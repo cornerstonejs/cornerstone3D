@@ -328,7 +328,16 @@ class ZoomTool extends BaseTool {
         return;
       }
 
-      this._applyViewportZoomDelta(viewport, element, -direction * 5);
+      const canvasPoint = this.configuration.zoomToCenter
+        ? undefined
+        : (points.canvas as Types.Point2);
+
+      this._applyViewportZoomDelta(
+        viewport,
+        element,
+        -direction * 5,
+        canvasPoint
+      );
       viewport.render();
       return;
     }
@@ -405,24 +414,26 @@ class ZoomTool extends BaseTool {
 
   _dragViewportZoom(
     evt: EventTypes.InteractionEventType,
-    viewport: {
-      getZoom(): number;
-      render(): void;
-      setZoom(zoom: number): void;
-    }
+    viewport: { getZoom(): number; setZoom(...args: unknown[]): void }
   ): void {
-    const { element, deltaPoints } = evt.detail;
+    const { element, deltaPoints, startPoints } = evt.detail;
+    const canvasPoint = this.configuration.zoomToCenter
+      ? undefined
+      : startPoints?.canvas;
 
-    this._applyViewportZoomDelta(viewport, element, deltaPoints.canvas[1]);
+    this._applyViewportZoomDelta(
+      viewport,
+      element,
+      deltaPoints.canvas[1],
+      canvasPoint
+    );
   }
 
   _applyViewportZoomDelta(
-    viewport: {
-      getZoom(): number;
-      setZoom(zoom: number): void;
-    },
+    viewport: { getZoom(): number; setZoom(...args: unknown[]): void },
     element: HTMLDivElement,
-    deltaY: number
+    deltaY: number,
+    canvasPoint?: Types.Point2
   ): void {
     const currentZoom = viewport.getZoom();
     const zoomScale = 5 / Math.max(element.clientHeight, 1);
@@ -434,7 +445,7 @@ class ZoomTool extends BaseTool {
       this.configuration.maxZoomScale
     );
 
-    viewport.setZoom(zoom);
+    viewport.setZoom(zoom, canvasPoint);
   }
 }
 

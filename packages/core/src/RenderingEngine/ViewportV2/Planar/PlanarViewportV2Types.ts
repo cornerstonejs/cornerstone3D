@@ -1,27 +1,15 @@
-import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
-import type vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
-import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
-import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
-import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import type { InterpolationType, OrientationAxis } from '../../../enums';
-import type {
-  CPUFallbackEnabledElement,
-  ICamera,
-  IImage,
-  IImageVolume,
-  Point3,
-  VOIRange,
-} from '../../../types';
+import type { IImage, IImageVolume, Point3, VOIRange } from '../../../types';
 import type { ViewportInput } from '../../../types/IViewport';
 import type {
   BaseViewportRenderContext,
   BasePresentationProps,
   DataProvider,
   LoadedData,
-  MountedRendering,
   RenderPathResolver,
 } from '../ViewportArchitectureTypes';
+import type { ViewportCameraBase } from '../ViewportCameraTypes';
 
 export type PlanarRenderMode = 'cpu2d' | 'webgl2d' | 'vtkImage' | 'vtkVolume';
 export type PlanarRequestedRenderMode = PlanarRenderMode | 'cpuVolume' | 'auto';
@@ -74,16 +62,13 @@ export interface PlanarPresentationProps extends BasePresentationProps {
   invert?: boolean;
 }
 
-export interface PlanarCamera {
+export interface PlanarCamera extends ViewportCameraBase<Point3> {
   imageIdIndex?: number;
   orientation?:
     | OrientationAxis.ACQUISITION
     | OrientationAxis.AXIAL
     | OrientationAxis.CORONAL
     | OrientationAxis.SAGITTAL;
-  rotation?: number;
-  zoom?: number;
-  pan?: [number, number];
 }
 
 export interface PlanarProperties {
@@ -106,6 +91,7 @@ export interface PlanarViewportV2Input extends ViewportInput {
 }
 
 export interface PlanarViewportRenderContext extends BaseViewportRenderContext {
+  renderingEngineId: string;
   type: 'planar';
   viewport: {
     element: HTMLDivElement;
@@ -126,11 +112,11 @@ export interface PlanarViewportRenderContext extends BaseViewportRenderContext {
 
 type PlanarContextBase = Pick<
   PlanarViewportRenderContext,
-  'viewportId' | 'type'
+  'viewportId' | 'renderingEngineId' | 'type'
 >;
 
 export type PlanarCpuImageAdapterContext = PlanarContextBase &
-  Pick<PlanarViewportRenderContext, 'display' | 'cpu'>;
+  Pick<PlanarViewportRenderContext, 'viewport' | 'display' | 'cpu'>;
 
 export type PlanarCpuVolumeAdapterContext = PlanarContextBase &
   Pick<PlanarViewportRenderContext, 'viewport' | 'display' | 'cpu' | 'vtk'>;
@@ -140,86 +126,3 @@ export type PlanarVtkImageAdapterContext = PlanarContextBase &
 
 export type PlanarVtkVolumeAdapterContext = PlanarContextBase &
   Pick<PlanarViewportRenderContext, 'viewport' | 'display' | 'vtk'>;
-
-export interface PlanarCameraState {
-  focalPoint: Point3;
-  parallelScale: number;
-  position: Point3;
-  viewPlaneNormal: Point3;
-  viewUp: Point3;
-}
-
-export type PlanarImageMapperRendering = MountedRendering<{
-  renderMode: 'vtkImage';
-  actor: vtkImageSlice;
-  currentImage: IImage;
-  mapper: vtkImageMapper;
-  imageData: vtkImageData;
-  currentImageIdIndex: number;
-  defaultVOIRange?: VOIRange;
-  initialCamera: PlanarCameraState;
-  loadRequestId: number;
-  camera?: ICamera;
-}>;
-
-export type PlanarCpuImageRendering = MountedRendering<{
-  renderMode: 'cpu2d';
-  enabledElement: CPUFallbackEnabledElement;
-  currentImageIdIndex: number;
-  defaultVOIRange?: VOIRange;
-  fitScale: number;
-  loadRequestId: number;
-  camera?: ICamera;
-  renderingInvalidated: boolean;
-}>;
-
-export type PlanarCpuVolumeRendering = MountedRendering<{
-  renderMode: 'cpuVolume';
-  actor: vtkVolume;
-  mapper: vtkVolumeMapper;
-  enabledElement?: CPUFallbackEnabledElement;
-  imageVolume: IImageVolume;
-  currentImageIdIndex: number;
-  maxImageIdIndex: number;
-  defaultVOIRange?: VOIRange;
-  baseCamera?: PlanarCameraState;
-  resolvedCamera?: ICamera;
-  camera?: PlanarCamera;
-  renderingInvalidated: boolean;
-  dataPresentation?: PlanarDataPresentation;
-  sampledSliceState?: {
-    image: IImage;
-    focalPoint: Point3;
-    translationReferenceFocalPoint: Point3;
-    right: Point3;
-    up: Point3;
-    normal: Point3;
-    spacingInNormalDirection: number;
-    canvasWidth: number;
-    canvasHeight: number;
-    interpolationType: InterpolationType;
-  };
-  pendingVolumeLoadCallback?: boolean;
-  removeStreamingSubscriptions?: () => void;
-}>;
-
-export type PlanarVolumeMapperRendering = MountedRendering<{
-  renderMode: 'vtkVolume';
-  actor: vtkVolume;
-  imageVolume: IImageVolume;
-  mapper: vtkVolumeMapper;
-  currentImageIdIndex: number;
-  maxImageIdIndex: number;
-  defaultVOIRange?: VOIRange;
-  baseCamera?: PlanarCameraState;
-  resolvedCamera?: ICamera;
-  camera?: PlanarCamera;
-  dataPresentation?: PlanarDataPresentation;
-  removeStreamingSubscriptions?: () => void;
-}>;
-
-export type PlanarRendering =
-  | PlanarImageMapperRendering
-  | PlanarCpuImageRendering
-  | PlanarCpuVolumeRendering
-  | PlanarVolumeMapperRendering;

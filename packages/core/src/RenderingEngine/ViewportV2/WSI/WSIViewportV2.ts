@@ -104,6 +104,16 @@ class WSIViewportV2 extends ViewportV2<
     return renderingId;
   }
 
+  getZoom(): number {
+    return Math.max(this.camera.zoom ?? 1, 0.001);
+  }
+
+  setZoom(zoom: number): void {
+    this.setCamera({
+      zoom: Math.max(zoom, 0.001),
+    });
+  }
+
   /**
    * Requests a render on the active OpenLayers map.
    */

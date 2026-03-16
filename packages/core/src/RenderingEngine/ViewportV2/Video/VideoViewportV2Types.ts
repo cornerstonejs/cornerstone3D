@@ -5,6 +5,7 @@ import type {
   MountedRendering,
   RenderPathResolver,
 } from '../ViewportArchitectureTypes';
+import type { ViewportCameraBase } from '../ViewportCameraTypes';
 import type { VideoImageMetadata } from '../../../utilities/VideoUtilities';
 
 export interface VideoStreamPayload {
@@ -19,7 +20,7 @@ export interface VideoStreamPayload {
 
 export interface VideoPresentationProps extends BasePresentationProps {}
 
-export interface VideoCamera {
+export interface VideoCamera extends ViewportCameraBase<[number, number]> {
   zoom?: number;
   pan?: [number, number];
   rotation?: number;

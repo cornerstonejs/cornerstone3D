@@ -4,6 +4,12 @@ export {
 } from './DefaultRenderPathResolver';
 export { default as ViewportV2 } from './ViewportV2';
 export type {
+  CameraFrame,
+  CameraScaleMode,
+  ViewAnchor,
+  ViewportCameraBase,
+} from './ViewportCameraTypes';
+export type {
   BaseViewportRenderContext,
   BasePresentationProps,
   DataAddOptions,
@@ -74,20 +80,15 @@ export {
 } from './Planar';
 export type {
   PlanarCamera,
-  PlanarCameraState,
-  PlanarCpuImageRendering,
   PlanarDataPresentation,
   PlanarDataProvider,
   PlanarDataLoadOptions,
-  PlanarImageMapperRendering,
   PlanarOrientation,
   PlanarPayload,
   PlanarPresentationProps,
   PlanarRegisteredDataSet,
   PlanarRenderMode,
-  PlanarRendering,
   PlanarSetDataOptions,
-  PlanarVolumeMapperRendering,
   PlanarViewportRenderContext,
   PlanarViewportV2Input,
 } from './Planar';

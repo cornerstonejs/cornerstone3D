@@ -1,9 +1,9 @@
 import '@kitware/vtk.js/Rendering/Profiles/Volume';
 import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
-import Events from '../../../enums/Events';
-import ViewportType from '../../../enums/ViewportType';
+import { Events, ViewportStatus, ViewportType } from '../../../enums';
 import eventTarget from '../../../eventTarget';
 import type { IImageData, Point2, Point3 } from '../../../types';
+import triggerEvent from '../../../utilities/triggerEvent';
 import createVolumeActor from '../../helpers/createVolumeActor';
 import drawImageSync from '../../helpers/cpuFallback/drawImageSync';
 import type {
@@ -17,19 +17,17 @@ import type {
   PlanarCamera,
   PlanarDataPresentation,
   PlanarCpuVolumeAdapterContext,
-  PlanarCpuVolumeRendering,
   PlanarPayload,
   PlanarViewportRenderContext,
 } from './PlanarViewportV2Types';
+import type { PlanarCpuVolumeRendering } from './planarRuntimeTypes';
 import PlanarCPUVolumeSampler from './PlanarCPUVolumeSampler';
 import {
   canvasToWorldPlanarCamera,
   worldToCanvasPlanarCamera,
 } from './planarAdapterCoordinateTransforms';
-import {
-  createPlanarVolumeCameraState,
-  resolvePlanarVolumeCamera,
-} from './planarVolumeCameraState';
+import { resolvePlanarRenderCamera } from './planarRenderCamera';
+import { createPlanarVolumeSliceBasis } from './planarSliceBasis';
 
 export class CpuVolumeSliceRenderPath
   implements RenderPath<PlanarCpuVolumeAdapterContext>
@@ -70,9 +68,8 @@ export class CpuVolumeSliceRenderPath
       imageVolume: payload.imageVolume,
       currentImageIdIndex: payload.initialImageIdIndex,
       maxImageIdIndex: payload.imageIds.length - 1,
-      baseCamera: undefined,
-      resolvedCamera: undefined,
-      camera: undefined,
+      requestedCamera: undefined,
+      renderCamera: undefined,
       renderingInvalidated: true,
       removeStreamingSubscriptions: subscribeToVolumeLoadCompletion(
         payload.volumeId,
@@ -142,8 +139,8 @@ export class CpuVolumeSliceRenderPath
     cameraInput: unknown
   ): void {
     const camera = cameraInput as PlanarCamera | undefined;
-    const { baseCamera, currentImageIdIndex, maxImageIdIndex } =
-      createPlanarVolumeCameraState({
+    const { sliceBasis, currentImageIdIndex, maxImageIdIndex } =
+      createPlanarVolumeSliceBasis({
         canvasHeight: ctx.cpu.canvas.height,
         canvasWidth: ctx.cpu.canvas.width,
         imageIdIndex: camera?.imageIdIndex,
@@ -152,16 +149,15 @@ export class CpuVolumeSliceRenderPath
       });
 
     ctx.display.activateRenderMode('cpuVolume');
-    rendering.baseCamera = baseCamera;
-    rendering.resolvedCamera = resolvePlanarVolumeCamera({
-      baseCamera,
+    rendering.requestedCamera = camera;
+    rendering.renderCamera = resolvePlanarRenderCamera({
+      sliceBasis,
+      camera: rendering.requestedCamera,
       canvasWidth: ctx.cpu.canvas.width,
       canvasHeight: ctx.cpu.canvas.height,
-      camera,
     });
     rendering.currentImageIdIndex = currentImageIdIndex;
     rendering.maxImageIdIndex = maxImageIdIndex;
-    rendering.camera = camera;
     rendering.renderingInvalidated = true;
   }
 
@@ -170,30 +166,23 @@ export class CpuVolumeSliceRenderPath
     rendering: PlanarCpuVolumeRendering,
     canvasPos: Point2
   ): Point3 {
-    const resolvedCamera =
-      rendering.resolvedCamera ||
-      resolvePlanarVolumeCamera({
-        baseCamera: rendering.baseCamera,
-        canvasWidth: ctx.cpu.canvas.width,
-        canvasHeight: ctx.cpu.canvas.height,
-        camera: rendering.camera,
-      });
+    const renderCamera = rendering.renderCamera;
 
     if (
-      !resolvedCamera?.focalPoint ||
-      !resolvedCamera.parallelScale ||
-      !resolvedCamera.viewPlaneNormal ||
-      !resolvedCamera.viewUp
+      !renderCamera?.focalPoint ||
+      !renderCamera.parallelScale ||
+      !renderCamera.viewPlaneNormal ||
+      !renderCamera.viewUp
     ) {
       return [0, 0, 0];
     }
 
     return canvasToWorldPlanarCamera({
       camera: {
-        focalPoint: resolvedCamera.focalPoint,
-        parallelScale: resolvedCamera.parallelScale,
-        viewPlaneNormal: resolvedCamera.viewPlaneNormal,
-        viewUp: resolvedCamera.viewUp,
+        focalPoint: renderCamera.focalPoint,
+        parallelScale: renderCamera.parallelScale,
+        viewPlaneNormal: renderCamera.viewPlaneNormal,
+        viewUp: renderCamera.viewUp,
       },
       canvasWidth: ctx.cpu.canvas.width,
       canvasHeight: ctx.cpu.canvas.height,
@@ -206,30 +195,23 @@ export class CpuVolumeSliceRenderPath
     rendering: PlanarCpuVolumeRendering,
     worldPos: Point3
   ): Point2 {
-    const resolvedCamera =
-      rendering.resolvedCamera ||
-      resolvePlanarVolumeCamera({
-        baseCamera: rendering.baseCamera,
-        canvasWidth: ctx.cpu.canvas.width,
-        canvasHeight: ctx.cpu.canvas.height,
-        camera: rendering.camera,
-      });
+    const renderCamera = rendering.renderCamera;
 
     if (
-      !resolvedCamera?.focalPoint ||
-      !resolvedCamera.parallelScale ||
-      !resolvedCamera.viewPlaneNormal ||
-      !resolvedCamera.viewUp
+      !renderCamera?.focalPoint ||
+      !renderCamera.parallelScale ||
+      !renderCamera.viewPlaneNormal ||
+      !renderCamera.viewUp
     ) {
       return [0, 0];
     }
 
     return worldToCanvasPlanarCamera({
       camera: {
-        focalPoint: resolvedCamera.focalPoint,
-        parallelScale: resolvedCamera.parallelScale,
-        viewPlaneNormal: resolvedCamera.viewPlaneNormal,
-        viewUp: resolvedCamera.viewUp,
+        focalPoint: renderCamera.focalPoint,
+        parallelScale: renderCamera.parallelScale,
+        viewPlaneNormal: renderCamera.viewPlaneNormal,
+        viewUp: renderCamera.viewUp,
       },
       canvasWidth: ctx.cpu.canvas.width,
       canvasHeight: ctx.cpu.canvas.height,
@@ -286,16 +268,10 @@ export class CpuVolumeSliceRenderPath
       return;
     }
 
-    const resolvedCamera =
-      runtime.resolvedCamera ||
-      resolvePlanarVolumeCamera({
-        baseCamera: runtime.baseCamera,
-        canvasWidth: ctx.cpu.canvas.width,
-        canvasHeight: ctx.cpu.canvas.height,
-        camera: runtime.camera,
-      });
+    const renderCamera = runtime.renderCamera;
+    const zoom = Math.max(runtime.requestedCamera?.frame?.scale ?? 1, 0.001);
 
-    if (!resolvedCamera) {
+    if (!renderCamera) {
       clearToBackground(ctx);
       return;
     }
@@ -305,7 +281,7 @@ export class CpuVolumeSliceRenderPath
         sampledSliceState: runtime.sampledSliceState,
         width: ctx.cpu.canvas.width,
         height: ctx.cpu.canvas.height,
-        camera: resolvedCamera,
+        camera: renderCamera,
         dataPresentation: runtime.dataPresentation,
       });
 
@@ -314,7 +290,7 @@ export class CpuVolumeSliceRenderPath
         volume: runtime.imageVolume,
         width: ctx.cpu.canvas.width,
         height: ctx.cpu.canvas.height,
-        camera: resolvedCamera,
+        camera: renderCamera,
         dataPresentation: runtime.dataPresentation,
       });
       runtime.renderingInvalidated = true;
@@ -334,9 +310,9 @@ export class CpuVolumeSliceRenderPath
     this.sampler.updateCPUFallbackViewport({
       enabledElement: runtime.enabledElement,
       sampledSliceState: runtime.sampledSliceState,
-      camera: resolvedCamera,
+      camera: renderCamera,
       dataPresentation: runtime.dataPresentation,
-      zoom: runtime.camera?.zoom,
+      zoom,
     });
     runtime.defaultVOIRange = this.sampler.getResolvedVOIRange(
       runtime.dataPresentation?.voiRange,
@@ -345,17 +321,30 @@ export class CpuVolumeSliceRenderPath
     );
     drawImageSync(runtime.enabledElement, runtime.renderingInvalidated);
     runtime.renderingInvalidated = false;
+    triggerEvent(ctx.viewport.element, Events.IMAGE_RENDERED, {
+      element: ctx.viewport.element,
+      viewportId: ctx.viewportId,
+      renderingEngineId: ctx.renderingEngineId,
+      viewportStatus: ViewportStatus.RENDERED,
+    });
   }
 
   private resize(
     ctx: PlanarCpuVolumeAdapterContext,
     rendering: PlanarCpuVolumeRendering
   ): void {
-    rendering.resolvedCamera = resolvePlanarVolumeCamera({
-      baseCamera: rendering.baseCamera,
+    const { sliceBasis } = createPlanarVolumeSliceBasis({
       canvasWidth: ctx.cpu.canvas.width,
       canvasHeight: ctx.cpu.canvas.height,
-      camera: rendering.camera,
+      imageIdIndex: rendering.currentImageIdIndex,
+      imageVolume: rendering.imageVolume,
+      orientation: rendering.requestedCamera?.orientation,
+    });
+    rendering.renderCamera = resolvePlanarRenderCamera({
+      sliceBasis,
+      camera: rendering.requestedCamera,
+      canvasWidth: ctx.cpu.canvas.width,
+      canvasHeight: ctx.cpu.canvas.height,
     });
     rendering.renderingInvalidated = true;
   }
@@ -421,6 +410,7 @@ export class CpuVolumeSlicePath
   ): PlanarCpuVolumeAdapterContext {
     return {
       viewportId: rootContext.viewportId,
+      renderingEngineId: rootContext.renderingEngineId,
       type: rootContext.type,
       viewport: rootContext.viewport,
       display: rootContext.display,

@@ -9,6 +9,7 @@ import type {
   IImageVolume,
   RGB,
   VOIRange,
+  Point3,
 } from '../../../types';
 import type { ViewportInput } from '../../../types/IViewport';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
@@ -21,6 +22,7 @@ import type {
   MountedRendering,
   RenderPathResolver,
 } from '../ViewportArchitectureTypes';
+import type { ViewportCameraBase } from '../ViewportCameraTypes';
 
 export type Volume3DRenderMode = 'vtkVolume3d' | 'vtkGeometry3d';
 export type Volume3DRequestedRenderMode = Volume3DRenderMode | 'auto';
@@ -67,7 +69,7 @@ export interface Volume3DProperties {
 export type Volume3DDataPresentation = Volume3DPresentationProps &
   Volume3DProperties;
 
-export type Volume3DCamera = ICamera;
+export interface Volume3DCamera extends ICamera, ViewportCameraBase<Point3> {}
 
 export interface Volume3DDataProvider extends DataProvider {
   load(

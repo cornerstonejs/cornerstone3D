@@ -129,7 +129,7 @@ export interface ICanvasWorldViewport {
 
 export interface IZoomViewport {
   getZoom(): number;
-  setZoom(zoom: number): void;
+  setZoom(zoom: number, canvasPoint?: Point2): void;
 }
 
 export interface IPanViewport {

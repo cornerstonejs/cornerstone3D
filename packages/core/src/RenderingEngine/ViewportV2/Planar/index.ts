@@ -18,13 +18,9 @@ export {
 export { default } from './PlanarViewportV2';
 export type {
   PlanarCamera,
-  PlanarCameraState,
   PlanarCpuImageAdapterContext,
-  PlanarCpuImageRendering,
   PlanarCpuVolumeAdapterContext,
-  PlanarCpuVolumeRendering,
   PlanarDataProvider,
-  PlanarImageMapperRendering,
   PlanarDataLoadOptions,
   PlanarDataPresentation,
   PlanarEffectiveRenderMode,
@@ -34,11 +30,9 @@ export type {
   PlanarRequestedRenderMode,
   PlanarRegisteredDataSet,
   PlanarRenderMode,
-  PlanarRendering,
   PlanarSetDataOptions,
   PlanarVtkImageAdapterContext,
   PlanarVtkVolumeAdapterContext,
-  PlanarVolumeMapperRendering,
   PlanarViewportRenderContext,
   PlanarViewportV2Input,
 } from './PlanarViewportV2Types';

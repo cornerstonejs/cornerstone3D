@@ -137,6 +137,28 @@ class ECGViewportV2 extends ViewportV2<
     return renderingIds;
   }
 
+  getZoom(): number {
+    return Math.max(this.camera.zoom ?? 1, 0.001);
+  }
+
+  setZoom(zoom: number): void {
+    this.setCamera({
+      zoom: Math.max(zoom, 0.001),
+    });
+  }
+
+  getPan(): Point2 {
+    const [x, y] = this.camera.pan ?? [0, 0];
+
+    return [x, y];
+  }
+
+  setPan(pan: Point2): void {
+    this.setCamera({
+      pan: [pan[0], pan[1]],
+    });
+  }
+
   /**
    * Shows or hides a specific ECG channel in the active dataset.
    *

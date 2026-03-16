@@ -6,6 +6,7 @@ import type {
   MountedRendering,
   RenderPathResolver,
 } from '../ViewportArchitectureTypes';
+import type { ViewportCameraBase } from '../ViewportCameraTypes';
 import type {
   WSIClientLike,
   WSIImageDataMetadata,
@@ -37,7 +38,7 @@ export interface WSIPayload {
 
 export interface WSIPresentationProps extends BasePresentationProps {}
 
-export interface WSICamera {
+export interface WSICamera extends ViewportCameraBase<[number, number]> {
   zoom?: number;
   centerIndex?: [number, number];
   rotation?: number;

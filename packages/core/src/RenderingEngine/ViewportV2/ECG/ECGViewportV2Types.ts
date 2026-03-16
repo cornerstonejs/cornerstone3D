@@ -5,6 +5,7 @@ import type {
   MountedRendering,
   RenderPathResolver,
 } from '../ViewportArchitectureTypes';
+import type { ViewportCameraBase } from '../ViewportCameraTypes';
 
 export interface ECGChannelData {
   name: string;
@@ -28,7 +29,7 @@ export interface ECGPresentationProps extends BasePresentationProps {
   visibleChannels?: number[];
 }
 
-export interface ECGCamera {
+export interface ECGCamera extends ViewportCameraBase<[number, number]> {
   timeRange: [number, number];
   valueRange: [number, number];
   scrollOffset?: number;

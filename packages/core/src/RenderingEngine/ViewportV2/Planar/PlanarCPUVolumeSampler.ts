@@ -54,10 +54,6 @@ function subtractPoints(a: Point3, b: Point3): Point3 {
   ) as Point3;
 }
 
-function copyPoint3(point: Point3): Point3 {
-  return vec3.copy([0, 0, 0] as vec3, point as unknown as vec3) as Point3;
-}
-
 function arePointsClose(a: Point3, b: Point3, tolerance = 1e-4): boolean {
   return vec3.distance(a as unknown as vec3, b as unknown as vec3) <= tolerance;
 }
@@ -383,13 +379,13 @@ export default class PlanarCPUVolumeSampler {
           orthogonalSlice.maxPixelValue,
           voiRange
         ),
-        focalPoint: copyPoint3(camera.focalPoint as Point3),
-        translationReferenceFocalPoint: copyPoint3(
-          orthogonalSlice.translationReferenceFocalPoint
-        ),
-        right: copyPoint3(right),
-        up: copyPoint3(up),
-        normal: copyPoint3(normal),
+        focalPoint: vec3.clone(camera.focalPoint as unknown as vec3) as Point3,
+        translationReferenceFocalPoint: vec3.clone(
+          orthogonalSlice.translationReferenceFocalPoint as unknown as vec3
+        ) as Point3,
+        right: vec3.clone(right as unknown as vec3) as Point3,
+        up: vec3.clone(up as unknown as vec3) as Point3,
+        normal: vec3.clone(normal as unknown as vec3) as Point3,
         spacingInNormalDirection: Math.max(
           getSpacingInNormalDirection(volume, normal),
           EPSILON
@@ -472,11 +468,13 @@ export default class PlanarCPUVolumeSampler {
         maxPixelValue,
         voiRange
       ),
-      focalPoint: copyPoint3(camera.focalPoint as Point3),
-      translationReferenceFocalPoint: copyPoint3(camera.focalPoint as Point3),
-      right: copyPoint3(right),
-      up: copyPoint3(up),
-      normal: copyPoint3(normal),
+      focalPoint: vec3.clone(camera.focalPoint as unknown as vec3) as Point3,
+      translationReferenceFocalPoint: vec3.clone(
+        camera.focalPoint as unknown as vec3
+      ) as Point3,
+      right: vec3.clone(right as unknown as vec3) as Point3,
+      up: vec3.clone(up as unknown as vec3) as Point3,
+      normal: vec3.clone(normal as unknown as vec3) as Point3,
       spacingInNormalDirection: Math.max(
         getSpacingInNormalDirection(volume, normal),
         EPSILON

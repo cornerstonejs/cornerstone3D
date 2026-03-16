@@ -12,6 +12,7 @@ import type {
   ViewportId,
 } from './ViewportArchitectureTypes';
 import type ViewportType from '../../enums/ViewportType';
+import type { ViewAnchor, ViewportCameraBase } from './ViewportCameraTypes';
 
 /**
  * Generic ViewportV2 controller.
@@ -37,7 +38,7 @@ import type ViewportType from '../../enums/ViewportType';
  * centralizing render-mode-specific behavior in the controller.
  */
 abstract class ViewportV2<
-  TCamera,
+  TCamera extends ViewportCameraBase<unknown>,
   TDataPresentation = unknown,
   TContext extends BaseViewportRenderContext = BaseViewportRenderContext,
 > implements ViewportController<TCamera, TDataPresentation>
@@ -188,11 +189,25 @@ abstract class ViewportV2<
    * Merges partial camera updates into the shared viewport camera state and
    * propagates that state to every active binding.
    */
-  setCamera(camera: Partial<TCamera>): void {
-    this.camera = {
+  protected normalizeCamera(camera: TCamera): TCamera {
+    return camera;
+  }
+
+  setCamera(cameraPatch: Partial<TCamera>): void {
+    const next = {
       ...this.camera,
-      ...camera,
-    };
+      ...cameraPatch,
+      ...(cameraPatch.frame !== undefined
+        ? {
+            frame: {
+              ...(this.camera.frame || {}),
+              ...(cameraPatch.frame || {}),
+            },
+          }
+        : {}),
+    } as TCamera;
+
+    this.camera = this.normalizeCamera(next);
     this.modified();
   }
 
@@ -224,37 +239,33 @@ abstract class ViewportV2<
     return this.getBinding(dataId)?.rendering.renderMode;
   }
 
-  /**
-   * Compatibility helper for tool APIs that operate on scalar zoom state.
-   */
-  getZoom(): number {
-    return (this.camera as { zoom?: number }).zoom ?? 1;
+  getScale(): number {
+    return Math.max(this.camera.frame?.scale ?? 1, 0.001);
   }
 
-  /**
-   * Compatibility helper for tool APIs that operate on scalar zoom state.
-   */
-  setZoom(zoom: number): void {
+  setScale(scale: number): void {
     this.setCamera({
-      zoom: Math.max(zoom, 0.001),
-    } as unknown as Partial<TCamera>);
+      frame: {
+        ...(this.camera.frame || {}),
+        scale: Math.max(scale, 0.001),
+        scaleMode: 'fit',
+      },
+    } as Partial<TCamera>);
   }
 
-  /**
-   * Compatibility helper for tool APIs that operate on planar pan state.
-   */
-  getPan(): Point2 {
-    const [x, y] = (this.camera as { pan?: [number, number] }).pan ?? [0, 0];
+  getAnchorView(): ViewAnchor {
+    const [x, y] = this.camera.frame?.anchorView ?? [0.5, 0.5];
+
     return [x, y];
   }
 
-  /**
-   * Compatibility helper for tool APIs that operate on planar pan state.
-   */
-  setPan(pan: Point2): void {
+  setAnchorView(anchorView: ViewAnchor): void {
     this.setCamera({
-      pan: [pan[0], pan[1]],
-    } as unknown as Partial<TCamera>);
+      frame: {
+        ...(this.camera.frame || {}),
+        anchorView: [anchorView[0], anchorView[1]],
+      },
+    } as Partial<TCamera>);
   }
 
   /**

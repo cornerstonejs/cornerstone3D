@@ -62,9 +62,13 @@ content.appendChild(viewportGrid);
 
 const instructions = document.createElement('p');
 instructions.innerText =
-  'Left click to draw length measurements on any viewport. Use the mouse wheel to scroll, middle drag to pan, and right drag to zoom. Add cpu=true in the URL to force CPU rendering.';
+  'Left click to draw length measurements on any viewport. Use the mouse wheel to scroll, middle drag to pan, and right drag to zoom.';
+
+const toggleButton = document.createElement('button');
+toggleButton.style.marginTop = '10px';
 
 content.append(instructions);
+content.append(toggleButton);
 // ============================= //
 
 /**
@@ -199,20 +203,41 @@ async function run() {
     Enums.OrientationAxis.CORONAL,
   ] as const;
 
-  await Promise.all(
-    viewports.map((viewport, index) =>
-      viewport.setDataIds([dataId], {
-        orientation: orientations[index],
-      })
-    )
-  );
+  let isCpu = false;
 
-  viewports.forEach((viewport) => {
-    viewport.setDataPresentation(dataId, {
-      voiRange: ctVoiRange,
+  async function loadWithRenderMode(renderMode?: 'cpuVolume' | 'vtkVolume') {
+    await Promise.all(
+      viewports.map((viewport, index) => {
+        viewport.removeDataId(dataId);
+        return viewport.setDataIds([dataId], {
+          orientation: orientations[index],
+          ...(renderMode ? { renderMode } : {}),
+        });
+      })
+    );
+
+    viewports.forEach((viewport) => {
+      viewport.setDataPresentation(dataId, {
+        voiRange: ctVoiRange,
+      });
+      viewport.render();
     });
-    viewport.render();
+  }
+
+  function updateButtonLabel() {
+    toggleButton.innerText = `Switch to ${isCpu ? 'GPU' : 'CPU'} rendering`;
+  }
+
+  toggleButton.addEventListener('click', async () => {
+    toggleButton.disabled = true;
+    isCpu = !isCpu;
+    await loadWithRenderMode(isCpu ? 'cpuVolume' : 'vtkVolume');
+    updateButtonLabel();
+    toggleButton.disabled = false;
   });
+
+  updateButtonLabel();
+  await loadWithRenderMode();
 }
 
 run();

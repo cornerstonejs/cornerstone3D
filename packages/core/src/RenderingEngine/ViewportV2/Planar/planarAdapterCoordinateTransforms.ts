@@ -1,11 +1,6 @@
 import { vec3 } from 'gl-matrix';
-import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import canvasToPixel from '../../helpers/cpuFallback/rendering/canvasToPixel';
 import pixelToCanvas from '../../helpers/cpuFallback/rendering/pixelToCanvas';
-import {
-  canvasToWorldContextPool,
-  worldToCanvasContextPool,
-} from '../../helpers/vtkCanvasCoordinateTransforms';
 export {
   canvasToWorldContextPool,
   worldToCanvasContextPool,
@@ -18,16 +13,6 @@ import type {
   Point2,
   Point3,
 } from '../../../types';
-import type { PlanarCamera } from './PlanarViewportV2Types';
-import { rotatePlanarViewUp } from './planarCameraPresentation';
-
-interface PlanarBaseCameraState {
-  focalPoint: Point3;
-  parallelScale: number;
-  position: Point3;
-  viewPlaneNormal: Point3;
-  viewUp: Point3;
-}
 
 type PlanarResolvedCamera = Pick<
   Required<ICamera>,
@@ -150,63 +135,6 @@ export function worldToCanvasCPUImage(
   ];
 
   return pixelToCanvas(enabledElement, indexPoint);
-}
-
-export function applyPlanarCanvasCameraViewState(args: {
-  canvas: HTMLCanvasElement;
-  renderer: vtkRenderer;
-  baseCamera: PlanarBaseCameraState;
-  camera?: Pick<PlanarCamera, 'pan' | 'rotation' | 'zoom'>;
-}): void {
-  const { canvas, renderer, baseCamera, camera } = args;
-  const vtkCamera = renderer.getActiveCamera();
-  const zoom = Math.max(camera?.zoom ?? 1, 0.001);
-  const [panX, panY] = camera?.pan ?? [0, 0];
-  const rotatedViewUp = rotatePlanarViewUp({
-    rotation: camera?.rotation,
-    viewPlaneNormal: baseCamera.viewPlaneNormal,
-    viewUp: baseCamera.viewUp,
-  });
-
-  vtkCamera.setParallelProjection(true);
-  vtkCamera.setDirectionOfProjection(
-    -baseCamera.viewPlaneNormal[0],
-    -baseCamera.viewPlaneNormal[1],
-    -baseCamera.viewPlaneNormal[2]
-  );
-  vtkCamera.setParallelScale(baseCamera.parallelScale / zoom);
-  vtkCamera.setFocalPoint(...baseCamera.focalPoint);
-  vtkCamera.setPosition(...baseCamera.position);
-  vtkCamera.setViewUp(...rotatedViewUp);
-
-  if (!panX && !panY) {
-    return;
-  }
-
-  const zeroWorld = canvasToWorldContextPool({
-    canvas,
-    renderer,
-    canvasPos: [0, 0],
-  });
-  const pannedWorld = canvasToWorldContextPool({
-    canvas,
-    renderer,
-    canvasPos: [panX, panY],
-  });
-  const deltaWorld = vec3.subtract(vec3.create(), pannedWorld, zeroWorld);
-  const focalPoint = vec3.subtract(
-    vec3.create(),
-    baseCamera.focalPoint,
-    deltaWorld
-  ) as Point3;
-  const position = vec3.subtract(
-    vec3.create(),
-    baseCamera.position,
-    deltaWorld
-  ) as Point3;
-
-  vtkCamera.setFocalPoint(...focalPoint);
-  vtkCamera.setPosition(...position);
 }
 
 export function getCpuEquivalentParallelScale(args: {

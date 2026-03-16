@@ -1,7 +1,7 @@
 import { OrientationAxis, ViewportType } from '../../../enums';
 import type {
-  ICamera,
   Point2,
+  Point3,
   ReferenceCompatibleOptions,
   ViewPresentation,
   ViewPresentationSelector,
@@ -26,15 +26,25 @@ import {
   selectPlanarRenderPath,
 } from './planarRenderPathSelector';
 import type { SelectedPlanarRenderPath } from './planarRenderPathSelector';
-import { normalizePlanarRotation } from './planarCameraPresentation';
+import { normalizePlanarRotation } from './planarViewPresentation';
 import {
-  getPlanarCompatibilityCamera,
+  createDefaultPlanarCamera,
+  normalizePlanarCamera,
+} from './planarViewportCamera';
+import { derivePlanarPresentation } from './planarRenderCamera';
+import {
   getPlanarReferencedImageId,
   getPlanarViewReference,
   getPlanarViewReferenceId,
   isPlanarPlaneViewable,
   isPlanarReferenceViewable,
-} from './planarViewportCompatibility';
+} from './planarViewReference';
+import {
+  createPlanarCpuImageSliceBasis,
+  createPlanarImageSliceBasis,
+  createPlanarVolumeSliceBasis,
+} from './planarSliceBasis';
+import type { PlanarRendering } from './planarRuntimeTypes';
 import type {
   PlanarCamera,
   PlanarDataPresentation,
@@ -42,7 +52,6 @@ import type {
   PlanarEffectiveRenderMode,
   PlanarPayload,
   PlanarRegisteredDataSet,
-  PlanarRendering,
   PlanarSetDataOptions,
   PlanarViewportRenderContext,
   PlanarViewportV2Input,
@@ -162,13 +171,7 @@ class PlanarViewportV2 extends ViewportV2<
         canvas: vtkCanvas,
       },
     };
-    this.camera = {
-      imageIdIndex: 0,
-      orientation: OrientationAxis.ACQUISITION,
-      rotation: 0,
-      zoom: 1,
-      pan: [0, 0],
-    };
+    this.camera = createDefaultPlanarCamera();
 
     this.element.setAttribute('data-viewport-uid', this.id);
     this.element.setAttribute(
@@ -293,80 +296,77 @@ class PlanarViewportV2 extends ViewportV2<
     return this.getCurrentImageIdIndex();
   }
 
-  /**
-   * Returns the current camera plus compatibility fields expected by legacy
-   * camera consumers such as pan/zoom helpers and interaction tools.
-   *
-   * @returns The current planar camera in the compatibility camera shape.
-   */
-  getCamera(): PlanarCamera & ICamera {
-    return this.getCompatibilityCamera();
+  protected normalizeCamera(camera: PlanarCamera): PlanarCamera {
+    return normalizePlanarCamera(camera);
   }
 
-  /**
-   * Applies camera updates using the planar compatibility contract.
-   *
-   * @param camera - Partial planar or compatibility camera values to merge into
-   * the current viewport camera state.
-   */
-  setCamera(camera: Partial<PlanarCamera & ICamera>): void {
-    const currentZoom = Math.max(this.camera.zoom ?? 1, 0.001);
-    const compatibilityCamera = this.getCompatibilityCamera();
-    const nextCamera: Partial<PlanarCamera> = {
-      ...(typeof camera.imageIdIndex === 'number'
-        ? { imageIdIndex: camera.imageIdIndex }
-        : {}),
-      ...(camera.orientation !== undefined
-        ? { orientation: camera.orientation }
-        : {}),
-      ...(typeof camera.rotation === 'number'
-        ? { rotation: normalizePlanarRotation(camera.rotation) }
-        : {}),
-      ...(typeof camera.zoom === 'number'
-        ? { zoom: Math.max(camera.zoom, 0.001) }
-        : {}),
-    };
+  getRotation(): number {
+    return normalizePlanarRotation(this.camera.frame?.rotation);
+  }
 
-    if (
-      typeof camera.parallelScale === 'number' &&
-      camera.parallelScale > 0 &&
-      typeof compatibilityCamera.parallelScale === 'number' &&
-      compatibilityCamera.parallelScale > 0
-    ) {
-      nextCamera.zoom = Math.max(
-        (currentZoom * compatibilityCamera.parallelScale) /
-          camera.parallelScale,
-        0.001
-      );
-    }
+  getAnchorPoint(): Point3 | undefined {
+    const anchorPoint = this.camera.frame?.anchorPoint;
 
-    const panFromFocalPoint = this.getPanFromFocalPoint({
-      currentFocalPoint: compatibilityCamera.focalPoint,
-      currentZoom,
-      nextZoom: nextCamera.zoom ?? currentZoom,
-      targetFocalPoint: camera.focalPoint,
+    return anchorPoint ? ([...anchorPoint] as Point3) : undefined;
+  }
+
+  setAnchorPoint(point?: Point3): void {
+    this.setCamera({
+      frame: {
+        anchorPoint: point ? ([...point] as Point3) : undefined,
+      },
     });
+  }
 
-    if (panFromFocalPoint) {
-      nextCamera.pan = panFromFocalPoint;
-    } else if (camera.pan) {
-      nextCamera.pan = [camera.pan[0], camera.pan[1]];
-    }
+  getZoom(): number {
+    return this.getScale();
+  }
 
-    if (!Object.keys(nextCamera).length) {
+  setZoom(zoom: number, canvasPoint?: Point2): void {
+    if (canvasPoint) {
+      this.setScaleAtCanvasPoint(zoom, canvasPoint);
       return;
     }
-
-    super.setCamera(nextCamera);
+    this.setScale(zoom);
   }
 
-  /**
-   * Returns the normalized planar rotation in degrees.
-   *
-   * @returns The normalized rotation angle.
-   */
-  getRotation(): number {
-    return normalizePlanarRotation(this.camera.rotation);
+  getPan(): Point2 {
+    const presentation = this.getCurrentPresentation();
+
+    return presentation ? [presentation.pan[0], presentation.pan[1]] : [0, 0];
+  }
+
+  setPan(nextPan: Point2): void {
+    const currentPan = this.getPan();
+    const [ax, ay] = this.getAnchorView();
+    const canvasWidth = this.getCurrentCanvasWidth();
+    const canvasHeight = this.getCurrentCanvasHeight();
+    const deltaX = nextPan[0] - currentPan[0];
+    const deltaY = nextPan[1] - currentPan[1];
+
+    this.setAnchorView([
+      ax + deltaX / Math.max(canvasWidth, 1),
+      ay + deltaY / Math.max(canvasHeight, 1),
+    ]);
+  }
+
+  setScaleAtCanvasPoint(scale: number, canvasPoint: Point2): void {
+    const worldPoint = this.canvasToWorld(canvasPoint);
+    const canvasWidth = this.getCurrentCanvasWidth();
+    const canvasHeight = this.getCurrentCanvasHeight();
+
+    this.setCamera({
+      frame: {
+        ...(this.getCamera().frame || {}),
+        anchorPoint: worldPoint,
+        anchorView: [
+          canvasPoint[0] / Math.max(canvasWidth, 1),
+          canvasPoint[1] / Math.max(canvasHeight, 1),
+        ],
+        scale: Math.max(scale, 0.001),
+        scaleMode: 'fit',
+      },
+    });
   }
 
   /**
@@ -426,16 +426,19 @@ class PlanarViewportV2 extends ViewportV2<
       rotation = this.getRotation(),
       zoom = this.getZoom(),
     } = viewPres;
+    const nextZoom = Math.max(zoom, 0.001);
 
     this.setCamera({
-      rotation,
-      zoom,
-      ...(pan
-        ? {
-            pan: [pan[0] * zoom, pan[1] * zoom] as Point2,
-          }
-        : {}),
+      frame: {
+        rotation,
+        scale: nextZoom,
+        scaleMode: 'fit',
+      },
     });
+
+    if (pan) {
+      this.setPan([pan[0] * nextZoom, pan[1] * nextZoom]);
+    }
   }
 
   /**
@@ -621,7 +624,7 @@ class PlanarViewportV2 extends ViewportV2<
       | OrientationAxis.CORONAL
       | OrientationAxis.SAGITTAL
   ): void {
-    this.setCamera({ imageIdIndex: undefined, orientation });
+    this.setCamera({ orientation });
   }
 
   /**
@@ -632,11 +635,20 @@ class PlanarViewportV2 extends ViewportV2<
    */
   resetCamera(options?: { resetPan?: boolean; resetZoom?: boolean }): boolean {
     const { resetPan = true, resetZoom = true } = options || {};
+    const frame = {
+      ...(this.camera.frame || {}),
+      ...(resetPan
+        ? {
+            anchorPoint: undefined,
+            anchorView: [0.5, 0.5] as [number, number],
+          }
+        : {}),
+      ...(resetZoom ? { scale: 1, scaleMode: 'fit' as const } : {}),
+      rotation: 0,
+    };
 
     this.setCamera({
-      rotation: 0,
-      ...(resetPan ? { pan: [0, 0] as Point2 } : {}),
-      ...(resetZoom ? { zoom: 1 } : {}),
+      frame,
     });
 
     return true;
@@ -720,31 +732,6 @@ class PlanarViewportV2 extends ViewportV2<
     return Math.max(0, this.getImageIds().length - 1);
   }
 
-  private getPanFromFocalPoint(args: {
-    currentFocalPoint?: ICamera['focalPoint'];
-    currentZoom: number;
-    nextZoom: number;
-    targetFocalPoint?: ICamera['focalPoint'];
-  }): Point2 | undefined {
-    const { currentFocalPoint, currentZoom, nextZoom, targetFocalPoint } = args;
-
-    if (!currentFocalPoint || !targetFocalPoint) {
-      return;
-    }
-
-    const currentCanvasFocalPoint = this.worldToCanvas(currentFocalPoint);
-    const targetCanvasFocalPoint = this.worldToCanvas(targetFocalPoint);
-    const zoomRatio = nextZoom / Math.max(currentZoom, 0.001);
-    const currentPan = this.getPan();
-
-    return [
-      currentPan[0] +
-        (currentCanvasFocalPoint[0] - targetCanvasFocalPoint[0]) * zoomRatio,
-      currentPan[1] +
-        (currentCanvasFocalPoint[1] - targetCanvasFocalPoint[1]) * zoomRatio,
-    ];
-  }
-
   private getPlanarData(): LoadedData<PlanarPayload> | undefined {
     return this.getCurrentPlanarData();
   }
@@ -765,14 +752,6 @@ class PlanarViewportV2 extends ViewportV2<
     }
 
     return dataSet;
-  }
-
-  private getCompatibilityCamera(): PlanarCamera & ICamera {
-    return getPlanarCompatibilityCamera({
-      camera: this.camera,
-      rendering: this.getCurrentPlanarRendering(),
-      renderContext: this.renderContext,
-    });
   }
 
   private async loadPlanarData(
@@ -809,24 +788,124 @@ class PlanarViewportV2 extends ViewportV2<
     planarData: PlanarPayload,
     selectedPath: SelectedPlanarRenderPath
   ): void {
-    const isVolumeRenderMode =
+    const isVolumePath =
       selectedPath.renderMode === 'cpuVolume' ||
       selectedPath.renderMode === 'vtkVolume';
+    const imageIdIndex = isVolumePath
+      ? undefined
+      : planarData.initialImageIdIndex;
 
-    this.camera = {
+    this.camera = this.normalizeCamera({
       ...this.camera,
-      imageIdIndex: isVolumeRenderMode
-        ? undefined
-        : planarData.initialImageIdIndex,
+      imageIdIndex,
       orientation: normalizePlanarOrientation(
         options.orientation,
         selectedPath.acquisitionOrientation
       ),
-    };
+    });
   }
 
   private getCurrentPlanarRendering(): PlanarRendering | undefined {
     return this.getCurrentBinding()?.rendering as PlanarRendering | undefined;
+  }
+
+  private buildCurrentPlanarSliceBasis() {
+    const rendering = this.getCurrentPlanarRendering();
+
+    if (!rendering) {
+      return;
+    }
+
+    const canvasWidth = this.getCurrentCanvasWidth();
+    const canvasHeight = this.getCurrentCanvasHeight();
+
+    if (rendering.renderMode === 'cpu2d') {
+      const image = rendering.enabledElement?.image;
+
+      if (!image) {
+        return;
+      }
+
+      return createPlanarCpuImageSliceBasis({
+        image,
+        canvasWidth,
+        canvasHeight,
+      });
+    }
+
+    if (rendering.renderMode === 'vtkImage') {
+      const image = rendering.currentImage;
+
+      if (!image) {
+        return;
+      }
+
+      return createPlanarImageSliceBasis({ image, canvasWidth, canvasHeight });
+    }
+
+    if (
+      rendering.renderMode === 'cpuVolume' ||
+      rendering.renderMode === 'vtkVolume'
+    ) {
+      const { sliceBasis } = createPlanarVolumeSliceBasis({
+        canvasWidth,
+        canvasHeight,
+        imageIdIndex: rendering.currentImageIdIndex,
+        imageVolume: rendering.imageVolume,
+        orientation: rendering.requestedCamera?.orientation,
+      });
+
+      return sliceBasis;
+    }
+  }
+
+  private getCurrentPresentation() {
+    const sliceBasis = this.buildCurrentPlanarSliceBasis();
+
+    if (!sliceBasis) {
+      return;
+    }
+
+    return derivePlanarPresentation({
+      sliceBasis,
+      camera: this.camera,
+      canvasHeight: this.getCurrentCanvasHeight(),
+      canvasWidth: this.getCurrentCanvasWidth(),
+    });
+  }
+
+  private getCurrentCanvasWidth(): number {
+    const rendering = this.getCurrentPlanarRendering();
+
+    if (
+      rendering?.renderMode === 'cpu2d' ||
+      rendering?.renderMode === 'cpuVolume'
+    ) {
+      return this.renderContext.cpu.canvas.width || this.element.clientWidth;
+    }
+
+    return (
+      this.renderContext.vtk.canvas.clientWidth ||
+      this.renderContext.vtk.canvas.width ||
+      this.element.clientWidth
+    );
+  }
+
+  private getCurrentCanvasHeight(): number {
+    const rendering = this.getCurrentPlanarRendering();
+
+    if (
+      rendering?.renderMode === 'cpu2d' ||
+      rendering?.renderMode === 'cpuVolume'
+    ) {
+      return this.renderContext.cpu.canvas.height || this.element.clientHeight;
+    }
+
+    return (
+      this.renderContext.vtk.canvas.clientHeight ||
+      this.renderContext.vtk.canvas.height ||
+      this.element.clientHeight
+    );
   }
 
   private getCurrentPlanarData(): LoadedData<PlanarPayload> | undefined {

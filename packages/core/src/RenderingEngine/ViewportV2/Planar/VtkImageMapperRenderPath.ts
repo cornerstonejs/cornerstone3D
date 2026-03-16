@@ -13,7 +13,6 @@ import {
   applyPlanarImagePresentation,
   createVTKImageDataFromImage,
   getDefaultImageVOIRange,
-  getPlanarCameraState,
 } from '../../helpers/planarImageRendering';
 import type {
   DataAddOptions,
@@ -25,18 +24,21 @@ import type {
 import type {
   PlanarCamera,
   PlanarDataPresentation,
-  PlanarImageMapperRendering,
   PlanarPayload,
   PlanarViewportRenderContext,
   PlanarVtkImageAdapterContext,
 } from './PlanarViewportV2Types';
+import type { PlanarImageMapperRendering } from './planarRuntimeTypes';
 import {
-  applyPlanarCanvasCameraViewState,
   canvasToWorldContextPool,
-  getCpuEquivalentParallelScale,
   worldToCanvasContextPool,
 } from './planarAdapterCoordinateTransforms';
 import { buildPlanarImageData } from './CpuImageSliceRenderPath';
+import {
+  applyPlanarRenderCameraToRenderer,
+  resolvePlanarRenderCamera,
+} from './planarRenderCamera';
+import { createPlanarImageSliceBasis } from './planarSliceBasis';
 
 export class VtkImageMapperRenderPath
   implements RenderPath<PlanarVtkImageAdapterContext>
@@ -62,9 +64,11 @@ export class VtkImageMapperRenderPath
     mapper.setInputData(imageData);
     actor.setMapper(mapper);
     ctx.vtk.renderer.addActor(actor);
-    applyImageOrientationToCamera(ctx.vtk.renderer, imageData);
-    ctx.vtk.renderer.resetCamera();
-    applyCpuEquivalentInitialScale(ctx, payload.image);
+    const sliceBasis = createPlanarImageSliceBasis({
+      canvasHeight: ctx.vtk.canvas.clientHeight || ctx.vtk.canvas.height,
+      canvasWidth: ctx.vtk.canvas.clientWidth || ctx.vtk.canvas.width,
+      image: payload.image,
+    });
 
     const rendering: PlanarImageMapperRendering = {
       id: `rendering:${data.id}:${options.renderMode}`,
@@ -75,8 +79,12 @@ export class VtkImageMapperRenderPath
       imageData,
       currentImageIdIndex: payload.initialImageIdIndex,
       defaultVOIRange: getDefaultImageVOIRange(payload.image),
-      initialCamera: getPlanarCameraState(ctx.vtk.renderer),
-      camera: getVtkImageCompatibilityCamera(ctx.vtk.renderer),
+      requestedCamera: undefined,
+      renderCamera: resolvePlanarRenderCamera({
+        sliceBasis,
+        canvasHeight: ctx.vtk.canvas.clientHeight || ctx.vtk.canvas.height,
+        canvasWidth: ctx.vtk.canvas.clientWidth || ctx.vtk.canvas.width,
+      }),
       loadRequestId: 0,
     };
 
@@ -99,6 +107,9 @@ export class VtkImageMapperRenderPath
       },
       getImageData: () => {
         return this.getImageData(rendering);
+      },
+      resize: () => {
+        this.resize(ctx, rendering);
       },
       removeData: () => {
         this.removeData(ctx, rendering);
@@ -131,19 +142,26 @@ export class VtkImageMapperRenderPath
     const planarCamera = camera as PlanarCamera | undefined;
     const nextImageIdIndex =
       planarCamera?.imageIdIndex ?? rendering.currentImageIdIndex;
+    const canvasWidth = ctx.vtk.canvas.clientWidth || ctx.vtk.canvas.width;
+    const canvasHeight = ctx.vtk.canvas.clientHeight || ctx.vtk.canvas.height;
 
     ctx.display.activateRenderMode('vtkImage');
-    applyPlanarCanvasCameraViewState({
-      canvas: ctx.vtk.canvas,
-      baseCamera: rendering.initialCamera,
-      renderer: ctx.vtk.renderer,
-      camera: {
-        pan: planarCamera?.pan,
-        rotation: planarCamera?.rotation,
-        zoom: planarCamera?.zoom,
-      },
+    const sliceBasis = createPlanarImageSliceBasis({
+      canvasHeight,
+      canvasWidth,
+      image: rendering.currentImage,
     });
-    rendering.camera = getVtkImageCompatibilityCamera(ctx.vtk.renderer);
+    rendering.requestedCamera = planarCamera;
+    rendering.renderCamera = resolvePlanarRenderCamera({
+      sliceBasis,
+      camera: rendering.requestedCamera,
+      canvasWidth,
+      canvasHeight,
+    });
+    applyPlanarRenderCameraToRenderer({
+      renderer: ctx.vtk.renderer,
+      renderCamera: rendering.renderCamera,
+    });
 
     if (nextImageIdIndex === rendering.currentImageIdIndex) {
       return;
@@ -222,6 +240,30 @@ export class VtkImageMapperRenderPath
 
     ctx.vtk.renderer.removeActor(actor);
   }
+
+  private resize(
+    ctx: PlanarVtkImageAdapterContext,
+    rendering: PlanarImageMapperRendering
+  ): void {
+    const canvasWidth = ctx.vtk.canvas.clientWidth || ctx.vtk.canvas.width;
+    const canvasHeight = ctx.vtk.canvas.clientHeight || ctx.vtk.canvas.height;
+    const sliceBasis = createPlanarImageSliceBasis({
+      canvasHeight,
+      canvasWidth,
+      image: rendering.currentImage,
+    });
+    rendering.renderCamera = resolvePlanarRenderCamera({
+      sliceBasis,
+      camera: rendering.requestedCamera,
+      canvasWidth,
+      canvasHeight,
+    });
+    applyPlanarRenderCameraToRenderer({
+      renderer: ctx.vtk.renderer,
+      renderCamera: rendering.renderCamera,
+    });
+    ctx.display.requestRender();
+  }
 }
 
 export class VtkImageMapperPath
@@ -247,6 +289,7 @@ export class VtkImageMapperPath
   ): PlanarVtkImageAdapterContext {
     return {
       viewportId: rootContext.viewportId,
+      renderingEngineId: rootContext.renderingEngineId,
       type: rootContext.type,
       display: rootContext.display,
       vtk: rootContext.vtk,
@@ -260,18 +303,10 @@ async function updateRenderedImage(args: {
   rendering: PlanarImageMapperRendering;
   imageIdIndex: number;
   dataPresentation?: PlanarDataPresentation;
-  resetCamera?: boolean;
   camera?: PlanarCamera;
 }): Promise<void> {
-  const {
-    ctx,
-    image,
-    rendering,
-    imageIdIndex,
-    dataPresentation,
-    resetCamera = false,
-    camera,
-  } = args;
+  const { ctx, image, rendering, imageIdIndex, dataPresentation, camera } =
+    args;
   const { actor, mapper } = rendering;
   const imageData = createVTKImageDataFromImage(image);
 
@@ -295,70 +330,23 @@ async function updateRenderedImage(args: {
     },
   });
 
-  if (resetCamera) {
-    applyImageOrientationToCamera(ctx.vtk.renderer, imageData);
-    ctx.vtk.renderer.resetCamera();
-    applyCpuEquivalentInitialScale(ctx, image);
-    rendering.initialCamera = getPlanarCameraState(ctx.vtk.renderer);
-  }
-
-  applyPlanarCanvasCameraViewState({
-    canvas: ctx.vtk.canvas,
-    baseCamera: rendering.initialCamera,
-    renderer: ctx.vtk.renderer,
-    camera: {
-      pan: camera?.pan,
-      rotation: camera?.rotation,
-      zoom: camera?.zoom,
-    },
+  const canvasWidth = ctx.vtk.canvas.clientWidth || ctx.vtk.canvas.width;
+  const canvasHeight = ctx.vtk.canvas.clientHeight || ctx.vtk.canvas.height;
+  const sliceBasis = createPlanarImageSliceBasis({
+    canvasHeight,
+    canvasWidth,
+    image,
   });
-  rendering.camera = getVtkImageCompatibilityCamera(ctx.vtk.renderer);
+  rendering.requestedCamera = camera;
+  rendering.renderCamera = resolvePlanarRenderCamera({
+    sliceBasis,
+    camera: rendering.requestedCamera,
+    canvasWidth,
+    canvasHeight,
+  });
+  applyPlanarRenderCameraToRenderer({
+    renderer: ctx.vtk.renderer,
+    renderCamera: rendering.renderCamera,
+  });
   ctx.display.requestRender();
-}
-
-function getVtkImageCompatibilityCamera(
-  renderer: PlanarVtkImageAdapterContext['vtk']['renderer']
-) {
-  return {
-    ...getPlanarCameraState(renderer),
-    parallelProjection: true as const,
-  };
-}
-
-function applyImageOrientationToCamera(
-  renderer: PlanarVtkImageAdapterContext['vtk']['renderer'],
-  imageData: PlanarImageMapperRendering['imageData']
-): void {
-  const direction = Array.from(imageData.getDirection());
-  const viewPlaneNormal = direction.slice(6, 9).map((x) => -x) as Point3;
-  const viewUp = direction.slice(3, 6).map((x) => -x) as Point3;
-  const camera = renderer.getActiveCamera();
-
-  camera.setParallelProjection(true);
-  camera.setDirectionOfProjection(
-    -viewPlaneNormal[0],
-    -viewPlaneNormal[1],
-    -viewPlaneNormal[2]
-  );
-  camera.setViewUp(viewUp[0], viewUp[1], viewUp[2]);
-}
-
-function applyCpuEquivalentInitialScale(
-  ctx: PlanarVtkImageAdapterContext,
-  image: IImage
-): void {
-  const camera = ctx.vtk.renderer.getActiveCamera();
-  const canvasWidth = ctx.vtk.canvas.clientWidth;
-  const canvasHeight = ctx.vtk.canvas.clientHeight;
-
-  camera.setParallelScale(
-    getCpuEquivalentParallelScale({
-      canvasHeight,
-      canvasWidth,
-      columnPixelSpacing: image.columnPixelSpacing || 1,
-      columns: image.columns,
-      rowPixelSpacing: image.rowPixelSpacing || 1,
-      rows: image.rows,
-    })
-  );
 }
