@@ -420,7 +420,8 @@ async function run(numViewports = getNumViewportsFromUrl()) {
   toolGroupVRT.setToolActive(ZoomTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Secondary,
+        // scroll wheel for zoom
+        mouseButton: MouseBindings.Wheel,
       },
     ],
   });
@@ -428,7 +429,8 @@ async function run(numViewports = getNumViewportsFromUrl()) {
   toolGroupVRT.setToolActive(PanTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Auxiliary,
+        //updated to right mouse button for pan
+        mouseButton: MouseBindings.Secondary,
       },
     ],
   });
