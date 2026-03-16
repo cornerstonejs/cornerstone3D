@@ -22,6 +22,17 @@ jobs:
       - name: Checkout Cornerstone
         uses: actions/checkout@v4
 
+      - name: Log build context (OHIF/CS3D branch and version for build diagnosis)
+        run: |
+          echo "::notice::Build type: ohif-downstream | CS3D: ${{ github.repository }}@${{ github.ref }} (${{ github.sha }}) | OHIF ref: ${{ env.OHIF_REF }}"
+          CS3D_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          CS3D_SHA=$(git rev-parse --short HEAD)
+          echo "[build-context] ═══════════════════════════════════════════════════════════════"
+          echo "[build-context] Build type: ohif-downstream (CS3D repo validating against OHIF)"
+          echo "[build-context] CS3D branch: $CS3D_BRANCH | CS3D SHA: $CS3D_SHA"
+          echo "[build-context] OHIF ref: ${{ env.OHIF_REF }}"
+          echo "[build-context] ═══════════════════════════════════════════════════════════════"
+
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
         with:
