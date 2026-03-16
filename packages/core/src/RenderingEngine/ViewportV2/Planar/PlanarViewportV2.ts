@@ -1,5 +1,6 @@
 import { OrientationAxis, ViewportType } from '../../../enums';
 import type {
+  IVolumeInput,
   Point2,
   Point3,
   ReferenceCompatibleOptions,
@@ -16,6 +17,7 @@ import type { DataAddOptions, LoadedData } from '../ViewportArchitectureTypes';
 import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
 import ViewportV2 from '../ViewportV2';
 import { getViewportV2ImageDataSet } from '../viewportV2DataSetAccess';
+import PlanarLegacyCompatibilityController from './PlanarLegacyCompatibilityController';
 import { CpuImageSlicePath } from './CpuImageSliceRenderPath';
 import { CpuVolumeSlicePath } from './CpuVolumeSliceRenderPath';
 import { DefaultPlanarDataProvider } from './DefaultPlanarDataProvider';
@@ -26,6 +28,10 @@ import {
   selectPlanarRenderPath,
 } from './planarRenderPathSelector';
 import type { SelectedPlanarRenderPath } from './planarRenderPathSelector';
+import {
+  clonePlanarOrientation,
+  type PlanarLegacyViewportProperties,
+} from './planarLegacyCompatibility';
 import { normalizePlanarRotation } from './planarViewPresentation';
 import {
   createDefaultPlanarCamera,
@@ -80,6 +86,45 @@ class PlanarViewportV2 extends ViewportV2<
   protected renderContext: PlanarViewportRenderContext;
 
   private activeDataId?: string;
+  private readonly legacyCompatibility =
+    new PlanarLegacyCompatibilityController({
+      getViewportId: () => this.id,
+      getRequestedOrientation: () => this.resolveRequestedOrientation(),
+      prepareVolumeCompatibilityCamera: () => {
+        this.camera = this.normalizeCamera({
+          ...this.camera,
+          imageIdIndex: undefined,
+          orientation: this.resolveRequestedOrientation(),
+        });
+      },
+      setDataId: (dataId, options) => this.setDataId(dataId, options),
+      setDataIds: (dataIds, options) => this.setDataIds(dataIds, options),
+      setImageIdIndex: (imageIdIndex) => this.setImageIdIndex(imageIdIndex),
+      getCurrentImageId: () => this.getCurrentImageId(),
+      render: () => this.render(),
+      removeBindingsExcept: (keepDataIds) =>
+        this.removeBindingsExcept(keepDataIds),
+      setCameraOrientation: (orientation) => {
+        this.setCamera({ orientation });
+      },
+      setDataPresentationState: (dataId, presentation) => {
+        this.setDataPresentationState(dataId, presentation);
+      },
+      setDataPresentation: (dataId, presentation) => {
+        this.setDataPresentation(dataId, presentation);
+      },
+      getDataPresentation: (dataId) => this.getDataPresentation(dataId),
+      getCameraOrientation: () => this.camera.orientation,
+      getCurrentPlanarRendering: () => this.getCurrentPlanarRendering(),
+      getActiveDataId: () => this.activeDataId,
+      getFirstBoundDataId: () => this.bindings.keys().next().value,
+      findDataIdByVolumeId: (volumeId) => this.findDataIdByVolumeId(volumeId),
+      getBindingActor: (dataId) =>
+        (this.getBinding(dataId)?.rendering as { actor?: unknown } | undefined)
+          ?.actor,
+      getImageCount: () => this.getImageIds().length,
+      getMaxImageIdIndex: () => this.getMaxImageIdIndex(),
+    });
 
   static get useCustomRenderingPipeline(): boolean {
     return false;
@@ -171,7 +216,10 @@ class PlanarViewportV2 extends ViewportV2<
         canvas: vtkCanvas,
       },
     };
-    this.camera = createDefaultPlanarCamera();
+    this.camera = normalizePlanarCamera({
+      ...createDefaultPlanarCamera(),
+      orientation: this.resolveRequestedOrientation(),
+    });
 
     this.element.setAttribute('data-viewport-uid', this.id);
     this.element.setAttribute(
@@ -220,13 +268,11 @@ class PlanarViewportV2 extends ViewportV2<
     options: PlanarSetDataOptions | DataAddOptions = {}
   ): Promise<string> {
     const planarOptions = options as PlanarSetDataOptions;
-    const { data, selectedPath } = await this.loadPlanarData(
-      dataId,
-      planarOptions
-    );
+    const { data, resolvedOrientation, selectedPath } =
+      await this.loadPlanarData(dataId, planarOptions);
 
     this.activeDataId = dataId;
-    this.applyLoadedPlanarCamera(planarOptions, data, selectedPath);
+    this.applyLoadedPlanarCamera(resolvedOrientation, data, selectedPath);
 
     const renderingId = await this.addLoadedData(dataId, data, {
       renderMode: selectedPath.renderMode,
@@ -238,6 +284,68 @@ class PlanarViewportV2 extends ViewportV2<
     });
 
     return renderingId;
+  }
+
+  async setStack(imageIds: string[], currentImageIdIndex = 0): Promise<string> {
+    return this.legacyCompatibility.setStack(imageIds, currentImageIdIndex);
+  }
+
+  async setVolumes(
+    volumeInputArray: IVolumeInput[],
+    immediate = false,
+    suppressEvents = false
+  ): Promise<void> {
+    return this.legacyCompatibility.setVolumes(
+      volumeInputArray,
+      immediate,
+      suppressEvents
+    );
+  }
+
+  async addVolumes(
+    volumeInputArray: IVolumeInput[],
+    immediate = false,
+    suppressEvents = false
+  ): Promise<void> {
+    return this.legacyCompatibility.addVolumes(
+      volumeInputArray,
+      immediate,
+      suppressEvents
+    );
+  }
+
+  setProperties(
+    properties: PlanarLegacyViewportProperties = {},
+    volumeIdOrSuppressEvents?: string | boolean,
+    suppressEvents = false
+  ): void {
+    this.legacyCompatibility.setProperties(
+      properties,
+      volumeIdOrSuppressEvents,
+      suppressEvents
+    );
+  }
+
+  getProperties(volumeId?: string): PlanarLegacyViewportProperties {
+    return this.legacyCompatibility.getProperties(volumeId);
+  }
+
+  resetProperties(volumeId?: string): void {
+    this.legacyCompatibility.resetProperties(volumeId);
+  }
+
+  getNumberOfSlices(): number {
+    return this.legacyCompatibility.getNumberOfSlices();
+  }
+
+  removeDataId(dataId: string): void {
+    super.removeDataId(dataId);
+
+    if (this.activeDataId === dataId) {
+      this.activeDataId = undefined;
+    }
+
+    this.legacyCompatibility.removeDataId(dataId);
   }
 
   /**
@@ -760,6 +868,7 @@ class PlanarViewportV2 extends ViewportV2<
   ): Promise<{
     data: LoadedData<PlanarPayload>;
     selectedPath: SelectedPlanarRenderPath;
+    resolvedOrientation: PlanarCamera['orientation'];
   }> {
     const dataSet = this.getDataSet(dataId);
 
@@ -769,10 +878,16 @@ class PlanarViewportV2 extends ViewportV2<
       );
     }
 
-    const selectedPath = selectPlanarRenderPath(dataSet, options);
+    const resolvedOrientation = this.resolveRequestedOrientation(
+      options.orientation
+    );
+    const selectedPath = selectPlanarRenderPath(dataSet, {
+      ...options,
+      orientation: resolvedOrientation,
+    });
     const data = await (this.dataProvider as PlanarDataProvider).load(dataId, {
       acquisitionOrientation: selectedPath.acquisitionOrientation,
-      orientation: options.orientation || OrientationAxis.ACQUISITION,
+      orientation: resolvedOrientation,
       renderMode: selectedPath.renderMode,
       volumeId: selectedPath.volumeId,
     });
@@ -780,11 +895,12 @@ class PlanarViewportV2 extends ViewportV2<
     return {
       data,
       selectedPath,
+      resolvedOrientation,
     };
   }
 
   private applyLoadedPlanarCamera(
-    options: PlanarSetDataOptions,
+    resolvedOrientation: PlanarCamera['orientation'],
     planarData: PlanarPayload,
     selectedPath: SelectedPlanarRenderPath
   ): void {
@@ -799,10 +915,42 @@ class PlanarViewportV2 extends ViewportV2<
       ...this.camera,
       imageIdIndex,
       orientation: normalizePlanarOrientation(
-        options.orientation,
+        resolvedOrientation,
         selectedPath.acquisitionOrientation
       ),
     });
+  }
+
+  private resolveRequestedOrientation(
+    orientation?: PlanarSetDataOptions['orientation']
+  ): PlanarCamera['orientation'] {
+    return (
+      clonePlanarOrientation(
+        (orientation ??
+          (this.defaultOptions.orientation as PlanarCamera['orientation'])) ||
+          OrientationAxis.ACQUISITION
+      ) || OrientationAxis.ACQUISITION
+    );
+  }
+
+  private removeBindingsExcept(keepDataIds: Set<string>): void {
+    for (const dataId of Array.from(this.bindings.keys())) {
+      if (!keepDataIds.has(dataId)) {
+        this.removeDataId(dataId);
+      }
+    }
+  }
+
+  private findDataIdByVolumeId(volumeId: string): string | undefined {
+    for (const [dataId, binding] of this.bindings.entries()) {
+      const bindingVolumeId = (
+        binding.data as LoadedData<PlanarPayload> | undefined
+      )?.volumeId;
+
+      if (bindingVolumeId === volumeId) {
+        return dataId;
+      }
+    }
   }
 
   private getCurrentPlanarRendering(): PlanarRendering | undefined {

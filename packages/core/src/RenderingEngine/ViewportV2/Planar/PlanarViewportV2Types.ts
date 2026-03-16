@@ -1,6 +1,12 @@
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import type { InterpolationType, OrientationAxis } from '../../../enums';
-import type { IImage, IImageVolume, Point3, VOIRange } from '../../../types';
+import type {
+  IImage,
+  IImageVolume,
+  OrientationVectors,
+  Point3,
+  VOIRange,
+} from '../../../types';
 import type { ViewportInput } from '../../../types/IViewport';
 import type {
   BaseViewportRenderContext,
@@ -23,7 +29,8 @@ export type PlanarOrientation =
   | OrientationAxis.ACQUISITION
   | OrientationAxis.AXIAL
   | OrientationAxis.CORONAL
-  | OrientationAxis.SAGITTAL;
+  | OrientationAxis.SAGITTAL
+  | OrientationVectors;
 
 export interface PlanarRegisteredDataSet {
   imageIds: string[];
@@ -64,11 +71,7 @@ export interface PlanarPresentationProps extends BasePresentationProps {
 
 export interface PlanarCamera extends ViewportCameraBase<Point3> {
   imageIdIndex?: number;
-  orientation?:
-    | OrientationAxis.ACQUISITION
-    | OrientationAxis.AXIAL
-    | OrientationAxis.CORONAL
-    | OrientationAxis.SAGITTAL;
+  orientation?: PlanarOrientation;
 }
 
 export interface PlanarProperties {

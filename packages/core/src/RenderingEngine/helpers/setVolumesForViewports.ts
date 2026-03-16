@@ -1,9 +1,9 @@
-import BaseVolumeViewport from '../BaseVolumeViewport';
 import type {
   IVolumeInput,
   IRenderingEngine,
   IVolumeViewport,
 } from '../../types';
+import supportsVolumeCompatibilityApi from './supportsVolumeCompatibilityApi';
 
 /**
  * Similar to {@link addVolumesToViewports} it adds volumes to viewports; however,
@@ -24,7 +24,6 @@ async function setVolumesForViewports(
   immediateRender = false,
   suppressEvents = false
 ): Promise<void> {
-  // Check if all viewports are volumeViewports
   viewportIds.forEach((viewportId) => {
     const viewport = renderingEngine.getViewport(viewportId);
 
@@ -32,10 +31,9 @@ async function setVolumesForViewports(
       throw new Error(`Viewport with Id ${viewportId} does not exist`);
     }
 
-    // if not instance of BaseVolumeViewport, throw
-    if (!(viewport instanceof BaseVolumeViewport)) {
+    if (!supportsVolumeCompatibilityApi(viewport, 'setVolumes')) {
       throw new Error(
-        'setVolumesForViewports only supports VolumeViewport and VolumeViewport3D'
+        'setVolumesForViewports only supports viewports that implement setVolumes'
       );
     }
   });

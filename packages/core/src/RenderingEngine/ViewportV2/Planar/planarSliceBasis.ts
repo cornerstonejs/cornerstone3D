@@ -20,6 +20,7 @@ import { vec3 } from 'gl-matrix';
 import { OrientationAxis } from '../../../enums';
 import type { IImage, IImageVolume, Point3 } from '../../../types';
 import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
+import { getCubeSizeInView } from '../../../utilities/getPlaneCubeIntersectionDimensions';
 import getSpacingInNormalDirection from '../../../utilities/getSpacingInNormalDirection';
 import {
   getCpuEquivalentParallelScale,
@@ -308,18 +309,40 @@ function getBaseParallelScale(args: {
     viewUp,
   });
 
-  if (!geometry) {
-    return MIN_CAMERA_DISTANCE;
+  if (geometry) {
+    return getCpuEquivalentParallelScale({
+      canvasHeight: getSafeCanvasDimension(canvasHeight),
+      canvasWidth: getSafeCanvasDimension(canvasWidth),
+      columnPixelSpacing: geometry.columnPixelSpacing,
+      columns: geometry.columns,
+      rowPixelSpacing: geometry.rowPixelSpacing,
+      rows: geometry.rows,
+    });
   }
 
-  return getCpuEquivalentParallelScale({
-    canvasHeight: getSafeCanvasDimension(canvasHeight),
-    canvasWidth: getSafeCanvasDimension(canvasWidth),
-    columnPixelSpacing: geometry.columnPixelSpacing,
-    columns: geometry.columns,
-    rowPixelSpacing: geometry.rowPixelSpacing,
-    rows: geometry.rows,
-  });
+  const imageData = imageVolume.imageData;
+
+  if (imageData) {
+    const { widthWorld, heightWorld } = getCubeSizeInView(
+      imageData,
+      viewPlaneNormal,
+      viewUp
+    );
+    const safeCanvasWidth = getSafeCanvasDimension(canvasWidth);
+    const safeCanvasHeight = getSafeCanvasDimension(canvasHeight);
+
+    if (widthWorld > 0 && heightWorld > 0) {
+      const boundsAspectRatio = widthWorld / heightWorld;
+      const canvasAspectRatio = safeCanvasWidth / safeCanvasHeight;
+      const scaleFactor = boundsAspectRatio / canvasAspectRatio;
+
+      return scaleFactor < 1
+        ? heightWorld / 2
+        : (heightWorld * scaleFactor) / 2;
+    }
+  }
+
+  return MIN_CAMERA_DISTANCE;
 }
 
 /**

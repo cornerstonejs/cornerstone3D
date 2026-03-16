@@ -13,6 +13,7 @@ import type {
   PlanarRegisteredDataSet,
   PlanarSetDataOptions,
 } from './PlanarViewportV2Types';
+import { clonePlanarOrientation } from './planarLegacyCompatibility';
 
 export const DEFAULT_PLANAR_CPU_IMAGE_THRESHOLD = 64 * 1024 * 1024;
 export const DEFAULT_PLANAR_CPU_VOLUME_THRESHOLD = 64 * 1024 * 1024;
@@ -195,5 +196,5 @@ export function normalizePlanarOrientation(
     return OrientationAxis.ACQUISITION;
   }
 
-  return orientation;
+  return clonePlanarOrientation(orientation);
 }

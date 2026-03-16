@@ -1,35 +1,42 @@
 import type { Types } from '@cornerstonejs/core';
 import {
-  Enums,
   RenderingEngine,
-  PlanarViewportV2,
-  utilities,
+  Enums,
+  setVolumesForViewports,
+  volumeLoader,
 } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
-  ctVoiRange,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
+// This is for debugging purposes
+console.warn(
+  'Click on index.ts to open source code for this example --------->'
+);
+
 const {
   LengthTool,
-  PanTool,
   ToolGroupManager,
   StackScrollTool,
   ZoomTool,
   Enums: csToolsEnums,
 } = cornerstoneTools;
 
+const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
-const dataId = 'ct-volume-annotation-planar-v2';
-const planarViewportType = Enums.ViewportType?.PLANAR_V2 || 'planarV2';
+
+// Define a unique id for the volume
+const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
+const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
+const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Annotation Tools On Volumes With ViewportV2',
-  'Here we demonstrate how annotation tools can be drawn and rendered on axial, sagittal, and coronal PlanarViewportV2 viewports. Add cpu=true in the URL to force CPU rendering.'
+  'Annotation Tools On Volumes',
+  'Here we demonstrate how annotation tools can be drawn/rendered on any plane.'
 );
 
 const size = '500px';
@@ -62,13 +69,9 @@ content.appendChild(viewportGrid);
 
 const instructions = document.createElement('p');
 instructions.innerText =
-  'Left click to draw length measurements on any viewport. Use the mouse wheel to scroll, middle drag to pan, and right drag to zoom.';
-
-const toggleButton = document.createElement('button');
-toggleButton.style.marginTop = '10px';
+  'Left Click to draw length measurements on any viewport.\n Use the mouse wheel to scroll through the stack.';
 
 content.append(instructions);
-content.append(toggleButton);
 // ============================= //
 
 /**
@@ -85,7 +88,6 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(LengthTool);
-  cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollTool);
 
@@ -93,10 +95,9 @@ async function run() {
   // Any viewport using the group
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
-  // Add the tools to the tool group
-  toolGroup.addTool(LengthTool.toolName);
-  toolGroup.addTool(PanTool.toolName);
-  toolGroup.addTool(ZoomTool.toolName);
+  // Add the tools to the tool group and specify which volume they are pointing at
+  toolGroup.addTool(LengthTool.toolName, { volumeId });
+  toolGroup.addTool(ZoomTool.toolName, { volumeId });
   toolGroup.addTool(StackScrollTool.toolName);
 
   // Set the initial state of the tools, here we set one tool active on left click.
@@ -105,14 +106,6 @@ async function run() {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click
-      },
-    ],
-  });
-
-  toolGroup.setToolActive(PanTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Auxiliary, // Middle Click
       },
     ],
   });
@@ -148,96 +141,68 @@ async function run() {
 
   // Create the viewports
   const viewportIds = [
-    'CT_AXIAL_PLANAR_V2',
-    'CT_SAGITTAL_PLANAR_V2',
-    'CT_CORONAL_PLANAR_V2',
+    'CT_AXIAL_STACK',
+    'CT_SAGITTAL_STACK',
+    'CT_OBLIQUE_STACK',
   ];
 
   const viewportInputArray = [
     {
       viewportId: viewportIds[0],
-      type: planarViewportType,
+      type: ViewportType.PLANAR_V2,
       element: element1,
       defaultOptions: {
+        orientation: Enums.OrientationAxis.AXIAL,
         background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
     {
       viewportId: viewportIds[1],
-      type: planarViewportType,
+      type: ViewportType.PLANAR_V2,
       element: element2,
       defaultOptions: {
+        orientation: Enums.OrientationAxis.SAGITTAL,
         background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
     {
       viewportId: viewportIds[2],
-      type: planarViewportType,
+      type: ViewportType.PLANAR_V2,
       element: element3,
       defaultOptions: {
+        orientation: {
+          // Random oblique orientation
+          viewUp: <Types.Point3>[
+            0.7070766143169096, 0.009237043481146607, -0.7070766143169096,
+          ],
+          viewPlaneNormal: <Types.Point3>[
+            -0.5962687530844388, 0.5453181550345819, -0.5891448751239446,
+          ],
+        },
         background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
   ];
 
-  viewportInputArray.forEach((viewportInput) =>
-    renderingEngine.enableElement(viewportInput as Types.PublicViewportInput)
-  );
+  renderingEngine.setViewports(viewportInputArray);
 
   // Set the tool group on the viewports
   viewportIds.forEach((viewportId) =>
     toolGroup.addViewport(viewportId, renderingEngineId)
   );
 
-  utilities.viewportV2DataSetMetadataProvider.add(dataId, {
+  // Define a volume in memory
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
   });
 
-  const viewports = viewportIds.map(
-    (viewportId) =>
-      renderingEngine.getViewport(viewportId) as unknown as PlanarViewportV2
-  );
-  const orientations = [
-    Enums.OrientationAxis.AXIAL,
-    Enums.OrientationAxis.SAGITTAL,
-    Enums.OrientationAxis.CORONAL,
-  ] as const;
+  // Set the volume to load
+  volume.load();
 
-  let isCpu = false;
+  setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds);
 
-  async function loadWithRenderMode(renderMode?: 'cpuVolume' | 'vtkVolume') {
-    await Promise.all(
-      viewports.map((viewport, index) => {
-        viewport.removeDataId(dataId);
-        return viewport.setDataIds([dataId], {
-          orientation: orientations[index],
-          ...(renderMode ? { renderMode } : {}),
-        });
-      })
-    );
-
-    viewports.forEach((viewport) => {
-      viewport.setDataPresentation(dataId, {
-        voiRange: ctVoiRange,
-      });
-      viewport.render();
-    });
-  }
-
-  function updateButtonLabel() {
-    toggleButton.innerText = `Switch to ${isCpu ? 'GPU' : 'CPU'} rendering`;
-  }
-
-  toggleButton.addEventListener('click', async () => {
-    toggleButton.disabled = true;
-    isCpu = !isCpu;
-    await loadWithRenderMode(isCpu ? 'cpuVolume' : 'vtkVolume');
-    updateButtonLabel();
-    toggleButton.disabled = false;
-  });
-
-  updateButtonLabel();
-  await loadWithRenderMode();
+  // Render the image
+  renderingEngine.renderViewports(viewportIds);
 }
 
 run();

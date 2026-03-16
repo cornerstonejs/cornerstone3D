@@ -1,5 +1,6 @@
 import type { Point3 } from '../../../types';
 import { OrientationAxis } from '../../../enums';
+import { clonePlanarOrientation } from './planarLegacyCompatibility';
 import type { PlanarCamera } from './PlanarViewportV2Types';
 import { normalizePlanarRotation } from './planarViewPresentation';
 
@@ -21,7 +22,8 @@ export function normalizePlanarCamera(camera: PlanarCamera): PlanarCamera {
     ...(camera.imageIdIndex !== undefined
       ? { imageIdIndex: camera.imageIdIndex }
       : {}),
-    orientation: camera.orientation ?? OrientationAxis.ACQUISITION,
+    orientation:
+      clonePlanarOrientation(camera.orientation) ?? OrientationAxis.ACQUISITION,
     frame: {
       anchorView: camera.frame?.anchorView ?? [0.5, 0.5],
       scale: Math.max(camera.frame?.scale ?? 1, 0.001),

@@ -2,6 +2,7 @@ import { MPR_CAMERA_VALUES } from '../../../constants';
 import { OrientationAxis } from '../../../enums';
 import type { IImageVolume, Point3 } from '../../../types';
 import getAcquisitionPlaneOrientation from '../../../utilities/getAcquisitionPlaneOrientation';
+import { isPlanarOrientationVectors } from './planarLegacyCompatibility';
 import type { PlanarCamera } from './PlanarViewportV2Types';
 
 type PlanarCameraVectors = {
@@ -33,6 +34,16 @@ export function getPlanarCameraVectors(args: {
 
   if (orientation === OrientationAxis.ACQUISITION) {
     return getAcquisitionCameraVectors(imageVolume);
+  }
+
+  if (isPlanarOrientationVectors(orientation)) {
+    return {
+      viewPlaneNormal: [...orientation.viewPlaneNormal] as Point3,
+      viewUp: [
+        ...(orientation.viewUp ||
+          getAcquisitionCameraVectors(imageVolume).viewUp),
+      ] as Point3,
+    };
   }
 
   const cameraValues = MPR_CAMERA_VALUES[orientation];
