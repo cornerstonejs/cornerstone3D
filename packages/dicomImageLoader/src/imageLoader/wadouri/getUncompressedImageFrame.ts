@@ -59,6 +59,36 @@ function getUncompressedImageFrame(
     return new Uint8Array(
       dataSet.byteArray.buffer.slice(frameOffset, frameOffset + pixelsPerFrame)
     );
+  } else if (bitsAllocated === 12) {
+    // Packed 12-bit: 2 pixels = 3 bytes
+    const bytesPerFrame = Math.ceil((pixelsPerFrame * 12) / 8);
+    frameOffset = pixelDataOffset + frameIndex * bytesPerFrame;
+
+    if (frameOffset + bytesPerFrame > dataSet.byteArray.length) {
+      throw new Error('frame exceeds size of pixelData');
+    }
+
+    const pixelData = new Uint16Array(pixelsPerFrame);
+    let byteOffset = frameOffset;
+    let pixelIndex = 0;
+
+    while (pixelIndex < pixelsPerFrame) {
+      const byte0 = dataSet.byteArray[byteOffset++] || 0;
+      const byte1 = dataSet.byteArray[byteOffset++] || 0;
+      const byte2 = dataSet.byteArray[byteOffset++] || 0;
+
+      // First pixel: lower 12 bits from bytes 0-1
+      // Byte0: bits 0-7, Byte1 bits 0-3 (lower nibble)
+      pixelData[pixelIndex++] = byte0 | ((byte1 & 0x0f) << 8);
+
+      // Second pixel: upper 12 bits from bytes 1-2
+      // Byte1 bits 4-7 (upper nibble), Byte2: bits 0-7
+      if (pixelIndex < pixelsPerFrame) {
+        pixelData[pixelIndex++] = (byte1 >> 4) | (byte2 << 4);
+      }
+    }
+
+    return new Uint8Array(pixelData.buffer);
   } else if (bitsAllocated === 16) {
     frameOffset = pixelDataOffset + frameIndex * pixelsPerFrame * 2;
     if (frameOffset >= dataSet.byteArray.length) {
