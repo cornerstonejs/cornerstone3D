@@ -17,6 +17,7 @@
  *     orthogonal orientations with per-slice indexing).
  */
 import { vec3 } from 'gl-matrix';
+import { OrientationAxis } from '../../../enums';
 import type { IImage, IImageVolume, Point3 } from '../../../types';
 import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
 import getSpacingInNormalDirection from '../../../utilities/getSpacingInNormalDirection';
@@ -266,6 +267,21 @@ function clampImageIdIndex(
   }
 
   return Math.min(Math.max(0, imageIdIndex), maxImageIdIndex);
+}
+
+export function resolvePlanarVolumeImageIdIndex(args: {
+  camera?: PlanarCamera;
+  fallbackImageIdIndex?: number;
+}): number | undefined {
+  const { camera, fallbackImageIdIndex } = args;
+
+  if (typeof camera?.imageIdIndex === 'number') {
+    return camera.imageIdIndex;
+  }
+
+  if (camera?.orientation === OrientationAxis.ACQUISITION) {
+    return fallbackImageIdIndex;
+  }
 }
 
 /**

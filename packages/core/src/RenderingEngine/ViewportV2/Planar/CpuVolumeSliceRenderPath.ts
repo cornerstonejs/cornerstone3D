@@ -27,7 +27,10 @@ import {
   worldToCanvasPlanarCamera,
 } from './planarAdapterCoordinateTransforms';
 import { resolvePlanarRenderCamera } from './planarRenderCamera';
-import { createPlanarVolumeSliceBasis } from './planarSliceBasis';
+import {
+  createPlanarVolumeSliceBasis,
+  resolvePlanarVolumeImageIdIndex,
+} from './planarSliceBasis';
 
 export class CpuVolumeSliceRenderPath
   implements RenderPath<PlanarCpuVolumeAdapterContext>
@@ -143,7 +146,10 @@ export class CpuVolumeSliceRenderPath
       createPlanarVolumeSliceBasis({
         canvasHeight: ctx.cpu.canvas.height,
         canvasWidth: ctx.cpu.canvas.width,
-        imageIdIndex: camera?.imageIdIndex,
+        imageIdIndex: resolvePlanarVolumeImageIdIndex({
+          camera,
+          fallbackImageIdIndex: rendering.currentImageIdIndex,
+        }),
         imageVolume: rendering.imageVolume,
         orientation: camera?.orientation,
       });

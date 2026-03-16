@@ -33,7 +33,10 @@ import {
   setPlanarVolumeCameraClippingRange,
   updatePlanarVolumeClippingPlanes,
 } from './planarRenderCamera';
-import { createPlanarVolumeSliceBasis } from './planarSliceBasis';
+import {
+  createPlanarVolumeSliceBasis,
+  resolvePlanarVolumeImageIdIndex,
+} from './planarSliceBasis';
 
 export class VtkVolumeMapperRenderPath
   implements RenderPath<PlanarVtkVolumeAdapterContext>
@@ -151,7 +154,10 @@ export class VtkVolumeMapperRenderPath
       createPlanarVolumeSliceBasis({
         canvasHeight,
         canvasWidth,
-        imageIdIndex: camera?.imageIdIndex,
+        imageIdIndex: resolvePlanarVolumeImageIdIndex({
+          camera,
+          fallbackImageIdIndex: rendering.currentImageIdIndex,
+        }),
         imageVolume: rendering.imageVolume,
         orientation: camera?.orientation,
       });
