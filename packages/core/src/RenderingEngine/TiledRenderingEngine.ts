@@ -2,14 +2,10 @@ import BaseRenderingEngine, { VIEWPORT_MIN_SIZE } from './BaseRenderingEngine';
 import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
-import ViewportType from '../enums/ViewportType';
-import VolumeViewport from './VolumeViewport';
-import StackViewport from './StackViewport';
 import viewportTypeUsesCustomRenderingPipeline from './helpers/viewportTypeUsesCustomRenderingPipeline';
 import getOrCreateCanvas from './helpers/getOrCreateCanvas';
 import type IStackViewport from '../types/IStackViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
-import VolumeViewport3D from './VolumeViewport3D';
 import { vtkOffscreenMultiRenderWindow } from './vtkClasses';
 
 import type * as EventTypes from '../types/EventTypes';
@@ -19,6 +15,7 @@ import type {
   NormalizedViewportInput,
   IViewport,
 } from '../types/IViewport';
+import viewportTypeToViewportClass from './helpers/viewportTypeToViewportClass';
 
 interface ViewportDisplayCoords {
   sxStartDisplayCoords: number;
@@ -65,6 +62,12 @@ class TiledRenderingEngine extends BaseRenderingEngine {
     super(id);
 
     if (!this.useCPURendering) {
+      this.ensureOffscreenResources();
+    }
+  }
+
+  private ensureOffscreenResources(): void {
+    if (!this.offscreenMultiRenderWindow) {
       this.offscreenMultiRenderWindow =
         vtkOffscreenMultiRenderWindow.newInstance();
       this.offScreenCanvasContainer = document.createElement('div');
@@ -82,6 +85,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
   protected enableVTKjsDrivenViewport(
     viewportInputEntry: NormalizedViewportInput
   ) {
+    this.ensureOffscreenResources();
     const viewports = this._getViewportsAsArray();
     const viewportsDrivenByVtkJs = viewports.filter(
       (vp) => viewportTypeUsesCustomRenderingPipeline(vp.type) === false
@@ -131,6 +135,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
       xOffset: number;
     }
   ): void {
+    this.ensureOffscreenResources();
     const { element, canvas, viewportId, type, defaultOptions } =
       viewportInputEntry;
 
@@ -185,21 +190,13 @@ class TiledRenderingEngine extends BaseRenderingEngine {
     } as ViewportInput;
 
     // 4. Create a proper viewport based on the type of the viewport
-    let viewport: IViewport;
-    if (type === ViewportType.STACK) {
-      // 4.a Create stack viewport
-      viewport = new StackViewport(viewportInput);
-    } else if (
-      type === ViewportType.ORTHOGRAPHIC ||
-      type === ViewportType.PERSPECTIVE
-    ) {
-      // 4.b Create a volume viewport
-      viewport = new VolumeViewport(viewportInput);
-    } else if (type === ViewportType.VOLUME_3D) {
-      viewport = new VolumeViewport3D(viewportInput);
-    } else {
+    const ViewportClass = viewportTypeToViewportClass[type];
+
+    if (!ViewportClass) {
       throw new Error(`Viewport Type ${type} is not supported`);
     }
+
+    const viewport = new ViewportClass(viewportInput) as unknown as IViewport;
 
     // 5. Storing the viewports
     this._viewports.set(viewportId, viewport);
@@ -347,7 +344,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
   protected _renderFlaggedViewports = () => {
     this._throwIfDestroyed();
 
-    if (!this.useCPURendering) {
+    if (this.offscreenMultiRenderWindow) {
       this.performVtkDrawCall();
     }
 
@@ -444,7 +441,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
       eventDetail =
         viewport.customRenderViewportToCanvas() as EventTypes.ImageRenderedEventDetail;
     } else {
-      if (this.useCPURendering) {
+      if (!this.offscreenMultiRenderWindow) {
         throw new Error(
           'GPU not available, and using a viewport with no custom render pipeline.'
         );

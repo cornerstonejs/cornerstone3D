@@ -133,9 +133,9 @@ abstract class BaseRenderingEngine {
     // 2.b) Retrieving the list of viewports for calculation of the new size for
     // offScreen canvas.
 
-    // If the viewport being added uses a custom pipeline, or we aren't using
-    // GPU rendering, we don't need to resize the offscreen canvas.
-    if (!this.useCPURendering && !viewportUsesCustomRenderingPipeline) {
+    // Route based on the viewport's declared pipeline. Some V2 viewports still
+    // need VTK backing even when global CPU rendering is enabled.
+    if (!viewportUsesCustomRenderingPipeline) {
       this.enableVTKjsDrivenViewport(viewportInput);
     } else {
       // 3 Add the requested viewport to rendering Engine
@@ -179,12 +179,10 @@ abstract class BaseRenderingEngine {
     // 4. Remove the related renderer from the offScreenMultiRenderWindow
     if (
       !viewportTypeUsesCustomRenderingPipeline(viewport.type) &&
-      !this.useCPURendering
+      this.offscreenMultiRenderWindow
     ) {
       // Only remove renderer if offscreenMultiRenderWindow exists (not in ContextPoolRenderingEngine)
-      if (this.offscreenMultiRenderWindow) {
-        this.offscreenMultiRenderWindow.removeRenderer(viewportId);
-      }
+      this.offscreenMultiRenderWindow.removeRenderer(viewportId);
     }
 
     // 5. Remove the requested viewport from the rendering engine
@@ -263,10 +261,7 @@ abstract class BaseRenderingEngine {
     const customRenderingViewportInputEntries: NormalizedViewportInput[] = [];
 
     viewportInputEntries.forEach((vpie) => {
-      if (
-        !this.useCPURendering &&
-        !viewportTypeUsesCustomRenderingPipeline(vpie.type)
-      ) {
+      if (!viewportTypeUsesCustomRenderingPipeline(vpie.type)) {
         vtkDrivenViewportInputEntries.push(vpie);
       } else {
         customRenderingViewportInputEntries.push(vpie);
@@ -401,10 +396,14 @@ abstract class BaseRenderingEngine {
     StatsOverlay.cleanup();
 
     // remove vtk rendered first before resetting the viewport
-    if (!this.useCPURendering) {
+    if (this.offscreenMultiRenderWindow) {
       const viewports = this._getViewportsAsArray();
       viewports.forEach((vp) => {
-        if (this.offscreenMultiRenderWindow) {
+        if (
+          this.offscreenMultiRenderWindow &&
+          !viewportUsesCustomRenderingPipeline(vp) &&
+          this.offscreenMultiRenderWindow.getRenderer(vp.id)
+        ) {
           this.offscreenMultiRenderWindow.removeRenderer(vp.id);
         }
       });
@@ -631,10 +630,8 @@ abstract class BaseRenderingEngine {
   public getOffscreenMultiRenderWindow(
     _viewportId?: string
   ): VtkOffscreenMultiRenderWindow {
-    if (this.useCPURendering) {
-      throw new Error(
-        'Offscreen multi render window is not available when using CPU rendering.'
-      );
+    if (!this.offscreenMultiRenderWindow) {
+      throw new Error('Offscreen multi render window is not available.');
     }
     return this.offscreenMultiRenderWindow;
   }

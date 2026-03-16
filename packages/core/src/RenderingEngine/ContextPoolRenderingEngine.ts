@@ -33,16 +33,23 @@ import viewportTypeToViewportClass from './helpers/viewportTypeToViewportClass';
  * @public
  */
 class ContextPoolRenderingEngine extends BaseRenderingEngine {
-  private contextPool: WebGLContextPool;
+  private contextPool?: WebGLContextPool;
 
   constructor(id?: string) {
     super(id);
-    const { rendering } = getConfiguration();
-    const { webGlContextCount } = rendering;
-
     if (!this.useCPURendering) {
+      this.ensureContextPool();
+    }
+  }
+
+  private ensureContextPool(): WebGLContextPool {
+    if (!this.contextPool) {
+      const { rendering } = getConfiguration();
+      const { webGlContextCount } = rendering;
       this.contextPool = new WebGLContextPool(webGlContextCount);
     }
+
+    return this.contextPool;
   }
 
   /**
@@ -78,6 +85,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
   protected addVtkjsDrivenViewport(
     viewportInputEntry: InternalViewportInput
   ): void {
+    const contextPool = this.ensureContextPool();
     const { element, canvas, viewportId, type, defaultOptions } =
       viewportInputEntry;
 
@@ -89,25 +97,21 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     // across WebGL contexts.
     let contextIndex = 0;
     if (type === ViewportType.STACK) {
-      const contexts = this.contextPool.getAllContexts();
+      const contexts = contextPool.getAllContexts();
       contextIndex = this._viewports.size % contexts.length;
     }
-    this.contextPool.assignViewportToContext(viewportId, contextIndex);
+    contextPool.assignViewportToContext(viewportId, contextIndex);
 
     // Track viewport size
-    this.contextPool.updateViewportSize(
-      viewportId,
-      canvas.width,
-      canvas.height
-    );
+    contextPool.updateViewportSize(viewportId, canvas.width, canvas.height);
 
     // Get the context and add the renderer
-    const contextData = this.contextPool.getContextByIndex(contextIndex);
+    const contextData = contextPool.getContextByIndex(contextIndex);
 
     const { context: offscreenMultiRenderWindow, container } = contextData;
 
     // Initialize the offscreen canvas size to the max size for this context
-    const maxSize = this.contextPool.getMaxSizeForContext(contextIndex);
+    const maxSize = contextPool.getMaxSizeForContext(contextIndex);
     // @ts-expect-error
     container.width = maxSize.width;
     // @ts-expect-error
@@ -331,7 +335,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     }
 
     // If using CPU rendering, throw error
-    if (this.useCPURendering) {
+    if (!this.contextPool) {
       throw new Error(
         'GPU not available, and using a viewport with no custom render pipeline.'
       );
@@ -379,7 +383,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       return viewport.customRenderViewportToCanvas() as EventTypes.ImageRenderedEventDetail;
     }
 
-    if (this.useCPURendering) {
+    if (!this.contextPool) {
       throw new Error(
         'GPU not available, and using a viewport with no custom render pipeline.'
       );
@@ -657,7 +661,15 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     const contextIndex =
       this.contextPool?.getContextIndexForViewport(viewportId);
 
+    if (contextIndex === undefined || !this.contextPool) {
+      return;
+    }
+
     const contextData = this.contextPool.getContextByIndex(contextIndex);
+
+    if (!contextData) {
+      return;
+    }
 
     const { context: offscreenMultiRenderWindow } = contextData;
     return offscreenMultiRenderWindow.getRenderer(viewportId);
@@ -678,7 +690,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
     if (
       !viewportTypeUsesCustomRenderingPipeline(viewport.type) &&
-      !this.useCPURendering
+      this.contextPool
     ) {
       const contextIndex =
         this.contextPool.getContextIndexForViewport(viewportId);
@@ -706,16 +718,26 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
   public getOffscreenMultiRenderWindow(
     viewportId: string
   ): VtkOffscreenMultiRenderWindow {
-    if (this.useCPURendering) {
-      throw new Error(
-        'Offscreen multi render window is not available when using CPU rendering.'
-      );
+    if (!this.contextPool) {
+      throw new Error('Offscreen multi render window is not available.');
     }
 
     const contextIndex =
       this.contextPool.getContextIndexForViewport(viewportId);
 
+    if (contextIndex === undefined) {
+      throw new Error(
+        `Offscreen multi render window is not available for viewport ${viewportId}.`
+      );
+    }
+
     const contextData = this.contextPool.getContextByIndex(contextIndex);
+
+    if (!contextData) {
+      throw new Error(
+        `Offscreen multi render window is not available for viewport ${viewportId}.`
+      );
+    }
 
     return contextData.context;
   }

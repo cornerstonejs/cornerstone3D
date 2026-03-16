@@ -262,6 +262,7 @@ export default class PlanarCPUVolumeSampler {
     sampledSliceState: PlanarCPUSampledSliceState;
     camera: ICamera;
     dataPresentation?: PlanarDataPresentation;
+    defaultVOIRange?: VOIRange;
     zoom?: number;
   }): void {
     const {
@@ -269,6 +270,7 @@ export default class PlanarCPUVolumeSampler {
       sampledSliceState,
       camera,
       dataPresentation,
+      defaultVOIRange,
       zoom,
     } = args;
     const rowPixelSpacing = sampledSliceState.image.rowPixelSpacing || 1;
@@ -279,7 +281,7 @@ export default class PlanarCPUVolumeSampler {
     );
     const viewport = enabledElement.viewport;
     const resolvedVOI = this.getResolvedVOIRange(
-      dataPresentation?.voiRange,
+      dataPresentation?.voiRange ?? defaultVOIRange,
       sampledSliceState.image.minPixelValue ?? 0,
       sampledSliceState.image.maxPixelValue ?? 1
     );

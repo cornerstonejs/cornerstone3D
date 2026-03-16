@@ -59,6 +59,10 @@ export class CpuVolumeSliceRenderPath
       true
     );
     const mapper = actor.getMapper() as vtkVolumeMapper;
+    const defaultRange = actor
+      .getProperty()
+      .getRGBTransferFunction(0)
+      .getRange();
 
     ctx.vtk.renderer.addVolume(actor);
     ctx.display.activateRenderMode('cpuVolume');
@@ -71,6 +75,9 @@ export class CpuVolumeSliceRenderPath
       imageVolume: payload.imageVolume,
       currentImageIdIndex: payload.initialImageIdIndex,
       maxImageIdIndex: payload.imageIds.length - 1,
+      defaultVOIRange: defaultRange
+        ? { lower: defaultRange[0], upper: defaultRange[1] }
+        : undefined,
       requestedCamera: undefined,
       renderCamera: undefined,
       renderingInvalidated: true,
@@ -318,9 +325,10 @@ export class CpuVolumeSliceRenderPath
       sampledSliceState: runtime.sampledSliceState,
       camera: renderCamera,
       dataPresentation: runtime.dataPresentation,
+      defaultVOIRange: runtime.defaultVOIRange,
       zoom,
     });
-    runtime.defaultVOIRange = this.sampler.getResolvedVOIRange(
+    runtime.defaultVOIRange ||= this.sampler.getResolvedVOIRange(
       runtime.dataPresentation?.voiRange,
       runtime.sampledSliceState.image.minPixelValue ?? 0,
       runtime.sampledSliceState.image.maxPixelValue ?? 1

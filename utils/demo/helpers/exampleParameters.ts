@@ -3,6 +3,7 @@ import { utilities } from '@cornerstonejs/core';
 type DemoConfig = {
   core?: {
     rendering?: {
+      useCPURendering?: boolean;
       planar?: {
         cpuThresholds?: {
           image?: number;
@@ -55,6 +56,7 @@ export function applyUrlParameterOverridesToDemoConfig(
   return utilities.deepMerge(config, {
     core: {
       rendering: {
+        useCPURendering: true,
         planar: {
           cpuThresholds: {
             image: 0,
