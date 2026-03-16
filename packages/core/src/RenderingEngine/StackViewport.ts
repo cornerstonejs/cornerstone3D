@@ -223,8 +223,6 @@ class StackViewport extends Viewport {
     this.resetCamera();
 
     this.initializeElementDisabledHandler();
-
-    console.warn('********* Test change to demo OHIF picks up PR');
   }
 
   public setUseCPURendering(value: boolean) {
