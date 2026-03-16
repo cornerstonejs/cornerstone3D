@@ -24,6 +24,7 @@ enum ViewportType {
    * Whole slide imaging viewport
    */
   WHOLE_SLIDE = 'wholeSlide',
+  WHOLE_SLIDE_V2 = 'wholeSlideV2',
   /**
    * ECG waveform viewport for displaying DICOM ECG traces
    */

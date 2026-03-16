@@ -13,8 +13,10 @@ import type {
   WSIImageMetadataSource,
   WSIImageVolumeLike,
   WSIMapLike,
+  WSITransformUtilitiesLike,
   WSIViewerLike,
 } from '../../../utilities/WSIUtilities';
+import type ICamera from '../../../types/ICamera';
 
 export interface WSIDataSetOptions {
   miniNavigationOverlay?: boolean;
@@ -38,7 +40,13 @@ export interface WSIPayload {
 
 export interface WSIPresentationProps extends BasePresentationProps {}
 
-export interface WSICamera extends ViewportCameraBase<[number, number]> {}
+export interface WSICamera
+  extends ViewportCameraBase<[number, number]>,
+    ICamera {
+  centerIndex?: [number, number];
+  resolution?: number;
+  zoom?: number;
+}
 
 export interface WSIProperties {}
 
@@ -66,5 +74,6 @@ export type WSIRendering = MountedRendering<{
   microscopyElement: HTMLDivElement;
   viewer: WSIViewerLike;
   map: WSIMapLike;
+  transformUtils?: WSITransformUtilitiesLike;
   postrenderHandler: () => void;
 }>;

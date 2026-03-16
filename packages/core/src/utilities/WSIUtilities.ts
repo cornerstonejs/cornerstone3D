@@ -59,6 +59,7 @@ export interface WSIMapLike {
   on(eventName: string, handler: () => void): void;
   render(): void;
   un(eventName: string, handler: () => void): void;
+  updateSize?(): void;
 }
 
 export interface WSIViewerLike {

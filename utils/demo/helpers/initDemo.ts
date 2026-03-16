@@ -29,11 +29,12 @@ export default async function initDemo(config: any = {}) {
   cornerstoneDICOMImageLoader.init();
   initVolumeLoader();
 
-  applyViewportTypeOverride();
-
   const urlParams = new URLSearchParams(window.location.search);
   const debugEnabled = urlParams.get('debug') === 'true';
-  const demoConfig = applyUrlParameterOverridesToDemoConfig(config);
+
+  // Apply URL parameter overrides (cpu thresholds, viewport V2 flag, etc.)
+  let demoConfig = applyUrlParameterOverridesToDemoConfig(config);
+  demoConfig = applyViewportTypeOverride(demoConfig);
 
   await csRenderInit({
     peerImport,

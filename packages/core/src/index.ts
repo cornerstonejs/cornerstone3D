@@ -77,6 +77,7 @@ import * as metaData from './metaData';
 import {
   init,
   getShouldUseCPURendering,
+  getUseViewportV2,
   isCornerstoneInitialized,
   setUseCPURendering,
   setPreferSizeOverAccuracy,
@@ -253,6 +254,8 @@ export {
   setUseCPURendering,
   setPreferSizeOverAccuracy,
   resetUseCPURendering,
+  // ViewportV2
+  getUseViewportV2,
   // Geometry Loader
   geometryLoader,
   cornerstoneMeshLoader,

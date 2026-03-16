@@ -1,8 +1,6 @@
-import { mat4, vec3 } from 'gl-matrix';
 import { Events as EVENTS, ViewportType } from '../../../enums';
 import triggerEvent from '../../../utilities/triggerEvent';
 import { getDicomMicroscopyViewer } from '../../../utilities/WSIUtilities';
-import { Transform } from '../../helpers/cpuFallback/rendering/transform';
 import type {
   DataAddOptions,
   LoadedData,
@@ -18,6 +16,12 @@ import type {
   WSIPayload,
   WSIViewportRenderContext,
 } from './WSIViewportV2Types';
+import {
+  canvasToIndexForWSI,
+  indexToCanvasForWSI,
+  indexToWorldWSIMetadata,
+  worldToIndexWSIMetadata,
+} from './wsiTransformUtils';
 
 const EVENT_POSTRENDER = 'postrender';
 
@@ -83,6 +87,7 @@ export class DicomMicroscopyRenderPath
       microscopyElement,
       viewer,
       map,
+      transformUtils: DicomMicroscopyViewer.utils,
       postrenderHandler,
     };
 
@@ -102,6 +107,13 @@ export class DicomMicroscopyRenderPath
       },
       getFrameOfReferenceUID: () => {
         return this.getFrameOfReferenceUID(payload);
+      },
+      render: () => {
+        map.render?.();
+      },
+      resize: () => {
+        map.updateSize?.();
+        map.render?.();
       },
       removeData: () => {
         this.removeData(rendering);
@@ -129,6 +141,9 @@ export class DicomMicroscopyRenderPath
       return;
     }
 
+    if (typeof wsiCamera.resolution === 'number') {
+      view.setResolution?.(wsiCamera.resolution);
+    }
     if (typeof wsiCamera.zoom === 'number') {
       view.setZoom(wsiCamera.zoom);
     }
@@ -146,10 +161,15 @@ export class DicomMicroscopyRenderPath
     metadata: WSIPayload['metadata'],
     canvasPos: Point2
   ): Point3 {
-    const indexPoint = canvasToIndex(ctx, rendering, canvasPos);
+    const indexPoint = canvasToIndexForWSI({
+      canvasPos,
+      canvasWidth: ctx.element.clientWidth,
+      canvasHeight: ctx.element.clientHeight,
+      view: rendering.map.getView(),
+    });
     indexPoint[1] = -indexPoint[1];
 
-    return indexToWorld(metadata, indexPoint);
+    return indexToWorldWSIMetadata(metadata, indexPoint);
   }
 
   private worldToCanvas(
@@ -158,10 +178,15 @@ export class DicomMicroscopyRenderPath
     metadata: WSIPayload['metadata'],
     worldPos: Point3
   ): Point2 {
-    const indexPoint = worldToIndex(metadata, worldPos);
+    const indexPoint = worldToIndexWSIMetadata(metadata, worldPos);
     indexPoint[1] = -indexPoint[1];
 
-    return indexToCanvas(ctx, rendering, indexPoint);
+    return indexToCanvasForWSI({
+      indexPos: indexPoint,
+      canvasWidth: ctx.element.clientWidth,
+      canvasHeight: ctx.element.clientHeight,
+      view: rendering.map.getView(),
+    });
   }
 
   private getFrameOfReferenceUID(payload: WSIPayload): string | undefined {
@@ -190,96 +215,4 @@ export class DicomMicroscopyPath
   createRenderPath() {
     return new DicomMicroscopyRenderPath();
   }
-}
-
-function computeTransforms(metadata: WSIPayload['metadata']) {
-  const indexToWorld = mat4.create();
-  const worldToIndexMatrix = mat4.create();
-
-  mat4.fromTranslation(indexToWorld, metadata.origin);
-  indexToWorld[0] = metadata.direction[0];
-  indexToWorld[1] = metadata.direction[1];
-  indexToWorld[2] = metadata.direction[2];
-  indexToWorld[4] = metadata.direction[3];
-  indexToWorld[5] = metadata.direction[4];
-  indexToWorld[6] = metadata.direction[5];
-  indexToWorld[8] = metadata.direction[6];
-  indexToWorld[9] = metadata.direction[7];
-  indexToWorld[10] = metadata.direction[8];
-  mat4.scale(indexToWorld, indexToWorld, metadata.spacing);
-  mat4.invert(worldToIndexMatrix, indexToWorld);
-
-  return {
-    indexToWorld,
-    worldToIndexMatrix,
-  };
-}
-
-function worldToIndex(metadata: WSIPayload['metadata'], point: Point3): Point3 {
-  const transforms = computeTransforms(metadata);
-  const imageCoord = vec3.create();
-
-  vec3.transformMat4(imageCoord, point, transforms.worldToIndexMatrix);
-
-  return [imageCoord[0], imageCoord[1], imageCoord[2]];
-}
-
-function indexToWorld(metadata: WSIPayload['metadata'], point: Point3): Point3 {
-  const transforms = computeTransforms(metadata);
-  const worldPos = vec3.create();
-
-  vec3.transformMat4(worldPos, point, transforms.indexToWorld);
-
-  return [worldPos[0], worldPos[1], worldPos[2]];
-}
-
-function canvasToIndex(
-  ctx: WSIViewportRenderContext,
-  rendering: WSIRendering,
-  canvasPos: Point2
-): Point3 {
-  const transform = getTransform(ctx, rendering);
-
-  transform.invert();
-
-  const indexPoint = transform.transformPoint(
-    canvasPos.map((value) => value * (window.devicePixelRatio || 1)) as Point2
-  );
-
-  return [indexPoint[0], indexPoint[1], 0];
-}
-
-function indexToCanvas(
-  ctx: WSIViewportRenderContext,
-  rendering: WSIRendering,
-  indexPos: Point3
-): Point2 {
-  const transform = getTransform(ctx, rendering);
-
-  return transform
-    .transformPoint([indexPos[0], indexPos[1]])
-    .map((value) => value / (window.devicePixelRatio || 1)) as Point2;
-}
-
-function getTransform(
-  ctx: WSIViewportRenderContext,
-  rendering: WSIRendering
-): Transform {
-  const view = rendering.map.getView();
-  const center = view.getCenter();
-  const resolution = view.getResolution();
-  const rotation = view.getRotation();
-  const canvasWidth =
-    Math.max(ctx.element.clientWidth, 1) * (window.devicePixelRatio || 1);
-  const canvasHeight =
-    Math.max(ctx.element.clientHeight, 1) * (window.devicePixelRatio || 1);
-  const halfCanvas = [canvasWidth / 2, canvasHeight / 2];
-  const transform = new Transform();
-
-  transform.translate(halfCanvas[0], halfCanvas[1]);
-  transform.rotate(rotation);
-  transform.scale(1 / resolution, -1 / resolution);
-  transform.translate(-center[0], -center[1]);
-
-  return transform;
 }

@@ -12,6 +12,7 @@ import viewportTypeUsesCustomRenderingPipeline, {
 import getOrCreateCanvas from './helpers/getOrCreateCanvas';
 import {
   getShouldUseCPURendering,
+  getUseViewportV2,
   isCornerstoneInitialized,
   getConfiguration,
 } from '../init';
@@ -500,10 +501,34 @@ abstract class BaseRenderingEngine {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
 
+  /**
+   * Map from legacy viewport types to their V2 equivalents.
+   * Used when `rendering.useViewportV2` is enabled.
+   */
+  private static readonly V2_TYPE_REMAP: Partial<
+    Record<ViewportType, ViewportType>
+  > = {
+    [ViewportType.STACK]: ViewportType.PLANAR_V2,
+    [ViewportType.ORTHOGRAPHIC]: ViewportType.PLANAR_V2,
+    [ViewportType.VIDEO]: ViewportType.VIDEO_V2,
+    [ViewportType.WHOLE_SLIDE]: ViewportType.WHOLE_SLIDE_V2,
+    [ViewportType.ECG]: ViewportType.ECG_V2,
+  };
+
   private _normalizeViewportInputEntry(
     viewportInputEntry: PublicViewportInput
   ) {
-    const { type, defaultOptions } = viewportInputEntry;
+    let { type } = viewportInputEntry;
+    const { defaultOptions } = viewportInputEntry;
+
+    // Remap legacy types to V2 when the flag is set
+    if (getUseViewportV2()) {
+      const remapped = BaseRenderingEngine.V2_TYPE_REMAP[type];
+      if (remapped) {
+        type = remapped;
+      }
+    }
+
     let options = defaultOptions;
 
     if (!options || Object.keys(options).length === 0) {
@@ -523,6 +548,7 @@ abstract class BaseRenderingEngine {
 
     return {
       ...viewportInputEntry,
+      type,
       defaultOptions: options,
     };
   }

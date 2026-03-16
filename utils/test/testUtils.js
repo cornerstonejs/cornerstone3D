@@ -18,6 +18,7 @@ import {
   getRenderingEngine,
   init as initCore,
   setUseCPURendering,
+  getConfiguration,
   getRenderingEngines,
 } from '@cornerstonejs/core';
 import {
@@ -38,11 +39,18 @@ function setupTestEnvironment({
   toolActivations = {},
   viewportIds = [],
   options = {},
+  useViewportV2 = false,
 } = {}) {
   // Initialize csTools3d and add specified tools
   window.devicePixelRatio = 1;
 
   initCore();
+
+  // Enable V2 viewport remapping when requested
+  // if (useViewportV2) {
+  //   getConfiguration().rendering.useViewportV2 = true;
+  // }
+  getConfiguration().rendering.useViewportV2 = true;
   initTools();
   tools.forEach((tool) => addTool(tool));
 
