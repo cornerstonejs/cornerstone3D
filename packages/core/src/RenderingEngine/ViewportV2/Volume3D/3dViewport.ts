@@ -393,12 +393,15 @@ class VolumeViewport3DV2 extends ViewportV2<
    * @returns Always `true` for compatibility with legacy viewport contracts.
    */
   resetCamera(): boolean {
+    const previousCamera = this.getCameraForEvent();
     const renderer = this.getRenderer();
 
     renderer.resetCamera();
     renderer.resetCameraClippingRange();
     this.camera = this.getCamera();
     this.render();
+    this.triggerCameraModifiedEvent(previousCamera);
+    this.triggerCameraResetEvent();
 
     return true;
   }

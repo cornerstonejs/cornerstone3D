@@ -1,6 +1,6 @@
 import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
 import ViewportV2 from '../ViewportV2';
-import type { Point2 } from '../../../types';
+import type { ICamera, Point2 } from '../../../types';
 import { ViewportType } from '../../../enums';
 import {
   frameNumberToTimeSeconds,
@@ -445,6 +445,25 @@ class VideoViewportV2 extends ViewportV2<
 
   private getVideoElement(): HTMLVideoElement | undefined {
     return this.getVideoRendering()?.element;
+  }
+
+  protected getCameraForEvent(): ICamera {
+    const layout = this.getCurrentVideoLayout();
+    const worldToCanvasRatio = Math.max(layout?.worldToCanvasRatio ?? 1, 0.001);
+    const focalPoint = this.canvasToWorld([
+      this.element.clientWidth / 2,
+      this.element.clientHeight / 2,
+    ]);
+
+    return {
+      parallelProjection: true,
+      focalPoint,
+      position: [0, 0, 0],
+      viewUp: [0, -1, 0],
+      parallelScale: this.element.clientHeight / 2 / worldToCanvasRatio,
+      viewPlaneNormal: [0, 0, 1],
+      rotation: this.camera.frame?.rotation ?? 0,
+    };
   }
 
   private getVideoData(): LoadedData<VideoStreamPayload> | undefined {

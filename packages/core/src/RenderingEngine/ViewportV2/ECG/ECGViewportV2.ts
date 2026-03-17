@@ -4,7 +4,7 @@ import type { LoadedData } from '../ViewportArchitectureTypes';
 import ViewportV2 from '../ViewportV2';
 import { ViewportType } from '../../../enums';
 import { getDefaultECGValueRange } from '../../../utilities/ECGUtilities';
-import type { IImageData, Point2, Point3 } from '../../../types';
+import type { ICamera, IImageData, Point2, Point3 } from '../../../types';
 import { CanvasECGPath } from './CanvasECGRenderPath';
 import { DefaultECGDataProvider } from './DefaultECGDataProvider';
 import type {
@@ -306,11 +306,13 @@ class ECGViewportV2 extends ViewportV2<
    * Resets pan and zoom to defaults and re-renders.
    */
   resetCamera(): boolean {
+    const previousCamera = this.getCameraForEvent();
     this.camera = createDefaultECGCamera({
       timeRange: this.camera.timeRange,
       valueRange: this.camera.valueRange,
     });
-    this.modified();
+    this.modified(previousCamera);
+    this.triggerCameraResetEvent();
 
     return true;
   }
@@ -436,6 +438,24 @@ class ECGViewportV2 extends ViewportV2<
       camera: this.camera,
       canvas: this.canvas,
     });
+  }
+
+  protected getCameraForEvent(): ICamera {
+    const layout = this.getCurrentCameraLayout();
+    const effectiveRatio = Math.max(layout?.effectiveRatio ?? 1, 0.001);
+    const canvasCenter: Point2 = [
+      this.element.clientWidth / 2,
+      this.element.clientHeight / 2,
+    ];
+
+    return {
+      parallelProjection: true,
+      focalPoint: this.canvasToWorld(canvasCenter),
+      position: [0, 0, 0],
+      viewUp: [0, -1, 0],
+      parallelScale: this.element.clientHeight / 2 / effectiveRatio,
+      viewPlaneNormal: [0, 0, 1],
+    };
   }
 }
 

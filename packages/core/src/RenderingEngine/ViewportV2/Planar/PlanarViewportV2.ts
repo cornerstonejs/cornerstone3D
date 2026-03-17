@@ -1,6 +1,7 @@
 import { OrientationAxis, ViewportType } from '../../../enums';
 import type BlendModes from '../../../enums/BlendModes';
 import type {
+  ICamera,
   IVolumeInput,
   Point2,
   Point3,
@@ -38,7 +39,10 @@ import {
   createDefaultPlanarCamera,
   normalizePlanarCamera,
 } from './planarViewportCamera';
-import { derivePlanarPresentation } from './planarRenderCamera';
+import {
+  derivePlanarPresentation,
+  resolvePlanarRenderCamera,
+} from './planarRenderCamera';
 import {
   getPlanarReferencedImageId,
   getPlanarViewReference,
@@ -807,6 +811,7 @@ class PlanarViewportV2 extends ViewportV2<
     this.setCamera({
       frame,
     });
+    this.triggerCameraResetEvent();
 
     return true;
   }
@@ -1006,6 +1011,34 @@ class PlanarViewportV2 extends ViewportV2<
 
   private getCurrentPlanarRendering(): PlanarRendering | undefined {
     return this.getCurrentBinding()?.rendering as PlanarRendering | undefined;
+  }
+
+  protected getCameraForEvent(): ICamera {
+    const rendering = this.getCurrentPlanarRendering();
+
+    if (rendering?.renderCamera) {
+      return rendering.renderCamera as ICamera;
+    }
+
+    const sliceBasis = this.buildCurrentPlanarSliceBasis();
+
+    if (sliceBasis) {
+      return resolvePlanarRenderCamera({
+        sliceBasis,
+        camera: this.camera,
+        canvasHeight: this.getCurrentCanvasHeight(),
+        canvasWidth: this.getCurrentCanvasWidth(),
+      });
+    }
+
+    return {
+      parallelProjection: true,
+      focalPoint: [0, 0, 0],
+      position: [0, 0, 1],
+      parallelScale: 1,
+      viewPlaneNormal: [0, 0, 1],
+      viewUp: [0, -1, 0],
+    };
   }
 
   private buildCurrentPlanarSliceBasis() {

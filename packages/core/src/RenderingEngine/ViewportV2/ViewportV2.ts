@@ -1,4 +1,8 @@
+import type * as EventTypes from '../../types/EventTypes';
 import type { Point2, Point3 } from '../../types';
+import type ICamera from '../../types/ICamera';
+import Events from '../../enums/Events';
+import triggerEvent from '../../utilities/triggerEvent';
 import type {
   BaseViewportRenderContext,
   DataAddOptions,
@@ -45,6 +49,8 @@ abstract class ViewportV2<
 {
   abstract readonly id: ViewportId;
   abstract readonly type: ViewportType;
+  abstract readonly element: HTMLDivElement;
+  abstract readonly renderingEngineId: string;
 
   protected dataProvider: DataProvider;
   protected renderPathResolver: RenderPathResolver;
@@ -199,6 +205,7 @@ abstract class ViewportV2<
   }
 
   setCamera(cameraPatch: Partial<TCamera>): void {
+    const previousCamera = this.getCameraForEvent();
     const next = {
       ...this.camera,
       ...cameraPatch,
@@ -213,7 +220,7 @@ abstract class ViewportV2<
     } as TCamera;
 
     this.camera = this.normalizeCamera(next);
-    this.modified();
+    this.modified(previousCamera);
   }
 
   /**
@@ -384,16 +391,44 @@ abstract class ViewportV2<
     });
   }
 
+  protected getCameraForEvent(): ICamera {
+    return this.getCamera() as unknown as ICamera;
+  }
+
+  protected triggerCameraModifiedEvent(previousCamera: ICamera): void {
+    const eventDetail: EventTypes.CameraModifiedEventDetail = {
+      camera: this.getCameraForEvent(),
+      viewportId: this.id,
+      renderingEngineId: this.renderingEngineId,
+    };
+
+    triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
+  }
+
+  protected triggerCameraResetEvent(): void {
+    const eventDetail: EventTypes.CameraResetEventDetail = {
+      viewportId: this.id,
+      camera: this.getCameraForEvent(),
+      renderingEngineId: this.renderingEngineId,
+    };
+
+    triggerEvent(this.element, Events.CAMERA_RESET, eventDetail);
+  }
+
   /**
    * Pushes the current shared camera state to every binding and schedules a
    * render.
    */
-  protected modified(): void {
+  protected modified(previousCamera?: ICamera): void {
     this.forEachBinding((binding) => {
       binding.updateCamera(this.camera);
     });
 
     this.render();
+
+    if (previousCamera) {
+      this.triggerCameraModifiedEvent(previousCamera);
+    }
   }
 
   /**
