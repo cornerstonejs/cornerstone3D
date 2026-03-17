@@ -1,7 +1,10 @@
 import { loadAndCacheImage } from '../../../loaders/imageLoader';
 import { createAndCacheVolume } from '../../../loaders/volumeLoader';
 import type { LoadedData } from '../ViewportArchitectureTypes';
-import { getViewportV2ImageDataSet } from '../viewportV2DataSetAccess';
+import {
+  getViewportV2ImageDataSet,
+  isViewportV2ImageDataSet,
+} from '../viewportV2DataSetAccess';
 import type {
   PlanarDataProvider,
   PlanarDataLoadOptions,
@@ -76,9 +79,9 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
   }
 
   private getDataSet(dataId: string): PlanarRegisteredDataSet | undefined {
-    const dataSet = getViewportV2ImageDataSet<PlanarRegisteredDataSet>(dataId);
+    const dataSet = getViewportV2ImageDataSet(dataId);
 
-    if (!dataSet?.imageIds) {
+    if (!isPlanarRegisteredDataSet(dataSet)) {
       return;
     }
 
@@ -99,3 +102,17 @@ function getStreamingVolumeId(volumeId: string): string {
 }
 
 const STREAMING_VOLUME_LOADER_SCHEME = 'cornerstoneStreamingImageVolume';
+
+function isPlanarRegisteredDataSet(
+  value: unknown
+): value is PlanarRegisteredDataSet {
+  if (!isViewportV2ImageDataSet(value) || value.imageIds.length === 0) {
+    return false;
+  }
+
+  return (
+    (value.initialImageIdIndex === undefined ||
+      typeof value.initialImageIdIndex === 'number') &&
+    (value.volumeId === undefined || typeof value.volumeId === 'string')
+  );
+}

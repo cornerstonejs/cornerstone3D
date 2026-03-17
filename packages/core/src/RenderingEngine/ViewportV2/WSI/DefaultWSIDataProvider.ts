@@ -42,13 +42,34 @@ export class DefaultWSIDataProvider implements WSIDataProvider {
   }
 
   private getDataSet(dataId: string): WSIRegisteredDataSet | undefined {
-    const registered =
-      getViewportV2RegisteredData<WSIRegisteredDataSet>(dataId);
+    const registered = getViewportV2RegisteredData(dataId);
 
-    if (!registered?.imageIds || !registered?.options?.webClient) {
+    if (!isWSIRegisteredDataSet(registered)) {
       return;
     }
 
     return registered;
   }
+}
+
+function isWSIRegisteredDataSet(value: unknown): value is WSIRegisteredDataSet {
+  if (!isRecord(value) || !Array.isArray(value.imageIds)) {
+    return false;
+  }
+
+  const options = value.options;
+
+  return (
+    value.imageIds.every((imageId) => typeof imageId === 'string') &&
+    isRecord(options) &&
+    isWSIClientLike(options.webClient)
+  );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isWSIClientLike(value: unknown): boolean {
+  return isRecord(value) && typeof value.getDICOMwebMetadata === 'function';
 }

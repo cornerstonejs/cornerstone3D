@@ -14,9 +14,13 @@ import type {
   WSIClientLike,
   WSIMapLike,
   WSIMapViewLike,
+  WSIViewerLike,
 } from '../../../utilities/WSIUtilities';
 import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
-import type { RenderingBinding } from '../ViewportArchitectureTypes';
+import type {
+  LoadedData,
+  RenderingBinding,
+} from '../ViewportArchitectureTypes';
 import ViewportV2 from '../ViewportV2';
 import { getViewportV2RegisteredData } from '../viewportV2DataSetAccess';
 import { DefaultWSIDataProvider } from './DefaultWSIDataProvider';
@@ -320,6 +324,10 @@ class WSIViewportV2 extends ViewportV2<
   }
 
   resize(): void {
+    if (this.isDestroyed) {
+      return;
+    }
+
     this.resizeBindings();
     this.render();
   }
@@ -330,7 +338,9 @@ class WSIViewportV2 extends ViewportV2<
     const transformUtils = rendering?.transformUtils;
 
     if (!transformUtils || !affine) {
-      return undefined as unknown as Point2;
+      throw new Error(
+        `[WSIViewportV2] Cannot convert world to index for viewport ${this.id} because the WSI transform runtime is not ready.`
+      );
     }
 
     const pixelCoords = transformUtils.applyInverseTransform({
@@ -347,7 +357,9 @@ class WSIViewportV2 extends ViewportV2<
     const transformUtils = rendering?.transformUtils;
 
     if (!transformUtils || !affine) {
-      return undefined as unknown as Point3;
+      throw new Error(
+        `[WSIViewportV2] Cannot convert index to world for viewport ${this.id} because the WSI transform runtime is not ready.`
+      );
     }
 
     const sliceCoords = transformUtils.applyTransform({
@@ -391,7 +403,12 @@ class WSIViewportV2 extends ViewportV2<
       return view;
     }
 
-    const anyWindow = window as unknown as Record<string, unknown>;
+    const anyWindow = window as Window & {
+      map?: WSIMapLike;
+      viewer?: WSIViewerLike;
+      view?: WSIMapViewLike;
+      wsi?: WSIViewportV2;
+    };
 
     anyWindow.map = rendering?.map;
     anyWindow.viewer = rendering?.viewer;
@@ -429,7 +446,34 @@ class WSIViewportV2 extends ViewportV2<
   }
 
   render(): void {
+    if (this.isDestroyed) {
+      return;
+    }
+
     this.renderBindings();
+  }
+
+  public override destroy(): void {
+    if (this.isDestroyed) {
+      return;
+    }
+
+    const rendering = this.getWSIRendering();
+    const map = rendering?.map;
+    const viewer = rendering?.viewer;
+    const view = map?.getView?.();
+
+    super.destroy();
+    this.clearGlobalDebugRefs({ map, viewer, view });
+  }
+
+  protected override onDestroy(): void {
+    this.activeDataId = undefined;
+
+    this.managedLegacyDataIds.forEach((dataId) => {
+      viewportV2DataSetMetadataProvider.remove(dataId);
+    });
+    this.managedLegacyDataIds.clear();
   }
 
   customRenderViewportToCanvas(): void {
@@ -574,12 +618,83 @@ class WSIViewportV2 extends ViewportV2<
   }
 
   private getWSIData(): WSIPayload | undefined {
-    return this.getCurrentBinding()?.data as unknown as WSIPayload | undefined;
+    const binding = this.getCurrentBinding();
+
+    if (!binding || !isWSIPayload(binding.data)) {
+      return;
+    }
+
+    return binding.data;
   }
 
   private getWSIRendering(): WSIRendering | undefined {
-    return this.getCurrentBinding()?.rendering as WSIRendering | undefined;
+    const binding = this.getCurrentBinding();
+
+    if (!binding || !isWSIRendering(binding.rendering)) {
+      return;
+    }
+
+    return binding.rendering;
+  }
+
+  private clearGlobalDebugRefs(args: {
+    map?: WSIMapLike;
+    viewer?: WSIViewerLike;
+    view?: WSIMapViewLike;
+  }): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const anyWindow = window as Window & {
+      map?: WSIMapLike;
+      viewer?: WSIViewerLike;
+      view?: WSIMapViewLike;
+      wsi?: WSIViewportV2;
+    };
+
+    if (anyWindow.wsi !== this) {
+      return;
+    }
+
+    if (args.map && anyWindow.map === args.map) {
+      delete anyWindow.map;
+    }
+
+    if (args.viewer && anyWindow.viewer === args.viewer) {
+      delete anyWindow.viewer;
+    }
+
+    if (args.view && anyWindow.view === args.view) {
+      delete anyWindow.view;
+    }
+
+    delete anyWindow.wsi;
   }
 }
 
 export default WSIViewportV2;
+
+function isWSIPayload(data: LoadedData): data is LoadedData<WSIPayload> {
+  if (typeof data !== 'object' || data === null || data.type !== 'wsi') {
+    return false;
+  }
+
+  const payload = data as Record<string, unknown>;
+
+  return (
+    Array.isArray(payload.imageIds) &&
+    typeof payload.client === 'object' &&
+    payload.client !== null &&
+    typeof payload.metadata === 'object' &&
+    payload.metadata !== null &&
+    typeof payload.frameOfReferenceUID !== 'undefined' &&
+    payload.imageURISet instanceof Set
+  );
+}
+
+function isWSIRendering(rendering: {
+  renderMode: string;
+}): rendering is WSIRendering {
+  return rendering.renderMode === 'wsi2d';
+}

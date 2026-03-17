@@ -42,7 +42,7 @@ import type { ViewAnchor, ViewportCameraBase } from './ViewportCameraTypes';
  * centralizing render-mode-specific behavior in the controller.
  */
 abstract class ViewportV2<
-  TCamera extends ViewportCameraBase<unknown>,
+  TCamera extends ICamera & ViewportCameraBase<unknown>,
   TDataPresentation = unknown,
   TContext extends BaseViewportRenderContext = BaseViewportRenderContext,
 > implements ViewportController<TCamera, TDataPresentation>
@@ -59,6 +59,7 @@ abstract class ViewportV2<
   protected bindings = new Map<DataId, RenderingBinding<TDataPresentation>>();
   protected dataPresentation = new Map<DataId, TDataPresentation>();
   protected camera!: TCamera;
+  protected isDestroyed = false;
 
   readonly _debug: { renderModes: Record<string, string> } = {
     renderModes: {},
@@ -72,6 +73,10 @@ abstract class ViewportV2<
     dataId: DataId,
     options: DataAddOptions
   ): Promise<RenderingId> {
+    if (this.isDestroyed) {
+      throw new Error('Viewport has been destroyed');
+    }
+
     const data = await this.dataProvider.load(dataId, options);
     return this.addLoadedData(dataId, data, options);
   }
@@ -88,6 +93,10 @@ abstract class ViewportV2<
     data: LoadedData,
     options: DataAddOptions
   ): Promise<RenderingId> {
+    if (this.isDestroyed) {
+      throw new Error('Viewport has been destroyed');
+    }
+
     const path = this.renderPathResolver.resolve<TContext>(
       this.type,
       data,
@@ -102,6 +111,11 @@ abstract class ViewportV2<
     }
 
     const attachment = await renderPath.addData(ctx, data, options);
+
+    if (this.isDestroyed) {
+      attachment.removeData();
+      throw new Error('Viewport has been destroyed');
+    }
 
     this.bindings.set(dataId, {
       data,
@@ -133,6 +147,10 @@ abstract class ViewportV2<
     dataId: DataId,
     props: TDataPresentation
   ): void {
+    if (this.isDestroyed) {
+      return;
+    }
+
     this.dataPresentation.set(dataId, props);
     const binding = this.bindings.get(dataId);
 
@@ -205,6 +223,10 @@ abstract class ViewportV2<
   }
 
   setCamera(cameraPatch: Partial<TCamera>): void {
+    if (this.isDestroyed) {
+      return;
+    }
+
     const previousCamera = this.getCameraForEvent();
     const next = {
       ...this.camera,
@@ -281,17 +303,33 @@ abstract class ViewportV2<
   }
 
   /**
-   * Uses the current binding's render-path transform when available.
+   * Uses the current binding's render-path transform.
    */
   canvasToWorld(canvasPos: Point2): Point3 {
-    return this.getCurrentBinding()?.canvasToWorld?.(canvasPos) ?? [0, 0, 0];
+    const binding = this.getCurrentBinding();
+
+    if (!binding) {
+      throw new Error(
+        `[ViewportV2] Cannot convert canvas to world for viewport ${this.id} because no rendering is mounted.`
+      );
+    }
+
+    return binding.canvasToWorld(canvasPos);
   }
 
   /**
-   * Uses the current binding's render-path transform when available.
+   * Uses the current binding's render-path transform.
    */
   worldToCanvas(worldPos: Point3): Point2 {
-    return this.getCurrentBinding()?.worldToCanvas?.(worldPos) ?? [0, 0];
+    const binding = this.getCurrentBinding();
+
+    if (!binding) {
+      throw new Error(
+        `[ViewportV2] Cannot convert world to canvas for viewport ${this.id} because no rendering is mounted.`
+      );
+    }
+
+    return binding.worldToCanvas(worldPos);
   }
 
   /**
@@ -300,15 +338,17 @@ abstract class ViewportV2<
    * value for non-referenceable viewports.
    */
   getFrameOfReferenceUID(): string {
-    return (
-      this.getCurrentBinding()?.getFrameOfReferenceUID?.() ??
-      `${this.type}-viewport-${this.id}`
-    );
+    const binding = this.getCurrentBinding();
+
+    if (!binding) {
+      return `${this.type}-viewport-${this.id}`;
+    }
+
+    return binding.getFrameOfReferenceUID();
   }
 
   /**
-   * Removes one dataset binding and clears any stored per-dataset render
-   * state for that dataset.
+   * Tears down all mounted dataset bindings during viewport reset.
    */
   removeWidgets(): void {
     // V2 viewports do not use VTK widgets — intentional no-op.
@@ -325,7 +365,10 @@ abstract class ViewportV2<
     this.bindings.delete(dataId);
     this.dataPresentation.delete(dataId);
     delete this._debug.renderModes[dataId];
-    this.render();
+
+    if (!this.isDestroyed) {
+      this.render();
+    }
   }
 
   /**
@@ -372,6 +415,10 @@ abstract class ViewportV2<
    * render request directly.
    */
   protected renderBindings(): boolean {
+    if (this.isDestroyed) {
+      return false;
+    }
+
     let renderedByAdapter = false;
 
     this.forEachBinding((binding) => {
@@ -386,13 +433,17 @@ abstract class ViewportV2<
    * Invokes resize on each mounted binding.
    */
   protected resizeBindings(): void {
+    if (this.isDestroyed) {
+      return;
+    }
+
     this.forEachBinding((binding) => {
       binding.resize?.();
     });
   }
 
   protected getCameraForEvent(): ICamera {
-    return this.getCamera() as unknown as ICamera;
+    return this.getCamera();
   }
 
   protected triggerCameraModifiedEvent(previousCamera: ICamera): void {
@@ -420,6 +471,10 @@ abstract class ViewportV2<
    * render.
    */
   protected modified(previousCamera?: ICamera): void {
+    if (this.isDestroyed) {
+      return;
+    }
+
     this.forEachBinding((binding) => {
       binding.updateCamera(this.camera);
     });
@@ -432,10 +487,41 @@ abstract class ViewportV2<
   }
 
   /**
-   * Requests the viewport family to render. Concrete subclasses decide whether
-   * rendering is delegated to render paths, the rendering engine, or another
-   * runtime.
+   * Releases mounted bindings and viewport-local resources.
    */
+  public destroy(): void {
+    if (this.isDestroyed) {
+      return;
+    }
+
+    this.isDestroyed = true;
+    this.destroyBindings();
+    this.onDestroy();
+    this.bindings.clear();
+    this.dataPresentation.clear();
+
+    for (const key of Object.keys(this._debug.renderModes)) {
+      delete this._debug.renderModes[key];
+    }
+
+    this.element.removeAttribute('data-viewport-uid');
+    this.element.removeAttribute('data-rendering-engine-uid');
+  }
+
+  public dispose(): void {
+    this.destroy();
+  }
+
+  protected destroyBindings(): void {
+    for (const dataId of Array.from(this.bindings.keys())) {
+      this.removeDataId(dataId);
+    }
+  }
+
+  protected onDestroy(): void {
+    // Subclasses can release viewport-local resources here.
+  }
+
   abstract render(): void;
 }
 

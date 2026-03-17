@@ -2,7 +2,10 @@ import cache from '../../../cache/cache';
 import { loadAndCacheGeometry } from '../../../loaders/geometryLoader';
 import { createAndCacheVolume } from '../../../loaders/volumeLoader';
 import type { LoadedData } from '../ViewportArchitectureTypes';
-import { getViewportV2ImageDataSet } from '../viewportV2DataSetAccess';
+import {
+  getViewportV2ImageDataSet,
+  isViewportV2ImageDataSet,
+} from '../viewportV2DataSetAccess';
 import type {
   Volume3DDataProvider,
   Volume3DGeometryPayload,
@@ -66,7 +69,13 @@ export class DefaultVolume3DDataProvider implements Volume3DDataProvider {
   }
 
   private getDataSet(dataId: string): Volume3DRegisteredDataSet | undefined {
-    return getViewportV2ImageDataSet<Volume3DRegisteredDataSet>(dataId);
+    const dataSet = getViewportV2ImageDataSet(dataId);
+
+    if (!isVolume3DRegisteredDataSet(dataSet)) {
+      return;
+    }
+
+    return dataSet;
   }
 }
 
@@ -80,4 +89,21 @@ function getStreamingVolumeId(volumeId: string): string {
   }
 
   return `${STREAMING_VOLUME_LOADER_SCHEME}:${volumeId}`;
+}
+
+function isVolume3DRegisteredDataSet(
+  value: unknown
+): value is Volume3DRegisteredDataSet {
+  if (!isViewportV2ImageDataSet(value)) {
+    return false;
+  }
+
+  return (
+    (value.actorUID === undefined || typeof value.actorUID === 'string') &&
+    (value.geometryId === undefined || typeof value.geometryId === 'string') &&
+    (value.volumeId === undefined || typeof value.volumeId === 'string') &&
+    (value.geometryLoadOptions === undefined ||
+      (typeof value.geometryLoadOptions === 'object' &&
+        !Array.isArray(value.geometryLoadOptions)))
+  );
 }

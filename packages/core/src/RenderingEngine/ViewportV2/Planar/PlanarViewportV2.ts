@@ -18,7 +18,10 @@ import renderingEngineCache from '../../renderingEngineCache';
 import type { DataAddOptions, LoadedData } from '../ViewportArchitectureTypes';
 import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
 import ViewportV2 from '../ViewportV2';
-import { getViewportV2ImageDataSet } from '../viewportV2DataSetAccess';
+import {
+  getViewportV2ImageDataSet,
+  isViewportV2ImageDataSet,
+} from '../viewportV2DataSetAccess';
 import PlanarLegacyCompatibilityController from './PlanarLegacyCompatibilityController';
 import { CpuImageSlicePath } from './CpuImageSliceRenderPath';
 import { CpuVolumeSlicePath } from './CpuVolumeSliceRenderPath';
@@ -91,6 +94,7 @@ class PlanarViewportV2 extends ViewportV2<
   protected renderContext: PlanarViewportRenderContext;
 
   private activeDataId?: string;
+  private cpuCanvas?: HTMLCanvasElement;
   private readonly legacyCompatibility =
     new PlanarLegacyCompatibilityController({
       getElement: () => this.element,
@@ -183,6 +187,7 @@ class PlanarViewportV2 extends ViewportV2<
     cpuCanvas.style.width = '100%';
     cpuCanvas.style.zIndex = '0';
     this.element.appendChild(cpuCanvas);
+    this.cpuCanvas = cpuCanvas;
 
     if (viewportElement) {
       viewportElement.style.position =
@@ -475,8 +480,8 @@ class PlanarViewportV2 extends ViewportV2<
   setPan(nextPan: Point2): void {
     const currentPan = this.getPan();
     const [ax, ay] = this.getAnchorView();
-    const canvasWidth = this.getCurrentCanvasWidth();
-    const canvasHeight = this.getCurrentCanvasHeight();
+    const { height: canvasHeight, width: canvasWidth } =
+      this.getCurrentCanvasDimensions();
     const deltaX = nextPan[0] - currentPan[0];
     const deltaY = nextPan[1] - currentPan[1];
 
@@ -488,8 +493,8 @@ class PlanarViewportV2 extends ViewportV2<
 
   setScaleAtCanvasPoint(scale: number, canvasPoint: Point2): void {
     const worldPoint = this.canvasToWorld(canvasPoint);
-    const canvasWidth = this.getCurrentCanvasWidth();
-    const canvasHeight = this.getCurrentCanvasHeight();
+    const { height: canvasHeight, width: canvasWidth } =
+      this.getCurrentCanvasDimensions();
 
     this.setCamera({
       frame: {
@@ -830,6 +835,10 @@ class PlanarViewportV2 extends ViewportV2<
    * Resizes the internal CPU canvas and notifies active render bindings.
    */
   resize(): void {
+    if (this.isDestroyed) {
+      return;
+    }
+
     const { clientHeight, clientWidth } = this.element;
     const { canvas } = this.renderContext.cpu;
 
@@ -845,11 +854,22 @@ class PlanarViewportV2 extends ViewportV2<
    * Renders the active planar bindings or queues an engine-driven render.
    */
   render(): void {
+    if (this.isDestroyed) {
+      return;
+    }
+
     this.renderContext.cpu.composition.renderPassId += 1;
 
     if (!this.renderBindings()) {
       this.requestRenderingEngineRender();
     }
+  }
+
+  protected override onDestroy(): void {
+    this.legacyCompatibility.destroy();
+    this.cpuCanvas?.remove();
+    this.cpuCanvas = undefined;
+    this.activeDataId = undefined;
   }
 
   private requestRenderingEngineRender(): void {
@@ -909,9 +929,9 @@ class PlanarViewportV2 extends ViewportV2<
   }
 
   private getDataSet(dataId: string): PlanarRegisteredDataSet | undefined {
-    const dataSet = getViewportV2ImageDataSet<PlanarRegisteredDataSet>(dataId);
+    const dataSet = getViewportV2ImageDataSet(dataId);
 
-    if (!dataSet?.imageIds) {
+    if (!isPlanarRegisteredDataSet(dataSet)) {
       return;
     }
 
@@ -1023,11 +1043,14 @@ class PlanarViewportV2 extends ViewportV2<
     const sliceBasis = this.buildCurrentPlanarSliceBasis();
 
     if (sliceBasis) {
+      const { height: canvasHeight, width: canvasWidth } =
+        this.getCurrentCanvasDimensions();
+
       return resolvePlanarRenderCamera({
         sliceBasis,
         camera: this.camera,
-        canvasHeight: this.getCurrentCanvasHeight(),
-        canvasWidth: this.getCurrentCanvasWidth(),
+        canvasHeight,
+        canvasWidth,
       });
     }
 
@@ -1048,8 +1071,8 @@ class PlanarViewportV2 extends ViewportV2<
       return;
     }
 
-    const canvasWidth = this.getCurrentCanvasWidth();
-    const canvasHeight = this.getCurrentCanvasHeight();
+    const { height: canvasHeight, width: canvasWidth } =
+      this.getCurrentCanvasDimensions();
 
     if (rendering.renderMode === 'cpu2d') {
       const image = rendering.enabledElement?.image;
@@ -1093,6 +1116,8 @@ class PlanarViewportV2 extends ViewportV2<
 
   private getCurrentPresentation() {
     const sliceBasis = this.buildCurrentPlanarSliceBasis();
+    const { height: canvasHeight, width: canvasWidth } =
+      this.getCurrentCanvasDimensions();
 
     if (!sliceBasis) {
       return;
@@ -1101,43 +1126,32 @@ class PlanarViewportV2 extends ViewportV2<
     return derivePlanarPresentation({
       sliceBasis,
       camera: this.camera,
-      canvasHeight: this.getCurrentCanvasHeight(),
-      canvasWidth: this.getCurrentCanvasWidth(),
+      canvasHeight,
+      canvasWidth,
     });
   }
 
-  private getCurrentCanvasWidth(): number {
+  private getCurrentCanvasDimensions(): { width: number; height: number } {
     const rendering = this.getCurrentPlanarRendering();
+    const activeCanvas =
+      rendering?.renderMode === 'cpu2d' || rendering?.renderMode === 'cpuVolume'
+        ? this.renderContext.cpu.canvas
+        : this.renderContext.vtk.canvas;
+    const width = activeCanvas.width || activeCanvas.clientWidth;
+    const height = activeCanvas.height || activeCanvas.clientHeight;
 
-    if (
-      rendering?.renderMode === 'cpu2d' ||
-      rendering?.renderMode === 'cpuVolume'
-    ) {
-      return this.renderContext.cpu.canvas.width || this.element.clientWidth;
-    }
+    return {
+      width: width || this.element.clientWidth,
+      height: height || this.element.clientHeight,
+    };
+  }
 
-    return (
-      this.renderContext.vtk.canvas.clientWidth ||
-      this.renderContext.vtk.canvas.width ||
-      this.element.clientWidth
-    );
+  private getCurrentCanvasWidth(): number {
+    return this.getCurrentCanvasDimensions().width;
   }
 
   private getCurrentCanvasHeight(): number {
-    const rendering = this.getCurrentPlanarRendering();
-
-    if (
-      rendering?.renderMode === 'cpu2d' ||
-      rendering?.renderMode === 'cpuVolume'
-    ) {
-      return this.renderContext.cpu.canvas.height || this.element.clientHeight;
-    }
-
-    return (
-      this.renderContext.vtk.canvas.clientHeight ||
-      this.renderContext.vtk.canvas.height ||
-      this.element.clientHeight
-    );
+    return this.getCurrentCanvasDimensions().height;
   }
 
   private getCurrentPlanarData(): LoadedData<PlanarPayload> | undefined {
@@ -1145,6 +1159,20 @@ class PlanarViewportV2 extends ViewportV2<
       | LoadedData<PlanarPayload>
       | undefined;
   }
+}
+
+function isPlanarRegisteredDataSet(
+  value: unknown
+): value is PlanarRegisteredDataSet {
+  if (!isViewportV2ImageDataSet(value) || value.imageIds.length === 0) {
+    return false;
+  }
+
+  return (
+    (value.initialImageIdIndex === undefined ||
+      typeof value.initialImageIdIndex === 'number') &&
+    (value.volumeId === undefined || typeof value.volumeId === 'string')
+  );
 }
 
 export default PlanarViewportV2;

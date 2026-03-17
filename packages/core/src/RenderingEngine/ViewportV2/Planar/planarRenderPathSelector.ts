@@ -36,6 +36,10 @@ function supportsVolumeRendering(dataSet: PlanarRegisteredDataSet): boolean {
   return hasExplicitCachedVolume(dataSet) || isValidVolume(dataSet.imageIds);
 }
 
+function isPositiveSafeInteger(value: unknown): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value > 0;
+}
+
 export function getPlanarAcquisitionOrientation(
   imageIds: string[]
 ): PlanarCamera['orientation'] | undefined {
@@ -66,9 +70,11 @@ export function getPlanarAcquisitionOrientation(
 
   vec3.cross(scanAxisNormal, rowVec, colVec);
 
-  const orientation = getOrientationFromScanAxisNormal(
-    scanAxisNormal as unknown as [number, number, number]
-  );
+  const orientation = getOrientationFromScanAxisNormal([
+    scanAxisNormal[0],
+    scanAxisNormal[1],
+    scanAxisNormal[2],
+  ]);
 
   if (
     orientation !== OrientationAxis.AXIAL &&
@@ -99,11 +105,24 @@ export function shouldUseCPU(
   const rows = imagePlaneModule?.rows;
   const columns = imagePlaneModule?.columns;
 
-  if (typeof rows !== 'number' || typeof columns !== 'number') {
+  if (!isPositiveSafeInteger(rows) || !isPositiveSafeInteger(columns)) {
     return false;
   }
 
-  return rows * columns * imageIds.length >= threshold;
+  if (!Number.isFinite(threshold)) {
+    return false;
+  }
+
+  const normalizedThreshold = Math.trunc(threshold);
+
+  if (!Number.isSafeInteger(normalizedThreshold) || normalizedThreshold < 0) {
+    return false;
+  }
+
+  return (
+    BigInt(rows) * BigInt(columns) * BigInt(imageIds.length) >=
+    BigInt(normalizedThreshold)
+  );
 }
 
 function getConfiguredPlanarCpuThresholds() {

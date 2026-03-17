@@ -395,9 +395,11 @@ abstract class BaseRenderingEngine {
 
     StatsOverlay.cleanup();
 
-    // remove vtk rendered first before resetting the viewport
+    const viewports = this._getViewportsAsArray();
+
+    this._reset();
+
     if (this.offscreenMultiRenderWindow) {
-      const viewports = this._getViewportsAsArray();
       viewports.forEach((vp) => {
         if (
           this.offscreenMultiRenderWindow &&
@@ -409,15 +411,12 @@ abstract class BaseRenderingEngine {
       });
 
       // Free up WebGL resources
-      if (this.offscreenMultiRenderWindow) {
-        this.offscreenMultiRenderWindow.delete();
-      }
+      this.offscreenMultiRenderWindow.delete();
 
       // Make sure all references go stale and are garbage collected.
       delete this.offscreenMultiRenderWindow;
     }
 
-    this._reset();
     renderingEngineCache.delete(this.id);
 
     this.hasBeenDestroyed = true;
@@ -706,6 +705,12 @@ abstract class BaseRenderingEngine {
     // Trigger first before removing the data attributes, as we need the enabled
     // element to remove tools associated with the viewport
     triggerEvent(eventTarget, Events.ELEMENT_DISABLED, eventDetail);
+
+    (
+      viewport as IViewport & {
+        destroy?: () => void;
+      }
+    ).destroy?.();
 
     element.removeAttribute('data-viewport-uid');
     element.removeAttribute('data-rendering-engine-uid');

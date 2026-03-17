@@ -4,7 +4,13 @@ import type { LoadedData } from '../ViewportArchitectureTypes';
 import ViewportV2 from '../ViewportV2';
 import { ViewportType } from '../../../enums';
 import { getDefaultECGValueRange } from '../../../utilities/ECGUtilities';
-import type { ICamera, IImageData, Point2, Point3 } from '../../../types';
+import type {
+  CPUIImageData,
+  ICamera,
+  Mat3,
+  Point2,
+  Point3,
+} from '../../../types';
 import { CanvasECGPath } from './CanvasECGRenderPath';
 import { DefaultECGDataProvider } from './DefaultECGDataProvider';
 import type {
@@ -112,10 +118,7 @@ class ECGViewportV2 extends ViewportV2<
     const renderingIds: string[] = [];
 
     for (const dataId of dataIds) {
-      const waveform =
-        ((await this.dataProvider.load(
-          dataId
-        )) as LoadedData<ECGWaveformPayload>) || null;
+      const waveform = await this.loadWaveformData(dataId);
       const durationMs =
         (waveform.numberOfSamples / waveform.samplingFrequency) * 1000;
 
@@ -143,13 +146,7 @@ class ECGViewportV2 extends ViewportV2<
   }
 
   getWaveformData(): ECGWaveformPayload | null {
-    const binding = this.getFirstBinding();
-
-    if (!binding) {
-      return null;
-    }
-
-    return binding.data as unknown as LoadedData<ECGWaveformPayload>;
+    return this.getWaveformBindingData() ?? null;
   }
 
   getSliceIndex(): number {
@@ -200,15 +197,13 @@ class ECGViewportV2 extends ViewportV2<
    * @param visible - Whether the channel should be visible.
    */
   setChannelVisibility(index: number, visible: boolean): void {
-    const firstBinding = this.getFirstBinding();
+    const waveform = this.getWaveformBindingData();
 
-    if (!firstBinding) {
+    if (!waveform) {
       return;
     }
 
-    const dataId = firstBinding.data.id;
-    const waveform =
-      firstBinding.data as unknown as LoadedData<ECGWaveformPayload>;
+    const dataId = waveform.id;
     const current = this.getDataPresentation(dataId) || {};
     const nextVisibleChannels = new Set(
       current.visibleChannels || waveform.channels.map((_channel, i) => i)
@@ -231,15 +226,13 @@ class ECGViewportV2 extends ViewportV2<
    * @returns Channel names paired with their current visibility state.
    */
   getVisibleChannels(): { name: string; visible: boolean }[] {
-    const firstBinding = this.getFirstBinding();
+    const waveform = this.getWaveformBindingData();
 
-    if (!firstBinding) {
+    if (!waveform) {
       return [];
     }
 
-    const dataId = firstBinding.data.id;
-    const waveform =
-      firstBinding.data as unknown as LoadedData<ECGWaveformPayload>;
+    const dataId = waveform.id;
     const visibleChannels = new Set(
       this.getDataPresentation(dataId)?.visibleChannels ||
         waveform.channels.map((_channel, index) => index)
@@ -257,13 +250,12 @@ class ECGViewportV2 extends ViewportV2<
    * @returns The ECG content width and height in device pixels.
    */
   getContentDimensions(): { width: number; height: number } {
-    const firstBinding = this.getFirstBinding();
+    const rendering = this.getCurrentRendering();
 
-    if (!firstBinding) {
+    if (!rendering) {
       return { width: 0, height: 0 };
     }
 
-    const rendering = firstBinding.rendering as ECGCanvasRendering;
     return {
       width: rendering.metrics.ecgWidth,
       height: rendering.metrics.ecgHeight,
@@ -361,23 +353,23 @@ class ECGViewportV2 extends ViewportV2<
    * Amplitude is mapped to [0, ECG_AMPLITUDE_INDEX_SIZE) so annotation
    * index bounds checks work correctly across channels.
    */
-  getImageData(): IImageData | null {
-    const binding = this.getFirstBinding();
+  getImageData(): CPUIImageData | null {
+    const waveform = this.getWaveformBindingData();
 
-    if (!binding) {
+    if (!waveform) {
       return null;
     }
 
-    const waveform = binding.data as unknown as LoadedData<ECGWaveformPayload>;
     const nSamples = waveform.numberOfSamples;
     const nChannels = waveform.channels.length;
-    const dimensions = [nSamples, ECG_AMPLITUDE_INDEX_SIZE, nChannels];
-    const spacing = [1, 1, 1];
-    const origin = [0, 0, 0];
-    const direction = [1, 0, 0, 0, 1, 0, 0, 0, 1];
+    const dimensions: Point3 = [nSamples, ECG_AMPLITUDE_INDEX_SIZE, nChannels];
+    const spacing: Point3 = [1, 1, 1];
+    const origin: Point3 = [0, 0, 0];
+    const direction: Mat3 = [1, 0, 0, 0, 1, 0, 0, 0, 1];
     const amplitudeOffset = ECG_AMPLITUDE_INDEX_SIZE / 2;
+    const scalarData = new Int16Array(0);
 
-    const imageData = {
+    const imageData: CPUIImageData['imageData'] = {
       getDirection: () => direction,
       getDimensions: () => dimensions,
       getRange: () => [0, 1] as Point2,
@@ -396,10 +388,11 @@ class ECGViewportV2 extends ViewportV2<
       origin,
       direction,
       imageData,
+      scalarData,
       hasPixelSpacing: false,
       preScale: { scaled: false },
-      metadata: { Modality: 'ECG' },
-    } as unknown as IImageData;
+      metadata: { Modality: 'ECG', FrameOfReferenceUID: '' },
+    };
   }
 
   private setScaleAtCanvasPoint(scale: number, canvasPoint: Point2): void {
@@ -425,19 +418,51 @@ class ECGViewportV2 extends ViewportV2<
   }
 
   private getCurrentCameraLayout() {
-    const binding = this.getFirstBinding();
+    const rendering = this.getCurrentRendering();
 
-    if (!binding) {
+    if (!rendering) {
       return;
     }
-
-    const rendering = binding.rendering as ECGCanvasRendering;
 
     return getECGCameraLayout({
       metrics: rendering.metrics,
       camera: this.camera,
       canvas: this.canvas,
     });
+  }
+
+  private async loadWaveformData(
+    dataId: string
+  ): Promise<LoadedData<ECGWaveformPayload>> {
+    const waveform = await this.dataProvider.load(dataId);
+
+    if (!isECGWaveformData(waveform)) {
+      throw new Error(
+        `[ECGViewportV2] Loaded data for ${dataId} is not a valid ECG waveform`
+      );
+    }
+
+    return waveform;
+  }
+
+  private getWaveformBindingData(): LoadedData<ECGWaveformPayload> | undefined {
+    const binding = this.getFirstBinding();
+
+    if (!binding || !isECGWaveformData(binding.data)) {
+      return;
+    }
+
+    return binding.data;
+  }
+
+  private getCurrentRendering(): ECGCanvasRendering | undefined {
+    const binding = this.getFirstBinding();
+
+    if (!binding || !isECGCanvasRendering(binding.rendering)) {
+      return;
+    }
+
+    return binding.rendering;
   }
 
   protected getCameraForEvent(): ICamera {
@@ -460,3 +485,26 @@ class ECGViewportV2 extends ViewportV2<
 }
 
 export default ECGViewportV2;
+
+function isECGWaveformData(
+  data: LoadedData
+): data is LoadedData<ECGWaveformPayload> {
+  if (typeof data !== 'object' || data === null || data.type !== 'ecg') {
+    return false;
+  }
+
+  const waveform = data as Record<string, unknown>;
+
+  return (
+    Array.isArray(waveform.channels) &&
+    typeof waveform.numberOfSamples === 'number' &&
+    typeof waveform.samplingFrequency === 'number' &&
+    typeof waveform.numberOfChannels === 'number'
+  );
+}
+
+function isECGCanvasRendering(rendering: {
+  renderMode: string;
+}): rendering is ECGCanvasRendering {
+  return rendering.renderMode === 'signal2d';
+}

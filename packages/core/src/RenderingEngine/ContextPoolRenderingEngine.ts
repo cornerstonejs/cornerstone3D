@@ -709,10 +709,11 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
   }
 
   public destroy(): void {
+    super.destroy();
+
     if (this.contextPool) {
       this.contextPool.destroy();
     }
-    super.destroy();
   }
 
   public getOffscreenMultiRenderWindow(

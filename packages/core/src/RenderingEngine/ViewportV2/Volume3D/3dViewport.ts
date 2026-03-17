@@ -2,10 +2,17 @@ import { ViewportType } from '../../../enums';
 import type { ActorEntry, ICamera, IImageData } from '../../../types';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
 import renderingEngineCache from '../../renderingEngineCache';
-import type { DataAddOptions, LoadedData } from '../ViewportArchitectureTypes';
+import type {
+  DataAddOptions,
+  LoadedData,
+  RenderingBinding,
+} from '../ViewportArchitectureTypes';
 import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
 import ViewportV2 from '../ViewportV2';
-import { getViewportV2ImageDataSet } from '../viewportV2DataSetAccess';
+import {
+  getViewportV2ImageDataSet,
+  isViewportV2ImageDataSet,
+} from '../viewportV2DataSetAccess';
 import { DefaultVolume3DDataProvider } from './DefaultVolume3DDataProvider';
 import { VtkGeometry3DPath } from './VtkGeometry3DRenderPath';
 import { VtkVolume3DPath } from './VtkVolume3DRenderPath';
@@ -188,12 +195,13 @@ class VolumeViewport3DV2 extends ViewportV2<
       return [];
     }
 
-    const data = binding.data as unknown as LoadedData<Volume3DPayload>;
-    const rendering = binding.rendering as Volume3DRendering;
+    const data = this.getVolume3DPayload(binding);
+    const rendering = this.getVolume3DRendering(binding);
 
     if (
-      rendering.renderMode !== 'vtkVolume3d' ||
-      data.renderMode !== 'vtkVolume3d'
+      !data ||
+      data.renderMode !== 'vtkVolume3d' ||
+      rendering.renderMode !== 'vtkVolume3d'
     ) {
       return [];
     }
@@ -300,12 +308,13 @@ class VolumeViewport3DV2 extends ViewportV2<
       return;
     }
 
-    const data = binding.data as unknown as LoadedData<Volume3DPayload>;
-    const rendering = binding.rendering as Volume3DRendering;
+    const data = this.getVolume3DPayload(binding);
+    const rendering = this.getVolume3DRendering(binding);
 
     if (
-      rendering.renderMode !== 'vtkVolume3d' ||
-      data.renderMode !== 'vtkVolume3d'
+      !data ||
+      data.renderMode !== 'vtkVolume3d' ||
+      rendering.renderMode !== 'vtkVolume3d'
     ) {
       return;
     }
@@ -356,10 +365,16 @@ class VolumeViewport3DV2 extends ViewportV2<
     const actors: ActorEntry[] = [];
 
     for (const binding of this.bindings.values()) {
+      const data = this.getVolume3DPayload(binding);
+
+      if (!data) {
+        continue;
+      }
+
       actors.push(
         ...this.getActorEntriesForRendering(
-          binding.rendering as Volume3DRendering,
-          binding.data as unknown as LoadedData<Volume3DPayload>
+          this.getVolume3DRendering(binding),
+          data
         )
       );
     }
@@ -379,11 +394,15 @@ class VolumeViewport3DV2 extends ViewportV2<
       return this.getActors()[0];
     }
 
-    const rendering = binding.rendering as Volume3DRendering;
+    const data = this.getVolume3DPayload(binding);
+
+    if (!data) {
+      return undefined;
+    }
 
     return this.getActorEntriesForRendering(
-      rendering,
-      binding.data as unknown as LoadedData<Volume3DPayload>
+      this.getVolume3DRendering(binding),
+      data
     )[0];
   }
 
@@ -420,6 +439,10 @@ class VolumeViewport3DV2 extends ViewportV2<
    * Updates cached size state and notifies active render bindings.
    */
   resize(): void {
+    if (this.isDestroyed) {
+      return;
+    }
+
     this.sWidth = this.canvas.width;
     this.sHeight = this.canvas.height;
 
@@ -430,9 +453,17 @@ class VolumeViewport3DV2 extends ViewportV2<
    * Renders active 3D bindings or queues an engine-driven render.
    */
   render(): void {
+    if (this.isDestroyed) {
+      return;
+    }
+
     if (!this.renderBindings()) {
       this.requestRenderingEngineRender();
     }
+  }
+
+  protected override onDestroy(): void {
+    this.primaryDataId = undefined;
   }
 
   protected getCurrentBinding() {
@@ -469,7 +500,35 @@ class VolumeViewport3DV2 extends ViewportV2<
   }
 
   private getDataSet(dataId: string): Volume3DRegisteredDataSet | undefined {
-    return getViewportV2ImageDataSet<Volume3DRegisteredDataSet>(dataId);
+    const dataSet = getViewportV2ImageDataSet(dataId);
+
+    if (!isVolume3DRegisteredDataSet(dataSet)) {
+      return;
+    }
+
+    return dataSet;
+  }
+
+  private getVolume3DPayload(
+    binding: RenderingBinding<Volume3DDataPresentation>
+  ): LoadedData<Volume3DPayload> | undefined {
+    if (!isVolume3DData(binding.data)) {
+      return;
+    }
+
+    return binding.data;
+  }
+
+  private getVolume3DRendering(
+    binding: RenderingBinding<Volume3DDataPresentation>
+  ): Volume3DRendering {
+    if (!isVolume3DRendering(binding.rendering)) {
+      throw new Error(
+        '[VolumeViewport3DV2] Binding render mode is not a supported 3D rendering'
+      );
+    }
+
+    return binding.rendering;
   }
 
   private getActorEntriesForRendering(
@@ -506,5 +565,44 @@ function isVolume3DViewPresentation(
     Boolean(viewPresentation) &&
     typeof viewPresentation === 'object' &&
     'camera' in viewPresentation
+  );
+}
+
+function isVolume3DData(data: LoadedData): data is LoadedData<Volume3DPayload> {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+
+  const payload = data as Record<string, unknown>;
+
+  return (
+    (payload.type === 'image' && payload.renderMode === 'vtkVolume3d') ||
+    (payload.type === 'geometry' && payload.renderMode === 'vtkGeometry3d')
+  );
+}
+
+function isVolume3DRendering(rendering: {
+  renderMode: string;
+}): rendering is Volume3DRendering {
+  return (
+    rendering.renderMode === 'vtkVolume3d' ||
+    rendering.renderMode === 'vtkGeometry3d'
+  );
+}
+
+function isVolume3DRegisteredDataSet(
+  value: unknown
+): value is Volume3DRegisteredDataSet {
+  if (!isViewportV2ImageDataSet(value)) {
+    return false;
+  }
+
+  return (
+    (value.actorUID === undefined || typeof value.actorUID === 'string') &&
+    (value.geometryId === undefined || typeof value.geometryId === 'string') &&
+    (value.volumeId === undefined || typeof value.volumeId === 'string') &&
+    (value.geometryLoadOptions === undefined ||
+      (typeof value.geometryLoadOptions === 'object' &&
+        !Array.isArray(value.geometryLoadOptions)))
   );
 }

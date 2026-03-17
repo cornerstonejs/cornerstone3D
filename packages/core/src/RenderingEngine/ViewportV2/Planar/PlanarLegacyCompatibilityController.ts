@@ -89,16 +89,21 @@ class PlanarLegacyCompatibilityController {
       imageIds,
       initialImageIdIndex: clampedImageIdIndex,
     });
-    this.host.removeBindingsExcept(new Set([dataId]));
+    try {
+      this.host.removeBindingsExcept(new Set([dataId]));
 
-    await this.host.setDataId(dataId, {
-      orientation: this.host.getRequestedOrientation(),
-    });
+      await this.host.setDataId(dataId, {
+        orientation: this.host.getRequestedOrientation(),
+      });
 
-    const resolvedImageId =
-      await this.host.setImageIdIndex(clampedImageIdIndex);
+      const resolvedImageId =
+        await this.host.setImageIdIndex(clampedImageIdIndex);
 
-    return this.host.getCurrentImageId() || resolvedImageId;
+      return this.host.getCurrentImageId() || resolvedImageId;
+    } catch (error) {
+      this.removeDataId(dataId);
+      throw error;
+    }
   }
 
   async setVolumes(
@@ -283,14 +288,27 @@ class PlanarLegacyCompatibilityController {
       return;
     }
 
-    viewportV2DataSetMetadataProvider.remove(dataId);
-    this.properties.delete(dataId);
-    this.defaultProperties.delete(dataId);
+    this.unregisterDataId(dataId);
+  }
 
-    for (const [volumeId, mappedDataId] of this.volumeDataIds.entries()) {
-      if (mappedDataId === dataId) {
-        this.volumeDataIds.delete(volumeId);
+  destroy(): void {
+    let cleanupError: unknown;
+
+    for (const dataId of Array.from(this.managedDataIds)) {
+      try {
+        this.unregisterDataId(dataId);
+      } catch (error) {
+        cleanupError ??= error;
       }
+    }
+
+    this.managedDataIds.clear();
+    this.volumeDataIds.clear();
+    this.properties.clear();
+    this.defaultProperties.clear();
+
+    if (cleanupError !== undefined) {
+      throw cleanupError;
     }
   }
 
@@ -319,89 +337,105 @@ class PlanarLegacyCompatibilityController {
       return;
     }
 
-    const dataIds = volumeInputArray.map((volumeInput) => {
-      const cachedVolume = cache.getVolume(volumeInput.volumeId);
+    const dataIds: string[] = [];
 
-      if (!cachedVolume) {
-        throw new Error(
-          `imageVolume with id: ${volumeInput.volumeId} does not exist, you need to create/allocate the volume first`
-        );
-      }
+    try {
+      for (const volumeInput of volumeInputArray) {
+        const cachedVolume = cache.getVolume(volumeInput.volumeId);
 
-      const dataId = this.getLegacyVolumeDataId(volumeInput.volumeId);
+        if (!cachedVolume) {
+          throw new Error(
+            `imageVolume with id: ${volumeInput.volumeId} does not exist, you need to create/allocate the volume first`
+          );
+        }
 
-      this.registerDataSet(dataId, {
-        imageIds: cachedVolume.imageIds,
-        initialImageIdIndex: this.getInitialVolumeImageIdIndex(
-          cachedVolume.imageIds.length
-        ),
-        volumeId: volumeInput.volumeId,
-      });
-      this.volumeDataIds.set(volumeInput.volumeId, dataId);
+        const dataId = this.getLegacyVolumeDataId(volumeInput.volumeId);
 
-      return dataId;
-    });
-
-    if (replaceExisting) {
-      this.host.removeBindingsExcept(new Set(dataIds));
-    }
-
-    this.host.prepareVolumeCompatibilityCamera();
-
-    await this.host.setDataIds(dataIds, {
-      orientation: this.host.getRequestedOrientation(),
-      renderMode: getShouldUseCPURendering() ? 'cpuVolume' : 'vtkVolume',
-    });
-
-    volumeInputArray.forEach((volumeInput, index) => {
-      const dataId = dataIds[index];
-
-      if (volumeInput.visibility !== undefined) {
-        this.host.setDataPresentation(dataId, {
-          visible: volumeInput.visibility,
-        });
-      }
-
-      if (volumeInput.blendMode !== undefined) {
-        const nextProperties = mergePlanarLegacyProperties(
-          this.properties.get(dataId) || {},
-          { blendMode: volumeInput.blendMode }
-        );
-
-        this.properties.set(dataId, nextProperties);
-        this.host.setDataPresentation(dataId, {
-          blendMode: volumeInput.blendMode,
-        });
-      }
-
-      if (volumeInput.slabThickness !== undefined) {
-        this.host.setDataPresentation(dataId, {
-          slabThickness: volumeInput.slabThickness,
-        });
-      }
-
-      const actor = this.host.getBindingActor(dataId);
-
-      if (actor && volumeInput.callback) {
-        volumeInput.callback({
-          volumeActor: actor as never,
+        this.registerDataSet(dataId, {
+          imageIds: cachedVolume.imageIds,
+          initialImageIdIndex: this.getInitialVolumeImageIdIndex(
+            cachedVolume.imageIds.length
+          ),
           volumeId: volumeInput.volumeId,
         });
-
-        const volumePresentation =
-          this.buildVolumePresentationFromActor(dataId);
-
-        if (volumePresentation) {
-          this.applyVolumePresentation(dataId, volumePresentation);
-        }
+        this.volumeDataIds.set(volumeInput.volumeId, dataId);
+        dataIds.push(dataId);
       }
-    });
 
-    if (!suppressEvents) {
-      triggerEvent(this.host.getElement(), Events.VOLUME_VIEWPORT_NEW_VOLUME, {
-        viewportId: this.host.getViewportId(),
-        volumeActors: this.buildVolumeActorEntries(volumeInputArray, dataIds),
+      if (replaceExisting) {
+        this.host.removeBindingsExcept(new Set(dataIds));
+      }
+
+      this.host.prepareVolumeCompatibilityCamera();
+
+      await this.host.setDataIds(dataIds, {
+        orientation: this.host.getRequestedOrientation(),
+        renderMode: getShouldUseCPURendering() ? 'cpuVolume' : 'vtkVolume',
       });
+
+      volumeInputArray.forEach((volumeInput, index) => {
+        const dataId = dataIds[index];
+
+        if (volumeInput.visibility !== undefined) {
+          this.host.setDataPresentation(dataId, {
+            visible: volumeInput.visibility,
+          });
+        }
+
+        if (volumeInput.blendMode !== undefined) {
+          const nextProperties = mergePlanarLegacyProperties(
+            this.properties.get(dataId) || {},
+            { blendMode: volumeInput.blendMode }
+          );
+
+          this.properties.set(dataId, nextProperties);
+          this.host.setDataPresentation(dataId, {
+            blendMode: volumeInput.blendMode,
+          });
+        }
+
+        if (volumeInput.slabThickness !== undefined) {
+          this.host.setDataPresentation(dataId, {
+            slabThickness: volumeInput.slabThickness,
+          });
+        }
+
+        const actor = this.host.getBindingActor(dataId);
+
+        if (actor && volumeInput.callback) {
+          volumeInput.callback({
+            volumeActor: actor as never,
+            volumeId: volumeInput.volumeId,
+          });
+
+          const volumePresentation =
+            this.buildVolumePresentationFromActor(dataId);
+
+          if (volumePresentation) {
+            this.applyVolumePresentation(dataId, volumePresentation);
+          }
+        }
+      });
+
+      if (!suppressEvents) {
+        triggerEvent(
+          this.host.getElement(),
+          Events.VOLUME_VIEWPORT_NEW_VOLUME,
+          {
+            viewportId: this.host.getViewportId(),
+            volumeActors: this.buildVolumeActorEntries(
+              volumeInputArray,
+              dataIds
+            ),
+          }
+        );
+      }
+    } catch (error) {
+      dataIds.forEach((dataId) => {
+        this.removeDataId(dataId);
+      });
+
+      throw error;
     }
   }
 
@@ -618,6 +652,24 @@ class PlanarLegacyCompatibilityController {
     for (const [volumeId, mappedDataId] of this.volumeDataIds.entries()) {
       if (mappedDataId === dataId) {
         return volumeId;
+      }
+    }
+  }
+
+  private unregisterDataId(dataId: string): void {
+    try {
+      viewportV2DataSetMetadataProvider.remove(dataId);
+    } finally {
+      this.properties.delete(dataId);
+      this.defaultProperties.delete(dataId);
+      this.removeVolumeDataId(dataId);
+    }
+  }
+
+  private removeVolumeDataId(dataId: string): void {
+    for (const [volumeId, mappedDataId] of this.volumeDataIds.entries()) {
+      if (mappedDataId === dataId) {
+        this.volumeDataIds.delete(volumeId);
       }
     }
   }

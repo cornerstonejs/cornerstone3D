@@ -20,6 +20,7 @@ import type {
   LoadedData,
   RenderPathResolver,
 } from '../ViewportArchitectureTypes';
+import type ICamera from '../../../types/ICamera';
 import type { ViewportCameraBase } from '../ViewportCameraTypes';
 
 export type PlanarRenderMode = 'cpu2d' | 'webgl2d' | 'vtkImage' | 'vtkVolume';
@@ -75,7 +76,7 @@ export interface PlanarPresentationProps extends BasePresentationProps {
   invert?: boolean;
 }
 
-export interface PlanarCamera extends ViewportCameraBase<Point3> {
+export interface PlanarCamera extends ViewportCameraBase<Point3>, ICamera {
   imageIdIndex?: number;
   orientation?: PlanarOrientation;
   flipHorizontal?: boolean;

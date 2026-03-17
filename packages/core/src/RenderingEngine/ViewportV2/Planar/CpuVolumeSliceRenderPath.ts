@@ -91,18 +91,49 @@ export class CpuVolumeSliceRenderPath
       requestedCamera: undefined,
       renderCamera: undefined,
       renderingInvalidated: true,
-      removeStreamingSubscriptions: subscribeToVolumeLoadCompletion(
-        payload.volumeId,
-        () => {
+      removeStreamingSubscriptions: (() => {
+        let isActive = true;
+        let pendingAnimationFrameId: number | undefined;
+        const unsubscribe = subscribeToVolumeLoadCompletion(
+          payload.volumeId,
+          () => {
+            if (!isActive) {
+              return;
+            }
+
+            rendering.pendingVolumeLoadCallback = false;
+            rendering.sampledSliceState = undefined;
+            rendering.renderingInvalidated = true;
+            ctx.display.renderNow();
+            if (!isActive) {
+              return;
+            }
+
+            pendingAnimationFrameId = window.requestAnimationFrame(() => {
+              pendingAnimationFrameId = undefined;
+
+              if (!isActive) {
+                return;
+              }
+
+              ctx.display.renderNow();
+            });
+          }
+        );
+
+        return () => {
+          isActive = false;
           rendering.pendingVolumeLoadCallback = false;
           rendering.sampledSliceState = undefined;
-          rendering.renderingInvalidated = true;
-          ctx.display.renderNow();
-          window.requestAnimationFrame(() => {
-            ctx.display.renderNow();
-          });
-        }
-      ),
+
+          if (pendingAnimationFrameId !== undefined) {
+            window.cancelAnimationFrame(pendingAnimationFrameId);
+            pendingAnimationFrameId = undefined;
+          }
+
+          unsubscribe();
+        };
+      })(),
     };
 
     return {
@@ -267,11 +298,11 @@ export class CpuVolumeSliceRenderPath
     const runtime = rendering;
 
     ctx.display.activateRenderMode('cpuVolume');
-    beginCompositePass(ctx);
     ctx.cpu.canvas.style.display = '';
     ctx.cpu.canvas.style.opacity = '1';
 
     if (runtime.dataPresentation?.visible === false) {
+      beginCompositePass(ctx);
       return;
     }
 
@@ -298,6 +329,9 @@ export class CpuVolumeSliceRenderPath
     if (!renderCamera) {
       return;
     }
+
+    beginCompositePass(ctx);
+
     const layerCanvasWasResized = syncLayerCanvasSize(
       runtime.layerCanvas,
       ctx.cpu.canvas
@@ -316,38 +350,41 @@ export class CpuVolumeSliceRenderPath
         dataPresentation: runtime.dataPresentation,
       });
 
-    if (shouldResample) {
-      runtime.sampledSliceState = this.sampler.sampleSliceImage({
-        volume: runtime.imageVolume,
-        width: ctx.cpu.canvas.width,
-        height: ctx.cpu.canvas.height,
-        camera: renderCamera,
-        dataPresentation: runtime.dataPresentation,
-      });
-      runtime.renderingInvalidated = true;
+    const sampledSliceState = shouldResample
+      ? (runtime.sampledSliceState = this.sampler.sampleSliceImage({
+          volume: runtime.imageVolume,
+          width: ctx.cpu.canvas.width,
+          height: ctx.cpu.canvas.height,
+          camera: renderCamera,
+          dataPresentation: runtime.dataPresentation,
+        }))
+      : runtime.sampledSliceState;
+
+    if (!sampledSliceState) {
+      return;
     }
 
-    if (!runtime.sampledSliceState) {
-      return;
+    if (shouldResample) {
+      runtime.renderingInvalidated = true;
     }
 
     runtime.enabledElement = this.sampler.createOrUpdateEnabledElement({
       enabledElement: runtime.enabledElement,
       canvas: runtime.layerCanvas,
-      image: runtime.sampledSliceState.image,
+      image: sampledSliceState.image,
       modality: runtime.imageVolume.metadata?.Modality,
     });
     this.sampler.updateCPUFallbackViewport({
       enabledElement: runtime.enabledElement,
-      sampledSliceState: runtime.sampledSliceState,
+      sampledSliceState,
       camera: renderCamera,
       dataPresentation: runtime.dataPresentation,
       defaultVOIRange: runtime.defaultVOIRange,
     });
     runtime.defaultVOIRange ||= this.sampler.getResolvedVOIRange(
       runtime.dataPresentation?.voiRange,
-      runtime.sampledSliceState.image.minPixelValue ?? 0,
-      runtime.sampledSliceState.image.maxPixelValue ?? 1
+      sampledSliceState.image.minPixelValue ?? 0,
+      sampledSliceState.image.maxPixelValue ?? 1
     );
     drawImageSync(runtime.enabledElement, runtime.renderingInvalidated);
     runtime.renderingInvalidated = false;

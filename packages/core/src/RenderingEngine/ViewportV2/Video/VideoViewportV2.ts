@@ -9,7 +9,10 @@ import {
 import { generateFrameImageId } from '../../../utilities/splitImageIdsBy4DTags';
 import { DefaultVideoDataProvider } from './DefaultVideoDataProvider';
 import { HtmlVideoPath } from './HtmlVideoRenderPath';
-import type { LoadedData } from '../ViewportArchitectureTypes';
+import type {
+  LoadedData,
+  RenderingBinding,
+} from '../ViewportArchitectureTypes';
 import { getViewportV2SourceDataId } from '../viewportV2DataSetAccess';
 import type {
   VideoCamera,
@@ -119,8 +122,14 @@ class VideoViewportV2 extends ViewportV2<
         objectFit: 'contain',
       });
 
-      const videoData =
-        binding.data as unknown as LoadedData<VideoStreamPayload>;
+      const videoData = this.getVideoDataFromBinding(binding);
+
+      if (!videoData) {
+        throw new Error(
+          `[VideoViewportV2] Loaded data for ${dataId} is not a valid video stream`
+        );
+      }
+
       this.camera = createDefaultVideoCamera();
 
       if (videoData.frameRange[0] > 1) {
@@ -440,7 +449,19 @@ class VideoViewportV2 extends ViewportV2<
    * No-op render hook because DOM updates happen eagerly in the render path.
    */
   render(): void {
+    if (this.isDestroyed) {
+      return;
+    }
+
     // DOM updates are applied immediately in updateCamera/updateDataPresentation
+  }
+
+  protected override onDestroy(): void {
+    this.untrackVideoElement();
+  }
+
+  public override dispose(): void {
+    this.destroy();
   }
 
   private getVideoElement(): HTMLVideoElement | undefined {
@@ -467,9 +488,23 @@ class VideoViewportV2 extends ViewportV2<
   }
 
   private getVideoData(): LoadedData<VideoStreamPayload> | undefined {
-    return this.getCurrentBinding()?.data as
-      | LoadedData<VideoStreamPayload>
-      | undefined;
+    const binding = this.getCurrentBinding();
+
+    if (!binding) {
+      return;
+    }
+
+    return this.getVideoDataFromBinding(binding);
+  }
+
+  private getVideoDataFromBinding(
+    binding: RenderingBinding<VideoDataPresentation>
+  ): LoadedData<VideoStreamPayload> | undefined {
+    if (!isVideoStreamData(binding.data)) {
+      return;
+    }
+
+    return binding.data;
   }
 
   private getCurrentVideoLayout() {
@@ -503,15 +538,19 @@ class VideoViewportV2 extends ViewportV2<
       containerHeight,
       intrinsicWidth,
       intrinsicHeight,
-      objectFit: objectFit as VideoProperties['objectFit'],
+      objectFit,
       camera: this.camera,
     });
   }
 
   private getVideoRendering(): VideoElementRendering | undefined {
-    return this.getFirstBinding()?.rendering as
-      | VideoElementRendering
-      | undefined;
+    const binding = this.getFirstBinding();
+
+    if (!binding || !isVideoElementRendering(binding.rendering)) {
+      return;
+    }
+
+    return binding.rendering;
   }
 
   private syncCameraCurrentTimeFromElement(): void {
@@ -568,3 +607,29 @@ class VideoViewportV2 extends ViewportV2<
 }
 
 export default VideoViewportV2;
+
+function isVideoStreamData(
+  data: LoadedData
+): data is LoadedData<VideoStreamPayload> {
+  if (typeof data !== 'object' || data === null || data.type !== 'video') {
+    return false;
+  }
+
+  const payload = data as Record<string, unknown>;
+
+  return (
+    typeof payload.renderedUrl === 'string' &&
+    typeof payload.fps === 'number' &&
+    typeof payload.numberOfFrames === 'number' &&
+    Array.isArray(payload.frameRange) &&
+    payload.frameRange.length === 2 &&
+    typeof payload.frameRange[0] === 'number' &&
+    typeof payload.frameRange[1] === 'number'
+  );
+}
+
+function isVideoElementRendering(rendering: {
+  renderMode: string;
+}): rendering is VideoElementRendering {
+  return rendering.renderMode === 'video2d';
+}

@@ -19,6 +19,9 @@ export class DefaultRenderPathResolver implements RenderPathResolver {
     );
 
     if (existingPath) {
+      console.debug(
+        `[DefaultRenderPathResolver] Duplicate render path registration ignored for "${path.id}"`
+      );
       return;
     }
 

@@ -238,6 +238,15 @@ class Viewport {
     });
   };
 
+  public dispose(): void {
+    // Legacy viewports do not own extra teardown beyond the rendering engine
+    // reset path and widget cleanup above.
+  }
+
+  public destroy(): void {
+    this.dispose();
+  }
+
   /**
    * Indicate that the image has been rendered.
    * This will set the viewportStatus to RENDERED if there is image data

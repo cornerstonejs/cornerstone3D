@@ -1,45 +1,62 @@
 import * as metaData from '../../metaData';
 import viewportV2DataSetMetadataProvider from '../../utilities/viewportV2DataSetMetadataProvider';
 
-export function getViewportV2RegisteredData<T = unknown>(
-  dataId: string
-): T | undefined {
+export interface ViewportV2ImageDataSet {
+  imageIds: string[];
+  [key: string]: unknown;
+}
+
+export function getViewportV2RegisteredData(dataId: string): unknown {
   return metaData.get(
     viewportV2DataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
     dataId
-  ) as T | undefined;
+  );
 }
 
-export function getViewportV2ImageDataSet<T extends { imageIds?: string[] }>(
+export function getViewportV2ImageDataSet(
   dataId: string
-): T | undefined {
-  const registered = getViewportV2RegisteredData<unknown>(dataId);
+): ViewportV2ImageDataSet | undefined {
+  const registered = getViewportV2RegisteredData(dataId);
 
-  if (Array.isArray(registered)) {
+  if (isStringArray(registered)) {
     return {
       imageIds: registered,
-    } as T;
+    };
   }
 
-  const candidate = registered as T | undefined;
-
-  if (!candidate || typeof candidate !== 'object') {
+  if (!isViewportV2ImageDataSet(registered)) {
     return;
   }
 
-  return candidate;
+  return registered;
 }
 
 export function getViewportV2SourceDataId(dataId: string): string {
-  const registered = getViewportV2RegisteredData<unknown>(dataId);
+  const registered = getViewportV2RegisteredData(dataId);
 
   if (typeof registered === 'string') {
     return registered;
   }
 
-  if (Array.isArray(registered) && registered[0]) {
+  if (isStringArray(registered) && registered[0]) {
     return registered[0];
   }
 
   return dataId;
+}
+
+export function isViewportV2ImageDataSet(
+  value: unknown
+): value is ViewportV2ImageDataSet {
+  return isRecord(value) && isStringArray(value.imageIds);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return (
+    Array.isArray(value) && value.every((item) => typeof item === 'string')
+  );
 }
