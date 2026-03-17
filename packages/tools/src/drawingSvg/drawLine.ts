@@ -48,7 +48,7 @@ export default function drawLine(
   const svgNodeHash = _getHash(annotationUID, 'line', lineUID);
   const existingLine = svgDrawingHelper.getSvgNode(svgNodeHash);
   const layerId = svgDrawingHelper.svgLayerElement.id;
-  const dropShadowStyle = shadow ? `filter:url(#shadow-${layerId});` : '';
+  const dropShadowStyle = shadow ? `url(#shadow-${layerId});` : '';
 
   const attributes = {
     x1: `${start[0]}`,
@@ -56,7 +56,7 @@ export default function drawLine(
     x2: `${end[0]}`,
     y2: `${end[1]}`,
     stroke: textBoxLinkLineColor || color,
-    style: dropShadowStyle,
+    filter: dropShadowStyle,
     'stroke-width': strokeWidth,
     'stroke-dasharray': lineDash,
     'marker-start': markerStartId ? `url(#${markerStartId})` : '',
