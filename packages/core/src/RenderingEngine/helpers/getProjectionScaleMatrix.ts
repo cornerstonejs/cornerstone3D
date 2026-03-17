@@ -4,8 +4,6 @@ import { mat4 } from 'gl-matrix';
  * Computes the projection scaling matrix used for canvas stretch.
  * The scaling is applied along the canvas axes.
  *
- * @param viewUp - Camera viewUp vector in patient space
- * @param viewPlaneNormal - Camera viewPlaneNormal vector in patient space
  * @param aspectRatio - [scaleX, scaleY], where each value controls stretching along the corresponding canvas axis
  * @returns Projection scaling matrix for canvas stretch
  */

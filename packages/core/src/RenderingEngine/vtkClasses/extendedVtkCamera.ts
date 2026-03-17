@@ -37,8 +37,11 @@ declare module '@kitware/vtk.js/Rendering/Core/Camera' {
     getAspectRatio(): [x: number, y: number];
 
     /**
-     * Set the aspectRatio of the viewport
-     * @param aspectRatio - aspectRatio of the viewport in x and y axis
+     * Sets the viewport aspect ratio used for canvas-space stretching.
+     * The aspect ratio is applied along the canvas X and Y axes,
+     * independent of the image orientation.
+     *
+     * @param aspectRatio - [scaleX, scaleY] stretch factors applied along the canvas X and Y axes
      */
     setAspectRatio(aspectRatio: [x: number, y: number]): boolean;
   }
