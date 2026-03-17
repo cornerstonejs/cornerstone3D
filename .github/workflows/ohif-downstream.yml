@@ -14,8 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 180
     env:
-      BUN_VERSION: 1.3.9
-      NODE_VERSION: 24
+      BUN_VERSION: 1.2.23
+      NODE_VERSION: 20
       OHIF_REF: feat/use-beta-5.0-cs3d
       OHIF_DIR: ohif
     steps:
