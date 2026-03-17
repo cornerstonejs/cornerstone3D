@@ -1,12 +1,22 @@
 import LookupTable from './lookupTable';
 import CPU_COLORMAPS from '../../../../constants/cpuColormaps';
 import type {
+  ColormapPublic,
+  ColormapRegistration,
   CPUFallbackColormap,
   CPUFallbackColormapData,
   Point4,
 } from '../../../../types';
+import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
+import { resolveColormap as resolveSharedColormap } from '../../../../utilities/colormap';
 
 const COLOR_TRANSPARENT: Point4 = [0, 0, 0, 0];
+const CPU_FALLBACK_GRAYSCALE_NAMES = new Set([
+  'gray',
+  'grey',
+  'grayscale',
+  'greyscale',
+]);
 
 /**
  *  Generate linearly spaced vectors
@@ -215,6 +225,36 @@ export function getColormapsList() {
   return colormaps;
 }
 
+export function resolveCPUFallbackColormap(
+  colormap?: string | ColormapPublic,
+  fallbackColormap?: CPUFallbackColormap
+): CPUFallbackColormap | undefined {
+  const name =
+    typeof colormap === 'string' ? colormap.trim() : colormap?.name?.trim();
+
+  if (!name) {
+    return fallbackColormap;
+  }
+
+  const normalizedName = name.toLowerCase();
+
+  // Keep grayscale on the normal CPU image renderer instead of forcing it
+  // through the pseudocolor LUT pipeline.
+  if (CPU_FALLBACK_GRAYSCALE_NAMES.has(normalizedName)) {
+    return undefined;
+  }
+
+  const registeredColormap = resolveSharedColormap(name);
+
+  if (registeredColormap) {
+    return getOrCreateCPUFallbackColormap(registeredColormap, name);
+  }
+
+  const colormapId = findCPUFallbackColormapId(name);
+
+  return colormapId ? getColormap(colormapId) : undefined;
+}
+
 /**
  * Return a colorMap object with the provided id and colormapData
  * if the Id matches existent colorMap objects (check colormapsData) the colormapData is ignored.
@@ -340,4 +380,59 @@ export function getColormap(
   };
 
   return cpuFallbackColormap;
+}
+
+function getOrCreateCPUFallbackColormap(
+  colormap: ColormapRegistration,
+  originalName: string
+): CPUFallbackColormap {
+  const id = `vtk:${(colormap.name || colormap.Name || originalName)
+    .trim()
+    .toLowerCase()}`;
+
+  return getColormap(id, createCPUFallbackColormapData(colormap, originalName));
+}
+
+function createCPUFallbackColormapData(
+  colormap: ColormapRegistration,
+  originalName: string
+): CPUFallbackColormapData {
+  const transferFunction = vtkColorTransferFunction.newInstance();
+
+  transferFunction.applyColorMap(colormap);
+
+  const [lower, upper] = transferFunction.getRange();
+  const colors = Array.from({ length: 256 }, (_unused, index) => {
+    const t = index / 255;
+    const x = lower + t * (upper - lower);
+    const rgb: number[] = [];
+
+    transferFunction.getColor(x, rgb);
+
+    return [
+      Math.round(rgb[0] * 255),
+      Math.round(rgb[1] * 255),
+      Math.round(rgb[2] * 255),
+      255,
+    ] as Point4;
+  });
+
+  return {
+    colors,
+    name: colormap.Name || originalName,
+    numColors: colors.length,
+  };
+}
+
+function findCPUFallbackColormapId(name: string): string | undefined {
+  const normalizedName = name.trim().toLowerCase();
+
+  return Object.keys(CPU_COLORMAPS).find((id) => {
+    const colormap = CPU_COLORMAPS[id];
+
+    return (
+      id.toLowerCase() === normalizedName ||
+      colormap.name?.trim().toLowerCase() === normalizedName
+    );
+  });
 }

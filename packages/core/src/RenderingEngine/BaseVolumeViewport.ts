@@ -1,6 +1,5 @@
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
-import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 
 import { vec2, vec3 } from 'gl-matrix';
@@ -293,13 +292,7 @@ abstract class BaseVolumeViewport extends Viewport {
     const { volumeActor } = applicableVolumeActorInfo;
 
     const cfun = vtkColorTransferFunction.newInstance();
-    let colormapObj = colormapUtils.getColormap(colormap.name);
-
-    const { name } = colormap;
-
-    if (!colormapObj) {
-      colormapObj = vtkColorMaps.getPresetByName(name);
-    }
+    const colormapObj = colormapUtils.resolveColormap(colormap.name);
 
     if (!colormapObj) {
       throw new Error(`Colormap ${colormap} not found`);

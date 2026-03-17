@@ -1,6 +1,7 @@
 import { vec3 } from 'gl-matrix';
 import { EPSILON } from '../../../constants';
 import { InterpolationType, VOILUTFunctionType } from '../../../enums';
+import { resolveCPUFallbackColormap } from '../../helpers/cpuFallback/colors';
 import type {
   CPUFallbackEnabledElement,
   ICamera,
@@ -12,7 +13,6 @@ import type {
   VOIRange,
 } from '../../../types';
 import VoxelManager from '../../../utilities/VoxelManager';
-import { getColormap as getCPUFallbackColormap } from '../../helpers/cpuFallback/colors';
 import getDefaultViewport from '../../helpers/cpuFallback/rendering/getDefaultViewport';
 import getSpacingInNormalDirection from '../../../utilities/getSpacingInNormalDirection';
 import type { PlanarDataPresentation } from './PlanarViewportV2Types';
@@ -247,6 +247,10 @@ export default class PlanarCPUVolumeSampler {
     if (enabledElement) {
       enabledElement.canvas = canvas;
       enabledElement.image = image;
+      // Orthogonal CPU volume slices can change dimensions and pixel spacing
+      // when the camera orientation changes, so the fallback viewport geometry
+      // must be rebuilt to keep displayedArea in sync with the sampled image.
+      enabledElement.viewport = getDefaultViewport(canvas, image, modality);
       return enabledElement;
     }
 
@@ -295,10 +299,10 @@ export default class PlanarCPUVolumeSampler {
       (getDefaultViewport(enabledElement.canvas, sampledSliceState.image)
         .scale ?? 1) * Math.max(zoom ?? 1, 0.001);
     viewport.parallelScale = camera.parallelScale;
-    viewport.colormap =
-      dataPresentation?.colormap?.name !== undefined
-        ? getCPUFallbackColormap(dataPresentation.colormap.name)
-        : sampledSliceState.image.colormap;
+    viewport.colormap = resolveCPUFallbackColormap(
+      dataPresentation?.colormap,
+      sampledSliceState.image.colormap
+    );
     viewport.invert = dataPresentation?.invert ?? false;
     viewport.pixelReplication =
       dataPresentation?.interpolationType === InterpolationType.NEAREST;

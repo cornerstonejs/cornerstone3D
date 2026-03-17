@@ -1,7 +1,6 @@
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
-import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import { InterpolationType } from '../../enums';
@@ -10,7 +9,7 @@ import createLinearRGBTransferFunction from '../../utilities/createLinearRGBTran
 import getVOIRangeFromWindowLevel from '../../utilities/getVOIRangeFromWindowLevel';
 import { getImageDataMetadata } from '../../utilities/getImageDataMetadata';
 import invertRgbTransferFunction from '../../utilities/invertRgbTransferFunction';
-import { getColormap } from '../../utilities/colormap';
+import { resolveColormap } from '../../utilities/colormap';
 import { updateVTKImageDataWithCornerstoneImage } from '../../utilities/updateVTKImageDataWithCornerstoneImage';
 
 export interface PlanarCameraState {
@@ -177,7 +176,7 @@ function createColormapTransferFunction(
 ): vtkColorTransferFunction {
   const colormapName = colormap.name;
   const colormapDefinition = colormapName
-    ? getColormap(colormapName) || vtkColorMaps.getPresetByName(colormapName)
+    ? resolveColormap(colormapName)
     : undefined;
 
   if (!colormapDefinition) {

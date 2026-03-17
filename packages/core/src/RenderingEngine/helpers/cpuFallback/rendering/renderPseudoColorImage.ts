@@ -7,7 +7,11 @@ import doesImageNeedToBeRendered from './doesImageNeedToBeRendered';
 import storedPixelDataToCanvasImageDataPseudocolorLUT from './storedPixelDataToCanvasImageDataPseudocolorLUT';
 import storedPixelDataToCanvasImageDataPseudocolorLUTPET from './storedPixelDataToCanvasImageDataPseudocolorLUTPET';
 import * as colors from '../colors/index';
-import type { IImage, CPUFallbackEnabledElement } from '../../../../types';
+import type {
+  ColormapPublic,
+  IImage,
+  CPUFallbackEnabledElement,
+} from '../../../../types';
 import { clamp } from '../../../../utilities/clamp';
 import { createCanvas } from '../../getOrCreateCanvas';
 
@@ -45,7 +49,13 @@ function getRenderCanvas(
     );
   }
   if (colormap && typeof colormap === 'string') {
-    colormap = colors.getColormap(colormap);
+    colormap = colors.resolveCPUFallbackColormap(colormap);
+  } else if (
+    colormap &&
+    typeof colormap === 'object' &&
+    typeof colormap.getId !== 'function'
+  ) {
+    colormap = colors.resolveCPUFallbackColormap(colormap as ColormapPublic);
   }
 
   if (!colormap) {

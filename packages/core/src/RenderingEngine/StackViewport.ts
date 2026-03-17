@@ -2,7 +2,6 @@ import type { vtkImageData as vtkImageDataType } from '@kitware/vtk.js/Common/Da
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
-import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import { mat4, vec2, vec3 } from 'gl-matrix';
@@ -61,6 +60,7 @@ import getVOIRangeFromWindowLevel from '../utilities/getVOIRangeFromWindowLevel'
 
 import Viewport from './Viewport';
 import drawImageSync from './helpers/cpuFallback/drawImageSync';
+import { resolveCPUFallbackColormap } from './helpers/cpuFallback/colors';
 import { getImagePlaneModule } from '../utilities/buildMetadata';
 import { createEmptyVTKImageData } from './helpers/planarImageRendering';
 
@@ -3442,11 +3442,18 @@ class StackViewport extends Viewport {
     this.render();
   }
 
-  private setColormapCPU(colormapData: CPUFallbackColormapData) {
+  private setColormapCPU(
+    colormapData: CPUFallbackColormapData | ColormapPublic
+  ) {
     this.colormap = colormapData;
-    const colormap = colormapUtils.getColormap(colormapData.name);
+    const colormap = resolveCPUFallbackColormap(colormapData);
 
-    this._cpuFallbackEnabledElement.viewport.colormap = colormap;
+    if (colormap) {
+      this._cpuFallbackEnabledElement.viewport.colormap = colormap;
+    } else {
+      delete this._cpuFallbackEnabledElement.viewport.colormap;
+    }
+
     this._cpuFallbackEnabledElement.renderingTools = {};
 
     this.fillWithBackgroundColor();
@@ -3466,10 +3473,7 @@ class StackViewport extends Viewport {
     const actor = ActorEntry.actor as ImageActor;
     const actorProp = actor.getProperty();
     const rgbTransferFunction = actorProp.getRGBTransferFunction();
-
-    const colormapObj =
-      colormapUtils.getColormap(colormap.name) ||
-      vtkColorMaps.getPresetByName(colormap.name);
+    const colormapObj = colormapUtils.resolveColormap(colormap.name);
 
     if (!rgbTransferFunction) {
       const cfun = vtkColorTransferFunction.newInstance();

@@ -1,10 +1,10 @@
 import { vec3 } from 'gl-matrix';
-import { getColormap as getCPUFallbackColormap } from '../../helpers/cpuFallback/colors';
 import calculateTransform from '../../helpers/cpuFallback/rendering/calculateTransform';
 import getDefaultViewport from '../../helpers/cpuFallback/rendering/getDefaultViewport';
 import { getDefaultImageVOIRange } from '../../helpers/planarImageRendering';
 import resizeEnabledElement from '../../helpers/cpuFallback/rendering/resize';
 import drawImageSync from '../../helpers/cpuFallback/drawImageSync';
+import { resolveCPUFallbackColormap } from '../../helpers/cpuFallback/colors';
 import {
   InterpolationType,
   MetadataModules,
@@ -389,10 +389,10 @@ function applyDataPresentation(
   canvas.style.display = props?.visible === false ? 'none' : '';
   canvas.style.opacity = String(props?.opacity ?? 1);
 
-  viewport.colormap =
-    props?.colormap?.name !== undefined
-      ? getCPUFallbackColormap(props.colormap.name)
-      : enabledElement.image?.colormap;
+  viewport.colormap = resolveCPUFallbackColormap(
+    props?.colormap,
+    enabledElement.image?.colormap
+  );
   viewport.invert = props?.invert ?? false;
 
   if (voiRange) {
