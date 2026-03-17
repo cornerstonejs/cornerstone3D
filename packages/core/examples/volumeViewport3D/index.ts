@@ -2,152 +2,134 @@ import type { Types } from '@cornerstonejs/core';
 import {
   CONSTANTS,
   Enums,
+  getRenderingEngine,
   RenderingEngine,
-  utilities,
-  VolumeViewport3DV2,
+  setVolumesForViewports,
+  volumeLoader,
 } from '@cornerstonejs/core';
-import {
-  addTool,
-  Enums as csToolsEnums,
-  PanTool,
-  ToolGroupManager,
-  TrackballRotateTool,
-  ZoomTool,
-} from '@cornerstonejs/tools';
+import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   addButtonToToolbar,
   addDropdownToToolbar,
+  addManipulationBindings,
   createImageIdsAndCacheMetaData,
   initDemo,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
 
+// This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
-const volumeName = 'CT_VOLUME_ID';
-const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
-const volumeId = `${volumeLoaderScheme}:${volumeName}`;
-const volumeDataId = 'ct-volume-3d-v2';
-const renderingEngineId = 'volumeViewport3dV2RenderingEngine';
-const viewportId = '3D_VIEWPORT_V2';
-const toolGroupId = 'VOLUME_3D_V2_TOOL_GROUP';
-const volumeViewportType = Enums.ViewportType?.VOLUME_3D_V2 || 'volume3dV2';
+const { ToolGroupManager, Enums: csToolsEnums } = cornerstoneTools;
+
+const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
 
-let viewport: VolumeViewport3DV2 | undefined;
+// Define a unique id for the volume
+let renderingEngine;
+const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
+const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
+const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
+const renderingEngineId = 'myRenderingEngine';
+const viewportId = '3D_VIEWPORT';
 
+// ======== Set up page ======== //
 setTitleAndDescription(
-  '3D Volume Rendering With ViewportV2',
-  'This example uses the dedicated 3D ViewportV2 path for GPU volume rendering.'
+  '3D Volume Rendering',
+  'Here we demonstrate how to 3D render a volume.'
 );
 
 const size = '500px';
 const content = document.getElementById('content');
-
-if (!content) {
-  throw new Error('Missing #content container');
-}
-
 const viewportGrid = document.createElement('div');
+
+viewportGrid.style.display = 'flex';
 viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
 
-const element = document.createElement('div');
-element.oncontextmenu = () => false;
-element.style.width = size;
-element.style.height = size;
+const element1 = document.createElement('div');
+element1.oncontextmenu = () => false;
 
-viewportGrid.appendChild(element);
+element1.style.width = size;
+element1.style.height = size;
+
+viewportGrid.appendChild(element1);
+
 content.appendChild(viewportGrid);
 
 const instructions = document.createElement('p');
 instructions.innerText =
-  'Use the toolbar to change the preset and sampling distance. Interaction tools: left-drag rotates, middle-drag pans, and right-drag or mouse wheel zooms.';
+  'Click the image to rotate it.  Select the preset and sampling distance from the drop downs';
+
 content.append(instructions);
 
 addButtonToToolbar({
   title: 'Apply random rotation',
   onClick: () => {
-    if (!viewport) {
-      return;
-    }
+    // Get the rendering engine
+    const renderingEngine = getRenderingEngine(renderingEngineId);
 
-    const vtkCamera = viewport.getRenderer().getActiveCamera();
-    vtkCamera.azimuth(Math.random() * 360);
-    vtkCamera.elevation((Math.random() - 0.5) * 90);
-    viewport.getRenderer().resetCameraClippingRange();
-    viewport.setCamera(viewport.getCamera());
+    // Get the volume viewport
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IVolumeViewport;
+
+    // Apply the rotation to the camera of the viewport
+    viewport.setViewPresentation({ rotation: Math.random() * 360 });
+    viewport.render();
   },
 });
-
 addDropdownToToolbar({
   options: {
     values: CONSTANTS.VIEWPORT_PRESETS.map((preset) => preset.name),
     defaultValue: 'CT-Bone',
   },
   onSelectedValueChange: (presetName) => {
-    applyPreset(presetName as string);
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    const viewport = renderingEngine.getViewport(viewportId);
+    viewport.setProperties({ preset: presetName as string });
+    viewport.render();
   },
 });
 
 addDropdownToToolbar({
   options: {
-    values: Array.from({ length: 16 }, (_, i) => i + 1),
+    values: Array.from({ length: 16 }, (_, i) => i + 1), // [1, 2, ..., 16]
     defaultValue: 1,
   },
   onSelectedValueChange: (sampleDistanceMultiplier) => {
-    viewport?.setDataPresentation(volumeDataId, {
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    const viewport = renderingEngine.getViewport(viewportId);
+    viewport.setProperties({
       sampleDistanceMultiplier: Number(sampleDistanceMultiplier),
     });
+    viewport.render();
   },
 });
 
-function applyPreset(presetName: string): void {
-  if (!viewport) {
-    return;
-  }
+// ============================= //
 
-  const preset = CONSTANTS.VIEWPORT_PRESETS.find(
-    (item) => item.name === presetName
-  );
-  const volumeActor = viewport.getDefaultActor()?.actor as
-    | Types.VolumeActor
-    | undefined;
-
-  if (!preset || !volumeActor) {
-    return;
-  }
-
-  utilities.applyPreset(volumeActor, preset);
-  viewport.render();
-}
-
+/**
+ * Runs the demo
+ */
 async function run() {
+  // Init Cornerstone and related libraries
   await initDemo();
-  addTool(PanTool);
-  addTool(TrackballRotateTool);
-  addTool(ZoomTool);
 
+  const toolGroupId = 'TOOL_GROUP_ID';
+
+  // Define a tool group, which defines how mouse events map to tool commands for
+  // Any viewport using the group
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
-  toolGroup.addTool(PanTool.toolName);
-  toolGroup.addTool(TrackballRotateTool.toolName);
-  toolGroup.addTool(ZoomTool.toolName);
-  toolGroup.setToolActive(PanTool.toolName, {
-    bindings: [{ mouseButton: MouseBindings.Auxiliary }],
-  });
-  toolGroup.setToolActive(TrackballRotateTool.toolName, {
-    bindings: [{ mouseButton: MouseBindings.Primary }],
-  });
-  toolGroup.setToolActive(ZoomTool.toolName, {
-    bindings: [
-      { mouseButton: MouseBindings.Secondary },
-      { mouseButton: MouseBindings.Wheel },
-    ],
+  // Add the tools to the tool group and specify which volume they are pointing at
+  addManipulationBindings(toolGroup, {
+    is3DViewport: true,
   });
 
+  // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.871108593056125491804754960339',
@@ -156,31 +138,47 @@ async function run() {
     wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
-  const renderingEngine = new RenderingEngine(renderingEngineId);
-  renderingEngine.enableElement({
-    viewportId,
-    type: volumeViewportType,
-    element,
-    defaultOptions: {
-      background: CONSTANTS.BACKGROUND_COLORS.slicer3D as Types.Point3,
-      orientation: Enums.OrientationAxis.CORONAL,
+  // Instantiate a rendering engine
+  renderingEngine = new RenderingEngine(renderingEngineId);
+
+  // Create the viewports
+
+  const viewportInputArray = [
+    {
+      viewportId: viewportId,
+      type: ViewportType.VOLUME_3D,
+      element: element1,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.CORONAL,
+        background: CONSTANTS.BACKGROUND_COLORS.slicer3D,
+      },
     },
-  });
+  ];
 
-  viewport = renderingEngine.getViewport(viewportId) as VolumeViewport3DV2;
-  toolGroup.addViewport(viewportId, renderingEngine.id);
+  renderingEngine.setViewports(viewportInputArray);
 
-  utilities.viewportV2DataSetMetadataProvider.add(volumeDataId, {
+  // Set the tool group on the viewports
+  toolGroup.addViewport(viewportId, renderingEngineId);
+
+  // Define a volume in memory
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
-    volumeId,
   });
 
-  await viewport.setDataIds([volumeDataId]);
-  viewport.setDataPresentation(volumeDataId, {
-    sampleDistanceMultiplier: 1,
+  // Set the volume to load
+  volume.load();
+  viewport = renderingEngine.getViewport(viewportId);
+
+  await setVolumesForViewports(
+    renderingEngine,
+    [{ volumeId }],
+    [viewportId]
+  ).then(() => {
+    viewport.setProperties({
+      preset: 'CT-Bone',
+    });
+    viewport.render();
   });
-  applyPreset('CT-Bone');
-  viewport.render();
 }
 
 run();

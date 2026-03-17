@@ -3,10 +3,8 @@ import {
   RenderingEngine,
   Enums,
   init as csRenderInit,
-  eventTarget,
   geometryLoader,
-  utilities,
-  VolumeViewport3DV2,
+  eventTarget,
 } from '@cornerstonejs/core';
 import { setTitleAndDescription } from '../../../../utils/demo/helpers';
 import { init as csToolsInit } from '@cornerstonejs/tools';
@@ -38,7 +36,6 @@ const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
 
 const renderingEngineId = 'myRenderingEngine';
-const volumeViewportType = Enums.ViewportType?.VOLUME_3D_V2 || 'volume3dV2';
 const viewportId1 = 'POLYDATA_1';
 const viewportId2 = 'POLYDATA_2';
 const viewportId3 = 'POLYDATA_3';
@@ -62,57 +59,6 @@ const element1 = document.createElement('div');
 const element2 = document.createElement('div');
 const element3 = document.createElement('div');
 const element4 = document.createElement('div');
-
-const meshViewports = [
-  {
-    viewportId: viewportId1,
-    dataId: 'mesh-loader-data-1',
-    element: element1,
-    background: <Types.RGB>[0.2, 0, 0.2],
-    geometryId:
-      'mesh:https://data.kitware.com/api/v1/file/5afd92e18d777f15ebe1ad73/download',
-    geometryData: {
-      id: 'mesh1',
-      format: Enums.MeshType.PLY,
-    } as Types.MeshData,
-  },
-  {
-    viewportId: viewportId2,
-    dataId: 'mesh-loader-data-2',
-    element: element2,
-    background: <Types.RGB>[0.2, 0.2, 0],
-    geometryId:
-      'mesh:https://data.kitware.com/api/v1/file/5afd93238d777f15ebe1b113/download',
-    geometryData: {
-      id: 'mesh2',
-      format: Enums.MeshType.STL,
-    } as Types.MeshData,
-  },
-  {
-    viewportId: viewportId3,
-    dataId: 'mesh-loader-data-3',
-    element: element3,
-    background: <Types.RGB>[0.2, 0.2, 0.2],
-    geometryId:
-      'mesh:https://data.kitware.com/api/v1/file/5c3c7daf8d777f072b02eaae/download',
-    geometryData: {
-      id: 'mesh3',
-      format: Enums.MeshType.OBJ,
-    } as Types.MeshData,
-  },
-  {
-    viewportId: viewportId4,
-    dataId: 'mesh-loader-data-4',
-    element: element4,
-    background: <Types.RGB>[0.4, 0.4, 0.4],
-    geometryId:
-      'mesh:https://data.kitware.com/api/v1/file/59de9de58d777f31ac641dc6/download',
-    geometryData: {
-      id: 'mesh4',
-      format: Enums.MeshType.VTP,
-    } as Types.MeshData,
-  },
-] as const;
 
 element1.style.width = width;
 element1.style.height = height;
@@ -208,49 +154,133 @@ async function run() {
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create the viewports
-  const viewportInputArray = meshViewports.map(
-    ({ viewportId, element, background }) => ({
-      viewportId,
-      type: volumeViewportType,
-      element,
+  const viewportInputArray = [
+    {
+      viewportId: viewportId1,
+      type: ViewportType.VOLUME_3D,
+      element: element1,
       defaultOptions: {
-        background,
+        background: <Types.RGB>[0.2, 0, 0.2],
       },
-    })
-  );
+    },
+    {
+      viewportId: viewportId2,
+      type: ViewportType.VOLUME_3D,
+      element: element2,
+      defaultOptions: {
+        background: <Types.RGB>[0.2, 0.2, 0],
+      },
+    },
+    {
+      viewportId: viewportId3,
+      type: ViewportType.VOLUME_3D,
+      element: element3,
+      defaultOptions: {
+        background: <Types.RGB>[0.2, 0.2, 0.2],
+      },
+    },
+    {
+      viewportId: viewportId4,
+      type: ViewportType.VOLUME_3D,
+      element: element4,
+      defaultOptions: {
+        background: <Types.RGB>[0.4, 0.4, 0.4],
+      },
+    },
+  ];
 
   renderingEngine.setViewports(viewportInputArray);
 
   // Set the tool group on the viewport
-  meshViewports.forEach(({ viewportId }) => {
-    toolGroup.addViewport(viewportId, renderingEngineId);
-  });
+  toolGroup.addViewport(viewportId1, renderingEngineId);
+  toolGroup.addViewport(viewportId2, renderingEngineId);
+  toolGroup.addViewport(viewportId3, renderingEngineId);
+  toolGroup.addViewport(viewportId4, renderingEngineId);
 
   eventTarget.addEventListener(Enums.Events.GEOMETRY_LOADED, (e) => {
     console.log('Geometry Loaded', e);
   });
 
-  meshViewports.forEach(({ dataId, geometryData, geometryId }) => {
-    utilities.viewportV2DataSetMetadataProvider.add(dataId, {
-      geometryId,
-      geometryLoadOptions: {
-        type: Enums.GeometryType.MESH,
-        geometryData,
-      },
-    });
-  });
-
-  await Promise.all(
-    meshViewports.map(async ({ dataId, viewportId }) => {
-      const viewport = renderingEngine.getViewport(
-        viewportId
-      ) as VolumeViewport3DV2;
-
-      await viewport.setDataId(dataId, { renderMode: 'vtkGeometry3d' });
-      viewport.resetCamera();
-      viewport.render();
-    })
+  const mesh1 = await geometryLoader.loadAndCacheGeometry(
+    'mesh:https://data.kitware.com/api/v1/file/5afd92e18d777f15ebe1ad73/download',
+    {
+      type: Enums.GeometryType.MESH,
+      geometryData: {
+        id: 'mesh1',
+        format: Enums.MeshType.PLY,
+      } as Types.MeshData,
+    }
   );
+
+  const viewport1 = <Types.IVolumeViewport>(
+    renderingEngine.getViewport(viewportId1)
+  );
+  viewport1.setActors([
+    { uid: mesh1.id, actor: (mesh1.data as Types.IMesh).defaultActor },
+  ]);
+
+  const mesh2 = await geometryLoader.loadAndCacheGeometry(
+    'mesh:https://data.kitware.com/api/v1/file/5afd93238d777f15ebe1b113/download',
+    {
+      type: Enums.GeometryType.MESH,
+      geometryData: {
+        id: 'mesh2',
+        format: Enums.MeshType.STL,
+      } as Types.MeshData,
+    }
+  );
+
+  const viewport2 = <Types.IVolumeViewport>(
+    renderingEngine.getViewport(viewportId2)
+  );
+
+  viewport2.setActors([
+    { uid: mesh2.id, actor: (mesh2.data as Types.IMesh).defaultActor },
+  ]);
+  viewport2.resetCamera();
+  viewport2.render();
+
+  const mesh3 = await geometryLoader.loadAndCacheGeometry(
+    'mesh:https://data.kitware.com/api/v1/file/5c3c7daf8d777f072b02eaae/download',
+    {
+      type: Enums.GeometryType.MESH,
+      geometryData: {
+        id: 'mesh3',
+        format: Enums.MeshType.OBJ,
+      } as Types.MeshData,
+    }
+  );
+
+  const viewport3 = <Types.IVolumeViewport>(
+    renderingEngine.getViewport(viewportId3)
+  );
+
+  viewport3.setActors([
+    { uid: mesh3.id, actor: (mesh3.data as Types.IMesh).defaultActor },
+  ]);
+  viewport3.resetCamera();
+  viewport3.render();
+
+  const mesh4 = await geometryLoader.loadAndCacheGeometry(
+    'mesh:https://data.kitware.com/api/v1/file/59de9de58d777f31ac641dc6/download',
+    {
+      type: Enums.GeometryType.MESH,
+      geometryData: {
+        id: 'mesh4',
+        format: Enums.MeshType.VTP,
+      } as Types.MeshData,
+    }
+  );
+
+  const viewport4 = <Types.IVolumeViewport>(
+    renderingEngine.getViewport(viewportId4)
+  );
+
+  viewport4.setActors([
+    { uid: mesh4.id, actor: (mesh4.data as Types.IMesh).defaultActor },
+  ]);
+  viewport4.resetCamera();
+  viewport4.render();
 }
 
 run();

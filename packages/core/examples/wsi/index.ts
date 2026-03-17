@@ -124,6 +124,7 @@ async function run() {
   ) as Types.IWSIViewport;
 
   client.getDICOMwebMetadata = (imageId) => wadors.metaDataManager.get(imageId);
+  // Set the stack on the viewport
   await viewport.setDataIds(imageIds, { webClient: client });
 
   toolGroup.addViewport(viewportId, renderingEngineId);
