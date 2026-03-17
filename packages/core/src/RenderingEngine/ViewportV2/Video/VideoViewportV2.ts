@@ -25,7 +25,7 @@ import type {
 } from './VideoViewportV2Types';
 import {
   createDefaultVideoCamera,
-  getAnchorPointForPan,
+  getAnchorWorldForPan,
   getPanForVideoLayout,
   getVideoLayout,
   normalizeVideoCamera,
@@ -179,7 +179,7 @@ class VideoViewportV2 extends ViewportV2<
 
     this.setCamera({
       frame: {
-        anchorPoint: getAnchorPointForPan([pan[0], pan[1]], layout),
+        anchorWorld: getAnchorWorldForPan([pan[0], pan[1]], layout),
       },
     });
   }
@@ -192,8 +192,8 @@ class VideoViewportV2 extends ViewportV2<
     this.setCamera({
       frame: {
         ...(this.getCamera().frame || {}),
-        anchorPoint: [worldPoint[0], worldPoint[1]],
-        anchorView: [
+        anchorWorld: [worldPoint[0], worldPoint[1]],
+        anchorCanvas: [
           canvasPoint[0] / Math.max(canvasWidth, 1),
           canvasPoint[1] / Math.max(canvasHeight, 1),
         ],

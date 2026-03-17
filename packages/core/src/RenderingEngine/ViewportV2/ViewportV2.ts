@@ -287,17 +287,17 @@ abstract class ViewportV2<
     } as Partial<TCamera>);
   }
 
-  getAnchorView(): ViewAnchor {
-    const [x, y] = this.camera.frame?.anchorView ?? [0.5, 0.5];
+  getAnchorCanvas(): ViewAnchor {
+    const [x, y] = this.camera.frame?.anchorCanvas ?? [0.5, 0.5];
 
     return [x, y];
   }
 
-  setAnchorView(anchorView: ViewAnchor): void {
+  setAnchorCanvas(anchorCanvas: ViewAnchor): void {
     this.setCamera({
       frame: {
         ...(this.camera.frame || {}),
-        anchorView: [anchorView[0], anchorView[1]],
+        anchorCanvas: [anchorCanvas[0], anchorCanvas[1]],
       },
     } as Partial<TCamera>);
   }

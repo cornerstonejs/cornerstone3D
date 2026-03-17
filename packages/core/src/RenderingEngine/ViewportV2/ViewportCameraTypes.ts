@@ -2,14 +2,14 @@ export type ViewAnchor = [number, number];
 
 export type CameraScaleMode = 'fit';
 
-export interface CameraFrame<TAnchorPoint = unknown> {
-  anchorPoint?: TAnchorPoint;
-  anchorView?: ViewAnchor;
+export interface CameraFrame<TAnchorWorld = unknown> {
+  anchorWorld?: TAnchorWorld;
+  anchorCanvas?: ViewAnchor;
   scale?: number;
   scaleMode?: CameraScaleMode;
   rotation?: number;
 }
 
-export interface ViewportCameraBase<TAnchorPoint = unknown> {
-  frame?: CameraFrame<TAnchorPoint>;
+export interface ViewportCameraBase<TAnchorWorld = unknown> {
+  frame?: CameraFrame<TAnchorWorld>;
 }

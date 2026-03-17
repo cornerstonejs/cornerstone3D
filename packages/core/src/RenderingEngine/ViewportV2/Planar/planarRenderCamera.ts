@@ -55,27 +55,27 @@ export interface DerivedPlanarPresentation {
  * slice. Without this projection, an anchor from slice N would shift the
  * focal point off-plane when viewed from slice M.
  *
- * @param anchorPoint - The original anchor in world coordinates.
+ * @param anchorWorld - The original anchor in world coordinates.
  * @param planePoint - Any point on the target plane (typically sliceCenterWorld).
  * @param planeNormal - The target plane's normal vector.
  * @returns The anchor point projected onto the target plane.
  */
-export function projectAnchorPointToCurrentPlane(
-  anchorPoint: Point3,
+export function projectAnchorWorldToCurrentPlane(
+  anchorWorld: Point3,
   planePoint: Point3,
   planeNormal: Point3
 ): Point3 {
   const normalizedPlaneNormal = normalizePoint3(planeNormal, [0, 0, 1]);
   const delta = vec3.subtract(
     vec3.create(),
-    anchorPoint as unknown as vec3,
+    anchorWorld as unknown as vec3,
     planePoint as unknown as vec3
   );
   const distance = vec3.dot(delta, normalizedPlaneNormal as unknown as vec3);
 
   return vec3.scaleAndAdd(
     vec3.create(),
-    anchorPoint as unknown as vec3,
+    anchorWorld as unknown as vec3,
     normalizedPlaneNormal as unknown as vec3,
     -distance
   ) as Point3;
@@ -86,9 +86,9 @@ export function projectAnchorPointToCurrentPlane(
  * semantic PlanarCamera and a PlanarSliceBasis.
  *
  * Pan is computed in two parts:
- *   1. `panFromAnchorPoint` — the offset caused by the anchor point being
+ *   1. `panFromAnchorWorld` — the offset caused by the anchor point being
  *      away from sliceCenterWorld, projected into canvas pixels.
- *   2. `panFromAnchorView` — the offset caused by the anchor being placed
+ *   2. `panFromAnchorCanvas` — the offset caused by the anchor being placed
  *      at a non-center canvas location (e.g. zoom-to-cursor).
  *
  * @param args.sliceBasis - The geometric basis for the current slice.
@@ -106,8 +106,8 @@ export function derivePlanarPresentation(args: {
   const { sliceBasis, camera, canvasHeight, canvasWidth } = args;
   const scale = Math.max(camera?.frame?.scale ?? 1, 0.001);
   const rotation = normalizePlanarRotation(camera?.frame?.rotation ?? 0);
-  const anchorView = vec2.clone(
-    (camera?.frame?.anchorView ?? [0.5, 0.5]) as unknown as vec2
+  const anchorCanvas = vec2.clone(
+    (camera?.frame?.anchorCanvas ?? [0.5, 0.5]) as unknown as vec2
   ) as Point2;
   const safeCanvasWidth = getSafeCanvasDimension(canvasWidth);
   const safeCanvasHeight = getSafeCanvasDimension(canvasHeight);
@@ -144,9 +144,9 @@ export function derivePlanarPresentation(args: {
 
   // Project the anchor point onto the current slice plane so that an anchor
   // placed on a different slice doesn't shift the focal point off-plane.
-  const effectiveAnchorPoint = camera?.frame?.anchorPoint
-    ? projectAnchorPointToCurrentPlane(
-        camera.frame.anchorPoint,
+  const effectiveAnchorWorld = camera?.frame?.anchorWorld
+    ? projectAnchorWorldToCurrentPlane(
+        camera.frame.anchorWorld,
         sliceBasis.sliceCenterWorld,
         viewPlaneNormal
       )
@@ -160,9 +160,9 @@ export function derivePlanarPresentation(args: {
   const deltaWorld = vec3.subtract(
     vec3.create(),
     sliceBasis.sliceCenterWorld as unknown as vec3,
-    effectiveAnchorPoint as unknown as vec3
+    effectiveAnchorWorld as unknown as vec3
   );
-  const panFromAnchorPoint: Point2 = [
+  const panFromAnchorWorld: Point2 = [
     (vec3.dot(deltaWorld, right as unknown as vec3) * safeCanvasWidth) /
       worldWidth,
     (-vec3.dot(deltaWorld, flippedViewUp as unknown as vec3) *
@@ -171,16 +171,16 @@ export function derivePlanarPresentation(args: {
   ];
 
   // Pan contribution from the anchor view position (normalized canvas coords).
-  // An anchorView of [0.5, 0.5] means centered, so this produces zero pan.
-  const panFromAnchorView: Point2 = [
-    (anchorView[0] - 0.5) * safeCanvasWidth,
-    (anchorView[1] - 0.5) * safeCanvasHeight,
+  // An anchorCanvas of [0.5, 0.5] means centered, so this produces zero pan.
+  const panFromAnchorCanvas: Point2 = [
+    (anchorCanvas[0] - 0.5) * safeCanvasWidth,
+    (anchorCanvas[1] - 0.5) * safeCanvasHeight,
   ];
 
   return {
     pan: [
-      panFromAnchorPoint[0] + panFromAnchorView[0],
-      panFromAnchorPoint[1] + panFromAnchorView[1],
+      panFromAnchorWorld[0] + panFromAnchorCanvas[0],
+      panFromAnchorWorld[1] + panFromAnchorCanvas[1],
     ],
     flipHorizontal: camera?.flipHorizontal === true,
     flipVertical: camera?.flipVertical === true,

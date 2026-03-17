@@ -445,16 +445,16 @@ class PlanarViewportV2 extends ViewportV2<
     return normalizePlanarRotation(this.camera.frame?.rotation);
   }
 
-  getAnchorPoint(): Point3 | undefined {
-    const anchorPoint = this.camera.frame?.anchorPoint;
+  getAnchorWorld(): Point3 | undefined {
+    const anchorWorld = this.camera.frame?.anchorWorld;
 
-    return anchorPoint ? ([...anchorPoint] as Point3) : undefined;
+    return anchorWorld ? ([...anchorWorld] as Point3) : undefined;
   }
 
-  setAnchorPoint(point?: Point3): void {
+  setAnchorWorld(point?: Point3): void {
     this.setCamera({
       frame: {
-        anchorPoint: point ? ([...point] as Point3) : undefined,
+        anchorWorld: point ? ([...point] as Point3) : undefined,
       },
     });
   }
@@ -479,13 +479,13 @@ class PlanarViewportV2 extends ViewportV2<
 
   setPan(nextPan: Point2): void {
     const currentPan = this.getPan();
-    const [ax, ay] = this.getAnchorView();
+    const [ax, ay] = this.getAnchorCanvas();
     const { height: canvasHeight, width: canvasWidth } =
       this.getCurrentCanvasDimensions();
     const deltaX = nextPan[0] - currentPan[0];
     const deltaY = nextPan[1] - currentPan[1];
 
-    this.setAnchorView([
+    this.setAnchorCanvas([
       ax + deltaX / Math.max(canvasWidth, 1),
       ay + deltaY / Math.max(canvasHeight, 1),
     ]);
@@ -499,8 +499,8 @@ class PlanarViewportV2 extends ViewportV2<
     this.setCamera({
       frame: {
         ...(this.getCamera().frame || {}),
-        anchorPoint: worldPoint,
-        anchorView: [
+        anchorWorld: worldPoint,
+        anchorCanvas: [
           canvasPoint[0] / Math.max(canvasWidth, 1),
           canvasPoint[1] / Math.max(canvasHeight, 1),
         ],
@@ -805,8 +805,8 @@ class PlanarViewportV2 extends ViewportV2<
       ...(this.camera.frame || {}),
       ...(resetPan
         ? {
-            anchorPoint: undefined,
-            anchorView: [0.5, 0.5] as [number, number],
+            anchorWorld: undefined,
+            anchorCanvas: [0.5, 0.5] as [number, number],
           }
         : {}),
       ...(resetZoom ? { scale: 1, scaleMode: 'fit' as const } : {}),

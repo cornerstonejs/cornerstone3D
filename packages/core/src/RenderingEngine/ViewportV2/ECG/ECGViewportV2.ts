@@ -23,8 +23,8 @@ import type {
 } from './ECGViewportV2Types';
 import {
   createDefaultECGCamera,
-  getAnchorPointForCanvasPoint,
-  getAnchorPointForPan,
+  getAnchorWorldForCanvasPoint,
+  getAnchorWorldForPan,
   getECGCameraLayout,
   getPanForECGLayout,
   normalizeECGCamera,
@@ -185,7 +185,7 @@ class ECGViewportV2 extends ViewportV2<
 
     this.setCamera({
       frame: {
-        anchorPoint: getAnchorPointForPan([pan[0], pan[1]], layout),
+        anchorWorld: getAnchorWorldForPan([pan[0], pan[1]], layout),
       },
     });
   }
@@ -406,8 +406,8 @@ class ECGViewportV2 extends ViewportV2<
     this.setCamera({
       frame: {
         ...(this.getCamera().frame || {}),
-        anchorPoint: getAnchorPointForCanvasPoint(canvasPoint, layout),
-        anchorView: [
+        anchorWorld: getAnchorWorldForCanvasPoint(canvasPoint, layout),
+        anchorCanvas: [
           canvasPoint[0] / Math.max(this.canvas.clientWidth, 1),
           canvasPoint[1] / Math.max(this.canvas.clientHeight, 1),
         ],

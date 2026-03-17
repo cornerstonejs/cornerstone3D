@@ -3,8 +3,8 @@ import type { ViewAnchor } from '../ViewportCameraTypes';
 import type { ECGCamera, RenderWindowMetrics } from './ECGViewportV2Types';
 
 export interface ECGCameraLayout {
-  anchorPoint: [number, number];
-  anchorView: ViewAnchor;
+  anchorWorld: [number, number];
+  anchorCanvas: ViewAnchor;
   canvasHeight: number;
   canvasWidth: number;
   centeredXOffset: number;
@@ -23,7 +23,7 @@ export function createDefaultECGCamera(args: {
     valueRange: [...args.valueRange] as [number, number],
     scrollOffset: 0,
     frame: {
-      anchorView: [0.5, 0.5],
+      anchorCanvas: [0.5, 0.5],
       scale: 1,
       scaleMode: 'fit',
       rotation: 0,
@@ -39,13 +39,13 @@ export function normalizeECGCamera(camera: ECGCamera): ECGCamera {
       ? { scrollOffset: camera.scrollOffset }
       : {}),
     frame: {
-      anchorView: cloneAnchorView(camera.frame?.anchorView ?? [0.5, 0.5]),
+      anchorCanvas: cloneAnchorCanvas(camera.frame?.anchorCanvas ?? [0.5, 0.5]),
       scale: Math.max(camera.frame?.scale ?? 1, 0.001),
       scaleMode: 'fit',
       rotation: 0,
-      ...(camera.frame?.anchorPoint
+      ...(camera.frame?.anchorWorld
         ? {
-            anchorPoint: clonePoint(camera.frame.anchorPoint),
+            anchorWorld: clonePoint(camera.frame.anchorWorld),
           }
         : {}),
     },
@@ -64,18 +64,20 @@ export function getECGCameraLayout(args: {
   const drawHeight = metrics.ecgHeight * effectiveRatio;
   const centeredXOffset = (canvas.clientWidth - drawWidth) / 2;
   const centeredYOffset = (canvas.clientHeight - drawHeight) / 2;
-  const anchorView = cloneAnchorView(camera?.frame?.anchorView ?? [0.5, 0.5]);
-  const anchorPoint =
-    clonePoint(camera?.frame?.anchorPoint) ??
+  const anchorCanvas = cloneAnchorCanvas(
+    camera?.frame?.anchorCanvas ?? [0.5, 0.5]
+  );
+  const anchorWorld =
+    clonePoint(camera?.frame?.anchorWorld) ??
     ([metrics.ecgWidth / 2, metrics.ecgHeight / 2] as [number, number]);
   const xOffset =
-    canvas.clientWidth * anchorView[0] - anchorPoint[0] * effectiveRatio;
+    canvas.clientWidth * anchorCanvas[0] - anchorWorld[0] * effectiveRatio;
   const yOffset =
-    canvas.clientHeight * anchorView[1] - anchorPoint[1] * effectiveRatio;
+    canvas.clientHeight * anchorCanvas[1] - anchorWorld[1] * effectiveRatio;
 
   return {
-    anchorPoint,
-    anchorView,
+    anchorWorld,
+    anchorCanvas,
     canvasHeight: canvas.clientHeight,
     canvasWidth: canvas.clientWidth,
     centeredXOffset,
@@ -93,21 +95,21 @@ export function getPanForECGLayout(layout: ECGCameraLayout): Point2 {
   ];
 }
 
-export function getAnchorPointForPan(
+export function getAnchorWorldForPan(
   pan: Point2,
   layout: ECGCameraLayout
 ): [number, number] {
   return [
-    (layout.canvasWidth * layout.anchorView[0] -
+    (layout.canvasWidth * layout.anchorCanvas[0] -
       (layout.centeredXOffset + pan[0])) /
       layout.effectiveRatio,
-    (layout.canvasHeight * layout.anchorView[1] -
+    (layout.canvasHeight * layout.anchorCanvas[1] -
       (layout.centeredYOffset + pan[1])) /
       layout.effectiveRatio,
   ];
 }
 
-export function getAnchorPointForCanvasPoint(
+export function getAnchorWorldForCanvasPoint(
   canvasPoint: Point2,
   layout: ECGCameraLayout
 ): [number, number] {
@@ -121,6 +123,6 @@ function clonePoint(point?: [number, number]): [number, number] | undefined {
   return point ? [point[0], point[1]] : undefined;
 }
 
-function cloneAnchorView(anchorView: ViewAnchor): ViewAnchor {
-  return [anchorView[0], anchorView[1]];
+function cloneAnchorCanvas(anchorCanvas: ViewAnchor): ViewAnchor {
+  return [anchorCanvas[0], anchorCanvas[1]];
 }

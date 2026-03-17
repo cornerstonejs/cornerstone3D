@@ -10,8 +10,8 @@ export interface VideoCameraLayout {
   containerHeight: number;
   intrinsicWidth: number;
   intrinsicHeight: number;
-  anchorPoint: [number, number];
-  anchorView: ViewAnchor;
+  anchorWorld: [number, number];
+  anchorCanvas: ViewAnchor;
   worldToCanvasRatio: number;
 }
 
@@ -27,7 +27,7 @@ export function createDefaultVideoCamera(): VideoCamera {
   return {
     currentTimeSeconds: 0,
     frame: {
-      anchorView: [0.5, 0.5],
+      anchorCanvas: [0.5, 0.5],
       scale: 1,
       scaleMode: 'fit',
       rotation: 0,
@@ -41,13 +41,13 @@ export function normalizeVideoCamera(camera: VideoCamera): VideoCamera {
       ? { currentTimeSeconds: Math.max(0, camera.currentTimeSeconds) }
       : {}),
     frame: {
-      anchorView: cloneAnchorView(camera.frame?.anchorView ?? [0.5, 0.5]),
+      anchorCanvas: cloneAnchorCanvas(camera.frame?.anchorCanvas ?? [0.5, 0.5]),
       scale: Math.max(camera.frame?.scale ?? 1, 0.001),
       scaleMode: 'fit',
       rotation: camera.frame?.rotation ?? 0,
-      ...(camera.frame?.anchorPoint
+      ...(camera.frame?.anchorWorld
         ? {
-            anchorPoint: cloneAnchorPoint(camera.frame.anchorPoint),
+            anchorWorld: cloneAnchorWorld(camera.frame.anchorWorld),
           }
         : {}),
     },
@@ -117,14 +117,16 @@ export function getVideoLayout(
   height *= zoom;
 
   const worldToCanvasRatio = width / intrinsicWidth;
-  const anchorView = cloneAnchorView(camera?.frame?.anchorView ?? [0.5, 0.5]);
-  const anchorPoint =
-    cloneAnchorPoint(camera?.frame?.anchorPoint) ??
+  const anchorCanvas = cloneAnchorCanvas(
+    camera?.frame?.anchorCanvas ?? [0.5, 0.5]
+  );
+  const anchorWorld =
+    cloneAnchorWorld(camera?.frame?.anchorWorld) ??
     ([intrinsicWidth / 2, intrinsicHeight / 2] as [number, number]);
   const left =
-    containerWidth * anchorView[0] - anchorPoint[0] * worldToCanvasRatio;
+    containerWidth * anchorCanvas[0] - anchorWorld[0] * worldToCanvasRatio;
   const top =
-    containerHeight * anchorView[1] - anchorPoint[1] * worldToCanvasRatio;
+    containerHeight * anchorCanvas[1] - anchorWorld[1] * worldToCanvasRatio;
 
   return {
     left,
@@ -135,8 +137,8 @@ export function getVideoLayout(
     containerHeight,
     intrinsicWidth,
     intrinsicHeight,
-    anchorPoint,
-    anchorView,
+    anchorWorld,
+    anchorCanvas,
     worldToCanvasRatio,
   };
 }
@@ -150,25 +152,26 @@ export function getPanForVideoLayout(
   ];
 }
 
-export function getAnchorPointForPan(
+export function getAnchorWorldForPan(
   pan: [number, number],
   layout: VideoCameraLayout
 ): [number, number] {
   return [
-    (layout.containerWidth * layout.anchorView[0]) / layout.worldToCanvasRatio -
+    (layout.containerWidth * layout.anchorCanvas[0]) /
+      layout.worldToCanvasRatio -
       pan[0],
-    (layout.containerHeight * layout.anchorView[1]) /
+    (layout.containerHeight * layout.anchorCanvas[1]) /
       layout.worldToCanvasRatio -
       pan[1],
   ];
 }
 
-function cloneAnchorPoint(
-  anchorPoint?: [number, number]
+function cloneAnchorWorld(
+  anchorWorld?: [number, number]
 ): [number, number] | undefined {
-  return anchorPoint ? [anchorPoint[0], anchorPoint[1]] : undefined;
+  return anchorWorld ? [anchorWorld[0], anchorWorld[1]] : undefined;
 }
 
-function cloneAnchorView(anchorView: ViewAnchor): ViewAnchor {
-  return [anchorView[0], anchorView[1]];
+function cloneAnchorCanvas(anchorCanvas: ViewAnchor): ViewAnchor {
+  return [anchorCanvas[0], anchorCanvas[1]];
 }
