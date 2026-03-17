@@ -6,6 +6,7 @@ import { asArray } from '../asArray';
 const Events = {
   HISTORY_UNDO: 'CORNERSTONE_TOOLS_HISTORY_UNDO',
   HISTORY_REDO: 'CORNERSTONE_TOOLS_HISTORY_REDO',
+  HISTORY_PUSHED: 'CORNERSTONE_TOOLS_HISTORY_PUSHED',
 };
 
 export type Memo = {
@@ -229,7 +230,9 @@ export class HistoryMemo {
     }
 
     if (this.isRecordingGrouped) {
-      return this.pushGrouped(memo);
+      const result = this.pushGrouped(memo);
+      this.dispatchPushedEvent(memo);
+      return result;
     }
 
     this.redoAvailable = 0;
@@ -238,7 +241,30 @@ export class HistoryMemo {
     }
     this.position = (this.position + 1) % this._size;
     this.ring[this.position] = memo;
+
+    this.dispatchPushedEvent(memo);
+
     return memo;
+  }
+
+  /**
+   * Dispatches a custom event indicating that a new memo has been pushed onto the history stack.
+   * The event detail contains the memo's unique identifier, the operation type,
+   * and the memo object itself.
+   *
+   * @private
+   * @param {Memo} item - The memo item being pushed.
+   */
+  private dispatchPushedEvent(item: Memo) {
+    eventTarget.dispatchEvent(
+      new CustomEvent(Events.HISTORY_PUSHED, {
+        detail: {
+          id: item.id,
+          operationType: item.operationType || 'annotation',
+          memo: item,
+        },
+      })
+    );
   }
 }
 
