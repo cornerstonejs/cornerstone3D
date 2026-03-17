@@ -31,6 +31,8 @@ import {
   Enums as csToolsEnums,
 } from '@cornerstonejs/tools';
 
+const viewportV2ConfigurationStack = [];
+
 function setupTestEnvironment({
   renderingEngineId = utilities.uuidv4(),
   toolGroupIds = ['default'],
@@ -46,11 +48,10 @@ function setupTestEnvironment({
 
   initCore();
 
-  // Enable V2 viewport remapping when requested
-  // if (useViewportV2) {
-  //   getConfiguration().rendering.useViewportV2 = true;
-  // }
-  getConfiguration().rendering.useViewportV2 = true;
+  const renderingConfiguration = getConfiguration().rendering;
+
+  viewportV2ConfigurationStack.push(renderingConfiguration.useViewportV2);
+  renderingConfiguration.useViewportV2 = useViewportV2;
   initTools();
   tools.forEach((tool) => addTool(tool));
 
@@ -170,6 +171,12 @@ function cleanupTestEnvironment(options = {}) {
 
   cache.setMaxCacheSize(ONE_GB);
   setUseCPURendering(false);
+
+  const previousUseViewportV2 = viewportV2ConfigurationStack.pop();
+
+  if (previousUseViewportV2 !== undefined) {
+    getConfiguration().rendering.useViewportV2 = previousUseViewportV2;
+  }
 
   // Clean up DOM elements
   if (cleanupDOMElements) {
