@@ -185,13 +185,22 @@ export function renderPseudoColorImage(
   context.setTransform(1, 0, 0, 1, 0, 0);
 
   // Clear the canvas
-  context.fillStyle = 'black';
-  context.fillRect(
-    0,
-    0,
-    enabledElement.canvas.width,
-    enabledElement.canvas.height
-  );
+  if (enabledElement.options?.transparentBackground) {
+    context.clearRect(
+      0,
+      0,
+      enabledElement.canvas.width,
+      enabledElement.canvas.height
+    );
+  } else {
+    context.fillStyle = 'black';
+    context.fillRect(
+      0,
+      0,
+      enabledElement.canvas.width,
+      enabledElement.canvas.height
+    );
+  }
 
   // Turn off image smooth/interpolation if pixelReplication is set in the viewport
   context.imageSmoothingEnabled = !enabledElement.viewport.pixelReplication;

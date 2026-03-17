@@ -1,5 +1,9 @@
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
-import type { InterpolationType, OrientationAxis } from '../../../enums';
+import type {
+  BlendModes,
+  InterpolationType,
+  OrientationAxis,
+} from '../../../enums';
 import type {
   ColormapPublic,
   IImage,
@@ -79,6 +83,7 @@ export interface PlanarCamera extends ViewportCameraBase<Point3> {
 }
 
 export interface PlanarProperties {
+  blendMode?: BlendModes;
   interpolationType?: InterpolationType;
   slabThickness?: number;
 }
@@ -105,10 +110,15 @@ export interface PlanarViewportRenderContext extends BaseViewportRenderContext {
   };
   display: {
     requestRender(): void;
+    renderNow(): void;
     activateRenderMode(renderMode: PlanarEffectiveRenderMode): void;
   };
   cpu: {
     canvas: HTMLCanvasElement;
+    composition: {
+      clearedRenderPassId: number;
+      renderPassId: number;
+    };
     context: CanvasRenderingContext2D;
   };
   vtk: {

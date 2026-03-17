@@ -28,6 +28,14 @@ function getVolumeId(dataSet: PlanarRegisteredDataSet): string {
   return dataSet.volumeId || cache.generateVolumeId(dataSet.imageIds);
 }
 
+function hasExplicitCachedVolume(dataSet: PlanarRegisteredDataSet): boolean {
+  return !!(dataSet.volumeId && cache.getVolume(dataSet.volumeId));
+}
+
+function supportsVolumeRendering(dataSet: PlanarRegisteredDataSet): boolean {
+  return hasExplicitCachedVolume(dataSet) || isValidVolume(dataSet.imageIds);
+}
+
 export function getPlanarAcquisitionOrientation(
   imageIds: string[]
 ): PlanarCamera['orientation'] | undefined {
@@ -150,7 +158,7 @@ export function selectPlanarRenderPath(
       };
     }
 
-    if (!isValidVolume(dataSet.imageIds)) {
+    if (!supportsVolumeRendering(dataSet)) {
       throw new Error(
         '[PlanarViewportV2] Volume rendering requires a valid volume dataset'
       );
@@ -164,7 +172,7 @@ export function selectPlanarRenderPath(
   }
 
   if (!isAcquisitionPath) {
-    if (!isValidVolume(dataSet.imageIds)) {
+    if (!supportsVolumeRendering(dataSet)) {
       throw new Error(
         '[PlanarViewportV2] Non-acquisition rendering requires a valid volume dataset'
       );

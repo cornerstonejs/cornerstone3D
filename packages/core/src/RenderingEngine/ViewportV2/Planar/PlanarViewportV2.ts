@@ -1,4 +1,5 @@
 import { OrientationAxis, ViewportType } from '../../../enums';
+import type BlendModes from '../../../enums/BlendModes';
 import type {
   IVolumeInput,
   Point2,
@@ -88,6 +89,7 @@ class PlanarViewportV2 extends ViewportV2<
   private activeDataId?: string;
   private readonly legacyCompatibility =
     new PlanarLegacyCompatibilityController({
+      getElement: () => this.element,
       getViewportId: () => this.id,
       getRequestedOrientation: () => this.resolveRequestedOrientation(),
       prepareVolumeCompatibilityCamera: () => {
@@ -203,12 +205,19 @@ class PlanarViewportV2 extends ViewportV2<
         requestRender: () => {
           this.requestRenderingEngineRender();
         },
+        renderNow: () => {
+          this.render();
+        },
         activateRenderMode: (renderMode: PlanarEffectiveRenderMode) => {
           this.setRenderModeVisibility(renderMode, cpuCanvas, vtkCanvas);
         },
       },
       cpu: {
         canvas: cpuCanvas,
+        composition: {
+          clearedRenderPassId: -1,
+          renderPassId: 0,
+        },
         context: cpuCanvasContext,
       },
       vtk: {
@@ -280,7 +289,6 @@ class PlanarViewportV2 extends ViewportV2<
 
     this.setDefaultDataPresentation(dataId, {
       visible: true,
-      opacity: 1,
     });
 
     return renderingId;
@@ -332,6 +340,22 @@ class PlanarViewportV2 extends ViewportV2<
 
   resetProperties(volumeId?: string): void {
     this.legacyCompatibility.resetProperties(volumeId);
+  }
+
+  getBlendMode(filterActorUIDs?: string[]): BlendModes | undefined {
+    return this.legacyCompatibility.getBlendMode(filterActorUIDs);
+  }
+
+  setBlendMode(
+    blendMode: BlendModes,
+    filterActorUIDs?: string[],
+    immediate = false
+  ): void {
+    this.legacyCompatibility.setBlendMode(
+      blendMode,
+      filterActorUIDs,
+      immediate
+    );
   }
 
   getNumberOfSlices(): number {
@@ -816,6 +840,8 @@ class PlanarViewportV2 extends ViewportV2<
    * Renders the active planar bindings or queues an engine-driven render.
    */
   render(): void {
+    this.renderContext.cpu.composition.renderPassId += 1;
+
     if (!this.renderBindings()) {
       this.requestRenderingEngineRender();
     }

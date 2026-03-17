@@ -1,6 +1,15 @@
 import cache from '../../../cache/cache';
+import type BlendModes from '../../../enums/BlendModes';
+import { Events } from '../../../enums';
 import { getShouldUseCPURendering } from '../../../init';
-import type { IVolumeInput } from '../../../types';
+import type { ActorEntry, ColormapPublic, IVolumeInput } from '../../../types';
+import triggerEvent from '../../../utilities/triggerEvent';
+import {
+  findMatchingColormap,
+  getMaxOpacity,
+  getThresholdValue,
+} from '../../../utilities/colormap';
+import { getTransferFunctionNodes } from '../../../utilities/transferFunctionUtils';
 import viewportV2DataSetMetadataProvider from '../../../utilities/viewportV2DataSetMetadataProvider';
 import type { PlanarRendering } from './planarRuntimeTypes';
 import {
@@ -18,6 +27,7 @@ import type {
 } from './PlanarViewportV2Types';
 
 type PlanarLegacyCompatibilityHost = {
+  getElement(): HTMLDivElement;
   getViewportId(): string;
   getRequestedOrientation(): PlanarCamera['orientation'];
   prepareVolumeCompatibilityCamera(): void;
@@ -96,8 +106,7 @@ class PlanarLegacyCompatibilityController {
     immediate = false,
     suppressEvents = false
   ): Promise<void> {
-    void suppressEvents;
-    await this.mountVolumes(volumeInputArray, true);
+    await this.mountVolumes(volumeInputArray, true, suppressEvents);
 
     if (immediate) {
       this.host.render();
@@ -109,8 +118,7 @@ class PlanarLegacyCompatibilityController {
     immediate = false,
     suppressEvents = false
   ): Promise<void> {
-    void suppressEvents;
-    await this.mountVolumes(volumeInputArray, false);
+    await this.mountVolumes(volumeInputArray, false, suppressEvents);
 
     if (immediate) {
       this.host.render();
@@ -122,8 +130,6 @@ class PlanarLegacyCompatibilityController {
     volumeIdOrSuppressEvents?: string | boolean,
     suppressEvents = false
   ): void {
-    void suppressEvents;
-
     const volumeId =
       typeof volumeIdOrSuppressEvents === 'string'
         ? volumeIdOrSuppressEvents
@@ -158,6 +164,10 @@ class PlanarLegacyCompatibilityController {
       targetDataId,
       toPlanarDataPresentation(nextProperties)
     );
+
+    if (!suppressEvents && properties.colormap !== undefined) {
+      this.emitColormapModified(targetDataId, volumeId);
+    }
   }
 
   getProperties(volumeId?: string): PlanarLegacyViewportProperties {
@@ -210,6 +220,57 @@ class PlanarLegacyCompatibilityController {
     );
   }
 
+  getBlendMode(filterActorUIDs: string[] = []): BlendModes | undefined {
+    const targetDataId = this.getBlendModeTargetDataIds(filterActorUIDs)[0];
+
+    if (!targetDataId) {
+      return;
+    }
+
+    const storedBlendMode =
+      this.host.getDataPresentation(targetDataId)?.blendMode;
+
+    if (storedBlendMode !== undefined) {
+      return storedBlendMode;
+    }
+
+    const actor = this.host.getBindingActor(targetDataId) as
+      | {
+          getMapper?: () => {
+            getBlendMode?: () => BlendModes;
+          };
+        }
+      | undefined;
+
+    return actor?.getMapper?.()?.getBlendMode?.();
+  }
+
+  setBlendMode(
+    blendMode: BlendModes,
+    filterActorUIDs: string[] = [],
+    immediate = false
+  ): void {
+    const targetDataIds = this.getBlendModeTargetDataIds(filterActorUIDs);
+
+    if (!targetDataIds.length) {
+      return;
+    }
+
+    targetDataIds.forEach((dataId) => {
+      const nextProperties = mergePlanarLegacyProperties(
+        this.properties.get(dataId) || {},
+        { blendMode }
+      );
+
+      this.properties.set(dataId, nextProperties);
+      this.host.setDataPresentation(dataId, { blendMode });
+    });
+
+    if (immediate) {
+      this.host.render();
+    }
+  }
+
   getNumberOfSlices(): number {
     return Math.max(
       this.host.getImageCount(),
@@ -251,7 +312,8 @@ class PlanarLegacyCompatibilityController {
 
   private async mountVolumes(
     volumeInputArray: IVolumeInput[],
-    replaceExisting: boolean
+    replaceExisting: boolean,
+    suppressEvents: boolean
   ): Promise<void> {
     if (!volumeInputArray.length) {
       return;
@@ -300,6 +362,18 @@ class PlanarLegacyCompatibilityController {
         });
       }
 
+      if (volumeInput.blendMode !== undefined) {
+        const nextProperties = mergePlanarLegacyProperties(
+          this.properties.get(dataId) || {},
+          { blendMode: volumeInput.blendMode }
+        );
+
+        this.properties.set(dataId, nextProperties);
+        this.host.setDataPresentation(dataId, {
+          blendMode: volumeInput.blendMode,
+        });
+      }
+
       if (volumeInput.slabThickness !== undefined) {
         this.host.setDataPresentation(dataId, {
           slabThickness: volumeInput.slabThickness,
@@ -313,8 +387,22 @@ class PlanarLegacyCompatibilityController {
           volumeActor: actor as never,
           volumeId: volumeInput.volumeId,
         });
+
+        const volumePresentation =
+          this.buildVolumePresentationFromActor(dataId);
+
+        if (volumePresentation) {
+          this.applyVolumePresentation(dataId, volumePresentation);
+        }
       }
     });
+
+    if (!suppressEvents) {
+      triggerEvent(this.host.getElement(), Events.VOLUME_VIEWPORT_NEW_VOLUME, {
+        viewportId: this.host.getViewportId(),
+        volumeActors: this.buildVolumeActorEntries(volumeInputArray, dataIds),
+      });
+    }
   }
 
   private getInitialVolumeImageIdIndex(imageCount: number): number {
@@ -334,6 +422,31 @@ class PlanarLegacyCompatibilityController {
     return Math.max(0, Math.round((imageCount - 1) / 2));
   }
 
+  private getBlendModeTargetDataIds(filterActorUIDs: string[]): string[] {
+    const volumeDataIds = Array.from(new Set(this.volumeDataIds.values()));
+
+    if (!filterActorUIDs.length) {
+      return volumeDataIds;
+    }
+
+    return volumeDataIds.filter((dataId) => {
+      const actor = this.host.getBindingActor(dataId) as
+        | {
+            get?: (propertyName?: string) => unknown;
+            getUID?: () => string;
+            uid?: string;
+          }
+        | undefined;
+      const actorUid =
+        actor?.getUID?.() ||
+        actor?.uid ||
+        ((actor?.get?.('uid') as { uid?: string } | undefined)?.uid ??
+          undefined);
+
+      return actorUid ? filterActorUIDs.includes(actorUid) : false;
+    });
+  }
+
   private resolveTargetDataId(volumeId?: string): string | undefined {
     if (volumeId) {
       const dataId =
@@ -346,6 +459,167 @@ class PlanarLegacyCompatibilityController {
     }
 
     return this.host.getActiveDataId() || this.host.getFirstBoundDataId();
+  }
+
+  private emitColormapModified(
+    dataId: string,
+    requestedVolumeId?: string
+  ): void {
+    const volumeId = requestedVolumeId || this.resolveVolumeIdForDataId(dataId);
+    const colormap =
+      (volumeId ? this.buildVolumeColormap(dataId) : undefined) ||
+      this.properties.get(dataId)?.colormap;
+
+    if (!colormap) {
+      return;
+    }
+
+    triggerEvent(this.host.getElement(), Events.COLORMAP_MODIFIED, {
+      viewportId: this.host.getViewportId(),
+      volumeId,
+      colormap,
+    });
+  }
+
+  private applyVolumePresentation(
+    dataId: string,
+    volumePresentation: PlanarLegacyViewportProperties
+  ): void {
+    const nextProperties = mergePlanarLegacyProperties(
+      this.properties.get(dataId) || {},
+      volumePresentation
+    );
+
+    this.properties.set(dataId, nextProperties);
+
+    if (!this.defaultProperties.has(dataId)) {
+      this.defaultProperties.set(
+        dataId,
+        clonePlanarLegacyProperties(nextProperties)
+      );
+    }
+
+    this.host.setDataPresentationState(
+      dataId,
+      toPlanarDataPresentation(nextProperties)
+    );
+  }
+
+  private buildVolumeActorEntries(
+    volumeInputArray: IVolumeInput[],
+    dataIds: string[]
+  ): ActorEntry[] {
+    return volumeInputArray.flatMap((volumeInput, index) => {
+      const actor = this.host.getBindingActor(dataIds[index]) as
+        | ActorEntry['actor']
+        | undefined;
+
+      if (!actor) {
+        return [];
+      }
+
+      const { actorUID, slabThickness, volumeId, ...rest } = volumeInput;
+
+      return [
+        {
+          uid: actorUID || volumeId,
+          actor,
+          slabThickness,
+          referencedId: volumeId,
+          ...rest,
+        },
+      ];
+    });
+  }
+
+  private buildVolumeColormap(dataId: string): ColormapPublic | undefined {
+    const actor = this.host.getBindingActor(dataId) as
+      | {
+          getProperty?: () => {
+            getRGBTransferFunction?: (index: number) => {
+              getNodeValue?: (index: number, values: number[]) => void;
+              getSize?: () => number;
+            };
+          };
+        }
+      | undefined;
+
+    const transferFunction = actor?.getProperty?.().getRGBTransferFunction?.(0);
+
+    if (!actor || !transferFunction) {
+      return;
+    }
+
+    const rgbPoints = getTransferFunctionNodes(transferFunction).reduce(
+      (points, node) => {
+        points.push(node[0], node[1], node[2], node[3]);
+        return points;
+      },
+      [] as number[]
+    );
+    const matchedColormap =
+      findMatchingColormap(rgbPoints, actor as never) || {};
+    const threshold = getThresholdValue(actor as never);
+
+    if (matchedColormap.opacity === undefined) {
+      matchedColormap.opacity = getMaxOpacity(actor as never);
+    }
+
+    if (threshold !== null) {
+      matchedColormap.threshold = threshold;
+    }
+
+    return Object.keys(matchedColormap).length ? matchedColormap : undefined;
+  }
+
+  private buildVolumePresentationFromActor(
+    dataId: string
+  ): PlanarLegacyViewportProperties | undefined {
+    const actor = this.host.getBindingActor(dataId) as
+      | {
+          getMapper?: () => {
+            getBlendMode?: () => BlendModes;
+          };
+          getProperty?: () => {
+            getRGBTransferFunction?: (index: number) => {
+              getRange?: () => [number, number];
+            };
+          };
+        }
+      | undefined;
+
+    const transferFunction = actor?.getProperty?.().getRGBTransferFunction?.(0);
+    const volumeColormap = this.buildVolumeColormap(dataId);
+    const blendMode = actor?.getMapper?.()?.getBlendMode?.();
+    const range = transferFunction?.getRange?.();
+    const volumePresentation: PlanarLegacyViewportProperties = {};
+
+    if (volumeColormap) {
+      volumePresentation.colormap = volumeColormap;
+    }
+
+    if (range && range[1] > range[0]) {
+      volumePresentation.voiRange = {
+        lower: range[0],
+        upper: range[1],
+      };
+    }
+
+    if (blendMode !== undefined) {
+      volumePresentation.blendMode = blendMode;
+    }
+
+    return Object.keys(volumePresentation).length
+      ? volumePresentation
+      : undefined;
+  }
+
+  private resolveVolumeIdForDataId(dataId: string): string | undefined {
+    for (const [volumeId, mappedDataId] of this.volumeDataIds.entries()) {
+      if (mappedDataId === dataId) {
+        return volumeId;
+      }
+    }
   }
 }
 

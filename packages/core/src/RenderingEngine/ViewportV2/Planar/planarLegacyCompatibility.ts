@@ -1,3 +1,4 @@
+import type BlendModes from '../../../enums/BlendModes';
 import type {
   ColormapPublic,
   OrientationVectors,
@@ -12,6 +13,7 @@ import type {
 export type PlanarLegacyViewportProperties = Partial<
   Omit<StackViewportProperties & VolumeViewportProperties, 'orientation'> &
     Pick<PlanarDataPresentation, 'opacity' | 'visible'> & {
+      blendMode?: BlendModes;
       orientation?: PlanarOrientation;
     }
 >;
@@ -170,6 +172,10 @@ export function toPlanarDataPresentation(
 
   if (properties.invert !== undefined) {
     presentation.invert = properties.invert;
+  }
+
+  if (properties.blendMode !== undefined) {
+    presentation.blendMode = properties.blendMode;
   }
 
   if (properties.interpolationType !== undefined) {

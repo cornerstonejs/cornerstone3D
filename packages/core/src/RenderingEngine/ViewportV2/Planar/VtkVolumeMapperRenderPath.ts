@@ -5,12 +5,7 @@ import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import { Events, ViewportType } from '../../../enums';
 import eventTarget from '../../../eventTarget';
 import createVolumeActor from '../../helpers/createVolumeActor';
-import { createPlanarRGBTransferFunction } from '../../helpers/planarImageRendering';
 import type { IImageData, Point2, Point3 } from '../../../types';
-import {
-  updateOpacity as updateVolumeOpacity,
-  updateThreshold as updateVolumeThreshold,
-} from '../../../utilities/colormap';
 import type {
   DataAddOptions,
   LoadedData,
@@ -40,6 +35,7 @@ import {
   createPlanarVolumeSliceBasis,
   resolvePlanarVolumeImageIdIndex,
 } from './planarSliceBasis';
+import { applyPlanarVolumePresentation } from './planarVolumePresentation';
 
 export class VtkVolumeMapperRenderPath
   implements RenderPath<PlanarVtkVolumeAdapterContext>
@@ -361,60 +357,15 @@ function applyDataPresentation(
   props?: PlanarDataPresentation
 ): void {
   const { actor, defaultVOIRange, mapper } = rendering;
-  const property = actor.getProperty();
-  const voiRange = props?.voiRange ?? defaultVOIRange;
   const slabThickness = resolveSlabThickness(props?.slabThickness);
 
   rendering.dataPresentation = props;
-
-  actor.setVisibility(props?.visible === false ? false : true);
-
-  if (props?.opacity !== undefined) {
-    updateVolumeOpacity(actor, props.opacity);
-  }
-
-  if (!voiRange) {
-    return;
-  }
-
-  const transferFunction = createPlanarRGBTransferFunction({
-    colormap: props?.colormap,
-    invert: props?.invert,
-    voiRange,
+  applyPlanarVolumePresentation({
+    actor,
+    mapper,
+    defaultVOIRange,
+    props,
   });
-
-  property.setRGBTransferFunction(0, transferFunction);
-
-  if (props?.colormap?.opacity !== undefined) {
-    if (typeof props.colormap.opacity === 'number') {
-      updateVolumeOpacity(actor, props.colormap.opacity);
-    } else {
-      const opacityFunction = vtkPiecewiseFunction.newInstance();
-
-      props.colormap.opacity.forEach(({ opacity, value }) => {
-        opacityFunction.addPoint(value, opacity);
-      });
-      property.setScalarOpacity(0, opacityFunction);
-    }
-  }
-
-  if (props?.colormap?.threshold !== undefined) {
-    updateVolumeThreshold(actor, props.colormap.threshold);
-  }
-
-  if (props?.interpolationType !== undefined) {
-    property.setInterpolationType(
-      props.interpolationType as Parameters<
-        typeof property.setInterpolationType
-      >[0]
-    );
-  }
-
-  if (slabThickness !== undefined) {
-    mapper.setBlendModeToMaximumIntensity();
-  } else {
-    mapper.setBlendModeToComposite();
-  }
 
   if (
     rendering.renderCamera?.focalPoint &&

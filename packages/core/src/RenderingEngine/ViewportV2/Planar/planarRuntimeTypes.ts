@@ -92,6 +92,7 @@ export type PlanarCpuVolumeRendering = MountedRendering<{
   mapper: vtkVolumeMapper;
   enabledElement?: CPUFallbackEnabledElement;
   imageVolume: IImageVolume;
+  layerCanvas: HTMLCanvasElement;
   currentImageIdIndex: number;
   maxImageIdIndex: number;
   defaultVOIRange?: VOIRange;
