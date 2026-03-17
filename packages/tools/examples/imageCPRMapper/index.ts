@@ -19,10 +19,6 @@ import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import vtkImageCPRMapper from '@kitware/vtk.js/Rendering/Core/ImageCPRMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 
-console.warn(
-  'Click on index.ts to open source code for this example --------->'
-);
-
 const {
   PlanarFreehandROITool,
   PanTool,
@@ -57,20 +53,20 @@ viewportGrid.style.display = 'flex';
 viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
 
-const element1 = document.createElement('div');
-const element2 = document.createElement('div');
-element1.style.width = size;
-element1.style.height = size;
-element2.style.width = size;
-element2.style.height = size;
+const cprElement = document.createElement('div');
+const sagittalElement = document.createElement('div');
+cprElement.style.width = size;
+cprElement.style.height = size;
+sagittalElement.style.width = size;
+sagittalElement.style.height = size;
 
 // Disable right click context menu so we can have right click tool
-element1.oncontextmenu = (e) => e.preventDefault();
-element2.oncontextmenu = (e) => e.preventDefault();
+cprElement.oncontextmenu = (e) => e.preventDefault();
+sagittalElement.oncontextmenu = (e) => e.preventDefault();
 
 // Append in the order we want them displayed: volume on the left, stack on the right
-viewportGrid.appendChild(element2);
-viewportGrid.appendChild(element1);
+viewportGrid.appendChild(sagittalElement);
+viewportGrid.appendChild(cprElement);
 
 content.appendChild(viewportGrid);
 
@@ -207,7 +203,7 @@ async function run() {
     {
       viewportId: viewportIds[0],
       type: ViewportType.ORTHOGRAPHIC,
-      element: element2,
+      element: sagittalElement,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
         background: <Types.Point3>[0.2, 0, 0.2],
@@ -216,7 +212,7 @@ async function run() {
     {
       viewportId: viewportIds[1],
       type: ViewportType.STACK,
-      element: element1,
+      element: cprElement,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
       },
