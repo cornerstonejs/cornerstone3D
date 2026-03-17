@@ -1,14 +1,13 @@
 import { mat4 } from 'gl-matrix';
 
 /**
- * Computes a projection scaling matrix with rotation-invariant scaling in patient
- * coordinate space. The stretch follows patient anatomical directions (AP or SI)
- * rather than screen axes, maintaining consistent scaling after view rotations.
+ * Computes the projection scaling matrix used for canvas stretch.
+ * The scaling is applied along the canvas axes.
  *
  * @param viewUp - Camera viewUp vector in patient space
  * @param viewPlaneNormal - Camera viewPlaneNormal vector in patient space
- * @param aspectRatio - [scaleX, scaleY]. scaleY applies to dominant anatomical axis
- * @returns Projection scaling matrix
+ * @param aspectRatio - [scaleX, scaleY], where each value controls stretching along the corresponding canvas axis
+ * @returns Projection scaling matrix for canvas stretch
  */
 export function getProjectionScaleMatrix(aspectRatio: Array<number>): mat4 {
   const [scaleX, scaleY] = aspectRatio;
