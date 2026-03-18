@@ -34,12 +34,15 @@ import type {
   StyleSpecifier,
 } from '../../types/AnnotationStyle';
 import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
+import { drawLinkedTextBox } from '../../drawingSvg';
+import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
+import type { SVGDrawingHelper } from '../../types';
 import ChangeTypes from '../../enums/ChangeTypes';
 import { setAnnotationSelected } from '../../stateManagement/annotation/annotationSelection';
 import { addContourSegmentationAnnotation } from '../../utilities/contourSegmentation';
+import { safeStructuredClone } from '../../utilities/safeStructuredClone';
 
 const { DefaultHistoryMemo } = csUtils.HistoryMemo;
-const { PointsManager } = csUtils;
 
 /**
  * Abstract class for tools which create and display annotations on the
@@ -372,6 +375,112 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
   }
 
   /**
+   * Renders a linked text box for an annotation using shared visibility, placement,
+   * and worldBoundingBox logic. Call from renderAnnotation when the tool uses a
+   * linked text box (e.g. Length, RectangleROI). The caller must supply textLines
+   * and canvasCoordinates; when text box visibility is off, this method resets
+   * data.handles.textBox and returns false.
+   *
+   * @param options.enabledElement - Cornerstone enabled element
+   * @param options.svgDrawingHelper - SVG drawing helper
+   * @param options.annotation - Annotation whose text box to render
+   * @param options.styleSpecifier - Style specifier for getLinkedTextBoxStyle
+   * @param options.textLines - Lines to display (caller responsibility to compute/skip when empty)
+   * @param options.canvasCoordinates - Canvas anchor points for the link line (and for placement when placementPoints omitted)
+   * @param options.textBoxUID - Optional UID for the text box SVG group (default '1')
+   * @param options.placementPoints - Optional; when provided, used for getTextBoxCoordsCanvas only (e.g. circle ROI uses corners for placement, center for link)
+   * @returns true if the text box was drawn, false if visibility was off (textBox was reset)
+   */
+  protected renderLinkedTextBoxAnnotation(options: {
+    enabledElement: Types.IEnabledElement;
+    svgDrawingHelper: SVGDrawingHelper;
+    annotation: Annotation;
+    styleSpecifier: StyleSpecifier;
+    textLines: string[];
+    canvasCoordinates: Types.Point2[];
+    textBoxUID?: string;
+    placementPoints?: Types.Point2[];
+  }): boolean {
+    const {
+      enabledElement,
+      svgDrawingHelper,
+      annotation,
+      styleSpecifier,
+      textLines,
+      canvasCoordinates,
+      textBoxUID = '1',
+      placementPoints,
+    } = options;
+    const { viewport } = enabledElement;
+    const { element } = viewport;
+    const { annotationUID, data } = annotation;
+
+    const styleOptions = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
+    if (!styleOptions.visibility) {
+      data.handles.textBox = {
+        hasMoved: false,
+        worldPosition: <Types.Point3>[0, 0, 0],
+        worldBoundingBox: {
+          topLeft: <Types.Point3>[0, 0, 0],
+          topRight: <Types.Point3>[0, 0, 0],
+          bottomLeft: <Types.Point3>[0, 0, 0],
+          bottomRight: <Types.Point3>[0, 0, 0],
+        },
+      };
+      return false;
+    }
+
+    if (!data.handles.textBox) {
+      data.handles.textBox = {
+        hasMoved: false,
+        worldPosition: <Types.Point3>[0, 0, 0],
+        worldBoundingBox: {
+          topLeft: <Types.Point3>[0, 0, 0],
+          topRight: <Types.Point3>[0, 0, 0],
+          bottomLeft: <Types.Point3>[0, 0, 0],
+          bottomRight: <Types.Point3>[0, 0, 0],
+        },
+      };
+    }
+
+    const pointsForPlacement = placementPoints ?? canvasCoordinates;
+    if (!data.handles.textBox.hasMoved) {
+      const canvasTextBoxCoords = getTextBoxCoordsCanvas(
+        pointsForPlacement,
+        element,
+        textLines
+      );
+      data.handles.textBox.worldPosition =
+        viewport.canvasToWorld(canvasTextBoxCoords);
+    }
+
+    const textBoxPosition = viewport.worldToCanvas(
+      data.handles.textBox.worldPosition
+    );
+
+    const boundingBox = drawLinkedTextBox(
+      svgDrawingHelper,
+      annotationUID,
+      textBoxUID,
+      textLines,
+      textBoxPosition,
+      canvasCoordinates,
+      {},
+      styleOptions
+    );
+
+    const { x: left, y: top, width, height } = boundingBox;
+    data.handles.textBox.worldBoundingBox = {
+      topLeft: viewport.canvasToWorld([left, top]),
+      topRight: viewport.canvasToWorld([left + width, top]),
+      bottomLeft: viewport.canvasToWorld([left, top + height]),
+      bottomRight: viewport.canvasToWorld([left + width, top + height]),
+    };
+
+    return true;
+  }
+
+  /**
    * Returns true if the viewport is scaled to SUV units
    * @param viewport - The viewport
    * @param targetId - The annotation targetId
@@ -478,9 +587,8 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
 
   /**
    * Creates an annotation state copy to allow storing the current state of
-   * an annotation.  This class has knowledge about the contour and spline
-   * implementations in order to copy the contour object efficiently, and to
-   * allow copying the spline object (which has member variables etc).
+   * an annotation. Contour and other special keys are handled by safeStructuredClone.
+   * Spline is omitted (non-cloneable refs).
    *
    * @param annotation - the annotation to create a clone of
    * @param deleting - a flag to indicate that this object is about to be deleted (deleting true),
@@ -493,34 +601,11 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
   ) {
     const { data, annotationUID } = annotation;
 
-    const cloneData = {
-      ...data,
-      cachedStats: {},
-    } as typeof data;
-
-    delete cloneData.contour;
-    delete cloneData.spline;
-
-    const state = {
+    return {
       annotationUID,
-      data: structuredClone(cloneData),
+      data: safeStructuredClone(data),
       deleting,
     };
-
-    const contour = (data as ContourAnnotationData['data']).contour;
-
-    if (contour) {
-      state.data.contour = {
-        ...contour,
-        polyline: null,
-        pointsManager: PointsManager.create3(
-          contour.polyline.length,
-          contour.polyline
-        ),
-      };
-    }
-
-    return state;
   }
 
   /**
@@ -541,7 +626,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
    * @returns Memo containing the annotation data.
    */
   public static createAnnotationMemo(
-    element,
+    element: HTMLDivElement | null | undefined,
     annotation: Annotation,
     options?: { newAnnotation?: boolean; deleting?: boolean }
   ) {
@@ -617,11 +702,13 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
         }
         state.data = newState.data;
         currentAnnotation.invalidated = true;
-        triggerAnnotationModified(
-          currentAnnotation,
-          element,
-          ChangeTypes.History
-        );
+        if (element) {
+          triggerAnnotationModified(
+            currentAnnotation,
+            element,
+            ChangeTypes.History
+          );
+        }
       },
       id: annotationUID,
       operationType: 'annotation',

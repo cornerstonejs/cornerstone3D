@@ -195,6 +195,10 @@
         "name": "Multiple Tool Groups",
         "description": "Demonstrates the usage of multiple tool groups for a set of viewports."
       },
+      "leftClickRightClickTools": {
+        "name": "Left Click and Right Click multi bindings",
+        "description": "Demonstrates how to bind different annotation tools to left and right mouse buttons. Left click uses the Length tool, and right click uses the Bidirectional tool.  Center/wheel+shift pan/zoom, and shift/left or right click to draw a rectangle or circle."
+      },
       "stackManipulationTools": {
         "name": "Stack Manipulation Tools",
         "description": "Demonstrates several manipulation tools (window/level, pan, zoom) as well as Stack Viewport-specific scrolling"
@@ -336,6 +340,10 @@
       "wsi": {
         "name": "Whole Slide Imaging",
         "description": "Display WSI Series"
+      },
+      "ecg": {
+        "name": "ECG Viewport",
+        "description": "Displays a 12-lead ECG from DICOM Waveform data."
       },
       "wsiAnnotationTools": {
         "name": "WSI Annotation Tools",
@@ -636,7 +644,7 @@
         "description": "Volume Decimated loading"
       }
     },
-  
+
     "adapters": {
       "segmentationStack": {
         "name": "DICOM SEG Stack",

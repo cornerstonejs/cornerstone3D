@@ -29,7 +29,11 @@ export default function mouseDownActivate(
   }
 
   if (activeTool.addNewAnnotation) {
-    const annotation = activeTool.addNewAnnotation(evt, 'mouse');
-    setAnnotationSelected(annotation.annotationUID);
+    try {
+      const annotation = activeTool.addNewAnnotation(evt, 'mouse');
+      setAnnotationSelected(annotation.annotationUID);
+    } catch (error) {
+      console.warn('Error adding new annotation, viewport not ready:', error);
+    }
   }
 }

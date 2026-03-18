@@ -146,10 +146,23 @@ class VolumeViewport extends BaseVolumeViewport {
   }
 
   public jumpToWorld(worldPos: Point3): boolean {
+    let targetWorldPos = worldPos;
+
+    const imageData = this.getImageData();
+    if (imageData?.imageData) {
+      const bounds = imageData.imageData.getBounds();
+      // Ensure the target world position is within the bounds of the image data
+      targetWorldPos = [
+        Math.max(bounds[0], Math.min(bounds[1], worldPos[0])),
+        Math.max(bounds[2], Math.min(bounds[3], worldPos[1])),
+        Math.max(bounds[4], Math.min(bounds[5], worldPos[2])),
+      ] as Point3;
+    }
+
     const { focalPoint } = this.getCamera();
 
     const delta: Point3 = [0, 0, 0];
-    vec3.sub(delta, worldPos, focalPoint);
+    vec3.sub(delta, targetWorldPos, focalPoint);
 
     const camera = this.getCamera();
     const normal = camera.viewPlaneNormal;
@@ -200,12 +213,30 @@ class VolumeViewport extends BaseVolumeViewport {
       if (orientation === OrientationAxis.ACQUISITION) {
         // Acquisition orientation is determined from the volume data
         ({ viewPlaneNormal, viewUp } = super._getAcquisitionPlaneOrientation());
-      } else if (
-        orientation === OrientationAxis.REFORMAT ||
-        (orientation as string).includes('_reformat')
-      ) {
+      } else if (orientation === OrientationAxis.REFORMAT) {
+        // Generic reformat - auto-detect closest orientation
         ({ viewPlaneNormal, viewUp } = getCameraVectors(this, {
           useViewportNormal: true,
+        }));
+      } else if (
+        orientation === OrientationAxis.AXIAL_REFORMAT ||
+        orientation === OrientationAxis.SAGITTAL_REFORMAT ||
+        orientation === OrientationAxis.CORONAL_REFORMAT
+      ) {
+        // Extract base orientation from reformat type
+        let baseOrientation: OrientationAxis;
+        if (orientation === OrientationAxis.AXIAL_REFORMAT) {
+          baseOrientation = OrientationAxis.AXIAL;
+        } else if (orientation === OrientationAxis.SAGITTAL_REFORMAT) {
+          baseOrientation = OrientationAxis.SAGITTAL;
+        } else {
+          baseOrientation = OrientationAxis.CORONAL;
+        }
+
+        // Use viewport normal (for reformat) but specify base orientation (for reference)
+        ({ viewPlaneNormal, viewUp } = getCameraVectors(this, {
+          useViewportNormal: true,
+          orientation: baseOrientation,
         }));
       } else if (MPR_CAMERA_VALUES[orientation]) {
         ({ viewPlaneNormal, viewUp } = MPR_CAMERA_VALUES[orientation]);
@@ -221,7 +252,8 @@ class VolumeViewport extends BaseVolumeViewport {
       });
 
       this.viewportProperties.orientation = orientation;
-      this.resetCamera();
+      // Suppress events to prevent CAMERA_RESET from triggering render before camera is ready
+      this.resetCamera({ suppressEvents: true });
     } else {
       ({ viewPlaneNormal, viewUp } = orientation);
       this.applyViewOrientation(orientation, true, suppressEvents);
@@ -542,12 +574,15 @@ class VolumeViewport extends BaseVolumeViewport {
    * have the same affect, excluding end/looping conditions.
    */
   public getCurrentImageIdIndex = (
-    volumeId?: string,
+    volumeId: string = this.getVolumeId(),
     useSlabThickness = true
   ): number => {
+    if (!volumeId) {
+      return 0;
+    }
     const { currentStepIndex } = getVolumeViewportScrollInfo(
       this,
-      volumeId || this.getVolumeId(),
+      volumeId,
       useSlabThickness
     );
     return currentStepIndex;

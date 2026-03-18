@@ -22,7 +22,7 @@ test.describe('MPR Reformat Visual Tests', () => {
     );
 
     // Click the reformat button
-    await page.click('button:has-text("Reformat viewports")');
+    await page.click('button:has-text("Set orientation reformat")');
 
     // Wait for reformat to complete
     await page.waitForTimeout(2000);
@@ -40,7 +40,7 @@ test.describe('MPR Reformat Visual Tests', () => {
     const firstCanvas = page.locator('.cornerstone-canvas').nth(0);
 
     // Click the reformat button
-    await page.click('button:has-text("Reformat viewports")');
+    await page.click('button:has-text("Set orientation reformat")');
 
     // Wait for reformat to complete
     await page.waitForTimeout(2000);

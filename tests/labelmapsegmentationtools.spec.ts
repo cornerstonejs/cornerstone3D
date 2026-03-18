@@ -14,7 +14,7 @@ test.beforeEach(async ({ page }) => {
   await visitExample(page, 'labelmapSegmentationTools', 10000);
 });
 
-test.describe('Basic manual labelmap Segmentation tools shouldUpdateThis', async () => {
+test.describe('Basic manual labelmap Segmentation tools', async () => {
   test('should render and allow usage of circle brush', async ({ page }) => {
     const screenshotLocator = page.locator('#content > div');
     const firstCanvas = page.locator('.cornerstone-canvas').nth(0);

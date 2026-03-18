@@ -124,6 +124,7 @@ async function computeSurfaceFromLabelmapSegmentation(
 
 /**
  * Computes the surface from contour segmentation.
+ * This may return an empty array in cases where the surface is currently empty
  * @param segmentationId - The ID of the segmentation.
  * @param options - The options for surface computation.
  * @returns A promise that resolves to the raw surfaces data.
@@ -149,8 +150,8 @@ async function computeSurfaceFromContourSegmentation(
   });
 
   const surfaces = await Promise.all(promises);
-
-  return surfaces;
+  const availableSurfaces = surfaces.filter((surface) => surface?.data);
+  return availableSurfaces;
 }
 
 export {

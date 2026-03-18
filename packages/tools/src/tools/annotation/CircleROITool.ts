@@ -26,12 +26,10 @@ import {
 import {
   drawCircle as drawCircleSvg,
   drawHandles as drawHandlesSvg,
-  drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
 import { state } from '../../store/state';
 import { ChangeTypes, Events, MeasurementType } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import {
   resetElementCursor,
   hideElementCursor,
@@ -604,8 +602,6 @@ class CircleROITool extends AnnotationTool {
       return renderStatus;
     }
 
-    const targetId = this.getTargetId(viewport);
-
     const renderingEngine = viewport.getRenderingEngine();
 
     const styleSpecifier: StyleSpecifier = {
@@ -620,6 +616,7 @@ class CircleROITool extends AnnotationTool {
       const { handles } = data;
       const { points, activeHandleIndex } = handles;
 
+      const targetId = this.getTargetId(viewport, data);
       styleSpecifier.annotationUID = annotationUID;
 
       const { color, lineWidth, lineDash } = this.getAnnotationStyle({
@@ -782,60 +779,24 @@ class CircleROITool extends AnnotationTool {
       renderStatus = true;
 
       if (this.configuration.calculateStats) {
-        const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
-        if (!options.visibility) {
-          data.handles.textBox = {
-            hasMoved: false,
-            worldPosition: <Types.Point3>[0, 0, 0],
-            worldBoundingBox: {
-              topLeft: <Types.Point3>[0, 0, 0],
-              topRight: <Types.Point3>[0, 0, 0],
-              bottomLeft: <Types.Point3>[0, 0, 0],
-              bottomRight: <Types.Point3>[0, 0, 0],
-            },
-          };
-          continue;
-        }
-
         const textLines = this.configuration.getTextLines(data, targetId);
         if (!textLines || textLines.length === 0) {
           continue;
         }
-
-        // Poor man's cached?
-        let canvasTextBoxCoords;
-
-        if (!data.handles.textBox.hasMoved) {
-          canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCorners);
-
-          data.handles.textBox.worldPosition =
-            viewport.canvasToWorld(canvasTextBoxCoords);
+        const linkAnchorPoints: Types.Point2[] = [center, canvasCoordinates[1]];
+        if (
+          !this.renderLinkedTextBoxAnnotation({
+            enabledElement,
+            svgDrawingHelper,
+            annotation,
+            styleSpecifier,
+            textLines,
+            canvasCoordinates: linkAnchorPoints,
+            placementPoints: canvasCorners,
+          })
+        ) {
+          continue;
         }
-
-        const textBoxPosition = viewport.worldToCanvas(
-          data.handles.textBox.worldPosition
-        );
-
-        const textBoxUID = '1';
-        const boundingBox = drawLinkedTextBoxSvg(
-          svgDrawingHelper,
-          annotationUID,
-          textBoxUID,
-          textLines,
-          textBoxPosition,
-          [center, canvasCoordinates[1]],
-          {},
-          options
-        );
-
-        const { x: left, y: top, width, height } = boundingBox;
-
-        data.handles.textBox.worldBoundingBox = {
-          topLeft: viewport.canvasToWorld([left, top]),
-          topRight: viewport.canvasToWorld([left + width, top]),
-          bottomLeft: viewport.canvasToWorld([left, top + height]),
-          bottomRight: viewport.canvasToWorld([left + width, top + height]),
-        };
       }
     }
 
@@ -874,13 +835,15 @@ class CircleROITool extends AnnotationTool {
 
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
-
       const image = this.getTargetImageData(targetId);
 
       // If image does not exists for the targetId, skip. This can be due
       // to various reasons such as if the target was a volumeViewport, and
       // the volumeViewport has been decached in the meantime.
       if (!image) {
+        console.warn('image not found for stats:', targetId);
+        // Better clean the stats for this targetId
+        delete cachedStats[targetId];
         continue;
       }
 
@@ -888,7 +851,11 @@ class CircleROITool extends AnnotationTool {
 
       const handles = points.map((point) => imageData.worldToIndex(point));
       const calibrate = getCalibratedLengthUnitsAndScale(image, handles);
-      const radius = CircleROITool.calculateLengthInIndex(calibrate, handles);
+      // Representation is either simplified 2 points or 5 points, so we need to slice the handles to get the correct handles
+      const radius = CircleROITool.calculateLengthInIndex(
+        calibrate,
+        handles.slice(0, 2)
+      );
       const area = Math.PI * radius * radius;
       const perimeter = 2 * Math.PI * radius;
       const isEmptyArea = radius === 0;

@@ -4,6 +4,7 @@ import { utilities } from "dcmjs";
 import MeasurementReport from "./MeasurementReport";
 import BaseAdapter3D from "./BaseAdapter3D";
 import { toScoord } from "../helpers";
+import { extractAllNUMGroups, restoreAdditionalMetrics } from "./metricHandler";
 
 const { Ellipse: TID300Ellipse } = utilities.TID300;
 
@@ -31,7 +32,13 @@ class EllipticalROI extends BaseAdapter3D {
             metadata,
             EllipticalROI.toolType
         );
-
+        const referencedSOPInstanceUID = state.sopInstanceUid;
+        const allNUMGroups = extractAllNUMGroups(
+            MeasurementGroup,
+            referencedSOPInstanceUID
+        );
+        const measurementNUMGroups =
+            allNUMGroups[referencedSOPInstanceUID] || {};
         state.annotation.data = {
             ...state.annotation.data,
             handles: {
@@ -45,7 +52,8 @@ class EllipticalROI extends BaseAdapter3D {
                   [`imageId:${referencedImageId}`]: {
                       area: NUMGroup
                           ? NUMGroup.MeasuredValueSequence.NumericValue
-                          : 0
+                          : 0,
+                      ...restoreAdditionalMetrics(measurementNUMGroups)
                   }
               }
             : {};
@@ -98,7 +106,8 @@ class EllipticalROI extends BaseAdapter3D {
             points.push(left, right, top, bottom);
         }
 
-        const { area } = cachedStats[`imageId:${referencedImageId}`] || {};
+        const { area, max, min, mean, stdDev, modalityUnit, areaUnit } =
+            cachedStats[`imageId:${referencedImageId}`] || {};
 
         const convertedPoints = points.map(point =>
             toScoord(scoordProps, point)
@@ -106,6 +115,12 @@ class EllipticalROI extends BaseAdapter3D {
 
         return {
             area,
+            areaUnit,
+            max,
+            min,
+            mean,
+            stdDev,
+            modalityUnit,
             points: convertedPoints,
             trackingIdentifierTextValue: this.trackingIdentifierTextValue,
             finding,

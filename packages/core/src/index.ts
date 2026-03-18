@@ -17,6 +17,7 @@ import BaseVolumeViewport from './RenderingEngine/BaseVolumeViewport';
 import StackViewport from './RenderingEngine/StackViewport';
 import VideoViewport from './RenderingEngine/VideoViewport';
 import WSIViewport from './RenderingEngine/WSIViewport';
+import ECGViewport from './RenderingEngine/ECGViewport';
 import Viewport from './RenderingEngine/Viewport';
 import eventTarget from './eventTarget';
 import { version } from './version';
@@ -79,6 +80,7 @@ import * as utilities from './utilities';
 import { registerImageLoader } from './loaders/imageLoader'; // since it is used by CSWIL right now
 
 import triggerEvent from './utilities/triggerEvent';
+import { convertColorArrayToRgbString } from './utilities/convertColorArrayToRgbString';
 import { cornerstoneStreamingImageVolumeLoader } from './loaders/cornerstoneStreamingImageVolumeLoader';
 import { cornerstoneStreamingDynamicImageVolumeLoader } from './loaders/cornerstoneStreamingDynamicImageVolumeLoader';
 import { cornerstoneMeshLoader } from './loaders/cornerstoneMeshLoader';
@@ -126,6 +128,7 @@ export {
   StackViewport,
   VideoViewport,
   WSIViewport,
+  ECGViewport,
   RenderingEngine,
   BaseRenderingEngine,
   TiledRenderingEngine,
@@ -146,6 +149,7 @@ export {
   // event helpers
   eventTarget,
   triggerEvent,
+  convertColorArrayToRgbString,
   // Image Loader
   imageLoader,
   registerImageLoader, // Todo: remove this after CSWIL uses imageLoader now

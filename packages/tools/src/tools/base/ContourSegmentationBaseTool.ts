@@ -190,10 +190,12 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
 
       const viewportIds = getViewportIdsWithSegmentation(segmentationId);
 
-      const toolGroupIds = viewportIds.map((viewportId) => {
-        const toolGroup = getToolGroupForViewport(viewportId);
-        return toolGroup.id;
-      });
+      const toolGroupIds = viewportIds
+        .map((viewportId) => {
+          const toolGroup = getToolGroupForViewport(viewportId);
+          return toolGroup?.id;
+        })
+        .filter((toolGroupId): toolGroupId is string => toolGroupId != null);
 
       triggerAnnotationRenderForToolGroupIds(toolGroupIds);
     }
