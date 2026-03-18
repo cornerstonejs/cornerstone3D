@@ -110,7 +110,7 @@ class PlanarFreehandROI extends BaseAdapter3D {
     const { polyline, closed } = data.contour;
     const isOpenContour = closed !== true;
 
-    const { referencedImageId } = metadata;
+    const { referencedImageId, volumeId } = metadata;
     const scoordProps = {
       is3DMeasurement,
       referencedImageId,
@@ -136,7 +136,14 @@ class PlanarFreehandROI extends BaseAdapter3D {
       max,
       stdDev,
       length,
-    } = data.cachedStats[`imageId:${referencedImageId}`] || {};
+    } =
+      data.cachedStats[`imageId:${referencedImageId}`] ||
+      data.cachedStats[
+        Object.keys(data.cachedStats).find((k) =>
+          k.startsWith(`volumeId:${volumeId}`)
+        )
+      ] ||
+      {};
 
     return {
       /** From cachedStats */
