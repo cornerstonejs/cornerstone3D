@@ -214,4 +214,13 @@ export default class BaseAdapter3D {
 
     return tidArguments;
   }
+
+  public static getCachedStats(cachedStats, metadata) {
+    const { referencedImageId, volumeId } = metadata;
+    return (
+      cachedStats[`imageId:${referencedImageId}`] ||
+      cachedStats[`volumeId:${volumeId}`] ||
+      {}
+    );
+  }
 }
