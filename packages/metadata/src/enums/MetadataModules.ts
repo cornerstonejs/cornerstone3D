@@ -31,6 +31,7 @@ enum MetadataModules {
   SCALING = 'scalingModule',
   SOP_COMMON = 'sopCommonModule',
   ULTRASOUND_ENHANCED_REGION = 'ultrasoundEnhancedRegionModule',
+  ECG = 'ecgModule',
   VOI_LUT = 'voiLutModule',
 
   /** Transfer syntax information*/
