@@ -382,7 +382,9 @@ class VolumeCroppingTool extends BaseTool {
     const { element } = eventDetail;
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
-    const actorEntry = viewport.getDefaultActor();
+    const actorEntry = this._getVolumeActorEntry(
+      viewport as Types.IVolumeViewport
+    );
     const actor = actorEntry.actor as Types.VolumeActor;
     const mapper = actor.getMapper();
 
@@ -920,7 +922,7 @@ class VolumeCroppingTool extends BaseTool {
   };
 
   _updateClippingPlanes(viewport) {
-    const actorEntry = viewport.getDefaultActor();
+    const actorEntry = this._getVolumeActorEntry(viewport);
     const actor = actorEntry.actor;
     const mapper = actor.getMapper();
     const matrix = actor.getMatrix();
@@ -1113,14 +1115,14 @@ class VolumeCroppingTool extends BaseTool {
     if (!viewport) {
       return;
     }
-    const volumeActors = viewport.getActors();
-    if (!volumeActors || volumeActors.length === 0) {
+    const volumeEntry = this._getVolumeActorEntry(viewport);
+    if (!volumeEntry?.actor) {
       console.warn(
         'VolumeCroppingTool: No volume actors found in the viewport.'
       );
       return;
     }
-    const imageData = volumeActors[0].actor.getMapper().getInputData();
+    const imageData = volumeEntry.actor.getMapper().getInputData();
     if (!imageData) {
       console.warn('VolumeCroppingTool: No image data found for volume actor.');
       return;
@@ -1289,9 +1291,7 @@ class VolumeCroppingTool extends BaseTool {
       }
     });
 
-    const mapper = viewport
-      .getDefaultActor()
-      .actor.getMapper() as vtkVolumeMapper;
+    const mapper = volumeEntry.actor.getMapper() as vtkVolumeMapper;
 
     mapper.addClippingPlane(planeXMin);
     mapper.addClippingPlane(planeXMax);
@@ -1330,11 +1330,24 @@ class VolumeCroppingTool extends BaseTool {
     return (viewport as Types.IVolumeViewport) || null;
   };
 
+  /**
+   * Viewport default actor is getActors()[0]; 3D overlays (e.g. OrientationController)
+   * may be registered first, so cropping must target vtkVolume explicitly.
+   */
+  _getVolumeActorEntry(viewport: Types.IVolumeViewport) {
+    const actors = viewport.getActors?.() ?? [];
+    return (
+      actors.find((e) => e.actor?.getClassName?.() === 'vtkVolume') ??
+      viewport.getDefaultActor()
+    );
+  }
+
   _getVolumeActor(
     viewport?: Types.IVolumeViewport
   ): Types.VolumeActor | undefined {
     const vp = viewport || this._getViewport();
-    return vp?.getDefaultActor()?.actor as Types.VolumeActor | undefined;
+    const entry = vp ? this._getVolumeActorEntry(vp) : undefined;
+    return entry?.actor as Types.VolumeActor | undefined;
   }
 
   _getVolumeMapper(
@@ -1364,7 +1377,7 @@ class VolumeCroppingTool extends BaseTool {
   }
 
   _updateClippingPlanesFromFaceSpheres(viewport) {
-    const mapper = viewport.getDefaultActor().actor.getMapper();
+    const mapper = this._getVolumeActorEntry(viewport).actor.getMapper();
     // Update origins in originalClippingPlanes
     this.originalClippingPlanes[PLANEINDEX.XMIN].origin = [
       ...this.sphereStates[SPHEREINDEX.XMIN].point,
