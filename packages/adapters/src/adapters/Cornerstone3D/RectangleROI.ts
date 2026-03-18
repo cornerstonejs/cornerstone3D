@@ -82,7 +82,7 @@ export class RectangleROI extends BaseAdapter3D {
   static getTID300RepresentationArguments(tool, is3DMeasurement = false) {
     const { data, finding, findingSites, metadata } = tool;
 
-    const { referencedImageId } = metadata;
+    const { referencedImageId, volumeId } = metadata;
     const scoordProps = {
       is3DMeasurement,
       referencedImageId,
@@ -91,7 +91,13 @@ export class RectangleROI extends BaseAdapter3D {
     const corners = toScoords(scoordProps, data.handles.points);
 
     const { area, perimeter, max, mean, stdDev, areaUnit, modalityUnit } =
-      data.cachedStats[`imageId:${referencedImageId}`] || {};
+      data.cachedStats[`imageId:${referencedImageId}`] ||
+      data.cachedStats[
+        Object.keys(data.cachedStats).find((k) =>
+          k.startsWith(`volumeId:${volumeId}`)
+        )
+      ] ||
+      {};
 
     return {
       points: [corners[0], corners[1], corners[3], corners[2], corners[0]],
