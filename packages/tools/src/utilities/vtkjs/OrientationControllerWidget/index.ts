@@ -320,7 +320,8 @@ export class vtkOrientationControllerWidget {
 
   calculateMarkerPosition(
     viewport: Types.IVolumeViewport,
-    position: PositionConfig['position']
+    position: PositionConfig['position'],
+    screenSizePixels: number
   ): [number, number, number] | null {
     const canvas = viewport.canvas;
     if (!canvas) {
@@ -331,28 +332,40 @@ export class vtkOrientationControllerWidget {
     const canvasWidth = canvas.clientWidth || canvas.width / devicePixelRatio;
     const canvasHeight =
       canvas.clientHeight || canvas.height / devicePixelRatio;
-    const cornerOffset =
-      viewport.type === Enums.ViewportType.VOLUME_3D ? 55 : 35;
+
+    // We want the distance between the controller and the viewport border
+    // to scale with the controller size.
+    //
+    // We clamp the margin so the controller stays fully within the viewport
+    // even when the size is large.
+    const marginRatio =
+      viewport.type === Enums.ViewportType.VOLUME_3D ? 1.3 : 1.1;
+    const marginPxRaw = marginRatio * screenSizePixels;
+    const halfPx = screenSizePixels * 0.5;
+
+    const maxMarginX = Math.max(0, (canvasWidth - screenSizePixels) / 2);
+    const maxMarginY = Math.max(0, (canvasHeight - screenSizePixels) / 2);
+    const marginPx = Math.min(marginPxRaw, maxMarginX, maxMarginY);
 
     let canvasX: number;
     let canvasY: number;
 
     switch (position) {
       case 'top-left':
-        canvasX = cornerOffset;
-        canvasY = cornerOffset;
+        canvasX = marginPx + halfPx;
+        canvasY = marginPx + halfPx;
         break;
       case 'top-right':
-        canvasX = canvasWidth - cornerOffset;
-        canvasY = cornerOffset;
+        canvasX = canvasWidth - marginPx - halfPx;
+        canvasY = marginPx + halfPx;
         break;
       case 'bottom-left':
-        canvasX = cornerOffset;
-        canvasY = canvasHeight - cornerOffset;
+        canvasX = marginPx + halfPx;
+        canvasY = canvasHeight - marginPx - halfPx;
         break;
       default: // bottom-right
-        canvasX = canvasWidth - cornerOffset;
-        canvasY = canvasHeight - cornerOffset;
+        canvasX = canvasWidth - marginPx - halfPx;
+        canvasY = canvasHeight - marginPx - halfPx;
     }
 
     const canvasPos: Types.Point2 = [canvasX, canvasY];
@@ -407,7 +420,11 @@ export class vtkOrientationControllerWidget {
     actors.forEach((actor) => {
       actor.setScale(markerSize, markerSize, markerSize);
 
-      const worldPos = this.calculateMarkerPosition(viewport, config.position);
+      const worldPos = this.calculateMarkerPosition(
+        viewport,
+        config.position,
+        screenSizePixels
+      );
       if (!worldPos) {
         console.warn(
           'OrientationControllerWidget: Could not get world position'
