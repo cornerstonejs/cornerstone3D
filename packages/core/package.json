@@ -86,6 +86,9 @@
     "gl-matrix": "3.4.3",
     "loglevel": "1.9.2"
   },
+  "peerDependencies": {
+    "@cornerstonejs/metadata": "workspace:*"
+  },
   "contributors": [
     {
       "name": "Cornerstone.js Contributors",
