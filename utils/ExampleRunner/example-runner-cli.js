@@ -195,7 +195,7 @@ if (configuration.examples) {
   closestExampleNames.sort((a, b) => a.similarity - b.similarity);
 
   let topClosestNames = closestExampleNames
-    .filter((item) => item.similarity < -2) // this is arbitrary and can be adjusted, but basically says at least two characters should match sequentially
+    .filter((item) => item.similarity <= -2) // this is arbitrary and can be adjusted, but basically says at least two characters should match sequentially
     .map((item) => item.name);
 
   if (exampleCount === 0 && topClosestNames.length) {
@@ -232,7 +232,7 @@ if (configuration.examples) {
         ) {
           // If user selected a valid example, run that example
           filterExamples[0] = topClosestNames[selectedIndex];
-          filteredExampleCorrectCase = filterExamples;
+          filteredExampleCorrectCase = filterExamples[0];
           rl.close();
           run();
         } else {
@@ -245,6 +245,11 @@ if (configuration.examples) {
         }
       }
     );
+  } else if (exampleCount === 0) {
+    console.log(
+      `\n=> Error: Did not find any examples matching ${filterExamples[0]}`
+    );
+    process.exit(1);
   } else {
     // say name of running example
     run();

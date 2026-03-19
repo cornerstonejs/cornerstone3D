@@ -1,0 +1,611 @@
+import { vec3 } from 'gl-matrix';
+import calculateTransform from '../../helpers/cpuFallback/rendering/calculateTransform';
+import getDefaultViewport from '../../helpers/cpuFallback/rendering/getDefaultViewport';
+import { getDefaultImageVOIRange } from '../../helpers/planarImageRendering';
+import resizeEnabledElement from '../../helpers/cpuFallback/rendering/resize';
+import drawImageSync from '../../helpers/cpuFallback/drawImageSync';
+import { resolveCPUFallbackColormap } from '../../helpers/cpuFallback/colors';
+import {
+  InterpolationType,
+  MetadataModules,
+  ViewportType,
+  Events,
+  ViewportStatus,
+} from '../../../enums';
+import { loadAndCacheImage } from '../../../loaders/imageLoader';
+import * as metaData from '../../../metaData';
+import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
+import triggerEvent from '../../../utilities/triggerEvent';
+import { toWindowLevel } from '../../../utilities/windowLevel';
+import type {
+  CPUIImageData,
+  CPUFallbackEnabledElement,
+  IImage,
+  Point2,
+  Point3,
+} from '../../../types';
+import type {
+  DataAddOptions,
+  LoadedData,
+  RenderPathAttachment,
+  RenderPathDefinition,
+  RenderPath,
+} from '../ViewportArchitectureTypes';
+import type {
+  PlanarCamera,
+  PlanarDataPresentation,
+  PlanarCpuImageAdapterContext,
+  PlanarPayload,
+  PlanarViewportRenderContext,
+} from './PlanarViewportV2Types';
+import type { PlanarCpuImageRendering } from './planarRuntimeTypes';
+import {
+  canvasToWorldPlanarCamera,
+  worldToCanvasPlanarCamera,
+} from './planarAdapterCoordinateTransforms';
+import type { DerivedPlanarPresentation } from './planarRenderCamera';
+import {
+  derivePlanarPresentation,
+  resolvePlanarRenderCamera,
+} from './planarRenderCamera';
+import { createPlanarCpuImageSliceBasis } from './planarSliceBasis';
+
+export class CpuImageSliceRenderPath
+  implements RenderPath<PlanarCpuImageAdapterContext>
+{
+  async addData(
+    ctx: PlanarCpuImageAdapterContext,
+    data: LoadedData,
+    options: DataAddOptions
+  ): Promise<RenderPathAttachment<PlanarDataPresentation>> {
+    const payload: PlanarPayload = data as unknown as LoadedData<PlanarPayload>;
+
+    if (!payload.image) {
+      throw new Error('[PlanarViewportV2] CPU rendering requires an image');
+    }
+
+    ctx.display.activateRenderMode('cpu2d');
+
+    const enabledElement = {
+      canvas: ctx.cpu.canvas,
+      image: payload.image,
+      renderingTools: {},
+      viewport: getDefaultViewport(ctx.cpu.canvas, payload.image),
+    } as CPUFallbackEnabledElement;
+
+    resizeEnabledElement(enabledElement, true);
+    enabledElement.transform = calculateTransform(enabledElement);
+    const sliceBasis = createPlanarCpuImageSliceBasis({
+      canvasHeight: ctx.cpu.canvas.height,
+      canvasWidth: ctx.cpu.canvas.width,
+      image: payload.image,
+    });
+
+    const rendering: PlanarCpuImageRendering = {
+      id: `rendering:${data.id}:${options.renderMode}`,
+      renderMode: 'cpu2d',
+      enabledElement,
+      currentImageIdIndex: payload.initialImageIdIndex,
+      defaultVOIRange: getDefaultImageVOIRange(payload.image),
+      dataPresentation: undefined,
+      fitScale: enabledElement.viewport.scale ?? 1,
+      loadRequestId: 0,
+      requestedCamera: undefined,
+      renderCamera: resolvePlanarRenderCamera({
+        sliceBasis,
+        canvasHeight: ctx.cpu.canvas.height,
+        canvasWidth: ctx.cpu.canvas.width,
+      }),
+      renderingInvalidated: true,
+    };
+
+    return {
+      rendering,
+      updateDataPresentation: (props) => {
+        this.updateDataPresentation(rendering, props);
+      },
+      updateCamera: (camera) => {
+        this.updateCamera(ctx, rendering, camera, payload.imageIds);
+      },
+      canvasToWorld: (canvasPos) => {
+        return this.canvasToWorld(ctx, rendering, canvasPos);
+      },
+      worldToCanvas: (worldPos) => {
+        return this.worldToCanvas(ctx, rendering, worldPos);
+      },
+      getFrameOfReferenceUID: () => {
+        return this.getFrameOfReferenceUID(rendering);
+      },
+      getImageData: () => {
+        return this.getImageData(rendering);
+      },
+      render: () => {
+        this.render(ctx, rendering);
+      },
+      resize: () => {
+        this.resize(rendering);
+      },
+      removeData: () => {
+        this.removeData(ctx, rendering);
+      },
+    };
+  }
+
+  private updateDataPresentation(
+    rendering: PlanarCpuImageRendering,
+    props: unknown
+  ): void {
+    rendering.dataPresentation = props as PlanarDataPresentation | undefined;
+    applyDataPresentation(rendering, rendering.dataPresentation);
+  }
+
+  private updateCamera(
+    ctx: PlanarCpuImageAdapterContext,
+    rendering: PlanarCpuImageRendering,
+    camera: unknown,
+    imageIds: string[]
+  ): void {
+    const planarCamera = camera as PlanarCamera | undefined;
+    const nextImageIdIndex =
+      planarCamera?.imageIdIndex ?? rendering.currentImageIdIndex;
+    const image = rendering.enabledElement.image;
+
+    ctx.display.activateRenderMode('cpu2d');
+
+    if (image) {
+      const sliceBasis = createPlanarCpuImageSliceBasis({
+        canvasHeight: ctx.cpu.canvas.height,
+        canvasWidth: ctx.cpu.canvas.width,
+        image,
+      });
+      rendering.requestedCamera = planarCamera;
+      rendering.renderCamera = resolvePlanarRenderCamera({
+        sliceBasis,
+        camera: rendering.requestedCamera,
+        canvasWidth: ctx.cpu.canvas.width,
+        canvasHeight: ctx.cpu.canvas.height,
+      });
+      const presentation = derivePlanarPresentation({
+        sliceBasis,
+        camera: rendering.requestedCamera,
+        canvasWidth: ctx.cpu.canvas.width,
+        canvasHeight: ctx.cpu.canvas.height,
+      });
+      applyPresentationState(rendering, presentation);
+    }
+
+    if (nextImageIdIndex === rendering.currentImageIdIndex) {
+      return;
+    }
+
+    if (nextImageIdIndex < 0 || nextImageIdIndex >= imageIds.length) {
+      return;
+    }
+
+    const requestId = ++rendering.loadRequestId;
+
+    void loadAndCacheImage(imageIds[nextImageIdIndex]).then((image) => {
+      if (requestId !== rendering.loadRequestId) {
+        return;
+      }
+
+      void updateRenderedImage({
+        ctx,
+        image,
+        imageIdIndex: nextImageIdIndex,
+        props: rendering.dataPresentation,
+        rendering,
+        camera: planarCamera,
+      });
+    });
+  }
+
+  private canvasToWorld(
+    ctx: PlanarCpuImageAdapterContext,
+    rendering: PlanarCpuImageRendering,
+    canvasPos: Point2
+  ): Point3 {
+    const renderCamera = rendering.renderCamera;
+
+    if (
+      !renderCamera?.focalPoint ||
+      !renderCamera.parallelScale ||
+      !renderCamera.viewPlaneNormal ||
+      !renderCamera.viewUp
+    ) {
+      return [0, 0, 0];
+    }
+
+    return canvasToWorldPlanarCamera({
+      camera: {
+        focalPoint: renderCamera.focalPoint,
+        parallelScale: renderCamera.parallelScale,
+        viewPlaneNormal: renderCamera.viewPlaneNormal,
+        viewUp: renderCamera.viewUp,
+      },
+      canvasWidth: ctx.cpu.canvas.width,
+      canvasHeight: ctx.cpu.canvas.height,
+      canvasPos,
+    });
+  }
+
+  private worldToCanvas(
+    ctx: PlanarCpuImageAdapterContext,
+    rendering: PlanarCpuImageRendering,
+    worldPos: Point3
+  ): Point2 {
+    const renderCamera = rendering.renderCamera;
+
+    if (
+      !renderCamera?.focalPoint ||
+      !renderCamera.parallelScale ||
+      !renderCamera.viewPlaneNormal ||
+      !renderCamera.viewUp
+    ) {
+      return [0, 0];
+    }
+
+    return worldToCanvasPlanarCamera({
+      camera: {
+        focalPoint: renderCamera.focalPoint,
+        parallelScale: renderCamera.parallelScale,
+        viewPlaneNormal: renderCamera.viewPlaneNormal,
+        viewUp: renderCamera.viewUp,
+      },
+      canvasWidth: ctx.cpu.canvas.width,
+      canvasHeight: ctx.cpu.canvas.height,
+      worldPos,
+    });
+  }
+
+  private getFrameOfReferenceUID(
+    rendering: PlanarCpuImageRendering
+  ): string | undefined {
+    const imageId = rendering.enabledElement.image?.imageId;
+    const imagePlaneModule = imageId
+      ? (metaData.get(MetadataModules.IMAGE_PLANE, imageId) as
+          | { frameOfReferenceUID?: string }
+          | undefined)
+      : undefined;
+
+    return imagePlaneModule?.frameOfReferenceUID;
+  }
+
+  private getImageData(
+    rendering: PlanarCpuImageRendering
+  ): CPUIImageData | undefined {
+    const image = rendering.enabledElement.image;
+
+    if (!image) {
+      return;
+    }
+
+    return buildPlanarImageData(image, this.getFrameOfReferenceUID(rendering));
+  }
+
+  private render(
+    ctx: PlanarCpuImageAdapterContext,
+    rendering: PlanarCpuImageRendering
+  ): void {
+    renderCPUImage(rendering);
+    triggerEvent(ctx.viewport.element, Events.IMAGE_RENDERED, {
+      element: ctx.viewport.element,
+      viewportId: ctx.viewportId,
+      renderingEngineId: ctx.renderingEngineId,
+      viewportStatus: ViewportStatus.RENDERED,
+    });
+  }
+
+  private resize(rendering: PlanarCpuImageRendering): void {
+    resizeEnabledElement(rendering.enabledElement, true);
+    const image = rendering.enabledElement.image;
+
+    if (!image) {
+      return;
+    }
+
+    const sliceBasis = createPlanarCpuImageSliceBasis({
+      canvasHeight: rendering.enabledElement.canvas.height,
+      canvasWidth: rendering.enabledElement.canvas.width,
+      image,
+    });
+    rendering.renderCamera = resolvePlanarRenderCamera({
+      sliceBasis,
+      camera: rendering.requestedCamera,
+      canvasWidth: rendering.enabledElement.canvas.width,
+      canvasHeight: rendering.enabledElement.canvas.height,
+    });
+    const presentation = derivePlanarPresentation({
+      sliceBasis,
+      camera: rendering.requestedCamera,
+      canvasWidth: rendering.enabledElement.canvas.width,
+      canvasHeight: rendering.enabledElement.canvas.height,
+    });
+
+    rendering.fitScale =
+      getDefaultViewport(rendering.enabledElement.canvas, image).scale ?? 1;
+    rendering.renderingInvalidated = true;
+    applyPresentationState(rendering, presentation);
+  }
+
+  private removeData(
+    ctx: PlanarCpuImageAdapterContext,
+    rendering: PlanarCpuImageRendering
+  ): void {
+    const { enabledElement } = rendering;
+
+    ctx.cpu.context.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.cpu.context.clearRect(
+      0,
+      0,
+      ctx.cpu.canvas.width,
+      ctx.cpu.canvas.height
+    );
+    enabledElement.image = undefined;
+  }
+}
+
+export class CpuImageSlicePath
+  implements
+    RenderPathDefinition<
+      PlanarViewportRenderContext,
+      PlanarCpuImageAdapterContext
+    >
+{
+  readonly id = 'planar:cpu-image-slice';
+  readonly type = ViewportType.PLANAR_V2;
+
+  matches(data: LoadedData, options: DataAddOptions): boolean {
+    return data.type === 'image' && options.renderMode === 'cpu2d';
+  }
+
+  createRenderPath() {
+    return new CpuImageSliceRenderPath();
+  }
+
+  selectContext(
+    rootContext: PlanarViewportRenderContext
+  ): PlanarCpuImageAdapterContext {
+    return {
+      viewportId: rootContext.viewportId,
+      renderingEngineId: rootContext.renderingEngineId,
+      type: rootContext.type,
+      viewport: rootContext.viewport,
+      display: rootContext.display,
+      cpu: rootContext.cpu,
+    };
+  }
+}
+
+function applyDataPresentation(
+  rendering: PlanarCpuImageRendering,
+  props?: PlanarDataPresentation
+): void {
+  const { enabledElement, defaultVOIRange } = rendering;
+  const { viewport } = enabledElement;
+  const canvas = enabledElement.canvas as HTMLCanvasElement;
+  const voiRange = props?.voiRange ?? defaultVOIRange;
+
+  canvas.style.display = props?.visible === false ? 'none' : '';
+  canvas.style.opacity = String(props?.opacity ?? 1);
+
+  viewport.colormap = resolveCPUFallbackColormap(
+    props?.colormap,
+    enabledElement.image?.colormap
+  );
+  viewport.invert = props?.invert ?? false;
+
+  if (voiRange) {
+    const { windowCenter, windowWidth } = toWindowLevel(
+      voiRange.lower,
+      voiRange.upper
+    );
+
+    viewport.voi = {
+      windowCenter,
+      windowWidth,
+      voiLUTFunction: enabledElement.image?.voiLUTFunction,
+    };
+  }
+
+  rendering.renderingInvalidated = true;
+
+  if (props?.interpolationType !== undefined) {
+    viewport.pixelReplication =
+      props.interpolationType !== InterpolationType.LINEAR;
+  }
+}
+
+function applyPresentationState(
+  rendering: PlanarCpuImageRendering,
+  presentation?: DerivedPlanarPresentation
+): void {
+  const { enabledElement, fitScale } = rendering;
+  const viewport = enabledElement.viewport;
+  const desiredPan = presentation?.pan ?? [0, 0];
+  const zoom = Math.max(presentation?.zoom ?? 1, 0.001);
+
+  viewport.hflip = presentation?.flipHorizontal ?? false;
+  viewport.vflip = presentation?.flipVertical ?? false;
+  viewport.scale = fitScale * zoom;
+  viewport.rotation = presentation?.rotation ?? 0;
+  viewport.translation = resolveCPUImageViewportTranslation(
+    enabledElement,
+    desiredPan
+  );
+
+  enabledElement.transform = calculateTransform(enabledElement);
+}
+
+function resolveCPUImageViewportTranslation(
+  enabledElement: CPUFallbackEnabledElement,
+  desiredPan: Point2
+): { x: number; y: number } {
+  const { viewport } = enabledElement;
+  const originalTranslation = viewport.translation || { x: 0, y: 0 };
+
+  viewport.translation = { x: 0, y: 0 };
+  const baseOrigin = calculateTransform(enabledElement).transformPoint([0, 0]);
+
+  viewport.translation = { x: 1, y: 0 };
+  const translatedXOrigin = calculateTransform(enabledElement).transformPoint([
+    0, 0,
+  ]);
+
+  viewport.translation = { x: 0, y: 1 };
+  const translatedYOrigin = calculateTransform(enabledElement).transformPoint([
+    0, 0,
+  ]);
+
+  viewport.translation = originalTranslation;
+
+  const deltaX: Point2 = [
+    translatedXOrigin[0] - baseOrigin[0],
+    translatedXOrigin[1] - baseOrigin[1],
+  ];
+  const deltaY: Point2 = [
+    translatedYOrigin[0] - baseOrigin[0],
+    translatedYOrigin[1] - baseOrigin[1],
+  ];
+  const determinant = deltaX[0] * deltaY[1] - deltaX[1] * deltaY[0];
+
+  if (Math.abs(determinant) < 1e-6) {
+    return { x: 0, y: 0 };
+  }
+
+  return {
+    x: (desiredPan[0] * deltaY[1] - desiredPan[1] * deltaY[0]) / determinant,
+    y: (deltaX[0] * desiredPan[1] - deltaX[1] * desiredPan[0]) / determinant,
+  };
+}
+
+export function buildPlanarImageData(
+  image: IImage,
+  frameOfReferenceUID?: string
+): CPUIImageData {
+  const metadata = getImageDataMetadata(image);
+  const { calibration, dimensions, direction, modality, origin, spacing } =
+    metadata;
+  const rowVector = direction.slice(0, 3) as Point3;
+  const columnVector = direction.slice(3, 6) as Point3;
+  const scalarData =
+    image.voxelManager?.getScalarData() || image.getPixelData?.();
+
+  return {
+    dimensions,
+    spacing,
+    origin,
+    direction,
+    metadata: {
+      Modality: modality,
+      FrameOfReferenceUID: frameOfReferenceUID,
+    },
+    imageData: {
+      getDirection: () => direction,
+      getDimensions: () => dimensions,
+      getScalarData: () => scalarData,
+      getSpacing: () => spacing,
+      worldToIndex: (point: Point3) => {
+        const diff = vec3.subtract(
+          vec3.create(),
+          point as unknown as vec3,
+          origin as unknown as vec3
+        );
+
+        return [
+          vec3.dot(diff, rowVector as unknown as vec3) / spacing[0],
+          vec3.dot(diff, columnVector as unknown as vec3) / spacing[1],
+          0,
+        ] as Point3;
+      },
+      indexToWorld: (point: Point3) => {
+        const worldPoint = [...origin] as Point3;
+
+        vec3.scaleAndAdd(
+          worldPoint as unknown as vec3,
+          worldPoint as unknown as vec3,
+          rowVector as unknown as vec3,
+          point[0] * spacing[0]
+        );
+        vec3.scaleAndAdd(
+          worldPoint as unknown as vec3,
+          worldPoint as unknown as vec3,
+          columnVector as unknown as vec3,
+          point[1] * spacing[1]
+        );
+
+        return worldPoint;
+      },
+    },
+    scalarData,
+    scaling: image.scaling,
+    hasPixelSpacing: Boolean(image.rowPixelSpacing || image.columnPixelSpacing),
+    calibration,
+    preScale: image.preScale,
+    voxelManager: image.voxelManager,
+  };
+}
+
+function renderCPUImage(rendering: PlanarCpuImageRendering): void {
+  const { enabledElement, renderingInvalidated } = rendering;
+
+  if (!enabledElement.image) {
+    return;
+  }
+
+  drawImageSync(enabledElement, renderingInvalidated);
+  rendering.renderingInvalidated = false;
+}
+
+async function updateRenderedImage(args: {
+  ctx: PlanarCpuImageAdapterContext;
+  image: IImage;
+  imageIdIndex: number;
+  props?: PlanarDataPresentation;
+  rendering: PlanarCpuImageRendering;
+  camera?: PlanarCamera;
+}): Promise<void> {
+  const { ctx, image, imageIdIndex, props, rendering, camera } = args;
+  const enabledElement = rendering.enabledElement;
+  const defaultViewport = getDefaultViewport(ctx.cpu.canvas, image);
+  const previousViewport = enabledElement.viewport;
+
+  enabledElement.image = image;
+  enabledElement.viewport = {
+    ...defaultViewport,
+    hflip: previousViewport?.hflip ?? defaultViewport.hflip,
+    invert: defaultViewport.invert,
+    pixelReplication:
+      previousViewport?.pixelReplication ?? defaultViewport.pixelReplication,
+    rotation: previousViewport?.rotation ?? defaultViewport.rotation,
+    translation: previousViewport?.translation ?? defaultViewport.translation,
+    vflip: previousViewport?.vflip ?? defaultViewport.vflip,
+  };
+
+  rendering.currentImageIdIndex = imageIdIndex;
+  rendering.defaultVOIRange = getDefaultImageVOIRange(image);
+  rendering.fitScale = defaultViewport.scale ?? 1;
+  rendering.renderingInvalidated = true;
+
+  applyDataPresentation(rendering, props);
+  const sliceBasis = createPlanarCpuImageSliceBasis({
+    canvasHeight: enabledElement.canvas.height,
+    canvasWidth: enabledElement.canvas.width,
+    image,
+  });
+  rendering.requestedCamera = camera;
+  rendering.renderCamera = resolvePlanarRenderCamera({
+    sliceBasis,
+    camera: rendering.requestedCamera,
+    canvasWidth: enabledElement.canvas.width,
+    canvasHeight: enabledElement.canvas.height,
+  });
+  const presentation = derivePlanarPresentation({
+    sliceBasis,
+    camera: rendering.requestedCamera,
+    canvasWidth: enabledElement.canvas.width,
+    canvasHeight: enabledElement.canvas.height,
+  });
+  applyPresentationState(rendering, presentation);
+  ctx.display.requestRender();
+}

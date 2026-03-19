@@ -16,6 +16,7 @@ import type {
 } from '../../types';
 import triggerAnnotationRender from '../../utilities/triggerAnnotationRender';
 import filterAnnotationsForDisplay from '../../utilities/planar/filterAnnotationsForDisplay';
+import getViewportSpatialCamera from '../../utilities/getViewportSpatialCamera';
 import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
 import { getState } from '../../stateManagement/annotation/config';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
@@ -186,26 +187,26 @@ abstract class AnnotationDisplayTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    const camera = viewport.getCamera();
-    const { viewPlaneNormal, viewUp, position: cameraPosition } = camera;
-
-    const referencedImageId = this.getReferencedImageId(
-      viewport,
-      worldPos,
-      viewPlaneNormal,
-      viewUp
-    );
-
     const viewReference = viewport.getViewReference({ points: [worldPos] });
+    const {
+      viewPlaneNormal,
+      viewUp,
+      position: cameraPosition,
+    } = getViewportSpatialCamera(viewport, viewReference);
+    const referencedImageId =
+      viewReference.referencedImageId ||
+      (viewPlaneNormal
+        ? this.getReferencedImageId(viewport, worldPos, viewPlaneNormal, viewUp)
+        : undefined);
 
     const annotation = AnnotationDisplayTool.createAnnotation(
       {
         metadata: {
           toolName: this.getToolName(),
           ...viewReference,
-          referencedImageId,
-          viewUp,
-          cameraPosition,
+          ...(referencedImageId ? { referencedImageId } : {}),
+          ...(viewUp ? { viewUp } : {}),
+          ...(cameraPosition ? { cameraPosition } : {}),
         },
         data: {
           handles: {

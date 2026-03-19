@@ -3,8 +3,6 @@ import TiledRenderingEngine from './TiledRenderingEngine';
 import ContextPoolRenderingEngine from './ContextPoolRenderingEngine';
 import type BaseRenderingEngine from './BaseRenderingEngine';
 import type {
-  IStackViewport,
-  IVolumeViewport,
   IViewport,
   PublicViewportInput,
   VtkOffscreenMultiRenderWindow,
@@ -42,6 +40,10 @@ class RenderingEngine {
     return this._implementation.id;
   }
 
+  public disableViewport(viewportId: string): void {
+    return this._implementation.disableElement(viewportId);
+  }
+
   public enableElement(viewportInputEntry: PublicViewportInput): void {
     return this._implementation.enableElement(viewportInputEntry);
   }
@@ -64,18 +66,6 @@ class RenderingEngine {
 
   public getViewports(): IViewport[] {
     return this._implementation.getViewports();
-  }
-
-  public getStackViewport(viewportId: string): IStackViewport {
-    return this._implementation.getStackViewport(viewportId);
-  }
-
-  public getStackViewports(): IStackViewport[] {
-    return this._implementation.getStackViewports();
-  }
-
-  public getVolumeViewports(): IVolumeViewport[] {
-    return this._implementation.getVolumeViewports();
   }
 
   public getRenderer(viewportId: string) {

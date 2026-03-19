@@ -18,6 +18,38 @@ import StackViewport from './RenderingEngine/StackViewport';
 import VideoViewport from './RenderingEngine/VideoViewport';
 import WSIViewport from './RenderingEngine/WSIViewport';
 import ECGViewport from './RenderingEngine/ECGViewport';
+import {
+  defaultRenderPathResolver,
+  DefaultRenderPathResolver,
+  viewportHasCanvasWorldTransform,
+  viewportHasFrameOfReferenceUID,
+  viewportHasPan,
+  viewportHasZoom,
+  ViewportV2,
+} from './RenderingEngine/ViewportV2';
+import ECGViewportV2, {
+  CanvasECGPath,
+  DefaultECGDataProvider,
+} from './RenderingEngine/ViewportV2/ECG';
+import VideoViewportV2, {
+  DefaultVideoDataProvider,
+  HtmlVideoPath,
+} from './RenderingEngine/ViewportV2/Video';
+import PlanarViewportV2, {
+  CpuImageSlicePath,
+  DefaultPlanarDataProvider,
+  VtkImageMapperPath,
+  VtkVolumeMapperPath,
+} from './RenderingEngine/ViewportV2/Planar';
+import VolumeViewport3DV2, {
+  DefaultVolume3DDataProvider,
+  VtkGeometry3DPath,
+  VtkVolume3DPath,
+} from './RenderingEngine/ViewportV2/Volume3D';
+import WSIViewportV2, {
+  DefaultWSIDataProvider,
+  DicomMicroscopyPath,
+} from './RenderingEngine/ViewportV2/WSI';
 import Viewport from './RenderingEngine/Viewport';
 import eventTarget from './eventTarget';
 import { version } from './version';
@@ -45,6 +77,7 @@ import * as metaData from './metaData';
 import {
   init,
   getShouldUseCPURendering,
+  getUseViewportV2,
   isCornerstoneInitialized,
   setUseCPURendering,
   setPreferSizeOverAccuracy,
@@ -93,6 +126,30 @@ import {
 
 export * from './loaders/decimatedVolumeLoader';
 
+const renderingEngineExportsV2 = {
+  ViewportV2,
+  DefaultRenderPathResolver,
+  defaultRenderPathResolver,
+  ECGViewportV2,
+  CanvasECGPath,
+  DefaultECGDataProvider,
+  VideoViewportV2,
+  HtmlVideoPath,
+  DefaultVideoDataProvider,
+  PlanarViewportV2,
+  CpuImageSlicePath,
+  VtkImageMapperPath,
+  VtkVolumeMapperPath,
+  DefaultPlanarDataProvider,
+  VolumeViewport3DV2,
+  VtkVolume3DPath,
+  VtkGeometry3DPath,
+  DefaultVolume3DDataProvider,
+  WSIViewportV2,
+  DicomMicroscopyPath,
+  DefaultWSIDataProvider,
+};
+
 // Add new types here so that they can be imported singly as required.
 export type {
   Types,
@@ -129,6 +186,12 @@ export {
   VideoViewport,
   WSIViewport,
   ECGViewport,
+  ECGViewportV2,
+  ViewportV2,
+  viewportHasCanvasWorldTransform,
+  viewportHasFrameOfReferenceUID,
+  viewportHasPan,
+  viewportHasZoom,
   RenderingEngine,
   BaseRenderingEngine,
   TiledRenderingEngine,
@@ -162,6 +225,26 @@ export {
   setVolumesForViewports,
   addVolumesToViewports,
   addImageSlicesToViewports,
+  DefaultRenderPathResolver,
+  defaultRenderPathResolver,
+  CanvasECGPath,
+  DefaultECGDataProvider,
+  VideoViewportV2,
+  HtmlVideoPath,
+  DefaultVideoDataProvider,
+  PlanarViewportV2,
+  CpuImageSlicePath,
+  VtkImageMapperPath,
+  VtkVolumeMapperPath,
+  DefaultPlanarDataProvider,
+  VolumeViewport3DV2,
+  VtkVolume3DPath,
+  VtkGeometry3DPath,
+  DefaultVolume3DDataProvider,
+  WSIViewportV2,
+  DicomMicroscopyPath,
+  DefaultWSIDataProvider,
+  renderingEngineExportsV2,
   //
   imageLoadPoolManager as requestPoolManager,
   imageRetrievalPoolManager,
@@ -171,6 +254,8 @@ export {
   setUseCPURendering,
   setPreferSizeOverAccuracy,
   resetUseCPURendering,
+  // ViewportV2
+  getUseViewportV2,
   // Geometry Loader
   geometryLoader,
   cornerstoneMeshLoader,

@@ -51,10 +51,22 @@ interface Cornerstone3DConfig {
      * The default value is 7, which is suitable for mobile/desktop.
      */
     webGlContextCount?: number;
+    planar?: {
+      cpuThresholds?: {
+        image?: number;
+        volume?: number;
+      };
+    };
     volumeRendering?: {
       /** Multiplier for the calculated sample distance */
       sampleDistanceMultiplier?: number;
     };
+    /**
+     * When true, legacy viewport types (STACK, ORTHOGRAPHIC, VIDEO, ECG,
+     * WHOLE_SLIDE) are automatically remapped to their V2 equivalents
+     * (PLANAR_V2, VIDEO_V2, ECG_V2, etc.) at viewport creation time.
+     */
+    useViewportV2?: boolean;
   };
 
   debug: {

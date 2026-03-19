@@ -1,5 +1,9 @@
 import type { Types } from '@cornerstonejs/core';
-import { getRenderingEngine } from '@cornerstonejs/core';
+import {
+  getRenderingEngine,
+  viewportHasPan,
+  viewportHasZoom,
+} from '@cornerstonejs/core';
 import type { Synchronizer } from '../../store';
 
 /**
@@ -30,12 +34,20 @@ export default function zoomPanSyncCallback(
   const tViewport = renderingEngine.getViewport(targetViewport.viewportId);
   const sViewport = renderingEngine.getViewport(sourceViewport.viewportId);
 
-  if (options?.syncZoom !== false) {
+  if (
+    options?.syncZoom !== false &&
+    viewportHasZoom(sViewport) &&
+    viewportHasZoom(tViewport)
+  ) {
     const srcZoom = sViewport.getZoom();
     // Do the zoom first, as the pan is relative to the zoom level
     tViewport.setZoom(srcZoom);
   }
-  if (options?.syncPan !== false) {
+  if (
+    options?.syncPan !== false &&
+    viewportHasPan(sViewport) &&
+    viewportHasPan(tViewport)
+  ) {
     const srcPan = sViewport.getPan();
     tViewport.setPan(srcPan);
   }

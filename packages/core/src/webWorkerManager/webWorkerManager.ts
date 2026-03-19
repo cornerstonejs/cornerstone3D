@@ -69,7 +69,6 @@ class CentralizedWorkerManager {
     } = options;
 
     if (this.workerRegistry[workerName] && !overwrite) {
-      console.warn(`Worker type '${workerName}' is already registered...`);
       return;
     }
 

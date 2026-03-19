@@ -20,11 +20,11 @@ import type { ActorEntry } from './IActor';
  */
 interface CameraModifiedEventDetail {
   /** Previous camera properties */
-  previousCamera: ICamera;
+  previousCamera?: ICamera;
   /** Current camera properties */
   camera: ICamera;
   /** Viewport HTML element in the DOM */
-  element: HTMLDivElement;
+  element?: HTMLDivElement;
   /** Viewport Unique ID in the renderingEngine */
   viewportId: string;
   /** Unique ID for the renderingEngine */
@@ -37,7 +37,7 @@ interface CameraModifiedEventDetail {
 
 interface CameraResetEventDetail {
   /** Viewport HTML element in the DOM */
-  element: HTMLDivElement;
+  element?: HTMLDivElement;
   /** Viewport Unique ID in the renderingEngine */
   viewportId: string;
   /** Unique ID for the renderingEngine */

@@ -78,8 +78,8 @@ module.exports = function (config) {
     ],
     frameworks: ['jasmine', 'webpack'],
     files: [
-      'packages/core/test/**/*_test.js',
-      'packages/tools/test/**/*_test.js',
+      ...(process.env.KARMA_PACKAGE === 'core' ? [] : ['packages/tools/test/**/*_test.js']),
+      ...(process.env.KARMA_PACKAGE === 'tools' ? [] : ['packages/core/test/**/*_test.js']),
       // Serve dicomImageLoad test images
       {
         pattern: 'packages/dicomImageLoader/testImages/**/*',

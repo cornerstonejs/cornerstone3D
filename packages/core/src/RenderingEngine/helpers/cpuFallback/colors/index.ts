@@ -1,4 +1,13 @@
-import { getColormap, getColormapsList } from './colormap';
+import {
+  getColormap,
+  getColormapsList,
+  resolveCPUFallbackColormap,
+} from './colormap';
 import LookupTable from './lookupTable';
 
-export { getColormap, getColormapsList, LookupTable };
+export {
+  getColormap,
+  getColormapsList,
+  resolveCPUFallbackColormap,
+  LookupTable,
+};

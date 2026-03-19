@@ -18,7 +18,7 @@ interface IEnabledElement {
   /** Unique ID of the renderingEngine */
   renderingEngineId: string;
   /** FrameOfReference the enabledElement is rendering inside */
-  FrameOfReferenceUID: string;
+  FrameOfReferenceUID?: string;
 }
 
 export type { IEnabledElement as default };

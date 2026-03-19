@@ -1,4 +1,8 @@
-import { utilities as csUtils } from '@cornerstonejs/core';
+import {
+  utilities as csUtils,
+  viewportHasPan,
+  viewportHasZoom,
+} from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import ToolModes from '../../enums/ToolModes';
 import type StrategyCallbacks from '../../enums/StrategyCallbacks';
@@ -341,6 +345,10 @@ abstract class BaseTool {
    * the given viewport.
    */
   public static createZoomPanMemo(viewport) {
+    if (!viewportHasPan(viewport) || !viewportHasZoom(viewport)) {
+      return;
+    }
+
     // TODO - move this to view callback as a utility
     const state = {
       pan: viewport.getPan(),
@@ -350,9 +358,14 @@ abstract class BaseTool {
       restoreMemo: () => {
         const currentPan = viewport.getPan();
         const currentZoom = viewport.getZoom();
+        const renderableViewport = viewport as typeof viewport & {
+          render?: () => void;
+        };
         viewport.setZoom(state.zoom);
         viewport.setPan(state.pan);
-        viewport.render();
+        if (typeof renderableViewport.render === 'function') {
+          renderableViewport.render();
+        }
         state.pan = currentPan;
         state.zoom = currentZoom;
       },

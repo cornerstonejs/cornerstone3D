@@ -18,6 +18,7 @@ import {
   getRenderingEngine,
   init as initCore,
   setUseCPURendering,
+  getConfiguration,
   getRenderingEngines,
 } from '@cornerstonejs/core';
 import {
@@ -30,6 +31,8 @@ import {
   Enums as csToolsEnums,
 } from '@cornerstonejs/tools';
 
+const viewportV2ConfigurationStack = [];
+
 function setupTestEnvironment({
   renderingEngineId = utilities.uuidv4(),
   toolGroupIds = ['default'],
@@ -38,11 +41,17 @@ function setupTestEnvironment({
   toolActivations = {},
   viewportIds = [],
   options = {},
+  useViewportV2 = false,
 } = {}) {
   // Initialize csTools3d and add specified tools
   window.devicePixelRatio = 1;
 
   initCore();
+
+  const renderingConfiguration = getConfiguration().rendering;
+
+  viewportV2ConfigurationStack.push(renderingConfiguration.useViewportV2);
+  renderingConfiguration.useViewportV2 = useViewportV2;
   initTools();
   tools.forEach((tool) => addTool(tool));
 
@@ -162,6 +171,12 @@ function cleanupTestEnvironment(options = {}) {
 
   cache.setMaxCacheSize(ONE_GB);
   setUseCPURendering(false);
+
+  const previousUseViewportV2 = viewportV2ConfigurationStack.pop();
+
+  if (previousUseViewportV2 !== undefined) {
+    getConfiguration().rendering.useViewportV2 = previousUseViewportV2;
+  }
 
   // Clean up DOM elements
   if (cleanupDOMElements) {

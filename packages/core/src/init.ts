@@ -29,6 +29,12 @@ const defaultConfig: Cornerstone3DConfig = {
      * The default value is 7, which is suitable for mobile/desktop.
      */
     webGlContextCount: 7,
+    planar: {
+      cpuThresholds: {
+        image: 64 * 1024 * 1024,
+        volume: 64 * 1024 * 1024,
+      },
+    },
     volumeRendering: {
       /** Multiplier for the calculated sample distance */
       sampleDistanceMultiplier: 1,
@@ -219,6 +225,16 @@ function getShouldUseCPURendering(): boolean {
 }
 
 /**
+ * Returns whether ViewportV2 remapping is enabled.
+ * When true, legacy viewport types are automatically remapped to V2 equivalents.
+ * @returns true if viewport V2 remapping is enabled.
+ * @category Initialization
+ */
+function getUseViewportV2(): boolean {
+  return config.rendering.useViewportV2 === true;
+}
+
+/**
  *
  * Returns whether or not cornerstone-core has been initialized.
  * @returns true if the cornerstone render has been initialized.
@@ -277,6 +293,7 @@ async function peerImport(moduleId: string) {
 export {
   init,
   getShouldUseCPURendering,
+  getUseViewportV2,
   isCornerstoneInitialized,
   setUseCPURendering,
   setPreferSizeOverAccuracy,

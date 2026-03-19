@@ -11,6 +11,7 @@ import {
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import { viewportSupportsStackCompatibility } from '../../src/utilities/viewportCapabilities';
 
 // This is for debugging purposes
 console.warn(
@@ -191,8 +192,15 @@ async function run() {
     toolGroup.addViewport(viewportId, renderingEngineId)
   );
 
-  const vp1 = renderingEngine.getStackViewports()[0];
-  const vp2 = renderingEngine.getStackViewports()[1];
+  const vp1 = renderingEngine.getViewport(viewportIds[0]);
+  const vp2 = renderingEngine.getViewport(viewportIds[1]);
+
+  if (
+    !viewportSupportsStackCompatibility(vp1) ||
+    !viewportSupportsStackCompatibility(vp2)
+  ) {
+    throw new Error('Image slice sync requires stack-compatible viewports');
+  }
 
   await vp1.setStack(imageIds);
   await vp2.setStack(imageIds, 50);

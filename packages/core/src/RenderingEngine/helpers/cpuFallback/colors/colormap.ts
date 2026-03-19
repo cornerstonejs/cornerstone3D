@@ -1,12 +1,23 @@
 import LookupTable from './lookupTable';
 import CPU_COLORMAPS from '../../../../constants/cpuColormaps';
 import type {
+  ColormapPublic,
+  ColormapRegistration,
   CPUFallbackColormap,
   CPUFallbackColormapData,
   Point4,
+  VOIRange,
 } from '../../../../types';
+import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
+import { resolveColormap as resolveSharedColormap } from '../../../../utilities/colormap';
 
 const COLOR_TRANSPARENT: Point4 = [0, 0, 0, 0];
+const CPU_FALLBACK_GRAYSCALE_NAMES = new Set([
+  'gray',
+  'grey',
+  'grayscale',
+  'greyscale',
+]);
 
 /**
  *  Generate linearly spaced vectors
@@ -215,6 +226,48 @@ export function getColormapsList() {
   return colormaps;
 }
 
+export function resolveCPUFallbackColormap(
+  colormap?: string | ColormapPublic,
+  fallbackColormap?: CPUFallbackColormap,
+  options?: {
+    voiRange?: VOIRange;
+  }
+): CPUFallbackColormap | undefined {
+  const name =
+    typeof colormap === 'string' ? colormap.trim() : colormap?.name?.trim();
+
+  if (!name) {
+    return fallbackColormap;
+  }
+
+  const normalizedName = name.toLowerCase();
+
+  // Keep grayscale on the normal CPU image renderer instead of forcing it
+  // through the pseudocolor LUT pipeline.
+  if (CPU_FALLBACK_GRAYSCALE_NAMES.has(normalizedName)) {
+    return undefined;
+  }
+
+  const registeredColormap = resolveSharedColormap(name);
+
+  if (registeredColormap) {
+    return resolveCPUFallbackOpacityMappedColormap(
+      getOrCreateCPUFallbackColormap(registeredColormap, name),
+      typeof colormap === 'string' ? undefined : colormap,
+      options?.voiRange
+    );
+  }
+
+  const colormapId = findCPUFallbackColormapId(name);
+  const resolvedBaseColormap = colormapId ? getColormap(colormapId) : undefined;
+
+  return resolveCPUFallbackOpacityMappedColormap(
+    resolvedBaseColormap,
+    typeof colormap === 'string' ? undefined : colormap,
+    options?.voiRange
+  );
+}
+
 /**
  * Return a colorMap object with the provided id and colormapData
  * if the Id matches existent colorMap objects (check colormapsData) the colormapData is ignored.
@@ -340,4 +393,197 @@ export function getColormap(
   };
 
   return cpuFallbackColormap;
+}
+
+function getOrCreateCPUFallbackColormap(
+  colormap: ColormapRegistration,
+  originalName: string
+): CPUFallbackColormap {
+  const id = `vtk:${(colormap.name || colormap.Name || originalName)
+    .trim()
+    .toLowerCase()}`;
+
+  return getColormap(id, createCPUFallbackColormapData(colormap, originalName));
+}
+
+function createCPUFallbackColormapData(
+  colormap: ColormapRegistration,
+  originalName: string
+): CPUFallbackColormapData {
+  const transferFunction = vtkColorTransferFunction.newInstance();
+
+  transferFunction.applyColorMap(colormap);
+
+  const [lower, upper] = transferFunction.getRange();
+  const colors = Array.from({ length: 256 }, (_unused, index) => {
+    const t = index / 255;
+    const x = lower + t * (upper - lower);
+    const rgb: number[] = [];
+
+    transferFunction.getColor(x, rgb);
+
+    return [
+      Math.round(rgb[0] * 255),
+      Math.round(rgb[1] * 255),
+      Math.round(rgb[2] * 255),
+      255,
+    ] as Point4;
+  });
+
+  return {
+    colors,
+    name: colormap.Name || originalName,
+    numColors: colors.length,
+  };
+}
+
+function findCPUFallbackColormapId(name: string): string | undefined {
+  const normalizedName = name.trim().toLowerCase();
+
+  return Object.keys(CPU_COLORMAPS).find((id) => {
+    const colormap = CPU_COLORMAPS[id];
+
+    return (
+      id.toLowerCase() === normalizedName ||
+      colormap.name?.trim().toLowerCase() === normalizedName
+    );
+  });
+}
+
+function resolveCPUFallbackOpacityMappedColormap(
+  baseColormap: CPUFallbackColormap | undefined,
+  colormap: ColormapPublic | undefined,
+  voiRange?: VOIRange
+): CPUFallbackColormap | undefined {
+  if (!baseColormap) {
+    return;
+  }
+
+  if (colormap?.opacity === undefined && colormap?.threshold === undefined) {
+    return baseColormap;
+  }
+
+  if (!voiRange || voiRange.upper <= voiRange.lower) {
+    return baseColormap;
+  }
+
+  const alphaMappedColors = createOpacityMappedColors(
+    baseColormap,
+    colormap,
+    voiRange
+  );
+  const id = [
+    baseColormap.getId(),
+    `lower:${roundColormapNumber(voiRange.lower)}`,
+    `upper:${roundColormapNumber(voiRange.upper)}`,
+    `opacity:${serializeColormapOpacity(colormap?.opacity)}`,
+    `threshold:${roundColormapNumber(colormap?.threshold)}`,
+  ].join(':');
+
+  return getColormap(id, {
+    colors: alphaMappedColors,
+    name: baseColormap.getColorSchemeName(),
+    numColors: alphaMappedColors.length,
+  });
+}
+
+function createOpacityMappedColors(
+  baseColormap: CPUFallbackColormap,
+  colormap: ColormapPublic | undefined,
+  voiRange: VOIRange
+): Point4[] {
+  const numberOfColors = Math.max(baseColormap.getNumberOfColors(), 1);
+
+  return Array.from({ length: 256 }, (_unused, index) => {
+    const sourceIndex =
+      numberOfColors === 1
+        ? 0
+        : Math.round((index / 255) * (numberOfColors - 1));
+    const rgba = baseColormap.getColor(sourceIndex);
+    const scalarValue =
+      voiRange.lower + (voiRange.upper - voiRange.lower) * (index / 255);
+    const opacity = resolveOpacityAtValue(
+      scalarValue,
+      colormap?.opacity,
+      colormap?.threshold
+    );
+
+    return [
+      rgba[0],
+      rgba[1],
+      rgba[2],
+      Math.round((rgba[3] / 255) * opacity * 255),
+    ];
+  });
+}
+
+function resolveOpacityAtValue(
+  scalarValue: number,
+  opacity: ColormapPublic['opacity'],
+  threshold?: number
+): number {
+  if (threshold !== undefined && scalarValue < threshold) {
+    return 0;
+  }
+
+  if (opacity === undefined) {
+    return 1;
+  }
+
+  if (typeof opacity === 'number') {
+    return clampToUnit(opacity);
+  }
+
+  if (!opacity.length) {
+    return 1;
+  }
+
+  if (scalarValue <= opacity[0].value) {
+    return clampToUnit(opacity[0].opacity);
+  }
+
+  for (let i = 1; i < opacity.length; i++) {
+    const previous = opacity[i - 1];
+    const current = opacity[i];
+
+    if (scalarValue <= current.value) {
+      const range = current.value - previous.value;
+      const t = range > 0 ? (scalarValue - previous.value) / range : 0;
+
+      return clampToUnit(
+        previous.opacity + (current.opacity - previous.opacity) * t
+      );
+    }
+  }
+
+  return clampToUnit(opacity[opacity.length - 1].opacity);
+}
+
+function clampToUnit(value: number): number {
+  return Math.max(0, Math.min(1, value));
+}
+
+function serializeColormapOpacity(opacity: ColormapPublic['opacity']): string {
+  if (opacity === undefined) {
+    return 'none';
+  }
+
+  if (typeof opacity === 'number') {
+    return String(roundColormapNumber(opacity));
+  }
+
+  return opacity
+    .map(
+      ({ opacity: alpha, value }) =>
+        `${roundColormapNumber(value)}-${roundColormapNumber(alpha)}`
+    )
+    .join(',');
+}
+
+function roundColormapNumber(value: number | undefined): string {
+  if (value === undefined) {
+    return 'none';
+  }
+
+  return String(Math.round(value * 1000) / 1000);
 }

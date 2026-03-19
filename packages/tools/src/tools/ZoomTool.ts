@@ -1,6 +1,11 @@
 import { vec3 } from 'gl-matrix';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
-import { getConfiguration, type Types } from '@cornerstonejs/core';
+import {
+  getConfiguration,
+  type Types,
+  viewportHasPan,
+  viewportHasZoom,
+} from '@cornerstonejs/core';
 import { Enums, getEnabledElement } from '@cornerstonejs/core';
 import { BaseTool } from './base';
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
@@ -56,8 +61,14 @@ class ZoomTool extends BaseTool {
     const { element, currentPoints } = eventData;
     const worldPos = currentPoints.world;
     const enabledElement = getEnabledElement(element);
+    const viewport = enabledElement.viewport;
 
-    const camera = enabledElement.viewport.getCamera();
+    const camera = viewport.getCamera();
+
+    if (!hasLegacyCameraPosition(camera)) {
+      return false;
+    }
+
     const { focalPoint } = camera;
 
     this.initialMousePosWorld = worldPos;
@@ -131,7 +142,13 @@ class ZoomTool extends BaseTool {
 
     const camera = viewport.getCamera();
 
-    if (camera.parallelProjection) {
+    if (!hasLegacyParallelCamera(camera)) {
+      if (!viewportHasZoom(viewport)) {
+        return;
+      }
+
+      this._dragViewportZoom(evt, viewport);
+    } else if (camera.parallelProjection) {
       this._dragParallelProjection(evt, viewport, camera);
     } else {
       this._dragPerspectiveProjection(evt, viewport, camera);
@@ -306,6 +323,25 @@ class ZoomTool extends BaseTool {
     const wheelData = evt.detail.wheel;
     const direction = wheelData.direction;
 
+    if (!hasLegacyParallelCamera(camera)) {
+      if (!viewportHasZoom(viewport)) {
+        return;
+      }
+
+      const canvasPoint = this.configuration.zoomToCenter
+        ? undefined
+        : (points.canvas as Types.Point2);
+
+      this._applyViewportZoomDelta(
+        viewport,
+        element,
+        -direction * 5,
+        canvasPoint
+      );
+      viewport.render();
+      return;
+    }
+
     // Fake event to simulate a drag event
     const eventDetails = {
       detail: {
@@ -338,7 +374,23 @@ class ZoomTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
 
     const deltaPointsWorld = deltaPoints.world;
-    const camera = enabledElement.viewport.getCamera();
+    const viewport = enabledElement.viewport;
+    const camera = viewport.getCamera();
+
+    if (!hasLegacyCameraPosition(camera)) {
+      if (!viewportHasPan(viewport)) {
+        return;
+      }
+
+      const pan = viewport.getPan();
+      viewport.setPan([
+        pan[0] + deltaPoints.canvas[0],
+        pan[1] + deltaPoints.canvas[1],
+      ]);
+      viewport.render();
+      return;
+    }
+
     const { focalPoint, position } = camera;
 
     const updatedPosition = <Types.Point3>[
@@ -353,12 +405,67 @@ class ZoomTool extends BaseTool {
       focalPoint[2] - deltaPointsWorld[2],
     ];
 
-    enabledElement.viewport.setCamera({
+    viewport.setCamera({
       focalPoint: updatedFocalPoint,
       position: updatedPosition,
     });
-    enabledElement.viewport.render();
+    viewport.render();
   }
+
+  _dragViewportZoom(
+    evt: EventTypes.InteractionEventType,
+    viewport: { getZoom(): number; setZoom(...args: unknown[]): void }
+  ): void {
+    const { element, deltaPoints, startPoints } = evt.detail;
+    const canvasPoint = this.configuration.zoomToCenter
+      ? undefined
+      : startPoints?.canvas;
+
+    this._applyViewportZoomDelta(
+      viewport,
+      element,
+      deltaPoints.canvas[1],
+      canvasPoint
+    );
+  }
+
+  _applyViewportZoomDelta(
+    viewport: { getZoom(): number; setZoom(...args: unknown[]): void },
+    element: HTMLDivElement,
+    deltaY: number,
+    canvasPoint?: Types.Point2
+  ): void {
+    const currentZoom = viewport.getZoom();
+    const zoomScale = 5 / Math.max(element.clientHeight, 1);
+    const k = deltaY * zoomScale * (this.configuration.invert ? -1 : 1);
+    const denominator = Math.max(1 - k, 0.01);
+    const unclampedZoom = currentZoom / denominator;
+    const zoom = Math.min(
+      Math.max(unclampedZoom, this.configuration.minZoomScale),
+      this.configuration.maxZoomScale
+    );
+
+    viewport.setZoom(zoom, canvasPoint);
+  }
+}
+
+function hasLegacyCameraPosition(
+  camera: unknown
+): camera is Pick<Types.ICamera, 'focalPoint' | 'position'> {
+  return Boolean(
+    camera &&
+      Array.isArray((camera as Types.ICamera).focalPoint) &&
+      Array.isArray((camera as Types.ICamera).position)
+  );
+}
+
+function hasLegacyParallelCamera(camera: unknown): camera is Types.ICamera {
+  return Boolean(
+    hasLegacyCameraPosition(camera) &&
+      typeof (camera as Types.ICamera).parallelProjection === 'boolean' &&
+      typeof (camera as Types.ICamera).parallelScale === 'number' &&
+      Array.isArray((camera as Types.ICamera).viewPlaneNormal)
+  );
 }
 
 ZoomTool.toolName = 'Zoom';

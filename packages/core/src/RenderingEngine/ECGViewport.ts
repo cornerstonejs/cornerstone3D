@@ -1,5 +1,5 @@
 import type { mat4 } from 'gl-matrix';
-import { Events as EVENTS, MetadataModules } from '../enums';
+import { Events as EVENTS } from '../enums';
 import type {
   Point3,
   Point2,
@@ -15,38 +15,21 @@ import { Transform } from './helpers/cpuFallback/rendering/transform';
 import triggerEvent from '../utilities/triggerEvent';
 import Viewport from './Viewport';
 import { getOrCreateCanvas } from './helpers';
-import * as metaData from '../metaData';
+import {
+  ECG_CHANNEL_SPACING,
+  computeECGChannelLayouts,
+  computeECGHeight,
+  drawECGGrid,
+  drawECGLabels,
+  drawECGTraces,
+  ECG_RENDERING_COLORS,
+  ECG_SECONDS_WIDTH,
+  getVisibleECGChannelsByFlag,
+  loadECGWaveform,
+} from '../utilities/ECGUtilities';
 
-// Rendering constants ported from ecg-dicom reference
-const SECONDS_WIDTH = 150; // pixels per second of ECG data
-const CHANNEL_SPACING = 5; // vertical spacing between channels in world units
 /** Index-space size for amplitude axis so tools (e.g. Probe) use indexWithinDimensions; Int16 range. */
 const ECG_AMPLITUDE_INDEX_SIZE = 65536;
-
-// Colors
-const COLOR_GRID_MAJOR = '#7f0000'; // dark red
-const COLOR_GRID_MINOR = '#3f0000'; // darker red
-const COLOR_BASELINE = '#7F4C00'; // brown
-const COLOR_TRACE = '#ffffff'; // white
-const COLOR_LABEL = '#ffff00'; // yellow
-const COLOR_BACKGROUND = '#000000'; // black
-
-/**
- * Computes min and max values for an Int16Array.
- */
-function computeMinMax(data: Int16Array): { min: number; max: number } {
-  let min = 0;
-  let max = 0;
-  for (let i = 0; i < data.length; i++) {
-    if (data[i] < min) {
-      min = data[i];
-    }
-    if (data[i] > max) {
-      max = data[i];
-    }
-  }
-  return { min, max };
-}
 
 /**
  * Pre-computed layout information for a single visible channel.
@@ -127,56 +110,23 @@ class ECGViewport extends Viewport {
    */
   public async setEcg(imageId: string): Promise<void> {
     this.imageId = imageId;
-    const ecgModule = metaData.get(MetadataModules.ECG, imageId);
+    const { waveform, calibration } = await loadECGWaveform(imageId);
 
-    if (!ecgModule?.waveformData?.retrieveBulkData) {
-      throw new Error(
-        `[ECGViewport] No ECG waveform data for imageId: ${imageId}`
-      );
-    }
-
-    const {
-      numberOfWaveformChannels: numberOfChannels,
-      numberOfWaveformSamples: numberOfSamples,
-      samplingFrequency,
-      waveformBitsAllocated: bitsAllocated = 16,
-      waveformSampleInterpretation: sampleInterpretation = 'SS',
-      multiplexGroupLabel,
-      channelDefinitionSequence: channelDefinitions = [],
-    } = ecgModule;
-
-    const channelArrays: Int16Array[] =
-      await ecgModule.waveformData.retrieveBulkData();
-
-    // Build channel descriptors with cached min/max
-    this.channels = [];
-    for (let i = 0; i < numberOfChannels; i++) {
-      const channelDef = channelDefinitions[i] || {};
-      const name =
-        channelDef.channelSourceSequence?.codeMeaning ||
-        channelDef.ChannelSourceSequence?.CodeMeaning ||
-        `Channel ${i + 1}`;
-      const data = channelArrays[i] || new Int16Array(0);
-      const { min, max } = computeMinMax(data);
-      this.channels.push({ name, data, visible: true, min, max });
-    }
-
+    this.channels = waveform.channels.map((channel) => ({
+      ...channel,
+      visible: true,
+    }));
     this.waveformData = {
+      ...waveform,
       channels: this.channels,
-      numberOfChannels,
-      numberOfSamples,
-      samplingFrequency,
-      bitsAllocated,
-      sampleInterpretation,
-      multiplexGroupLabel,
+      multiplexGroupLabel: waveform.multiplexGroupLabel,
     };
-
-    // Set calibration from metadata (e.g. sequenceOfEcgRegions from wadors) for measurement tools
-    this.calibration = metaData.get(MetadataModules.CALIBRATION, imageId);
+    this.calibration = calibration as typeof this.calibration;
 
     // Calculate ECG width from sample count and frequency
     this.ecgWidth = Math.ceil(
-      (numberOfSamples * SECONDS_WIDTH) / samplingFrequency
+      (this.waveformData.numberOfSamples * ECG_SECONDS_WIDTH) /
+        this.waveformData.samplingFrequency
     );
 
     this.computeChannelScale();
@@ -229,9 +179,7 @@ class ECGViewport extends Viewport {
    * so the initial fit-to-canvas fills the viewport.
    */
   private computeChannelScale(): void {
-    const visibleChannels = this.channels.filter(
-      (c) => c.visible && c.data.length > 0
-    );
+    const visibleChannels = getVisibleECGChannelsByFlag(this.channels);
     if (visibleChannels.length === 0 || this.ecgWidth === 0) {
       this.channelScale = 0;
       return;
@@ -250,7 +198,7 @@ class ECGViewport extends Viewport {
         ? this.canvas.offsetHeight / this.canvas.offsetWidth
         : 2 / 3;
     const targetTotalHeight = this.ecgWidth * canvasAspect;
-    const totalSpacing = CHANNEL_SPACING * visibleChannels.length;
+    const totalSpacing = ECG_CHANNEL_SPACING * visibleChannels.length;
     const heightPerChannel =
       (targetTotalHeight - totalSpacing) / visibleChannels.length;
 
@@ -259,16 +207,10 @@ class ECGViewport extends Viewport {
   }
 
   private recalculateHeight(): void {
-    const scale = this.channelScale;
-    let totalHeight = 0;
-    for (const channel of this.channels) {
-      if (!channel.visible || channel.data.length === 0) {
-        continue;
-      }
-      const itemHeight = (channel.max - channel.min) * scale * 1.25;
-      totalHeight += itemHeight + CHANNEL_SPACING;
-    }
-    this.ecgHeight = totalHeight;
+    this.ecgHeight = computeECGHeight(
+      getVisibleECGChannelsByFlag(this.channels),
+      this.channelScale
+    );
   }
 
   /**
@@ -276,21 +218,10 @@ class ECGViewport extends Viewport {
    * Returns pre-calculated positions used by drawTraces and drawLabels.
    */
   private computeChannelLayouts(): ChannelLayout[] {
-    const scale = this.channelScale;
-    const layouts: ChannelLayout[] = [];
-    let yOffset = 0;
-
-    for (const channel of this.channels) {
-      if (!channel.visible || channel.data.length === 0) {
-        continue;
-      }
-      const itemHeight = (channel.max - channel.min) * scale * 1.25;
-      yOffset += itemHeight + CHANNEL_SPACING;
-      const baseline = yOffset + channel.min * scale;
-      layouts.push({ channel, itemHeight, yOffset, baseline });
-    }
-
-    return layouts;
+    return computeECGChannelLayouts({
+      visibleChannels: getVisibleECGChannelsByFlag(this.channels),
+      channelScale: this.channelScale,
+    }) as ChannelLayout[];
   }
 
   public setProperties(props: ECGViewportProperties): void {
@@ -349,7 +280,7 @@ class ECGViewport extends Viewport {
       ];
     }
 
-    this.canvasContext.fillStyle = COLOR_BACKGROUND;
+    this.canvasContext.fillStyle = ECG_RENDERING_COLORS.background;
     this.canvasContext.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
     this.renderFrame();
@@ -615,7 +546,7 @@ class ECGViewport extends Viewport {
     const ctx = this.canvasContext;
 
     ctx.resetTransform();
-    ctx.fillStyle = COLOR_BACKGROUND;
+    ctx.fillStyle = ECG_RENDERING_COLORS.background;
     ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
     // Apply the world-to-canvas transformation
@@ -647,75 +578,11 @@ class ECGViewport extends Viewport {
    * Draws the ECG paper grid.
    */
   private drawGrid(ctx: CanvasRenderingContext2D): void {
-    const scale = this.channelScale;
-    const pxWidth = this.ecgWidth;
-    const pxHeight = this.ecgHeight;
-
-    if (scale <= 0) {
-      return;
-    }
-
-    // Adaptive horizontal grid: standard ECG minor = 100 uV, but double
-    // the unit until lines are at least 8 world-pixels apart.
-    const MIN_LINE_SPACING = 8;
-    let hGridUnit = 100; // data units per minor horizontal line
-    while (hGridUnit * scale < MIN_LINE_SPACING) {
-      hGridUnit *= 2;
-    }
-    const minorH = hGridUnit * scale;
-    const majorH = minorH * 5;
-
-    // Vertical grid: time-based, minor = 0.04s, major = 0.2s
-    const minorV = SECONDS_WIDTH / 25;
-    const majorV = SECONDS_WIDTH / 5;
-
-    // Minor grid lines
-    ctx.strokeStyle = COLOR_GRID_MINOR;
-    ctx.lineWidth = 0.5;
-    ctx.beginPath();
-
-    // Horizontal minor lines (skip every 5th — those are major)
-    const hLines = Math.floor(pxHeight / minorH);
-    for (let h = 1; h <= hLines; h++) {
-      if (h % 5 !== 0) {
-        const y = h * minorH;
-        ctx.moveTo(0, y);
-        ctx.lineTo(pxWidth, y);
-      }
-    }
-
-    // Vertical minor lines (skip every 5th — those are major)
-    const vLines = Math.floor(pxWidth / minorV);
-    for (let v = 1; v <= vLines; v++) {
-      if (v % 5 !== 0) {
-        const x = v * minorV;
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, pxHeight);
-      }
-    }
-    ctx.stroke();
-
-    // Major grid lines
-    ctx.strokeStyle = COLOR_GRID_MAJOR;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-
-    // Horizontal major lines
-    const hMajorLines = Math.floor(pxHeight / majorH);
-    for (let h = 1; h <= hMajorLines; h++) {
-      const y = h * majorH;
-      ctx.moveTo(0, y);
-      ctx.lineTo(pxWidth, y);
-    }
-
-    // Vertical major lines
-    const vMajorLines = Math.floor(pxWidth / majorV);
-    for (let v = 1; v <= vMajorLines; v++) {
-      const x = v * majorV;
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, pxHeight);
-    }
-    ctx.stroke();
+    drawECGGrid(ctx, {
+      ecgWidth: this.ecgWidth,
+      ecgHeight: this.ecgHeight,
+      channelScale: this.channelScale,
+    });
   }
 
   /**
@@ -725,33 +592,12 @@ class ECGViewport extends Viewport {
     ctx: CanvasRenderingContext2D,
     layouts: ChannelLayout[]
   ): void {
-    const scale = this.channelScale;
-    const pxWidth = this.ecgWidth;
-
-    for (const { channel, baseline } of layouts) {
-      // Draw baseline reference line
-      ctx.strokeStyle = COLOR_BASELINE;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(0, baseline);
-      ctx.lineTo(pxWidth, baseline);
-      ctx.stroke();
-
-      // Draw trace
-      ctx.strokeStyle = COLOR_TRACE;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      for (let i = 0; i < channel.data.length; i++) {
-        const x = (i * pxWidth) / channel.data.length;
-        const y = baseline - channel.data[i] * scale;
-        if (i === 0) {
-          ctx.moveTo(x, y);
-        } else {
-          ctx.lineTo(x, y);
-        }
-      }
-      ctx.stroke();
-    }
+    drawECGTraces({
+      ctx,
+      layouts,
+      ecgWidth: this.ecgWidth,
+      channelScale: this.channelScale,
+    });
   }
 
   /**
@@ -761,23 +607,7 @@ class ECGViewport extends Viewport {
     ctx: CanvasRenderingContext2D,
     layouts: ChannelLayout[]
   ): void {
-    // Font size in world coordinates that appears as ~14 screen pixels
-    const worldToCanvas = this.getWorldToCanvasRatio();
-    const fontSize = 14 / worldToCanvas;
-
-    for (const { channel, itemHeight, yOffset } of layouts) {
-      // Label position: top of this channel's area
-      const labelY = yOffset - itemHeight + fontSize;
-
-      ctx.font = `${fontSize}px monospace`;
-      // Background rect for readability
-      const textWidth = ctx.measureText(channel.name).width;
-      ctx.fillStyle = COLOR_BACKGROUND;
-      ctx.fillRect(5, labelY - fontSize, textWidth + 4, fontSize + 4);
-      // Label text
-      ctx.fillStyle = COLOR_LABEL;
-      ctx.fillText(channel.name, 5, labelY);
-    }
+    drawECGLabels(ctx, layouts, this.getWorldToCanvasRatio());
   }
 
   /**

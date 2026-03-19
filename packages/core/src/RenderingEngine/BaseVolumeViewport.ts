@@ -1,6 +1,5 @@
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
-import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 
 import { vec2, vec3 } from 'gl-matrix';
@@ -54,6 +53,7 @@ import {
   getThresholdValue,
   getMaxOpacity,
 } from '../utilities/colormap';
+import getAcquisitionPlaneOrientation from '../utilities/getAcquisitionPlaneOrientation';
 import { getTransferFunctionNodes } from '../utilities/transferFunctionUtils';
 import type { TransferFunctionNodes } from '../types/ITransferFunctionNode';
 import type vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
@@ -78,6 +78,7 @@ import { isContextPoolRenderingEngine } from './helpers/isContextPoolRenderingEn
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import mprCameraValues from '../constants/mprCameraValues';
 import { isInvalidNumber } from './helpers/isInvalidNumber';
+import getVolumeViewReferenceId from '../utilities/getVolumeViewReferenceId';
 import {
   createSharpeningRenderPass,
   createSmoothingRenderPass,
@@ -291,13 +292,7 @@ abstract class BaseVolumeViewport extends Viewport {
     const { volumeActor } = applicableVolumeActorInfo;
 
     const cfun = vtkColorTransferFunction.newInstance();
-    let colormapObj = colormapUtils.getColormap(colormap.name);
-
-    const { name } = colormap;
-
-    if (!colormapObj) {
-      colormapObj = vtkColorMaps.getPresetByName(name);
-    }
+    const colormapObj = colormapUtils.resolveColormap(colormap.name);
 
     if (!colormapObj) {
       throw new Error(`Colormap ${colormap} not found`);
@@ -2275,14 +2270,7 @@ abstract class BaseVolumeViewport extends Viewport {
       );
     }
 
-    const { direction } = imageVolume;
-    const viewPlaneNormal = direction.slice(6, 9).map((x) => -x) as Point3;
-    const viewUp = (direction.slice(3, 6) as Point3).map((x) => -x) as Point3;
-
-    return {
-      viewPlaneNormal,
-      viewUp,
-    };
+    return getAcquisitionPlaneOrientation(imageVolume);
   }
 
   /**
@@ -2405,12 +2393,13 @@ abstract class BaseVolumeViewport extends Viewport {
 
     const currentIndex = this.getSliceIndex();
     sliceIndex ??= currentIndex;
-    const { viewPlaneNormal, focalPoint } = this.getCamera();
-    const querySeparator = volumeId.includes('?') ? '&' : '?';
-    // Format each element of viewPlaneNormal to 3 decimal places
-    // to avoid floating point precision issues
-    const formattedNormal = viewPlaneNormal.map((v) => v.toFixed(3)).join(',');
-    return `volumeId:${volumeId}${querySeparator}sliceIndex=${sliceIndex}&viewPlaneNormal=${formattedNormal}`;
+    const { viewPlaneNormal } = this.getCamera();
+
+    return getVolumeViewReferenceId({
+      sliceIndex,
+      viewPlaneNormal,
+      volumeId,
+    });
   }
 
   private _addVolumeId(volumeId: string): void {

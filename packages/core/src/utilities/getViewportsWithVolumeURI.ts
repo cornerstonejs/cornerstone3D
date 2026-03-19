@@ -1,29 +1,34 @@
-import type { IVolumeViewport } from '../types';
 import {
   getRenderingEngines,
   getRenderingEngine,
 } from '../RenderingEngine/getRenderingEngine';
+import {
+  viewportSupportsVolumeURI,
+  type VolumeURIViewport,
+} from './viewportCapabilities';
 
 /**
- * Retrieves viewports containing a specific volume ID.
+ * Retrieves viewports containing a specific volume URI.
  *
- * @param volumeId - The ID of the volume to search for within viewports.
+ * @param volumeURI - The volume URI to search for within viewports.
  * @param renderingEngineId - (Optional) The ID of a specific rendering engine to search in.
- * @returns An array of volume viewports that contain the specified volume ID.
+ * @returns Viewports that implement volume URI queries and contain the specified volume URI.
  */
 function getViewportsWithVolumeURI(
   volumeURI: string,
   renderingEngineId?: string
-): IVolumeViewport[] {
+): VolumeURIViewport[] {
   // If rendering engine is not provided, use all rendering engines
   const renderingEngines = renderingEngineId
     ? [getRenderingEngine(renderingEngineId)]
     : getRenderingEngines();
 
-  const targetViewports: IVolumeViewport[] = [];
+  const targetViewports: VolumeURIViewport[] = [];
 
   renderingEngines.forEach((renderingEngine) => {
-    const viewports = renderingEngine.getVolumeViewports();
+    const viewports = renderingEngine
+      .getViewports()
+      .filter(viewportSupportsVolumeURI);
     const filteredViewports = viewports.filter((vp) =>
       vp.hasVolumeURI(volumeURI)
     );

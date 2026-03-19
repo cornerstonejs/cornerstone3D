@@ -185,6 +185,10 @@ class Viewport {
     return false;
   }
 
+  public getUseCustomRenderingPipeline(): boolean {
+    return (this.constructor as typeof Viewport).useCustomRenderingPipeline;
+  }
+
   /**
    * Returns whether the viewport supports changing orientation (e.g. via setCamera
    * with viewPlaneNormal/viewUp). Used by tools like OrientationControllerTool to
@@ -233,6 +237,15 @@ class Viewport {
       }
     });
   };
+
+  public dispose(): void {
+    // Legacy viewports do not own extra teardown beyond the rendering engine
+    // reset path and widget cleanup above.
+  }
+
+  public destroy(): void {
+    this.dispose();
+  }
 
   /**
    * Indicate that the image has been rendered.
@@ -2013,7 +2026,7 @@ class Viewport {
   /**
    * Navigates to the image specified by the viewRef.
    */
-  public setViewReference(viewRef: ViewReference) {
+  public setViewReference(_viewRef: ViewReference) {
     // No-op
   }
 

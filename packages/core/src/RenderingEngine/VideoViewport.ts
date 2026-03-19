@@ -1,12 +1,6 @@
-import { vec3 } from 'gl-matrix';
 import type { mat4 } from 'gl-matrix';
-import {
-  Events as EVENTS,
-  VideoEnums as VideoViewportEnum,
-  MetadataModules,
-} from '../enums';
+import { Events as EVENTS, VideoEnums as VideoViewportEnum } from '../enums';
 import type {
-  IVideoViewport,
   VideoViewportProperties,
   Point3,
   Point2,
@@ -27,7 +21,6 @@ import type {
   IImageData,
   BoundsIJK,
 } from '../types';
-import * as metaData from '../metaData';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
 import triggerEvent from '../utilities/triggerEvent';
 import Viewport from './Viewport';
@@ -37,6 +30,11 @@ import cache from '../cache/cache';
 import uuidv4 from '../utilities/uuidv4';
 import FrameRange from '../utilities/FrameRange';
 import { pointInShapeCallback } from '../utilities/pointInShapeCallback';
+import {
+  getVideoImageDataMetadata,
+  loadVideoStreamMetadata,
+  normalizeVideoPlaybackInfo,
+} from '../utilities/VideoUtilities';
 
 /**
  * A data type for the scalar data for video data.
@@ -169,61 +167,10 @@ class VideoViewport extends Viewport {
 
   public getImageDataMetadata(image: IImage | string) {
     const imageId = typeof image === 'string' ? image : image.imageId;
-    const imagePlaneModule = metaData.get(MetadataModules.IMAGE_PLANE, imageId);
+    const metadata = getVideoImageDataMetadata(imageId);
 
-    let rowCosines = imagePlaneModule.rowCosines as Point3;
-    let columnCosines = imagePlaneModule.columnCosines as Point3;
-    const usingDefaultValues = imagePlaneModule.usingDefaultValues;
-
-    // if null or undefined
-    if (usingDefaultValues || rowCosines == null || columnCosines == null) {
-      rowCosines = [1, 0, 0] as Point3;
-      columnCosines = [0, 1, 0] as Point3;
-    }
-
-    const rowCosineVec = vec3.fromValues(
-      rowCosines[0],
-      rowCosines[1],
-      rowCosines[2]
-    );
-    const colCosineVec = vec3.fromValues(
-      columnCosines[0],
-      columnCosines[1],
-      columnCosines[2]
-    );
-
-    const { rows, columns } = imagePlaneModule;
-    const scanAxisNormal = vec3.create();
-    vec3.cross(scanAxisNormal, rowCosineVec, colCosineVec);
-
-    let origin = imagePlaneModule.imagePositionPatient;
-    // if null or undefined
-    if (origin == null) {
-      origin = [0, 0, 0];
-    }
-
-    const xSpacing = imagePlaneModule.columnPixelSpacing || 1;
-    const ySpacing = imagePlaneModule.rowPixelSpacing || 1;
-    const xVoxels = imagePlaneModule.columns;
-    const yVoxels = imagePlaneModule.rows;
-
-    const zSpacing = 1;
-    const zVoxels = 1;
-
-    this.hasPixelSpacing = !!imagePlaneModule.columnPixelSpacing;
-    return {
-      bitsAllocated: 8,
-      numberOfComponents: 3,
-      origin,
-      rows,
-      columns,
-      direction: [...rowCosineVec, ...colCosineVec, ...scanAxisNormal],
-      dimensions: [xVoxels, yVoxels, zVoxels],
-      spacing: [xSpacing, ySpacing, zSpacing],
-      hasPixelSpacing: this.hasPixelSpacing,
-      numVoxels: xVoxels * yVoxels * zVoxels,
-      imagePlaneModule,
-    };
+    this.hasPixelSpacing = metadata.hasPixelSpacing;
+    return metadata;
   }
 
   /**
@@ -246,35 +193,23 @@ class VideoViewport extends Viewport {
    */
   public setVideo(imageId: string, frameNumber?: number): Promise<unknown> {
     this.imageId = Array.isArray(imageId) ? imageId[0] : imageId;
-    const imageUrlModule = metaData.get(MetadataModules.IMAGE_URL, imageId);
-    if (!imageUrlModule?.rendered) {
-      throw new Error(
-        `Video Image ID ${imageId} does not have a rendered video view`
-      );
-    }
-    const { rendered } = imageUrlModule;
-    const generalSeries = metaData.get(MetadataModules.GENERAL_SERIES, imageId);
-    this.modality = generalSeries?.Modality;
-    this.metadata = this.getImageDataMetadata(imageId);
-    let { cineRate, numberOfFrames } = metaData.get(
-      MetadataModules.CINE,
-      imageId
-    );
-    this.numberOfFrames = numberOfFrames;
+    const stream = loadVideoStreamMetadata(imageId);
 
-    return this.setVideoURL(rendered).then(() => {
-      if (!numberOfFrames || numberOfFrames === 1) {
-        numberOfFrames = Math.round(
-          this.videoElement.duration * (cineRate || 30)
-        );
-      }
-      if (!cineRate) {
-        cineRate = Math.round(numberOfFrames / this.videoElement.duration);
-      }
-      this.fps = cineRate;
-      this.numberOfFrames = numberOfFrames;
+    this.modality = stream.modality;
+    this.metadata = stream.metadata;
+    this.numberOfFrames = stream.numberOfFrames;
+
+    return this.setVideoURL(stream.renderedUrl).then(() => {
+      const playbackInfo = normalizeVideoPlaybackInfo({
+        durationSeconds: this.videoElement.duration,
+        cineRate: stream.cineRate,
+        numberOfFrames: stream.numberOfFrames,
+      });
+
+      this.fps = playbackInfo.fps;
+      this.numberOfFrames = playbackInfo.numberOfFrames;
       // 1 based range setting
-      this.setFrameRange([1, numberOfFrames]);
+      this.setFrameRange(playbackInfo.frameRange);
       // The initial render allows us to set the frame position - rendering needs
       // to start already playing
       this.initialRender = () => {
@@ -351,7 +286,7 @@ class VideoViewport extends Viewport {
         await this.videoElement.play();
         this.renderWhilstPlaying();
       }
-    } catch (e) {
+    } catch {
       // No-op, an exception sometimes gets thrown on the initial play, not
       // quite sure why.  Catching it prevents displaying an error
     }
@@ -361,7 +296,7 @@ class VideoViewport extends Viewport {
     try {
       this.isPlaying = false;
       this.videoElement.pause();
-    } catch (e) {
+    } catch {
       // No-op - sometimes this happens on startup
     }
   }
@@ -378,7 +313,7 @@ class VideoViewport extends Viewport {
     videoElement.currentTime = newTime;
 
     // Need to wait for seek update
-    const seekEventListener = (evt) => {
+    const seekEventListener = () => {
       renderFrame();
 
       videoElement.removeEventListener('seeked', seekEventListener);
@@ -395,7 +330,7 @@ class VideoViewport extends Viewport {
 
     if (videoElement.paused) {
       // Need to wait for seek update
-      const seekEventListener = (evt) => {
+      const seekEventListener = () => {
         renderFrame();
 
         videoElement.removeEventListener('seeked', seekEventListener);
@@ -413,7 +348,7 @@ class VideoViewport extends Viewport {
 
     if (videoElement.paused) {
       // Need to wait for seek update
-      const seekEventListener = (evt) => {
+      const seekEventListener = () => {
         renderFrame();
 
         videoElement.removeEventListener('seeked', seekEventListener);
@@ -431,7 +366,7 @@ class VideoViewport extends Viewport {
 
     if (videoElement.paused) {
       // Need to wait for seek update
-      const seekEventListener = (evt) => {
+      const seekEventListener = () => {
         renderFrame();
 
         videoElement.removeEventListener('seeked', seekEventListener);
@@ -773,7 +708,7 @@ class VideoViewport extends Viewport {
    *  Gets a target id that can be used to specify how to show this
    */
   public getViewReferenceId(specifier: ViewReferenceSpecifier = {}): string {
-    const { sliceIndex: sliceIndex } = specifier;
+    const { sliceIndex } = specifier;
     if (sliceIndex === undefined) {
       return `videoId:${this.getCurrentImageId()}`;
     }

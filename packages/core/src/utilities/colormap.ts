@@ -8,6 +8,10 @@ import { actorIsA } from './actorCheck';
 
 const _colormaps = new Map();
 
+function normalizeColormapName(name?: string): string | undefined {
+  return name?.trim().toLowerCase();
+}
+
 /**
  * Register a colormap
  * @param name - name of the colormap
@@ -34,6 +38,61 @@ function getColormap(name) {
  */
 function getColormapNames() {
   return Array.from(_colormaps.keys());
+}
+
+function findRegisteredColormap(
+  name: string
+): ColormapRegistration | undefined {
+  const exactMatch = getColormap(name);
+
+  if (exactMatch) {
+    return exactMatch;
+  }
+
+  const normalizedName = normalizeColormapName(name);
+
+  if (!normalizedName) {
+    return;
+  }
+
+  for (const [registeredName, registeredColormap] of _colormaps.entries()) {
+    if (
+      normalizeColormapName(registeredName) === normalizedName ||
+      normalizeColormapName(registeredColormap.Name) === normalizedName
+    ) {
+      return registeredColormap;
+    }
+  }
+}
+
+function findVTKColormap(name: string): ColormapRegistration | undefined {
+  const exactMatch = vtkColorMaps.getPresetByName(name);
+
+  if (exactMatch) {
+    return exactMatch as ColormapRegistration;
+  }
+
+  const normalizedName = normalizeColormapName(name);
+
+  if (!normalizedName) {
+    return;
+  }
+
+  const matchedPresetName = vtkColorMaps.rgbPresetNames.find(
+    (presetName) => normalizeColormapName(presetName) === normalizedName
+  );
+
+  return matchedPresetName
+    ? (vtkColorMaps.getPresetByName(matchedPresetName) as ColormapRegistration)
+    : undefined;
+}
+
+function resolveColormap(name?: string): ColormapRegistration | undefined {
+  if (!name?.trim()) {
+    return;
+  }
+
+  return findRegisteredColormap(name) || findVTKColormap(name);
 }
 
 /**
@@ -246,6 +305,7 @@ function getMaxOpacity(volumeActor) {
 export {
   getColormap,
   getColormapNames,
+  resolveColormap,
   registerColormap,
   findMatchingColormap,
   getThresholdValue,

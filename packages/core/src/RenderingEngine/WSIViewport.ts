@@ -16,13 +16,22 @@ import Viewport from './Viewport';
 import { getOrCreateCanvas } from './helpers';
 import { EPSILON } from '../constants';
 import triggerEvent from '../utilities/triggerEvent';
-import { peerImport } from '../init';
-import microscopyViewportCss from '../constants/microscopyViewportCss';
 import type { DataSetOptions } from '../types/IViewport';
 import eventTarget from '../eventTarget';
 import imageIdToURI from '../utilities/imageIdToURI';
+import {
+  addWSIMiniNavigationOverlayCss,
+  type WSIClientLike,
+  getDicomMicroscopyViewer,
+  loadWSIData,
+  type WSIImageDataMetadata,
+  type WSIMapLike,
+  type WSIMapViewLike,
+  type WSITransformUtilitiesLike,
+  type WSIViewerLike,
+} from '../utilities/WSIUtilities';
 
-let WSIUtilFunctions = null;
+let WSIUtilFunctions: WSITransformUtilitiesLike | null = null;
 const EVENT_POSTRENDER = 'postrender';
 const ANNOTATION_REMOVED = 'CORNERSTONE_TOOLS_ANNOTATION_REMOVED';
 /**
@@ -42,16 +51,13 @@ class WSIViewport extends Viewport {
   readonly uid;
   readonly renderingEngineId: string;
 
-  private frameOfReferenceUID: string;
+  private frameOfReferenceUID: string | null;
 
   // First is some specific metadata on the current image
-  protected metadata;
-  // Then the metadata array containing the dicomweb metadata definitions
-  protected metadataDicomweb;
-
+  protected metadata: WSIImageDataMetadata;
   private microscopyElement: HTMLDivElement;
 
-  protected map;
+  protected map: WSIMapLike;
   private imageURISet: Set<string> = new Set();
 
   private internalCamera = {
@@ -64,7 +70,7 @@ class WSIViewport extends Viewport {
     zoom: 1,
   };
 
-  private viewer;
+  private viewer: WSIViewerLike;
   private annotationRemovedListener: EventListener = (evt: Event) => {
     const { detail } = evt as CustomEvent<{
       annotation?: {
@@ -197,81 +203,8 @@ class WSIViewport extends Viewport {
     this.imageURISet.clear();
   }
 
-  private getImageDataMetadata(imageIndex = 0) {
-    const maxImage = this.metadataDicomweb.reduce((maxImage, image) => {
-      return maxImage?.NumberOfFrames < image.NumberOfFrames ? image : maxImage;
-    });
-    const {
-      TotalPixelMatrixColumns: columns,
-      TotalPixelMatrixRows: rows,
-      ImageOrientationSlide,
-      ImagedVolumeWidth: width,
-      ImagedVolumeHeight: height,
-      ImagedVolumeDepth: depth,
-    } = maxImage;
-
-    const imagePlaneModule = metaData.get(
-      MetadataModules.IMAGE_PLANE,
-      this.imageIds[imageIndex]
-    );
-
-    let rowCosines = ImageOrientationSlide.slice(0, 3);
-    let columnCosines = ImageOrientationSlide.slice(3, 6);
-
-    // if null or undefined
-    if (rowCosines == null || columnCosines == null) {
-      rowCosines = [1, 0, 0] as Point3;
-      columnCosines = [0, 1, 0] as Point3;
-    }
-
-    const rowCosineVec = vec3.fromValues(
-      rowCosines[0],
-      rowCosines[1],
-      rowCosines[2]
-    );
-    const colCosineVec = vec3.fromValues(
-      columnCosines[0],
-      columnCosines[1],
-      columnCosines[2]
-    );
-    const scanAxisNormal = vec3.create();
-    vec3.cross(scanAxisNormal, rowCosineVec, colCosineVec);
-
-    const {
-      XOffsetInSlideCoordinateSystem = 0,
-      YOffsetInSlideCoordinateSystem = 0,
-      ZOffsetInSlideCoordinateSystem = 0,
-    } = maxImage.TotalPixelMatrixOriginSequence?.[0] || {};
-    const origin = [
-      XOffsetInSlideCoordinateSystem,
-      YOffsetInSlideCoordinateSystem,
-      ZOffsetInSlideCoordinateSystem,
-    ];
-
-    const xSpacing = width / columns;
-    const ySpacing = height / rows;
-    const xVoxels = columns;
-    const yVoxels = rows;
-
-    const zSpacing = depth;
-    const zVoxels = 1;
-
-    this.hasPixelSpacing = !!(width && height);
-    return {
-      bitsAllocated: 8,
-      numberOfComponents: 3,
-      origin,
-      direction: [...rowCosineVec, ...colCosineVec, ...scanAxisNormal],
-      dimensions: [xVoxels, yVoxels, zVoxels],
-      spacing: [xSpacing, ySpacing, zSpacing],
-      hasPixelSpacing: this.hasPixelSpacing,
-      numVoxels: xVoxels * yVoxels * zVoxels,
-      imagePlaneModule,
-    };
-  }
-
   // Sets the frame number - note according to DICOM, this is 1 based
-  public async setFrameNumber(frame: number) {
+  public async setFrameNumber(_frame: number) {
     // No-op right now, not sure what this will be
   }
 
@@ -317,7 +250,7 @@ class WSIViewport extends Viewport {
       .getViewport()
       .querySelectorAll('.ol-layers canvas');
     olCanvases.forEach((canvas) => {
-      canvas.style.filter = feFilter;
+      (canvas as HTMLCanvasElement).style.filter = feFilter;
     });
   }
 
@@ -435,13 +368,13 @@ class WSIViewport extends Viewport {
       const worldToCanvasRatio = this.element.clientHeight / parallelScale;
       const resolution = 1 / xSpacing / worldToCanvasRatio;
 
-      view.setResolution(resolution);
+      view.setResolution?.(resolution);
     }
 
     if (focalPoint) {
       const newCanvas = this.worldToCanvas(focalPoint);
       const newIndex = this.canvasToIndex(newCanvas);
-      view.setCenter(newIndex);
+      view.setCenter([newIndex[0], newIndex[1]]);
     }
     const updatedCamera = this.getCamera();
     this.triggerCameraModifiedEventIfNecessary(previousCamera, updatedCamera);
@@ -498,17 +431,6 @@ class WSIViewport extends Viewport {
    */
   public getNumberOfSlices = (): number => {
     return 1;
-  };
-
-  /**
-   * Encapsulate the dicom microscopy fetch so that it can be replaced
-   * with the browser import function.  Webpack munges this and then throws
-   * exceptions trying to get this working, so this has to be provided externally
-   * as a globalThis.browserImportFunction taking the package name, and a set
-   * of options defining how to get the value out of the package.
-   */
-  public static getDicomMicroscopyViewer = async () => {
-    return peerImport('dicom-microscopy-viewer');
   };
 
   /**
@@ -620,11 +542,11 @@ class WSIViewport extends Viewport {
     imageIds: string[],
     options?: DataSetOptions & {
       miniNavigationOverlay?: boolean;
-      webClient: unknown;
+      webClient: WSIClientLike;
     }
   ) {
     if (options?.miniNavigationOverlay !== false) {
-      WSIViewport.addMiniNavigationOverlayCss();
+      addWSIMiniNavigationOverlayCss();
     }
     const webClient =
       options?.webClient ||
@@ -639,60 +561,27 @@ class WSIViewport extends Viewport {
     return this.setWSI(imageIds, webClient);
   }
 
-  public async setWSI(imageIds: string[], client) {
+  public async setWSI(imageIds: string[], client: WSIClientLike) {
     this.microscopyElement.style.background = 'black';
     this.microscopyElement.innerText = 'Loading';
     this.imageIds = imageIds;
-    this.imageURISet = new Set(
-      imageIds.map((imageId) => imageIdToURI(imageId))
-    );
-    const DicomMicroscopyViewer = await WSIViewport.getDicomMicroscopyViewer();
+    const DicomMicroscopyViewer = await getDicomMicroscopyViewer();
     WSIUtilFunctions ||= DicomMicroscopyViewer.utils;
-    this.frameOfReferenceUID = null;
-
-    const metadataDicomweb = this.imageIds.map((imageId) => {
-      const imageMetadata = client.getDICOMwebMetadata(imageId);
-
-      Object.defineProperty(imageMetadata, 'isMultiframe', {
-        value: imageMetadata.isMultiframe,
-        enumerable: false,
-      });
-      Object.defineProperty(imageMetadata, 'frameNumber', {
-        value: undefined,
-        enumerable: false,
-      });
-      const imageType = imageMetadata['00080008']?.Value;
-      if (imageType?.length === 1) {
-        imageMetadata['00080008'].Value = imageType[0].split('\\');
-      }
-      const frameOfReference = imageMetadata['00200052']?.Value?.[0];
-      if (!this.frameOfReferenceUID) {
-        this.frameOfReferenceUID = frameOfReference;
-      } else if (frameOfReference !== this.frameOfReferenceUID) {
-        imageMetadata['00200052'].Value = [this.frameOfReferenceUID];
-      }
-
-      return imageMetadata;
+    const loadedData = await loadWSIData({
+      imageIds: this.imageIds,
+      client,
+      dicomMicroscopyViewer: DicomMicroscopyViewer,
     });
-    const volumeImages = [];
-    metadataDicomweb.forEach((m) => {
-      const image =
-        new DicomMicroscopyViewer.metadata.VLWholeSlideMicroscopyImage({
-          metadata: m,
-        });
-      const imageFlavor = image.ImageType[2];
-      if (imageFlavor === 'VOLUME' || imageFlavor === 'THUMBNAIL') {
-        volumeImages.push(image);
-      } else {
-        console.log('Unknown image type', image.ImageType);
-      }
-    });
-    this.metadataDicomweb = volumeImages;
+
+    this.imageURISet = loadedData.imageURISet;
+    this.frameOfReferenceUID = loadedData.frameOfReferenceUID;
+    this.metadata = loadedData.metadata;
+    this.hasPixelSpacing = loadedData.metadata.hasPixelSpacing;
 
     // Construct viewer instance
     const viewer = new DicomMicroscopyViewer.viewer.VolumeImageViewer({
       client,
-      metadata: volumeImages,
+      metadata: loadedData.volumeImages,
       controls: ['overview', 'position'],
       retrieveRendered: false,
       bindings: {},
@@ -700,8 +589,6 @@ class WSIViewport extends Viewport {
 
     // Render viewer instance in the "viewport" HTML element
     viewer.render({ container: this.microscopyElement });
-
-    this.metadata = this.getImageDataMetadata();
 
     viewer.deactivateDragPanInteraction();
     this.viewer = viewer;
@@ -767,7 +654,7 @@ class WSIViewport extends Viewport {
    * Gets the internal OpenLayers view object being rendered
    * Note this is not typeds right now, but might add typing later.
    */
-  getView() {
+  getView(): WSIMapViewLike | undefined {
     if (!this.viewer) {
       return;
     }
@@ -875,18 +762,6 @@ class WSIViewport extends Viewport {
 
   public getCurrentImageIdIndex() {
     return 0;
-  }
-
-  private static overlayCssId = 'overlayCss';
-
-  public static addMiniNavigationOverlayCss() {
-    if (document.getElementById(this.overlayCssId)) {
-      return;
-    }
-    const overlayCss = document.createElement('style');
-    overlayCss.innerText = microscopyViewportCss;
-    overlayCss.setAttribute('id', this.overlayCssId);
-    document.getElementsByTagName('head')[0].append(overlayCss);
   }
 }
 

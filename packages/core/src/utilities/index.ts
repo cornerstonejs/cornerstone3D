@@ -8,6 +8,7 @@ import triggerEvent from './triggerEvent';
 import uuidv4 from './uuidv4';
 import getMinMax from './getMinMax';
 import getRuntimeId from './getRuntimeId';
+import getVOIRangeFromWindowLevel from './getVOIRangeFromWindowLevel';
 import imageIdToURI from './imageIdToURI';
 import calibratedPixelSpacingMetadataProvider from './calibratedPixelSpacingMetadataProvider';
 import clamp from './clamp';
@@ -56,6 +57,7 @@ import { updateVTKImageDataWithCornerstoneImage } from './updateVTKImageDataWith
 import ProgressiveIterator from './ProgressiveIterator';
 import decimate from './decimate';
 import imageRetrieveMetadataProvider from './imageRetrieveMetadataProvider';
+import viewportV2DataSetMetadataProvider from './viewportV2DataSetMetadataProvider';
 import isVideoTransferSyntax from './isVideoTransferSyntax';
 import { getBufferConfiguration } from './getBufferConfiguration';
 import { generateVolumePropsFromImageIds } from './generateVolumePropsFromImageIds';
@@ -71,6 +73,9 @@ import { getRandomSampleFromArray } from './getRandomSampleFromArray';
 import { getVolumeId } from './getVolumeId';
 import { hasFloatScalingParameters } from './hasFloatScalingParameters';
 import { pointInShapeCallback } from './pointInShapeCallback';
+import * as ECGUtilities from './ECGUtilities';
+import * as VideoUtilities from './VideoUtilities';
+import * as WSIUtilities from './WSIUtilities';
 // name spaces
 export * as planar from './planar';
 import * as windowLevel from './windowLevel';
@@ -99,7 +104,9 @@ import { jumpToSlice } from './jumpToSlice';
 import scroll from './scroll';
 import clip from './clip';
 import createSubVolume from './createSubVolume';
+import getAcquisitionPlaneOrientation from './getAcquisitionPlaneOrientation';
 import getVolumeDirectionVectors from './getVolumeDirectionVectors';
+import getVolumeViewReferenceId from './getVolumeViewReferenceId';
 import calculateSpacingBetweenImageIds from './calculateSpacingBetweenImageIds';
 export * as logger from './logger';
 import { calculateNeighborhoodStats } from './calculateNeighborhoodStats';
@@ -107,6 +114,15 @@ export * from './getPixelSpacingInformation';
 export * from './getPlaneCubeIntersectionDimensions';
 export * from './rotateToViewCoordinates';
 import { asArray } from './asArray';
+import {
+  viewportSupportsImageSlices,
+  viewportSupportsStackCalibration,
+  viewportSupportsStackCompatibility,
+  viewportSupportsVolumeActors,
+  viewportSupportsVolumeCompatibility,
+  viewportSupportsVolumeId,
+  viewportSupportsVolumeURI,
+} from './viewportCapabilities';
 export { updatePlaneRestriction } from './updatePlaneRestriction';
 
 const getViewportModality = (viewport: IViewport, volumeId?: string) =>
@@ -130,6 +146,7 @@ export {
   uuidv4,
   getMinMax,
   getRuntimeId,
+  getVOIRangeFromWindowLevel,
   isOpposite,
   getViewportModality,
   windowLevel,
@@ -173,6 +190,7 @@ export {
   ProgressiveIterator,
   decimate,
   imageRetrieveMetadataProvider,
+  viewportV2DataSetMetadataProvider,
   transferFunctionUtils,
   updateVTKImageDataWithCornerstoneImage,
   sortImageIdsAndGetSpacing,
@@ -202,16 +220,28 @@ export {
   handleMultiframe4D,
   generateFrameImageId,
   pointInShapeCallback,
+  ECGUtilities,
+  VideoUtilities,
+  WSIUtilities,
   deepEqual,
   jumpToSlice,
   scroll,
   clip,
   transformWorldToIndexContinuous,
   createSubVolume,
+  getAcquisitionPlaneOrientation,
   getVolumeDirectionVectors,
+  getVolumeViewReferenceId,
   calculateSpacingBetweenImageIds,
   getImageDataMetadata,
   buildMetadata,
   calculateNeighborhoodStats,
   asArray,
+  viewportSupportsImageSlices,
+  viewportSupportsStackCalibration,
+  viewportSupportsStackCompatibility,
+  viewportSupportsVolumeActors,
+  viewportSupportsVolumeCompatibility,
+  viewportSupportsVolumeId,
+  viewportSupportsVolumeURI,
 };

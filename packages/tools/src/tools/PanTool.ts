@@ -1,5 +1,9 @@
 import { BaseTool } from './base';
-import { getEnabledElement, utilities as csUtils } from '@cornerstonejs/core';
+import {
+  getEnabledElement,
+  utilities as csUtils,
+  viewportHasPan,
+} from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
@@ -18,7 +22,7 @@ class PanTool extends BaseTool {
         //put ignore in false
         ignoreX: false,
         ignoreY: false,
-        ignoreZ: false
+        ignoreZ: false,
       },
     }
   ) {
@@ -107,8 +111,6 @@ class PanTool extends BaseTool {
     const deltaPointsWorld = deltaPoints.world;
     const deltaPointsCanvas = deltaPoints.canvas;
 
-
-
     // This occurs when the mouse event is fired but the mouse hasn't moved a full pixel yet (high resolution mice)
     if (
       deltaPointsWorld[0] === 0 &&
@@ -118,20 +120,35 @@ class PanTool extends BaseTool {
       return;
     }
     // Block X-axis movement if ignoreX is enabled
-    if(this.configuration.ignoreX){
-      deltaPointsWorld[0] =  0
+    if (this.configuration.ignoreX) {
+      deltaPointsWorld[0] = 0;
     }
     // Block Y-axis movement if ignoreY is enabled
-        if(this.configuration.ignoreY){
-      deltaPointsWorld[1] =  0
+    if (this.configuration.ignoreY) {
+      deltaPointsWorld[1] = 0;
     }
 
     // Block Z-axis movement if ignoreZ is enabled
-        if(this.configuration.ignoreZ){
-      deltaPointsWorld[2] =  0
+    if (this.configuration.ignoreZ) {
+      deltaPointsWorld[2] = 0;
     }
     const viewport = enabledElement.viewport;
     const camera = viewport.getCamera();
+
+    if (!hasLegacyCameraPosition(camera)) {
+      if (!viewportHasPan(viewport)) {
+        return;
+      }
+
+      const pan = viewport.getPan();
+      viewport.setPan([
+        pan[0] + deltaPointsCanvas[0],
+        pan[1] + deltaPointsCanvas[1],
+      ]);
+      viewport.render();
+      return;
+    }
+
     const { focalPoint, position } = camera;
 
     if (
@@ -159,6 +176,16 @@ class PanTool extends BaseTool {
     });
     viewport.render();
   }
+}
+
+function hasLegacyCameraPosition(
+  camera: unknown
+): camera is Pick<Types.ICamera, 'focalPoint' | 'position'> {
+  return Boolean(
+    camera &&
+      Array.isArray((camera as Types.ICamera).focalPoint) &&
+      Array.isArray((camera as Types.ICamera).position)
+  );
 }
 
 PanTool.toolName = 'Pan';
