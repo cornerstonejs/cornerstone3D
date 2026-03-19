@@ -211,7 +211,11 @@ class GrowCutBaseTool extends BaseTool {
 
       fn(segmentationId, segmentIndex, labelmap, growcutLabelmap);
 
-      this._removeIslands(updatedGrowCutData);
+      // Skip _removeIslands when using flood fill - island removal is already done in runFloodFillSegmentation
+      const segmentationMode = config.segmentationMode ?? 'floodfill_full';
+      if (segmentationMode !== 'floodfill_full') {
+        this._removeIslands(updatedGrowCutData);
+      }
     };
 
     await growCutCommand();

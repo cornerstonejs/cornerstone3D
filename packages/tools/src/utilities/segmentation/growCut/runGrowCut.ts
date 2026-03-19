@@ -145,6 +145,10 @@ async function runGrowCut(
     volumePixelData = new Float32Array(volumePixelData);
   }
 
+  // Use imageData min/max range for normalized strength cost (modality-independent)
+  const [imageMin, imageMax] = volume.voxelManager.getRange();
+  const volumeRange = Math.max(imageMax - imageMin, 1e-6);
+
   const requiredLimits = {
     maxStorageBufferBindingSize: WEBGPU_MEMORY_LIMIT,
     maxBufferSize: WEBGPU_MEMORY_LIMIT,
@@ -181,6 +185,13 @@ async function runGrowCut(
     size: paramsArrayValues.byteLength,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
+
+  const volumeRangeBuffer = new Float32Array([volumeRange]);
+  const gpuVolumeRangeBuffer = device.createBuffer({
+    size: volumeRangeBuffer.byteLength,
+    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+  });
+  device.queue.writeBuffer(gpuVolumeRangeBuffer, 0, volumeRangeBuffer);
 
   const gpuVolumePixelDataBuffer = device.createBuffer({
     size: BUFFER_SIZE,
@@ -306,6 +317,13 @@ async function runGrowCut(
           type: 'storage',
         },
       },
+      {
+        binding: 8,
+        visibility: GPUShaderStage.COMPUTE,
+        buffer: {
+          type: 'uniform',
+        },
+      },
     ],
   });
 
@@ -364,6 +382,12 @@ async function runGrowCut(
           binding: 7,
           resource: {
             buffer: gpuBoundsBuffer,
+          },
+        },
+        {
+          binding: 8,
+          resource: {
+            buffer: gpuVolumeRangeBuffer,
           },
         },
       ],

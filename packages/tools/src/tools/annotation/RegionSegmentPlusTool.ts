@@ -2,6 +2,7 @@ import {
   cache,
   utilities as csUtils,
   getEnabledElement,
+  getRenderingEngine,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import type { EventTypes, PublicToolProps, ToolProps } from '../../types';
@@ -13,6 +14,10 @@ import type {
   RemoveIslandData,
 } from '../base/GrowCutBaseTool';
 import { calculateGrowCutSeeds } from '../../utilities/segmentation/growCut/runOneClickGrowCut';
+import {
+  runFloodFillSegmentation,
+  getPositiveIntensityRange,
+} from '../../utilities/segmentation/growCut/runFloodFillSegmentation';
 import { ToolModes } from '../../enums';
 
 type RegionSegmentPlusToolData = GrowCutToolData & {
@@ -33,9 +38,14 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
         positiveSeedVariance: 0.4,
         negativeSeedVariance: 0.9,
         subVolumePaddingPercentage: 0.1,
+        /**
+         * Segmentation mode: 'growcut' for distinct regions, 'floodfill_full' for
+         * contiguous regions with speckling (flood fill + remove external islands + fill internal islands).
+         */
+        segmentationMode: 'floodfill_full' as const,
         islandRemoval: {
           /**
-           * Enable/disable island removal
+           * Enable/disable island removal (only applies when segmentationMode is 'growcut')
            */
           enabled: false,
         },
@@ -78,26 +88,40 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
     const refVolume = cache.getVolume(
       this.growCutData.segmentation.referencedVolumeId
     );
-    const seeds = calculateGrowCutSeeds(refVolume, worldPoint, {}) || {
-      positiveSeedIndices: new Set(),
-      negativeSeedIndices: new Set(),
-    };
+    const segmentationMode =
+      this.configuration.segmentationMode ?? 'floodfill_full';
 
-    const { positiveSeedIndices, negativeSeedIndices } = seeds;
-
-    // if the ratio of positive to negative is significant, this is not a good
-    // seed and we should not run grow cut. These are just heuristics numbers
-    // and can be adjusted.
-    let cursor;
-    if (
-      positiveSeedIndices.size / negativeSeedIndices.size > 20 ||
-      negativeSeedIndices.size < 30
-    ) {
-      cursor = 'not-allowed';
-      this.allowedToProceed = false;
+    let cursor: string;
+    if (segmentationMode === 'floodfill_full') {
+      const rangeResult = getPositiveIntensityRange(refVolume, worldPoint, {
+        positiveStdDevMultiplier: this.configuration.positiveStdDevMultiplier,
+      });
+      if (!rangeResult) {
+        cursor = 'not-allowed';
+        this.allowedToProceed = false;
+      } else {
+        cursor = 'copy';
+        this.allowedToProceed = true;
+      }
     } else {
-      cursor = 'copy';
-      this.allowedToProceed = true;
+      const seeds = calculateGrowCutSeeds(refVolume, worldPoint, {}) || {
+        positiveSeedIndices: new Set(),
+        negativeSeedIndices: new Set(),
+      };
+      const { positiveSeedIndices, negativeSeedIndices } = seeds;
+      if (
+        positiveSeedIndices.size / Math.max(negativeSeedIndices.size, 1) > 20 ||
+        negativeSeedIndices.size < 30
+      ) {
+        cursor = 'not-allowed';
+        this.allowedToProceed = false;
+      } else {
+        cursor = 'copy';
+        this.allowedToProceed = true;
+      }
+      if (this.allowedToProceed) {
+        this.seeds = seeds;
+      }
     }
 
     // Get the enabled element first
@@ -111,10 +135,6 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
           element.style.cursor = cursor;
         }
       });
-    }
-
-    if (this.allowedToProceed) {
-      this.seeds = seeds;
     }
 
     // Ensure the viewport renders after cursor is updated
@@ -180,10 +200,39 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
 
   protected async getGrowCutLabelmap(growCutData): Promise<Types.IImageVolume> {
     const {
-      segmentation: { referencedVolumeId },
+      segmentation: { referencedVolumeId, segmentIndex },
       worldPoint,
       options,
+      viewportId,
+      renderingEngineId,
     } = growCutData;
+
+    const segmentationMode =
+      this.configuration.segmentationMode ?? 'floodfill_full';
+
+    if (segmentationMode === 'floodfill_full') {
+      const renderingEngine = getRenderingEngine(renderingEngineId);
+      const viewport = renderingEngine?.getViewport(viewportId);
+      if (!viewport) {
+        throw new Error(
+          'Viewport not found for flood fill segmentation. Ensure the viewport is still active.'
+        );
+      }
+      const result = await runFloodFillSegmentation({
+        referencedVolumeId,
+        worldPosition: worldPoint,
+        viewport,
+        options: {
+          segmentIndex,
+          positiveStdDevMultiplier: this.configuration.positiveStdDevMultiplier,
+          ...options,
+        },
+      });
+      if (!result) {
+        throw new Error('Flood fill segmentation failed.');
+      }
+      return result;
+    }
 
     const { subVolumePaddingPercentage } = this.configuration;
     const mergedOptions = {
