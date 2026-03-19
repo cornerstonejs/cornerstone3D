@@ -1,6 +1,6 @@
 import vtkCellPicker from '@kitware/vtk.js/Rendering/Core/CellPicker';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
-import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
+import vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import { Enums } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import vtkAnnotatedRhombicuboctahedronActor from '../AnnotatedRhombicuboctahedronActor';
@@ -43,13 +43,28 @@ export interface MouseHandlersCallbacks {
 export class vtkOrientationControllerWidget {
   private actors = new Map<string, vtkActor[]>();
   private pickers = new Map<string, vtkCellPicker>();
+  private overlayRenderers = new Map<
+    string,
+    ReturnType<typeof vtkRenderer.newInstance>
+  >();
+  private renderWindows = new Map<
+    string,
+    {
+      addRenderer(r: unknown): void;
+      removeRenderer(r: unknown): void;
+      setNumberOfLayers(n: number): void;
+      getNumberOfLayers(): number;
+    }
+  >();
   private highlightedFace: {
     actor: vtkActor;
     cellId: number;
     originalColor: number[];
     viewport: Types.IVolumeViewport;
     isMainFace: boolean;
-    originalScale?: number[];
+    mainFacePointIds?: number[];
+    mainFacePositions?: number[];
+    mainFaceNormals?: number[];
   } | null = null;
   private mouseHandlers = new Map<
     string,
@@ -146,9 +161,9 @@ export class vtkOrientationControllerWidget {
   }
 
   /**
-   * Adds orientation controller actors to the viewport's main scene so they
-   * are always visible without requiring any rendering engine changes. Actors
-   * are positioned in the viewport corner and rendered with the rest of the scene.
+   * Adds orientation controller actors to a dedicated overlay renderer (layer 1)
+   * so they always render on top of the volume and other scene actors.
+   * This follows the same pattern as vtkOrientationMarkerWidget.
    */
   addActorsToViewport(
     viewportId: string,
@@ -160,25 +175,69 @@ export class vtkOrientationControllerWidget {
       this.removeActorsFromViewport(viewportId, viewport);
     }
 
-    actors.forEach((actor, index) => {
-      const uid = `orientation-controller-${viewportId}-${index}`;
-      viewport.addActor({ actor, uid });
+    const renderWindow = (viewport as Types.IViewport)
+      .getRenderingEngine()
+      .getOffscreenMultiRenderWindow(viewport.id)
+      .getRenderWindow();
+
+    const mainRenderer =
+      (viewport as Types.IViewport)
+        .getRenderingEngine()
+        ?.getRenderer(viewportId) ?? viewport.getRenderer();
+
+    const vtkMainRenderer = mainRenderer as vtkRenderer;
+    const overlayRenderer = vtkRenderer.newInstance();
+    overlayRenderer.setLayer(1);
+    overlayRenderer.setInteractive(false);
+    overlayRenderer.setPreserveColorBuffer(true);
+
+    overlayRenderer.setActiveCamera(vtkMainRenderer.getActiveCamera());
+
+    // Match the main renderer's viewport region within the shared render window
+    // so the overlay only draws in this viewport's canvas area.
+    const vp = vtkMainRenderer.getViewport() as [
+      number,
+      number,
+      number,
+      number,
+    ];
+    overlayRenderer.setViewport(...vp);
+
+    if (renderWindow.getNumberOfLayers() < 2) {
+      renderWindow.setNumberOfLayers(2);
+    }
+    renderWindow.addRenderer(overlayRenderer);
+
+    actors.forEach((actor) => {
+      overlayRenderer.addActor(actor);
     });
+
     this.actors.set(viewportId, actors);
+    this.overlayRenderers.set(viewportId, overlayRenderer);
+    this.renderWindows.set(viewportId, renderWindow);
   }
 
   removeActorsFromViewport(
     viewportId: string,
-    viewport: Types.IVolumeViewport
+    _viewport: Types.IVolumeViewport
   ): void {
     const actors = this.actors.get(viewportId);
-    if (actors) {
-      const uids = actors.map(
-        (_, index) => `orientation-controller-${viewportId}-${index}`
-      );
-      viewport.removeActors(uids);
-      this.actors.delete(viewportId);
+    const overlayRenderer = this.overlayRenderers.get(viewportId);
+    const renderWindow = this.renderWindows.get(viewportId);
+
+    if (actors && overlayRenderer) {
+      actors.forEach((actor) => {
+        overlayRenderer.removeActor(actor);
+      });
+      if (renderWindow) {
+        renderWindow.removeRenderer(overlayRenderer);
+      }
+      overlayRenderer.delete();
     }
+
+    this.actors.delete(viewportId);
+    this.overlayRenderers.delete(viewportId);
+    this.renderWindows.delete(viewportId);
   }
 
   setupPicker(viewportId: string, actors: vtkActor[]): vtkCellPicker {
@@ -206,11 +265,12 @@ export class vtkOrientationControllerWidget {
       return null;
     }
 
-    const mainRenderer =
+    const renderer =
+      this.overlayRenderers.get(viewportId) ??
       (viewport as Types.IViewport)
         .getRenderingEngine()
-        ?.getRenderer(viewportId) ?? viewport.getRenderer();
-    const renderer: vtkRenderer | null = mainRenderer as vtkRenderer | null;
+        ?.getRenderer(viewportId) ??
+      viewport.getRenderer();
     if (!renderer) {
       return null;
     }
@@ -362,6 +422,139 @@ export class vtkOrientationControllerWidget {
     return true;
   }
 
+  /**
+   * Main-face mesh uses disjoint vertex sets per quad (see RhombicuboctahedronSource MAIN_FACES),
+   * so scaling only that cell's points expands a single face plate.
+   */
+  private scaleMainFaceQuadLocally(
+    actor: vtkActor,
+    cellId: number,
+    scaleFactor: number
+  ): {
+    pointIds: number[];
+    positions: number[];
+    normals: number[];
+  } | null {
+    const mapper = actor.getMapper();
+    const polyData = mapper.getInputData() as {
+      getCellPoints: (id: number) => {
+        cellPointIds: Uint32Array | Uint16Array | null;
+      };
+      getPoints: () => {
+        getData: () => Float32Array | Float64Array;
+        modified: () => void;
+      };
+      getPointData: () => {
+        getNormals: () => {
+          getData: () => Float32Array | Float64Array;
+          modified: () => void;
+        } | null;
+        modified: () => void;
+      };
+      modified: () => void;
+    } | null;
+    if (!polyData?.getCellPoints) {
+      return null;
+    }
+    const { cellPointIds } = polyData.getCellPoints(cellId);
+    if (!cellPointIds || cellPointIds.length < 3) {
+      return null;
+    }
+    const pointIds = Array.from(cellPointIds);
+    const points = polyData.getPoints();
+    const ptsData = points.getData();
+    const normalScalars = polyData.getPointData().getNormals();
+    const normalsData = normalScalars?.getData();
+
+    const positions: number[] = [];
+    const normals: number[] = [];
+    let cx = 0;
+    let cy = 0;
+    let cz = 0;
+    for (const pid of pointIds) {
+      const o = pid * 3;
+      positions.push(ptsData[o], ptsData[o + 1], ptsData[o + 2]);
+      cx += ptsData[o];
+      cy += ptsData[o + 1];
+      cz += ptsData[o + 2];
+      if (normalsData) {
+        normals.push(normalsData[o], normalsData[o + 1], normalsData[o + 2]);
+      }
+    }
+    const nPts = pointIds.length;
+    cx /= nPts;
+    cy /= nPts;
+    cz /= nPts;
+
+    for (const pid of pointIds) {
+      const o = pid * 3;
+      const vx = ptsData[o] - cx;
+      const vy = ptsData[o + 1] - cy;
+      const vz = ptsData[o + 2] - cz;
+      ptsData[o] = cx + vx * scaleFactor;
+      ptsData[o + 1] = cy + vy * scaleFactor;
+      ptsData[o + 2] = cz + vz * scaleFactor;
+      if (normalsData) {
+        const nx = ptsData[o];
+        const ny = ptsData[o + 1];
+        const nz = ptsData[o + 2];
+        const len = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
+        normalsData[o] = nx / len;
+        normalsData[o + 1] = ny / len;
+        normalsData[o + 2] = nz / len;
+      }
+    }
+    points.modified();
+    polyData.getPointData().modified();
+    polyData.modified();
+    return { pointIds, positions, normals };
+  }
+
+  private restoreMainFaceQuadGeometry(
+    actor: vtkActor,
+    pointIds: number[],
+    positions: number[],
+    normalsBackup: number[] | undefined
+  ): void {
+    const mapper = actor.getMapper();
+    const polyData = mapper.getInputData() as {
+      getPoints: () => {
+        getData: () => Float32Array | Float64Array;
+        modified: () => void;
+      };
+      getPointData: () => {
+        getNormals: () => {
+          getData: () => Float32Array | Float64Array;
+          modified: () => void;
+        } | null;
+        modified: () => void;
+      };
+      modified: () => void;
+    } | null;
+    if (!polyData) {
+      return;
+    }
+    const points = polyData.getPoints();
+    const ptsData = points.getData();
+    const normalsData = polyData.getPointData().getNormals()?.getData();
+    for (let i = 0; i < pointIds.length; i++) {
+      const pid = pointIds[i];
+      const o = pid * 3;
+      const j = i * 3;
+      ptsData[o] = positions[j];
+      ptsData[o + 1] = positions[j + 1];
+      ptsData[o + 2] = positions[j + 2];
+      if (normalsData && normalsBackup && normalsBackup.length >= j + 3) {
+        normalsData[o] = normalsBackup[j];
+        normalsData[o + 1] = normalsBackup[j + 1];
+        normalsData[o + 2] = normalsBackup[j + 2];
+      }
+    }
+    points.modified();
+    polyData.getPointData().modified();
+    polyData.modified();
+  }
+
   highlightFace(
     actor: vtkActor,
     cellId: number,
@@ -381,10 +574,22 @@ export class vtkOrientationControllerWidget {
     // Clear any existing highlight first
     this.clearHighlight();
 
-    // For main faces (texture-based), we can't easily highlight individual faces
-    // since they're all on the same actor. Scaling the actor would affect all 6 main faces.
-    // Skip highlighting for main faces on hover to avoid highlighting multiple faces.
     if (isMainFace) {
+      const backup = this.scaleMainFaceQuadLocally(actor, cellId, 1.08);
+      if (!backup) {
+        return;
+      }
+      this.highlightedFace = {
+        actor,
+        cellId,
+        originalColor: [0, 0, 0, 0],
+        viewport,
+        isMainFace: true,
+        mainFacePointIds: backup.pointIds,
+        mainFacePositions: backup.positions,
+        mainFaceNormals: backup.normals,
+      };
+      viewport.render();
       return;
     }
 
@@ -442,10 +647,13 @@ export class vtkOrientationControllerWidget {
     const { actor, cellId, originalColor, viewport, isMainFace } =
       this.highlightedFace;
 
-    // For main faces, reset the actor's scale
-    if (isMainFace && this.highlightedFace.originalScale) {
-      const scale = this.highlightedFace.originalScale;
-      actor.setScale(scale[0], scale[1], scale[2]);
+    if (isMainFace) {
+      const ids = this.highlightedFace.mainFacePointIds;
+      const pos = this.highlightedFace.mainFacePositions;
+      const nrm = this.highlightedFace.mainFaceNormals;
+      if (ids && pos && pos.length === ids.length * 3) {
+        this.restoreMainFaceQuadGeometry(actor, ids, pos, nrm);
+      }
       viewport.render();
       this.highlightedFace = null;
       return;
@@ -508,16 +716,7 @@ export class vtkOrientationControllerWidget {
 
       if (pickResult) {
         const { pickedActor, cellId, actorIndex } = pickResult;
-        // Only highlight edge/corner faces on hover (not main faces)
-        // Main faces are all on the same actor, so highlighting would affect all of them
-        if (actorIndex !== 0) {
-          this.highlightFace(
-            pickedActor,
-            cellId,
-            viewport,
-            false // isMainFace = false for edge/corner faces
-          );
-        }
+        this.highlightFace(pickedActor, cellId, viewport, actorIndex === 0);
         if (callbacks.onFaceHover) {
           callbacks.onFaceHover(pickResult);
         }
@@ -611,10 +810,30 @@ export class vtkOrientationControllerWidget {
   }
 
   syncOverlayViewport(
-    _viewportId: string,
-    _viewport: Types.IVolumeViewport
+    viewportId: string,
+    viewport: Types.IVolumeViewport
   ): void {
-    // No overlay when using main scene only; keep for API compatibility.
+    const overlayRenderer = this.overlayRenderers.get(viewportId);
+    if (!overlayRenderer) {
+      return;
+    }
+
+    const mainRenderer =
+      (viewport as Types.IViewport)
+        .getRenderingEngine()
+        ?.getRenderer(viewportId) ?? viewport.getRenderer();
+    if (!mainRenderer) {
+      return;
+    }
+
+    // Camera is shared via setActiveCamera, so only viewport bounds need syncing.
+    const mainVp = (mainRenderer as vtkRenderer).getViewport() as [
+      number,
+      number,
+      number,
+      number,
+    ];
+    overlayRenderer.setViewport(...mainVp);
   }
 
   getOrientationForFace(cellId: number): {
@@ -735,11 +954,34 @@ export class vtkOrientationControllerWidget {
         handler.cleanup();
         this.mouseHandlers.delete(viewportId);
       }
+
+      const overlayRenderer = this.overlayRenderers.get(viewportId);
+      const renderWindow = this.renderWindows.get(viewportId);
+      if (overlayRenderer) {
+        if (renderWindow) {
+          renderWindow.removeRenderer(overlayRenderer);
+        }
+        overlayRenderer.delete();
+      }
+
       this.actors.delete(viewportId);
       this.pickers.delete(viewportId);
+      this.overlayRenderers.delete(viewportId);
+      this.renderWindows.delete(viewportId);
     } else {
       this.mouseHandlers.forEach((handler) => handler.cleanup());
       this.mouseHandlers.clear();
+
+      this.overlayRenderers.forEach((overlayRenderer, vpId) => {
+        const renderWindow = this.renderWindows.get(vpId);
+        if (renderWindow) {
+          renderWindow.removeRenderer(overlayRenderer);
+        }
+        overlayRenderer.delete();
+      });
+      this.overlayRenderers.clear();
+      this.renderWindows.clear();
+
       this.actors.clear();
       this.pickers.clear();
     }

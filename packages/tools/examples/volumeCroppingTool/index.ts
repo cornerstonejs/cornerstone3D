@@ -406,14 +406,6 @@ async function run(numViewports = getNumViewportsFromUrl()) {
   const keepOrientationUp = true;
   const letterColorScheme: 'mixed' | 'white' | 'black' = 'mixed';
 
-  toolGroup.addTool(OrientationControllerTool.toolName, {
-    colorScheme,
-    keepOrientationUp,
-    letterColorScheme,
-    position: 'top-right',
-  });
-  toolGroup.setToolEnabled(OrientationControllerTool.toolName);
-
   // Tool group for 3D viewport
   const toolGroupVRT = ToolGroupManager.createToolGroup(toolGroupIdVRT);
   toolGroupVRT.addTool(ZoomTool.toolName);

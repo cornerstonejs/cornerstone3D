@@ -444,12 +444,12 @@ class OrientationControllerTool extends BaseTool {
           }
         },
         onFaceHover: (result) => {
-          if (result && result.actorIndex !== 0) {
+          if (result) {
             this.widget.highlightFace(
               result.pickedActor,
               result.cellId,
               volumeViewport,
-              false
+              result.actorIndex === 0
             );
           } else {
             this.widget.clearHighlight();
@@ -512,14 +512,13 @@ class OrientationControllerTool extends BaseTool {
       return;
     }
 
-    // Recalculate both size and position to maintain fixed screen size
-    // Size needs to be recalculated because parallel scale changes with zoom
     const volumeViewport = viewport as Types.IVolumeViewport;
     this.widget.positionActors(
       volumeViewport,
       actors,
       this.getPositionConfig()
     );
+    this.widget.syncOverlayViewport(viewportId, volumeViewport);
     viewport.render();
   };
 
