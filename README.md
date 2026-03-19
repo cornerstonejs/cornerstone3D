@@ -101,6 +101,7 @@ following packages are linked:
 | `@cornerstonejs/core` | `packages/core` |
 | `@cornerstonejs/dicom-image-loader` | `packages/dicomImageLoader` |
 | `@cornerstonejs/labelmap-interpolation` | `packages/labelmap-interpolation` |
+| `@cornerstonejs/metadata` | `packages/metadata` |
 | `@cornerstonejs/nifti-volume-loader` | `packages/nifti-volume-loader` |
 | `@cornerstonejs/polymorphic-segmentation` | `packages/polymorphic-segmentation` |
 | `@cornerstonejs/tools` | `packages/tools` |
