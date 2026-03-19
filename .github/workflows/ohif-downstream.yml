@@ -16,7 +16,7 @@ jobs:
     env:
       BUN_VERSION: 1.2.23
       NODE_VERSION: 20
-      OHIF_REF: master
+      OHIF_REF: fix/cs3d-combined-integration
       OHIF_DIR: ohif
     steps:
       - name: Checkout Cornerstone
