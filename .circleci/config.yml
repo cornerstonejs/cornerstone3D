@@ -47,9 +47,11 @@ jobs:
 
             # Define ignored vulnerabilities with comments
             IGNORED_VULNS=(
-              "GHSA-5j98-mcp5-4vw2"  # CVE-2025-64756 - CS3D's use of glob is strictly for building and CI/CD purposes
-              "GHSA-3ppc-4f35-3m26"  # CVE-2026-26996 - CS3D's use of minimatch via glob is safe because it does NOT use the CLI
-                                     # CVE-2026-26996 - CS3D's other uses of minimatch are strictly for building and CI/CD purposes
+              "GHSA-5j98-mcp5-4vw2"  # CVE-2025-64756 - glob is strictly for building and CI/CD purposes
+              "GHSA-3ppc-4f35-3m26"  # CVE-2026-26996 - minimatch via itk-wasm and glob is safe because it does NOT use the CLI
+                                     # CVE-2026-26996 - minimatch via other packages are strictly for building and CI/CD purposes; no user supplied expressions are passed to minimatch
+              "GHSA-7r86-cg39-jmmj"  # CVE-2026-27903 - minimatch same as above
+              "GHSA-23c5-xmqv-rm74"  # CVE-2026-27904 - minimatch same as above
             )
 
             # Build ignore flags
@@ -156,7 +158,7 @@ workflows:
           requires:
             - CHECKOUT
 
-  # MERGE TO MAIN
+  # MERGE TO MAIN/BETA
   TEST_AND_RELEASE:
     jobs:
       - CHECKOUT:
@@ -164,11 +166,15 @@ workflows:
             branches:
               only:
                 - main
-                # - beta
+                - beta
       - BUILD:
           requires:
             - CHECKOUT
-      - NPM_PUBLISH:
+      - HOLD_FOR_APPROVAL:
+          type: approval
           requires:
             - BUILD
+      - NPM_PUBLISH:
+          requires:
+            - HOLD_FOR_APPROVAL
 # VS Code Extension Version: 1.5.1
