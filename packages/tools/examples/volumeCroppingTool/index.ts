@@ -550,6 +550,45 @@ async function run(numViewports = getNumViewportsFromUrl()) {
     },
   });
 
+  addSliderToToolbar({
+    title: 'Handles size',
+    range: [2, 20],
+    defaultValue: 7,
+    step: 1,
+    container: planesRow,
+    onSelectedValueChange: (value) => {
+      const sphereRadius = Number(value);
+      const toolGroupVRT =
+        cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
+      const croppingTool = toolGroupVRT.getToolInstance(
+        VolumeCroppingTool.toolName
+      );
+
+      if (!croppingTool) {
+        return;
+      }
+
+      croppingTool.configuration.sphereRadius = sphereRadius;
+
+      if (Array.isArray(croppingTool.sphereStates)) {
+        croppingTool.sphereStates.forEach((state) => {
+          if (state?.sphereSource?.setRadius) {
+            state.sphereSource.setRadius(sphereRadius);
+            state.sphereSource.modified();
+          }
+        });
+      }
+
+      const viewport = croppingTool._getViewport?.();
+      if (viewport) {
+        viewport.render();
+      }
+    },
+    updateLabelOnChange: (value, label) => {
+      label.textContent = `Handles size: ${value}`;
+    },
+  });
+
   const viewport = renderingEngine.getViewport(viewportId4) as VolumeViewport3D;
 
   await setVolumesForViewports(
