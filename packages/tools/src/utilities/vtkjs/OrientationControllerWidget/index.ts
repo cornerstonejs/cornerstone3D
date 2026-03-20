@@ -41,6 +41,9 @@ export interface MouseHandlersCallbacks {
 }
 
 export class vtkOrientationControllerWidget {
+  private static readonly ACTIVE_DRAG_ATTR =
+    'data-cs-orientation-controller-drag';
+
   private actors = new Map<string, vtkActor[]>();
   private pickers = new Map<string, vtkCellPicker>();
   private overlayRenderers = new Map<
@@ -717,9 +720,20 @@ export class vtkOrientationControllerWidget {
     callbacks: MouseHandlersCallbacks
   ): { cleanup: () => void } {
     let isMouseDown = false;
+    let didDrag = false;
+    let pendingPickResult: PickResult | null = null;
+    let mouseDownCanvas: { x: number; y: number } | null = null;
+    const clickTolerancePx = 3;
 
     const hoverHandler = (evt: MouseEvent) => {
       if (isMouseDown) {
+        if (mouseDownCanvas) {
+          const dx = evt.clientX - mouseDownCanvas.x;
+          const dy = evt.clientY - mouseDownCanvas.y;
+          if (dx * dx + dy * dy > clickTolerancePx * clickTolerancePx) {
+            didDrag = true;
+          }
+        }
         return;
       }
 
@@ -763,29 +777,39 @@ export class vtkOrientationControllerWidget {
       }
 
       isMouseDown = true;
-
-      // Determine global cellId
-      let globalCellId = pickResult.cellId;
-      if (pickResult.actorIndex === 1) {
-        // Edge faces: add 6 to convert local cellId to global
-        globalCellId = pickResult.cellId + 6;
-      } else if (pickResult.actorIndex === 2) {
-        // Corner faces: add 18 to convert local cellId to global
-        globalCellId = pickResult.cellId + 18;
-      }
-      // actorIndex === 0 (main faces): cellId stays as is
-
-      callbacks.onFacePicked({
-        ...pickResult,
-        cellId: globalCellId,
-      });
-
-      evt.preventDefault();
-      evt.stopPropagation();
+      didDrag = false;
+      pendingPickResult = pickResult;
+      mouseDownCanvas = { x: evt.clientX, y: evt.clientY };
+      element.setAttribute(
+        vtkOrientationControllerWidget.ACTIVE_DRAG_ATTR,
+        'true'
+      );
     };
 
-    const mouseUpHandler = () => {
+    const mouseUpHandler = (evt: MouseEvent) => {
+      if (isMouseDown && !didDrag && pendingPickResult) {
+        // Determine global cellId for a true click (not drag).
+        let globalCellId = pendingPickResult.cellId;
+        if (pendingPickResult.actorIndex === 1) {
+          globalCellId = pendingPickResult.cellId + 6;
+        } else if (pendingPickResult.actorIndex === 2) {
+          globalCellId = pendingPickResult.cellId + 18;
+        }
+
+        callbacks.onFacePicked({
+          ...pendingPickResult,
+          cellId: globalCellId,
+        });
+        evt.preventDefault();
+        evt.stopImmediatePropagation();
+        evt.stopPropagation();
+      }
+
       isMouseDown = false;
+      didDrag = false;
+      pendingPickResult = null;
+      mouseDownCanvas = null;
+      element.removeAttribute(vtkOrientationControllerWidget.ACTIVE_DRAG_ATTR);
       this.clearHighlight();
     };
 
@@ -803,18 +827,19 @@ export class vtkOrientationControllerWidget {
       }
     };
 
-    element.addEventListener('mousemove', hoverHandler);
-    element.addEventListener('mousedown', clickHandler);
+    element.addEventListener('mousemove', hoverHandler, true);
+    element.addEventListener('mousedown', clickHandler, true);
     element.addEventListener('mouseup', mouseUpHandler);
     element.addEventListener('mouseleave', mouseUpHandler);
     element.addEventListener('dblclick', dblclickHandler, true);
 
     const cleanup = () => {
-      element.removeEventListener('mousemove', hoverHandler);
-      element.removeEventListener('mousedown', clickHandler);
+      element.removeEventListener('mousemove', hoverHandler, true);
+      element.removeEventListener('mousedown', clickHandler, true);
       element.removeEventListener('mouseup', mouseUpHandler);
       element.removeEventListener('mouseleave', mouseUpHandler);
       element.removeEventListener('dblclick', dblclickHandler, true);
+      element.removeAttribute(vtkOrientationControllerWidget.ACTIVE_DRAG_ATTR);
     };
 
     this.mouseHandlers.set(viewportId, { cleanup });
