@@ -20,7 +20,7 @@ import vtkImageCPRMapper from '@kitware/vtk.js/Rendering/Core/ImageCPRMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 
 const {
-  PlanarFreehandROITool,
+  SplineROITool,
   PanTool,
   ZoomTool,
   ToolGroupManager,
@@ -78,17 +78,26 @@ addButtonToToolbar({
     if (!viewport) {
       return;
     }
-    const annotations =
-      getAnnotations(PlanarFreehandROITool.toolName, viewport.element) || [];
+    const annotations = getAnnotations(toolsNames[0], viewport.element) || [];
     if (annotations.length) {
       const lastAnnotation = annotations[annotations.length - 1];
-      const polylineFlat = lastAnnotation.data.contour.polyline.flat();
+      const contourPolyline = lastAnnotation.data.contour.polyline;
+      // Ensure polyline is ordered top-to-bottom along Z-axis.
+      // The CPRMapper requires consistent orientation regardless
+      // of drawing direction (top-to-bottom vs bottom-to-top)
+      if (contourPolyline[0][2] > contourPolyline.at(-1)[2]) {
+        contourPolyline.reverse();
+      }
+
+      // Convert 2D array of [x, y, z] points into a flat 1D array for VTK
+      // VTK expects coordinates as [x1, y1, z1, x2, y2, z2, ...]
+      const polylineFlat = contourPolyline.flat();
 
       centerline = vtkPolyData.newInstance();
       const nPoints = polylineFlat.length / 3;
       centerline.getPoints().setData(polylineFlat, 3);
 
-      // Set polylines of the centerline
+      // Define connectivity for the centerline polyline in VTK format:
       const centerlineLines = new Uint16Array(1 + nPoints);
       centerlineLines[0] = nPoints;
       for (let i = 0; i < nPoints; ++i) {
@@ -98,7 +107,9 @@ addButtonToToolbar({
 
       centerline.modified();
 
-      // Defining const orientation for all points
+      // Configure mapper for Curved Planar Reformation (CPR)
+      // Uniform orientation [0, 1, 0, 0] applies same viewing direction (Y-axis)
+      // to all points along the centerline, creating orthogonal cross-sections
       const mapper = vtkImageCPRMapper.newInstance();
       mapper.setUseUniformOrientation(true);
       mapper.setUniformOrientation([0, 1, 0, 0]);
@@ -124,26 +135,16 @@ addButtonToToolbar({
   },
 });
 
-addButtonToToolbar({
-  title: 'Clear All',
-  onClick: () => {
-    const annotationManager = annotation.state.getAnnotationManager();
-    annotationManager.removeAllAnnotations();
-
-    const stackViewport = renderingEngine.getViewport(
-      viewportIds[1]
-    ) as Types.IStackViewport;
-    if (stackViewport) {
-      stackViewport.setActors([]);
-    }
-
-    renderingEngine.renderViewports(viewportIds);
-  },
-});
-
-// ============================= //
-
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
+const Splines = {
+  CatmullRomSplineROI: {
+    splineType: SplineROITool.SplineTypes.CatmullRom,
+  },
+};
+
+const SplineToolNames = Object.keys(Splines);
+const toolsNames = [...SplineToolNames];
+let toolName = toolsNames[0];
 
 /**
  * Runs the demo
@@ -153,7 +154,7 @@ async function run() {
   await initDemo();
 
   // Add tools to Cornerstone3D
-  cornerstoneTools.addTool(PlanarFreehandROITool);
+  cornerstoneTools.addTool(SplineROITool);
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
 
@@ -162,18 +163,29 @@ async function run() {
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
   // Add the tools to the tool group
-  toolGroup.addTool(PlanarFreehandROITool.toolName, { cachedStats: true });
+  toolGroup.addToolInstance('CatmullRomSplineROI', SplineROITool.toolName, {
+    spline: {
+      type: SplineROITool.SplineTypes.CatmullRom,
+    },
+  });
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
 
   // Set the initial state of the tools.
-  toolGroup.setToolActive(PlanarFreehandROITool.toolName, {
+  toolGroup.setToolActive(toolsNames[0], {
     bindings: [
       {
         mouseButton: MouseBindings.Primary, // Left Click
       },
     ],
   });
+
+  // Allow drawing incomplete splines without requiring closure
+  // Useful for defining paths that don't need to form a closed loop
+  toolGroup.setToolConfiguration(toolName, {
+    allowOpenSplines: true,
+  });
+
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [
       {
@@ -298,7 +310,7 @@ function prepareImageDataForPicking(viewport: Types.IVolumeViewport) {
   // Set the point data to return the fakeScalars
   imageData.setPointData({
     getScalars: () => fakeScalars,
-    getMTime: () => 0, // Add getMTime to avoid VTK.js error
+    getMTime: () => 0, // Required by VTK to track data updates
   });
 }
 
