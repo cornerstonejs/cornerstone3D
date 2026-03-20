@@ -402,9 +402,9 @@ async function run(numViewports = getNumViewportsFromUrl()) {
     ],
   });
 
-  const colorScheme: 'rgy' | 'gray' | 'marker' = 'rgy';
+  const colorScheme: 'rgy' | 'gray' | 'marker' = 'gray';
   const keepOrientationUp = true;
-  const letterColorScheme: 'mixed' | 'white' | 'black' = 'mixed';
+  const letterColorScheme: 'mixed' | 'white' | 'black' = 'white';
 
   // Tool group for 3D viewport
   const toolGroupVRT = ToolGroupManager.createToolGroup(toolGroupIdVRT);
