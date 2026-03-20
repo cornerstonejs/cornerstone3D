@@ -14,12 +14,12 @@ import type {
   Point3,
 } from '../../../types';
 
-type PlanarResolvedCamera = Pick<
+type PlanarComputedCamera = Pick<
   Required<ICamera>,
   'focalPoint' | 'parallelScale' | 'viewPlaneNormal' | 'viewUp'
 >;
 
-function getPlanarCameraBasis(camera: PlanarResolvedCamera) {
+function getPlanarCameraBasis(camera: PlanarComputedCamera) {
   const viewUp = vec3.normalize(
     vec3.create(),
     camera.viewUp as unknown as vec3
@@ -46,7 +46,7 @@ function getPlanarCameraBasis(camera: PlanarResolvedCamera) {
 }
 
 export function canvasToWorldPlanarCamera(args: {
-  camera: PlanarResolvedCamera;
+  camera: PlanarComputedCamera;
   canvasWidth: number;
   canvasHeight: number;
   canvasPos: Point2;
@@ -78,7 +78,7 @@ export function canvasToWorldPlanarCamera(args: {
 }
 
 export function worldToCanvasPlanarCamera(args: {
-  camera: PlanarResolvedCamera;
+  camera: PlanarComputedCamera;
   canvasWidth: number;
   canvasHeight: number;
   worldPos: Point3;

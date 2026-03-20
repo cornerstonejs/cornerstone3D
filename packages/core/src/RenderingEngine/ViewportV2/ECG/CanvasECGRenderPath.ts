@@ -58,12 +58,6 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
       updateCamera: (camera) => {
         this.updateCamera(rendering, camera);
       },
-      canvasToWorld: (canvasPos) => {
-        return this.canvasToWorld(rendering, waveform, canvasPos);
-      },
-      worldToCanvas: (worldPos) => {
-        return this.worldToCanvas(rendering, waveform, worldPos);
-      },
       getFrameOfReferenceUID: () => {
         return this.getFrameOfReferenceUID(ctx);
       },

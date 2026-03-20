@@ -22,12 +22,10 @@ export function createDefaultECGCamera(args: {
     timeRange: [...args.timeRange] as [number, number],
     valueRange: [...args.valueRange] as [number, number],
     scrollOffset: 0,
-    frame: {
-      anchorCanvas: [0.5, 0.5],
-      scale: 1,
-      scaleMode: 'fit',
-      rotation: 0,
-    },
+    anchorCanvas: [0.5, 0.5],
+    scale: 1,
+    scaleMode: 'fit',
+    rotation: 0,
   };
 }
 
@@ -38,17 +36,15 @@ export function normalizeECGCamera(camera: ECGCamera): ECGCamera {
     ...(camera.scrollOffset !== undefined
       ? { scrollOffset: camera.scrollOffset }
       : {}),
-    frame: {
-      anchorCanvas: cloneAnchorCanvas(camera.frame?.anchorCanvas ?? [0.5, 0.5]),
-      scale: Math.max(camera.frame?.scale ?? 1, 0.001),
-      scaleMode: 'fit',
-      rotation: 0,
-      ...(camera.frame?.anchorWorld
-        ? {
-            anchorWorld: clonePoint(camera.frame.anchorWorld),
-          }
-        : {}),
-    },
+    anchorCanvas: cloneAnchorCanvas(camera.anchorCanvas ?? [0.5, 0.5]),
+    scale: Math.max(camera.scale ?? 1, 0.001),
+    scaleMode: 'fit',
+    rotation: 0,
+    ...(camera.anchorWorld
+      ? {
+          anchorWorld: clonePoint(camera.anchorWorld),
+        }
+      : {}),
   };
 }
 
@@ -58,17 +54,15 @@ export function getECGCameraLayout(args: {
   canvas: HTMLCanvasElement;
 }): ECGCameraLayout {
   const { metrics, camera, canvas } = args;
-  const scale = Math.max(camera?.frame?.scale ?? 1, 0.001);
+  const scale = Math.max(camera?.scale ?? 1, 0.001);
   const effectiveRatio = metrics.worldToCanvasRatio * scale;
   const drawWidth = metrics.ecgWidth * effectiveRatio;
   const drawHeight = metrics.ecgHeight * effectiveRatio;
   const centeredXOffset = (canvas.clientWidth - drawWidth) / 2;
   const centeredYOffset = (canvas.clientHeight - drawHeight) / 2;
-  const anchorCanvas = cloneAnchorCanvas(
-    camera?.frame?.anchorCanvas ?? [0.5, 0.5]
-  );
+  const anchorCanvas = cloneAnchorCanvas(camera?.anchorCanvas ?? [0.5, 0.5]);
   const anchorWorld =
-    clonePoint(camera?.frame?.anchorWorld) ??
+    clonePoint(camera?.anchorWorld) ??
     ([metrics.ecgWidth / 2, metrics.ecgHeight / 2] as [number, number]);
   const xOffset =
     canvas.clientWidth * anchorCanvas[0] - anchorWorld[0] * effectiveRatio;

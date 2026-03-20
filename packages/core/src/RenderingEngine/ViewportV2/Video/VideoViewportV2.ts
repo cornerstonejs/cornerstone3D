@@ -25,11 +25,10 @@ import type {
 } from './VideoViewportV2Types';
 import {
   createDefaultVideoCamera,
-  getAnchorWorldForPan,
-  getPanForVideoLayout,
   getVideoLayout,
   normalizeVideoCamera,
 } from './videoViewportCamera';
+import VideoComputedCamera from './VideoComputedCamera';
 
 defaultRenderPathResolver.register(new HtmlVideoPath());
 
@@ -152,55 +151,52 @@ class VideoViewportV2 extends ViewportV2<
   }
 
   getZoom(): number {
-    return this.getScale();
+    return (
+      this.getComputedCamera()?.zoom ?? Math.max(this.camera.scale ?? 1, 0.001)
+    );
   }
 
   setZoom(zoom: number, canvasPoint?: Point2): void {
-    if (canvasPoint) {
-      this.setScaleAtCanvasPoint(zoom, canvasPoint);
+    const computedCamera = this.getComputedCamera();
+
+    if (computedCamera) {
+      this.applyComputedCameraState(
+        computedCamera.withZoom(zoom, canvasPoint).state.camera
+      );
       return;
     }
 
-    this.setScale(zoom);
+    this.setCamera({
+      scale: Math.max(zoom, 0.001),
+      scaleMode: 'fit',
+    });
   }
 
   getPan(): Point2 {
-    const layout = this.getCurrentVideoLayout();
-
-    return layout ? getPanForVideoLayout(layout) : [0, 0];
+    return this.getComputedCamera()?.pan ?? [0, 0];
   }
 
   setPan(pan: Point2): void {
-    const layout = this.getCurrentVideoLayout();
+    const computedCamera = this.getComputedCamera();
 
-    if (!layout) {
+    if (!computedCamera) {
       return;
     }
 
-    this.setCamera({
-      frame: {
-        anchorWorld: getAnchorWorldForPan([pan[0], pan[1]], layout),
-      },
-    });
+    this.applyComputedCameraState(computedCamera.withPan(pan).state.camera);
   }
 
   private setScaleAtCanvasPoint(scale: number, canvasPoint: Point2): void {
-    const worldPoint = this.canvasToWorld(canvasPoint);
-    const canvasWidth = this.element.clientWidth;
-    const canvasHeight = this.element.clientHeight;
+    const computedCamera = this.getComputedCamera();
 
-    this.setCamera({
-      frame: {
-        ...(this.getCamera().frame || {}),
-        anchorWorld: [worldPoint[0], worldPoint[1]],
-        anchorCanvas: [
-          canvasPoint[0] / Math.max(canvasWidth, 1),
-          canvasPoint[1] / Math.max(canvasHeight, 1),
-        ],
-        scale: Math.max(scale, 0.001),
-        scaleMode: 'fit',
-      },
-    });
+    if (!computedCamera) {
+      this.setZoom(scale);
+      return;
+    }
+
+    this.applyComputedCameraState(
+      computedCamera.withZoom(scale, canvasPoint).state.camera
+    );
   }
 
   /**
@@ -468,23 +464,74 @@ class VideoViewportV2 extends ViewportV2<
     return this.getVideoRendering()?.element;
   }
 
-  protected getCameraForEvent(): ICamera {
-    const layout = this.getCurrentVideoLayout();
-    const worldToCanvasRatio = Math.max(layout?.worldToCanvasRatio ?? 1, 0.001);
-    const focalPoint = this.canvasToWorld([
-      this.element.clientWidth / 2,
-      this.element.clientHeight / 2,
-    ]);
+  getComputedCamera(): VideoComputedCamera | undefined {
+    const videoElement = this.getVideoElement();
+    const videoData = this.getVideoData();
 
-    return {
-      parallelProjection: true,
-      focalPoint,
-      position: [0, 0, 0],
-      viewUp: [0, -1, 0],
-      parallelScale: this.element.clientHeight / 2 / worldToCanvasRatio,
-      viewPlaneNormal: [0, 0, 1],
-      rotation: this.camera.frame?.rotation ?? 0,
-    };
+    if (!videoElement || !videoData) {
+      return;
+    }
+
+    return new VideoComputedCamera({
+      camera: this.camera,
+      containerHeight: this.element.clientHeight,
+      containerWidth: this.element.clientWidth,
+      frameOfReferenceUID:
+        (
+          videoData.metadata.imagePlaneModule as
+            | { frameOfReferenceUID?: string }
+            | undefined
+        )?.frameOfReferenceUID || videoData.renderedUrl,
+      intrinsicHeight: videoElement.videoHeight || this.element.clientHeight,
+      intrinsicWidth: videoElement.videoWidth || this.element.clientWidth,
+      objectFit: this.getDataPresentation(videoData.id)?.objectFit,
+      payload: videoData,
+    });
+  }
+
+  canvasToWorld(canvasPos: Point2) {
+    const computedCamera = this.getComputedCamera();
+
+    if (!computedCamera) {
+      throw new Error(
+        `[VideoViewportV2] Cannot convert canvas to world for viewport ${this.id} because no video is mounted.`
+      );
+    }
+
+    return computedCamera.canvasToWorld(canvasPos);
+  }
+
+  worldToCanvas(worldPos: [number, number, number]) {
+    const computedCamera = this.getComputedCamera();
+
+    if (!computedCamera) {
+      throw new Error(
+        `[VideoViewportV2] Cannot convert world to canvas for viewport ${this.id} because no video is mounted.`
+      );
+    }
+
+    return computedCamera.worldToCanvas(worldPos);
+  }
+
+  override getFrameOfReferenceUID(): string {
+    return (
+      this.getComputedCamera()?.getFrameOfReferenceUID() ??
+      `${this.type}-viewport-${this.id}`
+    );
+  }
+
+  protected getCameraForEvent(): ICamera {
+    return (
+      this.getComputedCamera()?.toICamera() ?? {
+        parallelProjection: true,
+        focalPoint: [0, 0, 0],
+        position: [0, 0, 0],
+        viewUp: [0, -1, 0],
+        parallelScale: 1,
+        viewPlaneNormal: [0, 0, 1],
+        rotation: this.camera.rotation ?? 0,
+      }
+    );
   }
 
   private getVideoData(): LoadedData<VideoStreamPayload> | undefined {
@@ -508,9 +555,10 @@ class VideoViewportV2 extends ViewportV2<
   }
 
   private getCurrentVideoLayout() {
+    const computedCamera = this.getComputedCamera();
     const videoElement = this.getVideoElement();
 
-    if (!videoElement) {
+    if (!computedCamera || !videoElement) {
       return;
     }
 
@@ -539,7 +587,7 @@ class VideoViewportV2 extends ViewportV2<
       intrinsicWidth,
       intrinsicHeight,
       objectFit,
-      camera: this.camera,
+      camera: computedCamera.state.camera,
     });
   }
 
@@ -603,6 +651,13 @@ class VideoViewportV2 extends ViewportV2<
     this.cleanupTrackedVideoElement?.();
     this.cleanupTrackedVideoElement = undefined;
     this.trackedVideoElement = undefined;
+  }
+
+  private applyComputedCameraState(nextCamera: VideoCamera): void {
+    const previousCamera = this.getCameraForEvent();
+
+    this.camera = this.normalizeCamera(nextCamera);
+    this.modified(previousCamera);
   }
 }
 

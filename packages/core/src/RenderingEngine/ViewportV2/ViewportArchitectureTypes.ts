@@ -40,8 +40,6 @@ export interface RenderPathAttachment<TPresentation = unknown> {
   rendering: MountedRendering;
   updateDataPresentation(props: TPresentation): void;
   updateCamera(camera: unknown): void;
-  canvasToWorld(canvasPos: Point2): Point3;
-  worldToCanvas(worldPos: Point3): Point2;
   getFrameOfReferenceUID(): string | undefined;
   getImageData?(): unknown;
   render?(): void;

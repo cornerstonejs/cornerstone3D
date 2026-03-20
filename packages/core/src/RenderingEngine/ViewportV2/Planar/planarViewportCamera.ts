@@ -10,12 +10,10 @@ export function createDefaultPlanarCamera(): PlanarCamera {
     orientation: OrientationAxis.ACQUISITION,
     flipHorizontal: false,
     flipVertical: false,
-    frame: {
-      anchorCanvas: [0.5, 0.5],
-      scale: 1,
-      scaleMode: 'fit',
-      rotation: 0,
-    },
+    anchorCanvas: [0.5, 0.5],
+    scale: 1,
+    scaleMode: 'fit',
+    rotation: 0,
   };
 }
 
@@ -28,14 +26,12 @@ export function normalizePlanarCamera(camera: PlanarCamera): PlanarCamera {
       clonePlanarOrientation(camera.orientation) ?? OrientationAxis.ACQUISITION,
     flipHorizontal: camera.flipHorizontal === true,
     flipVertical: camera.flipVertical === true,
-    frame: {
-      anchorCanvas: camera.frame?.anchorCanvas ?? [0.5, 0.5],
-      scale: Math.max(camera.frame?.scale ?? 1, 0.001),
-      scaleMode: 'fit',
-      rotation: normalizePlanarRotation(camera.frame?.rotation ?? 0),
-      ...(camera.frame?.anchorWorld
-        ? { anchorWorld: [...camera.frame.anchorWorld] as Point3 }
-        : {}),
-    },
+    anchorCanvas: camera.anchorCanvas ?? [0.5, 0.5],
+    scale: Math.max(camera.scale ?? 1, 0.001),
+    scaleMode: 'fit',
+    rotation: normalizePlanarRotation(camera.rotation ?? 0),
+    ...(camera.anchorWorld
+      ? { anchorWorld: [...camera.anchorWorld] as Point3 }
+      : {}),
   };
 }

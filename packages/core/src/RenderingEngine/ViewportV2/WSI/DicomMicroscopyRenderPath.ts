@@ -99,12 +99,6 @@ export class DicomMicroscopyRenderPath
       updateCamera: (camera) => {
         this.updateCamera(rendering, camera);
       },
-      canvasToWorld: (canvasPos) => {
-        return this.canvasToWorld(ctx, rendering, payload.metadata, canvasPos);
-      },
-      worldToCanvas: (worldPos) => {
-        return this.worldToCanvas(ctx, rendering, payload.metadata, worldPos);
-      },
       getFrameOfReferenceUID: () => {
         return this.getFrameOfReferenceUID(payload);
       },

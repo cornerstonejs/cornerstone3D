@@ -104,10 +104,10 @@ export function derivePlanarPresentation(args: {
   canvasHeight: number;
 }): DerivedPlanarPresentation {
   const { sliceBasis, camera, canvasHeight, canvasWidth } = args;
-  const scale = Math.max(camera?.frame?.scale ?? 1, 0.001);
-  const rotation = normalizePlanarRotation(camera?.frame?.rotation ?? 0);
+  const scale = Math.max(camera?.scale ?? 1, 0.001);
+  const rotation = normalizePlanarRotation(camera?.rotation ?? 0);
   const anchorCanvas = vec2.clone(
-    (camera?.frame?.anchorCanvas ?? [0.5, 0.5]) as unknown as vec2
+    (camera?.anchorCanvas ?? [0.5, 0.5]) as unknown as vec2
   ) as Point2;
   const safeCanvasWidth = getSafeCanvasDimension(canvasWidth);
   const safeCanvasHeight = getSafeCanvasDimension(canvasHeight);
@@ -144,9 +144,9 @@ export function derivePlanarPresentation(args: {
 
   // Project the anchor point onto the current slice plane so that an anchor
   // placed on a different slice doesn't shift the focal point off-plane.
-  const effectiveAnchorWorld = camera?.frame?.anchorWorld
+  const effectiveAnchorWorld = camera?.anchorWorld
     ? projectAnchorWorldToCurrentPlane(
-        camera.frame.anchorWorld,
+        camera.anchorWorld,
         sliceBasis.sliceCenterWorld,
         viewPlaneNormal
       )

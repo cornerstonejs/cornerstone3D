@@ -1,5 +1,4 @@
 import type * as EventTypes from '../../types/EventTypes';
-import type { Point2, Point3 } from '../../types';
 import type ICamera from '../../types/ICamera';
 import Events from '../../enums/Events';
 import triggerEvent from '../../utilities/triggerEvent';
@@ -16,7 +15,7 @@ import type {
   ViewportId,
 } from './ViewportArchitectureTypes';
 import type ViewportType from '../../enums/ViewportType';
-import type { ViewAnchor, ViewportCameraBase } from './ViewportCameraTypes';
+import type { ViewportCameraBase } from './ViewportCameraTypes';
 
 /**
  * Generic ViewportV2 controller.
@@ -231,14 +230,6 @@ abstract class ViewportV2<
     const next = {
       ...this.camera,
       ...cameraPatch,
-      ...(cameraPatch.frame !== undefined
-        ? {
-            frame: {
-              ...(this.camera.frame || {}),
-              ...(cameraPatch.frame || {}),
-            },
-          }
-        : {}),
     } as TCamera;
 
     this.camera = this.normalizeCamera(next);
@@ -273,65 +264,6 @@ abstract class ViewportV2<
     return this.getBinding(dataId)?.rendering.renderMode;
   }
 
-  getScale(): number {
-    return Math.max(this.camera.frame?.scale ?? 1, 0.001);
-  }
-
-  setScale(scale: number): void {
-    this.setCamera({
-      frame: {
-        ...(this.camera.frame || {}),
-        scale: Math.max(scale, 0.001),
-        scaleMode: 'fit',
-      },
-    } as Partial<TCamera>);
-  }
-
-  getAnchorCanvas(): ViewAnchor {
-    const [x, y] = this.camera.frame?.anchorCanvas ?? [0.5, 0.5];
-
-    return [x, y];
-  }
-
-  setAnchorCanvas(anchorCanvas: ViewAnchor): void {
-    this.setCamera({
-      frame: {
-        ...(this.camera.frame || {}),
-        anchorCanvas: [anchorCanvas[0], anchorCanvas[1]],
-      },
-    } as Partial<TCamera>);
-  }
-
-  /**
-   * Uses the current binding's render-path transform.
-   */
-  canvasToWorld(canvasPos: Point2): Point3 {
-    const binding = this.getCurrentBinding();
-
-    if (!binding) {
-      throw new Error(
-        `[ViewportV2] Cannot convert canvas to world for viewport ${this.id} because no rendering is mounted.`
-      );
-    }
-
-    return binding.canvasToWorld(canvasPos);
-  }
-
-  /**
-   * Uses the current binding's render-path transform.
-   */
-  worldToCanvas(worldPos: Point3): Point2 {
-    const binding = this.getCurrentBinding();
-
-    if (!binding) {
-      throw new Error(
-        `[ViewportV2] Cannot convert world to canvas for viewport ${this.id} because no rendering is mounted.`
-      );
-    }
-
-    return binding.worldToCanvas(worldPos);
-  }
-
   /**
    * Returns the current binding's frame of reference when one exists.
    * Falls back to a viewport-local identifier so callers still get a stable
@@ -349,6 +281,7 @@ abstract class ViewportV2<
 
   /**
    * Tears down all mounted dataset bindings during viewport reset.
+   * @deprecated Compatibility no-op retained during the V2 migration.
    */
   removeWidgets(): void {
     // V2 viewports do not use VTK widgets — intentional no-op.

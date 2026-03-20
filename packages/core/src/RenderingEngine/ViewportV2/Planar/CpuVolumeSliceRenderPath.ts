@@ -94,32 +94,29 @@ export class CpuVolumeSliceRenderPath
       removeStreamingSubscriptions: (() => {
         let isActive = true;
         let pendingAnimationFrameId: number | undefined;
-        const unsubscribe = subscribeToVolumeLoadCompletion(
-          payload.volumeId,
-          () => {
-            if (!isActive) {
-              return;
-            }
-
-            rendering.pendingVolumeLoadCallback = false;
-            rendering.sampledSliceState = undefined;
-            rendering.renderingInvalidated = true;
-            ctx.display.renderNow();
-            if (!isActive) {
-              return;
-            }
-
-            pendingAnimationFrameId = window.requestAnimationFrame(() => {
-              pendingAnimationFrameId = undefined;
-
-              if (!isActive) {
-                return;
-              }
-
-              ctx.display.renderNow();
-            });
+        const unsubscribe = subscribeToVolumeEvents(payload.volumeId, () => {
+          if (!isActive) {
+            return;
           }
-        );
+
+          rendering.pendingVolumeLoadCallback = false;
+          rendering.sampledSliceState = undefined;
+          rendering.renderingInvalidated = true;
+          ctx.display.renderNow();
+          if (!isActive) {
+            return;
+          }
+
+          pendingAnimationFrameId = window.requestAnimationFrame(() => {
+            pendingAnimationFrameId = undefined;
+
+            if (!isActive) {
+              return;
+            }
+
+            ctx.display.renderNow();
+          });
+        });
 
         return () => {
           isActive = false;
@@ -143,12 +140,6 @@ export class CpuVolumeSliceRenderPath
       },
       updateCamera: (camera) => {
         this.updateCamera(ctx, rendering, camera);
-      },
-      canvasToWorld: (canvasPos) => {
-        return this.canvasToWorld(ctx, rendering, canvasPos);
-      },
-      worldToCanvas: (worldPos) => {
-        return this.worldToCanvas(ctx, rendering, worldPos);
       },
       getFrameOfReferenceUID: () => {
         return this.getFrameOfReferenceUID(rendering);
@@ -432,29 +423,31 @@ export class CpuVolumeSliceRenderPath
   }
 }
 
-function subscribeToVolumeLoadCompletion(
+function subscribeToVolumeEvents(
   volumeId: string,
-  onComplete: () => void
+  onUpdate: () => void
 ): () => void {
-  const handleComplete = (evt: Event) => {
+  const handleUpdate = (evt: Event) => {
     const detail = (evt as CustomEvent<{ volumeId?: string }>).detail;
 
     if (detail?.volumeId !== volumeId) {
       return;
     }
 
-    onComplete();
+    onUpdate();
   };
 
+  eventTarget.addEventListener(Events.IMAGE_VOLUME_MODIFIED, handleUpdate);
   eventTarget.addEventListener(
     Events.IMAGE_VOLUME_LOADING_COMPLETED,
-    handleComplete
+    handleUpdate
   );
 
   return () => {
+    eventTarget.removeEventListener(Events.IMAGE_VOLUME_MODIFIED, handleUpdate);
     eventTarget.removeEventListener(
       Events.IMAGE_VOLUME_LOADING_COMPLETED,
-      handleComplete
+      handleUpdate
     );
   };
 }

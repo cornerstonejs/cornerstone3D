@@ -10,6 +10,5 @@ export interface CameraFrame<TAnchorWorld = unknown> {
   rotation?: number;
 }
 
-export interface ViewportCameraBase<TAnchorWorld = unknown> {
-  frame?: CameraFrame<TAnchorWorld>;
-}
+export interface ViewportCameraBase<TAnchorWorld = unknown>
+  extends CameraFrame<TAnchorWorld> {}

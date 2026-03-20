@@ -25,30 +25,39 @@ import {
   viewportHasFrameOfReferenceUID,
   viewportHasPan,
   viewportHasZoom,
+  ViewportComputedCamera,
   ViewportV2,
 } from './RenderingEngine/ViewportV2';
 import ECGViewportV2, {
   CanvasECGPath,
   DefaultECGDataProvider,
+  ECGComputedCamera,
 } from './RenderingEngine/ViewportV2/ECG';
 import VideoViewportV2, {
   DefaultVideoDataProvider,
   HtmlVideoPath,
+  VideoComputedCamera,
 } from './RenderingEngine/ViewportV2/Video';
 import PlanarViewportV2, {
+  BasePlanarViewportCamera,
   CpuImageSlicePath,
   DefaultPlanarDataProvider,
+  PlanarLegacyCompatibleViewport,
+  PlanarStackViewportCamera,
+  PlanarVolumeViewportCamera,
   VtkImageMapperPath,
   VtkVolumeMapperPath,
 } from './RenderingEngine/ViewportV2/Planar';
 import VolumeViewport3DV2, {
   DefaultVolume3DDataProvider,
+  Volume3DComputedCamera,
   VtkGeometry3DPath,
   VtkVolume3DPath,
 } from './RenderingEngine/ViewportV2/Volume3D';
 import WSIViewportV2, {
   DefaultWSIDataProvider,
   DicomMicroscopyPath,
+  WSIComputedCamera,
 } from './RenderingEngine/ViewportV2/WSI';
 import Viewport from './RenderingEngine/Viewport';
 import eventTarget from './eventTarget';
@@ -128,15 +137,22 @@ export * from './loaders/decimatedVolumeLoader';
 
 const renderingEngineExportsV2 = {
   ViewportV2,
+  ViewportComputedCamera,
   DefaultRenderPathResolver,
   defaultRenderPathResolver,
   ECGViewportV2,
   CanvasECGPath,
   DefaultECGDataProvider,
+  ECGComputedCamera,
   VideoViewportV2,
   HtmlVideoPath,
   DefaultVideoDataProvider,
+  VideoComputedCamera,
   PlanarViewportV2,
+  PlanarLegacyCompatibleViewport,
+  BasePlanarViewportCamera,
+  PlanarStackViewportCamera,
+  PlanarVolumeViewportCamera,
   CpuImageSlicePath,
   VtkImageMapperPath,
   VtkVolumeMapperPath,
@@ -145,9 +161,11 @@ const renderingEngineExportsV2 = {
   VtkVolume3DPath,
   VtkGeometry3DPath,
   DefaultVolume3DDataProvider,
+  Volume3DComputedCamera,
   WSIViewportV2,
   DicomMicroscopyPath,
   DefaultWSIDataProvider,
+  WSIComputedCamera,
 };
 
 // Add new types here so that they can be imported singly as required.
@@ -187,7 +205,9 @@ export {
   WSIViewport,
   ECGViewport,
   ECGViewportV2,
+  ECGComputedCamera,
   ViewportV2,
+  ViewportComputedCamera,
   viewportHasCanvasWorldTransform,
   viewportHasFrameOfReferenceUID,
   viewportHasPan,
@@ -207,6 +227,9 @@ export {
   getEnabledElementByViewportId,
   createVolumeActor,
   createVolumeMapper,
+  VideoComputedCamera,
+  Volume3DComputedCamera,
+  WSIComputedCamera,
   // cache
   cache,
   // event helpers
@@ -233,6 +256,10 @@ export {
   HtmlVideoPath,
   DefaultVideoDataProvider,
   PlanarViewportV2,
+  PlanarLegacyCompatibleViewport,
+  BasePlanarViewportCamera,
+  PlanarStackViewportCamera,
+  PlanarVolumeViewportCamera,
   CpuImageSlicePath,
   VtkImageMapperPath,
   VtkVolumeMapperPath,

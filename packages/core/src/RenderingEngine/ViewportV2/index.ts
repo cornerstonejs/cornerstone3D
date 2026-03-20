@@ -3,6 +3,7 @@ export {
   DefaultRenderPathResolver,
 } from './DefaultRenderPathResolver';
 export { default as ViewportV2 } from './ViewportV2';
+export { default as ViewportComputedCamera } from './ViewportComputedCamera';
 export type {
   CameraFrame,
   CameraScaleMode,
@@ -42,6 +43,7 @@ export {
   CanvasECGPath,
   CanvasECGRenderPath,
   DefaultECGDataProvider,
+  ECGComputedCamera,
 } from './ECG';
 export type {
   ECGCamera,
@@ -58,6 +60,7 @@ export {
   DefaultVideoDataProvider,
   HtmlVideoPath,
   HtmlVideoRenderPath,
+  VideoComputedCamera,
 } from './Video';
 export type {
   VideoCamera,
@@ -70,9 +73,13 @@ export type {
 } from './Video';
 export { default as PlanarViewportV2 } from './Planar';
 export {
+  BasePlanarViewportCamera,
   CpuImageSlicePath,
   CpuImageSliceRenderPath,
   DefaultPlanarDataProvider,
+  PlanarLegacyCompatibleViewport,
+  PlanarStackViewportCamera,
+  PlanarVolumeViewportCamera,
   VtkImageMapperPath,
   VtkImageMapperRenderPath,
   VtkVolumeMapperPath,
@@ -95,6 +102,7 @@ export type {
 export { default as VolumeViewport3DV2 } from './Volume3D';
 export {
   DefaultVolume3DDataProvider,
+  Volume3DComputedCamera,
   VtkGeometry3DPath,
   VtkGeometry3DRenderPath,
   VtkVolume3DPath,
@@ -125,6 +133,7 @@ export {
   DefaultWSIDataProvider,
   DicomMicroscopyPath,
   DicomMicroscopyRenderPath,
+  WSIComputedCamera,
 } from './WSI';
 export type {
   WSICamera,

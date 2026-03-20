@@ -22,7 +22,7 @@ import {
   getViewportV2ImageDataSet,
   isViewportV2ImageDataSet,
 } from '../viewportV2DataSetAccess';
-import PlanarLegacyCompatibilityController from './PlanarLegacyCompatibilityController';
+import PlanarLegacyCompatibleViewport from './PlanarLegacyCompatibleViewport';
 import { CpuImageSlicePath } from './CpuImageSliceRenderPath';
 import { CpuVolumeSlicePath } from './CpuVolumeSliceRenderPath';
 import { DefaultPlanarDataProvider } from './DefaultPlanarDataProvider';
@@ -42,10 +42,11 @@ import {
   createDefaultPlanarCamera,
   normalizePlanarCamera,
 } from './planarViewportCamera';
+import type { DerivedPlanarPresentation } from './planarRenderCamera';
 import {
-  derivePlanarPresentation,
-  resolvePlanarRenderCamera,
-} from './planarRenderCamera';
+  getPlanarCameraCanvasDimensions,
+  computePlanarViewportCamera,
+} from './PlanarComputedCamera';
 import {
   getPlanarReferencedImageId,
   getPlanarViewReference,
@@ -53,11 +54,6 @@ import {
   isPlanarPlaneViewable,
   isPlanarReferenceViewable,
 } from './planarViewReference';
-import {
-  createPlanarCpuImageSliceBasis,
-  createPlanarImageSliceBasis,
-  createPlanarVolumeSliceBasis,
-} from './planarSliceBasis';
 import type { PlanarRendering } from './planarRuntimeTypes';
 import type {
   PlanarCamera,
@@ -95,8 +91,8 @@ class PlanarViewportV2 extends ViewportV2<
 
   private activeDataId?: string;
   private cpuCanvas?: HTMLCanvasElement;
-  private readonly legacyCompatibility =
-    new PlanarLegacyCompatibilityController({
+  private readonly legacyCompatibleViewport =
+    new PlanarLegacyCompatibleViewport(this, {
       getElement: () => this.element,
       getViewportId: () => this.id,
       getRequestedOrientation: () => this.resolveRequestedOrientation(),
@@ -303,72 +299,88 @@ class PlanarViewportV2 extends ViewportV2<
     return renderingId;
   }
 
-  async setStack(imageIds: string[], currentImageIdIndex = 0): Promise<string> {
-    return this.legacyCompatibility.setStack(imageIds, currentImageIdIndex);
+  getLegacyCompatibleViewport(): PlanarLegacyCompatibleViewport {
+    return this.legacyCompatibleViewport;
   }
 
+  /** @deprecated Use `getLegacyCompatibleViewport().setStack(...)`. */
+  async setStack(imageIds: string[], currentImageIdIndex = 0): Promise<string> {
+    return this.legacyCompatibleViewport.setStack(
+      imageIds,
+      currentImageIdIndex
+    );
+  }
+
+  /** @deprecated Use `getLegacyCompatibleViewport().setVolumes(...)`. */
   async setVolumes(
     volumeInputArray: IVolumeInput[],
     immediate = false,
     suppressEvents = false
   ): Promise<void> {
-    return this.legacyCompatibility.setVolumes(
+    return this.legacyCompatibleViewport.setVolumes(
       volumeInputArray,
       immediate,
       suppressEvents
     );
   }
 
+  /** @deprecated Use `getLegacyCompatibleViewport().addVolumes(...)`. */
   async addVolumes(
     volumeInputArray: IVolumeInput[],
     immediate = false,
     suppressEvents = false
   ): Promise<void> {
-    return this.legacyCompatibility.addVolumes(
+    return this.legacyCompatibleViewport.addVolumes(
       volumeInputArray,
       immediate,
       suppressEvents
     );
   }
 
+  /** @deprecated Use `getLegacyCompatibleViewport().setProperties(...)`. */
   setProperties(
     properties: PlanarLegacyViewportProperties = {},
     volumeIdOrSuppressEvents?: string | boolean,
     suppressEvents = false
   ): void {
-    this.legacyCompatibility.setProperties(
+    this.legacyCompatibleViewport.setProperties(
       properties,
       volumeIdOrSuppressEvents,
       suppressEvents
     );
   }
 
+  /** @deprecated Use `getLegacyCompatibleViewport().getProperties(...)`. */
   getProperties(volumeId?: string): PlanarLegacyViewportProperties {
-    return this.legacyCompatibility.getProperties(volumeId);
+    return this.legacyCompatibleViewport.getProperties(volumeId);
   }
 
+  /** @deprecated Use `getLegacyCompatibleViewport().resetProperties(...)`. */
   resetProperties(volumeId?: string): void {
-    this.legacyCompatibility.resetProperties(volumeId);
+    this.legacyCompatibleViewport.resetProperties(volumeId);
   }
 
+  /** @deprecated Use `getLegacyCompatibleViewport().getBlendMode(...)`. */
   getBlendMode(filterActorUIDs?: string[]): BlendModes | undefined {
-    return this.legacyCompatibility.getBlendMode(filterActorUIDs);
+    return this.legacyCompatibleViewport.getBlendMode(filterActorUIDs);
   }
 
+  /** @deprecated Use `getLegacyCompatibleViewport().setBlendMode(...)`. */
   setBlendMode(
     blendMode: BlendModes,
     filterActorUIDs?: string[],
     immediate = false
   ): void {
-    this.legacyCompatibility.setBlendMode(
+    this.legacyCompatibleViewport.setBlendMode(
       blendMode,
       filterActorUIDs,
       immediate
     );
   }
 
+  /** @deprecated Use `getLegacyCompatibleViewport().getNumberOfSlices()`. */
   getNumberOfSlices(): number {
-    return this.legacyCompatibility.getNumberOfSlices();
+    return this.legacyCompatibleViewport.getNumberOfSlices();
   }
 
   removeDataId(dataId: string): void {
@@ -378,7 +390,7 @@ class PlanarViewportV2 extends ViewportV2<
       this.activeDataId = undefined;
     }
 
-    this.legacyCompatibility.removeDataId(dataId);
+    this.legacyCompatibleViewport.removeDataId(dataId);
   }
 
   /**
@@ -442,71 +454,129 @@ class PlanarViewportV2 extends ViewportV2<
   }
 
   getRotation(): number {
-    return normalizePlanarRotation(this.camera.frame?.rotation);
+    return (
+      this.getComputedCamera()?.rotation ??
+      normalizePlanarRotation(this.camera.rotation)
+    );
   }
 
   getAnchorWorld(): Point3 | undefined {
-    const anchorWorld = this.camera.frame?.anchorWorld;
+    const anchorWorld = this.camera.anchorWorld;
 
     return anchorWorld ? ([...anchorWorld] as Point3) : undefined;
   }
 
   setAnchorWorld(point?: Point3): void {
     this.setCamera({
-      frame: {
-        anchorWorld: point ? ([...point] as Point3) : undefined,
-      },
+      anchorWorld: point ? ([...point] as Point3) : undefined,
     });
   }
 
+  /** @deprecated Use `getLegacyCompatibleViewport().getZoom()`. */
   getZoom(): number {
-    return this.getScale();
+    return (
+      this.getComputedCamera()?.zoom ?? Math.max(this.camera.scale ?? 1, 0.001)
+    );
   }
 
+  /** @deprecated Use `getLegacyCompatibleViewport().setZoom(...)`. */
   setZoom(zoom: number, canvasPoint?: Point2): void {
+    const computedCamera = this.getComputedCamera();
+
+    if (computedCamera) {
+      this.applyComputedCameraState(
+        computedCamera.withZoom(zoom, canvasPoint).state.camera
+      );
+      return;
+    }
+
     if (canvasPoint) {
       this.setScaleAtCanvasPoint(zoom, canvasPoint);
       return;
     }
-    this.setScale(zoom);
+
+    this.setCamera({
+      scale: Math.max(zoom, 0.001),
+      scaleMode: 'fit',
+    });
   }
 
+  /** @deprecated Use `getLegacyCompatibleViewport().getPan()`. */
   getPan(): Point2 {
-    const presentation = this.getCurrentPresentation();
+    const computedCamera = this.getComputedCamera();
 
-    return presentation ? [presentation.pan[0], presentation.pan[1]] : [0, 0];
+    return computedCamera ? computedCamera.pan : [0, 0];
   }
 
+  /** @deprecated Use `getLegacyCompatibleViewport().setPan(...)`. */
   setPan(nextPan: Point2): void {
+    const computedCamera = this.getComputedCamera();
+
+    if (computedCamera) {
+      this.applyComputedCameraState(
+        computedCamera.withPan(nextPan).state.camera
+      );
+      return;
+    }
+
     const currentPan = this.getPan();
-    const [ax, ay] = this.getAnchorCanvas();
+    const [ax, ay] = this.camera.anchorCanvas ?? [0.5, 0.5];
     const { height: canvasHeight, width: canvasWidth } =
       this.getCurrentCanvasDimensions();
     const deltaX = nextPan[0] - currentPan[0];
     const deltaY = nextPan[1] - currentPan[1];
 
-    this.setAnchorCanvas([
-      ax + deltaX / Math.max(canvasWidth, 1),
-      ay + deltaY / Math.max(canvasHeight, 1),
-    ]);
+    this.setCamera({
+      anchorCanvas: [
+        ax + deltaX / Math.max(canvasWidth, 1),
+        ay + deltaY / Math.max(canvasHeight, 1),
+      ],
+    });
   }
 
   setScaleAtCanvasPoint(scale: number, canvasPoint: Point2): void {
-    const worldPoint = this.canvasToWorld(canvasPoint);
+    const computedCamera = this.getComputedCamera();
+
+    if (computedCamera) {
+      this.applyComputedCameraState(
+        computedCamera.withZoom(scale, canvasPoint).state.camera
+      );
+      return;
+    }
+
+    const worldPoint = this.buildFallbackCanvasToWorld(canvasPoint);
     const { height: canvasHeight, width: canvasWidth } =
       this.getCurrentCanvasDimensions();
 
     this.setCamera({
-      frame: {
-        ...(this.getCamera().frame || {}),
-        anchorWorld: worldPoint,
-        anchorCanvas: [
-          canvasPoint[0] / Math.max(canvasWidth, 1),
-          canvasPoint[1] / Math.max(canvasHeight, 1),
-        ],
-        scale: Math.max(scale, 0.001),
-        scaleMode: 'fit',
-      },
+      anchorWorld: worldPoint,
+      anchorCanvas: [
+        canvasPoint[0] / Math.max(canvasWidth, 1),
+        canvasPoint[1] / Math.max(canvasHeight, 1),
+      ],
+      scale: Math.max(scale, 0.001),
+      scaleMode: 'fit',
+    });
+  }
+
+  getCameraState(): PlanarCamera {
+    return this.getCamera();
+  }
+
+  getComputedCamera(
+    args: {
+      frameOfReferenceUID?: string;
+      sliceIndex?: number;
+    } = {}
+  ) {
+    return computePlanarViewportCamera({
+      camera: this.camera,
+      data: this.getPlanarData(),
+      frameOfReferenceUID:
+        args.frameOfReferenceUID ?? this.resolveFrameOfReferenceUID(),
+      renderContext: this.renderContext,
+      rendering: this.getCurrentPlanarRendering(),
+      sliceIndex: args.sliceIndex,
     });
   }
 
@@ -583,11 +653,9 @@ class PlanarViewportV2 extends ViewportV2<
     this.setCamera({
       flipHorizontal,
       flipVertical,
-      frame: {
-        rotation,
-        scale: nextZoom,
-        scaleMode: 'fit',
-      },
+      rotation,
+      scale: nextZoom,
+      scaleMode: 'fit',
     });
 
     if (pan) {
@@ -649,6 +717,38 @@ class PlanarViewportV2 extends ViewportV2<
    */
   getImageData() {
     return this.getCurrentBinding()?.getImageData?.();
+  }
+
+  canvasToWorld(canvasPos: Point2): Point3 {
+    const computedCamera = this.getComputedCamera();
+
+    if (!computedCamera) {
+      throw new Error(
+        `[PlanarViewportV2] Cannot convert canvas to world for viewport ${this.id} because no planar rendering is mounted.`
+      );
+    }
+
+    return computedCamera.canvasToWorld(canvasPos);
+  }
+
+  worldToCanvas(worldPos: Point3): Point2 {
+    const computedCamera = this.getComputedCamera();
+
+    if (!computedCamera) {
+      throw new Error(
+        `[PlanarViewportV2] Cannot convert world to canvas for viewport ${this.id} because no planar rendering is mounted.`
+      );
+    }
+
+    return computedCamera.worldToCanvas(worldPos);
+  }
+
+  override getFrameOfReferenceUID(): string {
+    return (
+      this.getComputedCamera({
+        frameOfReferenceUID: this.resolveFrameOfReferenceUID(),
+      })?.getFrameOfReferenceUID() ?? this.resolveFrameOfReferenceUID()
+    );
   }
 
   /**
@@ -801,8 +901,7 @@ class PlanarViewportV2 extends ViewportV2<
    */
   resetCamera(options?: { resetPan?: boolean; resetZoom?: boolean }): boolean {
     const { resetPan = true, resetZoom = true } = options || {};
-    const frame = {
-      ...(this.camera.frame || {}),
+    this.setCamera({
       ...(resetPan
         ? {
             anchorWorld: undefined,
@@ -811,10 +910,6 @@ class PlanarViewportV2 extends ViewportV2<
         : {}),
       ...(resetZoom ? { scale: 1, scaleMode: 'fit' as const } : {}),
       rotation: 0,
-    };
-
-    this.setCamera({
-      frame,
     });
     this.triggerCameraResetEvent();
 
@@ -866,7 +961,7 @@ class PlanarViewportV2 extends ViewportV2<
   }
 
   protected override onDestroy(): void {
-    this.legacyCompatibility.destroy();
+    this.legacyCompatibleViewport.destroy();
     this.cpuCanvas?.remove();
     this.cpuCanvas = undefined;
     this.activeDataId = undefined;
@@ -1033,25 +1128,39 @@ class PlanarViewportV2 extends ViewportV2<
     return this.getCurrentBinding()?.rendering as PlanarRendering | undefined;
   }
 
+  private resolveFrameOfReferenceUID(): string {
+    const binding = this.getCurrentBinding();
+
+    return (
+      binding?.getFrameOfReferenceUID() ?? `${this.type}-viewport-${this.id}`
+    );
+  }
+
+  private buildFallbackCanvasToWorld(canvasPos: Point2): Point3 {
+    const anchorCanvas = this.camera.anchorCanvas ?? [0.5, 0.5];
+    const anchorWorld = this.camera.anchorWorld ?? [0, 0, 0];
+    const { height, width } = this.getCurrentCanvasDimensions();
+    const scale = Math.max(this.camera.scale ?? 1, 0.001);
+
+    return [
+      anchorWorld[0] + (canvasPos[0] - anchorCanvas[0] * width) / scale,
+      anchorWorld[1] + (canvasPos[1] - anchorCanvas[1] * height) / scale,
+      anchorWorld[2],
+    ];
+  }
+
+  private applyComputedCameraState(nextCamera: PlanarCamera): void {
+    const previousCamera = this.getCameraForEvent();
+
+    this.camera = this.normalizeCamera(nextCamera);
+    this.modified(previousCamera);
+  }
+
   protected getCameraForEvent(): ICamera {
-    const rendering = this.getCurrentPlanarRendering();
+    const computedCamera = this.getComputedCamera();
 
-    if (rendering?.renderCamera) {
-      return rendering.renderCamera as ICamera;
-    }
-
-    const sliceBasis = this.buildCurrentPlanarSliceBasis();
-
-    if (sliceBasis) {
-      const { height: canvasHeight, width: canvasWidth } =
-        this.getCurrentCanvasDimensions();
-
-      return resolvePlanarRenderCamera({
-        sliceBasis,
-        camera: this.camera,
-        canvasHeight,
-        canvasWidth,
-      });
+    if (computedCamera) {
+      return computedCamera.toICamera();
     }
 
     return {
@@ -1065,84 +1174,43 @@ class PlanarViewportV2 extends ViewportV2<
   }
 
   private buildCurrentPlanarSliceBasis() {
-    const rendering = this.getCurrentPlanarRendering();
-
-    if (!rendering) {
-      return;
-    }
-
-    const { height: canvasHeight, width: canvasWidth } =
-      this.getCurrentCanvasDimensions();
-
-    if (rendering.renderMode === 'cpu2d') {
-      const image = rendering.enabledElement?.image;
-
-      if (!image) {
-        return;
-      }
-
-      return createPlanarCpuImageSliceBasis({
-        image,
-        canvasWidth,
-        canvasHeight,
-      });
-    }
-
-    if (rendering.renderMode === 'vtkImage') {
-      const image = rendering.currentImage;
-
-      if (!image) {
-        return;
-      }
-
-      return createPlanarImageSliceBasis({ image, canvasWidth, canvasHeight });
-    }
-
-    if (
-      rendering.renderMode === 'cpuVolume' ||
-      rendering.renderMode === 'vtkVolume'
-    ) {
-      const { sliceBasis } = createPlanarVolumeSliceBasis({
-        canvasWidth,
-        canvasHeight,
-        imageIdIndex: rendering.currentImageIdIndex,
-        imageVolume: rendering.imageVolume,
-        orientation: rendering.requestedCamera?.orientation,
-      });
-
-      return sliceBasis;
-    }
+    return this.getComputedCamera()?.getSliceBasis();
   }
 
-  private getCurrentPresentation() {
-    const sliceBasis = this.buildCurrentPlanarSliceBasis();
-    const { height: canvasHeight, width: canvasWidth } =
-      this.getCurrentCanvasDimensions();
+  private getCurrentPresentation(): DerivedPlanarPresentation | undefined {
+    const computedCamera = this.getComputedCamera();
 
-    if (!sliceBasis) {
+    if (!computedCamera) {
       return;
     }
 
-    return derivePlanarPresentation({
-      sliceBasis,
-      camera: this.camera,
-      canvasHeight,
-      canvasWidth,
-    });
+    return {
+      flipHorizontal: computedCamera.state.camera.flipHorizontal === true,
+      flipVertical: computedCamera.state.camera.flipVertical === true,
+      pan: computedCamera.pan,
+      rotation: computedCamera.rotation,
+      zoom: computedCamera.zoom,
+    };
   }
 
   private getCurrentCanvasDimensions(): { width: number; height: number } {
     const rendering = this.getCurrentPlanarRendering();
-    const activeCanvas =
-      rendering?.renderMode === 'cpu2d' || rendering?.renderMode === 'cpuVolume'
-        ? this.renderContext.cpu.canvas
-        : this.renderContext.vtk.canvas;
-    const width = activeCanvas.width || activeCanvas.clientWidth;
-    const height = activeCanvas.height || activeCanvas.clientHeight;
+
+    if (rendering) {
+      const { canvasHeight, canvasWidth } = getPlanarCameraCanvasDimensions({
+        renderContext: this.renderContext,
+        rendering,
+      });
+
+      return {
+        width: canvasWidth || this.element.clientWidth,
+        height: canvasHeight || this.element.clientHeight,
+      };
+    }
 
     return {
-      width: width || this.element.clientWidth,
-      height: height || this.element.clientHeight,
+      width: this.element.clientWidth,
+      height: this.element.clientHeight,
     };
   }
 

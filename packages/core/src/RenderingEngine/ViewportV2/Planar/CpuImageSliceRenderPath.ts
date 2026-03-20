@@ -107,12 +107,6 @@ export class CpuImageSliceRenderPath
       updateCamera: (camera) => {
         this.updateCamera(ctx, rendering, camera, payload.imageIds);
       },
-      canvasToWorld: (canvasPos) => {
-        return this.canvasToWorld(ctx, rendering, canvasPos);
-      },
-      worldToCanvas: (worldPos) => {
-        return this.worldToCanvas(ctx, rendering, worldPos);
-      },
       getFrameOfReferenceUID: () => {
         return this.getFrameOfReferenceUID(rendering);
       },

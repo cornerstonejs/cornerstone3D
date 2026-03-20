@@ -105,12 +105,6 @@ export class VtkVolumeMapperRenderPath
       updateCamera: (camera) => {
         this.updateCamera(ctx, rendering, camera);
       },
-      canvasToWorld: (canvasPos) => {
-        return this.canvasToWorld(ctx, canvasPos);
-      },
-      worldToCanvas: (worldPos) => {
-        return this.worldToCanvas(ctx, worldPos);
-      },
       getFrameOfReferenceUID: () => {
         return this.getFrameOfReferenceUID(rendering);
       },

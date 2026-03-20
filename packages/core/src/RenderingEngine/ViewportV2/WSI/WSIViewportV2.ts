@@ -42,6 +42,7 @@ import {
   indexToWorldWSIMetadata,
   worldToIndexWSIMetadata,
 } from './wsiTransformUtils';
+import WSIComputedCamera from './WSIComputedCamera';
 
 defaultRenderPathResolver.register(new DicomMicroscopyPath());
 
@@ -282,25 +283,29 @@ class WSIViewportV2 extends ViewportV2<
     super.setCamera(nextPatch);
   }
 
-  getCamera(): ICamera {
-    const view = this.getView();
-    const metadata = this.getWSIData()?.metadata;
-    const focalPoint = this.canvasToWorld([
-      this.element.clientWidth / 2,
-      this.element.clientHeight / 2,
-    ]);
-    const xSpacing = metadata?.spacing?.[0] || 1;
-    const resolution = view?.getResolution?.() || this.camera.resolution || 1;
-
+  getCamera(): WSICamera & ICamera {
     return {
-      parallelProjection: true,
-      focalPoint,
-      position: focalPoint,
-      viewUp: [0, -1, 0],
-      parallelScale: this.element.clientHeight * resolution * xSpacing,
-      viewPlaneNormal: [0, 0, 1],
-      rotation: view?.getRotation?.() || 0,
+      ...this.camera,
+      ...this.getCameraForEvent(),
     };
+  }
+
+  getComputedCamera(): WSIComputedCamera | undefined {
+    const view = this.getView();
+    const data = this.getWSIData();
+
+    if (!view || !data) {
+      return;
+    }
+
+    return new WSIComputedCamera({
+      camera: this.camera,
+      canvasHeight: this.element.clientHeight,
+      canvasWidth: this.element.clientWidth,
+      frameOfReferenceUID: data.frameOfReferenceUID,
+      metadata: data.metadata,
+      view,
+    });
   }
 
   getCurrentImageId(): string | undefined {
@@ -379,7 +384,7 @@ class WSIViewportV2 extends ViewportV2<
   }
 
   scroll(delta: number): void {
-    const camera = this.getCamera();
+    const camera = this.getComputedCamera()?.toICamera();
 
     this.setCamera({
       parallelScale:
@@ -425,7 +430,16 @@ class WSIViewportV2 extends ViewportV2<
     );
   }
 
-  setZoom(zoom: number): void {
+  setZoom(zoom: number, canvasPoint?: Point2): void {
+    const computedCamera = this.getComputedCamera();
+
+    if (computedCamera) {
+      this.applyComputedCameraState(
+        computedCamera.withZoom(zoom, canvasPoint).state.camera
+      );
+      return;
+    }
+
     this.setCamera({
       zoom: Math.max(zoom, 0.001),
     });
@@ -443,6 +457,58 @@ class WSIViewportV2 extends ViewportV2<
 
   getCurrentImageIdIndex(): number {
     return 0;
+  }
+
+  canvasToWorld(canvasPos: Point2): Point3 {
+    const computedCamera = this.getComputedCamera();
+
+    if (!computedCamera) {
+      throw new Error(
+        `[WSIViewportV2] Cannot convert canvas to world for viewport ${this.id} because the WSI view is not ready.`
+      );
+    }
+
+    return computedCamera.canvasToWorld(canvasPos);
+  }
+
+  worldToCanvas(worldPos: Point3): Point2 {
+    const computedCamera = this.getComputedCamera();
+
+    if (!computedCamera) {
+      throw new Error(
+        `[WSIViewportV2] Cannot convert world to canvas for viewport ${this.id} because the WSI view is not ready.`
+      );
+    }
+
+    return computedCamera.worldToCanvas(worldPos);
+  }
+
+  override getFrameOfReferenceUID(): string {
+    return (
+      this.getComputedCamera()?.getFrameOfReferenceUID() ??
+      `${this.type}-viewport-${this.id}`
+    );
+  }
+
+  protected getCameraForEvent(): ICamera {
+    return (
+      this.getComputedCamera()?.toICamera() ?? {
+        parallelProjection: true,
+        focalPoint: [0, 0, 0],
+        position: [0, 0, 0],
+        viewUp: [0, -1, 0],
+        parallelScale: 1,
+        viewPlaneNormal: [0, 0, 1],
+        rotation: this.camera.rotation ?? 0,
+      }
+    );
+  }
+
+  private applyComputedCameraState(nextCamera: WSICamera): void {
+    const previousCamera = this.getCameraForEvent();
+
+    this.camera = this.normalizeCamera(nextCamera);
+    this.modified(previousCamera);
   }
 
   render(): void {

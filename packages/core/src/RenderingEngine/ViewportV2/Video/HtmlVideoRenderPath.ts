@@ -78,12 +78,6 @@ export class HtmlVideoRenderPath
       updateCamera: (camera) => {
         this.updateCamera(rendering, camera, videoData);
       },
-      canvasToWorld: (canvasPos) => {
-        return this.canvasToWorld(rendering, canvasPos);
-      },
-      worldToCanvas: (worldPos) => {
-        return this.worldToCanvas(rendering, worldPos);
-      },
       getFrameOfReferenceUID: () => {
         return this.getFrameOfReferenceUID(rendering);
       },
@@ -115,7 +109,7 @@ export class HtmlVideoRenderPath
   ): void {
     const videoCamera = camera as VideoCamera;
     const { element } = rendering;
-    const rotation = videoCamera.frame?.rotation ?? 0;
+    const rotation = videoCamera.rotation ?? 0;
     const layout = this.getLayout(element, videoCamera);
 
     rendering.currentCamera = videoCamera;

@@ -23,12 +23,9 @@ import type {
 } from './ECGViewportV2Types';
 import {
   createDefaultECGCamera,
-  getAnchorWorldForCanvasPoint,
-  getAnchorWorldForPan,
-  getECGCameraLayout,
-  getPanForECGLayout,
   normalizeECGCamera,
 } from './ecgViewportCamera';
+import ECGComputedCamera from './ECGComputedCamera';
 
 const ECG_AMPLITUDE_INDEX_SIZE = 65536;
 
@@ -154,7 +151,9 @@ class ECGViewportV2 extends ViewportV2<
   }
 
   getZoom(): number {
-    return this.getScale();
+    return (
+      this.getComputedCamera()?.zoom ?? Math.max(this.camera.scale ?? 1, 0.001)
+    );
   }
 
   protected normalizeCamera(camera: ECGCamera): ECGCamera {
@@ -162,32 +161,33 @@ class ECGViewportV2 extends ViewportV2<
   }
 
   setZoom(zoom: number, canvasPoint?: Point2): void {
-    if (canvasPoint) {
-      this.setScaleAtCanvasPoint(zoom, canvasPoint);
-      return;
-    }
+    const computedCamera = this.getComputedCamera();
 
-    this.setScale(zoom);
-  }
-
-  getPan(): Point2 {
-    const layout = this.getCurrentCameraLayout();
-
-    return layout ? getPanForECGLayout(layout) : [0, 0];
-  }
-
-  setPan(pan: Point2): void {
-    const layout = this.getCurrentCameraLayout();
-
-    if (!layout) {
+    if (computedCamera) {
+      this.applyComputedCameraState(
+        computedCamera.withZoom(zoom, canvasPoint).state.camera
+      );
       return;
     }
 
     this.setCamera({
-      frame: {
-        anchorWorld: getAnchorWorldForPan([pan[0], pan[1]], layout),
-      },
+      scale: Math.max(zoom, 0.001),
+      scaleMode: 'fit',
     });
+  }
+
+  getPan(): Point2 {
+    return this.getComputedCamera()?.pan ?? [0, 0];
+  }
+
+  setPan(pan: Point2): void {
+    const computedCamera = this.getComputedCamera();
+
+    if (!computedCamera) {
+      return;
+    }
+
+    this.applyComputedCameraState(computedCamera.withPan(pan).state.camera);
   }
 
   /**
@@ -396,39 +396,16 @@ class ECGViewportV2 extends ViewportV2<
   }
 
   private setScaleAtCanvasPoint(scale: number, canvasPoint: Point2): void {
-    const layout = this.getCurrentCameraLayout();
+    const computedCamera = this.getComputedCamera();
 
-    if (!layout) {
-      this.setScale(scale);
+    if (!computedCamera) {
+      this.setZoom(scale);
       return;
     }
 
-    this.setCamera({
-      frame: {
-        ...(this.getCamera().frame || {}),
-        anchorWorld: getAnchorWorldForCanvasPoint(canvasPoint, layout),
-        anchorCanvas: [
-          canvasPoint[0] / Math.max(this.canvas.clientWidth, 1),
-          canvasPoint[1] / Math.max(this.canvas.clientHeight, 1),
-        ],
-        scale: Math.max(scale, 0.001),
-        scaleMode: 'fit',
-      },
-    });
-  }
-
-  private getCurrentCameraLayout() {
-    const rendering = this.getCurrentRendering();
-
-    if (!rendering) {
-      return;
-    }
-
-    return getECGCameraLayout({
-      metrics: rendering.metrics,
-      camera: this.camera,
-      canvas: this.canvas,
-    });
+    this.applyComputedCameraState(
+      computedCamera.withZoom(scale, canvasPoint).state.camera
+    );
   }
 
   private async loadWaveformData(
@@ -465,22 +442,73 @@ class ECGViewportV2 extends ViewportV2<
     return binding.rendering;
   }
 
-  protected getCameraForEvent(): ICamera {
-    const layout = this.getCurrentCameraLayout();
-    const effectiveRatio = Math.max(layout?.effectiveRatio ?? 1, 0.001);
-    const canvasCenter: Point2 = [
-      this.element.clientWidth / 2,
-      this.element.clientHeight / 2,
-    ];
+  getComputedCamera(): ECGComputedCamera | undefined {
+    const waveform = this.getWaveformBindingData();
+    const rendering = this.getCurrentRendering();
 
-    return {
-      parallelProjection: true,
-      focalPoint: this.canvasToWorld(canvasCenter),
-      position: [0, 0, 0],
-      viewUp: [0, -1, 0],
-      parallelScale: this.element.clientHeight / 2 / effectiveRatio,
-      viewPlaneNormal: [0, 0, 1],
-    };
+    if (!waveform || !rendering) {
+      return;
+    }
+
+    return new ECGComputedCamera({
+      camera: this.camera,
+      canvas: this.canvas,
+      dataPresentation: this.getDataPresentation(waveform.id),
+      frameOfReferenceUID: `ecg-viewport-${this.id}`,
+      metrics: rendering.metrics,
+      waveform,
+    });
+  }
+
+  canvasToWorld(canvasPos: Point2): Point3 {
+    const computedCamera = this.getComputedCamera();
+
+    if (!computedCamera) {
+      throw new Error(
+        `[ECGViewportV2] Cannot convert canvas to world for viewport ${this.id} because no waveform is mounted.`
+      );
+    }
+
+    return computedCamera.canvasToWorld(canvasPos);
+  }
+
+  worldToCanvas(worldPos: Point3): Point2 {
+    const computedCamera = this.getComputedCamera();
+
+    if (!computedCamera) {
+      throw new Error(
+        `[ECGViewportV2] Cannot convert world to canvas for viewport ${this.id} because no waveform is mounted.`
+      );
+    }
+
+    return computedCamera.worldToCanvas(worldPos);
+  }
+
+  override getFrameOfReferenceUID(): string {
+    return (
+      this.getComputedCamera()?.getFrameOfReferenceUID() ||
+      `ecg-viewport-${this.id}`
+    );
+  }
+
+  protected getCameraForEvent(): ICamera {
+    return (
+      this.getComputedCamera()?.toICamera() ?? {
+        parallelProjection: true,
+        focalPoint: [0, 0, 0],
+        position: [0, 0, 0],
+        viewUp: [0, -1, 0],
+        parallelScale: 1,
+        viewPlaneNormal: [0, 0, 1],
+      }
+    );
+  }
+
+  private applyComputedCameraState(nextCamera: ECGCamera): void {
+    const previousCamera = this.getCameraForEvent();
+
+    this.camera = this.normalizeCamera(nextCamera);
+    this.modified(previousCamera);
   }
 }
 

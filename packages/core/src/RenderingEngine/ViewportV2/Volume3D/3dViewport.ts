@@ -1,5 +1,11 @@
 import { ViewportType } from '../../../enums';
-import type { ActorEntry, ICamera, IImageData } from '../../../types';
+import type {
+  ActorEntry,
+  ICamera,
+  IImageData,
+  Point2,
+  Point3,
+} from '../../../types';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
 import renderingEngineCache from '../../renderingEngineCache';
 import type {
@@ -14,6 +20,7 @@ import {
   isViewportV2ImageDataSet,
 } from '../viewportV2DataSetAccess';
 import { DefaultVolume3DDataProvider } from './DefaultVolume3DDataProvider';
+import Volume3DComputedCamera from './Volume3DComputedCamera';
 import { VtkGeometry3DPath } from './VtkGeometry3DRenderPath';
 import { VtkVolume3DPath } from './VtkVolume3DRenderPath';
 import type {
@@ -255,6 +262,30 @@ class VolumeViewport3DV2 extends ViewportV2<
       viewPlaneNormal: camera.getViewPlaneNormal(),
       viewUp: camera.getViewUp(),
     } as Volume3DCamera & ICamera;
+  }
+
+  getComputedCamera(): Volume3DComputedCamera {
+    return new Volume3DComputedCamera({
+      camera: this.getCamera(),
+      canvas: this.canvas,
+      frameOfReferenceUID: this.resolveFrameOfReferenceUID(),
+      renderer: this.getRenderer(),
+    });
+  }
+
+  canvasToWorld(canvasPos: Point2) {
+    return this.getComputedCamera().canvasToWorld(canvasPos);
+  }
+
+  worldToCanvas(worldPos: Point3) {
+    return this.getComputedCamera().worldToCanvas(worldPos);
+  }
+
+  override getFrameOfReferenceUID(): string {
+    return (
+      this.getComputedCamera().getFrameOfReferenceUID() ??
+      `${this.type}-viewport-${this.id}`
+    );
   }
 
   // TrackballRotateTool preserves 3D view state across resize by round-tripping
@@ -517,6 +548,29 @@ class VolumeViewport3DV2 extends ViewportV2<
     }
 
     return binding.data;
+  }
+
+  private resolveFrameOfReferenceUID(): string | undefined {
+    const binding = this.getCurrentBinding();
+
+    if (!binding) {
+      return;
+    }
+
+    const data = this.getVolume3DPayload(binding);
+    const rendering = this.getVolume3DRendering(binding);
+
+    if (!data) {
+      return;
+    }
+
+    if (data.renderMode === 'vtkVolume3d') {
+      return data.imageVolume.metadata?.FrameOfReferenceUID;
+    }
+
+    if (rendering.renderMode === 'vtkGeometry3d') {
+      return rendering.frameOfReferenceUID;
+    }
   }
 
   private getVolume3DRendering(

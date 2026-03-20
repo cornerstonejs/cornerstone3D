@@ -185,10 +185,9 @@ function getWSICanvasTransform(args: {
   const resolution = args.view.getResolution();
   const rotation = args.view.getRotation();
   const center = args.view.getCenter();
-  const pixelRatio = args.devicePixelRatio || window.devicePixelRatio || 1;
   const halfCanvas = [
-    (Math.max(args.canvasWidth, 1) * pixelRatio) / 2,
-    (Math.max(args.canvasHeight, 1) * pixelRatio) / 2,
+    Math.max(args.canvasWidth, 1) / 2,
+    Math.max(args.canvasHeight, 1) / 2,
   ];
   const transform = new Transform();
 

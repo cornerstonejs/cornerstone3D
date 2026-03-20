@@ -1,4 +1,11 @@
 export { DefaultPlanarDataProvider } from './DefaultPlanarDataProvider';
+export { default as PlanarLegacyCompatibleViewport } from './PlanarLegacyCompatibleViewport';
+export {
+  BasePlanarViewportCamera,
+  PlanarStackViewportCamera,
+  PlanarVolumeViewportCamera,
+  computePlanarViewportCamera,
+} from './PlanarComputedCamera';
 export {
   CpuImageSlicePath,
   CpuImageSliceRenderPath,

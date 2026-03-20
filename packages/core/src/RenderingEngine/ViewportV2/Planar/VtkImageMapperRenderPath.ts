@@ -97,12 +97,6 @@ export class VtkImageMapperRenderPath
       updateCamera: (camera) => {
         this.updateCamera(ctx, rendering, camera, payload.imageIds);
       },
-      canvasToWorld: (canvasPos) => {
-        return this.canvasToWorld(ctx, canvasPos);
-      },
-      worldToCanvas: (worldPos) => {
-        return this.worldToCanvas(ctx, worldPos);
-      },
       getFrameOfReferenceUID: () => {
         return this.getFrameOfReferenceUID(rendering);
       },

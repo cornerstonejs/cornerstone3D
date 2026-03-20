@@ -45,6 +45,7 @@ export interface WSIMapViewLike {
     getExtent(): number[];
   };
   getResolution(): number;
+  getResolutionForZoom?(zoom: number): number;
   getRotation(): number;
   getZoom(): number;
   setCenter(center: [number, number]): void;

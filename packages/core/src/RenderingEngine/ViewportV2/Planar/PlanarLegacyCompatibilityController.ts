@@ -26,7 +26,7 @@ import type {
   PlanarSetDataOptions,
 } from './PlanarViewportV2Types';
 
-type PlanarLegacyCompatibilityHost = {
+export type PlanarLegacyCompatibilityHost = {
   getElement(): HTMLDivElement;
   getViewportId(): string;
   getRequestedOrientation(): PlanarCamera['orientation'];

@@ -3,6 +3,7 @@ export {
   DicomMicroscopyPath,
   DicomMicroscopyRenderPath,
 } from './DicomMicroscopyRenderPath';
+export { default as WSIComputedCamera } from './WSIComputedCamera';
 export { default } from './WSIViewportV2';
 export type {
   WSICamera,

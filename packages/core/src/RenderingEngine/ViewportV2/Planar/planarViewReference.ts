@@ -18,7 +18,6 @@
  */
 import { vec3 } from 'gl-matrix';
 import type {
-  ICamera,
   Point3,
   ReferenceCompatibleOptions,
   ViewReference,
@@ -35,19 +34,15 @@ import type {
   PlanarPayload,
   PlanarViewportRenderContext,
 } from './PlanarViewportV2Types';
+import { computePlanarViewportCamera } from './PlanarComputedCamera';
 import type { PlanarRendering } from './planarRuntimeTypes';
-import {
-  createPlanarImageSliceBasis,
-  createPlanarVolumeSliceBasis,
-} from './planarSliceBasis';
-import { resolvePlanarRenderCamera } from './planarRenderCamera';
 
 /**
  * Returns the imageId that the viewport is currently displaying (or would
  * display at a given `sliceIndex` override).
  *
  * For image-based paths (cpu2d, vtkImage) this is a direct index lookup.
- * For volume paths (cpuVolume, vtkVolume) the resolved camera's focalPoint
+ * For volume paths (cpuVolume, vtkVolume) the computed camera's focalPoint
  * and viewPlaneNormal are used to find the closest imageId in the volume's
  * imageId list via `getClosestImageId`.
  *
@@ -61,6 +56,7 @@ import { resolvePlanarRenderCamera } from './planarRenderCamera';
 export function getPlanarReferencedImageId(args: {
   camera: PlanarCamera;
   data?: PlanarPayload;
+  frameOfReferenceUID?: string;
   rendering?: PlanarRendering;
   renderContext: PlanarViewportRenderContext;
   viewRefSpecifier?: ViewReferenceSpecifier;
@@ -89,14 +85,16 @@ export function getPlanarReferencedImageId(args: {
     return imageIds[imageIdIndex];
   }
 
-  const resolvedCamera = getTargetVolumeSpatialCamera({
+  const computedCamera = getPlanarComputedCameraForReference({
     camera: args.camera,
+    data: args.data,
+    frameOfReferenceUID: args.frameOfReferenceUID,
     renderContext: args.renderContext,
     rendering,
     sliceIndex: viewRefSpecifier?.sliceIndex,
-  });
+  })?.toICamera();
 
-  if (!resolvedCamera?.focalPoint || !resolvedCamera.viewPlaneNormal) {
+  if (!computedCamera?.focalPoint || !computedCamera.viewPlaneNormal) {
     return imageIds[
       Math.min(getCurrentSliceIndex(rendering), imageIds.length - 1)
     ];
@@ -104,8 +102,8 @@ export function getPlanarReferencedImageId(args: {
 
   return getClosestImageId(
     rendering.imageVolume,
-    resolvedCamera.focalPoint,
-    resolvedCamera.viewPlaneNormal
+    computedCamera.focalPoint,
+    computedCamera.viewPlaneNormal
   );
 }
 
@@ -136,18 +134,10 @@ export function getPlanarViewReference(args: {
   viewRefSpecifier?: ViewReferenceSpecifier;
 }): ViewReference {
   const { frameOfReferenceUID, rendering, viewRefSpecifier } = args;
-  const resolvedCamera = getPlanarRenderCameraForReference(args);
-  const targetCamera =
-    rendering &&
-    (rendering.renderMode === 'cpuVolume' ||
-      rendering.renderMode === 'vtkVolume')
-      ? getTargetVolumeSpatialCamera({
-          camera: args.camera,
-          renderContext: args.renderContext,
-          rendering,
-          sliceIndex: viewRefSpecifier?.sliceIndex,
-        }) || resolvedCamera
-      : resolvedCamera;
+  const targetCamera = getPlanarComputedCameraForReference({
+    ...args,
+    sliceIndex: viewRefSpecifier?.sliceIndex,
+  })?.toICamera();
   const viewReference: ViewReference = {
     FrameOfReferenceUID: frameOfReferenceUID,
     cameraFocalPoint: targetCamera?.focalPoint,
@@ -206,6 +196,7 @@ export function getPlanarViewReference(args: {
  */
 export function getPlanarViewReferenceId(args: {
   camera: PlanarCamera;
+  frameOfReferenceUID?: string;
   data?: PlanarPayload;
   rendering?: PlanarRendering;
   renderContext: PlanarViewportRenderContext;
@@ -221,18 +212,21 @@ export function getPlanarViewReferenceId(args: {
     rendering.renderMode === 'cpuVolume' ||
     rendering.renderMode === 'vtkVolume'
   ) {
-    const resolvedCamera = getPlanarRenderCameraForReference(args);
+    const computedCamera = getPlanarComputedCameraForReference({
+      ...args,
+      sliceIndex: viewRefSpecifier?.sliceIndex,
+    })?.toICamera();
     const sliceIndex =
       viewRefSpecifier?.sliceIndex ?? getCurrentSliceIndex(rendering);
     const volumeId = args.data?.volumeId;
 
-    if (!volumeId || !resolvedCamera?.viewPlaneNormal) {
+    if (!volumeId || !computedCamera?.viewPlaneNormal) {
       return null;
     }
 
     return getVolumeViewReferenceId({
       sliceIndex,
-      viewPlaneNormal: resolvedCamera.viewPlaneNormal as Point3,
+      viewPlaneNormal: computedCamera.viewPlaneNormal as Point3,
       volumeId,
     });
   }
@@ -271,8 +265,8 @@ export function isPlanarPlaneViewable(args: {
     return false;
   }
 
-  const resolvedCamera = getPlanarRenderCameraForReference(args);
-  const { focalPoint, viewPlaneNormal } = resolvedCamera || {};
+  const computedCamera = getPlanarComputedCameraForReference(args)?.toICamera();
+  const { focalPoint, viewPlaneNormal } = computedCamera || {};
 
   if (!focalPoint || !viewPlaneNormal) {
     return false;
@@ -370,19 +364,19 @@ export function isPlanarReferenceViewable(args: {
     return false;
   }
 
-  const resolvedCamera = getPlanarRenderCameraForReference(args);
+  const computedCamera = getPlanarComputedCameraForReference(args)?.toICamera();
 
-  if (!resolvedCamera?.viewPlaneNormal) {
+  if (!computedCamera?.viewPlaneNormal) {
     return false;
   }
 
   if (
     viewRef.viewPlaneNormal &&
-    !isEqual(viewRef.viewPlaneNormal, resolvedCamera.viewPlaneNormal) &&
+    !isEqual(viewRef.viewPlaneNormal, computedCamera.viewPlaneNormal) &&
     !isEqual(
       vec3.negate(
         vec3.create(),
-        resolvedCamera.viewPlaneNormal as unknown as vec3
+        computedCamera.viewPlaneNormal as unknown as vec3
       ) as unknown as Point3,
       viewRef.viewPlaneNormal
     )
@@ -427,176 +421,16 @@ function getImageIds(payload?: PlanarPayload): string[] {
 }
 
 /**
- * Resolves the current ICamera for spatial reference queries.
- *
- * Prefers the cached `renderCamera` on the rendering (which is set after
- * each render cycle). If no cached camera exists (e.g. before first render),
- * builds a sliceBasis from the rendering's current state and resolves a
- * fresh ICamera through the standard pipeline.
- *
- * This function is called by all spatial reference queries to avoid
- * duplicating the camera resolution logic.
+ * Resolves the current shared planar camera object for spatial reference
+ * queries. This reuses the same construction path as `PlanarViewportV2`.
  */
-function getPlanarRenderCameraForReference(args: {
+function getPlanarComputedCameraForReference(args: {
   camera: PlanarCamera;
+  data?: PlanarPayload;
+  frameOfReferenceUID?: string;
   rendering?: PlanarRendering;
   renderContext: PlanarViewportRenderContext;
-}): ICamera | undefined {
-  const { rendering, renderContext } = args;
-
-  if (!rendering) {
-    return;
-  }
-
-  if (rendering.renderCamera) {
-    return rendering.renderCamera;
-  }
-
-  const { canvasHeight, canvasWidth } = getPlanarCanvasDimensions({
-    rendering,
-    renderContext,
-  });
-  const camera = rendering.requestedCamera || args.camera;
-
-  if (rendering.renderMode === 'cpu2d') {
-    const image = rendering.enabledElement?.image;
-
-    if (!image) {
-      return;
-    }
-
-    const sliceBasis = createPlanarImageSliceBasis({
-      image,
-      canvasWidth,
-      canvasHeight,
-    });
-
-    return resolvePlanarRenderCamera({
-      sliceBasis,
-      camera,
-      canvasWidth,
-      canvasHeight,
-    });
-  }
-
-  if (rendering.renderMode === 'vtkImage') {
-    const image = rendering.currentImage;
-
-    if (!image) {
-      return;
-    }
-
-    const sliceBasis = createPlanarImageSliceBasis({
-      image,
-      canvasWidth,
-      canvasHeight,
-    });
-
-    return resolvePlanarRenderCamera({
-      sliceBasis,
-      camera,
-      canvasWidth,
-      canvasHeight,
-    });
-  }
-
-  if (
-    rendering.renderMode === 'cpuVolume' ||
-    rendering.renderMode === 'vtkVolume'
-  ) {
-    const { sliceBasis } = createPlanarVolumeSliceBasis({
-      canvasWidth,
-      canvasHeight,
-      imageIdIndex: rendering.currentImageIdIndex,
-      imageVolume: rendering.imageVolume,
-      orientation: camera?.orientation,
-    });
-
-    return resolvePlanarRenderCamera({
-      sliceBasis,
-      camera,
-      canvasWidth,
-      canvasHeight,
-    });
-  }
-}
-
-/**
- * Resolves the ICamera for a volume rendering at a potentially different
- * slice index than the current one. Used when building a ViewReference
- * for a hypothetical slice position (e.g. from a viewRefSpecifier override).
- *
- * If the requested sliceIndex matches the current one (or is unspecified),
- * delegates to the standard `getPlanarRenderCameraForReference`.
- */
-function getTargetVolumeSpatialCamera(args: {
-  camera: PlanarCamera;
-  renderContext: PlanarViewportRenderContext;
-  rendering: Extract<
-    PlanarRendering,
-    { renderMode: 'cpuVolume' | 'vtkVolume' }
-  >;
   sliceIndex?: number;
-}): ICamera | undefined {
-  const { camera, renderContext, rendering, sliceIndex } = args;
-
-  if (
-    typeof sliceIndex !== 'number' ||
-    sliceIndex === rendering.currentImageIdIndex
-  ) {
-    return getPlanarRenderCameraForReference({
-      camera,
-      rendering,
-      renderContext,
-    });
-  }
-
-  const { canvasHeight, canvasWidth } = getPlanarCanvasDimensions({
-    rendering,
-    renderContext,
-  });
-  const { sliceBasis } = createPlanarVolumeSliceBasis({
-    canvasHeight,
-    canvasWidth,
-    imageIdIndex: sliceIndex,
-    imageVolume: rendering.imageVolume,
-    orientation: (rendering.requestedCamera || camera).orientation,
-  });
-
-  return resolvePlanarRenderCamera({
-    sliceBasis,
-    canvasHeight,
-    canvasWidth,
-    camera: rendering.requestedCamera || camera,
-  });
-}
-
-/**
- * Returns the canvas dimensions appropriate for the rendering's render mode.
- * CPU paths use the offscreen canvas dimensions; VTK paths use the on-screen
- * element dimensions (clientWidth/clientHeight), falling back to canvas
- * width/height.
- */
-function getPlanarCanvasDimensions(args: {
-  rendering: PlanarRendering;
-  renderContext: PlanarViewportRenderContext;
 }) {
-  const { rendering, renderContext } = args;
-
-  if (
-    rendering.renderMode === 'cpu2d' ||
-    rendering.renderMode === 'cpuVolume'
-  ) {
-    return {
-      canvasWidth: renderContext.cpu.canvas.width,
-      canvasHeight: renderContext.cpu.canvas.height,
-    };
-  }
-
-  return {
-    canvasWidth:
-      renderContext.vtk.canvas.clientWidth || renderContext.vtk.canvas.width,
-    canvasHeight:
-      renderContext.vtk.canvas.clientHeight || renderContext.vtk.canvas.height,
-  };
+  return computePlanarViewportCamera(args);
 }

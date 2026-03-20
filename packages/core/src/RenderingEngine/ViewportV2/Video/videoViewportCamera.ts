@@ -26,12 +26,10 @@ interface VideoCameraMetrics {
 export function createDefaultVideoCamera(): VideoCamera {
   return {
     currentTimeSeconds: 0,
-    frame: {
-      anchorCanvas: [0.5, 0.5],
-      scale: 1,
-      scaleMode: 'fit',
-      rotation: 0,
-    },
+    anchorCanvas: [0.5, 0.5],
+    scale: 1,
+    scaleMode: 'fit',
+    rotation: 0,
   };
 }
 
@@ -40,17 +38,15 @@ export function normalizeVideoCamera(camera: VideoCamera): VideoCamera {
     ...(camera.currentTimeSeconds !== undefined
       ? { currentTimeSeconds: Math.max(0, camera.currentTimeSeconds) }
       : {}),
-    frame: {
-      anchorCanvas: cloneAnchorCanvas(camera.frame?.anchorCanvas ?? [0.5, 0.5]),
-      scale: Math.max(camera.frame?.scale ?? 1, 0.001),
-      scaleMode: 'fit',
-      rotation: camera.frame?.rotation ?? 0,
-      ...(camera.frame?.anchorWorld
-        ? {
-            anchorWorld: cloneAnchorWorld(camera.frame.anchorWorld),
-          }
-        : {}),
-    },
+    anchorCanvas: cloneAnchorCanvas(camera.anchorCanvas ?? [0.5, 0.5]),
+    scale: Math.max(camera.scale ?? 1, 0.001),
+    scaleMode: 'fit',
+    rotation: camera.rotation ?? 0,
+    ...(camera.anchorWorld
+      ? {
+          anchorWorld: cloneAnchorWorld(camera.anchorWorld),
+        }
+      : {}),
   };
 }
 
@@ -112,16 +108,14 @@ export function getVideoLayout(
       break;
   }
 
-  const zoom = Math.max(camera?.frame?.scale ?? 1, 0.001);
+  const zoom = Math.max(camera?.scale ?? 1, 0.001);
   width *= zoom;
   height *= zoom;
 
   const worldToCanvasRatio = width / intrinsicWidth;
-  const anchorCanvas = cloneAnchorCanvas(
-    camera?.frame?.anchorCanvas ?? [0.5, 0.5]
-  );
+  const anchorCanvas = cloneAnchorCanvas(camera?.anchorCanvas ?? [0.5, 0.5]);
   const anchorWorld =
-    cloneAnchorWorld(camera?.frame?.anchorWorld) ??
+    cloneAnchorWorld(camera?.anchorWorld) ??
     ([intrinsicWidth / 2, intrinsicHeight / 2] as [number, number]);
   const left =
     containerWidth * anchorCanvas[0] - anchorWorld[0] * worldToCanvasRatio;
