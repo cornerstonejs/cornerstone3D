@@ -595,42 +595,24 @@ class OrientationControllerTool extends BaseTool {
 
     let targetUp: vec3;
     if (keepOrientationUp) {
-      // Use the target viewUp as specified (original behavior)
       targetUp = vec3.fromValues(
         targetViewUp[0],
         targetViewUp[1],
         targetViewUp[2]
       );
     } else {
-      // Keep current viewUp, but project it onto the plane perpendicular to targetViewPlaneNormal
-      // to ensure orthogonality
-      const currentUp = vec3.normalize(vec3.create(), startUp);
+      const targetFwd = vec3.normalize(
+        vec3.create(),
+        targetViewPlaneNormal as vec3
+      );
+      const currentFwd = vec3.normalize(vec3.create(), startForward);
 
-      // Normalize targetViewPlaneNormal for projection
-      const normalizedForward = vec3.create();
-      vec3.normalize(normalizedForward, targetViewPlaneNormal as vec3);
+      const rotQuat = quat.create();
+      quat.rotationTo(rotQuat, currentFwd, targetFwd);
 
-      // Project currentUp onto the plane perpendicular to targetViewPlaneNormal
-      // Remove the component of currentUp that's parallel to targetViewPlaneNormal
-      const dot = vec3.dot(currentUp, normalizedForward);
       targetUp = vec3.create();
-      vec3.scaleAndAdd(targetUp, currentUp, normalizedForward, -dot);
+      vec3.transformQuat(targetUp, startUp, rotQuat);
       vec3.normalize(targetUp, targetUp);
-
-      // If the projection results in a zero vector (currentUp was parallel to targetViewPlaneNormal),
-      // use a default up vector
-      if (vec3.length(targetUp) < 0.001) {
-        // Use a default up vector perpendicular to targetViewPlaneNormal
-        if (Math.abs(normalizedForward[2]) < 0.9) {
-          targetUp = vec3.fromValues(0, 0, 1);
-        } else {
-          targetUp = vec3.fromValues(0, 1, 0);
-        }
-        // Project and normalize
-        const dot2 = vec3.dot(targetUp, normalizedForward);
-        vec3.scaleAndAdd(targetUp, targetUp, normalizedForward, -dot2);
-        vec3.normalize(targetUp, targetUp);
-      }
     }
 
     const targetRight = vec3.create();
@@ -664,8 +646,12 @@ class OrientationControllerTool extends BaseTool {
     const stepDuration = duration / steps;
     let currentStep = 0;
 
+    const finalNormal = targetViewPlaneNormal as Point3;
+    const finalUp: Point3 = [targetUp[0], targetUp[1], targetUp[2]];
+
     const animate = () => {
       currentStep++;
+      const isLastStep = currentStep >= steps;
       const t = currentStep / steps;
       const easedT = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 
@@ -679,13 +665,21 @@ class OrientationControllerTool extends BaseTool {
       const interpolatedUp = interpolatedMatrix.slice(4, 7) as Point3;
 
       viewport.setCamera({
-        viewPlaneNormal: interpolatedForward,
-        viewUp: interpolatedUp,
+        viewPlaneNormal: isLastStep ? finalNormal : interpolatedForward,
+        viewUp: isLastStep ? finalUp : interpolatedUp,
       });
-      viewport.resetCamera(ANIMATE_RESET_CAMERA_OPTIONS);
+
+      if (isLastStep) {
+        viewport.resetCamera(ANIMATE_RESET_CAMERA_OPTIONS);
+        viewport.setCamera({
+          viewPlaneNormal: finalNormal,
+          viewUp: finalUp,
+        });
+      }
+
       viewport.render();
 
-      if (currentStep < steps) {
+      if (!isLastStep) {
         setTimeout(animate, stepDuration);
       }
     };
