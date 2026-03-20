@@ -102,7 +102,7 @@ const renderingEngineId = 'myRenderingEngine';
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Volume Cropping with Orientation Controller',
-  'Here we demonstrate how to crop a 3D  volume with 6 clipping planes and an orientation controller. Use shift-drag to rotate the planes.'
+  'Demonstrates the volume cropping and the orientation controller tools in a volume3d viewport along with the volume cropping control tool in 1 to 3 orthographic viewports. Use SHIFT-drag to rotate the clipping planes.'
 );
 
 const size = '400px';
