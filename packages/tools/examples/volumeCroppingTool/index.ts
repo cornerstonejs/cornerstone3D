@@ -101,8 +101,8 @@ const renderingEngineId = 'myRenderingEngine';
 /////////////////////////////////////////
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Volume Cropping with Orientation Controller',
-  'Demonstrates the volume cropping and the orientation controller tools in a volume3d viewport along with the volume cropping control tool in 1 to 3 orthographic viewports. Use SHIFT-drag to rotate the clipping planes.'
+  'Volume Cropping and Orientation Controller',
+  'Demonstrates the volume cropping and the orientation controller tools in a volume3d viewport along with the volume cropping control tool in 1 to 3 orthographic viewports.'
 );
 
 const size = '400px';
@@ -169,7 +169,6 @@ instructions.innerText = `
   Basic controls:
   - Click/Drag the spheres in 3D or reference lines in the orthographic viewports.
   - Rotate, pan or zoom the 3D viewport using the mouse.
-  - Shift+Drag in the 3D viewport to rotate the clipping planes.
   - Use the scroll wheel to scroll through the slices in the orthographic viewports.
   - Toggle the clipping planes, handles, and rotate clipping planes on drag.
   - Click on the faces/edges/corners of the beveled cube orientation widget to change the orientation.
@@ -177,6 +176,34 @@ instructions.innerText = `
   `;
 
 content.append(instructions);
+
+const rotateHintOverlay = document.createElement('div');
+rotateHintOverlay.textContent = 'Use SHIFT-drag to rotate the clipping planes.';
+rotateHintOverlay.style.position = 'absolute';
+rotateHintOverlay.style.top = '10px';
+rotateHintOverlay.style.left = '50%';
+rotateHintOverlay.style.transform = 'translateX(-50%)';
+rotateHintOverlay.style.padding = '4px 8px';
+rotateHintOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0.55)';
+rotateHintOverlay.style.color = 'white';
+rotateHintOverlay.style.fontSize = '12px';
+rotateHintOverlay.style.borderRadius = '4px';
+rotateHintOverlay.style.pointerEvents = 'none';
+rotateHintOverlay.style.zIndex = '2';
+rotateHintOverlay.style.display = 'none';
+element4.appendChild(rotateHintOverlay);
+
+const updateRotateHintVisibility = () => {
+  const toolGroupVRT =
+    cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
+  const croppingTool = toolGroupVRT?.getToolInstance('VolumeCropping');
+  const isCroppingActive =
+    !!croppingTool &&
+    typeof croppingTool.getClippingPlanesVisible === 'function' &&
+    croppingTool.getClippingPlanesVisible();
+
+  rotateHintOverlay.style.display = isCroppingActive ? 'block' : 'none';
+};
 
 const croppingLabel = document.createElement('span');
 croppingLabel.textContent = 'Cropping:';
@@ -198,6 +225,7 @@ addToggleButtonToToolbar({
       croppingTool.setClippingPlanesVisible(
         !croppingTool.getClippingPlanesVisible()
       );
+      updateRotateHintVisibility();
     }
   },
 });
@@ -639,6 +667,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
   if (croppingTool && typeof croppingTool.setHandlesVisible === 'function') {
     croppingTool.setHandlesVisible(false);
   }
+  updateRotateHintVisibility();
   // Clipping off on load; user enables via Toggle Clipping Planes button
   renderingEngine.renderViewports(activeViewportIds);
 }
