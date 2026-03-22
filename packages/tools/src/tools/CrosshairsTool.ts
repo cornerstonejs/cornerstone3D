@@ -163,6 +163,12 @@ class CrosshairsTool extends AnnotationTool {
         // referenceLinesCenterGapRatio: 0.1 → gap is 10% of the canvas min dimension
         // referenceLinesCenterGapRatio: 1 → gap is 100% (not recommended)
         referenceLinesCenterGapRatio: null,
+        // Minimal crosshair mode renders a short fixed-length cross centered on
+        // the tool center and disables rotation and slab thickness handles.
+        minimal: {
+          enabled: false,
+          lineLengthInPx: 40,
+        },
         // actorUIDs for slabThickness application, if not defined, the slab thickness
         // will be applied to all actors of the viewport
         filterActorUIDsToSetSlabThickness: [],
@@ -948,15 +954,6 @@ class CrosshairsTool extends AnnotationTool {
         canvasUnitVectorFromCenter,
         canvasDiagonalLength * 100
       );
-      const canvasVectorFromCenterMid = vec2.create();
-      vec2.scale(
-        canvasVectorFromCenterMid,
-        canvasUnitVectorFromCenter,
-        // to maximize the visibility of the controls, they need to be
-        // placed at most at half the length of the shortest side of the canvas.
-        // Chosen 0.4 to have some margin to the edge.
-        canvasMinDimensionLength * 0.4
-      );
       const canvasVectorFromCenterShort = vec2.create();
       vec2.scale(
         canvasVectorFromCenterShort,
@@ -967,9 +964,13 @@ class CrosshairsTool extends AnnotationTool {
       const canvasVectorFromCenterStart = vec2.create();
       // Calculate center gap using ratio if provided, else fallback to pixel value
       const mobileConfig = this.configuration.mobile;
-      const { referenceLinesCenterGapRatio } = mobileConfig?.enabled
+      const activeConfiguration = mobileConfig?.enabled
         ? mobileConfig
         : this.configuration;
+      const { referenceLinesCenterGapRatio } = activeConfiguration;
+      const minimalCrosshairConfig = getMinimalCrosshairConfig(
+        this.configuration
+      );
 
       const centerGap =
         referenceLinesCenterGapRatio > 0
@@ -1012,16 +1013,45 @@ class CrosshairsTool extends AnnotationTool {
       liangBarksyClip(refLinePointOne, refLinePointTwo, canvasBox);
       liangBarksyClip(refLinePointThree, refLinePointFour, canvasBox);
 
-      // Computing rotation handle positions
-      const rotHandleOne = vec2.create();
-      vec2.subtract(
-        rotHandleOne,
-        crosshairCenterCanvas,
-        canvasVectorFromCenterMid
-      );
+      if (minimalCrosshairConfig.enabled) {
+        const minimalCanvasVectorFromCenterLong = vec2.create();
+        vec2.scale(
+          minimalCanvasVectorFromCenterLong,
+          canvasUnitVectorFromCenter,
+          minimalCrosshairConfig.lineLengthInPx
+        );
 
-      const rotHandleTwo = vec2.create();
-      vec2.add(rotHandleTwo, crosshairCenterCanvas, canvasVectorFromCenterMid);
+        vec2.add(
+          refLinePointOne,
+          refLinesCenter,
+          canvasVectorFromCenterStart
+        );
+        vec2.add(
+          refLinePointTwo,
+          refLinePointOne,
+          minimalCanvasVectorFromCenterLong
+        );
+        vec2.subtract(
+          refLinePointThree,
+          refLinesCenter,
+          canvasVectorFromCenterStart
+        );
+        vec2.subtract(
+          refLinePointFour,
+          refLinePointThree,
+          minimalCanvasVectorFromCenterLong
+        );
+
+        liangBarksyClip(refLinePointOne, refLinePointTwo, canvasBox);
+        liangBarksyClip(refLinePointThree, refLinePointFour, canvasBox);
+      }
+
+      // Computing rotation handle positions
+      const rotHandleOne = getSegmentMidpoint(refLinePointOne, refLinePointTwo);
+      const rotHandleTwo = getSegmentMidpoint(
+        refLinePointThree,
+        refLinePointFour
+      );
 
       // Computing SlabThickness (st below) position
 
@@ -1186,16 +1216,21 @@ class CrosshairsTool extends AnnotationTool {
     referenceLines.forEach((line, lineIndex) => {
       // get color for the reference line
       const otherViewport = line[0];
+      const minimalCrosshairConfig = getMinimalCrosshairConfig(
+        this.configuration
+      );
       const viewportColor = this._getReferenceLineColor(otherViewport.id);
       const viewportControllable = this._getReferenceLineControllable(
         otherViewport.id
       );
       const viewportDraggableRotatable =
-        this._getReferenceLineDraggableRotatable(otherViewport.id) ||
-        this.configuration.mobile?.enabled;
+        !minimalCrosshairConfig.enabled &&
+        (this._getReferenceLineDraggableRotatable(otherViewport.id) ||
+          this.configuration.mobile?.enabled);
       const viewportSlabThicknessControlsOn =
-        this._getReferenceLineSlabThicknessControlsOn(otherViewport.id) ||
-        this.configuration.mobile?.enabled;
+        !minimalCrosshairConfig.enabled &&
+        (this._getReferenceLineSlabThicknessControlsOn(otherViewport.id) ||
+          this.configuration.mobile?.enabled);
       const selectedViewportId = data.activeViewportIds.find(
         (id) => id === otherViewport.id
       );
@@ -1215,7 +1250,10 @@ class CrosshairsTool extends AnnotationTool {
       }
 
       let lineUID = `${lineIndex}`;
-      if (viewportControllable && viewportDraggableRotatable) {
+      if (
+        viewportControllable &&
+        (viewportDraggableRotatable || minimalCrosshairConfig.enabled)
+      ) {
         lineUID = `${lineIndex}One`;
         drawLineSvg(
           svgDrawingHelper,
@@ -1281,36 +1319,38 @@ class CrosshairsTool extends AnnotationTool {
           data.handles.activeOperation === OPERATION.SLAB;
         const slabThicknessHandles = [line[11], line[12], line[13], line[14]];
 
-        const slabThicknessHandleWorldOne = [
-          viewport.canvasToWorld(line[11]),
-          otherViewport,
-          line[5],
-          line[6],
-        ];
-        const slabThicknessHandleWorldTwo = [
-          viewport.canvasToWorld(line[12]),
-          otherViewport,
-          line[5],
-          line[6],
-        ];
-        const slabThicknessHandleWorldThree = [
-          viewport.canvasToWorld(line[13]),
-          otherViewport,
-          line[7],
-          line[8],
-        ];
-        const slabThicknessHandleWorldFour = [
-          viewport.canvasToWorld(line[14]),
-          otherViewport,
-          line[7],
-          line[8],
-        ];
-        newStpoints.push(
-          slabThicknessHandleWorldOne,
-          slabThicknessHandleWorldTwo,
-          slabThicknessHandleWorldThree,
-          slabThicknessHandleWorldFour
-        );
+        if (!minimalCrosshairConfig.enabled) {
+          const slabThicknessHandleWorldOne = [
+            viewport.canvasToWorld(line[11]),
+            otherViewport,
+            line[5],
+            line[6],
+          ];
+          const slabThicknessHandleWorldTwo = [
+            viewport.canvasToWorld(line[12]),
+            otherViewport,
+            line[5],
+            line[6],
+          ];
+          const slabThicknessHandleWorldThree = [
+            viewport.canvasToWorld(line[13]),
+            otherViewport,
+            line[7],
+            line[8],
+          ];
+          const slabThicknessHandleWorldFour = [
+            viewport.canvasToWorld(line[14]),
+            otherViewport,
+            line[7],
+            line[8],
+          ];
+          newStpoints.push(
+            slabThicknessHandleWorldOne,
+            slabThicknessHandleWorldTwo,
+            slabThicknessHandleWorldThree,
+            slabThicknessHandleWorldFour
+          );
+        }
 
         let handleRadius =
           this.configuration.handleRadius *
@@ -2605,6 +2645,9 @@ class CrosshairsTool extends AnnotationTool {
     canvasCoords,
     proximity
   ) {
+    const minimalCrosshairConfig = getMinimalCrosshairConfig(
+      this.configuration
+    );
     const { data } = annotation;
     const { rotationPoints } = data.handles;
 
@@ -2619,6 +2662,7 @@ class CrosshairsTool extends AnnotationTool {
       }
 
       const viewportDraggableRotatable =
+        !minimalCrosshairConfig.enabled &&
         this._getReferenceLineDraggableRotatable(otherViewport.id);
       if (!viewportDraggableRotatable) {
         continue;
@@ -2645,6 +2689,9 @@ class CrosshairsTool extends AnnotationTool {
     canvasCoords,
     proximity
   ) {
+    const minimalCrosshairConfig = getMinimalCrosshairConfig(
+      this.configuration
+    );
     const { data } = annotation;
     const { slabThicknessPoints } = data.handles;
 
@@ -2659,6 +2706,7 @@ class CrosshairsTool extends AnnotationTool {
       }
 
       const viewportSlabThicknessControlsOn =
+        !minimalCrosshairConfig.enabled &&
         this._getReferenceLineSlabThicknessControlsOn(otherViewport.id);
       if (!viewportSlabThicknessControlsOn) {
         continue;
@@ -2682,6 +2730,9 @@ class CrosshairsTool extends AnnotationTool {
   }
 
   _pointNearTool(element, annotation, canvasCoords, proximity) {
+    const minimalCrosshairConfig = getMinimalCrosshairConfig(
+      this.configuration
+    );
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
     const { clientWidth, clientHeight } = viewport.canvas;
@@ -2702,7 +2753,10 @@ class CrosshairsTool extends AnnotationTool {
       const viewportDraggableRotatable =
         this._getReferenceLineDraggableRotatable(otherViewport.id);
 
-      if (!viewportControllable || !viewportDraggableRotatable) {
+      if (
+        !viewportControllable ||
+        (!viewportDraggableRotatable && !minimalCrosshairConfig.enabled)
+      ) {
         continue;
       }
 
@@ -2759,6 +2813,7 @@ class CrosshairsTool extends AnnotationTool {
         otherViewport.id
       );
       const viewportSlabThicknessControlsOn =
+        !minimalCrosshairConfig.enabled &&
         this._getReferenceLineSlabThicknessControlsOn(otherViewport.id);
 
       if (!viewportControllable || !viewportSlabThicknessControlsOn) {
@@ -3122,6 +3177,39 @@ class CrosshairsTool extends AnnotationTool {
 
     return toolCenter;
   };
+}
+
+function getMinimalCrosshairConfig(configuration) {
+  const minimal = configuration?.minimal;
+
+  if (!minimal?.enabled) {
+    return {
+      enabled: false,
+      lineLengthInPx: 0,
+    };
+  }
+
+  const lineLengthInPx =
+    typeof minimal.lineLengthInPx === 'number' &&
+    Number.isFinite(minimal.lineLengthInPx)
+      ? minimal.lineLengthInPx
+      : 40;
+
+  return {
+    enabled: true,
+    lineLengthInPx: Math.max(0, lineLengthInPx),
+  };
+}
+
+function getSegmentMidpoint(
+  start: Types.Point2 | vec2,
+  end: Types.Point2 | vec2
+): Types.Point2 {
+  const midpoint = vec2.create();
+  vec2.add(midpoint, start, end);
+  vec2.scale(midpoint, midpoint, 0.5);
+
+  return midpoint as Types.Point2;
 }
 
 CrosshairsTool.toolName = 'Crosshairs';
