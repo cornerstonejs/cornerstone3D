@@ -39,7 +39,7 @@ function isLoaded(uri: string): boolean {
 function get(uri: string): DataSet {
   let dataSet;
 
-  if (uri.includes('&frame=')) {
+  if (/[?&]frame=/.test(uri)) {
     const { frame, dataSet: multiframeDataSet } =
       multiframeDataset.retrieveMultiframeDataset(uri);
 

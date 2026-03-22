@@ -31,29 +31,36 @@ interface MultiframeSplitResult {
  * Generates frame-specific imageIds for a multiframe image.
  * Replaces the frame number in the imageId with the specified frame number (1-based).
  *
- * @param baseImageId - The base imageId that must contain a "/frames/" pattern followed by a digit.
- *   Expected format: e.g., "wadouri:http://example.com/image/frames/1" or "wadors:/path/to/image.dcm/frames/1".
- *   The pattern "/frames/\d+" will be replaced with "/frames/" + frameNumber.
+ * @param baseImageId - The base imageId.
+ *   Supported formats:
+ *   - DICOMweb: "wadors:/path/to/image.dcm/frames/1"
+ *   - Loader query param: "wadouri:http://example.com/image.dcm?frame=1"
+ *   - Loader base image id without a frame suffix: "dicomfile:0"
+ *   The frame designator is replaced or appended using the loader's convention.
  * @param frameNumber - The frame number to use (1-based)
  * @returns The imageId with the frame number replaced
- * @throws {Error} If baseImageId does not contain the required "/frames/" pattern, throws an error
- *   with a clear message indicating the expected format.
  */
 function generateFrameImageId(
   baseImageId: string,
   frameNumber: number
 ): string {
   const framePattern = /\/frames\/\d+/;
+  const queryFramePattern = /([?&])frame=\d+/;
 
-  if (!framePattern.test(baseImageId)) {
-    throw new Error(
-      `generateFrameImageId: baseImageId must contain a "/frames/" pattern followed by a digit. ` +
-        `Expected format: e.g., "wadouri:http://example.com/image/frames/1" or "wadors:/path/to/image.dcm/frames/1". ` +
-        `Received: ${baseImageId}`
+  if (framePattern.test(baseImageId)) {
+    return baseImageId.replace(framePattern, `/frames/${frameNumber}`);
+  }
+
+  if (queryFramePattern.test(baseImageId)) {
+    return baseImageId.replace(
+      queryFramePattern,
+      (_, separator) => `${separator}frame=${frameNumber}`
     );
   }
 
-  return baseImageId.replace(framePattern, `/frames/${frameNumber}`);
+  const separator = baseImageId.includes('?') ? '&' : '?';
+
+  return `${baseImageId}${separator}frame=${frameNumber}`;
 }
 
 /**
@@ -61,8 +68,8 @@ function generateFrameImageId(
  * For NM Multi-frame images where frames are indexed by time slot and slice.
  *
  * @param imageIds - Array containing the base imageId (typically just one for multiframe).
- *   The base imageId must contain a "/frames/" pattern (e.g., "wadouri:http://example.com/image/frames/1").
- *   See generateFrameImageId for format requirements.
+ *   The base imageId can be either a DICOMweb frame imageId or a local loader
+ *   imageId such as "dicomfile:0".
  * @returns Split result if multiframe 4D is detected, null otherwise
  */
 function handleMultiframe4D(imageIds: string[]): MultiframeSplitResult | null {
