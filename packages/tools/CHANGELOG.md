@@ -3,6 +3,68 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.20.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.19.4...v4.20.0) (2026-03-16)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [4.19.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.19.3...v4.19.4) (2026-03-13)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [4.19.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.19.2...v4.19.3) (2026-03-13)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [4.19.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.19.1...v4.19.2) (2026-03-12)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [4.19.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.19.0...v4.19.1) (2026-03-12)
+
+### Bug Fixes
+
+- **adapters:** Added adapters as subtypes of PlanarFreehandROI for LivewireContour and SplineROI. ([#2642](https://github.com/cornerstonejs/cornerstone3D/issues/2642)) ([13c6b59](https://github.com/cornerstonejs/cornerstone3D/commit/13c6b599cfeb91e5789e172d4e99aad21fb508a0))
+
+# [4.19.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.18.5...v4.19.0) (2026-03-10)
+
+### Features
+
+- **segmentation:** Added fallbackLabel to various segmentation state types. ([#2652](https://github.com/cornerstonejs/cornerstone3D/issues/2652)) ([e645369](https://github.com/cornerstonejs/cornerstone3D/commit/e6453698737ff9077c1865b90da1797a852ce438))
+
+## [4.18.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.18.4...v4.18.5) (2026-03-06)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [4.18.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.18.3...v4.18.4) (2026-02-27)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [4.18.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.18.2...v4.18.3) (2026-02-26)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [4.18.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.18.1...v4.18.2) (2026-02-25)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [4.18.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.18.0...v4.18.1) (2026-02-25)
+
+### Bug Fixes
+
+- **tools:** prevent ANNOTATION_COMPLETED re-firing on PlanarFreehandROI text click ([#2631](https://github.com/cornerstonejs/cornerstone3D/issues/2631)) ([d09bce9](https://github.com/cornerstonejs/cornerstone3D/commit/d09bce920c738d72f5a1b06e7dde7b6638d53395))
+
+# [4.18.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.17.5...v4.18.0) (2026-02-25)
+
+### Features
+
+- **core:** add ECGViewport for DICOM waveform rendering ([#2621](https://github.com/cornerstonejs/cornerstone3D/issues/2621)) ([7c91439](https://github.com/cornerstonejs/cornerstone3D/commit/7c914397b228b380d0f236f3f940170599fceab3))
+
+## [4.17.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.17.4...v4.17.5) (2026-02-24)
+
+### Bug Fixes
+
+- move crosshairs implementation to absolute camera instead of delta ([#2627](https://github.com/cornerstonejs/cornerstone3D/issues/2627)) ([1798953](https://github.com/cornerstonejs/cornerstone3D/commit/1798953dfb8921f3acf73e47976367da22088e63))
+
 ## [4.17.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.17.3...v4.17.4) (2026-02-23)
 
 **Note:** Version bump only for package @cornerstonejs/tools

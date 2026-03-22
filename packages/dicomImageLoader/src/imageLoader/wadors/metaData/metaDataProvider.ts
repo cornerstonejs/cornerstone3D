@@ -1,4 +1,3 @@
-import * as dicomParser from 'dicom-parser';
 import {
   Enums,
   utilities,
@@ -21,11 +20,9 @@ import {
 } from './extractPositioningFromMetadata';
 import { getImageTypeSubItemFromMetadata } from './NMHelpers';
 import isNMReconstructable from '../../isNMReconstructable';
-import {
-  getInstanceModule,
-  instanceModuleNames,
-} from '../../getInstanceModule';
+import { instanceModuleNames } from '../../getInstanceModule';
 import { getUSEnhancedRegions } from './USHelpers';
+import { getECGModule } from './ECGHelpers';
 
 function metaDataProvider(type, imageId) {
   const { MetadataModules } = Enums;
@@ -209,6 +206,22 @@ function metaDataProvider(type, imageId) {
     return getUSEnhancedRegions(metaData);
   }
 
+  if (type === MetadataModules.ECG) {
+    // Extract wadoRsRoot and studyUID from the imageId for BulkDataURI resolution
+    const imageUri = imageId.replace('wadors:', '');
+    const studiesIndex = imageUri.indexOf('/studies/');
+    let wadoRsRoot: string | undefined;
+    let studyUID: string | undefined;
+    if (studiesIndex !== -1) {
+      wadoRsRoot = imageUri.substring(0, studiesIndex);
+      const afterStudies = imageUri.substring(studiesIndex + 9);
+      const nextSlash = afterStudies.indexOf('/');
+      studyUID =
+        nextSlash !== -1 ? afterStudies.substring(0, nextSlash) : afterStudies;
+    }
+    return getECGModule(metaData, wadoRsRoot, studyUID);
+  }
+
   if (type === MetadataModules.CALIBRATION) {
     const modality = getValue(metaData['00080060']);
 
@@ -216,6 +229,46 @@ function metaDataProvider(type, imageId) {
       const enhancedRegion = getUSEnhancedRegions(metaData);
       return {
         sequenceOfUltrasoundRegions: enhancedRegion,
+      };
+    }
+
+    // ECG waveform: use sequenceOfUltrasoundRegions for time (seconds) and amplitude (mV)
+    const imageUri = imageId.replace('wadors:', '');
+    const studiesIndex = imageUri.indexOf('/studies/');
+    let wadoRsRoot;
+    let studyUID;
+    if (studiesIndex !== -1) {
+      wadoRsRoot = imageUri.substring(0, studiesIndex);
+      const afterStudies = imageUri.substring(studiesIndex + 9);
+      const nextSlash = afterStudies.indexOf('/');
+      studyUID =
+        nextSlash !== -1 ? afterStudies.substring(0, nextSlash) : afterStudies;
+    }
+    const ecgModule = getECGModule(metaData, wadoRsRoot, studyUID);
+    if (ecgModule) {
+      const { numberOfWaveformSamples, samplingFrequency } = ecgModule;
+      const physicalDeltaX = 1 / (samplingFrequency || 1);
+      // Typical ECG: raw Int16 in µV or similar; 0.001 mV per raw unit (1 µV/LSB)
+      const physicalDeltaY = 0.001;
+      // Match ECGViewport getImageData(): amplitude mapped to index [0, 65536), offset 32768
+      const ECG_AMPLITUDE_INDEX_SIZE = 65536;
+      const ECG_AMPLITUDE_OFFSET = 32768;
+      return {
+        sequenceOfUltrasoundRegions: [
+          {
+            regionLocationMinX0: 0,
+            regionLocationMaxX1: numberOfWaveformSamples,
+            regionLocationMinY0: 0,
+            regionLocationMaxY1: ECG_AMPLITUDE_INDEX_SIZE - 1,
+            referencePixelX0: 0,
+            referencePixelY0: ECG_AMPLITUDE_OFFSET,
+            physicalDeltaX,
+            physicalDeltaY,
+            physicalUnitsXDirection: 4, // seconds
+            physicalUnitsYDirection: -1, // mV (extension unit)
+            regionDataType: 1,
+          },
+        ],
       };
     }
   }
