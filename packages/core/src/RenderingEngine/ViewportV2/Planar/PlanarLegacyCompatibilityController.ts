@@ -24,7 +24,7 @@ import type {
   PlanarDataPresentation,
   PlanarRegisteredDataSet,
   PlanarSetDataOptions,
-} from './PlanarViewportV2Types';
+} from './PlanarViewportTypes';
 
 export type PlanarLegacyCompatibilityHost = {
   getElement(): HTMLDivElement;
@@ -76,7 +76,7 @@ class PlanarLegacyCompatibilityController {
 
   async setStack(imageIds: string[], currentImageIdIndex = 0): Promise<string> {
     if (!imageIds.length) {
-      throw new Error('[PlanarViewportV2] Cannot set an empty stack');
+      throw new Error('[PlanarViewport] Cannot set an empty stack');
     }
 
     const dataId = this.getLegacyStackDataId();

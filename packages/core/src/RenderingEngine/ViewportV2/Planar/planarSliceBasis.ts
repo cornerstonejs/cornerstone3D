@@ -28,7 +28,7 @@ import {
 } from './planarAdapterCoordinateTransforms';
 import { getPlanarCameraVectors } from './planarOrientationVectors';
 import { getSafeCanvasDimension, normalizePoint3 } from './planarMath';
-import type { PlanarCamera } from './PlanarViewportV2Types';
+import type { PlanarCamera } from './PlanarViewportTypes';
 
 /**
  * The geometric basis for a single planar cross-section through image data.

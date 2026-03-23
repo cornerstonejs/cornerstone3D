@@ -4,13 +4,13 @@ import type { PlanarLegacyViewportProperties } from './planarLegacyCompatibility
 import PlanarLegacyCompatibilityController, {
   type PlanarLegacyCompatibilityHost,
 } from './PlanarLegacyCompatibilityController';
-import type PlanarViewportV2 from './PlanarViewportV2';
+import type PlanarViewport from './PlanarViewport';
 
 class PlanarLegacyCompatibleViewport {
   private readonly legacyCompatibility: PlanarLegacyCompatibilityController;
 
   constructor(
-    readonly viewport: PlanarViewportV2,
+    readonly viewport: PlanarViewport,
     host: PlanarLegacyCompatibilityHost
   ) {
     this.legacyCompatibility = new PlanarLegacyCompatibilityController(host);
