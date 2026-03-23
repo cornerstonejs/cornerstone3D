@@ -1,4 +1,3 @@
-import * as metaData from '../../metaData';
 import viewportV2DataSetMetadataProvider from '../../utilities/viewportV2DataSetMetadataProvider';
 
 export interface ViewportV2ImageDataSet {
@@ -7,7 +6,7 @@ export interface ViewportV2ImageDataSet {
 }
 
 export function getViewportV2RegisteredData(dataId: string): unknown {
-  return metaData.get(
+  return viewportV2DataSetMetadataProvider.get(
     viewportV2DataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
     dataId
   );

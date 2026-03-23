@@ -33,7 +33,7 @@ import type {
   PlanarCamera,
   PlanarPayload,
   PlanarViewportRenderContext,
-} from './PlanarViewportV2Types';
+} from './PlanarViewportTypes';
 import { computePlanarViewportCamera } from './PlanarComputedCamera';
 import type { PlanarRendering } from './planarRuntimeTypes';
 
@@ -422,7 +422,7 @@ function getImageIds(payload?: PlanarPayload): string[] {
 
 /**
  * Resolves the current shared planar camera object for spatial reference
- * queries. This reuses the same construction path as `PlanarViewportV2`.
+ * queries. This reuses the same construction path as `PlanarViewport`.
  */
 function getPlanarComputedCameraForReference(args: {
   camera: PlanarCamera;

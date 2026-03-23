@@ -22,7 +22,7 @@ export {
   VtkVolumeMapperPath,
   VtkVolumeMapperRenderPath,
 } from './VtkVolumeMapperRenderPath';
-export { default } from './PlanarViewportV2';
+export { default, default as PlanarViewport } from './PlanarViewport';
 export type {
   PlanarCamera,
   PlanarCpuImageAdapterContext,
@@ -41,5 +41,5 @@ export type {
   PlanarVtkImageAdapterContext,
   PlanarVtkVolumeAdapterContext,
   PlanarViewportRenderContext,
-  PlanarViewportV2Input,
-} from './PlanarViewportV2Types';
+  PlanarViewportInput,
+} from './PlanarViewportTypes';

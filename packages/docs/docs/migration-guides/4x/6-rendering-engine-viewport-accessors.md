@@ -11,7 +11,7 @@ title: Rendering Engine Viewport Accessors
 
 Use `getViewport()` or `getViewports()` and then filter by the behavior you need.
 
-This change matters for ViewportV2 because a `PlanarViewportV2` can expose stack-style or volume-style compatibility methods without being a `StackViewport` or `VolumeViewport`.
+This change matters for ViewportV2 because a `PlanarViewport` can expose stack-style or volume-style compatibility methods without being a `StackViewport` or `VolumeViewport`.
 
 ## Why This Changed
 

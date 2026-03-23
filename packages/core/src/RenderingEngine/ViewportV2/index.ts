@@ -71,7 +71,7 @@ export type {
   VideoStreamPayload,
   VideoViewportV2Input,
 } from './Video';
-export { default as PlanarViewportV2 } from './Planar';
+export { default as PlanarViewport } from './Planar';
 export {
   BasePlanarViewportCamera,
   CpuImageSlicePath,
@@ -96,8 +96,8 @@ export type {
   PlanarRegisteredDataSet,
   PlanarRenderMode,
   PlanarSetDataOptions,
+  PlanarViewportInput,
   PlanarViewportRenderContext,
-  PlanarViewportV2Input,
 } from './Planar';
 export { default as VolumeViewport3DV2 } from './Volume3D';
 export {

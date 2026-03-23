@@ -4,7 +4,7 @@ import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import type { ColormapPublic, VOIRange } from '../../../types';
 import { createPlanarRGBTransferFunction } from '../../helpers/planarImageRendering';
 import { updateOpacity as updateVolumeOpacity } from '../../../utilities/colormap';
-import type { PlanarDataPresentation } from './PlanarViewportV2Types';
+import type { PlanarDataPresentation } from './PlanarViewportTypes';
 
 export function applyPlanarVolumePresentation(args: {
   actor: vtkVolume;

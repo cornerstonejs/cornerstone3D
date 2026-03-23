@@ -27,7 +27,7 @@ import type {
   PlanarPayload,
   PlanarViewportRenderContext,
   PlanarVtkImageAdapterContext,
-} from './PlanarViewportV2Types';
+} from './PlanarViewportTypes';
 import type { PlanarImageMapperRendering } from './planarRuntimeTypes';
 import {
   canvasToWorldContextPool,
@@ -51,9 +51,7 @@ export class VtkImageMapperRenderPath
     const payload: PlanarPayload = data as unknown as LoadedData<PlanarPayload>;
 
     if (!payload.image) {
-      throw new Error(
-        '[PlanarViewportV2] VTK image rendering requires an image'
-      );
+      throw new Error('[PlanarViewport] VTK image rendering requires an image');
     }
 
     const mapper = vtkImageMapper.newInstance();

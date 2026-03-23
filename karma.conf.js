@@ -26,12 +26,16 @@ process.env.CHROME_BIN = require('puppeteer').executablePath();
  * https://github.com/codymikol/karma-webpack?tab=readme-ov-file#default-webpack-configuration
  */
 const outputPath = path.join(os.tmpdir(), '_karma_webpack_') + Math.floor(Math.random() * 1000000)
+const forceViewportV2 = process.env.FORCE_VIEWPORT_V2 === 'true';
+const forceCpuRendering = process.env.FORCE_CPU_RENDERING === 'true';
 
 /** @param {import('karma').Config} config */
 module.exports = function (config) {
   config.set({
     reporters: ['junit', 'coverage', 'spec'],
     client: {
+      forceCpuRendering,
+      forceViewportV2,
       jasmine: {
         random: false, // don't randomize the order of tests
         stopOnFailure: false,
@@ -43,11 +47,10 @@ module.exports = function (config) {
       clearContext: false,
     },
     concurrency: 1,
-    // Uncomment this out to capture all logging
-    // browserConsoleLogOptions: {
-    //   terminal: true,
-    //   level: '',
-    // },
+    browserConsoleLogOptions: {
+      terminal: true,
+      level: 'log',
+    },
     specReporter: {
       maxLogLines: 5, // limit number of lines logged per test
       suppressSummary: true, // do not print summary

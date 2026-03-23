@@ -19,7 +19,7 @@ import VideoViewportV2, {
   DefaultVideoDataProvider,
   HtmlVideoPath,
 } from './ViewportV2/Video';
-import PlanarViewportV2, {
+import PlanarViewport, {
   CpuImageSlicePath,
   DefaultPlanarDataProvider,
   VtkImageMapperPath,
@@ -46,7 +46,7 @@ const renderingEngineExportsV2 = {
   VideoViewportV2,
   HtmlVideoPath,
   DefaultVideoDataProvider,
-  PlanarViewportV2,
+  PlanarViewport,
   CpuImageSlicePath,
   VtkImageMapperPath,
   VtkVolumeMapperPath,
@@ -78,7 +78,7 @@ export {
   VideoViewportV2,
   HtmlVideoPath,
   DefaultVideoDataProvider,
-  PlanarViewportV2,
+  PlanarViewport,
   CpuImageSlicePath,
   VtkImageMapperPath,
   VtkVolumeMapperPath,

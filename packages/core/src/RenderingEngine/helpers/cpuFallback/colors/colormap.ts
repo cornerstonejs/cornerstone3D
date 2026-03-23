@@ -12,12 +12,24 @@ import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransf
 import { resolveColormap as resolveSharedColormap } from '../../../../utilities/colormap';
 
 const COLOR_TRANSPARENT: Point4 = [0, 0, 0, 0];
+const CPU_FALLBACK_COLOR_COUNT = 256;
 const CPU_FALLBACK_GRAYSCALE_NAMES = new Set([
   'gray',
   'grey',
   'grayscale',
   'greyscale',
 ]);
+
+function getCPUFallbackUnitValue(index: number): number {
+  return index / CPU_FALLBACK_COLOR_COUNT;
+}
+
+function mapCPUFallbackColorIndex(index: number, colorCount: number): number {
+  return Math.min(
+    colorCount - 1,
+    Math.floor(getCPUFallbackUnitValue(index) * colorCount)
+  );
+}
 
 /**
  *  Generate linearly spaced vectors
@@ -415,20 +427,23 @@ function createCPUFallbackColormapData(
   transferFunction.applyColorMap(colormap);
 
   const [lower, upper] = transferFunction.getRange();
-  const colors = Array.from({ length: 256 }, (_unused, index) => {
-    const t = index / 255;
-    const x = lower + t * (upper - lower);
-    const rgb: number[] = [];
+  const colors = Array.from(
+    { length: CPU_FALLBACK_COLOR_COUNT },
+    (_unused, index) => {
+      const t = getCPUFallbackUnitValue(index);
+      const x = lower + t * (upper - lower);
+      const rgb: number[] = [];
 
-    transferFunction.getColor(x, rgb);
+      transferFunction.getColor(x, rgb);
 
-    return [
-      Math.round(rgb[0] * 255),
-      Math.round(rgb[1] * 255),
-      Math.round(rgb[2] * 255),
-      255,
-    ] as Point4;
-  });
+      return [
+        Math.round(rgb[0] * 255),
+        Math.round(rgb[1] * 255),
+        Math.round(rgb[2] * 255),
+        255,
+      ] as Point4;
+    }
+  );
 
   return {
     colors,
@@ -494,14 +509,15 @@ function createOpacityMappedColors(
 ): Point4[] {
   const numberOfColors = Math.max(baseColormap.getNumberOfColors(), 1);
 
-  return Array.from({ length: 256 }, (_unused, index) => {
+  return Array.from({ length: CPU_FALLBACK_COLOR_COUNT }, (_unused, index) => {
     const sourceIndex =
       numberOfColors === 1
         ? 0
-        : Math.round((index / 255) * (numberOfColors - 1));
+        : mapCPUFallbackColorIndex(index, numberOfColors);
     const rgba = baseColormap.getColor(sourceIndex);
     const scalarValue =
-      voiRange.lower + (voiRange.upper - voiRange.lower) * (index / 255);
+      voiRange.lower +
+      (voiRange.upper - voiRange.lower) * getCPUFallbackUnitValue(index);
     const opacity = resolveOpacityAtValue(
       scalarValue,
       colormap?.opacity,

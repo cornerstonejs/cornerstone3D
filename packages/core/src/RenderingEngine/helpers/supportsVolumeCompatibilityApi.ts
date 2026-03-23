@@ -1,17 +1,19 @@
 import type { IVolumeViewport } from '../../types';
 
-type VolumeCompatibilityMethod = 'setVolumes' | 'addVolumes';
+export type ICompatibleVolumeViewport = Pick<
+  IVolumeViewport,
+  'setVolumes' | 'addVolumes'
+>;
 
-function supportsVolumeCompatibilityApi<
-  TMethod extends VolumeCompatibilityMethod,
->(
-  viewport: unknown,
-  method: TMethod
-): viewport is Pick<IVolumeViewport, TMethod> {
-  return (
-    typeof (viewport as Record<TMethod, unknown> | undefined)?.[method] ===
-    'function'
+function isVolumeCompatible(
+  viewport: unknown
+): viewport is ICompatibleVolumeViewport {
+  return Boolean(
+    viewport &&
+      typeof (viewport as ICompatibleVolumeViewport).setVolumes ===
+        'function' &&
+      typeof (viewport as ICompatibleVolumeViewport).addVolumes === 'function'
   );
 }
 
-export default supportsVolumeCompatibilityApi;
+export default isVolumeCompatible;

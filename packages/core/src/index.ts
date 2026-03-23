@@ -38,7 +38,7 @@ import VideoViewportV2, {
   HtmlVideoPath,
   VideoComputedCamera,
 } from './RenderingEngine/ViewportV2/Video';
-import PlanarViewportV2, {
+import PlanarViewport, {
   BasePlanarViewportCamera,
   CpuImageSlicePath,
   DefaultPlanarDataProvider,
@@ -148,7 +148,7 @@ const renderingEngineExportsV2 = {
   HtmlVideoPath,
   DefaultVideoDataProvider,
   VideoComputedCamera,
-  PlanarViewportV2,
+  PlanarViewport,
   PlanarLegacyCompatibleViewport,
   BasePlanarViewportCamera,
   PlanarStackViewportCamera,
@@ -255,7 +255,7 @@ export {
   VideoViewportV2,
   HtmlVideoPath,
   DefaultVideoDataProvider,
-  PlanarViewportV2,
+  PlanarViewport,
   PlanarLegacyCompatibleViewport,
   BasePlanarViewportCamera,
   PlanarStackViewportCamera,

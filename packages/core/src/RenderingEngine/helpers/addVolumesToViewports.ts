@@ -1,9 +1,7 @@
-import type {
-  IVolumeViewport,
-  IVolumeInput,
-  IRenderingEngine,
-} from '../../types';
-import supportsVolumeCompatibilityApi from './supportsVolumeCompatibilityApi';
+import type { IVolumeInput, IRenderingEngine } from '../../types';
+import isVolumeCompatible, {
+  type ICompatibleVolumeViewport,
+} from './supportsVolumeCompatibilityApi';
 
 /**
  * For each provided viewport it adds a volume to the viewport using the
@@ -24,6 +22,8 @@ async function addVolumesToViewports(
   immediateRender = false,
   suppressEvents = false
 ): Promise<void> {
+  const compatibleViewports: ICompatibleVolumeViewport[] = [];
+
   for (const viewportId of viewportIds) {
     const viewport = renderingEngine.getViewport(viewportId);
 
@@ -31,22 +31,22 @@ async function addVolumesToViewports(
       throw new Error(`Viewport with Id ${viewportId} does not exist`);
     }
 
-    if (!supportsVolumeCompatibilityApi(viewport, 'addVolumes')) {
+    if (!isVolumeCompatible(viewport)) {
       console.warn(
         `Viewport with Id ${viewportId} does not implement addVolumes. Cannot add volume to this viewport.`
       );
 
       return;
     }
+
+    compatibleViewports.push(viewport);
   }
 
-  const addVolumePromises = viewportIds.map(async (viewportId) => {
-    const viewport = renderingEngine.getViewport(viewportId) as IVolumeViewport;
-
-    await viewport.addVolumes(volumeInputs, immediateRender, suppressEvents);
-  });
-
-  await Promise.all(addVolumePromises);
+  await Promise.all(
+    compatibleViewports.map((viewport) =>
+      viewport.addVolumes(volumeInputs, immediateRender, suppressEvents)
+    )
+  );
   return;
 }
 

@@ -4,7 +4,7 @@
  *
  * Each type in this file is a discriminated-union member keyed by
  * `renderMode`. Together they form the `PlanarRendering` union that
- * PlanarViewportV2 and its adapters use to track the mounted state of a
+ * PlanarViewport and its adapters use to track the mounted state of a
  * single dataset.
  *
  * These types are intentionally NOT exported from the public API surface;
@@ -35,7 +35,7 @@ import type { MountedRendering } from '../ViewportArchitectureTypes';
 import type {
   PlanarCamera,
   PlanarDataPresentation,
-} from './PlanarViewportV2Types';
+} from './PlanarViewportTypes';
 
 /**
  * Mounted rendering state for the GPU single-image path (`vtkImage`).

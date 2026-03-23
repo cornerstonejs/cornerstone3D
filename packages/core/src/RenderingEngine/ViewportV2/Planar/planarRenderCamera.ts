@@ -33,7 +33,7 @@ import {
   rotatePlanarViewUp,
 } from './planarViewPresentation';
 import { getSafeCanvasDimension, normalizePoint3 } from './planarMath';
-import type { PlanarCamera } from './PlanarViewportV2Types';
+import type { PlanarCamera } from './PlanarViewportTypes';
 import type { PlanarSliceBasis } from './planarSliceBasis';
 
 /**

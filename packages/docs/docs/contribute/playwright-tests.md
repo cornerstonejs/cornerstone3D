@@ -151,20 +151,51 @@ Our simulate drag utility can simulate a drag on any element, and avoid going ou
 After you have wrote your tests, you can run them by using the following command:
 
 ```bash
-yarn test:e2e:ci
+./scripts/run-playright.sh
+./scripts/run-playright.sh --viewport-v2
+./scripts/run-playright.sh --cpu
 ```
 
-If you want to use headed mode, you can use the following command:
+This defaults to `all`. You can also scope the run:
 
 ```bash
-yarn test:e2e:headed
+./scripts/run-playright.sh core
+./scripts/run-playright.sh core --viewport-v2
+./scripts/run-playright.sh core --cpu
+./scripts/run-playright.sh tools
+./scripts/run-playright.sh all
 ```
 
-You will see the test results in your terminal, if you want an indepth report, you can use the following command:
+Each run gets its own timestamped report directory:
 
 ```bash
-yarn playwright show-report tests/playwright-report
+reports/all-legacy-playwright/<timestamp>/
+reports/core-legacy-playwright/<timestamp>/
+reports/tools-legacy-playwright/<timestamp>/
 ```
+
+When `--viewport-v2` is used, the folder name changes accordingly, for example:
+
+```bash
+reports/core-viewport-v2-playwright/<timestamp>/
+reports/core-viewport-v2-cpu-playwright/<timestamp>/
+```
+
+If you want to run Karma and Playwright together for the same package scope, use:
+
+```bash
+./scripts/run-tests.sh
+./scripts/run-tests.sh core
+./scripts/run-tests.sh tools
+./scripts/run-tests.sh tools --viewport-v2
+./scripts/run-tests.sh core --viewport-v2 --cpu
+```
+
+Passing `--viewport-v2` forces the example navigation helper to open each example with `?type=next`, which
+enables `rendering.useViewportV2` in the demo setup for that Playwright run.
+
+Passing `--cpu` forces the example navigation helper to open each example with `?cpu=1`, which enables CPU
+rendering in the demo setup for that Playwright run.
 
 ## Serving the examples manually for development
 

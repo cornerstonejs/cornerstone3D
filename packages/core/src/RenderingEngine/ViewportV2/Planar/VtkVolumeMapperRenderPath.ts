@@ -19,7 +19,7 @@ import type {
   PlanarPayload,
   PlanarViewportRenderContext,
   PlanarVtkVolumeAdapterContext,
-} from './PlanarViewportV2Types';
+} from './PlanarViewportTypes';
 import type { PlanarVolumeMapperRendering } from './planarRuntimeTypes';
 import {
   canvasToWorldContextPool,
@@ -50,7 +50,7 @@ export class VtkVolumeMapperRenderPath
 
     if (!imageVolume) {
       throw new Error(
-        '[PlanarViewportV2] Volume rendering requires a prepared image volume'
+        '[PlanarViewport] Volume rendering requires a prepared image volume'
       );
     }
 

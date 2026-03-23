@@ -7,7 +7,7 @@ import VideoViewport from '../VideoViewport';
 import WSIViewport from '../WSIViewport';
 import ECGViewport from '../ECGViewport';
 import ECGViewportV2 from '../ViewportV2/ECG/ECGViewportV2';
-import PlanarViewportV2 from '../ViewportV2/Planar/PlanarViewportV2';
+import PlanarViewport from '../ViewportV2/Planar/PlanarViewport';
 import VideoViewportV2 from '../ViewportV2/Video/VideoViewportV2';
 import VolumeViewport3DV2 from '../ViewportV2/Volume3D/3dViewport';
 import WSIViewportV2 from '../ViewportV2/WSI/WSIViewportV2';
@@ -18,7 +18,7 @@ interface ViewportConstructor {
     viewportInput: ViewportInput
   ):
     | IViewport
-    | PlanarViewportV2
+    | PlanarViewport
     | VideoViewportV2
     | VolumeViewport3DV2
     | ECGViewportV2;
@@ -36,7 +36,7 @@ const viewportTypeToViewportClass: {
   [ViewportType.VIDEO]: VideoViewport,
   // v2 viewports below
   [ViewportType.VOLUME_3D_V2]: VolumeViewport3DV2, // v2
-  [ViewportType.PLANAR_V2]: PlanarViewportV2, // v2
+  [ViewportType.PLANAR_V2]: PlanarViewport, // v2
   [ViewportType.VIDEO_V2]: VideoViewportV2, // v2
   [ViewportType.ECG_V2]: ECGViewportV2, // v2
   [ViewportType.WHOLE_SLIDE_V2]:

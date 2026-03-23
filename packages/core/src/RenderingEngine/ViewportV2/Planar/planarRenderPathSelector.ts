@@ -12,7 +12,7 @@ import type {
   PlanarRenderMode,
   PlanarRegisteredDataSet,
   PlanarSetDataOptions,
-} from './PlanarViewportV2Types';
+} from './PlanarViewportTypes';
 import { clonePlanarOrientation } from './planarLegacyCompatibility';
 
 export const DEFAULT_PLANAR_CPU_IMAGE_THRESHOLD = 64 * 1024 * 1024;
@@ -134,7 +134,7 @@ export function selectPlanarRenderPath(
   options: PlanarSetDataOptions = {}
 ): SelectedPlanarRenderPath {
   if (!dataSet.imageIds.length) {
-    throw new Error('[PlanarViewportV2] Cannot add an empty planar dataset');
+    throw new Error('[PlanarViewport] Cannot add an empty planar dataset');
   }
 
   const orientation = options.orientation || OrientationAxis.ACQUISITION;
@@ -166,7 +166,7 @@ export function selectPlanarRenderPath(
     if (requestedRenderMode === 'cpu2d' || requestedRenderMode === 'vtkImage') {
       if (!isAcquisitionPath) {
         throw new Error(
-          '[PlanarViewportV2] cpu2d and vtkImage render modes require the acquisition plane'
+          '[PlanarViewport] cpu2d and vtkImage render modes require the acquisition plane'
         );
       }
 
@@ -179,7 +179,7 @@ export function selectPlanarRenderPath(
 
     if (!supportsVolumeRendering(dataSet)) {
       throw new Error(
-        '[PlanarViewportV2] Volume rendering requires a valid volume dataset'
+        '[PlanarViewport] Volume rendering requires a valid volume dataset'
       );
     }
 
@@ -193,7 +193,7 @@ export function selectPlanarRenderPath(
   if (!isAcquisitionPath) {
     if (!supportsVolumeRendering(dataSet)) {
       throw new Error(
-        '[PlanarViewportV2] Non-acquisition rendering requires a valid volume dataset'
+        '[PlanarViewport] Non-acquisition rendering requires a valid volume dataset'
       );
     }
 

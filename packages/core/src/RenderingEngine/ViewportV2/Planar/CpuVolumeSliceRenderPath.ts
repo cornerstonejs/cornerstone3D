@@ -20,7 +20,7 @@ import type {
   PlanarCpuVolumeAdapterContext,
   PlanarPayload,
   PlanarViewportRenderContext,
-} from './PlanarViewportV2Types';
+} from './PlanarViewportTypes';
 import type { PlanarCpuVolumeRendering } from './planarRuntimeTypes';
 import PlanarCPUVolumeSampler from './PlanarCPUVolumeSampler';
 import {
@@ -51,7 +51,7 @@ export class CpuVolumeSliceRenderPath
 
     if (!payload.imageVolume) {
       throw new Error(
-        '[PlanarViewportV2] CPU volume rendering requires a prepared image volume'
+        '[PlanarViewport] CPU volume rendering requires a prepared image volume'
       );
     }
 

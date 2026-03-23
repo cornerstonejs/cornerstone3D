@@ -1,13 +1,2 @@
-import {
-  getColormap,
-  getColormapsList,
-  resolveCPUFallbackColormap,
-} from './colormap';
-import LookupTable from './lookupTable';
-
-export {
-  getColormap,
-  getColormapsList,
-  resolveCPUFallbackColormap,
-  LookupTable,
-};
+export * from './colormap';
+export { default as LookupTable } from './lookupTable';

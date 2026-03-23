@@ -8,7 +8,7 @@ import type {
 import type {
   PlanarDataPresentation,
   PlanarOrientation,
-} from './PlanarViewportV2Types';
+} from './PlanarViewportTypes';
 
 export type PlanarLegacyViewportProperties = Partial<
   Omit<StackViewportProperties & VolumeViewportProperties, 'orientation'> &

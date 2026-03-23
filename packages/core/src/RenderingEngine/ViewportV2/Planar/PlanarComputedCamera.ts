@@ -29,7 +29,7 @@ import type {
   PlanarCamera,
   PlanarPayload,
   PlanarViewportRenderContext,
-} from './PlanarViewportV2Types';
+} from './PlanarViewportTypes';
 import type { PlanarRendering } from './planarRuntimeTypes';
 
 type BasePlanarViewportCameraState = {

@@ -17,6 +17,7 @@ import {
   eventTarget,
   getRenderingEngine,
   init as initCore,
+  getShouldUseCPURendering,
   setUseCPURendering,
   getConfiguration,
   getRenderingEngines,
@@ -32,6 +33,21 @@ import {
 } from '@cornerstonejs/tools';
 
 const viewportV2ConfigurationStack = [];
+const cpuRenderingConfigurationStack = [];
+const KARMA_CURRENT_SPEC_FULL_NAME = '__karmaCurrentSpecFullName';
+const KARMA_LAST_SPEC_FULL_NAME = '__karmaLastSpecFullName';
+const KARMA_LAST_SPEC_DONE_AT = '__karmaLastSpecDoneAt';
+const KARMA_SPEC_REPORTER_INSTALLED = '__karmaSpecReporterInstalled';
+
+installKarmaSpecTracker();
+
+function getForcedViewportV2FromKarma() {
+  return window.__karma__?.config?.forceViewportV2 === true;
+}
+
+function getForcedCpuRenderingFromKarma() {
+  return window.__karma__?.config?.forceCpuRendering === true;
+}
 
 function setupTestEnvironment({
   renderingEngineId = utilities.uuidv4(),
@@ -49,9 +65,14 @@ function setupTestEnvironment({
   initCore();
 
   const renderingConfiguration = getConfiguration().rendering;
+  const resolvedUseViewportV2 = useViewportV2 || getForcedViewportV2FromKarma();
+  const resolvedUseCpuRendering =
+    getShouldUseCPURendering() || getForcedCpuRenderingFromKarma();
 
   viewportV2ConfigurationStack.push(renderingConfiguration.useViewportV2);
-  renderingConfiguration.useViewportV2 = useViewportV2;
+  cpuRenderingConfigurationStack.push(renderingConfiguration.useCPURendering);
+  renderingConfiguration.useViewportV2 = resolvedUseViewportV2;
+  setUseCPURendering(resolvedUseCpuRendering, false);
   initTools();
   tools.forEach((tool) => addTool(tool));
 
@@ -170,12 +191,16 @@ function cleanupTestEnvironment(options = {}) {
   const ONE_GB = 1073741824;
 
   cache.setMaxCacheSize(ONE_GB);
-  setUseCPURendering(false);
 
   const previousUseViewportV2 = viewportV2ConfigurationStack.pop();
+  const previousUseCpuRendering = cpuRenderingConfigurationStack.pop();
 
   if (previousUseViewportV2 !== undefined) {
     getConfiguration().rendering.useViewportV2 = previousUseViewportV2;
+  }
+
+  if (previousUseCpuRendering !== undefined) {
+    setUseCPURendering(previousUseCpuRendering, false);
   }
 
   // Clean up DOM elements
@@ -283,6 +308,9 @@ function compareImages(
   outputName,
   updateBaselines = false
 ) {
+  installKarmaSpecTracker();
+  const testName = getCurrentTestName();
+
   if (updateBaselines) {
     // Store the base64 data in a global object for later processing
     if (!window.__groundTruthUpdates) {
@@ -311,17 +339,47 @@ function compareImages(
     resemble(baseline.default)
       .compareTo(imageDataURL)
       .onComplete((data) => {
+        const mismatchExact = String(data.misMatchPercentage);
         const mismatch = parseFloat(data.misMatchPercentage);
+        const diff = data.getImageDataUrl();
+
+        console.log(
+          `[KARMA_IMAGE_ARTIFACT]${JSON.stringify({
+            actual: imageDataURL,
+            diff,
+            expected: baseline.default,
+            mismatch,
+            mismatchExact,
+            outputName,
+            status: mismatch > 1 ? 'failed' : 'passed',
+            testName,
+          })}`
+        );
+
         // If the error is greater than 1%, fail the test
         // and download the difference image
         // Todo: this should be a configurable threshold
         if (mismatch > 1) {
-          console.warn('mismatch of', mismatch, '% to image', imageDataURL);
-          const diff = data.getImageDataUrl();
+          console.warn(
+            'mismatch of',
+            mismatchExact,
+            '% to image',
+            imageDataURL
+          );
+          console.log(
+            `[KARMA_IMAGE_DIFF]${JSON.stringify({
+              actual: imageDataURL,
+              diff,
+              expected: baseline.default,
+              mismatch,
+              mismatchExact,
+              outputName,
+            })}`
+          );
           // Todo: we should store the diff image somewhere
           reject(
             new Error(
-              `mismatch of ${mismatch} between images for ${outputName},
+              `mismatch of ${mismatchExact} between images for ${outputName},
               the diff image is: \n\n ${diff} \n\n`
             )
           );
@@ -331,6 +389,64 @@ function compareImages(
         }
       });
   });
+}
+
+function getCurrentTestName() {
+  installKarmaSpecTracker();
+
+  if (typeof globalThis[KARMA_CURRENT_SPEC_FULL_NAME] === 'string') {
+    return globalThis[KARMA_CURRENT_SPEC_FULL_NAME];
+  }
+
+  if (
+    typeof globalThis[KARMA_LAST_SPEC_FULL_NAME] === 'string' &&
+    Date.now() - Number(globalThis[KARMA_LAST_SPEC_DONE_AT] || 0) < 5000
+  ) {
+    return globalThis[KARMA_LAST_SPEC_FULL_NAME];
+  }
+
+  const jasmineGlobal = globalThis.jasmine;
+
+  if (!jasmineGlobal) {
+    return undefined;
+  }
+
+  if (typeof jasmineGlobal.currentTest?.fullName === 'string') {
+    return jasmineGlobal.currentTest.fullName;
+  }
+
+  const currentSpec = jasmineGlobal.getEnv?.().currentSpec;
+
+  if (typeof currentSpec?.getFullName === 'function') {
+    return currentSpec.getFullName();
+  }
+
+  if (typeof currentSpec?.result?.fullName === 'string') {
+    return currentSpec.result.fullName;
+  }
+}
+
+function installKarmaSpecTracker() {
+  const jasmineGlobal = globalThis.jasmine;
+
+  if (!jasmineGlobal?.getEnv || globalThis[KARMA_SPEC_REPORTER_INSTALLED]) {
+    return;
+  }
+
+  jasmineGlobal.getEnv().addReporter({
+    specStarted(result) {
+      globalThis[KARMA_CURRENT_SPEC_FULL_NAME] =
+        result.fullName || result.description;
+    },
+    specDone(result) {
+      globalThis[KARMA_LAST_SPEC_FULL_NAME] =
+        result.fullName || result.description;
+      globalThis[KARMA_LAST_SPEC_DONE_AT] = Date.now();
+      delete globalThis[KARMA_CURRENT_SPEC_FULL_NAME];
+    },
+  });
+
+  globalThis[KARMA_SPEC_REPORTER_INSTALLED] = true;
 }
 
 function encodeImageIdInfo(info) {

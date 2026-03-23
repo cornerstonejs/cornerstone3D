@@ -1,7 +1,7 @@
 import type { Point3 } from '../../../types';
 import { OrientationAxis } from '../../../enums';
 import { clonePlanarOrientation } from './planarLegacyCompatibility';
-import type { PlanarCamera } from './PlanarViewportV2Types';
+import type { PlanarCamera } from './PlanarViewportTypes';
 import { normalizePlanarRotation } from './planarViewPresentation';
 
 export function createDefaultPlanarCamera(): PlanarCamera {

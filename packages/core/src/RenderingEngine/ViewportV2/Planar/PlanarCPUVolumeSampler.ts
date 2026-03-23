@@ -15,7 +15,7 @@ import type {
 import VoxelManager from '../../../utilities/VoxelManager';
 import getDefaultViewport from '../../helpers/cpuFallback/rendering/getDefaultViewport';
 import getSpacingInNormalDirection from '../../../utilities/getSpacingInNormalDirection';
-import type { PlanarDataPresentation } from './PlanarViewportV2Types';
+import type { PlanarDataPresentation } from './PlanarViewportTypes';
 
 type SliceArray = PixelDataTypedArray;
 type ColorSample = number[];
@@ -382,9 +382,7 @@ export default class PlanarCPUVolumeSampler {
     const voxelManager = volume.voxelManager;
 
     if (!voxelManager) {
-      throw new Error(
-        '[PlanarViewportV2] CPU volume rendering requires voxels'
-      );
+      throw new Error('[PlanarViewport] CPU volume rendering requires voxels');
     }
 
     const parallelScale = Math.max(camera.parallelScale ?? 1, EPSILON);

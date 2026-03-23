@@ -3,7 +3,7 @@ import { OrientationAxis } from '../../../enums';
 import type { IImageVolume, Point3 } from '../../../types';
 import getAcquisitionPlaneOrientation from '../../../utilities/getAcquisitionPlaneOrientation';
 import { isPlanarOrientationVectors } from './planarLegacyCompatibility';
-import type { PlanarCamera } from './PlanarViewportV2Types';
+import type { PlanarCamera } from './PlanarViewportTypes';
 
 type PlanarCameraVectors = {
   viewPlaneNormal: Point3;

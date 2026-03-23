@@ -52,6 +52,7 @@ temp/
 junit/
 junit.xml
 coverage/
+reports/
 /test-results/
 /playwright-report/
 /blob-report/

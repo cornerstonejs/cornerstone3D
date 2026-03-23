@@ -10,7 +10,7 @@ import type {
   PlanarDataLoadOptions,
   PlanarPayload,
   PlanarRegisteredDataSet,
-} from './PlanarViewportV2Types';
+} from './PlanarViewportTypes';
 
 export class DefaultPlanarDataProvider implements PlanarDataProvider {
   async load(
@@ -21,18 +21,18 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
 
     if (!dataSet) {
       throw new Error(
-        `[PlanarViewportV2] No registered planar dataset for ${dataId}`
+        `[PlanarViewport] No registered planar dataset for ${dataId}`
       );
     }
 
     if (!options) {
       throw new Error(
-        `[PlanarViewportV2] No load options were provided for ${dataId}`
+        `[PlanarViewport] No load options were provided for ${dataId}`
       );
     }
 
     if (!dataSet.imageIds.length) {
-      throw new Error('[PlanarViewportV2] Cannot load an empty planar dataset');
+      throw new Error('[PlanarViewport] Cannot load an empty planar dataset');
     }
 
     const clampedImageIdIndex = Math.min(
