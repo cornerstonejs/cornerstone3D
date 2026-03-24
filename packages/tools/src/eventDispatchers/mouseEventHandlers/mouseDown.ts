@@ -146,6 +146,19 @@ export default function mouseDown(evt: EventTypes.MouseDownEventType) {
     return;
   }
 
+  // Give passive tools a chance to respond to modifier-aware clicks
+  // (e.g., Crosshairs jump-to-click with a held modifier key).
+  if (allPassiveTools?.length) {
+    for (const passiveTool of allPassiveTools) {
+      if (typeof passiveTool.passiveMouseDownCallback === 'function') {
+        const consumed = passiveTool.passiveMouseDownCallback(evt);
+        if (consumed) {
+          return;
+        }
+      }
+    }
+  }
+
   // Run the postMouseDownCallback for the active tool if it exists
   if (activeTool && typeof activeTool.postMouseDownCallback === 'function') {
     const consumedEvent = activeTool.postMouseDownCallback(evt);

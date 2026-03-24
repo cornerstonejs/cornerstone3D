@@ -39,6 +39,7 @@ import {
   hideElementCursor,
 } from '../cursors/elementCursor';
 import liangBarksyClip from '../utilities/math/vec2/liangBarksyClip';
+import getMouseModifier from '../eventDispatchers/shared/getMouseModifier';
 
 import * as lineSegment from '../utilities/math/line';
 import type {
@@ -184,6 +185,14 @@ class CrosshairsTool extends AnnotationTool {
           opacity: 0.8,
           handleRadius: 9,
           referenceLinesCenterGapRatio: 0.05,
+        },
+        // When enabled, holding the specified modifier key and clicking
+        // will jump the crosshairs to the click location even when the
+        // tool is in Passive mode. The modifierKey value should be a
+        // KeyboardBindings enum value (e.g. KeyboardBindings.Shift).
+        jumpOnClick: {
+          enabled: false,
+          modifierKey: undefined,
         },
       },
     }
@@ -540,6 +549,46 @@ class CrosshairsTool extends AnnotationTool {
 
     this._activateModify(element);
     return filteredAnnotations[0];
+  };
+
+  /**
+   * Called by the mouseDown dispatcher for passive tools. When jumpOnClick
+   * is configured, holding the modifier key and clicking will jump the
+   * crosshairs to the click location even while the tool is in Passive mode.
+   */
+  passiveMouseDownCallback = (evt: EventTypes.MouseDownEventType): boolean => {
+    const { jumpOnClick } = this.configuration;
+    if (!jumpOnClick?.enabled || jumpOnClick.modifierKey == null) {
+      return false;
+    }
+
+    const mouseEvent = evt.detail.event as MouseEvent;
+    const pressedModifier = getMouseModifier(mouseEvent);
+
+    if (pressedModifier !== jumpOnClick.modifierKey) {
+      return false;
+    }
+
+    const eventDetail = evt.detail;
+    const { element, currentPoints } = eventDetail;
+    const jumpWorld = currentPoints.world;
+
+    const enabledElement = getEnabledElement(element);
+    if (!enabledElement) {
+      return false;
+    }
+
+    this._syncVolumeListenersWithToolGroup();
+    this._recomputeToolCenterFromAbsoluteCameras({
+      emitEvent: false,
+      updateViewportCameras: false,
+    });
+
+    const jumped = this._jump(enabledElement, jumpWorld);
+    if (jumped) {
+      evt.preventDefault();
+    }
+    return jumped;
   };
 
   cancel = () => {
@@ -1021,11 +1070,7 @@ class CrosshairsTool extends AnnotationTool {
           minimalCrosshairConfig.lineLengthInPx
         );
 
-        vec2.add(
-          refLinePointOne,
-          refLinesCenter,
-          canvasVectorFromCenterStart
-        );
+        vec2.add(refLinePointOne, refLinesCenter, canvasVectorFromCenterStart);
         vec2.add(
           refLinePointTwo,
           refLinePointOne,
@@ -2054,6 +2099,9 @@ class CrosshairsTool extends AnnotationTool {
       emitEvent: true,
       updateViewportCameras: false,
     });
+
+    // Render the source viewport so its crosshair lines update to the new tool center.
+    viewport.render();
 
     state.isInteractingWithTool = false;
 
