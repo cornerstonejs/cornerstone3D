@@ -16,6 +16,7 @@ import {
 } from './planarRenderCamera';
 import {
   createPlanarCpuImageSliceBasis,
+  createPlanarCpuVolumeSliceBasis,
   createPlanarImageSliceBasis,
   createPlanarVolumeSliceBasis,
   type PlanarSliceBasis,
@@ -50,6 +51,7 @@ type PlanarVolumeViewportCameraState = BasePlanarViewportCameraState & {
   currentImageIdIndex: number;
   imageVolume: IImageVolume;
   maxImageIdIndex: number;
+  usePixelGridCenter: boolean;
 };
 
 function clonePoint2(point: Point2): Point2 {
@@ -244,9 +246,11 @@ class PlanarStackViewportCamera extends BasePlanarViewportCamera<PlanarStackView
       image: this.state.image,
     };
 
-    return this.state.usePixelGridCenter
-      ? createPlanarCpuImageSliceBasis(args)
-      : createPlanarImageSliceBasis(args);
+    if (this.state.usePixelGridCenter) {
+      return createPlanarCpuImageSliceBasis(args);
+    }
+
+    return createPlanarImageSliceBasis(args);
   }
 
   protected cloneWithCamera(camera: PlanarCamera): PlanarStackViewportCamera {
@@ -275,7 +279,11 @@ class PlanarVolumeViewportCamera extends BasePlanarViewportCamera<PlanarVolumeVi
   }
 
   protected buildSliceBasis(): PlanarSliceBasis {
-    return createPlanarVolumeSliceBasis({
+    const createSliceBasis = this.state.usePixelGridCenter
+      ? createPlanarCpuVolumeSliceBasis
+      : createPlanarVolumeSliceBasis;
+
+    return createSliceBasis({
       canvasHeight: this.state.canvasHeight,
       canvasWidth: this.state.canvasWidth,
       imageIdIndex: this.state.currentImageIdIndex,
@@ -389,6 +397,7 @@ export function computePlanarViewportCamera(args: {
       frameOfReferenceUID,
       imageVolume: rendering.imageVolume,
       maxImageIdIndex: rendering.maxImageIdIndex,
+      usePixelGridCenter: rendering.renderMode === 'cpuVolume',
     });
   }
 }

@@ -33,7 +33,7 @@ import {
 } from './planarRenderCamera';
 import { applyPlanarVolumePresentation } from './planarVolumePresentation';
 import {
-  createPlanarVolumeSliceBasis,
+  createPlanarCpuVolumeSliceBasis,
   resolvePlanarVolumeImageIdIndex,
 } from './planarSliceBasis';
 
@@ -94,29 +94,44 @@ export class CpuVolumeSliceRenderPath
       removeStreamingSubscriptions: (() => {
         let isActive = true;
         let pendingAnimationFrameId: number | undefined;
-        const unsubscribe = subscribeToVolumeEvents(payload.volumeId, () => {
-          if (!isActive) {
-            return;
-          }
-
-          rendering.pendingVolumeLoadCallback = false;
-          rendering.sampledSliceState = undefined;
-          rendering.renderingInvalidated = true;
-          ctx.display.renderNow();
-          if (!isActive) {
-            return;
-          }
-
-          pendingAnimationFrameId = window.requestAnimationFrame(() => {
-            pendingAnimationFrameId = undefined;
-
+        const unsubscribe = subscribeToVolumeEvents(
+          payload.volumeId,
+          (eventType) => {
             if (!isActive) {
               return;
             }
 
+            const shouldResampleOnDeferredPass =
+              eventType === Events.IMAGE_VOLUME_LOADING_COMPLETED;
+
+            rendering.pendingVolumeLoadCallback = false;
+            rendering.sampledSliceState = undefined;
+            rendering.renderingInvalidated = true;
             ctx.display.renderNow();
-          });
-        });
+            if (!isActive) {
+              return;
+            }
+
+            pendingAnimationFrameId = window.requestAnimationFrame(() => {
+              pendingAnimationFrameId = undefined;
+
+              if (!isActive) {
+                return;
+              }
+
+              if (shouldResampleOnDeferredPass) {
+                // The completion event can arrive before the streamed voxel
+                // buffer is fully stable for CPU sampling. Retry one frame
+                // later, but keep progressive IMAGE_VOLUME_MODIFIED updates on
+                // their lighter redraw path.
+                rendering.sampledSliceState = undefined;
+                rendering.renderingInvalidated = true;
+              }
+
+              ctx.display.renderNow();
+            });
+          }
+        );
 
         return () => {
           isActive = false;
@@ -184,7 +199,7 @@ export class CpuVolumeSliceRenderPath
   ): void {
     const camera = cameraInput as PlanarCamera | undefined;
     const { sliceBasis, currentImageIdIndex, maxImageIdIndex } =
-      createPlanarVolumeSliceBasis({
+      createPlanarCpuVolumeSliceBasis({
         canvasHeight: ctx.cpu.canvas.height,
         canvasWidth: ctx.cpu.canvas.width,
         imageIdIndex: resolvePlanarVolumeImageIdIndex({
@@ -300,8 +315,9 @@ export class CpuVolumeSliceRenderPath
     const loadStatus = (
       runtime.imageVolume as { loadStatus?: { loaded?: boolean } }
     ).loadStatus;
+    const hasStreamedFrameData = hasStreamedVolumeData(runtime.imageVolume);
 
-    if (!loadStatus?.loaded) {
+    if (!loadStatus?.loaded && !hasStreamedFrameData) {
       if (!runtime.pendingVolumeLoadCallback) {
         runtime.pendingVolumeLoadCallback = true;
         runtime.imageVolume.load();
@@ -392,7 +408,7 @@ export class CpuVolumeSliceRenderPath
     ctx: PlanarCpuVolumeAdapterContext,
     rendering: PlanarCpuVolumeRendering
   ): void {
-    const { sliceBasis } = createPlanarVolumeSliceBasis({
+    const { sliceBasis } = createPlanarCpuVolumeSliceBasis({
       canvasWidth: ctx.cpu.canvas.width,
       canvasHeight: ctx.cpu.canvas.height,
       imageIdIndex: rendering.currentImageIdIndex,
@@ -425,7 +441,11 @@ export class CpuVolumeSliceRenderPath
 
 function subscribeToVolumeEvents(
   volumeId: string,
-  onUpdate: () => void
+  onUpdate: (
+    eventType:
+      | Events.IMAGE_VOLUME_MODIFIED
+      | Events.IMAGE_VOLUME_LOADING_COMPLETED
+  ) => void
 ): () => void {
   const handleUpdate = (evt: Event) => {
     const detail = (evt as CustomEvent<{ volumeId?: string }>).detail;
@@ -434,7 +454,11 @@ function subscribeToVolumeEvents(
       return;
     }
 
-    onUpdate();
+    onUpdate(
+      evt.type as
+        | Events.IMAGE_VOLUME_MODIFIED
+        | Events.IMAGE_VOLUME_LOADING_COMPLETED
+    );
   };
 
   eventTarget.addEventListener(Events.IMAGE_VOLUME_MODIFIED, handleUpdate);
@@ -450,6 +474,20 @@ function subscribeToVolumeEvents(
       handleUpdate
     );
   };
+}
+
+function hasStreamedVolumeData(imageVolume: unknown): boolean {
+  const streamingState = imageVolume as {
+    framesLoaded?: number;
+    framesProcessed?: number;
+    framesUpdated?: number;
+  };
+
+  return Boolean(
+    (streamingState.framesLoaded ?? 0) > 0 ||
+      (streamingState.framesProcessed ?? 0) > 0 ||
+      (streamingState.framesUpdated ?? 0) > 0
+  );
 }
 
 export class CpuVolumeSlicePath
