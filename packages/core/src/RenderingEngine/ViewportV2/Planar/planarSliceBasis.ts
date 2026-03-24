@@ -17,7 +17,7 @@
  *     orthogonal orientations with per-slice indexing).
  */
 import { vec3 } from 'gl-matrix';
-import { OrientationAxis } from '../../../enums';
+import { InterpolationType, OrientationAxis } from '../../../enums';
 import type { IImage, IImageVolume, Point3 } from '../../../types';
 import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
 import { getCubeSizeInView } from '../../../utilities/getPlaneCubeIntersectionDimensions';
@@ -620,4 +620,10 @@ export function createPlanarCpuVolumeSliceBasis(args: {
         })
       : MIN_CAMERA_DISTANCE,
   });
+}
+
+export function shouldUsePlanarCpuVolumeSliceBasis(
+  interpolationType: InterpolationType = InterpolationType.LINEAR
+): boolean {
+  return interpolationType === InterpolationType.NEAREST;
 }

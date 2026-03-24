@@ -34,7 +34,9 @@ import {
 import { applyPlanarVolumePresentation } from './planarVolumePresentation';
 import {
   createPlanarCpuVolumeSliceBasis,
+  createPlanarVolumeSliceBasis,
   resolvePlanarVolumeImageIdIndex,
+  shouldUsePlanarCpuVolumeSliceBasis,
 } from './planarSliceBasis';
 
 export class CpuVolumeSliceRenderPath
@@ -151,7 +153,7 @@ export class CpuVolumeSliceRenderPath
     return {
       rendering,
       updateDataPresentation: (props) => {
-        this.updateDataPresentation(rendering, props);
+        this.updateDataPresentation(ctx, rendering, props);
       },
       updateCamera: (camera) => {
         this.updateCamera(ctx, rendering, camera);
@@ -175,9 +177,12 @@ export class CpuVolumeSliceRenderPath
   }
 
   private updateDataPresentation(
+    ctx: PlanarCpuVolumeAdapterContext,
     rendering: PlanarCpuVolumeRendering,
     props: unknown
   ): void {
+    const previousInterpolationType =
+      rendering.dataPresentation?.interpolationType;
     const { slabThickness: _slabThickness, ...dataPresentation } =
       (props as PlanarDataPresentation | undefined) || {};
 
@@ -190,6 +195,16 @@ export class CpuVolumeSliceRenderPath
       defaultVOIRange: rendering.defaultVOIRange,
       props: rendering.dataPresentation,
     });
+
+    if (
+      previousInterpolationType !==
+      rendering.dataPresentation?.interpolationType
+    ) {
+      this.syncRenderCamera(ctx, rendering, rendering.requestedCamera);
+      return;
+    }
+
+    rendering.renderingInvalidated = true;
   }
 
   private updateCamera(
@@ -197,34 +212,12 @@ export class CpuVolumeSliceRenderPath
     rendering: PlanarCpuVolumeRendering,
     cameraInput: unknown
   ): void {
-    const camera = cameraInput as PlanarCamera | undefined;
-    const { sliceBasis, currentImageIdIndex, maxImageIdIndex } =
-      createPlanarCpuVolumeSliceBasis({
-        canvasHeight: ctx.cpu.canvas.height,
-        canvasWidth: ctx.cpu.canvas.width,
-        imageIdIndex: resolvePlanarVolumeImageIdIndex({
-          camera,
-          fallbackImageIdIndex: rendering.currentImageIdIndex,
-        }),
-        imageVolume: rendering.imageVolume,
-        orientation: camera?.orientation,
-      });
-
     ctx.display.activateRenderMode('cpuVolume');
-    rendering.requestedCamera = camera;
-    rendering.renderCamera = resolvePlanarRenderCamera({
-      sliceBasis,
-      camera: rendering.requestedCamera,
-      canvasWidth: ctx.cpu.canvas.width,
-      canvasHeight: ctx.cpu.canvas.height,
-    });
-    applyPlanarRenderCameraToRenderer({
-      renderer: ctx.vtk.renderer,
-      renderCamera: rendering.renderCamera,
-    });
-    rendering.currentImageIdIndex = currentImageIdIndex;
-    rendering.maxImageIdIndex = maxImageIdIndex;
-    rendering.renderingInvalidated = true;
+    this.syncRenderCamera(
+      ctx,
+      rendering,
+      cameraInput as PlanarCamera | undefined
+    );
   }
 
   private canvasToWorld(
@@ -408,24 +401,7 @@ export class CpuVolumeSliceRenderPath
     ctx: PlanarCpuVolumeAdapterContext,
     rendering: PlanarCpuVolumeRendering
   ): void {
-    const { sliceBasis } = createPlanarCpuVolumeSliceBasis({
-      canvasWidth: ctx.cpu.canvas.width,
-      canvasHeight: ctx.cpu.canvas.height,
-      imageIdIndex: rendering.currentImageIdIndex,
-      imageVolume: rendering.imageVolume,
-      orientation: rendering.requestedCamera?.orientation,
-    });
-    rendering.renderCamera = resolvePlanarRenderCamera({
-      sliceBasis,
-      camera: rendering.requestedCamera,
-      canvasWidth: ctx.cpu.canvas.width,
-      canvasHeight: ctx.cpu.canvas.height,
-    });
-    applyPlanarRenderCameraToRenderer({
-      renderer: ctx.vtk.renderer,
-      renderCamera: rendering.renderCamera,
-    });
-    rendering.renderingInvalidated = true;
+    this.syncRenderCamera(ctx, rendering, rendering.requestedCamera);
   }
 
   private removeData(
@@ -436,6 +412,54 @@ export class CpuVolumeSliceRenderPath
 
     removeStreamingSubscriptions?.();
     ctx.vtk.renderer.removeVolume(actor);
+  }
+
+  private syncRenderCamera(
+    ctx: PlanarCpuVolumeAdapterContext,
+    rendering: PlanarCpuVolumeRendering,
+    camera: PlanarCamera | undefined
+  ): void {
+    const requestedCamera = camera ?? rendering.requestedCamera;
+    const { sliceBasis, currentImageIdIndex, maxImageIdIndex } =
+      this.resolveVolumeSliceBasis(ctx, rendering, requestedCamera);
+
+    rendering.requestedCamera = requestedCamera;
+    rendering.renderCamera = resolvePlanarRenderCamera({
+      sliceBasis,
+      camera: rendering.requestedCamera,
+      canvasWidth: ctx.cpu.canvas.width,
+      canvasHeight: ctx.cpu.canvas.height,
+    });
+    applyPlanarRenderCameraToRenderer({
+      renderer: ctx.vtk.renderer,
+      renderCamera: rendering.renderCamera,
+    });
+    rendering.currentImageIdIndex = currentImageIdIndex;
+    rendering.maxImageIdIndex = maxImageIdIndex;
+    rendering.renderingInvalidated = true;
+  }
+
+  private resolveVolumeSliceBasis(
+    ctx: PlanarCpuVolumeAdapterContext,
+    rendering: PlanarCpuVolumeRendering,
+    camera: PlanarCamera | undefined
+  ) {
+    const createSliceBasis = shouldUsePlanarCpuVolumeSliceBasis(
+      rendering.dataPresentation?.interpolationType
+    )
+      ? createPlanarCpuVolumeSliceBasis
+      : createPlanarVolumeSliceBasis;
+
+    return createSliceBasis({
+      canvasHeight: ctx.cpu.canvas.height,
+      canvasWidth: ctx.cpu.canvas.width,
+      imageIdIndex: resolvePlanarVolumeImageIdIndex({
+        camera,
+        fallbackImageIdIndex: rendering.currentImageIdIndex,
+      }),
+      imageVolume: rendering.imageVolume,
+      orientation: camera?.orientation,
+    });
   }
 }
 

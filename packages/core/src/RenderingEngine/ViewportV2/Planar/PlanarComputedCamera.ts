@@ -21,6 +21,7 @@ import {
   createPlanarVolumeSliceBasis,
   type PlanarSliceBasis,
   resolvePlanarVolumeImageIdIndex,
+  shouldUsePlanarCpuVolumeSliceBasis,
 } from './planarSliceBasis';
 import {
   createDefaultPlanarCamera,
@@ -397,7 +398,11 @@ export function computePlanarViewportCamera(args: {
       frameOfReferenceUID,
       imageVolume: rendering.imageVolume,
       maxImageIdIndex: rendering.maxImageIdIndex,
-      usePixelGridCenter: rendering.renderMode === 'cpuVolume',
+      usePixelGridCenter:
+        rendering.renderMode === 'cpuVolume' &&
+        shouldUsePlanarCpuVolumeSliceBasis(
+          rendering.dataPresentation?.interpolationType
+        ),
     });
   }
 }
