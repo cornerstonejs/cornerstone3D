@@ -8,6 +8,7 @@ import type {
 import ViewportComputedCamera from '../ViewportComputedCamera';
 import {
   canvasToWorldPlanarCamera,
+  getCanvasCssDimensions,
   worldToCanvasPlanarCamera,
 } from './planarAdapterCoordinateTransforms';
 import {
@@ -315,10 +316,7 @@ export function getPlanarCameraCanvasDimensions(args: {
     rendering.renderMode === 'cpu2d' ||
     rendering.renderMode === 'cpuVolume'
   ) {
-    return {
-      canvasHeight: renderContext.cpu.canvas.height,
-      canvasWidth: renderContext.cpu.canvas.width,
-    };
+    return getCanvasCssDimensions(renderContext.cpu.canvas);
   }
 
   return {

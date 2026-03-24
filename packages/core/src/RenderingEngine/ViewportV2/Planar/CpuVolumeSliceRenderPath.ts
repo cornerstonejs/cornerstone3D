@@ -25,6 +25,7 @@ import type { PlanarCpuVolumeRendering } from './planarRuntimeTypes';
 import PlanarCPUVolumeSampler from './PlanarCPUVolumeSampler';
 import {
   canvasToWorldPlanarCamera,
+  getCanvasCssDimensions,
   worldToCanvasPlanarCamera,
 } from './planarAdapterCoordinateTransforms';
 import {
@@ -236,6 +237,10 @@ export class CpuVolumeSliceRenderPath
       return [0, 0, 0];
     }
 
+    const { canvasWidth, canvasHeight } = getCanvasCssDimensions(
+      ctx.cpu.canvas
+    );
+
     return canvasToWorldPlanarCamera({
       camera: {
         focalPoint: renderCamera.focalPoint,
@@ -243,8 +248,8 @@ export class CpuVolumeSliceRenderPath
         viewPlaneNormal: renderCamera.viewPlaneNormal,
         viewUp: renderCamera.viewUp,
       },
-      canvasWidth: ctx.cpu.canvas.width,
-      canvasHeight: ctx.cpu.canvas.height,
+      canvasWidth,
+      canvasHeight,
       canvasPos,
     });
   }
@@ -265,6 +270,10 @@ export class CpuVolumeSliceRenderPath
       return [0, 0];
     }
 
+    const { canvasWidth, canvasHeight } = getCanvasCssDimensions(
+      ctx.cpu.canvas
+    );
+
     return worldToCanvasPlanarCamera({
       camera: {
         focalPoint: renderCamera.focalPoint,
@@ -272,8 +281,8 @@ export class CpuVolumeSliceRenderPath
         viewPlaneNormal: renderCamera.viewPlaneNormal,
         viewUp: renderCamera.viewUp,
       },
-      canvasWidth: ctx.cpu.canvas.width,
-      canvasHeight: ctx.cpu.canvas.height,
+      canvasWidth,
+      canvasHeight,
       worldPos,
     });
   }

@@ -103,6 +103,19 @@ export function worldToCanvasPlanarCamera(args: {
   ];
 }
 
+export function getCanvasCssDimensions(canvas: HTMLCanvasElement): {
+  canvasWidth: number;
+  canvasHeight: number;
+} {
+  const devicePixelRatio =
+    typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1;
+
+  return {
+    canvasWidth: canvas.width / devicePixelRatio,
+    canvasHeight: canvas.height / devicePixelRatio,
+  };
+}
+
 export function canvasToWorldCPUImage(
   enabledElement: CPUFallbackEnabledElement,
   image: IImage,

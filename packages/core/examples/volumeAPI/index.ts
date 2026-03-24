@@ -309,8 +309,8 @@ async function run() {
     type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
-      orientation: Enums.OrientationAxis.SAGITTAL,
-      background: [0.2, 0, 0.2] as Types.Point3,
+      // orientation: Enums.OrientationAxis.SAGITTAL,
+      // background: [0.2, 0, 0.2] as Types.Point3,
     },
   };
 

@@ -936,10 +936,13 @@ class PlanarViewport extends ViewportV2<
 
     const { clientHeight, clientWidth } = this.element;
     const { canvas } = this.renderContext.cpu;
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const targetWidth = Math.round(clientWidth * devicePixelRatio);
+    const targetHeight = Math.round(clientHeight * devicePixelRatio);
 
-    if (canvas.width !== clientWidth || canvas.height !== clientHeight) {
-      canvas.width = clientWidth;
-      canvas.height = clientHeight;
+    if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
     }
 
     this.resizeBindings();

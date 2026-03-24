@@ -41,6 +41,7 @@ import type {
 import type { PlanarCpuImageRendering } from './planarRuntimeTypes';
 import {
   canvasToWorldPlanarCamera,
+  getCanvasCssDimensions,
   worldToCanvasPlanarCamera,
 } from './planarAdapterCoordinateTransforms';
 import type { DerivedPlanarPresentation } from './planarRenderCamera';
@@ -210,6 +211,10 @@ export class CpuImageSliceRenderPath
       return [0, 0, 0];
     }
 
+    const { canvasWidth, canvasHeight } = getCanvasCssDimensions(
+      ctx.cpu.canvas
+    );
+
     return canvasToWorldPlanarCamera({
       camera: {
         focalPoint: renderCamera.focalPoint,
@@ -217,8 +222,8 @@ export class CpuImageSliceRenderPath
         viewPlaneNormal: renderCamera.viewPlaneNormal,
         viewUp: renderCamera.viewUp,
       },
-      canvasWidth: ctx.cpu.canvas.width,
-      canvasHeight: ctx.cpu.canvas.height,
+      canvasWidth,
+      canvasHeight,
       canvasPos,
     });
   }
@@ -239,6 +244,10 @@ export class CpuImageSliceRenderPath
       return [0, 0];
     }
 
+    const { canvasWidth, canvasHeight } = getCanvasCssDimensions(
+      ctx.cpu.canvas
+    );
+
     return worldToCanvasPlanarCamera({
       camera: {
         focalPoint: renderCamera.focalPoint,
@@ -246,8 +255,8 @@ export class CpuImageSliceRenderPath
         viewPlaneNormal: renderCamera.viewPlaneNormal,
         viewUp: renderCamera.viewUp,
       },
-      canvasWidth: ctx.cpu.canvas.width,
-      canvasHeight: ctx.cpu.canvas.height,
+      canvasWidth,
+      canvasHeight,
       worldPos,
     });
   }
