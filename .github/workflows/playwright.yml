@@ -17,6 +17,9 @@ jobs:
         node-version: [20]
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Use PR head SHA for pull_request events instead of refs/pull/*/merge.
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.2.23
