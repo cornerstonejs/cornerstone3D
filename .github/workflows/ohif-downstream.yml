@@ -80,6 +80,8 @@ jobs:
         working-directory: ${{ env.OHIF_DIR }}
         env:
           PLAYWRIGHT_HTML_OPEN: never
+          # OHIF Playwright: use *-linux.png baselines + retries: 1 (see playwright.config.ts, screenshotPathForOhifDownstream).
+          OHIF_DOWNSTREAM: '1'
         run: bun run test:e2e:ci
 
       - name: Upload OHIF Playwright artifacts
