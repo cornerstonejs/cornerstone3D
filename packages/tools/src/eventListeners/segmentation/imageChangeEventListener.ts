@@ -111,6 +111,8 @@ function _imageChangeEventListener(evt) {
   // or any actor that needs to be added (which it is added later down), but remove
   // it here if it is not needed
   labelmapActors.forEach((actor) => {
+    // if cannot find a representation for this actor means it has stuck around
+    // from previous renderings and should be removed
     const belongsToActiveSegmentation = labelmapRepresentations.some(
       (representation) =>
         (actor.representationUID as string)?.startsWith(
