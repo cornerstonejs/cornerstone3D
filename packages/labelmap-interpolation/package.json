@@ -54,6 +54,10 @@
     "@itk-wasm/morphological-contour-interpolation": "1.1.0",
     "itk-wasm": "1.0.0-b.165"
   },
+  "devDependencies": {
+    "@cornerstonejs/core": "4.20.0",
+    "@cornerstonejs/tools": "4.20.0"
+  },
   "peerDependencies": {
     "@cornerstonejs/core": "4.20.0",
     "@cornerstonejs/tools": "4.20.0",

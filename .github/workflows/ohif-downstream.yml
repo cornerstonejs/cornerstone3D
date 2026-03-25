@@ -12,26 +12,20 @@ jobs:
   ohif-downstream:
     name: OHIF downstream tests against this PR
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 60
     env:
-      BUN_VERSION: 1.2.23
-      NODE_VERSION: 20
-      OHIF_REF: master
+      BUN_VERSION: 1.3.10
+      NODE_VERSION: 24
+      # Passed through to OHIF Playwright tests/tests/testEnv.ts (headless Linux limitations).
+      OHIF_NO_GPU: '1'
+      OHIF_LINUX_TEXT: '1'
+      OHIF_REF: fix/cs3d-combined-integration
+      # Update this to the next number to rebuild the OHIF checkout
+      OHIF_REBUILD: 2
       OHIF_DIR: ohif
     steps:
       - name: Checkout Cornerstone
         uses: actions/checkout@v4
-
-      - name: Log build context (OHIF/CS3D branch and version for build diagnosis)
-        run: |
-          echo "::notice::Build type: ohif-downstream | CS3D: ${{ github.repository }}@${{ github.ref }} (${{ github.sha }}) | OHIF ref: ${{ env.OHIF_REF }}"
-          CS3D_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-          CS3D_SHA=$(git rev-parse --short HEAD)
-          echo "[build-context] ═══════════════════════════════════════════════════════════════"
-          echo "[build-context] Build type: ohif-downstream (CS3D repo validating against OHIF)"
-          echo "[build-context] CS3D branch: $CS3D_BRANCH | CS3D SHA: $CS3D_SHA"
-          echo "[build-context] OHIF ref: ${{ env.OHIF_REF }}"
-          echo "[build-context] ═══════════════════════════════════════════════════════════════"
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
@@ -55,8 +49,20 @@ jobs:
           repository: OHIF/Viewers
           ref: ${{ env.OHIF_REF }}
           path: ${{ env.OHIF_DIR }}
-          fetch-depth: 1
+          fetch-depth: 0
           submodules: recursive
+
+      - name: Log build context (OHIF/CS3D branch and version for build diagnosis)
+        run: |
+          CS3D_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          CS3D_SHA=$(git rev-parse HEAD)
+          OHIF_BRANCH=$(git -C "${OHIF_DIR}" rev-parse --abbrev-ref HEAD)
+          OHIF_SHA=$(git -C "${OHIF_DIR}" rev-parse HEAD)
+          echo "::notice::Build type: ohif-downstream | OHIF: OHIF/Viewers@${OHIF_BRANCH} (${OHIF_SHA}) | CS3D: ${{ github.repository }}@${CS3D_BRANCH} (${CS3D_SHA})"
+          echo "[build-context] ═══════════════════════════════════════════════════════════════"
+          echo "[build-context] Build type: ohif-downstream (CS3D repo validating against OHIF)"
+          echo "[build-context] OHIF checkout: ${OHIF_BRANCH} (${OHIF_SHA}) | CS3D checkout: ${CS3D_BRANCH} (${CS3D_SHA})"
+          echo "[build-context] ═══════════════════════════════════════════════════════════════"
 
       - name: Install OHIF dependencies
         working-directory: ${{ env.OHIF_DIR }}
@@ -76,7 +82,11 @@ jobs:
       - name: Run OHIF e2e tests
         working-directory: ${{ env.OHIF_DIR }}
         env:
+          TEST_ENV: 'true'
           PLAYWRIGHT_HTML_OPEN: never
+          # OHIF_NO_GPU / OHIF_LINUX_TEXT: from job env → tests/testEnv.ts
+          # OHIF Playwright: use *-linux.png baselines + retries: 1 (see playwright.config.ts, screenshotPathForOhifDownstream).
+          OHIF_DOWNSTREAM: '1'
         run: bun run test:e2e:ci
 
       - name: Upload OHIF Playwright artifacts

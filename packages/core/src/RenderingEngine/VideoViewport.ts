@@ -1185,6 +1185,7 @@ class VideoViewport extends Viewport {
       (actor.actor as ICanvasActor).render(this, this.canvasContext);
     }
     this.canvasContext.resetTransform();
+    this.setRendered();
 
     // This is stack new image to agree with stack/non-volume viewports
     triggerEvent(this.element, EVENTS.STACK_NEW_IMAGE, {

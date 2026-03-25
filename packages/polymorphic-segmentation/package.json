@@ -52,6 +52,10 @@
   "dependencies": {
     "@icr/polyseg-wasm": "0.4.0"
   },
+  "devDependencies": {
+    "@cornerstonejs/core": "4.20.0",
+    "@cornerstonejs/tools": "4.20.0"
+  },
   "peerDependencies": {
     "@cornerstonejs/core": "4.20.0",
     "@cornerstonejs/tools": "4.20.0",
