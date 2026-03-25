@@ -21,7 +21,7 @@ jobs:
       OHIF_LINUX_TEXT: '1'
       OHIF_REF: fix/cs3d-combined-integration
       # Update this to the next number to rebuild the OHIF checkout
-      OHIF_REBUILD: 1
+      OHIF_REBUILD: 2
       OHIF_DIR: ohif
     steps:
       - name: Checkout Cornerstone
