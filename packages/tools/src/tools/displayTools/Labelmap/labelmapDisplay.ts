@@ -481,13 +481,17 @@ function _needsTransferFunctionUpdate(
     oldSegmentColor[2] !== segmentColor[2];
   // oldCfunMTime !== cfun.getMTime();
 
+  const segmentsHiddenChanged =
+    oldSegmentsHidden.size !== segmentsHidden.size ||
+    [...segmentsHidden].some((idx) => !oldSegmentsHidden.has(idx));
+
   const forceOpacityUpdate =
     oldSegmentColor[3] !== segmentColor[3] ||
     oldFillAlpha !== fillAlpha ||
     oldRenderFill !== renderFill ||
     oldRenderOutline !== renderOutline ||
     oldOutlineWidth !== outlineWidth ||
-    oldSegmentsHidden !== segmentsHidden;
+    segmentsHiddenChanged;
 
   // Update the cache only if needed
   if (forceOpacityUpdate || forceColorUpdate) {
