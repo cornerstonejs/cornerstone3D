@@ -75,7 +75,7 @@ interface Cornerstone3DConfig {
      * WHOLE_SLIDE) are automatically remapped to their V2 equivalents
      * (PLANAR_V2, VIDEO_V2, ECG_V2, etc.) at viewport creation time.
      */
-    useViewportV2?: boolean;
+    useViewportNext?: boolean;
   };
 
   debug: {

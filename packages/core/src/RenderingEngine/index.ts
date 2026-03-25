@@ -9,41 +9,41 @@ import VolumeViewport3D from './VolumeViewport3D';
 import {
   defaultRenderPathResolver,
   DefaultRenderPathResolver,
-  ViewportV2,
-} from './ViewportV2';
-import ECGViewportV2, {
+  ViewportNext,
+} from './ViewportNext';
+import ECGViewportNext, {
   CanvasECGPath,
   DefaultECGDataProvider,
-} from './ViewportV2/ECG';
-import VideoViewportV2, {
+} from './ViewportNext/ECG';
+import VideoViewportNext, {
   DefaultVideoDataProvider,
   HtmlVideoPath,
-} from './ViewportV2/Video';
+} from './ViewportNext/Video';
 import PlanarViewport, {
   CpuImageSlicePath,
   DefaultPlanarDataProvider,
   VtkImageMapperPath,
   VtkVolumeMapperPath,
-} from './ViewportV2/Planar';
+} from './ViewportNext/Planar';
 import VolumeViewport3DV2, {
   DefaultVolume3DDataProvider,
   VtkGeometry3DPath,
   VtkVolume3DPath,
-} from './ViewportV2/Volume3D';
-import WSIViewportV2, {
+} from './ViewportNext/Volume3D';
+import WSIViewportNext, {
   DefaultWSIDataProvider,
   DicomMicroscopyPath,
-} from './ViewportV2/WSI';
+} from './ViewportNext/WSI';
 export * from './helpers';
 
 const renderingEngineExportsV2 = {
-  ViewportV2,
+  ViewportNext,
   DefaultRenderPathResolver,
   defaultRenderPathResolver,
-  ECGViewportV2,
+  ECGViewportNext,
   CanvasECGPath,
   DefaultECGDataProvider,
-  VideoViewportV2,
+  VideoViewportNext,
   HtmlVideoPath,
   DefaultVideoDataProvider,
   PlanarViewport,
@@ -55,7 +55,7 @@ const renderingEngineExportsV2 = {
   VtkVolume3DPath,
   VtkGeometry3DPath,
   DefaultVolume3DDataProvider,
-  WSIViewportV2,
+  WSIViewportNext,
   DicomMicroscopyPath,
   DefaultWSIDataProvider,
 };
@@ -69,13 +69,13 @@ export {
   VolumeViewport,
   VolumeViewport3D,
   StackViewport,
-  ViewportV2,
+  ViewportNext,
   DefaultRenderPathResolver,
   defaultRenderPathResolver,
-  ECGViewportV2,
+  ECGViewportNext,
   CanvasECGPath,
   DefaultECGDataProvider,
-  VideoViewportV2,
+  VideoViewportNext,
   HtmlVideoPath,
   DefaultVideoDataProvider,
   PlanarViewport,
@@ -87,7 +87,7 @@ export {
   VtkVolume3DPath,
   VtkGeometry3DPath,
   DefaultVolume3DDataProvider,
-  WSIViewportV2,
+  WSIViewportNext,
   DicomMicroscopyPath,
   DefaultWSIDataProvider,
   renderingEngineExportsV2,

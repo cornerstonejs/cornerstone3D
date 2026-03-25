@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 
-function shouldForceViewportV2() {
+function shouldForceViewportNext() {
   return process.env.PLAYWRIGHT_FORCE_VIEWPORT_V2 === 'true';
 }
 
@@ -50,7 +50,7 @@ export const visitExample = async (
   if (href) {
     const exampleUrl = new URL(href, page.url());
 
-    if (shouldForceViewportV2()) {
+    if (shouldForceViewportNext()) {
       exampleUrl.searchParams.set('type', 'next');
     }
 
@@ -62,10 +62,10 @@ export const visitExample = async (
   } else {
     await link.click();
 
-    if (shouldForceViewportV2() || shouldForceCpuRendering()) {
+    if (shouldForceViewportNext() || shouldForceCpuRendering()) {
       const exampleUrl = new URL(page.url());
 
-      if (shouldForceViewportV2()) {
+      if (shouldForceViewportNext()) {
         exampleUrl.searchParams.set('type', 'next');
       }
 

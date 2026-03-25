@@ -1,6 +1,6 @@
 import type WSIViewport from '../RenderingEngine/WSIViewport';
-import type WSIViewportV2 from '../RenderingEngine/ViewportV2/WSI/WSIViewportV2';
+import type WSIViewportNext from '../RenderingEngine/ViewportNext/WSI/WSIViewportNext';
 
-type IWSIViewport = WSIViewport | WSIViewportV2;
+type IWSIViewport = WSIViewport | WSIViewportNext;
 
 export type { IWSIViewport as default };

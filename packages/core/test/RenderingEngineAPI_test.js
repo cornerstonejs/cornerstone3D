@@ -159,7 +159,7 @@ describe('RenderingEngineAPI -- ', () => {
     beforeEach(function () {
       const testEnv = setupTestEnvironment({
         renderingEngineId,
-        useViewportV2: true,
+        useViewportNext: true,
       });
       renderingEngine = testEnv.renderingEngine;
     });

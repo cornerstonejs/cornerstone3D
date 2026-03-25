@@ -26,18 +26,18 @@ import {
   viewportHasPan,
   viewportHasZoom,
   ViewportComputedCamera,
-  ViewportV2,
-} from './RenderingEngine/ViewportV2';
-import ECGViewportV2, {
+  ViewportNext,
+} from './RenderingEngine/ViewportNext';
+import ECGViewportNext, {
   CanvasECGPath,
   DefaultECGDataProvider,
   ECGComputedCamera,
-} from './RenderingEngine/ViewportV2/ECG';
-import VideoViewportV2, {
+} from './RenderingEngine/ViewportNext/ECG';
+import VideoViewportNext, {
   DefaultVideoDataProvider,
   HtmlVideoPath,
   VideoComputedCamera,
-} from './RenderingEngine/ViewportV2/Video';
+} from './RenderingEngine/ViewportNext/Video';
 import PlanarViewport, {
   BasePlanarViewportCamera,
   CpuImageSlicePath,
@@ -47,18 +47,18 @@ import PlanarViewport, {
   PlanarVolumeViewportCamera,
   VtkImageMapperPath,
   VtkVolumeMapperPath,
-} from './RenderingEngine/ViewportV2/Planar';
+} from './RenderingEngine/ViewportNext/Planar';
 import VolumeViewport3DV2, {
   DefaultVolume3DDataProvider,
   Volume3DComputedCamera,
   VtkGeometry3DPath,
   VtkVolume3DPath,
-} from './RenderingEngine/ViewportV2/Volume3D';
-import WSIViewportV2, {
+} from './RenderingEngine/ViewportNext/Volume3D';
+import WSIViewportNext, {
   DefaultWSIDataProvider,
   DicomMicroscopyPath,
   WSIComputedCamera,
-} from './RenderingEngine/ViewportV2/WSI';
+} from './RenderingEngine/ViewportNext/WSI';
 import Viewport from './RenderingEngine/Viewport';
 import eventTarget from './eventTarget';
 import { version } from './version';
@@ -86,7 +86,7 @@ import * as metaData from './metaData';
 import {
   init,
   getShouldUseCPURendering,
-  getUseViewportV2,
+  getUseViewportNext,
   isCornerstoneInitialized,
   setUseCPURendering,
   setPreferSizeOverAccuracy,
@@ -136,15 +136,15 @@ import {
 export * from './loaders/decimatedVolumeLoader';
 
 const renderingEngineExportsV2 = {
-  ViewportV2,
+  ViewportNext,
   ViewportComputedCamera,
   DefaultRenderPathResolver,
   defaultRenderPathResolver,
-  ECGViewportV2,
+  ECGViewportNext,
   CanvasECGPath,
   DefaultECGDataProvider,
   ECGComputedCamera,
-  VideoViewportV2,
+  VideoViewportNext,
   HtmlVideoPath,
   DefaultVideoDataProvider,
   VideoComputedCamera,
@@ -162,7 +162,7 @@ const renderingEngineExportsV2 = {
   VtkGeometry3DPath,
   DefaultVolume3DDataProvider,
   Volume3DComputedCamera,
-  WSIViewportV2,
+  WSIViewportNext,
   DicomMicroscopyPath,
   DefaultWSIDataProvider,
   WSIComputedCamera,
@@ -204,9 +204,9 @@ export {
   VideoViewport,
   WSIViewport,
   ECGViewport,
-  ECGViewportV2,
+  ECGViewportNext,
   ECGComputedCamera,
-  ViewportV2,
+  ViewportNext,
   ViewportComputedCamera,
   viewportHasCanvasWorldTransform,
   viewportHasFrameOfReferenceUID,
@@ -252,7 +252,7 @@ export {
   defaultRenderPathResolver,
   CanvasECGPath,
   DefaultECGDataProvider,
-  VideoViewportV2,
+  VideoViewportNext,
   HtmlVideoPath,
   DefaultVideoDataProvider,
   PlanarViewport,
@@ -268,7 +268,7 @@ export {
   VtkVolume3DPath,
   VtkGeometry3DPath,
   DefaultVolume3DDataProvider,
-  WSIViewportV2,
+  WSIViewportNext,
   DicomMicroscopyPath,
   DefaultWSIDataProvider,
   renderingEngineExportsV2,
@@ -281,8 +281,8 @@ export {
   setUseCPURendering,
   setPreferSizeOverAccuracy,
   resetUseCPURendering,
-  // ViewportV2
-  getUseViewportV2,
+  // ViewportNext
+  getUseViewportNext,
   // Geometry Loader
   geometryLoader,
   cornerstoneMeshLoader,

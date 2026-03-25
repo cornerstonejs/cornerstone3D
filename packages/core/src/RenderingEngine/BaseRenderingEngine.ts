@@ -10,7 +10,7 @@ import viewportTypeUsesCustomRenderingPipeline, {
 import getOrCreateCanvas from './helpers/getOrCreateCanvas';
 import {
   getShouldUseCPURendering,
-  getUseViewportV2,
+  getUseViewportNext,
   isCornerstoneInitialized,
   getConfiguration,
 } from '../init';
@@ -445,7 +445,7 @@ abstract class BaseRenderingEngine {
 
   /**
    * Map from legacy viewport types to their V2 equivalents.
-   * Used when `rendering.useViewportV2` is enabled.
+   * Used when `rendering.useViewportNext` is enabled.
    */
   private static readonly V2_TYPE_REMAP: Partial<
     Record<ViewportType, ViewportType>
@@ -464,7 +464,7 @@ abstract class BaseRenderingEngine {
     const { defaultOptions } = viewportInputEntry;
 
     // Remap legacy types to V2 when the flag is set
-    if (getUseViewportV2()) {
+    if (getUseViewportNext()) {
       const remapped = BaseRenderingEngine.V2_TYPE_REMAP[type];
       if (remapped) {
         type = remapped;

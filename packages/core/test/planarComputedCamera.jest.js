@@ -8,7 +8,7 @@ import * as metaData from '../src/metaData';
 import {
   PlanarStackViewportCamera,
   PlanarVolumeViewportCamera,
-} from '../src/RenderingEngine/ViewportV2/Planar';
+} from '../src/RenderingEngine/ViewportNext/Planar';
 
 function createImage(imageId = 'image-1') {
   return {
