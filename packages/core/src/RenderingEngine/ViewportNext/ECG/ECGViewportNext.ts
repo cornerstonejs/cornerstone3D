@@ -4,13 +4,7 @@ import type { LoadedData } from '../ViewportArchitectureTypes';
 import ViewportNext from '../ViewportNext';
 import { ViewportType } from '../../../enums';
 import { getDefaultECGValueRange } from '../../../utilities/ECGUtilities';
-import type {
-  CPUIImageData,
-  ICamera,
-  Mat3,
-  Point2,
-  Point3,
-} from '../../../types';
+import type { CPUIImageData, Mat3, Point2, Point3 } from '../../../types';
 import { CanvasECGPath } from './CanvasECGRenderPath';
 import { DefaultECGDataProvider } from './DefaultECGDataProvider';
 import type {
@@ -438,50 +432,6 @@ class ECGViewportNext extends ViewportNext<
       metrics: rendering.metrics,
       waveform,
     });
-  }
-
-  canvasToWorld(canvasPos: Point2): Point3 {
-    const computedCamera = this.getComputedCamera();
-
-    if (!computedCamera) {
-      throw new Error(
-        `[ECGViewportNext] Cannot convert canvas to world for viewport ${this.id} because no waveform is mounted.`
-      );
-    }
-
-    return computedCamera.canvasToWorld(canvasPos);
-  }
-
-  worldToCanvas(worldPos: Point3): Point2 {
-    const computedCamera = this.getComputedCamera();
-
-    if (!computedCamera) {
-      throw new Error(
-        `[ECGViewportNext] Cannot convert world to canvas for viewport ${this.id} because no waveform is mounted.`
-      );
-    }
-
-    return computedCamera.worldToCanvas(worldPos);
-  }
-
-  override getFrameOfReferenceUID(): string {
-    return (
-      this.getComputedCamera()?.getFrameOfReferenceUID() ||
-      `ecg-viewport-${this.id}`
-    );
-  }
-
-  protected getCameraForEvent(): ICamera {
-    return (
-      this.getComputedCamera()?.toICamera() ?? {
-        parallelProjection: true,
-        focalPoint: [0, 0, 0],
-        position: [0, 0, 0],
-        viewUp: [0, -1, 0],
-        parallelScale: 1,
-        viewPlaneNormal: [0, 0, 1],
-      }
-    );
   }
 
   private applyComputedCameraState(nextCamera: ECGCamera): void {

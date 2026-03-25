@@ -1,6 +1,6 @@
 import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
 import ViewportNext from '../ViewportNext';
-import type { ICamera, Point2 } from '../../../types';
+import type { Point2 } from '../../../types';
 import { ViewportType } from '../../../enums';
 import {
   frameNumberToTimeSeconds,
@@ -19,7 +19,6 @@ import type {
   VideoDataPresentation,
   VideoElementRenderContext,
   VideoElementRendering,
-  VideoProperties,
   VideoStreamPayload,
   VideoViewportNextInput,
 } from './VideoViewportNextTypes';
@@ -37,6 +36,8 @@ class VideoViewportNext extends ViewportNext<
   VideoDataPresentation,
   VideoElementRenderContext
 > {
+  // ── Fields ───────────────────────────────────────────────────────────
+
   readonly type = ViewportType.VIDEO_V2;
   readonly id: string;
   readonly element: HTMLDivElement;
@@ -46,13 +47,13 @@ class VideoViewportNext extends ViewportNext<
   private trackedVideoElement?: HTMLVideoElement;
   private cleanupTrackedVideoElement?: () => void;
 
+  // ── Static ───────────────────────────────────────────────────────────
+
   static get useCustomRenderingPipeline(): boolean {
     return true;
   }
 
-  getUseCustomRenderingPipeline(): boolean {
-    return true;
-  }
+  // ── Constructor ──────────────────────────────────────────────────────
 
   constructor(args: VideoViewportNextInput) {
     super();
@@ -79,6 +80,10 @@ class VideoViewportNext extends ViewportNext<
       this.renderingEngineId
     );
   }
+
+  // ====================================================================
+  // Public API -- data
+  // ====================================================================
 
   /**
    * Adds one or more video datasets using the HTML video render path.
@@ -134,16 +139,38 @@ class VideoViewportNext extends ViewportNext<
     return renderingIds;
   }
 
-  protected normalizeCamera(camera: VideoCamera): VideoCamera {
-    return normalizeVideoCamera(camera);
+  /**
+   * Removes a video dataset and rebinds tracking if the primary video changed.
+   *
+   * @param dataId - Logical dataset id to remove.
+   */
+  removeData(dataId: string): void {
+    const firstDataId = this.getFirstBinding()?.data.id;
+
+    super.removeData(dataId);
+
+    if (firstDataId === dataId) {
+      this.untrackVideoElement();
+      this.trackVideoElement();
+    }
   }
 
+  // ====================================================================
+  // Public API -- camera & navigation
+  // ====================================================================
+
+  /**
+   * Returns the current zoom level derived from camera scale.
+   */
   getZoom(): number {
     return (
       this.getComputedCamera()?.zoom ?? Math.max(this.camera.scale ?? 1, 0.001)
     );
   }
 
+  /**
+   * Sets the zoom level, optionally anchored to a canvas point.
+   */
   setZoom(zoom: number, canvasPoint?: Point2): void {
     const computedCamera = this.getComputedCamera();
 
@@ -160,10 +187,16 @@ class VideoViewportNext extends ViewportNext<
     });
   }
 
+  /**
+   * Returns the current pan offset in canvas coordinates.
+   */
   getPan(): Point2 {
     return this.getComputedCamera()?.pan ?? [0, 0];
   }
 
+  /**
+   * Sets the pan offset in canvas coordinates.
+   */
   setPan(pan: Point2): void {
     const computedCamera = this.getComputedCamera();
 
@@ -173,6 +206,39 @@ class VideoViewportNext extends ViewportNext<
 
     this.applyComputedCameraState(computedCamera.withPan(pan).state.camera);
   }
+
+  /**
+   * Returns the computed camera that resolves layout, zoom, and pan
+   * from the raw camera state and the current video element dimensions.
+   */
+  getComputedCamera(): VideoComputedCamera | undefined {
+    const videoElement = this.getVideoElement();
+    const videoData = this.getVideoData();
+
+    if (!videoElement || !videoData) {
+      return;
+    }
+
+    return new VideoComputedCamera({
+      camera: this.camera,
+      containerHeight: this.element.clientHeight,
+      containerWidth: this.element.clientWidth,
+      frameOfReferenceUID:
+        (
+          videoData.metadata.imagePlaneModule as
+            | { frameOfReferenceUID?: string }
+            | undefined
+        )?.frameOfReferenceUID || videoData.renderedUrl,
+      intrinsicHeight: videoElement.videoHeight || this.element.clientHeight,
+      intrinsicWidth: videoElement.videoWidth || this.element.clientWidth,
+      objectFit: this.getDataPresentation(videoData.id)?.objectFit,
+      payload: videoData,
+    });
+  }
+
+  // ====================================================================
+  // Public API -- playback
+  // ====================================================================
 
   /**
    * Starts playback on the active video element.
@@ -249,109 +315,6 @@ class VideoViewportNext extends ViewportNext<
   }
 
   /**
-   * Returns the active dataset frame rate.
-   *
-   * @returns The active video frame rate, or `0` if no video is loaded.
-   */
-  getFrameRate(): number {
-    return this.getVideoData()?.fps ?? 0;
-  }
-
-  /**
-   * Returns the total number of frames in the active dataset.
-   *
-   * @returns The total frame count, or `0` if no video is loaded.
-   */
-  getNumberOfFrames(): number {
-    return this.getVideoData()?.numberOfFrames ?? 0;
-  }
-
-  /**
-   * Returns the stack-like slice count used by tool compatibility layers.
-   *
-   * @returns The total number of generated frame image ids.
-   */
-  getNumberOfSlices(): number {
-    return this.getImageIds().length || this.getNumberOfFrames();
-  }
-
-  /**
-   * Returns the current playback time in seconds.
-   *
-   * @returns The current playback time in seconds.
-   */
-  getCurrentTime(): number {
-    this.syncCameraCurrentTimeFromElement();
-    return this.camera.currentTimeSeconds ?? 0;
-  }
-
-  /**
-   * Returns the current frame number derived from playback time.
-   *
-   * @returns The current frame number in dataset coordinates.
-   */
-  getFrameNumber(): number {
-    const videoData = this.getVideoData();
-
-    if (!videoData) {
-      return 1;
-    }
-
-    const frameNumber = timeSecondsToFrameNumber(
-      this.getCurrentTime(),
-      videoData.fps
-    );
-
-    return Math.max(
-      videoData.frameRange[0],
-      Math.min(frameNumber, videoData.frameRange[1])
-    );
-  }
-
-  /**
-   * Returns the current frame index in zero-based stack form.
-   *
-   * @returns The current zero-based frame index.
-   */
-  getCurrentImageIdIndex(): number {
-    return Math.max(0, this.getFrameNumber() - 1);
-  }
-
-  /**
-   * Returns generated frame image ids for the active video dataset.
-   *
-   * @returns Generated frame image ids for the active dataset.
-   */
-  getImageIds(): string[] {
-    const dataId = this.getFirstBinding()?.data.id;
-    const videoData = this.getVideoData();
-
-    if (!dataId || !videoData) {
-      return [];
-    }
-
-    const sourceDataId = getViewportNextSourceDataId(dataId);
-    const imageIds = Array<string>(videoData.numberOfFrames);
-
-    for (
-      let frameNumber = 1;
-      frameNumber <= videoData.numberOfFrames;
-      frameNumber++
-    ) {
-      try {
-        imageIds[frameNumber - 1] = generateFrameImageId(
-          sourceDataId,
-          frameNumber
-        );
-      } catch {
-        return [sourceDataId];
-      }
-    }
-
-    return imageIds;
-  }
-
-  /**
    * Scrolls through frames using a signed delta.
    *
    * @param delta - Signed number of frames to move by.
@@ -400,24 +363,105 @@ class VideoViewportNext extends ViewportNext<
     this.seek(nextTimeSeconds);
   }
 
+  // ====================================================================
+  // Public API -- queries
+  // ====================================================================
+
   /**
-   * Removes a video dataset and rebinds tracking if the primary video changed.
-   *
-   * @param dataId - Logical dataset id to remove.
+   * Returns the active dataset frame rate.
    */
-  removeData(dataId: string): void {
-    const firstDataId = this.getFirstBinding()?.data.id;
-
-    super.removeData(dataId);
-
-    if (firstDataId === dataId) {
-      this.untrackVideoElement();
-      this.trackVideoElement();
-    }
+  getFrameRate(): number {
+    return this.getVideoData()?.fps ?? 0;
   }
 
   /**
-   * No-op render hook because DOM updates happen eagerly in the render path.
+   * Returns the total number of frames in the active dataset.
+   */
+  getNumberOfFrames(): number {
+    return this.getVideoData()?.numberOfFrames ?? 0;
+  }
+
+  /**
+   * Returns the stack-like slice count used by tool compatibility layers.
+   */
+  getNumberOfSlices(): number {
+    return this.getImageIds().length || this.getNumberOfFrames();
+  }
+
+  /**
+   * Returns the current playback time in seconds.
+   */
+  getCurrentTime(): number {
+    this.syncCameraCurrentTimeFromElement();
+    return this.camera.currentTimeSeconds ?? 0;
+  }
+
+  /**
+   * Returns the current frame number derived from playback time.
+   */
+  getFrameNumber(): number {
+    const videoData = this.getVideoData();
+
+    if (!videoData) {
+      return 1;
+    }
+
+    const frameNumber = timeSecondsToFrameNumber(
+      this.getCurrentTime(),
+      videoData.fps
+    );
+
+    return Math.max(
+      videoData.frameRange[0],
+      Math.min(frameNumber, videoData.frameRange[1])
+    );
+  }
+
+  /**
+   * Returns the current frame index in zero-based stack form.
+   */
+  getCurrentImageIdIndex(): number {
+    return Math.max(0, this.getFrameNumber() - 1);
+  }
+
+  /**
+   * Returns generated frame image ids for the active video dataset.
+   */
+  getImageIds(): string[] {
+    const dataId = this.getFirstBinding()?.data.id;
+    const videoData = this.getVideoData();
+
+    if (!dataId || !videoData) {
+      return [];
+    }
+
+    const sourceDataId = getViewportNextSourceDataId(dataId);
+    const imageIds = Array<string>(videoData.numberOfFrames);
+
+    for (
+      let frameNumber = 1;
+      frameNumber <= videoData.numberOfFrames;
+      frameNumber++
+    ) {
+      try {
+        imageIds[frameNumber - 1] = generateFrameImageId(
+          sourceDataId,
+          frameNumber
+        );
+      } catch {
+        return [sourceDataId];
+      }
+    }
+
+    return imageIds;
+  }
+
+  // ====================================================================
+  // Public API -- lifecycle
+  // ====================================================================
+
+  /**
+   * No-op render because DOM updates happen eagerly in the render path.
    */
   render(): void {
     if (this.isDestroyed) {
@@ -427,86 +471,45 @@ class VideoViewportNext extends ViewportNext<
     // DOM updates are applied immediately in updateCamera/updateDataPresentation
   }
 
-  protected override onDestroy(): void {
-    this.untrackVideoElement();
-  }
-
+  /**
+   * Alias for {@link destroy}. Provided for compatibility with disposable
+   * resource conventions.
+   */
   public override dispose(): void {
     this.destroy();
   }
 
+  /**
+   * Returns whether this viewport bypasses the shared rendering pipeline.
+   */
+  getUseCustomRenderingPipeline(): boolean {
+    return true;
+  }
+
+  // ====================================================================
+  // Protected
+  // ====================================================================
+
+  /**
+   * Clamps and normalizes video camera values before storage.
+   */
+  protected normalizeCamera(camera: VideoCamera): VideoCamera {
+    return normalizeVideoCamera(camera);
+  }
+
+  /**
+   * Releases the tracked video element listener during destroy.
+   */
+  protected override onDestroy(): void {
+    this.untrackVideoElement();
+  }
+
+  // ====================================================================
+  // Private
+  // ====================================================================
+
   private getVideoElement(): HTMLVideoElement | undefined {
     return this.getVideoRendering()?.element;
-  }
-
-  getComputedCamera(): VideoComputedCamera | undefined {
-    const videoElement = this.getVideoElement();
-    const videoData = this.getVideoData();
-
-    if (!videoElement || !videoData) {
-      return;
-    }
-
-    return new VideoComputedCamera({
-      camera: this.camera,
-      containerHeight: this.element.clientHeight,
-      containerWidth: this.element.clientWidth,
-      frameOfReferenceUID:
-        (
-          videoData.metadata.imagePlaneModule as
-            | { frameOfReferenceUID?: string }
-            | undefined
-        )?.frameOfReferenceUID || videoData.renderedUrl,
-      intrinsicHeight: videoElement.videoHeight || this.element.clientHeight,
-      intrinsicWidth: videoElement.videoWidth || this.element.clientWidth,
-      objectFit: this.getDataPresentation(videoData.id)?.objectFit,
-      payload: videoData,
-    });
-  }
-
-  canvasToWorld(canvasPos: Point2) {
-    const computedCamera = this.getComputedCamera();
-
-    if (!computedCamera) {
-      throw new Error(
-        `[VideoViewportNext] Cannot convert canvas to world for viewport ${this.id} because no video is mounted.`
-      );
-    }
-
-    return computedCamera.canvasToWorld(canvasPos);
-  }
-
-  worldToCanvas(worldPos: [number, number, number]) {
-    const computedCamera = this.getComputedCamera();
-
-    if (!computedCamera) {
-      throw new Error(
-        `[VideoViewportNext] Cannot convert world to canvas for viewport ${this.id} because no video is mounted.`
-      );
-    }
-
-    return computedCamera.worldToCanvas(worldPos);
-  }
-
-  override getFrameOfReferenceUID(): string {
-    return (
-      this.getComputedCamera()?.getFrameOfReferenceUID() ??
-      `${this.type}-viewport-${this.id}`
-    );
-  }
-
-  protected getCameraForEvent(): ICamera {
-    return (
-      this.getComputedCamera()?.toICamera() ?? {
-        parallelProjection: true,
-        focalPoint: [0, 0, 0],
-        position: [0, 0, 0],
-        viewUp: [0, -1, 0],
-        parallelScale: 1,
-        viewPlaneNormal: [0, 0, 1],
-        rotation: this.camera.rotation ?? 0,
-      }
-    );
   }
 
   private getVideoData(): LoadedData<VideoStreamPayload> | undefined {
@@ -527,43 +530,6 @@ class VideoViewportNext extends ViewportNext<
     }
 
     return binding.data;
-  }
-
-  private getCurrentVideoLayout() {
-    const computedCamera = this.getComputedCamera();
-    const videoElement = this.getVideoElement();
-
-    if (!computedCamera || !videoElement) {
-      return;
-    }
-
-    const containerWidth = this.element.clientWidth;
-    const containerHeight = this.element.clientHeight;
-    const intrinsicWidth = videoElement.videoWidth || containerWidth;
-    const intrinsicHeight = videoElement.videoHeight || containerHeight;
-
-    if (
-      !containerWidth ||
-      !containerHeight ||
-      !intrinsicWidth ||
-      !intrinsicHeight
-    ) {
-      return;
-    }
-
-    const dataId = this.getFirstBinding()?.data.id;
-    const objectFit =
-      (dataId ? this.getDataPresentation(dataId)?.objectFit : undefined) ??
-      'contain';
-
-    return getVideoLayout({
-      containerWidth,
-      containerHeight,
-      intrinsicWidth,
-      intrinsicHeight,
-      objectFit,
-      camera: computedCamera.state.camera,
-    });
   }
 
   private getVideoRendering(): VideoElementRendering | undefined {

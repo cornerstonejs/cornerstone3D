@@ -1,11 +1,5 @@
 import { ViewportType } from '../../../enums';
-import type {
-  ActorEntry,
-  ICamera,
-  IImageData,
-  Point2,
-  Point3,
-} from '../../../types';
+import type { ActorEntry, ICamera, IImageData } from '../../../types';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
 import renderingEngineCache from '../../renderingEngineCache';
 import type {
@@ -269,21 +263,6 @@ class VolumeViewport3DV2 extends ViewportNext<
       frameOfReferenceUID: this.resolveFrameOfReferenceUID(),
       renderer: this.getRenderer(),
     });
-  }
-
-  canvasToWorld(canvasPos: Point2) {
-    return this.getComputedCamera().canvasToWorld(canvasPos);
-  }
-
-  worldToCanvas(worldPos: Point3) {
-    return this.getComputedCamera().worldToCanvas(worldPos);
-  }
-
-  override getFrameOfReferenceUID(): string {
-    return (
-      this.getComputedCamera().getFrameOfReferenceUID() ??
-      `${this.type}-viewport-${this.id}`
-    );
   }
 
   // TrackballRotateTool preserves 3D view state across resize by round-tripping

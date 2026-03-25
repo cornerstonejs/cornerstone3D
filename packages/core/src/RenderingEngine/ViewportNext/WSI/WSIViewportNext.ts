@@ -418,51 +418,6 @@ class WSIViewportNext extends ViewportNext<
     return 0;
   }
 
-  canvasToWorld(canvasPos: Point2): Point3 {
-    const computedCamera = this.getComputedCamera();
-
-    if (!computedCamera) {
-      throw new Error(
-        `[WSIViewportNext] Cannot convert canvas to world for viewport ${this.id} because the WSI view is not ready.`
-      );
-    }
-
-    return computedCamera.canvasToWorld(canvasPos);
-  }
-
-  worldToCanvas(worldPos: Point3): Point2 {
-    const computedCamera = this.getComputedCamera();
-
-    if (!computedCamera) {
-      throw new Error(
-        `[WSIViewportNext] Cannot convert world to canvas for viewport ${this.id} because the WSI view is not ready.`
-      );
-    }
-
-    return computedCamera.worldToCanvas(worldPos);
-  }
-
-  override getFrameOfReferenceUID(): string {
-    return (
-      this.getComputedCamera()?.getFrameOfReferenceUID() ??
-      `${this.type}-viewport-${this.id}`
-    );
-  }
-
-  protected getCameraForEvent(): ICamera {
-    return (
-      this.getComputedCamera()?.toICamera() ?? {
-        parallelProjection: true,
-        focalPoint: [0, 0, 0],
-        position: [0, 0, 0],
-        viewUp: [0, -1, 0],
-        parallelScale: 1,
-        viewPlaneNormal: [0, 0, 1],
-        rotation: this.camera.rotation ?? 0,
-      }
-    );
-  }
-
   private applyComputedCameraState(nextCamera: WSICamera): void {
     const previousCamera = this.getCameraForEvent();
 

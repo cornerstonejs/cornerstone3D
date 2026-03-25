@@ -1,5 +1,6 @@
 import type * as EventTypes from '../../types/EventTypes';
 import type ICamera from '../../types/ICamera';
+import type { Point2, Point3 } from '../../types';
 import Events from '../../enums/Events';
 import triggerEvent from '../../utilities/triggerEvent';
 import type {
@@ -16,6 +17,7 @@ import type {
 } from './ViewportArchitectureTypes';
 import type ViewportType from '../../enums/ViewportType';
 import type { ViewportCameraBase } from './ViewportCameraTypes';
+import type ViewportComputedCamera from './ViewportComputedCamera';
 
 /**
  * Generic ViewportNext controller.
@@ -130,18 +132,58 @@ abstract class ViewportNext<
   }
 
   /**
-   * Returns the current binding's frame of reference when one exists.
-   * Falls back to a viewport-local identifier so callers still get a stable
-   * value for non-referenceable viewports.
+   * Returns the frame of reference UID from the computed camera when
+   * available, falling back to the current binding or a viewport-local
+   * identifier.
    */
   getFrameOfReferenceUID(): string {
-    const binding = this.getCurrentBinding();
+    return (
+      this.getComputedCamera()?.getFrameOfReferenceUID() ??
+      `${this.type}-viewport-${this.id}`
+    );
+  }
 
-    if (!binding) {
-      return `${this.type}-viewport-${this.id}`;
+  // ====================================================================
+  // Public API -- coordinate transforms
+  // ====================================================================
+
+  /**
+   * Returns the viewport's computed camera snapshot for coordinate
+   * transforms and legacy ICamera interop. Subclasses must implement this
+   * to produce the viewport-family-specific computed camera.
+   */
+  abstract getComputedCamera(): ViewportComputedCamera<unknown> | undefined;
+
+  /**
+   * Converts a canvas-space point to world-space coordinates using the
+   * computed camera.
+   */
+  canvasToWorld(canvasPos: Point2): Point3 {
+    const cc = this.getComputedCamera();
+
+    if (!cc) {
+      throw new Error(
+        `[${this.type}] Cannot convert canvas to world for viewport ${this.id} because no data is mounted.`
+      );
     }
 
-    return binding.getFrameOfReferenceUID();
+    return cc.canvasToWorld(canvasPos);
+  }
+
+  /**
+   * Converts a world-space point to canvas-space coordinates using the
+   * computed camera.
+   */
+  worldToCanvas(worldPos: Point3): Point2 {
+    const cc = this.getComputedCamera();
+
+    if (!cc) {
+      throw new Error(
+        `[${this.type}] Cannot convert world to canvas for viewport ${this.id} because no data is mounted.`
+      );
+    }
+
+    return cc.worldToCanvas(worldPos);
   }
 
   // ====================================================================
@@ -392,12 +434,12 @@ abstract class ViewportNext<
   }
 
   /**
-   * Returns the camera representation used for event payloads. Subclasses
-   * can override this to project their camera type into the base ICamera
-   * shape expected by event consumers.
+   * Returns the camera representation used for event payloads. Delegates
+   * to the computed camera's ICamera projection when available, falling
+   * back to the raw camera state.
    */
   protected getCameraForEvent(): ICamera {
-    return this.getCamera();
+    return this.getComputedCamera()?.toICamera() ?? this.getCamera();
   }
 
   /**
