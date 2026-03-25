@@ -111,6 +111,9 @@
     "pako": "2.1.0",
     "uuid": "9.0.1"
   },
+  "devDependencies": {
+    "@cornerstonejs/core": "4.20.0"
+  },
   "peerDependencies": {
     "@cornerstonejs/core": "4.20.0",
     "dicom-parser": "1.8.21"
