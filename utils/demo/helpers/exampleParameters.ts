@@ -10,7 +10,7 @@ type DemoConfig = {
           volume?: number;
         };
       };
-      useViewportV2?: boolean;
+      useViewportNext?: boolean;
     };
   };
 };
@@ -37,7 +37,7 @@ export function applyViewportTypeOverride(config: DemoConfig = {}): DemoConfig {
     return utilities.deepMerge(config, {
       core: {
         rendering: {
-          useViewportV2: true,
+          useViewportNext: true,
         },
       },
     });

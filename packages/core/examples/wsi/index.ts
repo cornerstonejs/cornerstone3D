@@ -127,7 +127,7 @@ async function run() {
   client.getDICOMwebMetadata = (imageId) => wadors.metaDataManager.get(imageId);
 
   // Register WSI data and set it on the viewport
-  const dataId = 'wsi-dataset';
+  const dataId = `wsi:${imageIds[0]}`;
   utilities.viewportNextDataSetMetadataProvider.add(dataId, {
     imageIds,
     options: { webClient: client },
