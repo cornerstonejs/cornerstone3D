@@ -16,6 +16,9 @@ jobs:
     env:
       BUN_VERSION: 1.3.10
       NODE_VERSION: 24
+      # Passed through to OHIF Playwright tests/tests/testEnv.ts (headless Linux limitations).
+      OHIF_NO_GPU: '1'
+      OHIF_LINUX_TEXT: '1'
       OHIF_REF: fix/cs3d-combined-integration
       # Update this to the next number to rebuild the OHIF checkout
       OHIF_REBUILD: 1
@@ -79,7 +82,9 @@ jobs:
       - name: Run OHIF e2e tests
         working-directory: ${{ env.OHIF_DIR }}
         env:
+          TEST_ENV: 'true'
           PLAYWRIGHT_HTML_OPEN: never
+          # OHIF_NO_GPU / OHIF_LINUX_TEXT: from job env → tests/testEnv.ts
           # OHIF Playwright: use *-linux.png baselines + retries: 1 (see playwright.config.ts, screenshotPathForOhifDownstream).
           OHIF_DOWNSTREAM: '1'
         run: bun run test:e2e:ci
