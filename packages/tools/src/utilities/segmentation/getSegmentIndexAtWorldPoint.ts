@@ -1,4 +1,4 @@
-import { BaseVolumeViewport, cache, utilities } from '@cornerstonejs/core';
+import { cache, utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { SegmentationRepresentations } from '../../enums';
 import {
@@ -10,6 +10,7 @@ import type { ContourSegmentationAnnotation, Segmentation } from '../../types';
 import { getAnnotation } from '../../stateManagement';
 import { isPointInsidePolyline3D } from '../math/polyline';
 import { getLabelmapActorEntry } from '../../stateManagement/segmentation/helpers/getSegmentationActor';
+import getViewportLabelmapRenderMode from '../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
 
 type Options = {
   representationType?: SegmentationRepresentations;
@@ -74,8 +75,11 @@ export function getSegmentIndexAtWorldForLabelmap(
   { viewport }: Options
 ): number | undefined {
   const labelmapData = segmentation.representationData.Labelmap;
+  const viewportRenderMode = viewport
+    ? getViewportLabelmapRenderMode(viewport)
+    : 'unsupported';
 
-  if (viewport instanceof BaseVolumeViewport) {
+  if (viewportRenderMode === 'volume') {
     const { volumeId } = labelmapData as LabelmapSegmentationDataVolume;
     const segmentationVolume = cache.getVolume(volumeId);
 
@@ -94,6 +98,10 @@ export function getSegmentIndexAtWorldForLabelmap(
     viewport.id,
     segmentation.segmentationId
   );
+
+  if (!segmentationImageIds?.length) {
+    return;
+  }
 
   if (segmentationImageIds.length > 1) {
     console.warn(

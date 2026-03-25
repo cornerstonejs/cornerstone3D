@@ -1,8 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import {
-  getEnabledElementByViewportId,
-  VolumeViewport,
-} from '@cornerstonejs/core';
+import { getEnabledElementByViewportId } from '@cornerstonejs/core';
 
 import type {
   LabelmapSegmentationData,
@@ -33,6 +30,7 @@ import { computeAndAddRepresentation } from '../../../utilities/segmentation/com
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
 import { defaultSegmentationStateManager } from '../../../stateManagement/segmentation/SegmentationStateManager';
 import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
+import getViewportLabelmapRenderMode from '../../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
 
 // 255 itself is used as preview color, so basically
 // we have 254 colors to use for the segments if we are using the preview.
@@ -157,7 +155,9 @@ async function render(
     return;
   }
 
-  if (viewport instanceof VolumeViewport) {
+  const renderMode = getViewportLabelmapRenderMode(viewport);
+
+  if (renderMode === 'volume') {
     if (!labelmapActorEntries?.length) {
       // only add the labelmap to ToolGroup viewports if it is not already added
       await _addLabelmapToViewport(
@@ -169,7 +169,7 @@ async function render(
     }
 
     labelmapActorEntries = getLabelmapActorEntries(viewport.id, segmentationId);
-  } else {
+  } else if (renderMode === 'image') {
     // stack segmentation
     const labelmapImageIds = getCurrentLabelmapImageIdsForViewport(
       viewport.id,
@@ -193,6 +193,8 @@ async function render(
     }
 
     labelmapActorEntries = getLabelmapActorEntries(viewport.id, segmentationId);
+  } else {
+    return;
   }
 
   if (!labelmapActorEntries?.length) {
@@ -314,6 +316,16 @@ function _setLabelmapColorAndOpacity(
 
   ofun.setClamping(false);
   const labelmapActor = labelmapActorEntry.actor as vtkVolume | vtkImageSlice;
+  const actorMapper = labelmapActorEntry.actorMapper as
+    | {
+        mapper?: {
+          modified?: () => void;
+        };
+      }
+    | undefined;
+  const labelmapMapper = actorMapper?.mapper
+    ? actorMapper.mapper
+    : labelmapActor.getMapper();
 
   // @ts-ignore - fix type in vtk
   const { preLoad } = labelmapActor.get?.('preLoad') || { preLoad: null };
@@ -361,7 +373,7 @@ function _setLabelmapColorAndOpacity(
     // Mark the actor as modified to ensure the changes are applied
     labelmapActor.modified();
     labelmapActor.getProperty().modified();
-    labelmapActor.getMapper().modified();
+    labelmapMapper?.modified?.();
   } else {
     // reset outline width to 0
     labelmapActor

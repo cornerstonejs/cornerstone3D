@@ -1,7 +1,6 @@
 import {
   cache,
   utilities as csUtils,
-  VolumeViewport,
   getEnabledElementByViewportId,
 } from '@cornerstonejs/core';
 
@@ -9,6 +8,7 @@ import { SegmentationRepresentations } from '../../../enums';
 import { getLabelmapActorEntries } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
 import { getSegmentationRepresentations } from '../../../stateManagement/segmentation/getSegmentationRepresentation';
 import { getCurrentLabelmapImageIdsForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
+import getViewportLabelmapRenderMode from '../../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
 
 /**
  * Updates the labelmap for stack viewports
@@ -43,7 +43,7 @@ export function performStackLabelmapUpdate({
 
       const { viewport } = enabledElement;
 
-      if (viewport instanceof VolumeViewport) {
+      if (getViewportLabelmapRenderMode(viewport) !== 'image') {
         return;
       }
 
@@ -54,7 +54,17 @@ export function performStackLabelmapUpdate({
       }
 
       actorEntries.forEach((actorEntry, i) => {
-        const segImageData = actorEntry.actor.getMapper().getInputData();
+        const actorMapper = actorEntry.actorMapper as
+          | {
+              mapper?: {
+                getInputData: () => unknown;
+              };
+            }
+          | undefined;
+        const mapper = actorMapper?.mapper
+          ? actorMapper.mapper
+          : actorEntry.actor.getMapper();
+        const segImageData = mapper.getInputData();
 
         const currentSegmentationImageIds =
           getCurrentLabelmapImageIdsForViewport(viewportId, segmentationId);
@@ -63,6 +73,11 @@ export function performStackLabelmapUpdate({
           currentSegmentationImageIds[i]
         );
         segImageData.modified();
+
+        if (segImageData.setDerivedImage) {
+          segImageData.setDerivedImage(segmentationImage);
+          return;
+        }
 
         // update the cache with the new image data
         csUtils.updateVTKImageDataWithCornerstoneImage(

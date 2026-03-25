@@ -93,6 +93,18 @@ function loadImageFromImageLoader(
     return cachedImageLoadObject;
   }
 
+  const cachedImage = cache.getImage(imageId);
+
+  if (cachedImage) {
+    const imageLoadObject = {
+      promise: Promise.resolve(cachedImage),
+    };
+
+    handleImageLoadPromise(imageLoadObject.promise, imageId);
+
+    return imageLoadObject;
+  }
+
   // Determine the appropriate image loader based on the image scheme
   const scheme = imageId.split(':')[0];
   const loader = imageLoaders[scheme] || unknownImageLoader;

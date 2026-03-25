@@ -311,15 +311,45 @@ function getSliceMetrics(args: {
 }
 
 /**
- * Clamps an imageIdIndex to [0, maxImageIdIndex]. If the index is undefined
- * (no slice has been selected yet), defaults to the middle slice.
+ * Clamps an imageIdIndex to [0, maxImageIdIndex]. If the index is undefined,
+ * derives the centered slice index using the same projection math as the
+ * legacy volume viewport scroll utilities.
  */
-function clampImageIdIndex(
-  imageIdIndex: number | undefined,
-  maxImageIdIndex: number
-): number {
+function resolveCenteredImageIdIndex(args: {
+  centerProjection: number;
+  min: number;
+  max: number;
+  maxImageIdIndex: number;
+}): number {
+  const { centerProjection, min, max, maxImageIdIndex } = args;
+  const range = max - min;
+
+  if (!(range > 0) || maxImageIdIndex === 0) {
+    return 0;
+  }
+
+  const fraction = (centerProjection - min) / range;
+  const floatingImageIdIndex = fraction * maxImageIdIndex;
+
+  return Math.round(floatingImageIdIndex);
+}
+
+function clampImageIdIndex(args: {
+  imageIdIndex: number | undefined;
+  centerProjection: number;
+  min: number;
+  max: number;
+  maxImageIdIndex: number;
+}): number {
+  const { centerProjection, imageIdIndex, max, maxImageIdIndex, min } = args;
+
   if (typeof imageIdIndex !== 'number') {
-    return Math.round(maxImageIdIndex / 2);
+    return resolveCenteredImageIdIndex({
+      centerProjection,
+      min,
+      max,
+      maxImageIdIndex,
+    });
   }
 
   return Math.min(Math.max(0, imageIdIndex), maxImageIdIndex);
@@ -525,14 +555,20 @@ function buildPlanarVolumeSliceBasis(args: {
       imageVolume,
       viewPlaneNormal,
     });
-  const currentImageIdIndex = clampImageIdIndex(imageIdIndex, maxImageIdIndex);
-
-  // Project volume center onto the viewing direction to compute the
-  // scalar offset needed to reach the target slice depth.
   const centerProjection = vec3.dot(
     center as unknown as vec3,
     viewPlaneNormal as unknown as vec3
   );
+  const currentImageIdIndex = clampImageIdIndex({
+    imageIdIndex,
+    centerProjection,
+    min,
+    max,
+    maxImageIdIndex,
+  });
+
+  // Project volume center onto the viewing direction to compute the
+  // scalar offset needed to reach the target slice depth.
   const targetProjection = Math.min(
     max,
     min + currentImageIdIndex * spacingInNormalDirection

@@ -136,6 +136,49 @@ function indexToWorld(volume: IImageVolume, ijk: Point3): Point3 {
 
 export default class PlanarCPUVolumeSampler {
   private sampleSequence = 0;
+  private scalarRangeCache = new WeakMap<
+    NonNullable<IImageVolume['voxelManager']>,
+    { min: number; max: number }
+  >();
+
+  public clearCachedScalarRange(
+    voxelManager: NonNullable<IImageVolume['voxelManager']>
+  ): void {
+    this.scalarRangeCache.delete(voxelManager);
+  }
+
+  private getScalarDataRange(
+    voxelManager: NonNullable<IImageVolume['voxelManager']>
+  ): { min: number; max: number } {
+    let scalarData: ArrayLike<number>;
+
+    if (voxelManager.getCompleteScalarDataArray) {
+      scalarData = voxelManager.getCompleteScalarDataArray();
+    } else {
+      scalarData = voxelManager.getScalarData();
+    }
+
+    let min = Infinity;
+    let max = -Infinity;
+
+    for (let index = 0; index < scalarData.length; index++) {
+      const value = Number(scalarData[index]);
+
+      if (!Number.isFinite(value)) {
+        continue;
+      }
+
+      if (value < min) {
+        min = value;
+      }
+
+      if (value > max) {
+        max = value;
+      }
+    }
+
+    return { min, max };
+  }
 
   public getCameraBasis(camera: ICamera): {
     right: Point3;
@@ -187,15 +230,38 @@ export default class PlanarCPUVolumeSampler {
     min: number;
     max: number;
   } {
-    const [volumeMin, volumeMax] = volume.voxelManager.getRange();
-    let min = Math.floor(Number.isFinite(volumeMin) ? volumeMin : 0);
-    let max = Math.ceil(Number.isFinite(volumeMax) ? volumeMax : min + 1);
+    const voxelManager = volume.voxelManager;
+    const [volumeMin, volumeMax] = voxelManager.getRange();
+    let min = Number.isFinite(volumeMin) ? Math.floor(volumeMin) : 0;
+    let max = Number.isFinite(volumeMax) ? Math.ceil(volumeMax) : min + 1;
+
+    if (max <= min) {
+      const cachedRange = this.scalarRangeCache.get(voxelManager);
+
+      if (cachedRange) {
+        return cachedRange;
+      }
+
+      const resolvedRange = this.getScalarDataRange(voxelManager);
+
+      if (Number.isFinite(resolvedRange.min)) {
+        min = Math.floor(resolvedRange.min);
+      }
+
+      if (Number.isFinite(resolvedRange.max)) {
+        max = Math.ceil(resolvedRange.max);
+      }
+    }
 
     if (max <= min) {
       max = min + 1;
     }
 
-    return { min, max };
+    const resolvedRange = { min, max };
+
+    this.scalarRangeCache.set(voxelManager, resolvedRange);
+
+    return resolvedRange;
   }
 
   public createOrUpdateEnabledElement(args: {

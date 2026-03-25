@@ -29,6 +29,7 @@ import type {
   VolumeActor,
   Actor,
   ActorEntry,
+  ActorMapperProxy,
   ImageActor,
   ICanvasActor,
 } from './IActor';
@@ -207,6 +208,7 @@ export type {
   VolumeActor,
   Actor,
   ActorEntry,
+  ActorMapperProxy,
   ImageActor,
   ICanvasActor,
   IImageLoadObject,

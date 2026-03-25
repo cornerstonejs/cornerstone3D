@@ -1,7 +1,11 @@
 import { OrientationAxis, ViewportType } from '../../../enums';
 import type BlendModes from '../../../enums/BlendModes';
 import type {
+  ActorEntry,
+  CPUIImageData,
   ICamera,
+  IImage,
+  IStackInput,
   IVolumeInput,
   Point2,
   Point3,
@@ -11,9 +15,11 @@ import type {
   ViewReference,
   ViewReferenceSpecifier,
 } from '../../../types';
+import cache from '../../../cache/cache';
 import type { PlaneRestriction } from '../../../types/IViewport';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
 import imageIdToURI from '../../../utilities/imageIdToURI';
+import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
 import renderingEngineCache from '../../renderingEngineCache';
 import type { DataAddOptions, LoadedData } from '../ViewportArchitectureTypes';
 import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
@@ -42,6 +48,15 @@ import {
   createDefaultPlanarCamera,
   normalizePlanarCamera,
 } from './planarViewportCamera';
+import {
+  createPlanarCpuImageOverlayActorEntry,
+  createPlanarImageOverlayActorEntry,
+  projectPlanarBindingActorEntry,
+} from './planarActorCompatibility';
+import {
+  canvasToWorldPlanarCpuImage,
+  worldToCanvasPlanarCpuImage,
+} from './planarCpuImageTransforms';
 import type { DerivedPlanarPresentation } from './planarRenderCamera';
 import {
   getPlanarCameraCanvasDimensions,
@@ -90,6 +105,7 @@ class PlanarViewport extends ViewportV2<
   protected renderContext: PlanarViewportRenderContext;
 
   private activeDataId?: string;
+  private readonly compatibilityOverlayActors = new Map<string, ActorEntry>();
   private cpuCanvas?: HTMLCanvasElement;
   private readonly legacyCompatibleViewport =
     new PlanarLegacyCompatibleViewport(this, {
@@ -156,6 +172,8 @@ class PlanarViewport extends ViewportV2<
     this.element.style.position = this.element.style.position || 'relative';
     this.element.style.overflow = 'hidden';
     this.element.style.background = this.element.style.background || '#000';
+    this.canvasToWorld = this.canvasToWorld.bind(this);
+    this.worldToCanvas = this.worldToCanvas.bind(this);
     this.dataProvider = args.dataProvider || new DefaultPlanarDataProvider();
     this.renderPathResolver =
       args.renderPathResolver || defaultRenderPathResolver;
@@ -205,6 +223,8 @@ class PlanarViewport extends ViewportV2<
       type: 'planar',
       viewport: {
         element: this.element,
+        getOverlayActors: () =>
+          Array.from(this.compatibilityOverlayActors.values()),
       },
       display: {
         requestRender: () => {
@@ -383,6 +403,121 @@ class PlanarViewport extends ViewportV2<
     return this.legacyCompatibleViewport.getNumberOfSlices();
   }
 
+  getActors(): ActorEntry[] {
+    return [
+      ...this.getProjectedBindingActorEntries(),
+      ...this.compatibilityOverlayActors.values(),
+    ];
+  }
+
+  getDefaultActor(): ActorEntry | undefined {
+    const bindingActors = this.getProjectedBindingActorEntries();
+    const primaryBindingActor = bindingActors.find(
+      (actorEntry) => typeof actorEntry.representationUID !== 'string'
+    );
+
+    if (primaryBindingActor) {
+      return primaryBindingActor;
+    }
+
+    if (bindingActors[0]) {
+      return bindingActors[0];
+    }
+
+    return this.compatibilityOverlayActors.values().next().value;
+  }
+
+  getActor(actorUID: string): ActorEntry | undefined {
+    return this.getActors().find((actorEntry) => actorEntry.uid === actorUID);
+  }
+
+  removeActors(actorUIDs: string[]): void {
+    let didRemoveActor = false;
+
+    actorUIDs
+      .filter((actorUID): actorUID is string => typeof actorUID === 'string')
+      .forEach((actorUID) => {
+        const overlayActorEntry = this.compatibilityOverlayActors.get(actorUID);
+
+        if (overlayActorEntry) {
+          if (overlayActorEntry.actorMapper?.renderMode === 'vtkImage') {
+            this.renderContext.vtk.renderer.removeActor(
+              overlayActorEntry.actor as never
+            );
+          }
+          this.compatibilityOverlayActors.delete(actorUID);
+          didRemoveActor = true;
+          return;
+        }
+
+        const bindingDataId = this.findBindingDataIdByActorUID(actorUID);
+
+        if (bindingDataId) {
+          this.removeDataId(bindingDataId);
+          didRemoveActor = true;
+        }
+      });
+
+    if (didRemoveActor) {
+      this.render();
+    }
+  }
+
+  addImages(stackInputs: IStackInput[]): void {
+    const rendering = this.getCurrentPlanarRendering();
+
+    if (
+      rendering?.renderMode !== 'vtkImage' &&
+      rendering?.renderMode !== 'cpu2d'
+    ) {
+      return;
+    }
+
+    stackInputs.forEach((stackInput) => {
+      const image = cache.getImage(stackInput.imageId);
+
+      if (!image) {
+        return;
+      }
+
+      const actorEntry =
+        rendering.renderMode === 'cpu2d'
+          ? createPlanarCpuImageOverlayActorEntry(
+              this as never,
+              image,
+              stackInput
+            )
+          : createPlanarImageOverlayActorEntry(image, stackInput);
+      const existingActorEntry = this.compatibilityOverlayActors.get(
+        actorEntry.uid
+      );
+
+      if (existingActorEntry?.actorMapper?.renderMode === 'vtkImage') {
+        this.renderContext.vtk.renderer.removeActor(
+          existingActorEntry.actor as never
+        );
+      }
+
+      if (stackInput.callback) {
+        stackInput.callback({
+          imageActor: actorEntry.actor as never,
+          imageId: stackInput.imageId,
+        });
+      }
+
+      if (actorEntry.actorMapper?.renderMode === 'vtkImage') {
+        this.renderContext.vtk.renderer.addActor(actorEntry.actor as never);
+      }
+      this.compatibilityOverlayActors.set(actorEntry.uid, actorEntry);
+    });
+
+    this.render();
+  }
+
+  getImageDataMetadata(image: IImage) {
+    return getImageDataMetadata(image);
+  }
+
   removeDataId(dataId: string): void {
     super.removeDataId(dataId);
 
@@ -559,8 +694,17 @@ class PlanarViewport extends ViewportV2<
     });
   }
 
+  getCamera(): PlanarCamera & ICamera {
+    return {
+      ...this.camera,
+      ...this.getCameraForEvent(),
+    };
+  }
+
   getCameraState(): PlanarCamera {
-    return this.getCamera();
+    return {
+      ...this.camera,
+    };
   }
 
   getComputedCamera(
@@ -720,24 +864,48 @@ class PlanarViewport extends ViewportV2<
   }
 
   canvasToWorld(canvasPos: Point2): Point3 {
+    const rendering = this.getCurrentPlanarRendering();
+
+    if (rendering?.renderMode === 'cpu2d') {
+      const imageData = this.getImageData() as CPUIImageData | undefined;
+
+      if (imageData) {
+        return canvasToWorldPlanarCpuImage(
+          rendering.enabledElement,
+          imageData,
+          canvasPos
+        );
+      }
+    }
+
     const computedCamera = this.getComputedCamera();
 
     if (!computedCamera) {
-      throw new Error(
-        `[PlanarViewport] Cannot convert canvas to world for viewport ${this.id} because no planar rendering is mounted.`
-      );
+      return this.buildFallbackCanvasToWorld(canvasPos);
     }
 
     return computedCamera.canvasToWorld(canvasPos);
   }
 
   worldToCanvas(worldPos: Point3): Point2 {
+    const rendering = this.getCurrentPlanarRendering();
+
+    if (rendering?.renderMode === 'cpu2d') {
+      const imageData = this.getImageData() as CPUIImageData | undefined;
+
+      if (imageData) {
+        return worldToCanvasPlanarCpuImage(
+          rendering.enabledElement,
+          imageData,
+          worldPos
+        );
+      }
+    }
+
     const computedCamera = this.getComputedCamera();
 
     if (!computedCamera) {
-      throw new Error(
-        `[PlanarViewport] Cannot convert world to canvas for viewport ${this.id} because no planar rendering is mounted.`
-      );
+      return this.buildFallbackWorldToCanvas(worldPos);
     }
 
     return computedCamera.worldToCanvas(worldPos);
@@ -965,6 +1133,12 @@ class PlanarViewport extends ViewportV2<
 
   protected override onDestroy(): void {
     this.legacyCompatibleViewport.destroy();
+    this.compatibilityOverlayActors.forEach((actorEntry) => {
+      if (actorEntry.actorMapper?.renderMode === 'vtkImage') {
+        this.renderContext.vtk.renderer.removeActor(actorEntry.actor as never);
+      }
+    });
+    this.compatibilityOverlayActors.clear();
     this.cpuCanvas?.remove();
     this.cpuCanvas = undefined;
     this.activeDataId = undefined;
@@ -1115,6 +1289,36 @@ class PlanarViewport extends ViewportV2<
     }
   }
 
+  private getProjectedBindingActorEntries(): ActorEntry[] {
+    const actorEntries: ActorEntry[] = [];
+
+    for (const binding of this.bindings.values()) {
+      const actorEntry = projectPlanarBindingActorEntry(
+        binding.data as LoadedData<PlanarPayload>,
+        binding.rendering as PlanarRendering
+      );
+
+      if (actorEntry) {
+        actorEntries.push(actorEntry);
+      }
+    }
+
+    return actorEntries;
+  }
+
+  private findBindingDataIdByActorUID(actorUID: string): string | undefined {
+    for (const [dataId, binding] of this.bindings.entries()) {
+      const actorEntry = projectPlanarBindingActorEntry(
+        binding.data as LoadedData<PlanarPayload>,
+        binding.rendering as PlanarRendering
+      );
+
+      if (actorEntry?.uid === actorUID) {
+        return dataId;
+      }
+    }
+  }
+
   private findDataIdByVolumeId(volumeId: string): string | undefined {
     for (const [dataId, binding] of this.bindings.entries()) {
       const bindingVolumeId = (
@@ -1149,6 +1353,18 @@ class PlanarViewport extends ViewportV2<
       anchorWorld[0] + (canvasPos[0] - anchorCanvas[0] * width) / scale,
       anchorWorld[1] + (canvasPos[1] - anchorCanvas[1] * height) / scale,
       anchorWorld[2],
+    ];
+  }
+
+  private buildFallbackWorldToCanvas(worldPos: Point3): Point2 {
+    const anchorCanvas = this.camera.anchorCanvas ?? [0.5, 0.5];
+    const anchorWorld = this.camera.anchorWorld ?? [0, 0, 0];
+    const { height, width } = this.getCurrentCanvasDimensions();
+    const scale = Math.max(this.camera.scale ?? 1, 0.001);
+
+    return [
+      (worldPos[0] - anchorWorld[0]) * scale + anchorCanvas[0] * width,
+      (worldPos[1] - anchorWorld[1]) * scale + anchorCanvas[1] * height,
     ];
   }
 

@@ -57,6 +57,7 @@ export default class VoxelManager<T> {
   public readonly numberOfComponents: number;
   public getCompleteScalarDataArray?: () => ArrayLike<number>;
   public setCompleteScalarDataArray?: (scalarData: ArrayLike<number>) => void;
+  public invalidateCache?: () => void;
 
   public getRange: () => [number, number];
   private scalarData = null as PixelDataTypedArray;
@@ -1063,6 +1064,12 @@ export default class VoxelManager<T> {
       _getConstructor,
       _id: id || 'createImageVolumeVoxelManager',
     });
+
+    voxelManager.invalidateCache = () => {
+      sliceVoxelManagers.fill(undefined);
+      lastSliceIndex = -1;
+      lastSliceVoxelManager = null;
+    };
 
     voxelManager.getMiddleSliceData = () => {
       const middleSliceIndex = Math.floor(dimensions[2] / 2);

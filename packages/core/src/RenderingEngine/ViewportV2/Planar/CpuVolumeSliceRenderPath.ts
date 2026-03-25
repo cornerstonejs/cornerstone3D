@@ -1,12 +1,15 @@
 import '@kitware/vtk.js/Rendering/Profiles/Volume';
 import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
+import CanvasActor from '../../CanvasActor';
 import { Events, ViewportStatus, ViewportType } from '../../../enums';
 import eventTarget from '../../../eventTarget';
 import type { ICamera, IImageData, Point2, Point3 } from '../../../types';
+import type { IViewport } from '../../../types/IViewport';
 import triggerEvent from '../../../utilities/triggerEvent';
 import createVolumeActor from '../../helpers/createVolumeActor';
 import { createCanvas } from '../../helpers/getOrCreateCanvas';
 import drawImageSync from '../../helpers/cpuFallback/drawImageSync';
+import setToPixelCoordinateSystem from '../../helpers/cpuFallback/rendering/setToPixelCoordinateSystem';
 import type {
   DataAddOptions,
   LoadedData,
@@ -71,15 +74,27 @@ export class CpuVolumeSliceRenderPath
       .getProperty()
       .getRGBTransferFunction(0)
       .getRange();
+    let rendering: PlanarCpuVolumeRendering;
+    const compatibilityActor = new CanvasActor(
+      {
+        getImageData: () => this.getImageData(rendering),
+      } as unknown as IViewport,
+      payload.imageVolume.imageIds?.length
+        ? { imageId: payload.imageVolume.imageIds[0] }
+        : {}
+    );
+
+    compatibilityActor.setVisibility(true);
 
     ctx.vtk.renderer.addVolume(actor);
     ctx.display.activateRenderMode('cpuVolume');
 
-    const rendering: PlanarCpuVolumeRendering = {
+    rendering = {
       id: `rendering:${data.id}:${options.renderMode}`,
       renderMode: 'cpuVolume',
       actor,
       mapper,
+      compatibilityActor,
       imageVolume: payload.imageVolume,
       layerCanvas: createCanvas(
         null,
@@ -94,6 +109,7 @@ export class CpuVolumeSliceRenderPath
       requestedCamera: undefined,
       renderCamera: undefined,
       renderingInvalidated: true,
+      compositeActor: typeof payload.representationUID === 'string',
       removeStreamingSubscriptions: (() => {
         let isActive = true;
         let pendingAnimationFrameId: number | undefined;
@@ -107,6 +123,10 @@ export class CpuVolumeSliceRenderPath
             const shouldResampleOnDeferredPass =
               eventType === Events.IMAGE_VOLUME_LOADING_COMPLETED;
 
+            payload.imageVolume.voxelManager?.invalidateCache?.();
+            this.sampler.clearCachedScalarRange(
+              payload.imageVolume.voxelManager
+            );
             rendering.pendingVolumeLoadCallback = false;
             rendering.sampledSliceState = undefined;
             rendering.renderingInvalidated = true;
@@ -318,8 +338,12 @@ export class CpuVolumeSliceRenderPath
       runtime.imageVolume as { loadStatus?: { loaded?: boolean } }
     ).loadStatus;
     const hasStreamedFrameData = hasStreamedVolumeData(runtime.imageVolume);
+    const isVolumeReady =
+      loadStatus === undefined ||
+      loadStatus.loaded === true ||
+      hasStreamedFrameData;
 
-    if (!loadStatus?.loaded && !hasStreamedFrameData) {
+    if (!isVolumeReady) {
       if (!runtime.pendingVolumeLoadCallback) {
         runtime.pendingVolumeLoadCallback = true;
         runtime.imageVolume.load();
@@ -395,7 +419,20 @@ export class CpuVolumeSliceRenderPath
       sampledSliceState.image.minPixelValue ?? 0,
       sampledSliceState.image.maxPixelValue ?? 1
     );
-    drawImageSync(runtime.enabledElement, runtime.renderingInvalidated);
+
+    if (shouldResample) {
+      runtime.compatibilityActor
+        .getMapper()
+        .getInputData()
+        .setDerivedImage(sampledSliceState.image);
+    }
+
+    if (runtime.compositeActor) {
+      renderCanvasActorLayer(runtime);
+    } else {
+      drawImageSync(runtime.enabledElement, runtime.renderingInvalidated);
+    }
+
     runtime.renderingInvalidated = false;
     compositeLayerCanvas(ctx, runtime);
     triggerEvent(ctx.viewport.element, Events.IMAGE_RENDERED, {
@@ -554,6 +591,31 @@ export class CpuVolumeSlicePath
       vtk: rootContext.vtk,
     };
   }
+}
+
+function renderCanvasActorLayer(rendering: PlanarCpuVolumeRendering): void {
+  const enabledElement = rendering.enabledElement;
+
+  if (!enabledElement) {
+    return;
+  }
+
+  const context = rendering.layerCanvas.getContext('2d');
+
+  if (!context) {
+    return;
+  }
+
+  context.setTransform(1, 0, 0, 1, 0, 0);
+  context.clearRect(
+    0,
+    0,
+    rendering.layerCanvas.width,
+    rendering.layerCanvas.height
+  );
+  context.imageSmoothingEnabled = !enabledElement.viewport.pixelReplication;
+  setToPixelCoordinateSystem(enabledElement, context);
+  rendering.compatibilityActor.render(undefined as never, context);
 }
 
 function clearToBackground(ctx: PlanarCpuVolumeAdapterContext): void {

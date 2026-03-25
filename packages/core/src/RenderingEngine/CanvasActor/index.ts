@@ -17,6 +17,9 @@ export default class CanvasActor {
   private visibility = false;
   private mapper = new CanvasMapper(this);
   private viewport;
+  private rasterDirty = true;
+  private hasCachedRaster = false;
+  private cachedImageData?: ImageData;
   protected className = 'CanvasActor';
   protected canvas;
 
@@ -34,73 +37,68 @@ export default class CanvasActor {
     let { canvas } = this;
     if (!canvas || canvas.width !== width || canvas.height !== height) {
       this.canvas = canvas = new window.OffscreenCanvas(width, height);
+      this.cachedImageData = undefined;
+      this.rasterDirty = true;
     }
+
+    if (!this.rasterDirty) {
+      if (this.hasCachedRaster) {
+        context.drawImage(canvas, 0, 0);
+      }
+
+      return;
+    }
+
     const localContext = canvas.getContext('2d');
-    const imageData = localContext.createImageData(width, height);
+    let imageData = this.cachedImageData;
+
+    if (!imageData) {
+      imageData = localContext.createImageData(width, height);
+      this.cachedImageData = imageData;
+    }
+
     const { data: imageArray } = imageData;
     imageArray.fill(0);
     const { map } = voxelManager;
-    let dirtyX = Infinity;
-    let dirtyY = Infinity;
-    let dirtyX2 = -Infinity;
-    let dirtyY2 = -Infinity;
+    let hasVisiblePixels = false;
+
     for (let y = 0; y < height; y++) {
       const row = map.getRun(y, 0);
       if (!row) {
         continue;
       }
-      dirtyY = Math.min(dirtyY, y);
-      dirtyY2 = Math.max(dirtyY2, y);
+
       const baseOffset = (y * width) << 2;
-      let indicesToDelete;
       for (const run of row) {
         const { start, end, value: segmentIndex } = run;
         if (segmentIndex === 0) {
-          indicesToDelete ||= [];
-          indicesToDelete.push(row.indexOf(run));
           continue;
         }
-        dirtyX = Math.min(dirtyX, start);
-        dirtyX2 = Math.max(dirtyX2, end);
-        const rgb = this.canvasProperties
-          .getColor(segmentIndex)
-          .map((v) => v * 255);
+
+        hasVisiblePixels = true;
+        const rgba = this.canvasProperties.getColorBytes(segmentIndex);
         let startOffset = baseOffset + (start << 2);
 
         for (let i = start; i < end; i++) {
-          imageArray[startOffset++] = rgb[0];
-          imageArray[startOffset++] = rgb[1];
-          imageArray[startOffset++] = rgb[2];
-          imageArray[startOffset++] = rgb[3];
+          imageArray[startOffset++] = rgba[0];
+          imageArray[startOffset++] = rgba[1];
+          imageArray[startOffset++] = rgba[2];
+          imageArray[startOffset++] = rgba[3];
         }
       }
     }
 
-    if (dirtyX > width) {
+    if (!hasVisiblePixels) {
+      localContext.clearRect(0, 0, width, height);
+      this.hasCachedRaster = false;
+      this.rasterDirty = false;
       return;
     }
-    const dirtyWidth = dirtyX2 - dirtyX;
-    const dirtyHeight = dirtyY2 - dirtyY;
-    localContext.putImageData(
-      imageData,
-      0,
-      0,
-      dirtyX - 1,
-      dirtyY - 1,
-      dirtyWidth + 2,
-      dirtyHeight + 2
-    );
-    context.drawImage(
-      canvas,
-      dirtyX,
-      dirtyY,
-      dirtyWidth,
-      dirtyHeight,
-      dirtyX,
-      dirtyY,
-      dirtyWidth,
-      dirtyHeight
-    );
+
+    localContext.putImageData(imageData, 0, 0);
+    this.hasCachedRaster = true;
+    this.rasterDirty = false;
+    context.drawImage(canvas, 0, 0);
   }
 
   public setMapper(mapper: CanvasMapper) {
@@ -120,70 +118,65 @@ export default class CanvasActor {
       return;
     }
     const { voxelManager } = image;
-    if (voxelManager) {
-      if (voxelManager.map.getRun) {
-        this.renderRLE(viewport, context, voxelManager);
-        return;
-      }
+    if (voxelManager?.map?.getRun) {
+      this.renderRLE(viewport, context, voxelManager);
+      return;
     }
     let { canvas } = this;
     if (!canvas || canvas.width !== width || canvas.height !== height) {
       this.canvas = canvas = new window.OffscreenCanvas(width, height);
+      this.cachedImageData = undefined;
+      this.rasterDirty = true;
     }
+
+    if (!this.rasterDirty) {
+      if (this.hasCachedRaster) {
+        context.drawImage(canvas, 0, 0);
+      }
+
+      return;
+    }
+
     const localContext = canvas.getContext('2d');
-    const imageData = localContext.createImageData(width, height);
+    let imageData = this.cachedImageData;
+
+    if (!imageData) {
+      imageData = localContext.createImageData(width, height);
+      this.cachedImageData = imageData;
+    }
+
     const { data: imageArray } = imageData;
+    imageArray.fill(0);
     let offset = 0;
     let destOffset = 0;
-    let dirtyX = Infinity;
-    let dirtyY = Infinity;
-    let dirtyX2 = -Infinity;
-    let dirtyY2 = -Infinity;
+    let hasVisiblePixels = false;
+
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
-        // const destOffset = (x + y * width) * 4;
         const segmentIndex = data[offset++];
         if (segmentIndex) {
-          dirtyX = Math.min(x, dirtyX);
-          dirtyY = Math.min(y, dirtyY);
-          dirtyX2 = Math.max(x, dirtyX2);
-          dirtyY2 = Math.max(y, dirtyY2);
-          const rgb = this.canvasProperties.getColor(segmentIndex);
-          imageArray[destOffset] = rgb[0] * 255;
-          imageArray[destOffset + 1] = rgb[1] * 255;
-          imageArray[destOffset + 2] = rgb[2] * 255;
-          imageArray[destOffset + 3] = 127;
-          // imageArray.fill(55, offset, offset + 4);
+          hasVisiblePixels = true;
+          const rgba = this.canvasProperties.getColorBytes(segmentIndex);
+          imageArray[destOffset] = rgba[0];
+          imageArray[destOffset + 1] = rgba[1];
+          imageArray[destOffset + 2] = rgba[2];
+          imageArray[destOffset + 3] = rgba[3];
         }
         destOffset += 4;
       }
     }
 
-    if (dirtyX > width) {
+    if (!hasVisiblePixels) {
+      localContext.clearRect(0, 0, width, height);
+      this.hasCachedRaster = false;
+      this.rasterDirty = false;
       return;
     }
-    const dirtyWidth = dirtyX2 - dirtyX + 1;
-    const dirtyHeight = dirtyY2 - dirtyY + 1;
-    localContext.putImageData(
-      imageData,
-      0,
-      0,
-      dirtyX,
-      dirtyY,
-      dirtyWidth,
-      dirtyHeight
-    );
-    context.drawImage(
-      canvas,
-      dirtyX,
-      dirtyY,
-      dirtyWidth,
-      dirtyHeight,
-      dirtyX,
-      dirtyY,
-      dirtyWidth,
-      dirtyHeight
-    );
+
+    localContext.putImageData(imageData, 0, 0);
+    this.hasCachedRaster = true;
+    this.rasterDirty = false;
+    context.drawImage(canvas, 0, 0);
   }
 
   public getClassName() {
@@ -204,6 +197,10 @@ export default class CanvasActor {
 
   public isA(actorType) {
     return actorType === this.className;
+  }
+
+  public modified() {
+    this.rasterDirty = true;
   }
 
   public getImage() {
@@ -229,6 +226,7 @@ export default class CanvasActor {
       setDerivedImage: (image) => {
         this.derivedImage = image;
         this.image = null;
+        this.modified();
       },
       modified: () => null,
     });

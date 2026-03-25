@@ -1,6 +1,7 @@
 import cache from '../../../cache/cache';
 import { loadAndCacheGeometry } from '../../../loaders/geometryLoader';
 import { createAndCacheVolume } from '../../../loaders/volumeLoader';
+import resolveViewportVolumeId from '../../helpers/resolveViewportVolumeId';
 import type { LoadedData } from '../ViewportArchitectureTypes';
 import {
   getViewportV2ImageDataSet,
@@ -12,8 +13,6 @@ import type {
   Volume3DRegisteredDataSet,
   Volume3DVolumePayload,
 } from './3dViewportTypes';
-
-const STREAMING_VOLUME_LOADER_SCHEME = 'cornerstoneStreamingImageVolume';
 
 export class DefaultVolume3DDataProvider implements Volume3DDataProvider {
   async load(
@@ -37,7 +36,7 @@ export class DefaultVolume3DDataProvider implements Volume3DDataProvider {
         );
       }
 
-      const volumeId = getStreamingVolumeId(dataSet.volumeId || dataId);
+      const volumeId = resolveViewportVolumeId(dataSet.volumeId ?? dataId);
       const imageVolume = await createAndCacheVolume(volumeId, {
         imageIds: dataSet.imageIds,
       });
@@ -77,18 +76,6 @@ export class DefaultVolume3DDataProvider implements Volume3DDataProvider {
 
     return dataSet;
   }
-}
-
-function getStreamingVolumeId(volumeId: string): string {
-  if (volumeId.startsWith(`${STREAMING_VOLUME_LOADER_SCHEME}:`)) {
-    return volumeId;
-  }
-
-  if (volumeId.includes(':')) {
-    return volumeId;
-  }
-
-  return `${STREAMING_VOLUME_LOADER_SCHEME}:${volumeId}`;
 }
 
 function isVolume3DRegisteredDataSet(

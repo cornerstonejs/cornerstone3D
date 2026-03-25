@@ -2,7 +2,6 @@ import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { Types } from '@cornerstonejs/core';
 import {
-  BaseVolumeViewport,
   getEnabledElement,
   Enums,
   getEnabledElementByIds,
@@ -14,6 +13,7 @@ import { updateLabelmapSegmentationImageReferences } from '../../stateManagement
 import { getCurrentLabelmapImageIdsForViewport } from '../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import { SegmentationRepresentations } from '../../enums';
 import { getLabelmapActorEntries } from '../../stateManagement/segmentation/helpers/getSegmentationActor';
+import getViewportLabelmapRenderMode from '../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
 import { getSegmentationRepresentations } from '../../stateManagement/segmentation/getSegmentationRepresentation';
 
 const enable = function (element: HTMLDivElement): void {
@@ -29,7 +29,7 @@ const enable = function (element: HTMLDivElement): void {
 
   const { viewport } = enabledElement;
 
-  if (viewport instanceof BaseVolumeViewport) {
+  if (getViewportLabelmapRenderMode(viewport) !== 'image') {
     return;
   }
 
@@ -82,6 +82,10 @@ function _imageChangeEventListener(evt) {
   }
 
   const { viewport } = enabledElement;
+
+  if (getViewportLabelmapRenderMode(viewport) !== 'image') {
+    return;
+  }
 
   const representations = getSegmentationRepresentations(viewportId);
 
@@ -163,59 +167,71 @@ function _imageChangeEventListener(evt) {
       );
 
       if (!segmentationActorInput) {
-        // i guess we need to create here
-        const { dimensions, spacing, direction } =
-          viewport.getImageDataMetadata(derivedImage);
+        const renderMode = getViewportLabelmapRenderMode(viewport);
+        const defaultActorRenderMode = viewport.getDefaultActor()?.actorMapper
+          ?.renderMode as string | undefined;
 
-        const currentImage =
-          cache.getImage(currentImageId) ||
-          ({
-            imageId: currentImageId,
-          } as Types.IImage);
-
-        const { origin: currentOrigin } =
-          viewport.getImageDataMetadata(currentImage);
-
-        // IMPORTANT: We need to make sure that the origin of the segmentation
-        // is the same as the current image origin. This is because due to some
-        // floating point precision issues, when coming from volume to stack
-        // the origin of the segmentation can be slightly different from the
-        // current image origin. This can cause the segmentation to be rendered
-        // in the wrong location.
-        // Todo: This will not work for segmentations that are not in the same frame
-        // of reference or derived from the same image. This can happen when we have
-        // a segmentation that happens to exist in the same space as the image but is
-        // not derived from it. We need to find a way to handle this case, but don't think
-        // it makes sense to do it for the stack viewport, as the volume viewport is designed to handle this case.
-        const originToUse = currentOrigin;
-        const constructor = derivedImage.voxelManager.getConstructor();
-        const newPixelData = derivedImage.voxelManager.getScalarData();
-
-        const scalarArray = vtkDataArray.newInstance({
-          name: 'Pixels',
-          numberOfComponents: 1,
-          // @ts-expect-error
-          values: new constructor(newPixelData),
-        });
-
-        const imageData = vtkImageData.newInstance();
-
-        imageData.setDimensions(dimensions[0], dimensions[1], 1);
-        imageData.setSpacing(spacing);
-        imageData.setDirection(direction);
-        imageData.setOrigin(originToUse);
-        imageData.getPointData().setScalars(scalarArray);
-        imageData.modified();
-
-        viewport.addImages([
-          {
-            imageId: derivedImageId,
-            representationUID: `${segmentationId}-${SegmentationRepresentations.Labelmap}-${derivedImage.imageId}`,
-            callback: ({ imageActor }) => {
-              imageActor.getMapper().setInputData(imageData);
+        if (renderMode === 'image' && defaultActorRenderMode === 'cpu2d') {
+          viewport.addImages([
+            {
+              imageId: derivedImageId,
+              representationUID: `${segmentationId}-${SegmentationRepresentations.Labelmap}-${derivedImage.imageId}`,
             },
-          },
-        ]);
+          ]);
+        } else {
+          const { dimensions, spacing, direction } =
+            viewport.getImageDataMetadata(derivedImage);
+
+          const currentImage =
+            cache.getImage(currentImageId) ||
+            ({
+              imageId: currentImageId,
+            } as Types.IImage);
+
+          const { origin: currentOrigin } =
+            viewport.getImageDataMetadata(currentImage);
+
+          // IMPORTANT: We need to make sure that the origin of the segmentation
+          // is the same as the current image origin. This is because due to some
+          // floating point precision issues, when coming from volume to stack
+          // the origin of the segmentation can be slightly different from the
+          // current image origin. This can cause the segmentation to be rendered
+          // in the wrong location.
+          // Todo: This will not work for segmentations that are not in the same frame
+          // of reference or derived from the same image. This can happen when we have
+          // a segmentation that happens to exist in the same space as the image but is
+          // not derived from it. We need to find a way to handle this case, but don't think
+          // it makes sense to do it for the stack viewport, as the volume viewport is designed to handle this case.
+          const originToUse = currentOrigin;
+          const constructor = derivedImage.voxelManager.getConstructor();
+          const newPixelData = derivedImage.voxelManager.getScalarData();
+
+          const scalarArray = vtkDataArray.newInstance({
+            name: 'Pixels',
+            numberOfComponents: 1,
+            // @ts-expect-error
+            values: new constructor(newPixelData),
+          });
+
+          const imageData = vtkImageData.newInstance();
+
+          imageData.setDimensions(dimensions[0], dimensions[1], 1);
+          imageData.setSpacing(spacing);
+          imageData.setDirection(direction);
+          imageData.setOrigin(originToUse);
+          imageData.getPointData().setScalars(scalarArray);
+          imageData.modified();
+
+          viewport.addImages([
+            {
+              imageId: derivedImageId,
+              representationUID: `${segmentationId}-${SegmentationRepresentations.Labelmap}-${derivedImage.imageId}`,
+              callback: ({ imageActor }) => {
+                imageActor.getMapper().setInputData(imageData);
+              },
+            },
+          ]);
+        }
 
         shouldTriggerSegmentationRender = true;
         return;
@@ -241,14 +257,9 @@ function _imageChangeEventListener(evt) {
     };
 
     derivedImageIds.forEach(updateSegmentationActor);
+
     // if one or more actors were added to the viewport
     // we need to trigger a segmentation render
-    if (shouldTriggerSegmentationRender) {
-      triggerSegmentationRender(viewportId);
-    }
-
-    viewport.render();
-
     // This is put here to make sure that the segmentation is rendered
     // for the initial image as well after that we don't need it since
     // stack new image is called when changing slices
@@ -259,6 +270,12 @@ function _imageChangeEventListener(evt) {
         _imageChangeEventListener as EventListener
       );
     }
+
+    if (shouldTriggerSegmentationRender) {
+      triggerSegmentationRender(viewportId);
+    }
+
+    viewport.render();
   });
 }
 

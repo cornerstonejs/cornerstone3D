@@ -5,6 +5,7 @@ import type {
   OrientationAxis,
 } from '../../../enums';
 import type {
+  ActorEntry,
   ColormapPublic,
   IImage,
   IImageVolume,
@@ -43,6 +44,9 @@ export interface PlanarRegisteredDataSet {
   initialImageIdIndex?: number;
   volumeId?: string;
   image?: IImage;
+  actorUID?: string;
+  referencedId?: string;
+  representationUID?: string;
 }
 
 export interface PlanarSetDataOptions {
@@ -69,6 +73,9 @@ export interface PlanarPayload {
   acquisitionOrientation?: PlanarCamera['orientation'];
   imageVolume?: IImageVolume;
   image?: IImage;
+  actorUID?: string;
+  referencedId?: string;
+  representationUID?: string;
 }
 
 export interface PlanarPresentationProps extends BasePresentationProps {
@@ -109,6 +116,7 @@ export interface PlanarViewportRenderContext extends BaseViewportRenderContext {
   type: 'planar';
   viewport: {
     element: HTMLDivElement;
+    getOverlayActors(): ActorEntry[];
   };
   display: {
     requestRender(): void;

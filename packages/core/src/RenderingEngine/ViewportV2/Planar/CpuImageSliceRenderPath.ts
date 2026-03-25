@@ -1,4 +1,5 @@
 import { vec3 } from 'gl-matrix';
+import CanvasActor from '../../CanvasActor';
 import calculateTransform from '../../helpers/cpuFallback/rendering/calculateTransform';
 import getDefaultViewport from '../../helpers/cpuFallback/rendering/getDefaultViewport';
 import { getDefaultImageVOIRange } from '../../helpers/planarImageRendering';
@@ -24,6 +25,7 @@ import type {
   Point2,
   Point3,
 } from '../../../types';
+import type { IViewport } from '../../../types/IViewport';
 import type {
   DataAddOptions,
   LoadedData,
@@ -67,6 +69,16 @@ export class CpuImageSliceRenderPath
 
     ctx.display.activateRenderMode('cpu2d');
 
+    let rendering: PlanarCpuImageRendering;
+    const compatibilityActor = new CanvasActor(
+      {
+        getImageData: () => this.getImageData(rendering),
+      } as unknown as IViewport,
+      payload.image
+    );
+
+    compatibilityActor.setVisibility(true);
+
     const enabledElement = {
       canvas: ctx.cpu.canvas,
       image: payload.image,
@@ -82,10 +94,11 @@ export class CpuImageSliceRenderPath
       image: payload.image,
     });
 
-    const rendering: PlanarCpuImageRendering = {
+    rendering = {
       id: `rendering:${data.id}:${options.renderMode}`,
       renderMode: 'cpu2d',
       enabledElement,
+      compatibilityActor,
       currentImageIdIndex: payload.initialImageIdIndex,
       defaultVOIRange: getDefaultImageVOIRange(payload.image),
       dataPresentation: undefined,
@@ -291,6 +304,7 @@ export class CpuImageSliceRenderPath
     rendering: PlanarCpuImageRendering
   ): void {
     renderCPUImage(rendering);
+    renderCompatibilityOverlayActors(ctx);
     triggerEvent(ctx.viewport.element, Events.IMAGE_RENDERED, {
       element: ctx.viewport.element,
       viewportId: ctx.viewportId,
@@ -560,6 +574,23 @@ function renderCPUImage(rendering: PlanarCpuImageRendering): void {
   rendering.renderingInvalidated = false;
 }
 
+function renderCompatibilityOverlayActors(
+  ctx: PlanarCpuImageAdapterContext
+): void {
+  const overlayActors = ctx.viewport.getOverlayActors();
+
+  for (const actorEntry of overlayActors) {
+    if (actorEntry.actorMapper?.renderMode !== 'cpu2d') {
+      continue;
+    }
+
+    (actorEntry.actor as CanvasActor).render(
+      undefined as never,
+      ctx.cpu.context
+    );
+  }
+}
+
 async function updateRenderedImage(args: {
   ctx: PlanarCpuImageAdapterContext;
   image: IImage;
@@ -589,6 +620,10 @@ async function updateRenderedImage(args: {
   rendering.defaultVOIRange = getDefaultImageVOIRange(image);
   rendering.fitScale = defaultViewport.scale ?? 1;
   rendering.renderingInvalidated = true;
+  rendering.compatibilityActor
+    .getMapper()
+    .getInputData()
+    .setDerivedImage(image);
 
   applyDataPresentation(rendering, props);
   const sliceBasis = createPlanarCpuImageSliceBasis({

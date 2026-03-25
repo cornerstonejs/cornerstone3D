@@ -1,4 +1,4 @@
-import { cache } from '@cornerstonejs/core';
+import { cache, eventTarget, triggerEvent, Enums } from '@cornerstonejs/core';
 
 import type { SegmentationRepresentations } from '../../../enums';
 import type { LabelmapSegmentationDataVolume } from '../../../types/LabelmapTypes';
@@ -35,12 +35,25 @@ export function performVolumeLabelmapUpdate({
     slicesToUpdate = [...Array(numSlices).keys()];
   }
 
-  slicesToUpdate.forEach((i) => {
-    vtkOpenGLTexture.setUpdatedFrame(i);
-  });
+  vtkOpenGLTexture?.setUpdatedFrame &&
+    slicesToUpdate.forEach((i) => {
+      vtkOpenGLTexture.setUpdatedFrame(i);
+    });
 
   // Trigger modified on the imageData to update the image
   // this is the start of the rendering pipeline for updating the texture
   // to the gpu
   imageData.modified();
+
+  const numberOfFrames =
+    segmentationVolume.imageIds?.length ?? imageData.getDimensions()[2] ?? 0;
+  const FrameOfReferenceUID =
+    segmentationVolume.metadata?.FrameOfReferenceUID ?? '';
+
+  triggerEvent(eventTarget, Enums.Events.IMAGE_VOLUME_MODIFIED, {
+    volumeId: segmentationVolume.volumeId,
+    FrameOfReferenceUID,
+    numberOfFrames,
+    framesProcessed: numberOfFrames,
+  });
 }

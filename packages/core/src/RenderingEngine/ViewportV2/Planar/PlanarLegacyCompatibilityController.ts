@@ -352,10 +352,16 @@ class PlanarLegacyCompatibilityController {
         const dataId = this.getLegacyVolumeDataId(volumeInput.volumeId);
 
         this.registerDataSet(dataId, {
+          actorUID: volumeInput.actorUID,
           imageIds: cachedVolume.imageIds,
           initialImageIdIndex: this.getInitialVolumeImageIdIndex(
             cachedVolume.imageIds.length
           ),
+          referencedId: volumeInput.volumeId,
+          representationUID:
+            typeof volumeInput.representationUID === 'string'
+              ? volumeInput.representationUID
+              : undefined,
           volumeId: volumeInput.volumeId,
         });
         this.volumeDataIds.set(volumeInput.volumeId, dataId);

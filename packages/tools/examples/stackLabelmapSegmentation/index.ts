@@ -330,7 +330,7 @@ function setupTools(toolGroupId) {
         dynamicRadius: 3,
       },
       preview: {
-        enabled: true,
+        enabled: false,
       },
     }
   );
@@ -344,7 +344,7 @@ function setupTools(toolGroupId) {
         dynamicRadius: 3,
       },
       preview: {
-        enabled: true,
+        enabled: false,
       },
     }
   );
@@ -354,7 +354,7 @@ function setupTools(toolGroupId) {
     {
       activeStrategy: brushStrategies.CircularBrush,
       preview: {
-        enabled: true,
+        enabled: false,
       },
       useCenterSegmentIndex: true,
     }

@@ -1,5 +1,6 @@
 import { loadAndCacheImage } from '../../../loaders/imageLoader';
 import { createAndCacheVolume } from '../../../loaders/volumeLoader';
+import resolveViewportVolumeId from '../../helpers/resolveViewportVolumeId';
 import type { LoadedData } from '../ViewportArchitectureTypes';
 import {
   getViewportV2ImageDataSet,
@@ -44,20 +45,26 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
       options.renderMode === 'vtkVolume' ||
       options.renderMode === 'cpuVolume'
     ) {
-      const volumeId = getStreamingVolumeId(options.volumeId);
+      const volumeId = resolveViewportVolumeId(options.volumeId);
       const imageVolume = await createAndCacheVolume(volumeId, {
         imageIds: dataSet.imageIds,
       });
       imageVolume.load();
+      const imageIds = imageVolume.imageIds
+        ? imageVolume.imageIds
+        : dataSet.imageIds;
 
       return {
         id: dataId,
         type: 'image',
-        imageIds: imageVolume.imageIds || dataSet.imageIds,
+        actorUID: dataSet.actorUID,
+        imageIds,
         initialImageIdIndex: clampedImageIdIndex,
         acquisitionOrientation: options.acquisitionOrientation,
         imageVolume,
+        referencedId: dataSet.referencedId,
         renderMode: options.renderMode,
+        representationUID: dataSet.representationUID,
         volumeId,
       };
     }
@@ -69,11 +76,14 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
     return {
       id: dataId,
       type: 'image',
+      actorUID: dataSet.actorUID,
       imageIds: dataSet.imageIds,
       image,
       initialImageIdIndex: clampedImageIdIndex,
       acquisitionOrientation: options.acquisitionOrientation,
+      referencedId: dataSet.referencedId,
       renderMode: options.renderMode,
+      representationUID: dataSet.representationUID,
       volumeId: options.volumeId,
     };
   }
@@ -88,20 +98,6 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
     return dataSet;
   }
 }
-
-function getStreamingVolumeId(volumeId: string): string {
-  if (volumeId.startsWith(`${STREAMING_VOLUME_LOADER_SCHEME}:`)) {
-    return volumeId;
-  }
-
-  if (volumeId.includes(':')) {
-    return volumeId;
-  }
-
-  return `${STREAMING_VOLUME_LOADER_SCHEME}:${volumeId}`;
-}
-
-const STREAMING_VOLUME_LOADER_SCHEME = 'cornerstoneStreamingImageVolume';
 
 function isPlanarRegisteredDataSet(
   value: unknown

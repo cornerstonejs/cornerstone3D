@@ -5,7 +5,6 @@ import {
   addImageSlicesToViewports,
   Enums,
   cache,
-  BaseVolumeViewport,
   volumeLoader,
   utilities,
 } from '@cornerstonejs/core';
@@ -23,6 +22,7 @@ import {
 import { SegmentationRepresentations } from '../../../enums';
 import { addVolumesAsIndependentComponents } from './addVolumesAsIndependentComponents';
 import type { LabelmapRenderingConfig } from '../../../types/SegmentationStateTypes';
+import getViewportLabelmapRenderMode from '../../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
 
 const { uuidv4 } = utilities;
 
@@ -52,7 +52,12 @@ async function addLabelmapToElement(
   const visibility = true;
   const immediateRender = false;
   const suppressEvents = true;
-  if (viewport instanceof BaseVolumeViewport) {
+  const renderMode = getViewportLabelmapRenderMode(viewport);
+
+  if (renderMode === 'volume') {
+    const volumeCompatibleViewport = viewport as Types.IVolumeViewport & {
+      getVolumeId?: () => string;
+    };
     const volumeLabelMapData = labelMapData as LabelmapSegmentationDataVolume;
     const volumeId = _ensureVolumeHasVolumeId(
       volumeLabelMapData,
@@ -71,7 +76,7 @@ async function addLabelmapToElement(
 
     // Add dimension check before deciding to use independent components
     if (useIndependentComponents) {
-      const referenceVolumeId = viewport.getVolumeId();
+      const referenceVolumeId = volumeCompatibleViewport.getVolumeId?.();
       const baseVolume = cache.getVolume(referenceVolumeId);
       const segVolume = cache.getVolume(volumeId);
 
@@ -126,14 +131,14 @@ async function addLabelmapToElement(
       );
     } else {
       const result = await addVolumesAsIndependentComponents({
-        viewport,
+        viewport: volumeCompatibleViewport,
         volumeInputs,
         segmentationId,
       });
 
       return result;
     }
-  } else {
+  } else if (renderMode === 'image') {
     // We can use the current imageId in the viewport to get the segmentation imageId
     // which later is used to create the actor and mapper.
     const segmentationImageIds = getCurrentLabelmapImageIdsForViewport(
@@ -150,6 +155,8 @@ async function addLabelmapToElement(
 
     // Add labelmap volumes to the viewports to be be rendered, but not force the render
     addImageSlicesToViewports(renderingEngine, stackInputs, [viewportId]);
+  } else {
+    return;
   }
 
   // Just to make sure if the segmentation data had value before, it gets updated too
@@ -195,7 +202,7 @@ async function _handleMissingVolume(labelMapData: LabelmapSegmentationData) {
   }
 
   const volume = await volumeLoader.createAndCacheVolumeFromImages(
-    (labelMapData as LabelmapSegmentationDataVolume).volumeId || uuidv4(),
+    (labelMapData as LabelmapSegmentationDataVolume).volumeId ?? uuidv4(),
     stackData.imageIds
   );
 

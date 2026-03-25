@@ -4,8 +4,6 @@ import {
   utilities as csUtils,
   Enums,
   eventTarget,
-  BaseVolumeViewport,
-  StackViewport,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -30,6 +28,7 @@ import { isPointInsidePolyline3D } from '../../utilities/math/polyline';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import { fillInsideCircle } from './strategies';
 import type { LabelmapToolOperationData } from '../../types/LabelmapToolOperationData';
+import getViewportLabelmapRenderMode from '../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
 
 /**
  * A type for preview data/information, used to setup previews on hover, or
@@ -285,7 +284,9 @@ export default class LabelmapBaseTool extends BaseTool {
     segmentsLocked,
     segmentationId,
   }): EditDataReturnType {
-    if (viewport instanceof BaseVolumeViewport) {
+    const viewportRenderMode = getViewportLabelmapRenderMode(viewport);
+
+    if (viewportRenderMode === 'volume') {
       if (!representationData[SegmentationRepresentations.Labelmap]) {
         return;
       }
@@ -297,20 +298,6 @@ export default class LabelmapBaseTool extends BaseTool {
         return;
       }
       const actors = viewport.getActors();
-
-      const isStackViewport = viewport instanceof StackViewport;
-
-      if (isStackViewport) {
-        const event = new CustomEvent(Enums.Events.ERROR_EVENT, {
-          detail: {
-            type: 'Segmentation',
-            message: 'Cannot perform brush operation on the selected viewport',
-          },
-          cancelable: true,
-        });
-        eventTarget.dispatchEvent(event);
-        return null;
-      }
 
       // we used to take the first actor here but we should take the one that is
       // probably the same size as the segmentation volume
@@ -332,7 +319,9 @@ export default class LabelmapBaseTool extends BaseTool {
           referencedVolumeIdToThreshold,
         segmentsLocked,
       };
-    } else {
+    }
+
+    if (viewportRenderMode === 'image') {
       const segmentationImageId = getCurrentLabelmapImageIdForViewport(
         viewport.id,
         segmentationId
@@ -349,6 +338,17 @@ export default class LabelmapBaseTool extends BaseTool {
         segmentsLocked,
       };
     }
+
+    const event = new CustomEvent(Enums.Events.ERROR_EVENT, {
+      detail: {
+        type: 'Segmentation',
+        message: 'Cannot perform brush operation on the selected viewport',
+      },
+      cancelable: true,
+    });
+    eventTarget.dispatchEvent(event);
+
+    return null;
   }
 
   protected createHoverData(element, centerCanvas?) {

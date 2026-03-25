@@ -1,6 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
 import {
-  BaseVolumeViewport,
   cache,
   utilities as csUtils,
   getEnabledElementByViewportId,
@@ -23,6 +22,7 @@ import type {
 } from '../../types/LabelmapTypes';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
+import getViewportLabelmapRenderMode from './helpers/getViewportLabelmapRenderMode';
 import {
   triggerSegmentationModified,
   triggerSegmentationRemoved,
@@ -429,12 +429,11 @@ export default class SegmentationStateManager {
      *    before rendering.
      */
     const volumeViewport =
-      enabledElement.viewport instanceof BaseVolumeViewport;
+      getViewportLabelmapRenderMode(enabledElement.viewport) === 'volume';
 
     const { representationData } = segmentation;
 
     const isBaseVolumeSegmentation = 'volumeId' in representationData.Labelmap;
-    const viewport = enabledElement.viewport;
     if (!volumeViewport && !isBaseVolumeSegmentation) {
       // Stack Viewport
       !this.updateLabelmapSegmentationImageReferences(
@@ -632,8 +631,19 @@ export default class SegmentationStateManager {
       return;
     }
 
-    const stackViewport = enabledElement.viewport as Types.IStackViewport;
-    const referenceImageId = stackViewport.getCurrentImageId();
+    const { viewport } = enabledElement;
+    const viewportRenderMode = getViewportLabelmapRenderMode(viewport);
+
+    if (
+      viewportRenderMode !== 'image' ||
+      typeof (viewport as Types.IStackViewport).getCurrentImageId !== 'function'
+    ) {
+      return;
+    }
+
+    const referenceImageId = (
+      viewport as Types.IStackViewport
+    ).getCurrentImageId();
 
     return this.getLabelmapImageIdsForImageId(referenceImageId, segmentationId);
   }
@@ -659,8 +669,19 @@ export default class SegmentationStateManager {
       return;
     }
 
-    const stackViewport = enabledElement.viewport as Types.IStackViewport;
-    const currentImageId = stackViewport.getCurrentImageId();
+    const { viewport } = enabledElement;
+    const viewportRenderMode = getViewportLabelmapRenderMode(viewport);
+
+    if (
+      viewportRenderMode !== 'image' ||
+      typeof (viewport as Types.IStackViewport).getCurrentImageId !== 'function'
+    ) {
+      return;
+    }
+
+    const currentImageId = (
+      viewport as Types.IStackViewport
+    ).getCurrentImageId();
 
     const imageIdReferenceMap =
       this._stackLabelmapImageIdReferenceMap.get(segmentationId);

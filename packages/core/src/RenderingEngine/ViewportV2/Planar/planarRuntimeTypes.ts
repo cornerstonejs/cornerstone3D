@@ -25,6 +25,7 @@ import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import type { InterpolationType } from '../../../enums';
 import type {
   CPUFallbackEnabledElement,
+  ICanvasActor,
   ICamera,
   IImage,
   IImageVolume,
@@ -68,6 +69,7 @@ export type PlanarImageMapperRendering = MountedRendering<{
 export type PlanarCpuImageRendering = MountedRendering<{
   renderMode: 'cpu2d';
   enabledElement: CPUFallbackEnabledElement;
+  compatibilityActor: ICanvasActor;
   currentImageIdIndex: number;
   defaultVOIRange?: VOIRange;
   dataPresentation?: PlanarDataPresentation;
@@ -90,6 +92,7 @@ export type PlanarCpuVolumeRendering = MountedRendering<{
   renderMode: 'cpuVolume';
   actor: vtkVolume;
   mapper: vtkVolumeMapper;
+  compatibilityActor: ICanvasActor;
   enabledElement?: CPUFallbackEnabledElement;
   imageVolume: IImageVolume;
   layerCanvas: HTMLCanvasElement;
@@ -100,6 +103,7 @@ export type PlanarCpuVolumeRendering = MountedRendering<{
   renderCamera?: ICamera;
   renderingInvalidated: boolean;
   dataPresentation?: PlanarDataPresentation;
+  compositeActor?: boolean;
   sampledSliceState?: {
     image: IImage;
     focalPoint: Point3;
