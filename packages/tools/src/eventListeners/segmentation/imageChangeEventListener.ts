@@ -135,6 +135,7 @@ function _imageChangeEventListener(evt) {
     }
 
     let shouldTriggerSegmentationRender = false;
+    const consumedActorUIDs = new Set<string>();
     const updateSegmentationActor = (derivedImageId) => {
       const derivedImage = cache.getImage(derivedImageId);
 
@@ -154,12 +155,15 @@ function _imageChangeEventListener(evt) {
       if (!segmentationActorInput) {
         const reusableEntry = actors.find(
           (a) =>
+            !consumedActorUIDs.has(a.uid) &&
             (a.representationUID as string)?.startsWith(
               `${segmentationId}-${SegmentationRepresentations.Labelmap}`
-            ) && a.referencedId !== derivedImageId
+            ) &&
+            a.referencedId !== derivedImageId
         );
 
         if (reusableEntry) {
+          consumedActorUIDs.add(reusableEntry.uid);
           const segImageData = reusableEntry.actor.getMapper().getInputData();
 
           const currentImage =
