@@ -26,14 +26,10 @@ async function setDefaultVolumeVOI(
   volumeActor: VolumeActor,
   imageVolume: IImageVolume
 ): Promise<void> {
-  let voi = getVOIFromMetadata(imageVolume);
-
-  if (!voi && imageVolume.imageIds.length) {
-    voi = await getVOIFromMiddleSliceMinMax(imageVolume);
-    voi = handlePreScaledVolume(imageVolume, voi);
-  }
+  const voi = await getDefaultVolumeVOIRange(imageVolume);
 
   if (
+    !voi ||
     (voi.lower === 0 && voi.upper === 0) ||
     voi.lower === undefined ||
     voi.upper === undefined
@@ -45,6 +41,19 @@ async function setDefaultVolumeVOI(
     .getProperty()
     .getRGBTransferFunction(0)
     .setMappingRange(voi.lower, voi.upper);
+}
+
+export async function getDefaultVolumeVOIRange(
+  imageVolume: IImageVolume
+): Promise<VOIRange | undefined> {
+  let voi = getVOIFromMetadata(imageVolume);
+
+  if (!voi && imageVolume.imageIds.length) {
+    voi = await getVOIFromMiddleSliceMinMax(imageVolume);
+    voi = handlePreScaledVolume(imageVolume, voi);
+  }
+
+  return voi;
 }
 
 function handlePreScaledVolume(imageVolume: IImageVolume, voi: VOIRange) {

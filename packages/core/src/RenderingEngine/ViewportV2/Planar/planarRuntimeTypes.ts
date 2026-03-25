@@ -85,13 +85,11 @@ export type PlanarCpuImageRendering = MountedRendering<{
  *
  * Samples an arbitrary orthogonal slice from an IImageVolume on the CPU
  * using `PlanarCPUVolumeSampler`, then renders the resulting IImage through
- * the CPU fallback pipeline. The `sampledSliceState` cache avoids
+ * the CPU fallback pipeline and `CanvasActor`. The `sampledSliceState` cache avoids
  * re-sampling when only presentation (VOI, colormap) changes.
  */
 export type PlanarCpuVolumeRendering = MountedRendering<{
   renderMode: 'cpuVolume';
-  actor: vtkVolume;
-  mapper: vtkVolumeMapper;
   compatibilityActor: ICanvasActor;
   enabledElement?: CPUFallbackEnabledElement;
   imageVolume: IImageVolume;

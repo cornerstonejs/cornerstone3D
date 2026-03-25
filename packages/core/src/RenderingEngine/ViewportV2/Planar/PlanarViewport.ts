@@ -1,3 +1,4 @@
+import { vec3 } from 'gl-matrix';
 import { OrientationAxis, ViewportType } from '../../../enums';
 import type BlendModes from '../../../enums/BlendModes';
 import type {
@@ -18,7 +19,9 @@ import type {
 import cache from '../../../cache/cache';
 import type { PlaneRestriction } from '../../../types/IViewport';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
+import getClosestImageId from '../../../utilities/getClosestImageId';
 import imageIdToURI from '../../../utilities/imageIdToURI';
+import isEqual from '../../../utilities/isEqual';
 import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
 import renderingEngineCache from '../../renderingEngineCache';
 import type { DataAddOptions, LoadedData } from '../ViewportArchitectureTypes';
@@ -86,6 +89,13 @@ defaultRenderPathResolver.register(new CpuImageSlicePath());
 defaultRenderPathResolver.register(new CpuVolumeSlicePath());
 defaultRenderPathResolver.register(new VtkImageMapperPath());
 defaultRenderPathResolver.register(new VtkVolumeMapperPath());
+
+type PlanarReferenceContext = {
+  dataId: string;
+  data: LoadedData<PlanarPayload>;
+  frameOfReferenceUID: string;
+  rendering: PlanarRendering;
+};
 
 class PlanarViewport extends ViewportV2<
   PlanarCamera,
@@ -431,6 +441,23 @@ class PlanarViewport extends ViewportV2<
     return this.getActors().find((actorEntry) => actorEntry.uid === actorUID);
   }
 
+  renderImageObject(image: IImage): Promise<string> {
+    return this.setStack([image.imageId], 0);
+  }
+
+  getCanvas(): HTMLCanvasElement {
+    const rendering = this.getCurrentPlanarRendering();
+
+    if (
+      rendering?.renderMode === 'cpu2d' ||
+      rendering?.renderMode === 'cpuVolume'
+    ) {
+      return this.renderContext.cpu.canvas;
+    }
+
+    return this.renderContext.vtk.canvas;
+  }
+
   removeActors(actorUIDs: string[]): void {
     let didRemoveActor = false;
 
@@ -548,8 +575,13 @@ class PlanarViewport extends ViewportV2<
    *
    * @returns The volume id for the active dataset, if one exists.
    */
-  getVolumeId(): string | undefined {
-    return this.getPlanarData()?.volumeId;
+  getVolumeId(
+    viewRefSpecifier: ViewReferenceSpecifier = {}
+  ): string | undefined {
+    return (
+      this.getPlanarReferenceContext(viewRefSpecifier)?.data.volumeId ??
+      this.getPlanarData()?.volumeId
+    );
   }
 
   /**
@@ -566,12 +598,18 @@ class PlanarViewport extends ViewportV2<
    *
    * @returns The current image id, if one can be resolved.
    */
-  getCurrentImageId(): string | undefined {
+  getCurrentImageId(
+    viewRefSpecifier: ViewReferenceSpecifier = {}
+  ): string | undefined {
+    const referenceContext = this.getPlanarReferenceContext(viewRefSpecifier);
+
     return getPlanarReferencedImageId({
       camera: this.camera,
-      data: this.getPlanarData(),
-      rendering: this.getCurrentPlanarRendering(),
+      data: referenceContext?.data,
+      frameOfReferenceUID: referenceContext?.frameOfReferenceUID,
+      rendering: referenceContext?.rendering,
       renderContext: this.renderContext,
+      viewRefSpecifier,
     });
   }
 
@@ -826,11 +864,14 @@ class PlanarViewport extends ViewportV2<
   getViewReference(
     viewRefSpecifier: ViewReferenceSpecifier = {}
   ): ViewReference {
+    const referenceContext = this.getPlanarReferenceContext(viewRefSpecifier);
+
     return getPlanarViewReference({
       camera: this.camera,
-      frameOfReferenceUID: this.getFrameOfReferenceUID(),
-      data: this.getPlanarData(),
-      rendering: this.getCurrentPlanarRendering(),
+      frameOfReferenceUID:
+        referenceContext?.frameOfReferenceUID ?? this.getFrameOfReferenceUID(),
+      data: referenceContext?.data,
+      rendering: referenceContext?.rendering,
       renderContext: this.renderContext,
       viewRefSpecifier,
     });
@@ -844,13 +885,37 @@ class PlanarViewport extends ViewportV2<
    * @returns A stable identifier for the current planar reference state.
    */
   getViewReferenceId(viewRefSpecifier: ViewReferenceSpecifier = {}): string {
+    const referenceContext = this.getPlanarReferenceContext(viewRefSpecifier);
+
     return getPlanarViewReferenceId({
       camera: this.camera,
-      data: this.getPlanarData(),
-      rendering: this.getCurrentPlanarRendering(),
+      frameOfReferenceUID: referenceContext?.frameOfReferenceUID,
+      data: referenceContext?.data,
+      rendering: referenceContext?.rendering,
       renderContext: this.renderContext,
       viewRefSpecifier,
     });
+  }
+
+  setViewReference(viewRef: ViewReference): void {
+    if (!viewRef) {
+      return;
+    }
+
+    const targetContext = this.resolveViewReferenceContext(viewRef);
+
+    if (!targetContext) {
+      return;
+    }
+
+    const didActivateBinding = this.activatePlanarReferenceContext(
+      targetContext.dataId
+    );
+    const didApplyReference = this.applyViewReferenceToCurrentBinding(viewRef);
+
+    if (didActivateBinding && !didApplyReference) {
+      this.render();
+    }
   }
 
   /**
@@ -997,15 +1062,32 @@ class PlanarViewport extends ViewportV2<
     viewRef: ViewReference,
     options: ReferenceCompatibleOptions = {}
   ): boolean {
-    return isPlanarReferenceViewable({
-      camera: this.camera,
-      frameOfReferenceUID: this.getFrameOfReferenceUID(),
-      imageIds: this.getImageIds(),
-      options,
-      rendering: this.getCurrentPlanarRendering(),
-      renderContext: this.renderContext,
-      viewRef,
-    });
+    const currentReferenceContext = this.getCurrentPlanarReferenceContext();
+
+    if (
+      currentReferenceContext &&
+      this.isReferenceViewableInContext(
+        currentReferenceContext,
+        viewRef,
+        options
+      )
+    ) {
+      return true;
+    }
+
+    for (const referenceContext of this.getAllPlanarReferenceContexts()) {
+      if (referenceContext.dataId === currentReferenceContext?.dataId) {
+        continue;
+      }
+
+      if (
+        this.isReferenceViewableInContext(referenceContext, viewRef, options)
+      ) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /**
@@ -1445,6 +1527,499 @@ class PlanarViewport extends ViewportV2<
     return this.getCurrentBinding()?.data as
       | LoadedData<PlanarPayload>
       | undefined;
+  }
+
+  private getCurrentPlanarReferenceContext():
+    | PlanarReferenceContext
+    | undefined {
+    if (this.activeDataId) {
+      const activeContext = this.getPlanarReferenceContextByDataId(
+        this.activeDataId
+      );
+
+      if (activeContext) {
+        return activeContext;
+      }
+    }
+
+    for (const [dataId] of this.bindings.entries()) {
+      return this.getPlanarReferenceContextByDataId(dataId);
+    }
+  }
+
+  private getPlanarReferenceContext(
+    viewRefSpecifier: ViewReferenceSpecifier = {}
+  ): PlanarReferenceContext | undefined {
+    if (viewRefSpecifier.volumeId) {
+      return (
+        this.findPlanarReferenceContextByVolumeId(viewRefSpecifier.volumeId) ??
+        this.getCurrentPlanarReferenceContext()
+      );
+    }
+
+    return this.getCurrentPlanarReferenceContext();
+  }
+
+  private getPlanarReferenceContextByDataId(
+    dataId: string
+  ): PlanarReferenceContext | undefined {
+    const binding = this.getBinding(dataId);
+
+    if (!binding) {
+      return;
+    }
+
+    return {
+      dataId,
+      data: binding.data as LoadedData<PlanarPayload>,
+      frameOfReferenceUID:
+        binding.getFrameOfReferenceUID() ?? `${this.type}-viewport-${this.id}`,
+      rendering: binding.rendering as PlanarRendering,
+    };
+  }
+
+  private getAllPlanarReferenceContexts(): PlanarReferenceContext[] {
+    const contexts: PlanarReferenceContext[] = [];
+
+    for (const [dataId] of this.bindings.entries()) {
+      const referenceContext = this.getPlanarReferenceContextByDataId(dataId);
+
+      if (referenceContext) {
+        contexts.push(referenceContext);
+      }
+    }
+
+    return contexts;
+  }
+
+  private findPlanarReferenceContextByVolumeId(
+    volumeId: string
+  ): PlanarReferenceContext | undefined {
+    for (const [dataId, binding] of this.bindings.entries()) {
+      const bindingData = binding.data as LoadedData<PlanarPayload>;
+
+      if (bindingData.volumeId === volumeId) {
+        return this.getPlanarReferenceContextByDataId(dataId);
+      }
+    }
+  }
+
+  private findPlanarReferenceContextByImageReference(
+    referencedImageId?: string,
+    referencedImageURI?: string
+  ): PlanarReferenceContext | undefined {
+    const targetImageURI =
+      referencedImageURI ||
+      (referencedImageId ? imageIdToURI(referencedImageId) : undefined);
+
+    if (!targetImageURI) {
+      return;
+    }
+
+    for (const referenceContext of this.getAllPlanarReferenceContexts()) {
+      if (
+        this.getImageIdsForReferenceContext(referenceContext).some(
+          (imageId) => imageIdToURI(imageId) === targetImageURI
+        )
+      ) {
+        return referenceContext;
+      }
+    }
+  }
+
+  private resolveViewReferenceContext(
+    viewRef: ViewReference
+  ): PlanarReferenceContext | undefined {
+    if (viewRef.volumeId) {
+      const volumeContext = this.findPlanarReferenceContextByVolumeId(
+        viewRef.volumeId
+      );
+
+      if (volumeContext) {
+        return volumeContext;
+      }
+    }
+
+    const imageContext = this.findPlanarReferenceContextByImageReference(
+      viewRef.referencedImageId,
+      viewRef.referencedImageURI
+    );
+
+    if (imageContext) {
+      return imageContext;
+    }
+
+    const currentReferenceContext = this.getCurrentPlanarReferenceContext();
+
+    if (
+      viewRef.FrameOfReferenceUID &&
+      currentReferenceContext?.frameOfReferenceUID !==
+        viewRef.FrameOfReferenceUID
+    ) {
+      return;
+    }
+
+    return currentReferenceContext;
+  }
+
+  private activatePlanarReferenceContext(dataId: string): boolean {
+    if (this.activeDataId === dataId) {
+      return false;
+    }
+
+    this.activeDataId = dataId;
+
+    return true;
+  }
+
+  private applyViewReferenceToCurrentBinding(viewRef: ViewReference): boolean {
+    const referenceContext = this.getCurrentPlanarReferenceContext();
+
+    if (
+      !referenceContext ||
+      (viewRef.FrameOfReferenceUID &&
+        referenceContext.frameOfReferenceUID !== viewRef.FrameOfReferenceUID)
+    ) {
+      return false;
+    }
+
+    const { rendering } = referenceContext;
+
+    if (
+      rendering.renderMode === 'cpu2d' ||
+      rendering.renderMode === 'vtkImage'
+    ) {
+      return this.applyImageViewReference(referenceContext, viewRef);
+    }
+
+    return this.applyVolumeViewReference(referenceContext, viewRef);
+  }
+
+  private applyImageViewReference(
+    referenceContext: PlanarReferenceContext,
+    viewRef: ViewReference
+  ): boolean {
+    const imageIds = this.getImageIdsForReferenceContext(referenceContext);
+    const referencedImageIndex = this.findImageIdIndexByReference(
+      imageIds,
+      viewRef.referencedImageId,
+      viewRef.referencedImageURI
+    );
+
+    if (typeof referencedImageIndex === 'number') {
+      this.setImageIdIndex(referencedImageIndex);
+      return true;
+    }
+
+    if (typeof viewRef.sliceIndex === 'number') {
+      this.setImageIdIndex(viewRef.sliceIndex);
+      return true;
+    }
+
+    return false;
+  }
+
+  private applyVolumeViewReference(
+    referenceContext: PlanarReferenceContext,
+    viewRef: ViewReference
+  ): boolean {
+    const normalizedViewRef = this.normalizeVolumeViewReference(
+      referenceContext,
+      viewRef
+    );
+    const computedCamera = this.getComputedCamera({
+      frameOfReferenceUID: referenceContext.frameOfReferenceUID,
+    })?.toICamera();
+
+    if (!computedCamera?.viewPlaneNormal) {
+      return false;
+    }
+
+    const currentViewPlaneNormal = computedCamera.viewPlaneNormal;
+    const refViewPlaneNormal = normalizedViewRef.viewPlaneNormal;
+    const shouldReorient =
+      refViewPlaneNormal &&
+      !this.areNormalsEqual(currentViewPlaneNormal, refViewPlaneNormal) &&
+      !this.areNormalsOpposite(currentViewPlaneNormal, refViewPlaneNormal);
+    const effectiveViewPlaneNormal =
+      refViewPlaneNormal ?? currentViewPlaneNormal;
+    const isOppositeNormal =
+      !shouldReorient &&
+      this.areNormalsOpposite(currentViewPlaneNormal, effectiveViewPlaneNormal);
+    const nextImageIdIndex = this.resolveVolumeReferenceImageIdIndex(
+      referenceContext,
+      normalizedViewRef,
+      effectiveViewPlaneNormal,
+      isOppositeNormal
+    );
+    const cameraPatch: Partial<PlanarCamera> = {};
+
+    if (shouldReorient && refViewPlaneNormal) {
+      cameraPatch.orientation = {
+        viewPlaneNormal: [...refViewPlaneNormal] as Point3,
+        ...(normalizedViewRef.viewUp
+          ? {
+              viewUp: [...normalizedViewRef.viewUp] as Point3,
+            }
+          : {}),
+      };
+    }
+
+    if (typeof nextImageIdIndex === 'number') {
+      cameraPatch.imageIdIndex = nextImageIdIndex;
+    }
+
+    if (!Object.keys(cameraPatch).length) {
+      return false;
+    }
+
+    this.setCamera(cameraPatch);
+
+    return true;
+  }
+
+  private normalizeVolumeViewReference(
+    referenceContext: PlanarReferenceContext,
+    viewRef: ViewReference
+  ): ViewReference {
+    if (!viewRef.planeRestriction || viewRef.viewPlaneNormal) {
+      return viewRef;
+    }
+
+    const orientation = this.deriveOrientationFromPlaneRestriction(
+      referenceContext,
+      viewRef.planeRestriction
+    );
+
+    return {
+      ...viewRef,
+      cameraFocalPoint:
+        viewRef.cameraFocalPoint ?? viewRef.planeRestriction.point,
+      ...orientation,
+    };
+  }
+
+  private deriveOrientationFromPlaneRestriction(
+    referenceContext: PlanarReferenceContext,
+    planeRestriction: PlaneRestriction
+  ): Pick<ViewReference, 'viewPlaneNormal' | 'viewUp'> {
+    const computedCamera = this.getComputedCamera({
+      frameOfReferenceUID: referenceContext.frameOfReferenceUID,
+    })?.toICamera();
+    const currentViewPlaneNormal = computedCamera?.viewPlaneNormal;
+    const currentViewUp = computedCamera?.viewUp;
+    const { inPlaneVector1, inPlaneVector2 } = planeRestriction;
+    const result: Pick<ViewReference, 'viewPlaneNormal' | 'viewUp'> = {};
+
+    if (
+      currentViewPlaneNormal &&
+      this.isPlaneRestrictionCompatibleWithNormal(
+        planeRestriction,
+        currentViewPlaneNormal
+      )
+    ) {
+      result.viewPlaneNormal = [...currentViewPlaneNormal] as Point3;
+      if (inPlaneVector1) {
+        result.viewUp = [...inPlaneVector1] as Point3;
+      } else if (currentViewUp) {
+        result.viewUp = [...currentViewUp] as Point3;
+      }
+
+      return result;
+    }
+
+    let derivedViewPlaneNormal: Point3 | undefined;
+
+    if (inPlaneVector1 && inPlaneVector2) {
+      const cross = vec3.cross(
+        vec3.create(),
+        inPlaneVector2 as unknown as vec3,
+        inPlaneVector1 as unknown as vec3
+      );
+
+      if (vec3.length(cross) > 0) {
+        vec3.normalize(cross, cross);
+        derivedViewPlaneNormal = [...cross] as Point3;
+      }
+    } else if (inPlaneVector1 && currentViewPlaneNormal) {
+      const cross = vec3.cross(
+        vec3.create(),
+        currentViewPlaneNormal as unknown as vec3,
+        inPlaneVector1 as unknown as vec3
+      );
+
+      if (vec3.length(cross) > 0) {
+        vec3.normalize(cross, cross);
+        derivedViewPlaneNormal = [...cross] as Point3;
+      }
+    }
+
+    if (derivedViewPlaneNormal) {
+      result.viewPlaneNormal = derivedViewPlaneNormal;
+    }
+
+    if (inPlaneVector1) {
+      result.viewUp = [...inPlaneVector1] as Point3;
+    } else if (currentViewUp) {
+      result.viewUp = [...currentViewUp] as Point3;
+    }
+
+    return result;
+  }
+
+  private isPlaneRestrictionCompatibleWithNormal(
+    planeRestriction: PlaneRestriction,
+    viewPlaneNormal: Point3
+  ): boolean {
+    return (
+      (!planeRestriction.inPlaneVector1 ||
+        isEqual(
+          0,
+          vec3.dot(
+            viewPlaneNormal as unknown as vec3,
+            planeRestriction.inPlaneVector1 as unknown as vec3
+          )
+        )) &&
+      (!planeRestriction.inPlaneVector2 ||
+        isEqual(
+          0,
+          vec3.dot(
+            viewPlaneNormal as unknown as vec3,
+            planeRestriction.inPlaneVector2 as unknown as vec3
+          )
+        ))
+    );
+  }
+
+  private resolveVolumeReferenceImageIdIndex(
+    referenceContext: PlanarReferenceContext,
+    viewRef: ViewReference,
+    effectiveViewPlaneNormal: Point3,
+    isOppositeNormal: boolean
+  ): number | undefined {
+    const { rendering } = referenceContext;
+
+    if (
+      rendering.renderMode !== 'cpuVolume' &&
+      rendering.renderMode !== 'vtkVolume'
+    ) {
+      return;
+    }
+
+    const imageIds = this.getImageIdsForReferenceContext(referenceContext);
+    const maxImageIdIndex = rendering.maxImageIdIndex;
+
+    if (
+      typeof viewRef.sliceIndex === 'number' &&
+      viewRef.volumeId === referenceContext.data.volumeId &&
+      viewRef.viewPlaneNormal
+    ) {
+      const targetSliceIndex = isOppositeNormal
+        ? maxImageIdIndex - viewRef.sliceIndex
+        : viewRef.sliceIndex;
+
+      return Math.min(Math.max(0, targetSliceIndex), maxImageIdIndex);
+    }
+
+    const referencedImageIndex = this.findImageIdIndexByReference(
+      imageIds,
+      viewRef.referencedImageId,
+      viewRef.referencedImageURI
+    );
+
+    if (typeof referencedImageIndex === 'number') {
+      return referencedImageIndex;
+    }
+
+    const targetPoint =
+      viewRef.cameraFocalPoint ?? viewRef.planeRestriction?.point;
+
+    if (targetPoint) {
+      const referencedImageId = getClosestImageId(
+        rendering.imageVolume,
+        targetPoint,
+        effectiveViewPlaneNormal
+      );
+
+      return this.findImageIdIndexByReference(imageIds, referencedImageId);
+    }
+
+    if (typeof viewRef.sliceIndex === 'number') {
+      return Math.min(Math.max(0, viewRef.sliceIndex), maxImageIdIndex);
+    }
+  }
+
+  private isReferenceViewableInContext(
+    referenceContext: PlanarReferenceContext,
+    viewRef: ViewReference,
+    options: ReferenceCompatibleOptions
+  ): boolean {
+    return isPlanarReferenceViewable({
+      camera: this.camera,
+      frameOfReferenceUID: referenceContext.frameOfReferenceUID,
+      imageIds: this.getImageIdsForReferenceContext(referenceContext),
+      options,
+      rendering: referenceContext.rendering,
+      renderContext: this.renderContext,
+      viewRef,
+    });
+  }
+
+  private getImageIdsForReferenceContext(
+    referenceContext: PlanarReferenceContext
+  ): string[] {
+    return (
+      referenceContext.data.imageVolume?.imageIds ||
+      referenceContext.data.imageIds
+    );
+  }
+
+  private findImageIdIndexByReference(
+    imageIds: string[],
+    referencedImageId?: string,
+    referencedImageURI?: string
+  ): number | undefined {
+    const targetImageURI =
+      referencedImageURI ||
+      (referencedImageId ? imageIdToURI(referencedImageId) : undefined);
+
+    if (!targetImageURI) {
+      return;
+    }
+
+    const foundImageIdIndex = imageIds.findIndex(
+      (imageId) => imageIdToURI(imageId) === targetImageURI
+    );
+
+    return foundImageIdIndex >= 0 ? foundImageIdIndex : undefined;
+  }
+
+  private areNormalsEqual(
+    currentViewPlaneNormal?: Point3,
+    targetViewPlaneNormal?: Point3
+  ): boolean {
+    return Boolean(
+      currentViewPlaneNormal &&
+        targetViewPlaneNormal &&
+        isEqual(currentViewPlaneNormal, targetViewPlaneNormal)
+    );
+  }
+
+  private areNormalsOpposite(
+    currentViewPlaneNormal?: Point3,
+    targetViewPlaneNormal?: Point3
+  ): boolean {
+    if (!currentViewPlaneNormal || !targetViewPlaneNormal) {
+      return false;
+    }
+
+    return isEqual(
+      vec3.negate(
+        vec3.create(),
+        currentViewPlaneNormal as unknown as vec3
+      ) as unknown as Point3,
+      targetViewPlaneNormal
+    );
   }
 }
 

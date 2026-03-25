@@ -146,7 +146,7 @@ export type PlanarCpuImageAdapterContext = PlanarContextBase &
   Pick<PlanarViewportRenderContext, 'viewport' | 'display' | 'cpu'>;
 
 export type PlanarCpuVolumeAdapterContext = PlanarContextBase &
-  Pick<PlanarViewportRenderContext, 'viewport' | 'display' | 'cpu' | 'vtk'>;
+  Pick<PlanarViewportRenderContext, 'viewport' | 'display' | 'cpu'>;
 
 export type PlanarVtkImageAdapterContext = PlanarContextBase &
   Pick<PlanarViewportRenderContext, 'display' | 'vtk'>;

@@ -56,6 +56,15 @@ interface Cornerstone3DConfig {
         image?: number;
         volume?: number;
       };
+      cpuVolume?: {
+        /**
+         * Minimum delay between CPU volume re-renders triggered by
+         * progressive IMAGE_VOLUME_MODIFIED updates. Defaults to 50ms.
+         * A value of 0 disables throttling and preserves immediate rendering
+         * on every update.
+         */
+        volumeModifiedThrottleMs?: number;
+      };
     };
     volumeRendering?: {
       /** Multiplier for the calculated sample distance */

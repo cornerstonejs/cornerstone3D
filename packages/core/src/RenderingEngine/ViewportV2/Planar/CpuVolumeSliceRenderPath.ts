@@ -1,15 +1,14 @@
-import '@kitware/vtk.js/Rendering/Profiles/Volume';
-import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import CanvasActor from '../../CanvasActor';
 import { Events, ViewportStatus, ViewportType } from '../../../enums';
 import eventTarget from '../../../eventTarget';
 import type { ICamera, IImageData, Point2, Point3 } from '../../../types';
 import type { IViewport } from '../../../types/IViewport';
 import triggerEvent from '../../../utilities/triggerEvent';
-import createVolumeActor from '../../helpers/createVolumeActor';
 import { createCanvas } from '../../helpers/getOrCreateCanvas';
 import drawImageSync from '../../helpers/cpuFallback/drawImageSync';
 import setToPixelCoordinateSystem from '../../helpers/cpuFallback/rendering/setToPixelCoordinateSystem';
+import { getDefaultVolumeVOIRange } from '../../helpers/setDefaultVolumeVOI';
+import { getConfiguration } from '../../../init';
 import type {
   DataAddOptions,
   LoadedData,
@@ -31,11 +30,7 @@ import {
   getCanvasCssDimensions,
   worldToCanvasPlanarCamera,
 } from './planarAdapterCoordinateTransforms';
-import {
-  applyPlanarRenderCameraToRenderer,
-  resolvePlanarRenderCamera,
-} from './planarRenderCamera';
-import { applyPlanarVolumePresentation } from './planarVolumePresentation';
+import { resolvePlanarRenderCamera } from './planarRenderCamera';
 import {
   createPlanarCpuVolumeSliceBasis,
   createPlanarVolumeSliceBasis,
@@ -61,19 +56,7 @@ export class CpuVolumeSliceRenderPath
       );
     }
 
-    const actor = await createVolumeActor(
-      {
-        volumeId: payload.volumeId,
-      },
-      ctx.viewport.element,
-      ctx.viewportId,
-      true
-    );
-    const mapper = actor.getMapper() as vtkVolumeMapper;
-    const defaultRange = actor
-      .getProperty()
-      .getRGBTransferFunction(0)
-      .getRange();
+    const defaultVOIRange = await getDefaultVolumeVOIRange(payload.imageVolume);
     let rendering: PlanarCpuVolumeRendering;
     const compatibilityActor = new CanvasActor(
       {
@@ -86,14 +69,11 @@ export class CpuVolumeSliceRenderPath
 
     compatibilityActor.setVisibility(true);
 
-    ctx.vtk.renderer.addVolume(actor);
     ctx.display.activateRenderMode('cpuVolume');
 
     rendering = {
       id: `rendering:${data.id}:${options.renderMode}`,
       renderMode: 'cpuVolume',
-      actor,
-      mapper,
       compatibilityActor,
       imageVolume: payload.imageVolume,
       layerCanvas: createCanvas(
@@ -103,9 +83,7 @@ export class CpuVolumeSliceRenderPath
       ),
       currentImageIdIndex: payload.initialImageIdIndex,
       maxImageIdIndex: payload.imageIds.length - 1,
-      defaultVOIRange: defaultRange
-        ? { lower: defaultRange[0], upper: defaultRange[1] }
-        : undefined,
+      defaultVOIRange,
       requestedCamera: undefined,
       renderCamera: undefined,
       renderingInvalidated: true,
@@ -113,6 +91,43 @@ export class CpuVolumeSliceRenderPath
       removeStreamingSubscriptions: (() => {
         let isActive = true;
         let pendingAnimationFrameId: number | undefined;
+        let pendingVolumeModifiedTimeoutId: number | undefined;
+        let lastVolumeModifiedRenderTime = -Infinity;
+        const volumeModifiedThrottleMs = getCpuVolumeModifiedThrottleMs();
+        const renderVolumeModified = () => {
+          if (!isActive) {
+            return;
+          }
+
+          lastVolumeModifiedRenderTime = performance.now();
+          ctx.display.renderNow();
+        };
+        const scheduleVolumeModifiedRender = () => {
+          if (volumeModifiedThrottleMs <= 0) {
+            renderVolumeModified();
+            return;
+          }
+
+          if (pendingVolumeModifiedTimeoutId !== undefined) {
+            return;
+          }
+
+          const remainingDelay = Math.max(
+            0,
+            volumeModifiedThrottleMs -
+              (performance.now() - lastVolumeModifiedRenderTime)
+          );
+
+          if (remainingDelay === 0) {
+            renderVolumeModified();
+            return;
+          }
+
+          pendingVolumeModifiedTimeoutId = window.setTimeout(() => {
+            pendingVolumeModifiedTimeoutId = undefined;
+            renderVolumeModified();
+          }, remainingDelay);
+        };
         const unsubscribe = subscribeToVolumeEvents(
           payload.volumeId,
           (eventType) => {
@@ -130,8 +145,22 @@ export class CpuVolumeSliceRenderPath
             rendering.pendingVolumeLoadCallback = false;
             rendering.sampledSliceState = undefined;
             rendering.renderingInvalidated = true;
-            ctx.display.renderNow();
+
+            if (eventType === Events.IMAGE_VOLUME_MODIFIED) {
+              scheduleVolumeModifiedRender();
+            } else {
+              if (pendingVolumeModifiedTimeoutId !== undefined) {
+                window.clearTimeout(pendingVolumeModifiedTimeoutId);
+                pendingVolumeModifiedTimeoutId = undefined;
+              }
+              ctx.display.renderNow();
+            }
+
             if (!isActive) {
+              return;
+            }
+
+            if (!shouldResampleOnDeferredPass) {
               return;
             }
 
@@ -164,6 +193,11 @@ export class CpuVolumeSliceRenderPath
           if (pendingAnimationFrameId !== undefined) {
             window.cancelAnimationFrame(pendingAnimationFrameId);
             pendingAnimationFrameId = undefined;
+          }
+
+          if (pendingVolumeModifiedTimeoutId !== undefined) {
+            window.clearTimeout(pendingVolumeModifiedTimeoutId);
+            pendingVolumeModifiedTimeoutId = undefined;
           }
 
           unsubscribe();
@@ -210,12 +244,6 @@ export class CpuVolumeSliceRenderPath
     rendering.dataPresentation = Object.keys(dataPresentation).length
       ? (dataPresentation as PlanarCpuVolumeRendering['dataPresentation'])
       : undefined;
-    applyPlanarVolumePresentation({
-      actor: rendering.actor,
-      mapper: rendering.mapper,
-      defaultVOIRange: rendering.defaultVOIRange,
-      props: rendering.dataPresentation,
-    });
 
     if (
       previousInterpolationType !==
@@ -246,7 +274,7 @@ export class CpuVolumeSliceRenderPath
     rendering: PlanarCpuVolumeRendering,
     canvasPos: Point2
   ): Point3 {
-    const renderCamera = getDisplayCamera(ctx, rendering);
+    const renderCamera = rendering.renderCamera;
 
     if (
       !renderCamera?.focalPoint ||
@@ -279,7 +307,7 @@ export class CpuVolumeSliceRenderPath
     rendering: PlanarCpuVolumeRendering,
     worldPos: Point3
   ): Point2 {
-    const renderCamera = getDisplayCamera(ctx, rendering);
+    const renderCamera = rendering.renderCamera;
 
     if (
       !renderCamera?.focalPoint ||
@@ -357,7 +385,7 @@ export class CpuVolumeSliceRenderPath
       return;
     }
 
-    const renderCamera = getDisplayCamera(ctx, runtime);
+    const renderCamera = runtime.renderCamera;
 
     if (!renderCamera) {
       return;
@@ -454,10 +482,9 @@ export class CpuVolumeSliceRenderPath
     ctx: PlanarCpuVolumeAdapterContext,
     rendering: PlanarCpuVolumeRendering
   ): void {
-    const { actor, removeStreamingSubscriptions } = rendering;
+    const { removeStreamingSubscriptions } = rendering;
 
     removeStreamingSubscriptions?.();
-    ctx.vtk.renderer.removeVolume(actor);
   }
 
   private syncRenderCamera(
@@ -475,10 +502,6 @@ export class CpuVolumeSliceRenderPath
       camera: rendering.requestedCamera,
       canvasWidth: ctx.cpu.canvas.width,
       canvasHeight: ctx.cpu.canvas.height,
-    });
-    applyPlanarRenderCameraToRenderer({
-      renderer: ctx.vtk.renderer,
-      renderCamera: rendering.renderCamera,
     });
     rendering.currentImageIdIndex = currentImageIdIndex;
     rendering.maxImageIdIndex = maxImageIdIndex;
@@ -560,6 +583,17 @@ function hasStreamedVolumeData(imageVolume: unknown): boolean {
   );
 }
 
+function getCpuVolumeModifiedThrottleMs(): number {
+  const throttleMs =
+    getConfiguration().rendering?.planar?.cpuVolume?.volumeModifiedThrottleMs;
+
+  if (!Number.isFinite(throttleMs)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.trunc(throttleMs));
+}
+
 export class CpuVolumeSlicePath
   implements
     RenderPathDefinition<
@@ -588,7 +622,6 @@ export class CpuVolumeSlicePath
       viewport: rootContext.viewport,
       display: rootContext.display,
       cpu: rootContext.cpu,
-      vtk: rootContext.vtk,
     };
   }
 }
@@ -693,31 +726,4 @@ function buildPlanarVolumeImageData(imageVolume): IImageData | undefined {
     hasPixelSpacing: imageVolume.hasPixelSpacing,
     voxelManager: imageVolume.voxelManager,
   };
-}
-
-function getDisplayCamera(
-  ctx: PlanarCpuVolumeAdapterContext,
-  rendering: PlanarCpuVolumeRendering
-): ICamera | undefined {
-  const activeCamera = ctx.vtk.renderer.getActiveCamera?.();
-  const focalPoint = activeCamera?.getFocalPoint?.();
-  const parallelScale = activeCamera?.getParallelScale?.();
-  const viewPlaneNormal = activeCamera?.getViewPlaneNormal?.();
-  const viewUp = activeCamera?.getViewUp?.();
-
-  if (
-    focalPoint?.length === 3 &&
-    Number.isFinite(parallelScale) &&
-    viewPlaneNormal?.length === 3 &&
-    viewUp?.length === 3
-  ) {
-    return {
-      focalPoint: [...focalPoint] as Point3,
-      parallelScale,
-      viewPlaneNormal: [...viewPlaneNormal] as Point3,
-      viewUp: [...viewUp] as Point3,
-    } as ICamera;
-  }
-
-  return rendering.renderCamera;
 }

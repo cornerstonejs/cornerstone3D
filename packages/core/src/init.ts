@@ -34,6 +34,9 @@ const defaultConfig: Cornerstone3DConfig = {
         image: 64 * 1024 * 1024,
         volume: 64 * 1024 * 1024,
       },
+      cpuVolume: {
+        volumeModifiedThrottleMs: 5000,
+      },
     },
     volumeRendering: {
       /** Multiplier for the calculated sample distance */

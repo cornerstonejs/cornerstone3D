@@ -134,18 +134,20 @@ export function getPlanarViewReference(args: {
   viewRefSpecifier?: ViewReferenceSpecifier;
 }): ViewReference {
   const { frameOfReferenceUID, rendering, viewRefSpecifier } = args;
+  const sliceIndex =
+    viewRefSpecifier?.sliceIndex ??
+    (rendering ? getCurrentSliceIndex(rendering) : undefined);
+  const rangeEndSliceIndex = viewRefSpecifier?.rangeEndSliceIndex;
   const targetCamera = getPlanarComputedCameraForReference({
     ...args,
-    sliceIndex: viewRefSpecifier?.sliceIndex,
+    sliceIndex,
   })?.toICamera();
   const viewReference: ViewReference = {
     FrameOfReferenceUID: frameOfReferenceUID,
     cameraFocalPoint: targetCamera?.focalPoint,
     viewPlaneNormal: targetCamera?.viewPlaneNormal,
     viewUp: targetCamera?.viewUp,
-    sliceIndex:
-      viewRefSpecifier?.sliceIndex ??
-      (rendering ? getCurrentSliceIndex(rendering) : undefined),
+    sliceIndex,
     planeRestriction:
       targetCamera?.viewPlaneNormal &&
       targetCamera.viewUp &&
@@ -163,6 +165,18 @@ export function getPlanarViewReference(args: {
         : undefined,
   };
   const referencedImageId = getPlanarReferencedImageId(args);
+  const rangeEndReferencedImageId =
+    typeof sliceIndex === 'number' &&
+    typeof rangeEndSliceIndex === 'number' &&
+    rangeEndSliceIndex > sliceIndex
+      ? getPlanarReferencedImageId({
+          ...args,
+          viewRefSpecifier: {
+            ...viewRefSpecifier,
+            sliceIndex: rangeEndSliceIndex,
+          },
+        })
+      : undefined;
 
   if (
     rendering &&
@@ -176,6 +190,20 @@ export function getPlanarViewReference(args: {
   if (referencedImageId) {
     viewReference.referencedImageId = referencedImageId;
     viewReference.referencedImageURI = imageIdToURI(referencedImageId);
+  }
+
+  if (
+    rangeEndReferencedImageId &&
+    typeof rangeEndSliceIndex === 'number' &&
+    typeof sliceIndex === 'number' &&
+    rangeEndSliceIndex > sliceIndex
+  ) {
+    viewReference.multiSliceReference = {
+      FrameOfReferenceUID: frameOfReferenceUID,
+      referencedImageId: rangeEndReferencedImageId,
+      referencedImageURI: imageIdToURI(rangeEndReferencedImageId),
+      sliceIndex: rangeEndSliceIndex,
+    };
   }
 
   if (viewRefSpecifier?.points && viewReference.planeRestriction) {
