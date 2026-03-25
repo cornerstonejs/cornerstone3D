@@ -1,4 +1,4 @@
-import { MetadataModules, ViewportType } from '../../../enums';
+import { ViewportType } from '../../../enums';
 import type {
   CPUIImageData,
   ICamera,
@@ -8,10 +8,7 @@ import type {
   VOIRange,
   WSIViewportProperties,
 } from '../../../types';
-import * as metaData from '../../../metaData';
-import viewportV2DataSetMetadataProvider from '../../../utilities/viewportV2DataSetMetadataProvider';
 import type {
-  WSIClientLike,
   WSIMapLike,
   WSIMapViewLike,
   WSIViewerLike,
@@ -22,13 +19,11 @@ import type {
   RenderingBinding,
 } from '../ViewportArchitectureTypes';
 import ViewportV2 from '../ViewportV2';
-import { getViewportV2RegisteredData } from '../viewportV2DataSetAccess';
 import { DefaultWSIDataProvider } from './DefaultWSIDataProvider';
 import { DicomMicroscopyPath } from './DicomMicroscopyRenderPath';
 import type {
   WSICamera,
   WSIDataPresentation,
-  WSIDataSetOptions,
   WSIPayload,
   WSIViewportRenderContext,
   WSIViewportV2Input,
@@ -60,7 +55,6 @@ class WSIViewportV2 extends ViewportV2<
   protected renderContext: WSIViewportRenderContext;
 
   private activeDataId?: string;
-  private readonly managedLegacyDataIds = new Set<string>();
   private voiRange: VOIRange = {
     lower: 0,
     upper: 255,
@@ -119,24 +113,11 @@ class WSIViewportV2 extends ViewportV2<
     };
   }
 
-  async setDataIds(dataIds: string[]): Promise<string[]>;
-  async setDataIds(
-    imageIds: string[],
-    options?: WSIDataSetOptions
-  ): Promise<string[] | void>;
-  async setDataIds(
-    dataIdsOrImageIds: string[],
-    options?: WSIDataSetOptions
-  ): Promise<string[] | void> {
-    if (this.shouldUseLegacyDataRegistration(dataIdsOrImageIds, options)) {
-      await this.setLegacyDataIds(dataIdsOrImageIds, options);
-      return;
-    }
-
+  async setDataList(entries: Array<{ dataId: string }>): Promise<string[]> {
     const renderingIds: string[] = [];
 
-    for (const dataId of dataIdsOrImageIds) {
-      const renderingId = await this.setDataId(dataId, {
+    for (const { dataId } of entries) {
+      const renderingId = await this.setData(dataId, {
         renderMode: 'wsi2d',
       });
 
@@ -152,28 +133,6 @@ class WSIViewportV2 extends ViewportV2<
     this.applyVOIToRendering();
 
     return renderingIds;
-  }
-
-  async setWSI(dataId: string, webClient?: WSIClientLike): Promise<string>;
-  async setWSI(
-    imageIds: string[],
-    client: WSIClientLike
-  ): Promise<string | void>;
-  async setWSI(
-    dataIdOrImageIds: string | string[],
-    webClient?: WSIClientLike
-  ): Promise<string | void> {
-    if (Array.isArray(dataIdOrImageIds)) {
-      await this.setDataIds(
-        dataIdOrImageIds,
-        webClient ? { webClient } : undefined
-      );
-      return;
-    }
-
-    const renderingIds = await this.setDataIds([dataIdOrImageIds]);
-
-    return Array.isArray(renderingIds) ? renderingIds[0] : undefined;
   }
 
   setProperties(props: WSIViewportProperties): void {
@@ -535,11 +494,6 @@ class WSIViewportV2 extends ViewportV2<
 
   protected override onDestroy(): void {
     this.activeDataId = undefined;
-
-    this.managedLegacyDataIds.forEach((dataId) => {
-      viewportV2DataSetMetadataProvider.remove(dataId);
-    });
-    this.managedLegacyDataIds.clear();
   }
 
   customRenderViewportToCanvas(): void {
@@ -550,13 +504,8 @@ class WSIViewportV2 extends ViewportV2<
     // No-op for DOM-driven WSI rendering.
   }
 
-  removeDataId(dataId: string): void {
-    super.removeDataId(dataId);
-
-    if (this.managedLegacyDataIds.has(dataId)) {
-      this.managedLegacyDataIds.delete(dataId);
-      viewportV2DataSetMetadataProvider.remove(dataId);
-    }
+  removeData(dataId: string): void {
+    super.removeData(dataId);
 
     if (this.activeDataId === dataId) {
       this.activeDataId = this.bindings.keys().next().value;
@@ -601,82 +550,6 @@ class WSIViewportV2 extends ViewportV2<
       resolution: view.getResolution(),
       centerIndex: centerIndex ? [centerIndex[0], centerIndex[1]] : undefined,
     });
-  }
-
-  private shouldUseLegacyDataRegistration(
-    dataIdsOrImageIds: string[],
-    options?: WSIDataSetOptions
-  ): boolean {
-    if (!dataIdsOrImageIds.length) {
-      return false;
-    }
-
-    if (options?.webClient || options?.miniNavigationOverlay !== undefined) {
-      return true;
-    }
-
-    if (dataIdsOrImageIds.some((id) => getViewportV2RegisteredData(id))) {
-      return false;
-    }
-
-    return Boolean(
-      metaData.get(MetadataModules.WADO_WEB_CLIENT, dataIdsOrImageIds[0])
-    );
-  }
-
-  private async setLegacyDataIds(
-    imageIds: string[],
-    options?: WSIDataSetOptions
-  ): Promise<void> {
-    if (!imageIds.length) {
-      throw new Error('[WSIViewportV2] Cannot set an empty WSI dataset');
-    }
-
-    const webClient =
-      options?.webClient ||
-      metaData.get(MetadataModules.WADO_WEB_CLIENT, imageIds[0]);
-
-    if (!webClient) {
-      throw new Error(
-        `To use setDataIds on WSI data, you must provide metaData.webClient for ${imageIds[0]}.`
-      );
-    }
-
-    const dataId = this.getLegacyDataId();
-
-    viewportV2DataSetMetadataProvider.add(dataId, {
-      imageIds,
-      options: {
-        ...options,
-        webClient,
-      },
-    });
-    this.managedLegacyDataIds.add(dataId);
-    this.removeBindingsExcept(new Set([dataId]));
-
-    await this.setDataId(dataId, {
-      renderMode: 'wsi2d',
-    });
-
-    this.setDefaultDataPresentation(dataId, {
-      visible: true,
-      opacity: 1,
-    });
-    this.activeDataId = dataId;
-    this.syncCameraFromView();
-    this.applyVOIToRendering();
-  }
-
-  private removeBindingsExcept(keepDataIds: Set<string>): void {
-    Array.from(this.bindings.keys()).forEach((dataId) => {
-      if (!keepDataIds.has(dataId)) {
-        this.removeDataId(dataId);
-      }
-    });
-  }
-
-  private getLegacyDataId(): string {
-    return `__wsi_v2__:${this.id}:legacy`;
   }
 
   private getMap(): WSIMapLike | undefined {

@@ -132,18 +132,16 @@ class VolumeViewport3DV2 extends ViewportV2<
   /**
    * Adds one or more 3D datasets and returns their rendering ids.
    *
-   * @param dataIds - Logical dataset ids to add.
-   * @param options - Requested 3D render-mode options.
-   * @returns Rendering ids in the same order as the input dataset ids.
+   * @param entries - List of datasets to add, each with its own render-mode options.
+   * @returns Rendering ids in the same order as the provided entries.
    */
-  async setDataIds(
-    dataIds: string[],
-    options: Volume3DSetDataOptions = {}
+  async setDataList(
+    entries: Array<{ dataId: string; options?: Volume3DSetDataOptions }>
   ): Promise<string[]> {
     const renderingIds: string[] = [];
 
-    for (const dataId of dataIds) {
-      renderingIds.push(await this.setDataId(dataId, options));
+    for (const { dataId, options = {} } of entries) {
+      renderingIds.push(await this.setData(dataId, options));
     }
 
     return renderingIds;
@@ -156,7 +154,7 @@ class VolumeViewport3DV2 extends ViewportV2<
    * @param options - Requested 3D render-mode options.
    * @returns The rendering id created for the mounted dataset.
    */
-  async setDataId(
+  async setData(
     dataId: string,
     options: Volume3DSetDataOptions | DataAddOptions = {}
   ): Promise<string> {
@@ -164,7 +162,7 @@ class VolumeViewport3DV2 extends ViewportV2<
       dataId,
       (options as Volume3DSetDataOptions).renderMode
     );
-    const renderingId = await super.setDataId(dataId, {
+    const renderingId = await super.setData(dataId, {
       renderMode,
     });
 

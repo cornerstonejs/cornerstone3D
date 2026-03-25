@@ -108,8 +108,8 @@ export interface ViewportController<
   readonly id: ViewportId;
   readonly type: ViewportType;
 
-  setDataId(dataId: DataId, options: DataAddOptions): Promise<RenderingId>;
-  removeDataId(dataId: DataId): void;
+  setData(dataId: DataId, options: DataAddOptions): Promise<RenderingId>;
+  removeData(dataId: DataId): void;
 
   setCamera(camera: Partial<TCamera>): void;
   getCamera(): TCamera;

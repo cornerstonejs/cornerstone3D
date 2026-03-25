@@ -31,10 +31,9 @@ export type PlanarLegacyCompatibilityHost = {
   getViewportId(): string;
   getRequestedOrientation(): PlanarCamera['orientation'];
   prepareVolumeCompatibilityCamera(): void;
-  setDataId(dataId: string, options: PlanarSetDataOptions): Promise<string>;
-  setDataIds(
-    dataIds: string[],
-    options: PlanarSetDataOptions
+  setData(dataId: string, options: PlanarSetDataOptions): Promise<string>;
+  setDataList(
+    entries: Array<{ dataId: string; options?: PlanarSetDataOptions }>
   ): Promise<string[]>;
   setImageIdIndex(imageIdIndex: number): Promise<string>;
   getCurrentImageId(): string | undefined;
@@ -92,7 +91,7 @@ class PlanarLegacyCompatibilityController {
     try {
       this.host.removeBindingsExcept(new Set([dataId]));
 
-      await this.host.setDataId(dataId, {
+      await this.host.setData(dataId, {
         orientation: this.host.getRequestedOrientation(),
       });
 
@@ -101,7 +100,7 @@ class PlanarLegacyCompatibilityController {
 
       return this.host.getCurrentImageId() || resolvedImageId;
     } catch (error) {
-      this.removeDataId(dataId);
+      this.removeData(dataId);
       throw error;
     }
   }
@@ -283,7 +282,7 @@ class PlanarLegacyCompatibilityController {
     );
   }
 
-  removeDataId(dataId: string): void {
+  removeData(dataId: string): void {
     if (!this.managedDataIds.delete(dataId)) {
       return;
     }
@@ -374,10 +373,14 @@ class PlanarLegacyCompatibilityController {
 
       this.host.prepareVolumeCompatibilityCamera();
 
-      await this.host.setDataIds(dataIds, {
+      const sharedOptions: PlanarSetDataOptions = {
         orientation: this.host.getRequestedOrientation(),
         renderMode: getShouldUseCPURendering() ? 'cpuVolume' : 'vtkVolume',
-      });
+      };
+
+      await this.host.setDataList(
+        dataIds.map((dataId) => ({ dataId, options: sharedOptions }))
+      );
 
       volumeInputArray.forEach((volumeInput, index) => {
         const dataId = dataIds[index];
@@ -438,7 +441,7 @@ class PlanarLegacyCompatibilityController {
       }
     } catch (error) {
       dataIds.forEach((dataId) => {
-        this.removeDataId(dataId);
+        this.removeData(dataId);
       });
 
       throw error;

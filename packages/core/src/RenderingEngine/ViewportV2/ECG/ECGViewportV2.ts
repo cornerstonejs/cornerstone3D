@@ -86,35 +86,15 @@ class ECGViewportV2 extends ViewportV2<
   }
 
   /**
-   * Adds a single waveform dataset and returns its rendering id.
-   *
-   * @param dataId - Logical dataset id to add.
-   * @returns The rendering id created for the mounted waveform.
-   */
-  /**
-   * Legacy compat: loads ECG data from an imageId, matching the old
-   * ECGViewport.setEcg signature.
-   */
-  async setEcg(imageId: string): Promise<void> {
-    await this.setSignal(imageId);
-  }
-
-  async setSignal(dataId: string): Promise<string> {
-    const [renderingId] = await this.setDataIds([dataId]);
-
-    return renderingId;
-  }
-
-  /**
    * Adds one or more waveform datasets using the canvas ECG render path.
    *
-   * @param dataIds - Logical dataset ids to add.
-   * @returns Rendering ids in the same order as the input dataset ids.
+   * @param entries - List of datasets to add.
+   * @returns Rendering ids in the same order as the provided entries.
    */
-  async setDataIds(dataIds: string[]): Promise<string[]> {
+  async setDataList(entries: Array<{ dataId: string }>): Promise<string[]> {
     const renderingIds: string[] = [];
 
-    for (const dataId of dataIds) {
+    for (const { dataId } of entries) {
       const waveform = await this.loadWaveformData(dataId);
       const durationMs =
         (waveform.numberOfSamples / waveform.samplingFrequency) * 1000;

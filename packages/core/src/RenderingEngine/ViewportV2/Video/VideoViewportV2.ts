@@ -81,28 +81,16 @@ class VideoViewportV2 extends ViewportV2<
   }
 
   /**
-   * Adds a single video dataset and returns its rendering id.
-   *
-   * @param dataId - Logical dataset id to add.
-   * @returns The rendering id created for the mounted dataset.
-   */
-  async setVideo(dataId: string): Promise<string> {
-    const [renderingId] = await this.setDataIds([dataId]);
-
-    return renderingId;
-  }
-
-  /**
    * Adds one or more video datasets using the HTML video render path.
    *
-   * @param dataIds - Logical dataset ids to add.
-   * @returns Rendering ids in the same order as the input dataset ids.
+   * @param entries - List of datasets to add.
+   * @returns Rendering ids in the same order as the provided entries.
    */
-  async setDataIds(dataIds: string[]): Promise<string[]> {
+  async setDataList(entries: Array<{ dataId: string }>): Promise<string[]> {
     const renderingIds: string[] = [];
 
-    for (const dataId of dataIds) {
-      const renderingId = await this.setDataId(dataId, {
+    for (const { dataId } of entries) {
+      const renderingId = await this.setData(dataId, {
         renderMode: 'video2d',
       });
       const binding = this.getBinding(dataId);
@@ -184,19 +172,6 @@ class VideoViewportV2 extends ViewportV2<
     }
 
     this.applyComputedCameraState(computedCamera.withPan(pan).state.camera);
-  }
-
-  private setScaleAtCanvasPoint(scale: number, canvasPoint: Point2): void {
-    const computedCamera = this.getComputedCamera();
-
-    if (!computedCamera) {
-      this.setZoom(scale);
-      return;
-    }
-
-    this.applyComputedCameraState(
-      computedCamera.withZoom(scale, canvasPoint).state.camera
-    );
   }
 
   /**
@@ -430,10 +405,10 @@ class VideoViewportV2 extends ViewportV2<
    *
    * @param dataId - Logical dataset id to remove.
    */
-  removeDataId(dataId: string): void {
+  removeData(dataId: string): void {
     const firstDataId = this.getFirstBinding()?.data.id;
 
-    super.removeDataId(dataId);
+    super.removeData(dataId);
 
     if (firstDataId === dataId) {
       this.untrackVideoElement();

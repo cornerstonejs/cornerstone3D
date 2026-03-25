@@ -46,10 +46,14 @@ abstract class ViewportV2<
   TContext extends BaseViewportRenderContext = BaseViewportRenderContext,
 > implements ViewportController<TCamera, TDataPresentation>
 {
+  // ── Abstract fields ──────────────────────────────────────────────────
+
   abstract readonly id: ViewportId;
   abstract readonly type: ViewportType;
   abstract readonly element: HTMLDivElement;
   abstract readonly renderingEngineId: string;
+
+  // ── Protected fields ─────────────────────────────────────────────────
 
   protected dataProvider: DataProvider;
   protected renderPathResolver: RenderPathResolver;
@@ -60,18 +64,21 @@ abstract class ViewportV2<
   protected camera!: TCamera;
   protected isDestroyed = false;
 
+  // ── Debug ────────────────────────────────────────────────────────────
+
   readonly _debug: { renderModes: Record<string, string> } = {
     renderModes: {},
   };
+
+  // ====================================================================
+  // Public API -- data
+  // ====================================================================
 
   /**
    * Loads a logical dataset through the viewport data provider and adds it
    * through the render-path resolver.
    */
-  async setDataId(
-    dataId: DataId,
-    options: DataAddOptions
-  ): Promise<RenderingId> {
+  async setData(dataId: DataId, options: DataAddOptions): Promise<RenderingId> {
     if (this.isDestroyed) {
       throw new Error('Viewport has been destroyed');
     }
@@ -79,6 +86,144 @@ abstract class ViewportV2<
     const data = await this.dataProvider.load(dataId, options);
     return this.addLoadedData(dataId, data, options);
   }
+
+  /**
+   * Removes a dataset binding and its stored presentation state, then
+   * triggers a re-render so the viewport reflects the removal.
+   */
+  removeData(dataId: DataId): void {
+    const binding = this.bindings.get(dataId);
+
+    if (!binding) {
+      return;
+    }
+
+    binding.removeData();
+    this.bindings.delete(dataId);
+    this.dataPresentation.delete(dataId);
+    delete this._debug.renderModes[dataId];
+
+    if (!this.isDestroyed) {
+      this.render();
+    }
+  }
+
+  /**
+   * Updates the stored per-dataset presentation state for a specific dataset.
+   */
+  setDataPresentation(dataId: DataId, props: Partial<TDataPresentation>): void {
+    this.mergeDataPresentation(dataId, props);
+  }
+
+  /**
+   * Returns the stored presentation state for a specific dataset.
+   */
+  getDataPresentation(dataId: DataId): TDataPresentation | undefined {
+    return this.getDataPresentationState(dataId);
+  }
+
+  /**
+   * Returns the mounted render mode for a specific dataset when present.
+   */
+  getDataRenderMode(dataId: DataId): string | undefined {
+    return this.getBinding(dataId)?.rendering.renderMode;
+  }
+
+  /**
+   * Returns the current binding's frame of reference when one exists.
+   * Falls back to a viewport-local identifier so callers still get a stable
+   * value for non-referenceable viewports.
+   */
+  getFrameOfReferenceUID(): string {
+    const binding = this.getCurrentBinding();
+
+    if (!binding) {
+      return `${this.type}-viewport-${this.id}`;
+    }
+
+    return binding.getFrameOfReferenceUID();
+  }
+
+  // ====================================================================
+  // Public API -- camera
+  // ====================================================================
+
+  /**
+   * Merges partial camera updates into the shared viewport camera state and
+   * propagates the result to every active binding.
+   */
+  setCamera(cameraPatch: Partial<TCamera>): void {
+    if (this.isDestroyed) {
+      return;
+    }
+
+    const previousCamera = this.getCameraForEvent();
+    const next = {
+      ...this.camera,
+      ...cameraPatch,
+    } as TCamera;
+
+    this.camera = this.normalizeCamera(next);
+    this.modified(previousCamera);
+  }
+
+  /**
+   * Returns the controller's current shared camera state.
+   */
+  getCamera(): TCamera {
+    return this.camera;
+  }
+
+  // ====================================================================
+  // Public API -- lifecycle
+  // ====================================================================
+
+  /**
+   * @deprecated Compatibility no-op retained during the V2 migration.
+   */
+  removeWidgets(): void {
+    // V2 viewports do not use VTK widgets -- intentional no-op.
+  }
+
+  /**
+   * Releases mounted bindings and viewport-local resources.
+   */
+  public destroy(): void {
+    if (this.isDestroyed) {
+      return;
+    }
+
+    this.isDestroyed = true;
+    this.destroyBindings();
+    this.onDestroy();
+    this.bindings.clear();
+    this.dataPresentation.clear();
+
+    for (const key of Object.keys(this._debug.renderModes)) {
+      delete this._debug.renderModes[key];
+    }
+
+    this.element.removeAttribute('data-viewport-uid');
+    this.element.removeAttribute('data-rendering-engine-uid');
+  }
+
+  /**
+   * Alias for {@link destroy}. Provided for compatibility with disposable
+   * resource conventions.
+   */
+  public dispose(): void {
+    this.destroy();
+  }
+
+  /**
+   * Schedules a render pass for the viewport. Concrete viewport families
+   * implement this to delegate to their rendering runtime.
+   */
+  abstract render(): void;
+
+  // ====================================================================
+  // Protected -- data loading & presentation
+  // ====================================================================
 
   /**
    * Converts loaded logical data into a mounted rendering binding.
@@ -213,96 +358,77 @@ abstract class ViewportV2<
     return nextPresentation;
   }
 
+  // ====================================================================
+  // Protected -- camera
+  // ====================================================================
+
   /**
-   * Merges partial camera updates into the shared viewport camera state and
-   * propagates that state to every active binding.
+   * Hook for subclasses to clamp or adjust camera values before they are
+   * stored. The default implementation returns the camera unchanged.
    */
   protected normalizeCamera(camera: TCamera): TCamera {
     return camera;
   }
 
-  setCamera(cameraPatch: Partial<TCamera>): void {
+  /**
+   * Pushes the current shared camera state to every binding and schedules a
+   * render. Optionally fires a camera-modified event when a previous camera
+   * snapshot is provided.
+   */
+  protected modified(previousCamera?: ICamera): void {
     if (this.isDestroyed) {
       return;
     }
 
-    const previousCamera = this.getCameraForEvent();
-    const next = {
-      ...this.camera,
-      ...cameraPatch,
-    } as TCamera;
+    this.forEachBinding((binding) => {
+      binding.updateCamera(this.camera);
+    });
 
-    this.camera = this.normalizeCamera(next);
-    this.modified(previousCamera);
-  }
+    this.render();
 
-  /**
-   * Returns the controller's current shared camera state.
-   */
-  getCamera(): TCamera {
-    return this.camera;
-  }
-
-  /**
-   * Updates the stored per-dataset presentation state for a specific dataset.
-   */
-  setDataPresentation(dataId: DataId, props: Partial<TDataPresentation>): void {
-    this.mergeDataPresentation(dataId, props);
-  }
-
-  /**
-   * Returns the stored presentation state for a specific dataset.
-   */
-  getDataPresentation(dataId: DataId): TDataPresentation | undefined {
-    return this.getDataPresentationState(dataId);
-  }
-
-  /**
-   * Returns the mounted render mode for a specific dataset when present.
-   */
-  getDataRenderMode(dataId: DataId): string | undefined {
-    return this.getBinding(dataId)?.rendering.renderMode;
-  }
-
-  /**
-   * Returns the current binding's frame of reference when one exists.
-   * Falls back to a viewport-local identifier so callers still get a stable
-   * value for non-referenceable viewports.
-   */
-  getFrameOfReferenceUID(): string {
-    const binding = this.getCurrentBinding();
-
-    if (!binding) {
-      return `${this.type}-viewport-${this.id}`;
-    }
-
-    return binding.getFrameOfReferenceUID();
-  }
-
-  /**
-   * Tears down all mounted dataset bindings during viewport reset.
-   * @deprecated Compatibility no-op retained during the V2 migration.
-   */
-  removeWidgets(): void {
-    // V2 viewports do not use VTK widgets — intentional no-op.
-  }
-
-  removeDataId(dataId: DataId): void {
-    const binding = this.bindings.get(dataId);
-
-    if (!binding) {
-      return;
-    }
-
-    binding.removeData();
-    this.bindings.delete(dataId);
-    this.dataPresentation.delete(dataId);
-    delete this._debug.renderModes[dataId];
-
-    if (!this.isDestroyed) {
-      this.render();
+    if (previousCamera) {
+      this.triggerCameraModifiedEvent(previousCamera);
     }
   }
+
+  /**
+   * Returns the camera representation used for event payloads. Subclasses
+   * can override this to project their camera type into the base ICamera
+   * shape expected by event consumers.
+   */
+  protected getCameraForEvent(): ICamera {
+    return this.getCamera();
+  }
+
+  /**
+   * Fires a {@link Events.CAMERA_MODIFIED} event on the viewport element.
+   */
+  protected triggerCameraModifiedEvent(previousCamera: ICamera): void {
+    const eventDetail: EventTypes.CameraModifiedEventDetail = {
+      camera: this.getCameraForEvent(),
+      viewportId: this.id,
+      renderingEngineId: this.renderingEngineId,
+    };
+
+    triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
+  }
+
+  /**
+   * Fires a {@link Events.CAMERA_RESET} event on the viewport element.
+   */
+  protected triggerCameraResetEvent(): void {
+    const eventDetail: EventTypes.CameraResetEventDetail = {
+      viewportId: this.id,
+      camera: this.getCameraForEvent(),
+      renderingEngineId: this.renderingEngineId,
+    };
+
+    triggerEvent(this.element, Events.CAMERA_RESET, eventDetail);
+  }
+
+  // ====================================================================
+  // Protected -- binding access
+  // ====================================================================
 
   /**
    * Looks up a binding by dataset identifier.
@@ -343,6 +469,10 @@ abstract class ViewportV2<
     }
   }
 
+  // ====================================================================
+  // Protected -- binding lifecycle
+  // ====================================================================
+
   /**
    * Invokes render on each binding and reports whether any binding handled the
    * render request directly.
@@ -375,87 +505,22 @@ abstract class ViewportV2<
     });
   }
 
-  protected getCameraForEvent(): ICamera {
-    return this.getCamera();
-  }
-
-  protected triggerCameraModifiedEvent(previousCamera: ICamera): void {
-    const eventDetail: EventTypes.CameraModifiedEventDetail = {
-      camera: this.getCameraForEvent(),
-      viewportId: this.id,
-      renderingEngineId: this.renderingEngineId,
-    };
-
-    triggerEvent(this.element, Events.CAMERA_MODIFIED, eventDetail);
-  }
-
-  protected triggerCameraResetEvent(): void {
-    const eventDetail: EventTypes.CameraResetEventDetail = {
-      viewportId: this.id,
-      camera: this.getCameraForEvent(),
-      renderingEngineId: this.renderingEngineId,
-    };
-
-    triggerEvent(this.element, Events.CAMERA_RESET, eventDetail);
-  }
-
   /**
-   * Pushes the current shared camera state to every binding and schedules a
-   * render.
+   * Tears down all mounted dataset bindings by removing each one individually.
    */
-  protected modified(previousCamera?: ICamera): void {
-    if (this.isDestroyed) {
-      return;
-    }
-
-    this.forEachBinding((binding) => {
-      binding.updateCamera(this.camera);
-    });
-
-    this.render();
-
-    if (previousCamera) {
-      this.triggerCameraModifiedEvent(previousCamera);
-    }
-  }
-
-  /**
-   * Releases mounted bindings and viewport-local resources.
-   */
-  public destroy(): void {
-    if (this.isDestroyed) {
-      return;
-    }
-
-    this.isDestroyed = true;
-    this.destroyBindings();
-    this.onDestroy();
-    this.bindings.clear();
-    this.dataPresentation.clear();
-
-    for (const key of Object.keys(this._debug.renderModes)) {
-      delete this._debug.renderModes[key];
-    }
-
-    this.element.removeAttribute('data-viewport-uid');
-    this.element.removeAttribute('data-rendering-engine-uid');
-  }
-
-  public dispose(): void {
-    this.destroy();
-  }
-
   protected destroyBindings(): void {
     for (const dataId of Array.from(this.bindings.keys())) {
-      this.removeDataId(dataId);
+      this.removeData(dataId);
     }
   }
 
+  /**
+   * Hook for subclasses to release viewport-local resources during destroy.
+   * Called after bindings have been torn down but before the maps are cleared.
+   */
   protected onDestroy(): void {
     // Subclasses can release viewport-local resources here.
   }
-
-  abstract render(): void;
 }
 
 export default ViewportV2;

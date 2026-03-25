@@ -3,6 +3,7 @@ import {
   RenderingEngine,
   Enums,
   getRenderingEngine,
+  utilities,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import dicomImageLoader from '@cornerstonejs/dicom-image-loader';
@@ -124,8 +125,14 @@ async function run() {
   ) as Types.IWSIViewport;
 
   client.getDICOMwebMetadata = (imageId) => wadors.metaDataManager.get(imageId);
-  // Set the stack on the viewport
-  await viewport.setDataIds(imageIds, { webClient: client });
+
+  // Register WSI data and set it on the viewport
+  const dataId = 'wsi-dataset';
+  utilities.viewportV2DataSetMetadataProvider.add(dataId, {
+    imageIds,
+    options: { webClient: client },
+  });
+  await viewport.setDataList([{ dataId }]);
 
   toolGroup.addViewport(viewportId, renderingEngineId);
 }

@@ -2203,10 +2203,13 @@ class Viewport {
   }
 
   /**
-   * This is a wrapper for setStack/setVideo/etc
+   * Sets one or more datasets on the viewport. Legacy viewports should
+   * override this to delegate to their specific data setter.
    */
-  public setDataIds(_imageIds: string[], _options?: DataSetOptions) {
-    throw new Error('Unsupported operatoin setDataIds');
+  public setDataList(
+    _entries: Array<{ dataId: string; options?: DataSetOptions }>
+  ) {
+    throw new Error('Unsupported operation setDataList');
   }
 }
 

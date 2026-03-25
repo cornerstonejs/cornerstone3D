@@ -116,8 +116,8 @@ class PlanarLegacyCompatibleViewport {
     this.viewport.setPan(pan);
   }
 
-  removeDataId(dataId: string): void {
-    this.legacyCompatibility.removeDataId(dataId);
+  removeData(dataId: string): void {
+    this.legacyCompatibility.removeData(dataId);
   }
 
   destroy(): void {

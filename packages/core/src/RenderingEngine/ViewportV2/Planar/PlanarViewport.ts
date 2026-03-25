@@ -129,8 +129,8 @@ class PlanarViewport extends ViewportV2<
           orientation: this.resolveRequestedOrientation(),
         });
       },
-      setDataId: (dataId, options) => this.setDataId(dataId, options),
-      setDataIds: (dataIds, options) => this.setDataIds(dataIds, options),
+      setData: (dataId, options) => this.setData(dataId, options),
+      setDataList: (entries) => this.setDataList(entries),
       setImageIdIndex: (imageIdIndex) => this.setImageIdIndex(imageIdIndex),
       getCurrentImageId: () => this.getCurrentImageId(),
       render: () => this.render(),
@@ -276,24 +276,22 @@ class PlanarViewport extends ViewportV2<
   /**
    * Adds one or more logical planar datasets to the viewport.
    *
-   * @param dataIds - Logical dataset ids to add to the viewport.
-   * @param options - Render-mode and orientation options used while resolving
-   * the effective planar render path.
-   * @returns Rendering ids in the same order as the provided data ids.
+   * @param entries - List of datasets to add, each with its own options for
+   * render-mode and orientation resolution.
+   * @returns Rendering ids in the same order as the provided entries.
    */
-  async setDataIds(
-    dataIds: string[],
-    options: PlanarSetDataOptions = {}
+  async setDataList(
+    entries: Array<{ dataId: string; options?: PlanarSetDataOptions }>
   ): Promise<string[]> {
     const renderingIds: string[] = [];
 
-    for (const dataId of dataIds) {
-      const renderingId = await this.setDataId(dataId, options);
+    for (const { dataId, options = {} } of entries) {
+      const renderingId = await this.setData(dataId, options);
       renderingIds.push(renderingId);
     }
 
-    if (dataIds[0]) {
-      this.activeDataId = dataIds[0];
+    if (entries[0]) {
+      this.activeDataId = entries[0].dataId;
     }
 
     return renderingIds;
@@ -307,7 +305,7 @@ class PlanarViewport extends ViewportV2<
    * the effective planar render path.
    * @returns The rendering id created for the mounted dataset.
    */
-  async setDataId(
+  async setData(
     dataId: string,
     options: PlanarSetDataOptions | DataAddOptions = {}
   ): Promise<string> {
@@ -480,7 +478,7 @@ class PlanarViewport extends ViewportV2<
         const bindingDataId = this.findBindingDataIdByActorUID(actorUID);
 
         if (bindingDataId) {
-          this.removeDataId(bindingDataId);
+          this.removeData(bindingDataId);
           didRemoveActor = true;
         }
       });
@@ -545,14 +543,14 @@ class PlanarViewport extends ViewportV2<
     return getImageDataMetadata(image);
   }
 
-  removeDataId(dataId: string): void {
-    super.removeDataId(dataId);
+  removeData(dataId: string): void {
+    super.removeData(dataId);
 
     if (this.activeDataId === dataId) {
       this.activeDataId = undefined;
     }
 
-    this.legacyCompatibleViewport.removeDataId(dataId);
+    this.legacyCompatibleViewport.removeData(dataId);
   }
 
   /**
@@ -1366,7 +1364,7 @@ class PlanarViewport extends ViewportV2<
   private removeBindingsExcept(keepDataIds: Set<string>): void {
     for (const dataId of Array.from(this.bindings.keys())) {
       if (!keepDataIds.has(dataId)) {
-        this.removeDataId(dataId);
+        this.removeData(dataId);
       }
     }
   }
