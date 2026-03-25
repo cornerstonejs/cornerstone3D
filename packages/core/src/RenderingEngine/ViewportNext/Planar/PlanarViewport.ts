@@ -31,7 +31,7 @@ import {
   getViewportNextImageDataSet,
   isViewportNextImageDataSet,
 } from '../viewportNextDataSetAccess';
-import PlanarLegacyCompatibleViewport from './PlanarLegacyCompatibleViewport';
+import PlanarLegacyCompatibilityController from './PlanarLegacyCompatibilityController';
 import { CpuImageSlicePath } from './CpuImageSliceRenderPath';
 import { CpuVolumeSlicePath } from './CpuVolumeSliceRenderPath';
 import { DefaultPlanarDataProvider } from './DefaultPlanarDataProvider';
@@ -117,8 +117,8 @@ class PlanarViewport extends ViewportNext<
   private activeDataId?: string;
   private readonly compatibilityOverlayActors = new Map<string, ActorEntry>();
   private cpuCanvas?: HTMLCanvasElement;
-  private readonly legacyCompatibleViewport =
-    new PlanarLegacyCompatibleViewport(this, {
+  private readonly legacyCompatibility =
+    new PlanarLegacyCompatibilityController({
       getElement: () => this.element,
       getViewportId: () => this.id,
       getRequestedOrientation: () => this.resolveRequestedOrientation(),
@@ -158,17 +158,13 @@ class PlanarViewport extends ViewportNext<
       getMaxImageIdIndex: () => this.getMaxImageIdIndex(),
     });
 
+  // ── Static ───────────────────────────────────────────────────────────
+
   static get useCustomRenderingPipeline(): boolean {
     return false;
   }
 
-  getUseCustomRenderingPipeline(): boolean {
-    return false;
-  }
-
-  setRendered(): void {
-    // no-op -- rendering engine calls this after completing a frame
-  }
+  // ── Constructor ──────────────────────────────────────────────────────
 
   constructor(args: PlanarViewportInput) {
     super();
@@ -273,6 +269,10 @@ class PlanarViewport extends ViewportNext<
     this.resize();
   }
 
+  // ====================================================================
+  // Public API -- data
+  // ====================================================================
+
   /**
    * Adds one or more logical planar datasets to the viewport.
    *
@@ -327,90 +327,108 @@ class PlanarViewport extends ViewportNext<
     return renderingId;
   }
 
-  getLegacyCompatibleViewport(): PlanarLegacyCompatibleViewport {
-    return this.legacyCompatibleViewport;
+  /**
+   * Removes a dataset binding and clears the active data id when the
+   * removed dataset was active.
+   */
+  removeData(dataId: string): void {
+    super.removeData(dataId);
+
+    if (this.activeDataId === dataId) {
+      this.activeDataId = undefined;
+    }
+
+    this.legacyCompatibility.removeData(dataId);
   }
 
-  /** @deprecated Use `getLegacyCompatibleViewport().setStack(...)`. */
+  // ====================================================================
+  // Public API -- legacy compatibility (deprecated)
+  // ====================================================================
+
+  /** @deprecated Legacy shim for `setStack(...)`. */
   async setStack(imageIds: string[], currentImageIdIndex = 0): Promise<string> {
-    return this.legacyCompatibleViewport.setStack(
-      imageIds,
-      currentImageIdIndex
-    );
+    return this.legacyCompatibility.setStack(imageIds, currentImageIdIndex);
   }
 
-  /** @deprecated Use `getLegacyCompatibleViewport().setVolumes(...)`. */
+  /** @deprecated Legacy shim for `setVolumes(...)`. */
   async setVolumes(
     volumeInputArray: IVolumeInput[],
     immediate = false,
     suppressEvents = false
   ): Promise<void> {
-    return this.legacyCompatibleViewport.setVolumes(
+    return this.legacyCompatibility.setVolumes(
       volumeInputArray,
       immediate,
       suppressEvents
     );
   }
 
-  /** @deprecated Use `getLegacyCompatibleViewport().addVolumes(...)`. */
+  /** @deprecated Legacy shim for `addVolumes(...)`. */
   async addVolumes(
     volumeInputArray: IVolumeInput[],
     immediate = false,
     suppressEvents = false
   ): Promise<void> {
-    return this.legacyCompatibleViewport.addVolumes(
+    return this.legacyCompatibility.addVolumes(
       volumeInputArray,
       immediate,
       suppressEvents
     );
   }
 
-  /** @deprecated Use `getLegacyCompatibleViewport().setProperties(...)`. */
+  /** @deprecated Legacy shim for `setProperties(...)`. */
   setProperties(
     properties: PlanarLegacyViewportProperties = {},
     volumeIdOrSuppressEvents?: string | boolean,
     suppressEvents = false
   ): void {
-    this.legacyCompatibleViewport.setProperties(
+    this.legacyCompatibility.setProperties(
       properties,
       volumeIdOrSuppressEvents,
       suppressEvents
     );
   }
 
-  /** @deprecated Use `getLegacyCompatibleViewport().getProperties(...)`. */
+  /** @deprecated Legacy shim for `getProperties(...)`. */
   getProperties(volumeId?: string): PlanarLegacyViewportProperties {
-    return this.legacyCompatibleViewport.getProperties(volumeId);
+    return this.legacyCompatibility.getProperties(volumeId);
   }
 
-  /** @deprecated Use `getLegacyCompatibleViewport().resetProperties(...)`. */
+  /** @deprecated Legacy shim for `resetProperties(...)`. */
   resetProperties(volumeId?: string): void {
-    this.legacyCompatibleViewport.resetProperties(volumeId);
+    this.legacyCompatibility.resetProperties(volumeId);
   }
 
-  /** @deprecated Use `getLegacyCompatibleViewport().getBlendMode(...)`. */
+  /** @deprecated Legacy shim for `getBlendMode(...)`. */
   getBlendMode(filterActorUIDs?: string[]): BlendModes | undefined {
-    return this.legacyCompatibleViewport.getBlendMode(filterActorUIDs);
+    return this.legacyCompatibility.getBlendMode(filterActorUIDs);
   }
 
-  /** @deprecated Use `getLegacyCompatibleViewport().setBlendMode(...)`. */
+  /** @deprecated Legacy shim for `setBlendMode(...)`. */
   setBlendMode(
     blendMode: BlendModes,
     filterActorUIDs?: string[],
     immediate = false
   ): void {
-    this.legacyCompatibleViewport.setBlendMode(
+    this.legacyCompatibility.setBlendMode(
       blendMode,
       filterActorUIDs,
       immediate
     );
   }
 
-  /** @deprecated Use `getLegacyCompatibleViewport().getNumberOfSlices()`. */
+  /** @deprecated Legacy shim for `getNumberOfSlices()`. */
   getNumberOfSlices(): number {
-    return this.legacyCompatibleViewport.getNumberOfSlices();
+    return this.legacyCompatibility.getNumberOfSlices();
   }
 
+  // ====================================================================
+  // Public API -- actors (legacy interop)
+  // ====================================================================
+
+  /**
+   * Returns all actor entries from both bindings and overlay actors.
+   */
   getActors(): ActorEntry[] {
     return [
       ...this.getProjectedBindingActorEntries(),
@@ -418,6 +436,9 @@ class PlanarViewport extends ViewportNext<
     ];
   }
 
+  /**
+   * Returns the primary actor entry for the viewport.
+   */
   getDefaultActor(): ActorEntry | undefined {
     const bindingActors = this.getProjectedBindingActorEntries();
     const primaryBindingActor = bindingActors.find(
@@ -435,14 +456,23 @@ class PlanarViewport extends ViewportNext<
     return this.compatibilityOverlayActors.values().next().value;
   }
 
+  /**
+   * Returns a specific actor entry by its UID.
+   */
   getActor(actorUID: string): ActorEntry | undefined {
     return this.getActors().find((actorEntry) => actorEntry.uid === actorUID);
   }
 
+  /**
+   * Renders a single image object by setting it as a one-image stack.
+   */
   renderImageObject(image: IImage): Promise<string> {
     return this.setStack([image.imageId], 0);
   }
 
+  /**
+   * Returns the active canvas element (CPU or VTK) based on render mode.
+   */
   getCanvas(): HTMLCanvasElement {
     const rendering = this.getCurrentPlanarRendering();
 
@@ -456,6 +486,9 @@ class PlanarViewport extends ViewportNext<
     return this.renderContext.vtk.canvas;
   }
 
+  /**
+   * Removes actors by UID from both overlay actors and data bindings.
+   */
   removeActors(actorUIDs: string[]): void {
     let didRemoveActor = false;
 
@@ -488,6 +521,9 @@ class PlanarViewport extends ViewportNext<
     }
   }
 
+  /**
+   * Adds overlay images on top of the primary render path output.
+   */
   addImages(stackInputs: IStackInput[]): void {
     const rendering = this.getCurrentPlanarRendering();
 
@@ -539,19 +575,16 @@ class PlanarViewport extends ViewportNext<
     this.render();
   }
 
+  /**
+   * Returns image metadata for a given image object.
+   */
   getImageDataMetadata(image: IImage) {
     return getImageDataMetadata(image);
   }
 
-  removeData(dataId: string): void {
-    super.removeData(dataId);
-
-    if (this.activeDataId === dataId) {
-      this.activeDataId = undefined;
-    }
-
-    this.legacyCompatibleViewport.removeData(dataId);
-  }
+  // ====================================================================
+  // Public API -- queries
+  // ====================================================================
 
   /**
    * Returns the current image ids for the active planar dataset.
@@ -620,10 +653,17 @@ class PlanarViewport extends ViewportNext<
     return this.getCurrentImageIdIndex();
   }
 
+  // ====================================================================
+  // Public API -- camera & navigation
+  // ====================================================================
+
   protected normalizeCamera(camera: PlanarCamera): PlanarCamera {
     return normalizePlanarCamera(camera);
   }
 
+  /**
+   * Returns the current rotation angle in degrees.
+   */
   getRotation(): number {
     return (
       this.getComputedCamera()?.rotation ??
@@ -631,26 +671,32 @@ class PlanarViewport extends ViewportNext<
     );
   }
 
+  /**
+   * Returns the current world-space anchor point when one is set.
+   */
   getAnchorWorld(): Point3 | undefined {
     const anchorWorld = this.camera.anchorWorld;
 
     return anchorWorld ? ([...anchorWorld] as Point3) : undefined;
   }
 
+  /**
+   * Sets or clears the world-space anchor point.
+   */
   setAnchorWorld(point?: Point3): void {
     this.setCamera({
       anchorWorld: point ? ([...point] as Point3) : undefined,
     });
   }
 
-  /** @deprecated Use `getLegacyCompatibleViewport().getZoom()`. */
+  /** @deprecated Legacy shim for `getZoom()`. */
   getZoom(): number {
     return (
       this.getComputedCamera()?.zoom ?? Math.max(this.camera.scale ?? 1, 0.001)
     );
   }
 
-  /** @deprecated Use `getLegacyCompatibleViewport().setZoom(...)`. */
+  /** @deprecated Legacy shim for `setZoom(...)`. */
   setZoom(zoom: number, canvasPoint?: Point2): void {
     const computedCamera = this.getComputedCamera();
 
@@ -672,14 +718,14 @@ class PlanarViewport extends ViewportNext<
     });
   }
 
-  /** @deprecated Use `getLegacyCompatibleViewport().getPan()`. */
+  /** @deprecated Legacy shim for `getPan()`. */
   getPan(): Point2 {
     const computedCamera = this.getComputedCamera();
 
     return computedCamera ? computedCamera.pan : [0, 0];
   }
 
-  /** @deprecated Use `getLegacyCompatibleViewport().setPan(...)`. */
+  /** @deprecated Legacy shim for `setPan(...)`. */
   setPan(nextPan: Point2): void {
     const computedCamera = this.getComputedCamera();
 
@@ -705,6 +751,9 @@ class PlanarViewport extends ViewportNext<
     });
   }
 
+  /**
+   * Sets the zoom scale anchored to a specific canvas point.
+   */
   setScaleAtCanvasPoint(scale: number, canvasPoint: Point2): void {
     const computedCamera = this.getComputedCamera();
 
@@ -730,6 +779,10 @@ class PlanarViewport extends ViewportNext<
     });
   }
 
+  /**
+   * Returns the current camera state merged with the legacy ICamera
+   * projection for interop.
+   */
   getCamera(): PlanarCamera & ICamera {
     return {
       ...this.camera,
@@ -737,12 +790,19 @@ class PlanarViewport extends ViewportNext<
     };
   }
 
+  /**
+   * Returns the raw planar camera state without the legacy ICamera merge.
+   */
   getCameraState(): PlanarCamera {
     return {
       ...this.camera,
     };
   }
 
+  /**
+   * Returns the computed camera snapshot that resolves the raw camera
+   * state against the current render context and data geometry.
+   */
   getComputedCamera(
     args: {
       frameOfReferenceUID?: string;
@@ -843,6 +903,10 @@ class PlanarViewport extends ViewportNext<
     }
   }
 
+  // ====================================================================
+  // Public API -- view reference & synchronization
+  // ====================================================================
+
   /**
    * Returns the rendering engine that owns this viewport.
    *
@@ -895,6 +959,10 @@ class PlanarViewport extends ViewportNext<
     });
   }
 
+  /**
+   * Applies a view reference by activating the matching binding and
+   * navigating to the referenced slice.
+   */
   setViewReference(viewRef: ViewReference): void {
     if (!viewRef) {
       return;
@@ -926,6 +994,14 @@ class PlanarViewport extends ViewportNext<
     return this.getCurrentBinding()?.getImageData?.();
   }
 
+  // ====================================================================
+  // Public API -- coordinate transforms
+  // ====================================================================
+
+  /**
+   * Converts canvas-space to world-space. Uses the CPU image transform
+   * when in CPU render mode, otherwise delegates to the computed camera.
+   */
   canvasToWorld(canvasPos: Point2): Point3 {
     const rendering = this.getCurrentPlanarRendering();
 
@@ -950,6 +1026,10 @@ class PlanarViewport extends ViewportNext<
     return computedCamera.canvasToWorld(canvasPos);
   }
 
+  /**
+   * Converts world-space to canvas-space. Uses the CPU image transform
+   * when in CPU render mode, otherwise delegates to the computed camera.
+   */
   worldToCanvas(worldPos: Point3): Point2 {
     const rendering = this.getCurrentPlanarRendering();
 
@@ -974,6 +1054,10 @@ class PlanarViewport extends ViewportNext<
     return computedCamera.worldToCanvas(worldPos);
   }
 
+  /**
+   * Returns the frame of reference UID from the computed camera,
+   * resolving against the active binding's spatial metadata.
+   */
   override getFrameOfReferenceUID(): string {
     return (
       this.getComputedCamera({
@@ -1174,6 +1258,24 @@ class PlanarViewport extends ViewportNext<
     return this.resetCamera();
   }
 
+  // ====================================================================
+  // Public API -- lifecycle
+  // ====================================================================
+
+  /**
+   * Returns whether this viewport bypasses the shared rendering pipeline.
+   */
+  getUseCustomRenderingPipeline(): boolean {
+    return false;
+  }
+
+  /**
+   * No-op called by the rendering engine after completing a frame.
+   */
+  setRendered(): void {
+    // no-op
+  }
+
   /**
    * Resizes the internal CPU canvas and notifies active render bindings.
    */
@@ -1211,8 +1313,12 @@ class PlanarViewport extends ViewportNext<
     }
   }
 
+  // ====================================================================
+  // Protected & private
+  // ====================================================================
+
   protected override onDestroy(): void {
-    this.legacyCompatibleViewport.destroy();
+    this.legacyCompatibility.destroy();
     this.compatibilityOverlayActors.forEach((actorEntry) => {
       if (actorEntry.actorMapper?.renderMode === 'vtkImage') {
         this.renderContext.vtk.renderer.removeActor(actorEntry.actor as never);
@@ -1472,10 +1578,6 @@ class PlanarViewport extends ViewportNext<
     };
   }
 
-  private buildCurrentPlanarSliceBasis() {
-    return this.getComputedCamera()?.getSliceBasis();
-  }
-
   private getCurrentPresentation(): DerivedPlanarPresentation | undefined {
     const computedCamera = this.getComputedCamera();
 
@@ -1511,14 +1613,6 @@ class PlanarViewport extends ViewportNext<
       width: this.element.clientWidth,
       height: this.element.clientHeight,
     };
-  }
-
-  private getCurrentCanvasWidth(): number {
-    return this.getCurrentCanvasDimensions().width;
-  }
-
-  private getCurrentCanvasHeight(): number {
-    return this.getCurrentCanvasDimensions().height;
   }
 
   private getCurrentPlanarData(): LoadedData<PlanarPayload> | undefined {

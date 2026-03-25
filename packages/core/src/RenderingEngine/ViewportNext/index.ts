@@ -77,7 +77,6 @@ export {
   CpuImageSlicePath,
   CpuImageSliceRenderPath,
   DefaultPlanarDataProvider,
-  PlanarLegacyCompatibleViewport,
   PlanarStackViewportCamera,
   PlanarVolumeViewportCamera,
   VtkImageMapperPath,
