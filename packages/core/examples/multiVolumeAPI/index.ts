@@ -16,6 +16,7 @@ import {
   setPetColorMapTransferFunctionForVolumeActor,
   addSliderToToolbar,
 } from '../../../../utils/demo/helpers';
+import { getBooleanUrlParam } from '../../../../utils/demo/helpers/exampleParameters';
 
 // This is for debugging purposes
 console.warn(
@@ -34,6 +35,7 @@ const ctVolumeId = `${volumeLoaderScheme}:${ctVolumeName}`; // VolumeId with loa
 // Define a unique id for the volume
 const ptVolumeName = 'PT_VOLUME_ID';
 const ptVolumeId = `${volumeLoaderScheme}:${ptVolumeName}`;
+const PET_DEFAULT_OPACITY = getDefaultPetOpacity();
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -67,8 +69,8 @@ content.appendChild(eventDetailsElement);
 addSliderToToolbar({
   title: 'Opacity',
   range: [0, 1],
-  step: 0.1,
-  defaultValue: 0.5,
+  step: 0.05,
+  defaultValue: PET_DEFAULT_OPACITY,
   onSelectedValueChange: (value) => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const viewport = renderingEngine.getViewport(
@@ -228,13 +230,16 @@ function addColormapEventListener() {
         ? opacity.reduce((max, current) => Math.max(max, current.opacity), 0)
         : opacity;
 
-      const details = {
+      const details: Record<string, string> = {
         type: 'Colormap Modified',
         volumeId,
-        threshold: threshold.toFixed(2),
         opacity: opacityToUse.toFixed(2),
         timestamp: new Date().toLocaleTimeString(),
       };
+
+      if (typeof threshold === 'number') {
+        details.threshold = threshold.toFixed(2);
+      }
 
       eventDetailsElement.innerText = JSON.stringify(details, null, 2);
     }
@@ -313,13 +318,31 @@ async function run() {
   await ptVolume.load();
 
   // Set the volume on the viewport
-  viewport.setVolumes([
+  await viewport.setVolumes([
     { volumeId: ctVolumeId },
     {
       volumeId: ptVolumeId,
-      callback: setPetColorMapTransferFunctionForVolumeActor,
     },
   ]);
+
+  viewport.setProperties(
+    {
+      colormap: {
+        name: 'hsv',
+        opacity: PET_DEFAULT_OPACITY,
+      },
+    },
+    ptVolumeId
+  );
+  viewport.render();
 }
 
 run();
+
+function getDefaultPetOpacity(): number {
+  const isCpu = getBooleanUrlParam('cpu');
+  const isNext =
+    new URLSearchParams(window.location.search).get('type') === 'next';
+
+  return isCpu || isNext ? 0.4 : 0.85;
+}
