@@ -268,6 +268,11 @@ const screenShotPaths = {
     legacyViewport: 'legacy-viewport.png',
     nextViewport: 'next-viewport.png',
   },
+  multiVolumeAPINext: {
+    legacyViewport: 'legacy-viewport.png',
+    nextViewport: 'next-viewport.png',
+    nextCpuViewport: 'next-cpu-viewport.png',
+  },
   labelmapSegToolsNext: {
     legacySphereBrush: 'legacy-sphereBrush.png',
     nextSphereBrush: 'next-sphereBrush.png',

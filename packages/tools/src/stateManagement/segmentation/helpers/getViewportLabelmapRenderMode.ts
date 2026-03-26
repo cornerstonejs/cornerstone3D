@@ -36,7 +36,7 @@ export default function getViewportLabelmapRenderMode(
     | undefined;
   const renderMode = actorMapper?.renderMode;
 
-  if (renderMode === 'vtkVolume') {
+  if (renderMode === 'vtkVolume' || renderMode === 'vtkVolumeSlice') {
     return 'volume';
   }
 

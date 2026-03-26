@@ -19,6 +19,7 @@ import {
   type PlanarLegacyViewportProperties,
   toPlanarDataPresentation,
 } from './planarLegacyCompatibility';
+import { mapSlabTypeToBlendMode } from './planarVolumeSliceBlendMode';
 import type {
   PlanarCamera,
   PlanarDataPresentation,
@@ -242,11 +243,19 @@ class PlanarLegacyCompatibilityController {
       | {
           getMapper?: () => {
             getBlendMode?: () => BlendModes;
+            getSlabType?: () => number;
           };
         }
       | undefined;
 
-    return actor?.getMapper?.()?.getBlendMode?.();
+    const mapper = actor?.getMapper?.();
+    const blendMode = mapper?.getBlendMode?.();
+
+    if (blendMode !== undefined) {
+      return blendMode;
+    }
+
+    return mapSlabTypeToBlendMode(mapper?.getSlabType?.());
   }
 
   setBlendMode(
@@ -375,7 +384,7 @@ class PlanarLegacyCompatibilityController {
 
       const sharedOptions: PlanarSetDataOptions = {
         orientation: this.host.getRequestedOrientation(),
-        renderMode: getShouldUseCPURendering() ? 'cpuVolume' : 'vtkVolume',
+        renderMode: getShouldUseCPURendering() ? 'cpuVolume' : 'vtkVolumeSlice',
       };
 
       await this.host.setDataList(
@@ -454,7 +463,7 @@ class PlanarLegacyCompatibilityController {
     if (
       rendering &&
       (rendering.renderMode === 'cpuVolume' ||
-        rendering.renderMode === 'vtkVolume')
+        rendering.renderMode === 'vtkVolumeSlice')
     ) {
       return Math.min(
         Math.max(0, rendering.currentImageIdIndex),
@@ -622,6 +631,7 @@ class PlanarLegacyCompatibilityController {
       | {
           getMapper?: () => {
             getBlendMode?: () => BlendModes;
+            getSlabType?: () => number;
           };
           getProperty?: () => {
             getRGBTransferFunction?: (index: number) => {
@@ -633,7 +643,10 @@ class PlanarLegacyCompatibilityController {
 
     const transferFunction = actor?.getProperty?.().getRGBTransferFunction?.(0);
     const volumeColormap = this.buildVolumeColormap(dataId);
-    const blendMode = actor?.getMapper?.()?.getBlendMode?.();
+    const mapper = actor?.getMapper?.();
+    const blendMode =
+      mapper?.getBlendMode?.() ??
+      mapSlabTypeToBlendMode(mapper?.getSlabType?.());
     const range = transferFunction?.getRange?.();
     const volumePresentation: PlanarLegacyViewportProperties = {};
 

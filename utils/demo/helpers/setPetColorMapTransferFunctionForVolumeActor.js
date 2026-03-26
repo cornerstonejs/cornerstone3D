@@ -7,14 +7,17 @@ export default function setPetColorMapTransferFunctionForVolumeActor(
 ) {
   const { volumeActor, preset } = volumeInfo;
   const mapper = volumeActor.getMapper();
-  mapper.setSampleDistance(1.0);
+
+  mapper.setSampleDistance?.(1.0);
 
   const cfun = vtkColorTransferFunction.newInstance();
-  let presetToUse = preset ? preset : vtkColorMaps.getPresetByName('hsv');
+  const presetToUse = preset ? preset : vtkColorMaps.getPresetByName('hsv');
   cfun.applyColorMap(presetToUse);
   cfun.setMappingRange(0, 5);
 
-  volumeActor.getProperty().setRGBTransferFunction(0, cfun);
+  const property = volumeActor.getProperty();
+  property.setRGBTransferFunction(0, cfun);
+  property.setUseLookupTableScalarRange?.(true);
 
   // Create scalar opacity function
   const ofun = vtkPiecewiseFunction.newInstance();
@@ -22,5 +25,5 @@ export default function setPetColorMapTransferFunctionForVolumeActor(
   ofun.addPoint(0.1, 0.9);
   ofun.addPoint(5, 1.0);
 
-  volumeActor.getProperty().setScalarOpacity(0, ofun);
+  property.setScalarOpacity(0, ofun);
 }

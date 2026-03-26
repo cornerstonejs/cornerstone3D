@@ -1,5 +1,6 @@
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
+import type vtkImageResliceMapper from '@kitware/vtk.js/Rendering/Core/ImageResliceMapper';
 import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
@@ -15,8 +16,17 @@ export type ICanvasActor = CanvasActor;
 
 export interface ActorMapperProxy {
   actor: VolumeActor | ImageActor | ICanvasActor;
-  mapper: vtkImageMapper | vtkVolumeMapper | CanvasMapper;
-  renderMode: 'vtkImage' | 'vtkVolume' | 'cpu2d' | 'cpuVolume';
+  mapper:
+    | vtkImageMapper
+    | vtkImageResliceMapper
+    | vtkVolumeMapper
+    | CanvasMapper;
+  renderMode:
+    | 'vtkImage'
+    | 'vtkVolume'
+    | 'vtkVolumeSlice'
+    | 'cpu2d'
+    | 'cpuVolume';
 }
 
 /**

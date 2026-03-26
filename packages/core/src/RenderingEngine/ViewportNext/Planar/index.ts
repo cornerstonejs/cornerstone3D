@@ -18,9 +18,9 @@ export {
   VtkImageMapperRenderPath,
 } from './VtkImageMapperRenderPath';
 export {
-  VtkVolumeMapperPath,
-  VtkVolumeMapperRenderPath,
-} from './VtkVolumeMapperRenderPath';
+  VtkVolumeSlicePath,
+  VtkVolumeSliceRenderPath,
+} from './VtkVolumeSliceRenderPath';
 export { default, default as PlanarViewport } from './PlanarViewport';
 export type {
   PlanarCamera,

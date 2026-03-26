@@ -36,7 +36,7 @@ import { CpuImageSlicePath } from './CpuImageSliceRenderPath';
 import { CpuVolumeSlicePath } from './CpuVolumeSliceRenderPath';
 import { DefaultPlanarDataProvider } from './DefaultPlanarDataProvider';
 import { VtkImageMapperPath } from './VtkImageMapperRenderPath';
-import { VtkVolumeMapperPath } from './VtkVolumeMapperRenderPath';
+import { VtkVolumeSlicePath } from './VtkVolumeSliceRenderPath';
 import {
   normalizePlanarOrientation,
   selectPlanarRenderPath,
@@ -87,7 +87,7 @@ import type {
 defaultRenderPathResolver.register(new CpuImageSlicePath());
 defaultRenderPathResolver.register(new CpuVolumeSlicePath());
 defaultRenderPathResolver.register(new VtkImageMapperPath());
-defaultRenderPathResolver.register(new VtkVolumeMapperPath());
+defaultRenderPathResolver.register(new VtkVolumeSlicePath());
 
 type PlanarReferenceContext = {
   dataId: string;
@@ -150,9 +150,13 @@ class PlanarViewport extends ViewportNext<
       getActiveDataId: () => this.activeDataId,
       getFirstBoundDataId: () => this.bindings.keys().next().value,
       findDataIdByVolumeId: (volumeId) => this.findDataIdByVolumeId(volumeId),
-      getBindingActor: (dataId) =>
-        (this.getBinding(dataId)?.rendering as { actor?: unknown } | undefined)
-          ?.actor,
+      getBindingActor: (dataId) => {
+        const rendering = this.getBinding(dataId)?.rendering as
+          | { actor?: unknown; compatibilityActor?: unknown }
+          | undefined;
+
+        return rendering?.actor ?? rendering?.compatibilityActor;
+      },
       getImageCount: () => this.getImageIds().length,
       getMaxImageIdIndex: () => this.getMaxImageIdIndex(),
     });
@@ -1439,7 +1443,7 @@ class PlanarViewport extends ViewportNext<
   ): void {
     const isVolumePath =
       selectedPath.renderMode === 'cpuVolume' ||
-      selectedPath.renderMode === 'vtkVolume';
+      selectedPath.renderMode === 'vtkVolumeSlice';
     const imageIdIndex = isVolumePath
       ? undefined
       : planarData.initialImageIdIndex;
@@ -1986,7 +1990,7 @@ class PlanarViewport extends ViewportNext<
 
     if (
       rendering.renderMode !== 'cpuVolume' &&
-      rendering.renderMode !== 'vtkVolume'
+      rendering.renderMode !== 'vtkVolumeSlice'
     ) {
       return;
     }

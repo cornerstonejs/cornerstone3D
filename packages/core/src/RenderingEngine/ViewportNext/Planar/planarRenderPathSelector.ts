@@ -199,7 +199,7 @@ export function selectPlanarRenderPath(
 
     return {
       acquisitionOrientation,
-      renderMode: shouldUseCpuVolumePath ? 'cpuVolume' : 'vtkVolume',
+      renderMode: shouldUseCpuVolumePath ? 'cpuVolume' : 'vtkVolumeSlice',
       volumeId,
     };
   }

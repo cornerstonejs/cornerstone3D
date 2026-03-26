@@ -375,7 +375,7 @@ export function computePlanarViewportCamera(args: {
 
   if (
     rendering.renderMode === 'cpuVolume' ||
-    rendering.renderMode === 'vtkVolume'
+    rendering.renderMode === 'vtkVolumeSlice'
   ) {
     const currentImageIdIndex =
       typeof sliceIndex === 'number'

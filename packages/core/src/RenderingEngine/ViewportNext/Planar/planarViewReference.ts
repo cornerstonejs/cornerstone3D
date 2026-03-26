@@ -181,7 +181,7 @@ export function getPlanarViewReference(args: {
   if (
     rendering &&
     (rendering.renderMode === 'cpuVolume' ||
-      rendering.renderMode === 'vtkVolume') &&
+      rendering.renderMode === 'vtkVolumeSlice') &&
     viewRefSpecifier?.forFrameOfReference !== false
   ) {
     viewReference.volumeId = args.data?.volumeId;
@@ -238,7 +238,7 @@ export function getPlanarViewReferenceId(args: {
 
   if (
     rendering.renderMode === 'cpuVolume' ||
-    rendering.renderMode === 'vtkVolume'
+    rendering.renderMode === 'vtkVolumeSlice'
   ) {
     const computedCamera = getPlanarComputedCameraForReference({
       ...args,

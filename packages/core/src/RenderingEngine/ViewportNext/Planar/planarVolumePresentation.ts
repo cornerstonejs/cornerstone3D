@@ -1,14 +1,17 @@
 import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
-import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
-import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
+import type vtkImageResliceMapper from '@kitware/vtk.js/Rendering/Core/ImageResliceMapper';
+import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type { ColormapPublic, VOIRange } from '../../../types';
 import { createPlanarRGBTransferFunction } from '../../helpers/planarImageRendering';
-import { updateOpacity as updateVolumeOpacity } from '../../../utilities/colormap';
 import type { PlanarDataPresentation } from './PlanarViewportTypes';
+import {
+  mapBlendModeToSlabType,
+  resolveSlabThickness,
+} from './planarVolumeSliceBlendMode';
 
 export function applyPlanarVolumePresentation(args: {
-  actor: vtkVolume;
-  mapper: vtkVolumeMapper;
+  actor: vtkImageSlice;
+  mapper: vtkImageResliceMapper;
   defaultVOIRange?: VOIRange;
   props?: PlanarDataPresentation;
 }): void {
@@ -17,6 +20,24 @@ export function applyPlanarVolumePresentation(args: {
   const voiRange = props?.voiRange ?? defaultVOIRange;
 
   actor.setVisibility(props?.visible === false ? false : true);
+
+  if (props?.interpolationType !== undefined) {
+    property.setInterpolationType(
+      props.interpolationType as Parameters<
+        typeof property.setInterpolationType
+      >[0]
+    );
+  }
+
+  if (props?.blendMode !== undefined) {
+    const slabType = mapBlendModeToSlabType(props.blendMode);
+
+    if (slabType !== undefined) {
+      mapper.setSlabType(slabType);
+    }
+  }
+
+  mapper.setSlabThickness(resolveSlabThickness(props?.slabThickness));
 
   if (props?.opacity !== undefined) {
     applyVolumeOpacity({
@@ -36,6 +57,7 @@ export function applyPlanarVolumePresentation(args: {
     voiRange,
   });
 
+  property.setUseLookupTableScalarRange(true);
   property.setRGBTransferFunction(0, transferFunction);
 
   applyColormapOpacity({
@@ -43,30 +65,17 @@ export function applyPlanarVolumePresentation(args: {
     colormap: props?.colormap,
     voiRange,
   });
-
-  if (props?.interpolationType !== undefined) {
-    property.setInterpolationType(
-      props.interpolationType as Parameters<
-        typeof property.setInterpolationType
-      >[0]
-    );
-  }
-
-  if (props?.blendMode !== undefined) {
-    // @ts-expect-error vtk.js typing is missing setBlendMode on volume mappers
-    mapper.setBlendMode?.(props.blendMode);
-  }
 }
 
 function applyVolumeOpacity(args: {
-  actor: vtkVolume;
+  actor: vtkImageSlice;
   opacity: number;
   voiRange?: VOIRange;
 }): void {
   const { actor, opacity, voiRange } = args;
 
   if (getVolumeNumberOfComponents(actor) < 2) {
-    updateVolumeOpacity(actor, opacity);
+    actor.getProperty().setOpacity(opacity);
     return;
   }
 
@@ -83,7 +92,7 @@ function applyVolumeOpacity(args: {
 }
 
 function applyColormapOpacity(args: {
-  actor: vtkVolume;
+  actor: vtkImageSlice;
   colormap?: ColormapPublic;
   voiRange?: VOIRange;
 }): void {
@@ -243,12 +252,12 @@ function dedupeOpacityPoints(
   return deduped;
 }
 
-function getCurrentMaxOpacity(actor: vtkVolume): number {
+function getCurrentMaxOpacity(actor: vtkImageSlice): number {
   const opacityFunction = actor.getProperty().getScalarOpacity(0);
   const opacityValues = opacityFunction?.getDataPointer?.();
 
   if (!opacityValues?.length) {
-    return 1;
+    return actor.getProperty().getOpacity?.() ?? 1;
   }
 
   let maxOpacity = 0;
@@ -266,7 +275,7 @@ function clampToUnit(value: number): number {
   return Math.max(0, Math.min(1, value));
 }
 
-function getVolumeNumberOfComponents(actor: vtkVolume): number {
+function getVolumeNumberOfComponents(actor: vtkImageSlice): number {
   const mapperInputData = actor.getMapper()?.getInputData?.();
   const scalars = mapperInputData?.getPointData?.()?.getScalars?.();
   const imageDataMetadata = mapperInputData?.get?.('numberOfComponents') as
@@ -281,7 +290,7 @@ function getVolumeNumberOfComponents(actor: vtkVolume): number {
 }
 
 function resolveVolumeOpacityRange(
-  actor: vtkVolume,
+  actor: vtkImageSlice,
   voiRange?: VOIRange
 ): VOIRange {
   if (

@@ -45,7 +45,7 @@ import PlanarViewport, {
   PlanarStackViewportCamera,
   PlanarVolumeViewportCamera,
   VtkImageMapperPath,
-  VtkVolumeMapperPath,
+  VtkVolumeSlicePath,
 } from './RenderingEngine/ViewportNext/Planar';
 import VolumeViewport3DV2, {
   DefaultVolume3DDataProvider,
@@ -154,7 +154,7 @@ const renderingEngineExportsV2 = {
   PlanarVolumeViewportCamera,
   CpuImageSlicePath,
   VtkImageMapperPath,
-  VtkVolumeMapperPath,
+  VtkVolumeSlicePath,
   DefaultPlanarDataProvider,
   VolumeViewport3DV2,
   VtkVolume3DPath,
@@ -260,7 +260,7 @@ export {
   PlanarVolumeViewportCamera,
   CpuImageSlicePath,
   VtkImageMapperPath,
-  VtkVolumeMapperPath,
+  VtkVolumeSlicePath,
   DefaultPlanarDataProvider,
   VolumeViewport3DV2,
   VtkVolume3DPath,

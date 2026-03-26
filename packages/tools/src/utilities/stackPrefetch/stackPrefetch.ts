@@ -126,7 +126,6 @@ function prefetch(element) {
   const preventCache = false;
 
   function doneCallback(imageId) {
-    console.log('prefetch done: %s', imageId);
     const imageIdIndex = stack.imageIds.indexOf(imageId);
 
     removeFromList(imageIdIndex);

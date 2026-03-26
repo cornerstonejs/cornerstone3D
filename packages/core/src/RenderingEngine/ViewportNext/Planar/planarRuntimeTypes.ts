@@ -15,13 +15,12 @@
  *   - `vtkImage`   -- GPU path for single-image (stack) display via vtkImageMapper.
  *   - `cpu2d`      -- CPU fallback for single-image display via CPUFallbackEnabledElement.
  *   - `cpuVolume`  -- CPU path for volume slicing (samples a slice from the volume on the CPU).
- *   - `vtkVolume`  -- GPU path for volume slicing via vtkVolumeMapper.
+ *   - `vtkVolumeSlice` -- GPU path for volume slicing via vtkImageResliceMapper.
  */
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
+import type vtkImageResliceMapper from '@kitware/vtk.js/Rendering/Core/ImageResliceMapper';
 import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
-import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
-import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import type { InterpolationType } from '../../../enums';
 import type {
   CPUFallbackEnabledElement,
@@ -119,18 +118,17 @@ export type PlanarCpuVolumeRendering = MountedRendering<{
 }>;
 
 /**
- * Mounted rendering state for the GPU volume-slice path (`vtkVolume`).
+ * Mounted rendering state for the GPU volume-slice path (`vtkVolumeSlice`).
  *
- * Uses a vtkVolumeMapper + vtkVolume actor with clipping planes to display
- * an orthogonal slab of the volume. Slice navigation moves the clipping
- * planes along the view-plane normal while the full volume stays mounted
- * in the GPU pipeline.
+ * Uses a vtkImageResliceMapper + vtkImageSlice actor to display an orthogonal
+ * slab of the volume. Slice navigation updates the mapper slice plane to match
+ * the current render camera focal point and view-plane normal.
  */
-export type PlanarVolumeMapperRendering = MountedRendering<{
-  renderMode: 'vtkVolume';
-  actor: vtkVolume;
+export type PlanarVolumeSliceRendering = MountedRendering<{
+  renderMode: 'vtkVolumeSlice';
+  actor: vtkImageSlice;
   imageVolume: IImageVolume;
-  mapper: vtkVolumeMapper;
+  mapper: vtkImageResliceMapper;
   currentImageIdIndex: number;
   maxImageIdIndex: number;
   defaultVOIRange?: VOIRange;
@@ -154,4 +152,4 @@ export type PlanarRendering =
   | PlanarImageMapperRendering
   | PlanarCpuImageRendering
   | PlanarCpuVolumeRendering
-  | PlanarVolumeMapperRendering;
+  | PlanarVolumeSliceRendering;

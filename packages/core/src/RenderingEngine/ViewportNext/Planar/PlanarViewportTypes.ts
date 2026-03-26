@@ -24,13 +24,17 @@ import type {
 import type ICamera from '../../../types/ICamera';
 import type { ViewportCameraBase } from '../ViewportCameraTypes';
 
-export type PlanarRenderMode = 'cpu2d' | 'webgl2d' | 'vtkImage' | 'vtkVolume';
+export type PlanarRenderMode =
+  | 'cpu2d'
+  | 'webgl2d'
+  | 'vtkImage'
+  | 'vtkVolumeSlice';
 export type PlanarRequestedRenderMode = PlanarRenderMode | 'cpuVolume' | 'auto';
 export type PlanarEffectiveRenderMode =
   | 'cpu2d'
   | 'webgl2d'
   | 'vtkImage'
-  | 'vtkVolume'
+  | 'vtkVolumeSlice'
   | 'cpuVolume';
 export type PlanarOrientation =
   | OrientationAxis.ACQUISITION

@@ -42,7 +42,7 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
     );
 
     if (
-      options.renderMode === 'vtkVolume' ||
+      options.renderMode === 'vtkVolumeSlice' ||
       options.renderMode === 'cpuVolume'
     ) {
       const volumeId = resolveViewportVolumeId(options.volumeId);

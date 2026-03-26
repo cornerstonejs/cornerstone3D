@@ -21,6 +21,10 @@ export default class CanvasProperties {
     this.invalidateColorCache();
   }
 
+  public getRGBTransferFunction(index = 0) {
+    return this.transferFunction[index];
+  }
+
   public setScalarOpacity(indexOrOpacity, scalarOpacityFunction?) {
     if (scalarOpacityFunction?.getValue) {
       this.scalarOpacityFunction = scalarOpacityFunction;
@@ -38,6 +42,14 @@ export default class CanvasProperties {
       this.opacity = indexOrOpacity;
       this.invalidateColorCache();
     }
+  }
+
+  public getScalarOpacity() {
+    return this.scalarOpacityFunction;
+  }
+
+  public getOpacity() {
+    return this.opacity;
   }
 
   public setInterpolationTypeToNearest() {
