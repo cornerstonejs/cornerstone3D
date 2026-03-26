@@ -131,8 +131,9 @@ class VideoViewportNext extends ViewportNext<
         );
       }
 
-      this.trackVideoElement();
       this.modified();
+      this.trackVideoElement();
+      await this.primeInitialFrame(videoData);
       renderingIds.push(renderingId);
     }
 
@@ -600,9 +601,95 @@ class VideoViewportNext extends ViewportNext<
     this.camera = this.normalizeCamera(nextCamera);
     this.modified(previousCamera);
   }
+
+  private async primeInitialFrame(
+    videoData: LoadedData<VideoStreamPayload>
+  ): Promise<void> {
+    const element = this.getVideoElement();
+
+    if (!element) {
+      return;
+    }
+
+    await waitForVideoReady(element);
+
+    const targetTimeSeconds =
+      videoData.frameRange[0] > 1
+        ? frameNumberToTimeSeconds(videoData.frameRange[0], videoData.fps)
+        : 0;
+
+    try {
+      await element.play().catch(() => undefined);
+    } catch {
+      // Some environments reject the initial play request; seeking still helps.
+    }
+
+    await seekVideoElement(element, targetTimeSeconds);
+    await waitForVideoFramePaint(element);
+    element.pause();
+    this.syncCameraCurrentTimeFromElement();
+  }
 }
 
 export default VideoViewportNext;
+
+async function waitForVideoReady(element: HTMLVideoElement): Promise<void> {
+  if (element.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+    return;
+  }
+
+  await new Promise<void>((resolve) => {
+    const onReady = () => {
+      cleanup();
+      resolve();
+    };
+    const cleanup = () => {
+      element.removeEventListener('loadeddata', onReady);
+      element.removeEventListener('canplay', onReady);
+    };
+
+    element.addEventListener('loadeddata', onReady, { once: true });
+    element.addEventListener('canplay', onReady, { once: true });
+  });
+}
+
+async function seekVideoElement(
+  element: HTMLVideoElement,
+  timeSeconds: number
+): Promise<void> {
+  if (Math.abs((element.currentTime || 0) - timeSeconds) <= 0.001) {
+    return;
+  }
+
+  await new Promise<void>((resolve) => {
+    const onSeeked = () => {
+      element.removeEventListener('seeked', onSeeked);
+      resolve();
+    };
+
+    element.addEventListener('seeked', onSeeked, { once: true });
+    element.currentTime = timeSeconds;
+  });
+}
+
+async function waitForVideoFramePaint(
+  element: HTMLVideoElement
+): Promise<void> {
+  const requestFrameCallback = (
+    element as HTMLVideoElement & {
+      requestVideoFrameCallback?: (callback: () => void) => number;
+    }
+  ).requestVideoFrameCallback;
+
+  if (requestFrameCallback) {
+    await new Promise<void>((resolve) => {
+      requestFrameCallback.call(element, () => resolve());
+    });
+    return;
+  }
+
+  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+}
 
 function isVideoStreamData(
   data: LoadedData

@@ -14,6 +14,7 @@ import {
   addDropdownToToolbar,
   addSliderToToolbar,
   setCtTransferFunctionForVolumeActor,
+  getExampleBackground,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -423,7 +424,7 @@ async function run() {
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
-        background: <Types.Point3>[0, 0, 0],
+        background: <Types.Point3>getExampleBackground(),
       },
     },
     {
@@ -432,7 +433,7 @@ async function run() {
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
-        background: <Types.Point3>[0, 0, 0],
+        background: <Types.Point3>getExampleBackground(),
       },
     },
     {
@@ -441,7 +442,7 @@ async function run() {
       element: element3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
-        background: <Types.Point3>[0, 0, 0],
+        background: <Types.Point3>getExampleBackground(),
       },
     },
   ];

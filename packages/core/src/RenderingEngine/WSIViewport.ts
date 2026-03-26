@@ -535,6 +535,27 @@ class WSIViewport extends Viewport {
     return canvasPoint;
   };
 
+  /** ViewportNext compat shim – resolves dataId metadata and delegates to setDataIds. */
+  public setDataList(
+    entries: Array<{ dataId: string; options?: Record<string, unknown> }>
+  ) {
+    if (!entries.length) {
+      return;
+    }
+    const { dataId } = entries[0];
+    const dataSet = metaData.get('viewportNextDataSet', dataId) as
+      | { imageIds?: string[]; options?: { webClient?: WSIClientLike } }
+      | undefined;
+
+    if (dataSet?.imageIds) {
+      return this.setDataIds(dataSet.imageIds, {
+        webClient: dataSet.options?.webClient,
+      } as Parameters<typeof this.setDataIds>[1]);
+    }
+
+    return this.setDataIds([dataId]);
+  }
+
   /**
    * This is a wrapper for setWSI to allow generic behaviour
    */

@@ -37,6 +37,15 @@ function validPath(str) {
   return str?.replace(/\\\\/g, '/');
 }
 
+const rspackBin = validPath(
+  path.join(
+    rootPath,
+    'node_modules',
+    '.bin',
+    process.platform === 'win32' ? 'rspack.cmd' : 'rspack'
+  )
+);
+
 function calculateSubstringSimilarity(a, b) {
   let shorter = a;
   let longer = b;
@@ -284,7 +293,7 @@ function run() {
     // You can run this with --no-cache after the serve to prevent caching
     // which can help when doing certain types of development.
     shell.exec(
-      `rspack serve --host 0.0.0.0 ${
+      `${rspackBin} serve --host 0.0.0.0 ${
         options.https ? '--https' : ''
       } --config ${webpackConfigPath}`
     );

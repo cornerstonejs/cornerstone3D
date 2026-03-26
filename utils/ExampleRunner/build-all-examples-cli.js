@@ -47,6 +47,15 @@ function validPath(str) {
   return str.replace(/\\\\/g, '/');
 }
 
+const rspackBin = validPath(
+  path.join(
+    rootPath,
+    'node_modules',
+    '.bin',
+    process.platform === 'win32' ? 'rspack.cmd' : 'rspack'
+  )
+);
+
 // ----------------------------------------------------------------------------
 // Find examples
 // ----------------------------------------------------------------------------
@@ -109,11 +118,16 @@ if (configuration.examples) {
           exampleName = fullPath.pop();
         }
 
-        currentExamples[exampleName] = './' + file;
-        console.debug(' -', exampleName, ':', file);
-        exampleCount++;
+        if (
+          filterExamples.length === 0 ||
+          filterExamples.indexOf(exampleName) !== -1
+        ) {
+          currentExamples[exampleName] = './' + file;
+          console.debug(' -', exampleName, ':', file);
+          exampleCount++;
 
-        allExamplePaths[exampleName] = validPath(path.resolve(file));
+          allExamplePaths[exampleName] = validPath(path.resolve(file));
+        }
       });
   });
 
@@ -162,8 +176,10 @@ if (configuration.examples) {
     );
     shell.ShellString(conf).to(webpackConfigPath);
 
-    shell.exec(`rspack build --config ${webpackConfigPath}`);
+    shell.exec(`${rspackBin} build --config ${webpackConfigPath}`);
   } else {
-    shell.exec(`rspack serve  --host 0.0.0.0 --config ${webpackConfigPath}`);
+    shell.exec(
+      `${rspackBin} serve --host 0.0.0.0 --config ${webpackConfigPath}`
+    );
   }
 }

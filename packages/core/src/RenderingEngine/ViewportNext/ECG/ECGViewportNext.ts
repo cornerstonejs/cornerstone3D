@@ -79,6 +79,11 @@ class ECGViewportNext extends ViewportNext<
     this.resize();
   }
 
+  /** Legacy compat shim – delegates to setDataList. */
+  async setEcg(imageId: string): Promise<void> {
+    await this.setDataList([{ dataId: imageId }]);
+  }
+
   /**
    * Adds one or more waveform datasets using the canvas ECG render path.
    *

@@ -1,3 +1,4 @@
+import { buildPlanarActorEntry } from './buildPlanarActorEntry';
 import CanvasActor from '../../CanvasActor';
 import { Events, ViewportStatus, ViewportType } from '../../../enums';
 import eventTarget from '../../../eventTarget';
@@ -215,6 +216,14 @@ export class CpuVolumeSliceRenderPath
       },
       getFrameOfReferenceUID: () => {
         return this.getFrameOfReferenceUID(rendering);
+      },
+      getActorEntry: (data) => {
+        return buildPlanarActorEntry(data, {
+          actor: rendering.compatibilityActor,
+          renderMode: 'cpuVolume',
+          uidFallback: data.volumeId,
+          referencedIdFallback: data.volumeId,
+        });
       },
       getImageData: () => {
         return this.getImageData(rendering);

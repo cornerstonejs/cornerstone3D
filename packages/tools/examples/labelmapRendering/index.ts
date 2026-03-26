@@ -10,6 +10,7 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
+  getExampleBackground,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import { fillVolumeLabelmapWithMockData } from '../../../../utils/test/testUtils';
@@ -109,7 +110,7 @@ async function run() {
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
-        background: <Types.Point3>[0.2, 0, 0.2],
+        background: <Types.Point3>getExampleBackground(),
       },
     },
     {
@@ -118,7 +119,7 @@ async function run() {
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
-        background: <Types.Point3>[0.2, 0, 0.2],
+        background: <Types.Point3>getExampleBackground(),
       },
     },
     {
@@ -127,7 +128,7 @@ async function run() {
       element: element3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
-        background: <Types.Point3>[0.2, 0, 0.2],
+        background: <Types.Point3>getExampleBackground(),
       },
     },
   ];

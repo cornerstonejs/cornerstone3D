@@ -10,6 +10,7 @@ import {
   createImageIdsAndCacheMetaData,
   getLocalUrl,
   annotationTools,
+  getExampleBackground,
 } from '../../../../utils/demo/helpers';
 
 // This is for debugging purposes
@@ -125,7 +126,7 @@ async function run() {
     type: ViewportType.ECG,
     element,
     defaultOptions: {
-      background: [0, 0, 0] as Types.Point3,
+      background: getExampleBackground() as Types.Point3,
     },
   };
 

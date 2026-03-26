@@ -1,5 +1,6 @@
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
+import { buildPlanarActorEntry } from './buildPlanarActorEntry';
 import {
   InterpolationType,
   MetadataModules,
@@ -97,6 +98,14 @@ export class VtkImageMapperRenderPath
       },
       getFrameOfReferenceUID: () => {
         return this.getFrameOfReferenceUID(rendering);
+      },
+      getActorEntry: (data) => {
+        return buildPlanarActorEntry(data, {
+          actor: rendering.actor,
+          mapper: rendering.mapper,
+          renderMode: 'vtkImage',
+          referencedIdFallback: rendering.currentImage.imageId,
+        });
       },
       getImageData: () => {
         return this.getImageData(rendering);

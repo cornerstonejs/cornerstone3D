@@ -54,7 +54,6 @@ import {
 import {
   createPlanarCpuImageOverlayActorEntry,
   createPlanarImageOverlayActorEntry,
-  projectPlanarBindingActorEntry,
 } from './planarActorCompatibility';
 import {
   canvasToWorldPlanarCpuImage,
@@ -1479,10 +1478,7 @@ class PlanarViewport extends ViewportNext<
     const actorEntries: ActorEntry[] = [];
 
     for (const binding of this.bindings.values()) {
-      const actorEntry = projectPlanarBindingActorEntry(
-        binding.data as LoadedData<PlanarPayload>,
-        binding.rendering as PlanarRendering
-      );
+      const actorEntry = binding.getActorEntry?.(binding.data);
 
       if (actorEntry) {
         actorEntries.push(actorEntry);
@@ -1494,10 +1490,7 @@ class PlanarViewport extends ViewportNext<
 
   private findBindingDataIdByActorUID(actorUID: string): string | undefined {
     for (const [dataId, binding] of this.bindings.entries()) {
-      const actorEntry = projectPlanarBindingActorEntry(
-        binding.data as LoadedData<PlanarPayload>,
-        binding.rendering as PlanarRendering
-      );
+      const actorEntry = binding.getActorEntry?.(binding.data);
 
       if (actorEntry?.uid === actorUID) {
         return dataId;

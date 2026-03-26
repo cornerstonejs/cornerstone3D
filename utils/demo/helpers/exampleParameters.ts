@@ -46,6 +46,22 @@ export function applyViewportTypeOverride(config: DemoConfig = {}): DemoConfig {
   return config;
 }
 
+/**
+ * Returns a viewport background color based on URL params:
+ *   - cpu=true  -> black [0, 0, 0]
+ *   - type=next -> green [0, 0.2, 0]
+ *   - otherwise -> purple [0.2, 0, 0.2]
+ */
+export function getExampleBackground(): [number, number, number] {
+  if (getBooleanUrlParam('cpu')) {
+    return [0, 0, 0];
+  }
+  if (getUrlParam('type') === 'next') {
+    return [0, 0.2, 0];
+  }
+  return [0.2, 0, 0.2];
+}
+
 export function applyUrlParameterOverridesToDemoConfig(
   config: DemoConfig = {}
 ): DemoConfig {

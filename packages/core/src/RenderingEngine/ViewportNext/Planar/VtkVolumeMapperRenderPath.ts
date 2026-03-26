@@ -1,5 +1,6 @@
 import '@kitware/vtk.js/Rendering/Profiles/Volume';
 import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
+import { buildPlanarActorEntry } from './buildPlanarActorEntry';
 import { RENDERING_DEFAULTS } from '../../../constants';
 import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import { Events, ViewportType } from '../../../enums';
@@ -107,6 +108,15 @@ export class VtkVolumeMapperRenderPath
       },
       getFrameOfReferenceUID: () => {
         return this.getFrameOfReferenceUID(rendering);
+      },
+      getActorEntry: (data) => {
+        return buildPlanarActorEntry(data, {
+          actor: rendering.actor,
+          mapper: rendering.mapper,
+          renderMode: 'vtkVolume',
+          uidFallback: data.volumeId,
+          referencedIdFallback: data.volumeId,
+        });
       },
       getImageData: () => {
         return this.getImageData(rendering);

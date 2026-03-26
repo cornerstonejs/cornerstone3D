@@ -186,6 +186,16 @@ class VideoViewport extends Viewport {
     );
   }
 
+  /** ViewportNext compat shim – delegates to setVideo. */
+  public setDataList(
+    entries: Array<{ dataId: string; options?: Record<string, unknown> }>
+  ) {
+    if (!entries.length) {
+      return;
+    }
+    return this.setVideo(entries[0].dataId);
+  }
+
   /**
    * Sets the video image id to show and hte frame number.
    * Requirements are to have the imageUrlModule in the metadata

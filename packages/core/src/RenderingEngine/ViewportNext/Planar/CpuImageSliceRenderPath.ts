@@ -1,4 +1,5 @@
 import { vec3 } from 'gl-matrix';
+import { buildPlanarActorEntry } from './buildPlanarActorEntry';
 import CanvasActor from '../../CanvasActor';
 import calculateTransform from '../../helpers/cpuFallback/rendering/calculateTransform';
 import getDefaultViewport from '../../helpers/cpuFallback/rendering/getDefaultViewport';
@@ -123,6 +124,14 @@ export class CpuImageSliceRenderPath
       },
       getFrameOfReferenceUID: () => {
         return this.getFrameOfReferenceUID(rendering);
+      },
+      getActorEntry: (data) => {
+        return buildPlanarActorEntry(data, {
+          actor: rendering.compatibilityActor,
+          renderMode: 'cpu2d',
+          uidFallback: rendering.enabledElement.image?.imageId,
+          referencedIdFallback: rendering.enabledElement.image?.imageId,
+        });
       },
       getImageData: () => {
         return this.getImageData(rendering);

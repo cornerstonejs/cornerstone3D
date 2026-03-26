@@ -38,6 +38,7 @@ import {
   createAndCacheGeometriesFromSurfaces,
 } from './createAndCacheGeometriesFromSurfaces';
 import { createAndCacheGeometriesFromContours } from './createAndCacheGeometriesFromContours';
+import { getExampleBackground } from './exampleParameters';
 
 export {
   addBrushSizeSlider,
@@ -76,4 +77,5 @@ export {
   createAndCacheGeometriesFromContours,
   createAndCacheGeometriesFromSurfaces,
   createAndCacheGeometriesFromOneSurface,
+  getExampleBackground,
 };

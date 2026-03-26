@@ -1,5 +1,12 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const reuseExistingServer =
+  process.env.PLAYWRIGHT_REUSE_EXISTING_SERVER === 'true'
+    ? true
+    : process.env.PLAYWRIGHT_REUSE_EXISTING_SERVER === 'false'
+      ? false
+      : !process.env.CI;
+
 export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
@@ -26,12 +33,20 @@ export default defineConfig({
     {
       name: 'slow-tests',
       testMatch: /.+@slow.+/,
-      use: { ...devices['Desktop Chrome'], deviceScaleFactor: 1 },
+      use: {
+        ...devices['Desktop Chrome'],
+        channel: 'chrome',
+        deviceScaleFactor: 1,
+      },
     },
     {
       name: 'chromium',
       testIgnore: /.+@slow.+/,
-      use: { ...devices['Desktop Chrome'], deviceScaleFactor: 1 },
+      use: {
+        ...devices['Desktop Chrome'],
+        channel: 'chrome',
+        deviceScaleFactor: 1,
+      },
     },
     {
       name: 'webkit',
@@ -79,7 +94,7 @@ export default defineConfig({
   webServer: {
     command: 'cross-env COVERAGE=true nyc bun build-and-serve-static-examples',
     url: 'http://localhost:3333',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer,
     timeout: 500 * 1000,
   },
 });

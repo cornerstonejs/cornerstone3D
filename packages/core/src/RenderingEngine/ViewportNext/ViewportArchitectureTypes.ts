@@ -1,4 +1,4 @@
-import type { Point2, Point3 } from '../../types';
+import type { ActorEntry, Point2, Point3 } from '../../types';
 import type ViewportType from '../../enums/ViewportType';
 
 export type ViewportId = string;
@@ -41,6 +41,7 @@ export interface RenderPathAttachment<TPresentation = unknown> {
   updateDataPresentation(props: TPresentation): void;
   updateCamera(camera: unknown): void;
   getFrameOfReferenceUID(): string | undefined;
+  getActorEntry?(data: LoadedData): ActorEntry | undefined;
   getImageData?(): unknown;
   render?(): void;
   resize?(): void;
