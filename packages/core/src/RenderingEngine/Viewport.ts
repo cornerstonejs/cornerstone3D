@@ -1582,51 +1582,41 @@ class Viewport {
       vtkCamera.setClippingRange(clippingRange);
     }
 
-    // update clipping range only if focal point changed of a new actor is added
-    const prevFocalPoint = previousCamera.focalPoint;
-    const prevViewUp = previousCamera.viewUp;
-
-    if ((prevFocalPoint && focalPoint) || (prevViewUp && viewUp)) {
-      const currentViewPlaneNormal = vtkCamera.getViewPlaneNormal() as Point3;
-      const currentViewUp = vtkCamera.getViewUp() as Point3;
-
-      let cameraModifiedOutOfPlane = false;
-      let viewUpHasChanged = false;
-
-      if (focalPoint) {
-        const deltaCamera = [
-          focalPoint[0] - prevFocalPoint[0],
-          focalPoint[1] - prevFocalPoint[1],
-          focalPoint[2] - prevFocalPoint[2],
-        ] as Point3;
-
-        cameraModifiedOutOfPlane =
-          Math.abs(vtkMath.dot(deltaCamera, currentViewPlaneNormal)) > 0;
+    // update clipping range unless viewPlaneNormal remains the same and focal point move orthogonal to the camera's viewPlaneNormal
+    const updatedViewPlaneNormal = vtkCamera.getViewPlaneNormal() as Point3;
+    const previousViewPlaneNormal = previousCamera.viewPlaneNormal;
+    const sameViewPlaneNormal =
+      updatedViewPlaneNormal &&
+      previousViewPlaneNormal &&
+      isEqual(updatedViewPlaneNormal, previousViewPlaneNormal);
+    let doUpdate = !sameViewPlaneNormal;
+    if (sameViewPlaneNormal && focalPoint) {
+      if (previousCamera.focalPoint) {
+        const deltaFocalPoint = vec3.subtract(
+          vec3.create(),
+          focalPoint,
+          previousCamera.focalPoint
+        );
+        doUpdate = vec3.dot(deltaFocalPoint, updatedViewPlaneNormal) !== 0;
+      } else {
+        doUpdate = true;
+      }
+    }
+    if (doUpdate) {
+      const actorEntry = this.getDefaultActor();
+      if (!actorEntry?.actor) {
+        return;
+      }
+      if (!actorIsA(actorEntry, 'vtkActor')) {
+        this.updateClippingPlanesForActors(updatedCamera);
       }
 
-      if (viewUp) {
-        viewUpHasChanged = !isEqual(currentViewUp, prevViewUp);
-      }
-
-      // only modify the clipping planes if the camera is modified out of plane
-      // or a new actor is added and we need to update the clipping planes
-      if (cameraModifiedOutOfPlane || viewUpHasChanged) {
-        const actorEntry = this.getDefaultActor();
-        if (!actorEntry?.actor) {
-          return;
-        }
-
-        if (!actorIsA(actorEntry, 'vtkActor')) {
-          this.updateClippingPlanesForActors(updatedCamera);
-        }
-
-        if (
-          actorIsA(actorEntry, 'vtkImageSlice') ||
-          this.type === ViewportType.VOLUME_3D
-        ) {
-          const renderer = this.getRenderer();
-          renderer.resetCameraClippingRange();
-        }
+      if (
+        actorIsA(actorEntry, 'vtkImageSlice') ||
+        this.type === ViewportType.VOLUME_3D
+      ) {
+        const renderer = this.getRenderer();
+        renderer.resetCameraClippingRange();
       }
     }
 
