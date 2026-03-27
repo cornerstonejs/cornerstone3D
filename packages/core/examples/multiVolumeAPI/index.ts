@@ -292,7 +292,6 @@ async function run() {
     type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
-      orientation: Enums.OrientationAxis.SAGITTAL,
       background: [0.2, 0, 0.2] as Types.Point3,
     },
   };
@@ -317,7 +316,10 @@ async function run() {
   toolGroup.addTool(ZoomTool.toolName);
 
   toolGroup.setToolActive(StackScrollTool.toolName, {
-    bindings: [{ mouseButton: MouseBindings.Primary }],
+    bindings: [
+      { mouseButton: MouseBindings.Primary },
+      { mouseButton: MouseBindings.Wheel },
+    ],
   });
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [{ mouseButton: MouseBindings.Auxiliary }],
@@ -364,12 +366,20 @@ async function run() {
     {
       colormap: {
         name: 'hsv',
-        opacity: PET_DEFAULT_OPACITY,
+        // opacity: PET_DEFAULT_OPACITY,
       },
     },
     ptVolumeId
   );
+  viewport.scroll(-12);
+
   viewport.render();
+
+  // setTimeout(()=>{
+  // viewport.scroll(4)
+  // viewport.render()
+
+  // },1000)
 }
 
 run();
