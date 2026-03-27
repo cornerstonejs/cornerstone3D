@@ -25,6 +25,10 @@ struct Bounds {
   maxZ: atomic<i32>,
 }
 
+struct VolumeRange {
+  range: f32,
+}
+
 @group(0) @binding(0) var<uniform> params: Params;
 @group(0) @binding(1) var<storage> volumePixelData: array<f32>;
 @group(0) @binding(2) var<storage, read_write> labelmap: array<u32>;
@@ -33,6 +37,7 @@ struct Bounds {
 @group(0) @binding(5) var<storage> prevStrengthData: array<f32>;
 @group(0) @binding(6) var<storage, read_write> updatedVoxelsCounter: array<atomic<u32>>;
 @group(0) @binding(7) var<storage, read_write> modifiedBounds: Bounds;
+@group(0) @binding(8) var<uniform> volumeRange: VolumeRange;
 
 fn getPixelIndex(ijkPos: vec3u) -> u32 {
   let numPixelsPerSlice = params.size.x * params.size.y;
@@ -123,7 +128,8 @@ fn main(
         let neighborIndex = getPixelIndex(vec3u(neighborCoord));
         let neighborPixelValue = volumePixelData[neighborIndex];
         let prevNeighborStrength = prevStrengthData[neighborIndex];
-        let strengthCost = abs(neighborPixelValue - currentPixelValue);
+        // Normalize by volume range for modality-independent boundary strength (e.g. PET vs CT)
+        let strengthCost = abs(neighborPixelValue - currentPixelValue) / volumeRange.range;
         let takeoverStrength = prevNeighborStrength - strengthCost;
 
         if (takeoverStrength > newStrength) {

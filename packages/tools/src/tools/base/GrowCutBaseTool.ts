@@ -95,9 +95,7 @@ class GrowCutBaseTool extends BaseTool {
     super(toolProps, baseToolProps);
   }
 
-  async preMouseDownCallback(
-    evt: EventTypes.MouseDownActivateEventType
-  ): Promise<boolean> {
+  preMouseDownCallback(evt: EventTypes.MouseDownActivateEventType): boolean {
     const eventData = evt.detail;
     const { element, currentPoints } = eventData;
     const { world: worldPoint } = currentPoints;
@@ -105,12 +103,18 @@ class GrowCutBaseTool extends BaseTool {
     const { viewport, renderingEngine } = enabledElement;
 
     const { viewUp } = viewport.getCamera();
+    const labelmapSegmentationData = this.getLabelmapSegmentationData(viewport);
+
+    if (!labelmapSegmentationData) {
+      return false;
+    }
+
     const {
       segmentationId,
       segmentIndex,
       labelmapVolumeId,
       referencedVolumeId,
-    } = await this.getLabelmapSegmentationData(viewport);
+    } = labelmapSegmentationData;
 
     if (!this._isOrthogonalView(viewport, referencedVolumeId)) {
       throw new Error('Oblique view is not supported yet');
@@ -211,7 +215,11 @@ class GrowCutBaseTool extends BaseTool {
 
       fn(segmentationId, segmentIndex, labelmap, growcutLabelmap);
 
-      this._removeIslands(updatedGrowCutData);
+      // Skip _removeIslands when using flood fill - island removal is already done in runFloodFillSegmentation
+      const segmentationMode = config.segmentationMode ?? 'floodfill_full';
+      if (segmentationMode !== 'floodfill_full') {
+        this._removeIslands(updatedGrowCutData);
+      }
     };
 
     await growCutCommand();
@@ -302,11 +310,12 @@ class GrowCutBaseTool extends BaseTool {
     }
   }
 
-  protected async getLabelmapSegmentationData(viewport: Types.IViewport) {
+  protected getLabelmapSegmentationData(viewport: Types.IViewport) {
     const activeSeg = activeSegmentation.getActiveSegmentation(viewport.id);
 
     if (!activeSeg) {
-      throw new Error('No active segmentation found');
+      console.warn('No active segmentation found for viewport', viewport.id);
+      return;
     }
 
     const { segmentationId } = activeSeg;
@@ -372,11 +381,9 @@ class GrowCutBaseTool extends BaseTool {
 
       referencedVolumeId = imageVolume
         ? imageVolume.volumeId
-        : (
-            await volumeLoader.createAndCacheVolumeFromImagesSync(
-              volumeId,
-              referencedImageIds
-            )
+        : volumeLoader.createAndCacheVolumeFromImagesSync(
+            volumeId,
+            referencedImageIds
           ).volumeId;
     }
 
