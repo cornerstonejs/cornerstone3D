@@ -142,8 +142,8 @@ function findMatchingColormap(rgbPoints, actor): ColormapPublic | null {
   if (actorIsA(actor, 'vtkVolume') || actorIsA(actor, 'vtkImageSlice')) {
     const opacityPoints = actor
       .getProperty()
-      .getScalarOpacity(0)
-      .getDataPointer();
+      ?.getScalarOpacity?.(0)
+      ?.getDataPointer?.();
 
     if (!opacityPoints) {
       return {

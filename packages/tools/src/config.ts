@@ -94,12 +94,21 @@ type ComputeWorkerConfig = {
   };
 };
 
+type SegmentationConfig = {
+  /**
+   * When enabled, labelmap brush drags render an SVG trajectory preview and
+   * defer the voxel-manager mutation until interaction end.
+   */
+  lazyLabelmapEditing?: boolean;
+};
+
 /**
  * Configuration type containing add-ons
  */
 export type Config = {
   addons: AddOns;
   computeWorker?: ComputeWorkerConfig;
+  segmentation?: SegmentationConfig;
 };
 
 let config = {} as Config;

@@ -35,6 +35,7 @@ export default async function initDemo(config: any = {}) {
   // Apply URL parameter overrides (cpu thresholds, viewport V2 flag, etc.)
   let demoConfig = applyUrlParameterOverridesToDemoConfig(config);
   demoConfig = applyViewportTypeOverride(demoConfig);
+  const toolsConfig = demoConfig?.tools || {};
 
   await csRenderInit({
     peerImport,
@@ -52,8 +53,10 @@ export default async function initDemo(config: any = {}) {
         }),
   });
   await csToolsInit({
+    ...toolsConfig,
     addons: {
       polySeg,
+      ...(toolsConfig.addons || {}),
     },
   });
 

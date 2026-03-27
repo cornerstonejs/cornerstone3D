@@ -16,6 +16,7 @@ import {
   setCtTransferFunctionForVolumeActor,
   getExampleBackground,
 } from '../../../../utils/demo/helpers';
+import { getBooleanUrlParam } from '../../../../utils/demo/helpers/exampleParameters';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 // This is for debugging purposes
@@ -261,7 +262,13 @@ async function addSegmentationsToState() {
  */
 async function run() {
   // Init Cornerstone and related libraries
-  await initDemo();
+  await initDemo({
+    tools: {
+      segmentation: {
+        lazyLabelmapEditing: getBooleanUrlParam('lazyLabelmapEditing'),
+      },
+    },
+  });
 
   // This is not necessary, but makes the images appear faster
   utilities.imageRetrieveMetadataProvider.add(

@@ -421,6 +421,7 @@ export default class LabelmapBaseTool extends BaseTool {
       this._hoverData || this.createHoverData(element);
     const { data, metadata = {} } = brushCursor || {};
     const { viewPlaneNormal, viewUp } = metadata;
+    const points = data?.editPoints || data?.handles?.points;
 
     const configColor =
       this.configuration.preview?.previewColors?.[segmentIndex];
@@ -444,7 +445,7 @@ export default class LabelmapBaseTool extends BaseTool {
 
     const operationData = {
       ...editData,
-      points: data?.handles?.points,
+      points,
       segmentIndex,
       viewPlaneNormal,
       previewOnHover: !this._previewData.isDrag,

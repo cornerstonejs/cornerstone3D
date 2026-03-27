@@ -6,6 +6,7 @@ import {
   getRenderingEngine,
   eventTarget,
 } from '@cornerstonejs/core';
+import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -18,6 +19,15 @@ import {
 } from '../../../../utils/demo/helpers';
 import { getBooleanUrlParam } from '../../../../utils/demo/helpers/exampleParameters';
 
+const {
+  PanTool,
+  ZoomTool,
+  StackScrollTool,
+  ToolGroupManager,
+  Enums: csToolsEnums,
+} = cornerstoneTools;
+const { MouseBindings } = csToolsEnums;
+
 // This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
@@ -26,6 +36,7 @@ console.warn(
 const { ViewportType } = Enums;
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_SAGITTAL_STACK';
+const toolGroupId = 'myToolGroup';
 
 // Define unique ids for the volumes
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
@@ -292,6 +303,30 @@ async function run() {
   const viewport = renderingEngine.getViewport(
     viewportId
   ) as Types.IVolumeViewport;
+
+  // Set up interaction tools
+  cornerstoneTools.addTool(StackScrollTool);
+  cornerstoneTools.addTool(PanTool);
+  cornerstoneTools.addTool(ZoomTool);
+
+  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+  toolGroup.addViewport(viewportId, renderingEngineId);
+
+  toolGroup.addTool(StackScrollTool.toolName);
+  toolGroup.addTool(PanTool.toolName);
+  toolGroup.addTool(ZoomTool.toolName);
+
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Primary }],
+  });
+  toolGroup.setToolActive(PanTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Auxiliary }],
+  });
+  toolGroup.setToolActive(ZoomTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Secondary }],
+  });
+
+  element.addEventListener('contextmenu', (e) => e.preventDefault());
 
   // Setup event listener for colormap modifications
   addColormapEventListener();
