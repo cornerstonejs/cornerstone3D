@@ -83,6 +83,7 @@ import type {
   PlanarViewportRenderContext,
   PlanarViewportInput,
 } from './PlanarViewportTypes';
+import { resolvePlanarViewportRenderMode } from './resolvePlanarViewportRenderMode';
 
 defaultRenderPathResolver.register(new CpuImageSlicePath());
 defaultRenderPathResolver.register(new CpuVolumeSlicePath());
@@ -114,6 +115,7 @@ class PlanarViewport extends ViewportNext<
   protected renderContext: PlanarViewportRenderContext;
 
   private activeDataId?: string;
+  private readonly lockedRenderMode: PlanarEffectiveRenderMode;
   private readonly compatibilityOverlayActors = new Map<string, ActorEntry>();
   private cpuCanvas?: HTMLCanvasElement;
   private readonly legacyCompatibility =
@@ -186,6 +188,12 @@ class PlanarViewport extends ViewportNext<
     this.dataProvider = args.dataProvider || new DefaultPlanarDataProvider();
     this.renderPathResolver =
       args.renderPathResolver || defaultRenderPathResolver;
+    this.lockedRenderMode = resolvePlanarViewportRenderMode({
+      orientation: this.defaultOptions.orientation as
+        | PlanarSetDataOptions['orientation']
+        | null,
+      renderMode: this.defaultOptions.renderMode,
+    });
 
     const renderingEngine = renderingEngineCache.get(this.renderingEngineId);
     const renderer = renderingEngine?.getRenderer(this.id);
@@ -232,8 +240,15 @@ class PlanarViewport extends ViewportNext<
       type: 'planar',
       viewport: {
         element: this.element,
+        getActiveDataId: () => this.activeDataId,
+        getCameraState: () => this.getCameraState(),
+        isCurrentDataId: (dataId) =>
+          this.getCurrentBinding()?.data.id === dataId,
         getOverlayActors: () =>
           Array.from(this.compatibilityOverlayActors.values()),
+      },
+      renderPath: {
+        renderMode: this.lockedRenderMode,
       },
       display: {
         requestRender: () => {
@@ -263,6 +278,7 @@ class PlanarViewport extends ViewportNext<
       ...createDefaultPlanarCamera(),
       orientation: this.resolveRequestedOrientation(),
     });
+    this.setRenderModeVisibility(this.lockedRenderMode, cpuCanvas, vtkCanvas);
 
     this.element.setAttribute('data-viewport-uid', this.id);
     this.element.setAttribute(
@@ -295,6 +311,7 @@ class PlanarViewport extends ViewportNext<
 
     if (entries[0]) {
       this.activeDataId = entries[0].dataId;
+      this.updateBindingsCameraState();
     }
 
     return renderingIds;
@@ -339,6 +356,10 @@ class PlanarViewport extends ViewportNext<
 
     if (this.activeDataId === dataId) {
       this.activeDataId = undefined;
+    }
+
+    if (!this.isDestroyed && this.getCurrentBinding()) {
+      this.updateBindingsCameraState();
     }
 
     this.legacyCompatibility.removeData(dataId);
@@ -1298,7 +1319,7 @@ class PlanarViewport extends ViewportNext<
       canvas.height = targetHeight;
     }
 
-    this.resizeBindings();
+    this.resizeBindingsWithActiveFirst();
   }
 
   /**
@@ -1331,6 +1352,20 @@ class PlanarViewport extends ViewportNext<
     this.cpuCanvas?.remove();
     this.cpuCanvas = undefined;
     this.activeDataId = undefined;
+    this.renderContext.renderPath.renderCamera = undefined;
+  }
+
+  protected override modified(previousCamera?: ICamera): void {
+    if (this.isDestroyed) {
+      return;
+    }
+
+    this.updateBindingsCameraState();
+    this.render();
+
+    if (previousCamera) {
+      this.triggerCameraModifiedEvent(previousCamera);
+    }
   }
 
   private requestRenderingEngineRender(): void {
@@ -1347,8 +1382,45 @@ class PlanarViewport extends ViewportNext<
     vtkCanvas: HTMLCanvasElement
   ): void {
     const useCPUCanvas = renderMode === 'cpu2d' || renderMode === 'cpuVolume';
+    const viewportElement = this.element.querySelector(
+      '.viewport-element'
+    ) as HTMLDivElement | null;
+
     cpuCanvas.style.display = useCPUCanvas ? '' : 'none';
+    cpuCanvas.style.pointerEvents = useCPUCanvas ? 'auto' : 'none';
     vtkCanvas.style.display = useCPUCanvas ? 'none' : '';
+
+    if (viewportElement) {
+      viewportElement.style.pointerEvents = useCPUCanvas ? 'none' : '';
+    }
+  }
+
+  private updateBindingsCameraState(): void {
+    const currentBinding = this.getCurrentBinding();
+
+    if (currentBinding) {
+      currentBinding.updateCamera(this.camera);
+    } else {
+      this.renderContext.renderPath.renderCamera = undefined;
+    }
+
+    this.forEachBinding((binding) => {
+      if (binding !== currentBinding) {
+        binding.updateCamera(this.camera);
+      }
+    });
+  }
+
+  private resizeBindingsWithActiveFirst(): void {
+    const currentBinding = this.getCurrentBinding();
+
+    currentBinding?.resize?.();
+
+    this.forEachBinding((binding) => {
+      if (binding !== currentBinding) {
+        binding.resize?.();
+      }
+    });
   }
 
   private getActiveImageIdIndex(): number {
@@ -1418,9 +1490,17 @@ class PlanarViewport extends ViewportNext<
     const resolvedOrientation = this.resolveRequestedOrientation(
       options.orientation
     );
+    if (
+      options.renderMode !== undefined &&
+      options.renderMode !== this.lockedRenderMode
+    ) {
+      throw new Error(
+        `[PlanarViewport] Viewport ${this.id} is locked to ${this.lockedRenderMode}; cannot add ${dataId} as ${options.renderMode}`
+      );
+    }
     const selectedPath = selectPlanarRenderPath(dataSet, {
-      ...options,
       orientation: resolvedOrientation,
+      renderMode: this.lockedRenderMode,
     });
     const data = await (this.dataProvider as PlanarDataProvider).load(dataId, {
       acquisitionOrientation: selectedPath.acquisitionOrientation,
@@ -1757,6 +1837,7 @@ class PlanarViewport extends ViewportNext<
     }
 
     this.activeDataId = dataId;
+    this.updateBindingsCameraState();
 
     return true;
   }

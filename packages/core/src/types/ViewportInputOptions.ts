@@ -11,6 +11,8 @@ interface ViewportInputOptions {
   background?: RGB;
   /** orientation of the viewport which can be either an Enum for axis Enums.OrientationAxis.[AXIAL|SAGITTAL|CORONAL|DEFAULT] or an object with viewPlaneNormal and viewUp */
   orientation?: OrientationAxis | OrientationVectors;
+  /** Planar viewport render mode selected at viewport creation time. */
+  renderMode?: string;
   /** displayArea of interest */
   displayArea?: DisplayArea;
   /** whether the events should be suppressed and not fired*/

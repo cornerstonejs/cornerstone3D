@@ -85,8 +85,6 @@ export class CpuVolumeSliceRenderPath
       currentImageIdIndex: payload.initialImageIdIndex,
       maxImageIdIndex: payload.imageIds.length - 1,
       defaultVOIRange,
-      requestedCamera: undefined,
-      renderCamera: undefined,
       renderingInvalidated: true,
       compositeActor: typeof payload.representationUID === 'string',
       removeStreamingSubscriptions: (() => {
@@ -209,20 +207,22 @@ export class CpuVolumeSliceRenderPath
     return {
       rendering,
       updateDataPresentation: (props) => {
-        this.updateDataPresentation(ctx, rendering, props);
+        this.updateDataPresentation(ctx, rendering, data.id, props);
       },
       updateCamera: (camera) => {
-        this.updateCamera(ctx, rendering, camera);
+        this.updateCamera(ctx, rendering, data.id, camera);
       },
       getFrameOfReferenceUID: () => {
         return this.getFrameOfReferenceUID(rendering);
       },
       getActorEntry: (data) => {
-        return buildPlanarActorEntry(data, {
+        const planarData = data as LoadedData<PlanarPayload>;
+
+        return buildPlanarActorEntry(planarData, {
           actor: rendering.compatibilityActor,
           renderMode: 'cpuVolume',
-          uidFallback: data.volumeId,
-          referencedIdFallback: data.volumeId,
+          uidFallback: planarData.volumeId,
+          referencedIdFallback: planarData.volumeId,
         });
       },
       getImageData: () => {
@@ -232,7 +232,7 @@ export class CpuVolumeSliceRenderPath
         this.render(ctx, rendering);
       },
       resize: () => {
-        this.resize(ctx, rendering);
+        this.resize(ctx, rendering, data.id);
       },
       removeData: () => {
         this.removeData(ctx, rendering);
@@ -243,6 +243,7 @@ export class CpuVolumeSliceRenderPath
   private updateDataPresentation(
     ctx: PlanarCpuVolumeAdapterContext,
     rendering: PlanarCpuVolumeRendering,
+    dataId: string,
     props: unknown
   ): void {
     const previousInterpolationType =
@@ -258,7 +259,12 @@ export class CpuVolumeSliceRenderPath
       previousInterpolationType !==
       rendering.dataPresentation?.interpolationType
     ) {
-      this.syncRenderCamera(ctx, rendering, rendering.requestedCamera);
+      this.syncRenderCamera(
+        ctx,
+        rendering,
+        dataId,
+        ctx.viewport.getCameraState()
+      );
       return;
     }
 
@@ -268,12 +274,14 @@ export class CpuVolumeSliceRenderPath
   private updateCamera(
     ctx: PlanarCpuVolumeAdapterContext,
     rendering: PlanarCpuVolumeRendering,
+    dataId: string,
     cameraInput: unknown
   ): void {
     ctx.display.activateRenderMode('cpuVolume');
     this.syncRenderCamera(
       ctx,
       rendering,
+      dataId,
       cameraInput as PlanarCamera | undefined
     );
   }
@@ -283,7 +291,7 @@ export class CpuVolumeSliceRenderPath
     rendering: PlanarCpuVolumeRendering,
     canvasPos: Point2
   ): Point3 {
-    const renderCamera = rendering.renderCamera;
+    const renderCamera = ctx.renderPath.renderCamera;
 
     if (
       !renderCamera?.focalPoint ||
@@ -316,7 +324,7 @@ export class CpuVolumeSliceRenderPath
     rendering: PlanarCpuVolumeRendering,
     worldPos: Point3
   ): Point2 {
-    const renderCamera = rendering.renderCamera;
+    const renderCamera = ctx.renderPath.renderCamera;
 
     if (
       !renderCamera?.focalPoint ||
@@ -394,7 +402,7 @@ export class CpuVolumeSliceRenderPath
       return;
     }
 
-    const renderCamera = runtime.renderCamera;
+    const renderCamera = ctx.renderPath.renderCamera;
 
     if (!renderCamera) {
       return;
@@ -482,9 +490,15 @@ export class CpuVolumeSliceRenderPath
 
   private resize(
     ctx: PlanarCpuVolumeAdapterContext,
-    rendering: PlanarCpuVolumeRendering
+    rendering: PlanarCpuVolumeRendering,
+    dataId: string
   ): void {
-    this.syncRenderCamera(ctx, rendering, rendering.requestedCamera);
+    this.syncRenderCamera(
+      ctx,
+      rendering,
+      dataId,
+      ctx.viewport.getCameraState()
+    );
   }
 
   private removeData(
@@ -499,19 +513,24 @@ export class CpuVolumeSliceRenderPath
   private syncRenderCamera(
     ctx: PlanarCpuVolumeAdapterContext,
     rendering: PlanarCpuVolumeRendering,
+    dataId: string,
     camera: PlanarCamera | undefined
   ): void {
-    const requestedCamera = camera ?? rendering.requestedCamera;
     const { sliceBasis, currentImageIdIndex, maxImageIdIndex } =
-      this.resolveVolumeSliceBasis(ctx, rendering, requestedCamera);
-
-    rendering.requestedCamera = requestedCamera;
-    rendering.renderCamera = resolvePlanarRenderCamera({
+      this.resolveVolumeSliceBasis(ctx, rendering, camera);
+    const renderCamera = resolvePlanarRenderCamera({
       sliceBasis,
-      camera: rendering.requestedCamera,
+      camera,
       canvasWidth: ctx.cpu.canvas.width,
       canvasHeight: ctx.cpu.canvas.height,
     });
+
+    if (
+      ctx.viewport.isCurrentDataId(dataId) ||
+      ctx.renderPath.renderCamera === undefined
+    ) {
+      ctx.renderPath.renderCamera = renderCamera;
+    }
     rendering.currentImageIdIndex = currentImageIdIndex;
     rendering.maxImageIdIndex = maxImageIdIndex;
     rendering.renderingInvalidated = true;
@@ -629,6 +648,7 @@ export class CpuVolumeSlicePath
       renderingEngineId: rootContext.renderingEngineId,
       type: rootContext.type,
       viewport: rootContext.viewport,
+      renderPath: rootContext.renderPath,
       display: rootContext.display,
       cpu: rootContext.cpu,
     };

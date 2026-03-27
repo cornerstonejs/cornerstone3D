@@ -10,9 +10,9 @@ import type { PlanarPayload } from './PlanarViewportTypes';
 export function buildPlanarActorEntry(
   data: LoadedData<PlanarPayload>,
   source: {
-    actor: unknown;
-    mapper?: unknown;
-    renderMode: string;
+    actor: NonNullable<ActorEntry['actorMapper']>['actor'];
+    mapper?: NonNullable<ActorEntry['actorMapper']>['mapper'];
+    renderMode: NonNullable<ActorEntry['actorMapper']>['renderMode'];
     uidFallback?: string;
     referencedIdFallback?: string;
   }
@@ -31,12 +31,14 @@ export function buildPlanarActorEntry(
   const mapper =
     source.mapper ??
     (typeof (actor as { getMapper?: () => unknown }).getMapper === 'function'
-      ? (actor as { getMapper: () => unknown }).getMapper()
+      ? ((actor as { getMapper: () => unknown }).getMapper() as NonNullable<
+          ActorEntry['actorMapper']
+        >['mapper'])
       : undefined);
 
   return {
     uid,
-    actor,
+    actor: actor as ActorEntry['actor'],
     actorMapper: {
       actor,
       mapper,

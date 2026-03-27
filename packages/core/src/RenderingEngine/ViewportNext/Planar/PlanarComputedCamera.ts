@@ -346,7 +346,7 @@ export function computePlanarViewportCamera(args: {
     renderContext,
     rendering,
   });
-  const requestedCamera = rendering.requestedCamera || args.camera;
+  const requestedCamera = args.camera;
 
   if (rendering.renderMode === 'cpu2d' || rendering.renderMode === 'vtkImage') {
     const image =

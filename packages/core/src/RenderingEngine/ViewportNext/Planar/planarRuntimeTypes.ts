@@ -25,17 +25,13 @@ import type { InterpolationType } from '../../../enums';
 import type {
   CPUFallbackEnabledElement,
   ICanvasActor,
-  ICamera,
   IImage,
   IImageVolume,
   Point3,
   VOIRange,
 } from '../../../types';
 import type { MountedRendering } from '../ViewportArchitectureTypes';
-import type {
-  PlanarCamera,
-  PlanarDataPresentation,
-} from './PlanarViewportTypes';
+import type { PlanarDataPresentation } from './PlanarViewportTypes';
 
 /**
  * Mounted rendering state for the GPU single-image path (`vtkImage`).
@@ -53,8 +49,6 @@ export type PlanarImageMapperRendering = MountedRendering<{
   currentImageIdIndex: number;
   defaultVOIRange?: VOIRange;
   dataPresentation?: PlanarDataPresentation;
-  requestedCamera?: PlanarCamera;
-  renderCamera?: ICamera;
   loadRequestId: number;
 }>;
 
@@ -74,8 +68,6 @@ export type PlanarCpuImageRendering = MountedRendering<{
   dataPresentation?: PlanarDataPresentation;
   fitScale: number;
   loadRequestId: number;
-  requestedCamera?: PlanarCamera;
-  renderCamera?: ICamera;
   renderingInvalidated: boolean;
 }>;
 
@@ -96,8 +88,6 @@ export type PlanarCpuVolumeRendering = MountedRendering<{
   currentImageIdIndex: number;
   maxImageIdIndex: number;
   defaultVOIRange?: VOIRange;
-  requestedCamera?: PlanarCamera;
-  renderCamera?: ICamera;
   renderingInvalidated: boolean;
   dataPresentation?: PlanarDataPresentation;
   compositeActor?: boolean;
@@ -132,8 +122,6 @@ export type PlanarVolumeSliceRendering = MountedRendering<{
   currentImageIdIndex: number;
   maxImageIdIndex: number;
   defaultVOIRange?: VOIRange;
-  requestedCamera?: PlanarCamera;
-  renderCamera?: ICamera;
   dataPresentation?: PlanarDataPresentation;
   removeStreamingSubscriptions?: () => void;
 }>;

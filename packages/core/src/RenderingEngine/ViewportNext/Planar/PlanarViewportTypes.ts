@@ -103,6 +103,11 @@ export interface PlanarProperties {
 
 export type PlanarDataPresentation = PlanarPresentationProps & PlanarProperties;
 
+export interface PlanarRenderPathRuntime {
+  renderMode: PlanarEffectiveRenderMode;
+  renderCamera?: ICamera;
+}
+
 export interface PlanarDataProvider extends DataProvider {
   load(
     dataId: string,
@@ -120,8 +125,12 @@ export interface PlanarViewportRenderContext extends BaseViewportRenderContext {
   type: 'planar';
   viewport: {
     element: HTMLDivElement;
+    getActiveDataId(): string | undefined;
+    getCameraState(): PlanarCamera;
+    isCurrentDataId(dataId: string): boolean;
     getOverlayActors(): ActorEntry[];
   };
+  renderPath: PlanarRenderPathRuntime;
   display: {
     requestRender(): void;
     renderNow(): void;
@@ -147,13 +156,25 @@ type PlanarContextBase = Pick<
 >;
 
 export type PlanarCpuImageAdapterContext = PlanarContextBase &
-  Pick<PlanarViewportRenderContext, 'viewport' | 'display' | 'cpu'>;
+  Pick<
+    PlanarViewportRenderContext,
+    'viewport' | 'renderPath' | 'display' | 'cpu'
+  >;
 
 export type PlanarCpuVolumeAdapterContext = PlanarContextBase &
-  Pick<PlanarViewportRenderContext, 'viewport' | 'display' | 'cpu'>;
+  Pick<
+    PlanarViewportRenderContext,
+    'viewport' | 'renderPath' | 'display' | 'cpu'
+  >;
 
 export type PlanarVtkImageAdapterContext = PlanarContextBase &
-  Pick<PlanarViewportRenderContext, 'display' | 'vtk'>;
+  Pick<
+    PlanarViewportRenderContext,
+    'viewport' | 'renderPath' | 'display' | 'vtk'
+  >;
 
 export type PlanarVtkVolumeAdapterContext = PlanarContextBase &
-  Pick<PlanarViewportRenderContext, 'viewport' | 'display' | 'vtk'>;
+  Pick<
+    PlanarViewportRenderContext,
+    'viewport' | 'renderPath' | 'display' | 'vtk'
+  >;

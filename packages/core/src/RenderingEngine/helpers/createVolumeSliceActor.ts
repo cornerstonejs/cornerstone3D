@@ -50,8 +50,10 @@ async function createVolumeSliceActor(
   const actor = vtkImageSlice.newInstance();
   actor.setMapper(mapper);
 
-  const numberOfComponents = imageData.get('numberOfComponents')
-    .numberOfComponents as number;
+  const imageDataMetadata = imageData.get('numberOfComponents') as
+    | { numberOfComponents?: number }
+    | undefined;
+  const numberOfComponents = imageDataMetadata?.numberOfComponents ?? 1;
 
   if (numberOfComponents > 1) {
     actor.getProperty().setIndependentComponents(false);

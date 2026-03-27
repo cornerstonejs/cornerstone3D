@@ -79,8 +79,6 @@ export class VtkVolumeSliceRenderPath
       defaultVOIRange: defaultRange
         ? { lower: defaultRange[0], upper: defaultRange[1] }
         : undefined,
-      requestedCamera: undefined,
-      renderCamera: undefined,
       dataPresentation: undefined,
       removeStreamingSubscriptions: subscribeToVolumeEvents(
         payload.volumeId,
@@ -99,18 +97,20 @@ export class VtkVolumeSliceRenderPath
         this.updateDataPresentation(ctx, rendering, props);
       },
       updateCamera: (camera) => {
-        this.updateCamera(ctx, rendering, camera);
+        this.updateCamera(ctx, rendering, data.id, camera);
       },
       getFrameOfReferenceUID: () => {
         return this.getFrameOfReferenceUID(rendering);
       },
       getActorEntry: (data) => {
-        return buildPlanarActorEntry(data, {
+        const planarData = data as LoadedData<PlanarPayload>;
+
+        return buildPlanarActorEntry(planarData, {
           actor: rendering.actor,
           mapper: rendering.mapper,
           renderMode: 'vtkVolumeSlice',
-          uidFallback: data.volumeId,
-          referencedIdFallback: data.volumeId,
+          uidFallback: planarData.volumeId,
+          referencedIdFallback: planarData.volumeId,
         });
       },
       getImageData: () => {
@@ -120,7 +120,7 @@ export class VtkVolumeSliceRenderPath
         this.render(ctx);
       },
       resize: () => {
-        this.resize(ctx, rendering);
+        this.resize(ctx, rendering, data.id);
       },
       removeData: () => {
         this.removeData(ctx, rendering);
@@ -140,13 +140,14 @@ export class VtkVolumeSliceRenderPath
       mapper: rendering.mapper,
       props: rendering.dataPresentation,
     });
-    updateVolumeSlicePlane(rendering.mapper, rendering.renderCamera);
+    updateVolumeSlicePlane(rendering.mapper, ctx.renderPath.renderCamera);
     ctx.vtk.renderer.resetCameraClippingRange();
   }
 
   private updateCamera(
     ctx: PlanarVtkVolumeAdapterContext,
     rendering: PlanarVolumeSliceRendering,
+    dataId: string,
     cameraInput: unknown
   ): void {
     const camera = cameraInput as PlanarCamera | undefined;
@@ -165,21 +166,28 @@ export class VtkVolumeSliceRenderPath
       });
 
     ctx.display.activateRenderMode('vtkVolumeSlice');
-    rendering.requestedCamera = camera;
-    rendering.renderCamera = resolvePlanarRenderCamera({
+    const renderCamera = resolvePlanarRenderCamera({
       sliceBasis,
-      camera: rendering.requestedCamera,
+      camera,
       canvasWidth,
       canvasHeight,
     });
-    applyPlanarRenderCameraToRenderer({
-      renderer: ctx.vtk.renderer,
-      renderCamera: rendering.renderCamera,
-    });
+    if (
+      ctx.viewport.isCurrentDataId(dataId) ||
+      ctx.renderPath.renderCamera === undefined
+    ) {
+      ctx.renderPath.renderCamera = renderCamera;
+    }
+    if (ctx.viewport.isCurrentDataId(dataId)) {
+      applyPlanarRenderCameraToRenderer({
+        renderer: ctx.vtk.renderer,
+        renderCamera,
+      });
+    }
     rendering.currentImageIdIndex = currentImageIdIndex;
     rendering.maxImageIdIndex = maxImageIdIndex;
 
-    updateVolumeSlicePlane(rendering.mapper, rendering.renderCamera);
+    updateVolumeSlicePlane(rendering.mapper, ctx.renderPath.renderCamera);
     ctx.vtk.renderer.resetCameraClippingRange();
   }
 
@@ -223,28 +231,41 @@ export class VtkVolumeSliceRenderPath
 
   private resize(
     ctx: PlanarVtkVolumeAdapterContext,
-    rendering: PlanarVolumeSliceRendering
+    rendering: PlanarVolumeSliceRendering,
+    dataId: string
   ): void {
+    const camera = ctx.viewport.getCameraState();
     const canvasWidth = ctx.vtk.canvas.clientWidth || ctx.vtk.canvas.width;
     const canvasHeight = ctx.vtk.canvas.clientHeight || ctx.vtk.canvas.height;
-    const { sliceBasis } = createPlanarVolumeSliceBasis({
-      canvasWidth,
-      canvasHeight,
-      imageIdIndex: rendering.currentImageIdIndex,
-      imageVolume: rendering.imageVolume,
-      orientation: rendering.requestedCamera?.orientation,
-    });
-    rendering.renderCamera = resolvePlanarRenderCamera({
+    const { sliceBasis, currentImageIdIndex, maxImageIdIndex } =
+      createPlanarVolumeSliceBasis({
+        canvasWidth,
+        canvasHeight,
+        imageIdIndex: rendering.currentImageIdIndex,
+        imageVolume: rendering.imageVolume,
+        orientation: camera?.orientation,
+      });
+    const renderCamera = resolvePlanarRenderCamera({
       sliceBasis,
-      camera: rendering.requestedCamera,
+      camera,
       canvasWidth,
       canvasHeight,
     });
-    applyPlanarRenderCameraToRenderer({
-      renderer: ctx.vtk.renderer,
-      renderCamera: rendering.renderCamera,
-    });
-    updateVolumeSlicePlane(rendering.mapper, rendering.renderCamera);
+    if (
+      ctx.viewport.isCurrentDataId(dataId) ||
+      ctx.renderPath.renderCamera === undefined
+    ) {
+      ctx.renderPath.renderCamera = renderCamera;
+    }
+    if (ctx.viewport.isCurrentDataId(dataId)) {
+      applyPlanarRenderCameraToRenderer({
+        renderer: ctx.vtk.renderer,
+        renderCamera,
+      });
+    }
+    rendering.currentImageIdIndex = currentImageIdIndex;
+    rendering.maxImageIdIndex = maxImageIdIndex;
+    updateVolumeSlicePlane(rendering.mapper, ctx.renderPath.renderCamera);
     ctx.vtk.renderer.resetCameraClippingRange();
     ctx.display.requestRender();
   }
@@ -286,6 +307,7 @@ export class VtkVolumeSlicePath
       renderingEngineId: rootContext.renderingEngineId,
       type: rootContext.type,
       viewport: rootContext.viewport,
+      renderPath: rootContext.renderPath,
       display: rootContext.display,
       vtk: rootContext.vtk,
     };
