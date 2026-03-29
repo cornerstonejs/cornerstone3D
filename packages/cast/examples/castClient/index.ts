@@ -10,7 +10,7 @@ setTitleAndDescription(
 /** Default actor keyword for subscribe list and publish preset. */
 const DEFAULT_ACTOR_KEYWORD = 'WORKLIST_CLIENT';
 /** Default subscribe actors field: JSON array of actor keywords. */
-const DEFAULT_SUBSCRIBE_ACTORS_JSON = `["${DEFAULT_ACTOR_KEYWORD}"]`;
+const DEFAULT_SUBSCRIBE_ACTORS_JSON = `["${DEFAULT_ACTOR_KEYWORD}","WATCHER"]`;
 /** Default actor keyword for Get preset. */
 const DEFAULT_GET_ACTOR_KEYWORD = 'HUB';
 /** Default Cast subscriber name (Subscribe + Get). */
@@ -22,25 +22,29 @@ if (!root) throw new Error('Missing #content');
 const css = `
 .cast-demo { max-width: 1100px; margin: 0 auto; color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 .cast-demo .container { background:#3d3d3d; border-radius:8px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,.5); }
-.cast-demo h1 { margin-top:0; color:#e0e0e0; display:flex; justify-content:space-between; align-items:flex-start; gap:28px; flex-wrap:wrap; }
-.cast-demo .header-left { display:flex; flex-direction:column; align-items:flex-start; gap:14px; }
-.cast-demo .header-controls-row { display:flex; align-items:center; gap:32px; flex-wrap:wrap; }
-.cast-demo .header-hub-row { display:inline-flex; align-items:center; gap:12px; flex-wrap:wrap; }
-.cast-demo .header-hub-row label { display:inline-block; margin-bottom:0; color:#b0b0b0; font-size:15px; }
-.cast-demo .header-hub-select { width:auto; min-width:140px; padding:6px 10px; font-size:14px; }
-.cast-demo .header-token-btn { padding:6px 12px; font-size:14px; }
-.cast-demo .header-right { display:flex; flex-direction:column; align-items:flex-end; gap:10px; text-align:right; }
-.cast-demo .header-id { font-weight:normal; color:#90A4AE; font-size:17px; }
-.cast-demo .status.status-header { margin:0; padding:11px 14px; font-size:15px; line-height:1.45; border-left-width:4px; border-radius:6px; min-width:0; max-width:min(380px,100%); text-align:left; }
+.cast-demo .cast-demo-header { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:nowrap; margin-bottom:0; }
+.cast-demo .header-title { font-size:1.25rem; font-weight:600; color:#e0e0e0; flex-shrink:0; }
+.cast-demo .header-right { display:flex; align-items:center; gap:12px; flex-shrink:0; }
+.cast-demo .status.status-header { margin:0; padding:8px 12px; font-size:14px; line-height:1.35; border-left-width:4px; border-radius:6px; white-space:nowrap; }
 .cast-demo .status.status-header strong { font-weight:600; }
+.cast-demo .connection-controls { display:flex; align-items:center; gap:24px; flex-wrap:nowrap; overflow-x:auto; padding:10px 0 12px; border-bottom:1px solid #555; margin-bottom:8px; }
+.cast-demo .ctrl-group { display:inline-flex; align-items:center; gap:8px; flex-shrink:0; }
+.cast-demo .ctrl-group label { display:inline; margin-bottom:0; color:#b0b0b0; font-size:14px; white-space:nowrap; }
+.cast-demo .header-hub-select { width:auto; min-width:140px; padding:6px 10px; font-size:14px; }
+.cast-demo .header-token-btn { padding:6px 12px; font-size:14px; white-space:nowrap; }
 .cast-demo h2 { color:#e0e0e0; margin:0 0 12px; }
 .cast-demo .section { margin-top:20px; padding-bottom:16px; border-bottom:1px solid #555; }
 .cast-demo .section:last-child { border-bottom:none; }
 .cast-demo .grid { display:grid; grid-template-columns: repeat(2, minmax(220px,1fr)); gap:12px; }
-.cast-demo label { display:block; margin-bottom:6px; color:#b0b0b0; font-size:13px; }
-.cast-demo input,.cast-demo textarea,.cast-demo select { width:100%; box-sizing:border-box; border:1px solid #666; border-radius:4px; background:#4a4a4a; color:#e0e0e0; padding:9px 10px; font-size:13px; }
-.cast-demo textarea { min-height:110px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; resize:vertical; }
-.cast-demo input.subscribe-actors-json { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.cast-demo .section label,
+.cast-demo .cast-hidden-endpoint label { display:block; margin-bottom:6px; color:#b0b0b0; font-size:13px; }
+.cast-demo .section input,
+.cast-demo .section textarea,
+.cast-demo .section select,
+.cast-demo .cast-hidden-endpoint input,
+.cast-demo .cast-hidden-endpoint select { width:100%; box-sizing:border-box; border:1px solid #666; border-radius:4px; background:#4a4a4a; color:#e0e0e0; padding:9px 10px; font-size:13px; }
+.cast-demo .section textarea { min-height:110px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; resize:vertical; }
+.cast-demo .section input.subscribe-actors-json { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 .cast-demo .status { padding:10px 12px; border-radius:4px; margin:12px 0; background:#4a4a4a; border-left:4px solid #777; }
 .cast-demo .connected { border-left-color:#90A4AE; }
 .cast-demo .disconnected { border-left-color:#d32f2f; }
@@ -57,7 +61,8 @@ const css = `
 .cast-demo .msg.sent { border-left-color:#2196F3; }
 .cast-demo .msg.err { border-left-color:#d32f2f; background:#5d4037; }
 .cast-demo .subscribe-events-topic-actors,
-.cast-demo .publish-event-topic-actor-row { grid-column:1/-1; display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:12px; align-items:start; }
+.cast-demo .publish-event-topic-actor-row,
+.cast-demo .get-datatype-topic-actor-row { grid-column:1/-1; display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:12px; align-items:start; }
 .cast-demo .cast-hidden-endpoint { display:none !important; }
 `;
 
@@ -68,28 +73,8 @@ document.head.appendChild(style);
 root.className = 'cast-demo';
 root.innerHTML = `
 <div class="container">
-  <h1>
-    <div class="header-left">
-      <span>Cast client</span>
-      <div class="header-controls-row">
-        <span class="header-hub-row">
-          <label for="hubSelect">Hub</label>
-          <select id="hubSelect" class="header-hub-select">
-            <option value="local">local</option>
-            <option value="cloud" selected>cloud</option>
-          </select>
-        </span>
-        <span class="header-hub-row">
-          <label for="tokenBtn">Auth</label>
-          <button type="button" id="tokenBtn" class="header-token-btn">Authenticate</button>
-        </span>
-      </div>
-    </div>
-    <div class="header-right">
-      <span class="header-id">ID: <span id="topicDisplay"></span></span>
-      <div id="connectionStatus" class="status status-header disconnected"><strong>Status:</strong> <span id="statusText">Not connected</span></div>
-    </div>
-  </h1>
+  <div class="cast-demo-header"><span class="header-title">Cast client</span><div class="header-right"><div id="connectionStatus" class="status status-header disconnected"><strong>Status:</strong> <span id="statusText">Not connected</span></div><button type="button" id="hubAdminPortalBtn" class="header-token-btn">Hub Admin portal</button></div></div>
+  <div class="connection-controls"><span class="ctrl-group"><label for="hubSelect">Hub</label><select id="hubSelect" class="header-hub-select"><option value="local">3D Slicer local</option><option value="cloud" selected>3D Slicer cloud</option></select></span><span class="ctrl-group"><label for="tokenBtn">Auth</label><button type="button" id="tokenBtn" class="header-token-btn">Authenticate</button></span><span class="ctrl-group"><label for="topicDisplay">Topic</label><input id="topicDisplay" class="header-hub-select" type="text" spellcheck="false" autocomplete="off" /><button type="button" id="topicUpdateBtn" class="header-token-btn">Update</button></span></div>
   <span class="cast-hidden-endpoint">
     <div>
       <label for="tokenEndpoint">auth endpoint</label>
@@ -149,26 +134,28 @@ root.innerHTML = `
     <div class="grid">
       <div class="cast-hidden-endpoint"><label for="getEndpoint">GET endpoint</label><input id="getEndpoint" /></div>
       <div class="cast-hidden-endpoint"><label for="getSubscriber">Subscriber</label><input id="getSubscriber" /></div>
-      <div>
-        <label for="getActorPreset">Actor</label>
-        <select id="getActorPreset"></select>
-      </div>
-      <div><label for="getTopic">Topic</label><input id="getTopic" /></div>
-      <div><label for="getDataType">DataType</label>
-        <select id="getDataType">
-          <option value="FHIRcastContext" selected>FHIRcastContext</option>
-          <option value="SCENEVIEW">SCENEVIEW</option>
-          <option value="TRANSFORM">TRANSFORM</option>
-          <option value="POSITION">POSITION</option>
-          <option value="CAPIBIL">CAPIBIL</option>
-          <option value="STATUS">STATUS</option>
-          <option value="TDATA">TDATA</option>
-          <option value="IMGMETA">IMGMETA</option>
-          <option value="LBMETA">LBMETA</option>
-          <option value="POINT">POINT</option>
-          <option value="TRAJ">TRAJ</option>
-          <option value="NDARRAY">NDARRAY</option>
-        </select>
+      <div class="get-datatype-topic-actor-row">
+        <div><label for="getDataType">DataType</label>
+          <select id="getDataType">
+            <option value="FHIRcastContext" selected>FHIRcastContext</option>
+            <option value="SCENEVIEW">SCENEVIEW</option>
+            <option value="TRANSFORM">TRANSFORM</option>
+            <option value="POSITION">POSITION</option>
+            <option value="CAPIBIL">CAPIBIL</option>
+            <option value="STATUS">STATUS</option>
+            <option value="TDATA">TDATA</option>
+            <option value="IMGMETA">IMGMETA</option>
+            <option value="LBMETA">LBMETA</option>
+            <option value="POINT">POINT</option>
+            <option value="TRAJ">TRAJ</option>
+            <option value="NDARRAY">NDARRAY</option>
+          </select>
+        </div>
+        <div><label for="getTopic">Topic</label><input id="getTopic" /></div>
+        <div>
+          <label for="getActorPreset">Actor</label>
+          <select id="getActorPreset"></select>
+        </div>
       </div>
     </div>
     <div id="getResults"></div>
@@ -225,15 +212,17 @@ const publishBtnEl = byId<HTMLButtonElement>('publishBtn');
 const getBtnEl = byId<HTMLButtonElement>('getBtn');
 const conferenceBtnEl = byId<HTMLButtonElement>('conferenceBtn');
 const tokenBtnEl = byId<HTMLButtonElement>('tokenBtn');
+const hubAdminPortalBtnEl = byId<HTMLButtonElement>('hubAdminPortalBtn');
 const clearBtnEl = byId<HTMLButtonElement>('clearBtn');
 const messagesEl = byId<HTMLDivElement>('messages');
 const statusTextEl = byId<HTMLSpanElement>('statusText');
 const connectionStatusEl = byId<HTMLDivElement>('connectionStatus');
-const topicDisplayEl = byId<HTMLSpanElement>('topicDisplay');
+const topicDisplayEl = byId<HTMLInputElement>('topicDisplay');
+const topicUpdateBtnEl = byId<HTMLButtonElement>('topicUpdateBtn');
 const messageCountEl = byId<HTMLSpanElement>('messageCount');
 
 const defaultTopic =
-  new URLSearchParams(window.location.search).get('topic') ?? 'test-topic';
+  new URLSearchParams(window.location.search).get('topic') ?? '';
 
 /** Tooltip for Get actor preset OpenIGTLink (option + closed select when selected). */
 const OPENIGT_LINK_ACTOR_TOOLTIP =
@@ -388,7 +377,7 @@ eventDataEl.value = `[
     }
   }
 ]`;
-topicDisplayEl.textContent = defaultTopic;
+topicDisplayEl.value = defaultTopic;
 
 /** When `hub_endpoint` is edited manually, derive token/cast-get/conference URLs from its origin. Hub dropdown uses `applyHubPreset` only (presets carry full auth URLs). */
 function refreshDerivedUrls(): void {
@@ -405,7 +394,7 @@ refreshDerivedUrls();
 
 topicEl.addEventListener('input', () => {
   const t = topicEl.value.trim();
-  topicDisplayEl.textContent = t;
+  topicDisplayEl.value = t;
   publishTopicEl.value = t;
   getTopicEl.value = t;
 });
@@ -447,6 +436,16 @@ function setConnection(
 }
 
 let client: CastClient | null = null;
+
+function applyHeaderTopicToAll(): void {
+  const t = topicDisplayEl.value.trim();
+  topicEl.value = t;
+  publishTopicEl.value = t;
+  getTopicEl.value = t;
+  client?.setTopic(t);
+}
+
+topicUpdateBtnEl.addEventListener('click', applyHeaderTopicToAll);
 
 function parseEvents(raw: string): string[] {
   const value = raw.trim();
@@ -527,6 +526,22 @@ function ensureClient(recreate = false): CastClient {
   return client;
 }
 
+hubAdminPortalBtnEl.addEventListener('click', () => {
+  const base = hubEndpointEl.value.trim();
+  if (!base) {
+    addMessage('err', 'Hub Admin', 'hub_endpoint is empty');
+    return;
+  }
+  try {
+    // e.g. https://host/api/hub + admin -> https://host/api/hub/admin
+    const hubBase = base.endsWith('/') ? base : `${base}/`;
+    const url = new URL('admin', hubBase).href;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  } catch {
+    addMessage('err', 'Hub Admin', 'Invalid hub_endpoint URL');
+  }
+});
+
 tokenBtnEl.addEventListener('click', async () => {
   setConnection('connecting', 'Getting token');
   try {
@@ -569,7 +584,7 @@ tokenBtnEl.addEventListener('click', async () => {
         topicEl.value = hub.topic;
         publishTopicEl.value = hub.topic;
         getTopicEl.value = hub.topic;
-        topicDisplayEl.textContent = hub.topic;
+        topicDisplayEl.value = hub.topic;
       }
       addMessage('received', 'Token', 'Token obtained');
     } else {
