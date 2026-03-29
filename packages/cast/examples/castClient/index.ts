@@ -22,16 +22,20 @@ if (!root) throw new Error('Missing #content');
 const css = `
 .cast-demo { max-width: 1100px; margin: 0 auto; color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 .cast-demo .container { background:#3d3d3d; border-radius:8px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,.5); }
-.cast-demo .cast-demo-header { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:nowrap; margin-bottom:0; }
-.cast-demo .header-title { font-size:1.25rem; font-weight:600; color:#e0e0e0; flex-shrink:0; }
-.cast-demo .header-right { display:flex; align-items:center; gap:12px; flex-shrink:0; }
-.cast-demo .status.status-header { margin:0; padding:8px 12px; font-size:14px; line-height:1.35; border-left-width:4px; border-radius:6px; white-space:nowrap; }
+.cast-demo .cast-demo-header { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:16px; margin-bottom:0; }
+.cast-demo .header-title { font-size:1.75rem; font-weight:700; color:#e0e0e0; }
+.cast-demo .header-center { display:flex; justify-content:center; }
+.cast-demo .header-right { display:flex; align-items:center; gap:12px; justify-content:flex-end; }
+.cast-demo .status.status-header { margin:0; padding:10px 16px; font-size:1.1rem; line-height:1.4; border-left-width:4px; border-radius:6px; white-space:nowrap; }
 .cast-demo .status.status-header strong { font-weight:600; }
-.cast-demo .connection-controls { display:flex; align-items:center; gap:24px; flex-wrap:nowrap; overflow-x:auto; padding:10px 0 12px; border-bottom:1px solid #555; margin-bottom:8px; }
-.cast-demo .ctrl-group { display:inline-flex; align-items:center; gap:8px; flex-shrink:0; }
-.cast-demo .ctrl-group label { display:inline; margin-bottom:0; color:#b0b0b0; font-size:14px; white-space:nowrap; }
-.cast-demo .header-hub-select { width:auto; min-width:140px; padding:6px 10px; font-size:14px; }
-.cast-demo .header-token-btn { padding:6px 12px; font-size:14px; white-space:nowrap; }
+.cast-demo .connection-controls { padding:10px 0 16px; border-bottom:1px solid #555; margin-bottom:8px; }
+.cast-demo .connection-controls .grid { margin-top:0; }
+.cast-demo .auth-topic-pair { display:flex; gap:8px; align-items:flex-end; }
+.cast-demo .auth-topic-pair > div { flex:1 1 0; min-width:0; display:flex; flex-direction:column; }
+.cast-demo .auth-topic-pair > div > div { display:flex; gap:8px; }
+.cast-demo .auth-topic-pair > div > div > input { flex:1 1 0; min-width:0; width:auto; box-sizing:border-box; padding:9px 10px; font-size:13px; border:1px solid #666; border-radius:4px; background:#4a4a4a; color:#e0e0e0; }
+.cast-demo .auth-topic-pair button { flex-shrink:0; align-self:flex-end; }
+.cast-demo .header-token-btn { white-space:nowrap; }
 .cast-demo h2 { color:#e0e0e0; margin:0 0 12px; }
 .cast-demo .section { margin-top:20px; padding-bottom:16px; border-bottom:1px solid #555; }
 .cast-demo .section:last-child { border-bottom:none; }
@@ -73,8 +77,14 @@ document.head.appendChild(style);
 root.className = 'cast-demo';
 root.innerHTML = `
 <div class="container">
-  <div class="cast-demo-header"><span class="header-title">Cast client</span><div class="header-right"><div id="connectionStatus" class="status status-header disconnected"><strong>Status:</strong> <span id="statusText">Not connected</span></div><button type="button" id="hubAdminPortalBtn" class="header-token-btn">Hub Admin portal</button></div></div>
-  <div class="connection-controls"><span class="ctrl-group"><label for="hubSelect">Hub</label><select id="hubSelect" class="header-hub-select"><option value="local">3D Slicer local</option><option value="cloud" selected>3D Slicer cloud</option></select></span><span class="ctrl-group"><label for="tokenBtn">Auth</label><button type="button" id="tokenBtn" class="header-token-btn">Authenticate</button></span><span class="ctrl-group"><label for="topicDisplay">Topic</label><input id="topicDisplay" class="header-hub-select" type="text" spellcheck="false" autocomplete="off" /><button type="button" id="topicUpdateBtn" class="header-token-btn">Update</button></span></div>
+  <div class="cast-demo-header"><span class="header-title">Cast client</span><div class="header-center"><div id="connectionStatus" class="status status-header disconnected"><strong>Status:</strong> <span id="statusText">Not connected</span></div></div><div class="header-right"><button type="button" id="hubAdminPortalBtn" class="header-token-btn">Hub Admin portal</button></div></div>
+  <div class="connection-controls section">
+    <h2>Auth</h2>
+    <div class="grid">
+      <div><label for="hubSelect">Hub</label><select id="hubSelect"><option value="local">3D Slicer local</option><option value="cloud" selected>3D Slicer cloud</option></select></div>
+      <div style="grid-column:1/-1"><div class="auth-topic-pair"><button type="button" id="tokenBtn">Authenticate</button><div><label for="topicDisplay">Topic</label><div><input id="topicDisplay" type="text" spellcheck="false" autocomplete="off" /><button type="button" id="topicUpdateBtn">Update</button></div></div></div></div>
+    </div>
+  </div>
   <span class="cast-hidden-endpoint">
     <div>
       <label for="tokenEndpoint">auth endpoint</label>
