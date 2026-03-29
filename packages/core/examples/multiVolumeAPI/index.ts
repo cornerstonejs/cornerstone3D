@@ -375,15 +375,8 @@ async function run() {
     },
     ptVolumeId
   );
-  viewport.scroll(18);
 
   viewport.render();
-
-  // setTimeout(()=>{
-  // viewport.scroll(4)
-  // viewport.render()
-
-  // },1000)
 }
 
 run();
