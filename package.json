@@ -11,6 +11,7 @@
     "packages/tools",
     "packages/ai",
     "packages/labelmap-interpolation",
+    "packages/cast",
     "addOns/externals/*",
     "addOns/local/*"
   ],

@@ -14,6 +14,7 @@ const csDICOMImageLoaderDistPath = path.resolve(
   'packages/dicomImageLoader/src/index'
 );
 const csNiftiPath = path.resolve('packages/nifti-volume-loader/src/index');
+const csCastBasePath = path.resolve('packages/cast/src/index');
 
 module.exports = function buildConfig(name, destPath, root, exampleBasePath) {
   return `
@@ -94,6 +95,7 @@ module.exports = {
         /\\/g,
         '/'
       )}',
+      '@cornerstonejs/cast': '${csCastBasePath.replace(/\\/g, '/')}',
     },
     modules,
     extensions: ['.ts', '.tsx', '.js', '.jsx'],

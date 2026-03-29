@@ -29,6 +29,9 @@
     },
     "nifti": {
       "description": "Nifti Volume loader"
+    },
+    "cast": {
+      "description": "Cast hub networking (@cornerstonejs/cast)"
     }
   },
   "examplesByCategory": {
@@ -512,6 +515,12 @@
       "SAMClientSide": {
         "name": "Segmentation AI Assistance",
         "description": "Demonstrates how to use AI assistance tools for segmentation creation using onnx runtime on the client side"
+      }
+    },
+    "cast": {
+      "castClient": {
+        "name": "Cast Client",
+        "description": "Subscribe, receive, and publish Cast hub events using CastClient (same flow as the Slicer Cast HTML reference client)"
       }
     },
     "tools-advanced": {
