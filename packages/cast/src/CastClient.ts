@@ -7,7 +7,7 @@ export interface CastTransport {
   sendGetResponse(requestId: string, data: unknown, topic?: string): void;
 }
 
-const DEFAULT_MESSAGE_ID_PREFIX = 'OHIF-';
+const DEFAULT_MESSAGE_ID_PREFIX = 'CS3D-';
 
 export class CastClient implements CastTransport {
   private _config: CastClientConfig;
@@ -94,7 +94,7 @@ export class CastClient implements CastTransport {
     tokenFormData.append('client_secret', hub.client_secret ?? '');
     tokenFormData.append(
       'client_product_name',
-      this._config.productName ?? 'OHIF'
+      this._config.productName ?? 'CS3D-EXAMPLE'
     );
 
     const requestOptions = {
@@ -106,18 +106,20 @@ export class CastClient implements CastTransport {
     try {
       const response = await fetch(hub.token_endpoint, requestOptions);
       if (response.status === 200) {
-        const config = await response.json();
-        if (config.access_token) {
+        const config = (await response.json()) as Record<string, unknown>;
+        if (typeof config.access_token === 'string' && config.access_token) {
           hub.token = config.access_token;
         }
-        hub.subscriberName = config.subscriber_name;
-        if (config.topic) {
+        if (typeof config.subscriber_name === 'string') {
+          hub.subscriberName = config.subscriber_name;
+        }
+        if (config.topic && typeof config.topic === 'string') {
           this.setTopic(config.topic);
           if (this._config.autoStart) {
-            this.subscribe();
+            void this.subscribe();
           }
         }
-        return true;
+        return Boolean(hub.token);
       }
       await response.text(); // consume body (may contain sensitive data; do not log)
       console.error(
@@ -134,7 +136,8 @@ export class CastClient implements CastTransport {
 
   async subscribe(): Promise<number | string> {
     const hub = this._hub;
-    if (hub.topic === undefined) {
+    const topic = hub.topic?.trim();
+    if (!topic) {
       console.warn(
         'CastClient: Error. subscription not sent. No topic defined.'
       );
@@ -157,7 +160,7 @@ export class CastClient implements CastTransport {
     subscribeFormData.append('hub.channel.type', 'websocket');
     subscribeFormData.append('hub.callback', callbackUrl);
     subscribeFormData.append('hub.events', (hub.events ?? []).toString());
-    subscribeFormData.append('hub.topic', hub.topic);
+    subscribeFormData.append('hub.topic', topic);
     subscribeFormData.append('hub.lease', String(hub.lease ?? 999));
     subscribeFormData.append('subscriber.name', hub.subscriberName ?? '');
     for (const a of hub.actors ?? []) {
@@ -217,7 +220,7 @@ export class CastClient implements CastTransport {
         console.warn(
           'CastClient: Subscription response 401 - Token refresh needed.'
         );
-        this.getToken();
+        await this.getToken();
       } else {
         console.error(
           'CastClient: Subscription rejected by hub. Status:',
@@ -381,7 +384,7 @@ export class CastClient implements CastTransport {
   private _processEvent(eventData: string): void {
     try {
       const castMessage = JSON.parse(eventData) as CastMessage;
-      if (castMessage['hub.mode' as keyof CastMessage]) {
+      if (castMessage['hub.mode']) {
         return;
       }
       const event = castMessage.event;

@@ -3,8 +3,8 @@ import type { HubConfig } from '@cornerstonejs/cast';
 import { setTitleAndDescription } from '../../../../utils/demo/helpers';
 
 setTitleAndDescription(
-  'Cast Client',
-  'Demontrate connecting, messaging and conferencing with the 3D Slicer hub.'
+  'Cast client API',
+  'Demonstrate connecting, messaging and conferencing with the 3D Slicer hub.'
 );
 
 /** Default actor keyword for subscribe list and publish preset. */
@@ -70,14 +70,13 @@ root.innerHTML = `
 <div class="container">
   <h1>
     <div class="header-left">
-      <span>Cast Client</span>
+      <span>Cast client</span>
       <div class="header-controls-row">
         <span class="header-hub-row">
           <label for="hubSelect">Hub</label>
           <select id="hubSelect" class="header-hub-select">
             <option value="local">local</option>
-            <option value="cloud">cloud</option>
-            <option value="agfa">agfa</option>
+            <option value="cloud" selected>cloud</option>
           </select>
         </span>
         <span class="header-hub-row">
@@ -221,6 +220,12 @@ const getActorPresetEl = byId<HTMLSelectElement>('getActorPreset');
 const getDataTypeEl = byId<HTMLSelectElement>('getDataType');
 const conferenceEndpointEl = byId<HTMLInputElement>('conferenceEndpoint');
 const subscribeBtnEl = byId<HTMLButtonElement>('subscribeBtn');
+const unsubscribeBtnEl = byId<HTMLButtonElement>('unsubscribeBtn');
+const publishBtnEl = byId<HTMLButtonElement>('publishBtn');
+const getBtnEl = byId<HTMLButtonElement>('getBtn');
+const conferenceBtnEl = byId<HTMLButtonElement>('conferenceBtn');
+const tokenBtnEl = byId<HTMLButtonElement>('tokenBtn');
+const clearBtnEl = byId<HTMLButtonElement>('clearBtn');
 const messagesEl = byId<HTMLDivElement>('messages');
 const statusTextEl = byId<HTMLSpanElement>('statusText');
 const connectionStatusEl = byId<HTMLDivElement>('connectionStatus');
@@ -340,13 +345,6 @@ const HUB_DEFINITIONS = {
     client_id: 'client_id_3d_Slicer',
     client_secret: 'client_secret_3d_Slicer',
   },
-  agfa: {
-    hubEndpoint: 'https://10.251.1.21/fhircast-hub',
-    authEndpoint:
-      'https://10.251.1.21/auth/realms/EI/protocol/openid-connect/token',
-    client_id: 'desktop-integration',
-    client_secret: 'hBcEN8Da5GTDywkeFNMmLnuhUx1i5o1U',
-  },
 } as const;
 let selectedClientId = '';
 let selectedClientSecret = '';
@@ -366,8 +364,8 @@ function applyHubPreset(hubKey: keyof typeof HUB_DEFINITIONS): void {
   }
 }
 
-hubSelectEl.value = 'local';
-applyHubPreset('local');
+hubSelectEl.value = 'cloud';
+applyHubPreset('cloud');
 topicEl.value = defaultTopic;
 publishTopicEl.value = defaultTopic;
 subscriberNameEl.value = DEFAULT_SUBSCRIBER_NAME;
@@ -392,6 +390,7 @@ eventDataEl.value = `[
 ]`;
 topicDisplayEl.textContent = defaultTopic;
 
+/** When `hub_endpoint` is edited manually, derive token/cast-get/conference URLs from its origin. Hub dropdown uses `applyHubPreset` only (presets carry full auth URLs). */
 function refreshDerivedUrls(): void {
   try {
     const hub = new URL(hubEndpointEl.value.trim());
@@ -448,7 +447,6 @@ function setConnection(
 }
 
 let client: CastClient | null = null;
-let hasToken = false;
 
 function parseEvents(raw: string): string[] {
   const value = raw.trim();
@@ -507,7 +505,7 @@ function buildHubConfig(): HubConfig {
     subscriberName: subscriberNameEl.value.trim() || undefined,
     actors: actorsList.length ? actorsList : undefined,
     topic: topicEl.value.trim(),
-  };
+  } as HubConfig;
 }
 
 function ensureClient(recreate = false): CastClient {
@@ -519,7 +517,6 @@ function ensureClient(recreate = false): CastClient {
       defaultHub: hub.name,
       productName: productNameEl.value.trim() || 'CS3D-EXAMPLE',
       callbackUrl: `${window.location.origin}/castCallback`,
-      messageIdPrefix: 'CAST-',
       autoReconnect: true,
     });
     client.onMessage((message) => {
@@ -530,7 +527,7 @@ function ensureClient(recreate = false): CastClient {
   return client;
 }
 
-byId<HTMLButtonElement>('tokenBtn').addEventListener('click', async () => {
+tokenBtnEl.addEventListener('click', async () => {
   setConnection('connecting', 'Getting token');
   try {
     const c = ensureClient(true);
@@ -560,7 +557,6 @@ byId<HTMLButtonElement>('tokenBtn').addEventListener('click', async () => {
       }
       ok = Boolean(c.getHub().token);
     }
-    hasToken = ok;
     subscribeBtnEl.disabled = !ok;
     if (ok) {
       setConnection('disconnected', 'Token ready');
@@ -581,7 +577,6 @@ byId<HTMLButtonElement>('tokenBtn').addEventListener('click', async () => {
       addMessage('err', 'Token error', 'Failed to get token');
     }
   } catch (error) {
-    hasToken = false;
     subscribeBtnEl.disabled = true;
     setConnection('disconnected', 'Token error');
     addMessage('err', 'Token exception', String(error));
@@ -594,10 +589,10 @@ subscribeBtnEl.addEventListener('click', async () => {
   const result = await c.subscribe();
   if (result === 202) {
     setConnection('connected', 'Websocket connected');
-    byId<HTMLButtonElement>('unsubscribeBtn').disabled = false;
-    byId<HTMLButtonElement>('publishBtn').disabled = false;
-    byId<HTMLButtonElement>('getBtn').disabled = false;
-    byId<HTMLButtonElement>('conferenceBtn').disabled = false;
+    unsubscribeBtnEl.disabled = false;
+    publishBtnEl.disabled = false;
+    getBtnEl.disabled = false;
+    conferenceBtnEl.disabled = false;
     addMessage('sent', 'Subscribe', { topic: topicEl.value.trim() });
   } else {
     setConnection('disconnected', `Subscribe failed (${String(result)})`);
@@ -609,22 +604,19 @@ subscribeBtnEl.addEventListener('click', async () => {
   }
 });
 
-byId<HTMLButtonElement>('unsubscribeBtn').addEventListener(
-  'click',
-  async () => {
-    if (!client) return;
-    await client.unsubscribe();
-    byId<HTMLButtonElement>('unsubscribeBtn').disabled = true;
-    byId<HTMLButtonElement>('publishBtn').disabled = true;
-    byId<HTMLButtonElement>('getBtn').disabled = true;
-    byId<HTMLButtonElement>('conferenceBtn').disabled = true;
-    subscribeBtnEl.disabled = false;
-    setConnection('disconnected', 'Not connected');
-    addMessage('sent', 'Unsubscribe', topicEl.value.trim());
-  }
-);
+unsubscribeBtnEl.addEventListener('click', async () => {
+  if (!client) return;
+  await client.unsubscribe();
+  unsubscribeBtnEl.disabled = true;
+  publishBtnEl.disabled = true;
+  getBtnEl.disabled = true;
+  conferenceBtnEl.disabled = true;
+  subscribeBtnEl.disabled = false;
+  setConnection('disconnected', 'Not connected');
+  addMessage('sent', 'Unsubscribe', topicEl.value.trim());
+});
 
-byId<HTMLButtonElement>('publishBtn').addEventListener('click', async () => {
+publishBtnEl.addEventListener('click', async () => {
   if (!client) {
     addMessage('err', 'Publish error', 'Subscribe first');
     return;
@@ -667,7 +659,7 @@ byId<HTMLButtonElement>('publishBtn').addEventListener('click', async () => {
   }
 });
 
-byId<HTMLButtonElement>('getBtn').addEventListener('click', async () => {
+getBtnEl.addEventListener('click', async () => {
   const subscriber = getSubscriberEl.value.trim();
   if (!subscriber) {
     addMessage('err', 'Get error', 'Subscriber is required');
@@ -698,14 +690,14 @@ byId<HTMLButtonElement>('getBtn').addEventListener('click', async () => {
   }
 });
 
-byId<HTMLButtonElement>('conferenceBtn').addEventListener('click', () => {
+conferenceBtnEl.addEventListener('click', () => {
   const url = new URL(conferenceEndpointEl.value.trim());
   url.searchParams.set('subscriberName', subscriberNameEl.value.trim());
   url.searchParams.set('topic', topicEl.value.trim());
   window.open(url.toString(), '_blank');
 });
 
-byId<HTMLButtonElement>('clearBtn').addEventListener('click', () => {
+clearBtnEl.addEventListener('click', () => {
   messagesEl.innerHTML = '';
   messageCount = 0;
   messageCountEl.textContent = '(0)';

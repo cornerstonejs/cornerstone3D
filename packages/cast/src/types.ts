@@ -24,6 +24,8 @@ export interface HubConfig {
 export interface CastMessage {
   id?: string;
   timestamp?: string;
+  /** Present on control-plane messages; ignored for app events. */
+  'hub.mode'?: string;
   event?: {
     'hub.event': string;
     'hub.topic'?: string;
@@ -39,7 +41,7 @@ export interface CastClientConfig {
   autoStart?: boolean;
   autoReconnect?: boolean;
   /**
-   * Prefix for generated message IDs (publish and get-response). Defaults to `OHIF-` for backward compatibility.
+   * Prefix for generated message IDs (publish and get-response). Defaults to `CS3D-`.
    */
   messageIdPrefix?: string;
 }

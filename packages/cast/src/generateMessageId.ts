@@ -1,7 +1,7 @@
 /**
  * Generates a unique message ID for cast publish. Prefers crypto.randomUUID when available.
  */
-export function generateMessageId(prefix = 'OHIF-'): string {
+export function generateMessageId(prefix = 'CS3D-'): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return prefix + crypto.randomUUID().replace(/-/g, '').slice(0, 16);
   }
