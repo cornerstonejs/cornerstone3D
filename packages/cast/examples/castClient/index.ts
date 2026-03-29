@@ -20,64 +20,79 @@ const root = document.getElementById('content');
 if (!root) throw new Error('Missing #content');
 
 const css = `
-.cast-demo { max-width: 1100px; margin: 0 auto; color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-.cast-demo .container { background:#3d3d3d; border-radius:8px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,.5); }
-.cast-demo .cast-demo-header { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:16px; margin-bottom:0; }
-.cast-demo .header-title { font-size:1.75rem; font-weight:700; color:#e0e0e0; }
-.cast-demo .header-center { display:flex; justify-content:center; }
-.cast-demo .header-right { display:flex; align-items:center; gap:12px; justify-content:flex-end; }
-.cast-demo .status.status-header { margin:0; padding:10px 16px; font-size:1.1rem; line-height:1.4; border-left-width:4px; border-radius:6px; white-space:nowrap; }
-.cast-demo .status.status-header strong { font-weight:600; }
-.cast-demo .connection-controls { padding:10px 0 16px; border-bottom:1px solid #555; margin-bottom:8px; }
-.cast-demo .connection-controls .grid { margin-top:0; }
-.cast-demo .auth-topic-pair { display:flex; gap:8px; align-items:flex-end; }
-.cast-demo .auth-topic-pair > div { flex:1 1 0; min-width:0; display:flex; flex-direction:column; }
-.cast-demo .auth-topic-pair > div > div { display:flex; gap:8px; }
-.cast-demo .auth-topic-pair > div > div > input { flex:1 1 0; min-width:0; width:auto; box-sizing:border-box; padding:9px 10px; font-size:13px; border:1px solid #666; border-radius:4px; background:#4a4a4a; color:#e0e0e0; }
-.cast-demo .auth-topic-pair button { flex-shrink:0; align-self:flex-end; }
-.cast-demo .header-token-btn { white-space:nowrap; }
-.cast-demo h2 { color:#e0e0e0; margin:0 0 12px; }
-.cast-demo .section { margin-top:20px; padding-bottom:16px; border-bottom:1px solid #555; }
-.cast-demo .section:last-child { border-bottom:none; }
-.cast-demo .grid { display:grid; grid-template-columns: repeat(2, minmax(220px,1fr)); gap:12px; }
-.cast-demo .section label,
-.cast-demo .cast-hidden-endpoint label { display:block; margin-bottom:6px; color:#b0b0b0; font-size:13px; }
-.cast-demo .section input,
-.cast-demo .section textarea,
-.cast-demo .section select,
-.cast-demo .cast-hidden-endpoint input,
-.cast-demo .cast-hidden-endpoint select { width:100%; box-sizing:border-box; border:1px solid #666; border-radius:4px; background:#4a4a4a; color:#e0e0e0; padding:9px 10px; font-size:13px; }
-.cast-demo .section textarea { min-height:110px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; resize:vertical; }
-.cast-demo .section input.subscribe-actors-json { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-.cast-demo .status { padding:10px 12px; border-radius:4px; margin:12px 0; background:#4a4a4a; border-left:4px solid #777; }
-.cast-demo .connected { border-left-color:#90A4AE; }
-.cast-demo .disconnected { border-left-color:#d32f2f; }
-.cast-demo .connecting { border-left-color:#ff9800; }
-.cast-demo .success { border-left-color:#4CAF50; }
-.cast-demo .error { border-left-color:#ff9800; background:#5d4037; }
-.cast-demo .actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; }
-.cast-demo button { padding:9px 14px; border:1px solid #666; border-radius:4px; background:#90A4AE; color:white; cursor:pointer; font-size:13px; }
-.cast-demo button:hover:not(:disabled){ background:#78909C; }
-.cast-demo button:disabled{ background:#3a3a3a; color:#777; border-color:#555; cursor:not-allowed; }
-.cast-demo .messages { margin-top:12px; max-height:380px; overflow:auto; background:#2b2b2b; border-radius:4px; padding:10px; font-size:12px; }
-.cast-demo .msg { border-left:3px solid #90A4AE; background:#3d3d3d; border-radius:4px; margin-bottom:8px; padding:8px; white-space:pre-wrap; word-break:break-word; }
-.cast-demo .msg.received { border-left-color:#4CAF50; }
-.cast-demo .msg.sent { border-left-color:#2196F3; }
-.cast-demo .msg.err { border-left-color:#d32f2f; background:#5d4037; }
-.cast-demo .subscribe-events-topic-actors,
-.cast-demo .publish-event-topic-actor-row,
-.cast-demo .get-datatype-topic-actor-row { grid-column:1/-1; display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:12px; align-items:start; }
-.cast-demo .cast-hidden-endpoint { display:none !important; }
+.cast { max-width: 1100px; margin: 0 auto; color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+.cast .container { background:#3d3d3d; border-radius:8px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,.5); }
+.cast .cast-header { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:16px; margin-bottom:0; }
+.cast .header-title { font-size:1.75rem; font-weight:700; color:#e0e0e0; }
+.cast .header-center { display:flex; justify-content:center; }
+.cast .header-right { display:flex; align-items:center; gap:12px; justify-content:flex-end; }
+.cast .status.status-header { margin:0; padding:10px 16px; font-size:1.1rem; line-height:1.4; border-left-width:4px; border-radius:6px; white-space:nowrap; }
+.cast .status.status-header strong { font-weight:600; }
+.cast .connection-controls { padding:10px 0 16px; border-bottom:1px solid #555; margin-bottom:8px; }
+.cast .connection-controls .grid { margin-top:0; }
+.cast .auth-topic-pair { display:flex; gap:8px; align-items:flex-end; }
+.cast .auth-topic-pair > div { flex:1 1 0; min-width:0; display:flex; flex-direction:column; }
+.cast .auth-topic-pair > div > div { display:flex; gap:8px; }
+.cast .auth-topic-pair > div > div > input { flex:1 1 0; min-width:0; width:auto; box-sizing:border-box; padding:9px 10px; font-size:13px; border:1px solid #666; border-radius:4px; background:#4a4a4a; color:#e0e0e0; }
+.cast .auth-topic-pair button { flex-shrink:0; align-self:flex-end; }
+.cast .header-token-btn { white-space:nowrap; }
+.cast h2 { color:#e0e0e0; margin:0 0 12px; }
+.cast .section { margin-top:20px; padding-bottom:16px; border-bottom:1px solid #555; }
+.cast .section:last-child { border-bottom:none; }
+.cast .grid { display:grid; grid-template-columns: repeat(2, minmax(220px,1fr)); gap:12px; }
+.cast .section label,
+.cast .cast-hidden-endpoint label { display:block; margin-bottom:6px; color:#b0b0b0; font-size:13px; }
+.cast .section input,
+.cast .section textarea,
+.cast .section select,
+.cast .cast-hidden-endpoint input,
+.cast .cast-hidden-endpoint select { width:100%; box-sizing:border-box; border:1px solid #666; border-radius:4px; background:#4a4a4a; color:#e0e0e0; padding:9px 10px; font-size:13px; }
+.cast .section textarea { min-height:110px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; resize:vertical; }
+.cast .section input.subscribe-actors-json { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.cast .status { padding:10px 12px; border-radius:4px; margin:12px 0; background:#4a4a4a; border-left:4px solid #777; }
+.cast .connected { border-left-color:#4CAF50; }
+.cast .disconnected { border-left-color:#d32f2f; }
+.cast .connecting { border-left-color:#ff9800; }
+.cast .token-ready { border-left-color:#ff9800; }
+.cast .success { border-left-color:#4CAF50; }
+.cast .error { border-left-color:#ff9800; background:#5d4037; }
+.cast .actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; }
+.cast button { padding:9px 14px; border:1px solid #666; border-radius:4px; background:#90A4AE; color:white; cursor:pointer; font-size:13px; }
+.cast button:hover:not(:disabled){ background:#78909C; }
+.cast button:disabled{ background:#3a3a3a; color:#777; border-color:#555; cursor:not-allowed; }
+.cast .messages { margin-top:12px; max-height:380px; overflow:auto; background:#2b2b2b; border-radius:4px; padding:10px; font-size:12px; }
+.cast .msg { border-left:3px solid #90A4AE; background:#3d3d3d; border-radius:4px; margin-bottom:8px; padding:8px; white-space:pre-wrap; word-break:break-word; }
+.cast .msg.received { border-left-color:#4CAF50; }
+.cast .msg.sent { border-left-color:#2196F3; }
+.cast .msg.err { border-left-color:#d32f2f; background:#5d4037; }
+.cast .subscribe-events-topic-actors,
+.cast .publish-event-topic-actor-row,
+.cast .get-datatype-topic-actor-row { grid-column:1/-1; display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:12px; align-items:start; }
+.cast .cast-hidden-endpoint { display:none !important; }
+@media (max-width:600px) {
+  .cast .container { padding:12px; }
+  .cast .cast-header { grid-template-columns:1fr 1fr; grid-template-rows:auto auto; }
+  .cast .header-title { grid-column:1; grid-row:1; }
+  .cast .header-right { grid-column:2; grid-row:1; }
+  .cast .header-center { grid-column:1/-1; grid-row:2; justify-content:flex-start; }
+  .cast .status.status-header { white-space:normal; font-size:0.95rem; }
+  .cast .grid { grid-template-columns:1fr; }
+  .cast .subscribe-events-topic-actors,
+  .cast .publish-event-topic-actor-row,
+  .cast .get-datatype-topic-actor-row { grid-template-columns:1fr; }
+  .cast .auth-topic-pair { flex-wrap:wrap; }
+  .cast .auth-topic-pair > div { flex:1 1 100%; }
+}
 `;
 
 const style = document.createElement('style');
 style.textContent = css;
 document.head.appendChild(style);
 
-root.className = 'cast-demo';
+root.className = 'cast';
 root.innerHTML = `
 <div class="container">
-  <div class="cast-demo-header"><span class="header-title">Cast client</span><div class="header-center"><div id="connectionStatus" class="status status-header disconnected"><strong>Status:</strong> <span id="statusText">Not connected</span></div></div><div class="header-right"><button type="button" id="hubAdminPortalBtn" class="header-token-btn">Hub Admin portal</button></div></div>
+  <div class="cast-header"><span class="header-title">Cast client</span><div class="header-center"><div id="connectionStatus" class="status status-header disconnected"><strong>Status:</strong> <span id="statusText">Not connected</span></div></div><div class="header-right"><button type="button" id="hubAdminPortalBtn" class="header-token-btn">Hub Admin portal</button></div></div>
   <div class="connection-controls section">
     <h2>Auth</h2>
     <div class="grid">
@@ -438,7 +453,7 @@ function addMessage(
 }
 
 function setConnection(
-  status: 'connected' | 'disconnected' | 'connecting',
+  status: 'connected' | 'disconnected' | 'connecting' | 'token-ready',
   text: string
 ): void {
   connectionStatusEl.className = `status status-header ${status}`;
@@ -584,7 +599,7 @@ tokenBtnEl.addEventListener('click', async () => {
     }
     subscribeBtnEl.disabled = !ok;
     if (ok) {
-      setConnection('disconnected', 'Token ready');
+      setConnection('token-ready', 'Token ready');
       const hub = c.getHub();
       if (hub.subscriberName) {
         subscriberNameEl.value = hub.subscriberName;
