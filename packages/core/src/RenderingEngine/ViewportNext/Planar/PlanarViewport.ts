@@ -23,6 +23,8 @@ import getClosestImageId from '../../../utilities/getClosestImageId';
 import imageIdToURI from '../../../utilities/imageIdToURI';
 import isEqual from '../../../utilities/isEqual';
 import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
+import getVolumeViewportScrollInfo from '../../../utilities/getVolumeViewportScrollInfo';
+import snapFocalPointToSlice from '../../../utilities/snapFocalPointToSlice';
 import renderingEngineCache from '../../renderingEngineCache';
 import type { DataAddOptions, LoadedData } from '../ViewportArchitectureTypes';
 import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
@@ -1217,9 +1219,50 @@ class PlanarViewport extends ViewportNext<
     );
     const resolvedImageId =
       imageIds[clampedImageIdIndex] || imageIds[imageIds.length - 1];
+    const rendering = this.getCurrentPlanarRendering();
+
+    if (
+      rendering?.renderMode === 'cpuVolume' ||
+      rendering?.renderMode === 'vtkVolumeSlice'
+    ) {
+      const volumeId = this.getVolumeId();
+
+      if (volumeId) {
+        const { currentStepIndex, sliceRangeInfo } =
+          getVolumeViewportScrollInfo(this as never, volumeId, true);
+        const delta = clampedImageIdIndex - currentStepIndex;
+
+        if (sliceRangeInfo && delta !== 0) {
+          const { sliceRange, spacingInNormalDirection, camera } =
+            sliceRangeInfo;
+          const { focalPoint, position, viewPlaneNormal } = camera;
+
+          if (focalPoint && position && viewPlaneNormal) {
+            const { newFocalPoint, newPosition } = snapFocalPointToSlice(
+              focalPoint,
+              position,
+              sliceRange,
+              viewPlaneNormal,
+              spacingInNormalDirection,
+              delta
+            );
+
+            this.setCamera({
+              focalPoint: newFocalPoint,
+              imageIdIndex: undefined,
+              position: newPosition,
+            });
+
+            return Promise.resolve(resolvedImageId);
+          }
+        }
+      }
+    }
 
     this.setCamera({
+      focalPoint: undefined,
       imageIdIndex: clampedImageIdIndex,
+      position: undefined,
     });
 
     return Promise.resolve(resolvedImageId);
@@ -1936,7 +1979,9 @@ class PlanarViewport extends ViewportNext<
     }
 
     if (typeof nextImageIdIndex === 'number') {
+      cameraPatch.focalPoint = undefined;
       cameraPatch.imageIdIndex = nextImageIdIndex;
+      cameraPatch.position = undefined;
     }
 
     if (!Object.keys(cameraPatch).length) {

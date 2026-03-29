@@ -548,6 +548,7 @@ export class CpuVolumeSliceRenderPath
       : createPlanarVolumeSliceBasis;
 
     return createSliceBasis({
+      camera,
       canvasHeight: ctx.cpu.canvas.height,
       canvasWidth: ctx.cpu.canvas.width,
       imageIdIndex: resolvePlanarVolumeImageIdIndex({

@@ -18,18 +18,35 @@ export function createDefaultPlanarCamera(): PlanarCamera {
 }
 
 export function normalizePlanarCamera(camera: PlanarCamera): PlanarCamera {
+  const orientationFromCameraVectors = camera.viewPlaneNormal
+    ? {
+        viewPlaneNormal: [...camera.viewPlaneNormal] as Point3,
+        ...(camera.viewUp
+          ? {
+              viewUp: [...camera.viewUp] as Point3,
+            }
+          : {}),
+      }
+    : undefined;
+
   return {
     ...(camera.imageIdIndex !== undefined
       ? { imageIdIndex: camera.imageIdIndex }
       : {}),
     orientation:
-      clonePlanarOrientation(camera.orientation) ?? OrientationAxis.ACQUISITION,
+      clonePlanarOrientation(camera.orientation) ??
+      orientationFromCameraVectors ??
+      OrientationAxis.ACQUISITION,
     flipHorizontal: camera.flipHorizontal === true,
     flipVertical: camera.flipVertical === true,
     anchorCanvas: camera.anchorCanvas ?? [0.5, 0.5],
     scale: Math.max(camera.scale ?? 1, 0.001),
     scaleMode: 'fit',
     rotation: normalizePlanarRotation(camera.rotation ?? 0),
+    ...(camera.focalPoint
+      ? { focalPoint: [...camera.focalPoint] as Point3 }
+      : {}),
+    ...(camera.position ? { position: [...camera.position] as Point3 } : {}),
     ...(camera.anchorWorld
       ? { anchorWorld: [...camera.anchorWorld] as Point3 }
       : {}),

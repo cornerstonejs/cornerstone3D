@@ -35,6 +35,8 @@ import {
 } from './planarSliceBasis';
 import { applyPlanarVolumePresentation } from './planarVolumePresentation';
 
+const SLICE_OVERLAY_DEPTH_EPSILON = 1e-4;
+
 export class VtkVolumeSliceRenderPath
   implements RenderPath<PlanarVtkVolumeAdapterContext>
 {
@@ -72,6 +74,7 @@ export class VtkVolumeSliceRenderPath
       id: `rendering:${data.id}:${options.renderMode}`,
       renderMode: 'vtkVolumeSlice',
       actor,
+      overlayOrder: getImageSliceOverlayOrder(ctx.vtk.renderer, actor),
       imageVolume,
       mapper,
       currentImageIdIndex: payload.initialImageIdIndex,
@@ -141,6 +144,11 @@ export class VtkVolumeSliceRenderPath
       props: rendering.dataPresentation,
     });
     updateVolumeSlicePlane(rendering.mapper, ctx.renderPath.renderCamera);
+    updateVolumeSliceActorDepthOffset(
+      rendering.actor,
+      ctx.renderPath.renderCamera,
+      rendering.overlayOrder
+    );
     ctx.vtk.renderer.resetCameraClippingRange();
   }
 
@@ -155,6 +163,7 @@ export class VtkVolumeSliceRenderPath
     const canvasHeight = ctx.vtk.canvas.clientHeight || ctx.vtk.canvas.height;
     const { sliceBasis, currentImageIdIndex, maxImageIdIndex } =
       createPlanarVolumeSliceBasis({
+        camera,
         canvasHeight,
         canvasWidth,
         imageIdIndex: resolvePlanarVolumeImageIdIndex({
@@ -188,6 +197,11 @@ export class VtkVolumeSliceRenderPath
     rendering.maxImageIdIndex = maxImageIdIndex;
 
     updateVolumeSlicePlane(rendering.mapper, ctx.renderPath.renderCamera);
+    updateVolumeSliceActorDepthOffset(
+      rendering.actor,
+      ctx.renderPath.renderCamera,
+      rendering.overlayOrder
+    );
     ctx.vtk.renderer.resetCameraClippingRange();
   }
 
@@ -239,6 +253,7 @@ export class VtkVolumeSliceRenderPath
     const canvasHeight = ctx.vtk.canvas.clientHeight || ctx.vtk.canvas.height;
     const { sliceBasis, currentImageIdIndex, maxImageIdIndex } =
       createPlanarVolumeSliceBasis({
+        camera,
         canvasWidth,
         canvasHeight,
         imageIdIndex: rendering.currentImageIdIndex,
@@ -266,6 +281,11 @@ export class VtkVolumeSliceRenderPath
     rendering.currentImageIdIndex = currentImageIdIndex;
     rendering.maxImageIdIndex = maxImageIdIndex;
     updateVolumeSlicePlane(rendering.mapper, ctx.renderPath.renderCamera);
+    updateVolumeSliceActorDepthOffset(
+      rendering.actor,
+      ctx.renderPath.renderCamera,
+      rendering.overlayOrder
+    );
     ctx.vtk.renderer.resetCameraClippingRange();
     ctx.display.requestRender();
   }
@@ -370,6 +390,37 @@ function updateVolumeSlicePlane(
   const slicePlane = ensureSlicePlane(mapper);
   slicePlane.setOrigin(...renderCamera.focalPoint);
   slicePlane.setNormal(...renderCamera.viewPlaneNormal);
+}
+
+function getImageSliceOverlayOrder(
+  renderer: PlanarVtkVolumeAdapterContext['vtk']['renderer'],
+  actor: PlanarVolumeSliceRendering['actor']
+): number {
+  const imageSliceActors = renderer
+    .getActors()
+    .filter(
+      (currentActor) => currentActor?.getClassName?.() === 'vtkImageSlice'
+    );
+
+  return Math.max(0, imageSliceActors.indexOf(actor));
+}
+
+function updateVolumeSliceActorDepthOffset(
+  actor: PlanarVolumeSliceRendering['actor'],
+  renderCamera?: Pick<PlanarCamera, 'viewPlaneNormal'>,
+  overlayOrder = 0
+): void {
+  if (!renderCamera?.viewPlaneNormal || overlayOrder <= 0) {
+    actor.setPosition(0, 0, 0);
+    return;
+  }
+
+  const [x, y, z] = renderCamera.viewPlaneNormal;
+  const offset = overlayOrder * SLICE_OVERLAY_DEPTH_EPSILON;
+
+  // Keep later slice actors microscopically closer to the camera to avoid
+  // depth-buffer ties between coplanar fusion overlays.
+  actor.setPosition(x * offset, y * offset, z * offset);
 }
 
 function buildPlanarVolumeImageData(imageVolume): IImageData | undefined {

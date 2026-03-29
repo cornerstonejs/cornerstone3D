@@ -361,6 +361,10 @@ export function resolvePlanarVolumeImageIdIndex(args: {
 }): number | undefined {
   const { camera, fallbackImageIdIndex } = args;
 
+  if (camera?.focalPoint) {
+    return;
+  }
+
   if (typeof camera?.imageIdIndex === 'number') {
     return camera.imageIdIndex;
   }
@@ -513,6 +517,7 @@ function buildPlanarVolumeSliceBasis(args: {
   imageIdIndex?: number;
   imageVolume: IImageVolume;
   orientation?: PlanarCamera['orientation'];
+  camera?: PlanarCamera;
   center: Point3;
   fitParallelScale: number;
 }): {
@@ -524,6 +529,7 @@ function buildPlanarVolumeSliceBasis(args: {
     canvasWidth,
     canvasHeight,
     center,
+    camera,
     fitParallelScale,
     imageIdIndex,
     imageVolume,
@@ -559,9 +565,21 @@ function buildPlanarVolumeSliceBasis(args: {
     center as unknown as vec3,
     viewPlaneNormal as unknown as vec3
   );
+  const requestedSliceProjection = Math.min(
+    max,
+    Math.max(
+      min,
+      camera?.focalPoint
+        ? vec3.dot(
+            camera.focalPoint as unknown as vec3,
+            viewPlaneNormal as unknown as vec3
+          )
+        : centerProjection
+    )
+  );
   const currentImageIdIndex = clampImageIdIndex({
     imageIdIndex,
-    centerProjection,
+    centerProjection: requestedSliceProjection,
     min,
     max,
     maxImageIdIndex,
@@ -569,10 +587,10 @@ function buildPlanarVolumeSliceBasis(args: {
 
   // Project volume center onto the viewing direction to compute the
   // scalar offset needed to reach the target slice depth.
-  const targetProjection = Math.min(
-    max,
-    min + currentImageIdIndex * spacingInNormalDirection
-  );
+  const targetProjection =
+    typeof imageIdIndex === 'number'
+      ? Math.min(max, min + currentImageIdIndex * spacingInNormalDirection)
+      : requestedSliceProjection;
   const scalarOffset = targetProjection - centerProjection;
   const sliceCenterWorld = vec3.scaleAndAdd(
     vec3.create(),
@@ -604,6 +622,7 @@ export function createPlanarVolumeSliceBasis(args: {
   imageIdIndex?: number;
   imageVolume: IImageVolume;
   orientation?: PlanarCamera['orientation'];
+  camera?: PlanarCamera;
 }): {
   sliceBasis: PlanarSliceBasis;
   currentImageIdIndex: number;
@@ -634,6 +653,7 @@ export function createPlanarCpuVolumeSliceBasis(args: {
   imageIdIndex?: number;
   imageVolume: IImageVolume;
   orientation?: PlanarCamera['orientation'];
+  camera?: PlanarCamera;
 }): {
   sliceBasis: PlanarSliceBasis;
   currentImageIdIndex: number;

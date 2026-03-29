@@ -101,15 +101,17 @@ addSliderToToolbar({
   title: 'PET Threshold',
   range: [0, 5],
   step: 0.1,
-  defaultValue: 2.5,
+  defaultValue: 0,
   onSelectedValueChange: (value) => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const viewport = renderingEngine.getViewport(
       viewportId
     ) as Types.IBaseVolumeViewport;
 
+    const threshold = Number(value);
+
     viewport.setProperties(
-      { colormap: { threshold: Number(value) } },
+      threshold > 0 ? { colormap: { threshold } } : { colormap: {} },
       ptVolumeId
     );
     viewport.render();
@@ -292,6 +294,7 @@ async function run() {
     type: ViewportType.ORTHOGRAPHIC,
     element,
     defaultOptions: {
+      orientation: Enums.OrientationAxis.SAGITTAL,
       background: [0.2, 0, 0.2] as Types.Point3,
     },
   };
@@ -359,6 +362,7 @@ async function run() {
     { volumeId: ctVolumeId },
     {
       volumeId: ptVolumeId,
+      callback: setPetColorMapTransferFunctionForVolumeActor,
     },
   ]);
 
@@ -366,12 +370,12 @@ async function run() {
     {
       colormap: {
         name: 'hsv',
-        // opacity: PET_DEFAULT_OPACITY,
+        opacity: PET_DEFAULT_OPACITY,
       },
     },
     ptVolumeId
   );
-  viewport.scroll(-12);
+  viewport.scroll(18);
 
   viewport.render();
 

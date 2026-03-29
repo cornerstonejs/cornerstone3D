@@ -286,6 +286,7 @@ class PlanarVolumeViewportCamera extends BasePlanarViewportCamera<PlanarVolumeVi
       : createPlanarVolumeSliceBasis;
 
     return createSliceBasis({
+      camera: this.state.camera,
       canvasHeight: this.state.canvasHeight,
       canvasWidth: this.state.canvasWidth,
       imageIdIndex: this.state.currentImageIdIndex,

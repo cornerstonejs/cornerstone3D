@@ -117,6 +117,7 @@ export type PlanarCpuVolumeRendering = MountedRendering<{
 export type PlanarVolumeSliceRendering = MountedRendering<{
   renderMode: 'vtkVolumeSlice';
   actor: vtkImageSlice;
+  overlayOrder: number;
   imageVolume: IImageVolume;
   mapper: vtkImageResliceMapper;
   currentImageIdIndex: number;
