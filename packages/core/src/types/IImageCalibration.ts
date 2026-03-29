@@ -34,7 +34,7 @@ export interface IImageCalibration {
   type: CalibrationTypes;
   /** A tooltip which can be used to explain the calibration information */
   tooltip?: string;
-  /** The DICOM defined ultrasound regions.  Used for non-distance spacing units. */
+  /** The DICOM defined ultrasound regions.  Used for non-distance spacing units (US and ECG). */
   sequenceOfUltrasoundRegions?: Record<string, unknown>[];
 }
 

@@ -5,6 +5,7 @@ import ViewportType from '../../enums/ViewportType';
 import VolumeViewport3D from '../VolumeViewport3D';
 import VideoViewport from '../VideoViewport';
 import WSIViewport from '../WSIViewport';
+import ECGViewport from '../ECGViewport';
 import type { ViewportInput, IViewport } from '../../types/IViewport';
 
 interface ViewportConstructor {
@@ -20,6 +21,7 @@ const viewportTypeToViewportClass: {
   [ViewportType.VOLUME_3D]: VolumeViewport3D,
   [ViewportType.VIDEO]: VideoViewport,
   [ViewportType.WHOLE_SLIDE]: WSIViewport,
+  [ViewportType.ECG]: ECGViewport,
 };
 
 export default viewportTypeToViewportClass;

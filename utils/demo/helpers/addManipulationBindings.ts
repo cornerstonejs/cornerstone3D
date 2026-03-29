@@ -25,6 +25,8 @@ export type ToolBinding = {
   passive?: boolean;
   // Initial bindings
   bindings?: Types.IToolBinding[];
+  // Sets as the default active tool on primary mouse button
+  selected?: boolean;
 };
 
 /**

@@ -237,7 +237,7 @@ function completeDrawClosedContour(
     return false;
   }
 
-  const { annotation, viewportIdsToRender } = this.commonData;
+  const { annotation, viewportIdsToRender, movingTextBox } = this.commonData;
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;
 
@@ -267,7 +267,7 @@ function completeDrawClosedContour(
 
   const { textBox } = annotation.data.handles;
 
-  if (!textBox?.hasMoved) {
+  if (!textBox?.hasMoved && !movingTextBox) {
     triggerContourAnnotationCompleted(annotation, contourHoleProcessingEnabled);
   }
 
@@ -330,7 +330,7 @@ function completeDrawOpenContour(
     return false;
   }
 
-  const { annotation, viewportIdsToRender } = this.commonData;
+  const { annotation, viewportIdsToRender, movingTextBox } = this.commonData;
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;
 
@@ -379,7 +379,7 @@ function completeDrawOpenContour(
     );
   }
 
-  if (!textBox.hasMoved) {
+  if (!textBox.hasMoved && !movingTextBox) {
     triggerContourAnnotationCompleted(annotation, contourHoleProcessingEnabled);
   }
 

@@ -119,10 +119,18 @@ import type { Color, ColorLUT } from './Color';
 import type VideoViewportProperties from './VideoViewportProperties';
 import type WSIViewportProperties from './WSIViewportProperties';
 import type { IVideoViewport } from './IVideoViewport';
+import type { IECGViewport } from './IECGViewport';
 import type {
   InternalVideoCamera,
   VideoViewportInput,
 } from './VideoViewportTypes';
+import type {
+  InternalECGCamera,
+  ECGViewportInput,
+  ECGChannel,
+  ECGWaveformData,
+} from './ECGViewportTypes';
+import type ECGViewportProperties from './ECGViewportProperties';
 import type { ISurface } from './ISurface';
 import type BoundsIJK from './BoundsIJK';
 import type { ImageVolumeProps } from './ImageVolumeProps';
@@ -158,6 +166,7 @@ export type {
   ICamera,
   IStackViewport,
   IVideoViewport,
+  IECGViewport,
   IWSIViewport,
   IVolumeViewport,
   IEnabledElement,
@@ -275,6 +284,12 @@ export type {
   // video
   InternalVideoCamera,
   VideoViewportInput,
+  // ecg
+  InternalECGCamera,
+  ECGViewportInput,
+  ECGChannel,
+  ECGWaveformData,
+  ECGViewportProperties,
   BoundsIJK,
   BoundsLPS,
   Color,

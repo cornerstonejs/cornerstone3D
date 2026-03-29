@@ -214,7 +214,7 @@ class StackViewport extends Viewport {
     this.useCPURendering = getShouldUseCPURendering();
     this._configureRenderingPipeline();
 
-    const result = this.useCPURendering
+    this.useCPURendering
       ? this._resetCPUFallbackElement()
       : this._resetGPUViewport();
 

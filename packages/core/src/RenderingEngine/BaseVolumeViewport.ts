@@ -148,6 +148,10 @@ abstract class BaseVolumeViewport extends Viewport {
     return false;
   }
 
+  override isOrientationChangeable(): boolean {
+    return true;
+  }
+
   public getSliceViewInfo(): {
     width: number;
     height: number;
