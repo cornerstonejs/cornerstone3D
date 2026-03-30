@@ -32,6 +32,7 @@ import EllipticalROITool from './annotation/EllipticalROITool';
 import CircleROITool from './annotation/CircleROITool';
 import ETDRSGridTool from './annotation/ETDRSGridTool';
 import SplineROITool from './annotation/SplineROITool';
+import CrossSectionSplineTool from './annotation/CrossSectionSplineTool';
 import SplineContourSegmentationTool from './annotation/SplineContourSegmentationTool';
 import PlanarFreehandROITool from './annotation/PlanarFreehandROITool';
 import PlanarFreehandContourSegmentationTool from './annotation/PlanarFreehandContourSegmentationTool';
@@ -100,6 +101,7 @@ export {
   CircleROITool,
   ETDRSGridTool,
   SplineROITool,
+  CrossSectionSplineTool,
   PlanarFreehandROITool,
   PlanarFreehandContourSegmentationTool,
   LivewireContourTool,
