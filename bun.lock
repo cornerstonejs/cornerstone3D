@@ -129,8 +129,8 @@
         "ndarray": "1.0.19",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "4.19.2",
-        "@cornerstonejs/tools": "4.19.2",
+        "@cornerstonejs/core": "4.20.0",
+        "@cornerstonejs/tools": "4.20.0",
       },
     },
     "packages/ai": {
@@ -147,8 +147,8 @@
         "onnxruntime-web": "1.17.1",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "4.19.2",
-        "@cornerstonejs/tools": "4.19.2",
+        "@cornerstonejs/core": "4.20.0",
+        "@cornerstonejs/tools": "4.20.0",
       },
     },
     "packages/cast": {
@@ -180,7 +180,7 @@
         "uuid": "9.0.1",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "4.19.2",
+        "@cornerstonejs/core": "4.20.0",
         "dicom-parser": "1.8.21",
       },
     },
@@ -192,8 +192,8 @@
         "itk-wasm": "1.0.0-b.165",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "4.19.2",
-        "@cornerstonejs/tools": "4.19.2",
+        "@cornerstonejs/core": "4.20.0",
+        "@cornerstonejs/tools": "4.20.0",
         "@kitware/vtk.js": "34.15.1",
       },
     },
@@ -204,7 +204,7 @@
         "nifti-reader-js": "0.6.9",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "4.19.2",
+        "@cornerstonejs/core": "4.20.0",
       },
     },
     "packages/polymorphic-segmentation": {
@@ -214,8 +214,8 @@
         "@icr/polyseg-wasm": "0.4.0",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "4.19.2",
-        "@cornerstonejs/tools": "4.19.2",
+        "@cornerstonejs/core": "4.20.0",
+        "@cornerstonejs/tools": "4.20.0",
         "@kitware/vtk.js": "34.15.1",
       },
     },
@@ -231,7 +231,7 @@
         "canvas": "3.2.0",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "4.19.2",
+        "@cornerstonejs/core": "4.20.0",
         "@kitware/vtk.js": "34.15.1",
         "@types/d3-array": "3.2.1",
         "@types/d3-interpolate": "3.0.4",
