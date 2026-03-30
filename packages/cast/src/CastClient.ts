@@ -14,6 +14,47 @@ export interface CastTransport {
 
 const DEFAULT_MESSAGE_ID_PREFIX = 'CS3D-';
 
+/**
+ * Cast client for a single hub configuration.
+ *
+ * Handles token acquisition, subscribe/unsubscribe lifecycle, websocket message
+ * processing, publish, and optional auto-reconnect.
+ *
+ * Example:
+ * ```ts
+ * const client = new CastClient({
+ *   hub: {
+ *     name: 'demo',
+ *     version: '1',
+ *     events: ['*'],
+ *     lease: 7200,
+ *     hub_endpoint: 'https://host/api/hub',
+ *     token_endpoint: 'https://host/oauth/token',
+ *     client_id: 'client_id',
+ *     client_secret: 'client_secret',
+ *     subscriberName: 'CS3D-EXAMPLE',
+ *     topic: 'my-topic',
+ *   },
+ *   autoReconnect: true,
+ * });
+ *
+ * client.onMessage((message) => {
+ *   console.log(message);
+ * });
+ *
+ * const tokenOk = await client.getToken();
+ * if (tokenOk) {
+ *   await client.subscribe();
+ *   await client.publish({
+ *     event: {
+ *       'hub.event': 'custom',
+ *       'hub.topic': 'my-topic',
+ *       context: [],
+ *     },
+ *   });
+ * }
+ * ```
+ */
 export class CastClient implements CastTransport {
   private _config: CastClientConfig;
   private _hub: ActiveHub;
@@ -34,6 +75,7 @@ export class CastClient implements CastTransport {
     }
   }
 
+  /** Release resources: stop reconnect checks and unsubscribe/close websocket. */
   destroy(): void {
     if (this._reconnectInterval) {
       clearInterval(this._reconnectInterval);
@@ -42,10 +84,12 @@ export class CastClient implements CastTransport {
     this.unsubscribe();
   }
 
+  /** Register callback for incoming non-heartbeat hub events. */
   onMessage(callback: (message: CastMessage) => void): void {
     this._onMessageCallback = callback;
   }
 
+  /** Get immutable hub configuration values (without runtime connection state). */
   getHubConfig(): HubConfig {
     const {
       token,
@@ -58,7 +102,8 @@ export class CastClient implements CastTransport {
     return config;
   }
 
-  getHubState(): HubRuntimeState {
+  /** Get current runtime connection state (token, websocket, subscribe flags). */
+  getConnectionState(): HubRuntimeState {
     const {
       token,
       subscribed,
@@ -75,19 +120,27 @@ export class CastClient implements CastTransport {
     };
   }
 
+  /** Update active topic used for subscribe/publish/get-response payloads. */
   setTopic(topic: string): void {
     console.debug('CastClient: setting topic to', topic);
     this._hub.topic = topic;
   }
 
+  /** Set bearer token used for authenticated hub requests. */
   setToken(token: string): void {
     this._hub.token = token;
   }
 
+  /** Set subscriber name used by subscribe/unsubscribe requests. */
   setSubscriberName(subscriberName: string): void {
     this._hub.subscriberName = subscriberName;
   }
 
+  /**
+   * Request and store an access token from the configured token endpoint.
+   *
+   * Returns true when a non-empty token is stored; otherwise false.
+   */
   async getToken(): Promise<boolean> {
     const hub = this._hub;
     try {
@@ -146,6 +199,16 @@ export class CastClient implements CastTransport {
     }
   }
 
+  /**
+   * Send subscribe request and open websocket when accepted.
+   *
+   * Returns:
+   * - 202 when accepted by hub and websocket setup is started
+   * - HTTP status code for non-202 HTTP responses
+   * - 'error: topic not defined' when topic is empty
+   * - 'error: no token' when token is missing
+   * - 0 on fetch/transport exception
+   */
   async subscribe(): Promise<number | string> {
     const hub = this._hub;
     const topic = hub.topic?.trim();
@@ -247,6 +310,7 @@ export class CastClient implements CastTransport {
     }
   }
 
+  /** Send unsubscribe request and close websocket if open. */
   async unsubscribe(): Promise<void> {
     const hub = this._hub;
     hub.subscribed = false;
@@ -296,6 +360,11 @@ export class CastClient implements CastTransport {
     }
   }
 
+  /**
+   * Publish a cast event to the active hub.
+   *
+   * Returns the fetch Response on success, or null on exception.
+   */
   async publish(
     castMessage: Record<string, unknown>,
     hub: ActiveHub = this._hub
@@ -332,6 +401,7 @@ export class CastClient implements CastTransport {
     }
   }
 
+  /** Send a websocket get-response event for a given request id and payload. */
   sendGetResponse(requestId: string, data: unknown, topic?: string): void {
     const hub = this._hub;
     if (!hub.websocket || hub.websocket.readyState !== WebSocket.OPEN) {

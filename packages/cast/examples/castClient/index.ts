@@ -612,7 +612,7 @@ tokenBtnEl.addEventListener('click', async () => {
       if (data.topic) {
         c.setTopic(data.topic);
       }
-      ok = Boolean(c.getHubState().token);
+      ok = Boolean(c.getConnectionState().token);
     }
     subscribeBtnEl.disabled = !ok;
     if (ok) {
