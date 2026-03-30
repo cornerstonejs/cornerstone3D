@@ -16,7 +16,7 @@ const DEFAULT_MESSAGE_ID_PREFIX = 'CS3D-';
 type ActiveHub = HubConfig & SessionConfig & HubRuntimeState;
 
 /**
- * Cast client for a single hub configuration.
+ * Cast client.
  *
  * Handles token acquisition, subscribe/unsubscribe lifecycle, websocket message
  * processing, publish, and optional auto-reconnect.
