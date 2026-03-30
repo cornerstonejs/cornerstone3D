@@ -42,6 +42,11 @@ export interface MouseHandlersCallbacks {
 
 const CLICK_TOLERANCE_PX = 3;
 
+enum MainFaceHighlight {
+  // Slightly enlarges the hovered main face (8%) for visual feedback.
+  ScaleFactor = 1.08,
+}
+
 export class vtkOrientationControllerWidget {
   private static readonly ACTIVE_DRAG_ATTR =
     'data-cs-orientation-controller-drag';
@@ -600,7 +605,11 @@ export class vtkOrientationControllerWidget {
     this.clearHighlight();
 
     if (isMainFace) {
-      const backup = this.scaleMainFaceQuadLocally(actor, cellId, 1.08);
+      const backup = this.scaleMainFaceQuadLocally(
+        actor,
+        cellId,
+        MainFaceHighlight.ScaleFactor
+      );
       if (!backup) {
         return;
       }
