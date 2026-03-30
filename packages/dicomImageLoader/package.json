@@ -66,6 +66,7 @@
   },
   "scripts": {
     "build:loader": "yarn run build:all && yarn run copy-dts",
+    "build": "yarn run build:esm",
     "build:esm": "tsc --project ./tsconfig.json",
     "build:esm:watch": "tsc --project ./tsconfig.json --watch",
     "build:umd:dynamic": "cross-env NODE_ENV=production webpack --config .webpack/webpack-dynamic-import.js",
@@ -111,9 +112,13 @@
     "pako": "2.1.0",
     "uuid": "9.0.1"
   },
+  "devDependencies": {
+    "@cornerstonejs/core": "workspace:*",
+    "@cornerstonejs/metadata": "workspace:*"
+  },
   "peerDependencies": {
-    "@cornerstonejs/core": "5.0.0-beta.1",
-    "@cornerstonejs/metadata": "workspace:*",
+    "@cornerstonejs/core": ">=5.0.0-beta.1 <6.0.0-0",
+    "@cornerstonejs/metadata": ">=4.18.0 <6.0.0-0",
     "dicom-parser": "1.8.21"
   },
   "config": {

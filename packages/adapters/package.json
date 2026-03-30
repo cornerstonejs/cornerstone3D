@@ -69,7 +69,8 @@
     "start": "rollup --watch -c rollup.config.mjs",
     "format": "prettier --write 'src/**/*.js' 'test/**/*.js'",
     "lint": "oxlint .",
-    "prebuild": "node ../../scripts/generate-version.js ./"
+    "prebuild": "node ../../scripts/generate-version.js ./",
+    "prebuild:esm": "node ../../scripts/generate-version.js ./"
   },
   "repository": {
     "type": "git",
@@ -88,8 +89,12 @@
     "gl-matrix": "3.4.3",
     "ndarray": "1.0.19"
   },
+  "devDependencies": {
+    "@cornerstonejs/core": "workspace:*",
+    "@cornerstonejs/tools": "workspace:*"
+  },
   "peerDependencies": {
-    "@cornerstonejs/core": "5.0.0-beta.1",
-    "@cornerstonejs/tools": "5.0.0-beta.1"
+    "@cornerstonejs/core": ">=5.0.0-beta.1 <6.0.0-0",
+    "@cornerstonejs/tools": ">=5.0.0-beta.1 <6.0.0-0"
   }
 }

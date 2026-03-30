@@ -26,6 +26,7 @@
   },
   "scripts": {
     "prebuild": "node ../../scripts/generate-version.js ./",
+    "prebuild:esm": "node ../../scripts/generate-version.js ./",
     "test": "jest --testTimeout 60000",
     "clean": "rm -rf node_modules/.cache/storybook && shx rm -rf dist",
     "clean:deep": "yarn run clean && shx rm -rf node_modules",
@@ -60,8 +61,12 @@
     "onnxruntime-common": "1.17.1",
     "onnxruntime-web": "1.17.1"
   },
+  "devDependencies": {
+    "@cornerstonejs/core": "workspace:*",
+    "@cornerstonejs/tools": "workspace:*"
+  },
   "peerDependencies": {
-    "@cornerstonejs/core": "5.0.0-beta.1",
-    "@cornerstonejs/tools": "5.0.0-beta.1"
+    "@cornerstonejs/core": ">=5.0.0-beta.1 <6.0.0-0",
+    "@cornerstonejs/tools": ">=5.0.0-beta.1 <6.0.0-0"
   }
 }

@@ -26,6 +26,7 @@
   },
   "scripts": {
     "prebuild": "node ../../scripts/generate-version.js ./",
+    "prebuild:esm": "node ../../scripts/generate-version.js ./",
     "test": "jest --testTimeout 60000",
     "clean": "rimraf dist",
     "clean:deep": "yarn run clean && shx rm -rf node_modules",
@@ -54,9 +55,13 @@
     "@itk-wasm/morphological-contour-interpolation": "1.1.0",
     "itk-wasm": "1.0.0-b.165"
   },
+  "devDependencies": {
+    "@cornerstonejs/core": "workspace:*",
+    "@cornerstonejs/tools": "workspace:*"
+  },
   "peerDependencies": {
-    "@cornerstonejs/core": "5.0.0-beta.1",
-    "@cornerstonejs/tools": "5.0.0-beta.1",
+    "@cornerstonejs/core": ">=5.0.0-beta.1 <6.0.0-0",
+    "@cornerstonejs/tools": ">=5.0.0-beta.1 <6.0.0-0",
     "@kitware/vtk.js": "34.15.1"
   }
 }
