@@ -1,5 +1,9 @@
 import vtkCellPicker from '@kitware/vtk.js/Rendering/Core/CellPicker';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
+import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
+import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
+import vtkPoints from '@kitware/vtk.js/Common/Core/Points';
+import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import { Enums } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
@@ -40,13 +44,6 @@ export interface MouseHandlersCallbacks {
   onFaceHover?: (result: PickResult | null) => void;
 }
 
-const CLICK_TOLERANCE_PX = 3;
-
-enum MainFaceHighlight {
-  // Slightly enlarges the hovered main face (8%) for visual feedback.
-  ScaleFactor = 1.08,
-}
-
 export class vtkOrientationControllerWidget {
   private static readonly ACTIVE_DRAG_ATTR =
     'data-cs-orientation-controller-drag';
@@ -72,9 +69,15 @@ export class vtkOrientationControllerWidget {
     originalColor: number[];
     viewport: Types.IVolumeViewport;
     isMainFace: boolean;
-    mainFacePointIds?: number[];
-    mainFacePositions?: number[];
-    mainFaceNormals?: number[];
+    mainFaceTextureData?: Uint8Array;
+    mainFaceTile?: {
+      x0: number;
+      y0: number;
+      width: number;
+      height: number;
+      imageWidth: number;
+    };
+    mainFaceHighlightActor?: vtkActor;
   } | null = null;
   private mouseHandlers = new Map<
     string,
@@ -185,13 +188,10 @@ export class vtkOrientationControllerWidget {
       this.removeActorsFromViewport(viewportId, viewport);
     }
 
-    const offscreenMultiRenderWindow = (viewport as Types.IViewport)
+    const renderWindow = (viewport as Types.IViewport)
       .getRenderingEngine()
-      ?.getOffscreenMultiRenderWindow(viewport.id);
-    const renderWindow = offscreenMultiRenderWindow?.getRenderWindow();
-    if (!renderWindow) {
-      return;
-    }
+      .getOffscreenMultiRenderWindow(viewport.id)
+      .getRenderWindow();
 
     const mainRenderer =
       (viewport as Types.IViewport)
@@ -452,139 +452,6 @@ export class vtkOrientationControllerWidget {
     return true;
   }
 
-  /**
-   * Main-face mesh uses disjoint vertex sets per quad (see RhombicuboctahedronSource MAIN_FACES),
-   * so scaling only that cell's points expands a single face plate.
-   */
-  private scaleMainFaceQuadLocally(
-    actor: vtkActor,
-    cellId: number,
-    scaleFactor: number
-  ): {
-    pointIds: number[];
-    positions: number[];
-    normals: number[];
-  } | null {
-    const mapper = actor.getMapper();
-    const polyData = mapper.getInputData() as {
-      getCellPoints: (id: number) => {
-        cellPointIds: Uint32Array | Uint16Array | null;
-      };
-      getPoints: () => {
-        getData: () => Float32Array | Float64Array;
-        modified: () => void;
-      };
-      getPointData: () => {
-        getNormals: () => {
-          getData: () => Float32Array | Float64Array;
-          modified: () => void;
-        } | null;
-        modified: () => void;
-      };
-      modified: () => void;
-    } | null;
-    if (!polyData?.getCellPoints) {
-      return null;
-    }
-    const { cellPointIds } = polyData.getCellPoints(cellId);
-    if (!cellPointIds || cellPointIds.length < 3) {
-      return null;
-    }
-    const pointIds = Array.from(cellPointIds);
-    const points = polyData.getPoints();
-    const ptsData = points.getData();
-    const normalScalars = polyData.getPointData().getNormals();
-    const normalsData = normalScalars?.getData();
-
-    const positions: number[] = [];
-    const normals: number[] = [];
-    let cx = 0;
-    let cy = 0;
-    let cz = 0;
-    for (const pid of pointIds) {
-      const o = pid * 3;
-      positions.push(ptsData[o], ptsData[o + 1], ptsData[o + 2]);
-      cx += ptsData[o];
-      cy += ptsData[o + 1];
-      cz += ptsData[o + 2];
-      if (normalsData) {
-        normals.push(normalsData[o], normalsData[o + 1], normalsData[o + 2]);
-      }
-    }
-    const nPts = pointIds.length;
-    cx /= nPts;
-    cy /= nPts;
-    cz /= nPts;
-
-    for (const pid of pointIds) {
-      const o = pid * 3;
-      const vx = ptsData[o] - cx;
-      const vy = ptsData[o + 1] - cy;
-      const vz = ptsData[o + 2] - cz;
-      ptsData[o] = cx + vx * scaleFactor;
-      ptsData[o + 1] = cy + vy * scaleFactor;
-      ptsData[o + 2] = cz + vz * scaleFactor;
-      if (normalsData) {
-        const nx = normalsData[o];
-        const ny = normalsData[o + 1];
-        const nz = normalsData[o + 2];
-        const len = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
-        normalsData[o] = nx / len;
-        normalsData[o + 1] = ny / len;
-        normalsData[o + 2] = nz / len;
-      }
-    }
-    points.modified();
-    polyData.getPointData().modified();
-    polyData.modified();
-    return { pointIds, positions, normals };
-  }
-
-  private restoreMainFaceQuadGeometry(
-    actor: vtkActor,
-    pointIds: number[],
-    positions: number[],
-    normalsBackup: number[] | undefined
-  ): void {
-    const mapper = actor.getMapper();
-    const polyData = mapper.getInputData() as {
-      getPoints: () => {
-        getData: () => Float32Array | Float64Array;
-        modified: () => void;
-      };
-      getPointData: () => {
-        getNormals: () => {
-          getData: () => Float32Array | Float64Array;
-          modified: () => void;
-        } | null;
-        modified: () => void;
-      };
-      modified: () => void;
-    } | null;
-    if (!polyData) {
-      return;
-    }
-    const points = polyData.getPoints();
-    const ptsData = points.getData();
-    const normalsData = polyData.getPointData().getNormals()?.getData();
-    for (let i = 0; i < pointIds.length; i++) {
-      const pid = pointIds[i];
-      const o = pid * 3;
-      const j = i * 3;
-      ptsData[o] = positions[j];
-      ptsData[o + 1] = positions[j + 1];
-      ptsData[o + 2] = positions[j + 2];
-      if (normalsData && normalsBackup && normalsBackup.length >= j + 3) {
-        normalsData[o] = normalsBackup[j];
-        normalsData[o + 1] = normalsBackup[j + 1];
-        normalsData[o + 2] = normalsBackup[j + 2];
-      }
-    }
-    points.modified();
-    polyData.getPointData().modified();
-    polyData.modified();
-  }
-
   highlightFace(
     actor: vtkActor,
     cellId: number,
@@ -605,23 +472,212 @@ export class vtkOrientationControllerWidget {
     this.clearHighlight();
 
     if (isMainFace) {
-      const backup = this.scaleMainFaceQuadLocally(
-        actor,
-        cellId,
-        MainFaceHighlight.ScaleFactor
-      );
-      if (!backup) {
+      const textureCollection = (
+        actor as unknown as {
+          getTextures?: () =>
+            | unknown[]
+            | {
+                getItem?: (index: number) => unknown;
+                getNumberOfItems?: () => number;
+              };
+        }
+      ).getTextures?.();
+      const textureCandidate = Array.isArray(textureCollection)
+        ? textureCollection[0]
+        : textureCollection?.getItem?.(0);
+      const texture = textureCandidate as
+        | {
+            getInputData: () => {
+              getDimensions: () => [number, number, number];
+              getPointData: () => {
+                getScalars: () => {
+                  getData: () => Uint8Array | Uint8ClampedArray;
+                  modified: () => void;
+                } | null;
+              };
+              modified: () => void;
+            } | null;
+          }
+        | undefined;
+      const imageData = texture?.getInputData?.();
+      const scalars = imageData?.getPointData().getScalars();
+      const pixels = scalars?.getData();
+      const dims = imageData?.getDimensions();
+
+      if (
+        !imageData ||
+        !scalars ||
+        !pixels ||
+        !dims ||
+        cellId < 0 ||
+        cellId > 5
+      ) {
+        const mapper = actor.getMapper();
+        const polyData = mapper.getInputData() as {
+          getCellPoints: (id: number) => {
+            cellPointIds: Uint32Array | Uint16Array | null;
+          };
+          getPoints: () => {
+            getData: () => Float32Array | Float64Array;
+          };
+        } | null;
+        if (!polyData?.getCellPoints) {
+          return;
+        }
+        const { cellPointIds } = polyData.getCellPoints(cellId);
+        if (!cellPointIds || cellPointIds.length < 3) {
+          return;
+        }
+        const src = polyData.getPoints().getData();
+        const coords: number[] = [];
+        Array.from(cellPointIds).forEach((pid) => {
+          const o = pid * 3;
+          coords.push(src[o], src[o + 1], src[o + 2]);
+        });
+        const points = vtkPoints.newInstance();
+        points.setData(new Float32Array(coords), 3);
+        const polys = vtkCellArray.newInstance({
+          values: new Uint32Array([
+            cellPointIds.length,
+            ...Array.from(cellPointIds, (_, i) => i),
+          ]),
+        });
+        const poly = vtkPolyData.newInstance();
+        poly.setPoints(points);
+        poly.setPolys(polys);
+        const faceMapper = vtkMapper.newInstance();
+        faceMapper.setInputData(poly);
+        const faceActor = vtkActor.newInstance();
+        faceActor.setMapper(faceMapper);
+        const [sx, sy, sz] = actor.getScale();
+        const [px, py, pz] = actor.getPosition();
+        const [ox, oy, oz] = actor.getOrientation();
+        faceActor.setScale(sx, sy, sz);
+        faceActor.setPosition(px, py, pz);
+        faceActor.setOrientation(ox, oy, oz);
+        faceActor.setPickable(false);
+        const p = faceActor.getProperty();
+        p.setLighting(false);
+        p.setAmbient(1);
+        p.setDiffuse(0);
+        p.setColor(1, 1, 1);
+        p.setOpacity(0.58);
+        this.overlayRenderers.get(viewport.id)?.addActor(faceActor);
+        this.highlightedFace = {
+          actor,
+          cellId,
+          originalColor: [0, 0, 0, 0],
+          viewport,
+          isMainFace: true,
+          mainFaceHighlightActor: faceActor,
+        };
+        viewport.render();
         return;
       }
+      const [imageWidth, imageHeight] = dims;
+      const tileWidth = Math.floor(imageWidth / 3);
+      const tileHeight = Math.floor(imageHeight / 2);
+      const tileCol = cellId % 3;
+      const tileRow = Math.floor(cellId / 3);
+      const x0 = tileCol * tileWidth;
+      const y0 = tileRow * tileHeight;
+
+      const tileBackup = new Uint8Array(tileWidth * tileHeight * 4);
+      let b = 0;
+      for (let y = 0; y < tileHeight; y++) {
+        for (let x = 0; x < tileWidth; x++) {
+          const srcIndex = ((y0 + y) * imageWidth + (x0 + x)) * 4;
+          tileBackup[b++] = pixels[srcIndex];
+          tileBackup[b++] = pixels[srcIndex + 1];
+          tileBackup[b++] = pixels[srcIndex + 2];
+          tileBackup[b++] = pixels[srcIndex + 3];
+        }
+      }
+
+      const bgSampleIndices = [
+        ((y0 + 8) * imageWidth + (x0 + 8)) * 4,
+        ((y0 + 8) * imageWidth + (x0 + tileWidth - 9)) * 4,
+        ((y0 + tileHeight - 9) * imageWidth + (x0 + 8)) * 4,
+        ((y0 + tileHeight - 9) * imageWidth + (x0 + tileWidth - 9)) * 4,
+      ];
+      const bgColor = [0, 0, 0];
+      bgSampleIndices.forEach((idx) => {
+        bgColor[0] += pixels[idx];
+        bgColor[1] += pixels[idx + 1];
+        bgColor[2] += pixels[idx + 2];
+      });
+      bgColor[0] /= bgSampleIndices.length;
+      bgColor[1] /= bgSampleIndices.length;
+      bgColor[2] /= bgSampleIndices.length;
+
+      // Brighten face fill only (not the letter); outer frame stays black below.
+      const glyphThreshold = 42;
+      const faceBrighten = 72;
+      const isGlyphPixel = (x: number, y: number): boolean => {
+        if (x < 0 || x >= tileWidth || y < 0 || y >= tileHeight) {
+          return false;
+        }
+        const idx = ((y0 + y) * imageWidth + (x0 + x)) * 4;
+        const dr = pixels[idx] - bgColor[0];
+        const dg = pixels[idx + 1] - bgColor[1];
+        const db = pixels[idx + 2] - bgColor[2];
+        return Math.sqrt(dr * dr + dg * dg + db * db) >= glyphThreshold;
+      };
+
+      const borderWidth = Math.max(4, Math.floor(tileWidth * 0.035));
+      for (let y = 0; y < tileHeight; y++) {
+        for (let x = 0; x < tileWidth; x++) {
+          const onBorder =
+            x < borderWidth ||
+            x >= tileWidth - borderWidth ||
+            y < borderWidth ||
+            y >= tileHeight - borderWidth;
+          if (onBorder || isGlyphPixel(x, y)) {
+            continue;
+          }
+          const idx = ((y0 + y) * imageWidth + (x0 + x)) * 4;
+          pixels[idx] = Math.min(255, pixels[idx] + faceBrighten);
+          pixels[idx + 1] = Math.min(255, pixels[idx + 1] + faceBrighten);
+          pixels[idx + 2] = Math.min(255, pixels[idx + 2] + faceBrighten);
+        }
+      }
+
+      // Black border around the hovered face tile.
+      for (let y = 0; y < tileHeight; y++) {
+        for (let x = 0; x < tileWidth; x++) {
+          const onBorder =
+            x < borderWidth ||
+            x >= tileWidth - borderWidth ||
+            y < borderWidth ||
+            y >= tileHeight - borderWidth;
+          if (!onBorder) {
+            continue;
+          }
+          const idx = ((y0 + y) * imageWidth + (x0 + x)) * 4;
+          pixels[idx] = 0;
+          pixels[idx + 1] = 0;
+          pixels[idx + 2] = 0;
+        }
+      }
+
+      scalars.modified();
+      imageData.modified();
+      (texture as { modified?: () => void }).modified?.();
+      actor.modified?.();
       this.highlightedFace = {
         actor,
         cellId,
         originalColor: [0, 0, 0, 0],
         viewport,
         isMainFace: true,
-        mainFacePointIds: backup.pointIds,
-        mainFacePositions: backup.positions,
-        mainFaceNormals: backup.normals,
+        mainFaceTextureData: tileBackup,
+        mainFaceTile: {
+          x0,
+          y0,
+          width: tileWidth,
+          height: tileHeight,
+          imageWidth,
+        },
       };
       viewport.render();
       return;
@@ -682,11 +738,49 @@ export class vtkOrientationControllerWidget {
       this.highlightedFace;
 
     if (isMainFace) {
-      const ids = this.highlightedFace.mainFacePointIds;
-      const pos = this.highlightedFace.mainFacePositions;
-      const nrm = this.highlightedFace.mainFaceNormals;
-      if (ids && pos && pos.length === ids.length * 3) {
-        this.restoreMainFaceQuadGeometry(actor, ids, pos, nrm);
+      const backup = this.highlightedFace.mainFaceTextureData;
+      const tile = this.highlightedFace.mainFaceTile;
+      const textures = (
+        actor as unknown as { getTextures?: () => unknown[] }
+      ).getTextures?.();
+      const texture = textures?.[0] as
+        | {
+            getInputData: () => {
+              getPointData: () => {
+                getScalars: () => {
+                  getData: () => Uint8Array | Uint8ClampedArray;
+                  modified: () => void;
+                } | null;
+              };
+              modified: () => void;
+            } | null;
+          }
+        | undefined;
+      const imageData = texture?.getInputData?.();
+      const scalars = imageData?.getPointData().getScalars();
+      const pixels = scalars?.getData();
+      if (backup && tile && scalars && imageData && pixels) {
+        let b = 0;
+        for (let y = 0; y < tile.height; y++) {
+          for (let x = 0; x < tile.width; x++) {
+            const dstIndex =
+              ((tile.y0 + y) * tile.imageWidth + (tile.x0 + x)) * 4;
+            pixels[dstIndex] = backup[b++];
+            pixels[dstIndex + 1] = backup[b++];
+            pixels[dstIndex + 2] = backup[b++];
+            pixels[dstIndex + 3] = backup[b++];
+          }
+        }
+        scalars.modified();
+        imageData.modified();
+        (texture as { modified?: () => void }).modified?.();
+        actor.modified?.();
+      } else if (this.highlightedFace.mainFaceHighlightActor) {
+        const overlayRenderer = this.overlayRenderers.get(viewport.id);
+        overlayRenderer?.removeActor(
+          this.highlightedFace.mainFaceHighlightActor
+        );
+        this.highlightedFace.mainFaceHighlightActor.delete();
       }
       viewport.render();
       this.highlightedFace = null;
@@ -737,13 +831,14 @@ export class vtkOrientationControllerWidget {
     let didDrag = false;
     let pendingPickResult: PickResult | null = null;
     let mouseDownCanvas: { x: number; y: number } | null = null;
+    const clickTolerancePx = 3;
 
     const hoverHandler = (evt: MouseEvent) => {
       if (isMouseDown) {
         if (mouseDownCanvas) {
           const dx = evt.clientX - mouseDownCanvas.x;
           const dy = evt.clientY - mouseDownCanvas.y;
-          if (dx * dx + dy * dy > CLICK_TOLERANCE_PX * CLICK_TOLERANCE_PX) {
+          if (dx * dx + dy * dy > clickTolerancePx * clickTolerancePx) {
             didDrag = true;
           }
         }
