@@ -616,11 +616,13 @@ tokenBtnEl.addEventListener('click', async () => {
     if (response.ok) {
       const data = await response.json();
       c.setToken(data.access_token ?? '');
-      if (data.subscriber_name) {
+      const receivedTopic =
+        typeof data.topic === 'string' ? data.topic.trim() : '';
+      if (receivedTopic) {
+        c.setTopic(receivedTopic);
+        c.setSubscriberName(`CS3D-${receivedTopic}`);
+      } else if (data.subscriber_name) {
         c.setSubscriberName(data.subscriber_name);
-      }
-      if (data.topic) {
-        c.setTopic(data.topic);
       }
       ok = Boolean(c.getConnectionState().token);
     }
