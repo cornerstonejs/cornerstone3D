@@ -88,7 +88,7 @@
     "loglevel": "1.9.2"
   },
   "devDependencies": {
-    "@cornerstonejs/metadata": "workspace:*"
+    "@cornerstonejs/metadata": "4.18.4"
   },
   "peerDependencies": {
     "@cornerstonejs/metadata": ">=4.18.0 <6.0.0-0"
