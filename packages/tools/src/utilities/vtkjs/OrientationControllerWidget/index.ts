@@ -515,9 +515,9 @@ export class vtkOrientationControllerWidget {
       ptsData[o + 1] = cy + vy * scaleFactor;
       ptsData[o + 2] = cz + vz * scaleFactor;
       if (normalsData) {
-        const nx = ptsData[o];
-        const ny = ptsData[o + 1];
-        const nz = ptsData[o + 2];
+        const nx = normalsData[o];
+        const ny = normalsData[o + 1];
+        const nz = normalsData[o + 2];
         const len = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
         normalsData[o] = nx / len;
         normalsData[o + 1] = ny / len;
