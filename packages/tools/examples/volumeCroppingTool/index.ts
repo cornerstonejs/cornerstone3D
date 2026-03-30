@@ -596,21 +596,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
         return;
       }
 
-      croppingTool.configuration.sphereRadius = sphereRadius;
-
-      if (Array.isArray(croppingTool.sphereStates)) {
-        croppingTool.sphereStates.forEach((state) => {
-          if (state?.sphereSource?.setRadius) {
-            state.sphereSource.setRadius(sphereRadius);
-            state.sphereSource.modified();
-          }
-        });
-      }
-
-      const viewport = croppingTool._getViewport?.();
-      if (viewport) {
-        viewport.render();
-      }
+      croppingTool.setHandleRadius(sphereRadius);
     },
     updateLabelOnChange: (value, label) => {
       label.textContent = `Handles size: ${value}`;

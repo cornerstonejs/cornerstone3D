@@ -560,6 +560,32 @@ class VolumeCroppingTool extends BaseTool {
   }
 
   /**
+   * Sets the radius of all cropping handles and re-renders the viewport.
+   *
+   * @param radius - New handle radius in world units
+   */
+  setHandleRadius(radius: number) {
+    this.configuration.sphereRadius = radius;
+
+    this.sphereStates.forEach((state) => {
+      if (state?.sphereSource?.setRadius) {
+        state.sphereSource.setRadius(radius);
+        state.sphereSource.modified();
+      }
+    });
+
+    const viewportsInfo = this._getViewportsInfo();
+    const [viewport3D] = viewportsInfo;
+    if (!viewport3D) {
+      return;
+    }
+
+    const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
+    const viewport = renderingEngine?.getViewport(viewport3D.viewportId);
+    viewport?.render();
+  }
+
+  /**
    * Gets the current visibility state of the clipping planes.
    *
    * @returns Whether the clipping planes are currently visible and actively cropping the volume
