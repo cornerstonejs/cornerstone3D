@@ -1,8 +1,8 @@
 export { CastClient, type CastTransport } from './CastClient';
 export type {
   HubConfig,
+  SessionConfig,
   HubRuntimeState,
-  ActiveHub,
   CastMessage,
   CastClientConfig,
 } from './types';

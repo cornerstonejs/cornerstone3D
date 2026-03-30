@@ -366,6 +366,7 @@ const HUB_DEFINITIONS = {
   local: {
     hubEndpoint: 'http://127.0.0.1:2017/api/hub',
     authEndpoint: 'http://127.0.0.1:2017/oauth/token',
+    product_name: 'CS3D-EXAMPLE',
     client_id: 'client_id_3d_Slicer',
     client_secret: 'client_secret_3d_Slicer',
   },
@@ -374,6 +375,7 @@ const HUB_DEFINITIONS = {
       'https://cast-hub-g6abetanhjesb6cx.westeurope-01.azurewebsites.net/api/hub',
     authEndpoint:
       'https://cast-hub-g6abetanhjesb6cx.westeurope-01.azurewebsites.net/oauth/token',
+    product_name: 'CS3D-EXAMPLE',
     client_id: 'client_id_3d_Slicer',
     client_secret: 'client_secret_3d_Slicer',
   },
@@ -385,6 +387,7 @@ function applyHubPreset(hubKey: keyof typeof HUB_DEFINITIONS): void {
   const hubDef = HUB_DEFINITIONS[hubKey];
   hubEndpointEl.value = hubDef.hubEndpoint;
   tokenEndpointEl.value = hubDef.authEndpoint;
+  productNameEl.value = hubDef.product_name;
   selectedClientId = hubDef.client_id;
   selectedClientSecret = hubDef.client_secret;
   try {
@@ -534,19 +537,24 @@ function parseActorField(raw: string): unknown | undefined {
 }
 
 function buildHubConfig() {
-  const actorsList = parseSubscribeActorsList(subscribeActorsEl.value);
   return {
     name: 'demo',
     version: '1',
-    events: parseEvents(eventsEl.value),
-    lease: 7200,
     hub_endpoint: hubEndpointEl.value.trim(),
     token_endpoint: tokenEndpointEl.value.trim(),
     client_id: selectedClientId || undefined,
     client_secret: selectedClientSecret || undefined,
+  };
+}
+
+function buildSessionConfig() {
+  const actorsList = parseSubscribeActorsList(subscribeActorsEl.value);
+  return {
     subscriberName: subscriberNameEl.value.trim() || undefined,
     actors: actorsList.length ? actorsList : undefined,
     topic: topicEl.value.trim(),
+    events: parseEvents(eventsEl.value),
+    lease: 7200,
   };
 }
 
@@ -554,8 +562,10 @@ function ensureClient(recreate = false): CastClient {
   if (!client || recreate) {
     client?.destroy();
     const hub = buildHubConfig();
+    const session = buildSessionConfig();
     client = new CastClient({
       hub,
+      session,
       productName: productNameEl.value.trim() || 'CS3D-EXAMPLE',
       callbackUrl: `${window.location.origin}/castCallback`,
       autoReconnect: true,
@@ -617,16 +627,16 @@ tokenBtnEl.addEventListener('click', async () => {
     subscribeBtnEl.disabled = !ok;
     if (ok) {
       setConnection('token-ready', 'Token ready');
-      const hub = c.getHubConfig();
-      if (hub.subscriberName) {
-        subscriberNameEl.value = hub.subscriberName;
-        getSubscriberEl.value = hub.subscriberName;
+      const session = c.getSessionConfig();
+      if (session.subscriberName) {
+        subscriberNameEl.value = session.subscriberName;
+        getSubscriberEl.value = session.subscriberName;
       }
-      if (hub.topic) {
-        topicEl.value = hub.topic;
-        publishTopicEl.value = hub.topic;
-        getTopicEl.value = hub.topic;
-        topicDisplayEl.value = hub.topic;
+      if (session.topic) {
+        topicEl.value = session.topic;
+        publishTopicEl.value = session.topic;
+        getTopicEl.value = session.topic;
+        topicDisplayEl.value = session.topic;
       }
       addMessage('received', 'Token', 'Token obtained');
     } else {

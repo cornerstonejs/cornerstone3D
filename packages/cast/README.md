@@ -19,3 +19,27 @@ Then open the dev server URL (default port from `CS3D_PORT` or `3000`). Set **To
 Optional query parameter: `?topic=your-topic` pre-fills the topic fields.
 
 The full static example index is built with `yarn build-all-examples` (output under `.static-examples/castClient.html`).
+
+## Config Shape
+
+`CastClient` now separates static hub endpoints from session values:
+
+```ts
+const client = new CastClient({
+  hub: {
+    name: 'demo',
+    version: '1',
+    hub_endpoint: 'https://host/api/hub',
+    token_endpoint: 'https://host/oauth/token',
+    client_id: 'client_id',
+    client_secret: 'client_secret',
+  },
+  session: {
+    subscriberName: 'CS3D-EXAMPLE',
+    topic: 'my-topic',
+    events: ['*'],
+    lease: 7200,
+    actors: ['WORKLIST_CLIENT'],
+  },
+});
+```

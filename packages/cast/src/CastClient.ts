@@ -1,9 +1,9 @@
 import type {
   HubConfig,
+  SessionConfig,
   CastMessage,
   CastClientConfig,
   HubRuntimeState,
-  ActiveHub,
 } from './types';
 import { generateMessageId } from './generateMessageId';
 import { RECONNECT_INTERVAL_MS, SUBSCRIBE_TIMEOUT_MS } from './constants';
@@ -13,6 +13,7 @@ export interface CastTransport {
 }
 
 const DEFAULT_MESSAGE_ID_PREFIX = 'CS3D-';
+type ActiveHub = HubConfig & SessionConfig & HubRuntimeState;
 
 /**
  * Cast client for a single hub configuration.
@@ -26,12 +27,14 @@ const DEFAULT_MESSAGE_ID_PREFIX = 'CS3D-';
  *   hub: {
  *     name: 'demo',
  *     version: '1',
- *     events: ['*'],
- *     lease: 7200,
  *     hub_endpoint: 'https://host/api/hub',
  *     token_endpoint: 'https://host/oauth/token',
  *     client_id: 'client_id',
  *     client_secret: 'client_secret',
+ *   },
+ *   session: {
+ *     events: ['*'],
+ *     lease: 7200,
  *     subscriberName: 'CS3D-EXAMPLE',
  *     topic: 'my-topic',
  *   },
@@ -63,9 +66,13 @@ export class CastClient implements CastTransport {
 
   constructor(config: CastClientConfig = {}) {
     this._config = config;
-    this._hub = config.hub
-      ? { ...config.hub, ...this._createEmptyHubRuntimeState() }
-      : this._createEmptyHub();
+    this._hub = {
+      ...this._createEmptyHubConfig(),
+      ...config.hub,
+      ...this._createEmptySessionConfig(),
+      ...config.session,
+      ...this._createEmptyHubRuntimeState(),
+    };
 
     if (config.autoReconnect) {
       this._reconnectInterval = setInterval(
@@ -91,15 +98,30 @@ export class CastClient implements CastTransport {
 
   /** Get immutable hub configuration values (without runtime connection state). */
   getHubConfig(): HubConfig {
-    const {
-      token,
-      subscribed,
-      resubscribeRequested,
-      websocket,
-      lastPublishedMessageID,
-      ...config
-    } = this._hub;
-    return config;
+    const hub = this._hub;
+    return {
+      name: hub.name,
+      friendlyName: hub.friendlyName,
+      productName: hub.productName,
+      version: hub.version,
+      hub_endpoint: hub.hub_endpoint,
+      authorization_endpoint: hub.authorization_endpoint,
+      token_endpoint: hub.token_endpoint,
+      client_id: hub.client_id,
+      client_secret: hub.client_secret,
+    };
+  }
+
+  /** Get mutable session configuration values (topic, actors, events, lease). */
+  getSessionConfig(): SessionConfig {
+    const hub = this._hub;
+    return {
+      subscriberName: hub.subscriberName,
+      actors: hub.actors,
+      topic: hub.topic,
+      events: hub.events,
+      lease: hub.lease,
+    };
   }
 
   /** Get current runtime connection state (token, websocket, subscribe flags). */
@@ -423,21 +445,25 @@ export class CastClient implements CastTransport {
     return this._config.messageIdPrefix ?? DEFAULT_MESSAGE_ID_PREFIX;
   }
 
-  private _createEmptyHub(): ActiveHub {
+  private _createEmptyHubConfig(): HubConfig {
     return {
       name: '',
       friendlyName: '',
       productName: '',
       version: '',
-      events: [],
-      lease: 999,
       hub_endpoint: '',
       authorization_endpoint: '',
       token_endpoint: '',
-      ...this._createEmptyHubRuntimeState(),
+    };
+  }
+
+  private _createEmptySessionConfig(): SessionConfig {
+    return {
       subscriberName: '',
       actors: [],
       topic: '',
+      events: [],
+      lease: 999,
     };
   }
 

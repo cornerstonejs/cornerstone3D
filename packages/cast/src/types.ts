@@ -3,17 +3,20 @@ export interface HubConfig {
   friendlyName?: string;
   productName?: string;
   version?: string;
-  events: string[];
-  lease: number;
   hub_endpoint: string;
   authorization_endpoint?: string;
   token_endpoint: string;
   client_id?: string;
   client_secret?: string;
+}
+
+export interface SessionConfig {
   subscriberName?: string;
   /** Optional; each entry is sent as a repeated `subscriber.actor` form field. */
   actors?: string[];
   topic?: string;
+  events?: string[];
+  lease?: number;
 }
 
 export interface HubRuntimeState {
@@ -23,8 +26,6 @@ export interface HubRuntimeState {
   websocket: WebSocket | null;
   lastPublishedMessageID: string;
 }
-
-export type ActiveHub = HubConfig & HubRuntimeState;
 
 export interface CastMessage {
   id?: string;
@@ -40,6 +41,7 @@ export interface CastMessage {
 
 export interface CastClientConfig {
   hub?: HubConfig;
+  session?: SessionConfig;
   productName?: string;
   callbackUrl?: string;
   autoStart?: boolean;
