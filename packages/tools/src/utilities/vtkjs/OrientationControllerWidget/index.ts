@@ -180,10 +180,13 @@ export class vtkOrientationControllerWidget {
       this.removeActorsFromViewport(viewportId, viewport);
     }
 
-    const renderWindow = (viewport as Types.IViewport)
+    const offscreenMultiRenderWindow = (viewport as Types.IViewport)
       .getRenderingEngine()
-      .getOffscreenMultiRenderWindow(viewport.id)
-      .getRenderWindow();
+      ?.getOffscreenMultiRenderWindow(viewport.id);
+    const renderWindow = offscreenMultiRenderWindow?.getRenderWindow();
+    if (!renderWindow) {
+      return;
+    }
 
     const mainRenderer =
       (viewport as Types.IViewport)
