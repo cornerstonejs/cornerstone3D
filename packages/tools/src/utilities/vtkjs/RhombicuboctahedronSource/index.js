@@ -19,6 +19,9 @@ const EDGE_FACES = [
   20, 21, 10, 4, 13, 23, 22, 14, 4, 12, 19, 18, 15,
 ];
 
+// Half-extent of the square main faces in geometry/model space (not pixels).
+const FACE_HALF_SIZE = 0.792;
+
 function vtkRhombicuboctahedronSource(publicAPI, model) {
   model.classHierarchy.push('vtkRhombicuboctahedronSource');
 
@@ -36,33 +39,32 @@ function vtkRhombicuboctahedronSource(publicAPI, model) {
     }
 
     const phi = 1.4;
-    const faceSize = 0.792;
     const vertices = [];
 
-    vertices.push(-faceSize, -faceSize, -phi);
-    vertices.push(faceSize, -faceSize, -phi);
-    vertices.push(faceSize, faceSize, -phi);
-    vertices.push(-faceSize, faceSize, -phi);
-    vertices.push(-faceSize, -faceSize, phi);
-    vertices.push(faceSize, -faceSize, phi);
-    vertices.push(faceSize, faceSize, phi);
-    vertices.push(-faceSize, faceSize, phi);
-    vertices.push(-faceSize, -phi, -faceSize);
-    vertices.push(faceSize, -phi, -faceSize);
-    vertices.push(faceSize, -phi, faceSize);
-    vertices.push(-faceSize, -phi, faceSize);
-    vertices.push(-faceSize, phi, -faceSize);
-    vertices.push(faceSize, phi, -faceSize);
-    vertices.push(faceSize, phi, faceSize);
-    vertices.push(-faceSize, phi, faceSize);
-    vertices.push(-phi, -faceSize, -faceSize);
-    vertices.push(-phi, -faceSize, faceSize);
-    vertices.push(-phi, faceSize, faceSize);
-    vertices.push(-phi, faceSize, -faceSize);
-    vertices.push(phi, -faceSize, -faceSize);
-    vertices.push(phi, -faceSize, faceSize);
-    vertices.push(phi, faceSize, faceSize);
-    vertices.push(phi, faceSize, -faceSize);
+    vertices.push(-FACE_HALF_SIZE, -FACE_HALF_SIZE, -phi);
+    vertices.push(FACE_HALF_SIZE, -FACE_HALF_SIZE, -phi);
+    vertices.push(FACE_HALF_SIZE, FACE_HALF_SIZE, -phi);
+    vertices.push(-FACE_HALF_SIZE, FACE_HALF_SIZE, -phi);
+    vertices.push(-FACE_HALF_SIZE, -FACE_HALF_SIZE, phi);
+    vertices.push(FACE_HALF_SIZE, -FACE_HALF_SIZE, phi);
+    vertices.push(FACE_HALF_SIZE, FACE_HALF_SIZE, phi);
+    vertices.push(-FACE_HALF_SIZE, FACE_HALF_SIZE, phi);
+    vertices.push(-FACE_HALF_SIZE, -phi, -FACE_HALF_SIZE);
+    vertices.push(FACE_HALF_SIZE, -phi, -FACE_HALF_SIZE);
+    vertices.push(FACE_HALF_SIZE, -phi, FACE_HALF_SIZE);
+    vertices.push(-FACE_HALF_SIZE, -phi, FACE_HALF_SIZE);
+    vertices.push(-FACE_HALF_SIZE, phi, -FACE_HALF_SIZE);
+    vertices.push(FACE_HALF_SIZE, phi, -FACE_HALF_SIZE);
+    vertices.push(FACE_HALF_SIZE, phi, FACE_HALF_SIZE);
+    vertices.push(-FACE_HALF_SIZE, phi, FACE_HALF_SIZE);
+    vertices.push(-phi, -FACE_HALF_SIZE, -FACE_HALF_SIZE);
+    vertices.push(-phi, -FACE_HALF_SIZE, FACE_HALF_SIZE);
+    vertices.push(-phi, FACE_HALF_SIZE, FACE_HALF_SIZE);
+    vertices.push(-phi, FACE_HALF_SIZE, -FACE_HALF_SIZE);
+    vertices.push(phi, -FACE_HALF_SIZE, -FACE_HALF_SIZE);
+    vertices.push(phi, -FACE_HALF_SIZE, FACE_HALF_SIZE);
+    vertices.push(phi, FACE_HALF_SIZE, FACE_HALF_SIZE);
+    vertices.push(phi, FACE_HALF_SIZE, -FACE_HALF_SIZE);
 
     let textureCoords = null;
     if (model.generate3DTextureCoordinates) {

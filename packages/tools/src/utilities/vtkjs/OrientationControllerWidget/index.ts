@@ -40,6 +40,8 @@ export interface MouseHandlersCallbacks {
   onFaceHover?: (result: PickResult | null) => void;
 }
 
+const CLICK_TOLERANCE_PX = 3;
+
 export class vtkOrientationControllerWidget {
   private static readonly ACTIVE_DRAG_ATTR =
     'data-cs-orientation-controller-drag';
@@ -723,14 +725,13 @@ export class vtkOrientationControllerWidget {
     let didDrag = false;
     let pendingPickResult: PickResult | null = null;
     let mouseDownCanvas: { x: number; y: number } | null = null;
-    const clickTolerancePx = 3;
 
     const hoverHandler = (evt: MouseEvent) => {
       if (isMouseDown) {
         if (mouseDownCanvas) {
           const dx = evt.clientX - mouseDownCanvas.x;
           const dy = evt.clientY - mouseDownCanvas.y;
-          if (dx * dx + dy * dy > clickTolerancePx * clickTolerancePx) {
+          if (dx * dx + dy * dy > CLICK_TOLERANCE_PX * CLICK_TOLERANCE_PX) {
             didDrag = true;
           }
         }
