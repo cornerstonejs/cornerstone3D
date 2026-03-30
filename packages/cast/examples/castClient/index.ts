@@ -1,6 +1,8 @@
-import { CastClient } from '@cornerstonejs/cast';
-import type { HubConfig } from '@cornerstonejs/cast';
-import { setTitleAndDescription } from '../../../../utils/demo/helpers';
+import { CastClient } from '../../src';
+import {
+  setTitleAndDescription,
+  createInfoSection,
+} from '../../../../utils/demo/helpers';
 
 setTitleAndDescription(
   'Cast client API',
@@ -16,12 +18,14 @@ const DEFAULT_GET_ACTOR_KEYWORD = 'HUB';
 /** Default Cast subscriber name (Subscribe + Get). */
 const DEFAULT_SUBSCRIBER_NAME = 'CS3D-EXAMPLE';
 
-const root = document.getElementById('content');
-if (!root) throw new Error('Missing #content');
+const content = document.getElementById('content');
+if (!content) throw new Error('Missing #content');
+
+const root = content;
 
 const css = `
-.cast { max-width: 1100px; margin: 0 auto; color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-.cast .container { background:#3d3d3d; border-radius:8px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,.5); }
+.cast { max-width: 1100px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+.cast .container { background:#3d3d3d; border-radius:8px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,.5); color:#e0e0e0; }
 .cast .cast-header { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:16px; margin-bottom:0; }
 .cast .header-title { font-size:1.75rem; font-weight:700; color:#e0e0e0; }
 .cast .header-center { display:flex; justify-content:center; }
@@ -94,7 +98,7 @@ root.innerHTML = `
 <div class="container">
   <div class="cast-header"><span class="header-title">Cast client</span><div class="header-center"><div id="connectionStatus" class="status status-header disconnected"><strong>Status:</strong> <span id="statusText">Not connected</span></div></div><div class="header-right"><button type="button" id="hubAdminPortalBtn" class="header-token-btn">Hub Admin portal</button></div></div>
   <div class="connection-controls section">
-    <h2>Auth</h2>
+    <h2>Authenticate</h2>
     <div class="grid">
       <div><label for="hubSelect">Hub</label><select id="hubSelect"><option value="local">3D Slicer local</option><option value="cloud" selected>3D Slicer cloud</option></select></div>
       <div style="grid-column:1/-1"><div class="auth-topic-pair"><button type="button" id="tokenBtn">Authenticate</button><div><label for="topicDisplay">Topic</label><div><input id="topicDisplay" type="text" spellcheck="false" autocomplete="off" /><button type="button" id="topicUpdateBtn">Update</button></div></div></div></div>
@@ -205,6 +209,20 @@ root.innerHTML = `
     <div id="messages" class="messages"></div>
   </div>
 </div>`;
+
+createInfoSection(root, { title: 'Instructions' })
+  .addInstruction('Select a Hub (local 3D Slicer or cloud) from the dropdown.')
+  .addInstruction('Click Authenticate to obtain a user id and access token.')
+  .addInstruction(
+    'Click Subscribe to open a WebSocket connection and start receiving events from the hub.'
+  )
+  .addInstruction('Use Publish to send an event to the hub.')
+  .addInstruction(
+    'Use Get to fetch context from a FHIRCast hub or other data from cast compliant IHE actors.'
+  )
+  .addInstruction(
+    'Use Collaborate to open a conference client for real-time collaboration.'
+  );
 
 function byId<T extends HTMLElement>(id: string): T {
   const el = document.getElementById(id);
@@ -515,11 +533,11 @@ function parseActorField(raw: string): unknown | undefined {
   }
 }
 
-function buildHubConfig(): HubConfig {
+function buildHubConfig() {
   const actorsList = parseSubscribeActorsList(subscribeActorsEl.value);
   return {
     name: 'demo',
-    enabled: true,
+    version: '1',
     events: parseEvents(eventsEl.value),
     lease: 7200,
     hub_endpoint: hubEndpointEl.value.trim(),
@@ -529,7 +547,7 @@ function buildHubConfig(): HubConfig {
     subscriberName: subscriberNameEl.value.trim() || undefined,
     actors: actorsList.length ? actorsList : undefined,
     topic: topicEl.value.trim(),
-  } as HubConfig;
+  };
 }
 
 function ensureClient(recreate = false): CastClient {
@@ -537,8 +555,7 @@ function ensureClient(recreate = false): CastClient {
     client?.destroy();
     const hub = buildHubConfig();
     client = new CastClient({
-      hubs: [hub],
-      defaultHub: hub.name,
+      hub,
       productName: productNameEl.value.trim() || 'CS3D-EXAMPLE',
       callbackUrl: `${window.location.origin}/castCallback`,
       autoReconnect: true,
@@ -588,19 +605,19 @@ tokenBtnEl.addEventListener('click', async () => {
     let ok = false;
     if (response.ok) {
       const data = await response.json();
-      c.getHub().token = data.access_token ?? '';
+      c.setToken(data.access_token ?? '');
       if (data.subscriber_name) {
-        c.getHub().subscriberName = data.subscriber_name;
+        c.setSubscriberName(data.subscriber_name);
       }
       if (data.topic) {
         c.setTopic(data.topic);
       }
-      ok = Boolean(c.getHub().token);
+      ok = Boolean(c.getHubState().token);
     }
     subscribeBtnEl.disabled = !ok;
     if (ok) {
       setConnection('token-ready', 'Token ready');
-      const hub = c.getHub();
+      const hub = c.getHubConfig();
       if (hub.subscriberName) {
         subscriberNameEl.value = hub.subscriberName;
         getSubscriberEl.value = hub.subscriberName;
@@ -687,7 +704,7 @@ publishBtnEl.addEventListener('click', async () => {
   if (actorValue !== undefined) {
     payload.actor = actorValue;
   }
-  const res = await client.publish(payload, client.getHub());
+  const res = await client.publish(payload);
   if (res?.ok) {
     addMessage('sent', 'Publish', payload);
   } else {

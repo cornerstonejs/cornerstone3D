@@ -1,9 +1,14 @@
-import type { HubConfig, CastMessage, CastClientConfig } from './types';
+import type {
+  HubConfig,
+  CastMessage,
+  CastClientConfig,
+  HubRuntimeState,
+  ActiveHub,
+} from './types';
 import { generateMessageId } from './generateMessageId';
 import { RECONNECT_INTERVAL_MS, SUBSCRIBE_TIMEOUT_MS } from './constants';
 
 export interface CastTransport {
-  getHub(): HubConfig;
   sendGetResponse(requestId: string, data: unknown, topic?: string): void;
 }
 
@@ -11,17 +16,15 @@ const DEFAULT_MESSAGE_ID_PREFIX = 'CS3D-';
 
 export class CastClient implements CastTransport {
   private _config: CastClientConfig;
-  private _hub: HubConfig;
+  private _hub: ActiveHub;
   private _reconnectInterval: ReturnType<typeof setInterval> | null = null;
   private _onMessageCallback: ((message: CastMessage) => void) | null = null;
 
   constructor(config: CastClientConfig = {}) {
     this._config = config;
-    this._hub = this._createEmptyHub();
-
-    if (config.hubs?.length && config.defaultHub) {
-      this.setHub(config.defaultHub);
-    }
+    this._hub = config.hub
+      ? { ...config.hub, ...this._createEmptyHubRuntimeState() }
+      : this._createEmptyHub();
 
     if (config.autoReconnect) {
       this._reconnectInterval = setInterval(
@@ -43,37 +46,46 @@ export class CastClient implements CastTransport {
     this._onMessageCallback = callback;
   }
 
-  setHub(hubName: string): boolean {
-    if (hubName === this._hub.name) {
-      console.debug('CastClient: setHub: hub already set to', hubName);
-      return true;
-    }
-    console.debug('CastClient: setting hub to', hubName);
-    const hubs = this._config.hubs;
-    if (!hubs) {
-      console.debug('CastClient: hub not found in configuration', hubName);
-      return false;
-    }
-    for (const hubConfig of hubs) {
-      if (hubConfig.enabled && hubConfig.name === hubName) {
-        if (this._hub.subscribed) {
-          this.unsubscribe();
-        }
-        this._hub = { ...hubConfig, subscribed: false } as HubConfig;
-        return true;
-      }
-    }
-    console.debug('CastClient: hub not found in configuration', hubName);
-    return false;
+  getHubConfig(): HubConfig {
+    const {
+      token,
+      subscribed,
+      resubscribeRequested,
+      websocket,
+      lastPublishedMessageID,
+      ...config
+    } = this._hub;
+    return config;
   }
 
-  getHub(): HubConfig {
-    return this._hub;
+  getHubState(): HubRuntimeState {
+    const {
+      token,
+      subscribed,
+      resubscribeRequested,
+      websocket,
+      lastPublishedMessageID,
+    } = this._hub;
+    return {
+      token,
+      subscribed,
+      resubscribeRequested,
+      websocket,
+      lastPublishedMessageID,
+    };
   }
 
   setTopic(topic: string): void {
     console.debug('CastClient: setting topic to', topic);
     this._hub.topic = topic;
+  }
+
+  setToken(token: string): void {
+    this._hub.token = token;
+  }
+
+  setSubscriberName(subscriberName: string): void {
+    this._hub.subscriberName = subscriberName;
   }
 
   async getToken(): Promise<boolean> {
@@ -286,7 +298,7 @@ export class CastClient implements CastTransport {
 
   async publish(
     castMessage: Record<string, unknown>,
-    hub: HubConfig
+    hub: ActiveHub = this._hub
   ): Promise<Response | null> {
     const timestamp = new Date();
     const msg = { ...castMessage, timestamp: timestamp.toJSON() } as Record<
@@ -341,21 +353,27 @@ export class CastClient implements CastTransport {
     return this._config.messageIdPrefix ?? DEFAULT_MESSAGE_ID_PREFIX;
   }
 
-  private _createEmptyHub(): HubConfig {
+  private _createEmptyHub(): ActiveHub {
     return {
       name: '',
       friendlyName: '',
       productName: '',
-      enabled: false,
+      version: '',
       events: [],
       lease: 999,
       hub_endpoint: '',
       authorization_endpoint: '',
       token_endpoint: '',
-      token: '',
+      ...this._createEmptyHubRuntimeState(),
       subscriberName: '',
       actors: [],
       topic: '',
+    };
+  }
+
+  private _createEmptyHubRuntimeState(): HubRuntimeState {
+    return {
+      token: '',
       lastPublishedMessageID: '',
       subscribed: false,
       resubscribeRequested: false,
