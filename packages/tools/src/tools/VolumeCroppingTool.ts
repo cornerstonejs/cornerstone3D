@@ -922,9 +922,11 @@ class VolumeCroppingTool extends BaseTool {
   };
 
   _updateClippingPlanes(viewport) {
-    const actorEntry = this._getVolumeActorEntry(viewport);
-    const actor = actorEntry.actor;
-    const mapper = actor.getMapper();
+    const actor = this._getVolumeActor(viewport);
+    const mapper = this._getVolumeMapper(viewport);
+    if (!actor || !mapper) {
+      return;
+    }
     const matrix = actor.getMatrix();
 
     if (!this.configuration.showClippingPlanes) {
@@ -1377,7 +1379,10 @@ class VolumeCroppingTool extends BaseTool {
   }
 
   _updateClippingPlanesFromFaceSpheres(viewport) {
-    const mapper = this._getVolumeActorEntry(viewport).actor.getMapper();
+    const mapper = this._getVolumeMapper(viewport);
+    if (!mapper) {
+      return;
+    }
     // Update origins in originalClippingPlanes
     this.originalClippingPlanes[PLANEINDEX.XMIN].origin = [
       ...this.sphereStates[SPHEREINDEX.XMIN].point,
