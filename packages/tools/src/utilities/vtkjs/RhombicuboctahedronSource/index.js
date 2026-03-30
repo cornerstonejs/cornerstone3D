@@ -36,7 +36,8 @@ function vtkRhombicuboctahedronSource(publicAPI, model) {
     }
 
     const phi = 1.4;
-    const faceSize = 0.792;
+    // Smaller main faces (0.75 vs 0.95) make edge and corner faces easier to click
+    const faceSize = 0.88;
     const vertices = [];
 
     vertices.push(-faceSize, -faceSize, -phi);

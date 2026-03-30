@@ -1,727 +1,615 @@
-import { BaseTool } from './base';
+import type { Types, VolumeViewport3D } from '@cornerstonejs/core';
 import {
-  getEnabledElementByIds,
+  RenderingEngine,
   Enums,
-  eventTarget,
+  setVolumesForViewports,
+  volumeLoader,
 } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
-import type { Point3 } from '@cornerstonejs/core/types';
-import { getToolGroup } from '../store/ToolGroupManager';
-import * as ToolsEnums from '../enums';
-import { vec3, mat4, quat } from 'gl-matrix';
-import { vtkOrientationControllerWidget } from '../utilities/vtkjs/OrientationControllerWidget';
-
-/**
- * OrientationControllerTool provides an interactive orientation marker
- * using a rhombicuboctahedron (26-faced polyhedron) with clickable surfaces
- * for intuitive 3D volume reorientation.
- *
- * Features:
- * - 6 main square faces with anatomical labels (L/R, A/P, S/I)
- * - 12 edge squares for diagonal orientations
- * - 8 corner triangles for tri-axial views
- * - Smooth animated camera transitions
- * - Configurable appearance and positioning
- *
- * @public
- * @class OrientationControllerTool
- * @extends BaseTool
- */
-const ADD_MARKER_DELAY_MS = 500;
-const POSITION_RETRY_DELAY_MS = 1000;
-
-type FaceColors = {
-  topBottom: number[];
-  frontBack: number[];
-  leftRight: number[];
-};
-
-type LetterColors = {
-  zMinus: number[];
-  zPlus: number[];
-  yMinus: number[];
-  yPlus: number[];
-  xMinus: number[];
-  xPlus: number[];
-};
-
-const FACE_COLOR_SCHEMES: Record<string, FaceColors> = {
-  marker: {
-    topBottom: [0, 0, 255],
-    frontBack: [0, 255, 255],
-    leftRight: [255, 255, 0],
-  },
-  gray: {
-    topBottom: [180, 180, 180],
-    frontBack: [180, 180, 180],
-    leftRight: [180, 180, 180],
-  },
-  rgy: {
-    topBottom: [255, 0, 0],
-    frontBack: [0, 255, 0],
-    leftRight: [255, 255, 0],
-  },
-};
-
-const LETTER_COLOR_SCHEMES: Record<string, LetterColors> = {
-  mixed: {
-    zMinus: [255, 255, 255],
-    zPlus: [255, 255, 255],
-    yMinus: [255, 255, 255],
-    yPlus: [255, 255, 255],
-    xMinus: [0, 0, 0],
-    xPlus: [0, 0, 0],
-  },
-  rgy: {
-    zMinus: [255, 255, 255],
-    zPlus: [255, 255, 255],
-    yMinus: [255, 255, 255],
-    yPlus: [255, 255, 255],
-    xMinus: [0, 0, 0],
-    xPlus: [0, 0, 0],
-  },
-  white: {
-    zMinus: [255, 255, 255],
-    zPlus: [255, 255, 255],
-    yMinus: [255, 255, 255],
-    yPlus: [255, 255, 255],
-    xMinus: [255, 255, 255],
-    xPlus: [255, 255, 255],
-  },
-  black: {
-    zMinus: [0, 0, 0],
-    zPlus: [0, 0, 0],
-    yMinus: [0, 0, 0],
-    yPlus: [0, 0, 0],
-    xMinus: [0, 0, 0],
-    xPlus: [0, 0, 0],
-  },
-};
-
-const DEFAULT_FACE_COLOR_SCHEME = 'rgy';
-const DEFAULT_LETTER_COLOR_SCHEME = 'mixed';
-
-const ANIMATE_RESET_CAMERA_OPTIONS = {
-  resetZoom: false,
-  resetPan: true,
-  resetToCenter: true,
-} as const;
-
-class OrientationControllerTool extends BaseTool {
-  static toolName = 'OrientationControllerTool';
-
-  private widget = new vtkOrientationControllerWidget();
-  private resizeObservers = new Map<string, ResizeObserver>();
-  private cameraHandlers = new Map<string, (evt: CustomEvent) => void>();
-  private animationFrameHandles = new Map<string, number>();
-  private animationTokens = new Map<string, number>();
-
-  constructor(
-    toolProps = {},
-    defaultToolProps = {
-      supportedInteractionTypes: ['Mouse'],
-      configuration: {
-        enabled: true,
-        opacity: 1.0,
-        size: 0.04,
-        position: 'bottom-right',
-        colorScheme: 'rgy',
-        letterColorScheme: 'mixed',
-        showEdgeFaces: true,
-        showCornerFaces: true,
-        keepOrientationUp: true,
-      },
-    }
-  ) {
-    super(toolProps, defaultToolProps);
-  }
-
-  private _getViewportsInfo = () => {
-    const viewports = getToolGroup(this.toolGroupId)?.viewportsInfo;
-    return viewports || [];
-  };
-
-  private getPositionConfig() {
-    return {
-      position: this.configuration.position || 'bottom-right',
-      size: this.configuration.size || 0.04,
-    };
-  }
-
-  private getFaceColors(): {
-    topBottom: number[];
-    frontBack: number[];
-    leftRight: number[];
-  } {
-    const colorScheme = this.configuration.colorScheme || 'rgy';
-
-    // If faceColors are explicitly provided, use them (but ensure they have the required properties)
-    if (this.configuration.faceColors) {
-      const provided = this.configuration.faceColors;
-      if (provided.topBottom && provided.frontBack && provided.leftRight) {
-        return {
-          topBottom: provided.topBottom,
-          frontBack: provided.frontBack,
-          leftRight: provided.leftRight,
-        };
-      }
-    }
-
-    return (
-      FACE_COLOR_SCHEMES[colorScheme] ??
-      FACE_COLOR_SCHEMES[DEFAULT_FACE_COLOR_SCHEME]
-    );
-  }
-
-  private getLetterColors(): {
-    zMinus: number[];
-    zPlus: number[];
-    yMinus: number[];
-    yPlus: number[];
-    xMinus: number[];
-    xPlus: number[];
-  } {
-    const letterColorScheme = this.configuration.letterColorScheme || 'mixed';
-    return (
-      LETTER_COLOR_SCHEMES[letterColorScheme] ??
-      LETTER_COLOR_SCHEMES[DEFAULT_LETTER_COLOR_SCHEME]
-    );
-  }
-
-  onSetToolEnabled(): void {
-    // Remove any existing markers first to ensure clean recreation
-    this.removeMarkers();
-    this.addMarkers();
-
-    eventTarget.addEventListener(
-      ToolsEnums.Events.TOOLGROUP_VIEWPORT_ADDED,
-      this.onViewportAdded
-    );
-    eventTarget.addEventListener(
-      ToolsEnums.Events.TOOLGROUP_VIEWPORT_REMOVED,
-      this.onViewportRemoved
-    );
-  }
-
-  onSetToolDisabled(): void {
-    this.removeMarkers();
-
-    eventTarget.removeEventListener(
-      ToolsEnums.Events.TOOLGROUP_VIEWPORT_ADDED,
-      this.onViewportAdded
-    );
-    eventTarget.removeEventListener(
-      ToolsEnums.Events.TOOLGROUP_VIEWPORT_REMOVED,
-      this.onViewportRemoved
-    );
-  }
-
-  onSetToolConfiguration = (): void => {
-    // If tool is enabled, recreate markers with new configuration
-    const viewportsInfo = this._getViewportsInfo();
-    const hasActiveMarkers = viewportsInfo.some(({ viewportId }) => {
-      return this.widget.getActors(viewportId) !== null;
-    });
-
-    if (hasActiveMarkers) {
-      // Remove existing markers and recreate with new configuration
-      this.removeMarkers();
-      this.addMarkers();
-    }
-  };
-
-  private onViewportAdded = (evt: CustomEvent): void => {
-    const { viewportId, renderingEngineId, toolGroupId } = evt.detail;
-
-    if (toolGroupId !== this.toolGroupId) {
-      return;
-    }
-
-    if (this.widget.getActors(viewportId)) {
-      return;
-    }
-
-    setTimeout(() => {
-      this.addMarkerToViewport(viewportId, renderingEngineId);
-    }, ADD_MARKER_DELAY_MS);
-  };
-
-  private onViewportRemoved = (evt: CustomEvent): void => {
-    const { viewportId, renderingEngineId, toolGroupId } = evt.detail;
-
-    if (toolGroupId !== this.toolGroupId) {
-      return;
-    }
-
-    const enabledElement = getEnabledElementByIds(
-      viewportId,
-      renderingEngineId
-    );
-
-    if (enabledElement) {
-      const { viewport } = enabledElement;
-      if ((viewport as Types.IViewport).isOrientationChangeable()) {
-        this.widget.removeActorsFromViewport(
-          viewportId,
-          viewport as Types.IVolumeViewport
-        );
-      }
-      const cameraHandler = this.cameraHandlers.get(viewportId);
-      if (cameraHandler) {
-        viewport.element.removeEventListener(
-          Enums.Events.CAMERA_MODIFIED,
-          cameraHandler as EventListener
-        );
-        this.cameraHandlers.delete(viewportId);
-      }
-    }
-
-    this.widget.cleanup(viewportId);
-
-    const resizeObserver = this.resizeObservers.get(viewportId);
-    if (resizeObserver) {
-      resizeObserver.disconnect();
-      this.resizeObservers.delete(viewportId);
-    }
-  };
-
-  private removeMarkers(): void {
-    const viewportsInfo = this._getViewportsInfo();
-
-    viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
-      const enabledElement = getEnabledElementByIds(
-        viewportId,
-        renderingEngineId
-      );
-
-      if (enabledElement) {
-        const { viewport } = enabledElement;
-        if ((viewport as Types.IViewport).isOrientationChangeable()) {
-          this.widget.removeActorsFromViewport(
-            viewportId,
-            viewport as Types.IVolumeViewport
-          );
-        }
-        const cameraHandler = this.cameraHandlers.get(viewportId);
-        if (cameraHandler) {
-          viewport.element.removeEventListener(
-            Enums.Events.CAMERA_MODIFIED,
-            cameraHandler as EventListener
-          );
-          this.cameraHandlers.delete(viewportId);
-        }
-      }
-      const resizeObserver = this.resizeObservers.get(viewportId);
-      if (resizeObserver) {
-        resizeObserver.disconnect();
-        this.resizeObservers.delete(viewportId);
-      }
-    });
-
-    this.widget.cleanup();
-    this.resizeObservers.forEach((observer) => observer.disconnect());
-    this.resizeObservers.clear();
-    this.cameraHandlers.clear();
-    this.animationFrameHandles.forEach((handle) =>
-      cancelAnimationFrame(handle)
-    );
-    this.animationFrameHandles.clear();
-    this.animationTokens.clear();
-  }
-
-  private addMarkers = (): void => {
-    const viewportsInfo = this._getViewportsInfo();
-
-    viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
-      const enabledElement = getEnabledElementByIds(
-        viewportId,
-        renderingEngineId
-      );
-
-      if (!enabledElement) {
-        return;
-      }
-
-      const { viewport } = enabledElement;
-
-      if (!(viewport as Types.IViewport).isOrientationChangeable()) {
-        return;
-      }
-
-      if (this.widget.getActors(viewportId)) {
-        return;
-      }
-
-      setTimeout(() => {
-        this.addMarkerToViewport(viewportId, renderingEngineId);
-      }, ADD_MARKER_DELAY_MS);
-    });
-  };
-
-  private createAnnotatedRhombActor(): ReturnType<
-    vtkOrientationControllerWidget['createActors']
-  > {
-    const faceColors = this.getFaceColors();
-    const letterColors = this.getLetterColors();
-
-    return this.widget.createActors({
-      faceColors,
-      letterColors,
-      opacity: this.configuration.opacity ?? 1.0,
-      showEdgeFaces: this.configuration.showEdgeFaces !== false,
-      showCornerFaces: this.configuration.showCornerFaces !== false,
-    });
-  }
-
-  private addMarkerToViewport(
-    viewportId: string,
-    renderingEngineId: string
-  ): void {
-    if (this.widget.getActors(viewportId)) {
-      return;
-    }
-
-    const enabledElement = getEnabledElementByIds(
-      viewportId,
-      renderingEngineId
-    );
-
-    if (!enabledElement) {
-      console.warn('OrientationControllerTool: No enabled element found');
-      return;
-    }
-
-    const { viewport } = enabledElement;
-
-    if (!(viewport as Types.IViewport).isOrientationChangeable()) {
-      console.warn(
-        'OrientationControllerTool: Viewport does not support orientation changes'
-      );
-      return;
-    }
-
-    const element = viewport.element;
-    const volumeViewport = viewport as Types.IVolumeViewport;
-
-    const actors = this.createAnnotatedRhombActor();
-
-    this.widget.addActorsToViewport(viewportId, volumeViewport, actors);
-
-    const positioned = this.widget.positionActors(
-      volumeViewport,
-      actors,
-      this.getPositionConfig()
-    );
-
-    if (!positioned) {
-      console.warn(
-        'OrientationControllerTool: Initial positioning failed, retrying...'
-      );
-      setTimeout(() => {
-        const repositioned = this.widget.positionActors(
-          volumeViewport,
-          actors,
-          this.getPositionConfig()
-        );
-        if (repositioned) {
-          viewport.render();
-        } else {
-          console.error(
-            'OrientationControllerTool: Retry positioning also failed'
-          );
-        }
-      }, POSITION_RETRY_DELAY_MS);
-    } else {
-      viewport.render();
-    }
-
-    this.widget.syncOverlayViewport(viewportId, volumeViewport);
-    this.widget.setupPicker(viewportId, actors);
-
-    this.widget.setupMouseHandlers(
-      viewportId,
-      element,
-      volumeViewport,
-      actors,
-      {
-        onFacePicked: (result) => {
-          const orientation = this.widget.getOrientationForFace(result.cellId);
-          if (orientation) {
-            this.animateCameraToOrientation(
-              volumeViewport,
-              orientation.viewPlaneNormal,
-              orientation.viewUp
-            );
-          }
-        },
-        onFaceHover: (result) => {
-          if (result) {
-            this.widget.highlightFace(
-              result.pickedActor,
-              result.cellId,
-              volumeViewport,
-              result.actorIndex === 0
-            );
-          } else {
-            this.widget.clearHighlight();
-          }
-        },
-      }
-    );
-
-    const resizeObserver = new ResizeObserver(() => {
-      this.updateMarkerPosition(viewportId, renderingEngineId);
-    });
-    resizeObserver.observe(element);
-    this.resizeObservers.set(viewportId, resizeObserver);
-
-    const cameraHandler = (evt: CustomEvent) => {
-      const detail = evt.detail as { viewportId: string };
-      if (detail.viewportId === viewportId) {
-        this.onCameraModified(evt);
-      }
-    };
-    element.addEventListener(
-      Enums.Events.CAMERA_MODIFIED,
-      cameraHandler as EventListener
-    );
-    this.cameraHandlers.set(viewportId, cameraHandler);
-  }
-
-  private onCameraModified = (evt: CustomEvent): void => {
-    const { viewportId } = evt.detail as { viewportId: string };
-    if (!viewportId) {
-      return;
-    }
-
-    const actors = this.widget.getActors(viewportId);
-
-    if (!actors) {
-      return;
-    }
-
-    const viewportsInfo = this._getViewportsInfo();
-    const viewportInfo = viewportsInfo.find(
-      (vp) => vp.viewportId === viewportId
-    );
-
-    if (!viewportInfo) {
-      return;
-    }
-
-    const enabledElement = getEnabledElementByIds(
-      viewportId,
-      viewportInfo.renderingEngineId
-    );
-
-    if (!enabledElement) {
-      return;
-    }
-
-    const { viewport } = enabledElement;
-    if (!(viewport as Types.IViewport).isOrientationChangeable()) {
-      return;
-    }
-
-    const volumeViewport = viewport as Types.IVolumeViewport;
-    this.widget.positionActors(
-      volumeViewport,
-      actors,
-      this.getPositionConfig()
-    );
-    this.widget.syncOverlayViewport(viewportId, volumeViewport);
-    viewport.render();
-  };
-
-  private updateMarkerPosition(
-    viewportId: string,
-    renderingEngineId: string
-  ): void {
-    const enabledElement = getEnabledElementByIds(
-      viewportId,
-      renderingEngineId
-    );
-
-    if (!enabledElement) {
-      return;
-    }
-
-    const actors = this.widget.getActors(viewportId);
-
-    if (!actors) {
-      return;
-    }
-
-    const { viewport } = enabledElement;
-    if (!(viewport as Types.IViewport).isOrientationChangeable()) {
-      return;
-    }
-
-    this.widget.positionActors(
-      viewport as Types.IVolumeViewport,
-      actors,
-      this.getPositionConfig()
-    );
-    this.widget.syncOverlayViewport(
-      viewportId,
-      viewport as Types.IVolumeViewport
-    );
-    viewport.render();
-  }
-
-  private animateCameraToOrientation(
-    viewport: Types.IVolumeViewport,
-    targetViewPlaneNormal: number[],
-    targetViewUp: number[]
-  ): void {
-    const viewportId = viewport.id;
-    const existingHandle = this.animationFrameHandles.get(viewportId);
-    if (existingHandle !== undefined) {
-      cancelAnimationFrame(existingHandle);
-      this.animationFrameHandles.delete(viewportId);
-    }
-    const nextToken = (this.animationTokens.get(viewportId) ?? 0) + 1;
-    this.animationTokens.set(viewportId, nextToken);
-
-    const keepOrientationUp = this.configuration.keepOrientationUp !== false; // Default to true
-
-    // Get the VTK camera from the renderer
-    const renderer = viewport.getRenderer();
-    const camera = renderer.getActiveCamera();
-    const directionOfProjection = camera.getDirectionOfProjection();
-    const startViewUpArray = camera.getViewUp();
-
-    const startForward = vec3.fromValues(
-      -directionOfProjection[0],
-      -directionOfProjection[1],
-      -directionOfProjection[2]
-    );
-    const startUp = vec3.fromValues(
-      startViewUpArray[0],
-      startViewUpArray[1],
-      startViewUpArray[2]
-    );
-    const startRight = vec3.create();
-    vec3.cross(startRight, startUp, startForward);
-    vec3.normalize(startRight, startRight);
-
-    // prettier-ignore
-    const startMatrix = mat4.fromValues(
-      startRight[0], startRight[1], startRight[2], 0,
-      startUp[0], startUp[1], startUp[2], 0,
-      startForward[0], startForward[1], startForward[2], 0,
-      0, 0, 0, 1
-    );
-
-    const targetForward = vec3.normalize(
-      vec3.create(),
-      targetViewPlaneNormal as vec3
-    );
-
-    let targetUp: vec3;
-    if (keepOrientationUp) {
-      targetUp = vec3.fromValues(
-        targetViewUp[0],
-        targetViewUp[1],
-        targetViewUp[2]
-      );
-    } else {
-      const currentFwd = vec3.normalize(vec3.create(), startForward);
-
-      const rotQuat = quat.create();
-      quat.rotationTo(rotQuat, currentFwd, targetForward);
-
-      targetUp = vec3.create();
-      vec3.transformQuat(targetUp, startUp, rotQuat);
-      vec3.normalize(targetUp, targetUp);
-    }
-
-    // Keep an orthonormal target camera basis so quaternion interpolation
-    // matches the final camera vectors and avoids end-of-animation snapping.
-    const upDotForward = vec3.dot(targetUp, targetForward);
-    vec3.scaleAndAdd(targetUp, targetUp, targetForward, -upDotForward);
-    if (vec3.length(targetUp) < 0.0001) {
-      targetUp = vec3.clone(startUp);
-      const fallbackDot = vec3.dot(targetUp, targetForward);
-      vec3.scaleAndAdd(targetUp, targetUp, targetForward, -fallbackDot);
-    }
-    vec3.normalize(targetUp, targetUp);
-
-    const targetRight = vec3.create();
-    vec3.cross(targetRight, targetUp, targetForward);
-    vec3.normalize(targetRight, targetRight);
-    vec3.cross(targetUp, targetForward, targetRight);
-    vec3.normalize(targetUp, targetUp);
-
-    // prettier-ignore
-    const targetMatrix = mat4.fromValues(
-      targetRight[0], targetRight[1], targetRight[2], 0,
-      targetUp[0], targetUp[1], targetUp[2], 0,
-      targetForward[0], targetForward[1], targetForward[2], 0,
-      0, 0, 0, 1
-    );
-
-    const startQuat = mat4.getRotation(quat.create(), startMatrix);
-    const targetQuat = mat4.getRotation(quat.create(), targetMatrix);
-
-    let dotProduct = quat.dot(startQuat, targetQuat);
-    if (dotProduct < 0) {
-      quat.scale(targetQuat, targetQuat, -1);
-      dotProduct = -dotProduct;
-    }
-
-    const threshold = 0.99996;
-    if (dotProduct > threshold) {
-      return;
-    }
-
-    const duration = 150;
-    const animationStart = performance.now();
-
-    const finalNormal: Point3 = [
-      targetForward[0],
-      targetForward[1],
-      targetForward[2],
-    ];
-    const finalUp: Point3 = [targetUp[0], targetUp[1], targetUp[2]];
-
-    const animate = (now: number) => {
-      if (this.animationTokens.get(viewportId) !== nextToken) {
-        return;
-      }
-      const elapsed = now - animationStart;
-      const t = Math.min(1, elapsed / duration);
-      const isLastStep = t >= 1;
-      const easedT = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-
-      const interpolatedQuat = quat.create();
-      quat.slerp(interpolatedQuat, startQuat, targetQuat, easedT);
-
-      const interpolatedMatrix = mat4.create();
-      mat4.fromQuat(interpolatedMatrix, interpolatedQuat);
-
-      const interpolatedForward = interpolatedMatrix.slice(8, 11) as Point3;
-      const interpolatedUp = interpolatedMatrix.slice(4, 7) as Point3;
-
-      viewport.setCamera({
-        viewPlaneNormal: isLastStep ? finalNormal : interpolatedForward,
-        viewUp: isLastStep ? finalUp : interpolatedUp,
-      });
-      viewport.resetCamera(ANIMATE_RESET_CAMERA_OPTIONS);
-
-      viewport.render();
-
-      if (!isLastStep) {
-        const handle = requestAnimationFrame(animate);
-        this.animationFrameHandles.set(viewportId, handle);
-      } else {
-        this.animationFrameHandles.delete(viewportId);
-      }
-    };
-
-    const handle = requestAnimationFrame(animate);
-    this.animationFrameHandles.set(viewportId, handle);
-  }
+import {
+  initDemo,
+  createImageIdsAndCacheMetaData,
+  setTitleAndDescription,
+  setCtTransferFunctionForVolumeActor,
+  addDropdownToToolbar,
+  getLocalUrl,
+  addToggleButtonToToolbar,
+  addSliderToToolbar,
+} from '../../../../utils/demo/helpers';
+
+import * as cornerstoneTools from '@cornerstonejs/tools';
+
+// This is for debugging purposes
+console.warn(
+  'Click on index.ts to open source code for this example --------->'
+);
+
+const {
+  ToolGroupManager,
+  Enums: csToolsEnums,
+  VolumeCroppingTool,
+  VolumeCroppingControlTool,
+  TrackballRotateTool,
+  ZoomTool,
+  PanTool,
+  OrientationMarkerTool,
+  OrientationControllerTool,
+  StackScrollTool,
+  CrosshairsTool,
+} = cornerstoneTools;
+
+const { MouseBindings, KeyboardBindings } = csToolsEnums;
+const { ViewportType } = Enums;
+
+// Define a unique id for the volume
+const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
+const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
+const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
+const toolGroupId = 'MY_TOOLGROUP_ID';
+const toolGroupIdVRT = 'MY_TOOLGROUP_VRT_ID';
+
+const viewportId1 = 'CT_AXIAL';
+const viewportId2 = 'CT_CORONAL';
+const viewportId3 = 'CT_SAGITTAL';
+const viewportId4 = 'CT_3D_VOLUME'; // New 3D volume viewport
+const viewportIds = [viewportId1, viewportId2, viewportId3, viewportId4];
+
+// Set up toolbar with three rows: viewports, planes, control
+const toolbar = document.getElementById('demo-toolbar');
+if (toolbar) {
+  toolbar.style.display = 'flex';
+  toolbar.style.flexDirection = 'column';
+  toolbar.style.gap = '8px';
 }
 
-export default OrientationControllerTool;
+const viewportsRow = document.createElement('div');
+viewportsRow.style.display = 'flex';
+viewportsRow.style.gap = '10px';
+viewportsRow.style.alignItems = 'center';
+
+const planesRow = document.createElement('div');
+planesRow.style.display = 'flex';
+planesRow.style.gap = '10px';
+planesRow.style.alignItems = 'center';
+
+const controlRow = document.createElement('div');
+controlRow.style.display = 'flex';
+controlRow.style.gap = '10px';
+controlRow.style.alignItems = 'center';
+
+if (toolbar) {
+  toolbar.appendChild(viewportsRow);
+  toolbar.appendChild(planesRow);
+  toolbar.appendChild(controlRow);
+}
+
+// Add dropdown to toolbar to select number of orthographic viewports (reloads page with URL param)
+addDropdownToToolbar({
+  labelText: 'Number of Orthographic Viewports:',
+  options: {
+    values: [1, 2, 3],
+    defaultValue: getNumViewportsFromUrl(),
+  },
+  container: viewportsRow,
+  onSelectedValueChange: (selectedValue) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('numViewports', String(selectedValue));
+    window.location.href = url.toString();
+  },
+});
+const renderingEngineId = 'myRenderingEngine';
+
+/////////////////////////////////////////
+// ======== Set up page ======== //
+setTitleAndDescription(
+  'Volume Cropping with Orientation Controller',
+  'Here we demonstrate how to crop a 3D  volume with 6 clipping planes and an orientation controller. Use shift-drag to rotate the planes.'
+);
+
+const size = '400px';
+const content = document.getElementById('content');
+const viewportGrid = document.createElement('div');
+
+viewportGrid.style.display = 'flex';
+viewportGrid.style.flexDirection = 'row';
+viewportGrid.style.width = '100%';
+viewportGrid.style.height = '800px';
+
+// Create elements for the viewports
+const element1 = document.createElement('div'); // Axial
+const element2 = document.createElement('div'); // Sagittal
+const element3 = document.createElement('div'); // Coronal
+const element4 = document.createElement('div'); // 3D Volume
+
+// Create a container for the right side viewports
+const rightViewportsContainer = document.createElement('div');
+rightViewportsContainer.style.display = 'flex';
+rightViewportsContainer.style.flexDirection = 'column';
+rightViewportsContainer.style.width = '25%';
+rightViewportsContainer.style.height = '100%';
+
+// Set styles for the 2D viewports (stacked vertically on the right)
+element1.style.width = '100%';
+element1.style.height = '33.33%';
+element1.style.minHeight = '200px';
+
+element2.style.width = '100%';
+element2.style.height = '33.33%';
+element2.style.minHeight = '200px';
+
+element3.style.width = '100%';
+element3.style.height = '33.33%';
+element3.style.minHeight = '200px';
+
+// Set styles for the 3D viewport (on the left)
+element4.style.width = '75%';
+element4.style.height = '100%';
+element4.style.minHeight = '600px';
+element4.style.position = 'relative';
+
+// Disable right click context menu so we can have right click tools
+element1.oncontextmenu = (e) => e.preventDefault();
+element2.oncontextmenu = (e) => e.preventDefault();
+element3.oncontextmenu = (e) => e.preventDefault();
+element4.oncontextmenu = (e) => e.preventDefault();
+
+// Add elements to the viewport grid
+// First add the 3D viewport on the left
+viewportGrid.appendChild(element4);
+
+// Add the 2D viewports stacked vertically on the right
+rightViewportsContainer.appendChild(element1);
+rightViewportsContainer.appendChild(element2);
+rightViewportsContainer.appendChild(element3);
+viewportGrid.appendChild(rightViewportsContainer);
+
+content.appendChild(viewportGrid);
+
+const instructions = document.createElement('p');
+instructions.innerText = `
+  Basic controls:
+  - Click/Drag the spheres in 3D or reference lines in the orthographic viewports.
+  - Rotate, pan or zoom the 3D viewport using the mouse.
+  - Shift+Drag in the 3D viewport to rotate the clipping planes.
+  - Use the scroll wheel to scroll through the slices in the orthographic viewports.
+  - Toggle the clipping planes, handles, and rotate clipping planes on drag.
+  - Click on the faces/edges/corners of the beveled cube orientation widget to change the orientation.
+  URL params: numViewports=1|2|3
+  `;
+
+content.append(instructions);
+
+const croppingLabel = document.createElement('span');
+croppingLabel.textContent = 'Cropping:';
+croppingLabel.style.marginRight = '4px';
+planesRow.appendChild(croppingLabel);
+
+addToggleButtonToToolbar({
+  title: 'Toggle Clipping Planes',
+  defaultToggle: false,
+  container: planesRow,
+  onClick: (toggle) => {
+    const toolGroupVRT =
+      cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
+    const croppingTool = toolGroupVRT.getToolInstance('VolumeCropping');
+    if (
+      croppingTool &&
+      typeof croppingTool.setClippingPlanesVisible === 'function'
+    ) {
+      croppingTool.setClippingPlanesVisible(
+        !croppingTool.getClippingPlanesVisible()
+      );
+    }
+  },
+});
+
+addToggleButtonToToolbar({
+  title: 'Toggle Handles',
+  defaultToggle: false,
+  container: planesRow,
+  onClick: (toggle) => {
+    const toolGroupVRT =
+      cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
+    const croppingTool = toolGroupVRT.getToolInstance('VolumeCropping');
+    if (croppingTool && typeof croppingTool.setHandlesVisible === 'function') {
+      croppingTool.setHandlesVisible(!croppingTool.getHandlesVisible());
+    }
+  },
+});
+
+addToggleButtonToToolbar({
+  title: 'Toggle Rotate Clipping Planes on drag (without shift)',
+  defaultToggle: false,
+  container: planesRow,
+  onClick: (toggle) => {
+    const toolGroupVRT =
+      cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
+    const croppingTool = toolGroupVRT.getToolInstance('VolumeCropping');
+    if (
+      croppingTool &&
+      typeof croppingTool.setRotatePlanesOnDrag === 'function' &&
+      typeof croppingTool.getRotatePlanesOnDrag === 'function'
+    ) {
+      const currentState = croppingTool.getRotatePlanesOnDrag();
+      croppingTool.setRotatePlanesOnDrag(!currentState);
+    }
+  },
+});
+
+const viewportColors = {
+  [viewportId1]: 'rgb(200, 0, 0)',
+  [viewportId2]: 'rgb(0, 200, 0)',
+  [viewportId3]: 'rgb(200, 200, 0)',
+  [viewportId4]: 'rgb(0, 200, 200)',
+};
+
+function getReferenceLineColor(viewportId) {
+  return viewportColors[viewportId];
+}
+
+const viewportReferenceLineControllable = [
+  viewportId1,
+  viewportId2,
+  viewportId3,
+];
+
+/**
+ * Get the number of orthographic viewports from the URL (?numViewports=1|2|3)
+ */
+function getNumViewportsFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const value = params.get('numViewports');
+  const num = Number(value);
+  if ([1, 2, 3].includes(num)) {
+    return num;
+  }
+  return 3; // default
+}
+
+/**
+ * Runs the demo with a configurable number of orthographic viewports
+ */
+async function run(numViewports = getNumViewportsFromUrl()) {
+  await initDemo();
+
+  cornerstoneTools.addTool(VolumeCroppingTool);
+  cornerstoneTools.addTool(VolumeCroppingControlTool);
+  cornerstoneTools.addTool(TrackballRotateTool);
+  cornerstoneTools.addTool(ZoomTool);
+  cornerstoneTools.addTool(PanTool);
+  cornerstoneTools.addTool(OrientationMarkerTool);
+  cornerstoneTools.addTool(OrientationControllerTool);
+  cornerstoneTools.addTool(StackScrollTool);
+  cornerstoneTools.addTool(CrosshairsTool);
+
+  const imageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    wadoRsRoot:
+      getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+  });
+
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+    imageIds,
+  });
+
+  const renderingEngine = new RenderingEngine(renderingEngineId);
+
+  // Only include the requested number of orthographic viewports
+  const orthographicViewports = [
+    {
+      viewportId: viewportId1,
+      type: ViewportType.ORTHOGRAPHIC,
+      element: element1,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.AXIAL,
+        background: <Types.Point3>[0, 0, 0],
+      },
+    },
+    {
+      viewportId: viewportId2,
+      type: ViewportType.ORTHOGRAPHIC,
+      element: element2,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.CORONAL,
+        background: <Types.Point3>[0, 0, 0],
+      },
+    },
+    {
+      viewportId: viewportId3,
+      type: ViewportType.ORTHOGRAPHIC,
+      element: element3,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.SAGITTAL,
+        background: <Types.Point3>[0, 0, 0],
+      },
+    },
+  ].slice(0, numViewports);
+
+  // Show/hide orthographic viewport elements based on numViewports
+  [element1, element2, element3].forEach((el, idx) => {
+    if (idx < numViewports) {
+      el.style.display = 'block';
+      el.style.height = `${100 / numViewports}%`;
+    } else {
+      el.style.display = 'none';
+    }
+  });
+
+  // Always set viewport4 (3D viewport) orientation to CORONAL
+  const viewportInputArray = [
+    ...orthographicViewports,
+    {
+      viewportId: viewportId4,
+      type: ViewportType.VOLUME_3D,
+      element: element4,
+      defaultOptions: {
+        background: <Types.Point3>[0, 0, 0],
+        orientation: Enums.OrientationAxis.CORONAL,
+      },
+    },
+  ];
+
+  renderingEngine.setViewports(viewportInputArray);
+
+  await volume.load();
+
+  // Only set volumes for the active viewport IDs
+  const activeViewportIds = [
+    ...orthographicViewports.map((vp) => vp.viewportId),
+    viewportId4,
+  ];
+  await setVolumesForViewports(
+    renderingEngine,
+    [
+      {
+        volumeId,
+        callback: setCtTransferFunctionForVolumeActor,
+      },
+    ],
+    activeViewportIds
+  );
+
+  // Tool group for orthographic viewports
+  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+  orthographicViewports.forEach((vp) => {
+    toolGroup.addViewport(vp.viewportId, renderingEngineId);
+  });
+
+  toolGroup.addTool(VolumeCroppingControlTool.toolName, {
+    getReferenceLineColor,
+    viewportIndicators: true,
+  });
+  toolGroup.setToolActive(VolumeCroppingControlTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary,
+      },
+    ],
+  });
+  toolGroup.addTool(StackScrollTool.toolName, {
+    viewportIndicators: true,
+  });
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Wheel,
+      },
+      {
+        mouseButton: MouseBindings.Secondary,
+      },
+    ],
+  });
+
+  const colorScheme: 'rgy' | 'gray' | 'marker' = 'rgy';
+  const keepOrientationUp = true;
+  const letterColorScheme: 'mixed' | 'white' | 'black' = 'mixed';
+
+  toolGroup.addTool(OrientationControllerTool.toolName, {
+    colorScheme,
+    keepOrientationUp,
+    letterColorScheme,
+    position: 'top-right',
+  });
+  toolGroup.setToolEnabled(OrientationControllerTool.toolName);
+
+  // Tool group for 3D viewport
+  const toolGroupVRT = ToolGroupManager.createToolGroup(toolGroupIdVRT);
+  toolGroupVRT.addTool(ZoomTool.toolName);
+  toolGroupVRT.setToolActive(ZoomTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Secondary,
+      },
+    ],
+  });
+  toolGroupVRT.addTool(PanTool.toolName);
+  toolGroupVRT.setToolActive(PanTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Auxiliary,
+      },
+    ],
+  });
+
+  // Disable tool if it already exists to ensure fresh configuration
+  if (toolGroupVRT.hasTool(OrientationControllerTool.toolName)) {
+    toolGroupVRT.setToolDisabled(OrientationControllerTool.toolName);
+  }
+
+  // Add OrientationControllerTool - colors resolved from colorScheme/letterColorScheme maps
+  toolGroupVRT.addTool(OrientationControllerTool.toolName, {
+    colorScheme,
+    keepOrientationUp,
+    letterColorScheme,
+  });
+  // Enable OrientationControllerTool after viewport is added and volume is loaded
+  toolGroupVRT.setToolEnabled(OrientationControllerTool.toolName);
+
+  // Add dropdown for orientation control colors
+  const colorSchemeValues: string[] = ['rgy', 'gray', 'marker'];
+  const colorSchemeLabels = ['RGY', 'Gray', 'Marker'];
+
+  addDropdownToToolbar({
+    labelText: 'Orientation Control: Colors',
+    options: {
+      values: colorSchemeValues,
+      defaultValue: colorScheme,
+      labels: colorSchemeLabels,
+    },
+    container: controlRow,
+    onSelectedValueChange: (selectedValue) => {
+      const toolGroupVRT =
+        cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
+      const orientationControllerTool = toolGroupVRT.getToolInstance(
+        OrientationControllerTool.toolName
+      );
+
+      if (orientationControllerTool) {
+        orientationControllerTool.configuration.colorScheme = selectedValue;
+        orientationControllerTool.onSetToolDisabled();
+        orientationControllerTool.onSetToolEnabled();
+      }
+    },
+  });
+
+  // Add dropdown for letter color scheme
+  const letterColorSchemeValues: string[] = ['mixed', 'white', 'black'];
+  const letterColorSchemeLabels = ['Mixed', 'White', 'Black'];
+
+  addDropdownToToolbar({
+    labelText: 'Letter Colors',
+    options: {
+      values: letterColorSchemeValues,
+      defaultValue: letterColorScheme,
+      labels: letterColorSchemeLabels,
+    },
+    container: controlRow,
+    onSelectedValueChange: (selectedValue) => {
+      const toolGroupVRT =
+        cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
+      const orientationControllerTool = toolGroupVRT.getToolInstance(
+        OrientationControllerTool.toolName
+      );
+
+      if (orientationControllerTool) {
+        orientationControllerTool.configuration.letterColorScheme =
+          selectedValue;
+        orientationControllerTool.onSetToolDisabled();
+        orientationControllerTool.onSetToolEnabled();
+      }
+    },
+  });
+
+  // Add dropdown for "Keep orientation up"
+  const keepOrientationUpValues: string[] = ['true', 'false'];
+  const keepOrientationUpLabels = ['True', 'False'];
+
+  addDropdownToToolbar({
+    labelText: 'Keep Orientation Up',
+    options: {
+      values: keepOrientationUpValues,
+      defaultValue: String(keepOrientationUp),
+      labels: keepOrientationUpLabels,
+    },
+    container: controlRow,
+    onSelectedValueChange: (selectedValue) => {
+      const newValue = selectedValue === 'true';
+
+      // Get the tool group for the 3D viewport
+      const toolGroupVRT =
+        cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
+      // Get the OrientationControllerTool instance from the tool group
+      const orientationControllerTool = toolGroupVRT.getToolInstance(
+        OrientationControllerTool.toolName
+      );
+      if (orientationControllerTool) {
+        // Update configuration
+        orientationControllerTool.configuration.keepOrientationUp = newValue;
+        // Reinitialize viewports to apply the change
+        orientationControllerTool.onSetToolDisabled();
+        orientationControllerTool.onSetToolEnabled();
+      }
+    },
+  });
+
+  addSliderToToolbar({
+    title: 'Marker size',
+    range: [0.01, 0.05],
+    defaultValue: 0.04,
+    step: 0.01,
+    container: controlRow,
+    onSelectedValueChange: (value) => {
+      const size = Number(value);
+      const toolGroupVRT =
+        cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
+      const orientationControllerTool = toolGroupVRT.getToolInstance(
+        OrientationControllerTool.toolName
+      );
+      if (orientationControllerTool) {
+        orientationControllerTool.configuration.size = size;
+        orientationControllerTool.onSetToolDisabled();
+        orientationControllerTool.onSetToolEnabled();
+      }
+    },
+    updateLabelOnChange: (value, label) => {
+      label.textContent = `Orientation marker size: ${value}`;
+    },
+  });
+
+  const viewport = renderingEngine.getViewport(viewportId4) as VolumeViewport3D;
+
+  await setVolumesForViewports(
+    renderingEngine,
+    [{ volumeId }],
+    [viewportId4],
+    true
+  );
+
+  viewport.setProperties({
+    preset: 'CT-Bone',
+  });
+
+  toolGroupVRT.addViewport(viewportId4, renderingEngineId);
+
+  viewport.resetCamera();
+  viewport.setZoom(1.2);
+
+  // Force VTK pipeline to size and render (workaround for volume not showing until interaction)
+  renderingEngine.resize(true, true);
+
+  // Now add and activate the cropping tool (start with clipping off so volume gets first render)
+  toolGroupVRT.addTool(VolumeCroppingTool.toolName, {
+    showHandles: false,
+    showClippingPlanes: false,
+    sphereRadius: 7,
+    sphereColors: {
+      x: [1, 1, 0],
+      y: [0, 1, 0],
+      z: [1, 0, 0],
+      corners: [0, 0, 1],
+    },
+    showCornerSpheres: true,
+    initialCropFactor: 0.2,
+  });
+  toolGroupVRT.setToolActive(VolumeCroppingTool.toolName, {
+    bindings: [
+      { mouseButton: MouseBindings.Primary },
+      {
+        mouseButton: MouseBindings.Primary,
+        modifierKey: KeyboardBindings.Shift,
+      },
+    ],
+  });
+
+  // Hide 3D handles by default (same as toggle button does)
+  const croppingTool = toolGroupVRT.getToolInstance('VolumeCropping');
+  if (croppingTool && typeof croppingTool.setHandlesVisible === 'function') {
+    croppingTool.setHandlesVisible(false);
+  }
+  // Clipping off on load; user enables via Toggle Clipping Planes button
+  renderingEngine.renderViewports(activeViewportIds);
+}
+
+run();

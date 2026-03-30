@@ -38,9 +38,6 @@ import {
   calculateAdaptiveSphereRadius,
 } from '../utilities/draw3D';
 
-const ORIENTATION_CONTROLLER_ACTIVE_DRAG_ATTR =
-  'data-cs-orientation-controller-drag';
-
 /**
  * VolumeCroppingTool provides manipulatable spheres and real-time volume cropping capabilities.
  *  It renders interactive handles (spheres) at face centers and corners of a cropping box, allowing users to precisely adjust volume boundaries through direct manipulation in 3D space.
@@ -200,7 +197,6 @@ class VolumeCroppingTool extends BaseTool {
   originalClippingPlanes: ClippingPlane[] = [];
   draggingSphereIndex: number | null = null;
   rotatePlanesOnDrag: boolean = false; // If true, dragging rotates clipping planes instead of camera
-  suppressPlaneRotationForCurrentDrag: boolean = false;
   cornerDragOffset: [number, number, number] | null = null;
   faceDragOffset: number | null = null;
   // Store volume direction vectors for non-axis-aligned volumes
@@ -384,9 +380,6 @@ class VolumeCroppingTool extends BaseTool {
   preMouseDownCallback = (evt: EventTypes.InteractionEventType) => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
-    this.suppressPlaneRotationForCurrentDrag = element.hasAttribute(
-      ORIENTATION_CONTROLLER_ACTIVE_DRAG_ATTR
-    );
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
     const actorEntry = viewport.getDefaultActor();
@@ -486,7 +479,6 @@ class VolumeCroppingTool extends BaseTool {
         this.draggingSphereIndex = null;
         this.cornerDragOffset = null;
         this.faceDragOffset = null;
-        this.suppressPlaneRotationForCurrentDrag = false;
 
         viewport.render();
         this._hasResolutionChanged = false;
@@ -687,10 +679,7 @@ class VolumeCroppingTool extends BaseTool {
       this._onMouseMoveSphere(evt);
     } else {
       const shiftKey = (evt.detail.event as MouseEvent)?.shiftKey ?? false;
-      if (
-        (this.rotatePlanesOnDrag === true || shiftKey) &&
-        !this.suppressPlaneRotationForCurrentDrag
-      ) {
+      if (this.rotatePlanesOnDrag === true || shiftKey) {
         this._rotateClippingPlanes(evt);
         return;
       }
