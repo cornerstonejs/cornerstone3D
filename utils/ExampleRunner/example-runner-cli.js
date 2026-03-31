@@ -128,6 +128,10 @@ const configuration = {
       path: 'packages/adapters/examples',
       regexp: 'index.ts',
     },
+    {
+      path: 'packages/cast/examples',
+      regexp: 'index.ts',
+    },
   ],
 };
 
