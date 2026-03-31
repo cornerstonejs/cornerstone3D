@@ -12,6 +12,23 @@ import { getCanUseNorm16Texture } from '../../init';
 
 const { vtkErrorMacro } = macro;
 
+function findLabelOutlineProperties(actor, currentValidInputs) {
+  const labelmapProperties = [];
+
+  for (let i = 0; i < currentValidInputs.length; i++) {
+    const property = actor.getProperty(currentValidInputs[i].inputIndex);
+
+    if (property?.getUseLabelOutline()) {
+      labelmapProperties.push({
+        property,
+        arrayIndex: i,
+      });
+    }
+  }
+
+  return labelmapProperties;
+}
+
 function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
   model.classHierarchy.push('vtkStreamingOpenGLImageResliceMapper');
 
@@ -81,6 +98,11 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
       return;
     }
 
+    model.labelOutlineProperties = findLabelOutlineProperties(
+      actor,
+      model.currentValidInputs
+    );
+
     const firstImageData = model.currentValidInputs[0].imageData;
     const firstScalars = firstImageData.getPointData().getScalars();
     const { numberOfComponents } = firstImageData.get('numberOfComponents') || {
@@ -102,6 +124,8 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
   };
 
   publicAPI.getNeedToRebuildBufferObjects = (ren, actor) => {
+    const useLabelOutline = model.labelOutlineProperties.length > 0;
+
     if (
       model.VBOBuildTime.getMTime() < publicAPI.getMTime() ||
       model.VBOBuildTime.getMTime() < actor.getMTime() ||
@@ -114,7 +138,10 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
       model.VBOBuildTime.getMTime() < model.resliceGeom.getMTime() ||
       model.scalarTextures.length !== model.currentValidInputs.length ||
       !model.colorTexture?.getHandle() ||
-      !model.pwfTexture?.getHandle()
+      !model.pwfTexture?.getHandle() ||
+      (useLabelOutline &&
+        (!model.labelOutlineThicknessTexture?.getHandle() ||
+          !model.labelOutlineOpacityTexture?.getHandle()))
     ) {
       return true;
     }
@@ -470,6 +497,13 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
       firstPwFunc
     );
     model._pwfTextureCore = firstPwFunc;
+
+    if (model.labelOutlineProperties.length > 0) {
+      publicAPI.updateLabelOutlineThicknessTexture(
+        model.labelOutlineProperties
+      );
+      publicAPI.updateLabelOutlineOpacityTexture(model.labelOutlineProperties);
+    }
 
     const vboString = `${model.resliceGeom.getMTime()}A${model.renderable.getSlabThickness()}`;
 
