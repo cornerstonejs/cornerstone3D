@@ -8,6 +8,7 @@ import vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import { Enums } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import vtkAnnotatedRhombicuboctahedronActor from '../AnnotatedRhombicuboctahedronActor';
+import { beginOwnedDrag, endOwnedDrag } from '../../interactionDragCoordinator';
 
 export interface OrientationControllerConfig {
   faceColors: {
@@ -45,9 +46,6 @@ export interface MouseHandlersCallbacks {
 }
 
 export class vtkOrientationControllerWidget {
-  private static readonly ACTIVE_DRAG_ATTR =
-    'data-cs-orientation-controller-drag';
-
   private actors = new Map<string, vtkActor[]>();
   private pickers = new Map<string, vtkCellPicker>();
   private overlayRenderers = new Map<
@@ -888,10 +886,7 @@ export class vtkOrientationControllerWidget {
       didDrag = false;
       pendingPickResult = pickResult;
       mouseDownCanvas = { x: evt.clientX, y: evt.clientY };
-      element.setAttribute(
-        vtkOrientationControllerWidget.ACTIVE_DRAG_ATTR,
-        'true'
-      );
+      beginOwnedDrag(viewportId, 'orientation-controller');
     };
 
     const mouseUpHandler = (evt: MouseEvent) => {
@@ -917,7 +912,7 @@ export class vtkOrientationControllerWidget {
       didDrag = false;
       pendingPickResult = null;
       mouseDownCanvas = null;
-      element.removeAttribute(vtkOrientationControllerWidget.ACTIVE_DRAG_ATTR);
+      endOwnedDrag(viewportId, 'orientation-controller');
       this.clearHighlight();
     };
 
@@ -947,7 +942,7 @@ export class vtkOrientationControllerWidget {
       element.removeEventListener('mouseup', mouseUpHandler);
       element.removeEventListener('mouseleave', mouseUpHandler);
       element.removeEventListener('dblclick', dblclickHandler, true);
-      element.removeAttribute(vtkOrientationControllerWidget.ACTIVE_DRAG_ATTR);
+      endOwnedDrag(viewportId, 'orientation-controller');
     };
 
     this.mouseHandlers.set(viewportId, { cleanup });

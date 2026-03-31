@@ -37,9 +37,7 @@ import {
   addLine3DBetweenPoints,
   calculateAdaptiveSphereRadius,
 } from '../utilities/draw3D';
-
-const ORIENTATION_CONTROLLER_ACTIVE_DRAG_ATTR =
-  'data-cs-orientation-controller-drag';
+import { isDragOwnedBy } from '../utilities/interactionDragCoordinator';
 
 /**
  * VolumeCroppingTool provides manipulatable spheres and real-time volume cropping capabilities.
@@ -384,11 +382,12 @@ class VolumeCroppingTool extends BaseTool {
   preMouseDownCallback = (evt: EventTypes.InteractionEventType) => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
-    this.suppressPlaneRotationForCurrentDrag = element.hasAttribute(
-      ORIENTATION_CONTROLLER_ACTIVE_DRAG_ATTR
-    );
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
+    this.suppressPlaneRotationForCurrentDrag = isDragOwnedBy(
+      viewport.id,
+      'orientation-controller'
+    );
     const actorEntry = viewport.getDefaultActor();
     const actor = actorEntry.actor as Types.VolumeActor;
     const mapper = actor.getMapper();
