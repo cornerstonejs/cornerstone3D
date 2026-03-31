@@ -14,6 +14,10 @@ export interface CastTransport {
 
 const DEFAULT_MESSAGE_ID_PREFIX = 'CS3D-';
 type ActiveHub = HubConfig & SessionConfig & HubRuntimeState;
+const EMPTY_FHIRCAST_CONTEXT = {
+  'context.type': '',
+  context: [],
+};
 
 /**
  * Cast client.
@@ -63,6 +67,7 @@ export class CastClient implements CastTransport {
   private _hub: ActiveHub;
   private _reconnectInterval: ReturnType<typeof setInterval> | null = null;
   private _onMessageCallback: ((message: CastMessage) => void) | null = null;
+  private _lastSentMessage: Record<string, unknown> | null = null;
 
   constructor(config: CastClientConfig = {}) {
     this._config = config;
@@ -260,9 +265,14 @@ export class CastClient implements CastTransport {
     subscribeFormData.append('hub.topic', topic);
     subscribeFormData.append('hub.lease', String(hub.lease ?? 999));
     subscribeFormData.append('subscriber.name', hub.subscriberName ?? '');
-    for (const a of hub.actors ?? []) {
-      const v = a.trim();
-      if (v) subscribeFormData.append('subscriber.actor', v);
+    const subscribeActors = (hub.actors ?? [])
+      .map((actor) => actor.trim())
+      .filter(Boolean);
+    if (subscribeActors.length) {
+      subscribeFormData.append(
+        'subscriber.actors',
+        JSON.stringify(subscribeActors)
+      );
     }
 
     const requestOptions = {
@@ -351,9 +361,14 @@ export class CastClient implements CastTransport {
     subscribeFormData.append('hub.topic', hub.topic ?? '');
     subscribeFormData.append('hub.lease', String(hub.lease ?? 999));
     subscribeFormData.append('subscriber.name', hub.subscriberName ?? '');
-    for (const a of hub.actors ?? []) {
-      const v = a.trim();
-      if (v) subscribeFormData.append('subscriber.actor', v);
+    const unsubscribeActors = (hub.actors ?? [])
+      .map((actor) => actor.trim())
+      .filter(Boolean);
+    if (unsubscribeActors.length) {
+      subscribeFormData.append(
+        'subscriber.actors',
+        JSON.stringify(unsubscribeActors)
+      );
     }
 
     try {
@@ -398,6 +413,7 @@ export class CastClient implements CastTransport {
     >;
     msg.id = generateMessageId(this._messageIdPrefix());
     hub.lastPublishedMessageID = msg.id as string;
+    this._lastSentMessage = msg;
 
     const event = msg.event as Record<string, unknown>;
     if (event) {
@@ -504,6 +520,37 @@ export class CastClient implements CastTransport {
       const event = castMessage.event;
       if (!event) return;
       if (event['hub.event'] === 'heartbeat') {
+        return;
+      }
+      if (event['hub.event'] === 'get-request') {
+        const context =
+          (event.context as { requestId?: unknown; dataType?: unknown }) ?? {};
+        const requestId = context.requestId;
+        if (
+          typeof requestId === 'string' &&
+          context.dataType === 'FHIRcastContext'
+        ) {
+          const lastEvent = this._lastSentMessage?.event as
+            | { 'hub.event'?: unknown; context?: unknown }
+            | undefined;
+          const lastEventTypeText =
+            typeof lastEvent?.['hub.event'] === 'string'
+              ? lastEvent['hub.event'].toLowerCase()
+              : '';
+          let responseData: unknown =
+            this._lastSentMessage ?? EMPTY_FHIRCAST_CONTEXT;
+          if (lastEventTypeText.includes('close')) {
+            responseData = EMPTY_FHIRCAST_CONTEXT;
+          } else if (lastEventTypeText.includes('imagingstudy-open')) {
+            responseData = {
+              'context.type': 'ImagingStudy',
+              context: Array.isArray(lastEvent?.context)
+                ? lastEvent.context
+                : [],
+            };
+          }
+          this.sendGetResponse(requestId, responseData, event['hub.topic']);
+        }
         return;
       }
       if (castMessage.id === this._hub.lastPublishedMessageID) {

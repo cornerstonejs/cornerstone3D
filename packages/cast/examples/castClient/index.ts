@@ -9,7 +9,7 @@ const DEFAULT_ACTOR_KEYWORD = 'WORKLIST_CLIENT';
 /** Default subscribe actors field: JSON array of actor keywords. */
 const DEFAULT_SUBSCRIBE_ACTORS_JSON = `["${DEFAULT_ACTOR_KEYWORD}","WATCHER"]`;
 /** Default actor keyword for Get preset. */
-const DEFAULT_GET_ACTOR_KEYWORD = 'HUB';
+const DEFAULT_GET_ACTOR_KEYWORD = 'WORKLIST_CLIENT';
 /** Default Cast subscriber name (Subscribe + Get). */
 const DEFAULT_SUBSCRIBER_NAME = 'CS3D-EXAMPLE';
 
@@ -399,10 +399,10 @@ function renderInstructions(target: HTMLElement): void {
     )
     .addInstruction('Use Publish to send an event to the hub.')
     .addInstruction(
-      'Use Get to fetch context from a FHIRCast hub or other data from cast compliant IHE actors.'
+      'Use Get to fetch context from a FHIRCast hub or other data from cast compliant IHE actors (in this case your own worklist-client).'
     )
     .addInstruction(
-      'Use Collaborate to open a conference client for real-time collaboration.'
+      'Use Collaborate to open a conference client to create a multi-topic session.'
     );
 }
 
@@ -967,7 +967,32 @@ async function handleGet(
   const response = await fetch(url.toString(), { method: 'GET' });
   if (response.ok) {
     const json = await response.json();
-    elm.getResults.innerHTML = `<div class="status success"><pre>${JSON.stringify(json, null, 2)}</pre></div>`;
+    const typedGetResponse = json as {
+      subscriber_name?: unknown;
+      subscriber?: unknown;
+      response?: {
+        event?: { context?: { data?: unknown } };
+      };
+    };
+    const getResponseData =
+      (
+        json as {
+          response?: {
+            event?: { context?: { data?: unknown } };
+          };
+        }
+      ).response?.event?.context?.data ?? [];
+    const subscriberName =
+      typeof typedGetResponse.subscriber_name === 'string'
+        ? typedGetResponse.subscriber_name
+        : typeof typedGetResponse.subscriber === 'string'
+          ? typedGetResponse.subscriber
+          : '';
+    const getWindowPayload = {
+      subscriber_name: subscriberName,
+      data: getResponseData,
+    };
+    elm.getResults.innerHTML = `<div class="status success"><pre>${JSON.stringify(getWindowPayload, null, 2)}</pre></div>`;
     addMessage(elm, stateValue, 'received', 'Get', json);
     return;
   }
