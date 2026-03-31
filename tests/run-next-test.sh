@@ -13,20 +13,24 @@ SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$SCRIPT_DIR"
 
 SPECS=(
-  # "tests/labelmapRenderingNext.spec.ts"
-  # "tests/labelmapSegToolsNext.spec.ts"
-  # "tests/stackLabelmapSegNext.spec.ts"
+  "tests/labelmapRenderingNext.spec.ts"
+  "tests/labelmapOverlapNext.spec.ts"
+  "tests/labelmapSegToolsNext.spec.ts"
   "tests/volumeAnnotationNext.spec.ts"
   "tests/stackManipulationToolsNext.spec.ts"
   "tests/multiVolumeAPINext.spec.ts"
-  # "tests/stackAPINext.spec.ts"
-  # "tests/wsiNext.spec.ts"
-  # "tests/videoNext.spec.ts"
-  # "tests/ecgNext.spec.ts"
+  "tests/stackAPINext.spec.ts"
+  "tests/wsiNext.spec.ts"
+  "tests/videoNext.spec.ts"
+  "tests/ecgNext.spec.ts"
+)
+
+SERIAL_SPECS=(
+  "tests/stackLabelmapSegNext.spec.ts"
 )
 
 # Only build the examples these tests actually use (8 out of ~120)
-EXAMPLES="labelmapRendering labelmapSegmentationTools stackLabelmapSegmentation volumeAnnotationTools stackManipulationTools multiVolumeAPI stackAPI wsi video ecg"
+EXAMPLES="labelmapRendering labelmapOverlapPlayground labelmapSegmentationTools stackLabelmapSegmentation volumeAnnotationTools stackManipulationTools multiVolumeAPI stackAPI wsi video ecg"
 
 PROJECT="chromium"
 UPDATE_FLAG=""
@@ -44,6 +48,7 @@ done
 
 if [[ ${#CUSTOM_SPECS[@]} -gt 0 ]]; then
   SPECS=("${CUSTOM_SPECS[@]}")
+  SERIAL_SPECS=()
 fi
 
 # ── Kill existing server on our port ────────────────────────────────
@@ -102,3 +107,15 @@ PLAYWRIGHT_REUSE_EXISTING_SERVER=true \
   --project="$PROJECT" \
   --reporter=list \
   $UPDATE_FLAG
+
+if [[ ${#SERIAL_SPECS[@]} -gt 0 ]]; then
+  echo ""
+  echo "-- Running ${#SERIAL_SPECS[@]} spec(s) sequentially --"
+  echo ""
+
+  PLAYWRIGHT_REUSE_EXISTING_SERVER=true \
+    npx playwright test "${SERIAL_SPECS[@]}" \
+    --project="$PROJECT" \
+    --reporter=list \
+    $UPDATE_FLAG
+fi

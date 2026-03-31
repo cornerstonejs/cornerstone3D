@@ -433,10 +433,12 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
     renderer.setViewport(0, 0, xEnd, yEnd);
 
-    // Set only this renderer to draw
+    // Set only this renderer (and its overlay renderers) to draw.
+    // Overlay renderers use the convention id = viewportId::suffix.
     const allRenderers = offscreenMultiRenderWindow.getRenderers();
     allRenderers.forEach(({ renderer: r, id }) => {
-      r.setDraw(id === viewport.id);
+      const baseId = id.split('::')[0];
+      r.setDraw(baseId === viewport.id);
     });
 
     // Handle widget renderers

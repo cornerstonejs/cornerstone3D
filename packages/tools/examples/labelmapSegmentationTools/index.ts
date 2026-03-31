@@ -16,7 +16,7 @@ import {
   setCtTransferFunctionForVolumeActor,
   getExampleBackground,
 } from '../../../../utils/demo/helpers';
-import { getBooleanUrlParam } from '../../../../utils/demo/helpers/exampleParameters';
+import { getStringUrlParam } from '../../../../utils/demo/helpers/exampleParameters';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 // This is for debugging purposes
@@ -261,11 +261,17 @@ async function addSegmentationsToState() {
  * Runs the demo
  */
 async function run() {
+  const overwriteMode = getStringUrlParam('overwriteMode');
   // Init Cornerstone and related libraries
   await initDemo({
     tools: {
       segmentation: {
-        lazyLabelmapEditing: getBooleanUrlParam('lazyLabelmapEditing'),
+        overwriteMode:
+          overwriteMode === 'all' ||
+          overwriteMode === 'visible' ||
+          overwriteMode === 'none'
+            ? overwriteMode
+            : undefined,
       },
     },
   });

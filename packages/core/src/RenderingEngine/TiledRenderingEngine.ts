@@ -401,8 +401,10 @@ class TiledRenderingEngine extends BaseRenderingEngine {
     for (let i = 0; i < renderers.length; i++) {
       const { renderer, id } = renderers[i];
 
-      // Requesting viewports that need rendering to be rendered only
-      if (this._needsRender.has(id)) {
+      // Requesting viewports that need rendering to be rendered only.
+      // Also enable overlay renderers linked to a viewport (id = viewportId::suffix).
+      const viewportId = id.split('::')[0];
+      if (this._needsRender.has(viewportId)) {
         renderer.setDraw(true);
       } else {
         renderer.setDraw(false);

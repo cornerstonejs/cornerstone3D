@@ -24,6 +24,10 @@ export function getBooleanUrlParam(name: string): boolean {
   return value === 'true' || value === '1';
 }
 
+export function getStringUrlParam(name: string): string | null {
+  return getUrlParam(name);
+}
+
 /**
  * Reads `?type=next` from the URL and merges `useViewportV2: true` into the
  * demo config so that the RenderingEngine automatically remaps legacy viewport

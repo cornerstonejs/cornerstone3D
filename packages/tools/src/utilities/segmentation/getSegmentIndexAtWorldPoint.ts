@@ -1,16 +1,20 @@
-import { cache, utilities } from '@cornerstonejs/core';
+import { BaseVolumeViewport, cache, utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { SegmentationRepresentations } from '../../enums';
 import {
   getSegmentation,
   getCurrentLabelmapImageIdsForViewport,
 } from '../../stateManagement/segmentation/segmentationState';
-import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
 import type { ContourSegmentationAnnotation, Segmentation } from '../../types';
 import { getAnnotation } from '../../stateManagement';
 import { isPointInsidePolyline3D } from '../math/polyline';
 import { getLabelmapActorEntry } from '../../stateManagement/segmentation/helpers/getSegmentationActor';
 import getViewportLabelmapRenderMode from '../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
+import {
+  getLabelmaps,
+  getOrCreateLabelmapVolume,
+  getSegmentIndexForLabelValue,
+} from '../../stateManagement/segmentation/helpers/labelmapSegmentationState';
 
 type Options = {
   representationType?: SegmentationRepresentations;
@@ -74,23 +78,36 @@ export function getSegmentIndexAtWorldForLabelmap(
   worldPoint: Types.Point3,
   { viewport }: Options
 ): number | undefined {
-  const labelmapData = segmentation.representationData.Labelmap;
   const viewportRenderMode = viewport
     ? getViewportLabelmapRenderMode(viewport)
     : 'unsupported';
 
-  if (viewportRenderMode === 'volume') {
-    const { volumeId } = labelmapData as LabelmapSegmentationDataVolume;
-    const segmentationVolume = cache.getVolume(volumeId);
+  if (
+    viewportRenderMode === 'volume' ||
+    viewport instanceof BaseVolumeViewport
+  ) {
+    for (const layer of getLabelmaps(segmentation)) {
+      const segmentationVolume = getOrCreateLabelmapVolume(layer);
 
-    if (!segmentationVolume) {
-      return;
+      if (!segmentationVolume) {
+        continue;
+      }
+
+      const labelValue =
+        segmentationVolume.imageData.getScalarValueFromWorld(worldPoint);
+
+      if (!labelValue) {
+        continue;
+      }
+
+      return getSegmentIndexForLabelValue(
+        segmentation,
+        layer.labelmapId,
+        labelValue
+      );
     }
 
-    const segmentIndex =
-      segmentationVolume.imageData.getScalarValueFromWorld(worldPoint);
-
-    return segmentIndex;
+    return;
   }
 
   // stack segmentation case
@@ -103,38 +120,47 @@ export function getSegmentIndexAtWorldForLabelmap(
     return;
   }
 
-  if (segmentationImageIds.length > 1) {
-    console.warn(
-      'Segment selection for labelmaps with multiple imageIds in stack viewports is not supported yet.'
+  for (const segmentationImageId of segmentationImageIds) {
+    const image = cache.getImage(segmentationImageId);
+
+    if (!image) {
+      continue;
+    }
+
+    const segmentationActorEntry = getLabelmapActorEntry(
+      viewport.id,
+      segmentation.segmentationId,
+      segmentationImageId
     );
-    return;
+    const imageData = segmentationActorEntry?.actor.getMapper().getInputData();
+    const indexIJK = utilities.transformWorldToIndex(imageData, worldPoint);
+
+    const dimensions = imageData.getDimensions();
+    const voxelManager = (imageData.voxelManager ||
+      utilities.VoxelManager.createScalarVolumeVoxelManager({
+        dimensions,
+        scalarData: imageData.getPointData().getScalars().getData(),
+      })) as Types.IVoxelManager<number>;
+
+    const labelValue = voxelManager.getAtIJKPoint(indexIJK as Types.Point3);
+
+    if (!labelValue) {
+      continue;
+    }
+
+    const layer = getLabelmaps(segmentation).find((candidateLayer) =>
+      candidateLayer.imageIds?.includes(segmentationImageId)
+    );
+    if (!layer) {
+      return labelValue;
+    }
+
+    return getSegmentIndexForLabelValue(
+      segmentation,
+      layer.labelmapId,
+      labelValue
+    );
   }
-
-  const segmentationImageId = segmentationImageIds[0];
-
-  const image = cache.getImage(segmentationImageId);
-
-  if (!image) {
-    return;
-  }
-
-  const segmentationActorEntry = getLabelmapActorEntry(
-    viewport.id,
-    segmentation.segmentationId
-  );
-  const imageData = segmentationActorEntry?.actor.getMapper().getInputData();
-  const indexIJK = utilities.transformWorldToIndex(imageData, worldPoint);
-
-  const dimensions = imageData.getDimensions();
-  const voxelManager = (imageData.voxelManager ||
-    utilities.VoxelManager.createScalarVolumeVoxelManager({
-      dimensions,
-      scalarData: imageData.getPointData().getScalars().getData(),
-    })) as Types.IVoxelManager<number>;
-
-  const segmentIndex = voxelManager.getAtIJKPoint(indexIJK as Types.Point3);
-
-  return segmentIndex;
 }
 
 /**

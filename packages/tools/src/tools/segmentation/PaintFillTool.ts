@@ -1,4 +1,5 @@
 import {
+  BaseVolumeViewport,
   cache,
   getEnabledElement,
   utilities as csUtils,
@@ -25,8 +26,11 @@ import {
   getCurrentLabelmapImageIdForViewport,
   getSegmentation,
 } from '../../stateManagement/segmentation/segmentationState';
-import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
 import getViewportLabelmapRenderMode from '../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
+import {
+  getOrCreateLabelmapVolume,
+  resolveLabelmapForSegment,
+} from '../../stateManagement/segmentation/helpers/labelmapSegmentationState';
 
 const { transformWorldToIndex, isEqual } = csUtils;
 
@@ -100,12 +104,19 @@ class PaintFillTool extends BaseTool {
 
     const viewportRenderMode = getViewportLabelmapRenderMode(viewport);
 
-    if (viewportRenderMode === 'volume') {
-      const { volumeId } = representationData[
-        SegmentationRepresentations.Labelmap
-      ] as LabelmapSegmentationDataVolume;
+    if (
+      viewportRenderMode === 'volume' ||
+      viewport instanceof BaseVolumeViewport
+    ) {
+      const layer = resolveLabelmapForSegment(
+        getSegmentation(segmentationId),
+        segmentIndex
+      );
+      const segmentation = layer ? getOrCreateLabelmapVolume(layer) : undefined;
 
-      const segmentation = cache.getVolume(volumeId);
+      if (!segmentation) {
+        return;
+      }
       ({ dimensions, direction } = segmentation);
 
       voxelManager = segmentation.voxelManager;

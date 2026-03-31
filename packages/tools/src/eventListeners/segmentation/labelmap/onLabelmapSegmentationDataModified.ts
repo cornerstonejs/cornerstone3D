@@ -1,4 +1,7 @@
-import { getEnabledElementByViewportId } from '@cornerstonejs/core';
+import {
+  BaseVolumeViewport,
+  getEnabledElementByViewportId,
+} from '@cornerstonejs/core';
 
 import type { SegmentationDataModifiedEventType } from '../../../types/EventTypes';
 import { SegmentationRepresentations } from '../../../enums';
@@ -6,7 +9,10 @@ import { performVolumeLabelmapUpdate } from './performVolumeLabelmapUpdate';
 import { performStackLabelmapUpdate } from './performStackLabelmapUpdate';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
 import { getViewportIdsWithSegmentation } from '../../../stateManagement/segmentation/getViewportIdsWithSegmentation';
+import { getSegmentationRepresentations } from '../../../stateManagement/segmentation/getSegmentationRepresentation';
 import getViewportLabelmapRenderMode from '../../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
+import { triggerSegmentationRender } from '../../../stateManagement/segmentation/SegmentationRenderingEngine';
+import { shouldUseLabelmapImageMapper } from '../../../stateManagement/segmentation/helpers/labelmapImageMapperSupport';
 
 const getViewportByViewportId = (viewportId: string) => {
   const enabledElement = getEnabledElementByViewportId(viewportId);
@@ -26,6 +32,7 @@ const onLabelmapSegmentationDataModified = function (
   const viewportIds = getViewportIdsWithSegmentation(segmentationId);
   const volumeViewportIds: string[] = [];
   const stackViewportIds: string[] = [];
+  const imageMapperViewportIds: string[] = [];
 
   viewportIds.forEach((viewportId) => {
     const viewport = getViewportByViewportId(viewportId);
@@ -34,7 +41,17 @@ const onLabelmapSegmentationDataModified = function (
       return;
     }
 
-    const renderMode = getViewportLabelmapRenderMode(viewport);
+    const labelmapRepresentation = getSegmentationRepresentations(viewportId, {
+      segmentationId,
+      type: SegmentationRepresentations.Labelmap,
+    })[0] as { config?: { useImageMapper?: boolean } } | undefined;
+    const useImageMapper = shouldUseLabelmapImageMapper(
+      getSegmentation(segmentationId),
+      labelmapRepresentation?.config
+    );
+    const renderMode = getViewportLabelmapRenderMode(viewport, {
+      useImageMapper,
+    });
 
     if (renderMode === 'volume') {
       volumeViewportIds.push(viewportId);
@@ -42,7 +59,11 @@ const onLabelmapSegmentationDataModified = function (
     }
 
     if (renderMode === 'image') {
-      stackViewportIds.push(viewportId);
+      if (useImageMapper && viewport instanceof BaseVolumeViewport) {
+        imageMapperViewportIds.push(viewportId);
+      } else {
+        stackViewportIds.push(viewportId);
+      }
     }
   });
 
@@ -69,6 +90,10 @@ const onLabelmapSegmentationDataModified = function (
       segmentationId,
     });
   }
+
+  imageMapperViewportIds.forEach((viewportId) => {
+    triggerSegmentationRender(viewportId);
+  });
 };
 
 export default onLabelmapSegmentationDataModified;

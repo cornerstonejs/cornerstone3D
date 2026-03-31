@@ -1,8 +1,8 @@
 import {
+  BaseVolumeViewport,
   type Types,
   getEnabledElement,
   addVolumesToViewports,
-  addImageSlicesToViewports,
   Enums,
   cache,
   volumeLoader,
@@ -13,7 +13,6 @@ import type {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../../types/LabelmapTypes';
-import { getCurrentLabelmapImageIdsForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
 import {
   triggerSegmentationDataModified,
@@ -23,6 +22,10 @@ import { SegmentationRepresentations } from '../../../enums';
 import { addVolumesAsIndependentComponents } from './addVolumesAsIndependentComponents';
 import type { LabelmapRenderingConfig } from '../../../types/SegmentationStateTypes';
 import getViewportLabelmapRenderMode from '../../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
+import { shouldUseLabelmapImageMapper } from '../../../stateManagement/segmentation/helpers/labelmapImageMapperSupport';
+import { getLabelmaps } from '../../../stateManagement/segmentation/helpers/labelmapSegmentationState';
+import { addVolumeLabelmapImageMapperActors } from './volumeLabelmapImageMapper';
+import { syncStackLabelmapActors } from './syncStackLabelmapActors';
 
 const { uuidv4 } = utilities;
 
@@ -52,20 +55,37 @@ async function addLabelmapToElement(
   const visibility = true;
   const immediateRender = false;
   const suppressEvents = true;
-  const renderMode = getViewportLabelmapRenderMode(viewport);
+  const segmentation = getSegmentation(segmentationId);
+  const useImageMapper = shouldUseLabelmapImageMapper(segmentation, config);
+  const renderMode = getViewportLabelmapRenderMode(viewport, {
+    useImageMapper,
+  });
 
   if (renderMode === 'volume') {
     const volumeCompatibleViewport = viewport as Types.IVolumeViewport & {
       getVolumeId?: () => string;
     };
-    const volumeLabelMapData = labelMapData as LabelmapSegmentationDataVolume;
-    const volumeId = _ensureVolumeHasVolumeId(
-      volumeLabelMapData,
-      segmentationId
+    const labelmapLayers = getLabelmaps(segmentation).filter(
+      (layer) => !!layer.volumeId
     );
 
-    if (!cache.getVolume(volumeId)) {
-      await _handleMissingVolume(labelMapData);
+    if (!labelmapLayers.length) {
+      const volumeLabelMapData = labelMapData as LabelmapSegmentationDataVolume;
+      const volumeId = _ensureVolumeHasVolumeId(
+        volumeLabelMapData,
+        segmentationId
+      );
+
+      if (!cache.getVolume(volumeId)) {
+        await _handleMissingVolume(labelMapData);
+      }
+
+      labelmapLayers.push({
+        labelmapId: volumeId,
+        type: 'volume',
+        volumeId,
+        imageIds: cache.getVolume(volumeId)?.imageIds,
+      });
     }
 
     let blendMode =
@@ -78,7 +98,7 @@ async function addLabelmapToElement(
     if (useIndependentComponents) {
       const referenceVolumeId = volumeCompatibleViewport.getVolumeId?.();
       const baseVolume = cache.getVolume(referenceVolumeId);
-      const segVolume = cache.getVolume(volumeId);
+      const segVolume = cache.getVolume(labelmapLayers[0]?.volumeId);
 
       const segDims = segVolume.dimensions;
       const refDims = baseVolume.dimensions;
@@ -97,15 +117,13 @@ async function addLabelmapToElement(
       }
     }
 
-    const volumeInputs: Types.IVolumeInput[] = [
-      {
-        volumeId,
-        visibility,
-        representationUID: `${segmentationId}-${SegmentationRepresentations.Labelmap}`,
-        useIndependentComponents,
-        blendMode,
-      },
-    ];
+    const volumeInputs: Types.IVolumeInput[] = labelmapLayers.map((layer) => ({
+      volumeId: layer.volumeId,
+      visibility,
+      representationUID: `${segmentationId}-${SegmentationRepresentations.Labelmap}-${layer.labelmapId}`,
+      useIndependentComponents,
+      blendMode,
+    }));
 
     /*
      * Having independent components for the segmentation data means that we are
@@ -139,22 +157,15 @@ async function addLabelmapToElement(
       return result;
     }
   } else if (renderMode === 'image') {
-    // We can use the current imageId in the viewport to get the segmentation imageId
-    // which later is used to create the actor and mapper.
-    const segmentationImageIds = getCurrentLabelmapImageIdsForViewport(
-      viewport.id,
-      segmentationId
-    );
-
-    const stackInputs: Types.IStackInput[] = segmentationImageIds.map(
-      (imageId) => ({
-        imageId,
-        representationUID: `${segmentationId}-${SegmentationRepresentations.Labelmap}-${imageId}`,
-      })
-    );
-
-    // Add labelmap volumes to the viewports to be be rendered, but not force the render
-    addImageSlicesToViewports(renderingEngine, stackInputs, [viewportId]);
+    if (useImageMapper && viewport instanceof BaseVolumeViewport) {
+      addVolumeLabelmapImageMapperActors({
+        viewport: viewport as Types.IVolumeViewport,
+        segmentation,
+        segmentationId,
+      });
+    } else {
+      syncStackLabelmapActors(viewport as Types.IStackViewport, segmentationId);
+    }
   } else {
     return;
   }

@@ -9,6 +9,10 @@ import type { ContourSegmentationData } from '../../../types/ContourTypes';
 import type { Types } from '@cornerstonejs/core';
 import { cache } from '@cornerstonejs/core';
 import type { SurfaceSegmentationData } from '../../../types/SurfaceTypes';
+import {
+  ensureLabelmapState,
+  syncLegacyLabelmapData,
+} from './labelmapSegmentationState';
 
 /**
  * It takes in a segmentation input and returns a segmentation with default values
@@ -35,17 +39,29 @@ function normalizeSegmentationInput(
   // since we normalize the segments, we don't need the segments config in the final object
   delete config?.segments;
 
-  return {
+  const segmentation = {
     segmentationId,
     label: config?.label ?? null,
     cachedStats: config?.cachedStats ?? {},
     segments: normalizedSegments,
+    segmentOrder:
+      config?.segmentOrder ??
+      Object.keys(normalizedSegments)
+        .map(Number)
+        .sort((a, b) => a - b),
     representationData: {
       [type]: {
         ...data,
       },
     },
-  };
+  } as Segmentation;
+
+  if (type === SegmentationRepresentations.Labelmap) {
+    ensureLabelmapState(segmentation);
+    syncLegacyLabelmapData(segmentation);
+  }
+
+  return segmentation;
 }
 
 /**

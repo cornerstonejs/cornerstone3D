@@ -1,4 +1,4 @@
-import { test } from 'playwright-test-coverage';
+import { test } from '@playwright/test';
 import {
   checkForScreenshot,
   getVisibleViewportCanvas,
@@ -11,13 +11,7 @@ const SETTLE_MS = 10000;
 
 function navigateToExample(params?: Record<string, string>) {
   return async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('domcontentloaded');
-
-    const link = page.locator(`a:has-text("${EXAMPLE}")`).first();
-    const href = await link.getAttribute('href');
-    const url = new URL(href, page.url());
-    url.pathname = url.pathname.replace(/\.html$/, '');
+    const url = new URL(`http://localhost:3333/${EXAMPLE}.html`);
 
     if (params) {
       for (const [key, value] of Object.entries(params)) {
@@ -26,8 +20,10 @@ function navigateToExample(params?: Record<string, string>) {
     }
 
     await page.goto(url.toString());
-    await page.waitForSelector('div#content');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForSelector('#content canvas', {
+      state: 'visible',
+    });
     await page.waitForTimeout(SETTLE_MS);
   };
 }

@@ -2,6 +2,11 @@ import { cache, utilities } from '@cornerstonejs/core';
 import { getSegmentation } from '../getSegmentation';
 import { triggerSegmentationDataModified } from '../triggerSegmentationEvents';
 import { createLabelmapMemo } from '../../../utilities/segmentation/createLabelmapMemo';
+import {
+  getSegmentBinding,
+  getLabelmapForSegment,
+  removeSegmentBinding,
+} from './labelmapSegmentationState';
 
 const { DefaultHistoryMemo } = utilities.HistoryMemo;
 
@@ -27,14 +32,13 @@ export function clearSegmentValue(
   const segmentation = getSegmentation(segmentationId);
 
   if (segmentation.representationData.Labelmap) {
-    const { representationData } = segmentation;
-    const labelmapData = representationData.Labelmap;
+    const binding = getSegmentBinding(segmentation, segmentIndex);
+    const layer = getLabelmapForSegment(segmentation, segmentIndex);
 
-    if ('imageIds' in labelmapData || 'volumeId' in labelmapData) {
-      const items =
-        'imageIds' in labelmapData
-          ? labelmapData.imageIds.map((imageId) => cache.getImage(imageId))
-          : [cache.getVolume(labelmapData.volumeId)];
+    if (binding && layer) {
+      const items = layer.volumeId
+        ? [cache.getVolume(layer.volumeId)]
+        : (layer.imageIds ?? []).map((imageId) => cache.getImage(imageId));
 
       items.forEach((item) => {
         if (!item) {
@@ -48,7 +52,7 @@ export function clearSegmentValue(
         const useVoxelManager = memo?.voxelManager ?? voxelManager;
 
         voxelManager.forEach(({ value, index }) => {
-          if (value === segmentIndex) {
+          if (value === binding.labelValue) {
             useVoxelManager.setAtIndex(index, 0);
           }
         });
@@ -57,6 +61,8 @@ export function clearSegmentValue(
           DefaultHistoryMemo.push(memo);
         }
       });
+
+      removeSegmentBinding(segmentation, segmentIndex);
     }
 
     triggerSegmentationDataModified(segmentationId);

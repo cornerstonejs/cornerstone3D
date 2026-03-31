@@ -1,6 +1,7 @@
 import type { Types } from '@cornerstonejs/core';
 import { utilities as csUtils } from '@cornerstonejs/core';
 
+import { getConfig } from '../../../config';
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
 import compositions from './compositions';
 import { getStrategyData } from './utils/getStrategyData';
@@ -8,6 +9,10 @@ import { StrategyCallbacks } from '../../../enums';
 import type { LabelmapToolOperationDataAny } from '../../../types/LabelmapToolOperationData';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { LabelmapMemo } from '../../../utilities/segmentation/createLabelmapMemo';
+import {
+  eraseCrossLayerOverwrites,
+  prepareOverlapOperationData,
+} from './utils/labelmapOverlap';
 
 export type InitializedOperationData = LabelmapToolOperationDataAny & {
   // Allow initialization that is operation specific by keying on the name
@@ -63,6 +68,11 @@ export type InitializedOperationData = LabelmapToolOperationDataAny & {
   };
   memo?: LabelmapMemo;
   modified?: boolean;
+  previewOnHover?: boolean;
+  labelValue?: number;
+  labelmapId?: string;
+  overwriteSegmentIndices?: number[];
+  imageId?: string;
 };
 
 export type StrategyFunction = (
@@ -246,13 +256,48 @@ export default class BrushStrategy {
       return;
     }
 
+    const isLazyLabelmapEditing =
+      getConfig().segmentation?.overwriteMode !== undefined;
+    const shouldPrepareOverlap =
+      !isLazyLabelmapEditing || !initializedData.previewOnHover;
+    const originalSegmentationVoxelManager =
+      initializedData.segmentationVoxelManager;
+    const originalSegmentationImageData = initializedData.segmentationImageData;
+
+    if (shouldPrepareOverlap) {
+      prepareOverlapOperationData(initializedData);
+    }
+
+    if (
+      initializedData.memo?.segmentationVoxelManager !==
+      initializedData.segmentationVoxelManager
+    ) {
+      initializedData.memo = initializedData.createMemo(
+        initializedData.segmentationId,
+        initializedData.segmentationVoxelManager
+      );
+    }
+
+    if (
+      initializedData.segmentationVoxelManager !==
+        originalSegmentationVoxelManager ||
+      initializedData.segmentationImageData !== originalSegmentationImageData
+    ) {
+      this._initialize.forEach((func) => func(initializedData));
+    }
+
     this._fill.forEach((func) => func(initializedData));
 
     const { segmentationVoxelManager, segmentIndex } = initializedData;
+    const crossLayerModifiedSlices = eraseCrossLayerOverwrites(initializedData);
+    const modifiedSlices = new Set<number>([
+      ...(segmentationVoxelManager.getArrayOfModifiedSlices() ?? []),
+      ...crossLayerModifiedSlices,
+    ]);
 
     triggerSegmentationDataModified(
       initializedData.segmentationId,
-      segmentationVoxelManager.getArrayOfModifiedSlices(),
+      Array.from(modifiedSlices),
       segmentIndex
     );
 

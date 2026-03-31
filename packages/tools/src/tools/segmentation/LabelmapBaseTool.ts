@@ -4,11 +4,11 @@ import {
   utilities as csUtils,
   Enums,
   eventTarget,
+  BaseVolumeViewport,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
-import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { getActiveSegmentation } from '../../stateManagement/segmentation/getActiveSegmentation';
@@ -29,6 +29,10 @@ import { triggerSegmentationDataModified } from '../../stateManagement/segmentat
 import { fillInsideCircle } from './strategies';
 import type { LabelmapToolOperationData } from '../../types/LabelmapToolOperationData';
 import getViewportLabelmapRenderMode from '../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
+import {
+  getOrCreateLabelmapVolume,
+  resolveLabelmapForSegment,
+} from '../../stateManagement/segmentation/helpers/labelmapSegmentationState';
 
 /**
  * A type for preview data/information, used to setup previews on hover, or
@@ -285,27 +289,33 @@ export default class LabelmapBaseTool extends BaseTool {
     segmentationId,
   }): EditDataReturnType {
     const viewportRenderMode = getViewportLabelmapRenderMode(viewport);
+    const activeSegmentIndex = getActiveSegmentIndex(segmentationId);
+    const segmentation = getSegmentation(segmentationId);
+    const layerForEdit = activeSegmentIndex
+      ? resolveLabelmapForSegment(segmentation, activeSegmentIndex)
+      : undefined;
 
-    if (viewportRenderMode === 'volume') {
-      if (!representationData[SegmentationRepresentations.Labelmap]) {
+    if (
+      viewportRenderMode === 'volume' ||
+      viewport instanceof BaseVolumeViewport
+    ) {
+      const segmentationVolume = layerForEdit
+        ? getOrCreateLabelmapVolume(layerForEdit)
+        : undefined;
+      const volumeId = layerForEdit?.volumeId ?? segmentationVolume?.volumeId;
+
+      if (!segmentationVolume || !volumeId) {
         return;
       }
 
-      const { volumeId } = representationData[
-        SegmentationRepresentations.Labelmap
-      ] as LabelmapSegmentationDataVolume;
-      if (!volumeId) {
-        return;
-      }
       const actors = viewport.getActors();
 
       // we used to take the first actor here but we should take the one that is
       // probably the same size as the segmentation volume
       const volumes = actors
         .filter((actorEntry) => actorEntry.referencedId)
-        .map((actorEntry) => cache.getVolume(actorEntry.referencedId));
-
-      const segmentationVolume = cache.getVolume(volumeId);
+        .map((actorEntry) => cache.getVolume(actorEntry.referencedId))
+        .filter((volume): volume is Types.IImageVolume => !!volume);
 
       const referencedVolumeIdToThreshold =
         volumes.find((volume) =>
@@ -316,6 +326,8 @@ export default class LabelmapBaseTool extends BaseTool {
         volumeId,
         referencedVolumeId:
           this.configuration.threshold?.volumeId ??
+          layerForEdit?.referencedVolumeId ??
+          segmentationVolume.referencedVolumeId ??
           referencedVolumeIdToThreshold,
         segmentsLocked,
       };

@@ -2,13 +2,21 @@ import {
   BaseVolumeViewport,
   StackViewport,
   Enums,
+  VolumeViewport,
   type Types,
 } from '@cornerstonejs/core';
+import {
+  canRenderVolumeViewportLabelmapAsImage,
+  isLabelmapImageMapperEnabled,
+} from './labelmapImageMapperSupport';
 
 export type ViewportLabelmapRenderMode = 'image' | 'volume' | 'unsupported';
 
 export default function getViewportLabelmapRenderMode(
-  viewport: Types.IViewport
+  viewport: Types.IViewport,
+  options?: {
+    useImageMapper?: boolean;
+  }
 ): ViewportLabelmapRenderMode {
   const compatibilityViewport = viewport as Types.IViewport & {
     getCurrentImageId?: () => string;
@@ -16,6 +24,13 @@ export default function getViewportLabelmapRenderMode(
     getVolumeId?: () => string | undefined;
     type?: string;
   };
+  const useImageMapper = isLabelmapImageMapperEnabled(options);
+
+  if (viewport instanceof VolumeViewport && useImageMapper) {
+    return canRenderVolumeViewportLabelmapAsImage(viewport)
+      ? 'image'
+      : 'unsupported';
+  }
 
   if (viewport instanceof BaseVolumeViewport) {
     return 'volume';

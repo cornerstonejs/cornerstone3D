@@ -96,10 +96,12 @@ type ComputeWorkerConfig = {
 
 type SegmentationConfig = {
   /**
-   * When enabled, labelmap brush drags render an SVG trajectory preview and
-   * defer the voxel-manager mutation until interaction end.
+   * Controls how labelmap editing interacts with other segments.
+   * - all: erase all other unlocked segments under the edit footprint
+   * - visible: erase only visible unlocked segments
+   * - none: do not erase other segments, allowing overlap
    */
-  lazyLabelmapEditing?: boolean;
+  overwriteMode?: 'all' | 'visible' | 'none';
 };
 
 /**

@@ -283,6 +283,9 @@ const screenShotPaths = {
     nextBrush: 'next-brush.png',
     nextCpuBrush: 'next-cpu-brush.png',
   },
+  labelmapOverlapNext: {
+    legacyViewport: 'legacy-viewport.png',
+  },
   stackAPINext: {
     legacySetVoi: 'legacy-setVoi.png',
     legacyNextImage: 'legacy-nextImage.png',

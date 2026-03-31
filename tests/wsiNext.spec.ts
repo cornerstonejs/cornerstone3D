@@ -1,4 +1,4 @@
-import { test } from 'playwright-test-coverage';
+import { test } from '@playwright/test';
 import { checkForScreenshot, screenShotPaths } from './utils/index';
 
 const EXAMPLE = 'wsi';

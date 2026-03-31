@@ -17,6 +17,7 @@ export default {
     const {
       previewSegmentIndex,
       segmentIndex,
+      labelValue,
       viewport,
       segmentationVoxelManager,
       activeStrategy,
@@ -35,7 +36,7 @@ export default {
     if (
       !islandRemoval.initialize(viewport, voxelManager, {
         previewSegmentIndex,
-        segmentIndex,
+        segmentIndex: labelValue ?? segmentIndex,
       })
     ) {
       return;

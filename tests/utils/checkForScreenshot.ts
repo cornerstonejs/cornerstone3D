@@ -1,4 +1,4 @@
-import { expect } from 'playwright-test-coverage';
+import { expect } from '@playwright/test';
 import type { Locator, Page } from 'playwright';
 
 /**
@@ -16,7 +16,21 @@ const checkForScreenshot = async (
   attempts = 10,
   delay = 100
 ) => {
-  await page.waitForLoadState('networkidle');
+  try {
+    await page.waitForLoadState('networkidle', {
+      timeout: 1000,
+    });
+  } catch {
+    // Some examples keep background requests active long enough that
+    // waiting for network idle becomes a source of test hangs.
+  }
+
+  if ('waitFor' in locator && typeof locator.waitFor === 'function') {
+    await locator.waitFor({
+      state: 'visible',
+      timeout: 5000,
+    });
+  }
 
   for (let i = 0; i < attempts; i++) {
     try {

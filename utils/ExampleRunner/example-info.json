@@ -387,6 +387,14 @@
         "name": "Segmentation Tools (Labelmap) - Brush, Scissors",
         "description": "Demonstrates how to use manual segmentation tools to modify the segmentation data"
       },
+      "labelmapOverlapPlayground": {
+        "name": "Labelmap Overlap Playground",
+        "description": "Minimal overlap demo with brush and eraser variants, segment selection, and an Allow Overlap toggle for legacy, cpu=true, and type=next."
+      },
+      "labelmapOverlapPetCt": {
+        "name": "Labelmap Overlap PET-CT",
+        "description": "Segmentation drawn on CT (top row) is also displayed on PET (bottom row). Demonstrates cross-volume labelmap rendering."
+      },
       "labelmapStatistics": {
         "name": "Labelmap Statistics",
         "description": "Show labelmap statistics"

@@ -15,45 +15,47 @@ export function performVolumeLabelmapUpdate({
   representationData: Record<string, unknown>;
   type: SegmentationRepresentations;
 }): void {
-  const segmentationVolume = cache.getVolume(
-    (representationData[type] as LabelmapSegmentationDataVolume).volumeId
-  );
+  const labelmapData = representationData[
+    type
+  ] as LabelmapSegmentationDataVolume;
+  const volumeIds = Object.values(labelmapData?.labelmaps ?? {})
+    .map((layer) => layer.volumeId)
+    .filter(Boolean) || [labelmapData.volumeId];
 
-  if (!segmentationVolume) {
-    console.warn('segmentation not found in cache');
-    return;
-  }
+  volumeIds.forEach((volumeId) => {
+    const segmentationVolume = cache.getVolume(volumeId);
 
-  const { imageData, vtkOpenGLTexture } = segmentationVolume;
+    if (!segmentationVolume) {
+      return;
+    }
 
-  // Update the texture for the volume in the GPU
-  let slicesToUpdate;
-  if (modifiedSlicesToUse?.length > 0) {
-    slicesToUpdate = modifiedSlicesToUse;
-  } else {
-    const numSlices = imageData.getDimensions()[2];
-    slicesToUpdate = [...Array(numSlices).keys()];
-  }
+    const { imageData, vtkOpenGLTexture } = segmentationVolume;
 
-  vtkOpenGLTexture?.setUpdatedFrame &&
-    slicesToUpdate.forEach((i) => {
-      vtkOpenGLTexture.setUpdatedFrame(i);
+    let slicesToUpdate;
+    if (modifiedSlicesToUse?.length > 0) {
+      slicesToUpdate = modifiedSlicesToUse;
+    } else {
+      const numSlices = imageData.getDimensions()[2];
+      slicesToUpdate = [...Array(numSlices).keys()];
+    }
+
+    vtkOpenGLTexture?.setUpdatedFrame &&
+      slicesToUpdate.forEach((i) => {
+        vtkOpenGLTexture.setUpdatedFrame(i);
+      });
+
+    imageData.modified();
+
+    const numberOfFrames =
+      segmentationVolume.imageIds?.length ?? imageData.getDimensions()[2] ?? 0;
+    const FrameOfReferenceUID =
+      segmentationVolume.metadata?.FrameOfReferenceUID ?? '';
+
+    triggerEvent(eventTarget, Enums.Events.IMAGE_VOLUME_MODIFIED, {
+      volumeId: segmentationVolume.volumeId,
+      FrameOfReferenceUID,
+      numberOfFrames,
+      framesProcessed: numberOfFrames,
     });
-
-  // Trigger modified on the imageData to update the image
-  // this is the start of the rendering pipeline for updating the texture
-  // to the gpu
-  imageData.modified();
-
-  const numberOfFrames =
-    segmentationVolume.imageIds?.length ?? imageData.getDimensions()[2] ?? 0;
-  const FrameOfReferenceUID =
-    segmentationVolume.metadata?.FrameOfReferenceUID ?? '';
-
-  triggerEvent(eventTarget, Enums.Events.IMAGE_VOLUME_MODIFIED, {
-    volumeId: segmentationVolume.volumeId,
-    FrameOfReferenceUID,
-    numberOfFrames,
-    framesProcessed: numberOfFrames,
   });
 }

@@ -5,6 +5,13 @@ import { getViewportIdsWithSegmentation } from './getViewportIdsWithSegmentation
 import { triggerSegmentationModified } from './triggerSegmentationEvents';
 import { getActiveSegmentIndex } from './getActiveSegmentIndex';
 import { getSegmentationRepresentations } from './getSegmentationRepresentation';
+import {
+  ensureLabelmapState,
+  getSegmentBinding,
+  getLabelmaps,
+  setSegmentBinding,
+  syncLegacyLabelmapData,
+} from './helpers/labelmapSegmentationState';
 
 /**
  * Set the active segment index for a segmentation Id. It fires a global state
@@ -40,6 +47,33 @@ function setActiveSegmentIndex(
       cachedStats: {},
       active: false,
     };
+
+    if (segmentation.representationData?.Labelmap) {
+      ensureLabelmapState(segmentation);
+      const primaryLayer = getLabelmaps(segmentation)[0];
+      if (primaryLayer) {
+        setSegmentBinding(segmentation, segmentIndex, {
+          labelmapId: primaryLayer.labelmapId,
+          labelValue: segmentIndex,
+        });
+        syncLegacyLabelmapData(segmentation);
+      }
+    }
+  }
+
+  if (
+    segmentation.representationData?.Labelmap &&
+    !getSegmentBinding(segmentation, segmentIndex)
+  ) {
+    ensureLabelmapState(segmentation);
+    const primaryLayer = getLabelmaps(segmentation)[0];
+    if (primaryLayer) {
+      setSegmentBinding(segmentation, segmentIndex, {
+        labelmapId: primaryLayer.labelmapId,
+        labelValue: segmentIndex,
+      });
+      syncLegacyLabelmapData(segmentation);
+    }
   }
 
   if (segmentation.segments[segmentIndex].active !== true) {

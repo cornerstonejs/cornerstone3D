@@ -196,7 +196,7 @@ class BrushTool extends LabelmapBaseTool {
   }
 
   private _isLazyLabelmapEditingEnabled(): boolean {
-    return !!getConfig().segmentation?.lazyLabelmapEditing;
+    return getConfig().segmentation?.overwriteMode !== undefined;
   }
 
   private _resetLazyEditState(): void {

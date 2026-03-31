@@ -27,7 +27,7 @@ function getUniqueSegmentIndices(segmentationId) {
 
   let indices;
   if (segmentation.representationData.Labelmap) {
-    indices = handleLabelmapSegmentation(segmentation, segmentationId);
+    indices = handleLabelmapSegmentation(segmentation);
   } else if (segmentation.representationData.Contour) {
     indices = handleContourSegmentation(segmentation);
   } else if (segmentation.representationData.Surface) {
@@ -44,41 +44,10 @@ function getUniqueSegmentIndices(segmentationId) {
   return indices;
 }
 
-function handleLabelmapSegmentation(segmentation, segmentationId) {
-  const labelmapData =
-    segmentation.representationData[SegmentationRepresentations.Labelmap];
-  const keySet = new Set();
-
-  if (labelmapData.imageIds) {
-    addImageSegmentIndices(keySet, labelmapData.imageIds);
-  } else {
-    addVolumeSegmentIndices(keySet, segmentationId);
-  }
-
-  return Array.from(keySet)
+function handleLabelmapSegmentation(segmentation) {
+  return Object.keys(segmentation.segments)
     .map(Number)
     .sort((a, b) => a - b);
-}
-
-function addVolumeSegmentIndices(keySet, segmentationId) {
-  const volume = cache.getVolume(segmentationId);
-  volume.voxelManager.forEach(({ value }) => {
-    if (value !== 0) {
-      keySet.add(value);
-    }
-  });
-}
-
-function addImageSegmentIndices(keySet, imageIds) {
-  imageIds.forEach((segmentationImageId) => {
-    const image = cache.getImage(segmentationImageId);
-    const scalarData = image.voxelManager.getScalarData();
-    scalarData.forEach((segmentIndex) => {
-      if (segmentIndex !== 0) {
-        keySet.add(segmentIndex);
-      }
-    });
-  });
 }
 
 function handleContourSegmentation(segmentation) {

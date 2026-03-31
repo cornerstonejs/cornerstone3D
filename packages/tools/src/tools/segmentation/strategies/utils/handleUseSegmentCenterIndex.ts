@@ -9,7 +9,9 @@ export function handleUseSegmentCenterIndex({
     centerSegmentIndexInfo,
     previewOnHover,
     segmentIndex,
+    labelValue,
   } = operationData;
+  const activeLabelValue = labelValue ?? segmentIndex;
 
   const {
     hasPreviewIndex,
@@ -19,7 +21,7 @@ export function handleUseSegmentCenterIndex({
 
   // Todo: these can get simplified but for now it is fine
   if (centerSegmentIndex === 0 && hasSegmentIndex && hasPreviewIndex) {
-    if (existingValue === segmentIndex) {
+    if (existingValue === activeLabelValue) {
       return;
     }
 
@@ -39,7 +41,7 @@ export function handleUseSegmentCenterIndex({
   }
 
   if (centerSegmentIndex === 0 && hasSegmentIndex && !hasPreviewIndex) {
-    if (existingValue === 0 || existingValue !== segmentIndex) {
+    if (existingValue === 0 || existingValue !== activeLabelValue) {
       return;
     }
 
@@ -49,7 +51,7 @@ export function handleUseSegmentCenterIndex({
   }
 
   if (centerSegmentIndex === 0 && !hasSegmentIndex && hasPreviewIndex) {
-    if (existingValue === segmentIndex) {
+    if (existingValue === activeLabelValue) {
       return;
     }
 
@@ -69,7 +71,7 @@ export function handleUseSegmentCenterIndex({
   }
 
   if (centerSegmentIndex === 0 && !hasSegmentIndex && !hasPreviewIndex) {
-    if (existingValue === segmentIndex) {
+    if (existingValue === activeLabelValue) {
       return;
     }
 
@@ -86,7 +88,7 @@ export function handleUseSegmentCenterIndex({
     hasSegmentIndex &&
     hasPreviewIndex
   ) {
-    if (existingValue === segmentIndex) {
+    if (existingValue === activeLabelValue) {
       return;
     }
 
@@ -100,7 +102,7 @@ export function handleUseSegmentCenterIndex({
     !hasSegmentIndex &&
     hasPreviewIndex
   ) {
-    if (existingValue === segmentIndex) {
+    if (existingValue === activeLabelValue) {
       return;
     }
 
@@ -110,11 +112,11 @@ export function handleUseSegmentCenterIndex({
   }
 
   if (
-    centerSegmentIndex === segmentIndex &&
+    centerSegmentIndex === activeLabelValue &&
     hasSegmentIndex &&
     hasPreviewIndex
   ) {
-    if (existingValue === segmentIndex) {
+    if (existingValue === activeLabelValue) {
       return;
     }
 
@@ -123,11 +125,11 @@ export function handleUseSegmentCenterIndex({
     return;
   }
   if (
-    centerSegmentIndex === segmentIndex &&
+    centerSegmentIndex === activeLabelValue &&
     hasSegmentIndex &&
     !hasPreviewIndex
   ) {
-    if (existingValue === segmentIndex) {
+    if (existingValue === activeLabelValue) {
       return;
     }
 

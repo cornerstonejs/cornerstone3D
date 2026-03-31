@@ -364,6 +364,8 @@ export function createLocalVolume(
     origin,
     direction,
     scalarData,
+    referencedImageIds,
+    referencedVolumeId,
     targetBuffer,
     preventCache = false,
   } = options;
@@ -422,6 +424,7 @@ export function createLocalVolume(
       spacing: [spacing[0], spacing[1]],
       origin,
       direction,
+      referencedImageId: referencedImageIds?.[i],
       targetBuffer: { type: dataType },
     });
 
@@ -438,6 +441,8 @@ export function createLocalVolume(
     direction,
     imageIds,
     dataType,
+    referencedVolumeId,
+    referencedImageIds,
   });
 
   // Create and set voxel manager

@@ -38,26 +38,50 @@ export type InactiveLabelmapStyle = {
  */
 export type LabelmapStyle = BaseLabelmapStyle & InactiveLabelmapStyle;
 
-export type LabelmapSegmentationDataVolume = {
-  volumeId: string;
+export type LabelmapLayerType = 'volume' | 'stack';
+
+export type LabelmapLayer = {
+  labelmapId: string;
+  type: LabelmapLayerType;
+  volumeId?: string;
+  geometryVolumeId?: string;
+  referencedVolumeId?: string;
+  referencedImageIds?: string[];
+  imageIds?: string[];
+  labelToSegmentIndex?: {
+    [labelValue: number]: number;
+  };
+};
+
+export type SegmentLabelmapBindingState = {
+  labelmapId: string;
+  labelValue: number;
+};
+
+export type LabelmapSegmentationDataShared = {
+  referencedImageIds?: string[];
+  labelmaps?: {
+    [labelmapId: string]: LabelmapLayer;
+  };
+  segmentBindings?: {
+    [segmentIndex: number]: SegmentLabelmapBindingState;
+  };
+  sourceRepresentationName?: string;
+};
+
+export type LabelmapSegmentationDataVolume = LabelmapSegmentationDataShared & {
+  volumeId?: string;
   referencedVolumeId?: string;
 };
 
-export type LabelmapSegmentationDataStack = {
+export type LabelmapSegmentationDataStack = LabelmapSegmentationDataShared & {
   /**
    * array of imageIds that are associated with this segmentation
    * for each slice
    */
-  imageIds: string[];
+  imageIds?: string[];
 };
 
-export type LabelmapSegmentationData =
-  | LabelmapSegmentationDataVolume
-  | LabelmapSegmentationDataStack
-  // PolySeg version that has both
-  | {
-      volumeId?: string;
-      referencedVolumeId?: string;
-      referencedImageIds?: string[];
-      imageIds?: string[];
-    };
+export type LabelmapSegmentationData = LabelmapSegmentationDataShared &
+  LabelmapSegmentationDataVolume &
+  LabelmapSegmentationDataStack;

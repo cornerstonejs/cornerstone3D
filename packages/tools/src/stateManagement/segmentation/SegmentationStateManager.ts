@@ -31,6 +31,14 @@ import {
 } from './triggerSegmentationEvents';
 import { segmentationStyle } from './SegmentationStyle';
 import { triggerSegmentationAdded } from './events/triggerSegmentationAdded';
+import {
+  ensureLabelmapState,
+  getLabelmaps,
+  getReferencedImageIdToCurrentImageIdMap,
+  getSegmentBinding,
+  getLabelmapForSegment,
+  syncLegacyLabelmapData,
+} from './helpers/labelmapSegmentationState';
 
 const initialDefaultState: SegmentationState = {
   colorLUT: [],
@@ -161,6 +169,10 @@ export default class SegmentationStateManager {
 
       // Directly mutate the draft state
       Object.assign(segmentation, payload);
+      if (segmentation.representationData?.Labelmap) {
+        ensureLabelmapState(segmentation);
+        syncLegacyLabelmapData(segmentation);
+      }
     });
 
     triggerSegmentationModified(segmentationId);
@@ -180,6 +192,10 @@ export default class SegmentationStateManager {
 
     this.updateState((state) => {
       const newSegmentation = csUtils.deepClone(segmentation) as Segmentation;
+      if (newSegmentation.representationData?.Labelmap) {
+        ensureLabelmapState(newSegmentation);
+        syncLegacyLabelmapData(newSegmentation);
+      }
       if (
         newSegmentation.representationData.Labelmap &&
         'volumeId' in newSegmentation.representationData.Labelmap &&
@@ -586,6 +602,16 @@ export default class SegmentationStateManager {
     const labelmapData = representationData.Labelmap;
     let labelmapImageIds;
 
+    if (labelmapData?.labelmaps) {
+      return Array.from(
+        new Set(
+          Object.values(labelmapData.labelmaps)
+            .flatMap((layer) => layer.imageIds ?? [])
+            .filter(Boolean)
+        )
+      );
+    }
+
     if ((labelmapData as LabelmapSegmentationDataStack).imageIds) {
       labelmapImageIds = (labelmapData as LabelmapSegmentationDataStack)
         .imageIds;
@@ -607,11 +633,13 @@ export default class SegmentationStateManager {
   }
 
   getLabelmapImageIdsForImageId(imageId: string, segmentationId: string) {
-    const key = this._generateMapKey({
-      segmentationId,
-      referenceImageId: imageId,
-    });
-    return this._labelmapImageIdReferenceMap.get(key);
+    const segmentation = this.getSegmentation(segmentationId);
+    if (!segmentation?.representationData?.Labelmap) {
+      return;
+    }
+
+    ensureLabelmapState(segmentation);
+    return getReferencedImageIdToCurrentImageIdMap(segmentation).get(imageId);
   }
 
   /**
@@ -644,8 +672,72 @@ export default class SegmentationStateManager {
     const referenceImageId = (
       viewport as Types.IStackViewport
     ).getCurrentImageId();
+    const segmentation = this.getSegmentation(segmentationId);
+    if (!segmentation) {
+      return;
+    }
 
-    return this.getLabelmapImageIdsForImageId(referenceImageId, segmentationId);
+    ensureLabelmapState(segmentation);
+
+    const viewportImageIds = (viewport as Types.IStackViewport).getImageIds();
+    const currentIndex = viewportImageIds.indexOf(referenceImageId);
+    const labelmapImageIds: string[] = [];
+
+    getLabelmaps(segmentation).forEach((layer) => {
+      const referencedImageIds =
+        layer.referencedImageIds ?? viewportImageIds ?? [];
+      const referencedIndex = referencedImageIds.indexOf(referenceImageId);
+
+      if (referencedIndex !== -1 && layer.imageIds?.[referencedIndex]) {
+        labelmapImageIds.push(layer.imageIds[referencedIndex]);
+        return;
+      }
+
+      if (currentIndex !== -1 && layer.imageIds?.[currentIndex]) {
+        labelmapImageIds.push(layer.imageIds[currentIndex]);
+        return;
+      }
+
+      layer.imageIds?.some((candidateImageId) => {
+        const viewableImageId = (
+          viewport as Types.IStackViewport
+        ).isReferenceViewable(
+          { referencedImageId: candidateImageId },
+          { asOverlay: true }
+        );
+
+        if (viewableImageId) {
+          labelmapImageIds.push(candidateImageId);
+        }
+
+        return !!viewableImageId;
+      });
+    });
+
+    const resolvedImageIds = Array.from(new Set(labelmapImageIds));
+    const key = this._generateMapKey({
+      segmentationId,
+      referenceImageId,
+    });
+    this._labelmapImageIdReferenceMap.set(key, resolvedImageIds);
+
+    if (!this._stackLabelmapImageIdReferenceMap.has(segmentationId)) {
+      this._stackLabelmapImageIdReferenceMap.set(segmentationId, new Map());
+    }
+
+    const activeSegmentIndex = Object.keys(segmentation.segments).find(
+      (segmentIndex) => segmentation.segments[segmentIndex].active
+    );
+    const activeImageId = activeSegmentIndex
+      ? getLabelmapForSegment(segmentation, Number(activeSegmentIndex))
+          ?.imageIds?.[currentIndex]
+      : undefined;
+
+    this._stackLabelmapImageIdReferenceMap
+      .get(segmentationId)
+      .set(referenceImageId, activeImageId ?? resolvedImageIds[0]);
+
+    return resolvedImageIds;
   }
 
   /**
@@ -665,10 +757,6 @@ export default class SegmentationStateManager {
       return;
     }
 
-    if (!this._stackLabelmapImageIdReferenceMap.has(segmentationId)) {
-      return;
-    }
-
     const { viewport } = enabledElement;
     const viewportRenderMode = getViewportLabelmapRenderMode(viewport);
 
@@ -682,11 +770,30 @@ export default class SegmentationStateManager {
     const currentImageId = (
       viewport as Types.IStackViewport
     ).getCurrentImageId();
+    const currentImageIds = this.getCurrentLabelmapImageIdsForViewport(
+      viewportId,
+      segmentationId
+    );
+    if (!currentImageIds?.length) {
+      return;
+    }
 
-    const imageIdReferenceMap =
-      this._stackLabelmapImageIdReferenceMap.get(segmentationId);
+    const segmentation = this.getSegmentation(segmentationId);
+    const currentIndex = (viewport as Types.IStackViewport)
+      .getImageIds()
+      .indexOf(currentImageId);
+    const activeSegmentIndex = segmentation
+      ? Object.keys(segmentation.segments).find(
+          (segmentIndex) => segmentation.segments[segmentIndex].active
+        )
+      : undefined;
+    const activeImageId =
+      segmentation && activeSegmentIndex
+        ? getLabelmapForSegment(segmentation, Number(activeSegmentIndex))
+            ?.imageIds?.[currentIndex]
+        : undefined;
 
-    return imageIdReferenceMap.get(currentImageId);
+    return activeImageId ?? currentImageIds[0];
   }
 
   /**
@@ -712,13 +819,9 @@ export default class SegmentationStateManager {
     );
     const { viewport } = getEnabledElementByViewportId(viewportId);
     const imageIds = viewport.getImageIds();
+    const imageIdMap = getReferencedImageIdToCurrentImageIdMap(segmentation);
 
-    const associatedReferenceImageAndLabelmapImageIds =
-      this._stackLabelmapImageIdReferenceMap.get(segmentationId);
-
-    return imageIds.map((imageId) => {
-      return associatedReferenceImageAndLabelmapImageIds.get(imageId);
-    });
+    return imageIds.flatMap((imageId) => imageIdMap.get(imageId) ?? []);
   }
 
   private removeSegmentationRepresentationsInternal(
