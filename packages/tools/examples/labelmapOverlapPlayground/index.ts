@@ -392,7 +392,7 @@ async function run() {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
         config: {
-          useImageMapper: true,
+          useSliceRendering: true,
         },
       },
     ],
@@ -401,7 +401,7 @@ async function run() {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
         config: {
-          useImageMapper: true,
+          useSliceRendering: true,
         },
       },
     ],
@@ -410,7 +410,7 @@ async function run() {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
         config: {
-          useImageMapper: true,
+          useSliceRendering: true,
         },
       },
     ],
@@ -419,7 +419,7 @@ async function run() {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
         config: {
-          useImageMapper: true,
+          useSliceRendering: true,
         },
       },
     ],

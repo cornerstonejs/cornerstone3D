@@ -22,7 +22,7 @@ import { SegmentationRepresentations } from '../../../enums';
 import { addVolumesAsIndependentComponents } from './addVolumesAsIndependentComponents';
 import type { LabelmapRenderingConfig } from '../../../types/SegmentationStateTypes';
 import getViewportLabelmapRenderMode from '../../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
-import { shouldUseLabelmapImageMapper } from '../../../stateManagement/segmentation/helpers/labelmapImageMapperSupport';
+import { shouldUseSliceRendering } from '../../../stateManagement/segmentation/helpers/labelmapImageMapperSupport';
 import { getLabelmaps } from '../../../stateManagement/segmentation/helpers/labelmapSegmentationState';
 import { addVolumeLabelmapImageMapperActors } from './volumeLabelmapImageMapper';
 import { syncStackLabelmapActors } from './syncStackLabelmapActors';
@@ -56,9 +56,9 @@ async function addLabelmapToElement(
   const immediateRender = false;
   const suppressEvents = true;
   const segmentation = getSegmentation(segmentationId);
-  const useImageMapper = shouldUseLabelmapImageMapper(segmentation, config);
+  const useSliceRendering = shouldUseSliceRendering(segmentation, config);
   const renderMode = getViewportLabelmapRenderMode(viewport, {
-    useImageMapper,
+    useSliceRendering,
   });
 
   if (renderMode === 'volume') {
@@ -157,7 +157,7 @@ async function addLabelmapToElement(
       return result;
     }
   } else if (renderMode === 'image') {
-    if (useImageMapper && viewport instanceof BaseVolumeViewport) {
+    if (useSliceRendering && viewport instanceof BaseVolumeViewport) {
       addVolumeLabelmapImageMapperActors({
         viewport: viewport as Types.IVolumeViewport,
         segmentation,

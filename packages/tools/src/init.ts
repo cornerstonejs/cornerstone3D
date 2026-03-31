@@ -19,6 +19,7 @@ import segmentationRepresentationModifiedListener from './eventListeners/segment
 import { setConfig } from './config';
 import type { Config } from './config';
 import segmentationRemovedListener from './eventListeners/segmentation/segmentationRemovedEventListener';
+import { registerBuiltInSegmentationRepresentationDisplays } from './tools/displayTools/registerBuiltInSegmentationRepresentationDisplays';
 
 let csToolsInitialized = false;
 
@@ -33,6 +34,7 @@ export function init(defaultConfiguration = {} as Config): void {
     return;
   }
 
+  registerBuiltInSegmentationRepresentationDisplays();
   setConfig(defaultConfiguration);
 
   _addCornerstoneEventListeners();

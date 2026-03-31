@@ -16,20 +16,12 @@ import Representations from '../../enums/SegmentationRepresentations';
 import { getSegmentation } from './getSegmentation';
 import { getSegmentationRepresentations } from './getSegmentationRepresentation';
 import type { SegmentationRepresentation } from '../../types/SegmentationStateTypes';
-import surfaceDisplay from '../../tools/displayTools/Surface/surfaceDisplay';
-import contourDisplay from '../../tools/displayTools/Contour/contourDisplay';
-import labelmapDisplay from '../../tools/displayTools/Labelmap/labelmapDisplay';
 import { addTool } from '../../store/addTool';
 import { state } from '../../store/state';
 import PlanarFreehandContourSegmentationTool from '../../tools/annotation/PlanarFreehandContourSegmentationTool';
 import { getToolGroupForViewport } from '../../store/ToolGroupManager';
 import { addDefaultSegmentationListener } from './segmentationEventManager';
-
-const renderers = {
-  [Representations.Labelmap]: labelmapDisplay,
-  [Representations.Contour]: contourDisplay,
-  [Representations.Surface]: surfaceDisplay,
-};
+import { getSegmentationRepresentationDisplay } from './SegmentationRepresentationDisplayRegistry';
 
 const planarContourToolName = PlanarFreehandContourSegmentationTool.toolName;
 
@@ -195,13 +187,24 @@ class SegmentationRenderingEngine {
           this._addPlanarFreeHandToolIfAbsent(viewport);
         }
 
-        const display = renderers[representation.type];
+        const display = getSegmentationRepresentationDisplay(
+          representation.type
+        );
         const segmentation = getSegmentation(representation.segmentationId);
         const existingRepresentation =
           segmentation.representationData[representation.type] !== undefined;
 
+        if (!display) {
+          console.warn(
+            `No display registered for segmentation representation type ${representation.type}.`
+          );
+          return Promise.resolve({
+            segmentationId: representation.segmentationId,
+            type: representation.type,
+          });
+        }
+
         try {
-          // @ts-ignore
           display.render(viewport, representation).then(() => {
             if (!existingRepresentation) {
               addDefaultSegmentationListener(

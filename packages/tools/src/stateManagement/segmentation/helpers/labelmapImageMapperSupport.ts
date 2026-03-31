@@ -14,10 +14,10 @@ export type VolumeViewportLabelmapImageMapperState = {
   supported: boolean;
 };
 
-export function isLabelmapImageMapperEnabled(options?: {
-  useImageMapper?: boolean;
+export function isSliceRenderingEnabled(options?: {
+  useSliceRendering?: boolean;
 }): boolean {
-  if (options?.useImageMapper) {
+  if (options?.useSliceRendering) {
     return true;
   }
 
@@ -46,13 +46,13 @@ export function isLabelmapImageMapperEnabled(options?: {
   );
 }
 
-export function shouldUseLabelmapImageMapper(
+export function shouldUseSliceRendering(
   segmentation?: Segmentation,
   options?: {
-    useImageMapper?: boolean;
+    useSliceRendering?: boolean;
   }
 ): boolean {
-  if (isLabelmapImageMapperEnabled(options)) {
+  if (isSliceRenderingEnabled(options)) {
     return true;
   }
 

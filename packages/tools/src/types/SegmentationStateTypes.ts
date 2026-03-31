@@ -67,7 +67,7 @@ export type LabelmapRenderingConfig = {
   colorLUTIndex: number;
   // segmentation blend mode if desired
   blendMode?: coreEnums.BlendModes;
-  useImageMapper?: boolean;
+  useSliceRendering?: boolean;
 };
 
 export type ContourRenderingConfig = {};
@@ -149,6 +149,6 @@ export type RepresentationPublicInput = {
   config?: {
     colorLUTOrIndex?: Types.ColorLUT | number;
     blendMode?: coreEnums.BlendModes;
-    useImageMapper?: boolean;
+    useSliceRendering?: boolean;
   };
 };

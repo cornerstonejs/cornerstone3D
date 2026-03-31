@@ -38,7 +38,7 @@ import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import getViewportLabelmapRenderMode from '../../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
 import {
   getVolumeViewportLabelmapImageMapperState,
-  shouldUseLabelmapImageMapper,
+  shouldUseSliceRendering,
 } from '../../../stateManagement/segmentation/helpers/labelmapImageMapperSupport';
 import {
   getSegmentBinding,
@@ -175,9 +175,9 @@ async function render(
     return;
   }
 
-  const useImageMapper = shouldUseLabelmapImageMapper(segmentation, config);
+  const useSliceRendering = shouldUseSliceRendering(segmentation, config);
   const renderMode = getViewportLabelmapRenderMode(viewport, {
-    useImageMapper,
+    useSliceRendering,
   });
   const shouldResyncActors = _haveLabelmapActorsChanged(
     viewport,
@@ -192,7 +192,7 @@ async function render(
       removeRepresentation(viewport.id, segmentationId);
     }
 
-    if (useImageMapper) {
+    if (useSliceRendering) {
       const state = getVolumeViewportLabelmapImageMapperState(viewport);
       reportUnsupportedImageMapperError(viewport.id, segmentationId, state.key);
     }
@@ -221,7 +221,7 @@ async function render(
     labelmapActorEntries = getLabelmapActorEntries(viewport.id, segmentationId);
   } else if (renderMode === 'image') {
     const isVolumeImageMapper =
-      useImageMapper && viewport instanceof BaseVolumeViewport;
+      useSliceRendering && viewport instanceof BaseVolumeViewport;
 
     if (!isVolumeImageMapper) {
       const labelmapImageIds = getCurrentLabelmapImageIdsForViewport(
@@ -319,12 +319,12 @@ function _getExpectedLabelmapRepresentationUIDs(
   segmentationId: string,
   representation: LabelmapRepresentation
 ): string[] {
-  const useImageMapper = shouldUseLabelmapImageMapper(
+  const useSliceRendering = shouldUseSliceRendering(
     segmentation,
     representation.config
   );
   const renderMode = getViewportLabelmapRenderMode(viewport, {
-    useImageMapper,
+    useSliceRendering,
   });
 
   if (renderMode === 'volume') {
@@ -337,7 +337,7 @@ function _getExpectedLabelmapRepresentationUIDs(
   }
 
   if (renderMode === 'image') {
-    if (useImageMapper && viewport instanceof BaseVolumeViewport) {
+    if (useSliceRendering && viewport instanceof BaseVolumeViewport) {
       return getVolumeLabelmapImageMapperRepresentationUIDs(
         viewport,
         segmentationId,

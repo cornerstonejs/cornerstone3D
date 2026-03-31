@@ -12,7 +12,7 @@ import { getViewportIdsWithSegmentation } from '../../../stateManagement/segment
 import { getSegmentationRepresentations } from '../../../stateManagement/segmentation/getSegmentationRepresentation';
 import getViewportLabelmapRenderMode from '../../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
 import { triggerSegmentationRender } from '../../../stateManagement/segmentation/SegmentationRenderingEngine';
-import { shouldUseLabelmapImageMapper } from '../../../stateManagement/segmentation/helpers/labelmapImageMapperSupport';
+import { shouldUseSliceRendering } from '../../../stateManagement/segmentation/helpers/labelmapImageMapperSupport';
 
 const getViewportByViewportId = (viewportId: string) => {
   const enabledElement = getEnabledElementByViewportId(viewportId);
@@ -44,13 +44,13 @@ const onLabelmapSegmentationDataModified = function (
     const labelmapRepresentation = getSegmentationRepresentations(viewportId, {
       segmentationId,
       type: SegmentationRepresentations.Labelmap,
-    })[0] as { config?: { useImageMapper?: boolean } } | undefined;
-    const useImageMapper = shouldUseLabelmapImageMapper(
+    })[0] as { config?: { useSliceRendering?: boolean } } | undefined;
+    const useSliceRendering = shouldUseSliceRendering(
       getSegmentation(segmentationId),
       labelmapRepresentation?.config
     );
     const renderMode = getViewportLabelmapRenderMode(viewport, {
-      useImageMapper,
+      useSliceRendering,
     });
 
     if (renderMode === 'volume') {
@@ -59,7 +59,7 @@ const onLabelmapSegmentationDataModified = function (
     }
 
     if (renderMode === 'image') {
-      if (useImageMapper && viewport instanceof BaseVolumeViewport) {
+      if (useSliceRendering && viewport instanceof BaseVolumeViewport) {
         imageMapperViewportIds.push(viewportId);
       } else {
         stackViewportIds.push(viewportId);

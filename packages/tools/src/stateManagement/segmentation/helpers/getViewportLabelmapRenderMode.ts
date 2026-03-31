@@ -7,7 +7,7 @@ import {
 } from '@cornerstonejs/core';
 import {
   canRenderVolumeViewportLabelmapAsImage,
-  isLabelmapImageMapperEnabled,
+  isSliceRenderingEnabled,
 } from './labelmapImageMapperSupport';
 
 export type ViewportLabelmapRenderMode = 'image' | 'volume' | 'unsupported';
@@ -15,7 +15,7 @@ export type ViewportLabelmapRenderMode = 'image' | 'volume' | 'unsupported';
 export default function getViewportLabelmapRenderMode(
   viewport: Types.IViewport,
   options?: {
-    useImageMapper?: boolean;
+    useSliceRendering?: boolean;
   }
 ): ViewportLabelmapRenderMode {
   const compatibilityViewport = viewport as Types.IViewport & {
@@ -24,9 +24,9 @@ export default function getViewportLabelmapRenderMode(
     getVolumeId?: () => string | undefined;
     type?: string;
   };
-  const useImageMapper = isLabelmapImageMapperEnabled(options);
+  const useSliceRendering = isSliceRenderingEnabled(options);
 
-  if (viewport instanceof VolumeViewport && useImageMapper) {
+  if (viewport instanceof VolumeViewport && useSliceRendering) {
     return canRenderVolumeViewportLabelmapAsImage(viewport)
       ? 'image'
       : 'unsupported';

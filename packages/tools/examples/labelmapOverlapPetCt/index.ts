@@ -408,7 +408,7 @@ async function run() {
         segmentationId,
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
         config: {
-          useImageMapper: true,
+          useSliceRendering: true,
         },
       },
     ];

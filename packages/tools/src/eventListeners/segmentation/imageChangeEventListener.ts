@@ -9,7 +9,7 @@ import { SegmentationRepresentations } from '../../enums';
 import getViewportLabelmapRenderMode from '../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
 import {
   getVolumeViewportLabelmapImageMapperState,
-  shouldUseLabelmapImageMapper,
+  shouldUseSliceRendering,
 } from '../../stateManagement/segmentation/helpers/labelmapImageMapperSupport';
 import { getSegmentationRepresentations } from '../../stateManagement/segmentation/getSegmentationRepresentation';
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
@@ -125,9 +125,13 @@ function _imageChangeEventListener(evt) {
 
       return (
         isVolumeViewport &&
-        shouldUseLabelmapImageMapper(
+        shouldUseSliceRendering(
           segmentation,
-          (representation as { config?: { useImageMapper?: boolean } }).config
+          (
+            representation as {
+              config?: { useSliceRendering?: boolean };
+            }
+          ).config
         )
       );
     }
