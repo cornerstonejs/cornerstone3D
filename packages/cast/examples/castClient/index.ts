@@ -310,6 +310,7 @@ function renderPublishSection(): string {
           <select id="eventType">
             <option value="imagingstudy-open">imagingstudy-open</option>
             <option value="imagingstudy-close">imagingstudy-close</option>
+            <option value="dicom-update">dicom-update</option>
             <option value="patient-open">patient-open</option>
             <option value="patient-close">patient-close</option>
             <option value="custom">Other (custom)</option>
@@ -341,6 +342,7 @@ function renderGetSection(): string {
         <div><label for="getDataType">DataType</label>
           <select id="getDataType">
             <option value="FHIRcastContext" selected>FHIRcastContext</option>
+            <option value="DICOM">DICOM</option>
             <option value="SCENEVIEW">SCENEVIEW</option>
             <option value="TRANSFORM">TRANSFORM</option>
             <option value="POSITION">POSITION</option>
@@ -393,7 +395,9 @@ function renderInstructions(target: HTMLElement): void {
     .addInstruction(
       'Select a Hub (local 3D Slicer or cloud) from the dropdown.'
     )
-    .addInstruction('Click Authenticate to obtain a user id and access token.')
+    .addInstruction(
+      'Click Authenticate to obtain a user id and access token (use ?topic=<userid> to choose a mock user id).'
+    )
     .addInstruction(
       'Click Subscribe to open a WebSocket connection and start receiving events from the hub.'
     )
