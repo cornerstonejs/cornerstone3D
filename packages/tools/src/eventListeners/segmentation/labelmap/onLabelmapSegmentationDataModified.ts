@@ -1,7 +1,4 @@
-import {
-  BaseVolumeViewport,
-  getEnabledElementByViewportId,
-} from '@cornerstonejs/core';
+import { getEnabledElementByViewportId } from '@cornerstonejs/core';
 
 import type { SegmentationDataModifiedEventType } from '../../../types/EventTypes';
 import { SegmentationRepresentations } from '../../../enums';
@@ -12,7 +9,10 @@ import { getViewportIdsWithSegmentation } from '../../../stateManagement/segment
 import { getSegmentationRepresentations } from '../../../stateManagement/segmentation/getSegmentationRepresentation';
 import getViewportLabelmapRenderMode from '../../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
 import { triggerSegmentationRender } from '../../../stateManagement/segmentation/SegmentationRenderingEngine';
-import { shouldUseSliceRendering } from '../../../stateManagement/segmentation/helpers/labelmapImageMapperSupport';
+import {
+  canRenderVolumeViewportLabelmapAsImage,
+  shouldUseSliceRendering,
+} from '../../../stateManagement/segmentation/helpers/labelmapImageMapperSupport';
 
 const getViewportByViewportId = (viewportId: string) => {
   const enabledElement = getEnabledElementByViewportId(viewportId);
@@ -59,7 +59,10 @@ const onLabelmapSegmentationDataModified = function (
     }
 
     if (renderMode === 'image') {
-      if (useSliceRendering && viewport instanceof BaseVolumeViewport) {
+      if (
+        useSliceRendering &&
+        canRenderVolumeViewportLabelmapAsImage(viewport)
+      ) {
         imageMapperViewportIds.push(viewportId);
       } else {
         stackViewportIds.push(viewportId);

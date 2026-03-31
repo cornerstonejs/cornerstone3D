@@ -8,6 +8,7 @@ import { triggerSegmentationRender } from '../../stateManagement/segmentation/Se
 import { SegmentationRepresentations } from '../../enums';
 import getViewportLabelmapRenderMode from '../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
 import {
+  canRenderVolumeViewportLabelmapAsImage,
   getVolumeViewportLabelmapImageMapperState,
   shouldUseSliceRendering,
 } from '../../stateManagement/segmentation/helpers/labelmapImageMapperSupport';
@@ -28,11 +29,12 @@ const enable = function (element: HTMLDivElement): void {
 
   const { viewport } = enabledElement;
   const isVolumeViewport = viewport instanceof BaseVolumeViewport;
+  const isPlanarViewport = viewport.type === Enums.ViewportType.PLANAR_V2;
   const canUseStackImageEvents =
     typeof (viewport as { getCurrentImageId?: () => string })
       .getCurrentImageId === 'function';
 
-  if (isVolumeViewport) {
+  if (isVolumeViewport || isPlanarViewport) {
     element.addEventListener(
       Enums.Events.CAMERA_MODIFIED,
       _imageChangeEventListener as EventListener
@@ -124,7 +126,7 @@ function _imageChangeEventListener(evt) {
       const segmentation = getSegmentation(representation.segmentationId);
 
       return (
-        isVolumeViewport &&
+        canRenderVolumeViewportLabelmapAsImage(viewport) &&
         shouldUseSliceRendering(
           segmentation,
           (
@@ -159,7 +161,7 @@ function _imageChangeEventListener(evt) {
     return;
   }
 
-  if (isVolumeViewport) {
+  if (canRenderVolumeViewportLabelmapAsImage(viewport)) {
     return;
   }
 
@@ -170,9 +172,13 @@ function _imageChangeEventListener(evt) {
     return;
   }
 
+  const stackViewport = viewport as Types.IStackViewport & {
+    element: HTMLDivElement;
+  };
+
   labelmapRepresentations.forEach((representation) => {
     const { segmentationId } = representation;
-    syncStackLabelmapActors(viewport, segmentationId);
+    syncStackLabelmapActors(stackViewport, segmentationId);
 
     // if one or more actors were added to the viewport
     // we need to trigger a segmentation render
@@ -181,7 +187,7 @@ function _imageChangeEventListener(evt) {
     // stack new image is called when changing slices
     if (evt.type === Enums.Events.IMAGE_RENDERED) {
       // unsubscribe after the initial render
-      viewport.element.removeEventListener(
+      stackViewport.element.removeEventListener(
         Enums.Events.IMAGE_RENDERED,
         _imageChangeEventListener as EventListener
       );

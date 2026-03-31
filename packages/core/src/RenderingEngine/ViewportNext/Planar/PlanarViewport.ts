@@ -555,6 +555,7 @@ class PlanarViewport extends ViewportNext<
 
     if (
       rendering?.renderMode !== 'vtkImage' &&
+      rendering?.renderMode !== 'vtkVolumeSlice' &&
       rendering?.renderMode !== 'cpu2d'
     ) {
       return;

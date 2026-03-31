@@ -2,7 +2,6 @@ import {
   BaseVolumeViewport,
   StackViewport,
   Enums,
-  VolumeViewport,
   type Types,
 } from '@cornerstonejs/core';
 import {
@@ -26,10 +25,8 @@ export default function getViewportLabelmapRenderMode(
   };
   const useSliceRendering = isSliceRenderingEnabled(options);
 
-  if (viewport instanceof VolumeViewport && useSliceRendering) {
-    return canRenderVolumeViewportLabelmapAsImage(viewport)
-      ? 'image'
-      : 'unsupported';
+  if (useSliceRendering && canRenderVolumeViewportLabelmapAsImage(viewport)) {
+    return 'image';
   }
 
   if (viewport instanceof BaseVolumeViewport) {

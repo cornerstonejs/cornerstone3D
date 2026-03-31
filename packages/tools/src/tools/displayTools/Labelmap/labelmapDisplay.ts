@@ -1,6 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
 import {
-  BaseVolumeViewport,
   Enums as CoreEnums,
   eventTarget,
   getEnabledElementByViewportId,
@@ -37,6 +36,7 @@ import { defaultSegmentationStateManager } from '../../../stateManagement/segmen
 import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import getViewportLabelmapRenderMode from '../../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
 import {
+  canRenderVolumeViewportLabelmapAsImage,
   getVolumeViewportLabelmapImageMapperState,
   shouldUseSliceRendering,
 } from '../../../stateManagement/segmentation/helpers/labelmapImageMapperSupport';
@@ -104,7 +104,7 @@ function removeRepresentation(
  * @param configuration - The configuration object for the labelmap.
  */
 async function render(
-  viewport: Types.IStackViewport | Types.IVolumeViewport,
+  viewport: Types.IViewport,
   representation: LabelmapRepresentation
 ): Promise<void> {
   const { segmentationId, config } = representation;
@@ -144,7 +144,10 @@ async function render(
     labelmapData = await computeAndAddRepresentation(
       segmentationId,
       SegmentationRepresentations.Labelmap,
-      () => polySeg.computeLabelmapData(segmentationId, { viewport }),
+      () =>
+        polySeg.computeLabelmapData(segmentationId, {
+          viewport: viewport as Types.IVolumeViewport | Types.IStackViewport,
+        }),
       () => {
         defaultSegmentationStateManager.processLabelmapRepresentationAddition(
           viewport.id,
@@ -221,7 +224,7 @@ async function render(
     labelmapActorEntries = getLabelmapActorEntries(viewport.id, segmentationId);
   } else if (renderMode === 'image') {
     const isVolumeImageMapper =
-      useSliceRendering && viewport instanceof BaseVolumeViewport;
+      useSliceRendering && canRenderVolumeViewportLabelmapAsImage(viewport);
 
     if (!isVolumeImageMapper) {
       const labelmapImageIds = getCurrentLabelmapImageIdsForViewport(
@@ -253,7 +256,7 @@ async function render(
 
     if (isVolumeImageMapper && labelmapActorEntries?.length) {
       updateVolumeLabelmapImageMapperActors({
-        viewport: viewport as Types.IVolumeViewport,
+        viewport,
         segmentation,
         segmentationId,
         actorEntries: labelmapActorEntries,
@@ -278,7 +281,7 @@ async function render(
 }
 
 function _haveLabelmapActorsChanged(
-  viewport: Types.IStackViewport | Types.IVolumeViewport,
+  viewport: Types.IViewport,
   segmentation: ReturnType<typeof getSegmentation>,
   segmentationId: string,
   representation: LabelmapRepresentation,
@@ -314,7 +317,7 @@ function _haveLabelmapActorsChanged(
 }
 
 function _getExpectedLabelmapRepresentationUIDs(
-  viewport: Types.IStackViewport | Types.IVolumeViewport,
+  viewport: Types.IViewport,
   segmentation: NonNullable<ReturnType<typeof getSegmentation>>,
   segmentationId: string,
   representation: LabelmapRepresentation
@@ -337,7 +340,7 @@ function _getExpectedLabelmapRepresentationUIDs(
   }
 
   if (renderMode === 'image') {
-    if (useSliceRendering && viewport instanceof BaseVolumeViewport) {
+    if (useSliceRendering && canRenderVolumeViewportLabelmapAsImage(viewport)) {
       return getVolumeLabelmapImageMapperRepresentationUIDs(
         viewport,
         segmentationId,
@@ -697,7 +700,7 @@ function _needsTransferFunctionUpdate(
 }
 
 async function _addLabelmapToViewport(
-  viewport: Types.IVolumeViewport | Types.IStackViewport,
+  viewport: Types.IViewport,
   labelmapData: LabelmapSegmentationData,
   segmentationId: string,
   config: LabelmapRenderingConfig
@@ -718,7 +721,7 @@ async function _addLabelmapToViewport(
  * @returns
  */
 function getUpdateFunction(
-  viewport: Types.IVolumeViewport | Types.IStackViewport
+  viewport: Types.IViewport
 ): (segmentationId: string) => Promise<void> | null {
   return;
 }

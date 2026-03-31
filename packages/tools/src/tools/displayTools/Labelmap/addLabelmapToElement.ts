@@ -1,5 +1,4 @@
 import {
-  BaseVolumeViewport,
   type Types,
   getEnabledElement,
   addVolumesToViewports,
@@ -22,7 +21,10 @@ import { SegmentationRepresentations } from '../../../enums';
 import { addVolumesAsIndependentComponents } from './addVolumesAsIndependentComponents';
 import type { LabelmapRenderingConfig } from '../../../types/SegmentationStateTypes';
 import getViewportLabelmapRenderMode from '../../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
-import { shouldUseSliceRendering } from '../../../stateManagement/segmentation/helpers/labelmapImageMapperSupport';
+import {
+  canRenderVolumeViewportLabelmapAsImage,
+  shouldUseSliceRendering,
+} from '../../../stateManagement/segmentation/helpers/labelmapImageMapperSupport';
 import { getLabelmaps } from '../../../stateManagement/segmentation/helpers/labelmapSegmentationState';
 import { addVolumeLabelmapImageMapperActors } from './volumeLabelmapImageMapper';
 import { syncStackLabelmapActors } from './syncStackLabelmapActors';
@@ -157,9 +159,9 @@ async function addLabelmapToElement(
       return result;
     }
   } else if (renderMode === 'image') {
-    if (useSliceRendering && viewport instanceof BaseVolumeViewport) {
+    if (useSliceRendering && canRenderVolumeViewportLabelmapAsImage(viewport)) {
       addVolumeLabelmapImageMapperActors({
-        viewport: viewport as Types.IVolumeViewport,
+        viewport,
         segmentation,
         segmentationId,
       });

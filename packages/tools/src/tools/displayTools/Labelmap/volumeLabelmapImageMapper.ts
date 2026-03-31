@@ -2,7 +2,7 @@ import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
-import { type Types, utilities } from '@cornerstonejs/core';
+import { Enums, type Types, utilities } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 import type { Segmentation } from '../../../types/SegmentationStateTypes';
 import SegmentationRepresentations from '../../../enums/SegmentationRepresentations';
@@ -19,6 +19,7 @@ import {
 } from '../../../stateManagement/segmentation/helpers/labelmapSegmentationState';
 
 const OVERLAY_RENDERER_SUFFIX = 'labelmap-image-mapper-overlay';
+const PLANAR_OVERLAY_DEPTH_EPSILON = 1e-4;
 
 type AxisMatch = {
   axis: number;
@@ -34,6 +35,57 @@ type ImageMapperSliceState = {
   sliceAxis: number;
   sliceIndex: number;
 };
+
+type SliceRenderingViewport = Types.IViewport & {
+  getCamera(): Pick<Types.ICamera, 'focalPoint' | 'viewPlaneNormal' | 'viewUp'>;
+};
+
+type PlanarSliceRenderingViewport = SliceRenderingViewport & {
+  addImages: (
+    stackInputs: Array<{
+      imageId: string;
+      referencedId?: string;
+      representationUID?: string;
+      callback?: (args: { imageActor: vtkImageSlice }) => void;
+    }>
+  ) => void;
+  getCurrentImageId: () => string | undefined;
+  render: () => void;
+  type: string;
+};
+
+function isPlanarSliceRenderingViewport(
+  viewport: Types.IViewport
+): viewport is PlanarSliceRenderingViewport {
+  const compatibilityViewport =
+    viewport as Partial<PlanarSliceRenderingViewport>;
+
+  return (
+    compatibilityViewport.type === Enums.ViewportType.PLANAR_V2 &&
+    typeof compatibilityViewport.addImages === 'function' &&
+    typeof compatibilityViewport.getCurrentImageId === 'function' &&
+    typeof compatibilityViewport.render === 'function'
+  );
+}
+
+function applyPlanarOverlayDepthOffset(
+  actor: vtkImageSlice,
+  viewPlaneNormal: Types.Point3,
+  overlayOrder: number
+): void {
+  if (overlayOrder <= 0) {
+    actor.setPosition(0, 0, 0);
+    return;
+  }
+
+  const [x, y, z] = vec3.normalize(
+    vec3.create(),
+    viewPlaneNormal as unknown as vec3
+  ) as Types.Point3;
+  const offset = overlayOrder * PLANAR_OVERLAY_DEPTH_EPSILON;
+
+  actor.setPosition(x * offset, y * offset, z * offset);
+}
 
 function matchAxis(
   vector: Types.Point3,
@@ -75,7 +127,7 @@ function getVolumeAxes(volume: Types.IImageVolume): Types.Point3[] {
 }
 
 function getSliceState(
-  viewport: Types.IVolumeViewport,
+  viewport: SliceRenderingViewport,
   volume: Types.IImageVolume
 ): ImageMapperSliceState | undefined {
   const { viewPlaneNormal, viewUp, focalPoint } = viewport.getCamera();
@@ -136,7 +188,7 @@ function getSliceState(
 
 function createSliceImageData(
   volume: Types.IImageVolume,
-  viewport: Types.IVolumeViewport
+  viewport: SliceRenderingViewport
 ): { imageData: vtkImageData; state: ImageMapperSliceState } | undefined {
   const state = getSliceState(viewport, volume);
 
@@ -314,7 +366,7 @@ export function getVolumeLabelmapImageMapperRepresentationUIDs(
         return;
       }
 
-      const state = getSliceState(viewport as Types.IVolumeViewport, volume);
+      const state = getSliceState(viewport as SliceRenderingViewport, volume);
       if (!state) {
         return;
       }
@@ -325,13 +377,22 @@ export function getVolumeLabelmapImageMapperRepresentationUIDs(
 }
 
 export function addVolumeLabelmapImageMapperActors(args: {
-  viewport: Types.IVolumeViewport;
+  viewport: Types.IViewport;
   segmentation: Segmentation;
   segmentationId: string;
 }): void {
   const { viewport, segmentation, segmentationId } = args;
 
   if (!canRenderVolumeViewportLabelmapAsImage(viewport)) {
+    return;
+  }
+
+  if (isPlanarSliceRenderingViewport(viewport)) {
+    addPlanarLabelmapImageMapperActors({
+      viewport,
+      segmentation,
+      segmentationId,
+    });
     return;
   }
 
@@ -353,13 +414,13 @@ export function addVolumeLabelmapImageMapperActors(args: {
       representationUID,
     });
 
-    viewport.addActor(actorEntry);
-    moveActorToOverlayRenderer(viewport, actorEntry);
+    (viewport as Types.IVolumeViewport).addActor(actorEntry);
+    moveActorToOverlayRenderer(viewport as Types.IVolumeViewport, actorEntry);
   });
 }
 
 export function updateVolumeLabelmapImageMapperActors(args: {
-  viewport: Types.IVolumeViewport;
+  viewport: Types.IViewport;
   segmentation: Segmentation;
   segmentationId: string;
   actorEntries?: Types.ActorEntry[];
@@ -367,6 +428,16 @@ export function updateVolumeLabelmapImageMapperActors(args: {
   const { viewport, segmentation, segmentationId, actorEntries } = args;
 
   if (!canRenderVolumeViewportLabelmapAsImage(viewport)) {
+    return;
+  }
+
+  if (isPlanarSliceRenderingViewport(viewport)) {
+    updatePlanarLabelmapImageMapperActors({
+      viewport,
+      segmentation,
+      segmentationId,
+      actorEntries,
+    });
     return;
   }
 
@@ -410,6 +481,10 @@ export function removeVolumeLabelmapImageMapperActors(
   viewport: Types.IViewport,
   segmentationId: string
 ): void {
+  if (!(viewport.type === Enums.ViewportType.ORTHOGRAPHIC)) {
+    return;
+  }
+
   if (!canRenderVolumeViewportLabelmapAsImage(viewport)) {
     return;
   }
@@ -457,4 +532,101 @@ export function getLabelmapForActorReference(
     getLabelmapForVolumeId(segmentation, referencedId) ??
     getLabelmaps(segmentation).find((layer) => layer.volumeId === referencedId)
   );
+}
+
+function addPlanarLabelmapImageMapperActors(args: {
+  viewport: PlanarSliceRenderingViewport;
+  segmentation: Segmentation;
+  segmentationId: string;
+}): void {
+  const { viewport, segmentation, segmentationId } = args;
+  const currentImageId = viewport.getCurrentImageId();
+
+  if (!currentImageId) {
+    return;
+  }
+
+  getLabelmaps(segmentation).forEach((layer, index) => {
+    const volume = getOrCreateLabelmapVolume(layer);
+
+    if (!volume) {
+      return;
+    }
+
+    const sliceData = createSliceImageData(volume, viewport);
+
+    if (!sliceData) {
+      return;
+    }
+
+    viewport.addImages([
+      {
+        imageId: currentImageId,
+        referencedId: layer.labelmapId,
+        representationUID: `${segmentationId}-${SegmentationRepresentations.Labelmap}-${layer.labelmapId}-${sliceData.state.key}`,
+        callback: ({ imageActor }) => {
+          const mapper = imageActor.getMapper() as vtkImageMapper;
+
+          mapper.setInputData(sliceData.imageData);
+          mapper.modified();
+          applyPlanarOverlayDepthOffset(
+            imageActor,
+            viewport.getCamera().viewPlaneNormal,
+            index + 1
+          );
+        },
+      },
+    ]);
+  });
+
+  viewport.render();
+}
+
+function updatePlanarLabelmapImageMapperActors(args: {
+  viewport: PlanarSliceRenderingViewport;
+  segmentation: Segmentation;
+  segmentationId: string;
+  actorEntries?: Types.ActorEntry[];
+}): void {
+  const { viewport, segmentation, segmentationId, actorEntries } = args;
+  const actorEntriesByLabelmapId = new Map(
+    (actorEntries ?? viewport.getActors())
+      .filter((actorEntry) =>
+        (actorEntry.representationUID as string | undefined)?.startsWith(
+          `${segmentationId}-${SegmentationRepresentations.Labelmap}`
+        )
+      )
+      .map((actorEntry) => [actorEntry.referencedId, actorEntry] as const)
+  );
+
+  getLabelmaps(segmentation).forEach((layer, index) => {
+    const actorEntry = actorEntriesByLabelmapId.get(layer.labelmapId);
+
+    if (!actorEntry) {
+      return;
+    }
+
+    const volume = getOrCreateLabelmapVolume(layer);
+
+    if (!volume) {
+      return;
+    }
+
+    const sliceData = createSliceImageData(volume, viewport);
+
+    if (!sliceData) {
+      return;
+    }
+
+    const mapper = actorEntry.actor.getMapper() as vtkImageMapper;
+
+    mapper.setInputData(sliceData.imageData);
+    mapper.modified();
+    applyPlanarOverlayDepthOffset(
+      actorEntry.actor as vtkImageSlice,
+      viewport.getCamera().viewPlaneNormal,
+      index + 1
+    );
+    actorEntry.actor.modified?.();
+  });
 }

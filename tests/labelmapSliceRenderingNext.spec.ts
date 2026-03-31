@@ -74,3 +74,45 @@ test.describe('Labelmap Slice Rendering - Legacy', () => {
     }
   });
 });
+
+test.describe('Labelmap Slice Rendering - Next (GPU)', () => {
+  test.beforeEach(navigateToExample({ type: 'next' }));
+
+  test('should render labelmap with useSliceRendering in all orientations (next GPU)', async ({
+    page,
+  }) => {
+    const axial = getVisibleViewportCanvas(page, 0);
+    const coronal = getVisibleViewportCanvas(page, 1);
+    const sagittal = getVisibleViewportCanvas(page, 2);
+
+    await checkForScreenshot(
+      page,
+      axial,
+      screenShotPaths.labelmapSliceRenderingNext.nextAxial
+    );
+    await checkForScreenshot(
+      page,
+      coronal,
+      screenShotPaths.labelmapSliceRenderingNext.nextCoronal
+    );
+    await checkForScreenshot(
+      page,
+      sagittal,
+      screenShotPaths.labelmapSliceRenderingNext.nextSagittal
+    );
+  });
+
+  test('should use vtkImageSlice actor for segmentation (next GPU)', async ({
+    page,
+  }) => {
+    const classNames = await getSegmentationActorClassNames(
+      page,
+      SEGMENTATION_ID
+    );
+
+    expect(classNames.length).toBeGreaterThan(0);
+    for (const className of classNames) {
+      expect(className).toBe('vtkImageSlice');
+    }
+  });
+});

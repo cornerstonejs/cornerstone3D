@@ -290,6 +290,9 @@ const screenShotPaths = {
     legacyAxial: 'legacy-axial.png',
     legacyCoronal: 'legacy-coronal.png',
     legacySagittal: 'legacy-sagittal.png',
+    nextAxial: 'next-axial.png',
+    nextCoronal: 'next-coronal.png',
+    nextSagittal: 'next-sagittal.png',
   },
   labelmapSliceRenderingToolsNext: {
     legacySphereBrush: 'legacy-sphereBrush.png',

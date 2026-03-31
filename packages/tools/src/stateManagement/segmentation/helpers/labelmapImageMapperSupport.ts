@@ -14,6 +14,46 @@ export type VolumeViewportLabelmapImageMapperState = {
   supported: boolean;
 };
 
+type ViewportLabelmapImageMapperCompatibilityViewport = Types.IViewport & {
+  getBlendMode?: () => Enums.BlendModes | undefined;
+  getCurrentImageIdIndex?: () => number;
+  getDefaultActor?: () =>
+    | (Types.ActorEntry & {
+        actorMapper?: {
+          renderMode?: string;
+        };
+      })
+    | undefined;
+  getProperties?: (volumeId?: string) => {
+    slabThickness?: number;
+  };
+  getSliceViewInfo?: () => {
+    sliceIndex: number;
+  };
+  getVolumeId?: () => string | undefined;
+  type?: string;
+};
+
+function isPlanarGpuVolumeSliceViewport(
+  viewport: Types.IViewport
+): viewport is ViewportLabelmapImageMapperCompatibilityViewport {
+  const compatibilityViewport =
+    viewport as ViewportLabelmapImageMapperCompatibilityViewport;
+
+  if (compatibilityViewport.type !== Enums.ViewportType.PLANAR_V2) {
+    return false;
+  }
+
+  if (!compatibilityViewport.getVolumeId?.()) {
+    return false;
+  }
+
+  const defaultActor = compatibilityViewport.getDefaultActor?.();
+  const renderMode = defaultActor?.actorMapper?.renderMode;
+
+  return renderMode === 'vtkVolumeSlice';
+}
+
 export function isSliceRenderingEnabled(options?: {
   useSliceRendering?: boolean;
 }): boolean {
@@ -67,34 +107,51 @@ export function shouldUseSliceRendering(
 
 export function canRenderVolumeViewportLabelmapAsImage(
   viewport: Types.IViewport
-): viewport is Types.IVolumeViewport {
-  if (!(viewport instanceof VolumeViewport)) {
+): viewport is ViewportLabelmapImageMapperCompatibilityViewport {
+  const compatibilityViewport =
+    viewport as ViewportLabelmapImageMapperCompatibilityViewport;
+  const isLegacyVolumeViewport = viewport instanceof VolumeViewport;
+  const isNextPlanarViewport = isPlanarGpuVolumeSliceViewport(viewport);
+
+  if (!isLegacyVolumeViewport && !isNextPlanarViewport) {
     return false;
   }
 
-  if (viewport.getBlendMode?.() !== Enums.BlendModes.COMPOSITE) {
+  if (compatibilityViewport.getBlendMode?.() !== Enums.BlendModes.COMPOSITE) {
     return false;
   }
 
-  if (
-    viewport.getSlabThickness?.() >
-    MINIMUM_SLAB_THICKNESS + SLAB_THICKNESS_EPSILON
-  ) {
+  const slabThickness = isLegacyVolumeViewport
+    ? viewport.getSlabThickness?.()
+    : (compatibilityViewport.getProperties?.(
+        compatibilityViewport.getVolumeId?.()
+      )?.slabThickness ?? MINIMUM_SLAB_THICKNESS);
+
+  if (slabThickness > MINIMUM_SLAB_THICKNESS + SLAB_THICKNESS_EPSILON) {
     return false;
   }
 
-  try {
-    viewport.getSliceViewInfo();
-    return true;
-  } catch {
-    return false;
+  if (isLegacyVolumeViewport) {
+    try {
+      viewport.getSliceViewInfo();
+      return true;
+    } catch {
+      return false;
+    }
   }
+
+  return true;
 }
 
 export function getVolumeViewportLabelmapImageMapperState(
   viewport: Types.IViewport
 ): VolumeViewportLabelmapImageMapperState {
-  if (!(viewport instanceof VolumeViewport)) {
+  const compatibilityViewport =
+    viewport as ViewportLabelmapImageMapperCompatibilityViewport;
+  const isLegacyVolumeViewport = viewport instanceof VolumeViewport;
+  const isNextPlanarViewport = isPlanarGpuVolumeSliceViewport(viewport);
+
+  if (!isLegacyVolumeViewport && !isNextPlanarViewport) {
     return {
       key: 'unsupported:viewport',
       sliceIndex: NaN,
@@ -113,13 +170,21 @@ export function getVolumeViewportLabelmapImageMapperState(
   ) as Types.Point3;
   let sliceIndex: number | undefined;
 
-  try {
-    sliceIndex = viewport.getSliceViewInfo().sliceIndex;
-  } catch {
-    sliceIndex = undefined;
+  if (isLegacyVolumeViewport) {
+    try {
+      sliceIndex = viewport.getSliceViewInfo().sliceIndex;
+    } catch {
+      sliceIndex = undefined;
+    }
+  } else {
+    sliceIndex = compatibilityViewport.getCurrentImageIdIndex?.();
   }
-  const blendMode = viewport.getBlendMode?.();
-  const slabThickness = viewport.getSlabThickness?.() ?? MINIMUM_SLAB_THICKNESS;
+  const blendMode = compatibilityViewport.getBlendMode?.();
+  const slabThickness = isLegacyVolumeViewport
+    ? viewport.getSlabThickness?.()
+    : (compatibilityViewport.getProperties?.(
+        compatibilityViewport.getVolumeId?.()
+      )?.slabThickness ?? MINIMUM_SLAB_THICKNESS);
 
   const orientationKey = [
     normalizedNormal.map((value) => value.toFixed(3)).join(','),
@@ -142,11 +207,25 @@ export function getVolumeViewportLabelmapImageMapperState(
     };
   }
 
-  try {
-    viewport.getSliceViewInfo();
-  } catch {
+  if (isLegacyVolumeViewport) {
+    try {
+      viewport.getSliceViewInfo();
+    } catch {
+      return {
+        key: `unsupported:oblique:${orientationKey}`,
+        sliceIndex: sliceIndex ?? NaN,
+        supported: false,
+      };
+    }
+  }
+
+  if (
+    isNextPlanarViewport &&
+    compatibilityViewport.getDefaultActor?.()?.actorMapper?.renderMode !==
+      'vtkVolumeSlice'
+  ) {
     return {
-      key: `unsupported:oblique:${orientationKey}`,
+      key: `unsupported:renderMode:${orientationKey}`,
       sliceIndex: sliceIndex ?? NaN,
       supported: false,
     };
