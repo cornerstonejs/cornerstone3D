@@ -7,3 +7,4 @@ export { simulateDrawPath } from './simulateDrawPath';
 export { reduceViewportsSize } from './reduceViewportsSize';
 export { attemptAction } from './attemptAction';
 export { getVisibleViewportCanvas } from './getVisibleViewportCanvas';
+export { getSegmentationActorClassNames } from './getSegmentationActorClassNames';

@@ -355,6 +355,14 @@
         "name": "Labelmap Segmentation Rendering",
         "description": "Demonstrates how to add a Labelmap to the viewports for rendering"
       },
+      "labelmapSliceRendering": {
+        "name": "Labelmap Slice Rendering (useSliceRendering)",
+        "description": "Demonstrates labelmap rendering with useSliceRendering to avoid 3D texture allocation"
+      },
+      "labelmapSliceRenderingTools": {
+        "name": "Labelmap Slice Rendering Tools (useSliceRendering)",
+        "description": "Demonstrates sphere brush painting with useSliceRendering enabled"
+      },
       "contourRendering": {
         "name": "Contour Segmentation Representation",
         "description": "Demonstrates how to use the Contour Segmentation Representation"

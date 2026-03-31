@@ -16,6 +16,8 @@ SPECS=(
   "tests/labelmapRenderingNext.spec.ts"
   "tests/labelmapOverlapNext.spec.ts"
   "tests/labelmapSegToolsNext.spec.ts"
+  "tests/labelmapSliceRenderingNext.spec.ts"
+  "tests/labelmapSliceRenderingToolsNext.spec.ts"
   "tests/volumeAnnotationNext.spec.ts"
   "tests/stackManipulationToolsNext.spec.ts"
   "tests/multiVolumeAPINext.spec.ts"
@@ -30,7 +32,7 @@ SERIAL_SPECS=(
 )
 
 # Only build the examples these tests actually use (8 out of ~120)
-EXAMPLES="labelmapRendering labelmapOverlapPlayground labelmapSegmentationTools stackLabelmapSegmentation volumeAnnotationTools stackManipulationTools multiVolumeAPI stackAPI wsi video ecg"
+EXAMPLES="labelmapRendering labelmapOverlapPlayground labelmapSegmentationTools labelmapSliceRendering labelmapSliceRenderingTools stackLabelmapSegmentation volumeAnnotationTools stackManipulationTools multiVolumeAPI stackAPI wsi video ecg"
 
 PROJECT="chromium"
 UPDATE_FLAG=""

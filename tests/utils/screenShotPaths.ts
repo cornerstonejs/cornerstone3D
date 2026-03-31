@@ -286,6 +286,14 @@ const screenShotPaths = {
   labelmapOverlapNext: {
     legacyViewport: 'legacy-viewport.png',
   },
+  labelmapSliceRenderingNext: {
+    legacyAxial: 'legacy-axial.png',
+    legacyCoronal: 'legacy-coronal.png',
+    legacySagittal: 'legacy-sagittal.png',
+  },
+  labelmapSliceRenderingToolsNext: {
+    legacySphereBrush: 'legacy-sphereBrush.png',
+  },
   stackAPINext: {
     legacySetVoi: 'legacy-setVoi.png',
     legacyNextImage: 'legacy-nextImage.png',
