@@ -1,4 +1,4 @@
-import { getEnabledElementByViewportId } from '@cornerstonejs/core';
+import { Enums, getEnabledElementByViewportId } from '@cornerstonejs/core';
 
 import type { SegmentationDataModifiedEventType } from '../../../types/EventTypes';
 import { SegmentationRepresentations } from '../../../enums';
@@ -9,6 +9,8 @@ import { getViewportIdsWithSegmentation } from '../../../stateManagement/segment
 import { getSegmentationRepresentations } from '../../../stateManagement/segmentation/getSegmentationRepresentation';
 import getViewportLabelmapRenderMode from '../../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
 import { triggerSegmentationRender } from '../../../stateManagement/segmentation/SegmentationRenderingEngine';
+import { getLabelmapActorEntries } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
+import { getLabelmaps } from '../../../stateManagement/segmentation/helpers/labelmapSegmentationState';
 import {
   canRenderVolumeViewportLabelmapAsImage,
   shouldUseSliceRendering,
@@ -18,6 +20,74 @@ const getViewportByViewportId = (viewportId: string) => {
   const enabledElement = getEnabledElementByViewportId(viewportId);
   return enabledElement?.viewport ?? undefined;
 };
+
+type NextPlanarVolumeLabelmapViewport = ReturnType<
+  typeof getViewportByViewportId
+> & {
+  removeData?: (dataId: string) => void;
+  getDefaultActor?: () =>
+    | {
+        actorMapper?: {
+          renderMode?: string;
+        };
+      }
+    | undefined;
+  type?: string;
+};
+
+function isNextPlanarVolumeLabelmapViewport(
+  viewport: ReturnType<typeof getViewportByViewportId>
+): viewport is NextPlanarVolumeLabelmapViewport {
+  const compatibilityViewport = viewport as NextPlanarVolumeLabelmapViewport;
+
+  return (
+    compatibilityViewport?.type === Enums.ViewportType.PLANAR_V2 &&
+    compatibilityViewport.getDefaultActor?.()?.actorMapper?.renderMode ===
+      'vtkVolumeSlice' &&
+    typeof compatibilityViewport.removeData === 'function'
+  );
+}
+
+function shouldRefreshSingleLayerNextPlanarVolumeLabelmap(
+  segmentationId: string
+): boolean {
+  const segmentation = getSegmentation(segmentationId);
+
+  if (!segmentation) {
+    return false;
+  }
+
+  return (
+    getLabelmaps(segmentation).filter((layer) => !!layer.volumeId).length === 1
+  );
+}
+
+function refreshNextPlanarVolumeLabelmapBindings(
+  viewportId: string,
+  segmentationId: string
+): boolean {
+  const viewport = getViewportByViewportId(viewportId);
+
+  if (!isNextPlanarVolumeLabelmapViewport(viewport)) {
+    return false;
+  }
+
+  const actorEntries = getLabelmapActorEntries(viewportId, segmentationId);
+
+  if (!actorEntries?.length) {
+    return false;
+  }
+
+  actorEntries.forEach((actorEntry) => {
+    const dataId = actorEntry.representationUID ?? actorEntry.uid;
+
+    if (typeof dataId === 'string') {
+      viewport.removeData?.(dataId);
+    }
+  });
+
+  return true;
+}
 
 /** A callback function that is called when the segmentation data is modified which
  *  often is as a result of tool interactions e.g., scissors, eraser, etc.
@@ -33,6 +103,7 @@ const onLabelmapSegmentationDataModified = function (
   const volumeViewportIds: string[] = [];
   const stackViewportIds: string[] = [];
   const imageMapperViewportIds: string[] = [];
+  const nextPlanarVolumeViewportIdsToRefresh: string[] = [];
 
   viewportIds.forEach((viewportId) => {
     const viewport = getViewportByViewportId(viewportId);
@@ -54,6 +125,13 @@ const onLabelmapSegmentationDataModified = function (
     });
 
     if (renderMode === 'volume') {
+      if (
+        isNextPlanarVolumeLabelmapViewport(viewport) &&
+        shouldRefreshSingleLayerNextPlanarVolumeLabelmap(segmentationId)
+      ) {
+        nextPlanarVolumeViewportIdsToRefresh.push(viewportId);
+      }
+
       volumeViewportIds.push(viewportId);
       return;
     }
@@ -96,6 +174,12 @@ const onLabelmapSegmentationDataModified = function (
 
   imageMapperViewportIds.forEach((viewportId) => {
     triggerSegmentationRender(viewportId);
+  });
+
+  nextPlanarVolumeViewportIdsToRefresh.forEach((viewportId) => {
+    if (refreshNextPlanarVolumeLabelmapBindings(viewportId, segmentationId)) {
+      triggerSegmentationRender(viewportId);
+    }
   });
 };
 

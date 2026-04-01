@@ -393,6 +393,8 @@ interface NormalizedViewportInput {
   viewportId: string;
   /** type of the viewport */
   type: ViewportType;
+  /** original requested type before any internal remapping */
+  requestedType?: ViewportType;
   /** options for the viewport */
   defaultOptions: ViewportInputOptions;
 }
@@ -402,6 +404,7 @@ interface InternalViewportInput {
   canvas: HTMLCanvasElement;
   viewportId: string;
   type: ViewportType;
+  requestedType?: ViewportType;
   defaultOptions: ViewportInputOptions;
 }
 
@@ -409,6 +412,7 @@ interface ViewportInput {
   id: string;
   renderingEngineId: string;
   type: ViewportType;
+  requestedType?: ViewportType;
   element: HTMLDivElement;
   sx: number;
   sy: number;

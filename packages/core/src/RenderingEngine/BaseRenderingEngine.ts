@@ -16,7 +16,7 @@ import {
 } from '../init';
 import type IStackViewport from '../types/IStackViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
-import viewportTypeToViewportClass from './helpers/viewportTypeToViewportClass';
+import { getViewportClassForInput } from './helpers/viewportTypeToViewportClass';
 
 import type * as EventTypes from '../types/EventTypes';
 import type {
@@ -446,7 +446,9 @@ abstract class BaseRenderingEngine {
 
   /**
    * Map from legacy viewport types to their V2 equivalents.
-   * Used when `rendering.useViewportNext` is enabled.
+   * The remapped type is used internally for the render path and pipeline
+   * selection, while the original requested type is retained so viewport
+   * creation can choose a legacy adapter instead of a raw V2 class.
    */
   private static readonly V2_TYPE_REMAP: Partial<
     Record<ViewportType, ViewportType>
@@ -503,6 +505,10 @@ abstract class BaseRenderingEngine {
 
     return {
       ...viewportInputEntry,
+      requestedType:
+        requestedType !== type || getUseViewportNext()
+          ? requestedType
+          : undefined,
       type,
       defaultOptions: options,
     };
@@ -612,8 +618,8 @@ abstract class BaseRenderingEngine {
     };
 
     // 4. Create a proper viewport based on the type of the viewport
-    const ViewportType = viewportTypeToViewportClass[type];
-    const viewport = new ViewportType(viewportInput);
+    const ViewportClass = getViewportClassForInput(viewportInputEntry);
+    const viewport = new ViewportClass(viewportInput);
 
     // 5. Storing the viewports
     this._viewports.set(viewportId, viewport as unknown as IViewport);

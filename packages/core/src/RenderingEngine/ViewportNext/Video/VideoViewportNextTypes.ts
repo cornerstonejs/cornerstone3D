@@ -8,6 +8,7 @@ import type {
 import type ICamera from '../../../types/ICamera';
 import type { ViewportCameraBase } from '../ViewportCameraTypes';
 import type { VideoImageMetadata } from '../../../utilities/VideoUtilities';
+import type { VOIRange } from '../../../types';
 
 export interface VideoStreamPayload {
   renderedUrl: string;
@@ -32,6 +33,9 @@ export interface VideoProperties {
   loop?: boolean;
   muted?: boolean;
   objectFit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down';
+  voiRange?: VOIRange;
+  invert?: boolean;
+  averageWhite?: [number, number, number];
 }
 
 export type VideoDataPresentation = VideoPresentationProps & VideoProperties;

@@ -34,7 +34,8 @@ defaultRenderPathResolver.register(new VtkGeometry3DPath());
 class VolumeViewport3DV2 extends ViewportNext<
   Volume3DCamera,
   Volume3DDataPresentation,
-  Volume3DViewportRenderContext
+  Volume3DViewportRenderContext,
+  { camera: Volume3DCamera & ICamera }
 > {
   readonly type: ViewportType = ViewportType.VOLUME_3D_V2;
   readonly id: string;

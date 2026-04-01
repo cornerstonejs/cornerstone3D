@@ -4,9 +4,10 @@ import type {
   ICamera,
   Point2,
   Point3,
+  ViewPresentation,
+  ViewPresentationSelector,
+  ViewReference,
   ViewReferenceSpecifier,
-  VOIRange,
-  WSIViewportProperties,
 } from '../../../types';
 import type {
   WSIMapLike,
@@ -46,7 +47,7 @@ class WSIViewportNext extends ViewportNext<
   WSIDataPresentation,
   WSIViewportRenderContext
 > {
-  readonly type = ViewportType.WHOLE_SLIDE;
+  readonly type = ViewportType.WHOLE_SLIDE_V2;
   readonly id: string;
   readonly element: HTMLDivElement;
   readonly renderingEngineId: string;
@@ -55,11 +56,6 @@ class WSIViewportNext extends ViewportNext<
   protected renderContext: WSIViewportRenderContext;
 
   private activeDataId?: string;
-  private voiRange: VOIRange = {
-    lower: 0,
-    upper: 255,
-  };
-  private averageWhite?: [number, number, number];
 
   static get useCustomRenderingPipeline(): boolean {
     return true;
@@ -135,35 +131,15 @@ class WSIViewportNext extends ViewportNext<
     return renderingIds;
   }
 
-  setProperties(props: WSIViewportProperties): void {
-    if (props.voiRange) {
-      this.setVOI(props.voiRange);
+  setDataPresentation(
+    dataId: string,
+    props: Partial<WSIDataPresentation>
+  ): void {
+    super.setDataPresentation(dataId, props);
+
+    if (dataId === this.getActiveDataId()) {
+      this.applyVOIToRendering();
     }
-  }
-
-  getProperties = (): WSIViewportProperties => {
-    return {
-      voiRange: { ...this.voiRange },
-    };
-  };
-
-  resetProperties(): void {
-    this.setProperties({
-      voiRange: {
-        lower: 0,
-        upper: 255,
-      },
-    });
-  }
-
-  setVOI(voiRange: VOIRange): void {
-    this.voiRange = { ...voiRange };
-    this.applyVOIToRendering();
-  }
-
-  setAverageWhite(averageWhite: [number, number, number]): void {
-    this.averageWhite = [...averageWhite] as [number, number, number];
-    this.applyVOIToRendering();
   }
 
   computeTransforms() {
@@ -269,6 +245,57 @@ class WSIViewportNext extends ViewportNext<
 
   getCurrentImageId(): string | undefined {
     return this.getWSIData()?.imageIds[0];
+  }
+
+  getViewPresentation(
+    viewPresSel: ViewPresentationSelector = {
+      zoom: true,
+      rotation: true,
+    }
+  ): ViewPresentation {
+    const target: ViewPresentation = {};
+
+    if (viewPresSel.zoom) {
+      target.zoom = this.getZoom();
+    }
+
+    if (viewPresSel.rotation) {
+      target.rotation = this.getRotation();
+    }
+
+    return target;
+  }
+
+  setViewPresentation(viewPres?: ViewPresentation): void {
+    if (!viewPres) {
+      return;
+    }
+
+    const cameraPatch: Partial<WSICamera> = {};
+
+    if (typeof viewPres.zoom === 'number') {
+      cameraPatch.zoom = viewPres.zoom;
+    }
+
+    if (typeof viewPres.rotation === 'number') {
+      cameraPatch.rotation = viewPres.rotation;
+    }
+
+    if (Object.keys(cameraPatch).length) {
+      this.setCamera(cameraPatch);
+    }
+  }
+
+  getViewReference(_specifier: ViewReferenceSpecifier = {}): ViewReference {
+    return {
+      FrameOfReferenceUID: this.getFrameOfReferenceUID(),
+      referencedImageId: this.getCurrentImageId(),
+      sliceIndex: 0,
+    };
+  }
+
+  setViewReference(_viewRef: ViewReference): void {
+    // No-op for current single-image whole-slide workflows.
   }
 
   getFrameNumber(): number {
@@ -464,6 +491,7 @@ class WSIViewportNext extends ViewportNext<
 
     if (this.activeDataId === dataId) {
       this.activeDataId = this.bindings.keys().next().value;
+      this.applyVOIToRendering();
     }
   }
 
@@ -476,8 +504,22 @@ class WSIViewportNext extends ViewportNext<
     );
   }
 
+  protected getActiveDataId(): string | undefined {
+    return this.activeDataId;
+  }
+
   private applyVOIToRendering(): void {
-    const filter = buildWSIColorTransform(this.voiRange, this.averageWhite);
+    const activeDataId = this.getActiveDataId();
+    const dataPresentation = activeDataId
+      ? this.getDataPresentation(activeDataId)
+      : undefined;
+    const filter = buildWSIColorTransform(
+      dataPresentation?.voiRange || {
+        lower: 0,
+        upper: 255,
+      },
+      dataPresentation?.averageWhite
+    );
     const viewport = this.getMap()?.getViewport();
 
     if (!viewport) {

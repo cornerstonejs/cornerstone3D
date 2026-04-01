@@ -2,10 +2,7 @@ import { loadAndCacheImage } from '../../../loaders/imageLoader';
 import { createAndCacheVolume } from '../../../loaders/volumeLoader';
 import resolveViewportVolumeId from '../../helpers/resolveViewportVolumeId';
 import type { LoadedData } from '../ViewportArchitectureTypes';
-import {
-  getViewportNextImageDataSet,
-  isViewportNextImageDataSet,
-} from '../viewportNextDataSetAccess';
+import { getViewportNextPlanarDataSet } from '../viewportNextDataSetAccess';
 import type {
   PlanarDataProvider,
   PlanarDataLoadOptions,
@@ -69,9 +66,11 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
       };
     }
 
-    const image = await loadAndCacheImage(
-      dataSet.imageIds[clampedImageIdIndex]
-    );
+    const image =
+      dataSet.image &&
+      dataSet.image.imageId === dataSet.imageIds[clampedImageIdIndex]
+        ? dataSet.image
+        : await loadAndCacheImage(dataSet.imageIds[clampedImageIdIndex]);
 
     return {
       id: dataId,
@@ -89,7 +88,7 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
   }
 
   private getDataSet(dataId: string): PlanarRegisteredDataSet | undefined {
-    const dataSet = getViewportNextImageDataSet(dataId);
+    const dataSet = getViewportNextPlanarDataSet(dataId);
 
     if (!isPlanarRegisteredDataSet(dataSet)) {
       return;
@@ -102,13 +101,20 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
 function isPlanarRegisteredDataSet(
   value: unknown
 ): value is PlanarRegisteredDataSet {
-  if (!isViewportNextImageDataSet(value) || value.imageIds.length === 0) {
+  if (
+    !value ||
+    typeof value !== 'object' ||
+    !Array.isArray((value as PlanarRegisteredDataSet).imageIds) ||
+    (value as PlanarRegisteredDataSet).imageIds.length === 0
+  ) {
     return false;
   }
 
+  const dataSet = value as PlanarRegisteredDataSet;
+
   return (
-    (value.initialImageIdIndex === undefined ||
-      typeof value.initialImageIdIndex === 'number') &&
-    (value.volumeId === undefined || typeof value.volumeId === 'string')
+    (dataSet.initialImageIdIndex === undefined ||
+      typeof dataSet.initialImageIdIndex === 'number') &&
+    (dataSet.volumeId === undefined || typeof dataSet.volumeId === 'string')
   );
 }

@@ -1,6 +1,13 @@
 import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
 import ViewportNext from '../ViewportNext';
-import type { Point2 } from '../../../types';
+import type {
+  Point2,
+  ViewPresentation,
+  ViewPresentationSelector,
+  ViewReference,
+  ViewReferenceSpecifier,
+  ReferenceCompatibleOptions,
+} from '../../../types';
 import { ViewportType } from '../../../enums';
 import {
   frameNumberToTimeSeconds,
@@ -154,6 +161,117 @@ class VideoViewportNext extends ViewportNext<
       this.untrackVideoElement();
       this.trackVideoElement();
     }
+  }
+
+  getViewPresentation(
+    viewPresSel: ViewPresentationSelector = {
+      rotation: true,
+      zoom: true,
+      pan: true,
+    }
+  ): ViewPresentation {
+    const target: ViewPresentation = {};
+    const { rotation, zoom, pan } = viewPresSel;
+    const currentZoom = this.getZoom();
+
+    if (rotation) {
+      target.rotation = this.getComputedCamera()?.rotation ?? 0;
+    }
+
+    if (zoom) {
+      target.zoom = currentZoom;
+    }
+
+    if (pan) {
+      const currentPan = this.getPan();
+      target.pan = [currentPan[0] / currentZoom, currentPan[1] / currentZoom];
+    }
+
+    return target;
+  }
+
+  setViewPresentation(viewPres?: ViewPresentation): void {
+    if (!viewPres) {
+      return;
+    }
+
+    const nextZoom = Math.max(viewPres.zoom ?? this.getZoom(), 0.001);
+    this.setCamera({
+      rotation: viewPres.rotation ?? this.getComputedCamera()?.rotation ?? 0,
+      scale: nextZoom,
+      scaleMode: 'fit',
+    });
+
+    if (viewPres.pan) {
+      this.setPan([viewPres.pan[0] * nextZoom, viewPres.pan[1] * nextZoom]);
+    }
+  }
+
+  getViewReference(
+    viewRefSpecifier: ViewReferenceSpecifier = {}
+  ): ViewReference {
+    const sliceIndex =
+      viewRefSpecifier.sliceIndex ?? this.getCurrentImageIdIndex();
+    const referencedImageId =
+      typeof sliceIndex === 'number'
+        ? this.getCurrentImageId(sliceIndex)
+        : this.getCurrentImageId();
+
+    return {
+      FrameOfReferenceUID: this.getFrameOfReferenceUID(),
+      referencedImageId,
+      sliceIndex,
+    };
+  }
+
+  getCurrentImageId(index = this.getCurrentImageIdIndex()): string | undefined {
+    const sourceDataId = getViewportNextSourceDataId(
+      this.getFirstBinding()?.data.id || ''
+    );
+
+    if (!sourceDataId) {
+      return;
+    }
+
+    return generateFrameImageId(sourceDataId, index + 1);
+  }
+
+  getViewReferenceId(specifier: ViewReferenceSpecifier = {}): string {
+    const sliceIndex = specifier.sliceIndex;
+
+    if (sliceIndex === undefined) {
+      return `videoId:${this.getCurrentImageId()}`;
+    }
+
+    return `videoId:${this.getCurrentImageId(sliceIndex)}`;
+  }
+
+  isReferenceViewable(
+    viewRef: ViewReference,
+    options: ReferenceCompatibleOptions = {}
+  ): boolean {
+    if (!super.isReferenceViewable(viewRef, options)) {
+      return false;
+    }
+
+    if (options.withNavigation) {
+      return true;
+    }
+
+    return (
+      typeof viewRef.sliceIndex !== 'number' ||
+      viewRef.sliceIndex === this.getSliceIndex()
+    );
+  }
+
+  setViewReference(viewRef: ViewReference): void {
+    if (typeof viewRef.sliceIndex === 'number') {
+      this.setFrameNumber(viewRef.sliceIndex + 1);
+    }
+  }
+
+  getSliceIndex(): number {
+    return this.getCurrentImageIdIndex();
   }
 
   // ====================================================================

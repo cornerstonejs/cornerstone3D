@@ -8,10 +8,19 @@ import WSIViewport from '../WSIViewport';
 import ECGViewport from '../ECGViewport';
 import ECGViewportNext from '../ViewportNext/ECG/ECGViewportNext';
 import PlanarViewport from '../ViewportNext/Planar/PlanarViewport';
+import PlanarViewportLegacyAdapter from '../ViewportNext/Planar/PlanarViewportLegacyAdapter';
 import VideoViewportNext from '../ViewportNext/Video/VideoViewportNext';
+import VideoViewportLegacyAdapter from '../ViewportNext/Video/VideoViewportLegacyAdapter';
 import VolumeViewport3DV2 from '../ViewportNext/Volume3D/3dViewport';
 import WSIViewportNext from '../ViewportNext/WSI/WSIViewportNext';
-import type { ViewportInput, IViewport } from '../../types/IViewport';
+import WSIViewportLegacyAdapter from '../ViewportNext/WSI/WSIViewportLegacyAdapter';
+import ECGViewportLegacyAdapter from '../ViewportNext/ECG/ECGViewportLegacyAdapter';
+import type {
+  ViewportInput,
+  IViewport,
+  InternalViewportInput,
+  NormalizedViewportInput,
+} from '../../types/IViewport';
 
 interface ViewportConstructor {
   new (
@@ -44,3 +53,38 @@ const viewportTypeToViewportClass: {
 };
 
 export default viewportTypeToViewportClass;
+
+type ViewportClassInput = Pick<
+  ViewportInput | InternalViewportInput | NormalizedViewportInput,
+  'type' | 'requestedType'
+>;
+
+export function getViewportClassForInput({
+  type,
+  requestedType,
+}: ViewportClassInput): ViewportConstructor {
+  if (
+    type === ViewportType.PLANAR_V2 &&
+    (requestedType === ViewportType.STACK ||
+      requestedType === ViewportType.ORTHOGRAPHIC)
+  ) {
+    return PlanarViewportLegacyAdapter as unknown as ViewportConstructor;
+  }
+
+  if (type === ViewportType.VIDEO_V2 && requestedType === ViewportType.VIDEO) {
+    return VideoViewportLegacyAdapter as unknown as ViewportConstructor;
+  }
+
+  if (type === ViewportType.ECG_V2 && requestedType === ViewportType.ECG) {
+    return ECGViewportLegacyAdapter as unknown as ViewportConstructor;
+  }
+
+  if (
+    type === ViewportType.WHOLE_SLIDE_V2 &&
+    requestedType === ViewportType.WHOLE_SLIDE
+  ) {
+    return WSIViewportLegacyAdapter as unknown as ViewportConstructor;
+  }
+
+  return viewportTypeToViewportClass[type];
+}

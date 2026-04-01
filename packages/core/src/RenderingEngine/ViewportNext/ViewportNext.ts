@@ -18,6 +18,13 @@ import type {
 import type ViewportType from '../../enums/ViewportType';
 import type { ViewportCameraBase } from './ViewportCameraTypes';
 import type ViewportComputedCamera from './ViewportComputedCamera';
+import type {
+  ReferenceCompatibleOptions,
+  ViewPresentation,
+  ViewPresentationSelector,
+  ViewReference,
+  ViewReferenceSpecifier,
+} from '../../types/IViewport';
 
 /**
  * Generic ViewportNext controller.
@@ -46,7 +53,8 @@ abstract class ViewportNext<
   TCamera extends ICamera & ViewportCameraBase<unknown>,
   TDataPresentation = unknown,
   TContext extends BaseViewportRenderContext = BaseViewportRenderContext,
-> implements ViewportController<TCamera, TDataPresentation>
+  TViewPresentation = ViewPresentation,
+> implements ViewportController<TCamera, TDataPresentation, TViewPresentation>
 {
   // ── Abstract fields ──────────────────────────────────────────────────
 
@@ -118,6 +126,27 @@ abstract class ViewportNext<
   }
 
   /**
+   * Adds one or more logical datasets to the viewport.
+   */
+  async setDataList(
+    entries: Array<{ dataId: DataId; options?: unknown }>
+  ): Promise<RenderingId[]> {
+    const renderingIds: RenderingId[] = [];
+
+    for (const { dataId, options } of entries) {
+      if (!options) {
+        throw new Error(
+          `[${this.type}] setDataList requires per-entry options when the viewport family does not override it.`
+        );
+      }
+
+      renderingIds.push(await this.setData(dataId, options as DataAddOptions));
+    }
+
+    return renderingIds;
+  }
+
+  /**
    * Returns the stored presentation state for a specific dataset.
    */
   getDataPresentation(dataId: DataId): TDataPresentation | undefined {
@@ -129,6 +158,59 @@ abstract class ViewportNext<
    */
   getDataRenderMode(dataId: DataId): string | undefined {
     return this.getBinding(dataId)?.rendering.renderMode;
+  }
+
+  /**
+   * Returns a viewport-family-specific view-presentation snapshot when
+   * implemented by the concrete viewport.
+   */
+  getViewPresentation(
+    _selector?: ViewPresentationSelector
+  ): TViewPresentation | undefined {
+    return undefined;
+  }
+
+  /**
+   * Applies a viewport-family-specific view-presentation snapshot.
+   */
+  setViewPresentation(_viewPresentation?: TViewPresentation): void {
+    // Subclasses can implement.
+  }
+
+  /**
+   * Returns a spatial reference for the current viewport state.
+   */
+  getViewReference(_specifier: ViewReferenceSpecifier = {}): ViewReference {
+    return {
+      FrameOfReferenceUID: this.getFrameOfReferenceUID(),
+    };
+  }
+
+  /**
+   * Returns a stable string identifier for the current view reference.
+   */
+  getViewReferenceId(_specifier: ViewReferenceSpecifier = {}): string {
+    return `frameOfReference:${this.getFrameOfReferenceUID()}`;
+  }
+
+  /**
+   * Applies a spatial reference to the current viewport state.
+   */
+  setViewReference(_viewReference: ViewReference): void {
+    // Subclasses can implement.
+  }
+
+  /**
+   * Returns whether a spatial reference is compatible with this viewport.
+   */
+  isReferenceViewable(
+    viewReference: ViewReference,
+    _options: ReferenceCompatibleOptions = {}
+  ): boolean {
+    return (
+      !viewReference.FrameOfReferenceUID ||
+      viewReference.FrameOfReferenceUID === this.getFrameOfReferenceUID()
+    );
   }
 
   /**

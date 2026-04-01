@@ -15,24 +15,43 @@ export type VolumeViewportLabelmapImageMapperState = {
 };
 
 type ViewportLabelmapImageMapperCompatibilityViewport = Types.IViewport & {
-  getBlendMode?: () => Enums.BlendModes | undefined;
   getCurrentImageIdIndex?: () => number;
+  getDataPresentation?: (dataId: string) => {
+    blendMode?: Enums.BlendModes;
+    slabThickness?: number;
+  };
   getDefaultActor?: () =>
     | (Types.ActorEntry & {
         actorMapper?: {
+          actor?: {
+            getMapper?: () => {
+              getBlendMode?: () => Enums.BlendModes;
+              getSlabThickness?: () => number;
+            };
+          };
+          mapper?: {
+            getBlendMode?: () => Enums.BlendModes;
+            getSlabThickness?: () => number;
+          };
           renderMode?: string;
         };
       })
     | undefined;
-  getProperties?: (volumeId?: string) => {
-    slabThickness?: number;
-  };
   getSliceViewInfo?: () => {
     sliceIndex: number;
   };
   getVolumeId?: () => string | undefined;
   type?: string;
 };
+
+function isSupportedImageMapperBlendMode(
+  blendMode: Enums.BlendModes | undefined
+): boolean {
+  return (
+    blendMode === Enums.BlendModes.COMPOSITE ||
+    blendMode === Enums.BlendModes.AVERAGE_INTENSITY_BLEND
+  );
+}
 
 function isPlanarGpuVolumeSliceViewport(
   viewport: Types.IViewport
@@ -52,6 +71,97 @@ function isPlanarGpuVolumeSliceViewport(
   const renderMode = defaultActor?.actorMapper?.renderMode;
 
   return renderMode === 'vtkVolumeSlice';
+}
+
+function getPlanarVolumeSliceMapper(
+  viewport: ViewportLabelmapImageMapperCompatibilityViewport
+) {
+  const defaultActor = viewport.getDefaultActor?.();
+
+  return (defaultActor?.actorMapper?.mapper ??
+    defaultActor?.actorMapper?.actor?.getMapper?.()) as
+    | {
+        getBlendMode?: () => Enums.BlendModes;
+        getSlabThickness?: () => number;
+      }
+    | undefined;
+}
+
+function getPlanarPrimaryDataId(
+  viewport: ViewportLabelmapImageMapperCompatibilityViewport
+): string | undefined {
+  const renderModes = (
+    viewport as Types.IViewport & {
+      _debug?: {
+        renderModes?: Record<string, string>;
+      };
+    }
+  )._debug?.renderModes;
+
+  if (!renderModes) {
+    return;
+  }
+
+  return Object.entries(renderModes).find(
+    ([, renderMode]) => renderMode === 'vtkVolumeSlice'
+  )?.[0];
+}
+
+function getPlanarVolumeDataPresentation(
+  viewport: ViewportLabelmapImageMapperCompatibilityViewport
+) {
+  if (!viewport.getDataPresentation) {
+    return;
+  }
+
+  const primaryDataId = getPlanarPrimaryDataId(viewport);
+
+  return primaryDataId
+    ? viewport.getDataPresentation(primaryDataId)
+    : undefined;
+}
+
+function getCompatibilityBlendMode(
+  viewport: Types.IViewport
+): Enums.BlendModes | undefined {
+  if (viewport instanceof VolumeViewport) {
+    return viewport.getBlendMode?.();
+  }
+
+  if (!isPlanarGpuVolumeSliceViewport(viewport)) {
+    return;
+  }
+
+  const presentationBlendMode =
+    getPlanarVolumeDataPresentation(viewport)?.blendMode;
+
+  if (presentationBlendMode !== undefined) {
+    return presentationBlendMode;
+  }
+
+  return Enums.BlendModes.AVERAGE_INTENSITY_BLEND;
+}
+
+function getCompatibilitySlabThickness(viewport: Types.IViewport): number {
+  if (viewport instanceof VolumeViewport) {
+    return viewport.getSlabThickness?.() ?? MINIMUM_SLAB_THICKNESS;
+  }
+
+  if (!isPlanarGpuVolumeSliceViewport(viewport)) {
+    return MINIMUM_SLAB_THICKNESS;
+  }
+
+  const mapperSlabThickness =
+    getPlanarVolumeSliceMapper(viewport)?.getSlabThickness?.();
+
+  if (typeof mapperSlabThickness === 'number') {
+    return mapperSlabThickness;
+  }
+
+  return (
+    getPlanarVolumeDataPresentation(viewport)?.slabThickness ??
+    MINIMUM_SLAB_THICKNESS
+  );
 }
 
 export function isSliceRenderingEnabled(options?: {
@@ -117,15 +227,13 @@ export function canRenderVolumeViewportLabelmapAsImage(
     return false;
   }
 
-  if (compatibilityViewport.getBlendMode?.() !== Enums.BlendModes.COMPOSITE) {
+  const blendMode = getCompatibilityBlendMode(viewport);
+
+  if (isLegacyVolumeViewport && !isSupportedImageMapperBlendMode(blendMode)) {
     return false;
   }
 
-  const slabThickness = isLegacyVolumeViewport
-    ? viewport.getSlabThickness?.()
-    : (compatibilityViewport.getProperties?.(
-        compatibilityViewport.getVolumeId?.()
-      )?.slabThickness ?? MINIMUM_SLAB_THICKNESS);
+  const slabThickness = getCompatibilitySlabThickness(viewport);
 
   if (slabThickness > MINIMUM_SLAB_THICKNESS + SLAB_THICKNESS_EPSILON) {
     return false;
@@ -179,19 +287,15 @@ export function getVolumeViewportLabelmapImageMapperState(
   } else {
     sliceIndex = compatibilityViewport.getCurrentImageIdIndex?.();
   }
-  const blendMode = compatibilityViewport.getBlendMode?.();
-  const slabThickness = isLegacyVolumeViewport
-    ? viewport.getSlabThickness?.()
-    : (compatibilityViewport.getProperties?.(
-        compatibilityViewport.getVolumeId?.()
-      )?.slabThickness ?? MINIMUM_SLAB_THICKNESS);
+  const blendMode = getCompatibilityBlendMode(viewport);
+  const slabThickness = getCompatibilitySlabThickness(viewport);
 
   const orientationKey = [
     normalizedNormal.map((value) => value.toFixed(3)).join(','),
     normalizedViewUp.map((value) => value.toFixed(3)).join(','),
   ].join('|');
 
-  if (blendMode !== Enums.BlendModes.COMPOSITE) {
+  if (isLegacyVolumeViewport && !isSupportedImageMapperBlendMode(blendMode)) {
     return {
       key: `unsupported:blend:${blendMode}:${orientationKey}`,
       sliceIndex: sliceIndex ?? NaN,

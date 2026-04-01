@@ -1,13 +1,11 @@
 import { vec3 } from 'gl-matrix';
 import { OrientationAxis, ViewportType } from '../../../enums';
-import type BlendModes from '../../../enums/BlendModes';
 import type {
   ActorEntry,
   CPUIImageData,
   ICamera,
   IImage,
   IStackInput,
-  IVolumeInput,
   Point2,
   Point3,
   ReferenceCompatibleOptions,
@@ -25,6 +23,7 @@ import isEqual from '../../../utilities/isEqual';
 import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
 import getVolumeViewportScrollInfo from '../../../utilities/getVolumeViewportScrollInfo';
 import snapFocalPointToSlice from '../../../utilities/snapFocalPointToSlice';
+import viewportNextDataSetMetadataProvider from '../../../utilities/viewportNextDataSetMetadataProvider';
 import renderingEngineCache from '../../renderingEngineCache';
 import type { DataAddOptions, LoadedData } from '../ViewportArchitectureTypes';
 import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
@@ -33,7 +32,6 @@ import {
   getViewportNextImageDataSet,
   isViewportNextImageDataSet,
 } from '../viewportNextDataSetAccess';
-import PlanarLegacyCompatibilityController from './PlanarLegacyCompatibilityController';
 import { CpuImageSlicePath } from './CpuImageSliceRenderPath';
 import { CpuVolumeSlicePath } from './CpuVolumeSliceRenderPath';
 import { DefaultPlanarDataProvider } from './DefaultPlanarDataProvider';
@@ -44,10 +42,7 @@ import {
   selectPlanarRenderPath,
 } from './planarRenderPathSelector';
 import type { SelectedPlanarRenderPath } from './planarRenderPathSelector';
-import {
-  clonePlanarOrientation,
-  type PlanarLegacyViewportProperties,
-} from './planarLegacyCompatibility';
+import { clonePlanarOrientation } from './planarLegacyCompatibility';
 import { normalizePlanarRotation } from './planarViewPresentation';
 import {
   createDefaultPlanarCamera,
@@ -120,50 +115,6 @@ class PlanarViewport extends ViewportNext<
   private readonly lockedRenderMode: PlanarEffectiveRenderMode;
   private readonly compatibilityOverlayActors = new Map<string, ActorEntry>();
   private cpuCanvas?: HTMLCanvasElement;
-  private readonly legacyCompatibility =
-    new PlanarLegacyCompatibilityController({
-      getElement: () => this.element,
-      getViewportId: () => this.id,
-      getRequestedOrientation: () => this.resolveRequestedOrientation(),
-      prepareVolumeCompatibilityCamera: () => {
-        this.camera = this.normalizeCamera({
-          ...this.camera,
-          imageIdIndex: undefined,
-          orientation: this.resolveRequestedOrientation(),
-        });
-      },
-      setData: (dataId, options) => this.setData(dataId, options),
-      setDataList: (entries) => this.setDataList(entries),
-      setImageIdIndex: (imageIdIndex) => this.setImageIdIndex(imageIdIndex),
-      getCurrentImageId: () => this.getCurrentImageId(),
-      render: () => this.render(),
-      removeBindingsExcept: (keepDataIds) =>
-        this.removeBindingsExcept(keepDataIds),
-      setCameraOrientation: (orientation) => {
-        this.setCamera({ orientation });
-      },
-      setDataPresentationState: (dataId, presentation) => {
-        this.setDataPresentationState(dataId, presentation);
-      },
-      setDataPresentation: (dataId, presentation) => {
-        this.setDataPresentation(dataId, presentation);
-      },
-      getDataPresentation: (dataId) => this.getDataPresentation(dataId),
-      getCameraOrientation: () => this.camera.orientation,
-      getCurrentPlanarRendering: () => this.getCurrentPlanarRendering(),
-      getActiveDataId: () => this.activeDataId,
-      getFirstBoundDataId: () => this.bindings.keys().next().value,
-      findDataIdByVolumeId: (volumeId) => this.findDataIdByVolumeId(volumeId),
-      getBindingActor: (dataId) => {
-        const rendering = this.getBinding(dataId)?.rendering as
-          | { actor?: unknown; compatibilityActor?: unknown }
-          | undefined;
-
-        return rendering?.actor ?? rendering?.compatibilityActor;
-      },
-      getImageCount: () => this.getImageIds().length,
-      getMaxImageIdIndex: () => this.getMaxImageIdIndex(),
-    });
 
   // ── Static ───────────────────────────────────────────────────────────
 
@@ -363,89 +314,6 @@ class PlanarViewport extends ViewportNext<
     if (!this.isDestroyed && this.getCurrentBinding()) {
       this.updateBindingsCameraState();
     }
-
-    this.legacyCompatibility.removeData(dataId);
-  }
-
-  // ====================================================================
-  // Public API -- legacy compatibility (deprecated)
-  // ====================================================================
-
-  /** @deprecated Legacy shim for `setStack(...)`. */
-  async setStack(imageIds: string[], currentImageIdIndex = 0): Promise<string> {
-    return this.legacyCompatibility.setStack(imageIds, currentImageIdIndex);
-  }
-
-  /** @deprecated Legacy shim for `setVolumes(...)`. */
-  async setVolumes(
-    volumeInputArray: IVolumeInput[],
-    immediate = false,
-    suppressEvents = false
-  ): Promise<void> {
-    return this.legacyCompatibility.setVolumes(
-      volumeInputArray,
-      immediate,
-      suppressEvents
-    );
-  }
-
-  /** @deprecated Legacy shim for `addVolumes(...)`. */
-  async addVolumes(
-    volumeInputArray: IVolumeInput[],
-    immediate = false,
-    suppressEvents = false
-  ): Promise<void> {
-    return this.legacyCompatibility.addVolumes(
-      volumeInputArray,
-      immediate,
-      suppressEvents
-    );
-  }
-
-  /** @deprecated Legacy shim for `setProperties(...)`. */
-  setProperties(
-    properties: PlanarLegacyViewportProperties = {},
-    volumeIdOrSuppressEvents?: string | boolean,
-    suppressEvents = false
-  ): void {
-    this.legacyCompatibility.setProperties(
-      properties,
-      volumeIdOrSuppressEvents,
-      suppressEvents
-    );
-  }
-
-  /** @deprecated Legacy shim for `getProperties(...)`. */
-  getProperties(volumeId?: string): PlanarLegacyViewportProperties {
-    return this.legacyCompatibility.getProperties(volumeId);
-  }
-
-  /** @deprecated Legacy shim for `resetProperties(...)`. */
-  resetProperties(volumeId?: string): void {
-    this.legacyCompatibility.resetProperties(volumeId);
-  }
-
-  /** @deprecated Legacy shim for `getBlendMode(...)`. */
-  getBlendMode(filterActorUIDs?: string[]): BlendModes | undefined {
-    return this.legacyCompatibility.getBlendMode(filterActorUIDs);
-  }
-
-  /** @deprecated Legacy shim for `setBlendMode(...)`. */
-  setBlendMode(
-    blendMode: BlendModes,
-    filterActorUIDs?: string[],
-    immediate = false
-  ): void {
-    this.legacyCompatibility.setBlendMode(
-      blendMode,
-      filterActorUIDs,
-      immediate
-    );
-  }
-
-  /** @deprecated Legacy shim for `getNumberOfSlices()`. */
-  getNumberOfSlices(): number {
-    return this.legacyCompatibility.getNumberOfSlices();
   }
 
   // ====================================================================
@@ -493,7 +361,16 @@ class PlanarViewport extends ViewportNext<
    * Renders a single image object by setting it as a one-image stack.
    */
   renderImageObject(image: IImage): Promise<string> {
-    return this.setStack([image.imageId], 0);
+    viewportNextDataSetMetadataProvider.add(image.imageId, {
+      image,
+      imageIds: [image.imageId],
+      initialImageIdIndex: 0,
+      kind: 'planar',
+    });
+
+    return this.setData(image.imageId, {
+      orientation: this.resolveRequestedOrientation(),
+    });
   }
 
   /**
@@ -1386,7 +1263,6 @@ class PlanarViewport extends ViewportNext<
   // ====================================================================
 
   protected override onDestroy(): void {
-    this.legacyCompatibility.destroy();
     this.compatibilityOverlayActors.forEach((actorEntry) => {
       if (actorEntry.actorMapper?.renderMode === 'vtkImage') {
         this.renderContext.vtk.renderer.removeActor(actorEntry.actor as never);
@@ -1439,7 +1315,53 @@ class PlanarViewport extends ViewportNext<
     }
   }
 
-  private updateBindingsCameraState(): void {
+  protected createLegacyCompatibilityHost() {
+    return {
+      getElement: () => this.element,
+      getViewportId: () => this.id,
+      getRequestedOrientation: () => this.resolveRequestedOrientation(),
+      prepareVolumeCompatibilityCamera: () => {
+        this.camera = this.normalizeCamera({
+          ...this.camera,
+          imageIdIndex: undefined,
+          orientation: this.resolveRequestedOrientation(),
+        });
+      },
+      setData: (dataId, options) => this.setData(dataId, options),
+      setDataList: (entries) => this.setDataList(entries),
+      setImageIdIndex: (imageIdIndex) => this.setImageIdIndex(imageIdIndex),
+      getCurrentImageId: () => this.getCurrentImageId(),
+      render: () => this.render(),
+      removeBindingsExcept: (keepDataIds) =>
+        this.removeBindingsExcept(keepDataIds),
+      setCameraOrientation: (orientation) => {
+        this.setCamera({ orientation });
+      },
+      setDataPresentationState: (dataId, presentation) => {
+        this.setDataPresentationState(dataId, presentation);
+      },
+      setDataPresentation: (dataId, presentation) => {
+        this.setDataPresentation(dataId, presentation);
+      },
+      getDataPresentation: (dataId) => this.getDataPresentation(dataId),
+      getCameraOrientation: () => this.camera.orientation,
+      getCurrentPlanarRendering: () => this.getCurrentPlanarRendering(),
+      getActiveDataId: () => this.activeDataId,
+      getFirstBoundDataId: () => this.bindings.keys().next().value,
+      findDataIdByVolumeId: (volumeId) => this.findDataIdByVolumeId(volumeId),
+      getBindingActor: (dataId) => {
+        const rendering = this.getBinding(dataId)?.rendering as
+          | { actor?: unknown; compatibilityActor?: unknown }
+          | undefined;
+
+        return rendering?.actor ?? rendering?.compatibilityActor;
+      },
+      getImageCount: () => this.getImageIds().length,
+      getMaxImageIdIndex: () => this.getMaxImageIdIndex(),
+    };
+  }
+
+  protected updateBindingsCameraState(): void {
     const currentBinding = this.getCurrentBinding();
 
     if (currentBinding) {
@@ -1480,7 +1402,7 @@ class PlanarViewport extends ViewportNext<
     return this.camera.imageIdIndex ?? 0;
   }
 
-  private getMaxImageIdIndex(): number {
+  protected getMaxImageIdIndex(): number {
     const binding = this.getCurrentBinding();
     const maxImageIdIndex = (
       binding?.rendering as { maxImageIdIndex?: number } | undefined
@@ -1594,7 +1516,7 @@ class PlanarViewport extends ViewportNext<
     );
   }
 
-  private removeBindingsExcept(keepDataIds: Set<string>): void {
+  protected removeBindingsExcept(keepDataIds: Set<string>): void {
     for (const dataId of Array.from(this.bindings.keys())) {
       if (!keepDataIds.has(dataId)) {
         this.removeData(dataId);
@@ -1626,7 +1548,7 @@ class PlanarViewport extends ViewportNext<
     }
   }
 
-  private findDataIdByVolumeId(volumeId: string): string | undefined {
+  protected findDataIdByVolumeId(volumeId: string): string | undefined {
     for (const [dataId, binding] of this.bindings.entries()) {
       const bindingVolumeId = (
         binding.data as LoadedData<PlanarPayload> | undefined
@@ -1638,7 +1560,7 @@ class PlanarViewport extends ViewportNext<
     }
   }
 
-  private getCurrentPlanarRendering(): PlanarRendering | undefined {
+  protected getCurrentPlanarRendering(): PlanarRendering | undefined {
     return this.getCurrentBinding()?.rendering as PlanarRendering | undefined;
   }
 

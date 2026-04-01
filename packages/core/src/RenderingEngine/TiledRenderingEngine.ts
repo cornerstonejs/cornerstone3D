@@ -15,7 +15,7 @@ import type {
   NormalizedViewportInput,
   IViewport,
 } from '../types/IViewport';
-import viewportTypeToViewportClass from './helpers/viewportTypeToViewportClass';
+import { getViewportClassForInput } from './helpers/viewportTypeToViewportClass';
 
 interface ViewportDisplayCoords {
   sxStartDisplayCoords: number;
@@ -190,7 +190,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
     } as ViewportInput;
 
     // 4. Create a proper viewport based on the type of the viewport
-    const ViewportClass = viewportTypeToViewportClass[type];
+    const ViewportClass = getViewportClassForInput(viewportInputEntry);
 
     if (!ViewportClass) {
       throw new Error(`Viewport Type ${type} is not supported`);

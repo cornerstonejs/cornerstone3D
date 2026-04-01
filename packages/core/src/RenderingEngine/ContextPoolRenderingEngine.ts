@@ -24,7 +24,7 @@ import type {
   IVolumeViewport,
   VtkOffscreenMultiRenderWindow,
 } from '../types';
-import viewportTypeToViewportClass from './helpers/viewportTypeToViewportClass';
+import { getViewportClassForInput } from './helpers/viewportTypeToViewportClass';
 
 /**
  * ContextPoolRenderingEngine extends BaseRenderingEngine to provide parallel rendering
@@ -140,7 +140,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       defaultOptions: defaultOptions || {},
     } as ViewportInput;
 
-    const ViewportClass = viewportTypeToViewportClass[type];
+    const ViewportClass = getViewportClassForInput(viewportInputEntry);
 
     if (!ViewportClass) {
       throw new Error(`Viewport Type ${type} is not supported`);

@@ -1,11 +1,11 @@
 #!/bin/bash
 #
-# Runs all Next viewport Playwright tests (legacy vs Next GPU vs Next CPU).
+# Runs all Next viewport Playwright tests.
 #
 # Usage:
 #   ./tests/run-next-test.sh              # run all tests
 #   ./tests/run-next-test.sh --update     # update baseline screenshots
-#   ./tests/run-next-test.sh tests/ecgNext.spec.ts  # run a single spec
+#   ./tests/run-next-test.sh tests/nextEcg.spec.ts  # run a single spec
 #
 set -euo pipefail
 
@@ -13,26 +13,26 @@ SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$SCRIPT_DIR"
 
 SPECS=(
-  "tests/labelmapRenderingNext.spec.ts"
-  "tests/labelmapOverlapNext.spec.ts"
-  "tests/labelmapSegToolsNext.spec.ts"
-  "tests/labelmapSliceRenderingNext.spec.ts"
-  "tests/labelmapSliceRenderingToolsNext.spec.ts"
-  "tests/volumeAnnotationNext.spec.ts"
-  "tests/stackManipulationToolsNext.spec.ts"
-  "tests/multiVolumeAPINext.spec.ts"
-  "tests/stackAPINext.spec.ts"
-  "tests/wsiNext.spec.ts"
-  "tests/videoNext.spec.ts"
-  "tests/ecgNext.spec.ts"
+  "tests/nextLabelmapRendering.spec.ts"
+  "tests/nextLabelmapOverlapPlayground.spec.ts"
+  "tests/nextLabelmapSegmentationTools.spec.ts"
+  "tests/nextLabelmapSliceRendering.spec.ts"
+  "tests/nextLabelmapSliceRenderingTools.spec.ts"
+  "tests/nextVolumeAnnotationTools.spec.ts"
+  "tests/nextStackManipulationTools.spec.ts"
+  "tests/nextMultiVolumeAPI.spec.ts"
+  "tests/nextStackAPI.spec.ts"
+  "tests/nextWsi.spec.ts"
+  "tests/nextVideo.spec.ts"
+  "tests/nextEcg.spec.ts"
 )
 
 SERIAL_SPECS=(
-  "tests/stackLabelmapSegNext.spec.ts"
+  "tests/nextStackLabelmapSegmentation.spec.ts"
 )
 
-# Only build the examples these tests actually use (8 out of ~120)
-EXAMPLES="labelmapRendering labelmapOverlapPlayground labelmapSegmentationTools labelmapSliceRendering labelmapSliceRenderingTools stackLabelmapSegmentation volumeAnnotationTools stackManipulationTools multiVolumeAPI stackAPI wsi video ecg"
+# Only build the examples these tests actually use.
+EXAMPLES="nextLabelmapRendering nextLabelmapOverlapPlayground nextLabelmapSegmentationTools nextLabelmapSliceRendering nextLabelmapSliceRenderingTools nextStackLabelmapSegmentation nextVolumeAnnotationTools nextStackManipulationTools nextMultiVolumeAPI nextStackAPI nextWsi nextVideo nextEcg"
 
 PROJECT="chromium"
 UPDATE_FLAG=""

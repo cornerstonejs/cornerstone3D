@@ -1,0 +1,281 @@
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
+import {
+  RenderingEngine,
+  Enums,
+  getRenderingEngine,
+  utilities,
+} from '@cornerstonejs/core';
+import {
+  initDemo,
+  createImageIdsAndCacheMetaData,
+  setTitleAndDescription,
+  addButtonToToolbar,
+  camera as cameraHelpers,
+  ctVoiRange,
+} from '../../../../utils/demo/helpers';
+import { getBooleanUrlParam } from '../../../../utils/demo/helpers/exampleParameters';
+
+// This is for debugging purposes
+console.warn(
+  'Click on index.ts to open source code for this example --------->'
+);
+
+const { ViewportType, Events } = Enums;
+
+const renderingEngineId = 'myRenderingEngine';
+const viewportId = 'CT_STACK_NEXT';
+const stackDataId = 'stack-api-next:primary';
+const planarRenderMode = getBooleanUrlParam('cpu') ? 'cpu2d' : 'vtkImage';
+
+function getNextExampleBackground(): Types.Point3 {
+  return getBooleanUrlParam('cpu') ? [0, 0, 0] : [0, 0.2, 0];
+}
+
+setTitleAndDescription(
+  'Stack ViewportNext API',
+  'Demonstrates the clean Planar ViewportNext API for stack-like workflows.'
+);
+
+const content = document.getElementById('content');
+const element = document.createElement('div');
+element.id = 'cornerstone-element';
+element.style.width = '500px';
+element.style.height = '500px';
+
+content.appendChild(element);
+
+const info = document.createElement('div');
+content.appendChild(info);
+
+const rotationInfo = document.createElement('div');
+info.appendChild(rotationInfo);
+
+const flipHorizontalInfo = document.createElement('div');
+info.appendChild(flipHorizontalInfo);
+
+const flipVerticalInfo = document.createElement('div');
+info.appendChild(flipVerticalInfo);
+
+element.addEventListener(Events.CAMERA_MODIFIED, () => {
+  const renderingEngine = getRenderingEngine(renderingEngineId);
+  const viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
+
+  if (!viewport) {
+    return;
+  }
+
+  const { flipHorizontal, flipVertical } = viewport.getCamera();
+  const { rotation } = viewport.getViewPresentation();
+
+  rotationInfo.innerText = `Rotation: ${Math.round(rotation || 0)}`;
+  flipHorizontalInfo.innerText = `Flip horizontal: ${flipHorizontal}`;
+  flipVerticalInfo.innerText = `Flip vertical: ${flipVertical}`;
+});
+
+addButtonToToolbar({
+  title: 'Set VOI Range',
+  onClick: () => {
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    const viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
+
+    viewport.setDataPresentation(stackDataId, {
+      voiRange: { upper: 2500, lower: -1500 },
+    });
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Next Image',
+  onClick: () => {
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    const viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
+
+    const currentImageIdIndex = viewport.getCurrentImageIdIndex();
+    const numImages = viewport.getImageIds().length;
+    const newImageIdIndex = Math.min(currentImageIdIndex + 1, numImages - 1);
+
+    void viewport.setImageIdIndex(newImageIdIndex);
+  },
+});
+
+addButtonToToolbar({
+  title: 'Previous Image',
+  onClick: () => {
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    const viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
+
+    const currentImageIdIndex = viewport.getCurrentImageIdIndex();
+    const newImageIdIndex = Math.max(currentImageIdIndex - 1, 0);
+
+    void viewport.setImageIdIndex(newImageIdIndex);
+  },
+});
+
+addButtonToToolbar({
+  title: 'Flip H',
+  onClick: () => {
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    const viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
+    const { flipHorizontal } = viewport.getCamera();
+
+    viewport.setCamera({ flipHorizontal: !flipHorizontal });
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Flip V',
+  onClick: () => {
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    const viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
+    const { flipVertical } = viewport.getCamera();
+
+    viewport.setCamera({ flipVertical: !flipVertical });
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Rotate Random',
+  onClick: () => {
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    const viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
+
+    viewport.setViewPresentation({ rotation: Math.random() * 360 });
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Rotate Absolute 150',
+  onClick: () => {
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    const viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
+
+    viewport.setViewPresentation({ rotation: 150 });
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Rotate Delta 30',
+  onClick: () => {
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    const viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
+    const { rotation = 0 } = viewport.getViewPresentation();
+
+    viewport.setViewPresentation({ rotation: rotation + 30 });
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Invert',
+  onClick: () => {
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    const viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
+    const { invert = false } = viewport.getDataPresentation(stackDataId) || {};
+
+    viewport.setDataPresentation(stackDataId, {
+      invert: !invert,
+    });
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Apply Random Zoom And Pan',
+  onClick: () => {
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    const viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
+
+    viewport.resetCamera();
+
+    const camera = viewport.getCamera();
+    const { parallelScale, position, focalPoint } =
+      cameraHelpers.getRandomlyTranslatedAndZoomedCameraProperties(camera, 50);
+
+    viewport.setCamera({
+      parallelScale,
+      position: position as Types.Point3,
+      focalPoint: focalPoint as Types.Point3,
+    });
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Apply Colormap',
+  onClick: () => {
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    const viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
+
+    viewport.setDataPresentation(stackDataId, {
+      colormap: { name: 'hsv' },
+    });
+    viewport.render();
+  },
+});
+
+addButtonToToolbar({
+  title: 'Reset Viewport',
+  onClick: () => {
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    const viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
+
+    viewport.resetCamera();
+    viewport.setDataPresentation(stackDataId, {
+      colormap: undefined,
+      invert: false,
+      voiRange: ctVoiRange,
+    });
+    viewport.render();
+  },
+});
+
+async function run() {
+  await initDemo();
+
+  const imageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+  });
+
+  const renderingEngine = new RenderingEngine(renderingEngineId);
+
+  renderingEngine.enableElement({
+    viewportId,
+    type: ViewportType.PLANAR_V2,
+    element,
+    defaultOptions: {
+      background: getNextExampleBackground(),
+      renderMode: planarRenderMode,
+    },
+  });
+
+  const viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
+  const stack = [imageIds[0], imageIds[1], imageIds[2]];
+
+  utilities.viewportNextDataSetMetadataProvider.add(stackDataId, {
+    imageIds: stack,
+    kind: 'planar',
+    initialImageIdIndex: 0,
+  });
+
+  await viewport.setDataList([
+    {
+      dataId: stackDataId,
+      options: {
+        renderMode: planarRenderMode,
+      },
+    },
+  ]);
+  viewport.setDataPresentation(stackDataId, { voiRange: ctVoiRange });
+  viewport.render();
+}
+
+run();

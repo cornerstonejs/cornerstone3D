@@ -4,7 +4,16 @@ import type { LoadedData } from '../ViewportArchitectureTypes';
 import ViewportNext from '../ViewportNext';
 import { ViewportType } from '../../../enums';
 import { getDefaultECGValueRange } from '../../../utilities/ECGUtilities';
-import type { CPUIImageData, Mat3, Point2, Point3 } from '../../../types';
+import type {
+  CPUIImageData,
+  Mat3,
+  Point2,
+  Point3,
+  ViewPresentation,
+  ViewPresentationSelector,
+  ViewReference,
+  ViewReferenceSpecifier,
+} from '../../../types';
 import { CanvasECGPath } from './CanvasECGRenderPath';
 import { DefaultECGDataProvider } from './DefaultECGDataProvider';
 import type {
@@ -79,11 +88,6 @@ class ECGViewportNext extends ViewportNext<
     this.resize();
   }
 
-  /** Legacy compat shim – delegates to setDataList. */
-  async setEcg(imageId: string): Promise<void> {
-    await this.setDataList([{ dataId: imageId }]);
-  }
-
   /**
    * Adds one or more waveform datasets using the canvas ECG render path.
    *
@@ -123,6 +127,61 @@ class ECGViewportNext extends ViewportNext<
 
   getWaveformData(): ECGWaveformPayload | null {
     return this.getWaveformBindingData() ?? null;
+  }
+
+  getViewPresentation(
+    viewPresSel: ViewPresentationSelector = {
+      zoom: true,
+      pan: true,
+    }
+  ): ViewPresentation {
+    const target: ViewPresentation = {};
+    const { zoom, pan } = viewPresSel;
+    const currentZoom = this.getZoom();
+
+    if (zoom) {
+      target.zoom = currentZoom;
+    }
+
+    if (pan) {
+      const currentPan = this.getPan();
+      target.pan = [currentPan[0] / currentZoom, currentPan[1] / currentZoom];
+    }
+
+    return target;
+  }
+
+  setViewPresentation(viewPres?: ViewPresentation): void {
+    if (!viewPres) {
+      return;
+    }
+
+    const nextZoom = Math.max(viewPres.zoom ?? this.getZoom(), 0.001);
+
+    this.setCamera({
+      scale: nextZoom,
+      scaleMode: 'fit',
+    });
+
+    if (viewPres.pan) {
+      this.setPan([viewPres.pan[0] * nextZoom, viewPres.pan[1] * nextZoom]);
+    }
+  }
+
+  getViewReference(_specifier: ViewReferenceSpecifier = {}): ViewReference {
+    return {
+      FrameOfReferenceUID: this.getFrameOfReferenceUID(),
+      referencedImageId: this.getCurrentImageId(),
+      sliceIndex: 0,
+    };
+  }
+
+  getViewReferenceId(_specifier: ViewReferenceSpecifier = {}): string {
+    return `imageId:${this.getCurrentImageId()}`;
+  }
+
+  setViewReference(_viewRef: ViewReference): void {
+    // ECG viewports always show the single active waveform.
   }
 
   getSliceIndex(): number {
@@ -167,36 +226,6 @@ class ECGViewportNext extends ViewportNext<
     }
 
     this.applyComputedCameraState(computedCamera.withPan(pan).state.camera);
-  }
-
-  /**
-   * Shows or hides a specific ECG channel in the active dataset.
-   *
-   * @param index - Channel index to update.
-   * @param visible - Whether the channel should be visible.
-   */
-  setChannelVisibility(index: number, visible: boolean): void {
-    const waveform = this.getWaveformBindingData();
-
-    if (!waveform) {
-      return;
-    }
-
-    const dataId = waveform.id;
-    const current = this.getDataPresentation(dataId) || {};
-    const nextVisibleChannels = new Set(
-      current.visibleChannels || waveform.channels.map((_channel, i) => i)
-    );
-
-    if (visible) {
-      nextVisibleChannels.add(index);
-    } else {
-      nextVisibleChannels.delete(index);
-    }
-
-    this.setDataPresentation(dataId, {
-      visibleChannels: Array.from(nextVisibleChannels).sort((a, b) => a - b),
-    });
   }
 
   /**

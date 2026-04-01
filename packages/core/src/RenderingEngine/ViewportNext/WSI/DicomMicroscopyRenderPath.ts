@@ -200,7 +200,7 @@ export class DicomMicroscopyPath
   implements RenderPathDefinition<WSIViewportRenderContext>
 {
   readonly id = 'wsi:dicom-microscopy-viewer';
-  readonly type = ViewportType.WHOLE_SLIDE;
+  readonly type = ViewportType.WHOLE_SLIDE_V2;
 
   matches(data: LoadedData, options: DataAddOptions): boolean {
     return data.type === 'wsi' && options.renderMode === 'wsi2d';

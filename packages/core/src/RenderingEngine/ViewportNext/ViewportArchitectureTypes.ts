@@ -1,4 +1,11 @@
 import type { ActorEntry, Point2, Point3 } from '../../types';
+import type {
+  ReferenceCompatibleOptions,
+  ViewPresentation,
+  ViewPresentationSelector,
+  ViewReference,
+  ViewReferenceSpecifier,
+} from '../../types/IViewport';
 import type ViewportType from '../../enums/ViewportType';
 
 export type ViewportId = string;
@@ -105,17 +112,32 @@ export interface RenderingBinding<TPresentation = unknown>
 export interface ViewportController<
   TCamera = unknown,
   TDataPresentation = unknown,
+  TViewPresentation = ViewPresentation,
 > {
   readonly id: ViewportId;
   readonly type: ViewportType;
 
   setData(dataId: DataId, options: DataAddOptions): Promise<RenderingId>;
+  setDataList(
+    entries: Array<{ dataId: DataId; options?: unknown }>
+  ): Promise<RenderingId[]>;
   removeData(dataId: DataId): void;
 
   setCamera(camera: Partial<TCamera>): void;
   getCamera(): TCamera;
   setDataPresentation(dataId: DataId, props: Partial<TDataPresentation>): void;
   getDataPresentation(dataId: DataId): TDataPresentation | undefined;
+  setViewPresentation(viewPresentation?: TViewPresentation): void;
+  getViewPresentation(
+    selector?: ViewPresentationSelector
+  ): TViewPresentation | undefined;
+  setViewReference(viewReference: ViewReference): void;
+  getViewReference(specifier?: ViewReferenceSpecifier): ViewReference;
+  getViewReferenceId(specifier?: ViewReferenceSpecifier): string;
+  isReferenceViewable(
+    viewReference: ViewReference,
+    options?: ReferenceCompatibleOptions
+  ): boolean;
   getDataRenderMode(dataId: DataId): string | undefined;
 
   render(): void;

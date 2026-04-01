@@ -228,8 +228,9 @@ function getShouldUseCPURendering(): boolean {
 }
 
 /**
- * Returns whether ViewportNext remapping is enabled.
- * When true, legacy viewport types are automatically remapped to V2 equivalents.
+ * Returns whether ViewportNext compatibility adapters are enabled.
+ * When true, legacy viewport types are internally routed to ViewportNext-backed
+ * implementations while preserving the legacy public API surface for rollout.
  * @returns true if viewport V2 remapping is enabled.
  * @category Initialization
  */

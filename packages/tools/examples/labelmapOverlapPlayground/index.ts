@@ -76,9 +76,8 @@ setTitleAndDescription(
 const instructions = document.createElement('p');
 instructions.innerText = `
   URL options:
-  - default: legacy GPU
+  - default: GPU rendering
   - ?cpu=true: CPU rendering
-  - ?type=next: ViewportNext
 
   Left Click: selected brush
   Middle Click: pan

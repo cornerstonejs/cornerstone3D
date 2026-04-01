@@ -17,6 +17,7 @@ import type {
   WSIViewerLike,
 } from '../../../utilities/WSIUtilities';
 import type ICamera from '../../../types/ICamera';
+import type { VOIRange } from '../../../types';
 
 export interface WSIDataSetOptions {
   miniNavigationOverlay?: boolean;
@@ -48,7 +49,10 @@ export interface WSICamera
   zoom?: number;
 }
 
-export interface WSIProperties {}
+export interface WSIProperties {
+  voiRange?: VOIRange;
+  averageWhite?: [number, number, number];
+}
 
 export type WSIDataPresentation = WSIPresentationProps & WSIProperties;
 

@@ -72,8 +72,8 @@ interface Cornerstone3DConfig {
     };
     /**
      * When true, legacy viewport types (STACK, ORTHOGRAPHIC, VIDEO, ECG,
-     * WHOLE_SLIDE) are automatically remapped to their V2 equivalents
-     * (PLANAR_V2, VIDEO_V2, ECG_V2, etc.) at viewport creation time.
+     * WHOLE_SLIDE) are internally backed by ViewportNext implementations
+     * through legacy compatibility adapters at viewport creation time.
      */
     useViewportNext?: boolean;
   };

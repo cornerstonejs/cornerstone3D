@@ -19,7 +19,6 @@ console.warn(
 );
 
 const { ViewportType, Events } = Enums;
-
 // ======== Constants ======= //
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'videoViewport';

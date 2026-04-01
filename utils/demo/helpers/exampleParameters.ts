@@ -15,6 +15,10 @@ type DemoConfig = {
   };
 };
 
+type DemoWindow = Window & {
+  __DEMO_USE_VIEWPORT_NEXT__?: boolean;
+};
+
 function getUrlParam(name: string): string | null {
   return new URLSearchParams(window.location.search).get(name);
 }
@@ -28,16 +32,23 @@ export function getStringUrlParam(name: string): string | null {
   return getUrlParam(name);
 }
 
+function getGlobalViewportNextOverride(): boolean {
+  return Boolean((window as DemoWindow).__DEMO_USE_VIEWPORT_NEXT__);
+}
+
+function getViewportNextOverrideActive(): boolean {
+  return getGlobalViewportNextOverride() || getUrlParam('type') === 'next';
+}
+
 /**
- * Reads `?type=next` from the URL and merges `useViewportV2: true` into the
- * demo config so that the RenderingEngine automatically remaps legacy viewport
- * types to their V2 equivalents.
+ * Reads the ViewportNext override from either `?type=next` or a dedicated
+ * example global and merges `useViewportNext: true` into the demo config so
+ * that the RenderingEngine automatically remaps legacy viewport types to their
+ * V2 equivalents.
  */
 export function applyViewportTypeOverride(config: DemoConfig = {}): DemoConfig {
-  const typeParam = getUrlParam('type');
-
-  if (typeParam === 'next') {
-    console.log('[exampleParameters] Viewport V2 override active: ?type=next');
+  if (getViewportNextOverrideActive()) {
+    console.log('[exampleParameters] ViewportNext override active');
     return utilities.deepMerge(config, {
       core: {
         rendering: {
@@ -53,14 +64,14 @@ export function applyViewportTypeOverride(config: DemoConfig = {}): DemoConfig {
 /**
  * Returns a viewport background color based on URL params:
  *   - cpu=true  -> black [0, 0, 0]
- *   - type=next -> green [0, 0.2, 0]
+ *   - ViewportNext override -> green [0, 0.2, 0]
  *   - otherwise -> purple [0.2, 0, 0.2]
  */
 export function getExampleBackground(): [number, number, number] {
   if (getBooleanUrlParam('cpu')) {
     return [0, 0, 0];
   }
-  if (getUrlParam('type') === 'next') {
+  if (getViewportNextOverrideActive()) {
     return [0, 0.2, 0];
   }
   return [0.2, 0, 0.2];

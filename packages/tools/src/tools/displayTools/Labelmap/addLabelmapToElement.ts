@@ -31,6 +31,40 @@ import { syncStackLabelmapActors } from './syncStackLabelmapActors';
 
 const { uuidv4 } = utilities;
 
+type PlanarNextVolumeViewport = Types.IViewport & {
+  getCamera: () => Types.ICamera;
+  getCurrentImageIdIndex?: () => number;
+  getDefaultActor?: () =>
+    | (Types.ActorEntry & {
+        actorMapper?: {
+          renderMode?: string;
+        };
+      })
+    | undefined;
+  getVolumeId: () => string | undefined;
+  getViewReference: (
+    specifier?: Types.ViewReferenceSpecifier
+  ) => Types.ViewReference;
+  getActor?: (actorUID: string) => Types.ActorEntry | undefined;
+  render?: () => void;
+  setData: (
+    dataId: string,
+    options: {
+      orientation?: unknown;
+      renderMode: 'cpuVolume' | 'vtkVolumeSlice';
+    }
+  ) => Promise<string>;
+  setDataPresentation: (
+    dataId: string,
+    props: {
+      blendMode?: Enums.BlendModes;
+      visible?: boolean;
+    }
+  ) => void;
+  setViewReference: (viewReference: Types.ViewReference) => void;
+  type: string;
+};
+
 /**
  * It adds a labelmap segmentation representation of the viewport's HTML Element.
  * NOTE: This function should not be called directly.
@@ -127,6 +161,16 @@ async function addLabelmapToElement(
       blendMode,
     }));
 
+    if (isPlanarNextVolumeViewport(viewport)) {
+      return addLabelmapToPlanarNextViewport({
+        blendMode,
+        labelmapLayers,
+        segmentationId,
+        viewport,
+        visibility,
+      });
+    }
+
     /*
      * Having independent components for the segmentation data means that we are
      * dding the segmentation as a separate component (e.g., component 2) to the
@@ -174,6 +218,117 @@ async function addLabelmapToElement(
 
   // Just to make sure if the segmentation data had value before, it gets updated too
   triggerSegmentationDataModified(segmentationId);
+}
+
+function isPlanarNextVolumeViewport(
+  viewport: Types.IViewport
+): viewport is PlanarNextVolumeViewport {
+  const nextViewport = viewport as Partial<PlanarNextVolumeViewport>;
+
+  return (
+    nextViewport.type === Enums.ViewportType.PLANAR_V2 &&
+    typeof nextViewport.getCamera === 'function' &&
+    typeof nextViewport.getVolumeId === 'function' &&
+    typeof nextViewport.getViewReference === 'function' &&
+    typeof nextViewport.setData === 'function' &&
+    typeof nextViewport.setDataPresentation === 'function' &&
+    typeof nextViewport.setViewReference === 'function'
+  );
+}
+
+function getPlanarNextVolumeRenderMode(
+  viewport: PlanarNextVolumeViewport
+): 'cpuVolume' | 'vtkVolumeSlice' | undefined {
+  const renderMode = viewport.getDefaultActor?.()?.actorMapper?.renderMode;
+
+  if (renderMode === 'cpuVolume' || renderMode === 'vtkVolumeSlice') {
+    return renderMode;
+  }
+}
+
+async function addLabelmapToPlanarNextViewport(args: {
+  blendMode: Enums.BlendModes;
+  labelmapLayers: Array<{
+    imageIds?: string[];
+    labelmapId: string;
+    volumeId?: string;
+  }>;
+  segmentationId: string;
+  viewport: PlanarNextVolumeViewport;
+  visibility: boolean;
+}): Promise<void | { uid: string; actor }> {
+  const { blendMode, labelmapLayers, segmentationId, viewport, visibility } =
+    args;
+  const renderMode = getPlanarNextVolumeRenderMode(viewport);
+
+  if (!renderMode) {
+    return;
+  }
+
+  const sourceVolumeId = viewport.getVolumeId();
+  const sourceViewReference = sourceVolumeId
+    ? viewport.getViewReference({ volumeId: sourceVolumeId })
+    : viewport.getViewReference();
+  const requestedOrientation = (
+    viewport.getCamera() as {
+      orientation?: unknown;
+    }
+  ).orientation;
+  const currentImageIdIndex = Math.max(
+    0,
+    viewport.getCurrentImageIdIndex?.() ?? 0
+  );
+  let firstActorEntry: Types.ActorEntry | undefined;
+
+  for (const layer of labelmapLayers) {
+    if (!layer.volumeId) {
+      continue;
+    }
+
+    const volume = cache.getVolume(layer.volumeId);
+
+    if (!volume) {
+      throw new Error(
+        `imageVolume with id: ${layer.volumeId} does not exist, you need to create/allocate the volume first`
+      );
+    }
+
+    const representationUID = `${segmentationId}-${SegmentationRepresentations.Labelmap}-${layer.labelmapId}`;
+    const dataId = representationUID;
+
+    utilities.viewportNextDataSetMetadataProvider.add(dataId, {
+      kind: 'planar',
+      imageIds: volume.imageIds,
+      initialImageIdIndex: Math.min(
+        currentImageIdIndex,
+        Math.max(volume.imageIds.length - 1, 0)
+      ),
+      referencedId: layer.volumeId,
+      representationUID,
+      volumeId: layer.volumeId,
+    });
+
+    await viewport.setData(dataId, {
+      orientation: requestedOrientation,
+      renderMode,
+    });
+    viewport.setDataPresentation(dataId, {
+      blendMode,
+      visible: visibility,
+    });
+
+    firstActorEntry ||= viewport.getActor?.(representationUID);
+  }
+
+  viewport.setViewReference(sourceViewReference);
+  viewport.render?.();
+
+  if (firstActorEntry) {
+    return {
+      uid: firstActorEntry.uid,
+      actor: firstActorEntry.actor,
+    };
+  }
 }
 
 /**
