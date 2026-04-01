@@ -1,5 +1,6 @@
 import { utilities as csUtils, cache, volumeLoader } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
+import type { NumberVoxelManager } from '@cornerstonejs/core/utilities';
 import { run } from './runGrowCut';
 import type { GrowCutOptions } from './runGrowCut';
 import {
@@ -75,7 +76,8 @@ function calculateGrowCutSeedsImpl(
 } | null {
   const { dimensions, imageData: refImageData } = referencedVolume;
   const [width, height, numSlices] = dimensions;
-  const referenceVolumeVoxelManager = referencedVolume.voxelManager;
+  const referenceVolumeVoxelManager =
+    referencedVolume.voxelManager as NumberVoxelManager;
   const scalarData = referenceVolumeVoxelManager.getCompleteScalarDataArray();
   const numPixelsPerSlice = width * height;
 
@@ -112,14 +114,14 @@ function calculateGrowCutSeedsImpl(
   }
 
   const initialStats = csUtils.calculateNeighborhoodStats(
-    scalarData as Types.PixelDataTypedArray,
+    referenceVolumeVoxelManager,
     dimensions,
     ijkStart,
     neighborhoodRadius
   );
 
   if (initialStats.count === 0) {
-    initialStats.mean = scalarData[startIndex];
+    initialStats.mean = referenceVolumeVoxelManager.getAtIJKPoint(ijkStart);
     initialStats.stdDev = 0;
   }
 

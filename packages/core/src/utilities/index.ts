@@ -103,6 +103,7 @@ import getVolumeDirectionVectors from './getVolumeDirectionVectors';
 import calculateSpacingBetweenImageIds from './calculateSpacingBetweenImageIds';
 export * as logger from './logger';
 import { calculateNeighborhoodStats } from './calculateNeighborhoodStats';
+export type { NumberVoxelManager, RGBVoxelManager } from './VoxelManager';
 export * from './getPixelSpacingInformation';
 export * from './getPlaneCubeIntersectionDimensions';
 export * from './rotateToViewCoordinates';

@@ -1,5 +1,6 @@
 import { utilities as csUtils, cache, volumeLoader } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
+import type { NumberVoxelManager } from '@cornerstonejs/core/utilities';
 import floodFill from '../floodFill';
 import IslandRemoval from '../islandRemoval';
 import {
@@ -115,8 +116,8 @@ function getPositiveIntensityRange(
 ): FloodFillIntensityRangeResult | null {
   const { dimensions, imageData: refImageData } = referencedVolume;
   const [width, height, numSlices] = dimensions;
-  const referenceVolumeVoxelManager = referencedVolume.voxelManager;
-  const scalarData = referenceVolumeVoxelManager.getCompleteScalarDataArray();
+  const referenceVolumeVoxelManager =
+    referencedVolume.voxelManager as NumberVoxelManager;
 
   const neighborhoodRadius =
     options?.initialNeighborhoodRadius ?? DEFAULT_NEIGHBORHOOD_RADIUS;
@@ -160,21 +161,24 @@ function getPositiveIntensityRange(
   });
 
   const initialStats = csUtils.calculateNeighborhoodStats(
-    scalarData as Types.PixelDataTypedArray,
+    referenceVolumeVoxelManager,
     dimensions,
     ijkStart,
     neighborhoodRadius
   );
 
   if (initialStats.count === 0) {
+    const seedScalar = Number(
+      referenceVolumeVoxelManager.getAtIJKPoint(ijkStart)
+    );
     log.info(
       'flood fill: neighborhood stats had zero samples; using click voxel only',
       {
         fallbackMeanAndStdDevFrom: 'single voxel at seed',
-        scalarAtSeed: scalarData[startIndex],
+        scalarAtSeed: seedScalar,
       }
     );
-    initialStats.mean = scalarData[startIndex];
+    initialStats.mean = seedScalar;
     initialStats.stdDev = 0;
   } else {
     log.info('flood fill: neighborhood statistics (raw)', {
@@ -195,7 +199,7 @@ function getPositiveIntensityRange(
   const max = initialStats.mean + positiveK * initialStats.stdDev;
   const halfWidth = positiveK * initialStats.stdDev;
 
-  const startValue = scalarData[startIndex];
+  const startValue = referenceVolumeVoxelManager.getAtIJKPoint(ijkStart);
   const deltaFromMean = startValue - initialStats.mean;
   const signedStdDevUnits =
     initialStats.stdDev > 1e-12 ? deltaFromMean / initialStats.stdDev : null;
@@ -324,8 +328,7 @@ async function runFloodFillSegmentation({
   try {
     const { dimensions } = referencedVolume;
     const [width, height, numSlices] = dimensions;
-    const scalarData =
-      referencedVolume.voxelManager.getCompleteScalarDataArray();
+    const refVoxelManager = referencedVolume.voxelManager as NumberVoxelManager;
     const numPixelsPerSlice = width * height;
 
     const intensityGetter = (
@@ -343,8 +346,7 @@ async function runFloodFillSegmentation({
       ) {
         return undefined;
       }
-      const index = z * numPixelsPerSlice + y * width + x;
-      return scalarData[index];
+      return refVoxelManager.getAtIJK(x, y, z);
     };
 
     const inRange = (val: number) => val >= positiveMin && val <= positiveMax;
