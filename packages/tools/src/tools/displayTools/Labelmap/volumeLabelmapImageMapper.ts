@@ -540,11 +540,6 @@ function addPlanarLabelmapImageMapperActors(args: {
   segmentationId: string;
 }): void {
   const { viewport, segmentation, segmentationId } = args;
-  const currentImageId = viewport.getCurrentImageId();
-
-  if (!currentImageId) {
-    return;
-  }
 
   getLabelmaps(segmentation).forEach((layer, index) => {
     const volume = getOrCreateLabelmapVolume(layer);
@@ -556,6 +551,19 @@ function addPlanarLabelmapImageMapperActors(args: {
     const sliceData = createSliceImageData(volume, viewport);
 
     if (!sliceData) {
+      return;
+    }
+
+    const currentImageId =
+      viewport.getCurrentImageId() ??
+      volume.imageIds[
+        Math.min(
+          Math.max(sliceData.state.sliceIndex, 0),
+          Math.max(volume.imageIds.length - 1, 0)
+        )
+      ];
+
+    if (!currentImageId) {
       return;
     }
 
