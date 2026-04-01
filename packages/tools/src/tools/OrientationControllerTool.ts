@@ -128,6 +128,11 @@ class OrientationControllerTool extends BaseTool {
         showEdgeFaces: true,
         showCornerFaces: true,
         keepOrientationUp: true,
+        highlightColor: [255, 255, 255],
+        edgeColor: [200, 200, 200],
+        cornerColor: [150, 150, 150],
+        restingAmbient: 1.0,
+        hoverAmbient: 1.0,
       },
     }
   ) {
@@ -363,6 +368,11 @@ class OrientationControllerTool extends BaseTool {
       opacity: this.configuration.opacity ?? 1.0,
       showEdgeFaces: this.configuration.showEdgeFaces !== false,
       showCornerFaces: this.configuration.showCornerFaces !== false,
+      highlightColor: this.configuration.highlightColor ?? [255, 255, 255],
+      edgeColor: this.configuration.edgeColor ?? [200, 200, 200],
+      cornerColor: this.configuration.cornerColor ?? [150, 150, 150],
+      restingAmbient: this.configuration.restingAmbient ?? 1.0,
+      hoverAmbient: this.configuration.hoverAmbient ?? 1.0,
     });
   }
 
