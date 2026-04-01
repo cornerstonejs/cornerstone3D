@@ -16,6 +16,7 @@ import {
   addSliderToToolbar,
   addDropdownToToolbar,
   addManipulationBindings,
+  addCheckboxToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -41,7 +42,14 @@ const { MouseBindings, KeyboardBindings } = csToolsEnums;
  * once its module `registered` flag is true (e.g. after opening another example).
  */
 const regionSegmentPlusToolMap = new Map([
-  [RegionSegmentPlusTool.toolName, { selected: true }],
+  [
+    RegionSegmentPlusTool.toolName,
+    {
+      selected: true,
+      /** Example: allow click without the stable-hover gate until the user enables it. */
+      configuration: { hoverPrecheckEnabled: false },
+    },
+  ],
 ]);
 
 const WADO_RS_ROOT = 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb';
@@ -188,7 +196,7 @@ function attachStackStatusListeners() {
 // prettier-ignore
 createInfoSection(content)
   .addInstruction('Study drives both series lists; changing study reloads left and right. Scouts/localizers never appear.')
-  .addInstruction('Primary click (default): Region Segment Plus — hover briefly on the spot to segment')
+  .addInstruction('Primary click (default): Region Segment Plus. This demo starts with hover precheck off (toolbar checkbox unchecked); enable "Hover precheck" to require a short stable hover before segmenting.')
   .addInstruction('Middle mouse / Ctrl+drag: Pan · Right click: Zoom · Wheel / Alt+drag: Stack scroll · Shift+Ctrl+click: Length');
 
 // ==[ Toolbar ]================================================================
@@ -670,6 +678,18 @@ async function run() {
         segmentationId: segmentationIdPt,
         studyInstanceUID: currentStudyUID,
         seriesInstanceUID: String(uid),
+      });
+    },
+  });
+
+  addCheckboxToToolbar({
+    id: 'region-seg-plus-hover-precheck',
+    title: 'Hover precheck',
+    checked: false,
+    container: seriesToolbar,
+    onChange: (checked) => {
+      toolGroup.setToolConfiguration(RegionSegmentPlusTool.toolName, {
+        hoverPrecheckEnabled: checked,
       });
     },
   });

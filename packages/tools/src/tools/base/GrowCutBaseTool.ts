@@ -33,6 +33,7 @@ import { getCurrentLabelmapImageIdForViewport } from '../../stateManagement/segm
 import type { GrowCutOneClickOptions } from '../../utilities/segmentation/growCut/runOneClickGrowCut';
 
 const { transformWorldToIndex, transformIndexToWorld } = csUtils;
+const { growCutLog } = csUtils.logger;
 
 type GrowCutToolData = {
   metadata: Types.ViewReference & {
@@ -205,6 +206,16 @@ class GrowCutBaseTool extends BaseTool {
         },
       };
 
+      const segmentationMode = config.segmentationMode ?? 'floodfill_full';
+      growCutLog.info('run command', {
+        segmentationMode,
+        shrinkExpandAmount,
+        shrinkExpandAccumulator,
+        positiveStdDevMultiplier: newPositiveStdDevMultiplier,
+        negativeSeedMargin,
+        isPartialVolume: !!config.isPartialVolume,
+      });
+
       const growcutLabelmap = await this.getGrowCutLabelmap(updatedGrowCutData);
 
       const { isPartialVolume } = config;
@@ -216,7 +227,6 @@ class GrowCutBaseTool extends BaseTool {
       fn(segmentationId, segmentIndex, labelmap, growcutLabelmap);
 
       // Skip _removeIslands when using flood fill - island removal is already done in runFloodFillSegmentation
-      const segmentationMode = config.segmentationMode ?? 'floodfill_full';
       if (segmentationMode !== 'floodfill_full') {
         this._removeIslands(updatedGrowCutData);
       }

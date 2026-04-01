@@ -17,8 +17,18 @@ import { calculateGrowCutSeeds } from '../../utilities/segmentation/growCut/runO
 import {
   runFloodFillSegmentation,
   getPositiveIntensityRange,
+  getDisplayVoiSnapshot,
 } from '../../utilities/segmentation/growCut/runFloodFillSegmentation';
+import type { GetFloodFillIntensityRange } from '../../utilities/segmentation/growCut/runFloodFillSegmentation';
 import { ToolModes } from '../../enums';
+
+const { growCutLog } = csUtils.logger;
+
+/** Optional RegionSegmentPlus flood-fill tuning (set via tool configuration). */
+type RegionSegmentPlusFloodFillConfig = {
+  initialNeighborhoodRadius?: number;
+  getIntensityRange?: GetFloodFillIntensityRange;
+};
 
 type RegionSegmentPlusToolData = GrowCutToolData & {
   worldPoint: Types.Point3;
@@ -43,6 +53,12 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
          * contiguous regions with speckling (flood fill + remove external islands + fill internal islands).
          */
         segmentationMode: 'floodfill_full' as const,
+        /**
+         * When true (default), a short stable hover updates the cursor and gates
+         * primary click using intensity / seed heuristics. When false, clicks are
+         * allowed without that hover gate (range or seeds are resolved at click).
+         */
+        hoverPrecheckEnabled: true,
         islandRemoval: {
           /**
            * Enable/disable island removal (only applies when segmentationMode is 'growcut')
@@ -53,7 +69,20 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
     }
   ) {
     super(toolProps, defaultToolProps);
+    if (!this.configuration.hoverPrecheckEnabled) {
+      this.allowedToProceed = true;
+    }
   }
+
+  onSetToolConfiguration = (): void => {
+    if (!this.configuration.hoverPrecheckEnabled) {
+      this.allowedToProceed = true;
+      this.seeds = null;
+    } else {
+      this.allowedToProceed = false;
+      this.seeds = null;
+    }
+  };
 
   mouseMoveCallback(evt: EventTypes.MouseMoveEventType) {
     if (this.mode !== ToolModes.Active) {
@@ -62,6 +91,12 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
     const eventData = evt.detail;
     const { currentPoints, element } = eventData;
     const { world: worldPoint } = currentPoints;
+
+    if (!this.configuration.hoverPrecheckEnabled) {
+      this.allowedToProceed = true;
+      element.style.cursor = 'copy';
+      return;
+    }
 
     element.style.cursor = 'default';
 
@@ -81,6 +116,16 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
     worldPoint: Types.Point3,
     element: HTMLDivElement
   ) {
+    if (!this.configuration.hoverPrecheckEnabled) {
+      this.allowedToProceed = true;
+      element.style.cursor = 'copy';
+      const enabledElement = getEnabledElement(element);
+      if (enabledElement?.viewport) {
+        enabledElement.viewport.render();
+      }
+      return;
+    }
+
     await super.preMouseDownCallback(
       evt as EventTypes.MouseDownActivateEventType
     );
@@ -93,15 +138,30 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
 
     let cursor: string;
     if (segmentationMode === 'floodfill_full') {
-      const rangeResult = getPositiveIntensityRange(refVolume, worldPoint, {
+      const ffConfig = this.configuration as RegionSegmentPlusFloodFillConfig;
+      const rangeOpts = {
         positiveStdDevMultiplier: this.configuration.positiveStdDevMultiplier,
-      });
+        initialNeighborhoodRadius: ffConfig.initialNeighborhoodRadius,
+      };
+      const rangeFn = ffConfig.getIntensityRange ?? getPositiveIntensityRange;
+      const rangeResult = rangeFn(refVolume, worldPoint, rangeOpts);
       if (!rangeResult) {
         cursor = 'not-allowed';
         this.allowedToProceed = false;
+        growCutLog.info(
+          'hover gate: blocked (flood fill — no valid intensity band)',
+          {
+            worldPoint,
+          }
+        );
       } else {
         cursor = 'copy';
         this.allowedToProceed = true;
+        growCutLog.info('hover gate: OK (flood fill)', {
+          toleranceMin: rangeResult.min,
+          toleranceMax: rangeResult.max,
+          neighborhood: rangeResult.diagnostics,
+        });
       }
     } else {
       const seeds = calculateGrowCutSeeds(refVolume, worldPoint, {}) || {
@@ -109,15 +169,31 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
         negativeSeedIndices: new Set(),
       };
       const { positiveSeedIndices, negativeSeedIndices } = seeds;
-      if (
-        positiveSeedIndices.size / Math.max(negativeSeedIndices.size, 1) > 20 ||
-        negativeSeedIndices.size < 30
-      ) {
+      const ratio =
+        positiveSeedIndices.size / Math.max(negativeSeedIndices.size, 1);
+      if (ratio > 20 || negativeSeedIndices.size < 30) {
         cursor = 'not-allowed';
         this.allowedToProceed = false;
+        growCutLog.info(
+          'hover gate: blocked (GPU grow cut — seed heuristics)',
+          {
+            positiveSeedCount: positiveSeedIndices.size,
+            negativeSeedCount: negativeSeedIndices.size,
+            positiveToNegativeRatio: ratio,
+            reason:
+              ratio > 20
+                ? 'ratio too high (>20:1) — likely uniform tissue, poor contrast'
+                : 'negative seeds < 30 — not enough background samples',
+          }
+        );
       } else {
         cursor = 'copy';
         this.allowedToProceed = true;
+        growCutLog.info('hover gate: OK (GPU grow cut)', {
+          positiveSeedCount: positiveSeedIndices.size,
+          negativeSeedCount: negativeSeedIndices.size,
+          positiveToNegativeRatio: ratio,
+        });
       }
       if (this.allowedToProceed) {
         this.seeds = seeds;
@@ -146,27 +222,41 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
   async preMouseDownCallback(
     evt: EventTypes.MouseDownActivateEventType
   ): Promise<boolean> {
-    // change cursor to loading
-    if (!this.allowedToProceed) {
+    if (this.configuration.hoverPrecheckEnabled && !this.allowedToProceed) {
       return false;
+    }
+
+    if (!this.configuration.hoverPrecheckEnabled) {
+      this.seeds = null;
     }
 
     const eventData = evt.detail;
     const { currentPoints, element } = eventData;
     const enabledElement = getEnabledElement(element);
-    if (enabledElement) {
-      element.style.cursor = 'wait';
-
-      requestAnimationFrame(() => {
-        if (element.style.cursor !== 'wait') {
-          element.style.cursor = 'wait';
-        }
-      });
-    }
-
     const { world: worldPoint } = currentPoints;
 
-    await super.preMouseDownCallback(evt);
+    const restoreCursor = () => {
+      if (!element) {
+        return;
+      }
+      element.style.cursor = this.configuration.hoverPrecheckEnabled
+        ? 'default'
+        : 'copy';
+    };
+
+    if (enabledElement) {
+      element.style.cursor = 'wait';
+      // Let the browser paint `wait` before long synchronous flood fill / GPU work.
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => resolve())
+      );
+    }
+
+    const setupOk = super.preMouseDownCallback(evt);
+    if (!setupOk) {
+      restoreCursor();
+      return false;
+    }
 
     this.growCutData = csUtils.deepMerge(this.growCutData, {
       worldPoint,
@@ -179,13 +269,13 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
     this.growCutData.islandRemoval = {
       worldIslandPoints: [worldPoint],
     };
-    await this.runGrowCut();
 
-    if (element) {
-      element.style.cursor = 'default';
+    try {
+      await this.runGrowCut();
+      return true;
+    } finally {
+      restoreCursor();
     }
-
-    return true;
   }
 
   protected getRemoveIslandData(
@@ -210,14 +300,35 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
     const segmentationMode =
       this.configuration.segmentationMode ?? 'floodfill_full';
 
+    const refVolume = cache.getVolume(referencedVolumeId);
+    const [volMin, volMax] = refVolume.voxelManager.getRange();
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    const viewport = renderingEngine?.getViewport(viewportId);
+    const displayVoi = viewport
+      ? getDisplayVoiSnapshot(viewport, referencedVolumeId)
+      : null;
+
+    growCutLog.info('one-click run', {
+      segmentationMode,
+      algorithm:
+        segmentationMode === 'floodfill_full'
+          ? 'flood_fill_plus_island_removal'
+          : 'gpu_grow_cut',
+      referencedVolumeId,
+      segmentIndex,
+      worldPosition: worldPoint,
+      volumeScalarRange: { min: volMin, max: volMax },
+      displayVoi,
+      positiveStdDevMultiplier: this.configuration.positiveStdDevMultiplier,
+    });
+
     if (segmentationMode === 'floodfill_full') {
-      const renderingEngine = getRenderingEngine(renderingEngineId);
-      const viewport = renderingEngine?.getViewport(viewportId);
       if (!viewport) {
         throw new Error(
           'Viewport not found for flood fill segmentation. Ensure the viewport is still active.'
         );
       }
+      const ffConfig = this.configuration as RegionSegmentPlusFloodFillConfig;
       const result = await runFloodFillSegmentation({
         referencedVolumeId,
         worldPosition: worldPoint,
@@ -225,6 +336,8 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
         options: {
           segmentIndex,
           positiveStdDevMultiplier: this.configuration.positiveStdDevMultiplier,
+          initialNeighborhoodRadius: ffConfig.initialNeighborhoodRadius,
+          getIntensityRange: ffConfig.getIntensityRange,
           ...options,
         },
       });

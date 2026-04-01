@@ -1,6 +1,8 @@
-import { cache } from '@cornerstonejs/core';
+import { cache, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import shaderCode from './growCutShader';
+
+const { growCutLog } = csUtils.logger;
 
 const GB = 1024 * 1024 * 1024;
 const WEBGPU_MEMORY_LIMIT = 1.99 * GB;
@@ -14,6 +16,8 @@ const DEFAULT_GROWCUT_OPTIONS = {
     threshold: 1e-4,
   },
 };
+
+const GROW_CUT_GPU_TIMING_LABEL = 'cornerstone.tools: growCut: gpuIterations';
 
 /**
  * Grow cut options
@@ -100,6 +104,19 @@ type GrowCutOptions = {
  * @param options - Options
  */
 async function runGrowCut(
+  referenceVolumeId: string,
+  labelmapVolumeId: string,
+  options: GrowCutOptions = DEFAULT_GROWCUT_OPTIONS
+) {
+  console.time(GROW_CUT_GPU_TIMING_LABEL);
+  try {
+    await runGrowCutCore(referenceVolumeId, labelmapVolumeId, options);
+  } finally {
+    console.timeEnd(GROW_CUT_GPU_TIMING_LABEL);
+  }
+}
+
+async function runGrowCutCore(
   referenceVolumeId: string,
   labelmapVolumeId: string,
   options: GrowCutOptions = DEFAULT_GROWCUT_OPTIONS
@@ -427,8 +444,30 @@ async function runGrowCut(
   let currentInspectionNumCyclesInterval = inspection.numCyclesInterval;
   let belowThresholdCounter = 0;
 
+  let stopReason: 'converged' | 'time_limit' | 'max_iterations' =
+    'max_iterations';
+
+  growCutLog.info('GPU grow cut starting', {
+    referenceVolumeId,
+    labelmapVolumeId,
+    volumeDimensions: [columns, rows, numSlices],
+    plannedIterations: numIterations,
+    volumeScalarRange: { min: imageMin, max: imageMax },
+    normalizationSpan: volumeRange,
+    windowSize,
+    maxProcessingTimeMs: maxProcessingTime ?? null,
+    inspection: {
+      numCyclesInterval: inspection.numCyclesInterval,
+      numCyclesBelowThreshold: inspection.numCyclesBelowThreshold,
+      threshold: inspection.threshold,
+    },
+  });
+
+  let lastIterationIndex = -1;
+
   // Create each iteration step and submit them to the GPU
   for (let i = 0; i < numIterations; i++) {
+    lastIterationIndex = i;
     paramsArrayValues[numIterationIndex] = i;
     device.queue.writeBuffer(gpuParamsBuffer, 0, paramsArrayValues);
 
@@ -490,6 +529,7 @@ async function runGrowCut(
         belowThresholdCounter++;
 
         if (belowThresholdCounter === inspection.numCyclesBelowThreshold) {
+          stopReason = 'converged';
           break;
         }
       } else {
@@ -500,9 +540,20 @@ async function runGrowCut(
 
     if (limitProcessingTime && performance.now() > limitProcessingTime) {
       console.warn(`Exceeded processing time limit (${maxProcessingTime})ms`);
+      stopReason = 'time_limit';
       break;
     }
   }
+
+  const iterationsCompleted =
+    stopReason === 'max_iterations' ? numIterations : lastIterationIndex + 1;
+
+  growCutLog.info('GPU grow cut finished', {
+    iterationsCompleted,
+    plannedIterations: numIterations,
+    stopReason,
+    lastIterationIndex,
+  });
 
   const commandEncoder = device.createCommandEncoder();
   const outputLabelmapBufferIndex = (numIterations + 1) % 2;

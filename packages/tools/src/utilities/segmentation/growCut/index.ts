@@ -9,4 +9,9 @@ export {
 export type { SphereInfo, GrowCutSphereOptions } from './runGrowCutForSphere';
 export type { GrowCutBoundingBoxOptions } from './runGrowCutForBoundingBox';
 export type { GrowCutOneClickOptions } from './runOneClickGrowCut';
-export type { FloodFillSegmentationOptions } from './runFloodFillSegmentation';
+export type {
+  FloodFillSegmentationOptions,
+  FloodFillIntensityRangeResult,
+  FloodFillIntensityRangeOptions,
+  GetFloodFillIntensityRange,
+} from './runFloodFillSegmentation';

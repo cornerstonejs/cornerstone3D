@@ -67,6 +67,9 @@ export const cs3dLog = getRootLogger('cs3d');
  */
 export const coreLog = cs3dLog.getLogger('core');
 export const toolsLog = cs3dLog.getLogger('tools');
+/** One-click flood fill and GPU grow cut diagnostics. */
+export const growCutLog = toolsLog.getLogger('growCut');
+growCutLog.setLevel('info');
 export const loaderLog = cs3dLog.getLogger('dicomImageLoader');
 export const aiLog = cs3dLog.getLogger('ai');
 

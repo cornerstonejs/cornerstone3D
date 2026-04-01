@@ -10,6 +10,8 @@ import { getLabelmapActorEntries } from '../../../stateManagement/segmentation/h
 import { getSegmentationRepresentations } from '../../../stateManagement/segmentation/getSegmentationRepresentation';
 import { getCurrentLabelmapImageIdsForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 
+const log = csUtils.logger.toolsLog.getLogger('performStackLabelmapUpdate');
+
 /**
  * Updates the labelmap for stack viewports
  */
@@ -53,15 +55,32 @@ export function performStackLabelmapUpdate({
         return;
       }
 
+      const currentSegmentationImageIds = getCurrentLabelmapImageIdsForViewport(
+        viewportId,
+        segmentationId
+      );
+      const imageIdsArray = currentSegmentationImageIds ?? [];
+      const imageIdsLength = imageIdsArray.length;
+
       actorEntries.forEach((actorEntry, i) => {
         const segImageData = actorEntry.actor.getMapper().getInputData();
 
-        const currentSegmentationImageIds =
-          getCurrentLabelmapImageIdsForViewport(viewportId, segmentationId);
+        const imageId = currentSegmentationImageIds?.[i];
+        if (imageId === undefined) {
+          log.error(
+            'Stack labelmap update skipped: labelmap imageId is undefined for actor index i (getImage would throw).',
+            i,
+            actorEntries.length,
+            imageIdsLength,
+            [...imageIdsArray],
+            currentSegmentationImageIds?.[i],
+            viewportId,
+            segmentationId
+          );
+          return;
+        }
 
-        const segmentationImage = cache.getImage(
-          currentSegmentationImageIds[i]
-        );
+        const segmentationImage = cache.getImage(imageId);
         segImageData.modified();
 
         // update the cache with the new image data

@@ -14,6 +14,7 @@ import {
 } from './constants';
 
 const { transformWorldToIndex } = csUtils;
+const { growCutLog } = csUtils.logger;
 
 type GrowCutOneClickOptions = GrowCutOptions & {
   // Radius of the neighborhood (in voxels) around the click point used to calculate initial statistics (mean, stdDev). E.g., 1 means a 3x3x3 neighborhood.
@@ -46,7 +47,25 @@ const MAX_POSITIVE_SEEDS = 100000; // Maximum number of positive seeds to preven
  * @param options - Configuration options for seed generation
  * @returns An object containing sets of positive and negative seed indices, or null if seeding fails.
  */
+const INITIAL_SEEDS_TIMING_LABEL = 'cornerstone.tools: growCut: initialSeeds';
+
 function calculateGrowCutSeeds(
+  referencedVolume: Types.IImageVolume,
+  worldPosition: Types.Point3,
+  options?: GrowCutOneClickOptions
+): {
+  positiveSeedIndices: Set<number>;
+  negativeSeedIndices: Set<number>;
+} | null {
+  console.time(INITIAL_SEEDS_TIMING_LABEL);
+  try {
+    return calculateGrowCutSeedsImpl(referencedVolume, worldPosition, options);
+  } finally {
+    console.timeEnd(INITIAL_SEEDS_TIMING_LABEL);
+  }
+}
+
+function calculateGrowCutSeedsImpl(
   referencedVolume: Types.IImageVolume,
   worldPosition: Types.Point3,
   options?: GrowCutOneClickOptions
@@ -84,6 +103,10 @@ function calculateGrowCutSeeds(
     ijkStart[2] < 0 ||
     ijkStart[2] >= numSlices
   ) {
+    growCutLog.info('seeding failed: click outside volume', {
+      ijkStart,
+      dimensions: [width, height, numSlices],
+    });
     console.warn('Click position is outside volume bounds.');
     return null;
   }
@@ -135,6 +158,13 @@ function calculateGrowCutSeeds(
     minY = maxY = ijkStart[1];
     minZ = maxZ = ijkStart[2];
   } else {
+    growCutLog.info('seeding failed: click intensity outside local band', {
+      clickedValue: startValue,
+      positiveIntensityMin,
+      positiveIntensityMax,
+      initialMean: initialStats.mean,
+      initialStdDev: initialStats.stdDev,
+    });
     console.warn(
       'Clicked voxel intensity is outside the calculated positive range. No positive seeds generated.'
     );
@@ -194,12 +224,16 @@ function calculateGrowCutSeeds(
   }
 
   if (positiveSeedIndices.size >= MAX_POSITIVE_SEEDS) {
-    console.debug(
+    growCutLog.info(
       `Reached maximum number of positive seeds (${MAX_POSITIVE_SEEDS}). Stopping BFS.`
     );
   }
 
   if (positiveSeedIndices.size === 0) {
+    growCutLog.info('seeding failed: BFS found no positive seeds', {
+      positiveIntensityMin,
+      positiveIntensityMax,
+    });
     console.warn('No positive seeds found after BFS.');
     return { positiveSeedIndices: new Set(), negativeSeedIndices: new Set() };
   }
@@ -298,8 +332,27 @@ function calculateGrowCutSeeds(
     );
   }
 
-  console.debug('positiveSeedIndices', positiveSeedIndices.size);
-  console.debug('negativeSeedIndices', negativeSeedIndices.size);
+  const posNegRatio =
+    positiveSeedIndices.size / Math.max(negativeSeedIndices.size, 1);
+
+  growCutLog.info('seeding for GPU grow cut', {
+    positiveIntensityMin,
+    positiveIntensityMax,
+    initialNeighborhood: {
+      mean: initialStats.mean,
+      stdDev: initialStats.stdDev,
+      count: initialStats.count,
+    },
+    positiveSeedCount: positiveSeedIndices.size,
+    negativeSeedCount: negativeSeedIndices.size,
+    positiveToNegativeRatio: posNegRatio,
+    bbox: { minX, minY, minZ, maxX, maxY, maxZ },
+    negativeSearchBbox: { minXm, minYm, minZm, maxXm, maxYm, maxZm },
+    neighborhoodRadius,
+    positiveStdDevMultiplier: positiveK,
+    negativeStdDevMultiplier: negativeK,
+    negativeSeedMargin,
+  });
 
   return { positiveSeedIndices, negativeSeedIndices };
 }
@@ -339,6 +392,9 @@ async function runOneClickGrowCut({
   const negativeSeedLabel = options?.negativeSeedValue ?? NEGATIVE_SEED_LABEL;
 
   if (!seeds) {
+    growCutLog.info('GPU grow cut aborted: no seeds', {
+      referencedVolumeId,
+    });
     return null;
   }
 
@@ -349,11 +405,27 @@ async function runOneClickGrowCut({
     positiveSeedIndices.size > MAX_POSITIVE_SEEDS ||
     negativeSeedIndices.size < 10
   ) {
+    growCutLog.info('GPU grow cut skipped: seed count out of range', {
+      referencedVolumeId,
+      positiveSeedCount: positiveSeedIndices.size,
+      negativeSeedCount: negativeSeedIndices.size,
+      maxPositiveSeeds: MAX_POSITIVE_SEEDS,
+      minRequired: 10,
+    });
     console.warn(
       'Not enough seeds found. GrowCut might fail or produce poor results.'
     );
     return labelmap;
   }
+
+  const [vmin, vmax] = referencedVolume.voxelManager.getRange();
+  growCutLog.info('GPU grow cut: applying seeds and running iterations', {
+    referencedVolumeId,
+    labelmapVolumeId: labelmap.volumeId,
+    volumeScalarRange: { min: vmin, max: vmax },
+    positiveSeedCount: positiveSeedIndices.size,
+    negativeSeedCount: negativeSeedIndices.size,
+  });
 
   // Apply the calculated seeds to the labelmap
   positiveSeedIndices.forEach((index) => {
