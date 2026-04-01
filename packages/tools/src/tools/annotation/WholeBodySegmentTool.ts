@@ -80,9 +80,7 @@ class WholeBodySegmentTool extends GrowCutBaseTool {
     super(toolProps, defaultToolProps);
   }
 
-  async preMouseDownCallback(
-    evt: EventTypes.MouseDownActivateEventType
-  ): Promise<boolean> {
+  preMouseDownCallback(evt: EventTypes.MouseDownActivateEventType): boolean {
     const eventData = evt.detail;
     const { element, currentPoints } = eventData;
     const { world: worldPoint } = currentPoints;
@@ -93,7 +91,7 @@ class WholeBodySegmentTool extends GrowCutBaseTool {
       worldPoint
     );
 
-    await super.preMouseDownCallback(evt);
+    super.preMouseDownCallback(evt);
     this.growCutData.horizontalLines = [linePoints, linePoints];
     this._activateDraw(element);
 

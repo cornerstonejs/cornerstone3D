@@ -48,16 +48,14 @@ class RegionSegmentTool extends GrowCutBaseTool {
     super(toolProps, defaultToolProps);
   }
 
-  async preMouseDownCallback(
-    evt: EventTypes.MouseDownActivateEventType
-  ): Promise<boolean> {
+  preMouseDownCallback(evt: EventTypes.MouseDownActivateEventType): boolean {
     const eventData = evt.detail;
     const { element, currentPoints } = eventData;
     const { world: worldPoint } = currentPoints;
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
 
-    await super.preMouseDownCallback(evt);
+    super.preMouseDownCallback(evt);
 
     Object.assign(this.growCutData, {
       circleCenterPoint: worldPoint,

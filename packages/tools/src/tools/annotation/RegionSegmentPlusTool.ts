@@ -111,7 +111,7 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
     }, this.configuration.mouseStabilityDelay || 500);
   }
 
-  async onMouseStable(
+  onMouseStable(
     evt: EventTypes.MouseMoveEventType,
     worldPoint: Types.Point3,
     element: HTMLDivElement
@@ -126,9 +126,12 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
       return;
     }
 
-    await super.preMouseDownCallback(
+    const setupOk = super.preMouseDownCallback(
       evt as EventTypes.MouseDownActivateEventType
     );
+    if (!setupOk || !this.growCutData) {
+      return;
+    }
 
     const refVolume = cache.getVolume(
       this.growCutData.segmentation.referencedVolumeId
@@ -219,32 +222,15 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
     }
   }
 
-  async preMouseDownCallback(
-    evt: EventTypes.MouseDownActivateEventType
-  ): Promise<boolean> {
-    if (this.configuration.hoverPrecheckEnabled && !this.allowedToProceed) {
-      return false;
-    }
-
-    if (!this.configuration.hoverPrecheckEnabled) {
-      this.seeds = null;
-    }
-
-    const eventData = evt.detail;
-    const { currentPoints, element } = eventData;
-    const enabledElement = getEnabledElement(element);
-    const { world: worldPoint } = currentPoints;
-
-    const restoreCursor = () => {
-      if (!element) {
-        return;
-      }
-      element.style.cursor = this.configuration.hoverPrecheckEnabled
-        ? 'default'
-        : 'copy';
-    };
-
-    if (enabledElement) {
+  /** Deferred click path: rAF, base setup, runGrowCut (see preMouseDownCallback). */
+  private async _runGrowCutAfterMouseDown(
+    evt: EventTypes.MouseDownActivateEventType,
+    worldPoint: Types.Point3,
+    element: HTMLDivElement | undefined,
+    restoreCursor: () => void
+  ): Promise<void> {
+    const enabledElement = element ? getEnabledElement(element) : undefined;
+    if (enabledElement && element) {
       element.style.cursor = 'wait';
       // Let the browser paint `wait` before long synchronous flood fill / GPU work.
       await new Promise<void>((resolve) =>
@@ -255,7 +241,7 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
     const setupOk = super.preMouseDownCallback(evt);
     if (!setupOk) {
       restoreCursor();
-      return false;
+      return;
     }
 
     this.growCutData = csUtils.deepMerge(this.growCutData, {
@@ -272,10 +258,43 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
 
     try {
       await this.runGrowCut();
-      return true;
     } finally {
       restoreCursor();
     }
+  }
+
+  preMouseDownCallback(evt: EventTypes.MouseDownActivateEventType): boolean {
+    if (this.configuration.hoverPrecheckEnabled && !this.allowedToProceed) {
+      return false;
+    }
+
+    if (!this.configuration.hoverPrecheckEnabled) {
+      this.seeds = null;
+    }
+
+    const eventData = evt.detail;
+    const { currentPoints, element } = eventData;
+    const { world: worldPoint } = currentPoints;
+
+    const restoreCursor = () => {
+      if (!element) {
+        return;
+      }
+      element.style.cursor = this.configuration.hoverPrecheckEnabled
+        ? 'default'
+        : 'copy';
+    };
+
+    void this._runGrowCutAfterMouseDown(
+      evt,
+      worldPoint,
+      element,
+      restoreCursor
+    ).catch(() => {
+      restoreCursor();
+    });
+
+    return true;
   }
 
   protected getRemoveIslandData(
