@@ -10,12 +10,14 @@ type NeighborhoodStats = {
 /**
  * Mean and standard deviation over a cubic neighborhood, using the voxel manager's
  * `getAtIJK` (no full scalar buffer required).
+ * @param mapValue - If set, each sample is passed through this before mean/std (e.g. VOI-mapped intensity).
  */
 export function calculateNeighborhoodStats(
   voxelManager: NumberVoxelManager,
   dimensions: Point3,
   centerIjk: Point3,
-  radius: number
+  radius: number,
+  mapValue?: (v: number) => number
 ): NeighborhoodStats {
   const [width, height, numSlices] = dimensions;
 
@@ -38,7 +40,8 @@ export function calculateNeighborhoodStats(
           continue;
         }
 
-        const value = voxelManager.getAtIJK(x, y, z);
+        const raw = voxelManager.getAtIJK(x, y, z);
+        const value = mapValue ? mapValue(raw) : raw;
         sum += value;
         sumSq += value * value;
         count++;
@@ -55,7 +58,8 @@ export function calculateNeighborhoodStats(
       cz >= 0 &&
       cz < numSlices
     ) {
-      const centerValue = voxelManager.getAtIJK(cx, cy, cz);
+      const raw = voxelManager.getAtIJK(cx, cy, cz);
+      const centerValue = mapValue ? mapValue(raw) : raw;
       return { mean: centerValue, stdDev: 0, count: 1 };
     }
     return { mean: 0, stdDev: 0, count: 0 };

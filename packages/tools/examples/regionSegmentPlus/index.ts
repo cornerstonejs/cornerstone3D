@@ -80,6 +80,30 @@ const SELECT_ID_STUDY = 'region-seg-plus-study';
 /** Left viewport: non-PT stack series (scouts excluded). */
 const SELECT_ID_LEFT = 'region-seg-plus-left-series';
 const SELECT_ID_PT = 'region-seg-plus-pt-series';
+const SELECT_ID_FILL_STRATEGY = 'region-seg-plus-fill-strategy';
+
+const FILL_STRATEGY_OPTIONS = [
+  {
+    value: 'meanStdMapped',
+    label: 'Mean ±σ neighborhood (VOI-mapped)',
+  },
+  {
+    value: 'fixedPercent5',
+    label: 'Fixed ±5% around click (VOI-mapped)',
+  },
+  {
+    value: 'fixedPercent10',
+    label: 'Fixed ±10% around click (VOI-mapped)',
+  },
+  {
+    value: 'canvasDiskTriClassSmall',
+    label: 'Canvas disk (small, 3 px) — tri-class from rendered window',
+  },
+  {
+    value: 'canvasDiskTriClassLarge',
+    label: 'Canvas disk (large, 10 px) — tri-class from rendered window',
+  },
+] as const;
 
 let currentStudyUID: string = DEMO_STUDIES[0].studyInstanceUID;
 
@@ -196,7 +220,9 @@ function attachStackStatusListeners() {
 // prettier-ignore
 createInfoSection(content)
   .addInstruction('Study drives both series lists; changing study reloads left and right. Scouts/localizers never appear.')
-  .addInstruction('Primary click (default): Region Segment Plus. This demo starts with hover precheck off (toolbar checkbox unchecked); enable "Hover precheck" to require a short stable hover before segmenting.')
+  .addInstruction('Primary click (default): Region Segment Plus. Hover precheck is off by default (second toolbar row); enable it to require a short stable hover before segmenting.')
+  .addInstruction('Intensity strategy changes log to the console; each segment click logs the resolved raw intensity band from runFloodFillSegmentation.')
+  .addInstruction('Canvas disk small/large are separate intensity options (3 px vs 10 px); the green circle matches the active choice.')
   .addInstruction('Middle mouse / Ctrl+drag: Pan · Right click: Zoom · Wheel / Alt+drag: Stack scroll · Shift+Ctrl+click: Length');
 
 // ==[ Toolbar ]================================================================
@@ -585,6 +611,17 @@ async function run() {
     marginBottom: '8px',
     width: '100%',
   });
+  const segmentationToolbar = document.createElement('div');
+  Object.assign(segmentationToolbar.style, {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '12px',
+    alignItems: 'center',
+    marginBottom: '8px',
+    width: '100%',
+    flexBasis: '100%',
+  });
+  toolbar.prepend(segmentationToolbar);
   toolbar.prepend(seriesToolbar);
 
   addDropdownToToolbar({
@@ -682,11 +719,32 @@ async function run() {
     },
   });
 
+  addDropdownToToolbar({
+    labelText: 'Intensity / fill range',
+    id: SELECT_ID_FILL_STRATEGY,
+    container: segmentationToolbar,
+    options: {
+      labels: FILL_STRATEGY_OPTIONS.map((o) => o.label),
+      values: [...FILL_STRATEGY_OPTIONS.map((o) => o.value)],
+      defaultValue: FILL_STRATEGY_OPTIONS[0].value,
+    },
+    onSelectedValueChange: (value) => {
+      const opt = FILL_STRATEGY_OPTIONS.find((o) => o.value === value);
+      console.info('[regionSegmentPlus] intensity / fill strategy', {
+        value,
+        label: opt?.label,
+      });
+      toolGroup.setToolConfiguration(RegionSegmentPlusTool.toolName, {
+        intensityRangeStrategy: value,
+      });
+    },
+  });
+
   addCheckboxToToolbar({
     id: 'region-seg-plus-hover-precheck',
     title: 'Hover precheck',
     checked: false,
-    container: seriesToolbar,
+    container: segmentationToolbar,
     onChange: (checked) => {
       toolGroup.setToolConfiguration(RegionSegmentPlusTool.toolName, {
         hoverPrecheckEnabled: checked,

@@ -3,69 +3,58 @@ import type { Types } from '@cornerstonejs/core';
 import type { NumberVoxelManager } from '@cornerstonejs/core/utilities';
 import floodFill from '../floodFill';
 import IslandRemoval from '../islandRemoval';
+import { createEnsureSliceLoadedForVolume } from '../createEnsureSliceLoadedForVolume';
 import {
   DEFAULT_NEIGHBORHOOD_RADIUS,
   DEFAULT_POSITIVE_STD_DEV_MULTIPLIER,
 } from './constants';
+import { getViewportVoiMappingForVolume } from './getViewportVoiMappingForVolume';
+import { getCanvasDiskIntensityRange } from './intensityRange/canvasDiskIntensityRange';
+import type {
+  FloodFillIntensityRangeResult,
+  FloodFillIntensityRangeOptions,
+  GetFloodFillIntensityRange,
+} from './floodFillIntensityRangeTypes';
 
-const { transformWorldToIndex } = csUtils;
+const {
+  transformWorldToIndex,
+  mapScalarToViewportVoiIntensity,
+  mapMappedBandToRawRange,
+} = csUtils;
 const { growCutLog: log } = csUtils.logger;
+
+export type {
+  FloodFillIntensityRangeResult,
+  FloodFillIntensityRangeOptions,
+  GetFloodFillIntensityRange,
+} from './floodFillIntensityRangeTypes';
 
 /** Derived labelmap creation, ref-volume getRange(), and zeroing the full labelmap. */
 const FLOOD_FILL_PREP_TIMING_LABEL = 'cornerstone.tools: floodFill: prep';
-/** Neighborhood band only (excludes prep and full scalar-array access). */
 const FLOOD_FILL_RANGE_TIMING_LABEL =
   'cornerstone.tools: floodFill: intensityRange';
-/** Scalar access, flood fill, labelmap write, island removal. */
 const FLOOD_FILL_RUN_TIMING_LABEL =
   'cornerstone.tools: floodFill: fillAndIslandRemoval';
-
-/** Result of computing the scalar intensity band used as the flood-fill predicate. */
-type FloodFillIntensityRangeResult = {
-  min: number;
-  max: number;
-  ijkStart: Types.Point3;
-  diagnostics: {
-    neighborhoodMean: number;
-    neighborhoodStdDev: number;
-    clickedVoxelValue: number;
-    positiveStdDevMultiplier: number;
-    neighborhoodRadius: number;
-  };
-};
-
-/** Options passed to the default or custom flood-fill range function. */
-type FloodFillIntensityRangeOptions = {
-  positiveStdDevMultiplier?: number;
-  initialNeighborhoodRadius?: number;
-};
-
-/**
- * Pluggable range for flood fill: return { min, max, ijkStart, diagnostics }
- * or null when the seed is invalid (same contract as getPositiveIntensityRange).
- */
-type GetFloodFillIntensityRange = (
-  referencedVolume: Types.IImageVolume,
-  worldPosition: Types.Point3,
-  options?: FloodFillIntensityRangeOptions
-) => FloodFillIntensityRangeResult | null;
 
 type FloodFillSegmentationOptions = {
   positiveStdDevMultiplier?: number;
   initialNeighborhoodRadius?: number;
   segmentIndex?: number;
   maxInternalRemove?: number;
-  /**
-   * Replace the default neighborhood mean ± k·σ band. Implementations may
-   * delegate to getPositiveIntensityRange for the baseline behavior.
-   */
   getIntensityRange?: GetFloodFillIntensityRange;
+  /** Viewport container; passed into `getIntensityRange` / canvas-disk strategy. */
+  element?: HTMLDivElement;
+  /** Pointer position in viewport canvas coordinates (same space as `canvasDiskRadiusPx`). */
+  canvasPoint?: { x: number; y: number };
+  /** Circular sampling ROI radius in canvas pixels (see tool `intensitySamplingDiskRadiusCanvasPx`). */
+  intensitySamplingDiskRadiusCanvasPx?: number;
+  /**
+   * 3D: load slice images on demand (streaming volumes). Built from volume when omitted.
+   */
+  ensureSliceLoaded?: (sliceIndex: number) => Promise<void>;
+  yieldEvery?: number;
 };
 
-/**
- * Display VOI (window/level) from the viewport when available — algorithm uses raw
- * voxel intensities, so compare this to the intensity tolerance range when debugging.
- */
 function getDisplayVoiSnapshot(
   viewport: Types.IViewport,
   referencedVolumeId?: string
@@ -106,10 +95,9 @@ function getDisplayVoiSnapshot(
 }
 
 /**
- * Computes the positive intensity range [min, max] from a click position using
- * neighborhood statistics. Reuses the same logic as calculateGrowCutSeeds.
+ * Raw neighborhood mean ± kσ (no VOI mapping).
  */
-function getPositiveIntensityRange(
+function getPositiveIntensityRangeRaw(
   referencedVolume: Types.IImageVolume,
   worldPosition: Types.Point3,
   options?: FloodFillIntensityRangeOptions
@@ -127,7 +115,6 @@ function getPositiveIntensityRange(
   const ijkStart = transformWorldToIndex(refImageData, worldPosition).map(
     Math.round
   ) as Types.Point3;
-  const startIndex = referenceVolumeVoxelManager.toIndex(ijkStart);
 
   if (
     ijkStart[0] < 0 ||
@@ -145,21 +132,6 @@ function getPositiveIntensityRange(
     return null;
   }
 
-  const cubeSide = 2 * neighborhoodRadius + 1;
-  const fullCubeVoxelCount = cubeSide ** 3;
-
-  log.info('flood fill: computing initial intensity band from neighborhood', {
-    volumeId: referencedVolume.volumeId,
-    worldPosition,
-    seedIjk: [...ijkStart],
-    startLinearIndex: startIndex,
-    dimensions: [width, height, numSlices],
-    neighborhoodRadiusVoxels: neighborhoodRadius,
-    neighborhoodShape: `${cubeSide}×${cubeSide}×${cubeSide} (max ${fullCubeVoxelCount} voxels; fewer at volume edges)`,
-    positiveStdDevMultiplier: positiveK,
-    formula: `[mean − ${positiveK}×σ, mean + ${positiveK}×σ]`,
-  });
-
   const initialStats = csUtils.calculateNeighborhoodStats(
     referenceVolumeVoxelManager,
     dimensions,
@@ -171,64 +143,15 @@ function getPositiveIntensityRange(
     const seedScalar = Number(
       referenceVolumeVoxelManager.getAtIJKPoint(ijkStart)
     );
-    log.info(
-      'flood fill: neighborhood stats had zero samples; using click voxel only',
-      {
-        fallbackMeanAndStdDevFrom: 'single voxel at seed',
-        scalarAtSeed: seedScalar,
-      }
-    );
     initialStats.mean = seedScalar;
     initialStats.stdDev = 0;
-  } else {
-    log.info('flood fill: neighborhood statistics (raw)', {
-      voxelCountUsed: initialStats.count,
-      fullCubeVoxelCount,
-      neighborhoodClippedByVolumeBounds:
-        initialStats.count < fullCubeVoxelCount,
-      mean: initialStats.mean,
-      stdDev: initialStats.stdDev,
-      coefficientOfVariation:
-        initialStats.mean !== 0
-          ? initialStats.stdDev / Math.abs(initialStats.mean)
-          : null,
-    });
   }
 
   const min = initialStats.mean - positiveK * initialStats.stdDev;
   const max = initialStats.mean + positiveK * initialStats.stdDev;
-  const halfWidth = positiveK * initialStats.stdDev;
-
   const startValue = referenceVolumeVoxelManager.getAtIJKPoint(ijkStart);
-  const deltaFromMean = startValue - initialStats.mean;
-  const signedStdDevUnits =
-    initialStats.stdDev > 1e-12 ? deltaFromMean / initialStats.stdDev : null;
-
-  log.info('flood fill: derived tolerance band before click check', {
-    toleranceMin: min,
-    toleranceMax: max,
-    bandHalfWidth: halfWidth,
-    bandWidth: max - min,
-    clickedVoxelValue: startValue,
-    clickDeltaFromNeighborhoodMean: deltaFromMean,
-    clickDistanceFromMeanInSigma: signedStdDevUnits,
-    clickInsideBand:
-      startValue >= min && startValue <= max
-        ? true
-        : startValue < min
-          ? 'below_min'
-          : 'above_max',
-  });
 
   if (startValue < min || startValue > max) {
-    log.info('intensity range: clicked voxel outside local tolerance band', {
-      clickedVoxelValue: startValue,
-      toleranceMin: min,
-      toleranceMax: max,
-      neighborhoodMean: initialStats.mean,
-      neighborhoodStdDev: initialStats.stdDev,
-      positiveStdDevMultiplier: positiveK,
-    });
     console.warn(
       'Clicked voxel intensity is outside the calculated positive range.'
     );
@@ -245,21 +168,172 @@ function getPositiveIntensityRange(
       clickedVoxelValue: startValue,
       positiveStdDevMultiplier: positiveK,
       neighborhoodRadius,
+      strategy: 'meanStdRaw',
     },
   };
 }
 
 /**
- * Runs flood fill segmentation with intensity range, followed by island removal
- * (remove external islands, fill internal islands). Better for contiguous regions
- * with speckling than GrowCut.
- *
- * @param referencedVolumeId - The volume ID to segment
- * @param worldPosition - The clicked position in world coordinates
- * @param viewport - The viewport (required for IslandRemoval plane normalization)
- * @param options - Configuration options
- * @returns The segmented labelmap volume
+ * Neighborhood mean ± kσ in VOI-mapped [0,1] space, band inverted to raw bounds.
  */
+function getPositiveIntensityRangeVoiMapped(
+  referencedVolume: Types.IImageVolume,
+  worldPosition: Types.Point3,
+  voiMapping: NonNullable<FloodFillIntensityRangeOptions['voiMapping']>,
+  options?: FloodFillIntensityRangeOptions
+): FloodFillIntensityRangeResult | null {
+  const { dimensions, imageData: refImageData } = referencedVolume;
+  const [width, height, numSlices] = dimensions;
+  const referenceVolumeVoxelManager =
+    referencedVolume.voxelManager as NumberVoxelManager;
+
+  const neighborhoodRadius =
+    options?.initialNeighborhoodRadius ?? DEFAULT_NEIGHBORHOOD_RADIUS;
+  const positiveK =
+    options?.positiveStdDevMultiplier ?? DEFAULT_POSITIVE_STD_DEV_MULTIPLIER;
+
+  const ijkStart = transformWorldToIndex(refImageData, worldPosition).map(
+    Math.round
+  ) as Types.Point3;
+
+  if (
+    ijkStart[0] < 0 ||
+    ijkStart[0] >= width ||
+    ijkStart[1] < 0 ||
+    ijkStart[1] >= height ||
+    ijkStart[2] < 0 ||
+    ijkStart[2] >= numSlices
+  ) {
+    log.info('intensity range (VOI-mapped): click outside volume', {
+      ijkStart,
+      dimensions: [width, height, numSlices],
+    });
+    return null;
+  }
+
+  const mapFn = (v: number) => mapScalarToViewportVoiIntensity(v, voiMapping);
+
+  const initialStats = csUtils.calculateNeighborhoodStats(
+    referenceVolumeVoxelManager,
+    dimensions,
+    ijkStart,
+    neighborhoodRadius,
+    mapFn
+  );
+
+  if (initialStats.count === 0) {
+    const seedScalar = Number(
+      referenceVolumeVoxelManager.getAtIJKPoint(ijkStart)
+    );
+    initialStats.mean = mapFn(seedScalar);
+    initialStats.stdDev = 0;
+  }
+
+  let yMin = initialStats.mean - positiveK * initialStats.stdDev;
+  let yMax = initialStats.mean + positiveK * initialStats.stdDev;
+  yMin = Math.max(0, Math.min(1, yMin));
+  yMax = Math.max(0, Math.min(1, yMax));
+  if (yMin > yMax) {
+    const t = yMin;
+    yMin = yMax;
+    yMax = t;
+  }
+
+  const { rawMin, rawMax } = mapMappedBandToRawRange(yMin, yMax, voiMapping);
+  const startValue = Number(
+    referenceVolumeVoxelManager.getAtIJKPoint(ijkStart)
+  );
+  const bandLo = Math.min(rawMin, rawMax);
+  const bandHi = Math.max(rawMin, rawMax);
+  const min = Math.min(bandLo, startValue);
+  const max = Math.max(bandHi, startValue);
+
+  return {
+    min,
+    max,
+    ijkStart,
+    diagnostics: {
+      neighborhoodMean: initialStats.mean,
+      neighborhoodStdDev: initialStats.stdDev,
+      clickedVoxelValue: startValue,
+      positiveStdDevMultiplier: positiveK,
+      neighborhoodRadius,
+      strategy: 'meanStdVoiMapped',
+      mappedBand: { min: yMin, max: yMax },
+    },
+  };
+}
+
+function getPositiveIntensityRange(
+  referencedVolume: Types.IImageVolume,
+  worldPosition: Types.Point3,
+  options?: FloodFillIntensityRangeOptions
+): FloodFillIntensityRangeResult | null {
+  if (options?.voiMapping) {
+    return getPositiveIntensityRangeVoiMapped(
+      referencedVolume,
+      worldPosition,
+      options.voiMapping,
+      options
+    );
+  }
+  return getPositiveIntensityRangeRaw(referencedVolume, worldPosition, options);
+}
+
+function resolveIntensityRange(
+  referencedVolume: Types.IImageVolume,
+  worldPosition: Types.Point3,
+  viewport: Types.IViewport,
+  referencedVolumeId: string,
+  options: FloodFillSegmentationOptions,
+  rangeContext: FloodFillIntensityRangeOptions
+): FloodFillIntensityRangeResult | null {
+  if (options.getIntensityRange) {
+    const fromGetter = options.getIntensityRange(
+      referencedVolume,
+      worldPosition,
+      rangeContext
+    );
+    if (!fromGetter) {
+      log.warn(
+        'flood fill intensity range: strategy/custom getIntensityRange returned null (e.g. missing canvasPoint/VOI for canvas-disk, click outside volume, or fixed-% rejection)',
+        { referencedVolumeId, worldPosition }
+      );
+    }
+    return fromGetter;
+  }
+  const voiFromViewport = getViewportVoiMappingForVolume(
+    viewport,
+    referencedVolumeId
+  );
+  const merged: FloodFillIntensityRangeOptions = {
+    ...rangeContext,
+    voiMapping: voiFromViewport ?? undefined,
+  };
+  let result = getPositiveIntensityRange(
+    referencedVolume,
+    worldPosition,
+    merged
+  );
+  if (!result && merged.voiMapping) {
+    log.info(
+      'flood fill intensity range: VOI-mapped mean±σ failed; falling back to raw mean±σ',
+      { referencedVolumeId }
+    );
+    result = getPositiveIntensityRange(referencedVolume, worldPosition, {
+      ...merged,
+      voiMapping: undefined,
+    });
+  }
+  if (!result) {
+    log.warn(
+      'flood fill intensity range: default mean±σ (VOI + raw fallback) could not resolve a band',
+      { referencedVolumeId, worldPosition }
+    );
+  }
+  return result;
+}
+
 async function runFloodFillSegmentation({
   referencedVolumeId,
   worldPosition,
@@ -286,7 +360,6 @@ async function runFloodFillSegmentation({
     displayVoi,
   });
 
-  // Reset the labelmap
   labelmap.voxelManager.forEach(({ index, value }) => {
     if (value !== 0) {
       labelmap.voxelManager.setAtIndex(index, 0);
@@ -294,34 +367,55 @@ async function runFloodFillSegmentation({
   });
   console.timeEnd(FLOOD_FILL_PREP_TIMING_LABEL);
 
+  const voiMapping = getViewportVoiMappingForVolume(
+    viewport,
+    referencedVolumeId
+  );
+
   const rangeContext: FloodFillIntensityRangeOptions = {
     positiveStdDevMultiplier: options.positiveStdDevMultiplier,
     initialNeighborhoodRadius: options.initialNeighborhoodRadius,
+    viewport,
+    element: options.element,
+    referencedVolumeId,
+    canvasPoint: options.canvasPoint,
+    canvasDiskRadiusPx: options.intensitySamplingDiskRadiusCanvasPx,
+    voiMapping: voiMapping ?? undefined,
   };
 
   console.time(FLOOD_FILL_RANGE_TIMING_LABEL);
-  const rangeResult = options.getIntensityRange
-    ? options.getIntensityRange(referencedVolume, worldPosition, rangeContext)
-    : getPositiveIntensityRange(referencedVolume, worldPosition, rangeContext);
+  const rangeResult = resolveIntensityRange(
+    referencedVolume,
+    worldPosition,
+    viewport,
+    referencedVolumeId,
+    options,
+    rangeContext
+  );
   console.timeEnd(FLOOD_FILL_RANGE_TIMING_LABEL);
 
   if (!rangeResult) {
+    log.warn('flood fill: aborted before fill (no intensity range)', {
+      referencedVolumeId,
+      worldPosition,
+    });
     return null;
   }
 
-  const {
-    min: positiveMin,
-    max: positiveMax,
-    ijkStart,
-    diagnostics,
-  } = rangeResult;
+  const { min: rangeMin, max: rangeMax, ijkStart, diagnostics } = rangeResult;
 
-  log.info('intensity tolerance band (from neighborhood stats)', {
-    toleranceMin: positiveMin,
-    toleranceMax: positiveMax,
-    width: positiveMax - positiveMin,
+  log.info('intensity tolerance band', {
+    toleranceMin: rangeMin,
+    toleranceMax: rangeMax,
+    width: rangeMax - rangeMin,
     ...diagnostics,
-    note: 'Segmentation includes voxels in [toleranceMin, toleranceMax]; display window is independent.',
+  });
+  console.info('[cornerstone-tools] flood fill intensity range', {
+    rawMin: rangeMin,
+    rawMax: rangeMax,
+    strategy: diagnostics.strategy,
+    mappedBand: diagnostics.mappedBand,
+    neighborhoodRadius: diagnostics.neighborhoodRadius,
   });
 
   console.time(FLOOD_FILL_RUN_TIMING_LABEL);
@@ -330,6 +424,31 @@ async function runFloodFillSegmentation({
     const [width, height, numSlices] = dimensions;
     const refVoxelManager = referencedVolume.voxelManager as NumberVoxelManager;
     const numPixelsPerSlice = width * height;
+
+    let positiveMin = rangeMin;
+    let positiveMax = rangeMax;
+    const seedScalar = Number(refVoxelManager.getAtIJKPoint(ijkStart));
+    if (Number.isFinite(seedScalar)) {
+      if (seedScalar < positiveMin) {
+        log.info('flood fill: expanded tolerance min to include seed voxel', {
+          seedScalar,
+          previousMin: positiveMin,
+        });
+        positiveMin = seedScalar;
+      }
+      if (seedScalar > positiveMax) {
+        log.info('flood fill: expanded tolerance max to include seed voxel', {
+          seedScalar,
+          previousMax: positiveMax,
+        });
+        positiveMax = seedScalar;
+      }
+    }
+    console.info('[cornerstone-tools] flood fill seed + effective tolerance', {
+      seedScalar,
+      effectiveMin: positiveMin,
+      effectiveMax: positiveMax,
+    });
 
     const intensityGetter = (
       x: number,
@@ -352,13 +471,19 @@ async function runFloodFillSegmentation({
     const inRange = (val: number) => val >= positiveMin && val <= positiveMax;
 
     const floodedPoints: Types.Point3[] = [];
-    floodFill(intensityGetter, ijkStart as [number, number, number], {
+    const ensureSliceLoaded =
+      options.ensureSliceLoaded ??
+      createEnsureSliceLoadedForVolume(referencedVolume);
+
+    await floodFill(intensityGetter, ijkStart as [number, number, number], {
       equals: (val, _startVal) =>
         val !== undefined && typeof val === 'number' && inRange(val),
       onFlood: (x: number, y: number, z?: number) => {
         const k = z ?? ijkStart[2];
         floodedPoints.push([x, y, k]);
       },
+      ensureSliceLoaded,
+      yieldEvery: options.yieldEvery ?? 500,
     });
 
     if (floodedPoints.length === 0) {
@@ -379,13 +504,11 @@ async function runFloodFillSegmentation({
       ijkStart,
     });
 
-    // Write flooded voxels to labelmap
     floodedPoints.forEach(([x, y, z]) => {
       const index = z * numPixelsPerSlice + y * width + x;
       labelmap.voxelManager.setAtIndex(index, segmentIndex);
     });
 
-    // Island removal: keep only the island containing the click, fill internal holes
     const islandRemoval = new IslandRemoval({
       maxInternalRemove: options.maxInternalRemove ?? 128,
       fillInternalEdge: false,
@@ -412,12 +535,9 @@ async function runFloodFillSegmentation({
     islandRemoval.removeExternalIslands();
     islandRemoval.removeInternalIslands();
 
-    log.info(
-      'island removal: complete (keep island at click, drop external, fill holes)',
-      {
-        segmentIndex,
-      }
-    );
+    log.info('island removal: complete', {
+      segmentIndex,
+    });
 
     return labelmap;
   } finally {
@@ -429,11 +549,8 @@ export {
   runFloodFillSegmentation as default,
   runFloodFillSegmentation,
   getPositiveIntensityRange,
+  getPositiveIntensityRangeRaw,
+  getPositiveIntensityRangeVoiMapped,
   getDisplayVoiSnapshot,
 };
-export type {
-  FloodFillSegmentationOptions,
-  FloodFillIntensityRangeResult,
-  FloodFillIntensityRangeOptions,
-  GetFloodFillIntensityRange,
-};
+export type { FloodFillSegmentationOptions };

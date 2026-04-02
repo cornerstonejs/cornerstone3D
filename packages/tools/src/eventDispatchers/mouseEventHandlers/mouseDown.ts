@@ -29,7 +29,8 @@ const { Active, Passive } = ToolModes;
  *
  * - First we get the `activeTool` for the mouse button pressed.
  * - If the `activeTool` has a `preMouseDownCallback`, this is called. If the callback returns `true`,
- *   the event does not propagate further.
+ *   the event does not propagate further. Async work must be scheduled by the tool itself (this
+ *   dispatcher does not await Promises from tool callbacks).
  * - Next we get all tools which are active or passive (`activeAndPassiveTools`), as annotation. for these tools could
  *   possibly catch and handle these events. We then filter the `activeAndPassiveTools` using `filterToolsWithAnnotationsForElement`, which filters tools with annotations
  *   for this frame of reference. Optionally a tool can employ a further filtering (via a

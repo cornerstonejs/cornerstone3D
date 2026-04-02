@@ -22,6 +22,9 @@ import * as annotation from './stateManagement/annotation';
 import * as segmentation from './stateManagement/segmentation';
 import * as splines from './tools/annotation/splines';
 
+export type { RegionSegmentIntensityRangeStrategy } from './utilities/segmentation/growCut/intensityRange/intensityRangeStrategyGetters';
+export { getCanvasDiskRadiusPxForStrategy } from './utilities/segmentation/growCut/intensityRange/intensityRangeStrategyGetters';
+
 import {
   BaseTool,
   AnnotationTool,

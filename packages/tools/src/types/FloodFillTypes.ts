@@ -16,6 +16,14 @@ type FloodFillOptions = {
   bounds?: Map<number, Types.Point2 | Types.Point3>; //Store the bounds
   // Return false to exclude
   filter?: (point) => boolean;
+  /**
+   * 3D only: await before reading voxels on slice index z (e.g. load image for streaming volumes).
+   */
+  ensureSliceLoaded?: (sliceIndex: number) => Promise<void>;
+  /**
+   * Yield to the event loop every N flood steps (default 500). Use 0 to disable.
+   */
+  yieldEvery?: number;
 };
 
 export type { FloodFillResult, FloodFillGetter, FloodFillOptions };

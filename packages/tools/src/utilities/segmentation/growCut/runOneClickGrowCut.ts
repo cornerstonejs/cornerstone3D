@@ -13,11 +13,23 @@ import {
   DEFAULT_NEGATIVE_SEEDS_COUNT,
   MAX_NEGATIVE_SEED_ATTEMPTS_MULTIPLIER,
 } from './constants';
+import {
+  getPositiveIntensityRange,
+  type GetFloodFillIntensityRange,
+  type FloodFillIntensityRangeOptions,
+} from './runFloodFillSegmentation';
 
 const { transformWorldToIndex } = csUtils;
 const { growCutLog } = csUtils.logger;
 
 type GrowCutOneClickOptions = GrowCutOptions & {
+  /**
+   * Same pluggable intensity band as flood fill. When omitted, uses
+   * getPositiveIntensityRange with optional `intensityRangeOptions.voiMapping`.
+   */
+  getIntensityRange?: GetFloodFillIntensityRange;
+  /** Context passed into getIntensityRange / default range (VOI, canvas, etc.). */
+  intensityRangeOptions?: FloodFillIntensityRangeOptions;
   // Radius of the neighborhood (in voxels) around the click point used to calculate initial statistics (mean, stdDev). E.g., 1 means a 3x3x3 neighborhood.
   initialNeighborhoodRadius?: number;
   // Multiplier (k) for standard deviation used to define the positive seed intensity range (mean +/- k * stdDev).
@@ -92,43 +104,54 @@ function calculateGrowCutSeedsImpl(
   const negativeSeedsTargetPatches =
     options?.negativeSeedsTargetPatches ?? DEFAULT_NEGATIVE_SEEDS_COUNT;
 
-  const ijkStart = transformWorldToIndex(refImageData, worldPosition).map(
+  const ijkProbe = transformWorldToIndex(refImageData, worldPosition).map(
     Math.round
-  );
-  const startIndex = referenceVolumeVoxelManager.toIndex(ijkStart);
-
+  ) as Types.Point3;
   if (
-    ijkStart[0] < 0 ||
-    ijkStart[0] >= width ||
-    ijkStart[1] < 0 ||
-    ijkStart[1] >= height ||
-    ijkStart[2] < 0 ||
-    ijkStart[2] >= numSlices
+    ijkProbe[0] < 0 ||
+    ijkProbe[0] >= width ||
+    ijkProbe[1] < 0 ||
+    ijkProbe[1] >= height ||
+    ijkProbe[2] < 0 ||
+    ijkProbe[2] >= numSlices
   ) {
     growCutLog.info('seeding failed: click outside volume', {
-      ijkStart,
+      ijkStart: ijkProbe,
       dimensions: [width, height, numSlices],
     });
     console.warn('Click position is outside volume bounds.');
     return null;
   }
 
-  const initialStats = csUtils.calculateNeighborhoodStats(
-    referenceVolumeVoxelManager,
-    dimensions,
-    ijkStart,
-    neighborhoodRadius
-  );
+  const rangeCtx: FloodFillIntensityRangeOptions = {
+    positiveStdDevMultiplier: positiveK,
+    initialNeighborhoodRadius: neighborhoodRadius,
+    ...options?.intensityRangeOptions,
+  };
 
-  if (initialStats.count === 0) {
-    initialStats.mean = referenceVolumeVoxelManager.getAtIJKPoint(ijkStart);
-    initialStats.stdDev = 0;
+  const rangeResult = options?.getIntensityRange
+    ? options.getIntensityRange(referencedVolume, worldPosition, rangeCtx)
+    : getPositiveIntensityRange(referencedVolume, worldPosition, rangeCtx);
+
+  if (!rangeResult) {
+    return {
+      positiveSeedIndices: new Set(),
+      negativeSeedIndices: new Set(),
+    };
   }
 
-  const positiveIntensityMin =
-    initialStats.mean - positiveK * initialStats.stdDev;
-  const positiveIntensityMax =
-    initialStats.mean + positiveK * initialStats.stdDev;
+  const {
+    min: positiveIntensityMin,
+    max: positiveIntensityMax,
+    ijkStart,
+  } = rangeResult;
+  const startIndex = referenceVolumeVoxelManager.toIndex(ijkStart);
+
+  const initialStats = {
+    mean: rangeResult.diagnostics.neighborhoodMean,
+    stdDev: rangeResult.diagnostics.neighborhoodStdDev,
+    count: 1,
+  };
 
   const neighborsCoordDelta = [
     [-1, 0, 0],
@@ -166,6 +189,7 @@ function calculateGrowCutSeedsImpl(
       positiveIntensityMax,
       initialMean: initialStats.mean,
       initialStdDev: initialStats.stdDev,
+      intensityStrategy: rangeResult.diagnostics.strategy,
     });
     console.warn(
       'Clicked voxel intensity is outside the calculated positive range. No positive seeds generated.'
