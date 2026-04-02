@@ -119,7 +119,7 @@
     },
     "packages/adapters": {
       "name": "@cornerstonejs/adapters",
-      "version": "4.19.2",
+      "version": "4.20.2",
       "dependencies": {
         "@babel/runtime-corejs2": "7.26.10",
         "buffer": "6.0.3",
@@ -128,13 +128,13 @@
         "ndarray": "1.0.19",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "4.19.2",
-        "@cornerstonejs/tools": "4.19.2",
+        "@cornerstonejs/core": "4.20.2",
+        "@cornerstonejs/tools": "4.20.2",
       },
     },
     "packages/ai": {
       "name": "@cornerstonejs/ai",
-      "version": "4.19.2",
+      "version": "4.20.2",
       "dependencies": {
         "@babel/runtime-corejs2": "7.26.10",
         "buffer": "6.0.3",
@@ -146,13 +146,13 @@
         "onnxruntime-web": "1.17.1",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "4.19.2",
-        "@cornerstonejs/tools": "4.19.2",
+        "@cornerstonejs/core": "4.20.2",
+        "@cornerstonejs/tools": "4.20.2",
       },
     },
     "packages/core": {
       "name": "@cornerstonejs/core",
-      "version": "4.19.2",
+      "version": "4.20.2",
       "dependencies": {
         "@kitware/vtk.js": "34.15.1",
         "comlink": "4.4.2",
@@ -162,7 +162,7 @@
     },
     "packages/dicomImageLoader": {
       "name": "@cornerstonejs/dicom-image-loader",
-      "version": "4.19.2",
+      "version": "4.20.2",
       "dependencies": {
         "@cornerstonejs/codec-charls": "1.2.3",
         "@cornerstonejs/codec-libjpeg-turbo-8bit": "1.2.2",
@@ -175,48 +175,48 @@
         "uuid": "9.0.1",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "4.19.2",
+        "@cornerstonejs/core": "4.20.2",
         "dicom-parser": "1.8.21",
       },
     },
     "packages/labelmap-interpolation": {
       "name": "@cornerstonejs/labelmap-interpolation",
-      "version": "4.19.2",
+      "version": "4.20.2",
       "dependencies": {
         "@itk-wasm/morphological-contour-interpolation": "1.1.0",
         "itk-wasm": "1.0.0-b.165",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "4.19.2",
-        "@cornerstonejs/tools": "4.19.2",
+        "@cornerstonejs/core": "4.20.2",
+        "@cornerstonejs/tools": "4.20.2",
         "@kitware/vtk.js": "34.15.1",
       },
     },
     "packages/nifti-volume-loader": {
       "name": "@cornerstonejs/nifti-volume-loader",
-      "version": "4.19.2",
+      "version": "4.20.2",
       "dependencies": {
         "nifti-reader-js": "0.6.9",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "4.19.2",
+        "@cornerstonejs/core": "4.20.2",
       },
     },
     "packages/polymorphic-segmentation": {
       "name": "@cornerstonejs/polymorphic-segmentation",
-      "version": "4.19.2",
+      "version": "4.20.2",
       "dependencies": {
         "@icr/polyseg-wasm": "0.4.0",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "4.19.2",
-        "@cornerstonejs/tools": "4.19.2",
+        "@cornerstonejs/core": "4.20.2",
+        "@cornerstonejs/tools": "4.20.2",
         "@kitware/vtk.js": "34.15.1",
       },
     },
     "packages/tools": {
       "name": "@cornerstonejs/tools",
-      "version": "4.19.2",
+      "version": "4.20.2",
       "dependencies": {
         "@types/offscreencanvas": "2019.7.3",
         "comlink": "4.4.2",
@@ -226,7 +226,7 @@
         "canvas": "3.2.0",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "4.19.2",
+        "@cornerstonejs/core": "4.20.2",
         "@kitware/vtk.js": "34.15.1",
         "@types/d3-array": "3.2.1",
         "@types/d3-interpolate": "3.0.4",
@@ -244,13 +244,16 @@
     "caniuse-lite": "1.0.30001767",
     "canvas": "3.2.0",
     "dcmjs": "0.49.4",
-    "flatted": "3.4.0",
-    "lodash": "4.17.23",
-    "node-forge": "1.3.2",
+    "flatted": "3.4.2",
+    "handlebars": "4.7.9",
+    "lodash": "4.18.1",
+    "node-forge": "1.4.0",
+    "path-to-regexp": "0.1.13",
     "qs": "6.14.1",
     "rollup": "3.30.0",
     "serialize-javascript": "7.0.4",
     "shelljs": "0.10.0",
+    "socket.io-parser": "4.2.6",
     "svgo": "3.3.3",
     "tar": "7.5.11",
     "tar-fs": "2.1.4",
@@ -1883,7 +1886,7 @@
 
     "flatbuffers": ["flatbuffers@1.12.0", "", {}, "sha512-c7CZADjRcl6j0PlvFy0ZqXQ67qSEZfrVPynmnL+2zPc+NtMvrF8Y0QceMo7QqnSPc7+uWjUIAbvCQ5WIKlMVdQ=="],
 
-    "flatted": ["flatted@3.4.0", "", {}, "sha512-kC6Bb+ooptOIvWj5B63EQWkF0FEnNjV2ZNkLMLZRDDduIiWeFF4iKnslwhiWxjAdbg4NzTNo6h0qLuvFrcx+Sw=="],
+    "flatted": ["flatted@3.4.2", "", {}, "sha512-PjDse7RzhcPkIJwy5t7KPWQSZ9cAbzQXcafsetQoD7sOJRQlGikNbx7yZp2OotDnJyrDcbyRq3Ttb18iYOqkxA=="],
 
     "follow-redirects": ["follow-redirects@1.15.9", "", {}, "sha512-gew4GsXizNgdoRyqmyfMHyAmXsZDk6mHkSxZFCzW9gwlbtOW44CDtYavM+y+72qD/Vq2l550kMF52DT8fOLJqQ=="],
 
@@ -1981,7 +1984,7 @@
 
     "handle-thing": ["handle-thing@2.0.1", "", {}, "sha512-9Qn4yBxelxoh2Ow62nP+Ka/kMnOXRi8BXnRaUwezLNhqelnN49xKz4F/dPP8OYLxLxq6JDtZb2i9XznUQbNPTg=="],
 
-    "handlebars": ["handlebars@4.7.8", "", { "dependencies": { "minimist": "^1.2.5", "neo-async": "^2.6.2", "source-map": "^0.6.1", "wordwrap": "^1.0.0" }, "optionalDependencies": { "uglify-js": "^3.1.4" }, "bin": { "handlebars": "bin/handlebars" } }, "sha512-vafaFqs8MZkRrSX7sFVUdo3ap/eNiLnb4IakshzvP56X5Nr1iGKAIqdX6tMlm6HcNRIkr6AxO5jFEoJzzpT8aQ=="],
+    "handlebars": ["handlebars@4.7.9", "", { "dependencies": { "minimist": "^1.2.5", "neo-async": "^2.6.2", "source-map": "^0.6.1", "wordwrap": "^1.0.0" }, "optionalDependencies": { "uglify-js": "^3.1.4" }, "bin": { "handlebars": "bin/handlebars" } }, "sha512-4E71E0rpOaQuJR2A3xDZ+GM1HyWYv1clR58tC8emQNeQe3RH7MAzSbat+V0wG78LQBo6m6bzSG/L4pBuCsgnUQ=="],
 
     "hard-rejection": ["hard-rejection@2.1.0", "", {}, "sha512-VIZB+ibDhx7ObhAe7OVtoEbuP4h/MuOTHJ+J8h/eBXotJYl0fBgR72xDFCKgIh22OJZIOVNxBMWuhAr10r8HdA=="],
 
@@ -2355,7 +2358,7 @@
 
     "locate-path": ["locate-path@5.0.0", "", { "dependencies": { "p-locate": "^4.1.0" } }, "sha512-t7hw9pI+WvuwNJXwk5zVHpyhIqzg2qTlklJOf0mVxGSbe3Fp2VieZcduNYjaLDoy6p9uGpQEGWG87WpMKlNq8g=="],
 
-    "lodash": ["lodash@4.17.23", "", {}, "sha512-LgVTMpQtIopCi79SJeDiP0TfWi5CNEc/L/aRdTh3yIvmZXTnheWpKjSZhnvMl8iXbC1tFg9gdHHDMLoV7CnG+w=="],
+    "lodash": ["lodash@4.18.1", "", {}, "sha512-dMInicTPVE8d1e5otfwmmjlxkZoUpiVLwyeTdUsi/Caj/gfzzblBcCE5sRHV/AsjuCmxWrte2TNGSYuCeCq+0Q=="],
 
     "lodash.clonedeep": ["lodash.clonedeep@4.5.0", "", {}, "sha512-H5ZhCF25riFd9uB5UCkVKo61m3S/xZk1x4wA6yp/L3RFP6Z/eHH1ymQcGLo7J3GMPfm0V/7m1tryHuGVxpqEBQ=="],
 
@@ -2511,7 +2514,7 @@
 
     "node-fetch": ["node-fetch@2.6.7", "", { "dependencies": { "whatwg-url": "^5.0.0" }, "peerDependencies": { "encoding": "^0.1.0" }, "optionalPeers": ["encoding"] }, "sha512-ZjMPFEfVx5j+y2yF35Kzx5sF7kDzxuDj6ziH4FFbOp87zKDZNx8yExJIb05OGF4Nlt9IHFIMBkRl41VdvcNdbQ=="],
 
-    "node-forge": ["node-forge@1.3.2", "", {}, "sha512-6xKiQ+cph9KImrRh0VsjH2d8/GXA4FIMlgU4B757iI1ApvcyA9VlouP0yZJha01V+huImO+kKMU7ih+2+E14fw=="],
+    "node-forge": ["node-forge@1.4.0", "", {}, "sha512-LarFH0+6VfriEhqMMcLX2F7SwSXeWwnEAJEsYm5QKWchiVYVvJyV9v7UDvUv+w5HO23ZpQTXDv/GxdDdMyOuoQ=="],
 
     "node-gyp": ["node-gyp@12.2.0", "", { "dependencies": { "env-paths": "^2.2.0", "exponential-backoff": "^3.1.1", "graceful-fs": "^4.2.6", "make-fetch-happen": "^15.0.0", "nopt": "^9.0.0", "proc-log": "^6.0.0", "semver": "^7.3.5", "tar": "^7.5.4", "tinyglobby": "^0.2.12", "which": "^6.0.0" }, "bin": { "node-gyp": "bin/node-gyp.js" } }, "sha512-q23WdzrQv48KozXlr0U1v9dwO/k59NHeSzn6loGcasyf0UnSrtzs8kRxM+mfwJSf0DkX0s43hcqgnSO4/VNthQ=="],
 
@@ -2657,7 +2660,7 @@
 
     "path-scurry": ["path-scurry@2.0.1", "", { "dependencies": { "lru-cache": "^11.0.0", "minipass": "^7.1.2" } }, "sha512-oWyT4gICAu+kaA7QWk/jvCHWarMKNs6pXOGWKDTr7cw4IGcUbW+PeTfbaQiLGheFRpjo6O9J0PmyMfQPjH71oA=="],
 
-    "path-to-regexp": ["path-to-regexp@0.1.12", "", {}, "sha512-RA1GjUVMnvYFxuqovrEqZoxxW5NUZqbwKtYz/Tt7nXerk0LbLblQmrsgdeOxV5SFHf0UDggjS/bSeOZwt1pmEQ=="],
+    "path-to-regexp": ["path-to-regexp@0.1.13", "", {}, "sha512-A/AGNMFN3c8bOlvV9RreMdrv7jsmF9XIfDeCd87+I8RNg6s78BhJxMu69NEMHBSJFxKidViTEdruRwEk/WIKqA=="],
 
     "path-type": ["path-type@4.0.0", "", {}, "sha512-gDKb8aZMDeD/tZWs9P6+q0J9Mwkdl6xMV8TjnGP3qJVJ06bdMgkbBlLU8IdfOsIsFz2BW1rNVT3XuNEl8zPAvw=="],
 
@@ -3057,7 +3060,7 @@
 
     "socket.io-adapter": ["socket.io-adapter@2.5.5", "", { "dependencies": { "debug": "~4.3.4", "ws": "~8.17.1" } }, "sha512-eLDQas5dzPgOWCk9GuuJC2lBqItuhKI4uxGgo9aIV7MYbk2h9Q6uULEh8WBzThoI7l+qU9Ast9fVUmkqPP9wYg=="],
 
-    "socket.io-parser": ["socket.io-parser@4.2.4", "", { "dependencies": { "@socket.io/component-emitter": "~3.1.0", "debug": "~4.3.1" } }, "sha512-/GbIKmo8ioc+NIWIhwdecY0ge+qVBSMdgxGygevmdHj24bsfgtCmcUUcQ5ZzcylGFHsN3k4HB4Cgkl96KVnuew=="],
+    "socket.io-parser": ["socket.io-parser@4.2.6", "", { "dependencies": { "@socket.io/component-emitter": "~3.1.0", "debug": "~4.4.1" } }, "sha512-asJqbVBDsBCJx0pTqw3WfesSY0iRX+2xzWEWzrpcH7L6fLzrhyF8WPI8UaeM4YCuDfpwA/cgsdugMsmtz8EJeg=="],
 
     "sockjs": ["sockjs@0.3.24", "", { "dependencies": { "faye-websocket": "^0.11.3", "uuid": "^8.3.2", "websocket-driver": "^0.7.4" } }, "sha512-GJgLTZ7vYb/JtPSSZ10hsOYIvEYsjbNU+zPdIHcUaWVNUEPivzxku31865sSSud0Da0W4lEeOPlmw93zLQchuQ=="],
 
@@ -4305,7 +4308,7 @@
 
     "socket.io-adapter/debug": ["debug@4.3.7", "", { "dependencies": { "ms": "^2.1.3" } }, "sha512-Er2nc/H7RrMXZBFCEim6TCmMk02Z8vLC2Rbi1KEBggpo0fS6l0S1nnapwmIi3yW/+GOJap1Krg4w0Hg80oCqgQ=="],
 
-    "socket.io-parser/debug": ["debug@4.3.7", "", { "dependencies": { "ms": "^2.1.3" } }, "sha512-Er2nc/H7RrMXZBFCEim6TCmMk02Z8vLC2Rbi1KEBggpo0fS6l0S1nnapwmIi3yW/+GOJap1Krg4w0Hg80oCqgQ=="],
+    "socket.io-parser/debug": ["debug@4.4.3", "", { "dependencies": { "ms": "^2.1.3" } }, "sha512-RGwwWnwQvkVfavKVt22FGLw+xYSdzARwm0ru6DhTVA3umU5hZc28V3kO4stgYryrTlLpuvgI9GiijltAjNbcqA=="],
 
     "sockjs/uuid": ["uuid@8.3.2", "", { "bin": { "uuid": "dist/bin/uuid" } }, "sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg=="],
 
