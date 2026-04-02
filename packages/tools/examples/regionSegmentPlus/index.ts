@@ -36,6 +36,9 @@ const {
 const { ViewportType, Events: csCoreEvents } = Enums;
 const { MouseBindings, KeyboardBindings } = csToolsEnums;
 
+/** Default intensity strategy for this example (canvas disk, 10 CSS px radius). */
+const DEFAULT_FILL_STRATEGY = 'canvasDiskTriClassLarge' as const;
+
 /**
  * Primary binding = one-click region segment. Tool class is registered explicitly
  * before addManipulationBindings — that helper skips addTool for toolMap entries
@@ -46,8 +49,10 @@ const regionSegmentPlusToolMap = new Map([
     RegionSegmentPlusTool.toolName,
     {
       selected: true,
-      /** Example: allow click without the stable-hover gate until the user enables it. */
-      configuration: { hoverPrecheckEnabled: false },
+      configuration: {
+        hoverPrecheckEnabled: false,
+        intensityRangeStrategy: DEFAULT_FILL_STRATEGY,
+      },
     },
   ],
 ]);
@@ -726,7 +731,9 @@ async function run() {
     options: {
       labels: FILL_STRATEGY_OPTIONS.map((o) => o.label),
       values: [...FILL_STRATEGY_OPTIONS.map((o) => o.value)],
-      defaultValue: FILL_STRATEGY_OPTIONS[0].value,
+      defaultValue:
+        FILL_STRATEGY_OPTIONS.find((o) => o.value === DEFAULT_FILL_STRATEGY)
+          ?.value ?? FILL_STRATEGY_OPTIONS[0].value,
     },
     onSelectedValueChange: (value) => {
       const opt = FILL_STRATEGY_OPTIONS.find((o) => o.value === value);
