@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.20.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.20.1...v4.20.2) (2026-04-02)
+
+### Bug Fixes
+
+- **tools:** no active segmentation error toast when hovering over viewport without segmentation ([#2683](https://github.com/cornerstonejs/cornerstone3D/issues/2683)) ([a7e4ea1](https://github.com/cornerstonejs/cornerstone3D/commit/a7e4ea13c58f6ac6dd26677c0d9ece697b5d57e9))
+
 ## [4.20.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.20.0...v4.20.1) (2026-03-31)
 
 ### Bug Fixes
