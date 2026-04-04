@@ -228,6 +228,7 @@ createInfoSection(content)
   .addInstruction('Primary click (default): Region Segment Plus. Hover precheck is off by default (second toolbar row); enable it to require a short stable hover before segmenting.')
   .addInstruction('Intensity strategy changes log to the console; each segment click logs the resolved raw intensity band from runFloodFillSegmentation.')
   .addInstruction('Canvas disk small/large are separate intensity options (3 px vs 10 px); the green circle matches the active choice.')
+  .addInstruction('Flood fill (default mode): toolbar checkboxes toggle external/internal island removal and verbose island-removal logs (growCut logger).')
   .addInstruction('Middle mouse / Ctrl+drag: Pan · Right click: Zoom · Wheel / Alt+drag: Stack scroll · Shift+Ctrl+click: Length');
 
 // ==[ Toolbar ]================================================================
@@ -756,6 +757,46 @@ async function run() {
       toolGroup.setToolConfiguration(RegionSegmentPlusTool.toolName, {
         hoverPrecheckEnabled: checked,
       });
+    },
+  });
+
+  const mergeFloodFillIslandRemoval = (
+    partial: Record<string, boolean | undefined>
+  ) => {
+    const inst = toolGroup.getToolInstance(RegionSegmentPlusTool.toolName);
+    const prev = inst.configuration.floodFillIslandRemoval ?? {};
+    toolGroup.setToolConfiguration(RegionSegmentPlusTool.toolName, {
+      floodFillIslandRemoval: { ...prev, ...partial },
+    });
+  };
+
+  addCheckboxToToolbar({
+    id: 'region-seg-plus-island-external',
+    title: 'FF: remove external islands',
+    checked: true,
+    container: segmentationToolbar,
+    onChange: (checked) => {
+      mergeFloodFillIslandRemoval({ removeExternalIslands: checked });
+    },
+  });
+
+  addCheckboxToToolbar({
+    id: 'region-seg-plus-island-internal',
+    title: 'FF: remove internal islands',
+    checked: true,
+    container: segmentationToolbar,
+    onChange: (checked) => {
+      mergeFloodFillIslandRemoval({ removeInternalIslands: checked });
+    },
+  });
+
+  addCheckboxToToolbar({
+    id: 'region-seg-plus-island-verbose',
+    title: 'FF: verbose island logs',
+    checked: false,
+    container: segmentationToolbar,
+    onChange: (checked) => {
+      mergeFloodFillIslandRemoval({ verboseLogging: checked });
     },
   });
 }

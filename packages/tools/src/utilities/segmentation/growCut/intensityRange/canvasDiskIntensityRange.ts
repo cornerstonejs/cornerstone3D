@@ -11,6 +11,45 @@ const { growCutLog } = csUtils.logger;
 const DISPLAY_BAND_FALLBACK_ABS = 5;
 
 /**
+ * Stack viewports often letterbox the image on the canvas: many disk samples read 0 outside the
+ * drawn slice. That skews tri-class (vmin=0, full spread) and inverse bands away from the click.
+ */
+const LETTERBOX_ZERO_FRACTION_TRIM = 0.12;
+const LETTERBOX_TRIM_MIN_NONZERO_MAX = 32;
+const LETTERBOX_TRIM_MIN_REMAINING = 24;
+
+function trimLetterboxPaddingZeros(samples: number[]): {
+  trimmed: number[];
+  didTrim: boolean;
+} {
+  const n = samples.length;
+  if (n < 16) {
+    return { trimmed: samples.slice(), didTrim: false };
+  }
+  let z = 0;
+  let mx = 0;
+  for (let i = 0; i < n; i++) {
+    if (samples[i] === 0) {
+      z++;
+    }
+    if (samples[i] > mx) {
+      mx = samples[i];
+    }
+  }
+  if (
+    z / n < LETTERBOX_ZERO_FRACTION_TRIM ||
+    mx < LETTERBOX_TRIM_MIN_NONZERO_MAX
+  ) {
+    return { trimmed: samples.slice(), didTrim: false };
+  }
+  const filtered = samples.filter((v) => v > 0);
+  if (filtered.length < LETTERBOX_TRIM_MIN_REMAINING) {
+    return { trimmed: samples.slice(), didTrim: false };
+  }
+  return { trimmed: filtered, didTrim: true };
+}
+
+/**
  * Display-intensity byte 0…255 from canvas `ImageData` RGBA at offset `i` (red channel index).
  * Uses BT.601 luma on 8-bit channels (for R=G=B grayscale this equals that channel).
  */
@@ -404,8 +443,11 @@ export function getCanvasDiskIntensityRange(
     return null;
   }
 
-  samples255.sort((a, b) => a - b);
-  const samples = samples255.map((v) => v / 255);
+  const rawDiskSampleCount = samples255.length;
+  const { trimmed: workBytes, didTrim: letterboxTrimmed } =
+    trimLetterboxPaddingZeros(samples255);
+  workBytes.sort((a, b) => a - b);
+  const samples = workBytes.map((v) => v / 255);
   const spread = samples[samples.length - 1] - samples[0];
 
   const ci = (cy * cw + cx) * 4;
@@ -432,7 +474,7 @@ export function getCanvasDiskIntensityRange(
     dLo = toMapped01(loB);
     dHi = toMapped01(hiB);
   } else {
-    const uniqueSorted = [...new Set(samples255)].sort((a, b) => a - b);
+    const uniqueSorted = [...new Set(workBytes)].sort((a, b) => a - b);
     ({ dLo, dHi } = mappedTriClassBandFromUniqueDisplayValues(
       uniqueSorted,
       centerByte
@@ -510,10 +552,12 @@ export function getCanvasDiskIntensityRange(
     min = max = Math.max(volMin, Math.min(volMax, startValue));
   }
 
-  logCanvasDiskSampledPixelValues(samples255, {
+  logCanvasDiskSampledPixelValues(workBytes, {
     centerDisplayByte255: centerByte,
     centerSample01: centerSample,
     spread,
+    rawDiskSampleCount,
+    letterboxTrimmed,
     diskRadiusBitmapPx: R,
     centerBitmap: { cx, cy },
     canvasBitmapSize: { cw, ch },
@@ -541,9 +585,10 @@ export function getCanvasDiskIntensityRange(
       positiveStdDevMultiplier: 0,
       neighborhoodRadius: R,
       strategy: 'canvasDiskTriClass',
-      canvasSampleCount: samples255.length,
+      canvasSampleCount: workBytes.length,
       mappedBand: { min: dLo, max: dHi },
       canvasDiskBandCenteredOnSeed,
+      canvasDiskLetterboxTrimmed: letterboxTrimmed,
     },
   };
 }

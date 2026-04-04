@@ -12,6 +12,8 @@ export type FloodFillIntensityRangeDiagnostics = {
   canvasSampleCount?: number;
   /** True when luma-derived raw band missed the seed; interval was recentred on the voxel scalar. */
   canvasDiskBandCenteredOnSeed?: boolean;
+  /** Canvas disk samples excluded dominant 0s (letterbox / unused canvas). */
+  canvasDiskLetterboxTrimmed?: boolean;
 };
 
 export type FloodFillIntensityRangeResult = {

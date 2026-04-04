@@ -2,7 +2,8 @@ import { utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import normalizeViewportPlane from '../normalizeViewportPlane';
 
-const { RLEVoxelMap, VoxelManager } = utilities;
+const { RLEVoxelMap, VoxelManager, logger } = utilities;
+const { growCutLog: islandRemovalLog } = logger;
 
 // The maximum size of a dimension on an image in DICOM
 // Note, does not work for whole slide imaging
@@ -68,14 +69,18 @@ export default class IslandRemoval {
   private fillInternalEdge = false;
   /** Maximum internal size of an island to remove */
   private maxInternalRemove = 128;
+  /** When true, log bounds, normalizer mapping, per-click flood, and voxel counts. */
+  private verboseLogging = false;
 
   constructor(options?: {
     maxInternalRemove?: number;
     fillInternalEdge?: boolean;
+    verboseLogging?: boolean;
   }) {
     this.maxInternalRemove =
       options?.maxInternalRemove ?? this.maxInternalRemove;
     this.fillInternalEdge = options?.fillInternalEdge ?? this.fillInternalEdge;
+    this.verboseLogging = options?.verboseLogging ?? this.verboseLogging;
   }
 
   /**
@@ -173,7 +178,38 @@ export default class IslandRemoval {
     this.previewSegmentIndex = previewSegmentIndex ?? segmentIndex;
     this.selectedPoints = clickedPoints;
 
+    if (this.verboseLogging) {
+      const segmentVoxels = IslandRemoval.countRleValueVolume(
+        segmentSet,
+        SegmentationEnum.SEGMENT
+      );
+      islandRemovalLog.info('islandRemoval: initialize', {
+        segmentIndex,
+        previewSegmentIndex,
+        volumeDimensions: segmentationVoxelManager.dimensions,
+        segmentSetDimensions: { width, height, depth },
+        boundsIJK,
+        boundsIJKPrime,
+        clickedPoints,
+        segmentVoxelsInPlaneGrid: segmentVoxels,
+      });
+    }
+
     return true;
+  }
+
+  /** Sum of run lengths in the RLE map for a given classification value. */
+  private static countRleValueVolume(
+    segmentSet: Types.RLEVoxelMap<SegmentationEnum>,
+    value: SegmentationEnum
+  ): number {
+    let n = 0;
+    segmentSet.forEach((_baseIndex, rle) => {
+      if (rle.value === value) {
+        n += rle.end - rle.start;
+      }
+    });
+    return n;
   }
 
   /**
@@ -197,20 +233,54 @@ export default class IslandRemoval {
     let floodedCount = 0;
     const { fromIJK } = segmentSet.normalizer;
 
+    const segmentVoxelsBefore = this.verboseLogging
+      ? IslandRemoval.countRleValueVolume(segmentSet, SegmentationEnum.SEGMENT)
+      : 0;
+
     // First mark everything as island that is connected to a start point
     clickedPoints.forEach((clickedPoint) => {
       const ijkPrime = fromIJK(clickedPoint);
       const index = segmentSet.toIndex(ijkPrime);
       const [iPrime, jPrime, kPrime] = ijkPrime;
-      if (segmentSet.get(index) === SegmentationEnum.SEGMENT) {
-        floodedCount += segmentSet.floodFill(
+      const atClick = segmentSet.get(index);
+      if (atClick === SegmentationEnum.SEGMENT) {
+        const added = segmentSet.floodFill(
           iPrime,
           jPrime,
           kPrime,
           SegmentationEnum.ISLAND
         );
+        floodedCount += added;
+        if (this.verboseLogging) {
+          islandRemovalLog.info('islandRemoval: floodFillSegmentIsland click', {
+            clickedPointVolumeIJK: clickedPoint,
+            ijkPrime,
+            voxelsMarkedIsland: added,
+          });
+        }
+      } else if (this.verboseLogging) {
+        islandRemovalLog.info(
+          'islandRemoval: floodFillSegmentIsland click skipped (not SEGMENT)',
+          {
+            clickedPointVolumeIJK: clickedPoint,
+            ijkPrime,
+            segmentSetAtIndex: atClick,
+          }
+        );
       }
     });
+
+    if (this.verboseLogging) {
+      const islandVoxels = IslandRemoval.countRleValueVolume(
+        segmentSet,
+        SegmentationEnum.ISLAND
+      );
+      islandRemovalLog.info('islandRemoval: floodFillSegmentIsland done', {
+        totalIslandVoxels: floodedCount,
+        segmentVoxelsBeforeFlood: segmentVoxelsBefore,
+        islandVoxelsAfterFlood: islandVoxels,
+      });
+    }
 
     return floodedCount;
   }
@@ -224,13 +294,18 @@ export default class IslandRemoval {
    * preview that is not marked as ISLAND is now external and can be reset to
    * the value it had before the flood fill was initiated.
    */
-  public removeExternalIslands() {
+  /**
+   * Clear segment voxels not connected (in segmentSet topology) to the click.
+   * @returns Number of voxels cleared in the labelmap.
+   */
+  public removeExternalIslands(): number {
     const { previewVoxelManager, segmentSet } = this;
     const { toIJK } = segmentSet.normalizer;
 
     // Next, iterate over all points which were set to a new value in the preview
     // For everything NOT connected to something in set of clicked points,
     // remove it from the preview.
+    let clearedVoxels = 0;
 
     const callback = (index, rle) => {
       const [, jPrime, kPrime] = segmentSet.toIJK(index);
@@ -245,11 +320,20 @@ export default class IslandRemoval {
             clearPoint,
             v === undefined ? 0 : null
           );
+          clearedVoxels += 1;
         }
       }
     };
 
     segmentSet.forEach(callback, { rowModified: true });
+
+    if (this.verboseLogging) {
+      islandRemovalLog.info('islandRemoval: removeExternalIslands', {
+        clearedVoxels,
+      });
+    }
+
+    return clearedVoxels;
   }
 
   /**
@@ -356,7 +440,19 @@ export default class IslandRemoval {
         previewVoxelManager.setAtIJKPoint(clearPoint, previewSegmentIndex);
       }
     });
-    return previewVoxelManager.getArrayOfModifiedSlices();
+    const modifiedSlices = previewVoxelManager.getArrayOfModifiedSlices();
+    if (this.verboseLogging) {
+      const interiorSmallVoxels = IslandRemoval.countRleValueVolume(
+        segmentSet,
+        SegmentationEnum.INTERIOR_SMALL
+      );
+      islandRemovalLog.info('islandRemoval: removeInternalIslands', {
+        modifiedSliceCount: modifiedSlices.length,
+        interiorSmallRleVoxels: interiorSmallVoxels,
+        maxInternalRemove: this.maxInternalRemove,
+      });
+    }
+    return modifiedSlices;
   }
 
   /**

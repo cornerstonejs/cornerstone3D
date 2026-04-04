@@ -50,6 +50,16 @@ type RegionSegmentPlusFloodFillConfig = {
   intensityRangeStrategy?:
     | RegionSegmentIntensityRangeStrategyConfig
     | RegionSegmentIntensityRangeStrategy;
+  /**
+   * Post-process after 3D intensity flood (`floodfill_full` only).
+   * External removal keeps only voxels planar-connected to the click in the viewport-normalized grid;
+   * internal removal fills small enclosed holes (see IslandRemoval).
+   */
+  floodFillIslandRemoval?: {
+    removeExternalIslands?: boolean;
+    removeInternalIslands?: boolean;
+    verboseLogging?: boolean;
+  };
 };
 
 type RegionSegmentPlusToolData = GrowCutToolData & {
@@ -530,6 +540,7 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
       const canvasPoint = toolData.canvasPoint;
       const irc = this.getIntensityStrategyConfig();
       const diskPx = getCanvasDiskRadiusCssPxFromConfig(irc) ?? 3;
+      const islandCfg = ffConfig.floodFillIslandRemoval ?? {};
       const result = await runFloodFillSegmentation({
         referencedVolumeId,
         worldPosition: worldPoint,
@@ -543,6 +554,9 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
           element: viewport.element,
           canvasPoint,
           intensitySamplingDiskRadiusCanvasPx: diskPx,
+          applyExternalIslandRemoval: islandCfg.removeExternalIslands !== false,
+          applyInternalIslandRemoval: islandCfg.removeInternalIslands !== false,
+          islandRemovalVerboseLogging: islandCfg.verboseLogging === true,
         },
       });
       if (!result) {

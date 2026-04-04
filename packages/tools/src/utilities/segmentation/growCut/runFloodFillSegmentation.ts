@@ -41,6 +41,18 @@ type FloodFillSegmentationOptions = {
   initialNeighborhoodRadius?: number;
   segmentIndex?: number;
   maxInternalRemove?: number;
+  /**
+   * When true (default), run planar island flood from the click then clear voxels
+   * not marked ISLAND. Set false to keep the raw 3D flood fill result.
+   */
+  applyExternalIslandRemoval?: boolean;
+  /**
+   * When true (default), run internal hole / speckle cleanup after external removal.
+   * Ignored if applyExternalIslandRemoval is false (nothing to clean in-labelmap).
+   */
+  applyInternalIslandRemoval?: boolean;
+  /** Forwarded to IslandRemoval: logs bounds, per-click flood, and voxel counts. */
+  islandRemovalVerboseLogging?: boolean;
   getIntensityRange?: GetFloodFillIntensityRange;
   /** Viewport container; passed into `getIntensityRange` / canvas-disk strategy. */
   element?: HTMLDivElement;
@@ -509,9 +521,15 @@ async function runFloodFillSegmentation({
       labelmap.voxelManager.setAtIndex(index, segmentIndex);
     });
 
+    const applyExternal = options.applyExternalIslandRemoval !== false;
+    const applyInternal =
+      options.applyInternalIslandRemoval !== false && applyExternal;
+    const islandVerbose = options.islandRemovalVerboseLogging === true;
+
     const islandRemoval = new IslandRemoval({
       maxInternalRemove: options.maxInternalRemove ?? 128,
       fillInternalEdge: false,
+      verboseLogging: islandVerbose,
     });
 
     const ijkPoints = [ijkStart];
@@ -531,12 +549,28 @@ async function runFloodFillSegmentation({
       return labelmap;
     }
 
-    islandRemoval.floodFillSegmentIsland();
-    islandRemoval.removeExternalIslands();
-    islandRemoval.removeInternalIslands();
+    let islandFloodVoxels = 0;
+    let externalClearedVoxels = 0;
+    let internalSliceCount: number | undefined;
+
+    if (applyExternal) {
+      islandFloodVoxels = islandRemoval.floodFillSegmentIsland();
+      externalClearedVoxels = islandRemoval.removeExternalIslands();
+      if (applyInternal) {
+        const modifiedSlices = islandRemoval.removeInternalIslands();
+        internalSliceCount = modifiedSlices?.length;
+      }
+    }
 
     log.info('island removal: complete', {
       segmentIndex,
+      applyExternalIslandRemoval: applyExternal,
+      applyInternalIslandRemoval: applyInternal,
+      floodedPointsBeforeIsland: floodedPoints.length,
+      islandFloodVoxelsFromSegmentSet: islandFloodVoxels,
+      externalIslandClearVoxels: externalClearedVoxels,
+      internalRemovalModifiedSlices: internalSliceCount,
+      islandRemovalVerboseLogging: islandVerbose,
     });
 
     return labelmap;
