@@ -106,6 +106,17 @@ const OPERATION = {
  */
 class CrosshairsTool extends AnnotationTool {
   static toolName;
+  static minimalModeExamples = new Map<
+    string,
+    {
+      enabled: boolean;
+      lineLengthInPx: number;
+    }
+  >([
+    ['Default', { enabled: false, lineLengthInPx: 40 }],
+    ['Minimal 40px', { enabled: true, lineLengthInPx: 40 }],
+    ['Minimal 80px', { enabled: true, lineLengthInPx: 80 }],
+  ]);
 
   toolCenter: Types.Point3 = [0, 0, 0]; // NOTE: it is assumed that all the active/linked viewports share the same crosshair center.
   // This because the rotation operation rotates also all the other active/intersecting reference lines of the same angle
@@ -186,10 +197,9 @@ class CrosshairsTool extends AnnotationTool {
           handleRadius: 9,
           referenceLinesCenterGapRatio: 0.05,
         },
-        // When enabled, holding the specified modifier key and clicking
-        // will jump the crosshairs to the click location even when the
-        // tool is in Passive mode. The modifierKey value should be a
-        // KeyboardBindings enum value (e.g. KeyboardBindings.Shift).
+        // When enabled, bind the tool with the same modifier key in Active mode
+        // to make modifier+click jump the crosshairs without entering the normal
+        // primary drag interaction.
         jumpOnClick: {
           enabled: false,
           modifierKey: undefined,
@@ -551,13 +561,9 @@ class CrosshairsTool extends AnnotationTool {
     return filteredAnnotations[0];
   };
 
-  /**
-   * Called by the mouseDown dispatcher for passive tools. When jumpOnClick
-   * is configured, holding the modifier key and clicking will jump the
-   * crosshairs to the click location even while the tool is in Passive mode.
-   */
-  passiveMouseDownCallback = (evt: EventTypes.MouseDownEventType): boolean => {
+  preMouseDownCallback = (evt: EventTypes.MouseDownEventType): boolean => {
     const { jumpOnClick } = this.configuration;
+
     if (!jumpOnClick?.enabled || jumpOnClick.modifierKey == null) {
       return false;
     }
@@ -588,6 +594,7 @@ class CrosshairsTool extends AnnotationTool {
     if (jumped) {
       evt.preventDefault();
     }
+
     return jumped;
   };
 

@@ -264,9 +264,9 @@ addDropdownToToolbar({
 addDropdownToToolbar({
   labelText: 'Crosshair Style',
   options: {
-    values: ['default', 'minimal-40', 'minimal-80'],
-    labels: ['Default', 'Minimal 40px', 'Minimal 80px'],
-    defaultValue: 'default',
+    values: Array.from(CrosshairsTool.minimalModeExamples.keys()),
+    labels: Array.from(CrosshairsTool.minimalModeExamples.keys()),
+    defaultValue: 'Default',
   },
   onSelectedValueChange: (selectedValue) => {
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
@@ -274,20 +274,18 @@ addDropdownToToolbar({
     const crosshairsInstance = toolGroup.getToolInstance(
       CrosshairsTool.toolName
     );
+    const minimalConfiguration =
+      CrosshairsTool.minimalModeExamples.get(selectedValue);
+
+    if (!minimalConfiguration) {
+      return;
+    }
+
     const oldConfiguration = crosshairsInstance.configuration;
 
     crosshairsInstance.configuration = {
       ...oldConfiguration,
-      minimal:
-        selectedValue === 'default'
-          ? {
-              enabled: false,
-              lineLengthInPx: 40,
-            }
-          : {
-              enabled: true,
-              lineLengthInPx: selectedValue === 'minimal-80' ? 80 : 40,
-            },
+      minimal: { ...minimalConfiguration },
     };
 
     const renderingEngine = getRenderingEngine(renderingEngineId);
