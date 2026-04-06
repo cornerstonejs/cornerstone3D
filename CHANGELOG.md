@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.21.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.20.4...v4.21.0) (2026-04-06)
+
+### Features
+
+- Crosshairs minimal mode and add jump on click with modifier key ([#2673](https://github.com/cornerstonejs/cornerstone3D/issues/2673)) ([df672f1](https://github.com/cornerstonejs/cornerstone3D/commit/df672f11cba9284035bc32dd80f697db6df3518f))
+
 ## [4.20.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.20.3...v4.20.4) (2026-04-02)
 
 ### Bug Fixes
