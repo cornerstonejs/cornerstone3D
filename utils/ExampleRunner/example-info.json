@@ -523,6 +523,10 @@
         "name": "Crosshairs",
         "description": "Here we demonstrate crosshairs linking three orthogonal views of the same data"
       },
+      "crossHairsBindings": {
+        "name": "Crosshairs Binding Modes",
+        "description": "Demonstrates Crosshairs as a regular active tool binding on either primary or right click."
+      },
       "mprReformat": {
         "name": "DICOM Reformats in MPR",
         "description": "Aligns MPR viewports to dicom acquisition orientations"

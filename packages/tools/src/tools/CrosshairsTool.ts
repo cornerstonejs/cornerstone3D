@@ -39,7 +39,6 @@ import {
   hideElementCursor,
 } from '../cursors/elementCursor';
 import liangBarksyClip from '../utilities/math/vec2/liangBarksyClip';
-import getMouseModifier from '../eventDispatchers/shared/getMouseModifier';
 
 import * as lineSegment from '../utilities/math/line';
 import type {
@@ -196,13 +195,6 @@ class CrosshairsTool extends AnnotationTool {
           opacity: 0.8,
           handleRadius: 9,
           referenceLinesCenterGapRatio: 0.05,
-        },
-        // When enabled, bind the tool with the same modifier key in Active mode
-        // to make modifier+click jump the crosshairs without entering the normal
-        // primary drag interaction.
-        jumpOnClick: {
-          enabled: false,
-          modifierKey: undefined,
         },
       },
     }
@@ -559,43 +551,6 @@ class CrosshairsTool extends AnnotationTool {
 
     this._activateModify(element);
     return filteredAnnotations[0];
-  };
-
-  preMouseDownCallback = (evt: EventTypes.MouseDownEventType): boolean => {
-    const { jumpOnClick } = this.configuration;
-
-    if (!jumpOnClick?.enabled || jumpOnClick.modifierKey == null) {
-      return false;
-    }
-
-    const mouseEvent = evt.detail.event as MouseEvent;
-    const pressedModifier = getMouseModifier(mouseEvent);
-
-    if (pressedModifier !== jumpOnClick.modifierKey) {
-      return false;
-    }
-
-    const eventDetail = evt.detail;
-    const { element, currentPoints } = eventDetail;
-    const jumpWorld = currentPoints.world;
-
-    const enabledElement = getEnabledElement(element);
-    if (!enabledElement) {
-      return false;
-    }
-
-    this._syncVolumeListenersWithToolGroup();
-    this._recomputeToolCenterFromAbsoluteCameras({
-      emitEvent: false,
-      updateViewportCameras: false,
-    });
-
-    const jumped = this._jump(enabledElement, jumpWorld);
-    if (jumped) {
-      evt.preventDefault();
-    }
-
-    return jumped;
   };
 
   cancel = () => {
