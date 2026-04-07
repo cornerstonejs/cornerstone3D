@@ -12,10 +12,10 @@ jobs:
   ohif-downstream:
     name: OHIF downstream tests against this PR
     runs-on: self-hosted
-    timeout-minutes: 180
+    timeout-minutes: 60
     env:
-      BUN_VERSION: 1.2.23
-      NODE_VERSION: 20
+      BUN_VERSION: 1.3.11
+      NODE_VERSION: 24
       OHIF_REF: fix/combined-ohif-cs3d-build-local-agent
       OHIF_DIR: ohif
     steps:
