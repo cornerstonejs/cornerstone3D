@@ -409,6 +409,37 @@ function promotePreviewSegmentToFinal(
   }
 }
 
+function collectPreviewPointsOnSlices(
+  voxelManager: NumberVoxelManager,
+  preview: number,
+  width: number,
+  height: number,
+  slices: number[]
+): Types.Point3[] {
+  const out: Types.Point3[] = [];
+  const seen = new Set<number>();
+  const numPixelsPerSlice = width * height;
+  for (let si = 0; si < slices.length; si++) {
+    const k = slices[si];
+    if (!Number.isInteger(k) || k < 0) {
+      continue;
+    }
+    const base = k * numPixelsPerSlice;
+    for (let y = 0; y < height; y++) {
+      const rowBase = base + y * width;
+      for (let x = 0; x < width; x++) {
+        const index = rowBase + x;
+        if (voxelManager.getAtIndex(index) !== preview || seen.has(index)) {
+          continue;
+        }
+        seen.add(index);
+        out.push([x, y, k]);
+      }
+    }
+  }
+  return out;
+}
+
 async function runFloodFillSegmentation({
   referencedVolumeId,
   worldPosition,
@@ -694,6 +725,7 @@ async function runFloodFillSegmentation({
     let islandFloodVoxels = 0;
     let externalClearedVoxels = 0;
     let internalSliceCount: number | undefined;
+    let internalModifiedSlices: number[] | undefined;
 
     if (applyExternal) {
       console.time(FLOOD_FILL_ISLAND_EXTERNAL_TIMING_LABEL);
@@ -704,6 +736,7 @@ async function runFloodFillSegmentation({
         console.time(FLOOD_FILL_ISLAND_INTERNAL_TIMING_LABEL);
         const modifiedSlices = islandRemoval.removeInternalIslands();
         internalSliceCount = modifiedSlices?.length;
+        internalModifiedSlices = modifiedSlices;
         console.timeEnd(FLOOD_FILL_ISLAND_INTERNAL_TIMING_LABEL);
       }
     }
@@ -720,11 +753,25 @@ async function runFloodFillSegmentation({
     });
 
     if (usePreview) {
+      const internalPreviewPoints =
+        internalModifiedSlices?.length && applyInternal
+          ? collectPreviewPointsOnSlices(
+              labelmap.voxelManager as NumberVoxelManager,
+              paintIndex,
+              width,
+              height,
+              internalModifiedSlices
+            )
+          : [];
+      const promotionPoints =
+        internalPreviewPoints.length > 0
+          ? floodedPoints.concat(internalPreviewPoints)
+          : floodedPoints;
       promotePreviewSegmentToFinal(
         labelmap.voxelManager as NumberVoxelManager,
         paintIndex,
         segmentIndex,
-        floodedPoints,
+        promotionPoints,
         numPixelsPerSlice,
         width
       );

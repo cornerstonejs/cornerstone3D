@@ -301,8 +301,6 @@ export default class IslandRemoval {
   public removeExternalIslands(): number {
     const { previewVoxelManager, segmentSet } = this;
     const { toIJK } = segmentSet.normalizer;
-    const sourceVoxelManager =
-      previewVoxelManager.sourceVoxelManager ?? previewVoxelManager;
 
     // Next, iterate over all points which were set to a new value in the preview
     // For everything NOT connected to something in set of clicked points,
@@ -314,14 +312,14 @@ export default class IslandRemoval {
       if (rle.value !== SegmentationEnum.ISLAND) {
         for (let iPrime = rle.start; iPrime < rle.end; iPrime++) {
           const clearPoint = toIJK([iPrime, jPrime, kPrime]);
-          const sourceVal = sourceVoxelManager.getAtIJKPoint(clearPoint);
-          // External removal should only affect transient preview paint, never
-          // existing final segment labels from prior clicks.
-          if (sourceVal !== this.previewSegmentIndex) {
-            continue;
+          const v = previewVoxelManager.getAtIJKPoint(clearPoint);
+          // Act only on operation history entries. If a point was not touched in
+          // this run, it won't exist in the history voxel manager and must be left
+          // unchanged (preserves additive behavior across clicks).
+          if (v !== undefined) {
+            previewVoxelManager.setAtIJKPoint(clearPoint, null);
+            clearedVoxels += 1;
           }
-          previewVoxelManager.setAtIJKPoint(clearPoint, null);
-          clearedVoxels += 1;
         }
       }
     };
