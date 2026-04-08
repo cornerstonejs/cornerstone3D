@@ -133,7 +133,8 @@ describe('IslandRemove', function () {
     expect(segmentationVoxels.getAtIJK(x - 5, y, z)).toBe(1);
     islandRemoval.removeExternalIslands();
     expect(segmentationVoxels.getAtIJK(x, y + 1, z)).toBe(1);
-    expect(segmentationVoxels.getAtIJK(x - 5, y, z)).toBe(0);
+    // External cleanup now targets preview-only edits; accepted segment voxels persist.
+    expect(segmentationVoxels.getAtIJK(x - 5, y, z)).toBe(1);
   });
 
   it('deletes preview externals', () => {
@@ -148,7 +149,7 @@ describe('IslandRemove', function () {
     createBox(previewVoxels, previewSegmentIndex, x, y, z, w, h);
     createBox(previewVoxels, previewSegmentIndex, x - 5, y, z, 2, 2);
 
-    const initialized = islandRemoval.initialize(viewport, segmentationVoxels, {
+    const initialized = islandRemoval.initialize(viewport, previewVoxels, {
       segmentIndex,
       previewSegmentIndex,
       points: [
