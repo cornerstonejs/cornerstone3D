@@ -15,6 +15,7 @@ import {
 import { getAnnotations } from '../../src/stateManagement/annotation/annotationState';
 
 import * as cornerstoneTools from '@cornerstonejs/tools';
+
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import vtkImageCPRMapper from '@kitware/vtk.js/Rendering/Core/ImageCPRMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
@@ -38,13 +39,14 @@ const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const renderingEngineId = 'myRenderingEngine';
+const halfWidth = 50;
 let renderingEngine: RenderingEngine;
 
 let centerline;
 let currentPolyline = null;
 let cprMapper = null;
 let cprActor = null;
-let cprViewport = null;
+let reslice = null;
 let resliceActor = null;
 let resliceViewport = null;
 
@@ -112,13 +114,13 @@ function getPolylineCrossSection(
   // 2. Configurar Matriz 4x4 (Column-Major para gl-matrix)
   // Coluna 0: Right, Coluna 1: Up, Coluna 2: Tangent (Normal do plano), Coluna 3: Origin (P_curr)
   const resliceAxes = mat4.create();
-  resliceAxes[0] = right[0];
-  resliceAxes[1] = right[1];
-  resliceAxes[2] = right[2];
+  resliceAxes[0] = up[0];
+  resliceAxes[1] = up[1];
+  resliceAxes[2] = up[2];
   resliceAxes[3] = 0;
-  resliceAxes[4] = up[0];
-  resliceAxes[5] = up[1];
-  resliceAxes[6] = up[2];
+  resliceAxes[4] = right[0];
+  resliceAxes[5] = right[1];
+  resliceAxes[6] = right[2];
   resliceAxes[7] = 0;
   resliceAxes[8] = tangent[0];
   resliceAxes[9] = tangent[1];
@@ -129,18 +131,41 @@ function getPolylineCrossSection(
   resliceAxes[14] = P_curr[2];
   resliceAxes[15] = 1;
 
-  const reslice = vtkImageReslice.newInstance();
+  if (!reslice) {
+    reslice = vtkImageReslice.newInstance();
+  }
+
   reslice.setInputData(inputVolume);
   reslice.setResliceAxes(resliceAxes);
 
   // Define o plano de saída: centrado na origem (0,0) do plano local
   // Para uma imagem de 200x200 com espaçamento 1mm, o centro é 100
   reslice.setOutputSpacing([1, 1, 1]);
-  reslice.setOutputExtent([-100, 99, -100, 99, 0, 0]);
+  reslice.setOutputExtent([-halfWidth, halfWidth, -halfWidth, halfWidth, 0, 0]);
   reslice.setOutputOrigin([0, 0, 0]);
 
   reslice.update();
   return reslice.getOutputData();
+}
+
+function getPolylineFromAnnotation(viewport) {
+  let currentPolyline = null;
+  const annotations =
+    getAnnotations(CrossSectionSplineTool.toolName, viewport.element) || [];
+  if (annotations.length) {
+    const lastAnnotation = annotations[annotations.length - 1];
+    const contourPolyline = lastAnnotation.data.contour.polyline;
+
+    // Ensure polyline is ordered top-to-bottom along Z-axis.
+    // The CPRMapper requires consistent orientation regardless
+    // of drawing direction (top-to-bottom vs bottom-to-top)
+    if (contourPolyline[0][2] > contourPolyline.at(-1)[2]) {
+      contourPolyline.reverse();
+    }
+
+    currentPolyline = contourPolyline;
+  }
+  return currentPolyline;
 }
 
 addButtonToToolbar({
@@ -151,24 +176,11 @@ addButtonToToolbar({
     if (!viewport) {
       return;
     }
-    const annotations =
-      getAnnotations(CrossSectionSplineTool.toolName, viewport.element) || [];
-    if (annotations.length) {
-      const lastAnnotation = annotations[annotations.length - 1];
-      const contourPolyline = lastAnnotation.data.contour.polyline;
-
-      // Ensure polyline is ordered top-to-bottom along Z-axis.
-      // The CPRMapper requires consistent orientation regardless
-      // of drawing direction (top-to-bottom vs bottom-to-top)
-      if (contourPolyline[0][2] > contourPolyline.at(-1)[2]) {
-        contourPolyline.reverse();
-      }
-
-      currentPolyline = contourPolyline;
-
+    currentPolyline = getPolylineFromAnnotation(viewport);
+    if (currentPolyline) {
       // Convert 2D array of [x, y, z] points into a flat 1D array for VTK
       // VTK expects coordinates as [x1, y1, z1, x2, y2, z2, ...]
-      const polylineFlat = contourPolyline.flat();
+      const polylineFlat = currentPolyline.flat();
 
       // Create or update centerline
       if (!centerline) {
@@ -222,59 +234,64 @@ addButtonToToolbar({
   },
 });
 
+function updateCrossSectionImage() {
+  const renderingEngine = getRenderingEngine(renderingEngineId);
+  const volumeViewport = renderingEngine.getViewport(viewportIds[0]);
+  const stackViewport = renderingEngine.getViewport(viewportIds[2]);
+
+  currentPolyline = getPolylineFromAnnotation(volumeViewport);
+  if (!volumeViewport || !stackViewport || !currentPolyline) return;
+
+  const volumeActor = volumeViewport.getDefaultActor()?.actor;
+  if (!volumeActor) return;
+
+  const volumeImageData = volumeActor.getMapper().getInputData();
+
+  // 1. PEGAR ÍNDICE E PONTOS
+  const currentConfig =
+    toolGroup?.getToolConfiguration(CrossSectionSplineTool.toolName) || {};
+  let idx =
+    currentConfig?.perpendicularIndex || currentConfig?.calculatedIndex || 0;
+  if (idx < 0) {
+    idx = 0;
+  }
+  if (idx >= currentPolyline.length) {
+    idx = currentPolyline.length - 1;
+  }
+  const { viewPlaneNormal } = volumeViewport.getCamera();
+
+  const imageData = getPolylineCrossSection(
+    volumeImageData,
+    currentPolyline,
+    idx,
+    viewPlaneNormal
+  );
+
+  let mapper;
+  // 3. INICIALIZAR ATOR (APENAS UMA VEZ)
+  if (!resliceActor) {
+    mapper = vtkImageMapper.newInstance();
+    mapper.setInputData(imageData);
+
+    resliceActor = vtkImageSlice.newInstance();
+    resliceActor.setMapper(mapper);
+
+    stackViewport.addActor({ actor: resliceActor, uid: 'cross-section' });
+  } else {
+    mapper = resliceActor.getMapper();
+  }
+
+  // 4. ATUALIZAR POSIÇÃO DO PLANO
+  mapper.setInputData(imageData);
+  stackViewport.resetCamera();
+  stackViewport.render();
+  console.log('ImageReslice cross-section initialized at index', idx);
+}
+
 addButtonToToolbar({
   title: 'ImageReslice CrossSection',
   onClick: () => {
-    renderingEngine = getRenderingEngine(renderingEngineId);
-    const volumeViewport = renderingEngine.getViewport(viewportIds[0]);
-    const stackViewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportIds[2])
-    );
-
-    if (!volumeViewport || !stackViewport || !currentPolyline) {
-      console.warn('Volume, stack viewport, or polyline not available');
-      return;
-    }
-
-    resliceViewport = stackViewport;
-    const volumeActor = volumeViewport.getDefaultActor()?.actor;
-    if (!volumeActor) {
-      return;
-    }
-
-    const imageData = volumeActor.getMapper().getInputData();
-    const camera = volumeViewport.getCamera();
-    const viewPlaneNormal = camera.viewPlaneNormal as [number, number, number];
-
-    const currentConfig =
-      toolGroup?.getToolConfiguration(CrossSectionSplineTool.toolName) || {};
-    const idx =
-      currentConfig?.perpendicularIndex || currentConfig?.calculatedIndex || 0;
-
-    const crossSectionImageData = getPolylineCrossSection(
-      imageData,
-      currentPolyline,
-      idx,
-      viewPlaneNormal
-    );
-
-    const imageMapper = vtkImageMapper.newInstance();
-    imageMapper.setInputData(crossSectionImageData);
-
-    // Use o vtkImageMapper padrão do core
-    if (!resliceActor) {
-      const imageMapper = vtkImageMapper.newInstance();
-      imageMapper.setInputData(crossSectionImageData);
-
-      resliceActor = vtkImageSlice.newInstance();
-      resliceActor.setMapper(imageMapper);
-      stackViewport.addActor({ actor: resliceActor, uid: 'cross-section' });
-    } else {
-      resliceActor.getMapper().setInputData(crossSectionImageData);
-    }
-    stackViewport.resetCamera();
-    stackViewport.render();
-    console.log('ImageReslice cross-section initialized at index', idx);
+    updateCrossSectionImage();
   },
 });
 
@@ -295,33 +312,7 @@ addButtonToToolbar({
       perpendicularIndex,
     });
     console.log('Perpendicular index set to', perpendicularIndex);
-
-    // Update reslice cross-section if active
-    if (resliceViewport && currentPolyline) {
-      const volumeViewport = renderingEngine.getViewport(viewportIds[0]);
-      const volumeActor = volumeViewport?.getDefaultActor()?.actor;
-      if (volumeActor) {
-        const imageData = volumeActor.getMapper().getInputData();
-        const camera = volumeViewport.getCamera();
-        const viewPlaneNormal = camera.viewPlaneNormal as [
-          number,
-          number,
-          number,
-        ];
-
-        const crossSectionImageData = getPolylineCrossSection(
-          imageData,
-          currentPolyline,
-          Math.max(1, perpendicularIndex),
-          viewPlaneNormal
-        );
-
-        if (resliceActor?.getMapper()) {
-          resliceActor.getMapper().setInputData(crossSectionImageData);
-          resliceViewport.render();
-        }
-      }
-    }
+    updateCrossSectionImage();
   },
 });
 
@@ -344,31 +335,7 @@ addButtonToToolbar({
     console.log('Perpendicular index set to', perpendicularIndex);
 
     // Update reslice cross-section if active
-    if (resliceViewport && currentPolyline) {
-      const volumeViewport = renderingEngine.getViewport(viewportIds[0]);
-      const volumeActor = volumeViewport?.getDefaultActor()?.actor;
-      if (volumeActor) {
-        const imageData = volumeActor.getMapper().getInputData();
-        const camera = volumeViewport.getCamera();
-        const viewPlaneNormal = camera.viewPlaneNormal as [
-          number,
-          number,
-          number,
-        ];
-
-        const crossSectionImageData = getPolylineCrossSection(
-          imageData,
-          currentPolyline,
-          perpendicularIndex,
-          viewPlaneNormal
-        );
-
-        if (resliceActor?.getMapper()) {
-          resliceActor.getMapper().setInputData(crossSectionImageData);
-          resliceViewport.render();
-        }
-      }
-    }
+    updateCrossSectionImage();
   },
 });
 
