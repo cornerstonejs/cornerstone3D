@@ -20,6 +20,7 @@ async function floodFill(
   const onBoundary = options.onBoundary;
   const equals = options.equals;
   const filter = options.filter;
+  const planar = options.planar === true;
   const diagonals = options.diagonals || false;
   const bounds = options.bounds;
   const ensureSliceLoaded = options.ensureSliceLoaded;
@@ -127,6 +128,13 @@ async function floodFill(
 
       for (let j = 0; j < getArgs.length; j += 1) {
         nextArgs[j] += perm[j];
+      }
+      if (
+        planar &&
+        is3D &&
+        (nextArgs as Types.Point3)[2] !== (seed as Types.Point3)[2]
+      ) {
+        continue;
       }
       if (filter?.(nextArgs) === false) {
         continue;

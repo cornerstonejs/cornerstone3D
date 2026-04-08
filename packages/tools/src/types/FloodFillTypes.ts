@@ -17,6 +17,11 @@ type FloodFillOptions = {
   // Return false to exclude
   filter?: (point) => boolean;
   /**
+   * 3D only: keep expansion on the same slice as the seed (fixed third index / k).
+   * Composed with {@link filter}: both must allow the neighbor.
+   */
+  planar?: boolean;
+  /**
    * 3D only: await before reading voxels on slice index z (e.g. load image for streaming volumes).
    */
   ensureSliceLoaded?: (sliceIndex: number) => Promise<void>;

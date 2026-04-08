@@ -60,6 +60,10 @@ type RegionSegmentPlusFloodFillConfig = {
     removeInternalIslands?: boolean;
     verboseLogging?: boolean;
   };
+  /**
+   * Flood fill only on the seed slice (fixed k); forwarded as `planar` on `floodFill`.
+   */
+  planar?: boolean;
 };
 
 type RegionSegmentPlusToolData = GrowCutToolData & {
@@ -108,6 +112,13 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
         intensityRangeStrategy: {
           strategy: 'meanStdMapped',
         } satisfies RegionSegmentIntensityRangeStrategyConfig,
+        /** Same meaning as `floodFill`’s `planar` option (fixed slice k). */
+        planar: false,
+        floodFillIslandRemoval: {
+          removeExternalIslands: true,
+          removeInternalIslands: true,
+          verboseLogging: false,
+        },
       },
     }
   ) {
@@ -506,6 +517,7 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
 
     const segmentationMode =
       this.configuration.segmentationMode ?? 'floodfill_full';
+    const ffConfig = this.configuration as RegionSegmentPlusFloodFillConfig;
 
     const refVolume = cache.getVolume(referencedVolumeId);
     const [volMin, volMax] = refVolume.voxelManager.getRange();
@@ -527,6 +539,10 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
       volumeScalarRange: { min: volMin, max: volMax },
       displayVoi,
       positiveStdDevMultiplier: this.configuration.positiveStdDevMultiplier,
+      floodFillPlanar:
+        segmentationMode === 'floodfill_full' &&
+        (this.configuration as RegionSegmentPlusFloodFillConfig).planar ===
+          true,
     });
 
     if (segmentationMode === 'floodfill_full') {
@@ -535,18 +551,29 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
           'Viewport not found for flood fill segmentation. Ensure the viewport is still active.'
         );
       }
-      const ffConfig = this.configuration as RegionSegmentPlusFloodFillConfig;
+      const { labelmapVolumeId } = growCutData.segmentation;
+      const labelmapVolume = cache.getVolume(labelmapVolumeId);
+      if (!labelmapVolume) {
+        throw new Error(
+          `Flood fill: segmentation labelmap volume not in cache: ${labelmapVolumeId}`
+        );
+      }
       const toolData = growCutData as RegionSegmentPlusToolData;
       const canvasPoint = toolData.canvasPoint;
       const irc = this.getIntensityStrategyConfig();
       const diskPx = getCanvasDiskRadiusCssPxFromConfig(irc) ?? 3;
       const islandCfg = ffConfig.floodFillIslandRemoval ?? {};
+      // `growCutData.options` must not set `planar`; flood slice mode comes only from tool configuration.
+      const { planar: _ignoredPlanarFromGrowCut, ...growCutOptionsForFlood } =
+        options ?? {};
+      const floodFillPlanar = ffConfig.planar === true;
       const result = await runFloodFillSegmentation({
         referencedVolumeId,
         worldPosition: worldPoint,
         viewport,
+        labelmapVolume,
         options: {
-          ...options,
+          ...growCutOptionsForFlood,
           segmentIndex,
           positiveStdDevMultiplier: this.configuration.positiveStdDevMultiplier,
           initialNeighborhoodRadius: ffConfig.initialNeighborhoodRadius,
@@ -557,6 +584,7 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
           applyExternalIslandRemoval: islandCfg.removeExternalIslands !== false,
           applyInternalIslandRemoval: islandCfg.removeInternalIslands !== false,
           islandRemovalVerboseLogging: islandCfg.verboseLogging === true,
+          planar: floodFillPlanar,
         },
       });
       if (!result) {
@@ -570,7 +598,6 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
     }
 
     const { subVolumePaddingPercentage } = this.configuration;
-    const ffConfig = this.configuration as RegionSegmentPlusFloodFillConfig;
     const toolData = growCutData as RegionSegmentPlusToolData;
     const cp = toolData.canvasPoint;
     const canvas: Types.Point2 | undefined = cp ? [cp.x, cp.y] : undefined;

@@ -224,7 +224,11 @@ class GrowCutBaseTool extends BaseTool {
         ? this.applyPartialGrowCutLabelmap
         : this.applyGrowCutLabelmap;
 
-      fn(segmentationId, segmentIndex, labelmap, growcutLabelmap);
+      if (growcutLabelmap !== labelmap) {
+        fn(segmentationId, segmentIndex, labelmap, growcutLabelmap);
+      } else {
+        triggerSegmentationDataModified(segmentationId);
+      }
 
       // Skip _removeIslands when using flood fill - island removal is already done in runFloodFillSegmentation
       if (segmentationMode !== 'floodfill_full') {

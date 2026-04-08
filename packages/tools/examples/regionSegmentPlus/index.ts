@@ -39,6 +39,13 @@ const { MouseBindings, KeyboardBindings } = csToolsEnums;
 /** Default intensity strategy for this example (canvas disk, 10 CSS px radius). */
 const DEFAULT_FILL_STRATEGY = 'canvasDiskTriClassLarge' as const;
 
+/** Initial toolbar + tool configuration (single source for `addTool` and checkbox `checked`). */
+const initialRegionSegPlusHoverPrecheck = false;
+const initialRegionSegPlusPlanarFill = false;
+const initialRegionSegPlusIslandExternal = true;
+const initialRegionSegPlusIslandInternal = true;
+const initialRegionSegPlusIslandVerbose = false;
+
 /**
  * Primary binding = one-click region segment. Tool class is registered explicitly
  * before addManipulationBindings — that helper skips addTool for toolMap entries
@@ -50,8 +57,14 @@ const regionSegmentPlusToolMap = new Map([
     {
       selected: true,
       configuration: {
-        hoverPrecheckEnabled: false,
+        hoverPrecheckEnabled: initialRegionSegPlusHoverPrecheck,
         intensityRangeStrategy: DEFAULT_FILL_STRATEGY,
+        planar: initialRegionSegPlusPlanarFill,
+        floodFillIslandRemoval: {
+          removeExternalIslands: initialRegionSegPlusIslandExternal,
+          removeInternalIslands: initialRegionSegPlusIslandInternal,
+          verboseLogging: initialRegionSegPlusIslandVerbose,
+        },
       },
     },
   ],
@@ -751,7 +764,7 @@ async function run() {
   addCheckboxToToolbar({
     id: 'region-seg-plus-hover-precheck',
     title: 'Hover precheck',
-    checked: false,
+    checked: initialRegionSegPlusHoverPrecheck,
     container: segmentationToolbar,
     onChange: (checked) => {
       toolGroup.setToolConfiguration(RegionSegmentPlusTool.toolName, {
@@ -771,9 +784,21 @@ async function run() {
   };
 
   addCheckboxToToolbar({
+    id: 'region-seg-plus-planar-flood',
+    title: 'FF: planar fill only (current slice)',
+    checked: initialRegionSegPlusPlanarFill,
+    container: segmentationToolbar,
+    onChange: (checked) => {
+      toolGroup.setToolConfiguration(RegionSegmentPlusTool.toolName, {
+        planar: checked,
+      });
+    },
+  });
+
+  addCheckboxToToolbar({
     id: 'region-seg-plus-island-external',
     title: 'FF: remove external islands',
-    checked: true,
+    checked: initialRegionSegPlusIslandExternal,
     container: segmentationToolbar,
     onChange: (checked) => {
       mergeFloodFillIslandRemoval({ removeExternalIslands: checked });
@@ -793,7 +818,7 @@ async function run() {
   addCheckboxToToolbar({
     id: 'region-seg-plus-island-verbose',
     title: 'FF: verbose island logs',
-    checked: false,
+    checked: initialRegionSegPlusIslandVerbose,
     container: segmentationToolbar,
     onChange: (checked) => {
       mergeFloodFillIslandRemoval({ verboseLogging: checked });

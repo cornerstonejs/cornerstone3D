@@ -403,12 +403,8 @@ async function runOneClickGrowCut({
   const labelmap =
     volumeLoader.createAndCacheDerivedLabelmapVolume(referencedVolumeId);
 
-  // reset the volume
-  labelmap.voxelManager.forEach(({ index, value }) => {
-    if (value !== 0) {
-      labelmap.voxelManager.setAtIndex(index, 0);
-    }
-  });
+  // Reset GPU grow-cut scratch labelmap (per-slice buffers) without a full forEach scan.
+  labelmap.voxelManager.clear();
 
   const seeds =
     options.seeds ??

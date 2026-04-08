@@ -1,4 +1,4 @@
-import { utilities as csUtils, cache, volumeLoader } from '@cornerstonejs/core';
+import { utilities as csUtils, cache } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import type { NumberVoxelManager } from '@cornerstonejs/core/utilities';
 import floodFill from '../floodFill';
@@ -29,8 +29,10 @@ export type {
   GetFloodFillIntensityRange,
 } from './floodFillIntensityRangeTypes';
 
-/** Derived labelmap creation, ref-volume getRange(), and zeroing the full labelmap. */
+/** Ref-volume metadata + labelmap dimension check. */
 const FLOOD_FILL_PREP_TIMING_LABEL = 'cornerstone.tools: floodFill: prep';
+const FLOOD_FILL_PREP_REF_META =
+  'cornerstone.tools: floodFill: prep: ref_volume_meta';
 const FLOOD_FILL_RANGE_TIMING_LABEL =
   'cornerstone.tools: floodFill: intensityRange';
 const FLOOD_FILL_RUN_TIMING_LABEL =
@@ -40,6 +42,13 @@ type FloodFillSegmentationOptions = {
   positiveStdDevMultiplier?: number;
   initialNeighborhoodRadius?: number;
   segmentIndex?: number;
+  /**
+   * Segment value written during the async flood (e.g. 255) so the active labelmap
+   * can update slice-by-slice. After island removal, those voxels are promoted to
+   * {@link segmentIndex}. Omit to use 255 when `segmentIndex !== 255`, or set equal
+   * to `segmentIndex` to disable preview and paint the final index immediately.
+   */
+  floodPreviewSegmentIndex?: number;
   maxInternalRemove?: number;
   /**
    * When true (default), run planar island flood from the click then clear voxels
@@ -65,6 +74,10 @@ type FloodFillSegmentationOptions = {
    */
   ensureSliceLoaded?: (sliceIndex: number) => Promise<void>;
   yieldEvery?: number;
+  /**
+   * When true, forwarded to {@link floodFill} as `planar` (same acquisition slice as seed, fixed k).
+   */
+  planar?: boolean;
 };
 
 function getDisplayVoiSnapshot(
@@ -346,37 +359,85 @@ function resolveIntensityRange(
   return result;
 }
 
+function assertFloodFillLabelmapMatchesRef(
+  referencedVolume: Types.IImageVolume,
+  labelmapVolume: Types.IImageVolume
+) {
+  const [rw, rh, rd] = referencedVolume.dimensions;
+  const [lw, lh, ld] = labelmapVolume.dimensions;
+  if (rw !== lw || rh !== lh || rd !== ld) {
+    throw new Error(
+      `runFloodFillSegmentation: labelmap dimensions [${lw},${lh},${ld}] must match referenced volume [${rw},${rh},${rd}]`
+    );
+  }
+}
+
+function resolveFloodPaintIndices(
+  segmentIndex: number,
+  explicitPreview?: number
+): { paintIndex: number; usePreview: boolean } {
+  if (explicitPreview !== undefined) {
+    return {
+      paintIndex: explicitPreview,
+      usePreview: explicitPreview !== segmentIndex,
+    };
+  }
+  if (segmentIndex === 255) {
+    return { paintIndex: 255, usePreview: false };
+  }
+  return { paintIndex: 255, usePreview: true };
+}
+
+function promotePreviewSegmentToFinal(
+  voxelManager: NumberVoxelManager,
+  preview: number,
+  final: number
+) {
+  voxelManager.forEach(({ value, index }) => {
+    if (value === preview) {
+      voxelManager.setAtIndex(index, final);
+    }
+  });
+}
+
 async function runFloodFillSegmentation({
   referencedVolumeId,
   worldPosition,
   viewport,
+  labelmapVolume,
   options = {},
 }: {
   referencedVolumeId: string;
   worldPosition: Types.Point3;
   viewport: Types.IViewport;
+  /** Active segmentation labelmap (same grid as referenced volume). */
+  labelmapVolume: Types.IImageVolume;
   options?: FloodFillSegmentationOptions;
 }): Promise<Types.IImageVolume | null> {
   console.time(FLOOD_FILL_PREP_TIMING_LABEL);
+
   const referencedVolume = cache.getVolume(referencedVolumeId);
-  const labelmap =
-    volumeLoader.createAndCacheDerivedLabelmapVolume(referencedVolumeId);
+  assertFloodFillLabelmapMatchesRef(referencedVolume, labelmapVolume);
+  const labelmap = labelmapVolume;
 
   const segmentIndex = options.segmentIndex ?? 1;
+  const { paintIndex, usePreview } = resolveFloodPaintIndices(
+    segmentIndex,
+    options.floodPreviewSegmentIndex
+  );
 
+  console.time(FLOOD_FILL_PREP_REF_META);
   const [volMin, volMax] = referencedVolume.voxelManager.getRange();
   const displayVoi = getDisplayVoiSnapshot(viewport, referencedVolumeId);
   log.info('segmentation path: flood fill (floodfill_full)', {
     referencedVolumeId,
     volumeScalarRange: { min: volMin, max: volMax },
     displayVoi,
+    floodPreview: usePreview ? paintIndex : null,
+    segmentIndex,
   });
+  console.timeEnd(FLOOD_FILL_PREP_REF_META);
 
-  labelmap.voxelManager.forEach(({ index, value }) => {
-    if (value !== 0) {
-      labelmap.voxelManager.setAtIndex(index, 0);
-    }
-  });
   console.timeEnd(FLOOD_FILL_PREP_TIMING_LABEL);
 
   const voiMapping = getViewportVoiMappingForVolume(
@@ -487,13 +548,22 @@ async function runFloodFillSegmentation({
       options.ensureSliceLoaded ??
       createEnsureSliceLoadedForVolume(referencedVolume);
 
+    const planar = options.planar === true;
+
+    if (planar) {
+      log.info('flood fill: planar mode (fixed slice index k)', { ijkStart });
+    }
+
     await floodFill(intensityGetter, ijkStart as [number, number, number], {
       equals: (val, _startVal) =>
         val !== undefined && typeof val === 'number' && inRange(val),
       onFlood: (x: number, y: number, z?: number) => {
         const k = z ?? ijkStart[2];
         floodedPoints.push([x, y, k]);
+        const index = k * numPixelsPerSlice + y * width + x;
+        labelmap.voxelManager.setAtIndex(index, paintIndex);
       },
+      planar,
       ensureSliceLoaded,
       yieldEvery: options.yieldEvery ?? 500,
     });
@@ -514,11 +584,8 @@ async function runFloodFillSegmentation({
     log.info('flood fill: complete', {
       voxelCount: floodedPoints.length,
       ijkStart,
-    });
-
-    floodedPoints.forEach(([x, y, z]) => {
-      const index = z * numPixelsPerSlice + y * width + x;
-      labelmap.voxelManager.setAtIndex(index, segmentIndex);
+      paintIndex,
+      usePreview,
     });
 
     const applyExternal = options.applyExternalIslandRemoval !== false;
@@ -539,13 +606,20 @@ async function runFloodFillSegmentation({
       {
         points: ijkPoints,
         segmentIndex,
-        previewSegmentIndex: segmentIndex,
+        previewSegmentIndex: usePreview ? paintIndex : segmentIndex,
       }
     );
 
     if (!initialized) {
       log.info('island removal: initialize failed', { segmentIndex, ijkStart });
       console.warn('Island removal initialization failed.');
+      if (usePreview) {
+        promotePreviewSegmentToFinal(
+          labelmap.voxelManager as NumberVoxelManager,
+          paintIndex,
+          segmentIndex
+        );
+      }
       return labelmap;
     }
 
@@ -572,6 +646,14 @@ async function runFloodFillSegmentation({
       internalRemovalModifiedSlices: internalSliceCount,
       islandRemovalVerboseLogging: islandVerbose,
     });
+
+    if (usePreview) {
+      promotePreviewSegmentToFinal(
+        labelmap.voxelManager as NumberVoxelManager,
+        paintIndex,
+        segmentIndex
+      );
+    }
 
     return labelmap;
   } finally {
