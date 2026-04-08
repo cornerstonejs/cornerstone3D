@@ -106,9 +106,13 @@ const ELBOW_MIN_PRIOR_STEPS = 2;
  * Elbows can sit on adjacent quantized luma levels → tiny mapped width → one voxel after
  * inverse VOI. Widen to at least this absolute width in [0,1] and this fraction of the
  * disk luma span so flood fill tolerates real scalar variation under the disk.
+ *
+ * Units: these are display/VOI-mapped units (window-leveled) in [0,1], not raw stored
+ * scalar units (e.g. HU). User-facing tuning should happen in this mapped space.
+ * Expressed as n/256 so the equivalent 8-bit display-byte scale is obvious.
  */
-const MIN_MAPPED_BAND_ABS = 0.022;
-const MIN_MAPPED_BAND_REL_SPAN = 0.16;
+const MIN_MAPPED_BAND_ABS = 6 / 256;
+const MIN_MAPPED_BAND_REL_SPAN = 28 / 256;
 
 /**
  * After inverse VOI, ensure raw band is at least this fraction of global volume span
@@ -121,31 +125,47 @@ function widenMappedBandForFloodFill(
   dHiIn: number,
   center: number,
   vmin: number,
-  vmax: number
+  vmax: number,
+  edgePinned?: { high: boolean; low: boolean }
 ): { dLo: number; dHi: number } {
   let lo = Math.min(dLoIn, dHiIn, center);
   let hi = Math.max(dLoIn, dHiIn, center);
   const span = vmax - vmin || 1;
-  const minW = Math.max(
+  const edgeMinW = Math.max(
     MIN_MAPPED_BAND_ABS,
-    span * MIN_MAPPED_BAND_REL_SPAN,
     DISPLAY_BAND_FALLBACK_ABS / 255
   );
+  const minW =
+    edgePinned?.high || edgePinned?.low
+      ? edgeMinW
+      : Math.max(
+          MIN_MAPPED_BAND_ABS,
+          span * MIN_MAPPED_BAND_REL_SPAN,
+          DISPLAY_BAND_FALLBACK_ABS / 255
+        );
 
   if (hi - lo >= minW) {
     return { dLo: lo, dHi: hi };
   }
 
-  const mid = (lo + hi) / 2;
-  lo = mid - minW / 2;
-  hi = mid + minW / 2;
-  if (lo < vmin) {
-    hi += vmin - lo;
-    lo = vmin;
-  }
-  if (hi > vmax) {
-    lo -= hi - vmax;
-    hi = vmax;
+  if (edgePinned?.high) {
+    hi = Math.max(hi, center, vmax);
+    lo = hi - minW;
+  } else if (edgePinned?.low) {
+    lo = Math.min(lo, center, vmin);
+    hi = lo + minW;
+  } else {
+    const mid = (lo + hi) / 2;
+    lo = mid - minW / 2;
+    hi = mid + minW / 2;
+    if (lo < vmin) {
+      hi += vmin - lo;
+      lo = vmin;
+    }
+    if (hi > vmax) {
+      lo -= hi - vmax;
+      hi = vmax;
+    }
   }
   lo = Math.max(vmin, lo);
   hi = Math.min(vmax, hi);
@@ -153,8 +173,16 @@ function widenMappedBandForFloodFill(
   hi = Math.max(hi, center);
   if (hi - lo < minW) {
     const deficit = minW - (hi - lo);
-    lo = Math.max(vmin, lo - deficit / 2);
-    hi = Math.min(vmax, hi + deficit / 2);
+    if (edgePinned?.high) {
+      lo = Math.max(vmin, lo - deficit);
+      hi = vmax;
+    } else if (edgePinned?.low) {
+      hi = Math.min(vmax, hi + deficit);
+      lo = vmin;
+    } else {
+      lo = Math.max(vmin, lo - deficit / 2);
+      hi = Math.min(vmax, hi + deficit / 2);
+    }
   }
 
   if (lo > hi) {
@@ -256,7 +284,7 @@ function toMapped01(b: number): number {
 function mappedTriClassBandFromUniqueDisplayValues(
   uniqueSorted: number[],
   centerByte: number
-): { dLo: number; dHi: number } {
+): { dLo: number; dHi: number; atHighEnd: boolean; atLowEnd: boolean } {
   const n = uniqueSorted.length;
   const vminU = uniqueSorted[0];
   const vmaxU = uniqueSorted[n - 1];
@@ -264,14 +292,26 @@ function mappedTriClassBandFromUniqueDisplayValues(
   if (n === 1) {
     const b = uniqueSorted[0];
     if (b >= 255) {
-      return { dLo: toMapped01(255 - DISPLAY_BAND_FALLBACK_ABS), dHi: 1 };
+      return {
+        dLo: toMapped01(255 - DISPLAY_BAND_FALLBACK_ABS),
+        dHi: 1,
+        atHighEnd: true,
+        atLowEnd: false,
+      };
     }
     if (b <= 0) {
-      return { dLo: 0, dHi: toMapped01(DISPLAY_BAND_FALLBACK_ABS) };
+      return {
+        dLo: 0,
+        dHi: toMapped01(DISPLAY_BAND_FALLBACK_ABS),
+        atHighEnd: false,
+        atLowEnd: true,
+      };
     }
     return {
       dLo: toMapped01(b - DISPLAY_BAND_FALLBACK_ABS),
       dHi: toMapped01(b + DISPLAY_BAND_FALLBACK_ABS),
+      atHighEnd: false,
+      atLowEnd: false,
     };
   }
 
@@ -303,6 +343,8 @@ function mappedTriClassBandFromUniqueDisplayValues(
     return {
       dLo: toMapped01(Math.max(0, centerByte - DISPLAY_BAND_FALLBACK_ABS)),
       dHi: toMapped01(Math.min(255, centerByte + DISPLAY_BAND_FALLBACK_ABS)),
+      atHighEnd: true,
+      atLowEnd: true,
     };
   }
   if (atHighEnd) {
@@ -358,7 +400,12 @@ function mappedTriClassBandFromUniqueDisplayValues(
     dHiByte = t;
   }
 
-  return { dLo: toMapped01(dLoByte), dHi: toMapped01(dHiByte) };
+  return {
+    dLo: toMapped01(dLoByte),
+    dHi: toMapped01(dHiByte),
+    atHighEnd,
+    atLowEnd,
+  };
 }
 
 /**
@@ -456,6 +503,8 @@ export function getCanvasDiskIntensityRange(
 
   let dLo: number;
   let dHi: number;
+  let edgePinnedHigh = false;
+  let edgePinnedLow = false;
 
   if (spread < 1e-12) {
     if (centerByte >= 255) {
@@ -475,11 +524,16 @@ export function getCanvasDiskIntensityRange(
     dHi = toMapped01(hiB);
   } else {
     const uniqueSorted = [...new Set(workBytes)].sort((a, b) => a - b);
-    ({ dLo, dHi } = mappedTriClassBandFromUniqueDisplayValues(
-      uniqueSorted,
-      centerByte
-    ));
+    ({
+      dLo,
+      dHi,
+      atHighEnd: edgePinnedHigh,
+      atLowEnd: edgePinnedLow,
+    } = mappedTriClassBandFromUniqueDisplayValues(uniqueSorted, centerByte));
   }
+
+  const preWidenDLo = dLo;
+  const preWidenDHi = dHi;
 
   {
     const smin = samples[0];
@@ -489,9 +543,27 @@ export function getCanvasDiskIntensityRange(
       dHi,
       centerSample,
       smin,
-      smax
+      smax,
+      { high: edgePinnedHigh, low: edgePinnedLow }
     ));
   }
+  console.info('[cornerstone-tools] canvasDiskIntensityRange edge-clip', {
+    centerDisplayByte255: centerByte,
+    edgePinnedHigh,
+    edgePinnedLow,
+    preWidenMappedBand: {
+      min: preWidenDLo,
+      max: preWidenDHi,
+      minByte255: Math.round(preWidenDLo * 255),
+      maxByte255: Math.round(preWidenDHi * 255),
+    },
+    postWidenMappedBand: {
+      min: dLo,
+      max: dHi,
+      minByte255: Math.round(dLo * 255),
+      maxByte255: Math.round(dHi * 255),
+    },
+  });
 
   const { rawMin, rawMax } = mapMappedBandToRawRange(dLo, dHi, opts.voi);
   let bandLo = Math.min(rawMin, rawMax);
