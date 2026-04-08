@@ -22,7 +22,7 @@ function navigateToExample(params?: Record<string, string>) {
 
     await page.goto(url.toString());
     await page.waitForLoadState('domcontentloaded');
-    await page.waitForSelector('div#content canvas', {
+    await page.waitForSelector('div#content canvas:visible', {
       state: 'visible',
     });
     await page.waitForTimeout(SETTLE_MS);

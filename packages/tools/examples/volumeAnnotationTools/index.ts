@@ -9,7 +9,6 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  getExampleBackground,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -20,7 +19,6 @@ console.warn(
 
 const {
   LengthTool,
-  PanTool,
   ToolGroupManager,
   StackScrollTool,
   ZoomTool,
@@ -90,7 +88,6 @@ async function run() {
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(LengthTool);
-  cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollTool);
 
@@ -100,7 +97,6 @@ async function run() {
 
   // Add the tools to the tool group and specify which volume they are pointing at
   toolGroup.addTool(LengthTool.toolName, { volumeId });
-  toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName, { volumeId });
   toolGroup.addTool(StackScrollTool.toolName);
 
@@ -118,14 +114,6 @@ async function run() {
     bindings: [
       {
         mouseButton: MouseBindings.Secondary, // Right Click
-      },
-    ],
-  });
-
-  toolGroup.setToolActive(PanTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Auxiliary, // Middle Click
       },
     ],
   });
@@ -161,25 +149,25 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportIds[0],
-      type: ViewportType.PLANAR_V2,
+      type: ViewportType.ORTHOGRAPHIC,
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
-        background: <Types.Point3>getExampleBackground(),
+        background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
     {
       viewportId: viewportIds[1],
-      type: ViewportType.PLANAR_V2,
+      type: ViewportType.ORTHOGRAPHIC,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
-        background: <Types.Point3>getExampleBackground(),
+        background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
     {
       viewportId: viewportIds[2],
-      type: ViewportType.PLANAR_V2,
+      type: ViewportType.ORTHOGRAPHIC,
       element: element3,
       defaultOptions: {
         orientation: {
@@ -191,7 +179,7 @@ async function run() {
             -0.5962687530844388, 0.5453181550345819, -0.5891448751239446,
           ],
         },
-        background: <Types.Point3>getExampleBackground(),
+        background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
   ];

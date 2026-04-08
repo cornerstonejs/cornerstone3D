@@ -75,7 +75,6 @@ export const visitExample = async (
 
   if (href) {
     const exampleUrl = new URL(href, page.url());
-    exampleUrl.pathname = exampleUrl.pathname.replace(/\.html$/, '');
 
     if (shouldForceViewportNext()) {
       exampleUrl.searchParams.set('type', 'next');
