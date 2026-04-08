@@ -4,12 +4,12 @@ import {
   imageLoader,
   cache,
   metaData,
-  utilities as csCoreUtilities,
   type Types,
 } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
+  validateAndSortVolumeIds,
   setTitleAndDescription,
   createInfoSection,
   addButtonToToolbar,
@@ -139,10 +139,17 @@ type StudySeriesEntry = {
   seriesNumber: number;
 };
 
+type SeriesStackValidation = {
+  valid: boolean;
+  sortedImageIds: string[];
+  reason?: string;
+};
+
 let toolGroup;
 let viewportCt;
 let viewportPt;
 let renderingEngine;
+const seriesValidationCache = new Map<string, Promise<SeriesStackValidation>>();
 
 setTitleAndDescription(
   'Region Segment Plus Tool with Stack Viewport',
@@ -422,25 +429,63 @@ function defaultPtSeries(pt: StudySeriesEntry[]): StudySeriesEntry | undefined {
   return suv ?? pt[0];
 }
 
-/**
- * Order slices along the series scan axis using ImagePositionPatient (requires
- * wadors metadata already cached by createImageIdsAndCacheMetaData).
- */
-function sortStackImageIdsByVolumePosition(imageIds: string[]): string[] {
-  if (imageIds.length <= 1) {
-    return imageIds;
+function makeSeriesCacheKey(
+  studyInstanceUID: string,
+  seriesInstanceUID: string
+) {
+  return `${studyInstanceUID}::${seriesInstanceUID}`;
+}
+
+async function validateAndSortSeriesForStack(
+  studyInstanceUID: string,
+  seriesInstanceUID: string
+): Promise<SeriesStackValidation> {
+  const cacheKey = makeSeriesCacheKey(studyInstanceUID, seriesInstanceUID);
+  const existing = seriesValidationCache.get(cacheKey);
+  if (existing) {
+    return existing;
   }
-  try {
-    const { sortedImageIds } =
-      csCoreUtilities.sortImageIdsAndGetSpacing(imageIds);
-    return sortedImageIds;
-  } catch (err) {
+
+  const promise = (async (): Promise<SeriesStackValidation> => {
+    const imageIds = await createImageIdsAndCacheMetaData({
+      StudyInstanceUID: studyInstanceUID,
+      SeriesInstanceUID: seriesInstanceUID,
+      wadoRsRoot: WADO_RS_ROOT,
+    });
+    return validateAndSortVolumeIds(imageIds);
+  })();
+
+  seriesValidationCache.set(cacheKey, promise);
+  return promise;
+}
+
+async function filterValidStackSeries(
+  studyInstanceUID: string,
+  entries: StudySeriesEntry[],
+  laneLabel: string
+): Promise<StudySeriesEntry[]> {
+  const checks = await Promise.all(
+    entries.map(async (entry) => {
+      const validation = await validateAndSortSeriesForStack(
+        studyInstanceUID,
+        entry.seriesInstanceUID
+      );
+      return { entry, validation };
+    })
+  );
+
+  const valid = checks
+    .filter((it) => it.validation.valid)
+    .map((it) => it.entry);
+  const rejected = checks.filter((it) => !it.validation.valid);
+
+  rejected.forEach(({ entry, validation }) => {
     console.warn(
-      'regionSegmentPlus: could not sort stack by IPP; keeping DICOMweb order',
-      err
+      `[regionSegmentPlus] excluding ${laneLabel} series ${entry.seriesInstanceUID}: ${validation.reason}`
     );
-    return imageIds;
-  }
+  });
+
+  return valid;
 }
 
 async function addSegmentationToState(imageIds, segId) {
@@ -477,18 +522,18 @@ async function loadStackWithSegmentation({
 }) {
   segmentation.removeSegmentation(segmentationId);
 
-  let imageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID: studyInstanceUID,
-    SeriesInstanceUID: seriesInstanceUID,
-    wadoRsRoot: WADO_RS_ROOT,
-  });
+  const validation = await validateAndSortSeriesForStack(
+    studyInstanceUID,
+    seriesInstanceUID
+  );
+  let imageIds = validation.sortedImageIds;
 
-  if (!imageIds?.length) {
-    console.warn('No instances for series', seriesInstanceUID);
+  if (!validation.valid || !imageIds?.length) {
+    console.warn(
+      `[regionSegmentPlus] refusing to load invalid stack series ${seriesInstanceUID}: ${validation.reason}`
+    );
     return;
   }
-
-  imageIds = sortStackImageIdsByVolumePosition(imageIds);
 
   await addSegmentationToState(imageIds, segmentationId);
 
@@ -543,8 +588,16 @@ async function run() {
   await initDemo({});
 
   const studySeries = await fetchStudySeries(currentStudyUID);
-  const leftSeries = nonPtSeriesNoScout(studySeries);
-  const ptSeries = ptSeriesNoScout(studySeries);
+  const leftSeries = await filterValidStackSeries(
+    currentStudyUID,
+    nonPtSeriesNoScout(studySeries),
+    'left'
+  );
+  const ptSeries = await filterValidStackSeries(
+    currentStudyUID,
+    ptSeriesNoScout(studySeries),
+    'right/PT'
+  );
 
   if (!leftSeries.length || !ptSeries.length) {
     throw new Error(
@@ -654,9 +707,18 @@ async function run() {
     },
     onSelectedValueChange: async (uid) => {
       currentStudyUID = String(uid);
+      seriesValidationCache.clear();
       const nextSeries = await fetchStudySeries(currentStudyUID);
-      const nextLeft = nonPtSeriesNoScout(nextSeries);
-      const nextPt = ptSeriesNoScout(nextSeries);
+      const nextLeft = await filterValidStackSeries(
+        currentStudyUID,
+        nonPtSeriesNoScout(nextSeries),
+        'left'
+      );
+      const nextPt = await filterValidStackSeries(
+        currentStudyUID,
+        ptSeriesNoScout(nextSeries),
+        'right/PT'
+      );
       if (!nextLeft.length || !nextPt.length) {
         console.error(
           `Study ${currentStudyUID}: need non-PT (non-scout) and PT (non-scout). Got left ${nextLeft.length}, PT ${nextPt.length}`

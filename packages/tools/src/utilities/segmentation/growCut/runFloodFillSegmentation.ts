@@ -37,6 +37,10 @@ const FLOOD_FILL_RANGE_TIMING_LABEL =
   'cornerstone.tools: floodFill: intensityRange';
 const FLOOD_FILL_RUN_TIMING_LABEL =
   'cornerstone.tools: floodFill: fillAndIslandRemoval';
+const FLOOD_FILL_ISLAND_EXTERNAL_TIMING_LABEL =
+  'cornerstone.tools: floodFill: islandRemoval:external';
+const FLOOD_FILL_ISLAND_INTERNAL_TIMING_LABEL =
+  'cornerstone.tools: floodFill: islandRemoval:internal';
 
 type FloodFillSegmentationOptions = {
   positiveStdDevMultiplier?: number;
@@ -391,13 +395,18 @@ function resolveFloodPaintIndices(
 function promotePreviewSegmentToFinal(
   voxelManager: NumberVoxelManager,
   preview: number,
-  final: number
+  final: number,
+  points: Types.Point3[],
+  numPixelsPerSlice: number,
+  width: number
 ) {
-  voxelManager.forEach(({ value, index }) => {
-    if (value === preview) {
+  for (let i = 0; i < points.length; i++) {
+    const [x, y, z] = points[i];
+    const index = z * numPixelsPerSlice + y * width + x;
+    if (voxelManager.getAtIndex(index) === preview) {
       voxelManager.setAtIndex(index, final);
     }
-  });
+  }
 }
 
 async function runFloodFillSegmentation({
@@ -476,16 +485,59 @@ async function runFloodFillSegmentation({
   }
 
   const { min: rangeMin, max: rangeMax, ijkStart, diagnostics } = rangeResult;
+  let clampedRangeMin = rangeMin;
+  let clampedRangeMax = rangeMax;
+  const MAX_WL_BAND_FRACTION = 0.2;
+  if (voiMapping && diagnostics?.mappedBand) {
+    const mapped = diagnostics.mappedBand;
+    const mappedLo = Math.max(0, Math.min(1, Math.min(mapped.min, mapped.max)));
+    const mappedHi = Math.max(0, Math.min(1, Math.max(mapped.min, mapped.max)));
+    const mappedWidth = mappedHi - mappedLo;
+    if (mappedWidth > MAX_WL_BAND_FRACTION) {
+      const seedScalarPreClamp = Number(
+        (referencedVolume.voxelManager as NumberVoxelManager).getAtIJKPoint(
+          ijkStart
+        )
+      );
+      const seedMapped = Math.max(
+        0,
+        Math.min(
+          1,
+          mapScalarToViewportVoiIntensity(seedScalarPreClamp, voiMapping)
+        )
+      );
+      const half = MAX_WL_BAND_FRACTION / 2;
+      const clippedMappedLo = Math.max(0, seedMapped - half);
+      const clippedMappedHi = Math.min(1, seedMapped + half);
+      const { rawMin: clipRawMin, rawMax: clipRawMax } =
+        mapMappedBandToRawRange(clippedMappedLo, clippedMappedHi, voiMapping);
+      clampedRangeMin = Math.min(clipRawMin, clipRawMax, seedScalarPreClamp);
+      clampedRangeMax = Math.max(clipRawMin, clipRawMax, seedScalarPreClamp);
+      log.info('flood fill: clipped wide WL band around seed', {
+        maxWlBandFraction: MAX_WL_BAND_FRACTION,
+        originalMappedBand: {
+          min: mappedLo,
+          max: mappedHi,
+          width: mappedWidth,
+        },
+        clippedMappedBand: {
+          min: clippedMappedLo,
+          max: clippedMappedHi,
+          width: clippedMappedHi - clippedMappedLo,
+        },
+      });
+    }
+  }
 
   log.info('intensity tolerance band', {
-    toleranceMin: rangeMin,
-    toleranceMax: rangeMax,
-    width: rangeMax - rangeMin,
+    toleranceMin: clampedRangeMin,
+    toleranceMax: clampedRangeMax,
+    width: clampedRangeMax - clampedRangeMin,
     ...diagnostics,
   });
   console.info('[cornerstone-tools] flood fill intensity range', {
-    rawMin: rangeMin,
-    rawMax: rangeMax,
+    rawMin: clampedRangeMin,
+    rawMax: clampedRangeMax,
     strategy: diagnostics.strategy,
     mappedBand: diagnostics.mappedBand,
     neighborhoodRadius: diagnostics.neighborhoodRadius,
@@ -498,8 +550,8 @@ async function runFloodFillSegmentation({
     const refVoxelManager = referencedVolume.voxelManager as NumberVoxelManager;
     const numPixelsPerSlice = width * height;
 
-    let positiveMin = rangeMin;
-    let positiveMax = rangeMax;
+    let positiveMin = clampedRangeMin;
+    let positiveMax = clampedRangeMax;
     const seedScalar = Number(refVoxelManager.getAtIJKPoint(ijkStart));
     if (Number.isFinite(seedScalar)) {
       if (seedScalar < positiveMin) {
@@ -591,6 +643,19 @@ async function runFloodFillSegmentation({
     const applyExternal = options.applyExternalIslandRemoval !== false;
     const applyInternal =
       options.applyInternalIslandRemoval !== false && applyExternal;
+    if (!applyExternal && !applyInternal) {
+      if (usePreview) {
+        promotePreviewSegmentToFinal(
+          labelmap.voxelManager as NumberVoxelManager,
+          paintIndex,
+          segmentIndex,
+          floodedPoints,
+          numPixelsPerSlice,
+          width
+        );
+      }
+      return labelmap;
+    }
     const islandVerbose = options.islandRemovalVerboseLogging === true;
 
     const islandRemoval = new IslandRemoval({
@@ -617,7 +682,10 @@ async function runFloodFillSegmentation({
         promotePreviewSegmentToFinal(
           labelmap.voxelManager as NumberVoxelManager,
           paintIndex,
-          segmentIndex
+          segmentIndex,
+          floodedPoints,
+          numPixelsPerSlice,
+          width
         );
       }
       return labelmap;
@@ -628,11 +696,15 @@ async function runFloodFillSegmentation({
     let internalSliceCount: number | undefined;
 
     if (applyExternal) {
+      console.time(FLOOD_FILL_ISLAND_EXTERNAL_TIMING_LABEL);
       islandFloodVoxels = islandRemoval.floodFillSegmentIsland();
       externalClearedVoxels = islandRemoval.removeExternalIslands();
+      console.timeEnd(FLOOD_FILL_ISLAND_EXTERNAL_TIMING_LABEL);
       if (applyInternal) {
+        console.time(FLOOD_FILL_ISLAND_INTERNAL_TIMING_LABEL);
         const modifiedSlices = islandRemoval.removeInternalIslands();
         internalSliceCount = modifiedSlices?.length;
+        console.timeEnd(FLOOD_FILL_ISLAND_INTERNAL_TIMING_LABEL);
       }
     }
 
@@ -651,8 +723,43 @@ async function runFloodFillSegmentation({
       promotePreviewSegmentToFinal(
         labelmap.voxelManager as NumberVoxelManager,
         paintIndex,
-        segmentIndex
+        segmentIndex,
+        floodedPoints,
+        numPixelsPerSlice,
+        width
       );
+    }
+
+    // Debug visibility: verify final voxel values at flooded points before returning.
+    if (floodedPoints.length > 0) {
+      let finalSegmentCount = 0;
+      let previewCount = 0;
+      let zeroCount = 0;
+      let otherCount = 0;
+      for (let i = 0; i < floodedPoints.length; i++) {
+        const [x, y, z] = floodedPoints[i];
+        const index = z * numPixelsPerSlice + y * width + x;
+        const value = Number(labelmap.voxelManager.getAtIndex(index) ?? 0);
+        if (value === segmentIndex) {
+          finalSegmentCount += 1;
+        } else if (value === paintIndex) {
+          previewCount += 1;
+        } else if (value === 0) {
+          zeroCount += 1;
+        } else {
+          otherCount += 1;
+        }
+      }
+      console.info('[cornerstone-tools] flood fill final voxel check', {
+        floodedPoints: floodedPoints.length,
+        segmentIndex,
+        paintIndex,
+        usePreview,
+        finalSegmentCount,
+        previewCount,
+        zeroCount,
+        otherCount,
+      });
     }
 
     return labelmap;
