@@ -6,6 +6,7 @@ import type { FloodFillIntensityRangeResult } from '../floodFillIntensityRangeTy
 
 const { transformWorldToIndex, mapMappedBandToRawRange } = csUtils;
 const { growCutLog } = csUtils.logger;
+const ENABLE_VERBOSE_CANVAS_DISK_LOGS = false;
 
 /** Display-byte tolerance: fallbacks and “near disk end” use ±this many levels (not % of span). */
 const DISPLAY_BAND_FALLBACK_ABS = 5;
@@ -66,6 +67,9 @@ function logCanvasDiskSampledPixelValues(
   sortedDisplayBytes: number[],
   detail: Record<string, unknown>
 ): void {
+  if (!ENABLE_VERBOSE_CANVAS_DISK_LOGS) {
+    return;
+  }
   const uniqueSorted = [...new Set(sortedDisplayBytes)].sort((a, b) => a - b);
   growCutLog.debug('canvasDisk rendered display bytes (sorted 0–255)', {
     sortedLength: sortedDisplayBytes.length,
@@ -547,23 +551,25 @@ export function getCanvasDiskIntensityRange(
       { high: edgePinnedHigh, low: edgePinnedLow }
     ));
   }
-  console.info('[cornerstone-tools] canvasDiskIntensityRange edge-clip', {
-    centerDisplayByte255: centerByte,
-    edgePinnedHigh,
-    edgePinnedLow,
-    preWidenMappedBand: {
-      min: preWidenDLo,
-      max: preWidenDHi,
-      minByte255: Math.round(preWidenDLo * 255),
-      maxByte255: Math.round(preWidenDHi * 255),
-    },
-    postWidenMappedBand: {
-      min: dLo,
-      max: dHi,
-      minByte255: Math.round(dLo * 255),
-      maxByte255: Math.round(dHi * 255),
-    },
-  });
+  if (ENABLE_VERBOSE_CANVAS_DISK_LOGS) {
+    console.info('[cornerstone-tools] canvasDiskIntensityRange edge-clip', {
+      centerDisplayByte255: centerByte,
+      edgePinnedHigh,
+      edgePinnedLow,
+      preWidenMappedBand: {
+        min: preWidenDLo,
+        max: preWidenDHi,
+        minByte255: Math.round(preWidenDLo * 255),
+        maxByte255: Math.round(preWidenDHi * 255),
+      },
+      postWidenMappedBand: {
+        min: dLo,
+        max: dHi,
+        minByte255: Math.round(dLo * 255),
+        maxByte255: Math.round(dHi * 255),
+      },
+    });
+  }
 
   const { rawMin, rawMax } = mapMappedBandToRawRange(dLo, dHi, opts.voi);
   let bandLo = Math.min(rawMin, rawMax);

@@ -22,6 +22,7 @@ const {
   mapMappedBandToRawRange,
 } = csUtils;
 const { growCutLog: log } = csUtils.logger;
+const ENABLE_VERBOSE_FLOOD_FILL_LOGS = false;
 
 export type {
   FloodFillIntensityRangeResult,
@@ -41,6 +42,9 @@ const FLOOD_FILL_ISLAND_EXTERNAL_TIMING_LABEL =
   'cornerstone.tools: floodFill: islandRemoval:external';
 const FLOOD_FILL_ISLAND_INTERNAL_TIMING_LABEL =
   'cornerstone.tools: floodFill: islandRemoval:internal';
+
+/** ~96MB max dense visited buffer; larger volumes keep using a Set in flood fill. */
+const FLOOD_FILL_MAX_DENSE_VISIT_VOXELS = 96 * 1024 * 1024;
 
 type FloodFillSegmentationOptions = {
   positiveStdDevMultiplier?: number;
@@ -566,13 +570,15 @@ async function runFloodFillSegmentation({
     width: clampedRangeMax - clampedRangeMin,
     ...diagnostics,
   });
-  console.info('[cornerstone-tools] flood fill intensity range', {
-    rawMin: clampedRangeMin,
-    rawMax: clampedRangeMax,
-    strategy: diagnostics.strategy,
-    mappedBand: diagnostics.mappedBand,
-    neighborhoodRadius: diagnostics.neighborhoodRadius,
-  });
+  if (ENABLE_VERBOSE_FLOOD_FILL_LOGS) {
+    console.info('[cornerstone-tools] flood fill intensity range', {
+      rawMin: clampedRangeMin,
+      rawMax: clampedRangeMax,
+      strategy: diagnostics.strategy,
+      mappedBand: diagnostics.mappedBand,
+      neighborhoodRadius: diagnostics.neighborhoodRadius,
+    });
+  }
 
   console.time(FLOOD_FILL_RUN_TIMING_LABEL);
   try {
@@ -600,11 +606,16 @@ async function runFloodFillSegmentation({
         positiveMax = seedScalar;
       }
     }
-    console.info('[cornerstone-tools] flood fill seed + effective tolerance', {
-      seedScalar,
-      effectiveMin: positiveMin,
-      effectiveMax: positiveMax,
-    });
+    if (ENABLE_VERBOSE_FLOOD_FILL_LOGS) {
+      console.info(
+        '[cornerstone-tools] flood fill seed + effective tolerance',
+        {
+          seedScalar,
+          effectiveMin: positiveMin,
+          effectiveMax: positiveMax,
+        }
+      );
+    }
 
     const intensityGetter = (
       x: number,
@@ -621,7 +632,8 @@ async function runFloodFillSegmentation({
       ) {
         return undefined;
       }
-      return refVoxelManager.getAtIJK(x, y, z);
+      const idx = z * numPixelsPerSlice + y * width + x;
+      return refVoxelManager.getAtIndex(idx);
     };
 
     const inRange = (val: number) => val >= positiveMin && val <= positiveMax;
@@ -637,6 +649,26 @@ async function runFloodFillSegmentation({
       log.info('flood fill: planar mode (fixed slice index k)', { ijkStart });
     }
 
+    const visitVoxelCount = planar
+      ? width * height
+      : width * height * numSlices;
+    const visitedBuffer =
+      visitVoxelCount > 0 &&
+      visitVoxelCount <= FLOOD_FILL_MAX_DENSE_VISIT_VOXELS
+        ? planar
+          ? {
+              data: new Uint8Array(visitVoxelCount),
+              width,
+              height,
+            }
+          : {
+              data: new Uint8Array(visitVoxelCount),
+              width,
+              height,
+              depth: numSlices,
+            }
+        : undefined;
+
     await floodFill(intensityGetter, ijkStart as [number, number, number], {
       equals: (val, _startVal) =>
         val !== undefined && typeof val === 'number' && inRange(val),
@@ -649,6 +681,7 @@ async function runFloodFillSegmentation({
       planar,
       ensureSliceLoaded,
       yieldEvery: options.yieldEvery ?? 500,
+      visitedBuffer,
     });
 
     if (floodedPoints.length === 0) {
@@ -778,7 +811,7 @@ async function runFloodFillSegmentation({
     }
 
     // Debug visibility: verify final voxel values at flooded points before returning.
-    if (floodedPoints.length > 0) {
+    if (ENABLE_VERBOSE_FLOOD_FILL_LOGS && floodedPoints.length > 0) {
       let finalSegmentCount = 0;
       let previewCount = 0;
       let zeroCount = 0;

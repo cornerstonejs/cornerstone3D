@@ -38,7 +38,9 @@ async function floodFill(
     previousArgs?: Types.Point2 | Types.Point3;
   }[] = [];
   const flooded: Types.Point2[] | Types.Point3[] = [];
-  const visits = new Set<number>();
+  const visitedBuffer = options.visitedBuffer;
+  /** All visited keys when not using {@link visitedBuffer}; OOB keys when using dense buffer. */
+  const visitsSet = new Set<number>();
   let iteration = 0;
 
   stack.push({ currentArgs: seed });
@@ -83,16 +85,54 @@ async function floodFill(
     }
   }
 
+  function packVisitedKey(x: number, y: number, z: number): number {
+    return x + 32768 + 65536 * (y + 32768 + 65536 * (z + 32768));
+  }
+
+  /** @returns linear index, or -1 if out of volume / invalid for the buffer layout */
+  function linearVisitIndex(x: number, y: number, z: number): number {
+    if (!visitedBuffer) {
+      return -1;
+    }
+    const w = visitedBuffer.width;
+    const h = visitedBuffer.height;
+    if (x < 0 || x >= w || y < 0 || y >= h) {
+      return -1;
+    }
+    if (visitedBuffer.depth === undefined) {
+      return x + y * w;
+    }
+    const d = visitedBuffer.depth;
+    if (z < 0 || z >= d) {
+      return -1;
+    }
+    return x + y * w + z * w * h;
+  }
+
   function visited(key: Types.Point2 | Types.Point3) {
     const [x, y, z = 0] = key;
-    const iKey = x + 32768 + 65536 * (y + 32768 + 65536 * (z + 32768));
-    return visits.has(iKey);
+    if (visitedBuffer) {
+      const li = linearVisitIndex(x, y, z);
+      if (li >= 0) {
+        return visitedBuffer.data[li] !== 0;
+      }
+      return visitsSet.has(packVisitedKey(x, y, z));
+    }
+    return visitsSet.has(packVisitedKey(x, y, z));
   }
 
   function markAsVisited(key: Types.Point2 | Types.Point3) {
     const [x, y, z = 0] = key;
-    const iKey = x + 32768 + 65536 * (y + 32768 + 65536 * (z + 32768));
-    visits.add(iKey);
+    if (visitedBuffer) {
+      const li = linearVisitIndex(x, y, z);
+      if (li >= 0) {
+        visitedBuffer.data[li] = 1;
+        return;
+      }
+      visitsSet.add(packVisitedKey(x, y, z));
+      return;
+    }
+    visitsSet.add(packVisitedKey(x, y, z));
   }
 
   function member(getArgs: Types.Point2 | Types.Point3) {
@@ -113,7 +153,7 @@ async function floodFill(
       return;
     }
     const [x, y, z = 0] = prevArgs;
-    const iKey = x + 32768 + 65536 * (y + 32768 + 65536 * (z + 32768));
+    const iKey = packVisitedKey(x, y, z);
     bounds?.set(iKey, prevArgs);
     if (onBoundary) {
       // @ts-expect-error spread tuple

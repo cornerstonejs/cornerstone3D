@@ -4,6 +4,9 @@ import type { Types } from '@cornerstonejs/core';
 /**
  * Builds an idempotent per-slice loader for volumes backed by `imageIds` (e.g. streaming stacks).
  * No-op when `imageIds` is missing or empty. Uses `imageLoader.loadImage` for the slice imageId.
+ *
+ * After a slice loads successfully once, it is remembered so callers (e.g. flood fill per voxel)
+ * do not re-enter `loadImage` or await redundant work on the same z index.
  */
 export function createEnsureSliceLoadedForVolume(
   volume: Types.IImageVolume
@@ -14,10 +17,15 @@ export function createEnsureSliceLoadedForVolume(
     return async () => undefined;
   }
 
+  const loadedSlices = new Set<number>();
   const inFlight = new Map<number, Promise<void>>();
 
   return async function ensureSliceLoaded(z: number): Promise<void> {
     if (!Number.isFinite(z) || z < 0 || z >= numSlices) {
+      return;
+    }
+
+    if (loadedSlices.has(z)) {
       return;
     }
 
@@ -33,7 +41,9 @@ export function createEnsureSliceLoadedForVolume(
 
     const promise = imageLoader
       .loadImage(imageId)
-      .then(() => undefined)
+      .then(() => {
+        loadedSlices.add(z);
+      })
       .finally(() => {
         inFlight.delete(z);
       });

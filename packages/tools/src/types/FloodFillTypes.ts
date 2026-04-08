@@ -8,6 +8,22 @@ type FloodFillGetter3D = (x: number, y: number, z: number) => unknown;
 type FloodFillGetter2D = (x: number, y: number) => unknown;
 type FloodFillGetter = FloodFillGetter2D | FloodFillGetter3D;
 
+/**
+ * Dense O(1) visited marks for flood fill. Prefer over the default {@link Set} for large fills.
+ *
+ * - **Planar / 2D:** `data.length` must be `width * height`; index = `x + y * width`.
+ * - **3D:** set `depth`; `data.length` must be `width * height * depth`;
+ *   index = `x + y * width + z * width * height`.
+ *
+ * Out-of-bounds coordinates still fall back to a small internal {@link Set} (rare).
+ */
+type FloodFillVisitedBuffer = {
+  data: Uint8Array;
+  width: number;
+  height: number;
+  depth?: number;
+};
+
 type FloodFillOptions = {
   onFlood?: (x: number, y: number, z?: number) => void;
   onBoundary?: (x: number, y: number, z?: number) => void;
@@ -29,6 +45,13 @@ type FloodFillOptions = {
    * Yield to the event loop every N flood steps (default 500). Use 0 to disable.
    */
   yieldEvery?: number;
+  /** Optional dense visited buffer (see {@link FloodFillVisitedBuffer}). */
+  visitedBuffer?: FloodFillVisitedBuffer;
 };
 
-export type { FloodFillResult, FloodFillGetter, FloodFillOptions };
+export type {
+  FloodFillResult,
+  FloodFillGetter,
+  FloodFillOptions,
+  FloodFillVisitedBuffer,
+};
