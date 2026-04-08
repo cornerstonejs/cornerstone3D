@@ -16,6 +16,9 @@ type FloodFillGetter = FloodFillGetter2D | FloodFillGetter3D;
  *   index = `x + y * width + z * width * height`.
  *
  * Out-of-bounds coordinates still fall back to a small internal {@link Set} (rare).
+ *
+ * During DFS flood fill with a buffer, bytes may use: bit 0 = fully processed,
+ * bit 1 = on stack (pending pop). After completion, only bit 0 remains set for filled cells.
  */
 type FloodFillVisitedBuffer = {
   data: Uint8Array;

@@ -83,6 +83,7 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
     element: HTMLDivElement;
     svg: SVGSVGElement;
   } | null = null;
+  private diskPreviewLastCanvas: Types.Point2 | null = null;
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {

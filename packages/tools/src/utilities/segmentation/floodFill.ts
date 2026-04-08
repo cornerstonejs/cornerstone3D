@@ -5,6 +5,11 @@ import type {
 } from '../../types';
 import type { Types } from '@cornerstonejs/core';
 
+/** Fully processed (popped and expanded). After fill, only this bit remains on buffer cells. */
+const VISITED_BUF_DONE = 1;
+/** Pending on DFS stack — avoids pushing the same cell twice before it is popped. */
+const VISITED_BUF_ON_STACK = 2;
+
 /**
  * N-dimensional flood fill (based on https://github.com/tuzz/n-dimensional-flood-fill).
  * Async API: yields to the event loop periodically and can await per-slice loading for 3D data.
@@ -43,6 +48,14 @@ async function floodFill(
   const visitsSet = new Set<number>();
   let iteration = 0;
 
+  if (visitedBuffer) {
+    const [sx, sy, sz = 0] = seed;
+    const sli = linearVisitIndex(sx, sy, sz);
+    if (sli >= 0) {
+      visitedBuffer.data[sli] |= VISITED_BUF_ON_STACK;
+    }
+  }
+
   stack.push({ currentArgs: seed });
 
   async function yieldIfNeeded() {
@@ -67,7 +80,17 @@ async function floodFill(
     const getArgs = job.currentArgs;
     const prevArgs = job.previousArgs;
 
-    if (visited(getArgs)) {
+    const [vx, vy, vz = 0] = getArgs;
+    if (visitedBuffer) {
+      const li0 = linearVisitIndex(vx, vy, vz);
+      if (li0 >= 0) {
+        if ((visitedBuffer.data[li0] & VISITED_BUF_DONE) !== 0) {
+          return;
+        }
+      } else if (visitsSet.has(packVisitedKey(vx, vy, vz))) {
+        return;
+      }
+    } else if (visitsSet.has(packVisitedKey(vx, vy, vz))) {
       return;
     }
 
@@ -109,12 +132,13 @@ async function floodFill(
     return x + y * w + z * w * h;
   }
 
+  /** Set / sparse OOB path only; dense buffer uses explicit DONE vs ON_STACK in pushAdjacent. */
   function visited(key: Types.Point2 | Types.Point3) {
     const [x, y, z = 0] = key;
     if (visitedBuffer) {
       const li = linearVisitIndex(x, y, z);
       if (li >= 0) {
-        return visitedBuffer.data[li] !== 0;
+        return (visitedBuffer.data[li] & VISITED_BUF_DONE) !== 0;
       }
       return visitsSet.has(packVisitedKey(x, y, z));
     }
@@ -126,7 +150,8 @@ async function floodFill(
     if (visitedBuffer) {
       const li = linearVisitIndex(x, y, z);
       if (li >= 0) {
-        visitedBuffer.data[li] = 1;
+        const v = visitedBuffer.data[li];
+        visitedBuffer.data[li] = (v & ~VISITED_BUF_ON_STACK) | VISITED_BUF_DONE;
         return;
       }
       visitsSet.add(packVisitedKey(x, y, z));
@@ -179,7 +204,19 @@ async function floodFill(
       if (filter?.(nextArgs) === false) {
         continue;
       }
-      if (visited(nextArgs)) {
+      const [nx, ny, nz = 0] = nextArgs;
+      if (visitedBuffer) {
+        const li = linearVisitIndex(nx, ny, nz);
+        if (li >= 0) {
+          const v = visitedBuffer.data[li];
+          if ((v & (VISITED_BUF_DONE | VISITED_BUF_ON_STACK)) !== 0) {
+            continue;
+          }
+          visitedBuffer.data[li] = v | VISITED_BUF_ON_STACK;
+        } else if (visited(nextArgs)) {
+          continue;
+        }
+      } else if (visited(nextArgs)) {
         continue;
       }
 
