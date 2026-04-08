@@ -9,3 +9,8 @@ export { attemptAction } from './attemptAction';
 export { getVisibleViewportCanvas } from './getVisibleViewportCanvas';
 export { getSegmentationActorClassNames } from './getSegmentationActorClassNames';
 export { expectViewportNextRuntime } from './expectViewportNextRuntime';
+export {
+  isCompatibilityMode,
+  resolveCompatibilityScreenshotPath,
+  validateCompatibilityRuntime,
+} from './compatibilityMode';

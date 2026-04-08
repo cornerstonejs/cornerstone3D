@@ -3,6 +3,7 @@ import {
   checkForScreenshot,
   visitExample,
   screenShotPaths,
+  getVisibleViewportCanvas,
 } from '../utils/index';
 import { drawCircleScissor } from './utils/helpers';
 
@@ -19,7 +20,7 @@ test('Stack Segmentation - Circular Scissor Tool with segmentation 1', async ({
 }) => {
   await page.getByRole('combobox').first().selectOption('CircleScissor');
 
-  const canvas = await page.locator('canvas').first();
+  const canvas = getVisibleViewportCanvas(page, 0);
 
   await drawCircleScissor(page, canvas);
   await page.waitForTimeout(1500);

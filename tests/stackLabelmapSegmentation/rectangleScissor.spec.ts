@@ -3,6 +3,7 @@ import {
   checkForScreenshot,
   visitExample,
   screenShotPaths,
+  getVisibleViewportCanvas,
 } from '../utils/index';
 import { drawRectangleScissor } from './utils/helpers';
 
@@ -18,7 +19,7 @@ test('Stack Segmentation - Rectangle Scissor Tool with segmentation 2', async ({
 }) => {
   await page.getByRole('combobox').first().selectOption('RectangleScissor');
 
-  const canvas = await page.locator('canvas').first();
+  const canvas = getVisibleViewportCanvas(page, 0);
 
   await page
     .getByRole('button', { name: 'Create New Segmentation on' })

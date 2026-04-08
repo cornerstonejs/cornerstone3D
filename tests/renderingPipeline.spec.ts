@@ -4,6 +4,7 @@ import {
   checkForScreenshot,
   visitExample,
   screenShotPaths,
+  getVisibleViewportCanvas,
 } from './utils/index';
 
 test.skip('Rendering Pipelines for GPU', async () => {
@@ -78,7 +79,7 @@ async function checkCPURendering(page: Page) {
   });
   expect(isUsingCPU).toBe(true);
 
-  const canvas = await page.locator('canvas').first();
+  const canvas = getVisibleViewportCanvas(page, 0);
   await checkForScreenshot(
     page,
     canvas,
@@ -91,17 +92,14 @@ async function selectRenderingOption(page: Page, optionName: string) {
 }
 
 async function getCanvases(page: Page): Promise<Locator[]> {
-  return [
-    await page.locator('canvas').first(),
-    await page.locator('canvas').last(),
-  ];
+  return [getVisibleViewportCanvas(page, 0), getVisibleViewportCanvas(page, 1)];
 }
 
 async function waitForRenderingAndAddEllipse(page: Page) {
   await page.waitForLoadState('networkidle');
   await page.waitForTimeout(2000);
 
-  const canvas = await page.locator('canvas').first();
+  const canvas = getVisibleViewportCanvas(page, 0);
   await canvas.click({ position: { x: 58, y: 49 } });
   await canvas.click({ position: { x: 75, y: 63 } });
 

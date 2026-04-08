@@ -1,5 +1,9 @@
+import cache from '../../../cache/cache';
+import { Events } from '../../../enums';
 import type { IVolumeInput } from '../../../types';
+import type DisplayArea from '../../../types/displayArea';
 import type BlendModes from '../../../enums/BlendModes';
+import triggerEvent from '../../../utilities/triggerEvent';
 import type { PlanarLegacyViewportProperties } from './planarLegacyCompatibility';
 import PlanarLegacyCompatibilityController from './PlanarLegacyCompatibilityController';
 import PlanarViewport from './PlanarViewport';
@@ -9,6 +13,111 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
     new PlanarLegacyCompatibilityController(
       this.createLegacyCompatibilityHost()
     );
+
+  private cloneTuple<T extends ArrayLike<number> | undefined>(
+    tuple: T
+  ): T extends undefined ? undefined : [number, number, number] {
+    if (!tuple) {
+      return undefined as T extends undefined
+        ? undefined
+        : [number, number, number];
+    }
+
+    return Array.from(tuple) as T extends undefined
+      ? undefined
+      : [number, number, number];
+  }
+
+  override getCamera(): ReturnType<PlanarViewport['getCamera']> {
+    const camera = super.getCamera();
+    const orientation =
+      camera.orientation && typeof camera.orientation === 'object'
+        ? {
+            ...camera.orientation,
+            viewUp: this.cloneTuple(camera.orientation.viewUp),
+            viewPlaneNormal: this.cloneTuple(
+              camera.orientation.viewPlaneNormal
+            ),
+          }
+        : camera.orientation;
+
+    return {
+      ...camera,
+      focalPoint: this.cloneTuple(camera.focalPoint),
+      position: this.cloneTuple(camera.position),
+      viewUp: this.cloneTuple(camera.viewUp),
+      viewPlaneNormal: this.cloneTuple(camera.viewPlaneNormal),
+      orientation,
+    };
+  }
+
+  get volumeIds(): Set<string> {
+    const ids = new Set<string>();
+
+    for (const actorEntry of this.getActors()) {
+      const candidates = [actorEntry.referencedId, actorEntry.uid];
+
+      for (const candidate of candidates) {
+        if (typeof candidate === 'string' && cache.getVolume(candidate)) {
+          ids.add(candidate);
+        }
+      }
+    }
+
+    return ids;
+  }
+
+  getAllVolumeIds(): string[] {
+    return Array.from(this.volumeIds);
+  }
+
+  getDisplayArea(): DisplayArea | undefined {
+    return this.defaultOptions?.displayArea;
+  }
+
+  setDisplayArea(displayArea: DisplayArea, suppressEvents = false): void {
+    if (!displayArea) {
+      return;
+    }
+
+    this.defaultOptions.displayArea = displayArea;
+
+    const { imageArea, imageCanvasPoint, scale, storeAsInitialCamera } =
+      displayArea;
+
+    if (typeof scale === 'number' && Number.isFinite(scale) && scale > 0) {
+      this.setZoom(scale);
+    } else if (imageArea) {
+      const [areaX = 1, areaY = 1] = imageArea;
+      const effectiveArea = Math.max(areaX, areaY, 1e-3);
+
+      this.setZoom(this.getZoom() / effectiveArea);
+    }
+
+    if (imageCanvasPoint) {
+      const { imagePoint, canvasPoint = imagePoint || [0.5, 0.5] } =
+        imageCanvasPoint;
+      const [canvasX, canvasY] = canvasPoint;
+      const [imageX, imageY] = imagePoint || canvasPoint;
+      const canvasWidth = this.canvas.width || this.element.clientWidth || 1;
+      const canvasHeight = this.canvas.height || this.element.clientHeight || 1;
+      const currentPan = this.getPan();
+      const nextPan: [number, number] = [
+        currentPan[0] + canvasWidth * (canvasX - imageX),
+        currentPan[1] + canvasHeight * (canvasY - imageY),
+      ];
+
+      this.setPan(nextPan);
+    }
+
+    if (!suppressEvents) {
+      triggerEvent(this.element, Events.DISPLAY_AREA_MODIFIED, {
+        viewportId: this.id,
+        displayArea,
+        storeAsInitialCamera,
+      });
+    }
+  }
 
   removeData(dataId: string): void {
     super.removeData(dataId);

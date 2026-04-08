@@ -109,6 +109,26 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     }
   }
 
+  private _isCoordinateTuple(
+    value: unknown
+  ): value is Types.Point3 | vec3 | Float32Array | Float64Array {
+    return Array.isArray(value) || ArrayBuffer.isView(value);
+  }
+
+  private _resolveViewPlaneCoordinate(
+    coordinate: number | Types.Point3 | vec3 | Float32Array | Float64Array,
+    viewPlaneNormal: Types.Point3
+  ): number {
+    if (this._isCoordinateTuple(coordinate)) {
+      return this._getCoordinateForViewplaneNormal(
+        coordinate as Types.Point3,
+        viewPlaneNormal
+      );
+    }
+
+    return coordinate;
+  }
+
   /**
    * Based on the current position of the mouse and the enabledElement it creates
    * the edit data for the tool.
@@ -212,7 +232,10 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     // update the projection points in 3D space, since we are projecting
     // the points to the slice plane, we need to make sure the points are
     // computed for later export
-    this._computeProjectionPoints(annotation, imageVolume);
+    this._computeProjectionPoints(
+      annotation as RectangleROIStartEndThresholdAnnotation,
+      imageVolume
+    );
 
     addAnnotation(annotation, element);
 
@@ -274,6 +297,10 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     const targetId = this.getTargetId(enabledElement.viewport);
     const imageVolume = cache.getVolume(targetId.split(/volumeId:|\?/)[1]);
 
+    this._computeProjectionPoints(
+      annotation as RectangleROIStartEndThresholdAnnotation,
+      imageVolume
+    );
     this._computePointsInsideVolume(
       annotation,
       targetId,
@@ -298,7 +325,14 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     const { data, metadata } = annotation;
     const { viewPlaneNormal, spacingInNormal } = metadata;
     const { imageData } = imageVolume;
-    const { startCoordinate, endCoordinate } = data;
+    const startCoordinate = this._resolveViewPlaneCoordinate(
+      data.startCoordinate as number | Types.Point3,
+      viewPlaneNormal
+    );
+    const endCoordinate = this._resolveViewPlaneCoordinate(
+      data.endCoordinate as number | Types.Point3,
+      viewPlaneNormal
+    );
     const { points } = data.handles;
 
     const startIJK = transformWorldToIndex(imageData, points[0]);
@@ -556,30 +590,27 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       const focalPoint = viewport.getCamera().focalPoint;
       const viewplaneNormal = viewport.getCamera().viewPlaneNormal;
 
-      let startCoord: number | vec3 = startCoordinate;
-      let endCoord: number | vec3 = endCoordinate;
+      let startCoord: number = this._resolveViewPlaneCoordinate(
+        startCoordinate as number | Types.Point3,
+        viewplaneNormal
+      );
+      let endCoord: number = this._resolveViewPlaneCoordinate(
+        endCoordinate as number | Types.Point3,
+        viewplaneNormal
+      );
 
-      if (Array.isArray(startCoordinate)) {
-        startCoord = this._getCoordinateForViewplaneNormal(
-          startCoord,
-          viewplaneNormal
-        );
+      if (this._isCoordinateTuple(startCoordinate)) {
         const indexOfDirection =
           this._getIndexOfCoordinatesForViewplaneNormal(viewplaneNormal);
 
         data.handles.points.forEach((point) => {
-          point[indexOfDirection] = startCoord as number;
+          point[indexOfDirection] = startCoord;
         });
 
         data.startCoordinate = startCoord;
       }
 
-      if (Array.isArray(endCoordinate)) {
-        endCoord = this._getCoordinateForViewplaneNormal(
-          endCoord,
-          viewplaneNormal
-        );
-        data.endCoordinate = endCoord;
+      if (this._isCoordinateTuple(endCoordinate)) {
         data.endCoordinate = endCoord;
       }
 

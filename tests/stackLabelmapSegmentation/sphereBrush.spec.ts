@@ -4,6 +4,7 @@ import {
   visitExample,
   screenShotPaths,
   simulateDrawPath,
+  getVisibleViewportCanvas,
 } from '../utils/index';
 import { rightArmBoneContour } from './utils/constants';
 import pause from '../utils/pause';
@@ -20,14 +21,14 @@ test('Stack Segmentation - Sphere Brush Tool', async ({
 }) => {
   await page.getByRole('combobox').first().selectOption('SphereBrush');
 
-  const canvas = await page.locator('canvas').first();
+  const canvas = getVisibleViewportCanvas(page, 0);
 
   await simulateDrawPath(page, canvas, rightArmBoneContour, {
     interpolateSteps: true,
     closePath: true,
   });
 
-  const secondViewport = await page.locator('canvas').nth(1);
+  const secondViewport = getVisibleViewportCanvas(page, 1);
 
   await page.evaluate(() => {
     // Access cornerstone directly from the window object

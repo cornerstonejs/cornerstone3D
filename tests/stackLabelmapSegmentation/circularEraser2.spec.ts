@@ -4,6 +4,7 @@ import {
   visitExample,
   screenShotPaths,
   simulateDrawPath,
+  getVisibleViewportCanvas,
 } from '../utils/index';
 import { rightArmBoneContour } from './utils/constants';
 
@@ -19,7 +20,7 @@ test('Stack Segmentation - Circular Eraser Tool with segmentation 2', async ({
 }) => {
   await page.getByRole('combobox').first().selectOption('CircularBrush');
 
-  const canvas = await page.locator('canvas').first();
+  const canvas = getVisibleViewportCanvas(page, 0);
 
   await simulateDrawPath(page, canvas, [...rightArmBoneContour, [120, 150]], {
     interpolateSteps: true,

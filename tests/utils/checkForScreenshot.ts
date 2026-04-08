@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test';
 import type { Locator, Page } from 'playwright';
+import { resolveCompatibilityScreenshotPath } from './compatibilityMode';
 
 /**
  * @param page - The page to interact with
@@ -16,6 +17,9 @@ const checkForScreenshot = async (
   attempts = 10,
   delay = 100
 ) => {
+  const resolvedScreenshotPath =
+    resolveCompatibilityScreenshotPath(screenshotPath);
+
   try {
     await page.waitForLoadState('networkidle', {
       timeout: 1000,
@@ -34,7 +38,7 @@ const checkForScreenshot = async (
 
   for (let i = 0; i < attempts; i++) {
     try {
-      await expect(locator).toHaveScreenshot(screenshotPath, {
+      await expect(locator).toHaveScreenshot(resolvedScreenshotPath, {
         maxDiffPixelRatio: 0.05,
       });
       return true;

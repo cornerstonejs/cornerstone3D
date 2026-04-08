@@ -3,7 +3,7 @@ import {
   checkForScreenshot,
   visitExample,
   screenShotPaths,
-  attemptAction,
+  getVisibleViewportCanvas,
 } from './utils/index';
 
 test.beforeEach(async ({ page }) => {
@@ -14,9 +14,9 @@ test.describe('Labelmap Rendering', async () => {
   test('should render the labelmap in axial/coronal/sagittal orientations', async ({
     page,
   }) => {
-    const axial = await page.locator('canvas').nth(0);
-    const coronal = await page.locator('canvas').nth(1);
-    const sagittal = await page.locator('canvas').nth(2);
+    const axial = getVisibleViewportCanvas(page, 0);
+    const coronal = getVisibleViewportCanvas(page, 1);
+    const sagittal = getVisibleViewportCanvas(page, 2);
 
     await checkForScreenshot(
       page,

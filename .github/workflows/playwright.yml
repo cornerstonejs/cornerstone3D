@@ -14,7 +14,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [20]
+        include:
+          - node-version: 20
+            mode: legacy
+            run_args: "all --project=chromium"
+            collect_coverage: true
+          - node-version: 20
+            mode: compatibility
+            run_args: "all --viewport-v2 --project=chromium"
+            collect_coverage: false
+    name: Playwright (${{ matrix.mode }})
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -30,14 +39,26 @@ jobs:
       - name: Run Playwright tests
         run: |
           export NODE_OPTIONS="--max_old_space_size=10192"
-          bun run test:e2e:coverage
+          if [ "${{ matrix.collect_coverage }}" = "true" ]; then
+            bun x nyc --reporter=html ./scripts/run-playright.sh ${{ matrix.run_args }}
+          else
+            ./scripts/run-playright.sh ${{ matrix.run_args }}
+          fi
       - name: create the coverage report
+        if: ${{ matrix.collect_coverage }}
         run: |
           bun nyc report --reporter=lcov --reporter=text
       - name: Upload the coverage report to GitHub Actions Artifacts
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && matrix.collect_coverage }}
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report-pr
           path: coverage
+          retention-days: 7
+      - name: Upload Playwright reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.mode }}
+          path: reports/*playwright
           retention-days: 7

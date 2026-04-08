@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import { validateCompatibilityRuntime } from './compatibilityMode';
 
 function shouldForceViewportNext() {
   return process.env.PLAYWRIGHT_FORCE_VIEWPORT_V2 === 'true';
@@ -44,8 +45,33 @@ export const visitExample = async (
     await page.waitForLoadState('domcontentloaded');
   }
 
-  const link = page.locator(`a:has-text("${title}")`).first();
-  const href = await link.getAttribute('href');
+  const href = await page.evaluate((requestedTitle) => {
+    const normalizedTitle = requestedTitle.toLowerCase();
+    const links = Array.from(document.querySelectorAll('a[href]'));
+
+    const getNormalizedHrefName = (hrefValue: string) => {
+      const url = new URL(hrefValue, window.location.href);
+      const basename = url.pathname.split('/').pop() ?? '';
+      return basename.replace(/\.html$/, '').toLowerCase();
+    };
+
+    const exactHrefLink = links.find((link) => {
+      const hrefValue = link.getAttribute('href');
+      return hrefValue
+        ? getNormalizedHrefName(hrefValue) === normalizedTitle
+        : false;
+    });
+
+    if (exactHrefLink) {
+      return exactHrefLink.getAttribute('href');
+    }
+
+    const exactTextLink = links.find(
+      (link) => link.textContent?.trim().toLowerCase() === normalizedTitle
+    );
+
+    return exactTextLink?.getAttribute('href') ?? null;
+  }, title);
 
   if (href) {
     const exampleUrl = new URL(href, page.url());
@@ -61,6 +87,7 @@ export const visitExample = async (
 
     await page.goto(exampleUrl.toString());
   } else {
+    const link = page.locator(`a:has-text("${title}")`).first();
     await link.click();
 
     if (shouldForceViewportNext() || shouldForceCpuRendering()) {
@@ -79,5 +106,6 @@ export const visitExample = async (
   }
 
   await waitForExamplePage(page, waitForNetwork, waitForDom);
+  await validateCompatibilityRuntime(page, title);
   await page.waitForTimeout(delay);
 };

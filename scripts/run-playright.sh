@@ -93,6 +93,9 @@ declare -a TOOLS_TESTS=(
 declare -a SELECTED_TESTS=()
 
 case "$PACKAGE_NAME" in
+  all)
+    SELECTED_TESTS=("${CORE_TESTS[@]}" "${TOOLS_TESTS[@]}")
+    ;;
   core)
     SELECTED_TESTS=("${CORE_TESTS[@]}")
     ;;

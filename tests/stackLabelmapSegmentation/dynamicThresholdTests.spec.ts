@@ -4,6 +4,7 @@ import {
   visitExample,
   screenShotPaths,
   simulateDrawPath,
+  getVisibleViewportCanvas,
 } from '../utils/index';
 import { leftArmContour } from './utils/constants';
 import locatorToPageCoord from '../utils/locatorToPageCoord';
@@ -22,7 +23,7 @@ test('Stack Segmentation - Dynamic Threshold Tool - Initial Highlight', async ({
   await page.getByRole('combobox').first().selectOption('DynamicThreshold');
   await page.getByRole('slider').fill('25');
 
-  const canvas = await page.locator('canvas').first();
+  const canvas = getVisibleViewportCanvas(page, 0);
   const canvasPoint = leftArmContour[0];
   const pagePoint = await locatorToPageCoord(canvas, canvasPoint);
 
@@ -45,7 +46,7 @@ test('Stack Segmentation - Dynamic Threshold Tool - Highlight Contour', async ({
   await page.getByRole('combobox').first().selectOption('DynamicThreshold');
   await page.getByRole('slider').fill('25');
 
-  const canvas = await page.locator('canvas').first();
+  const canvas = getVisibleViewportCanvas(page, 0);
 
   await simulateDrawPath(page, canvas, leftArmContour, {
     interpolateSteps: true,
@@ -68,7 +69,7 @@ test('Stack Segmentation - Dynamic Threshold Tool - Confirm Contour', async ({
   await page.getByRole('combobox').first().selectOption('DynamicThreshold');
   await page.getByRole('slider').fill('25');
 
-  const canvas = await page.locator('canvas').first();
+  const canvas = getVisibleViewportCanvas(page, 0);
 
   await simulateDrawPath(page, canvas, leftArmContour, {
     interpolateSteps: true,

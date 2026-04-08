@@ -412,16 +412,50 @@ export function isPlanarReferenceViewable(args: {
     return Boolean(options.withOrientation);
   }
 
-  if (options.withNavigation) {
-    if (!viewRef.referencedImageId) {
+  if (viewRef.referencedImageId || viewRef.referencedImageURI) {
+    const referencedImageURI =
+      viewRef.referencedImageURI ||
+      imageIdToURI(viewRef.referencedImageId as string);
+    const currentSliceIndex = args.rendering
+      ? getCurrentSliceIndex(args.rendering)
+      : 0;
+    const currentReferencedImageId = imageIds[currentSliceIndex];
+
+    if (
+      currentReferencedImageId &&
+      imageIdToURI(currentReferencedImageId) === referencedImageURI
+    ) {
       return true;
     }
 
-    const referencedImageURI = imageIdToURI(viewRef.referencedImageId);
-
-    return imageIds.some(
+    const foundSliceIndex = imageIds.findIndex(
       (imageId) => imageIdToURI(imageId) === referencedImageURI
     );
+
+    if (foundSliceIndex === -1) {
+      return false;
+    }
+
+    if (options.withNavigation) {
+      return true;
+    }
+
+    const rangeEndSliceIndex =
+      viewRef.multiSliceReference &&
+      imageIds.findIndex(
+        (imageId) =>
+          imageIdToURI(imageId) ===
+          imageIdToURI(viewRef.multiSliceReference.referencedImageId)
+      );
+
+    if (rangeEndSliceIndex !== undefined && rangeEndSliceIndex >= 0) {
+      return (
+        foundSliceIndex <= currentSliceIndex &&
+        currentSliceIndex <= rangeEndSliceIndex
+      );
+    }
+
+    return currentSliceIndex === foundSliceIndex;
   }
 
   const currentSliceIndex = args.rendering
