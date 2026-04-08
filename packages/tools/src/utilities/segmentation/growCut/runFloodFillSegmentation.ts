@@ -1,9 +1,10 @@
 import { utilities as csUtils, cache } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import type { NumberVoxelManager } from '@cornerstonejs/core/utilities';
-import floodFill from '../floodFill';
 import IslandRemoval from '../islandRemoval';
+import { commitSliceMasksToLabelmapVolume } from '../commitSliceMasksToLabelmap';
 import { createEnsureSliceLoadedForVolume } from '../createEnsureSliceLoadedForVolume';
+import { floodFill3dSliceLazy } from '../floodFillSliceLazy';
 import {
   DEFAULT_NEIGHBORHOOD_RADIUS,
   DEFAULT_POSITIVE_STD_DEV_MULTIPLIER,
@@ -42,9 +43,6 @@ const FLOOD_FILL_ISLAND_EXTERNAL_TIMING_LABEL =
   'cornerstone.tools: floodFill: islandRemoval:external';
 const FLOOD_FILL_ISLAND_INTERNAL_TIMING_LABEL =
   'cornerstone.tools: floodFill: islandRemoval:internal';
-
-/** ~96MB max dense visited buffer; larger volumes keep using a Set in flood fill. */
-const FLOOD_FILL_MAX_DENSE_VISIT_VOXELS = 96 * 1024 * 1024;
 
 type FloodFillSegmentationOptions = {
   positiveStdDevMultiplier?: number;
@@ -638,7 +636,6 @@ async function runFloodFillSegmentation({
 
     const inRange = (val: number) => val >= positiveMin && val <= positiveMax;
 
-    const floodedPoints: Types.Point3[] = [];
     const ensureSliceLoaded =
       options.ensureSliceLoaded ??
       createEnsureSliceLoadedForVolume(referencedVolume);
@@ -649,42 +646,19 @@ async function runFloodFillSegmentation({
       log.info('flood fill: planar mode (fixed slice index k)', { ijkStart });
     }
 
-    const visitVoxelCount = planar
-      ? width * height
-      : width * height * numSlices;
-    const visitedBuffer =
-      visitVoxelCount > 0 &&
-      visitVoxelCount <= FLOOD_FILL_MAX_DENSE_VISIT_VOXELS
-        ? planar
-          ? {
-              data: new Uint8Array(visitVoxelCount),
-              width,
-              height,
-            }
-          : {
-              data: new Uint8Array(visitVoxelCount),
-              width,
-              height,
-              depth: numSlices,
-            }
-        : undefined;
+    const { sliceMasks, voxelCount: filledVoxelCount } =
+      await floodFill3dSliceLazy(intensityGetter, ijkStart, {
+        width,
+        height,
+        depth: numSlices,
+        equals: (val, _startVal) =>
+          val !== undefined && typeof val === 'number' && inRange(val),
+        ensureSliceLoaded,
+        yieldEvery: options.yieldEvery ?? 500,
+        planar,
+      });
 
-    await floodFill(intensityGetter, ijkStart as [number, number, number], {
-      equals: (val, _startVal) =>
-        val !== undefined && typeof val === 'number' && inRange(val),
-      onFlood: (x: number, y: number, z?: number) => {
-        const k = z ?? ijkStart[2];
-        floodedPoints.push([x, y, k]);
-        const index = k * numPixelsPerSlice + y * width + x;
-        labelmap.voxelManager.setAtIndex(index, paintIndex);
-      },
-      planar,
-      ensureSliceLoaded,
-      yieldEvery: options.yieldEvery ?? 500,
-      visitedBuffer,
-    });
-
-    if (floodedPoints.length === 0) {
+    if (filledVoxelCount === 0) {
       log.info(
         'flood fill: zero voxels (range may be too tight or seed isolated)',
         {
@@ -694,6 +668,25 @@ async function runFloodFillSegmentation({
         }
       );
       console.warn('Flood fill produced no voxels.');
+      return labelmap;
+    }
+
+    const { floodedPoints, voxelCount: committedVoxels } =
+      commitSliceMasksToLabelmapVolume({
+        labelmapVolume: labelmap,
+        sliceMasks,
+        width,
+        height,
+        paintIndex,
+      });
+
+    if (committedVoxels === 0 || floodedPoints.length === 0) {
+      log.warn('flood fill: commit produced no labelmap voxels', {
+        filledVoxelCount,
+        committedVoxels,
+        ijkStart,
+      });
+      console.warn('Flood fill commit produced no voxels.');
       return labelmap;
     }
 
