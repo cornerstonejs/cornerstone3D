@@ -134,6 +134,21 @@ function indexToWorld(volume: IImageVolume, ijk: Point3): Point3 {
   return world;
 }
 
+function worldVectorToContinuousIndexDelta(
+  volume: IImageVolume,
+  worldVector: Point3
+): Point3 {
+  const row = volume.direction.slice(0, 3) as Point3;
+  const col = volume.direction.slice(3, 6) as Point3;
+  const scan = volume.direction.slice(6, 9) as Point3;
+
+  return [
+    dot(worldVector, row) / volume.spacing[0],
+    dot(worldVector, col) / volume.spacing[1],
+    dot(worldVector, scan) / volume.spacing[2],
+  ];
+}
+
 export default class PlanarCPUVolumeSampler {
   private sampleSequence = 0;
   private scalarRangeCache = new WeakMap<
@@ -398,15 +413,24 @@ export default class PlanarCPUVolumeSampler {
   }): PlanarCPUSampledSliceState {
     const { volume, width, height, camera, dataPresentation } = args;
     const { right, up, normal } = this.getCameraBasis(camera);
+    const numberOfComponents = this.getVolumeNumberOfComponents(volume);
+    const preserveFloatScalarSamples =
+      numberOfComponents === 1 && this.shouldPreserveFloatScalarSamples(volume);
     const interpolationType =
       dataPresentation?.interpolationType ?? InterpolationType.LINEAR;
-    const orthogonalSlice = this.trySampleOrthogonalSliceFromVoxelManager(
-      volume,
-      camera,
-      right,
-      up,
-      normal
-    );
+    // The orthogonal fast path extracts source voxels directly. Keep it for
+    // nearest-neighbor rendering, but use the continuous sampler for linear
+    // interpolation so fused PET slices are sampled at canvas resolution.
+    const orthogonalSlice =
+      interpolationType === InterpolationType.NEAREST
+        ? this.trySampleOrthogonalSliceFromVoxelManager(
+            volume,
+            camera,
+            right,
+            up,
+            normal
+          )
+        : undefined;
     const fallbackRange = this.getFallbackStoredRange(volume);
     const voiRange = this.getResolvedVOIRange(
       dataPresentation?.voiRange,
@@ -458,38 +482,54 @@ export default class PlanarCPUVolumeSampler {
     const yStep = worldHeight / Math.max(height, 1);
     const xStart = -worldWidth / 2 + xStep / 2;
     const yStart = worldHeight / 2 - yStep / 2;
-    const numberOfComponents = this.getVolumeNumberOfComponents(volume);
+    const centerIndex = VoxelManager.worldToIndexContinuous(
+      volume,
+      camera.focalPoint as Point3
+    );
+    const startIndexDelta = worldVectorToContinuousIndexDelta(volume, [
+      right[0] * xStart + up[0] * yStart,
+      right[1] * xStart + up[1] * yStart,
+      right[2] * xStart + up[2] * yStart,
+    ]);
+    const xStepIndexDelta = worldVectorToContinuousIndexDelta(volume, [
+      right[0] * xStep,
+      right[1] * xStep,
+      right[2] * xStep,
+    ]);
+    const yStepIndexDelta = worldVectorToContinuousIndexDelta(volume, [
+      -up[0] * yStep,
+      -up[1] * yStep,
+      -up[2] * yStep,
+    ]);
     const SliceArrayConstructor = this.getSliceArrayConstructor(
       volume,
       fallbackRange.min,
       fallbackRange.max,
-      numberOfComponents
+      numberOfComponents,
+      preserveFloatScalarSamples
     );
     const sliceScalarData = new SliceArrayConstructor(
       width * height * numberOfComponents
     );
+    const rowStartIndex = [
+      centerIndex[0] + startIndexDelta[0],
+      centerIndex[1] + startIndexDelta[1],
+      centerIndex[2] + startIndexDelta[2],
+    ] as Point3;
+    const sampleIndex = [...rowStartIndex] as Point3;
     let sampledMin = Infinity;
     let sampledMax = -Infinity;
 
     for (let y = 0; y < height; y++) {
-      const yOffset = yStart - y * yStep;
-      const rowBase = [
-        camera.focalPoint[0] + up[0] * yOffset,
-        camera.focalPoint[1] + up[1] * yOffset,
-        camera.focalPoint[2] + up[2] * yOffset,
-      ] as Point3;
+      sampleIndex[0] = rowStartIndex[0];
+      sampleIndex[1] = rowStartIndex[1];
+      sampleIndex[2] = rowStartIndex[2];
 
       for (let x = 0; x < width; x++) {
-        const xOffset = xStart + x * xStep;
-        const worldPoint = [
-          rowBase[0] + right[0] * xOffset,
-          rowBase[1] + right[1] * xOffset,
-          rowBase[2] + right[2] * xOffset,
-        ] as Point3;
         const sampledValue = this.sampleVoxelAtContinuousIndex(
           voxelManager,
           volume.dimensions,
-          VoxelManager.worldToIndexContinuous(volume, worldPoint),
+          sampleIndex,
           numberOfComponents,
           interpolationType
         );
@@ -504,15 +544,26 @@ export default class PlanarCPUVolumeSampler {
 
         sampledMin = Math.min(sampledMin, valueRange.min);
         sampledMax = Math.max(sampledMax, valueRange.max);
+        sampleIndex[0] += xStepIndexDelta[0];
+        sampleIndex[1] += xStepIndexDelta[1];
+        sampleIndex[2] += xStepIndexDelta[2];
       }
+
+      rowStartIndex[0] += yStepIndexDelta[0];
+      rowStartIndex[1] += yStepIndexDelta[1];
+      rowStartIndex[2] += yStepIndexDelta[2];
     }
 
     const minPixelValue = Number.isFinite(sampledMin)
-      ? Math.floor(sampledMin)
+      ? preserveFloatScalarSamples
+        ? sampledMin
+        : Math.floor(sampledMin)
       : fallbackRange.min;
     const maxPixelValue =
       Number.isFinite(sampledMax) && sampledMax > sampledMin
-        ? Math.ceil(sampledMax)
+        ? preserveFloatScalarSamples
+          ? sampledMax
+          : Math.ceil(sampledMax)
         : Math.max(minPixelValue + 1, fallbackRange.max);
 
     return {
@@ -594,6 +645,8 @@ export default class PlanarCPUVolumeSampler {
       (volume.dimensions[1] - 1) / 2,
       (volume.dimensions[2] - 1) / 2,
     ] as Point3;
+    const preserveFloatScalarSamples =
+      numberOfComponents === 1 && this.shouldPreserveFloatScalarSamples(volume);
 
     referenceIndex[normalAxis.axis] = normalIndex;
 
@@ -605,7 +658,8 @@ export default class PlanarCPUVolumeSampler {
       volume,
       fallbackRange.min,
       fallbackRange.max,
-      numberOfComponents
+      numberOfComponents,
+      preserveFloatScalarSamples
     );
     const scalarData = new SliceArrayConstructor(
       outputWidth * outputHeight * numberOfComponents
@@ -653,8 +707,8 @@ export default class PlanarCPUVolumeSampler {
       height: outputHeight,
       columnPixelSpacing: volume.spacing[rightAxis.axis],
       rowPixelSpacing: volume.spacing[downAxis],
-      minPixelValue: Math.floor(min),
-      maxPixelValue: Math.ceil(max),
+      minPixelValue: preserveFloatScalarSamples ? min : Math.floor(min),
+      maxPixelValue: preserveFloatScalarSamples ? max : Math.ceil(max),
       numberOfComponents,
       translationReferenceFocalPoint,
     };
@@ -835,8 +889,12 @@ export default class PlanarCPUVolumeSampler {
 
     if (numberOfComponents < 2) {
       const scalar = Number(voxelValue);
+      const preserveFloatScalarSamples =
+        pixelData instanceof Float32Array || pixelData instanceof Float64Array;
       const clampedValue = Number.isFinite(scalar)
-        ? Math.round(Math.min(fallbackMax, Math.max(fallbackMin, scalar)))
+        ? preserveFloatScalarSamples
+          ? Math.min(fallbackMax, Math.max(fallbackMin, scalar))
+          : Math.round(Math.min(fallbackMax, Math.max(fallbackMin, scalar)))
         : fallbackMin;
 
       pixelData[pixelIndex] = clampedValue;
@@ -890,10 +948,15 @@ export default class PlanarCPUVolumeSampler {
     volume: IImageVolume,
     minPixelValue: number,
     maxPixelValue: number,
-    numberOfComponents: number
+    numberOfComponents: number,
+    preserveFloatScalarSamples = false
   ): new (length: number) => SliceArray {
     if (numberOfComponents > 1) {
       return volume.voxelManager?.getConstructor() || Uint8Array;
+    }
+
+    if (preserveFloatScalarSamples) {
+      return Float32Array;
     }
 
     if (minPixelValue >= 0 && maxPixelValue <= 65535) {
@@ -940,7 +1003,7 @@ export default class PlanarCPUVolumeSampler {
       windowCenter,
       windowWidth,
       voiLUTFunction: VOILUTFunctionType.LINEAR,
-      isPreScaled: false,
+      isPreScaled: volume.isPreScaled,
       scaling: volume.scaling,
       color: numberOfComponents > 1,
       numberOfComponents,
@@ -963,6 +1026,13 @@ export default class PlanarCPUVolumeSampler {
       voxelManager,
       sizeInBytes: scalarData.byteLength,
     } as IImage;
+  }
+
+  private shouldPreserveFloatScalarSamples(volume: IImageVolume): boolean {
+    // PT fusion relies on continuous sampled SUV values. Rounding the derived
+    // slice back to integers before the CPU colormap step makes linear
+    // interpolation look coarse again.
+    return volume.metadata?.Modality === 'PT';
   }
 }
 
