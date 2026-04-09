@@ -4,22 +4,15 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TIMESTAMP="$(date '+%Y%m%d-%H%M%S')"
-PACKAGE_NAME="all"
+SUITE="legacy"
 FORCE_COMPAT="false"
 FORCE_CPU_RENDERING="false"
-PACKAGE_SET="false"
 declare -a PLAYWRIGHT_ARGS=()
 
 for arg in "$@"; do
   case "$arg" in
-    next)
-      if [[ "$PACKAGE_SET" == "true" ]]; then
-        echo "Usage: ./scripts/run-playright.sh [next] [--compat] [--cpu] [playwright args...]" >&2
-        exit 1
-      fi
-
-      PACKAGE_NAME="$arg"
-      PACKAGE_SET="true"
+    --next)
+      SUITE="next"
       ;;
     --compat)
       FORCE_COMPAT="true"
@@ -34,14 +27,14 @@ for arg in "$@"; do
 done
 
 # Next mode manages its own viewport/cpu settings via per-test query params
-if [[ "$PACKAGE_NAME" == "next" ]]; then
+if [[ "$SUITE" == "next" ]]; then
   FORCE_COMPAT="false"
   FORCE_CPU_RENDERING="false"
 fi
 
 VIEWPORT_MODE="legacy"
 
-if [[ "$PACKAGE_NAME" == "next" ]]; then
+if [[ "$SUITE" == "next" ]]; then
   VIEWPORT_MODE="next"
 elif [[ "$FORCE_COMPAT" == "true" ]]; then
   VIEWPORT_MODE="compat"
@@ -53,78 +46,22 @@ if [[ "$FORCE_CPU_RENDERING" == "true" ]]; then
   CPU_MODE_SUFFIX="-cpu"
 fi
 
-if [[ "$PACKAGE_NAME" == "next" ]]; then
+if [[ "$SUITE" == "next" ]]; then
   RUN_SLUG="next-viewport-playwright"
 else
-  RUN_SLUG="${PACKAGE_NAME}-${VIEWPORT_MODE}${CPU_MODE_SUFFIX}-playwright"
+  RUN_SLUG="${VIEWPORT_MODE}${CPU_MODE_SUFFIX}-playwright"
 fi
 
-declare -a LEGACY_TESTS=(
-  "tests/MPRReformat.spec.ts"
-  "tests/contextPoolRenderingEngine.spec.ts"
-  "tests/dicomImageLoaderWADOURI.spec.ts"
-  "tests/renderingPipeline.spec.ts"
-  "tests/stackAPI.spec.ts"
-  "tests/stackBasic.spec.ts"
-  "tests/stackBasicTiled.spec.ts"
-  "tests/stackProperties.spec.ts"
-  "tests/surfaceRendering.spec.ts"
-  "tests/ultrasoundColors.spec.ts"
-  "tests/volumeBasic.spec.ts"
-  "tests/volumeBasicTiled.spec.ts"
-  "tests/contourRendering.spec.ts"
-  "tests/contourRenderingTiled.spec.ts"
-  "tests/interpolationContourSegmentation.spec.ts"
-  "tests/labelmapGlobalConfiguration.spec.ts"
-  "tests/labelmapRendering.spec.ts"
-  "tests/labelmapRenderingTiled.spec.ts"
-  "tests/labelmapSwapping.spec.ts"
-  "tests/labelmapsegmentationtools.spec.ts"
-  "tests/multipleToolGroups.spec.ts"
-  "tests/rectangleROIThresholdStatisticsMIM.spec.ts"
-  "tests/splineContourSegmentationTools.spec.ts"
-  "tests/stackAnnotation.spec.ts"
-  "tests/stackAnnotationTiled.spec.ts"
-  "tests/stackLabelmapSegmentation/circleScissor.spec.ts"
-  "tests/stackLabelmapSegmentation/circularBrush.spec.ts"
-  "tests/stackLabelmapSegmentation/circularEraser1.spec.ts"
-  "tests/stackLabelmapSegmentation/circularEraser2.spec.ts"
-  "tests/stackLabelmapSegmentation/dynamicThresholdTests.spec.ts"
-  "tests/stackLabelmapSegmentation/rectangleScissor.spec.ts"
-  "tests/stackLabelmapSegmentation/sphereBrush.spec.ts"
-  "tests/stackManipulationTools.spec.ts"
-  "tests/volumeAnnotation.spec.ts"
-  "tests/volumeAnnotationTiled.spec.ts"
-)
-
-declare -a NEXT_TESTS=(
-  "tests/nextViewport/nextEcg.spec.ts"
-  "tests/nextViewport/nextLabelmapOverlapPlayground.spec.ts"
-  "tests/nextViewport/nextLabelmapRendering.spec.ts"
-  "tests/nextViewport/nextLabelmapSegmentationTools.spec.ts"
-  "tests/nextViewport/nextLabelmapSliceRendering.spec.ts"
-  "tests/nextViewport/nextLabelmapSliceRenderingTools.spec.ts"
-  "tests/nextViewport/nextMultiVolumeAPI.spec.ts"
-  "tests/nextViewport/nextStackAPI.spec.ts"
-  "tests/nextViewport/nextStackLabelmapSegmentation.spec.ts"
-  "tests/nextViewport/nextStackManipulationTools.spec.ts"
-  "tests/nextViewport/nextVideo.spec.ts"
-  "tests/nextViewport/nextVolumeAnnotationTools.spec.ts"
-  "tests/nextViewport/nextWsi.spec.ts"
-)
-
+# Auto-discover test files by directory convention
 declare -a SELECTED_TESTS=()
 
-case "$PACKAGE_NAME" in
-  all)
-    SELECTED_TESTS=("${LEGACY_TESTS[@]}")
-    ;;
-  next)
-    SELECTED_TESTS=("${NEXT_TESTS[@]}")
-    ;;
-esac
+if [[ "$SUITE" == "next" ]]; then
+  mapfile -t SELECTED_TESTS < <(find "$ROOT_DIR/tests/nextViewport" -name '*.spec.ts' | sort)
+else
+  mapfile -t SELECTED_TESTS < <(find "$ROOT_DIR/tests" -name '*.spec.ts' -not -path '*/nextViewport/*' | sort)
+fi
 
-echo "Suite: $PACKAGE_NAME | Mode: $VIEWPORT_MODE | CPU: $FORCE_CPU_RENDERING"
+echo "Suite: $SUITE | Mode: $VIEWPORT_MODE | CPU: $FORCE_CPU_RENDERING | Tests: ${#SELECTED_TESTS[@]}"
 echo
 
 RUN_DIR="$ROOT_DIR/reports/$RUN_SLUG/$TIMESTAMP"
