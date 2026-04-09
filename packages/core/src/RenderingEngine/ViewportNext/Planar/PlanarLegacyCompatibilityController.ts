@@ -471,7 +471,8 @@ class PlanarLegacyCompatibilityController {
       );
     }
 
-    return Math.max(0, Math.round((imageCount - 1) / 2));
+    // Match legacy VolumeViewport startup behavior for the first mounted volume.
+    return 0;
   }
 
   private getBlendModeTargetDataIds(filterActorUIDs: string[]): string[] {
