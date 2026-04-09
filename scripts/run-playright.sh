@@ -59,7 +59,7 @@ else
   RUN_SLUG="${PACKAGE_NAME}-${VIEWPORT_MODE}${CPU_MODE_SUFFIX}-playwright"
 fi
 
-declare -a CORE_TESTS=(
+declare -a LEGACY_TESTS=(
   "tests/MPRReformat.spec.ts"
   "tests/contextPoolRenderingEngine.spec.ts"
   "tests/dicomImageLoaderWADOURI.spec.ts"
@@ -68,14 +68,10 @@ declare -a CORE_TESTS=(
   "tests/stackBasic.spec.ts"
   "tests/stackBasicTiled.spec.ts"
   "tests/stackProperties.spec.ts"
-
   "tests/surfaceRendering.spec.ts"
   "tests/ultrasoundColors.spec.ts"
   "tests/volumeBasic.spec.ts"
   "tests/volumeBasicTiled.spec.ts"
-)
-
-declare -a TOOLS_TESTS=(
   "tests/contourRendering.spec.ts"
   "tests/contourRenderingTiled.spec.ts"
   "tests/interpolationContourSegmentation.spec.ts"
@@ -121,13 +117,7 @@ declare -a SELECTED_TESTS=()
 
 case "$PACKAGE_NAME" in
   all)
-    SELECTED_TESTS=("${CORE_TESTS[@]}" "${TOOLS_TESTS[@]}")
-    ;;
-  core)
-    SELECTED_TESTS=("${CORE_TESTS[@]}")
-    ;;
-  tools)
-    SELECTED_TESTS=("${TOOLS_TESTS[@]}")
+    SELECTED_TESTS=("${LEGACY_TESTS[@]}")
     ;;
   next)
     SELECTED_TESTS=("${NEXT_TESTS[@]}")
