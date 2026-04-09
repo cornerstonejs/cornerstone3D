@@ -42,6 +42,10 @@
   .diff-info.identical { color: #40916c; }
   .diff-info.minor { color: #e9c46a; }
   .diff-info.major { color: #e94560; }
+  .git-add-btn { padding: 4px 14px; font-size: 12px; font-weight: 600; background: #2d6a4f; border: 1px solid #40916c; color: #fff; cursor: pointer; border-radius: 4px; transition: all 0.15s; }
+  .git-add-btn:hover:not(:disabled) { background: #40916c; }
+  .git-add-btn:disabled { opacity: 0.4; cursor: default; }
+  .git-add-btn.staged { background: #0f3460; border-color: #0f3460; cursor: default; }
 
   .compare-area { flex: 1; display: flex; align-items: center; justify-content: center; overflow: auto; padding: 20px; position: relative; }
 
@@ -100,6 +104,7 @@
       <button data-mode="diff" onclick="setMode('diff')">Diff</button>
     </div>
     <span class="diff-info" id="diff-info"></span>
+    <button class="git-add-btn" id="git-add-btn" onclick="gitAddCurrent()" disabled>Git Add</button>
   </div>
   <div class="compare-area" id="compare-area">
     <div style="color:#555; font-size: 14px;">Select a screenshot from the sidebar, or press <kbd>J</kbd> / <kbd>K</kbd> to navigate.</div>
@@ -117,10 +122,17 @@ const BASE = "/screenshots/chromium/nextViewport/";
 let currentIndex = -1;
 let mode = "slider";
 let filteredPairs = [];
+const stagedPairs = new Set();
 
 async function loadPairs() {
   const res = await fetch("/api/pairs");
-  PAIRS = await res.json();
+  const all = await res.json();
+  all.forEach(p => {
+    if (p.status === "committed" || p.status === "staged") {
+      stagedPairs.add(p.gpu + "|" + (p.cpu || ""));
+    }
+  });
+  PAIRS = all;
   buildSidebar();
   if (filteredPairs.length > 0) selectPair(0);
 }
@@ -129,9 +141,11 @@ function buildSidebar() {
   const list = document.getElementById("sidebar-list");
   const filter = document.getElementById("filter").value.toLowerCase();
 
-  filteredPairs = PAIRS.filter(p =>
-    p.spec.toLowerCase().includes(filter) || p.name.toLowerCase().includes(filter)
-  );
+  filteredPairs = PAIRS.filter(p => {
+    const key = p.gpu + "|" + (p.cpu || "");
+    return (p.spec.toLowerCase().includes(filter) || p.name.toLowerCase().includes(filter)) &&
+      !stagedPairs.has(key);
+  });
 
   const paired = filteredPairs.filter(p => p.cpu);
   const gpuOnly = filteredPairs.filter(p => !p.cpu);
@@ -182,6 +196,8 @@ function selectPair(index) {
     info.className = "diff-info";
   }
 
+  updateGitAddBtn();
+
   document.querySelectorAll(".item").forEach(el => {
     el.classList.toggle("active", parseInt(el.dataset.index) === currentIndex);
   });
@@ -189,6 +205,65 @@ function selectPair(index) {
   if (activeEl) activeEl.scrollIntoView({ block: "nearest" });
 
   render();
+}
+
+function updateGitAddBtn() {
+  const btn = document.getElementById("git-add-btn");
+  if (currentIndex < 0) { btn.disabled = true; btn.className = "git-add-btn"; btn.textContent = "Git Add"; return; }
+  const pair = filteredPairs[currentIndex];
+  const key = pair.gpu + "|" + (pair.cpu || "");
+  if (stagedPairs.has(key)) {
+    btn.disabled = true; btn.className = "git-add-btn staged"; btn.textContent = "Staged";
+  } else {
+    btn.disabled = false; btn.className = "git-add-btn"; btn.textContent = "Git Add";
+  }
+}
+
+async function gitAddCurrent() {
+  if (currentIndex < 0) return;
+  const pair = filteredPairs[currentIndex];
+  const btn = document.getElementById("git-add-btn");
+  btn.disabled = true; btn.textContent = "Adding...";
+  const files = [BASE + pair.gpu];
+  if (pair.cpu) files.push(BASE + pair.cpu);
+  try {
+    const res = await fetch("/git-add", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ files })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      const key = pair.gpu + "|" + (pair.cpu || "");
+      stagedPairs.add(key);
+      btn.className = "git-add-btn staged"; btn.textContent = "Staged";
+      setTimeout(() => {
+        buildSidebar();
+        adjustAfterFilter();
+      }, 300);
+    } else {
+      btn.textContent = "Error"; btn.disabled = false;
+      setTimeout(() => updateGitAddBtn(), 2000);
+      console.error(data.error);
+    }
+  } catch (e) {
+    btn.textContent = "Error"; btn.disabled = false;
+    setTimeout(() => updateGitAddBtn(), 2000);
+    console.error(e);
+  }
+}
+
+function adjustAfterFilter() {
+  if (filteredPairs.length === 0) {
+    currentIndex = -1;
+    document.getElementById("compare-area").innerHTML = '<div style="color:#40916c;font-size:16px;font-weight:600;">All screenshots reviewed!</div>';
+    document.getElementById("current-title").textContent = "Done";
+    document.getElementById("diff-info").textContent = "";
+    updateGitAddBtn();
+    return;
+  }
+  if (currentIndex >= filteredPairs.length) currentIndex = filteredPairs.length - 1;
+  selectPair(Math.max(0, currentIndex));
 }
 
 function navigate(dir) {

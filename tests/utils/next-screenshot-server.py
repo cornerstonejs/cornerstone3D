@@ -68,6 +68,41 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                         "cpu": None,
                     })
 
+        # Get git tracked files to mark status
+        tracked = set()
+        try:
+            r = subprocess.run(
+                ["git", "ls-files", "--", "tests/screenshots/chromium/nextViewport/"],
+                cwd=REPO, capture_output=True, text=True
+            )
+            for line in r.stdout.strip().split("\n"):
+                if line:
+                    tracked.add(line.replace("tests/screenshots/chromium/nextViewport/", ""))
+        except Exception:
+            pass
+
+        staged = set()
+        try:
+            r = subprocess.run(
+                ["git", "diff", "--cached", "--name-only", "--", "tests/screenshots/chromium/nextViewport/"],
+                cwd=REPO, capture_output=True, text=True
+            )
+            for line in r.stdout.strip().split("\n"):
+                if line:
+                    staged.add(line.replace("tests/screenshots/chromium/nextViewport/", ""))
+        except Exception:
+            pass
+
+        for p in pairs:
+            gpu_staged = p["gpu"] in staged or p["gpu"] in tracked
+            cpu_staged = (p["cpu"] in staged or p["cpu"] in tracked) if p["cpu"] else True
+            if gpu_staged and cpu_staged:
+                p["status"] = "committed"
+            elif p["gpu"] in staged or (p["cpu"] and p["cpu"] in staged):
+                p["status"] = "staged"
+            else:
+                p["status"] = "new"
+
         self._json(200, pairs)
 
     def _json(self, code, data):
@@ -82,9 +117,41 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def do_OPTIONS(self):
         self.send_response(200)
         self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.end_headers()
+
+    def do_POST(self):
+        if self.path == "/git-add":
+            length = int(self.headers.get("Content-Length", 0))
+            body = json.loads(self.rfile.read(length))
+            files = body.get("files", [])
+            if not files:
+                self._json(400, {"error": "missing files"})
+                return
+            added = []
+            for filepath in files:
+                full = os.path.normpath(os.path.join(TESTS_DIR, filepath.lstrip("/")))
+                if not full.startswith(TESTS_DIR):
+                    self._json(400, {"error": f"path outside tests dir: {filepath}"})
+                    return
+                if not os.path.isfile(full):
+                    self._json(404, {"error": f"file not found: {filepath}"})
+                    return
+                added.append(full)
+            try:
+                result = subprocess.run(
+                    ["git", "add"] + added,
+                    cwd=REPO, capture_output=True, text=True
+                )
+                if result.returncode == 0:
+                    self._json(200, {"ok": True, "files": files})
+                else:
+                    self._json(500, {"error": result.stderr.strip()})
+            except Exception as e:
+                self._json(500, {"error": str(e)})
+        else:
+            self._json(404, {"error": "not found"})
 
 
 if __name__ == "__main__":
