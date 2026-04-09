@@ -1,4 +1,4 @@
-import { test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import {
   checkForScreenshot,
   expectViewportNextRuntime,
@@ -9,8 +9,12 @@ import {
 const EXAMPLE = 'nextStackAPI';
 const SETTLE_MS = 5000;
 
-function navigateToExample(params?: Record<string, string>) {
+function navigateToExample(
+  params?: Record<string, string>,
+  options: { settleMs?: number; waitForNetworkIdle?: boolean } = {}
+) {
   return async ({ page }) => {
+    const { settleMs = SETTLE_MS, waitForNetworkIdle = true } = options;
     const url = new URL(`http://localhost:3333/${EXAMPLE}.html`);
 
     if (params) {
@@ -22,8 +26,14 @@ function navigateToExample(params?: Record<string, string>) {
     await page.goto(url.toString());
     await page.waitForLoadState('domcontentloaded');
     await page.waitForSelector('div#content');
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(SETTLE_MS);
+
+    if (waitForNetworkIdle) {
+      await page.waitForLoadState('networkidle');
+    }
+
+    if (settleMs > 0) {
+      await page.waitForTimeout(settleMs);
+    }
   };
 }
 
@@ -109,6 +119,33 @@ test.describe('Stack API Next (GPU)', () => {
 test.describe('Stack API Next (CPU)', () => {
   test.beforeEach(navigateToExample({ cpu: 'true' }));
 
+  test('should keep toolbar disabled until the stack is ready (CPU)', async ({
+    page,
+  }) => {
+    await navigateToExample(
+      { cpu: 'true' },
+      { settleMs: 0, waitForNetworkIdle: false }
+    )({ page });
+
+    const nextImageButton = page.getByRole('button', { name: 'Next Image' });
+
+    await expect(nextImageButton).toBeDisabled();
+    await expect(nextImageButton).toBeEnabled({ timeout: 15000 });
+    await nextImageButton.click();
+
+    await expect
+      .poll(async () => {
+        return page.evaluate(() => {
+          const engine =
+            window.cornerstone?.getRenderingEngine?.('myRenderingEngine');
+          const viewport = engine?.getViewport?.('CT_STACK_NEXT');
+
+          return viewport?.getCurrentImageIdIndex?.() ?? -1;
+        });
+      })
+      .toBe(1);
+  });
+
   test('should use PlanarViewport CPU runtime', async ({ page }) => {
     await expectViewportNextRuntime(page, [
       {
@@ -121,6 +158,31 @@ test.describe('Stack API Next (CPU)', () => {
         },
       },
     ]);
+  });
+
+  test('should visually update after one next-image click (CPU)', async ({
+    page,
+  }) => {
+    const locator = getVisibleViewportCanvas(page);
+    const before = await locator.screenshot();
+
+    await page.getByRole('button', { name: 'Next Image' }).click();
+
+    await expect
+      .poll(async () => {
+        return page.evaluate(() => {
+          const engine =
+            window.cornerstone?.getRenderingEngine?.('myRenderingEngine');
+          const viewport = engine?.getViewport?.('CT_STACK_NEXT');
+
+          return viewport?.getCurrentImageIdIndex?.() ?? -1;
+        });
+      })
+      .toBe(1);
+
+    const after = await locator.screenshot();
+
+    expect(before.equals(after)).toBe(false);
   });
 
   createStackAPITests('CPU', {

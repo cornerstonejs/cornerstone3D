@@ -737,5 +737,8 @@ async function updateRenderedImage(args: {
     canvasHeight: enabledElement.canvas.height,
   });
   applyPresentationState(rendering, presentation, renderCamera);
-  ctx.display.requestRender();
+  // cpu2d is drawn by the Planar viewport itself, not by the rendering
+  // engine's VTK pass. The image swap therefore needs an immediate viewport
+  // render or the visible canvas stays stale until another direct render.
+  ctx.display.renderNow();
 }
