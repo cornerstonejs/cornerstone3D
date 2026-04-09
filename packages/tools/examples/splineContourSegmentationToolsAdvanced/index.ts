@@ -273,18 +273,20 @@ addDropdownToToolbar({
   options: { values: splineToolsNames, defaultValue: selectedToolName },
   onSelectedValueChange: (newSelectedToolNameAsStringOrNumber) => {
     const newSelectedToolName = String(newSelectedToolNameAsStringOrNumber);
-    const toolGroup = ToolGroupManager.getToolGroup(stackToolGroupId);
+    const toolGroups = [stackToolGroupId, volumeToolGroupId]
+      .map((toolGroupId) => ToolGroupManager.getToolGroup(toolGroupId))
+      .filter(Boolean);
 
-    // Set the old tool passive
-    toolGroup.setToolPassive(selectedToolName);
+    toolGroups.forEach((toolGroup) => {
+      toolGroup.setToolPassive(selectedToolName);
 
-    // Set the new tool active
-    toolGroup.setToolActive(newSelectedToolName, {
-      bindings: [
-        {
-          mouseButton: MouseBindings.Primary, // Left Click
-        },
-      ],
+      toolGroup.setToolActive(newSelectedToolName, {
+        bindings: [
+          {
+            mouseButton: MouseBindings.Primary, // Left Click
+          },
+        ],
+      });
     });
 
     selectedToolName = <string>newSelectedToolName;
