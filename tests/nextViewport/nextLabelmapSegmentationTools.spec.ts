@@ -13,13 +13,7 @@ const SETTLE_MS = 10000;
 
 function navigateToExample(params?: Record<string, string>) {
   return async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('domcontentloaded');
-
-    const link = page.locator(`a:has-text("${EXAMPLE}")`).first();
-    const href = await link.getAttribute('href');
-    const url = new URL(href, page.url());
-    url.pathname = url.pathname.replace(/\.html$/, '');
+    const url = new URL(`http://localhost:3333/${EXAMPLE}.html`);
 
     if (params) {
       for (const [key, value] of Object.entries(params)) {
@@ -28,6 +22,7 @@ function navigateToExample(params?: Record<string, string>) {
     }
 
     await page.goto(url.toString());
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForLoadState('networkidle');
     await getVisibleViewportCanvas(page, 0).waitFor({
       state: 'visible',
