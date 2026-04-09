@@ -1,4 +1,5 @@
 import cache from '../../../cache/cache';
+import RENDERING_DEFAULTS from '../../../constants/rendering';
 import { Events } from '../../../enums';
 import type { IVolumeInput } from '../../../types';
 import type DisplayArea from '../../../types/displayArea';
@@ -186,6 +187,18 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
       filterActorUIDs,
       immediate
     );
+  }
+
+  getSlabThickness(): number {
+    let slabThickness = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
+
+    for (const actor of this.getActors()) {
+      if (actor.slabThickness > slabThickness) {
+        slabThickness = actor.slabThickness;
+      }
+    }
+
+    return slabThickness;
   }
 
   getNumberOfSlices(): number {

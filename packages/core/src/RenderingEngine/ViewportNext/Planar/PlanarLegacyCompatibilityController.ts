@@ -471,8 +471,9 @@ class PlanarLegacyCompatibilityController {
       );
     }
 
-    // Match legacy VolumeViewport startup behavior for the first mounted volume.
-    return 0;
+    // Match legacy VolumeViewport startup behavior: resetCamera positions
+    // the focal point at the center of the volume, which is the middle slice.
+    return Math.floor((imageCount - 1) / 2);
   }
 
   private getBlendModeTargetDataIds(filterActorUIDs: string[]): string[] {

@@ -529,7 +529,9 @@ abstract class ViewportNext<
    */
   protected triggerCameraModifiedEvent(previousCamera: ICamera): void {
     const eventDetail: EventTypes.CameraModifiedEventDetail = {
+      previousCamera,
       camera: this.getCameraForEvent(),
+      element: this.element,
       viewportId: this.id,
       renderingEngineId: this.renderingEngineId,
     };
@@ -542,6 +544,7 @@ abstract class ViewportNext<
    */
   protected triggerCameraResetEvent(): void {
     const eventDetail: EventTypes.CameraResetEventDetail = {
+      element: this.element,
       viewportId: this.id,
       camera: this.getCameraForEvent(),
       renderingEngineId: this.renderingEngineId,
