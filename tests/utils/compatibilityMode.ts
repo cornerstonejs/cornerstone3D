@@ -1,7 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 
 function shouldForceViewportNext(): boolean {
-  return process.env.PLAYWRIGHT_FORCE_VIEWPORT_V2 === 'true';
+  return process.env.PLAYWRIGHT_FORCE_COMPAT === 'true';
 }
 
 function shouldForceCpuRendering(): boolean {

@@ -2,7 +2,7 @@ import type { Page } from '@playwright/test';
 import { validateCompatibilityRuntime } from './compatibilityMode';
 
 function shouldForceViewportNext() {
-  return process.env.PLAYWRIGHT_FORCE_VIEWPORT_V2 === 'true';
+  return process.env.PLAYWRIGHT_FORCE_COMPAT === 'true';
 }
 
 function shouldForceCpuRendering() {

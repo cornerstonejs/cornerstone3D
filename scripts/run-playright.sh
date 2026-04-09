@@ -5,24 +5,24 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TIMESTAMP="$(date '+%Y%m%d-%H%M%S')"
 PACKAGE_NAME="all"
-FORCE_VIEWPORT_V2="false"
+FORCE_COMPAT="false"
 FORCE_CPU_RENDERING="false"
 PACKAGE_SET="false"
 declare -a PLAYWRIGHT_ARGS=()
 
 for arg in "$@"; do
   case "$arg" in
-    all|core|tools|next)
+    next)
       if [[ "$PACKAGE_SET" == "true" ]]; then
-        echo "Usage: ./scripts/run-playright.sh [all|core|tools|next] [--viewport-v2] [--cpu] [playwright args...]" >&2
+        echo "Usage: ./scripts/run-playright.sh [next] [--compat] [--cpu] [playwright args...]" >&2
         exit 1
       fi
 
       PACKAGE_NAME="$arg"
       PACKAGE_SET="true"
       ;;
-    --viewport-v2)
-      FORCE_VIEWPORT_V2="true"
+    --compat)
+      FORCE_COMPAT="true"
       ;;
     --cpu)
       FORCE_CPU_RENDERING="true"
@@ -35,7 +35,7 @@ done
 
 # Next mode manages its own viewport/cpu settings via per-test query params
 if [[ "$PACKAGE_NAME" == "next" ]]; then
-  FORCE_VIEWPORT_V2="false"
+  FORCE_COMPAT="false"
   FORCE_CPU_RENDERING="false"
 fi
 
@@ -43,8 +43,8 @@ VIEWPORT_MODE="legacy"
 
 if [[ "$PACKAGE_NAME" == "next" ]]; then
   VIEWPORT_MODE="next"
-elif [[ "$FORCE_VIEWPORT_V2" == "true" ]]; then
-  VIEWPORT_MODE="viewport-v2"
+elif [[ "$FORCE_COMPAT" == "true" ]]; then
+  VIEWPORT_MODE="compat"
 fi
 
 CPU_MODE_SUFFIX=""
@@ -134,6 +134,9 @@ case "$PACKAGE_NAME" in
     ;;
 esac
 
+echo "Suite: $PACKAGE_NAME | Mode: $VIEWPORT_MODE | CPU: $FORCE_CPU_RENDERING"
+echo
+
 RUN_DIR="$ROOT_DIR/reports/$RUN_SLUG/$TIMESTAMP"
 LOG_FILE="$RUN_DIR/$RUN_SLUG.log"
 HTML_REPORT_DIR="$RUN_DIR/html-report"
@@ -144,7 +147,7 @@ cd "$ROOT_DIR"
 mkdir -p "$RUN_DIR"
 
 set +e
-PLAYWRIGHT_FORCE_VIEWPORT_V2="$FORCE_VIEWPORT_V2" \
+PLAYWRIGHT_FORCE_COMPAT="$FORCE_COMPAT" \
 PLAYWRIGHT_FORCE_CPU_RENDERING="$FORCE_CPU_RENDERING" \
 PLAYWRIGHT_HTML_OUTPUT_DIR="$HTML_REPORT_DIR" \
 PLAYWRIGHT_HTML_OPEN="never" \
@@ -156,7 +159,7 @@ PLAYWRIGHT_EXIT_CODE=${PIPESTATUS[0]}
 set -e
 
 echo
-echo "Viewport V2 forced: $FORCE_VIEWPORT_V2"
+echo "Compat mode forced: $FORCE_COMPAT"
 echo "CPU rendering forced: $FORCE_CPU_RENDERING"
 echo "Run directory: $RUN_DIR"
 echo "HTML report: $HTML_REPORT_DIR/index.html"
