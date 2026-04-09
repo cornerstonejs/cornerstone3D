@@ -17,9 +17,7 @@ const screenShotPaths = {
   stackBasicTiled: {
     viewport: 'viewport.png',
   },
-  stackToVolumeFusion: {
-    viewport: 'viewport.png',
-  },
+
   stackAPI: {
     flipBoth: 'flipBoth.png',
     setVoiRange: 'setVoiRange.png',

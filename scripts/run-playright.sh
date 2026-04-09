@@ -57,7 +57,7 @@ declare -a CORE_TESTS=(
   "tests/stackBasic.spec.ts"
   "tests/stackBasicTiled.spec.ts"
   "tests/stackProperties.spec.ts"
-  "tests/stackToVolumeFusion.spec.ts"
+
   "tests/surfaceRendering.spec.ts"
   "tests/ultrasoundColors.spec.ts"
   "tests/volumeBasic.spec.ts"

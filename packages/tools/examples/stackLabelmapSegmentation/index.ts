@@ -489,7 +489,7 @@ async function run() {
   toolGroup.addViewport(viewportId2, renderingEngineId);
   viewport = renderingEngine.getViewport(viewportId);
 
-  const ctImageIds = imageIds.slice(0, 3);
+  const ctImageIds = imageIds.slice(0, 30);
   const ctSegImages =
     await imageLoader.createAndCacheDerivedLabelmapImages(ctImageIds);
 
