@@ -25,16 +25,21 @@ for spec in "$@"; do
     continue
   fi
 
-  # Delete only legacy screenshots (not compatibility-viewport-v2-*)
+  # Delete all screenshots (both legacy and compatibility)
   count=0
   while IFS= read -r -d '' file; do
     rm "$file"
     count=$((count + 1))
-  done < <(find "$ss_path" -maxdepth 1 -name '*.png' ! -name 'compatibility-viewport-v2-*' -print0)
+  done < <(find "$ss_path" -maxdepth 1 -name '*.png' -print0)
 
-  echo "Deleted $count legacy screenshots from $spec_name"
+  echo "Deleted $count screenshots from $spec_name"
 done
 
 echo ""
-echo "Running playwright to regenerate..."
-./scripts/run-playright.sh all --project=chromium -- "$@" --update-snapshots
+echo "Running legacy playwright to regenerate..."
+cd "$ROOT_DIR"
+# npx playwright test "$@" --project=chromium --update-snapshots
+
+echo ""
+echo "Running compatibility (viewport-v2) playwright to regenerate..."
+PLAYWRIGHT_FORCE_VIEWPORT_V2="true" npx playwright test "$@" --project=chromium --update-snapshots
