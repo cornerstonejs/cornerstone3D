@@ -11,6 +11,16 @@ export type FloodFillSliceLazyOptions = {
   ensureSliceLoaded?: (z: number) => Promise<void>;
   yieldEvery?: number;
   planar?: boolean;
+  /**
+   * Optional bound in index-k from the seed slice: allow only voxels with
+   * `abs(k - seedK) <= maxDeltaK`.
+   */
+  maxDeltaK?: number;
+  /**
+   * Optional in-slice bound from the seed pixel: allow only voxels with
+   * `abs(i - seedI) <= maxDeltaIJ` AND `abs(j - seedJ) <= maxDeltaIJ`.
+   */
+  maxDeltaIJ?: number;
 };
 
 export type FloodFillSliceLazyResult = {
@@ -36,6 +46,8 @@ export async function floodFill3dSliceLazy(
     ensureSliceLoaded,
     yieldEvery = 500,
     planar = false,
+    maxDeltaK,
+    maxDeltaIJ,
   } = options;
 
   const [sx, sy, sz] = seed;
@@ -125,6 +137,15 @@ export async function floodFill3dSliceLazy(
       const ny = y + dirs[di][1];
       const nz = z + dirs[di][2];
       if (nx < 0 || nx >= w || ny < 0 || ny >= h || nz < 0 || nz >= d) {
+        continue;
+      }
+      if (maxDeltaK >= 0 && Math.abs(nz - sz) > maxDeltaK) {
+        continue;
+      }
+      if (
+        maxDeltaIJ >= 0 &&
+        (Math.abs(nx - sx) > maxDeltaIJ || Math.abs(ny - sy) > maxDeltaIJ)
+      ) {
         continue;
       }
       if (planar && nz !== sz) {

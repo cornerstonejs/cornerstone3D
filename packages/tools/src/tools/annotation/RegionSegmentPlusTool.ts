@@ -64,6 +64,13 @@ type RegionSegmentPlusFloodFillConfig = {
    * Flood fill only on the seed slice (fixed k); forwarded as `planar` on `floodFill`.
    */
   planar?: boolean;
+  /** Optional flood bound in k from the seed: `abs(k-seedK) <= maxDeltaK`. */
+  maxDeltaK?: number;
+  /**
+   * Optional flood bound in i/j from the seed:
+   * `abs(i-seedI) <= maxDeltaIJ` and `abs(j-seedJ) <= maxDeltaIJ`.
+   */
+  maxDeltaIJ?: number;
 };
 
 type RegionSegmentPlusToolData = GrowCutToolData & {
@@ -115,6 +122,8 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
         } satisfies RegionSegmentIntensityRangeStrategyConfig,
         /** Same meaning as `floodFill`’s `planar` option (fixed slice k). */
         planar: false,
+        maxDeltaK: 25,
+        maxDeltaIJ: 512,
         floodFillIslandRemoval: {
           removeExternalIslands: true,
           removeInternalIslands: true,
@@ -586,6 +595,8 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
           applyInternalIslandRemoval: islandCfg.removeInternalIslands !== false,
           islandRemovalVerboseLogging: islandCfg.verboseLogging === true,
           planar: floodFillPlanar,
+          maxDeltaK: ffConfig.maxDeltaK,
+          maxDeltaIJ: ffConfig.maxDeltaIJ,
         },
       });
       if (!result) {

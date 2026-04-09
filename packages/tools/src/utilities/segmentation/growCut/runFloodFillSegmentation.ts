@@ -84,6 +84,13 @@ type FloodFillSegmentationOptions = {
    * When true, forwarded to {@link floodFill} as `planar` (same acquisition slice as seed, fixed k).
    */
   planar?: boolean;
+  /** Optional flood bound in k from seed: keep voxels with `abs(k-seedK) <= maxDeltaK`. */
+  maxDeltaK?: number;
+  /**
+   * Optional flood bound in i/j from seed: keep voxels with
+   * `abs(i-seedI) <= maxDeltaIJ` and `abs(j-seedJ) <= maxDeltaIJ`.
+   */
+  maxDeltaIJ?: number;
 };
 
 function getDisplayVoiSnapshot(
@@ -656,6 +663,8 @@ async function runFloodFillSegmentation({
         ensureSliceLoaded,
         yieldEvery: options.yieldEvery ?? 500,
         planar,
+        maxDeltaK: options.maxDeltaK,
+        maxDeltaIJ: options.maxDeltaIJ,
       });
 
     if (filledVoxelCount === 0) {

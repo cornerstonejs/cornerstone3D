@@ -45,6 +45,8 @@ const initialRegionSegPlusPlanarFill = false;
 const initialRegionSegPlusIslandExternal = true;
 const initialRegionSegPlusIslandInternal = true;
 const initialRegionSegPlusIslandVerbose = false;
+const initialRegionSegPlusMaxDeltaK = 25;
+const initialRegionSegPlusMaxDeltaIJ = 512;
 
 /**
  * Primary binding = one-click region segment. Tool class is registered explicitly
@@ -60,6 +62,8 @@ const regionSegmentPlusToolMap = new Map([
         hoverPrecheckEnabled: initialRegionSegPlusHoverPrecheck,
         intensityRangeStrategy: DEFAULT_FILL_STRATEGY,
         planar: initialRegionSegPlusPlanarFill,
+        maxDeltaK: initialRegionSegPlusMaxDeltaK,
+        maxDeltaIJ: initialRegionSegPlusMaxDeltaIJ,
         floodFillIslandRemoval: {
           removeExternalIslands: initialRegionSegPlusIslandExternal,
           removeInternalIslands: initialRegionSegPlusIslandInternal,
@@ -320,6 +324,36 @@ addSliderToToolbar({
   },
 });
 
+addSliderToToolbar({
+  title: `FF max ΔK (${initialRegionSegPlusMaxDeltaK})`,
+  range: [1, 1024],
+  defaultValue: initialRegionSegPlusMaxDeltaK,
+  label: {
+    html: 'test',
+  },
+  onSelectedValueChange: (value: string) => {
+    updateFloodBoundsConfig({ maxDeltaK: Number(value) });
+  },
+  updateLabelOnChange: (value: string, label: HTMLElement) => {
+    label.innerHTML = `FF max ΔK (${value})`;
+  },
+});
+
+addSliderToToolbar({
+  title: `FF max ΔIJ (${initialRegionSegPlusMaxDeltaIJ})`,
+  range: [5, 512],
+  defaultValue: initialRegionSegPlusMaxDeltaIJ,
+  label: {
+    html: 'test',
+  },
+  onSelectedValueChange: (value: string) => {
+    updateFloodBoundsConfig({ maxDeltaIJ: Number(value) });
+  },
+  updateLabelOnChange: (value: string, label: HTMLElement) => {
+    label.innerHTML = `FF max ΔIJ (${value})`;
+  },
+});
+
 // =============================================================================
 
 const updateSeedVariancesConfig = cstUtils.throttle(
@@ -340,6 +374,25 @@ const updateSeedVariancesConfig = cstUtils.throttle(
     toolInstance.refresh();
   },
   1000
+);
+
+const updateFloodBoundsConfig = cstUtils.throttle(
+  ({ maxDeltaK, maxDeltaIJ }) => {
+    const toolInstance = toolGroup.getToolInstance(
+      RegionSegmentPlusTool.toolName
+    );
+    const { configuration: config } = toolInstance;
+
+    if (maxDeltaK !== undefined) {
+      config.maxDeltaK = Number(maxDeltaK);
+    }
+    if (maxDeltaIJ !== undefined) {
+      config.maxDeltaIJ = Number(maxDeltaIJ);
+    }
+
+    toolInstance.refresh();
+  },
+  250
 );
 
 function parseStudySeries(dicomSeriesArray: unknown[]): StudySeriesEntry[] {
