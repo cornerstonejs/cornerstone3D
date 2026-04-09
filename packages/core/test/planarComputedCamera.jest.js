@@ -4,11 +4,20 @@ jest.mock('../src/metaData', () => ({
 }));
 
 import { OrientationAxis, VOILUTFunctionType } from '../src/enums';
+import calculateTransform from '../src/RenderingEngine/helpers/cpuFallback/rendering/calculateTransform';
+import canvasToPixel from '../src/RenderingEngine/helpers/cpuFallback/rendering/canvasToPixel';
+import getDefaultViewport from '../src/RenderingEngine/helpers/cpuFallback/rendering/getDefaultViewport';
 import * as metaData from '../src/metaData';
 import {
   PlanarStackViewportCamera,
   PlanarVolumeViewportCamera,
 } from '../src/RenderingEngine/ViewportNext/Planar';
+import {
+  resolvePlanarCpuImageDisplayedArea,
+  resolvePlanarCpuViewportScale,
+} from '../src/RenderingEngine/ViewportNext/Planar/planarCpuViewportMath';
+import { resolvePlanarRenderCamera } from '../src/RenderingEngine/ViewportNext/Planar/planarRenderCamera';
+import { createPlanarImageSliceBasis } from '../src/RenderingEngine/ViewportNext/Planar/planarSliceBasis';
 
 function createImage(imageId = 'image-1') {
   return {
@@ -120,6 +129,156 @@ describe('Planar resolved cameras', () => {
     const worldPoint = camera.canvasToWorld(canvasPoint);
 
     expectPoint2Close(camera.worldToCanvas(worldPoint), canvasPoint);
+  });
+
+  it('resolves identical stack image cameras for cpu and vtk image paths', () => {
+    const state = {
+      camera: {
+        orientation: OrientationAxis.AXIAL,
+      },
+      canvasHeight: 257,
+      canvasWidth: 513,
+      currentImageIdIndex: 0,
+      frameOfReferenceUID: 'image-for',
+      image: createImage(),
+      maxImageIdIndex: 0,
+    };
+    const vtkCamera = new PlanarStackViewportCamera({
+      ...state,
+      usePixelGridCenter: false,
+    });
+    const cpuCamera = new PlanarStackViewportCamera({
+      ...state,
+      usePixelGridCenter: true,
+    });
+    const referenceCanvasPoint = [173, 91];
+    const vtkResolvedCamera = vtkCamera.toICamera();
+    const cpuResolvedCamera = cpuCamera.toICamera();
+
+    expectPoint3Close(
+      cpuResolvedCamera.focalPoint,
+      vtkResolvedCamera.focalPoint
+    );
+    expectPoint3Close(cpuResolvedCamera.position, vtkResolvedCamera.position);
+    expectPoint3Close(
+      cpuResolvedCamera.viewPlaneNormal,
+      vtkResolvedCamera.viewPlaneNormal
+    );
+    expectPoint3Close(cpuResolvedCamera.viewUp, vtkResolvedCamera.viewUp);
+    expect(cpuResolvedCamera.parallelScale).toBeCloseTo(
+      vtkResolvedCamera.parallelScale,
+      5
+    );
+    expectPoint3Close(
+      cpuCamera.canvasToWorld(referenceCanvasPoint),
+      vtkCamera.canvasToWorld(referenceCanvasPoint)
+    );
+
+    const cpuTransformedCamera = cpuCamera
+      .withZoom(1.75, referenceCanvasPoint)
+      .withPan([24, -18])
+      .flipHorizontal();
+    const vtkTransformedCamera = vtkCamera
+      .withZoom(1.75, referenceCanvasPoint)
+      .withPan([24, -18])
+      .flipHorizontal();
+    const cpuResolvedTransformed = cpuTransformedCamera.toICamera();
+    const vtkResolvedTransformed = vtkTransformedCamera.toICamera();
+
+    expectPoint3Close(
+      cpuResolvedTransformed.focalPoint,
+      vtkResolvedTransformed.focalPoint
+    );
+    expectPoint3Close(
+      cpuResolvedTransformed.position,
+      vtkResolvedTransformed.position
+    );
+    expect(cpuResolvedTransformed.parallelScale).toBeCloseTo(
+      vtkResolvedTransformed.parallelScale,
+      5
+    );
+    expectPoint2Close(cpuTransformedCamera.pan, vtkTransformedCamera.pan);
+    expectPoint2Close(
+      cpuTransformedCamera.worldToCanvas(
+        cpuTransformedCamera.canvasToWorld(referenceCanvasPoint)
+      ),
+      vtkTransformedCamera.worldToCanvas(
+        vtkTransformedCamera.canvasToWorld(referenceCanvasPoint)
+      )
+    );
+  });
+
+  it('uses pixel-center lattice scaling for cpu stack image transforms', () => {
+    const image = {
+      ...createImage(),
+      columns: 512,
+      rows: 512,
+      width: 512,
+      height: 512,
+    };
+    const canvas = document.createElement('canvas');
+
+    canvas.width = 500;
+    canvas.height = 500;
+
+    const renderCamera = resolvePlanarRenderCamera({
+      sliceBasis: createPlanarImageSliceBasis({
+        canvasHeight: canvas.height,
+        canvasWidth: canvas.width,
+        image,
+      }),
+      canvasHeight: canvas.height,
+      canvasWidth: canvas.width,
+    });
+    const enabledElement = {
+      canvas,
+      image,
+      renderingTools: {},
+      viewport: getDefaultViewport(canvas, image),
+    };
+
+    enabledElement.viewport.displayedArea =
+      resolvePlanarCpuImageDisplayedArea(image);
+    enabledElement.viewport.scale = resolvePlanarCpuViewportScale({
+      canvas,
+      parallelScale: renderCamera.parallelScale,
+      columnPixelSpacing: image.columnPixelSpacing,
+      rowPixelSpacing: image.rowPixelSpacing,
+    });
+    enabledElement.transform = calculateTransform(enabledElement);
+
+    expect(
+      canvasToPixel(enabledElement, [0, canvas.height / 2])[0]
+    ).toBeCloseTo(0.5, 5);
+    expect(
+      canvasToPixel(enabledElement, [canvas.width, canvas.height / 2])[0]
+    ).toBeCloseTo(511.5, 5);
+  });
+
+  it('uses half-pixel crop bounds for cpu stack image rasterization', () => {
+    const image = {
+      ...createImage(),
+      columns: 512,
+      rows: 512,
+      width: 512,
+      height: 512,
+      columnPixelSpacing: 0.976562,
+      rowPixelSpacing: 0.976562,
+    };
+
+    expect(resolvePlanarCpuImageDisplayedArea(image)).toEqual({
+      tlhc: {
+        x: 1.5,
+        y: 1.5,
+      },
+      brhc: {
+        x: 512.5,
+        y: 512.5,
+      },
+      rowPixelSpacing: 0.976562,
+      columnPixelSpacing: 0.976562,
+      presentationSizeMode: 'NONE',
+    });
   });
 
   it('keeps the zoom anchor stable when zooming at a canvas point', () => {

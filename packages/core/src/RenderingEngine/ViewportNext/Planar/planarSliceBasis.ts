@@ -103,9 +103,9 @@ function buildPlanarImageSliceBasis(args: {
     .map((value) => -value) as Point3;
   const viewUp = columnVector.map((value) => -value) as Point3;
   const sliceCenterWorld = [...origin] as Point3;
-  // CPU and VTK image paths intentionally use different slice centers.
-  // VTK uses the viewport-compatible middle pixel index, while CPU follows
-  // the full displayed-area center used by canvas pixel transforms.
+  // Stack images must resolve the same slice basis regardless of whether the
+  // pixels are drawn through VTK or the CPU fallback. Keeping the center and
+  // fit geometry shared prevents render-mode switches from nudging the camera.
   vec3.scaleAndAdd(
     sliceCenterWorld as unknown as vec3,
     sliceCenterWorld as unknown as vec3,
@@ -153,25 +153,15 @@ export function createPlanarImageSliceBasis(args: {
 }
 
 /**
- * CPU fallback centers the image using the full displayed-area width/height
- * rather than the geometric center of the pixel-center lattice. This keeps
- * the semantic camera aligned with the actual CPU canvas transform.
+ * CPU stack rendering reuses the VTK-compatible image slice basis so that the
+ * semantic camera is invariant across render modes.
  */
 export function createPlanarCpuImageSliceBasis(args: {
   image: IImage;
   canvasWidth: number;
   canvasHeight: number;
 }): PlanarSliceBasis {
-  const { image } = args;
-  const { dimensions, spacing } = getImageDataMetadata(image);
-
-  return buildPlanarImageSliceBasis({
-    ...args,
-    rowOffset: (dimensions[0] * spacing[0]) / 2,
-    columnOffset: (dimensions[1] * spacing[1]) / 2,
-    rowsForFit: Math.max(image.rows, 1),
-    columnsForFit: Math.max(image.columns, 1),
-  });
+  return createPlanarImageSliceBasis(args);
 }
 
 /**

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Screenshot Comparison: Legacy vs Compatibility</title>
+<title>Next Viewport: GPU vs CPU</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace; background: #1a1a2e; color: #e0e0e0; display: flex; height: 100vh; overflow: hidden; }
@@ -11,14 +11,14 @@
   /* Sidebar */
   .sidebar { width: 300px; min-width: 300px; background: #16213e; border-right: 1px solid #0f3460; display: flex; flex-direction: column; }
   .sidebar-header { padding: 16px; border-bottom: 1px solid #0f3460; }
-  .sidebar-header h2 { font-size: 14px; color: #e94560; margin-bottom: 8px; }
+  .sidebar-header h2 { font-size: 14px; color: #4cc9f0; margin-bottom: 8px; }
   .sidebar-header .stats { font-size: 12px; color: #888; }
   .sidebar-filter { padding: 8px 16px; border-bottom: 1px solid #0f3460; }
   .sidebar-filter input { width: 100%; padding: 6px 10px; background: #1a1a2e; border: 1px solid #0f3460; color: #e0e0e0; border-radius: 4px; font-size: 13px; outline: none; }
-  .sidebar-filter input:focus { border-color: #e94560; }
+  .sidebar-filter input:focus { border-color: #4cc9f0; }
   .sidebar-list { flex: 1; overflow-y: auto; }
   .spec-group { border-bottom: 1px solid #0f3460; }
-  .spec-group-header { padding: 8px 16px; font-size: 12px; color: #e94560; background: #1a1a2e; cursor: pointer; user-select: none; position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 6px; }
+  .spec-group-header { padding: 8px 16px; font-size: 12px; color: #4cc9f0; background: #1a1a2e; cursor: pointer; user-select: none; position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 6px; }
   .spec-group-header .arrow { transition: transform 0.2s; font-size: 10px; }
   .spec-group-header.collapsed .arrow { transform: rotate(-90deg); }
   .spec-group-items { }
@@ -26,6 +26,7 @@
   .item { padding: 6px 16px 6px 28px; font-size: 13px; cursor: pointer; transition: background 0.15s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .item:hover { background: #1a1a2e; }
   .item.active { background: #0f3460; color: #fff; }
+  .item.gpu-only { color: #888; font-style: italic; }
 
   /* Main */
   .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
@@ -33,35 +34,29 @@
   .toolbar .title { font-size: 14px; font-weight: 600; flex: 1; min-width: 200px; }
   .toolbar .mode-btns { display: flex; gap: 4px; }
   .toolbar .mode-btns button { padding: 4px 12px; font-size: 12px; background: #1a1a2e; border: 1px solid #0f3460; color: #e0e0e0; cursor: pointer; border-radius: 4px; }
-  .toolbar .mode-btns button.active { background: #e94560; border-color: #e94560; color: #fff; }
+  .toolbar .mode-btns button.active { background: #4cc9f0; border-color: #4cc9f0; color: #1a1a2e; }
   .toolbar .nav-btns { display: flex; gap: 4px; }
   .toolbar .nav-btns button { padding: 4px 10px; font-size: 12px; background: #1a1a2e; border: 1px solid #0f3460; color: #e0e0e0; cursor: pointer; border-radius: 4px; }
-  .toolbar .nav-btns button:hover { border-color: #e94560; }
-  .hide-staged-label { font-size: 12px; color: #888; cursor: pointer; user-select: none; display: flex; align-items: center; gap: 4px; }
-  .hide-staged-label input { cursor: pointer; }
+  .toolbar .nav-btns button:hover { border-color: #4cc9f0; }
   .diff-info { font-size: 12px; padding: 4px 10px; border-radius: 4px; font-weight: 600; white-space: nowrap; }
   .diff-info.identical { color: #40916c; }
   .diff-info.minor { color: #e9c46a; }
   .diff-info.major { color: #e94560; }
-  .git-add-btn { padding: 4px 14px; font-size: 12px; font-weight: 600; background: #2d6a4f; border: 1px solid #40916c; color: #fff; cursor: pointer; border-radius: 4px; transition: all 0.15s; }
-  .git-add-btn:hover:not(:disabled) { background: #40916c; }
-  .git-add-btn:disabled { opacity: 0.4; cursor: default; }
-  .git-add-btn.staged { background: #0f3460; border-color: #0f3460; cursor: default; }
 
   .compare-area { flex: 1; display: flex; align-items: center; justify-content: center; overflow: auto; padding: 20px; position: relative; }
 
   /* Slider mode */
   .slider-container { position: relative; display: inline-block; cursor: col-resize; user-select: none; }
   .slider-container img { display: block; max-width: 80vw; max-height: 80vh; image-rendering: pixelated; }
-  .slider-container .img-legacy { position: relative; }
-  .slider-container .img-compat-wrap { position: absolute; top: 0; left: 0; height: 100%; overflow: hidden; pointer-events: none; }
-  .slider-container .img-compat-wrap img { display: block; image-rendering: pixelated; }
-  .slider-line { position: absolute; top: 0; height: 100%; width: 2px; background: #e94560; pointer-events: none; z-index: 2; }
+  .slider-container .img-gpu { position: relative; }
+  .slider-container .img-cpu-wrap { position: absolute; top: 0; left: 0; height: 100%; overflow: hidden; pointer-events: none; }
+  .slider-container .img-cpu-wrap img { display: block; image-rendering: pixelated; }
+  .slider-line { position: absolute; top: 0; height: 100%; width: 2px; background: #4cc9f0; pointer-events: none; z-index: 2; }
   .slider-label { position: absolute; top: 8px; padding: 2px 8px; font-size: 11px; border-radius: 3px; pointer-events: none; z-index: 3; white-space: nowrap; }
   .slider-label.left { right: 100%; margin-right: 12px; background: #0f3460; color: #e0e0e0; }
-  .slider-label.right { left: 100%; margin-left: 12px; background: #e94560; color: #fff; }
-  .slider-handle { position: absolute; top: 50%; width: 32px; height: 32px; margin-top: -16px; margin-left: -16px; background: #e94560; border-radius: 50%; z-index: 3; pointer-events: none; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 8px rgba(233,69,96,0.5); }
-  .slider-handle::before { content: "<>"; font-size: 12px; color: #fff; }
+  .slider-label.right { left: 100%; margin-left: 12px; background: #4cc9f0; color: #1a1a2e; }
+  .slider-handle { position: absolute; top: 50%; width: 32px; height: 32px; margin-top: -16px; margin-left: -16px; background: #4cc9f0; border-radius: 50%; z-index: 3; pointer-events: none; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 8px rgba(76,201,240,0.5); }
+  .slider-handle::before { content: "<>"; font-size: 12px; color: #1a1a2e; }
 
   /* Side-by-side mode */
   .sidebyside { display: flex; gap: 20px; align-items: flex-start; }
@@ -83,7 +78,7 @@
 
 <div class="sidebar">
   <div class="sidebar-header">
-    <h2>Legacy vs Compatibility</h2>
+    <h2>GPU vs CPU</h2>
     <div class="stats" id="stats"></div>
   </div>
   <div class="sidebar-filter">
@@ -104,9 +99,7 @@
       <button data-mode="sidebyside" onclick="setMode('sidebyside')">Side by Side</button>
       <button data-mode="diff" onclick="setMode('diff')">Diff</button>
     </div>
-    <label class="hide-staged-label"><input type="checkbox" id="hide-staged" checked onchange="buildSidebar(); adjustAfterFilter()"> Hide staged</label>
     <span class="diff-info" id="diff-info"></span>
-    <button class="git-add-btn" id="git-add-btn" onclick="gitAddCurrent()" disabled>Git Add</button>
   </div>
   <div class="compare-area" id="compare-area">
     <div style="color:#555; font-size: 14px;">Select a screenshot from the sidebar, or press <kbd>J</kbd> / <kbd>K</kbd> to navigate.</div>
@@ -120,38 +113,29 @@
 <script>
 let PAIRS = [];
 
-const BASE = "/screenshots/chromium/";
+const BASE = "/screenshots/chromium/nextViewport/";
 let currentIndex = -1;
 let mode = "slider";
 let filteredPairs = [];
-const stagedFiles = new Set();
 
 async function loadPairs() {
   const res = await fetch("/api/pairs");
-  const all = await res.json();
-  // Pre-mark committed/staged files
-  all.forEach(p => {
-    if (p.status === "committed" || p.status === "staged") {
-      stagedFiles.add(p.compat);
-    }
-  });
-  PAIRS = all;
+  PAIRS = await res.json();
   buildSidebar();
   if (filteredPairs.length > 0) selectPair(0);
 }
 
-// Build sidebar
 function buildSidebar() {
   const list = document.getElementById("sidebar-list");
   const filter = document.getElementById("filter").value.toLowerCase();
 
-  const hideStaged = document.getElementById("hide-staged").checked;
   filteredPairs = PAIRS.filter(p =>
-    (p.spec.toLowerCase().includes(filter) || p.name.toLowerCase().includes(filter)) &&
-    !(hideStaged && (stagedFiles.has(p.compat) || p.status === "committed"))
+    p.spec.toLowerCase().includes(filter) || p.name.toLowerCase().includes(filter)
   );
 
-  document.getElementById("stats").textContent = `${filteredPairs.length} pairs across ${new Set(filteredPairs.map(p=>p.spec)).size} specs`;
+  const paired = filteredPairs.filter(p => p.cpu);
+  const gpuOnly = filteredPairs.filter(p => !p.cpu);
+  document.getElementById("stats").textContent = `${paired.length} pairs, ${gpuOnly.length} GPU-only across ${new Set(filteredPairs.map(p=>p.spec)).size} specs`;
 
   const groups = {};
   filteredPairs.forEach((p, i) => {
@@ -174,8 +158,8 @@ function buildSidebar() {
     itemsDiv.className = "spec-group-items";
     items.forEach(item => {
       const el = document.createElement("div");
-      el.className = "item" + (item.index === currentIndex ? " active" : "");
-      el.textContent = item.name;
+      el.className = "item" + (item.index === currentIndex ? " active" : "") + (item.cpu ? "" : " gpu-only");
+      el.textContent = item.name + (item.cpu ? "" : " (GPU only)");
       el.dataset.index = item.index;
       el.onclick = () => selectPair(item.index);
       itemsDiv.appendChild(el);
@@ -190,14 +174,17 @@ function selectPair(index) {
   currentIndex = index;
   const pair = filteredPairs[currentIndex];
   document.getElementById("current-title").textContent = `${pair.spec.replace(".spec.ts", "")} / ${pair.name}`;
-  updateGitAddBtn();
-  computeDiff(pair);
+  if (pair.cpu) {
+    computeDiff(pair);
+  } else {
+    const info = document.getElementById("diff-info");
+    info.textContent = "GPU only (no CPU screenshot)";
+    info.className = "diff-info";
+  }
 
-  // Update active sidebar item
   document.querySelectorAll(".item").forEach(el => {
     el.classList.toggle("active", parseInt(el.dataset.index) === currentIndex);
   });
-  // Scroll active item into view
   const activeEl = document.querySelector(".item.active");
   if (activeEl) activeEl.scrollIntoView({ block: "nearest" });
 
@@ -224,19 +211,29 @@ function render() {
   const area = document.getElementById("compare-area");
   const pair = filteredPairs[currentIndex];
   const bust = "?t=" + Date.now();
-  const legacySrc = BASE + pair.legacy + bust;
-  const compatSrc = BASE + pair.compat + bust;
+  const gpuSrc = BASE + pair.gpu + bust;
+
+  if (!pair.cpu) {
+    area.innerHTML = `
+      <div style="text-align:center">
+        <div style="font-size:12px;color:#888;margin-bottom:8px">GPU</div>
+        <img src="${gpuSrc}" style="max-width:80vw;max-height:80vh;image-rendering:pixelated" draggable="false" />
+      </div>`;
+    return;
+  }
+
+  const cpuSrc = BASE + pair.cpu + bust;
 
   if (mode === "slider") {
     area.innerHTML = `
       <div class="slider-container" id="slider">
-        <img class="img-legacy" src="${legacySrc}" draggable="false" />
-        <div class="img-compat-wrap" id="compat-wrap">
-          <img src="${compatSrc}" draggable="false" />
+        <img class="img-gpu" src="${gpuSrc}" draggable="false" />
+        <div class="img-cpu-wrap" id="cpu-wrap">
+          <img src="${cpuSrc}" draggable="false" />
         </div>
         <div class="slider-line" id="slider-line">
-          <div class="slider-label left">Legacy</div>
-          <div class="slider-label right">Compat</div>
+          <div class="slider-label left">GPU</div>
+          <div class="slider-label right">CPU</div>
           <div class="slider-handle"></div>
         </div>
       </div>`;
@@ -245,19 +242,19 @@ function render() {
     area.innerHTML = `
       <div class="sidebyside">
         <div class="panel">
-          <div class="panel-label">Legacy</div>
-          <img src="${legacySrc}" draggable="false" />
+          <div class="panel-label">GPU</div>
+          <img src="${gpuSrc}" draggable="false" />
         </div>
         <div class="panel">
-          <div class="panel-label">Compatibility (ViewportNext)</div>
-          <img src="${compatSrc}" draggable="false" />
+          <div class="panel-label">CPU</div>
+          <img src="${cpuSrc}" draggable="false" />
         </div>
       </div>`;
   } else if (mode === "diff") {
     area.innerHTML = `
       <div class="diff-container">
-        <img src="${legacySrc}" draggable="false" />
-        <img class="diff-overlay" src="${compatSrc}" draggable="false" />
+        <img src="${gpuSrc}" draggable="false" />
+        <img class="diff-overlay" src="${cpuSrc}" draggable="false" />
       </div>
       <div style="position:absolute;bottom:12px;left:20px;font-size:11px;color:#888;">
         Black = identical pixels. Colored = differences.
@@ -267,29 +264,25 @@ function render() {
 
 function initSlider() {
   const slider = document.getElementById("slider");
-  const wrap = document.getElementById("compat-wrap");
+  const wrap = document.getElementById("cpu-wrap");
   const line = document.getElementById("slider-line");
   if (!slider) return;
 
   let dragging = false;
-  let sliderPos = 0.5;
 
   function updateSlider(ratio) {
-    sliderPos = Math.max(0, Math.min(1, ratio));
+    ratio = Math.max(0, Math.min(1, ratio));
     const w = slider.offsetWidth;
-    const px = sliderPos * w;
+    const px = ratio * w;
     wrap.style.width = px + "px";
     line.style.left = px + "px";
   }
 
-  // Wait for image to load, then size compat to match legacy and set initial position
-  const img = slider.querySelector(".img-legacy");
-  const compatImg = wrap.querySelector("img");
+  const img = slider.querySelector(".img-gpu");
+  const cpuImg = wrap.querySelector("img");
   function setInitial() {
-    const w = img.offsetWidth;
-    const h = img.offsetHeight;
-    compatImg.style.width = w + "px";
-    compatImg.style.height = h + "px";
+    cpuImg.style.width = img.offsetWidth + "px";
+    cpuImg.style.height = img.offsetHeight + "px";
     updateSlider(0.5);
   }
   if (img.complete) setInitial(); else img.onload = setInitial;
@@ -302,7 +295,6 @@ function initSlider() {
   });
   window.addEventListener("mouseup", () => { dragging = false; });
 
-  // Touch
   slider.addEventListener("touchstart", (e) => {
     dragging = true;
     const rect = slider.getBoundingClientRect();
@@ -316,23 +308,10 @@ function initSlider() {
   window.addEventListener("touchend", () => { dragging = false; });
 }
 
-function adjustAfterFilter() {
-  if (filteredPairs.length === 0) {
-    currentIndex = -1;
-    document.getElementById("compare-area").innerHTML = '<div style="color:#40916c;font-size:16px;font-weight:600;">All screenshots reviewed!</div>';
-    document.getElementById("current-title").textContent = "Done";
-    document.getElementById("diff-info").textContent = "";
-    updateGitAddBtn();
-    return;
-  }
-  if (currentIndex >= filteredPairs.length) currentIndex = filteredPairs.length - 1;
-  selectPair(Math.max(0, currentIndex));
-}
-
 const diffCache = {};
 
 function computeDiff(pair) {
-  const key = pair.legacy + "|" + pair.compat;
+  const key = pair.gpu + "|" + pair.cpu;
   if (diffCache[key] !== undefined) { showDiff(diffCache[key]); return; }
 
   const info = document.getElementById("diff-info");
@@ -384,8 +363,8 @@ function computeDiff(pair) {
   imgA.onload = onLoad;
   imgB.onload = onLoad;
   const cb = "?t=" + Date.now();
-  imgA.src = BASE + pair.legacy + cb;
-  imgB.src = BASE + pair.compat + cb;
+  imgA.src = BASE + pair.gpu + cb;
+  imgB.src = BASE + pair.cpu + cb;
 }
 
 function showDiff(result) {
@@ -400,59 +379,6 @@ function showDiff(result) {
   }
 }
 
-function updateGitAddBtn() {
-  const btn = document.getElementById("git-add-btn");
-  if (currentIndex < 0) { btn.disabled = true; btn.className = "git-add-btn"; btn.textContent = "Git Add"; return; }
-  const pair = filteredPairs[currentIndex];
-  if (stagedFiles.has(pair.compat)) {
-    btn.disabled = true; btn.className = "git-add-btn staged"; btn.textContent = "Staged";
-  } else {
-    btn.disabled = false; btn.className = "git-add-btn"; btn.textContent = "Git Add";
-  }
-}
-
-async function gitAddCurrent() {
-  if (currentIndex < 0) return;
-  const pair = filteredPairs[currentIndex];
-  const btn = document.getElementById("git-add-btn");
-  btn.disabled = true; btn.textContent = "Adding...";
-  try {
-    const [resCompat, resLegacy] = await Promise.all([
-      fetch("/git-add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ file: BASE + pair.compat })
-      }),
-      fetch("/git-add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ file: BASE + pair.legacy })
-      })
-    ]);
-    const dataCompat = await resCompat.json();
-    const dataLegacy = await resLegacy.json();
-    if (dataCompat.ok && dataLegacy.ok) {
-      stagedFiles.add(pair.compat);
-      btn.className = "git-add-btn staged"; btn.textContent = "Staged";
-      // Rebuild sidebar and advance
-      setTimeout(() => {
-        buildSidebar();
-        adjustAfterFilter();
-      }, 300);
-    } else {
-      const errMsg = !dataCompat.ok ? dataCompat.error : dataLegacy.error;
-      btn.textContent = "Error"; btn.disabled = false;
-      setTimeout(() => updateGitAddBtn(), 2000);
-      console.error(errMsg);
-    }
-  } catch (e) {
-    btn.textContent = "Error"; btn.disabled = false;
-    setTimeout(() => updateGitAddBtn(), 2000);
-    console.error(e);
-  }
-}
-
-// Keyboard shortcuts
 document.addEventListener("keydown", (e) => {
   if (e.target.tagName === "INPUT") return;
   if (e.key === "j" || e.key === "ArrowDown") { e.preventDefault(); navigate(1); }
@@ -468,7 +394,7 @@ document.getElementById("filter").addEventListener("input", () => {
   const oldPair = currentIndex >= 0 ? filteredPairs[currentIndex] : null;
   buildSidebar();
   if (oldPair) {
-    const newIdx = filteredPairs.findIndex(p => p.legacy === oldPair.legacy);
+    const newIdx = filteredPairs.findIndex(p => p.gpu === oldPair.gpu);
     if (newIdx >= 0) currentIndex = newIdx;
     else currentIndex = -1;
   }

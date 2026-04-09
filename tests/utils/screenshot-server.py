@@ -7,7 +7,9 @@ import signal
 import urllib.parse
 
 PORT = 8123
-ROOT = os.path.dirname(os.path.abspath(__file__))
+# tests/utils/ -> tests/
+TESTS_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) if os.path.basename(os.path.dirname(os.path.abspath(__file__))) == "utils" else os.path.dirname(os.path.abspath(__file__))
+REPO = os.path.dirname(TESTS_DIR)
 
 
 def kill_existing_server():
@@ -23,11 +25,10 @@ def kill_existing_server():
                 os.kill(int(pid), signal.SIGKILL)
     except Exception:
         pass
-REPO = os.path.dirname(ROOT)
 
 class Handler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, directory=ROOT, **kwargs)
+        super().__init__(*args, directory=TESTS_DIR, **kwargs)
 
     def end_headers(self):
         self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
@@ -40,7 +41,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             super().do_GET()
 
     def _serve_pairs(self):
-        ss_dir = os.path.join(ROOT, "screenshots", "chromium")
+        ss_dir = os.path.join(TESTS_DIR, "screenshots", "chromium")
         # Find all pairs
         pairs = []
         for dirpath, dirs, files in sorted(os.walk(ss_dir)):
@@ -100,8 +101,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 self._json(400, {"error": "missing file"})
                 return
             # Resolve relative to screenshots dir and ensure it stays inside
-            full = os.path.normpath(os.path.join(ROOT, filepath))
-            if not full.startswith(ROOT):
+            full = os.path.normpath(os.path.join(TESTS_DIR, filepath.lstrip("/")))
+            if not full.startswith(TESTS_DIR):
                 self._json(400, {"error": "path outside tests dir"})
                 return
             if not os.path.isfile(full):
@@ -140,5 +141,5 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 if __name__ == "__main__":
     kill_existing_server()
     server = http.server.HTTPServer(("", PORT), Handler)
-    print(f"Serving on http://localhost:{PORT}/screenshot-compare.html")
+    print(f"Serving on http://localhost:{PORT}/utils/screenshot-compare.html")
     server.serve_forever()
