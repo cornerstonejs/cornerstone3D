@@ -9,6 +9,7 @@ import type {
   Point2,
   Point3,
   ReferenceCompatibleOptions,
+  VOIRange,
   ViewPresentation,
   ViewPresentationSelector,
   ViewReference,
@@ -1355,6 +1356,13 @@ class PlanarViewport extends ViewportNext<
           | undefined;
 
         return rendering?.actor ?? rendering?.compatibilityActor;
+      },
+      getDefaultVOIRange: (dataId) => {
+        const rendering = this.getBinding(dataId)?.rendering as
+          | { defaultVOIRange?: VOIRange }
+          | undefined;
+
+        return rendering?.defaultVOIRange;
       },
       getImageCount: () => this.getImageIds().length,
       getMaxImageIdIndex: () => this.getMaxImageIdIndex(),

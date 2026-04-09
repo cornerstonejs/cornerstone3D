@@ -140,21 +140,28 @@ function _imageChangeEventListener(evt) {
   );
 
   if (evt.type === Enums.Events.CAMERA_MODIFIED) {
-    if (!hasVolumeImageMapperRepresentation) {
+    if (hasVolumeImageMapperRepresentation) {
+      const nextState = getVolumeViewportLabelmapImageMapperState(viewport);
+      const previousState = perViewportManualTriggers.get(viewportId);
+
+      if (previousState === nextState.key) {
+        return;
+      }
+
+      perViewportManualTriggers.set(viewportId, nextState.key);
+      triggerSegmentationRender(viewportId);
+      return;
+    }
+
+    // ViewportNext (PLANAR_V2) does not fire PRE_STACK_NEW_IMAGE when
+    // scrolling, so handle stack labelmap sync on CAMERA_MODIFIED instead.
+    const isPlanarV2 = viewport.type === Enums.ViewportType.PLANAR_V2;
+    if (!isPlanarV2) {
       perViewportManualTriggers.delete(viewportId);
       return;
     }
 
-    const nextState = getVolumeViewportLabelmapImageMapperState(viewport);
-    const previousState = perViewportManualTriggers.get(viewportId);
-
-    if (previousState === nextState.key) {
-      return;
-    }
-
-    perViewportManualTriggers.set(viewportId, nextState.key);
-    triggerSegmentationRender(viewportId);
-    return;
+    // Fall through to the stack labelmap sync below.
   }
 
   if (getViewportLabelmapRenderMode(viewport) !== 'image') {

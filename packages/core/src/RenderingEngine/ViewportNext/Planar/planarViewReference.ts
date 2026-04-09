@@ -80,7 +80,9 @@ export function getPlanarReferencedImageId(args: {
             Math.max(0, viewRefSpecifier.sliceIndex),
             imageIds.length - 1
           )
-        : getCurrentSliceIndex(rendering);
+        : typeof args.camera?.imageIdIndex === 'number'
+          ? Math.min(Math.max(0, args.camera.imageIdIndex), imageIds.length - 1)
+          : getCurrentSliceIndex(rendering);
 
     return imageIds[imageIdIndex];
   }

@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Screenshot Comparison: Legacy vs Compatibility</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace; background: #1a1a2e; color: #e0e0e0; display: flex; height: 100vh; overflow: hidden; }
+
+  /* Sidebar */
+  .sidebar { width: 300px; min-width: 300px; background: #16213e; border-right: 1px solid #0f3460; display: flex; flex-direction: column; }
+  .sidebar-header { padding: 16px; border-bottom: 1px solid #0f3460; }
+  .sidebar-header h2 { font-size: 14px; color: #e94560; margin-bottom: 8px; }
+  .sidebar-header .stats { font-size: 12px; color: #888; }
+  .sidebar-filter { padding: 8px 16px; border-bottom: 1px solid #0f3460; }
+  .sidebar-filter input { width: 100%; padding: 6px 10px; background: #1a1a2e; border: 1px solid #0f3460; color: #e0e0e0; border-radius: 4px; font-size: 13px; outline: none; }
+  .sidebar-filter input:focus { border-color: #e94560; }
+  .sidebar-list { flex: 1; overflow-y: auto; }
+  .spec-group { border-bottom: 1px solid #0f3460; }
+  .spec-group-header { padding: 8px 16px; font-size: 12px; color: #e94560; background: #1a1a2e; cursor: pointer; user-select: none; position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 6px; }
+  .spec-group-header .arrow { transition: transform 0.2s; font-size: 10px; }
+  .spec-group-header.collapsed .arrow { transform: rotate(-90deg); }
+  .spec-group-items { }
+  .spec-group-header.collapsed + .spec-group-items { display: none; }
+  .item { padding: 6px 16px 6px 28px; font-size: 13px; cursor: pointer; transition: background 0.15s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .item:hover { background: #1a1a2e; }
+  .item.active { background: #0f3460; color: #fff; }
+
+  /* Main */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .toolbar { display: flex; align-items: center; gap: 16px; padding: 12px 20px; background: #16213e; border-bottom: 1px solid #0f3460; flex-wrap: wrap; }
+  .toolbar .title { font-size: 14px; font-weight: 600; flex: 1; min-width: 200px; }
+  .toolbar .mode-btns { display: flex; gap: 4px; }
+  .toolbar .mode-btns button { padding: 4px 12px; font-size: 12px; background: #1a1a2e; border: 1px solid #0f3460; color: #e0e0e0; cursor: pointer; border-radius: 4px; }
+  .toolbar .mode-btns button.active { background: #e94560; border-color: #e94560; color: #fff; }
+  .toolbar .nav-btns { display: flex; gap: 4px; }
+  .toolbar .nav-btns button { padding: 4px 10px; font-size: 12px; background: #1a1a2e; border: 1px solid #0f3460; color: #e0e0e0; cursor: pointer; border-radius: 4px; }
+  .toolbar .nav-btns button:hover { border-color: #e94560; }
+  .hide-staged-label { font-size: 12px; color: #888; cursor: pointer; user-select: none; display: flex; align-items: center; gap: 4px; }
+  .hide-staged-label input { cursor: pointer; }
+  .diff-info { font-size: 12px; padding: 4px 10px; border-radius: 4px; font-weight: 600; white-space: nowrap; }
+  .diff-info.identical { color: #40916c; }
+  .diff-info.minor { color: #e9c46a; }
+  .diff-info.major { color: #e94560; }
+  .git-add-btn { padding: 4px 14px; font-size: 12px; font-weight: 600; background: #2d6a4f; border: 1px solid #40916c; color: #fff; cursor: pointer; border-radius: 4px; transition: all 0.15s; }
+  .git-add-btn:hover:not(:disabled) { background: #40916c; }
+  .git-add-btn:disabled { opacity: 0.4; cursor: default; }
+  .git-add-btn.staged { background: #0f3460; border-color: #0f3460; cursor: default; }
+
+  .compare-area { flex: 1; display: flex; align-items: center; justify-content: center; overflow: auto; padding: 20px; position: relative; }
+
+  /* Slider mode */
+  .slider-container { position: relative; display: inline-block; cursor: col-resize; user-select: none; }
+  .slider-container img { display: block; max-width: 80vw; max-height: 80vh; image-rendering: pixelated; }
+  .slider-container .img-legacy { position: relative; }
+  .slider-container .img-compat-wrap { position: absolute; top: 0; left: 0; height: 100%; overflow: hidden; pointer-events: none; }
+  .slider-container .img-compat-wrap img { display: block; image-rendering: pixelated; }
+  .slider-line { position: absolute; top: 0; height: 100%; width: 2px; background: #e94560; pointer-events: none; z-index: 2; }
+  .slider-label { position: absolute; top: 8px; padding: 2px 8px; font-size: 11px; border-radius: 3px; pointer-events: none; z-index: 3; white-space: nowrap; }
+  .slider-label.left { right: 100%; margin-right: 12px; background: #0f3460; color: #e0e0e0; }
+  .slider-label.right { left: 100%; margin-left: 12px; background: #e94560; color: #fff; }
+  .slider-handle { position: absolute; top: 50%; width: 32px; height: 32px; margin-top: -16px; margin-left: -16px; background: #e94560; border-radius: 50%; z-index: 3; pointer-events: none; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 8px rgba(233,69,96,0.5); }
+  .slider-handle::before { content: "<>"; font-size: 12px; color: #fff; }
+
+  /* Side-by-side mode */
+  .sidebyside { display: flex; gap: 20px; align-items: flex-start; }
+  .sidebyside .panel { text-align: center; }
+  .sidebyside .panel img { max-width: 38vw; max-height: 80vh; image-rendering: pixelated; display: block; }
+  .sidebyside .panel-label { font-size: 12px; padding: 6px; color: #888; }
+
+  /* Diff mode */
+  .diff-container { position: relative; display: inline-block; }
+  .diff-container img { display: block; max-width: 80vw; max-height: 80vh; image-rendering: pixelated; }
+  .diff-container .diff-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; mix-blend-mode: difference; }
+
+  /* Keyboard hints */
+  .kbd-hints { position: fixed; bottom: 12px; right: 12px; font-size: 11px; color: #555; }
+  .kbd-hints kbd { background: #16213e; border: 1px solid #0f3460; padding: 1px 5px; border-radius: 3px; font-family: inherit; }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-header">
+    <h2>Legacy vs Compatibility</h2>
+    <div class="stats" id="stats"></div>
+  </div>
+  <div class="sidebar-filter">
+    <input type="text" id="filter" placeholder="Filter screenshots..." />
+  </div>
+  <div class="sidebar-list" id="sidebar-list"></div>
+</div>
+
+<div class="main">
+  <div class="toolbar">
+    <div class="title" id="current-title">Select a screenshot</div>
+    <div class="nav-btns">
+      <button onclick="navigate(-1)">Prev</button>
+      <button onclick="navigate(1)">Next</button>
+    </div>
+    <div class="mode-btns">
+      <button class="active" data-mode="slider" onclick="setMode('slider')">Slider</button>
+      <button data-mode="sidebyside" onclick="setMode('sidebyside')">Side by Side</button>
+      <button data-mode="diff" onclick="setMode('diff')">Diff</button>
+    </div>
+    <label class="hide-staged-label"><input type="checkbox" id="hide-staged" checked onchange="buildSidebar(); adjustAfterFilter()"> Hide staged</label>
+    <span class="diff-info" id="diff-info"></span>
+    <button class="git-add-btn" id="git-add-btn" onclick="gitAddCurrent()" disabled>Git Add</button>
+  </div>
+  <div class="compare-area" id="compare-area">
+    <div style="color:#555; font-size: 14px;">Select a screenshot from the sidebar, or press <kbd>J</kbd> / <kbd>K</kbd> to navigate.</div>
+  </div>
+</div>
+
+<div class="kbd-hints">
+  <kbd>J</kbd>/<kbd>K</kbd> navigate &nbsp; <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> mode &nbsp; <kbd>/</kbd> filter
+</div>
+
+<script>
+let PAIRS = [];
+
+const BASE = "screenshots/chromium/";
+let currentIndex = -1;
+let mode = "slider";
+let filteredPairs = [];
+const stagedFiles = new Set();
+
+async function loadPairs() {
+  const res = await fetch("/api/pairs");
+  const all = await res.json();
+  // Pre-mark committed/staged files
+  all.forEach(p => {
+    if (p.status === "committed" || p.status === "staged") {
+      stagedFiles.add(p.compat);
+    }
+  });
+  PAIRS = all;
+  buildSidebar();
+  if (filteredPairs.length > 0) selectPair(0);
+}
+
+// Build sidebar
+function buildSidebar() {
+  const list = document.getElementById("sidebar-list");
+  const filter = document.getElementById("filter").value.toLowerCase();
+
+  const hideStaged = document.getElementById("hide-staged").checked;
+  filteredPairs = PAIRS.filter(p =>
+    (p.spec.toLowerCase().includes(filter) || p.name.toLowerCase().includes(filter)) &&
+    !(hideStaged && (stagedFiles.has(p.compat) || p.status === "committed"))
+  );
+
+  document.getElementById("stats").textContent = `${filteredPairs.length} pairs across ${new Set(filteredPairs.map(p=>p.spec)).size} specs`;
+
+  const groups = {};
+  filteredPairs.forEach((p, i) => {
+    if (!groups[p.spec]) groups[p.spec] = [];
+    groups[p.spec].push({ ...p, index: i });
+  });
+
+  list.innerHTML = "";
+  for (const [spec, items] of Object.entries(groups)) {
+    const group = document.createElement("div");
+    group.className = "spec-group";
+
+    const header = document.createElement("div");
+    header.className = "spec-group-header";
+    header.innerHTML = `<span class="arrow">&#9660;</span> ${spec.replace(".spec.ts", "")}`;
+    header.onclick = () => header.classList.toggle("collapsed");
+    group.appendChild(header);
+
+    const itemsDiv = document.createElement("div");
+    itemsDiv.className = "spec-group-items";
+    items.forEach(item => {
+      const el = document.createElement("div");
+      el.className = "item" + (item.index === currentIndex ? " active" : "");
+      el.textContent = item.name;
+      el.dataset.index = item.index;
+      el.onclick = () => selectPair(item.index);
+      itemsDiv.appendChild(el);
+    });
+    group.appendChild(itemsDiv);
+    list.appendChild(group);
+  }
+}
+
+function selectPair(index) {
+  if (index < 0 || index >= filteredPairs.length) return;
+  currentIndex = index;
+  const pair = filteredPairs[currentIndex];
+  document.getElementById("current-title").textContent = `${pair.spec.replace(".spec.ts", "")} / ${pair.name}`;
+  updateGitAddBtn();
+  computeDiff(pair);
+
+  // Update active sidebar item
+  document.querySelectorAll(".item").forEach(el => {
+    el.classList.toggle("active", parseInt(el.dataset.index) === currentIndex);
+  });
+  // Scroll active item into view
+  const activeEl = document.querySelector(".item.active");
+  if (activeEl) activeEl.scrollIntoView({ block: "nearest" });
+
+  render();
+}
+
+function navigate(dir) {
+  if (filteredPairs.length === 0) return;
+  let next = currentIndex + dir;
+  if (next < 0) next = filteredPairs.length - 1;
+  if (next >= filteredPairs.length) next = 0;
+  selectPair(next);
+}
+
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll(".mode-btns button").forEach(b => {
+    b.classList.toggle("active", b.dataset.mode === m);
+  });
+  if (currentIndex >= 0) render();
+}
+
+function render() {
+  const area = document.getElementById("compare-area");
+  const pair = filteredPairs[currentIndex];
+  const bust = "?t=" + Date.now();
+  const legacySrc = BASE + pair.legacy + bust;
+  const compatSrc = BASE + pair.compat + bust;
+
+  if (mode === "slider") {
+    area.innerHTML = `
+      <div class="slider-container" id="slider">
+        <img class="img-legacy" src="${legacySrc}" draggable="false" />
+        <div class="img-compat-wrap" id="compat-wrap">
+          <img src="${compatSrc}" draggable="false" />
+        </div>
+        <div class="slider-line" id="slider-line">
+          <div class="slider-label left">Legacy</div>
+          <div class="slider-label right">Compat</div>
+          <div class="slider-handle"></div>
+        </div>
+      </div>`;
+    initSlider();
+  } else if (mode === "sidebyside") {
+    area.innerHTML = `
+      <div class="sidebyside">
+        <div class="panel">
+          <div class="panel-label">Legacy</div>
+          <img src="${legacySrc}" draggable="false" />
+        </div>
+        <div class="panel">
+          <div class="panel-label">Compatibility (ViewportNext)</div>
+          <img src="${compatSrc}" draggable="false" />
+        </div>
+      </div>`;
+  } else if (mode === "diff") {
+    area.innerHTML = `
+      <div class="diff-container">
+        <img src="${legacySrc}" draggable="false" />
+        <img class="diff-overlay" src="${compatSrc}" draggable="false" />
+      </div>
+      <div style="position:absolute;bottom:12px;left:20px;font-size:11px;color:#888;">
+        Black = identical pixels. Colored = differences.
+      </div>`;
+  }
+}
+
+function initSlider() {
+  const slider = document.getElementById("slider");
+  const wrap = document.getElementById("compat-wrap");
+  const line = document.getElementById("slider-line");
+  if (!slider) return;
+
+  let dragging = false;
+  let sliderPos = 0.5;
+
+  function updateSlider(ratio) {
+    sliderPos = Math.max(0, Math.min(1, ratio));
+    const w = slider.offsetWidth;
+    const px = sliderPos * w;
+    wrap.style.width = px + "px";
+    line.style.left = px + "px";
+  }
+
+  // Wait for image to load, then size compat to match legacy and set initial position
+  const img = slider.querySelector(".img-legacy");
+  const compatImg = wrap.querySelector("img");
+  function setInitial() {
+    const w = img.offsetWidth;
+    const h = img.offsetHeight;
+    compatImg.style.width = w + "px";
+    compatImg.style.height = h + "px";
+    updateSlider(0.5);
+  }
+  if (img.complete) setInitial(); else img.onload = setInitial;
+
+  slider.addEventListener("mousedown", (e) => { dragging = true; updateSlider(e.offsetX / slider.offsetWidth); });
+  window.addEventListener("mousemove", (e) => {
+    if (!dragging) return;
+    const rect = slider.getBoundingClientRect();
+    updateSlider((e.clientX - rect.left) / rect.width);
+  });
+  window.addEventListener("mouseup", () => { dragging = false; });
+
+  // Touch
+  slider.addEventListener("touchstart", (e) => {
+    dragging = true;
+    const rect = slider.getBoundingClientRect();
+    updateSlider((e.touches[0].clientX - rect.left) / rect.width);
+  });
+  window.addEventListener("touchmove", (e) => {
+    if (!dragging) return;
+    const rect = slider.getBoundingClientRect();
+    updateSlider((e.touches[0].clientX - rect.left) / rect.width);
+  });
+  window.addEventListener("touchend", () => { dragging = false; });
+}
+
+function adjustAfterFilter() {
+  if (filteredPairs.length === 0) {
+    currentIndex = -1;
+    document.getElementById("compare-area").innerHTML = '<div style="color:#40916c;font-size:16px;font-weight:600;">All screenshots reviewed!</div>';
+    document.getElementById("current-title").textContent = "Done";
+    document.getElementById("diff-info").textContent = "";
+    updateGitAddBtn();
+    return;
+  }
+  if (currentIndex >= filteredPairs.length) currentIndex = filteredPairs.length - 1;
+  selectPair(Math.max(0, currentIndex));
+}
+
+const diffCache = {};
+
+function computeDiff(pair) {
+  const key = pair.legacy + "|" + pair.compat;
+  if (diffCache[key] !== undefined) { showDiff(diffCache[key]); return; }
+
+  const info = document.getElementById("diff-info");
+  info.textContent = "computing...";
+  info.className = "diff-info";
+
+  const imgA = new Image();
+  const imgB = new Image();
+  let loaded = 0;
+
+  function onLoad() {
+    if (++loaded < 2) return;
+    const w = Math.max(imgA.width, imgB.width);
+    const h = Math.max(imgA.height, imgB.height);
+    const canvas = document.createElement("canvas");
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext("2d");
+
+    ctx.drawImage(imgA, 0, 0);
+    const dataA = ctx.getImageData(0, 0, w, h).data;
+
+    ctx.clearRect(0, 0, w, h);
+    ctx.drawImage(imgB, 0, 0);
+    const dataB = ctx.getImageData(0, 0, w, h).data;
+
+    let totalDiff = 0;
+    let diffPixels = 0;
+    const totalPixels = w * h;
+
+    for (let i = 0; i < dataA.length; i += 4) {
+      const dr = Math.abs(dataA[i] - dataB[i]);
+      const dg = Math.abs(dataA[i+1] - dataB[i+1]);
+      const db = Math.abs(dataA[i+2] - dataB[i+2]);
+      const maxD = Math.max(dr, dg, db);
+      if (maxD > 0) diffPixels++;
+      totalDiff += (dr + dg + db) / (3 * 255);
+    }
+
+    const result = {
+      pctPixels: (diffPixels / totalPixels * 100),
+      pctValue: (totalDiff / totalPixels * 100),
+      diffPixels,
+      totalPixels
+    };
+    diffCache[key] = result;
+    showDiff(result);
+  }
+
+  imgA.onload = onLoad;
+  imgB.onload = onLoad;
+  const cb = "?t=" + Date.now();
+  imgA.src = BASE + pair.legacy + cb;
+  imgB.src = BASE + pair.compat + cb;
+}
+
+function showDiff(result) {
+  const info = document.getElementById("diff-info");
+  if (result.pctPixels === 0) {
+    info.textContent = "0% diff (identical)";
+    info.className = "diff-info identical";
+  } else {
+    const cls = result.pctPixels < 5 ? "minor" : "major";
+    info.textContent = `${result.pctPixels.toFixed(2)}% pixels differ | ${result.pctValue.toFixed(2)}% avg intensity diff`;
+    info.className = "diff-info " + cls;
+  }
+}
+
+function updateGitAddBtn() {
+  const btn = document.getElementById("git-add-btn");
+  if (currentIndex < 0) { btn.disabled = true; btn.className = "git-add-btn"; btn.textContent = "Git Add"; return; }
+  const pair = filteredPairs[currentIndex];
+  if (stagedFiles.has(pair.compat)) {
+    btn.disabled = true; btn.className = "git-add-btn staged"; btn.textContent = "Staged";
+  } else {
+    btn.disabled = false; btn.className = "git-add-btn"; btn.textContent = "Git Add";
+  }
+}
+
+async function gitAddCurrent() {
+  if (currentIndex < 0) return;
+  const pair = filteredPairs[currentIndex];
+  const btn = document.getElementById("git-add-btn");
+  btn.disabled = true; btn.textContent = "Adding...";
+  try {
+    const [resCompat, resLegacy] = await Promise.all([
+      fetch("/git-add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ file: BASE + pair.compat })
+      }),
+      fetch("/git-add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ file: BASE + pair.legacy })
+      })
+    ]);
+    const dataCompat = await resCompat.json();
+    const dataLegacy = await resLegacy.json();
+    if (dataCompat.ok && dataLegacy.ok) {
+      stagedFiles.add(pair.compat);
+      btn.className = "git-add-btn staged"; btn.textContent = "Staged";
+      // Rebuild sidebar and advance
+      setTimeout(() => {
+        buildSidebar();
+        adjustAfterFilter();
+      }, 300);
+    } else {
+      const errMsg = !dataCompat.ok ? dataCompat.error : dataLegacy.error;
+      btn.textContent = "Error"; btn.disabled = false;
+      setTimeout(() => updateGitAddBtn(), 2000);
+      console.error(errMsg);
+    }
+  } catch (e) {
+    btn.textContent = "Error"; btn.disabled = false;
+    setTimeout(() => updateGitAddBtn(), 2000);
+    console.error(e);
+  }
+}
+
+// Keyboard shortcuts
+document.addEventListener("keydown", (e) => {
+  if (e.target.tagName === "INPUT") return;
+  if (e.key === "j" || e.key === "ArrowDown") { e.preventDefault(); navigate(1); }
+  if (e.key === "k" || e.key === "ArrowUp") { e.preventDefault(); navigate(-1); }
+  if (e.key === "1") setMode("slider");
+  if (e.key === "2") setMode("sidebyside");
+  if (e.key === "3") setMode("diff");
+  if (e.key === "/") { e.preventDefault(); document.getElementById("filter").focus(); }
+  if (e.key === "Escape") { document.getElementById("filter").blur(); }
+});
+
+document.getElementById("filter").addEventListener("input", () => {
+  const oldPair = currentIndex >= 0 ? filteredPairs[currentIndex] : null;
+  buildSidebar();
+  if (oldPair) {
+    const newIdx = filteredPairs.findIndex(p => p.legacy === oldPair.legacy);
+    if (newIdx >= 0) currentIndex = newIdx;
+    else currentIndex = -1;
+  }
+});
+
+loadPairs();
+</script>
+</body>
+</html>
