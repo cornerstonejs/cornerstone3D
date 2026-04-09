@@ -4,7 +4,7 @@ import {
   expectViewportNextRuntime,
   getVisibleViewportCanvas,
   screenShotPaths,
-} from './utils/index';
+} from '../utils/index';
 
 const EXAMPLE = 'nextVolumeAnnotationTools';
 const SETTLE_MS = 5000;

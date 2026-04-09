@@ -3,9 +3,9 @@ import {
   checkForScreenshot,
   expectViewportNextRuntime,
   screenShotPaths,
-} from './utils/index';
+} from '../utils/index';
 
-const EXAMPLE = 'nextWsi';
+const EXAMPLE = 'nextVideo';
 const SETTLE_MS = 5000;
 
 function navigateToExample(params?: Record<string, string>) {
@@ -31,25 +31,25 @@ function navigateToExample(params?: Record<string, string>) {
   };
 }
 
-test.describe('WSI ViewportNext', () => {
+test.describe('Video ViewportNext', () => {
   test.beforeEach(navigateToExample());
 
-  test('should use WSIViewportNext runtime', async ({ page }) => {
+  test('should use VideoViewportNext runtime', async ({ page }) => {
     await expectViewportNextRuntime(page, [
       {
         renderingEngineId: 'myRenderingEngine',
-        viewportId: 'wsiNextViewport',
-        constructorName: 'WSIViewportNext',
-        type: 'wholeSlideV2',
+        viewportId: 'videoNextViewport',
+        constructorName: 'VideoViewportNext',
+        type: 'videoV2',
         renderModesByDataId: {
-          'wsi-next:primary': 'wsi2d',
+          'video-next:primary': 'video2d',
         },
       },
     ]);
   });
 
-  test('should render WSI data', async ({ page }) => {
+  test('should render video data', async ({ page }) => {
     const locator = page.locator('#cornerstone-element');
-    await checkForScreenshot(page, locator, screenShotPaths.wsiNext.viewport);
+    await checkForScreenshot(page, locator, screenShotPaths.videoNext.viewport);
   });
 });

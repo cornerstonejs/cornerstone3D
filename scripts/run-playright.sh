@@ -12,9 +12,9 @@ declare -a PLAYWRIGHT_ARGS=()
 
 for arg in "$@"; do
   case "$arg" in
-    all|core|tools)
+    all|core|tools|next)
       if [[ "$PACKAGE_SET" == "true" ]]; then
-        echo "Usage: ./scripts/run-playright.sh [all|core|tools] [--viewport-v2] [--cpu] [playwright args...]" >&2
+        echo "Usage: ./scripts/run-playright.sh [all|core|tools|next] [--viewport-v2] [--cpu] [playwright args...]" >&2
         exit 1
       fi
 
@@ -33,9 +33,17 @@ for arg in "$@"; do
   esac
 done
 
+# Next mode manages its own viewport/cpu settings via per-test query params
+if [[ "$PACKAGE_NAME" == "next" ]]; then
+  FORCE_VIEWPORT_V2="false"
+  FORCE_CPU_RENDERING="false"
+fi
+
 VIEWPORT_MODE="legacy"
 
-if [[ "$FORCE_VIEWPORT_V2" == "true" ]]; then
+if [[ "$PACKAGE_NAME" == "next" ]]; then
+  VIEWPORT_MODE="next"
+elif [[ "$FORCE_VIEWPORT_V2" == "true" ]]; then
   VIEWPORT_MODE="viewport-v2"
 fi
 
@@ -45,13 +53,16 @@ if [[ "$FORCE_CPU_RENDERING" == "true" ]]; then
   CPU_MODE_SUFFIX="-cpu"
 fi
 
-RUN_SLUG="${PACKAGE_NAME}-${VIEWPORT_MODE}${CPU_MODE_SUFFIX}-playwright"
+if [[ "$PACKAGE_NAME" == "next" ]]; then
+  RUN_SLUG="next-viewport-playwright"
+else
+  RUN_SLUG="${PACKAGE_NAME}-${VIEWPORT_MODE}${CPU_MODE_SUFFIX}-playwright"
+fi
 
 declare -a CORE_TESTS=(
   "tests/MPRReformat.spec.ts"
   "tests/contextPoolRenderingEngine.spec.ts"
   "tests/dicomImageLoaderWADOURI.spec.ts"
-  "tests/planarArchitecture.spec.ts"
   "tests/renderingPipeline.spec.ts"
   "tests/stackAPI.spec.ts"
   "tests/stackBasic.spec.ts"
@@ -90,6 +101,22 @@ declare -a TOOLS_TESTS=(
   "tests/volumeAnnotationTiled.spec.ts"
 )
 
+declare -a NEXT_TESTS=(
+  "tests/nextViewport/nextEcg.spec.ts"
+  "tests/nextViewport/nextLabelmapOverlapPlayground.spec.ts"
+  "tests/nextViewport/nextLabelmapRendering.spec.ts"
+  "tests/nextViewport/nextLabelmapSegmentationTools.spec.ts"
+  "tests/nextViewport/nextLabelmapSliceRendering.spec.ts"
+  "tests/nextViewport/nextLabelmapSliceRenderingTools.spec.ts"
+  "tests/nextViewport/nextMultiVolumeAPI.spec.ts"
+  "tests/nextViewport/nextStackAPI.spec.ts"
+  "tests/nextViewport/nextStackLabelmapSegmentation.spec.ts"
+  "tests/nextViewport/nextStackManipulationTools.spec.ts"
+  "tests/nextViewport/nextVideo.spec.ts"
+  "tests/nextViewport/nextVolumeAnnotationTools.spec.ts"
+  "tests/nextViewport/nextWsi.spec.ts"
+)
+
 declare -a SELECTED_TESTS=()
 
 case "$PACKAGE_NAME" in
@@ -101,6 +128,9 @@ case "$PACKAGE_NAME" in
     ;;
   tools)
     SELECTED_TESTS=("${TOOLS_TESTS[@]}")
+    ;;
+  next)
+    SELECTED_TESTS=("${NEXT_TESTS[@]}")
     ;;
 esac
 

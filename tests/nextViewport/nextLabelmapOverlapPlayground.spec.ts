@@ -5,7 +5,7 @@ import {
   getVisibleViewportCanvas,
   screenShotPaths,
   simulateDrawPath,
-} from './utils/index';
+} from '../utils/index';
 
 const EXAMPLE = 'nextLabelmapOverlapPlayground';
 const SETTLE_MS = 10000;

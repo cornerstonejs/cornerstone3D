@@ -5,7 +5,7 @@ import {
   getVisibleViewportCanvas,
   screenShotPaths,
   simulateDrag,
-} from './utils/index';
+} from '../utils/index';
 
 const EXAMPLE = 'nextStackLabelmapSegmentation';
 const SETTLE_MS = 10000;

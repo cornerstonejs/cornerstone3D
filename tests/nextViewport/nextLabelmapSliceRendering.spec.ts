@@ -5,7 +5,7 @@ import {
   getVisibleViewportCanvas,
   getSegmentationActorClassNames,
   screenShotPaths,
-} from './utils/index';
+} from '../utils/index';
 
 const EXAMPLE = 'nextLabelmapSliceRendering';
 const SETTLE_MS = 5000;

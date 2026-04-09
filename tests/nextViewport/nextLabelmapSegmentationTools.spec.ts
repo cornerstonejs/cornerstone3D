@@ -5,7 +5,7 @@ import {
   getVisibleViewportCanvas,
   screenShotPaths,
   simulateClicksOnElement,
-} from './utils/index';
+} from '../utils/index';
 
 const EXAMPLE = 'nextLabelmapSegmentationTools';
 const SEGMENTATION_ID = 'MY_SEGMENTATION_ID';

@@ -23,6 +23,10 @@ jobs:
             mode: compatibility
             run_args: "all --viewport-v2 --project=chromium"
             collect_coverage: false
+          - node-version: 20
+            mode: next
+            run_args: "next --project=chromium"
+            collect_coverage: false
     name: Playwright (${{ matrix.mode }})
     steps:
       - uses: actions/checkout@v4

@@ -4,7 +4,7 @@ import {
   expectViewportNextRuntime,
   getVisibleViewportCanvas,
   screenShotPaths,
-} from './utils/index';
+} from '../utils/index';
 
 const EXAMPLE = 'nextStackAPI';
 const SETTLE_MS = 5000;

@@ -6,7 +6,7 @@ import {
   getSegmentationActorClassNames,
   screenShotPaths,
   simulateClicksOnElement,
-} from './utils/index';
+} from '../utils/index';
 
 const EXAMPLE = 'nextLabelmapSliceRenderingTools';
 const SETTLE_MS = 10000;

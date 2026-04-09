@@ -3,7 +3,7 @@ import {
   checkForScreenshot,
   expectViewportNextRuntime,
   screenShotPaths,
-} from './utils/index';
+} from '../utils/index';
 
 const EXAMPLE = 'nextEcg';
 const SETTLE_MS = 5000;
