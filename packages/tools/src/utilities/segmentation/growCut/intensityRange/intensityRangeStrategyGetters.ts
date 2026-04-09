@@ -17,7 +17,8 @@ export type RegionSegmentBuiltInStrategy =
   | 'meanStdMapped'
   | 'fixedPercent5'
   | 'fixedPercent10'
-  | 'canvasDiskTriClass';
+  | 'canvasDiskTriClass'
+  | 'canvasDiskRange';
 
 /**
  * Single configuration object for Region Segment Plus intensity-range resolution.
@@ -29,6 +30,8 @@ export type RegionSegmentIntensityRangeStrategyConfig = {
   getIntensityRange?: GetFloodFillIntensityRange;
   /** Used when `strategy === 'canvasDiskTriClass'` (CSS pixels; matches on-screen disk). Default 3. */
   canvasDiskRadiusPx?: number;
+  /** Used by canvas-disk exact-range mode: abort if range exceeds this fraction of volume range. */
+  canvasDiskMaxRangeFraction?: number;
 };
 
 const DEFAULT_INTENSITY_STRATEGY_CONFIG: RegionSegmentIntensityRangeStrategyConfig =
@@ -44,6 +47,9 @@ export type RegionSegmentIntensityRangeStrategy =
   | RegionSegmentBuiltInStrategy
   | 'canvasDiskTriClassSmall'
   | 'canvasDiskTriClassLarge'
+  | 'canvasDiskTriClassXL'
+  | 'canvasDiskRangeSmall'
+  | 'canvasDiskRangeLarge'
   | 'canvasDiskTriClass';
 
 /** Fragment of tool `configuration` consumed by {@link normalizeIntensityRangeStrategyConfig}. */
@@ -67,6 +73,7 @@ export function normalizeIntensityRangeStrategyConfig(
       strategy: o.strategy,
       getIntensityRange: o.getIntensityRange,
       canvasDiskRadiusPx: o.canvasDiskRadiusPx,
+      canvasDiskMaxRangeFraction: o.canvasDiskMaxRangeFraction,
     };
   }
 
@@ -83,6 +90,23 @@ function coerceStrategyShorthandToConfig(
   if (strategy === 'canvasDiskTriClassLarge') {
     return { strategy: 'canvasDiskTriClass', canvasDiskRadiusPx: 10 };
   }
+  if (strategy === 'canvasDiskTriClassXL') {
+    return { strategy: 'canvasDiskTriClass', canvasDiskRadiusPx: 15 };
+  }
+  if (strategy === 'canvasDiskRangeLarge') {
+    return {
+      strategy: 'canvasDiskRange',
+      canvasDiskRadiusPx: 10,
+      canvasDiskMaxRangeFraction: 0.25,
+    };
+  }
+  if (strategy === 'canvasDiskRangeSmall') {
+    return {
+      strategy: 'canvasDiskRange',
+      canvasDiskRadiusPx: 3,
+      canvasDiskMaxRangeFraction: 0.25,
+    };
+  }
   if (
     strategy === 'canvasDiskTriClassSmall' ||
     strategy === 'canvasDiskTriClass'
@@ -95,14 +119,22 @@ function coerceStrategyShorthandToConfig(
 export function getCanvasDiskRadiusCssPxFromConfig(
   config: RegionSegmentIntensityRangeStrategyConfig
 ): number | undefined {
-  if (config.strategy !== 'canvasDiskTriClass') {
+  if (
+    config.strategy !== 'canvasDiskTriClass' &&
+    config.strategy !== 'canvasDiskRange'
+  ) {
     return undefined;
   }
-  return config.canvasDiskRadiusPx ?? 3;
+  return (
+    config.canvasDiskRadiusPx ??
+    (config.strategy === 'canvasDiskRange' ? 10 : 3)
+  );
 }
 
 function makeCanvasDiskGetter(
-  canvasDiskRadiusPx: number
+  canvasDiskRadiusPx: number,
+  mode: 'triClass' | 'exactRange' = 'triClass',
+  maxRangeFraction = 0.25
 ): GetFloodFillIntensityRange {
   return (referencedVolume, worldPosition, options) => {
     if (!options?.viewport || options.canvasPoint === undefined) {
@@ -125,6 +157,8 @@ function makeCanvasDiskGetter(
       canvasDiskRadiusPx,
       voi,
       worldPosition,
+      mode,
+      maxRangeFraction,
     });
   };
 }
@@ -207,7 +241,15 @@ export function resolveIntensityRangeGetterFromConfig(
       return fixedPercent10Getter;
     case 'canvasDiskTriClass': {
       const r = config.canvasDiskRadiusPx ?? 3;
-      return makeCanvasDiskGetter(r);
+      return makeCanvasDiskGetter(r, 'triClass');
+    }
+    case 'canvasDiskRange': {
+      const r = config.canvasDiskRadiusPx ?? 10;
+      return makeCanvasDiskGetter(
+        r,
+        'exactRange',
+        config.canvasDiskMaxRangeFraction ?? 0.25
+      );
     }
     default:
       return undefined;

@@ -46,6 +46,7 @@ type WholeBodySegmentToolData = GrowCutToolData & {
 class WholeBodySegmentTool extends GrowCutBaseTool {
   static toolName;
   protected growCutData: WholeBodySegmentToolData | null;
+  private segmentationInProgress = false;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -81,6 +82,10 @@ class WholeBodySegmentTool extends GrowCutBaseTool {
   }
 
   preMouseDownCallback(evt: EventTypes.MouseDownActivateEventType): boolean {
+    if (this.segmentationInProgress) {
+      return false;
+    }
+
     const eventData = evt.detail;
     const { element, currentPoints } = eventData;
     const { world: worldPoint } = currentPoints;
@@ -102,6 +107,10 @@ class WholeBodySegmentTool extends GrowCutBaseTool {
   }
 
   private _dragCallback = (evt: EventTypes.InteractionEventType): void => {
+    if (this.segmentationInProgress || !this.growCutData) {
+      return;
+    }
+
     const eventData = evt.detail;
     const { element, currentPoints } = eventData;
     const { world: currentWorldPoint } = currentPoints;
@@ -118,18 +127,27 @@ class WholeBodySegmentTool extends GrowCutBaseTool {
   };
 
   private _endCallback = async (evt: EventTypes.InteractionEventType) => {
+    if (this.segmentationInProgress) {
+      return;
+    }
+
     const eventData = evt.detail;
     const { element } = eventData;
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    await this.runGrowCut();
-    this._deactivateDraw(element);
+    this.segmentationInProgress = true;
+    element.style.cursor = 'wait';
 
-    this.growCutData = null;
-
-    resetElementCursor(element);
-    triggerAnnotationRenderForViewportUIDs([viewport.id]);
+    try {
+      await this.runGrowCut();
+      this._deactivateDraw(element);
+      this.growCutData = null;
+    } finally {
+      this.segmentationInProgress = false;
+      resetElementCursor(element);
+      triggerAnnotationRenderForViewportUIDs([viewport.id]);
+    }
   };
 
   renderAnnotation(

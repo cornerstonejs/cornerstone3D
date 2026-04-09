@@ -8,6 +8,7 @@ export type FloodFillIntensityRangeDiagnostics = {
   positiveStdDevMultiplier: number;
   neighborhoodRadius: number;
   strategy?: string;
+  strategyMode?: 'triClass' | 'exactRange';
   mappedBand?: { min: number; max: number };
   canvasSampleCount?: number;
   /** True when luma-derived raw band missed the seed; interval was recentred on the voxel scalar. */

@@ -1,5 +1,7 @@
 import {
   cache,
+  Enums as CoreEnums,
+  eventTarget,
   utilities as csUtils,
   getEnabledElement,
   getRenderingEngine,
@@ -85,12 +87,24 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
   protected growCutData: RegionSegmentPlusToolData | null;
   private mouseTimer: number | null = null;
   private allowedToProceed = false;
+  private segmentationInProgress = false;
   /** SVG overlay host for canvas-disk sampling strategies (small/large). */
   private diskPreviewOverlay: {
     element: HTMLDivElement;
     svg: SVGSVGElement;
   } | null = null;
   private diskPreviewLastCanvas: Types.Point2 | null = null;
+
+  private notifySegmentationError(message: string): void {
+    const event = new CustomEvent(CoreEnums.Events.ERROR_EVENT, {
+      detail: {
+        type: 'Segmentation',
+        message,
+      },
+      cancelable: true,
+    });
+    eventTarget.dispatchEvent(event);
+  }
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
@@ -129,6 +143,16 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
           removeInternalIslands: true,
           verboseLogging: false,
         },
+        actions: {
+          cancelInProgress: {
+            method: 'cancelInProgress',
+            bindings: [
+              {
+                key: 'Escape',
+              },
+            ],
+          },
+        },
       },
     }
   ) {
@@ -154,7 +178,8 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
 
   /** True when the built-in canvas-disk strategy is selected (overlay ring). */
   private usesCanvasDiskStrategy(): boolean {
-    return this.getIntensityStrategyConfig().strategy === 'canvasDiskTriClass';
+    const strategy = this.getIntensityStrategyConfig().strategy;
+    return strategy === 'canvasDiskTriClass' || strategy === 'canvasDiskRange';
   }
 
   private removeDiskSamplingPreview(): void {
@@ -222,6 +247,14 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
     this.removeDiskSamplingPreview();
   }
 
+  /**
+   * Standard Escape-key cancellation hook used by other interactive tools.
+   * Delegates to GrowCutBaseTool's cooperative abort signal.
+   */
+  public cancelInProgress(): boolean {
+    return this.cancelActiveOperation();
+  }
+
   private buildIntensityRangeContext(
     viewport: Types.IViewport,
     element: HTMLDivElement,
@@ -258,6 +291,11 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
     const { currentPoints, element } = eventData;
     const { world: worldPoint } = currentPoints;
 
+    if (this.segmentationInProgress) {
+      element.style.cursor = 'wait';
+      return;
+    }
+
     if (this.usesCanvasDiskStrategy()) {
       const irc = this.getIntensityStrategyConfig();
       const r = getCanvasDiskRadiusCssPxFromConfig(irc) ?? 3;
@@ -290,6 +328,11 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
     worldPoint: Types.Point3,
     element: HTMLDivElement
   ) {
+    if (this.segmentationInProgress) {
+      element.style.cursor = 'wait';
+      return;
+    }
+
     if (!this.configuration.hoverPrecheckEnabled) {
       this.allowedToProceed = true;
       element.style.cursor = 'copy';
@@ -427,13 +470,10 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
     element: HTMLDivElement | undefined,
     restoreCursor: () => void
   ): Promise<void> {
+    this.segmentationInProgress = true;
     const enabledElement = element ? getEnabledElement(element) : undefined;
     if (enabledElement && element) {
       element.style.cursor = 'wait';
-      // Let the browser paint `wait` before long synchronous flood fill / GPU work.
-      await new Promise<void>((resolve) =>
-        requestAnimationFrame(() => resolve())
-      );
     }
 
     const canvas = evt.detail.currentPoints.canvas;
@@ -456,6 +496,7 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
     try {
       await this.runGrowCut();
     } finally {
+      this.segmentationInProgress = false;
       restoreCursor();
     }
   }
@@ -498,8 +539,18 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
       element,
       restoreCursor
     ).catch((err) => {
-      growCutLog.error('RegionSegmentPlus: segmentation failed', err);
-      console.error('RegionSegmentPlus: segmentation failed', err);
+      const message =
+        err instanceof Error ? err.message : 'One-click segmentation failed.';
+      if (message.includes('no valid intensity range')) {
+        this.notifySegmentationError(
+          'One-click segmentation could not determine a valid intensity range at the clicked location. Try clicking inside the target region, adjusting VOI/contrast, or changing Max Delta K/IJ.'
+        );
+      } else {
+        this.notifySegmentationError(message);
+      }
+      growCutLog.error('RegionSegmentPlus: segmentation failed', {
+        message,
+      });
       restoreCursor();
     });
 

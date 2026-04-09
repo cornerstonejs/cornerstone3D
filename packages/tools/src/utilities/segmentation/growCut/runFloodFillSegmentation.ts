@@ -45,6 +45,8 @@ const FLOOD_FILL_ISLAND_INTERNAL_TIMING_LABEL =
   'cornerstone.tools: floodFill: islandRemoval:internal';
 
 type FloodFillSegmentationOptions = {
+  /** Cooperative cancellation hook; returns true to stop at next checkpoint. */
+  isCancelled?: () => boolean;
   positiveStdDevMultiplier?: number;
   initialNeighborhoodRadius?: number;
   segmentIndex?: number;
@@ -665,6 +667,7 @@ async function runFloodFillSegmentation({
         planar,
         maxDeltaK: options.maxDeltaK,
         maxDeltaIJ: options.maxDeltaIJ,
+        isCancelled: options.isCancelled,
       });
 
     if (filledVoxelCount === 0) {
@@ -704,11 +707,31 @@ async function runFloodFillSegmentation({
       ijkStart,
       paintIndex,
       usePreview,
+      cancelled: options.isCancelled?.() === true,
     });
 
     const applyExternal = options.applyExternalIslandRemoval !== false;
     const applyInternal =
       options.applyInternalIslandRemoval !== false && applyExternal;
+    const cancelled = options.isCancelled?.() === true;
+    if (cancelled) {
+      if (usePreview) {
+        promotePreviewSegmentToFinal(
+          labelmap.voxelManager as NumberVoxelManager,
+          paintIndex,
+          segmentIndex,
+          floodedPoints,
+          numPixelsPerSlice,
+          width
+        );
+      }
+      log.info('flood fill: cancellation requested; returning partial result', {
+        voxelCount: floodedPoints.length,
+        segmentIndex,
+      });
+      return labelmap;
+    }
+
     if (!applyExternal && !applyInternal) {
       if (usePreview) {
         promotePreviewSegmentToFinal(

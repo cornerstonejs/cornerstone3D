@@ -95,6 +95,8 @@ type CanvasDiskOptions = {
   canvasDiskRadiusPx: number;
   voi: ViewportVoiMappingForTool;
   worldPosition: Types.Point3;
+  mode?: 'triClass' | 'exactRange';
+  maxRangeFraction?: number;
 };
 
 /** Tri-class runs on normalized display intensity in [0, 1] (rendered byte ÷ 255). */
@@ -500,6 +502,8 @@ export function getCanvasDiskIntensityRange(
   workBytes.sort((a, b) => a - b);
   const samples = workBytes.map((v) => v / 255);
   const spread = samples[samples.length - 1] - samples[0];
+  const mode = opts.mode ?? 'triClass';
+  const maxRangeFraction = opts.maxRangeFraction ?? 0.25;
 
   const ci = (cy * cw + cx) * 4;
   const centerByte = renderedDisplayByte255(data, ci);
@@ -510,7 +514,14 @@ export function getCanvasDiskIntensityRange(
   let edgePinnedHigh = false;
   let edgePinnedLow = false;
 
-  if (spread < 1e-12) {
+  if (mode === 'exactRange') {
+    const minByte = workBytes[0];
+    const maxByte = workBytes[workBytes.length - 1];
+    dLo = toMapped01(minByte);
+    dHi = toMapped01(maxByte);
+    edgePinnedLow = minByte <= 0;
+    edgePinnedHigh = maxByte >= 255;
+  } else if (spread < 1e-12) {
     if (centerByte >= 255) {
       dLo = toMapped01(255 - DISPLAY_BAND_FALLBACK_ABS);
       dHi = 1;
@@ -539,7 +550,7 @@ export function getCanvasDiskIntensityRange(
   const preWidenDLo = dLo;
   const preWidenDHi = dHi;
 
-  {
+  if (mode !== 'exactRange') {
     const smin = samples[0];
     const smax = samples[samples.length - 1];
     ({ dLo, dHi } = widenMappedBandForFloodFill(
@@ -601,17 +612,22 @@ export function getCanvasDiskIntensityRange(
   let max: number;
   let canvasDiskBandCenteredOnSeed = false;
 
-  if (startValue >= bandLo - eps && startValue <= bandHi + eps) {
-    // Sigmoid Y_EPS / numeric: guarantee the scalar under the cursor is inside [min,max].
-    min = Math.min(bandLo, startValue);
-    max = Math.max(bandHi, startValue);
+  if (mode === 'exactRange') {
+    min = bandLo;
+    max = bandHi;
   } else {
-    // Rendered display band can inverse-map to a raw interval that misses the seed voxel;
-    // keep band width and center on the stored scalar.
-    canvasDiskBandCenteredOnSeed = true;
-    const half = Math.max(bandWidth / 2, volSpan * 0.0015);
-    min = startValue - half;
-    max = startValue + half;
+    if (startValue >= bandLo - eps && startValue <= bandHi + eps) {
+      // Sigmoid Y_EPS / numeric: guarantee the scalar under the cursor is inside [min,max].
+      min = Math.min(bandLo, startValue);
+      max = Math.max(bandHi, startValue);
+    } else {
+      // Rendered display band can inverse-map to a raw interval that misses the seed voxel;
+      // keep band width and center on the stored scalar.
+      canvasDiskBandCenteredOnSeed = true;
+      const half = Math.max(bandWidth / 2, volSpan * 0.0015);
+      min = startValue - half;
+      max = startValue + half;
+    }
   }
 
   min = Math.max(volMin, Math.min(volMax, min));
@@ -628,6 +644,32 @@ export function getCanvasDiskIntensityRange(
   max = Math.min(volMax, max);
   if (min > max) {
     min = max = Math.max(volMin, Math.min(volMax, startValue));
+  }
+
+  if (mode === 'exactRange') {
+    const minDisplayByte = workBytes[0];
+    const maxDisplayByte = workBytes[workBytes.length - 1];
+    const displayFillFraction = (maxDisplayByte - minDisplayByte) / 255;
+    if (displayFillFraction > maxRangeFraction) {
+      const pct = (displayFillFraction * 100).toFixed(1);
+      const allowedPct = (maxRangeFraction * 100).toFixed(1);
+      const msg =
+        `Exact disk display range too broad (${pct}% > ${allowedPct}%). ` +
+        `Aborting fill.`;
+      growCutLog.warn(msg, {
+        mode,
+        displayFillFraction,
+        maxRangeFraction,
+        minDisplayByte,
+        maxDisplayByte,
+        finalMin: min,
+        finalMax: max,
+        volMin,
+        volMax,
+      });
+      console.warn(msg);
+      return null;
+    }
   }
 
   logCanvasDiskSampledPixelValues(workBytes, {
@@ -663,6 +705,7 @@ export function getCanvasDiskIntensityRange(
       positiveStdDevMultiplier: 0,
       neighborhoodRadius: R,
       strategy: 'canvasDiskTriClass',
+      strategyMode: mode,
       canvasSampleCount: workBytes.length,
       mappedBand: { min: dLo, max: dHi },
       canvasDiskBandCenteredOnSeed,

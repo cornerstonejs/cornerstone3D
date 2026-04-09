@@ -41,7 +41,6 @@ const DEFAULT_FILL_STRATEGY = 'canvasDiskTriClassLarge' as const;
 
 /** Initial toolbar + tool configuration (single source for `addTool` and checkbox `checked`). */
 const initialRegionSegPlusHoverPrecheck = false;
-const initialRegionSegPlusPlanarFill = false;
 const initialRegionSegPlusIslandExternal = true;
 const initialRegionSegPlusIslandInternal = true;
 const initialRegionSegPlusIslandVerbose = false;
@@ -61,7 +60,6 @@ const regionSegmentPlusToolMap = new Map([
       configuration: {
         hoverPrecheckEnabled: initialRegionSegPlusHoverPrecheck,
         intensityRangeStrategy: DEFAULT_FILL_STRATEGY,
-        planar: initialRegionSegPlusPlanarFill,
         maxDeltaK: initialRegionSegPlusMaxDeltaK,
         maxDeltaIJ: initialRegionSegPlusMaxDeltaIJ,
         floodFillIslandRemoval: {
@@ -106,6 +104,22 @@ const SELECT_ID_FILL_STRATEGY = 'region-seg-plus-fill-strategy';
 
 const FILL_STRATEGY_OPTIONS = [
   {
+    value: 'canvasDiskTriClassLarge',
+    label: 'Canvas disk (large, 10 px) — tri-class from rendered window',
+  },
+  {
+    value: 'canvasDiskTriClassXL',
+    label: 'Canvas disk (x-large, 15 px) — tri-class from rendered window',
+  },
+  {
+    value: 'canvasDiskRangeLarge',
+    label: 'Canvas disk range (large, 10 px) — exact min/max in disk',
+  },
+  {
+    value: 'canvasDiskRangeSmall',
+    label: 'Canvas disk range (small, 3 px) — exact min/max in disk',
+  },
+  {
     value: 'meanStdMapped',
     label: 'Mean ±σ neighborhood (VOI-mapped)',
   },
@@ -120,10 +134,6 @@ const FILL_STRATEGY_OPTIONS = [
   {
     value: 'canvasDiskTriClassSmall',
     label: 'Canvas disk (small, 3 px) — tri-class from rendered window',
-  },
-  {
-    value: 'canvasDiskTriClassLarge',
-    label: 'Canvas disk (large, 10 px) — tri-class from rendered window',
   },
 ] as const;
 
@@ -154,6 +164,7 @@ let viewportCt;
 let viewportPt;
 let renderingEngine;
 const seriesValidationCache = new Map<string, Promise<SeriesStackValidation>>();
+let escCancelListenerAttached = false;
 
 setTitleAndDescription(
   'Region Segment Plus Tool with Stack Viewport',
@@ -256,125 +267,6 @@ createInfoSection(content)
   .addInstruction('Middle mouse / Ctrl+drag: Pan · Right click: Zoom · Wheel / Alt+drag: Stack scroll · Shift+Ctrl+click: Length');
 
 // ==[ Toolbar ]================================================================
-
-addButtonToToolbar({
-  title: 'Shrink',
-  onClick: async () => {
-    toolGroup.getToolInstance(RegionSegmentPlusTool.toolName).shrink();
-  },
-});
-
-addButtonToToolbar({
-  title: 'Expand',
-  onClick: async () => {
-    toolGroup.getToolInstance(RegionSegmentPlusTool.toolName).expand();
-  },
-});
-
-addButtonToToolbar({
-  title: 'Clear segmentation',
-  onClick: async () => {
-    [segmentationIdCt, segmentationIdPt].forEach((segId) => {
-      const segmentationData = segmentation.state.getSegmentation(segId);
-      if (segmentationData?.representationData?.Labelmap) {
-        const labelmapData = segmentationData.representationData.Labelmap;
-        if ('imageIds' in labelmapData && labelmapData.imageIds) {
-          labelmapData.imageIds.forEach((imageId) => {
-            const image = cache.getImage(imageId);
-            if (image?.voxelManager) {
-              image.voxelManager.clear();
-            }
-          });
-        }
-        segmentation.triggerSegmentationEvents.triggerSegmentationDataModified(
-          segId
-        );
-      }
-    });
-  },
-});
-
-addSliderToToolbar({
-  title: 'Positive threshold (10%)',
-  range: [0, 100],
-  defaultValue: 5,
-  label: {
-    html: 'test',
-  },
-  onSelectedValueChange: (value: string) => {
-    updateSeedVariancesConfig({ positiveSeedVariance: value });
-  },
-  updateLabelOnChange: (value: string, label: HTMLElement) => {
-    label.innerHTML = `Positive threshold (${value}%)`;
-  },
-});
-
-addSliderToToolbar({
-  title: 'Negative threshold (50%)',
-  range: [0, 100],
-  defaultValue: 50,
-  label: {
-    html: 'test',
-  },
-  onSelectedValueChange: (value: string) => {
-    updateSeedVariancesConfig({ negativeSeedVariance: value });
-  },
-  updateLabelOnChange: (value: string, label: HTMLElement) => {
-    label.innerHTML = `Negative threshold (${value}%)`;
-  },
-});
-
-addSliderToToolbar({
-  title: `FF max ΔK (${initialRegionSegPlusMaxDeltaK})`,
-  range: [1, 1024],
-  defaultValue: initialRegionSegPlusMaxDeltaK,
-  label: {
-    html: 'test',
-  },
-  onSelectedValueChange: (value: string) => {
-    updateFloodBoundsConfig({ maxDeltaK: Number(value) });
-  },
-  updateLabelOnChange: (value: string, label: HTMLElement) => {
-    label.innerHTML = `FF max ΔK (${value})`;
-  },
-});
-
-addSliderToToolbar({
-  title: `FF max ΔIJ (${initialRegionSegPlusMaxDeltaIJ})`,
-  range: [5, 512],
-  defaultValue: initialRegionSegPlusMaxDeltaIJ,
-  label: {
-    html: 'test',
-  },
-  onSelectedValueChange: (value: string) => {
-    updateFloodBoundsConfig({ maxDeltaIJ: Number(value) });
-  },
-  updateLabelOnChange: (value: string, label: HTMLElement) => {
-    label.innerHTML = `FF max ΔIJ (${value})`;
-  },
-});
-
-// =============================================================================
-
-const updateSeedVariancesConfig = cstUtils.throttle(
-  ({ positiveSeedVariance, negativeSeedVariance }) => {
-    const toolInstance = toolGroup.getToolInstance(
-      RegionSegmentPlusTool.toolName
-    );
-    const { configuration: config } = toolInstance;
-
-    if (positiveSeedVariance !== undefined) {
-      config.positiveSeedVariance = Number(positiveSeedVariance) / 100;
-    }
-
-    if (negativeSeedVariance !== undefined) {
-      config.negativeSeedVariance = Number(negativeSeedVariance) / 100;
-    }
-
-    toolInstance.refresh();
-  },
-  1000
-);
 
 const updateFloodBoundsConfig = cstUtils.throttle(
   ({ maxDeltaK, maxDeltaIJ }) => {
@@ -640,32 +532,6 @@ function replaceSeriesSelectOptions(
 async function run() {
   await initDemo({});
 
-  const studySeries = await fetchStudySeries(currentStudyUID);
-  const leftSeries = await filterValidStackSeries(
-    currentStudyUID,
-    nonPtSeriesNoScout(studySeries),
-    'left'
-  );
-  const ptSeries = await filterValidStackSeries(
-    currentStudyUID,
-    ptSeriesNoScout(studySeries),
-    'right/PT'
-  );
-
-  if (!leftSeries.length || !ptSeries.length) {
-    throw new Error(
-      `Need at least one non-PT (non-scout) and one PT (non-scout) series. Got left: ${leftSeries.length}, PT: ${ptSeries.length}`
-    );
-  }
-
-  const initialLeft = defaultLeftSeries(leftSeries);
-  const initialPt = defaultPtSeries(ptSeries);
-  if (!initialLeft || !initialPt) {
-    throw new Error(
-      'Could not choose default left or PT series for this study'
-    );
-  }
-
   cornerstoneTools.addTool(RegionSegmentPlusTool);
   cornerstoneTools.addTool(WindowLevelTool);
 
@@ -708,23 +574,24 @@ async function run() {
   toolGroup.addViewport(viewportIdCt, renderingEngineId);
   toolGroup.addViewport(viewportIdPt, renderingEngineId);
 
-  await loadStackWithSegmentation({
-    viewportId: viewportIdCt,
-    viewport: viewportCt,
-    element: elementCt,
-    segmentationId: segmentationIdCt,
-    studyInstanceUID: currentStudyUID,
-    seriesInstanceUID: initialLeft.seriesInstanceUID,
-  });
-
-  await loadStackWithSegmentation({
-    viewportId: viewportIdPt,
-    viewport: viewportPt,
-    element: elementPt,
-    segmentationId: segmentationIdPt,
-    studyInstanceUID: currentStudyUID,
-    seriesInstanceUID: initialPt.seriesInstanceUID,
-  });
+  if (!escCancelListenerAttached) {
+    document.addEventListener('keydown', (evt) => {
+      if (evt.key !== 'Escape') {
+        return;
+      }
+      const toolInstance = toolGroup?.getToolInstance?.(
+        RegionSegmentPlusTool.toolName
+      ) as {
+        cancelActiveOperation?: () => boolean;
+      } | null;
+      const cancelled = toolInstance?.cancelActiveOperation?.() === true;
+      if (cancelled) {
+        evt.preventDefault();
+        console.info('[regionSegmentPlus] cancel requested (Esc)');
+      }
+    });
+    escCancelListenerAttached = true;
+  }
 
   const toolbar = document.getElementById('demo-toolbar');
   const seriesToolbar = document.createElement('div');
@@ -746,8 +613,73 @@ async function run() {
     width: '100%',
     flexBasis: '100%',
   });
-  toolbar.prepend(segmentationToolbar);
-  toolbar.prepend(seriesToolbar);
+  const intensityToolbar = document.createElement('div');
+  Object.assign(intensityToolbar.style, {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '12px',
+    alignItems: 'center',
+    marginBottom: '8px',
+    width: '100%',
+    flexBasis: '100%',
+  });
+  const floodBoundsToolbar = document.createElement('div');
+  Object.assign(floodBoundsToolbar.style, {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '12px',
+    alignItems: 'center',
+    marginBottom: '8px',
+    width: '100%',
+    flexBasis: '100%',
+  });
+  const operationsToolbar = document.createElement('div');
+  Object.assign(operationsToolbar.style, {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '12px',
+    alignItems: 'center',
+    marginBottom: '8px',
+    width: '100%',
+    flexBasis: '100%',
+  });
+  toolbar.append(seriesToolbar);
+  toolbar.append(intensityToolbar);
+  toolbar.append(floodBoundsToolbar);
+  toolbar.append(segmentationToolbar);
+  toolbar.append(operationsToolbar);
+
+  const initialSeriesPromise = (async () => {
+    const studySeries = await fetchStudySeries(currentStudyUID);
+    const leftSeries = await filterValidStackSeries(
+      currentStudyUID,
+      nonPtSeriesNoScout(studySeries),
+      'left'
+    );
+    const ptSeries = await filterValidStackSeries(
+      currentStudyUID,
+      ptSeriesNoScout(studySeries),
+      'right/PT'
+    );
+    if (!leftSeries.length || !ptSeries.length) {
+      throw new Error(
+        `Need at least one non-PT (non-scout) and one PT (non-scout) series. Got left: ${leftSeries.length}, PT: ${ptSeries.length}`
+      );
+    }
+    const initialLeft = defaultLeftSeries(leftSeries);
+    const initialPt = defaultPtSeries(ptSeries);
+    if (!initialLeft || !initialPt) {
+      throw new Error(
+        'Could not choose default left or PT series for this study'
+      );
+    }
+    return {
+      leftSeries,
+      ptSeries,
+      initialLeft,
+      initialPt,
+    };
+  })();
 
   addDropdownToToolbar({
     labelText: 'Study',
@@ -815,11 +747,11 @@ async function run() {
     labelText: 'Left — non-PT (no scout)',
     id: SELECT_ID_LEFT,
     container: seriesToolbar,
-    options: {
+    options: initialSeriesPromise.then(({ leftSeries, initialLeft }) => ({
       labels: leftSeries.map(formatSeriesLabel),
       values: leftSeries.map((s) => s.seriesInstanceUID),
       defaultValue: initialLeft.seriesInstanceUID,
-    },
+    })),
     onSelectedValueChange: (uid) => {
       loadStackWithSegmentation({
         viewportId: viewportIdCt,
@@ -836,11 +768,11 @@ async function run() {
     labelText: 'Right — PT',
     id: SELECT_ID_PT,
     container: seriesToolbar,
-    options: {
+    options: initialSeriesPromise.then(({ ptSeries, initialPt }) => ({
       labels: ptSeries.map(formatSeriesLabel),
       values: ptSeries.map((s) => s.seriesInstanceUID),
       defaultValue: initialPt.seriesInstanceUID,
-    },
+    })),
     onSelectedValueChange: (uid) => {
       loadStackWithSegmentation({
         viewportId: viewportIdPt,
@@ -856,7 +788,7 @@ async function run() {
   addDropdownToToolbar({
     labelText: 'Intensity / fill range',
     id: SELECT_ID_FILL_STRATEGY,
-    container: segmentationToolbar,
+    container: intensityToolbar,
     options: {
       labels: FILL_STRATEGY_OPTIONS.map((o) => o.label),
       values: [...FILL_STRATEGY_OPTIONS.map((o) => o.value)],
@@ -873,6 +805,38 @@ async function run() {
       toolGroup.setToolConfiguration(RegionSegmentPlusTool.toolName, {
         intensityRangeStrategy: value,
       });
+    },
+  });
+
+  addSliderToToolbar({
+    title: `FF max ΔK (${initialRegionSegPlusMaxDeltaK})`,
+    container: floodBoundsToolbar,
+    range: [1, 1024],
+    defaultValue: initialRegionSegPlusMaxDeltaK,
+    label: {
+      html: 'test',
+    },
+    onSelectedValueChange: (value: string) => {
+      updateFloodBoundsConfig({ maxDeltaK: Number(value) });
+    },
+    updateLabelOnChange: (value: string, label: HTMLElement) => {
+      label.innerHTML = `FF max ΔK (${value})`;
+    },
+  });
+
+  addSliderToToolbar({
+    title: `FF max ΔIJ (${initialRegionSegPlusMaxDeltaIJ})`,
+    container: floodBoundsToolbar,
+    range: [5, 512],
+    defaultValue: initialRegionSegPlusMaxDeltaIJ,
+    label: {
+      html: 'test',
+    },
+    onSelectedValueChange: (value: string) => {
+      updateFloodBoundsConfig({ maxDeltaIJ: Number(value) });
+    },
+    updateLabelOnChange: (value: string, label: HTMLElement) => {
+      label.innerHTML = `FF max ΔIJ (${value})`;
     },
   });
 
@@ -897,18 +861,6 @@ async function run() {
       floodFillIslandRemoval: { ...prev, ...partial },
     });
   };
-
-  addCheckboxToToolbar({
-    id: 'region-seg-plus-planar-flood',
-    title: 'FF: planar fill only (current slice)',
-    checked: initialRegionSegPlusPlanarFill,
-    container: segmentationToolbar,
-    onChange: (checked) => {
-      toolGroup.setToolConfiguration(RegionSegmentPlusTool.toolName, {
-        planar: checked,
-      });
-    },
-  });
 
   addCheckboxToToolbar({
     id: 'region-seg-plus-island-external',
@@ -938,6 +890,70 @@ async function run() {
     onChange: (checked) => {
       mergeFloodFillIslandRemoval({ verboseLogging: checked });
     },
+  });
+
+  Object.assign(segmentationToolbar.style, {
+    flexWrap: 'nowrap',
+  });
+
+  addButtonToToolbar({
+    title: 'Shrink',
+    container: operationsToolbar,
+    onClick: async () => {
+      toolGroup.getToolInstance(RegionSegmentPlusTool.toolName).shrink();
+    },
+  });
+
+  addButtonToToolbar({
+    title: 'Expand',
+    container: operationsToolbar,
+    onClick: async () => {
+      toolGroup.getToolInstance(RegionSegmentPlusTool.toolName).expand();
+    },
+  });
+
+  addButtonToToolbar({
+    title: 'Clear segmentation',
+    container: operationsToolbar,
+    onClick: async () => {
+      [segmentationIdCt, segmentationIdPt].forEach((segId) => {
+        const segmentationData = segmentation.state.getSegmentation(segId);
+        if (segmentationData?.representationData?.Labelmap) {
+          const labelmapData = segmentationData.representationData.Labelmap;
+          if ('imageIds' in labelmapData && labelmapData.imageIds) {
+            labelmapData.imageIds.forEach((imageId) => {
+              const image = cache.getImage(imageId);
+              if (image?.voxelManager) {
+                image.voxelManager.clear();
+              }
+            });
+          }
+          segmentation.triggerSegmentationEvents.triggerSegmentationDataModified(
+            segId
+          );
+        }
+      });
+    },
+  });
+
+  const { initialLeft, initialPt } = await initialSeriesPromise;
+
+  await loadStackWithSegmentation({
+    viewportId: viewportIdCt,
+    viewport: viewportCt,
+    element: elementCt,
+    segmentationId: segmentationIdCt,
+    studyInstanceUID: currentStudyUID,
+    seriesInstanceUID: initialLeft.seriesInstanceUID,
+  });
+
+  await loadStackWithSegmentation({
+    viewportId: viewportIdPt,
+    viewport: viewportPt,
+    element: elementPt,
+    segmentationId: segmentationIdPt,
+    studyInstanceUID: currentStudyUID,
+    seriesInstanceUID: initialPt.seriesInstanceUID,
   });
 }
 

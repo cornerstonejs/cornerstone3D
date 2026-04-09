@@ -71,6 +71,7 @@ class GrowCutBaseTool extends BaseTool {
   static toolName;
   protected growCutData: GrowCutToolData | null;
   private static lastGrowCutCommand = null;
+  private activeAbortController: AbortController | null = null;
   protected seeds: {
     positiveSeedIndices: Set<number>;
     negativeSeedIndices: Set<number>;
@@ -164,6 +165,8 @@ class GrowCutBaseTool extends BaseTool {
   }
 
   protected async runGrowCut() {
+    const abortController = new AbortController();
+    this.activeAbortController = abortController;
     const { growCutData, configuration: config } = this;
     const {
       segmentation: { segmentationId, segmentIndex, labelmapVolumeId },
@@ -203,6 +206,7 @@ class GrowCutBaseTool extends BaseTool {
           negativeSeedValue: 255,
           positiveStdDevMultiplier: newPositiveStdDevMultiplier,
           negativeSeedMargin,
+          isCancelled: () => abortController.signal.aborted,
         },
       };
 
@@ -236,11 +240,26 @@ class GrowCutBaseTool extends BaseTool {
       }
     };
 
-    await growCutCommand();
+    try {
+      await growCutCommand();
+      GrowCutBaseTool.lastGrowCutCommand = growCutCommand;
+      this.growCutData = null;
+    } finally {
+      if (this.activeAbortController === abortController) {
+        this.activeAbortController = null;
+      }
+    }
+  }
 
-    GrowCutBaseTool.lastGrowCutCommand = growCutCommand;
-
-    this.growCutData = null;
+  public cancelActiveOperation(): boolean {
+    if (
+      !this.activeAbortController ||
+      this.activeAbortController.signal.aborted
+    ) {
+      return false;
+    }
+    this.activeAbortController.abort();
+    return true;
   }
 
   protected applyPartialGrowCutLabelmap(

@@ -21,6 +21,8 @@ export type FloodFillSliceLazyOptions = {
    * `abs(i - seedI) <= maxDeltaIJ` AND `abs(j - seedJ) <= maxDeltaIJ`.
    */
   maxDeltaIJ?: number;
+  /** Cooperative cancellation hook; returns true to stop at next checkpoint. */
+  isCancelled?: () => boolean;
 };
 
 export type FloodFillSliceLazyResult = {
@@ -48,6 +50,7 @@ export async function floodFill3dSliceLazy(
     planar = false,
     maxDeltaK,
     maxDeltaIJ,
+    isCancelled,
   } = options;
 
   const [sx, sy, sz] = seed;
@@ -124,6 +127,10 @@ export async function floodFill3dSliceLazy(
   let steps = 0;
 
   while (qh < queue.length) {
+    if (isCancelled?.()) {
+      break;
+    }
+
     steps++;
     if (yieldEvery > 0 && steps % yieldEvery === 0) {
       await new Promise<void>((r) => setTimeout(r, 0));
@@ -156,6 +163,9 @@ export async function floodFill3dSliceLazy(
       }
       if (ensureSliceLoaded) {
         await ensureSliceLoaded(nz);
+        if (isCancelled?.()) {
+          break;
+        }
       }
       const nv = getter(nx, ny, nz);
       if (!equals(nv, startNode)) {

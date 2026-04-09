@@ -23,6 +23,8 @@ const GROW_CUT_GPU_TIMING_LABEL = 'cornerstone.tools: growCut: gpuIterations';
  * Grow cut options
  */
 type GrowCutOptions = {
+  /** Cooperative cancellation hook; returns true to stop at next checkpoint. */
+  isCancelled?: () => boolean;
   /**
    * Maximum amount of time the grow cut will be running in the GPU. This value
    * also depends on `numCyclesInterval` because N (numCyclesInterval) steps are
@@ -444,7 +446,7 @@ async function runGrowCutCore(
   let currentInspectionNumCyclesInterval = inspection.numCyclesInterval;
   let belowThresholdCounter = 0;
 
-  let stopReason: 'converged' | 'time_limit' | 'max_iterations' =
+  let stopReason: 'converged' | 'time_limit' | 'max_iterations' | 'cancelled' =
     'max_iterations';
 
   growCutLog.info('GPU grow cut starting', {
@@ -467,6 +469,11 @@ async function runGrowCutCore(
 
   // Create each iteration step and submit them to the GPU
   for (let i = 0; i < numIterations; i++) {
+    if (options.isCancelled?.()) {
+      stopReason = 'cancelled';
+      break;
+    }
+
     lastIterationIndex = i;
     paramsArrayValues[numIterationIndex] = i;
     device.queue.writeBuffer(gpuParamsBuffer, 0, paramsArrayValues);
@@ -499,6 +506,10 @@ async function runGrowCutCore(
     const inspect = i > 0 && !(i % currentInspectionNumCyclesInterval);
 
     if (inspect) {
+      if (options.isCancelled?.()) {
+        stopReason = 'cancelled';
+        break;
+      }
       // map staging buffer to read results back to JS
       await gpuUpdatedVoxelsCounterStagingBuffer.mapAsync(
         GPUMapMode.READ,
