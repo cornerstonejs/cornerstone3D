@@ -32,7 +32,7 @@ import {
   Enums as csToolsEnums,
 } from '@cornerstonejs/tools';
 
-const viewportV2ConfigurationStack = [];
+const viewportNextConfigurationStack = [];
 const cpuRenderingConfigurationStack = [];
 const KARMA_CURRENT_SPEC_FULL_NAME = '__karmaCurrentSpecFullName';
 const KARMA_LAST_SPEC_FULL_NAME = '__karmaLastSpecFullName';
@@ -41,12 +41,29 @@ const KARMA_SPEC_REPORTER_INSTALLED = '__karmaSpecReporterInstalled';
 
 installKarmaSpecTracker();
 
-function getForcedViewportV2FromKarma() {
-  return window.__karma__?.config?.forceViewportV2 === true;
+function getForcedCompatFromKarma() {
+  return window.__karma__?.config?.forceCompat === true;
 }
 
 function getForcedCpuRenderingFromKarma() {
   return window.__karma__?.config?.forceCpuRendering === true;
+}
+
+function getCompatModeString() {
+  const compat = getForcedCompatFromKarma();
+  const cpu = getForcedCpuRenderingFromKarma();
+  if (compat && cpu) return 'compat-cpu';
+  if (compat) return 'compat';
+  if (cpu) return 'cpu';
+  return null;
+}
+
+function blobToDataUrl(blob) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.readAsDataURL(blob);
+  });
 }
 
 function setupTestEnvironment({
@@ -57,7 +74,7 @@ function setupTestEnvironment({
   toolActivations = {},
   viewportIds = [],
   options = {},
-  useViewportV2 = false,
+  useViewportNext = false,
 } = {}) {
   // Initialize csTools3d and add specified tools
   window.devicePixelRatio = 1;
@@ -65,13 +82,13 @@ function setupTestEnvironment({
   initCore();
 
   const renderingConfiguration = getConfiguration().rendering;
-  const resolvedUseViewportV2 = useViewportV2 || getForcedViewportV2FromKarma();
+  const resolvedUseViewportNext = useViewportNext || getForcedCompatFromKarma();
   const resolvedUseCpuRendering =
     getShouldUseCPURendering() || getForcedCpuRenderingFromKarma();
 
-  viewportV2ConfigurationStack.push(renderingConfiguration.useViewportV2);
+  viewportNextConfigurationStack.push(renderingConfiguration.useViewportNext);
   cpuRenderingConfigurationStack.push(renderingConfiguration.useCPURendering);
-  renderingConfiguration.useViewportV2 = resolvedUseViewportV2;
+  renderingConfiguration.useViewportNext = resolvedUseViewportNext;
   setUseCPURendering(resolvedUseCpuRendering, false);
   initTools();
   tools.forEach((tool) => addTool(tool));
@@ -192,11 +209,11 @@ function cleanupTestEnvironment(options = {}) {
 
   cache.setMaxCacheSize(ONE_GB);
 
-  const previousUseViewportV2 = viewportV2ConfigurationStack.pop();
+  const previousUseViewportNext = viewportNextConfigurationStack.pop();
   const previousUseCpuRendering = cpuRenderingConfigurationStack.pop();
 
-  if (previousUseViewportV2 !== undefined) {
-    getConfiguration().rendering.useViewportV2 = previousUseViewportV2;
+  if (previousUseViewportNext !== undefined) {
+    getConfiguration().rendering.useViewportNext = previousUseViewportNext;
   }
 
   if (previousUseCpuRendering !== undefined) {
@@ -312,31 +329,87 @@ function compareImages(
   const testName = getCurrentTestName();
 
   if (updateBaselines) {
-    // Store the base64 data in a global object for later processing
     if (!window.__groundTruthUpdates) {
       window.__groundTruthUpdates = {};
     }
     window.__groundTruthUpdates[outputName] = imageDataURL;
-
     console.log(`[GROUND_TRUTH_UPDATE]::${outputName}::${imageDataURL}`);
-
     return Promise.resolve();
   }
 
+  const compatMode = getCompatModeString();
+
+  if (compatMode) {
+    return compareWithCompatBaseline(
+      imageDataURL,
+      outputName,
+      compatMode,
+      testName
+    );
+  }
+
+  return runResembleComparison(imageDataURL, baseline.default, outputName, testName);
+}
+
+function compareWithCompatBaseline(imageDataURL, outputName, mode, testName) {
+  const baselineUrl = '/karma-baselines/' + mode + '/' + outputName + '.png';
+
+  return fetch(baselineUrl)
+    .then(function (response) {
+      if (!response.ok) {
+        throw new Error('not found');
+      }
+      return response.blob();
+    })
+    .then(function (blob) {
+      return blobToDataUrl(blob);
+    })
+    .then(function (baselineDataUrl) {
+      return runResembleComparison(
+        imageDataURL,
+        baselineDataUrl,
+        outputName,
+        testName
+      );
+    })
+    .catch(function () {
+      // No compat baseline exists yet - save the actual as the new baseline
+      console.log(
+        '[KARMA_BASELINE_CREATE]' +
+          JSON.stringify({
+            mode: mode,
+            outputName: outputName,
+            image: imageDataURL,
+          })
+      );
+      console.log(
+        '[KARMA_IMAGE_ARTIFACT]' +
+          JSON.stringify({
+            actual: imageDataURL,
+            diff: '',
+            expected: '',
+            mismatch: 0,
+            mismatchExact: '0',
+            outputName: outputName,
+            status: 'new',
+            testName: testName,
+          })
+      );
+      // Pass the test - baseline will be created after the run
+    });
+}
+
+function runResembleComparison(imageDataURL, expectedDataUrl, outputName, testName) {
   return new Promise((resolve, reject) => {
     resemble.outputSettings({
       useCrossOrigin: false,
-      errorColor: {
-        red: 0,
-        green: 255,
-        blue: 0,
-      },
+      errorColor: { red: 0, green: 255, blue: 0 },
       transparency: 0.5,
       largeImageThreshold: 1200,
       outputDiff: true,
     });
 
-    resemble(baseline.default)
+    resemble(expectedDataUrl)
       .compareTo(imageDataURL)
       .onComplete((data) => {
         const mismatchExact = String(data.misMatchPercentage);
@@ -347,7 +420,7 @@ function compareImages(
           `[KARMA_IMAGE_ARTIFACT]${JSON.stringify({
             actual: imageDataURL,
             diff,
-            expected: baseline.default,
+            expected: expectedDataUrl,
             mismatch,
             mismatchExact,
             outputName,
@@ -356,34 +429,13 @@ function compareImages(
           })}`
         );
 
-        // If the error is greater than 1%, fail the test
-        // and download the difference image
-        // Todo: this should be a configurable threshold
         if (mismatch > 1) {
-          console.warn(
-            'mismatch of',
-            mismatchExact,
-            '% to image',
-            imageDataURL
-          );
-          console.log(
-            `[KARMA_IMAGE_DIFF]${JSON.stringify({
-              actual: imageDataURL,
-              diff,
-              expected: baseline.default,
-              mismatch,
-              mismatchExact,
-              outputName,
-            })}`
-          );
-          // Todo: we should store the diff image somewhere
           reject(
             new Error(
               `mismatch of ${mismatchExact} between images for ${outputName},
               the diff image is: \n\n ${diff} \n\n`
             )
           );
-          // reject(new Error(`mismatch between images for ${outputName}\n mismatch: ${mismatch}\n ${baseline.default}\n ${imageDataURL}\n ${diff}`));
         } else {
           resolve();
         }

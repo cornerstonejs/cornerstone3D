@@ -26,7 +26,7 @@ process.env.CHROME_BIN = require('puppeteer').executablePath();
  * https://github.com/codymikol/karma-webpack?tab=readme-ov-file#default-webpack-configuration
  */
 const outputPath = path.join(os.tmpdir(), '_karma_webpack_') + Math.floor(Math.random() * 1000000)
-const forceViewportV2 = process.env.FORCE_VIEWPORT_V2 === 'true';
+const forceCompat = process.env.FORCE_COMPAT === 'true';
 const forceCpuRendering = process.env.FORCE_CPU_RENDERING === 'true';
 
 /** @param {import('karma').Config} config */
@@ -35,7 +35,7 @@ module.exports = function (config) {
     reporters: ['junit', 'coverage', 'spec'],
     client: {
       forceCpuRendering,
-      forceViewportV2,
+      forceCompat,
       jasmine: {
         random: false, // don't randomize the order of tests
         stopOnFailure: false,
@@ -90,6 +90,13 @@ module.exports = function (config) {
         included: false,
         served: true
       },
+      // Compat-mode baselines for dynamic comparison
+      {
+        pattern: 'karma-baselines/**/*.png',
+        watched: false,
+        included: false,
+        served: true
+      },
       /**
        * Required to allow karma to load wasm and worker files built via webpack.
        * See the comment at the top of this file for more details.
@@ -102,8 +109,8 @@ module.exports = function (config) {
       }
     ],
     proxies: {
-      // Simplified path to access test images in tests
       '/testImages/': '/base/packages/dicomImageLoader/testImages/',
+      '/karma-baselines/': '/base/karma-baselines/',
     },
     preprocessors: {
       'packages/core/test/**/*_test.js': ['webpack'],

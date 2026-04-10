@@ -20,7 +20,9 @@ main().catch((error) => {
 async function main() {
   fs.mkdirSync(artifactsDir, { recursive: true });
 
-  const junit = junitPath ? await readJUnit(junitPath) : { tests: [] };
+  const junit = junitPath
+    ? await readJUnit(junitPath)
+    : { tests: [], totals: { total: 0, passed: 0, failed: 0, skipped: 0 } };
   const diffArtifacts = readDiffArtifacts(logPath, artifactsDir);
   const { tests: testsWithArtifacts, unmatchedArtifacts } = attachArtifacts(
     junit.tests,
@@ -30,6 +32,7 @@ async function main() {
     artifacts: diffArtifacts,
     junitPath,
     logPath,
+    reportName,
     tests: testsWithArtifacts,
     totals: junit.totals,
     unmatchedArtifacts,
@@ -53,6 +56,10 @@ async function main() {
     'utf8'
   );
 }
+
+// ---------------------------------------------------------------------------
+// Data loading (unchanged)
+// ---------------------------------------------------------------------------
 
 function findLatestJunitXml(junitRoot) {
   if (!fs.existsSync(junitRoot)) {
@@ -242,592 +249,154 @@ function attachArtifacts(tests, artifacts) {
   };
 }
 
+// ---------------------------------------------------------------------------
+// HTML report generation
+// ---------------------------------------------------------------------------
+
 function buildHtmlReport({
   tests,
   totals,
-  junitPath,
-  logPath,
+  junitPath: _junitPath,
+  logPath: _logPath,
+  reportName: rName = '',
   unmatchedArtifacts = [],
 }) {
-  const unmatchedArtifactGroups = groupArtifactsByTest(unmatchedArtifacts);
-  const orderedTests = [...tests].sort((left, right) => {
-    return statusSortWeight(left.status) - statusSortWeight(right.status);
-  });
-  const testsWithArtifactsCount =
-    orderedTests.filter((test) => test.artifacts.length).length +
-    unmatchedArtifactGroups.length;
+  const items = [];
 
-  const rows = orderedTests.length
-    ? orderedTests
-        .map((test) => {
-          return `
-            <details class="testcase ${test.status}" data-status="${escapeHtml(
-              test.status
-            )}" data-has-artifacts="${test.artifacts.length ? 'true' : 'false'}" ${test.status === 'failed' ? 'open' : ''}>
-              <summary>
-                <span class="status">${escapeHtml(test.status.toUpperCase())}</span>
-                <span class="name">${escapeHtml(test.name)}</span>
-                <span class="suite">${escapeHtml(test.suiteName)}</span>
-              </summary>
-              <div class="details">
-                <div class="meta">
-                  <div><strong>Suite:</strong> ${escapeHtml(test.suiteName)}</div>
-                  <div><strong>Class:</strong> ${escapeHtml(test.classname || '-')}</div>
-                  <div><strong>Duration:</strong> ${escapeHtml(test.duration || '-')}</div>
-                </div>
-                ${
-                  test.failureMessage
-                    ? `<pre class="failure">${escapeHtml(test.failureMessage)}</pre>`
-                    : ''
-                }
-                ${renderArtifacts(test.artifacts)}
-              </div>
-            </details>
-          `;
-        })
-        .join('\n')
-    : `
-        <section class="empty-state">
-          <strong>No testcases were parsed from the JUnit XML.</strong>
-          <div class="empty-state-meta">
-            Check the JUnit and log paths above if this report looks wrong.
-          </div>
-        </section>
-      `;
-
-  const unmatchedArtifactsHtml = buildUnmatchedArtifactsSection(
-    unmatchedArtifactGroups
-  );
-
-  return `<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>Karma Report</title>
-    <style>
-      body {
-        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        margin: 0;
-        padding: 24px;
-        background: #111827;
-        color: #e5e7eb;
+  for (const test of tests) {
+    if (test.artifacts.length > 0) {
+      // One entry per image artifact
+      for (const artifact of test.artifacts) {
+        items.push({
+          type: 'image',
+          testName: test.name,
+          suiteName: test.suiteName,
+          testStatus: test.status,
+          failureMessage: '',
+          outputName: artifact.outputName,
+          expected: artifact.expectedPath,
+          actual: artifact.actualPath,
+          diff: artifact.diffPath,
+          mismatch: artifact.mismatch,
+          mismatchExact: artifact.mismatchExact,
+          status: artifact.status,
+        });
       }
-      a { color: #93c5fd; }
-      .summary {
-        margin-bottom: 24px;
-        padding: 16px 20px;
-        background: #1f2937;
-        border: 1px solid #374151;
-        border-radius: 12px;
-      }
-      .counts {
-        display: flex;
-        gap: 16px;
-        flex-wrap: wrap;
-        margin-top: 8px;
-      }
-      .filters {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-        margin-top: 16px;
-      }
-      .filter-button {
-        appearance: none;
-        background: #111827;
-        border: 1px solid #374151;
-        border-radius: 999px;
-        color: #e5e7eb;
-        cursor: pointer;
-        font: inherit;
-        padding: 8px 12px;
-      }
-      .filter-button.active {
-        background: #e5e7eb;
-        border-color: #e5e7eb;
-        color: #111827;
-      }
-      .count {
-        padding: 8px 12px;
-        border-radius: 999px;
-        background: #111827;
-        border: 1px solid #374151;
-      }
-      .results-meta {
-        color: #9ca3af;
-        margin-top: 12px;
-      }
-      .empty-state {
-        margin-bottom: 12px;
-        padding: 16px 20px;
-        background: #1f2937;
-        border: 1px dashed #4b5563;
-        border-radius: 12px;
-      }
-      .empty-state-meta {
-        margin-top: 8px;
-        color: #9ca3af;
-      }
-      .testcase {
-        margin-bottom: 12px;
-        border: 1px solid #374151;
-        border-radius: 12px;
-        background: #1f2937;
-        overflow: hidden;
-      }
-      .testcase summary {
-        cursor: pointer;
-        list-style: none;
-        display: grid;
-        grid-template-columns: 110px 1fr auto;
-        gap: 12px;
-        align-items: center;
-        padding: 14px 16px;
-      }
-      .testcase summary::-webkit-details-marker { display: none; }
-      .status {
-        font-weight: 700;
-        font-size: 12px;
-        letter-spacing: 0.04em;
-      }
-      .testcase.passed .status { color: #86efac; }
-      .testcase.failed .status { color: #fca5a5; }
-      .testcase.skipped .status { color: #fde68a; }
-      .suite {
-        color: #9ca3af;
-        font-size: 13px;
-      }
-      .details {
-        padding: 0 16px 16px;
-      }
-      .meta {
-        display: grid;
-        gap: 6px;
-        margin-bottom: 12px;
-        color: #d1d5db;
-      }
-      .failure {
-        overflow: auto;
-        white-space: pre-wrap;
-        background: #111827;
-        border: 1px solid #374151;
-        border-radius: 8px;
-        padding: 12px;
-        color: #f3f4f6;
-      }
-      .artifact {
-        margin-top: 16px;
-        padding-top: 16px;
-        border-top: 1px solid #374151;
-      }
-      .artifact-header {
-        display: flex;
-        justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 12px;
-      }
-      .image-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 12px;
-      }
-      .image-grid-four-up {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-      }
-      .image-card {
-        background: #111827;
-        border: 1px solid #374151;
-        border-radius: 10px;
-        overflow: hidden;
-        min-width: 0;
-      }
-      .image-card-header {
-        padding: 10px 12px;
-        border-bottom: 1px solid #374151;
-        font-weight: 600;
-      }
-      .image-card a {
-        display: block;
-        padding: 12px;
-      }
-      .image-card img {
-        display: block;
-        width: 100%;
-        height: auto;
-        background: #000;
-      }
-      .compare-card {
-        background: #111827;
-        border: 1px solid #374151;
-        border-radius: 10px;
-        overflow: hidden;
-        min-width: 0;
-      }
-      .compare-card-header {
-        align-items: center;
-        border-bottom: 1px solid #374151;
-        display: flex;
-        font-weight: 600;
-        justify-content: space-between;
-        padding: 10px 12px;
-      }
-      .compare-stage {
-        aspect-ratio: 1 / 1;
-        background: #000;
-        overflow: hidden;
-        position: relative;
-      }
-      .compare-stage img {
-        display: block;
-        height: 100%;
-        left: 0;
-        object-fit: contain;
-        pointer-events: none;
-        position: absolute;
-        top: 0;
-        user-select: none;
-        width: 100%;
-      }
-      .compare-overlay {
-        border-right: 2px solid rgba(255, 255, 255, 0.95);
-        bottom: 0;
-        clip-path: inset(0 calc(100% - var(--compare-position, 50%)) 0 0);
-        left: 0;
-        position: absolute;
-        right: 0;
-        top: 0;
-      }
-      .compare-handle {
-        background: rgba(255, 255, 255, 0.95);
-        border: 0;
-        border-radius: 999px;
-        box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.65);
-        height: 18px;
-        left: var(--compare-position, 50%);
-        pointer-events: none;
-        position: absolute;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        width: 18px;
-      }
-      .compare-range {
-        appearance: none;
-        background: transparent;
-        bottom: 10px;
-        cursor: ew-resize;
-        left: 12px;
-        position: absolute;
-        right: 12px;
-      }
-      .compare-range::-webkit-slider-runnable-track {
-        background: rgba(255, 255, 255, 0.3);
-        border-radius: 999px;
-        height: 4px;
-      }
-      .compare-range::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        background: #fff;
-        border-radius: 999px;
-        height: 14px;
-        margin-top: -5px;
-        width: 14px;
-      }
-      .compare-range::-moz-range-track {
-        background: rgba(255, 255, 255, 0.3);
-        border-radius: 999px;
-        height: 4px;
-      }
-      .compare-range::-moz-range-thumb {
-        background: #fff;
-        border: 0;
-        border-radius: 999px;
-        height: 14px;
-        width: 14px;
-      }
-      .compare-labels {
-        color: #9ca3af;
-        display: flex;
-        font-size: 12px;
-        justify-content: space-between;
-        padding: 10px 12px 12px;
-      }
-      .no-artifacts {
-        margin-top: 16px;
-        color: #9ca3af;
-      }
-      @media (max-width: 1200px) {
-        .image-grid-four-up {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
+      // If the test also has a non-image failure, add a separate entry for it
+      if (test.status === 'failed' && test.failureMessage) {
+        const isOnlyImageFailure = test.artifacts.some(
+          (a) =>
+            a.status === 'failed' &&
+            test.failureMessage.includes(a.outputName)
+        );
+        if (!isOnlyImageFailure) {
+          items.push({
+            type: 'error',
+            testName: test.name,
+            suiteName: test.suiteName,
+            testStatus: test.status,
+            failureMessage: test.failureMessage,
+            outputName: '',
+            expected: '',
+            actual: '',
+            diff: '',
+            mismatch: 0,
+            mismatchExact: '0',
+            status: 'failed',
+          });
         }
       }
-      @media (max-width: 720px) {
-        .image-grid-four-up {
-          grid-template-columns: 1fr;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <section class="summary">
-      <h1>Karma HTML Report</h1>
-      <div>JUnit: ${escapeHtml(junitPath || 'not found')}</div>
-      <div>Log: ${escapeHtml(logPath || 'not found')}</div>
-      <div class="counts">
-        <div class="count">Total: ${totals.total}</div>
-        <div class="count">Passed: ${totals.passed}</div>
-        <div class="count">Failed: ${totals.failed}</div>
-        <div class="count">Skipped: ${totals.skipped}</div>
-      </div>
-      <div class="filters">
-        <button class="filter-button status-filter active" data-filter="all" type="button">All (${totals.total})</button>
-        <button class="filter-button status-filter" data-filter="failed" type="button">Failed (${totals.failed})</button>
-        <button class="filter-button status-filter" data-filter="passed" type="button">Passed (${totals.passed})</button>
-        <button class="filter-button status-filter" data-filter="skipped" type="button">Skipped (${totals.skipped})</button>
-        <button class="filter-button artifact-filter" id="artifact-filter" type="button" aria-pressed="false">With Images (${testsWithArtifactsCount})</button>
-      </div>
-      <div class="results-meta" id="results-meta">Showing ${totals.total} of ${totals.total} tests</div>
-    </section>
-    ${rows}
-    ${unmatchedArtifactsHtml}
-    <script>
-      (() => {
-        const statusButtons = Array.from(document.querySelectorAll('.status-filter'));
-        const artifactButton = document.getElementById('artifact-filter');
-        const testcases = Array.from(document.querySelectorAll('.testcase'));
-        const resultsMeta = document.getElementById('results-meta');
-        let currentStatusFilter = 'all';
-        let artifactsOnly = false;
-
-        function applyFilters() {
-          let visibleCount = 0;
-
-          testcases.forEach((testcase) => {
-            const matchesStatus =
-              currentStatusFilter === 'all' ||
-              testcase.dataset.status === currentStatusFilter;
-            const matchesArtifacts =
-              !artifactsOnly || testcase.dataset.hasArtifacts === 'true';
-            const matches = matchesStatus && matchesArtifacts;
-
-            testcase.hidden = !matches;
-
-            if (matches) {
-              visibleCount += 1;
-            }
-          });
-
-          statusButtons.forEach((button) => {
-            button.classList.toggle(
-              'active',
-              button.dataset.filter === currentStatusFilter
-            );
-          });
-          artifactButton?.classList.toggle('active', artifactsOnly);
-          artifactButton?.setAttribute(
-            'aria-pressed',
-            artifactsOnly ? 'true' : 'false'
-          );
-
-          resultsMeta.textContent = 'Showing ' + visibleCount + ' of ' + testcases.length + ' tests';
-        }
-
-        statusButtons.forEach((button) => {
-          button.addEventListener('click', () => {
-            currentStatusFilter = button.dataset.filter;
-            applyFilters();
-          });
-        });
-
-        artifactButton?.addEventListener('click', () => {
-          artifactsOnly = !artifactsOnly;
-          applyFilters();
-        });
-
-        applyFilters();
-
-        document.querySelectorAll('.compare-card').forEach((card) => {
-          const overlay = card.querySelector('.compare-overlay');
-          const range = card.querySelector('.compare-range');
-
-          function sync() {
-            const value = range.value + '%';
-            card.style.setProperty('--compare-position', value);
-          }
-
-          range.addEventListener('input', sync);
-          sync();
-        });
-      })();
-    </script>
-  </body>
-</html>`;
-}
-
-function statusSortWeight(status) {
-  switch (status) {
-    case 'failed':
-      return 0;
-    case 'skipped':
-      return 1;
-    case 'passed':
-      return 2;
-    default:
-      return 3;
-  }
-}
-
-function imageCard(label, imagePath) {
-  const openLabel = `Open ${String(label).toLowerCase()}`;
-
-  return `
-    <div class="image-card">
-      <div class="image-card-header">
-        <span>${escapeHtml(label)}</span>
-        <a href="${escapeHtml(imagePath)}" target="_blank" rel="noreferrer">${escapeHtml(
-          openLabel
-        )}</a>
-      </div>
-      <a href="${escapeHtml(imagePath)}" target="_blank" rel="noreferrer">
-        <img src="${escapeHtml(imagePath)}" alt="${escapeHtml(label)}" />
-      </a>
-    </div>
-  `;
-}
-
-function overlayCompareCard(expectedPath, actualPath, artifactName) {
-  return `
-    <div class="compare-card">
-      <div class="compare-card-header">
-        <span>Compare</span>
-        <span>
-          <a href="${escapeHtml(expectedPath)}" target="_blank" rel="noreferrer">Open expected</a>
-          <span> / </span>
-          <a href="${escapeHtml(actualPath)}" target="_blank" rel="noreferrer">Open actual</a>
-        </span>
-      </div>
-      <div class="compare-stage">
-        <img src="${escapeHtml(expectedPath)}" alt="${escapeHtml(
-          'Expected image for ' + artifactName
-        )}" />
-        <div class="compare-overlay">
-          <img src="${escapeHtml(actualPath)}" alt="${escapeHtml(
-            'Actual image for ' + artifactName
-          )}" />
-        </div>
-        <div class="compare-handle" aria-hidden="true"></div>
-        <input class="compare-range" type="range" min="0" max="100" value="50" aria-label="${escapeHtml(
-          'Compare expected and actual for ' + artifactName
-        )}" />
-      </div>
-      <div class="compare-labels">
-        <span>Expected</span>
-        <span>Actual</span>
-      </div>
-    </div>
-  `;
-}
-
-function renderArtifacts(artifacts) {
-  if (!artifacts.length) {
-    return '<div class="no-artifacts">No image artifacts for this test.</div>';
-  }
-
-  return artifacts.map(renderArtifact).join('');
-}
-
-function renderArtifact(artifact) {
-  return `
-    <div class="artifact">
-      <div class="artifact-header">
-        <strong>${escapeHtml(artifact.outputName)}</strong>
-        <span>${escapeHtml(getMismatchLabel(artifact))}% mismatch</span>
-      </div>
-      <div class="image-grid image-grid-four-up">
-        ${imageCard('Expected', artifact.expectedPath)}
-        ${imageCard('Actual', artifact.actualPath)}
-        ${overlayCompareCard(
-          artifact.expectedPath,
-          artifact.actualPath,
-          artifact.outputName
-        )}
-        ${imageCard('Diff Mask', artifact.diffPath)}
-      </div>
-    </div>
-  `;
-}
-
-function buildUnmatchedArtifactsSection(unmatchedArtifactGroups) {
-  if (!unmatchedArtifactGroups.length) {
-    return '';
-  }
-
-  const rows = unmatchedArtifactGroups
-    .map(
-      (group) => `
-        <details class="testcase ${group.status}" data-status="${escapeHtml(
-          group.status
-        )}" data-has-artifacts="true" open>
-          <summary>
-            <span class="status">${escapeHtml(group.status.toUpperCase())}</span>
-            <span class="name">${escapeHtml(group.name)}</span>
-            <span class="suite">Image Artifacts</span>
-          </summary>
-          <div class="details">
-            <div class="meta">
-              <div><strong>Suite:</strong> Image artifacts captured from Karma output but not matched to a parsed JUnit testcase.</div>
-              <div><strong>Class:</strong> -</div>
-              <div><strong>Duration:</strong> -</div>
-            </div>
-            ${renderArtifacts(group.artifacts)}
-          </div>
-        </details>
-      `
-    )
-    .join('\n');
-
-  return `
-    <section class="summary">
-      <h2>Unmatched Image Artifacts</h2>
-      <div>${unmatchedArtifactGroups.length} image artifact group(s) could not be attached to a parsed JUnit testcase, so they are listed here.</div>
-    </section>
-    ${rows}
-  `;
-}
-
-function groupArtifactsByTest(artifacts) {
-  const groups = new Map();
-
-  for (const artifact of artifacts) {
-    const groupName = artifact.testName || artifact.outputName;
-    const existing = groups.get(groupName);
-
-    if (existing) {
-      existing.artifacts.push(artifact);
-      if (artifact.status === 'failed') {
-        existing.status = 'failed';
-      }
-      continue;
+    } else {
+      // No image artifacts - show as text-only entry
+      items.push({
+        type: test.status === 'failed' ? 'error' : 'test',
+        testName: test.name,
+        suiteName: test.suiteName,
+        testStatus: test.status,
+        failureMessage: test.failureMessage || '',
+        outputName: '',
+        expected: '',
+        actual: '',
+        diff: '',
+        mismatch: 0,
+        mismatchExact: '0',
+        status: test.status,
+      });
     }
+  }
 
-    groups.set(groupName, {
-      name: groupName,
-      status: artifact.status === 'failed' ? 'failed' : 'passed',
-      artifacts: [artifact],
+  for (const artifact of unmatchedArtifacts) {
+    items.push({
+      type: 'image',
+      testName: artifact.testName || artifact.outputName,
+      suiteName: 'Unmatched Artifacts',
+      testStatus: artifact.status === 'failed' ? 'failed' : 'passed',
+      failureMessage: '',
+      outputName: artifact.outputName,
+      expected: artifact.expectedPath,
+      actual: artifact.actualPath,
+      diff: artifact.diffPath,
+      mismatch: artifact.mismatch,
+      mismatchExact: artifact.mismatchExact,
+      status: artifact.status,
     });
   }
 
-  return Array.from(groups.values()).sort((left, right) => {
-    const statusDifference =
-      statusSortWeight(left.status) - statusSortWeight(right.status);
-
-    if (statusDifference !== 0) {
-      return statusDifference;
-    }
-
-    return left.name.localeCompare(right.name);
+  // Sort: failed first, then by suite/test name
+  items.sort((a, b) => {
+    if (a.status === 'failed' && b.status !== 'failed') return -1;
+    if (a.status !== 'failed' && b.status === 'failed') return 1;
+    return (
+      a.suiteName.localeCompare(b.suiteName) ||
+      a.testName.localeCompare(b.testName)
+    );
   });
+
+  const itemsJson = JSON.stringify(items);
+  const totalsJson = JSON.stringify(totals || {});
+  const karmaModeJson = JSON.stringify({
+    compat: rName.includes('compat'),
+    cpu: rName.includes('-cpu'),
+  });
+
+  // Write data as a separate JS file so the report can be reloaded
+  // without re-running the generator when editing style.css or client.js
+  fs.writeFileSync(
+    path.join(reportsDir, 'data.js'),
+    'var ITEMS = ' + itemsJson + ';\n' +
+    'var TOTALS = ' + totalsJson + ';\n' +
+    'var KARMA_MODE = ' + karmaModeJson + ';\n',
+    'utf8'
+  );
+
+  // Compute relative path from report dir to the template assets
+  const templateDir = path.join(__dirname, 'karma-report');
+  const relTemplatePath = path.relative(reportsDir, templateDir).split(path.sep).join('/');
+
+  // Read body HTML template
+  const bodyHtml = fs.readFileSync(path.join(templateDir, 'body.html'), 'utf8');
+
+  return (
+    '<!DOCTYPE html>\n' +
+    '<html lang="en">\n' +
+    '<head>\n' +
+    '<meta charset="UTF-8">\n' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n' +
+    '<title>Karma Image Report</title>\n' +
+    '<link rel="stylesheet" href="' + relTemplatePath + '/style.css">\n' +
+    '</head>\n' +
+    '<body>\n' +
+    bodyHtml + '\n' +
+    '<script src="data.js"></script>\n' +
+    '<script src="' + relTemplatePath + '/client.js"></script>\n' +
+    '</body>\n' +
+    '</html>'
+  );
 }
+
+// ---------------------------------------------------------------------------
+// Utility functions
+// ---------------------------------------------------------------------------
 
 function findMatchingTestIndex(tests, artifact) {
   const artifactTestName = normalizeText(artifact.testName);
@@ -846,14 +415,17 @@ function findMatchingTestIndex(tests, artifact) {
         index,
         name: normalizeText(test.name),
       }))
-      .filter((candidate) => candidate.name && artifactTestName.endsWith(candidate.name));
+      .filter(
+        (candidate) =>
+          candidate.name && artifactTestName.endsWith(candidate.name)
+      );
 
     if (suffixMatches.length === 1) {
       return suffixMatches[0].index;
     }
   }
 
-  const outputNameHint = normalizeText(`for ${artifact.outputName}`);
+  const outputNameHint = normalizeText('for ' + artifact.outputName);
   const failureMatches = tests
     .map((test, index) => ({
       failureMessage: normalizeText(test.failureMessage),
@@ -879,19 +451,6 @@ function getArtifactKey(artifact) {
     normalizeText(artifact.testName),
     normalizeText(artifact.outputName),
   ].join('::');
-}
-
-function getMismatchLabel(artifact) {
-  return String(artifact.mismatchExact ?? artifact.mismatch ?? '');
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
 }
 
 function slugify(value) {

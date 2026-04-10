@@ -21,7 +21,7 @@ jobs:
             collect_coverage: true
           - node-version: 20
             mode: compatibility
-            run_args: "all --viewport-v2 --project=chromium"
+            run_args: "--compat --project=chromium"
             collect_coverage: false
           - node-version: 20
             mode: next

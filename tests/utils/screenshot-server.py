@@ -45,9 +45,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         # Find all pairs
         pairs = []
         for dirpath, dirs, files in sorted(os.walk(ss_dir)):
-            compat_files = [f for f in files if f.startswith("compatibility-viewport-v2-") and f.endswith(".png")]
+            compat_files = [f for f in files if f.startswith("compatibility-compat-") and f.endswith(".png")]
             for cf in sorted(compat_files):
-                base_name = cf.replace("compatibility-viewport-v2-", "")
+                base_name = cf.replace("compatibility-compat-", "")
                 if base_name in files:
                     rel = os.path.relpath(dirpath, ss_dir)
                     pairs.append({
@@ -65,7 +65,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 cwd=REPO, capture_output=True, text=True
             )
             for line in r.stdout.strip().split("\n"):
-                if "compatibility-viewport-v2" in line:
+                if "compatibility-compat" in line:
                     tracked.add(line.replace("tests/screenshots/chromium/", ""))
         except Exception:
             pass
@@ -77,7 +77,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 cwd=REPO, capture_output=True, text=True
             )
             for line in r.stdout.strip().split("\n"):
-                if "compatibility-viewport-v2" in line:
+                if "compatibility-compat" in line:
                     staged.add(line.replace("tests/screenshots/chromium/", ""))
         except Exception:
             pass

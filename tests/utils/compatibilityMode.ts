@@ -20,7 +20,7 @@ function getCompatibilityModePathPrefix(): string | null {
   const parts = ['compatibility'];
 
   if (shouldForceViewportNext()) {
-    parts.push('viewport-v2');
+    parts.push('compat');
   }
 
   if (shouldForceCpuRendering()) {
