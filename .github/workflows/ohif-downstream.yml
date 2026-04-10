@@ -39,7 +39,7 @@ jobs:
         with:
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
 
-      - name: Resolve OHIF ref (PR body OHIF_REF: … or workflow_dispatch input)
+      - name: Resolve OHIF ref (PR body OHIF_REF line or workflow_dispatch input)
         run: bash scripts/ci/ohif-ref-resolve.sh
         env:
           GH_TOKEN: ${{ github.token }}
