@@ -23,58 +23,54 @@ to run the tests and visually inspect the results, you can run the tests by chan
 
 ### Generating HTML Review Reports
 
-For local review, use the generic Karma runner instead of reading terminal output only:
+For local review, use the repository wrapper instead of reading terminal output only:
 
 ```bash
 ./scripts/run-karma.sh
-./scripts/run-karma.sh --viewport-v2
+./scripts/run-karma.sh --compat
 ./scripts/run-karma.sh --cpu
+./scripts/run-karma.sh --next
 ```
 
-This defaults to `all` and generates:
+The wrapper runs `npx karma start --single-run`, captures the log, and generates timestamped output under `reports/`.
 
-- `reports/all-legacy-karma/<timestamp>/all-legacy-karma.log`
-- `reports/all-legacy-karma/<timestamp>/html-report/index.html`
-
-You can also scope the run:
+Examples:
 
 ```bash
-./scripts/run-karma.sh core
-./scripts/run-karma.sh core --viewport-v2
-./scripts/run-karma.sh core --cpu
-./scripts/run-karma.sh tools
-./scripts/run-karma.sh all
+reports/legacy-karma/<timestamp>/legacy-karma.log
+reports/legacy-karma-<timestamp>/index.html
+reports/compat-karma/<timestamp>/compat-karma.log
+reports/compat-cpu-karma/<timestamp>/compat-cpu-karma.log
 ```
 
-These generate matching scoped outputs such as:
+Supported wrapper flags:
 
-- `reports/core-legacy-karma/<timestamp>/core-legacy-karma.log`
-- `reports/core-legacy-karma/<timestamp>/html-report/index.html`
-- `reports/tools-legacy-karma/<timestamp>/tools-legacy-karma.log`
-- `reports/tools-legacy-karma/<timestamp>/html-report/index.html`
+- `--compat`: force compatibility mode for the Karma run.
+- `--cpu`: force CPU rendering for the Karma run.
+- `--next`: convenience mode that runs two passes, `--compat` and then `--compat --cpu`.
 
-Each run gets its own timestamped subfolder, so new runs do not overwrite older reports.
-When `--viewport-v2` is used, the folder name changes accordingly, for example:
-
-- `reports/core-viewport-v2-karma/<timestamp>/core-viewport-v2-karma.log`
-- `reports/core-viewport-v2-karma/<timestamp>/html-report/index.html`
-- `reports/core-viewport-v2-cpu-karma/<timestamp>/core-viewport-v2-cpu-karma.log`
-- `reports/core-viewport-v2-cpu-karma/<timestamp>/html-report/index.html`
-
-To run both Karma and Playwright sequentially for the same package scope, use:
+Any other arguments are passed directly to `karma start`, so you can keep using normal Karma CLI options:
 
 ```bash
-./scripts/run-tests.sh
-./scripts/run-tests.sh core
-./scripts/run-tests.sh tools
-./scripts/run-tests.sh core --viewport-v2
+./scripts/run-karma.sh --browsers Chrome --no-single-run
+./scripts/run-karma.sh --reporters spec
 ```
 
-Passing `--viewport-v2` forces the test harness to enable `rendering.useViewportV2` for the run, so legacy
-viewport type inputs are remapped to the V2 implementations during Karma execution.
+Useful environment variables:
 
-Passing `--cpu` forces CPU rendering in the Karma test harness, so shared setup paths initialize viewports with
-`useCPURendering` enabled instead of relying only on per-test calls.
+- `KARMA_GREP="<pattern>"`: filter tests via Karma client args.
+- `KARMA_PACKAGE=core|tools`: load only the selected package's Karma tests.
+- `FORCE_COMPAT=true` and `FORCE_CPU_RENDERING=true`: direct overrides when running `karma start` without the wrapper.
+
+Examples:
+
+```bash
+./scripts/run-karma.sh
+./scripts/run-karma.sh --compat
+./scripts/run-karma.sh --compat --browsers Chrome --no-single-run
+KARMA_GREP="flip a stack viewport vertically" ./scripts/run-karma.sh --browsers Chrome --no-single-run
+KARMA_PACKAGE=core ./scripts/run-karma.sh
+```
 
 ### Reviewing Image Comparisons
 
@@ -95,5 +91,11 @@ The HTML report also supports filtering by status, and failed tests are rendered
 
 ### Running Only One Karma Test Locally
 
-You can use `karma` specifiers such as `describe` instead of (`describe`) and `fit` instead
-of (`it`) to run only one test.
+Use `KARMA_GREP` when you want to keep the wrapper but filter the suite:
+
+```bash
+KARMA_GREP="flip a stack viewport vertically" ./scripts/run-karma.sh
+KARMA_GREP="flip a stack viewport vertically" ./scripts/run-karma.sh --browsers Chrome --no-single-run
+```
+
+For ad hoc debugging, you can also still use Jasmine helpers such as `fdescribe` and `fit`.

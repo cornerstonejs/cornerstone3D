@@ -152,54 +152,65 @@ After you have wrote your tests, you can run them by using the following command
 
 ```bash
 ./scripts/run-playright.sh
-./scripts/run-playright.sh --viewport-v2
+./scripts/run-playright.sh --compat
 ./scripts/run-playright.sh --cpu
+./scripts/run-playright.sh --next
 ```
 
-This defaults to `all`. You can also scope the run:
+The wrapper runs `npx playwright test`, auto-selects the test files for the chosen mode, and writes timestamped logs and artifacts under `reports/`.
+
+Examples:
 
 ```bash
-./scripts/run-playright.sh core
-./scripts/run-playright.sh core --viewport-v2
-./scripts/run-playright.sh core --cpu
-./scripts/run-playright.sh tools
-./scripts/run-playright.sh all
+reports/legacy-playwright/<timestamp>/
+reports/compat-playwright/<timestamp>/
+reports/compat-cpu-playwright/<timestamp>/
+reports/next-viewport-playwright/<timestamp>/
 ```
 
-Each run gets its own timestamped report directory:
+Supported wrapper flags:
+
+- `--compat`: open example pages with `?type=next`.
+- `--cpu`: open example pages with `?cpu=1`.
+- `--next`: run only `tests/nextViewport/**/*.spec.ts`.
+
+`--next` on Playwright is different from `--next` on Karma. Playwright uses it to select the `tests/nextViewport` suite only. Karma uses it as a convenience mode that runs compatibility and CPU passes.
+
+Any other arguments are passed directly to `playwright test`, so you can still use the normal Playwright CLI:
 
 ```bash
-reports/all-legacy-playwright/<timestamp>/
-reports/core-legacy-playwright/<timestamp>/
-reports/tools-legacy-playwright/<timestamp>/
+./scripts/run-playright.sh --project chromium --headed
+./scripts/run-playright.sh -g "stack viewport"
+./scripts/run-playright.sh --workers 1
+./scripts/run-playright.sh --update-snapshots
 ```
 
-When `--viewport-v2` is used, the folder name changes accordingly, for example:
+Useful environment variables:
+
+- `PLAYWRIGHT_REUSE_EXISTING_SERVER=true|false`: control reuse of the configured local example server.
+- The wrapper sets `PLAYWRIGHT_FORCE_COMPAT`, `PLAYWRIGHT_FORCE_CPU_RENDERING`, `PLAYWRIGHT_HTML_OUTPUT_DIR`, and `PLAYWRIGHT_HTML_OPEN=never` internally.
+
+Examples:
 
 ```bash
-reports/core-viewport-v2-playwright/<timestamp>/
-reports/core-viewport-v2-cpu-playwright/<timestamp>/
+./scripts/run-playright.sh
+./scripts/run-playright.sh --compat
+./scripts/run-playright.sh --project chromium --headed
+./scripts/run-playright.sh -g "stack viewport"
+PLAYWRIGHT_REUSE_EXISTING_SERVER=true ./scripts/run-playright.sh --project chromium
+./scripts/run-playright.sh --next
 ```
-
-If you want to run Karma and Playwright together for the same package scope, use:
-
-```bash
-./scripts/run-tests.sh
-./scripts/run-tests.sh core
-./scripts/run-tests.sh tools
-./scripts/run-tests.sh tools --viewport-v2
-./scripts/run-tests.sh core --viewport-v2 --cpu
-```
-
-Passing `--viewport-v2` forces the example navigation helper to open each example with `?type=next`, which
-enables `rendering.useViewportV2` in the demo setup for that Playwright run.
-
-Passing `--cpu` forces the example navigation helper to open each example with `?cpu=1`, which enables CPU
-rendering in the demo setup for that Playwright run.
 
 ## Serving the examples manually for development
 
-By default, when you run the tests, it will call the `bun build-and-serve-static-examples` command to serve the examples first, then run the tests, if you would like to serve the examples manually, you can use the same command. The examples will be available at `http://localhost:3000`. This could speed up your development process since playwright will skip the build and serve step and use the existing server on port 3000.
+By default, Playwright uses the configured `webServer` in `playwright.config.ts`, which runs `bun build-and-serve-static-examples` and serves the examples at `http://localhost:3333`.
+
+If you want to serve the examples manually during development, you can run the same command yourself and then tell Playwright to reuse the existing server:
+
+```bash
+yarn run build-and-serve-static-examples
+PLAYWRIGHT_REUSE_EXISTING_SERVER=true ./scripts/run-playright.sh
+```
 
 ## Playwright VSCode Extension and Recording Tests
 
