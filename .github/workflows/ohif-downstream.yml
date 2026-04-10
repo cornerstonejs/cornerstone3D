@@ -16,7 +16,7 @@ jobs:
     env:
       BUN_VERSION: 1.3.11
       NODE_VERSION: 24
-      OHIF_REF: fix/combined-ohif-cs3d-build-local-agent
+      OHIF_REF: master
       OHIF_DIR: ohif
       # Update to force a rebuild of the OHIF integration
       BUILD_INDEX: 0
