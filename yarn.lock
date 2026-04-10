@@ -11146,20 +11146,20 @@ onetime@^7.0.0:
   dependencies:
     mimic-function "^5.0.0"
 
-onnxruntime-common@1.21.1:
-  version "1.21.1"
-  resolved "https://registry.yarnpkg.com/onnxruntime-common/-/onnxruntime-common-1.21.1.tgz#c552369aba8132caca286d08c1092363accd1cbb"
-  integrity sha512-E0q8+fMyJ+F8dvlwVsXcujrOc96lkPIDAZh3p6pjrZS4bzjowIcUMv48W5zOcFLtlWyycUlRPJWUUK2+3IL1eA==
+onnxruntime-common@1.24.3:
+  version "1.24.3"
+  resolved "https://registry.npmjs.org/onnxruntime-common/-/onnxruntime-common-1.24.3.tgz#fb93319a2d041fc9fe2a209167ba6ef2f1a47fee"
+  integrity sha512-GeuPZO6U/LBJXvwdaqHbuUmoXiEdeCjWi/EG7Y1HNnDwJYuk6WUbNXpF6luSUY8yASul3cmUlLGrCCL1ZgVXqA==
 
-onnxruntime-web@1.21.1:
-  version "1.21.1"
-  resolved "https://registry.yarnpkg.com/onnxruntime-web/-/onnxruntime-web-1.21.1.tgz#2b2446793bd56e785f67898c18992c350a596b07"
-  integrity sha512-be7zmmN9z8vCj7g6LISNGyeWH9pZjomDjBZ1PYtodoE5VCX7ebabVl3zJHTGjOABFsj2D+kNfy48L7NXNGGU4w==
+onnxruntime-web@1.24.3:
+  version "1.24.3"
+  resolved "https://registry.npmjs.org/onnxruntime-web/-/onnxruntime-web-1.24.3.tgz#83e4e60d07ba97b9db89ea3a6795555c9d258fea"
+  integrity sha512-41dDq7fxtTm0XzGE7N0d6m8FcOY8EWtUA65GkOixJPB/G7DGzBmiDAnVVXHznRw9bgUZpb+4/1lQK/PNxGpbrQ==
   dependencies:
     flatbuffers "^25.1.24"
     guid-typescript "^1.0.9"
     long "^5.2.3"
-    onnxruntime-common "1.21.1"
+    onnxruntime-common "1.24.3"
     platform "^1.3.6"
     protobufjs "^7.2.4"
 

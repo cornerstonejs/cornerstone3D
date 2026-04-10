@@ -1642,12 +1642,12 @@ export default class ONNXSegmentationController {
     }
     config.threads = parseInt(String(config.threads));
     config.local = parseInt(config.local);
-    // When using WebGPU, ONNX Runtime loads ort-wasm-simd-threaded.jsep.{mjs,wasm}
-    // from the /ort directory copied by the bundler (OHIF viewer and ExampleRunner).
-    // Use absolute paths so the browser can resolve the ES module specifier.
+    // WebGPU builds (onnxruntime-web/webgpu, 1.24+) load the asyncify WASM pair from /ort
+    // (copied from node_modules/onnxruntime-web/dist). JSEP filenames were used in older ORT;
+    // mismatched JS vs WASM causes "webgpuInit is not a function".
     ort.env.wasm.wasmPaths = {
-      mjs: '/ort/ort-wasm-simd-threaded.jsep.mjs',
-      wasm: '/ort/ort-wasm-simd-threaded.jsep.wasm',
+      mjs: '/ort/ort-wasm-simd-threaded.asyncify.mjs',
+      wasm: '/ort/ort-wasm-simd-threaded.asyncify.wasm',
     };
     // Multi-threaded WASM requires crossOriginIsolated (COOP/COEP headers). Otherwise use 1 thread.
     ort.env.wasm.numThreads =
