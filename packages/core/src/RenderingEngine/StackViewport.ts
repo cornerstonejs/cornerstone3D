@@ -223,6 +223,8 @@ class StackViewport extends Viewport {
     this.resetCamera();
 
     this.initializeElementDisabledHandler();
+
+    console.warn('Linked CS3D version test.  Remove before merging.');
   }
 
   public setUseCPURendering(value: boolean) {
