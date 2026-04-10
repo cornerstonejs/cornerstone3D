@@ -4,11 +4,9 @@ import { OrientationAxis, Events } from '../enums';
 import cache from '../cache/cache';
 import setDefaultVolumeVOI from './helpers/setDefaultVolumeVOI';
 import triggerEvent from '../utilities/triggerEvent';
-import { actorIsA, isImageActor } from '../utilities/actorCheck';
-import { setTransferFunctionNodes } from '../utilities/transferFunctionUtils';
+import { actorIsA } from '../utilities/actorCheck';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import type { ViewportInput } from '../types/IViewport';
-import type { ImageActor } from '../types/IActor';
 import BaseVolumeViewport from './BaseVolumeViewport';
 import type { Types } from '@cornerstonejs/core';
 /**
@@ -157,25 +155,7 @@ class VolumeViewport3D extends BaseVolumeViewport {
 
     setDefaultVolumeVOI(volumeActor.actor as vtkVolume, imageVolume);
 
-    if (isImageActor(volumeActor)) {
-      // Check if there are default properties (e.g., a 3D preset or colormap)
-      // to restore. This ensures "Reset" goes back to the configured look
-      // rather than the raw initial grayscale state.
-      const properties = this.getDefaultProperties(volumeId);
-
-      if (properties?.preset || properties?.colormap) {
-        this.setProperties(properties, volumeId, true);
-      } else {
-        const transferFunction = (volumeActor.actor as ImageActor)
-          .getProperty()
-          .getRGBTransferFunction(0);
-
-        setTransferFunctionNodes(
-          transferFunction,
-          this.initialTransferFunctionNodes
-        );
-      }
-    }
+    this._restoreDefaultVisualProperties(volumeActor, volumeId);
 
     this.setCamera(this.initialCamera);
     triggerEvent(

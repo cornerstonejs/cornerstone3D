@@ -54,7 +54,10 @@ import {
   getThresholdValue,
   getMaxOpacity,
 } from '../utilities/colormap';
-import { getTransferFunctionNodes } from '../utilities/transferFunctionUtils';
+import {
+  getTransferFunctionNodes,
+  setTransferFunctionNodes,
+} from '../utilities/transferFunctionUtils';
 import type { TransferFunctionNodes } from '../types/ITransferFunctionNode';
 import type vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
 
@@ -66,7 +69,8 @@ import Viewport from './Viewport';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
 import getVolumeViewportScrollInfo from '../utilities/getVolumeViewportScrollInfo';
-import { actorIsA } from '../utilities/actorCheck';
+import { actorIsA, isImageActor } from '../utilities/actorCheck';
+import type { ImageActor } from '../types/IActor';
 import snapFocalPointToSlice from '../utilities/snapFocalPointToSlice';
 import getVoiFromSigmoidRGBTransferFunction from '../utilities/getVoiFromSigmoidRGBTransferFunction';
 import isEqual, { isEqualAbs, isEqualNegative } from '../utilities/isEqual';
@@ -1144,6 +1148,40 @@ abstract class BaseVolumeViewport extends Viewport {
       return null;
     }
   };
+
+  /**
+   * Restores the default visual transfer function for a volume actor on reset.
+   * If the viewport has a configured default preset or colormap, it re-applies
+   * them via setProperties to restore the full visual state (color TF, opacity,
+   * lighting). Otherwise, it falls back to the initial transfer function nodes
+   * captured at volume load time.
+   *
+   * @param volumeActor - The actor entry for the volume
+   * @param volumeId - The id of the volume
+   */
+  protected _restoreDefaultVisualProperties(
+    volumeActor: ActorEntry,
+    volumeId: string
+  ): void {
+    if (!isImageActor(volumeActor)) {
+      return;
+    }
+
+    const properties = this.getDefaultProperties(volumeId);
+
+    if (properties?.preset || properties?.colormap) {
+      this.setProperties(properties, volumeId, true);
+    } else {
+      const transferFunction = (volumeActor.actor as ImageActor)
+        .getProperty()
+        .getRGBTransferFunction(0);
+
+      setTransferFunctionNodes(
+        transferFunction,
+        this.initialTransferFunctionNodes
+      );
+    }
+  }
 
   /**
    * Reset the viewport properties to the default values
