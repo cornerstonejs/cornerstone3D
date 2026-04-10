@@ -839,14 +839,23 @@ class VolumeViewport extends BaseVolumeViewport {
     setDefaultVolumeVOI(volumeActor.actor as vtkVolume, imageVolume);
 
     if (isImageActor(volumeActor)) {
-      const transferFunction = (volumeActor.actor as ImageActor)
-        .getProperty()
-        .getRGBTransferFunction(0);
+      // Check if there are default properties (e.g., a 3D preset or colormap)
+      // to restore. This ensures "Reset" goes back to the configured look
+      // rather than the raw initial grayscale state.
+      const properties = this.getDefaultProperties(volumeId);
 
-      setTransferFunctionNodes(
-        transferFunction,
-        this.initialTransferFunctionNodes
-      );
+      if (properties?.preset || properties?.colormap) {
+        this.setProperties(properties, volumeId, true);
+      } else {
+        const transferFunction = (volumeActor.actor as ImageActor)
+          .getProperty()
+          .getRGBTransferFunction(0);
+
+        setTransferFunctionNodes(
+          transferFunction,
+          this.initialTransferFunctionNodes
+        );
+      }
     }
 
     const eventDetails = {
