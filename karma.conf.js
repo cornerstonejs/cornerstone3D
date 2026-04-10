@@ -28,6 +28,7 @@ process.env.CHROME_BIN = require('puppeteer').executablePath();
 const outputPath = path.join(os.tmpdir(), '_karma_webpack_') + Math.floor(Math.random() * 1000000)
 const forceCompat = process.env.FORCE_COMPAT === 'true';
 const forceCpuRendering = process.env.FORCE_CPU_RENDERING === 'true';
+const grepPattern = process.env.KARMA_GREP;
 
 /** @param {import('karma').Config} config */
 module.exports = function (config) {
@@ -36,6 +37,7 @@ module.exports = function (config) {
     client: {
       forceCpuRendering,
       forceCompat,
+      args: grepPattern ? ['--grep', grepPattern] : [],
       jasmine: {
         random: false, // don't randomize the order of tests
         stopOnFailure: false,

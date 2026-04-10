@@ -343,9 +343,9 @@ function copyDebugCommand() {
   if (KARMA_MODE.compat) envParts.push("FORCE_COMPAT=true");
   if (KARMA_MODE.cpu) envParts.push("FORCE_CPU_RENDERING=true");
   var grep = item.testName;
+  if (grep) envParts.push("KARMA_GREP=" + JSON.stringify(grep));
   var cmd = (envParts.length ? envParts.join(" ") + " " : "") +
-    "npx karma start --no-single-run --browsers Chrome" +
-    (grep ? " --grep " + JSON.stringify(grep) : "");
+    "npx karma start --no-single-run --browsers Chrome";
   navigator.clipboard.writeText(cmd).then(function() {
     var btn = document.getElementById("copy-cmd-btn");
     btn.textContent = "Copied!";
