@@ -206,6 +206,7 @@
     "flatted": "3.4.2",
     "socket.io-parser": "4.2.6",
     "handlebars": "4.7.9",
-    "path-to-regexp": "0.1.13"
+    "path-to-regexp": "0.1.13",
+    "mathjs": "15.2.0"
   }
 }
