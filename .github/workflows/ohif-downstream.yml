@@ -18,6 +18,8 @@ jobs:
       NODE_VERSION: 24
       OHIF_REF: fix/combined-ohif-cs3d-build-local-agent
       OHIF_DIR: ohif
+      // Update to force a rebuild of the OHIF integration
+      BUILD_INDEX: 1
     steps:
       - name: Checkout Cornerstone
         uses: actions/checkout@v4
