@@ -214,7 +214,7 @@ class StackViewport extends Viewport {
     this.useCPURendering = getShouldUseCPURendering();
     this._configureRenderingPipeline();
 
-    const result = this.useCPURendering
+    this.useCPURendering
       ? this._resetCPUFallbackElement()
       : this._resetGPUViewport();
 
@@ -223,6 +223,8 @@ class StackViewport extends Viewport {
     this.resetCamera();
 
     this.initializeElementDisabledHandler();
+
+    console.warn('Linked CS3D version test.  Remove before merging.');
   }
 
   public setUseCPURendering(value: boolean) {

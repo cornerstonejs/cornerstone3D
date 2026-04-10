@@ -8,6 +8,18 @@ export const TEXT_ANNOTATION_POSITION = {
   value: 'TextPosition',
 };
 
+export const CONTROL_POINTS_CODE = {
+  schemeDesignator: CS3D_DESIGNATOR,
+  meaning: 'Control Points',
+  value: 'ControlPoints',
+};
+
+export const SPLINE_TYPE_CODE = {
+  schemeDesignator: CS3D_DESIGNATOR,
+  meaning: 'Spline Type',
+  value: 'SplineType',
+};
+
 export const COMMENT_CODE = {
   schemeDesignator: 'DCM',
   meaning: 'Comment',
