@@ -1,4 +1,3 @@
-import './initOrtEnv';
 import type { Types } from '@cornerstonejs/core';
 import {
   utilities,
