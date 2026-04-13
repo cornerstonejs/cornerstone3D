@@ -5,8 +5,7 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 3 : 0,
-  // Self-hosted CI: fewer workers reduces WebGL/GPU contention and screenshot flakes (was 16).
-  workers: process.env.CI ? 8 : undefined,
+  workers: process.env.CI ? 16 : undefined,
   timeout: 120 * 1000,
   snapshotPathTemplate:
     'tests/screenshots{/projectName}/{testFilePath}/{arg}{ext}',

@@ -11,9 +11,7 @@
  *   onnxruntime-web (e.g. to 1.18+) may improve this.
  *
  * WebGPU: We use onnxruntime-web/webgpu so the WebGPU backend is available.
- * polyfillWebGPU runs first so browsers that removed requestAdapterInfo() still work.
  */
-import './polyfillWebGPU';
 // @ts-ignore - onnxruntime-web/webgpu has no types
 import ort from 'onnxruntime-web/webgpu';
 
