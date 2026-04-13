@@ -888,6 +888,36 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     return cachedStats;
   };
 
+  /**
+   * Determines whether the current viewport camera is oriented along an
+   * oblique plane relative to the volume's principal IJK axes.
+   */
+  private _isObliqueView(viewport, imageData): boolean {
+    if (!(viewport instanceof VolumeViewport)) {
+      return false;
+    }
+
+    const direction = imageData.getDirection();
+    const { viewPlaneNormal } = viewport.getCamera();
+
+    const iVector = direction.slice(0, 3) as Types.Point3;
+    const jVector = direction.slice(3, 6) as Types.Point3;
+    const kVector = direction.slice(6, 9) as Types.Point3;
+
+    const OBLIQUE_EPSILON = 1e-3;
+
+    const absNormalDotI = Math.abs(vec3.dot(viewPlaneNormal, iVector));
+    const absNormalDotJ = Math.abs(vec3.dot(viewPlaneNormal, jVector));
+    const absNormalDotK = Math.abs(vec3.dot(viewPlaneNormal, kVector));
+
+    const normalAligned =
+      Math.abs(1 - absNormalDotI) < OBLIQUE_EPSILON ||
+      Math.abs(1 - absNormalDotJ) < OBLIQUE_EPSILON ||
+      Math.abs(1 - absNormalDotK) < OBLIQUE_EPSILON;
+
+    return !normalAligned;
+  }
+
   protected updateClosedCachedStats({
     viewport,
     points,
@@ -907,25 +937,6 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
 
     const indexPoints = points.map((point) => imageData.worldToIndex(point));
 
-    let iMin = Number.MAX_SAFE_INTEGER;
-    let iMax = Number.MIN_SAFE_INTEGER;
-    let jMin = Number.MAX_SAFE_INTEGER;
-    let jMax = Number.MIN_SAFE_INTEGER;
-    let kMin = Number.MAX_SAFE_INTEGER;
-    let kMax = Number.MIN_SAFE_INTEGER;
-
-    for (let j = 0; j < points.length; j++) {
-      const worldPosIndex = indexPoints[j].map(Math.floor);
-      iMin = Math.min(iMin, worldPosIndex[0]);
-      iMax = Math.max(iMax, worldPosIndex[0]);
-
-      jMin = Math.min(jMin, worldPosIndex[1]);
-      jMax = Math.max(jMax, worldPosIndex[1]);
-
-      kMin = Math.min(kMin, worldPosIndex[2]);
-      kMax = Math.max(kMax, worldPosIndex[2]);
-    }
-
     let area = polyline.getArea(canvasCoordinates) / scale / scale;
     // Convert from canvas_pixels ^2 to mm^2
     area *= deltaInX * deltaInY;
@@ -936,74 +947,190 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       closed
     );
 
-    // Expand bounding box
-    const iDelta = 0.01 * (iMax - iMin);
-    const jDelta = 0.01 * (jMax - jMin);
-    const kDelta = 0.01 * (kMax - kMin);
-
-    iMin = Math.floor(iMin - iDelta);
-    iMax = Math.ceil(iMax + iDelta);
-    jMin = Math.floor(jMin - jDelta);
-    jMax = Math.ceil(jMax + jDelta);
-    kMin = Math.floor(kMin - kDelta);
-    kMax = Math.ceil(kMax + kDelta);
-
-    const boundsIJK = [
-      [iMin, iMax],
-      [jMin, jMax],
-      [kMin, kMax],
-    ] as [Types.Point2, Types.Point2, Types.Point2];
-
-    const worldPosEnd = imageData.indexToWorld([iMax, jMax, kMax]);
-    const canvasPosEnd = viewport.worldToCanvas(worldPosEnd);
-
-    let curRow = 0;
-    let intersections = [];
-    let intersectionCounter = 0;
-
     let pointsInShape;
+
     if (voxelManager) {
-      pointsInShape = voxelManager.forEach(
-        this.configuration.statsCalculator.statsCallback,
-        {
-          imageData,
-          isInObject: (pointLPS, _pointIJK) => {
-            let result = true;
-            const point = viewport.worldToCanvas(pointLPS);
-            if (point[1] != curRow) {
-              intersectionCounter = 0;
-              curRow = point[1];
-              intersections = getLineSegmentIntersectionsCoordinates(
-                canvasCoordinates,
-                point,
-                [canvasPosEnd[0], point[1]]
+      if (this._isObliqueView(viewport, imageData)) {
+        // ---- OBLIQUE PATH ----
+        // In oblique views the IJK bounding box spans a large 3D volume and
+        // the scanline point-in-polygon test (which relies on ordered IJK
+        // iteration mapping to ordered canvas rows) breaks completely,
+        // producing count=0 and therefore NaN/Infinity stats.
+        //
+        // Instead we iterate in 2D canvas space over the AABB of the
+        // projected polygon, use a proper scanline fill to find pixels
+        // inside the contour, project each canvas pixel back to world
+        // (landing on the oblique view plane), then sample the nearest
+        // voxel value via voxelManager.
+        //
+        // This gives O(ROI area in canvas pixels) complexity regardless
+        // of obliquity, vs the original O(IJK bbox volume).
+
+        const {
+          maxX: canvasMaxX,
+          maxY: canvasMaxY,
+          minX: canvasMinX,
+          minY: canvasMinY,
+        } = math.polyline.getAABB(canvasCoordinates);
+
+        const startX = Math.floor(canvasMinX);
+        const endX = Math.ceil(canvasMaxX);
+        const startY = Math.floor(canvasMinY);
+        const endY = Math.ceil(canvasMaxY);
+
+        const dimensions = imageData.getDimensions();
+        const canvasMaxXPadded = endX + 1;
+
+        for (let cy = startY; cy <= endY; cy++) {
+          // Compute all intersections of the polygon with this scanline row
+          const intersections = getLineSegmentIntersectionsCoordinates(
+            canvasCoordinates,
+            [startX - 1, cy] as Types.Point2,
+            [canvasMaxXPadded, cy] as Types.Point2
+          );
+
+          if (!intersections || intersections.length === 0) {
+            continue;
+          }
+
+          // Sort intersections by X coordinate
+          intersections.sort((a, b) => a[0] - b[0]);
+
+          // Walk through intersection pairs (entry/exit)
+          for (let i = 0; i + 1 < intersections.length; i += 2) {
+            const xEnter = Math.ceil(intersections[i][0]);
+            const xExit = Math.floor(intersections[i + 1][0]);
+
+            for (let cx = xEnter; cx <= xExit; cx++) {
+              const canvasPoint: Types.Point2 = [cx, cy];
+              const worldPoint = viewport.canvasToWorld(canvasPoint);
+              const indexPoint = csUtils.transformWorldToIndex(
+                imageData,
+                worldPoint
               );
-              intersections.sort(
-                (function (index) {
-                  return function (a, b) {
-                    return a[index] === b[index]
-                      ? 0
-                      : a[index] < b[index]
-                        ? -1
-                        : 1;
-                  };
-                })(0)
-              );
+
+              // Nearest-neighbor: round to closest voxel
+              const ijkPoint: Types.Point3 = [
+                Math.round(indexPoint[0]),
+                Math.round(indexPoint[1]),
+                Math.round(indexPoint[2]),
+              ];
+
+              // Bounds check
+              if (
+                ijkPoint[0] < 0 ||
+                ijkPoint[0] >= dimensions[0] ||
+                ijkPoint[1] < 0 ||
+                ijkPoint[1] >= dimensions[1] ||
+                ijkPoint[2] < 0 ||
+                ijkPoint[2] >= dimensions[2]
+              ) {
+                continue;
+              }
+
+              const value = voxelManager.getAtIJKPoint(ijkPoint);
+
+              if (value === undefined || value === null) {
+                continue;
+              }
+
+              this.configuration.statsCalculator.statsCallback({
+                value: value as number,
+                pointLPS: worldPoint as Types.Point3,
+                pointIJK: ijkPoint,
+              });
             }
-            if (intersections.length && point[0] > intersections[0][0]) {
-              intersections.shift();
-              intersectionCounter++;
-            }
-            if (intersectionCounter % 2 === 0) {
-              result = false;
-            }
-            return result;
-          },
-          boundsIJK,
-          returnPoints: this.configuration.storePointData,
+          }
         }
-      );
+      } else {
+        // ---- ORTHOGONAL PATH (original algorithm) ----
+        let iMin = Number.MAX_SAFE_INTEGER;
+        let iMax = Number.MIN_SAFE_INTEGER;
+        let jMin = Number.MAX_SAFE_INTEGER;
+        let jMax = Number.MIN_SAFE_INTEGER;
+        let kMin = Number.MAX_SAFE_INTEGER;
+        let kMax = Number.MIN_SAFE_INTEGER;
+
+        for (let j = 0; j < points.length; j++) {
+          const worldPosIndex = indexPoints[j].map(Math.floor);
+          iMin = Math.min(iMin, worldPosIndex[0]);
+          iMax = Math.max(iMax, worldPosIndex[0]);
+
+          jMin = Math.min(jMin, worldPosIndex[1]);
+          jMax = Math.max(jMax, worldPosIndex[1]);
+
+          kMin = Math.min(kMin, worldPosIndex[2]);
+          kMax = Math.max(kMax, worldPosIndex[2]);
+        }
+
+        // Expand bounding box
+        const iDelta = 0.01 * (iMax - iMin);
+        const jDelta = 0.01 * (jMax - jMin);
+        const kDelta = 0.01 * (kMax - kMin);
+
+        iMin = Math.floor(iMin - iDelta);
+        iMax = Math.ceil(iMax + iDelta);
+        jMin = Math.floor(jMin - jDelta);
+        jMax = Math.ceil(jMax + jDelta);
+        kMin = Math.floor(kMin - kDelta);
+        kMax = Math.ceil(kMax + kDelta);
+
+        const boundsIJK = [
+          [iMin, iMax],
+          [jMin, jMax],
+          [kMin, kMax],
+        ] as [Types.Point2, Types.Point2, Types.Point2];
+
+        const worldPosEnd = imageData.indexToWorld([iMax, jMax, kMax]);
+        const canvasPosEnd = viewport.worldToCanvas(worldPosEnd);
+
+        let curRow = 0;
+        let intersections = [];
+        let intersectionCounter = 0;
+
+        pointsInShape = voxelManager.forEach(
+          this.configuration.statsCalculator.statsCallback,
+          {
+            imageData,
+            isInObject: (pointLPS, _pointIJK) => {
+              let result = true;
+              const point = viewport.worldToCanvas(pointLPS);
+              if (point[1] != curRow) {
+                intersectionCounter = 0;
+                curRow = point[1];
+                intersections = getLineSegmentIntersectionsCoordinates(
+                  canvasCoordinates,
+                  point,
+                  [canvasPosEnd[0], point[1]]
+                );
+                intersections.sort(
+                  (function (index) {
+                    return function (a, b) {
+                      return a[index] === b[index]
+                        ? 0
+                        : a[index] < b[index]
+                          ? -1
+                          : 1;
+                    };
+                  })(0)
+                );
+              }
+              if (intersections.length && point[0] > intersections[0][0]) {
+                intersections.shift();
+                intersectionCounter++;
+              }
+              if (intersectionCounter % 2 === 0) {
+                result = false;
+              }
+              return result;
+            },
+            boundsIJK,
+            returnPoints: this.configuration.storePointData,
+          }
+        );
+      }
     }
+
     const stats = this.configuration.statsCalculator.getStatistics();
 
     const namedArea: Statistics = {
