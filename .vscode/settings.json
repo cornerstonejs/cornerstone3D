@@ -31,6 +31,5 @@
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
   },
-  "typescript.tsdk": "node_modules/typescript/lib",
-  "liveServer.settings.port": 5501
+  "typescript.tsdk": "node_modules/typescript/lib"
 }

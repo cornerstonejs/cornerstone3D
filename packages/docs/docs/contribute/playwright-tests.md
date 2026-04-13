@@ -201,6 +201,18 @@ PLAYWRIGHT_REUSE_EXISTING_SERVER=true ./scripts/run-playright.sh --project chrom
 ./scripts/run-playright.sh --next
 ```
 
+## Updating Screenshot Baselines
+
+Playwright snapshot files are stored under `tests/screenshots/<project>/<spec>/<name>.png`, using the path template from `playwright.config.ts`.
+
+Normal runs compare against those committed screenshots. To rewrite them, pass Playwright's native snapshot flag through the wrapper:
+
+```bash
+./scripts/run-playright.sh --update-snapshots
+./scripts/run-playright.sh --next --update-snapshots
+./scripts/run-playright.sh --project chromium --update-snapshots
+```
+
 ## Serving the examples manually for development
 
 By default, Playwright uses the configured `webServer` in `playwright.config.ts`, which runs `bun build-and-serve-static-examples` and serves the examples at `http://localhost:3333`.

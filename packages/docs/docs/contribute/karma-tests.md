@@ -72,6 +72,25 @@ KARMA_GREP="flip a stack viewport vertically" ./scripts/run-karma.sh --browsers 
 KARMA_PACKAGE=core ./scripts/run-karma.sh
 ```
 
+### Baseline Images
+
+Karma uses two baseline locations depending on the mode:
+
+- Legacy mode compares against committed PNGs in `packages/core/test/groundTruth/` and `packages/tools/test/groundTruth/`.
+- Compatibility-mode runs use generated PNGs in `karma-baselines/<mode>/`.
+
+To refresh the committed legacy ground-truth images, run:
+
+```bash
+node utils/updateGroundTruth.js
+```
+
+Compatibility-mode baseline behavior is different:
+
+- Missing baselines are created automatically after `./scripts/run-karma.sh` finishes.
+- After a new compatibility baseline is created, rerun the same command to compare against it.
+- If you intentionally want to replace an existing compatibility baseline, remove or overwrite the PNG in `karma-baselines/` and rerun the wrapper.
+
 ### Reviewing Image Comparisons
 
 When Karma tests use `compareImages()`, the HTML report includes persisted image artifacts for review.
