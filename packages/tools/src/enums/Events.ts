@@ -210,6 +210,13 @@ enum Events {
    */
   HISTORY_REDO = 'CORNERSTONE_TOOLS_HISTORY_REDO',
 
+  /**
+   * Triggers on the eventTarget when a history pushed operation is performed.
+   * Event detail includes information about the operation type, memo ID, and
+   * the memo item itself.
+   */
+  HISTORY_PUSHED = 'CORNERSTONE_TOOLS_HISTORY_PUSHED',
+
   ///////////////////////////////////////
   //         Keyboard Events
   ///////////////////////////////////////
