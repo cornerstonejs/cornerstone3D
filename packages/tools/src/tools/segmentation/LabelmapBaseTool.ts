@@ -251,15 +251,6 @@ export default class LabelmapBaseTool extends BaseTool {
 
     const activeSegmentation = getActiveSegmentation(viewport.id);
     if (!activeSegmentation) {
-      const event = new CustomEvent(Enums.Events.ERROR_EVENT, {
-        detail: {
-          type: 'Segmentation',
-          message:
-            'No active segmentation detected, create a segmentation representation before using the brush tool',
-        },
-        cancelable: true,
-      });
-      eventTarget.dispatchEvent(event);
       return null;
     }
 
