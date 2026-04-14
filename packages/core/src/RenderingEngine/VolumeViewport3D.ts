@@ -155,7 +155,7 @@ class VolumeViewport3D extends BaseVolumeViewport {
 
     setDefaultVolumeVOI(volumeActor.actor as vtkVolume, imageVolume);
 
-    this._restoreDefaultVisualProperties(volumeActor, volumeId);
+    this._restoreVolumeRenderingDefaults(volumeActor, volumeId);
 
     this.setCamera(this.initialCamera);
     triggerEvent(

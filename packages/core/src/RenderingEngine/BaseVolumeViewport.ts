@@ -1159,7 +1159,7 @@ abstract class BaseVolumeViewport extends Viewport {
    * @param volumeActor - The actor entry for the volume
    * @param volumeId - The id of the volume
    */
-  protected _restoreDefaultVisualProperties(
+  protected _restoreVolumeRenderingDefaults(
     volumeActor: ActorEntry,
     volumeId: string
   ): void {

@@ -836,7 +836,7 @@ class VolumeViewport extends BaseVolumeViewport {
     }
     setDefaultVolumeVOI(volumeActor.actor as vtkVolume, imageVolume);
 
-    this._restoreDefaultVisualProperties(volumeActor, volumeId);
+    this._restoreVolumeRenderingDefaults(volumeActor, volumeId);
 
     const eventDetails = {
       ...super.getVOIModifiedEventDetail(volumeId),
