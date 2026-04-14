@@ -1,8 +1,22 @@
 name: OHIF Downstream Validation
 
+# Pull requests: add a line to the PR body, same style as OHIF uses for CS3D_REF:
+#   OHIF_REF: <branch-or-tag>
+# If omitted, Viewers ref defaults to master. workflow_dispatch can set ohif_ref instead.
 on:
   pull_request:
   workflow_dispatch:
+    inputs:
+      ohif_ref:
+        description: >-
+          OHIF Viewers branch or tag (e.g. master, beta). On pull_request you can instead add
+          a line "OHIF_REF: <ref>" to the PR body.
+        required: false
+        default: 'master'
+
+permissions:
+  contents: read
+  pull-requests: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -11,16 +25,30 @@ concurrency:
 jobs:
   ohif-downstream:
     name: OHIF downstream tests against this PR
-    runs-on: ubuntu-latest
-    timeout-minutes: 180
+    runs-on: self-hosted
+    timeout-minutes: 120
     env:
-      BUN_VERSION: 1.2.23
-      NODE_VERSION: 20
+      BUN_VERSION: 1.3.11
+      NODE_VERSION: 24
       OHIF_REF: feat/use-beta-5.0-cs3d
       OHIF_DIR: ohif
+      # Update to force a rebuild of the OHIF integration
+      BUILD_INDEX: 0
     steps:
       - name: Checkout Cornerstone
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+
+      - name: Resolve OHIF ref (PR body OHIF_REF line or workflow_dispatch input)
+        run: bash scripts/ci/ohif-ref-resolve.sh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          OHIF_REF_INPUT: ${{ github.event.inputs.ohif_ref }}
+          DEFAULT_REF: master
 
       - name: Log build context (OHIF/CS3D branch and version for build diagnosis)
         run: |
@@ -58,9 +86,21 @@ jobs:
           fetch-depth: 1
           submodules: recursive
 
+      - name: Log build context (OHIF/CS3D branch and version for build diagnosis)
+        run: |
+          CS3D_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          CS3D_SHA=$(git rev-parse HEAD)
+          OHIF_BRANCH=$(git -C "${OHIF_DIR}" rev-parse --abbrev-ref HEAD)
+          OHIF_SHA=$(git -C "${OHIF_DIR}" rev-parse HEAD)
+          echo "::notice::Build type: ohif-downstream | OHIF: OHIF/Viewers@${OHIF_BRANCH} (${OHIF_SHA}) | CS3D: ${{ github.repository }}@${CS3D_BRANCH} (${CS3D_SHA})"
+          echo "[build-context] ═══════════════════════════════════════════════════════════════"
+          echo "[build-context] Build type: ohif-downstream (CS3D repo validating against OHIF)"
+          echo "[build-context] OHIF checkout: ${OHIF_BRANCH} (${OHIF_SHA}) | CS3D checkout: ${CS3D_BRANCH} (${CS3D_SHA})"
+          echo "[build-context] ═══════════════════════════════════════════════════════════════"
+
       - name: Install OHIF dependencies
         working-directory: ${{ env.OHIF_DIR }}
-        run: bun install
+        run: bun install --frozen-lockfile
 
       - name: Link local Cornerstone packages into OHIF node_modules
         run: node scripts/link-ohif-cornerstone-node-modules.mjs ${{ env.OHIF_DIR }}
@@ -71,7 +111,7 @@ jobs:
 
       - name: Install Playwright browsers
         working-directory: ${{ env.OHIF_DIR }}
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install
 
       - name: Run OHIF e2e tests
         working-directory: ${{ env.OHIF_DIR }}

@@ -88,6 +88,10 @@
     "gl-matrix": "3.4.3",
     "ndarray": "1.0.19"
   },
+  "devDependencies": {
+    "@cornerstonejs/core": "5.0.0-beta.1",
+    "@cornerstonejs/tools": "5.0.0-beta.1"
+  },
   "peerDependencies": {
     "@cornerstonejs/core": "5.0.0-beta.1",
     "@cornerstonejs/tools": "5.0.0-beta.1"
