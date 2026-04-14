@@ -18,7 +18,7 @@ import { Events as aiEvents } from './enums';
 const { strategies } = cstSegmentation;
 const { fillInsideCircle } = strategies;
 
-// @ts-ignore - onnxruntime-web/webgpu has no types
+// @ts-ignore
 import ort from 'onnxruntime-web/webgpu';
 import { vec3 } from 'gl-matrix';
 
@@ -1641,20 +1641,9 @@ export default class ONNXSegmentationController {
     }
     config.threads = parseInt(String(config.threads));
     config.local = parseInt(config.local);
-    // WebGPU builds (onnxruntime-web/webgpu, 1.24+) load the asyncify WASM pair from /ort
-    // (copied from node_modules/onnxruntime-web/dist). JSEP filenames were used in older ORT;
-    // mismatched JS vs WASM causes "webgpuInit is not a function".
-    ort.env.wasm.wasmPaths = {
-      mjs: '/ort/ort-wasm-simd-threaded.asyncify.mjs',
-      wasm: '/ort/ort-wasm-simd-threaded.asyncify.wasm',
-    };
-    // Multi-threaded WASM requires crossOriginIsolated (COOP/COEP headers). Otherwise use 1 thread.
-    ort.env.wasm.numThreads =
-      typeof crossOriginIsolated !== 'undefined' && crossOriginIsolated
-        ? config.threads
-        : 1;
+    ort.env.wasm.wasmPaths = 'ort/';
+    ort.env.wasm.numThreads = config.threads;
     ort.env.wasm.proxy = config.provider == 'wasm';
-    ort.env.logLevel = 'error';
 
     this.config = config;
     return config;

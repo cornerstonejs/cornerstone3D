@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/ai",
-  "version": "4.21.3",
+  "version": "4.21.4",
   "description": "AI and ML Interfaces for Cornerstone3D",
   "files": [
     "dist"
@@ -57,11 +57,11 @@
     "gl-matrix": "3.4.3",
     "lodash.clonedeep": "4.5.0",
     "ndarray": "1.0.19",
-    "onnxruntime-common": "1.24.3",
-    "onnxruntime-web": "1.24.3"
+    "onnxruntime-common": "1.17.1",
+    "onnxruntime-web": "1.17.1"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "4.21.3",
-    "@cornerstonejs/tools": "4.21.3"
+    "@cornerstonejs/core": "4.21.4",
+    "@cornerstonejs/tools": "4.21.4"
   }
 }

@@ -151,37 +151,19 @@ module.exports = {
   },
   optimization: {
     minimize: false,
-    // Keep a deterministic shared runtime for all entries/workers.
-    runtimeChunk: {
-      name: 'runtime',
-    },
     splitChunks: {
       chunks: 'all',
-      minSize: 0,
       cacheGroups: {
-        onnxRuntime: {
-          test: /[\\/]node_modules[\\/](onnxruntime-web|onnxruntime-common)[\\/]/,
-          name: 'onnxruntime',
-          chunks: 'all',
-          enforce: true,
-          priority: 40,
-        },
         defaultVendors: {
           test: /[\\/]node_modules[\\/]/,
           name: 'vendors',
           chunks: 'all',
-          minChunks: 1,
-          enforce: true,
-          reuseExistingChunk: true,
-          priority: 20,
         },
         commons: {
           test: /[\\/]packages[\\/]/,
           name: 'commons',
           chunks: 'all',
           minChunks: 2,
-          enforce: true,
-          priority: 10,
         },
       },
     }
