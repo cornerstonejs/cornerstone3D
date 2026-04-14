@@ -38,6 +38,20 @@ describe('getTextBoxCoordsCanvas', () => {
     expect(coords[1]).toBe(110);
   });
 
+  it('uses all annotation points when determining the default textbox position', () => {
+    const bidirectionalPoints = [
+      [100, 100],
+      [120, 120],
+      [160, 70],
+      [140, 170],
+    ] as [number, number][];
+
+    const coords = getTextBoxCoordsCanvas(bidirectionalPoints);
+
+    expect(coords[0]).toBe(160);
+    expect(coords[1]).toBe(120);
+  });
+
   it('nudges downward when the default textbox overlaps an existing one', () => {
     const { element, svgLayer } = createViewportElement(500, 400);
 
@@ -48,11 +62,7 @@ describe('getTextBoxCoordsCanvas', () => {
       height: 67,
     });
 
-    const coords = getTextBoxCoordsCanvas(
-      annotationPoints,
-      element,
-      textLines
-    );
+    const coords = getTextBoxCoordsCanvas(annotationPoints, element, textLines);
 
     // blocker.y + blocker.height + gap(6)
     expect(coords[0]).toBe(120);
@@ -73,11 +83,7 @@ describe('getTextBoxCoordsCanvas', () => {
       height: 67,
     });
 
-    const coords = getTextBoxCoordsCanvas(
-      lowerPoints,
-      element,
-      textLines
-    );
+    const coords = getTextBoxCoordsCanvas(lowerPoints, element, textLines);
 
     // blocker.y - candidate.height - gap(6)
     expect(coords[0]).toBe(120);

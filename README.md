@@ -43,37 +43,44 @@ The downstream validation is defined in
 It runs on every CS3D pull request and `workflow_dispatch`:
 
 1. Checks out the CS3D PR branch and builds it (`bun run build:esm`).
-2. Checks out the OHIF Viewer at the ref specified by the `OHIF_REF` env
-   variable (defaults to `master`).
+2. Checks out the OHIF Viewer at a ref resolved for that run: by default
+   `master`; on pull requests you can override with a line in the PR description
+   (see below); on `workflow_dispatch` you can set the `ohif_ref` input.
 3. Installs OHIF dependencies, then symlinks the locally built CS3D packages
    into OHIF's `node_modules` via
    `scripts/link-ohif-cornerstone-node-modules.mjs`.
 4. Runs OHIF unit tests and Playwright e2e tests against the linked build.
 
-### Testing against an OHIF branch other than master
+### Choosing the OHIF Viewer ref (`OHIF_REF` / `ohif_ref`)
 
-By default the workflow checks out `master` of the OHIF Viewer. To test against
-a different OHIF branch (e.g. when a feature requires coordinated changes in
-both repos):
+By default the workflow checks out `master` of [OHIF/Viewers](https://github.com/OHIF/Viewers).
+You can point downstream validation at another branch or tag **without editing
+the workflow file**:
 
-1. Open `.github/workflows/ohif-downstream.yml`.
-2. Change the `OHIF_REF` environment variable (line 19) from `master` to the
-   target branch:
+**On a CS3D pull request** — add a line to the PR description (same style as
+OHIF uses for `CS3D_REF:` on the OHIF side):
 
-   ```yaml
-   env:
-     OHIF_REF: feat/my-ohif-feature   # was: master
-   ```
+```text
+OHIF_REF: your-branch-or-tag
+```
 
-3. Commit and push. The downstream job will now clone and test against that
-   OHIF branch instead.
-4. **Remember to set `OHIF_REF` back to `master` before merging your CS3D PR.**
+The first line matching that pattern wins; the value is the first token after
+the colon (no spaces in the ref). If you omit this line, the job uses `master`.
 
-> **Tip:** This pairs with the OHIF side of the integration. While `OHIF_REF`
-> lets a CS3D PR test against an OHIF branch, the OHIF repo has a symmetric
-> mechanism — the `ohif-integration` label and `CS3D_REF` in the PR body —
-> that lets an OHIF PR test against a CS3D branch. Together these allow both
-> sides to run the full test suite against unpublished code. See the
+**When running the workflow manually** — use the **ohif_ref** input on
+`workflow_dispatch` (defaults to `master`).
+
+**Coordinated CS3D + OHIF changes** — when a feature needs changes in both
+repositories, create an OHIF branch whose **name matches your CS3D branch**
+(e.g. both `feat/shared-thing`). Then put `OHIF_REF: feat/shared-thing` in the
+CS3D PR body (or set **ohif_ref** to that name for a manual run). Matching
+names make it obvious which Viewer branch pairs with which Cornerstone branch
+and avoid juggling unrelated branch names across the two repos.
+
+> **Tip:** This pairs with the OHIF side of the integration. The OHIF repo uses
+> the `ohif-integration` label and `CS3D_REF:` in the PR body to test an OHIF
+> PR against a CS3D branch. Together, `OHIF_REF:` here and `CS3D_REF:` there
+> let both sides run the full test suite against unpublished code. See the
 > [OHIF Viewer README — Cornerstone3D Integration Testing](https://github.com/OHIF/Viewers#cornerstone3d-integration-testing)
 > for details on the OHIF side.
 
