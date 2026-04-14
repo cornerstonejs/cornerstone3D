@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.21.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.4...v4.21.5) (2026-04-14)
+
+### Bug Fixes
+
+- sam model exception ([#2637](https://github.com/cornerstonejs/cornerstone3D/issues/2637)) ([0fccf54](https://github.com/cornerstonejs/cornerstone3D/commit/0fccf54df585199e64a1e7c5fa9f5bf4d0a48e93))
+
 ## [4.21.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.3...v4.21.4) (2026-04-14)
 
 **Note:** Version bump only for package @cornerstonejs/dicom-image-loader
