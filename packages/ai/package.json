@@ -63,5 +63,9 @@
   "peerDependencies": {
     "@cornerstonejs/core": "4.21.4",
     "@cornerstonejs/tools": "4.21.4"
+  },
+  "devDependencies": {
+    "@cornerstonejs/core": "4.21.4",
+    "@cornerstonejs/tools": "4.21.4"
   }
 }

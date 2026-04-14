@@ -494,25 +494,27 @@ class ProbeTool extends AnnotationTool {
           const { referencedImageId } = annotation.metadata;
 
           // invalidate all the relevant stackViewports if they are not
-          // at the referencedImageId
-          for (const targetId in data.cachedStats) {
-            if (targetId.startsWith('imageId')) {
-              const viewports = renderingEngine.getStackViewports();
+          // at the referencedImageId (skip if metadata/referencedImageId missing)
+          if (referencedImageId) {
+            for (const targetId in data.cachedStats) {
+              if (targetId.startsWith('imageId')) {
+                const viewports = renderingEngine.getStackViewports();
 
-              const invalidatedStack = viewports.find((vp) => {
-                // The stack viewport that contains the imageId but is not
-                // showing it currently
-                const referencedImageURI =
-                  csUtils.imageIdToURI(referencedImageId);
-                const hasImageURI = vp.hasImageURI(referencedImageURI);
-                const currentImageURI = csUtils.imageIdToURI(
-                  vp.getCurrentImageId()
-                );
-                return hasImageURI && currentImageURI !== referencedImageURI;
-              });
+                const invalidatedStack = viewports.find((vp) => {
+                  const currentImageId = vp.getCurrentImageId();
+                  if (!currentImageId) return false;
+                  // The stack viewport that contains the imageId but is not
+                  // showing it currently
+                  const referencedImageURI =
+                    csUtils.imageIdToURI(referencedImageId);
+                  const hasImageURI = vp.hasImageURI(referencedImageURI);
+                  const currentImageURI = csUtils.imageIdToURI(currentImageId);
+                  return hasImageURI && currentImageURI !== referencedImageURI;
+                });
 
-              if (invalidatedStack) {
-                delete data.cachedStats[targetId];
+                if (invalidatedStack) {
+                  delete data.cachedStats[targetId];
+                }
               }
             }
           }
