@@ -382,10 +382,10 @@ class VolumeCroppingTool extends BaseTool {
     const { element } = eventDetail;
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
-    const actorEntry = this._getVolumeActorEntry(
-      viewport as Types.IVolumeViewport
-    );
-    const actor = actorEntry.actor as Types.VolumeActor;
+    const actor = this._getVolumeActor(viewport as Types.IVolumeViewport);
+    if (!actor) {
+      return false;
+    }
     const mapper = actor.getMapper();
 
     const mouseCanvas: [number, number] = [
@@ -1117,14 +1117,14 @@ class VolumeCroppingTool extends BaseTool {
     if (!viewport) {
       return;
     }
-    const volumeEntry = this._getVolumeActorEntry(viewport);
-    if (!volumeEntry?.actor) {
+    const volumeActor = this._getVolumeActor(viewport);
+    if (!volumeActor) {
       console.warn(
         'VolumeCroppingTool: No volume actors found in the viewport.'
       );
       return;
     }
-    const imageData = volumeEntry.actor.getMapper().getInputData();
+    const imageData = volumeActor.getMapper().getInputData();
     if (!imageData) {
       console.warn('VolumeCroppingTool: No image data found for volume actor.');
       return;
@@ -1293,7 +1293,7 @@ class VolumeCroppingTool extends BaseTool {
       }
     });
 
-    const mapper = volumeEntry.actor.getMapper() as vtkVolumeMapper;
+    const mapper = volumeActor.getMapper() as vtkVolumeMapper;
 
     mapper.addClippingPlane(planeXMin);
     mapper.addClippingPlane(planeXMax);
@@ -1332,24 +1332,14 @@ class VolumeCroppingTool extends BaseTool {
     return (viewport as Types.IVolumeViewport) || null;
   };
 
-  /**
-   * Viewport default actor is getActors()[0]; 3D overlays (e.g. OrientationController)
-   * may be registered first, so cropping must target vtkVolume explicitly.
-   */
-  _getVolumeActorEntry(viewport: Types.IVolumeViewport) {
-    const actors = viewport.getActors?.() ?? [];
-    return (
-      actors.find((e) => e.actor?.getClassName?.() === 'vtkVolume') ??
-      viewport.getDefaultActor()
-    );
-  }
-
   _getVolumeActor(
     viewport?: Types.IVolumeViewport
   ): Types.VolumeActor | undefined {
     const vp = viewport || this._getViewport();
-    const entry = vp ? this._getVolumeActorEntry(vp) : undefined;
-    return entry?.actor as Types.VolumeActor | undefined;
+    return vp
+      ?.getActors?.()
+      ?.find((entry) => entry.actor?.getClassName?.() === 'vtkVolume')
+      ?.actor as Types.VolumeActor | undefined;
   }
 
   _getVolumeMapper(
