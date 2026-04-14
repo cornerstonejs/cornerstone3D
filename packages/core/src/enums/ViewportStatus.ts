@@ -5,6 +5,8 @@ enum ViewportStatus {
   LOADING = 'loading',
   /** Ready to be rendered */
   PRE_RENDER = 'preRender',
+  /** Render has been requested and is pending in RAF queue */
+  NEEDS_RENDER = 'needsRender',
   /** In the midst of a resize */
   RESIZE = 'resize',
   /** Rendered image data */
