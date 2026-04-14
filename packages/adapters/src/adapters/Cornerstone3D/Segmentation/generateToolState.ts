@@ -1,5 +1,5 @@
-import { generateToolState as generateToolStateCornerstoneLegacy } from "../../Cornerstone/Segmentation";
-import { createLabelmapsFromBufferInternal } from "./labelmapImagesFromBuffer";
+import { generateToolState as generateToolStateCornerstoneLegacy } from '../../Cornerstone/Segmentation';
+import { createLabelmapsFromBufferInternal } from './labelmapImagesFromBuffer';
 /**
  * generateToolState - Given a set of cornerstoneTools imageIds and a Segmentation buffer,
  * derive cornerstoneTools toolState and brush metadata.
@@ -15,21 +15,21 @@ import { createLabelmapsFromBufferInternal } from "./labelmapImagesFromBuffer";
  *  list containing the track of segments per frame for each labelMap (available only for the overlapping case).
  */
 function generateToolState(
+  imageIds,
+  arrayBuffer,
+  metadataProvider,
+  skipOverlapping = false,
+  tolerance = 1e-3,
+  cs3dVersion = 4
+) {
+  return generateToolStateCornerstoneLegacy(
     imageIds,
     arrayBuffer,
     metadataProvider,
-    skipOverlapping = false,
-    tolerance = 1e-3,
-    cs3dVersion = 4
-) {
-    return generateToolStateCornerstoneLegacy(
-        imageIds,
-        arrayBuffer,
-        metadataProvider,
-        skipOverlapping,
-        tolerance,
-        cs3dVersion
-    );
+    skipOverlapping,
+    tolerance,
+    cs3dVersion
+  );
 }
 
 /**
@@ -51,18 +51,18 @@ function generateToolState(
  * @throws Will throw an error if unsupported transfer syntax is encountered or if segmentation frames are out of plane.
  */
 function createFromDICOMSegBuffer(
+  referencedImageIds,
+  arrayBuffer,
+  { metadataProvider, tolerance = 1e-3 }
+) {
+  return createLabelmapsFromBufferInternal(
     referencedImageIds,
     arrayBuffer,
-    { metadataProvider, tolerance = 1e-3 }
-) {
-    return createLabelmapsFromBufferInternal(
-        referencedImageIds,
-        arrayBuffer,
-        metadataProvider,
-        {
-            tolerance
-        }
-    );
+    metadataProvider,
+    {
+      tolerance,
+    }
+  );
 }
 
 export { generateToolState, createFromDICOMSegBuffer };
