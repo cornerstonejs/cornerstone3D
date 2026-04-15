@@ -1,5 +1,6 @@
 import { eventTarget, imageLoader, triggerEvent } from '@cornerstonejs/core';
 import { utilities as cstUtils } from '@cornerstonejs/tools';
+import { data as dcmjsData, utilities as dcmjsUtilities } from 'dcmjs';
 import ndarray from 'ndarray';
 import checkOrientation from '../../helpers/checkOrientation';
 import {
@@ -13,6 +14,52 @@ import {
 } from '../../Cornerstone/Segmentation_4X';
 import { compactMergeSegmentDataWithoutInformationLoss } from './compactMergeSegData';
 import { Events } from '../../enums';
+
+const { BitArray } = dcmjsData;
+const { decode } = dcmjsUtilities.compression;
+
+function unpackPixelData(
+  multiframe,
+  options: { maxBytesPerChunk?: number } = {}
+) {
+  const { maxBytesPerChunk = Number.POSITIVE_INFINITY } = options;
+  const { PixelData } = multiframe;
+
+  if (!PixelData) {
+    return;
+  }
+
+  const pixelDataArray = Array.isArray(PixelData) ? PixelData[0] : PixelData;
+  const packedPixelData =
+    pixelDataArray instanceof Uint8Array
+      ? pixelDataArray
+      : new Uint8Array(pixelDataArray);
+
+  // Fractional segmentations are not yet supported by this adapter path.
+  if (multiframe.SegmentationType === 'FRACTIONAL') {
+    return;
+  }
+
+  const unpackedPixelData =
+    multiframe.BitsStored === 1
+      ? BitArray.unpack(packedPixelData)
+      : packedPixelData;
+
+  if (unpackedPixelData.length <= maxBytesPerChunk) {
+    return [unpackedPixelData];
+  }
+
+  const chunks = [];
+  for (
+    let offset = 0;
+    offset < unpackedPixelData.length;
+    offset += maxBytesPerChunk
+  ) {
+    chunks.push(unpackedPixelData.subarray(offset, offset + maxBytesPerChunk));
+  }
+
+  return chunks;
+}
 
 const updateSegmentsOnFrame = ({
   segmentsOnFrame,
@@ -71,8 +118,11 @@ async function createLabelmapsFromBufferInternal(
   metadataProvider,
   options
 ) {
-  const { tolerance = 1e-3, TypedArrayConstructor = Uint8Array } =
-    options ?? {};
+  const {
+    tolerance = 1e-3,
+    TypedArrayConstructor = Uint8Array,
+    maxBytesPerChunk,
+  } = options ?? {};
 
   const instanceMeta = metadataProvider.get('instance', segImageId);
   if (!instanceMeta) {
