@@ -86,7 +86,6 @@ async function createLabelmapsFromBufferInternal(
     'imagePlaneModule',
     referencedImageIds[0]
   );
-
   const generalSeriesModule = metadataProvider.get(
     'generalSeriesModule',
     referencedImageIds[0]
@@ -109,17 +108,37 @@ async function createLabelmapsFromBufferInternal(
         imagePlaneModule.columnCosines.z,
       ];
 
+  // Get IOP from ref series, compute supported orientations:
   const validOrientations = getValidOrientations(ImageOrientationPatient);
   const segMetadata = getSegmentMetadata(multiframe, SeriesInstanceUID);
 
-  const image = await imageLoader.loadImage(segImageId);
-  if (!image || typeof image.getPixelData !== 'function') {
-    throw new Error(
-      'SEG image load did not return an image with getPixelData(). Ensure a SEG-capable image loader is registered for this imageId.'
-    );
+  const TransferSyntaxUID = multiframe._meta.TransferSyntaxUID.Value[0];
+
+  let pixelData;
+  let pixelDataChunks;
+
+  if (TransferSyntaxUID === '1.2.840.10008.1.2.5') {
+    const rleEncodedFrames = Array.isArray(multiframe.PixelData)
+      ? multiframe.PixelData
+      : [multiframe.PixelData];
+
+    pixelData = decode(rleEncodedFrames, multiframe.Rows, multiframe.Columns);
+
+    if (multiframe.BitsStored === 1) {
+      console.warn('No implementation for rle + bit packing.');
+
+      return;
+    }
+
+    // Todo: need to test this with rle data
+    pixelDataChunks = [pixelData];
+  } else {
+    pixelDataChunks = unpackPixelData(multiframe, { maxBytesPerChunk });
+
+    if (!pixelDataChunks) {
+      throw new Error('Fractional segmentations are not yet supported');
+    }
   }
-  const pixelData = image.getPixelData();
-  const pixelDataChunks = Array.isArray(pixelData) ? pixelData : [pixelData];
 
   const orientation = checkOrientation(
     multiframe,
@@ -131,7 +150,6 @@ async function createLabelmapsFromBufferInternal(
     ],
     tolerance
   );
-
   // Pre-compute the sop UID to imageId index map so that in the for loop
   // we don't have to call metadataProvider.get() for each imageId over
   // and over again.
