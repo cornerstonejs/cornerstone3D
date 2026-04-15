@@ -3,7 +3,6 @@ import { generateLabelMaps2DFrom3D } from './generateLabelMaps2DFrom3D';
 import {
   generateToolState,
   createFromDICOMSegBuffer,
-  decodeSEGBufferToNaturalizedAndPixelData,
 } from './generateToolState';
 
 export {
@@ -11,5 +10,4 @@ export {
   generateSegmentation,
   generateToolState,
   createFromDICOMSegBuffer,
-  decodeSEGBufferToNaturalizedAndPixelData,
 };

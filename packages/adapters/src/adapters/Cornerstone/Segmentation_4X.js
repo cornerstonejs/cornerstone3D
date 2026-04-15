@@ -24,6 +24,8 @@ const { BitArray, DicomMessage, DicomMetaDictionary } = dcmjsData;
 const { Normalizer } = normalizers;
 const { Segmentation: SegmentationDerivation } = derivations;
 const { encode, decode } = utilities.compression;
+const RLE_LOSSLESS_TRANSFER_SYNTAX_UID = '1.2.840.10008.1.2.5';
+const EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID = '1.2.840.10008.1.2.1';
 
 /**
  *
@@ -34,7 +36,7 @@ const { encode, decode } = utilities.compression;
  */
 const generateSegmentationDefaultOptions = {
   includeSliceSpacing: true,
-  rleEncode: false,
+  transferSyntaxUid: RLE_LOSSLESS_TRANSFER_SYNTAX_UID,
 };
 
 /**
@@ -162,7 +164,12 @@ export function fillSegmentation(
       }
     }
   }
-  if (options.rleEncode) {
+  const transferSyntaxUid =
+    options.transferSyntaxUid ??
+    options.transferSyntaxUID ??
+    RLE_LOSSLESS_TRANSFER_SYNTAX_UID;
+
+  if (transferSyntaxUid === RLE_LOSSLESS_TRANSFER_SYNTAX_UID) {
     const rleEncodedFrames = encode(
       segmentation.dataset.PixelData,
       numberOfFrames,
@@ -183,15 +190,26 @@ export function fillSegmentation(
     });
 
     segmentation.dataset._meta.TransferSyntaxUID = {
-      Value: ['1.2.840.10008.1.2.5'],
+      Value: [RLE_LOSSLESS_TRANSFER_SYNTAX_UID],
       vr: 'UI',
     };
     segmentation.dataset.SpecificCharacterSet = 'ISO_IR 192';
     segmentation.dataset._vrMap.PixelData = 'OB';
     segmentation.dataset.PixelData = rleEncodedFrames;
-  } else {
-    // If no rleEncoding, at least bitpack the data.
+  } else if (
+    transferSyntaxUid === EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID
+  ) {
+    // For explicit VR little endian, at least bitpack the data.
     segmentation.bitPackPixelData();
+    segmentation.dataset._meta.TransferSyntaxUID = {
+      Value: [EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID],
+      vr: 'UI',
+    };
+  } else {
+    throw new Error(
+      `Unsupported SEG transfer syntax: ${transferSyntaxUid}. ` +
+        `Supported: ${RLE_LOSSLESS_TRANSFER_SYNTAX_UID}, ${EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID}`
+    );
   }
 
   return segmentation;
