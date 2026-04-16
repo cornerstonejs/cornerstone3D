@@ -4,10 +4,11 @@ import {
   checkForScreenshot,
   screenShotPaths,
   simulateClicksOnElement,
+  waitForViewportsRendered,
 } from './utils/index';
 
 const delayBetweenClicks = async (page: any) => {
-  await page.waitForTimeout(1500);
+  await waitForViewportsRendered(page);
 };
 
 test.beforeEach(async ({ page }) => {
@@ -621,7 +622,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
       ],
     });
 
-    await page.waitForTimeout(3000);
+    await waitForViewportsRendered(page);
     await checkForScreenshot(
       page,
       screenshotLocator,
@@ -682,7 +683,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
       ],
     });
 
-    await page.waitForTimeout(3000);
+    await waitForViewportsRendered(page);
     await checkForScreenshot(
       page,
       screenshotLocator,
