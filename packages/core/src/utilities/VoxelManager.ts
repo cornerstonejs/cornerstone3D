@@ -612,7 +612,7 @@ export default class VoxelManager<T> {
         for (let i = 0; i < height; i++) {
           for (let j = 0; j < depth; j++) {
             const index = sliceIndex + i * width + j * frameSize;
-            this.setSliceDataValue(sliceData, i * depth + j, this._get(index));
+            this.setSliceDataValue(sliceData, i + j * height, this._get(index));
           }
         }
         break;
