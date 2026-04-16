@@ -21,6 +21,7 @@ import vtkImageCPRMapper from '@kitware/vtk.js/Rendering/Core/ImageCPRMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import vtkImageReslice from '@kitware/vtk.js/Imaging/Core/ImageReslice';
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
+import { InterpolationMode } from '@kitware/vtk.js/Imaging/Core/AbstractImageInterpolator/Constants';
 import { vec3, mat4 } from 'gl-matrix';
 
 const {
@@ -133,16 +134,20 @@ function getPolylineCrossSection(
 
   if (!reslice) {
     reslice = vtkImageReslice.newInstance();
+    reslice.setInterpolationMode(InterpolationMode.LINEAR);
   }
 
   reslice.setInputData(inputVolume);
   reslice.setResliceAxes(resliceAxes);
 
-  // Define o plano de saída: centrado na origem (0,0) do plano local
-  // Para uma imagem de 200x200 com espaçamento 1mm, o centro é 100
+  // Define the output plane centered on P_curr.
+  // VTK.js does not support negative extents, so we use [0, 2*halfWidth] and
+  // shift the outputOrigin by -halfWidth so that the center index
+  // (halfWidth, halfWidth, 0) maps to physical (0, 0, 0), which through the
+  // resliceAxes matrix corresponds exactly to P_curr.
   reslice.setOutputSpacing([1, 1, 1]);
-  reslice.setOutputExtent([-halfWidth, halfWidth, -halfWidth, halfWidth, 0, 0]);
-  reslice.setOutputOrigin([0, 0, 0]);
+  reslice.setOutputExtent([0, 2 * halfWidth, 0, 2 * halfWidth, 0, 0]);
+  reslice.setOutputOrigin([-halfWidth, -halfWidth, 0]);
 
   reslice.update();
   return reslice.getOutputData();
@@ -218,7 +223,6 @@ addButtonToToolbar({
       const stackViewport = <Types.IStackViewport>(
         renderingEngine.getViewport(viewportIds[1])
       );
-      cprViewport = stackViewport;
 
       if (!cprActor) {
         cprActor = vtkImageSlice.newInstance();
@@ -247,11 +251,13 @@ function updateCrossSectionImage() {
 
   const volumeImageData = volumeActor.getMapper().getInputData();
 
-  // 1. PEGAR ÍNDICE E PONTOS
+  // get index and polyline
   const currentConfig =
     toolGroup?.getToolConfiguration(CrossSectionSplineTool.toolName) || {};
   let idx =
-    currentConfig?.perpendicularIndex || currentConfig?.calculatedIndex || 0;
+    currentConfig?.perpendicularIndex ??
+    currentConfig?.calculatedIndex ??
+    Math.floor((currentPolyline.length - 1) / 2);
   if (idx < 0) {
     idx = 0;
   }
@@ -268,7 +274,7 @@ function updateCrossSectionImage() {
   );
 
   let mapper;
-  // 3. INICIALIZAR ATOR (APENAS UMA VEZ)
+  // initialize the actor
   if (!resliceActor) {
     mapper = vtkImageMapper.newInstance();
     mapper.setInputData(imageData);
@@ -281,7 +287,7 @@ function updateCrossSectionImage() {
     mapper = resliceActor.getMapper();
   }
 
-  // 4. ATUALIZAR POSIÇÃO DO PLANO
+  // update position
   mapper.setInputData(imageData);
   stackViewport.resetCamera();
   stackViewport.render();
@@ -304,10 +310,10 @@ addButtonToToolbar({
     const currentConfig = toolGroup.getToolConfiguration(
       CrossSectionSplineTool.toolName
     );
-    perpendicularIndex =
-      (currentConfig?.perpendicularIndex ||
-        currentConfig?.calculatedIndex ||
-        0) - 1;
+    const base = (currentConfig?.perpendicularIndex ??
+      currentConfig?.calculatedIndex ??
+      Math.floor(((currentPolyline?.length ?? 2) - 1) / 2)) as number;
+    perpendicularIndex = base - 1;
     toolGroup.setToolConfiguration(CrossSectionSplineTool.toolName, {
       perpendicularIndex,
     });
@@ -325,10 +331,10 @@ addButtonToToolbar({
     const currentConfig = toolGroup.getToolConfiguration(
       CrossSectionSplineTool.toolName
     );
-    perpendicularIndex =
-      (currentConfig?.perpendicularIndex ||
-        currentConfig?.calculatedIndex ||
-        0) + 1;
+    const base2 = (currentConfig?.perpendicularIndex ??
+      currentConfig?.calculatedIndex ??
+      Math.floor(((currentPolyline?.length ?? 2) - 1) / 2)) as number;
+    perpendicularIndex = base2 + 1;
     toolGroup.setToolConfiguration(CrossSectionSplineTool.toolName, {
       perpendicularIndex,
     });
@@ -340,7 +346,7 @@ addButtonToToolbar({
 });
 
 let toolGroup;
-let perpendicularIndex = 0;
+let perpendicularIndex: number | null = null;
 
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
 
