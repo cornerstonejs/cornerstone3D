@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/dicom-image-loader",
-  "version": "4.21.5",
+  "version": "4.21.6",
   "description": "Cornerstone Image Loader for DICOM WADO-URI and WADO-RS and Local file",
   "keywords": [
     "DICOM",
@@ -112,11 +112,11 @@
     "uuid": "9.0.1"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "4.21.5",
+    "@cornerstonejs/core": "4.21.6",
     "dicom-parser": "1.8.21"
   },
   "devDependencies": {
-    "@cornerstonejs/core": "4.21.5"
+    "@cornerstonejs/core": "4.21.6"
   },
   "config": {
     "commitizen": {
