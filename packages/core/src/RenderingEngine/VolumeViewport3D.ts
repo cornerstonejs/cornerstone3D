@@ -4,11 +4,9 @@ import { OrientationAxis, Events } from '../enums';
 import cache from '../cache/cache';
 import setDefaultVolumeVOI from './helpers/setDefaultVolumeVOI';
 import triggerEvent from '../utilities/triggerEvent';
-import { actorIsA, isImageActor } from '../utilities/actorCheck';
-import { setTransferFunctionNodes } from '../utilities/transferFunctionUtils';
+import { actorIsA } from '../utilities/actorCheck';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import type { ViewportInput } from '../types/IViewport';
-import type { ImageActor } from '../types/IActor';
 import BaseVolumeViewport from './BaseVolumeViewport';
 import type { Types } from '@cornerstonejs/core';
 /**
@@ -157,16 +155,7 @@ class VolumeViewport3D extends BaseVolumeViewport {
 
     setDefaultVolumeVOI(volumeActor.actor as vtkVolume, imageVolume);
 
-    if (isImageActor(volumeActor)) {
-      const transferFunction = (volumeActor.actor as ImageActor)
-        .getProperty()
-        .getRGBTransferFunction(0);
-
-      setTransferFunctionNodes(
-        transferFunction,
-        this.initialTransferFunctionNodes
-      );
-    }
+    this._restoreVolumeRenderingDefaults(volumeActor, volumeId);
 
     this.setCamera(this.initialCamera);
     triggerEvent(

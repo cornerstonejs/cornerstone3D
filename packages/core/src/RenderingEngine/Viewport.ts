@@ -251,6 +251,14 @@ class Viewport {
   }
 
   /**
+   * Mark the viewport as needing a render pass (e.g. after external display-set / segmentation updates).
+   * Does not queue a render; the rendering engine’s normal RAF cycle will pick this up.
+   */
+  public setNeedsRender(): void {
+    this.viewportStatus = ViewportStatus.NEEDS_RENDER;
+  }
+
+  /**
    *  This applies a color transform as an svg filter to the output image.
    */
   protected setColorTransform(voiRange, averageWhite) {

@@ -16,6 +16,7 @@ import {
 import type IStackViewport from '../types/IStackViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
 import viewportTypeToViewportClass from './helpers/viewportTypeToViewportClass';
+import ViewportStatus from '../enums/ViewportStatus';
 
 import type * as EventTypes from '../types/EventTypes';
 import type {
@@ -689,6 +690,10 @@ abstract class BaseRenderingEngine {
     // Add the viewports to the set of flagged viewports
     viewportIds.forEach((viewportId) => {
       this._needsRender.add(viewportId);
+      const viewport = this._viewports.get(viewportId);
+      if (viewport) {
+        viewport.viewportStatus = ViewportStatus.NEEDS_RENDER;
+      }
     });
 
     // Render any flagged viewports
