@@ -49,7 +49,6 @@ let cprMapper = null;
 let cprActor = null;
 let reslice = null;
 let resliceActor = null;
-let resliceViewport = null;
 
 const viewportIds = ['CT_VOLUME_SAGITTAL', 'CPR_STACK', 'CROSS_STACK'];
 
@@ -98,13 +97,13 @@ function getPolylineCrossSection(
   const P_prev = polyline[Math.max(0, index - 1)];
   const P_next = polyline[Math.min(polyline.length - 1, index + 1)];
 
-  // 1. Calcular Vetores do Frame Local
+  // calculate vectors of current frame
   const tangent = vec3.create();
   vec3.subtract(tangent, P_next, P_prev);
   vec3.normalize(tangent, tangent);
 
   const right = vec3.create();
-  // Usamos o viewPlaneNormal da câmera para garantir que o 'Right' seja consistente com a visualização
+  // using viewPlaneNormal to make sure the directions are consistent
   vec3.cross(right, tangent, viewPlaneNormal);
   vec3.normalize(right, right);
 
@@ -112,8 +111,8 @@ function getPolylineCrossSection(
   vec3.cross(up, tangent, right);
   vec3.normalize(up, up);
 
-  // 2. Configurar Matriz 4x4 (Column-Major para gl-matrix)
-  // Coluna 0: Right, Coluna 1: Up, Coluna 2: Tangent (Normal do plano), Coluna 3: Origin (P_curr)
+  // 2. Configure Matriz 4x4 (Column-Major to gl-matrix)
+  // Column 0: Right, Column 1: Up, Column 2: Tangent (plane normal), Column 3: Origin (P_curr)
   const resliceAxes = mat4.create();
   resliceAxes[0] = up[0];
   resliceAxes[1] = up[1];

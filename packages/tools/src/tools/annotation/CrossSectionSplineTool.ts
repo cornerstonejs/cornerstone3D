@@ -1,7 +1,8 @@
-import { drawing, SplineROITool } from '@cornerstonejs/tools';
 import { vec3 } from 'gl-matrix';
 import { getAnnotations } from '../../stateManagement';
 import type { PublicToolProps, ToolProps } from '../../types';
+import SplineROITool from './SplineROITool';
+import { drawing } from '../..';
 
 const { drawLine: drawLineSvg } = drawing;
 
@@ -49,7 +50,7 @@ class CrossSectionSplineTool extends SplineROITool {
       return;
     }
 
-    // 2. Lógica de cálculo do ponto de perpendicular desejado
+    // Calculate the desired perpendicular point on the spline
     const pointIndex = this.getPerpendicularIndex(polyline);
     if (pointIndex === null) {
       return;
@@ -61,22 +62,22 @@ class CrossSectionSplineTool extends SplineROITool {
     const prevPoint = polyline[pointIndex - 1];
     const nextPoint = polyline[pointIndex + 1];
 
-    // Vetor tangente à curva no ponto desejado
+    // Tangent vector of the curve at the selected point
     const tangent = vec3.subtract(vec3.create(), nextPoint, prevPoint);
     const camera = viewport.getCamera();
     const { viewPlaneNormal } = camera;
 
     if (viewPlaneNormal) {
-      // Vetor normal à tangente e ao plano da câmera (Perpendicular)
+      // Normal vector perpendicular to both the view plane and the tangent
       const normal = vec3.cross(vec3.create(), viewPlaneNormal, tangent);
       vec3.normalize(normal, normal);
 
       const halfLength =
         typeof this.configuration?.halfLength === 'number'
           ? this.configuration.halfLength
-          : 50; // Tamanho padrão da linha
+          : 50; // Default cross-section half-length
 
-      // Pontos extremos da linha de cross-section em coordenadas de mundo
+      // Endpoints of the cross-section line in world coordinates
       const p1 = vec3.scaleAndAdd(
         vec3.create(),
         centerPoint,
@@ -90,11 +91,11 @@ class CrossSectionSplineTool extends SplineROITool {
         -halfLength
       );
 
-      // Conversão para Canvas
+      // Convert world coordinates to canvas coordinates
       const p1Canvas = viewport.worldToCanvas(p1);
       const p2Canvas = viewport.worldToCanvas(p2);
 
-      // 3. Desenho no SVG
+      // Draw the line in SVG
       const lineUID = `${annotation.annotationUID}-cross-section`;
 
       drawLineSvg(
@@ -111,7 +112,7 @@ class CrossSectionSplineTool extends SplineROITool {
     }
   }
   /**
-   * Esta função é chamada durante o ciclo de renderização do Cornerstone.
+   * This function is called during the Cornerstone render cycle.
    */
   protected renderAnnotationInstance(renderContext): boolean {
     const { enabledElement, svgDrawingHelper } = renderContext;
@@ -121,8 +122,7 @@ class CrossSectionSplineTool extends SplineROITool {
     }
     const { viewport } = enabledElement;
 
-    // 1. Buscar as anotações da ferramenta alvo (ex: PlanarFreehandROITool ou SplineROI)
-    // Aqui você deve passar o nome da ferramenta que gerou a spline
+    // Use the name of the tool that created the spline here
     const annotations =
       getAnnotations(CrossSectionSplineTool.toolName, viewport.element) || [];
 
