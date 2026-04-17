@@ -1,0 +1,105 @@
+name: Duplicate Issue Check
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  check-duplicate:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+
+    steps:
+      - name: Check for duplicate issues
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const title = issue.title;
+            const body = issue.body || '';
+            const issueNumber = issue.number;
+
+            // Extract meaningful keywords from the title (skip short/common words)
+            const stopWords = new Set([
+              'a', 'an', 'the', 'is', 'it', 'in', 'on', 'at', 'to', 'for',
+              'of', 'and', 'or', 'not', 'with', 'this', 'that', 'be', 'as',
+              'by', 'are', 'was', 'were', 'has', 'have', 'had', 'do', 'does',
+              'did', 'will', 'would', 'could', 'should', 'may', 'might', 'bug',
+              'when', 'how', 'what', 'why', 'where', 'which', 'who', 'can',
+            ]);
+
+            const keywords = title
+              .toLowerCase()
+              .replace(/[^\w\s]/g, ' ')
+              .split(/\s+/)
+              .filter(w => w.length > 3 && !stopWords.has(w));
+
+            if (keywords.length === 0) {
+              console.log('No meaningful keywords found in issue title, skipping duplicate check.');
+              return;
+            }
+
+            // Cap at 6 unique keywords to keep the search query short and within
+            // GitHub Search API length limits while still being specific enough.
+            const MAX_SEARCH_KEYWORDS = 6;
+            const queryKeywords = [...new Set(keywords)].slice(0, MAX_SEARCH_KEYWORDS).join(' ');
+            const searchQuery = `repo:${context.repo.owner}/${context.repo.repo} is:issue ${queryKeywords}`;
+
+            console.log(`Searching with query: ${searchQuery}`);
+
+            let searchResults;
+            try {
+              // Fetch up to 10 candidates; more than this is rarely useful and
+              // would make the comment overwhelming for the reporter.
+              const MAX_DUPLICATE_CANDIDATES = 10;
+              searchResults = await github.rest.search.issuesAndPullRequests({
+                q: searchQuery,
+                per_page: MAX_DUPLICATE_CANDIDATES,
+                sort: 'relevance',
+              });
+            } catch (err) {
+              console.log(`Search failed: ${err.message}`);
+              return;
+            }
+
+            // Filter out the current issue, pull requests, and only keep issues
+            const duplicateCandidates = searchResults.data.items.filter(item =>
+              item.number !== issueNumber &&
+              !item.pull_request
+            );
+
+            if (duplicateCandidates.length === 0) {
+              console.log('No potential duplicates found.');
+              return;
+            }
+
+            // Build the comment
+            const issueList = duplicateCandidates
+              .map(item => {
+                const state = item.state === 'closed' ? ' *(closed)*' : '';
+                return `- #${item.number} — [${item.title}](${item.html_url})${state}`;
+              })
+              .join('\n');
+
+            const comment = `## 🔍 Possible Duplicate Issues Detected
+
+Thank you for opening this issue! Our automated check found the following existing issues that may be related or duplicates:
+
+${issueList}
+
+**Please take a moment to review the issues listed above.**
+
+- If your issue is already covered by one of them, please consider **closing this issue** and adding a 👍 reaction or a comment to the existing one — this helps us keep the tracker focused.
+- If your issue is distinct, feel free to ignore this message and provide any additional details that distinguish it from the ones above.
+
+_This check is automated and may produce false positives. Thank you for your understanding!_ 🙏`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              body: comment,
+            });
+
+            console.log(`Posted duplicate check comment on issue #${issueNumber}`);
