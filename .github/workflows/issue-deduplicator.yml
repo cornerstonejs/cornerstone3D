@@ -1,0 +1,347 @@
+name: Issue Deduplicator
+
+on:
+  issues:
+    types:
+      - opened
+      - labeled
+
+concurrency:
+  group: issue-deduplicator-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  gather-candidates:
+    name: Identify potential duplicate candidates
+    if: >
+      github.repository == 'cornerstonejs/cornerstone3D' &&
+      github.event.issue.state == 'open' &&
+      (
+        github.event.action == 'opened' ||
+        (
+          github.event.action == 'labeled' &&
+          github.event.label.name == 'issue-deduplicate'
+        )
+      )
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      issues_json: ${{ steps.normalize.outputs.issues_json }}
+      reason: ${{ steps.normalize.outputs.reason }}
+      has_matches: ${{ steps.normalize.outputs.has_matches }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare Codex inputs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          set -euo pipefail
+
+          CURRENT_ISSUE_FILE=codex-current-issue.json
+          EXISTING_ALL_FILE=codex-existing-issues-all.json
+
+          gh issue list --repo "$REPO" \
+            --json number,title,body,createdAt,updatedAt,state,labels \
+            --limit 300 \
+            --state all \
+            --search "sort:updated-desc" \
+            | jq '[.[] | {
+                number,
+                title,
+                body: ((.body // "")[0:1600]),
+                createdAt,
+                updatedAt,
+                state,
+                labels: ((.labels // []) | map(.name))
+              }]' \
+            > "$EXISTING_ALL_FILE"
+
+          gh issue view "$ISSUE_NUMBER" \
+            --repo "$REPO" \
+            --json number,title,body \
+            | jq '{number, title, body: ((.body // "")[0:4000])}' \
+            > "$CURRENT_ISSUE_FILE"
+
+      - id: codex
+        name: Find duplicate candidates
+        uses: openai/codex-action@c25d10f3f498316d4b2496cc4c6dd58057a7b031 # v1.6
+        with:
+          openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
+          allow-users: '*'
+          safety-strategy: read-only
+          prompt: |
+            You are triaging a newly created GitHub issue for the cornerstonejs/cornerstone3D repository.
+
+            You can read the following JSON files from the working directory:
+            - codex-current-issue.json: the current issue (number, title, body)
+            - codex-existing-issues-all.json: recent issues with title, truncated body, timestamps, state, and labels
+
+            Task:
+            - Find up to five issues that may describe the same underlying bug, support request, or feature request.
+            - Prioritize overlap in symptoms, reproduction details, error messages, affected packages, and user intent.
+            - Prefer open issues when confidence is similar.
+            - Closed issues can still be valid duplicates if the match is clear.
+            - Return fewer matches rather than speculative guesses.
+            - If confidence is low, return an empty list.
+            - Never include the current issue number.
+
+            After deciding, provide a short reason.
+          output-schema: |
+            {
+              "type": "object",
+              "properties": {
+                "issues": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "reason": {
+                  "type": "string"
+                }
+              },
+              "required": ["issues", "reason"],
+              "additionalProperties": false
+            }
+
+      - id: normalize
+        name: Normalize candidate output
+        env:
+          CODEX_OUTPUT: ${{ steps.codex.outputs.final-message }}
+          CURRENT_ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          set -euo pipefail
+
+          raw=${CODEX_OUTPUT//$'\r'/}
+          issues='[]'
+          reason='Candidate selection output was empty or invalid JSON.'
+
+          if [ -n "$raw" ] && printf '%s' "$raw" | jq -e 'type == "object" and (.issues | type == "array")' >/dev/null 2>&1; then
+            issues=$(printf '%s' "$raw" | jq -c '[.issues[] | tostring]')
+            reason=$(printf '%s' "$raw" | jq -r '.reason // ""')
+          fi
+
+          filtered=$(jq -cn --argjson issues "$issues" --arg current "$CURRENT_ISSUE_NUMBER" '[
+            $issues[]
+            | tostring
+            | select(. != $current)
+          ] | reduce .[] as $issue ([]; if index($issue) then . else . + [$issue] end) | .[:5]')
+
+          has_matches=false
+          if [ "$(jq 'length' <<<"$filtered")" -gt 0 ]; then
+            has_matches=true
+          fi
+
+          {
+            echo "issues_json<<EOF"
+            echo "$filtered"
+            echo "EOF"
+            echo "reason<<EOF"
+            echo "$reason"
+            echo "EOF"
+            echo "has_matches=$has_matches"
+          } >> "$GITHUB_OUTPUT"
+
+  verify-candidates:
+    name: Verify duplicate candidates
+    needs: gather-candidates
+    if: needs.gather-candidates.outputs.has_matches == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      duplicates_json: ${{ steps.normalize.outputs.duplicates_json }}
+      summary: ${{ steps.normalize.outputs.summary }}
+      has_matches: ${{ steps.normalize.outputs.has_matches }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare verification inputs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          CANDIDATES_JSON: ${{ needs.gather-candidates.outputs.issues_json }}
+        run: |
+          set -euo pipefail
+
+          CURRENT_ISSUE_FILE=codex-current-issue.json
+          CANDIDATE_ISSUES_FILE=codex-candidate-issues.json
+
+          gh issue view "$ISSUE_NUMBER" \
+            --repo "$REPO" \
+            --json number,title,body,createdAt,updatedAt,state,labels \
+            | jq '{
+                number,
+                title,
+                body: ((.body // "")[0:4000]),
+                createdAt,
+                updatedAt,
+                state,
+                labels: ((.labels // []) | map(.name))
+              }' \
+            > "$CURRENT_ISSUE_FILE"
+
+          jq -r '.[]' <<<"$CANDIDATES_JSON" | while IFS= read -r candidate; do
+            gh issue view "$candidate" \
+              --repo "$REPO" \
+              --json number,title,body,createdAt,updatedAt,state,labels,url \
+              | jq '{
+                  number,
+                  title,
+                  body: ((.body // "")[0:4000]),
+                  createdAt,
+                  updatedAt,
+                  state,
+                  labels: ((.labels // []) | map(.name)),
+                  url
+                }'
+          done | jq -s '.' > "$CANDIDATE_ISSUES_FILE"
+
+      - id: codex
+        name: Confirm duplicate matches
+        uses: openai/codex-action@c25d10f3f498316d4b2496cc4c6dd58057a7b031 # v1.6
+        with:
+          openai-api-key: ${{ secrets.CODEX_OPENAI_API_KEY }}
+          allow-users: '*'
+          safety-strategy: read-only
+          prompt: |
+            You are validating whether a newly created GitHub issue in cornerstonejs/cornerstone3D is a duplicate.
+
+            You can read:
+            - codex-current-issue.json: the current issue
+            - codex-candidate-issues.json: candidate duplicate issues with fuller details
+
+            Instructions:
+            - Identify only strong or moderate-confidence duplicates.
+            - Return up to three matches.
+            - Use concrete overlap in symptoms, reproduction details, affected packages, error text, and requested behavior.
+            - If none of the candidates are convincing, return an empty list and an empty summary.
+            - Keep each reason short and specific.
+
+            The summary should be one short sentence suitable for a friendly triage comment.
+          output-schema: |
+            {
+              "type": "object",
+              "properties": {
+                "duplicates": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "number": {
+                        "type": "string"
+                      },
+                      "reason": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["number", "reason"],
+                    "additionalProperties": false
+                  }
+                },
+                "summary": {
+                  "type": "string"
+                }
+              },
+              "required": ["duplicates", "summary"],
+              "additionalProperties": false
+            }
+
+      - id: normalize
+        name: Normalize verification output
+        env:
+          CODEX_OUTPUT: ${{ steps.codex.outputs.final-message }}
+          CURRENT_ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          set -euo pipefail
+
+          raw=${CODEX_OUTPUT//$'\r'/}
+          duplicates='[]'
+          summary=''
+
+          if [ -n "$raw" ] && printf '%s' "$raw" | jq -e 'type == "object" and (.duplicates | type == "array")' >/dev/null 2>&1; then
+            duplicates=$(printf '%s' "$raw" | jq -c --arg current "$CURRENT_ISSUE_NUMBER" '[
+              .duplicates[]
+              | {
+                  number: (.number | tostring),
+                  reason: (.reason // "")
+                }
+              | select(.number != $current)
+            ] | reduce .[] as $issue ([]; if map(.number) | index($issue.number) then . else . + [$issue] end) | .[:3]')
+            summary=$(printf '%s' "$raw" | jq -r '.summary // ""')
+          fi
+
+          has_matches=false
+          if [ "$(jq 'length' <<<"$duplicates")" -gt 0 ]; then
+            has_matches=true
+          fi
+
+          {
+            echo "duplicates_json<<EOF"
+            echo "$duplicates"
+            echo "EOF"
+            echo "summary<<EOF"
+            echo "$summary"
+            echo "EOF"
+            echo "has_matches=$has_matches"
+          } >> "$GITHUB_OUTPUT"
+
+  comment-on-issue:
+    name: Comment on issue
+    needs: verify-candidates
+    if: needs.verify-candidates.outputs.has_matches == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Post or update duplicate comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          DUPLICATES_JSON: ${{ needs.verify-candidates.outputs.duplicates_json }}
+          SUMMARY: ${{ needs.verify-candidates.outputs.summary }}
+        run: |
+          set -euo pipefail
+
+          marker='<!-- issue-deduplicator -->'
+          comment_file=$(mktemp)
+          payload_file=$(mktemp)
+
+          {
+            echo "$marker"
+            echo "Thanks for opening this issue. I found a few potentially related reports that may describe the same problem:"
+            jq -r '.[] | "- #\(.number) — \(.reason)"' <<<"$DUPLICATES_JSON"
+            if [ -n "$SUMMARY" ]; then
+              echo
+              echo "$SUMMARY"
+            fi
+            echo
+            echo "If one of these already matches your report, please add any missing details there and consider closing this issue as a duplicate. If not, no action is needed."
+          } > "$comment_file"
+
+          jq -n --rawfile body "$comment_file" '{body: $body}' > "$payload_file"
+
+          existing_comment_id=$(
+            gh api "repos/$REPO/issues/$ISSUE_NUMBER/comments" \
+              --paginate \
+              --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | contains("<!-- issue-deduplicator -->"))) | .id' \
+              | head -n 1
+          )
+
+          if [ -n "$existing_comment_id" ]; then
+            gh api "repos/$REPO/issues/comments/$existing_comment_id" \
+              --method PATCH \
+              --input "$payload_file" >/dev/null
+          else
+            gh api "repos/$REPO/issues/$ISSUE_NUMBER/comments" \
+              --method POST \
+              --input "$payload_file" >/dev/null
+          fi
