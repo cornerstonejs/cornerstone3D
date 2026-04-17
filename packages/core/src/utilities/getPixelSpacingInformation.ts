@@ -45,6 +45,29 @@ export function getERMF(instance) {
   }
 }
 
+const MeasurementMessages = Object.freeze({
+  NOT_CALIBRATED: 'Measurements not calibrated.',
+  CORRECTED_AT_MODALITY: 'Measurements corrected at modality.',
+  NOT_CORRECTED_AT_DETECTOR:
+    'Measurements not corrected. Measured size is at detector.',
+  CORRECTED_USING_ERMF: 'Measurements corrected using the ERMF.',
+  UNCERTAIN: 'Measurements are uncertain.',
+  USER_CALIBRATED: 'Measurements are user calibrated.',
+});
+
+function hasSpacing(spacing) {
+  return Array.isArray(spacing) && spacing.length === 2;
+}
+
+function isValidSpacing(spacing) {
+  return (
+    hasSpacing(spacing) &&
+    spacing.every(
+      (value) => Number.isFinite(Number(value)) && Number(value) > 0
+    )
+  );
+}
+
 /**
  * Given an instance, calculates the project (radiographic) pixel spacing
  * plus the type of calibration that got used for it.
@@ -67,37 +90,43 @@ export function calculateRadiographicPixelSpacing(instance) {
     instance;
 
   const isProjection = true;
+  const hasPixelSpacing = hasSpacing(PixelSpacing);
+  const hasImagerPixelSpacing = hasSpacing(ImagerPixelSpacing);
+  const hasValidImagerPixelSpacing = isValidSpacing(ImagerPixelSpacing);
 
-  if (PixelSpacing && PixelSpacingCalibrationType === 'GEOMETRY') {
-    if (isEqual(PixelSpacing, ImagerPixelSpacing)) {
-      console.warn(
-        'Calibration type is geometry, but pixel spacing and imager pixel spacing identical',
-        PixelSpacing,
-        ImagerPixelSpacing
-      );
-    }
-    // This tag says just trust the pixel spacing without worrying about the value
-    return {
-      PixelSpacing,
-      type: CalibrationTypes.ERMF,
-      isProjection,
-    };
-  }
-
-  if (PixelSpacing && PixelSpacingCalibrationType === 'FIDUCIAL') {
-    // This tag says that the pixel spacing has been manually calibrated
+  // This tag says that the pixel spacing has been manually calibrated
+  if (hasPixelSpacing && PixelSpacingCalibrationType === 'FIDUCIAL') {
     return {
       PixelSpacing,
       type: CalibrationTypes.CALIBRATED,
       isProjection,
+      Message: MeasurementMessages.USER_CALIBRATED,
     };
   }
 
-  if (ImagerPixelSpacing) {
+  // Explicit geometry calibration from the modality
+  if (hasPixelSpacing && PixelSpacingCalibrationType === 'GEOMETRY') {
+    if (hasImagerPixelSpacing && isEqual(PixelSpacing, ImagerPixelSpacing)) {
+      console.warn(
+        'Calibration type is geometry, but pixel spacing and imager pixel spacing are identical',
+        PixelSpacing,
+        ImagerPixelSpacing
+      );
+    }
+
+    return {
+      PixelSpacing,
+      type: CalibrationTypes.ERMF,
+      isProjection,
+      Message: MeasurementMessages.CORRECTED_AT_MODALITY,
+    };
+  }
+
+  if (hasImagerPixelSpacing) {
     const ermf = getERMF(instance);
-    if (ermf > 1) {
-      // The IHE Mammo profile specifies that the value of Imager Pixel Spacing is required to be corrected by
-      // Estimated Radiographic Magnification Factor and the user informed of that.
+    // The IHE Mammo profile specifies that the value of Imager Pixel Spacing is required to be corrected by
+    // Estimated Radiographic Magnification Factor and the user informed of that.
+    if (typeof ermf === 'number' && ermf > 1) {
       const correctedPixelSpacing = ImagerPixelSpacing.map(
         (pixelSpacing) => pixelSpacing / ermf
       );
@@ -106,33 +135,59 @@ export function calculateRadiographicPixelSpacing(instance) {
         PixelSpacing: correctedPixelSpacing,
         type: CalibrationTypes.ERMF,
         isProjection,
+        Message: MeasurementMessages.CORRECTED_USING_ERMF,
       };
     }
+
     if (ermf === true) {
-      // PixelSpacing already updated/correct, don't tweak it
+      // PixelSpacing already updated/correct, don't tweak it again
       return {
-        PixelSpacing,
+        PixelSpacing: PixelSpacing || ImagerPixelSpacing,
         type: CalibrationTypes.ERMF,
         isProjection,
+        Message: MeasurementMessages.CORRECTED_USING_ERMF,
       };
     }
+
     if (ermf) {
       console.error('Illegal ERMF value:', ermf);
     }
+
+    if (hasValidImagerPixelSpacing && hasPixelSpacing) {
+      return {
+        PixelSpacing,
+        type: CalibrationTypes.PROJECTION,
+        isProjection,
+        Message: MeasurementMessages.CORRECTED_AT_MODALITY,
+      };
+    }
+
+    if (hasValidImagerPixelSpacing) {
+      return {
+        PixelSpacing: ImagerPixelSpacing,
+        type: CalibrationTypes.PROJECTION,
+        isProjection,
+        Message: MeasurementMessages.NOT_CORRECTED_AT_DETECTOR,
+      };
+    }
+  }
+
+  // PS is present, but IPS is absent/invalid (or IPS+ERMF combination is not trustworthy)
+  if (hasPixelSpacing) {
     return {
-      PixelSpacing: PixelSpacing || ImagerPixelSpacing,
-      type: CalibrationTypes.PROJECTION,
+      PixelSpacing,
+      type: CalibrationTypes.UNKNOWN,
       isProjection,
+      Message: MeasurementMessages.UNCERTAIN,
     };
   }
 
-  // If only Pixel Spacing is present, and this is a projection radiograph,
-  // PixelSpacing should be used, but the user should be informed that
-  // what it means is unknown
+  // Neither PS nor IPS is usable
   return {
     PixelSpacing,
     type: CalibrationTypes.UNKNOWN,
     isProjection,
+    Message: MeasurementMessages.NOT_CALIBRATED,
   };
 }
 
