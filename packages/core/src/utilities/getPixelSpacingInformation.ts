@@ -45,7 +45,7 @@ export function getERMF(instance) {
   }
 }
 
-const MeasurementMessages = Object.freeze({
+const MeasurementMessages = {
   NOT_CALIBRATED: 'Measurements not calibrated.',
   CORRECTED_AT_MODALITY: 'Measurements corrected at modality.',
   NOT_CORRECTED_AT_DETECTOR:
@@ -53,10 +53,12 @@ const MeasurementMessages = Object.freeze({
   CORRECTED_USING_ERMF: 'Measurements corrected using the ERMF.',
   UNCERTAIN: 'Measurements are uncertain.',
   USER_CALIBRATED: 'Measurements are user calibrated.',
-});
+};
 
 function hasSpacing(spacing) {
-  return Array.isArray(spacing) && spacing.length === 2;
+  return (
+    Array.isArray(spacing) && (spacing.length === 1 || spacing.length === 2)
+  );
 }
 
 function isValidSpacing(spacing) {
@@ -142,7 +144,7 @@ export function calculateRadiographicPixelSpacing(instance) {
     if (ermf === true) {
       // PixelSpacing already updated/correct, don't tweak it again
       return {
-        PixelSpacing: PixelSpacing || ImagerPixelSpacing,
+        PixelSpacing,
         type: CalibrationTypes.ERMF,
         isProjection,
         Message: MeasurementMessages.CORRECTED_USING_ERMF,
@@ -151,15 +153,6 @@ export function calculateRadiographicPixelSpacing(instance) {
 
     if (ermf) {
       console.error('Illegal ERMF value:', ermf);
-    }
-
-    if (hasValidImagerPixelSpacing && hasPixelSpacing) {
-      return {
-        PixelSpacing,
-        type: CalibrationTypes.PROJECTION,
-        isProjection,
-        Message: MeasurementMessages.CORRECTED_AT_MODALITY,
-      };
     }
 
     if (hasValidImagerPixelSpacing) {
