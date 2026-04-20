@@ -27,6 +27,11 @@ export interface OrientationControllerConfig {
   opacity: number;
   showEdgeFaces: boolean;
   showCornerFaces: boolean;
+  highlightColor?: number[];
+  edgeColor?: number[];
+  cornerColor?: number[];
+  restingAmbient?: number;
+  hoverAmbient?: number;
 }
 
 export interface PickResult {
@@ -83,6 +88,9 @@ export class vtkOrientationControllerWidget {
       cleanup: () => void;
     }
   >();
+  private _highlightColor: number[] = [255, 255, 255];
+  private _restingAmbient: number = 1.0;
+  private _hoverAmbient: number = 1.0;
 
   createActors(config: OrientationControllerConfig): vtkActor[] {
     const rgbToHex = (rgb: number[]) => {
@@ -98,7 +106,10 @@ export class vtkOrientationControllerWidget {
       return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
     };
 
-    const actorFactory = vtkAnnotatedRhombicuboctahedronActor.newInstance();
+    const actorFactory = vtkAnnotatedRhombicuboctahedronActor.newInstance({
+      edgeColor: config.edgeColor ?? [200, 200, 200],
+      cornerColor: config.cornerColor ?? [150, 150, 150],
+    });
 
     const defaultStyle = {
       fontStyle: 'bold',
@@ -161,10 +172,15 @@ export class vtkOrientationControllerWidget {
 
     const actors = actorFactory.getActors();
 
-    // Set opacity for all actors
+    this._highlightColor = config.highlightColor ?? [255, 255, 255];
+    this._restingAmbient = config.restingAmbient ?? 1.0;
+    this._hoverAmbient = config.hoverAmbient ?? 1.0;
+
+    // Set opacity and ambient for all actors
     actors.forEach((actor) => {
       const property = actor.getProperty();
       property.setOpacity(config.opacity);
+      property.setAmbient(this._restingAmbient);
       actor.setVisibility(true);
     });
 
@@ -715,10 +731,11 @@ export class vtkOrientationControllerWidget {
       isMainFace: false,
     };
 
-    // Set highlight color (bright white)
-    colorArray[offset] = 255;
-    colorArray[offset + 1] = 255;
-    colorArray[offset + 2] = 255;
+    // Set highlight color
+    const hc = this._highlightColor;
+    colorArray[offset] = hc[0];
+    colorArray[offset + 1] = hc[1];
+    colorArray[offset + 2] = hc[2];
     colorArray[offset + 3] = 255;
 
     // Mark as modified and render
@@ -826,6 +843,15 @@ export class vtkOrientationControllerWidget {
     callbacks: MouseHandlersCallbacks
   ): { cleanup: () => void } {
     let isMouseDown = false;
+    let isCubeHovered = false;
+
+    const setAmbient = (full: boolean) => {
+      actors.forEach((actor) => {
+        const property = actor.getProperty();
+        property.setAmbient(full ? this._hoverAmbient : this._restingAmbient);
+      });
+      viewport.render();
+    };
     let didDrag = false;
     let pendingPickResult: PickResult | null = null;
     let mouseDownCanvas: { x: number; y: number } | null = null;
@@ -852,12 +878,20 @@ export class vtkOrientationControllerWidget {
       );
 
       if (pickResult) {
+        if (!isCubeHovered) {
+          isCubeHovered = true;
+          setAmbient(true);
+        }
         const { pickedActor, cellId, actorIndex } = pickResult;
         this.highlightFace(pickedActor, cellId, viewport, actorIndex === 0);
         if (callbacks.onFaceHover) {
           callbacks.onFaceHover(pickResult);
         }
       } else {
+        if (isCubeHovered) {
+          isCubeHovered = false;
+          setAmbient(false);
+        }
         this.clearHighlight();
         if (callbacks.onFaceHover) {
           callbacks.onFaceHover(null);
@@ -909,6 +943,10 @@ export class vtkOrientationControllerWidget {
       }
 
       isMouseDown = false;
+      if (isCubeHovered) {
+        isCubeHovered = false;
+        setAmbient(false);
+      }
       didDrag = false;
       pendingPickResult = null;
       mouseDownCanvas = null;
