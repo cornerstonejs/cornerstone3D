@@ -120,7 +120,7 @@
     },
     "packages/adapters": {
       "name": "@cornerstonejs/adapters",
-      "version": "4.21.0",
+      "version": "4.21.2",
       "dependencies": {
         "@babel/runtime-corejs2": "7.26.10",
         "buffer": "6.0.3",
@@ -129,17 +129,17 @@
         "ndarray": "1.0.19",
       },
       "devDependencies": {
-        "@cornerstonejs/core": "4.21.0",
-        "@cornerstonejs/tools": "4.21.0",
+        "@cornerstonejs/core": "4.21.2",
+        "@cornerstonejs/tools": "4.21.2",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "4.21.0",
-        "@cornerstonejs/tools": "4.21.0",
+        "@cornerstonejs/core": "4.21.2",
+        "@cornerstonejs/tools": "4.21.2",
       },
     },
     "packages/ai": {
       "name": "@cornerstonejs/ai",
-      "version": "4.21.0",
+      "version": "4.21.2",
       "dependencies": {
         "@babel/runtime-corejs2": "7.26.10",
         "buffer": "6.0.3",
@@ -157,7 +157,7 @@
     },
     "packages/core": {
       "name": "@cornerstonejs/core",
-      "version": "4.21.0",
+      "version": "4.21.2",
       "dependencies": {
         "@kitware/vtk.js": "34.15.1",
         "comlink": "4.4.2",
@@ -167,7 +167,7 @@
     },
     "packages/dicomImageLoader": {
       "name": "@cornerstonejs/dicom-image-loader",
-      "version": "4.21.0",
+      "version": "4.21.2",
       "dependencies": {
         "@cornerstonejs/codec-charls": "1.2.3",
         "@cornerstonejs/codec-libjpeg-turbo-8bit": "1.2.2",
@@ -186,7 +186,7 @@
     },
     "packages/labelmap-interpolation": {
       "name": "@cornerstonejs/labelmap-interpolation",
-      "version": "4.21.0",
+      "version": "4.21.2",
       "dependencies": {
         "@itk-wasm/morphological-contour-interpolation": "1.1.0",
         "itk-wasm": "1.0.0-b.165",
@@ -199,7 +199,7 @@
     },
     "packages/nifti-volume-loader": {
       "name": "@cornerstonejs/nifti-volume-loader",
-      "version": "4.21.0",
+      "version": "4.21.2",
       "dependencies": {
         "nifti-reader-js": "0.6.9",
       },
@@ -209,7 +209,7 @@
     },
     "packages/polymorphic-segmentation": {
       "name": "@cornerstonejs/polymorphic-segmentation",
-      "version": "4.21.0",
+      "version": "4.21.2",
       "dependencies": {
         "@icr/polyseg-wasm": "0.4.0",
       },
@@ -221,7 +221,7 @@
     },
     "packages/tools": {
       "name": "@cornerstonejs/tools",
-      "version": "4.21.0",
+      "version": "4.21.2",
       "dependencies": {
         "@types/offscreencanvas": "2019.7.3",
         "comlink": "4.4.2",
@@ -231,7 +231,7 @@
         "canvas": "3.2.0",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "4.21.0",
+        "@cornerstonejs/core": "4.21.2",
         "@kitware/vtk.js": "34.15.1",
         "@types/d3-array": "3.2.1",
         "@types/d3-interpolate": "3.0.4",

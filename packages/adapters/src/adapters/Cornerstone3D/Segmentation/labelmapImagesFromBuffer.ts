@@ -1,6 +1,6 @@
 import { eventTarget, imageLoader, triggerEvent } from '@cornerstonejs/core';
 import { utilities as cstUtils } from '@cornerstonejs/tools';
-import { data as dcmjsData, normalizers, utilities } from 'dcmjs';
+import { data as dcmjsData, utilities as dcmjsUtilities } from 'dcmjs';
 import ndarray from 'ndarray';
 import checkOrientation from '../../helpers/checkOrientation';
 import {
@@ -11,14 +11,156 @@ import {
   getSegmentMetadata,
   getValidOrientations,
   readFromUnpackedChunks,
-  unpackPixelData,
 } from '../../Cornerstone/Segmentation_4X';
 import { compactMergeSegmentDataWithoutInformationLoss } from './compactMergeSegData';
 import { Events } from '../../enums';
 
-const { DicomMessage, DicomMetaDictionary } = dcmjsData;
-const { Normalizer } = normalizers;
-const { decode } = utilities.compression;
+const { BitArray } = dcmjsData;
+const { decode } = dcmjsUtilities.compression;
+const LABELMAP_SEG_SOP_CLASS_UID = '1.2.840.10008.5.1.4.1.1.66.7';
+
+function chunkPixelData(
+  pixelData,
+  options: { maxBytesPerChunk?: number } = {}
+) {
+  const { maxBytesPerChunk = Number.POSITIVE_INFINITY } = options;
+
+  if (pixelData.length <= maxBytesPerChunk) {
+    return [pixelData];
+  }
+
+  const chunks = [];
+  for (let offset = 0; offset < pixelData.length; offset += maxBytesPerChunk) {
+    chunks.push(pixelData.subarray(offset, offset + maxBytesPerChunk));
+  }
+
+  return chunks;
+}
+
+function normalizeDecodedPixelData(pixelData) {
+  if (Array.isArray(pixelData)) {
+    if (pixelData.length === 1) {
+      return normalizeDecodedPixelData(pixelData[0]);
+    }
+
+    const hasUint16Frame = pixelData.some(
+      (frame) => frame instanceof Uint16Array
+    );
+
+    if (hasUint16Frame) {
+      const normalizedFrames = pixelData.map((frame) =>
+        frame instanceof Uint16Array
+          ? frame
+          : frame instanceof Uint8Array
+            ? new Uint16Array(frame)
+            : new Uint16Array(frame)
+      );
+      const totalLength = normalizedFrames.reduce(
+        (acc, frame) => acc + frame.length,
+        0
+      );
+      const combined = new Uint16Array(totalLength);
+      let offset = 0;
+      for (const frame of normalizedFrames) {
+        combined.set(frame, offset);
+        offset += frame.length;
+      }
+      return combined;
+    }
+
+    const normalizedFrames = pixelData.map((frame) =>
+      frame instanceof Uint8Array ? frame : new Uint8Array(frame)
+    );
+    const totalLength = normalizedFrames.reduce(
+      (acc, frame) => acc + frame.length,
+      0
+    );
+    const combined = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const frame of normalizedFrames) {
+      combined.set(frame, offset);
+      offset += frame.length;
+    }
+    return combined;
+  }
+
+  if (pixelData instanceof Uint8Array || pixelData instanceof Uint16Array) {
+    return pixelData;
+  }
+
+  return new Uint8Array(pixelData);
+}
+
+function getExpectedVoxelCount(multiframe) {
+  const numberOfFrames =
+    Number(multiframe.NumberOfFrames) ||
+    multiframe.PerFrameFunctionalGroupsSequence?.length ||
+    1;
+  return multiframe.Rows * multiframe.Columns * numberOfFrames;
+}
+
+function decodeFromDatasetPixelData(multiframe) {
+  const encodedFrames = Array.isArray(multiframe.PixelData)
+    ? multiframe.PixelData
+    : [multiframe.PixelData];
+
+  if (!encodedFrames?.length) {
+    return;
+  }
+
+  const decoded = decode(encodedFrames, multiframe.Rows, multiframe.Columns);
+  return normalizeDecodedPixelData(decoded);
+}
+
+async function defaultDecodeImageData(segImageId) {
+  const segImage = await imageLoader.loadImage(segImageId);
+  return segImage?.getPixelData?.();
+}
+
+async function decodeSegPixelData({
+  segImageId,
+  multiframe,
+  decodeImageData = defaultDecodeImageData,
+  allowLegacyDatasetDecode = false,
+}: {
+  segImageId: string;
+  multiframe: Record<string, unknown>;
+  decodeImageData?: (
+    imageId: string
+  ) => Promise<
+    | ArrayLike<number>
+    | ArrayLike<number>[]
+    | Uint8Array
+    | Uint16Array
+    | (Uint8Array | Uint16Array)[]
+  >;
+  allowLegacyDatasetDecode?: boolean;
+}) {
+  const segPixelData = await decodeImageData(segImageId);
+
+  if (!segPixelData) {
+    throw new Error(
+      `No decoded pixel data found for SEG imageId: ${segImageId}`
+    );
+  }
+
+  const normalizedDecodedPixelData = normalizeDecodedPixelData(segPixelData);
+  const expectedVoxelCount = getExpectedVoxelCount(multiframe);
+  let decodedPixelData = normalizedDecodedPixelData;
+
+  if (
+    allowLegacyDatasetDecode &&
+    normalizedDecodedPixelData.length !== expectedVoxelCount
+  ) {
+    const datasetDecodedPixelData = decodeFromDatasetPixelData(multiframe);
+
+    if (datasetDecodedPixelData) {
+      decodedPixelData = datasetDecodedPixelData;
+    }
+  }
+
+  return { decodedPixelData, expectedVoxelCount };
+}
 
 const updateSegmentsOnFrame = ({
   segmentsOnFrame,
@@ -61,27 +203,69 @@ const extractInfoFromPerFrameFunctionalGroups = ({
   return { referencedSOPInstanceUid, referencedImageId, segmentIndex };
 };
 
+const getReferencedImageIdFromPerFrameGroup = ({
+  perFrameFunctionalGroup,
+  sopUIDImageIdIndexMap,
+}) => {
+  const derivationImageSequence =
+    perFrameFunctionalGroup?.DerivationImageSequence;
+  const normalizedDerivationImageSequence = Array.isArray(
+    derivationImageSequence
+  )
+    ? derivationImageSequence[0]
+    : derivationImageSequence;
+  const sourceImageSequence =
+    normalizedDerivationImageSequence?.SourceImageSequence;
+  const normalizedSourceImageSequence = Array.isArray(sourceImageSequence)
+    ? sourceImageSequence[0]
+    : sourceImageSequence;
+  const referencedSOPInstanceUID =
+    normalizedSourceImageSequence?.ReferencedSOPInstanceUID;
+
+  if (!referencedSOPInstanceUID) {
+    return;
+  }
+
+  return sopUIDImageIdIndexMap[referencedSOPInstanceUID];
+};
+
+/**
+ * Creates labelmap images from a SEG instance identified by segImageId.
+ * Uses metadataProvider.get('instance', segImageId) for the naturalized SEG dataset
+ * and imageLoader.loadImage(segImageId) for uncompressed pixel data.
+ *
+ * @param referencedImageIds - Referenced image IDs (e.g. CT/MR series)
+ * @param segImageId - Image ID for the SEG instance (loadable via imageLoader)
+ * @param metadataProvider - Provider for instance metadata (must return naturalized dataset for segImageId)
+ * @param options - { tolerance, TypedArrayConstructor, maxBytesPerChunk }
+ */
 async function createLabelmapsFromBufferInternal(
   referencedImageIds,
-  arrayBuffer,
+  segImageId,
   metadataProvider,
   options
 ) {
   const {
     tolerance = 1e-3,
     TypedArrayConstructor = Uint8Array,
-    maxBytesPerChunk = 199000000,
-  } = options;
-  const dicomData = DicomMessage.readFile(arrayBuffer);
-  const dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
-  dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
-  const multiframe = Normalizer.normalizeToDataset([dataset]);
+    maxBytesPerChunk,
+    parserType = 'bitmap',
+    decodeImageData = defaultDecodeImageData,
+    allowLegacyDatasetDecode = false,
+  } = options ?? {};
+
+  const instanceMeta = metadataProvider.get('instance', segImageId);
+  if (!instanceMeta) {
+    throw new Error(
+      `No instance metadata found for SEG imageId: ${segImageId}. Ensure the SEG instance is registered in the metadata provider (e.g. after loading the image).`
+    );
+  }
+  const multiframe = instanceMeta.dataset ?? instanceMeta;
 
   const imagePlaneModule = metadataProvider.get(
     'imagePlaneModule',
     referencedImageIds[0]
   );
-
   const generalSeriesModule = metadataProvider.get(
     'generalSeriesModule',
     referencedImageIds[0]
@@ -108,33 +292,34 @@ async function createLabelmapsFromBufferInternal(
   const validOrientations = getValidOrientations(ImageOrientationPatient);
   const segMetadata = getSegmentMetadata(multiframe, SeriesInstanceUID);
 
-  const TransferSyntaxUID = multiframe._meta.TransferSyntaxUID.Value[0];
-
-  let pixelData;
   let pixelDataChunks;
 
-  if (TransferSyntaxUID === '1.2.840.10008.1.2.5') {
-    const rleEncodedFrames = Array.isArray(multiframe.PixelData)
-      ? multiframe.PixelData
-      : [multiframe.PixelData];
-
-    pixelData = decode(rleEncodedFrames, multiframe.Rows, multiframe.Columns);
-
-    if (multiframe.BitsStored === 1) {
-      console.warn('No implementation for rle + bit packing.');
-
-      return;
-    }
-
-    // Todo: need to test this with rle data
-    pixelDataChunks = [pixelData];
-  } else {
-    pixelDataChunks = unpackPixelData(multiframe, { maxBytesPerChunk });
-
-    if (!pixelDataChunks) {
-      throw new Error('Fractional segmentations are not yet supported');
-    }
+  if (multiframe.SegmentationType === 'FRACTIONAL') {
+    throw new Error('Fractional segmentations are not yet supported');
   }
+
+  const { decodedPixelData, expectedVoxelCount } = await decodeSegPixelData({
+    segImageId,
+    multiframe,
+    decodeImageData,
+    allowLegacyDatasetDecode,
+  });
+  const sliceLength = multiframe.Rows * multiframe.Columns;
+
+  const unpackedPixelData =
+    multiframe.BitsStored === 1 && decodedPixelData.length < expectedVoxelCount
+      ? BitArray.unpack(
+          decodedPixelData instanceof Uint8Array
+            ? decodedPixelData
+            : new Uint8Array(decodedPixelData.buffer)
+        )
+      : decodedPixelData;
+  const decodedFrameCount = Math.max(
+    1,
+    Math.floor(unpackedPixelData.length / sliceLength)
+  );
+
+  pixelDataChunks = chunkPixelData(unpackedPixelData, { maxBytesPerChunk });
 
   const orientation = checkOrientation(
     multiframe,
@@ -146,7 +331,6 @@ async function createLabelmapsFromBufferInternal(
     ],
     tolerance
   );
-
   // Pre-compute the sop UID to imageId index map so that in the for loop
   // we don't have to call metadataProvider.get() for each imageId over
   // and over again.
@@ -218,6 +402,8 @@ async function createLabelmapsFromBufferInternal(
       sopUIDImageIdIndexMap,
       imageIdMaps,
       TypedArrayConstructor,
+      parserType,
+      decodedFrameCount,
     });
 
   // calculate the centroid of each segment
@@ -264,6 +450,8 @@ export function insertPixelDataPlanar({
   segmentsPixelIndices,
   sopUIDImageIdIndexMap,
   imageIdMaps,
+  parserType,
+  decodedFrameCount,
 }) {
   const {
     SharedFunctionalGroupsSequence,
@@ -279,7 +467,15 @@ export function insertPixelDataPlanar({
       : undefined;
   const sliceLength = Columns * Rows;
 
-  const groupsLen = PerFrameFunctionalGroupsSequence.length;
+  const metadataFrameCount =
+    Number(multiframe.NumberOfFrames) ||
+    PerFrameFunctionalGroupsSequence.length;
+  const groupsLenFromMetadata =
+    PerFrameFunctionalGroupsSequence.length || metadataFrameCount;
+  const groupsLen =
+    typeof decodedFrameCount === 'number'
+      ? Math.min(groupsLenFromMetadata, decodedFrameCount)
+      : groupsLenFromMetadata;
 
   let overlapping = false;
   // Below, we chunk the processing of the frames to avoid blocking the main thread
@@ -438,7 +634,6 @@ export function insertPixelDataPlanar({
       const sharedPlaneOrientation =
         multiframe.SharedFunctionalGroupsSequence.PlaneOrientationSequence
           ?.ImageOrientationPatient;
-
       for (
         let i = firstIndex;
         i < firstIndex + imagesPerChunk && i < groupsLen;
@@ -447,12 +642,13 @@ export function insertPixelDataPlanar({
         const PerFrameFunctionalGroups = pfSeq[i];
         const ImageOrientationPatientI =
           sharedPlaneOrientation ||
-          PerFrameFunctionalGroups.PlaneOrientationSequence
-            .ImageOrientationPatient;
-        // Use slice to get the correct frame (TypedArray)
-        const view = pixelDataChunks.subarray(
+          PerFrameFunctionalGroups?.PlaneOrientationSequence
+            ?.ImageOrientationPatient ||
+          validOrientations[0];
+        const view = readFromUnpackedChunks(
+          pixelDataChunks,
           i * sliceLength,
-          (i + 1) * sliceLength
+          sliceLength
         );
         const pixelDataI2D = ndarray(view, [Rows, Columns]);
         const alignedPixelDataI = alignPixelDataWithSourceData(
@@ -467,7 +663,7 @@ export function insertPixelDataPlanar({
               'This is not yet supported. Aborting segmentation loading.'
           );
         }
-        const imageId = findReferenceSourceImageId(
+        let imageId = findReferenceSourceImageId(
           multiframe,
           i,
           referencedImageIds,
@@ -475,6 +671,16 @@ export function insertPixelDataPlanar({
           tolerance,
           sopUIDImageIdIndexMap
         );
+        if (!imageId) {
+          imageId = getReferencedImageIdFromPerFrameGroup({
+            perFrameFunctionalGroup: PerFrameFunctionalGroups,
+            sopUIDImageIdIndexMap,
+          });
+        }
+
+        if (!imageId && parserType === 'labelmap') {
+          imageId = referencedImageIds[i];
+        }
         if (!imageId) {
           console.warn(
             `Image not present in stack, can't import frame : ${i}.`
@@ -495,6 +701,7 @@ export function insertPixelDataPlanar({
         const imageIdIndex = imageIdMaps.indices[imageId];
         const labelmapImage = labelMapImages[imageIdIndex];
         const labelmap2DView = labelmapImage.getPixelData(); // TypedArray
+        const imageVoxelManager = labelmapImage.voxelManager;
         const data = alignedPixelDataI.data;
         let segmentsOnFrameArr = segmentsOnFrame[imageIdIndex];
         if (!segmentsOnFrameArr) {
@@ -506,7 +713,11 @@ export function insertPixelDataPlanar({
         for (let k = 0, len = data.length; k < len; ++k) {
           const segIdx = data[k];
           if (segIdx !== 0) {
-            labelmap2DView[k] = segIdx;
+            if (imageVoxelManager) {
+              imageVoxelManager.setAtIndex(k, segIdx);
+            } else {
+              labelmap2DView[k] = segIdx;
+            }
             if (!segSet.has(segIdx)) {
               segmentsOnFrameArr.push(segIdx);
               segSet.add(segIdx);
@@ -534,7 +745,12 @@ export function insertPixelDataPlanar({
       }
     };
 
-    if (multiframe.SegmentationType === 'LABELMAP') {
+    const isLabelmapSegmentation =
+      parserType === 'labelmap' ||
+      multiframe.SOPClassUID === LABELMAP_SEG_SOP_CLASS_UID ||
+      multiframe.SegmentationType === 'LABELMAP';
+
+    if (isLabelmapSegmentation) {
       // If the segmentation is a labelmap, we can process it in chunks
       processLabelmapChunk(0);
     } else {
@@ -861,3 +1077,4 @@ const getSegmentData = ({
 };
 
 export { createLabelmapsFromBufferInternal };
+export { decodeSegPixelData };

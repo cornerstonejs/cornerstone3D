@@ -1,5 +1,6 @@
 import { generateToolState as generateToolStateCornerstoneLegacy } from '../../Cornerstone/Segmentation';
 import { createLabelmapsFromBufferInternal } from './labelmapImagesFromBuffer';
+
 /**
  * generateToolState - Given a set of cornerstoneTools imageIds and a Segmentation buffer,
  * derive cornerstoneTools toolState and brush metadata.
@@ -33,34 +34,43 @@ function generateToolState(
 }
 
 /**
- * Creates a segmentation tool state from a set of image IDs and a segmentation buffer.
+ * Creates a segmentation tool state from a set of image IDs and a SEG instance loaded via its imageId.
+ * The naturalized SEG dataset must be available from metadataProvider.get('instance', segImageId)
+ * (e.g. dataset or instanceMeta.dataset). Uncompressed pixel data is obtained via imageLoader.loadImage(segImageId).
  *
  * @param referencedImageIds - An array of referenced image IDs e.g., CT, MR etc.
- * @param arrayBuffer - The DICOM SEG array buffer containing segmentation data.
- * @param metadataProvider - The metadata provider to retrieve necessary metadata.
- * @param options - Optional parameters to customize the segmentation processing.
+ * @param segImageId - Image ID for the SEG instance (loadable via imageLoader; instance metadata must be registered).
+ * @param options - { metadataProvider, tolerance }
  *
  * @returns An object containing:
  *          - `labelMapImages`: Array of label map images for each label map.
  *          - `segMetadata`: Metadata related to the segmentation segments.
  *          - `segmentsOnFrame`: 2D array tracking segments per frame.
- *          - `segmentsOnFrameArray`: 3D array tracking segments per frame for each label map.
  *          - `centroids`: Map of centroid coordinates for each segment.
  *          - `overlappingSegments`: Boolean indicating if segments are overlapping.
  *
- * @throws Will throw an error if unsupported transfer syntax is encountered or if segmentation frames are out of plane.
+ * @throws Will throw an error if instance metadata is missing or if the loaded image has no getPixelData().
  */
 function createFromDICOMSegBuffer(
   referencedImageIds,
-  arrayBuffer,
-  { metadataProvider, tolerance = 1e-3 }
+  segImageId,
+  {
+    metadataProvider,
+    tolerance = 1e-3,
+    parserType = 'bitmap',
+    decodeImageData,
+    allowLegacyDatasetDecode = false,
+  }
 ) {
   return createLabelmapsFromBufferInternal(
     referencedImageIds,
-    arrayBuffer,
+    segImageId,
     metadataProvider,
     {
       tolerance,
+      parserType,
+      decodeImageData,
+      allowLegacyDatasetDecode,
     }
   );
 }
