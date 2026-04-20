@@ -34,12 +34,10 @@ import type {
   Statistics,
 } from '../../types';
 import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
-import { drawLinkedTextBox } from '../../drawingSvg';
 import type {
   ContourAnnotation,
   PlanarFreehandROIAnnotation,
 } from '../../types/ToolSpecificAnnotationTypes';
-import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import type { PlanarFreehandROICommonData } from '../../utilities/math/polyline/planarFreehandROIInternalTypes';
 
 import { getLineSegmentIntersectionsCoordinates } from '../../utilities/math/polyline';
@@ -1080,7 +1078,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     svgDrawingHelper
   ) => {
     const { data } = <PlanarFreehandROIAnnotation>annotation;
-    const targetId = this.getTargetId(viewport);
+    const targetId = this.getTargetId(viewport, data);
 
     const styleSpecifier: AnnotationStyle.StyleSpecifier = {
       toolGroupId: this.toolGroupId,
@@ -1088,11 +1086,6 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       viewportId: enabledElement.viewport.id,
       annotationUID: annotation.annotationUID,
     };
-
-    const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
-    if (!options.visibility) {
-      return;
-    }
 
     const textLines = this.configuration.getTextLines(data, targetId);
     if (!textLines || textLines.length === 0) {
@@ -1102,37 +1095,14 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     const canvasCoordinates = data.contour.polyline.map((p) =>
       viewport.worldToCanvas(p)
     );
-    if (!data.handles.textBox.hasMoved) {
-      const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
-
-      data.handles.textBox.worldPosition =
-        viewport.canvasToWorld(canvasTextBoxCoords);
-    }
-
-    const textBoxPosition = viewport.worldToCanvas(
-      data.handles.textBox.worldPosition
-    );
-
-    const textBoxUID = '1';
-    const boundingBox = drawLinkedTextBox(
+    this.renderLinkedTextBoxAnnotation({
+      enabledElement,
       svgDrawingHelper,
-      annotation.annotationUID ?? '',
-      textBoxUID,
+      annotation,
+      styleSpecifier,
       textLines,
-      textBoxPosition,
       canvasCoordinates,
-      {},
-      options
-    );
-
-    const { x: left, y: top, width, height } = boundingBox;
-
-    data.handles.textBox.worldBoundingBox = {
-      topLeft: viewport.canvasToWorld([left, top]),
-      topRight: viewport.canvasToWorld([left + width, top]),
-      bottomLeft: viewport.canvasToWorld([left, top + height]),
-      bottomRight: viewport.canvasToWorld([left + width, top + height]),
-    };
+    });
   };
 }
 

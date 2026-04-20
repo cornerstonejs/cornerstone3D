@@ -9,7 +9,9 @@ import VolumeViewport from './VolumeViewport';
 import StackViewport from './StackViewport';
 import VolumeViewport3D from './VolumeViewport3D';
 import viewportTypeUsesCustomRenderingPipeline from './helpers/viewportTypeUsesCustomRenderingPipeline';
-import getOrCreateCanvas from './helpers/getOrCreateCanvas';
+import getOrCreateCanvas, {
+  updateCanvasSizeAndAspectRatio,
+} from './helpers/getOrCreateCanvas';
 import type IStackViewport from '../types/IStackViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
 
@@ -59,6 +61,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     const canvasesDrivenByVtkJs = viewportsDrivenByVtkJs.map((vp) => vp.canvas);
 
     const canvas = getOrCreateCanvas(viewportInputEntry.element);
+    updateCanvasSizeAndAspectRatio(canvas);
     canvasesDrivenByVtkJs.push(canvas);
 
     const internalViewportEntry = { ...viewportInputEntry, canvas };
@@ -172,13 +175,9 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
         getOrCreateCanvas(vp.element)
       );
 
-      vtkDrivenCanvases.forEach((canvas) => {
-        const devicePixelRatio = window.devicePixelRatio || 1;
-
-        const rect = canvas.getBoundingClientRect();
-        canvas.width = rect.width * devicePixelRatio;
-        canvas.height = rect.height * devicePixelRatio;
-      });
+      vtkDrivenCanvases.forEach((canvas) =>
+        updateCanvasSizeAndAspectRatio(canvas)
+      );
 
       for (let i = 0; i < viewportInputEntries.length; i++) {
         const vtkDrivenViewportInputEntry = viewportInputEntries[i];
@@ -195,25 +194,65 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
   /**
    * Resizes viewports that use VTK.js for rendering.
+   * Only updates the VTK offscreen size when the displayed size (canvas client size in device pixels)
+   * differs from the current rendered size (canvas.width/height). The on-screen canvas dimensions
+   * are updated only when the VTK render result is copied in _copyToOnscreenCanvas, avoiding
+   * flicker during resize. If a render is already scheduled, resize is deferred until the next
+   * resize() call.
    */
   protected _resizeVTKViewports(
     vtkDrivenViewports: (IStackViewport | IVolumeViewport)[],
     keepCamera = true,
     immediate = true
   ) {
-    const canvasesDrivenByVtkJs = vtkDrivenViewports.map(
-      (vp: IStackViewport | IVolumeViewport) => {
-        return getOrCreateCanvas(vp.element);
+    const devicePixelRatio = window.devicePixelRatio || 1;
+
+    // Compute target display size (pixels the canvas is actually displayed at) for each viewport
+    const viewportsNeedingResize: (IStackViewport | IVolumeViewport)[] = [];
+    for (const vp of vtkDrivenViewports) {
+      const canvas = getOrCreateCanvas(vp.element);
+      const displayedWidth = Math.round(canvas.clientWidth * devicePixelRatio);
+      const displayedHeight = Math.round(
+        canvas.clientHeight * devicePixelRatio
+      );
+
+      if (displayedWidth === 0 || displayedHeight === 0) {
+        continue;
       }
-    );
+      const renderedWidth = canvas.width;
+      const renderedHeight = canvas.height;
 
-    canvasesDrivenByVtkJs.forEach((canvas) => {
-      const devicePixelRatio = window.devicePixelRatio || 1;
-      canvas.width = canvas.clientWidth * devicePixelRatio;
-      canvas.height = canvas.clientHeight * devicePixelRatio;
-    });
+      if (
+        displayedWidth === renderedWidth &&
+        displayedHeight === renderedHeight
+      ) {
+        continue;
+      }
+      viewportsNeedingResize.push(vp);
+    }
 
-    if (canvasesDrivenByVtkJs.length) {
+    if (viewportsNeedingResize.length === 0) {
+      return;
+    }
+
+    if (this._animationFrameSet) {
+      return;
+    }
+
+    for (const vp of viewportsNeedingResize) {
+      const canvas = getOrCreateCanvas(vp.element);
+      const displayedWidth = Math.round(canvas.clientWidth * devicePixelRatio);
+      const displayedHeight = Math.round(
+        canvas.clientHeight * devicePixelRatio
+      );
+      const targetWidth = Math.max(VIEWPORT_MIN_SIZE, displayedWidth);
+      const targetHeight = Math.max(VIEWPORT_MIN_SIZE, displayedHeight);
+
+      vp.sWidth = targetWidth;
+      vp.sHeight = targetHeight;
+    }
+
+    if (vtkDrivenViewports.length) {
       this._resize(vtkDrivenViewports);
     }
 
@@ -320,6 +359,12 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     offscreenMultiRenderWindow: VtkOffscreenMultiRenderWindow,
     offScreenCanvasContainer: HTMLDivElement
   ): EventTypes.ImageRenderedEventDetail {
+    if (
+      viewport.canvas.clientWidth === 0 ||
+      viewport.canvas.clientHeight === 0
+    ) {
+      return;
+    }
     // Check viewport size
     if (
       viewport.sWidth < VIEWPORT_MIN_SIZE ||
@@ -375,8 +420,8 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     );
     const maxSize = this.contextPool.getMaxSizeForContext(contextIndex);
 
-    const viewportWidth = viewport.canvas.width;
-    const viewportHeight = viewport.canvas.height;
+    const viewportWidth = viewport.sWidth;
+    const viewportHeight = viewport.sHeight;
 
     const xEnd = Math.min(1, viewportWidth / maxSize.width);
     const yEnd = Math.min(1, viewportHeight / maxSize.height);
@@ -443,8 +488,8 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
     const maxSizeChanged = this.contextPool.updateViewportSize(
       viewport.id,
-      viewport.canvas.width,
-      viewport.canvas.height
+      viewport.sWidth,
+      viewport.sHeight
     );
 
     if (!maxSizeChanged) {
@@ -481,7 +526,12 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       renderingEngineId,
       suppressEvents,
     } = viewport;
-    const { width: dWidth, height: dHeight } = canvas;
+    const dWidth = viewport.sWidth;
+    const dHeight = viewport.sHeight;
+
+    // Update on-screen canvas size only when the VTK render result is available,
+    // so the displayed size matches the rendered size and aspect ratio without flicker.
+    updateCanvasSizeAndAspectRatio(canvas, { width: dWidth, height: dHeight });
 
     const onScreenContext = canvas.getContext('2d');
 
@@ -522,8 +572,8 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     for (const viewport of viewportsDrivenByVtkJs) {
       viewport.sx = 0;
       viewport.sy = 0;
-      viewport.sWidth = viewport.canvas.width;
-      viewport.sHeight = viewport.canvas.height;
+      // Use viewport.sWidth/sHeight (set by _resizeVTKViewports to target size); do not overwrite from canvas,
+      // so that we only update the on-screen canvas when the VTK result is copied in _copyToOnscreenCanvas.
 
       // Get the context assigned to this viewport
       const contextIndex = this.contextPool.getContextIndexForViewport(
@@ -533,8 +583,8 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       // Update viewport size and check if max size changed
       const maxSizeChanged = this.contextPool.updateViewportSize(
         viewport.id,
-        viewport.canvas.width,
-        viewport.canvas.height
+        viewport.sWidth,
+        viewport.sHeight
       );
 
       if (maxSizeChanged) {
@@ -547,8 +597,8 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
       // Calculate viewport coordinates relative to the max size
       const maxSize = this.contextPool.getMaxSizeForContext(contextIndex);
-      const xEnd = Math.min(1, viewport.canvas.width / maxSize.width);
-      const yEnd = Math.min(1, viewport.canvas.height / maxSize.height);
+      const xEnd = Math.min(1, viewport.sWidth / maxSize.width);
+      const yEnd = Math.min(1, viewport.sHeight / maxSize.height);
 
       renderer.setViewport(0, 0, xEnd, yEnd);
     }

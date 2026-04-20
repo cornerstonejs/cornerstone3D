@@ -85,8 +85,10 @@ class LivewireContourSegmentationTool extends LivewireContourTool {
       }
 
       // Regenerate the updated data based on the updated handles
+      // Interpolating the closed handle displays very weirdly so stop at
+      // count-1, and manually close the livewire to have it fully interpolated
       const acceptedPath = new LivewirePath();
-      for (let i = 0; i < count; i++) {
+      for (let i = 0; i < count - 1; i++) {
         scissors.startSearch(worldToSlice(points[i]));
         const path = scissors.findPathToPoint(
           worldToSlice(points[(i + 1) % count])

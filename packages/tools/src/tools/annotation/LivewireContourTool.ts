@@ -10,10 +10,7 @@ import {
 import type { Types } from '@cornerstonejs/core';
 
 import { removeAnnotation } from '../../stateManagement/annotation/annotationState';
-import {
-  drawHandles as drawHandlesSvg,
-  drawLinkedTextBox as drawLinkedTextBoxSvg,
-} from '../../drawingSvg';
+import { drawHandles as drawHandlesSvg } from '../../drawingSvg';
 import { state } from '../../store/state';
 import { Events, KeyboardBindings, ChangeTypes } from '../../enums';
 import type {
@@ -41,7 +38,6 @@ import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters'
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
 import type { AnnotationStyle } from '../../types/AnnotationStyle';
 import type { AnnotationModifiedEventDetail } from '../../types/EventTypes';
-import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import { getCalibratedLengthUnitsAndScale, throttle } from '../../utilities';
 
 const CLICK_CLOSE_CURVE_SQR_DIST = 10 ** 2; // px
@@ -384,9 +380,6 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       movingTextBox: false,
     };
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-
     this._activateModify(element);
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
     evt.preventDefault();
@@ -427,9 +420,6 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       movingTextBox,
     };
     this._activateModify(element);
-
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
@@ -536,7 +526,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const { canvas: canvasPos, world: worldPosOriginal } = currentPoints;
     let worldPos = worldPosOriginal;
     const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
+    const { viewport } = enabledElement;
     const controlPoints = this.editData.currentPath.getControlPoints();
     let closePath = controlPoints.length >= 2 && doubleClick;
 
@@ -610,6 +600,10 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     if (this.editData.closed) {
+      // Set isOpenUShapeContour to 'lineSegment' when the tool ends with a double-click
+      if (closePath) {
+        annotation.data.isOpenUShapeContour = 'lineSegment';
+      }
       // Update the annotation because `editData` will be set to null
       this.updateAnnotation(this.editData.confirmedPath);
       this._endCallback(evt);
@@ -621,7 +615,6 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
   private _mouseMoveCallback = (evt: EventTypes.InteractionEventType): void => {
     const { element, currentPoints } = evt.detail;
     const { world: worldPos, canvas: canvasPos } = currentPoints;
-    const { renderingEngine } = getEnabledElement(element);
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
       this.getToolName()
@@ -794,9 +787,6 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     }
 
     this.editData.hasMoved = true;
-
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
@@ -991,12 +981,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       this._throttledCalculateCachedStats(annotation, element);
     }
 
-    this._renderStats(
-      annotation,
-      viewport,
-      svgDrawingHelper,
-      annotationStyle.textbox
-    );
+    this._renderStats(annotation, enabledElement, svgDrawingHelper);
 
     return true;
   }
@@ -1015,7 +1000,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     }
 
     const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
+    const { viewport } = enabledElement;
     const { cachedStats } = data;
     const { polyline: points } = data.contour;
     const targetIds = Object.keys(cachedStats);
@@ -1106,58 +1091,37 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     return cachedStats;
   };
 
-  private _renderStats = (
-    annotation,
-    viewport,
-    svgDrawingHelper,
-    textboxStyle
-  ) => {
+  private _renderStats = (annotation, enabledElement, svgDrawingHelper) => {
     const data = annotation.data;
+    const { viewport } = enabledElement;
     const targetId = this.getTargetId(viewport);
 
-    if (!data.contour.closed || !textboxStyle.visibility) {
+    if (!data.contour.closed) {
       return;
     }
 
+    const styleSpecifier = {
+      toolGroupId: this.toolGroupId,
+      toolName: this.getToolName(),
+      viewportId: enabledElement.viewport.id,
+      annotationUID: annotation.annotationUID,
+    };
     const textLines = this.configuration.getTextLines(data, targetId);
     if (!textLines || textLines.length === 0) {
       return;
     }
-
     const canvasCoordinates = data.handles.points.map((p) =>
       viewport.worldToCanvas(p)
     );
-    if (!data.handles.textBox.hasMoved) {
-      const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
-
-      data.handles.textBox.worldPosition =
-        viewport.canvasToWorld(canvasTextBoxCoords);
-    }
-
-    const textBoxPosition = viewport.worldToCanvas(
-      data.handles.textBox.worldPosition
-    );
-
-    const textBoxUID = 'textBox';
-    const boundingBox = drawLinkedTextBoxSvg(
+    this.renderLinkedTextBoxAnnotation({
+      enabledElement,
       svgDrawingHelper,
-      annotation.annotationUID ?? '',
-      textBoxUID,
+      annotation,
+      styleSpecifier,
       textLines,
-      textBoxPosition,
       canvasCoordinates,
-      {},
-      textboxStyle
-    );
-
-    const { x: left, y: top, width, height } = boundingBox;
-
-    data.handles.textBox.worldBoundingBox = {
-      topLeft: viewport.canvasToWorld([left, top]),
-      topRight: viewport.canvasToWorld([left + width, top]),
-      bottomLeft: viewport.canvasToWorld([left, top + height]),
-      bottomRight: viewport.canvasToWorld([left + width, top + height]),
-    };
+      textBoxUID: 'textBox',
+    });
   };
 
   triggerAnnotationModified = (

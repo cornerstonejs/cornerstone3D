@@ -286,9 +286,16 @@ export default class LabelmapBaseTool extends BaseTool {
     segmentationId,
   }): EditDataReturnType {
     if (viewport instanceof BaseVolumeViewport) {
+      if (!representationData[SegmentationRepresentations.Labelmap]) {
+        return;
+      }
+
       const { volumeId } = representationData[
         SegmentationRepresentations.Labelmap
       ] as LabelmapSegmentationDataVolume;
+      if (!volumeId) {
+        return;
+      }
       const actors = viewport.getActors();
 
       const isStackViewport = viewport instanceof StackViewport;
@@ -307,9 +314,9 @@ export default class LabelmapBaseTool extends BaseTool {
 
       // we used to take the first actor here but we should take the one that is
       // probably the same size as the segmentation volume
-      const volumes = actors.map((actorEntry) =>
-        cache.getVolume(actorEntry.referencedId)
-      );
+      const volumes = actors
+        .filter((actorEntry) => actorEntry.referencedId)
+        .map((actorEntry) => cache.getVolume(actorEntry.referencedId));
 
       const segmentationVolume = cache.getVolume(volumeId);
 

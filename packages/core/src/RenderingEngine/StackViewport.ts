@@ -215,7 +215,7 @@ class StackViewport extends Viewport {
     this.useCPURendering = getShouldUseCPURendering();
     this._configureRenderingPipeline();
 
-    const result = this.useCPURendering
+    this.useCPURendering
       ? this._resetCPUFallbackElement()
       : this._resetGPUViewport();
 
@@ -280,7 +280,7 @@ class StackViewport extends Viewport {
       canvas: this.canvas,
       renderingTools: {},
       transform: new Transform(),
-      viewport: { rotation: 0 },
+      viewport: { rotation: 0, aspectRatio: [1, 1] },
     };
   }
 
@@ -1034,6 +1034,7 @@ class StackViewport extends Viewport {
         viewPlaneNormal[1],
         viewPlaneNormal[2],
       ],
+      aspectRatio: viewport.aspectRatio ?? [1, 1],
       viewUp: [viewUp[0], viewUp[1], viewUp[2]],
       flipHorizontal: this.flipHorizontal,
       flipVertical: this.flipVertical,
@@ -1105,6 +1106,10 @@ class StackViewport extends Viewport {
       viewport.parallelScale = (clientHeight * rowPixelSpacing * 0.5) / scale;
     }
 
+    if (aspectRatio) {
+      viewport.aspectRatio = aspectRatio;
+    }
+
     if (flipHorizontal !== undefined || flipVertical !== undefined) {
       this.setFlipCPU({ flipHorizontal, flipVertical });
     }
@@ -1150,6 +1155,26 @@ class StackViewport extends Viewport {
     const camera = this.getCameraCPU();
 
     this.setCameraCPU({ ...camera, scale: zoom });
+  }
+
+  public getAspectRatioCPU(): Point2 {
+    const { aspectRatio } = this.getCameraCPU();
+    return aspectRatio ?? this.options?.aspectRatio ?? [1, 1];
+  }
+
+  public setAspectRatioCPU(value: Point2, storeAsInitialCamera = false): void {
+    const camera = this.getCameraCPU();
+    if (storeAsInitialCamera) {
+      this.options.aspectRatio = value;
+    }
+
+    this.setCamera(
+      {
+        ...camera,
+        aspectRatio: value,
+      },
+      storeAsInitialCamera
+    );
   }
 
   private setFlipCPU({ flipHorizontal, flipVertical }: FlipDirection): void {
@@ -3587,6 +3612,14 @@ class StackViewport extends Viewport {
     setZoom: {
       cpu: this.setZoomCPU,
       gpu: super.setZoom,
+    },
+    getAspectRatio: {
+      cpu: this.getAspectRatioCPU,
+      gpu: super.getAspectRatio,
+    },
+    setAspectRatio: {
+      cpu: this.setAspectRatioCPU,
+      gpu: super.setAspectRatio,
     },
     setVOI: {
       cpu: this.setVOICPU,

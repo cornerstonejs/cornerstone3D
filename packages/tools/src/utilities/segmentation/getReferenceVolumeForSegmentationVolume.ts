@@ -33,7 +33,13 @@ export function getReferenceVolumeForSegmentationVolume(
     const imageIds = segmentationVolume.imageIds;
     const image = cache.getImage(imageIds[0]);
     const referencedImageId = image.referencedImageId;
-    const volumeInfo = cache.getVolumeContainingImageId(referencedImageId);
+    let volumeInfo = cache.getVolumeContainingImageId(referencedImageId);
+    if (!volumeInfo?.volume) {
+      // If no volume contains the referenced image ID, the volume may have been
+      // built from the segmentation's image IDs (e.g. createAndCacheVolumeFromImages
+      // in _handleMissingVolume with derived IDs). Look up by the segmentation image's own ID.
+      volumeInfo = cache.getVolumeContainingImageId(image.imageId);
+    }
     imageVolume = volumeInfo?.volume;
   }
 

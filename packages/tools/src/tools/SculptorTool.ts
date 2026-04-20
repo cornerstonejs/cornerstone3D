@@ -99,6 +99,7 @@ class SculptorTool extends BaseTool {
         ],
         toolShape: 'circle',
         referencedToolName: 'PlanarFreehandROI',
+        updateCursorSize: 'dynamic',
       },
     }
   ) {
@@ -490,7 +491,11 @@ class SculptorTool extends BaseTool {
     } else {
       const cursorShape = this.registeredShapes.get(this.selectedShape);
       const canvasCoords = eventData.currentPoints.canvas;
-      cursorShape.updateToolSize(canvasCoords, viewport, activeAnnotation);
+
+      // Only call updateToolSize when updateCursorSize is set to 'dynamic'
+      if (this.configuration.updateCursorSize === 'dynamic') {
+        cursorShape.updateToolSize(canvasCoords, viewport, activeAnnotation);
+      }
     }
 
     triggerAnnotationRenderForViewportIds(this.commonData.viewportIdsToRender);

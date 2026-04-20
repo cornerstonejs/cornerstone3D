@@ -65,6 +65,7 @@ import VoxelManager from './VoxelManager';
 import RLEVoxelMap from './RLEVoxelMap';
 import roundNumber, { roundToPrecision } from './roundNumber';
 import convertToGrayscale from './convertToGrayscale';
+import { convertColorArrayToRgbString } from './convertColorArrayToRgbString';
 import getViewportImageIds from './getViewportImageIds';
 import { getRandomSampleFromArray } from './getRandomSampleFromArray';
 import { getVolumeId } from './getVolumeId';
@@ -103,7 +104,10 @@ import calculateSpacingBetweenImageIds from './calculateSpacingBetweenImageIds';
 export * as logger from './logger';
 import { calculateNeighborhoodStats } from './calculateNeighborhoodStats';
 export * from './getPixelSpacingInformation';
+export * from './getPlaneCubeIntersectionDimensions';
+export * from './rotateToViewCoordinates';
 import { asArray } from './asArray';
+import { getNormalizedAspectRatio } from './getNormalizedAspectRatio';
 export { updatePlaneRestriction } from './updatePlaneRestriction';
 
 const getViewportModality = (viewport: IViewport, volumeId?: string) =>
@@ -131,6 +135,7 @@ export {
   getViewportModality,
   windowLevel,
   convertToGrayscale,
+  convertColorArrayToRgbString,
   getClosestImageId,
   getSpacingInNormalDirection,
   getTargetVolumeAndSpacingInNormalDir,
@@ -210,4 +215,5 @@ export {
   buildMetadata,
   calculateNeighborhoodStats,
   asArray,
+  getNormalizedAspectRatio,
 };
