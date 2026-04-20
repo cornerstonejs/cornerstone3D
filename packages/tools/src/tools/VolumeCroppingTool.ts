@@ -37,6 +37,7 @@ import {
   addLine3DBetweenPoints,
   calculateAdaptiveSphereRadius,
 } from '../utilities/draw3D';
+import { isDragOwnedBy } from '../utilities/interactionDragCoordinator';
 
 /**
  * VolumeCroppingTool provides manipulatable spheres and real-time volume cropping capabilities.
@@ -197,6 +198,7 @@ class VolumeCroppingTool extends BaseTool {
   originalClippingPlanes: ClippingPlane[] = [];
   draggingSphereIndex: number | null = null;
   rotatePlanesOnDrag: boolean = false; // If true, dragging rotates clipping planes instead of camera
+  suppressPlaneRotationForCurrentDrag: boolean = false;
   cornerDragOffset: [number, number, number] | null = null;
   faceDragOffset: number | null = null;
   // Store volume direction vectors for non-axis-aligned volumes
@@ -382,6 +384,10 @@ class VolumeCroppingTool extends BaseTool {
     const { element } = eventDetail;
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
+    this.suppressPlaneRotationForCurrentDrag = isDragOwnedBy(
+      viewport.id,
+      'orientation-controller'
+    );
     const actorEntry = viewport.getDefaultActor();
     const actor = actorEntry.actor as Types.VolumeActor;
     const mapper = actor.getMapper();
@@ -479,6 +485,7 @@ class VolumeCroppingTool extends BaseTool {
         this.draggingSphereIndex = null;
         this.cornerDragOffset = null;
         this.faceDragOffset = null;
+        this.suppressPlaneRotationForCurrentDrag = false;
 
         viewport.render();
         this._hasResolutionChanged = false;
@@ -549,6 +556,32 @@ class VolumeCroppingTool extends BaseTool {
    */
   getHandlesVisible() {
     return this.configuration.showHandles;
+  }
+
+  /**
+   * Sets the radius of all cropping handles and re-renders the viewport.
+   *
+   * @param radius - New handle radius in world units
+   */
+  setHandleRadius(radius: number) {
+    this.configuration.sphereRadius = radius;
+
+    this.sphereStates.forEach((state) => {
+      if (state?.sphereSource?.setRadius) {
+        state.sphereSource.setRadius(radius);
+        state.sphereSource.modified();
+      }
+    });
+
+    const viewportsInfo = this._getViewportsInfo();
+    const [viewport3D] = viewportsInfo;
+    if (!viewport3D) {
+      return;
+    }
+
+    const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
+    const viewport = renderingEngine?.getViewport(viewport3D.viewportId);
+    viewport?.render();
   }
 
   /**
@@ -679,7 +712,10 @@ class VolumeCroppingTool extends BaseTool {
       this._onMouseMoveSphere(evt);
     } else {
       const shiftKey = (evt.detail.event as MouseEvent)?.shiftKey ?? false;
-      if (this.rotatePlanesOnDrag === true || shiftKey) {
+      if (
+        (this.rotatePlanesOnDrag === true || shiftKey) &&
+        !this.suppressPlaneRotationForCurrentDrag
+      ) {
         this._rotateClippingPlanes(evt);
         return;
       }
