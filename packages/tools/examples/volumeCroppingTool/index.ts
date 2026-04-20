@@ -280,6 +280,34 @@ const viewportReferenceLineControllable = [
   viewportId3,
 ];
 
+type OrientationAppearancePreset = {
+  edgeColor: [number, number, number];
+  cornerColor: [number, number, number];
+  highlightColor: [number, number, number];
+  restingAmbient: number;
+  hoverAmbient: number;
+};
+
+const orientationAppearancePresets: Record<
+  string,
+  OrientationAppearancePreset
+> = {
+  default: {
+    edgeColor: [200, 200, 200],
+    cornerColor: [150, 150, 150],
+    highlightColor: [255, 255, 255],
+    restingAmbient: 1.0,
+    hoverAmbient: 1.0,
+  },
+  themed: {
+    edgeColor: [66, 111, 176],
+    cornerColor: [41, 73, 124],
+    highlightColor: [91, 163, 255],
+    restingAmbient: 0.55,
+    hoverAmbient: 1.0,
+  },
+};
+
 /**
  * Get the number of orthographic viewports from the URL (?numViewports=1|2|3)
  */
@@ -430,9 +458,10 @@ async function run(numViewports = getNumViewportsFromUrl()) {
     ],
   });
 
-  const colorScheme: 'rgy' | 'gray' | 'marker' = 'gray';
+  const colorScheme: 'rgy' | 'gray' | 'marker' = 'rgy';
   const keepOrientationUp = true;
-  const letterColorScheme: 'mixed' | 'white' | 'black' = 'black';
+  const letterColorScheme: 'mixed' | 'white' | 'black' = 'mixed';
+  const appearancePreset = 'default';
 
   // Tool group for 3D viewport
   const toolGroupVRT = ToolGroupManager.createToolGroup(toolGroupIdVRT);
@@ -463,6 +492,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
     colorScheme,
     keepOrientationUp,
     letterColorScheme,
+    ...orientationAppearancePresets[appearancePreset],
   });
   // Enable OrientationControllerTool after viewport is added and volume is loaded
   toolGroupVRT.setToolEnabled(OrientationControllerTool.toolName);
@@ -548,6 +578,48 @@ async function run(numViewports = getNumViewportsFromUrl()) {
         // Update configuration
         orientationControllerTool.configuration.keepOrientationUp = newValue;
         // Reinitialize viewports to apply the change
+        orientationControllerTool.onSetToolDisabled();
+        orientationControllerTool.onSetToolEnabled();
+      }
+    },
+  });
+
+  const orientationAppearanceValues = ['default', 'themed'];
+  const orientationAppearanceLabels = [
+    'Default bevel/hover',
+    'Themed bevel/hover',
+  ];
+
+  addDropdownToToolbar({
+    labelText: 'Bevel + Hover Theme',
+    options: {
+      values: orientationAppearanceValues,
+      defaultValue: appearancePreset,
+      labels: orientationAppearanceLabels,
+    },
+    container: controlRow,
+    onSelectedValueChange: (selectedValue) => {
+      const toolGroupVRT =
+        cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
+      const orientationControllerTool = toolGroupVRT.getToolInstance(
+        OrientationControllerTool.toolName
+      );
+
+      if (orientationControllerTool) {
+        const preset = orientationAppearancePresets[selectedValue];
+        if (!preset) {
+          return;
+        }
+
+        orientationControllerTool.configuration.edgeColor = preset.edgeColor;
+        orientationControllerTool.configuration.cornerColor =
+          preset.cornerColor;
+        orientationControllerTool.configuration.highlightColor =
+          preset.highlightColor;
+        orientationControllerTool.configuration.restingAmbient =
+          preset.restingAmbient;
+        orientationControllerTool.configuration.hoverAmbient =
+          preset.hoverAmbient;
         orientationControllerTool.onSetToolDisabled();
         orientationControllerTool.onSetToolEnabled();
       }
