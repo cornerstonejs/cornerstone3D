@@ -3,6 +3,78 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.21.8](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.7...v4.21.8) (2026-04-20)
+
+### Bug Fixes
+
+- Orientation Controller - always on top ([#2671](https://github.com/cornerstonejs/cornerstone3D/issues/2671)) ([a854224](https://github.com/cornerstonejs/cornerstone3D/commit/a854224fd1691311d9fe043059f36c8347264dfa))
+
+## [4.21.7](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.6...v4.21.7) (2026-04-16)
+
+**Note:** Version bump only for package root
+
+## [4.21.6](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.5...v4.21.6) (2026-04-16)
+
+### Bug Fixes
+
+- **viewport:** restore default visual properties on reset in VolumeViewport3D and VolumeViewport ([#2693](https://github.com/cornerstonejs/cornerstone3D/issues/2693)) ([d1a7097](https://github.com/cornerstonejs/cornerstone3D/commit/d1a709707c58c7780d7838ac95a8ef8783e45cfd))
+
+## [4.21.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.4...v4.21.5) (2026-04-14)
+
+### Bug Fixes
+
+- sam model exception ([#2637](https://github.com/cornerstonejs/cornerstone3D/issues/2637)) ([0fccf54](https://github.com/cornerstonejs/cornerstone3D/commit/0fccf54df585199e64a1e7c5fa9f5bf4d0a48e93))
+
+## [4.21.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.3...v4.21.4) (2026-04-14)
+
+**Note:** Version bump only for package root
+
+## [4.21.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.2...v4.21.3) (2026-04-13)
+
+**Note:** Version bump only for package root
+
+## [4.21.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.1...v4.21.2) (2026-04-10)
+
+### Bug Fixes
+
+- add auth json to gitignore ([#2694](https://github.com/cornerstonejs/cornerstone3D/issues/2694)) ([7a5cc93](https://github.com/cornerstonejs/cornerstone3D/commit/7a5cc93765b7ebfdfd02790d4eb9e7c29cd7b38b))
+
+## [4.21.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.0...v4.21.1) (2026-04-10)
+
+### Bug Fixes
+
+- Minimal changes to get linking to work for ohif-downstream ([#2689](https://github.com/cornerstonejs/cornerstone3D/issues/2689)) ([b2d771b](https://github.com/cornerstonejs/cornerstone3D/commit/b2d771b13010a9018acbdf5427fbc635d0ddd8a7))
+
+# [4.21.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.20.4...v4.21.0) (2026-04-06)
+
+### Features
+
+- Crosshairs minimal mode and add jump on click with modifier key ([#2673](https://github.com/cornerstonejs/cornerstone3D/issues/2673)) ([df672f1](https://github.com/cornerstonejs/cornerstone3D/commit/df672f11cba9284035bc32dd80f697db6df3518f))
+
+## [4.20.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.20.3...v4.20.4) (2026-04-02)
+
+### Bug Fixes
+
+- **security:** update dependencies to fix security vulnerabilities ([#2687](https://github.com/cornerstonejs/cornerstone3D/issues/2687)) ([77c553b](https://github.com/cornerstonejs/cornerstone3D/commit/77c553b0851be285b02c218bc2ae9ae21a44b5ee))
+
+## [4.20.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.20.2...v4.20.3) (2026-04-02)
+
+### Bug Fixes
+
+- **annotation:** Enhance getTextBoxCoordsCanvas to use all annotation points for default textbox position and improve corner determination logic ([#2686](https://github.com/cornerstonejs/cornerstone3D/issues/2686)) ([11bfc2b](https://github.com/cornerstonejs/cornerstone3D/commit/11bfc2bb90571bd672c8627f812cc0118658be97))
+
+## [4.20.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.20.1...v4.20.2) (2026-04-02)
+
+### Bug Fixes
+
+- **tools:** no active segmentation error toast when hovering over viewport without segmentation ([#2683](https://github.com/cornerstonejs/cornerstone3D/issues/2683)) ([a7e4ea1](https://github.com/cornerstonejs/cornerstone3D/commit/a7e4ea13c58f6ac6dd26677c0d9ece697b5d57e9))
+
+## [4.20.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.20.0...v4.20.1) (2026-03-31)
+
+### Bug Fixes
+
+- **htmlSetup:** Uncomment form creation and append to content in setup function ([#2681](https://github.com/cornerstonejs/cornerstone3D/issues/2681)) ([90acd90](https://github.com/cornerstonejs/cornerstone3D/commit/90acd90cdc36844ef20a8f65509bc8c467219101))
+
 # [4.20.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.19.4...v4.20.0) (2026-03-16)
 
 ### Features
