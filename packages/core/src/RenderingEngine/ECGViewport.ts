@@ -634,6 +634,7 @@ class ECGViewport extends Viewport {
     this.drawLabels(ctx, layouts);
 
     ctx.resetTransform();
+    this.setRendered();
 
     triggerEvent(this.element, EVENTS.IMAGE_RENDERED, {
       element: this.element,
