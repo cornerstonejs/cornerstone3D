@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [4.22.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.9...v4.22.0) (2026-04-20)
+
+### Features
+
+- **OrientationControllerTool:** expose widget color and ambient configuration ([#2682](https://github.com/cornerstonejs/cornerstone3D/issues/2682)) ([2f62ac0](https://github.com/cornerstonejs/cornerstone3D/commit/2f62ac0a51d146b4e9d5347bc41091726d2ce39e))
+
 ## [4.21.9](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.8...v4.21.9) (2026-04-20)
 
 ### Bug Fixes
