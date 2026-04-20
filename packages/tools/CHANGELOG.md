@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.21.8](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.7...v4.21.8) (2026-04-20)
+
+### Bug Fixes
+
+- Orientation Controller - always on top ([#2671](https://github.com/cornerstonejs/cornerstone3D/issues/2671)) ([a854224](https://github.com/cornerstonejs/cornerstone3D/commit/a854224fd1691311d9fe043059f36c8347264dfa))
+
 ## [4.21.7](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.6...v4.21.7) (2026-04-16)
 
 **Note:** Version bump only for package @cornerstonejs/tools
