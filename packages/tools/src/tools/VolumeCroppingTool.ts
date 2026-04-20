@@ -388,8 +388,10 @@ class VolumeCroppingTool extends BaseTool {
       viewport.id,
       'orientation-controller'
     );
-    const actorEntry = viewport.getDefaultActor();
-    const actor = actorEntry.actor as Types.VolumeActor;
+    const actor = this._getVolumeActor(viewport as Types.IVolumeViewport);
+    if (!actor) {
+      return false;
+    }
     const mapper = actor.getMapper();
 
     const mouseCanvas: [number, number] = [
@@ -956,9 +958,11 @@ class VolumeCroppingTool extends BaseTool {
   };
 
   _updateClippingPlanes(viewport) {
-    const actorEntry = viewport.getDefaultActor();
-    const actor = actorEntry.actor;
-    const mapper = actor.getMapper();
+    const actor = this._getVolumeActor(viewport);
+    const mapper = this._getVolumeMapper(viewport);
+    if (!actor || !mapper) {
+      return;
+    }
     const matrix = actor.getMatrix();
 
     if (!this.configuration.showClippingPlanes) {
@@ -1149,14 +1153,14 @@ class VolumeCroppingTool extends BaseTool {
     if (!viewport) {
       return;
     }
-    const volumeActors = viewport.getActors();
-    if (!volumeActors || volumeActors.length === 0) {
+    const volumeActor = this._getVolumeActor(viewport);
+    if (!volumeActor) {
       console.warn(
         'VolumeCroppingTool: No volume actors found in the viewport.'
       );
       return;
     }
-    const imageData = volumeActors[0].actor.getMapper().getInputData();
+    const imageData = volumeActor.getMapper().getInputData();
     if (!imageData) {
       console.warn('VolumeCroppingTool: No image data found for volume actor.');
       return;
@@ -1325,9 +1329,7 @@ class VolumeCroppingTool extends BaseTool {
       }
     });
 
-    const mapper = viewport
-      .getDefaultActor()
-      .actor.getMapper() as vtkVolumeMapper;
+    const mapper = volumeActor.getMapper() as vtkVolumeMapper;
 
     mapper.addClippingPlane(planeXMin);
     mapper.addClippingPlane(planeXMax);
@@ -1370,7 +1372,10 @@ class VolumeCroppingTool extends BaseTool {
     viewport?: Types.IVolumeViewport
   ): Types.VolumeActor | undefined {
     const vp = viewport || this._getViewport();
-    return vp?.getDefaultActor()?.actor as Types.VolumeActor | undefined;
+    return vp
+      ?.getActors?.()
+      ?.find((entry) => entry.actor?.getClassName?.() === 'vtkVolume')
+      ?.actor as Types.VolumeActor | undefined;
   }
 
   _getVolumeMapper(
@@ -1400,7 +1405,10 @@ class VolumeCroppingTool extends BaseTool {
   }
 
   _updateClippingPlanesFromFaceSpheres(viewport) {
-    const mapper = viewport.getDefaultActor().actor.getMapper();
+    const mapper = this._getVolumeMapper(viewport);
+    if (!mapper) {
+      return;
+    }
     // Update origins in originalClippingPlanes
     this.originalClippingPlanes[PLANEINDEX.XMIN].origin = [
       ...this.sphereStates[SPHEREINDEX.XMIN].point,
