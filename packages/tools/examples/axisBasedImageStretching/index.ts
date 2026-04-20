@@ -7,6 +7,8 @@ import {
   ProgressiveRetrieveImages,
   utilities,
   getRenderingEngine,
+  getShouldUseCPURendering,
+  setUseCPURendering,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -33,6 +35,8 @@ const {
   Enums: csToolsEnums,
   segmentation,
   utilities: cstUtils,
+  CrosshairsTool,
+  PlanarRotateTool,
 } = cornerstoneTools;
 
 const { MouseBindings } = csToolsEnums;
@@ -47,17 +51,32 @@ for (const [key, value] of labelmapTools.toolMap) {
 for (const [key, value] of contourTools.toolMap) {
   toolMap.set(key, value);
 }
+toolMap.set(PlanarRotateTool.toolName, { tool: PlanarRotateTool });
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const segmentationId = 'MY_SEGMENTATION_ID';
-const toolGroupId = 'MY_TOOLGROUP_ID';
+const stackToolGroupId = 'STACK_TOOLGROUP_ID';
+const volumeToolGroupId = 'VOLUME_TOOLGROUP_ID';
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`;
 const renderingEngineId = 'myRenderingEngine';
-const viewportId1 = 'CT_AXIAL';
-const viewportId2 = 'CT_SAGITTAL';
-const viewportId3 = 'CT_CORONAL';
+const stackViewportId = 'CT_STACK';
+const axialViewportId = 'CT_AXIAL';
+const sagittalViewportId = 'CT_SAGITTAL';
+const coronalViewportId = 'CT_CORONAL';
+const volumeViewportIds = [
+  axialViewportId,
+  sagittalViewportId,
+  coronalViewportId,
+];
+const allViewportIds = [stackViewportId, ...volumeViewportIds];
+const params = new URLSearchParams(window.location.search);
+const useCPURendering = params.get('useCpu') === 'true';
+const activeViewportIds = useCPURendering ? [stackViewportId] : allViewportIds;
+const activeToolGroupIds = useCPURendering
+  ? [stackToolGroupId]
+  : [stackToolGroupId, volumeToolGroupId];
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -65,64 +84,114 @@ setTitleAndDescription(
   'Here we demonstrate axis based stretching with annotation and segmentation tools'
 );
 
-const size = '500px';
+const size = '49%';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 
 viewportGrid.style.display = 'flex';
 viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
+viewportGrid.style.flexWrap = 'wrap';
 
 const element1 = document.createElement('div');
 const element2 = document.createElement('div');
 const element3 = document.createElement('div');
+const element4 = document.createElement('div');
 element1.style.width = size;
-element1.style.height = size;
+element1.style.height = '500px';
 element2.style.width = size;
-element2.style.height = size;
+element2.style.height = '500px';
 element3.style.width = size;
-element3.style.height = size;
+element3.style.height = '500px';
+element4.style.width = size;
+element4.style.height = '500px';
+
+if (useCPURendering) {
+  element1.style.width = '100%';
+  element2.style.display = 'none';
+  element3.style.display = 'none';
+  element4.style.display = 'none';
+}
 
 // Disable right click context menu so we can have right click tools
 element1.oncontextmenu = (e) => e.preventDefault();
 element2.oncontextmenu = (e) => e.preventDefault();
 element3.oncontextmenu = (e) => e.preventDefault();
+element4.oncontextmenu = (e) => e.preventDefault();
 
 viewportGrid.appendChild(element1);
 viewportGrid.appendChild(element2);
 viewportGrid.appendChild(element3);
+viewportGrid.appendChild(element4);
 
 content.appendChild(viewportGrid);
 
 const instructions = document.createElement('p');
 instructions.innerText = `
-  Left Click: Use selected Segmentation Tool.
+  Left Click: Use selected Tool.
+  Ctrl + Left Click (MPR only, GPU mode): Crosshairs
   Middle Click: Pan
   Right Click: Zoom
   Mouse wheel: Scroll Stack
   Shift Left Click: Zoom
   Alt Left Click: Stack Scroll
+  CPU mode hides MPR viewports and defaults to Length.
+  GPU mode enables MPR + segmentation + crosshairs.
   `;
 
 content.append(instructions);
 
-const defaultTool = 'CircularBrush';
+if (useCPURendering) {
+  for (const [key] of labelmapTools.toolMap) {
+    toolMap.delete(key);
+  }
+  for (const [key] of contourTools.toolMap) {
+    toolMap.delete(key);
+  }
+}
+
+const defaultTool = useCPURendering ? 'Length' : 'CircularBrush';
+const renderModes = ['GPU Rendering', 'CPU Rendering'];
+
+setUseCPURendering(useCPURendering);
 
 // ============================= //
 addDropdownToToolbar({
-  options: { map: toolMap, defaultValue: defaultTool },
-  onSelectedValueChange: (newSelectedToolName) => {
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+  id: 'renderingPipeline',
+  labelText: 'Rendering',
+  options: {
+    values: renderModes,
+    defaultValue: useCPURendering ? renderModes[1] : renderModes[0],
+  },
+  onSelectedValueChange: (selectedValue) => {
+    const shouldUseCPU = selectedValue === renderModes[1];
 
-    // Set the old tool passive
-    const selectedToolName = toolGroup.getActivePrimaryMouseButtonTool();
-    if (selectedToolName) {
-      toolGroup.setToolPassive(selectedToolName);
+    if (shouldUseCPU === getShouldUseCPURendering()) {
+      return;
     }
 
-    // Set the new tool active
-    toolGroup.setToolActive(newSelectedToolName as string, {
-      bindings: [{ mouseButton: MouseBindings.Primary }],
+    params.set('useCpu', String(shouldUseCPU));
+    window.location.search = params.toString();
+  },
+});
+
+addDropdownToToolbar({
+  options: { map: toolMap, defaultValue: defaultTool },
+  onSelectedValueChange: (newSelectedToolName) => {
+    activeToolGroupIds.forEach((toolGroupId) => {
+      const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+      if (!toolGroup || !toolGroup.hasTool(newSelectedToolName as string)) {
+        return;
+      }
+
+      const selectedToolName = toolGroup.getActivePrimaryMouseButtonTool();
+      if (selectedToolName && selectedToolName !== CrosshairsTool.toolName) {
+        toolGroup.setToolPassive(selectedToolName);
+      }
+
+      toolGroup.setToolActive(newSelectedToolName as string, {
+        bindings: [{ mouseButton: MouseBindings.Primary }],
+      });
     });
   },
 });
@@ -145,11 +214,13 @@ addDropdownToToolbar({
 
     const thresholdArgs = thresholdOptions.get(name);
 
-    segmentationUtils.setBrushThresholdForToolGroup(toolGroupId, {
-      range: thresholdArgs.threshold,
-      isDynamic: false,
-      dynamicRadius: null,
-    });
+    activeToolGroupIds.forEach((toolGroupId) =>
+      segmentationUtils.setBrushThresholdForToolGroup(toolGroupId, {
+        range: thresholdArgs.threshold,
+        isDynamic: false,
+        dynamicRadius: null,
+      })
+    );
   },
 });
 
@@ -159,7 +230,9 @@ addSliderToToolbar({
   defaultValue: 25,
   onSelectedValueChange: (valueAsStringOrNumber) => {
     const value = Number(valueAsStringOrNumber);
-    segmentationUtils.setBrushSizeForToolGroup(toolGroupId, value);
+    activeToolGroupIds.forEach((toolGroupId) =>
+      segmentationUtils.setBrushSizeForToolGroup(toolGroupId, value)
+    );
   },
 });
 
@@ -168,7 +241,13 @@ let selectedAxis = stretchAxis[0];
 
 const setStretch = (value) => {
   const renderingEngine = getRenderingEngine(renderingEngineId);
-  const viewport = renderingEngine.getViewport(viewportId1);
+  const viewportIdForStretch = useCPURendering
+    ? stackViewportId
+    : axialViewportId;
+  const viewport = renderingEngine.getViewport(viewportIdForStretch);
+  if (!viewport) {
+    return;
+  }
   const { aspectRatio } = viewport.getCamera();
   let [sx, sy] = aspectRatio;
   if (selectedAxis === 'Stretch X') {
@@ -176,8 +255,11 @@ const setStretch = (value) => {
   } else {
     [sx, sy] = [aspectRatio[0], value];
   }
-  [viewportId1, viewportId2, viewportId3].forEach((id) => {
+  activeViewportIds.forEach((id) => {
     const vp = renderingEngine.getViewport(id);
+    if (!vp) {
+      return;
+    }
     vp.setAspectRatio([sx, sy]);
     vp.render();
   });
@@ -196,8 +278,11 @@ addDropdownToToolbar({
       .split(':')
       .map((it) => Number(it)) as Types.Point2;
 
-    [viewportId1, viewportId2, viewportId3].forEach((id) => {
+    activeViewportIds.forEach((id) => {
       const vp = renderingEngine.getViewport(id);
+      if (!vp) {
+        return;
+      }
       vp.setAspectRatio(aspect);
       vp.render();
     });
@@ -239,7 +324,7 @@ addDropdownToToolbar({
   onSelectedValueChange: (valueAsStringOrNumber) => {
     const rotation = Number(valueAsStringOrNumber);
     const renderingEngine = getRenderingEngine(renderingEngineId);
-    [viewportId1, viewportId2, viewportId3].forEach((id) => {
+    volumeViewportIds.forEach((id) => {
       const vp = renderingEngine.getViewport(id) as Types.IVolumeViewport;
       vp.setViewPresentation({ rotation });
       vp.render();
@@ -251,7 +336,7 @@ addButtonToToolbar({
   title: 'Flip',
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
-    [viewportId1, viewportId2, viewportId3].forEach((id) => {
+    volumeViewportIds.forEach((id) => {
       const vp = renderingEngine.getViewport(id) as Types.IVolumeViewport;
       const { flipHorizontal, flipVertical } = vp.getCamera();
       vp.setCamera({
@@ -301,12 +386,49 @@ async function run() {
     ProgressiveRetrieveImages.interleavedRetrieveStages
   );
 
-  // Define tool groups
-  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-  addManipulationBindings(toolGroup, {
+  // Define tool groups: stack tools and MPR tools are configured separately.
+  const stackToolGroup = ToolGroupManager.createToolGroup(stackToolGroupId);
+  const volumeToolGroup = useCPURendering
+    ? null
+    : ToolGroupManager.createToolGroup(volumeToolGroupId);
+  addManipulationBindings(stackToolGroup, {
     toolMap,
     enableShiftClickZoom: true,
   });
+  if (volumeToolGroup) {
+    addManipulationBindings(volumeToolGroup, {
+      toolMap,
+      enableShiftClickZoom: true,
+    });
+  }
+
+  // Keep brush editing on default left click in both groups.
+  stackToolGroup.setToolActive(defaultTool, {
+    bindings: [{ mouseButton: MouseBindings.Primary }],
+  });
+  if (volumeToolGroup) {
+    volumeToolGroup.setToolActive(defaultTool, {
+      bindings: [{ mouseButton: MouseBindings.Primary }],
+    });
+  }
+
+  // Crosshairs are only supported on orthographic volume viewports.
+  if (volumeToolGroup) {
+    try {
+      cornerstoneTools.addTool(CrosshairsTool);
+    } catch {
+      // Tool might already be registered by another example session.
+    }
+    volumeToolGroup.addTool(CrosshairsTool.toolName);
+    volumeToolGroup.setToolActive(CrosshairsTool.toolName, {
+      bindings: [
+        {
+          mouseButton: MouseBindings.Primary,
+          modifierKey: csToolsEnums.KeyboardBindings.Ctrl,
+        },
+      ],
+    });
+  }
 
   // Get Cornerstone imageIds for the source data and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
@@ -317,74 +439,97 @@ async function run() {
     wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
-  // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
-    imageIds,
-  });
-
-  volume.load();
-
-  // Add some segmentations based on the source data volume
-  await addSegmentationsToState();
-
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create the viewports
-  const viewportInputArray = [
-    {
-      viewportId: viewportId1,
-      type: ViewportType.STACK,
-      element: element1,
-      defaultOptions: {
-        background: <Types.Point3>[0, 0, 0],
-      },
-    },
-    {
-      viewportId: viewportId2,
-      type: ViewportType.ORTHOGRAPHIC,
-      element: element2,
-      defaultOptions: {
-        orientation: Enums.OrientationAxis.ACQUISITION_AXIAL,
-        background: <Types.Point3>[0, 0, 0],
-      },
-    },
-    {
-      viewportId: viewportId3,
-      type: ViewportType.ORTHOGRAPHIC,
-      element: element3,
-      defaultOptions: {
-        orientation: Enums.OrientationAxis.CORONAL,
-        background: <Types.Point3>[0, 0, 0],
-      },
-    },
-  ];
+  const viewportInputArray = useCPURendering
+    ? [
+        {
+          viewportId: stackViewportId,
+          type: ViewportType.STACK,
+          element: element1,
+          defaultOptions: {
+            background: <Types.Point3>[0.2, 0.0, 0.0],
+          },
+        },
+      ]
+    : [
+        {
+          viewportId: stackViewportId,
+          type: ViewportType.STACK,
+          element: element1,
+          defaultOptions: {
+            background: <Types.Point3>[0.2, 0.0, 0.0],
+          },
+        },
+        {
+          viewportId: axialViewportId,
+          type: ViewportType.ORTHOGRAPHIC,
+          element: element2,
+          defaultOptions: {
+            orientation: Enums.OrientationAxis.AXIAL,
+            background: <Types.Point3>[0.0, 0.2, 0.0],
+          },
+        },
+        {
+          viewportId: sagittalViewportId,
+          type: ViewportType.ORTHOGRAPHIC,
+          element: element3,
+          defaultOptions: {
+            orientation: Enums.OrientationAxis.SAGITTAL,
+            background: <Types.Point3>[0.0, 0.0, 0.2],
+          },
+        },
+        {
+          viewportId: coronalViewportId,
+          type: ViewportType.ORTHOGRAPHIC,
+          element: element4,
+          defaultOptions: {
+            orientation: Enums.OrientationAxis.CORONAL,
+            background: <Types.Point3>[0.2, 0.2, 0.0],
+          },
+        },
+      ];
 
   renderingEngine.setViewports(viewportInputArray);
 
-  toolGroup.addViewport(viewportId1, renderingEngineId);
-  toolGroup.addViewport(viewportId2, renderingEngineId);
-  toolGroup.addViewport(viewportId3, renderingEngineId);
+  stackToolGroup.addViewport(stackViewportId, renderingEngineId);
+  if (volumeToolGroup) {
+    volumeViewportIds.forEach((viewportId) => {
+      volumeToolGroup.addViewport(viewportId, renderingEngineId);
+    });
+  }
 
-  // Set volumes on the viewports
-  await setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
-    [viewportId2, viewportId3]
-  );
-  await renderingEngine.getViewport(viewportId1).setStack(imageIds);
+  await (
+    renderingEngine.getViewport(stackViewportId) as Types.IStackViewport
+  ).setStack(imageIds);
+  if (!useCPURendering) {
+    // Define a volume in memory and load segmentations only for GPU mode.
+    const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+      imageIds,
+    });
+    volume.load();
+    await addSegmentationsToState();
 
-  // Add the segmentation representation to the viewports
-  const segmentationRepresentation = {
-    segmentationId,
-    type: csToolsEnums.SegmentationRepresentations.Labelmap,
-  };
+    await setVolumesForViewports(
+      renderingEngine,
+      [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
+      volumeViewportIds
+    );
 
-  await segmentation.addLabelmapRepresentationToViewportMap({
-    [viewportId1]: [segmentationRepresentation],
-    [viewportId2]: [segmentationRepresentation],
-    [viewportId3]: [segmentationRepresentation],
-  });
+    const segmentationRepresentation = {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    };
+
+    await segmentation.addLabelmapRepresentationToViewportMap({
+      [stackViewportId]: [segmentationRepresentation],
+      [axialViewportId]: [segmentationRepresentation],
+      [sagittalViewportId]: [segmentationRepresentation],
+      [coronalViewportId]: [segmentationRepresentation],
+    });
+  }
 
   // Render the image
   renderingEngine.render();
