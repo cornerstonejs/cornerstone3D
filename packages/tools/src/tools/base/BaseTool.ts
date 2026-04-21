@@ -424,7 +424,7 @@ abstract class BaseTool {
   public static isInsideVolume(dimensions, indexPoints) {
     const { length: count } = indexPoints;
     for (let i = 0; i < count; i++) {
-      if (!csUtils.indexWithinDimensions(indexPoints[i], dimensions)) {
+      if (!csUtils.indexAlmostWithinDimensions(indexPoints[i], dimensions)) {
         return false;
       }
     }
