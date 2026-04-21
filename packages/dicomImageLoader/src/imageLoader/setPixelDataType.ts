@@ -8,6 +8,14 @@ import getPixelDataTypeFromMinMax from '../shared/getPixelDataTypeFromMinMax';
  * min and max values
  */
 function setPixelDataType(imageFrame) {
+  // If the pixel data is already Float32Array (e.g. from _handlePreScaleSetup
+  // forcing Float32 for non-integer rescale slopes), skip re-typing to prevent
+  // getPixelDataTypeFromMinMax from downgrading it to Uint8Array.
+  // See: https://github.com/cornerstonejs/cornerstone3D/issues/2706
+  if (imageFrame.pixelData instanceof Float32Array) {
+    return;
+  }
+
   const minValue = imageFrame.smallestPixelValue;
   const maxValue = imageFrame.largestPixelValue;
 
