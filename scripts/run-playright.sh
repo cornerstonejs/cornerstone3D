@@ -7,6 +7,7 @@ TIMESTAMP="$(date '+%Y%m%d-%H%M%S')"
 SUITE="legacy"
 FORCE_COMPAT="false"
 FORCE_CPU_RENDERING="false"
+USE_ALL_PROJECTS="false"
 declare -a PLAYWRIGHT_ARGS=()
 
 for arg in "$@"; do
@@ -20,11 +21,28 @@ for arg in "$@"; do
     --cpu)
       FORCE_CPU_RENDERING="true"
       ;;
+    --all-projects)
+      USE_ALL_PROJECTS="true"
+      ;;
     *)
       PLAYWRIGHT_ARGS+=("$arg")
       ;;
   esac
 done
+
+# Default to chromium-only locally unless user explicitly opts into the full
+# matrix (--all-projects) or passes their own --project=... flag.
+if [[ "$USE_ALL_PROJECTS" == "false" ]]; then
+  HAS_PROJECT_FLAG="false"
+  for a in "${PLAYWRIGHT_ARGS[@]+"${PLAYWRIGHT_ARGS[@]}"}"; do
+    case "$a" in
+      --project|--project=*) HAS_PROJECT_FLAG="true" ;;
+    esac
+  done
+  if [[ "$HAS_PROJECT_FLAG" == "false" ]]; then
+    PLAYWRIGHT_ARGS+=("--project=chromium")
+  fi
+fi
 
 # Next mode manages its own viewport/cpu settings via per-test query params
 if [[ "$SUITE" == "next" ]]; then
@@ -61,7 +79,12 @@ else
   mapfile -t SELECTED_TESTS < <(find "$ROOT_DIR/tests" -name '*.spec.ts' -not -path '*/nextViewport/*' | sort)
 fi
 
-echo "Suite: $SUITE | Mode: $VIEWPORT_MODE | CPU: $FORCE_CPU_RENDERING | Tests: ${#SELECTED_TESTS[@]}"
+PROJECTS_DESC="chromium"
+if [[ "$USE_ALL_PROJECTS" == "true" ]]; then
+  PROJECTS_DESC="all"
+fi
+
+echo "Suite: $SUITE | Mode: $VIEWPORT_MODE | CPU: $FORCE_CPU_RENDERING | Projects: $PROJECTS_DESC | Tests: ${#SELECTED_TESTS[@]}"
 echo
 
 RUN_DIR="$ROOT_DIR/reports/$RUN_SLUG/$TIMESTAMP"

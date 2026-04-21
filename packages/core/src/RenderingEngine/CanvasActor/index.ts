@@ -76,14 +76,15 @@ export default class CanvasActor {
         }
 
         hasVisiblePixels = true;
-        const rgba = this.canvasProperties.getColorBytes(segmentIndex);
         let startOffset = baseOffset + (start << 2);
 
         for (let i = start; i < end; i++) {
-          imageArray[startOffset++] = rgba[0];
-          imageArray[startOffset++] = rgba[1];
-          imageArray[startOffset++] = rgba[2];
-          imageArray[startOffset++] = rgba[3];
+          this.canvasProperties.getColorBytes(
+            segmentIndex,
+            imageArray,
+            startOffset
+          );
+          startOffset += 4;
         }
       }
     }
@@ -156,11 +157,11 @@ export default class CanvasActor {
         const segmentIndex = data[offset++];
         if (segmentIndex) {
           hasVisiblePixels = true;
-          const rgba = this.canvasProperties.getColorBytes(segmentIndex);
-          imageArray[destOffset] = rgba[0];
-          imageArray[destOffset + 1] = rgba[1];
-          imageArray[destOffset + 2] = rgba[2];
-          imageArray[destOffset + 3] = rgba[3];
+          this.canvasProperties.getColorBytes(
+            segmentIndex,
+            imageArray,
+            destOffset
+          );
         }
         destOffset += 4;
       }

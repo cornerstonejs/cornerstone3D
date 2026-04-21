@@ -74,7 +74,7 @@ export function createPlanarCpuImageOverlayActorEntry(
     actorMapper: {
       actor,
       mapper: actor.getMapper(),
-      renderMode: 'cpu2d',
+      renderMode: 'cpuImage',
     },
     referencedId: image.imageId,
     ...stackInput,

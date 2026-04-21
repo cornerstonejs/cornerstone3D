@@ -56,7 +56,7 @@ export default function getViewportLabelmapRenderMode(
     return 'volume';
   }
 
-  if (renderMode === 'vtkImage' || renderMode === 'cpu2d') {
+  if (renderMode === 'vtkImage' || renderMode === 'cpuImage') {
     return 'image';
   }
 

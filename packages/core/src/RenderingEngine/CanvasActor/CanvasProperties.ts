@@ -72,34 +72,42 @@ export default class CanvasProperties {
     this.invalidateColorCache();
   }
 
-  public getColorBytes(index: number): [number, number, number, number] {
-    const cachedColor = this.colorCache.get(index);
+  public getColorBytes(
+    index: number,
+    destination?: Uint8ClampedArray | Uint8Array | number[],
+    offset = 0
+  ): [number, number, number, number] {
+    let color = this.colorCache.get(index);
 
-    if (cachedColor) {
-      return cachedColor;
+    if (!color) {
+      const cfun = this.transferFunction[0];
+
+      if (!cfun) {
+        color = [0, 0, 0, 0];
+      } else {
+        const rawOpacity = this.scalarOpacityFunction?.getValue
+          ? this.scalarOpacityFunction.getValue(index)
+          : this.opacity;
+        const opacity = Math.min(Math.max(rawOpacity, 0), 1);
+        color = [
+          Math.round(Math.min(Math.max(cfun.getRedValue(index), 0), 1) * 255),
+          Math.round(Math.min(Math.max(cfun.getGreenValue(index), 0), 1) * 255),
+          Math.round(Math.min(Math.max(cfun.getBlueValue(index), 0), 1) * 255),
+          Math.round(opacity * 255),
+        ];
+      }
+
+      this.colorCache.set(index, color);
     }
 
-    const cfun = this.transferFunction[0];
-
-    if (!cfun) {
-      const transparentColor: [number, number, number, number] = [0, 0, 0, 0];
-      this.colorCache.set(index, transparentColor);
-      return transparentColor;
+    if (destination) {
+      destination[offset] = color[0];
+      destination[offset + 1] = color[1];
+      destination[offset + 2] = color[2];
+      destination[offset + 3] = color[3];
     }
 
-    const opacity = this.scalarOpacityFunction?.getValue
-      ? this.scalarOpacityFunction.getValue(index)
-      : this.opacity;
-    const resolvedColor: [number, number, number, number] = [
-      Math.round(cfun.getRedValue(index) * 255),
-      Math.round(cfun.getGreenValue(index) * 255),
-      Math.round(cfun.getBlueValue(index) * 255),
-      Math.round(opacity * 255),
-    ];
-
-    this.colorCache.set(index, resolvedColor);
-
-    return resolvedColor;
+    return color;
   }
 
   public getColor(index: number) {

@@ -56,7 +56,7 @@ info.appendChild(flipVerticalInfo);
 
 element.addEventListener(Events.CAMERA_MODIFIED, () => {
   const renderingEngine = getRenderingEngine(renderingEngineId);
-  const viewport = renderingEngine.getViewport(viewportId) as VideoViewportNext;
+  const viewport = renderingEngine.getViewport<VideoViewportNext>(viewportId);
 
   if (!viewport) {
     return;
@@ -123,7 +123,7 @@ async function run() {
     },
   });
 
-  const viewport = renderingEngine.getViewport(viewportId) as VideoViewportNext;
+  const viewport = renderingEngine.getViewport<VideoViewportNext>(viewportId);
 
   utilities.viewportNextDataSetMetadataProvider.add(videoDataId, {
     kind: 'video',

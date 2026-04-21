@@ -293,8 +293,11 @@ function applySampleDistanceMultiplier(
 
   const spacing = imageData.getSpacing();
   const defaultSampleDistance = (spacing[0] + spacing[1] + spacing[2]) / 6;
+  const safeMultiplier = Number.isFinite(multiplier)
+    ? Math.max(multiplier, 0.001)
+    : 1;
 
-  mapper.setSampleDistance(defaultSampleDistance * (multiplier || 1));
+  mapper.setSampleDistance(defaultSampleDistance * safeMultiplier);
 }
 
 function setCameraClippingRange(ctx: Volume3DVtkVolumeAdapterContext): void {
@@ -311,8 +314,6 @@ function setCameraClippingRange(ctx: Volume3DVtkVolumeAdapterContext): void {
       RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
     );
   }
-
-  ctx.vtk.renderer.resetCameraClippingRange();
 }
 
 function buildVolumeImageData(imageVolume): IImageData | undefined {

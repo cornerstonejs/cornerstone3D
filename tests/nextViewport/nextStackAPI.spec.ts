@@ -11,10 +11,18 @@ const SETTLE_MS = 5000;
 
 function navigateToExample(
   params?: Record<string, string>,
-  options: { settleMs?: number; waitForNetworkIdle?: boolean } = {}
+  options: {
+    settleMs?: number;
+    waitForCanvas?: boolean;
+    waitForNetworkIdle?: boolean;
+  } = {}
 ) {
   return async ({ page }) => {
-    const { settleMs = SETTLE_MS, waitForNetworkIdle = true } = options;
+    const {
+      settleMs = SETTLE_MS,
+      waitForCanvas = true,
+      waitForNetworkIdle = false,
+    } = options;
     const url = new URL(`http://localhost:3333/${EXAMPLE}.html`);
 
     if (params) {
@@ -25,7 +33,17 @@ function navigateToExample(
 
     await page.goto(url.toString());
     await page.waitForLoadState('domcontentloaded');
-    await page.waitForSelector('div#content');
+    await page.waitForSelector('div#content', {
+      state: 'visible',
+      timeout: 30000,
+    });
+
+    if (waitForCanvas) {
+      await page.waitForSelector('#content canvas:visible', {
+        state: 'visible',
+        timeout: 30000,
+      });
+    }
 
     if (waitForNetworkIdle) {
       await page.waitForLoadState('networkidle');
@@ -116,15 +134,13 @@ test.describe('Stack API Next (GPU)', () => {
   });
 });
 
-test.describe('Stack API Next (CPU)', () => {
-  test.beforeEach(navigateToExample({ cpu: 'true' }));
-
+test.describe('Stack API Next (CPU readiness)', () => {
   test('should keep toolbar disabled until the stack is ready (CPU)', async ({
     page,
   }) => {
     await navigateToExample(
-      { cpu: 'true' },
-      { settleMs: 0, waitForNetworkIdle: false }
+      { cpu: 'true', stackReadyDelayMs: '1000' },
+      { settleMs: 0, waitForCanvas: false }
     )({ page });
 
     const nextImageButton = page.getByRole('button', { name: 'Next Image' });
@@ -145,6 +161,10 @@ test.describe('Stack API Next (CPU)', () => {
       })
       .toBe(1);
   });
+});
+
+test.describe('Stack API Next (CPU)', () => {
+  test.beforeEach(navigateToExample({ cpu: 'true' }));
 
   test('should use PlanarViewport CPU runtime', async ({ page }) => {
     await expectViewportNextRuntime(page, [
@@ -154,7 +174,7 @@ test.describe('Stack API Next (CPU)', () => {
         constructorName: 'PlanarViewport',
         type: 'planarV2',
         renderModesByDataId: {
-          'stack-api-next:primary': 'cpu2d',
+          'stack-api-next:primary': 'cpuImage',
         },
       },
     ]);

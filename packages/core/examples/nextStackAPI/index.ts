@@ -25,7 +25,7 @@ const { ViewportType, Events } = Enums;
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_STACK_NEXT';
 const stackDataId = 'stack-api-next:primary';
-const planarRenderMode = getBooleanUrlParam('cpu') ? 'cpu2d' : 'vtkImage';
+const planarRenderMode = getBooleanUrlParam('cpu') ? 'cpuImage' : 'vtkImage';
 
 function getNextExampleBackground(): Types.Point3 {
   return getBooleanUrlParam('cpu') ? [0, 0, 0] : [0, 0.2, 0];
@@ -58,7 +58,7 @@ info.appendChild(flipVerticalInfo);
 
 element.addEventListener(Events.CAMERA_MODIFIED, () => {
   const renderingEngine = getRenderingEngine(renderingEngineId);
-  const viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   if (!viewport) {
     return;
@@ -76,7 +76,7 @@ addButtonToToolbar({
   title: 'Set VOI Range',
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     viewport.setDataPresentation(stackDataId, {
       voiRange: { upper: 2500, lower: -1500 },
@@ -89,7 +89,7 @@ addButtonToToolbar({
   title: 'Next Image',
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     const currentImageIdIndex = viewport.getCurrentImageIdIndex();
     const numImages = viewport.getImageIds().length;
@@ -103,7 +103,7 @@ addButtonToToolbar({
   title: 'Previous Image',
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     const currentImageIdIndex = viewport.getCurrentImageIdIndex();
     const newImageIdIndex = Math.max(currentImageIdIndex - 1, 0);
@@ -116,7 +116,7 @@ addButtonToToolbar({
   title: 'Flip H',
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
     const { flipHorizontal } = viewport.getCamera();
 
     viewport.setCamera({ flipHorizontal: !flipHorizontal });
@@ -128,7 +128,7 @@ addButtonToToolbar({
   title: 'Flip V',
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
     const { flipVertical } = viewport.getCamera();
 
     viewport.setCamera({ flipVertical: !flipVertical });
@@ -140,7 +140,7 @@ addButtonToToolbar({
   title: 'Rotate Random',
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     viewport.setViewPresentation({ rotation: Math.random() * 360 });
     viewport.render();
@@ -151,7 +151,7 @@ addButtonToToolbar({
   title: 'Rotate Absolute 150',
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     viewport.setViewPresentation({ rotation: 150 });
     viewport.render();
@@ -162,7 +162,7 @@ addButtonToToolbar({
   title: 'Rotate Delta 30',
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
     const { rotation = 0 } = viewport.getViewPresentation();
 
     viewport.setViewPresentation({ rotation: rotation + 30 });
@@ -174,7 +174,7 @@ addButtonToToolbar({
   title: 'Invert',
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
     const { invert = false } = viewport.getDataPresentation(stackDataId) || {};
 
     viewport.setDataPresentation(stackDataId, {
@@ -188,7 +188,7 @@ addButtonToToolbar({
   title: 'Apply Random Zoom And Pan',
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     viewport.resetCamera();
 
@@ -209,7 +209,7 @@ addButtonToToolbar({
   title: 'Apply Colormap',
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     viewport.setDataPresentation(stackDataId, {
       colormap: { name: 'hsv' },
@@ -222,7 +222,7 @@ addButtonToToolbar({
   title: 'Reset Viewport',
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     viewport.resetCamera();
     viewport.setDataPresentation(stackDataId, {
@@ -257,7 +257,7 @@ async function run() {
     },
   });
 
-  const viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
   const stack = [imageIds[0], imageIds[1], imageIds[2]];
 
   utilities.viewportNextDataSetMetadataProvider.add(stackDataId, {

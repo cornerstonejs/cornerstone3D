@@ -35,7 +35,7 @@ const { MouseBindings } = csToolsEnums;
 
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
 const dataId = 'stack-manipulation-tools-next:primary';
-const stackRenderMode = getBooleanUrlParam('cpu') ? 'cpu2d' : 'vtkImage';
+const stackRenderMode = getBooleanUrlParam('cpu') ? 'cpuImage' : 'vtkImage';
 const leftClickTools = [
   WindowLevelTool.toolName,
   PlanarRotateTool.toolName,
@@ -210,7 +210,7 @@ async function run() {
 
   toolGroup.addViewport(viewportId, renderingEngineId);
 
-  const viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   utilities.viewportNextDataSetMetadataProvider.add(dataId, {
     kind: 'planar',

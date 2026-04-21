@@ -50,7 +50,7 @@ const viewportId2 = 'STACK_VIEWPORT_2';
 const toolGroupId = 'TOOL_GROUP_ID';
 const ctDataId = 'stack-labelmap-segmentation-next:ct';
 const mgDataId = 'stack-labelmap-segmentation-next:mg';
-const stackRenderMode = getBooleanUrlParam('cpu') ? 'cpu2d' : 'vtkImage';
+const stackRenderMode = getBooleanUrlParam('cpu') ? 'cpuImage' : 'vtkImage';
 
 function getNextExampleBackground(): Types.Point3 {
   return getBooleanUrlParam('cpu') ? [0, 0, 0] : [0, 0.2, 0];
@@ -463,8 +463,8 @@ async function run() {
   toolGroup.addViewport(viewportId, renderingEngineId);
   toolGroup.addViewport(viewportId2, renderingEngineId);
 
-  viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
-  const viewport2 = renderingEngine.getViewport(viewportId2) as PlanarViewport;
+  viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
+  const viewport2 = renderingEngine.getViewport<PlanarViewport>(viewportId2);
 
   const ctImageIds = imageIds.slice(0, 3);
   const ctSegImages =

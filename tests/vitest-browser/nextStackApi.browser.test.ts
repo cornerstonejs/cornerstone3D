@@ -215,7 +215,7 @@ async function renderNextStackViewport() {
     },
   });
 
-  const viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
   const imageId = encodeImageIdInfo(imageInfo);
 
   utilities.viewportNextDataSetMetadataProvider.add(stackDataId, {

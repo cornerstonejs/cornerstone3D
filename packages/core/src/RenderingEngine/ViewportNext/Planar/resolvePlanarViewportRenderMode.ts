@@ -6,7 +6,7 @@ import type {
 } from './PlanarViewportTypes';
 
 const PLANAR_EFFECTIVE_RENDER_MODES: PlanarEffectiveRenderMode[] = [
-  'cpu2d',
+  'cpuImage',
   'cpuVolume',
   'vtkImage',
   'vtkVolumeSlice',
@@ -49,5 +49,5 @@ export function resolvePlanarViewportRenderMode(args: {
     return useCPURendering ? 'cpuVolume' : 'vtkVolumeSlice';
   }
 
-  return useCPURendering ? 'cpu2d' : 'vtkImage';
+  return useCPURendering ? 'cpuImage' : 'vtkImage';
 }

@@ -60,8 +60,8 @@ class RenderingEngine {
     return this._implementation.resize(immediate, keepCamera);
   }
 
-  public getViewport(viewportId: string): IViewport {
-    return this._implementation.getViewport(viewportId);
+  public getViewport<T = IViewport>(viewportId: string): T {
+    return this._implementation.getViewport<T>(viewportId);
   }
 
   public getViewports(): IViewport[] {

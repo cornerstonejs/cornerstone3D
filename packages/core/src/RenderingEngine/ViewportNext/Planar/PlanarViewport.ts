@@ -381,7 +381,7 @@ class PlanarViewport extends ViewportNext<
     const rendering = this.getCurrentPlanarRendering();
 
     if (
-      rendering?.renderMode === 'cpu2d' ||
+      rendering?.renderMode === 'cpuImage' ||
       rendering?.renderMode === 'cpuVolume'
     ) {
       return this.renderContext.cpu.canvas;
@@ -434,7 +434,7 @@ class PlanarViewport extends ViewportNext<
     if (
       rendering?.renderMode !== 'vtkImage' &&
       rendering?.renderMode !== 'vtkVolumeSlice' &&
-      rendering?.renderMode !== 'cpu2d'
+      rendering?.renderMode !== 'cpuImage'
     ) {
       return;
     }
@@ -447,7 +447,7 @@ class PlanarViewport extends ViewportNext<
       }
 
       const actorEntry =
-        rendering.renderMode === 'cpu2d'
+        rendering.renderMode === 'cpuImage'
           ? createPlanarCpuImageOverlayActorEntry(
               this as never,
               image,
@@ -910,7 +910,7 @@ class PlanarViewport extends ViewportNext<
   canvasToWorld(canvasPos: Point2): Point3 {
     const rendering = this.getCurrentPlanarRendering();
 
-    if (rendering?.renderMode === 'cpu2d') {
+    if (rendering?.renderMode === 'cpuImage') {
       const imageData = this.getImageData() as CPUIImageData | undefined;
 
       if (imageData) {
@@ -938,7 +938,7 @@ class PlanarViewport extends ViewportNext<
   worldToCanvas(worldPos: Point3): Point2 {
     const rendering = this.getCurrentPlanarRendering();
 
-    if (rendering?.renderMode === 'cpu2d') {
+    if (rendering?.renderMode === 'cpuImage') {
       const imageData = this.getImageData() as CPUIImageData | undefined;
 
       if (imageData) {
@@ -1302,7 +1302,8 @@ class PlanarViewport extends ViewportNext<
     cpuCanvas: HTMLCanvasElement,
     vtkCanvas: HTMLCanvasElement
   ): void {
-    const useCPUCanvas = renderMode === 'cpu2d' || renderMode === 'cpuVolume';
+    const useCPUCanvas =
+      renderMode === 'cpuImage' || renderMode === 'cpuVolume';
     const viewportElement = this.element.querySelector(
       '.viewport-element'
     ) as HTMLDivElement | null;
@@ -1830,7 +1831,7 @@ class PlanarViewport extends ViewportNext<
     const { rendering } = referenceContext;
 
     if (
-      rendering.renderMode === 'cpu2d' ||
+      rendering.renderMode === 'cpuImage' ||
       rendering.renderMode === 'vtkImage'
     ) {
       return this.applyImageViewReference(referenceContext, viewRef);

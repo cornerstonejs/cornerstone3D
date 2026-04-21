@@ -185,7 +185,7 @@ function createActorEntries(geometry: IGeometry) {
     polyData.getPoints().setData(surface.points, 3);
     polyData.setPolys(
       vtkCellArray.newInstance({
-        values: Float32Array.from(surface.polys),
+        values: Uint32Array.from(surface.polys),
       })
     );
 

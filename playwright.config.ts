@@ -12,7 +12,7 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 3 : 0,
-  workers: process.env.CI ? 16 : undefined,
+  workers: Number(process.env.PLAYWRIGHT_WORKERS) || 8,
   timeout: 120 * 1000,
   snapshotPathTemplate:
     'tests/screenshots{/projectName}/{testFilePath}/{arg}{ext}',
@@ -96,7 +96,10 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'cross-env COVERAGE=true nyc bun build-and-serve-static-examples',
+    command:
+      process.env.COVERAGE === 'true'
+        ? 'cross-env COVERAGE=true nyc bun build-and-serve-static-examples'
+        : 'bun build-and-serve-static-examples',
     url: 'http://localhost:3333',
     reuseExistingServer,
     timeout: 500 * 1000,

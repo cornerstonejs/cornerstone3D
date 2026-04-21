@@ -124,7 +124,7 @@ test.describe('Stack Manipulation - Next (CPU)', () => {
         constructorName: 'PlanarViewport',
         type: 'planarV2',
         renderModesByDataId: {
-          'stack-manipulation-tools-next:primary': 'cpu2d',
+          'stack-manipulation-tools-next:primary': 'cpuImage',
         },
       },
     ]);

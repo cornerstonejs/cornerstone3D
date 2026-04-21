@@ -163,10 +163,13 @@ export function selectPlanarRenderPath(
   );
 
   if (requestedRenderMode !== 'auto') {
-    if (requestedRenderMode === 'cpu2d' || requestedRenderMode === 'vtkImage') {
+    if (
+      requestedRenderMode === 'cpuImage' ||
+      requestedRenderMode === 'vtkImage'
+    ) {
       if (!isAcquisitionPath) {
         throw new Error(
-          '[PlanarViewport] cpu2d and vtkImage render modes require the acquisition plane'
+          '[PlanarViewport] cpuImage and vtkImage render modes require the acquisition plane'
         );
       }
 
@@ -206,7 +209,7 @@ export function selectPlanarRenderPath(
 
   return {
     acquisitionOrientation,
-    renderMode: shouldUseCpuImagePath ? 'cpu2d' : 'vtkImage',
+    renderMode: shouldUseCpuImagePath ? 'cpuImage' : 'vtkImage',
     volumeId,
   };
 }

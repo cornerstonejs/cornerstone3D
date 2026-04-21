@@ -14,20 +14,44 @@ export type ImageActor = vtkImageSlice;
 
 export type ICanvasActor = CanvasActor;
 
-export interface ActorMapperProxy {
-  actor: VolumeActor | ImageActor | ICanvasActor;
-  mapper:
-    | vtkImageMapper
-    | vtkImageResliceMapper
-    | vtkVolumeMapper
-    | CanvasMapper;
-  renderMode:
-    | 'vtkImage'
-    | 'vtkVolume'
-    | 'vtkVolumeSlice'
-    | 'cpu2d'
-    | 'cpuVolume';
-}
+/**
+ * Actor/mapper pair associated with a rendering path, discriminated by
+ * `renderMode`. Narrowing on `renderMode` produces a fully-typed actor +
+ * mapper combination so consumers do not need to cast.
+ *
+ * ```ts
+ * if (proxy.renderMode === 'vtkVolumeSlice') {
+ *   // proxy.mapper is vtkImageResliceMapper, proxy.actor is ImageActor
+ *   proxy.mapper.setSlicePlane(...);
+ * }
+ * ```
+ */
+export type ActorMapperProxy =
+  | {
+      renderMode: 'vtkImage';
+      actor: ImageActor;
+      mapper: vtkImageMapper;
+    }
+  | {
+      renderMode: 'vtkVolume';
+      actor: VolumeActor;
+      mapper: vtkVolumeMapper;
+    }
+  | {
+      renderMode: 'vtkVolumeSlice';
+      actor: ImageActor;
+      mapper: vtkImageResliceMapper;
+    }
+  | {
+      renderMode: 'cpuImage';
+      actor: ICanvasActor;
+      mapper: CanvasMapper;
+    }
+  | {
+      renderMode: 'cpuVolume';
+      actor: ICanvasActor;
+      mapper: CanvasMapper;
+    };
 
 /**
  * Cornerstone Actor Entry including actor uid, actual Actor, and

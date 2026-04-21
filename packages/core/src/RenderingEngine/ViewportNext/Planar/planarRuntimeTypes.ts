@@ -13,7 +13,7 @@
  *
  * Render modes:
  *   - `vtkImage`   -- GPU path for single-image (stack) display via vtkImageMapper.
- *   - `cpu2d`      -- CPU fallback for single-image display via CPUFallbackEnabledElement.
+ *   - `cpuImage`      -- CPU fallback for single-image display via CPUFallbackEnabledElement.
  *   - `cpuVolume`  -- CPU path for volume slicing (samples a slice from the volume on the CPU).
  *   - `vtkVolumeSlice` -- GPU path for volume slicing via vtkImageResliceMapper.
  */
@@ -53,14 +53,14 @@ export type PlanarImageMapperRendering = MountedRendering<{
 }>;
 
 /**
- * Mounted rendering state for the CPU single-image path (`cpu2d`).
+ * Mounted rendering state for the CPU single-image path (`cpuImage`).
  *
  * Uses the Cornerstone CPU fallback renderer (`CPUFallbackEnabledElement`)
  * to draw a single image onto an offscreen canvas. The viewport reads
  * pixel data directly from the IImage and applies windowing / LUT on the CPU.
  */
 export type PlanarCpuImageRendering = MountedRendering<{
-  renderMode: 'cpu2d';
+  renderMode: 'cpuImage';
   enabledElement: CPUFallbackEnabledElement;
   compatibilityActor: ICanvasActor;
   currentImageIdIndex: number;

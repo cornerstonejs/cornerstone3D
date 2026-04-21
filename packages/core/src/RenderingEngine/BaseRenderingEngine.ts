@@ -323,8 +323,8 @@ abstract class BaseRenderingEngine {
    *
    * @returns viewport
    */
-  public getViewport(viewportId: string): IViewport {
-    return this._viewports?.get(viewportId);
+  public getViewport<T = IViewport>(viewportId: string): T {
+    return this._viewports?.get(viewportId) as T;
   }
 
   /**
@@ -458,6 +458,7 @@ abstract class BaseRenderingEngine {
     [ViewportType.VIDEO]: ViewportType.VIDEO_V2,
     [ViewportType.WHOLE_SLIDE]: ViewportType.WHOLE_SLIDE_V2,
     [ViewportType.ECG]: ViewportType.ECG_V2,
+    [ViewportType.VOLUME_3D]: ViewportType.VOLUME_3D_V2,
   };
 
   private _normalizeViewportInputEntry(

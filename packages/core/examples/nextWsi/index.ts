@@ -45,7 +45,7 @@ addButtonToToolbar({
   title: 'Zoom In',
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport = renderingEngine.getViewport(viewportId) as WSIViewportNext;
+    const viewport = renderingEngine.getViewport<WSIViewportNext>(viewportId);
 
     viewport.setZoom(2 * viewport.getZoom());
     viewport.render();
@@ -104,7 +104,7 @@ async function run() {
     },
   });
 
-  const viewport = renderingEngine.getViewport(viewportId) as WSIViewportNext;
+  const viewport = renderingEngine.getViewport<WSIViewportNext>(viewportId);
 
   client.getDICOMwebMetadata = (imageId) => wadors.metaDataManager.get(imageId);
 

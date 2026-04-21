@@ -9,7 +9,6 @@ import {
   ensureECGCanvasSize,
   getVisibleECGChannels,
 } from '../../../utilities/ECGUtilities';
-import type { Point2, Point3 } from '../../../types';
 import type {
   DataAddOptions,
   LoadedData,
@@ -83,82 +82,6 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
     rendering.currentCamera = camera as ECGCamera;
   }
 
-  private canvasToWorld(
-    rendering: ECGCanvasRendering,
-    waveform: ECGWaveformPayload,
-    canvasPos: Point2
-  ): Point3 {
-    const { metrics, currentCamera } = rendering;
-    const layouts = getChannelLayouts(rendering, waveform);
-    const { effectiveRatio, xOffset, yOffset } = getEffectiveTransform(
-      metrics,
-      currentCamera,
-      rendering.canvas
-    );
-    const subCanvasPos: Point2 = [
-      (canvasPos[0] - xOffset) / effectiveRatio,
-      (canvasPos[1] - yOffset) / effectiveRatio,
-    ];
-    let z = 0;
-
-    for (let i = 0; i < layouts.length; i++) {
-      const layout = layouts[i];
-
-      if (subCanvasPos[1] <= layout.yOffset) {
-        z = i;
-        break;
-      }
-
-      if (i === layouts.length - 1) {
-        z = i;
-      }
-    }
-
-    const layout = layouts[z];
-
-    return [
-      Math.max(
-        0,
-        Math.min(
-          waveform.numberOfSamples - 1,
-          (subCanvasPos[0] * waveform.numberOfSamples) / metrics.ecgWidth
-        )
-      ),
-      (layout.baseline - subCanvasPos[1]) / metrics.channelScale,
-      z,
-    ];
-  }
-
-  private worldToCanvas(
-    rendering: ECGCanvasRendering,
-    waveform: ECGWaveformPayload,
-    worldPos: Point3
-  ): Point2 {
-    const { metrics, currentCamera } = rendering;
-    const layouts = getChannelLayouts(rendering, waveform);
-    const z = Math.round(worldPos[2]);
-
-    if (z < 0 || z >= layouts.length) {
-      return [0, 0];
-    }
-
-    const { effectiveRatio, xOffset, yOffset } = getEffectiveTransform(
-      metrics,
-      currentCamera,
-      rendering.canvas
-    );
-    const layout = layouts[z];
-
-    return [
-      (worldPos[0] / waveform.numberOfSamples) *
-        metrics.ecgWidth *
-        effectiveRatio +
-        xOffset,
-      (layout.baseline - worldPos[1] * metrics.channelScale) * effectiveRatio +
-        yOffset,
-    ];
-  }
-
   private getFrameOfReferenceUID(
     ctx: ECGCanvasRenderContext
   ): string | undefined {
@@ -209,21 +132,6 @@ function getEffectiveTransform(
     xOffset: layout.xOffset,
     yOffset: layout.yOffset,
   };
-}
-
-function getChannelLayouts(
-  rendering: ECGCanvasRendering,
-  waveform: ECGWaveformPayload
-) {
-  const visibleChannels = getVisibleECGChannels(
-    waveform.channels,
-    rendering.currentDataPresentation?.visibleChannels
-  );
-
-  return computeECGChannelLayouts({
-    visibleChannels,
-    channelScale: rendering.metrics.channelScale,
-  });
 }
 
 function computeTimeWindow(

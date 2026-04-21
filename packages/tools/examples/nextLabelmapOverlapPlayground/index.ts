@@ -46,7 +46,7 @@ const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
 const volumeId = `${volumeLoaderScheme}:${volumeName}`;
 const stackDataId = 'labelmap-overlap-next:stack';
 const volumeDataId = 'labelmap-overlap-next:volume';
-const stackRenderMode = getBooleanUrlParam('cpu') ? 'cpu2d' : 'vtkImage';
+const stackRenderMode = getBooleanUrlParam('cpu') ? 'cpuImage' : 'vtkImage';
 const volumeRenderMode = getBooleanUrlParam('cpu')
   ? 'cpuVolume'
   : 'vtkVolumeSlice';

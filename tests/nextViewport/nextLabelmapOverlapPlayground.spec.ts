@@ -162,7 +162,7 @@ test.describe('Labelmap Overlap Playground - Next (CPU)', () => {
         constructorName: 'PlanarViewport',
         type: 'planarV2',
         renderModesByDataId: {
-          'labelmap-overlap-next:stack': 'cpu2d',
+          'labelmap-overlap-next:stack': 'cpuImage',
         },
       },
       {

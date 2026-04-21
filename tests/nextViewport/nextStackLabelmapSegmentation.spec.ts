@@ -85,7 +85,7 @@ test.describe('Stack Labelmap Segmentation - Next (CPU)', () => {
         constructorName: 'PlanarViewport',
         type: 'planarV2',
         renderModesByDataId: {
-          'stack-labelmap-segmentation-next:ct': 'cpu2d',
+          'stack-labelmap-segmentation-next:ct': 'cpuImage',
         },
       },
       {
@@ -94,7 +94,7 @@ test.describe('Stack Labelmap Segmentation - Next (CPU)', () => {
         constructorName: 'PlanarViewport',
         type: 'planarV2',
         renderModesByDataId: {
-          'stack-labelmap-segmentation-next:mg': 'cpu2d',
+          'stack-labelmap-segmentation-next:mg': 'cpuImage',
         },
       },
     ]);

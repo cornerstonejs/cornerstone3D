@@ -121,7 +121,7 @@ async function run() {
 
   toolGroup.addViewport(viewportId, renderingEngineId);
 
-  const viewport = renderingEngine.getViewport(viewportId) as ECGViewportNext;
+  const viewport = renderingEngine.getViewport<ECGViewportNext>(viewportId);
 
   utilities.viewportNextDataSetMetadataProvider.add(ecgDataId, {
     kind: 'ecg',

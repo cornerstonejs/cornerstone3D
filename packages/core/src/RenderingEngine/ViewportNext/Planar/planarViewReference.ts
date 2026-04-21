@@ -41,7 +41,7 @@ import type { PlanarRendering } from './planarRuntimeTypes';
  * Returns the imageId that the viewport is currently displaying (or would
  * display at a given `sliceIndex` override).
  *
- * For image-based paths (cpu2d, vtkImage) this is a direct index lookup.
+ * For image-based paths (cpuImage, vtkImage) this is a direct index lookup.
  * For volume paths (cpuVolume, vtkVolume) the computed camera's focalPoint
  * and viewPlaneNormal are used to find the closest imageId in the volume's
  * imageId list via `getClosestImageId`.
@@ -73,7 +73,10 @@ export function getPlanarReferencedImageId(args: {
     return;
   }
 
-  if (rendering.renderMode === 'cpu2d' || rendering.renderMode === 'vtkImage') {
+  if (
+    rendering.renderMode === 'cpuImage' ||
+    rendering.renderMode === 'vtkImage'
+  ) {
     const imageIdIndex =
       typeof viewRefSpecifier?.sliceIndex === 'number'
         ? Math.min(

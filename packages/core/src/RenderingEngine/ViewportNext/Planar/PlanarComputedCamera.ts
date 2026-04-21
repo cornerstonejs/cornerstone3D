@@ -314,7 +314,7 @@ export function getPlanarCameraCanvasDimensions(args: {
   const { renderContext, rendering } = args;
 
   if (
-    rendering.renderMode === 'cpu2d' ||
+    rendering.renderMode === 'cpuImage' ||
     rendering.renderMode === 'cpuVolume'
   ) {
     return getCanvasCssDimensions(renderContext.cpu.canvas);
@@ -349,9 +349,12 @@ export function computePlanarViewportCamera(args: {
   });
   const requestedCamera = args.camera;
 
-  if (rendering.renderMode === 'cpu2d' || rendering.renderMode === 'vtkImage') {
+  if (
+    rendering.renderMode === 'cpuImage' ||
+    rendering.renderMode === 'vtkImage'
+  ) {
     const image =
-      (rendering.renderMode === 'cpu2d'
+      (rendering.renderMode === 'cpuImage'
         ? rendering.enabledElement?.image
         : rendering.currentImage) || data?.image;
 
@@ -370,7 +373,7 @@ export function computePlanarViewportCamera(args: {
         rendering.currentImageIdIndex,
         (data?.imageIds.length || 1) - 1
       ),
-      usePixelGridCenter: rendering.renderMode === 'cpu2d',
+      usePixelGridCenter: rendering.renderMode === 'cpuImage',
     });
   }
 

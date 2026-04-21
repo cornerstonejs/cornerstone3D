@@ -41,6 +41,8 @@ jobs:
       # - name: Install Playwright browsers
       #   run: bun x playwright install-deps chromium
       - name: Run Playwright tests
+        env:
+          COVERAGE: ${{ matrix.collect_coverage && 'true' || '' }}
         run: |
           export NODE_OPTIONS="--max_old_space_size=10192"
           if [ "${{ matrix.collect_coverage }}" = "true" ]; then

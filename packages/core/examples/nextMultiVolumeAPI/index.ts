@@ -267,7 +267,7 @@ async function run() {
     },
   });
 
-  const viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(PanTool);

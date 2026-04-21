@@ -74,7 +74,7 @@ export class CpuImageSliceRenderPath
       throw new Error('[PlanarViewport] CPU rendering requires an image');
     }
 
-    ctx.display.activateRenderMode('cpu2d');
+    ctx.display.activateRenderMode('cpuImage');
 
     let rendering: PlanarCpuImageRendering;
     const compatibilityActor = new CanvasActor(
@@ -103,7 +103,7 @@ export class CpuImageSliceRenderPath
     enabledElement.transform = calculateTransform(enabledElement);
     rendering = {
       id: `rendering:${data.id}:${options.renderMode}`,
-      renderMode: 'cpu2d',
+      renderMode: 'cpuImage',
       enabledElement,
       compatibilityActor,
       currentImageIdIndex: payload.initialImageIdIndex,
@@ -126,12 +126,18 @@ export class CpuImageSliceRenderPath
         return this.getFrameOfReferenceUID(rendering);
       },
       getActorEntry: (data) => {
-        return buildPlanarActorEntry(data as LoadedData<PlanarPayload>, {
-          actor: rendering.compatibilityActor,
-          renderMode: 'cpu2d',
-          uidFallback: rendering.enabledElement.image?.imageId,
-          referencedIdFallback: rendering.enabledElement.image?.imageId,
-        });
+        return buildPlanarActorEntry(
+          data as LoadedData<PlanarPayload>,
+          {
+            actor: rendering.compatibilityActor,
+            mapper: rendering.compatibilityActor.getMapper(),
+            renderMode: 'cpuImage',
+          },
+          {
+            uid: rendering.enabledElement.image?.imageId,
+            referencedId: rendering.enabledElement.image?.imageId,
+          }
+        );
       },
       getImageData: () => {
         return this.getImageData(rendering);
@@ -168,7 +174,7 @@ export class CpuImageSliceRenderPath
       planarCamera?.imageIdIndex ?? rendering.currentImageIdIndex;
     const image = rendering.enabledElement.image;
 
-    ctx.display.activateRenderMode('cpu2d');
+    ctx.display.activateRenderMode('cpuImage');
 
     if (image) {
       const sliceBasis = createPlanarCpuImageSliceBasis({
@@ -393,7 +399,7 @@ export class CpuImageSlicePath
   readonly type = ViewportType.PLANAR_V2;
 
   matches(data: LoadedData, options: DataAddOptions): boolean {
-    return data.type === 'image' && options.renderMode === 'cpu2d';
+    return data.type === 'image' && options.renderMode === 'cpuImage';
   }
 
   createRenderPath() {
@@ -667,7 +673,7 @@ function renderCompatibilityOverlayActors(
   const overlayActors = ctx.viewport.getOverlayActors();
 
   for (const actorEntry of overlayActors) {
-    if (actorEntry.actorMapper?.renderMode !== 'cpu2d') {
+    if (actorEntry.actorMapper?.renderMode !== 'cpuImage') {
       continue;
     }
 
@@ -737,7 +743,7 @@ async function updateRenderedImage(args: {
     canvasHeight: enabledElement.canvas.height,
   });
   applyPresentationState(rendering, presentation, renderCamera);
-  // cpu2d is drawn by the Planar viewport itself, not by the rendering
+  // cpuImage is drawn by the Planar viewport itself, not by the rendering
   // engine's VTK pass. The image swap therefore needs an immediate viewport
   // render or the visible canvas stays stale until another direct render.
   ctx.display.renderNow();

@@ -71,7 +71,7 @@ export function syncStackLabelmapActors(
     )?.find((actorEntry) => actorEntry.referencedId === derivedImageId);
 
     if (!segmentationActorEntry) {
-      if (renderMode === 'image' && defaultActorRenderMode === 'cpu2d') {
+      if (renderMode === 'image' && defaultActorRenderMode === 'cpuImage') {
         viewport.addImages([
           {
             imageId: derivedImageId,

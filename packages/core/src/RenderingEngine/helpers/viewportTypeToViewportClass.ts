@@ -12,6 +12,7 @@ import PlanarViewportLegacyAdapter from '../ViewportNext/Planar/PlanarViewportLe
 import VideoViewportNext from '../ViewportNext/Video/VideoViewportNext';
 import VideoViewportLegacyAdapter from '../ViewportNext/Video/VideoViewportLegacyAdapter';
 import VolumeViewport3DV2 from '../ViewportNext/Volume3D/3dViewport';
+import VolumeViewport3DLegacyAdapter from '../ViewportNext/Volume3D/VolumeViewport3DLegacyAdapter';
 import WSIViewportNext from '../ViewportNext/WSI/WSIViewportNext';
 import WSIViewportLegacyAdapter from '../ViewportNext/WSI/WSIViewportLegacyAdapter';
 import ECGViewportLegacyAdapter from '../ViewportNext/ECG/ECGViewportLegacyAdapter';
@@ -84,6 +85,13 @@ export function getViewportClassForInput({
     requestedType === ViewportType.WHOLE_SLIDE
   ) {
     return WSIViewportLegacyAdapter as unknown as ViewportConstructor;
+  }
+
+  if (
+    type === ViewportType.VOLUME_3D_V2 &&
+    requestedType === ViewportType.VOLUME_3D
+  ) {
+    return VolumeViewport3DLegacyAdapter as unknown as ViewportConstructor;
   }
 
   return viewportTypeToViewportClass[type];
