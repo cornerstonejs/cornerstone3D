@@ -58,11 +58,8 @@ function toLowHighRange(
   lower: number;
   upper: number;
 } {
-  // When WindowWidth <= 1, the LINEAR formula produces lower === upper
-  // (degenerate range) because (WW-1) becomes 0 or negative. This causes
-  // division by zero in the VOI LUT shader. Fall back to LINEAR_EXACT
-  // which handles all positive WW values correctly.
-  // See: https://github.com/cornerstonejs/cornerstone3D/issues/2706
+  // LINEAR formula produces lower === upper when WW <= 1 because (WW-1)
+  // becomes 0. Fall back to LINEAR_EXACT to avoid division by zero. See #2706.
   if (windowWidth <= 1 && voiLUTFunction === VOILUTFunctionType.LINEAR) {
     voiLUTFunction = VOILUTFunctionType.LINEAR_EXACT;
   }

@@ -244,13 +244,10 @@ function _handlePreScaleSetup(
   const scalingParameters = options.preScale.scalingParameters;
   _validateScalingParameters(scalingParameters);
 
-  // When scaling parameters contain non-integer values (e.g. rescaleSlope=0.001
-  // for DTI FA maps), the scaled pixel values will be fractional (e.g. 0.013,
-  // 0.5, 0.999). Force Float32Array to prevent truncation that would occur if
-  // getPixelDataTypeFromMinMax selects an integer array type — which happens
-  // when scaled min/max are "integer-like" (e.g. 0.0 and 1.0) because
-  // Number.isInteger(1.0) === true in JavaScript.
-  // See: https://github.com/cornerstonejs/cornerstone3D/issues/2706
+  // Force Float32Array when scaling parameters are non-integer to avoid
+  // getPixelDataTypeFromMinMax selecting Uint8Array (Number.isInteger(1.0)
+  // is true in JS, so scaled min/max can appear integer even when values
+  // between them are fractional). See #2706.
   const hasFloatRescale = Object.values(scalingParameters).some(
     (v) => typeof v === 'number' && !Number.isInteger(v)
   );
