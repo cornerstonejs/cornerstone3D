@@ -120,6 +120,7 @@ import type VideoViewportProperties from './VideoViewportProperties';
 import type WSIViewportProperties from './WSIViewportProperties';
 import type { IVideoViewport } from './IVideoViewport';
 import type { IECGViewport } from './IECGViewport';
+import type { ISlicerViewport } from './ISlicerViewport';
 import type {
   InternalVideoCamera,
   VideoViewportInput,
@@ -131,6 +132,13 @@ import type {
   ECGWaveformData,
 } from './ECGViewportTypes';
 import type ECGViewportProperties from './ECGViewportProperties';
+import type {
+  InternalSlicerCamera,
+  SlicerViewportInput,
+  SlicerSliceParams,
+  SlicerDicomStudy,
+  SlicerVolumeGeometry,
+} from './SlicerViewportTypes';
 import type { ISurface } from './ISurface';
 import type BoundsIJK from './BoundsIJK';
 import type { ImageVolumeProps } from './ImageVolumeProps';
@@ -167,6 +175,7 @@ export type {
   IStackViewport,
   IVideoViewport,
   IECGViewport,
+  ISlicerViewport,
   IWSIViewport,
   IVolumeViewport,
   IEnabledElement,
@@ -290,6 +299,12 @@ export type {
   ECGChannel,
   ECGWaveformData,
   ECGViewportProperties,
+  // slicer
+  InternalSlicerCamera,
+  SlicerViewportInput,
+  SlicerSliceParams,
+  SlicerDicomStudy,
+  SlicerVolumeGeometry,
   BoundsIJK,
   BoundsLPS,
   Color,

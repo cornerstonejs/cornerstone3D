@@ -18,6 +18,7 @@ import StackViewport from './RenderingEngine/StackViewport';
 import VideoViewport from './RenderingEngine/VideoViewport';
 import WSIViewport from './RenderingEngine/WSIViewport';
 import ECGViewport from './RenderingEngine/ECGViewport';
+import SlicerViewport from './RenderingEngine/SlicerViewport';
 import Viewport from './RenderingEngine/Viewport';
 import eventTarget from './eventTarget';
 import { version } from './version';
@@ -129,6 +130,7 @@ export {
   VideoViewport,
   WSIViewport,
   ECGViewport,
+  SlicerViewport,
   RenderingEngine,
   BaseRenderingEngine,
   TiledRenderingEngine,

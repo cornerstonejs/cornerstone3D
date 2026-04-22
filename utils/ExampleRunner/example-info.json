@@ -345,6 +345,18 @@
         "name": "ECG Viewport",
         "description": "Displays a 12-lead ECG from DICOM Waveform data."
       },
+      "slicerViewport": {
+        "name": "Slicer Remote Viewport",
+        "description": "Streams slice PNGs from a locally running 3D Slicer WebServer. Supports pan, zoom, scroll, and annotation tools."
+      },
+      "slicerViewportSagittal": {
+        "name": "Slicer Remote Viewport (Sagittal)",
+        "description": "Same Slicer-backed viewport as slicerViewport, but starts in sagittal orientation. Uses the same study from the local Orthanc."
+      },
+      "slicerViewportFourUp": {
+        "name": "Slicer Remote Viewport (Four Up)",
+        "description": "2x2 grid of SlicerViewports: axial, sagittal, coronal, and a 3D volume rendering of the same study (Slicer /threeD endpoint, CT-AAA preset)."
+      },
       "wsiAnnotationTools": {
         "name": "WSI Annotation Tools",
         "description": "WSI with length and other annotation tools"

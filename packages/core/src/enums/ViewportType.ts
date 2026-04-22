@@ -25,6 +25,10 @@ enum ViewportType {
    * ECG waveform viewport for displaying DICOM ECG traces
    */
   ECG = 'ecg',
+  /**
+   * Remote PNG-rendered slice served by 3D Slicer's WebServer module.
+   */
+  SLICER = 'slicer',
 }
 
 export default ViewportType;
