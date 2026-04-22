@@ -47,4 +47,22 @@ for (const [packageName, localPath] of Object.entries(localPackages)) {
   fs.symlinkSync(targetPath, linkPath, 'dir');
 }
 
+// Compatibility for OHIF Jest mappings that expect @cornerstonejs/*/dist/esm.
+// calculate-suv only ships dist/ (without dist/esm), so create an alias.
+const calculateSUVDistDir = path.join(
+  nodeModulesRoot,
+  'calculate-suv',
+  'dist'
+);
+const calculateSUVDistEsmDir = path.join(calculateSUVDistDir, 'esm');
+
+if (fs.existsSync(calculateSUVDistDir) && !fs.existsSync(calculateSUVDistEsmDir)) {
+  fs.mkdirSync(calculateSUVDistEsmDir, { recursive: true });
+  const shimContents = "module.exports = require('../index.js');\n";
+  fs.writeFileSync(path.join(calculateSUVDistEsmDir, 'index.js'), shimContents, 'utf8');
+  console.log(
+    `Created calculate-suv dist/esm compatibility shim: ${calculateSUVDistEsmDir}/index.js`
+  );
+}
+
 console.log(`Linked local Cornerstone packages into ${nodeModulesRoot}`);
