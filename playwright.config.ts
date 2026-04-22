@@ -11,6 +11,7 @@ export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
+  globalSetup: './playwright.globalSetup.ts',
   retries: process.env.CI ? 3 : 0,
   workers: Number(process.env.PLAYWRIGHT_WORKERS) || 8,
   timeout: 120 * 1000,
@@ -96,12 +97,13 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command:
-      process.env.COVERAGE === 'true'
-        ? 'cross-env COVERAGE=true nyc bun build-and-serve-static-examples'
-        : 'bun build-and-serve-static-examples',
+    command: 'npx serve .static-examples --listen 3333',
     url: 'http://localhost:3333',
     reuseExistingServer,
+    gracefulShutdown: {
+      signal: 'SIGTERM',
+      timeout: 5000,
+    },
     timeout: 500 * 1000,
   },
 });

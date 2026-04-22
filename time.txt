@@ -1,0 +1,4640 @@
+{
+  "config": {
+    "configFile": "/Users/alireza/open-source/clean/cornerstone3D.worktrees/cornerstone3d-redo-viewports/playwright.config.ts",
+    "rootDir": "/Users/alireza/open-source/clean/cornerstone3D.worktrees/cornerstone3d-redo-viewports/tests",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 8
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/alireza/open-source/clean/cornerstone3D.worktrees/cornerstone3d-redo-viewports/tests/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 8
+        },
+        "id": "slow-tests",
+        "name": "slow-tests",
+        "testDir": "/Users/alireza/open-source/clean/cornerstone3D.worktrees/cornerstone3d-redo-viewports/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "/.+@slow.+/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/Users/alireza/open-source/clean/cornerstone3D.worktrees/cornerstone3d-redo-viewports/tests/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 8
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/alireza/open-source/clean/cornerstone3D.worktrees/cornerstone3d-redo-viewports/tests",
+        "testIgnore": [
+          "/.+@slow.+/"
+        ],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/Users/alireza/open-source/clean/cornerstone3D.worktrees/cornerstone3d-redo-viewports/tests/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 8
+        },
+        "id": "webkit",
+        "name": "webkit",
+        "testDir": "/Users/alireza/open-source/clean/cornerstone3D.worktrees/cornerstone3d-redo-viewports/tests",
+        "testIgnore": [
+          "**/renderingPipeline.spec.ts"
+        ],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/Users/alireza/open-source/clean/cornerstone3D.worktrees/cornerstone3d-redo-viewports/tests/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 8
+        },
+        "id": "Mobile Safari",
+        "name": "Mobile Safari",
+        "testDir": "/Users/alireza/open-source/clean/cornerstone3D.worktrees/cornerstone3d-redo-viewports/tests",
+        "testIgnore": [
+          "**/labelmapsegmentationtools.spec.ts",
+          "**/splineContourSegmentationTools.spec.ts",
+          "**/interpolationContourSegmentation.spec.ts",
+          "**/stackLabelmapSegmentation.spec.ts",
+          "**/rectangleROIThresholdStatisticsMIM.spec.ts",
+          "**/renderingPipeline.spec.ts",
+          "**/stackLabelmapSegmentation/**.spec.ts"
+        ],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/Users/alireza/open-source/clean/cornerstone3D.worktrees/cornerstone3d-redo-viewports/tests/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 8
+        },
+        "id": "Mobile Android",
+        "name": "Mobile Android",
+        "testDir": "/Users/alireza/open-source/clean/cornerstone3D.worktrees/cornerstone3d-redo-viewports/tests",
+        "testIgnore": [
+          "**/labelmapsegmentationtools.spec.ts",
+          "**/splineContourSegmentationTools.spec.ts",
+          "**/interpolationContourSegmentation.spec.ts",
+          "**/stackLabelmapSegmentation.spec.ts",
+          "**/rectangleROIThresholdStatisticsMIM.spec.ts",
+          "**/stackLabelmapSegmentation/**.spec.ts"
+        ],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 8,
+    "webServer": {
+      "command": "bun build-and-serve-static-examples",
+      "url": "http://localhost:3333",
+      "reuseExistingServer": true,
+      "timeout": 500000
+    }
+  },
+  "suites": [
+    {
+      "title": "contextPoolRenderingEngine.spec.ts",
+      "file": "contextPoolRenderingEngine.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Context Pool Rendering Engine",
+          "file": "contextPoolRenderingEngine.spec.ts",
+          "line": 13,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should display context pool rendering engine example",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4377,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:09.767Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "6badb9bef84d90fb9c9d-4257f8c18bc6c161233b",
+              "file": "contextPoolRenderingEngine.spec.ts",
+              "line": 14,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "contourRendering.spec.ts",
+      "file": "contourRendering.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Contour Rendering",
+          "file": "contourRendering.spec.ts",
+          "line": 12,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should add a contour as a segmentation to a volume viewport",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 3389,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:09.779Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a7eabd4586791a350897-20de1e672bdb4e29a164",
+              "file": "contourRendering.spec.ts",
+              "line": 13,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "contourRenderingTiled.spec.ts",
+      "file": "contourRenderingTiled.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Contour Rendering",
+          "file": "contourRenderingTiled.spec.ts",
+          "line": 13,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should add a contour as a segmentation to a volume viewport",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 3469,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:09.778Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "0a9dd7a06bfb5e7fee33-8bb3db0c3188e93d9609",
+              "file": "contourRenderingTiled.spec.ts",
+              "line": 14,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "dicomImageLoaderWADOURI.spec.ts",
+      "file": "dicomImageLoaderWADOURI.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Dicom Image Loader WADOURI",
+          "file": "dicomImageLoaderWADOURI.spec.ts",
+          "line": 32,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should load a dicom image with JPEGLSLosslessTransferSyntax",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 3026,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:09.777Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-4edb6ba85769fc938c40",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 36,
+              "column": 7
+            },
+            {
+              "title": "should load a dicom image with JPEGLSLossyTransferSyntax",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 3138,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:09.778Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-d441d4214842f708d775",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 58,
+              "column": 7
+            },
+            {
+              "title": "should load a dicom image with JPEGProcess1TransferSyntax",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 3163,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:09.779Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-465c70de2bbec9e1db7f",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 80,
+              "column": 7
+            },
+            {
+              "title": "should load a dicom image with RLELosslessTransferSyntax",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 3015,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:09.767Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-432d057e5f045d7c5091",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 102,
+              "column": 7
+            },
+            {
+              "title": "should load a dicom image with JPEGProcess14TransferSyntax",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 3043,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:09.778Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-02f6d67ebf86e7cc07a8",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 124,
+              "column": 7
+            },
+            {
+              "title": "should load a dicom image with JPEGProcess14SV1TransferSyntax",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 2143,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:13.563Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-57d7afa3d5980f10dfe2",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 146,
+              "column": 7
+            },
+            {
+              "title": "should load a dicom image with JPEG2000LosslessOnlyTransferSyntax",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 2347,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:13.638Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-4291d37c763fc43cc40a",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 168,
+              "column": 7
+            },
+            {
+              "title": "should load a dicom image with JPEG2000TransferSyntax",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 2303,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:13.656Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-066830f2036afa0a5261",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 190,
+              "column": 7
+            },
+            {
+              "title": "should load TestPattern_JPEG-Baseline_YBR422.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 2222,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:13.681Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-c129295b17a0baf22c91",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 212,
+              "column": 7
+            },
+            {
+              "title": "should load TestPattern_JPEG-Baseline_YBRFull.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 2211,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:13.709Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-1910e7e7678806c08c23",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 232,
+              "column": 7
+            },
+            {
+              "title": "should load TestPattern_JPEG-Lossless_RGB.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 2291,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:13.968Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-6d6614f69ff96fb447c1",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 254,
+              "column": 7
+            },
+            {
+              "title": "should load TestPattern_JPEG-LS-Lossless.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 2238,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:14.012Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-a91c3a31d0572c5c6f0f",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 272,
+              "column": 7
+            },
+            {
+              "title": "should load TestPattern_JPEG-LS-NearLossless.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2221,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:15.004Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-debd4a0d54f1a67eef04",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 287,
+              "column": 7
+            },
+            {
+              "title": "should load TestPattern_Palette_16.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 2014,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:15.712Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-e58425b46df427bccdb8",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 307,
+              "column": 7
+            },
+            {
+              "title": "should load TestPattern_Palette.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 2219,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:15.914Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-0bdf2ab188362a0b5ab9",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 322,
+              "column": 7
+            },
+            {
+              "title": "should load TestPattern_RGB.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 2237,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:15.929Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-0f5bd4233f22cafa3836",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 337,
+              "column": 7
+            },
+            {
+              "title": "should load TG_18-luminance-1K/TG18-AD/TG18-AD-1k-01.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 2161,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:15.966Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-b7d07315784349b01e4a",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 352,
+              "column": 7
+            },
+            {
+              "title": "should load TG_18-luminance-1K/TG18-CT/TG18-CT-1k-01.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 2197,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:15.993Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-b22592f07afab41e2906",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 374,
+              "column": 7
+            },
+            {
+              "title": "should load TG_18-luminance-1K/TG18-LN/TG18-LN-1k-01.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 2187,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:16.255Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-c07b49d976667364bfa1",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 396,
+              "column": 7
+            },
+            {
+              "title": "should load TG_18-luminance-1K/TG18-LN/TG18-LN-1k-04.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 2149,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:16.264Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-4411dbf8b30d679fba7a",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 418,
+              "column": 7
+            },
+            {
+              "title": "should load TG_18-luminance-1K/TG18-LN/TG18-LN-1k-09.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2116,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:17.230Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-518ff8e34170d7a7bb0b",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 440,
+              "column": 7
+            },
+            {
+              "title": "should load TG_18-luminance-1K/TG18-LN/TG18-LN-1k-13.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 2071,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:17.732Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-07438ae06bec07b8b355",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 462,
+              "column": 7
+            },
+            {
+              "title": "should load TG_18-luminance-1K/TG18-LN/TG18-LN-1k-18.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 2212,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:18.133Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-383590cb29e2f7ade6a6",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 484,
+              "column": 7
+            },
+            {
+              "title": "should load TG_18-luminance-1K/TG18-MP/TG18-MP-1k-01.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 2205,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:18.140Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-4ef4931d325a192fd5e8",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 506,
+              "column": 7
+            },
+            {
+              "title": "should load TG_18-luminance-1K/TG18-UN/TG18-UN-1k-01.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 2263,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:18.172Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-09a8d6a8f6af66b4cbdb",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 528,
+              "column": 7
+            },
+            {
+              "title": "should load TG_18-luminance-1K/TG18-UNL/TG18-UNL-1k-01.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 2272,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:18.196Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-464d062fd006e900571a",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 550,
+              "column": 7
+            },
+            {
+              "title": "should load TG_18-multi-1K/TG18-BR/TG18-BR-1k-01.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 2249,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:18.421Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-0f060ec3f66d5310759c",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 572,
+              "column": 7
+            },
+            {
+              "title": "should load TG_18-multi-1K/TG18-QC/TG18-QC-1k-01.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 2234,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:18.448Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-70af6dd49ca4b4a31a1f",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 594,
+              "column": 7
+            },
+            {
+              "title": "should load TG_18-multi-1K/TG18-pQC/TG18-PQC-1k-01.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2114,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:19.357Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-d409741c54d2faffa731",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 616,
+              "column": 7
+            },
+            {
+              "title": "should load TG_18-noise-1k/TG18-AFC/TG18-AFC-1k-01.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 2131,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:19.807Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-9c96f44de32dd1ee1563",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 638,
+              "column": 7
+            },
+            {
+              "title": "should load TG_18-noise-1k/TG18-NS/TG18-NS-1k-01.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 2394,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:20.352Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-a7d9a186ec9bf26c2864",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 660,
+              "column": 7
+            },
+            {
+              "title": "should load TG_18-noise-1k/TG18-NS/TG18-NS-1k-02.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 2315,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:20.352Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-527438c78b3c10d887d7",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 682,
+              "column": 7
+            },
+            {
+              "title": "should load TG_18-noise-1k/TG18-NS/TG18-NS-1k-03.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 2240,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:20.443Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-d9d71367a5edb4004585",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 704,
+              "column": 7
+            },
+            {
+              "title": "should load TG_18-resolution-2k/TG18-CX/TG18-CX-2k-01.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 2378,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:20.475Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-ee30dba2d7abfee79791",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 726,
+              "column": 7
+            },
+            {
+              "title": "should load TG_18-resolution-2k/TG18-LPH/TG18-LPH-2k-01.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 2364,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:20.676Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-96b908b0371914f56eb5",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 748,
+              "column": 7
+            },
+            {
+              "title": "should load TG_18-resolution-2k/TG18-LPV/TG18-LPV-2k-01.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 2326,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:20.687Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-254fafb2d3c6e6527a71",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 770,
+              "column": 7
+            },
+            {
+              "title": "should load TG_18-resolution-2k/TG18-LPV/TG18-LPV-2k-02.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2195,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:21.478Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-932df64ac2cdde5ead0f",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 792,
+              "column": 7
+            },
+            {
+              "title": "should load TG_18-resolution-2k/TG18-LPV/TG18-LPV-2k-03.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 2176,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:21.943Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-076ab2050d6b032209c6",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 814,
+              "column": 7
+            },
+            {
+              "title": "should load TG_18-resolution-2k/TG18-PX/TG18-PX-2k-01.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 2213,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:22.673Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-348a0bd77550546b35cd",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 836,
+              "column": 7
+            },
+            {
+              "title": "should load TG_18-resolution-2k/TG18-RH/TG18-RH-2k-01.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 2193,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:22.689Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-756b8bea5e0c9e2b8c03",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 858,
+              "column": 7
+            },
+            {
+              "title": "should load TG_18-resolution-2k/TG18-RH/TG18-RH-2k-02.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 2268,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:22.754Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-c05536ec993c943101e4",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 880,
+              "column": 7
+            },
+            {
+              "title": "should load TG_18-resolution-2k/TG18-RH/TG18-RH-2k-03.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 2299,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:22.862Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-2adad637be0d074db8a0",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 902,
+              "column": 7
+            },
+            {
+              "title": "should load TG_18-resolution-2k/TG18-RV/TG18-RV-2k-01.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 2285,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:23.018Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-48d64e59170f40ee84f8",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 924,
+              "column": 7
+            },
+            {
+              "title": "should load TG_18-resolution-2k/TG18-RV/TG18-RV-2k-02.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 2250,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:23.047Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-0f28ee41cc3b9b3c463f",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 946,
+              "column": 7
+            },
+            {
+              "title": "should load TG_18-resolution-2k/TG18-RV/TG18-RV-2k-03.dcm",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2188,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:23.681Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9d45d41dfce22524046a-0e256b5dd3e0234b2369",
+              "file": "dicomImageLoaderWADOURI.spec.ts",
+              "line": 968,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "interpolationContourSegmentation.spec.ts",
+      "file": "interpolationContourSegmentation.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Contour Freehand Annotation Tool",
+          "file": "interpolationContourSegmentation.spec.ts",
+          "line": 13,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should draw a spline contour segmentation when SplineContourSegmentationTool is selected",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 9436,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:24.125Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "900900e7e33c79b7f627-b8b2043d730395a8e439",
+              "file": "interpolationContourSegmentation.spec.ts",
+              "line": 14,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "labelmapGlobalConfiguration.spec.ts",
+      "file": "labelmapGlobalConfiguration.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Labelmap Global Configuration",
+          "file": "labelmapGlobalConfiguration.spec.ts",
+          "line": 19,
+          "column": 6,
+          "specs": [],
+          "suites": [
+            {
+              "title": "when no changes are made",
+              "file": "labelmapGlobalConfiguration.spec.ts",
+              "line": 20,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "should render the segmentations using the default global configuration",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 120000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 5,
+                          "parallelIndex": 5,
+                          "status": "passed",
+                          "duration": 3188,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-04-22T13:24:24.893Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "3ecf7df12f3741ac693e-7d3f598ba833b9d91621",
+                  "file": "labelmapGlobalConfiguration.spec.ts",
+                  "line": 21,
+                  "column": 9
+                }
+              ]
+            },
+            {
+              "title": "when toggling inactive segmentations",
+              "file": "labelmapGlobalConfiguration.spec.ts",
+              "line": 34,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "should hide the inactive segmentation",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 120000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 3,
+                          "parallelIndex": 3,
+                          "status": "passed",
+                          "duration": 3093,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-04-22T13:24:24.897Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "3ecf7df12f3741ac693e-021e793963edf5249cc0",
+                  "file": "labelmapGlobalConfiguration.spec.ts",
+                  "line": 35,
+                  "column": 9
+                }
+              ]
+            },
+            {
+              "title": "when toggling outline rendering",
+              "file": "labelmapGlobalConfiguration.spec.ts",
+              "line": 50,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "should render segmentations with no outline",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 120000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 4,
+                          "parallelIndex": 4,
+                          "status": "passed",
+                          "duration": 3061,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-04-22T13:24:25.028Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "3ecf7df12f3741ac693e-7ce46a781e2820cbe3f5",
+                  "file": "labelmapGlobalConfiguration.spec.ts",
+                  "line": 51,
+                  "column": 9
+                }
+              ]
+            },
+            {
+              "title": "when toggling fill rendering",
+              "file": "labelmapGlobalConfiguration.spec.ts",
+              "line": 66,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "should not fill the active segmentation",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 120000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 7,
+                          "parallelIndex": 7,
+                          "status": "passed",
+                          "duration": 3348,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-04-22T13:24:25.167Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "3ecf7df12f3741ac693e-6a63cb03ae2a4028371f",
+                  "file": "labelmapGlobalConfiguration.spec.ts",
+                  "line": 67,
+                  "column": 9
+                }
+              ]
+            },
+            {
+              "title": "when changing the outline width for the active segmentation",
+              "file": "labelmapGlobalConfiguration.spec.ts",
+              "line": 79,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "should render the active segmentation with the new outline width",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 120000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 1,
+                          "parallelIndex": 1,
+                          "status": "passed",
+                          "duration": 3473,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-04-22T13:24:25.303Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "3ecf7df12f3741ac693e-e7ce1a08f13ed4f6ed9e",
+                  "file": "labelmapGlobalConfiguration.spec.ts",
+                  "line": 80,
+                  "column": 9
+                }
+              ]
+            },
+            {
+              "title": "when changing the outline alpha for the active segmentation",
+              "file": "labelmapGlobalConfiguration.spec.ts",
+              "line": 94,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "should render the active segmentation with the new outline alpha",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 120000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 2,
+                          "parallelIndex": 2,
+                          "status": "passed",
+                          "duration": 3411,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-04-22T13:24:25.310Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "3ecf7df12f3741ac693e-3e92e4ebfc0e8ae30f47",
+                  "file": "labelmapGlobalConfiguration.spec.ts",
+                  "line": 95,
+                  "column": 9
+                }
+              ]
+            },
+            {
+              "title": "when changing the outline width for the inactive segmentation",
+              "file": "labelmapGlobalConfiguration.spec.ts",
+              "line": 110,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "should render the inactive segmentation with the new outline width",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 120000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 3694,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-04-22T13:24:25.877Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "3ecf7df12f3741ac693e-3a515a955fa63e23bfe6",
+                  "file": "labelmapGlobalConfiguration.spec.ts",
+                  "line": 111,
+                  "column": 9
+                }
+              ]
+            },
+            {
+              "title": "when changing the fill alpha for the active segmentation",
+              "file": "labelmapGlobalConfiguration.spec.ts",
+              "line": 125,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "should render the active segmentation with the new fill alpha",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 120000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 3,
+                          "parallelIndex": 3,
+                          "status": "passed",
+                          "duration": 2913,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-04-22T13:24:28.004Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "3ecf7df12f3741ac693e-1ceafbd80e30458d0400",
+                  "file": "labelmapGlobalConfiguration.spec.ts",
+                  "line": 126,
+                  "column": 9
+                }
+              ]
+            },
+            {
+              "title": "when changing the fill alpha for the inactive segmentation",
+              "file": "labelmapGlobalConfiguration.spec.ts",
+              "line": 140,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "should render the inactive segmentation with the new fill alpha",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 120000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 5,
+                          "parallelIndex": 5,
+                          "status": "passed",
+                          "duration": 2837,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2026-04-22T13:24:28.088Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "3ecf7df12f3741ac693e-178702d195075732f0b4",
+                  "file": "labelmapGlobalConfiguration.spec.ts",
+                  "line": 141,
+                  "column": 9
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "labelmapRendering.spec.ts",
+      "file": "labelmapRendering.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Labelmap Rendering",
+          "file": "labelmapRendering.spec.ts",
+          "line": 13,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should render the labelmap in axial/coronal/sagittal orientations",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 2480,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:28.105Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3e2c03565baaca2417ba-fe291bdac8df43f22939",
+              "file": "labelmapRendering.spec.ts",
+              "line": 14,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "labelmapRenderingTiled.spec.ts",
+      "file": "labelmapRenderingTiled.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Labelmap Rendering",
+          "file": "labelmapRenderingTiled.spec.ts",
+          "line": 14,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should render the labelmap in axial/coronal/sagittal orientations",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 3353,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:28.522Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "0142a2f6f3a49d87820f-e7c0ea84e58434dcd0b3",
+              "file": "labelmapRenderingTiled.spec.ts",
+              "line": 15,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "labelmapsegmentationtools.spec.ts",
+      "file": "labelmapsegmentationtools.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Basic manual labelmap Segmentation tools",
+          "file": "labelmapsegmentationtools.spec.ts",
+          "line": 26,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should render and allow usage of circle brush",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 6257,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:28.738Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "07fe9e831acd98907bc7-48d8c8b665876d828697",
+              "file": "labelmapsegmentationtools.spec.ts",
+              "line": 27,
+              "column": 7
+            },
+            {
+              "title": "should render and allow usage of circle eraser",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 8391,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:28.797Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "07fe9e831acd98907bc7-b2e91b1238b2c15b6599",
+              "file": "labelmapsegmentationtools.spec.ts",
+              "line": 104,
+              "column": 7
+            },
+            {
+              "title": "should render and allow usage of sphere brush",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6734,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:29.583Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "07fe9e831acd98907bc7-400a0ea9826116850a28",
+              "file": "labelmapsegmentationtools.spec.ts",
+              "line": 253,
+              "column": 7
+            },
+            {
+              "title": "should render and allow usage of sphere eraser",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 8905,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:30.593Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "07fe9e831acd98907bc7-0d67d829bb1f62e49c71",
+              "file": "labelmapsegmentationtools.spec.ts",
+              "line": 335,
+              "column": 7
+            },
+            {
+              "title": "should render and allow usage of threshold circle",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 6094,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:30.936Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "07fe9e831acd98907bc7-1e4b8efe33112209390b",
+              "file": "labelmapsegmentationtools.spec.ts",
+              "line": 488,
+              "column": 7
+            },
+            {
+              "title": "should render and allow usage of rectangle scissor",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 5686,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:30.945Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "07fe9e831acd98907bc7-c7bd608e79b05c033714",
+              "file": "labelmapsegmentationtools.spec.ts",
+              "line": 576,
+              "column": 7
+            },
+            {
+              "title": "should render and allow usage of circle scissor",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 4860,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:31.885Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "07fe9e831acd98907bc7-19e70c1319cd6b588746",
+              "file": "labelmapsegmentationtools.spec.ts",
+              "line": 641,
+              "column": 7
+            },
+            {
+              "title": "should render and allow usage of sephere scissor",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 4560,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:33.570Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "07fe9e831acd98907bc7-1a130a3afd06f398c7a1",
+              "file": "labelmapsegmentationtools.spec.ts",
+              "line": 702,
+              "column": 7
+            },
+            {
+              "title": "should render and allow usage of eraser scissor",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 4427,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:35.373Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "07fe9e831acd98907bc7-92b88ffd2a4c27b3fd60",
+              "file": "labelmapsegmentationtools.spec.ts",
+              "line": 760,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "labelmapSwapping.spec.ts",
+      "file": "labelmapSwapping.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Swapping labelmap segmentations on a viewport",
+          "file": "labelmapSwapping.spec.ts",
+          "line": 12,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should load the default segmentation with two segments (circles)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3384,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:36.332Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7f634d0b65d029f1c40b-a3a6b5a024c7e8309e85",
+              "file": "labelmapSwapping.spec.ts",
+              "line": 13,
+              "column": 7
+            },
+            {
+              "title": "should swap the segmentation after clicking on \"Swap Segmentation\" button",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 3073,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:36.646Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7f634d0b65d029f1c40b-c8aa2caa0687ea5abcbb",
+              "file": "labelmapSwapping.spec.ts",
+              "line": 25,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "MPRReformat.spec.ts",
+      "file": "MPRReformat.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "MPR Reformat Visual Tests",
+          "file": "MPRReformat.spec.ts",
+          "line": 13,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should match screenshot before interaction",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 7749,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:36.806Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b1dc4a8a5f1f9c8ae3ba-c31b2735dfeea05c9f63",
+              "file": "MPRReformat.spec.ts",
+              "line": 14,
+              "column": 7
+            },
+            {
+              "title": "should match screenshot after interaction",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 8815,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:37.043Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b1dc4a8a5f1f9c8ae3ba-bdbe30d89e3c7a498024",
+              "file": "MPRReformat.spec.ts",
+              "line": 38,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "multipleToolGroups.spec.ts",
+      "file": "multipleToolGroups.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Multiple Tool Groups",
+          "file": "multipleToolGroups.spec.ts",
+          "line": 8,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should set WindowLevel cursor when moving to canvas center",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 3184,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:37.203Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "80e2d00988e5fc72b364-cbe47ab7ff9a24b55dc5",
+              "file": "multipleToolGroups.spec.ts",
+              "line": 9,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "rectangleROIThresholdStatisticsMIM.spec.ts",
+      "file": "rectangleROIThresholdStatisticsMIM.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Slice 1-5 Threshold 0.41% Statistics",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 6,
+                  "status": "passed",
+                  "duration": 4503,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-04-22T13:24:38.146Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9fc7a198e45a170371b3-e0e5b12dfb79b35f5782",
+          "file": "rectangleROIThresholdStatisticsMIM.spec.ts",
+          "line": 97,
+          "column": 9
+        },
+        {
+          "title": "Slice 10-15 0.41% Threshold Statistics",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 4,
+                  "parallelIndex": 4,
+                  "status": "passed",
+                  "duration": 3189,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-04-22T13:24:39.516Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9fc7a198e45a170371b3-80bc732e0da1ea92af59",
+          "file": "rectangleROIThresholdStatisticsMIM.spec.ts",
+          "line": 97,
+          "column": 9
+        },
+        {
+          "title": "Slice 1-5 Threshold 0.8 Statistics",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3481,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-04-22T13:24:39.730Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9fc7a198e45a170371b3-0a973c68f845d1a1e858",
+          "file": "rectangleROIThresholdStatisticsMIM.spec.ts",
+          "line": 97,
+          "column": 9
+        },
+        {
+          "title": "Slice 10-15 0.8 Threshold Statistics",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 5,
+                  "parallelIndex": 5,
+                  "status": "passed",
+                  "duration": 3474,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-04-22T13:24:39.730Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9fc7a198e45a170371b3-398966169a1fbeb17a66",
+          "file": "rectangleROIThresholdStatisticsMIM.spec.ts",
+          "line": 97,
+          "column": 9
+        }
+      ]
+    },
+    {
+      "title": "renderingPipeline.spec.ts",
+      "file": "renderingPipeline.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Rendering Pipelines for GPU",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [
+                {
+                  "type": "skip",
+                  "location": {
+                    "file": "/Users/alireza/open-source/clean/cornerstone3D.worktrees/cornerstone3d-redo-viewports/tests/renderingPipeline.spec.ts",
+                    "line": 10,
+                    "column": 6
+                  }
+                }
+              ],
+              "expectedStatus": "skipped",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-04-22T13:24:39.850Z",
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "location": {
+                        "file": "/Users/alireza/open-source/clean/cornerstone3D.worktrees/cornerstone3d-redo-viewports/tests/renderingPipeline.spec.ts",
+                        "line": 10,
+                        "column": 6
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "8ef4f837abb7e2e8a086-eb5431a1447af682be64",
+          "file": "renderingPipeline.spec.ts",
+          "line": 10,
+          "column": 6
+        },
+        {
+          "title": "Stack Viewport with CPU Rendering",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [
+                {
+                  "type": "skip",
+                  "location": {
+                    "file": "/Users/alireza/open-source/clean/cornerstone3D.worktrees/cornerstone3d-redo-viewports/tests/renderingPipeline.spec.ts",
+                    "line": 54,
+                    "column": 6
+                  }
+                }
+              ],
+              "expectedStatus": "skipped",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-04-22T13:24:39.850Z",
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "location": {
+                        "file": "/Users/alireza/open-source/clean/cornerstone3D.worktrees/cornerstone3d-redo-viewports/tests/renderingPipeline.spec.ts",
+                        "line": 54,
+                        "column": 6
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "8ef4f837abb7e2e8a086-d735c09a852bf982e0e1",
+          "file": "renderingPipeline.spec.ts",
+          "line": 54,
+          "column": 6
+        }
+      ]
+    },
+    {
+      "title": "splineContourSegmentationTools.spec.ts",
+      "file": "splineContourSegmentationTools.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Spline Contour Segmentation Tools",
+          "file": "splineContourSegmentationTools.spec.ts",
+          "line": 13,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should draw a CatmullRom Spline ROI when CatmullRom Spline ROI is selected",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 3526,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:39.853Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "6bce57e3af182c6e447c-c163938af42597f92ff6",
+              "file": "splineContourSegmentationTools.spec.ts",
+              "line": 14,
+              "column": 7
+            },
+            {
+              "title": "should draw a Linear Spline ROI when Linear Spline ROI is selected",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 3433,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:40.411Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "6bce57e3af182c6e447c-ed8794cd3ac539348fc6",
+              "file": "splineContourSegmentationTools.spec.ts",
+              "line": 31,
+              "column": 7
+            },
+            {
+              "title": "should draw a BSpline ROI when BSpline ROI is selected when BSpline ROI is selected",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 3202,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:42.659Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "6bce57e3af182c6e447c-d86b911c20fb85b82d64",
+              "file": "splineContourSegmentationTools.spec.ts",
+              "line": 48,
+              "column": 7
+            },
+            {
+              "title": "should have different colors when splines are added to different segments",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 3980,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:42.723Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "6bce57e3af182c6e447c-d00c0122a86d38f684c1",
+              "file": "splineContourSegmentationTools.spec.ts",
+              "line": 65,
+              "column": 7
+            },
+            {
+              "title": "should apply the styles to the splines appropriately when splines are drawn with different styles",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "location": {
+                        "file": "/Users/alireza/open-source/clean/cornerstone3D.worktrees/cornerstone3d-redo-viewports/tests/splineContourSegmentationTools.spec.ts",
+                        "line": 84,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": -1,
+                      "parallelIndex": -1,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:43.209Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "location": {
+                            "file": "/Users/alireza/open-source/clean/cornerstone3D.worktrees/cornerstone3d-redo-viewports/tests/splineContourSegmentationTools.spec.ts",
+                            "line": 84,
+                            "column": 8
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "6bce57e3af182c6e447c-e9cc620eb19504fda06d",
+              "file": "splineContourSegmentationTools.spec.ts",
+              "line": 84,
+              "column": 8
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "stackAnnotation.spec.ts",
+      "file": "stackAnnotation.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Stack Annotation Tools",
+          "file": "stackAnnotation.spec.ts",
+          "line": 13,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should draw a length measurement on the viewport",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 2716,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:43.210Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "cbea88455d2fd7df5469-86bad44084071cbc3c41",
+              "file": "stackAnnotation.spec.ts",
+              "line": 14,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "stackAnnotationTiled.spec.ts",
+      "file": "stackAnnotationTiled.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Stack Annotation Tools - Tiled",
+          "file": "stackAnnotationTiled.spec.ts",
+          "line": 14,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should draw a length measurement on the viewport",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2706,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:43.218Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ce998126b032e4382d06-09e19a5c535709691799",
+              "file": "stackAnnotationTiled.spec.ts",
+              "line": 15,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "stackAPI.spec.ts",
+      "file": "stackAPI.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Stack Viewport API",
+          "file": "stackAPI.spec.ts",
+          "line": 12,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should set VOI range correctly -- @debug",
+              "ok": true,
+              "tags": [
+                "debug"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 2793,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:43.386Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ed281b4d5342991fe3d4-f12426c2b522817fa322",
+              "file": "stackAPI.spec.ts",
+              "line": 13,
+              "column": 7
+            },
+            {
+              "title": "should move to next image",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 2544,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:43.877Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ed281b4d5342991fe3d4-89296a8c7179fc43d166",
+              "file": "stackAPI.spec.ts",
+              "line": 22,
+              "column": 7
+            },
+            {
+              "title": "should move to previous image",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 2405,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:44.568Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ed281b4d5342991fe3d4-23a7252114a0c0bb7220",
+              "file": "stackAPI.spec.ts",
+              "line": 27,
+              "column": 7
+            },
+            {
+              "title": "should flip horizontally ",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 3151,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:45.868Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ed281b4d5342991fe3d4-f64e9a3453dc9ca6aa07",
+              "file": "stackAPI.spec.ts",
+              "line": 37,
+              "column": 7
+            },
+            {
+              "title": "should flip vertically ",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 2963,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:45.876Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ed281b4d5342991fe3d4-e78b6b528b1084ffa8c9",
+              "file": "stackAPI.spec.ts",
+              "line": 42,
+              "column": 7
+            },
+            {
+              "title": "should rotate absolute 150 degrees",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2959,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:45.931Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ed281b4d5342991fe3d4-355a3eaf84ea54cb16ac",
+              "file": "stackAPI.spec.ts",
+              "line": 47,
+              "column": 7
+            },
+            {
+              "title": "should rotate delta 30 degrees",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 3092,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:45.934Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ed281b4d5342991fe3d4-db4ad0142f0a2c0c69d5",
+              "file": "stackAPI.spec.ts",
+              "line": 56,
+              "column": 7
+            },
+            {
+              "title": "should invert",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 2917,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:46.185Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ed281b4d5342991fe3d4-f8c4181a7df23e01268b",
+              "file": "stackAPI.spec.ts",
+              "line": 65,
+              "column": 7
+            },
+            {
+              "title": "should apply colormap",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 3169,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:46.427Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ed281b4d5342991fe3d4-db189c33d33d593c2fac",
+              "file": "stackAPI.spec.ts",
+              "line": 70,
+              "column": 7
+            },
+            {
+              "title": "should reset",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 2767,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:46.833Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ed281b4d5342991fe3d4-55b9f7c9dc6556d02786",
+              "file": "stackAPI.spec.ts",
+              "line": 76,
+              "column": 7
+            },
+            {
+              "title": "should flip both h and v and be able to scroll and keep the flip",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 3100,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:46.979Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ed281b4d5342991fe3d4-3a65e5be831ccc5632c9",
+              "file": "stackAPI.spec.ts",
+              "line": 90,
+              "column": 7
+            },
+            {
+              "title": "should rotate 30, flip both, and scroll to next image preserving transforms",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 3212,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:48.848Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ed281b4d5342991fe3d4-dab2c98922918fd19d7c",
+              "file": "stackAPI.spec.ts",
+              "line": 101,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "stackBasic.spec.ts",
+      "file": "stackBasic.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Basic Stack",
+          "file": "stackBasic.spec.ts",
+          "line": 12,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should display a single DICOM image in a Stack viewport",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2898,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:48.996Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9fd2678d73ca53f1c9ee-56a81360beb9b8eca728",
+              "file": "stackBasic.spec.ts",
+              "line": 13,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "stackBasicTiled.spec.ts",
+      "file": "stackBasicTiled.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Basic Stack",
+          "file": "stackBasicTiled.spec.ts",
+          "line": 13,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should display a single DICOM image in a Stack viewport",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 2896,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:49.029Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "fb3bcc4ca1d9cc5e2699-b4e3b62b4ca7e50fb20f",
+              "file": "stackBasicTiled.spec.ts",
+              "line": 14,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "stackManipulationTools.spec.ts",
+      "file": "stackManipulationTools.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Basic Stack Manipulation",
+          "file": "stackManipulationTools.spec.ts",
+          "line": 13,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should manipulate the window level using the window level tool",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 3479,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:49.036Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "013efc722cf06e0b4c67-636cfd4a0c9e6d6a3067",
+              "file": "stackManipulationTools.spec.ts",
+              "line": 14,
+              "column": 7
+            },
+            {
+              "title": "should rotate the viewport using the planar rotate tool",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 3220,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:49.113Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "013efc722cf06e0b4c67-3c82917ddf49b5978f5c",
+              "file": "stackManipulationTools.spec.ts",
+              "line": 26,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "stackProperties.spec.ts",
+      "file": "stackProperties.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Stack Properties",
+          "file": "stackProperties.spec.ts",
+          "line": 12,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should display the next image.",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 4370,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:49.602Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "19bcdf12699ca2033037-c71a7647fb0db9e81fad",
+              "file": "stackProperties.spec.ts",
+              "line": 13,
+              "column": 7
+            },
+            {
+              "title": "should display the previous image.",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 4407,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:49.607Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "19bcdf12699ca2033037-a1e3b6c67bd7586de764",
+              "file": "stackProperties.spec.ts",
+              "line": 23,
+              "column": 7
+            },
+            {
+              "title": "should add properties only for the current image.",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 4137,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:50.085Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "19bcdf12699ca2033037-fd440b4c44cf178221ab",
+              "file": "stackProperties.spec.ts",
+              "line": 34,
+              "column": 7
+            },
+            {
+              "title": "should remove current imageId properties.",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3183,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:51.912Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "19bcdf12699ca2033037-bf2fe6383cef27d667d8",
+              "file": "stackProperties.spec.ts",
+              "line": 54,
+              "column": 7
+            },
+            {
+              "title": "should reset to default viewport properties.",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 2665,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:51.938Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "19bcdf12699ca2033037-267f1aed207176c1822c",
+              "file": "stackProperties.spec.ts",
+              "line": 79,
+              "column": 7
+            },
+            {
+              "title": "should reset to metadata.",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 6,
+                      "status": "passed",
+                      "duration": 2907,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:52.076Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "19bcdf12699ca2033037-cea1eab099032bf65f00",
+              "file": "stackProperties.spec.ts",
+              "line": 95,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "surfaceRendering.spec.ts",
+      "file": "surfaceRendering.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "should render the segmentation correctly",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 2611,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-04-22T13:24:52.348Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "754ec57c0d92a09e9245-1d7add2ee7c1ca68ba1a",
+          "file": "surfaceRendering.spec.ts",
+          "line": 13,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "ultrasoundColors.spec.ts",
+      "file": "ultrasoundColors.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Ultrasound Colors",
+          "file": "ultrasoundColors.spec.ts",
+          "line": 12,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should render the ultrasound colors correctly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 4523,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:52.532Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "9f49aeeb3e7baf37242d-c7a067c4179b2084d759",
+              "file": "ultrasoundColors.spec.ts",
+              "line": 13,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "volumeAnnotation.spec.ts",
+      "file": "volumeAnnotation.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Volume Annotation Tools",
+          "file": "volumeAnnotation.spec.ts",
+          "line": 13,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should draw a length measurement on the viewport",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 3598,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:53.980Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2c76aaf8be4d3638950c-64a7727210c06dce71bf",
+              "file": "volumeAnnotation.spec.ts",
+              "line": 14,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "volumeAnnotationTiled.spec.ts",
+      "file": "volumeAnnotationTiled.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Volume Annotation Tools - Tiled",
+          "file": "volumeAnnotationTiled.spec.ts",
+          "line": 14,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should draw a length measurement on the viewport",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 3644,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:54.021Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "ce2dde278e681bd98b96-565707a1971012a11f01",
+              "file": "volumeAnnotationTiled.spec.ts",
+              "line": 15,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "volumeBasic.spec.ts",
+      "file": "volumeBasic.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Basic Volume",
+          "file": "volumeBasic.spec.ts",
+          "line": 12,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should display a single DICOM series in a Volume viewport.",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 7,
+                      "status": "passed",
+                      "duration": 3457,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:54.229Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "59d019ab9a03544e1d1d-659f66cde98159fa2656",
+              "file": "volumeBasic.spec.ts",
+              "line": 13,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "volumeBasicTiled.spec.ts",
+      "file": "volumeBasicTiled.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Basic Volume",
+          "file": "volumeBasicTiled.spec.ts",
+          "line": 13,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should display a single DICOM series in a Volume viewport.",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 3611,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-04-22T13:24:54.614Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c8ce79590f2725f631fe-cbc6700b45ca0ec59cc3",
+              "file": "volumeBasicTiled.spec.ts",
+              "line": 14,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-04-22T13:24:06.985Z",
+    "duration": 424472.287,
+    "expected": 112,
+    "skipped": 3,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

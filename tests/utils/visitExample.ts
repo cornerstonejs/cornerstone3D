@@ -17,7 +17,14 @@ async function waitForExamplePage(
   await page.waitForSelector('div#content');
 
   if (waitForNetwork) {
-    await page.waitForLoadState('networkidle');
+    try {
+      await page.waitForLoadState('networkidle', {
+        timeout: 1000,
+      });
+    } catch {
+      // Some examples keep enough background work active that waiting for
+      // network idle becomes a source of beforeEach timeouts in Playwright.
+    }
   }
 
   if (waitForDom) {
@@ -39,7 +46,13 @@ export const visitExample = async (
 ) => {
   await page.goto('/');
   if (waitForNetwork) {
-    await page.waitForLoadState('networkidle');
+    try {
+      await page.waitForLoadState('networkidle', {
+        timeout: 1000,
+      });
+    } catch {
+      // Avoid turning a best-effort idle check into a hard blocker for test setup.
+    }
   }
   if (waitForDom) {
     await page.waitForLoadState('domcontentloaded');

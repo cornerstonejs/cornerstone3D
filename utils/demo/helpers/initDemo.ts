@@ -25,10 +25,6 @@ window.cornerstone = cornerstone;
 window.cornerstoneTools = cornerstoneTools;
 
 export default async function initDemo(config: any = {}) {
-  initProviders();
-  cornerstoneDICOMImageLoader.init();
-  initVolumeLoader();
-
   const urlParams = new URLSearchParams(window.location.search);
   const debugEnabled = urlParams.get('debug') === 'true';
 
@@ -36,6 +32,10 @@ export default async function initDemo(config: any = {}) {
   let demoConfig = applyUrlParameterOverridesToDemoConfig(config);
   demoConfig = applyViewportTypeOverride(demoConfig);
   const toolsConfig = demoConfig?.tools || {};
+
+  initProviders();
+  cornerstoneDICOMImageLoader.init(demoConfig?.dicomImageLoader);
+  initVolumeLoader();
 
   await csRenderInit({
     peerImport,

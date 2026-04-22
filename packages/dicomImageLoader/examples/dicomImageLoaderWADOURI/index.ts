@@ -69,7 +69,11 @@ let viewport;
 
 async function run() {
   // Init Cornerstone and related libraries
-  await initDemo();
+  await initDemo({
+    dicomImageLoader: {
+      maxWebWorkers: 1,
+    },
+  });
 
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(WindowLevelTool);

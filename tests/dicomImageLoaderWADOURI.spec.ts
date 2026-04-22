@@ -207,26 +207,6 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   });
 
   /**
-   * Test to load a dicom image with DeflatedExplicitVRLittleEndianTransferSyntax
-   */
-  test.skip('should load a dicom image with DeflatedExplicitVRLittleEndianTransferSyntax', async ({
-    page,
-  }) => {
-    await selectImageAndWaitForRender(
-      page,
-      'CTImage.dcm_DeflatedExplicitVRLittleEndianTransferSyntax_1.2.840.10008.1.2.1.99.dcm'
-    );
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await checkForScreenshot(
-      page,
-      locator,
-      screenShotPaths.dicomImageLoaderWADOURI['1.2.840.10008.1.2.1.99']
-    );
-  });
-
-  /**
    * Test to load a dicom image TestPattern_JPEG-Baseline_YBR422.dcm
    */
   test('should load TestPattern_JPEG-Baseline_YBR422.dcm', async ({ page }) => {

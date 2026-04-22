@@ -84,7 +84,7 @@
     "@istanbuljs/nyc-config-typescript": "1.0.2",
     "@microsoft/api-extractor": "7.57.1",
     "@microsoft/tsdoc": "0.15.1",
-    "@playwright/test": "1.56.1",
+    "@playwright/test": "1.59.1",
     "@prettier/plugin-oxc": "0.0.4",
     "@rollup/plugin-babel": "6.0.4",
     "@rollup/plugin-json": "6.1.0",

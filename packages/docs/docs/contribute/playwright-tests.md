@@ -215,7 +215,7 @@ Normal runs compare against those committed screenshots. To rewrite them, pass P
 
 ## Serving the examples manually for development
 
-By default, Playwright uses the configured `webServer` in `playwright.config.ts`, which runs `bun build-and-serve-static-examples` and serves the examples at `http://localhost:3333`.
+By default, Playwright builds the examples in `playwright.globalSetup.ts` when it needs to start its own local server, then the configured `webServer` serves `.static-examples` at `http://localhost:3333`.
 
 If you want to serve the examples manually during development, you can run the same command yourself and then tell Playwright to reuse the existing server:
 

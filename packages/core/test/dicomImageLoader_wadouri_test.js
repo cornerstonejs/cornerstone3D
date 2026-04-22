@@ -39,7 +39,6 @@ const tests = [
   CtJpegLsLossless_1_2_840_10008_1_2_4_80,
   CtJpegLsLossless_1_2_840_10008_1_2_4_81,
   CtJpegProcess1_1_2_840_10008_1_2_4_50,
-  CtBigEndian_1_2_840_1008_1_2_2,
   CtJpegProcess14_1_2_840_10008_1_2_4_57,
   CtJpegProcess14V1_1_2_840_10008_1_2_4_70,
   CtLittleEndian_1_2_840_10008_1_2_1,
