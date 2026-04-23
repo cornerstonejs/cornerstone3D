@@ -244,6 +244,20 @@ function _handlePreScaleSetup(
   const scalingParameters = options.preScale.scalingParameters;
   _validateScalingParameters(scalingParameters);
 
+  // Force Float32Array when scaling parameters are non-integer to avoid
+  // getPixelDataTypeFromMinMax selecting Uint8Array (Number.isInteger(1.0)
+  // is true in JS, so scaled min/max can appear integer even when values
+  // between them are fractional). See #2706.
+  const hasFloatRescale = Object.values(scalingParameters).some(
+    (v) => typeof v === 'number' && !Number.isInteger(v)
+  );
+
+  if (hasFloatRescale) {
+    const typedArray = new Float32Array(imageFrame.pixelData.length);
+    typedArray.set(imageFrame.pixelData, 0);
+    return typedArray;
+  }
+
   const scaledValues = _calculateScaledMinMax(
     minBeforeScale,
     maxBeforeScale,
