@@ -86,6 +86,20 @@ addButtonToToolbar({
   },
 });
 
+addButtonToToolbar({
+  title: 'Delete Labelmap Representation',
+  onClick: () => {
+    const representations =
+      segmentation.state.getSegmentationRepresentations(viewportId2);
+
+    if (representations && representations.length > 0) {
+      segmentation.removeSegmentationRepresentation(
+        viewportId2,
+        segmentationId as any
+      );
+    }
+  },
+});
 /**
  * Runs the demo
  */
