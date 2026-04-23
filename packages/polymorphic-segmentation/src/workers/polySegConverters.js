@@ -1,5 +1,5 @@
 import { expose } from 'comlink';
-import { utilities } from '@cornerstonejs/core';
+import { utilities, peerImport } from '@cornerstonejs/core';
 import { utilities as ToolsUtilities } from '@cornerstonejs/tools';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
@@ -16,17 +16,6 @@ const {
   boundingBox: { getBoundingBoxAroundShapeWorld },
   planar: { isPlaneIntersectingAABB },
 } = ToolsUtilities;
-
-async function peerImport(moduleId) {
-  try {
-    if (moduleId === '@icr/polyseg-wasm') {
-      return import('@icr/polyseg-wasm');
-    }
-  } catch (error) {
-    console.warn('Error importing module:', error);
-    return null;
-  }
-}
 
 /**
  * Object containing methods for converting between different representations of
@@ -55,7 +44,9 @@ const polySegConverters = {
   async initializePolySeg(progressCallback) {
     let ICRPolySeg;
     try {
-      ICRPolySeg = (await peerImport('@icr/polyseg-wasm')).default;
+      ICRPolySeg = (
+        await peerImport('@icr/polyseg-wasm', () => import('@icr/polyseg-wasm'))
+      ).default;
     } catch (error) {
       console.error(error);
       console.debug(

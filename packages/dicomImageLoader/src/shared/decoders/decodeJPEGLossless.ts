@@ -1,5 +1,6 @@
 import type { ByteArray } from 'dicom-parser';
 import type { Types } from '@cornerstonejs/core';
+import { peerImport } from '@cornerstonejs/core';
 import type { WebWorkerDecodeConfig } from '../../types';
 
 const local = {
@@ -7,21 +8,23 @@ const local = {
   decodeConfig: {} as WebWorkerDecodeConfig,
 };
 
-export function initialize(
+export async function initialize(
   decodeConfig?: WebWorkerDecodeConfig
 ): Promise<void> {
   local.decodeConfig = decodeConfig;
 
   if (local.DecoderClass) {
-    return Promise.resolve();
+    return;
   }
 
-  return new Promise((resolve, reject) => {
-    import('jpeg-lossless-decoder-js').then(({ Decoder }) => {
-      local.DecoderClass = Decoder;
-      resolve();
-    }, reject);
-  });
+  const mod = await peerImport(
+    'jpeg-lossless-decoder-js',
+    () => import('jpeg-lossless-decoder-js')
+  );
+  if (!mod?.Decoder) {
+    throw new Error('Failed to load jpeg-lossless-decoder-js');
+  }
+  local.DecoderClass = mod.Decoder;
 }
 
 async function decodeJPEGLossless(
