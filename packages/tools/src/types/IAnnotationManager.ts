@@ -25,6 +25,12 @@ interface IAnnotationManager {
   getGroupKey: (annotationGroupSelector: AnnotationGroupSelector) => string;
 
   /**
+   * Get a list of all the current group keys stored in the annotation manager.
+   * @returns The group keys associated with the annotation manager.
+   */
+  getGroupKeys: () => string[];
+
+  /**
    * Adds an annotation to the specified group.
    * @param annotation - The annotation to add.
    * @param groupKey - The group key to add the annotation to.
