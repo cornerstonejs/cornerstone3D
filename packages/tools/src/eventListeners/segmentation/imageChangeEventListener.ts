@@ -112,17 +112,14 @@ function _imageChangeEventListener(evt) {
   // it here if it is not needed
   labelmapActors.forEach((actor) => {
     // if cannot find a representation for this actor means it has stuck around
-    // form previous renderings and should be removed
-    const validActor = labelmapRepresentations.find((representation) => {
-      const derivedImageIds = getCurrentLabelmapImageIdsForViewport(
-        viewportId,
-        representation.segmentationId
-      );
-
-      return derivedImageIds?.includes(actor.referencedId);
-    });
-
-    if (!validActor) {
+    // from previous renderings and should be removed
+    const belongsToActiveSegmentation = labelmapRepresentations.some(
+      (representation) =>
+        (actor.representationUID as string)?.startsWith(
+          `${representation.segmentationId}-${SegmentationRepresentations.Labelmap}`
+        )
+    );
+    if (!belongsToActiveSegmentation) {
       viewport.removeActors([actor.uid]);
     }
   });
@@ -140,6 +137,7 @@ function _imageChangeEventListener(evt) {
     }
 
     let shouldTriggerSegmentationRender = false;
+    const consumedActorUIDs = new Set<string>();
     const updateSegmentationActor = (derivedImageId) => {
       const derivedImage = cache.getImage(derivedImageId);
 
@@ -157,7 +155,45 @@ function _imageChangeEventListener(evt) {
       );
 
       if (!segmentationActorInput) {
-        // i guess we need to create here
+        const reusableEntry = actors.find(
+          (a) =>
+            !consumedActorUIDs.has(a.uid) &&
+            (a.representationUID as string)?.startsWith(
+              `${segmentationId}-${SegmentationRepresentations.Labelmap}`
+            ) &&
+            a.referencedId !== derivedImageId
+        );
+
+        if (reusableEntry) {
+          consumedActorUIDs.add(reusableEntry.uid);
+          const segImageData = reusableEntry.actor.getMapper().getInputData();
+
+          const currentImage =
+            cache.getImage(currentImageId) ||
+            ({
+              imageId: currentImageId,
+            } as Types.IImage);
+
+          const { origin: currentOrigin } =
+            viewport.getImageDataMetadata(currentImage);
+
+          segImageData.setOrigin(currentOrigin);
+
+          if (segImageData.setDerivedImage) {
+            segImageData.setDerivedImage(derivedImage);
+          } else {
+            utilities.updateVTKImageDataWithCornerstoneImage(
+              segImageData,
+              derivedImage
+            );
+          }
+
+          reusableEntry.referencedId = derivedImageId;
+          reusableEntry.representationUID = `${segmentationId}-${SegmentationRepresentations.Labelmap}-${derivedImage.imageId}`;
+          shouldTriggerSegmentationRender = true;
+          return;
+        }
+
         const { dimensions, spacing, direction } =
           viewport.getImageDataMetadata(derivedImage);
 
