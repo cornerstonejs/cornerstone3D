@@ -67,7 +67,7 @@
     "build:all": "yarn build",
     "api-check": "echo 'No API check for this package'",
     "start": "rollup --watch -c rollup.config.mjs",
-    "format": "prettier --write 'src/**/*.js' 'test/**/*.js'",
+    "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,css,md}\" \"test/**/*.{js,jsx,ts,tsx,json,css,md}\" \"examples/**/*.{js,jsx,ts,tsx,json,css,md}\" \"*.{js,mjs,json,md}\"",
     "lint": "oxlint .",
     "prebuild": "node ../../scripts/generate-version.js ./",
     "prebuild:esm": "node ../../scripts/generate-version.js ./"
