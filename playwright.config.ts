@@ -7,6 +7,21 @@ const reuseExistingServer =
       ? false
       : !process.env.CI;
 
+const video =
+  process.env.PLAYWRIGHT_VIDEO === 'off' ? 'off' : 'retain-on-failure';
+
+const useBundledChromium =
+  process.env.PLAYWRIGHT_USE_BUNDLED_CHROMIUM === 'true' ||
+  process.env.PLAYWRIGHT_CHROMIUM_CHANNEL === 'bundled';
+
+const chromiumProjectUse = {
+  ...devices['Desktop Chrome'],
+  ...(useBundledChromium
+    ? {}
+    : { channel: process.env.PLAYWRIGHT_CHROMIUM_CHANNEL || 'chrome' }),
+  deviceScaleFactor: 1,
+};
+
 export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
@@ -31,27 +46,19 @@ export default defineConfig({
     baseURL: 'http://localhost:3333',
     actionTimeout: 5000,
     trace: 'on-first-retry',
-    video: 'retain-on-failure',
+    video,
   },
 
   projects: [
     {
       name: 'slow-tests',
       testMatch: /.+@slow.+/,
-      use: {
-        ...devices['Desktop Chrome'],
-        channel: 'chrome',
-        deviceScaleFactor: 1,
-      },
+      use: chromiumProjectUse,
     },
     {
       name: 'chromium',
       testIgnore: /.+@slow.+/,
-      use: {
-        ...devices['Desktop Chrome'],
-        channel: 'chrome',
-        deviceScaleFactor: 1,
-      },
+      use: chromiumProjectUse,
     },
     {
       name: 'webkit',
