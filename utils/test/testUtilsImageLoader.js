@@ -5,6 +5,34 @@ import {
   getVerticalBarRGBImage,
 } from './testUtilsPixelData';
 
+const typedArrayConstructors = {
+  Uint8Array,
+  Uint16Array,
+  Float32Array,
+};
+
+function getTypedArrayConstructor(dataType = 'Uint8Array') {
+  const TypedArrayConstructor = typedArrayConstructors[dataType];
+
+  if (!TypedArrayConstructor) {
+    throw new Error(`Unsupported fake image data type: ${dataType}`);
+  }
+
+  return TypedArrayConstructor;
+}
+
+function getBitsAllocated(dataType = 'Uint8Array') {
+  switch (dataType) {
+    case 'Uint16Array':
+      return 16;
+    case 'Float32Array':
+      return 32;
+    case 'Uint8Array':
+    default:
+      return 8;
+  }
+}
+
 /**
  * It creates an image based on the imageId name for testing purposes. It splits the imageId
  * based on "_" and deciphers each field of scheme, rows, columns, barStart, barWidth, x_spacing, y_spacing, rgb, and PT.
@@ -26,11 +54,23 @@ import {
  */
 const fakeImageLoader = (imageId) => {
   const imageInfo = decodeImageIdInfo(imageId);
-  const { rows, columns, barStart, barWidth, xSpacing, ySpacing, rgb, id } =
-    imageInfo;
+  const {
+    rows,
+    columns,
+    barStart,
+    barWidth,
+    xSpacing,
+    ySpacing,
+    rgb,
+    id,
+    dataType,
+  } = imageInfo;
 
   const numberOfComponents = rgb ? 3 : 1;
-  const pixelData = new Uint8Array(rows * columns * numberOfComponents);
+  const TypedArrayConstructor = getTypedArrayConstructor(dataType);
+  const pixelData = new TypedArrayConstructor(
+    rows * columns * numberOfComponents
+  );
 
   const imageVoxelManager = utilities.VoxelManager.createImageVoxelManager({
     height: rows,
@@ -56,7 +96,7 @@ const fakeImageLoader = (imageId) => {
     rowPixelSpacing: ySpacing,
     columnPixelSpacing: xSpacing,
     getPixelData: () => imageVoxelManager.getScalarData(),
-    sizeInBytes: rows * columns * 1, // 1 byte for now
+    sizeInBytes: pixelData.byteLength,
     FrameOfReferenceUID: 'Stack_Frame_Of_Reference',
     imageFrame: {
       photometricInterpretation: rgb ? 'RGB' : 'MONOCHROME2',
@@ -134,10 +174,12 @@ function fakeMetaDataProvider(type, imageId) {
     rgb,
     PT = false,
     id,
+    dataType,
   } = imageInfo;
 
   const modality = PT ? 'PT' : 'MR';
   const photometricInterpretation = rgb ? 'RGB' : 'MONOCHROME2';
+  const bitsAllocated = rgb ? 24 : getBitsAllocated(dataType);
 
   if (type === 'imagePixelModule') {
     const imagePixelModule = {
@@ -145,9 +187,9 @@ function fakeMetaDataProvider(type, imageId) {
       rows,
       columns,
       samplesPerPixel: rgb ? 3 : 1,
-      bitsAllocated: rgb ? 24 : 8,
-      bitsStored: rgb ? 24 : 8,
-      highBit: rgb ? 24 : 8,
+      bitsAllocated,
+      bitsStored: bitsAllocated,
+      highBit: bitsAllocated,
       pixelRepresentation: 0,
     };
 
