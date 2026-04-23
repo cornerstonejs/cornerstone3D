@@ -113,6 +113,8 @@ class OrientationControllerTool extends BaseTool {
   private widget = new vtkOrientationControllerWidget();
   private resizeObservers = new Map<string, ResizeObserver>();
   private cameraHandlers = new Map<string, (evt: CustomEvent) => void>();
+  private animationFrameHandles = new Map<string, number>();
+  private animationTokens = new Map<string, number>();
 
   constructor(
     toolProps = {},
@@ -128,6 +130,11 @@ class OrientationControllerTool extends BaseTool {
         showEdgeFaces: true,
         showCornerFaces: true,
         keepOrientationUp: true,
+        highlightColor: [255, 255, 255],
+        edgeColor: [200, 200, 200],
+        cornerColor: [150, 150, 150],
+        restingAmbient: 1.0,
+        hoverAmbient: 1.0,
       },
     }
   ) {
@@ -320,6 +327,11 @@ class OrientationControllerTool extends BaseTool {
     this.resizeObservers.forEach((observer) => observer.disconnect());
     this.resizeObservers.clear();
     this.cameraHandlers.clear();
+    this.animationFrameHandles.forEach((handle) =>
+      cancelAnimationFrame(handle)
+    );
+    this.animationFrameHandles.clear();
+    this.animationTokens.clear();
   }
 
   private addMarkers = (): void => {
@@ -363,6 +375,11 @@ class OrientationControllerTool extends BaseTool {
       opacity: this.configuration.opacity ?? 1.0,
       showEdgeFaces: this.configuration.showEdgeFaces !== false,
       showCornerFaces: this.configuration.showCornerFaces !== false,
+      highlightColor: this.configuration.highlightColor ?? [255, 255, 255],
+      edgeColor: this.configuration.edgeColor ?? [200, 200, 200],
+      cornerColor: this.configuration.cornerColor ?? [150, 150, 150],
+      restingAmbient: this.configuration.restingAmbient ?? 1.0,
+      hoverAmbient: this.configuration.hoverAmbient ?? 1.0,
     });
   }
 
@@ -370,6 +387,10 @@ class OrientationControllerTool extends BaseTool {
     viewportId: string,
     renderingEngineId: string
   ): void {
+    if (this.widget.getActors(viewportId)) {
+      return;
+    }
+
     const enabledElement = getEnabledElementByIds(
       viewportId,
       renderingEngineId
@@ -444,12 +465,12 @@ class OrientationControllerTool extends BaseTool {
           }
         },
         onFaceHover: (result) => {
-          if (result && result.actorIndex !== 0) {
+          if (result) {
             this.widget.highlightFace(
               result.pickedActor,
               result.cellId,
               volumeViewport,
-              false
+              result.actorIndex === 0
             );
           } else {
             this.widget.clearHighlight();
@@ -512,14 +533,13 @@ class OrientationControllerTool extends BaseTool {
       return;
     }
 
-    // Recalculate both size and position to maintain fixed screen size
-    // Size needs to be recalculated because parallel scale changes with zoom
     const volumeViewport = viewport as Types.IVolumeViewport;
     this.widget.positionActors(
       volumeViewport,
       actors,
       this.getPositionConfig()
     );
+    this.widget.syncOverlayViewport(viewportId, volumeViewport);
     viewport.render();
   };
 
@@ -564,6 +584,15 @@ class OrientationControllerTool extends BaseTool {
     targetViewPlaneNormal: number[],
     targetViewUp: number[]
   ): void {
+    const viewportId = viewport.id;
+    const existingHandle = this.animationFrameHandles.get(viewportId);
+    if (existingHandle !== undefined) {
+      cancelAnimationFrame(existingHandle);
+      this.animationFrameHandles.delete(viewportId);
+    }
+    const nextToken = (this.animationTokens.get(viewportId) ?? 0) + 1;
+    this.animationTokens.set(viewportId, nextToken);
+
     const keepOrientationUp = this.configuration.keepOrientationUp !== false; // Default to true
 
     // Get the VTK camera from the renderer
@@ -594,55 +623,51 @@ class OrientationControllerTool extends BaseTool {
       0, 0, 0, 1
     );
 
+    const targetForward = vec3.normalize(
+      vec3.create(),
+      targetViewPlaneNormal as vec3
+    );
+
     let targetUp: vec3;
     if (keepOrientationUp) {
-      // Use the target viewUp as specified (original behavior)
       targetUp = vec3.fromValues(
         targetViewUp[0],
         targetViewUp[1],
         targetViewUp[2]
       );
     } else {
-      // Keep current viewUp, but project it onto the plane perpendicular to targetViewPlaneNormal
-      // to ensure orthogonality
-      const currentUp = vec3.normalize(vec3.create(), startUp);
+      const currentFwd = vec3.normalize(vec3.create(), startForward);
 
-      // Normalize targetViewPlaneNormal for projection
-      const normalizedForward = vec3.create();
-      vec3.normalize(normalizedForward, targetViewPlaneNormal as vec3);
+      const rotQuat = quat.create();
+      quat.rotationTo(rotQuat, currentFwd, targetForward);
 
-      // Project currentUp onto the plane perpendicular to targetViewPlaneNormal
-      // Remove the component of currentUp that's parallel to targetViewPlaneNormal
-      const dot = vec3.dot(currentUp, normalizedForward);
       targetUp = vec3.create();
-      vec3.scaleAndAdd(targetUp, currentUp, normalizedForward, -dot);
+      vec3.transformQuat(targetUp, startUp, rotQuat);
       vec3.normalize(targetUp, targetUp);
-
-      // If the projection results in a zero vector (currentUp was parallel to targetViewPlaneNormal),
-      // use a default up vector
-      if (vec3.length(targetUp) < 0.001) {
-        // Use a default up vector perpendicular to targetViewPlaneNormal
-        if (Math.abs(normalizedForward[2]) < 0.9) {
-          targetUp = vec3.fromValues(0, 0, 1);
-        } else {
-          targetUp = vec3.fromValues(0, 1, 0);
-        }
-        // Project and normalize
-        const dot2 = vec3.dot(targetUp, normalizedForward);
-        vec3.scaleAndAdd(targetUp, targetUp, normalizedForward, -dot2);
-        vec3.normalize(targetUp, targetUp);
-      }
     }
 
+    // Keep an orthonormal target camera basis so quaternion interpolation
+    // matches the final camera vectors and avoids end-of-animation snapping.
+    const upDotForward = vec3.dot(targetUp, targetForward);
+    vec3.scaleAndAdd(targetUp, targetUp, targetForward, -upDotForward);
+    if (vec3.length(targetUp) < 0.0001) {
+      targetUp = vec3.clone(startUp);
+      const fallbackDot = vec3.dot(targetUp, targetForward);
+      vec3.scaleAndAdd(targetUp, targetUp, targetForward, -fallbackDot);
+    }
+    vec3.normalize(targetUp, targetUp);
+
     const targetRight = vec3.create();
-    vec3.cross(targetRight, targetUp, targetViewPlaneNormal as vec3);
+    vec3.cross(targetRight, targetUp, targetForward);
     vec3.normalize(targetRight, targetRight);
+    vec3.cross(targetUp, targetForward, targetRight);
+    vec3.normalize(targetUp, targetUp);
 
     // prettier-ignore
     const targetMatrix = mat4.fromValues(
       targetRight[0], targetRight[1], targetRight[2], 0,
       targetUp[0], targetUp[1], targetUp[2], 0,
-      targetViewPlaneNormal[0], targetViewPlaneNormal[1], targetViewPlaneNormal[2], 0,
+      targetForward[0], targetForward[1], targetForward[2], 0,
       0, 0, 0, 1
     );
 
@@ -660,14 +685,23 @@ class OrientationControllerTool extends BaseTool {
       return;
     }
 
-    const steps = 10;
     const duration = 150;
-    const stepDuration = duration / steps;
-    let currentStep = 0;
+    const animationStart = performance.now();
 
-    const animate = () => {
-      currentStep++;
-      const t = currentStep / steps;
+    const finalNormal: Point3 = [
+      targetForward[0],
+      targetForward[1],
+      targetForward[2],
+    ];
+    const finalUp: Point3 = [targetUp[0], targetUp[1], targetUp[2]];
+
+    const animate = (now: number) => {
+      if (this.animationTokens.get(viewportId) !== nextToken) {
+        return;
+      }
+      const elapsed = now - animationStart;
+      const t = Math.min(1, elapsed / duration);
+      const isLastStep = t >= 1;
       const easedT = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 
       const interpolatedQuat = quat.create();
@@ -680,18 +714,23 @@ class OrientationControllerTool extends BaseTool {
       const interpolatedUp = interpolatedMatrix.slice(4, 7) as Point3;
 
       viewport.setCamera({
-        viewPlaneNormal: interpolatedForward,
-        viewUp: interpolatedUp,
+        viewPlaneNormal: isLastStep ? finalNormal : interpolatedForward,
+        viewUp: isLastStep ? finalUp : interpolatedUp,
       });
       viewport.resetCamera(ANIMATE_RESET_CAMERA_OPTIONS);
+
       viewport.render();
 
-      if (currentStep < steps) {
-        setTimeout(animate, stepDuration);
+      if (!isLastStep) {
+        const handle = requestAnimationFrame(animate);
+        this.animationFrameHandles.set(viewportId, handle);
+      } else {
+        this.animationFrameHandles.delete(viewportId);
       }
     };
 
-    animate();
+    const handle = requestAnimationFrame(animate);
+    this.animationFrameHandles.set(viewportId, handle);
   }
 }
 

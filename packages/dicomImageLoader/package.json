@@ -115,6 +115,9 @@
     "@cornerstonejs/core": "5.0.0-beta.1",
     "dicom-parser": "1.8.21"
   },
+  "devDependencies": {
+    "@cornerstonejs/core": "5.0.0-beta.1"
+  },
   "config": {
     "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"

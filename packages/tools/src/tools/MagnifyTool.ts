@@ -113,8 +113,11 @@ class MagnifyTool extends BaseTool {
     const { viewport } = enabledElement;
     const { element } = viewport;
     const viewportProperties = viewport.getProperties();
-    const { rotation: originalViewportRotation } =
-      viewport.getViewPresentation();
+    const {
+      rotation: originalViewportRotation,
+      flipHorizontal: originalViewportFlipHorizontal,
+      flipVertical: originalViewportFlipVertical,
+    } = viewport.getViewPresentation();
 
     const { canvas: canvasPos, world: worldPos } = currentPoints;
 
@@ -163,9 +166,11 @@ class MagnifyTool extends BaseTool {
       // match the original viewport voi range
       magnifyViewport.setProperties(viewportProperties);
 
-      // match the original viewport's rotation
+      // match the original viewport's rotation and flip state
       magnifyViewport.setViewPresentation({
         rotation: originalViewportRotation,
+        flipHorizontal: originalViewportFlipHorizontal,
+        flipVertical: originalViewportFlipVertical,
       });
 
       // Use the original viewport for the base for parallelScale

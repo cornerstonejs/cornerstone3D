@@ -150,9 +150,13 @@
         "onnxruntime-common": "1.17.1",
         "onnxruntime-web": "1.17.1",
       },
+      "devDependencies": {
+        "@cornerstonejs/core": "5.0.0-beta.1",
+        "@cornerstonejs/tools": "5.0.0-beta.1",
+      },
       "peerDependencies": {
-        "@cornerstonejs/core": "4.21.0",
-        "@cornerstonejs/tools": "4.21.0",
+        "@cornerstonejs/core": "5.0.0-beta.1",
+        "@cornerstonejs/tools": "5.0.0-beta.1",
       },
     },
     "packages/core": {
@@ -179,8 +183,11 @@
         "pako": "2.1.0",
         "uuid": "9.0.1",
       },
+      "devDependencies": {
+        "@cornerstonejs/core": "5.0.0-beta.1",
+      },
       "peerDependencies": {
-        "@cornerstonejs/core": "4.21.0",
+        "@cornerstonejs/core": "5.0.0-beta.1",
         "dicom-parser": "1.8.21",
       },
     },
@@ -191,9 +198,13 @@
         "@itk-wasm/morphological-contour-interpolation": "1.1.0",
         "itk-wasm": "1.0.0-b.165",
       },
+      "devDependencies": {
+        "@cornerstonejs/core": "5.0.0-beta.1",
+        "@cornerstonejs/tools": "5.0.0-beta.1",
+      },
       "peerDependencies": {
-        "@cornerstonejs/core": "4.21.0",
-        "@cornerstonejs/tools": "4.21.0",
+        "@cornerstonejs/core": "5.0.0-beta.1",
+        "@cornerstonejs/tools": "5.0.0-beta.1",
         "@kitware/vtk.js": "34.15.1",
       },
     },
@@ -203,8 +214,11 @@
       "dependencies": {
         "nifti-reader-js": "0.6.9",
       },
+      "devDependencies": {
+        "@cornerstonejs/core": "5.0.0-beta.1",
+      },
       "peerDependencies": {
-        "@cornerstonejs/core": "4.21.0",
+        "@cornerstonejs/core": "5.0.0-beta.1",
       },
     },
     "packages/polymorphic-segmentation": {
@@ -213,9 +227,13 @@
       "dependencies": {
         "@icr/polyseg-wasm": "0.4.0",
       },
+      "devDependencies": {
+        "@cornerstonejs/core": "5.0.0-beta.1",
+        "@cornerstonejs/tools": "5.0.0-beta.1",
+      },
       "peerDependencies": {
-        "@cornerstonejs/core": "4.21.0",
-        "@cornerstonejs/tools": "4.21.0",
+        "@cornerstonejs/core": "5.0.0-beta.1",
+        "@cornerstonejs/tools": "5.0.0-beta.1",
         "@kitware/vtk.js": "34.15.1",
       },
     },
@@ -228,6 +246,7 @@
         "lodash.get": "4.4.2",
       },
       "devDependencies": {
+        "@cornerstonejs/core": "5.0.0-beta.1",
         "canvas": "3.2.0",
       },
       "peerDependencies": {
