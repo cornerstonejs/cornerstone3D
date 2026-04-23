@@ -102,10 +102,10 @@
     "prepublishOnly": "yarn run build:loader"
   },
   "dependencies": {
-    "@cornerstonejs/codec-charls": "5.0.0-beta.1",
-    "@cornerstonejs/codec-libjpeg-turbo-8bit": "5.0.0-beta.1",
-    "@cornerstonejs/codec-openjpeg": "5.0.0-beta.1",
-    "@cornerstonejs/codec-openjph": "5.0.0-beta.1",
+    "@cornerstonejs/codec-charls": "1.2.3",
+    "@cornerstonejs/codec-libjpeg-turbo-8bit": "1.2.2",
+    "@cornerstonejs/codec-openjpeg": "1.3.0",
+    "@cornerstonejs/codec-openjph": "2.4.7",
     "comlink": "4.4.2",
     "dicom-parser": "1.8.21",
     "jpeg-lossless-decoder-js": "2.1.2",
@@ -120,9 +120,6 @@
     "@cornerstonejs/core": ">=5.0.0-beta.1 <6.0.0-0",
     "@cornerstonejs/metadata": ">=4.18.0 <6.0.0-0",
     "dicom-parser": "1.8.21"
-  },
-  "devDependencies": {
-    "@cornerstonejs/core": "5.0.0-beta.1"
   },
   "config": {
     "commitizen": {
