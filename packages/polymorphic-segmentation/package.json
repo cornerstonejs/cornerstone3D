@@ -26,6 +26,7 @@
   },
   "scripts": {
     "prebuild": "node ../../scripts/generate-version.js ./",
+    "prebuild:esm": "node ../../scripts/generate-version.js ./",
     "test": "jest --testTimeout 60000",
     "clean": "rimraf dist",
     "build": "yarn run build:esm",
@@ -52,13 +53,13 @@
   "dependencies": {
     "@icr/polyseg-wasm": "0.4.0"
   },
-  "peerDependencies": {
-    "@cornerstonejs/core": "5.0.0-beta.1",
-    "@cornerstonejs/tools": "5.0.0-beta.1",
-    "@kitware/vtk.js": "34.15.1"
-  },
   "devDependencies": {
     "@cornerstonejs/core": "5.0.0-beta.1",
     "@cornerstonejs/tools": "5.0.0-beta.1"
+  },
+  "peerDependencies": {
+    "@cornerstonejs/core": ">=5.0.0-beta.1 <6.0.0-0",
+    "@cornerstonejs/tools": ">=5.0.0-beta.1 <6.0.0-0",
+    "@kitware/vtk.js": "34.15.1"
   }
 }

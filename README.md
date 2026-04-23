@@ -108,6 +108,7 @@ following packages are linked:
 | `@cornerstonejs/core` | `packages/core` |
 | `@cornerstonejs/dicom-image-loader` | `packages/dicomImageLoader` |
 | `@cornerstonejs/labelmap-interpolation` | `packages/labelmap-interpolation` |
+| `@cornerstonejs/metadata` | `packages/metadata` |
 | `@cornerstonejs/nifti-volume-loader` | `packages/nifti-volume-loader` |
 | `@cornerstonejs/polymorphic-segmentation` | `packages/polymorphic-segmentation` |
 | `@cornerstonejs/tools` | `packages/tools` |
@@ -153,6 +154,10 @@ node scripts/unlink-ohif-cornerstone-node-modules.mjs /path/to/ohif
 > **Tip:** For the `yarn link` based approach (useful when working on a single
 > package rather than the full set), see the
 > [Linking Cornerstone Libraries](packages/docs/docs/contribute/linking.md) doc.
+
+## Troubleshooting
+
+If unit tests fail with **\"Cannot find module '../build/Release/canvas.node'\"**, the native `canvas` addon wasn’t built. Run `yarn rebuild:canvas` (or `npm run rebuild:canvas`); if that doesn’t fix it, see [docs/troubleshooting.md](docs/troubleshooting.md#unit-tests-cannot-find-module-buildreleasecanvasnode).
 
 ## Support
 

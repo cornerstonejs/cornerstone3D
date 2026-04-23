@@ -1,6 +1,7 @@
 {
   "version": "5.0.0-beta.1",
   "packages": [
+    "packages/metadata",
     "packages/core",
     "packages/tools",
     "packages/adapters",

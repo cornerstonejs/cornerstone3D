@@ -1,6 +1,7 @@
-import type { DataSet } from 'dicom-parser';
+import type { ByteArray, DataSet } from 'dicom-parser';
 import type { Types } from '@cornerstonejs/core';
-import { Enums } from '@cornerstonejs/core';
+import { Enums, metaData } from '@cornerstonejs/core';
+import { Enums as MetadataEnums, utilities } from '@cornerstonejs/metadata';
 import createImage from '../createImage';
 import { xhrRequest } from '../internal/index';
 import dataSetCacheManager from './dataSetCacheManager';
@@ -14,6 +15,8 @@ import loadFileRequest from './loadFileRequest';
 import parseImageId from './parseImageId';
 
 const { ImageQualityStatus } = Enums;
+
+const { addPart10Instance } = utilities;
 
 // add a decache callback function to clear out our dataSetCacheManager
 function addDecache(imageLoadObject: Types.IImageLoadObject, imageId: string) {
@@ -75,7 +78,6 @@ function loadImageFromPromise(
           (image) => {
             image = image as DICOMLoaderIImage;
             image.data = dataSet;
-            image.sharedCacheKey = sharedCacheKey;
             const end = new Date().getTime();
 
             image.loadTimeInMS = loadEnd - start;
@@ -114,7 +116,7 @@ function loadImageFromDataSet(
   dataSet,
   imageId: string,
   frame = 0,
-  sharedCacheKey: string,
+  _sharedCacheKey,
   options
 ): Types.IImageLoadObject {
   const start = new Date().getTime();
@@ -169,62 +171,179 @@ function getLoaderForScheme(scheme: string): LoadRequestFunction {
   }
 }
 
-function loadImage(
+const asByteArray = (data) =>
+  data instanceof ArrayBuffer ? new Uint8Array(data) : data;
+
+function concatPixelData(pixelData) {
+  // Single buffer case
+  if (!Array.isArray(pixelData)) {
+    return asByteArray(pixelData);
+  }
+
+  if (pixelData.length === 0) {
+    return undefined;
+  }
+
+  if (pixelData.length === 1) {
+    return asByteArray(pixelData[0]);
+  }
+
+  // Concatenate multiple frames
+  let totalLength = 0;
+  for (const frame of pixelData) {
+    totalLength += asByteArray(frame).length;
+  }
+
+  const result = new Uint8Array(totalLength);
+  let offset = 0;
+  for (const frame of pixelData) {
+    const view = asByteArray(frame);
+    result.set(view, offset);
+    offset += view.length;
+  }
+  return result;
+}
+
+/**
+ * Loads an image from the NATURAL path: ensures NATURAL is populated (fetch +
+ * addPart10Instance when needed), gets frame pixel data via getMetaData(MetadataModules.COMPRESSED_FRAME_DATA, imageId, `{ frameIndex }`),
+ * then creates IImage. Does not use dataSetCacheManager.
+ */
+function loadImageFromNatural(
   imageId: string,
   options: DICOMLoaderImageOptions = {}
 ): Types.IImageLoadObject {
   const parsedImageId = parseImageId(imageId);
-
   options = Object.assign({}, options);
+  delete (options as Record<string, unknown>).loader;
 
-  // IMPORTANT: if you have a custom loader that you want to use for a specific
-  // scheme, you should create your own loader and register it with the scheme
-  // in the image loader, and NOT just pass it in as an option. This is because
-  // the scheme is used to determine the loader to use and is more maintainable
-
-  // The loader isn't transferable, so ensure it is deleted
-  delete options.loader;
-  // The options might have a loader above, but it is a loader into the cache,
-  // so not the scheme loader, which is separate and defined by the scheme here
   const schemeLoader = getLoaderForScheme(parsedImageId.scheme);
+  const frameIndex =
+    parsedImageId.pixelDataFrame !== undefined
+      ? parsedImageId.pixelDataFrame
+      : 0;
 
-  // if the dataset for this url is already loaded, use it, in case of multiframe
-  // images, we need to extract the frame pixelData from the dataset although the
-  // image is loaded
-  if (dataSetCacheManager.isLoaded(parsedImageId.url)) {
-    /**
-     * @todo The arguments to the dataSetCacheManager below are incorrect.
-     */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const dataSet: DataSet = (dataSetCacheManager as any).get(
-      parsedImageId.url,
-      schemeLoader,
-      imageId
-    );
-
-    return loadImageFromDataSet(
-      dataSet,
+  const promise = (async (): Promise<DICOMLoaderIImage> => {
+    const start = Date.now();
+    console.log('[dicomImageLoader/wadouri] loadImageFromNatural: start', {
       imageId,
-      parsedImageId.pixelDataFrame,
-      parsedImageId.url,
+      scheme: parsedImageId.scheme,
+      url: parsedImageId.url,
+      frameIndex,
+    });
+
+    const NATURAL = MetadataEnums.MetadataModules.NATURAL;
+    let natural = metaData.get(NATURAL, imageId);
+    if (!natural) {
+      console.log(
+        '[dicomImageLoader/wadouri] loadImageFromNatural: no NATURAL metadata, attempting to fetch and populate',
+        { imageId }
+      );
+
+      if (!schemeLoader) {
+        throw new Error(
+          `loadImageFromNatural: no NATURAL cache and unknown scheme ${parsedImageId.scheme}`
+        );
+      }
+      const result = (await schemeLoader(parsedImageId.url, imageId)) as
+        | ArrayBuffer
+        | { arrayBuffer: ArrayBuffer };
+      const arrayBuffer =
+        result instanceof ArrayBuffer ? result : result.arrayBuffer;
+      // Store NATURAL under base imageId (no ?frame=) so registration happens once per URL
+      const baseImageId = `${parsedImageId.scheme}:${parsedImageId.url}`;
+      await addPart10Instance(baseImageId, arrayBuffer);
+      natural = metaData.get(NATURAL, imageId);
+    }
+
+    const loadEnd = Date.now();
+
+    const frameData = metaData.getTyped(
+      MetadataEnums.MetadataModules.COMPRESSED_FRAME_DATA,
+      imageId,
+      { frameIndex }
+    );
+    if (!frameData) {
+      console.warn(
+        '[dicomImageLoader/wadouri] loadImageFromNatural: no COMPRESSED_FRAME_DATA for imageId',
+        { imageId, frameIndex }
+      );
+
+      throw new Error(
+        `loadImageFromNatural: no pixel data in NATURAL for imageId ${imageId}`
+      );
+    }
+
+    const { pixelData, transferSyntaxUid } = frameData;
+
+    const concatenatedPixelData = concatPixelData(pixelData);
+
+    const image = await createImage(
+      imageId,
+      concatenatedPixelData,
+      transferSyntaxUid,
       options
+    );
+    const end = Date.now();
+    const out = image as DICOMLoaderIImage;
+    out.imageQualityStatus = ImageQualityStatus.FULL_RESOLUTION;
+    out.data = natural;
+    out.loadTimeInMS = loadEnd - start;
+    out.totalTimeInMS = end - start;
+    return out;
+  })();
+
+  return { promise };
+}
+
+/**
+ * Legacy image loader entry point used when `useLegacyMetadataProvider` is true.
+ * This conforms to `Types.ImageLoaderFn` (imageId, options) and internally
+ * uses `dataSetCacheManager.load` plus `loadImageFromPromise`.
+ *
+ * @deprecated This loads images using the legacy URI loader, not the newer @cornerstonejs/metadata framework
+ */
+const loadImage = (
+  imageId: string,
+  options: DICOMLoaderImageOptions = {}
+): Types.IImageLoadObject => {
+  const parsedImageId = parseImageId(imageId);
+
+  const schemeLoader = getLoaderForScheme(parsedImageId.scheme);
+  if (!schemeLoader) {
+    throw new Error(
+      `wadouri loadImage: no loader for scheme '${parsedImageId.scheme}'`
     );
   }
 
-  // load the dataSet via the dataSetCacheManager
+  const frameIndex =
+    parsedImageId.pixelDataFrame !== undefined
+      ? parsedImageId.pixelDataFrame
+      : 0;
+
+  // For legacy wadouri, the shared cache key is the underlying URL without
+  // any frame parameter; multiframe helpers handle per-frame metadata.
+  const sharedCacheKey = parsedImageId.url;
+
   const dataSetPromise = dataSetCacheManager.load(
     parsedImageId.url,
     schemeLoader,
     imageId
-  );
+  ) as Promise<DataSet>;
 
   return loadImageFromPromise(
     dataSetPromise,
     imageId,
-    parsedImageId.pixelDataFrame,
-    parsedImageId.url,
+    frameIndex,
+    sharedCacheKey,
     options
   );
-}
+};
 
-export { loadImageFromPromise, getLoaderForScheme, loadImage };
+export {
+  loadImageFromPromise,
+  getLoaderForScheme,
+  loadImage,
+  loadImageFromNatural,
+  loadImageFromDataSet,
+};

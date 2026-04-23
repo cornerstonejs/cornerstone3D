@@ -10,7 +10,7 @@ import addManipulationBindings from './addManipulationBindings';
 import addSegmentIndexDropdown from './addSegmentIndexDropdown';
 import addSliderToToolbar from './addSliderToToolbar';
 import addToggleButtonToToolbar from './addToggleButtonToToolbar';
-import addUploadToToolbar from './addUploadToToolbar';
+export * from './addUploadToToolbar';
 import addVideoTime from './addVideoTime';
 import annotationTools from './annotationTools';
 import camera from './camera';
@@ -38,6 +38,7 @@ import {
   createAndCacheGeometriesFromSurfaces,
 } from './createAndCacheGeometriesFromSurfaces';
 import { createAndCacheGeometriesFromContours } from './createAndCacheGeometriesFromContours';
+export * from './constants';
 
 export {
   addBrushSizeSlider,
@@ -52,7 +53,6 @@ export {
   addSegmentIndexDropdown,
   addSliderToToolbar,
   addToggleButtonToToolbar,
-  addUploadToToolbar,
   addVideoTime,
   annotationTools,
   camera,

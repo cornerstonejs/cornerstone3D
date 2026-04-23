@@ -20,6 +20,9 @@ import isNMReconstructable from '../../isNMReconstructable';
 import { instanceModuleNames } from '../../getInstanceModule';
 import { getUSEnhancedRegions } from './USHelpers';
 
+/**
+ * @deprecated Use addPart10Instance from @cornerstonejs/metadata instead.
+ */
 function metaDataProvider(type, imageId) {
   const { MetadataModules } = Enums;
 

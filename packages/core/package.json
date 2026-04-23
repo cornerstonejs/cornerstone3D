@@ -69,6 +69,7 @@
   },
   "scripts": {
     "prebuild": "node ../../scripts/generate-version.js ./",
+    "prebuild:esm": "node ../../scripts/generate-version.js ./",
     "build:esm": "tsc --project ./tsconfig.json",
     "build:esm:watch": "tsc --project ./tsconfig.json --watch",
     "clean": "rm -rf node_modules/.cache/storybook && shx rm -rf dist",
@@ -85,6 +86,12 @@
     "comlink": "4.4.2",
     "gl-matrix": "3.4.3",
     "loglevel": "1.9.2"
+  },
+  "devDependencies": {
+    "@cornerstonejs/metadata": "4.18.4"
+  },
+  "peerDependencies": {
+    "@cornerstonejs/metadata": ">=4.18.0 <6.0.0-0"
   },
   "contributors": [
     {

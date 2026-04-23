@@ -46,7 +46,9 @@ export default function convertPaletteColor(
 
   const start = imageFrame.redPaletteColorLookupTableDescriptor[1];
   const bitsStored = imageFrame.redPaletteColorLookupTableDescriptor[2];
-  const shift = bitsStored > 8 || rData.some((num) => num > 255) ? 8 : 0;
+  // Only shift down when descriptor says 16-bit and LUT actually has values > 255.
+  // If LUT is 8-bit (all values ≤255) but descriptor says 16-bit, use shift 0 to avoid zeroing.
+  const shift = bitsStored > 8 && rData.some((num) => num > 255) ? 8 : 0;
 
   const rDataCleaned = convertLUTto8Bit(rData, shift);
   const gDataCleaned = convertLUTto8Bit(gData, shift);

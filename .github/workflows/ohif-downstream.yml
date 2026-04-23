@@ -28,7 +28,7 @@ jobs:
     runs-on: self-hosted
     timeout-minutes: 120
     env:
-      BUN_VERSION: 1.3.11
+      BUN_VERSION: 1.3.13
       NODE_VERSION: 24
       OHIF_REF: feat/use-beta-5.0-cs3d
       OHIF_DIR: ohif
@@ -74,8 +74,8 @@ jobs:
       - name: Install Cornerstone dependencies
         run: bun install --frozen-lockfile
 
-      - name: Build local Cornerstone packages for OHIF
-        run: bun run build:esm
+      - name: Build local Cornerstone packages for OHIF (includes metadata)
+        run: bun run build:esm:ohif
 
       - name: Checkout OHIF
         uses: actions/checkout@v4

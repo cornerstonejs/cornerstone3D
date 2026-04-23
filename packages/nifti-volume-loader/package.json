@@ -49,6 +49,7 @@
   },
   "scripts": {
     "prebuild": "node ../../scripts/generate-version.js ./",
+    "prebuild:esm": "node ../../scripts/generate-version.js ./",
     "build:esm": "tsc --project ./tsconfig.json",
     "build:esm:watch": "tsc --project ./tsconfig.json --watch",
     "build:all": "yarn run build:esm",
@@ -64,11 +65,11 @@
   "dependencies": {
     "nifti-reader-js": "0.6.9"
   },
-  "peerDependencies": {
-    "@cornerstonejs/core": "5.0.0-beta.1"
-  },
   "devDependencies": {
     "@cornerstonejs/core": "5.0.0-beta.1"
+  },
+  "peerDependencies": {
+    "@cornerstonejs/core": ">=5.0.0-beta.1 <6.0.0-0"
   },
   "contributors": [
     {

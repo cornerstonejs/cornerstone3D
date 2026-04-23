@@ -6,6 +6,7 @@ import {
   setUseCPURendering,
   setPreferSizeOverAccuracy,
   cache,
+  metaData,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import uids from '../uids';
@@ -152,89 +153,119 @@ async function loadAndViewImage(imageId) {
       viewport.render();
 
       const image = viewport.csImage;
+      if (!image) {
+        console.error('Image failed to load');
+        return;
+      }
+
+      // Use metadata API with imageId instead of direct dataset access
+      const { MetadataModules } = Enums;
+      const transferSyntaxMeta = metaData.get(
+        MetadataModules.TRANSFER_SYNTAX,
+        imageId
+      );
+      const sopCommonMeta = metaData.get(MetadataModules.SOP_COMMON, imageId);
+      const imagePixelMeta = metaData.get(MetadataModules.IMAGE_PIXEL, imageId);
+      const generalImageMeta = metaData.get(
+        MetadataModules.GENERAL_IMAGE,
+        imageId
+      );
+      const voiLutMeta = metaData.get(MetadataModules.VOI_LUT, imageId);
+      const modalityLutMeta = metaData.get(
+        MetadataModules.MODALITY_LUT,
+        imageId
+      );
+      const compressedFrameData = metaData.getMetaData(
+        MetadataModules.COMPRESSED_FRAME_DATA,
+        imageId,
+        { frameIndex: 0 }
+      );
 
       function getTransferSyntax() {
-        const value = image.data.string('x00020010');
-        return value + ' [' + uids[value] + ']';
+        const value =
+          transferSyntaxMeta?.transferSyntaxUID ??
+          transferSyntaxMeta?.transferSyntaxUid;
+        if (value == null) return '';
+        return value + ' [' + (uids[value] ?? '') + ']';
       }
 
       function getSopClass() {
-        const value = image.data.string('x00080016');
-        return value + ' [' + uids[value] + ']';
+        const value = sopCommonMeta?.sopClassUid;
+        if (value == null) return '';
+        return value + ' [' + (uids[value] ?? '') + ']';
       }
 
       function getPixelRepresentation() {
-        const value = image.data.uint16('x00280103');
-        if (value === undefined) {
-          return;
-        }
+        const value = imagePixelMeta?.pixelRepresentation;
+        if (value === undefined) return '';
         return value + (value === 0 ? ' (unsigned)' : ' (signed)');
       }
 
       function getPlanarConfiguration() {
-        const value = image.data.uint16('x00280006');
-        if (value === undefined) {
-          return;
-        }
+        const value = imagePixelMeta?.planarConfiguration;
+        if (value === undefined) return '';
         return value + (value === 0 ? ' (pixel)' : ' (plane)');
       }
+
+      // basicOffsetTable is not exposed via metadata API; show empty when using metadata
+      const basicOffsetTableText = '';
+      const fragmentsText =
+        compressedFrameData?.pixelData != null
+          ? Array.isArray(compressedFrameData.pixelData)
+            ? String(compressedFrameData.pixelData.length)
+            : '1'
+          : '';
 
       document.getElementById('transferSyntax').textContent =
         getTransferSyntax();
       document.getElementById('sopClass').textContent = getSopClass();
       document.getElementById('samplesPerPixel').textContent =
-        image.data.uint16('x00280002');
+        imagePixelMeta?.samplesPerPixel ?? '';
       document.getElementById('photometricInterpretation').textContent =
-        image.data.string('x00280004');
+        imagePixelMeta?.photometricInterpretation ?? '';
       document.getElementById('numberOfFrames').textContent =
-        image.data.string('x00280008');
+        generalImageMeta?.numberOfFrames ?? '';
       document.getElementById('planarConfiguration').textContent =
         getPlanarConfiguration();
-      document.getElementById('rows').textContent =
-        image.data.uint16('x00280010');
+      document.getElementById('rows').textContent = imagePixelMeta?.rows ?? '';
       document.getElementById('columns').textContent =
-        image.data.uint16('x00280011');
+        imagePixelMeta?.columns ?? '';
       document.getElementById('pixelSpacing').textContent =
-        image.data.string('x00280030');
+        generalImageMeta?.pixelSpacing ?? '';
       document.getElementById('rowPixelSpacing').textContent =
-        image.rowPixelSpacing;
+        image.rowPixelSpacing ?? '';
       document.getElementById('columnPixelSpacing').textContent =
-        image.columnPixelSpacing;
+        image.columnPixelSpacing ?? '';
       document.getElementById('bitsAllocated').textContent =
-        image.data.uint16('x00280100');
+        imagePixelMeta?.bitsAllocated ?? '';
       document.getElementById('bitsStored').textContent =
-        image.data.uint16('x00280101');
+        imagePixelMeta?.bitsStored ?? '';
       document.getElementById('highBit').textContent =
-        image.data.uint16('x00280102');
+        imagePixelMeta?.highBit ?? '';
       document.getElementById('pixelRepresentation').textContent =
         getPixelRepresentation();
       document.getElementById('windowCenter').textContent =
-        image.data.string('x00281050');
+        voiLutMeta?.windowCenter ?? '';
       document.getElementById('windowWidth').textContent =
-        image.data.string('x00281051');
+        voiLutMeta?.windowWidth ?? '';
       document.getElementById('rescaleIntercept').textContent =
-        image.data.string('x00281052');
+        modalityLutMeta?.rescaleIntercept ?? '';
       document.getElementById('rescaleSlope').textContent =
-        image.data.string('x00281053');
-      document.getElementById('basicOffsetTable').textContent = image.data
-        .elements.x7fe00010.basicOffsetTable
-        ? image.data.elements.x7fe00010.basicOffsetTable.length
-        : '';
-      document.getElementById('fragments').textContent = image.data.elements
-        .x7fe00010.fragments
-        ? image.data.elements.x7fe00010.fragments.length
-        : '';
+        modalityLutMeta?.rescaleSlope ?? '';
+      document.getElementById('basicOffsetTable').textContent =
+        basicOffsetTableText;
+      document.getElementById('fragments').textContent = fragmentsText;
       document.getElementById('minStoredPixelValue').textContent =
-        image.minPixelValue;
+        image.minPixelValue ?? '';
       document.getElementById('maxStoredPixelValue').textContent =
-        image.maxPixelValue;
+        image.maxPixelValue ?? '';
       const end = new Date().getTime();
       const time = end - start;
       document.getElementById('totalTime').textContent = time + 'ms';
       document.getElementById('loadTime').textContent =
-        image.loadTimeInMS + 'ms';
+        image.loadTimeInMS != null ? image.loadTimeInMS + 'ms' : '';
       document.getElementById('decodeTime').textContent =
-        image.decodeTimeInMS + 'ms';
+        image.decodeTimeInMS != null ? image.decodeTimeInMS + 'ms' : '';
     },
     function (err) {
       throw err;
