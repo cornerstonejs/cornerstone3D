@@ -263,8 +263,8 @@ addDropdownToToolbar({
 
 addSliderToToolbar({
   title: 'Slab Thickness',
-  range: [0, 50],
-  defaultValue: 0,
+  range: [0.05, 50],
+  defaultValue: 0.05,
   onSelectedValueChange: (value) => {
     const valueAsNumber = Number(value);
 
