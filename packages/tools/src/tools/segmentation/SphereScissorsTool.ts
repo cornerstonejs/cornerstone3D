@@ -28,6 +28,8 @@ import {
 
 import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
 import LabelmapBaseTool from './LabelmapBaseTool';
+import getEllipseWorldCoordinates from '../../utilities/getEllipseWorldCoordinates';
+import { getCenterAndRadiusInCanvas } from '../../utilities/getCenterAndRadiusInCanvas';
 
 /**
  * Tool for manipulating segmentation data by drawing a sphere in 3d space. It acts on the
@@ -216,35 +218,17 @@ class SphereScissorsTool extends LabelmapBaseTool {
     const { annotation, viewportIdsToRender, centerCanvas } = this.editData;
     const { data } = annotation;
 
-    const dX = Math.abs(currentCanvasPoints[0] - centerCanvas[0]);
-    const dY = Math.abs(currentCanvasPoints[1] - centerCanvas[1]);
-    const radius = Math.sqrt(dX * dX + dY * dY);
+    // Convert center and current point to world coordinates
+    const centerWorld = canvasToWorld(centerCanvas as Types.Point2);
+    const currentWorld = canvasToWorld(currentCanvasPoints as Types.Point2);
 
-    const bottomCanvas: Types.Point2 = [
-      centerCanvas[0],
-      centerCanvas[1] + radius,
-    ];
-    const topCanvas: Types.Point2 = [centerCanvas[0], centerCanvas[1] - radius];
-    const leftCanvas: Types.Point2 = [
-      centerCanvas[0] - radius,
-      centerCanvas[1],
-    ];
-    const rightCanvas: Types.Point2 = [
-      centerCanvas[0] + radius,
-      centerCanvas[1],
-    ];
-
-    data.handles.points = [
-      canvasToWorld(bottomCanvas),
-      canvasToWorld(topCanvas),
-      canvasToWorld(leftCanvas),
-      canvasToWorld(rightCanvas),
-    ];
+    data.handles.points = getEllipseWorldCoordinates(
+      [centerWorld, currentWorld],
+      viewport
+    ) as [Types.Point3, Types.Point3, Types.Point3, Types.Point3];
 
     annotation.invalidated = true;
-
     this.editData.hasMoved = true;
-
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
@@ -351,17 +335,7 @@ class SphereScissorsTool extends LabelmapBaseTool {
 
     const data = annotation.data;
     const { points } = data.handles;
-    const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
-
-    const bottom = canvasCoordinates[0];
-    const top = canvasCoordinates[1];
-
-    const center = [
-      Math.floor((bottom[0] + top[0]) / 2),
-      Math.floor((bottom[1] + top[1]) / 2),
-    ];
-
-    const radius = Math.abs(bottom[1] - Math.floor((bottom[1] + top[1]) / 2));
+    const { center, radius } = getCenterAndRadiusInCanvas(points, viewport);
 
     const color = `rgb(${toolMetadata.segmentColor.slice(0, 3)})`;
 
