@@ -35,6 +35,7 @@ import {
   worldToCanvasContextPool,
 } from './planarAdapterCoordinateTransforms';
 import { buildPlanarImageData } from './CpuImageSliceRenderPath';
+import { triggerPlanarNewImage } from './planarImageEvents';
 import {
   applyPlanarRenderCameraToRenderer,
   resolvePlanarRenderCamera,
@@ -75,6 +76,11 @@ export class VtkImageMapperRenderPath
       dataPresentation: undefined,
       loadRequestId: 0,
     };
+
+    triggerPlanarNewImage(ctx, {
+      image: payload.image,
+      imageIdIndex: payload.initialImageIdIndex,
+    });
 
     return {
       rendering,
@@ -353,5 +359,6 @@ async function updateRenderedImage(args: {
       renderCamera,
     });
   }
+  triggerPlanarNewImage(ctx, { image, imageIdIndex });
   ctx.display.requestRender();
 }

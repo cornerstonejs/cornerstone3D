@@ -25,6 +25,7 @@ import {
   canvasToWorldContextPool,
   worldToCanvasContextPool,
 } from './planarAdapterCoordinateTransforms';
+import { triggerPlanarVolumeNewImage } from './planarImageEvents';
 import {
   applyPlanarRenderCameraToRenderer,
   resolvePlanarRenderCamera,
@@ -76,6 +77,8 @@ export class VtkVolumeSliceRenderPath
       actor,
       overlayOrder: getImageSliceOverlayOrder(ctx.vtk.renderer, actor),
       imageVolume,
+      imageIds: payload.imageIds,
+      acquisitionOrientation: payload.acquisitionOrientation,
       mapper,
       currentImageIdIndex: payload.initialImageIdIndex,
       maxImageIdIndex: payload.imageIds.length - 1,
@@ -92,6 +95,13 @@ export class VtkVolumeSliceRenderPath
     };
     imageVolume.load(() => {
       ctx.display.requestRender();
+    });
+
+    triggerPlanarVolumeNewImage(ctx, {
+      camera: ctx.viewport.getCameraState(),
+      acquisitionOrientation: rendering.acquisitionOrientation,
+      imageIds: rendering.imageIds,
+      imageIdIndex: rendering.currentImageIdIndex,
     });
 
     return {
@@ -193,6 +203,8 @@ export class VtkVolumeSliceRenderPath
         renderCamera,
       });
     }
+    const imageIdIndexChanged =
+      currentImageIdIndex !== rendering.currentImageIdIndex;
     rendering.currentImageIdIndex = currentImageIdIndex;
     rendering.maxImageIdIndex = maxImageIdIndex;
 
@@ -203,6 +215,15 @@ export class VtkVolumeSliceRenderPath
       rendering.overlayOrder
     );
     ctx.vtk.renderer.resetCameraClippingRange();
+
+    if (imageIdIndexChanged) {
+      triggerPlanarVolumeNewImage(ctx, {
+        camera,
+        acquisitionOrientation: rendering.acquisitionOrientation,
+        imageIds: rendering.imageIds,
+        imageIdIndex: rendering.currentImageIdIndex,
+      });
+    }
   }
 
   private canvasToWorld(

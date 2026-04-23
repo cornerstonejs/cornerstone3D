@@ -173,6 +173,21 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
     this.legacyCompatibility.resetProperties(volumeId);
   }
 
+  setDefaultProperties(
+    properties: PlanarLegacyViewportProperties = {},
+    imageId?: string
+  ): void {
+    this.legacyCompatibility.setDefaultProperties(properties, imageId);
+  }
+
+  clearDefaultProperties(imageId?: string): void {
+    this.legacyCompatibility.clearDefaultProperties(imageId);
+  }
+
+  resetToDefaultProperties(): void {
+    this.legacyCompatibility.resetToDefaultProperties();
+  }
+
   getBlendMode(filterActorUIDs?: string[]): BlendModes | undefined {
     return this.legacyCompatibility.getBlendMode(filterActorUIDs);
   }

@@ -31,7 +31,10 @@ export async function waitForImageRendered(
         throw new Error(`waitForImageRendered: element not found: ${selector}`);
       }
 
-      const state = { matched: !expectedImageId, rendered: false };
+      const state: {
+        matched: boolean;
+        rendered: boolean;
+      } = { matched: !expectedImageId, rendered: false };
       (window as unknown as Record<string, unknown>)[stateKey] = state;
 
       const onStackNewImage = (event: Event) => {

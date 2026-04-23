@@ -31,6 +31,7 @@ import {
   getCanvasCssDimensions,
   worldToCanvasPlanarCamera,
 } from './planarAdapterCoordinateTransforms';
+import { triggerPlanarVolumeNewImage } from './planarImageEvents';
 import { resolvePlanarRenderCamera } from './planarRenderCamera';
 import {
   createPlanarCpuVolumeSliceBasis,
@@ -77,6 +78,8 @@ export class CpuVolumeSliceRenderPath
       renderMode: 'cpuVolume',
       compatibilityActor,
       imageVolume: payload.imageVolume,
+      imageIds: payload.imageIds,
+      acquisitionOrientation: payload.acquisitionOrientation,
       layerCanvas: createCanvas(
         null,
         ctx.cpu.canvas.width,
@@ -203,6 +206,13 @@ export class CpuVolumeSliceRenderPath
         };
       })(),
     };
+
+    triggerPlanarVolumeNewImage(ctx, {
+      camera: ctx.viewport.getCameraState(),
+      acquisitionOrientation: rendering.acquisitionOrientation,
+      imageIds: rendering.imageIds,
+      imageIdIndex: rendering.currentImageIdIndex,
+    });
 
     return {
       rendering,
@@ -531,9 +541,20 @@ export class CpuVolumeSliceRenderPath
     ) {
       ctx.renderPath.renderCamera = renderCamera;
     }
+    const imageIdIndexChanged =
+      currentImageIdIndex !== rendering.currentImageIdIndex;
     rendering.currentImageIdIndex = currentImageIdIndex;
     rendering.maxImageIdIndex = maxImageIdIndex;
     rendering.renderingInvalidated = true;
+
+    if (imageIdIndexChanged) {
+      triggerPlanarVolumeNewImage(ctx, {
+        camera,
+        acquisitionOrientation: rendering.acquisitionOrientation,
+        imageIds: rendering.imageIds,
+        imageIdIndex: rendering.currentImageIdIndex,
+      });
+    }
   }
 
   private resolveVolumeSliceBasis(

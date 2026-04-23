@@ -31,7 +31,10 @@ import type {
   VOIRange,
 } from '../../../types';
 import type { MountedRendering } from '../ViewportArchitectureTypes';
-import type { PlanarDataPresentation } from './PlanarViewportTypes';
+import type {
+  PlanarCamera,
+  PlanarDataPresentation,
+} from './PlanarViewportTypes';
 
 /**
  * Mounted rendering state for the GPU single-image path (`vtkImage`).
@@ -84,6 +87,8 @@ export type PlanarCpuVolumeRendering = MountedRendering<{
   compatibilityActor: ICanvasActor;
   enabledElement?: CPUFallbackEnabledElement;
   imageVolume: IImageVolume;
+  imageIds: string[];
+  acquisitionOrientation?: PlanarCamera['orientation'];
   layerCanvas: HTMLCanvasElement;
   currentImageIdIndex: number;
   maxImageIdIndex: number;
@@ -119,6 +124,8 @@ export type PlanarVolumeSliceRendering = MountedRendering<{
   actor: vtkImageSlice;
   overlayOrder: number;
   imageVolume: IImageVolume;
+  imageIds: string[];
+  acquisitionOrientation?: PlanarCamera['orientation'];
   mapper: vtkImageResliceMapper;
   currentImageIdIndex: number;
   maxImageIdIndex: number;

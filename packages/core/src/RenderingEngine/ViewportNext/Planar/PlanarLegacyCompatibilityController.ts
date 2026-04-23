@@ -56,6 +56,9 @@ export type PlanarLegacyCompatibilityHost = {
   getFirstBoundDataId(): string | undefined;
   findDataIdByVolumeId(volumeId: string): string | undefined;
   getBindingActor(dataId: string): unknown;
+  getDefaultVOIRange(
+    dataId: string
+  ): { lower: number; upper: number } | undefined;
   getImageCount(): number;
   getMaxImageIdIndex(): number;
 };
@@ -67,12 +70,46 @@ class PlanarLegacyCompatibilityController {
     string,
     PlanarLegacyViewportProperties
   >();
-  private readonly defaultProperties = new Map<
+  private readonly globalDefaultProperties = new Map<
+    string,
+    PlanarLegacyViewportProperties
+  >();
+  private readonly perImageIdDefaultProperties = new Map<
     string,
     PlanarLegacyViewportProperties
   >();
 
-  constructor(private readonly host: PlanarLegacyCompatibilityHost) {}
+  private readonly onStackNewImage = (event: Event) => {
+    if (this.perImageIdDefaultProperties.size === 0) {
+      return;
+    }
+
+    const detail = (event as CustomEvent<{ imageId?: string }>).detail;
+    const imageId = detail?.imageId;
+    const targetDataId = this.resolveTargetDataId();
+
+    if (!targetDataId) {
+      return;
+    }
+
+    const perImageProps = imageId
+      ? this.perImageIdDefaultProperties.get(imageId)
+      : undefined;
+    const globalProps = this.globalDefaultProperties.get(targetDataId);
+    const propsToApply = perImageProps || globalProps;
+
+    if (!propsToApply) {
+      return;
+    }
+
+    this.setProperties(propsToApply);
+  };
+
+  constructor(private readonly host: PlanarLegacyCompatibilityHost) {
+    host
+      .getElement()
+      .addEventListener(Events.STACK_NEW_IMAGE, this.onStackNewImage);
+  }
 
   async setStack(imageIds: string[], currentImageIdIndex = 0): Promise<string> {
     if (!imageIds.length) {
@@ -150,12 +187,12 @@ class PlanarLegacyCompatibilityController {
       properties
     );
 
-    if (!this.defaultProperties.has(targetDataId)) {
-      this.defaultProperties.set(
-        targetDataId,
-        clonePlanarLegacyProperties(properties)
-      );
-    }
+    const currentDefaults =
+      this.globalDefaultProperties.get(targetDataId) || {};
+    this.globalDefaultProperties.set(
+      targetDataId,
+      mergePlanarLegacyProperties(properties, currentDefaults)
+    );
 
     this.properties.set(targetDataId, nextProperties);
 
@@ -175,38 +212,59 @@ class PlanarLegacyCompatibilityController {
     }
   }
 
-  getProperties(volumeId?: string): PlanarLegacyViewportProperties {
-    const targetDataId = this.resolveTargetDataId(volumeId);
-    const dataPresentation = targetDataId
-      ? this.host.getDataPresentation(targetDataId)
-      : undefined;
-    const legacyProperties = targetDataId
-      ? this.properties.get(targetDataId)
-      : undefined;
+  setDefaultProperties(
+    properties: PlanarLegacyViewportProperties = {},
+    imageId?: string
+  ): void {
+    if (imageId == null) {
+      const targetDataId = this.resolveTargetDataId();
+      if (!targetDataId) {
+        return;
+      }
+      this.globalDefaultProperties.set(
+        targetDataId,
+        clonePlanarLegacyProperties(properties)
+      );
+      return;
+    }
 
-    return {
-      ...clonePlanarLegacyProperties(legacyProperties || {}),
-      ...(dataPresentation
-        ? clonePlanarLegacyProperties(dataPresentation)
-        : {}),
-      ...(this.host.getCameraOrientation()
-        ? {
-            orientation: clonePlanarOrientation(
-              this.host.getCameraOrientation()
-            ),
-          }
-        : {}),
-    };
+    this.perImageIdDefaultProperties.set(
+      imageId,
+      clonePlanarLegacyProperties(properties)
+    );
+
+    if (this.host.getCurrentImageId() === imageId) {
+      this.setProperties(properties);
+    }
   }
 
-  resetProperties(volumeId?: string): void {
-    const targetDataId = this.resolveTargetDataId(volumeId);
+  clearDefaultProperties(imageId?: string): void {
+    if (imageId == null) {
+      const targetDataId = this.resolveTargetDataId();
+      if (targetDataId) {
+        this.globalDefaultProperties.delete(targetDataId);
+      }
+      this.resetProperties();
+      return;
+    }
 
+    this.perImageIdDefaultProperties.delete(imageId);
+    this.resetToDefaultProperties();
+  }
+
+  resetToDefaultProperties(): void {
+    const targetDataId = this.resolveTargetDataId();
     if (!targetDataId) {
       return;
     }
 
-    const defaultProperties = this.defaultProperties.get(targetDataId) || {};
+    const currentImageId = this.host.getCurrentImageId();
+    const defaultProperties =
+      (currentImageId
+        ? this.perImageIdDefaultProperties.get(currentImageId)
+        : undefined) ||
+      this.globalDefaultProperties.get(targetDataId) ||
+      {};
 
     this.properties.set(
       targetDataId,
@@ -223,6 +281,49 @@ class PlanarLegacyCompatibilityController {
       targetDataId,
       toPlanarDataPresentation(defaultProperties)
     );
+  }
+
+  getProperties(volumeId?: string): PlanarLegacyViewportProperties {
+    const targetDataId = this.resolveTargetDataId(volumeId);
+    const dataPresentation = targetDataId
+      ? this.host.getDataPresentation(targetDataId)
+      : undefined;
+    const legacyProperties = targetDataId
+      ? this.properties.get(targetDataId)
+      : undefined;
+    const merged: PlanarLegacyViewportProperties = {
+      ...clonePlanarLegacyProperties(legacyProperties || {}),
+      ...(dataPresentation
+        ? clonePlanarLegacyProperties(dataPresentation)
+        : {}),
+      ...(this.host.getCameraOrientation()
+        ? {
+            orientation: clonePlanarOrientation(
+              this.host.getCameraOrientation()
+            ),
+          }
+        : {}),
+    };
+
+    if (!merged.voiRange && targetDataId) {
+      const defaultVOIRange = this.host.getDefaultVOIRange(targetDataId);
+      if (defaultVOIRange) {
+        merged.voiRange = { ...defaultVOIRange };
+      }
+    }
+
+    return merged;
+  }
+
+  resetProperties(volumeId?: string): void {
+    const targetDataId = this.resolveTargetDataId(volumeId);
+
+    if (!targetDataId) {
+      return;
+    }
+
+    this.properties.set(targetDataId, {});
+    this.host.setDataPresentationState(targetDataId, {});
   }
 
   getBlendMode(filterActorUIDs: string[] = []): BlendModes | undefined {
@@ -302,6 +403,10 @@ class PlanarLegacyCompatibilityController {
   destroy(): void {
     let cleanupError: unknown;
 
+    this.host
+      .getElement()
+      .removeEventListener(Events.STACK_NEW_IMAGE, this.onStackNewImage);
+
     for (const dataId of Array.from(this.managedDataIds)) {
       try {
         this.unregisterDataId(dataId);
@@ -313,7 +418,8 @@ class PlanarLegacyCompatibilityController {
     this.managedDataIds.clear();
     this.volumeDataIds.clear();
     this.properties.clear();
-    this.defaultProperties.clear();
+    this.globalDefaultProperties.clear();
+    this.perImageIdDefaultProperties.clear();
 
     if (cleanupError !== undefined) {
       throw cleanupError;
@@ -546,12 +652,11 @@ class PlanarLegacyCompatibilityController {
 
     this.properties.set(dataId, nextProperties);
 
-    if (!this.defaultProperties.has(dataId)) {
-      this.defaultProperties.set(
-        dataId,
-        clonePlanarLegacyProperties(nextProperties)
-      );
-    }
+    const currentDefaults = this.globalDefaultProperties.get(dataId) || {};
+    this.globalDefaultProperties.set(
+      dataId,
+      mergePlanarLegacyProperties(nextProperties, currentDefaults)
+    );
 
     this.host.setDataPresentationState(
       dataId,
@@ -685,7 +790,7 @@ class PlanarLegacyCompatibilityController {
       viewportNextDataSetMetadataProvider.remove(dataId);
     } finally {
       this.properties.delete(dataId);
-      this.defaultProperties.delete(dataId);
+      this.globalDefaultProperties.delete(dataId);
       this.removeVolumeDataId(dataId);
     }
   }

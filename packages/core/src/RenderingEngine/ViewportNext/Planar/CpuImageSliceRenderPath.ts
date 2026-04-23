@@ -58,6 +58,7 @@ import {
   resolvePlanarCpuImageDisplayedArea,
   resolvePlanarCpuViewportScale,
 } from './planarCpuViewportMath';
+import { triggerPlanarNewImage } from './planarImageEvents';
 import { createPlanarCpuImageSliceBasis } from './planarSliceBasis';
 
 export class CpuImageSliceRenderPath
@@ -113,6 +114,11 @@ export class CpuImageSliceRenderPath
       loadRequestId: 0,
       renderingInvalidated: true,
     };
+
+    triggerPlanarNewImage(ctx, {
+      image: payload.image,
+      imageIdIndex: payload.initialImageIdIndex,
+    });
 
     return {
       rendering,
@@ -743,6 +749,7 @@ async function updateRenderedImage(args: {
     canvasHeight: enabledElement.canvas.height,
   });
   applyPresentationState(rendering, presentation, renderCamera);
+  triggerPlanarNewImage(ctx, { image, imageIdIndex });
   // cpuImage is drawn by the Planar viewport itself, not by the rendering
   // engine's VTK pass. The image swap therefore needs an immediate viewport
   // render or the visible canvas stays stale until another direct render.
