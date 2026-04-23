@@ -56,5 +56,9 @@
     "@cornerstonejs/core": "5.0.0-beta.1",
     "@cornerstonejs/tools": "5.0.0-beta.1",
     "@kitware/vtk.js": "34.15.1"
+  },
+  "devDependencies": {
+    "@cornerstonejs/core": "5.0.0-beta.1",
+    "@cornerstonejs/tools": "5.0.0-beta.1"
   }
 }

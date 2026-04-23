@@ -67,6 +67,9 @@
   "peerDependencies": {
     "@cornerstonejs/core": "5.0.0-beta.1"
   },
+  "devDependencies": {
+    "@cornerstonejs/core": "5.0.0-beta.1"
+  },
   "contributors": [
     {
       "name": "Cornerstone.js Contributors",
