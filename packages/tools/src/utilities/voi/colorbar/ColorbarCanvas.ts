@@ -221,6 +221,10 @@ class ColorbarCanvas {
     let previousColorPoint = undefined;
     let currentColorPoint = getColorPoint(0);
 
+    const minPosition = rgbPoints[0];
+    const maxPosition = rgbPoints[rgbPoints.length - 4];
+    const colormapRange = maxPosition - minPosition;
+
     // Starts from `range.lower` incrementing by incRawPixelValue on each iteration
     const incRawPixelValue = (range.upper - range.lower) / (maxValue - 1);
     let rawPixelValue = range.lower;
@@ -230,12 +234,14 @@ class ColorbarCanvas {
         (rawPixelValue - voiRange.lower) /
         Math.abs(voiRange.upper - voiRange.lower);
 
+      const tColormapPosition = minPosition + tVoiRange * colormapRange;
+
       // Find the color in a linear way (O(n) complexity).
-      // currentColorPoint shall move to the next color until tVoiRange is smaller
+      // currentColorPoint shall move to the next color until tColormapPosition is smaller
       // than or equal to next color position.
       if (currentColorPoint) {
         for (let i = currentColorPoint.index; i < colorsCount; i++) {
-          if (tVoiRange <= currentColorPoint.position) {
+          if (tColormapPosition <= currentColorPoint.position) {
             break;
           }
 
@@ -262,7 +268,7 @@ class ColorbarCanvas {
         normColor = [...previousColorPoint.color];
       } else {
         const tColorRange =
-          (tVoiRange - previousColorPoint.position) /
+          (tColormapPosition - previousColorPoint.position) /
           (currentColorPoint.position - previousColorPoint.position);
 
         normColor = interpolateVec3(
