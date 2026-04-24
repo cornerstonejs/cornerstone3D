@@ -83,10 +83,16 @@ export function getSegmentIndexAtWorldForLabelmap(
       return;
     }
 
-    const segmentIndex =
-      segmentationVolume.imageData.getScalarValueFromWorld(worldPoint);
-
-    return segmentIndex;
+    const voxelManager = segmentationVolume.voxelManager;
+    const indexIJK = utilities.transformWorldToIndex(
+      voxelManager.imageData,
+      worldPoint
+    );
+    return voxelManager.getAtIJK(
+      indexIJK[0],
+      indexIJK[1],
+      indexIJK[2]
+    ) as number;
   }
 
   // stack segmentation case
