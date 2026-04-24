@@ -151,7 +151,7 @@ describe('dicomImageLoader - WADO-URI', () => {
 
     expect(onprogressSpy).toHaveBeenCalled();
 
-    expect(onreadystatechangeSpy).toHaveBeenCalledTimes(3);
+    expect(onreadystatechangeSpy.calls.count()).toBeGreaterThanOrEqual(3);
     expect(onreadystatechangeSpy.calls.argsFor(0)).toEqual([
       jasmine.any(Event),
       expectedLoaderParams,

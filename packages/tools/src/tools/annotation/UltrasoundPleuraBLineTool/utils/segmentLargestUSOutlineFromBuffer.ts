@@ -1,5 +1,4 @@
 import type { FanShapeContour } from './types';
-import { floodFill } from '../../../../utilities/segmentation';
 
 /**
  * Given a raw image buffer (grayscale, RGB, or RGBA) plus dimensions,
@@ -52,28 +51,25 @@ export function segmentLargestUSOutlineFromBuffer(
       if (mask[y][x] && labels[y][x] === 0) {
         currentLabel++;
 
-        // Create a getter function for the floodFill utility
-        const getter = (px, py) => {
-          if (px < 0 || px >= width || py < 0 || py >= height) {
-            return false;
-          }
-          return mask[py][px] && labels[py][px] === 0;
-        };
-
-        // Set up the flood fill options
         let pixelCount = 0;
-        const options = {
-          onFlood: (px, py) => {
-            labels[py][px] = currentLabel;
-            pixelCount++;
-          },
-          diagonals: false, // Use 4-connectivity
-        };
+        const stack: [number, number][] = [[x, y]];
+        while (stack.length > 0) {
+          const [px, py] = stack.pop();
+          if (
+            px < 0 ||
+            px >= width ||
+            py < 0 ||
+            py >= height ||
+            !mask[py][px] ||
+            labels[py][px] !== 0
+          ) {
+            continue;
+          }
+          labels[py][px] = currentLabel;
+          pixelCount++;
+          stack.push([px + 1, py], [px - 1, py], [px, py + 1], [px, py - 1]);
+        }
 
-        // Execute the flood fill
-        floodFill(getter, [x, y], options);
-
-        // Store the region size
         regionSizes[currentLabel] = pixelCount;
       }
     }

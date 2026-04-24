@@ -38,6 +38,22 @@ type PaintFillToolHelpers = {
   fixedDimensionValue: number;
 };
 
+/** Mutable labelmap slice data written after async flood fill completes. */
+type PaintFloodFillVoxelTarget = {
+  setAtIndex: (index: number, value: number) => void;
+};
+
+type PaintFloodFillAsyncPayload = {
+  segmentationId: string;
+  segmentIndex: number;
+  voxelManager: PaintFloodFillVoxelTarget;
+  floodFillGetter: FloodFillGetter;
+  inPlaneSeedPoint: Types.Point2;
+  getScalarDataPositionFromPlane: (x: number, y: number) => number;
+  fixedDimension: number;
+  fixedDimensionValue: number;
+};
+
 /**
  * Tool for manipulating segmentation data by filling in regions. It acts on the
  * active Segmentation on the viewport (enabled element) and requires an active
@@ -64,6 +80,10 @@ class PaintFillTool extends BaseTool {
    * @param evt -  EventTypes.NormalizedMouseEventType
    * @returns The annotation object.
    *
+   */
+  /**
+   * Validates synchronously, then runs {@link floodFill} off the event-dispatch path so
+   * `mouseDown` stays synchronous (large fills yield via the async flood-fill implementation).
    */
   preMouseDownCallback = (evt: EventTypes.InteractionEventType): boolean => {
     const eventDetail = evt.detail;
@@ -137,7 +157,7 @@ class PaintFillTool extends BaseTool {
 
     if (fixedDimension === undefined) {
       console.warn('Oblique paint fill not yet supported');
-      return;
+      return false;
     }
 
     const {
@@ -158,39 +178,61 @@ class PaintFillTool extends BaseTool {
       index[2] >= dimensions[2]
     ) {
       // Clicked outside segmentation volume, no good way to fill.
-      return;
+      return false;
     }
     //@ts-ignore // todo type
     const clickedLabelValue = getLabelValue(index[0], index[1], index[2]);
 
     if (segmentsLocked.includes(clickedLabelValue)) {
       // Label is locked, cannot fill.
-      return;
+      return false;
     }
 
-    const floodFillResult = floodFill(floodFillGetter, inPlaneSeedPoint);
+    void this.runPaintFloodFillAsync({
+      segmentationId,
+      segmentIndex,
+      voxelManager,
+      floodFillGetter,
+      inPlaneSeedPoint,
+      getScalarDataPositionFromPlane,
+      fixedDimension,
+      fixedDimensionValue,
+    }).catch((err) => {
+      console.error('PaintFillTool: flood fill failed', err);
+    });
+
+    return true;
+  };
+
+  private async runPaintFloodFillAsync(
+    payload: PaintFloodFillAsyncPayload
+  ): Promise<void> {
+    const floodFillResult = await floodFill(
+      payload.floodFillGetter,
+      payload.inPlaneSeedPoint
+    );
 
     const { flooded } = floodFillResult;
+    const {
+      voxelManager,
+      segmentIndex,
+      segmentationId,
+      getScalarDataPositionFromPlane,
+    } = payload;
 
-    flooded.forEach((index) => {
-      const scalarDataIndex = getScalarDataPositionFromPlane(
-        index[0],
-        index[1]
-      );
-
+    flooded.forEach((idx) => {
+      const scalarDataIndex = getScalarDataPositionFromPlane(idx[0], idx[1]);
       voxelManager.setAtIndex(scalarDataIndex, segmentIndex);
     });
 
     const framesModified = this.getFramesModified(
-      fixedDimension,
-      fixedDimensionValue,
+      payload.fixedDimension,
+      payload.fixedDimensionValue,
       floodFillResult
     );
 
     triggerSegmentationDataModified(segmentationId, framesModified);
-
-    return true;
-  };
+  }
 
   private getFramesModified = (
     fixedDimension: number,

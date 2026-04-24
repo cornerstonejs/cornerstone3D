@@ -48,6 +48,7 @@ import type {
   FloodFillGetter,
   FloodFillOptions,
   FloodFillResult,
+  FloodFillVisitedBuffer,
 } from './FloodFillTypes';
 import type IToolClassReference from './IToolClassReference';
 import type { ContourSegmentationData, ContourStyle } from './ContourTypes';
@@ -151,6 +152,7 @@ export type {
   FloodFillResult,
   FloodFillGetter,
   FloodFillOptions,
+  FloodFillVisitedBuffer,
   // Contour
   ContourSegmentationData,
   ISculptToolShape,

@@ -103,6 +103,13 @@ import getVolumeDirectionVectors from './getVolumeDirectionVectors';
 import calculateSpacingBetweenImageIds from './calculateSpacingBetweenImageIds';
 export * as logger from './logger';
 import { calculateNeighborhoodStats } from './calculateNeighborhoodStats';
+import {
+  mapScalarToViewportVoiIntensity,
+  mapViewportVoiIntensityToScalar,
+  mapMappedBandToRawRange,
+} from './viewportVoiIntensityMapping';
+export type { ViewportVoiMappingProps } from './viewportVoiIntensityMapping';
+export type { NumberVoxelManager, RGBVoxelManager } from './VoxelManager';
 export * from './getPixelSpacingInformation';
 export * from './getPlaneCubeIntersectionDimensions';
 export * from './rotateToViewCoordinates';
@@ -213,5 +220,8 @@ export {
   getImageDataMetadata,
   buildMetadata,
   calculateNeighborhoodStats,
+  mapScalarToViewportVoiIntensity,
+  mapViewportVoiIntensityToScalar,
+  mapMappedBandToRawRange,
   asArray,
 };

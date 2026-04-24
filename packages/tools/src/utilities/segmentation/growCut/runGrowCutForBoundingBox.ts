@@ -202,7 +202,7 @@ async function runGrowCutForBoundingBox(
     options
   );
 
-  await run(subVolume.volumeId, labelmap.volumeId);
+  await run(subVolume.volumeId, labelmap.volumeId, options);
 
   return labelmap;
 }

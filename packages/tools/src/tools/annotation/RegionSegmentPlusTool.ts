@@ -1,7 +1,10 @@
 import {
   cache,
+  Enums as CoreEnums,
+  eventTarget,
   utilities as csUtils,
   getEnabledElement,
+  getRenderingEngine,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import type { EventTypes, PublicToolProps, ToolProps } from '../../types';
@@ -13,17 +16,95 @@ import type {
   RemoveIslandData,
 } from '../base/GrowCutBaseTool';
 import { calculateGrowCutSeeds } from '../../utilities/segmentation/growCut/runOneClickGrowCut';
+import {
+  runFloodFillSegmentation,
+  getPositiveIntensityRange,
+  getDisplayVoiSnapshot,
+} from '../../utilities/segmentation/growCut/runFloodFillSegmentation';
+import type { GetFloodFillIntensityRange } from '../../utilities/segmentation/growCut/runFloodFillSegmentation';
+import { getViewportVoiMappingForVolume } from '../../utilities/segmentation/growCut/getViewportVoiMappingForVolume';
+import type { FloodFillIntensityRangeOptions } from '../../utilities/segmentation/growCut/floodFillIntensityRangeTypes';
+import {
+  normalizeIntensityRangeStrategyConfig,
+  resolveIntensityRangeGetterFromConfig,
+  getCanvasDiskRadiusCssPxFromConfig,
+  type RegionSegmentIntensityRangeStrategy,
+  type RegionSegmentIntensityRangeStrategyConfig,
+} from '../../utilities/segmentation/growCut/intensityRange/intensityRangeStrategyGetters';
 import { ToolModes } from '../../enums';
+
+const { growCutLog } = csUtils.logger;
+
+/**
+ * Region Segment Plus — intensity band for flood fill / grow-cut seeding.
+ *
+ * **Configuration:** `intensityRangeStrategy` is either a full object
+ * `{ strategy, getIntensityRange?, canvasDiskRadiusPx? }` or a string shorthand such as
+ * `'meanStdMapped'` or `'canvasDiskTriClassSmall'`. Replace the whole value when changing mode.
+ * When set on the object form, `getIntensityRange` overrides the built-in implementation for `strategy`.
+ */
+/** Optional RegionSegmentPlus flood-fill tuning (set via tool configuration). */
+type RegionSegmentPlusFloodFillConfig = {
+  initialNeighborhoodRadius?: number;
+  /**
+   * Intensity band: object form, or string shorthand (see module types).
+   */
+  intensityRangeStrategy?:
+    | RegionSegmentIntensityRangeStrategyConfig
+    | RegionSegmentIntensityRangeStrategy;
+  /**
+   * Post-process after 3D intensity flood (`floodfill_full` only).
+   * External removal keeps only voxels planar-connected to the click in the viewport-normalized grid;
+   * internal removal fills small enclosed holes (see IslandRemoval).
+   */
+  floodFillIslandRemoval?: {
+    removeExternalIslands?: boolean;
+    removeInternalIslands?: boolean;
+    verboseLogging?: boolean;
+  };
+  /**
+   * Flood fill only on the seed slice (fixed k); forwarded as `planar` on `floodFill`.
+   */
+  planar?: boolean;
+  /** Optional flood bound in k from the seed: `abs(k-seedK) <= maxDeltaK`. */
+  maxDeltaK?: number;
+  /**
+   * Optional flood bound in i/j from the seed:
+   * `abs(i-seedI) <= maxDeltaIJ` and `abs(j-seedJ) <= maxDeltaIJ`.
+   */
+  maxDeltaIJ?: number;
+};
 
 type RegionSegmentPlusToolData = GrowCutToolData & {
   worldPoint: Types.Point3;
+  canvasPoint?: { x: number; y: number };
 };
+
+const DISK_PREVIEW_SVG_ATTR = 'data-cornerstone-region-segment-plus-disk';
 
 class RegionSegmentPlusTool extends GrowCutBaseTool {
   static toolName = 'RegionSegmentPlus';
   protected growCutData: RegionSegmentPlusToolData | null;
   private mouseTimer: number | null = null;
   private allowedToProceed = false;
+  private segmentationInProgress = false;
+  /** SVG overlay host for canvas-disk sampling strategies (small/large). */
+  private diskPreviewOverlay: {
+    element: HTMLDivElement;
+    svg: SVGSVGElement;
+  } | null = null;
+  private diskPreviewLastCanvas: Types.Point2 | null = null;
+
+  private notifySegmentationError(message: string): void {
+    const event = new CustomEvent(CoreEnums.Events.ERROR_EVENT, {
+      detail: {
+        type: 'Segmentation',
+        message,
+      },
+      cancelable: true,
+    });
+    eventTarget.dispatchEvent(event);
+  }
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
@@ -33,25 +114,201 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
         positiveSeedVariance: 0.4,
         negativeSeedVariance: 0.9,
         subVolumePaddingPercentage: 0.1,
+        /**
+         * Segmentation mode: 'growcut' for distinct regions, 'floodfill_full' for
+         * contiguous regions with speckling (flood fill + remove external islands + fill internal islands).
+         */
+        segmentationMode: 'floodfill_full' as const,
+        /**
+         * When true, a short stable hover updates the cursor and gates primary click
+         * using intensity / seed heuristics. When false (default), clicks run
+         * segmentation without that hover gate (range or seeds are resolved at click).
+         */
+        hoverPrecheckEnabled: false,
         islandRemoval: {
           /**
-           * Enable/disable island removal
+           * Enable/disable island removal (only applies when segmentationMode is 'growcut')
            */
           enabled: false,
+        },
+        intensityRangeStrategy: {
+          strategy: 'meanStdMapped',
+        } satisfies RegionSegmentIntensityRangeStrategyConfig,
+        /** Same meaning as `floodFill`’s `planar` option (fixed slice k). */
+        planar: false,
+        maxDeltaK: 25,
+        maxDeltaIJ: 512,
+        floodFillIslandRemoval: {
+          removeExternalIslands: true,
+          removeInternalIslands: true,
+          verboseLogging: false,
+        },
+        actions: {
+          cancelInProgress: {
+            method: 'cancelInProgress',
+            bindings: [
+              {
+                key: 'Escape',
+              },
+            ],
+          },
         },
       },
     }
   ) {
     super(toolProps, defaultToolProps);
+    if (!this.configuration.hoverPrecheckEnabled) {
+      this.allowedToProceed = true;
+    }
+  }
+
+  private getIntensityStrategyConfig(): RegionSegmentIntensityRangeStrategyConfig {
+    return normalizeIntensityRangeStrategyConfig(
+      this.configuration as RegionSegmentPlusFloodFillConfig
+    );
+  }
+
+  private resolveIntensityRangeGetter():
+    | GetFloodFillIntensityRange
+    | undefined {
+    return resolveIntensityRangeGetterFromConfig(
+      this.getIntensityStrategyConfig()
+    );
+  }
+
+  /** True when the built-in canvas-disk strategy is selected (overlay ring). */
+  private usesCanvasDiskStrategy(): boolean {
+    const strategy = this.getIntensityStrategyConfig().strategy;
+    return strategy === 'canvasDiskTriClass' || strategy === 'canvasDiskRange';
+  }
+
+  private removeDiskSamplingPreview(): void {
+    this.diskPreviewLastCanvas = null;
+    if (this.diskPreviewOverlay) {
+      this.diskPreviewOverlay.svg.remove();
+      this.diskPreviewOverlay = null;
+    }
+  }
+
+  private updateDiskSamplingPreview(
+    element: HTMLDivElement,
+    canvas: Types.Point2,
+    radiusPx: number
+  ): void {
+    if (
+      this.diskPreviewOverlay &&
+      this.diskPreviewOverlay.element !== element
+    ) {
+      this.diskPreviewOverlay.svg.remove();
+      this.diskPreviewOverlay = null;
+    }
+    const pos = window.getComputedStyle(element).position;
+    if (pos === 'static') {
+      element.style.position = 'relative';
+    }
+    let svg = element.querySelector<SVGSVGElement>(
+      `[${DISK_PREVIEW_SVG_ATTR}]`
+    );
+    if (!svg) {
+      svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute(DISK_PREVIEW_SVG_ATTR, 'true');
+      Object.assign(svg.style, {
+        position: 'absolute',
+        inset: '0',
+        width: '100%',
+        height: '100%',
+        pointerEvents: 'none',
+        zIndex: '20',
+      });
+      const circle = document.createElementNS(
+        'http://www.w3.org/2000/svg',
+        'circle'
+      );
+      circle.setAttribute('fill', 'none');
+      circle.setAttribute('stroke', 'rgba(0, 220, 130, 0.92)');
+      circle.setAttribute('stroke-width', '2');
+      circle.setAttribute('vector-effect', 'non-scaling-stroke');
+      svg.appendChild(circle);
+      element.appendChild(svg);
+      this.diskPreviewOverlay = { element, svg };
+    } else if (!this.diskPreviewOverlay) {
+      this.diskPreviewOverlay = { element, svg };
+    }
+    const circle = svg.querySelector('circle');
+    if (circle) {
+      circle.setAttribute('cx', String(canvas[0]));
+      circle.setAttribute('cy', String(canvas[1]));
+      circle.setAttribute('r', String(Math.max(0, radiusPx)));
+    }
+    this.diskPreviewLastCanvas = canvas;
+  }
+
+  onSetToolPassive(): void {
+    this.removeDiskSamplingPreview();
+  }
+
+  /**
+   * Standard Escape-key cancellation hook used by other interactive tools.
+   * Delegates to GrowCutBaseTool's cooperative abort signal.
+   */
+  public cancelInProgress(): boolean {
+    return this.cancelActiveOperation();
+  }
+
+  private buildIntensityRangeContext(
+    viewport: Types.IViewport,
+    element: HTMLDivElement,
+    referencedVolumeId: string,
+    canvas: Types.Point2 | undefined
+  ): FloodFillIntensityRangeOptions {
+    const ffConfig = this.configuration as RegionSegmentPlusFloodFillConfig;
+    const voiMapping = getViewportVoiMappingForVolume(
+      viewport,
+      referencedVolumeId
+    );
+    const irc = normalizeIntensityRangeStrategyConfig(ffConfig);
+    const disk = getCanvasDiskRadiusCssPxFromConfig(irc) ?? 3;
+    const canvasPoint = canvas ? { x: canvas[0], y: canvas[1] } : undefined;
+    return {
+      positiveStdDevMultiplier: this.configuration.positiveStdDevMultiplier,
+      initialNeighborhoodRadius: ffConfig.initialNeighborhoodRadius,
+      viewport,
+      element,
+      referencedVolumeId,
+      canvasPoint,
+      canvasDiskRadiusPx: disk,
+      voiMapping: voiMapping ?? undefined,
+    };
   }
 
   mouseMoveCallback(evt: EventTypes.MouseMoveEventType) {
     if (this.mode !== ToolModes.Active) {
+      this.removeDiskSamplingPreview();
       return;
     }
+
     const eventData = evt.detail;
     const { currentPoints, element } = eventData;
     const { world: worldPoint } = currentPoints;
+
+    if (this.segmentationInProgress) {
+      element.style.cursor = 'wait';
+      return;
+    }
+
+    if (this.usesCanvasDiskStrategy()) {
+      const irc = this.getIntensityStrategyConfig();
+      const r = getCanvasDiskRadiusCssPxFromConfig(irc) ?? 3;
+      this.updateDiskSamplingPreview(element, currentPoints.canvas, r);
+    } else {
+      this.removeDiskSamplingPreview();
+    }
+
+    if (!this.configuration.hoverPrecheckEnabled) {
+      this.allowedToProceed = true;
+      element.style.cursor = 'copy';
+      return;
+    }
 
     element.style.cursor = 'default';
 
@@ -66,38 +323,125 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
     }, this.configuration.mouseStabilityDelay || 500);
   }
 
-  async onMouseStable(
+  onMouseStable(
     evt: EventTypes.MouseMoveEventType,
     worldPoint: Types.Point3,
     element: HTMLDivElement
   ) {
-    await super.preMouseDownCallback(
+    if (this.segmentationInProgress) {
+      element.style.cursor = 'wait';
+      return;
+    }
+
+    if (!this.configuration.hoverPrecheckEnabled) {
+      this.allowedToProceed = true;
+      element.style.cursor = 'copy';
+      const enabledElement = getEnabledElement(element);
+      if (enabledElement?.viewport) {
+        enabledElement.viewport.render();
+      }
+      return;
+    }
+
+    const setupOk = super.preMouseDownCallback(
       evt as EventTypes.MouseDownActivateEventType
     );
+    if (!setupOk || !this.growCutData) {
+      return;
+    }
 
     const refVolume = cache.getVolume(
       this.growCutData.segmentation.referencedVolumeId
     );
-    const seeds = calculateGrowCutSeeds(refVolume, worldPoint, {}) || {
-      positiveSeedIndices: new Set(),
-      negativeSeedIndices: new Set(),
-    };
+    const segmentationMode =
+      this.configuration.segmentationMode ?? 'floodfill_full';
 
-    const { positiveSeedIndices, negativeSeedIndices } = seeds;
-
-    // if the ratio of positive to negative is significant, this is not a good
-    // seed and we should not run grow cut. These are just heuristics numbers
-    // and can be adjusted.
-    let cursor;
-    if (
-      positiveSeedIndices.size / negativeSeedIndices.size > 20 ||
-      negativeSeedIndices.size < 30
-    ) {
-      cursor = 'not-allowed';
-      this.allowedToProceed = false;
+    let cursor: string;
+    if (segmentationMode === 'floodfill_full') {
+      const ffConfig = this.configuration as RegionSegmentPlusFloodFillConfig;
+      const enabledEl = getEnabledElement(element);
+      const viewport = enabledEl?.viewport;
+      if (!viewport) {
+        return;
+      }
+      const rangeOpts = this.buildIntensityRangeContext(
+        viewport,
+        element,
+        this.growCutData.segmentation.referencedVolumeId,
+        evt.detail.currentPoints.canvas
+      );
+      const rangeFn =
+        this.resolveIntensityRangeGetter() ?? getPositiveIntensityRange;
+      const rangeResult = rangeFn(refVolume, worldPoint, rangeOpts);
+      if (!rangeResult) {
+        cursor = 'not-allowed';
+        this.allowedToProceed = false;
+        growCutLog.info(
+          'hover gate: blocked (flood fill — no valid intensity band)',
+          {
+            worldPoint,
+          }
+        );
+      } else {
+        cursor = 'copy';
+        this.allowedToProceed = true;
+        growCutLog.info('hover gate: OK (flood fill)', {
+          toleranceMin: rangeResult.min,
+          toleranceMax: rangeResult.max,
+          neighborhood: rangeResult.diagnostics,
+        });
+      }
     } else {
-      cursor = 'copy';
-      this.allowedToProceed = true;
+      const ffConfig = this.configuration as RegionSegmentPlusFloodFillConfig;
+      const enabledEl = getEnabledElement(element);
+      const viewport = enabledEl?.viewport;
+      const rangeOpts = viewport
+        ? this.buildIntensityRangeContext(
+            viewport,
+            element,
+            this.growCutData.segmentation.referencedVolumeId,
+            evt.detail.currentPoints.canvas
+          )
+        : undefined;
+      const seeds = calculateGrowCutSeeds(refVolume, worldPoint, {
+        getIntensityRange: this.resolveIntensityRangeGetter(),
+        intensityRangeOptions: rangeOpts,
+        initialNeighborhoodRadius: ffConfig.initialNeighborhoodRadius,
+        positiveStdDevMultiplier: this.configuration.positiveStdDevMultiplier,
+      }) || {
+        positiveSeedIndices: new Set(),
+        negativeSeedIndices: new Set(),
+      };
+      const { positiveSeedIndices, negativeSeedIndices } = seeds;
+      const ratio =
+        positiveSeedIndices.size / Math.max(negativeSeedIndices.size, 1);
+      if (ratio > 20 || negativeSeedIndices.size < 30) {
+        cursor = 'not-allowed';
+        this.allowedToProceed = false;
+        growCutLog.info(
+          'hover gate: blocked (GPU grow cut — seed heuristics)',
+          {
+            positiveSeedCount: positiveSeedIndices.size,
+            negativeSeedCount: negativeSeedIndices.size,
+            positiveToNegativeRatio: ratio,
+            reason:
+              ratio > 20
+                ? 'ratio too high (>20:1) — likely uniform tissue, poor contrast'
+                : 'negative seeds < 30 — not enough background samples',
+          }
+        );
+      } else {
+        cursor = 'copy';
+        this.allowedToProceed = true;
+        growCutLog.info('hover gate: OK (GPU grow cut)', {
+          positiveSeedCount: positiveSeedIndices.size,
+          negativeSeedCount: negativeSeedIndices.size,
+          positiveToNegativeRatio: ratio,
+        });
+      }
+      if (this.allowedToProceed) {
+        this.seeds = seeds;
+      }
     }
 
     // Get the enabled element first
@@ -113,57 +457,102 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
       });
     }
 
-    if (this.allowedToProceed) {
-      this.seeds = seeds;
-    }
-
     // Ensure the viewport renders after cursor is updated
     if (enabledElement && enabledElement.viewport) {
       enabledElement.viewport.render();
     }
   }
 
-  async preMouseDownCallback(
-    evt: EventTypes.MouseDownActivateEventType
-  ): Promise<boolean> {
-    // change cursor to loading
-    if (!this.allowedToProceed) {
-      return false;
-    }
-
-    const eventData = evt.detail;
-    const { currentPoints, element } = eventData;
-    const enabledElement = getEnabledElement(element);
-    if (enabledElement) {
+  /** Deferred click path: rAF, base setup, runGrowCut (see preMouseDownCallback). */
+  private async _runGrowCutAfterMouseDown(
+    evt: EventTypes.MouseDownActivateEventType,
+    worldPoint: Types.Point3,
+    element: HTMLDivElement | undefined,
+    restoreCursor: () => void
+  ): Promise<void> {
+    this.segmentationInProgress = true;
+    const enabledElement = element ? getEnabledElement(element) : undefined;
+    if (enabledElement && element) {
       element.style.cursor = 'wait';
-
-      requestAnimationFrame(() => {
-        if (element.style.cursor !== 'wait') {
-          element.style.cursor = 'wait';
-        }
-      });
     }
 
-    const { world: worldPoint } = currentPoints;
-
-    await super.preMouseDownCallback(evt);
+    const canvas = evt.detail.currentPoints.canvas;
+    const canvasPoint = { x: canvas[0], y: canvas[1] };
 
     this.growCutData = csUtils.deepMerge(this.growCutData, {
       worldPoint,
+      canvasPoint,
       islandRemoval: {
         worldIslandPoints: [worldPoint],
       },
     });
 
     this.growCutData.worldPoint = worldPoint;
+    (this.growCutData as RegionSegmentPlusToolData).canvasPoint = canvasPoint;
     this.growCutData.islandRemoval = {
       worldIslandPoints: [worldPoint],
     };
-    await this.runGrowCut();
 
-    if (element) {
-      element.style.cursor = 'default';
+    try {
+      await this.runGrowCut();
+    } finally {
+      this.segmentationInProgress = false;
+      restoreCursor();
     }
+  }
+
+  preMouseDownCallback(evt: EventTypes.MouseDownActivateEventType): boolean {
+    if (this.configuration.hoverPrecheckEnabled && !this.allowedToProceed) {
+      return false;
+    }
+
+    if (!this.configuration.hoverPrecheckEnabled) {
+      this.seeds = null;
+    }
+
+    const eventData = evt.detail;
+    const { currentPoints, element } = eventData;
+    const { world: worldPoint } = currentPoints;
+
+    const restoreCursor = () => {
+      if (!element) {
+        return;
+      }
+      element.style.cursor = this.configuration.hoverPrecheckEnabled
+        ? 'default'
+        : 'copy';
+    };
+
+    /**
+     * Run base setup synchronously so `growCutData` is populated and
+     * `evt.preventDefault()` runs during MOUSE_DOWN (same as GrowCutBaseTool).
+     * Deferring only `runGrowCut()` broke consumption of the event and raced mouse-up state.
+     */
+    const setupOk = super.preMouseDownCallback(evt);
+    if (!setupOk) {
+      return false;
+    }
+
+    void this._runGrowCutAfterMouseDown(
+      evt,
+      worldPoint,
+      element,
+      restoreCursor
+    ).catch((err) => {
+      const message =
+        err instanceof Error ? err.message : 'One-click segmentation failed.';
+      if (message.includes('no valid intensity range')) {
+        this.notifySegmentationError(
+          'One-click segmentation could not determine a valid intensity range at the clicked location. Try clicking inside the target region, adjusting VOI/contrast, or changing Max Delta K/IJ.'
+        );
+      } else {
+        this.notifySegmentationError(message);
+      }
+      growCutLog.error('RegionSegmentPlus: segmentation failed', {
+        message,
+      });
+      restoreCursor();
+    });
 
     return true;
   }
@@ -180,16 +569,118 @@ class RegionSegmentPlusTool extends GrowCutBaseTool {
 
   protected async getGrowCutLabelmap(growCutData): Promise<Types.IImageVolume> {
     const {
-      segmentation: { referencedVolumeId },
+      segmentation: { referencedVolumeId, segmentIndex },
       worldPoint,
       options,
+      viewportId,
+      renderingEngineId,
     } = growCutData;
 
+    const segmentationMode =
+      this.configuration.segmentationMode ?? 'floodfill_full';
+    const ffConfig = this.configuration as RegionSegmentPlusFloodFillConfig;
+
+    const refVolume = cache.getVolume(referencedVolumeId);
+    const [volMin, volMax] = refVolume.voxelManager.getRange();
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    const viewport = renderingEngine?.getViewport(viewportId);
+    const displayVoi = viewport
+      ? getDisplayVoiSnapshot(viewport, referencedVolumeId)
+      : null;
+
+    growCutLog.info('one-click run', {
+      segmentationMode,
+      algorithm:
+        segmentationMode === 'floodfill_full'
+          ? 'flood_fill_plus_island_removal'
+          : 'gpu_grow_cut',
+      referencedVolumeId,
+      segmentIndex,
+      worldPosition: worldPoint,
+      volumeScalarRange: { min: volMin, max: volMax },
+      displayVoi,
+      positiveStdDevMultiplier: this.configuration.positiveStdDevMultiplier,
+      floodFillPlanar:
+        segmentationMode === 'floodfill_full' &&
+        (this.configuration as RegionSegmentPlusFloodFillConfig).planar ===
+          true,
+    });
+
+    if (segmentationMode === 'floodfill_full') {
+      if (!viewport) {
+        throw new Error(
+          'Viewport not found for flood fill segmentation. Ensure the viewport is still active.'
+        );
+      }
+      const { labelmapVolumeId } = growCutData.segmentation;
+      const labelmapVolume = cache.getVolume(labelmapVolumeId);
+      if (!labelmapVolume) {
+        throw new Error(
+          `Flood fill: segmentation labelmap volume not in cache: ${labelmapVolumeId}`
+        );
+      }
+      const toolData = growCutData as RegionSegmentPlusToolData;
+      const canvasPoint = toolData.canvasPoint;
+      const irc = this.getIntensityStrategyConfig();
+      const diskPx = getCanvasDiskRadiusCssPxFromConfig(irc) ?? 3;
+      const islandCfg = ffConfig.floodFillIslandRemoval ?? {};
+      // `growCutData.options` must not set `planar`; flood slice mode comes only from tool configuration.
+      const { planar: _ignoredPlanarFromGrowCut, ...growCutOptionsForFlood } =
+        options ?? {};
+      const floodFillPlanar = ffConfig.planar === true;
+      const result = await runFloodFillSegmentation({
+        referencedVolumeId,
+        worldPosition: worldPoint,
+        viewport,
+        labelmapVolume,
+        options: {
+          ...growCutOptionsForFlood,
+          segmentIndex,
+          positiveStdDevMultiplier: this.configuration.positiveStdDevMultiplier,
+          initialNeighborhoodRadius: ffConfig.initialNeighborhoodRadius,
+          getIntensityRange: this.resolveIntensityRangeGetter(),
+          element: viewport.element,
+          canvasPoint,
+          intensitySamplingDiskRadiusCanvasPx: diskPx,
+          applyExternalIslandRemoval: islandCfg.removeExternalIslands !== false,
+          applyInternalIslandRemoval: islandCfg.removeInternalIslands !== false,
+          islandRemovalVerboseLogging: islandCfg.verboseLogging === true,
+          planar: floodFillPlanar,
+          maxDeltaK: ffConfig.maxDeltaK,
+          maxDeltaIJ: ffConfig.maxDeltaIJ,
+        },
+      });
+      if (!result) {
+        throw new Error(
+          'Flood fill segmentation failed: no valid intensity range. ' +
+            'Enable debug logging for the growCut logger, or hover precheck, to see the reason ' +
+            '(click outside volume, strategy prerequisites, or seed outside computed band).'
+        );
+      }
+      return result;
+    }
+
     const { subVolumePaddingPercentage } = this.configuration;
+    const toolData = growCutData as RegionSegmentPlusToolData;
+    const cp = toolData.canvasPoint;
+    const canvas: Types.Point2 | undefined = cp ? [cp.x, cp.y] : undefined;
+    const intensityRangeOptions = viewport
+      ? this.buildIntensityRangeContext(
+          viewport,
+          viewport.element,
+          referencedVolumeId,
+          canvas
+        )
+      : undefined;
+
     const mergedOptions = {
       ...options,
       subVolumePaddingPercentage,
       seeds: this.seeds,
+      getIntensityRange: this.resolveIntensityRangeGetter(),
+      intensityRangeOptions,
+      initialNeighborhoodRadius: ffConfig.initialNeighborhoodRadius,
+      positiveStdDevMultiplier: this.configuration.positiveStdDevMultiplier,
     };
 
     return growCut.runOneClickGrowCut({

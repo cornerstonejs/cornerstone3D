@@ -733,11 +733,22 @@ export default class VoxelManager<T> {
   }): IVoxelManager<number> | IVoxelManager<RGB> {
     const pixelsPerSlice = dimensions[0] * dimensions[1];
 
+    let cachedSliceIndex = -1;
+    let cachedImageVoxelManager:
+      | IVoxelManager<number>
+      | IVoxelManager<RGB>
+      | null = null;
+
     function getPixelInfo(index) {
       const sliceIndex = Math.floor(index / pixelsPerSlice);
       if (sliceIndex < 0 || sliceIndex >= dimensions[2]) {
         return {};
       }
+      const pixelIndex = index % pixelsPerSlice;
+      if (sliceIndex === cachedSliceIndex && cachedImageVoxelManager !== null) {
+        return { voxelManager: cachedImageVoxelManager, pixelIndex };
+      }
+
       const imageId = imageIds[sliceIndex];
 
       if (!imageId) {
@@ -753,7 +764,8 @@ export default class VoxelManager<T> {
       }
 
       const voxelManager = image.voxelManager;
-      const pixelIndex = index % pixelsPerSlice;
+      cachedSliceIndex = sliceIndex;
+      cachedImageVoxelManager = voxelManager;
 
       return { voxelManager, pixelIndex };
     }
@@ -1492,8 +1504,9 @@ export default class VoxelManager<T> {
     // storing an RLE representation, which doesn't have an up front size.
     image.sizeInBytes = DEFAULT_RLE_SIZE;
   }
-
-  public static;
 }
+
+export type NumberVoxelManager = VoxelManager<number>;
+export type RGBVoxelManager = VoxelManager<RGB>;
 
 export type { VoxelManager };

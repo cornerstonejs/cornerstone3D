@@ -33,6 +33,7 @@ class RegionSegmentTool extends GrowCutBaseTool {
   static toolName = 'RegionSegment';
 
   protected growCutData: RegionSegmentToolData | null;
+  private segmentationInProgress = false;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -48,16 +49,18 @@ class RegionSegmentTool extends GrowCutBaseTool {
     super(toolProps, defaultToolProps);
   }
 
-  async preMouseDownCallback(
-    evt: EventTypes.MouseDownActivateEventType
-  ): Promise<boolean> {
+  preMouseDownCallback(evt: EventTypes.MouseDownActivateEventType): boolean {
+    if (this.segmentationInProgress) {
+      return false;
+    }
+
     const eventData = evt.detail;
     const { element, currentPoints } = eventData;
     const { world: worldPoint } = currentPoints;
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
 
-    await super.preMouseDownCallback(evt);
+    super.preMouseDownCallback(evt);
 
     Object.assign(this.growCutData, {
       circleCenterPoint: worldPoint,
@@ -73,6 +76,10 @@ class RegionSegmentTool extends GrowCutBaseTool {
   }
 
   private _dragCallback = (evt: EventTypes.InteractionEventType): void => {
+    if (this.segmentationInProgress || !this.growCutData) {
+      return;
+    }
+
     const eventData = evt.detail;
     const { element, currentPoints } = eventData;
     const { world: currentWorldPoint } = currentPoints;
@@ -85,17 +92,27 @@ class RegionSegmentTool extends GrowCutBaseTool {
   };
 
   private _endCallback = async (evt: EventTypes.InteractionEventType) => {
+    if (this.segmentationInProgress) {
+      return;
+    }
+
     const eventData = evt.detail;
     const { element } = eventData;
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    this.runGrowCut();
-    this._deactivateDraw(element);
+    this.segmentationInProgress = true;
+    element.style.cursor = 'wait';
 
-    this.growCutData = null;
-    resetElementCursor(element);
-    triggerAnnotationRenderForViewportUIDs([viewport.id]);
+    try {
+      await this.runGrowCut();
+      this._deactivateDraw(element);
+      this.growCutData = null;
+    } finally {
+      this.segmentationInProgress = false;
+      resetElementCursor(element);
+      triggerAnnotationRenderForViewportUIDs([viewport.id]);
+    }
   };
 
   protected async getGrowCutLabelmap(growCutData): Promise<Types.IImageVolume> {
