@@ -17,6 +17,7 @@
  * on demand via `getPlanarRenderCameraForReference`.
  */
 import { vec3 } from 'gl-matrix';
+import { ActorRenderMode } from '../../../types';
 import type {
   Point3,
   ReferenceCompatibleOptions,
@@ -74,8 +75,8 @@ export function getPlanarReferencedImageId(args: {
   }
 
   if (
-    rendering.renderMode === 'cpuImage' ||
-    rendering.renderMode === 'vtkImage'
+    rendering.renderMode === ActorRenderMode.CPU_IMAGE ||
+    rendering.renderMode === ActorRenderMode.VTK_IMAGE
   ) {
     const imageIdIndex =
       typeof viewRefSpecifier?.sliceIndex === 'number'
@@ -185,8 +186,8 @@ export function getPlanarViewReference(args: {
 
   if (
     rendering &&
-    (rendering.renderMode === 'cpuVolume' ||
-      rendering.renderMode === 'vtkVolumeSlice') &&
+    (rendering.renderMode === ActorRenderMode.CPU_VOLUME ||
+      rendering.renderMode === ActorRenderMode.VTK_VOLUME_SLICE) &&
     viewRefSpecifier?.forFrameOfReference !== false
   ) {
     viewReference.volumeId = args.data?.volumeId;
@@ -242,8 +243,8 @@ export function getPlanarViewReferenceId(args: {
   }
 
   if (
-    rendering.renderMode === 'cpuVolume' ||
-    rendering.renderMode === 'vtkVolumeSlice'
+    rendering.renderMode === ActorRenderMode.CPU_VOLUME ||
+    rendering.renderMode === ActorRenderMode.VTK_VOLUME_SLICE
   ) {
     const computedCamera = getPlanarComputedCameraForReference({
       ...args,

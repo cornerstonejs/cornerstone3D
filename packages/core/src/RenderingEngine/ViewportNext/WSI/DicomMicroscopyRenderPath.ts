@@ -8,20 +8,13 @@ import type {
   RenderPathDefinition,
   RenderPath,
 } from '../ViewportArchitectureTypes';
-import type { Point2, Point3 } from '../../../types';
 import type {
   WSICamera,
   WSIDataPresentation,
   WSIRendering,
   WSIPayload,
   WSIViewportRenderContext,
-} from './WSIViewportNextTypes';
-import {
-  canvasToIndexForWSI,
-  indexToCanvasForWSI,
-  indexToWorldWSIMetadata,
-  worldToIndexWSIMetadata,
-} from './wsiTransformUtils';
+} from './WSIViewportTypes';
 
 const EVENT_POSTRENDER = 'postrender';
 
@@ -149,40 +142,6 @@ export class DicomMicroscopyRenderPath
     }
   }
 
-  private canvasToWorld(
-    ctx: WSIViewportRenderContext,
-    rendering: WSIRendering,
-    metadata: WSIPayload['metadata'],
-    canvasPos: Point2
-  ): Point3 {
-    const indexPoint = canvasToIndexForWSI({
-      canvasPos,
-      canvasWidth: ctx.element.clientWidth,
-      canvasHeight: ctx.element.clientHeight,
-      view: rendering.map.getView(),
-    });
-    indexPoint[1] = -indexPoint[1];
-
-    return indexToWorldWSIMetadata(metadata, indexPoint);
-  }
-
-  private worldToCanvas(
-    ctx: WSIViewportRenderContext,
-    rendering: WSIRendering,
-    metadata: WSIPayload['metadata'],
-    worldPos: Point3
-  ): Point2 {
-    const indexPoint = worldToIndexWSIMetadata(metadata, worldPos);
-    indexPoint[1] = -indexPoint[1];
-
-    return indexToCanvasForWSI({
-      indexPos: indexPoint,
-      canvasWidth: ctx.element.clientWidth,
-      canvasHeight: ctx.element.clientHeight,
-      view: rendering.map.getView(),
-    });
-  }
-
   private getFrameOfReferenceUID(payload: WSIPayload): string | undefined {
     return payload.frameOfReferenceUID ?? undefined;
   }
@@ -200,7 +159,7 @@ export class DicomMicroscopyPath
   implements RenderPathDefinition<WSIViewportRenderContext>
 {
   readonly id = 'wsi:dicom-microscopy-viewer';
-  readonly type = ViewportType.WHOLE_SLIDE_V2;
+  readonly type = ViewportType.WHOLE_SLIDE_NEXT;
 
   matches(data: LoadedData, options: DataAddOptions): boolean {
     return data.type === 'wsi' && options.renderMode === 'wsi2d';

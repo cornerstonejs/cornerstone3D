@@ -43,7 +43,7 @@ test.describe('Multi Volume API Next (GPU)', () => {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_SAGITTAL_STACK_NEXT',
         constructorName: 'PlanarViewport',
-        type: 'planarV2',
+        type: 'planarNext',
         renderModesByDataId: {
           'multi-volume-api-next:ct': 'vtkVolumeSlice',
           'multi-volume-api-next:pt': 'vtkVolumeSlice',
@@ -64,7 +64,7 @@ test.describe('Multi Volume API Next (CPU)', () => {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_SAGITTAL_STACK_NEXT',
         constructorName: 'PlanarViewport',
-        type: 'planarV2',
+        type: 'planarNext',
         renderModesByDataId: {
           'multi-volume-api-next:ct': 'cpuVolume',
           'multi-volume-api-next:pt': 'cpuVolume',

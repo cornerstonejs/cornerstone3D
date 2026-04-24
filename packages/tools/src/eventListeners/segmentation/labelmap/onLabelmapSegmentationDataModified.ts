@@ -1,4 +1,9 @@
-import { Enums, getEnabledElementByViewportId } from '@cornerstonejs/core';
+import {
+  ActorRenderMode,
+  Enums,
+  getEnabledElementByViewportId,
+  type Types,
+} from '@cornerstonejs/core';
 
 import type { SegmentationDataModifiedEventType } from '../../../types/EventTypes';
 import { SegmentationRepresentations } from '../../../enums';
@@ -28,7 +33,7 @@ type NextPlanarVolumeLabelmapViewport = ReturnType<
   getDefaultActor?: () =>
     | {
         actorMapper?: {
-          renderMode?: string;
+          renderMode?: Types.ActorRenderMode;
         };
       }
     | undefined;
@@ -41,9 +46,9 @@ function isNextPlanarVolumeLabelmapViewport(
   const compatibilityViewport = viewport as NextPlanarVolumeLabelmapViewport;
 
   return (
-    compatibilityViewport?.type === Enums.ViewportType.PLANAR_V2 &&
+    compatibilityViewport?.type === Enums.ViewportType.PLANAR_NEXT &&
     compatibilityViewport.getDefaultActor?.()?.actorMapper?.renderMode ===
-      'vtkVolumeSlice' &&
+      ActorRenderMode.VTK_VOLUME_SLICE &&
     typeof compatibilityViewport.removeData === 'function'
   );
 }

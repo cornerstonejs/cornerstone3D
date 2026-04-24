@@ -5,6 +5,7 @@ import { buildPlanarActorEntry } from './buildPlanarActorEntry';
 import { Events, ViewportType } from '../../../enums';
 import eventTarget from '../../../eventTarget';
 import createVolumeSliceActor from '../../helpers/createVolumeSliceActor';
+import { ActorRenderMode } from '../../../types';
 import type { IImageData, Point2, Point3 } from '../../../types';
 import type {
   DataAddOptions,
@@ -65,7 +66,7 @@ export class VtkVolumeSliceRenderPath
     );
     const mapper = actor.getMapper() as vtkImageResliceMapper;
 
-    ctx.display.activateRenderMode('vtkVolumeSlice');
+    ctx.display.activateRenderMode(ActorRenderMode.VTK_VOLUME_SLICE);
     ctx.vtk.renderer.addActor(actor);
 
     const transferFunction = actor.getProperty().getRGBTransferFunction(0);
@@ -73,7 +74,7 @@ export class VtkVolumeSliceRenderPath
 
     const rendering: PlanarVolumeSliceRendering = {
       id: `rendering:${data.id}:${options.renderMode}`,
-      renderMode: 'vtkVolumeSlice',
+      renderMode: ActorRenderMode.VTK_VOLUME_SLICE,
       actor,
       overlayOrder: getImageSliceOverlayOrder(ctx.vtk.renderer, actor),
       imageVolume,
@@ -121,7 +122,7 @@ export class VtkVolumeSliceRenderPath
         return buildPlanarActorEntry(planarData, {
           actor: rendering.actor,
           mapper: rendering.mapper,
-          renderMode: 'vtkVolumeSlice',
+          renderMode: ActorRenderMode.VTK_VOLUME_SLICE,
           uidFallback: planarData.volumeId,
           referencedIdFallback: planarData.volumeId,
         });
@@ -184,7 +185,7 @@ export class VtkVolumeSliceRenderPath
         orientation: camera?.orientation,
       });
 
-    ctx.display.activateRenderMode('vtkVolumeSlice');
+    ctx.display.activateRenderMode(ActorRenderMode.VTK_VOLUME_SLICE);
     const renderCamera = resolvePlanarRenderCamera({
       sliceBasis,
       camera,
@@ -330,10 +331,13 @@ export class VtkVolumeSlicePath
     >
 {
   readonly id = 'planar:vtk-volume-slice';
-  readonly type = ViewportType.PLANAR_V2;
+  readonly type = ViewportType.PLANAR_NEXT;
 
   matches(data: LoadedData, options: DataAddOptions): boolean {
-    return data.type === 'image' && options.renderMode === 'vtkVolumeSlice';
+    return (
+      data.type === 'image' &&
+      options.renderMode === ActorRenderMode.VTK_VOLUME_SLICE
+    );
   }
 
   createRenderPath() {

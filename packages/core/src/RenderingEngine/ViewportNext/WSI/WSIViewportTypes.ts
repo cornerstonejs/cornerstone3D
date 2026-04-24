@@ -60,13 +60,15 @@ export interface WSIDataProvider extends DataProvider {
   load(dataId: string): Promise<LoadedData<WSIPayload>>;
 }
 
-export interface WSIViewportNextInput {
+export interface WSIViewportInput {
   id: string;
   element: HTMLDivElement;
   renderingEngineId: string;
   dataProvider?: WSIDataProvider;
   renderPathResolver?: RenderPathResolver;
 }
+
+export type WSIViewportNextInput = WSIViewportInput;
 
 export interface WSIViewportRenderContext extends BaseViewportRenderContext {
   type: 'wsi';

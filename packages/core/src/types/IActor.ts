@@ -14,6 +14,14 @@ export type ImageActor = vtkImageSlice;
 
 export type ICanvasActor = CanvasActor;
 
+export enum ActorRenderMode {
+  VTK_IMAGE = 'vtkImage',
+  VTK_VOLUME = 'vtkVolume',
+  VTK_VOLUME_SLICE = 'vtkVolumeSlice',
+  CPU_IMAGE = 'cpuImage',
+  CPU_VOLUME = 'cpuVolume',
+}
+
 /**
  * Actor/mapper pair associated with a rendering path, discriminated by
  * `renderMode`. Narrowing on `renderMode` produces a fully-typed actor +
@@ -28,27 +36,27 @@ export type ICanvasActor = CanvasActor;
  */
 export type ActorMapperProxy =
   | {
-      renderMode: 'vtkImage';
+      renderMode: ActorRenderMode.VTK_IMAGE;
       actor: ImageActor;
       mapper: vtkImageMapper;
     }
   | {
-      renderMode: 'vtkVolume';
+      renderMode: ActorRenderMode.VTK_VOLUME;
       actor: VolumeActor;
       mapper: vtkVolumeMapper;
     }
   | {
-      renderMode: 'vtkVolumeSlice';
+      renderMode: ActorRenderMode.VTK_VOLUME_SLICE;
       actor: ImageActor;
       mapper: vtkImageResliceMapper;
     }
   | {
-      renderMode: 'cpuImage';
+      renderMode: ActorRenderMode.CPU_IMAGE;
       actor: ICanvasActor;
       mapper: CanvasMapper;
     }
   | {
-      renderMode: 'cpuVolume';
+      renderMode: ActorRenderMode.CPU_VOLUME;
       actor: ICanvasActor;
       mapper: CanvasMapper;
     };
@@ -63,7 +71,7 @@ export interface ActorEntry {
   uid: string;
   /** actual actor object */
   actor: Actor | VolumeActor | ImageActor | ICanvasActor;
-  /** VTK actor/mapper proxy used by compatibility layers such as Viewport V2 */
+  /** VTK actor/mapper proxy used by compatibility layers such as Viewport Next */
   actorMapper?: ActorMapperProxy;
   /** the id of the referenced object (e.g., volume) from which this actor is derived or created*/
   referencedId?: string;

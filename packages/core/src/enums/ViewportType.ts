@@ -16,20 +16,20 @@ enum ViewportType {
   /** Perspective Viewport: Not Implemented yet */
   PERSPECTIVE = 'perspective',
   VOLUME_3D = 'volume3d',
-  VOLUME_3D_V2 = 'volume3dV2',
-  PLANAR_V2 = 'planarV2',
+  VOLUME_3D_NEXT = 'volume3dNext',
+  PLANAR_NEXT = 'planarNext',
   VIDEO = 'video',
-  VIDEO_V2 = 'videoV2',
+  VIDEO_NEXT = 'videoNext',
   /**
    * Whole slide imaging viewport
    */
   WHOLE_SLIDE = 'wholeSlide',
-  WHOLE_SLIDE_V2 = 'wholeSlideV2',
+  WHOLE_SLIDE_NEXT = 'wholeSlideNext',
   /**
    * ECG waveform viewport for displaying DICOM ECG traces
    */
   ECG = 'ecg',
-  ECG_V2 = 'ecgV2',
+  ECG_NEXT = 'ecgNext',
 }
 
 export default ViewportType;

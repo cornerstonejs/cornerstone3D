@@ -27,25 +27,24 @@ import type {
   VideoElementRenderContext,
   VideoElementRendering,
   VideoStreamPayload,
-  VideoViewportNextInput,
-} from './VideoViewportNextTypes';
+  VideoViewportInput,
+} from './VideoViewportTypes';
 import {
   createDefaultVideoCamera,
-  getVideoLayout,
   normalizeVideoCamera,
 } from './videoViewportCamera';
 import VideoComputedCamera from './VideoComputedCamera';
 
 defaultRenderPathResolver.register(new HtmlVideoPath());
 
-class VideoViewportNext extends ViewportNext<
+class VideoViewport extends ViewportNext<
   VideoCamera,
   VideoDataPresentation,
   VideoElementRenderContext
 > {
   // ── Fields ───────────────────────────────────────────────────────────
 
-  readonly type = ViewportType.VIDEO_V2;
+  readonly type = ViewportType.VIDEO_NEXT;
   readonly id: string;
   readonly element: HTMLDivElement;
   readonly renderingEngineId: string;
@@ -62,7 +61,7 @@ class VideoViewportNext extends ViewportNext<
 
   // ── Constructor ──────────────────────────────────────────────────────
 
-  constructor(args: VideoViewportNextInput) {
+  constructor(args: VideoViewportInput) {
     super();
     this.id = args.id;
     this.element = args.element;
@@ -102,7 +101,7 @@ class VideoViewportNext extends ViewportNext<
     const renderingIds: string[] = [];
 
     for (const { dataId } of entries) {
-      const renderingId = await this.setData(dataId, {
+      const renderingId = await this.addData(dataId, {
         renderMode: 'video2d',
       });
       const binding = this.getBinding(dataId);
@@ -125,7 +124,7 @@ class VideoViewportNext extends ViewportNext<
 
       if (!videoData) {
         throw new Error(
-          `[VideoViewportNext] Loaded data for ${dataId} is not a valid video stream`
+          `[VideoViewport] Loaded data for ${dataId} is not a valid video stream`
         );
       }
 
@@ -749,7 +748,7 @@ class VideoViewportNext extends ViewportNext<
   }
 }
 
-export default VideoViewportNext;
+export default VideoViewport;
 
 async function waitForVideoReady(element: HTMLVideoElement): Promise<void> {
   if (element.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {

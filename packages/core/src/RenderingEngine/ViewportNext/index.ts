@@ -38,7 +38,7 @@ export {
   viewportHasPan,
   viewportHasZoom,
 } from './ViewportArchitectureTypes';
-export { default as ECGViewportNext } from './ECG';
+export { default as ECGViewport } from './ECG';
 export {
   CanvasECGPath,
   CanvasECGRenderPath,
@@ -52,10 +52,11 @@ export type {
   ECGDataPresentation,
   ECGChannelData,
   ECGPresentationProps,
+  ECGViewportInput,
   ECGViewportNextInput,
   ECGWaveformPayload,
 } from './ECG';
-export { default as VideoViewportNext } from './Video';
+export { default as VideoViewport } from './Video';
 export {
   DefaultVideoDataProvider,
   HtmlVideoPath,
@@ -69,6 +70,7 @@ export type {
   VideoElementRendering,
   VideoPresentationProps,
   VideoStreamPayload,
+  VideoViewportInput,
   VideoViewportNextInput,
 } from './Video';
 export { default as PlanarViewport } from './Planar';
@@ -92,6 +94,7 @@ export type {
   PlanarOrientation,
   PlanarPayload,
   PlanarPresentationProps,
+  PlanarReferenceContext,
   PlanarRegisteredDataSet,
   PlanarRenderMode,
   PlanarSetDataOptions,
@@ -127,7 +130,7 @@ export type {
   Volume3DVtkVolumeAdapterContext,
   VolumeViewport3DV2Input,
 } from './Volume3D';
-export { default as WSIViewportNext } from './WSI';
+export { default as WSIViewport } from './WSI';
 export {
   DefaultWSIDataProvider,
   DicomMicroscopyPath,
@@ -142,6 +145,7 @@ export type {
   WSIPayload,
   WSIPresentationProps,
   WSIRendering,
+  WSIViewportInput,
   WSIViewportRenderContext,
   WSIViewportNextInput,
 } from './WSI';

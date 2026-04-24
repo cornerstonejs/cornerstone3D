@@ -23,7 +23,7 @@ import type {
   ECGDataPresentation,
   ECGWaveformPayload,
   RenderWindowMetrics,
-} from './ECGViewportNextTypes';
+} from './ECGViewportTypes';
 import { getECGCameraLayout } from './ecgViewportCamera';
 
 export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
@@ -105,7 +105,7 @@ export class CanvasECGPath
   implements RenderPathDefinition<ECGCanvasRenderContext>
 {
   readonly id = 'ecg:canvas-signal';
-  readonly type = ViewportType.ECG_V2;
+  readonly type = ViewportType.ECG_NEXT;
 
   matches(data: LoadedData, options: DataAddOptions): boolean {
     return data.type === 'ecg' && options.renderMode === 'signal2d';

@@ -112,7 +112,7 @@ async function run() {
 
   renderingEngine.enableElement({
     viewportId,
-    type: ViewportType.ECG_V2,
+    type: ViewportType.ECG_NEXT,
     element,
     defaultOptions: {
       background: getNextExampleBackground(),

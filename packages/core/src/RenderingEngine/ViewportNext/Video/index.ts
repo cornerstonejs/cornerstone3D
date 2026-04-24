@@ -1,7 +1,7 @@
 export { DefaultVideoDataProvider } from './DefaultVideoDataProvider';
 export { HtmlVideoPath, HtmlVideoRenderPath } from './HtmlVideoRenderPath';
 export { default as VideoComputedCamera } from './VideoComputedCamera';
-export { default } from './VideoViewportNext';
+export { default } from './VideoViewport';
 export type {
   VideoCamera,
   VideoDataPresentation,
@@ -9,5 +9,6 @@ export type {
   VideoElementRendering,
   VideoPresentationProps,
   VideoStreamPayload,
+  VideoViewportInput,
   VideoViewportNextInput,
-} from './VideoViewportNextTypes';
+} from './VideoViewportTypes';

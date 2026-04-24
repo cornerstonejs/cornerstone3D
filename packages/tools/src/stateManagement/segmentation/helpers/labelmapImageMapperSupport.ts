@@ -1,4 +1,9 @@
-import { Enums, VolumeViewport, type Types } from '@cornerstonejs/core';
+import {
+  ActorRenderMode,
+  Enums,
+  VolumeViewport,
+  type Types,
+} from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 import type { Segmentation } from '../../../types/SegmentationStateTypes';
 import { getLabelmaps } from './labelmapSegmentationState';
@@ -33,7 +38,7 @@ type ViewportLabelmapImageMapperCompatibilityViewport = Types.IViewport & {
             getBlendMode?: () => Enums.BlendModes;
             getSlabThickness?: () => number;
           };
-          renderMode?: string;
+          renderMode?: Types.ActorRenderMode;
         };
       })
     | undefined;
@@ -59,7 +64,7 @@ function isPlanarGpuVolumeSliceViewport(
   const compatibilityViewport =
     viewport as ViewportLabelmapImageMapperCompatibilityViewport;
 
-  if (compatibilityViewport.type !== Enums.ViewportType.PLANAR_V2) {
+  if (compatibilityViewport.type !== Enums.ViewportType.PLANAR_NEXT) {
     return false;
   }
 
@@ -70,7 +75,7 @@ function isPlanarGpuVolumeSliceViewport(
   const defaultActor = compatibilityViewport.getDefaultActor?.();
   const renderMode = defaultActor?.actorMapper?.renderMode;
 
-  return renderMode === 'vtkVolumeSlice';
+  return renderMode === ActorRenderMode.VTK_VOLUME_SLICE;
 }
 
 function getPlanarVolumeSliceMapper(
@@ -93,7 +98,7 @@ function getPlanarPrimaryDataId(
   const renderModes = (
     viewport as Types.IViewport & {
       _debug?: {
-        renderModes?: Record<string, string>;
+        renderModes?: Record<string, Types.ActorRenderMode>;
       };
     }
   )._debug?.renderModes;
@@ -103,7 +108,7 @@ function getPlanarPrimaryDataId(
   }
 
   return Object.entries(renderModes).find(
-    ([, renderMode]) => renderMode === 'vtkVolumeSlice'
+    ([, renderMode]) => renderMode === ActorRenderMode.VTK_VOLUME_SLICE
   )?.[0];
 }
 
@@ -326,7 +331,7 @@ export function getVolumeViewportLabelmapImageMapperState(
   if (
     isNextPlanarViewport &&
     compatibilityViewport.getDefaultActor?.()?.actorMapper?.renderMode !==
-      'vtkVolumeSlice'
+      ActorRenderMode.VTK_VOLUME_SLICE
   ) {
     return {
       key: `unsupported:renderMode:${orientationKey}`,

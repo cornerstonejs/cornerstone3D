@@ -2,7 +2,8 @@ import { buildPlanarActorEntry } from './buildPlanarActorEntry';
 import CanvasActor from '../../CanvasActor';
 import { Events, ViewportStatus, ViewportType } from '../../../enums';
 import eventTarget from '../../../eventTarget';
-import type { ICamera, IImageData, Point2, Point3 } from '../../../types';
+import { ActorRenderMode } from '../../../types';
+import type { IImageData, Point2, Point3 } from '../../../types';
 import type { IViewport } from '../../../types/IViewport';
 import triggerEvent from '../../../utilities/triggerEvent';
 import { createCanvas } from '../../helpers/getOrCreateCanvas';
@@ -71,11 +72,11 @@ export class CpuVolumeSliceRenderPath
 
     compatibilityActor.setVisibility(true);
 
-    ctx.display.activateRenderMode('cpuVolume');
+    ctx.display.activateRenderMode(ActorRenderMode.CPU_VOLUME);
 
     rendering = {
       id: `rendering:${data.id}:${options.renderMode}`,
-      renderMode: 'cpuVolume',
+      renderMode: ActorRenderMode.CPU_VOLUME,
       compatibilityActor,
       imageVolume: payload.imageVolume,
       imageIds: payload.imageIds,
@@ -230,7 +231,7 @@ export class CpuVolumeSliceRenderPath
 
         return buildPlanarActorEntry(planarData, {
           actor: rendering.compatibilityActor,
-          renderMode: 'cpuVolume',
+          renderMode: ActorRenderMode.CPU_VOLUME,
           uidFallback: planarData.volumeId,
           referencedIdFallback: planarData.volumeId,
         });
@@ -287,7 +288,7 @@ export class CpuVolumeSliceRenderPath
     dataId: string,
     cameraInput: unknown
   ): void {
-    ctx.display.activateRenderMode('cpuVolume');
+    ctx.display.activateRenderMode(ActorRenderMode.CPU_VOLUME);
     this.syncRenderCamera(
       ctx,
       rendering,
@@ -380,7 +381,7 @@ export class CpuVolumeSliceRenderPath
   ): void {
     const runtime = rendering;
 
-    ctx.display.activateRenderMode('cpuVolume');
+    ctx.display.activateRenderMode(ActorRenderMode.CPU_VOLUME);
     ctx.cpu.canvas.style.display = '';
     ctx.cpu.canvas.style.opacity = '1';
 
@@ -652,10 +653,12 @@ export class CpuVolumeSlicePath
     >
 {
   readonly id = 'planar:cpu-volume-slice';
-  readonly type = ViewportType.PLANAR_V2;
+  readonly type = ViewportType.PLANAR_NEXT;
 
   matches(data: LoadedData, options: DataAddOptions): boolean {
-    return data.type === 'image' && options.renderMode === 'cpuVolume';
+    return (
+      data.type === 'image' && options.renderMode === ActorRenderMode.CPU_VOLUME
+    );
   }
 
   createRenderPath() {

@@ -29,13 +29,13 @@ function navigateToExample(params?: Record<string, string>) {
 test.describe('Video ViewportNext', () => {
   test.beforeEach(navigateToExample());
 
-  test('should use VideoViewportNext runtime', async ({ page }) => {
+  test('should use VideoViewport runtime', async ({ page }) => {
     await expectViewportNextRuntime(page, [
       {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'videoNextViewport',
-        constructorName: 'VideoViewportNext',
-        type: 'videoV2',
+        constructorName: 'VideoViewport',
+        type: 'videoNext',
         renderModesByDataId: {
           'video-next:primary': 'video2d',
         },

@@ -137,7 +137,7 @@ test.describe('Volume Annotation - Next (GPU)', () => {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_AXIAL_STACK',
         constructorName: 'PlanarViewport',
-        type: 'planarV2',
+        type: 'planarNext',
         renderModesByDataId: {
           'volume-annotation-tools-next:source': 'vtkVolumeSlice',
         },
@@ -146,7 +146,7 @@ test.describe('Volume Annotation - Next (GPU)', () => {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_SAGITTAL_STACK',
         constructorName: 'PlanarViewport',
-        type: 'planarV2',
+        type: 'planarNext',
         renderModesByDataId: {
           'volume-annotation-tools-next:source': 'vtkVolumeSlice',
         },
@@ -155,7 +155,7 @@ test.describe('Volume Annotation - Next (GPU)', () => {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_OBLIQUE_STACK',
         constructorName: 'PlanarViewport',
-        type: 'planarV2',
+        type: 'planarNext',
         renderModesByDataId: {
           'volume-annotation-tools-next:source': 'vtkVolumeSlice',
         },
@@ -205,7 +205,7 @@ test.describe('Volume Annotation - Next (CPU)', () => {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_AXIAL_STACK',
         constructorName: 'PlanarViewport',
-        type: 'planarV2',
+        type: 'planarNext',
         renderModesByDataId: {
           'volume-annotation-tools-next:source': 'cpuVolume',
         },
@@ -214,7 +214,7 @@ test.describe('Volume Annotation - Next (CPU)', () => {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_SAGITTAL_STACK',
         constructorName: 'PlanarViewport',
-        type: 'planarV2',
+        type: 'planarNext',
         renderModesByDataId: {
           'volume-annotation-tools-next:source': 'cpuVolume',
         },
@@ -223,7 +223,7 @@ test.describe('Volume Annotation - Next (CPU)', () => {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_OBLIQUE_STACK',
         constructorName: 'PlanarViewport',
-        type: 'planarV2',
+        type: 'planarNext',
         renderModesByDataId: {
           'volume-annotation-tools-next:source': 'cpuVolume',
         },

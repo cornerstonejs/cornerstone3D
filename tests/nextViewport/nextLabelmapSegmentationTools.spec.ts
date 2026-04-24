@@ -186,7 +186,7 @@ test.describe('Labelmap Segmentation Tools - Next (GPU)', () => {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_AXIAL',
         constructorName: 'PlanarViewport',
-        type: 'planarV2',
+        type: 'planarNext',
         renderModesByDataId: {
           'labelmap-segmentation-tools-next:source': 'vtkVolumeSlice',
         },
@@ -195,7 +195,7 @@ test.describe('Labelmap Segmentation Tools - Next (GPU)', () => {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_SAGITTAL',
         constructorName: 'PlanarViewport',
-        type: 'planarV2',
+        type: 'planarNext',
         renderModesByDataId: {
           'labelmap-segmentation-tools-next:source': 'vtkVolumeSlice',
         },
@@ -204,7 +204,7 @@ test.describe('Labelmap Segmentation Tools - Next (GPU)', () => {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_CORONAL',
         constructorName: 'PlanarViewport',
-        type: 'planarV2',
+        type: 'planarNext',
         renderModesByDataId: {
           'labelmap-segmentation-tools-next:source': 'vtkVolumeSlice',
         },
@@ -235,7 +235,7 @@ test.describe('Labelmap Segmentation Tools - Next (CPU)', () => {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_AXIAL',
         constructorName: 'PlanarViewport',
-        type: 'planarV2',
+        type: 'planarNext',
         renderModesByDataId: {
           'labelmap-segmentation-tools-next:source': 'cpuVolume',
         },
@@ -244,7 +244,7 @@ test.describe('Labelmap Segmentation Tools - Next (CPU)', () => {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_SAGITTAL',
         constructorName: 'PlanarViewport',
-        type: 'planarV2',
+        type: 'planarNext',
         renderModesByDataId: {
           'labelmap-segmentation-tools-next:source': 'cpuVolume',
         },
@@ -253,7 +253,7 @@ test.describe('Labelmap Segmentation Tools - Next (CPU)', () => {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_CORONAL',
         constructorName: 'PlanarViewport',
-        type: 'planarV2',
+        type: 'planarNext',
         renderModesByDataId: {
           'labelmap-segmentation-tools-next:source': 'cpuVolume',
         },

@@ -187,7 +187,7 @@ export class VtkVolume3DPath
     >
 {
   readonly id = 'volume3d:vtk-volume';
-  readonly type = ViewportType.VOLUME_3D_V2;
+  readonly type = ViewportType.VOLUME_3D_NEXT;
 
   matches(data: LoadedData, options: DataAddOptions): boolean {
     return data.type === 'image' && options.renderMode === 'vtkVolume3d';

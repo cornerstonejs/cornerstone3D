@@ -1,4 +1,5 @@
 import {
+  ActorRenderMode,
   type Types,
   getEnabledElement,
   addVolumesToViewports,
@@ -37,7 +38,7 @@ type PlanarNextVolumeViewport = Types.IViewport & {
   getDefaultActor?: () =>
     | (Types.ActorEntry & {
         actorMapper?: {
-          renderMode?: string;
+          renderMode?: Types.ActorRenderMode;
         };
       })
     | undefined;
@@ -47,11 +48,13 @@ type PlanarNextVolumeViewport = Types.IViewport & {
   ) => Types.ViewReference;
   getActor?: (actorUID: string) => Types.ActorEntry | undefined;
   render?: () => void;
-  setData: (
+  addData: (
     dataId: string,
     options: {
       orientation?: unknown;
-      renderMode: 'cpuVolume' | 'vtkVolumeSlice';
+      renderMode:
+        | Types.ActorRenderMode.CPU_VOLUME
+        | Types.ActorRenderMode.VTK_VOLUME_SLICE;
     }
   ) => Promise<string>;
   setDataPresentation: (
@@ -226,11 +229,11 @@ function isPlanarNextVolumeViewport(
   const nextViewport = viewport as Partial<PlanarNextVolumeViewport>;
 
   return (
-    nextViewport.type === Enums.ViewportType.PLANAR_V2 &&
+    nextViewport.type === Enums.ViewportType.PLANAR_NEXT &&
     typeof nextViewport.getCamera === 'function' &&
     typeof nextViewport.getVolumeId === 'function' &&
     typeof nextViewport.getViewReference === 'function' &&
-    typeof nextViewport.setData === 'function' &&
+    typeof nextViewport.addData === 'function' &&
     typeof nextViewport.setDataPresentation === 'function' &&
     typeof nextViewport.setViewReference === 'function'
   );
@@ -238,10 +241,16 @@ function isPlanarNextVolumeViewport(
 
 function getPlanarNextVolumeRenderMode(
   viewport: PlanarNextVolumeViewport
-): 'cpuVolume' | 'vtkVolumeSlice' | undefined {
+):
+  | Types.ActorRenderMode.CPU_VOLUME
+  | Types.ActorRenderMode.VTK_VOLUME_SLICE
+  | undefined {
   const renderMode = viewport.getDefaultActor?.()?.actorMapper?.renderMode;
 
-  if (renderMode === 'cpuVolume' || renderMode === 'vtkVolumeSlice') {
+  if (
+    renderMode === ActorRenderMode.CPU_VOLUME ||
+    renderMode === ActorRenderMode.VTK_VOLUME_SLICE
+  ) {
     return renderMode;
   }
 }
@@ -308,7 +317,7 @@ async function addLabelmapToPlanarNextViewport(args: {
       volumeId: layer.volumeId,
     });
 
-    await viewport.setData(dataId, {
+    await viewport.addData(dataId, {
       orientation: requestedOrientation,
       renderMode,
     });

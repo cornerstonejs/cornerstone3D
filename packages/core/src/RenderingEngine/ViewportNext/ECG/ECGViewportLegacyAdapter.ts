@@ -1,7 +1,7 @@
 import type { ECGViewportProperties } from '../../../types';
-import ECGViewportNext from './ECGViewportNext';
+import ECGViewport from './ECGViewport';
 
-class ECGViewportLegacyAdapter extends ECGViewportNext {
+class ECGViewportLegacyAdapter extends ECGViewport {
   async setEcg(imageId: string): Promise<void> {
     await this.setDataList([{ dataId: imageId }]);
   }

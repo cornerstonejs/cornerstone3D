@@ -29,13 +29,13 @@ function navigateToExample(params?: Record<string, string>) {
 test.describe('WSI ViewportNext', () => {
   test.beforeEach(navigateToExample());
 
-  test('should use WSIViewportNext runtime', async ({ page }) => {
+  test('should use WSIViewport runtime', async ({ page }) => {
     await expectViewportNextRuntime(page, [
       {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'wsiNextViewport',
-        constructorName: 'WSIViewportNext',
-        type: 'wholeSlideV2',
+        constructorName: 'WSIViewport',
+        type: 'wholeSlideNext',
         renderModesByDataId: {
           'wsi-next:primary': 'wsi2d',
         },

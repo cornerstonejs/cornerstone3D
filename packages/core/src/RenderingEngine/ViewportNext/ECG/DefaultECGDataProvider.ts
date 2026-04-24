@@ -1,5 +1,5 @@
 import type { DataProvider, LoadedData } from '../ViewportArchitectureTypes';
-import type { ECGWaveformPayload } from './ECGViewportNextTypes';
+import type { ECGWaveformPayload } from './ECGViewportTypes';
 import { loadECGWaveform } from '../../../utilities/ECGUtilities';
 import { getViewportNextSourceDataId } from '../viewportNextDataSetAccess';
 

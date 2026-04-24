@@ -6,6 +6,7 @@ import type {
 } from '../../../enums';
 import type {
   ActorEntry,
+  ActorRenderMode,
   ColormapPublic,
   IImage,
   IImageVolume,
@@ -25,17 +26,20 @@ import type ICamera from '../../../types/ICamera';
 import type { ViewportCameraBase } from '../ViewportCameraTypes';
 
 export type PlanarRenderMode =
-  | 'cpuImage'
+  | ActorRenderMode.CPU_IMAGE
   | 'webgl2d'
-  | 'vtkImage'
-  | 'vtkVolumeSlice';
-export type PlanarRequestedRenderMode = PlanarRenderMode | 'cpuVolume' | 'auto';
+  | ActorRenderMode.VTK_IMAGE
+  | ActorRenderMode.VTK_VOLUME_SLICE;
+export type PlanarRequestedRenderMode =
+  | PlanarRenderMode
+  | ActorRenderMode.CPU_VOLUME
+  | 'auto';
 export type PlanarEffectiveRenderMode =
-  | 'cpuImage'
+  | ActorRenderMode.CPU_IMAGE
   | 'webgl2d'
-  | 'vtkImage'
-  | 'vtkVolumeSlice'
-  | 'cpuVolume';
+  | ActorRenderMode.VTK_IMAGE
+  | ActorRenderMode.VTK_VOLUME_SLICE
+  | ActorRenderMode.CPU_VOLUME;
 export type PlanarOrientation =
   | OrientationAxis.ACQUISITION
   | OrientationAxis.AXIAL

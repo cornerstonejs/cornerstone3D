@@ -47,13 +47,15 @@ export interface ECGProperties {
 
 export type ECGDataPresentation = ECGPresentationProps & ECGProperties;
 
-export interface ECGViewportNextInput {
+export interface ECGViewportInput {
   id: string;
   element: HTMLDivElement;
   renderingEngineId: string;
   dataProvider?: DataProvider;
   renderPathResolver?: RenderPathResolver;
 }
+
+export type ECGViewportNextInput = ECGViewportInput;
 
 export interface ChannelLayout {
   channel: ECGChannelData;

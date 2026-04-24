@@ -38,7 +38,7 @@ test.describe('Labelmap Slice Rendering - Next (GPU)', () => {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_AXIAL',
         constructorName: 'PlanarViewport',
-        type: 'planarV2',
+        type: 'planarNext',
         renderModesByDataId: {
           'labelmap-slice-rendering-next:source': 'vtkVolumeSlice',
         },
@@ -47,7 +47,7 @@ test.describe('Labelmap Slice Rendering - Next (GPU)', () => {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_SAGITTAL',
         constructorName: 'PlanarViewport',
-        type: 'planarV2',
+        type: 'planarNext',
         renderModesByDataId: {
           'labelmap-slice-rendering-next:source': 'vtkVolumeSlice',
         },
@@ -56,7 +56,7 @@ test.describe('Labelmap Slice Rendering - Next (GPU)', () => {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_CORONAL',
         constructorName: 'PlanarViewport',
-        type: 'planarV2',
+        type: 'planarNext',
         renderModesByDataId: {
           'labelmap-slice-rendering-next:source': 'vtkVolumeSlice',
         },

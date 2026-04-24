@@ -134,7 +134,7 @@ abstract class BaseRenderingEngine {
     // 2.b) Retrieving the list of viewports for calculation of the new size for
     // offScreen canvas.
 
-    // Route based on the viewport's declared pipeline. Some V2 viewports still
+    // Route based on the viewport's declared pipeline. Some Next viewports still
     // need VTK backing even when global CPU rendering is enabled.
     if (!viewportUsesCustomRenderingPipeline) {
       this.enableVTKjsDrivenViewport(viewportInput);
@@ -445,20 +445,20 @@ abstract class BaseRenderingEngine {
   }
 
   /**
-   * Map from legacy viewport types to their V2 equivalents.
+   * Map from legacy viewport types to their Next equivalents.
    * The remapped type is used internally for the render path and pipeline
    * selection, while the original requested type is retained so viewport
-   * creation can choose a legacy adapter instead of a raw V2 class.
+   * creation can choose a legacy adapter instead of a raw Next class.
    */
-  private static readonly V2_TYPE_REMAP: Partial<
+  private static readonly NEXT_TYPE_REMAP: Partial<
     Record<ViewportType, ViewportType>
   > = {
-    [ViewportType.STACK]: ViewportType.PLANAR_V2,
-    [ViewportType.ORTHOGRAPHIC]: ViewportType.PLANAR_V2,
-    [ViewportType.VIDEO]: ViewportType.VIDEO_V2,
-    [ViewportType.WHOLE_SLIDE]: ViewportType.WHOLE_SLIDE_V2,
-    [ViewportType.ECG]: ViewportType.ECG_V2,
-    [ViewportType.VOLUME_3D]: ViewportType.VOLUME_3D_V2,
+    [ViewportType.STACK]: ViewportType.PLANAR_NEXT,
+    [ViewportType.ORTHOGRAPHIC]: ViewportType.PLANAR_NEXT,
+    [ViewportType.VIDEO]: ViewportType.VIDEO_NEXT,
+    [ViewportType.WHOLE_SLIDE]: ViewportType.WHOLE_SLIDE_NEXT,
+    [ViewportType.ECG]: ViewportType.ECG_NEXT,
+    [ViewportType.VOLUME_3D]: ViewportType.VOLUME_3D_NEXT,
   };
 
   private _normalizeViewportInputEntry(
@@ -468,9 +468,9 @@ abstract class BaseRenderingEngine {
     let { type } = viewportInputEntry;
     const { defaultOptions } = viewportInputEntry;
 
-    // Remap legacy types to V2 when the flag is set
+    // Remap legacy types to Next when the flag is set
     if (getUseViewportNext()) {
-      const remapped = BaseRenderingEngine.V2_TYPE_REMAP[type];
+      const remapped = BaseRenderingEngine.NEXT_TYPE_REMAP[type];
       if (remapped) {
         type = remapped;
       }
@@ -493,7 +493,7 @@ abstract class BaseRenderingEngine {
       }
     }
 
-    if (type === ViewportType.PLANAR_V2) {
+    if (type === ViewportType.PLANAR_NEXT) {
       options = {
         ...options,
         renderMode: resolvePlanarViewportRenderMode({

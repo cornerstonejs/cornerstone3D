@@ -116,7 +116,7 @@ async function run() {
 
   renderingEngine.enableElement({
     viewportId,
-    type: ViewportType.VIDEO_V2,
+    type: ViewportType.VIDEO_NEXT,
     element,
     defaultOptions: {
       background: getNextExampleBackground(),

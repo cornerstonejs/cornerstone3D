@@ -10,7 +10,7 @@ import {
   indexToWorldWSIMetadata,
   worldToIndexWSIMetadata,
 } from './wsiTransformUtils';
-import type { WSICamera } from './WSIViewportNextTypes';
+import type { WSICamera } from './WSIViewportTypes';
 
 type WSIComputedCameraState = {
   camera: WSICamera;

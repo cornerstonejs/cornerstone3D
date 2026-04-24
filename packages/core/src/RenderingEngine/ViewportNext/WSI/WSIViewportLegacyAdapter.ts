@@ -7,9 +7,9 @@ import { MetadataModules } from '../../../enums';
 import * as metaData from '../../../metaData';
 import viewportNextDataSetMetadataProvider from '../../../utilities/viewportNextDataSetMetadataProvider';
 import type { WSIClientLike } from '../../../utilities/WSIUtilities';
-import WSIViewportNext from './WSIViewportNext';
+import WSIViewport from './WSIViewport';
 
-class WSIViewportLegacyAdapter extends WSIViewportNext {
+class WSIViewportLegacyAdapter extends WSIViewport {
   setDataIds(
     imageIds: string[],
     options?: ImageSetOptions & {

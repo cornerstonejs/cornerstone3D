@@ -27,9 +27,9 @@ import type {
   WSIDataPresentation,
   WSIPayload,
   WSIViewportRenderContext,
-  WSIViewportNextInput,
+  WSIViewportInput,
   WSIRendering,
-} from './WSIViewportNextTypes';
+} from './WSIViewportTypes';
 import {
   buildWSIColorTransform,
   buildWSIImageData,
@@ -42,12 +42,12 @@ import WSIComputedCamera from './WSIComputedCamera';
 
 defaultRenderPathResolver.register(new DicomMicroscopyPath());
 
-class WSIViewportNext extends ViewportNext<
+export default class WSIViewport extends ViewportNext<
   WSICamera,
   WSIDataPresentation,
   WSIViewportRenderContext
 > {
-  readonly type = ViewportType.WHOLE_SLIDE_V2;
+  readonly type = ViewportType.WHOLE_SLIDE_NEXT;
   readonly id: string;
   readonly element: HTMLDivElement;
   readonly renderingEngineId: string;
@@ -65,7 +65,7 @@ class WSIViewportNext extends ViewportNext<
     return true;
   }
 
-  constructor(args: WSIViewportNextInput) {
+  constructor(args: WSIViewportInput) {
     super();
     this.id = args.id;
     this.element = args.element;
@@ -113,7 +113,7 @@ class WSIViewportNext extends ViewportNext<
     const renderingIds: string[] = [];
 
     for (const { dataId } of entries) {
-      const renderingId = await this.setData(dataId, {
+      const renderingId = await this.addData(dataId, {
         renderMode: 'wsi2d',
       });
 
@@ -330,7 +330,7 @@ class WSIViewportNext extends ViewportNext<
 
     if (!transformUtils || !affine) {
       throw new Error(
-        `[WSIViewportNext] Cannot convert world to index for viewport ${this.id} because the WSI transform runtime is not ready.`
+        `[WSIViewport] Cannot convert world to index for viewport ${this.id} because the WSI transform runtime is not ready.`
       );
     }
 
@@ -349,7 +349,7 @@ class WSIViewportNext extends ViewportNext<
 
     if (!transformUtils || !affine) {
       throw new Error(
-        `[WSIViewportNext] Cannot convert index to world for viewport ${this.id} because the WSI transform runtime is not ready.`
+        `[WSIViewport] Cannot convert index to world for viewport ${this.id} because the WSI transform runtime is not ready.`
       );
     }
 
@@ -398,7 +398,7 @@ class WSIViewportNext extends ViewportNext<
       map?: WSIMapLike;
       viewer?: WSIViewerLike;
       view?: WSIMapViewLike;
-      wsi?: WSIViewportNext;
+      wsi?: WSIViewport;
     };
 
     anyWindow.map = rendering?.map;
@@ -586,7 +586,7 @@ class WSIViewportNext extends ViewportNext<
       map?: WSIMapLike;
       viewer?: WSIViewerLike;
       view?: WSIMapViewLike;
-      wsi?: WSIViewportNext;
+      wsi?: WSIViewport;
     };
 
     if (anyWindow.wsi !== this) {
@@ -608,8 +608,6 @@ class WSIViewportNext extends ViewportNext<
     delete anyWindow.wsi;
   }
 }
-
-export default WSIViewportNext;
 
 function isWSIPayload(data: LoadedData): data is LoadedData<WSIPayload> {
   if (typeof data !== 'object' || data === null || data.type !== 'wsi') {

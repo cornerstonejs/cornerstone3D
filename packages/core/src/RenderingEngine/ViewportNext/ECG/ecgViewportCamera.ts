@@ -1,6 +1,6 @@
 import type { Point2 } from '../../../types';
 import type { ViewAnchor } from '../ViewportCameraTypes';
-import type { ECGCamera, RenderWindowMetrics } from './ECGViewportNextTypes';
+import type { ECGCamera, RenderWindowMetrics } from './ECGViewportTypes';
 
 export interface ECGCameraLayout {
   anchorWorld: [number, number];

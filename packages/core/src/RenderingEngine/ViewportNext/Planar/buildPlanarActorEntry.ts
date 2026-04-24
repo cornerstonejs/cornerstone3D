@@ -1,4 +1,4 @@
-import type { ActorEntry } from '../../../types';
+import type { ActorEntry, ActorMapperProxy } from '../../../types';
 import type { LoadedData } from '../ViewportArchitectureTypes';
 import type { PlanarPayload } from './PlanarViewportTypes';
 
@@ -43,7 +43,7 @@ export function buildPlanarActorEntry(
       actor,
       mapper,
       renderMode: source.renderMode,
-    },
+    } as ActorMapperProxy,
     referencedId,
     ...(data.representationUID
       ? { representationUID: data.representationUID }

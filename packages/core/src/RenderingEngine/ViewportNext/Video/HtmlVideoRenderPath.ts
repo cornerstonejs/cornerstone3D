@@ -14,7 +14,7 @@ import type {
   VideoElementRendering,
   VideoProperties,
   VideoStreamPayload,
-} from './VideoViewportNextTypes';
+} from './VideoViewportTypes';
 import { normalizeVideoPlaybackInfo } from '../../../utilities/VideoUtilities';
 import { getVideoLayout } from './videoViewportCamera';
 
@@ -197,7 +197,7 @@ export class HtmlVideoPath
   implements RenderPathDefinition<VideoElementRenderContext>
 {
   readonly id = 'video:html-element';
-  readonly type = ViewportType.VIDEO_V2;
+  readonly type = ViewportType.VIDEO_NEXT;
 
   matches(data: LoadedData, options: DataAddOptions): boolean {
     return data.type === 'video' && options.renderMode === 'video2d';

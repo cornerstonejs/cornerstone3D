@@ -5,10 +5,10 @@ import type {
   ViewPresentation,
 } from '../../../types';
 import type { Point2 } from '../../../types';
-import type { VideoDataPresentation } from './VideoViewportNextTypes';
-import VideoViewportNext from './VideoViewportNext';
+import type { VideoDataPresentation } from './VideoViewportTypes';
+import VideoViewport from './VideoViewport';
 
-class VideoViewportLegacyAdapter extends VideoViewportNext {
+class VideoViewportLegacyAdapter extends VideoViewport {
   setDataIds(imageIds: string[], options?: ImageSetOptions) {
     const dataId = imageIds[0];
 

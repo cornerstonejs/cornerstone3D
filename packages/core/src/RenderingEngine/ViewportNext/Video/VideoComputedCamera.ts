@@ -10,7 +10,7 @@ import type {
   VideoCamera,
   VideoProperties,
   VideoStreamPayload,
-} from './VideoViewportNextTypes';
+} from './VideoViewportTypes';
 
 type VideoComputedCameraState = {
   camera: VideoCamera;

@@ -8,6 +8,7 @@ import {
 } from '../../../enums';
 import { loadAndCacheImage } from '../../../loaders/imageLoader';
 import * as metaData from '../../../metaData';
+import { ActorRenderMode } from '../../../types';
 import type { CPUIImageData, IImage, Point3 } from '../../../types';
 import type { Point2 } from '../../../types';
 import {
@@ -60,13 +61,13 @@ export class VtkImageMapperRenderPath
     const actor = vtkImageSlice.newInstance();
     const imageData = createVTKImageDataFromImage(payload.image);
 
-    ctx.display.activateRenderMode('vtkImage');
+    ctx.display.activateRenderMode(ActorRenderMode.VTK_IMAGE);
     mapper.setInputData(imageData);
     actor.setMapper(mapper);
     ctx.vtk.renderer.addActor(actor);
     const rendering: PlanarImageMapperRendering = {
       id: `rendering:${data.id}:${options.renderMode}`,
-      renderMode: 'vtkImage',
+      renderMode: ActorRenderMode.VTK_IMAGE,
       actor,
       currentImage: payload.image,
       mapper,
@@ -97,7 +98,7 @@ export class VtkImageMapperRenderPath
         return buildPlanarActorEntry(data as LoadedData<PlanarPayload>, {
           actor: rendering.actor,
           mapper: rendering.mapper,
-          renderMode: 'vtkImage',
+          renderMode: ActorRenderMode.VTK_IMAGE,
           referencedIdFallback: rendering.currentImage.imageId,
         });
       },
@@ -143,7 +144,7 @@ export class VtkImageMapperRenderPath
     const canvasWidth = ctx.vtk.canvas.clientWidth || ctx.vtk.canvas.width;
     const canvasHeight = ctx.vtk.canvas.clientHeight || ctx.vtk.canvas.height;
 
-    ctx.display.activateRenderMode('vtkImage');
+    ctx.display.activateRenderMode(ActorRenderMode.VTK_IMAGE);
     const sliceBasis = createPlanarImageSliceBasis({
       canvasHeight,
       canvasWidth,
@@ -280,10 +281,12 @@ export class VtkImageMapperPath
     >
 {
   readonly id = 'planar:vtk-image-mapper';
-  readonly type = ViewportType.PLANAR_V2;
+  readonly type = ViewportType.PLANAR_NEXT;
 
   matches(data: LoadedData, options: DataAddOptions): boolean {
-    return data.type === 'image' && options.renderMode === 'vtkImage';
+    return (
+      data.type === 'image' && options.renderMode === ActorRenderMode.VTK_IMAGE
+    );
   }
 
   createRenderPath() {

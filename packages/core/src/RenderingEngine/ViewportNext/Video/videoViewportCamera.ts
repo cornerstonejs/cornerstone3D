@@ -1,5 +1,5 @@
 import type { ViewAnchor } from '../ViewportCameraTypes';
-import type { VideoCamera, VideoProperties } from './VideoViewportNextTypes';
+import type { VideoCamera, VideoProperties } from './VideoViewportTypes';
 
 export interface VideoCameraLayout {
   left: number;

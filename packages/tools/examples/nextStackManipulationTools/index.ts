@@ -200,7 +200,7 @@ async function run() {
   const viewportId = 'CT_STACK';
   renderingEngine.enableElement({
     viewportId,
-    type: ViewportType.PLANAR_V2,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
       background: getNextExampleBackground(),

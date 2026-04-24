@@ -1,7 +1,7 @@
 import type { DataProvider, LoadedData } from '../ViewportArchitectureTypes';
 import { loadVideoStreamMetadata } from '../../../utilities/VideoUtilities';
 import { getViewportNextSourceDataId } from '../viewportNextDataSetAccess';
-import type { VideoStreamPayload } from './VideoViewportNextTypes';
+import type { VideoStreamPayload } from './VideoViewportTypes';
 
 export class DefaultVideoDataProvider implements DataProvider {
   async load(dataId: string): Promise<LoadedData<VideoStreamPayload>> {

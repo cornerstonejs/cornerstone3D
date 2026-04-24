@@ -33,6 +33,7 @@ import type {
   ImageActor,
   ICanvasActor,
 } from './IActor';
+import { ActorRenderMode } from './IActor';
 import type {
   IImageLoadObject,
   IVolumeLoadObject,
@@ -315,3 +316,5 @@ export type {
   RenderingEngineModeType,
   VtkOffscreenMultiRenderWindow,
 };
+
+export { ActorRenderMode };

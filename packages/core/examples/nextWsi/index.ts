@@ -97,7 +97,7 @@ async function run() {
 
   renderingEngine.enableElement({
     viewportId,
-    type: ViewportType.WHOLE_SLIDE_V2,
+    type: ViewportType.WHOLE_SLIDE_NEXT,
     element,
     defaultOptions: {
       background: getNextExampleBackground(),

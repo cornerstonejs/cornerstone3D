@@ -40,13 +40,15 @@ export interface VideoProperties {
 
 export type VideoDataPresentation = VideoPresentationProps & VideoProperties;
 
-export interface VideoViewportNextInput {
+export interface VideoViewportInput {
   id: string;
   element: HTMLDivElement;
   renderingEngineId: string;
   dataProvider?: DataProvider;
   renderPathResolver?: RenderPathResolver;
 }
+
+export type VideoViewportNextInput = VideoViewportInput;
 
 export interface VideoElementRenderContext extends BaseViewportRenderContext {
   type: 'video';

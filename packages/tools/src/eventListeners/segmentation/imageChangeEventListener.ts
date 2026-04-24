@@ -29,7 +29,7 @@ const enable = function (element: HTMLDivElement): void {
 
   const { viewport } = enabledElement;
   const isVolumeViewport = viewport instanceof BaseVolumeViewport;
-  const isPlanarViewport = viewport.type === Enums.ViewportType.PLANAR_V2;
+  const isPlanarViewport = viewport.type === Enums.ViewportType.PLANAR_NEXT;
   const canUseStackImageEvents =
     typeof (viewport as { getCurrentImageId?: () => string })
       .getCurrentImageId === 'function';
@@ -153,10 +153,10 @@ function _imageChangeEventListener(evt) {
       return;
     }
 
-    // ViewportNext (PLANAR_V2) does not fire PRE_STACK_NEW_IMAGE when
+    // ViewportNext (PLANAR_NEXT) does not fire PRE_STACK_NEW_IMAGE when
     // scrolling, so handle stack labelmap sync on CAMERA_MODIFIED instead.
-    const isPlanarV2 = viewport.type === Enums.ViewportType.PLANAR_V2;
-    if (!isPlanarV2) {
+    const isPlanarNext = viewport.type === Enums.ViewportType.PLANAR_NEXT;
+    if (!isPlanarNext) {
       perViewportManualTriggers.delete(viewportId);
       return;
     }

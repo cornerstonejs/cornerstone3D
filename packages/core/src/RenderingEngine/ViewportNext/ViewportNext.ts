@@ -85,10 +85,18 @@ abstract class ViewportNext<
   // ====================================================================
 
   /**
+   * Replaces all mounted datasets with a single logical dataset.
+   */
+  async setData(dataId: DataId, options: DataAddOptions): Promise<RenderingId> {
+    this.removeAllData();
+    return this.addData(dataId, options);
+  }
+
+  /**
    * Loads a logical dataset through the viewport data provider and adds it
    * through the render-path resolver.
    */
-  async setData(dataId: DataId, options: DataAddOptions): Promise<RenderingId> {
+  async addData(dataId: DataId, options: DataAddOptions): Promise<RenderingId> {
     if (this.isDestroyed) {
       throw new Error('Viewport has been destroyed');
     }
@@ -140,7 +148,7 @@ abstract class ViewportNext<
         );
       }
 
-      renderingIds.push(await this.setData(dataId, options as DataAddOptions));
+      renderingIds.push(await this.addData(dataId, options as DataAddOptions));
     }
 
     return renderingIds;
@@ -306,7 +314,7 @@ abstract class ViewportNext<
    * @deprecated Compatibility no-op retained during the V2 migration.
    */
   removeWidgets(): void {
-    // V2 viewports do not use VTK widgets -- intentional no-op.
+    // Next viewports do not use VTK widgets -- intentional no-op.
   }
 
   /**
@@ -405,6 +413,12 @@ abstract class ViewportNext<
     this._debug.renderModes[dataId] = attachment.rendering.renderMode;
     this.render();
     return attachment.rendering.id;
+  }
+
+  protected removeAllData(): void {
+    for (const dataId of Array.from(this.bindings.keys())) {
+      this.removeData(dataId);
+    }
   }
 
   /**

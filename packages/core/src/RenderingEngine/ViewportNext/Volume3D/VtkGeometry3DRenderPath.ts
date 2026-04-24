@@ -161,7 +161,7 @@ export class VtkGeometry3DPath
     >
 {
   readonly id = 'volume3d:vtk-geometry';
-  readonly type = ViewportType.VOLUME_3D_V2;
+  readonly type = ViewportType.VOLUME_3D_NEXT;
 
   matches(data: LoadedData, options: DataAddOptions): boolean {
     return data.type === 'geometry' && options.renderMode === 'vtkGeometry3d';
@@ -225,7 +225,7 @@ function createActorEntries(geometry: IGeometry) {
   }
 
   throw new Error(
-    `[VolumeViewport3DV2] Geometry type ${geometry.type} is not supported in 3D V2 rendering`
+    `[VolumeViewport3DV2] Geometry type ${geometry.type} is not supported in 3D Next rendering`
   );
 }
 

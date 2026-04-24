@@ -1,6 +1,11 @@
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
-import { cache, utilities, type Types } from '@cornerstonejs/core';
+import {
+  ActorRenderMode,
+  cache,
+  utilities,
+  type Types,
+} from '@cornerstonejs/core';
 import { triggerSegmentationRender } from '../../../stateManagement/segmentation/SegmentationRenderingEngine';
 import { updateLabelmapSegmentationImageReferences } from '../../../stateManagement/segmentation/updateLabelmapSegmentationImageReferences';
 import { getCurrentLabelmapImageIdsForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
@@ -46,7 +51,7 @@ export function syncStackLabelmapActors(
 
   const renderMode = getViewportLabelmapRenderMode(viewport);
   const defaultActorRenderMode = viewport.getDefaultActor()?.actorMapper
-    ?.renderMode as string | undefined;
+    ?.renderMode as Types.ActorRenderMode | undefined;
   const currentImage =
     cache.getImage(currentImageId) ||
     ({
@@ -71,7 +76,10 @@ export function syncStackLabelmapActors(
     )?.find((actorEntry) => actorEntry.referencedId === derivedImageId);
 
     if (!segmentationActorEntry) {
-      if (renderMode === 'image' && defaultActorRenderMode === 'cpuImage') {
+      if (
+        renderMode === 'image' &&
+        defaultActorRenderMode === ActorRenderMode.CPU_IMAGE
+      ) {
         viewport.addImages([
           {
             imageId: derivedImageId,

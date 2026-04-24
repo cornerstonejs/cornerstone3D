@@ -24,6 +24,7 @@ import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type { InterpolationType } from '../../../enums';
 import type {
   CPUFallbackEnabledElement,
+  ActorRenderMode,
   ICanvasActor,
   IImage,
   IImageVolume,
@@ -44,7 +45,7 @@ import type {
  * when the slice index changes.
  */
 export type PlanarImageMapperRendering = MountedRendering<{
-  renderMode: 'vtkImage';
+  renderMode: ActorRenderMode.VTK_IMAGE;
   actor: vtkImageSlice;
   currentImage: IImage;
   mapper: vtkImageMapper;
@@ -63,7 +64,7 @@ export type PlanarImageMapperRendering = MountedRendering<{
  * pixel data directly from the IImage and applies windowing / LUT on the CPU.
  */
 export type PlanarCpuImageRendering = MountedRendering<{
-  renderMode: 'cpuImage';
+  renderMode: ActorRenderMode.CPU_IMAGE;
   enabledElement: CPUFallbackEnabledElement;
   compatibilityActor: ICanvasActor;
   currentImageIdIndex: number;
@@ -83,7 +84,7 @@ export type PlanarCpuImageRendering = MountedRendering<{
  * re-sampling when only presentation (VOI, colormap) changes.
  */
 export type PlanarCpuVolumeRendering = MountedRendering<{
-  renderMode: 'cpuVolume';
+  renderMode: ActorRenderMode.CPU_VOLUME;
   compatibilityActor: ICanvasActor;
   enabledElement?: CPUFallbackEnabledElement;
   imageVolume: IImageVolume;
@@ -120,7 +121,7 @@ export type PlanarCpuVolumeRendering = MountedRendering<{
  * the current render camera focal point and view-plane normal.
  */
 export type PlanarVolumeSliceRendering = MountedRendering<{
-  renderMode: 'vtkVolumeSlice';
+  renderMode: ActorRenderMode.VTK_VOLUME_SLICE;
   actor: vtkImageSlice;
   overlayOrder: number;
   imageVolume: IImageVolume;

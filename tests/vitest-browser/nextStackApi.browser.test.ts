@@ -207,7 +207,7 @@ async function renderNextStackViewport() {
 
   renderingEngine.enableElement({
     viewportId,
-    type: ViewportType.PLANAR_V2,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
       orientation: OrientationAxis.AXIAL,
@@ -264,7 +264,7 @@ test('renders a fake-image stack with the Next stack API and matches the screens
   const canvas = viewport.getCanvas();
 
   expect(getConfiguration().rendering.useViewportNext).toBe(true);
-  expect(viewport.type).toBe(ViewportType.PLANAR_V2);
+  expect(viewport.type).toBe(ViewportType.PLANAR_NEXT);
   expect(viewport.constructor.name).toBe('PlanarViewport');
 
   await expect

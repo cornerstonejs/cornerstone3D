@@ -37,7 +37,7 @@ class VolumeViewport3DV2 extends ViewportNext<
   Volume3DViewportRenderContext,
   { camera: Volume3DCamera & ICamera }
 > {
-  readonly type: ViewportType = ViewportType.VOLUME_3D_V2;
+  readonly type: ViewportType = ViewportType.VOLUME_3D_NEXT;
   readonly id: string;
   readonly element: HTMLDivElement;
   readonly renderingEngineId: string;
@@ -136,7 +136,7 @@ class VolumeViewport3DV2 extends ViewportNext<
     const renderingIds: string[] = [];
 
     for (const { dataId, options = {} } of entries) {
-      renderingIds.push(await this.setData(dataId, options));
+      renderingIds.push(await this.addData(dataId, options));
     }
 
     return renderingIds;
@@ -149,7 +149,7 @@ class VolumeViewport3DV2 extends ViewportNext<
    * @param options - Requested 3D render-mode options.
    * @returns The rendering id created for the mounted dataset.
    */
-  async setData(
+  async addData(
     dataId: string,
     options: Volume3DSetDataOptions | DataAddOptions = {}
   ): Promise<string> {
@@ -157,7 +157,7 @@ class VolumeViewport3DV2 extends ViewportNext<
       dataId,
       (options as Volume3DSetDataOptions).renderMode
     );
-    const renderingId = await super.setData(dataId, {
+    const renderingId = await super.addData(dataId, {
       renderMode,
     });
 
@@ -172,6 +172,17 @@ class VolumeViewport3DV2 extends ViewportNext<
     this.camera = this.getCamera();
 
     return renderingId;
+  }
+
+  /**
+   * Replaces all mounted 3D datasets with a single logical 3D dataset.
+   */
+  async setData(
+    dataId: string,
+    options: Volume3DSetDataOptions | DataAddOptions = {}
+  ): Promise<string> {
+    this.removeAllData();
+    return this.addData(dataId, options);
   }
 
   /**

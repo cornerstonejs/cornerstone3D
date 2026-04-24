@@ -18,7 +18,7 @@ interface ViewportInputOptions {
   /** whether the events should be suppressed and not fired*/
   suppressEvents?: boolean;
   /**
-   * parallel projection settings. This is used by 3D volume viewports (`VOLUME_3D` and `VOLUME_3D_V2`).
+   * parallel projection settings. This is used by 3D volume viewports (`VOLUME_3D` and `VOLUME_3D_NEXT`).
    * You can't modify the parallel projection of a stack viewport or orthographic volume viewport using viewport input options.
    */
   parallelProjection?: boolean;

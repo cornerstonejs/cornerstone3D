@@ -1,6 +1,7 @@
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import CanvasActor from '../../CanvasActor';
+import { ActorRenderMode } from '../../../types';
 import type { ActorEntry, IImage, IStackInput } from '../../../types';
 import type { IViewport } from '../../../types/IViewport';
 import uuidv4 from '../../../utilities/uuidv4';
@@ -40,7 +41,7 @@ export function createPlanarImageOverlayActorEntry(
     actorMapper: {
       actor,
       mapper,
-      renderMode: 'vtkImage',
+      renderMode: ActorRenderMode.VTK_IMAGE,
     },
     referencedId: image.imageId,
     ...stackInput,
@@ -74,7 +75,7 @@ export function createPlanarCpuImageOverlayActorEntry(
     actorMapper: {
       actor,
       mapper: actor.getMapper(),
-      renderMode: 'cpuImage',
+      renderMode: ActorRenderMode.CPU_IMAGE,
     },
     referencedId: image.imageId,
     ...stackInput,

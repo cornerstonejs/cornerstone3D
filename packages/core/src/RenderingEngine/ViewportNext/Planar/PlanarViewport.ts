@@ -1,5 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import { OrientationAxis, ViewportType } from '../../../enums';
+import { ActorRenderMode } from '../../../types';
 import type {
   ActorEntry,
   CPUIImageData,
@@ -88,7 +89,7 @@ defaultRenderPathResolver.register(new CpuVolumeSlicePath());
 defaultRenderPathResolver.register(new VtkImageMapperPath());
 defaultRenderPathResolver.register(new VtkVolumeSlicePath());
 
-type PlanarReferenceContext = {
+export type PlanarReferenceContext = {
   dataId: string;
   data: LoadedData<PlanarPayload>;
   frameOfReferenceUID: string;
@@ -100,7 +101,7 @@ class PlanarViewport extends ViewportNext<
   PlanarDataPresentation,
   PlanarViewportRenderContext
 > {
-  readonly type = ViewportType.PLANAR_V2;
+  readonly type = ViewportType.PLANAR_NEXT;
   readonly id: string;
   readonly element: HTMLDivElement;
   readonly renderingEngineId: string;
@@ -259,7 +260,7 @@ class PlanarViewport extends ViewportNext<
     const renderingIds: string[] = [];
 
     for (const { dataId, options = {} } of entries) {
-      const renderingId = await this.setData(dataId, options);
+      const renderingId = await this.addData(dataId, options);
       renderingIds.push(renderingId);
     }
 
@@ -279,7 +280,7 @@ class PlanarViewport extends ViewportNext<
    * the effective planar render path.
    * @returns The rendering id created for the mounted dataset.
    */
-  async setData(
+  async addData(
     dataId: string,
     options: PlanarSetDataOptions | DataAddOptions = {}
   ): Promise<string> {
@@ -299,6 +300,17 @@ class PlanarViewport extends ViewportNext<
     });
 
     return renderingId;
+  }
+
+  /**
+   * Replaces all mounted planar datasets with a single logical planar dataset.
+   */
+  async setData(
+    dataId: string,
+    options: PlanarSetDataOptions | DataAddOptions = {}
+  ): Promise<string> {
+    this.removeAllData();
+    return this.addData(dataId, options);
   }
 
   /**
@@ -381,8 +393,8 @@ class PlanarViewport extends ViewportNext<
     const rendering = this.getCurrentPlanarRendering();
 
     if (
-      rendering?.renderMode === 'cpuImage' ||
-      rendering?.renderMode === 'cpuVolume'
+      rendering?.renderMode === ActorRenderMode.CPU_IMAGE ||
+      rendering?.renderMode === ActorRenderMode.CPU_VOLUME
     ) {
       return this.renderContext.cpu.canvas;
     }
@@ -402,7 +414,10 @@ class PlanarViewport extends ViewportNext<
         const overlayActorEntry = this.compatibilityOverlayActors.get(actorUID);
 
         if (overlayActorEntry) {
-          if (overlayActorEntry.actorMapper?.renderMode === 'vtkImage') {
+          if (
+            overlayActorEntry.actorMapper?.renderMode ===
+            ActorRenderMode.VTK_IMAGE
+          ) {
             this.renderContext.vtk.renderer.removeActor(
               overlayActorEntry.actor as never
             );
@@ -432,9 +447,9 @@ class PlanarViewport extends ViewportNext<
     const rendering = this.getCurrentPlanarRendering();
 
     if (
-      rendering?.renderMode !== 'vtkImage' &&
-      rendering?.renderMode !== 'vtkVolumeSlice' &&
-      rendering?.renderMode !== 'cpuImage'
+      rendering?.renderMode !== ActorRenderMode.VTK_IMAGE &&
+      rendering?.renderMode !== ActorRenderMode.VTK_VOLUME_SLICE &&
+      rendering?.renderMode !== ActorRenderMode.CPU_IMAGE
     ) {
       return;
     }
@@ -447,7 +462,7 @@ class PlanarViewport extends ViewportNext<
       }
 
       const actorEntry =
-        rendering.renderMode === 'cpuImage'
+        rendering.renderMode === ActorRenderMode.CPU_IMAGE
           ? createPlanarCpuImageOverlayActorEntry(
               this as never,
               image,
@@ -458,7 +473,10 @@ class PlanarViewport extends ViewportNext<
         actorEntry.uid
       );
 
-      if (existingActorEntry?.actorMapper?.renderMode === 'vtkImage') {
+      if (
+        existingActorEntry?.actorMapper?.renderMode ===
+        ActorRenderMode.VTK_IMAGE
+      ) {
         this.renderContext.vtk.renderer.removeActor(
           existingActorEntry.actor as never
         );
@@ -471,7 +489,7 @@ class PlanarViewport extends ViewportNext<
         });
       }
 
-      if (actorEntry.actorMapper?.renderMode === 'vtkImage') {
+      if (actorEntry.actorMapper?.renderMode === ActorRenderMode.VTK_IMAGE) {
         this.renderContext.vtk.renderer.addActor(actorEntry.actor as never);
       }
       this.compatibilityOverlayActors.set(actorEntry.uid, actorEntry);
@@ -910,7 +928,7 @@ class PlanarViewport extends ViewportNext<
   canvasToWorld(canvasPos: Point2): Point3 {
     const rendering = this.getCurrentPlanarRendering();
 
-    if (rendering?.renderMode === 'cpuImage') {
+    if (rendering?.renderMode === ActorRenderMode.CPU_IMAGE) {
       const imageData = this.getImageData() as CPUIImageData | undefined;
 
       if (imageData) {
@@ -938,7 +956,7 @@ class PlanarViewport extends ViewportNext<
   worldToCanvas(worldPos: Point3): Point2 {
     const rendering = this.getCurrentPlanarRendering();
 
-    if (rendering?.renderMode === 'cpuImage') {
+    if (rendering?.renderMode === ActorRenderMode.CPU_IMAGE) {
       const imageData = this.getImageData() as CPUIImageData | undefined;
 
       if (imageData) {
@@ -1101,8 +1119,8 @@ class PlanarViewport extends ViewportNext<
     const rendering = this.getCurrentPlanarRendering();
 
     if (
-      rendering?.renderMode === 'cpuVolume' ||
-      rendering?.renderMode === 'vtkVolumeSlice'
+      rendering?.renderMode === ActorRenderMode.CPU_VOLUME ||
+      rendering?.renderMode === ActorRenderMode.VTK_VOLUME_SLICE
     ) {
       const volumeId = this.getVolumeId();
 
@@ -1265,7 +1283,7 @@ class PlanarViewport extends ViewportNext<
 
   protected override onDestroy(): void {
     this.compatibilityOverlayActors.forEach((actorEntry) => {
-      if (actorEntry.actorMapper?.renderMode === 'vtkImage') {
+      if (actorEntry.actorMapper?.renderMode === ActorRenderMode.VTK_IMAGE) {
         this.renderContext.vtk.renderer.removeActor(actorEntry.actor as never);
       }
     });
@@ -1303,7 +1321,8 @@ class PlanarViewport extends ViewportNext<
     vtkCanvas: HTMLCanvasElement
   ): void {
     const useCPUCanvas =
-      renderMode === 'cpuImage' || renderMode === 'cpuVolume';
+      renderMode === ActorRenderMode.CPU_IMAGE ||
+      renderMode === ActorRenderMode.CPU_VOLUME;
     const viewportElement = this.element.querySelector(
       '.viewport-element'
     ) as HTMLDivElement | null;
@@ -1497,8 +1516,8 @@ class PlanarViewport extends ViewportNext<
     selectedPath: SelectedPlanarRenderPath
   ): void {
     const isVolumePath =
-      selectedPath.renderMode === 'cpuVolume' ||
-      selectedPath.renderMode === 'vtkVolumeSlice';
+      selectedPath.renderMode === ActorRenderMode.CPU_VOLUME ||
+      selectedPath.renderMode === ActorRenderMode.VTK_VOLUME_SLICE;
     const imageIdIndex = isVolumePath
       ? undefined
       : planarData.initialImageIdIndex;
@@ -1831,8 +1850,8 @@ class PlanarViewport extends ViewportNext<
     const { rendering } = referenceContext;
 
     if (
-      rendering.renderMode === 'cpuImage' ||
-      rendering.renderMode === 'vtkImage'
+      rendering.renderMode === ActorRenderMode.CPU_IMAGE ||
+      rendering.renderMode === ActorRenderMode.VTK_IMAGE
     ) {
       return this.applyImageViewReference(referenceContext, viewRef);
     }
@@ -2047,8 +2066,8 @@ class PlanarViewport extends ViewportNext<
     const { rendering } = referenceContext;
 
     if (
-      rendering.renderMode !== 'cpuVolume' &&
-      rendering.renderMode !== 'vtkVolumeSlice'
+      rendering.renderMode !== ActorRenderMode.CPU_VOLUME &&
+      rendering.renderMode !== ActorRenderMode.VTK_VOLUME_SLICE
     ) {
       return;
     }

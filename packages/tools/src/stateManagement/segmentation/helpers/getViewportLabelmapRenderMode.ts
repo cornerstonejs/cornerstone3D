@@ -1,4 +1,5 @@
 import {
+  ActorRenderMode,
   BaseVolumeViewport,
   StackViewport,
   Enums,
@@ -43,20 +44,26 @@ export default function getViewportLabelmapRenderMode(
       : undefined;
   const actorMapper = defaultActor?.actorMapper as
     | {
-        renderMode?: string;
+        renderMode?: Types.ActorRenderMode;
       }
     | undefined;
   const renderMode = actorMapper?.renderMode;
 
-  if (renderMode === 'vtkVolume' || renderMode === 'vtkVolumeSlice') {
+  if (
+    renderMode === ActorRenderMode.VTK_VOLUME ||
+    renderMode === ActorRenderMode.VTK_VOLUME_SLICE
+  ) {
     return 'volume';
   }
 
-  if (renderMode === 'cpuVolume') {
+  if (renderMode === ActorRenderMode.CPU_VOLUME) {
     return 'volume';
   }
 
-  if (renderMode === 'vtkImage' || renderMode === 'cpuImage') {
+  if (
+    renderMode === ActorRenderMode.VTK_IMAGE ||
+    renderMode === ActorRenderMode.CPU_IMAGE
+  ) {
     return 'image';
   }
 
@@ -76,14 +83,14 @@ export default function getViewportLabelmapRenderMode(
   if (actorClassName === 'CanvasActor') {
     const defaultActorRenderMode = actorMapper?.renderMode;
 
-    if (defaultActorRenderMode === 'cpuVolume') {
+    if (defaultActorRenderMode === ActorRenderMode.CPU_VOLUME) {
       return 'volume';
     }
 
     return 'image';
   }
 
-  if (compatibilityViewport.type === Enums.ViewportType.PLANAR_V2) {
+  if (compatibilityViewport.type === Enums.ViewportType.PLANAR_NEXT) {
     if (compatibilityViewport.getVolumeId?.()) {
       return 'volume';
     }

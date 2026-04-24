@@ -153,7 +153,7 @@ describe('RenderingEngineAPI -- ', () => {
     });
   });
 
-  describe('RenderingEngine Enable/Disable API with Viewport V2:', function () {
+  describe('RenderingEngine Enable/Disable API with Viewport Next:', function () {
     let renderingEngine;
 
     beforeEach(function () {
@@ -182,7 +182,7 @@ describe('RenderingEngineAPI -- ', () => {
       const viewport = renderingEngine.getViewport(axialViewportId);
 
       expect(viewport).toBeTruthy();
-      expect(viewport.type).toBe(ViewportType.PLANAR_V2);
+      expect(viewport.type).toBe(ViewportType.PLANAR_NEXT);
     });
 
     it('should remap legacy viewport types when using enableElement', function () {
@@ -195,7 +195,7 @@ describe('RenderingEngineAPI -- ', () => {
       const viewport = renderingEngine.getViewport(customOrientationViewportId);
 
       expect(viewport).toBeTruthy();
-      expect(viewport.type).toBe(ViewportType.ECG_V2);
+      expect(viewport.type).toBe(ViewportType.ECG_NEXT);
     });
   });
 });

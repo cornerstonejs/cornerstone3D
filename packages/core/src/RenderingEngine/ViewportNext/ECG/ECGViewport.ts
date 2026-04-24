@@ -21,9 +21,9 @@ import type {
   ECGCanvasRenderContext,
   ECGCanvasRendering,
   ECGDataPresentation,
-  ECGViewportNextInput,
+  ECGViewportInput,
   ECGWaveformPayload,
-} from './ECGViewportNextTypes';
+} from './ECGViewportTypes';
 import {
   createDefaultECGCamera,
   normalizeECGCamera,
@@ -34,12 +34,12 @@ const ECG_AMPLITUDE_INDEX_SIZE = 65536;
 
 defaultRenderPathResolver.register(new CanvasECGPath());
 
-class ECGViewportNext extends ViewportNext<
+class ECGViewport extends ViewportNext<
   ECGCamera,
   ECGDataPresentation,
   ECGCanvasRenderContext
 > {
-  readonly type = ViewportType.ECG_V2;
+  readonly type = ViewportType.ECG_NEXT;
   readonly id: string;
 
   readonly element: HTMLDivElement;
@@ -57,7 +57,7 @@ class ECGViewportNext extends ViewportNext<
     return true;
   }
 
-  constructor(args: ECGViewportNextInput) {
+  constructor(args: ECGViewportInput) {
     super();
     this.id = args.id;
     this.element = args.element;
@@ -423,7 +423,7 @@ class ECGViewportNext extends ViewportNext<
 
     if (!isECGWaveformData(waveform)) {
       throw new Error(
-        `[ECGViewportNext] Loaded data for ${dataId} is not a valid ECG waveform`
+        `[ECGViewport] Loaded data for ${dataId} is not a valid ECG waveform`
       );
     }
 
@@ -476,7 +476,7 @@ class ECGViewportNext extends ViewportNext<
   }
 }
 
-export default ECGViewportNext;
+export default ECGViewport;
 
 function isECGWaveformData(
   data: LoadedData

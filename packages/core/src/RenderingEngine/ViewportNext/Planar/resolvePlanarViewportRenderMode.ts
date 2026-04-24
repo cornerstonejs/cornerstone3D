@@ -1,15 +1,16 @@
 import { OrientationAxis, ViewportType } from '../../../enums';
 import { getShouldUseCPURendering } from '../../../init';
+import { ActorRenderMode } from '../../../types';
 import type {
   PlanarEffectiveRenderMode,
   PlanarOrientation,
 } from './PlanarViewportTypes';
 
 const PLANAR_EFFECTIVE_RENDER_MODES: PlanarEffectiveRenderMode[] = [
-  'cpuImage',
-  'cpuVolume',
-  'vtkImage',
-  'vtkVolumeSlice',
+  ActorRenderMode.CPU_IMAGE,
+  ActorRenderMode.CPU_VOLUME,
+  ActorRenderMode.VTK_IMAGE,
+  ActorRenderMode.VTK_VOLUME_SLICE,
 ];
 
 export function isPlanarEffectiveRenderMode(
@@ -46,8 +47,12 @@ export function resolvePlanarViewportRenderMode(args: {
   const useCPURendering = getShouldUseCPURendering();
 
   if (preferVolumeMode) {
-    return useCPURendering ? 'cpuVolume' : 'vtkVolumeSlice';
+    return useCPURendering
+      ? ActorRenderMode.CPU_VOLUME
+      : ActorRenderMode.VTK_VOLUME_SLICE;
   }
 
-  return useCPURendering ? 'cpuImage' : 'vtkImage';
+  return useCPURendering
+    ? ActorRenderMode.CPU_IMAGE
+    : ActorRenderMode.VTK_IMAGE;
 }

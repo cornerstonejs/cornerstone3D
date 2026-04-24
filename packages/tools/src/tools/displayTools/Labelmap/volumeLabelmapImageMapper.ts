@@ -2,7 +2,12 @@ import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
-import { Enums, type Types, utilities } from '@cornerstonejs/core';
+import {
+  ActorRenderMode,
+  Enums,
+  type Types,
+  utilities,
+} from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 import type { Segmentation } from '../../../types/SegmentationStateTypes';
 import SegmentationRepresentations from '../../../enums/SegmentationRepresentations';
@@ -61,7 +66,7 @@ function isPlanarSliceRenderingViewport(
     viewport as Partial<PlanarSliceRenderingViewport>;
 
   return (
-    compatibilityViewport.type === Enums.ViewportType.PLANAR_V2 &&
+    compatibilityViewport.type === Enums.ViewportType.PLANAR_NEXT &&
     typeof compatibilityViewport.addImages === 'function' &&
     typeof compatibilityViewport.getCurrentImageId === 'function' &&
     typeof compatibilityViewport.render === 'function'
@@ -283,7 +288,7 @@ function createActorEntry(args: {
     actorMapper: {
       actor,
       mapper,
-      renderMode: 'vtkImage',
+      renderMode: ActorRenderMode.VTK_IMAGE,
     },
     referencedId: args.referencedId,
     representationUID: args.representationUID,

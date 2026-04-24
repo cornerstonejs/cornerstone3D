@@ -22,6 +22,7 @@ export {
   VtkVolumeSliceRenderPath,
 } from './VtkVolumeSliceRenderPath';
 export { default, default as PlanarViewport } from './PlanarViewport';
+export type { PlanarReferenceContext } from './PlanarViewport';
 export type {
   PlanarCamera,
   PlanarCpuImageAdapterContext,

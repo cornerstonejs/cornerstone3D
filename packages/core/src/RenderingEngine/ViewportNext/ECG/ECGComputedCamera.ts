@@ -16,7 +16,7 @@ import type {
   ECGDataPresentation,
   ECGWaveformPayload,
   RenderWindowMetrics,
-} from './ECGViewportNextTypes';
+} from './ECGViewportTypes';
 
 type ECGComputedCameraState = {
   camera: ECGCamera;

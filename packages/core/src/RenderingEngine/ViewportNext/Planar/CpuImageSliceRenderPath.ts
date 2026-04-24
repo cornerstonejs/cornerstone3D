@@ -18,6 +18,7 @@ import {
 } from '../../../enums';
 import { loadAndCacheImage } from '../../../loaders/imageLoader';
 import * as metaData from '../../../metaData';
+import { ActorRenderMode } from '../../../types';
 import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
 import triggerEvent from '../../../utilities/triggerEvent';
 import { toWindowLevel } from '../../../utilities/windowLevel';
@@ -75,7 +76,7 @@ export class CpuImageSliceRenderPath
       throw new Error('[PlanarViewport] CPU rendering requires an image');
     }
 
-    ctx.display.activateRenderMode('cpuImage');
+    ctx.display.activateRenderMode(ActorRenderMode.CPU_IMAGE);
 
     let rendering: PlanarCpuImageRendering;
     const compatibilityActor = new CanvasActor(
@@ -104,7 +105,7 @@ export class CpuImageSliceRenderPath
     enabledElement.transform = calculateTransform(enabledElement);
     rendering = {
       id: `rendering:${data.id}:${options.renderMode}`,
-      renderMode: 'cpuImage',
+      renderMode: ActorRenderMode.CPU_IMAGE,
       enabledElement,
       compatibilityActor,
       currentImageIdIndex: payload.initialImageIdIndex,
@@ -132,18 +133,13 @@ export class CpuImageSliceRenderPath
         return this.getFrameOfReferenceUID(rendering);
       },
       getActorEntry: (data) => {
-        return buildPlanarActorEntry(
-          data as LoadedData<PlanarPayload>,
-          {
-            actor: rendering.compatibilityActor,
-            mapper: rendering.compatibilityActor.getMapper(),
-            renderMode: 'cpuImage',
-          },
-          {
-            uid: rendering.enabledElement.image?.imageId,
-            referencedId: rendering.enabledElement.image?.imageId,
-          }
-        );
+        return buildPlanarActorEntry(data as LoadedData<PlanarPayload>, {
+          actor: rendering.compatibilityActor,
+          mapper: rendering.compatibilityActor.getMapper(),
+          renderMode: ActorRenderMode.CPU_IMAGE,
+          uidFallback: rendering.enabledElement.image?.imageId,
+          referencedIdFallback: rendering.enabledElement.image?.imageId,
+        });
       },
       getImageData: () => {
         return this.getImageData(rendering);
@@ -180,7 +176,7 @@ export class CpuImageSliceRenderPath
       planarCamera?.imageIdIndex ?? rendering.currentImageIdIndex;
     const image = rendering.enabledElement.image;
 
-    ctx.display.activateRenderMode('cpuImage');
+    ctx.display.activateRenderMode(ActorRenderMode.CPU_IMAGE);
 
     if (image) {
       const sliceBasis = createPlanarCpuImageSliceBasis({
@@ -402,10 +398,12 @@ export class CpuImageSlicePath
     >
 {
   readonly id = 'planar:cpu-image-slice';
-  readonly type = ViewportType.PLANAR_V2;
+  readonly type = ViewportType.PLANAR_NEXT;
 
   matches(data: LoadedData, options: DataAddOptions): boolean {
-    return data.type === 'image' && options.renderMode === 'cpuImage';
+    return (
+      data.type === 'image' && options.renderMode === ActorRenderMode.CPU_IMAGE
+    );
   }
 
   createRenderPath() {
@@ -679,7 +677,7 @@ function renderCompatibilityOverlayActors(
   const overlayActors = ctx.viewport.getOverlayActors();
 
   for (const actorEntry of overlayActors) {
-    if (actorEntry.actorMapper?.renderMode !== 'cpuImage') {
+    if (actorEntry.actorMapper?.renderMode !== ActorRenderMode.CPU_IMAGE) {
       continue;
     }
 

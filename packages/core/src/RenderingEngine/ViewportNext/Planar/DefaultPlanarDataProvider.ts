@@ -1,5 +1,6 @@
 import { loadAndCacheImage } from '../../../loaders/imageLoader';
 import { createAndCacheVolume } from '../../../loaders/volumeLoader';
+import { ActorRenderMode } from '../../../types';
 import resolveViewportVolumeId from '../../helpers/resolveViewportVolumeId';
 import type { LoadedData } from '../ViewportArchitectureTypes';
 import { getViewportNextPlanarDataSet } from '../viewportNextDataSetAccess';
@@ -39,8 +40,8 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
     );
 
     if (
-      options.renderMode === 'vtkVolumeSlice' ||
-      options.renderMode === 'cpuVolume'
+      options.renderMode === ActorRenderMode.VTK_VOLUME_SLICE ||
+      options.renderMode === ActorRenderMode.CPU_VOLUME
     ) {
       const volumeId = resolveViewportVolumeId(options.volumeId);
       const imageVolume = await createAndCacheVolume(volumeId, {

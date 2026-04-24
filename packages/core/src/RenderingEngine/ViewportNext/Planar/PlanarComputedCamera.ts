@@ -1,3 +1,4 @@
+import { ActorRenderMode } from '../../../types';
 import type {
   ICamera,
   IImage,
@@ -314,8 +315,8 @@ export function getPlanarCameraCanvasDimensions(args: {
   const { renderContext, rendering } = args;
 
   if (
-    rendering.renderMode === 'cpuImage' ||
-    rendering.renderMode === 'cpuVolume'
+    rendering.renderMode === ActorRenderMode.CPU_IMAGE ||
+    rendering.renderMode === ActorRenderMode.CPU_VOLUME
   ) {
     return getCanvasCssDimensions(renderContext.cpu.canvas);
   }
@@ -350,11 +351,11 @@ export function computePlanarViewportCamera(args: {
   const requestedCamera = args.camera;
 
   if (
-    rendering.renderMode === 'cpuImage' ||
-    rendering.renderMode === 'vtkImage'
+    rendering.renderMode === ActorRenderMode.CPU_IMAGE ||
+    rendering.renderMode === ActorRenderMode.VTK_IMAGE
   ) {
     const image =
-      (rendering.renderMode === 'cpuImage'
+      (rendering.renderMode === ActorRenderMode.CPU_IMAGE
         ? rendering.enabledElement?.image
         : rendering.currentImage) || data?.image;
 
@@ -373,13 +374,13 @@ export function computePlanarViewportCamera(args: {
         rendering.currentImageIdIndex,
         (data?.imageIds.length || 1) - 1
       ),
-      usePixelGridCenter: rendering.renderMode === 'cpuImage',
+      usePixelGridCenter: rendering.renderMode === ActorRenderMode.CPU_IMAGE,
     });
   }
 
   if (
-    rendering.renderMode === 'cpuVolume' ||
-    rendering.renderMode === 'vtkVolumeSlice'
+    rendering.renderMode === ActorRenderMode.CPU_VOLUME ||
+    rendering.renderMode === ActorRenderMode.VTK_VOLUME_SLICE
   ) {
     const currentImageIdIndex =
       typeof sliceIndex === 'number'
@@ -401,7 +402,7 @@ export function computePlanarViewportCamera(args: {
       imageVolume: rendering.imageVolume,
       maxImageIdIndex: rendering.maxImageIdIndex,
       usePixelGridCenter:
-        rendering.renderMode === 'cpuVolume' &&
+        rendering.renderMode === ActorRenderMode.CPU_VOLUME &&
         shouldUsePlanarCpuVolumeSliceBasis(
           rendering.dataPresentation?.interpolationType
         ),

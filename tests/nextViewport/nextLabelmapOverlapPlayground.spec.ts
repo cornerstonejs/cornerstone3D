@@ -99,7 +99,7 @@ test.describe('Labelmap Overlap Playground - Next', () => {
         renderingEngineId: 'labelmapOverlapPlaygroundRenderingEngine',
         viewportId: 'OVERLAP_STACK',
         constructorName: 'PlanarViewport',
-        type: 'planarV2',
+        type: 'planarNext',
         renderModesByDataId: {
           'labelmap-overlap-next:stack': 'vtkImage',
         },
@@ -108,7 +108,7 @@ test.describe('Labelmap Overlap Playground - Next', () => {
         renderingEngineId: 'labelmapOverlapPlaygroundRenderingEngine',
         viewportId: 'OVERLAP_AXIAL',
         constructorName: 'PlanarViewport',
-        type: 'planarV2',
+        type: 'planarNext',
         renderModesByDataId: {
           'labelmap-overlap-next:volume': 'vtkVolumeSlice',
         },
@@ -117,7 +117,7 @@ test.describe('Labelmap Overlap Playground - Next', () => {
         renderingEngineId: 'labelmapOverlapPlaygroundRenderingEngine',
         viewportId: 'OVERLAP_SAGITTAL',
         constructorName: 'PlanarViewport',
-        type: 'planarV2',
+        type: 'planarNext',
         renderModesByDataId: {
           'labelmap-overlap-next:volume': 'vtkVolumeSlice',
         },
@@ -126,7 +126,7 @@ test.describe('Labelmap Overlap Playground - Next', () => {
         renderingEngineId: 'labelmapOverlapPlaygroundRenderingEngine',
         viewportId: 'OVERLAP_CORONAL',
         constructorName: 'PlanarViewport',
-        type: 'planarV2',
+        type: 'planarNext',
         renderModesByDataId: {
           'labelmap-overlap-next:volume': 'vtkVolumeSlice',
         },
@@ -160,7 +160,7 @@ test.describe('Labelmap Overlap Playground - Next (CPU)', () => {
         renderingEngineId: 'labelmapOverlapPlaygroundRenderingEngine',
         viewportId: 'OVERLAP_STACK',
         constructorName: 'PlanarViewport',
-        type: 'planarV2',
+        type: 'planarNext',
         renderModesByDataId: {
           'labelmap-overlap-next:stack': 'cpuImage',
         },
@@ -169,7 +169,7 @@ test.describe('Labelmap Overlap Playground - Next (CPU)', () => {
         renderingEngineId: 'labelmapOverlapPlaygroundRenderingEngine',
         viewportId: 'OVERLAP_AXIAL',
         constructorName: 'PlanarViewport',
-        type: 'planarV2',
+        type: 'planarNext',
         renderModesByDataId: {
           'labelmap-overlap-next:volume': 'cpuVolume',
         },
@@ -178,7 +178,7 @@ test.describe('Labelmap Overlap Playground - Next (CPU)', () => {
         renderingEngineId: 'labelmapOverlapPlaygroundRenderingEngine',
         viewportId: 'OVERLAP_SAGITTAL',
         constructorName: 'PlanarViewport',
-        type: 'planarV2',
+        type: 'planarNext',
         renderModesByDataId: {
           'labelmap-overlap-next:volume': 'cpuVolume',
         },
@@ -187,7 +187,7 @@ test.describe('Labelmap Overlap Playground - Next (CPU)', () => {
         renderingEngineId: 'labelmapOverlapPlaygroundRenderingEngine',
         viewportId: 'OVERLAP_CORONAL',
         constructorName: 'PlanarViewport',
-        type: 'planarV2',
+        type: 'planarNext',
         renderModesByDataId: {
           'labelmap-overlap-next:volume': 'cpuVolume',
         },

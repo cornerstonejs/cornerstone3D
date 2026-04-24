@@ -8,7 +8,7 @@ import type {
   WSIDataProvider,
   WSIPayload,
   WSIRegisteredDataSet,
-} from './WSIViewportNextTypes';
+} from './WSIViewportTypes';
 
 export class DefaultWSIDataProvider implements WSIDataProvider {
   async load(dataId: string): Promise<LoadedData<WSIPayload>> {
@@ -16,7 +16,7 @@ export class DefaultWSIDataProvider implements WSIDataProvider {
 
     if (!dataSet) {
       throw new Error(
-        `[WSIViewportNext] No registered WSI dataset metadata for ${dataId}`
+        `[WSIViewport] No registered WSI dataset metadata for ${dataId}`
       );
     }
 

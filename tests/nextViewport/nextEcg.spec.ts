@@ -30,13 +30,13 @@ function navigateToExample(params?: Record<string, string>) {
 test.describe('ECG ViewportNext', () => {
   test.beforeEach(navigateToExample());
 
-  test('should use ECGViewportNext runtime', async ({ page }) => {
+  test('should use ECGViewport runtime', async ({ page }) => {
     await expectViewportNextRuntime(page, [
       {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'ecgNextViewport',
-        constructorName: 'ECGViewportNext',
-        type: 'ecgV2',
+        constructorName: 'ECGViewport',
+        type: 'ecgNext',
         renderModesByDataId: {
           'ecg-next:primary': 'signal2d',
         },

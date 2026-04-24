@@ -5,15 +5,15 @@ import ViewportType from '../../enums/ViewportType';
 import VolumeViewport3D from '../VolumeViewport3D';
 import VideoViewport from '../VideoViewport';
 import WSIViewport from '../WSIViewport';
-import ECGViewport from '../ECGViewport';
-import ECGViewportNext from '../ViewportNext/ECG/ECGViewportNext';
+import LegacyECGViewport from '../ECGViewport';
+import ECGViewport from '../ViewportNext/ECG/ECGViewport';
 import PlanarViewport from '../ViewportNext/Planar/PlanarViewport';
 import PlanarViewportLegacyAdapter from '../ViewportNext/Planar/PlanarViewportLegacyAdapter';
-import VideoViewportNext from '../ViewportNext/Video/VideoViewportNext';
+import NextVideoViewport from '../ViewportNext/Video/VideoViewport';
 import VideoViewportLegacyAdapter from '../ViewportNext/Video/VideoViewportLegacyAdapter';
 import VolumeViewport3DV2 from '../ViewportNext/Volume3D/3dViewport';
 import VolumeViewport3DLegacyAdapter from '../ViewportNext/Volume3D/VolumeViewport3DLegacyAdapter';
-import WSIViewportNext from '../ViewportNext/WSI/WSIViewportNext';
+import NextWSIViewport from '../ViewportNext/WSI/WSIViewport';
 import WSIViewportLegacyAdapter from '../ViewportNext/WSI/WSIViewportLegacyAdapter';
 import ECGViewportLegacyAdapter from '../ViewportNext/ECG/ECGViewportLegacyAdapter';
 import type {
@@ -29,9 +29,9 @@ interface ViewportConstructor {
   ):
     | IViewport
     | PlanarViewport
-    | VideoViewportNext
+    | NextVideoViewport
     | VolumeViewport3DV2
-    | ECGViewportNext;
+    | ECGViewport;
 }
 
 const viewportTypeToViewportClass: {
@@ -42,15 +42,15 @@ const viewportTypeToViewportClass: {
   [ViewportType.STACK]: StackViewport,
   [ViewportType.VOLUME_3D]: VolumeViewport3D,
   [ViewportType.WHOLE_SLIDE]: WSIViewport,
-  [ViewportType.ECG]: ECGViewport,
+  [ViewportType.ECG]: LegacyECGViewport,
   [ViewportType.VIDEO]: VideoViewport,
-  // v2 viewports below
-  [ViewportType.VOLUME_3D_V2]: VolumeViewport3DV2, // v2
-  [ViewportType.PLANAR_V2]: PlanarViewport, // v2
-  [ViewportType.VIDEO_V2]: VideoViewportNext, // v2
-  [ViewportType.ECG_V2]: ECGViewportNext, // v2
-  [ViewportType.WHOLE_SLIDE_V2]:
-    WSIViewportNext as unknown as ViewportConstructor, // v2
+  // next viewports below
+  [ViewportType.VOLUME_3D_NEXT]: VolumeViewport3DV2, // next
+  [ViewportType.PLANAR_NEXT]: PlanarViewport, // next
+  [ViewportType.VIDEO_NEXT]: NextVideoViewport, // next
+  [ViewportType.ECG_NEXT]: ECGViewport, // next
+  [ViewportType.WHOLE_SLIDE_NEXT]:
+    NextWSIViewport as unknown as ViewportConstructor, // next
 };
 
 export default viewportTypeToViewportClass;
@@ -65,30 +65,33 @@ export function getViewportClassForInput({
   requestedType,
 }: ViewportClassInput): ViewportConstructor {
   if (
-    type === ViewportType.PLANAR_V2 &&
+    type === ViewportType.PLANAR_NEXT &&
     (requestedType === ViewportType.STACK ||
       requestedType === ViewportType.ORTHOGRAPHIC)
   ) {
     return PlanarViewportLegacyAdapter as unknown as ViewportConstructor;
   }
 
-  if (type === ViewportType.VIDEO_V2 && requestedType === ViewportType.VIDEO) {
+  if (
+    type === ViewportType.VIDEO_NEXT &&
+    requestedType === ViewportType.VIDEO
+  ) {
     return VideoViewportLegacyAdapter as unknown as ViewportConstructor;
   }
 
-  if (type === ViewportType.ECG_V2 && requestedType === ViewportType.ECG) {
+  if (type === ViewportType.ECG_NEXT && requestedType === ViewportType.ECG) {
     return ECGViewportLegacyAdapter as unknown as ViewportConstructor;
   }
 
   if (
-    type === ViewportType.WHOLE_SLIDE_V2 &&
+    type === ViewportType.WHOLE_SLIDE_NEXT &&
     requestedType === ViewportType.WHOLE_SLIDE
   ) {
     return WSIViewportLegacyAdapter as unknown as ViewportConstructor;
   }
 
   if (
-    type === ViewportType.VOLUME_3D_V2 &&
+    type === ViewportType.VOLUME_3D_NEXT &&
     requestedType === ViewportType.VOLUME_3D
   ) {
     return VolumeViewport3DLegacyAdapter as unknown as ViewportConstructor;

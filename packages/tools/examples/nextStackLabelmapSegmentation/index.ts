@@ -442,7 +442,7 @@ async function run() {
   renderingEngine.setViewports([
     {
       viewportId,
-      type: ViewportType.PLANAR_V2,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
       defaultOptions: {
         background: getNextExampleBackground(),
@@ -451,7 +451,7 @@ async function run() {
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.PLANAR_V2,
+      type: ViewportType.PLANAR_NEXT,
       element: element2,
       defaultOptions: {
         background: getNextExampleBackground(),

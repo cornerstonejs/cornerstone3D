@@ -2,6 +2,7 @@ import cache from '../../../cache/cache';
 import type BlendModes from '../../../enums/BlendModes';
 import { Events } from '../../../enums';
 import { getShouldUseCPURendering } from '../../../init';
+import { ActorRenderMode } from '../../../types';
 import type { ActorEntry, ColormapPublic, IVolumeInput } from '../../../types';
 import triggerEvent from '../../../utilities/triggerEvent';
 import {
@@ -490,7 +491,9 @@ class PlanarLegacyCompatibilityController {
 
       const sharedOptions: PlanarSetDataOptions = {
         orientation: this.host.getRequestedOrientation(),
-        renderMode: getShouldUseCPURendering() ? 'cpuVolume' : 'vtkVolumeSlice',
+        renderMode: getShouldUseCPURendering()
+          ? ActorRenderMode.CPU_VOLUME
+          : ActorRenderMode.VTK_VOLUME_SLICE,
       };
 
       await this.host.setDataList(
@@ -568,8 +571,8 @@ class PlanarLegacyCompatibilityController {
 
     if (
       rendering &&
-      (rendering.renderMode === 'cpuVolume' ||
-        rendering.renderMode === 'vtkVolumeSlice')
+      (rendering.renderMode === ActorRenderMode.CPU_VOLUME ||
+        rendering.renderMode === ActorRenderMode.VTK_VOLUME_SLICE)
     ) {
       return Math.min(
         Math.max(0, rendering.currentImageIdIndex),

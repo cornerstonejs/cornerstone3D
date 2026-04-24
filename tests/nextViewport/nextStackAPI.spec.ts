@@ -116,7 +116,7 @@ test.describe('Stack API Next (GPU)', () => {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_STACK_NEXT',
         constructorName: 'PlanarViewport',
-        type: 'planarV2',
+        type: 'planarNext',
         renderModesByDataId: {
           'stack-api-next:primary': 'vtkImage',
         },
@@ -172,7 +172,7 @@ test.describe('Stack API Next (CPU)', () => {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_STACK_NEXT',
         constructorName: 'PlanarViewport',
-        type: 'planarV2',
+        type: 'planarNext',
         renderModesByDataId: {
           'stack-api-next:primary': 'cpuImage',
         },

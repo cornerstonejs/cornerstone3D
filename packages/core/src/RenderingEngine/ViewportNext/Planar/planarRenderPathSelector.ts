@@ -3,13 +3,13 @@ import cache from '../../../cache/cache';
 import { OrientationAxis } from '../../../enums';
 import { getConfiguration, getShouldUseCPURendering } from '../../../init';
 import * as metaData from '../../../metaData';
+import { ActorRenderMode } from '../../../types';
 import { getOrientationFromScanAxisNormal } from '../../helpers/getCameraVectors';
 import { isValidVolume } from '../../../utilities/isValidVolume';
 import type {
   PlanarCamera,
   PlanarEffectiveRenderMode,
   PlanarOrientation,
-  PlanarRenderMode,
   PlanarRegisteredDataSet,
   PlanarSetDataOptions,
 } from './PlanarViewportTypes';
@@ -164,8 +164,8 @@ export function selectPlanarRenderPath(
 
   if (requestedRenderMode !== 'auto') {
     if (
-      requestedRenderMode === 'cpuImage' ||
-      requestedRenderMode === 'vtkImage'
+      requestedRenderMode === ActorRenderMode.CPU_IMAGE ||
+      requestedRenderMode === ActorRenderMode.VTK_IMAGE
     ) {
       if (!isAcquisitionPath) {
         throw new Error(
@@ -202,14 +202,18 @@ export function selectPlanarRenderPath(
 
     return {
       acquisitionOrientation,
-      renderMode: shouldUseCpuVolumePath ? 'cpuVolume' : 'vtkVolumeSlice',
+      renderMode: shouldUseCpuVolumePath
+        ? ActorRenderMode.CPU_VOLUME
+        : ActorRenderMode.VTK_VOLUME_SLICE,
       volumeId,
     };
   }
 
   return {
     acquisitionOrientation,
-    renderMode: shouldUseCpuImagePath ? 'cpuImage' : 'vtkImage',
+    renderMode: shouldUseCpuImagePath
+      ? ActorRenderMode.CPU_IMAGE
+      : ActorRenderMode.VTK_IMAGE,
     volumeId,
   };
 }

@@ -117,6 +117,7 @@ export interface ViewportController<
   readonly id: ViewportId;
   readonly type: ViewportType;
 
+  addData(dataId: DataId, options: DataAddOptions): Promise<RenderingId>;
   setData(dataId: DataId, options: DataAddOptions): Promise<RenderingId>;
   setDataList(
     entries: Array<{ dataId: DataId; options?: unknown }>
