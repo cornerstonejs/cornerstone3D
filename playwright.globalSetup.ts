@@ -36,6 +36,21 @@ function runBuildExamples() {
   }
 }
 
+function shouldSkipRebuild() {
+  const value = process.env.PLAYWRIGHT_SKIP_REBUILD;
+  if (!value) {
+    return false;
+  }
+  const normalized = value.trim().toLowerCase();
+  return normalized === '1' || normalized === 'true' || normalized === 'yes';
+}
+
 export default async function globalSetup() {
+  if (shouldSkipRebuild()) {
+    console.log(
+      '[playwright globalSetup] PLAYWRIGHT_SKIP_REBUILD is set; skipping example rebuild.'
+    );
+    return;
+  }
   runBuildExamples();
 }

@@ -13,7 +13,10 @@ import {
   camera as cameraHelpers,
   ctVoiRange,
 } from '../../../../utils/demo/helpers';
-import { getBooleanUrlParam } from '../../../../utils/demo/helpers/exampleParameters';
+import {
+  getBooleanUrlParam,
+  getStringUrlParam,
+} from '../../../../utils/demo/helpers/exampleParameters';
 
 // This is for debugging purposes
 console.warn(
@@ -29,6 +32,15 @@ const planarRenderMode = getBooleanUrlParam('cpu') ? 'cpuImage' : 'vtkImage';
 
 function getNextExampleBackground(): Types.Point3 {
   return getBooleanUrlParam('cpu') ? [0, 0, 0] : [0, 0.2, 0];
+}
+
+function parseStackReadyDelayMs(): number {
+  const raw = getStringUrlParam('stackReadyDelayMs');
+  if (!raw) {
+    return 0;
+  }
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
 }
 
 setTitleAndDescription(
@@ -72,7 +84,24 @@ element.addEventListener(Events.CAMERA_MODIFIED, () => {
   flipVerticalInfo.innerText = `Flip vertical: ${flipVertical}`;
 });
 
-addButtonToToolbar({
+const toolbarButtons: HTMLButtonElement[] = [];
+
+function addToolbarButton(
+  config: Parameters<typeof addButtonToToolbar>[0]
+): HTMLButtonElement {
+  const button = addButtonToToolbar(config);
+  button.disabled = true;
+  toolbarButtons.push(button);
+  return button;
+}
+
+function enableToolbar(): void {
+  for (const button of toolbarButtons) {
+    button.disabled = false;
+  }
+}
+
+addToolbarButton({
   title: 'Set VOI Range',
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
@@ -85,7 +114,7 @@ addButtonToToolbar({
   },
 });
 
-addButtonToToolbar({
+addToolbarButton({
   title: 'Next Image',
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
@@ -99,7 +128,7 @@ addButtonToToolbar({
   },
 });
 
-addButtonToToolbar({
+addToolbarButton({
   title: 'Previous Image',
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
@@ -112,7 +141,7 @@ addButtonToToolbar({
   },
 });
 
-addButtonToToolbar({
+addToolbarButton({
   title: 'Flip H',
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
@@ -124,7 +153,7 @@ addButtonToToolbar({
   },
 });
 
-addButtonToToolbar({
+addToolbarButton({
   title: 'Flip V',
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
@@ -136,7 +165,7 @@ addButtonToToolbar({
   },
 });
 
-addButtonToToolbar({
+addToolbarButton({
   title: 'Rotate Random',
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
@@ -147,7 +176,7 @@ addButtonToToolbar({
   },
 });
 
-addButtonToToolbar({
+addToolbarButton({
   title: 'Rotate Absolute 150',
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
@@ -158,7 +187,7 @@ addButtonToToolbar({
   },
 });
 
-addButtonToToolbar({
+addToolbarButton({
   title: 'Rotate Delta 30',
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
@@ -170,7 +199,7 @@ addButtonToToolbar({
   },
 });
 
-addButtonToToolbar({
+addToolbarButton({
   title: 'Invert',
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
@@ -184,7 +213,7 @@ addButtonToToolbar({
   },
 });
 
-addButtonToToolbar({
+addToolbarButton({
   title: 'Apply Random Zoom And Pan',
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
@@ -205,7 +234,7 @@ addButtonToToolbar({
   },
 });
 
-addButtonToToolbar({
+addToolbarButton({
   title: 'Apply Colormap',
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
@@ -218,7 +247,7 @@ addButtonToToolbar({
   },
 });
 
-addButtonToToolbar({
+addToolbarButton({
   title: 'Reset Viewport',
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
@@ -276,6 +305,13 @@ async function run() {
   ]);
   viewport.setDataPresentation(stackDataId, { voiRange: ctVoiRange });
   viewport.render();
+
+  const delayMs = parseStackReadyDelayMs();
+  if (delayMs > 0) {
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+
+  enableToolbar();
 }
 
 run();
