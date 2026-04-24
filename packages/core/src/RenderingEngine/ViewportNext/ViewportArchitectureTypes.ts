@@ -11,13 +11,16 @@ import type ViewportType from '../../enums/ViewportType';
 export type ViewportId = string;
 export type DataId = string;
 export type RenderingId = string;
-export type ViewportRenderContextType =
+export type KnownViewportRenderContext =
   | 'planar'
   | 'video'
   | 'ecg'
   | 'wsi'
-  | '3d'
-  | string;
+  | '3d';
+export type ExtensionViewportRenderContext = string & {};
+export type ViewportRenderContextType =
+  | KnownViewportRenderContext
+  | ExtensionViewportRenderContext;
 export type LogicalDataType = 'image' | 'video' | 'ecg' | 'wsi' | 'geometry';
 
 export interface DataAddOptions {

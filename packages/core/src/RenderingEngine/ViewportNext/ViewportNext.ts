@@ -58,9 +58,9 @@ abstract class ViewportNext<
 {
   // ── Abstract fields ──────────────────────────────────────────────────
 
-  abstract readonly id: ViewportId;
+  readonly id: ViewportId;
+  readonly element: HTMLDivElement;
   abstract readonly type: ViewportType;
-  abstract readonly element: HTMLDivElement;
   abstract readonly renderingEngineId: string;
 
   // ── Protected fields ─────────────────────────────────────────────────
@@ -79,6 +79,11 @@ abstract class ViewportNext<
   readonly _debug: { renderModes: Record<string, string> } = {
     renderModes: {},
   };
+
+  constructor(args: { id: ViewportId; element: HTMLDivElement }) {
+    this.id = args.id;
+    this.element = args.element;
+  }
 
   // ====================================================================
   // Public API -- data

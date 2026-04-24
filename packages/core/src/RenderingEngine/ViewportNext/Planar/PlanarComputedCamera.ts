@@ -120,6 +120,7 @@ abstract class BasePlanarViewportCamera<
     if (!canvasPoint) {
       return this.cloneWithCamera({
         ...this.state.camera,
+        displayArea: undefined,
         scale: nextZoom,
         scaleMode: 'fit',
       });
@@ -134,6 +135,7 @@ abstract class BasePlanarViewportCamera<
         canvasPoint[1] / Math.max(this.state.canvasHeight, 1),
       ],
       anchorWorld: worldPoint,
+      displayArea: undefined,
       scale: nextZoom,
       scaleMode: 'fit',
     });
@@ -151,6 +153,7 @@ abstract class BasePlanarViewportCamera<
         anchorY +
           (pan[1] - currentPan[1]) / Math.max(this.state.canvasHeight, 1),
       ],
+      displayArea: undefined,
     });
   }
 

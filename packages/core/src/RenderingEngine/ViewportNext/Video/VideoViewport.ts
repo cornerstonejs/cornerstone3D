@@ -45,8 +45,6 @@ class VideoViewport extends ViewportNext<
   // ── Fields ───────────────────────────────────────────────────────────
 
   readonly type = ViewportType.VIDEO_NEXT;
-  readonly id: string;
-  readonly element: HTMLDivElement;
   readonly renderingEngineId: string;
 
   protected renderContext: VideoElementRenderContext;
@@ -62,9 +60,7 @@ class VideoViewport extends ViewportNext<
   // ── Constructor ──────────────────────────────────────────────────────
 
   constructor(args: VideoViewportInput) {
-    super();
-    this.id = args.id;
-    this.element = args.element;
+    super(args);
     this.renderingEngineId = args.renderingEngineId;
     this.element.style.position = this.element.style.position || 'relative';
     this.element.style.overflow = 'hidden';

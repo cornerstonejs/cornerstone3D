@@ -48,8 +48,6 @@ export default class WSIViewport extends ViewportNext<
   WSIViewportRenderContext
 > {
   readonly type = ViewportType.WHOLE_SLIDE_NEXT;
-  readonly id: string;
-  readonly element: HTMLDivElement;
   readonly renderingEngineId: string;
   modality = 'SM';
 
@@ -66,9 +64,7 @@ export default class WSIViewport extends ViewportNext<
   }
 
   constructor(args: WSIViewportInput) {
-    super();
-    this.id = args.id;
-    this.element = args.element;
+    super(args);
     this.renderingEngineId = args.renderingEngineId;
     this.element.style.position = this.element.style.position || 'relative';
     this.element.style.overflow = 'hidden';

@@ -1,5 +1,5 @@
 import { vec3 } from 'gl-matrix';
-import { OrientationAxis, ViewportType } from '../../../enums';
+import { Events, OrientationAxis, ViewportType } from '../../../enums';
 import { ActorRenderMode } from '../../../types';
 import type {
   ActorEntry,
@@ -18,6 +18,7 @@ import type {
 } from '../../../types';
 import cache from '../../../cache/cache';
 import type { PlaneRestriction } from '../../../types/IViewport';
+import type DisplayArea from '../../../types/displayArea';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
 import getClosestImageId from '../../../utilities/getClosestImageId';
 import imageIdToURI from '../../../utilities/imageIdToURI';
@@ -26,6 +27,7 @@ import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
 import getVolumeViewportScrollInfo from '../../../utilities/getVolumeViewportScrollInfo';
 import snapFocalPointToSlice from '../../../utilities/snapFocalPointToSlice';
 import viewportNextDataSetMetadataProvider from '../../../utilities/viewportNextDataSetMetadataProvider';
+import triggerEvent from '../../../utilities/triggerEvent';
 import renderingEngineCache from '../../renderingEngineCache';
 import type { DataAddOptions, LoadedData } from '../ViewportArchitectureTypes';
 import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
@@ -47,6 +49,7 @@ import type { SelectedPlanarRenderPath } from './planarRenderPathSelector';
 import { clonePlanarOrientation } from './planarLegacyCompatibility';
 import { normalizePlanarRotation } from './planarViewPresentation';
 import {
+  cloneDisplayArea,
   createDefaultPlanarCamera,
   normalizePlanarCamera,
 } from './planarViewportCamera';
@@ -89,6 +92,19 @@ defaultRenderPathResolver.register(new CpuVolumeSlicePath());
 defaultRenderPathResolver.register(new VtkImageMapperPath());
 defaultRenderPathResolver.register(new VtkVolumeSlicePath());
 
+function cloneViewportOptions(
+  options: ViewportInputOptions = {}
+): ViewportInputOptions {
+  if (typeof structuredClone === 'function') {
+    return structuredClone(options);
+  }
+
+  return {
+    ...options,
+    displayArea: cloneDisplayArea(options.displayArea),
+  };
+}
+
 export type PlanarReferenceContext = {
   dataId: string;
   data: LoadedData<PlanarPayload>;
@@ -102,13 +118,12 @@ class PlanarViewport extends ViewportNext<
   PlanarViewportRenderContext
 > {
   readonly type = ViewportType.PLANAR_NEXT;
-  readonly id: string;
-  readonly element: HTMLDivElement;
   readonly renderingEngineId: string;
   readonly canvas: HTMLCanvasElement;
   sWidth: number;
   sHeight: number;
   defaultOptions: ViewportInputOptions;
+  options: ViewportInputOptions;
   suppressEvents = false;
 
   protected renderContext: PlanarViewportRenderContext;
@@ -127,14 +142,13 @@ class PlanarViewport extends ViewportNext<
   // ── Constructor ──────────────────────────────────────────────────────
 
   constructor(args: PlanarViewportInput) {
-    super();
-    this.id = args.id;
-    this.element = args.element;
+    super(args);
     this.renderingEngineId = args.renderingEngineId;
     this.canvas = args.canvas;
     this.sWidth = args.sWidth;
     this.sHeight = args.sHeight;
-    this.defaultOptions = args.defaultOptions || {};
+    this.defaultOptions = cloneViewportOptions(args.defaultOptions || {});
+    this.options = cloneViewportOptions(this.defaultOptions);
     this.element.style.position = this.element.style.position || 'relative';
     this.element.style.overflow = 'hidden';
     this.element.style.background = this.element.style.background || '#000';
@@ -612,6 +626,77 @@ class PlanarViewport extends ViewportNext<
     });
   }
 
+  /**
+   * Applies viewport-level options that affect the planar camera.
+   */
+  setOptions(options: ViewportInputOptions, immediate = false): void {
+    this.options = cloneViewportOptions(options);
+
+    if (this.options.displayArea) {
+      this.setDisplayArea(
+        this.options.displayArea,
+        this.options.suppressEvents ?? false
+      );
+    }
+
+    if (immediate) {
+      this.render();
+    }
+  }
+
+  /**
+   * Resets viewport options to the construction defaults.
+   */
+  reset(immediate = false): void {
+    this.options = cloneViewportOptions(this.defaultOptions);
+
+    if (immediate) {
+      this.render();
+    }
+  }
+
+  /**
+   * Returns the current display-area declaration, if any.
+   */
+  getDisplayArea(): DisplayArea | undefined {
+    return cloneDisplayArea(
+      this.camera.displayArea ?? this.options.displayArea
+    );
+  }
+
+  /**
+   * Stores a display-area declaration on the semantic camera. The shared
+   * planar camera resolver turns it into render-path-specific pan/zoom.
+   */
+  setDisplayArea(displayArea: DisplayArea, suppressEvents = false): void {
+    const nextDisplayArea = cloneDisplayArea(displayArea);
+
+    if (!nextDisplayArea) {
+      return;
+    }
+
+    this.options = {
+      ...this.options,
+      displayArea: cloneDisplayArea(nextDisplayArea),
+    };
+
+    this.setCamera({
+      anchorCanvas: [0.5, 0.5],
+      anchorWorld: undefined,
+      displayArea: nextDisplayArea,
+      scale: 1,
+      scaleMode: 'fit',
+    });
+
+    if (!suppressEvents && !this.suppressEvents) {
+      triggerEvent(this.element, Events.DISPLAY_AREA_MODIFIED, {
+        viewportId: this.id,
+        displayArea: cloneDisplayArea(nextDisplayArea),
+        storeAsInitialCamera: nextDisplayArea.storeAsInitialCamera,
+      });
+    }
+  }
+
   /** @deprecated Legacy shim for `getZoom()`. */
   getZoom(): number {
     return (
@@ -636,6 +721,7 @@ class PlanarViewport extends ViewportNext<
     }
 
     this.setCamera({
+      displayArea: undefined,
       scale: Math.max(zoom, 0.001),
       scaleMode: 'fit',
     });
@@ -671,6 +757,7 @@ class PlanarViewport extends ViewportNext<
         ax + deltaX / Math.max(canvasWidth, 1),
         ay + deltaY / Math.max(canvasHeight, 1),
       ],
+      displayArea: undefined,
     });
   }
 
@@ -697,6 +784,7 @@ class PlanarViewport extends ViewportNext<
         canvasPoint[0] / Math.max(canvasWidth, 1),
         canvasPoint[1] / Math.max(canvasHeight, 1),
       ],
+      displayArea: undefined,
       scale: Math.max(scale, 0.001),
       scaleMode: 'fit',
     });
@@ -709,6 +797,7 @@ class PlanarViewport extends ViewportNext<
   getCamera(): PlanarCamera & ICamera {
     return {
       ...this.camera,
+      displayArea: cloneDisplayArea(this.camera.displayArea),
       ...this.getCameraForEvent(),
     };
   }
@@ -719,6 +808,7 @@ class PlanarViewport extends ViewportNext<
   getCameraState(): PlanarCamera {
     return {
       ...this.camera,
+      displayArea: cloneDisplayArea(this.camera.displayArea),
     };
   }
 
@@ -770,7 +860,7 @@ class PlanarViewport extends ViewportNext<
     }
 
     if (displayArea) {
-      target.displayArea = undefined;
+      target.displayArea = this.getDisplayArea();
     }
 
     if (zoom) {
@@ -807,19 +897,41 @@ class PlanarViewport extends ViewportNext<
     const {
       pan,
       rotation = this.getRotation(),
-      zoom = this.getZoom(),
       flipHorizontal = this.camera.flipHorizontal ?? false,
       flipVertical = this.camera.flipVertical ?? false,
     } = viewPres;
+    const hasZoom = Object.prototype.hasOwnProperty.call(viewPres, 'zoom');
+    const hasDisplayArea = Object.prototype.hasOwnProperty.call(
+      viewPres,
+      'displayArea'
+    );
+    const zoom = viewPres.zoom ?? this.getZoom();
     const nextZoom = Math.max(zoom, 0.001);
-
-    this.setCamera({
+    const nextCamera: Partial<PlanarCamera> = {
       flipHorizontal,
       flipVertical,
       rotation,
-      scale: nextZoom,
-      scaleMode: 'fit',
-    });
+    };
+
+    if (hasDisplayArea) {
+      const displayArea = cloneDisplayArea(viewPres.displayArea);
+
+      this.options = {
+        ...this.options,
+        displayArea,
+      };
+
+      nextCamera.anchorCanvas = [0.5, 0.5];
+      nextCamera.anchorWorld = undefined;
+      nextCamera.displayArea = displayArea;
+      nextCamera.scale = hasZoom ? nextZoom : 1;
+      nextCamera.scaleMode = 'fit';
+    } else if (hasZoom || !this.camera.displayArea) {
+      nextCamera.scale = nextZoom;
+      nextCamera.scaleMode = 'fit';
+    }
+
+    this.setCamera(nextCamera);
 
     if (pan) {
       this.setPan([pan[0] * nextZoom, pan[1] * nextZoom]);

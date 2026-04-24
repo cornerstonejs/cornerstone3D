@@ -3,6 +3,7 @@ import {
   RenderingEngine,
   Enums,
   getRenderingEngine,
+  volumeLoader,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -10,24 +11,9 @@ import {
   setTitleAndDescription,
   addButtonToToolbar,
   addDropdownToToolbar,
-  getLocalUrl,
+  setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-
-// This is for debugging purposes
-console.warn(
-  'Click on index.ts to open source code for this example --------->'
-);
-
-const { ViewportType, Events } = Enums;
-
-// ======== Constants ======= //
-const renderingEngineId = 'myRenderingEngine';
-const viewportId = 'CT_STACK';
-
-// Get the rendering engine
-let renderingEngine, viewport;
-
 import {
   PanTool,
   ZoomTool,
@@ -35,14 +21,26 @@ import {
   Enums as csToolsEnums,
 } from '@cornerstonejs/tools';
 
+console.warn(
+  'Click on index.ts to open source code for this example --------->'
+);
+
+const { ViewportType, Events } = Enums;
 const { MouseBindings } = csToolsEnums;
 
-const toolGroupId = 'STACK_POSITION_TOOL_GROUP';
+const renderingEngineId = 'myRenderingEngine';
+const viewportId = 'CT_SAGITTAL_VOLUME';
+const toolGroupId = 'VOLUME_POSITION_TOOL_GROUP';
+const volumeName = 'CT_VOLUME_POSITION_ID';
+const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
+const volumeId = `${volumeLoaderScheme}:${volumeName}`;
 
-// ======== Set up page ======== //
+let viewport: Types.IVolumeViewport;
+let displayArea: unknown = 'none';
+
 setTitleAndDescription(
-  'Stack Position',
-  'Demonstrates how to use the display area with rotation and flip'
+  'Volume Position',
+  'Demonstrates how to use the display area with a sagittal CT volume viewport.'
 );
 
 const content = document.getElementById('content');
@@ -65,14 +63,11 @@ info.appendChild(rotationInfo);
 const flipHorizontalInfo = document.createElement('div');
 info.appendChild(flipHorizontalInfo);
 
-element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
-  // Get the rendering engine
+element.addEventListener(Events.CAMERA_MODIFIED, () => {
   const renderingEngine = getRenderingEngine(renderingEngineId);
-
-  // Get the stack viewport
   const viewport = renderingEngine.getViewport(
     viewportId
-  ) as Types.IStackViewport;
+  ) as Types.IVolumeViewport;
 
   if (!viewport) {
     return;
@@ -99,6 +94,7 @@ function createDisplayArea(
   const canvasPoint = Array.isArray(canvasValue)
     ? canvasValue
     : [canvasValue, canvasValue];
+
   return {
     rotation,
     flipHorizontal,
@@ -108,7 +104,6 @@ function createDisplayArea(
         imagePoint,
         canvasPoint,
       },
-      // storeAsInitialCamera: true,
     },
   };
 }
@@ -121,7 +116,6 @@ displayAreas.set('Left Top', createDisplayArea(1, 0));
 displayAreas.set('Right Top', createDisplayArea(1, [1, 0]));
 displayAreas.set('Center Left/Top', createDisplayArea(2, 0, 0.5));
 displayAreas.set('Center Right/Bottom', createDisplayArea(2, 1, 0.5));
-displayAreas.set('Left Top', createDisplayArea(1, 0));
 displayAreas.set('Left Bottom', createDisplayArea(1, [0, 1]));
 displayAreas.set('Right Bottom', createDisplayArea(1, [1, 1]));
 displayAreas.set(
@@ -153,8 +147,6 @@ displayAreas.set(
   createDisplayArea(2, [1, 1], undefined, 180, true)
 );
 
-let displayArea = 'none';
-
 addDropdownToToolbar({
   options: {
     values: [...displayAreas.keys()],
@@ -162,10 +154,15 @@ addDropdownToToolbar({
   },
   onSelectedValueChange: (name) => {
     displayArea = displayAreas.get(name);
+    const { flipHorizontal, rotation } = displayArea as {
+      flipHorizontal: boolean;
+      rotation: number;
+    };
+
     viewport.setOptions(displayArea);
     viewport.setProperties(displayArea);
-    const { flipHorizontal } = displayArea;
     viewport.setCamera({ flipHorizontal });
+    viewport.setViewPresentation({ rotation });
     viewport.render();
   },
 });
@@ -173,17 +170,13 @@ addDropdownToToolbar({
 addButtonToToolbar({
   title: 'Flip H',
   onClick: () => {
-    // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    // Get the stack viewport
     const viewport = renderingEngine.getViewport(
       viewportId
-    ) as Types.IStackViewport;
-
+    ) as Types.IVolumeViewport;
     const { flipHorizontal } = viewport.getCamera();
-    viewport.setCamera({ flipHorizontal: !flipHorizontal });
 
+    viewport.setCamera({ flipHorizontal: !flipHorizontal });
     viewport.render();
   },
 });
@@ -191,17 +184,13 @@ addButtonToToolbar({
 addButtonToToolbar({
   title: 'Rotate Delta 30',
   onClick: () => {
-    // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    // Get the stack viewport
     const viewport = renderingEngine.getViewport(
       viewportId
-    ) as Types.IStackViewport;
-
+    ) as Types.IVolumeViewport;
     const { rotation } = viewport.getViewPresentation();
-    viewport.setViewPresentation({ rotation: rotation + 30 });
 
+    viewport.setViewPresentation({ rotation: rotation + 30 });
     viewport.render();
   },
 });
@@ -209,18 +198,14 @@ addButtonToToolbar({
 addButtonToToolbar({
   title: 'Reset Viewport',
   onClick: () => {
-    // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    // Get the stack viewport
     const viewport = renderingEngine.getViewport(
       viewportId
-    ) as Types.IStackViewport;
+    ) as Types.IVolumeViewport;
 
-    // Resets the viewport's camera
     viewport.resetCamera();
-    // Resets the viewport's properties
     viewport.resetProperties();
+    viewport.setOrientation(Enums.OrientationAxis.SAGITTAL);
     viewport.render();
   },
 });
@@ -229,24 +214,21 @@ function initializeTools() {
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(ZoomTool);
 
-  // Create a tool group
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
   toolGroup.addTool(PanTool.toolName);
   toolGroup.addTool(ZoomTool.toolName);
-
-  // Set the initial state of the tools
   toolGroup.setToolActive(PanTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Auxiliary, // Middle Click
+        mouseButton: MouseBindings.Auxiliary,
       },
     ],
   });
   toolGroup.setToolActive(ZoomTool.toolName, {
     bindings: [
       {
-        mouseButton: MouseBindings.Secondary, // Right Click
+        mouseButton: MouseBindings.Secondary,
       },
     ],
   });
@@ -254,75 +236,76 @@ function initializeTools() {
   return toolGroup;
 }
 
-/**
- * Runs the demo
- */
-async function run() {
-  // Init Cornerstone and related libraries
-  await initDemo();
-
-  // Initialize tools
-  const toolGroup = initializeTools();
-
-  // Get Cornerstone imageIds and fetch metadata into RAM
-  const imageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.99.1071.55651399101931177647030363790032',
-    SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.99.1071.11955901484749168523821342348553',
-    wadoRsRoot:
-      getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
-  });
-
-  // Instantiate a rendering engine
-  renderingEngine = new RenderingEngine(renderingEngineId);
-
-  // Create a stack viewport
-
-  const viewportInput = {
-    viewportId,
-    type: ViewportType.STACK,
-    element,
-    defaultOptions: {
-      background: [0.8, 0, 0.8] as Types.Point3,
-    },
-  };
-
-  renderingEngine.enableElement(viewportInput);
-
-  // Get the stack viewport that was created
-  viewport = renderingEngine.getViewport(viewportId) as Types.IStackViewport;
-
-  // Set the stack on the viewport
-  await viewport.setStack(imageIds);
-
-  // Render the image
-  viewport.render();
-
-  // Add tools to the tool group
-  toolGroup.addViewport(viewportId, renderingEngineId);
-
-  // Disable right click context menu
-  element.oncontextmenu = (e) => e.preventDefault();
-
-  // Add instructions
-  const instructions = document.createElement('p');
-  instructions.innerText = 'Middle Click: Pan\nRight Click: Zoom';
-  content.appendChild(instructions);
-
+function addDisplayAreaGuides() {
   const svgNode = document.getElementsByClassName('svg-layer').item(0);
+  const parentNode = svgNode?.parentNode;
+
+  if (!parentNode) {
+    return;
+  }
+
   const divNode = document.createElement('div');
   divNode.setAttribute(
     'style',
     'left:25%; top: 25%; width:25%; height:25%; border: 1px solid green; position: absolute'
   );
-  svgNode.parentNode.insertBefore(divNode, svgNode.nextSibling);
+  parentNode.insertBefore(divNode, svgNode.nextSibling);
+
   const div2Node = document.createElement('div');
   div2Node.setAttribute(
     'style',
     'left: 50%; top: 50%; width:25%; height:25%; border: 1px solid red; position: absolute'
   );
-  divNode.parentNode.insertBefore(div2Node, divNode.nextSibling);
+  parentNode.insertBefore(div2Node, divNode.nextSibling);
+}
+
+async function run() {
+  await initDemo();
+
+  const toolGroup = initializeTools();
+  const imageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+  });
+  const renderingEngine = new RenderingEngine(renderingEngineId);
+
+  renderingEngine.enableElement({
+    viewportId,
+    type: ViewportType.ORTHOGRAPHIC,
+    element,
+    defaultOptions: {
+      orientation: Enums.OrientationAxis.SAGITTAL,
+      background: [0.8, 0, 0.8] as Types.Point3,
+    },
+  });
+
+  viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
+
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+    imageIds,
+  });
+
+  volume.load();
+
+  await viewport.setVolumes([
+    { volumeId, callback: setCtTransferFunctionForVolumeActor },
+  ]);
+
+  viewport.setOrientation(Enums.OrientationAxis.SAGITTAL);
+  viewport.setProperties({
+    voiRange: { lower: -160, upper: 240 },
+    VOILUTFunction: Enums.VOILUTFunctionType.LINEAR,
+    colormap: { name: 'Grayscale' },
+    slabThickness: 0.1,
+  });
+  viewport.render();
+
+  toolGroup.addViewport(viewportId, renderingEngineId);
+  element.oncontextmenu = (e) => e.preventDefault();
+  addDisplayAreaGuides();
 }
 
 run();

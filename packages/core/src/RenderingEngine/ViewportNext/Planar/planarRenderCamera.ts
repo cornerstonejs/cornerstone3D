@@ -49,6 +49,101 @@ export interface DerivedPlanarPresentation {
   flipVertical: boolean;
 }
 
+const MIN_DISPLAY_AREA_VALUE = 1e-3;
+
+function getSliceCanvasDimensionsAtFit(args: {
+  sliceBasis: PlanarSliceBasis;
+  canvasWidth: number;
+  canvasHeight: number;
+}): Point2 {
+  const { canvasHeight, canvasWidth, sliceBasis } = args;
+  const safeCanvasWidth = getSafeCanvasDimension(canvasWidth);
+  const safeCanvasHeight = getSafeCanvasDimension(canvasHeight);
+  const safeFitParallelScale = Math.max(
+    sliceBasis.fitParallelScale,
+    MIN_DISPLAY_AREA_VALUE
+  );
+  const worldHeightAtFit = safeFitParallelScale * 2;
+  const worldWidthAtFit =
+    worldHeightAtFit * (safeCanvasWidth / safeCanvasHeight);
+
+  return [
+    (Math.max(sliceBasis.sliceWidthWorld, MIN_DISPLAY_AREA_VALUE) /
+      Math.max(worldWidthAtFit, MIN_DISPLAY_AREA_VALUE)) *
+      safeCanvasWidth,
+    (Math.max(sliceBasis.sliceHeightWorld, MIN_DISPLAY_AREA_VALUE) /
+      Math.max(worldHeightAtFit, MIN_DISPLAY_AREA_VALUE)) *
+      safeCanvasHeight,
+  ];
+}
+
+function deriveDisplayAreaPresentation(args: {
+  sliceBasis: PlanarSliceBasis;
+  camera?: PlanarCamera;
+  canvasWidth: number;
+  canvasHeight: number;
+  scale: number;
+}): Pick<DerivedPlanarPresentation, 'pan' | 'zoom'> | undefined {
+  const { canvasHeight, canvasWidth, camera, scale, sliceBasis } = args;
+  const displayArea = camera?.displayArea;
+
+  if (!displayArea) {
+    return;
+  }
+
+  const safeCanvasWidth = getSafeCanvasDimension(canvasWidth);
+  const safeCanvasHeight = getSafeCanvasDimension(canvasHeight);
+  const [imageWidthAtFit, imageHeightAtFit] = getSliceCanvasDimensionsAtFit({
+    canvasHeight,
+    canvasWidth,
+    sliceBasis,
+  });
+  let zoom = scale;
+
+  if (
+    displayArea.type === 'SCALE' &&
+    typeof displayArea.scale === 'number' &&
+    Number.isFinite(displayArea.scale) &&
+    displayArea.scale > 0
+  ) {
+    zoom = displayArea.scale;
+  } else if (displayArea.imageArea) {
+    const [areaX, areaY] = displayArea.imageArea;
+    const currentScale = Math.max(
+      Math.abs(imageWidthAtFit / safeCanvasWidth),
+      Math.abs(imageHeightAtFit / safeCanvasHeight)
+    );
+    const requiredScale = Math.max(
+      Math.abs((areaX * imageWidthAtFit) / safeCanvasWidth),
+      Math.abs((areaY * imageHeightAtFit) / safeCanvasHeight),
+      MIN_DISPLAY_AREA_VALUE
+    );
+
+    zoom = scale * (currentScale / requiredScale);
+  }
+
+  let pan: Point2 = [0, 0];
+
+  if (displayArea.imageCanvasPoint) {
+    const { imagePoint, canvasPoint = imagePoint || [0.5, 0.5] } =
+      displayArea.imageCanvasPoint;
+    const [canvasX, canvasY] = canvasPoint;
+    const [imageX, imageY] = imagePoint || canvasPoint;
+
+    pan = [
+      zoom * imageWidthAtFit * (0.5 - imageX) +
+        safeCanvasWidth * (canvasX - 0.5),
+      zoom * imageHeightAtFit * (0.5 - imageY) +
+        safeCanvasHeight * (canvasY - 0.5),
+    ];
+  }
+
+  return {
+    pan,
+    zoom,
+  };
+}
+
 /**
  * Projects a 3-D anchor point onto the current viewing plane so that
  * zoom-to-point works correctly when the anchor was placed on a different
@@ -154,6 +249,13 @@ export function derivePlanarPresentation(args: {
   const parallelScale = sliceBasis.fitParallelScale / scale;
   const worldHeight = parallelScale * 2;
   const worldWidth = worldHeight * (safeCanvasWidth / safeCanvasHeight);
+  const displayAreaPresentation = deriveDisplayAreaPresentation({
+    sliceBasis,
+    camera,
+    canvasWidth,
+    canvasHeight,
+    scale,
+  });
 
   // Pan contribution from the anchor point being offset from sliceCenterWorld.
   // This converts the world-space displacement into canvas-pixel displacement.
@@ -177,14 +279,16 @@ export function derivePlanarPresentation(args: {
     (anchorCanvas[1] - 0.5) * safeCanvasHeight,
   ];
 
+  const pan: Point2 = displayAreaPresentation?.pan ?? [
+    panFromAnchorWorld[0] + panFromAnchorCanvas[0],
+    panFromAnchorWorld[1] + panFromAnchorCanvas[1],
+  ];
+
   return {
-    pan: [
-      panFromAnchorWorld[0] + panFromAnchorCanvas[0],
-      panFromAnchorWorld[1] + panFromAnchorCanvas[1],
-    ],
+    pan,
     flipHorizontal: camera?.flipHorizontal === true,
     flipVertical: camera?.flipVertical === true,
-    zoom: scale,
+    zoom: displayAreaPresentation?.zoom ?? scale,
     rotation,
   };
 }

@@ -42,6 +42,10 @@ import type { PlanarCamera } from './PlanarViewportTypes';
  * @property fitParallelScale - The parallelScale value at which the full
  *   slice exactly fits the canvas (i.e. zoom = 1). Computed from image
  *   dimensions, spacing, and canvas aspect ratio.
+ * @property sliceWidthWorld - Width of the displayed slice in world units
+ *   before canvas aspect-ratio fitting is applied.
+ * @property sliceHeightWorld - Height of the displayed slice in world units
+ *   before canvas aspect-ratio fitting is applied.
  * @property cameraDistance - Distance from the focal point to the camera
  *   position along the viewPlaneNormal. For single images this is a nominal
  *   value (1); for volumes it spans the full depth so clipping captures the
@@ -52,11 +56,47 @@ export interface PlanarSliceBasis {
   viewPlaneNormal: Point3;
   viewUp: Point3;
   fitParallelScale: number;
+  sliceWidthWorld: number;
+  sliceHeightWorld: number;
   cameraDistance: number;
 }
 
 const MIN_CAMERA_DISTANCE = 1;
 const MIN_SLICE_SPACING = 1e-6;
+
+type VolumeSliceFitMetrics = {
+  fitParallelScale: number;
+  sliceWidthWorld: number;
+  sliceHeightWorld: number;
+};
+
+function getFitParallelScaleFromWorldSize(args: {
+  canvasWidth: number;
+  canvasHeight: number;
+  widthWorld: number;
+  heightWorld: number;
+}): number {
+  const { canvasHeight, canvasWidth, heightWorld, widthWorld } = args;
+  const safeCanvasWidth = getSafeCanvasDimension(canvasWidth);
+  const safeCanvasHeight = getSafeCanvasDimension(canvasHeight);
+  const safeWidthWorld = Math.max(widthWorld, MIN_SLICE_SPACING);
+  const safeHeightWorld = Math.max(heightWorld, MIN_SLICE_SPACING);
+  const sliceAspectRatio = safeWidthWorld / safeHeightWorld;
+  const canvasAspectRatio = safeCanvasWidth / safeCanvasHeight;
+  const scaleFactor = sliceAspectRatio / canvasAspectRatio;
+
+  return scaleFactor < 1
+    ? safeHeightWorld / 2
+    : (safeHeightWorld * scaleFactor) / 2;
+}
+
+function createFallbackVolumeSliceFitMetrics(): VolumeSliceFitMetrics {
+  return {
+    fitParallelScale: MIN_CAMERA_DISTANCE,
+    sliceWidthWorld: MIN_CAMERA_DISTANCE * 2,
+    sliceHeightWorld: MIN_CAMERA_DISTANCE * 2,
+  };
+}
 
 /**
  * Creates a section basis for a single DICOM image (stack path).
@@ -94,8 +134,7 @@ function buildPlanarImageSliceBasis(args: {
     rowOffset,
     rowsForFit,
   } = args;
-  const { direction, dimensions, origin, spacing } =
-    getImageDataMetadata(image);
+  const { direction, origin } = getImageDataMetadata(image);
   const rowVector = direction.slice(0, 3) as Point3;
   const columnVector = direction.slice(3, 6) as Point3;
   const viewPlaneNormal = direction
@@ -103,6 +142,10 @@ function buildPlanarImageSliceBasis(args: {
     .map((value) => -value) as Point3;
   const viewUp = columnVector.map((value) => -value) as Point3;
   const sliceCenterWorld = [...origin] as Point3;
+  const sliceWidthWorld =
+    Math.max(columnsForFit, 1) * (image.columnPixelSpacing || 1);
+  const sliceHeightWorld =
+    Math.max(rowsForFit, 1) * (image.rowPixelSpacing || 1);
   // Stack images must resolve the same slice basis regardless of whether the
   // pixels are drawn through VTK or the CPU fallback. Keeping the center and
   // fit geometry shared prevents render-mode switches from nudging the camera.
@@ -131,6 +174,8 @@ function buildPlanarImageSliceBasis(args: {
       rowPixelSpacing: image.rowPixelSpacing || 1,
       rows: rowsForFit,
     }),
+    sliceWidthWorld,
+    sliceHeightWorld,
     cameraDistance: 1,
   };
 }
@@ -371,13 +416,13 @@ export function resolvePlanarVolumeImageIdIndex(args: {
  * delegates to `getCpuEquivalentParallelScale` for aspect-ratio-aware
  * scale computation.
  */
-function getCpuVolumeParallelScale(args: {
+function getCpuVolumeSliceFitMetrics(args: {
   imageVolume: IImageVolume;
   viewPlaneNormal: Point3;
   viewUp: Point3;
   canvasWidth: number;
   canvasHeight: number;
-}) {
+}): VolumeSliceFitMetrics {
   const { imageVolume, viewPlaneNormal, viewUp, canvasWidth, canvasHeight } =
     args;
   const geometry = getOrthogonalVolumeSliceGeometry({
@@ -389,49 +434,58 @@ function getCpuVolumeParallelScale(args: {
   });
 
   if (geometry) {
-    return getCpuEquivalentParallelScale({
-      canvasHeight: getSafeCanvasDimension(canvasHeight),
-      canvasWidth: getSafeCanvasDimension(canvasWidth),
-      columnPixelSpacing: geometry.columnPixelSpacing,
-      columns: Math.max(geometry.columns, 1),
-      rowPixelSpacing: geometry.rowPixelSpacing,
-      rows: Math.max(geometry.rows, 1),
-    });
+    const columns = Math.max(geometry.columns, 1);
+    const rows = Math.max(geometry.rows, 1);
+    const sliceWidthWorld = columns * geometry.columnPixelSpacing;
+    const sliceHeightWorld = rows * geometry.rowPixelSpacing;
+
+    return {
+      fitParallelScale: getCpuEquivalentParallelScale({
+        canvasHeight: getSafeCanvasDimension(canvasHeight),
+        canvasWidth: getSafeCanvasDimension(canvasWidth),
+        columnPixelSpacing: geometry.columnPixelSpacing,
+        columns,
+        rowPixelSpacing: geometry.rowPixelSpacing,
+        rows,
+      }),
+      sliceWidthWorld,
+      sliceHeightWorld,
+    };
   }
 
   const imageData = imageVolume.imageData;
 
   if (imageData) {
-    let { widthWorld, heightWorld } = getCubeSizeInView(
+    const { widthWorld, heightWorld } = getCubeSizeInView(
       imageData,
       viewPlaneNormal,
       viewUp
     );
-    const spacing = imageData.getSpacing();
-    const safeCanvasWidth = getSafeCanvasDimension(canvasWidth);
-    const safeCanvasHeight = getSafeCanvasDimension(canvasHeight);
 
     if (widthWorld > 0 && heightWorld > 0) {
-      const boundsAspectRatio = widthWorld / heightWorld;
-      const canvasAspectRatio = safeCanvasWidth / safeCanvasHeight;
-      const scaleFactor = boundsAspectRatio / canvasAspectRatio;
-
-      return scaleFactor < 1
-        ? heightWorld / 2
-        : (heightWorld * scaleFactor) / 2;
+      return {
+        fitParallelScale: getFitParallelScaleFromWorldSize({
+          canvasHeight,
+          canvasWidth,
+          widthWorld,
+          heightWorld,
+        }),
+        sliceWidthWorld: widthWorld,
+        sliceHeightWorld: heightWorld,
+      };
     }
   }
 
-  return MIN_CAMERA_DISTANCE;
+  return createFallbackVolumeSliceFitMetrics();
 }
 
-function getPlanarVolumeParallelScale(args: {
+function getPlanarVolumeSliceFitMetrics(args: {
   imageVolume: IImageVolume;
   viewPlaneNormal: Point3;
   viewUp: Point3;
   canvasWidth: number;
   canvasHeight: number;
-}) {
+}): VolumeSliceFitMetrics {
   const { imageVolume, viewPlaneNormal, viewUp, canvasWidth, canvasHeight } =
     args;
   const geometry = getOrthogonalVolumeSliceGeometry({
@@ -443,14 +497,23 @@ function getPlanarVolumeParallelScale(args: {
   });
 
   if (geometry) {
-    return getCpuEquivalentParallelScale({
-      canvasHeight: getSafeCanvasDimension(canvasHeight),
-      canvasWidth: getSafeCanvasDimension(canvasWidth),
-      columnPixelSpacing: geometry.columnPixelSpacing,
-      columns: Math.max(geometry.columns - 1, 1),
-      rowPixelSpacing: geometry.rowPixelSpacing,
-      rows: Math.max(geometry.rows - 1, 1),
-    });
+    const columns = Math.max(geometry.columns - 1, 1);
+    const rows = Math.max(geometry.rows - 1, 1);
+    const sliceWidthWorld = columns * geometry.columnPixelSpacing;
+    const sliceHeightWorld = rows * geometry.rowPixelSpacing;
+
+    return {
+      fitParallelScale: getCpuEquivalentParallelScale({
+        canvasHeight: getSafeCanvasDimension(canvasHeight),
+        canvasWidth: getSafeCanvasDimension(canvasWidth),
+        columnPixelSpacing: geometry.columnPixelSpacing,
+        columns,
+        rowPixelSpacing: geometry.rowPixelSpacing,
+        rows,
+      }),
+      sliceWidthWorld,
+      sliceHeightWorld,
+    };
   }
 
   const imageData = imageVolume.imageData;
@@ -462,24 +525,25 @@ function getPlanarVolumeParallelScale(args: {
       viewUp
     );
     const spacing = imageData.getSpacing();
-    const safeCanvasWidth = getSafeCanvasDimension(canvasWidth);
-    const safeCanvasHeight = getSafeCanvasDimension(canvasHeight);
 
     widthWorld = Math.max(spacing[0], widthWorld - spacing[0]);
     heightWorld = Math.max(spacing[1], heightWorld - spacing[1]);
 
     if (widthWorld > 0 && heightWorld > 0) {
-      const boundsAspectRatio = widthWorld / heightWorld;
-      const canvasAspectRatio = safeCanvasWidth / safeCanvasHeight;
-      const scaleFactor = boundsAspectRatio / canvasAspectRatio;
-
-      return scaleFactor < 1
-        ? heightWorld / 2
-        : (heightWorld * scaleFactor) / 2;
+      return {
+        fitParallelScale: getFitParallelScaleFromWorldSize({
+          canvasHeight,
+          canvasWidth,
+          widthWorld,
+          heightWorld,
+        }),
+        sliceWidthWorld: widthWorld,
+        sliceHeightWorld: heightWorld,
+      };
     }
   }
 
-  return MIN_CAMERA_DISTANCE;
+  return createFallbackVolumeSliceFitMetrics();
 }
 
 /**
@@ -510,20 +574,22 @@ function buildPlanarVolumeSliceBasis(args: {
   camera?: PlanarCamera;
   center: Point3;
   fitParallelScale: number;
+  sliceWidthWorld: number;
+  sliceHeightWorld: number;
 }): {
   sliceBasis: PlanarSliceBasis;
   currentImageIdIndex: number;
   maxImageIdIndex: number;
 } {
   const {
-    canvasWidth,
-    canvasHeight,
     center,
     camera,
     fitParallelScale,
     imageIdIndex,
     imageVolume,
     orientation,
+    sliceHeightWorld,
+    sliceWidthWorld,
   } = args;
   const cameraValues = getPlanarCameraVectors({
     imageVolume,
@@ -537,6 +603,8 @@ function buildPlanarVolumeSliceBasis(args: {
         viewPlaneNormal: [0, 0, 1],
         viewUp: [0, -1, 0],
         fitParallelScale: MIN_CAMERA_DISTANCE,
+        sliceWidthWorld: MIN_CAMERA_DISTANCE * 2,
+        sliceHeightWorld: MIN_CAMERA_DISTANCE * 2,
         cameraDistance: MIN_CAMERA_DISTANCE,
       },
       currentImageIdIndex: 0,
@@ -599,6 +667,8 @@ function buildPlanarVolumeSliceBasis(args: {
       viewPlaneNormal,
       viewUp,
       fitParallelScale,
+      sliceWidthWorld,
+      sliceHeightWorld,
       cameraDistance,
     },
     currentImageIdIndex,
@@ -623,17 +693,18 @@ export function createPlanarVolumeSliceBasis(args: {
     imageVolume,
     orientation,
   });
+  const sliceFitMetrics = cameraValues
+    ? getPlanarVolumeSliceFitMetrics({
+        ...args,
+        viewPlaneNormal: cameraValues.viewPlaneNormal,
+        viewUp: cameraValues.viewUp,
+      })
+    : createFallbackVolumeSliceFitMetrics();
 
   return buildPlanarVolumeSliceBasis({
     ...args,
     center: getViewportCompatibleImageVolumeCenter(imageVolume),
-    fitParallelScale: cameraValues
-      ? getPlanarVolumeParallelScale({
-          ...args,
-          viewPlaneNormal: cameraValues.viewPlaneNormal,
-          viewUp: cameraValues.viewUp,
-        })
-      : MIN_CAMERA_DISTANCE,
+    ...sliceFitMetrics,
   });
 }
 
@@ -654,17 +725,18 @@ export function createPlanarCpuVolumeSliceBasis(args: {
     imageVolume,
     orientation,
   });
+  const sliceFitMetrics = cameraValues
+    ? getCpuVolumeSliceFitMetrics({
+        ...args,
+        viewPlaneNormal: cameraValues.viewPlaneNormal,
+        viewUp: cameraValues.viewUp,
+      })
+    : createFallbackVolumeSliceFitMetrics();
 
   return buildPlanarVolumeSliceBasis({
     ...args,
     center: getGeometricImageVolumeCenter(imageVolume),
-    fitParallelScale: cameraValues
-      ? getCpuVolumeParallelScale({
-          ...args,
-          viewPlaneNormal: cameraValues.viewPlaneNormal,
-          viewUp: cameraValues.viewUp,
-        })
-      : MIN_CAMERA_DISTANCE,
+    ...sliceFitMetrics,
   });
 }
 

@@ -40,9 +40,6 @@ class ECGViewport extends ViewportNext<
   ECGCanvasRenderContext
 > {
   readonly type = ViewportType.ECG_NEXT;
-  readonly id: string;
-
-  readonly element: HTMLDivElement;
   readonly renderingEngineId: string;
   readonly canvas: HTMLCanvasElement;
   readonly canvasContext: CanvasRenderingContext2D;
@@ -58,9 +55,7 @@ class ECGViewport extends ViewportNext<
   }
 
   constructor(args: ECGViewportInput) {
-    super();
-    this.id = args.id;
-    this.element = args.element;
+    super(args);
     this.renderingEngineId = args.renderingEngineId;
     this.canvas = getOrCreateCanvas(this.element);
     this.canvasContext = this.canvas.getContext('2d');

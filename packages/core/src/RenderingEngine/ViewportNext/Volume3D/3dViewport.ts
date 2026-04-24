@@ -38,8 +38,6 @@ class VolumeViewport3DV2 extends ViewportNext<
   { camera: Volume3DCamera & ICamera }
 > {
   readonly type: ViewportType = ViewportType.VOLUME_3D_NEXT;
-  readonly id: string;
-  readonly element: HTMLDivElement;
   readonly renderingEngineId: string;
   readonly canvas: HTMLCanvasElement;
   sWidth: number;
@@ -64,9 +62,7 @@ class VolumeViewport3DV2 extends ViewportNext<
   }
 
   constructor(args: VolumeViewport3DV2Input) {
-    super();
-    this.id = args.id;
-    this.element = args.element;
+    super(args);
     this.renderingEngineId = args.renderingEngineId;
     this.canvas = args.canvas;
     this.sWidth = args.sWidth;

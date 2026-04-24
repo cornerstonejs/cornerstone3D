@@ -24,6 +24,7 @@ import type {
 } from '../ViewportArchitectureTypes';
 import type ICamera from '../../../types/ICamera';
 import type { ViewportCameraBase } from '../ViewportCameraTypes';
+import type DisplayArea from '../../../types/displayArea';
 
 export type PlanarRenderMode =
   | ActorRenderMode.CPU_IMAGE
@@ -97,6 +98,7 @@ export interface PlanarCamera extends ViewportCameraBase<Point3>, ICamera {
   orientation?: PlanarOrientation;
   flipHorizontal?: boolean;
   flipVertical?: boolean;
+  displayArea?: DisplayArea;
 }
 
 export interface PlanarProperties {
