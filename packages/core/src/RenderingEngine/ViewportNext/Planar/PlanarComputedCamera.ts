@@ -1,11 +1,5 @@
 import { ActorRenderMode } from '../../../types';
-import type {
-  ICamera,
-  IImage,
-  IImageVolume,
-  Point2,
-  Point3,
-} from '../../../types';
+import type { IImage, IImageVolume, Point2, Point3 } from '../../../types';
 import ViewportComputedCamera from '../ViewportComputedCamera';
 import {
   canvasToWorldPlanarCamera,
@@ -29,9 +23,14 @@ import {
   createDefaultPlanarCamera,
   normalizePlanarCamera,
 } from './planarViewportCamera';
+import {
+  normalizePlanarScale,
+  type PlanarScaleInput,
+} from './planarCameraScale';
 import type {
   PlanarCamera,
   PlanarPayload,
+  PlanarRenderCamera,
   PlanarViewportRenderContext,
 } from './PlanarViewportTypes';
 import type { PlanarRendering } from './planarRuntimeTypes';
@@ -67,7 +66,7 @@ function clonePoint3(point: Point3): Point3 {
 
 abstract class BasePlanarViewportCamera<
   TState extends BasePlanarViewportCameraState,
-> extends ViewportComputedCamera<TState> {
+> extends ViewportComputedCamera<TState, PlanarRenderCamera> {
   private cachedSliceBasis?: PlanarSliceBasis;
   private cachedPresentation?: ReturnType<typeof derivePlanarPresentation>;
 
@@ -77,6 +76,10 @@ abstract class BasePlanarViewportCamera<
 
   get zoom(): number {
     return this.getPresentation().zoom;
+  }
+
+  get scale(): Point2 {
+    return clonePoint2(this.getPresentation().scale);
   }
 
   get rotation(): number {
@@ -115,13 +118,20 @@ abstract class BasePlanarViewportCamera<
     zoom: number,
     canvasPoint?: Point2
   ): BasePlanarViewportCamera<TState> {
-    const nextZoom = Math.max(zoom, 0.001);
+    return this.withScale(zoom, canvasPoint);
+  }
+
+  withScale(
+    scale: PlanarScaleInput,
+    canvasPoint?: Point2
+  ): BasePlanarViewportCamera<TState> {
+    const nextScale = normalizePlanarScale(scale);
 
     if (!canvasPoint) {
       return this.cloneWithCamera({
         ...this.state.camera,
         displayArea: undefined,
-        scale: nextZoom,
+        scale: nextScale,
         scaleMode: 'fit',
       });
     }
@@ -136,7 +146,7 @@ abstract class BasePlanarViewportCamera<
       ],
       anchorWorld: worldPoint,
       displayArea: undefined,
-      scale: nextZoom,
+      scale: nextScale,
       scaleMode: 'fit',
     });
   }
@@ -175,7 +185,7 @@ abstract class BasePlanarViewportCamera<
     return;
   }
 
-  protected buildICamera(): ICamera {
+  protected buildICamera(): PlanarRenderCamera {
     return resolvePlanarRenderCamera({
       camera: this.state.camera,
       canvasHeight: this.state.canvasHeight,
@@ -196,8 +206,12 @@ abstract class BasePlanarViewportCamera<
   }
 
   protected requireResolvedICamera(): Required<
-    Pick<ICamera, 'focalPoint' | 'parallelScale' | 'viewPlaneNormal' | 'viewUp'>
-  > {
+    Pick<
+      PlanarRenderCamera,
+      'focalPoint' | 'parallelScale' | 'viewPlaneNormal' | 'viewUp'
+    >
+  > &
+    Pick<PlanarRenderCamera, 'presentationScale'> {
     const camera = this.toICamera();
 
     if (
@@ -212,6 +226,9 @@ abstract class BasePlanarViewportCamera<
     return {
       focalPoint: clonePoint3(camera.focalPoint),
       parallelScale: camera.parallelScale,
+      presentationScale: camera.presentationScale
+        ? clonePoint2(camera.presentationScale)
+        : undefined,
       viewPlaneNormal: clonePoint3(camera.viewPlaneNormal),
       viewUp: clonePoint3(camera.viewUp),
     };

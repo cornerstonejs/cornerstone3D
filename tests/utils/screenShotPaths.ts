@@ -328,6 +328,17 @@ const screenShotPaths = {
     cpuInvert: 'cpu-invert.png',
     cpuReset: 'cpu-reset.png',
   },
+  nextViewportScale: {
+    scale1x1: 'scale-1x1.png',
+    uniform1p5: 'scale-uniform-1p5.png',
+    wide2x1: 'scale-wide-2x1.png',
+    wideSliderNudge: 'scale-wide-slider-nudge.png',
+    tall1x2: 'scale-tall-1x2.png',
+    fitAspect: 'fit-aspect.png',
+    fitWidth: 'fit-width.png',
+    fitHeight: 'fit-height.png',
+    absoluteFill: 'absolute-fill.png',
+  },
   volumeAnnotationTiled: {
     lengthTool: 'lengthTool.png',
   },

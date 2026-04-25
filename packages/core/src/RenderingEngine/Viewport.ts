@@ -163,7 +163,6 @@ class Viewport {
     this.suppressEvents = props.defaultOptions.suppressEvents
       ? props.defaultOptions.suppressEvents
       : false;
-    //this.options = structuredClone(props.defaultOptions);
     this.options = deepClone(props.defaultOptions);
     this.isDisabled = false;
   }
@@ -331,7 +330,7 @@ class Viewport {
    * @param immediate - If `true`, renders the viewport after the options are set.
    */
   public setOptions(options: ViewportInputOptions, immediate = false): void {
-    this.options = structuredClone(options);
+    this.options = deepClone(options);
 
     // TODO When this is needed we need to move the camera position.
     // We can steal some logic from the tools we build to do this.
@@ -349,7 +348,7 @@ class Viewport {
    * @param immediate - If `true`, renders the viewport after the options are reset.
    */
   public reset(immediate = false) {
-    this.options = structuredClone(this.defaultOptions);
+    this.options = deepClone(this.defaultOptions);
 
     // TODO When this is needed we need to move the camera position.
     // We can steal some logic from the tools we build to do this.

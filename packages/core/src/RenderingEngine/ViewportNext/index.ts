@@ -6,6 +6,7 @@ export { default as ViewportNext } from './ViewportNext';
 export { default as ViewportComputedCamera } from './ViewportComputedCamera';
 export type {
   CameraFrame,
+  CameraScale,
   CameraScaleMode,
   ViewAnchor,
   ViewportCameraBase,

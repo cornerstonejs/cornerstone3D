@@ -1,4 +1,8 @@
-import { getEnabledElement, triggerEvent } from '@cornerstonejs/core';
+import {
+  getEnabledElement,
+  triggerEvent,
+  utilities,
+} from '@cornerstonejs/core';
 import Events from '../../enums/Events';
 import type {
   KeyDownEventDetail,
@@ -99,7 +103,7 @@ function _onKeyUp(evt: KeyboardEvent): void {
   state.element.addEventListener('keydown', keyListener);
 
   // Restore `state` to `defaultState`
-  state = structuredClone(defaultState);
+  state = utilities.deepClone(defaultState);
   triggerEvent(eventDetail.element, Events.KEY_UP, eventDetail);
 }
 

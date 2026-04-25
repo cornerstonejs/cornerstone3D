@@ -11,10 +11,15 @@ import type {
   IImage,
   IImageVolume,
   OrientationVectors,
+  Point2,
   Point3,
   VOIRange,
 } from '../../../types';
 import type { ViewportInput } from '../../../types/IViewport';
+import type {
+  ViewPresentation,
+  ViewPresentationSelector,
+} from '../../../types';
 import type {
   BaseViewportRenderContext,
   BasePresentationProps,
@@ -23,8 +28,12 @@ import type {
   RenderPathResolver,
 } from '../ViewportArchitectureTypes';
 import type ICamera from '../../../types/ICamera';
-import type { ViewportCameraBase } from '../ViewportCameraTypes';
+import type {
+  CameraScaleMode,
+  ViewportCameraBase,
+} from '../ViewportCameraTypes';
 import type DisplayArea from '../../../types/displayArea';
+import type { PlanarScaleInput } from './planarCameraScale';
 
 export type PlanarRenderMode =
   | ActorRenderMode.CPU_IMAGE
@@ -93,12 +102,35 @@ export interface PlanarPresentationProps extends BasePresentationProps {
   invert?: boolean;
 }
 
-export interface PlanarCamera extends ViewportCameraBase<Point3>, ICamera {
+export type PlanarDisplayArea = Omit<DisplayArea, 'scale'> & {
+  scale?: PlanarScaleInput;
+  scaleMode?: CameraScaleMode;
+};
+
+export interface PlanarViewPresentation
+  extends Omit<ViewPresentation, 'displayArea'> {
+  displayArea?: PlanarDisplayArea;
+  scale?: Point2;
+}
+
+export interface PlanarViewPresentationSelector
+  extends ViewPresentationSelector {
+  scale?: boolean;
+}
+
+export interface PlanarCamera
+  extends ViewportCameraBase<Point3, PlanarScaleInput>,
+    ICamera<PlanarScaleInput> {
   imageIdIndex?: number;
   orientation?: PlanarOrientation;
   flipHorizontal?: boolean;
   flipVertical?: boolean;
-  displayArea?: DisplayArea;
+  displayArea?: PlanarDisplayArea;
+}
+
+export interface PlanarRenderCamera extends ICamera<PlanarScaleInput> {
+  presentationScale?: Point2;
+  scaleMode?: CameraScaleMode;
 }
 
 export interface PlanarProperties {
@@ -111,7 +143,7 @@ export type PlanarDataPresentation = PlanarPresentationProps & PlanarProperties;
 
 export interface PlanarRenderPathRuntime {
   renderMode: PlanarEffectiveRenderMode;
-  renderCamera?: ICamera;
+  renderCamera?: PlanarRenderCamera;
 }
 
 export interface PlanarDataProvider extends DataProvider {

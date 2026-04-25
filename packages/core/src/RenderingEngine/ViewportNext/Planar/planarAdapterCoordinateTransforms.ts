@@ -13,11 +13,17 @@ import type {
   Point2,
   Point3,
 } from '../../../types';
+import {
+  getPlanarScaleRatio,
+  type PlanarScaleInput,
+} from './planarCameraScale';
 
 type PlanarComputedCamera = Pick<
   Required<ICamera>,
   'focalPoint' | 'parallelScale' | 'viewPlaneNormal' | 'viewUp'
->;
+> & {
+  presentationScale?: PlanarScaleInput;
+};
 
 function getPlanarCameraBasis(camera: PlanarComputedCamera) {
   const viewUp = vec3.normalize(
@@ -56,7 +62,10 @@ export function canvasToWorldPlanarCamera(args: {
   const safeCanvasHeight = Math.max(canvasHeight, 1);
   const { right, viewUp } = getPlanarCameraBasis(camera);
   const worldHeight = Math.max(camera.parallelScale, 0.001) * 2;
-  const worldWidth = worldHeight * (safeCanvasWidth / safeCanvasHeight);
+  const worldWidth =
+    worldHeight *
+    (safeCanvasWidth / safeCanvasHeight) *
+    (1 / getPlanarScaleRatio(camera.presentationScale));
   const xOffset = (canvasPos[0] / safeCanvasWidth - 0.5) * worldWidth;
   const yOffset = (0.5 - canvasPos[1] / safeCanvasHeight) * worldHeight;
   const worldPos = [...camera.focalPoint] as Point3;
@@ -88,7 +97,10 @@ export function worldToCanvasPlanarCamera(args: {
   const safeCanvasHeight = Math.max(canvasHeight, 1);
   const { right, viewUp } = getPlanarCameraBasis(camera);
   const worldHeight = Math.max(camera.parallelScale, 0.001) * 2;
-  const worldWidth = worldHeight * (safeCanvasWidth / safeCanvasHeight);
+  const worldWidth =
+    worldHeight *
+    (safeCanvasWidth / safeCanvasHeight) *
+    (1 / getPlanarScaleRatio(camera.presentationScale));
   const delta = vec3.subtract(
     vec3.create(),
     worldPos as unknown as vec3,

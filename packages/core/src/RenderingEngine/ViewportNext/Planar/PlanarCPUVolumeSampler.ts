@@ -9,6 +9,7 @@ import type {
   IImageVolume,
   PixelDataTypedArray,
   PixelDataTypedArrayString,
+  Point2,
   Point3,
   VOIRange,
 } from '../../../types';
@@ -16,6 +17,7 @@ import VoxelManager from '../../../utilities/VoxelManager';
 import getDefaultViewport from '../../helpers/cpuFallback/rendering/getDefaultViewport';
 import getSpacingInNormalDirection from '../../../utilities/getSpacingInNormalDirection';
 import type { PlanarDataPresentation } from './PlanarViewportTypes';
+import { getPlanarScaleRatio } from './planarCameraScale';
 
 type SliceArray = PixelDataTypedArray;
 type ColorSample = number[];
@@ -195,7 +197,7 @@ export default class PlanarCPUVolumeSampler {
     return { min, max };
   }
 
-  public getCameraBasis(camera: ICamera): {
+  public getCameraBasis(camera: ICamera<unknown>): {
     right: Point3;
     up: Point3;
     normal: Point3;
@@ -313,7 +315,7 @@ export default class PlanarCPUVolumeSampler {
   public updateCPUFallbackViewport(args: {
     enabledElement: CPUFallbackEnabledElement;
     sampledSliceState: PlanarCPUSampledSliceState;
-    camera: ICamera;
+    camera: ICamera<unknown> & { presentationScale?: Point2 };
     dataPresentation?: PlanarDataPresentation;
     defaultVOIRange?: VOIRange;
   }): void {
@@ -330,7 +332,12 @@ export default class PlanarCPUVolumeSampler {
       camera.focalPoint as Point3,
       sampledSliceState.translationReferenceFocalPoint
     );
-    const viewport = enabledElement.viewport;
+    const viewport = enabledElement.viewport as Omit<
+      CPUFallbackEnabledElement['viewport'],
+      'scale'
+    > & {
+      scale?: number | Point2;
+    };
     const resolvedVOI = this.getResolvedVOIRange(
       dataPresentation?.voiRange ?? defaultVOIRange,
       sampledSliceState.image.minPixelValue ?? 0,
@@ -369,7 +376,7 @@ export default class PlanarCPUVolumeSampler {
     sampledSliceState?: PlanarCPUSampledSliceState;
     width: number;
     height: number;
-    camera: ICamera;
+    camera: ICamera<unknown>;
     dataPresentation?: PlanarDataPresentation;
   }): boolean {
     const { sampledSliceState, width, height, camera, dataPresentation } = args;
@@ -408,7 +415,7 @@ export default class PlanarCPUVolumeSampler {
     volume: IImageVolume;
     width: number;
     height: number;
-    camera: ICamera;
+    camera: ICamera<unknown> & { presentationScale?: Point2 };
     dataPresentation?: PlanarDataPresentation;
   }): PlanarCPUSampledSliceState {
     const { volume, width, height, camera, dataPresentation } = args;
@@ -477,7 +484,10 @@ export default class PlanarCPUVolumeSampler {
 
     const parallelScale = Math.max(camera.parallelScale ?? 1, EPSILON);
     const worldHeight = parallelScale * 2;
-    const worldWidth = worldHeight * (width / Math.max(height, 1));
+    const worldWidth =
+      worldHeight *
+      (width / Math.max(height, 1)) *
+      (1 / getPlanarScaleRatio(camera.presentationScale));
     const xStep = worldWidth / Math.max(width, 1);
     const yStep = worldHeight / Math.max(height, 1);
     const xStart = -worldWidth / 2 + xStep / 2;
@@ -598,7 +608,7 @@ export default class PlanarCPUVolumeSampler {
 
   private trySampleOrthogonalSliceFromVoxelManager(
     volume: IImageVolume,
-    camera: ICamera,
+    camera: ICamera<unknown>,
     right: Point3,
     up: Point3,
     normal: Point3
@@ -1038,13 +1048,33 @@ export default class PlanarCPUVolumeSampler {
 
 function resolveViewportScale(args: {
   canvas: HTMLCanvasElement;
-  camera: ICamera;
+  camera: ICamera<unknown> & { presentationScale?: Point2 };
   rowPixelSpacing: number;
   columnPixelSpacing: number;
-}): number {
+}): number | Point2 {
   const { camera, canvas, columnPixelSpacing, rowPixelSpacing } = args;
   const worldHeight = Math.max((camera.parallelScale ?? 1) * 2, EPSILON);
   const worldToCanvasScale = canvas.height / worldHeight;
+  const scaleRatio = getPlanarScaleRatio(camera.presentationScale);
+
+  if (Math.abs(scaleRatio - 1) > EPSILON) {
+    const safeCanvasHeight = Math.max(canvas.height, 1);
+    const safeCanvasWidth = Math.max(canvas.width, 1);
+    const worldWidth =
+      worldHeight * (safeCanvasWidth / safeCanvasHeight) * (1 / scaleRatio);
+
+    return [
+      Math.max(
+        (safeCanvasWidth * (columnPixelSpacing || 1)) /
+          Math.max(worldWidth, EPSILON),
+        EPSILON
+      ),
+      Math.max(
+        (safeCanvasHeight * (rowPixelSpacing || 1)) / worldHeight,
+        EPSILON
+      ),
+    ];
+  }
 
   return Math.max(
     Math.min(rowPixelSpacing || 1, columnPixelSpacing || 1) *

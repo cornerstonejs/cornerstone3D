@@ -4,6 +4,19 @@ import type {
   CPUFallbackTransform,
 } from '../../../../types';
 
+// support previous one value for scale
+function getViewportScale(
+  scale?: number | [number, number]
+): [number, number, boolean] {
+  if (Array.isArray(scale)) {
+    return [scale[0] ?? 1, scale[1] ?? 1, true];
+  }
+
+  const scalarScale = scale ?? 1;
+
+  return [scalarScale, scalarScale, false];
+}
+
 /**
  * Calculate the transform for a Cornerstone enabled element
  *
@@ -35,8 +48,12 @@ export default function (
   }
 
   // Apply the scale
-  let widthScale = enabledElement.viewport.scale;
-  let heightScale = enabledElement.viewport.scale;
+  const [viewportScaleX, viewportScaleY, hasExplicitAxisScale] =
+    getViewportScale(
+      enabledElement.viewport.scale as number | [number, number] | undefined
+    );
+  let widthScale = viewportScaleX;
+  let heightScale = viewportScaleY;
 
   const width =
     enabledElement.viewport.displayedArea.brhc.x -
@@ -45,7 +62,12 @@ export default function (
     enabledElement.viewport.displayedArea.brhc.y -
     (enabledElement.viewport.displayedArea.tlhc.y - 1);
 
-  if (enabledElement.viewport.displayedArea.presentationSizeMode === 'NONE') {
+  if (hasExplicitAxisScale) {
+    // The caller supplied final x/y display scales; do not apply pixel-spacing
+    // compensation a second time.
+  } else if (
+    enabledElement.viewport.displayedArea.presentationSizeMode === 'NONE'
+  ) {
     if (
       enabledElement.image.rowPixelSpacing <
       enabledElement.image.columnPixelSpacing

@@ -20,6 +20,7 @@ import type {
   RenderingBinding,
 } from '../ViewportArchitectureTypes';
 import ViewportNext from '../ViewportNext';
+import type { ViewportNextReferenceContext } from '../viewportNextReferenceCompatibility';
 import { DefaultWSIDataProvider } from './DefaultWSIDataProvider';
 import { DicomMicroscopyPath } from './DicomMicroscopyRenderPath';
 import type {
@@ -283,8 +284,11 @@ export default class WSIViewport extends ViewportNext<
   }
 
   getViewReference(_specifier: ViewReferenceSpecifier = {}): ViewReference {
+    const dataId = this.getCurrentBinding()?.data.id;
+
     return {
       FrameOfReferenceUID: this.getFrameOfReferenceUID(),
+      dataId,
       referencedImageId: this.getCurrentImageId(),
       sliceIndex: 0,
     };
@@ -502,6 +506,27 @@ export default class WSIViewport extends ViewportNext<
 
   protected getActiveDataId(): string | undefined {
     return this.activeDataId;
+  }
+
+  protected getReferenceViewContexts(): ViewportNextReferenceContext[] {
+    const binding = this.getCurrentBinding();
+    const data = this.getWSIData();
+
+    if (!binding || !data) {
+      return super.getReferenceViewContexts();
+    }
+
+    return [
+      {
+        dataId: binding.data.id,
+        dataIds: [binding.data.id],
+        frameOfReferenceUID: data.frameOfReferenceUID ?? undefined,
+        imageIds: data.imageIds,
+        imageURIs: Array.from(data.imageURISet),
+        allowAnyImageReference: true,
+        currentImageIdIndex: 0,
+      },
+    ];
   }
 
   private applyVOIToRendering(): void {

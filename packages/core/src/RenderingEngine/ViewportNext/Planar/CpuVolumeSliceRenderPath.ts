@@ -321,6 +321,7 @@ export class CpuVolumeSliceRenderPath
       camera: {
         focalPoint: renderCamera.focalPoint,
         parallelScale: renderCamera.parallelScale,
+        presentationScale: renderCamera.presentationScale,
         viewPlaneNormal: renderCamera.viewPlaneNormal,
         viewUp: renderCamera.viewUp,
       },
@@ -354,6 +355,7 @@ export class CpuVolumeSliceRenderPath
       camera: {
         focalPoint: renderCamera.focalPoint,
         parallelScale: renderCamera.parallelScale,
+        presentationScale: renderCamera.presentationScale,
         viewPlaneNormal: renderCamera.viewPlaneNormal,
         viewUp: renderCamera.viewUp,
       },

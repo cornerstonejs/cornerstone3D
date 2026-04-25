@@ -15,7 +15,7 @@ import type { ICamera, Point2, Point3 } from '../../types';
  */
 abstract class ViewportComputedCamera<
   TState,
-  TICamera extends ICamera = ICamera,
+  TICamera extends ICamera<unknown> = ICamera,
 > {
   /** Frozen resolved-camera state captured when this instance was created. */
   readonly state: Readonly<TState>;

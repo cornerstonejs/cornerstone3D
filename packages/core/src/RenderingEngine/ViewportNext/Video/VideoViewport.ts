@@ -6,7 +6,6 @@ import type {
   ViewPresentationSelector,
   ViewReference,
   ViewReferenceSpecifier,
-  ReferenceCompatibleOptions,
 } from '../../../types';
 import { ViewportType } from '../../../enums';
 import {
@@ -21,6 +20,7 @@ import type {
   RenderingBinding,
 } from '../ViewportArchitectureTypes';
 import { getViewportNextSourceDataId } from '../viewportNextDataSetAccess';
+import type { ViewportNextReferenceContext } from '../viewportNextReferenceCompatibility';
 import type {
   VideoCamera,
   VideoDataPresentation,
@@ -205,15 +205,25 @@ class VideoViewport extends ViewportNext<
   getViewReference(
     viewRefSpecifier: ViewReferenceSpecifier = {}
   ): ViewReference {
+    const frameNumber =
+      viewRefSpecifier.frameNumber ??
+      (typeof viewRefSpecifier.sliceIndex === 'number'
+        ? viewRefSpecifier.sliceIndex + 1
+        : this.getFrameNumber());
     const sliceIndex =
-      viewRefSpecifier.sliceIndex ?? this.getCurrentImageIdIndex();
+      typeof viewRefSpecifier.sliceIndex === 'number'
+        ? viewRefSpecifier.sliceIndex
+        : frameNumber - 1;
     const referencedImageId =
       typeof sliceIndex === 'number'
         ? this.getCurrentImageId(sliceIndex)
         : this.getCurrentImageId();
+    const dataId = this.getFirstBinding()?.data.id;
 
     return {
       FrameOfReferenceUID: this.getFrameOfReferenceUID(),
+      dataId,
+      dimensionGroupNumber: frameNumber,
       referencedImageId,
       sliceIndex,
     };
@@ -241,25 +251,12 @@ class VideoViewport extends ViewportNext<
     return `videoId:${this.getCurrentImageId(sliceIndex)}`;
   }
 
-  isReferenceViewable(
-    viewRef: ViewReference,
-    options: ReferenceCompatibleOptions = {}
-  ): boolean {
-    if (!super.isReferenceViewable(viewRef, options)) {
-      return false;
-    }
-
-    if (options.withNavigation) {
-      return true;
-    }
-
-    return (
-      typeof viewRef.sliceIndex !== 'number' ||
-      viewRef.sliceIndex === this.getSliceIndex()
-    );
-  }
-
   setViewReference(viewRef: ViewReference): void {
+    if (typeof viewRef.dimensionGroupNumber === 'number') {
+      this.setFrameNumber(viewRef.dimensionGroupNumber);
+      return;
+    }
+
     if (typeof viewRef.sliceIndex === 'number') {
       this.setFrameNumber(viewRef.sliceIndex + 1);
     }
@@ -348,6 +345,30 @@ class VideoViewport extends ViewportNext<
       objectFit: this.getDataPresentation(videoData.id)?.objectFit,
       payload: videoData,
     });
+  }
+
+  protected getReferenceViewContexts(): ViewportNextReferenceContext[] {
+    const binding = this.getFirstBinding();
+    const videoData = this.getVideoData();
+
+    if (!binding || !videoData) {
+      return super.getReferenceViewContexts();
+    }
+
+    const sourceDataId = getViewportNextSourceDataId(binding.data.id);
+    const frameNumber = this.getFrameNumber();
+
+    return [
+      {
+        dataId: binding.data.id,
+        dataIds: [binding.data.id, sourceDataId],
+        frameOfReferenceUID: this.getFrameOfReferenceUID(),
+        imageIds: this.getImageIds(),
+        currentImageIdIndex: frameNumber - 1,
+        dimensionGroupNumber: frameNumber,
+        numDimensionGroups: videoData.numberOfFrames,
+      },
+    ];
   }
 
   // ====================================================================

@@ -20,7 +20,7 @@
  * `updatePlanarVolumeClippingPlanes`) are co-located here because they depend
  * on the resolved camera's focalPoint and viewPlaneNormal.
  */
-import { vec2, vec3 } from 'gl-matrix';
+import { mat4, vec2, vec3 } from 'gl-matrix';
 import type vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import vtkPlaneFactory from '@kitware/vtk.js/Common/DataModel/Plane';
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
@@ -33,8 +33,14 @@ import {
   rotatePlanarViewUp,
 } from './planarViewPresentation';
 import { getSafeCanvasDimension, normalizePoint3 } from './planarMath';
-import type { PlanarCamera } from './PlanarViewportTypes';
+import type { PlanarCamera, PlanarRenderCamera } from './PlanarViewportTypes';
 import type { PlanarSliceBasis } from './planarSliceBasis';
+import {
+  MIN_PLANAR_SCALE,
+  normalizePlanarScale,
+  normalizePlanarScaleMode,
+  type PlanarScale,
+} from './planarCameraScale';
 
 /**
  * Canvas-space presentation values derived from a semantic camera and a
@@ -44,12 +50,14 @@ import type { PlanarSliceBasis } from './planarSliceBasis';
 export interface DerivedPlanarPresentation {
   pan: Point2;
   zoom: number;
+  scale: Point2;
   rotation: number;
   flipHorizontal: boolean;
   flipVertical: boolean;
 }
 
 const MIN_DISPLAY_AREA_VALUE = 1e-3;
+const MIN_SCALE_RATIO = 1e-6;
 
 function getSliceCanvasDimensionsAtFit(args: {
   sliceBasis: PlanarSliceBasis;
@@ -82,8 +90,8 @@ function deriveDisplayAreaPresentation(args: {
   camera?: PlanarCamera;
   canvasWidth: number;
   canvasHeight: number;
-  scale: number;
-}): Pick<DerivedPlanarPresentation, 'pan' | 'zoom'> | undefined {
+  scale: PlanarScale;
+}): Pick<DerivedPlanarPresentation, 'pan' | 'zoom' | 'scale'> | undefined {
   const { canvasHeight, canvasWidth, camera, scale, sliceBasis } = args;
   const displayArea = camera?.displayArea;
 
@@ -98,28 +106,36 @@ function deriveDisplayAreaPresentation(args: {
     canvasWidth,
     sliceBasis,
   });
-  let zoom = scale;
+  let resolvedScale = [...scale] as Point2;
 
-  if (
-    displayArea.type === 'SCALE' &&
-    typeof displayArea.scale === 'number' &&
-    Number.isFinite(displayArea.scale) &&
-    displayArea.scale > 0
-  ) {
-    zoom = displayArea.scale;
+  if (displayArea.type === 'SCALE' && displayArea.scale !== undefined) {
+    resolvedScale = normalizePlanarScale(displayArea.scale);
   } else if (displayArea.imageArea) {
     const [areaX, areaY] = displayArea.imageArea;
-    const currentScale = Math.max(
-      Math.abs(imageWidthAtFit / safeCanvasWidth),
-      Math.abs(imageHeightAtFit / safeCanvasHeight)
-    );
-    const requiredScale = Math.max(
-      Math.abs((areaX * imageWidthAtFit) / safeCanvasWidth),
-      Math.abs((areaY * imageHeightAtFit) / safeCanvasHeight),
-      MIN_DISPLAY_AREA_VALUE
+    const safeAreaX = Math.max(Math.abs(areaX), MIN_DISPLAY_AREA_VALUE);
+    const safeAreaY = Math.max(Math.abs(areaY), MIN_DISPLAY_AREA_VALUE);
+    const fitScaleX =
+      safeCanvasWidth /
+      Math.max(safeAreaX * imageWidthAtFit, MIN_DISPLAY_AREA_VALUE);
+    const fitScaleY =
+      safeCanvasHeight /
+      Math.max(safeAreaY * imageHeightAtFit, MIN_DISPLAY_AREA_VALUE);
+    const scaleMode = normalizePlanarScaleMode(
+      displayArea.scaleMode ?? camera?.scaleMode
     );
 
-    zoom = scale * (currentScale / requiredScale);
+    if (scaleMode === 'absolute') {
+      resolvedScale = [fitScaleX * scale[0], fitScaleY * scale[1]];
+    } else {
+      const uniformFitScale =
+        scaleMode === 'fitWidth'
+          ? fitScaleX
+          : scaleMode === 'fitHeight'
+            ? fitScaleY
+            : Math.min(fitScaleX, fitScaleY);
+
+      resolvedScale = [uniformFitScale * scale[0], uniformFitScale * scale[1]];
+    }
   }
 
   let pan: Point2 = [0, 0];
@@ -131,16 +147,17 @@ function deriveDisplayAreaPresentation(args: {
     const [imageX, imageY] = imagePoint || canvasPoint;
 
     pan = [
-      zoom * imageWidthAtFit * (0.5 - imageX) +
+      resolvedScale[0] * imageWidthAtFit * (0.5 - imageX) +
         safeCanvasWidth * (canvasX - 0.5),
-      zoom * imageHeightAtFit * (0.5 - imageY) +
+      resolvedScale[1] * imageHeightAtFit * (0.5 - imageY) +
         safeCanvasHeight * (canvasY - 0.5),
     ];
   }
 
   return {
     pan,
-    zoom,
+    scale: resolvedScale,
+    zoom: resolvedScale[1],
   };
 }
 
@@ -199,7 +216,7 @@ export function derivePlanarPresentation(args: {
   canvasHeight: number;
 }): DerivedPlanarPresentation {
   const { sliceBasis, camera, canvasHeight, canvasWidth } = args;
-  const scale = Math.max(camera?.scale ?? 1, 0.001);
+  const scale = normalizePlanarScale(camera?.scale);
   const rotation = normalizePlanarRotation(camera?.rotation ?? 0);
   const anchorCanvas = vec2.clone(
     (camera?.anchorCanvas ?? [0.5, 0.5]) as unknown as vec2
@@ -246,9 +263,11 @@ export function derivePlanarPresentation(args: {
         viewPlaneNormal
       )
     : sliceBasis.sliceCenterWorld;
-  const parallelScale = sliceBasis.fitParallelScale / scale;
+  const [scaleX, scaleY] = scale;
+  const parallelScale = sliceBasis.fitParallelScale / scaleY;
   const worldHeight = parallelScale * 2;
   const worldWidth = worldHeight * (safeCanvasWidth / safeCanvasHeight);
+  const effectiveWorldWidth = worldWidth * (scaleY / scaleX);
   const displayAreaPresentation = deriveDisplayAreaPresentation({
     sliceBasis,
     camera,
@@ -266,7 +285,7 @@ export function derivePlanarPresentation(args: {
   );
   const panFromAnchorWorld: Point2 = [
     (vec3.dot(deltaWorld, right as unknown as vec3) * safeCanvasWidth) /
-      worldWidth,
+      effectiveWorldWidth,
     (-vec3.dot(deltaWorld, flippedViewUp as unknown as vec3) *
       safeCanvasHeight) /
       worldHeight,
@@ -288,7 +307,8 @@ export function derivePlanarPresentation(args: {
     pan,
     flipHorizontal: camera?.flipHorizontal === true,
     flipVertical: camera?.flipVertical === true,
-    zoom: displayAreaPresentation?.zoom ?? scale,
+    scale: displayAreaPresentation?.scale ?? scale,
+    zoom: displayAreaPresentation?.zoom ?? scale[1],
     rotation,
   };
 }
@@ -307,7 +327,7 @@ function getResolvedPanOffset(args: {
   flipVertical?: boolean;
   pan?: [number, number];
   rotation?: number;
-  zoom?: number;
+  scale?: PlanarScale;
 }) {
   const {
     sliceBasis,
@@ -317,7 +337,7 @@ function getResolvedPanOffset(args: {
     flipVertical,
     pan = [0, 0],
     rotation,
-    zoom = 1,
+    scale = [1, 1],
   } = args;
   const viewPlaneNormal = normalizePoint3(sliceBasis.viewPlaneNormal);
   const rotatedViewUp = normalizePoint3(
@@ -346,20 +366,21 @@ function getResolvedPanOffset(args: {
 
   right = vec3.normalize(vec3.create(), right);
 
-  const safeZoom = Math.max(zoom, 0.001);
+  const [scaleX, scaleY] = normalizePlanarScale(scale);
   const [panX, panY] = pan;
-  const parallelScale = sliceBasis.fitParallelScale / safeZoom;
+  const parallelScale = sliceBasis.fitParallelScale / scaleY;
   const safeCanvasWidth = getSafeCanvasDimension(canvasWidth);
   const safeCanvasHeight = getSafeCanvasDimension(canvasHeight);
   const worldHeight = parallelScale * 2;
   const worldWidth = worldHeight * (safeCanvasWidth / safeCanvasHeight);
+  const effectiveWorldWidth = worldWidth * (scaleY / scaleX);
   const deltaWorld = vec3.create();
 
   vec3.scaleAndAdd(
     deltaWorld,
     deltaWorld,
     right,
-    (panX * worldWidth) / safeCanvasWidth
+    (panX * effectiveWorldWidth) / safeCanvasWidth
   );
   vec3.scaleAndAdd(
     deltaWorld,
@@ -371,6 +392,7 @@ function getResolvedPanOffset(args: {
   return {
     deltaWorld: deltaWorld as Point3,
     parallelScale,
+    presentationScale: [scaleX, scaleY] as Point2,
     viewPlaneNormal: flippedViewPlaneNormal,
     viewUp: flippedViewUp,
   };
@@ -398,7 +420,7 @@ export function resolvePlanarRenderCamera(args: {
   camera?: PlanarCamera;
   canvasWidth: number;
   canvasHeight: number;
-}): ICamera {
+}): PlanarRenderCamera {
   const { sliceBasis, camera, canvasHeight, canvasWidth } = args;
   const presentation = derivePlanarPresentation({
     sliceBasis,
@@ -406,17 +428,22 @@ export function resolvePlanarRenderCamera(args: {
     canvasWidth,
     canvasHeight,
   });
-  const { deltaWorld, parallelScale, viewPlaneNormal, viewUp } =
-    getResolvedPanOffset({
-      sliceBasis,
-      canvasWidth,
-      canvasHeight,
-      flipHorizontal: presentation.flipHorizontal,
-      flipVertical: presentation.flipVertical,
-      pan: presentation.pan,
-      rotation: presentation.rotation,
-      zoom: presentation.zoom,
-    });
+  const {
+    deltaWorld,
+    parallelScale,
+    presentationScale,
+    viewPlaneNormal,
+    viewUp,
+  } = getResolvedPanOffset({
+    sliceBasis,
+    canvasWidth,
+    canvasHeight,
+    flipHorizontal: presentation.flipHorizontal,
+    flipVertical: presentation.flipVertical,
+    pan: presentation.pan,
+    rotation: presentation.rotation,
+    scale: presentation.scale,
+  });
   const focalPoint = vec3.subtract(
     vec3.create(),
     sliceBasis.sliceCenterWorld as unknown as vec3,
@@ -427,6 +454,9 @@ export function resolvePlanarRenderCamera(args: {
     focalPoint,
     parallelProjection: true,
     parallelScale,
+    presentationScale,
+    scale: presentation.scale,
+    scaleMode: normalizePlanarScaleMode(camera?.scaleMode),
     position: vec3.scaleAndAdd(
       vec3.create(),
       focalPoint as unknown as vec3,
@@ -450,8 +480,8 @@ export function resolvePlanarRenderCamera(args: {
  */
 export function applyPlanarRenderCameraToRenderer(args: {
   renderer: vtkRenderer;
-  renderCamera?: ICamera;
-}): ICamera | undefined {
+  renderCamera?: PlanarRenderCamera;
+}): PlanarRenderCamera | undefined {
   const { renderer, renderCamera } = args;
 
   if (
@@ -478,6 +508,100 @@ export function applyPlanarRenderCameraToRenderer(args: {
   vtkCamera.setViewUp(...renderCamera.viewUp);
 
   return renderCamera;
+}
+
+type PlanarScalableActor = {
+  setUserMatrix?: (matrix: mat4) => void;
+};
+
+function getPlanarRenderCameraRight(
+  renderCamera: Pick<PlanarRenderCamera, 'viewPlaneNormal' | 'viewUp'>
+): Point3 {
+  const viewUp = normalizePoint3(renderCamera.viewUp, [0, -1, 0]);
+  const viewPlaneNormal = normalizePoint3(
+    renderCamera.viewPlaneNormal,
+    [0, 0, 1]
+  );
+  const right = vec3.cross(
+    vec3.create(),
+    viewUp as unknown as vec3,
+    viewPlaneNormal as unknown as vec3
+  );
+
+  if (vec3.length(right) < MIN_SCALE_RATIO) {
+    return [1, 0, 0];
+  }
+
+  return vec3.normalize(vec3.create(), right) as Point3;
+}
+
+export function createPlanarPresentationScaleMatrix(
+  renderCamera?: Pick<
+    PlanarRenderCamera,
+    'focalPoint' | 'presentationScale' | 'viewPlaneNormal' | 'viewUp'
+  >
+): mat4 {
+  const matrix = mat4.create();
+
+  if (
+    !renderCamera?.focalPoint ||
+    !renderCamera.viewPlaneNormal ||
+    !renderCamera.viewUp
+  ) {
+    return matrix;
+  }
+
+  const [scaleX, scaleY] = normalizePlanarScale(renderCamera.presentationScale);
+  const ratioX = Math.max(scaleX / scaleY, MIN_PLANAR_SCALE);
+
+  if (Math.abs(ratioX - 1) < MIN_SCALE_RATIO) {
+    return matrix;
+  }
+
+  const right = getPlanarRenderCameraRight(renderCamera);
+  const ratioDelta = ratioX - 1;
+  const [rx, ry, rz] = right;
+  const linear = [
+    1 + ratioDelta * rx * rx,
+    ratioDelta * rx * ry,
+    ratioDelta * rx * rz,
+    ratioDelta * ry * rx,
+    1 + ratioDelta * ry * ry,
+    ratioDelta * ry * rz,
+    ratioDelta * rz * rx,
+    ratioDelta * rz * ry,
+    1 + ratioDelta * rz * rz,
+  ];
+  const [cx, cy, cz] = renderCamera.focalPoint;
+  const transformedCenter: Point3 = [
+    linear[0] * cx + linear[3] * cy + linear[6] * cz,
+    linear[1] * cx + linear[4] * cy + linear[7] * cz,
+    linear[2] * cx + linear[5] * cy + linear[8] * cz,
+  ];
+
+  matrix[0] = linear[0];
+  matrix[1] = linear[1];
+  matrix[2] = linear[2];
+  matrix[4] = linear[3];
+  matrix[5] = linear[4];
+  matrix[6] = linear[5];
+  matrix[8] = linear[6];
+  matrix[9] = linear[7];
+  matrix[10] = linear[8];
+  matrix[12] = cx - transformedCenter[0];
+  matrix[13] = cy - transformedCenter[1];
+  matrix[14] = cz - transformedCenter[2];
+
+  return matrix;
+}
+
+export function applyPlanarRenderCameraToActor(args: {
+  actor?: PlanarScalableActor;
+  renderCamera?: PlanarRenderCamera;
+}): void {
+  const { actor, renderCamera } = args;
+
+  actor?.setUserMatrix?.(createPlanarPresentationScaleMatrix(renderCamera));
 }
 
 /**

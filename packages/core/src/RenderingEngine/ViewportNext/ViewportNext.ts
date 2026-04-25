@@ -25,6 +25,10 @@ import type {
   ViewReference,
   ViewReferenceSpecifier,
 } from '../../types/IViewport';
+import {
+  isViewportNextReferenceViewable,
+  type ViewportNextReferenceContext,
+} from './viewportNextReferenceCompatibility';
 
 /**
  * Generic ViewportNext controller.
@@ -50,7 +54,7 @@ import type {
  * centralizing render-mode-specific behavior in the controller.
  */
 abstract class ViewportNext<
-  TCamera extends ICamera & ViewportCameraBase<unknown>,
+  TCamera extends ICamera<unknown> & ViewportCameraBase<unknown, unknown>,
   TDataPresentation = unknown,
   TContext extends BaseViewportRenderContext = BaseViewportRenderContext,
   TViewPresentation = ViewPresentation,
@@ -196,6 +200,7 @@ abstract class ViewportNext<
   getViewReference(_specifier: ViewReferenceSpecifier = {}): ViewReference {
     return {
       FrameOfReferenceUID: this.getFrameOfReferenceUID(),
+      dataId: this.getCurrentBinding()?.data.id,
     };
   }
 
@@ -218,11 +223,12 @@ abstract class ViewportNext<
    */
   isReferenceViewable(
     viewReference: ViewReference,
-    _options: ReferenceCompatibleOptions = {}
+    options: ReferenceCompatibleOptions = {}
   ): boolean {
-    return (
-      !viewReference.FrameOfReferenceUID ||
-      viewReference.FrameOfReferenceUID === this.getFrameOfReferenceUID()
+    return isViewportNextReferenceViewable(
+      viewReference,
+      this.getReferenceViewContexts(viewReference),
+      options
     );
   }
 
@@ -247,7 +253,9 @@ abstract class ViewportNext<
    * transforms and legacy ICamera interop. Subclasses must implement this
    * to produce the viewport-family-specific computed camera.
    */
-  abstract getComputedCamera(): ViewportComputedCamera<unknown> | undefined;
+  abstract getComputedCamera():
+    | ViewportComputedCamera<unknown, ICamera<unknown>>
+    | undefined;
 
   /**
    * Converts a canvas-space point to world-space coordinates using the
@@ -540,7 +548,8 @@ abstract class ViewportNext<
    * back to the raw camera state.
    */
   protected getCameraForEvent(): ICamera {
-    return this.getComputedCamera()?.toICamera() ?? this.getCamera();
+    return (this.getComputedCamera()?.toICamera() ??
+      this.getCamera()) as ICamera;
   }
 
   /**
@@ -613,6 +622,41 @@ abstract class ViewportNext<
     for (const binding of this.bindings.values()) {
       visitor(binding);
     }
+  }
+
+  /**
+   * Returns generic reference-compatibility contexts for mounted datasets.
+   * Subclasses can add image, volume, slice, plane, and dimension facts.
+   */
+  protected getReferenceViewContexts(
+    _viewReference?: ViewReference
+  ): ViewportNextReferenceContext[] {
+    const contexts: ViewportNextReferenceContext[] = [];
+    const computedCamera = this.getComputedCamera();
+    const camera = computedCamera?.toICamera();
+
+    for (const [dataId, binding] of this.bindings.entries()) {
+      contexts.push({
+        dataId,
+        dataIds: [binding.data.id],
+        frameOfReferenceUID:
+          binding.getFrameOfReferenceUID() ??
+          computedCamera?.getFrameOfReferenceUID() ??
+          this.getFrameOfReferenceUID(),
+        cameraFocalPoint: camera?.focalPoint,
+        viewPlaneNormal: camera?.viewPlaneNormal,
+      });
+    }
+
+    if (!contexts.length) {
+      contexts.push({
+        frameOfReferenceUID: this.getFrameOfReferenceUID(),
+        cameraFocalPoint: camera?.focalPoint,
+        viewPlaneNormal: camera?.viewPlaneNormal,
+      });
+    }
+
+    return contexts;
   }
 
   // ====================================================================

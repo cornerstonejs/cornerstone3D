@@ -1,4 +1,8 @@
-import { getEnabledElement, triggerEvent } from '@cornerstonejs/core';
+import {
+  getEnabledElement,
+  triggerEvent,
+  utilities,
+} from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import Events from '../../enums/Events';
@@ -444,7 +448,7 @@ function _cleanUp() {
 
   _clearDoubleClickTimeoutAndEvents();
 
-  state = JSON.parse(JSON.stringify(defaultState));
+  state = utilities.deepClone(defaultState);
 }
 
 /**
@@ -454,7 +458,7 @@ function _cleanUp() {
  * @returns A copy of the points.
  */
 function _copyPoints(points: IPoints): IPoints {
-  return JSON.parse(JSON.stringify(points));
+  return utilities.deepClone(points);
 }
 
 /**

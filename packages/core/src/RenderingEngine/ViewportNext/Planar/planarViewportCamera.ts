@@ -1,44 +1,19 @@
 import type { Point3 } from '../../../types';
 import { OrientationAxis } from '../../../enums';
 import type DisplayArea from '../../../types/displayArea';
+import { deepClone } from '../../../utilities/deepClone';
 import { clonePlanarOrientation } from './planarLegacyCompatibility';
-import type { PlanarCamera } from './PlanarViewportTypes';
+import type { PlanarCamera, PlanarDisplayArea } from './PlanarViewportTypes';
 import { normalizePlanarRotation } from './planarViewPresentation';
+import {
+  clonePlanarScale,
+  normalizePlanarScaleMode,
+} from './planarCameraScale';
 
-export function cloneDisplayArea(
-  displayArea?: DisplayArea
-): DisplayArea | undefined {
-  if (!displayArea) {
-    return;
-  }
-
-  const imageCanvasPoint = displayArea.imageCanvasPoint;
-  const clonedImageCanvasPoint = imageCanvasPoint
-    ? {
-        imagePoint: [
-          ...(imageCanvasPoint.imagePoint ??
-            imageCanvasPoint.canvasPoint ?? [0.5, 0.5]),
-        ] as [number, number],
-        ...(imageCanvasPoint.canvasPoint
-          ? {
-              canvasPoint: [...imageCanvasPoint.canvasPoint] as [
-                number,
-                number,
-              ],
-            }
-          : {}),
-      }
-    : undefined;
-
-  return {
-    ...displayArea,
-    ...(displayArea.imageArea
-      ? { imageArea: [...displayArea.imageArea] as [number, number] }
-      : {}),
-    ...(clonedImageCanvasPoint
-      ? { imageCanvasPoint: clonedImageCanvasPoint }
-      : {}),
-  };
+export function cloneDisplayArea<T extends DisplayArea | PlanarDisplayArea>(
+  displayArea?: T
+): T | undefined {
+  return deepClone(displayArea);
 }
 
 export function createDefaultPlanarCamera(): PlanarCamera {
@@ -48,7 +23,7 @@ export function createDefaultPlanarCamera(): PlanarCamera {
     flipHorizontal: false,
     flipVertical: false,
     anchorCanvas: [0.5, 0.5],
-    scale: 1,
+    scale: [1, 1],
     scaleMode: 'fit',
     rotation: 0,
   };
@@ -77,8 +52,10 @@ export function normalizePlanarCamera(camera: PlanarCamera): PlanarCamera {
     flipHorizontal: camera.flipHorizontal === true,
     flipVertical: camera.flipVertical === true,
     anchorCanvas: camera.anchorCanvas ?? [0.5, 0.5],
-    scale: Math.max(camera.scale ?? 1, 0.001),
-    scaleMode: 'fit',
+    scale: clonePlanarScale(camera.scale),
+    scaleMode: normalizePlanarScaleMode(
+      camera.displayArea?.scaleMode ?? camera.scaleMode
+    ),
     rotation: normalizePlanarRotation(camera.rotation ?? 0),
     ...(camera.displayArea
       ? { displayArea: cloneDisplayArea(camera.displayArea) }

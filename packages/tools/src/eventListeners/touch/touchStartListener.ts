@@ -1,4 +1,8 @@
-import { getEnabledElement, triggerEvent } from '@cornerstonejs/core';
+import {
+  getEnabledElement,
+  triggerEvent,
+  utilities,
+} from '@cornerstonejs/core';
 import Events from '../../enums/Events';
 import { Swipe } from '../../enums/Touch';
 
@@ -126,10 +130,8 @@ const defaultTapState: ITouchTapListenerState = {
   tapToleranceMs: 300,
 };
 
-let state: ITouchStartListenerState = JSON.parse(JSON.stringify(defaultState));
-let tapState: ITouchTapListenerState = JSON.parse(
-  JSON.stringify(defaultTapState)
-);
+let state: ITouchStartListenerState = utilities.deepClone(defaultState);
+let tapState: ITouchTapListenerState = utilities.deepClone(defaultTapState);
 
 function triggerEventCallback(ele, name, eventDetail) {
   return triggerEvent(ele, name, eventDetail);
@@ -373,7 +375,7 @@ function _onTouchEnd(evt: TouchEvent): void {
   _checkTouchTap(evt);
 
   // reset to default state
-  state = JSON.parse(JSON.stringify(defaultState));
+  state = utilities.deepClone(defaultState);
   document.removeEventListener('touchmove', _onTouchDrag);
   document.removeEventListener('touchend', _onTouchEnd);
 }
@@ -441,7 +443,7 @@ function _checkTouchTap(evt: TouchEvent): void {
       taps: tapState.taps,
     };
     triggerEventCallback(eventDetail.element, TOUCH_TAP, eventDetail);
-    tapState = JSON.parse(JSON.stringify(defaultTapState));
+    tapState = utilities.deepClone(defaultTapState);
   }, tapState.tapToleranceMs);
 }
 

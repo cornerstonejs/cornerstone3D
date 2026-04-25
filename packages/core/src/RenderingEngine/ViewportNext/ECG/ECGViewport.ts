@@ -16,6 +16,7 @@ import type {
 } from '../../../types';
 import { CanvasECGPath } from './CanvasECGRenderPath';
 import { DefaultECGDataProvider } from './DefaultECGDataProvider';
+import type { ViewportNextReferenceContext } from '../viewportNextReferenceCompatibility';
 import type {
   ECGCamera,
   ECGCanvasRenderContext,
@@ -164,8 +165,11 @@ class ECGViewport extends ViewportNext<
   }
 
   getViewReference(_specifier: ViewReferenceSpecifier = {}): ViewReference {
+    const dataId = this.getFirstBinding()?.data.id;
+
     return {
       FrameOfReferenceUID: this.getFrameOfReferenceUID(),
+      dataId,
       referencedImageId: this.getCurrentImageId(),
       sliceIndex: 0,
     };
@@ -191,6 +195,24 @@ class ECGViewport extends ViewportNext<
 
   protected normalizeCamera(camera: ECGCamera): ECGCamera {
     return normalizeECGCamera(camera);
+  }
+
+  protected getReferenceViewContexts(): ViewportNextReferenceContext[] {
+    const binding = this.getFirstBinding();
+
+    if (!binding) {
+      return super.getReferenceViewContexts();
+    }
+
+    return [
+      {
+        dataId: binding.data.id,
+        dataIds: [binding.data.id],
+        frameOfReferenceUID: this.getFrameOfReferenceUID(),
+        imageIds: [binding.data.id],
+        currentImageIdIndex: 0,
+      },
+    ];
   }
 
   setZoom(zoom: number, canvasPoint?: Point2): void {

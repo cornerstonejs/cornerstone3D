@@ -167,6 +167,11 @@ export interface ViewReference {
   FrameOfReferenceUID?: string;
 
   /**
+   * Logical dataset id for the referenced data.
+   */
+  dataId?: string;
+
+  /**
    * A referenced plane identifies one or more planes.
    * Currently this has a point within the plane to identify the focal depth
    * (but NOT the focal point), and up to two coplanar vectors.
@@ -258,6 +263,11 @@ export interface ViewReference {
    *
    */
   sliceIndex?: number;
+
+  /**
+   * 1-based dimension group number for dynamic/dimensional data.
+   */
+  dimensionGroupNumber?: number;
 
   /**
    * VolumeId that the referencedImageId was chosen from

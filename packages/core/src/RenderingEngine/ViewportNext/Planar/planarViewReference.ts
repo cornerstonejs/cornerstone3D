@@ -30,6 +30,7 @@ import imageIdToURI from '../../../utilities/imageIdToURI';
 import isEqual from '../../../utilities/isEqual';
 import getVolumeViewReferenceId from '../../../utilities/getVolumeViewReferenceId';
 import { updatePlaneRestriction } from '../../../utilities/updatePlaneRestriction';
+import { getDimensionGroupReferenceContext } from '../viewportNextReferenceCompatibility';
 import type {
   PlanarCamera,
   PlanarPayload,
@@ -133,6 +134,7 @@ export function getPlanarReferencedImageId(args: {
  */
 export function getPlanarViewReference(args: {
   camera: PlanarCamera;
+  dataId?: string;
   frameOfReferenceUID: string;
   data?: PlanarPayload;
   rendering?: PlanarRendering;
@@ -140,6 +142,9 @@ export function getPlanarViewReference(args: {
   viewRefSpecifier?: ViewReferenceSpecifier;
 }): ViewReference {
   const { frameOfReferenceUID, rendering, viewRefSpecifier } = args;
+  const { dimensionGroupNumber } = getDimensionGroupReferenceContext(
+    args.data?.imageVolume
+  );
   const sliceIndex =
     viewRefSpecifier?.sliceIndex ??
     (rendering ? getCurrentSliceIndex(rendering) : undefined);
@@ -148,25 +153,34 @@ export function getPlanarViewReference(args: {
     ...args,
     sliceIndex,
   })?.toICamera();
+  const cameraFocalPoint = toPoint3(targetCamera?.focalPoint);
+  const viewPlaneNormal = toPoint3(targetCamera?.viewPlaneNormal);
+  const viewUp = toPoint3(targetCamera?.viewUp);
+  const inPlaneVector2 =
+    viewUp && viewPlaneNormal
+      ? toPoint3(
+          vec3.cross(
+            vec3.create(),
+            viewUp as unknown as vec3,
+            viewPlaneNormal as unknown as vec3
+          ) as Point3
+        )
+      : undefined;
   const viewReference: ViewReference = {
     FrameOfReferenceUID: frameOfReferenceUID,
-    cameraFocalPoint: targetCamera?.focalPoint,
-    viewPlaneNormal: targetCamera?.viewPlaneNormal,
-    viewUp: targetCamera?.viewUp,
+    dataId: args.dataId,
+    dimensionGroupNumber,
+    cameraFocalPoint,
+    viewPlaneNormal,
+    viewUp,
     sliceIndex,
     planeRestriction:
-      targetCamera?.viewPlaneNormal &&
-      targetCamera.viewUp &&
-      targetCamera.focalPoint
+      viewPlaneNormal && viewUp && cameraFocalPoint
         ? {
             FrameOfReferenceUID: frameOfReferenceUID,
-            point: viewRefSpecifier?.points?.[0] || targetCamera.focalPoint,
-            inPlaneVector1: targetCamera.viewUp,
-            inPlaneVector2: vec3.cross(
-              vec3.create(),
-              targetCamera.viewUp as unknown as vec3,
-              targetCamera.viewPlaneNormal as unknown as vec3
-            ) as Point3,
+            point: toPoint3(viewRefSpecifier?.points?.[0]) || cameraFocalPoint,
+            inPlaneVector1: viewUp,
+            inPlaneVector2,
           }
         : undefined,
   };
@@ -486,6 +500,14 @@ function getCurrentSliceIndex(rendering: PlanarRendering): number {
 /** Extracts the imageId list from a PlanarPayload, preferring volume imageIds. */
 function getImageIds(payload?: PlanarPayload): string[] {
   return payload?.imageVolume?.imageIds || payload?.imageIds || [];
+}
+
+function toPoint3(point: Point3 | undefined): Point3 | undefined {
+  if (!point) {
+    return;
+  }
+
+  return [point[0], point[1], point[2]];
 }
 
 /**

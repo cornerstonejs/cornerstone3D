@@ -336,14 +336,14 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
       const toolSpecificAnnotations =
         frameOfReferenceSpecificAnnotations[toolName];
 
-      return structuredClone(toolSpecificAnnotations);
+      return utilities.deepClone(toolSpecificAnnotations);
     } else if (groupKey) {
       const frameOfReferenceSpecificAnnotations = annotations[groupKey];
 
-      return structuredClone(frameOfReferenceSpecificAnnotations);
+      return utilities.deepClone(frameOfReferenceSpecificAnnotations);
     }
 
-    return structuredClone(annotations);
+    return utilities.deepClone(annotations);
   };
 
   /**
@@ -383,7 +383,7 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
       annotations[groupKey] = <GroupSpecificAnnotations>state;
     } else {
       // Set entire annotations
-      this.annotations = <AnnotationState>structuredClone(state);
+      this.annotations = <AnnotationState>utilities.deepClone(state);
     }
   };
 

@@ -11,16 +11,14 @@ import type {
   Point3,
   ReferenceCompatibleOptions,
   VOIRange,
-  ViewPresentation,
-  ViewPresentationSelector,
   ViewReference,
   ViewReferenceSpecifier,
 } from '../../../types';
 import cache from '../../../cache/cache';
 import type { PlaneRestriction } from '../../../types/IViewport';
-import type DisplayArea from '../../../types/displayArea';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
 import getClosestImageId from '../../../utilities/getClosestImageId';
+import { deepClone } from '../../../utilities/deepClone';
 import imageIdToURI from '../../../utilities/imageIdToURI';
 import isEqual from '../../../utilities/isEqual';
 import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
@@ -32,6 +30,10 @@ import renderingEngineCache from '../../renderingEngineCache';
 import type { DataAddOptions, LoadedData } from '../ViewportArchitectureTypes';
 import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
 import ViewportNext from '../ViewportNext';
+import {
+  getDimensionGroupReferenceContext,
+  type ViewportNextReferenceContext,
+} from '../viewportNextReferenceCompatibility';
 import {
   getViewportNextImageDataSet,
   isViewportNextImageDataSet,
@@ -54,6 +56,12 @@ import {
   normalizePlanarCamera,
 } from './planarViewportCamera';
 import {
+  clonePlanarScale,
+  getPlanarScaleZoom,
+  normalizePlanarScale,
+  type PlanarScaleInput,
+} from './planarCameraScale';
+import {
   createPlanarCpuImageOverlayActorEntry,
   createPlanarImageOverlayActorEntry,
 } from './planarActorCompatibility';
@@ -71,17 +79,20 @@ import {
   getPlanarViewReference,
   getPlanarViewReferenceId,
   isPlanarPlaneViewable,
-  isPlanarReferenceViewable,
 } from './planarViewReference';
 import type { PlanarRendering } from './planarRuntimeTypes';
 import type {
   PlanarCamera,
   PlanarDataPresentation,
   PlanarDataProvider,
+  PlanarDisplayArea,
   PlanarEffectiveRenderMode,
   PlanarPayload,
   PlanarRegisteredDataSet,
+  PlanarRenderCamera,
   PlanarSetDataOptions,
+  PlanarViewPresentation,
+  PlanarViewPresentationSelector,
   PlanarViewportRenderContext,
   PlanarViewportInput,
 } from './PlanarViewportTypes';
@@ -92,17 +103,14 @@ defaultRenderPathResolver.register(new CpuVolumeSlicePath());
 defaultRenderPathResolver.register(new VtkImageMapperPath());
 defaultRenderPathResolver.register(new VtkVolumeSlicePath());
 
-function cloneViewportOptions(
-  options: ViewportInputOptions = {}
-): ViewportInputOptions {
-  if (typeof structuredClone === 'function') {
-    return structuredClone(options);
-  }
+type PlanarViewportInputOptions = Omit<ViewportInputOptions, 'displayArea'> & {
+  displayArea?: PlanarDisplayArea;
+};
 
-  return {
-    ...options,
-    displayArea: cloneDisplayArea(options.displayArea),
-  };
+function cloneViewportOptions(
+  options: PlanarViewportInputOptions = {}
+): PlanarViewportInputOptions {
+  return deepClone(options);
 }
 
 export type PlanarReferenceContext = {
@@ -115,15 +123,16 @@ export type PlanarReferenceContext = {
 class PlanarViewport extends ViewportNext<
   PlanarCamera,
   PlanarDataPresentation,
-  PlanarViewportRenderContext
+  PlanarViewportRenderContext,
+  PlanarViewPresentation
 > {
   readonly type = ViewportType.PLANAR_NEXT;
   readonly renderingEngineId: string;
   readonly canvas: HTMLCanvasElement;
   sWidth: number;
   sHeight: number;
-  defaultOptions: ViewportInputOptions;
-  options: ViewportInputOptions;
+  defaultOptions: PlanarViewportInputOptions;
+  options: PlanarViewportInputOptions;
   suppressEvents = false;
 
   protected renderContext: PlanarViewportRenderContext;
@@ -658,7 +667,7 @@ class PlanarViewport extends ViewportNext<
   /**
    * Returns the current display-area declaration, if any.
    */
-  getDisplayArea(): DisplayArea | undefined {
+  getDisplayArea(): PlanarDisplayArea | undefined {
     return cloneDisplayArea(
       this.camera.displayArea ?? this.options.displayArea
     );
@@ -668,7 +677,7 @@ class PlanarViewport extends ViewportNext<
    * Stores a display-area declaration on the semantic camera. The shared
    * planar camera resolver turns it into render-path-specific pan/zoom.
    */
-  setDisplayArea(displayArea: DisplayArea, suppressEvents = false): void {
+  setDisplayArea(displayArea: PlanarDisplayArea, suppressEvents = false): void {
     const nextDisplayArea = cloneDisplayArea(displayArea);
 
     if (!nextDisplayArea) {
@@ -684,8 +693,8 @@ class PlanarViewport extends ViewportNext<
       anchorCanvas: [0.5, 0.5],
       anchorWorld: undefined,
       displayArea: nextDisplayArea,
-      scale: 1,
-      scaleMode: 'fit',
+      scale: [1, 1],
+      scaleMode: nextDisplayArea.scaleMode ?? 'fit',
     });
 
     if (!suppressEvents && !this.suppressEvents) {
@@ -700,29 +709,47 @@ class PlanarViewport extends ViewportNext<
   /** @deprecated Legacy shim for `getZoom()`. */
   getZoom(): number {
     return (
-      this.getComputedCamera()?.zoom ?? Math.max(this.camera.scale ?? 1, 0.001)
+      this.getComputedCamera()?.zoom ?? getPlanarScaleZoom(this.camera.scale)
+    );
+  }
+
+  /**
+   * Returns the current native two-axis Planar scale.
+   */
+  getScale(): Point2 {
+    return (
+      this.getComputedCamera()?.scale ?? clonePlanarScale(this.camera.scale)
     );
   }
 
   /** @deprecated Legacy shim for `setZoom(...)`. */
   setZoom(zoom: number, canvasPoint?: Point2): void {
+    this.setScale(zoom, canvasPoint);
+  }
+
+  /**
+   * Sets the native two-axis Planar scale. A scalar keeps legacy uniform zoom
+   * behavior; a tuple intentionally changes the displayed aspect ratio.
+   */
+  setScale(scale: PlanarScaleInput, canvasPoint?: Point2): void {
     const computedCamera = this.getComputedCamera();
+    const nextScale = normalizePlanarScale(scale);
 
     if (computedCamera) {
       this.applyComputedCameraState(
-        computedCamera.withZoom(zoom, canvasPoint).state.camera
+        computedCamera.withScale(nextScale, canvasPoint).state.camera
       );
       return;
     }
 
     if (canvasPoint) {
-      this.setScaleAtCanvasPoint(zoom, canvasPoint);
+      this.setScaleAtCanvasPoint(nextScale, canvasPoint);
       return;
     }
 
     this.setCamera({
       displayArea: undefined,
-      scale: Math.max(zoom, 0.001),
+      scale: nextScale,
       scaleMode: 'fit',
     });
   }
@@ -764,12 +791,13 @@ class PlanarViewport extends ViewportNext<
   /**
    * Sets the zoom scale anchored to a specific canvas point.
    */
-  setScaleAtCanvasPoint(scale: number, canvasPoint: Point2): void {
+  setScaleAtCanvasPoint(scale: PlanarScaleInput, canvasPoint: Point2): void {
     const computedCamera = this.getComputedCamera();
+    const nextScale = normalizePlanarScale(scale);
 
     if (computedCamera) {
       this.applyComputedCameraState(
-        computedCamera.withZoom(scale, canvasPoint).state.camera
+        computedCamera.withScale(nextScale, canvasPoint).state.camera
       );
       return;
     }
@@ -785,7 +813,7 @@ class PlanarViewport extends ViewportNext<
         canvasPoint[1] / Math.max(canvasHeight, 1),
       ],
       displayArea: undefined,
-      scale: Math.max(scale, 0.001),
+      scale: nextScale,
       scaleMode: 'fit',
     });
   }
@@ -794,7 +822,7 @@ class PlanarViewport extends ViewportNext<
    * Returns the current camera state merged with the legacy ICamera
    * projection for interop.
    */
-  getCamera(): PlanarCamera & ICamera {
+  getCamera(): PlanarCamera & ICamera<PlanarScaleInput> {
     return {
       ...this.camera,
       displayArea: cloneDisplayArea(this.camera.displayArea),
@@ -841,19 +869,28 @@ class PlanarViewport extends ViewportNext<
    * @returns The selected planar view-presentation fields.
    */
   getViewPresentation(
-    viewPresSel: ViewPresentationSelector = {
+    viewPresSel: PlanarViewPresentationSelector = {
       rotation: true,
       displayArea: true,
       zoom: true,
+      scale: true,
       pan: true,
       flipHorizontal: true,
       flipVertical: true,
     }
-  ): ViewPresentation {
-    const target: ViewPresentation = {};
-    const { rotation, displayArea, zoom, pan, flipHorizontal, flipVertical } =
-      viewPresSel;
+  ): PlanarViewPresentation {
+    const target: PlanarViewPresentation = {};
+    const {
+      rotation,
+      displayArea,
+      zoom,
+      scale,
+      pan,
+      flipHorizontal,
+      flipVertical,
+    } = viewPresSel;
     const currentZoom = this.getZoom();
+    const currentScale = this.getScale();
 
     if (rotation) {
       target.rotation = this.getRotation();
@@ -867,10 +904,17 @@ class PlanarViewport extends ViewportNext<
       target.zoom = currentZoom;
     }
 
+    if (scale) {
+      target.scale = clonePlanarScale(currentScale);
+    }
+
     if (pan) {
       const currentPan = this.getPan();
 
-      target.pan = [currentPan[0] / currentZoom, currentPan[1] / currentZoom];
+      target.pan = [
+        currentPan[0] / currentScale[0],
+        currentPan[1] / currentScale[1],
+      ];
     }
 
     if (flipHorizontal) {
@@ -889,7 +933,7 @@ class PlanarViewport extends ViewportNext<
    *
    * @param viewPres - View-presentation values to apply to the viewport.
    */
-  setViewPresentation(viewPres?: ViewPresentation): void {
+  setViewPresentation(viewPres?: PlanarViewPresentation): void {
     if (!viewPres) {
       return;
     }
@@ -901,12 +945,14 @@ class PlanarViewport extends ViewportNext<
       flipVertical = this.camera.flipVertical ?? false,
     } = viewPres;
     const hasZoom = Object.prototype.hasOwnProperty.call(viewPres, 'zoom');
+    const hasScale = Object.prototype.hasOwnProperty.call(viewPres, 'scale');
     const hasDisplayArea = Object.prototype.hasOwnProperty.call(
       viewPres,
       'displayArea'
     );
-    const zoom = viewPres.zoom ?? this.getZoom();
-    const nextZoom = Math.max(zoom, 0.001);
+    const nextScale = hasScale
+      ? normalizePlanarScale(viewPres.scale)
+      : normalizePlanarScale(viewPres.zoom ?? this.getScale());
     const nextCamera: Partial<PlanarCamera> = {
       flipHorizontal,
       flipVertical,
@@ -924,17 +970,17 @@ class PlanarViewport extends ViewportNext<
       nextCamera.anchorCanvas = [0.5, 0.5];
       nextCamera.anchorWorld = undefined;
       nextCamera.displayArea = displayArea;
-      nextCamera.scale = hasZoom ? nextZoom : 1;
-      nextCamera.scaleMode = 'fit';
-    } else if (hasZoom || !this.camera.displayArea) {
-      nextCamera.scale = nextZoom;
+      nextCamera.scale = hasZoom || hasScale ? nextScale : [1, 1];
+      nextCamera.scaleMode = displayArea?.scaleMode ?? 'fit';
+    } else if (hasZoom || hasScale || !this.camera.displayArea) {
+      nextCamera.scale = nextScale;
       nextCamera.scaleMode = 'fit';
     }
 
     this.setCamera(nextCamera);
 
     if (pan) {
-      this.setPan([pan[0] * nextZoom, pan[1] * nextZoom]);
+      this.setPan([pan[0] * nextScale[0], pan[1] * nextScale[1]]);
     }
   }
 
@@ -965,6 +1011,7 @@ class PlanarViewport extends ViewportNext<
 
     return getPlanarViewReference({
       camera: this.camera,
+      dataId: referenceContext?.dataId,
       frameOfReferenceUID:
         referenceContext?.frameOfReferenceUID ?? this.getFrameOfReferenceUID(),
       data: referenceContext?.data,
@@ -1179,32 +1226,7 @@ class PlanarViewport extends ViewportNext<
     viewRef: ViewReference,
     options: ReferenceCompatibleOptions = {}
   ): boolean {
-    const currentReferenceContext = this.getCurrentPlanarReferenceContext();
-
-    if (
-      currentReferenceContext &&
-      this.isReferenceViewableInContext(
-        currentReferenceContext,
-        viewRef,
-        options
-      )
-    ) {
-      return true;
-    }
-
-    for (const referenceContext of this.getAllPlanarReferenceContexts()) {
-      if (referenceContext.dataId === currentReferenceContext?.dataId) {
-        continue;
-      }
-
-      if (
-        this.isReferenceViewableInContext(referenceContext, viewRef, options)
-      ) {
-        return true;
-      }
-    }
-
-    return false;
+    return super.isReferenceViewable(viewRef, options);
   }
 
   /**
@@ -1316,7 +1338,9 @@ class PlanarViewport extends ViewportNext<
             anchorCanvas: [0.5, 0.5] as [number, number],
           }
         : {}),
-      ...(resetZoom ? { scale: 1, scaleMode: 'fit' as const } : {}),
+      ...(resetZoom
+        ? { scale: [1, 1] as Point2, scaleMode: 'fit' as const }
+        : {}),
       rotation: 0,
     });
     this.triggerCameraResetEvent();
@@ -1716,11 +1740,11 @@ class PlanarViewport extends ViewportNext<
     const anchorCanvas = this.camera.anchorCanvas ?? [0.5, 0.5];
     const anchorWorld = this.camera.anchorWorld ?? [0, 0, 0];
     const { height, width } = this.getCurrentCanvasDimensions();
-    const scale = Math.max(this.camera.scale ?? 1, 0.001);
+    const [scaleX, scaleY] = normalizePlanarScale(this.camera.scale);
 
     return [
-      anchorWorld[0] + (canvasPos[0] - anchorCanvas[0] * width) / scale,
-      anchorWorld[1] + (canvasPos[1] - anchorCanvas[1] * height) / scale,
+      anchorWorld[0] + (canvasPos[0] - anchorCanvas[0] * width) / scaleX,
+      anchorWorld[1] + (canvasPos[1] - anchorCanvas[1] * height) / scaleY,
       anchorWorld[2],
     ];
   }
@@ -1729,11 +1753,11 @@ class PlanarViewport extends ViewportNext<
     const anchorCanvas = this.camera.anchorCanvas ?? [0.5, 0.5];
     const anchorWorld = this.camera.anchorWorld ?? [0, 0, 0];
     const { height, width } = this.getCurrentCanvasDimensions();
-    const scale = Math.max(this.camera.scale ?? 1, 0.001);
+    const [scaleX, scaleY] = normalizePlanarScale(this.camera.scale);
 
     return [
-      (worldPos[0] - anchorWorld[0]) * scale + anchorCanvas[0] * width,
-      (worldPos[1] - anchorWorld[1]) * scale + anchorCanvas[1] * height,
+      (worldPos[0] - anchorWorld[0]) * scaleX + anchorCanvas[0] * width,
+      (worldPos[1] - anchorWorld[1]) * scaleY + anchorCanvas[1] * height,
     ];
   }
 
@@ -1748,7 +1772,7 @@ class PlanarViewport extends ViewportNext<
     const computedCamera = this.getComputedCamera();
 
     if (computedCamera) {
-      return computedCamera.toICamera();
+      return computedCamera.toICamera() as unknown as ICamera;
     }
 
     return {
@@ -1758,7 +1782,9 @@ class PlanarViewport extends ViewportNext<
       parallelScale: 1,
       viewPlaneNormal: [0, 0, 1],
       viewUp: [0, -1, 0],
-    };
+      presentationScale: [1, 1],
+      scale: [1, 1],
+    } as unknown as ICamera;
   }
 
   private getCurrentPresentation(): DerivedPlanarPresentation | undefined {
@@ -1773,6 +1799,7 @@ class PlanarViewport extends ViewportNext<
       flipVertical: computedCamera.state.camera.flipVertical === true,
       pan: computedCamera.pan,
       rotation: computedCamera.rotation,
+      scale: computedCamera.scale,
       zoom: computedCamera.zoom,
     };
   }
@@ -1867,6 +1894,44 @@ class PlanarViewport extends ViewportNext<
     return contexts;
   }
 
+  protected getReferenceViewContexts(): ViewportNextReferenceContext[] {
+    const referenceContexts = this.getAllPlanarReferenceContexts();
+
+    if (!referenceContexts.length) {
+      return super.getReferenceViewContexts();
+    }
+
+    return referenceContexts.map((referenceContext) =>
+      this.getViewportNextReferenceContext(referenceContext)
+    );
+  }
+
+  private getViewportNextReferenceContext(
+    referenceContext: PlanarReferenceContext
+  ): ViewportNextReferenceContext {
+    const computedCamera = computePlanarViewportCamera({
+      camera: this.camera,
+      data: referenceContext.data,
+      frameOfReferenceUID: referenceContext.frameOfReferenceUID,
+      rendering: referenceContext.rendering,
+      renderContext: this.renderContext,
+    })?.toICamera();
+    const volumeId = referenceContext.data.volumeId;
+
+    return {
+      dataId: referenceContext.dataId,
+      dataIds: [referenceContext.data.id],
+      frameOfReferenceUID: referenceContext.frameOfReferenceUID,
+      imageIds: this.getImageIdsForReferenceContext(referenceContext),
+      currentImageIdIndex: referenceContext.rendering.currentImageIdIndex,
+      volumeId,
+      volumeIds: volumeId ? [volumeId] : undefined,
+      cameraFocalPoint: computedCamera?.focalPoint,
+      viewPlaneNormal: computedCamera?.viewPlaneNormal,
+      ...getDimensionGroupReferenceContext(referenceContext.data.imageVolume),
+    };
+  }
+
   private findPlanarReferenceContextByVolumeId(
     volumeId: string
   ): PlanarReferenceContext | undefined {
@@ -1905,6 +1970,16 @@ class PlanarViewport extends ViewportNext<
   private resolveViewReferenceContext(
     viewRef: ViewReference
   ): PlanarReferenceContext | undefined {
+    if (viewRef.dataId) {
+      const dataContext = this.getPlanarReferenceContextByDataId(
+        viewRef.dataId
+      );
+
+      if (dataContext) {
+        return dataContext;
+      }
+    }
+
     if (viewRef.volumeId) {
       const volumeContext = this.findPlanarReferenceContextByVolumeId(
         viewRef.volumeId
@@ -2225,22 +2300,6 @@ class PlanarViewport extends ViewportNext<
     if (typeof viewRef.sliceIndex === 'number') {
       return Math.min(Math.max(0, viewRef.sliceIndex), maxImageIdIndex);
     }
-  }
-
-  private isReferenceViewableInContext(
-    referenceContext: PlanarReferenceContext,
-    viewRef: ViewReference,
-    options: ReferenceCompatibleOptions
-  ): boolean {
-    return isPlanarReferenceViewable({
-      camera: this.camera,
-      frameOfReferenceUID: referenceContext.frameOfReferenceUID,
-      imageIds: this.getImageIdsForReferenceContext(referenceContext),
-      options,
-      rendering: referenceContext.rendering,
-      renderContext: this.renderContext,
-      viewRef,
-    });
   }
 
   private getImageIdsForReferenceContext(

@@ -6,6 +6,7 @@ import Events from '../enums/Events';
 import type VoxelManagerEnum from '../enums/VoxelManagerEnum';
 import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
+import { deepClone } from '../utilities/deepClone';
 
 import uuidv4 from '../utilities/uuidv4';
 import VoxelManager from '../utilities/VoxelManager';
@@ -249,7 +250,7 @@ export function createAndCacheDerivedVolume(
   const derivedVolume = new ImageVolume({
     volumeId,
     dataType,
-    metadata: structuredClone(metadata),
+    metadata: deepClone(metadata),
     dimensions: [dimensions[0], dimensions[1], dimensions[2]],
     spacing,
     origin,
@@ -329,7 +330,7 @@ export function createAndCacheVolumeFromImagesSync(
   const derivedVolume = new ImageVolume({
     volumeId,
     dataType: volumeProps.dataType,
-    metadata: structuredClone(volumeProps.metadata),
+    metadata: deepClone(volumeProps.metadata),
     dimensions: volumeProps.dimensions,
     spacing: volumeProps.spacing,
     origin: volumeProps.origin,
@@ -434,7 +435,7 @@ export function createLocalVolume(
   // Create the image volume
   const imageVolume = new ImageVolume({
     volumeId,
-    metadata: structuredClone(metadata),
+    metadata: deepClone(metadata),
     dimensions: [dimensions[0], dimensions[1], dimensions[2]],
     spacing,
     origin,

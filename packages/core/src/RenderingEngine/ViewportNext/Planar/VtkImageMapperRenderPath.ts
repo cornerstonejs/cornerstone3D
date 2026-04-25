@@ -38,6 +38,7 @@ import {
 import { buildPlanarImageData } from './CpuImageSliceRenderPath';
 import { triggerPlanarNewImage } from './planarImageEvents';
 import {
+  applyPlanarRenderCameraToActor,
   applyPlanarRenderCameraToRenderer,
   resolvePlanarRenderCamera,
 } from './planarRenderCamera';
@@ -156,6 +157,7 @@ export class VtkImageMapperRenderPath
       canvasWidth,
       canvasHeight,
     });
+    applyPlanarImageActorTransforms(ctx, rendering, renderCamera);
     if (ctx.viewport.isCurrentDataId(dataId)) {
       ctx.renderPath.renderCamera = renderCamera;
       applyPlanarRenderCameraToRenderer({
@@ -262,6 +264,7 @@ export class VtkImageMapperRenderPath
       canvasWidth,
       canvasHeight,
     });
+    applyPlanarImageActorTransforms(ctx, rendering, renderCamera);
     if (ctx.viewport.isCurrentDataId(dataId)) {
       ctx.renderPath.renderCamera = renderCamera;
       applyPlanarRenderCameraToRenderer({
@@ -355,6 +358,7 @@ async function updateRenderedImage(args: {
     canvasWidth,
     canvasHeight,
   });
+  applyPlanarImageActorTransforms(ctx, rendering, renderCamera);
   if (ctx.viewport.isCurrentDataId(dataId)) {
     ctx.renderPath.renderCamera = renderCamera;
     applyPlanarRenderCameraToRenderer({
@@ -364,4 +368,26 @@ async function updateRenderedImage(args: {
   }
   triggerPlanarNewImage(ctx, { image, imageIdIndex });
   ctx.display.requestRender();
+}
+
+function applyPlanarImageActorTransforms(
+  ctx: PlanarVtkImageAdapterContext,
+  rendering: PlanarImageMapperRendering,
+  renderCamera: ReturnType<typeof resolvePlanarRenderCamera>
+): void {
+  applyPlanarRenderCameraToActor({
+    actor: rendering.actor,
+    renderCamera,
+  });
+
+  for (const actorEntry of ctx.viewport.getOverlayActors()) {
+    if (actorEntry.actorMapper?.renderMode !== ActorRenderMode.VTK_IMAGE) {
+      continue;
+    }
+
+    applyPlanarRenderCameraToActor({
+      actor: actorEntry.actor as never,
+      renderCamera,
+    });
+  }
 }

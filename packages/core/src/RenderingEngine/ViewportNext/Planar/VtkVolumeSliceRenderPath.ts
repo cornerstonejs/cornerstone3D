@@ -28,6 +28,7 @@ import {
 } from './planarAdapterCoordinateTransforms';
 import { triggerPlanarVolumeNewImage } from './planarImageEvents';
 import {
+  applyPlanarRenderCameraToActor,
   applyPlanarRenderCameraToRenderer,
   resolvePlanarRenderCamera,
 } from './planarRenderCamera';
@@ -155,6 +156,10 @@ export class VtkVolumeSliceRenderPath
       props: rendering.dataPresentation,
     });
     updateVolumeSlicePlane(rendering.mapper, ctx.renderPath.renderCamera);
+    applyPlanarRenderCameraToActor({
+      actor: rendering.actor,
+      renderCamera: ctx.renderPath.renderCamera,
+    });
     updateVolumeSliceActorDepthOffset(
       rendering.actor,
       ctx.renderPath.renderCamera,
@@ -204,6 +209,10 @@ export class VtkVolumeSliceRenderPath
         renderCamera,
       });
     }
+    applyPlanarRenderCameraToActor({
+      actor: rendering.actor,
+      renderCamera,
+    });
     const imageIdIndexChanged =
       currentImageIdIndex !== rendering.currentImageIdIndex;
     rendering.currentImageIdIndex = currentImageIdIndex;
@@ -300,6 +309,10 @@ export class VtkVolumeSliceRenderPath
         renderCamera,
       });
     }
+    applyPlanarRenderCameraToActor({
+      actor: rendering.actor,
+      renderCamera,
+    });
     rendering.currentImageIdIndex = currentImageIdIndex;
     rendering.maxImageIdIndex = maxImageIdIndex;
     updateVolumeSlicePlane(rendering.mapper, ctx.renderPath.renderCamera);

@@ -42,6 +42,7 @@ import type {
   PlanarDataPresentation,
   PlanarCpuImageAdapterContext,
   PlanarPayload,
+  PlanarRenderCamera,
   PlanarViewportRenderContext,
 } from './PlanarViewportTypes';
 import type { PlanarCpuImageRendering } from './planarRuntimeTypes';
@@ -111,7 +112,7 @@ export class CpuImageSliceRenderPath
       currentImageIdIndex: payload.initialImageIdIndex,
       defaultVOIRange: getDefaultImageVOIRange(payload.image),
       dataPresentation: undefined,
-      fitScale: enabledElement.viewport.scale ?? 1,
+      fitScale: getCPUFallbackScalarScale(enabledElement.viewport.scale),
       loadRequestId: 0,
       renderingInvalidated: true,
     };
@@ -252,6 +253,7 @@ export class CpuImageSliceRenderPath
       camera: {
         focalPoint: renderCamera.focalPoint,
         parallelScale: renderCamera.parallelScale,
+        presentationScale: renderCamera.presentationScale,
         viewPlaneNormal: renderCamera.viewPlaneNormal,
         viewUp: renderCamera.viewUp,
       },
@@ -285,6 +287,7 @@ export class CpuImageSliceRenderPath
       camera: {
         focalPoint: renderCamera.focalPoint,
         parallelScale: renderCamera.parallelScale,
+        presentationScale: renderCamera.presentationScale,
         viewPlaneNormal: renderCamera.viewPlaneNormal,
         viewUp: renderCamera.viewUp,
       },
@@ -367,8 +370,9 @@ export class CpuImageSliceRenderPath
       canvasHeight: rendering.enabledElement.canvas.height,
     });
 
-    rendering.fitScale =
-      getDefaultViewport(rendering.enabledElement.canvas, image).scale ?? 1;
+    rendering.fitScale = getCPUFallbackScalarScale(
+      getDefaultViewport(rendering.enabledElement.canvas, image).scale
+    );
     rendering.renderingInvalidated = true;
     applyPresentationState(rendering, presentation, renderCamera);
   }
@@ -464,16 +468,22 @@ function applyDataPresentation(
   }
 }
 
+function getCPUFallbackScalarScale(scale?: number | Point2): number {
+  return Array.isArray(scale) ? scale[1] : (scale ?? 1);
+}
+
 function applyPresentationState(
   rendering: PlanarCpuImageRendering,
   presentation?: DerivedPlanarPresentation,
-  renderCamera?: {
-    focalPoint?: Point3;
-    parallelScale?: number;
-  }
+  renderCamera?: PlanarRenderCamera
 ): void {
   const { enabledElement, fitScale } = rendering;
-  const viewport = enabledElement.viewport;
+  const viewport = enabledElement.viewport as Omit<
+    CPUFallbackEnabledElement['viewport'],
+    'scale'
+  > & {
+    scale?: number | Point2;
+  };
   const desiredPan = presentation?.pan ?? [0, 0];
   const zoom = Math.max(presentation?.zoom ?? 1, 0.001);
 
@@ -485,10 +495,11 @@ function applyPresentationState(
       ? resolvePlanarCpuViewportScale({
           canvas: enabledElement.canvas,
           parallelScale: renderCamera.parallelScale,
+          presentationScale: renderCamera.presentationScale,
           columnPixelSpacing: enabledElement.image?.columnPixelSpacing || 1,
           rowPixelSpacing: enabledElement.image?.rowPixelSpacing || 1,
         })
-      : fitScale * zoom;
+      : [fitScale * (presentation?.scale?.[0] ?? zoom), fitScale * zoom];
   viewport.parallelScale = renderCamera?.parallelScale;
   viewport.translation = renderCamera?.focalPoint
     ? resolveCPUImageViewportTranslationFromFocalPoint(
@@ -718,7 +729,7 @@ async function updateRenderedImage(args: {
 
   rendering.currentImageIdIndex = imageIdIndex;
   rendering.defaultVOIRange = getDefaultImageVOIRange(image);
-  rendering.fitScale = defaultViewport.scale ?? 1;
+  rendering.fitScale = getCPUFallbackScalarScale(defaultViewport.scale);
   rendering.renderingInvalidated = true;
   rendering.compatibilityActor
     .getMapper()

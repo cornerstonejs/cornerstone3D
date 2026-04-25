@@ -1,5 +1,13 @@
+import { vec3 } from 'gl-matrix';
 import { ViewportType } from '../../../enums';
-import type { ActorEntry, ICamera, IImageData } from '../../../types';
+import type {
+  ActorEntry,
+  ICamera,
+  IImageData,
+  Point3,
+  ViewReference,
+  ViewReferenceSpecifier,
+} from '../../../types';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
 import renderingEngineCache from '../../renderingEngineCache';
 import type {
@@ -9,6 +17,10 @@ import type {
 } from '../ViewportArchitectureTypes';
 import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
 import ViewportNext from '../ViewportNext';
+import {
+  getDimensionGroupReferenceContext,
+  type ViewportNextReferenceContext,
+} from '../viewportNextReferenceCompatibility';
 import {
   getViewportNextImageDataSet,
   isViewportNextImageDataSet,
@@ -286,6 +298,48 @@ class VolumeViewport3DV2 extends ViewportNext<
     };
   }
 
+  getViewReference(
+    _viewRefSpecifier: ViewReferenceSpecifier = {}
+  ): ViewReference {
+    const binding = this.getCurrentBinding();
+    const data = binding ? this.getVolume3DPayload(binding) : undefined;
+    const camera = this.getCamera();
+    const FrameOfReferenceUID = this.getFrameOfReferenceUID();
+    const cameraFocalPoint = camera.focalPoint as Point3 | undefined;
+    const viewPlaneNormal = camera.viewPlaneNormal as Point3 | undefined;
+    const viewUp = camera.viewUp as Point3 | undefined;
+    const viewReference: ViewReference = {
+      FrameOfReferenceUID,
+      dataId: binding?.data.id,
+      cameraFocalPoint,
+      viewPlaneNormal,
+      viewUp,
+    };
+
+    if (data?.renderMode === 'vtkVolume3d') {
+      viewReference.volumeId = data.volumeId;
+      Object.assign(
+        viewReference,
+        getDimensionGroupReferenceContext(data.imageVolume)
+      );
+    }
+
+    if (cameraFocalPoint && viewPlaneNormal && viewUp) {
+      viewReference.planeRestriction = {
+        FrameOfReferenceUID,
+        point: cameraFocalPoint,
+        inPlaneVector1: viewUp,
+        inPlaneVector2: vec3.cross(
+          vec3.create(),
+          viewUp as unknown as vec3,
+          viewPlaneNormal as unknown as vec3
+        ) as Point3,
+      };
+    }
+
+    return viewReference;
+  }
+
   /**
    * Applies a 3D camera payload or wrapped view-presentation payload.
    *
@@ -488,6 +542,35 @@ class VolumeViewport3DV2 extends ViewportNext<
     }
 
     return this.getFirstBinding();
+  }
+
+  protected getReferenceViewContexts(): ViewportNextReferenceContext[] {
+    const contexts: ViewportNextReferenceContext[] = [];
+    const camera = this.getCamera();
+
+    for (const [dataId, binding] of this.bindings.entries()) {
+      const data = this.getVolume3DPayload(binding);
+      const volumeId =
+        data?.renderMode === 'vtkVolume3d' ? data.volumeId : undefined;
+
+      contexts.push({
+        dataId,
+        dataIds: [binding.data.id],
+        frameOfReferenceUID:
+          binding.getFrameOfReferenceUID() ?? this.getFrameOfReferenceUID(),
+        imageIds:
+          data?.renderMode === 'vtkVolume3d' ? data.imageIds : undefined,
+        volumeId,
+        volumeIds: volumeId ? [volumeId] : undefined,
+        cameraFocalPoint: camera.focalPoint as Point3 | undefined,
+        viewPlaneNormal: camera.viewPlaneNormal as Point3 | undefined,
+        ...(data?.renderMode === 'vtkVolume3d'
+          ? getDimensionGroupReferenceContext(data.imageVolume)
+          : {}),
+      });
+    }
+
+    return contexts.length ? contexts : super.getReferenceViewContexts();
   }
 
   private requestRenderingEngineRender(): void {

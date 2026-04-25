@@ -1,5 +1,5 @@
 import type { IDistance, IPoints, ITouchPoints } from '../../types';
-import type { Types } from '@cornerstonejs/core';
+import { utilities, type Types } from '@cornerstonejs/core';
 
 /**
  * Returns the difference between multiple `IPoints` instances.
@@ -79,11 +79,11 @@ function getDeltaDistanceBetweenIPoints(
  * @returns A copy of the points.
  */
 function copyPointsList(points: ITouchPoints[]): ITouchPoints[] {
-  return JSON.parse(JSON.stringify(points));
+  return utilities.deepClone(points);
 }
 
 function copyPoints(points: ITouchPoints): ITouchPoints {
-  return JSON.parse(JSON.stringify(points));
+  return utilities.deepClone(points);
 }
 
 function getMeanPoints(points: IPoints[]): IPoints {
