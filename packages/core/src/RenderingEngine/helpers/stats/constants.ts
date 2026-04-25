@@ -31,7 +31,10 @@ const STATS_CONFIG = {
     cursor: 'move',
     opacity: '0.9',
     display: 'flex',
-    flexDirection: 'column',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: '4px',
+    maxWidth: 'calc(100vw - 8px)',
     userSelect: 'none',
   },
   POSITION_STORAGE_KEY: 'cornerstone-stats-overlay-position',
@@ -52,7 +55,11 @@ const PANEL_CONFIGS = [
   { name: 'FPS', foregroundColor: '#0ff', backgroundColor: '#002' },
   { name: 'MS', foregroundColor: '#0f0', backgroundColor: '#020' },
   { name: 'MB', foregroundColor: '#f08', backgroundColor: '#201' },
-  { name: 'RENDER MODES', foregroundColor: '#fc0', backgroundColor: '#221100' },
+  {
+    name: 'VIEWPORT BINDINGS',
+    foregroundColor: '#fc0',
+    backgroundColor: '#221100',
+  },
 ] as const;
 
 export { PANEL_CONFIG, STATS_CONFIG, CONVERSION, PANEL_CONFIGS };

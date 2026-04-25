@@ -177,6 +177,39 @@ async function expectPaintedSegmentation(page) {
   expect(stats?.nonZero ?? 0, 'sphere brush should paint at least one voxel').toBeGreaterThan(0);
 }
 
+async function getSegmentationActorRenderModes(page) {
+  return page.evaluate((segmentationId) => {
+    const enabledElements =
+      (window as typeof window & {
+        cornerstone?: {
+          getEnabledElements?: () => Array<{
+            viewport?: {
+              getActors?: () => Array<{
+                actorMapper?: {
+                  renderMode?: string;
+                };
+                representationUID?: string;
+                uid?: string;
+              }>;
+            };
+          }>;
+        };
+      }).cornerstone?.getEnabledElements?.() ?? [];
+
+    const viewport = enabledElements[0]?.viewport;
+    const actors = viewport?.getActors?.() ?? [];
+
+    return actors
+      .filter(
+        (actor) =>
+          actor.representationUID?.startsWith?.(`${segmentationId}-`) ||
+          actor.uid?.startsWith?.(`${segmentationId}-`)
+      )
+      .map((actor) => actor.actorMapper?.renderMode)
+      .filter(Boolean);
+  }, SEGMENTATION_ID);
+}
+
 test.describe('Labelmap Segmentation Tools - Next (GPU)', () => {
   test.beforeEach(navigateToExample());
 
@@ -223,6 +256,25 @@ test.describe('Labelmap Segmentation Tools - Next (GPU)', () => {
       locator,
       screenShotPaths.labelmapSegToolsNext.sphereBrush
     );
+  });
+});
+
+test.describe('Labelmap Segmentation Tools - Next (2D Slice Rendering)', () => {
+  test.beforeEach(navigateToExample({ useSliceRendering: 'true' }));
+
+  test('should use vtkImage segmentation actors when useSliceRendering is enabled', async ({
+    page,
+  }) => {
+    await expect(page.locator('#segmentation-rendering-mode')).toHaveValue(
+      'slice'
+    );
+
+    const renderModes = await getSegmentationActorRenderModes(page);
+
+    expect(renderModes.length).toBeGreaterThan(0);
+    for (const renderMode of renderModes) {
+      expect(renderMode).toBe('vtkImage');
+    }
   });
 });
 

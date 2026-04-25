@@ -9,9 +9,9 @@ import {
 import { triggerSegmentationRender } from '../../../stateManagement/segmentation/SegmentationRenderingEngine';
 import { updateLabelmapSegmentationImageReferences } from '../../../stateManagement/segmentation/updateLabelmapSegmentationImageReferences';
 import { getCurrentLabelmapImageIdsForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
-import { SegmentationRepresentations } from '../../../enums';
 import { getLabelmapActorEntries } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
 import getViewportLabelmapRenderMode from '../../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
+import { createLabelmapRepresentationUID } from './labelmapRepresentationUID';
 
 export function syncStackLabelmapActors(
   viewport: Types.IStackViewport,
@@ -83,7 +83,10 @@ export function syncStackLabelmapActors(
         viewport.addImages([
           {
             imageId: derivedImageId,
-            representationUID: `${segmentationId}-${SegmentationRepresentations.Labelmap}-${derivedImage.imageId}`,
+            representationUID: createLabelmapRepresentationUID({
+              segmentationId,
+              referencedId: derivedImage.imageId,
+            }),
           },
         ]);
       } else {
@@ -109,7 +112,10 @@ export function syncStackLabelmapActors(
         viewport.addImages([
           {
             imageId: derivedImageId,
-            representationUID: `${segmentationId}-${SegmentationRepresentations.Labelmap}-${derivedImage.imageId}`,
+            representationUID: createLabelmapRepresentationUID({
+              segmentationId,
+              referencedId: derivedImage.imageId,
+            }),
             callback: ({ imageActor }) => {
               imageActor.getMapper().setInputData(imageData);
             },

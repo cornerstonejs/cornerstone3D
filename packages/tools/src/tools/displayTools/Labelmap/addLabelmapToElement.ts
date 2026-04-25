@@ -18,7 +18,6 @@ import {
   triggerSegmentationDataModified,
   triggerSegmentationModified,
 } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
-import { SegmentationRepresentations } from '../../../enums';
 import { addVolumesAsIndependentComponents } from './addVolumesAsIndependentComponents';
 import type { LabelmapRenderingConfig } from '../../../types/SegmentationStateTypes';
 import getViewportLabelmapRenderMode from '../../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
@@ -29,6 +28,7 @@ import {
 import { getLabelmaps } from '../../../stateManagement/segmentation/helpers/labelmapSegmentationState';
 import { addVolumeLabelmapImageMapperActors } from './volumeLabelmapImageMapper';
 import { syncStackLabelmapActors } from './syncStackLabelmapActors';
+import { createLabelmapRepresentationUID } from './labelmapRepresentationUID';
 
 const { uuidv4 } = utilities;
 
@@ -55,6 +55,7 @@ type PlanarNextVolumeViewport = Types.IViewport & {
       renderMode:
         | Types.ActorRenderMode.CPU_VOLUME
         | Types.ActorRenderMode.VTK_VOLUME_SLICE;
+      role?: 'source' | 'overlay';
     }
   ) => Promise<string>;
   setDataPresentation: (
@@ -159,7 +160,10 @@ async function addLabelmapToElement(
     const volumeInputs: Types.IVolumeInput[] = labelmapLayers.map((layer) => ({
       volumeId: layer.volumeId,
       visibility,
-      representationUID: `${segmentationId}-${SegmentationRepresentations.Labelmap}-${layer.labelmapId}`,
+      representationUID: createLabelmapRepresentationUID({
+        segmentationId,
+        referencedId: layer.labelmapId,
+      }),
       useIndependentComponents,
       blendMode,
     }));
@@ -207,7 +211,7 @@ async function addLabelmapToElement(
     }
   } else if (renderMode === 'image') {
     if (useSliceRendering && canRenderVolumeViewportLabelmapAsImage(viewport)) {
-      addVolumeLabelmapImageMapperActors({
+      await addVolumeLabelmapImageMapperActors({
         viewport,
         segmentation,
         segmentationId,
@@ -302,7 +306,10 @@ async function addLabelmapToPlanarNextViewport(args: {
       );
     }
 
-    const representationUID = `${segmentationId}-${SegmentationRepresentations.Labelmap}-${layer.labelmapId}`;
+    const representationUID = createLabelmapRepresentationUID({
+      segmentationId,
+      referencedId: layer.labelmapId,
+    });
     const dataId = representationUID;
 
     utilities.viewportNextDataSetMetadataProvider.add(dataId, {
@@ -320,6 +327,7 @@ async function addLabelmapToPlanarNextViewport(args: {
     await viewport.addData(dataId, {
       orientation: requestedOrientation,
       renderMode,
+      role: 'overlay',
     });
     viewport.setDataPresentation(dataId, {
       blendMode,

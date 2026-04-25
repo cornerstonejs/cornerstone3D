@@ -8,6 +8,7 @@ TIMESTAMP="$(date '+%Y%m%d-%H%M%S')"
 SUITE="legacy"
 FORCE_COMPAT="false"
 FORCE_CPU_RENDERING="false"
+FORCE_REBUILD="false"
 USE_ALL_PROJECTS="false"
 RUN_ALL_MODES="false"
 declare -a PLAYWRIGHT_ARGS=()
@@ -22,6 +23,9 @@ for arg in "$@"; do
       ;;
     --cpu)
       FORCE_CPU_RENDERING="true"
+      ;;
+    --force)
+      FORCE_REBUILD="true"
       ;;
     --all-projects)
       USE_ALL_PROJECTS="true"
@@ -42,6 +46,9 @@ if [[ "$RUN_ALL_MODES" == "true" ]]; then
   fi
   if [[ "$FORCE_CPU_RENDERING" == "true" ]]; then
     PASSTHROUGH_ARGS+=("--cpu")
+  fi
+  if [[ "$FORCE_REBUILD" == "true" ]]; then
+    PASSTHROUGH_ARGS+=("--force")
   fi
   PASSTHROUGH_ARGS+=("${PLAYWRIGHT_ARGS[@]+"${PLAYWRIGHT_ARGS[@]}"}")
 
@@ -132,7 +139,7 @@ if [[ "$RUN_ALL_MODES" == "true" ]]; then
 
     START_TIME=$(date +%s)
     set +e
-    if [[ $mode_index -eq 0 ]]; then
+    if [[ $mode_index -eq 0 || "$FORCE_REBUILD" == "true" ]]; then
       bash "$SCRIPT_PATH" "${MODE_ARGS[@]+"${MODE_ARGS[@]}"}" "${PASSTHROUGH_ARGS[@]+"${PASSTHROUGH_ARGS[@]}"}"
     else
       PLAYWRIGHT_SKIP_REBUILD=true \
@@ -241,6 +248,7 @@ if [[ "$USE_ALL_PROJECTS" == "true" ]]; then
 fi
 
 echo "Suite: $SUITE | Mode: $VIEWPORT_MODE | CPU: $FORCE_CPU_RENDERING | Projects: $PROJECTS_DESC | Tests: ${#SELECTED_TESTS[@]}"
+echo "Force rebuild: $FORCE_REBUILD"
 echo
 
 RUN_DIR="$ROOT_DIR/reports/$RUN_SLUG/$TIMESTAMP"
@@ -252,10 +260,17 @@ cd "$ROOT_DIR"
 
 mkdir -p "$RUN_DIR"
 
+if [[ "$FORCE_REBUILD" == "true" ]]; then
+  PLAYWRIGHT_SKIP_REBUILD_VALUE="false"
+else
+  PLAYWRIGHT_SKIP_REBUILD_VALUE="${PLAYWRIGHT_SKIP_REBUILD:-}"
+fi
+
 set +e
 PLAYWRIGHT_USE_BUNDLED_CHROMIUM=true \
 PLAYWRIGHT_FORCE_COMPAT="$FORCE_COMPAT" \
 PLAYWRIGHT_FORCE_CPU_RENDERING="$FORCE_CPU_RENDERING" \
+PLAYWRIGHT_SKIP_REBUILD="$PLAYWRIGHT_SKIP_REBUILD_VALUE" \
 PLAYWRIGHT_HTML_OUTPUT_DIR="$HTML_REPORT_DIR" \
 PLAYWRIGHT_HTML_OPEN="never" \
 npx playwright test \
@@ -268,6 +283,7 @@ set -e
 echo
 echo "Compat mode forced: $FORCE_COMPAT"
 echo "CPU rendering forced: $FORCE_CPU_RENDERING"
+echo "Force rebuild: $FORCE_REBUILD"
 echo "Run directory: $RUN_DIR"
 echo "HTML report: $HTML_REPORT_DIR/index.html"
 

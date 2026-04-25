@@ -22,9 +22,11 @@ export type ViewportRenderContextType =
   | KnownViewportRenderContext
   | ExtensionViewportRenderContext;
 export type LogicalDataType = 'image' | 'video' | 'ecg' | 'wsi' | 'geometry';
+export type BindingRole = 'source' | 'overlay';
 
 export interface DataAddOptions {
   renderMode: string;
+  role?: BindingRole;
 }
 
 export interface BasePresentationProps {
@@ -110,6 +112,7 @@ export interface DataProvider {
 export interface RenderingBinding<TPresentation = unknown>
   extends RenderPathAttachment<TPresentation> {
   data: LoadedData;
+  role: BindingRole;
 }
 
 export interface ViewportController<
@@ -143,6 +146,7 @@ export interface ViewportController<
     options?: ReferenceCompatibleOptions
   ): boolean;
   getDataRenderMode(dataId: DataId): string | undefined;
+  getDataRole(dataId: DataId): BindingRole | undefined;
 
   render(): void;
 }

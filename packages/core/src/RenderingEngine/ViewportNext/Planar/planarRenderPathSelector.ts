@@ -167,7 +167,7 @@ export function selectPlanarRenderPath(
       requestedRenderMode === ActorRenderMode.CPU_IMAGE ||
       requestedRenderMode === ActorRenderMode.VTK_IMAGE
     ) {
-      if (!isAcquisitionPath) {
+      if (!isAcquisitionPath && !dataSet.useWorldCoordinateImageData) {
         throw new Error(
           '[PlanarViewport] cpuImage and vtkImage render modes require the acquisition plane'
         );

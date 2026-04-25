@@ -60,7 +60,8 @@ export class VtkImageMapperRenderPath
 
     const mapper = vtkImageMapper.newInstance();
     const actor = vtkImageSlice.newInstance();
-    const imageData = createVTKImageDataFromImage(payload.image);
+    const imageData =
+      payload.imageData ?? createVTKImageDataFromImage(payload.image);
 
     ctx.display.activateRenderMode(ActorRenderMode.VTK_IMAGE);
     mapper.setInputData(imageData);
@@ -73,6 +74,7 @@ export class VtkImageMapperRenderPath
       currentImage: payload.image,
       mapper,
       imageData,
+      useWorldCoordinateImageData: payload.useWorldCoordinateImageData,
       currentImageIdIndex: payload.initialImageIdIndex,
       defaultVOIRange: getDefaultImageVOIRange(payload.image),
       dataPresentation: undefined,
@@ -146,6 +148,11 @@ export class VtkImageMapperRenderPath
     const canvasHeight = ctx.vtk.canvas.clientHeight || ctx.vtk.canvas.height;
 
     ctx.display.activateRenderMode(ActorRenderMode.VTK_IMAGE);
+
+    if (rendering.useWorldCoordinateImageData) {
+      return;
+    }
+
     const sliceBasis = createPlanarImageSliceBasis({
       canvasHeight,
       canvasWidth,
@@ -250,6 +257,11 @@ export class VtkImageMapperRenderPath
     rendering: PlanarImageMapperRendering,
     dataId: string
   ): void {
+    if (rendering.useWorldCoordinateImageData) {
+      ctx.display.requestRender();
+      return;
+    }
+
     const camera = ctx.viewport.getCameraState();
     const canvasWidth = ctx.vtk.canvas.clientWidth || ctx.vtk.canvas.width;
     const canvasHeight = ctx.vtk.canvas.clientHeight || ctx.vtk.canvas.height;
@@ -379,15 +391,4 @@ function applyPlanarImageActorTransforms(
     actor: rendering.actor,
     renderCamera,
   });
-
-  for (const actorEntry of ctx.viewport.getOverlayActors()) {
-    if (actorEntry.actorMapper?.renderMode !== ActorRenderMode.VTK_IMAGE) {
-      continue;
-    }
-
-    applyPlanarRenderCameraToActor({
-      actor: actorEntry.actor as never,
-      renderCamera,
-    });
-  }
 }

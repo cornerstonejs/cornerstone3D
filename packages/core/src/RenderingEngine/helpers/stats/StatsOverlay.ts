@@ -1,5 +1,8 @@
 import renderingEngineCache from '../../renderingEngineCache';
-import { RenderModesPanel } from './RenderModesPanel';
+import {
+  RenderModesPanel,
+  type RenderModePanelBinding,
+} from './RenderModesPanel';
 import { StatsPanel } from './StatsPanel';
 import type { Panel, StatsInstance, PerformanceWithMemory } from './types';
 import { PanelType } from './enums';
@@ -18,6 +21,8 @@ export class StatsOverlay implements StatsInstance {
   private lastUpdateTime: number = 0;
   private frameCount = 0;
   private panels: Map<PanelType, Panel> = new Map();
+  private metricsColumn: HTMLDivElement | null = null;
+  private bindingsColumn: HTMLDivElement | null = null;
   private animationFrameId: number | null = null;
   private isSetup = false;
   private dragPointerId: number | null = null;
@@ -83,6 +88,8 @@ export class StatsOverlay implements StatsInstance {
     }
 
     this.dom = null;
+    this.metricsColumn = null;
+    this.bindingsColumn = null;
     this.panels.clear();
     this.isSetup = false;
   }
@@ -120,6 +127,8 @@ export class StatsOverlay implements StatsInstance {
    * Initializes all panels.
    */
   private initializePanels(): void {
+    this.initializePanelColumns();
+
     // Always create FPS and MS panels
     const fpsPanel = new StatsPanel(
       PANEL_CONFIGS[PanelType.FPS].name,
@@ -148,6 +157,26 @@ export class StatsOverlay implements StatsInstance {
     this.addPanel(PanelType.RENDER_MODES, new RenderModesPanel());
   }
 
+  private initializePanelColumns(): void {
+    this.metricsColumn = document.createElement('div');
+    this.metricsColumn.style.cssText = `
+      display:flex;
+      flex-direction:column;
+      flex:0 0 auto;
+    `;
+
+    this.bindingsColumn = document.createElement('div');
+    this.bindingsColumn.style.cssText = `
+      display:flex;
+      flex-direction:column;
+      flex:0 1 auto;
+      min-width:0;
+    `;
+
+    this.dom.appendChild(this.metricsColumn);
+    this.dom.appendChild(this.bindingsColumn);
+  }
+
   /**
    * Checks if memory monitoring is available.
    */
@@ -160,7 +189,12 @@ export class StatsOverlay implements StatsInstance {
    * Adds a panel to the overlay.
    */
   private addPanel(type: PanelType, panel: Panel): void {
-    this.dom.appendChild(panel.dom);
+    const column =
+      type === PanelType.RENDER_MODES
+        ? this.bindingsColumn
+        : this.metricsColumn;
+
+    (column ?? this.dom).appendChild(panel.dom);
     this.panels.set(type, panel);
   }
 
@@ -222,8 +256,8 @@ export class StatsOverlay implements StatsInstance {
   }
 
   /**
-   * Collects every viewport's internal `_debug.renderModes` from the
-   * rendering engine cache and pushes the flat list to the render-modes panel.
+   * Collects every viewport's ViewportNext binding debug state from the
+   * rendering engine cache and pushes a role-aware list to the bindings panel.
    */
   private updateRenderModesPanel(): void {
     const panel = this.panels.get(PanelType.RENDER_MODES);
@@ -235,7 +269,7 @@ export class StatsOverlay implements StatsInstance {
     const entries: Array<{
       renderingEngineId: string;
       viewportId: string;
-      renderModes: Record<string, string>;
+      bindings: RenderModePanelBinding[];
     }> = [];
 
     for (const renderingEngine of renderingEngineCache.getAll()) {
@@ -244,20 +278,45 @@ export class StatsOverlay implements StatsInstance {
       }
 
       for (const viewport of renderingEngine.getViewports()) {
-        const renderModes = (
-          viewport as unknown as { _debug?: { renderModes?: unknown } }
-        )._debug?.renderModes;
+        const debugViewport = viewport as unknown as DebugBindingsViewport;
+        const renderModes = debugViewport._debug?.renderModes;
 
         entries.push({
           renderingEngineId: renderingEngine.id,
           viewportId: viewport.id,
-          renderModes:
-            (renderModes as Record<string, string> | undefined) ?? {},
+          bindings: this.getViewportBindingDebugEntries(
+            debugViewport,
+            (renderModes as Record<string, string> | undefined) ?? {}
+          ),
         });
       }
     }
 
     panel.setContent(entries);
+  }
+
+  private getViewportBindingDebugEntries(
+    viewport: DebugBindingsViewport,
+    renderModes: Record<string, string>
+  ): RenderModePanelBinding[] {
+    const actors = viewport.getActors?.() ?? [];
+    const sourceDataId = viewport.getSourceDataId?.();
+
+    return Object.entries(renderModes).map(([dataId, renderMode]) => {
+      const role = resolveBindingRole(viewport, dataId, sourceDataId);
+      const actor =
+        role === 'source'
+          ? viewport.getDefaultActor?.()
+          : findActorForDataId(actors, dataId);
+
+      return {
+        actorUID: actor?.uid,
+        dataId,
+        referencedId: actor?.referencedId,
+        renderMode,
+        role,
+      };
+    });
   }
 
   /**
@@ -406,4 +465,50 @@ export class StatsOverlay implements StatsInstance {
       // Storage may be unavailable (private mode, quota exceeded); ignore.
     }
   }
+}
+
+type DebugActorEntry = {
+  referencedId?: string;
+  representationUID?: string;
+  uid?: string;
+};
+
+type DebugBindingsViewport = {
+  _debug?: {
+    renderModes?: unknown;
+  };
+  getActors?: () => DebugActorEntry[];
+  getDataRole?: (dataId: string) => RenderModePanelBinding['role'] | undefined;
+  getDefaultActor?: () => DebugActorEntry | undefined;
+  getSourceDataId?: () => string | undefined;
+};
+
+function resolveBindingRole(
+  viewport: DebugBindingsViewport,
+  dataId: string,
+  sourceDataId?: string
+): RenderModePanelBinding['role'] {
+  const role = viewport.getDataRole?.(dataId);
+
+  if (role === 'source' || role === 'overlay') {
+    return role;
+  }
+
+  if (sourceDataId && dataId === sourceDataId) {
+    return 'source';
+  }
+
+  return 'data';
+}
+
+function findActorForDataId(
+  actors: DebugActorEntry[],
+  dataId: string
+): DebugActorEntry | undefined {
+  return actors.find(
+    (actor) =>
+      actor.uid === dataId ||
+      actor.representationUID === dataId ||
+      actor.referencedId === dataId
+  );
 }

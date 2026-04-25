@@ -4,9 +4,11 @@ import { ActorRenderMode } from '../../../types';
 import type {
   ActorEntry,
   CPUIImageData,
+  IBaseVolumeViewport,
   ICamera,
   IImage,
   IStackInput,
+  OrientationVectors,
   Point2,
   Point3,
   ReferenceCompatibleOptions,
@@ -27,7 +29,12 @@ import snapFocalPointToSlice from '../../../utilities/snapFocalPointToSlice';
 import viewportNextDataSetMetadataProvider from '../../../utilities/viewportNextDataSetMetadataProvider';
 import triggerEvent from '../../../utilities/triggerEvent';
 import renderingEngineCache from '../../renderingEngineCache';
-import type { DataAddOptions, LoadedData } from '../ViewportArchitectureTypes';
+import { getCameraVectors } from '../../helpers/getCameraVectors';
+import type {
+  BindingRole,
+  DataAddOptions,
+  LoadedData,
+} from '../ViewportArchitectureTypes';
 import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
 import ViewportNext from '../ViewportNext';
 import {
@@ -61,10 +68,6 @@ import {
   normalizePlanarScale,
   type PlanarScaleInput,
 } from './planarCameraScale';
-import {
-  createPlanarCpuImageOverlayActorEntry,
-  createPlanarImageOverlayActorEntry,
-} from './planarActorCompatibility';
 import {
   canvasToWorldPlanarCpuImage,
   worldToCanvasPlanarCpuImage,
@@ -107,10 +110,51 @@ type PlanarViewportInputOptions = Omit<ViewportInputOptions, 'displayArea'> & {
   displayArea?: PlanarDisplayArea;
 };
 
+type PlanarSetOrientationInput =
+  | OrientationAxis.ACQUISITION
+  | OrientationAxis.AXIAL
+  | OrientationAxis.CORONAL
+  | OrientationAxis.SAGITTAL
+  | OrientationAxis.REFORMAT
+  | OrientationAxis.AXIAL_REFORMAT
+  | OrientationAxis.CORONAL_REFORMAT
+  | OrientationAxis.SAGITTAL_REFORMAT
+  | OrientationVectors;
+
 function cloneViewportOptions(
   options: PlanarViewportInputOptions = {}
 ): PlanarViewportInputOptions {
   return deepClone(options);
+}
+
+function getBaseReformatOrientation(
+  orientation: PlanarSetOrientationInput
+):
+  | OrientationAxis.AXIAL
+  | OrientationAxis.CORONAL
+  | OrientationAxis.SAGITTAL
+  | undefined {
+  switch (orientation) {
+    case OrientationAxis.AXIAL_REFORMAT:
+      return OrientationAxis.AXIAL;
+    case OrientationAxis.CORONAL_REFORMAT:
+      return OrientationAxis.CORONAL;
+    case OrientationAxis.SAGITTAL_REFORMAT:
+      return OrientationAxis.SAGITTAL;
+    default:
+      return;
+  }
+}
+
+function isReformatOrientation(
+  orientation: PlanarSetOrientationInput
+): boolean {
+  return (
+    orientation === OrientationAxis.REFORMAT ||
+    orientation === OrientationAxis.AXIAL_REFORMAT ||
+    orientation === OrientationAxis.CORONAL_REFORMAT ||
+    orientation === OrientationAxis.SAGITTAL_REFORMAT
+  );
 }
 
 export type PlanarReferenceContext = {
@@ -137,9 +181,8 @@ class PlanarViewport extends ViewportNext<
 
   protected renderContext: PlanarViewportRenderContext;
 
-  private activeDataId?: string;
+  private sourceDataId?: string;
   private readonly lockedRenderMode: PlanarEffectiveRenderMode;
-  private readonly compatibilityOverlayActors = new Map<string, ActorEntry>();
   private cpuCanvas?: HTMLCanvasElement;
 
   // ── Static ───────────────────────────────────────────────────────────
@@ -218,12 +261,11 @@ class PlanarViewport extends ViewportNext<
       type: 'planar',
       viewport: {
         element: this.element,
-        getActiveDataId: () => this.activeDataId,
+        getActiveDataId: () => this.sourceDataId,
         getCameraState: () => this.getCameraState(),
         isCurrentDataId: (dataId) =>
           this.getCurrentBinding()?.data.id === dataId,
-        getOverlayActors: () =>
-          Array.from(this.compatibilityOverlayActors.values()),
+        getOverlayActors: () => this.getProjectedBindingActorEntries('overlay'),
       },
       renderPath: {
         renderMode: this.lockedRenderMode,
@@ -282,14 +324,13 @@ class PlanarViewport extends ViewportNext<
   ): Promise<string[]> {
     const renderingIds: string[] = [];
 
-    for (const { dataId, options = {} } of entries) {
-      const renderingId = await this.addData(dataId, options);
+    for (const [index, { dataId, options = {} }] of entries.entries()) {
+      const role = options.role ?? (index === 0 ? 'source' : 'overlay');
+      const renderingId = await this.addData(dataId, {
+        ...options,
+        role,
+      });
       renderingIds.push(renderingId);
-    }
-
-    if (entries[0]) {
-      this.activeDataId = entries[0].dataId;
-      this.updateBindingsCameraState();
     }
 
     return renderingIds;
@@ -308,14 +349,22 @@ class PlanarViewport extends ViewportNext<
     options: PlanarSetDataOptions | DataAddOptions = {}
   ): Promise<string> {
     const planarOptions = options as PlanarSetDataOptions;
+    const role = this.resolveBindingRole(planarOptions);
+    const resolvedOptions: PlanarSetDataOptions = {
+      ...planarOptions,
+      role,
+    };
     const { data, resolvedOrientation, selectedPath } =
-      await this.loadPlanarData(dataId, planarOptions);
+      await this.loadPlanarData(dataId, resolvedOptions);
 
-    this.activeDataId = dataId;
-    this.applyLoadedPlanarCamera(resolvedOrientation, data, selectedPath);
+    if (role === 'source') {
+      this.promoteSourceDataId(dataId);
+      this.applyLoadedPlanarCamera(resolvedOrientation, data, selectedPath);
+    }
 
     const renderingId = await this.addLoadedData(dataId, data, {
       renderMode: selectedPath.renderMode,
+      role,
     });
 
     this.setDefaultDataPresentation(dataId, {
@@ -333,7 +382,10 @@ class PlanarViewport extends ViewportNext<
     options: PlanarSetDataOptions | DataAddOptions = {}
   ): Promise<string> {
     this.removeAllData();
-    return this.addData(dataId, options);
+    return this.addData(dataId, {
+      ...options,
+      role: 'source',
+    });
   }
 
   /**
@@ -343,8 +395,9 @@ class PlanarViewport extends ViewportNext<
   removeData(dataId: string): void {
     super.removeData(dataId);
 
-    if (this.activeDataId === dataId) {
-      this.activeDataId = undefined;
+    if (this.sourceDataId === dataId) {
+      this.sourceDataId = undefined;
+      this.promoteFirstAvailableBindingToSource();
     }
 
     if (!this.isDestroyed && this.getCurrentBinding()) {
@@ -357,12 +410,12 @@ class PlanarViewport extends ViewportNext<
   // ====================================================================
 
   /**
-   * Returns all actor entries from both bindings and overlay actors.
+   * Returns all actor entries, with the source actor first and overlays after.
    */
   getActors(): ActorEntry[] {
     return [
-      ...this.getProjectedBindingActorEntries(),
-      ...this.compatibilityOverlayActors.values(),
+      ...this.getProjectedBindingActorEntries('source'),
+      ...this.getProjectedBindingActorEntries('overlay'),
     ];
   }
 
@@ -370,20 +423,10 @@ class PlanarViewport extends ViewportNext<
    * Returns the primary actor entry for the viewport.
    */
   getDefaultActor(): ActorEntry | undefined {
-    const bindingActors = this.getProjectedBindingActorEntries();
-    const primaryBindingActor = bindingActors.find(
-      (actorEntry) => typeof actorEntry.representationUID !== 'string'
+    return (
+      this.getProjectedBindingActorEntries('source')[0] ??
+      this.getProjectedBindingActorEntries()[0]
     );
-
-    if (primaryBindingActor) {
-      return primaryBindingActor;
-    }
-
-    if (bindingActors[0]) {
-      return bindingActors[0];
-    }
-
-    return this.compatibilityOverlayActors.values().next().value;
   }
 
   /**
@@ -434,25 +477,12 @@ class PlanarViewport extends ViewportNext<
     actorUIDs
       .filter((actorUID): actorUID is string => typeof actorUID === 'string')
       .forEach((actorUID) => {
-        const overlayActorEntry = this.compatibilityOverlayActors.get(actorUID);
-
-        if (overlayActorEntry) {
-          if (
-            overlayActorEntry.actorMapper?.renderMode ===
-            ActorRenderMode.VTK_IMAGE
-          ) {
-            this.renderContext.vtk.renderer.removeActor(
-              overlayActorEntry.actor as never
-            );
-          }
-          this.compatibilityOverlayActors.delete(actorUID);
-          didRemoveActor = true;
-          return;
-        }
-
         const bindingDataId = this.findBindingDataIdByActorUID(actorUID);
 
         if (bindingDataId) {
+          if (this.getDataRole(bindingDataId) === 'overlay') {
+            viewportNextDataSetMetadataProvider.remove(bindingDataId);
+          }
           this.removeData(bindingDataId);
           didRemoveActor = true;
         }
@@ -466,7 +496,7 @@ class PlanarViewport extends ViewportNext<
   /**
    * Adds overlay images on top of the primary render path output.
    */
-  addImages(stackInputs: IStackInput[]): void {
+  async addImages(stackInputs: IStackInput[]): Promise<void> {
     const rendering = this.getCurrentPlanarRendering();
 
     if (
@@ -477,46 +507,53 @@ class PlanarViewport extends ViewportNext<
       return;
     }
 
-    stackInputs.forEach((stackInput) => {
+    for (const stackInput of stackInputs) {
       const image = cache.getImage(stackInput.imageId);
 
       if (!image) {
-        return;
+        continue;
       }
 
-      const actorEntry =
+      const actorUID = this.resolveOverlayActorUID(stackInput, image);
+      const dataId = this.resolveOverlayDataId(actorUID);
+      const renderMode =
         rendering.renderMode === ActorRenderMode.CPU_IMAGE
-          ? createPlanarCpuImageOverlayActorEntry(
-              this as never,
-              image,
-              stackInput
-            )
-          : createPlanarImageOverlayActorEntry(image, stackInput);
-      const existingActorEntry = this.compatibilityOverlayActors.get(
-        actorEntry.uid
-      );
+          ? ActorRenderMode.CPU_IMAGE
+          : ActorRenderMode.VTK_IMAGE;
 
-      if (
-        existingActorEntry?.actorMapper?.renderMode ===
-        ActorRenderMode.VTK_IMAGE
-      ) {
-        this.renderContext.vtk.renderer.removeActor(
-          existingActorEntry.actor as never
-        );
-      }
+      viewportNextDataSetMetadataProvider.add(dataId, {
+        actorUID,
+        image,
+        imageData: stackInput.imageData,
+        imageIds: [stackInput.imageId],
+        initialImageIdIndex: 0,
+        kind: 'planar',
+        referencedId:
+          typeof stackInput.referencedId === 'string'
+            ? stackInput.referencedId
+            : stackInput.imageId,
+        representationUID:
+          typeof stackInput.representationUID === 'string'
+            ? stackInput.representationUID
+            : undefined,
+        useWorldCoordinateImageData:
+          stackInput.useWorldCoordinateImageData === true,
+      });
 
-      if (stackInput.callback) {
+      await this.addData(dataId, {
+        renderMode,
+        role: 'overlay',
+      });
+
+      const actorEntry = this.getActor(actorUID);
+
+      if (stackInput.callback && actorEntry) {
         stackInput.callback({
           imageActor: actorEntry.actor as never,
           imageId: stackInput.imageId,
         });
       }
-
-      if (actorEntry.actorMapper?.renderMode === ActorRenderMode.VTK_IMAGE) {
-        this.renderContext.vtk.renderer.addActor(actorEntry.actor as never);
-      }
-      this.compatibilityOverlayActors.set(actorEntry.uid, actorEntry);
-    });
+    }
 
     this.render();
   }
@@ -559,6 +596,10 @@ class PlanarViewport extends ViewportNext<
       this.getPlanarReferenceContext(viewRefSpecifier)?.data.volumeId ??
       this.getPlanarData()?.volumeId
     );
+  }
+
+  getSourceDataId(): string | undefined {
+    return this.sourceDataId;
   }
 
   /**
@@ -1314,13 +1355,8 @@ class PlanarViewport extends ViewportNext<
    *
    * @param orientation - Target acquisition-aligned orientation.
    */
-  setOrientation(
-    orientation:
-      | OrientationAxis.AXIAL
-      | OrientationAxis.CORONAL
-      | OrientationAxis.SAGITTAL
-  ): void {
-    this.setCamera({ orientation });
+  setOrientation(orientation: PlanarSetOrientationInput): void {
+    this.setCamera({ orientation: this.resolveSetOrientation(orientation) });
   }
 
   /**
@@ -1418,15 +1454,9 @@ class PlanarViewport extends ViewportNext<
   // ====================================================================
 
   protected override onDestroy(): void {
-    this.compatibilityOverlayActors.forEach((actorEntry) => {
-      if (actorEntry.actorMapper?.renderMode === ActorRenderMode.VTK_IMAGE) {
-        this.renderContext.vtk.renderer.removeActor(actorEntry.actor as never);
-      }
-    });
-    this.compatibilityOverlayActors.clear();
     this.cpuCanvas?.remove();
     this.cpuCanvas = undefined;
-    this.activeDataId = undefined;
+    this.sourceDataId = undefined;
     this.renderContext.renderPath.renderCamera = undefined;
   }
 
@@ -1441,6 +1471,29 @@ class PlanarViewport extends ViewportNext<
     if (previousCamera) {
       this.triggerCameraModifiedEvent(previousCamera);
     }
+  }
+
+  protected override renderBindings(): boolean {
+    if (this.isDestroyed) {
+      return false;
+    }
+
+    let renderedByAdapter = false;
+    const sourceBinding = this.getCurrentBinding();
+
+    sourceBinding?.render?.();
+    renderedByAdapter = renderedByAdapter || Boolean(sourceBinding?.render);
+
+    for (const binding of this.bindings.values()) {
+      if (binding === sourceBinding) {
+        continue;
+      }
+
+      binding.render?.();
+      renderedByAdapter = renderedByAdapter || Boolean(binding.render);
+    }
+
+    return renderedByAdapter;
   }
 
   private requestRenderingEngineRender(): void {
@@ -1492,7 +1545,11 @@ class PlanarViewport extends ViewportNext<
       removeBindingsExcept: (keepDataIds) =>
         this.removeBindingsExcept(keepDataIds),
       setCameraOrientation: (orientation) => {
-        this.setCamera({ orientation });
+        this.setCamera({
+          orientation: this.resolveSetOrientation(
+            orientation as PlanarSetOrientationInput
+          ),
+        });
       },
       setDataPresentationState: (dataId, presentation) => {
         this.setDataPresentationState(dataId, presentation);
@@ -1503,7 +1560,7 @@ class PlanarViewport extends ViewportNext<
       getDataPresentation: (dataId) => this.getDataPresentation(dataId),
       getCameraOrientation: () => this.camera.orientation,
       getCurrentPlanarRendering: () => this.getCurrentPlanarRendering(),
-      getActiveDataId: () => this.activeDataId,
+      getActiveDataId: () => this.sourceDataId,
       getFirstBoundDataId: () => this.bindings.keys().next().value,
       findDataIdByVolumeId: (volumeId) => this.findDataIdByVolumeId(volumeId),
       getBindingActor: (dataId) => {
@@ -1584,8 +1641,8 @@ class PlanarViewport extends ViewportNext<
   }
 
   protected getCurrentBinding() {
-    if (this.activeDataId) {
-      return this.getBinding(this.activeDataId) ?? this.getFirstBinding();
+    if (this.sourceDataId) {
+      return this.getBinding(this.sourceDataId) ?? this.getFirstBinding();
     }
 
     return this.getFirstBinding();
@@ -1622,15 +1679,20 @@ class PlanarViewport extends ViewportNext<
     );
     if (
       options.renderMode !== undefined &&
-      options.renderMode !== this.lockedRenderMode
+      options.renderMode !== this.lockedRenderMode &&
+      options.role !== 'overlay'
     ) {
       throw new Error(
         `[PlanarViewport] Viewport ${this.id} is locked to ${this.lockedRenderMode}; cannot add ${dataId} as ${options.renderMode}`
       );
     }
+    const requestedRenderMode =
+      options.role === 'overlay'
+        ? (options.renderMode ?? this.lockedRenderMode)
+        : this.lockedRenderMode;
     const selectedPath = selectPlanarRenderPath(dataSet, {
       orientation: resolvedOrientation,
-      renderMode: this.lockedRenderMode,
+      renderMode: requestedRenderMode,
     });
     const data = await (this.dataProvider as PlanarDataProvider).load(dataId, {
       acquisitionOrientation: selectedPath.acquisitionOrientation,
@@ -1680,6 +1742,42 @@ class PlanarViewport extends ViewportNext<
     );
   }
 
+  private resolveSetOrientation(
+    orientation: PlanarSetOrientationInput
+  ): PlanarCamera['orientation'] {
+    if (typeof orientation !== 'string') {
+      return clonePlanarOrientation(orientation) || OrientationAxis.ACQUISITION;
+    }
+
+    if (!isReformatOrientation(orientation)) {
+      return orientation as PlanarCamera['orientation'];
+    }
+
+    const baseOrientation = getBaseReformatOrientation(orientation);
+    const cameraVectors = getCameraVectors(
+      {
+        getActors: () => this.getActors(),
+        getCamera: () => this.getCamera(),
+        getCurrentImageId: () => this.getCurrentImageId(),
+        getImageIds: () => this.getImageIds(),
+        type: ViewportType.ORTHOGRAPHIC,
+      } as unknown as IBaseVolumeViewport,
+      {
+        useViewportNormal: true,
+        ...(baseOrientation ? { orientation: baseOrientation } : {}),
+      }
+    );
+
+    if (cameraVectors) {
+      return {
+        viewPlaneNormal: cameraVectors.viewPlaneNormal,
+        viewUp: cameraVectors.viewUp,
+      };
+    }
+
+    return baseOrientation || this.camera.orientation;
+  }
+
   protected removeBindingsExcept(keepDataIds: Set<string>): void {
     for (const dataId of Array.from(this.bindings.keys())) {
       if (!keepDataIds.has(dataId)) {
@@ -1688,10 +1786,63 @@ class PlanarViewport extends ViewportNext<
     }
   }
 
-  private getProjectedBindingActorEntries(): ActorEntry[] {
+  private resolveBindingRole(options: PlanarSetDataOptions): BindingRole {
+    return options.role === 'source' ? 'source' : 'overlay';
+  }
+
+  private promoteSourceDataId(dataId: string): void {
+    for (const [bindingDataId, binding] of this.bindings.entries()) {
+      binding.role = bindingDataId === dataId ? 'source' : 'overlay';
+    }
+
+    this.sourceDataId = dataId;
+  }
+
+  private promoteFirstAvailableBindingToSource(): void {
+    const firstBindingDataId = this.bindings.keys().next().value;
+
+    if (firstBindingDataId) {
+      this.promoteSourceDataId(firstBindingDataId);
+    }
+  }
+
+  private resolveOverlayActorUID(
+    stackInput: IStackInput,
+    image: IImage
+  ): string {
+    if (typeof stackInput.actorUID === 'string') {
+      return stackInput.actorUID;
+    }
+
+    if (typeof stackInput.representationUID === 'string') {
+      return stackInput.representationUID;
+    }
+
+    return image.imageId;
+  }
+
+  private resolveOverlayDataId(actorUID: string): string {
+    const currentBindingDataId = this.findBindingDataIdByActorUID(actorUID);
+
+    if (currentBindingDataId) {
+      return currentBindingDataId;
+    }
+
+    if (!this.getBinding(actorUID)) {
+      return actorUID;
+    }
+
+    return `overlay:${actorUID}`;
+  }
+
+  private getProjectedBindingActorEntries(role?: BindingRole): ActorEntry[] {
     const actorEntries: ActorEntry[] = [];
 
     for (const binding of this.bindings.values()) {
+      if (role && binding.role !== role) {
+        continue;
+      }
+
       const actorEntry = binding.getActorEntry?.(binding.data);
 
       if (actorEntry) {
@@ -1834,9 +1985,9 @@ class PlanarViewport extends ViewportNext<
   private getCurrentPlanarReferenceContext():
     | PlanarReferenceContext
     | undefined {
-    if (this.activeDataId) {
+    if (this.sourceDataId) {
       const activeContext = this.getPlanarReferenceContextByDataId(
-        this.activeDataId
+        this.sourceDataId
       );
 
       if (activeContext) {
@@ -2013,11 +2164,11 @@ class PlanarViewport extends ViewportNext<
   }
 
   private activatePlanarReferenceContext(dataId: string): boolean {
-    if (this.activeDataId === dataId) {
+    if (this.sourceDataId === dataId) {
       return false;
     }
 
-    this.activeDataId = dataId;
+    this.promoteSourceDataId(dataId);
     this.updateBindingsCameraState();
 
     return true;

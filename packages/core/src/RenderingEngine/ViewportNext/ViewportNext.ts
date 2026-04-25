@@ -5,6 +5,7 @@ import Events from '../../enums/Events';
 import triggerEvent from '../../utilities/triggerEvent';
 import type {
   BaseViewportRenderContext,
+  BindingRole,
   DataAddOptions,
   DataId,
   DataProvider,
@@ -98,7 +99,10 @@ abstract class ViewportNext<
    */
   async setData(dataId: DataId, options: DataAddOptions): Promise<RenderingId> {
     this.removeAllData();
-    return this.addData(dataId, options);
+    return this.addData(dataId, {
+      ...options,
+      role: 'source',
+    });
   }
 
   /**
@@ -150,14 +154,21 @@ abstract class ViewportNext<
   ): Promise<RenderingId[]> {
     const renderingIds: RenderingId[] = [];
 
-    for (const { dataId, options } of entries) {
+    for (const [index, { dataId, options }] of entries.entries()) {
       if (!options) {
         throw new Error(
           `[${this.type}] setDataList requires per-entry options when the viewport family does not override it.`
         );
       }
 
-      renderingIds.push(await this.addData(dataId, options as DataAddOptions));
+      const dataOptions = options as DataAddOptions;
+
+      renderingIds.push(
+        await this.addData(dataId, {
+          ...dataOptions,
+          role: dataOptions.role ?? (index === 0 ? 'source' : 'overlay'),
+        })
+      );
     }
 
     return renderingIds;
@@ -175,6 +186,13 @@ abstract class ViewportNext<
    */
   getDataRenderMode(dataId: DataId): string | undefined {
     return this.getBinding(dataId)?.rendering.renderMode;
+  }
+
+  /**
+   * Returns the binding role for a mounted dataset when present.
+   */
+  getDataRole(dataId: DataId): BindingRole | undefined {
+    return this.getBinding(dataId)?.role;
   }
 
   /**
@@ -406,8 +424,25 @@ abstract class ViewportNext<
       throw new Error('Viewport has been destroyed');
     }
 
+    const current = this.bindings.get(dataId);
+
+    if (current && current !== existing) {
+      current.removeData();
+    }
+
+    const role = options.role ?? 'overlay';
+
+    if (role === 'source') {
+      for (const [bindingDataId, binding] of this.bindings.entries()) {
+        if (bindingDataId !== dataId) {
+          binding.role = 'overlay';
+        }
+      }
+    }
+
     this.bindings.set(dataId, {
       data,
+      role,
       ...attachment,
     });
 

@@ -1,6 +1,7 @@
 import { getEnabledElement, utilities } from '@cornerstonejs/core';
 import { getLabelmapActorEntries } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
 import { removeVolumeLabelmapImageMapperActors } from './volumeLabelmapImageMapper';
+import { getLabelmapRepresentationPrefix } from './labelmapRepresentationUID';
 
 /**
  * Remove the labelmap segmentation representation from the viewport's HTML Element.
@@ -24,8 +25,10 @@ function removeLabelmapFromElement(
     ) ?? [];
 
   if (actorUIDs.length) {
+    const labelmapRepresentationPrefix =
+      getLabelmapRepresentationPrefix(segmentationId);
     actorUIDs.forEach((actorUID) => {
-      if (actorUID?.startsWith(`${segmentationId}-`)) {
+      if (actorUID?.startsWith(labelmapRepresentationPrefix)) {
         utilities.viewportNextDataSetMetadataProvider.remove(actorUID);
       }
     });

@@ -62,6 +62,10 @@ const dataId = 'labelmap-segmentation-tools-next:source';
 const volumeRenderMode = getBooleanUrlParam('cpu')
   ? 'cpuVolume'
   : 'vtkVolumeSlice';
+const useSliceRendering =
+  getBooleanUrlParam('useSliceRendering') ||
+  getBooleanUrlParam('sliceRendering');
+const segmentationRenderingMode = useSliceRendering ? 'slice' : 'volume';
 
 function getNextExampleBackground(): Types.Point3 {
   return getBooleanUrlParam('cpu') ? [0, 0, 0] : [0, 0.2, 0];
@@ -69,7 +73,7 @@ function getNextExampleBackground(): Types.Point3 {
 
 setTitleAndDescription(
   'Basic manual labelmap Segmentation tools',
-  'Here we demonstrate manual segmentation tools'
+  'Here we demonstrate manual segmentation tools with selectable volume and slice labelmap rendering.'
 );
 
 const size = '500px';
@@ -158,6 +162,34 @@ addDropdownToToolbar({
     toolGroup.setToolActive(name, {
       bindings: [{ mouseButton: MouseBindings.Primary }],
     });
+  },
+});
+
+addDropdownToToolbar({
+  id: 'segmentation-rendering-mode',
+  labelText: 'Segmentation Rendering',
+  options: {
+    values: ['volume', 'slice'],
+    labels: ['VTK volume slice', '2D slice rendering'],
+    defaultValue: segmentationRenderingMode,
+  },
+  onSelectedValueChange: (modeAsStringOrNumber) => {
+    const mode = String(modeAsStringOrNumber);
+
+    if (mode === segmentationRenderingMode) {
+      return;
+    }
+
+    const url = new URL(window.location.href);
+
+    if (mode === 'slice') {
+      url.searchParams.set('useSliceRendering', 'true');
+    } else {
+      url.searchParams.delete('useSliceRendering');
+      url.searchParams.delete('sliceRendering');
+    }
+
+    window.location.href = url.toString();
   },
 });
 
@@ -442,6 +474,13 @@ async function run() {
   const segmentationRepresentation = {
     segmentationId,
     type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    ...(useSliceRendering
+      ? {
+          config: {
+            useSliceRendering: true,
+          },
+        }
+      : {}),
   };
 
   await segmentation.addLabelmapRepresentationToViewportMap({

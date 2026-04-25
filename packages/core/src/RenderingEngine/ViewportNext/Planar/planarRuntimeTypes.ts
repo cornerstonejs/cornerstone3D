@@ -50,6 +50,7 @@ export type PlanarImageMapperRendering = MountedRendering<{
   currentImage: IImage;
   mapper: vtkImageMapper;
   imageData: vtkImageData;
+  useWorldCoordinateImageData?: boolean;
   currentImageIdIndex: number;
   defaultVOIRange?: VOIRange;
   dataPresentation?: PlanarDataPresentation;

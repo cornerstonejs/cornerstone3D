@@ -13,6 +13,7 @@ const video =
 const useBundledChromium =
   process.env.PLAYWRIGHT_USE_BUNDLED_CHROMIUM === 'true' ||
   process.env.PLAYWRIGHT_CHROMIUM_CHANNEL === 'bundled';
+const vitestBrowserTestIgnore = '**/vitest-browser/**';
 
 const chromiumProjectUse = {
   ...devices['Desktop Chrome'],
@@ -24,6 +25,7 @@ const chromiumProjectUse = {
 
 export default defineConfig({
   testDir: './tests',
+  testIgnore: [vitestBrowserTestIgnore],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   globalSetup: './playwright.globalSetup.ts',
@@ -57,13 +59,13 @@ export default defineConfig({
     },
     {
       name: 'chromium',
-      testIgnore: /.+@slow.+/,
+      testIgnore: [/.+@slow.+/, vitestBrowserTestIgnore],
       use: chromiumProjectUse,
     },
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'], deviceScaleFactor: 1 },
-      testIgnore: ['**/renderingPipeline.spec.ts'],
+      testIgnore: ['**/renderingPipeline.spec.ts', vitestBrowserTestIgnore],
     },
     {
       name: 'Mobile Safari',
@@ -75,6 +77,7 @@ export default defineConfig({
         isMobile: true,
       },
       testIgnore: [
+        vitestBrowserTestIgnore,
         '**/labelmapsegmentationtools.spec.ts',
         '**/splineContourSegmentationTools.spec.ts',
         '**/interpolationContourSegmentation.spec.ts',
@@ -94,6 +97,7 @@ export default defineConfig({
         isMobile: true,
       },
       testIgnore: [
+        vitestBrowserTestIgnore,
         '**/labelmapsegmentationtools.spec.ts',
         '**/splineContourSegmentationTools.spec.ts',
         '**/interpolationContourSegmentation.spec.ts',

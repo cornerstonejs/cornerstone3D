@@ -495,9 +495,21 @@ class PlanarLegacyCompatibilityController {
           ? ActorRenderMode.CPU_VOLUME
           : ActorRenderMode.VTK_VOLUME_SLICE,
       };
+      const existingSourceDataId = this.host.getActiveDataId();
 
       await this.host.setDataList(
-        dataIds.map((dataId) => ({ dataId, options: sharedOptions }))
+        dataIds.map((dataId, index) => {
+          const shouldMountAsSource =
+            index === 0 && (replaceExisting || !existingSourceDataId);
+
+          return {
+            dataId,
+            options: {
+              ...sharedOptions,
+              role: shouldMountAsSource ? 'source' : 'overlay',
+            },
+          };
+        })
       );
 
       volumeInputArray.forEach((volumeInput, index) => {

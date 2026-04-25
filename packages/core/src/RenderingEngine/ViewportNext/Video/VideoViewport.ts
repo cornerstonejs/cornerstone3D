@@ -96,9 +96,10 @@ class VideoViewport extends ViewportNext<
   async setDataList(entries: Array<{ dataId: string }>): Promise<string[]> {
     const renderingIds: string[] = [];
 
-    for (const { dataId } of entries) {
+    for (const [index, { dataId }] of entries.entries()) {
       const renderingId = await this.addData(dataId, {
         renderMode: 'video2d',
+        role: index === 0 ? 'source' : 'overlay',
       });
       const binding = this.getBinding(dataId);
 

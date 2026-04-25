@@ -17,6 +17,7 @@ import type { InterpolationType } from '../../../enums';
 import type {
   BaseViewportRenderContext,
   BasePresentationProps,
+  BindingRole,
   DataProvider,
   LoadedData,
   MountedRendering,
@@ -37,6 +38,7 @@ export interface Volume3DRegisteredDataSet {
 
 export interface Volume3DSetDataOptions {
   renderMode?: Volume3DRequestedRenderMode;
+  role?: BindingRole;
 }
 
 export interface Volume3DVolumePayload {

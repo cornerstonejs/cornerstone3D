@@ -9,6 +9,8 @@ test.beforeEach(async ({ page }) => {
   await visitExample(page, 'stackAPI');
 });
 
+test.describe.configure({ mode: 'serial' });
+
 test.describe('Stack Viewport API', async () => {
   test('should set VOI range correctly -- @debug', async ({ page }) => {
     await page.getByRole('button', { name: 'Set VOI Range' }).click();

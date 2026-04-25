@@ -59,10 +59,12 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
         imageIds,
         initialImageIdIndex: clampedImageIdIndex,
         acquisitionOrientation: options.acquisitionOrientation,
+        imageData: dataSet.imageData,
         imageVolume,
         referencedId: dataSet.referencedId,
         renderMode: options.renderMode,
         representationUID: dataSet.representationUID,
+        useWorldCoordinateImageData: dataSet.useWorldCoordinateImageData,
         volumeId,
       };
     }
@@ -79,11 +81,13 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
       actorUID: dataSet.actorUID,
       imageIds: dataSet.imageIds,
       image,
+      imageData: dataSet.imageData,
       initialImageIdIndex: clampedImageIdIndex,
       acquisitionOrientation: options.acquisitionOrientation,
       referencedId: dataSet.referencedId,
       renderMode: options.renderMode,
       representationUID: dataSet.representationUID,
+      useWorldCoordinateImageData: dataSet.useWorldCoordinateImageData,
       volumeId: options.volumeId,
     };
   }

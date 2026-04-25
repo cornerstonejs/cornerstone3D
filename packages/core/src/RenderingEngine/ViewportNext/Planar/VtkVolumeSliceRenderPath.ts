@@ -50,6 +50,9 @@ export class VtkVolumeSliceRenderPath
   ): Promise<RenderPathAttachment<PlanarDataPresentation>> {
     const payload: PlanarPayload = data as unknown as LoadedData<PlanarPayload>;
     const imageVolume = payload.imageVolume;
+    const shouldInvalidateFullTextureOnVolumeModified =
+      options.role === 'overlay' &&
+      typeof payload.representationUID === 'string';
 
     if (!imageVolume) {
       throw new Error(
@@ -90,7 +93,15 @@ export class VtkVolumeSliceRenderPath
       dataPresentation: undefined,
       removeStreamingSubscriptions: subscribeToVolumeEvents(
         payload.volumeId,
-        () => {
+        (eventType) => {
+          if (eventType === Events.IMAGE_VOLUME_MODIFIED) {
+            if (shouldInvalidateFullTextureOnVolumeModified) {
+              imageVolume.vtkOpenGLTexture?.modified?.();
+            }
+
+            mapper.modified();
+          }
+
           ctx.display.requestRender();
         }
       ),
@@ -374,7 +385,11 @@ export class VtkVolumeSlicePath
 
 function subscribeToVolumeEvents(
   volumeId: string,
-  onProgress: () => void
+  onProgress: (
+    eventType:
+      | Events.IMAGE_VOLUME_MODIFIED
+      | Events.IMAGE_VOLUME_LOADING_COMPLETED
+  ) => void
 ): () => void {
   const handleProgress = (evt: Event) => {
     const detail = (evt as CustomEvent<{ volumeId?: string }>).detail;
@@ -383,7 +398,11 @@ function subscribeToVolumeEvents(
       return;
     }
 
-    onProgress();
+    onProgress(
+      evt.type as
+        | Events.IMAGE_VOLUME_MODIFIED
+        | Events.IMAGE_VOLUME_LOADING_COMPLETED
+    );
   };
 
   eventTarget.addEventListener(Events.IMAGE_VOLUME_MODIFIED, handleProgress);

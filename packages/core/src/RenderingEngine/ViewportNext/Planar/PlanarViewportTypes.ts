@@ -1,4 +1,5 @@
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
+import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type {
   BlendModes,
   InterpolationType,
@@ -23,6 +24,7 @@ import type {
 import type {
   BaseViewportRenderContext,
   BasePresentationProps,
+  BindingRole,
   DataProvider,
   LoadedData,
   RenderPathResolver,
@@ -62,6 +64,8 @@ export interface PlanarRegisteredDataSet {
   initialImageIdIndex?: number;
   volumeId?: string;
   image?: IImage;
+  imageData?: vtkImageData;
+  useWorldCoordinateImageData?: boolean;
   actorUID?: string;
   referencedId?: string;
   representationUID?: string;
@@ -74,6 +78,7 @@ export interface PlanarSetDataOptions {
     volume?: number;
   };
   renderMode?: PlanarRequestedRenderMode;
+  role?: BindingRole;
 }
 
 export interface PlanarDataLoadOptions {
@@ -91,6 +96,8 @@ export interface PlanarPayload {
   acquisitionOrientation?: PlanarCamera['orientation'];
   imageVolume?: IImageVolume;
   image?: IImage;
+  imageData?: vtkImageData;
+  useWorldCoordinateImageData?: boolean;
   actorUID?: string;
   referencedId?: string;
   representationUID?: string;

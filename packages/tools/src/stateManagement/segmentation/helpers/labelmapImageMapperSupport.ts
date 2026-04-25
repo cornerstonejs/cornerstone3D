@@ -6,7 +6,7 @@ import {
 } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 import type { Segmentation } from '../../../types/SegmentationStateTypes';
-import { getLabelmaps } from './labelmapSegmentationState';
+import { getLabelmaps } from '../labelmapModel/labelmapLayerStore';
 
 const DIRECTION_ALIGNMENT_TOLERANCE = 0.999;
 const MINIMUM_SLAB_THICKNESS = 0.1;
@@ -21,6 +21,10 @@ export type VolumeViewportLabelmapImageMapperState = {
 
 type ViewportLabelmapImageMapperCompatibilityViewport = Types.IViewport & {
   getCurrentImageIdIndex?: () => number;
+  getDataRenderMode?: (
+    dataId: string
+  ) => Types.ActorRenderMode | string | undefined;
+  getDataRole?: (dataId: string) => 'source' | 'overlay' | undefined;
   getDataPresentation?: (dataId: string) => {
     blendMode?: Enums.BlendModes;
     slabThickness?: number;
@@ -45,6 +49,7 @@ type ViewportLabelmapImageMapperCompatibilityViewport = Types.IViewport & {
   getSliceViewInfo?: () => {
     sliceIndex: number;
   };
+  getSourceDataId?: () => string | undefined;
   getVolumeId?: () => string | undefined;
   type?: string;
 };
@@ -68,14 +73,26 @@ function isPlanarGpuVolumeSliceViewport(
     return false;
   }
 
-  if (!compatibilityViewport.getVolumeId?.()) {
-    return false;
+  return (
+    getPlanarPrimaryRenderMode(compatibilityViewport) ===
+    ActorRenderMode.VTK_VOLUME_SLICE
+  );
+}
+
+function getPlanarPrimaryRenderMode(
+  viewport: ViewportLabelmapImageMapperCompatibilityViewport
+): Types.ActorRenderMode | string | undefined {
+  const primaryDataId = getPlanarPrimaryDataId(viewport);
+
+  if (primaryDataId) {
+    const renderMode = viewport.getDataRenderMode?.(primaryDataId);
+
+    if (renderMode) {
+      return renderMode;
+    }
   }
 
-  const defaultActor = compatibilityViewport.getDefaultActor?.();
-  const renderMode = defaultActor?.actorMapper?.renderMode;
-
-  return renderMode === ActorRenderMode.VTK_VOLUME_SLICE;
+  return viewport.getDefaultActor?.()?.actorMapper?.renderMode;
 }
 
 function getPlanarVolumeSliceMapper(
@@ -95,6 +112,12 @@ function getPlanarVolumeSliceMapper(
 function getPlanarPrimaryDataId(
   viewport: ViewportLabelmapImageMapperCompatibilityViewport
 ): string | undefined {
+  const sourceDataId = viewport.getSourceDataId?.();
+
+  if (sourceDataId) {
+    return sourceDataId;
+  }
+
   const renderModes = (
     viewport as Types.IViewport & {
       _debug?: {
@@ -107,9 +130,16 @@ function getPlanarPrimaryDataId(
     return;
   }
 
-  return Object.entries(renderModes).find(
-    ([, renderMode]) => renderMode === ActorRenderMode.VTK_VOLUME_SLICE
-  )?.[0];
+  return (
+    Object.entries(renderModes).find(
+      ([dataId, renderMode]) =>
+        viewport.getDataRole?.(dataId) === 'source' &&
+        renderMode === ActorRenderMode.VTK_VOLUME_SLICE
+    )?.[0] ??
+    Object.entries(renderModes).find(
+      ([, renderMode]) => renderMode === ActorRenderMode.VTK_VOLUME_SLICE
+    )?.[0]
+  );
 }
 
 function getPlanarVolumeDataPresentation(
@@ -223,8 +253,6 @@ export function shouldUseSliceRendering(
 export function canRenderVolumeViewportLabelmapAsImage(
   viewport: Types.IViewport
 ): viewport is ViewportLabelmapImageMapperCompatibilityViewport {
-  const compatibilityViewport =
-    viewport as ViewportLabelmapImageMapperCompatibilityViewport;
   const isLegacyVolumeViewport = viewport instanceof VolumeViewport;
   const isNextPlanarViewport = isPlanarGpuVolumeSliceViewport(viewport);
 
@@ -330,7 +358,7 @@ export function getVolumeViewportLabelmapImageMapperState(
 
   if (
     isNextPlanarViewport &&
-    compatibilityViewport.getDefaultActor?.()?.actorMapper?.renderMode !==
+    getPlanarPrimaryRenderMode(compatibilityViewport) !==
       ActorRenderMode.VTK_VOLUME_SLICE
   ) {
     return {

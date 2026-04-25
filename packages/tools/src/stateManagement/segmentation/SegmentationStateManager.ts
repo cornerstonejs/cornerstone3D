@@ -1,6 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
 import {
-  cache,
   utilities as csUtils,
   getEnabledElementByViewportId,
   volumeLoader,
@@ -33,12 +32,9 @@ import { segmentationStyle } from './SegmentationStyle';
 import { triggerSegmentationAdded } from './events/triggerSegmentationAdded';
 import {
   ensureLabelmapState,
-  getLabelmaps,
-  getReferencedImageIdToCurrentImageIdMap,
-  getSegmentBinding,
-  getLabelmapForSegment,
+  LabelmapImageReferenceResolver,
   syncLegacyLabelmapData,
-} from './helpers/labelmapSegmentationState';
+} from './labelmapModel';
 
 const initialDefaultState: SegmentationState = {
   colorLUT: [],
@@ -55,21 +51,7 @@ const initialDefaultState: SegmentationState = {
 export default class SegmentationStateManager {
   private state: Readonly<SegmentationState>;
   public readonly uid: string;
-
-  /**
-   * A map between segmentationIds and within each segmentation, another
-   * map between imageIds and labelmap imageIds.
-   */
-  private _stackLabelmapImageIdReferenceMap = new Map<
-    string,
-    Map<string, string>
-  >();
-
-  /**
-   * A map of segmentationId-imageId to the labelmapImageIds that supports segment overlapping
-   * meaning that it supports a list of labelmapImageIds for each segmentationId-imageId pair
-   */
-  private _labelmapImageIdReferenceMap = new Map<string, string[]>();
+  private readonly labelmapImageReferenceResolver: LabelmapImageReferenceResolver;
 
   /**
    * Creates an instance of SegmentationStateManager.
@@ -81,6 +63,9 @@ export default class SegmentationStateManager {
       csUtils.deepClone(initialDefaultState) as SegmentationState
     );
     this.uid = uid;
+    this.labelmapImageReferenceResolver = new LabelmapImageReferenceResolver(
+      this.getSegmentation.bind(this)
+    );
   }
 
   /**
@@ -118,8 +103,7 @@ export default class SegmentationStateManager {
    * Resets the state to the default state.
    */
   resetState(): void {
-    this._stackLabelmapImageIdReferenceMap.clear();
-    this._labelmapImageIdReferenceMap.clear();
+    this.labelmapImageReferenceResolver.reset();
     this.state = Object.freeze(
       csUtils.deepClone(initialDefaultState) as SegmentationState
     );
@@ -460,136 +444,15 @@ export default class SegmentationStateManager {
   }
 
   /**
-   * Helper function to update labelmap segmentation image references.
-   * @param {string} segmentationId - The ID of the segmentation representation.
-   * @param {Types.IViewport} viewport - The viewport.
-   * @param {string[]} labelmapImageIds - The labelmap image IDs.
-   * @param {Function} updateCallback - A callback to update the reference map.
-   * @returns {string | undefined} The labelmap imageId reference for the current imageId rendered on the viewport.
-   */
-  _updateLabelmapSegmentationReferences(
-    segmentationId,
-    viewport,
-    labelmapImageIds,
-    updateCallback
-  ): string | undefined {
-    const referenceImageId = viewport.getCurrentImageId();
-
-    let viewableLabelmapImageIdFound = false;
-    for (const labelmapImageId of labelmapImageIds) {
-      const viewableImageId = viewport.isReferenceViewable(
-        { referencedImageId: labelmapImageId },
-        { asOverlay: true }
-      );
-
-      if (viewableImageId) {
-        viewableLabelmapImageIdFound = true;
-        this._stackLabelmapImageIdReferenceMap
-          .get(segmentationId)
-          .set(referenceImageId, labelmapImageId);
-        this._updateLabelmapImageIdReferenceMap({
-          segmentationId,
-          referenceImageId,
-          labelmapImageId,
-        });
-      }
-    }
-
-    if (updateCallback) {
-      updateCallback(viewport, segmentationId, labelmapImageIds);
-    }
-
-    return viewableLabelmapImageIdFound
-      ? this._stackLabelmapImageIdReferenceMap
-          .get(segmentationId)
-          .get(referenceImageId)
-      : undefined;
-  }
-
-  /**
    * Updates the segmentation image references for a given viewport and segmentation representation.
    * @param {string} viewportId - The ID of the viewport.
    * @param {string} segmentationId - The Id of the segmentation representation.
    * @returns {string | undefined} The labelmap imageId reference for the current imageId rendered on the viewport.
    */
   updateLabelmapSegmentationImageReferences(viewportId, segmentationId) {
-    const segmentation = this.getSegmentation(segmentationId);
-    if (!segmentation) {
-      return;
-    }
-
-    if (!this._stackLabelmapImageIdReferenceMap.has(segmentationId)) {
-      this._stackLabelmapImageIdReferenceMap.set(segmentationId, new Map());
-    }
-
-    const { representationData } = segmentation;
-    if (!representationData.Labelmap) {
-      return;
-    }
-
-    const labelmapImageIds = this.getLabelmapImageIds(representationData);
-    const enabledElement = getEnabledElementByViewportId(viewportId);
-    const stackViewport = enabledElement.viewport as Types.IStackViewport;
-
-    return this._updateLabelmapSegmentationReferences(
-      segmentationId,
-      stackViewport,
-      labelmapImageIds,
-      null
-    );
-  }
-
-  /**
-   * Updates all segmentation image references for a given viewport and segmentation representation.
-   * @param {string} viewportId - The ID of the viewport.
-   * @param {string} segmentationId - The Id of the segmentation representation.
-   * @returns {string | undefined} The labelmap imageId reference for the current imageId rendered on the viewport.
-   */
-  _updateAllLabelmapSegmentationImageReferences(viewportId, segmentationId) {
-    const segmentation = this.getSegmentation(segmentationId);
-    if (!segmentation) {
-      return;
-    }
-
-    if (!this._stackLabelmapImageIdReferenceMap.has(segmentationId)) {
-      this._stackLabelmapImageIdReferenceMap.set(segmentationId, new Map());
-    }
-
-    const { representationData } = segmentation;
-    if (!representationData.Labelmap) {
-      return;
-    }
-
-    const labelmapImageIds = this.getLabelmapImageIds(representationData);
-    const enabledElement = getEnabledElementByViewportId(viewportId);
-    const stackViewport = enabledElement.viewport as Types.IStackViewport;
-
-    this._updateLabelmapSegmentationReferences(
-      segmentationId,
-      stackViewport,
-      labelmapImageIds,
-      (stackViewport, segmentationId, labelmapImageIds) => {
-        const imageIds = stackViewport.getImageIds();
-        imageIds.forEach((referenceImageId, index) => {
-          for (const labelmapImageId of labelmapImageIds) {
-            const viewableImageId = stackViewport.isReferenceViewable(
-              { referencedImageId: labelmapImageId, sliceIndex: index },
-              { asOverlay: true, withNavigation: true }
-            );
-
-            if (viewableImageId) {
-              this._stackLabelmapImageIdReferenceMap
-                .get(segmentationId)
-                .set(referenceImageId, labelmapImageId);
-              this._updateLabelmapImageIdReferenceMap({
-                segmentationId,
-                referenceImageId,
-                labelmapImageId,
-              });
-            }
-          }
-        });
-      }
+    return this.labelmapImageReferenceResolver.updateLabelmapSegmentationImageReferences(
+      viewportId,
+      segmentationId
     );
   }
 
@@ -599,47 +462,16 @@ export default class SegmentationStateManager {
    * @returns {string[]} An array of labelmap image IDs.
    */
   public getLabelmapImageIds(representationData: RepresentationsData) {
-    const labelmapData = representationData.Labelmap;
-    let labelmapImageIds;
-
-    if (labelmapData?.labelmaps) {
-      return Array.from(
-        new Set(
-          Object.values(labelmapData.labelmaps)
-            .flatMap((layer) => layer.imageIds ?? [])
-            .filter(Boolean)
-        )
-      );
-    }
-
-    if ((labelmapData as LabelmapSegmentationDataStack).imageIds) {
-      labelmapImageIds = (labelmapData as LabelmapSegmentationDataStack)
-        .imageIds;
-    } else if (
-      !labelmapImageIds &&
-      (labelmapData as LabelmapSegmentationDataVolume).volumeId
-    ) {
-      // means we are dealing with a volume labelmap that is requested
-      // to be rendered on a stack viewport, since we have moved to creating
-      // associated imageIds and views for volume we can simply use the
-      // volume.imageIds for this
-      const volumeId = (labelmapData as LabelmapSegmentationDataVolume)
-        .volumeId;
-
-      const volume = cache.getVolume(volumeId) as Types.IImageVolume;
-      labelmapImageIds = volume.imageIds;
-    }
-    return labelmapImageIds;
+    return this.labelmapImageReferenceResolver.getLabelmapImageIds(
+      representationData
+    );
   }
 
   getLabelmapImageIdsForImageId(imageId: string, segmentationId: string) {
-    const segmentation = this.getSegmentation(segmentationId);
-    if (!segmentation?.representationData?.Labelmap) {
-      return;
-    }
-
-    ensureLabelmapState(segmentation);
-    return getReferencedImageIdToCurrentImageIdMap(segmentation).get(imageId);
+    return this.labelmapImageReferenceResolver.getLabelmapImageIdsForImageId(
+      imageId,
+      segmentationId
+    );
   }
 
   /**
@@ -653,91 +485,10 @@ export default class SegmentationStateManager {
     viewportId: string,
     segmentationId: string
   ): string[] | undefined {
-    const enabledElement = getEnabledElementByViewportId(viewportId);
-
-    if (!enabledElement) {
-      return;
-    }
-
-    const { viewport } = enabledElement;
-    const viewportRenderMode = getViewportLabelmapRenderMode(viewport);
-
-    if (
-      viewportRenderMode !== 'image' ||
-      typeof (viewport as Types.IStackViewport).getCurrentImageId !== 'function'
-    ) {
-      return;
-    }
-
-    const referenceImageId = (
-      viewport as Types.IStackViewport
-    ).getCurrentImageId();
-    const segmentation = this.getSegmentation(segmentationId);
-    if (!segmentation) {
-      return;
-    }
-
-    ensureLabelmapState(segmentation);
-
-    const viewportImageIds = (viewport as Types.IStackViewport).getImageIds();
-    const currentIndex = viewportImageIds.indexOf(referenceImageId);
-    const labelmapImageIds: string[] = [];
-
-    getLabelmaps(segmentation).forEach((layer) => {
-      const referencedImageIds =
-        layer.referencedImageIds ?? viewportImageIds ?? [];
-      const referencedIndex = referencedImageIds.indexOf(referenceImageId);
-
-      if (referencedIndex !== -1 && layer.imageIds?.[referencedIndex]) {
-        labelmapImageIds.push(layer.imageIds[referencedIndex]);
-        return;
-      }
-
-      if (currentIndex !== -1 && layer.imageIds?.[currentIndex]) {
-        labelmapImageIds.push(layer.imageIds[currentIndex]);
-        return;
-      }
-
-      layer.imageIds?.some((candidateImageId) => {
-        const viewableImageId = (
-          viewport as Types.IStackViewport
-        ).isReferenceViewable(
-          { referencedImageId: candidateImageId },
-          { asOverlay: true }
-        );
-
-        if (viewableImageId) {
-          labelmapImageIds.push(candidateImageId);
-        }
-
-        return !!viewableImageId;
-      });
-    });
-
-    const resolvedImageIds = Array.from(new Set(labelmapImageIds));
-    const key = this._generateMapKey({
-      segmentationId,
-      referenceImageId,
-    });
-    this._labelmapImageIdReferenceMap.set(key, resolvedImageIds);
-
-    if (!this._stackLabelmapImageIdReferenceMap.has(segmentationId)) {
-      this._stackLabelmapImageIdReferenceMap.set(segmentationId, new Map());
-    }
-
-    const activeSegmentIndex = Object.keys(segmentation.segments).find(
-      (segmentIndex) => segmentation.segments[segmentIndex].active
+    return this.labelmapImageReferenceResolver.getCurrentLabelmapImageIdsForViewport(
+      viewportId,
+      segmentationId
     );
-    const activeImageId = activeSegmentIndex
-      ? getLabelmapForSegment(segmentation, Number(activeSegmentIndex))
-          ?.imageIds?.[currentIndex]
-      : undefined;
-
-    this._stackLabelmapImageIdReferenceMap
-      .get(segmentationId)
-      .set(referenceImageId, activeImageId ?? resolvedImageIds[0]);
-
-    return resolvedImageIds;
   }
 
   /**
@@ -751,49 +502,10 @@ export default class SegmentationStateManager {
     viewportId: string,
     segmentationId: string
   ): string | undefined {
-    const enabledElement = getEnabledElementByViewportId(viewportId);
-
-    if (!enabledElement) {
-      return;
-    }
-
-    const { viewport } = enabledElement;
-    const viewportRenderMode = getViewportLabelmapRenderMode(viewport);
-
-    if (
-      viewportRenderMode !== 'image' ||
-      typeof (viewport as Types.IStackViewport).getCurrentImageId !== 'function'
-    ) {
-      return;
-    }
-
-    const currentImageId = (
-      viewport as Types.IStackViewport
-    ).getCurrentImageId();
-    const currentImageIds = this.getCurrentLabelmapImageIdsForViewport(
+    return this.labelmapImageReferenceResolver.getCurrentLabelmapImageIdForViewport(
       viewportId,
       segmentationId
     );
-    if (!currentImageIds?.length) {
-      return;
-    }
-
-    const segmentation = this.getSegmentation(segmentationId);
-    const currentIndex = (viewport as Types.IStackViewport)
-      .getImageIds()
-      .indexOf(currentImageId);
-    const activeSegmentIndex = segmentation
-      ? Object.keys(segmentation.segments).find(
-          (segmentIndex) => segmentation.segments[segmentIndex].active
-        )
-      : undefined;
-    const activeImageId =
-      segmentation && activeSegmentIndex
-        ? getLabelmapForSegment(segmentation, Number(activeSegmentIndex))
-            ?.imageIds?.[currentIndex]
-        : undefined;
-
-    return activeImageId ?? currentImageIds[0];
   }
 
   /**
@@ -807,21 +519,10 @@ export default class SegmentationStateManager {
     viewportId: string,
     segmentationId: string
   ): string[] {
-    const segmentation = this.getSegmentation(segmentationId);
-
-    if (!segmentation) {
-      return [];
-    }
-
-    this._updateAllLabelmapSegmentationImageReferences(
+    return this.labelmapImageReferenceResolver.getStackSegmentationImageIdsForViewport(
       viewportId,
       segmentationId
     );
-    const { viewport } = getEnabledElementByViewportId(viewportId);
-    const imageIds = viewport.getImageIds();
-    const imageIdMap = getReferencedImageIdToCurrentImageIdMap(segmentation);
-
-    return imageIds.flatMap((imageId) => imageIdMap.get(imageId) ?? []);
   }
 
   private removeSegmentationRepresentationsInternal(
@@ -989,29 +690,6 @@ export default class SegmentationStateManager {
     return removedRepresentations;
   }
 
-  /**
-   * Updates the _labelmapImageIdReferenceMap according to the correct key and preserving old values
-   * @param segmentationId
-   * @param referenceImageId
-   * @param labelmapImageId
-   */
-  _updateLabelmapImageIdReferenceMap({
-    segmentationId,
-    referenceImageId,
-    labelmapImageId,
-  }) {
-    const key = this._generateMapKey({ segmentationId, referenceImageId });
-
-    if (!this._labelmapImageIdReferenceMap.has(key)) {
-      this._labelmapImageIdReferenceMap.set(key, [labelmapImageId]);
-      return;
-    }
-
-    const currentValues = this._labelmapImageIdReferenceMap.get(key);
-    const newValues = Array.from(new Set([...currentValues, labelmapImageId]));
-    this._labelmapImageIdReferenceMap.set(key, newValues);
-  }
-
   _setActiveSegmentation(
     state: SegmentationState,
     viewportId: string,
@@ -1173,9 +851,12 @@ export default class SegmentationStateManager {
     visible: boolean
   ): void {
     this.updateState((state) => {
-      const viewportRepresentations = this.getSegmentationRepresentations(
-        viewportId,
-        specifier
+      const viewportRepresentations = state.viewportSegRepresentations[
+        viewportId
+      ]?.filter(
+        (representation) =>
+          representation.segmentationId === specifier.segmentationId &&
+          representation.type === specifier.type
       );
 
       if (!viewportRepresentations) {
@@ -1185,11 +866,9 @@ export default class SegmentationStateManager {
       viewportRepresentations.forEach((representation) => {
         representation.visible = visible;
 
-        Object.entries(representation.segments).forEach(
-          ([segmentIndex, segment]) => {
-            segment.visible = visible;
-          }
-        );
+        Object.values(representation.segments).forEach((segment) => {
+          segment.visible = visible;
+        });
       });
     });
 
@@ -1278,15 +957,6 @@ export default class SegmentationStateManager {
     );
 
     return result;
-  }
-
-  /**
-   * Generates a key for the _labelmapImageIdReferenceMap
-   * @param segmentationId - The ID of the segmentation
-   * @param referenceImageId - The reference image ID - this is the imageId that is currently being displayed in the viewport (not the derived imageId)
-   */
-  private _generateMapKey({ segmentationId, referenceImageId }) {
-    return `${segmentationId}-${referenceImageId}`;
   }
 }
 

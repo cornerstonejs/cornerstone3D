@@ -146,7 +146,7 @@ export class CpuImageSliceRenderPath
         return this.getImageData(rendering);
       },
       render: () => {
-        this.render(ctx, rendering);
+        this.render(ctx, rendering, data.id);
       },
       resize: () => {
         this.resize(ctx, rendering, data.id);
@@ -324,8 +324,13 @@ export class CpuImageSliceRenderPath
 
   private render(
     ctx: PlanarCpuImageAdapterContext,
-    rendering: PlanarCpuImageRendering
+    rendering: PlanarCpuImageRendering,
+    dataId: string
   ): void {
+    if (!ctx.viewport.isCurrentDataId(dataId)) {
+      return;
+    }
+
     renderCPUImage(rendering);
     renderCompatibilityOverlayActors(ctx);
     triggerEvent(ctx.viewport.element, Events.IMAGE_RENDERED, {

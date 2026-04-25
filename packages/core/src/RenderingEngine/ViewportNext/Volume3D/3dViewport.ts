@@ -143,8 +143,13 @@ class VolumeViewport3DV2 extends ViewportNext<
   ): Promise<string[]> {
     const renderingIds: string[] = [];
 
-    for (const { dataId, options = {} } of entries) {
-      renderingIds.push(await this.addData(dataId, options));
+    for (const [index, { dataId, options = {} }] of entries.entries()) {
+      renderingIds.push(
+        await this.addData(dataId, {
+          ...options,
+          role: options.role ?? (index === 0 ? 'source' : 'overlay'),
+        })
+      );
     }
 
     return renderingIds;
@@ -161,15 +166,14 @@ class VolumeViewport3DV2 extends ViewportNext<
     dataId: string,
     options: Volume3DSetDataOptions | DataAddOptions = {}
   ): Promise<string> {
-    const renderMode = this.resolveRenderMode(
-      dataId,
-      (options as Volume3DSetDataOptions).renderMode
-    );
+    const volumeOptions = options as Volume3DSetDataOptions;
+    const renderMode = this.resolveRenderMode(dataId, volumeOptions.renderMode);
     const renderingId = await super.addData(dataId, {
       renderMode,
+      role: volumeOptions.role,
     });
 
-    if (renderMode === 'vtkVolume3d') {
+    if (renderMode === 'vtkVolume3d' && volumeOptions.role === 'source') {
       this.primaryDataId = dataId;
     }
 
@@ -190,7 +194,10 @@ class VolumeViewport3DV2 extends ViewportNext<
     options: Volume3DSetDataOptions | DataAddOptions = {}
   ): Promise<string> {
     this.removeAllData();
-    return this.addData(dataId, options);
+    return this.addData(dataId, {
+      ...options,
+      role: 'source',
+    });
   }
 
   /**

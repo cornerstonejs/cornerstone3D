@@ -109,9 +109,10 @@ export default class WSIViewport extends ViewportNext<
   async setDataList(entries: Array<{ dataId: string }>): Promise<string[]> {
     const renderingIds: string[] = [];
 
-    for (const { dataId } of entries) {
+    for (const [index, { dataId }] of entries.entries()) {
       const renderingId = await this.addData(dataId, {
         renderMode: 'wsi2d',
+        role: index === 0 ? 'source' : 'overlay',
       });
 
       this.setDefaultDataPresentation(dataId, {
