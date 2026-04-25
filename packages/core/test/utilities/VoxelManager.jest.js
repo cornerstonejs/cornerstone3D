@@ -115,7 +115,6 @@ describe('VoxelManager', () => {
     });
     for (let y = 0; y < customDimensions[1]; y++) {
       for (let z = 0; z < customDimensions[2]; z++) {
-        console.log(sliceIndex0, y, z, sliceData0[y + z * customDimensions[1]]);
         expect(sliceData0[y + z * customDimensions[1]]).toBe(
           sliceIndex0 * 100 + y * 10 + z
         );
