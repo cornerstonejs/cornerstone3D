@@ -88,6 +88,69 @@ describe('VoxelManager', () => {
     expect(sliceData[ijkPoint[0] + ijkPoint[1] * dimensions[0]]).toBe(255);
   });
 
+  it('getSliceData for slicePlane 0, 1, 2', () => {
+    const customDimensions = [3, 4, 5];
+    const scalarData = new Uint16Array(
+      customDimensions[0] * customDimensions[1] * customDimensions[2]
+    );
+    const map = VoxelManager.createScalarVolumeVoxelManager({
+      dimensions: customDimensions,
+      scalarData,
+    });
+
+    // Fill the entire volume with unique values
+    for (let x = 0; x < customDimensions[0]; x++) {
+      for (let y = 0; y < customDimensions[1]; y++) {
+        for (let z = 0; z < customDimensions[2]; z++) {
+          map.setAtIJKPoint([x, y, z], x * 100 + y * 10 + z);
+        }
+      }
+    }
+
+    // Test slicePlane 0 (YZ plane) at x = 1
+    const sliceIndex0 = 1;
+    const sliceData0 = map.getSliceData({
+      sliceIndex: sliceIndex0,
+      slicePlane: 0,
+    });
+    for (let y = 0; y < customDimensions[1]; y++) {
+      for (let z = 0; z < customDimensions[2]; z++) {
+        console.log(sliceIndex0, y, z, sliceData0[y + z * customDimensions[1]]);
+        expect(sliceData0[y + z * customDimensions[1]]).toBe(
+          sliceIndex0 * 100 + y * 10 + z
+        );
+      }
+    }
+
+    // Test slicePlane 1 (XZ plane) at y = 2
+    const sliceIndex1 = 2;
+    const sliceData1 = map.getSliceData({
+      sliceIndex: sliceIndex1,
+      slicePlane: 1,
+    });
+    for (let x = 0; x < customDimensions[0]; x++) {
+      for (let z = 0; z < customDimensions[2]; z++) {
+        expect(sliceData1[x + z * customDimensions[0]]).toBe(
+          x * 100 + sliceIndex1 * 10 + z
+        );
+      }
+    }
+
+    // Test slicePlane 2 (XY plane) at z = 3
+    const sliceIndex2 = 3;
+    const sliceData2 = map.getSliceData({
+      sliceIndex: sliceIndex2,
+      slicePlane: 2,
+    });
+    for (let x = 0; x < customDimensions[0]; x++) {
+      for (let y = 0; y < customDimensions[1]; y++) {
+        expect(sliceData2[x + y * customDimensions[0]]).toBe(
+          x * 100 + y * 10 + sliceIndex2
+        );
+      }
+    }
+  });
+
   // @bill - fix this please
   xit('createImageVolumeVoxelManager', () => {
     const imageIds = ['image1', 'image2', 'image3', 'image4'];
