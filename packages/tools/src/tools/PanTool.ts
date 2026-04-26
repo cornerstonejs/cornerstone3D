@@ -133,7 +133,7 @@ class PanTool extends BaseTool {
       deltaPointsWorld[2] = 0;
     }
     const viewport = enabledElement.viewport;
-    const camera = viewport.getCamera();
+    const camera = getLegacyCamera(viewport);
 
     if (!hasLegacyCameraPosition(camera)) {
       if (!viewportHasPan(viewport)) {
@@ -176,6 +176,14 @@ class PanTool extends BaseTool {
     });
     viewport.render();
   }
+}
+
+function getLegacyCamera(viewport: unknown): unknown {
+  const maybeViewport = viewport as { getCamera?: () => unknown };
+
+  return typeof maybeViewport.getCamera === 'function'
+    ? maybeViewport.getCamera()
+    : undefined;
 }
 
 function hasLegacyCameraPosition(

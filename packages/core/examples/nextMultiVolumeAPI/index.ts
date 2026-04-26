@@ -190,13 +190,15 @@ addDropdownToToolbar({
         viewport.setOrientation(Enums.OrientationAxis.CORONAL);
         break;
       case orientationOptions.oblique:
-        viewport.setCamera({
-          viewUp: [
-            -0.5962687530844388, 0.5453181550345819, -0.5891448751239446,
-          ],
-          viewPlaneNormal: [
-            -0.5962687530844388, 0.5453181550345819, -0.5891448751239446,
-          ],
+        viewport.setViewState({
+          orientation: {
+            viewUp: [
+              -0.5962687530844388, 0.5453181550345819, -0.5891448751239446,
+            ],
+            viewPlaneNormal: [
+              -0.5962687530844388, 0.5453181550345819, -0.5891448751239446,
+            ],
+          },
         });
         viewport.resetCamera();
         break;

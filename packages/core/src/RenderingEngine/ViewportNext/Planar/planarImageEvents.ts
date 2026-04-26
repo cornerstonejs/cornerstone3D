@@ -1,7 +1,7 @@
 import { Events, OrientationAxis } from '../../../enums';
 import triggerEvent from '../../../utilities/triggerEvent';
 import type { IImage } from '../../../types';
-import type { PlanarCamera } from './PlanarViewportTypes';
+import type { PlanarViewState } from './PlanarViewportTypes';
 
 interface PlanarImageEventContext {
   viewportId: string;
@@ -31,8 +31,8 @@ export function triggerPlanarNewImage(
 export function triggerPlanarVolumeNewImage(
   ctx: PlanarImageEventContext,
   params: {
-    camera: PlanarCamera | undefined;
-    acquisitionOrientation?: PlanarCamera['orientation'];
+    camera: PlanarViewState | undefined;
+    acquisitionOrientation?: PlanarViewState['orientation'];
     imageIds: string[];
     imageIdIndex: number | undefined;
   }

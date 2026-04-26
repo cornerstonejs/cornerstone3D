@@ -65,7 +65,7 @@ element.addEventListener(Events.CAMERA_MODIFIED, () => {
     return;
   }
 
-  const { flipHorizontal } = viewport.getCamera();
+  const { flipHorizontal = false } = viewport.getViewState();
   const { rotation = 0 } = viewport.getViewPresentation();
 
   rotationInfo.innerText = `Rotation: ${Math.round(rotation)}`;
@@ -161,9 +161,9 @@ addButtonToToolbar({
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
-    const { flipHorizontal } = viewport.getCamera();
+    const { flipHorizontal = false } = viewport.getViewState();
 
-    viewport.setCamera({ flipHorizontal: !flipHorizontal });
+    viewport.setViewState({ flipHorizontal: !flipHorizontal });
     viewport.render();
   },
 });

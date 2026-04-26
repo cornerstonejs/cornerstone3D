@@ -29,7 +29,7 @@ import {
   createDefaultECGCamera,
   normalizeECGCamera,
 } from './ecgViewportCamera';
-import ECGComputedCamera from './ECGComputedCamera';
+import ECGResolvedView from './ECGResolvedView';
 
 const ECG_AMPLITUDE_INDEX_SIZE = 65536;
 
@@ -71,7 +71,7 @@ class ECGViewport extends ViewportNext<
       canvas: this.canvas,
       canvasContext: this.canvasContext,
     };
-    this.camera = createDefaultECGCamera({
+    this.viewState = createDefaultECGCamera({
       timeRange: [0, 1],
       valueRange: [-1, 1],
     });
@@ -106,7 +106,7 @@ class ECGViewport extends ViewportNext<
         amplitudeScale: 1,
         showGrid: true,
       });
-      this.camera = createDefaultECGCamera({
+      this.viewState = createDefaultECGCamera({
         timeRange: [0, durationMs],
         valueRange: getDefaultECGValueRange(waveform),
       });
@@ -154,7 +154,7 @@ class ECGViewport extends ViewportNext<
 
     const nextZoom = Math.max(viewPres.zoom ?? this.getZoom(), 0.001);
 
-    this.setCamera({
+    this.setViewState({
       scale: nextZoom,
       scaleMode: 'fit',
     });
@@ -189,12 +189,12 @@ class ECGViewport extends ViewportNext<
 
   getZoom(): number {
     return (
-      this.getComputedCamera()?.zoom ?? Math.max(this.camera.scale ?? 1, 0.001)
+      this.getResolvedView()?.zoom ?? Math.max(this.viewState.scale ?? 1, 0.001)
     );
   }
 
-  protected normalizeCamera(camera: ECGCamera): ECGCamera {
-    return normalizeECGCamera(camera);
+  protected override normalizeViewState(viewState: ECGCamera): ECGCamera {
+    return normalizeECGCamera(viewState);
   }
 
   protected getReferenceViewContexts(): ViewportNextReferenceContext[] {
@@ -216,33 +216,33 @@ class ECGViewport extends ViewportNext<
   }
 
   setZoom(zoom: number, canvasPoint?: Point2): void {
-    const computedCamera = this.getComputedCamera();
+    const resolvedView = this.getResolvedView();
 
-    if (computedCamera) {
-      this.applyComputedCameraState(
-        computedCamera.withZoom(zoom, canvasPoint).state.camera
+    if (resolvedView) {
+      this.applyResolvedViewState(
+        resolvedView.withZoom(zoom, canvasPoint).state.viewState
       );
       return;
     }
 
-    this.setCamera({
+    this.setViewState({
       scale: Math.max(zoom, 0.001),
       scaleMode: 'fit',
     });
   }
 
   getPan(): Point2 {
-    return this.getComputedCamera()?.pan ?? [0, 0];
+    return this.getResolvedView()?.pan ?? [0, 0];
   }
 
   setPan(pan: Point2): void {
-    const computedCamera = this.getComputedCamera();
+    const resolvedView = this.getResolvedView();
 
-    if (!computedCamera) {
+    if (!resolvedView) {
       return;
     }
 
-    this.applyComputedCameraState(computedCamera.withPan(pan).state.camera);
+    this.applyResolvedViewState(resolvedView.withPan(pan).state.viewState);
   }
 
   /**
@@ -324,9 +324,9 @@ class ECGViewport extends ViewportNext<
    */
   resetCamera(): boolean {
     const previousCamera = this.getCameraForEvent();
-    this.camera = createDefaultECGCamera({
-      timeRange: this.camera.timeRange,
-      valueRange: this.camera.valueRange,
+    this.viewState = createDefaultECGCamera({
+      timeRange: this.viewState.timeRange,
+      valueRange: this.viewState.valueRange,
     });
     this.modified(previousCamera);
     this.triggerCameraResetEvent();
@@ -421,15 +421,15 @@ class ECGViewport extends ViewportNext<
   }
 
   private setScaleAtCanvasPoint(scale: number, canvasPoint: Point2): void {
-    const computedCamera = this.getComputedCamera();
+    const resolvedView = this.getResolvedView();
 
-    if (!computedCamera) {
+    if (!resolvedView) {
       this.setZoom(scale);
       return;
     }
 
-    this.applyComputedCameraState(
-      computedCamera.withZoom(scale, canvasPoint).state.camera
+    this.applyResolvedViewState(
+      resolvedView.withZoom(scale, canvasPoint).state.viewState
     );
   }
 
@@ -467,7 +467,7 @@ class ECGViewport extends ViewportNext<
     return binding.rendering;
   }
 
-  getComputedCamera(): ECGComputedCamera | undefined {
+  getResolvedView(): ECGResolvedView | undefined {
     const waveform = this.getWaveformBindingData();
     const rendering = this.getCurrentRendering();
 
@@ -475,8 +475,8 @@ class ECGViewport extends ViewportNext<
       return;
     }
 
-    return new ECGComputedCamera({
-      camera: this.camera,
+    return new ECGResolvedView({
+      viewState: this.viewState,
       canvas: this.canvas,
       dataPresentation: this.getDataPresentation(waveform.id),
       frameOfReferenceUID: `ecg-viewport-${this.id}`,
@@ -485,10 +485,10 @@ class ECGViewport extends ViewportNext<
     });
   }
 
-  private applyComputedCameraState(nextCamera: ECGCamera): void {
+  private applyResolvedViewState(nextCamera: ECGCamera): void {
     const previousCamera = this.getCameraForEvent();
 
-    this.camera = this.normalizeCamera(nextCamera);
+    this.viewState = this.normalizeViewState(nextCamera);
     this.modified(previousCamera);
   }
 }

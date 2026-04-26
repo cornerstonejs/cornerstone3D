@@ -1,10 +1,10 @@
 export { DefaultPlanarDataProvider } from './DefaultPlanarDataProvider';
 export {
-  BasePlanarViewportCamera,
-  PlanarStackViewportCamera,
-  PlanarVolumeViewportCamera,
-  computePlanarViewportCamera,
-} from './PlanarComputedCamera';
+  BasePlanarResolvedView,
+  PlanarStackResolvedView,
+  PlanarVolumeResolvedView,
+  resolvePlanarViewportView,
+} from './PlanarResolvedView';
 export {
   CpuImageSlicePath,
   CpuImageSliceRenderPath,
@@ -24,7 +24,7 @@ export {
 export { default, default as PlanarViewport } from './PlanarViewport';
 export type { PlanarReferenceContext } from './PlanarViewport';
 export type {
-  PlanarCamera,
+  PlanarViewState,
   PlanarCpuImageAdapterContext,
   PlanarCpuVolumeAdapterContext,
   PlanarDataProvider,

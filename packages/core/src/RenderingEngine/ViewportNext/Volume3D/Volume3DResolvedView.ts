@@ -4,17 +4,17 @@ import {
   canvasToWorldContextPool,
   worldToCanvasContextPool,
 } from '../../helpers/vtkCanvasCoordinateTransforms';
-import ViewportComputedCamera from '../ViewportComputedCamera';
+import ResolvedViewportView from '../ResolvedViewportView';
 import type { Volume3DCamera } from './3dViewportTypes';
 
-type Volume3DComputedCameraState = {
+type Volume3DResolvedViewState = {
   camera: Volume3DCamera & ICamera;
   canvas: HTMLCanvasElement;
   frameOfReferenceUID?: string;
   renderer: vtkRenderer;
 };
 
-class Volume3DComputedCamera extends ViewportComputedCamera<Volume3DComputedCameraState> {
+class Volume3DResolvedView extends ResolvedViewportView<Volume3DResolvedViewState> {
   canvasToWorld(canvasPos: Point2): Point3 {
     return canvasToWorldContextPool({
       canvas: this.state.canvas,
@@ -57,5 +57,5 @@ class Volume3DComputedCamera extends ViewportComputedCamera<Volume3DComputedCame
   }
 }
 
-export type { Volume3DComputedCameraState };
-export default Volume3DComputedCamera;
+export type { Volume3DResolvedViewState };
+export default Volume3DResolvedView;

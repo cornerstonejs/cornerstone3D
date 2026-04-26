@@ -1,7 +1,7 @@
 import type { ViewAnchor } from '../ViewportCameraTypes';
 import type { VideoCamera, VideoProperties } from './VideoViewportTypes';
 
-export interface VideoCameraLayout {
+export interface VideoCanvasMapping {
   left: number;
   top: number;
   width: number;
@@ -15,7 +15,7 @@ export interface VideoCameraLayout {
   worldToCanvasRatio: number;
 }
 
-interface VideoCameraMetrics {
+interface VideoCanvasMappingInput {
   containerWidth: number;
   containerHeight: number;
   intrinsicWidth: number;
@@ -50,11 +50,11 @@ export function normalizeVideoCamera(camera: VideoCamera): VideoCamera {
   };
 }
 
-export function getVideoLayout(
-  metrics: VideoCameraMetrics & {
+export function resolveVideoCanvasMapping(
+  input: VideoCanvasMappingInput & {
     camera?: VideoCamera;
   }
-): VideoCameraLayout | undefined {
+): VideoCanvasMapping | undefined {
   const {
     containerWidth,
     containerHeight,
@@ -62,7 +62,7 @@ export function getVideoLayout(
     intrinsicHeight,
     objectFit = 'contain',
     camera,
-  } = metrics;
+  } = input;
 
   if (
     !containerWidth ||
@@ -137,25 +137,25 @@ export function getVideoLayout(
   };
 }
 
-export function getPanForVideoLayout(
-  layout: VideoCameraLayout
+export function getPanForVideoCanvasMapping(
+  mapping: VideoCanvasMapping
 ): [number, number] {
   return [
-    layout.left / layout.worldToCanvasRatio,
-    layout.top / layout.worldToCanvasRatio,
+    mapping.left / mapping.worldToCanvasRatio,
+    mapping.top / mapping.worldToCanvasRatio,
   ];
 }
 
 export function getAnchorWorldForPan(
   pan: [number, number],
-  layout: VideoCameraLayout
+  mapping: VideoCanvasMapping
 ): [number, number] {
   return [
-    (layout.containerWidth * layout.anchorCanvas[0]) /
-      layout.worldToCanvasRatio -
+    (mapping.containerWidth * mapping.anchorCanvas[0]) /
+      mapping.worldToCanvasRatio -
       pan[0],
-    (layout.containerHeight * layout.anchorCanvas[1]) /
-      layout.worldToCanvasRatio -
+    (mapping.containerHeight * mapping.anchorCanvas[1]) /
+      mapping.worldToCanvasRatio -
       pan[1],
   ];
 }

@@ -30,10 +30,7 @@ import type {
   RenderPathResolver,
 } from '../ViewportArchitectureTypes';
 import type ICamera from '../../../types/ICamera';
-import type {
-  CameraScaleMode,
-  ViewportCameraBase,
-} from '../ViewportCameraTypes';
+import type { CameraScaleMode, ViewAnchor } from '../ViewportCameraTypes';
 import type DisplayArea from '../../../types/displayArea';
 import type { PlanarScaleInput } from './planarCameraScale';
 
@@ -82,7 +79,7 @@ export interface PlanarSetDataOptions {
 }
 
 export interface PlanarDataLoadOptions {
-  acquisitionOrientation?: PlanarCamera['orientation'];
+  acquisitionOrientation?: PlanarViewState['orientation'];
   orientation: PlanarOrientation;
   renderMode: PlanarEffectiveRenderMode;
   volumeId: string;
@@ -93,7 +90,7 @@ export interface PlanarPayload {
   initialImageIdIndex: number;
   volumeId: string;
   renderMode: PlanarEffectiveRenderMode;
-  acquisitionOrientation?: PlanarCamera['orientation'];
+  acquisitionOrientation?: PlanarViewState['orientation'];
   imageVolume?: IImageVolume;
   image?: IImage;
   imageData?: vtkImageData;
@@ -125,17 +122,24 @@ export interface PlanarViewPresentationSelector
   scale?: boolean;
 }
 
-export interface PlanarCamera
-  extends ViewportCameraBase<Point3, PlanarScaleInput>,
-    ICamera<PlanarScaleInput> {
-  imageIdIndex?: number;
+export type PlanarSliceState =
+  | { kind: 'stackIndex'; imageIdIndex: number }
+  | { kind: 'volumePoint'; sliceWorldPoint: Point3 };
+
+export interface PlanarViewState {
   orientation?: PlanarOrientation;
+  slice?: PlanarSliceState;
+  anchorWorld?: Point3;
+  anchorCanvas?: ViewAnchor;
+  scale?: PlanarScaleInput;
+  scaleMode?: CameraScaleMode;
+  rotation?: number;
   flipHorizontal?: boolean;
   flipVertical?: boolean;
   displayArea?: PlanarDisplayArea;
 }
 
-export interface PlanarRenderCamera extends ICamera<PlanarScaleInput> {
+export interface PlanarResolvedICamera extends ICamera<PlanarScaleInput> {
   presentationScale?: Point2;
   scaleMode?: CameraScaleMode;
 }
@@ -150,7 +154,10 @@ export type PlanarDataPresentation = PlanarPresentationProps & PlanarProperties;
 
 export interface PlanarRenderPathRuntime {
   renderMode: PlanarEffectiveRenderMode;
-  renderCamera?: PlanarRenderCamera;
+}
+
+export interface PlanarActiveViewRuntime {
+  activeSourceICamera?: PlanarResolvedICamera;
 }
 
 export interface PlanarDataProvider extends DataProvider {
@@ -171,11 +178,12 @@ export interface PlanarViewportRenderContext extends BaseViewportRenderContext {
   viewport: {
     element: HTMLDivElement;
     getActiveDataId(): string | undefined;
-    getCameraState(): PlanarCamera;
+    getViewState(): PlanarViewState;
     isCurrentDataId(dataId: string): boolean;
     getOverlayActors(): ActorEntry[];
   };
   renderPath: PlanarRenderPathRuntime;
+  view: PlanarActiveViewRuntime;
   display: {
     requestRender(): void;
     renderNow(): void;
@@ -203,23 +211,23 @@ type PlanarContextBase = Pick<
 export type PlanarCpuImageAdapterContext = PlanarContextBase &
   Pick<
     PlanarViewportRenderContext,
-    'viewport' | 'renderPath' | 'display' | 'cpu'
+    'viewport' | 'renderPath' | 'view' | 'display' | 'cpu'
   >;
 
 export type PlanarCpuVolumeAdapterContext = PlanarContextBase &
   Pick<
     PlanarViewportRenderContext,
-    'viewport' | 'renderPath' | 'display' | 'cpu'
+    'viewport' | 'renderPath' | 'view' | 'display' | 'cpu'
   >;
 
 export type PlanarVtkImageAdapterContext = PlanarContextBase &
   Pick<
     PlanarViewportRenderContext,
-    'viewport' | 'renderPath' | 'display' | 'vtk'
+    'viewport' | 'renderPath' | 'view' | 'display' | 'vtk'
   >;
 
 export type PlanarVtkVolumeAdapterContext = PlanarContextBase &
   Pick<
     PlanarViewportRenderContext,
-    'viewport' | 'renderPath' | 'display' | 'vtk'
+    'viewport' | 'renderPath' | 'view' | 'display' | 'vtk'
   >;

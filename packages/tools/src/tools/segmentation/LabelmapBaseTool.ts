@@ -33,6 +33,7 @@ import {
   getOrCreateLabelmapVolume,
   resolveLabelmapForSegment,
 } from '../../stateManagement/segmentation/helpers/labelmapSegmentationState';
+import getViewportICamera from '../../utilities/getViewportICamera';
 
 /**
  * A type for preview data/information, used to setup previews on hover, or
@@ -367,8 +368,12 @@ export default class LabelmapBaseTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const { viewPlaneNormal, viewUp } = camera;
+
+    if (!viewPlaneNormal || !viewUp) {
+      return;
+    }
 
     const viewportIdsToRender = [viewport.id];
 

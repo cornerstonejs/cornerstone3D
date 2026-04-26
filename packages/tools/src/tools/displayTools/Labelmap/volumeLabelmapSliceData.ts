@@ -23,7 +23,18 @@ type ImageMapperSliceState = {
 };
 
 type SliceRenderingViewport = Types.IViewport & {
-  getCamera(): Pick<Types.ICamera, 'focalPoint' | 'viewPlaneNormal' | 'viewUp'>;
+  getCamera?: () => Pick<
+    Types.ICamera,
+    'focalPoint' | 'viewPlaneNormal' | 'viewUp'
+  >;
+  getResolvedView?: () =>
+    | {
+        toICamera?: () => Pick<
+          Types.ICamera,
+          'focalPoint' | 'viewPlaneNormal' | 'viewUp'
+        >;
+      }
+    | undefined;
 };
 
 function applyPlanarOverlayDepthOffset(
@@ -74,6 +85,66 @@ function matchAxis(
   };
 }
 
+function getSliceRenderingCamera(
+  viewport: SliceRenderingViewport
+):
+  | Pick<Types.ICamera, 'focalPoint' | 'viewPlaneNormal' | 'viewUp'>
+  | undefined {
+  const resolvedCamera = viewport.getResolvedView?.()?.toICamera?.();
+  const normalizedResolvedCamera =
+    normalizeSliceRenderingCamera(resolvedCamera);
+
+  if (normalizedResolvedCamera) {
+    return normalizedResolvedCamera;
+  }
+
+  const legacyCamera = viewport.getCamera?.();
+  const normalizedLegacyCamera = normalizeSliceRenderingCamera(legacyCamera);
+
+  return normalizedLegacyCamera;
+}
+
+function normalizeSliceRenderingCamera(
+  camera: unknown
+):
+  | Pick<Types.ICamera, 'focalPoint' | 'viewPlaneNormal' | 'viewUp'>
+  | undefined {
+  const candidate = camera as Partial<Types.ICamera> | undefined;
+  const focalPoint = toPoint3(candidate?.focalPoint);
+  const viewPlaneNormal = toPoint3(candidate?.viewPlaneNormal);
+  const viewUp = toPoint3(candidate?.viewUp);
+
+  if (!focalPoint || !viewPlaneNormal || !viewUp) {
+    return;
+  }
+
+  return {
+    focalPoint,
+    viewPlaneNormal,
+    viewUp,
+  };
+}
+
+function toPoint3(value: unknown): Types.Point3 | undefined {
+  const candidate = value as ArrayLike<number> | undefined;
+
+  if (!candidate || typeof candidate.length !== 'number') {
+    return;
+  }
+
+  if (candidate.length < 3) {
+    return;
+  }
+
+  const point = [
+    Number(candidate[0]),
+    Number(candidate[1]),
+    Number(candidate[2]),
+  ] as Types.Point3;
+
+  return point.every(Number.isFinite) ? point : undefined;
+}
+
 function getVolumeAxes(volume: Types.IImageVolume): Types.Point3[] {
   const { direction } = volume;
 
@@ -88,7 +159,13 @@ function getSliceState(
   viewport: SliceRenderingViewport,
   volume: Types.IImageVolume
 ): ImageMapperSliceState | undefined {
-  const { viewPlaneNormal, viewUp, focalPoint } = viewport.getCamera();
+  const camera = getSliceRenderingCamera(viewport);
+
+  if (!camera) {
+    return;
+  }
+
+  const { viewPlaneNormal, viewUp, focalPoint } = camera;
   const xDirection = vec3.normalize(
     vec3.create(),
     vec3.cross(
@@ -190,9 +267,15 @@ function createSliceImageData(
   const yDirection = axisVectors[state.yAxis].map(
     (value) => value * state.ySign
   ) as Types.Point3;
+  const camera = getSliceRenderingCamera(viewport);
+
+  if (!camera) {
+    return;
+  }
+
   const zDirection = vec3.normalize(
     vec3.create(),
-    viewport.getCamera().viewPlaneNormal as unknown as vec3
+    camera.viewPlaneNormal as unknown as vec3
   ) as Types.Point3;
 
   const scalarArray = vtkDataArray.newInstance({
@@ -225,5 +308,10 @@ function createSliceImageData(
   };
 }
 
-export { applyPlanarOverlayDepthOffset, createSliceImageData, getSliceState };
+export {
+  applyPlanarOverlayDepthOffset,
+  createSliceImageData,
+  getSliceRenderingCamera,
+  getSliceState,
+};
 export type { ImageMapperSliceState, SliceRenderingViewport };

@@ -1,19 +1,19 @@
 /**
- * planarRenderCamera — Converts the semantic PlanarCamera model into a
+ * planarRenderCamera — Converts the semantic PlanarViewState model into a
  * renderer-ready ICamera, and applies it to VTK renderers.
  *
  * This is the final stage of the three-tier camera pipeline:
- *   PlanarCamera (user model) -> PlanarSliceBasis (geometric basis) -> ICamera (render camera)
+ *   PlanarViewState (user model) -> PlanarSliceBasis (geometric basis) -> ICamera (render camera)
  *
  * Key concepts:
  *   - `derivePlanarPresentation`: extracts canvas-space pan/zoom/rotation from
- *     a sliceBasis + PlanarCamera pair. Used by CPU render paths that apply
+ *     a sliceBasis + PlanarViewState pair. Used by CPU render paths that apply
  *     presentation via their own transform pipeline.
- *   - `resolvePlanarRenderCamera`: produces a complete ICamera (focalPoint,
+ *   - `resolvePlanarICamera`: produces a complete ICamera (focalPoint,
  *     position, viewUp, parallelScale) ready for a VTK renderer. Internally
  *     calls `derivePlanarPresentation` then converts the canvas-space pan back
  *     to a world-space focal-point offset.
- *   - `applyPlanarRenderCameraToRenderer`: pushes the resolved ICamera onto
+ *   - `applyPlanarICameraToRenderer`: pushes the resolved ICamera onto
  *     a vtkRenderer's active camera.
  *
  * Volume clipping utilities (`setPlanarVolumeCameraClippingRange`,
@@ -33,7 +33,10 @@ import {
   rotatePlanarViewUp,
 } from './planarViewPresentation';
 import { getSafeCanvasDimension, normalizePoint3 } from './planarMath';
-import type { PlanarCamera, PlanarRenderCamera } from './PlanarViewportTypes';
+import type {
+  PlanarViewState,
+  PlanarResolvedICamera,
+} from './PlanarViewportTypes';
 import type { PlanarSliceBasis } from './planarSliceBasis';
 import {
   MIN_PLANAR_SCALE,
@@ -45,7 +48,7 @@ import {
 /**
  * Canvas-space presentation values derived from a semantic camera and a
  * section basis. CPU render paths consume these directly; VTK paths use
- * them as an intermediate step inside `resolvePlanarRenderCamera`.
+ * them as an intermediate step inside `resolvePlanarICamera`.
  */
 export interface DerivedPlanarPresentation {
   pan: Point2;
@@ -87,7 +90,7 @@ function getSliceCanvasDimensionsAtFit(args: {
 
 function deriveDisplayAreaPresentation(args: {
   sliceBasis: PlanarSliceBasis;
-  camera?: PlanarCamera;
+  camera?: PlanarViewState;
   canvasWidth: number;
   canvasHeight: number;
   scale: PlanarScale;
@@ -195,7 +198,7 @@ export function projectAnchorWorldToCurrentPlane(
 
 /**
  * Derives canvas-space presentation values (pan, zoom, rotation) from a
- * semantic PlanarCamera and a PlanarSliceBasis.
+ * semantic PlanarViewState and a PlanarSliceBasis.
  *
  * Pan is computed in two parts:
  *   1. `panFromAnchorWorld` — the offset caused by the anchor point being
@@ -211,7 +214,7 @@ export function projectAnchorWorldToCurrentPlane(
  */
 export function derivePlanarPresentation(args: {
   sliceBasis: PlanarSliceBasis;
-  camera?: PlanarCamera;
+  camera?: PlanarViewState;
   canvasWidth: number;
   canvasHeight: number;
 }): DerivedPlanarPresentation {
@@ -400,7 +403,7 @@ function getResolvedPanOffset(args: {
 
 /**
  * Produces a complete ICamera from a PlanarSliceBasis and an optional
- * PlanarCamera. This is the main entry point for VTK-based render paths
+ * PlanarViewState. This is the main entry point for VTK-based render paths
  * that need to set up a vtkRenderer camera.
  *
  * The pipeline:
@@ -415,12 +418,12 @@ function getResolvedPanOffset(args: {
  * @param args.canvasHeight - Current canvas height in CSS pixels.
  * @returns A fully resolved ICamera ready for a VTK renderer.
  */
-export function resolvePlanarRenderCamera(args: {
+export function resolvePlanarICamera(args: {
   sliceBasis: PlanarSliceBasis;
-  camera?: PlanarCamera;
+  camera?: PlanarViewState;
   canvasWidth: number;
   canvasHeight: number;
-}): PlanarRenderCamera {
+}): PlanarResolvedICamera {
   const { sliceBasis, camera, canvasHeight, canvasWidth } = args;
   const presentation = derivePlanarPresentation({
     sliceBasis,
@@ -475,21 +478,21 @@ export function resolvePlanarRenderCamera(args: {
  * Returns the applied camera, or undefined if the camera was incomplete.
  *
  * @param args.renderer - The VTK renderer whose camera will be updated.
- * @param args.renderCamera - The resolved ICamera to apply.
+ * @param args.activeSourceICamera - The resolved ICamera to apply.
  * @returns The applied ICamera, or undefined if required fields were missing.
  */
-export function applyPlanarRenderCameraToRenderer(args: {
+export function applyPlanarICameraToRenderer(args: {
   renderer: vtkRenderer;
-  renderCamera?: PlanarRenderCamera;
-}): PlanarRenderCamera | undefined {
-  const { renderer, renderCamera } = args;
+  activeSourceICamera?: PlanarResolvedICamera;
+}): PlanarResolvedICamera | undefined {
+  const { renderer, activeSourceICamera } = args;
 
   if (
-    !renderCamera?.focalPoint ||
-    !renderCamera.position ||
-    !renderCamera.viewPlaneNormal ||
-    !renderCamera.viewUp ||
-    typeof renderCamera.parallelScale !== 'number'
+    !activeSourceICamera?.focalPoint ||
+    !activeSourceICamera.position ||
+    !activeSourceICamera.viewPlaneNormal ||
+    !activeSourceICamera.viewUp ||
+    typeof activeSourceICamera.parallelScale !== 'number'
   ) {
     return;
   }
@@ -498,28 +501,28 @@ export function applyPlanarRenderCameraToRenderer(args: {
 
   vtkCamera.setParallelProjection(true);
   vtkCamera.setDirectionOfProjection(
-    -renderCamera.viewPlaneNormal[0],
-    -renderCamera.viewPlaneNormal[1],
-    -renderCamera.viewPlaneNormal[2]
+    -activeSourceICamera.viewPlaneNormal[0],
+    -activeSourceICamera.viewPlaneNormal[1],
+    -activeSourceICamera.viewPlaneNormal[2]
   );
-  vtkCamera.setParallelScale(renderCamera.parallelScale);
-  vtkCamera.setFocalPoint(...renderCamera.focalPoint);
-  vtkCamera.setPosition(...renderCamera.position);
-  vtkCamera.setViewUp(...renderCamera.viewUp);
+  vtkCamera.setParallelScale(activeSourceICamera.parallelScale);
+  vtkCamera.setFocalPoint(...activeSourceICamera.focalPoint);
+  vtkCamera.setPosition(...activeSourceICamera.position);
+  vtkCamera.setViewUp(...activeSourceICamera.viewUp);
 
-  return renderCamera;
+  return activeSourceICamera;
 }
 
 type PlanarScalableActor = {
   setUserMatrix?: (matrix: mat4) => void;
 };
 
-function getPlanarRenderCameraRight(
-  renderCamera: Pick<PlanarRenderCamera, 'viewPlaneNormal' | 'viewUp'>
+function getPlanarICameraRight(
+  activeSourceICamera: Pick<PlanarResolvedICamera, 'viewPlaneNormal' | 'viewUp'>
 ): Point3 {
-  const viewUp = normalizePoint3(renderCamera.viewUp, [0, -1, 0]);
+  const viewUp = normalizePoint3(activeSourceICamera.viewUp, [0, -1, 0]);
   const viewPlaneNormal = normalizePoint3(
-    renderCamera.viewPlaneNormal,
+    activeSourceICamera.viewPlaneNormal,
     [0, 0, 1]
   );
   const right = vec3.cross(
@@ -536,29 +539,31 @@ function getPlanarRenderCameraRight(
 }
 
 export function createPlanarPresentationScaleMatrix(
-  renderCamera?: Pick<
-    PlanarRenderCamera,
+  activeSourceICamera?: Pick<
+    PlanarResolvedICamera,
     'focalPoint' | 'presentationScale' | 'viewPlaneNormal' | 'viewUp'
   >
 ): mat4 {
   const matrix = mat4.create();
 
   if (
-    !renderCamera?.focalPoint ||
-    !renderCamera.viewPlaneNormal ||
-    !renderCamera.viewUp
+    !activeSourceICamera?.focalPoint ||
+    !activeSourceICamera.viewPlaneNormal ||
+    !activeSourceICamera.viewUp
   ) {
     return matrix;
   }
 
-  const [scaleX, scaleY] = normalizePlanarScale(renderCamera.presentationScale);
+  const [scaleX, scaleY] = normalizePlanarScale(
+    activeSourceICamera.presentationScale
+  );
   const ratioX = Math.max(scaleX / scaleY, MIN_PLANAR_SCALE);
 
   if (Math.abs(ratioX - 1) < MIN_SCALE_RATIO) {
     return matrix;
   }
 
-  const right = getPlanarRenderCameraRight(renderCamera);
+  const right = getPlanarICameraRight(activeSourceICamera);
   const ratioDelta = ratioX - 1;
   const [rx, ry, rz] = right;
   const linear = [
@@ -572,7 +577,7 @@ export function createPlanarPresentationScaleMatrix(
     ratioDelta * rz * ry,
     1 + ratioDelta * rz * rz,
   ];
-  const [cx, cy, cz] = renderCamera.focalPoint;
+  const [cx, cy, cz] = activeSourceICamera.focalPoint;
   const transformedCenter: Point3 = [
     linear[0] * cx + linear[3] * cy + linear[6] * cz,
     linear[1] * cx + linear[4] * cy + linear[7] * cz,
@@ -595,13 +600,15 @@ export function createPlanarPresentationScaleMatrix(
   return matrix;
 }
 
-export function applyPlanarRenderCameraToActor(args: {
+export function applyPlanarICameraToActor(args: {
   actor?: PlanarScalableActor;
-  renderCamera?: PlanarRenderCamera;
+  activeSourceICamera?: PlanarResolvedICamera;
 }): void {
-  const { actor, renderCamera } = args;
+  const { actor, activeSourceICamera } = args;
 
-  actor?.setUserMatrix?.(createPlanarPresentationScaleMatrix(renderCamera));
+  actor?.setUserMatrix?.(
+    createPlanarPresentationScaleMatrix(activeSourceICamera)
+  );
 }
 
 /**

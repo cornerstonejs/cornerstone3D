@@ -70,8 +70,8 @@ export class VtkGeometry3DRenderPath
       updateDataPresentation: (props) => {
         this.updateDataPresentation(rendering, props);
       },
-      updateCamera: (camera) => {
-        this.updateCamera(ctx, camera);
+      applyViewState: (camera) => {
+        this.applyViewState(ctx, camera);
       },
       getFrameOfReferenceUID: () => {
         return this.getFrameOfReferenceUID(rendering);
@@ -98,7 +98,7 @@ export class VtkGeometry3DRenderPath
     );
   }
 
-  private updateCamera(
+  private applyViewState(
     ctx: Volume3DVtkGeometryAdapterContext,
     camera: unknown
   ): void {

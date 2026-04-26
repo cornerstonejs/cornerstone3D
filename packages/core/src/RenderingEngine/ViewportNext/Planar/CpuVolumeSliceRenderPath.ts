@@ -19,7 +19,7 @@ import type {
   RenderPath,
 } from '../ViewportArchitectureTypes';
 import type {
-  PlanarCamera,
+  PlanarViewState,
   PlanarDataPresentation,
   PlanarCpuVolumeAdapterContext,
   PlanarPayload,
@@ -28,12 +28,12 @@ import type {
 import type { PlanarCpuVolumeRendering } from './planarRuntimeTypes';
 import PlanarCPUVolumeSampler from './PlanarCPUVolumeSampler';
 import {
-  canvasToWorldPlanarCamera,
+  canvasToWorldPlanarViewState,
   getCanvasCssDimensions,
-  worldToCanvasPlanarCamera,
+  worldToCanvasPlanarViewState,
 } from './planarAdapterCoordinateTransforms';
 import { triggerPlanarVolumeNewImage } from './planarImageEvents';
-import { resolvePlanarRenderCamera } from './planarRenderCamera';
+import { resolvePlanarICamera } from './planarRenderCamera';
 import {
   createPlanarCpuVolumeSliceBasis,
   createPlanarVolumeSliceBasis,
@@ -209,7 +209,7 @@ export class CpuVolumeSliceRenderPath
     };
 
     triggerPlanarVolumeNewImage(ctx, {
-      camera: ctx.viewport.getCameraState(),
+      camera: ctx.viewport.getViewState(),
       acquisitionOrientation: rendering.acquisitionOrientation,
       imageIds: rendering.imageIds,
       imageIdIndex: rendering.currentImageIdIndex,
@@ -220,8 +220,8 @@ export class CpuVolumeSliceRenderPath
       updateDataPresentation: (props) => {
         this.updateDataPresentation(ctx, rendering, data.id, props);
       },
-      updateCamera: (camera) => {
-        this.updateCamera(ctx, rendering, data.id, camera);
+      applyViewState: (camera) => {
+        this.applyViewState(ctx, rendering, data.id, camera);
       },
       getFrameOfReferenceUID: () => {
         return this.getFrameOfReferenceUID(rendering);
@@ -274,7 +274,7 @@ export class CpuVolumeSliceRenderPath
         ctx,
         rendering,
         dataId,
-        ctx.viewport.getCameraState()
+        ctx.viewport.getViewState()
       );
       return;
     }
@@ -282,7 +282,7 @@ export class CpuVolumeSliceRenderPath
     rendering.renderingInvalidated = true;
   }
 
-  private updateCamera(
+  private applyViewState(
     ctx: PlanarCpuVolumeAdapterContext,
     rendering: PlanarCpuVolumeRendering,
     dataId: string,
@@ -293,7 +293,7 @@ export class CpuVolumeSliceRenderPath
       ctx,
       rendering,
       dataId,
-      cameraInput as PlanarCamera | undefined
+      cameraInput as PlanarViewState | undefined
     );
   }
 
@@ -302,13 +302,13 @@ export class CpuVolumeSliceRenderPath
     rendering: PlanarCpuVolumeRendering,
     canvasPos: Point2
   ): Point3 {
-    const renderCamera = ctx.renderPath.renderCamera;
+    const activeSourceICamera = ctx.view.activeSourceICamera;
 
     if (
-      !renderCamera?.focalPoint ||
-      !renderCamera.parallelScale ||
-      !renderCamera.viewPlaneNormal ||
-      !renderCamera.viewUp
+      !activeSourceICamera?.focalPoint ||
+      !activeSourceICamera.parallelScale ||
+      !activeSourceICamera.viewPlaneNormal ||
+      !activeSourceICamera.viewUp
     ) {
       return [0, 0, 0];
     }
@@ -317,13 +317,13 @@ export class CpuVolumeSliceRenderPath
       ctx.cpu.canvas
     );
 
-    return canvasToWorldPlanarCamera({
+    return canvasToWorldPlanarViewState({
       camera: {
-        focalPoint: renderCamera.focalPoint,
-        parallelScale: renderCamera.parallelScale,
-        presentationScale: renderCamera.presentationScale,
-        viewPlaneNormal: renderCamera.viewPlaneNormal,
-        viewUp: renderCamera.viewUp,
+        focalPoint: activeSourceICamera.focalPoint,
+        parallelScale: activeSourceICamera.parallelScale,
+        presentationScale: activeSourceICamera.presentationScale,
+        viewPlaneNormal: activeSourceICamera.viewPlaneNormal,
+        viewUp: activeSourceICamera.viewUp,
       },
       canvasWidth,
       canvasHeight,
@@ -336,13 +336,13 @@ export class CpuVolumeSliceRenderPath
     rendering: PlanarCpuVolumeRendering,
     worldPos: Point3
   ): Point2 {
-    const renderCamera = ctx.renderPath.renderCamera;
+    const activeSourceICamera = ctx.view.activeSourceICamera;
 
     if (
-      !renderCamera?.focalPoint ||
-      !renderCamera.parallelScale ||
-      !renderCamera.viewPlaneNormal ||
-      !renderCamera.viewUp
+      !activeSourceICamera?.focalPoint ||
+      !activeSourceICamera.parallelScale ||
+      !activeSourceICamera.viewPlaneNormal ||
+      !activeSourceICamera.viewUp
     ) {
       return [0, 0];
     }
@@ -351,13 +351,13 @@ export class CpuVolumeSliceRenderPath
       ctx.cpu.canvas
     );
 
-    return worldToCanvasPlanarCamera({
+    return worldToCanvasPlanarViewState({
       camera: {
-        focalPoint: renderCamera.focalPoint,
-        parallelScale: renderCamera.parallelScale,
-        presentationScale: renderCamera.presentationScale,
-        viewPlaneNormal: renderCamera.viewPlaneNormal,
-        viewUp: renderCamera.viewUp,
+        focalPoint: activeSourceICamera.focalPoint,
+        parallelScale: activeSourceICamera.parallelScale,
+        presentationScale: activeSourceICamera.presentationScale,
+        viewPlaneNormal: activeSourceICamera.viewPlaneNormal,
+        viewUp: activeSourceICamera.viewUp,
       },
       canvasWidth,
       canvasHeight,
@@ -415,9 +415,9 @@ export class CpuVolumeSliceRenderPath
       return;
     }
 
-    const renderCamera = ctx.renderPath.renderCamera;
+    const activeSourceICamera = ctx.view.activeSourceICamera;
 
-    if (!renderCamera) {
+    if (!activeSourceICamera) {
       return;
     }
 
@@ -437,7 +437,7 @@ export class CpuVolumeSliceRenderPath
         sampledSliceState: runtime.sampledSliceState,
         width: ctx.cpu.canvas.width,
         height: ctx.cpu.canvas.height,
-        camera: renderCamera,
+        camera: activeSourceICamera,
         dataPresentation: runtime.dataPresentation,
       });
 
@@ -446,7 +446,7 @@ export class CpuVolumeSliceRenderPath
           volume: runtime.imageVolume,
           width: ctx.cpu.canvas.width,
           height: ctx.cpu.canvas.height,
-          camera: renderCamera,
+          camera: activeSourceICamera,
           dataPresentation: runtime.dataPresentation,
         }))
       : runtime.sampledSliceState;
@@ -468,7 +468,7 @@ export class CpuVolumeSliceRenderPath
     this.sampler.updateCPUFallbackViewport({
       enabledElement: runtime.enabledElement,
       sampledSliceState,
-      camera: renderCamera,
+      camera: activeSourceICamera,
       dataPresentation: runtime.dataPresentation,
       defaultVOIRange: runtime.defaultVOIRange,
     });
@@ -506,12 +506,7 @@ export class CpuVolumeSliceRenderPath
     rendering: PlanarCpuVolumeRendering,
     dataId: string
   ): void {
-    this.syncRenderCamera(
-      ctx,
-      rendering,
-      dataId,
-      ctx.viewport.getCameraState()
-    );
+    this.syncRenderCamera(ctx, rendering, dataId, ctx.viewport.getViewState());
   }
 
   private removeData(
@@ -527,22 +522,19 @@ export class CpuVolumeSliceRenderPath
     ctx: PlanarCpuVolumeAdapterContext,
     rendering: PlanarCpuVolumeRendering,
     dataId: string,
-    camera: PlanarCamera | undefined
+    camera: PlanarViewState | undefined
   ): void {
     const { sliceBasis, currentImageIdIndex, maxImageIdIndex } =
       this.resolveVolumeSliceBasis(ctx, rendering, camera);
-    const renderCamera = resolvePlanarRenderCamera({
+    const activeSourceICamera = resolvePlanarICamera({
       sliceBasis,
       camera,
       canvasWidth: ctx.cpu.canvas.width,
       canvasHeight: ctx.cpu.canvas.height,
     });
 
-    if (
-      ctx.viewport.isCurrentDataId(dataId) ||
-      ctx.renderPath.renderCamera === undefined
-    ) {
-      ctx.renderPath.renderCamera = renderCamera;
+    if (ctx.viewport.isCurrentDataId(dataId)) {
+      ctx.view.activeSourceICamera = activeSourceICamera;
     }
     const imageIdIndexChanged =
       currentImageIdIndex !== rendering.currentImageIdIndex;
@@ -563,7 +555,7 @@ export class CpuVolumeSliceRenderPath
   private resolveVolumeSliceBasis(
     ctx: PlanarCpuVolumeAdapterContext,
     rendering: PlanarCpuVolumeRendering,
-    camera: PlanarCamera | undefined
+    camera: PlanarViewState | undefined
   ) {
     const createSliceBasis = shouldUsePlanarCpuVolumeSliceBasis(
       rendering.dataPresentation?.interpolationType
@@ -572,11 +564,11 @@ export class CpuVolumeSliceRenderPath
       : createPlanarVolumeSliceBasis;
 
     return createSliceBasis({
-      camera,
+      viewState: camera,
       canvasHeight: ctx.cpu.canvas.height,
       canvasWidth: ctx.cpu.canvas.width,
       imageIdIndex: resolvePlanarVolumeImageIdIndex({
-        camera,
+        viewState: camera,
         fallbackImageIdIndex: rendering.currentImageIdIndex,
       }),
       imageVolume: rendering.imageVolume,
@@ -676,6 +668,7 @@ export class CpuVolumeSlicePath
       type: rootContext.type,
       viewport: rootContext.viewport,
       renderPath: rootContext.renderPath,
+      view: rootContext.view,
       display: rootContext.display,
       cpu: rootContext.cpu,
     };

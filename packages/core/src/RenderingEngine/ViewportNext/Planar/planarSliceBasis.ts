@@ -3,7 +3,7 @@
  * slice in world space.
  *
  * A `PlanarSliceBasis` is the second tier of the three-tier camera pipeline:
- *   PlanarCamera (user model) -> PlanarSliceBasis (geometric basis) -> ICamera (render camera)
+ *   PlanarViewState (user model) -> PlanarSliceBasis (geometric basis) -> ICamera (render camera)
  *
  * It encapsulates the properties of a specific cross-section through an image
  * or volume -- its center, orientation, and the scale at which the slice fits
@@ -26,9 +26,9 @@ import {
   getCpuEquivalentParallelScale,
   getOrthogonalVolumeSliceGeometry,
 } from './planarAdapterCoordinateTransforms';
-import { getPlanarCameraVectors } from './planarOrientationVectors';
+import { getPlanarViewStateVectors } from './planarOrientationVectors';
 import { getSafeCanvasDimension, normalizePoint3 } from './planarMath';
-import type { PlanarCamera } from './PlanarViewportTypes';
+import type { PlanarViewState } from './PlanarViewportTypes';
 
 /**
  * The geometric basis for a single planar cross-section through image data.
@@ -391,20 +391,21 @@ function clampImageIdIndex(args: {
 }
 
 export function resolvePlanarVolumeImageIdIndex(args: {
-  camera?: PlanarCamera;
+  viewState?: PlanarViewState;
   fallbackImageIdIndex?: number;
 }): number | undefined {
-  const { camera, fallbackImageIdIndex } = args;
+  const { viewState, fallbackImageIdIndex } = args;
+  const slice = viewState?.slice;
 
-  if (camera?.focalPoint) {
+  if (slice?.kind === 'volumePoint') {
     return;
   }
 
-  if (typeof camera?.imageIdIndex === 'number') {
-    return camera.imageIdIndex;
+  if (slice?.kind === 'stackIndex') {
+    return slice.imageIdIndex;
   }
 
-  if (camera?.orientation === OrientationAxis.ACQUISITION) {
+  if (viewState?.orientation === OrientationAxis.ACQUISITION) {
     return fallbackImageIdIndex;
   }
 }
@@ -570,8 +571,8 @@ function buildPlanarVolumeSliceBasis(args: {
   canvasHeight: number;
   imageIdIndex?: number;
   imageVolume: IImageVolume;
-  orientation?: PlanarCamera['orientation'];
-  camera?: PlanarCamera;
+  orientation?: PlanarViewState['orientation'];
+  viewState?: PlanarViewState;
   center: Point3;
   fitParallelScale: number;
   sliceWidthWorld: number;
@@ -583,15 +584,15 @@ function buildPlanarVolumeSliceBasis(args: {
 } {
   const {
     center,
-    camera,
     fitParallelScale,
     imageIdIndex,
     imageVolume,
     orientation,
     sliceHeightWorld,
     sliceWidthWorld,
+    viewState,
   } = args;
-  const cameraValues = getPlanarCameraVectors({
+  const cameraValues = getPlanarViewStateVectors({
     imageVolume,
     orientation,
   });
@@ -623,13 +624,17 @@ function buildPlanarVolumeSliceBasis(args: {
     center as unknown as vec3,
     viewPlaneNormal as unknown as vec3
   );
+  const volumePoint =
+    viewState?.slice?.kind === 'volumePoint'
+      ? viewState.slice.sliceWorldPoint
+      : undefined;
   const requestedSliceProjection = Math.min(
     max,
     Math.max(
       min,
-      camera?.focalPoint
+      volumePoint
         ? vec3.dot(
-            camera.focalPoint as unknown as vec3,
+            volumePoint as unknown as vec3,
             viewPlaneNormal as unknown as vec3
           )
         : centerProjection
@@ -681,15 +686,15 @@ export function createPlanarVolumeSliceBasis(args: {
   canvasHeight: number;
   imageIdIndex?: number;
   imageVolume: IImageVolume;
-  orientation?: PlanarCamera['orientation'];
-  camera?: PlanarCamera;
+  orientation?: PlanarViewState['orientation'];
+  viewState?: PlanarViewState;
 }): {
   sliceBasis: PlanarSliceBasis;
   currentImageIdIndex: number;
   maxImageIdIndex: number;
 } {
   const { imageVolume, orientation } = args;
-  const cameraValues = getPlanarCameraVectors({
+  const cameraValues = getPlanarViewStateVectors({
     imageVolume,
     orientation,
   });
@@ -713,15 +718,15 @@ export function createPlanarCpuVolumeSliceBasis(args: {
   canvasHeight: number;
   imageIdIndex?: number;
   imageVolume: IImageVolume;
-  orientation?: PlanarCamera['orientation'];
-  camera?: PlanarCamera;
+  orientation?: PlanarViewState['orientation'];
+  viewState?: PlanarViewState;
 }): {
   sliceBasis: PlanarSliceBasis;
   currentImageIdIndex: number;
   maxImageIdIndex: number;
 } {
   const { imageVolume, orientation } = args;
-  const cameraValues = getPlanarCameraVectors({
+  const cameraValues = getPlanarViewStateVectors({
     imageVolume,
     orientation,
   });

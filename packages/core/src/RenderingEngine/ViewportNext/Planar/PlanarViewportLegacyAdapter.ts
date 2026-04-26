@@ -1,10 +1,18 @@
 import cache from '../../../cache/cache';
 import RENDERING_DEFAULTS from '../../../constants/rendering';
-import type { IVolumeInput } from '../../../types';
+import { ActorRenderMode } from '../../../types';
+import type { ICamera, IVolumeInput, Point2, Point3 } from '../../../types';
 import type BlendModes from '../../../enums/BlendModes';
+import clonePoint3 from '../../../utilities/clonePoint3';
+import hasOwn from '../../../utilities/hasOwn';
 import type { PlanarLegacyViewportProperties } from './planarLegacyCompatibility';
 import PlanarLegacyCompatibilityController from './PlanarLegacyCompatibilityController';
 import PlanarViewport from './PlanarViewport';
+import type { PlanarScaleInput } from './planarCameraScale';
+import type {
+  PlanarResolvedICamera,
+  PlanarViewState,
+} from './PlanarViewportTypes';
 
 class PlanarViewportLegacyAdapter extends PlanarViewport {
   private readonly legacyCompatibility =
@@ -26,18 +34,22 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
       : [number, number, number];
   }
 
-  override getCamera(): ReturnType<PlanarViewport['getCamera']> {
-    const camera = super.getCamera();
+  getCamera(): PlanarViewState & ICamera<PlanarScaleInput> {
+    const viewState = this.getViewState();
+    const camera = {
+      ...viewState,
+      ...this.getCameraForEvent(),
+    } as PlanarViewState & ICamera<PlanarScaleInput>;
     const orientation =
-      camera.orientation && typeof camera.orientation === 'object'
+      viewState.orientation && typeof viewState.orientation === 'object'
         ? {
-            ...camera.orientation,
-            viewUp: this.cloneTuple(camera.orientation.viewUp),
+            ...viewState.orientation,
+            viewUp: this.cloneTuple(viewState.orientation.viewUp),
             viewPlaneNormal: this.cloneTuple(
-              camera.orientation.viewPlaneNormal
+              viewState.orientation.viewPlaneNormal
             ),
           }
-        : camera.orientation;
+        : viewState.orientation;
 
     return {
       ...camera,
@@ -47,6 +59,32 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
       viewPlaneNormal: this.cloneTuple(camera.viewPlaneNormal),
       orientation,
     };
+  }
+
+  setCamera(
+    cameraPatch: Partial<ICamera<PlanarScaleInput> & PlanarViewState>
+  ): void {
+    const viewStatePatch: Partial<PlanarViewState> = {};
+
+    this.applyLegacyPlanarPresentationPatch(viewStatePatch, cameraPatch);
+    this.applyLegacyParallelScalePatch(viewStatePatch, cameraPatch);
+    this.applyLegacyOrientationPatch(viewStatePatch, cameraPatch);
+    this.applyLegacyFocalPointPatch(viewStatePatch, cameraPatch);
+
+    if (
+      cameraPatch.position &&
+      !cameraPatch.focalPoint &&
+      !Object.keys(viewStatePatch).length
+    ) {
+      this.warnUnsupportedPositionOnlyCameraPatch();
+      return;
+    }
+
+    if (!Object.keys(viewStatePatch).length) {
+      return;
+    }
+
+    this.setViewState(viewStatePatch);
   }
 
   get volumeIds(): Set<string> {
@@ -67,6 +105,145 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
 
   getAllVolumeIds(): string[] {
     return Array.from(this.volumeIds);
+  }
+
+  private applyLegacyPlanarPresentationPatch(
+    viewStatePatch: Partial<PlanarViewState>,
+    cameraPatch: Partial<ICamera<PlanarScaleInput> & PlanarViewState>
+  ): void {
+    if (hasOwn(cameraPatch, 'orientation')) {
+      viewStatePatch.orientation = cameraPatch.orientation;
+    }
+    if (hasOwn(cameraPatch, 'anchorWorld')) {
+      viewStatePatch.anchorWorld = clonePoint3(cameraPatch.anchorWorld);
+    }
+    if (hasOwn(cameraPatch, 'anchorCanvas')) {
+      viewStatePatch.anchorCanvas = cameraPatch.anchorCanvas
+        ? ([...cameraPatch.anchorCanvas] as Point2)
+        : undefined;
+    }
+    if (hasOwn(cameraPatch, 'scale')) {
+      viewStatePatch.scale = cameraPatch.scale;
+    }
+    if (hasOwn(cameraPatch, 'scaleMode')) {
+      viewStatePatch.scaleMode = cameraPatch.scaleMode;
+    }
+    if (hasOwn(cameraPatch, 'rotation')) {
+      viewStatePatch.rotation = cameraPatch.rotation;
+    }
+    if (hasOwn(cameraPatch, 'flipHorizontal')) {
+      viewStatePatch.flipHorizontal = cameraPatch.flipHorizontal;
+    }
+    if (hasOwn(cameraPatch, 'flipVertical')) {
+      viewStatePatch.flipVertical = cameraPatch.flipVertical;
+    }
+    if (hasOwn(cameraPatch, 'displayArea')) {
+      viewStatePatch.displayArea = cameraPatch.displayArea;
+    }
+    if (hasOwn(cameraPatch, 'slice')) {
+      viewStatePatch.slice = cameraPatch.slice;
+    }
+  }
+
+  private applyLegacyParallelScalePatch(
+    viewStatePatch: Partial<PlanarViewState>,
+    cameraPatch: Partial<ICamera<PlanarScaleInput> & PlanarViewState>
+  ): void {
+    if (typeof cameraPatch.parallelScale !== 'number') {
+      return;
+    }
+
+    const resolvedICamera = this.getResolvedView()?.toICamera() as
+      | PlanarResolvedICamera
+      | undefined;
+
+    if (!resolvedICamera || typeof resolvedICamera.parallelScale !== 'number') {
+      return;
+    }
+
+    const currentScale = this.getScale();
+    const currentScaleY = Math.max(
+      resolvedICamera.presentationScale?.[1] ?? currentScale[1] ?? 1,
+      1e-6
+    );
+    const currentScaleX = Math.max(
+      resolvedICamera.presentationScale?.[0] ??
+        currentScale[0] ??
+        currentScaleY,
+      1e-6
+    );
+    const fitParallelScale = resolvedICamera.parallelScale * currentScaleY;
+    const nextScaleY =
+      fitParallelScale / Math.max(cameraPatch.parallelScale, 1e-6);
+    const aspectScale = currentScaleX / currentScaleY;
+
+    viewStatePatch.displayArea = undefined;
+    viewStatePatch.scale = [nextScaleY * aspectScale, nextScaleY];
+    viewStatePatch.scaleMode = 'fit';
+  }
+
+  private applyLegacyOrientationPatch(
+    viewStatePatch: Partial<PlanarViewState>,
+    cameraPatch: Partial<ICamera<PlanarScaleInput> & PlanarViewState>
+  ): void {
+    if (!cameraPatch.viewPlaneNormal) {
+      return;
+    }
+
+    const currentICamera = this.getResolvedView()?.toICamera();
+
+    viewStatePatch.orientation = {
+      viewPlaneNormal: [...cameraPatch.viewPlaneNormal] as Point3,
+      viewUp: cameraPatch.viewUp
+        ? ([...cameraPatch.viewUp] as Point3)
+        : currentICamera?.viewUp
+          ? ([...currentICamera.viewUp] as Point3)
+          : undefined,
+    };
+  }
+
+  private applyLegacyFocalPointPatch(
+    viewStatePatch: Partial<PlanarViewState>,
+    cameraPatch: Partial<ICamera<PlanarScaleInput> & PlanarViewState>
+  ): void {
+    if (!cameraPatch.focalPoint) {
+      return;
+    }
+
+    const focalPoint = [...cameraPatch.focalPoint] as Point3;
+
+    viewStatePatch.anchorCanvas = [0.5, 0.5];
+    viewStatePatch.anchorWorld = focalPoint;
+    viewStatePatch.displayArea = undefined;
+
+    if (this.isVolumeSliceRenderingActive()) {
+      viewStatePatch.slice = {
+        kind: 'volumePoint',
+        sliceWorldPoint: focalPoint,
+      };
+    }
+  }
+
+  private isVolumeSliceRenderingActive(): boolean {
+    const rendering = this.getCurrentPlanarRendering();
+
+    return (
+      rendering?.renderMode === ActorRenderMode.CPU_VOLUME ||
+      rendering?.renderMode === ActorRenderMode.VTK_VOLUME_SLICE
+    );
+  }
+
+  private warnUnsupportedPositionOnlyCameraPatch(): void {
+    if (
+      typeof process !== 'undefined' &&
+      process.env?.NODE_ENV === 'production'
+    ) {
+      return;
+    }
+
+    console.warn(
+      '[PlanarViewportLegacyAdapter] Position-only planar camera patches are unsupported. Use focalPoint, parallelScale, or view state APIs.'
+    );
   }
 
   removeData(dataId: string): void {

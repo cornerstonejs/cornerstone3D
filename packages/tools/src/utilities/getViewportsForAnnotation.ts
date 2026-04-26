@@ -1,7 +1,7 @@
 import { getEnabledElements, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import type { Annotation } from '../types';
-import getViewportSpatialCamera from './getViewportSpatialCamera';
+import getViewportICamera from './getViewportICamera';
 
 const { isEqual } = csUtils;
 
@@ -23,7 +23,7 @@ export default function getViewportsForAnnotation(
     .filter((enabledElement) => {
       if (enabledElement.FrameOfReferenceUID === metadata.FrameOfReferenceUID) {
         const viewport = enabledElement.viewport;
-        const { viewPlaneNormal, viewUp } = getViewportSpatialCamera(viewport);
+        const { viewPlaneNormal, viewUp } = getViewportICamera(viewport);
 
         if (!viewPlaneNormal) {
           return false;

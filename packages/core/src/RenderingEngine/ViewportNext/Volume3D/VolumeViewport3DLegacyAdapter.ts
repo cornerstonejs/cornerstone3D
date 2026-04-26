@@ -4,6 +4,7 @@ import { VIEWPORT_PRESETS } from '../../../constants';
 import { Events } from '../../../enums';
 import type {
   ActorEntry,
+  ICamera,
   IVolumeInput,
   VolumeViewportProperties,
   ViewportPreset,
@@ -13,6 +14,7 @@ import triggerEvent from '../../../utilities/triggerEvent';
 import viewportNextDataSetMetadataProvider from '../../../utilities/viewportNextDataSetMetadataProvider';
 import VolumeViewport3DV2 from './3dViewport';
 import type {
+  Volume3DCamera,
   Volume3DDataPresentation,
   Volume3DRegisteredDataSet,
   Volume3DVolumeRendering,
@@ -29,6 +31,14 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3DV2 {
     string,
     VolumeViewportProperties
   >();
+
+  getCamera(): Volume3DCamera & ICamera {
+    return this.getViewState();
+  }
+
+  setCamera(cameraPatch: Partial<Volume3DCamera>): void {
+    this.setViewState(cameraPatch);
+  }
 
   async setVolumes(
     volumeInputArray: IVolumeInput[],

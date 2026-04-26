@@ -24,7 +24,7 @@ import type {
   ECGWaveformPayload,
   RenderWindowMetrics,
 } from './ECGViewportTypes';
-import { getECGCameraLayout } from './ecgViewportCamera';
+import { resolveECGCanvasMapping } from './ecgViewportCamera';
 
 export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
   async addData(
@@ -54,8 +54,8 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
       updateDataPresentation: (props) => {
         this.updateDataPresentation(rendering, props);
       },
-      updateCamera: (camera) => {
-        this.updateCamera(rendering, camera);
+      applyViewState: (camera) => {
+        this.applyViewState(rendering, camera);
       },
       getFrameOfReferenceUID: () => {
         return this.getFrameOfReferenceUID(ctx);
@@ -78,7 +78,7 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
       | undefined;
   }
 
-  private updateCamera(rendering: ECGCanvasRendering, camera: unknown): void {
+  private applyViewState(rendering: ECGCanvasRendering, camera: unknown): void {
     rendering.currentCamera = camera as ECGCamera;
   }
 
@@ -121,16 +121,16 @@ function getEffectiveTransform(
   camera: ECGCamera | undefined,
   canvas: HTMLCanvasElement
 ): { effectiveRatio: number; xOffset: number; yOffset: number } {
-  const layout = getECGCameraLayout({
+  const mapping = resolveECGCanvasMapping({
     metrics,
     camera,
     canvas,
   });
 
   return {
-    effectiveRatio: layout.effectiveRatio,
-    xOffset: layout.xOffset,
-    yOffset: layout.yOffset,
+    effectiveRatio: mapping.effectiveRatio,
+    xOffset: mapping.xOffset,
+    yOffset: mapping.yOffset,
   };
 }
 

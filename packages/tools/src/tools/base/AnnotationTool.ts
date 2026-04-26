@@ -41,6 +41,7 @@ import ChangeTypes from '../../enums/ChangeTypes';
 import { setAnnotationSelected } from '../../stateManagement/annotation/annotationSelection';
 import { addContourSegmentationAnnotation } from '../../utilities/contourSegmentation';
 import { safeStructuredClone } from '../../utilities/safeStructuredClone';
+import getViewportICamera from '../../utilities/getViewportICamera';
 
 const { DefaultHistoryMemo } = csUtils.HistoryMemo;
 
@@ -756,7 +757,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     const { viewport } = enabledElement;
     const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
 
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const viewPlaneNormal = options.viewplaneNormal ?? camera.viewPlaneNormal;
     const viewUp = options.viewUp ?? camera.viewUp;
 

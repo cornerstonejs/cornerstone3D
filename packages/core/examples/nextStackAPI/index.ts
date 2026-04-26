@@ -10,7 +10,6 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addButtonToToolbar,
-  camera as cameraHelpers,
   ctVoiRange,
 } from '../../../../utils/demo/helpers';
 import {
@@ -76,7 +75,7 @@ element.addEventListener(Events.CAMERA_MODIFIED, () => {
     return;
   }
 
-  const { flipHorizontal, flipVertical } = viewport.getCamera();
+  const { flipHorizontal, flipVertical } = viewport.getViewState();
   const { rotation } = viewport.getViewPresentation();
 
   rotationInfo.innerText = `Rotation: ${Math.round(rotation || 0)}`;
@@ -146,9 +145,9 @@ addToolbarButton({
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
-    const { flipHorizontal } = viewport.getCamera();
+    const { flipHorizontal = false } = viewport.getViewState();
 
-    viewport.setCamera({ flipHorizontal: !flipHorizontal });
+    viewport.setViewState({ flipHorizontal: !flipHorizontal });
     viewport.render();
   },
 });
@@ -158,9 +157,9 @@ addToolbarButton({
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
-    const { flipVertical } = viewport.getCamera();
+    const { flipVertical = false } = viewport.getViewState();
 
-    viewport.setCamera({ flipVertical: !flipVertical });
+    viewport.setViewState({ flipVertical: !flipVertical });
     viewport.render();
   },
 });
@@ -220,16 +219,8 @@ addToolbarButton({
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     viewport.resetCamera();
-
-    const camera = viewport.getCamera();
-    const { parallelScale, position, focalPoint } =
-      cameraHelpers.getRandomlyTranslatedAndZoomedCameraProperties(camera, 50);
-
-    viewport.setCamera({
-      parallelScale,
-      position: position as Types.Point3,
-      focalPoint: focalPoint as Types.Point3,
-    });
+    viewport.setScale(1.35);
+    viewport.setPan([42, -28]);
     viewport.render();
   },
 });

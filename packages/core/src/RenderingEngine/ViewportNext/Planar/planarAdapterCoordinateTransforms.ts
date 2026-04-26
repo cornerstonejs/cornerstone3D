@@ -18,14 +18,14 @@ import {
   type PlanarScaleInput,
 } from './planarCameraScale';
 
-type PlanarComputedCamera = Pick<
+type PlanarResolvedView = Pick<
   Required<ICamera>,
   'focalPoint' | 'parallelScale' | 'viewPlaneNormal' | 'viewUp'
 > & {
   presentationScale?: PlanarScaleInput;
 };
 
-function getPlanarCameraBasis(camera: PlanarComputedCamera) {
+function getPlanarViewStateBasis(camera: PlanarResolvedView) {
   const viewUp = vec3.normalize(
     vec3.create(),
     camera.viewUp as unknown as vec3
@@ -51,8 +51,8 @@ function getPlanarCameraBasis(camera: PlanarComputedCamera) {
   };
 }
 
-export function canvasToWorldPlanarCamera(args: {
-  camera: PlanarComputedCamera;
+export function canvasToWorldPlanarViewState(args: {
+  camera: PlanarResolvedView;
   canvasWidth: number;
   canvasHeight: number;
   canvasPos: Point2;
@@ -60,7 +60,7 @@ export function canvasToWorldPlanarCamera(args: {
   const { camera, canvasWidth, canvasHeight, canvasPos } = args;
   const safeCanvasWidth = Math.max(canvasWidth, 1);
   const safeCanvasHeight = Math.max(canvasHeight, 1);
-  const { right, viewUp } = getPlanarCameraBasis(camera);
+  const { right, viewUp } = getPlanarViewStateBasis(camera);
   const worldHeight = Math.max(camera.parallelScale, 0.001) * 2;
   const worldWidth =
     worldHeight *
@@ -86,8 +86,8 @@ export function canvasToWorldPlanarCamera(args: {
   return worldPos;
 }
 
-export function worldToCanvasPlanarCamera(args: {
-  camera: PlanarComputedCamera;
+export function worldToCanvasPlanarViewState(args: {
+  camera: PlanarResolvedView;
   canvasWidth: number;
   canvasHeight: number;
   worldPos: Point3;
@@ -95,7 +95,7 @@ export function worldToCanvasPlanarCamera(args: {
   const { camera, canvasWidth, canvasHeight, worldPos } = args;
   const safeCanvasWidth = Math.max(canvasWidth, 1);
   const safeCanvasHeight = Math.max(canvasHeight, 1);
-  const { right, viewUp } = getPlanarCameraBasis(camera);
+  const { right, viewUp } = getPlanarViewStateBasis(camera);
   const worldHeight = Math.max(camera.parallelScale, 0.001) * 2;
   const worldWidth =
     worldHeight *

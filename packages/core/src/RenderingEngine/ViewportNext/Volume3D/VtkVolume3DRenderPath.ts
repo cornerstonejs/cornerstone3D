@@ -88,8 +88,8 @@ export class VtkVolume3DRenderPath
       updateDataPresentation: (props) => {
         this.updateDataPresentation(rendering, props);
       },
-      updateCamera: (camera) => {
-        this.updateCamera(ctx, camera);
+      applyViewState: (camera) => {
+        this.applyViewState(ctx, camera);
       },
       getFrameOfReferenceUID: () => {
         return this.getFrameOfReferenceUID(rendering);
@@ -119,7 +119,7 @@ export class VtkVolume3DRenderPath
     );
   }
 
-  private updateCamera(
+  private applyViewState(
     ctx: Volume3DVtkVolumeAdapterContext,
     camera: unknown
   ): void {

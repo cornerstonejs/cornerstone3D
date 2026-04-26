@@ -13,7 +13,7 @@ import renderingEngineCache from '../../renderingEngineCache';
 import type {
   DataAddOptions,
   LoadedData,
-  RenderingBinding,
+  ViewportDataBinding,
 } from '../ViewportArchitectureTypes';
 import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
 import ViewportNext from '../ViewportNext';
@@ -26,9 +26,10 @@ import {
   isViewportNextImageDataSet,
 } from '../viewportNextDataSetAccess';
 import { DefaultVolume3DDataProvider } from './DefaultVolume3DDataProvider';
-import Volume3DComputedCamera from './Volume3DComputedCamera';
+import Volume3DResolvedView from './Volume3DResolvedView';
 import { VtkGeometry3DPath } from './VtkGeometry3DRenderPath';
 import { VtkVolume3DPath } from './VtkVolume3DRenderPath';
+import applyVolume3DCamera from './applyVolume3DCamera';
 import type {
   Volume3DCamera,
   Volume3DPayload,
@@ -121,7 +122,7 @@ class VolumeViewport3DV2 extends ViewportNext<
         renderer,
       },
     };
-    this.camera = {
+    this.viewState = {
       parallelProjection: this.defaultOptions.parallelProjection ?? true,
     } as Volume3DCamera;
 
@@ -181,7 +182,7 @@ class VolumeViewport3DV2 extends ViewportNext<
       visible: true,
       opacity: 1,
     });
-    this.camera = this.getCamera();
+    this.viewState = this.getViewState();
 
     return renderingId;
   }
@@ -267,7 +268,25 @@ class VolumeViewport3DV2 extends ViewportNext<
    *
    * @returns The current 3D camera state.
    */
-  getCamera(): Volume3DCamera & ICamera {
+  getViewState(): Volume3DCamera & ICamera {
+    return this.getRuntimeCamera();
+  }
+
+  setViewState(viewStatePatch: Partial<Volume3DCamera>): void {
+    if (this.isDestroyed) {
+      return;
+    }
+
+    const previousCamera = this.getCameraForEvent();
+
+    applyVolume3DCamera(this.renderContext, viewStatePatch, {
+      resetClippingRange: true,
+    });
+    this.viewState = this.getRuntimeCamera();
+    this.modified(previousCamera);
+  }
+
+  protected getRuntimeCamera(): Volume3DCamera & ICamera {
     const camera = this.getRenderer().getActiveCamera();
 
     return {
@@ -283,9 +302,9 @@ class VolumeViewport3DV2 extends ViewportNext<
     } as Volume3DCamera & ICamera;
   }
 
-  getComputedCamera(): Volume3DComputedCamera {
-    return new Volume3DComputedCamera({
-      camera: this.getCamera(),
+  getResolvedView(): Volume3DResolvedView {
+    return new Volume3DResolvedView({
+      camera: this.getViewState(),
       canvas: this.canvas,
       frameOfReferenceUID: this.resolveFrameOfReferenceUID(),
       renderer: this.getRenderer(),
@@ -301,7 +320,7 @@ class VolumeViewport3DV2 extends ViewportNext<
    */
   getViewPresentation(): { camera: Volume3DCamera & ICamera } {
     return {
-      camera: this.getCamera(),
+      camera: this.getViewState(),
     };
   }
 
@@ -310,7 +329,7 @@ class VolumeViewport3DV2 extends ViewportNext<
   ): ViewReference {
     const binding = this.getCurrentBinding();
     const data = binding ? this.getVolume3DPayload(binding) : undefined;
-    const camera = this.getCamera();
+    const camera = this.getViewState();
     const FrameOfReferenceUID = this.getFrameOfReferenceUID();
     const cameraFocalPoint = camera.focalPoint as Point3 | undefined;
     const viewPlaneNormal = camera.viewPlaneNormal as Point3 | undefined;
@@ -364,13 +383,13 @@ class VolumeViewport3DV2 extends ViewportNext<
 
     if (isVolume3DViewPresentation(viewPresentation)) {
       if (viewPresentation.camera) {
-        this.setCamera(viewPresentation.camera);
+        this.setViewState(viewPresentation.camera);
       }
 
       return;
     }
 
-    this.setCamera(viewPresentation);
+    this.setViewState(viewPresentation);
   }
 
   /**
@@ -494,7 +513,7 @@ class VolumeViewport3DV2 extends ViewportNext<
 
     renderer.resetCamera();
     renderer.resetCameraClippingRange();
-    this.camera = this.getCamera();
+    this.viewState = this.getViewState();
     this.render();
     this.triggerCameraModifiedEvent(previousCamera);
     this.triggerCameraResetEvent();
@@ -553,7 +572,7 @@ class VolumeViewport3DV2 extends ViewportNext<
 
   protected getReferenceViewContexts(): ViewportNextReferenceContext[] {
     const contexts: ViewportNextReferenceContext[] = [];
-    const camera = this.getCamera();
+    const camera = this.getViewState();
 
     for (const [dataId, binding] of this.bindings.entries()) {
       const data = this.getVolume3DPayload(binding);
@@ -616,7 +635,7 @@ class VolumeViewport3DV2 extends ViewportNext<
   }
 
   private getVolume3DPayload(
-    binding: RenderingBinding<Volume3DDataPresentation>
+    binding: ViewportDataBinding<Volume3DDataPresentation>
   ): LoadedData<Volume3DPayload> | undefined {
     if (!isVolume3DData(binding.data)) {
       return;
@@ -649,7 +668,7 @@ class VolumeViewport3DV2 extends ViewportNext<
   }
 
   private getVolume3DRendering(
-    binding: RenderingBinding<Volume3DDataPresentation>
+    binding: ViewportDataBinding<Volume3DDataPresentation>
   ): Volume3DRendering {
     if (!isVolume3DRendering(binding.rendering)) {
       throw new Error(

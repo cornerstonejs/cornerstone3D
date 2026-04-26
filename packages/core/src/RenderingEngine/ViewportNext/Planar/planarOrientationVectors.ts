@@ -3,16 +3,16 @@ import { OrientationAxis } from '../../../enums';
 import type { IImageVolume, Point3 } from '../../../types';
 import getAcquisitionPlaneOrientation from '../../../utilities/getAcquisitionPlaneOrientation';
 import { isPlanarOrientationVectors } from './planarLegacyCompatibility';
-import type { PlanarCamera } from './PlanarViewportTypes';
+import type { PlanarViewState } from './PlanarViewportTypes';
 
-type PlanarCameraVectors = {
+type PlanarViewStateVectors = {
   viewPlaneNormal: Point3;
   viewUp: Point3;
 };
 
 export function getAcquisitionCameraVectors(
   imageVolume: IImageVolume
-): PlanarCameraVectors {
+): PlanarViewStateVectors {
   const { viewPlaneNormal, viewUp } =
     getAcquisitionPlaneOrientation(imageVolume);
 
@@ -22,10 +22,10 @@ export function getAcquisitionCameraVectors(
   };
 }
 
-export function getPlanarCameraVectors(args: {
+export function getPlanarViewStateVectors(args: {
   imageVolume: IImageVolume;
-  orientation?: PlanarCamera['orientation'];
-}): PlanarCameraVectors | undefined {
+  orientation?: PlanarViewState['orientation'];
+}): PlanarViewStateVectors | undefined {
   const { imageVolume, orientation } = args;
 
   if (!orientation) {

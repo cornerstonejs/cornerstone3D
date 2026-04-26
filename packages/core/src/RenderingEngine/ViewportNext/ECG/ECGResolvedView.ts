@@ -3,13 +3,13 @@ import {
   computeECGChannelLayouts,
   getVisibleECGChannels,
 } from '../../../utilities/ECGUtilities';
-import ViewportComputedCamera from '../ViewportComputedCamera';
+import ResolvedViewportView from '../ResolvedViewportView';
 import {
   getAnchorWorldForCanvasPoint,
   getAnchorWorldForPan,
-  getECGCameraLayout,
-  getPanForECGLayout,
-  type ECGCameraLayout,
+  resolveECGCanvasMapping,
+  getPanForECGCanvasMapping,
+  type ECGCanvasMapping,
 } from './ecgViewportCamera';
 import type {
   ECGCamera,
@@ -18,8 +18,8 @@ import type {
   RenderWindowMetrics,
 } from './ECGViewportTypes';
 
-type ECGComputedCameraState = {
-  camera: ECGCamera;
+type ECGResolvedViewState = {
+  viewState: ECGCamera;
   canvas: HTMLCanvasElement;
   dataPresentation?: ECGDataPresentation;
   frameOfReferenceUID: string;
@@ -27,23 +27,23 @@ type ECGComputedCameraState = {
   waveform: ECGWaveformPayload;
 };
 
-class ECGComputedCamera extends ViewportComputedCamera<ECGComputedCameraState> {
-  private cachedLayout?: ECGCameraLayout;
+class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
+  private cachedCanvasMapping?: ECGCanvasMapping;
 
   get zoom(): number {
-    return Math.max(this.state.camera.scale ?? 1, 0.001);
+    return Math.max(this.state.viewState.scale ?? 1, 0.001);
   }
 
   get pan(): Point2 {
-    return getPanForECGLayout(this.getLayout());
+    return getPanForECGCanvasMapping(this.getCanvasMapping());
   }
 
   canvasToWorld(canvasPos: Point2): Point3 {
-    const layout = this.getLayout();
+    const mapping = this.getCanvasMapping();
     const channelLayouts = this.getChannelLayouts();
     const subCanvasPos: Point2 = [
-      (canvasPos[0] - layout.xOffset) / layout.effectiveRatio,
-      (canvasPos[1] - layout.yOffset) / layout.effectiveRatio,
+      (canvasPos[0] - mapping.xOffset) / mapping.effectiveRatio,
+      (canvasPos[1] - mapping.yOffset) / mapping.effectiveRatio,
     ];
     let z = 0;
 
@@ -77,7 +77,7 @@ class ECGComputedCamera extends ViewportComputedCamera<ECGComputedCameraState> {
   }
 
   worldToCanvas(worldPos: Point3): Point2 {
-    const layout = this.getLayout();
+    const mapping = this.getCanvasMapping();
     const channelLayouts = this.getChannelLayouts();
     const z = Math.round(worldPos[2]);
 
@@ -88,12 +88,12 @@ class ECGComputedCamera extends ViewportComputedCamera<ECGComputedCameraState> {
     return [
       (worldPos[0] / this.state.waveform.numberOfSamples) *
         this.state.metrics.ecgWidth *
-        layout.effectiveRatio +
-        layout.xOffset,
+        mapping.effectiveRatio +
+        mapping.xOffset,
       (channelLayouts[z].baseline -
         worldPos[1] * this.state.metrics.channelScale) *
-        layout.effectiveRatio +
-        layout.yOffset,
+        mapping.effectiveRatio +
+        mapping.yOffset,
     ];
   }
 
@@ -101,20 +101,23 @@ class ECGComputedCamera extends ViewportComputedCamera<ECGComputedCameraState> {
     return this.state.frameOfReferenceUID;
   }
 
-  withZoom(zoom: number, canvasPoint?: Point2): ECGComputedCamera {
+  withZoom(zoom: number, canvasPoint?: Point2): ECGResolvedView {
     const nextZoom = Math.max(zoom, 0.001);
 
     if (!canvasPoint) {
-      return this.cloneWithCamera({
-        ...this.state.camera,
+      return this.cloneWithViewState({
+        ...this.state.viewState,
         scale: nextZoom,
         scaleMode: 'fit',
       });
     }
 
-    return this.cloneWithCamera({
-      ...this.state.camera,
-      anchorWorld: getAnchorWorldForCanvasPoint(canvasPoint, this.getLayout()),
+    return this.cloneWithViewState({
+      ...this.state.viewState,
+      anchorWorld: getAnchorWorldForCanvasPoint(
+        canvasPoint,
+        this.getCanvasMapping()
+      ),
       anchorCanvas: [
         canvasPoint[0] / Math.max(this.state.canvas.clientWidth, 1),
         canvasPoint[1] / Math.max(this.state.canvas.clientHeight, 1),
@@ -124,15 +127,18 @@ class ECGComputedCamera extends ViewportComputedCamera<ECGComputedCameraState> {
     });
   }
 
-  withPan(pan: Point2): ECGComputedCamera {
-    return this.cloneWithCamera({
-      ...this.state.camera,
-      anchorWorld: getAnchorWorldForPan([pan[0], pan[1]], this.getLayout()),
+  withPan(pan: Point2): ECGResolvedView {
+    return this.cloneWithViewState({
+      ...this.state.viewState,
+      anchorWorld: getAnchorWorldForPan(
+        [pan[0], pan[1]],
+        this.getCanvasMapping()
+      ),
     });
   }
 
   protected buildICamera(): ICamera {
-    const layout = this.getLayout();
+    const mapping = this.getCanvasMapping();
     const canvasCenter: Point2 = [
       this.state.canvas.clientWidth / 2,
       this.state.canvas.clientHeight / 2,
@@ -146,19 +152,19 @@ class ECGComputedCamera extends ViewportComputedCamera<ECGComputedCameraState> {
       parallelScale:
         this.state.canvas.clientHeight /
         2 /
-        Math.max(layout.effectiveRatio, 0.001),
+        Math.max(mapping.effectiveRatio, 0.001),
       viewPlaneNormal: [0, 0, 1],
     };
   }
 
-  private getLayout(): ECGCameraLayout {
-    this.cachedLayout ||= getECGCameraLayout({
+  private getCanvasMapping(): ECGCanvasMapping {
+    this.cachedCanvasMapping ||= resolveECGCanvasMapping({
       canvas: this.state.canvas,
-      camera: this.state.camera,
+      camera: this.state.viewState,
       metrics: this.state.metrics,
     });
 
-    return this.cachedLayout;
+    return this.cachedCanvasMapping;
   }
 
   private getChannelLayouts() {
@@ -171,13 +177,13 @@ class ECGComputedCamera extends ViewportComputedCamera<ECGComputedCameraState> {
     });
   }
 
-  private cloneWithCamera(camera: ECGCamera): ECGComputedCamera {
-    return new ECGComputedCamera({
+  private cloneWithViewState(viewState: ECGCamera): ECGResolvedView {
+    return new ECGResolvedView({
       ...this.state,
-      camera,
+      viewState,
     });
   }
 }
 
-export type { ECGComputedCameraState };
-export default ECGComputedCamera;
+export type { ECGResolvedViewState };
+export default ECGResolvedView;

@@ -7,7 +7,7 @@ import { ActorRenderMode } from '../../../types';
 import { getOrientationFromScanAxisNormal } from '../../helpers/getCameraVectors';
 import { isValidVolume } from '../../../utilities/isValidVolume';
 import type {
-  PlanarCamera,
+  PlanarViewState,
   PlanarEffectiveRenderMode,
   PlanarOrientation,
   PlanarRegisteredDataSet,
@@ -19,7 +19,7 @@ export const DEFAULT_PLANAR_CPU_IMAGE_THRESHOLD = 64 * 1024 * 1024;
 export const DEFAULT_PLANAR_CPU_VOLUME_THRESHOLD = 64 * 1024 * 1024;
 
 export interface SelectedPlanarRenderPath {
-  acquisitionOrientation?: PlanarCamera['orientation'];
+  acquisitionOrientation?: PlanarViewState['orientation'];
   renderMode: PlanarEffectiveRenderMode;
   volumeId: string;
 }
@@ -42,7 +42,7 @@ function isPositiveSafeInteger(value: unknown): value is number {
 
 export function getPlanarAcquisitionOrientation(
   imageIds: string[]
-): PlanarCamera['orientation'] | undefined {
+): PlanarViewState['orientation'] | undefined {
   const imageId = imageIds[0];
 
   if (!imageId) {
@@ -220,8 +220,8 @@ export function selectPlanarRenderPath(
 
 export function normalizePlanarOrientation(
   orientation: PlanarOrientation | undefined,
-  acquisitionOrientation?: PlanarCamera['orientation']
-): PlanarCamera['orientation'] {
+  acquisitionOrientation?: PlanarViewState['orientation']
+): PlanarViewState['orientation'] {
   if (!orientation || orientation === OrientationAxis.ACQUISITION) {
     return OrientationAxis.ACQUISITION;
   }

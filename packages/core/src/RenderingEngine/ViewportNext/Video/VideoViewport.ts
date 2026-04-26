@@ -17,7 +17,7 @@ import { DefaultVideoDataProvider } from './DefaultVideoDataProvider';
 import { HtmlVideoPath } from './HtmlVideoRenderPath';
 import type {
   LoadedData,
-  RenderingBinding,
+  ViewportDataBinding,
 } from '../ViewportArchitectureTypes';
 import { getViewportNextSourceDataId } from '../viewportNextDataSetAccess';
 import type { ViewportNextReferenceContext } from '../viewportNextReferenceCompatibility';
@@ -33,7 +33,7 @@ import {
   createDefaultVideoCamera,
   normalizeVideoCamera,
 } from './videoViewportCamera';
-import VideoComputedCamera from './VideoComputedCamera';
+import VideoResolvedView from './VideoResolvedView';
 
 defaultRenderPathResolver.register(new HtmlVideoPath());
 
@@ -74,7 +74,7 @@ class VideoViewport extends ViewportNext<
       type: 'video',
       element: this.element,
     };
-    this.camera = createDefaultVideoCamera();
+    this.viewState = createDefaultVideoCamera();
 
     this.element.setAttribute('data-viewport-uid', this.id);
     this.element.setAttribute(
@@ -125,10 +125,10 @@ class VideoViewport extends ViewportNext<
         );
       }
 
-      this.camera = createDefaultVideoCamera();
+      this.viewState = createDefaultVideoCamera();
 
       if (videoData.frameRange[0] > 1) {
-        this.camera.currentTimeSeconds = frameNumberToTimeSeconds(
+        this.viewState.currentTimeSeconds = frameNumberToTimeSeconds(
           videoData.frameRange[0],
           videoData.fps
         );
@@ -171,7 +171,7 @@ class VideoViewport extends ViewportNext<
     const currentZoom = this.getZoom();
 
     if (rotation) {
-      target.rotation = this.getComputedCamera()?.rotation ?? 0;
+      target.rotation = this.getResolvedView()?.rotation ?? 0;
     }
 
     if (zoom) {
@@ -192,8 +192,8 @@ class VideoViewport extends ViewportNext<
     }
 
     const nextZoom = Math.max(viewPres.zoom ?? this.getZoom(), 0.001);
-    this.setCamera({
-      rotation: viewPres.rotation ?? this.getComputedCamera()?.rotation ?? 0,
+    this.setViewState({
+      rotation: viewPres.rotation ?? this.getResolvedView()?.rotation ?? 0,
       scale: nextZoom,
       scaleMode: 'fit',
     });
@@ -276,7 +276,7 @@ class VideoViewport extends ViewportNext<
    */
   getZoom(): number {
     return (
-      this.getComputedCamera()?.zoom ?? Math.max(this.camera.scale ?? 1, 0.001)
+      this.getResolvedView()?.zoom ?? Math.max(this.viewState.scale ?? 1, 0.001)
     );
   }
 
@@ -284,16 +284,16 @@ class VideoViewport extends ViewportNext<
    * Sets the zoom level, optionally anchored to a canvas point.
    */
   setZoom(zoom: number, canvasPoint?: Point2): void {
-    const computedCamera = this.getComputedCamera();
+    const resolvedView = this.getResolvedView();
 
-    if (computedCamera) {
-      this.applyComputedCameraState(
-        computedCamera.withZoom(zoom, canvasPoint).state.camera
+    if (resolvedView) {
+      this.applyResolvedViewState(
+        resolvedView.withZoom(zoom, canvasPoint).state.viewState
       );
       return;
     }
 
-    this.setCamera({
+    this.setViewState({
       scale: Math.max(zoom, 0.001),
       scaleMode: 'fit',
     });
@@ -303,27 +303,27 @@ class VideoViewport extends ViewportNext<
    * Returns the current pan offset in canvas coordinates.
    */
   getPan(): Point2 {
-    return this.getComputedCamera()?.pan ?? [0, 0];
+    return this.getResolvedView()?.pan ?? [0, 0];
   }
 
   /**
    * Sets the pan offset in canvas coordinates.
    */
   setPan(pan: Point2): void {
-    const computedCamera = this.getComputedCamera();
+    const resolvedView = this.getResolvedView();
 
-    if (!computedCamera) {
+    if (!resolvedView) {
       return;
     }
 
-    this.applyComputedCameraState(computedCamera.withPan(pan).state.camera);
+    this.applyResolvedViewState(resolvedView.withPan(pan).state.viewState);
   }
 
   /**
    * Returns the computed camera that resolves layout, zoom, and pan
    * from the raw camera state and the current video element dimensions.
    */
-  getComputedCamera(): VideoComputedCamera | undefined {
+  getResolvedView(): VideoResolvedView | undefined {
     const videoElement = this.getVideoElement();
     const videoData = this.getVideoData();
 
@@ -331,8 +331,8 @@ class VideoViewport extends ViewportNext<
       return;
     }
 
-    return new VideoComputedCamera({
-      camera: this.camera,
+    return new VideoResolvedView({
+      viewState: this.viewState,
       containerHeight: this.element.clientHeight,
       containerWidth: this.element.clientWidth,
       frameOfReferenceUID:
@@ -413,7 +413,7 @@ class VideoViewport extends ViewportNext<
       ? Math.max(videoData.durationSeconds, 0)
       : Number.POSITIVE_INFINITY;
 
-    this.setCamera({
+    this.setViewState({
       currentTimeSeconds: Math.max(0, Math.min(timeSeconds, maxTimeSeconds)),
     });
   }
@@ -529,7 +529,7 @@ class VideoViewport extends ViewportNext<
    */
   getCurrentTime(): number {
     this.syncCameraCurrentTimeFromElement();
-    return this.camera.currentTimeSeconds ?? 0;
+    return this.viewState.currentTimeSeconds ?? 0;
   }
 
   /**
@@ -604,7 +604,7 @@ class VideoViewport extends ViewportNext<
       return;
     }
 
-    // DOM updates are applied immediately in updateCamera/updateDataPresentation
+    // DOM updates are applied immediately in applyViewState/updateDataPresentation
   }
 
   /**
@@ -629,8 +629,8 @@ class VideoViewport extends ViewportNext<
   /**
    * Clamps and normalizes video camera values before storage.
    */
-  protected normalizeCamera(camera: VideoCamera): VideoCamera {
-    return normalizeVideoCamera(camera);
+  protected override normalizeViewState(viewState: VideoCamera): VideoCamera {
+    return normalizeVideoCamera(viewState);
   }
 
   /**
@@ -659,7 +659,7 @@ class VideoViewport extends ViewportNext<
   }
 
   private getVideoDataFromBinding(
-    binding: RenderingBinding<VideoDataPresentation>
+    binding: ViewportDataBinding<VideoDataPresentation>
   ): LoadedData<VideoStreamPayload> | undefined {
     if (!isVideoStreamData(binding.data)) {
       return;
@@ -687,12 +687,12 @@ class VideoViewport extends ViewportNext<
 
     const currentTimeSeconds = Math.max(0, element.currentTime || 0);
 
-    if (currentTimeSeconds === (this.camera.currentTimeSeconds ?? 0)) {
+    if (currentTimeSeconds === (this.viewState.currentTimeSeconds ?? 0)) {
       return;
     }
 
-    this.camera = {
-      ...this.camera,
+    this.viewState = {
+      ...this.viewState,
       currentTimeSeconds,
     };
   }
@@ -730,10 +730,10 @@ class VideoViewport extends ViewportNext<
     this.trackedVideoElement = undefined;
   }
 
-  private applyComputedCameraState(nextCamera: VideoCamera): void {
+  private applyResolvedViewState(nextCamera: VideoCamera): void {
     const previousCamera = this.getCameraForEvent();
 
-    this.camera = this.normalizeCamera(nextCamera);
+    this.viewState = this.normalizeViewState(nextCamera);
     this.modified(previousCamera);
   }
 

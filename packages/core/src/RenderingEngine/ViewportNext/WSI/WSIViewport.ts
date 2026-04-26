@@ -1,7 +1,6 @@
 import { ViewportType } from '../../../enums';
 import type {
   CPUIImageData,
-  ICamera,
   Point2,
   Point3,
   ViewPresentation,
@@ -17,16 +16,16 @@ import type {
 import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
 import type {
   LoadedData,
-  RenderingBinding,
+  ViewportDataBinding,
 } from '../ViewportArchitectureTypes';
 import ViewportNext from '../ViewportNext';
 import type { ViewportNextReferenceContext } from '../viewportNextReferenceCompatibility';
 import { DefaultWSIDataProvider } from './DefaultWSIDataProvider';
 import { DicomMicroscopyPath } from './DicomMicroscopyRenderPath';
 import type {
-  WSICamera,
   WSIDataPresentation,
   WSIPayload,
+  WSIViewState,
   WSIViewportRenderContext,
   WSIViewportInput,
   WSIRendering,
@@ -34,17 +33,16 @@ import type {
 import {
   buildWSIColorTransform,
   buildWSIImageData,
-  canvasToIndexForWSI,
   computeWSITransforms,
   indexToWorldWSIMetadata,
   worldToIndexWSIMetadata,
 } from './wsiTransformUtils';
-import WSIComputedCamera from './WSIComputedCamera';
+import WSIResolvedView from './WSIResolvedView';
 
 defaultRenderPathResolver.register(new DicomMicroscopyPath());
 
 export default class WSIViewport extends ViewportNext<
-  WSICamera,
+  WSIViewState,
   WSIDataPresentation,
   WSIViewportRenderContext
 > {
@@ -79,7 +77,7 @@ export default class WSIViewport extends ViewportNext<
       type: 'wsi',
       element: this.element,
     };
-    this.camera = {
+    this.viewState = {
       zoom: 1,
       rotation: 0,
     };
@@ -91,7 +89,7 @@ export default class WSIViewport extends ViewportNext<
     );
   }
 
-  protected normalizeCamera(camera: WSICamera): WSICamera {
+  protected override normalizeViewState(camera: WSIViewState): WSIViewState {
     return {
       ...camera,
       zoom: Math.max(camera.zoom ?? 1, 0.001),
@@ -162,18 +160,16 @@ export default class WSIViewport extends ViewportNext<
     return this.getWSIData()?.imageURISet.has(imageURI) || false;
   }
 
-  setCamera(cameraPatch: Partial<WSICamera>): void {
+  setViewState(cameraPatch: Partial<WSIViewState>): void {
     this.syncCameraFromView();
 
     const view = this.getView();
-    const data = this.getWSIData();
-
     if (!view) {
-      super.setCamera(cameraPatch);
+      super.setViewState(cameraPatch);
       return;
     }
 
-    const nextPatch: Partial<WSICamera> = {};
+    const nextPatch: Partial<WSIViewState> = {};
 
     if (typeof cameraPatch.zoom === 'number') {
       nextPatch.zoom = Math.max(cameraPatch.zoom, 0.001);
@@ -190,40 +186,14 @@ export default class WSIViewport extends ViewportNext<
       nextPatch.rotation = cameraPatch.rotation;
     }
 
-    if (
-      typeof cameraPatch.parallelScale === 'number' &&
-      typeof data?.metadata?.spacing?.[0] === 'number' &&
-      data.metadata.spacing[0] > 0
-    ) {
-      const worldToCanvasRatio =
-        this.element.clientHeight / Math.max(cameraPatch.parallelScale, 0.001);
-
-      nextPatch.resolution = 1 / data.metadata.spacing[0] / worldToCanvasRatio;
+    if (typeof cameraPatch.resolution === 'number') {
+      nextPatch.resolution = Math.max(cameraPatch.resolution, 0.000001);
     }
 
-    if (cameraPatch.focalPoint && data) {
-      const newCanvas = this.worldToCanvas(cameraPatch.focalPoint);
-      const newIndex = canvasToIndexForWSI({
-        canvasPos: newCanvas,
-        canvasWidth: this.element.clientWidth,
-        canvasHeight: this.element.clientHeight,
-        view,
-      });
-
-      nextPatch.centerIndex = [newIndex[0], newIndex[1]];
-    }
-
-    super.setCamera(nextPatch);
+    super.setViewState(nextPatch);
   }
 
-  getCamera(): WSICamera & ICamera {
-    return {
-      ...this.camera,
-      ...this.getCameraForEvent(),
-    };
-  }
-
-  getComputedCamera(): WSIComputedCamera | undefined {
+  getResolvedView(): WSIResolvedView | undefined {
     const view = this.getView();
     const data = this.getWSIData();
 
@@ -231,8 +201,8 @@ export default class WSIViewport extends ViewportNext<
       return;
     }
 
-    return new WSIComputedCamera({
-      camera: this.camera,
+    return new WSIResolvedView({
+      viewState: this.viewState,
       canvasHeight: this.element.clientHeight,
       canvasWidth: this.element.clientWidth,
       frameOfReferenceUID: data.frameOfReferenceUID,
@@ -269,7 +239,7 @@ export default class WSIViewport extends ViewportNext<
       return;
     }
 
-    const cameraPatch: Partial<WSICamera> = {};
+    const cameraPatch: Partial<WSIViewState> = {};
 
     if (typeof viewPres.zoom === 'number') {
       cameraPatch.zoom = viewPres.zoom;
@@ -280,7 +250,7 @@ export default class WSIViewport extends ViewportNext<
     }
 
     if (Object.keys(cameraPatch).length) {
-      this.setCamera(cameraPatch);
+      this.setViewState(cameraPatch);
     }
   }
 
@@ -371,11 +341,11 @@ export default class WSIViewport extends ViewportNext<
   }
 
   scroll(delta: number): void {
-    const camera = this.getComputedCamera()?.toICamera();
+    const resolution =
+      this.getView()?.getResolution?.() ?? this.viewState.resolution ?? 1;
 
-    this.setCamera({
-      parallelScale:
-        Math.max(camera.parallelScale || 1, 0.001) * (1 + 0.1 * delta),
+    this.setViewState({
+      resolution: Math.max(resolution * (1 + 0.1 * delta), 0.000001),
     });
   }
 
@@ -412,22 +382,22 @@ export default class WSIViewport extends ViewportNext<
 
   getZoom(): number {
     return Math.max(
-      this.getView()?.getZoom?.() ?? this.camera.zoom ?? 1,
+      this.getView()?.getZoom?.() ?? this.viewState.zoom ?? 1,
       0.001
     );
   }
 
   setZoom(zoom: number, canvasPoint?: Point2): void {
-    const computedCamera = this.getComputedCamera();
+    const resolvedView = this.getResolvedView();
 
-    if (computedCamera) {
-      this.applyComputedCameraState(
-        computedCamera.withZoom(zoom, canvasPoint).state.camera
+    if (resolvedView) {
+      this.applyResolvedViewState(
+        resolvedView.withZoom(zoom, canvasPoint).state.viewState
       );
       return;
     }
 
-    this.setCamera({
+    this.setViewState({
       zoom: Math.max(zoom, 0.001),
     });
   }
@@ -446,10 +416,10 @@ export default class WSIViewport extends ViewportNext<
     return 0;
   }
 
-  private applyComputedCameraState(nextCamera: WSICamera): void {
+  private applyResolvedViewState(nextCamera: WSIViewState): void {
     const previousCamera = this.getCameraForEvent();
 
-    this.camera = this.normalizeCamera(nextCamera);
+    this.viewState = this.normalizeViewState(nextCamera);
     this.modified(previousCamera);
   }
 
@@ -497,7 +467,7 @@ export default class WSIViewport extends ViewportNext<
   }
 
   protected getCurrentBinding():
-    | RenderingBinding<WSIDataPresentation>
+    | ViewportDataBinding<WSIDataPresentation>
     | undefined {
     return (
       (this.activeDataId ? this.getBinding(this.activeDataId) : undefined) ??
@@ -562,8 +532,8 @@ export default class WSIViewport extends ViewportNext<
 
     const centerIndex = view.getCenter();
 
-    this.camera = this.normalizeCamera({
-      ...this.camera,
+    this.viewState = this.normalizeViewState({
+      ...this.viewState,
       zoom: view.getZoom(),
       rotation: view.getRotation(),
       resolution: view.getResolution(),
@@ -575,7 +545,7 @@ export default class WSIViewport extends ViewportNext<
     return this.getWSIRendering()?.map;
   }
 
-  private getWSIData(): WSIPayload | undefined {
+  protected getWSIData(): WSIPayload | undefined {
     const binding = this.getCurrentBinding();
 
     if (!binding || !isWSIPayload(binding.data)) {

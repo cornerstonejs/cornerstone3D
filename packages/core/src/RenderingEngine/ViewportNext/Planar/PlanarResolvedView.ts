@@ -1,14 +1,15 @@
 import { ActorRenderMode } from '../../../types';
 import type { IImage, IImageVolume, Point2, Point3 } from '../../../types';
-import ViewportComputedCamera from '../ViewportComputedCamera';
+import clonePoint3 from '../../../utilities/clonePoint3';
+import ResolvedViewportView from '../ResolvedViewportView';
 import {
-  canvasToWorldPlanarCamera,
+  canvasToWorldPlanarViewState,
   getCanvasCssDimensions,
-  worldToCanvasPlanarCamera,
+  worldToCanvasPlanarViewState,
 } from './planarAdapterCoordinateTransforms';
 import {
   derivePlanarPresentation,
-  resolvePlanarRenderCamera,
+  resolvePlanarICamera,
 } from './planarRenderCamera';
 import {
   createPlanarCpuImageSliceBasis,
@@ -20,36 +21,36 @@ import {
   shouldUsePlanarCpuVolumeSliceBasis,
 } from './planarSliceBasis';
 import {
-  createDefaultPlanarCamera,
-  normalizePlanarCamera,
-} from './planarViewportCamera';
+  createDefaultPlanarViewState,
+  normalizePlanarViewState,
+} from './planarViewState';
 import {
   normalizePlanarScale,
   type PlanarScaleInput,
 } from './planarCameraScale';
 import type {
-  PlanarCamera,
+  PlanarViewState,
   PlanarPayload,
-  PlanarRenderCamera,
+  PlanarResolvedICamera,
   PlanarViewportRenderContext,
 } from './PlanarViewportTypes';
 import type { PlanarRendering } from './planarRuntimeTypes';
 
-type BasePlanarViewportCameraState = {
-  camera: PlanarCamera;
+type BasePlanarResolvedViewState = {
+  viewState: PlanarViewState;
   canvasWidth: number;
   canvasHeight: number;
   frameOfReferenceUID?: string;
 };
 
-type PlanarStackViewportCameraState = BasePlanarViewportCameraState & {
+type PlanarStackResolvedViewState = BasePlanarResolvedViewState & {
   currentImageIdIndex: number;
   image: IImage;
   maxImageIdIndex: number;
   usePixelGridCenter: boolean;
 };
 
-type PlanarVolumeViewportCameraState = BasePlanarViewportCameraState & {
+type PlanarVolumeResolvedViewState = BasePlanarResolvedViewState & {
   currentImageIdIndex: number;
   imageVolume: IImageVolume;
   maxImageIdIndex: number;
@@ -60,13 +61,9 @@ function clonePoint2(point: Point2): Point2 {
   return [point[0], point[1]];
 }
 
-function clonePoint3(point: Point3): Point3 {
-  return [point[0], point[1], point[2]];
-}
-
-abstract class BasePlanarViewportCamera<
-  TState extends BasePlanarViewportCameraState,
-> extends ViewportComputedCamera<TState, PlanarRenderCamera> {
+abstract class BasePlanarResolvedView<
+  TState extends BasePlanarResolvedViewState,
+> extends ResolvedViewportView<TState, PlanarResolvedICamera> {
   private cachedSliceBasis?: PlanarSliceBasis;
   private cachedPresentation?: ReturnType<typeof derivePlanarPresentation>;
 
@@ -93,7 +90,7 @@ abstract class BasePlanarViewportCamera<
   }
 
   canvasToWorld(canvasPos: Point2): Point3 {
-    return canvasToWorldPlanarCamera({
+    return canvasToWorldPlanarViewState({
       camera: this.requireResolvedICamera(),
       canvasHeight: this.state.canvasHeight,
       canvasPos,
@@ -102,7 +99,7 @@ abstract class BasePlanarViewportCamera<
   }
 
   worldToCanvas(worldPos: Point3): Point2 {
-    return worldToCanvasPlanarCamera({
+    return worldToCanvasPlanarViewState({
       camera: this.requireResolvedICamera(),
       canvasHeight: this.state.canvasHeight,
       canvasWidth: this.state.canvasWidth,
@@ -114,22 +111,19 @@ abstract class BasePlanarViewportCamera<
     return this.state.frameOfReferenceUID;
   }
 
-  withZoom(
-    zoom: number,
-    canvasPoint?: Point2
-  ): BasePlanarViewportCamera<TState> {
+  withZoom(zoom: number, canvasPoint?: Point2): BasePlanarResolvedView<TState> {
     return this.withScale(zoom, canvasPoint);
   }
 
   withScale(
     scale: PlanarScaleInput,
     canvasPoint?: Point2
-  ): BasePlanarViewportCamera<TState> {
+  ): BasePlanarResolvedView<TState> {
     const nextScale = normalizePlanarScale(scale);
 
     if (!canvasPoint) {
-      return this.cloneWithCamera({
-        ...this.state.camera,
+      return this.cloneWithViewState({
+        ...this.state.viewState,
         displayArea: undefined,
         scale: nextScale,
         scaleMode: 'fit',
@@ -138,8 +132,8 @@ abstract class BasePlanarViewportCamera<
 
     const worldPoint = this.canvasToWorld(canvasPoint);
 
-    return this.cloneWithCamera({
-      ...this.state.camera,
+    return this.cloneWithViewState({
+      ...this.state.viewState,
       anchorCanvas: [
         canvasPoint[0] / Math.max(this.state.canvasWidth, 1),
         canvasPoint[1] / Math.max(this.state.canvasHeight, 1),
@@ -151,12 +145,12 @@ abstract class BasePlanarViewportCamera<
     });
   }
 
-  withPan(pan: Point2): BasePlanarViewportCamera<TState> {
+  withPan(pan: Point2): BasePlanarResolvedView<TState> {
     const currentPan = this.pan;
-    const [anchorX, anchorY] = this.state.camera.anchorCanvas ?? [0.5, 0.5];
+    const [anchorX, anchorY] = this.state.viewState.anchorCanvas ?? [0.5, 0.5];
 
-    return this.cloneWithCamera({
-      ...this.state.camera,
+    return this.cloneWithViewState({
+      ...this.state.viewState,
       anchorCanvas: [
         anchorX +
           (pan[0] - currentPan[0]) / Math.max(this.state.canvasWidth, 1),
@@ -167,17 +161,17 @@ abstract class BasePlanarViewportCamera<
     });
   }
 
-  flipHorizontal(): BasePlanarViewportCamera<TState> {
-    return this.cloneWithCamera({
-      ...this.state.camera,
-      flipHorizontal: !this.state.camera.flipHorizontal,
+  flipHorizontal(): BasePlanarResolvedView<TState> {
+    return this.cloneWithViewState({
+      ...this.state.viewState,
+      flipHorizontal: !this.state.viewState.flipHorizontal,
     });
   }
 
-  flipVertical(): BasePlanarViewportCamera<TState> {
-    return this.cloneWithCamera({
-      ...this.state.camera,
-      flipVertical: !this.state.camera.flipVertical,
+  flipVertical(): BasePlanarResolvedView<TState> {
+    return this.cloneWithViewState({
+      ...this.state.viewState,
+      flipVertical: !this.state.viewState.flipVertical,
     });
   }
 
@@ -185,9 +179,9 @@ abstract class BasePlanarViewportCamera<
     return;
   }
 
-  protected buildICamera(): PlanarRenderCamera {
-    return resolvePlanarRenderCamera({
-      camera: this.state.camera,
+  protected buildICamera(): PlanarResolvedICamera {
+    return resolvePlanarICamera({
+      camera: this.state.viewState,
       canvasHeight: this.state.canvasHeight,
       canvasWidth: this.state.canvasWidth,
       sliceBasis: this.getSliceBasis(),
@@ -196,7 +190,7 @@ abstract class BasePlanarViewportCamera<
 
   protected getPresentation() {
     this.cachedPresentation ||= derivePlanarPresentation({
-      camera: this.state.camera,
+      camera: this.state.viewState,
       canvasHeight: this.state.canvasHeight,
       canvasWidth: this.state.canvasWidth,
       sliceBasis: this.getSliceBasis(),
@@ -207,57 +201,59 @@ abstract class BasePlanarViewportCamera<
 
   protected requireResolvedICamera(): Required<
     Pick<
-      PlanarRenderCamera,
+      PlanarResolvedICamera,
       'focalPoint' | 'parallelScale' | 'viewPlaneNormal' | 'viewUp'
     >
   > &
-    Pick<PlanarRenderCamera, 'presentationScale'> {
-    const camera = this.toICamera();
+    Pick<PlanarResolvedICamera, 'presentationScale'> {
+    const viewState = this.toICamera();
 
     if (
-      !camera.focalPoint ||
-      typeof camera.parallelScale !== 'number' ||
-      !camera.viewPlaneNormal ||
-      !camera.viewUp
+      !viewState.focalPoint ||
+      typeof viewState.parallelScale !== 'number' ||
+      !viewState.viewPlaneNormal ||
+      !viewState.viewUp
     ) {
-      throw new Error('[PlanarComputedCamera] Failed to compute planar camera');
+      throw new Error(
+        '[PlanarResolvedView] Failed to compute planar viewState'
+      );
     }
 
     return {
-      focalPoint: clonePoint3(camera.focalPoint),
-      parallelScale: camera.parallelScale,
-      presentationScale: camera.presentationScale
-        ? clonePoint2(camera.presentationScale)
+      focalPoint: clonePoint3(viewState.focalPoint),
+      parallelScale: viewState.parallelScale,
+      presentationScale: viewState.presentationScale
+        ? clonePoint2(viewState.presentationScale)
         : undefined,
-      viewPlaneNormal: clonePoint3(camera.viewPlaneNormal),
-      viewUp: clonePoint3(camera.viewUp),
+      viewPlaneNormal: clonePoint3(viewState.viewPlaneNormal),
+      viewUp: clonePoint3(viewState.viewUp),
     };
   }
 
-  protected createCameraState(camera: PlanarCamera): TState {
+  protected createViewStateState(viewState: PlanarViewState): TState {
     return {
       ...this.state,
-      camera: normalizePlanarCamera(camera),
+      viewState: normalizePlanarViewState(viewState),
     };
   }
 
   protected abstract buildSliceBasis(): PlanarSliceBasis;
 
-  protected abstract cloneWithCamera(
-    camera: PlanarCamera
-  ): BasePlanarViewportCamera<TState>;
+  protected abstract cloneWithViewState(
+    viewState: PlanarViewState
+  ): BasePlanarResolvedView<TState>;
 }
 
-class PlanarStackViewportCamera extends BasePlanarViewportCamera<PlanarStackViewportCameraState> {
+class PlanarStackResolvedView extends BasePlanarResolvedView<PlanarStackResolvedViewState> {
   constructor(
-    state: Omit<PlanarStackViewportCameraState, 'camera'> & {
-      camera?: PlanarCamera;
+    state: Omit<PlanarStackResolvedViewState, 'viewState'> & {
+      viewState?: PlanarViewState;
     }
   ) {
     super({
       ...state,
-      camera: normalizePlanarCamera(
-        state.camera || createDefaultPlanarCamera()
+      viewState: normalizePlanarViewState(
+        state.viewState || createDefaultPlanarViewState()
       ),
     });
   }
@@ -276,21 +272,23 @@ class PlanarStackViewportCamera extends BasePlanarViewportCamera<PlanarStackView
     return createPlanarImageSliceBasis(args);
   }
 
-  protected cloneWithCamera(camera: PlanarCamera): PlanarStackViewportCamera {
-    return new PlanarStackViewportCamera(this.createCameraState(camera));
+  protected cloneWithViewState(
+    viewState: PlanarViewState
+  ): PlanarStackResolvedView {
+    return new PlanarStackResolvedView(this.createViewStateState(viewState));
   }
 }
 
-class PlanarVolumeViewportCamera extends BasePlanarViewportCamera<PlanarVolumeViewportCameraState> {
+class PlanarVolumeResolvedView extends BasePlanarResolvedView<PlanarVolumeResolvedViewState> {
   constructor(
-    state: Omit<PlanarVolumeViewportCameraState, 'camera'> & {
-      camera?: PlanarCamera;
+    state: Omit<PlanarVolumeResolvedViewState, 'viewState'> & {
+      viewState?: PlanarViewState;
     }
   ) {
     super({
       ...state,
-      camera: normalizePlanarCamera(
-        state.camera || createDefaultPlanarCamera()
+      viewState: normalizePlanarViewState(
+        state.viewState || createDefaultPlanarViewState()
       ),
     });
   }
@@ -307,17 +305,22 @@ class PlanarVolumeViewportCamera extends BasePlanarViewportCamera<PlanarVolumeVi
       : createPlanarVolumeSliceBasis;
 
     return createSliceBasis({
-      camera: this.state.camera,
+      viewState: this.state.viewState,
       canvasHeight: this.state.canvasHeight,
       canvasWidth: this.state.canvasWidth,
-      imageIdIndex: this.state.currentImageIdIndex,
+      imageIdIndex:
+        this.state.viewState.slice?.kind === 'stackIndex'
+          ? this.state.currentImageIdIndex
+          : undefined,
       imageVolume: this.state.imageVolume,
-      orientation: this.state.camera.orientation,
+      orientation: this.state.viewState.orientation,
     }).sliceBasis;
   }
 
-  protected cloneWithCamera(camera: PlanarCamera): PlanarVolumeViewportCamera {
-    return new PlanarVolumeViewportCamera(this.createCameraState(camera));
+  protected cloneWithViewState(
+    viewState: PlanarViewState
+  ): PlanarVolumeResolvedView {
+    return new PlanarVolumeResolvedView(this.createViewStateState(viewState));
   }
 }
 
@@ -325,7 +328,7 @@ function getCurrentSliceIndex(rendering: PlanarRendering): number {
   return rendering.currentImageIdIndex;
 }
 
-export function getPlanarCameraCanvasDimensions(args: {
+export function getPlanarViewStateCanvasDimensions(args: {
   rendering: PlanarRendering;
   renderContext: PlanarViewportRenderContext;
 }): {
@@ -349,14 +352,14 @@ export function getPlanarCameraCanvasDimensions(args: {
   };
 }
 
-export function computePlanarViewportCamera(args: {
-  camera: PlanarCamera;
+export function resolvePlanarViewportView(args: {
+  viewState: PlanarViewState;
   data?: PlanarPayload;
   frameOfReferenceUID?: string;
   rendering?: PlanarRendering;
   renderContext: PlanarViewportRenderContext;
   sliceIndex?: number;
-}): PlanarStackViewportCamera | PlanarVolumeViewportCamera | undefined {
+}): PlanarStackResolvedView | PlanarVolumeResolvedView | undefined {
   const { data, frameOfReferenceUID, renderContext, rendering, sliceIndex } =
     args;
 
@@ -364,11 +367,11 @@ export function computePlanarViewportCamera(args: {
     return;
   }
 
-  const { canvasHeight, canvasWidth } = getPlanarCameraCanvasDimensions({
+  const { canvasHeight, canvasWidth } = getPlanarViewStateCanvasDimensions({
     renderContext,
     rendering,
   });
-  const requestedCamera = args.camera;
+  const requestedViewState = args.viewState;
 
   if (
     rendering.renderMode === ActorRenderMode.CPU_IMAGE ||
@@ -383,8 +386,8 @@ export function computePlanarViewportCamera(args: {
       return;
     }
 
-    return new PlanarStackViewportCamera({
-      camera: requestedCamera,
+    return new PlanarStackResolvedView({
+      viewState: requestedViewState,
       canvasHeight,
       canvasWidth,
       currentImageIdIndex: getCurrentSliceIndex(rendering),
@@ -402,25 +405,45 @@ export function computePlanarViewportCamera(args: {
     rendering.renderMode === ActorRenderMode.CPU_VOLUME ||
     rendering.renderMode === ActorRenderMode.VTK_VOLUME_SLICE
   ) {
-    const currentImageIdIndex =
+    const resolvedViewState =
+      typeof sliceIndex === 'number'
+        ? {
+            ...requestedViewState,
+            slice: {
+              kind: 'stackIndex' as const,
+              imageIdIndex: sliceIndex,
+            },
+          }
+        : requestedViewState;
+    const createSliceBasis = shouldUsePlanarCpuVolumeSliceBasis(
+      rendering.dataPresentation?.interpolationType
+    )
+      ? createPlanarCpuVolumeSliceBasis
+      : createPlanarVolumeSliceBasis;
+    const resolvedImageIdIndex =
       typeof sliceIndex === 'number'
         ? sliceIndex
-        : (resolvePlanarVolumeImageIdIndex({
-            camera: requestedCamera,
+        : resolvePlanarVolumeImageIdIndex({
+            viewState: resolvedViewState,
             fallbackImageIdIndex: rendering.currentImageIdIndex,
-          }) ?? rendering.currentImageIdIndex);
+          });
+    const { currentImageIdIndex, maxImageIdIndex } = createSliceBasis({
+      viewState: resolvedViewState,
+      canvasHeight,
+      canvasWidth,
+      imageIdIndex: resolvedImageIdIndex,
+      imageVolume: rendering.imageVolume,
+      orientation: resolvedViewState.orientation,
+    });
 
-    return new PlanarVolumeViewportCamera({
-      camera: {
-        ...requestedCamera,
-        imageIdIndex: currentImageIdIndex,
-      },
+    return new PlanarVolumeResolvedView({
+      viewState: resolvedViewState,
       canvasHeight,
       canvasWidth,
       currentImageIdIndex,
       frameOfReferenceUID,
       imageVolume: rendering.imageVolume,
-      maxImageIdIndex: rendering.maxImageIdIndex,
+      maxImageIdIndex,
       usePixelGridCenter:
         rendering.renderMode === ActorRenderMode.CPU_VOLUME &&
         shouldUsePlanarCpuVolumeSliceBasis(
@@ -431,12 +454,12 @@ export function computePlanarViewportCamera(args: {
 }
 
 export type {
-  BasePlanarViewportCameraState,
-  PlanarStackViewportCameraState,
-  PlanarVolumeViewportCameraState,
+  BasePlanarResolvedViewState,
+  PlanarStackResolvedViewState,
+  PlanarVolumeResolvedViewState,
 };
 export {
-  BasePlanarViewportCamera,
-  PlanarStackViewportCamera,
-  PlanarVolumeViewportCamera,
+  BasePlanarResolvedView,
+  PlanarStackResolvedView,
+  PlanarVolumeResolvedView,
 };

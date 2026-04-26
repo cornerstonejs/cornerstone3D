@@ -229,7 +229,7 @@ function updateInfo(): void {
     const viewport = getViewport(viewportId);
     const scale = viewport.getScale();
     const zoom = viewport.getZoom();
-    const camera = viewport.getCamera();
+    const viewState = viewport.getViewState();
     const info = viewportInfo.get(viewportId);
 
     if (!info) {
@@ -239,7 +239,7 @@ function updateInfo(): void {
     info.innerText = [
       `scale: [${scale[0].toFixed(2)}, ${scale[1].toFixed(2)}]`,
       `legacy zoom: ${zoom.toFixed(2)}`,
-      `scaleMode: ${camera.scaleMode ?? 'fit'}`,
+      `scaleMode: ${viewState.scaleMode ?? 'fit'}`,
       `viewport: ${viewportWidthPx} x ${viewportHeightPx}`,
     ].join('\n');
   }

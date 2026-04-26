@@ -10,6 +10,7 @@ import {
   drawCircle as drawCircleSvg,
   drawPath as drawPathSvg,
 } from '../../../../drawingSvg';
+import getViewportICamera from '../../../../utilities/getViewportICamera';
 
 export default {
   [StrategyCallbacks.CalculateCursorGeometry]: function (
@@ -22,8 +23,12 @@ export default {
     const { configuration, activeStrategy, hoverData } = operationData;
     const { viewport } = enabledElement;
 
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const { brushSize } = configuration;
+
+    if (!camera.viewUp || !camera.viewPlaneNormal) {
+      return;
+    }
 
     const viewUp = vec3.fromValues(
       camera.viewUp[0],

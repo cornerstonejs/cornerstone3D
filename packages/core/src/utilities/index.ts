@@ -7,6 +7,8 @@ import scaleRgbTransferFunction from './scaleRgbTransferFunction';
 import triggerEvent from './triggerEvent';
 import uuidv4 from './uuidv4';
 import getMinMax from './getMinMax';
+import clonePoint3 from './clonePoint3';
+import hasOwn from './hasOwn';
 import getRuntimeId from './getRuntimeId';
 import getVOIRangeFromWindowLevel from './getVOIRangeFromWindowLevel';
 import imageIdToURI from './imageIdToURI';
@@ -145,6 +147,8 @@ export {
   clamp,
   uuidv4,
   getMinMax,
+  clonePoint3,
+  hasOwn,
   getRuntimeId,
   getVOIRangeFromWindowLevel,
   isOpposite,

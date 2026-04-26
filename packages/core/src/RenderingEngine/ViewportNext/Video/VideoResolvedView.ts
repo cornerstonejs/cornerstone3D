@@ -1,10 +1,10 @@
 import type { ICamera, Point2, Point3 } from '../../../types';
-import ViewportComputedCamera from '../ViewportComputedCamera';
+import ResolvedViewportView from '../ResolvedViewportView';
 import {
   getAnchorWorldForPan,
-  getPanForVideoLayout,
-  getVideoLayout,
-  type VideoCameraLayout,
+  getPanForVideoCanvasMapping,
+  resolveVideoCanvasMapping,
+  type VideoCanvasMapping,
 } from './videoViewportCamera';
 import type {
   VideoCamera,
@@ -12,8 +12,8 @@ import type {
   VideoStreamPayload,
 } from './VideoViewportTypes';
 
-type VideoComputedCameraState = {
-  camera: VideoCamera;
+type VideoResolvedViewState = {
+  viewState: VideoCamera;
   containerHeight: number;
   containerWidth: number;
   frameOfReferenceUID?: string;
@@ -23,37 +23,39 @@ type VideoComputedCameraState = {
   payload?: VideoStreamPayload;
 };
 
-class VideoComputedCamera extends ViewportComputedCamera<VideoComputedCameraState> {
-  private cachedLayout?: VideoCameraLayout;
+class VideoResolvedView extends ResolvedViewportView<VideoResolvedViewState> {
+  private cachedCanvasMapping?: VideoCanvasMapping;
 
   get zoom(): number {
-    return Math.max(this.state.camera.scale ?? 1, 0.001);
+    return Math.max(this.state.viewState.scale ?? 1, 0.001);
   }
 
   get pan(): Point2 {
-    return this.getLayout() ? getPanForVideoLayout(this.getLayout()) : [0, 0];
+    return this.getCanvasMapping()
+      ? getPanForVideoCanvasMapping(this.getCanvasMapping())
+      : [0, 0];
   }
 
   get rotation(): number {
-    return this.state.camera.rotation ?? 0;
+    return this.state.viewState.rotation ?? 0;
   }
 
   canvasToWorld(canvasPos: Point2): Point3 {
-    const layout = this.getLayout();
+    const mapping = this.getCanvasMapping();
 
     return [
-      (canvasPos[0] - layout.left) / layout.worldToCanvasRatio,
-      (canvasPos[1] - layout.top) / layout.worldToCanvasRatio,
+      (canvasPos[0] - mapping.left) / mapping.worldToCanvasRatio,
+      (canvasPos[1] - mapping.top) / mapping.worldToCanvasRatio,
       0,
     ];
   }
 
   worldToCanvas(worldPos: Point3): Point2 {
-    const layout = this.getLayout();
+    const mapping = this.getCanvasMapping();
 
     return [
-      layout.left + worldPos[0] * layout.worldToCanvasRatio,
-      layout.top + worldPos[1] * layout.worldToCanvasRatio,
+      mapping.left + worldPos[0] * mapping.worldToCanvasRatio,
+      mapping.top + worldPos[1] * mapping.worldToCanvasRatio,
     ];
   }
 
@@ -61,12 +63,12 @@ class VideoComputedCamera extends ViewportComputedCamera<VideoComputedCameraStat
     return this.state.frameOfReferenceUID;
   }
 
-  withZoom(zoom: number, canvasPoint?: Point2): VideoComputedCamera {
+  withZoom(zoom: number, canvasPoint?: Point2): VideoResolvedView {
     const nextZoom = Math.max(zoom, 0.001);
 
     if (!canvasPoint) {
-      return this.cloneWithCamera({
-        ...this.state.camera,
+      return this.cloneWithViewState({
+        ...this.state.viewState,
         scale: nextZoom,
         scaleMode: 'fit',
       });
@@ -74,8 +76,8 @@ class VideoComputedCamera extends ViewportComputedCamera<VideoComputedCameraStat
 
     const worldPoint = this.canvasToWorld(canvasPoint);
 
-    return this.cloneWithCamera({
-      ...this.state.camera,
+    return this.cloneWithViewState({
+      ...this.state.viewState,
       anchorCanvas: [
         canvasPoint[0] / Math.max(this.state.containerWidth, 1),
         canvasPoint[1] / Math.max(this.state.containerHeight, 1),
@@ -86,15 +88,18 @@ class VideoComputedCamera extends ViewportComputedCamera<VideoComputedCameraStat
     });
   }
 
-  withPan(pan: Point2): VideoComputedCamera {
-    return this.cloneWithCamera({
-      ...this.state.camera,
-      anchorWorld: getAnchorWorldForPan([pan[0], pan[1]], this.getLayout()),
+  withPan(pan: Point2): VideoResolvedView {
+    return this.cloneWithViewState({
+      ...this.state.viewState,
+      anchorWorld: getAnchorWorldForPan(
+        [pan[0], pan[1]],
+        this.getCanvasMapping()
+      ),
     });
   }
 
   protected buildICamera(): ICamera {
-    const layout = this.getLayout();
+    const mapping = this.getCanvasMapping();
     const focalPoint = this.canvasToWorld([
       this.state.containerWidth / 2,
       this.state.containerHeight / 2,
@@ -108,15 +113,15 @@ class VideoComputedCamera extends ViewportComputedCamera<VideoComputedCameraStat
       parallelScale:
         this.state.containerHeight /
         2 /
-        Math.max(layout.worldToCanvasRatio, 0.001),
+        Math.max(mapping.worldToCanvasRatio, 0.001),
       viewPlaneNormal: [0, 0, 1],
       rotation: this.rotation,
     };
   }
 
-  private getLayout(): VideoCameraLayout {
-    this.cachedLayout ||= getVideoLayout({
-      camera: this.state.camera,
+  private getCanvasMapping(): VideoCanvasMapping {
+    this.cachedCanvasMapping ||= resolveVideoCanvasMapping({
+      camera: this.state.viewState,
       containerHeight: this.state.containerHeight,
       containerWidth: this.state.containerWidth,
       intrinsicHeight: this.state.intrinsicHeight,
@@ -136,16 +141,16 @@ class VideoComputedCamera extends ViewportComputedCamera<VideoComputedCameraStat
       worldToCanvasRatio: 1,
     };
 
-    return this.cachedLayout;
+    return this.cachedCanvasMapping;
   }
 
-  private cloneWithCamera(camera: VideoCamera): VideoComputedCamera {
-    return new VideoComputedCamera({
+  private cloneWithViewState(viewState: VideoCamera): VideoResolvedView {
+    return new VideoResolvedView({
       ...this.state,
-      camera,
+      viewState,
     });
   }
 }
 
-export type { VideoComputedCameraState };
-export default VideoComputedCamera;
+export type { VideoResolvedViewState };
+export default VideoResolvedView;

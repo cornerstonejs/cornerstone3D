@@ -20,6 +20,7 @@ export type VolumeViewportLabelmapImageMapperState = {
 };
 
 type ViewportLabelmapImageMapperCompatibilityViewport = Types.IViewport & {
+  getCamera?: () => Pick<Types.ICamera, 'viewPlaneNormal' | 'viewUp'>;
   getCurrentImageIdIndex?: () => number;
   getDataRenderMode?: (
     dataId: string
@@ -51,6 +52,11 @@ type ViewportLabelmapImageMapperCompatibilityViewport = Types.IViewport & {
   };
   getSourceDataId?: () => string | undefined;
   getVolumeId?: () => string | undefined;
+  getResolvedView?: () =>
+    | {
+        toICamera?: () => Pick<Types.ICamera, 'viewPlaneNormal' | 'viewUp'>;
+      }
+    | undefined;
   type?: string;
 };
 
@@ -139,6 +145,49 @@ function getPlanarPrimaryDataId(
     Object.entries(renderModes).find(
       ([, renderMode]) => renderMode === ActorRenderMode.VTK_VOLUME_SLICE
     )?.[0]
+  );
+}
+
+function getLabelmapImageMapperCamera(
+  viewport: Types.IViewport
+): Pick<Types.ICamera, 'viewPlaneNormal' | 'viewUp'> | undefined {
+  const compatibilityViewport =
+    viewport as ViewportLabelmapImageMapperCompatibilityViewport;
+  const resolvedCamera = compatibilityViewport
+    .getResolvedView?.()
+    ?.toICamera?.();
+
+  if (isLabelmapImageMapperCamera(resolvedCamera)) {
+    return resolvedCamera;
+  }
+
+  const legacyCamera = compatibilityViewport.getCamera?.();
+
+  return isLabelmapImageMapperCamera(legacyCamera) ? legacyCamera : undefined;
+}
+
+function isLabelmapImageMapperCamera(
+  camera: unknown
+): camera is Pick<Types.ICamera, 'viewPlaneNormal' | 'viewUp'> {
+  const candidate = camera as Partial<Types.ICamera> | undefined;
+
+  return Boolean(
+    candidate &&
+      isPoint3Like(candidate.viewPlaneNormal) &&
+      isPoint3Like(candidate.viewUp)
+  );
+}
+
+function isPoint3Like(value: unknown): value is ArrayLike<number> {
+  const candidate = value as ArrayLike<number> | undefined;
+
+  return Boolean(
+    candidate &&
+      typeof candidate.length === 'number' &&
+      candidate.length >= 3 &&
+      Number.isFinite(Number(candidate[0])) &&
+      Number.isFinite(Number(candidate[1])) &&
+      Number.isFinite(Number(candidate[2]))
   );
 }
 
@@ -300,7 +349,17 @@ export function getVolumeViewportLabelmapImageMapperState(
     };
   }
 
-  const { viewPlaneNormal, viewUp } = viewport.getCamera();
+  const camera = getLabelmapImageMapperCamera(viewport);
+
+  if (!camera) {
+    return {
+      key: 'unsupported:camera',
+      sliceIndex: NaN,
+      supported: false,
+    };
+  }
+
+  const { viewPlaneNormal, viewUp } = camera;
   const normalizedNormal = vec3.normalize(
     vec3.create(),
     viewPlaneNormal as unknown as vec3

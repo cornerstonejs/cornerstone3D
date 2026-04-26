@@ -9,10 +9,10 @@ import type {
   RenderPath,
 } from '../ViewportArchitectureTypes';
 import type {
-  WSICamera,
   WSIDataPresentation,
   WSIRendering,
   WSIPayload,
+  WSIViewState,
   WSIViewportRenderContext,
 } from './WSIViewportTypes';
 
@@ -89,8 +89,8 @@ export class DicomMicroscopyRenderPath
       updateDataPresentation: (props) => {
         this.updateDataPresentation(rendering, props);
       },
-      updateCamera: (camera) => {
-        this.updateCamera(rendering, camera);
+      applyViewState: (camera) => {
+        this.applyViewState(rendering, camera);
       },
       getFrameOfReferenceUID: () => {
         return this.getFrameOfReferenceUID(payload);
@@ -119,8 +119,8 @@ export class DicomMicroscopyRenderPath
     microscopyElement.style.opacity = String(wsiProps?.opacity ?? 1);
   }
 
-  private updateCamera(rendering: WSIRendering, camera: unknown): void {
-    const wsiCamera = camera as WSICamera;
+  private applyViewState(rendering: WSIRendering, camera: unknown): void {
+    const wsiCamera = camera as WSIViewState;
     const { map } = rendering;
     const view = map?.getView?.();
 

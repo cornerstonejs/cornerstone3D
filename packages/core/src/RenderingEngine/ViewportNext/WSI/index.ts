@@ -3,7 +3,7 @@ export {
   DicomMicroscopyPath,
   DicomMicroscopyRenderPath,
 } from './DicomMicroscopyRenderPath';
-export { default as WSIComputedCamera } from './WSIComputedCamera';
+export { default as WSIResolvedView } from './WSIResolvedView';
 export { default } from './WSIViewport';
 export type {
   WSICamera,
@@ -13,6 +13,7 @@ export type {
   WSIPayload,
   WSIPresentationProps,
   WSIRendering,
+  WSIViewState,
   WSIViewportInput,
   WSIViewportRenderContext,
   WSIViewportNextInput,

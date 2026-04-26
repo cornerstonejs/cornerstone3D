@@ -28,6 +28,7 @@ import {
 
 import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
 import LabelmapBaseTool from './LabelmapBaseTool';
+import getViewportICamera from '../../utilities/getViewportICamera';
 
 /**
  * Tool for manipulating segmentation data by drawing a sphere in 3d space. It acts on the
@@ -106,8 +107,14 @@ class SphereScissorsTool extends LabelmapBaseTool {
 
     this.isDrawing = true;
 
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const { viewPlaneNormal, viewUp } = camera;
+
+    if (!viewPlaneNormal || !viewUp) {
+      throw new Error(
+        'Unable to resolve viewport view plane for scissors tool'
+      );
+    }
 
     const activeSegmentationRepresentation =
       activeSegmentation.getActiveSegmentation(viewport.id);

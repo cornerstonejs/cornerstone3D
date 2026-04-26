@@ -1,6 +1,6 @@
 export { CanvasECGPath, CanvasECGRenderPath } from './CanvasECGRenderPath';
 export { DefaultECGDataProvider } from './DefaultECGDataProvider';
-export { default as ECGComputedCamera } from './ECGComputedCamera';
+export { default as ECGResolvedView } from './ECGResolvedView';
 export { default } from './ECGViewport';
 export type {
   ECGCamera,

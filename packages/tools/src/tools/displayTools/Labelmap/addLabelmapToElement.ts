@@ -33,7 +33,6 @@ import { createLabelmapRepresentationUID } from './labelmapRepresentationUID';
 const { uuidv4 } = utilities;
 
 type PlanarNextVolumeViewport = Types.IViewport & {
-  getCamera: () => Types.ICamera;
   getCurrentImageIdIndex?: () => number;
   getDefaultActor?: () =>
     | (Types.ActorEntry & {
@@ -46,6 +45,9 @@ type PlanarNextVolumeViewport = Types.IViewport & {
   getViewReference: (
     specifier?: Types.ViewReferenceSpecifier
   ) => Types.ViewReference;
+  getViewState: () => {
+    orientation?: unknown;
+  };
   getActor?: (actorUID: string) => Types.ActorEntry | undefined;
   render?: () => void;
   addData: (
@@ -234,9 +236,9 @@ function isPlanarNextVolumeViewport(
 
   return (
     nextViewport.type === Enums.ViewportType.PLANAR_NEXT &&
-    typeof nextViewport.getCamera === 'function' &&
     typeof nextViewport.getVolumeId === 'function' &&
     typeof nextViewport.getViewReference === 'function' &&
+    typeof nextViewport.getViewState === 'function' &&
     typeof nextViewport.addData === 'function' &&
     typeof nextViewport.setDataPresentation === 'function' &&
     typeof nextViewport.setViewReference === 'function'
@@ -282,11 +284,7 @@ async function addLabelmapToPlanarNextViewport(args: {
   const sourceViewReference = sourceVolumeId
     ? viewport.getViewReference({ volumeId: sourceVolumeId })
     : viewport.getViewReference();
-  const requestedOrientation = (
-    viewport.getCamera() as {
-      orientation?: unknown;
-    }
-  ).orientation;
+  const requestedOrientation = viewport.getViewState().orientation;
   const currentImageIdIndex = Math.max(
     0,
     viewport.getCurrentImageIdIndex?.() ?? 0

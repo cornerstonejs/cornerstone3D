@@ -1,5 +1,5 @@
 import type { ICamera, Point2, Point3 } from '../../../types';
-import ViewportComputedCamera from '../ViewportComputedCamera';
+import ResolvedViewportView from '../ResolvedViewportView';
 import type {
   WSIImageDataMetadata,
   WSIMapViewLike,
@@ -10,10 +10,10 @@ import {
   indexToWorldWSIMetadata,
   worldToIndexWSIMetadata,
 } from './wsiTransformUtils';
-import type { WSICamera } from './WSIViewportTypes';
+import type { WSIViewState } from './WSIViewportTypes';
 
-type WSIComputedCameraState = {
-  camera: WSICamera;
+type WSIResolvedViewState = {
+  viewState: WSIViewState;
   canvasHeight: number;
   canvasWidth: number;
   frameOfReferenceUID?: string | null;
@@ -21,7 +21,7 @@ type WSIComputedCameraState = {
   view: WSIMapViewLike;
 };
 
-class WSIComputedCamera extends ViewportComputedCamera<WSIComputedCameraState> {
+class WSIResolvedView extends ResolvedViewportView<WSIResolvedViewState> {
   canvasToWorld(canvasPos: Point2): Point3 {
     const indexPoint = canvasToIndexForWSI({
       canvasHeight: this.state.canvasHeight,
@@ -46,13 +46,13 @@ class WSIComputedCamera extends ViewportComputedCamera<WSIComputedCameraState> {
     return this.state.frameOfReferenceUID || undefined;
   }
 
-  withZoom(zoom: number, canvasPoint?: Point2): WSIComputedCamera {
+  withZoom(zoom: number, canvasPoint?: Point2): WSIResolvedView {
     const nextZoom = Math.max(zoom, 0.001);
     const nextResolution = this.getResolutionForZoom(nextZoom);
 
     if (!canvasPoint) {
-      return this.cloneWithCamera({
-        ...this.state.camera,
+      return this.cloneWithViewState({
+        ...this.state.viewState,
         resolution: nextResolution,
         zoom: nextZoom,
       });
@@ -60,8 +60,8 @@ class WSIComputedCamera extends ViewportComputedCamera<WSIComputedCameraState> {
 
     const indexPoint = this.canvasToIndex(canvasPoint);
 
-    return this.cloneWithCamera({
-      ...this.state.camera,
+    return this.cloneWithViewState({
+      ...this.state.viewState,
       centerIndex: this.getCenterIndexForCanvasPoint({
         canvasPoint,
         indexPoint,
@@ -88,7 +88,7 @@ class WSIComputedCamera extends ViewportComputedCamera<WSIComputedCameraState> {
       parallelScale: this.state.canvasHeight * resolution * xSpacing,
       viewPlaneNormal: [0, 0, 1],
       rotation:
-        this.state.view.getRotation?.() || this.state.camera.rotation || 0,
+        this.state.view.getRotation?.() || this.state.viewState.rotation || 0,
     };
   }
 
@@ -105,12 +105,13 @@ class WSIComputedCamera extends ViewportComputedCamera<WSIComputedCameraState> {
 
   private getResolution(): number {
     return (
-      this.state.view.getResolution?.() || this.state.camera.resolution || 1
+      this.state.view.getResolution?.() || this.state.viewState.resolution || 1
     );
   }
 
   private getResolutionForZoom(zoom: number): number {
-    const viewZoom = this.state.view.getZoom?.() || this.state.camera.zoom || 1;
+    const viewZoom =
+      this.state.view.getZoom?.() || this.state.viewState.zoom || 1;
 
     return (
       this.state.view.getResolutionForZoom?.(zoom) ??
@@ -131,7 +132,7 @@ class WSIComputedCamera extends ViewportComputedCamera<WSIComputedCameraState> {
     const deltaCanvasX = canvasPoint[0] * pixelRatio - halfCanvasX;
     const deltaCanvasY = canvasPoint[1] * pixelRatio - halfCanvasY;
     const rotation =
-      this.state.view.getRotation?.() || this.state.camera.rotation || 0;
+      this.state.view.getRotation?.() || this.state.viewState.rotation || 0;
     const cos = Math.cos(rotation);
     const sin = Math.sin(rotation);
     const rotatedDeltaX = cos * deltaCanvasX + sin * deltaCanvasY;
@@ -143,13 +144,13 @@ class WSIComputedCamera extends ViewportComputedCamera<WSIComputedCameraState> {
     ];
   }
 
-  private cloneWithCamera(camera: WSICamera): WSIComputedCamera {
-    return new WSIComputedCamera({
+  private cloneWithViewState(viewState: WSIViewState): WSIResolvedView {
+    return new WSIResolvedView({
       ...this.state,
-      camera,
+      viewState,
     });
   }
 }
 
-export type { WSIComputedCameraState };
-export default WSIComputedCamera;
+export type { WSIResolvedViewState };
+export default WSIResolvedView;

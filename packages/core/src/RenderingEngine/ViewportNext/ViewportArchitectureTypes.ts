@@ -1,4 +1,4 @@
-import type { ActorEntry, Point2, Point3 } from '../../types';
+import type { ActorEntry, ICamera, Point2, Point3 } from '../../types';
 import type {
   ReferenceCompatibleOptions,
   ViewPresentation,
@@ -7,6 +7,21 @@ import type {
   ViewReferenceSpecifier,
 } from '../../types/IViewport';
 import type ViewportType from '../../enums/ViewportType';
+import type ResolvedViewportView from './ResolvedViewportView';
+
+/**
+ * View ownership contract:
+ *
+ * ViewState is the mutable viewport-local source of truth for navigation and
+ * layout. ViewPresentation is persistable look state only: pan, zoom/scale,
+ * rotation, flips, and display area. ViewReference is a persistable spatial
+ * pointer: frame of reference, data identity, slice locator, and plane
+ * restriction; it does not contain pan, zoom, rotation, flips, VOI, or opacity.
+ * ResolvedView is an ephemeral snapshot produced from data, canvas geometry,
+ * and ViewState; it owns world/canvas transforms and renderer geometry and is
+ * never persisted. DataPresentation is per-binding render appearance such as
+ * VOI, opacity, colormap, interpolation, and visibility.
+ */
 
 export type ViewportId = string;
 export type DataId = string;
@@ -51,7 +66,7 @@ export type MountedRendering<
 export interface RenderPathAttachment<TPresentation = unknown> {
   rendering: MountedRendering;
   updateDataPresentation(props: TPresentation): void;
-  updateCamera(camera: unknown): void;
+  applyViewState(viewState: unknown): void;
   getFrameOfReferenceUID(): string | undefined;
   getActorEntry?(data: LoadedData): ActorEntry | undefined;
   getImageData?(): unknown;
@@ -109,14 +124,14 @@ export interface DataProvider {
   load(dataId: DataId, options?: unknown): Promise<LoadedData>;
 }
 
-export interface RenderingBinding<TPresentation = unknown>
+export interface ViewportDataBinding<TPresentation = unknown>
   extends RenderPathAttachment<TPresentation> {
   data: LoadedData;
   role: BindingRole;
 }
 
 export interface ViewportController<
-  TCamera = unknown,
+  TViewState = unknown,
   TDataPresentation = unknown,
   TViewPresentation = ViewPresentation,
 > {
@@ -130,8 +145,11 @@ export interface ViewportController<
   ): Promise<RenderingId[]>;
   removeData(dataId: DataId): void;
 
-  setCamera(camera: Partial<TCamera>): void;
-  getCamera(): TCamera;
+  setViewState(viewState: Partial<TViewState>): void;
+  getViewState(): TViewState;
+  getResolvedView():
+    | ResolvedViewportView<unknown, ICamera<unknown>>
+    | undefined;
   setDataPresentation(dataId: DataId, props: Partial<TDataPresentation>): void;
   getDataPresentation(dataId: DataId): TDataPresentation | undefined;
   setViewPresentation(viewPresentation?: TViewPresentation): void;

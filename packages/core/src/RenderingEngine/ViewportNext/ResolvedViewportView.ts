@@ -13,7 +13,7 @@ import type { ICamera, Point2, Point3 } from '../../types';
  * @typeParam TICamera - Concrete {@link ICamera} shape produced for
  * interoperability.
  */
-abstract class ViewportComputedCamera<
+abstract class ResolvedViewportView<
   TState,
   TICamera extends ICamera<unknown> = ICamera,
 > {
@@ -61,4 +61,4 @@ abstract class ViewportComputedCamera<
   protected abstract buildICamera(): TICamera;
 }
 
-export default ViewportComputedCamera;
+export default ResolvedViewportView;

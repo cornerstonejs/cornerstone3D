@@ -33,7 +33,7 @@ import type {
 } from '../../../types';
 import type { MountedRendering } from '../ViewportArchitectureTypes';
 import type {
-  PlanarCamera,
+  PlanarViewState,
   PlanarDataPresentation,
 } from './PlanarViewportTypes';
 
@@ -90,7 +90,7 @@ export type PlanarCpuVolumeRendering = MountedRendering<{
   enabledElement?: CPUFallbackEnabledElement;
   imageVolume: IImageVolume;
   imageIds: string[];
-  acquisitionOrientation?: PlanarCamera['orientation'];
+  acquisitionOrientation?: PlanarViewState['orientation'];
   layerCanvas: HTMLCanvasElement;
   currentImageIdIndex: number;
   maxImageIdIndex: number;
@@ -127,7 +127,7 @@ export type PlanarVolumeSliceRendering = MountedRendering<{
   overlayOrder: number;
   imageVolume: IImageVolume;
   imageIds: string[];
-  acquisitionOrientation?: PlanarCamera['orientation'];
+  acquisitionOrientation?: PlanarViewState['orientation'];
   mapper: vtkImageResliceMapper;
   currentImageIdIndex: number;
   maxImageIdIndex: number;

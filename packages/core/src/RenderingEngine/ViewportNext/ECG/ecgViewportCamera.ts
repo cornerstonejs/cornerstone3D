@@ -2,7 +2,7 @@ import type { Point2 } from '../../../types';
 import type { ViewAnchor } from '../ViewportCameraTypes';
 import type { ECGCamera, RenderWindowMetrics } from './ECGViewportTypes';
 
-export interface ECGCameraLayout {
+export interface ECGCanvasMapping {
   anchorWorld: [number, number];
   anchorCanvas: ViewAnchor;
   canvasHeight: number;
@@ -48,11 +48,11 @@ export function normalizeECGCamera(camera: ECGCamera): ECGCamera {
   };
 }
 
-export function getECGCameraLayout(args: {
+export function resolveECGCanvasMapping(args: {
   metrics: RenderWindowMetrics;
   camera?: ECGCamera;
   canvas: HTMLCanvasElement;
-}): ECGCameraLayout {
+}): ECGCanvasMapping {
   const { metrics, camera, canvas } = args;
   const scale = Math.max(camera?.scale ?? 1, 0.001);
   const effectiveRatio = metrics.worldToCanvasRatio * scale;
@@ -82,34 +82,34 @@ export function getECGCameraLayout(args: {
   };
 }
 
-export function getPanForECGLayout(layout: ECGCameraLayout): Point2 {
+export function getPanForECGCanvasMapping(mapping: ECGCanvasMapping): Point2 {
   return [
-    layout.xOffset - layout.centeredXOffset,
-    layout.yOffset - layout.centeredYOffset,
+    mapping.xOffset - mapping.centeredXOffset,
+    mapping.yOffset - mapping.centeredYOffset,
   ];
 }
 
 export function getAnchorWorldForPan(
   pan: Point2,
-  layout: ECGCameraLayout
+  mapping: ECGCanvasMapping
 ): [number, number] {
   return [
-    (layout.canvasWidth * layout.anchorCanvas[0] -
-      (layout.centeredXOffset + pan[0])) /
-      layout.effectiveRatio,
-    (layout.canvasHeight * layout.anchorCanvas[1] -
-      (layout.centeredYOffset + pan[1])) /
-      layout.effectiveRatio,
+    (mapping.canvasWidth * mapping.anchorCanvas[0] -
+      (mapping.centeredXOffset + pan[0])) /
+      mapping.effectiveRatio,
+    (mapping.canvasHeight * mapping.anchorCanvas[1] -
+      (mapping.centeredYOffset + pan[1])) /
+      mapping.effectiveRatio,
   ];
 }
 
 export function getAnchorWorldForCanvasPoint(
   canvasPoint: Point2,
-  layout: ECGCameraLayout
+  mapping: ECGCanvasMapping
 ): [number, number] {
   return [
-    (canvasPoint[0] - layout.xOffset) / layout.effectiveRatio,
-    (canvasPoint[1] - layout.yOffset) / layout.effectiveRatio,
+    (canvasPoint[0] - mapping.xOffset) / mapping.effectiveRatio,
+    (canvasPoint[1] - mapping.yOffset) / mapping.effectiveRatio,
   ];
 }
 

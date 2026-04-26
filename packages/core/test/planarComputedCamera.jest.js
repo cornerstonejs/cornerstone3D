@@ -9,14 +9,14 @@ import canvasToPixel from '../src/RenderingEngine/helpers/cpuFallback/rendering/
 import getDefaultViewport from '../src/RenderingEngine/helpers/cpuFallback/rendering/getDefaultViewport';
 import * as metaData from '../src/metaData';
 import {
-  PlanarStackViewportCamera,
-  PlanarVolumeViewportCamera,
+  PlanarStackResolvedView,
+  PlanarVolumeResolvedView,
 } from '../src/RenderingEngine/ViewportNext/Planar';
 import {
   resolvePlanarCpuImageDisplayedArea,
   resolvePlanarCpuViewportScale,
 } from '../src/RenderingEngine/ViewportNext/Planar/planarCpuViewportMath';
-import { resolvePlanarRenderCamera } from '../src/RenderingEngine/ViewportNext/Planar/planarRenderCamera';
+import { resolvePlanarICamera } from '../src/RenderingEngine/ViewportNext/Planar/planarRenderCamera';
 import { createPlanarImageSliceBasis } from '../src/RenderingEngine/ViewportNext/Planar/planarSliceBasis';
 
 function createImage(imageId = 'image-1') {
@@ -113,8 +113,8 @@ describe('Planar resolved cameras', () => {
   });
 
   it('round-trips between world and canvas for stack cameras', () => {
-    const camera = new PlanarStackViewportCamera({
-      camera: {
+    const camera = new PlanarStackResolvedView({
+      viewState: {
         orientation: OrientationAxis.AXIAL,
       },
       canvasHeight: 256,
@@ -133,7 +133,7 @@ describe('Planar resolved cameras', () => {
 
   it('resolves identical stack image cameras for cpu and vtk image paths', () => {
     const state = {
-      camera: {
+      viewState: {
         orientation: OrientationAxis.AXIAL,
       },
       canvasHeight: 257,
@@ -143,11 +143,11 @@ describe('Planar resolved cameras', () => {
       image: createImage(),
       maxImageIdIndex: 0,
     };
-    const vtkCamera = new PlanarStackViewportCamera({
+    const vtkCamera = new PlanarStackResolvedView({
       ...state,
       usePixelGridCenter: false,
     });
-    const cpuCamera = new PlanarStackViewportCamera({
+    const cpuCamera = new PlanarStackResolvedView({
       ...state,
       usePixelGridCenter: true,
     });
@@ -221,7 +221,7 @@ describe('Planar resolved cameras', () => {
     canvas.width = 500;
     canvas.height = 500;
 
-    const renderCamera = resolvePlanarRenderCamera({
+    const activeSourceICamera = resolvePlanarICamera({
       sliceBasis: createPlanarImageSliceBasis({
         canvasHeight: canvas.height,
         canvasWidth: canvas.width,
@@ -241,7 +241,7 @@ describe('Planar resolved cameras', () => {
       resolvePlanarCpuImageDisplayedArea(image);
     enabledElement.viewport.scale = resolvePlanarCpuViewportScale({
       canvas,
-      parallelScale: renderCamera.parallelScale,
+      parallelScale: activeSourceICamera.parallelScale,
       columnPixelSpacing: image.columnPixelSpacing,
       rowPixelSpacing: image.rowPixelSpacing,
     });
@@ -282,7 +282,7 @@ describe('Planar resolved cameras', () => {
   });
 
   it('keeps the zoom anchor stable when zooming at a canvas point', () => {
-    const camera = new PlanarStackViewportCamera({
+    const camera = new PlanarStackResolvedView({
       canvasHeight: 256,
       canvasWidth: 256,
       currentImageIdIndex: 0,
@@ -303,7 +303,7 @@ describe('Planar resolved cameras', () => {
   });
 
   it('updates pan-derived transforms without recomputing ad hoc viewport math', () => {
-    const camera = new PlanarStackViewportCamera({
+    const camera = new PlanarStackResolvedView({
       canvasHeight: 256,
       canvasWidth: 256,
       currentImageIdIndex: 0,
@@ -320,7 +320,7 @@ describe('Planar resolved cameras', () => {
   });
 
   it('mirrors transforms when flipped horizontally or vertically', () => {
-    const camera = new PlanarStackViewportCamera({
+    const camera = new PlanarStackResolvedView({
       canvasHeight: 256,
       canvasWidth: 256,
       currentImageIdIndex: 0,
@@ -336,13 +336,13 @@ describe('Planar resolved cameras', () => {
 
     expectPoint2Close(horizontalFlip.worldToCanvas(worldPoint), [60, 84]);
     expectPoint2Close(verticalFlip.worldToCanvas(worldPoint), [196, 172]);
-    expect(horizontalFlip.state.camera.flipHorizontal).toBe(true);
-    expect(verticalFlip.state.camera.flipVertical).toBe(true);
+    expect(horizontalFlip.state.viewState.flipHorizontal).toBe(true);
+    expect(verticalFlip.state.viewState.flipVertical).toBe(true);
   });
 
   it('exposes indexToWorld for volume cameras', () => {
-    const camera = new PlanarVolumeViewportCamera({
-      camera: {
+    const camera = new PlanarVolumeResolvedView({
+      viewState: {
         imageIdIndex: 4,
         orientation: OrientationAxis.AXIAL,
       },

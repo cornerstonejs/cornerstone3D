@@ -18,6 +18,7 @@ import {
 import {
   applyPlanarOverlayDepthOffset,
   createSliceImageData,
+  getSliceRenderingCamera,
   getSliceState,
   type SliceRenderingViewport,
 } from './volumeLabelmapSliceData';
@@ -375,14 +376,17 @@ async function addPlanarLabelmapImageMapperActors(args: {
         useWorldCoordinateImageData: true,
         callback: ({ imageActor }) => {
           const mapper = imageActor.getMapper() as vtkImageMapper;
+          const camera = getSliceRenderingCamera(viewport);
 
           mapper.setInputData(sliceData.imageData);
           mapper.modified();
-          applyPlanarOverlayDepthOffset(
-            imageActor,
-            viewport.getCamera().viewPlaneNormal,
-            index + 1
-          );
+          if (camera) {
+            applyPlanarOverlayDepthOffset(
+              imageActor,
+              camera.viewPlaneNormal,
+              index + 1
+            );
+          }
         },
       },
     ]);
@@ -432,11 +436,15 @@ function updatePlanarLabelmapImageMapperActors(args: {
 
     mapper.setInputData(sliceData.imageData);
     mapper.modified();
-    applyPlanarOverlayDepthOffset(
-      actorEntry.actor as vtkImageSlice,
-      viewport.getCamera().viewPlaneNormal,
-      index + 1
-    );
+    const camera = getSliceRenderingCamera(viewport);
+
+    if (camera) {
+      applyPlanarOverlayDepthOffset(
+        actorEntry.actor as vtkImageSlice,
+        camera.viewPlaneNormal,
+        index + 1
+      );
+    }
     actorEntry.actor.modified?.();
   });
 }

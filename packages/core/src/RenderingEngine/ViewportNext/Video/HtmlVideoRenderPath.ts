@@ -16,7 +16,7 @@ import type {
   VideoStreamPayload,
 } from './VideoViewportTypes';
 import { normalizeVideoPlaybackInfo } from '../../../utilities/VideoUtilities';
-import { getVideoLayout } from './videoViewportCamera';
+import { resolveVideoCanvasMapping } from './videoViewportCamera';
 
 export class HtmlVideoRenderPath
   implements RenderPath<VideoElementRenderContext>
@@ -75,8 +75,8 @@ export class HtmlVideoRenderPath
       updateDataPresentation: (props) => {
         this.updateDataPresentation(rendering, props);
       },
-      updateCamera: (camera) => {
-        this.updateCamera(rendering, camera, videoData);
+      applyViewState: (camera) => {
+        this.applyViewState(rendering, camera, videoData);
       },
       getFrameOfReferenceUID: () => {
         return this.getFrameOfReferenceUID(rendering);
@@ -102,7 +102,7 @@ export class HtmlVideoRenderPath
     element.style.objectFit = videoProps?.objectFit ?? 'contain';
   }
 
-  private updateCamera(
+  private applyViewState(
     rendering: VideoElementRendering,
     camera: unknown,
     data: VideoStreamPayload
@@ -110,15 +110,15 @@ export class HtmlVideoRenderPath
     const videoCamera = camera as VideoCamera;
     const { element } = rendering;
     const rotation = videoCamera.rotation ?? 0;
-    const layout = this.getLayout(element, videoCamera);
+    const mapping = this.getCanvasMapping(element, videoCamera);
 
     rendering.currentCamera = videoCamera;
 
-    if (layout) {
-      element.style.width = `${layout.width}px`;
-      element.style.height = `${layout.height}px`;
-      element.style.left = `${layout.left}px`;
-      element.style.top = `${layout.top}px`;
+    if (mapping) {
+      element.style.width = `${mapping.width}px`;
+      element.style.height = `${mapping.height}px`;
+      element.style.left = `${mapping.left}px`;
+      element.style.top = `${mapping.top}px`;
     }
 
     element.style.transform = `rotate(${rotation}deg)`;
@@ -136,15 +136,18 @@ export class HtmlVideoRenderPath
     rendering: VideoElementRendering,
     canvasPos: Point2
   ): Point3 {
-    const layout = this.getLayout(rendering.element, rendering.currentCamera);
+    const mapping = this.getCanvasMapping(
+      rendering.element,
+      rendering.currentCamera
+    );
 
-    if (!layout) {
+    if (!mapping) {
       return [0, 0, 0];
     }
 
     return [
-      (canvasPos[0] - layout.left) / layout.worldToCanvasRatio,
-      (canvasPos[1] - layout.top) / layout.worldToCanvasRatio,
+      (canvasPos[0] - mapping.left) / mapping.worldToCanvasRatio,
+      (canvasPos[1] - mapping.top) / mapping.worldToCanvasRatio,
       0,
     ];
   }
@@ -153,22 +156,25 @@ export class HtmlVideoRenderPath
     rendering: VideoElementRendering,
     worldPos: Point3
   ): Point2 {
-    const layout = this.getLayout(rendering.element, rendering.currentCamera);
+    const mapping = this.getCanvasMapping(
+      rendering.element,
+      rendering.currentCamera
+    );
 
-    if (!layout) {
+    if (!mapping) {
       return [0, 0];
     }
 
     return [
-      layout.left + worldPos[0] * layout.worldToCanvasRatio,
-      layout.top + worldPos[1] * layout.worldToCanvasRatio,
+      mapping.left + worldPos[0] * mapping.worldToCanvasRatio,
+      mapping.top + worldPos[1] * mapping.worldToCanvasRatio,
     ];
   }
 
-  private getLayout(element: HTMLVideoElement, camera?: VideoCamera) {
+  private getCanvasMapping(element: HTMLVideoElement, camera?: VideoCamera) {
     const container = element.parentElement;
 
-    return getVideoLayout({
+    return resolveVideoCanvasMapping({
       containerWidth: container?.clientWidth ?? 0,
       containerHeight: container?.clientHeight ?? 0,
       intrinsicWidth: element.videoWidth || container?.clientWidth || 0,

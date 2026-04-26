@@ -12,9 +12,9 @@
  *   - "Can this viewport display a given plane?" (`isPlanarPlaneViewable`)
  *   - "Can this viewport display a given ViewReference?" (`isPlanarReferenceViewable`)
  *
- * All functions accept the current PlanarCamera, the active PlanarRendering,
+ * All functions accept the current PlanarViewState, the active PlanarRendering,
  * and a PlanarViewportRenderContext so they can reconstruct the render camera
- * on demand via `getPlanarRenderCameraForReference`.
+ * on demand via `getPlanarResolvedICameraForReference`.
  */
 import { vec3 } from 'gl-matrix';
 import { ActorRenderMode } from '../../../types';
@@ -32,11 +32,11 @@ import getVolumeViewReferenceId from '../../../utilities/getVolumeViewReferenceI
 import { updatePlaneRestriction } from '../../../utilities/updatePlaneRestriction';
 import { getDimensionGroupReferenceContext } from '../viewportNextReferenceCompatibility';
 import type {
-  PlanarCamera,
+  PlanarViewState,
   PlanarPayload,
   PlanarViewportRenderContext,
 } from './PlanarViewportTypes';
-import { computePlanarViewportCamera } from './PlanarComputedCamera';
+import { resolvePlanarViewportView } from './PlanarResolvedView';
 import type { PlanarRendering } from './planarRuntimeTypes';
 
 /**
@@ -48,7 +48,7 @@ import type { PlanarRendering } from './planarRuntimeTypes';
  * and viewPlaneNormal are used to find the closest imageId in the volume's
  * imageId list via `getClosestImageId`.
  *
- * @param args.camera - The current semantic PlanarCamera.
+ * @param args.viewState - The current semantic PlanarViewState.
  * @param args.data - The loaded PlanarPayload (provides imageIds and volumeId).
  * @param args.rendering - The active render-path state.
  * @param args.renderContext - The viewport render context (provides canvas refs).
@@ -56,7 +56,7 @@ import type { PlanarRendering } from './planarRuntimeTypes';
  * @returns The referenced imageId, or undefined if no rendering is active.
  */
 export function getPlanarReferencedImageId(args: {
-  camera: PlanarCamera;
+  viewState: PlanarViewState;
   data?: PlanarPayload;
   frameOfReferenceUID?: string;
   rendering?: PlanarRendering;
@@ -85,15 +85,18 @@ export function getPlanarReferencedImageId(args: {
             Math.max(0, viewRefSpecifier.sliceIndex),
             imageIds.length - 1
           )
-        : typeof args.camera?.imageIdIndex === 'number'
-          ? Math.min(Math.max(0, args.camera.imageIdIndex), imageIds.length - 1)
+        : args.viewState?.slice?.kind === 'stackIndex'
+          ? Math.min(
+              Math.max(0, args.viewState.slice.imageIdIndex),
+              imageIds.length - 1
+            )
           : getCurrentSliceIndex(rendering);
 
     return imageIds[imageIdIndex];
   }
 
-  const computedCamera = getPlanarComputedCameraForReference({
-    camera: args.camera,
+  const resolvedView = getPlanarResolvedViewForReference({
+    viewState: args.viewState,
     data: args.data,
     frameOfReferenceUID: args.frameOfReferenceUID,
     renderContext: args.renderContext,
@@ -101,7 +104,7 @@ export function getPlanarReferencedImageId(args: {
     sliceIndex: viewRefSpecifier?.sliceIndex,
   })?.toICamera();
 
-  if (!computedCamera?.focalPoint || !computedCamera.viewPlaneNormal) {
+  if (!resolvedView?.focalPoint || !resolvedView.viewPlaneNormal) {
     return imageIds[
       Math.min(getCurrentSliceIndex(rendering), imageIds.length - 1)
     ];
@@ -109,8 +112,8 @@ export function getPlanarReferencedImageId(args: {
 
   return getClosestImageId(
     rendering.imageVolume,
-    computedCamera.focalPoint,
-    computedCamera.viewPlaneNormal
+    resolvedView.focalPoint,
+    resolvedView.viewPlaneNormal
   );
 }
 
@@ -133,7 +136,7 @@ export function getPlanarReferencedImageId(args: {
  * @returns A ViewReference suitable for `isReferenceViewable` comparisons.
  */
 export function getPlanarViewReference(args: {
-  camera: PlanarCamera;
+  viewState: PlanarViewState;
   dataId?: string;
   frameOfReferenceUID: string;
   data?: PlanarPayload;
@@ -149,7 +152,7 @@ export function getPlanarViewReference(args: {
     viewRefSpecifier?.sliceIndex ??
     (rendering ? getCurrentSliceIndex(rendering) : undefined);
   const rangeEndSliceIndex = viewRefSpecifier?.rangeEndSliceIndex;
-  const targetCamera = getPlanarComputedCameraForReference({
+  const targetCamera = getPlanarResolvedViewForReference({
     ...args,
     sliceIndex,
   })?.toICamera();
@@ -243,7 +246,7 @@ export function getPlanarViewReference(args: {
  * @returns A view reference ID string, or null if no rendering is active.
  */
 export function getPlanarViewReferenceId(args: {
-  camera: PlanarCamera;
+  viewState: PlanarViewState;
   frameOfReferenceUID?: string;
   data?: PlanarPayload;
   rendering?: PlanarRendering;
@@ -260,7 +263,7 @@ export function getPlanarViewReferenceId(args: {
     rendering.renderMode === ActorRenderMode.CPU_VOLUME ||
     rendering.renderMode === ActorRenderMode.VTK_VOLUME_SLICE
   ) {
-    const computedCamera = getPlanarComputedCameraForReference({
+    const resolvedView = getPlanarResolvedViewForReference({
       ...args,
       sliceIndex: viewRefSpecifier?.sliceIndex,
     })?.toICamera();
@@ -268,13 +271,13 @@ export function getPlanarViewReferenceId(args: {
       viewRefSpecifier?.sliceIndex ?? getCurrentSliceIndex(rendering);
     const volumeId = args.data?.volumeId;
 
-    if (!volumeId || !computedCamera?.viewPlaneNormal) {
+    if (!volumeId || !resolvedView?.viewPlaneNormal) {
       return null;
     }
 
     return getVolumeViewReferenceId({
       sliceIndex,
-      viewPlaneNormal: computedCamera.viewPlaneNormal as Point3,
+      viewPlaneNormal: resolvedView.viewPlaneNormal as Point3,
       volumeId,
     });
   }
@@ -300,7 +303,7 @@ export function getPlanarViewReferenceId(args: {
  * @returns true if the plane is viewable in this viewport.
  */
 export function isPlanarPlaneViewable(args: {
-  camera: PlanarCamera;
+  viewState: PlanarViewState;
   frameOfReferenceUID: string;
   planeRestriction: PlaneRestriction;
   rendering?: PlanarRendering;
@@ -313,8 +316,8 @@ export function isPlanarPlaneViewable(args: {
     return false;
   }
 
-  const computedCamera = getPlanarComputedCameraForReference(args)?.toICamera();
-  const { focalPoint, viewPlaneNormal } = computedCamera || {};
+  const resolvedView = getPlanarResolvedViewForReference(args)?.toICamera();
+  const { focalPoint, viewPlaneNormal } = resolvedView || {};
 
   if (!focalPoint || !viewPlaneNormal) {
     return false;
@@ -380,7 +383,7 @@ export function isPlanarPlaneViewable(args: {
  * @returns true if the reference is viewable.
  */
 export function isPlanarReferenceViewable(args: {
-  camera: PlanarCamera;
+  viewState: PlanarViewState;
   frameOfReferenceUID: string;
   imageIds: string[];
   rendering?: PlanarRendering;
@@ -396,7 +399,7 @@ export function isPlanarReferenceViewable(args: {
 
   if (viewRef.planeRestriction) {
     return isPlanarPlaneViewable({
-      camera: args.camera,
+      viewState: args.viewState,
       frameOfReferenceUID,
       options,
       planeRestriction: viewRef.planeRestriction,
@@ -412,19 +415,19 @@ export function isPlanarReferenceViewable(args: {
     return false;
   }
 
-  const computedCamera = getPlanarComputedCameraForReference(args)?.toICamera();
+  const resolvedView = getPlanarResolvedViewForReference(args)?.toICamera();
 
-  if (!computedCamera?.viewPlaneNormal) {
+  if (!resolvedView?.viewPlaneNormal) {
     return false;
   }
 
   if (
     viewRef.viewPlaneNormal &&
-    !isEqual(viewRef.viewPlaneNormal, computedCamera.viewPlaneNormal) &&
+    !isEqual(viewRef.viewPlaneNormal, resolvedView.viewPlaneNormal) &&
     !isEqual(
       vec3.negate(
         vec3.create(),
-        computedCamera.viewPlaneNormal as unknown as vec3
+        resolvedView.viewPlaneNormal as unknown as vec3
       ) as unknown as Point3,
       viewRef.viewPlaneNormal
     )
@@ -514,13 +517,8 @@ function toPoint3(point: Point3 | undefined): Point3 | undefined {
  * Resolves the current shared planar camera object for spatial reference
  * queries. This reuses the same construction path as `PlanarViewport`.
  */
-function getPlanarComputedCameraForReference(args: {
-  camera: PlanarCamera;
-  data?: PlanarPayload;
-  frameOfReferenceUID?: string;
-  rendering?: PlanarRendering;
-  renderContext: PlanarViewportRenderContext;
-  sliceIndex?: number;
-}) {
-  return computePlanarViewportCamera(args);
+function getPlanarResolvedViewForReference(
+  args: Parameters<typeof resolvePlanarViewportView>[0]
+) {
+  return resolvePlanarViewportView(args);
 }

@@ -22,7 +22,7 @@ import {
 } from './planarLegacyCompatibility';
 import { mapSlabTypeToBlendMode } from './planarVolumeSliceBlendMode';
 import type {
-  PlanarCamera,
+  PlanarViewState,
   PlanarDataPresentation,
   PlanarRegisteredDataSet,
   PlanarSetDataOptions,
@@ -31,7 +31,7 @@ import type {
 export type PlanarLegacyCompatibilityHost = {
   getElement(): HTMLDivElement;
   getViewportId(): string;
-  getRequestedOrientation(): PlanarCamera['orientation'];
+  getRequestedOrientation(): PlanarViewState['orientation'];
   prepareVolumeCompatibilityCamera(): void;
   setData(dataId: string, options: PlanarSetDataOptions): Promise<string>;
   setDataList(
@@ -41,7 +41,7 @@ export type PlanarLegacyCompatibilityHost = {
   getCurrentImageId(): string | undefined;
   render(): void;
   removeBindingsExcept(keepDataIds: Set<string>): void;
-  setCameraOrientation(orientation: PlanarCamera['orientation']): void;
+  setCameraOrientation(orientation: PlanarViewState['orientation']): void;
   setDataPresentationState(
     dataId: string,
     presentation: PlanarDataPresentation
@@ -51,7 +51,7 @@ export type PlanarLegacyCompatibilityHost = {
     presentation: Partial<PlanarDataPresentation>
   ): void;
   getDataPresentation(dataId: string): PlanarDataPresentation | undefined;
-  getCameraOrientation(): PlanarCamera['orientation'];
+  getCameraOrientation(): PlanarViewState['orientation'];
   getCurrentPlanarRendering(): PlanarRendering | undefined;
   getActiveDataId(): string | undefined;
   getFirstBoundDataId(): string | undefined;

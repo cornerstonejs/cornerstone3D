@@ -63,7 +63,7 @@ class ZoomTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     const viewport = enabledElement.viewport;
 
-    const camera = viewport.getCamera();
+    const camera = getLegacyCamera(viewport);
 
     if (!hasLegacyCameraPosition(camera)) {
       return false;
@@ -107,8 +107,22 @@ class ZoomTool extends BaseTool {
       const { element, currentPoints } = evt.detail;
       const enabledElement = getEnabledElement(element);
       const { viewport } = enabledElement;
-      const camera = viewport.getCamera();
+      const camera = getLegacyCamera(viewport);
       const worldPos = currentPoints.world;
+
+      if (!hasLegacyCameraPosition(camera)) {
+        if (viewportHasZoom(viewport)) {
+          this._dragViewportZoom(evt, viewport);
+          viewport.render();
+        }
+
+        if (this.configuration.pan) {
+          this._panCallback(evt);
+        }
+
+        return;
+      }
+
       const { focalPoint } = camera;
       this.initialMousePosWorld = worldPos;
       // The direction vector from the clicked location to the focal point
@@ -121,9 +135,9 @@ class ZoomTool extends BaseTool {
       dirVec = vec3.normalize(vec3.create(), dirVec);
 
       this.dirVec = dirVec as Types.Point3;
-      if (camera.parallelProjection) {
+      if (hasLegacyParallelCamera(camera) && camera.parallelProjection) {
         this._dragParallelProjection(evt, viewport, camera, true);
-      } else {
+      } else if (hasLegacyPerspectiveCamera(camera)) {
         this._dragPerspectiveProjection(evt, viewport, camera, true);
       }
       viewport.render();
@@ -140,7 +154,7 @@ class ZoomTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    const camera = viewport.getCamera();
+    const camera = getLegacyCamera(viewport);
 
     if (!hasLegacyParallelCamera(camera)) {
       if (!viewportHasZoom(viewport)) {
@@ -319,7 +333,7 @@ class ZoomTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    const camera = viewport.getCamera();
+    const camera = getLegacyCamera(viewport);
     const wheelData = evt.detail.wheel;
     const direction = wheelData.direction;
 
@@ -375,7 +389,7 @@ class ZoomTool extends BaseTool {
 
     const deltaPointsWorld = deltaPoints.world;
     const viewport = enabledElement.viewport;
-    const camera = viewport.getCamera();
+    const camera = getLegacyCamera(viewport);
 
     if (!hasLegacyCameraPosition(camera)) {
       if (!viewportHasPan(viewport)) {
@@ -449,6 +463,14 @@ class ZoomTool extends BaseTool {
   }
 }
 
+function getLegacyCamera(viewport: unknown): unknown {
+  const maybeViewport = viewport as { getCamera?: () => unknown };
+
+  return typeof maybeViewport.getCamera === 'function'
+    ? maybeViewport.getCamera()
+    : undefined;
+}
+
 function hasLegacyCameraPosition(
   camera: unknown
 ): camera is Pick<Types.ICamera, 'focalPoint' | 'position'> {
@@ -464,6 +486,13 @@ function hasLegacyParallelCamera(camera: unknown): camera is Types.ICamera {
     hasLegacyCameraPosition(camera) &&
       typeof (camera as Types.ICamera).parallelProjection === 'boolean' &&
       typeof (camera as Types.ICamera).parallelScale === 'number' &&
+      Array.isArray((camera as Types.ICamera).viewPlaneNormal)
+  );
+}
+
+function hasLegacyPerspectiveCamera(camera: unknown): camera is Types.ICamera {
+  return Boolean(
+    hasLegacyCameraPosition(camera) &&
       Array.isArray((camera as Types.ICamera).viewPlaneNormal)
   );
 }

@@ -1,18 +1,18 @@
 import { utilities as csUtils } from '@cornerstonejs/core';
-import getViewportSpatialCamera from '../getViewportSpatialCamera';
+import getViewportICamera from '../getViewportICamera';
 
 export function filterViewportsWithSameOrientation(
   viewports,
   referenceViewport
 ) {
-  const referenceCamera = getViewportSpatialCamera(referenceViewport);
+  const referenceCamera = getViewportICamera(referenceViewport);
 
   if (!referenceCamera.viewPlaneNormal || !referenceCamera.viewUp) {
     return [];
   }
 
   return viewports.filter((viewport) => {
-    const vpCamera = getViewportSpatialCamera(viewport);
+    const vpCamera = getViewportICamera(viewport);
 
     if (!vpCamera.viewPlaneNormal || !vpCamera.viewUp) {
       return false;

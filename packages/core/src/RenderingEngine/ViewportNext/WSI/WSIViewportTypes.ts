@@ -41,13 +41,13 @@ export interface WSIPayload {
 
 export interface WSIPresentationProps extends BasePresentationProps {}
 
-export interface WSICamera
-  extends ViewportCameraBase<[number, number]>,
-    ICamera {
+export interface WSIViewState extends ViewportCameraBase<[number, number]> {
   centerIndex?: [number, number];
   resolution?: number;
   zoom?: number;
 }
+
+export type WSICamera = WSIViewState & ICamera;
 
 export interface WSIProperties {
   voiRange?: VOIRange;

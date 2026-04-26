@@ -38,23 +38,23 @@ import type {
   RenderPath,
 } from '../ViewportArchitectureTypes';
 import type {
-  PlanarCamera,
+  PlanarViewState,
   PlanarDataPresentation,
   PlanarCpuImageAdapterContext,
   PlanarPayload,
-  PlanarRenderCamera,
+  PlanarResolvedICamera,
   PlanarViewportRenderContext,
 } from './PlanarViewportTypes';
 import type { PlanarCpuImageRendering } from './planarRuntimeTypes';
 import {
-  canvasToWorldPlanarCamera,
+  canvasToWorldPlanarViewState,
   getCanvasCssDimensions,
-  worldToCanvasPlanarCamera,
+  worldToCanvasPlanarViewState,
 } from './planarAdapterCoordinateTransforms';
 import type { DerivedPlanarPresentation } from './planarRenderCamera';
 import {
   derivePlanarPresentation,
-  resolvePlanarRenderCamera,
+  resolvePlanarICamera,
 } from './planarRenderCamera';
 import {
   resolvePlanarCpuImageDisplayedArea,
@@ -127,8 +127,8 @@ export class CpuImageSliceRenderPath
       updateDataPresentation: (props) => {
         this.updateDataPresentation(rendering, props);
       },
-      updateCamera: (camera) => {
-        this.updateCamera(ctx, rendering, data.id, camera, payload.imageIds);
+      applyViewState: (camera) => {
+        this.applyViewState(ctx, rendering, data.id, camera, payload.imageIds);
       },
       getFrameOfReferenceUID: () => {
         return this.getFrameOfReferenceUID(rendering);
@@ -165,16 +165,18 @@ export class CpuImageSliceRenderPath
     applyDataPresentation(rendering, rendering.dataPresentation);
   }
 
-  private updateCamera(
+  private applyViewState(
     ctx: PlanarCpuImageAdapterContext,
     rendering: PlanarCpuImageRendering,
     dataId: string,
     camera: unknown,
     imageIds: string[]
   ): void {
-    const planarCamera = camera as PlanarCamera | undefined;
+    const planarCamera = camera as PlanarViewState | undefined;
     const nextImageIdIndex =
-      planarCamera?.imageIdIndex ?? rendering.currentImageIdIndex;
+      planarCamera?.slice?.kind === 'stackIndex'
+        ? planarCamera.slice.imageIdIndex
+        : rendering.currentImageIdIndex;
     const image = rendering.enabledElement.image;
 
     ctx.display.activateRenderMode(ActorRenderMode.CPU_IMAGE);
@@ -185,14 +187,14 @@ export class CpuImageSliceRenderPath
         canvasWidth: ctx.cpu.canvas.width,
         image,
       });
-      const renderCamera = resolvePlanarRenderCamera({
+      const activeSourceICamera = resolvePlanarICamera({
         sliceBasis,
         camera: planarCamera,
         canvasWidth: ctx.cpu.canvas.width,
         canvasHeight: ctx.cpu.canvas.height,
       });
       if (ctx.viewport.isCurrentDataId(dataId)) {
-        ctx.renderPath.renderCamera = renderCamera;
+        ctx.view.activeSourceICamera = activeSourceICamera;
       }
       const presentation = derivePlanarPresentation({
         sliceBasis,
@@ -200,7 +202,7 @@ export class CpuImageSliceRenderPath
         canvasWidth: ctx.cpu.canvas.width,
         canvasHeight: ctx.cpu.canvas.height,
       });
-      applyPresentationState(rendering, presentation, renderCamera);
+      applyPresentationState(rendering, presentation, activeSourceICamera);
     }
 
     if (nextImageIdIndex === rendering.currentImageIdIndex) {
@@ -234,13 +236,13 @@ export class CpuImageSliceRenderPath
     rendering: PlanarCpuImageRendering,
     canvasPos: Point2
   ): Point3 {
-    const renderCamera = ctx.renderPath.renderCamera;
+    const activeSourceICamera = ctx.view.activeSourceICamera;
 
     if (
-      !renderCamera?.focalPoint ||
-      !renderCamera.parallelScale ||
-      !renderCamera.viewPlaneNormal ||
-      !renderCamera.viewUp
+      !activeSourceICamera?.focalPoint ||
+      !activeSourceICamera.parallelScale ||
+      !activeSourceICamera.viewPlaneNormal ||
+      !activeSourceICamera.viewUp
     ) {
       return [0, 0, 0];
     }
@@ -249,13 +251,13 @@ export class CpuImageSliceRenderPath
       ctx.cpu.canvas
     );
 
-    return canvasToWorldPlanarCamera({
+    return canvasToWorldPlanarViewState({
       camera: {
-        focalPoint: renderCamera.focalPoint,
-        parallelScale: renderCamera.parallelScale,
-        presentationScale: renderCamera.presentationScale,
-        viewPlaneNormal: renderCamera.viewPlaneNormal,
-        viewUp: renderCamera.viewUp,
+        focalPoint: activeSourceICamera.focalPoint,
+        parallelScale: activeSourceICamera.parallelScale,
+        presentationScale: activeSourceICamera.presentationScale,
+        viewPlaneNormal: activeSourceICamera.viewPlaneNormal,
+        viewUp: activeSourceICamera.viewUp,
       },
       canvasWidth,
       canvasHeight,
@@ -268,13 +270,13 @@ export class CpuImageSliceRenderPath
     rendering: PlanarCpuImageRendering,
     worldPos: Point3
   ): Point2 {
-    const renderCamera = ctx.renderPath.renderCamera;
+    const activeSourceICamera = ctx.view.activeSourceICamera;
 
     if (
-      !renderCamera?.focalPoint ||
-      !renderCamera.parallelScale ||
-      !renderCamera.viewPlaneNormal ||
-      !renderCamera.viewUp
+      !activeSourceICamera?.focalPoint ||
+      !activeSourceICamera.parallelScale ||
+      !activeSourceICamera.viewPlaneNormal ||
+      !activeSourceICamera.viewUp
     ) {
       return [0, 0];
     }
@@ -283,13 +285,13 @@ export class CpuImageSliceRenderPath
       ctx.cpu.canvas
     );
 
-    return worldToCanvasPlanarCamera({
+    return worldToCanvasPlanarViewState({
       camera: {
-        focalPoint: renderCamera.focalPoint,
-        parallelScale: renderCamera.parallelScale,
-        presentationScale: renderCamera.presentationScale,
-        viewPlaneNormal: renderCamera.viewPlaneNormal,
-        viewUp: renderCamera.viewUp,
+        focalPoint: activeSourceICamera.focalPoint,
+        parallelScale: activeSourceICamera.parallelScale,
+        presentationScale: activeSourceICamera.presentationScale,
+        viewPlaneNormal: activeSourceICamera.viewPlaneNormal,
+        viewUp: activeSourceICamera.viewUp,
       },
       canvasWidth,
       canvasHeight,
@@ -348,7 +350,7 @@ export class CpuImageSliceRenderPath
   ): void {
     resizeEnabledElement(rendering.enabledElement, true);
     const image = rendering.enabledElement.image;
-    const camera = ctx.viewport.getCameraState();
+    const camera = ctx.viewport.getViewState();
 
     if (!image) {
       return;
@@ -359,14 +361,14 @@ export class CpuImageSliceRenderPath
       canvasWidth: rendering.enabledElement.canvas.width,
       image,
     });
-    const renderCamera = resolvePlanarRenderCamera({
+    const activeSourceICamera = resolvePlanarICamera({
       sliceBasis,
       camera,
       canvasWidth: rendering.enabledElement.canvas.width,
       canvasHeight: rendering.enabledElement.canvas.height,
     });
     if (ctx.viewport.isCurrentDataId(dataId)) {
-      ctx.renderPath.renderCamera = renderCamera;
+      ctx.view.activeSourceICamera = activeSourceICamera;
     }
     const presentation = derivePlanarPresentation({
       sliceBasis,
@@ -379,7 +381,7 @@ export class CpuImageSliceRenderPath
       getDefaultViewport(rendering.enabledElement.canvas, image).scale
     );
     rendering.renderingInvalidated = true;
-    applyPresentationState(rendering, presentation, renderCamera);
+    applyPresentationState(rendering, presentation, activeSourceICamera);
   }
 
   private removeData(
@@ -428,6 +430,7 @@ export class CpuImageSlicePath
       type: rootContext.type,
       viewport: rootContext.viewport,
       renderPath: rootContext.renderPath,
+      view: rootContext.view,
       display: rootContext.display,
       cpu: rootContext.cpu,
     };
@@ -480,7 +483,7 @@ function getCPUFallbackScalarScale(scale?: number | Point2): number {
 function applyPresentationState(
   rendering: PlanarCpuImageRendering,
   presentation?: DerivedPlanarPresentation,
-  renderCamera?: PlanarRenderCamera
+  activeSourceICamera?: PlanarResolvedICamera
 ): void {
   const { enabledElement, fitScale } = rendering;
   const viewport = enabledElement.viewport as Omit<
@@ -496,20 +499,20 @@ function applyPresentationState(
   viewport.vflip = presentation?.flipVertical ?? false;
   viewport.rotation = presentation?.rotation ?? 0;
   viewport.scale =
-    typeof renderCamera?.parallelScale === 'number'
+    typeof activeSourceICamera?.parallelScale === 'number'
       ? resolvePlanarCpuViewportScale({
           canvas: enabledElement.canvas,
-          parallelScale: renderCamera.parallelScale,
-          presentationScale: renderCamera.presentationScale,
+          parallelScale: activeSourceICamera.parallelScale,
+          presentationScale: activeSourceICamera.presentationScale,
           columnPixelSpacing: enabledElement.image?.columnPixelSpacing || 1,
           rowPixelSpacing: enabledElement.image?.rowPixelSpacing || 1,
         })
       : [fitScale * (presentation?.scale?.[0] ?? zoom), fitScale * zoom];
-  viewport.parallelScale = renderCamera?.parallelScale;
-  viewport.translation = renderCamera?.focalPoint
+  viewport.parallelScale = activeSourceICamera?.parallelScale;
+  viewport.translation = activeSourceICamera?.focalPoint
     ? resolveCPUImageViewportTranslationFromFocalPoint(
         enabledElement,
-        renderCamera.focalPoint
+        activeSourceICamera.focalPoint
       )
     : resolveCPUImageViewportTranslation(enabledElement, desiredPan);
 
@@ -714,7 +717,7 @@ async function updateRenderedImage(args: {
 }): Promise<void> {
   const { ctx, dataId, image, imageIdIndex, props, rendering } = args;
   const enabledElement = rendering.enabledElement;
-  const camera = ctx.viewport.getCameraState();
+  const camera = ctx.viewport.getViewState();
   const defaultViewport = getDefaultViewport(ctx.cpu.canvas, image);
   const previousViewport = enabledElement.viewport;
 
@@ -747,14 +750,14 @@ async function updateRenderedImage(args: {
     canvasWidth: enabledElement.canvas.width,
     image,
   });
-  const renderCamera = resolvePlanarRenderCamera({
+  const activeSourceICamera = resolvePlanarICamera({
     sliceBasis,
     camera,
     canvasWidth: enabledElement.canvas.width,
     canvasHeight: enabledElement.canvas.height,
   });
   if (ctx.viewport.isCurrentDataId(dataId)) {
-    ctx.renderPath.renderCamera = renderCamera;
+    ctx.view.activeSourceICamera = activeSourceICamera;
   }
   const presentation = derivePlanarPresentation({
     sliceBasis,
@@ -762,7 +765,7 @@ async function updateRenderedImage(args: {
     canvasWidth: enabledElement.canvas.width,
     canvasHeight: enabledElement.canvas.height,
   });
-  applyPresentationState(rendering, presentation, renderCamera);
+  applyPresentationState(rendering, presentation, activeSourceICamera);
   triggerPlanarNewImage(ctx, { image, imageIdIndex });
   // cpuImage is drawn by the Planar viewport itself, not by the rendering
   // engine's VTK pass. The image swap therefore needs an immediate viewport

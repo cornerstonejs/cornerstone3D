@@ -7,7 +7,7 @@ export {
   VtkVolume3DPath,
   VtkVolume3DRenderPath,
 } from './VtkVolume3DRenderPath';
-export { default as Volume3DComputedCamera } from './Volume3DComputedCamera';
+export { default as Volume3DResolvedView } from './Volume3DResolvedView';
 export { default } from './3dViewport';
 export type {
   Volume3DCamera,

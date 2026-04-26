@@ -16,7 +16,7 @@ import type {
 } from '../../types';
 import triggerAnnotationRender from '../../utilities/triggerAnnotationRender';
 import filterAnnotationsForDisplay from '../../utilities/planar/filterAnnotationsForDisplay';
-import getViewportSpatialCamera from '../../utilities/getViewportSpatialCamera';
+import getViewportICamera from '../../utilities/getViewportICamera';
 import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
 import { getState } from '../../stateManagement/annotation/config';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
@@ -192,7 +192,7 @@ abstract class AnnotationDisplayTool extends BaseTool {
       viewPlaneNormal,
       viewUp,
       position: cameraPosition,
-    } = getViewportSpatialCamera(viewport, viewReference);
+    } = getViewportICamera(viewport, viewReference);
     const referencedImageId =
       viewReference.referencedImageId ||
       (viewPlaneNormal

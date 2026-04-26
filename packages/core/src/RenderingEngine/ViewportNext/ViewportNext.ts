@@ -10,15 +10,14 @@ import type {
   DataId,
   DataProvider,
   LoadedData,
-  RenderingBinding,
+  ViewportDataBinding,
   RenderingId,
   RenderPathResolver,
   ViewportController,
   ViewportId,
 } from './ViewportArchitectureTypes';
 import type ViewportType from '../../enums/ViewportType';
-import type { ViewportCameraBase } from './ViewportCameraTypes';
-import type ViewportComputedCamera from './ViewportComputedCamera';
+import type ResolvedViewportView from './ResolvedViewportView';
 import type {
   ReferenceCompatibleOptions,
   ViewPresentation,
@@ -35,7 +34,7 @@ import {
  * Generic ViewportNext controller.
  *
  * The base class owns only shared viewport state and binding orchestration:
- * loaded logical data, mounted renderings, camera state, and per-dataset
+ * loaded logical data, mounted renderings, view state, and per-dataset
  * render-state forwarding. It does not know how CPU, VTK, DOM, image, volume,
  * or media runtimes work internally.
  *
@@ -47,7 +46,7 @@ import {
  *
  * Concrete render paths are expected to own:
  * - runtime add/remove lifecycle
- * - camera interpretation for that render path
+ * - view-state interpretation for that render path
  * - per-dataset render-state application
  * - render-path-specific coordinate transforms
  *
@@ -55,11 +54,12 @@ import {
  * centralizing render-mode-specific behavior in the controller.
  */
 abstract class ViewportNext<
-  TCamera extends ICamera<unknown> & ViewportCameraBase<unknown, unknown>,
+  TViewState extends object,
   TDataPresentation = unknown,
   TContext extends BaseViewportRenderContext = BaseViewportRenderContext,
   TViewPresentation = ViewPresentation,
-> implements ViewportController<TCamera, TDataPresentation, TViewPresentation>
+> implements
+    ViewportController<TViewState, TDataPresentation, TViewPresentation>
 {
   // ── Abstract fields ──────────────────────────────────────────────────
 
@@ -74,9 +74,12 @@ abstract class ViewportNext<
   protected renderPathResolver: RenderPathResolver;
   protected renderContext: TContext;
 
-  protected bindings = new Map<DataId, RenderingBinding<TDataPresentation>>();
+  protected bindings = new Map<
+    DataId,
+    ViewportDataBinding<TDataPresentation>
+  >();
   protected dataPresentation = new Map<DataId, TDataPresentation>();
-  protected camera!: TCamera;
+  protected viewState!: TViewState;
   protected isDestroyed = false;
 
   // ── Debug ────────────────────────────────────────────────────────────
@@ -257,7 +260,7 @@ abstract class ViewportNext<
    */
   getFrameOfReferenceUID(): string {
     return (
-      this.getComputedCamera()?.getFrameOfReferenceUID() ??
+      this.getResolvedView()?.getFrameOfReferenceUID() ??
       `${this.type}-viewport-${this.id}`
     );
   }
@@ -271,8 +274,8 @@ abstract class ViewportNext<
    * transforms and legacy ICamera interop. Subclasses must implement this
    * to produce the viewport-family-specific computed camera.
    */
-  abstract getComputedCamera():
-    | ViewportComputedCamera<unknown, ICamera<unknown>>
+  abstract getResolvedView():
+    | ResolvedViewportView<unknown, ICamera<unknown>>
     | undefined;
 
   /**
@@ -280,7 +283,7 @@ abstract class ViewportNext<
    * computed camera.
    */
   canvasToWorld(canvasPos: Point2): Point3 {
-    const cc = this.getComputedCamera();
+    const cc = this.getResolvedView();
 
     if (!cc) {
       throw new Error(
@@ -296,7 +299,7 @@ abstract class ViewportNext<
    * computed camera.
    */
   worldToCanvas(worldPos: Point3): Point2 {
-    const cc = this.getComputedCamera();
+    const cc = this.getResolvedView();
 
     if (!cc) {
       throw new Error(
@@ -308,33 +311,33 @@ abstract class ViewportNext<
   }
 
   // ====================================================================
-  // Public API -- camera
+  // Public API -- view state
   // ====================================================================
 
   /**
-   * Merges partial camera updates into the shared viewport camera state and
+   * Merges partial view-state updates into the viewport source of truth and
    * propagates the result to every active binding.
    */
-  setCamera(cameraPatch: Partial<TCamera>): void {
+  setViewState(viewStatePatch: Partial<TViewState>): void {
     if (this.isDestroyed) {
       return;
     }
 
     const previousCamera = this.getCameraForEvent();
     const next = {
-      ...this.camera,
-      ...cameraPatch,
-    } as TCamera;
+      ...this.viewState,
+      ...viewStatePatch,
+    } as TViewState;
 
-    this.camera = this.normalizeCamera(next);
+    this.viewState = this.normalizeViewState(next);
     this.modified(previousCamera);
   }
 
   /**
-   * Returns the controller's current shared camera state.
+   * Returns the controller's current shared view state.
    */
-  getCamera(): TCamera {
-    return this.camera;
+  getViewState(): TViewState {
+    return this.viewState;
   }
 
   // ====================================================================
@@ -457,7 +460,7 @@ abstract class ViewportNext<
       binding.updateDataPresentation(props);
     }
 
-    binding.updateCamera(this.camera);
+    binding.applyViewState(this.viewState);
     this._debug.renderModes[dataId] = attachment.rendering.renderMode;
     this.render();
     return attachment.rendering.id;
@@ -545,19 +548,19 @@ abstract class ViewportNext<
   }
 
   // ====================================================================
-  // Protected -- camera
+  // Protected -- view state
   // ====================================================================
 
   /**
-   * Hook for subclasses to clamp or adjust camera values before they are
-   * stored. The default implementation returns the camera unchanged.
+   * Hook for subclasses to clamp or adjust view-state values before they are
+   * stored. The default implementation returns the view state unchanged.
    */
-  protected normalizeCamera(camera: TCamera): TCamera {
-    return camera;
+  protected normalizeViewState(viewState: TViewState): TViewState {
+    return viewState;
   }
 
   /**
-   * Pushes the current shared camera state to every binding and schedules a
+   * Pushes the current shared view state to every binding and schedules a
    * render. Optionally fires a camera-modified event when a previous camera
    * snapshot is provided.
    */
@@ -567,7 +570,7 @@ abstract class ViewportNext<
     }
 
     this.forEachBinding((binding) => {
-      binding.updateCamera(this.camera);
+      binding.applyViewState(this.viewState);
     });
 
     this.render();
@@ -580,11 +583,11 @@ abstract class ViewportNext<
   /**
    * Returns the camera representation used for event payloads. Delegates
    * to the computed camera's ICamera projection when available, falling
-   * back to the raw camera state.
+   * back to the raw view state.
    */
   protected getCameraForEvent(): ICamera {
-    return (this.getComputedCamera()?.toICamera() ??
-      this.getCamera()) as ICamera;
+    return (this.getResolvedView()?.toICamera() ??
+      this.getViewState()) as ICamera;
   }
 
   /**
@@ -625,7 +628,7 @@ abstract class ViewportNext<
    */
   protected getBinding(
     dataId: DataId
-  ): RenderingBinding<TDataPresentation> | undefined {
+  ): ViewportDataBinding<TDataPresentation> | undefined {
     return this.bindings.get(dataId);
   }
 
@@ -633,7 +636,9 @@ abstract class ViewportNext<
    * Returns the first mounted binding when a viewport family does not have a
    * stronger notion of "current" selection.
    */
-  protected getFirstBinding(): RenderingBinding<TDataPresentation> | undefined {
+  protected getFirstBinding():
+    | ViewportDataBinding<TDataPresentation>
+    | undefined {
     return this.bindings.values().next().value;
   }
 
@@ -642,7 +647,7 @@ abstract class ViewportNext<
    * queries when a viewport family does not override the selection logic.
    */
   protected getCurrentBinding():
-    | RenderingBinding<TDataPresentation>
+    | ViewportDataBinding<TDataPresentation>
     | undefined {
     return this.getFirstBinding();
   }
@@ -652,7 +657,7 @@ abstract class ViewportNext<
    * subclasses.
    */
   protected forEachBinding(
-    visitor: (binding: RenderingBinding<TDataPresentation>) => void
+    visitor: (binding: ViewportDataBinding<TDataPresentation>) => void
   ): void {
     for (const binding of this.bindings.values()) {
       visitor(binding);
@@ -667,8 +672,8 @@ abstract class ViewportNext<
     _viewReference?: ViewReference
   ): ViewportNextReferenceContext[] {
     const contexts: ViewportNextReferenceContext[] = [];
-    const computedCamera = this.getComputedCamera();
-    const camera = computedCamera?.toICamera();
+    const resolvedView = this.getResolvedView();
+    const camera = resolvedView?.toICamera();
 
     for (const [dataId, binding] of this.bindings.entries()) {
       contexts.push({
@@ -676,7 +681,7 @@ abstract class ViewportNext<
         dataIds: [binding.data.id],
         frameOfReferenceUID:
           binding.getFrameOfReferenceUID() ??
-          computedCamera?.getFrameOfReferenceUID() ??
+          resolvedView?.getFrameOfReferenceUID() ??
           this.getFrameOfReferenceUID(),
         cameraFocalPoint: camera?.focalPoint,
         viewPlaneNormal: camera?.viewPlaneNormal,

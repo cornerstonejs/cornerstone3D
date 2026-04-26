@@ -3,7 +3,7 @@ export {
   DefaultRenderPathResolver,
 } from './DefaultRenderPathResolver';
 export { default as ViewportNext } from './ViewportNext';
-export { default as ViewportComputedCamera } from './ViewportComputedCamera';
+export { default as ResolvedViewportView } from './ResolvedViewportView';
 export type {
   CameraFrame,
   CameraScale,
@@ -27,7 +27,7 @@ export type {
   RenderPathAttachment,
   RenderPathResolver,
   RenderPath,
-  RenderingBinding,
+  ViewportDataBinding,
   RenderingId,
   ViewportController,
   ViewportId,
@@ -44,7 +44,7 @@ export {
   CanvasECGPath,
   CanvasECGRenderPath,
   DefaultECGDataProvider,
-  ECGComputedCamera,
+  ECGResolvedView,
 } from './ECG';
 export type {
   ECGCamera,
@@ -62,7 +62,7 @@ export {
   DefaultVideoDataProvider,
   HtmlVideoPath,
   HtmlVideoRenderPath,
-  VideoComputedCamera,
+  VideoResolvedView,
 } from './Video';
 export type {
   VideoCamera,
@@ -76,19 +76,19 @@ export type {
 } from './Video';
 export { default as PlanarViewport } from './Planar';
 export {
-  BasePlanarViewportCamera,
+  BasePlanarResolvedView,
   CpuImageSlicePath,
   CpuImageSliceRenderPath,
   DefaultPlanarDataProvider,
-  PlanarStackViewportCamera,
-  PlanarVolumeViewportCamera,
+  PlanarStackResolvedView,
+  PlanarVolumeResolvedView,
   VtkImageMapperPath,
   VtkImageMapperRenderPath,
   VtkVolumeSlicePath,
   VtkVolumeSliceRenderPath,
 } from './Planar';
 export type {
-  PlanarCamera,
+  PlanarViewState,
   PlanarDataPresentation,
   PlanarDataProvider,
   PlanarDataLoadOptions,
@@ -105,7 +105,7 @@ export type {
 export { default as VolumeViewport3DV2 } from './Volume3D';
 export {
   DefaultVolume3DDataProvider,
-  Volume3DComputedCamera,
+  Volume3DResolvedView,
   VtkGeometry3DPath,
   VtkGeometry3DRenderPath,
   VtkVolume3DPath,
@@ -136,7 +136,7 @@ export {
   DefaultWSIDataProvider,
   DicomMicroscopyPath,
   DicomMicroscopyRenderPath,
-  WSIComputedCamera,
+  WSIResolvedView,
 } from './WSI';
 export type {
   WSICamera,
@@ -146,6 +146,7 @@ export type {
   WSIPayload,
   WSIPresentationProps,
   WSIRendering,
+  WSIViewState,
   WSIViewportInput,
   WSIViewportRenderContext,
   WSIViewportNextInput,
