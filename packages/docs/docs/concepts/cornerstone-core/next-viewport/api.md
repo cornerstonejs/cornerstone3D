@@ -7,13 +7,15 @@ summary: Practical Next Viewport API examples for data, overlays, presentation, 
 # API
 
 The Next Viewport API is centered on logical data ids. Register the data once,
-mount it into a viewport with a render mode, then update view state and data
-presentation independently.
+mount it into a viewport, then update view state and data presentation
+independently.
 
 ## Create A Planar Next Viewport
 
 Use `ViewportType.PLANAR_NEXT` for stack-like and volume-slice 2D workflows.
-The render mode can be forced or left to `auto`.
+The viewport infers the render path from the registered dataset shape,
+requested orientation, rendering configuration, WebGL support, and segmentation
+slice-rendering configuration.
 
 ```ts
 import {
@@ -31,20 +33,16 @@ renderingEngine.enableElement({
   element,
   defaultOptions: {
     background: [0, 0, 0],
-    renderMode: 'vtkVolumeSlice',
   },
 });
 
 const viewport = renderingEngine.getViewport('CT_AXIAL') as PlanarViewport;
 ```
 
-Common planar render modes are:
-
-- `cpuImage` for CPU stack/image rendering.
-- `vtkImage` for VTK image-slice rendering.
-- `cpuVolume` for CPU volume slicing.
-- `vtkVolumeSlice` for VTK volume slice rendering.
-- `auto` when the viewport should choose an effective mode.
+Planar render-path selection is internal. Stack-like image-id data uses an
+image path; volume-backed data or reformatted orientations use a volume slice
+path. CPU/GPU choice is made by the planar render-path decision service from
+runtime rendering configuration and thresholds.
 
 ## Add Stack Data
 
@@ -63,9 +61,6 @@ utilities.viewportNextDataSetMetadataProvider.add(stackDataId, {
 await viewport.setDataList([
   {
     dataId: stackDataId,
-    options: {
-      renderMode: 'vtkImage',
-    },
   },
 ]);
 
@@ -82,7 +77,7 @@ provided explicitly.
 ## Add Volume Slice Data
 
 Volume slice data uses the same viewport API. The registered data includes a
-`volumeId` and can be shown with a volume render path.
+`volumeId`, so the viewport selects a volume slice render path.
 
 ```ts
 const ctDataId = 'ct-volume-source';
@@ -92,7 +87,6 @@ utilities.viewportNextDataSetMetadataProvider.add(ctDataId, {
   imageIds: ctImageIds,
   initialImageIdIndex: Math.floor(ctImageIds.length / 2),
   volumeId: ctVolumeId,
-  referencedId: ctVolumeId,
 });
 
 await viewport.setDataList([
@@ -100,14 +94,14 @@ await viewport.setDataList([
     dataId: ctDataId,
     options: {
       orientation: Enums.OrientationAxis.SAGITTAL,
-      renderMode: 'vtkVolumeSlice',
     },
   },
 ]);
 ```
 
-The same calls work with `cpuVolume` when the source should be sampled by the
-CPU volume slice path.
+The same calls work for CPU or GPU volume slicing. Configure CPU/GPU preference
+through rendering configuration and thresholds instead of passing a render mode
+with the data.
 
 ## Add An Overlay
 
@@ -122,12 +116,10 @@ utilities.viewportNextDataSetMetadataProvider.add(ptDataId, {
   imageIds: ptImageIds,
   initialImageIdIndex: Math.floor(ptImageIds.length / 2),
   volumeId: ptVolumeId,
-  referencedId: ptVolumeId,
 });
 
 await viewport.addData(ptDataId, {
   orientation: Enums.OrientationAxis.SAGITTAL,
-  renderMode: 'vtkVolumeSlice',
   role: 'overlay',
 });
 
@@ -149,7 +141,6 @@ await viewport.setDataList([
     dataId: ctDataId,
     options: {
       orientation: Enums.OrientationAxis.SAGITTAL,
-      renderMode: 'vtkVolumeSlice',
       role: 'source',
     },
   },
@@ -157,7 +148,6 @@ await viewport.setDataList([
     dataId: ptDataId,
     options: {
       orientation: Enums.OrientationAxis.SAGITTAL,
-      renderMode: 'vtkVolumeSlice',
       role: 'overlay',
     },
   },
@@ -250,7 +240,7 @@ await segmentation.addLabelmapRepresentationToViewportMap({
 With `useSliceRendering`, a compatible volume labelmap is rendered through an
 image/slice path instead of allocating and drawing it as a full 3D labelmap
 volume. This is useful for planar slice workflows, especially when the source
-viewport is using `vtkVolumeSlice`.
+viewport is using a volume slice path.
 
 The segmentation display tool registers each labelmap layer as overlay data in
 the viewport:
@@ -258,7 +248,6 @@ the viewport:
 ```ts
 await viewport.addData(labelmapDataId, {
   orientation: viewport.getViewState().orientation,
-  renderMode: 'vtkVolumeSlice',
   role: 'overlay',
 });
 

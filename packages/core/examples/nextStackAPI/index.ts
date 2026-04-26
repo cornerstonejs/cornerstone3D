@@ -27,7 +27,6 @@ const { ViewportType, Events } = Enums;
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_STACK_NEXT';
 const stackDataId = 'stack-api-next:primary';
-const planarRenderMode = getBooleanUrlParam('cpu') ? 'cpuImage' : 'vtkImage';
 
 function getNextExampleBackground(): Types.Point3 {
   return getBooleanUrlParam('cpu') ? [0, 0, 0] : [0, 0.2, 0];
@@ -273,7 +272,6 @@ async function run() {
     element,
     defaultOptions: {
       background: getNextExampleBackground(),
-      renderMode: planarRenderMode,
     },
   });
 
@@ -289,9 +287,7 @@ async function run() {
   await viewport.setDataList([
     {
       dataId: stackDataId,
-      options: {
-        renderMode: planarRenderMode,
-      },
+      options: {},
     },
   ]);
   viewport.setDataPresentation(stackDataId, { voiRange: ctVoiRange });

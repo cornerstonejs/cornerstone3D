@@ -1,7 +1,6 @@
 import cache from '../../../cache/cache';
 import type BlendModes from '../../../enums/BlendModes';
 import { Events } from '../../../enums';
-import { getShouldUseCPURendering } from '../../../init';
 import { ActorRenderMode } from '../../../types';
 import type { ActorEntry, ColormapPublic, IVolumeInput } from '../../../types';
 import triggerEvent from '../../../utilities/triggerEvent';
@@ -491,9 +490,6 @@ class PlanarLegacyCompatibilityController {
 
       const sharedOptions: PlanarSetDataOptions = {
         orientation: this.host.getRequestedOrientation(),
-        renderMode: getShouldUseCPURendering()
-          ? ActorRenderMode.CPU_VOLUME
-          : ActorRenderMode.VTK_VOLUME_SLICE,
       };
       const existingSourceDataId = this.host.getActiveDataId();
 

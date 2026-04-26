@@ -52,12 +52,15 @@ logical data id
 
 The viewport owns navigation and binding order. The data provider owns logical
 data lookup. A render path owns only the runtime implementation for one data
-type and render mode. A binding owns one mounted dataset in the viewport.
+shape and internal render-path decision. A binding owns one mounted dataset in
+the viewport.
 
 For planar imaging, one `PlanarViewport` can now display stack-like data,
 volume slice data, CPU image data, VTK image data, and VTK volume slice data
-behind the same clean API. The render mode is selected per dataset instead of
-being hardwired into a separate stack or volume viewport class.
+behind the same clean API. The render path is inferred from dataset shape,
+orientation, rendering configuration, and segmentation slice-rendering needs
+instead of being passed by application code or hardwired into a separate stack
+or volume viewport class.
 
 ## Source And Overlay Data
 

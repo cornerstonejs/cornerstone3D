@@ -59,9 +59,6 @@ const toolGroupId = 'MY_TOOLGROUP_ID';
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
 const volumeId = `${volumeLoaderScheme}:${volumeName}`;
 const dataId = 'labelmap-segmentation-tools-next:source';
-const volumeRenderMode = getBooleanUrlParam('cpu')
-  ? 'cpuVolume'
-  : 'vtkVolumeSlice';
 const useSliceRendering =
   getBooleanUrlParam('useSliceRendering') ||
   getBooleanUrlParam('sliceRendering');
@@ -435,7 +432,6 @@ async function run() {
       defaultOptions: {
         orientation,
         background: getNextExampleBackground(),
-        renderMode: volumeRenderMode,
       },
     }))
   );
@@ -463,7 +459,6 @@ async function run() {
           dataId,
           options: {
             orientation,
-            renderMode: volumeRenderMode,
           },
         },
       ]);

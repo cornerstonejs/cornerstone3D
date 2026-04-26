@@ -29,7 +29,6 @@ import { OrientationAxis } from '../enums';
 import type { VtkOffscreenMultiRenderWindow } from '../types';
 import { StatsOverlay } from './helpers/stats';
 import { convertColorArrayToRgbString } from '../utilities/convertColorArrayToRgbString';
-import { resolvePlanarViewportRenderMode } from './ViewportNext/Planar/resolvePlanarViewportRenderMode';
 
 // Rendering engines seem to not like rendering things less than 2 pixels per side
 export const VIEWPORT_MIN_SIZE = 2;
@@ -491,17 +490,6 @@ abstract class BaseRenderingEngine {
           orientation: OrientationAxis.AXIAL,
         };
       }
-    }
-
-    if (type === ViewportType.PLANAR_NEXT) {
-      options = {
-        ...options,
-        renderMode: resolvePlanarViewportRenderMode({
-          requestedType,
-          orientation: options.orientation as never,
-          renderMode: options.renderMode,
-        }),
-      };
     }
 
     return {

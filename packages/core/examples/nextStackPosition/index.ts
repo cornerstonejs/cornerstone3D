@@ -13,8 +13,6 @@ import {
   addDropdownToToolbar,
   getLocalUrl,
 } from '../../../../utils/demo/helpers';
-import { getBooleanUrlParam } from '../../../../utils/demo/helpers/exampleParameters';
-
 console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
@@ -24,7 +22,6 @@ const { ViewportType, Events } = Enums;
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_STACK_NEXT_POSITION';
 const stackDataId = 'stack-position-next:primary';
-const planarRenderMode = getBooleanUrlParam('cpu') ? 'cpuImage' : 'vtkImage';
 
 type FractionPoint = number | [number, number];
 type DisplayAreaSize = number | [number, number];
@@ -230,7 +227,6 @@ async function run() {
     element,
     defaultOptions: {
       background: [0.8, 0, 0.8] as Types.Point3,
-      renderMode: planarRenderMode,
     },
   });
 
@@ -245,9 +241,7 @@ async function run() {
   await viewport.setDataList([
     {
       dataId: stackDataId,
-      options: {
-        renderMode: planarRenderMode,
-      },
+      options: {},
     },
   ]);
 

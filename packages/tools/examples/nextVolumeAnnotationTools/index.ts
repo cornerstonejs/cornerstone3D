@@ -33,9 +33,6 @@ const volumeName = 'CT_VOLUME_ID';
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
 const volumeId = `${volumeLoaderScheme}:${volumeName}`;
 const dataId = 'volume-annotation-tools-next:source';
-const volumeRenderMode = getBooleanUrlParam('cpu')
-  ? 'cpuVolume'
-  : 'vtkVolumeSlice';
 
 function getNextExampleBackground(): Types.Point3 {
   return getBooleanUrlParam('cpu') ? [0, 0, 0] : [0, 0.2, 0];
@@ -176,7 +173,6 @@ async function run() {
       defaultOptions: {
         orientation,
         background: getNextExampleBackground(),
-        renderMode: volumeRenderMode,
       },
     }))
   );
@@ -210,7 +206,6 @@ async function run() {
           dataId,
           options: {
             orientation,
-            renderMode: volumeRenderMode,
           },
         },
       ]);

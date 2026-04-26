@@ -4,8 +4,9 @@ import type { PlanarPayload } from './PlanarViewportTypes';
 
 /**
  * Builds an ActorEntry from a planar data payload and the render-path-specific
- * actor/mapper. This consolidates the UID/referencedId fallback chain shared
- * across all four planar render modes.
+ * actor/mapper. Payload identity is the public contract for overlays and
+ * segmentations; render-path fallbacks are used only when the payload does not
+ * provide its own ids.
  */
 export function buildPlanarActorEntry(
   data: LoadedData<PlanarPayload>,
@@ -18,14 +19,13 @@ export function buildPlanarActorEntry(
   }
 ): ActorEntry {
   const uid =
-    data.actorUID ||
-    data.representationUID ||
-    data.referencedId ||
-    source.uidFallback ||
-    data.id;
+    data.actorUID || data.representationUID || source.uidFallback || data.id;
 
   const referencedId =
-    data.referencedId || source.referencedIdFallback || data.id;
+    data.referencedId ||
+    data.volumeId ||
+    source.referencedIdFallback ||
+    data.id;
 
   const actor = source.actor;
   const mapper =

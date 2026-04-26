@@ -50,7 +50,6 @@ const viewportId2 = 'STACK_VIEWPORT_2';
 const toolGroupId = 'TOOL_GROUP_ID';
 const ctDataId = 'stack-labelmap-segmentation-next:ct';
 const mgDataId = 'stack-labelmap-segmentation-next:mg';
-const stackRenderMode = getBooleanUrlParam('cpu') ? 'cpuImage' : 'vtkImage';
 
 function getNextExampleBackground(): Types.Point3 {
   return getBooleanUrlParam('cpu') ? [0, 0, 0] : [0, 0.2, 0];
@@ -446,7 +445,6 @@ async function run() {
       element: element1,
       defaultOptions: {
         background: getNextExampleBackground(),
-        renderMode: stackRenderMode,
       },
     },
     {
@@ -455,7 +453,6 @@ async function run() {
       element: element2,
       defaultOptions: {
         background: getNextExampleBackground(),
-        renderMode: stackRenderMode,
       },
     },
   ]);
@@ -487,17 +484,13 @@ async function run() {
   await viewport.setDataList([
     {
       dataId: ctDataId,
-      options: {
-        renderMode: stackRenderMode,
-      },
+      options: {},
     },
   ]);
   await viewport2.setDataList([
     {
       dataId: mgDataId,
-      options: {
-        renderMode: stackRenderMode,
-      },
+      options: {},
     },
   ]);
 

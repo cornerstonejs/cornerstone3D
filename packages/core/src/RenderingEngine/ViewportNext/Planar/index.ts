@@ -18,6 +18,15 @@ export {
   VtkImageMapperRenderPath,
 } from './VtkImageMapperRenderPath';
 export {
+  defaultPlanarRenderPathDecisionService,
+  PlanarRenderPathDecisionService,
+  selectPlanarRenderPath,
+} from './PlanarRenderPathDecisionService';
+export type {
+  PlanarRenderPathDecisionOptions,
+  SelectedPlanarRenderPath,
+} from './PlanarRenderPathDecisionService';
+export {
   VtkVolumeSlicePath,
   VtkVolumeSliceRenderPath,
 } from './VtkVolumeSliceRenderPath';
@@ -34,7 +43,6 @@ export type {
   PlanarOrientation,
   PlanarPayload,
   PlanarPresentationProps,
-  PlanarRequestedRenderMode,
   PlanarRegisteredDataSet,
   PlanarRenderMode,
   PlanarSetDataOptions,
@@ -42,4 +50,5 @@ export type {
   PlanarVtkVolumeAdapterContext,
   PlanarViewportRenderContext,
   PlanarViewportInput,
+  PlanarViewportInputOptions,
 } from './PlanarViewportTypes';

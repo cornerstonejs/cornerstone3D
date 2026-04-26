@@ -22,14 +22,17 @@ Examples include:
 
 ## Selection
 
-Render path selection starts from the requested viewport type, logical data, and
-render mode. A `RenderPathResolver` owns the registry and returns the first path
-that matches the data and options. The selected path can also narrow the root
-viewport render context into the runtime context it needs.
+Render path selection starts from the requested viewport type, logical data,
+dataset shape, requested orientation, and rendering configuration. A
+viewport-specific decision service chooses the effective path, then the
+`RenderPathResolver` returns the first registered path that matches the loaded
+data and internal decision. The selected path can also narrow the root viewport
+render context into the runtime context it needs.
 
-For planar viewports, render mode selection may normalize an `auto` request into
-an effective mode such as CPU image, CPU volume, VTK image, or VTK volume slice.
-That selected mode is stored as render-path runtime state, not as camera state.
+For planar viewports, stack-like image ids select an image path, while
+volume-backed data and reformatted orientations select a volume slice path.
+CPU/GPU selection comes from rendering configuration, thresholds, and runtime
+support. Source vs overlay role is not used to decide the render path.
 
 ## Projection
 
@@ -65,7 +68,8 @@ It follows source navigation without becoming the source view.
 
 When adding a new render path:
 
-- Match only the data type and render mode the path can actually draw.
+- Match only the data type and internal render-path decision the path can
+  actually draw.
 - Keep persistent navigation state on the viewport.
 - Implement `applyViewState()` as a projection from semantic state to runtime
   commands.

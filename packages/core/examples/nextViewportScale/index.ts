@@ -15,8 +15,6 @@ import {
   ctVoiRange,
   getLocalUrl,
 } from '../../../../utils/demo/helpers';
-import { getBooleanUrlParam } from '../../../../utils/demo/helpers/exampleParameters';
-
 console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
@@ -29,10 +27,6 @@ const volumeViewportId = 'CT_VOLUME_NEXT_SCALE';
 const stackDataId = 'next-viewport-scale:stack';
 const volumeDataId = 'next-viewport-scale:volume';
 const volumeId = 'cornerstoneStreamingImageVolume:NEXT_VIEWPORT_SCALE_CT';
-const stackRenderMode = getBooleanUrlParam('cpu') ? 'cpuImage' : 'vtkImage';
-const volumeRenderMode = getBooleanUrlParam('cpu')
-  ? 'cpuVolume'
-  : 'vtkVolumeSlice';
 const viewportWidthPx = 640;
 const viewportHeightPx = 400;
 const scaleXSliderId = 'next-viewport-scale-x';
@@ -394,7 +388,6 @@ async function run() {
     element: stackElement,
     defaultOptions: {
       background: stackViewportBackground,
-      renderMode: stackRenderMode,
     },
   });
   renderingEngine.enableElement({
@@ -404,7 +397,6 @@ async function run() {
     defaultOptions: {
       background: volumeViewportBackground,
       orientation: OrientationAxis.SAGITTAL,
-      renderMode: volumeRenderMode,
     },
   });
 
@@ -428,9 +420,7 @@ async function run() {
     stackViewport.setDataList([
       {
         dataId: stackDataId,
-        options: {
-          renderMode: stackRenderMode,
-        },
+        options: {},
       },
     ]),
     volumeViewport.setDataList([
@@ -438,7 +428,6 @@ async function run() {
         dataId: volumeDataId,
         options: {
           orientation: OrientationAxis.SAGITTAL,
-          renderMode: volumeRenderMode,
         },
       },
     ]),

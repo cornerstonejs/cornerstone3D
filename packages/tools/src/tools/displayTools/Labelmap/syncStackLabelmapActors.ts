@@ -94,11 +94,13 @@ export function syncStackLabelmapActors(
           viewport.getImageDataMetadata(derivedImage);
         const constructor = derivedImage.voxelManager.getConstructor();
         const newPixelData = derivedImage.voxelManager.getScalarData();
+        // @ts-expect-error vtk.js accepts typed array constructors here.
+        const values = new constructor(newPixelData);
         const scalarArray = vtkDataArray.newInstance({
+          dataType: vtkDataArray.getDataType(values as never),
           name: 'Pixels',
           numberOfComponents: 1,
-          // @ts-expect-error
-          values: new constructor(newPixelData),
+          values,
         });
         const imageData = vtkImageData.newInstance();
 

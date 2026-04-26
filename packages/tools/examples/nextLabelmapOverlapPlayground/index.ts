@@ -46,10 +46,6 @@ const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
 const volumeId = `${volumeLoaderScheme}:${volumeName}`;
 const stackDataId = 'labelmap-overlap-next:stack';
 const volumeDataId = 'labelmap-overlap-next:volume';
-const stackRenderMode = getBooleanUrlParam('cpu') ? 'cpuImage' : 'vtkImage';
-const volumeRenderMode = getBooleanUrlParam('cpu')
-  ? 'cpuVolume'
-  : 'vtkVolumeSlice';
 
 const viewportIds = {
   STACK: 'OVERLAP_STACK',
@@ -344,7 +340,6 @@ async function run() {
       element: stackElement,
       defaultOptions: {
         background: getNextExampleBackground(),
-        renderMode: stackRenderMode,
       },
     },
     {
@@ -354,7 +349,6 @@ async function run() {
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
         background: getNextExampleBackground(),
-        renderMode: volumeRenderMode,
       },
     },
     {
@@ -364,7 +358,6 @@ async function run() {
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
         background: getNextExampleBackground(),
-        renderMode: volumeRenderMode,
       },
     },
     {
@@ -374,7 +367,6 @@ async function run() {
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
         background: getNextExampleBackground(),
-        renderMode: volumeRenderMode,
       },
     },
   ]);
@@ -402,9 +394,7 @@ async function run() {
   await stackViewport.setDataList([
     {
       dataId: stackDataId,
-      options: {
-        renderMode: stackRenderMode,
-      },
+      options: {},
     },
   ]);
 
@@ -434,7 +424,6 @@ async function run() {
           dataId: volumeDataId,
           options: {
             orientation,
-            renderMode: volumeRenderMode,
           },
         },
       ]);

@@ -100,6 +100,7 @@ export type {
   PlanarRenderMode,
   PlanarSetDataOptions,
   PlanarViewportInput,
+  PlanarViewportInputOptions,
   PlanarViewportRenderContext,
 } from './Planar';
 export { default as VolumeViewport3DV2 } from './Volume3D';

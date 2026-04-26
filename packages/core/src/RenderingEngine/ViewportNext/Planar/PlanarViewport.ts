@@ -35,11 +35,7 @@ import getMinMax from '../../../utilities/getMinMax';
 import hasOwn from '../../../utilities/hasOwn';
 import renderingEngineCache from '../../renderingEngineCache';
 import { getCameraVectors } from '../../helpers/getCameraVectors';
-import type {
-  BindingRole,
-  DataAddOptions,
-  LoadedData,
-} from '../ViewportArchitectureTypes';
+import type { BindingRole, LoadedData } from '../ViewportArchitectureTypes';
 import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
 import ViewportNext from '../ViewportNext';
 import {
@@ -107,17 +103,13 @@ import type {
   PlanarViewPresentationSelector,
   PlanarViewportRenderContext,
   PlanarViewportInput,
+  PlanarViewportInputOptions,
 } from './PlanarViewportTypes';
-import { resolvePlanarViewportRenderMode } from './resolvePlanarViewportRenderMode';
 
 defaultRenderPathResolver.register(new CpuImageSlicePath());
 defaultRenderPathResolver.register(new CpuVolumeSlicePath());
 defaultRenderPathResolver.register(new VtkImageMapperPath());
 defaultRenderPathResolver.register(new VtkVolumeSlicePath());
-
-type PlanarViewportInputOptions = Omit<ViewportInputOptions, 'displayArea'> & {
-  displayArea?: PlanarDisplayArea;
-};
 
 type PlanarSetOrientationInput =
   | OrientationAxis.ACQUISITION
@@ -155,7 +147,6 @@ class PlanarViewport extends ViewportNext<
   protected renderContext: PlanarViewportRenderContext;
 
   private sourceDataId?: string;
-  private readonly lockedRenderMode: PlanarEffectiveRenderMode;
   private cpuCanvas?: HTMLCanvasElement;
 
   // ── Static ───────────────────────────────────────────────────────────
@@ -182,13 +173,6 @@ class PlanarViewport extends ViewportNext<
     this.dataProvider = args.dataProvider || new DefaultPlanarDataProvider();
     this.renderPathResolver =
       args.renderPathResolver || defaultRenderPathResolver;
-    this.lockedRenderMode = resolvePlanarViewportRenderMode({
-      orientation: this.defaultOptions.orientation as
-        | PlanarSetDataOptions['orientation']
-        | null,
-      renderMode: this.defaultOptions.renderMode,
-    });
-
     const renderingEngine = renderingEngineCache.get(this.renderingEngineId);
     const renderer = renderingEngine?.getRenderer(this.id);
 
@@ -241,7 +225,7 @@ class PlanarViewport extends ViewportNext<
         getOverlayActors: () => this.getProjectedBindingActorEntries('overlay'),
       },
       renderPath: {
-        renderMode: this.lockedRenderMode,
+        renderMode: ActorRenderMode.VTK_IMAGE,
       },
       view: {},
       display: {
@@ -252,6 +236,7 @@ class PlanarViewport extends ViewportNext<
           this.render();
         },
         activateRenderMode: (renderMode: PlanarEffectiveRenderMode) => {
+          this.renderContext.renderPath.renderMode = renderMode;
           this.setRenderModeVisibility(renderMode, cpuCanvas, vtkCanvas);
         },
       },
@@ -272,7 +257,11 @@ class PlanarViewport extends ViewportNext<
       ...createDefaultPlanarViewState(),
       orientation: this.resolveRequestedOrientation(),
     });
-    this.setRenderModeVisibility(this.lockedRenderMode, cpuCanvas, vtkCanvas);
+    this.setRenderModeVisibility(
+      ActorRenderMode.VTK_IMAGE,
+      cpuCanvas,
+      vtkCanvas
+    );
 
     this.element.setAttribute('data-viewport-uid', this.id);
     this.element.setAttribute(
@@ -290,7 +279,7 @@ class PlanarViewport extends ViewportNext<
    * Adds one or more logical planar datasets to the viewport.
    *
    * @param entries - List of datasets to add, each with its own options for
-   * render-mode and orientation resolution.
+   * orientation and binding role resolution.
    * @returns Rendering ids in the same order as the provided entries.
    */
   async setDataList(
@@ -314,18 +303,17 @@ class PlanarViewport extends ViewportNext<
    * Adds a single logical planar dataset.
    *
    * @param dataId - Logical dataset id to add.
-   * @param options - Render-mode and orientation options used while resolving
-   * the effective planar render path.
+   * @param options - Semantic orientation and binding options. The render path
+   * is inferred from the registered dataset and viewport configuration.
    * @returns The rendering id created for the mounted dataset.
    */
   async addData(
     dataId: string,
-    options: PlanarSetDataOptions | DataAddOptions = {}
+    options: PlanarSetDataOptions = {}
   ): Promise<string> {
-    const planarOptions = options as PlanarSetDataOptions;
-    const role = this.resolveBindingRole(planarOptions);
+    const role = this.resolveBindingRole(options);
     const resolvedOptions: PlanarSetDataOptions = {
-      ...planarOptions,
+      ...options,
       role,
     };
     const { data, resolvedOrientation, selectedPath } =
@@ -353,7 +341,7 @@ class PlanarViewport extends ViewportNext<
    */
   async setData(
     dataId: string,
-    options: PlanarSetDataOptions | DataAddOptions = {}
+    options: PlanarSetDataOptions = {}
   ): Promise<string> {
     this.removeAllData();
     return this.addData(dataId, {
@@ -490,11 +478,6 @@ class PlanarViewport extends ViewportNext<
 
       const actorUID = this.resolveOverlayActorUID(stackInput, image);
       const dataId = this.resolveOverlayDataId(actorUID);
-      const renderMode =
-        rendering.renderMode === ActorRenderMode.CPU_IMAGE
-          ? ActorRenderMode.CPU_IMAGE
-          : ActorRenderMode.VTK_IMAGE;
-
       viewportNextDataSetMetadataProvider.add(dataId, {
         actorUID,
         image,
@@ -515,7 +498,6 @@ class PlanarViewport extends ViewportNext<
       });
 
       await this.addData(dataId, {
-        renderMode,
         role: 'overlay',
       });
 
@@ -1630,22 +1612,9 @@ class PlanarViewport extends ViewportNext<
     const resolvedOrientation = this.resolveRequestedOrientation(
       options.orientation
     );
-    if (
-      options.renderMode !== undefined &&
-      options.renderMode !== this.lockedRenderMode &&
-      options.role !== 'overlay'
-    ) {
-      throw new Error(
-        `[PlanarViewport] Viewport ${this.id} is locked to ${this.lockedRenderMode}; cannot add ${dataId} as ${options.renderMode}`
-      );
-    }
-    const requestedRenderMode =
-      options.role === 'overlay'
-        ? (options.renderMode ?? this.lockedRenderMode)
-        : this.lockedRenderMode;
     const selectedPath = selectPlanarRenderPath(dataSet, {
       orientation: resolvedOrientation,
-      renderMode: requestedRenderMode,
+      cpuThresholds: options.cpuThresholds,
     });
     const data = await (this.dataProvider as PlanarDataProvider).load(dataId, {
       acquisitionOrientation: selectedPath.acquisitionOrientation,

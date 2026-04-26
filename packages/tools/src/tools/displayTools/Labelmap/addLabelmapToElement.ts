@@ -54,9 +54,6 @@ type PlanarNextVolumeViewport = Types.IViewport & {
     dataId: string,
     options: {
       orientation?: unknown;
-      renderMode:
-        | Types.ActorRenderMode.CPU_VOLUME
-        | Types.ActorRenderMode.VTK_VOLUME_SLICE;
       role?: 'source' | 'overlay';
     }
   ) => Promise<string>;
@@ -274,9 +271,9 @@ async function addLabelmapToPlanarNextViewport(args: {
 }): Promise<void | { uid: string; actor }> {
   const { blendMode, labelmapLayers, segmentationId, viewport, visibility } =
     args;
-  const renderMode = getPlanarNextVolumeRenderMode(viewport);
+  const sourceVolumeRenderMode = getPlanarNextVolumeRenderMode(viewport);
 
-  if (!renderMode) {
+  if (!sourceVolumeRenderMode) {
     return;
   }
 
@@ -317,14 +314,12 @@ async function addLabelmapToPlanarNextViewport(args: {
         currentImageIdIndex,
         Math.max(volume.imageIds.length - 1, 0)
       ),
-      referencedId: layer.volumeId,
       representationUID,
       volumeId: layer.volumeId,
     });
 
     await viewport.addData(dataId, {
       orientation: requestedOrientation,
-      renderMode,
       role: 'overlay',
     });
     viewport.setDataPresentation(dataId, {

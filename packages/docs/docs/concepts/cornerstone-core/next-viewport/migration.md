@@ -10,7 +10,8 @@ This migration guide is local to the Next Viewport architecture. It is not a
 general Cornerstone migration guide.
 
 The goal is to move application code from viewport-class-specific behavior to
-logical data ids, render paths, bindings, view state, and data presentation.
+logical data ids, inferred render paths, bindings, view state, and data
+presentation.
 
 ## Stack Or Volume Viewport Selection
 
@@ -44,9 +45,6 @@ renderingEngine.enableElement({
   viewportId,
   type: Enums.ViewportType.PLANAR_NEXT,
   element,
-  defaultOptions: {
-    renderMode: 'auto',
-  },
 });
 
 const viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
@@ -78,9 +76,6 @@ utilities.viewportNextDataSetMetadataProvider.add(dataId, {
 await viewport.setDataList([
   {
     dataId,
-    options: {
-      renderMode: 'vtkImage',
-    },
   },
 ]);
 
@@ -115,7 +110,6 @@ utilities.viewportNextDataSetMetadataProvider.add(dataId, {
   imageIds,
   initialImageIdIndex: Math.floor(imageIds.length / 2),
   volumeId,
-  referencedId: volumeId,
 });
 
 await viewport.setDataList([
@@ -123,7 +117,6 @@ await viewport.setDataList([
     dataId,
     options: {
       orientation: Enums.OrientationAxis.AXIAL,
-      renderMode: 'vtkVolumeSlice',
     },
   },
 ]);
@@ -163,7 +156,6 @@ await viewport.setDataList([
     dataId: ctDataId,
     options: {
       orientation: Enums.OrientationAxis.SAGITTAL,
-      renderMode: 'vtkVolumeSlice',
       role: 'source',
     },
   },
@@ -171,7 +163,6 @@ await viewport.setDataList([
     dataId: ptDataId,
     options: {
       orientation: Enums.OrientationAxis.SAGITTAL,
-      renderMode: 'vtkVolumeSlice',
       role: 'overlay',
     },
   },
@@ -190,15 +181,7 @@ viewport.setDataPresentation(ptDataId, {
 Before:
 
 ```ts
-viewport.addImages([
-  {
-    imageId,
-    actorUID,
-    callback: ({ imageActor }) => {
-      imageActor.getProperty().setOpacity(0.5);
-    },
-  },
-]);
+viewport.addImages([{ imageId }]);
 ```
 
 Now, prefer registering overlay data and using data presentation:
@@ -208,12 +191,9 @@ utilities.viewportNextDataSetMetadataProvider.add(overlayDataId, {
   kind: 'planar',
   imageIds: [imageId],
   initialImageIdIndex: 0,
-  referencedId: imageId,
-  actorUID,
 });
 
 await viewport.addData(overlayDataId, {
-  renderMode: 'vtkImage',
   role: 'overlay',
 });
 

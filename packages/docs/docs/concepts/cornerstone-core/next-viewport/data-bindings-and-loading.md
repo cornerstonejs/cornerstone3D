@@ -18,8 +18,8 @@ callbacks for view state, data presentation, rendering, resize, and cleanup.
 
 A data provider converts an application-level data id into loaded data. For
 planar viewports this may resolve image ids, volumes, acquisition orientation,
-metadata, and the selected effective render mode. The loaded object describes
-the data; it does not own viewport navigation.
+metadata, and the internally selected effective render path. The loaded object
+describes the data; it does not own viewport navigation.
 
 ## Viewport Data Binding
 
@@ -81,7 +81,6 @@ Internally, that representation maps to overlay data:
 ```ts
 await viewport.addData(labelmapDataId, {
   orientation: viewport.getViewState().orientation,
-  renderMode: 'vtkVolumeSlice',
   role: 'overlay',
 });
 ```
@@ -93,13 +92,16 @@ only owns the mounted overlay binding used to render it.
 
 The typical flow is:
 
-1. The viewport calls `dataProvider.load(dataId, options)`.
-2. The render path resolver selects the runtime path for the loaded data.
-3. The render path mounts runtime resources and returns a binding.
-4. The viewport stores the binding with its data id and role.
-5. The viewport pushes current `viewState` and data presentation into the
+1. The viewport infers the render path from dataset shape, orientation, and
+   rendering configuration.
+2. The viewport calls `dataProvider.load(dataId, options)` with that internal
+   decision.
+3. The render path resolver selects the runtime path for the loaded data.
+4. The render path mounts runtime resources and returns a binding.
+5. The viewport stores the binding with its data id and role.
+6. The viewport pushes current `viewState` and data presentation into the
    binding.
-6. The binding projects that state into renderer commands during render or
+7. The binding projects that state into renderer commands during render or
    resize.
 
 The viewport remains the owner of navigation state throughout this flow.

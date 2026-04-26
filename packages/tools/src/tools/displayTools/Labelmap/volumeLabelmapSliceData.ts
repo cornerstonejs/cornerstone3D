@@ -278,13 +278,16 @@ function createSliceImageData(
     camera.viewPlaneNormal as unknown as vec3
   ) as Types.Point3;
 
+  const dataType = vtkDataArray.getDataType(pixelData as never);
   const scalarArray = vtkDataArray.newInstance({
+    dataType,
     name: 'Pixels',
     numberOfComponents: 1,
     values: pixelData,
   });
 
   const imageData = vtkImageData.newInstance();
+  imageData.set({ dataType, numberOfComponents: 1 }, true);
   imageData.setDimensions(width, height, 1);
   imageData.setSpacing([spacing[state.xAxis], spacing[state.yAxis], 1]);
   imageData.setDirection(

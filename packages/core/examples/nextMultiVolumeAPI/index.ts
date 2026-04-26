@@ -38,9 +38,6 @@ const toolGroupId = 'myToolGroupNext';
 const ctDataId = 'multi-volume-api-next:ct';
 const ptDataId = 'multi-volume-api-next:pt';
 const defaultOrientation = Enums.OrientationAxis.SAGITTAL;
-const planarRenderMode = getBooleanUrlParam('cpu')
-  ? 'cpuVolume'
-  : 'vtkVolumeSlice';
 
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
 const ctVolumeName = 'CT_VOLUME_ID_NEXT';
@@ -265,7 +262,6 @@ async function run() {
     defaultOptions: {
       orientation: defaultOrientation,
       background: getNextExampleBackground(),
-      renderMode: planarRenderMode,
     },
   });
 
@@ -319,14 +315,12 @@ async function run() {
       dataId: ctDataId,
       options: {
         orientation: defaultOrientation,
-        renderMode: planarRenderMode,
       },
     },
     {
       dataId: ptDataId,
       options: {
         orientation: defaultOrientation,
-        renderMode: planarRenderMode,
       },
     },
   ]);

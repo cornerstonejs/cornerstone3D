@@ -17,6 +17,7 @@ import type {
   VOIRange,
 } from '../../../types';
 import type { ViewportInput } from '../../../types/IViewport';
+import type ViewportInputOptions from '../../../types/ViewportInputOptions';
 import type {
   ViewPresentation,
   ViewPresentationSelector,
@@ -39,10 +40,6 @@ export type PlanarRenderMode =
   | 'webgl2d'
   | ActorRenderMode.VTK_IMAGE
   | ActorRenderMode.VTK_VOLUME_SLICE;
-export type PlanarRequestedRenderMode =
-  | PlanarRenderMode
-  | ActorRenderMode.CPU_VOLUME
-  | 'auto';
 export type PlanarEffectiveRenderMode =
   | ActorRenderMode.CPU_IMAGE
   | 'webgl2d'
@@ -74,7 +71,6 @@ export interface PlanarSetDataOptions {
     image?: number;
     volume?: number;
   };
-  renderMode?: PlanarRequestedRenderMode;
   role?: BindingRole;
 }
 
@@ -109,6 +105,13 @@ export interface PlanarPresentationProps extends BasePresentationProps {
 export type PlanarDisplayArea = Omit<DisplayArea, 'scale'> & {
   scale?: PlanarScaleInput;
   scaleMode?: CameraScaleMode;
+};
+
+export type PlanarViewportInputOptions = Omit<
+  ViewportInputOptions,
+  'displayArea' | 'renderMode'
+> & {
+  displayArea?: PlanarDisplayArea;
 };
 
 export interface PlanarViewPresentation
@@ -167,7 +170,9 @@ export interface PlanarDataProvider extends DataProvider {
   ): Promise<LoadedData<PlanarPayload>>;
 }
 
-export interface PlanarViewportInput extends ViewportInput {
+export interface PlanarViewportInput
+  extends Omit<ViewportInput, 'defaultOptions'> {
+  defaultOptions: PlanarViewportInputOptions;
   dataProvider?: PlanarDataProvider;
   renderPathResolver?: RenderPathResolver;
 }
