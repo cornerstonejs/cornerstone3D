@@ -1,10 +1,17 @@
 import cache from '../../../cache/cache';
 import RENDERING_DEFAULTS from '../../../constants/rendering';
 import { ActorRenderMode } from '../../../types';
-import type { ICamera, IVolumeInput, Point2, Point3 } from '../../../types';
+import type {
+  ActorEntry,
+  ICamera,
+  IVolumeInput,
+  Point2,
+  Point3,
+} from '../../../types';
 import type BlendModes from '../../../enums/BlendModes';
 import clonePoint3 from '../../../utilities/clonePoint3';
 import hasOwn from '../../../utilities/hasOwn';
+import viewportNextDataSetMetadataProvider from '../../../utilities/viewportNextDataSetMetadataProvider';
 import type { PlanarLegacyViewportProperties } from './planarLegacyCompatibility';
 import PlanarLegacyCompatibilityController from './PlanarLegacyCompatibilityController';
 import PlanarViewport from './PlanarViewport';
@@ -249,6 +256,44 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
   removeData(dataId: string): void {
     super.removeData(dataId);
     this.legacyCompatibility.removeData(dataId);
+  }
+
+  /**
+   * Legacy actor lookup by internal actor UID.
+   */
+  getActor(actorEntryUID: string): ActorEntry | undefined {
+    return this.getActors().find(
+      (actorEntry) => actorEntry.uid === actorEntryUID
+    );
+  }
+
+  /**
+   * Legacy actor removal by internal actor UID.
+   */
+  removeActors(actorEntryUIDs: string[]): void {
+    let didRemoveActor = false;
+
+    actorEntryUIDs
+      .filter(
+        (actorEntryUID): actorEntryUID is string =>
+          typeof actorEntryUID === 'string'
+      )
+      .forEach((actorEntryUID) => {
+        const bindingDataId =
+          this.findBindingDataIdByActorEntryUID(actorEntryUID);
+
+        if (bindingDataId) {
+          if (this.getDataRole(bindingDataId) === 'overlay') {
+            viewportNextDataSetMetadataProvider.remove(bindingDataId);
+          }
+          this.removeData(bindingDataId);
+          didRemoveActor = true;
+        }
+      });
+
+    if (didRemoveActor) {
+      this.render();
+    }
   }
 
   async setStack(imageIds: string[], currentImageIdIndex = 0): Promise<string> {

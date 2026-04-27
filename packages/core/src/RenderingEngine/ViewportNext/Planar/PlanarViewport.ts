@@ -387,15 +387,6 @@ class PlanarViewport extends ViewportNext<
   }
 
   /**
-   * Returns a specific actor entry by its UID.
-   */
-  getActor(actorEntryUID: string): ActorEntry | undefined {
-    return this.getActors().find(
-      (actorEntry) => actorEntry.uid === actorEntryUID
-    );
-  }
-
-  /**
    * Renders a single image object by setting it as a one-image stack.
    */
   renderImageObject(image: IImage): Promise<void> {
@@ -425,35 +416,6 @@ class PlanarViewport extends ViewportNext<
     }
 
     return this.renderContext.vtk.canvas;
-  }
-
-  /**
-   * Removes actors by UID from both overlay actors and data bindings.
-   */
-  removeActors(actorEntryUIDs: string[]): void {
-    let didRemoveActor = false;
-
-    actorEntryUIDs
-      .filter(
-        (actorEntryUID): actorEntryUID is string =>
-          typeof actorEntryUID === 'string'
-      )
-      .forEach((actorEntryUID) => {
-        const bindingDataId =
-          this.findBindingDataIdByActorEntryUID(actorEntryUID);
-
-        if (bindingDataId) {
-          if (this.getDataRole(bindingDataId) === 'overlay') {
-            viewportNextDataSetMetadataProvider.remove(bindingDataId);
-          }
-          this.removeData(bindingDataId);
-          didRemoveActor = true;
-        }
-      });
-
-    if (didRemoveActor) {
-      this.render();
-    }
   }
 
   /**
@@ -1846,7 +1808,7 @@ class PlanarViewport extends ViewportNext<
     return actorEntries;
   }
 
-  private findBindingDataIdByActorEntryUID(
+  protected findBindingDataIdByActorEntryUID(
     actorEntryUID: string
   ): string | undefined {
     for (const [dataId, binding] of this.bindings.entries()) {

@@ -1,7 +1,7 @@
-import { getEnabledElement, utilities } from '@cornerstonejs/core';
+import { getEnabledElement } from '@cornerstonejs/core';
 import { getLabelmapActorEntries } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
 import { removeVolumeLabelmapImageMapperActors } from './volumeLabelmapImageMapper';
-import { getLabelmapRepresentationPrefix } from './labelmapRepresentationUID';
+import removeLabelmapRepresentationData from './removeLabelmapRepresentationData';
 
 /**
  * Remove the labelmap segmentation representation from the viewport's HTML Element.
@@ -19,28 +19,21 @@ function removeLabelmapFromElement(
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;
   removeVolumeLabelmapImageMapperActors(viewport, segmentationId);
-  const actorEntryUIDs =
-    getLabelmapActorEntries(viewport.id, segmentationId)?.map(
-      (actorEntry) => actorEntry.uid
-    ) ?? [];
 
-  if (actorEntryUIDs.length) {
-    const labelmapRepresentationPrefix =
-      getLabelmapRepresentationPrefix(segmentationId);
-    getLabelmapActorEntries(viewport.id, segmentationId)?.forEach(
-      (actorEntry) => {
-        const representationUID = actorEntry.representationUID as
-          | string
-          | undefined;
+  const labelmapActorEntries =
+    getLabelmapActorEntries(viewport.id, segmentationId) ?? [];
+  const legacyActorEntryUIDs: string[] = [];
 
-        if (representationUID?.startsWith(labelmapRepresentationPrefix)) {
-          utilities.viewportNextDataSetMetadataProvider.remove(
-            representationUID
-          );
-        }
-      }
-    );
-    viewport.removeActors(actorEntryUIDs);
+  labelmapActorEntries.forEach((actorEntry) => {
+    if (removeLabelmapRepresentationData(viewport, segmentationId, actorEntry)) {
+      return;
+    }
+
+    legacyActorEntryUIDs.push(actorEntry.uid);
+  });
+
+  if (legacyActorEntryUIDs.length) {
+    viewport.removeActors(legacyActorEntryUIDs);
   }
 }
 

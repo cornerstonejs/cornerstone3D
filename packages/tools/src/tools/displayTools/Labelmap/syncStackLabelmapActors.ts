@@ -12,6 +12,7 @@ import { getCurrentLabelmapImageIdsForViewport } from '../../../stateManagement/
 import { getLabelmapActorEntries } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
 import getViewportLabelmapRenderMode from '../../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
 import { createLabelmapRepresentationUID } from './labelmapRepresentationUID';
+import removeLabelmapRepresentationData from './removeLabelmapRepresentationData';
 
 export function syncStackLabelmapActors(
   viewport: Types.IStackViewport,
@@ -37,15 +38,30 @@ export function syncStackLabelmapActors(
   const derivedImageIdSet = new Set(derivedImageIds);
   const labelmapActorEntries =
     getLabelmapActorEntries(viewport.id, segmentationId) ?? [];
-  const staleActorUIDs = labelmapActorEntries
-    .filter((actorEntry) => !derivedImageIdSet.has(actorEntry.referencedId))
-    .map((actorEntry) => actorEntry.uid);
+  const staleActorEntries = labelmapActorEntries.filter(
+    (actorEntry) => !derivedImageIdSet.has(actorEntry.referencedId)
+  );
 
   let shouldTriggerSegmentationRender = false;
-  let shouldRenderViewport = staleActorUIDs.length > 0;
+  let shouldRenderViewport = staleActorEntries.length > 0;
 
-  if (staleActorUIDs.length) {
-    viewport.removeActors(staleActorUIDs);
+  if (staleActorEntries.length) {
+    const legacyActorEntryUIDs: string[] = [];
+
+    staleActorEntries.forEach((actorEntry) => {
+      if (
+        removeLabelmapRepresentationData(viewport, segmentationId, actorEntry)
+      ) {
+        return;
+      }
+
+      legacyActorEntryUIDs.push(actorEntry.uid);
+    });
+
+    if (legacyActorEntryUIDs.length) {
+      viewport.removeActors(legacyActorEntryUIDs);
+    }
+
     shouldTriggerSegmentationRender = true;
   }
 
