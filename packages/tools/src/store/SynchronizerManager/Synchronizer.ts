@@ -19,7 +19,9 @@ type auxiliaryEvent = {
 export type SynchronizerOptions = {
   auxiliaryEvents?: auxiliaryEvent[];
   eventSource?: eventSource;
-  viewPresentation?: Types.ViewPresentation;
+  viewPresentation?: Types.ViewPresentationSelector;
+  syncInvertState?: boolean;
+  syncColormap?: boolean;
 };
 
 /**
@@ -257,7 +259,7 @@ class Synchronizer {
 
   private fireEvent(
     sourceViewport: Types.IViewportId,
-    sourceEvent: unknown
+    sourceEvent: Event
   ): void {
     if (this.isDisabled() || this._ignoreFiredEvents) {
       return;
