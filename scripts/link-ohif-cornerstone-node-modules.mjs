@@ -23,8 +23,7 @@ if (!fs.existsSync(path.join(ohifDir, 'package.json'))) {
 }
 
 if (!fs.existsSync(nodeModulesRoot)) {
-  console.error(`Could not find ${nodeModulesRoot}. Run install first.`);
-  process.exit(1);
+  fs.mkdirSync(nodeModulesRoot, { recursive: true });
 }
 
 const localPackages = {
@@ -42,6 +41,11 @@ const localPackages = {
 for (const [packageName, localPath] of Object.entries(localPackages)) {
   const linkPath = path.join(nodeModulesRoot, packageName);
   const targetPath = path.join(repoRoot, localPath);
+
+  if (!fs.existsSync(targetPath)) {
+    console.error(`Local package path not found: ${targetPath}`);
+    process.exit(1);
+  }
 
   fs.rmSync(linkPath, { recursive: true, force: true });
   fs.symlinkSync(targetPath, linkPath, 'dir');
