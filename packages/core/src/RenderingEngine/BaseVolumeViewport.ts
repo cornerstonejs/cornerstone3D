@@ -200,7 +200,9 @@ abstract class BaseVolumeViewport extends Viewport {
     const volumeNewImageHandlerBound = volumeNewImageHandler.bind(this);
     const volumeNewImageCleanUpBound = volumeNewImageCleanUp.bind(this);
 
-    function volumeNewImageHandler(cameraEvent) {
+    function volumeNewImageHandler(
+      cameraEvent: EventTypes.CameraModifiedEvent
+    ) {
       const { viewportId } = cameraEvent.detail;
 
       if (viewportId !== this.id || this.isDisabled) {
@@ -752,7 +754,7 @@ abstract class BaseVolumeViewport extends Viewport {
    * 2. If dot products of the current view plane normal and inPlaneVector 1 and 2 are zero, no change
    *
    */
-  public setBestOrentation(inPlaneVector1, inPlaneVector2) {
+  public setBestOrentation(inPlaneVector1: Point3, inPlaneVector2: Point3) {
     if (!inPlaneVector1 && !inPlaneVector2) {
       // Any view is compatible with a point position
       return;
@@ -1280,7 +1282,7 @@ abstract class BaseVolumeViewport extends Viewport {
   public getDefaultProperties = (
     volumeId?: string
   ): VolumeViewportProperties => {
-    let volumeProperties;
+    let volumeProperties: VolumeViewportProperties | undefined;
     if (volumeId !== undefined) {
       volumeProperties = this.perVolumeIdDefaultProperties.get(volumeId);
     }
@@ -1299,7 +1301,9 @@ abstract class BaseVolumeViewport extends Viewport {
    * @param volumeId - The volume id to get the properties for (if undefined, the first volume)
    * @returns viewport properties including voi, interpolation type: TODO: slabThickness, invert
    */
-  public getProperties = (volumeId?: string): VolumeViewportProperties => {
+  public getProperties = (
+    volumeId?: string
+  ): VolumeViewportProperties | undefined | null => {
     const applicableVolumeActorInfo = this._getApplicableVolumeActor(volumeId);
     if (!applicableVolumeActorInfo) {
       return;
@@ -1369,7 +1373,7 @@ abstract class BaseVolumeViewport extends Viewport {
    * @param applicableVolumeActorInfo  - The volume actor information for the volume
    * @returns colormap information for the volume if identified
    */
-  private getColormap = (volumeId) => {
+  private getColormap = (volumeId: string) => {
     const applicableVolumeActorInfo = this._getApplicableVolumeActor(volumeId);
 
     if (!applicableVolumeActorInfo) {
@@ -1585,7 +1589,7 @@ abstract class BaseVolumeViewport extends Viewport {
    * @param getTransferFunctionNodes - Function to get the transfer function nodes.
    * @returns void
    */
-  private initializeColorTransferFunction(volumeInputArray) {
+  private initializeColorTransferFunction(volumeInputArray: IVolumeInput[]) {
     const selectedVolumeId = volumeInputArray[0].volumeId;
     const colorTransferFunction =
       this._getOrCreateColorTransferFunction(selectedVolumeId);
@@ -2213,7 +2217,7 @@ abstract class BaseVolumeViewport extends Viewport {
    * for axial, sagittal and coronal
    * Otherwise runs the Gram-Schmidt algorithm with the current viewUp
    */
-  protected _getViewUp(viewPlaneNormal): Point3 {
+  protected _getViewUp(viewPlaneNormal: Point3): Point3 {
     const { viewUp } = this.getCamera();
     const dot = vec3.dot(viewUp, viewPlaneNormal);
     if (isEqual(dot, 0)) {
@@ -2517,7 +2521,7 @@ abstract class BaseVolumeViewport extends Viewport {
 }
 
 /** Checks of a vector is compatible with the view plane normal */
-function isCompatible(viewPlaneNormal, vector) {
+function isCompatible(viewPlaneNormal: Point3, vector: Point3) {
   return !vector || isEqual(vec3.dot(viewPlaneNormal, vector), 0);
 }
 
