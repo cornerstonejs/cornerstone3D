@@ -741,6 +741,10 @@ class CrosshairsTool extends AnnotationTool {
     evt: EventTypes.MouseMoveEventType,
     filteredToolAnnotations: Annotations
   ): boolean => {
+    if (!filteredToolAnnotations) {
+      return false;
+    }
+
     const { element, currentPoints } = evt.detail;
     const canvasCoords = currentPoints.canvas;
     let imageNeedsUpdate = false;
