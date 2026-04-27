@@ -55,15 +55,13 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
       return {
         id: dataId,
         type: 'image',
-        actorUID: dataSet.actorUID,
         imageIds,
         initialImageIdIndex: clampedImageIdIndex,
         acquisitionOrientation: options.acquisitionOrientation,
         imageData: dataSet.imageData,
         imageVolume,
-        referencedId: dataSet.referencedId,
+        reference: dataSet.reference,
         renderMode: options.renderMode,
-        representationUID: dataSet.representationUID,
         useWorldCoordinateImageData: dataSet.useWorldCoordinateImageData,
         volumeId,
       };
@@ -78,15 +76,13 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
     return {
       id: dataId,
       type: 'image',
-      actorUID: dataSet.actorUID,
       imageIds: dataSet.imageIds,
       image,
       imageData: dataSet.imageData,
       initialImageIdIndex: clampedImageIdIndex,
       acquisitionOrientation: options.acquisitionOrientation,
-      referencedId: dataSet.referencedId,
+      reference: dataSet.reference,
       renderMode: options.renderMode,
-      representationUID: dataSet.representationUID,
       useWorldCoordinateImageData: dataSet.useWorldCoordinateImageData,
       volumeId: options.volumeId,
     };

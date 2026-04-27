@@ -299,14 +299,12 @@ async function run() {
     imageIds: ctImageIds,
     kind: 'planar',
     initialImageIdIndex: Math.floor(ctImageIds.length / 2),
-    referencedId: ctVolumeId,
     volumeId: ctVolumeId,
   });
   utilities.viewportNextDataSetMetadataProvider.add(ptDataId, {
     imageIds: ptImageIds,
     kind: 'planar',
     initialImageIdIndex: Math.floor(ptImageIds.length / 2),
-    referencedId: ptVolumeId,
     volumeId: ptVolumeId,
   });
 

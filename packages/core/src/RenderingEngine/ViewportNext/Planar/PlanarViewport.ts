@@ -35,7 +35,11 @@ import getMinMax from '../../../utilities/getMinMax';
 import hasOwn from '../../../utilities/hasOwn';
 import renderingEngineCache from '../../renderingEngineCache';
 import { getCameraVectors } from '../../helpers/getCameraVectors';
-import type { BindingRole, LoadedData } from '../ViewportArchitectureTypes';
+import type {
+  BindingRole,
+  LoadedData,
+  ViewportDataReference,
+} from '../ViewportArchitectureTypes';
 import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
 import ViewportNext from '../ViewportNext';
 import {
@@ -280,23 +284,17 @@ class PlanarViewport extends ViewportNext<
    *
    * @param entries - List of datasets to add, each with its own options for
    * orientation and binding role resolution.
-   * @returns Rendering ids in the same order as the provided entries.
    */
   async setDataList(
     entries: Array<{ dataId: string; options?: PlanarSetDataOptions }>
-  ): Promise<string[]> {
-    const renderingIds: string[] = [];
-
+  ): Promise<void> {
     for (const [index, { dataId, options = {} }] of entries.entries()) {
       const role = options.role ?? (index === 0 ? 'source' : 'overlay');
-      const renderingId = await this.addData(dataId, {
+      await this.addData(dataId, {
         ...options,
         role,
       });
-      renderingIds.push(renderingId);
     }
-
-    return renderingIds;
   }
 
   /**
@@ -305,12 +303,11 @@ class PlanarViewport extends ViewportNext<
    * @param dataId - Logical dataset id to add.
    * @param options - Semantic orientation and binding options. The render path
    * is inferred from the registered dataset and viewport configuration.
-   * @returns The rendering id created for the mounted dataset.
    */
   async addData(
     dataId: string,
     options: PlanarSetDataOptions = {}
-  ): Promise<string> {
+  ): Promise<void> {
     const role = this.resolveBindingRole(options);
     const resolvedOptions: PlanarSetDataOptions = {
       ...options,
@@ -324,7 +321,7 @@ class PlanarViewport extends ViewportNext<
       this.applyLoadedPlanarViewState(resolvedOrientation, data, selectedPath);
     }
 
-    const renderingId = await this.addLoadedData(dataId, data, {
+    await this.addLoadedData(dataId, data, {
       renderMode: selectedPath.renderMode,
       role,
     });
@@ -332,8 +329,6 @@ class PlanarViewport extends ViewportNext<
     this.setDefaultDataPresentation(dataId, {
       visible: true,
     });
-
-    return renderingId;
   }
 
   /**
@@ -342,9 +337,9 @@ class PlanarViewport extends ViewportNext<
   async setData(
     dataId: string,
     options: PlanarSetDataOptions = {}
-  ): Promise<string> {
+  ): Promise<void> {
     this.removeAllData();
-    return this.addData(dataId, {
+    await this.addData(dataId, {
       ...options,
       role: 'source',
     });
@@ -394,14 +389,16 @@ class PlanarViewport extends ViewportNext<
   /**
    * Returns a specific actor entry by its UID.
    */
-  getActor(actorUID: string): ActorEntry | undefined {
-    return this.getActors().find((actorEntry) => actorEntry.uid === actorUID);
+  getActor(actorEntryUID: string): ActorEntry | undefined {
+    return this.getActors().find(
+      (actorEntry) => actorEntry.uid === actorEntryUID
+    );
   }
 
   /**
    * Renders a single image object by setting it as a one-image stack.
    */
-  renderImageObject(image: IImage): Promise<string> {
+  renderImageObject(image: IImage): Promise<void> {
     viewportNextDataSetMetadataProvider.add(image.imageId, {
       image,
       imageIds: [image.imageId],
@@ -433,13 +430,17 @@ class PlanarViewport extends ViewportNext<
   /**
    * Removes actors by UID from both overlay actors and data bindings.
    */
-  removeActors(actorUIDs: string[]): void {
+  removeActors(actorEntryUIDs: string[]): void {
     let didRemoveActor = false;
 
-    actorUIDs
-      .filter((actorUID): actorUID is string => typeof actorUID === 'string')
-      .forEach((actorUID) => {
-        const bindingDataId = this.findBindingDataIdByActorUID(actorUID);
+    actorEntryUIDs
+      .filter(
+        (actorEntryUID): actorEntryUID is string =>
+          typeof actorEntryUID === 'string'
+      )
+      .forEach((actorEntryUID) => {
+        const bindingDataId =
+          this.findBindingDataIdByActorEntryUID(actorEntryUID);
 
         if (bindingDataId) {
           if (this.getDataRole(bindingDataId) === 'overlay') {
@@ -476,23 +477,15 @@ class PlanarViewport extends ViewportNext<
         continue;
       }
 
-      const actorUID = this.resolveOverlayActorUID(stackInput, image);
-      const dataId = this.resolveOverlayDataId(actorUID);
+      const reference = this.resolveOverlayReference(stackInput, image);
+      const dataId = this.resolveOverlayDataId(stackInput, image, reference);
       viewportNextDataSetMetadataProvider.add(dataId, {
-        actorUID,
         image,
         imageData: stackInput.imageData,
         imageIds: [stackInput.imageId],
         initialImageIdIndex: 0,
         kind: 'planar',
-        referencedId:
-          typeof stackInput.referencedId === 'string'
-            ? stackInput.referencedId
-            : stackInput.imageId,
-        representationUID:
-          typeof stackInput.representationUID === 'string'
-            ? stackInput.representationUID
-            : undefined,
+        reference,
         useWorldCoordinateImageData:
           stackInput.useWorldCoordinateImageData === true,
       });
@@ -501,7 +494,7 @@ class PlanarViewport extends ViewportNext<
         role: 'overlay',
       });
 
-      const actorEntry = this.getActor(actorUID);
+      const actorEntry = this.getActorForDataId(dataId);
 
       if (stackInput.callback && actorEntry) {
         stackInput.callback({
@@ -1786,33 +1779,53 @@ class PlanarViewport extends ViewportNext<
     );
   }
 
-  private resolveOverlayActorUID(
+  private resolveOverlayReference(
     stackInput: IStackInput,
     image: IImage
-  ): string {
-    if (typeof stackInput.actorUID === 'string') {
-      return stackInput.actorUID;
+  ): ViewportDataReference {
+    const reference = stackInput.reference as ViewportDataReference | undefined;
+
+    if (reference && typeof reference.kind === 'string') {
+      return reference;
     }
 
-    if (typeof stackInput.representationUID === 'string') {
-      return stackInput.representationUID;
-    }
-
-    return image.imageId;
+    return {
+      kind: 'image',
+      imageId: image.imageId,
+    };
   }
 
-  private resolveOverlayDataId(actorUID: string): string {
-    const currentBindingDataId = this.findBindingDataIdByActorUID(actorUID);
+  private resolveOverlayDataId(
+    stackInput: IStackInput,
+    image: IImage,
+    reference: ViewportDataReference
+  ): string {
+    const explicitDataId = stackInput.dataId;
 
-    if (currentBindingDataId) {
-      return currentBindingDataId;
+    if (typeof explicitDataId === 'string') {
+      return explicitDataId;
     }
 
-    if (!this.getBinding(actorUID)) {
-      return actorUID;
+    if (
+      reference.kind === 'segmentation' &&
+      typeof reference.representationUID === 'string'
+    ) {
+      return reference.representationUID;
     }
 
-    return `overlay:${actorUID}`;
+    const baseDataId = image.imageId;
+
+    if (!this.getBinding(baseDataId)) {
+      return baseDataId;
+    }
+
+    return `overlay:${baseDataId}`;
+  }
+
+  private getActorForDataId(dataId: string): ActorEntry | undefined {
+    const binding = this.getBinding(dataId);
+
+    return binding?.getActorEntry?.(binding.data);
   }
 
   private getProjectedBindingActorEntries(role?: BindingRole): ActorEntry[] {
@@ -1833,11 +1846,13 @@ class PlanarViewport extends ViewportNext<
     return actorEntries;
   }
 
-  private findBindingDataIdByActorUID(actorUID: string): string | undefined {
+  private findBindingDataIdByActorEntryUID(
+    actorEntryUID: string
+  ): string | undefined {
     for (const [dataId, binding] of this.bindings.entries()) {
       const actorEntry = binding.getActorEntry?.(binding.data);
 
-      if (actorEntry?.uid === actorUID) {
+      if (actorEntry?.uid === actorEntryUID) {
         return dataId;
       }
     }

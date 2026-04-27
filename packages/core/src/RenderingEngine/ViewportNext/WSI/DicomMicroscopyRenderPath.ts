@@ -51,14 +51,12 @@ export class DicomMicroscopyRenderPath
     viewer.deactivateDragPanInteraction();
 
     const map = viewer.getMap();
-    const renderingId = `rendering:${data.id}:${options.renderMode}`;
     const postrenderHandler = () => {
       triggerEvent(ctx.element, EVENTS.IMAGE_RENDERED, {
         element: ctx.element,
         viewportId: ctx.viewportId,
         renderingEngineId: ctx.renderingEngineId,
         rendering: {
-          id: renderingId,
           dataId: data.id,
           renderMode: 'wsi2d',
         },
@@ -75,7 +73,6 @@ export class DicomMicroscopyRenderPath
     });
 
     const rendering: WSIRendering = {
-      id: renderingId,
       renderMode: 'wsi2d',
       microscopyElement,
       viewer,

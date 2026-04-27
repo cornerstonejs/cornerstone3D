@@ -11,6 +11,7 @@ import drawImageSync from '../../helpers/cpuFallback/drawImageSync';
 import setToPixelCoordinateSystem from '../../helpers/cpuFallback/rendering/setToPixelCoordinateSystem';
 import { getDefaultVolumeVOIRange } from '../../helpers/setDefaultVolumeVOI';
 import { getConfiguration } from '../../../init';
+import uuidv4 from '../../../utilities/uuidv4';
 import type {
   DataAddOptions,
   LoadedData,
@@ -75,8 +76,8 @@ export class CpuVolumeSliceRenderPath
     ctx.display.activateRenderMode(ActorRenderMode.CPU_VOLUME);
 
     rendering = {
-      id: `rendering:${data.id}:${options.renderMode}`,
       renderMode: ActorRenderMode.CPU_VOLUME,
+      actorEntryUID: uuidv4(),
       compatibilityActor,
       imageVolume: payload.imageVolume,
       imageIds: payload.imageIds,
@@ -90,7 +91,7 @@ export class CpuVolumeSliceRenderPath
       maxImageIdIndex: payload.imageIds.length - 1,
       defaultVOIRange,
       renderingInvalidated: true,
-      compositeActor: typeof payload.representationUID === 'string',
+      compositeActor: payload.reference?.kind === 'segmentation',
       removeStreamingSubscriptions: (() => {
         let isActive = true;
         let pendingAnimationFrameId: number | undefined;
@@ -232,7 +233,7 @@ export class CpuVolumeSliceRenderPath
         return buildPlanarActorEntry(planarData, {
           actor: rendering.compatibilityActor,
           renderMode: ActorRenderMode.CPU_VOLUME,
-          uidFallback: planarData.volumeId,
+          uid: rendering.actorEntryUID,
           referencedIdFallback: planarData.volumeId,
         });
       },

@@ -25,13 +25,20 @@ import {
 
 const OVERLAY_RENDERER_SUFFIX = 'labelmap-image-mapper-overlay';
 
+type SegmentationReference = {
+  kind: 'segmentation';
+  segmentationId: string;
+  representationUID: string;
+  labelmapId: string;
+};
+
 type PlanarSliceRenderingViewport = SliceRenderingViewport & {
   addImages: (
     stackInputs: Array<{
+      dataId?: string;
       imageId: string;
       imageData?: vtkImageData;
-      referencedId?: string;
-      representationUID?: string;
+      reference?: SegmentationReference;
       useWorldCoordinateImageData?: boolean;
       callback?: (args: { imageActor: vtkImageSlice }) => void;
     }>
@@ -364,15 +371,22 @@ async function addPlanarLabelmapImageMapperActors(args: {
       continue;
     }
 
+    const representationUID = createLabelmapRepresentationUID({
+      segmentationId,
+      referencedId: layer.labelmapId,
+    });
+
     await viewport.addImages([
       {
+        dataId: representationUID,
         imageId: currentImageId,
         imageData: sliceData.imageData,
-        referencedId: layer.labelmapId,
-        representationUID: createLabelmapRepresentationUID({
+        reference: {
+          kind: 'segmentation',
           segmentationId,
-          referencedId: layer.labelmapId,
-        }),
+          representationUID,
+          labelmapId: layer.labelmapId,
+        },
         useWorldCoordinateImageData: true,
         callback: ({ imageActor }) => {
           const mapper = imageActor.getMapper() as vtkImageMapper;

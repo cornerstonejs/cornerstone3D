@@ -74,6 +74,10 @@ viewport.render();
 The first entry in `setDataList()` becomes the source binding unless a role is
 provided explicitly.
 
+`setDataList()`, `setData()`, and `addData()` do not return runtime rendering
+ids. Use the `dataId` you provided for later presentation updates, removal, and
+view-reference operations.
+
 ## Add Volume Slice Data
 
 Volume slice data uses the same viewport API. The registered data includes a
@@ -152,6 +156,24 @@ await viewport.setDataList([
     },
   },
 ]);
+```
+
+Use `reference` only when the registered data is semantically derived from
+another object. Source stack and volume data usually do not need it because
+their `dataId`, `imageIds`, and optional `volumeId` are already the public
+identity.
+
+```ts
+utilities.viewportNextDataSetMetadataProvider.add(labelmapDataId, {
+  kind: 'planar',
+  imageIds: labelmapImageIds,
+  reference: {
+    kind: 'segmentation',
+    segmentationId,
+    representationUID,
+    labelmapId,
+  },
+});
 ```
 
 ## Update View State

@@ -25,18 +25,8 @@ export function createPlanarImageOverlayActorEntry(
     actor.setVisibility(stackInput.visibility);
   }
 
-  let uid = stackInput.actorUID;
-
-  if (!uid && typeof stackInput.representationUID === 'string') {
-    uid = stackInput.representationUID;
-  }
-
-  if (!uid && image.imageId) {
-    uid = image.imageId;
-  }
-
   return {
-    uid: uid ?? uuidv4(),
+    uid: uuidv4(),
     actor,
     actorMapper: {
       actor,
@@ -59,18 +49,8 @@ export function createPlanarCpuImageOverlayActorEntry(
     typeof stackInput.visibility === 'boolean' ? stackInput.visibility : true
   );
 
-  let uid = stackInput.actorUID;
-
-  if (!uid && typeof stackInput.representationUID === 'string') {
-    uid = stackInput.representationUID;
-  }
-
-  if (!uid && image.imageId) {
-    uid = image.imageId;
-  }
-
   return {
-    uid: uid ?? uuidv4(),
+    uid: uuidv4(),
     actor,
     actorMapper: {
       actor,

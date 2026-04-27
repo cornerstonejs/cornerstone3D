@@ -1,12 +1,14 @@
 import type { ActorEntry, ActorMapperProxy } from '../../../types';
-import type { LoadedData } from '../ViewportArchitectureTypes';
+import type {
+  LoadedData,
+  ViewportDataReference,
+} from '../ViewportArchitectureTypes';
 import type { PlanarPayload } from './PlanarViewportTypes';
 
 /**
  * Builds an ActorEntry from a planar data payload and the render-path-specific
- * actor/mapper. Payload identity is the public contract for overlays and
- * segmentations; render-path fallbacks are used only when the payload does not
- * provide its own ids.
+ * actor/mapper. Clean Next dataset identity lives on dataId and semantic
+ * derived-data relationships live on `reference`; actor UID stays internal.
  */
 export function buildPlanarActorEntry(
   data: LoadedData<PlanarPayload>,
@@ -14,18 +16,14 @@ export function buildPlanarActorEntry(
     actor: NonNullable<ActorEntry['actorMapper']>['actor'];
     mapper?: NonNullable<ActorEntry['actorMapper']>['mapper'];
     renderMode: NonNullable<ActorEntry['actorMapper']>['renderMode'];
-    uidFallback?: string;
+    uid: string;
     referencedIdFallback?: string;
   }
 ): ActorEntry {
-  const uid =
-    data.actorUID || data.representationUID || source.uidFallback || data.id;
-
-  const referencedId =
-    data.referencedId ||
-    data.volumeId ||
-    source.referencedIdFallback ||
-    data.id;
+  const referenceFields = getActorEntryReferenceFields(
+    data.reference,
+    data.volumeId || source.referencedIdFallback
+  );
 
   const actor = source.actor;
   const mapper =
@@ -37,16 +35,63 @@ export function buildPlanarActorEntry(
       : undefined);
 
   return {
-    uid,
+    uid: source.uid,
     actor: actor as ActorEntry['actor'],
     actorMapper: {
       actor,
       mapper,
       renderMode: source.renderMode,
     } as ActorMapperProxy,
-    referencedId,
-    ...(data.representationUID
-      ? { representationUID: data.representationUID }
-      : {}),
+    ...referenceFields,
   };
+}
+
+function getActorEntryReferenceFields(
+  reference: ViewportDataReference | undefined,
+  fallbackReferencedId?: string
+): {
+  reference?: ViewportDataReference;
+  referencedId?: string;
+  representationUID?: string;
+} {
+  if (!reference) {
+    return fallbackReferencedId ? { referencedId: fallbackReferencedId } : {};
+  }
+
+  if (reference.kind === 'segmentation') {
+    return {
+      reference,
+      referencedId:
+        reference.labelmapId ??
+        reference.representationUID ??
+        reference.segmentationId,
+      ...(reference.representationUID
+        ? { representationUID: reference.representationUID }
+        : {}),
+    };
+  }
+
+  return {
+    reference,
+    referencedId: getReferenceId(reference),
+  };
+}
+
+function getReferenceId(reference: Exclude<ViewportDataReference, undefined>) {
+  switch (reference.kind) {
+    case 'data':
+      return reference.dataId;
+    case 'image':
+      return reference.imageId;
+    case 'volume':
+      return reference.volumeId;
+    case 'geometry':
+      return reference.geometryId;
+    case 'segmentation':
+      return (
+        reference.labelmapId ??
+        reference.representationUID ??
+        reference.segmentationId
+      );
+  }
 }

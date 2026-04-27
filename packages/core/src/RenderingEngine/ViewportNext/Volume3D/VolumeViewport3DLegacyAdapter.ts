@@ -196,7 +196,6 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3DV2 {
         const dataId = this.getLegacyVolumeDataId(volumeInput.volumeId);
 
         const dataSet: Volume3DRegisteredDataSet = {
-          actorUID: volumeInput.actorUID,
           imageIds: cachedVolume.imageIds,
           volumeId: volumeInput.volumeId,
         };

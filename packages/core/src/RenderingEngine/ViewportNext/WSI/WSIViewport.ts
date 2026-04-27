@@ -104,11 +104,9 @@ export default class WSIViewport extends ViewportNext<
     };
   }
 
-  async setDataList(entries: Array<{ dataId: string }>): Promise<string[]> {
-    const renderingIds: string[] = [];
-
+  async setDataList(entries: Array<{ dataId: string }>): Promise<void> {
     for (const [index, { dataId }] of entries.entries()) {
-      const renderingId = await this.addData(dataId, {
+      await this.addData(dataId, {
         renderMode: 'wsi2d',
         role: index === 0 ? 'source' : 'overlay',
       });
@@ -118,13 +116,10 @@ export default class WSIViewport extends ViewportNext<
         opacity: 1,
       });
       this.activeDataId = dataId;
-      renderingIds.push(renderingId);
     }
 
     this.syncCameraFromView();
     this.applyVOIToRendering();
-
-    return renderingIds;
   }
 
   setDataPresentation(

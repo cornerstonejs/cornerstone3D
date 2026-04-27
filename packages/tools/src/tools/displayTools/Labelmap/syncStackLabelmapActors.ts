@@ -76,17 +76,26 @@ export function syncStackLabelmapActors(
     )?.find((actorEntry) => actorEntry.referencedId === derivedImageId);
 
     if (!segmentationActorEntry) {
+      const representationUID = createLabelmapRepresentationUID({
+        segmentationId,
+        referencedId: derivedImage.imageId,
+      });
+
       if (
         renderMode === 'image' &&
         defaultActorRenderMode === ActorRenderMode.CPU_IMAGE
       ) {
         viewport.addImages([
           {
+            dataId: representationUID,
             imageId: derivedImageId,
-            representationUID: createLabelmapRepresentationUID({
+            reference: {
+              kind: 'segmentation',
               segmentationId,
-              referencedId: derivedImage.imageId,
-            }),
+              representationUID,
+              labelmapId: derivedImage.imageId,
+            },
+            representationUID,
           },
         ]);
       } else {
@@ -113,11 +122,15 @@ export function syncStackLabelmapActors(
 
         viewport.addImages([
           {
+            dataId: representationUID,
             imageId: derivedImageId,
-            representationUID: createLabelmapRepresentationUID({
+            reference: {
+              kind: 'segmentation',
               segmentationId,
-              referencedId: derivedImage.imageId,
-            }),
+              representationUID,
+              labelmapId: derivedImage.imageId,
+            },
+            representationUID,
             callback: ({ imageActor }) => {
               imageActor.getMapper().setInputData(imageData);
             },

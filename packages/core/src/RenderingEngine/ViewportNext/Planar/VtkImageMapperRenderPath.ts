@@ -1,6 +1,7 @@
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import { buildPlanarActorEntry } from './buildPlanarActorEntry';
+import uuidv4 from '../../../utilities/uuidv4';
 import {
   InterpolationType,
   MetadataModules,
@@ -68,8 +69,8 @@ export class VtkImageMapperRenderPath
     actor.setMapper(mapper);
     ctx.vtk.renderer.addActor(actor);
     const rendering: PlanarImageMapperRendering = {
-      id: `rendering:${data.id}:${options.renderMode}`,
       renderMode: ActorRenderMode.VTK_IMAGE,
+      actorEntryUID: uuidv4(),
       actor,
       currentImage: payload.image,
       mapper,
@@ -102,6 +103,7 @@ export class VtkImageMapperRenderPath
           actor: rendering.actor,
           mapper: rendering.mapper,
           renderMode: ActorRenderMode.VTK_IMAGE,
+          uid: rendering.actorEntryUID,
           referencedIdFallback: rendering.currentImage.imageId,
         });
       },

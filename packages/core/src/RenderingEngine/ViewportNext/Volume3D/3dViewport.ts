@@ -134,26 +134,19 @@ class VolumeViewport3DV2 extends ViewportNext<
   }
 
   /**
-   * Adds one or more 3D datasets and returns their rendering ids.
+   * Adds one or more 3D datasets.
    *
    * @param entries - List of datasets to add, each with its own render-mode options.
-   * @returns Rendering ids in the same order as the provided entries.
    */
   async setDataList(
     entries: Array<{ dataId: string; options?: Volume3DSetDataOptions }>
-  ): Promise<string[]> {
-    const renderingIds: string[] = [];
-
+  ): Promise<void> {
     for (const [index, { dataId, options = {} }] of entries.entries()) {
-      renderingIds.push(
-        await this.addData(dataId, {
-          ...options,
-          role: options.role ?? (index === 0 ? 'source' : 'overlay'),
-        })
-      );
+      await this.addData(dataId, {
+        ...options,
+        role: options.role ?? (index === 0 ? 'source' : 'overlay'),
+      });
     }
-
-    return renderingIds;
   }
 
   /**
@@ -161,15 +154,14 @@ class VolumeViewport3DV2 extends ViewportNext<
    *
    * @param dataId - Logical dataset id to add.
    * @param options - Requested 3D render-mode options.
-   * @returns The rendering id created for the mounted dataset.
    */
   async addData(
     dataId: string,
     options: Volume3DSetDataOptions | DataAddOptions = {}
-  ): Promise<string> {
+  ): Promise<void> {
     const volumeOptions = options as Volume3DSetDataOptions;
     const renderMode = this.resolveRenderMode(dataId, volumeOptions.renderMode);
-    const renderingId = await super.addData(dataId, {
+    await super.addData(dataId, {
       renderMode,
       role: volumeOptions.role,
     });
@@ -183,8 +175,6 @@ class VolumeViewport3DV2 extends ViewportNext<
       opacity: 1,
     });
     this.viewState = this.getViewState();
-
-    return renderingId;
   }
 
   /**
@@ -193,9 +183,9 @@ class VolumeViewport3DV2 extends ViewportNext<
   async setData(
     dataId: string,
     options: Volume3DSetDataOptions | DataAddOptions = {}
-  ): Promise<string> {
+  ): Promise<void> {
     this.removeAllData();
-    return this.addData(dataId, {
+    await this.addData(dataId, {
       ...options,
       role: 'source',
     });
@@ -691,7 +681,7 @@ class VolumeViewport3DV2 extends ViewportNext<
         {
           actor: rendering.actor,
           referencedId: data.volumeId,
-          uid: data.actorUID || data.volumeId,
+          uid: rendering.actorEntryUID,
         },
       ];
     }
@@ -746,7 +736,6 @@ function isVolume3DRegisteredDataSet(
   }
 
   return (
-    (value.actorUID === undefined || typeof value.actorUID === 'string') &&
     (value.geometryId === undefined || typeof value.geometryId === 'string') &&
     (value.volumeId === undefined || typeof value.volumeId === 'string') &&
     (value.geometryLoadOptions === undefined ||

@@ -28,7 +28,7 @@ export type {
   RenderPathResolver,
   RenderPath,
   ViewportDataBinding,
-  RenderingId,
+  ViewportDataReference,
   ViewportController,
   ViewportId,
   ViewportRenderContextType,

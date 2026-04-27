@@ -46,6 +46,7 @@ import type {
  */
 export type PlanarImageMapperRendering = MountedRendering<{
   renderMode: ActorRenderMode.VTK_IMAGE;
+  actorEntryUID: string;
   actor: vtkImageSlice;
   currentImage: IImage;
   mapper: vtkImageMapper;
@@ -66,6 +67,7 @@ export type PlanarImageMapperRendering = MountedRendering<{
  */
 export type PlanarCpuImageRendering = MountedRendering<{
   renderMode: ActorRenderMode.CPU_IMAGE;
+  actorEntryUID: string;
   enabledElement: CPUFallbackEnabledElement;
   compatibilityActor: ICanvasActor;
   currentImageIdIndex: number;
@@ -86,6 +88,7 @@ export type PlanarCpuImageRendering = MountedRendering<{
  */
 export type PlanarCpuVolumeRendering = MountedRendering<{
   renderMode: ActorRenderMode.CPU_VOLUME;
+  actorEntryUID: string;
   compatibilityActor: ICanvasActor;
   enabledElement?: CPUFallbackEnabledElement;
   imageVolume: IImageVolume;
@@ -123,6 +126,7 @@ export type PlanarCpuVolumeRendering = MountedRendering<{
  */
 export type PlanarVolumeSliceRendering = MountedRendering<{
   renderMode: ActorRenderMode.VTK_VOLUME_SLICE;
+  actorEntryUID: string;
   actor: vtkImageSlice;
   overlayOrder: number;
   imageVolume: IImageVolume;

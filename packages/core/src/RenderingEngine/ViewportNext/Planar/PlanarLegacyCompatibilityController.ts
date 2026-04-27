@@ -32,10 +32,10 @@ export type PlanarLegacyCompatibilityHost = {
   getViewportId(): string;
   getRequestedOrientation(): PlanarViewState['orientation'];
   prepareVolumeCompatibilityCamera(): void;
-  setData(dataId: string, options: PlanarSetDataOptions): Promise<string>;
+  setData(dataId: string, options: PlanarSetDataOptions): Promise<void>;
   setDataList(
     entries: Array<{ dataId: string; options?: PlanarSetDataOptions }>
-  ): Promise<string[]>;
+  ): Promise<void>;
   setImageIdIndex(imageIdIndex: number): Promise<string>;
   getCurrentImageId(): string | undefined;
   render(): void;
@@ -466,16 +466,14 @@ class PlanarLegacyCompatibilityController {
         const dataId = this.getLegacyVolumeDataId(volumeInput.volumeId);
 
         this.registerDataSet(dataId, {
-          actorUID: volumeInput.actorUID,
           imageIds: cachedVolume.imageIds,
           initialImageIdIndex: this.getInitialVolumeImageIdIndex(
             cachedVolume.imageIds.length
           ),
-          referencedId: volumeInput.volumeId,
-          representationUID:
-            typeof volumeInput.representationUID === 'string'
-              ? volumeInput.representationUID
-              : undefined,
+          reference: {
+            kind: 'volume',
+            volumeId: volumeInput.volumeId,
+          },
           volumeId: volumeInput.volumeId,
         });
         this.volumeDataIds.set(volumeInput.volumeId, dataId);

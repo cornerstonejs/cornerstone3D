@@ -7,6 +7,7 @@ import type { IImageData, Point2, Point3 } from '../../../types';
 import createLinearRGBTransferFunction from '../../../utilities/createLinearRGBTransferFunction';
 import invertRgbTransferFunction from '../../../utilities/invertRgbTransferFunction';
 import { updateOpacity as updateVolumeOpacity } from '../../../utilities/colormap';
+import uuidv4 from '../../../utilities/uuidv4';
 import createVolumeActor from '../../helpers/createVolumeActor';
 import {
   canvasToWorldContextPool,
@@ -67,8 +68,8 @@ export class VtkVolume3DRenderPath
       .getRange();
 
     const rendering: Volume3DVolumeRendering = {
-      id: `rendering:${data.id}:${options.renderMode}`,
       renderMode: 'vtkVolume3d',
+      actorEntryUID: uuidv4(),
       actor,
       defaultVOIRange: defaultRange
         ? { lower: defaultRange[0], upper: defaultRange[1] }

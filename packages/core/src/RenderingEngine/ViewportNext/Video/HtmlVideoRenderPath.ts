@@ -65,7 +65,6 @@ export class HtmlVideoRenderPath
     Object.assign(videoData, normalizedPayload);
 
     const rendering: VideoElementRendering = {
-      id: `rendering:${data.id}:${options.renderMode}`,
       renderMode: 'video2d',
       element,
     };

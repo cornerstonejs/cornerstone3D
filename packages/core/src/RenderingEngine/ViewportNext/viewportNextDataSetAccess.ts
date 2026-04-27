@@ -1,6 +1,7 @@
 import type { IImage } from '../../types';
 import type { WSIClientLike } from '../../utilities/WSIUtilities';
 import viewportNextDataSetMetadataProvider from '../../utilities/viewportNextDataSetMetadataProvider';
+import type { ViewportDataReference } from './ViewportArchitectureTypes';
 
 export interface ViewportNextImageDataSet {
   imageIds: string[];
@@ -12,9 +13,7 @@ export interface ViewportNextPlanarDataSet extends ViewportNextImageDataSet {
   initialImageIdIndex?: number;
   volumeId?: string;
   image?: IImage;
-  actorUID?: string;
-  referencedId?: string;
-  representationUID?: string;
+  reference?: ViewportDataReference;
 }
 
 export interface ViewportNextSourceAliasDataSet {

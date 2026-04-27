@@ -35,7 +35,6 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
     const waveform = data as unknown as LoadedData<ECGWaveformPayload>;
 
     const rendering: ECGCanvasRendering = {
-      id: `rendering:${data.id}:${options.renderMode}`,
       renderMode: 'signal2d',
       canvas: ctx.canvas,
       canvasContext: ctx.canvasContext,

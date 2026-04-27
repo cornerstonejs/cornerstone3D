@@ -58,6 +58,7 @@ import WSIViewportNext, {
   DicomMicroscopyPath,
   WSIResolvedView,
 } from './RenderingEngine/ViewportNext/WSI';
+export type { ViewportDataReference } from './RenderingEngine/ViewportNext';
 import Viewport from './RenderingEngine/Viewport';
 import eventTarget from './eventTarget';
 import { version } from './version';

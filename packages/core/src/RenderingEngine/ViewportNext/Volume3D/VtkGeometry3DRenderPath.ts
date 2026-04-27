@@ -4,6 +4,7 @@ import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
 import { GeometryType, ViewportType } from '../../../enums';
+import uuidv4 from '../../../utilities/uuidv4';
 import type {
   IGeometry,
   IMesh,
@@ -56,7 +57,6 @@ export class VtkGeometry3DRenderPath
     ctx.vtk.renderer.resetCameraClippingRange();
 
     const rendering: Volume3DGeometryRendering = {
-      id: `rendering:${data.id}:${options.renderMode}`,
       renderMode: 'vtkGeometry3d',
       actors,
       frameOfReferenceUID:
@@ -207,7 +207,7 @@ function createActorEntries(geometry: IGeometry) {
       {
         actor,
         referencedId: geometry.id,
-        uid: geometry.id,
+        uid: uuidv4(),
       },
     ];
   }
@@ -219,7 +219,7 @@ function createActorEntries(geometry: IGeometry) {
       return {
         actor: sourceActor,
         referencedId: geometry.id,
-        uid: `${geometry.id}:${index}`,
+        uid: uuidv4(),
       };
     });
   }

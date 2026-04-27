@@ -21,6 +21,7 @@ import * as metaData from '../../../metaData';
 import { ActorRenderMode } from '../../../types';
 import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
 import triggerEvent from '../../../utilities/triggerEvent';
+import uuidv4 from '../../../utilities/uuidv4';
 import { toWindowLevel } from '../../../utilities/windowLevel';
 import type {
   CPUIImageData,
@@ -105,8 +106,8 @@ export class CpuImageSliceRenderPath
     resizeEnabledElement(enabledElement, true);
     enabledElement.transform = calculateTransform(enabledElement);
     rendering = {
-      id: `rendering:${data.id}:${options.renderMode}`,
       renderMode: ActorRenderMode.CPU_IMAGE,
+      actorEntryUID: uuidv4(),
       enabledElement,
       compatibilityActor,
       currentImageIdIndex: payload.initialImageIdIndex,
@@ -138,7 +139,7 @@ export class CpuImageSliceRenderPath
           actor: rendering.compatibilityActor,
           mapper: rendering.compatibilityActor.getMapper(),
           renderMode: ActorRenderMode.CPU_IMAGE,
-          uidFallback: rendering.enabledElement.image?.imageId,
+          uid: rendering.actorEntryUID,
           referencedIdFallback: rendering.enabledElement.image?.imageId,
         });
       },

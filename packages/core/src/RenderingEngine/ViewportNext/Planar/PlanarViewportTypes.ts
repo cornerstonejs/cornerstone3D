@@ -29,6 +29,7 @@ import type {
   DataProvider,
   LoadedData,
   RenderPathResolver,
+  ViewportDataReference,
 } from '../ViewportArchitectureTypes';
 import type ICamera from '../../../types/ICamera';
 import type { CameraScaleMode, ViewAnchor } from '../ViewportCameraTypes';
@@ -60,9 +61,7 @@ export interface PlanarRegisteredDataSet {
   image?: IImage;
   imageData?: vtkImageData;
   useWorldCoordinateImageData?: boolean;
-  actorUID?: string;
-  referencedId?: string;
-  representationUID?: string;
+  reference?: ViewportDataReference;
 }
 
 export interface PlanarSetDataOptions {
@@ -91,9 +90,7 @@ export interface PlanarPayload {
   image?: IImage;
   imageData?: vtkImageData;
   useWorldCoordinateImageData?: boolean;
-  actorUID?: string;
-  referencedId?: string;
-  representationUID?: string;
+  reference?: ViewportDataReference;
 }
 
 export interface PlanarPresentationProps extends BasePresentationProps {

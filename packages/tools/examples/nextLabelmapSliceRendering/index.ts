@@ -128,7 +128,6 @@ async function run() {
     kind: 'planar',
     imageIds,
     initialImageIdIndex: Math.floor(imageIds.length / 2),
-    referencedId: volumeId,
     volumeId,
   });
 

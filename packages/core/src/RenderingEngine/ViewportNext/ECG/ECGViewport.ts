@@ -88,11 +88,8 @@ class ECGViewport extends ViewportNext<
    * Adds one or more waveform datasets using the canvas ECG render path.
    *
    * @param entries - List of datasets to add.
-   * @returns Rendering ids in the same order as the provided entries.
    */
-  async setDataList(entries: Array<{ dataId: string }>): Promise<string[]> {
-    const renderingIds: string[] = [];
-
+  async setDataList(entries: Array<{ dataId: string }>): Promise<void> {
     for (const { dataId } of entries) {
       const waveform = await this.loadWaveformData(dataId);
       const durationMs =
@@ -111,14 +108,10 @@ class ECGViewport extends ViewportNext<
         valueRange: getDefaultECGValueRange(waveform),
       });
 
-      const renderingId = await this.addLoadedData(dataId, waveform, {
+      await this.addLoadedData(dataId, waveform, {
         renderMode: 'signal2d',
       });
-
-      renderingIds.push(renderingId);
     }
-
-    return renderingIds;
   }
 
   getWaveformData(): ECGWaveformPayload | null {

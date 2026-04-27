@@ -19,20 +19,28 @@ function removeLabelmapFromElement(
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;
   removeVolumeLabelmapImageMapperActors(viewport, segmentationId);
-  const actorUIDs =
+  const actorEntryUIDs =
     getLabelmapActorEntries(viewport.id, segmentationId)?.map(
       (actorEntry) => actorEntry.uid
     ) ?? [];
 
-  if (actorUIDs.length) {
+  if (actorEntryUIDs.length) {
     const labelmapRepresentationPrefix =
       getLabelmapRepresentationPrefix(segmentationId);
-    actorUIDs.forEach((actorUID) => {
-      if (actorUID?.startsWith(labelmapRepresentationPrefix)) {
-        utilities.viewportNextDataSetMetadataProvider.remove(actorUID);
+    getLabelmapActorEntries(viewport.id, segmentationId)?.forEach(
+      (actorEntry) => {
+        const representationUID = actorEntry.representationUID as
+          | string
+          | undefined;
+
+        if (representationUID?.startsWith(labelmapRepresentationPrefix)) {
+          utilities.viewportNextDataSetMetadataProvider.remove(
+            representationUID
+          );
+        }
       }
-    });
-    viewport.removeActors(actorUIDs);
+    );
+    viewport.removeActors(actorEntryUIDs);
   }
 }
 

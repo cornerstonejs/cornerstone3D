@@ -29,7 +29,6 @@ export type Volume3DRenderMode = 'vtkVolume3d' | 'vtkGeometry3d';
 export type Volume3DRequestedRenderMode = Volume3DRenderMode | 'auto';
 
 export interface Volume3DRegisteredDataSet {
-  actorUID?: string;
   geometryId?: string;
   geometryLoadOptions?: GeometryOptions;
   imageIds?: string[];
@@ -42,7 +41,6 @@ export interface Volume3DSetDataOptions {
 }
 
 export interface Volume3DVolumePayload {
-  actorUID?: string;
   imageIds: string[];
   imageVolume: IImageVolume;
   renderMode: 'vtkVolume3d';
@@ -113,6 +111,7 @@ export type Volume3DVtkGeometryAdapterContext = Volume3DContextBase;
 
 export type Volume3DVolumeRendering = MountedRendering<{
   renderMode: 'vtkVolume3d';
+  actorEntryUID: string;
   actor: vtkVolume;
   defaultVOIRange?: VOIRange;
   imageVolume: IImageVolume;

@@ -2,6 +2,7 @@ import vtkPlaneFactory from '@kitware/vtk.js/Common/DataModel/Plane';
 import type vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import type vtkImageResliceMapper from '@kitware/vtk.js/Rendering/Core/ImageResliceMapper';
 import { buildPlanarActorEntry } from './buildPlanarActorEntry';
+import uuidv4 from '../../../utilities/uuidv4';
 import { Events, ViewportType } from '../../../enums';
 import eventTarget from '../../../eventTarget';
 import createVolumeSliceActor from '../../helpers/createVolumeSliceActor';
@@ -52,8 +53,7 @@ export class VtkVolumeSliceRenderPath
     const payload: PlanarPayload = data as unknown as LoadedData<PlanarPayload>;
     const imageVolume = payload.imageVolume;
     const shouldInvalidateFullTextureOnVolumeModified =
-      options.role === 'overlay' &&
-      typeof payload.representationUID === 'string';
+      options.role === 'overlay' && payload.reference?.kind === 'segmentation';
 
     if (!imageVolume) {
       throw new Error(
@@ -78,8 +78,8 @@ export class VtkVolumeSliceRenderPath
     const defaultRange = transferFunction?.getRange?.();
 
     const rendering: PlanarVolumeSliceRendering = {
-      id: `rendering:${data.id}:${options.renderMode}`,
       renderMode: ActorRenderMode.VTK_VOLUME_SLICE,
+      actorEntryUID: uuidv4(),
       actor,
       overlayOrder: getImageSliceOverlayOrder(ctx.vtk.renderer, actor),
       imageVolume,
@@ -136,7 +136,7 @@ export class VtkVolumeSliceRenderPath
           actor: rendering.actor,
           mapper: rendering.mapper,
           renderMode: ActorRenderMode.VTK_VOLUME_SLICE,
-          uidFallback: planarData.volumeId,
+          uid: rendering.actorEntryUID,
           referencedIdFallback: planarData.volumeId,
         });
       },

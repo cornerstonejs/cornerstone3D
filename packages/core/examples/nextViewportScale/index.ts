@@ -412,7 +412,6 @@ async function run() {
     imageIds,
     kind: 'planar',
     initialImageIdIndex: middleImageIndex,
-    referencedId: volumeId,
     volumeId,
   });
 

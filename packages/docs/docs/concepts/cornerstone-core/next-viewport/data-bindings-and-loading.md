@@ -44,6 +44,24 @@ viewport.setDataPresentation(petDataId, {
 viewport.render();
 ```
 
+`reference` is an optional semantic relationship on registered data. It is used
+when a binding renders something derived from another object, such as a
+segmentation labelmap, volume, image, geometry, or another data id. It is not an
+actor id and it is not used as runtime actor identity.
+
+```ts
+utilities.viewportNextDataSetMetadataProvider.add(labelmapDataId, {
+  kind: 'planar',
+  imageIds: labelmapImageIds,
+  reference: {
+    kind: 'segmentation',
+    segmentationId,
+    representationUID,
+    labelmapId,
+  },
+});
+```
+
 ## Presentation Split
 
 Viewport state and data presentation have different ownership:

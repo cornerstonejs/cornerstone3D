@@ -11,7 +11,6 @@ import type {
   DataProvider,
   LoadedData,
   ViewportDataBinding,
-  RenderingId,
   RenderPathResolver,
   ViewportController,
   ViewportId,
@@ -100,9 +99,9 @@ abstract class ViewportNext<
   /**
    * Replaces all mounted datasets with a single logical dataset.
    */
-  async setData(dataId: DataId, options: DataAddOptions): Promise<RenderingId> {
+  async setData(dataId: DataId, options: DataAddOptions): Promise<void> {
     this.removeAllData();
-    return this.addData(dataId, {
+    await this.addData(dataId, {
       ...options,
       role: 'source',
     });
@@ -112,13 +111,13 @@ abstract class ViewportNext<
    * Loads a logical dataset through the viewport data provider and adds it
    * through the render-path resolver.
    */
-  async addData(dataId: DataId, options: DataAddOptions): Promise<RenderingId> {
+  async addData(dataId: DataId, options: DataAddOptions): Promise<void> {
     if (this.isDestroyed) {
       throw new Error('Viewport has been destroyed');
     }
 
     const data = await this.dataProvider.load(dataId, options);
-    return this.addLoadedData(dataId, data, options);
+    await this.addLoadedData(dataId, data, options);
   }
 
   /**
@@ -154,9 +153,7 @@ abstract class ViewportNext<
    */
   async setDataList(
     entries: Array<{ dataId: DataId; options?: unknown }>
-  ): Promise<RenderingId[]> {
-    const renderingIds: RenderingId[] = [];
-
+  ): Promise<void> {
     for (const [index, { dataId, options }] of entries.entries()) {
       if (!options) {
         throw new Error(
@@ -166,15 +163,11 @@ abstract class ViewportNext<
 
       const dataOptions = options as DataAddOptions;
 
-      renderingIds.push(
-        await this.addData(dataId, {
-          ...dataOptions,
-          role: dataOptions.role ?? (index === 0 ? 'source' : 'overlay'),
-        })
-      );
+      await this.addData(dataId, {
+        ...dataOptions,
+        role: dataOptions.role ?? (index === 0 ? 'source' : 'overlay'),
+      });
     }
-
-    return renderingIds;
   }
 
   /**
@@ -402,7 +395,7 @@ abstract class ViewportNext<
     dataId: DataId,
     data: LoadedData,
     options: DataAddOptions
-  ): Promise<RenderingId> {
+  ): Promise<void> {
     if (this.isDestroyed) {
       throw new Error('Viewport has been destroyed');
     }
@@ -463,7 +456,6 @@ abstract class ViewportNext<
     binding.applyViewState(this.viewState);
     this._debug.renderModes[dataId] = attachment.rendering.renderMode;
     this.render();
-    return attachment.rendering.id;
   }
 
   protected removeAllData(): void {

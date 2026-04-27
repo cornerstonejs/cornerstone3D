@@ -48,7 +48,7 @@ type PlanarNextVolumeViewport = Types.IViewport & {
   getViewState: () => {
     orientation?: unknown;
   };
-  getActor?: (actorUID: string) => Types.ActorEntry | undefined;
+  getActors?: () => Types.ActorEntry[];
   render?: () => void;
   addData: (
     dataId: string,
@@ -56,7 +56,7 @@ type PlanarNextVolumeViewport = Types.IViewport & {
       orientation?: unknown;
       role?: 'source' | 'overlay';
     }
-  ) => Promise<string>;
+  ) => Promise<void>;
   setDataPresentation: (
     dataId: string,
     props: {
@@ -314,7 +314,12 @@ async function addLabelmapToPlanarNextViewport(args: {
         currentImageIdIndex,
         Math.max(volume.imageIds.length - 1, 0)
       ),
-      representationUID,
+      reference: {
+        kind: 'segmentation',
+        segmentationId,
+        representationUID,
+        labelmapId: layer.labelmapId,
+      },
       volumeId: layer.volumeId,
     });
 
@@ -327,7 +332,9 @@ async function addLabelmapToPlanarNextViewport(args: {
       visible: visibility,
     });
 
-    firstActorEntry ||= viewport.getActor?.(representationUID);
+    firstActorEntry ||= viewport
+      .getActors?.()
+      .find((actorEntry) => actorEntry.representationUID === representationUID);
   }
 
   viewport.setViewReference(sourceViewReference);

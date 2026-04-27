@@ -45,7 +45,6 @@ export class DefaultVolume3DDataProvider implements Volume3DDataProvider {
       return {
         id: dataId,
         type: 'image',
-        actorUID: dataSet.actorUID,
         imageIds: imageVolume.imageIds || dataSet.imageIds,
         imageVolume,
         renderMode: 'vtkVolume3d',
@@ -86,7 +85,6 @@ function isVolume3DRegisteredDataSet(
   }
 
   return (
-    (value.actorUID === undefined || typeof value.actorUID === 'string') &&
     (value.geometryId === undefined || typeof value.geometryId === 'string') &&
     (value.volumeId === undefined || typeof value.volumeId === 'string') &&
     (value.geometryLoadOptions === undefined ||

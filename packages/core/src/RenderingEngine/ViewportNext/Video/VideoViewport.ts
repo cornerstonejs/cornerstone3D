@@ -91,20 +91,16 @@ class VideoViewport extends ViewportNext<
    * Adds one or more video datasets using the HTML video render path.
    *
    * @param entries - List of datasets to add.
-   * @returns Rendering ids in the same order as the provided entries.
    */
-  async setDataList(entries: Array<{ dataId: string }>): Promise<string[]> {
-    const renderingIds: string[] = [];
-
+  async setDataList(entries: Array<{ dataId: string }>): Promise<void> {
     for (const [index, { dataId }] of entries.entries()) {
-      const renderingId = await this.addData(dataId, {
+      await this.addData(dataId, {
         renderMode: 'video2d',
         role: index === 0 ? 'source' : 'overlay',
       });
       const binding = this.getBinding(dataId);
 
       if (!binding) {
-        renderingIds.push(renderingId);
         continue;
       }
 
@@ -137,10 +133,7 @@ class VideoViewport extends ViewportNext<
       this.modified();
       this.trackVideoElement();
       await this.primeInitialFrame(videoData);
-      renderingIds.push(renderingId);
     }
-
-    return renderingIds;
   }
 
   /**

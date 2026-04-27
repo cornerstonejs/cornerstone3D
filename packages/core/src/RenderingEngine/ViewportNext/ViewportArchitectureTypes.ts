@@ -25,7 +25,6 @@ import type ResolvedViewportView from './ResolvedViewportView';
 
 export type ViewportId = string;
 export type DataId = string;
-export type RenderingId = string;
 export type KnownViewportRenderContext =
   | 'planar'
   | 'video'
@@ -38,6 +37,17 @@ export type ViewportRenderContextType =
   | ExtensionViewportRenderContext;
 export type LogicalDataType = 'image' | 'video' | 'ecg' | 'wsi' | 'geometry';
 export type BindingRole = 'source' | 'overlay';
+export type ViewportDataReference =
+  | { kind: 'data'; dataId: string }
+  | { kind: 'image'; imageId: string }
+  | { kind: 'volume'; volumeId: string }
+  | { kind: 'geometry'; geometryId: string }
+  | {
+      kind: 'segmentation';
+      segmentationId: string;
+      representationUID?: string;
+      labelmapId?: string;
+    };
 
 export interface DataAddOptions {
   renderMode: string;
@@ -59,9 +69,7 @@ export type LoadedData<TData extends object = object> = {
 // treats this object as opaque even though adapter fields are stored flat.
 export type MountedRendering<
   TRendering extends { renderMode: string } = { renderMode: string },
-> = {
-  id: RenderingId;
-} & Omit<TRendering, 'id'>;
+> = Omit<TRendering, 'id'>;
 
 export interface RenderPathAttachment<TPresentation = unknown> {
   rendering: MountedRendering;
@@ -138,11 +146,11 @@ export interface ViewportController<
   readonly id: ViewportId;
   readonly type: ViewportType;
 
-  addData(dataId: DataId, options: DataAddOptions): Promise<RenderingId>;
-  setData(dataId: DataId, options: DataAddOptions): Promise<RenderingId>;
+  addData(dataId: DataId, options: DataAddOptions): Promise<void>;
+  setData(dataId: DataId, options: DataAddOptions): Promise<void>;
   setDataList(
     entries: Array<{ dataId: DataId; options?: unknown }>
-  ): Promise<RenderingId[]>;
+  ): Promise<void>;
   removeData(dataId: DataId): void;
 
   setViewState(viewState: Partial<TViewState>): void;
