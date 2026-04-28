@@ -200,9 +200,8 @@ abstract class BaseVolumeViewport extends Viewport {
     const volumeNewImageHandlerBound = volumeNewImageHandler.bind(this);
     const volumeNewImageCleanUpBound = volumeNewImageCleanUp.bind(this);
 
-    function volumeNewImageHandler(
-      cameraEvent: EventTypes.CameraModifiedEvent
-    ) {
+    function volumeNewImageHandler(event: Event) {
+      const cameraEvent = event as EventTypes.CameraModifiedEvent;
       const { viewportId } = cameraEvent.detail;
 
       if (viewportId !== this.id || this.isDisabled) {
