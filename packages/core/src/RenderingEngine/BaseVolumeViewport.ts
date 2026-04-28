@@ -227,7 +227,7 @@ abstract class BaseVolumeViewport extends Viewport {
 
       this.element.removeEventListener(
         Events.CAMERA_MODIFIED,
-        volumeNewImageHandlerBound
+        volumeNewImageHandlerBound as EventListener
       );
 
       eventTarget.removeEventListener(
@@ -240,11 +240,11 @@ abstract class BaseVolumeViewport extends Viewport {
 
     this.element.removeEventListener(
       Events.CAMERA_MODIFIED,
-      volumeNewImageHandlerBound
+      volumeNewImageHandlerBound as EventListener
     );
     this.element.addEventListener(
       Events.CAMERA_MODIFIED,
-      volumeNewImageHandlerBound
+      volumeNewImageHandlerBound as EventListener
     );
 
     eventTarget.addEventListener(
