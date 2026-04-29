@@ -1,9 +1,6 @@
-import dcmjs from 'dcmjs';
+import { getMetaData } from '../../metaData';
 import { MetadataModules } from '../../enums';
-import { MetaDataIterator, NaturalTagListener } from '../dicomStream';
-import { setCacheData } from './cacheData';
-
-const { AsyncDicomReader } = dcmjs.async;
+import { ASYNC_NATURALIZED } from './naturalizedHandlers';
 
 /**
  * Adds a DICOMweb JSON metadata instance to the NATURALIZED cache.
@@ -20,13 +17,9 @@ export function addDicomwebInstance(
   imageId: string,
   metadata: Record<string, unknown>
 ) {
-  const iterator = new MetaDataIterator(metadata);
-  const listener = NaturalTagListener.createMetadataListener();
-  listener.startObject();
-  iterator.syncIterator(listener);
-  const instance = listener.pop();
-  setCacheData(MetadataModules.NATURALIZED, imageId, instance);
-  return instance;
+  return getMetaData(MetadataModules.NATURALIZED, imageId, {
+    metadata,
+  });
 }
 
 /**
@@ -39,27 +32,15 @@ export function addDicomwebInstance(
  * populated for the reader.
  *
  * @param imageId - The imageId to associate with this instance
- * @param arrayBuffer - The DICOM Part 10 binary data
+ * @param part10 - ArrayBuffer/Uint8Array or resolver function returning those values
  * @returns A promise that resolves to the naturalized instance object
  */
 export async function addPart10Instance(
   imageId: string,
-  arrayBuffer: ArrayBuffer
+  part10:
+    | ArrayBuffer
+    | Uint8Array
+    | (() => ArrayBuffer | Uint8Array | Promise<ArrayBuffer | Uint8Array>)
 ) {
-  const reader = new AsyncDicomReader();
-  const listener = NaturalTagListener.createMetadataListener();
-
-  reader.stream.addBuffer(arrayBuffer);
-  reader.stream.setComplete();
-  await reader.readFile({ listener });
-
-  const natural = reader.dict;
-  const transferSyntaxUid = reader.syntax;
-  if (transferSyntaxUid) {
-    natural.TransferSyntaxUID = Array.isArray(transferSyntaxUid)
-      ? transferSyntaxUid[0]
-      : transferSyntaxUid;
-  }
-  setCacheData(MetadataModules.NATURALIZED, imageId, natural);
-  return natural;
+  return getMetaData(ASYNC_NATURALIZED, imageId, { part10 });
 }

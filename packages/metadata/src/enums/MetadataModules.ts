@@ -184,6 +184,10 @@ enum MetadataModules {
    * and pixelData (from NATURALIZED when available). Use getMetaData(MetadataModules.COMPRESSED_FRAME_DATA, imageId, { frameIndex }).
    */
   COMPRESSED_FRAME_DATA = 'compressedFrameData',
+  /** Canonical base imageId derived from a frame-specific or base imageId query. */
+  BASE_IMAGE_ID = 'baseImageId',
+  /** Frame imageIds resolved/generated for a base imageId query. */
+  FRAME_IMAGE_IDS = 'frameImageIds',
 
   /**
    * The natural metadata is the naturalized instance data without any frame

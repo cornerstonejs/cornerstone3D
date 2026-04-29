@@ -1,5 +1,5 @@
 import { metaData, registerImageLoader, type Types } from '@cornerstonejs/core';
-import { registerDefaultProvider } from '@cornerstonejs/metadata';
+import { registerDefaultProviders } from '@cornerstonejs/metadata';
 
 import { loadImage, loadImageFromNaturalizedMetadata } from './loadImage';
 import { metaDataProvider } from './metaData/index';
@@ -37,7 +37,7 @@ export default function (options?: {
   registerImageLoader('wadouri', loadImageFromNaturalizedMetadata);
   registerImageLoader('dicomfile', loadImageFromNaturalizedMetadata);
 
-  registerDefaultProvider();
+  registerDefaultProviders();
 }
 
 export { loadImageFromNaturalizedMetadata as loadImage } from './loadImage';

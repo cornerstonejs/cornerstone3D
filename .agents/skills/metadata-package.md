@@ -83,7 +83,7 @@ registered with the metadata library for immediate viewing.
 ## Key Exports
 
 - `metaData` namespace: `addProvider`, `addTypedProvider`, `get`, `getMetaData`,
-  `getNormalized`, `typedProviderProvider`, `clearQuery`, `clear`,
+  `getNormalized`, `metadataModuleProvider`, `clearQuery`, `clear`,
   `toUpperCamelTag`, `toLowerCamelTag`
 - `Enums.MetadataModules`: Standard module name enum (imagePlaneModule,
   imagePixelModule, generalSeriesModule, instanceOrig, etc.)

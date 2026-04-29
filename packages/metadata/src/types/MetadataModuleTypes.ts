@@ -108,6 +108,8 @@ export interface CompressedFrameDataMetadata {
  * Names must match MetadataModules enum values (e.g. 'transferSyntax', 'imagePlaneModule').
  */
 export interface MetadataModuleType {
+  baseImageId: string;
+  frameImageIds: Set<string>;
   generalSeriesModule: GeneralSeriesModuleMetadata;
   patientStudyModule: PatientStudyModuleMetadata;
   imagePlaneModule: ImagePlaneModuleMetadata;

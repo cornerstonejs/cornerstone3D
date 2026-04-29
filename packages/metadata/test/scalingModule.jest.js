@@ -2,12 +2,12 @@
  * Unit tests for the scalingModule typed provider (PT and RTDOSE).
  * The provider expects instance or natural data in the chain's data field; the
  * default registration uses naturalLookup (see registerDataLookup), so we
- * prime the NATURAL cache and the lookup passes that data into the provider.
+ * prime the NATURALIZED cache and the lookup passes that data into the provider.
  */
 
 import { describe, it, expect, beforeEach } from '@jest/globals';
 import { getMetaData, removeAllProviders } from '../src/metaData';
-import { registerDefaultProvider } from '../src/registerDefaultProvider';
+import { registerDefaultProviders } from '../src/registerDefaultProviders';
 import {
   setCacheData,
   clearCacheData,
@@ -25,13 +25,13 @@ describe('scalingModule typed provider', () => {
   beforeEach(() => {
     removeAllProviders();
     clearCacheData();
-    registerDefaultProvider();
+    registerDefaultProviders();
   });
 
   describe('RTDOSE', () => {
-    it('returns scalingModule with DoseGridScaling, DoseSummation, DoseType, DoseUnit from NATURAL', () => {
-      // NATURAL is keyed by base imageId (no frame number)
-      setCacheData(MetadataModules.NATURAL, RT_DOSE_BASE_IMAGE_ID, {
+    it('returns scalingModule with DoseGridScaling, DoseSummation, DoseType, DoseUnit from NATURALIZED', () => {
+      // NATURALIZED is keyed by base imageId (no frame number)
+      setCacheData(MetadataModules.NATURALIZED, RT_DOSE_BASE_IMAGE_ID, {
         Modality: 'RTDOSE',
         DoseGridScaling: 2.5,
         DoseSummation: 'PLAN',
@@ -39,8 +39,8 @@ describe('scalingModule typed provider', () => {
         DoseUnit: 'GY',
       });
 
-      // scaling is requested for a frame-specific imageId; NATURAL is resolved
-      // via naturalBaseImageIdFallback + naturalLookup
+      // scaling is requested for a frame-specific imageId; NATURALIZED is resolved
+      // via baseImageIdQueryFilter + naturalLookup
       const result = getMetaData(MetadataModules.SCALING, RT_DOSE_IMAGE_ID);
 
       expect(result).toBeDefined();
@@ -52,8 +52,8 @@ describe('scalingModule typed provider', () => {
       });
     });
 
-    it('returns undefined when NATURAL has no dose fields', () => {
-      setCacheData(MetadataModules.NATURAL, RT_DOSE_BASE_IMAGE_ID, {
+    it('returns undefined when NATURALIZED has no dose fields', () => {
+      setCacheData(MetadataModules.NATURALIZED, RT_DOSE_BASE_IMAGE_ID, {
         Modality: 'RTDOSE',
       });
 
@@ -64,9 +64,9 @@ describe('scalingModule typed provider', () => {
   });
 
   describe('PT', () => {
-    it('returns scalingModule with suvbw from NATURAL PT instance (data passed via naturalLookup)', () => {
-      // NATURAL is keyed by base imageId (no frame number)
-      setCacheData(MetadataModules.NATURAL, PT_BASE_IMAGE_ID, {
+    it('returns scalingModule with suvbw from NATURALIZED PT instance (data passed via naturalLookup)', () => {
+      // NATURALIZED is keyed by base imageId (no frame number)
+      setCacheData(MetadataModules.NATURALIZED, PT_BASE_IMAGE_ID, {
         Modality: 'PT',
         SeriesDate: '20200101',
         SeriesTime: '120000',
@@ -86,8 +86,8 @@ describe('scalingModule typed provider', () => {
         ],
       });
 
-      // scaling is requested for a frame-specific imageId; NATURAL is resolved
-      // via naturalBaseImageIdFallback + naturalLookup
+      // scaling is requested for a frame-specific imageId; NATURALIZED is resolved
+      // via baseImageIdQueryFilter + naturalLookup
       const result = getMetaData(MetadataModules.SCALING, PT_IMAGE_ID);
 
       expect(result).toBeDefined();
@@ -97,7 +97,7 @@ describe('scalingModule typed provider', () => {
     });
 
     it('returns undefined when modality is not PT or RTDOSE', () => {
-      setCacheData(MetadataModules.NATURAL, 'ct-image-id', {
+      setCacheData(MetadataModules.NATURALIZED, 'ct-image-id', {
         Modality: 'CT',
       });
 

@@ -1,4 +1,4 @@
-import { addProvider, typedProviderProvider } from './metaData';
+import { addProvider, metadataModuleProvider } from './metaData';
 import calibratedPixelSpacingMetadataProvider from './utilities/calibratedPixelSpacingMetadataProvider';
 import { registerCacheProviders } from './utilities/metadataProvider/cacheData';
 import { registerUriModule } from './utilities/metadataProvider/uriModule';
@@ -15,8 +15,9 @@ import { registerPixelDataUpdate } from './utilities/metadataProvider/pixelDataU
 import { registerTransferSyntaxProvider } from './utilities/metadataProvider/transferSyntaxProvider';
 import { registerEcgFromInstanceProvider } from './utilities/metadataProvider/ecgFromInstance';
 import { registerCompressedFrameDataProvider } from './utilities/metadataProvider/compressedFrameData';
-import { registerNaturalBaseImageIdFallback } from './utilities/metadataProvider/naturalBaseImageIdFallback';
 import { registerScalingFromInstanceProvider } from './utilities/metadataProvider/scalingFromInstance';
+import { registerNaturalizedHandlers } from './utilities/metadataProvider/naturalizedHandlers';
+import { registerImageIdProviders } from './utilities/metadataProvider/imageIdsProviders';
 
 const TYPED_PROVIDER_BRIDGE_PRIORITY = -1000;
 
@@ -38,10 +39,10 @@ const TYPED_PROVIDER_BRIDGE_PRIORITY = -1000;
  *
  * Call at start or after removeAllProviders() to re-establish typed providers; duplicates are skipped.
  */
-export function registerDefaultProvider() {
+export function registerDefaultProviders() {
   // Register the typed provider bridge at low priority so that
   // legacy providers added via addProvider() run first
-  addProvider(typedProviderProvider, TYPED_PROVIDER_BRIDGE_PRIORITY);
+  addProvider(metadataModuleProvider, TYPED_PROVIDER_BRIDGE_PRIORITY);
 
   // Register calibrated pixel spacing so metaData.get('calibratedPixelSpacing', imageId) resolves
   addProvider(calibratedPixelSpacingMetadataProvider.get);
@@ -53,16 +54,19 @@ export function registerDefaultProvider() {
   // Register cache providers
   registerCacheProviders();
 
-  // When NATURALIZED is queried with imageId that has ?frame=, resolve from base imageId
-  registerNaturalBaseImageIdFallback();
+  // Register options-driven naturalized handlers (sync metadata and async part10)
+  registerNaturalizedHandlers();
 
   // Register URI module provider
   registerUriModule();
 
+  // Register imageId provider pipeline with front-end cache
+  registerImageIdProviders();
+
   // Register data lookup providers
   registerDataLookup();
 
-  // Register INSTANCE → NATURALIZED bridge
+  // Register INSTANCE -> NATURALIZED bridge
   registerInstanceFromListener();
 
   // Register combine frame provider

@@ -138,9 +138,9 @@ export function addTypedProvider(
 }
 
 /**
- * A provider for the general typed providers.
+ * A provider bridge for typed metadata modules.
  */
-export function typedProviderProvider(type: string, query: string, options) {
+export function metadataModuleProvider(type: string, query: string, options) {
   const typedProvider = typedProviderMap.get(type);
   if (!typedProvider) {
     return;
@@ -172,7 +172,7 @@ const TYPED_PROVIDER_BRIDGE_PRIORITY = -1000;
 /**
  * Removes all providers, clears all typed providers, and re-adds the typed
  * provider bridge at the end so getMetaData can still resolve typed types
- * after registerDefaultProvider() is called again.
+ * after registerDefaultProviders() is called again.
  *
  * @category MetaData
  */

@@ -14,7 +14,7 @@ import { convertMultiframeImageIds } from './convertMultiframeImageIds';
 const { calibratedPixelSpacingMetadataProvider, getPixelSpacingInformation } =
   utilities;
 
-const { addDicomwebInstance, setCacheData, Tags } = metadataUtilities;
+const { addDicomwebInstance, Tags } = metadataUtilities;
 const { MetadataModules } = metadataEnums;
 
 const SOP_INSTANCE_UID = Tags.resolveHexFromKeyword('SOPInstanceUID');
@@ -99,20 +99,11 @@ export default async function createImageIdsAndCacheMetaData({
     const originalImageIds = [...imageIds];
     imageIds = convertMultiframeImageIds(imageIds);
 
-    // For multiframe expansions, store NATURALIZED for each frame imageId
+    // For multiframe expansions, resolve through the metadata provider chain
+    // so canonical base/frame handling stays internal to metadata filters.
     if (useMetadata && imageIds.length !== originalImageIds.length) {
       for (const imageId of imageIds) {
-        if (metaData.get('instanceOrig', imageId)) {
-          continue;
-        }
-        const frameIdx = imageId.lastIndexOf('/frames/');
-        if (frameIdx >= 0) {
-          const baseImageId = imageId.substring(0, frameIdx) + '/frames/1';
-          const baseInstance = metaData.get('instanceOrig', baseImageId);
-          if (baseInstance) {
-            setCacheData(MetadataModules.NATURALIZED, imageId, baseInstance);
-          }
-        }
+        metaData.get(MetadataModules.NATURALIZED, imageId);
       }
     }
   }

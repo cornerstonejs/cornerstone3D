@@ -13,6 +13,7 @@ export {
   getERMF,
 } from './getPixelSpacingInformation';
 export { default as calibratedPixelSpacingMetadataProvider } from './calibratedPixelSpacingMetadataProvider';
+export * from './getNaturalizedField';
 export {
   default as splitImageIdsBy4DTags,
   handleMultiframe4D,

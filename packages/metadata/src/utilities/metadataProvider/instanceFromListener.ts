@@ -1,9 +1,9 @@
 import { MetadataModules } from '../../enums';
-import { addTypedProvider, typedProviderProvider } from '../../metaData';
+import { addTypedProvider, metadataModuleProvider } from '../../metaData';
 
 export const instanceOrigToInstanceProvider = (next, query, data, options) => {
   return (
-    typedProviderProvider(MetadataModules.NATURALIZED, query, options) ||
+    metadataModuleProvider(MetadataModules.NATURALIZED, query, options) ||
     next(query, data, options)
   );
 };

@@ -2,10 +2,10 @@ import { MetadataModules } from '../../enums';
 
 import { tags as transferSyntaxTags } from './transferSyntax';
 import { tags as cineTags } from './cine';
-import { tags as petIsotopeTags } from './petIsotope';
+import { tags as ptIsotopeTags } from './ptIsotope';
 import { tags as radiopharmaceuticalInfoTags } from './radiopharmaceuticalInfo';
-import { tags as petImageTags } from './petImage';
-import { tags as petSeriesTags } from './petSeries';
+import { tags as ptImageTags } from './ptImage';
+import { tags as ptSeriesTags } from './ptSeries';
 import { tags as patientTags } from './patient';
 import { tags as patientStudyTags } from './patientStudy';
 import { tags as generalStudyTags } from './generalStudy';
@@ -41,10 +41,10 @@ export type ModuleTagEntry = string | [name: string, hexOverride: string];
 export const moduleDefinitions: [string | null, ModuleTagEntry[]][] = [
   [MetadataModules.TRANSFER_SYNTAX, transferSyntaxTags],
   [MetadataModules.CINE, cineTags],
-  [MetadataModules.PET_ISOTOPE, petIsotopeTags],
+  [MetadataModules.PET_ISOTOPE, ptIsotopeTags],
   [RadiopharmaceuticalInfoModule, radiopharmaceuticalInfoTags],
-  [MetadataModules.PET_IMAGE, petImageTags],
-  [MetadataModules.PET_SERIES, petSeriesTags],
+  [MetadataModules.PET_IMAGE, ptImageTags],
+  [MetadataModules.PET_SERIES, ptSeriesTags],
   [MetadataModules.PATIENT, patientTags],
   [MetadataModules.PATIENT_STUDY, patientStudyTags],
   [MetadataModules.GENERAL_STUDY, generalStudyTags],

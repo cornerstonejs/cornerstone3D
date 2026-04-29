@@ -5,4 +5,5 @@ export const tags: ModuleTagEntry[] = [
   'ClinicalTrialSponsorName',
   'ClinicalTrialSiteID',
   'ClinicalTrialSiteName',
+  'ClinicalTrialSubjectID',
 ];
