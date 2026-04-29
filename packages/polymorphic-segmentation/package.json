@@ -26,11 +26,10 @@
   },
   "scripts": {
     "prebuild": "node ../../scripts/generate-version.js ./",
-    "prebuild:esm": "node ../../scripts/generate-version.js ./",
     "test": "jest --testTimeout 60000",
     "clean": "rimraf dist",
     "build": "yarn run build:esm",
-    "build:esm": "tsc --project ./tsconfig.json",
+    "build:esm": "yarn run prebuild && tsc --project ./tsconfig.json",
     "build:esm:watch": "tsc --project ./tsconfig.json --watch",
     "dev": "tsc --project ./tsconfig.json --watch",
     "build:all": "yarn run build:esm",

@@ -205,11 +205,11 @@ function concatPixelData(pixelData) {
 }
 
 /**
- * Loads an image from the NATURAL path: ensures NATURAL is populated (fetch +
+ * Loads an image from the NATURALIZED path: ensures NATURALIZED is populated (fetch +
  * addPart10Instance when needed), gets frame pixel data via getMetaData(MetadataModules.COMPRESSED_FRAME_DATA, imageId, `{ frameIndex }`),
  * then creates IImage. Does not use dataSetCacheManager.
  */
-function loadImageFromNatural(
+function loadImageFronNaturalizedMetadata(
   imageId: string,
   options: DICOMLoaderImageOptions = {}
 ): Types.IImageLoadObject {
@@ -233,16 +233,23 @@ function loadImageFromNatural(
     });
 
     const NATURAL = MetadataEnums.MetadataModules.NATURAL;
-    let natural = metaData.get(NATURAL, imageId);
+    const NATURALIZED =
+      (MetadataEnums.MetadataModules as Record<string, string>).NATURALIZED ||
+      NATURAL;
+    const getNaturalMetadata = () =>
+      metaData.get(NATURALIZED, imageId) ||
+      (NATURALIZED !== NATURAL ? metaData.get(NATURAL, imageId) : undefined);
+
+    let natural = getNaturalMetadata();
     if (!natural) {
       console.log(
-        '[dicomImageLoader/wadouri] loadImageFromNatural: no NATURAL metadata, attempting to fetch and populate',
+        '[dicomImageLoader/wadouri] loadImageFromNatural: no NATURALIZED metadata, attempting to fetch and populate',
         { imageId }
       );
 
       if (!schemeLoader) {
         throw new Error(
-          `loadImageFromNatural: no NATURAL cache and unknown scheme ${parsedImageId.scheme}`
+          `loadImageFromNatural: no NATURALIZED cache and unknown scheme ${parsedImageId.scheme}`
         );
       }
       const result = (await schemeLoader(parsedImageId.url, imageId)) as
@@ -250,10 +257,10 @@ function loadImageFromNatural(
         | { arrayBuffer: ArrayBuffer };
       const arrayBuffer =
         result instanceof ArrayBuffer ? result : result.arrayBuffer;
-      // Store NATURAL under base imageId (no ?frame=) so registration happens once per URL
+      // Store NATURALIZED under base imageId (no ?frame=) so registration happens once per URL
       const baseImageId = `${parsedImageId.scheme}:${parsedImageId.url}`;
       await addPart10Instance(baseImageId, arrayBuffer);
-      natural = metaData.get(NATURAL, imageId);
+      natural = getNaturalMetadata();
     }
 
     const loadEnd = Date.now();
@@ -270,7 +277,7 @@ function loadImageFromNatural(
       );
 
       throw new Error(
-        `loadImageFromNatural: no pixel data in NATURAL for imageId ${imageId}`
+        `loadImageFromNatural: no pixel data in NATURALIZED for imageId ${imageId}`
       );
     }
 
@@ -344,6 +351,6 @@ export {
   loadImageFromPromise,
   getLoaderForScheme,
   loadImage,
-  loadImageFromNatural,
+  loadImageFronNaturalizedMetadata,
   loadImageFromDataSet,
 };

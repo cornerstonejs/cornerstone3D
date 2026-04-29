@@ -59,7 +59,7 @@
   "scripts": {
     "test": "jest --testTimeout 60000",
     "build": "rollup -c rollup.config.mjs",
-    "build:esm": "rollup -c rollup.config.mjs",
+    "build:esm": "yarn run prebuild && rollup -c rollup.config.mjs",
     "build:esm:watch": "rollup --watch -c rollup.config.mjs",
     "clean": "rm -rf node_modules/.cache/storybook && shx rm -rf dist",
     "clean:deep": "yarn run clean && shx rm -rf node_modules",
@@ -69,8 +69,7 @@
     "start": "rollup --watch -c rollup.config.mjs",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,css,md}\" \"test/**/*.{js,jsx,ts,tsx,json,css,md}\" \"examples/**/*.{js,jsx,ts,tsx,json,css,md}\" \"*.{js,mjs,json,md}\"",
     "lint": "oxlint .",
-    "prebuild": "node ../../scripts/generate-version.js ./",
-    "prebuild:esm": "node ../../scripts/generate-version.js ./"
+    "prebuild": "node ../../scripts/generate-version.js ./"
   },
   "repository": {
     "type": "git",

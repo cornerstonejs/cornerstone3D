@@ -194,6 +194,11 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
   /**
    * Resizes viewports that use VTK.js for rendering.
+   * Only updates the VTK offscreen size when the displayed size (canvas client size in device pixels)
+   * differs from the current rendered size (canvas.width/height). The on-screen canvas dimensions
+   * are updated only when the VTK render result is copied in _copyToOnscreenCanvas, avoiding
+   * flicker during resize. If a render is already scheduled, resize is deferred until the next
+   * resize() call.
    */
   protected _resizeVTKViewports(
     vtkDrivenViewports: (IStackViewport | IVolumeViewport)[],
@@ -211,7 +216,9 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     for (const vp of vtkDrivenViewports) {
       const canvas = getOrCreateCanvas(vp.element);
       const displayedWidth = Math.round(canvas.clientWidth * devicePixelRatio);
-      const displayedHeight = Math.round(canvas.clientHeight * devicePixelRatio);
+      const displayedHeight = Math.round(
+        canvas.clientHeight * devicePixelRatio
+      );
       const renderedWidth = canvas.width;
       const renderedHeight = canvas.height;
 
@@ -236,7 +243,9 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     for (const vp of viewportsNeedingResize) {
       const canvas = getOrCreateCanvas(vp.element);
       const displayedWidth = Math.round(canvas.clientWidth * devicePixelRatio);
-      const displayedHeight = Math.round(canvas.clientHeight * devicePixelRatio);
+      const displayedHeight = Math.round(
+        canvas.clientHeight * devicePixelRatio
+      );
       const targetWidth = Math.max(VIEWPORT_MIN_SIZE, displayedWidth);
       const targetHeight = Math.max(VIEWPORT_MIN_SIZE, displayedHeight);
 
@@ -518,6 +527,8 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       renderingEngineId,
       suppressEvents,
     } = viewport;
+    // Update on-screen canvas size only when the VTK render result is available,
+    // so the displayed size matches the rendered size and aspect ratio without flicker.
     const { width: dWidth, height: dHeight } = canvas;
 
     const onScreenContext = canvas.getContext('2d');
@@ -559,6 +570,8 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     for (const viewport of viewportsDrivenByVtkJs) {
       viewport.sx = 0;
       viewport.sy = 0;
+      // Use viewport.sWidth/sHeight (set by _resizeVTKViewports to target size); do not overwrite from canvas,
+      // so that we only update the on-screen canvas when the VTK result is copied in _copyToOnscreenCanvas.
       viewport.sWidth = viewport.canvas.width;
       viewport.sHeight = viewport.canvas.height;
 
