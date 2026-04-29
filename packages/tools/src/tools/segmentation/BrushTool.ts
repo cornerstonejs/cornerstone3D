@@ -203,11 +203,11 @@ class BrushTool extends LabelmapBaseTool {
     centerCanvas: Types.Point2
   ): void {
     this._hoverData = this.createHoverData(element, centerCanvas);
-    this._calculateCursor(element, centerCanvas);
-
     if (!this._hoverData) {
       return;
     }
+
+    this._calculateCursor(element, centerCanvas);
 
     BrushTool.activeCursorTool = this;
     triggerAnnotationRenderForViewportUIDs(this._hoverData.viewportIdsToRender);
@@ -368,6 +368,10 @@ class BrushTool extends LabelmapBaseTool {
     const operationData = this.getOperationData(this._previewData.element) as
       | LabelmapToolOperationDataStack
       | LabelmapToolOperationDataVolume;
+    if (!operationData) {
+      return;
+    }
+
     const enabledElement = getEnabledElement(this._previewData.element);
     if (!enabledElement) {
       return;
@@ -422,6 +426,10 @@ class BrushTool extends LabelmapBaseTool {
 
     this.updateCursor(evt);
 
+    if (!this._hoverData) {
+      return;
+    }
+
     const { viewportIdsToRender } = this._hoverData;
 
     triggerAnnotationRenderForViewportUIDs(viewportIdsToRender);
@@ -465,6 +473,9 @@ class BrushTool extends LabelmapBaseTool {
     ]) as Types.Point3;
 
     this._hoverData = this.createHoverData(element, currentCanvas);
+    if (!this._hoverData) {
+      return;
+    }
 
     this._calculateCursor(element, currentCanvas);
 
@@ -506,10 +517,15 @@ class BrushTool extends LabelmapBaseTool {
 
   private _calculateCursor(element, _centerCanvas) {
     const enabledElement = getEnabledElement(element);
+    const operationData = this.getOperationData(element);
+
+    if (!enabledElement || !operationData) {
+      return;
+    }
 
     this.applyActiveStrategyCallback(
       enabledElement,
-      this.getOperationData(element),
+      operationData,
       StrategyCallbacks.CalculateCursorGeometry
     );
   }
@@ -582,9 +598,15 @@ class BrushTool extends LabelmapBaseTool {
       return;
     }
     const enabledElement = getEnabledElement(element);
+    const operationData = this.getOperationData(element);
+
+    if (!enabledElement || !operationData) {
+      return;
+    }
+
     const stats = this.applyActiveStrategyCallback(
       enabledElement,
-      this.getOperationData(element),
+      operationData,
       StrategyCallbacks.GetStatistics,
       segmentIndices
     );
@@ -606,9 +628,14 @@ class BrushTool extends LabelmapBaseTool {
     if (!enabledElement) {
       return;
     }
+    const operationData = this.getOperationData(element);
+    if (!operationData) {
+      return;
+    }
+
     this.applyActiveStrategyCallback(
       enabledElement,
-      this.getOperationData(element),
+      operationData,
       StrategyCallbacks.RejectPreview
     );
 
@@ -636,10 +663,15 @@ class BrushTool extends LabelmapBaseTool {
       return;
     }
     const enabledElement = getEnabledElement(element);
+    const operationData = this.getOperationData(element);
+
+    if (!enabledElement || !operationData) {
+      return;
+    }
 
     this._previewData.preview = this.applyActiveStrategyCallback(
       enabledElement,
-      this.getOperationData(element),
+      operationData,
       StrategyCallbacks.Interpolate,
       config.configuration
     );

@@ -486,19 +486,44 @@ function _updateTouchEventsLastPoints(
   element: HTMLDivElement,
   lastPoints: ITouchPoints[]
 ): ITouchPoints[] {
-  const { viewport } = getEnabledElement(element);
+  const { viewport } = getEnabledElement(element) || {};
+
+  if (!viewport) {
+    return lastPoints;
+  }
+
   // Need to update the world point to be calculated from the current reference frame,
   // Which might have changed since the last interaction.
-  return lastPoints.map((lp) => {
-    const world = viewport.canvasToWorld(lp.canvas);
-    return {
-      page: lp.page,
-      client: lp.client,
-      canvas: lp.canvas,
-      world,
-      touch: lp.touch,
-    };
-  });
+  return lastPoints
+    .map((lp) => {
+      let world;
+
+      try {
+        world = viewport.canvasToWorld(lp.canvas);
+      } catch (error) {
+        if (isNoMountedDataError(error)) {
+          return;
+        }
+
+        throw error;
+      }
+
+      return {
+        page: lp.page,
+        client: lp.client,
+        canvas: lp.canvas,
+        world,
+        touch: lp.touch,
+      };
+    })
+    .filter(Boolean) as ITouchPoints[];
+}
+
+function isNoMountedDataError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    error.message.includes('because no data is mounted')
+  );
 }
 
 export default touchStartListener;

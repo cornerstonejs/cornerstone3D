@@ -167,6 +167,11 @@ function mouseDownListener(evt: MouseEvent) {
   state.mouseButton = evt.buttons;
 
   const enabledElement = getEnabledElement(state.element);
+  if (!enabledElement) {
+    state = utilities.deepClone(defaultState);
+    return;
+  }
+
   const { renderingEngineId, viewportId } = enabledElement;
 
   state.renderingEngineId = renderingEngineId;
@@ -177,10 +182,16 @@ function mouseDownListener(evt: MouseEvent) {
     state.clickDelay
   );
 
+  const startPoints = getMouseEventPoints(evt, state.element);
+  if (!startPoints) {
+    clearTimeout(state.preventClickTimeout);
+    state = utilities.deepClone(defaultState);
+    return;
+  }
+
   // Prevent CornerstoneToolsMouseMove while mouse is down
   state.element.removeEventListener('mousemove', mouseMoveListener);
 
-  const startPoints = getMouseEventPoints(evt, state.element);
   state.startPoints = _copyPoints(startPoints);
   state.lastPoints = _copyPoints(startPoints);
 
@@ -240,6 +251,10 @@ function _onMouseDrag(evt: MouseEvent) {
     return;
   }
   const currentPoints = getMouseEventPoints(evt, state.element);
+  if (!currentPoints) {
+    return;
+  }
+
   const lastPoints = _updateMouseEventsLastPoints(
     state.element,
     state.lastPoints
@@ -321,6 +336,11 @@ function _onMouseUp(evt: MouseEvent): void {
     const eventName = state.isClickEvent ? MOUSE_CLICK : MOUSE_UP;
 
     const currentPoints = getMouseEventPoints(evt, state.element);
+    if (!currentPoints) {
+      _cleanUp();
+      return;
+    }
+
     const deltaPoints = _getDeltaPoints(currentPoints, state.lastPoints);
 
     const eventDetail:
@@ -358,6 +378,10 @@ function _onMouseUp(evt: MouseEvent): void {
  */
 function _onMouseMove(evt: MouseEvent) {
   const currentPoints = getMouseEventPoints(evt, state.element);
+  if (!currentPoints) {
+    return;
+  }
+
   const lastPoints = _updateMouseEventsLastPoints(
     state.element,
     state.lastPoints
@@ -478,7 +502,17 @@ function _updateMouseEventsLastPoints(
   }
   // Need to update the world point to be calculated from the current reference frame,
   // Which might have changed since the last interaction.
-  const world = viewport.canvasToWorld(lastPoints.canvas);
+  let world: Types.Point3;
+
+  try {
+    world = viewport.canvasToWorld(lastPoints.canvas);
+  } catch (error) {
+    if (isNoMountedDataError(error)) {
+      return lastPoints;
+    }
+
+    throw error;
+  }
 
   return {
     page: lastPoints.page,
@@ -532,6 +566,13 @@ function _subtractPoints3D(
   point1: Types.Point3
 ): Types.Point3 {
   return [point0[0] - point1[0], point0[1] - point1[1], point0[2] - point1[2]];
+}
+
+function isNoMountedDataError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    error.message.includes('because no data is mounted')
+  );
 }
 
 export function getMouseButton(): number {

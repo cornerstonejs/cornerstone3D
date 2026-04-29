@@ -376,6 +376,16 @@ abstract class ViewportNext<
   }
 
   /**
+   * Called by rendering engines after a frame is rendered.
+   *
+   * Most ViewportNext families do not need to track this separately because
+   * their render paths own concrete runtime state.
+   */
+  setRendered(): void {
+    // no-op
+  }
+
+  /**
    * Schedules a render pass for the viewport. Concrete viewport families
    * implement this to delegate to their rendering runtime.
    */

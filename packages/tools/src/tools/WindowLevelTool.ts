@@ -5,6 +5,7 @@ import {
   cache,
   utilities,
 } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import type { EventTypes } from '../types';
 
 // Todo: should move to configuration
@@ -46,7 +47,12 @@ class WindowLevelTool extends BaseTool {
       viewportsContainingVolumeUID;
     let isPreScaled = false;
 
-    const properties = viewport.getProperties();
+    const properties = getViewportVOIProperties(viewport);
+
+    if (!properties?.voiRange) {
+      throw new Error('Viewport is not a valid type');
+    }
+
     if (viewport instanceof VolumeViewport) {
       volumeId = viewport.getVolumeId();
 
@@ -91,6 +97,7 @@ class WindowLevelTool extends BaseTool {
         volumeId,
         lower,
         upper,
+        voiLutFunction: properties.VOILUTFunction,
       });
     }
 
@@ -99,7 +106,7 @@ class WindowLevelTool extends BaseTool {
       return;
     }
 
-    viewport.setProperties({
+    setViewportVOIProperties(viewport, {
       voiRange: newRange,
     });
 
@@ -143,7 +150,14 @@ class WindowLevelTool extends BaseTool {
     return { lower, upper };
   }
 
-  getNewRange({ viewport, deltaPointsCanvas, volumeId, lower, upper }) {
+  getNewRange({
+    viewport,
+    deltaPointsCanvas,
+    volumeId,
+    lower,
+    upper,
+    voiLutFunction,
+  }) {
     const multiplier =
       this._getMultiplierFromDynamicRange(viewport, volumeId) ||
       DEFAULT_MULTIPLIER;
@@ -160,8 +174,6 @@ class WindowLevelTool extends BaseTool {
     windowCenter += wcDelta;
 
     windowWidth = Math.max(windowWidth, 1);
-
-    const voiLutFunction = viewport.getProperties().VOILUTFunction;
 
     // Convert back to range
     return utilities.windowLevel.toLowHighRange(
@@ -208,8 +220,8 @@ class WindowLevelTool extends BaseTool {
     return !Number.isFinite(ratio)
       ? DEFAULT_IMAGE_DYNAMIC_RANGE
       : ratio > 1
-      ? Math.round(ratio)
-      : ratio;
+        ? Math.round(ratio)
+        : ratio;
   }
 
   _getImageDynamicRangeFromViewport(viewport) {
@@ -302,3 +314,88 @@ class WindowLevelTool extends BaseTool {
 
 WindowLevelTool.toolName = 'WindowLevel';
 export default WindowLevelTool;
+
+type ViewportVOIProperties = {
+  voiRange?: Types.VOIRange;
+  VOILUTFunction?: unknown;
+};
+
+type ViewportWithLegacyVOIProperties = {
+  getProperties?: () => ViewportVOIProperties;
+  setProperties?: (props: ViewportVOIProperties) => void;
+};
+
+type ViewportWithDataPresentation = {
+  getSourceDataId?: () => string | undefined;
+  getDataPresentation?: (dataId: string) => ViewportVOIProperties | undefined;
+  setDataPresentation?: (
+    dataId: string,
+    props: Partial<ViewportVOIProperties>
+  ) => void;
+  getDefaultVOIRange?: (dataId?: string) => Types.VOIRange | undefined;
+};
+
+function getViewportVOIProperties(viewport): ViewportVOIProperties | undefined {
+  const legacyViewport = viewport as ViewportWithLegacyVOIProperties;
+
+  if (typeof legacyViewport.getProperties === 'function') {
+    return legacyViewport.getProperties();
+  }
+
+  const target = getDataPresentationTarget(viewport);
+
+  if (!target) {
+    return;
+  }
+
+  const dataPresentation = target.viewport.getDataPresentation?.(target.dataId);
+  const defaultVOIRange = target.viewport.getDefaultVOIRange?.(target.dataId);
+
+  return {
+    ...(dataPresentation || {}),
+    voiRange: dataPresentation?.voiRange ?? defaultVOIRange,
+  };
+}
+
+function setViewportVOIProperties(
+  viewport,
+  props: ViewportVOIProperties
+): void {
+  const legacyViewport = viewport as ViewportWithLegacyVOIProperties;
+
+  if (typeof legacyViewport.setProperties === 'function') {
+    legacyViewport.setProperties(props);
+    return;
+  }
+
+  const target = getDataPresentationTarget(viewport);
+
+  if (!target) {
+    return;
+  }
+
+  target.viewport.setDataPresentation?.(target.dataId, props);
+}
+
+function getDataPresentationTarget(viewport):
+  | {
+      viewport: ViewportWithDataPresentation;
+      dataId: string;
+    }
+  | undefined {
+  const nextViewport = viewport as ViewportWithDataPresentation;
+  const dataId = nextViewport.getSourceDataId?.();
+
+  if (
+    !dataId ||
+    typeof nextViewport.getDataPresentation !== 'function' ||
+    typeof nextViewport.setDataPresentation !== 'function'
+  ) {
+    return;
+  }
+
+  return {
+    viewport: nextViewport,
+    dataId,
+  };
+}

@@ -171,6 +171,10 @@ export default class LabelmapBaseTool extends BaseTool {
 
       const element = memoData?.element;
       const operationData = this.getOperationData(element);
+      if (!operationData) {
+        return;
+      }
+
       operationData.segmentIndex = memoData?.segmentIndex;
 
       if (element) {
@@ -377,8 +381,14 @@ export default class LabelmapBaseTool extends BaseTool {
 
     const viewportIdsToRender = [viewport.id];
 
+    const activeSegmentationData = this.getActiveSegmentationData(viewport);
+
+    if (!activeSegmentationData) {
+      return;
+    }
+
     const { segmentIndex, segmentationId, segmentColor } =
-      this.getActiveSegmentationData(viewport) || {};
+      activeSegmentationData;
 
     // Center of circle in canvas Coordinates
     const brushCursor = {
@@ -432,17 +442,29 @@ export default class LabelmapBaseTool extends BaseTool {
     };
   }
 
-  protected getOperationData(element?): ModifiedLabelmapToolOperationData {
+  protected getOperationData(
+    element?
+  ): ModifiedLabelmapToolOperationData | undefined {
     const editData = this._editData || this.createEditData(element);
-    const { segmentIndex, segmentationId, brushCursor } =
-      this._hoverData || this.createHoverData(element);
+    const hoverData = this._hoverData || this.createHoverData(element);
+
+    if (!editData || !hoverData) {
+      return;
+    }
+
+    const { segmentIndex, segmentationId, brushCursor } = hoverData;
     const { data, metadata = {} } = brushCursor || {};
     const { viewPlaneNormal, viewUp } = metadata;
     const points = data?.editPoints || data?.handles?.points;
 
     const configColor =
       this.configuration.preview?.previewColors?.[segmentIndex];
-    const { viewport } = getEnabledElement(element);
+    const { viewport } = getEnabledElement(element) || {};
+
+    if (!viewport || !segmentIndex || !segmentationId) {
+      return;
+    }
+
     const segmentColor = getSegmentIndexColor(
       viewport.id,
       segmentationId,
@@ -496,9 +518,15 @@ export default class LabelmapBaseTool extends BaseTool {
       this.rejectPreview(element);
     }
     const enabledElement = getEnabledElement(element);
+    const operationData = this.getOperationData(element);
+
+    if (!enabledElement || !operationData) {
+      return;
+    }
+
     const results = this.applyActiveStrategyCallback(
       enabledElement,
-      this.getOperationData(element),
+      operationData,
       StrategyCallbacks.AddPreview
     );
     _previewData.isDrag = true;
@@ -519,9 +547,15 @@ export default class LabelmapBaseTool extends BaseTool {
     }
     this.doneEditMemo();
     const enabledElement = getEnabledElement(element);
+    const operationData = this.getOperationData(element);
+
+    if (!enabledElement || !operationData) {
+      return;
+    }
+
     this.applyActiveStrategyCallback(
       enabledElement,
-      this.getOperationData(element),
+      operationData,
       StrategyCallbacks.RejectPreview
     );
 
@@ -539,6 +573,9 @@ export default class LabelmapBaseTool extends BaseTool {
     }
 
     const operationData = this.getOperationData(element);
+    if (!operationData) {
+      return;
+    }
 
     // Track the memo ID if it was from an acceptPreview operation
     if (this.memo && this.memo.id) {

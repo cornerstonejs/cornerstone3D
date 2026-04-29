@@ -513,6 +513,17 @@ class PlanarViewport extends ViewportNext<
     return this.sourceDataId;
   }
 
+  getDefaultVOIRange(
+    dataId: string = this.sourceDataId ?? this.getCurrentBinding()?.data.id
+  ): VOIRange | undefined {
+    const rendering = this.getBinding(dataId)?.rendering as
+      | { defaultVOIRange?: VOIRange }
+      | undefined;
+    const defaultVOIRange = rendering?.defaultVOIRange;
+
+    return defaultVOIRange ? { ...defaultVOIRange } : undefined;
+  }
+
   /**
    * Returns the current slice index for stack-like and slice-like workflows.
    *
@@ -1447,13 +1458,7 @@ class PlanarViewport extends ViewportNext<
 
         return rendering?.actor ?? rendering?.compatibilityActor;
       },
-      getDefaultVOIRange: (dataId) => {
-        const rendering = this.getBinding(dataId)?.rendering as
-          | { defaultVOIRange?: VOIRange }
-          | undefined;
-
-        return rendering?.defaultVOIRange;
-      },
+      getDefaultVOIRange: (dataId) => this.getDefaultVOIRange(dataId),
       getImageCount: () => this.getImageIds().length,
       getMaxImageIdIndex: () => this.getMaxImageIdIndex(),
     };

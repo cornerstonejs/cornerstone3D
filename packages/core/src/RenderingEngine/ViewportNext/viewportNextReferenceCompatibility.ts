@@ -224,6 +224,14 @@ function isReferencedImageCompatible(
   context: ViewportNextReferenceContext,
   options: ReferenceCompatibleOptions
 ): boolean {
+  if (
+    viewRef.planeRestriction &&
+    viewRef.volumeId &&
+    getContextVolumeIds(context).includes(viewRef.volumeId)
+  ) {
+    return true;
+  }
+
   const referencedImageURI = getReferencedImageURI(viewRef);
 
   if (!referencedImageURI) {

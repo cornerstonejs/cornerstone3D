@@ -16,27 +16,39 @@ export default function getTouchEventPoints(
   element?: HTMLDivElement
 ): ITouchPoints[] {
   const elementToUse = element || (evt.currentTarget as HTMLDivElement);
+  const { viewport } = getEnabledElement(elementToUse) || {};
+
+  if (!viewport) {
+    return [];
+  }
+
   const touches = evt.type === 'touchend' ? evt.changedTouches : evt.touches;
-  return Object.keys(touches).map((i) => {
-    const clientPoint = _clientToPoint(touches[i]);
-    const pagePoint = _pageToPoint(touches[i]);
-    const canvasPoint = _pagePointsToCanvasPoints(elementToUse, pagePoint);
-    const { viewport } = getEnabledElement(elementToUse);
-    const worldPoint = viewport.canvasToWorld(canvasPoint);
-    return {
-      page: pagePoint,
-      client: clientPoint,
-      canvas: canvasPoint,
-      world: worldPoint,
-      touch: {
-        identifier: i,
-        radiusX: touches[i].radiusX,
-        radiusY: touches[i].radiusY,
-        force: touches[i].force,
-        rotationAngle: touches[i].rotationAngle,
-      },
-    };
-  });
+  return Object.keys(touches)
+    .map((i) => {
+      const clientPoint = _clientToPoint(touches[i]);
+      const pagePoint = _pageToPoint(touches[i]);
+      const canvasPoint = _pagePointsToCanvasPoints(elementToUse, pagePoint);
+      const worldPoint = getWorldPoint(viewport, canvasPoint);
+
+      if (!worldPoint) {
+        return;
+      }
+
+      return {
+        page: pagePoint,
+        client: clientPoint,
+        canvas: canvasPoint,
+        world: worldPoint,
+        touch: {
+          identifier: i,
+          radiusX: touches[i].radiusX,
+          radiusY: touches[i].radiusY,
+          force: touches[i].force,
+          rotationAngle: touches[i].rotationAngle,
+        },
+      };
+    })
+    .filter(Boolean) as ITouchPoints[];
 }
 
 /**
@@ -72,4 +84,26 @@ function _pageToPoint(touch: Touch): Types.Point2 {
  */
 function _clientToPoint(touch: Touch): Types.Point2 {
   return [touch.clientX, touch.clientY];
+}
+
+function getWorldPoint(
+  viewport: { canvasToWorld: (canvasPos: Types.Point2) => Types.Point3 },
+  canvasPoint: Types.Point2
+): Types.Point3 | undefined {
+  try {
+    return viewport.canvasToWorld(canvasPoint);
+  } catch (error) {
+    if (isNoMountedDataError(error)) {
+      return;
+    }
+
+    throw error;
+  }
+}
+
+function isNoMountedDataError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    error.message.includes('because no data is mounted')
+  );
 }

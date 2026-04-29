@@ -1,4 +1,4 @@
-import { test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import {
   checkForScreenshot,
   expectViewportNextRuntime,
@@ -8,6 +8,7 @@ import {
 
 const EXAMPLE = 'nextVolumeAnnotationTools';
 const SETTLE_MS = 5000;
+const EXAMPLE_BOOTSTRAP_TIMEOUT_MS = 30000;
 
 function navigateToExample(params?: Record<string, string>) {
   return async ({ page }) => {
@@ -21,8 +22,12 @@ function navigateToExample(params?: Record<string, string>) {
 
     await page.goto(url.toString());
     await page.waitForLoadState('domcontentloaded');
-    await page.waitForSelector('div#content');
-    await page.waitForLoadState('networkidle');
+    await page.waitForSelector('div#content', {
+      timeout: EXAMPLE_BOOTSTRAP_TIMEOUT_MS,
+    });
+    await page.waitForLoadState('networkidle', {
+      timeout: EXAMPLE_BOOTSTRAP_TIMEOUT_MS,
+    });
     await page.waitForTimeout(SETTLE_MS);
   };
 }
@@ -45,6 +50,26 @@ async function drawLengthMeasurement(page, locator) {
   await page.waitForTimeout(500);
 }
 
+async function expectRenderedLengthAnnotation(page, viewportIndex: number) {
+  const viewport = page.locator('[data-viewport-uid]').nth(viewportIndex);
+  const renderedAnnotationNodes = viewport.locator(
+    'svg.svg-layer line[data-id$="-line"]'
+  );
+
+  await expect
+    .poll(async () => renderedAnnotationNodes.count(), {
+      message: `expected viewport ${viewportIndex} to render annotation SVG nodes`,
+    })
+    .toBeGreaterThan(0);
+}
+
+async function drawAndExpectLengthAnnotation(page, viewportIndex: number) {
+  const locator = getVisibleViewportCanvas(page, viewportIndex);
+
+  await drawLengthMeasurement(page, locator);
+  await expectRenderedLengthAnnotation(page, viewportIndex);
+}
+
 /** Scroll the mouse wheel over the canvas center. */
 async function scrollSlices(page, locator, ticks: number) {
   const box = await locator.boundingBox();
@@ -63,7 +88,11 @@ async function scrollSlices(page, locator, ticks: number) {
 }
 
 /** Right-click drag (zoom) from an off-center point. */
-async function zoomOffCenter(page, locator, opts: { startFrac: [number, number]; dy: number }) {
+async function zoomOffCenter(
+  page,
+  locator,
+  opts: { startFrac: [number, number]; dy: number }
+) {
   const box = await locator.boundingBox();
   if (!box) {
     throw new Error('Canvas element is not visible');
@@ -185,6 +214,13 @@ test.describe('Volume Annotation - Next (GPU)', () => {
     );
   });
 
+  test('should render length measurements on sagittal and oblique planes (next GPU)', async ({
+    page,
+  }) => {
+    await drawAndExpectLengthAnnotation(page, 1);
+    await drawAndExpectLengthAnnotation(page, 2);
+  });
+
   test('should scroll, zoom, and pan all viewports (next GPU)', async ({
     page,
   }) => {
@@ -251,6 +287,13 @@ test.describe('Volume Annotation - Next (CPU)', () => {
       sagittal,
       screenShotPaths.volumeAnnotationNext.cpuSagittal
     );
+  });
+
+  test('should render length measurements on sagittal and oblique planes (next CPU)', async ({
+    page,
+  }) => {
+    await drawAndExpectLengthAnnotation(page, 1);
+    await drawAndExpectLengthAnnotation(page, 2);
   });
 
   test('should scroll, zoom, and pan all viewports (next CPU)', async ({

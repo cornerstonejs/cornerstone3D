@@ -175,6 +175,7 @@ export interface ViewportController<
   getDataRole(dataId: DataId): BindingRole | undefined;
 
   render(): void;
+  setRendered(): void;
 }
 
 export interface ICanvasWorldViewport {

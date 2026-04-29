@@ -22,6 +22,11 @@ function wheelListener(evt: WheelEvent) {
     return;
   }
 
+  const points = getMouseEventPoints(evt);
+  if (!points) {
+    return;
+  }
+
   evt.preventDefault();
 
   const { spinX, spinY, pixelX, pixelY } = normalizeWheel(evt);
@@ -42,7 +47,7 @@ function wheelListener(evt: WheelEvent) {
       pixelY,
       direction,
     },
-    points: getMouseEventPoints(evt),
+    points,
   };
 
   triggerEvent(element, Events.MOUSE_WHEEL, eventDetail);
