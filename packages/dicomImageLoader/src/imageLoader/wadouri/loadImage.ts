@@ -209,7 +209,7 @@ function concatPixelData(pixelData) {
  * addPart10Instance when needed), gets frame pixel data via getMetaData(MetadataModules.COMPRESSED_FRAME_DATA, imageId, `{ frameIndex }`),
  * then creates IImage. Does not use dataSetCacheManager.
  */
-function loadImageFronNaturalizedMetadata(
+function loadImageFromNaturalizedMetadata(
   imageId: string,
   options: DICOMLoaderImageOptions = {}
 ): Types.IImageLoadObject {
@@ -225,31 +225,34 @@ function loadImageFronNaturalizedMetadata(
 
   const promise = (async (): Promise<DICOMLoaderIImage> => {
     const start = Date.now();
-    console.log('[dicomImageLoader/wadouri] loadImageFromNatural: start', {
-      imageId,
-      scheme: parsedImageId.scheme,
-      url: parsedImageId.url,
-      frameIndex,
-    });
+    console.log(
+      '[dicomImageLoader/wadouri] loadImageFromNaturalizedMetadata: start',
+      {
+        imageId,
+        scheme: parsedImageId.scheme,
+        url: parsedImageId.url,
+        frameIndex,
+      }
+    );
 
     const NATURAL = MetadataEnums.MetadataModules.NATURAL;
     const NATURALIZED =
       (MetadataEnums.MetadataModules as Record<string, string>).NATURALIZED ||
       NATURAL;
-    const getNaturalMetadata = () =>
+    const getNaturalizedMetadata = () =>
       metaData.get(NATURALIZED, imageId) ||
       (NATURALIZED !== NATURAL ? metaData.get(NATURAL, imageId) : undefined);
 
-    let natural = getNaturalMetadata();
+    let natural = getNaturalizedMetadata();
     if (!natural) {
       console.log(
-        '[dicomImageLoader/wadouri] loadImageFromNatural: no NATURALIZED metadata, attempting to fetch and populate',
+        '[dicomImageLoader/wadouri] loadImageFromNaturalizedMetadata: no NATURALIZED metadata, attempting to fetch and populate',
         { imageId }
       );
 
       if (!schemeLoader) {
         throw new Error(
-          `loadImageFromNatural: no NATURALIZED cache and unknown scheme ${parsedImageId.scheme}`
+          `loadImageFromNaturalizedMetadata: no NATURALIZED cache and unknown scheme ${parsedImageId.scheme}`
         );
       }
       const result = (await schemeLoader(parsedImageId.url, imageId)) as
@@ -260,7 +263,7 @@ function loadImageFronNaturalizedMetadata(
       // Store NATURALIZED under base imageId (no ?frame=) so registration happens once per URL
       const baseImageId = `${parsedImageId.scheme}:${parsedImageId.url}`;
       await addPart10Instance(baseImageId, arrayBuffer);
-      natural = getNaturalMetadata();
+      natural = getNaturalizedMetadata();
     }
 
     const loadEnd = Date.now();
@@ -272,12 +275,12 @@ function loadImageFronNaturalizedMetadata(
     );
     if (!frameData) {
       console.warn(
-        '[dicomImageLoader/wadouri] loadImageFromNatural: no COMPRESSED_FRAME_DATA for imageId',
+        '[dicomImageLoader/wadouri] loadImageFromNaturalizedMetadata: no COMPRESSED_FRAME_DATA for imageId',
         { imageId, frameIndex }
       );
 
       throw new Error(
-        `loadImageFromNatural: no pixel data in NATURALIZED for imageId ${imageId}`
+        `loadImageFromNaturalizedMetadata: no pixel data in NATURALIZED for imageId ${imageId}`
       );
     }
 
@@ -351,6 +354,6 @@ export {
   loadImageFromPromise,
   getLoaderForScheme,
   loadImage,
-  loadImageFronNaturalizedMetadata,
+  loadImageFromNaturalizedMetadata,
   loadImageFromDataSet,
 };

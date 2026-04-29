@@ -1,7 +1,7 @@
 import { metaData, registerImageLoader, type Types } from '@cornerstonejs/core';
 import { registerDefaultProvider } from '@cornerstonejs/metadata';
 
-import { loadImage, loadImageFromNatural } from './loadImage';
+import { loadImage, loadImageFromNaturalizedMetadata } from './loadImage';
 import { metaDataProvider } from './metaData/index';
 
 /**
@@ -31,13 +31,13 @@ export default function (options?: {
     return;
   }
 
-  // register dicomweb and wadouri image loader prefixes to loadImageFromNatural
+  // register dicomweb and wadouri image loader prefixes to loadImageFromNaturalizedMetadata
   // (dataSetCacheManager populates NATURAL via addPart10Instance when loading; returns IImage).
-  registerImageLoader('dicomweb', loadImageFromNatural);
-  registerImageLoader('wadouri', loadImageFromNatural);
-  registerImageLoader('dicomfile', loadImageFromNatural);
+  registerImageLoader('dicomweb', loadImageFromNaturalizedMetadata);
+  registerImageLoader('wadouri', loadImageFromNaturalizedMetadata);
+  registerImageLoader('dicomfile', loadImageFromNaturalizedMetadata);
 
   registerDefaultProvider();
 }
 
-export { loadImageFromNatural as loadImage } from './loadImage';
+export { loadImageFromNaturalizedMetadata as loadImage } from './loadImage';
