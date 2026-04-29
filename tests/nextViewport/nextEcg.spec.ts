@@ -1,4 +1,4 @@
-import { test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import {
   checkForScreenshot,
   expectViewportNextRuntime,
@@ -47,5 +47,25 @@ test.describe('ECG ViewportNext', () => {
   test('should render ECG waveform', async ({ page }) => {
     const locator = page.locator('#cornerstone-element');
     await checkForScreenshot(page, locator, screenShotPaths.ecgNext.viewport);
+  });
+
+  test('should resize through the rendering engine', async ({ page }) => {
+    const result = await page.evaluate(() => {
+      const engine =
+        window.cornerstone?.getRenderingEngine?.('myRenderingEngine');
+
+      try {
+        engine?.resize();
+        return { ok: true };
+      } catch (error) {
+        return {
+          ok: false,
+          message:
+            error instanceof Error ? error.message : String(error ?? ''),
+        };
+      }
+    });
+
+    expect(result).toEqual({ ok: true });
   });
 });

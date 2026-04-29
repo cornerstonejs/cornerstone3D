@@ -38,6 +38,7 @@ import type {
   ViewPresentationSelector,
   DataSetOptions,
   PlaneRestriction,
+  RenderingEngineResizeOptions,
 } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
 import type IImageCalibration from '../types/IImageCalibration';
@@ -186,6 +187,26 @@ class Viewport {
 
   public getUseCustomRenderingPipeline(): boolean {
     return (this.constructor as typeof Viewport).useCustomRenderingPipeline;
+  }
+
+  /**
+   * RenderingEngine-owned resize hook for custom-pipeline viewports. Legacy
+   * viewports keep the previous camera-preserving behavior by default.
+   */
+  public resizeForRenderingEngine({
+    keepCamera = true,
+  }: RenderingEngineResizeOptions = {}): void {
+    if (typeof this.resize === 'function') {
+      this.resize();
+    }
+
+    const previousCamera = keepCamera ? this.getCamera() : undefined;
+
+    this.resetCamera();
+
+    if (previousCamera) {
+      this.setCamera(previousCamera);
+    }
   }
 
   /**

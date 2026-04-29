@@ -17,7 +17,7 @@ jobs:
         include:
           - node-version: 20
             mode: legacy
-            run_args: "all --project=chromium"
+            run_args: "--all --project=chromium"
             collect_coverage: true
           - node-version: 20
             mode: compatibility
@@ -25,7 +25,7 @@ jobs:
             collect_coverage: false
           - node-version: 20
             mode: next
-            run_args: "next --project=chromium"
+            run_args: "--next --project=chromium"
             collect_coverage: false
     name: Playwright (${{ matrix.mode }})
     steps:

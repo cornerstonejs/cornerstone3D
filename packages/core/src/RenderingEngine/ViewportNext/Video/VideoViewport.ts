@@ -601,6 +601,27 @@ class VideoViewport extends ViewportNext<
   }
 
   /**
+   * Resets layout navigation while preserving the current video time.
+   */
+  resetCamera(): boolean {
+    if (this.isDestroyed) {
+      return false;
+    }
+
+    const previousCamera = this.getCameraForEvent();
+    const { currentTimeSeconds } = this.viewState;
+
+    this.viewState = this.normalizeViewState({
+      ...createDefaultVideoCamera(),
+      currentTimeSeconds,
+    });
+    this.modified(previousCamera);
+    this.triggerCameraResetEvent();
+
+    return true;
+  }
+
+  /**
    * Alias for {@link destroy}. Provided for compatibility with disposable
    * resource conventions.
    */

@@ -24,6 +24,7 @@ import type {
   ViewPresentation,
   ViewPresentationSelector,
   ViewportInput,
+  RenderingEngineResizeOptions,
 } from './IViewport';
 import type {
   VolumeActor,
@@ -203,6 +204,7 @@ export type {
   ViewPresentationSelector,
   ReferenceCompatibleOptions,
   ViewReferenceSpecifier,
+  RenderingEngineResizeOptions,
   StackViewportProperties,
   VolumeViewportProperties,
   ViewportProperties,

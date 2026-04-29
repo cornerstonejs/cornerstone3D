@@ -382,6 +382,10 @@ export type DataSetOptions = {
 
 type IViewport = Viewport;
 
+interface RenderingEngineResizeOptions {
+  keepCamera?: boolean;
+}
+
 /**
  * Public Interface for viewport input to get enabled/disabled or set
  */
@@ -434,6 +438,7 @@ interface ViewportInput {
 
 export type {
   IViewport,
+  RenderingEngineResizeOptions,
   ViewportInput,
   PublicViewportInput,
   InternalViewportInput,

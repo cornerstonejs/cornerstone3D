@@ -522,24 +522,11 @@ abstract class BaseRenderingEngine {
     keepCamera = true,
     immediate = true
   ) {
-    // 1. If viewport has a custom resize method, call it here.
+    // Custom-pipeline viewports own their resize/camera semantics.
     customRenderingViewports.forEach((vp) => {
-      if (typeof vp.resize === 'function') {
-        vp.resize();
-      }
+      vp.resizeForRenderingEngine({ keepCamera });
     });
 
-    // 3. Reset viewport cameras
-    customRenderingViewports.forEach((vp) => {
-      const prevCamera = vp.getCamera();
-      vp.resetCamera();
-
-      if (keepCamera) {
-        vp.setCamera(prevCamera);
-      }
-    });
-
-    // 2. If render is immediate: Render all
     if (immediate) {
       this.render();
     }

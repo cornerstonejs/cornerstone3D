@@ -151,6 +151,16 @@ describe('RenderingEngineAPI -- ', () => {
         .filter(cornerstone3D.utilities.viewportSupportsStackCompatibility);
       expect(stackViewports.length).toBe(1);
     });
+
+    it('should resize legacy custom-pipeline viewports without changing the engine contract', function () {
+      createViewports(renderingEngine, {
+        viewportId: customOrientationViewportId,
+        viewportType: ViewportType.ECG,
+        useEnableElement: true,
+      });
+
+      expect(() => renderingEngine.resize()).not.toThrow();
+    });
   });
 
   describe('RenderingEngine Enable/Disable API with Viewport Next:', function () {
@@ -196,6 +206,16 @@ describe('RenderingEngineAPI -- ', () => {
 
       expect(viewport).toBeTruthy();
       expect(viewport.type).toBe(ViewportType.ECG_NEXT);
+    });
+
+    it('should resize remapped custom-pipeline Next viewports without legacy camera APIs', function () {
+      createViewports(renderingEngine, {
+        viewportId: customOrientationViewportId,
+        viewportType: ViewportType.ECG,
+        useEnableElement: true,
+      });
+
+      expect(() => renderingEngine.resize()).not.toThrow();
     });
   });
 });

@@ -23,6 +23,7 @@ import type {
   ViewPresentationSelector,
   ViewReference,
   ViewReferenceSpecifier,
+  RenderingEngineResizeOptions,
 } from '../../types/IViewport';
 import {
   isViewportNextReferenceViewable,
@@ -379,6 +380,47 @@ abstract class ViewportNext<
    * implement this to delegate to their rendering runtime.
    */
   abstract render(): void;
+
+  /**
+   * Recomputes viewport-owned runtime sizing. Concrete viewport families may
+   * override this when they need to resize canvases or external runtimes.
+   */
+  resize(): void {
+    if (this.isDestroyed) {
+      return;
+    }
+
+    this.resizeBindings();
+    this.modified();
+  }
+
+  /**
+   * Resets view state for viewport families that support a camera-like reset.
+   */
+  resetCamera(): boolean {
+    return false;
+  }
+
+  /**
+   * RenderingEngine-owned resize hook for custom-pipeline viewports.
+   *
+   * Next viewports own semantic view state, so the rendering engine delegates
+   * resize behavior here instead of preserving legacy getCamera/setCamera
+   * snapshots around a reset.
+   */
+  resizeForRenderingEngine({
+    keepCamera = true,
+  }: RenderingEngineResizeOptions = {}): void {
+    if (this.isDestroyed) {
+      return;
+    }
+
+    this.resize();
+
+    if (!keepCamera) {
+      this.resetCamera();
+    }
+  }
 
   // ====================================================================
   // Protected -- data loading & presentation

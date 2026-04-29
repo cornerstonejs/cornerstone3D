@@ -1,4 +1,4 @@
-import { test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import {
   checkForScreenshot,
   expectViewportNextRuntime,
@@ -46,5 +46,25 @@ test.describe('Video ViewportNext', () => {
   test('should render video data', async ({ page }) => {
     const locator = page.locator('#cornerstone-element');
     await checkForScreenshot(page, locator, screenShotPaths.videoNext.viewport);
+  });
+
+  test('should resize through the rendering engine', async ({ page }) => {
+    const result = await page.evaluate(() => {
+      const engine =
+        window.cornerstone?.getRenderingEngine?.('myRenderingEngine');
+
+      try {
+        engine?.resize();
+        return { ok: true };
+      } catch (error) {
+        return {
+          ok: false,
+          message:
+            error instanceof Error ? error.message : String(error ?? ''),
+        };
+      }
+    });
+
+    expect(result).toEqual({ ok: true });
   });
 });
