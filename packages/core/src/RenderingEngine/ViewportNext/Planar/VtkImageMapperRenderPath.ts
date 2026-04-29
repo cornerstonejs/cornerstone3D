@@ -28,6 +28,7 @@ import type {
   PlanarViewState,
   PlanarDataPresentation,
   PlanarPayload,
+  PlanarResolvedICamera,
   PlanarViewportRenderContext,
   PlanarVtkImageAdapterContext,
 } from './PlanarViewportTypes';
@@ -41,9 +42,11 @@ import { triggerPlanarNewImage } from './planarImageEvents';
 import {
   applyPlanarICameraToActor,
   applyPlanarICameraToRenderer,
-  resolvePlanarICamera,
 } from './planarRenderCamera';
-import { createPlanarImageSliceBasis } from './planarSliceBasis';
+import {
+  resolvePlanarRenderPathProjection,
+  resolvePlanarStackImageIdIndex,
+} from './planarRenderPathProjection';
 
 export class VtkImageMapperRenderPath
   implements RenderPath<PlanarVtkImageAdapterContext>
@@ -144,12 +147,10 @@ export class VtkImageMapperRenderPath
     imageIds: string[]
   ): void {
     const planarCamera = camera as PlanarViewState | undefined;
-    const nextImageIdIndex =
-      planarCamera?.slice?.kind === 'stackIndex'
-        ? planarCamera.slice.imageIdIndex
-        : rendering.currentImageIdIndex;
-    const canvasWidth = ctx.vtk.canvas.clientWidth || ctx.vtk.canvas.width;
-    const canvasHeight = ctx.vtk.canvas.clientHeight || ctx.vtk.canvas.height;
+    const nextImageIdIndex = resolvePlanarStackImageIdIndex({
+      fallbackImageIdIndex: rendering.currentImageIdIndex,
+      viewState: planarCamera,
+    });
 
     ctx.display.activateRenderMode(ActorRenderMode.VTK_IMAGE);
 
@@ -157,24 +158,26 @@ export class VtkImageMapperRenderPath
       return;
     }
 
-    const sliceBasis = createPlanarImageSliceBasis({
-      canvasHeight,
-      canvasWidth,
-      image: rendering.currentImage,
+    const projection = resolvePlanarRenderPathProjection({
+      ctx,
+      dataId,
+      rendering,
+      viewState: planarCamera,
     });
-    const activeSourceICamera = resolvePlanarICamera({
-      sliceBasis,
-      camera: planarCamera,
-      canvasWidth,
-      canvasHeight,
-    });
-    applyPlanarImageActorTransforms(ctx, rendering, activeSourceICamera);
-    if (ctx.viewport.isCurrentDataId(dataId)) {
-      ctx.view.activeSourceICamera = activeSourceICamera;
-      applyPlanarICameraToRenderer({
-        renderer: ctx.vtk.renderer,
-        activeSourceICamera,
-      });
+
+    if (projection) {
+      applyPlanarImageActorTransforms(
+        ctx,
+        rendering,
+        projection.resolvedICamera
+      );
+
+      if (projection.isSourceBinding) {
+        applyPlanarICameraToRenderer({
+          renderer: ctx.vtk.renderer,
+          activeSourceICamera: projection.resolvedICamera,
+        });
+      }
     }
 
     if (nextImageIdIndex === rendering.currentImageIdIndex) {
@@ -267,27 +270,28 @@ export class VtkImageMapperRenderPath
     }
 
     const camera = ctx.viewport.getViewState();
-    const canvasWidth = ctx.vtk.canvas.clientWidth || ctx.vtk.canvas.width;
-    const canvasHeight = ctx.vtk.canvas.clientHeight || ctx.vtk.canvas.height;
-    const sliceBasis = createPlanarImageSliceBasis({
-      canvasHeight,
-      canvasWidth,
-      image: rendering.currentImage,
+    const projection = resolvePlanarRenderPathProjection({
+      ctx,
+      dataId,
+      rendering,
+      viewState: camera,
     });
-    const activeSourceICamera = resolvePlanarICamera({
-      sliceBasis,
-      camera,
-      canvasWidth,
-      canvasHeight,
-    });
-    applyPlanarImageActorTransforms(ctx, rendering, activeSourceICamera);
-    if (ctx.viewport.isCurrentDataId(dataId)) {
-      ctx.view.activeSourceICamera = activeSourceICamera;
-      applyPlanarICameraToRenderer({
-        renderer: ctx.vtk.renderer,
-        activeSourceICamera,
-      });
+
+    if (projection) {
+      applyPlanarImageActorTransforms(
+        ctx,
+        rendering,
+        projection.resolvedICamera
+      );
+
+      if (projection.isSourceBinding) {
+        applyPlanarICameraToRenderer({
+          renderer: ctx.vtk.renderer,
+          activeSourceICamera: projection.resolvedICamera,
+        });
+      }
     }
+
     ctx.display.requestRender();
   }
 }
@@ -362,27 +366,24 @@ async function updateRenderedImage(args: {
     },
   });
 
-  const canvasWidth = ctx.vtk.canvas.clientWidth || ctx.vtk.canvas.width;
-  const canvasHeight = ctx.vtk.canvas.clientHeight || ctx.vtk.canvas.height;
-  const sliceBasis = createPlanarImageSliceBasis({
-    canvasHeight,
-    canvasWidth,
-    image,
+  const projection = resolvePlanarRenderPathProjection({
+    ctx,
+    dataId,
+    rendering,
+    viewState: camera,
   });
-  const activeSourceICamera = resolvePlanarICamera({
-    sliceBasis,
-    camera,
-    canvasWidth,
-    canvasHeight,
-  });
-  applyPlanarImageActorTransforms(ctx, rendering, activeSourceICamera);
-  if (ctx.viewport.isCurrentDataId(dataId)) {
-    ctx.view.activeSourceICamera = activeSourceICamera;
-    applyPlanarICameraToRenderer({
-      renderer: ctx.vtk.renderer,
-      activeSourceICamera,
-    });
+
+  if (projection) {
+    applyPlanarImageActorTransforms(ctx, rendering, projection.resolvedICamera);
+
+    if (projection.isSourceBinding) {
+      applyPlanarICameraToRenderer({
+        renderer: ctx.vtk.renderer,
+        activeSourceICamera: projection.resolvedICamera,
+      });
+    }
   }
+
   triggerPlanarNewImage(ctx, { image, imageIdIndex });
   ctx.display.requestRender();
 }
@@ -390,7 +391,7 @@ async function updateRenderedImage(args: {
 function applyPlanarImageActorTransforms(
   ctx: PlanarVtkImageAdapterContext,
   rendering: PlanarImageMapperRendering,
-  activeSourceICamera: ReturnType<typeof resolvePlanarICamera>
+  activeSourceICamera: PlanarResolvedICamera
 ): void {
   applyPlanarICameraToActor({
     actor: rendering.actor,

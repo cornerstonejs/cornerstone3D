@@ -6,6 +6,11 @@ export {
   resolvePlanarViewportView,
 } from './PlanarResolvedView';
 export {
+  resolvePlanarRenderPathProjection,
+  resolvePlanarStackImageIdIndex,
+} from './planarRenderPathProjection';
+export type { PlanarRenderPathProjection } from './planarRenderPathProjection';
+export {
   CpuImageSlicePath,
   CpuImageSliceRenderPath,
 } from './CpuImageSliceRenderPath';

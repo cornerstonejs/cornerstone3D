@@ -25,7 +25,7 @@ function navigateToExample(params?: Record<string, string>) {
 
     await page.goto(url.toString());
     await page.waitForLoadState('domcontentloaded');
-    await page.waitForSelector('#content canvas', {
+    await getVisibleViewportCanvas(page, 0).waitFor({
       state: 'visible',
     });
     await page.waitForTimeout(SETTLE_MS);
@@ -55,16 +55,18 @@ async function selectSphereBrushAndPaint(page) {
 
 async function disableActivePrimaryTool(page) {
   await page.evaluate((toolGroupId) => {
-    const toolGroup = (window as typeof window & {
-      cornerstoneTools?: {
-        ToolGroupManager?: {
-          getToolGroup?: (id: string) => {
-            getActivePrimaryMouseButtonTool?: () => string | undefined;
-            setToolDisabled?: (toolName: string) => void;
-          } | null;
+    const toolGroup = (
+      window as typeof window & {
+        cornerstoneTools?: {
+          ToolGroupManager?: {
+            getToolGroup?: (id: string) => {
+              getActivePrimaryMouseButtonTool?: () => string | undefined;
+              setToolDisabled?: (toolName: string) => void;
+            } | null;
+          };
         };
-      };
-    }).cornerstoneTools?.ToolGroupManager?.getToolGroup?.(toolGroupId);
+      }
+    ).cornerstoneTools?.ToolGroupManager?.getToolGroup?.(toolGroupId);
 
     const activeToolName = toolGroup?.getActivePrimaryMouseButtonTool?.();
 

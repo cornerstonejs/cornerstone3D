@@ -4,6 +4,7 @@ jest.mock('../src/metaData', () => ({
 }));
 
 import { OrientationAxis, VOILUTFunctionType } from '../src/enums';
+import { ActorRenderMode } from '../src/types';
 import calculateTransform from '../src/RenderingEngine/helpers/cpuFallback/rendering/calculateTransform';
 import canvasToPixel from '../src/RenderingEngine/helpers/cpuFallback/rendering/canvasToPixel';
 import getDefaultViewport from '../src/RenderingEngine/helpers/cpuFallback/rendering/getDefaultViewport';
@@ -11,6 +12,8 @@ import * as metaData from '../src/metaData';
 import {
   PlanarStackResolvedView,
   PlanarVolumeResolvedView,
+  resolvePlanarRenderPathProjection,
+  resolvePlanarStackImageIdIndex,
 } from '../src/RenderingEngine/ViewportNext/Planar';
 import {
   resolvePlanarCpuImageDisplayedArea,
@@ -58,6 +61,63 @@ function createImageVolume() {
     imageData: {
       getDimensions: () => [8, 10, 12],
       indexToWorld: ([i, j, k]) => [10 + i, 20 + j * 2, 30 + k * 3],
+    },
+  };
+}
+
+function createProjectionContext({
+  activeDataId = 'source',
+  canvasHeight = 256,
+  canvasWidth = 256,
+  renderMode = ActorRenderMode.CPU_IMAGE,
+  useVtk = false,
+} = {}) {
+  const canvas = document.createElement('canvas');
+
+  canvas.height = canvasHeight;
+  canvas.width = canvasWidth;
+
+  const context = {
+    viewportId: 'viewport',
+    renderingEngineId: 'rendering-engine',
+    type: 'planar',
+    viewport: {
+      element: document.createElement('div'),
+      getActiveDataId: () => activeDataId,
+      getOverlayActors: () => [],
+      getViewState: () => ({ orientation: OrientationAxis.AXIAL }),
+      isCurrentDataId: (dataId) => dataId === activeDataId,
+    },
+    renderPath: {
+      renderMode,
+    },
+    view: {},
+    display: {
+      activateRenderMode: jest.fn(),
+      renderNow: jest.fn(),
+      requestRender: jest.fn(),
+    },
+  };
+
+  if (useVtk) {
+    return {
+      ...context,
+      vtk: {
+        canvas,
+        renderer: {},
+      },
+    };
+  }
+
+  return {
+    ...context,
+    cpu: {
+      canvas,
+      composition: {
+        clearedRenderPassId: 0,
+        renderPassId: 0,
+      },
+      context: {},
     },
   };
 }
@@ -206,6 +266,172 @@ describe('Planar resolved cameras', () => {
         vtkTransformedCamera.canvasToWorld(referenceCanvasPoint)
       )
     );
+  });
+
+  it('resolves image render path projections through the shared Planar view', () => {
+    const image = createImage();
+    const viewState = {
+      orientation: OrientationAxis.AXIAL,
+      scale: 1.75,
+      anchorCanvas: [0.25, 0.75],
+      flipHorizontal: true,
+    };
+    const cpuProjection = resolvePlanarRenderPathProjection({
+      ctx: createProjectionContext({
+        activeDataId: 'cpu',
+        renderMode: ActorRenderMode.CPU_IMAGE,
+      }),
+      dataId: 'cpu',
+      rendering: {
+        renderMode: ActorRenderMode.CPU_IMAGE,
+        currentImageIdIndex: 0,
+        enabledElement: {
+          image,
+        },
+      },
+      viewState,
+    });
+    const vtkProjection = resolvePlanarRenderPathProjection({
+      ctx: createProjectionContext({
+        activeDataId: 'vtk',
+        renderMode: ActorRenderMode.VTK_IMAGE,
+        useVtk: true,
+      }),
+      dataId: 'vtk',
+      rendering: {
+        renderMode: ActorRenderMode.VTK_IMAGE,
+        currentImage: image,
+        currentImageIdIndex: 0,
+      },
+      viewState,
+    });
+
+    expectPoint3Close(
+      cpuProjection.resolvedICamera.focalPoint,
+      vtkProjection.resolvedICamera.focalPoint
+    );
+    expectPoint3Close(
+      cpuProjection.resolvedICamera.viewPlaneNormal,
+      vtkProjection.resolvedICamera.viewPlaneNormal
+    );
+    expect(cpuProjection.resolvedICamera.parallelScale).toBeCloseTo(
+      vtkProjection.resolvedICamera.parallelScale,
+      5
+    );
+    expect(cpuProjection.presentation.zoom).toBeCloseTo(
+      vtkProjection.presentation.zoom,
+      5
+    );
+    expect(cpuProjection.presentation.flipHorizontal).toBe(true);
+  });
+
+  it('preserves acquisition volume fallback index in render path cameras', () => {
+    const imageVolume = createImageVolume();
+    const rendering = {
+      renderMode: ActorRenderMode.VTK_VOLUME_SLICE,
+      currentImageIdIndex: 2,
+      imageVolume,
+    };
+    const fallbackProjection = resolvePlanarRenderPathProjection({
+      ctx: createProjectionContext({
+        activeDataId: 'volume',
+        renderMode: ActorRenderMode.VTK_VOLUME_SLICE,
+        useVtk: true,
+      }),
+      dataId: 'volume',
+      rendering,
+      viewState: {
+        orientation: OrientationAxis.ACQUISITION,
+      },
+    });
+    const explicitProjection = resolvePlanarRenderPathProjection({
+      ctx: createProjectionContext({
+        activeDataId: 'volume',
+        renderMode: ActorRenderMode.VTK_VOLUME_SLICE,
+        useVtk: true,
+      }),
+      dataId: 'volume',
+      rendering,
+      viewState: {
+        orientation: OrientationAxis.ACQUISITION,
+        slice: {
+          kind: 'stackIndex',
+          imageIdIndex: 2,
+        },
+      },
+    });
+
+    expect(fallbackProjection.currentImageIdIndex).toBe(2);
+    expectPoint3Close(
+      fallbackProjection.resolvedICamera.focalPoint,
+      explicitProjection.resolvedICamera.focalPoint
+    );
+  });
+
+  it('keeps overlay projections tied to the active source camera', () => {
+    const ctx = createProjectionContext();
+    const sourceProjection = resolvePlanarRenderPathProjection({
+      ctx,
+      dataId: 'source',
+      rendering: {
+        renderMode: ActorRenderMode.CPU_IMAGE,
+        currentImageIdIndex: 0,
+        enabledElement: {
+          image: createImage('source-image'),
+        },
+      },
+      viewState: {
+        orientation: OrientationAxis.AXIAL,
+      },
+    });
+    const overlayProjection = resolvePlanarRenderPathProjection({
+      ctx,
+      dataId: 'overlay',
+      rendering: {
+        renderMode: ActorRenderMode.CPU_IMAGE,
+        currentImageIdIndex: 0,
+        enabledElement: {
+          image: createImage('overlay-image'),
+        },
+      },
+      viewState: {
+        orientation: OrientationAxis.AXIAL,
+      },
+    });
+
+    expect(ctx.view.activeSourceICamera).toBe(sourceProjection.resolvedICamera);
+    expect(overlayProjection.isSourceBinding).toBe(false);
+    expect(overlayProjection.activeSourceICamera).toBe(
+      sourceProjection.resolvedICamera
+    );
+    expect(overlayProjection.resolvedICamera).not.toBe(
+      sourceProjection.resolvedICamera
+    );
+  });
+
+  it('resolves requested stack image index from Planar slice state', () => {
+    expect(
+      resolvePlanarStackImageIdIndex({
+        fallbackImageIdIndex: 2,
+        viewState: {
+          slice: {
+            kind: 'stackIndex',
+            imageIdIndex: 7,
+          },
+        },
+      })
+    ).toBe(7);
+    expect(
+      resolvePlanarStackImageIdIndex({
+        fallbackImageIdIndex: 2,
+        viewState: {
+          slice: {
+            kind: 'volumePoint',
+            sliceWorldPoint: [0, 0, 0],
+          },
+        },
+      })
+    ).toBe(2);
   });
 
   it('uses pixel-center lattice scaling for cpu stack image transforms', () => {

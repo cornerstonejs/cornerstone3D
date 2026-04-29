@@ -32,12 +32,8 @@ import { triggerPlanarVolumeNewImage } from './planarImageEvents';
 import {
   applyPlanarICameraToActor,
   applyPlanarICameraToRenderer,
-  resolvePlanarICamera,
 } from './planarRenderCamera';
-import {
-  createPlanarVolumeSliceBasis,
-  resolvePlanarVolumeImageIdIndex,
-} from './planarSliceBasis';
+import { resolvePlanarRenderPathProjection } from './planarRenderPathProjection';
 import { applyPlanarVolumePresentation } from './planarVolumePresentation';
 
 const SLICE_OVERLAY_DEPTH_EPSILON = 1e-4;
@@ -187,59 +183,55 @@ export class VtkVolumeSliceRenderPath
     cameraInput: unknown
   ): void {
     const camera = cameraInput as PlanarViewState | undefined;
-    const canvasWidth = ctx.vtk.canvas.clientWidth || ctx.vtk.canvas.width;
-    const canvasHeight = ctx.vtk.canvas.clientHeight || ctx.vtk.canvas.height;
-    const { sliceBasis, currentImageIdIndex, maxImageIdIndex } =
-      createPlanarVolumeSliceBasis({
-        viewState: camera,
-        canvasHeight,
-        canvasWidth,
-        imageIdIndex: resolvePlanarVolumeImageIdIndex({
-          viewState: camera,
-          fallbackImageIdIndex: rendering.currentImageIdIndex,
-        }),
-        imageVolume: rendering.imageVolume,
-        orientation: camera?.orientation,
-      });
 
     ctx.display.activateRenderMode(ActorRenderMode.VTK_VOLUME_SLICE);
-    const resolvedICamera = resolvePlanarICamera({
-      sliceBasis,
-      camera,
-      canvasWidth,
-      canvasHeight,
-    });
-    const isSourceBinding = ctx.viewport.isCurrentDataId(dataId);
+    this.syncRenderCamera(ctx, rendering, dataId, camera, true);
+  }
 
-    if (isSourceBinding) {
-      ctx.view.activeSourceICamera = resolvedICamera;
+  private syncRenderCamera(
+    ctx: PlanarVtkVolumeAdapterContext,
+    rendering: PlanarVolumeSliceRendering,
+    dataId: string,
+    camera: PlanarViewState | undefined,
+    triggerImageEvent: boolean
+  ): void {
+    const projection = resolvePlanarRenderPathProjection({
+      ctx,
+      dataId,
+      rendering,
+      viewState: camera,
+    });
+
+    if (!projection) {
+      return;
+    }
+
+    if (projection.isSourceBinding) {
       applyPlanarICameraToRenderer({
         renderer: ctx.vtk.renderer,
-        activeSourceICamera: resolvedICamera,
+        activeSourceICamera: projection.resolvedICamera,
       });
     }
-    const activeSourceICamera = isSourceBinding
-      ? resolvedICamera
-      : ctx.view.activeSourceICamera || resolvedICamera;
 
     applyPlanarICameraToActor({
       actor: rendering.actor,
-      activeSourceICamera,
+      activeSourceICamera: projection.activeSourceICamera,
     });
     const imageIdIndexChanged =
-      currentImageIdIndex !== rendering.currentImageIdIndex;
-    rendering.currentImageIdIndex = currentImageIdIndex;
-    rendering.maxImageIdIndex = maxImageIdIndex;
+      projection.currentImageIdIndex !== rendering.currentImageIdIndex;
 
-    updateVolumeSlicePlane(rendering.mapper, activeSourceICamera);
+    rendering.currentImageIdIndex = projection.currentImageIdIndex;
+    rendering.maxImageIdIndex = projection.maxImageIdIndex;
+
+    updateVolumeSlicePlane(rendering.mapper, projection.activeSourceICamera);
     updateVolumeSliceActorDepthOffset(
       rendering.actor,
-      activeSourceICamera,
+      projection.activeSourceICamera,
       rendering.overlayOrder
     );
     ctx.vtk.renderer.resetCameraClippingRange();
 
-    if (imageIdIndexChanged) {
+    if (triggerImageEvent && imageIdIndexChanged) {
       triggerPlanarVolumeNewImage(ctx, {
         camera,
         acquisitionOrientation: rendering.acquisitionOrientation,
@@ -293,52 +285,8 @@ export class VtkVolumeSliceRenderPath
     dataId: string
   ): void {
     const camera = ctx.viewport.getViewState();
-    const canvasWidth = ctx.vtk.canvas.clientWidth || ctx.vtk.canvas.width;
-    const canvasHeight = ctx.vtk.canvas.clientHeight || ctx.vtk.canvas.height;
-    const { sliceBasis, currentImageIdIndex, maxImageIdIndex } =
-      createPlanarVolumeSliceBasis({
-        viewState: camera,
-        canvasWidth,
-        canvasHeight,
-        imageIdIndex: resolvePlanarVolumeImageIdIndex({
-          viewState: camera,
-          fallbackImageIdIndex: rendering.currentImageIdIndex,
-        }),
-        imageVolume: rendering.imageVolume,
-        orientation: camera?.orientation,
-      });
-    const resolvedICamera = resolvePlanarICamera({
-      sliceBasis,
-      camera,
-      canvasWidth,
-      canvasHeight,
-    });
-    const isSourceBinding = ctx.viewport.isCurrentDataId(dataId);
 
-    if (isSourceBinding) {
-      ctx.view.activeSourceICamera = resolvedICamera;
-      applyPlanarICameraToRenderer({
-        renderer: ctx.vtk.renderer,
-        activeSourceICamera: resolvedICamera,
-      });
-    }
-    const activeSourceICamera = isSourceBinding
-      ? resolvedICamera
-      : ctx.view.activeSourceICamera || resolvedICamera;
-
-    applyPlanarICameraToActor({
-      actor: rendering.actor,
-      activeSourceICamera,
-    });
-    rendering.currentImageIdIndex = currentImageIdIndex;
-    rendering.maxImageIdIndex = maxImageIdIndex;
-    updateVolumeSlicePlane(rendering.mapper, activeSourceICamera);
-    updateVolumeSliceActorDepthOffset(
-      rendering.actor,
-      activeSourceICamera,
-      rendering.overlayOrder
-    );
-    ctx.vtk.renderer.resetCameraClippingRange();
+    this.syncRenderCamera(ctx, rendering, dataId, camera, false);
     ctx.display.requestRender();
   }
 

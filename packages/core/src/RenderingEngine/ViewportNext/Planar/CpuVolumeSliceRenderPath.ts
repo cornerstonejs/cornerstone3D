@@ -34,13 +34,7 @@ import {
   worldToCanvasPlanarViewState,
 } from './planarAdapterCoordinateTransforms';
 import { triggerPlanarVolumeNewImage } from './planarImageEvents';
-import { resolvePlanarICamera } from './planarRenderCamera';
-import {
-  createPlanarCpuVolumeSliceBasis,
-  createPlanarVolumeSliceBasis,
-  resolvePlanarVolumeImageIdIndex,
-  shouldUsePlanarCpuVolumeSliceBasis,
-} from './planarSliceBasis';
+import { resolvePlanarRenderPathProjection } from './planarRenderPathProjection';
 
 export class CpuVolumeSliceRenderPath
   implements RenderPath<PlanarCpuVolumeAdapterContext>
@@ -525,20 +519,21 @@ export class CpuVolumeSliceRenderPath
     dataId: string,
     camera: PlanarViewState | undefined
   ): void {
-    const { sliceBasis, currentImageIdIndex, maxImageIdIndex } =
-      this.resolveVolumeSliceBasis(ctx, rendering, camera);
-    const activeSourceICamera = resolvePlanarICamera({
-      sliceBasis,
-      camera,
-      canvasWidth: ctx.cpu.canvas.width,
-      canvasHeight: ctx.cpu.canvas.height,
+    const projection = resolvePlanarRenderPathProjection({
+      ctx,
+      dataId,
+      rendering,
+      viewState: camera,
     });
 
-    if (ctx.viewport.isCurrentDataId(dataId)) {
-      ctx.view.activeSourceICamera = activeSourceICamera;
+    if (!projection) {
+      return;
     }
+
+    const { currentImageIdIndex, maxImageIdIndex } = projection;
     const imageIdIndexChanged =
       currentImageIdIndex !== rendering.currentImageIdIndex;
+
     rendering.currentImageIdIndex = currentImageIdIndex;
     rendering.maxImageIdIndex = maxImageIdIndex;
     rendering.renderingInvalidated = true;
@@ -551,30 +546,6 @@ export class CpuVolumeSliceRenderPath
         imageIdIndex: rendering.currentImageIdIndex,
       });
     }
-  }
-
-  private resolveVolumeSliceBasis(
-    ctx: PlanarCpuVolumeAdapterContext,
-    rendering: PlanarCpuVolumeRendering,
-    camera: PlanarViewState | undefined
-  ) {
-    const createSliceBasis = shouldUsePlanarCpuVolumeSliceBasis(
-      rendering.dataPresentation?.interpolationType
-    )
-      ? createPlanarCpuVolumeSliceBasis
-      : createPlanarVolumeSliceBasis;
-
-    return createSliceBasis({
-      viewState: camera,
-      canvasHeight: ctx.cpu.canvas.height,
-      canvasWidth: ctx.cpu.canvas.width,
-      imageIdIndex: resolvePlanarVolumeImageIdIndex({
-        viewState: camera,
-        fallbackImageIdIndex: rendering.currentImageIdIndex,
-      }),
-      imageVolume: rendering.imageVolume,
-      orientation: camera?.orientation,
-    });
   }
 }
 

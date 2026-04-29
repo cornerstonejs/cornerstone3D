@@ -36,6 +36,10 @@ import type {
 } from './PlanarViewportTypes';
 import type { PlanarRendering } from './planarRuntimeTypes';
 
+type PlanarViewResolutionRenderContext = Partial<
+  Pick<PlanarViewportRenderContext, 'cpu' | 'vtk'>
+>;
+
 type BasePlanarResolvedViewState = {
   viewState: PlanarViewState;
   canvasWidth: number;
@@ -308,10 +312,10 @@ class PlanarVolumeResolvedView extends BasePlanarResolvedView<PlanarVolumeResolv
       viewState: this.state.viewState,
       canvasHeight: this.state.canvasHeight,
       canvasWidth: this.state.canvasWidth,
-      imageIdIndex:
-        this.state.viewState.slice?.kind === 'stackIndex'
-          ? this.state.currentImageIdIndex
-          : undefined,
+      imageIdIndex: resolvePlanarVolumeImageIdIndex({
+        viewState: this.state.viewState,
+        fallbackImageIdIndex: this.state.currentImageIdIndex,
+      }),
       imageVolume: this.state.imageVolume,
       orientation: this.state.viewState.orientation,
     }).sliceBasis;
@@ -330,7 +334,7 @@ function getCurrentSliceIndex(rendering: PlanarRendering): number {
 
 export function getPlanarViewStateCanvasDimensions(args: {
   rendering: PlanarRendering;
-  renderContext: PlanarViewportRenderContext;
+  renderContext: PlanarViewResolutionRenderContext;
 }): {
   canvasHeight: number;
   canvasWidth: number;
@@ -341,7 +345,19 @@ export function getPlanarViewStateCanvasDimensions(args: {
     rendering.renderMode === ActorRenderMode.CPU_IMAGE ||
     rendering.renderMode === ActorRenderMode.CPU_VOLUME
   ) {
+    if (!renderContext.cpu) {
+      throw new Error(
+        '[PlanarResolvedView] CPU render paths require a CPU canvas context'
+      );
+    }
+
     return getCanvasCssDimensions(renderContext.cpu.canvas);
+  }
+
+  if (!renderContext.vtk) {
+    throw new Error(
+      '[PlanarResolvedView] VTK render paths require a VTK canvas context'
+    );
   }
 
   return {
@@ -357,7 +373,7 @@ export function resolvePlanarViewportView(args: {
   data?: PlanarPayload;
   frameOfReferenceUID?: string;
   rendering?: PlanarRendering;
-  renderContext: PlanarViewportRenderContext;
+  renderContext: PlanarViewResolutionRenderContext;
   sliceIndex?: number;
 }): PlanarStackResolvedView | PlanarVolumeResolvedView | undefined {
   const { data, frameOfReferenceUID, renderContext, rendering, sliceIndex } =
@@ -456,6 +472,7 @@ export function resolvePlanarViewportView(args: {
 export type {
   BasePlanarResolvedViewState,
   PlanarStackResolvedViewState,
+  PlanarViewResolutionRenderContext,
   PlanarVolumeResolvedViewState,
 };
 export {

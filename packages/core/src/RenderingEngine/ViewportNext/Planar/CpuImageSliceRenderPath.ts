@@ -54,15 +54,14 @@ import {
 } from './planarAdapterCoordinateTransforms';
 import type { DerivedPlanarPresentation } from './planarRenderCamera';
 import {
-  derivePlanarPresentation,
-  resolvePlanarICamera,
-} from './planarRenderCamera';
-import {
   resolvePlanarCpuImageDisplayedArea,
   resolvePlanarCpuViewportScale,
 } from './planarCpuViewportMath';
 import { triggerPlanarNewImage } from './planarImageEvents';
-import { createPlanarCpuImageSliceBasis } from './planarSliceBasis';
+import {
+  resolvePlanarRenderPathProjection,
+  resolvePlanarStackImageIdIndex,
+} from './planarRenderPathProjection';
 
 export class CpuImageSliceRenderPath
   implements RenderPath<PlanarCpuImageAdapterContext>
@@ -174,36 +173,29 @@ export class CpuImageSliceRenderPath
     imageIds: string[]
   ): void {
     const planarCamera = camera as PlanarViewState | undefined;
-    const nextImageIdIndex =
-      planarCamera?.slice?.kind === 'stackIndex'
-        ? planarCamera.slice.imageIdIndex
-        : rendering.currentImageIdIndex;
+    const nextImageIdIndex = resolvePlanarStackImageIdIndex({
+      fallbackImageIdIndex: rendering.currentImageIdIndex,
+      viewState: planarCamera,
+    });
     const image = rendering.enabledElement.image;
 
     ctx.display.activateRenderMode(ActorRenderMode.CPU_IMAGE);
 
     if (image) {
-      const sliceBasis = createPlanarCpuImageSliceBasis({
-        canvasHeight: ctx.cpu.canvas.height,
-        canvasWidth: ctx.cpu.canvas.width,
-        image,
+      const projection = resolvePlanarRenderPathProjection({
+        ctx,
+        dataId,
+        rendering,
+        viewState: planarCamera,
       });
-      const activeSourceICamera = resolvePlanarICamera({
-        sliceBasis,
-        camera: planarCamera,
-        canvasWidth: ctx.cpu.canvas.width,
-        canvasHeight: ctx.cpu.canvas.height,
-      });
-      if (ctx.viewport.isCurrentDataId(dataId)) {
-        ctx.view.activeSourceICamera = activeSourceICamera;
+
+      if (projection) {
+        applyPresentationState(
+          rendering,
+          projection.presentation,
+          projection.resolvedICamera
+        );
       }
-      const presentation = derivePlanarPresentation({
-        sliceBasis,
-        camera: planarCamera,
-        canvasWidth: ctx.cpu.canvas.width,
-        canvasHeight: ctx.cpu.canvas.height,
-      });
-      applyPresentationState(rendering, presentation, activeSourceICamera);
     }
 
     if (nextImageIdIndex === rendering.currentImageIdIndex) {
@@ -357,32 +349,25 @@ export class CpuImageSliceRenderPath
       return;
     }
 
-    const sliceBasis = createPlanarCpuImageSliceBasis({
-      canvasHeight: rendering.enabledElement.canvas.height,
-      canvasWidth: rendering.enabledElement.canvas.width,
-      image,
-    });
-    const activeSourceICamera = resolvePlanarICamera({
-      sliceBasis,
-      camera,
-      canvasWidth: rendering.enabledElement.canvas.width,
-      canvasHeight: rendering.enabledElement.canvas.height,
-    });
-    if (ctx.viewport.isCurrentDataId(dataId)) {
-      ctx.view.activeSourceICamera = activeSourceICamera;
-    }
-    const presentation = derivePlanarPresentation({
-      sliceBasis,
-      camera,
-      canvasWidth: rendering.enabledElement.canvas.width,
-      canvasHeight: rendering.enabledElement.canvas.height,
+    const projection = resolvePlanarRenderPathProjection({
+      ctx,
+      dataId,
+      rendering,
+      viewState: camera,
     });
 
     rendering.fitScale = getCPUFallbackScalarScale(
       getDefaultViewport(rendering.enabledElement.canvas, image).scale
     );
     rendering.renderingInvalidated = true;
-    applyPresentationState(rendering, presentation, activeSourceICamera);
+
+    if (projection) {
+      applyPresentationState(
+        rendering,
+        projection.presentation,
+        projection.resolvedICamera
+      );
+    }
   }
 
   private removeData(
@@ -746,27 +731,21 @@ async function updateRenderedImage(args: {
     .setDerivedImage(image);
 
   applyDataPresentation(rendering, props);
-  const sliceBasis = createPlanarCpuImageSliceBasis({
-    canvasHeight: enabledElement.canvas.height,
-    canvasWidth: enabledElement.canvas.width,
-    image,
+  const projection = resolvePlanarRenderPathProjection({
+    ctx,
+    dataId,
+    rendering,
+    viewState: camera,
   });
-  const activeSourceICamera = resolvePlanarICamera({
-    sliceBasis,
-    camera,
-    canvasWidth: enabledElement.canvas.width,
-    canvasHeight: enabledElement.canvas.height,
-  });
-  if (ctx.viewport.isCurrentDataId(dataId)) {
-    ctx.view.activeSourceICamera = activeSourceICamera;
+
+  if (projection) {
+    applyPresentationState(
+      rendering,
+      projection.presentation,
+      projection.resolvedICamera
+    );
   }
-  const presentation = derivePlanarPresentation({
-    sliceBasis,
-    camera,
-    canvasWidth: enabledElement.canvas.width,
-    canvasHeight: enabledElement.canvas.height,
-  });
-  applyPresentationState(rendering, presentation, activeSourceICamera);
+
   triggerPlanarNewImage(ctx, { image, imageIdIndex });
   // cpuImage is drawn by the Planar viewport itself, not by the rendering
   // engine's VTK pass. The image swap therefore needs an immediate viewport
