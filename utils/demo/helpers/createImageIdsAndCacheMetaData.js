@@ -99,7 +99,7 @@ export default async function createImageIdsAndCacheMetaData({
     const originalImageIds = [...imageIds];
     imageIds = convertMultiframeImageIds(imageIds);
 
-    // For multiframe expansions, store NATURAL for each frame imageId
+    // For multiframe expansions, store NATURALIZED for each frame imageId
     if (useMetadata && imageIds.length !== originalImageIds.length) {
       for (const imageId of imageIds) {
         if (metaData.get('instanceOrig', imageId)) {
@@ -110,7 +110,7 @@ export default async function createImageIdsAndCacheMetaData({
           const baseImageId = imageId.substring(0, frameIdx) + '/frames/1';
           const baseInstance = metaData.get('instanceOrig', baseImageId);
           if (baseInstance) {
-            setCacheData(MetadataModules.NATURAL, imageId, baseInstance);
+            setCacheData(MetadataModules.NATURALIZED, imageId, baseInstance);
           }
         }
       }

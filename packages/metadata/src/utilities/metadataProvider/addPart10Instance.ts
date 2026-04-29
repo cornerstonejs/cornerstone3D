@@ -6,7 +6,7 @@ import { setCacheData } from './cacheData';
 const { AsyncDicomReader } = dcmjs.async;
 
 /**
- * Adds a DICOMweb JSON metadata instance to the NATURAL cache.
+ * Adds a DICOMweb JSON metadata instance to the NATURALIZED cache.
  *
  * Takes hex-tagged DICOMweb JSON (e.g. {"00080060": {vr:"CS", Value:["CT"]}})
  * and converts it to a naturalized instance via MetaDataIterator and
@@ -25,12 +25,12 @@ export function addDicomwebInstance(
   listener.startObject();
   iterator.syncIterator(listener);
   const instance = listener.pop();
-  setCacheData(MetadataModules.NATURAL, imageId, instance);
+  setCacheData(MetadataModules.NATURALIZED, imageId, instance);
   return instance;
 }
 
 /**
- * Adds a binary DICOM Part 10 instance to the NATURAL cache.
+ * Adds a binary DICOM Part 10 instance to the NATURALIZED cache.
  *
  * Parses the ArrayBuffer using dcmjs AsyncDicomReader with
  * NaturalTagListener.createMetadataListener() so that naturalized output
@@ -60,6 +60,6 @@ export async function addPart10Instance(
       ? transferSyntaxUid[0]
       : transferSyntaxUid;
   }
-  setCacheData(MetadataModules.NATURAL, imageId, natural);
+  setCacheData(MetadataModules.NATURALIZED, imageId, natural);
   return natural;
 }

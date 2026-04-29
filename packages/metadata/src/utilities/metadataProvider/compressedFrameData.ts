@@ -194,7 +194,7 @@ const COMPRESSED_FRAME_DATA_TYPE = MetadataModules.COMPRESSED_FRAME_DATA;
 
 /**
  * Typed provider for COMPRESSED_FRAME_DATA. Gets natural metadata via
- * getMetaData(MetadataModules.NATURAL, query); if it has pixel data as Value,
+ * getMetaData(MetadataModules.NATURALIZED, query); if it has pixel data as Value,
  * returns { transferSyntaxUid, frameOfInterest, frameNumber, pixelData }.
  * Otherwise calls next.
  */

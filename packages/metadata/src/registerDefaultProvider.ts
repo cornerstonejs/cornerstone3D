@@ -28,7 +28,7 @@ const TYPED_PROVIDER_BRIDGE_PRIORITY = -1000;
  * - Cache providers for instance, image plane, URI, and frame modules
  * - URI module provider (extracts frame info from imageId URIs)
  * - Data lookup providers (bridge between instance data and specific modules)
- * - Instance provider (bridges INSTANCE to NATURAL)
+ * - Instance provider (bridges INSTANCE to NATURALIZED)
  * - Combine frame provider (handles multiframe instances)
  * - Tag modules (converts instance data to module-specific results)
  * - Image plane calibrated provider
@@ -53,7 +53,7 @@ export function registerDefaultProvider() {
   // Register cache providers
   registerCacheProviders();
 
-  // When NATURAL is queried with imageId that has ?frame=, resolve from base imageId
+  // When NATURALIZED is queried with imageId that has ?frame=, resolve from base imageId
   registerNaturalBaseImageIdFallback();
 
   // Register URI module provider
@@ -62,7 +62,7 @@ export function registerDefaultProvider() {
   // Register data lookup providers
   registerDataLookup();
 
-  // Register INSTANCE → NATURAL bridge
+  // Register INSTANCE → NATURALIZED bridge
   registerInstanceFromListener();
 
   // Register combine frame provider
@@ -86,7 +86,7 @@ export function registerDefaultProvider() {
   // Register transfer syntax provider
   registerTransferSyntaxProvider();
 
-  // Compressed frame data (pixel data from NATURAL) via getMetaData('compressedFrameData', imageId, { frameIndex })
+  // Compressed frame data (pixel data from NATURALIZED) via getMetaData('compressedFrameData', imageId, { frameIndex })
   registerCompressedFrameDataProvider();
 
   // scalingModule from instance (PT: SUV factors; RTDOSE: DoseGridScaling etc.)

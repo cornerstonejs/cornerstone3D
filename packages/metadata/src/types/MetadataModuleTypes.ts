@@ -92,7 +92,7 @@ export interface TransferSyntaxMetadata {
 }
 
 /**
- * Compressed frame data when NATURAL has pixel data as a Value.
+ * Compressed frame data when NATURALIZED has pixel data as a Value.
  * pixelData may be a single buffer or an array of per-frame data.
  */
 export interface CompressedFrameDataMetadata {

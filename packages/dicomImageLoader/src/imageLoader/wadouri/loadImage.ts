@@ -17,6 +17,7 @@ import parseImageId from './parseImageId';
 const { ImageQualityStatus } = Enums;
 
 const { addPart10Instance } = utilities;
+const NATURALIZED = MetadataEnums.MetadataModules.NATURALIZED;
 
 // add a decache callback function to clear out our dataSetCacheManager
 function addDecache(imageLoadObject: Types.IImageLoadObject, imageId: string) {
@@ -235,15 +236,7 @@ function loadImageFromNaturalizedMetadata(
       }
     );
 
-    const NATURAL = MetadataEnums.MetadataModules.NATURAL;
-    const NATURALIZED =
-      (MetadataEnums.MetadataModules as Record<string, string>).NATURALIZED ||
-      NATURAL;
-    const getNaturalizedMetadata = () =>
-      metaData.get(NATURALIZED, imageId) ||
-      (NATURALIZED !== NATURAL ? metaData.get(NATURAL, imageId) : undefined);
-
-    let natural = getNaturalizedMetadata();
+    let natural = metaData.get(NATURALIZED, imageId);
     if (!natural) {
       console.log(
         '[dicomImageLoader/wadouri] loadImageFromNaturalizedMetadata: no NATURALIZED metadata, attempting to fetch and populate',
@@ -263,7 +256,7 @@ function loadImageFromNaturalizedMetadata(
       // Store NATURALIZED under base imageId (no ?frame=) so registration happens once per URL
       const baseImageId = `${parsedImageId.scheme}:${parsedImageId.url}`;
       await addPart10Instance(baseImageId, arrayBuffer);
-      natural = getNaturalizedMetadata();
+      natural = metaData.get(NATURALIZED, imageId);
     }
 
     const loadEnd = Date.now();

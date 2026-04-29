@@ -80,9 +80,10 @@ export function addCacheForType(type: string, options?) {
 }
 
 export function registerCacheProviders() {
-  addCacheForType(MetadataModules.NATURAL);
+  addCacheForType(MetadataModules.NATURALIZED);
   addCacheForType(MetadataModules.INSTANCE);
   addCacheForType(MetadataModules.URI_MODULE);
   addCacheForType(MetadataModules.IMAGE_PLANE);
   addCacheForType(MetadataModules.FRAME_MODULE);
+  addCacheForType(MetadataModules.GENERAL_MODULE);
 }

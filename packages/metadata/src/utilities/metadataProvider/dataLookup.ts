@@ -13,14 +13,14 @@ export function dataLookup(dataType: string) {
 
 /** The data lookup for the instance module */
 export const instanceLookup = dataLookup(MetadataModules.INSTANCE);
-export const naturalLookup = dataLookup(MetadataModules.NATURAL);
+export const naturalLookup = dataLookup(MetadataModules.NATURALIZED);
 
 export const DATA_PRIORITY = { priority: 5000 };
 
 export function registerDataLookup() {
   addTypedProvider(
     MetadataModules.INSTANCE,
-    dataLookup(MetadataModules.NATURAL),
+    dataLookup(MetadataModules.NATURALIZED),
     DATA_PRIORITY
   );
 
@@ -34,6 +34,6 @@ export function registerDataLookup() {
     DATA_PRIORITY
   );
 
-  // Scaling uses NATURAL (multiframe, no per-frame scaling); provider receives data from this lookup
+  // Scaling uses NATURALIZED (multiframe, no per-frame scaling); provider receives data from this lookup
   addTypedProvider(MetadataModules.SCALING, naturalLookup, DATA_PRIORITY);
 }

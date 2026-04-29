@@ -181,7 +181,7 @@ enum MetadataModules {
 
   /**
    * Compressed frame data: transferSyntaxUid, frameOfInterest, frameNumber,
-   * and pixelData (from NATURAL when available). Use getMetaData(MetadataModules.COMPRESSED_FRAME_DATA, imageId, { frameIndex }).
+   * and pixelData (from NATURALIZED when available). Use getMetaData(MetadataModules.COMPRESSED_FRAME_DATA, imageId, { frameIndex }).
    */
   COMPRESSED_FRAME_DATA = 'compressedFrameData',
 
@@ -205,7 +205,7 @@ enum MetadataModules {
    * Every frame of a multiframe should have the same natural value.
    * The per-frame data object is generated from the natural value object - see INSTANCE
    */
-  NATURAL = 'natural',
+  NATURALIZED = 'naturalized',
 }
 
 export default MetadataModules;
