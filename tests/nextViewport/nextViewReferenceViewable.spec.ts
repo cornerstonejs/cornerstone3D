@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { createExampleUrl } from '../utils/index';
 
 const EXAMPLE = 'nextStackAPI';
 const RENDERING_ENGINE_ID = 'myRenderingEngine';
@@ -50,7 +51,7 @@ type ReferenceCompatibilityJson = {
 };
 
 test.beforeEach(async ({ page }) => {
-  await page.goto(`http://localhost:3333/${EXAMPLE}.html`);
+  await page.goto(createExampleUrl(EXAMPLE + '.html').toString());
   await page.waitForLoadState('domcontentloaded');
   await page.waitForSelector('#cornerstone-element canvas:visible', {
     state: 'visible',

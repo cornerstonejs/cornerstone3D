@@ -33,7 +33,10 @@ import {
   applyPlanarICameraToActor,
   applyPlanarICameraToRenderer,
 } from './planarRenderCamera';
-import { resolvePlanarRenderPathProjection } from './planarRenderPathProjection';
+import {
+  getPlanarRenderPathActiveSourceICamera,
+  resolvePlanarRenderPathProjection,
+} from './planarRenderPathProjection';
 import { applyPlanarVolumePresentation } from './planarVolumePresentation';
 
 const SLICE_OVERLAY_DEPTH_EPSILON = 1e-4;
@@ -163,14 +166,16 @@ export class VtkVolumeSliceRenderPath
       mapper: rendering.mapper,
       props: rendering.dataPresentation,
     });
-    updateVolumeSlicePlane(rendering.mapper, ctx.view.activeSourceICamera);
+    const activeSourceICamera = getPlanarRenderPathActiveSourceICamera(ctx);
+
+    updateVolumeSlicePlane(rendering.mapper, activeSourceICamera);
     applyPlanarICameraToActor({
       actor: rendering.actor,
-      activeSourceICamera: ctx.view.activeSourceICamera,
+      activeSourceICamera,
     });
     updateVolumeSliceActorDepthOffset(
       rendering.actor,
-      ctx.view.activeSourceICamera,
+      activeSourceICamera,
       rendering.overlayOrder
     );
     ctx.vtk.renderer.resetCameraClippingRange();

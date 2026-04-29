@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import {
+  createExampleUrl,
   checkForScreenshot,
   expectViewportNextRuntime,
   getVisibleViewportCanvas,
@@ -23,7 +24,7 @@ function navigateToExample(
       waitForCanvas = true,
       waitForNetworkIdle = false,
     } = options;
-    const url = new URL(`http://localhost:3333/${EXAMPLE}.html`);
+    const url = createExampleUrl(EXAMPLE + '.html');
 
     if (params) {
       for (const [key, value] of Object.entries(params)) {

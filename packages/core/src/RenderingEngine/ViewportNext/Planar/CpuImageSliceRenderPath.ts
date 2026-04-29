@@ -47,11 +47,6 @@ import type {
   PlanarViewportRenderContext,
 } from './PlanarViewportTypes';
 import type { PlanarCpuImageRendering } from './planarRuntimeTypes';
-import {
-  canvasToWorldPlanarViewState,
-  getCanvasCssDimensions,
-  worldToCanvasPlanarViewState,
-} from './planarAdapterCoordinateTransforms';
 import type { DerivedPlanarPresentation } from './planarRenderCamera';
 import {
   resolvePlanarCpuImageDisplayedArea,
@@ -59,8 +54,10 @@ import {
 } from './planarCpuViewportMath';
 import { triggerPlanarNewImage } from './planarImageEvents';
 import {
+  canvasToWorldPlanarRenderPathProjection,
+  resolvePlanarRenderPathCurrentImageIdIndex,
   resolvePlanarRenderPathProjection,
-  resolvePlanarStackImageIdIndex,
+  worldToCanvasPlanarRenderPathProjection,
 } from './planarRenderPathProjection';
 
 export class CpuImageSliceRenderPath
@@ -173,29 +170,31 @@ export class CpuImageSliceRenderPath
     imageIds: string[]
   ): void {
     const planarCamera = camera as PlanarViewState | undefined;
-    const nextImageIdIndex = resolvePlanarStackImageIdIndex({
-      fallbackImageIdIndex: rendering.currentImageIdIndex,
-      viewState: planarCamera,
-    });
     const image = rendering.enabledElement.image;
 
     ctx.display.activateRenderMode(ActorRenderMode.CPU_IMAGE);
 
-    if (image) {
-      const projection = resolvePlanarRenderPathProjection({
-        ctx,
-        dataId,
-        rendering,
-        viewState: planarCamera,
-      });
-
-      if (projection) {
-        applyPresentationState(
+    const projection = image
+      ? resolvePlanarRenderPathProjection({
+          ctx,
+          dataId,
+          imageIds,
           rendering,
-          projection.presentation,
-          projection.resolvedICamera
-        );
-      }
+          viewState: planarCamera,
+        })
+      : undefined;
+    const nextImageIdIndex = resolvePlanarRenderPathCurrentImageIdIndex({
+      projection,
+      rendering,
+      viewState: planarCamera,
+    });
+
+    if (projection) {
+      applyPresentationState(
+        rendering,
+        projection.presentation,
+        projection.resolvedICamera
+      );
     }
 
     if (nextImageIdIndex === rendering.currentImageIdIndex) {
@@ -229,32 +228,10 @@ export class CpuImageSliceRenderPath
     rendering: PlanarCpuImageRendering,
     canvasPos: Point2
   ): Point3 {
-    const activeSourceICamera = ctx.view.activeSourceICamera;
-
-    if (
-      !activeSourceICamera?.focalPoint ||
-      !activeSourceICamera.parallelScale ||
-      !activeSourceICamera.viewPlaneNormal ||
-      !activeSourceICamera.viewUp
-    ) {
-      return [0, 0, 0];
-    }
-
-    const { canvasWidth, canvasHeight } = getCanvasCssDimensions(
-      ctx.cpu.canvas
-    );
-
-    return canvasToWorldPlanarViewState({
-      camera: {
-        focalPoint: activeSourceICamera.focalPoint,
-        parallelScale: activeSourceICamera.parallelScale,
-        presentationScale: activeSourceICamera.presentationScale,
-        viewPlaneNormal: activeSourceICamera.viewPlaneNormal,
-        viewUp: activeSourceICamera.viewUp,
-      },
-      canvasWidth,
-      canvasHeight,
+    return canvasToWorldPlanarRenderPathProjection({
+      canvas: ctx.cpu.canvas,
       canvasPos,
+      ctx,
     });
   }
 
@@ -263,31 +240,9 @@ export class CpuImageSliceRenderPath
     rendering: PlanarCpuImageRendering,
     worldPos: Point3
   ): Point2 {
-    const activeSourceICamera = ctx.view.activeSourceICamera;
-
-    if (
-      !activeSourceICamera?.focalPoint ||
-      !activeSourceICamera.parallelScale ||
-      !activeSourceICamera.viewPlaneNormal ||
-      !activeSourceICamera.viewUp
-    ) {
-      return [0, 0];
-    }
-
-    const { canvasWidth, canvasHeight } = getCanvasCssDimensions(
-      ctx.cpu.canvas
-    );
-
-    return worldToCanvasPlanarViewState({
-      camera: {
-        focalPoint: activeSourceICamera.focalPoint,
-        parallelScale: activeSourceICamera.parallelScale,
-        presentationScale: activeSourceICamera.presentationScale,
-        viewPlaneNormal: activeSourceICamera.viewPlaneNormal,
-        viewUp: activeSourceICamera.viewUp,
-      },
-      canvasWidth,
-      canvasHeight,
+    return worldToCanvasPlanarRenderPathProjection({
+      canvas: ctx.cpu.canvas,
+      ctx,
       worldPos,
     });
   }

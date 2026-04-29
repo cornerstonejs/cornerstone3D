@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import {
+  createExampleUrl,
   checkForScreenshot,
   expectViewportNextRuntime,
   screenShotPaths,
@@ -98,7 +99,7 @@ const screenshotCases = [
 ];
 
 test.beforeEach(async ({ page }) => {
-  await page.goto(`http://localhost:3333/${EXAMPLE}.html`);
+  await page.goto(createExampleUrl(EXAMPLE + '.html').toString());
   await page.waitForLoadState('domcontentloaded');
   await page.locator(STACK_POSITION_ELEMENT).waitFor({ state: 'visible' });
   await page.locator(DISPLAY_AREA_DROPDOWN).first().waitFor({

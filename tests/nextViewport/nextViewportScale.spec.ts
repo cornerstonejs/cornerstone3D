@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import {
+  createExampleUrl,
   checkForScreenshot,
   expectViewportNextRuntime,
   screenShotPaths,
@@ -28,7 +29,7 @@ test.skip(
 test.beforeEach(async ({ page }) => {
   await setupRenderTracking(page);
   await page.setViewportSize({ width: 1500, height: 900 });
-  await page.goto(`http://localhost:3333/${EXAMPLE}.html`);
+  await page.goto(createExampleUrl(EXAMPLE + '.html').toString());
   await page.waitForLoadState('domcontentloaded');
   await page.locator(SCALE_ROW).waitFor({ state: 'visible' });
   await page.waitForSelector(`${SCALE_ROW} canvas:visible`, {

@@ -44,8 +44,8 @@ import {
   applyPlanarICameraToRenderer,
 } from './planarRenderCamera';
 import {
+  resolvePlanarRenderPathCurrentImageIdIndex,
   resolvePlanarRenderPathProjection,
-  resolvePlanarStackImageIdIndex,
 } from './planarRenderPathProjection';
 
 export class VtkImageMapperRenderPath
@@ -147,10 +147,6 @@ export class VtkImageMapperRenderPath
     imageIds: string[]
   ): void {
     const planarCamera = camera as PlanarViewState | undefined;
-    const nextImageIdIndex = resolvePlanarStackImageIdIndex({
-      fallbackImageIdIndex: rendering.currentImageIdIndex,
-      viewState: planarCamera,
-    });
 
     ctx.display.activateRenderMode(ActorRenderMode.VTK_IMAGE);
 
@@ -161,6 +157,12 @@ export class VtkImageMapperRenderPath
     const projection = resolvePlanarRenderPathProjection({
       ctx,
       dataId,
+      imageIds,
+      rendering,
+      viewState: planarCamera,
+    });
+    const nextImageIdIndex = resolvePlanarRenderPathCurrentImageIdIndex({
+      projection,
       rendering,
       viewState: planarCamera,
     });

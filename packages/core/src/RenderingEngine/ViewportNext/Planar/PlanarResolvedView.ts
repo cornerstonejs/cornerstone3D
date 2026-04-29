@@ -61,6 +61,17 @@ type PlanarVolumeResolvedViewState = BasePlanarResolvedViewState & {
   usePixelGridCenter: boolean;
 };
 
+export function resolvePlanarStackImageIdIndex(args: {
+  fallbackImageIdIndex: number;
+  viewState?: PlanarViewState;
+}): number {
+  const { fallbackImageIdIndex, viewState } = args;
+
+  return viewState?.slice?.kind === 'stackIndex'
+    ? viewState.slice.imageIdIndex
+    : fallbackImageIdIndex;
+}
+
 function clonePoint2(point: Point2): Point2 {
   return [point[0], point[1]];
 }
@@ -372,12 +383,19 @@ export function resolvePlanarViewportView(args: {
   viewState: PlanarViewState;
   data?: PlanarPayload;
   frameOfReferenceUID?: string;
+  imageIds?: string[];
   rendering?: PlanarRendering;
   renderContext: PlanarViewResolutionRenderContext;
   sliceIndex?: number;
 }): PlanarStackResolvedView | PlanarVolumeResolvedView | undefined {
-  const { data, frameOfReferenceUID, renderContext, rendering, sliceIndex } =
-    args;
+  const {
+    data,
+    frameOfReferenceUID,
+    imageIds,
+    renderContext,
+    rendering,
+    sliceIndex,
+  } = args;
 
   if (!rendering) {
     return;
@@ -402,17 +420,24 @@ export function resolvePlanarViewportView(args: {
       return;
     }
 
+    const currentImageIdIndex = resolvePlanarStackImageIdIndex({
+      fallbackImageIdIndex: getCurrentSliceIndex(rendering),
+      viewState: requestedViewState,
+    });
+    const imageIdCount = imageIds?.length ?? data?.imageIds.length;
+    const maxImageIdIndex =
+      typeof imageIdCount === 'number' && imageIdCount > 0
+        ? imageIdCount - 1
+        : Math.max(currentImageIdIndex, getCurrentSliceIndex(rendering), 0);
+
     return new PlanarStackResolvedView({
       viewState: requestedViewState,
       canvasHeight,
       canvasWidth,
-      currentImageIdIndex: getCurrentSliceIndex(rendering),
+      currentImageIdIndex,
       frameOfReferenceUID,
       image,
-      maxImageIdIndex: Math.max(
-        rendering.currentImageIdIndex,
-        (data?.imageIds.length || 1) - 1
-      ),
+      maxImageIdIndex,
       usePixelGridCenter: rendering.renderMode === ActorRenderMode.CPU_IMAGE,
     });
   }

@@ -28,13 +28,13 @@ import type {
 } from './PlanarViewportTypes';
 import type { PlanarCpuVolumeRendering } from './planarRuntimeTypes';
 import PlanarCPUVolumeSampler from './PlanarCPUVolumeSampler';
-import {
-  canvasToWorldPlanarViewState,
-  getCanvasCssDimensions,
-  worldToCanvasPlanarViewState,
-} from './planarAdapterCoordinateTransforms';
 import { triggerPlanarVolumeNewImage } from './planarImageEvents';
-import { resolvePlanarRenderPathProjection } from './planarRenderPathProjection';
+import {
+  canvasToWorldPlanarRenderPathProjection,
+  getPlanarRenderPathActiveSourceICamera,
+  resolvePlanarRenderPathProjection,
+  worldToCanvasPlanarRenderPathProjection,
+} from './planarRenderPathProjection';
 
 export class CpuVolumeSliceRenderPath
   implements RenderPath<PlanarCpuVolumeAdapterContext>
@@ -297,32 +297,10 @@ export class CpuVolumeSliceRenderPath
     rendering: PlanarCpuVolumeRendering,
     canvasPos: Point2
   ): Point3 {
-    const activeSourceICamera = ctx.view.activeSourceICamera;
-
-    if (
-      !activeSourceICamera?.focalPoint ||
-      !activeSourceICamera.parallelScale ||
-      !activeSourceICamera.viewPlaneNormal ||
-      !activeSourceICamera.viewUp
-    ) {
-      return [0, 0, 0];
-    }
-
-    const { canvasWidth, canvasHeight } = getCanvasCssDimensions(
-      ctx.cpu.canvas
-    );
-
-    return canvasToWorldPlanarViewState({
-      camera: {
-        focalPoint: activeSourceICamera.focalPoint,
-        parallelScale: activeSourceICamera.parallelScale,
-        presentationScale: activeSourceICamera.presentationScale,
-        viewPlaneNormal: activeSourceICamera.viewPlaneNormal,
-        viewUp: activeSourceICamera.viewUp,
-      },
-      canvasWidth,
-      canvasHeight,
+    return canvasToWorldPlanarRenderPathProjection({
+      canvas: ctx.cpu.canvas,
       canvasPos,
+      ctx,
     });
   }
 
@@ -331,31 +309,9 @@ export class CpuVolumeSliceRenderPath
     rendering: PlanarCpuVolumeRendering,
     worldPos: Point3
   ): Point2 {
-    const activeSourceICamera = ctx.view.activeSourceICamera;
-
-    if (
-      !activeSourceICamera?.focalPoint ||
-      !activeSourceICamera.parallelScale ||
-      !activeSourceICamera.viewPlaneNormal ||
-      !activeSourceICamera.viewUp
-    ) {
-      return [0, 0];
-    }
-
-    const { canvasWidth, canvasHeight } = getCanvasCssDimensions(
-      ctx.cpu.canvas
-    );
-
-    return worldToCanvasPlanarViewState({
-      camera: {
-        focalPoint: activeSourceICamera.focalPoint,
-        parallelScale: activeSourceICamera.parallelScale,
-        presentationScale: activeSourceICamera.presentationScale,
-        viewPlaneNormal: activeSourceICamera.viewPlaneNormal,
-        viewUp: activeSourceICamera.viewUp,
-      },
-      canvasWidth,
-      canvasHeight,
+    return worldToCanvasPlanarRenderPathProjection({
+      canvas: ctx.cpu.canvas,
+      ctx,
       worldPos,
     });
   }
@@ -410,7 +366,7 @@ export class CpuVolumeSliceRenderPath
       return;
     }
 
-    const activeSourceICamera = ctx.view.activeSourceICamera;
+    const activeSourceICamera = getPlanarRenderPathActiveSourceICamera(ctx);
 
     if (!activeSourceICamera) {
       return;

@@ -1,5 +1,12 @@
-import type { Point2 } from '../../../types';
+import { ActorRenderMode } from '../../../types';
+import type { Point2, Point3 } from '../../../types';
 import {
+  canvasToWorldPlanarViewState,
+  getCanvasCssDimensions,
+  worldToCanvasPlanarViewState,
+} from './planarAdapterCoordinateTransforms';
+import {
+  resolvePlanarStackImageIdIndex,
   resolvePlanarViewportView,
   type PlanarViewResolutionRenderContext,
 } from './PlanarResolvedView';
@@ -23,6 +30,14 @@ type PlanarProjectionResolvedView = NonNullable<
   ReturnType<typeof resolvePlanarViewportView>
 >;
 
+export type PlanarRenderPathProjectionCamera = PlanarResolvedICamera &
+  Required<
+    Pick<
+      PlanarResolvedICamera,
+      'focalPoint' | 'parallelScale' | 'viewPlaneNormal' | 'viewUp'
+    >
+  >;
+
 export interface PlanarRenderPathProjection {
   activeSourceICamera: PlanarResolvedICamera;
   currentImageIdIndex: number;
@@ -33,15 +48,89 @@ export interface PlanarRenderPathProjection {
   resolvedView: PlanarProjectionResolvedView;
 }
 
-export function resolvePlanarStackImageIdIndex(args: {
-  fallbackImageIdIndex: number;
+export { resolvePlanarStackImageIdIndex };
+
+export function resolvePlanarRenderPathCurrentImageIdIndex(args: {
+  projection?: PlanarRenderPathProjection;
+  rendering: Pick<PlanarRendering, 'currentImageIdIndex' | 'renderMode'>;
   viewState?: PlanarViewState;
 }): number {
-  const { fallbackImageIdIndex, viewState } = args;
+  const { projection, rendering, viewState } = args;
 
-  return viewState?.slice?.kind === 'stackIndex'
-    ? viewState.slice.imageIdIndex
-    : fallbackImageIdIndex;
+  if (projection) {
+    return projection.currentImageIdIndex;
+  }
+
+  if (
+    rendering.renderMode === ActorRenderMode.CPU_IMAGE ||
+    rendering.renderMode === ActorRenderMode.VTK_IMAGE
+  ) {
+    return resolvePlanarStackImageIdIndex({
+      fallbackImageIdIndex: rendering.currentImageIdIndex,
+      viewState,
+    });
+  }
+
+  return rendering.currentImageIdIndex;
+}
+
+export function getPlanarRenderPathActiveSourceICamera(args: {
+  view: PlanarActiveViewRuntime;
+}): PlanarRenderPathProjectionCamera | undefined {
+  const activeSourceICamera = args.view.activeSourceICamera;
+
+  if (
+    !activeSourceICamera?.focalPoint ||
+    typeof activeSourceICamera.parallelScale !== 'number' ||
+    !activeSourceICamera.viewPlaneNormal ||
+    !activeSourceICamera.viewUp
+  ) {
+    return;
+  }
+
+  return activeSourceICamera as PlanarRenderPathProjectionCamera;
+}
+
+export function canvasToWorldPlanarRenderPathProjection(args: {
+  canvas: HTMLCanvasElement;
+  canvasPos: Point2;
+  ctx: Pick<PlanarRenderPathProjectionContext, 'view'>;
+}): Point3 {
+  const activeSourceICamera = getPlanarRenderPathActiveSourceICamera(args.ctx);
+
+  if (!activeSourceICamera) {
+    return [0, 0, 0];
+  }
+
+  const { canvasWidth, canvasHeight } = getCanvasCssDimensions(args.canvas);
+
+  return canvasToWorldPlanarViewState({
+    camera: activeSourceICamera,
+    canvasWidth,
+    canvasHeight,
+    canvasPos: args.canvasPos,
+  });
+}
+
+export function worldToCanvasPlanarRenderPathProjection(args: {
+  canvas: HTMLCanvasElement;
+  ctx: Pick<PlanarRenderPathProjectionContext, 'view'>;
+  worldPos: Point3;
+}): Point2 {
+  const activeSourceICamera = getPlanarRenderPathActiveSourceICamera(args.ctx);
+
+  if (!activeSourceICamera) {
+    return [0, 0];
+  }
+
+  const { canvasWidth, canvasHeight } = getCanvasCssDimensions(args.canvas);
+
+  return worldToCanvasPlanarViewState({
+    camera: activeSourceICamera,
+    canvasWidth,
+    canvasHeight,
+    worldPos: args.worldPos,
+  });
 }
 
 export function resolvePlanarRenderPathProjection(args: {
@@ -49,6 +138,7 @@ export function resolvePlanarRenderPathProjection(args: {
   data?: PlanarPayload;
   dataId: string;
   frameOfReferenceUID?: string;
+  imageIds?: string[];
   rendering: PlanarRendering;
   sliceIndex?: number;
   viewState?: PlanarViewState;
@@ -58,6 +148,7 @@ export function resolvePlanarRenderPathProjection(args: {
     data,
     dataId,
     frameOfReferenceUID,
+    imageIds,
     rendering,
     sliceIndex,
     viewState = {},
@@ -66,6 +157,7 @@ export function resolvePlanarRenderPathProjection(args: {
     viewState,
     data,
     frameOfReferenceUID,
+    imageIds,
     rendering,
     renderContext: ctx,
     sliceIndex,
@@ -82,10 +174,12 @@ export function resolvePlanarRenderPathProjection(args: {
     ctx.view.activeSourceICamera = resolvedICamera;
   }
 
+  const activeSourceICamera = isSourceBinding
+    ? resolvedICamera
+    : getPlanarRenderPathActiveSourceICamera(ctx) || resolvedICamera;
+
   return {
-    activeSourceICamera: isSourceBinding
-      ? resolvedICamera
-      : ctx.view.activeSourceICamera || resolvedICamera,
+    activeSourceICamera,
     currentImageIdIndex: resolvedView.state.currentImageIdIndex,
     isSourceBinding,
     maxImageIdIndex: resolvedView.state.maxImageIdIndex,

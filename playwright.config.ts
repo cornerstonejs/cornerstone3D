@@ -9,6 +9,11 @@ const reuseExistingServer =
 
 const video =
   process.env.PLAYWRIGHT_VIDEO === 'off' ? 'off' : 'retain-on-failure';
+const playwrightPort = Number(process.env.PLAYWRIGHT_PORT || 3333);
+const playwrightBaseURL =
+  process.env.PLAYWRIGHT_BASE_URL ||
+  process.env.PLAYWRIGHT_EXAMPLE_BASE_URL ||
+  `http://localhost:${playwrightPort}`;
 
 const useBundledChromium =
   process.env.PLAYWRIGHT_USE_BUNDLED_CHROMIUM === 'true' ||
@@ -45,7 +50,7 @@ export default defineConfig({
     ],
   ],
   use: {
-    baseURL: 'http://localhost:3333',
+    baseURL: playwrightBaseURL,
     actionTimeout: 5000,
     trace: 'on-first-retry',
     video,
@@ -108,8 +113,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npx serve .static-examples --listen 3333',
-    url: 'http://localhost:3333',
+    command: `npx serve .static-examples --listen ${playwrightPort}`,
+    url: playwrightBaseURL,
     reuseExistingServer,
     gracefulShutdown: {
       signal: 'SIGTERM',
