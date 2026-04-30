@@ -10,10 +10,18 @@ import type ViewportType from '../../enums/ViewportType';
 export class DefaultRenderPathResolver implements RenderPathResolver {
   private paths: RenderPathDefinition[] = [];
 
+  constructor(paths: ReadonlyArray<RenderPathDefinition> = []) {
+    paths.forEach((path) => this.add(path));
+  }
+
   register<
     TRootContext extends BaseViewportRenderContext,
     TAdapterContext extends BaseViewportRenderContext,
   >(path: RenderPathDefinition<TRootContext, TAdapterContext>): void {
+    this.add(path);
+  }
+
+  private add(path: RenderPathDefinition): void {
     const existingPath = this.paths.find(
       (candidate) => candidate.id === path.id
     );

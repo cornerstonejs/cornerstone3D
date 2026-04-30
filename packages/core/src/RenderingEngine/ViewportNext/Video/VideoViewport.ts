@@ -1,4 +1,3 @@
-import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
 import ViewportNext from '../ViewportNext';
 import type {
   Point2,
@@ -14,7 +13,6 @@ import {
 } from '../../../utilities/VideoUtilities';
 import { generateFrameImageId } from '../../../utilities/splitImageIdsBy4DTags';
 import { DefaultVideoDataProvider } from './DefaultVideoDataProvider';
-import { HtmlVideoPath } from './HtmlVideoRenderPath';
 import type {
   LoadedData,
   ViewportDataBinding,
@@ -33,9 +31,8 @@ import {
   createDefaultVideoCamera,
   normalizeVideoCamera,
 } from './videoViewportCamera';
+import { createVideoRenderPathResolver } from './VideoRenderPathResolver';
 import VideoResolvedView from './VideoResolvedView';
-
-defaultRenderPathResolver.register(new HtmlVideoPath());
 
 class VideoViewport extends ViewportNext<
   VideoCamera,
@@ -67,7 +64,7 @@ class VideoViewport extends ViewportNext<
     this.element.style.background = this.element.style.background || '#000';
     this.dataProvider = args.dataProvider || new DefaultVideoDataProvider();
     this.renderPathResolver =
-      args.renderPathResolver || defaultRenderPathResolver;
+      args.renderPathResolver || createVideoRenderPathResolver();
     this.renderContext = {
       viewportId: this.id,
       renderingEngineId: this.renderingEngineId,

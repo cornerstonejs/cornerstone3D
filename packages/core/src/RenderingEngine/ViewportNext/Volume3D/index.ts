@@ -7,6 +7,10 @@ export {
   VtkVolume3DPath,
   VtkVolume3DRenderPath,
 } from './VtkVolume3DRenderPath';
+export {
+  createDefaultVolume3DRenderPaths,
+  createVolume3DRenderPathResolver,
+} from './Volume3DRenderPathResolver';
 export { default as Volume3DResolvedView } from './Volume3DResolvedView';
 export { default } from './3dViewport';
 export type {

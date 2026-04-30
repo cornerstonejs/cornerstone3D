@@ -13,7 +13,6 @@ import type {
   WSIMapViewLike,
   WSIViewerLike,
 } from '../../../utilities/WSIUtilities';
-import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
 import type {
   LoadedData,
   ViewportDataBinding,
@@ -21,7 +20,7 @@ import type {
 import ViewportNext from '../ViewportNext';
 import type { ViewportNextReferenceContext } from '../viewportNextReferenceCompatibility';
 import { DefaultWSIDataProvider } from './DefaultWSIDataProvider';
-import { DicomMicroscopyPath } from './DicomMicroscopyRenderPath';
+import { createWSIRenderPathResolver } from './WSIRenderPathResolver';
 import type {
   WSIDataPresentation,
   WSIPayload,
@@ -38,8 +37,6 @@ import {
   worldToIndexWSIMetadata,
 } from './wsiTransformUtils';
 import WSIResolvedView from './WSIResolvedView';
-
-defaultRenderPathResolver.register(new DicomMicroscopyPath());
 
 export default class WSIViewport extends ViewportNext<
   WSIViewState,
@@ -70,7 +67,7 @@ export default class WSIViewport extends ViewportNext<
     this.element.style.background = this.element.style.background || '#000';
     this.dataProvider = args.dataProvider || new DefaultWSIDataProvider();
     this.renderPathResolver =
-      args.renderPathResolver || defaultRenderPathResolver;
+      args.renderPathResolver || createWSIRenderPathResolver();
     this.renderContext = {
       viewportId: this.id,
       renderingEngineId: this.renderingEngineId,

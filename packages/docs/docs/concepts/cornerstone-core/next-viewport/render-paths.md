@@ -25,9 +25,9 @@ Examples include:
 Render path selection starts from the requested viewport type, logical data,
 dataset shape, requested orientation, and rendering configuration. A
 viewport-specific decision service chooses the effective path, then the
-`RenderPathResolver` returns the first registered path that matches the loaded
-data and internal decision. The selected path can also narrow the root viewport
-render context into the runtime context it needs.
+viewport family's render path resolver returns the first catalogued path that
+matches the loaded data and internal decision. The selected path can also
+narrow the root viewport render context into the runtime context it needs.
 
 For planar viewports, stack-like image ids select an image path, while
 volume-backed data and reformatted orientations select a volume slice path.
@@ -70,6 +70,8 @@ When adding a new render path:
 
 - Match only the data type and internal render-path decision the path can
   actually draw.
+- Add the path definition to the owning viewport family's render path catalogue
+  so production setup is explicit.
 - Keep persistent navigation state on the viewport.
 - Implement `applyViewState()` as a projection from semantic state to runtime
   commands.

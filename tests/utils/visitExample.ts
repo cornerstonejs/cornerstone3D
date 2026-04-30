@@ -14,7 +14,7 @@ async function waitForExamplePage(
   waitForNetwork: boolean,
   waitForDom: boolean
 ) {
-  await page.waitForSelector('div#content');
+  await page.waitForSelector('div#content', { timeout: 30000 });
 
   if (waitForNetwork) {
     try {

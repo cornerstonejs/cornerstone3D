@@ -40,7 +40,6 @@ import type {
   LoadedData,
   ViewportDataReference,
 } from '../ViewportArchitectureTypes';
-import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
 import ViewportNext from '../ViewportNext';
 import {
   getDimensionGroupReferenceContext,
@@ -50,11 +49,8 @@ import {
   getViewportNextImageDataSet,
   isViewportNextImageDataSet,
 } from '../viewportNextDataSetAccess';
-import { CpuImageSlicePath } from './CpuImageSliceRenderPath';
-import { CpuVolumeSlicePath } from './CpuVolumeSliceRenderPath';
 import { DefaultPlanarDataProvider } from './DefaultPlanarDataProvider';
-import { VtkImageMapperPath } from './VtkImageMapperRenderPath';
-import { VtkVolumeSlicePath } from './VtkVolumeSliceRenderPath';
+import { createPlanarRenderPathResolver } from './PlanarRenderPathResolver';
 import {
   normalizePlanarOrientation,
   selectPlanarRenderPath,
@@ -109,11 +105,6 @@ import type {
   PlanarViewportInput,
   PlanarViewportInputOptions,
 } from './PlanarViewportTypes';
-
-defaultRenderPathResolver.register(new CpuImageSlicePath());
-defaultRenderPathResolver.register(new CpuVolumeSlicePath());
-defaultRenderPathResolver.register(new VtkImageMapperPath());
-defaultRenderPathResolver.register(new VtkVolumeSlicePath());
 
 type PlanarSetOrientationInput =
   | OrientationAxis.ACQUISITION
@@ -176,7 +167,7 @@ class PlanarViewport extends ViewportNext<
     this.worldToCanvas = this.worldToCanvas.bind(this);
     this.dataProvider = args.dataProvider || new DefaultPlanarDataProvider();
     this.renderPathResolver =
-      args.renderPathResolver || defaultRenderPathResolver;
+      args.renderPathResolver || createPlanarRenderPathResolver();
     const renderingEngine = renderingEngineCache.get(this.renderingEngineId);
     const renderer = renderingEngine?.getRenderer(this.id);
 

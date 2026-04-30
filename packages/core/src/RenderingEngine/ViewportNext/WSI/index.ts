@@ -3,6 +3,10 @@ export {
   DicomMicroscopyPath,
   DicomMicroscopyRenderPath,
 } from './DicomMicroscopyRenderPath';
+export {
+  createDefaultWSIRenderPaths,
+  createWSIRenderPathResolver,
+} from './WSIRenderPathResolver';
 export { default as WSIResolvedView } from './WSIResolvedView';
 export { default } from './WSIViewport';
 export type {

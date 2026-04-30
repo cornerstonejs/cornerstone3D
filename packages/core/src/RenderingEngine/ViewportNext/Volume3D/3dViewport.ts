@@ -15,7 +15,6 @@ import type {
   LoadedData,
   ViewportDataBinding,
 } from '../ViewportArchitectureTypes';
-import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
 import ViewportNext from '../ViewportNext';
 import {
   getDimensionGroupReferenceContext,
@@ -26,9 +25,8 @@ import {
   isViewportNextImageDataSet,
 } from '../viewportNextDataSetAccess';
 import { DefaultVolume3DDataProvider } from './DefaultVolume3DDataProvider';
+import { createVolume3DRenderPathResolver } from './Volume3DRenderPathResolver';
 import Volume3DResolvedView from './Volume3DResolvedView';
-import { VtkGeometry3DPath } from './VtkGeometry3DRenderPath';
-import { VtkVolume3DPath } from './VtkVolume3DRenderPath';
 import applyVolume3DCamera from './applyVolume3DCamera';
 import type {
   Volume3DCamera,
@@ -40,9 +38,6 @@ import type {
   Volume3DViewportRenderContext,
   VolumeViewport3DV2Input,
 } from './3dViewportTypes';
-
-defaultRenderPathResolver.register(new VtkVolume3DPath());
-defaultRenderPathResolver.register(new VtkGeometry3DPath());
 
 class VolumeViewport3DV2 extends ViewportNext<
   Volume3DCamera,
@@ -86,7 +81,7 @@ class VolumeViewport3DV2 extends ViewportNext<
     this.element.style.background = this.element.style.background || '#000';
     this.dataProvider = args.dataProvider || new DefaultVolume3DDataProvider();
     this.renderPathResolver =
-      args.renderPathResolver || defaultRenderPathResolver;
+      args.renderPathResolver || createVolume3DRenderPathResolver();
 
     const renderingEngine = renderingEngineCache.get(this.renderingEngineId);
     const renderer = renderingEngine?.getRenderer(this.id);

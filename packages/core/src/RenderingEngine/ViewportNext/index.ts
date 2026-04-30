@@ -43,6 +43,8 @@ export { default as ECGViewport } from './ECG';
 export {
   CanvasECGPath,
   CanvasECGRenderPath,
+  createDefaultECGRenderPaths,
+  createECGRenderPathResolver,
   DefaultECGDataProvider,
   ECGResolvedView,
 } from './ECG';
@@ -59,6 +61,8 @@ export type {
 } from './ECG';
 export { default as VideoViewport } from './Video';
 export {
+  createDefaultVideoRenderPaths,
+  createVideoRenderPathResolver,
   DefaultVideoDataProvider,
   HtmlVideoPath,
   HtmlVideoRenderPath,
@@ -77,6 +81,8 @@ export type {
 export { default as PlanarViewport } from './Planar';
 export {
   BasePlanarResolvedView,
+  createDefaultPlanarRenderPaths,
+  createPlanarRenderPathResolver,
   CpuImageSlicePath,
   CpuImageSliceRenderPath,
   DefaultPlanarDataProvider,
@@ -105,6 +111,8 @@ export type {
 } from './Planar';
 export { default as VolumeViewport3DV2 } from './Volume3D';
 export {
+  createDefaultVolume3DRenderPaths,
+  createVolume3DRenderPathResolver,
   DefaultVolume3DDataProvider,
   Volume3DResolvedView,
   VtkGeometry3DPath,
@@ -134,6 +142,8 @@ export type {
 } from './Volume3D';
 export { default as WSIViewport } from './WSI';
 export {
+  createDefaultWSIRenderPaths,
+  createWSIRenderPathResolver,
   DefaultWSIDataProvider,
   DicomMicroscopyPath,
   DicomMicroscopyRenderPath,

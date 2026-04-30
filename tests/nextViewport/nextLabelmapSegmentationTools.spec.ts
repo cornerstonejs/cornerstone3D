@@ -27,6 +27,7 @@ function navigateToExample(params?: Record<string, string>) {
     await page.waitForLoadState('networkidle');
     await getVisibleViewportCanvas(page, 0).waitFor({
       state: 'visible',
+      timeout: 30000,
     });
     await page.waitForTimeout(SETTLE_MS);
   };

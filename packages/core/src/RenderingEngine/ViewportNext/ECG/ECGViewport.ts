@@ -1,5 +1,4 @@
 import { getOrCreateCanvas } from '../../helpers';
-import { defaultRenderPathResolver } from '../DefaultRenderPathResolver';
 import type { LoadedData } from '../ViewportArchitectureTypes';
 import ViewportNext from '../ViewportNext';
 import { ViewportType } from '../../../enums';
@@ -14,8 +13,8 @@ import type {
   ViewReference,
   ViewReferenceSpecifier,
 } from '../../../types';
-import { CanvasECGPath } from './CanvasECGRenderPath';
 import { DefaultECGDataProvider } from './DefaultECGDataProvider';
+import { createECGRenderPathResolver } from './ECGRenderPathResolver';
 import type { ViewportNextReferenceContext } from '../viewportNextReferenceCompatibility';
 import type {
   ECGCamera,
@@ -32,8 +31,6 @@ import {
 import ECGResolvedView from './ECGResolvedView';
 
 const ECG_AMPLITUDE_INDEX_SIZE = 65536;
-
-defaultRenderPathResolver.register(new CanvasECGPath());
 
 class ECGViewport extends ViewportNext<
   ECGCamera,
@@ -62,7 +59,7 @@ class ECGViewport extends ViewportNext<
     this.canvasContext = this.canvas.getContext('2d');
     this.dataProvider = args.dataProvider || new DefaultECGDataProvider();
     this.renderPathResolver =
-      args.renderPathResolver || defaultRenderPathResolver;
+      args.renderPathResolver || createECGRenderPathResolver();
     this.renderContext = {
       viewportId: this.id,
       type: 'ecg',

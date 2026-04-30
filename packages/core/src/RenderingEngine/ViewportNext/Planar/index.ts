@@ -27,6 +27,10 @@ export {
   PlanarRenderPathDecisionService,
   selectPlanarRenderPath,
 } from './PlanarRenderPathDecisionService';
+export {
+  createDefaultPlanarRenderPaths,
+  createPlanarRenderPathResolver,
+} from './PlanarRenderPathResolver';
 export type {
   PlanarRenderPathDecisionOptions,
   SelectedPlanarRenderPath,
