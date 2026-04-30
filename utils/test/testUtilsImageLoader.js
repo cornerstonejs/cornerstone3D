@@ -177,6 +177,7 @@ function fakeMetaDataProvider(type, imageId) {
       pixelSpacing: [xSpacing, ySpacing],
       rowPixelSpacing: ySpacing,
       columnPixelSpacing: xSpacing,
+      frameOfReferenceUID: 'Volume_Frame_Of_Reference',
     };
 
     return imagePlaneModule;
