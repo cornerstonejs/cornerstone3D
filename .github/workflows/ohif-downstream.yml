@@ -33,7 +33,7 @@ jobs:
       OHIF_REF: beta
       OHIF_DIR: ohif
       # Update to force a rebuild of the OHIF integration
-      BUILD_INDEX: 0
+      BUILD_INDEX: 1
     steps:
       - name: Checkout Cornerstone
         uses: actions/checkout@v4
