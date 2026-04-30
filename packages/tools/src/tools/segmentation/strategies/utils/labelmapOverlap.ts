@@ -1,15 +1,11 @@
 import { getSegmentation } from '../../../../stateManagement/segmentation/getSegmentation';
 import {
-  getLabelValueForSegment,
-  getLabelmapForSegment,
+  beginLabelmapEditTransaction,
+  resolveLabelmapLayerEditTarget,
 } from '../../../../stateManagement/segmentation/helpers/labelmapSegmentationState';
 import type { InitializedOperationData } from '../BrushStrategy';
-import {
-  collectCrossLayerEraseBindings,
-  eraseCrossLayerOverwrites,
-} from './crossLayerErase';
+import { eraseCrossLayerOverwrites } from './crossLayerErase';
 import { resolveOverwriteSegmentIndices } from './overwritePolicy';
-import { separateSegmentIfNeeded } from './segmentSeparation';
 
 function prepareOverlapOperationData(
   operationData: InitializedOperationData
@@ -19,22 +15,42 @@ function prepareOverlapOperationData(
     return;
   }
 
-  operationData.labelValue = operationData.segmentIndex
-    ? getLabelValueForSegment(segmentation, operationData.segmentIndex)
-    : 0;
-  operationData.labelmapId =
-    operationData.segmentIndex > 0
-      ? getLabelmapForSegment(segmentation, operationData.segmentIndex)
-          ?.labelmapId
-      : undefined;
   operationData.overwriteSegmentIndices =
     resolveOverwriteSegmentIndices(operationData);
 
-  if (operationData.segmentIndex > 0) {
-    separateSegmentIfNeeded(operationData);
-  }
+  const transaction = beginLabelmapEditTransaction(segmentation, {
+    segmentIndex: operationData.segmentIndex,
+    overwriteSegmentIndices: operationData.overwriteSegmentIndices,
+    segmentationVoxelManager: operationData.segmentationVoxelManager,
+    segmentationImageData: operationData.segmentationImageData,
+    isInObject: operationData.isInObject,
+    isInObjectBoundsIJK: operationData.isInObjectBoundsIJK,
+  });
 
-  collectCrossLayerEraseBindings(operationData);
+  operationData.labelmapEditTransaction = transaction;
+  operationData.labelValue = transaction.labelValue;
+  operationData.labelmapId = transaction.labelmapId;
+  operationData.crossLayerEraseBindings = transaction.crossLayerEraseBindings;
+
+  if (transaction.movedSegment && transaction.activeLayer) {
+    const target = resolveLabelmapLayerEditTarget(transaction.activeLayer, {
+      viewport: operationData.viewport,
+      imageId: operationData.imageId,
+      sourceLayer: transaction.sourceLayer,
+    });
+
+    if (target.imageId) {
+      operationData.imageId = target.imageId;
+    }
+
+    if (target.imageData) {
+      operationData.segmentationImageData = target.imageData;
+    }
+
+    if (target.voxelManager) {
+      operationData.segmentationVoxelManager = target.voxelManager;
+    }
+  }
 }
 
 export { eraseCrossLayerOverwrites, prepareOverlapOperationData };

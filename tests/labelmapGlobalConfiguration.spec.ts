@@ -5,15 +5,24 @@ import {
   screenShotPaths,
 } from './utils/index';
 
+async function setRangeValue(page, selector: string, value: string) {
+  await page.locator(selector).evaluate((element, nextValue) => {
+    const input = element as HTMLInputElement;
+    input.value = nextValue;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  }, value);
+}
+
 test.beforeEach(async ({ page }) => {
   await visitExample(page, 'labelmapGlobalConfiguration');
 
   // Make sure it will always work even if someone updates the example page
-  await page.locator('#outlineWidthActive').fill('3');
-  await page.locator('#outlineAlphaActive').fill('100');
-  await page.locator('#outlineWidthInactive').fill('2');
-  await page.locator('#fillAlphaActive').fill('70');
-  await page.locator('#fillAlphaInactive').fill('70');
+  await setRangeValue(page, '#outlineWidthActive', '3');
+  await setRangeValue(page, '#outlineAlphaActive', '100');
+  await setRangeValue(page, '#outlineWidthInactive', '2');
+  await setRangeValue(page, '#fillAlphaActive', '70');
+  await setRangeValue(page, '#fillAlphaInactive', '70');
 });
 
 test.describe('Labelmap Global Configuration', async () => {
@@ -82,7 +91,7 @@ test.describe('Labelmap Global Configuration', async () => {
     }) => {
       const canvas = await page.locator('canvas.cornerstone-canvas');
 
-      await page.locator('#outlineWidthActive').fill('5');
+      await setRangeValue(page, '#outlineWidthActive', '5');
       await checkForScreenshot(
         page,
         canvas,
@@ -97,8 +106,8 @@ test.describe('Labelmap Global Configuration', async () => {
     }) => {
       const canvas = await page.locator('canvas.cornerstone-canvas');
 
-      await page.locator('#outlineWidthActive').fill('5');
-      await page.locator('#outlineAlphaActive').fill('0');
+      await setRangeValue(page, '#outlineWidthActive', '5');
+      await setRangeValue(page, '#outlineAlphaActive', '0');
       await checkForScreenshot(
         page,
         canvas,
@@ -113,7 +122,7 @@ test.describe('Labelmap Global Configuration', async () => {
     }) => {
       const canvas = await page.locator('canvas.cornerstone-canvas');
 
-      await page.locator('#outlineWidthInactive').fill('5');
+      await setRangeValue(page, '#outlineWidthInactive', '5');
       await checkForScreenshot(
         page,
         canvas,
@@ -128,7 +137,7 @@ test.describe('Labelmap Global Configuration', async () => {
     }) => {
       const canvas = await page.locator('canvas.cornerstone-canvas');
 
-      await page.locator('#fillAlphaActive').fill('25');
+      await setRangeValue(page, '#fillAlphaActive', '25');
       await checkForScreenshot(
         page,
         canvas,
@@ -143,7 +152,7 @@ test.describe('Labelmap Global Configuration', async () => {
     }) => {
       const canvas = await page.locator('canvas.cornerstone-canvas');
 
-      await page.locator('#fillAlphaInactive').fill('20');
+      await setRangeValue(page, '#fillAlphaInactive', '20');
       await checkForScreenshot(
         page,
         canvas,

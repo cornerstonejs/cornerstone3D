@@ -11,6 +11,26 @@ test.beforeEach(async ({ page }) => {
   await visitExample(page, 'dicomImageLoaderWADOURI');
 });
 
+test.afterEach(async ({ page }) => {
+  if (page.isClosed()) {
+    return;
+  }
+
+  await page.evaluate(() => {
+    const cornerstone = (
+      window as unknown as {
+        cornerstone?: {
+          getRenderingEngines?: () => Array<{ destroy?: () => void }>;
+        };
+      }
+    ).cornerstone;
+
+    cornerstone
+      ?.getRenderingEngines?.()
+      ?.forEach((renderingEngine) => renderingEngine.destroy?.());
+  });
+});
+
 function getExpectedWadoImageId(imagePath: string) {
   if (imagePath.startsWith('TG_18')) {
     return `wadouri:https://raw.githubusercontent.com/OHIF/viewer-testdata/master/dcm/tg18/${imagePath.substring(6)}`;

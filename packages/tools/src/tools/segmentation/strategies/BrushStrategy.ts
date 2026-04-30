@@ -1,5 +1,4 @@
 import type { Types } from '@cornerstonejs/core';
-import { utilities as csUtils } from '@cornerstonejs/core';
 
 import { getConfig } from '../../../config';
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
@@ -13,6 +12,7 @@ import {
   eraseCrossLayerOverwrites,
   prepareOverlapOperationData,
 } from './utils/labelmapOverlap';
+import type { LabelmapEditTransaction } from '../../../stateManagement/segmentation/helpers/labelmapSegmentationState';
 
 export type InitializedOperationData = LabelmapToolOperationDataAny & {
   // Allow initialization that is operation specific by keying on the name
@@ -73,6 +73,7 @@ export type InitializedOperationData = LabelmapToolOperationDataAny & {
   labelmapId?: string;
   overwriteSegmentIndices?: number[];
   imageId?: string;
+  labelmapEditTransaction?: LabelmapEditTransaction;
 };
 
 export type StrategyFunction = (

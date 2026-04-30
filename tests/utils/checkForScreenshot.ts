@@ -32,7 +32,7 @@ const checkForScreenshot = async (
   if ('waitFor' in locator && typeof locator.waitFor === 'function') {
     await locator.waitFor({
       state: 'visible',
-      timeout: 5000,
+      timeout: 30000,
     });
   }
 

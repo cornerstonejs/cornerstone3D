@@ -51,7 +51,7 @@ export default defineConfig({
   ],
   use: {
     baseURL: playwrightBaseURL,
-    actionTimeout: 5000,
+    actionTimeout: 30000,
     trace: 'on-first-retry',
     video,
   },

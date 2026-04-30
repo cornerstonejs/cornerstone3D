@@ -39,8 +39,17 @@ export {
   VtkVolumeSlicePath,
   VtkVolumeSliceRenderPath,
 } from './VtkVolumeSliceRenderPath';
+export { default as PlanarMountedData } from './PlanarMountedData';
+export type {
+  PlanarDataBinding,
+  PlanarMountedDataHost,
+} from './PlanarMountedData';
+export { default as PlanarViewReferenceController } from './PlanarViewReferenceController';
+export type {
+  PlanarReferenceContext,
+  PlanarViewReferenceHost,
+} from './PlanarViewReferenceController';
 export { default, default as PlanarViewport } from './PlanarViewport';
-export type { PlanarReferenceContext } from './PlanarViewport';
 export type {
   PlanarViewState,
   PlanarCpuImageAdapterContext,

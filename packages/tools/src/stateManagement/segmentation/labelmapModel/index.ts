@@ -36,4 +36,20 @@ export {
   createPrivateLabelmap,
   moveSegmentToPrivateLabelmap,
 } from './privateLabelmap';
+export {
+  beginLabelmapEditTransaction,
+  collectCrossLayerEraseBindings,
+  eraseLabelmapEditTransactionOverwrites,
+  getLabelmapLayerImageId,
+  getProtectedSegmentIndicesForLayer,
+  hasProtectedSegmentOverwrite,
+  resolveLabelmapLayerEditTarget,
+} from './labelmapEditTransaction';
+export type {
+  BeginLabelmapEditTransactionOptions,
+  EraseLabelmapEditTransactionOptions,
+  LabelmapEditTransaction,
+  LabelmapLayerEditTarget,
+  ResolveLabelmapLayerEditTargetOptions,
+} from './labelmapEditTransaction';
 export { default as LabelmapImageReferenceResolver } from './labelmapImageReferenceResolver';
