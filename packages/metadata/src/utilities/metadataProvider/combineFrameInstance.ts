@@ -2,6 +2,7 @@ import { vec3 } from 'gl-matrix';
 import { dicomSplit } from './dicomSplit';
 import { addTypedProvider, getMetaData } from '../../metaData';
 import { MetadataModules } from '../../enums';
+import { isEqual } from '../isEqual';
 
 /**
  * Combine the Per instance frame data, the shared frame data
@@ -46,7 +47,8 @@ export const combineFrameInstance = (frame, instance) => {
         instance.DetectorInformationSequence[0].ImageOrientationPatient;
     }
 
-    let ImagePositionPatientToUse = instance.ImagePositionPatient;
+    const rootImagePositionPatient = instance.ImagePositionPatient;
+    let detectorDerivedImagePositionPatient;
 
     if (
       !instance.ImagePositionPatient &&
@@ -89,7 +91,11 @@ export const combineFrameInstance = (frame, instance) => {
           SpacingBetweenSlices * (frameNumber - 1)
         );
 
-        ImagePositionPatientToUse = [position[0], position[1], position[2]];
+        detectorDerivedImagePositionPatient = [
+          position[0],
+          position[1],
+          position[2],
+        ];
       }
     }
 
@@ -111,8 +117,13 @@ export const combineFrameInstance = (frame, instance) => {
       frameNumber
     );
 
-    newInstance.ImagePositionPatient = ImagePositionPatientToUse ??
-      newInstance.ImagePositionPatient ?? [0, 0, frameNumber];
+    if (detectorDerivedImagePositionPatient) {
+      newInstance.ImagePositionPatient = detectorDerivedImagePositionPatient;
+    } else if (!newInstance.ImagePositionPatient && rootImagePositionPatient) {
+      newInstance.ImagePositionPatient = rootImagePositionPatient;
+    } else if (!newInstance.ImagePositionPatient) {
+      newInstance.ImagePositionPatient = [0, 0, frameNumber];
+    }
 
     Object.defineProperty(newInstance, 'frameNumber', {
       value: frameNumber,
@@ -145,27 +156,53 @@ export const combineFrameInstance = (frame, instance) => {
 
     const origin = newInstance.ImagePositionPatient?.map(Number);
     const orientation = newInstance.ImageOrientationPatient?.map(Number);
-    const offset = Number(instance.GridFrameOffsetVector[frameNumber - 1]);
+    const offsets = instance.GridFrameOffsetVector;
+    const firstOffset = Number(offsets[0]);
+    const offset = Number(offsets[frameNumber - 1]);
 
     if (origin && orientation && !Number.isNaN(offset)) {
-      const row = vec3.fromValues(
-        orientation[0],
-        orientation[1],
-        orientation[2]
-      );
-      const col = vec3.fromValues(
-        orientation[3],
-        orientation[4],
-        orientation[5]
-      );
-      const normal = vec3.cross(vec3.create(), row, col);
+      const isIdentityAxialOrientation =
+        isEqual(orientation[0], 1) &&
+        isEqual(orientation[1], 0) &&
+        isEqual(orientation[2], 0) &&
+        isEqual(orientation[3], 0) &&
+        isEqual(orientation[4], 1) &&
+        isEqual(orientation[5], 0);
 
-      const position = vec3.scaleAndAdd(vec3.create(), origin, normal, offset);
-      newInstance.ImagePositionPatient = [
-        position[0],
-        position[1],
-        position[2],
-      ];
+      // RTDOSE GridFrameOffsetVector has two valid encodings:
+      // (a) relative offsets where first value is 0
+      // (b) absolute patient z positions for axial orientation
+      const isRelativeOffsetForm = isEqual(firstOffset, 0);
+      const isAbsolutePatientZForm =
+        isIdentityAxialOrientation && isEqual(firstOffset, origin[2]);
+
+      if (isAbsolutePatientZForm) {
+        newInstance.ImagePositionPatient = [origin[0], origin[1], offset];
+      } else if (isRelativeOffsetForm) {
+        const row = vec3.fromValues(
+          orientation[0],
+          orientation[1],
+          orientation[2]
+        );
+        const col = vec3.fromValues(
+          orientation[3],
+          orientation[4],
+          orientation[5]
+        );
+        const normal = vec3.cross(vec3.create(), row, col);
+
+        const position = vec3.scaleAndAdd(
+          vec3.create(),
+          origin,
+          normal,
+          offset
+        );
+        newInstance.ImagePositionPatient = [
+          position[0],
+          position[1],
+          position[2],
+        ];
+      }
     }
 
     Object.defineProperty(newInstance, 'frameNumber', {
