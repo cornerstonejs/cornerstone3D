@@ -5,15 +5,8 @@ import {
   getEnabledElementByViewportId,
 } from '@cornerstonejs/core';
 
-import type { LabelmapSegmentationData } from '../../../types/LabelmapTypes';
-import type {
-  LabelmapRenderingConfig,
-  LabelmapRepresentation,
-} from '../../../types/SegmentationStateTypes';
+import type { LabelmapRepresentation } from '../../../types/SegmentationStateTypes';
 
-import addLabelmapToElement from './addLabelmapToElement';
-import removeLabelmapFromElement from './removeLabelmapFromElement';
-import { getCurrentLabelmapImageIdsForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
 import SegmentationRepresentations from '../../../enums/SegmentationRepresentations';
 import { getLabelmapActorEntries } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
@@ -21,13 +14,10 @@ import { getPolySeg } from '../../../config';
 import { computeAndAddRepresentation } from '../../../utilities/segmentation/computeAndAddRepresentation';
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
 import { defaultSegmentationStateManager } from '../../../stateManagement/segmentation/SegmentationStateManager';
-import { getLabelmaps } from '../../../stateManagement/segmentation/helpers/labelmapSegmentationState';
 import {
-  getVolumeLabelmapImageMapperRepresentationUIDs,
-  updateVolumeLabelmapImageMapperActors,
-} from './volumeLabelmapImageMapper';
-import { createLabelmapRepresentationUID } from './labelmapRepresentationUID';
-import { resolveLabelmapRenderPlan } from './labelmapRenderPlan';
+  removeLabelmapRepresentationFromViewport,
+  resolveLabelmapRenderPlan,
+} from './labelmapRenderPlan';
 import {
   MAX_NUMBER_COLORS,
   setLabelmapColorAndOpacity,
@@ -61,7 +51,7 @@ function removeRepresentation(
 
   const { viewport } = enabledElement;
 
-  removeLabelmapFromElement(viewport.element, segmentationId);
+  removeLabelmapRepresentationFromViewport(viewport, segmentationId);
 
   if (!renderImmediate) {
     return;
@@ -81,7 +71,7 @@ async function render(
   viewport: Types.IViewport,
   representation: LabelmapRepresentation
 ): Promise<void> {
-  const { segmentationId, config } = representation;
+  const { segmentationId } = representation;
 
   const segmentation = getSegmentation(segmentationId);
 
@@ -157,17 +147,10 @@ async function render(
     segmentation,
     representation,
   });
-  const shouldResyncActors = _haveLabelmapActorsChanged(
-    viewport,
-    segmentation,
-    segmentationId,
-    representation,
-    labelmapActorEntries
-  );
 
   if (renderPlan.kind === 'unsupported') {
     if (labelmapActorEntries?.length) {
-      removeRepresentation(viewport.id, segmentationId);
+      renderPlan.remove();
     }
 
     if (renderPlan.unsupportedStateKey) {
@@ -183,63 +166,10 @@ async function render(
 
   clearUnsupportedImageMapperError(viewport.id, segmentationId);
 
-  if (renderPlan.renderMode === 'volume') {
-    if (shouldResyncActors && labelmapActorEntries?.length) {
-      removeRepresentation(viewport.id, segmentationId);
-      labelmapActorEntries = undefined;
-    }
-
-    if (!labelmapActorEntries?.length) {
-      // only add the labelmap to ToolGroup viewports if it is not already added
-      await _addLabelmapToViewport(
-        viewport,
-        labelmapData,
-        segmentationId,
-        config
-      );
-    }
-
-    labelmapActorEntries = getLabelmapActorEntries(viewport.id, segmentationId);
-  } else if (renderPlan.renderMode === 'image') {
-    if (!renderPlan.isVolumeImageMapper) {
-      const labelmapImageIds = getCurrentLabelmapImageIdsForViewport(
-        viewport.id,
-        segmentationId
-      );
-
-      if (!labelmapImageIds?.length) {
-        return;
-      }
-    }
-
-    if (shouldResyncActors && labelmapActorEntries?.length) {
-      removeRepresentation(viewport.id, segmentationId);
-      labelmapActorEntries = undefined;
-    }
-
-    if (!labelmapActorEntries?.length) {
-      // only add the labelmap to ToolGroup viewports if it is not already added
-      await _addLabelmapToViewport(
-        viewport,
-        labelmapData,
-        segmentationId,
-        config
-      );
-    }
-
-    labelmapActorEntries = getLabelmapActorEntries(viewport.id, segmentationId);
-
-    if (renderPlan.isVolumeImageMapper && labelmapActorEntries?.length) {
-      updateVolumeLabelmapImageMapperActors({
-        viewport,
-        segmentation,
-        segmentationId,
-        actorEntries: labelmapActorEntries,
-      });
-    }
-  } else {
-    return;
-  }
+  labelmapActorEntries = await renderPlan.reconcile({
+    actorEntries: labelmapActorEntries,
+    labelMapData: labelmapData,
+  });
 
   if (!labelmapActorEntries?.length) {
     return;
@@ -249,103 +179,6 @@ async function render(
     // call the function to set the color and opacity
     setLabelmapColorAndOpacity(viewport.id, labelmapActorEntry, representation);
   }
-}
-
-function _haveLabelmapActorsChanged(
-  viewport: Types.IViewport,
-  segmentation: ReturnType<typeof getSegmentation>,
-  segmentationId: string,
-  representation: LabelmapRepresentation,
-  labelmapActorEntries?: Types.ActorEntry[]
-): boolean {
-  if (!segmentation) {
-    return false;
-  }
-
-  const actualUIDs = new Set(
-    (labelmapActorEntries ?? []).map((entry) => entry.representationUID)
-  );
-  const expectedUIDs = new Set(
-    _getExpectedLabelmapRepresentationUIDs(
-      viewport,
-      segmentation,
-      segmentationId,
-      representation
-    )
-  );
-
-  if (actualUIDs.size !== expectedUIDs.size) {
-    return true;
-  }
-
-  for (const expectedUID of expectedUIDs) {
-    if (!actualUIDs.has(expectedUID)) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-function _getExpectedLabelmapRepresentationUIDs(
-  viewport: Types.IViewport,
-  segmentation: NonNullable<ReturnType<typeof getSegmentation>>,
-  segmentationId: string,
-  representation: LabelmapRepresentation
-): string[] {
-  const renderPlan = resolveLabelmapRenderPlan({
-    viewport,
-    segmentation,
-    representation,
-  });
-
-  if (renderPlan.renderMode === 'volume') {
-    return getLabelmaps(segmentation)
-      .filter((layer) => !!layer.volumeId)
-      .map((layer) =>
-        createLabelmapRepresentationUID({
-          segmentationId,
-          referencedId: layer.labelmapId,
-        })
-      );
-  }
-
-  if (renderPlan.renderMode === 'image') {
-    if (renderPlan.isVolumeImageMapper) {
-      return getVolumeLabelmapImageMapperRepresentationUIDs(
-        viewport,
-        segmentationId,
-        segmentation
-      );
-    }
-
-    return (
-      getCurrentLabelmapImageIdsForViewport(viewport.id, segmentationId)?.map(
-        (imageId) =>
-          createLabelmapRepresentationUID({
-            segmentationId,
-            referencedId: imageId,
-          })
-      ) ?? []
-    );
-  }
-
-  return [];
-}
-
-async function _addLabelmapToViewport(
-  viewport: Types.IViewport,
-  labelmapData: LabelmapSegmentationData,
-  segmentationId: string,
-  config: LabelmapRenderingConfig
-): Promise<Types.ActorEntry | undefined> {
-  const result = await addLabelmapToElement(
-    viewport.element,
-    labelmapData,
-    segmentationId,
-    config
-  );
-  return result || undefined;
 }
 
 /**
