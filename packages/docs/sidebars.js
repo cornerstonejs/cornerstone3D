@@ -149,6 +149,13 @@ module.exports = {
         },
         {
           type: 'category',
+          label: 'Metadata',
+          link: { type: 'doc', id: 'concepts/cornerstone-metadata/index' },
+          collapsed: true,
+          items: ['concepts/cornerstone-metadata/index'],
+        },
+        {
+          type: 'category',
           label: 'Progressive Loading',
           collapsed: true,
           link: { type: 'doc', id: 'concepts/progressive-loading/index' },
