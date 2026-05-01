@@ -1,6 +1,5 @@
-import { getMetaData } from '../../metaData';
+import { addTyped } from '../../metaData';
 import { MetadataModules } from '../../enums';
-import { ASYNC_NATURALIZED } from './naturalizedHandlers';
 
 /**
  * Adds a DICOMweb JSON metadata instance to the NATURALIZED cache.
@@ -17,8 +16,8 @@ export function addDicomwebInstance(
   imageId: string,
   metadata: Record<string, unknown>
 ) {
-  return getMetaData(MetadataModules.NATURALIZED, imageId, {
-    metadata,
+  return addTyped(MetadataModules.NATURALIZED, imageId, {
+    dicomwebJson: metadata,
   });
 }
 
@@ -42,5 +41,7 @@ export async function addPart10Instance(
     | Uint8Array
     | (() => ArrayBuffer | Uint8Array | Promise<ArrayBuffer | Uint8Array>)
 ) {
-  return getMetaData(ASYNC_NATURALIZED, imageId, { part10 });
+  return addTyped(MetadataModules.NATURALIZED, imageId, {
+    part10Buffer: part10,
+  });
 }

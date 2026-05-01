@@ -1,5 +1,6 @@
-import { MetadataModules } from '../../enums';
+import { getAddModuleType, MetadataModules } from '../../enums';
 import {
+  addAddProvider,
   addTypedProvider,
   clear,
   clearQuery,
@@ -7,32 +8,24 @@ import {
 } from '../../metaData';
 import { BASE_IMAGE_ID, FRAME_IMAGE_IDS } from './imageIdsProviders';
 
-const ASYNC_NATURALIZED = 'asyncNaturalized';
-
 interface CacheGetOptions {
   noCache?: boolean;
   reCache?: boolean;
 }
 
-const DERIVED_TYPES_TO_CLEAR = new Set<string>([
-  MetadataModules.INSTANCE,
-  MetadataModules.URI_MODULE,
-  MetadataModules.IMAGE_PLANE,
-  MetadataModules.FRAME_MODULE,
-  MetadataModules.GENERAL_IMAGE,
-  MetadataModules.CALIBRATION,
-  MetadataModules.COMPRESSED_FRAME_DATA,
-  MetadataModules.SCALING,
-]);
+type CacheRegistrationOptions = CacheGetOptions & {
+  /** Register this cache type as secondary of one or more base cache types. */
+  secondaryOf?: string | string[];
+};
 
 export class CacheData {
   protected static readonly mapCacheData = new Map<
     string,
     Map<string, unknown>
   >();
-  protected static readonly inFlightByType = new Map<
+  protected static readonly secondaryTypesByBaseType = new Map<
     string,
-    Map<string, Promise<unknown>>
+    Set<string>
   >();
 
   protected static setCacheDataInternal(
@@ -46,21 +39,40 @@ export class CacheData {
       this.mapCacheData.set(type, valueMap);
     }
     valueMap.set(query, value);
-    if (type === MetadataModules.NATURALIZED) {
-      this.clearRelatedDerivedCache(query);
-      this.clearTypedCacheData(ASYNC_NATURALIZED, query);
-    }
+    this.clearRelatedDerivedCache(type, query);
   }
 
-  protected static clearRelatedDerivedCache(query: string) {
+  protected static clearRelatedDerivedCache(type: string, query: string) {
+    const derivedTypes = this.secondaryTypesByBaseType.get(type);
+    if (!derivedTypes?.size) {
+      return;
+    }
     const frameImageIds =
       (getMetaData(FRAME_IMAGE_IDS, query) as Set<string> | undefined) ??
       new Set<string>([query]);
     for (const frameImageId of frameImageIds) {
-      for (const type of DERIVED_TYPES_TO_CLEAR) {
-        const typeMap = this.mapCacheData.get(type);
+      for (const derivedType of derivedTypes) {
+        const typeMap = this.mapCacheData.get(derivedType);
         typeMap?.delete(frameImageId);
       }
+    }
+  }
+
+  static registerSecondaryTypes(
+    secondaryType: string,
+    secondaryOf?: string | string[]
+  ) {
+    if (!secondaryOf) {
+      return;
+    }
+    const baseTypes = Array.isArray(secondaryOf) ? secondaryOf : [secondaryOf];
+    for (const baseType of baseTypes) {
+      let secondaryTypes = this.secondaryTypesByBaseType.get(baseType);
+      if (!secondaryTypes) {
+        secondaryTypes = new Set<string>();
+        this.secondaryTypesByBaseType.set(baseType, secondaryTypes);
+      }
+      secondaryTypes.add(secondaryType);
     }
   }
 
@@ -74,38 +86,40 @@ export class CacheData {
 
   static clearCacheData() {
     this.mapCacheData.clear();
-    this.inFlightByType.clear();
+    this.secondaryTypesByBaseType.clear();
     clear(FRAME_IMAGE_IDS);
     clear(BASE_IMAGE_ID);
   }
 
   static clearTypedCacheData(type: string, query?: string) {
+    const secondaryTypes = this.secondaryTypesByBaseType.get(type);
     const valueMap = this.mapCacheData.get(type);
-    if (!valueMap) {
-      return;
-    }
+
     if (query) {
-      valueMap.delete(query);
-      this.inFlightByType.get(type)?.delete(query);
-      if (type === MetadataModules.NATURALIZED) {
+      valueMap?.delete(query);
+
+      if (secondaryTypes?.size) {
+        for (const secondaryType of secondaryTypes) {
+          this.mapCacheData.get(secondaryType)?.delete(query);
+        }
+      }
+
+      if (type === MetadataModules.NATURALIZED || secondaryTypes?.size) {
         clearQuery(FRAME_IMAGE_IDS, query);
         clearQuery(BASE_IMAGE_ID, query);
       }
       return;
     }
-    valueMap.clear();
-    this.inFlightByType.get(type)?.clear();
-    if (type === MetadataModules.NATURALIZED) {
+    valueMap?.clear();
+    if (secondaryTypes?.size) {
+      for (const secondaryType of secondaryTypes) {
+        this.mapCacheData.get(secondaryType)?.clear();
+      }
+    }
+    if (type === MetadataModules.NATURALIZED || secondaryTypes?.size) {
       clear(FRAME_IMAGE_IDS);
       clear(BASE_IMAGE_ID);
     }
-  }
-
-  static getAsyncCacheData(
-    type: string,
-    query: string
-  ): Promise<unknown> | undefined {
-    return this.inFlightByType.get(type)?.get(query);
   }
 
   static fromAsyncLookup<T>(
@@ -120,12 +134,6 @@ export class CacheData {
         return cachedValue as T;
       }
     }
-    if (options?.reCache !== true) {
-      const inFlight = this.getAsyncCacheData(type, query);
-      if (inFlight) {
-        return inFlight as Promise<T>;
-      }
-    }
 
     const lookupValue = lookup();
     if (lookupValue === undefined) {
@@ -138,25 +146,12 @@ export class CacheData {
       return lookupValue;
     }
 
-    let inFlightForType = this.inFlightByType.get(type);
-    if (!inFlightForType) {
-      inFlightForType = new Map<string, Promise<unknown>>();
-      this.inFlightByType.set(type, inFlightForType);
-    }
-
-    const managedPromise = lookupValue
-      .then((resolvedValue) => {
-        if (resolvedValue !== undefined && !options?.noCache) {
-          this.setCacheDataInternal(type, query, resolvedValue);
-        }
-        return resolvedValue;
-      })
-      .finally(() => {
-        inFlightForType?.delete(query);
-      });
-    inFlightForType.set(query, managedPromise);
-
-    return managedPromise;
+    return lookupValue.then((resolvedValue) => {
+      if (resolvedValue !== undefined && !options?.noCache) {
+        this.setCacheDataInternal(type, query, resolvedValue);
+      }
+      return resolvedValue;
+    });
   }
 
   createTypeCacheProvider(type: string) {
@@ -177,10 +172,6 @@ export class CacheData {
 
   hasCacheData(type: string, query: string) {
     return CacheData.hasCacheData(type, query);
-  }
-
-  getAsyncCacheData(type: string, query: string) {
-    return CacheData.getAsyncCacheData(type, query);
   }
 
   fromAsyncLookup<T>(
@@ -222,6 +213,50 @@ export function createTypeCacheProvider(type: string) {
   };
 }
 
+export function createTypeWritableCacheProvider(type: string) {
+  const addType = getAddModuleType(type);
+
+  return (next, query: string, data, options) => {
+    const cachedValue = CacheData.getCacheData(type, query);
+    if (cachedValue !== undefined) {
+      console.warn(
+        `Metadata add skipped for "${type}" at query "${query}" because cache already has a value.`
+      );
+      return cachedValue;
+    }
+
+    const addCachedValue = CacheData.getCacheData(addType, query);
+    if (addCachedValue !== undefined) {
+      return addCachedValue;
+    }
+
+    const nextValue = next(query, data, options);
+    if (nextValue === undefined) {
+      return undefined;
+    }
+
+    if (!(nextValue instanceof Promise)) {
+      WritableCacheData.setCacheData(type, query, nextValue);
+      return nextValue;
+    }
+
+    const managedPromise = nextValue
+      .then((resolvedValue) => {
+        if (resolvedValue !== undefined) {
+          WritableCacheData.setCacheData(type, query, resolvedValue);
+        }
+        return resolvedValue;
+      })
+      .finally(() => {
+        CacheData.clearTypedCacheData(addType, query);
+      });
+
+    WritableCacheData.setCacheData(addType, query, managedPromise);
+
+    return managedPromise;
+  };
+}
+
 export function clearCacheData() {
   CacheData.clearCacheData();
 }
@@ -252,13 +287,6 @@ export function hasCacheData(type: string, query: string): boolean {
   return CacheData.hasCacheData(type, query);
 }
 
-export function getAsyncCacheData(
-  type: string,
-  query: string
-): Promise<unknown> | undefined {
-  return CacheData.getAsyncCacheData(type, query);
-}
-
 export function fromAsyncLookup<T>(
   type: string,
   query: string,
@@ -269,21 +297,52 @@ export function fromAsyncLookup<T>(
 }
 
 export function addCacheForType(type: string, options?) {
+  const { secondaryOf, ...providerOptions } = (options ??
+    {}) as CacheRegistrationOptions;
+
+  CacheData.registerSecondaryTypes(type, secondaryOf);
+
   addTypedProvider(type, createTypeCacheProvider(type), {
     priority: 50_000,
     clear: clearTypedCacheData.bind(null, type) as () => void,
     clearQuery: clearTypedCacheData.bind(null, type),
-    ...options,
+    ...providerOptions,
+  });
+}
+
+export function addWritableCacheForType(type: string, options?) {
+  const addType = getAddModuleType(type);
+  const { secondaryOf, ...providerOptions } = (options ??
+    {}) as CacheRegistrationOptions;
+
+  addCacheForType(type, { secondaryOf, ...providerOptions });
+  CacheData.registerSecondaryTypes(addType, type);
+
+  addAddProvider(type, createTypeWritableCacheProvider(type), {
+    priority: 50_000,
+    clear: clearTypedCacheData.bind(null, addType) as () => void,
+    clearQuery: clearTypedCacheData.bind(null, addType),
+    ...providerOptions,
   });
 }
 
 export function registerCacheProviders() {
   addCacheForType(BASE_IMAGE_ID);
   addCacheForType(FRAME_IMAGE_IDS);
-  addCacheForType(MetadataModules.NATURALIZED);
-  addCacheForType(MetadataModules.INSTANCE);
-  addCacheForType(MetadataModules.URI_MODULE);
-  addCacheForType(MetadataModules.IMAGE_PLANE);
-  addCacheForType(MetadataModules.FRAME_MODULE);
-  addCacheForType(MetadataModules.GENERAL_IMAGE);
+  addWritableCacheForType(MetadataModules.NATURALIZED);
+  addCacheForType(MetadataModules.INSTANCE, {
+    secondaryOf: MetadataModules.NATURALIZED,
+  });
+  addCacheForType(MetadataModules.URI_MODULE, {
+    secondaryOf: MetadataModules.NATURALIZED,
+  });
+  addCacheForType(MetadataModules.IMAGE_PLANE, {
+    secondaryOf: MetadataModules.NATURALIZED,
+  });
+  addCacheForType(MetadataModules.FRAME_MODULE, {
+    secondaryOf: MetadataModules.NATURALIZED,
+  });
+  addCacheForType(MetadataModules.GENERAL_IMAGE, {
+    secondaryOf: MetadataModules.NATURALIZED,
+  });
 }

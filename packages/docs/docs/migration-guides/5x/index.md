@@ -19,6 +19,8 @@ In 5.x, the metadata module is designed as a shared handling layer for viewer me
 The current CS3D version keeps existing metadata flows working, and also introduces optional features you can adopt incrementally:
 
 - Typed getters for metadata lookup.
+- addMetadata providers for adding information to caches/waiting for async results to be added.
+- clear metadata handling for removing specific changes and/or removing all cached data
 - Providers that register directly for a specific single metadata type, so resolution can short-circuit quickly.
 - Shared caches used across metadata providers and metadata types.
 - Shared cache usage for Part10, DICOMweb, imageId-derived values, and other cached metadata outputs.
@@ -28,33 +30,35 @@ The current CS3D version keeps existing metadata flows working, and also introdu
 
 In 5.x, metadata providers are first-class extension points in the retrieval pipeline. Instead of each caller manually transforming and writing metadata, providers can normalize source payloads, compose with other providers, and rely on shared cache behavior for consistent lookups.
 
-- Prefer option-driven metadata retrieval over manual cache writes for NATURALIZED values.
-- Use `metaData.get(MetadataModules.NATURALIZED, imageId, { metadata })` for DICOMweb JSON payloads.
-- Use `metaData.get('asyncNaturalized', imageId, { part10 })` for async Part10 ingestion (`ArrayBuffer`, `Uint8Array`, or resolver function).
+- Use add-path metadata ingestion when the data requires parameters/externally provided values.
+  For example, the NATURALIZED data is computed from binary part 10 or DICMweb metadata format
+  - Use `metaData.addMetaData(MetadataModules.NATURALIZED, imageId, { dicomwebJson })` for DICOMweb JSON payloads.
+  - Use `metaData.addMetaData(MetadataModules.NATURALIZED, imageId, { part10Buffer })` for async Part10 ingestion (`ArrayBuffer`, `Uint8Array`, or resolver function).
 - The metadata layer now owns frame/base imageId mapping and derived cache invalidation; avoid direct frame propagation with `setCacheData`.
 
 ### New metadata handling (and backwards compatibility)
 
 - In 5.x, **NATURALIZED metadata is the base state for DICOM imaging data**. Other metadata modules (for example `INSTANCE` and derived module lookups) are expected to resolve from that canonical naturalized state rather than from source-specific conversion code.
-- Data sources should migrate to providing metadata through naturalized handlers (`{ metadata }` and `{ part10 }`) instead of performing custom source-local conversion to instance/natural objects.
-- New in 5.x: metadata ingestion is handled through typed-provider requests, so callers can pass source data as options (`{ metadata }` or `{ part10 }`) and let the provider chain naturalize/cache it.
+- Data sources should migrate to providing metadata through naturalized add handlers (`{ dicomwebJson }` and `{ part10Buffer }`) instead of performing custom source-local conversion to instance/natural objects.
+- New in 5.x: metadata ingestion is handled through add-path typed-provider requests, so callers can pass source data as options (`{ dicomwebJson }` or `{ part10Buffer }`) and let the provider chain naturalize/cache it.
 - Existing usage still works: if your app already resolves metadata through the legacy provider chain (`addProvider` / prior `metaData.get(...)` flow), that behavior remains supported while you migrate.
-- Recommended migration path: move NATURALIZED writes to option-driven `metaData.get(...)` calls and remove custom frame/base propagation logic from app code.
+- Recommended migration path: move NATURALIZED writes to `metaData.addMetaData(...)` calls and remove custom frame/base propagation logic from app code.
+- This migration is optional until you adopt the new metadata handler path; legacy flows remain supported during transition.
 - Why this matters: shared naturalization creates consistent behavior across DICOMweb, Part10, and other ingest paths, and helps eliminate recurring bugs caused by multiple, slightly different conversion implementations.
 
 ### Naturalized handlers
 
-`registerNaturalizedHandlers()` now registers the NATURALIZED handlers as a composable provider chain:
+`registerNaturalizedHandlers()` now registers NATURALIZED handlers as composable read and add provider chains:
 
 - **Base imageId query filter:** a shared `baseImageIdQueryFilter` can be plugged into typed provider chains and is registered for `NATURALIZED` at high priority so frame-specific imageIds resolve on canonical base imageId first.
-- **Synchronous naturalization handler:** when callers provide `{ metadata }`, the handler naturalizes DICOMweb-style metadata into NATURALIZED output.
-- **Asynchronous Part10 handler:** `asyncNaturalized` accepts `{ part10 }` (`ArrayBuffer`, `Uint8Array`, or resolver function), de-duplicates in-flight work, and stores the resolved NATURALIZED result.
+- **Synchronous naturalization handler (add path):** when callers provide `{ dicomwebJson }`, the handler naturalizes DICOMweb-style metadata into NATURALIZED output.
+- **Asynchronous Part10 handler (add path):** accepts `{ part10Buffer }` (`ArrayBuffer`, `Uint8Array`, or resolver function), resolves to NATURALIZED, and commits to shared cache.
 - **Cache interaction:** with base-image filtering ahead of cache providers, NATURALIZED cache keys remain canonical and downstream typed modules can rely on consistent lookups.
 
 Recommended usage:
 
-- `metaData.get(MetadataModules.NATURALIZED, imageId, { metadata })` for sync naturalization from DICOMweb metadata.
-- `metaData.get('asyncNaturalized', imageId, { part10 })` for async naturalization from Part10 payloads.
+- `metaData.addMetaData(MetadataModules.NATURALIZED, imageId, { dicomwebJson })` for sync naturalization from DICOMweb metadata.
+- `metaData.addMetaData(MetadataModules.NATURALIZED, imageId, { part10Buffer })` for async naturalization from Part10 payloads.
 
 ### Standard cache behavior in 5.x
 
@@ -72,14 +76,12 @@ The metadata cache in 5.x is a new shared layer that can be reused by different 
 - Then register one or more typed providers for that type; returned values are automatically cached under the query key.
 - Keep provider logic as source-of-truth retrieval; let the cache layer handle storage and re-use.
 
-### Writable custom caches (example: calibration-style setter)
+### Writable cache ingestion path
 
-- If a cache requires explicit external writes (for example a calibration setter), implement a writable cache class that uses the protected `setCacheDataInternal(...)`.
-- Pattern:
-  - Extend `CacheData`.
-  - Expose a controlled public static setter (for example `setCalibration(...)`) that calls `setCacheDataInternal(type, query, value)`.
-  - Export an instance as the public API, so consumers can write via that setter while still using standard cache read methods.
-- This keeps write access explicit and scoped, while preserving normal typed-provider cache behavior for reads.
+- Prefer add-path ingestion (`metaData.addMetaData(...)`) over direct writable cache setters.
+- Register writable behavior with `addWritableCacheForType(type)` (currently intended for `NATURALIZED`) so add-path ingestion writes to shared cache consistently.
+- Use `addCacheForType(type, { secondaryOf: ... })` to register derived caches that should be invalidated when a base cache type changes.
+- This keeps write behavior centralized in providers while preserving typed-provider cache behavior for reads.
 
 ### ImageId mapping changes (old vs new)
 

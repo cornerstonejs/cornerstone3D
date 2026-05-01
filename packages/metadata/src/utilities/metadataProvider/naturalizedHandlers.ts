@@ -1,16 +1,13 @@
 import dcmjs from 'dcmjs';
 import { MetadataModules } from '../../enums';
-import { addTypedProvider } from '../../metaData';
+import { addAddProvider, addTypedProvider } from '../../metaData';
 import { MetaDataIterator, NaturalTagListener } from '../dicomStream';
-import { cacheData, setCacheData } from './cacheData';
 import { baseImageIdQueryFilter } from './imageIdsProviders';
 
 const { AsyncDicomReader } = dcmjs.async;
 
-export const ASYNC_NATURALIZED = 'asyncNaturalized';
 const NATURAL_BASE_IMAGE_ID_FILTER_PRIORITY = 60_000;
-const NATURALIZED_HANDLER_PRIORITY = 30_000;
-const ASYNC_NATURALIZED_HANDLER_PRIORITY = 30_000;
+const NATURALIZED_ADD_HANDLER_PRIORITY = 30_000;
 
 type Part10Input =
   | ArrayBuffer
@@ -77,54 +74,36 @@ export async function naturalizePart10Buffer(part10: Part10Input) {
 }
 
 /**
- * Typed NATURALIZED provider that handles option-driven synchronous metadata
- * ingestion via `{ metadata }`.
+ * Add-path NATURALIZED provider that handles sync `{ dicomwebJson }` and async
+ * `{ part10Buffer }` ingestion.
  */
-function naturalizedOptionsProvider(next, query: string, data, options) {
-  const metadata = options?.metadata;
-  if (metadata && typeof metadata === 'object') {
-    return naturalizeDicomwebMetadata(metadata as Record<string, unknown>);
+function naturalizedAddProvider(next, query: string, data, options) {
+  const dicomwebJson = options?.dicomwebJson ?? options?.metadata;
+  if (dicomwebJson && typeof dicomwebJson === 'object') {
+    return naturalizeDicomwebMetadata(dicomwebJson as Record<string, unknown>);
   }
+
+  const part10Buffer = options?.part10Buffer ?? options?.part10;
+  if (part10Buffer) {
+    return naturalizePart10Buffer(part10Buffer as Part10Input);
+  }
+
   return next(query, data, options);
 }
 
 /**
- * Typed `asyncNaturalized` provider for `{ part10 }` ingestion.
- *
- * Uses shared async-cache deduplication and writes successful results into
- * the NATURALIZED cache for subsequent typed-provider lookups.
- */
-function asyncNaturalizedProvider(next, query: string, data, options) {
-  const part10 = options?.part10 as Part10Input | undefined;
-  if (!part10) {
-    return next(query, data, options);
-  }
-  return cacheData.fromAsyncLookup(
-    ASYNC_NATURALIZED,
-    query,
-    async () => {
-      const naturalized = await naturalizePart10Buffer(part10);
-      setCacheData(MetadataModules.NATURALIZED, query, naturalized);
-      return naturalized;
-    },
-    { ...options, noCache: true }
-  );
-}
-
-/**
- * Registers NATURALIZED-related handlers:
+ * Registers NATURALIZED-related handlers for read and add paths:
  * - base-image-id query normalization filter
- * - synchronous DICOMweb metadata naturalization
- * - asynchronous Part10 naturalization
+ * - sync/async ingestion through add-path providers
  */
 export function registerNaturalizedHandlers() {
   addTypedProvider(MetadataModules.NATURALIZED, baseImageIdQueryFilter, {
     priority: NATURAL_BASE_IMAGE_ID_FILTER_PRIORITY,
   });
-  addTypedProvider(MetadataModules.NATURALIZED, naturalizedOptionsProvider, {
-    priority: NATURALIZED_HANDLER_PRIORITY,
+  addAddProvider(MetadataModules.NATURALIZED, baseImageIdQueryFilter, {
+    priority: NATURAL_BASE_IMAGE_ID_FILTER_PRIORITY,
   });
-  addTypedProvider(ASYNC_NATURALIZED, asyncNaturalizedProvider, {
-    priority: ASYNC_NATURALIZED_HANDLER_PRIORITY,
+  addAddProvider(MetadataModules.NATURALIZED, naturalizedAddProvider, {
+    priority: NATURALIZED_ADD_HANDLER_PRIORITY,
   });
 }

@@ -54,7 +54,7 @@ export function registerDefaultProviders() {
   // Register cache providers
   registerCacheProviders();
 
-  // Register options-driven naturalized handlers (sync metadata and async part10)
+  // Register NATURALIZED read filters and add-path ingestion handlers
   registerNaturalizedHandlers();
 
   // Register URI module provider

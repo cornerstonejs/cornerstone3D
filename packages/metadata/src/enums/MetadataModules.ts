@@ -212,4 +212,17 @@ enum MetadataModules {
   NATURALIZED = 'naturalized',
 }
 
+export const ADD_MODULE_TYPE_SUFFIX = 'Add';
+
+/**
+ * Returns the add-path module type for a base metadata module.
+ *
+ * The metadata add pipeline registers providers under a derived module name
+ * (e.g. `naturalizedAdd`) so ingestion handlers can be isolated from read-path
+ * `get` providers.
+ */
+export function getAddModuleType(type: string) {
+  return `${type}${ADD_MODULE_TYPE_SUFFIX}`;
+}
+
 export default MetadataModules;

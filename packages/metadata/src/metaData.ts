@@ -2,6 +2,7 @@
 // So metadata can be provided in different ways (e.g. by parsing DICOM P10 or by a WADO-RS document)
 
 import type { MetadataModuleType } from './types';
+import { getAddModuleType } from './enums';
 
 const providers = [];
 
@@ -138,6 +139,20 @@ export function addTypedProvider(
 }
 
 /**
+ * Adds an add-path typed provider at the given priority level.
+ *
+ * The add-path provider chain is keyed by appending "Add" to the type and is
+ * resolved via add()/addTyped().
+ */
+export function addAddProvider(
+  type: string,
+  provider: TypedProvider,
+  options: TypedProviderOptions = { priority: 0, isDefault: true }
+) {
+  addTypedProvider(getAddModuleType(type), provider, options);
+}
+
+/**
  * A provider bridge for typed metadata modules.
  */
 export function metadataModuleProvider(type: string, query: string, options) {
@@ -235,16 +250,50 @@ export function getTyped<K extends keyof MetadataModuleType | string>(
 }
 
 /**
+ * Performs metadata ingestion on the add-path provider chain.
+ * Uses the type key `${type}Add`.
+ */
+export function addMetaData(type: string, query: string, options?): unknown {
+  return getMetaData(getAddModuleType(type), query, options) as unknown;
+}
+
+/**
+ * Adds metadata with return type inferred from module type, same mapping as
+ * getTyped() but allowing async ingestion handlers.
+ */
+export function addTyped<K extends keyof MetadataModuleType | string>(
+  type: K,
+  query: string,
+  options?: unknown
+):
+  | (K extends keyof MetadataModuleType ? MetadataModuleType[K] : never)
+  | Promise<K extends keyof MetadataModuleType ? MetadataModuleType[K] : never>
+  | undefined {
+  const result = addMetaData(type as string, query, options);
+
+  return result as
+    | (K extends keyof MetadataModuleType ? MetadataModuleType[K] : never)
+    | Promise<
+        K extends keyof MetadataModuleType ? MetadataModuleType[K] : never
+      >
+    | undefined;
+}
+
+/**
  * Clears cached data on the specific type
  * and query key
  */
 export const clearQuery = (type: string, query?: string) => {
-  const typedProviders = typedProviderValueMap.get(type);
-  if (!typedProviders) {
-    return;
-  }
-  for (const providerInfo of typedProviders) {
-    providerInfo?.clearQuery?.(query);
+  const typesToClear = [type, getAddModuleType(type)];
+
+  for (const currentType of typesToClear) {
+    const typedProviders = typedProviderValueMap.get(currentType);
+    if (!typedProviders) {
+      continue;
+    }
+    for (const providerInfo of typedProviders) {
+      providerInfo?.clearQuery?.(query);
+    }
   }
 };
 
@@ -253,12 +302,16 @@ export const clearQuery = (type: string, query?: string) => {
  * and query key
  */
 export const clear = (type: string) => {
-  const typedProviders = typedProviderValueMap.get(type);
-  if (!typedProviders) {
-    return;
-  }
-  for (const providerInfo of typedProviders) {
-    providerInfo?.clear?.();
+  const typesToClear = Array.from(new Set([type, getAddModuleType(type)]));
+
+  for (const currentType of typesToClear) {
+    const typedProviders = typedProviderValueMap.get(currentType);
+    if (!typedProviders) {
+      continue;
+    }
+    for (const providerInfo of typedProviders) {
+      providerInfo?.clear?.();
+    }
   }
 };
 
