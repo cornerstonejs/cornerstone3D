@@ -1,9 +1,24 @@
 import { metaData, registerImageLoader, type Types } from '@cornerstonejs/core';
 import loadImage from './loadImage';
 import { metaDataProvider } from './metaData';
+import { registerDefaultProviders } from '@cornerstonejs/metadata';
 
-export default function () {
-  // register wadors scheme and metadata provider
+/**
+ * Registers the wadors scheme image loader, and either the
+ * default metadata providers to use those, or the legacy metadata providers
+ * when options?.useLegacyMetadataProvider is true.
+ */
+export default function (options?: { useLegacyMetadataProvider?: boolean }) {
+  // register wadors scheme image loader
   registerImageLoader('wadors', loadImage as unknown as Types.ImageLoaderFn);
-  metaData.addProvider(metaDataProvider);
+
+  if (options?.useLegacyMetadataProvider) {
+    console.warn(
+      'wadors metaDataProvider is deprecated. Use addDicomwebInstance from @cornerstonejs/metadata instead.'
+    );
+    metaData.addProvider(metaDataProvider);
+    return;
+  }
+
+  registerDefaultProviders();
 }

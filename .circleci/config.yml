@@ -103,6 +103,7 @@ jobs:
       - persist_to_workspace:
           root: ~/repo
           paths:
+            - packages/metadata/dist
             - packages/core/dist
             - packages/tools/dist
             - packages/adapters/dist
@@ -159,7 +160,7 @@ workflows:
           requires:
             - CHECKOUT
 
-  # MERGE TO MAIN/BETA
+  # MERGE TO MAIN
   TEST_AND_RELEASE:
     jobs:
       - CHECKOUT:
@@ -167,15 +168,11 @@ workflows:
             branches:
               only:
                 - main
-                - beta
+                # - beta
       - BUILD:
           requires:
             - CHECKOUT
-      - HOLD_FOR_APPROVAL:
-          type: approval
-          requires:
-            - BUILD
       - NPM_PUBLISH:
           requires:
-            - HOLD_FOR_APPROVAL
+            - BUILD
 # VS Code Extension Version: 1.5.1

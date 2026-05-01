@@ -7,6 +7,7 @@ module.exports = {
   displayName: 'core',
   setupFiles: ['jest-canvas-mock'],
   moduleNameMapper: {
+    ...base.moduleNameMapper,
     '^@cornerstonejs/(.*)$': path.resolve(__dirname, '../$1/src'),
   },
 };
