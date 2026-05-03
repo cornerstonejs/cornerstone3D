@@ -1,7 +1,7 @@
 import { utilities } from 'dcmjs';
 import MeasurementReport from './MeasurementReport';
 import BaseAdapter3D from './BaseAdapter3D';
-import { toScoord } from '../helpers';
+import { toScoord, validateNumericValue } from '../helpers';
 import { extractAllNUMGroups, restoreAdditionalMetrics } from './metricHandler';
 
 const { Circle: TID300Circle } = utilities.TID300;
@@ -93,16 +93,16 @@ class CircleROI extends BaseAdapter3D {
     const perimeter = 2 * Math.PI * radius;
 
     return {
-      area,
+      area: validateNumericValue(area),
       areaUnit,
-      perimeter,
+      perimeter: validateNumericValue(perimeter),
       modalityUnit,
       radiusUnit,
-      radius,
-      max,
-      min,
-      stdDev,
-      mean,
+      radius: validateNumericValue(radius),
+      max: validateNumericValue(max),
+      min: validateNumericValue(min),
+      stdDev: validateNumericValue(stdDev),
+      mean: validateNumericValue(mean),
       points: [center, end],
       trackingIdentifierTextValue: this.trackingIdentifierTextValue,
       finding,

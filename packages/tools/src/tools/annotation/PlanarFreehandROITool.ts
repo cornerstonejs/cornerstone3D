@@ -961,16 +961,44 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     let intersections = [];
     let intersectionCounter = 0;
 
+    const { viewPlaneNormal } = viewport.getCamera();
+
+    /**
+     * Detect if the current viewport orientation is oblique.
+     * For oblique planes, the worldToCanvas transformation can produce
+     * slightly different floating-point Y values for points that belong
+     * to the same scanline due to floating-point precision and projection.
+     *
+     * This causes the scanline intersection logic to reset frequently,
+     * resulting in missing voxels and incorrect min/max/density statistics.
+     *
+     * To stabilize scanline detection, we introduce a tolerance (rowDelta)
+     * when comparing the current canvas Y coordinate with the previous row.
+     *
+     * - For orthogonal views, no tolerance is required (rowDelta = 0).
+     * - For oblique views, we allow a small half-pixel tolerance (0.5)
+     *   so that points with very small floating-point differences are
+     *   treated as belonging to the same scanline.
+     */
+    const TOLERANCE = 0.5;
+
+    const isOblique =
+      viewPlaneNormal.filter((c) => Math.abs(c) > EPSILON).length > 1;
+
+    const rowDelta = isOblique ? TOLERANCE : 0;
+
     let pointsInShape;
+
     if (voxelManager) {
       pointsInShape = voxelManager.forEach(
         this.configuration.statsCalculator.statsCallback,
         {
           imageData,
           isInObject: (pointLPS, _pointIJK) => {
-            let result = true;
             const point = viewport.worldToCanvas(pointLPS);
-            if (point[1] != curRow) {
+            // Use tolerance-based comparison to avoid scanline resets caused
+            // by floating-point precision differences in oblique projections.
+            if (Math.abs(point[1] - curRow) > rowDelta) {
               intersectionCounter = 0;
               curRow = point[1];
               intersections = getLineSegmentIntersectionsCoordinates(
@@ -994,10 +1022,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
               intersections.shift();
               intersectionCounter++;
             }
-            if (intersectionCounter % 2 === 0) {
-              result = false;
-            }
-            return result;
+            return intersectionCounter % 2 === 1;
           },
           boundsIJK,
           returnPoints: this.configuration.storePointData,
