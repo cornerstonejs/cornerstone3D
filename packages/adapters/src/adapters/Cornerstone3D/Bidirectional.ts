@@ -1,6 +1,11 @@
 import { utilities } from 'dcmjs';
 import MeasurementReport from './MeasurementReport';
-import { scoordToWorld, toScoord, toArray } from '../helpers';
+import {
+  scoordToWorld,
+  toScoord,
+  toArray,
+  validateNumericValue,
+} from '../helpers';
 import BaseAdapter3D from './BaseAdapter3D';
 
 const { Bidirectional: TID300Bidirectional } = utilities.TID300;
@@ -137,8 +142,8 @@ class Bidirectional extends BaseAdapter3D {
         point1: shortAxisStartImage,
         point2: shortAxisEndImage,
       },
-      longAxisLength: length,
-      shortAxisLength: width,
+      longAxisLength: validateNumericValue(length),
+      shortAxisLength: validateNumericValue(width),
       unit,
       trackingIdentifierTextValue: this.trackingIdentifierTextValue,
       finding: finding,
