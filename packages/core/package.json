@@ -81,6 +81,7 @@
     "prepublishOnly": "yarn run build"
   },
   "dependencies": {
+    "@cornerstonejs/utils": "5.0.0-beta.1",
     "@kitware/vtk.js": "34.15.1",
     "comlink": "4.4.2",
     "gl-matrix": "3.4.3",
@@ -90,7 +91,8 @@
     "@cornerstonejs/metadata": "4.18.4"
   },
   "peerDependencies": {
-    "@cornerstonejs/metadata": ">=4.18.0 <6.0.0-0"
+    "@cornerstonejs/metadata": ">=4.18.0 <6.0.0-0",
+    "@cornerstonejs/utils": ">=5.0.0-beta.1 <6.0.0-0"
   },
   "contributors": [
     {

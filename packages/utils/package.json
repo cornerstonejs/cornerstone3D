@@ -1,7 +1,7 @@
 {
-  "name": "@cornerstonejs/metadata",
-  "version": "4.18.4",
-  "description": "Cornerstone3D Metadata Foundation - Provider chain, DICOM stream parsing, tag modules, and series splitting",
+  "name": "@cornerstonejs/utils",
+  "version": "5.0.0-beta.1",
+  "description": "Cornerstone3D shared utility helpers",
   "module": "./dist/esm/index.js",
   "types": "./dist/esm/index.d.ts",
   "repository": "https://github.com/cornerstonejs/cornerstone3D",
@@ -15,46 +15,40 @@
       "node": "./dist/esm/index.js",
       "types": "./dist/esm/index.d.ts"
     },
-    "./metaData": {
-      "import": "./dist/esm/metaData.js",
-      "node": "./dist/esm/metaData.js",
-      "types": "./dist/esm/metaData.d.ts"
-    },
-    "./enums": {
-      "import": "./dist/esm/enums/index.js",
-      "node": "./dist/esm/enums/index.js",
-      "types": "./dist/esm/enums/index.d.ts"
-    },
-    "./enums/*": {
-      "import": "./dist/esm/enums/*.js",
-      "node": "./dist/esm/enums/*.js",
-      "types": "./dist/esm/enums/*.d.ts"
-    },
     "./utilities": {
       "import": "./dist/esm/utilities/index.js",
       "node": "./dist/esm/utilities/index.js",
       "types": "./dist/esm/utilities/index.d.ts"
     },
-    "./utilities/dicomStream": {
-      "import": "./dist/esm/utilities/dicomStream/index.js",
-      "node": "./dist/esm/utilities/dicomStream/index.js",
-      "types": "./dist/esm/utilities/dicomStream/index.d.ts"
+    "./utilities/object": {
+      "import": "./dist/esm/utilities/object/index.js",
+      "node": "./dist/esm/utilities/object/index.js",
+      "types": "./dist/esm/utilities/object/index.d.ts"
     },
-    "./utilities/metadataProvider": {
-      "import": "./dist/esm/utilities/metadataProvider/index.js",
-      "node": "./dist/esm/utilities/metadataProvider/index.js",
-      "types": "./dist/esm/utilities/metadataProvider/index.d.ts"
+    "./utilities/object/*": {
+      "import": "./dist/esm/utilities/object/*.js",
+      "node": "./dist/esm/utilities/object/*.js",
+      "types": "./dist/esm/utilities/object/*.d.ts"
     },
-    "./utilities/*": {
-      "import": "./dist/esm/utilities/*.js",
-      "node": "./dist/esm/utilities/*.js",
-      "types": "./dist/esm/utilities/*.d.ts"
+    "./utilities/math": {
+      "import": "./dist/esm/utilities/math/index.js",
+      "node": "./dist/esm/utilities/math/index.js",
+      "types": "./dist/esm/utilities/math/index.d.ts"
     },
-    "./types": {
-      "types": "./dist/esm/types/index.d.ts"
+    "./utilities/math/*": {
+      "import": "./dist/esm/utilities/math/*.js",
+      "node": "./dist/esm/utilities/math/*.js",
+      "types": "./dist/esm/utilities/math/*.d.ts"
     },
-    "./types/*": {
-      "types": "./dist/esm/types/*.d.ts"
+    "./utilities/logging": {
+      "import": "./dist/esm/utilities/logging/index.js",
+      "node": "./dist/esm/utilities/logging/index.js",
+      "types": "./dist/esm/utilities/logging/index.d.ts"
+    },
+    "./utilities/logging/*": {
+      "import": "./dist/esm/utilities/logging/*.js",
+      "node": "./dist/esm/utilities/logging/*.js",
+      "types": "./dist/esm/utilities/logging/*.d.ts"
     },
     "./version": {
       "import": "./dist/esm/version.js",
@@ -79,10 +73,7 @@
     "prepublishOnly": "yarn run build"
   },
   "dependencies": {
-    "@cornerstonejs/utils": "5.0.0-beta.1",
-    "@cornerstonejs/calculate-suv": "1.0.3",
-    "dcmjs": "0.50.1",
-    "gl-matrix": "3.4.3"
+    "dcmjs": "0.50.1"
   },
   "contributors": [
     {

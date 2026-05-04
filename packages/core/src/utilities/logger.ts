@@ -1,8 +1,8 @@
-import { logging } from '@cornerstonejs/metadata';
+import { logging } from '@cornerstonejs/utils';
 /**
- * @deprecated Moved to metadata. Import from `@cornerstonejs/metadata` instead.
+ * @deprecated Moved to utils. Import from `@cornerstonejs/utils` instead.
  *
- * Re-exports logging from @cornerstonejs/metadata for backward compatibility.
+ * Re-exports logging from @cornerstonejs/utils for backward compatibility.
  */
 export const {
   getRootLogger,

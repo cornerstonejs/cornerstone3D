@@ -32,6 +32,7 @@ const localPackages = {
   core: 'packages/core',
   'dicom-image-loader': 'packages/dicomImageLoader',
   metadata: 'packages/metadata',
+  utils: 'packages/utils',
   'labelmap-interpolation': 'packages/labelmap-interpolation',
   'nifti-volume-loader': 'packages/nifti-volume-loader',
   'polymorphic-segmentation': 'packages/polymorphic-segmentation',
