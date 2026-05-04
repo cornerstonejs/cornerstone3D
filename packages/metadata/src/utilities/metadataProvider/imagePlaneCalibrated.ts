@@ -1,6 +1,7 @@
 import type { ImagePlaneModuleMetadata } from '../../types';
 import { MetadataModules } from '../../enums';
-import { toNumber } from '../toNumber';
+import { toFiniteNumber, toNumber } from '../toNumber';
+import { getNaturalizedNumber } from '../getNaturalizedField';
 import calibratedPixelSpacingMetadataProvider from '../calibratedPixelSpacingMetadataProvider';
 import getPixelSpacingInformation from '../getPixelSpacingInformation';
 
@@ -21,13 +22,13 @@ export const getImagePlaneCalibrated = (
   let rowPixelSpacing;
   let columnPixelSpacing;
 
-  let rowCosines;
-  let columnCosines;
+  let rowCosines: number[];
+  let columnCosines: number[];
 
   let usingDefaultValues = false;
   let isDefaultValueSetForRowCosine = false;
   let isDefaultValueSetForColumnCosine = false;
-  let imageOrientationPatient;
+  let imageOrientationPatient: number[];
   if (PixelSpacing) {
     [rowPixelSpacing, columnPixelSpacing] = PixelSpacing;
     const calibratedPixelSpacing = calibratedPixelSpacingMetadataProvider.get(
@@ -47,9 +48,16 @@ export const getImagePlaneCalibrated = (
   }
 
   if (ImageOrientationPatient) {
-    rowCosines = toNumber(ImageOrientationPatient.slice(0, 3));
-    columnCosines = toNumber(ImageOrientationPatient.slice(3, 6));
-    imageOrientationPatient = toNumber(ImageOrientationPatient);
+    imageOrientationPatient = [
+      getNaturalizedNumber(instance, 'ImageOrientationPatient', 1, 0),
+      getNaturalizedNumber(instance, 'ImageOrientationPatient', 0, 1),
+      getNaturalizedNumber(instance, 'ImageOrientationPatient', 0, 2),
+      getNaturalizedNumber(instance, 'ImageOrientationPatient', 0, 3),
+      getNaturalizedNumber(instance, 'ImageOrientationPatient', 1, 4),
+      getNaturalizedNumber(instance, 'ImageOrientationPatient', 0, 5),
+    ];
+    rowCosines = imageOrientationPatient.slice(0, 3);
+    columnCosines = imageOrientationPatient.slice(3, 6);
   } else {
     rowCosines = [1, 0, 0];
     columnCosines = [0, 1, 0];
@@ -59,27 +67,41 @@ export const getImagePlaneCalibrated = (
     isDefaultValueSetForColumnCosine = true;
   }
 
-  const imagePositionPatient = toNumber(ImagePositionPatient) || [0, 0, 0];
+  const imagePositionPatient = [
+    getNaturalizedNumber(instance, 'ImagePositionPatient', 0, 0),
+    getNaturalizedNumber(instance, 'ImagePositionPatient', 0, 1),
+    getNaturalizedNumber(instance, 'ImagePositionPatient', 0, 2),
+  ];
   if (!ImagePositionPatient) {
     usingDefaultValues = true;
   }
 
+  const rowPixelSpacingNumber = toFiniteNumber(rowPixelSpacing) ?? null;
+  const columnPixelSpacingNumber = toFiniteNumber(columnPixelSpacing) ?? null;
+  const pixelSpacing =
+    rowPixelSpacingNumber !== null && columnPixelSpacingNumber !== null
+      ? [rowPixelSpacingNumber, columnPixelSpacingNumber]
+      : Array.isArray(PixelSpacing)
+        ? PixelSpacing.map((value) => Number(value)).filter(Number.isFinite)
+        : [];
+
   const result = {
     frameOfReferenceUID: instance.FrameOfReferenceUID,
-    rows: toNumber(instance.Rows),
-    columns: toNumber(instance.Columns),
+    rows: getNaturalizedNumber(instance, 'Rows', 0),
+    columns: getNaturalizedNumber(instance, 'Columns', 0),
     imageOrientationPatient,
     rowCosines,
     columnCosines,
     imagePositionPatient,
-    sliceLocation: toNumber(instance.SliceLocation),
-    pixelSpacing: toNumber(PixelSpacing),
-    rowPixelSpacing: rowPixelSpacing ? toNumber(rowPixelSpacing) : null,
-    sliceThickness: toNumber(instance.SliceThickness),
-    spacingBetweenSlices: toNumber(instance.SpacingBetweenSlices),
-    columnPixelSpacing: columnPixelSpacing
-      ? toNumber(columnPixelSpacing)
-      : null,
+    sliceLocation: getNaturalizedNumber(instance, 'SliceLocation', 0),
+    pixelSpacing,
+    rowPixelSpacing: rowPixelSpacingNumber,
+    sliceThickness: getNaturalizedNumber(instance, 'SliceThickness'),
+    spacingBetweenSlices: getNaturalizedNumber(
+      instance,
+      'SpacingBetweenSlices'
+    ),
+    columnPixelSpacing: columnPixelSpacingNumber,
   };
   Object.defineProperty(result, 'usingDefaultValues', {
     value: usingDefaultValues,
