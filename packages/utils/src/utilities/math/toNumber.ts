@@ -45,16 +45,30 @@ export function toFiniteNumber<T extends NumberLike>(
  * @param val - The javascript object for the specified element in the metadata
  * @returns finite number(s); invalid values are coerced to NaN
  */
-export function toNumber(val: NumberLike): number;
-export function toNumber<T extends NumberLike>(val: ArrayLike<T>): number[];
+export function toNumber(
+  val: NumberLike | null | undefined
+): number | undefined;
 export function toNumber<T extends NumberLike>(
-  val: T | ArrayLike<T>
-): number | number[] {
+  val: ArrayLike<T> | Iterable<T>
+): number[];
+export function toNumber(val: unknown): number | number[] | undefined {
+  if (val === undefined || val === null) {
+    return undefined;
+  }
+
   if (isNumberLike(val)) {
     return Number(val);
   }
 
-  return Array.from(val, (entry) => Number(entry));
+  if (Array.isArray(val)) {
+    return val.map((entry) => Number(entry));
+  }
+
+  if (typeof val === 'object' && Symbol.iterator in val) {
+    return Array.from(val as Iterable<unknown>, (entry) => Number(entry));
+  }
+
+  return Number(val as NumberLike);
 }
 
 export default toNumber;
