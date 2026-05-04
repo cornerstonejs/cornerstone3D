@@ -10,6 +10,13 @@ import {useCurrentSidebarCategory} from '@docusaurus/theme-common';
 
 Here you can find migration notes for moving from Cornerstone3D 4.x to 5.x.
 
+# Shared utilities (`@cornerstonejs/utils`)
+
+5.x introduces `@cornerstonejs/utils`, a package for shared helpers (for example small math utilities and general-purpose logging) that are also surfaced from other Cornerstone3D packages during the transition.
+
+- **Optional for now:** you do not need to change your imports on day one. You can keep consuming the same helpers through their existing package entry points while those re-exports remain available.
+- **Direction of travel:** over time, **`@cornerstonejs/utils` is intended to be the only published home** for these shared utilities. New code and incremental refactors may prefer importing from `@cornerstonejs/utils` so you are aligned with where they will ultimately live.
+
 # Metadata Module
 
 In 5.x, the metadata module is designed as a shared handling layer for viewer metadata concerns, so core behavior is implemented once and reused rather than replicated across DICOMweb-specific code, OHIF-specific flows, JSON ingestion paths, and other module-specific integrations (which often resulted in multiple implementations with differing bugs).

@@ -748,7 +748,7 @@
 
 "@babel/plugin-syntax-typescript@^7.28.6":
   version "7.28.6"
-  resolved "https://registry.yarnpkg.com/@babel/plugin-syntax-typescript/-/plugin-syntax-typescript-7.28.6.tgz#c7b2ddf1d0a811145b1de800d1abd146af92e3a2"
+  resolved "https://registry.npmjs.org/@babel/plugin-syntax-typescript/-/plugin-syntax-typescript-7.28.6.tgz#c7b2ddf1d0a811145b1de800d1abd146af92e3a2"
   integrity sha512-+nDNmQye7nlnuuHDboPbGm00Vqg3oO8niRRL27/4LYHUsHYh0zJ1xWOz0uRwNFmM1Avzk8wZbc6rdiYhomzv/A==
   dependencies:
     "@babel/helper-plugin-utils" "^7.28.6"
@@ -1054,7 +1054,7 @@
 
 "@babel/plugin-transform-private-methods@7.28.6":
   version "7.28.6"
-  resolved "https://registry.yarnpkg.com/@babel/plugin-transform-private-methods/-/plugin-transform-private-methods-7.28.6.tgz#c76fbfef3b86c775db7f7c106fff544610bdb411"
+  resolved "https://registry.npmjs.org/@babel/plugin-transform-private-methods/-/plugin-transform-private-methods-7.28.6.tgz#c76fbfef3b86c775db7f7c106fff544610bdb411"
   integrity sha512-piiuapX9CRv7+0st8lmuUlRSmX6mBcVeNQ1b4AYzJxfCMuBfB0vBXDiGSmm03pKJw1v6cZ8KSeM+oUnM6yAExg==
   dependencies:
     "@babel/helper-create-class-features-plugin" "^7.28.6"
@@ -1189,7 +1189,7 @@
 
 "@babel/plugin-transform-typescript@7.28.6":
   version "7.28.6"
-  resolved "https://registry.yarnpkg.com/@babel/plugin-transform-typescript/-/plugin-transform-typescript-7.28.6.tgz#1e93d96da8adbefdfdade1d4956f73afa201a158"
+  resolved "https://registry.npmjs.org/@babel/plugin-transform-typescript/-/plugin-transform-typescript-7.28.6.tgz#1e93d96da8adbefdfdade1d4956f73afa201a158"
   integrity sha512-0YWL2RFxOqEm9Efk5PvreamxPME8OyY0wM5wh5lHjF+VtVhdneCWGzZeSqzOfiobVqQaNCd2z0tQvnI9DaPWPw==
   dependencies:
     "@babel/helper-annotate-as-pure" "^7.27.3"
@@ -6268,7 +6268,7 @@ dateformat@^3.0.3:
 
 dcmjs@0.50.1:
   version "0.50.1"
-  resolved "https://registry.yarnpkg.com/dcmjs/-/dcmjs-0.50.1.tgz#a3f241128579601c8135d2c3209a2756d187b50d"
+  resolved "https://registry.npmjs.org/dcmjs/-/dcmjs-0.50.1.tgz#a3f241128579601c8135d2c3209a2756d187b50d"
   integrity sha512-858uKIFD8plzv0lPcvZceA/ZGH/wzZf36wFkQToie3pSWp8YRI88dysQYQI1DJxc6AyGPk6eyf6RwKJbhoiQUw==
   dependencies:
     "@babel/runtime-corejs3" "^7.22.5"
@@ -6281,7 +6281,7 @@ dcmjs@0.50.1:
 
 dcmjs@^0.41.0:
   version "0.41.0"
-  resolved "https://registry.yarnpkg.com/dcmjs/-/dcmjs-0.41.0.tgz#4804099980ab769f8902a948ad330abdf3b577d2"
+  resolved "https://registry.npmjs.org/dcmjs/-/dcmjs-0.41.0.tgz#4804099980ab769f8902a948ad330abdf3b577d2"
   integrity sha512-kr46REomItFeWz+0ck4Wif4uS5VVDWVlwdh5GGaCtTYHWfNQmrcCSiQOkrShc7Dc5zP8vNKrHEdORlZXenlg3w==
   dependencies:
     "@babel/runtime-corejs3" "^7.22.5"

@@ -88,10 +88,10 @@
     "loglevel": "1.9.2"
   },
   "devDependencies": {
-    "@cornerstonejs/metadata": "4.18.4"
+    "@cornerstonejs/metadata": "5.0.0-beta.1"
   },
   "peerDependencies": {
-    "@cornerstonejs/metadata": ">=4.18.0 <6.0.0-0",
+    "@cornerstonejs/metadata": ">=5.0.0-beta.1 <6.0.0-0",
     "@cornerstonejs/utils": ">=5.0.0-beta.1 <6.0.0-0"
   },
   "contributors": [

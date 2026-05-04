@@ -165,16 +165,18 @@
       "name": "@cornerstonejs/core",
       "version": "5.0.0-beta.1",
       "dependencies": {
+        "@cornerstonejs/utils": "5.0.0-beta.1",
         "@kitware/vtk.js": "34.15.1",
         "comlink": "4.4.2",
         "gl-matrix": "3.4.3",
         "loglevel": "1.9.2",
       },
       "devDependencies": {
-        "@cornerstonejs/metadata": "4.18.4",
+        "@cornerstonejs/metadata": "5.0.0-beta.1",
       },
       "peerDependencies": {
-        "@cornerstonejs/metadata": ">=4.18.0 <6.0.0-0",
+        "@cornerstonejs/metadata": ">=5.0.0-beta.1 <6.0.0-0",
+        "@cornerstonejs/utils": ">=5.0.0-beta.1 <6.0.0-0",
       },
     },
     "packages/dicomImageLoader": {
@@ -193,11 +195,11 @@
       },
       "devDependencies": {
         "@cornerstonejs/core": "5.0.0-beta.1",
-        "@cornerstonejs/metadata": "4.18.4",
+        "@cornerstonejs/metadata": "5.0.0-beta.1",
       },
       "peerDependencies": {
         "@cornerstonejs/core": ">=5.0.0-beta.1 <6.0.0-0",
-        "@cornerstonejs/metadata": ">=4.18.0 <6.0.0-0",
+        "@cornerstonejs/metadata": ">=5.0.0-beta.1 <6.0.0-0",
         "dicom-parser": "1.8.21",
       },
     },
@@ -220,9 +222,10 @@
     },
     "packages/metadata": {
       "name": "@cornerstonejs/metadata",
-      "version": "4.18.4",
+      "version": "5.0.0-beta.1",
       "dependencies": {
         "@cornerstonejs/calculate-suv": "1.0.3",
+        "@cornerstonejs/utils": "5.0.0-beta.1",
         "dcmjs": "0.50.1",
         "gl-matrix": "3.4.3",
       },
@@ -278,12 +281,20 @@
         "gl-matrix": "3.4.3",
       },
     },
+    "packages/utils": {
+      "name": "@cornerstonejs/utils",
+      "version": "5.0.0-beta.1",
+      "dependencies": {
+        "dcmjs": "0.50.1",
+      },
+    },
   },
   "overrides": {
     "@babel/helper-create-class-features-plugin": "7.28.3",
     "@cornerstonejs/core": "5.0.0-beta.1",
-    "@cornerstonejs/metadata": "4.18.4",
+    "@cornerstonejs/metadata": "5.0.0-beta.1",
     "@cornerstonejs/tools": "5.0.0-beta.1",
+    "@cornerstonejs/utils": "5.0.0-beta.1",
     "axios": "1.15.0",
     "body-parser": "1.20.3",
     "buffer": "6.0.3",
@@ -577,6 +588,8 @@
     "@cornerstonejs/polymorphic-segmentation": ["@cornerstonejs/polymorphic-segmentation@workspace:packages/polymorphic-segmentation"],
 
     "@cornerstonejs/tools": ["@cornerstonejs/tools@workspace:packages/tools"],
+
+    "@cornerstonejs/utils": ["@cornerstonejs/utils@workspace:packages/utils"],
 
     "@cspotcode/source-map-support": ["@cspotcode/source-map-support@0.8.1", "", { "dependencies": { "@jridgewell/trace-mapping": "0.3.9" } }, "sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw=="],
 
