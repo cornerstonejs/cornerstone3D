@@ -51,7 +51,7 @@ export function addUploadToToolbar(config: configUpload = {}): void {
   //
   addButtonToToolbar({
     merge: config,
-    title: config.title || 'Upload',
+    title: config.title || 'Local file',
     onClick: fnClick,
   });
 }

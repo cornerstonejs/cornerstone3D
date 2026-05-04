@@ -189,9 +189,9 @@ async function run() {
     },
   });
 
-  // Upload ECG button — load a DICOM waveform file and display it
+  // Local file — load a DICOM waveform from disk and display it (not a server upload)
   addButtonToToolbar({
-    title: 'Upload ECG',
+    title: 'Local file',
     onClick: () => {
       const input = document.createElement('input');
       input.type = 'file';
@@ -201,7 +201,7 @@ async function run() {
         if (!file) return;
         try {
           const arrayBuffer = await file.arrayBuffer();
-          const imageId = `ecg:upload:${file.name}`;
+          const imageId = `ecg:local:${file.name}`;
           await addPart10Instance(imageId, arrayBuffer);
           await viewport.setEcg(imageId);
           const { width: ecgWidth, height: ecgHeight } =

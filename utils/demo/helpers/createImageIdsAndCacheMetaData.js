@@ -22,7 +22,6 @@ const SERIES_INSTANCE_UID = Tags.resolveHexFromKeyword('SeriesInstanceUID');
 const MODALITY = Tags.resolveHexFromKeyword('Modality');
 
 /**
-/**
  * Uses dicomweb-client to fetch metadata of a study, cache it in cornerstone,
  * and return a list of imageIds for the frames.
  *
@@ -30,8 +29,7 @@ const MODALITY = Tags.resolveHexFromKeyword('Modality');
  * dicom-web server to fetch it from.
  *
  * @param {object} options
- * @param {boolean} [options.useMetadata=true] - Store instances in the new typed metadata framework
- * @param {boolean} [options.useLegacyWadoRs=true] - Store instances in the legacy wadors metaDataManager
+ * @param {boolean} [options.useLegacyWadoRs=false] - When true, store instances only in the legacy wadors metaDataManager; when false, use the typed metadata framework (@cornerstonejs/metadata)
  * @returns {string[]} An array of imageIds for instances in the study.
  */
 
@@ -42,9 +40,9 @@ export default async function createImageIdsAndCacheMetaData({
   wadoRsRoot,
   client = null,
   convertMultiframe = true,
-  useMetadata = true,
-  useLegacyWadoRs = true,
+  useLegacyWadoRs = false,
 }) {
+  const useTypedMetadata = !useLegacyWadoRs;
   const studySearchOptions = {
     studyInstanceUID: StudyInstanceUID,
     seriesInstanceUID: SeriesInstanceUID,
@@ -86,7 +84,7 @@ export default async function createImageIdsAndCacheMetaData({
       );
     }
 
-    if (useMetadata) {
+    if (useTypedMetadata) {
       addDicomwebInstance(imageId, instanceMetaData);
     }
 
@@ -101,14 +99,14 @@ export default async function createImageIdsAndCacheMetaData({
 
     // For multiframe expansions, resolve through the metadata provider chain
     // so canonical base/frame handling stays internal to metadata filters.
-    if (useMetadata && imageIds.length !== originalImageIds.length) {
+    if (useTypedMetadata && imageIds.length !== originalImageIds.length) {
       for (const imageId of imageIds) {
         metaData.get(MetadataModules.NATURALIZED, imageId);
       }
     }
   }
 
-  if (useMetadata) {
+  if (useTypedMetadata) {
     imageIds.forEach((imageId) => {
       const instance = metaData.get('instanceOrig', imageId);
 
