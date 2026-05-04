@@ -1,6 +1,6 @@
 import type { ImagePlaneModuleMetadata } from '../../types';
 import { MetadataModules } from '../../enums';
-import { toFiniteNumber, toNumber } from '../toNumber';
+import { toFiniteNumber } from '../toNumber';
 import { getNaturalizedNumber } from '../getNaturalizedField';
 import calibratedPixelSpacingMetadataProvider from '../calibratedPixelSpacingMetadataProvider';
 import getPixelSpacingInformation from '../getPixelSpacingInformation';
@@ -48,14 +48,9 @@ export const getImagePlaneCalibrated = (
   }
 
   if (ImageOrientationPatient) {
-    imageOrientationPatient = [
-      getNaturalizedNumber(instance, 'ImageOrientationPatient', 1, 0),
-      getNaturalizedNumber(instance, 'ImageOrientationPatient', 0, 1),
-      getNaturalizedNumber(instance, 'ImageOrientationPatient', 0, 2),
-      getNaturalizedNumber(instance, 'ImageOrientationPatient', 0, 3),
-      getNaturalizedNumber(instance, 'ImageOrientationPatient', 1, 4),
-      getNaturalizedNumber(instance, 'ImageOrientationPatient', 0, 5),
-    ];
+    imageOrientationPatient = toFiniteNumber(
+      ImageOrientationPatient as ArrayLike<string | String | number | Number>
+    ) || [1, 0, 0, 0, 1, 0];
     rowCosines = imageOrientationPatient.slice(0, 3);
     columnCosines = imageOrientationPatient.slice(3, 6);
   } else {
@@ -67,11 +62,9 @@ export const getImagePlaneCalibrated = (
     isDefaultValueSetForColumnCosine = true;
   }
 
-  const imagePositionPatient = [
-    getNaturalizedNumber(instance, 'ImagePositionPatient', 0, 0),
-    getNaturalizedNumber(instance, 'ImagePositionPatient', 0, 1),
-    getNaturalizedNumber(instance, 'ImagePositionPatient', 0, 2),
-  ];
+  const imagePositionPatient = toFiniteNumber(
+    ImagePositionPatient as ArrayLike<string | String | number | Number>
+  ) || [0, 0, 0];
   if (!ImagePositionPatient) {
     usingDefaultValues = true;
   }

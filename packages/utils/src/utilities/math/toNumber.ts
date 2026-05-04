@@ -15,13 +15,19 @@ function isNumberLike(value: unknown): value is NumberLike {
  * @param value - The value to convert to a finite number
  * @returns The finite number value, or undefined if the value is not finite
  */
-export function toFiniteNumber(value: NumberLike): number | undefined;
+export function toFiniteNumber(
+  value: NumberLike | undefined
+): number | undefined;
 export function toFiniteNumber<T extends NumberLike>(
-  value: ArrayLike<T>
-): Array<number | undefined>;
+  value: ArrayLike<T> | undefined
+): number[] | undefined;
 export function toFiniteNumber<T extends NumberLike>(
-  value: T | ArrayLike<T>
-): number | undefined | Array<number | undefined> {
+  value: T | ArrayLike<T> | undefined
+): number | undefined | number[] {
+  if (value === undefined) {
+    return undefined;
+  }
+
   if (isNumberLike(value)) {
     const converted = Number(value);
     return Number.isFinite(converted) ? converted : undefined;
@@ -30,7 +36,7 @@ export function toFiniteNumber<T extends NumberLike>(
   return Array.from(value, (entry) => {
     const converted = Number(entry);
     return Number.isFinite(converted) ? converted : undefined;
-  });
+  }) as number[];
 }
 
 /**
