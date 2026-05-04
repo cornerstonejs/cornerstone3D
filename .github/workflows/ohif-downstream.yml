@@ -75,7 +75,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Build local Cornerstone packages for OHIF (includes metadata)
-        run: bun run build:esm:ohif
+        run: bun run build:esm
 
       - name: Checkout OHIF
         uses: actions/checkout@v4
