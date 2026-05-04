@@ -184,6 +184,7 @@ module.exports = function (config) {
           '@cornerstonejs/tools': path.resolve('packages/tools/src/index'),
           '@cornerstonejs/dicom-image-loader': path.resolve('packages/dicomImageLoader/src/index'),
           '@cornerstonejs/metadata': path.resolve('packages/metadata/src/index'),
+          '@cornerstonejs/utils': path.resolve('packages/utils/src/index'),
         },
       },
     },
