@@ -1387,11 +1387,34 @@ abstract class BaseVolumeViewport extends Viewport {
 
     const matchedColormap = findMatchingColormap(RGBPoints, volumeActor) || {};
 
-    const threshold = getThresholdValue(volumeActor);
-    const opacity = getMaxOpacity(volumeActor);
+    // getColormap used to always read opacity and threshold from the VTK actor. That overwrote
+    // values that came from the hanging protocol. When the protocol sends opacity as an array
+    // (e.g. [{value: 0, opacity: 0}, ...]), it was replaced by a single number from the actor,
+    // and TMTV and similar flows broke. The threshold slider (added in v3.11/3.12) needs the
+    // current value from the actor when the user moves the slider. So we branch: if the stored
+    // value is a number (slider case), read from the actor; otherwise use the stored value so
+    // hanging protocol arrays and explicit null are preserved.
+    const storedColormap = this.viewportProperties.colormap;
 
-    matchedColormap.threshold = threshold;
-    matchedColormap.opacity = opacity;
+    if (
+      storedColormap?.opacity !== undefined &&
+      typeof storedColormap.opacity === 'number'
+    ) {
+      matchedColormap.opacity = getMaxOpacity(volumeActor);
+    } else if (storedColormap?.opacity !== undefined) {
+      matchedColormap.opacity = Array.isArray(storedColormap.opacity)
+        ? storedColormap.opacity.map((item) => ({ ...item }))
+        : storedColormap.opacity;
+    }
+
+    if (
+      storedColormap?.threshold !== undefined &&
+      typeof storedColormap.threshold === 'number'
+    ) {
+      matchedColormap.threshold = getThresholdValue(volumeActor);
+    } else if (storedColormap && 'threshold' in storedColormap) {
+      matchedColormap.threshold = storedColormap.threshold;
+    }
 
     return matchedColormap;
   };
