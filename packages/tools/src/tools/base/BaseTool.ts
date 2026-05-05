@@ -10,6 +10,7 @@ import type {
 } from '../../types';
 
 const { DefaultHistoryMemo } = csUtils.HistoryMemo;
+const IMAGE_ID_TARGET_PREFIX = 'imageId:';
 
 /**
  * Abstract base class from which all tools derive.
@@ -237,8 +238,8 @@ abstract class BaseTool {
   protected getTargetImageData(
     targetId: string
   ): Types.IImageData | Types.CPUIImageData {
-    if (targetId.startsWith('imageId:')) {
-      const imageId = targetId.split('imageId:')[1];
+    if (targetId.startsWith(IMAGE_ID_TARGET_PREFIX)) {
+      const imageId = this.getImageIdFromTargetId(targetId);
       const imageURI = csUtils.imageIdToURI(imageId);
       let viewports = csUtils.getViewportsWithImageURI(imageURI);
 
@@ -279,6 +280,10 @@ abstract class BaseTool {
         'getTargetIdImage: targetId must start with "imageId:" or "volumeId:"'
       );
     }
+  }
+
+  protected getImageIdFromTargetId(targetId: string): string {
+    return targetId.slice(IMAGE_ID_TARGET_PREFIX.length);
   }
 
   /**

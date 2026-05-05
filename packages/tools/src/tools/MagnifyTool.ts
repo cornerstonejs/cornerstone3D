@@ -49,7 +49,7 @@ class MagnifyTool extends BaseTool {
     let referencedImageId;
 
     if (viewport instanceof StackViewport) {
-      referencedImageId = targetId.split('imageId:')[1];
+      referencedImageId = this.getImageIdFromTargetId(targetId);
     }
 
     return referencedImageId;

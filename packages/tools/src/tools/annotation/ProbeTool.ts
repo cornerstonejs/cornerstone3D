@@ -618,7 +618,7 @@ class ProbeTool extends AnnotationTool {
         // Index[2] for stackViewport is always 0, but for visualization
         // we reset it to be imageId index
         if (targetId.startsWith('imageId:')) {
-          const imageId = targetId.split('imageId:')[1];
+          const imageId = this.getImageIdFromTargetId(targetId);
           const imageURI = csUtils.imageIdToURI(imageId);
           const viewports = csUtils.getViewportsWithImageURI(imageURI);
 
