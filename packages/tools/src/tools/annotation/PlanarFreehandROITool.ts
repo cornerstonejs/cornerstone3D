@@ -700,7 +700,10 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       return;
     }
 
-    if (annotation.invalidated) {
+    const { data, invalidated } = annotation;
+    const cachedStats = data && data.cachedStats;
+
+    if (invalidated || !cachedStats?.[targetId]) {
       this._calculateStatsIfActive(
         annotation,
         targetId,
@@ -906,6 +909,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     const { voxelManager } = viewport.getImageData();
 
     const indexPoints = points.map((point) => imageData.worldToIndex(point));
+    const dims = imageData.getDimensions();
 
     let iMin = Number.MAX_SAFE_INTEGER;
     let iMax = Number.MIN_SAFE_INTEGER;
@@ -915,7 +919,12 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     let kMax = Number.MIN_SAFE_INTEGER;
 
     for (let j = 0; j < points.length; j++) {
-      const worldPosIndex = indexPoints[j].map(Math.floor);
+      const worldPosIndex = indexPoints[j].map((v) => Math.floor(v + 1e-3));
+
+      worldPosIndex[0] = Math.max(0, Math.min(dims[0] - 1, worldPosIndex[0]));
+      worldPosIndex[1] = Math.max(0, Math.min(dims[1] - 1, worldPosIndex[1]));
+      worldPosIndex[2] = Math.max(0, Math.min(dims[2] - 1, worldPosIndex[2]));
+
       iMin = Math.min(iMin, worldPosIndex[0]);
       iMax = Math.max(iMax, worldPosIndex[0]);
 
