@@ -30,7 +30,7 @@ jobs:
       - name: Run Playwright tests
         run: |
           export NODE_OPTIONS="--max_old_space_size=10192"
-          bun run test:e2e:coverage
+          bun x nyc --reporter=html npx playwright test --max-failures=10 --retries=0
       - name: create the coverage report
         run: |
           bun nyc report --reporter=lcov --reporter=text

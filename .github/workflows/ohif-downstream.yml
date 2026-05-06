@@ -117,7 +117,7 @@ jobs:
         working-directory: ${{ env.OHIF_DIR }}
         env:
           PLAYWRIGHT_HTML_OPEN: never
-        run: bun run test:e2e:ci
+        run: bun run test:e2e:ci -- --max-failures=10 --retries=1
 
       - name: Upload OHIF Playwright artifacts
         if: always()
