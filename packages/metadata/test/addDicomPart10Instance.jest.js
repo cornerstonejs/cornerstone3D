@@ -2,7 +2,7 @@ import { describe, it, expect, jest, afterEach } from '@jest/globals';
 import * as metaData from '../src/metaData';
 import { MetadataModules } from '../src/enums';
 import {
-  addDicomwebInstance,
+  addDicomWebInstance,
   addDicomPart10Instance,
 } from '../src/utilities/metadataProvider/addDicomPart10Instance';
 
@@ -17,7 +17,7 @@ describe('naturalized add entrypoints', () => {
       .mockReturnValue({ value: 'ok' });
     const payload = { '00080060': { vr: 'CS', Value: ['CT'] } };
 
-    const result = addDicomwebInstance('image-6', payload);
+    const result = addDicomWebInstance('image-6', payload);
 
     expect(addTypedSpy).toHaveBeenCalledWith(
       MetadataModules.NATURALIZED,

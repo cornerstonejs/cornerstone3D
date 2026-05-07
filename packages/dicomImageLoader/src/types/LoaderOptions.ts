@@ -35,7 +35,7 @@ export interface LoaderOptions {
    * When true, registers the legacy wadouri/wadors metadata providers.
    * Default is false (use the new metadata design). Set to true only for
    * backward compatibility.
-   * New design: use addDicomPart10Instance and addDicomwebInstance from
+   * New design: use addDicomPart10Instance and addDicomWebInstance from
    * @cornerstonejs/metadata to populate the NATURAL cache instead.
    * @see https://www.cornerstonejs.org/docs/concepts/cornerstone-core/metadataProvider
    */

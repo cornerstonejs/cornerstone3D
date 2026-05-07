@@ -14,7 +14,7 @@ import { convertMultiframeImageIds } from './convertMultiframeImageIds';
 const { calibratedPixelSpacingMetadataProvider, getPixelSpacingInformation } =
   utilities;
 
-const { addDicomwebInstance, Tags } = metadataUtilities;
+const { addDicomWebInstance, Tags } = metadataUtilities;
 const { MetadataModules } = metadataEnums;
 
 const SOP_INSTANCE_UID = Tags.resolveHexFromKeyword('SOPInstanceUID');
@@ -85,7 +85,7 @@ export default async function createImageIdsAndCacheMetaData({
     }
 
     if (useTypedMetadata) {
-      addDicomwebInstance(imageId, instanceMetaData);
+      addDicomWebInstance(imageId, instanceMetaData);
     }
 
     return imageId;

@@ -54,11 +54,11 @@ element.oncontextmenu = (e) => e.preventDefault();
  */
 async function run() {
   // Use metadata package only: do not register legacy wadors/wadouri metaDataProvider.
-  // Instances are cached via addDicomwebInstance in createImageIdsAndCacheMetaData;
+  // Instances are cached via addDicomWebInstance in createImageIdsAndCacheMetaData;
   // ECG is provided by @cornerstonejs/metadata (ecgFromInstance provider).
   await initDemo();
 
-  // Use the standard pipeline to fetch and cache DICOM metadata (addDicomwebInstance)
+  // Use the standard pipeline to fetch and cache DICOM metadata (addDicomWebInstance)
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID,
     SeriesInstanceUID,

@@ -14,7 +14,7 @@ export default function (options?: { useLegacyMetadataProvider?: boolean }) {
 
   if (options?.useLegacyMetadataProvider) {
     console.warn(
-      'wadors metaDataProvider is deprecated. Use addDicomwebInstance from @cornerstonejs/metadata instead.'
+      'wadors metaDataProvider is deprecated. Use addDicomWebInstance from @cornerstonejs/metadata instead.'
     );
     metaData.addProvider(metaDataProvider);
     return;
