@@ -28,9 +28,22 @@ jobs:
       # - name: Install Playwright browsers
       #   run: bun x playwright install-deps chromium
       - name: Run Playwright tests
+        env:
+          CI: true
+          PLAYWRIGHT_HTML_OPEN: never
         run: |
           export NODE_OPTIONS="--max_old_space_size=10192"
           bun x nyc --reporter=html npx playwright test --max-failures=10 --retries=0
+      - name: Upload Playwright report and test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results-${{ github.sha }}
+          if-no-files-found: warn
+          path: |
+            tests/playwright-report/
+            tests/test-results/
+          retention-days: 7
       - name: create the coverage report
         run: |
           bun nyc report --reporter=lcov --reporter=text
