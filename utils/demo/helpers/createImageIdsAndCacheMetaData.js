@@ -96,14 +96,6 @@ export default async function createImageIdsAndCacheMetaData({
   if (convertMultiframe) {
     const originalImageIds = [...imageIds];
     imageIds = convertMultiframeImageIds(imageIds);
-
-    // For multiframe expansions, resolve through the metadata provider chain
-    // so canonical base/frame handling stays internal to metadata filters.
-    if (useTypedMetadata && imageIds.length !== originalImageIds.length) {
-      for (const imageId of imageIds) {
-        metaData.get(MetadataModules.NATURALIZED, imageId);
-      }
-    }
   }
 
   if (useTypedMetadata) {

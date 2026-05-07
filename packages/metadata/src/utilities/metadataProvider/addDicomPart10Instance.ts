@@ -12,7 +12,7 @@ import { MetadataModules } from '../../enums';
  * @param metadata - DICOMweb JSON metadata object with hex-tagged entries
  * @returns The naturalized instance object
  */
-export function addDicomwebInstance(
+export function addDicomWebInstance(
   imageId: string,
   metadata: Record<string, unknown>
 ) {
