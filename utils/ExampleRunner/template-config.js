@@ -14,6 +14,7 @@ const csDICOMImageLoaderDistPath = path.resolve(
   'packages/dicomImageLoader/src/index'
 );
 const csMetadataBasePath = path.resolve('packages/metadata/src');
+const csUtilsBasePath = path.resolve('packages/utils/src');
 const csNiftiPath = path.resolve('packages/nifti-volume-loader/src/index');
 
 module.exports = function buildConfig(name, destPath, root, exampleBasePath) {
@@ -92,6 +93,7 @@ module.exports = {
       )}',
       '@cornerstonejs/adapters': '${csAdapters.replace(/\\/g, '/')}',
       '@cornerstonejs/metadata': '${csMetadataBasePath.replace(/\\/g, '/')}',
+      '@cornerstonejs/utils': '${csUtilsBasePath.replace(/\\/g, '/')}',
       '@cornerstonejs/dicom-image-loader': '${csDICOMImageLoaderDistPath.replace(
         /\\/g,
         '/'
