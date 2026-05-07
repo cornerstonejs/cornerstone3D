@@ -137,12 +137,12 @@ export function buildMetadata(image: IImage): BuildMetadataResult {
     highBit,
     photometricInterpretation,
     samplesPerPixel,
-  } = metaData.get('imagePixelModule', imageId);
+  } = metaData.get(MetadataModules.IMAGE_PIXEL, imageId);
 
   const { windowWidth, windowCenter, voiLUTFunction } = image;
 
-  const { modality } = metaData.get('generalSeriesModule', imageId);
-  const imageIdScalingFactor = metaData.get('scalingModule', imageId);
+  const { modality } = metaData.get(MetadataModules.GENERAL_SERIES, imageId);
+  const imageIdScalingFactor = metaData.get(MetadataModules.SCALING, imageId);
   const calibration = metaData.get(MetadataModules.CALIBRATION, imageId);
 
   const voiLUTFunctionEnum = getValidVOILUTFunction(voiLUTFunction);

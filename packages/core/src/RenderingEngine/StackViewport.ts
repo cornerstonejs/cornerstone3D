@@ -2212,7 +2212,8 @@ class StackViewport extends Viewport {
 
   public getLoaderImageOptions(imageId: string) {
     const imageIdIndex = this.imageIds.indexOf(imageId);
-    const { transferSyntaxUID } = metaData.get('transferSyntax', imageId) || {};
+    const { transferSyntaxUID } =
+      metaData.get(MetadataModules.TRANSFER_SYNTAX, imageId) || {};
 
     const options = {
       useRGBA: false,

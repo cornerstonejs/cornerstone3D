@@ -42,7 +42,6 @@ export default async function createImageIdsAndCacheMetaData({
   convertMultiframe = true,
   useLegacyWadoRs = false,
 }) {
-  const useTypedMetadata = !useLegacyWadoRs;
   const studySearchOptions = {
     studyInstanceUID: StudyInstanceUID,
     seriesInstanceUID: SeriesInstanceUID,
@@ -82,9 +81,7 @@ export default async function createImageIdsAndCacheMetaData({
         imageId,
         instanceMetaData
       );
-    }
-
-    if (useTypedMetadata) {
+    } else {
       addDicomWebInstance(imageId, instanceMetaData);
     }
 
@@ -98,7 +95,7 @@ export default async function createImageIdsAndCacheMetaData({
     imageIds = convertMultiframeImageIds(imageIds);
   }
 
-  if (useTypedMetadata) {
+  if (!useLegacyWadoRs) {
     imageIds.forEach((imageId) => {
       const instance = metaData.get('instanceOrig', imageId);
 
