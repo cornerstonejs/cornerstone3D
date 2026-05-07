@@ -59,7 +59,7 @@
   "scripts": {
     "test": "jest --testTimeout 60000",
     "build": "rollup -c rollup.config.mjs",
-    "build:esm": "rollup -c rollup.config.mjs",
+    "build:esm": "yarn run prebuild && rollup -c rollup.config.mjs",
     "build:esm:watch": "rollup --watch -c rollup.config.mjs",
     "clean": "rm -rf node_modules/.cache/storybook && shx rm -rf dist",
     "clean:deep": "yarn run clean && shx rm -rf node_modules",
@@ -84,7 +84,7 @@
   "dependencies": {
     "@babel/runtime-corejs2": "7.26.10",
     "buffer": "6.0.3",
-    "dcmjs": "0.49.4",
+    "dcmjs": "0.50.1",
     "gl-matrix": "3.4.3",
     "ndarray": "1.0.19"
   },
@@ -93,7 +93,7 @@
     "@cornerstonejs/tools": "5.0.0-beta.1"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "5.0.0-beta.1",
-    "@cornerstonejs/tools": "5.0.0-beta.1"
+    "@cornerstonejs/core": ">=5.0.0-beta.1 <6.0.0-0",
+    "@cornerstonejs/tools": ">=5.0.0-beta.1 <6.0.0-0"
   }
 }

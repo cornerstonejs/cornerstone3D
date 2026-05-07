@@ -9,7 +9,6 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  ctVoiRange,
   addButtonToToolbar,
   setCtTransferFunctionForVolumeActor,
   setPetColorMapTransferFunctionForVolumeActor,
@@ -40,8 +39,25 @@ const ptVolumeId = `${volumeLoaderScheme}:${ptVolumeName}`;
 // Segmentation ID
 const segmentationId = 'MY_SEGMENTATION_ID';
 
+// Parse URL flags for comparison: ?url=<wadoRsRoot>&useLegacyMetadataProvider=true
+const urlParams = new URLSearchParams(
+  typeof window !== 'undefined' ? window.location.search : ''
+);
+const wadoRsRootFromUrl = urlParams.get('url') ?? urlParams.get('wadoRsRoot');
+const useLegacyMetadataProvider =
+  urlParams.get('useLegacyMetadataProvider') === 'true';
+
+const defaultWadoRsRoot = 'https://d33do7qe4w26qo.cloudfront.net/dicomweb';
+const wadoRsRoot = wadoRsRootFromUrl ?? defaultWadoRsRoot;
+
 // ======== Set up page ======== //
-setTitleAndDescription('Stack Viewport First then Add Overlay Volume', '');
+const descParts: string[] = [];
+if (useLegacyMetadataProvider) descParts.push('Legacy metadata provider');
+if (wadoRsRootFromUrl) descParts.push(`URL: ${wadoRsRoot}`);
+setTitleAndDescription(
+  'Stack Viewport First then Add Overlay Volume',
+  descParts.length ? descParts.join(' | ') : ''
+);
 
 const content = document.getElementById('content');
 const element = document.createElement('div');
@@ -55,36 +71,36 @@ let renderingEngine: RenderingEngine;
 let ctImageIds, ptImageIds;
 addButtonToToolbar({
   title: 'Stack to Volume',
-  onClick: () => {
+  onClick: async () => {
     const viewPresentation = viewport.getViewPresentation();
     const viewReference = viewport.getViewReference();
 
-    convertStackToFusionVolume();
-    viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
+    await convertStackToFusionVolume();
+    viewport = renderingEngine.getViewport(viewportId);
 
-    // for some reason we need the setTimeout here since the viewReference requires
-    // image data
-    setTimeout(() => {
-      viewport.setViewReference(viewReference);
-      viewport.setViewPresentation(viewPresentation);
-      viewport.render();
-    }, 100);
+    // viewport.render();
+
+    console.warn(
+      'Setting view presentation and reference',
+      viewPresentation,
+      viewReference
+    );
+    viewport.setViewPresentation(viewPresentation);
+    viewport.setViewReference(viewReference);
+    viewport.render();
   },
 });
 
 addButtonToToolbar({
   title: 'Stack to Volume with Labelmap',
-  onClick: () => {
-    const viewPresentation = viewport.getViewPresentation();
+  onClick: async () => {
     const viewReference = viewport.getViewReference();
 
-    convertStackToVolumeWithLabelmap();
-    viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
+    await convertStackToVolumeWithLabelmap();
+    viewport = renderingEngine.getViewport(viewportId);
 
-    setTimeout(() => {
-      viewport.setViewReference(viewReference);
-      viewport.render();
-    }, 100);
+    viewport.setViewReference(viewReference);
+    viewport.render();
   },
 });
 
@@ -92,15 +108,15 @@ addButtonToToolbar({
  * Runs the demo
  */
 async function run() {
-  // Init Cornerstone and related libraries
-  await initDemo();
+  // Init Cornerstone and related libraries (useLegacyMetadataProvider from URL for comparison)
+  await initDemo({ useLegacyMetadataProvider });
 
   ptImageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
-    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+    wadoRsRoot,
   });
 
   ctImageIds = await createImageIdsAndCacheMetaData({
@@ -108,7 +124,7 @@ async function run() {
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d33do7qe4w26qo.cloudfront.net/dicomweb',
+    wadoRsRoot,
   });
 
   // Instantiate a rendering engine
@@ -127,10 +143,11 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  viewport = renderingEngine.getViewport(viewportId) as Types.IStackViewport;
+  viewport = renderingEngine.getViewport(viewportId);
+  const stackViewport = viewport as Types.IStackViewport;
 
   // Set the stack on the viewport
-  await viewport.setStack(ctImageIds);
+  await stackViewport.setStack(ctImageIds);
 
   // Create and cache both volumes
   const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
@@ -150,7 +167,7 @@ async function run() {
     volumeId: segmentationId,
   });
 
-  // Render the image
+  // Render the image - note the offset/zoom is specifically set to to be re-rendered after the viewport is updated
   viewport.render();
   viewport.setZoom(2.4);
   viewport.setPan([-100, -100]);
@@ -159,7 +176,7 @@ async function run() {
 /**
  * Converts stack viewport to volume viewport with fusion
  */
-async function convertStackToFusionVolume() {
+function convertStackToFusionVolume() {
   // Disable the current viewport
   const renderingEngine = getRenderingEngine(renderingEngineId);
   renderingEngine.disableElement(viewportId);
@@ -178,10 +195,11 @@ async function convertStackToFusionVolume() {
   // Enable the volume viewport
   renderingEngine.enableElement(viewportInput);
 
-  viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
+  viewport = renderingEngine.getViewport(viewportId);
+  const volumeViewport = viewport as Types.IVolumeViewport;
 
   // Set both volumes on the viewport with fusion
-  viewport.setVolumes([
+  return volumeViewport.setVolumes([
     {
       volumeId: ctVolumeId,
       callback: setCtTransferFunctionForVolumeActor,
@@ -230,8 +248,9 @@ async function convertStackToVolumeWithLabelmap() {
     },
   ]);
 
+  const volumeViewport = viewport as Types.IVolumeViewport;
   // Set the volume on the viewport
-  viewport.setVolumes([
+  await volumeViewport.setVolumes([
     {
       volumeId: ctVolumeId,
       callback: setCtTransferFunctionForVolumeActor,

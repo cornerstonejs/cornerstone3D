@@ -30,7 +30,7 @@
     "clean": "rimraf dist",
     "clean:deep": "yarn run clean && shx rm -rf node_modules",
     "build": "yarn run build:esm",
-    "build:esm": "tsc --project ./tsconfig.json",
+    "build:esm": "yarn run prebuild && tsc --project ./tsconfig.json",
     "build:esm:watch": "tsc --project ./tsconfig.json --watch",
     "dev": "tsc --project ./tsconfig.json --watch",
     "build:all": "yarn run build:esm",
@@ -54,13 +54,13 @@
     "@itk-wasm/morphological-contour-interpolation": "1.1.0",
     "itk-wasm": "1.0.0-b.165"
   },
-  "peerDependencies": {
-    "@cornerstonejs/core": "5.0.0-beta.1",
-    "@cornerstonejs/tools": "5.0.0-beta.1",
-    "@kitware/vtk.js": "34.15.1"
-  },
   "devDependencies": {
     "@cornerstonejs/core": "5.0.0-beta.1",
     "@cornerstonejs/tools": "5.0.0-beta.1"
+  },
+  "peerDependencies": {
+    "@cornerstonejs/core": ">=5.0.0-beta.1 <6.0.0-0",
+    "@cornerstonejs/tools": ">=5.0.0-beta.1 <6.0.0-0",
+    "@kitware/vtk.js": "34.15.1"
   }
 }

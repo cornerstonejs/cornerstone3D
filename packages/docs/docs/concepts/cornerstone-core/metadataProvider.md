@@ -6,6 +6,9 @@ summary: Functions that retrieve and provide non-pixel metadata associated with 
 
 # Metadata Providers
 
+For package-level architecture and current 5.x metadata behavior, see
+[Metadata Module](../cornerstone-metadata/index.md).
+
 Medical images typically come with lots of non-pixel-wise metadata such as the pixel spacing of the image, the patient ID, or the scan acquisition date. With some file types (e.g. DICOM), this information is stored within the file header and can be read and parsed and passed around your application. With others (e.g. JPEG, PNG), this information needs to be provided independently from the actual pixel data. Even for DICOM images, however, it is common for application developers to provide metadata independently from the transmission of pixel data from the server to the client since this can considerably improve performance.
 
 A Metadata Provider is a JavaScript function that acts as an interface for accessing metadata related to Images in Cornerstone. Users can define their own provider functions in order to return any metadata they wish for each specific image. A Metadata Provider function has the following prototype:

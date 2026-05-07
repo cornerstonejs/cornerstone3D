@@ -30,7 +30,7 @@ const WADO_RS_TESTS = [
 describe('dicomImageLoader - WADO-RS', () => {
   beforeEach(() => {
     wadors.register();
-    dicomImageLoaderInit();
+    dicomImageLoaderInit({ useLegacyMetadataProvider: true });
   });
 
   afterEach(() => {

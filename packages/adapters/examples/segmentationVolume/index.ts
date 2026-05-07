@@ -107,7 +107,7 @@ addInstruction(
   "After making changes, click 'Export SEG' to download the updated segmentation as a DICOM SEG file."
 );
 addInstruction(
-  "You can also upload local DICOM images or SEG files by using the 'Import DICOM' and 'Import SEG' buttons."
+  "You can also load local DICOM images or SEG files from disk using the 'Import DICOM' and 'Import SEG' buttons."
 );
 
 const state = {

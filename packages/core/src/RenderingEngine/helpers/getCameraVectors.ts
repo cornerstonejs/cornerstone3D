@@ -262,7 +262,10 @@ export function getCameraVectors(
   if (!imageId) {
     return;
   }
-  const { imageOrientationPatient } = metaData.get('imagePlaneModule', imageId);
+  const { imageOrientationPatient } = metaData.get(
+    Enums.MetadataModules.IMAGE_PLANE,
+    imageId
+  );
   const rowCosineVec = vec3.fromValues(
     imageOrientationPatient[0],
     imageOrientationPatient[1],
