@@ -32,7 +32,7 @@ export default function (options?: {
   }
 
   // register dicomweb and wadouri image loader prefixes to loadImageFromNaturalizedMetadata
-  // (dataSetCacheManager populates NATURAL via addPart10Instance when loading; returns IImage).
+  // (dataSetCacheManager populates NATURAL via addDicomPart10Instance when loading; returns IImage).
   registerImageLoader('dicomweb', loadImageFromNaturalizedMetadata);
   registerImageLoader('wadouri', loadImageFromNaturalizedMetadata);
   registerImageLoader('dicomfile', loadImageFromNaturalizedMetadata);

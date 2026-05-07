@@ -21,7 +21,7 @@ import { instanceModuleNames } from '../../getInstanceModule';
 import { getUSEnhancedRegions } from './USHelpers';
 
 /**
- * @deprecated Use addPart10Instance from @cornerstonejs/metadata instead.
+ * @deprecated Use addDicomPart10Instance from @cornerstonejs/metadata instead.
  */
 function metaDataProvider(type, imageId) {
   const { MetadataModules } = Enums;

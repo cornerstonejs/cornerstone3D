@@ -34,7 +34,7 @@ export function addDicomwebInstance(
  * @param part10 - ArrayBuffer/Uint8Array or resolver function returning those values
  * @returns A promise that resolves to the naturalized instance object
  */
-export async function addPart10Instance(
+export async function addDicomPart10Instance(
   imageId: string,
   part10:
     | ArrayBuffer

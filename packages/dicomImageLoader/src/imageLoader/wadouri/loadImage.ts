@@ -16,7 +16,7 @@ import parseImageId from './parseImageId';
 
 const { ImageQualityStatus } = Enums;
 
-const { addPart10Instance } = utilities;
+const { addDicomPart10Instance } = utilities;
 const NATURALIZED = MetadataEnums.MetadataModules.NATURALIZED;
 
 // add a decache callback function to clear out our dataSetCacheManager
@@ -207,7 +207,7 @@ function concatPixelData(pixelData) {
 
 /**
  * Loads an image from the NATURALIZED path: ensures NATURALIZED is populated (fetch +
- * addPart10Instance when needed), gets frame pixel data via getMetaData(MetadataModules.COMPRESSED_FRAME_DATA, imageId, `{ frameIndex }`),
+ * addDicomPart10Instance when needed), gets frame pixel data via getMetaData(MetadataModules.COMPRESSED_FRAME_DATA, imageId, `{ frameIndex }`),
  * then creates IImage. Does not use dataSetCacheManager.
  */
 function loadImageFromNaturalizedMetadata(
@@ -255,7 +255,7 @@ function loadImageFromNaturalizedMetadata(
         result instanceof ArrayBuffer ? result : result.arrayBuffer;
       // Store NATURALIZED under base imageId (no ?frame=) so registration happens once per URL
       const baseImageId = `${parsedImageId.scheme}:${parsedImageId.url}`;
-      await addPart10Instance(baseImageId, arrayBuffer);
+      await addDicomPart10Instance(baseImageId, arrayBuffer);
       natural = metaData.get(NATURALIZED, imageId);
     }
 

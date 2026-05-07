@@ -1,7 +1,7 @@
 import type { Types } from '@cornerstonejs/core';
 import { RenderingEngine, Enums } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import { addPart10Instance } from '@cornerstonejs/metadata/utilities/metadataProvider';
+import { addDicomPart10Instance } from '@cornerstonejs/metadata/utilities/metadataProvider';
 import {
   initDemo,
   setTitleAndDescription,
@@ -202,7 +202,7 @@ async function run() {
         try {
           const arrayBuffer = await file.arrayBuffer();
           const imageId = `ecg:local:${file.name}`;
-          await addPart10Instance(imageId, arrayBuffer);
+          await addDicomPart10Instance(imageId, arrayBuffer);
           await viewport.setEcg(imageId);
           const { width: ecgWidth, height: ecgHeight } =
             viewport.getContentDimensions();

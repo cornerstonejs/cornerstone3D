@@ -3,8 +3,8 @@ import * as metaData from '../src/metaData';
 import { MetadataModules } from '../src/enums';
 import {
   addDicomwebInstance,
-  addPart10Instance,
-} from '../src/utilities/metadataProvider/addPart10Instance';
+  addDicomPart10Instance,
+} from '../src/utilities/metadataProvider/addDicomPart10Instance';
 
 describe('naturalized add entrypoints', () => {
   afterEach(() => {
@@ -33,7 +33,7 @@ describe('naturalized add entrypoints', () => {
       .mockResolvedValue({ value: 'ok' });
     const payload = new Uint8Array([1, 2, 3]);
 
-    const result = await addPart10Instance('image-7', payload);
+    const result = await addDicomPart10Instance('image-7', payload);
 
     expect(addTypedSpy).toHaveBeenCalledWith(
       MetadataModules.NATURALIZED,

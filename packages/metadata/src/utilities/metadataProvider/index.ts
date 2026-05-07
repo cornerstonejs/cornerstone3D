@@ -11,7 +11,7 @@ export * from './combineFrameInstance';
 export * from './uriModule';
 export * from './pixelDataUpdate';
 export * from './transferSyntaxProvider';
-export * from './addPart10Instance';
+export * from './addDicomPart10Instance';
 export type { CompressedFrameDataMetadata } from '../../types';
 export * from './ecgModule';
 export * from './ecgFromInstance';
