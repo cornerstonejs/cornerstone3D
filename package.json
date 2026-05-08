@@ -188,7 +188,7 @@
   "resolutions": {
     "@babel/helper-create-class-features-plugin": "7.28.3",
     "caniuse-lite": "1.0.30001767",
-    "axios": "1.15.0",
+    "axios": "1.15.2",
     "buffer": "6.0.3",
     "node-forge": "1.4.0",
     "canvas": "3.2.0",
@@ -206,6 +206,7 @@
     "flatted": "3.4.2",
     "socket.io-parser": "4.2.6",
     "handlebars": "4.7.9",
-    "path-to-regexp": "0.1.13"
+    "path-to-regexp": "0.1.13",
+    "protobufjs": "7.5.5"
   }
 }

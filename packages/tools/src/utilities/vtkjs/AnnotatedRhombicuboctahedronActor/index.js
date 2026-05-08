@@ -305,7 +305,7 @@ function vtkAnnotatedRhombicuboctahedronActor(publicAPI, model) {
     }
 
     if (model.showEdgeFaces !== false) {
-      const edgeColor = [200, 200, 200];
+      const edgeColor = model.edgeColor ?? [200, 200, 200];
       const edgeData = createEdgeFacesMesh(sourceScale, edgeColor);
       if (edgeData) {
         const edgeFacesActor = vtkActor.newInstance();
@@ -329,7 +329,7 @@ function vtkAnnotatedRhombicuboctahedronActor(publicAPI, model) {
     }
 
     if (model.showCornerFaces !== false) {
-      const cornerColor = [150, 150, 150];
+      const cornerColor = model.cornerColor ?? [150, 150, 150];
       const cornerData = createCornerFacesMesh(sourceScale, cornerColor);
       if (cornerData) {
         const cornerFacesActor = vtkActor.newInstance();
