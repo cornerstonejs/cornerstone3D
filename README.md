@@ -1,11 +1,11 @@
 # [Cornerstone.js](https://cornerstonejs.org/) &middot; ![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)
 
-Cornerstone is a set of JavaScript libraries that can be used to build web-based medical imaging applications. It provides a framework to build radiology applications such as the [OHIF Viewer](https://ohif.org/).
+Cornerstone is a set of JavaScript libraries that can be used to build web-based medical imaging applications. It provides a framework to build radiology applications such as the [OHIF Viewer](https://ohif.org/)
 
 - **Fast:** Cornerstone leverages WebGL to provide high-performance image rendering and WebAssembly for fast image decompression.
 - **Flexible:** Cornerstone provides APIs for defining custom image, volume, and metadata loading schemes, allowing developers to easily connect with proprietary image archives.
 - **Community Driven:** Cornerstone is supported by the [Open Health Imaging Foundation](https://ohif.org/). We publish our roadmap and welcome contributions and collaboration.
-- **Standards Compliant:** Cornerstone's core focus is Radiology, so it provides DICOMweb compatibility out-of-the-box.
+- **Standards Compliant:** Cornerstone's core focus is Radiology, so it provides DICOMweb compatibility out-of-the-box
 
 [Learn how to use Cornerstone3D in your project](https://www.cornerstonejs.org/docs/getting-started/overview).
 
@@ -108,6 +108,7 @@ following packages are linked:
 | `@cornerstonejs/core` | `packages/core` |
 | `@cornerstonejs/dicom-image-loader` | `packages/dicomImageLoader` |
 | `@cornerstonejs/labelmap-interpolation` | `packages/labelmap-interpolation` |
+| `@cornerstonejs/metadata` | `packages/metadata` |
 | `@cornerstonejs/nifti-volume-loader` | `packages/nifti-volume-loader` |
 | `@cornerstonejs/polymorphic-segmentation` | `packages/polymorphic-segmentation` |
 | `@cornerstonejs/tools` | `packages/tools` |
@@ -153,6 +154,10 @@ node scripts/unlink-ohif-cornerstone-node-modules.mjs /path/to/ohif
 > **Tip:** For the `yarn link` based approach (useful when working on a single
 > package rather than the full set), see the
 > [Linking Cornerstone Libraries](packages/docs/docs/contribute/linking.md) doc.
+
+## Troubleshooting
+
+If unit tests fail with **\"Cannot find module '../build/Release/canvas.node'\"**, the native `canvas` addon wasn’t built. Run `yarn rebuild:canvas` (or `npm run rebuild:canvas`); if that doesn’t fix it, see [docs/troubleshooting.md](docs/troubleshooting.md#unit-tests-cannot-find-module-buildreleasecanvasnode).
 
 ## Support
 

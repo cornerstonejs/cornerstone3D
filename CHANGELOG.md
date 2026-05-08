@@ -3,15 +3,7 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
-## [4.22.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.3...v4.22.4) (2026-05-06)
-
-**Note:** Version bump only for package root
-
-## [4.22.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.2...v4.22.3) (2026-04-23)
-
-### Bug Fixes
-
-- **security:** Patch protobufjs for CVE-2026-41242 ([#2712](https://github.com/cornerstonejs/cornerstone3D/issues/2712)) ([7027290](https://github.com/cornerstonejs/cornerstone3D/commit/7027290d168d91829f608a6c2f3c39c995e28c31))
+# [5.0.0-beta.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.18.3...v5.0.0-beta.1) (2026-02-27)
 
 ## [4.22.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.1...v4.22.2) (2026-04-21)
 

@@ -10,12 +10,13 @@ export default defineConfig({
   snapshotPathTemplate:
     'tests/screenshots{/projectName}/{testFilePath}/{arg}{ext}',
   outputDir: './tests/test-results',
-  reporter: [
-    [
-      process.env.CI ? 'blob' : 'html',
-      { outputFolder: './packages/docs/static/playwright-report' },
-    ],
-  ],
+  // In CI, blob feeds docs merge workflows; HTML goes under tests/ for artifact upload.
+  reporter: process.env.CI
+    ? [
+        ['blob', { outputFolder: './packages/docs/static/playwright-report' }],
+        ['html', { open: 'never', outputFolder: './tests/playwright-report' }],
+      ]
+    : [['html', { outputFolder: './packages/docs/static/playwright-report' }]],
   use: {
     baseURL: 'http://localhost:3333',
     trace: 'on-first-retry',

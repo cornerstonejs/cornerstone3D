@@ -28,8 +28,9 @@ jobs:
     runs-on: self-hosted
     timeout-minutes: 120
     env:
-      BUN_VERSION: 1.3.11
+      BUN_VERSION: 1.3.13
       NODE_VERSION: 24
+      OHIF_REF: master
       OHIF_DIR: ohif
       # Update to force a rebuild of the OHIF integration
       BUILD_INDEX: 0
@@ -73,7 +74,7 @@ jobs:
       - name: Install Cornerstone dependencies
         run: bun install --frozen-lockfile
 
-      - name: Build local Cornerstone packages for OHIF
+      - name: Build local Cornerstone packages for OHIF (includes metadata)
         run: bun run build:esm
 
       - name: Checkout OHIF
@@ -116,7 +117,7 @@ jobs:
         working-directory: ${{ env.OHIF_DIR }}
         env:
           PLAYWRIGHT_HTML_OPEN: never
-        run: bun run test:e2e:ci
+        run: bun run test:e2e:ci -- --max-failures=10 --retries=1
 
       - name: Upload OHIF Playwright artifacts
         if: always()

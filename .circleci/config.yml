@@ -103,6 +103,7 @@ jobs:
       - persist_to_workspace:
           root: ~/repo
           paths:
+            - packages/metadata/dist
             - packages/core/dist
             - packages/tools/dist
             - packages/adapters/dist

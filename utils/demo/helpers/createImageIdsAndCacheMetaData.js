@@ -1,19 +1,26 @@
 import { api } from 'dicomweb-client';
-import dcmjs from 'dcmjs';
 import { calculateSUVScalingFactors } from '@cornerstonejs/calculate-suv';
 import { getPTImageIdInstanceMetadata } from './getPTImageIdInstanceMetadata';
-import { utilities } from '@cornerstonejs/core';
+import { utilities, metaData } from '@cornerstonejs/core';
 import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
+import {
+  utilities as metadataUtilities,
+  Enums as metadataEnums,
+} from '@cornerstonejs/metadata';
 
 import ptScalingMetaDataProvider from './ptScalingMetaDataProvider';
 import { convertMultiframeImageIds } from './convertMultiframeImageIds';
-import removeInvalidTags from './removeInvalidTags';
 
-const { DicomMetaDictionary } = dcmjs.data;
 const { calibratedPixelSpacingMetadataProvider, getPixelSpacingInformation } =
   utilities;
 
-/**
+const { addDicomWebInstance, Tags } = metadataUtilities;
+const { MetadataModules } = metadataEnums;
+
+const SOP_INSTANCE_UID = Tags.resolveHexFromKeyword('SOPInstanceUID');
+const SERIES_INSTANCE_UID = Tags.resolveHexFromKeyword('SeriesInstanceUID');
+const MODALITY = Tags.resolveHexFromKeyword('Modality');
+
 /**
  * Uses dicomweb-client to fetch metadata of a study, cache it in cornerstone,
  * and return a list of imageIds for the frames.
@@ -21,6 +28,8 @@ const { calibratedPixelSpacingMetadataProvider, getPixelSpacingInformation } =
  * Uses the app config to choose which study to fetch, and which
  * dicom-web server to fetch it from.
  *
+ * @param {object} options
+ * @param {boolean} [options.useLegacyWadoRs=false] - When true, store instances only in the legacy wadors metaDataManager; when false, use the typed metadata framework (@cornerstonejs/metadata)
  * @returns {string[]} An array of imageIds for instances in the study.
  */
 
@@ -31,11 +40,8 @@ export default async function createImageIdsAndCacheMetaData({
   wadoRsRoot,
   client = null,
   convertMultiframe = true,
+  useLegacyWadoRs = false,
 }) {
-  const SOP_INSTANCE_UID = '00080018';
-  const SERIES_INSTANCE_UID = '0020000E';
-  const MODALITY = '00080060';
-
   const studySearchOptions = {
     studyInstanceUID: StudyInstanceUID,
     seriesInstanceUID: SeriesInstanceUID,
@@ -70,34 +76,35 @@ export default async function createImageIdsAndCacheMetaData({
       SOPInstanceUIDToUse.trim() +
       '/frames/1';
 
-    cornerstoneDICOMImageLoader.wadors.metaDataManager.add(
-      imageId,
-      instanceMetaData
-    );
+    if (useLegacyWadoRs) {
+      cornerstoneDICOMImageLoader.wadors.metaDataManager.add(
+        imageId,
+        instanceMetaData
+      );
+    } else {
+      addDicomWebInstance(imageId, instanceMetaData);
+    }
+
     return imageId;
   });
 
   // if the image ids represent multiframe information, creates a new list with one image id per frame
   // if not multiframe data available, just returns the same list given
   if (convertMultiframe) {
+    const originalImageIds = [...imageIds];
     imageIds = convertMultiframeImageIds(imageIds);
   }
 
-  imageIds.forEach((imageId) => {
-    let instanceMetaData =
-      cornerstoneDICOMImageLoader.wadors.metaDataManager.get(imageId);
+  if (!useLegacyWadoRs) {
+    imageIds.forEach((imageId) => {
+      const instance = metaData.get('instanceOrig', imageId);
 
-    if (!instanceMetaData) {
-      return;
-    }
+      if (!instance) {
+        return;
+      }
 
-    // It was using JSON.parse(JSON.stringify(...)) before but it is 8x slower
-    instanceMetaData = removeInvalidTags(instanceMetaData);
-
-    if (instanceMetaData) {
-      // Add calibrated pixel spacing
-      const metadata = DicomMetaDictionary.naturalizeDataset(instanceMetaData);
-      const pixelSpacingInformation = getPixelSpacingInformation(metadata);
+      // Add calibrated pixel spacing from the naturalized instance
+      const pixelSpacingInformation = getPixelSpacingInformation(instance);
       const pixelSpacing = pixelSpacingInformation?.PixelSpacing;
 
       if (pixelSpacing) {
@@ -107,8 +114,8 @@ export default async function createImageIdsAndCacheMetaData({
           type: pixelSpacingInformation.type,
         });
       }
-    }
-  });
+    });
+  }
 
   // we don't want to add non-pet
   // Note: for 99% of scanners SUV calculation is consistent bw slices
