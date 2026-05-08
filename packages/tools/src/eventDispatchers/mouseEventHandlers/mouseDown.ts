@@ -67,19 +67,16 @@ export default function mouseDown(evt: EventTypes.MouseDownEventType) {
     }
   }
 
-  // Find all tools that might respond to this mouse down
-  const isPrimaryClick = evt.detail.event.buttons === 1;
-  const activeToolsWithEventBinding = getToolsWithModesForMouseEvent(
-    evt,
-    [Active],
-    evt.detail.event.buttons as number
-  );
-  const passiveToolsIfEventWasPrimaryMouseButton = isPrimaryClick
-    ? getToolsWithModesForMouseEvent(evt, [Passive])
-    : undefined;
+  // Find all tools that might respond to this mouse down for annotation interaction.
+  // For checking existing annotation interactions (handles, moveable annotations),
+  // we need ALL Active and Passive tools regardless of mouse button binding.
+  // This allows editing annotations created by tools bound to different mouse buttons.
+  // The button binding only determines which tool creates NEW annotations.
+  const allActiveTools = getToolsWithModesForMouseEvent(evt, [Active]);
+  const allPassiveTools = getToolsWithModesForMouseEvent(evt, [Passive]);
   const applicableTools = [
-    ...(activeToolsWithEventBinding || []),
-    ...(passiveToolsIfEventWasPrimaryMouseButton || []),
+    ...(allActiveTools || []),
+    ...(allPassiveTools || []),
   ];
 
   // Actions need to run before tool/handle selected callbacks otherwise actions

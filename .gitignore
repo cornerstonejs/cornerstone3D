@@ -1,4 +1,5 @@
 # dependencies
+CLAUDE.md
 node_modules
 .nyc_output
 .nx
@@ -60,3 +61,11 @@ coverage/
 
 # Add Playwright HTML report output from playwright.config.ts
 /packages/docs/static/playwright-report/
+.cursor
+
+**/.claude/settings.local.json
+CLAUDE.md
+# External repositories
+vtk-js/
+.ohif-downstream/
+auth.json

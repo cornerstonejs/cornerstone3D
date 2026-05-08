@@ -1,5 +1,6 @@
 import type { ByteArray } from 'dicom-parser';
-import { metaData, type Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { fetchLUTForInstance } from './fetchLUTForInstance';
 
 function convertLUTto8Bit(lut: number[], shift: number) {
   const numEntries = lut.length;
@@ -12,33 +13,16 @@ function convertLUTto8Bit(lut: number[], shift: number) {
   return cleanedLUT;
 }
 
-function fetchPaletteData(imageFrame, color, fallback) {
-  const data = imageFrame[`${color}PaletteColorLookupTableData`];
-  if (data) {
-    return Promise.resolve(data);
-  }
-
-  const result = metaData.get('imagePixelModule', imageFrame.imageId);
-
-  if (result && typeof result.then === 'function') {
-    return result.then((module) =>
-      module ? module[`${color}PaletteColorLookupTableData`] : fallback
-    );
-  } else {
-    return Promise.resolve(
-      result ? result[`${color}PaletteColorLookupTableData`] : fallback
-    );
-  }
-}
-
 /**
- * Convert pixel data with PALETTE COLOR Photometric Interpretation to RGBA
+ * Convert pixel data with PALETTE COLOR Photometric Interpretation to RGB/RGBA
+ * Note: Palette bulkdata must be loaded on the imageFrame before calling this function
  *
- * @param imageFrame - The ImageFrame to convert
+ * @param imageFrame - The ImageFrame to convert (must have palette data loaded)
  * @param colorBuffer - The buffer to write the converted pixel data to
+ * @param useRGBA - Whether to output RGBA (true) or RGB (false)
  * @returns
  */
-export default function (
+export default function convertPaletteColor(
   imageFrame: Types.IImageFrame,
   colorBuffer: ByteArray,
   useRGBA: boolean
@@ -46,50 +30,29 @@ export default function (
   const numPixels = imageFrame.columns * imageFrame.rows;
   const pixelData = imageFrame.pixelData;
 
-  Promise.all([
-    fetchPaletteData(imageFrame, 'red', null),
-    fetchPaletteData(imageFrame, 'green', null),
-    fetchPaletteData(imageFrame, 'blue', null),
-  ]).then(([rData, gData, bData]) => {
-    if (!rData || !gData || !bData) {
-      throw new Error(
-        'The image does not have a complete color palette. R, G, and B palette data are required.'
-      );
-    }
+  const rData = imageFrame.redPaletteColorLookupTableData;
+  const gData = imageFrame.greenPaletteColorLookupTableData;
+  const bData = imageFrame.bluePaletteColorLookupTableData;
 
-    const len = rData.length;
-    let palIndex = 0;
-    let bufferIndex = 0;
+  if (!rData || !gData || !bData) {
+    throw new Error(
+      'The image does not have a complete color palette. R, G, and B palette data are required.'
+    );
+  }
 
-    const start = imageFrame.redPaletteColorLookupTableDescriptor[1];
-    const shift =
-      imageFrame.redPaletteColorLookupTableDescriptor[2] === 8 ? 0 : 8;
+  const len = rData.length;
+  let palIndex = 0;
+  let bufferIndex = 0;
 
-    const rDataCleaned = convertLUTto8Bit(rData, shift);
-    const gDataCleaned = convertLUTto8Bit(gData, shift);
-    const bDataCleaned = convertLUTto8Bit(bData, shift);
+  const start = imageFrame.redPaletteColorLookupTableDescriptor[1];
+  const bitsStored = imageFrame.redPaletteColorLookupTableDescriptor[2];
+  const shift = bitsStored > 8 || rData.some((num) => num > 255) ? 8 : 0;
 
-    if (useRGBA) {
-      for (let i = 0; i < numPixels; ++i) {
-        let value = pixelData[palIndex++];
+  const rDataCleaned = convertLUTto8Bit(rData, shift);
+  const gDataCleaned = convertLUTto8Bit(gData, shift);
+  const bDataCleaned = convertLUTto8Bit(bData, shift);
 
-        if (value < start) {
-          value = 0;
-        } else if (value > start + len - 1) {
-          value = len - 1;
-        } else {
-          value -= start;
-        }
-
-        colorBuffer[bufferIndex++] = rDataCleaned[value];
-        colorBuffer[bufferIndex++] = gDataCleaned[value];
-        colorBuffer[bufferIndex++] = bDataCleaned[value];
-        colorBuffer[bufferIndex++] = 255;
-      }
-
-      return;
-    }
-
+  if (useRGBA) {
     for (let i = 0; i < numPixels; ++i) {
       let value = pixelData[palIndex++];
 
@@ -104,6 +67,48 @@ export default function (
       colorBuffer[bufferIndex++] = rDataCleaned[value];
       colorBuffer[bufferIndex++] = gDataCleaned[value];
       colorBuffer[bufferIndex++] = bDataCleaned[value];
+      colorBuffer[bufferIndex++] = 255;
     }
-  });
+
+    return;
+  }
+
+  for (let i = 0; i < numPixels; ++i) {
+    let value = pixelData[palIndex++];
+
+    if (value < start) {
+      value = 0;
+    } else if (value > start + len - 1) {
+      value = len - 1;
+    } else {
+      value -= start;
+    }
+
+    colorBuffer[bufferIndex++] = rDataCleaned[value];
+    colorBuffer[bufferIndex++] = gDataCleaned[value];
+    colorBuffer[bufferIndex++] = bDataCleaned[value];
+  }
+}
+
+/**
+ * Convert pixel data with PALETTE COLOR Photometric Interpretation to RGB/RGBA
+ * with automatic fetching of palette color lookup tables if not already loaded.
+ * This is useful for users who want to convert palette color frames without
+ * manually fetching the palette data first.
+ *
+ * @param imageFrame - The ImageFrame to convert
+ * @param colorBuffer - The buffer to write the converted pixel data to
+ * @param useRGBA - Whether to output RGBA (true) or RGB (false)
+ * @returns Promise that resolves when conversion is complete
+ */
+export async function convertPaletteColorWithFetch(
+  imageFrame: Types.IImageFrame,
+  colorBuffer: ByteArray,
+  useRGBA: boolean
+): Promise<void> {
+  // Fetch LUT data if needed (palette, modality, VOI)
+  await fetchLUTForInstance(imageFrame);
+
+  // Call the synchronous conversion function
+  convertPaletteColor(imageFrame, colorBuffer, useRGBA);
 }

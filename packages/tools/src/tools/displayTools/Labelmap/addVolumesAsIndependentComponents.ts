@@ -50,7 +50,7 @@ export async function addVolumesAsIndependentComponents({
   // which the segmentation data is added as a second component to the volume data
   const defaultActor = viewport.getDefaultActor();
   const { actor } = defaultActor as { actor: vtkVolume };
-  const { uid, callback } = defaultActor;
+  const { uid } = defaultActor;
 
   const referenceVolumeId = viewport.getVolumeId();
 
@@ -84,6 +84,15 @@ export async function addVolumesAsIndependentComponents({
 
   const { imageData: segImageData } = segImageVolume;
   const baseVolume = cache.getVolume(referenceVolumeId);
+
+  const volumeTexture = baseVolume.vtkOpenGLTexture;
+  const hasPendingFrames = volumeTexture.hasUpdatedFrames();
+  if (hasPendingFrames) {
+    // We do not change the actor if there are pending frames (i.e. the viewport is still rendering).
+    // If we did proceed to change the actor, the viewport would be blanked out.
+    return;
+  }
+
   const baseVoxelManager = baseVolume.voxelManager;
   const baseData = baseVoxelManager.getCompleteScalarDataArray();
 
@@ -116,16 +125,20 @@ export async function addVolumesAsIndependentComponents({
   arrayAgain.setData(cubeData);
   arrayAgain.setNumberOfComponents(2);
 
+  const oldColorMixPreset = actor.getProperty().getColorMixPreset();
   actor.getProperty().setColorMixPreset(1);
 
+  const oldForceNearestInterpolation = actor
+    .getProperty()
+    .getForceNearestInterpolation(1);
   actor.getProperty().setForceNearestInterpolation(1, true);
+  const oldIndependentComponents = actor
+    .getProperty()
+    .getIndependentComponents();
   actor.getProperty().setIndependentComponents(true);
 
   viewport.addActor({
-    actor,
-    uid,
-    callback,
-    referencedId: referenceVolumeId,
+    ...defaultActor,
     representationUID: `${segmentationId}-${SegmentationRepresentations.Labelmap}`,
   });
 
@@ -135,6 +148,7 @@ export async function addVolumesAsIndependentComponents({
     originalBlendMode: viewport.getBlendMode(),
   });
 
+  const oldPreLoad = actor.get('preLoad');
   actor.set({
     preLoad: load,
   });
@@ -184,40 +198,52 @@ export async function addVolumesAsIndependentComponents({
     200
   );
 
+  function onSegmentationRepresentationRemoved(evt) {
+    if (evt.detail.viewportId !== viewport.id) {
+      return;
+    }
+
+    eventTarget.removeEventListener(
+      Events.SEGMENTATION_DATA_MODIFIED,
+      onSegmentationDataModified
+    );
+    eventTarget.removeEventListener(
+      Events.SEGMENTATION_REPRESENTATION_REMOVED,
+      onSegmentationRepresentationRemoved
+    );
+
+    const actorEntry = viewport.getActor(uid);
+
+    if (actorEntry) {
+      viewport.removeActors([uid]);
+    }
+
+    internalCache.delete(uid);
+
+    if (viewport.isDisabled) {
+      return;
+    }
+
+    // Restore the original actor and add it back to the viewport.
+    actor.setMapper(oldMapper);
+    actor.getProperty().setColorMixPreset(oldColorMixPreset);
+    actor
+      .getProperty()
+      .setForceNearestInterpolation(1, oldForceNearestInterpolation);
+    actor.getProperty().setIndependentComponents(oldIndependentComponents);
+
+    viewport.addActor({
+      ...defaultActor,
+    });
+
+    actor.set(oldPreLoad);
+
+    viewport.render();
+  }
+
   eventTarget.addEventListener(
     Events.SEGMENTATION_REPRESENTATION_REMOVED,
-    async (evt) => {
-      eventTarget.removeEventListener(
-        Events.SEGMENTATION_DATA_MODIFIED,
-        onSegmentationDataModified
-      );
-
-      const actorEntry = viewport.getActor(uid);
-      const { element, id } = viewport;
-      viewport.removeActors([uid]);
-
-      const actor = await createVolumeActor(
-        {
-          volumeId: uid,
-          blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
-          callback: ({ volumeActor }) => {
-            if (actorEntry.callback) {
-              // @ts-expect-error
-              actorEntry.callback({
-                volumeActor,
-                volumeId,
-              });
-            }
-          },
-        },
-        element,
-        id
-      );
-
-      viewport.addActor({ actor, uid });
-
-      viewport.render();
-    }
+    onSegmentationRepresentationRemoved
   );
 
   return {

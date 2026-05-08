@@ -29,6 +29,7 @@ test('Stack Segmentation - Dynamic Threshold Tool - Initial Highlight', async ({
   await page.mouse.move(pagePoint[0], pagePoint[1]);
   await pause(1000);
 
+  await page.waitForTimeout(1500);
   await checkForScreenshot(
     page,
     canvas,
@@ -49,6 +50,8 @@ test('Stack Segmentation - Dynamic Threshold Tool - Highlight Contour', async ({
   await simulateDrawPath(page, canvas, leftArmContour, {
     interpolateSteps: true,
   });
+
+  await page.waitForTimeout(1500);
 
   await checkForScreenshot(
     page,
@@ -72,6 +75,8 @@ test('Stack Segmentation - Dynamic Threshold Tool - Confirm Contour', async ({
   });
 
   page.keyboard.press('Enter');
+
+  await page.waitForTimeout(1500);
 
   await checkForScreenshot(
     page,

@@ -1,4 +1,10 @@
-import { getRuntimeId, isEqual, planar, isOpposite } from '../../src/utilities';
+import {
+  getRuntimeId,
+  isEqual,
+  planar,
+  isOpposite,
+  isNumber,
+} from '../../src/utilities';
 import { describe, it, expect } from '@jest/globals';
 
 describe('Cornerstone-render Utilities:', function () {
@@ -67,5 +73,37 @@ describe('Cornerstone-render Utilities:', function () {
     expect(isOpposite([0, 0, 0], [0, 0, 0])).toBe(true);
     expect(isOpposite([-1, -1, -1], [1, 1, 1])).toBe(true);
     expect(isOpposite([-0.0000000001, 0, 0], [0.0000000001, 0, 0])).toBe(true);
+  });
+
+  describe('isNumber utility', () => {
+    it('should return true for finite numbers', () => {
+      expect(isNumber(0)).toBe(true);
+      expect(isNumber(123)).toBe(true);
+      expect(isNumber(-456.78)).toBe(true);
+    });
+
+    it('should return false for NaN and Infinity', () => {
+      expect(isNumber(NaN)).toBe(false);
+      expect(isNumber(Infinity)).toBe(false);
+      expect(isNumber(-Infinity)).toBe(false);
+    });
+
+    it('should return true for arrays whose first element is a finite number', () => {
+      expect(isNumber([5])).toBe(true);
+      expect(isNumber([0])).toBe(true);
+      expect(isNumber([-3.14])).toBe(true);
+    });
+
+    it('should return false for arrays whose first element is NaN or Infinity', () => {
+      expect(isNumber([NaN])).toBe(false);
+      expect(isNumber([Infinity])).toBe(false);
+      expect(isNumber([-Infinity])).toBe(false);
+    });
+
+    it('should return false for non-number types', () => {
+      expect(isNumber(undefined)).toBe(false);
+      expect(isNumber({})).toBe(false);
+      expect(isNumber([])).toBe(false);
+    });
   });
 });

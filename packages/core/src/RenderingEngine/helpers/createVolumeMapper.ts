@@ -21,16 +21,16 @@ export default function createVolumeMapper(
 ): vtkVolumeMapper {
   const volumeMapper = vtkSharedVolumeMapper.newInstance();
 
-  if (getConfiguration().rendering.preferSizeOverAccuracy) {
-    volumeMapper.setPreferSizeOverAccuracy(true);
-  }
-
   volumeMapper.setInputData(imageData);
 
   const spacing = imageData.getSpacing();
   // Set the sample distance to half the mean length of one side. This is where the divide by 6 comes from.
   // https://github.com/Kitware/VTK/blob/6b559c65bb90614fb02eb6d1b9e3f0fca3fe4b0b/Rendering/VolumeOpenGL2/vtkSmartVolumeMapper.cxx#L344
-  const sampleDistance = (spacing[0] + spacing[1] + spacing[2]) / 6;
+  const sampleDistanceMultiplier =
+    getConfiguration().rendering?.volumeRendering?.sampleDistanceMultiplier ||
+    1;
+  const sampleDistance =
+    (sampleDistanceMultiplier * (spacing[0] + spacing[1] + spacing[2])) / 6;
 
   // This is to allow for good pixel level image quality.
   // Todo: why we are setting this to 4000? Is this a good number? it should be configurable

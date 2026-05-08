@@ -60,7 +60,7 @@ async function simulateDrawPath(
 
       steps = Math.max(
         1,
-        Math.round(Math.sqrt(dx ** 2 + dy ** 2)) * stepsResolution
+        Math.round(Math.round(Math.sqrt(dx ** 2 + dy ** 2)) * stepsResolution)
       );
     }
 

@@ -107,6 +107,29 @@ class RegionSegmentTool extends GrowCutBaseTool {
       circleBorderPoint,
       options,
     } = growCutData;
+    const {
+      positiveSeedVariance,
+      negativeSeedVariance,
+      positiveStdDevMultiplier,
+    } = this.configuration;
+    const baseStdDevMultiplier = positiveStdDevMultiplier ?? 1;
+    const currentStdDevMultiplier = options?.positiveStdDevMultiplier
+      ? Math.max(options.positiveStdDevMultiplier, 0.01)
+      : baseStdDevMultiplier;
+    const varianceScale = currentStdDevMultiplier / baseStdDevMultiplier;
+
+    const growCutOptions = {
+      ...options,
+      positiveSeedVariance: Math.max(
+        0.01,
+        (positiveSeedVariance ?? 1) * varianceScale
+      ),
+      negativeSeedVariance: Math.max(
+        0.01,
+        (negativeSeedVariance ?? 1) * varianceScale
+      ),
+    };
+
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const viewport = renderingEngine.getViewport(viewportId);
     const worldCircleRadius = vec3.len(
@@ -126,7 +149,7 @@ class RegionSegmentTool extends GrowCutBaseTool {
       referencedVolumeId,
       sphereInfo,
       viewport,
-      options
+      growCutOptions
     );
   }
 

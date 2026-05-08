@@ -19,45 +19,56 @@ async function main() {
    * Collect DICOM tags from XML documents
    */
   const part06 = await getDocbook('part06/part06.xml');
-  const part06Rows = part06.book.chapter.find(chapter => chapter.$['xml:id'] === 'chapter_6').table[0].tbody[0].tr;
-  tags.push(...part06Rows.map(row => {
-    const retired = getCellData(row.td[5])?.startsWith('RET');
-    const name = getCellData(row.td[2]);
-    return {
-      tag: getCellData(row.td[0]),
-      vr: getCellData(row.td[3]),
-      name: retired ? `RETIRED_${name}` : name,
-      vm: getCellData(row.td[4]),
-      version: retired ? 'DICOM/retired' : 'DICOM',
-    }
-  }));
+  const part06Rows = part06.book.chapter.find(
+    (chapter) => chapter.$['xml:id'] === 'chapter_6'
+  ).table[0].tbody[0].tr;
+  tags.push(
+    ...part06Rows.map((row) => {
+      const retired = getCellData(row.td[5])?.startsWith('RET');
+      const name = getCellData(row.td[2]);
+      return {
+        tag: getCellData(row.td[0]),
+        vr: getCellData(row.td[3]),
+        name: retired ? `RETIRED_${name}` : name,
+        vm: getCellData(row.td[4]),
+        version: retired ? 'DICOM/retired' : 'DICOM',
+      };
+    })
+  );
 
   const part07 = await getDocbook('part07/part07.xml');
-  const chapterE = part07.book.chapter.find(chapter => chapter.$['xml:id'] === 'chapter_E');
+  const chapterE = part07.book.chapter.find(
+    (chapter) => chapter.$['xml:id'] === 'chapter_E'
+  );
   const commandFields = chapterE.section[0].table[0].tbody[0].tr;
-  tags.push(...commandFields.map(row => {
-    return {
-      tag: getCellData(row.td[0]),
-      vr: getCellData(row.td[3]),
-      name: getCellData(row.td[2]),
-      vm: getCellData(row.td[4]),
-      version: 'DICOM',
-    }
-  }));
+  tags.push(
+    ...commandFields.map((row) => {
+      return {
+        tag: getCellData(row.td[0]),
+        vr: getCellData(row.td[3]),
+        name: getCellData(row.td[2]),
+        vm: getCellData(row.td[4]),
+        version: 'DICOM',
+      };
+    })
+  );
   const retiredCommandFields = chapterE.section[1].table[0].tbody[0].tr;
-  tags.push(...retiredCommandFields.map(row => {
-    return {
-      tag: getCellData(row.td[0]),
-      vr: getCellData(row.td[3]),
-      name: `RETIRED_${getCellData(row.td[2])}`,
-      vm: getCellData(row.td[4]),
-      version: 'DICOM/retired',
-    }
-  }));
+  tags.push(
+    ...retiredCommandFields.map((row) => {
+      return {
+        tag: getCellData(row.td[0]),
+        vr: getCellData(row.td[3]),
+        name: `RETIRED_${getCellData(row.td[2])}`,
+        vm: getCellData(row.td[4]),
+        version: 'DICOM/retired',
+      };
+    })
+  );
 
-  const newTags = tags.filter(tag => tag.vr && tag.name && tag.vm)
-    .filter(tag => !(tag.tag in dictionary)) // filter already defined
-    .filter(tag => !/[(,\dA-F]x+[A-F\d,)]/.test(tag.tag)); // filter repeater tags
+  const newTags = tags
+    .filter((tag) => tag.vr && tag.name && tag.vm)
+    .filter((tag) => !(tag.tag in dictionary)) // filter already defined
+    .filter((tag) => !/[(,\dA-F]x+[A-F\d,)]/.test(tag.tag)); // filter repeater tags
 
   /**
    * Insert new tags into dictionary, ordered among tags with the same version
@@ -65,7 +76,7 @@ async function main() {
   const dictionaryArray = Object.values(dictionary);
   for (const newTag of newTags) {
     const parsedTag = Tag.fromPString(newTag.tag);
-    const insertIndex = dictionaryArray.findIndex(tag => {
+    const insertIndex = dictionaryArray.findIndex((tag) => {
       if (tag.version !== newTag.version) {
         return false;
       }
@@ -85,7 +96,7 @@ async function writeDictionary(tags) {
       data += `
     "": {
         tag: ""
-    },`
+    },`;
       continue;
     }
     const tagKey = tag.tag.includes('"') ? `'${tag.tag}'` : `"${tag.tag}"`;
@@ -108,7 +119,9 @@ export default dictionary;
 }
 
 async function getDocbook(part) {
-  const source = await getUrl(`http://dicom.nema.org/medical/dicom/current/source/docbook/${part}`);
+  const source = await getUrl(
+    `http://dicom.nema.org/medical/dicom/current/source/docbook/${part}`
+  );
   return xml2js.parseStringPromise(source);
 }
 
@@ -123,7 +136,7 @@ function getCellData(td) {
 
 function getUrl(url) {
   return new Promise((resolve, reject) => {
-    http.get(url, request => {
+    http.get(url, (request) => {
       let data = '';
       request.on('error', () => {
         reject(error);
@@ -131,7 +144,7 @@ function getUrl(url) {
       request.on('end', () => {
         resolve(data);
       });
-      request.on('data', chunk => {
+      request.on('data', (chunk) => {
         data += chunk;
       });
     });
@@ -139,7 +152,7 @@ function getUrl(url) {
 }
 
 if (require.main === module) {
-  main().catch(error => {
+  main().catch((error) => {
     console.log(error);
   });
 }

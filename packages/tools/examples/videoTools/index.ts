@@ -149,8 +149,8 @@ function updateAnnotationDiv(uid) {
   const { toolName } = metadata;
   selectionDiv.innerHTML = `
     <b>${toolName} Annotation UID:</b>${uid} <b>Label:</b>${
-    data.label || data.text
-  } ${annotation.isVisible ? 'visible' : 'not visible'}
+      data.label || data.text
+    } ${annotation.isVisible ? 'visible' : 'not visible'}
   `;
 }
 

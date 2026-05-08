@@ -1,1 +1,1 @@
-export { generateToolState } from "./generateToolState";
+export { generateToolState } from './generateToolState';

@@ -9,6 +9,9 @@ import type { RawContourData } from '../contourComputationStrategies';
  */
 export function extractContourData(polyDataCache: PolyDataClipCacheType) {
   const rawResults = new Map() as RawContourData;
+  if (!polyDataCache) {
+    return rawResults;
+  }
 
   for (const [segmentIndex, intersectionInfo] of polyDataCache) {
     const segmentIndexNumber = Number(segmentIndex);

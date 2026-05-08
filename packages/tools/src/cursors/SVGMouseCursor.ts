@@ -42,6 +42,9 @@ export default class SVGMouseCursor extends ImageMouseCursor {
     }
     const urn = getCursorURN(name, pointer, color);
     let cursor = super.getDefinedCursor(urn);
+    const pointerStrokeWidth = Number(
+      getStyleProperty('pointerStrokeWidth', {} as StyleSpecifier)
+    );
     if (!cursor) {
       const descriptor = getDefinedSVGCursorDescriptor(name);
       if (descriptor) {
@@ -50,6 +53,7 @@ export default class SVGMouseCursor extends ImageMouseCursor {
           urn,
           pointer,
           color,
+          pointerStrokeWidth,
           super.getDefinedCursor('default')
         );
         super.setDefinedCursor(urn, cursor);
@@ -81,11 +85,12 @@ function createSVGMouseCursor(
   name: string,
   pointer: boolean,
   color: string,
+  pointerStrokeWidth: number,
   fallback: MouseCursor
 ): SVGMouseCursor {
   const { x, y } = descriptor.mousePoint;
   return new SVGMouseCursor(
-    createSVGIconUrl(descriptor, pointer, { color }),
+    createSVGIconUrl(descriptor, pointer, { color, pointerStrokeWidth }),
     x,
     y,
     name,
@@ -140,10 +145,11 @@ function createSVGIconWithPointer(
     descriptor;
   const scale = iconSize / Math.max(viewBox.x, viewBox.y, 1);
   const svgSize = 16 + iconSize;
+  const pointerStrokeWidth = options.pointerStrokeWidth || 1;
   const svgString = `
     <svg data-icon="cursor" role="img" xmlns="http://www.w3.org/2000/svg"
       width="${svgSize}" height="${svgSize}" viewBox="0 0 ${svgSize} ${svgSize}">
-      <g>${mousePointerGroupString}</g>
+      <g stroke-width="${pointerStrokeWidth}">${mousePointerGroupString}</g>
       <g transform="translate(16, 16) scale(${scale})">${iconContent}</g>
     </svg>`;
   return format(svgString, options);

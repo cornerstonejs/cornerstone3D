@@ -1,4 +1,7 @@
 import RenderingEngine from './RenderingEngine';
+import BaseRenderingEngine from './BaseRenderingEngine';
+import TiledRenderingEngine from './TiledRenderingEngine';
+import ContextPoolRenderingEngine from './ContextPoolRenderingEngine';
 import getRenderingEngine from './getRenderingEngine';
 import VolumeViewport from './VolumeViewport';
 import StackViewport from './StackViewport';
@@ -8,6 +11,9 @@ export * from './helpers';
 export {
   getRenderingEngine,
   RenderingEngine,
+  BaseRenderingEngine,
+  TiledRenderingEngine,
+  ContextPoolRenderingEngine,
   VolumeViewport,
   VolumeViewport3D,
   StackViewport,

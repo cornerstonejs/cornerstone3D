@@ -1,9 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import {
-  cache,
-  getEnabledElementByViewportId,
-  Enums,
-} from '@cornerstonejs/core';
+import { cache, getEnabledElementByViewportId } from '@cornerstonejs/core';
 
 import Representations from '../../../enums/SegmentationRepresentations';
 import type { SegmentationRepresentation } from '../../../types/SegmentationStateTypes';
@@ -80,8 +76,7 @@ async function render(
     SurfaceData = await computeAndAddRepresentation(
       segmentationId,
       Representations.Surface,
-      () => polySeg.computeSurfaceData(segmentationId, { viewport }),
-      () => polySeg.updateSurfaceData(segmentationId, { viewport })
+      () => polySeg.computeSurfaceData(segmentationId, { viewport })
     );
 
     if (!SurfaceData) {
@@ -140,7 +135,7 @@ async function render(
 
     surfaces.push(surface);
     addOrUpdateSurfaceToElement(
-      viewport.element,
+      viewport as Types.IVolumeViewport,
       surface as Types.ISurface,
       segmentationId
     );
@@ -149,9 +144,18 @@ async function render(
   viewport.render();
 }
 
+function getUpdateFunction(
+  viewport: Types.IVolumeViewport | Types.IStackViewport
+): (segmentationId: string) => Promise<void> {
+  const polySeg = getPolySeg();
+  return (segmentationId: string) =>
+    polySeg.updateSurfaceData(segmentationId, { viewport });
+}
+
 export default {
+  getUpdateFunction,
   render,
   removeRepresentation,
 };
 
-export { render, removeRepresentation };
+export { getUpdateFunction, render, removeRepresentation };

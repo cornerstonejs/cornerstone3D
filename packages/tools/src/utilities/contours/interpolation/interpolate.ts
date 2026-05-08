@@ -1,4 +1,4 @@
-import { triggerEvent, utilities } from '@cornerstonejs/core';
+import { eventTarget, triggerEvent, utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 
@@ -11,7 +11,7 @@ import EventTypes from '../../../enums/Events';
 import * as annotationState from '../../../stateManagement/annotation';
 import selectHandles from './selectHandles';
 import updateChildInterpolationUID from './updateChildInterpolationUID';
-import { createPolylineHole } from '../../../eventListeners/annotations/contourSegmentation/contourSegmentationCompleted';
+import { createPolylineHole } from '../../contourSegmentation';
 
 const { PointsManager } = utilities;
 
@@ -112,6 +112,11 @@ function startInterpolation(viewportData: InterpolationViewportData) {
       EventTypes.ANNOTATION_INTERPOLATION_PROCESS_COMPLETED,
       eventDetails
     );
+    triggerEvent(
+      eventTarget,
+      EventTypes.ANNOTATION_INTERPOLATION_PROCESS_COMPLETED,
+      eventDetails
+    );
   }
 }
 
@@ -136,6 +141,7 @@ function _linearlyInterpolateBetween(
   const annotation1 = interpolationData.get(annotationPair[1])[0];
   const c1 = _generateClosedContour(annotation0.data.contour.polyline);
   const c2 = _generateClosedContour(annotation1.data.contour.polyline);
+  console.warn('annotation0=', annotation0);
 
   const { c1Interp, c2Interp } = _generateInterpolationContourPair(c1, c2);
   c1Interp.kIndex = annotationPair[0];
@@ -153,16 +159,6 @@ function _linearlyInterpolateBetween(
       eventData
     );
   });
-}
-
-function getPointCount(pointArray) {
-  let sum = 0;
-  for (let i = 0; i < pointArray.I.length; i++) {
-    if (pointArray.I[i]) {
-      sum++;
-    }
-  }
-  return sum;
 }
 
 /**
@@ -201,7 +197,10 @@ function _linearlyInterpolateContour(
 
   const nearestAnnotation = zInterp > 0.5 ? annotation1 : annotation0;
 
-  const handlePoints = selectHandles(interpolated3DPoints);
+  const isOpenUShapeContour = nearestAnnotation.data.isOpenUShapeContour;
+  const handlePoints = selectHandles(interpolated3DPoints, {
+    isOpenUShapeContour,
+  });
 
   if (interpolationData.has(sliceIndex)) {
     _editInterpolatedContour(
@@ -611,8 +610,7 @@ function _getNodesPerSegment(perimInterp, perimInd) {
       arr.push(i);
     }
     return arr;
-  },
-  []);
+  }, []);
 
   const nodesPerSegment = [];
 

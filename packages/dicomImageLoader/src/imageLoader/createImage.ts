@@ -18,10 +18,11 @@ import isColorImageFn from '../shared/isColorImage';
 import removeAFromRGBA from './removeAFromRGBA';
 import isModalityLUTForDisplay from './isModalityLutForDisplay';
 import setPixelDataType from './setPixelDataType';
+import { fetchPaletteData } from './colorSpaceConverters/fetchPaletteData';
 
 let lastImageIdDrawn = '';
 
-function createImage(
+async function createImage(
   imageId: string,
   pixelData: ByteArray,
   transferSyntax: string,
@@ -50,6 +51,16 @@ function createImage(
   imageFrame.decodeLevel = options.decodeLevel;
 
   options.allowFloatRendering = canRenderFloatTextures();
+
+  let redData, greenData, blueData;
+  // For PALETTE COLOR images, ensure palette bulkdata is loaded before decoding
+  if (imageFrame.photometricInterpretation === 'PALETTE COLOR') {
+    [redData, greenData, blueData] = await Promise.all([
+      fetchPaletteData(imageFrame, 'red', null),
+      fetchPaletteData(imageFrame, 'green', null),
+      fetchPaletteData(imageFrame, 'blue', null),
+    ]);
+  }
 
   // Get the scaling parameters from the metadata
   if (options.preScale.enabled) {
@@ -121,6 +132,7 @@ function createImage(
             Uint16Array,
             Int16Array,
             Float32Array,
+            Uint32Array,
           };
 
           if (length !== imageFrame.pixelDataLength) {
@@ -162,6 +174,14 @@ function createImage(
         const calibrationModule =
           metaData.get(MetadataModules.CALIBRATION, imageId) || {};
         const { rows, columns } = imageFrame;
+
+        // For PALETTE COLOR images, assign palette bulkdata after decoding
+        // to avoid copying unnecessary memory to/from the worker
+        if (imageFrame.photometricInterpretation === 'PALETTE COLOR') {
+          imageFrame.redPaletteColorLookupTableData = redData;
+          imageFrame.greenPaletteColorLookupTableData = greenData;
+          imageFrame.bluePaletteColorLookupTableData = blueData;
+        }
 
         if (isColorImage) {
           if (isColorConversionRequired(imageFrame)) {
@@ -219,11 +239,17 @@ function createImage(
           imageFrame.largestPixelValue = minMax.max;
         }
 
+        // Set numberOfComponents based on photometric interpretation
+        let numberOfComponents = imageFrame.samplesPerPixel;
+        if (imageFrame.photometricInterpretation === 'PALETTE COLOR') {
+          numberOfComponents = useRGBA ? 4 : 3;
+        }
+
         const voxelManager = utilities.VoxelManager.createImageVoxelManager({
           scalarData: imageFrame.pixelData,
           width: imageFrame.columns,
           height: imageFrame.rows,
-          numberOfComponents: imageFrame.samplesPerPixel,
+          numberOfComponents: numberOfComponents,
         });
 
         const image: DICOMLoaderIImage = {
@@ -267,7 +293,7 @@ function createImage(
           rgba: isColorImage && useRGBA,
           getPixelData: () => imageFrame.pixelData,
           getCanvas: undefined,
-          numberOfComponents: imageFrame.samplesPerPixel,
+          numberOfComponents: numberOfComponents,
         };
 
         if (image.color) {
@@ -350,11 +376,13 @@ function createImage(
           image.windowCenter === undefined ||
           image.windowWidth === undefined
         ) {
-          const minVoi = image.imageFrame.smallestPixelValue;
-          const maxVoi = image.imageFrame.largestPixelValue;
+          const windowLevel = utilities.windowLevel.toWindowLevel(
+            image.imageFrame.smallestPixelValue,
+            image.imageFrame.largestPixelValue
+          );
 
-          image.windowWidth = maxVoi - minVoi;
-          image.windowCenter = (maxVoi + minVoi) / 2;
+          image.windowWidth = windowLevel.windowWidth;
+          image.windowCenter = windowLevel.windowCenter;
         }
         resolve(image);
       }, reject);

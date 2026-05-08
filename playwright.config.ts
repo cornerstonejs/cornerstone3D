@@ -5,7 +5,7 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 3 : 0,
-  workers: process.env.CI ? 8 : undefined,
+  workers: process.env.CI ? 16 : undefined,
   timeout: 120 * 1000,
   snapshotPathTemplate:
     'tests/screenshots{/projectName}/{testFilePath}/{arg}{ext}',
@@ -50,7 +50,9 @@ export default defineConfig({
       testIgnore: [
         '**/labelmapsegmentationtools.spec.ts',
         '**/splineContourSegmentationTools.spec.ts',
+        '**/interpolationContourSegmentation.spec.ts',
         '**/stackLabelmapSegmentation.spec.ts',
+        '**/rectangleROIThresholdStatisticsMIM.spec.ts',
         '**/renderingPipeline.spec.ts',
         '**/stackLabelmapSegmentation/**.spec.ts',
       ],
@@ -67,13 +69,15 @@ export default defineConfig({
       testIgnore: [
         '**/labelmapsegmentationtools.spec.ts',
         '**/splineContourSegmentationTools.spec.ts',
+        '**/interpolationContourSegmentation.spec.ts',
         '**/stackLabelmapSegmentation.spec.ts',
+        '**/rectangleROIThresholdStatisticsMIM.spec.ts',
         '**/stackLabelmapSegmentation/**.spec.ts',
       ],
     },
   ],
   webServer: {
-    command: 'COVERAGE=true nyc yarn build-and-serve-static-examples',
+    command: 'cross-env COVERAGE=true nyc bun build-and-serve-static-examples',
     url: 'http://localhost:3333',
     reuseExistingServer: !process.env.CI,
     timeout: 500 * 1000,

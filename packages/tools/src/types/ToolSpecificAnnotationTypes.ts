@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import type { Annotation } from './AnnotationTypes';
+import type { Annotation, AnnotationData } from './AnnotationTypes';
 import type { ISpline } from './';
 import type { ContourSegmentationAnnotationData } from './ContourSegmentationAnnotation';
 import type { ContourAnnotation } from './ContourAnnotation';
@@ -92,6 +92,17 @@ export interface LengthAnnotation extends Annotation {
   };
 }
 
+export interface UltrasoundPleuraBLineAnnotation extends Annotation {
+  data: {
+    handles: {
+      points: [Types.Point3, Types.Point3];
+      activeHandleIndex: number | null;
+    };
+    annotationType: 'pleura' | 'bLine'; // Allowed values
+    label: string;
+  };
+}
+
 export interface AdvancedMagnifyAnnotation extends Annotation {
   data: {
     zoomFactor: number;
@@ -108,7 +119,13 @@ export interface AdvancedMagnifyAnnotation extends Annotation {
 export interface CircleROIAnnotation extends Annotation {
   data: {
     handles: {
-      points: [Types.Point3, Types.Point3]; // [center, end]
+      points: [
+        Types.Point3,
+        Types.Point3,
+        Types.Point3,
+        Types.Point3,
+        Types.Point3,
+      ]; // [center, top, bottom, left, right]
       activeHandleIndex: number | null;
       textBox?: {
         hasMoved: boolean;
@@ -299,7 +316,7 @@ export interface CircleROIStartEndThresholdAnnotation extends Annotation {
       statistics?: ROICachedStats;
     };
     handles: {
-      points: [Types.Point3, Types.Point3]; // [center, end]
+      points: Types.Point3[]; // [center, top, bottom, left, right]
       activeHandleIndex: number | null;
       textBox?: {
         hasMoved: boolean;
@@ -318,8 +335,8 @@ export interface CircleROIStartEndThresholdAnnotation extends Annotation {
 export type PlanarFreehandROIAnnotation = ContourAnnotation & {
   data: {
     label?: string;
-    isOpenUShapeContour?: boolean;
-    // Present if isOpenUShapeContour is true:
+    isOpenUShapeContour?: boolean | 'lineSegment' | 'orthogonalT';
+    // Present if isOpenUShapeContour is truthy:
     openUShapeContourVectorToPeak?: Types.Point3[];
     cachedStats?: ROICachedStats;
   };
@@ -348,8 +365,8 @@ export type InterpolationROIAnnotation = ContourAnnotation &
   };
 
 export interface ArrowAnnotation extends Annotation {
-  data: {
-    text: string;
+  data: AnnotationData & {
+    label: string;
     handles: {
       points: Types.Point3[];
       arrowFirst: boolean;
@@ -369,8 +386,8 @@ export interface ArrowAnnotation extends Annotation {
 }
 
 export interface LabelAnnotation extends Annotation {
-  data: {
-    text: string;
+  data: AnnotationData & {
+    label: string;
     handles: {
       points: Types.Point3[];
     };

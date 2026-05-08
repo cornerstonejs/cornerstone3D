@@ -1,6 +1,7 @@
 ---
 id: index
 title: Segmentations
+summary: Core framework for medical image segmentation that decouples the underlying segmentation data from its visual representations like labelmaps, contours, and surfaces
 ---
 
 import DocCardList from '@theme/DocCardList';
@@ -21,8 +22,6 @@ way we have decouple the presentational aspect of a `Segmentation` from the unde
 Similar relationship structure has been adapted in popular medical imaging softwares
 such as [3D Slicer](https://www.slicer.org/) with the addition of [polymorph segmentation](https://github.com/PerkLab/PolySeg).
 :::
-
-
 
 ## API
 

@@ -34,8 +34,8 @@ const initialDisableCursor = false;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Cursor corsshair syncing example',
-  'This example shows how to sync the crosshair cursors between 3 viewports (2 Stack viewports and 1 Volume viewport with a slightly different orientation). To disable orther cursors, set disableCursor to on and then disable and reactivate the tool.'
+  'Cursor crosshair syncing example',
+  'This example shows how to sync the crosshair cursors between 3 viewports (2 Stack viewports and 1 Volume viewport with a slightly different orientation). To disable other cursors, set disableCursor to on and then disable and reactivate the tool.'
 );
 
 const size = '500px';

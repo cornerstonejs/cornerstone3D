@@ -1,9 +1,4 @@
-import type {
-  Annotation,
-  Annotations,
-  AnnotationState,
-  GroupSpecificAnnotations,
-} from './AnnotationTypes';
+export type * from './AnnotationTypes';
 import type {
   ContourAnnotationData,
   ContourAnnotation,
@@ -84,6 +79,7 @@ import type { SplineProps } from './SplineProps';
 import type { BidirectionalData } from '../utilities/segmentation/createBidirectionalToolData';
 import type { IBaseTool } from './IBaseTool';
 import type { RepresentationStyle } from './../stateManagement/segmentation/SegmentationStyle';
+import type { LogicalOperation } from '../utilities/contourSegmentation';
 import type {
   LabelmapStyle,
   LabelmapSegmentationData,
@@ -100,8 +96,6 @@ import type {
 
 export type {
   // AnnotationState
-  Annotation,
-  Annotations,
   ContourAnnotationData,
   ContourAnnotation,
   ContourSegmentationAnnotationData,
@@ -111,8 +105,6 @@ export type {
   IAnnotationManager,
   InterpolationViewportData,
   ImageInterpolationData,
-  GroupSpecificAnnotations,
-  AnnotationState,
   AnnotationStyle,
   ToolSpecificAnnotationTypes,
   AnnotationGroupSelector,
@@ -195,4 +187,5 @@ export type {
   LabelmapSegmentationDataVolume,
   BaseLabelmapStyle,
   InactiveLabelmapStyle,
+  LogicalOperation,
 };

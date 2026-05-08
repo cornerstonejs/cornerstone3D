@@ -1,6 +1,7 @@
 ---
 id: segmentation-tools
 title: Segmentation Tools
+summary: Collection of interactive tools for creating and modifying segmentations, including brushes, scissors, and threshold-based tools that work in 2D and 3D views
 ---
 
 # Segmentation Tools

@@ -105,7 +105,6 @@ function addContourSetsToElement(
     }
   });
 
-  viewport.resetCamera();
   viewport.render();
 }
 

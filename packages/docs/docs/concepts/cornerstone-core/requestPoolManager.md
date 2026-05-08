@@ -1,5 +1,7 @@
 ---
 id: requestPoolManager
+title: Request Pool Manager
+summary: System for managing asynchronous image retrieval and decoding with separate queues for different operations, supporting request prioritization and reordering
 ---
 
 # RequestPool Manager

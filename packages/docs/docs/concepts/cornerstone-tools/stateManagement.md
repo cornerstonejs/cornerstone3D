@@ -1,6 +1,7 @@
 ---
 id: state-management
 title: State Management
+summary: System for managing annotation data organized by Frame of Reference UIDs, with world coordinates for points and a comprehensive API for data operations
 ---
 
 # State Management

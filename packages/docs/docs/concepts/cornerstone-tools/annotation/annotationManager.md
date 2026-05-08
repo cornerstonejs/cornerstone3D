@@ -1,12 +1,14 @@
 ---
 id: annotationManager
 title: Annotation Manager
+summary: Singleton class that manages annotation storage and retrieval, with the default implementation organizing annotations by Frame of Reference UID
 ---
 
 The Annotation Manager is a singleton class that manages annotations in Cornerstone Tools.
 We use the Annotation Manager to store annotations, retrieve annotations, and save and restore annotations.
 
 ## Default Annotation Manager
+
 The default Annotation Manager, `FrameOfReferenceSpecificAnnotationManager`, stores annotations based on the FrameOfReferenceUID.
 This means that annotations are stored separately for each FrameOfReferenceUID.
 
@@ -15,10 +17,9 @@ FrameOfReferenceUID, they will share the same annotations. However, StackViewpor
 works on the per imageId basis, so annotations are not shared between StackViewports.
 
 ### GroupKey
+
 Annotation groups are identified by a groupKey. The groupKey is a string that is used to identify the group of annotations.
 As mentioned above, the default Annotation Manager stores annotations based on the FrameOfReferenceUID, so the groupKey is the `FrameOfReferenceUID`.
-
-
 
 ## Custom Annotation Manager
 

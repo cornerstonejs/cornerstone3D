@@ -26,7 +26,7 @@ const requestTypeDefault = RequestType.Prefetch;
  * It implements load method to load the imageIds and insert them into the volume.
  *
  */
-export default class BaseStreamingImageVolume
+export class BaseStreamingImageVolume
   extends ImageVolume
   implements IImagesLoader
 {
@@ -283,11 +283,11 @@ export default class BaseStreamingImageVolume
     this.imagesLoader = this.isDynamicVolume()
       ? this
       : imageRetrieveConfiguration
-      ? (
-          imageRetrieveConfiguration.create ||
-          ProgressiveRetrieveImages.createProgressive
-        )(imageRetrieveConfiguration)
-      : this;
+        ? (
+            imageRetrieveConfiguration.create ||
+            ProgressiveRetrieveImages.createProgressive
+          )(imageRetrieveConfiguration)
+        : this;
 
     if (loadStatus.loading === true) {
       return; // Already loading, will get callbacks from main load.
@@ -320,8 +320,9 @@ export default class BaseStreamingImageVolume
     const { transferSyntaxUID: transferSyntaxUID } =
       metaData.get('transferSyntax', imageId) || {};
 
-    const imagePlaneModule = metaData.get('imagePlaneModule', imageId) || {};
-    const { rows, columns } = imagePlaneModule;
+    // Use the actual dimensions for this volume in order to support volumes not the same size as the raw data
+    const targetRows = this.dimensions[1];
+    const targetCols = this.dimensions[0];
     const imageIdIndex = this.getImageIdIndex(imageId);
 
     const modalityLutModule = metaData.get('modalityLutModule', imageId) || {};
@@ -334,13 +335,14 @@ export default class BaseStreamingImageVolume
       rescaleIntercept: modalityLutModule.rescaleIntercept,
       modality: generalSeriesModule.modality,
     };
+    const modality = scalingParameters.modality;
 
-    if (scalingParameters.modality === 'PT') {
-      const suvFactor = metaData.get('scalingModule', imageId);
+    if (modality === 'PT' || modality === 'RTDOSE') {
+      const scalingFactor = metaData.get('scalingModule', imageId);
 
-      if (suvFactor) {
-        this._addScalingToVolume(suvFactor);
-        scalingParameters.suvbw = suvFactor.suvbw;
+      if (scalingFactor) {
+        this._addScalingToVolume(scalingFactor);
+        Object.assign(scalingParameters, scalingFactor);
       }
     }
 
@@ -379,8 +381,8 @@ export default class BaseStreamingImageVolume
 
     const targetBuffer = {
       type: this.dataType,
-      rows,
-      columns,
+      rows: targetRows,
+      columns: targetCols,
     };
 
     return {
@@ -404,6 +406,7 @@ export default class BaseStreamingImageVolume
         imageIdIndex,
         volumeId: this.volumeId,
       },
+      retrieveOptions: undefined,
     };
   }
 
@@ -439,11 +442,14 @@ export default class BaseStreamingImageVolume
       loadAndCacheImage(imageId, options)
     );
 
-    return uncompressedIterator.forEach((image) => {
-      // scalarData is the volume container we are progressively loading into
-      // image is the pixelData decoded from workers in cornerstoneDICOMImageLoader
-      this.successCallback(imageId, image);
-    }, this.errorCallback.bind(this, imageIdIndex, imageId));
+    return uncompressedIterator.forEach(
+      (image) => {
+        // scalarData is the volume container we are progressively loading into
+        // image is the pixelData decoded from workers in cornerstoneDICOMImageLoader
+        this.successCallback(imageId, image);
+      },
+      this.errorCallback.bind(this, imageIdIndex, imageId)
+    );
   }
 
   protected getImageIdsRequests(imageIds: string[], priorityDefault: number) {
@@ -469,6 +475,19 @@ export default class BaseStreamingImageVolume
       const requestType = requestTypeDefault;
       const priority = priorityDefault;
       const options = this.getLoaderImageOptions(imageId);
+
+      const { retrieveOptions = {} } =
+        metaData.get(
+          imageRetrieveMetadataProvider.IMAGE_RETRIEVE_CONFIGURATION,
+          imageId,
+          'volume'
+        ) || {};
+      options.retrieveOptions = {
+        ...options.retrieveOptions,
+        ...(retrieveOptions.default ||
+          Object.values(retrieveOptions)?.[0] ||
+          {}),
+      };
 
       return {
         callLoadImage: this.callLoadImage.bind(this),
@@ -498,7 +517,7 @@ export default class BaseStreamingImageVolume
    * @returns Array of requests including imageId of the request, its imageIdIndex,
    * options (targetBuffer and scaling parameters), and additionalDetails (volumeId)
    */
-  public getImageLoadRequests(priority: number): ImageLoadRequests[] {
+  public getImageLoadRequests(priority?: number): ImageLoadRequests[] {
     throw new Error('Abstract method');
   }
 
@@ -591,3 +610,5 @@ export default class BaseStreamingImageVolume
 
   protected checkDimensionGroupCompletion(imageIdIndex: number): void {}
 }
+
+export default BaseStreamingImageVolume;

@@ -1,6 +1,7 @@
 ---
 id: state
 title: State
+summary: System for managing annotation data persistence organized by Frame of Reference, with APIs for adding, removing, and retrieving annotations
 ---
 
 # State Management

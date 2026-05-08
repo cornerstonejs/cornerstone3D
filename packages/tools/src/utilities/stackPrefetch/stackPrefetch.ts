@@ -4,7 +4,9 @@ import {
   eventTarget,
   imageLoadPoolManager,
   cache,
-  getConfiguration as getCoreConfiguration,
+  metaData,
+  utilities,
+  triggerEvent,
 } from '@cornerstonejs/core';
 import { addToolState, getToolState, type StackPrefetchData } from './state';
 import {
@@ -15,6 +17,10 @@ import {
   nearestIndex,
   range,
 } from './stackPrefetchUtils';
+import { Events } from '../../enums';
+import type { EventTypes } from '../../types';
+
+const { imageRetrieveMetadataProvider } = utilities;
 
 let configuration = {
   maxImagesToPrefetch: Infinity,
@@ -119,11 +125,22 @@ function prefetch(element) {
   let nextImageIdIndex;
   const preventCache = false;
 
-  function doneCallback(image) {
-    console.log('prefetch done: %s', image.imageId);
-    const imageIdIndex = stack.imageIds.indexOf(image.imageId);
+  function doneCallback(imageId) {
+    console.log('prefetch done: %s', imageId);
+    const imageIdIndex = stack.imageIds.indexOf(imageId);
 
     removeFromList(imageIdIndex);
+
+    // If all requests are complete, trigger the STACK_PREFETCH_COMPLETE event,
+    // providing the last imageId and triggering element so that the stack can
+    // be identified
+    if (stackPrefetch.indicesToRequest.length === 0) {
+      const eventDetail: EventTypes.StackPrefetchCompleteEventDetail = {
+        element: element,
+        lastPrefetchedImageId: imageId,
+      };
+      triggerEvent(eventTarget, Events.STACK_PREFETCH_COMPLETE, eventDetail);
+    }
   }
 
   // Prefetch images around the current image (before and after)
@@ -164,8 +181,21 @@ function prefetch(element) {
     }
   }
 
-  const requestFn = (imageId, options) =>
-    imageLoader.loadAndCacheImage(imageId, options);
+  const requestFn = (imageId, options) => {
+    const { retrieveOptions = {} } =
+      metaData.get(
+        imageRetrieveMetadataProvider.IMAGE_RETRIEVE_CONFIGURATION,
+        imageId,
+        'stack'
+      ) || {};
+    options.retrieveOptions = {
+      ...options.retrieveOptions,
+      ...(retrieveOptions.default || Object.values(retrieveOptions)?.[0] || {}),
+    };
+    return imageLoader
+      .loadAndCacheImage(imageId, options)
+      .then(() => doneCallback(imageId));
+  };
 
   imageIdsToPrefetch.forEach((imageId) => {
     // IMPORTANT: Request type should be passed if not the 'interaction'

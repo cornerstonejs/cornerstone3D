@@ -11,7 +11,6 @@ import getRuntimeId from './getRuntimeId';
 import imageIdToURI from './imageIdToURI';
 import calibratedPixelSpacingMetadataProvider from './calibratedPixelSpacingMetadataProvider';
 import clamp from './clamp';
-import { isEqual, isEqualAbs, isEqualNegative } from './isEqual';
 import isOpposite from './isOpposite';
 import getClosestImageId from './getClosestImageId';
 import getSpacingInNormalDirection from './getSpacingInNormalDirection';
@@ -66,6 +65,7 @@ import VoxelManager from './VoxelManager';
 import RLEVoxelMap from './RLEVoxelMap';
 import roundNumber, { roundToPrecision } from './roundNumber';
 import convertToGrayscale from './convertToGrayscale';
+import { convertColorArrayToRgbString } from './convertColorArrayToRgbString';
 import getViewportImageIds from './getViewportImageIds';
 import { getRandomSampleFromArray } from './getRandomSampleFromArray';
 import { getVolumeId } from './getVolumeId';
@@ -90,7 +90,10 @@ import cache from '../cache/cache';
 import getDynamicVolumeInfo from './getDynamicVolumeInfo';
 import autoLoad from './autoLoad';
 import scaleArray from './scaleArray';
-import splitImageIdsBy4DTags from './splitImageIdsBy4DTags';
+import splitImageIdsBy4DTags, {
+  handleMultiframe4D,
+  generateFrameImageId,
+} from './splitImageIdsBy4DTags';
 import { deepClone } from './deepClone';
 import { jumpToSlice } from './jumpToSlice';
 import scroll from './scroll';
@@ -100,10 +103,16 @@ import getVolumeDirectionVectors from './getVolumeDirectionVectors';
 import calculateSpacingBetweenImageIds from './calculateSpacingBetweenImageIds';
 export * as logger from './logger';
 import { calculateNeighborhoodStats } from './calculateNeighborhoodStats';
-import getPixelSpacingInformation from './getPixelSpacingInformation';
+export * from './getPixelSpacingInformation';
+export * from './getPlaneCubeIntersectionDimensions';
+export * from './rotateToViewCoordinates';
+import { asArray } from './asArray';
+export { updatePlaneRestriction } from './updatePlaneRestriction';
 
 const getViewportModality = (viewport: IViewport, volumeId?: string) =>
   _getViewportModality(viewport, volumeId, cache.getVolume);
+
+export * from './isEqual';
 
 export {
   FrameRange,
@@ -121,13 +130,11 @@ export {
   uuidv4,
   getMinMax,
   getRuntimeId,
-  isEqual,
-  isEqualAbs,
-  isEqualNegative,
   isOpposite,
   getViewportModality,
   windowLevel,
   convertToGrayscale,
+  convertColorArrayToRgbString,
   getClosestImageId,
   getSpacingInNormalDirection,
   getTargetVolumeAndSpacingInNormalDir,
@@ -192,6 +199,8 @@ export {
   scaleArray,
   deepClone,
   splitImageIdsBy4DTags,
+  handleMultiframe4D,
+  generateFrameImageId,
   pointInShapeCallback,
   deepEqual,
   jumpToSlice,
@@ -204,5 +213,5 @@ export {
   getImageDataMetadata,
   buildMetadata,
   calculateNeighborhoodStats,
-  getPixelSpacingInformation,
+  asArray,
 };

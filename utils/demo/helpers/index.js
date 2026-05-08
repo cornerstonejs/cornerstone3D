@@ -2,6 +2,9 @@ import addBrushSizeSlider from './addBrushSizeSlider';
 import addButtonToToolbar from './addButtonToToolbar';
 import addCheckboxToToolbar from './addCheckboxToToolbar';
 import addDropdownToToolbar from './addDropdownToToolbar';
+import addFillOpacityDropdownToToolbar from './addFillOpacityDropdownToToolbar';
+import addUShapeModeDropdownToToolbar from './addUShapeModeDropdownToToolbar';
+import addInputToToolbar from './addInputToToolbar';
 import addLabelToToolbar from './addLabelToToolbar';
 import addManipulationBindings from './addManipulationBindings';
 import addSegmentIndexDropdown from './addSegmentIndexDropdown';
@@ -19,6 +22,8 @@ import createInfoSection from './createInfoSection';
 import downloadSurfacesData from './downloadSurfacesData';
 import getLocalUrl from './getLocalUrl';
 import initDemo from './initDemo';
+import initProviders from './initProviders';
+import initVolumeLoader from './initVolumeLoader';
 import labelmapTools from './labelmapTools';
 import setCtTransferFunctionForVolumeActor, {
   ctVoiRange,
@@ -39,6 +44,9 @@ export {
   addButtonToToolbar,
   addCheckboxToToolbar,
   addDropdownToToolbar,
+  addFillOpacityDropdownToToolbar,
+  addUShapeModeDropdownToToolbar,
+  addInputToToolbar,
   addLabelToToolbar,
   addManipulationBindings,
   addSegmentIndexDropdown,
@@ -57,6 +65,8 @@ export {
   downloadSurfacesData,
   getLocalUrl,
   initDemo,
+  initProviders,
+  initVolumeLoader,
   labelmapTools,
   setCtTransferFunctionForVolumeActor,
   setPetColorMapTransferFunctionForVolumeActor,

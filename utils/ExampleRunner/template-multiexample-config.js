@@ -73,7 +73,7 @@ module.exports = {
         },
         {
           from: '../../../node_modules/dicom-microscopy-viewer/dist/dynamic-import/',
-          to: '${destPath.replace(/\\/g, '/')}',
+          to: '${destPath.replace(/\\/g, '/') + '/dicom-microscopy-viewer/'}',
           noErrorOnMissing: true,
         },
         {
@@ -82,6 +82,9 @@ module.exports = {
           to: '${destPath.replace(/\\/g, '/')}/ort',
         },
       ],
+    }),
+    new rspack.ProvidePlugin({
+      Buffer: ['buffer', 'Buffer'],
     }),
   ],
   entry: {
@@ -95,7 +98,8 @@ module.exports = {
     rules,
   },
   experiments: {
-    asyncWebAssembly: true
+    asyncWebAssembly: true,
+    nativeWatcher: true,
   },
   externals: {
     "dicom-microscopy-viewer": {
@@ -132,6 +136,7 @@ module.exports = {
       fs: false,
       path: require.resolve('path-browserify'),
       events: false,
+      buffer: require.resolve('buffer'),
     },
   },
   devServer: {

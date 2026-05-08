@@ -28,12 +28,12 @@ import AnnotationDisplayTool from './base/AnnotationDisplayTool';
 
 const { EPSILON } = CONSTANTS;
 
-export interface OverlayGridAnnotation extends Annotation {
+export type OverlayGridAnnotation = Annotation & {
   data: {
     viewportData: Map<string, object>;
     pointSets: Array<object>;
   };
-}
+};
 
 /**
  * @public
@@ -228,13 +228,12 @@ class OverlayGridTool extends AnnotationDisplayTool {
     );
 
     const pointSets = annotation.data.pointSets;
-    const viewportData = annotation.data.viewportData;
+    const viewportData = (<OverlayGridAnnotation>annotation).data.viewportData;
     for (let i = 0; i < sourceImageIds.length; i++) {
       // check if pointSets for the imageId was calculated. If not calculate and store
       const { pointSet1, pointSet2 } = pointSets[i];
 
       const targetData =
-        // @ts-expect-error
         viewportData.get(targetViewport.id) ||
         this.initializeViewportData(viewportData, targetViewport.id);
 

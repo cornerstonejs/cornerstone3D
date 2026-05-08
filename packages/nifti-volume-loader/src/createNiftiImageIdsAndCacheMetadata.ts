@@ -37,7 +37,11 @@ export async function fetchArrayBuffer({
 
   const options = getOptions();
   const defaultHeaders = {} as Record<string, string>;
-  const beforeSendHeaders = options.beforeSend?.(null, defaultHeaders, url);
+  const beforeSendHeaders = await options.beforeSend?.(
+    null,
+    defaultHeaders,
+    url
+  );
 
   const headers = Object.assign({}, defaultHeaders, beforeSendHeaders);
 

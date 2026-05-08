@@ -1,5 +1,7 @@
 ---
 id: basic-volume
+title: Render Volume
+summary: Step-by-step tutorial for rendering medical volumes in different orientations using Cornerstone3D's volume loading and viewport capabilities
 ---
 
 # Render Volume

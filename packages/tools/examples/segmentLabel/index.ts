@@ -317,9 +317,8 @@ async function _handleStackViewports(stackImageIds: string[]) {
 
   const imageIdsArray = [stackImageIds[0]];
 
-  const segImages = await imageLoader.createAndCacheDerivedLabelmapImages(
-    imageIdsArray
-  );
+  const segImages =
+    await imageLoader.createAndCacheDerivedLabelmapImages(imageIdsArray);
 
   const segmentationImageIds = segImages.map((it) => it.imageId);
 

@@ -21,21 +21,6 @@ interface IDynamicImageVolume extends IImageVolume {
   get numDimensionGroups(): number;
 
   /**
-   * @deprecated Use dimensionGroupNumber instead. timePointIndex is zero-based while dimensionGroupNumber starts at 1.
-   */
-  get timePointIndex(): number;
-
-  /**
-   * @deprecated Use dimensionGroupNumber instead. timePointIndex is zero-based while dimensionGroupNumber starts at 1.
-   */
-  set timePointIndex(timePointIndex: number);
-
-  /**
-   * @deprecated Use numDimensionGroups instead
-   */
-  get numTimePoints(): number;
-
-  /**
    * Scroll through dimension groups, handling wrapping at start/end
    * @param delta - The number of dimension groups to scroll by (positive or negative)
    */

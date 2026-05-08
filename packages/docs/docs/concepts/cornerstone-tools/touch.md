@@ -1,6 +1,7 @@
 ---
 id: touchEvents
 title: TouchEvents
+summary: Touch interaction system supporting multi-touch gestures, with events for tap, drag, swipe, and press actions that complement mouse-based interactions
 ---
 
 # Touch Events

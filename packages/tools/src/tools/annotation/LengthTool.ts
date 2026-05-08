@@ -1,4 +1,4 @@
-import { Events, ChangeTypes } from '../../enums';
+import { Events, ChangeTypes, MeasurementType } from '../../enums';
 import {
   getEnabledElement,
   utilities as csUtils,
@@ -26,11 +26,9 @@ import * as lineSegment from '../../utilities/math/line';
 import {
   drawHandles as drawHandlesSvg,
   drawLine as drawLineSvg,
-  drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
 import { state } from '../../store/state';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 
 import {
@@ -46,11 +44,11 @@ import type {
   ToolProps,
   SVGDrawingHelper,
   Annotation,
+  Statistics,
 } from '../../types';
 import type { LengthAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
-
-const { transformWorldToIndex } = csUtils;
+import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
 
 /**
  * LengthTool let you draw annotations that measures the length of two drawing
@@ -203,53 +201,16 @@ class LengthTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
-    const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
 
     hideElementCursor(element);
     this.isDrawing = true;
 
-    const {
-      viewPlaneNormal,
-      viewUp,
-      position: cameraPosition,
-    } = viewport.getCamera();
-    const referencedImageId = this.getReferencedImageId(
-      viewport,
-      worldPos,
-      viewPlaneNormal,
-      viewUp
+    const annotation = <LengthAnnotation>(
+      this.createAnnotation(evt, [
+        <Types.Point3>[...worldPos],
+        <Types.Point3>[...worldPos],
+      ])
     );
-
-    const annotation = {
-      highlighted: true,
-      invalidated: true,
-      metadata: {
-        ...viewport.getViewReference({ points: [worldPos] }),
-        toolName: this.getToolName(),
-        referencedImageId,
-        viewUp,
-        cameraPosition,
-      },
-      data: {
-        handles: {
-          points: [<Types.Point3>[...worldPos], <Types.Point3>[...worldPos]],
-          activeHandleIndex: null,
-          textBox: {
-            hasMoved: false,
-            worldPosition: <Types.Point3>[0, 0, 0],
-            worldBoundingBox: {
-              topLeft: <Types.Point3>[0, 0, 0],
-              topRight: <Types.Point3>[0, 0, 0],
-              bottomLeft: <Types.Point3>[0, 0, 0],
-              bottomRight: <Types.Point3>[0, 0, 0],
-            },
-          },
-        },
-        label: '',
-        cachedStats: {},
-      },
-    };
 
     addAnnotation(annotation, element);
 
@@ -745,7 +706,10 @@ class LengthTool extends AnnotationTool {
         activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]];
       }
 
-      if (activeHandleCanvasCoords) {
+      const showHandlesAlways = Boolean(
+        getStyleProperty('showHandlesAlways', {} as StyleSpecifier)
+      );
+      if (activeHandleCanvasCoords || showHandlesAlways) {
         const handleGroupUID = '0';
 
         drawHandlesSvg(
@@ -786,74 +750,28 @@ class LengthTool extends AnnotationTool {
         return renderStatus;
       }
 
-      const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
-      if (!options.visibility) {
-        data.handles.textBox = {
-          hasMoved: false,
-          worldPosition: <Types.Point3>[0, 0, 0],
-          worldBoundingBox: {
-            topLeft: <Types.Point3>[0, 0, 0],
-            topRight: <Types.Point3>[0, 0, 0],
-            bottomLeft: <Types.Point3>[0, 0, 0],
-            bottomRight: <Types.Point3>[0, 0, 0],
-          },
-        };
+      const textLines = this.configuration.getTextLines(data, targetId);
+      if (
+        !this.renderLinkedTextBoxAnnotation({
+          enabledElement,
+          svgDrawingHelper,
+          annotation,
+          styleSpecifier,
+          textLines: textLines ?? [],
+          canvasCoordinates,
+        })
+      ) {
         continue;
       }
-
-      const textLines = this.configuration.getTextLines(data, targetId);
-
-      // Need to update to sync with annotation while unlinked/not moved
-      if (!data.handles.textBox.hasMoved) {
-        const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
-
-        data.handles.textBox.worldPosition =
-          viewport.canvasToWorld(canvasTextBoxCoords);
-      }
-
-      const textBoxPosition = viewport.worldToCanvas(
-        data.handles.textBox.worldPosition
-      );
-
-      const textBoxUID = '1';
-      const boundingBox = drawLinkedTextBoxSvg(
-        svgDrawingHelper,
-        annotationUID,
-        textBoxUID,
-        textLines,
-        textBoxPosition,
-        canvasCoordinates,
-        {},
-        options
-      );
-
-      const { x: left, y: top, width, height } = boundingBox;
-
-      data.handles.textBox.worldBoundingBox = {
-        topLeft: viewport.canvasToWorld([left, top]),
-        topRight: viewport.canvasToWorld([left + width, top]),
-        bottomLeft: viewport.canvasToWorld([left, top + height]),
-        bottomRight: viewport.canvasToWorld([left + width, top + height]),
-      };
     }
 
     return renderStatus;
   };
 
-  _calculateLength(pos1, pos2) {
-    const dx = pos1[0] - pos2[0];
-    const dy = pos1[1] - pos2[1];
-    const dz = pos1[2] - pos2[2];
-
-    return Math.sqrt(dx * dx + dy * dy + dz * dz);
-  }
-
   _calculateCachedStats(annotation, renderingEngine, enabledElement) {
     const data = annotation.data;
     const { element } = enabledElement.viewport;
 
-    const worldPos1 = data.handles.points[0];
-    const worldPos2 = data.handles.points[1];
     const { cachedStats } = data;
     const targetIds = Object.keys(cachedStats);
 
@@ -873,27 +791,29 @@ class LengthTool extends AnnotationTool {
 
       const { imageData, dimensions } = image;
 
-      const index1 = transformWorldToIndex(imageData, worldPos1);
-      const index2 = transformWorldToIndex(imageData, worldPos2);
-      const handles = [index1, index2];
-      const { scale, unit } = getCalibratedLengthUnitsAndScale(image, handles);
+      const handles = data.handles.points.map((point) =>
+        imageData.worldToIndex(point)
+      );
+      const calibrate = getCalibratedLengthUnitsAndScale(image, handles);
+      const { unit } = calibrate;
 
-      const length = this._calculateLength(worldPos1, worldPos2) / scale;
+      const length = LengthTool.calculateLengthInIndex(calibrate, handles);
 
-      if (this._isInsideVolume(index1, index2, dimensions)) {
-        this.isHandleOutsideImage = false;
-      } else {
-        this.isHandleOutsideImage = true;
-      }
+      this.isHandleOutsideImage = !LengthTool.isInsideVolume(
+        dimensions,
+        handles
+      );
 
-      // TODO -> Do we instead want to clip to the bounds of the volume and only include that portion?
-      // Seems like a lot of work for an unrealistic case. At the moment bail out of stat calculation if either
-      // corner is off the canvas.
-
-      // todo: add insideVolume calculation, for removing tool if outside
+      const namedLength: Statistics = {
+        name: 'length',
+        value: length,
+        unit,
+        type: MeasurementType.Linear,
+      };
       cachedStats[targetId] = {
         length,
         unit,
+        statsArray: [namedLength],
       };
     }
 
@@ -906,13 +826,6 @@ class LengthTool extends AnnotationTool {
     }
 
     return cachedStats;
-  }
-
-  _isInsideVolume(index1, index2, dimensions) {
-    return (
-      csUtils.indexWithinDimensions(index1, dimensions) &&
-      csUtils.indexWithinDimensions(index2, dimensions)
-    );
   }
 }
 

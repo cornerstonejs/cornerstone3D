@@ -46,11 +46,11 @@ function createFormElement(): HTMLFormElement {
         coordType.charAt(0).toUpperCase() + coordType.slice(1)
       } Coords: Top Left [${coordType === 'canvas' ? 'x, y' : 'i, j'}]:</label>
       <input style="width:40px" type="number" id="${coordType}-start-1" placeholder="${
-      coordType === 'canvas' ? 'x' : 'i'
-    }" value="10">
+        coordType === 'canvas' ? 'x' : 'i'
+      }" value="10">
       <input style="width:40px" type="number" id="${coordType}-start-2" placeholder="${
-      coordType === 'canvas' ? 'y' : 'j'
-    }" value="10">
+        coordType === 'canvas' ? 'y' : 'j'
+      }" value="10">
       <label style="margin-left: 52px; margin-right: 21px;">Top Right [${
         coordType === 'canvas' ? 'x, y' : 'i, j'
       }]:</label>
@@ -89,7 +89,7 @@ function addButtonListeners(form: HTMLFormElement): void {
       const [type, viewportType, useImageId] = button.id.split('-') as [
         'canvas' | 'image',
         keyof typeof typeToIdMap,
-        'imageId'?
+        'imageId'?,
       ];
       const enabledElement = getEnabledElementByViewportId(
         typeToIdMap[viewportType]
@@ -101,7 +101,10 @@ function addButtonListeners(form: HTMLFormElement): void {
 
       const convertPoint = (point: Point2): Point3 =>
         type === 'image'
-          ? (utilities.imageToWorldCoords(imageId || currentImageId, point) as Point3)
+          ? (utilities.imageToWorldCoords(
+              imageId || currentImageId,
+              point
+            ) as Point3)
           : viewport.canvasToWorld(point);
 
       const points: Point3[] = [

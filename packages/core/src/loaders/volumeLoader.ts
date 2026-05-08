@@ -32,6 +32,7 @@ import { cornerstoneStreamingImageVolumeLoader } from './cornerstoneStreamingIma
 interface VolumeLoaderOptions {
   imageIds: string[];
   progressiveRendering?: boolean;
+  ijkDecimation?: [number, number, number]; // Optional parameter for decimation factors [i, j, k]
 }
 
 interface DerivedVolumeOptions {
@@ -218,7 +219,7 @@ export function createAndCacheDerivedVolume(
     ? (
         referencedVolume as StreamingDynamicImageVolume
       ).getCurrentDimensionGroupImageIds()
-    : referencedVolume.imageIds ?? [];
+    : (referencedVolume.imageIds ?? []);
 
   // Todo: fix later
   // const byteLength = referencedImageIds.reduce((total, imageId) => {
@@ -377,7 +378,7 @@ export function createLocalVolume(
 
   const dataType = scalarData
     ? (scalarData.constructor.name as PixelDataTypedArrayString)
-    : targetBuffer?.type ?? 'Float32Array';
+    : (targetBuffer?.type ?? 'Float32Array');
 
   const totalNumberOfVoxels = sliceLength * dimensions[2];
   let byteLength;

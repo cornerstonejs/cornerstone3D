@@ -1,111 +1,118 @@
-import { utilities } from "dcmjs";
-import MeasurementReport from "./MeasurementReport";
-import BaseAdapter3D from "./BaseAdapter3D";
+import { utilities } from 'dcmjs';
+import MeasurementReport from './MeasurementReport';
+import BaseAdapter3D from './BaseAdapter3D';
+import { toScoord } from '../helpers';
+import { extractAllNUMGroups, restoreAdditionalMetrics } from './metricHandler';
 
 const { Circle: TID300Circle } = utilities.TID300;
 
 class CircleROI extends BaseAdapter3D {
-    static {
-        this.init("CircleROI", TID300Circle);
-        this.registerLegacy();
+  static {
+    this.init('CircleROI', TID300Circle);
+    this.registerLegacy();
+  }
+
+  /** Gets the measurement data for cornerstone, given DICOM SR measurement data. */
+  static getMeasurementData(
+    MeasurementGroup,
+    sopInstanceUIDToImageIdMap,
+    metadata
+  ) {
+    const {
+      state,
+      NUMGroup,
+      worldCoords,
+      referencedImageId,
+      ReferencedFrameNumber,
+    } = MeasurementReport.getSetupMeasurementData(
+      MeasurementGroup,
+      sopInstanceUIDToImageIdMap,
+      metadata,
+      this.toolType
+    );
+    const referencedSOPInstanceUID = state.sopInstanceUid;
+    const allNUMGroups = extractAllNUMGroups(
+      MeasurementGroup,
+      referencedSOPInstanceUID
+    );
+    const measurementNUMGroups = allNUMGroups[referencedSOPInstanceUID] || {};
+    state.annotation.data = {
+      ...state.annotation.data,
+      handles: {
+        ...state.annotation.data.handles,
+        points: worldCoords,
+      },
+      frameNumber: ReferencedFrameNumber,
+    };
+    if (referencedImageId) {
+      state.annotation.data.cachedStats = {
+        [`imageId:${referencedImageId}`]: {
+          area: NUMGroup ? NUMGroup.MeasuredValueSequence.NumericValue : 0,
+          // Dummy values to be updated by cornerstone
+          radius: 0,
+          perimeter: 0,
+          ...restoreAdditionalMetrics(measurementNUMGroups),
+        },
+      };
     }
 
-    /** Gets the measurement data for cornerstone, given DICOM SR measurement data. */
-    static getMeasurementData(
-        MeasurementGroup,
-        sopInstanceUIDToImageIdMap,
-        imageToWorldCoords,
-        metadata
-    ) {
-        const { defaultState, NUMGroup, SCOORDGroup, ReferencedFrameNumber } =
-            MeasurementReport.getSetupMeasurementData(
-                MeasurementGroup,
-                sopInstanceUIDToImageIdMap,
-                metadata,
-                CircleROI.toolType
-            );
+    return state;
+  }
 
-        const referencedImageId =
-            defaultState.annotation.metadata.referencedImageId;
+  /**
+   * Gets the TID 300 representation of a circle, given the cornerstone representation.
+   *
+   * @param {Object} tool
+   * @returns
+   */
+  static getTID300RepresentationArguments(tool, is3DMeasurement = false) {
+    const { data, finding, findingSites, metadata } = tool;
+    const { cachedStats = {}, handles } = data;
 
-        const { GraphicData } = SCOORDGroup;
+    const { referencedImageId } = metadata;
+    const scoordProps = {
+      is3DMeasurement,
+      referencedImageId,
+    };
 
-        // GraphicData is ordered as [centerX, centerY, endX, endY]
-        const pointsWorld = [];
-        for (let i = 0; i < GraphicData.length; i += 2) {
-            const worldPos = imageToWorldCoords(referencedImageId, [
-                GraphicData[i],
-                GraphicData[i + 1]
-            ]);
+    // Using image coordinates for 2D points
+    const center = toScoord(scoordProps, handles.points[0]);
+    const end = toScoord(scoordProps, handles.points[1]);
 
-            pointsWorld.push(worldPos);
-        }
+    const {
+      area,
+      radius,
+      max,
+      min,
+      stdDev,
+      mean,
+      modalityUnit,
+      radiusUnit,
+      areaUnit,
+    } = cachedStats[`imageId:${referencedImageId}`] || {};
+    const perimeter = 2 * Math.PI * radius;
 
-        const state = defaultState;
-
-        state.annotation.data = {
-            handles: {
-                points: [...pointsWorld],
-                activeHandleIndex: 0,
-                textBox: {
-                    hasMoved: false
-                }
-            },
-            cachedStats: {
-                [`imageId:${referencedImageId}`]: {
-                    area: NUMGroup
-                        ? NUMGroup.MeasuredValueSequence.NumericValue
-                        : 0,
-                    // Dummy values to be updated by cornerstone
-                    radius: 0,
-                    perimeter: 0
-                }
-            },
-            frameNumber: ReferencedFrameNumber
-        };
-
-        return state;
-    }
-
-    /**
-     * Gets the TID 300 representation of a circle, given the cornerstone representation.
-     *
-     * @param {Object} tool
-     * @returns
-     */
-    static getTID300RepresentationArguments(tool, worldToImageCoords) {
-        const { data, finding, findingSites, metadata } = tool;
-        const { cachedStats = {}, handles } = data;
-
-        const { referencedImageId } = metadata;
-
-        if (!referencedImageId) {
-            throw new Error(
-                "CircleROI.getTID300RepresentationArguments: referencedImageId is not defined"
-            );
-        }
-
-        const center = worldToImageCoords(referencedImageId, handles.points[0]);
-        const end = worldToImageCoords(referencedImageId, handles.points[1]);
-
-        const points = [];
-        points.push({ x: center[0], y: center[1] });
-        points.push({ x: end[0], y: end[1] });
-
-        const { area, radius } =
-            cachedStats[`imageId:${referencedImageId}`] || {};
-        const perimeter = 2 * Math.PI * radius;
-
-        return {
-            area,
-            perimeter,
-            radius,
-            points,
-            trackingIdentifierTextValue: this.trackingIdentifierTextValue,
-            finding,
-            findingSites: findingSites || []
-        };
-    }
+    return {
+      area,
+      areaUnit,
+      perimeter,
+      modalityUnit,
+      radiusUnit,
+      radius,
+      max,
+      min,
+      stdDev,
+      mean,
+      points: [center, end],
+      trackingIdentifierTextValue: this.trackingIdentifierTextValue,
+      finding,
+      findingSites: findingSites || [],
+      ReferencedFrameOfReferenceUID: is3DMeasurement
+        ? metadata.FrameOfReferenceUID
+        : null,
+      use3DSpatialCoordinates: is3DMeasurement,
+    };
+  }
 }
 
 export default CircleROI;

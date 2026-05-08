@@ -9,6 +9,7 @@ import triggerEvent from '../../utilities/triggerEvent';
 import { Events } from '../../enums';
 import setDefaultVolumeVOI from './setDefaultVolumeVOI';
 import type { BlendMode } from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants';
+import { getConfiguration } from '../../init';
 
 interface createVolumeActorInterface {
   volumeId: string;
@@ -66,7 +67,12 @@ async function createVolumeActor(
   };
 
   const volumeProperty = volumeActor.getProperty();
-  volumeProperty.set({ viewportId: viewportId });
+  volumeProperty.set({ viewportId: viewportId }, true);
+
+  if (getConfiguration().rendering.preferSizeOverAccuracy) {
+    // @ts-expect-error: vtk.js typing is missing this method
+    volumeProperty.setPreferSizeOverAccuracy(true);
+  }
 
   if (numberOfComponents === 3) {
     volumeActor.getProperty().setIndependentComponents(false);

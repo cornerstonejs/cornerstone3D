@@ -31,6 +31,13 @@ function retrieveMultiframeMetadataImageId(imageId) {
 }
 
 function isMultiframe(metadata) {
+  // test for presence of Shared Functional Groups Sequence or Per-Frame Functional Groups Sequence
+  if (
+    metadata['52009230'] !== undefined ||
+    metadata['52009229'] !== undefined
+  ) {
+    return true;
+  }
   // Checks if dicomTag NumberOf Frames exists and it is greater than one
   const numberOfFrames = getValue<number>(metadata['00280008']);
 

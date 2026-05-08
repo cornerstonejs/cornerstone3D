@@ -1,6 +1,7 @@
 ---
 id: static-wado
 title: Static dicom web
+summary: Information on implementing progressive loading with Static DICOMweb, supporting both standard and non-standard configuration options
 ---
 
 standard and non-standard options,

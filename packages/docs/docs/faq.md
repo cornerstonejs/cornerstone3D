@@ -1,5 +1,7 @@
 ---
 id: faq
+title: Frequently Asked Questions
+summary: Answers to common questions about the differences between Cornerstone legacy and Cornerstone3D, including design choices, architectural changes, and feature comparisons
 ---
 
 # Frequently Asked Questions

@@ -88,7 +88,7 @@ function volumetricGetStatistics(
     },
     []
   );
-  const volumeScale = spacing ? spacing[0] * spacing[1] * spacing[2] * 1000 : 1;
+  const volumeScale = spacing ? spacing[0] * spacing[1] * spacing[2] : 1;
 
   stats.volume = {
     value: Array.isArray(stats.count.value)

@@ -21,11 +21,9 @@ import * as lineSegment from '../../utilities/math/line';
 import {
   drawHandles as drawHandlesSvg,
   drawHeight as drawHeightSvg,
-  drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
 import { state } from '../../store/state';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 
 import {
@@ -44,6 +42,7 @@ import type {
 } from '../../types';
 import type { LengthAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
+import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -134,53 +133,16 @@ class HeightTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
-    const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
 
     hideElementCursor(element);
     this.isDrawing = true;
 
-    const {
-      viewPlaneNormal,
-      viewUp,
-      position: cameraPosition,
-    } = viewport.getCamera();
-    const referencedImageId = this.getReferencedImageId(
-      viewport,
-      worldPos,
-      viewPlaneNormal,
-      viewUp
+    const annotation = <LengthAnnotation>(
+      this.createAnnotation(evt, [
+        <Types.Point3>[...worldPos],
+        <Types.Point3>[...worldPos],
+      ])
     );
-
-    const annotation = {
-      highlighted: true,
-      invalidated: true,
-      metadata: {
-        ...viewport.getViewReference({ points: [worldPos] }),
-        toolName: this.getToolName(),
-        referencedImageId,
-        viewUp,
-        cameraPosition,
-      },
-      data: {
-        handles: {
-          points: [<Types.Point3>[...worldPos], <Types.Point3>[...worldPos]],
-          activeHandleIndex: null,
-          textBox: {
-            hasMoved: false,
-            worldPosition: <Types.Point3>[0, 0, 0],
-            worldBoundingBox: {
-              topLeft: <Types.Point3>[0, 0, 0],
-              topRight: <Types.Point3>[0, 0, 0],
-              bottomLeft: <Types.Point3>[0, 0, 0],
-              bottomRight: <Types.Point3>[0, 0, 0],
-            },
-          },
-        },
-        label: '',
-        cachedStats: {},
-      },
-    };
 
     addAnnotation(annotation, element);
 
@@ -360,7 +322,7 @@ class HeightTool extends AnnotationTool {
     }
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
-
+    this.doneEditMemo();
     if (newAnnotation) {
       triggerAnnotationCompleted(annotation);
     }
@@ -374,10 +336,15 @@ class HeightTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    const { annotation, viewportIdsToRender, handleIndex, movingTextBox } =
-      this.editData;
+    const {
+      annotation,
+      viewportIdsToRender,
+      handleIndex,
+      movingTextBox,
+      newAnnotation,
+    } = this.editData;
     const { data } = annotation;
-
+    this.createMemo(element, annotation, { newAnnotation });
     if (movingTextBox) {
       // Drag mode - moving text box
       const { deltaPoints } = eventDetail as EventTypes.MouseDragEventDetail;
@@ -667,7 +634,10 @@ class HeightTool extends AnnotationTool {
         activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]];
       }
 
-      if (activeHandleCanvasCoords) {
+      const showHandlesAlways = Boolean(
+        getStyleProperty('showHandlesAlways', {} as StyleSpecifier)
+      );
+      if (activeHandleCanvasCoords || showHandlesAlways) {
         const handleGroupUID = '0';
 
         drawHandlesSvg(
@@ -707,55 +677,19 @@ class HeightTool extends AnnotationTool {
         return renderStatus;
       }
 
-      const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
-      if (!options.visibility) {
-        data.handles.textBox = {
-          hasMoved: false,
-          worldPosition: <Types.Point3>[0, 0, 0],
-          worldBoundingBox: {
-            topLeft: <Types.Point3>[0, 0, 0],
-            topRight: <Types.Point3>[0, 0, 0],
-            bottomLeft: <Types.Point3>[0, 0, 0],
-            bottomRight: <Types.Point3>[0, 0, 0],
-          },
-        };
+      const textLines = this.configuration.getTextLines(data, targetId);
+      if (
+        !this.renderLinkedTextBoxAnnotation({
+          enabledElement,
+          svgDrawingHelper,
+          annotation,
+          styleSpecifier,
+          textLines: textLines ?? [],
+          canvasCoordinates,
+        })
+      ) {
         continue;
       }
-
-      const textLines = this.configuration.getTextLines(data, targetId);
-
-      // Need to update to sync with annotation while unlinked/not moved
-      if (!data.handles.textBox.hasMoved) {
-        const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
-
-        data.handles.textBox.worldPosition =
-          viewport.canvasToWorld(canvasTextBoxCoords);
-      }
-
-      const textBoxPosition = viewport.worldToCanvas(
-        data.handles.textBox.worldPosition
-      );
-
-      const textBoxUID = '1';
-      const boundingBox = drawLinkedTextBoxSvg(
-        svgDrawingHelper,
-        annotationUID,
-        textBoxUID,
-        textLines,
-        textBoxPosition,
-        canvasCoordinates,
-        {},
-        options
-      );
-
-      const { x: left, y: top, width, height } = boundingBox;
-
-      data.handles.textBox.worldBoundingBox = {
-        topLeft: viewport.canvasToWorld([left, top]),
-        topRight: viewport.canvasToWorld([left + width, top]),
-        bottomLeft: viewport.canvasToWorld([left, top + height]),
-        bottomRight: viewport.canvasToWorld([left + width, top + height]),
-      };
     }
 
     return renderStatus;

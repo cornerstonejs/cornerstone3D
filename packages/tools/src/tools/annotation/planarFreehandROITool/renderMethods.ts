@@ -5,7 +5,7 @@ import {
   drawPath as drawPathSvg,
 } from '../../../drawingSvg';
 import { polyline } from '../../../utilities/math';
-import { findOpenUShapedContourVectorToPeakOnRender } from './findOpenUShapedContourVectorToPeak';
+import { resolveVectorToPeakOnRender } from './findOpenUShapedContourVectorToPeak';
 import type { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../../types/AnnotationStyle';
 import type { SVGDrawingHelper } from '../../../types';
@@ -43,7 +43,10 @@ function _getRenderingOptions(
     width: lineWidth,
     lineDash,
     fillColor,
-    fillOpacity,
+    fillOpacity:
+      this.configuration?.fillOpacity !== undefined
+        ? this.configuration.fillOpacity
+        : fillOpacity,
     closePath: isClosedContour,
   };
 
@@ -68,10 +71,12 @@ function renderContour(
   } else {
     // If its an open contour, check i its a U-shaped contour
     if (annotation.data.isOpenUShapeContour) {
-      calculateUShapeContourVectorToPeakIfNotPresent(
-        enabledElement,
-        annotation
-      );
+      if (annotation.data.isOpenUShapeContour !== 'lineSegment') {
+        calculateUShapeContourVectorToPeakIfNotPresent(
+          enabledElement,
+          annotation
+        );
+      }
 
       this.renderOpenUShapedContour(
         enabledElement,
@@ -93,10 +98,10 @@ function calculateUShapeContourVectorToPeakIfNotPresent(
   annotation: PlanarFreehandROIAnnotation
 ): void {
   if (!annotation.data.openUShapeContourVectorToPeak) {
-    // Annotation just been set to be an open U-shaped contour.
-    // calculate its peak vector here.
-    annotation.data.openUShapeContourVectorToPeak =
-      findOpenUShapedContourVectorToPeakOnRender(enabledElement, annotation);
+    annotation.data.openUShapeContourVectorToPeak = resolveVectorToPeakOnRender(
+      enabledElement,
+      annotation
+    );
   }
 }
 
@@ -229,18 +234,16 @@ function renderOpenUShapedContour(
 
   this.renderOpenContour(enabledElement, svgDrawingHelper, annotation);
 
+  const isLineSegmentOnly =
+    annotation.data.isOpenUShapeContour === 'lineSegment';
+
   // prevent rendering u shape in case openUShapeContourVectorToPeak is not set yet
-  if (!openUShapeContourVectorToPeak) {
+  if (!isLineSegmentOnly && !openUShapeContourVectorToPeak) {
     return;
   }
 
   const firstCanvasPoint = viewport.worldToCanvas(polyline[0]);
   const lastCanvasPoint = viewport.worldToCanvas(polyline[polyline.length - 1]);
-
-  const openUShapeContourVectorToPeakCanvas = [
-    viewport.worldToCanvas(openUShapeContourVectorToPeak[0]),
-    viewport.worldToCanvas(openUShapeContourVectorToPeak[1]),
-  ];
 
   const options = this._getRenderingOptions(enabledElement, annotation);
 
@@ -258,22 +261,50 @@ function renderOpenUShapedContour(
     }
   );
 
-  // Render midpoint to open contour surface line
-  drawPolylineSvg(
-    svgDrawingHelper,
-    annotation.annotationUID,
-    'midpoint-to-open-contour',
-    [
-      openUShapeContourVectorToPeakCanvas[0],
-      openUShapeContourVectorToPeakCanvas[1],
-    ],
-    {
-      color: options.color,
-      width: options.width,
-      closePath: false,
-      lineDash: '2,2',
-    }
-  );
+  // Render midpoint to open contour surface line (skip for lineSegment mode)
+  if (!isLineSegmentOnly) {
+    const openUShapeContourVectorToPeakCanvas = [
+      viewport.worldToCanvas(openUShapeContourVectorToPeak[0]),
+      viewport.worldToCanvas(openUShapeContourVectorToPeak[1]),
+    ];
+
+    drawPolylineSvg(
+      svgDrawingHelper,
+      annotation.annotationUID,
+      'midpoint-to-open-contour',
+      [
+        openUShapeContourVectorToPeakCanvas[0],
+        openUShapeContourVectorToPeakCanvas[1],
+      ],
+      {
+        color: options.color,
+        width: options.width,
+        closePath: false,
+        lineDash: '2,2',
+      }
+    );
+  }
+
+  // Render optional shaded fill for the enclosed region (contour + chord)
+  if (options.fillOpacity > 0) {
+    const canvasPolyline = polyline.map((worldPos) =>
+      viewport.worldToCanvas(worldPos)
+    );
+
+    drawPathSvg(
+      svgDrawingHelper,
+      annotation.annotationUID,
+      'u-shape-fill',
+      [[...canvasPolyline, firstCanvasPoint]],
+      {
+        color: options.fillColor || options.color,
+        fillColor: options.fillColor || options.color,
+        fillOpacity: options.fillOpacity,
+        closePath: true,
+        width: 0,
+      }
+    );
+  }
 }
 
 /**

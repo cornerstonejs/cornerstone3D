@@ -73,8 +73,8 @@ module.exports = {
           ],
         },
         {
-          to: '/docs/migration-guides/3x/polyseg',
-          label: '3.0 Migration Guides',
+          to: '/docs/migration-guides/4x',
+          label: '4.0 Migration Guides',
           position: 'left',
           className: 'new-badge',
         },
@@ -85,6 +85,10 @@ module.exports = {
             {
               type: 'html',
               value: '<hr class="dropdown-separator">',
+            },
+            {
+              href: 'https://v3.cornerstonejs.org/',
+              label: '3.0',
             },
             {
               href: 'https://v2.cornerstonejs.org/',
@@ -219,7 +223,7 @@ module.exports = {
           onlyIncludeVersions: ['current'],
           versions: {
             current: {
-              label: `3.0 (Latest)`,
+              label: `4.0 (Latest)`,
             },
           },
         },
@@ -254,6 +258,8 @@ module.exports = {
             out: `./docs/api/${pkg}`,
             entryPoints: [`../${pkg}/src/index.ts`],
             tsconfig: `../${pkg}/tsconfig.json`,
+            exclude: [`../${pkg}/test/**/*`, `../${pkg}/jest.config.js`],
+            skipErrorChecking: true,
           },
         ]);
       }

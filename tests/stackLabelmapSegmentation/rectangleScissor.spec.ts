@@ -25,6 +25,8 @@ test('Stack Segmentation - Rectangle Scissor Tool with segmentation 2', async ({
     .click();
 
   await drawRectangleScissor(page, canvas);
+  await page.waitForTimeout(1500);
+
   await checkForScreenshot(
     page,
     canvas,

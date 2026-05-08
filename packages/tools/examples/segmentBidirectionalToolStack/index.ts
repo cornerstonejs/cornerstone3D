@@ -202,9 +202,8 @@ addButtonToToolbar({
 
 async function addSegmentationsToState(imageIds) {
   // Create a segmentation of the same resolution as the source data
-  const segImages = await imageLoader.createAndCacheDerivedLabelmapImages(
-    imageIds
-  );
+  const segImages =
+    await imageLoader.createAndCacheDerivedLabelmapImages(imageIds);
 
   // Add the segmentations to state
   segmentation.addSegmentations([

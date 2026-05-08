@@ -1,5 +1,7 @@
 ---
 id: legacy-to-3d
+title: 'Legacy to Cornerstone3D 1.0'
+summary: Comprehensive guide for migrating from legacy Cornerstone to Cornerstone3D 1.0, covering API changes for initialization, viewports, image loading, and coordinate systems
 ---
 
 import Tabs from '@theme/Tabs';
@@ -267,7 +269,7 @@ renderingEngine.destroy();
 // The ELEMENT_DISABLED event contains just a reference to the canvas element which is now disabled, and related IDs.
 
 eventDetail: {
-  viewportId, renderingEngineId, canvas;
+  (viewportId, renderingEngineId, canvas);
 }
 ```
 
@@ -407,12 +409,12 @@ viewport: {
 
 ```js
 camera: {
-  viewUp,
+  (viewUp,
     viewPlaneNormal,
     position,
     focalPoint,
     orthogonalOrPerspective,
-    viewAngle;
+    viewAngle);
 }
 ```
 
@@ -443,7 +445,7 @@ startPoints / lastPoints / currentPoints / deltaPoints: {
 ```js
 // Location in 3D in world space
 {
-  CanvasCoord, WorldCoord;
+  (CanvasCoord, WorldCoord);
 }
 ```
 

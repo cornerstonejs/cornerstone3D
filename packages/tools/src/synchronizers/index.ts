@@ -4,6 +4,7 @@ import createVOISynchronizer from './synchronizers/createVOISynchronizer';
 import createZoomPanSynchronizer from './synchronizers/createZoomPanSynchronizer';
 import createImageSliceSynchronizer from './synchronizers/createImageSliceSynchronizer';
 import createSlabThicknessSynchronizer from './synchronizers/createSlabThicknessSynchronizer';
+import imageSliceSyncCallback from './callbacks/imageSliceSyncCallback';
 
 // for backward compatibility
 const createStackImageSynchronizer = createImageSliceSynchronizer;
@@ -16,4 +17,5 @@ export {
   createImageSliceSynchronizer,
   createStackImageSynchronizer,
   createSlabThicknessSynchronizer,
+  imageSliceSyncCallback,
 };

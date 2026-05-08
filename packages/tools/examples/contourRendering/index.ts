@@ -70,7 +70,10 @@ content.append(instructions);
  */
 async function run() {
   // Init Cornerstone and related libraries
-  await initDemo();
+  const config = (window as any).IS_TILED
+    ? { core: { renderingEngineMode: 'tiled' } }
+    : {};
+  await initDemo(config);
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
@@ -124,9 +127,8 @@ async function run() {
 
   // Add some segmentations based on the source data volume
 
-  const geometriesInfo = await createAndCacheGeometriesFromContours(
-    'SampleContour'
-  );
+  const geometriesInfo =
+    await createAndCacheGeometriesFromContours('SampleContour');
 
   // Add the segmentations to state
   segmentation.addSegmentations([

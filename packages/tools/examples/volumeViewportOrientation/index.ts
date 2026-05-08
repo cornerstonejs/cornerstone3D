@@ -52,8 +52,14 @@ content.appendChild(element);
 
 addDropdownToToolbar({
   options: {
-    values: ['axial', 'sagittal', 'coronal', 'acquisition'],
-    defaultValue: 'sagittal',
+    values: [
+      Enums.OrientationAxis.AXIAL,
+      Enums.OrientationAxis.SAGITTAL,
+      Enums.OrientationAxis.CORONAL,
+      Enums.OrientationAxis.ACQUISITION,
+      Enums.OrientationAxis.REFORMAT,
+    ],
+    defaultValue: Enums.OrientationAxis.SAGITTAL,
   },
   onSelectedValueChange: (selectedValue) => {
     // Get the rendering engine

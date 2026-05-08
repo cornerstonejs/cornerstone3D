@@ -24,6 +24,7 @@ import {
   drawHandles as drawHandlesSvg,
   drawTextBox as drawTextBoxSvg,
 } from '../../drawingSvg';
+import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import { state } from '../../store/state';
 import { ChangeTypes, Events } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
@@ -31,6 +32,7 @@ import {
   resetElementCursor,
   hideElementCursor,
 } from '../../cursors/elementCursor';
+import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 
@@ -100,6 +102,10 @@ class ProbeTool extends AnnotationTool {
       preventHandleOutsideImage: false,
       getTextLines: defaultGetTextLines,
       handleRadius: '6',
+      textCanvasOffset: {
+        x: 6,
+        y: -6,
+      },
     },
   };
 
@@ -431,7 +437,6 @@ class ProbeTool extends AnnotationTool {
       return renderStatus;
     }
 
-    const targetId = this.getTargetId(viewport);
     const renderingEngine = viewport.getRenderingEngine();
 
     const styleSpecifier: StyleSpecifier = {
@@ -447,6 +452,7 @@ class ProbeTool extends AnnotationTool {
       const point = data.handles.points[0];
       const canvasCoordinates = viewport.worldToCanvas(point);
 
+      const targetId = this.getTargetId(viewport, data);
       styleSpecifier.annotationUID = annotationUID;
 
       const { color, lineWidth } = this.getAnnotationStyle({
@@ -488,25 +494,27 @@ class ProbeTool extends AnnotationTool {
           const { referencedImageId } = annotation.metadata;
 
           // invalidate all the relevant stackViewports if they are not
-          // at the referencedImageId
-          for (const targetId in data.cachedStats) {
-            if (targetId.startsWith('imageId')) {
-              const viewports = renderingEngine.getStackViewports();
+          // at the referencedImageId (skip if metadata/referencedImageId missing)
+          if (referencedImageId) {
+            for (const targetId in data.cachedStats) {
+              if (targetId.startsWith('imageId')) {
+                const viewports = renderingEngine.getStackViewports();
 
-              const invalidatedStack = viewports.find((vp) => {
-                // The stack viewport that contains the imageId but is not
-                // showing it currently
-                const referencedImageURI =
-                  csUtils.imageIdToURI(referencedImageId);
-                const hasImageURI = vp.hasImageURI(referencedImageURI);
-                const currentImageURI = csUtils.imageIdToURI(
-                  vp.getCurrentImageId()
-                );
-                return hasImageURI && currentImageURI !== referencedImageURI;
-              });
+                const invalidatedStack = viewports.find((vp) => {
+                  const currentImageId = vp.getCurrentImageId();
+                  if (!currentImageId) return false;
+                  // The stack viewport that contains the imageId but is not
+                  // showing it currently
+                  const referencedImageURI =
+                    csUtils.imageIdToURI(referencedImageId);
+                  const hasImageURI = vp.hasImageURI(referencedImageURI);
+                  const currentImageURI = csUtils.imageIdToURI(currentImageId);
+                  return hasImageURI && currentImageURI !== referencedImageURI;
+                });
 
-              if (invalidatedStack) {
-                delete data.cachedStats[targetId];
+                if (invalidatedStack) {
+                  delete data.cachedStats[targetId];
+                }
               }
             }
           }
@@ -517,6 +525,10 @@ class ProbeTool extends AnnotationTool {
       if (!viewport.getRenderingEngine()) {
         console.warn('Rendering Engine has been destroyed');
         return renderStatus;
+      }
+
+      if (!isAnnotationVisible(annotationUID!)) {
+        continue;
       }
 
       const handleGroupUID = '0';
@@ -538,10 +550,11 @@ class ProbeTool extends AnnotationTool {
 
       const textLines = this.configuration.getTextLines(data, targetId);
       if (textLines) {
-        const textCanvasCoordinates = [
-          canvasCoordinates[0] + 6,
-          canvasCoordinates[1] - 6,
-        ];
+        const textCanvasCoordinates = getTextBoxCoordsCanvas(
+          [canvasCoordinates],
+          element,
+          textLines
+        );
 
         const textUID = '0';
         drawTextBoxSvg(
@@ -549,7 +562,7 @@ class ProbeTool extends AnnotationTool {
           annotationUID,
           textUID,
           textLines,
-          [textCanvasCoordinates[0], textCanvasCoordinates[1]],
+          textCanvasCoordinates,
           options
         );
       }
@@ -596,7 +609,7 @@ class ProbeTool extends AnnotationTool {
 
       const { dimensions, imageData, metadata, voxelManager } = image;
 
-      const modality = metadata.Modality;
+      const modality = metadata?.Modality;
       let ijk = transformWorldToIndex(imageData, worldPos);
 
       ijk = vec3.round(ijk, ijk);
@@ -604,11 +617,9 @@ class ProbeTool extends AnnotationTool {
       if (csUtils.indexWithinDimensions(ijk, dimensions)) {
         this.isHandleOutsideImage = false;
 
-        let value = voxelManager.getAtIJKPoint(ijk);
-
         // Index[2] for stackViewport is always 0, but for visualization
-        // we reset it to be imageId index
-        if (targetId.startsWith('imageId:')) {
+        // we reset it to be imageId index (skip for ECG; channel is already in ijk[2])
+        if (targetId.startsWith('imageId:') && modality !== 'ECG') {
           const imageId = targetId.split('imageId:')[1];
           const imageURI = csUtils.imageIdToURI(imageId);
           const viewports = csUtils.getViewportsWithImageURI(imageURI);
@@ -618,17 +629,23 @@ class ProbeTool extends AnnotationTool {
           ijk[2] = viewport.getCurrentImageIdIndex();
         }
 
-        let modalityUnit;
+        let value: number | number[];
+        let modalityUnit: string | string[];
 
-        if (modality === 'US') {
+        if (modality === 'ECG') {
           const calibratedResults = getCalibratedProbeUnitsAndValue(image, [
             ijk,
           ]);
-
+          value = calibratedResults.values;
+          modalityUnit = calibratedResults.units;
+        } else if (modality === 'US') {
+          value = voxelManager?.getAtIJKPoint(ijk);
+          const calibratedResults = getCalibratedProbeUnitsAndValue(image, [
+            ijk,
+          ]);
           const hasEnhancedRegionValues = calibratedResults.values.every(
-            (value) => value !== null
+            (v) => v !== null
           );
-
           value = (
             hasEnhancedRegionValues ? calibratedResults.values : value
           ) as number;
@@ -636,6 +653,7 @@ class ProbeTool extends AnnotationTool {
             ? calibratedResults.units
             : 'raw';
         } else {
+          value = voxelManager?.getAtIJKPoint(ijk);
           modalityUnit = getPixelValueUnits(
             modality,
             annotation.metadata.referencedImageId,
@@ -649,6 +667,7 @@ class ProbeTool extends AnnotationTool {
           Modality: modality,
           modalityUnit,
         };
+        annotation.invalidated = true;
       } else {
         this.isHandleOutsideImage = true;
         cachedStats[targetId] = {

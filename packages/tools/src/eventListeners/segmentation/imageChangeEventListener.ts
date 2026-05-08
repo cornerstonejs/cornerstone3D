@@ -34,7 +34,7 @@ const enable = function (element: HTMLDivElement): void {
   }
 
   element.addEventListener(
-    Enums.Events.STACK_NEW_IMAGE,
+    Enums.Events.PRE_STACK_NEW_IMAGE,
     _imageChangeEventListener as EventListener
   );
   // this listener handles the segmentation modifications
@@ -48,7 +48,7 @@ const enable = function (element: HTMLDivElement): void {
 
 const disable = function (element: HTMLDivElement): void {
   element.removeEventListener(
-    Enums.Events.STACK_NEW_IMAGE,
+    Enums.Events.PRE_STACK_NEW_IMAGE,
     _imageChangeEventListener as EventListener
   );
   element.removeEventListener(
@@ -139,6 +139,7 @@ function _imageChangeEventListener(evt) {
       return;
     }
 
+    let shouldTriggerSegmentationRender = false;
     const updateSegmentationActor = (derivedImageId) => {
       const derivedImage = cache.getImage(derivedImageId);
 
@@ -210,7 +211,7 @@ function _imageChangeEventListener(evt) {
           },
         ]);
 
-        triggerSegmentationRender(viewportId);
+        shouldTriggerSegmentationRender = true;
         return;
       } else {
         // if actor found
@@ -234,6 +235,11 @@ function _imageChangeEventListener(evt) {
     };
 
     derivedImageIds.forEach(updateSegmentationActor);
+    // if one or more actors were added to the viewport
+    // we need to trigger a segmentation render
+    if (shouldTriggerSegmentationRender) {
+      triggerSegmentationRender(viewportId);
+    }
 
     viewport.render();
 

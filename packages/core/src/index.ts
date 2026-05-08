@@ -1,7 +1,11 @@
 import * as Enums from './enums';
 import * as CONSTANTS from './constants';
 import { Events } from './enums';
-import RenderingEngine from './RenderingEngine';
+import RenderingEngine, {
+  BaseRenderingEngine,
+  TiledRenderingEngine,
+  ContextPoolRenderingEngine,
+} from './RenderingEngine';
 import createVolumeActor from './RenderingEngine/helpers/createVolumeActor';
 import createVolumeMapper, {
   convertMapperToNotSharedMapper,
@@ -13,8 +17,10 @@ import BaseVolumeViewport from './RenderingEngine/BaseVolumeViewport';
 import StackViewport from './RenderingEngine/StackViewport';
 import VideoViewport from './RenderingEngine/VideoViewport';
 import WSIViewport from './RenderingEngine/WSIViewport';
+import ECGViewport from './RenderingEngine/ECGViewport';
 import Viewport from './RenderingEngine/Viewport';
 import eventTarget from './eventTarget';
+import { version } from './version';
 
 import {
   getRenderingEngine,
@@ -59,6 +65,7 @@ import * as volumeLoader from './loaders/volumeLoader';
 import * as imageLoader from './loaders/imageLoader';
 import * as geometryLoader from './loaders/geometryLoader';
 import ProgressiveRetrieveImages from './loaders/ProgressiveRetrieveImages';
+import { decimatedVolumeLoader } from './loaders/decimatedVolumeLoader';
 // eslint-disable-next-line import/no-duplicates
 import type * as Types from './types';
 import type {
@@ -73,6 +80,7 @@ import * as utilities from './utilities';
 import { registerImageLoader } from './loaders/imageLoader'; // since it is used by CSWIL right now
 
 import triggerEvent from './utilities/triggerEvent';
+import { convertColorArrayToRgbString } from './utilities/convertColorArrayToRgbString';
 import { cornerstoneStreamingImageVolumeLoader } from './loaders/cornerstoneStreamingImageVolumeLoader';
 import { cornerstoneStreamingDynamicImageVolumeLoader } from './loaders/cornerstoneStreamingDynamicImageVolumeLoader';
 import { cornerstoneMeshLoader } from './loaders/cornerstoneMeshLoader';
@@ -82,6 +90,8 @@ import {
   addVolumesToViewports,
   addImageSlicesToViewports,
 } from './RenderingEngine/helpers';
+
+export * from './loaders/decimatedVolumeLoader';
 
 // Add new types here so that they can be imported singly as required.
 export type {
@@ -118,7 +128,11 @@ export {
   StackViewport,
   VideoViewport,
   WSIViewport,
+  ECGViewport,
   RenderingEngine,
+  BaseRenderingEngine,
+  TiledRenderingEngine,
+  ContextPoolRenderingEngine,
   ImageVolume,
   Surface,
   // Helpers
@@ -135,6 +149,7 @@ export {
   // event helpers
   eventTarget,
   triggerEvent,
+  convertColorArrayToRgbString,
   // Image Loader
   imageLoader,
   registerImageLoader, // Todo: remove this after CSWIL uses imageLoader now
@@ -160,9 +175,12 @@ export {
   geometryLoader,
   cornerstoneMeshLoader,
   ProgressiveRetrieveImages,
+  decimatedVolumeLoader,
   cornerstoneStreamingImageVolumeLoader,
   cornerstoneStreamingDynamicImageVolumeLoader,
   StreamingDynamicImageVolume,
   StreamingImageVolume,
   convertMapperToNotSharedMapper,
+  // Version
+  version,
 };

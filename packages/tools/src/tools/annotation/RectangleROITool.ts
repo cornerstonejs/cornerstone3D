@@ -1,5 +1,4 @@
 import { AnnotationTool } from '../base';
-
 import {
   getEnabledElement,
   VolumeViewport,
@@ -7,6 +6,7 @@ import {
   getEnabledElementByViewportId,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
+import { vec3 } from 'gl-matrix';
 
 import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
 import throttle from '../../utilities/throttle';
@@ -23,15 +23,12 @@ import {
 } from '../../stateManagement/annotation/helpers/state';
 import {
   drawHandles as drawHandlesSvg,
-  drawLinkedTextBox as drawLinkedTextBoxSvg,
   drawRectByCoordinates as drawRectSvg,
 } from '../../drawingSvg';
 import { state } from '../../store/state';
 import { ChangeTypes, Events } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import * as rectangle from '../../utilities/math/rectangle';
-import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
-import getWorldWidthAndHeightFromCorners from '../../utilities/planar/getWorldWidthAndHeightFromCorners';
 import {
   resetElementCursor,
   hideElementCursor,
@@ -52,6 +49,7 @@ import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
+import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -607,7 +605,6 @@ class RectangleROITool extends AnnotationTool {
       return renderStatus;
     }
 
-    const targetId = this.getTargetId(viewport);
     const renderingEngine = viewport.getRenderingEngine();
 
     const styleSpecifier: StyleSpecifier = {
@@ -622,6 +619,7 @@ class RectangleROITool extends AnnotationTool {
       const { points, activeHandleIndex } = data.handles;
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
+      const targetId = this.getTargetId(viewport, data);
       styleSpecifier.annotationUID = annotationUID;
 
       const { color, lineWidth, lineDash } = this.getAnnotationStyle({
@@ -713,20 +711,24 @@ class RectangleROITool extends AnnotationTool {
       if (
         !isAnnotationLocked(annotationUID) &&
         !this.editData &&
-        activeHandleIndex !== null
+        activeHandleIndex !== null &&
+        activeHandleIndex !== undefined
       ) {
         // Not locked or creating and hovering over handle, so render handle.
         activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]];
       }
 
-      if (activeHandleCanvasCoords) {
+      const showHandlesAlways = Boolean(
+        getStyleProperty('showHandlesAlways', {} as StyleSpecifier)
+      );
+      if (activeHandleCanvasCoords || showHandlesAlways) {
         const handleGroupUID = '0';
 
         drawHandlesSvg(
           svgDrawingHelper,
           annotationUID,
           handleGroupUID,
-          activeHandleCanvasCoords,
+          showHandlesAlways ? canvasCoordinates : activeHandleCanvasCoords,
           {
             color,
           }
@@ -750,57 +752,22 @@ class RectangleROITool extends AnnotationTool {
 
       renderStatus = true;
 
-      const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
-      if (!options.visibility) {
-        data.handles.textBox = {
-          hasMoved: false,
-          worldPosition: <Types.Point3>[0, 0, 0],
-          worldBoundingBox: {
-            topLeft: <Types.Point3>[0, 0, 0],
-            topRight: <Types.Point3>[0, 0, 0],
-            bottomLeft: <Types.Point3>[0, 0, 0],
-            bottomRight: <Types.Point3>[0, 0, 0],
-          },
-        };
-        continue;
-      }
-
       const textLines = this.configuration.getTextLines(data, targetId);
       if (!textLines || textLines.length === 0) {
         continue;
       }
-
-      if (!data.handles.textBox.hasMoved) {
-        const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
-
-        data.handles.textBox.worldPosition =
-          viewport.canvasToWorld(canvasTextBoxCoords);
+      if (
+        !this.renderLinkedTextBoxAnnotation({
+          enabledElement,
+          svgDrawingHelper,
+          annotation,
+          styleSpecifier,
+          textLines,
+          canvasCoordinates,
+        })
+      ) {
+        continue;
       }
-
-      const textBoxPosition = viewport.worldToCanvas(
-        data.handles.textBox.worldPosition
-      );
-
-      const textBoxUID = '1';
-      const boundingBox = drawLinkedTextBoxSvg(
-        svgDrawingHelper,
-        annotationUID,
-        textBoxUID,
-        textLines,
-        textBoxPosition,
-        canvasCoordinates,
-        {},
-        options
-      );
-
-      const { x: left, y: top, width, height } = boundingBox;
-
-      data.handles.textBox.worldBoundingBox = {
-        topLeft: viewport.canvasToWorld([left, top]),
-        topRight: viewport.canvasToWorld([left + width, top]),
-        bottomLeft: viewport.canvasToWorld([left, top + height]),
-        bottomRight: viewport.canvasToWorld([left + width, top + height]),
-      };
     }
 
     return renderStatus;
@@ -849,8 +816,7 @@ class RectangleROITool extends AnnotationTool {
     const { viewport } = enabledElement;
     const { element } = viewport;
 
-    const worldPos1 = data.handles.points[0];
-    const worldPos2 = data.handles.points[3];
+    const worldHandles = data.handles.points;
     const { cachedStats } = data;
 
     const targetIds = Object.keys(cachedStats);
@@ -869,17 +835,11 @@ class RectangleROITool extends AnnotationTool {
 
       const { dimensions, imageData, metadata, voxelManager } = image;
 
-      const pos1Index = transformWorldToIndex(imageData, worldPos1);
-
-      pos1Index[0] = Math.floor(pos1Index[0]);
-      pos1Index[1] = Math.floor(pos1Index[1]);
-      pos1Index[2] = Math.floor(pos1Index[2]);
-
-      const pos2Index = transformWorldToIndex(imageData, worldPos2);
-
-      pos2Index[0] = Math.floor(pos2Index[0]);
-      pos2Index[1] = Math.floor(pos2Index[1]);
-      pos2Index[2] = Math.floor(pos2Index[2]);
+      const indexHandles = worldHandles.map((worldHandle) =>
+        transformWorldToIndex(imageData, worldHandle)
+      );
+      const pos1Index = indexHandles[0].map(Math.floor);
+      const pos2Index = indexHandles[3].map(Math.floor);
 
       // Check if one of the indexes are inside the volume, this then gives us
       // Some area to do stats over.
@@ -904,20 +864,19 @@ class RectangleROITool extends AnnotationTool {
           [kMin, kMax],
         ] as [Types.Point2, Types.Point2, Types.Point2];
 
-        const { worldWidth, worldHeight } = getWorldWidthAndHeightFromCorners(
-          viewPlaneNormal,
-          viewUp,
-          worldPos1,
-          worldPos2
-        );
-
         const handles = [pos1Index, pos2Index];
-        const { scale, areaUnit } = getCalibratedLengthUnitsAndScale(
-          image,
-          handles
-        );
+        const calibrate = getCalibratedLengthUnitsAndScale(image, handles);
 
-        const area = Math.abs(worldWidth * worldHeight) / (scale * scale);
+        const width = RectangleROITool.calculateLengthInIndex(
+          calibrate,
+          indexHandles.slice(0, 2)
+        );
+        const height = RectangleROITool.calculateLengthInIndex(
+          calibrate,
+          indexHandles.slice(2, 4)
+        );
+        const area = Math.abs(width * height);
+        const { areaUnit } = calibrate;
 
         const pixelUnitsOptions = {
           isPreScaled: isViewportPreScaled(viewport, targetId),
@@ -935,14 +894,17 @@ class RectangleROITool extends AnnotationTool {
           pixelUnitsOptions
         );
 
-        const pointsInShape = voxelManager.forEach(
-          this.configuration.statsCalculator.statsCallback,
-          {
-            boundsIJK,
-            imageData,
-            returnPoints: this.configuration.storePointData,
-          }
-        );
+        let pointsInShape;
+        if (voxelManager) {
+          pointsInShape = voxelManager.forEach(
+            this.configuration.statsCalculator.statsCallback,
+            {
+              boundsIJK,
+              imageData,
+              returnPoints: this.configuration.storePointData,
+            }
+          );
+        }
         const stats = this.configuration.statsCalculator.getStatistics();
 
         cachedStats[targetId] = {
@@ -951,6 +913,7 @@ class RectangleROITool extends AnnotationTool {
           mean: stats.mean?.value,
           stdDev: stats.stdDev?.value,
           max: stats.max?.value,
+          min: stats.min?.value,
           statsArray: stats.array,
           pointsInShape: pointsInShape,
           areaUnit,
@@ -1052,7 +1015,8 @@ class RectangleROITool extends AnnotationTool {
  */
 function defaultGetTextLines(data, targetId: string): string[] {
   const cachedVolumeStats = data.cachedStats[targetId];
-  const { area, mean, max, stdDev, areaUnit, modalityUnit } = cachedVolumeStats;
+  const { area, mean, max, stdDev, areaUnit, modalityUnit, min } =
+    cachedVolumeStats;
 
   if (mean === undefined || mean === null) {
     return;
@@ -1060,10 +1024,21 @@ function defaultGetTextLines(data, targetId: string): string[] {
 
   const textLines: string[] = [];
 
-  textLines.push(`Area: ${csUtils.roundNumber(area)} ${areaUnit}`);
-  textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
-  textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
-  textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
+  if (csUtils.isNumber(area)) {
+    textLines.push(`Area: ${csUtils.roundNumber(area)} ${areaUnit}`);
+  }
+  if (csUtils.isNumber(mean)) {
+    textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
+  }
+  if (csUtils.isNumber(max)) {
+    textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
+  }
+  if (csUtils.isNumber(min)) {
+    textLines.push(`Min: ${csUtils.roundNumber(min)} ${modalityUnit}`);
+  }
+  if (csUtils.isNumber(stdDev)) {
+    textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
+  }
 
   return textLines;
 }

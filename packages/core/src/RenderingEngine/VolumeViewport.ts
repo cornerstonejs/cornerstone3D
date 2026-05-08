@@ -17,7 +17,7 @@ import type {
   ViewReferenceSpecifier,
 } from '../types';
 import type { ViewportInput } from '../types/IViewport';
-import { actorIsA, isImageActor } from '../utilities/actorCheck';
+import { actorIsA } from '../utilities/actorCheck';
 import getClosestImageId from '../utilities/getClosestImageId';
 import getSliceRange from '../utilities/getSliceRange';
 import getSpacingInNormalDirection from '../utilities/getSpacingInNormalDirection';
@@ -26,13 +26,15 @@ import triggerEvent from '../utilities/triggerEvent';
 
 import BaseVolumeViewport from './BaseVolumeViewport';
 import setDefaultVolumeVOI from './helpers/setDefaultVolumeVOI';
-import { setTransferFunctionNodes } from '../utilities/transferFunctionUtils';
-import type { ImageActor } from '../types/IActor';
 import getImageSliceDataForVolumeViewport from '../utilities/getImageSliceDataForVolumeViewport';
 import { transformCanvasToIJK } from '../utilities/transformCanvasToIJK';
 import { transformIJKToCanvas } from '../utilities/transformIJKToCanvas';
 import type vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import getVolumeViewportScrollInfo from '../utilities/getVolumeViewportScrollInfo';
+import {
+  calculateCameraPosition,
+  getCameraVectors,
+} from './helpers/getCameraVectors';
 
 /**
  * An object representing a VolumeViewport. VolumeViewports are used to render
@@ -73,17 +75,26 @@ class VolumeViewport extends BaseVolumeViewport {
     immediate = false,
     suppressEvents = false
   ): Promise<void> {
-    const firstImageVolume = cache.getVolume(volumeInputArray[0].volumeId);
+    const volumeId = volumeInputArray[0].volumeId;
+    const firstImageVolume = cache.getVolume(volumeId);
 
     if (!firstImageVolume) {
-      throw new Error(
-        `imageVolume with id: ${firstImageVolume.volumeId} does not exist`
-      );
+      throw new Error(`imageVolume with id: ${volumeId} does not exist`);
     }
 
     if (this._useAcquisitionPlaneForViewPlane) {
       this._setViewPlaneToAcquisitionPlane(firstImageVolume);
       this._useAcquisitionPlaneForViewPlane = false;
+    } else if (
+      this.options.orientation &&
+      typeof this.options.orientation === 'string'
+    ) {
+      if (this.options.orientation.includes('_reformat')) {
+        this._setViewPlaneToReformatOrientation(
+          this.options.orientation,
+          firstImageVolume
+        );
+      }
     }
 
     return super.setVolumes(volumeInputArray, immediate, suppressEvents);
@@ -118,16 +129,38 @@ class VolumeViewport extends BaseVolumeViewport {
     if (this._useAcquisitionPlaneForViewPlane) {
       this._setViewPlaneToAcquisitionPlane(firstImageVolume);
       this._useAcquisitionPlaneForViewPlane = false;
+    } else if (
+      this.options.orientation &&
+      typeof this.options.orientation === 'string'
+    ) {
+      if (this.options.orientation.includes('_reformat')) {
+        this._setViewPlaneToReformatOrientation(
+          this.options.orientation,
+          firstImageVolume
+        );
+      }
     }
-
     return super.addVolumes(volumeInputArray, immediate, suppressEvents);
   }
 
   public jumpToWorld(worldPos: Point3): boolean {
+    let targetWorldPos = worldPos;
+
+    const imageData = this.getImageData();
+    if (imageData?.imageData) {
+      const bounds = imageData.imageData.getBounds();
+      // Ensure the target world position is within the bounds of the image data
+      targetWorldPos = [
+        Math.max(bounds[0], Math.min(bounds[1], worldPos[0])),
+        Math.max(bounds[2], Math.min(bounds[3], worldPos[1])),
+        Math.max(bounds[4], Math.min(bounds[5], worldPos[2])),
+      ] as Point3;
+    }
+
     const { focalPoint } = this.getCamera();
 
     const delta: Point3 = [0, 0, 0];
-    vec3.sub(delta, worldPos, focalPoint);
+    vec3.sub(delta, targetWorldPos, focalPoint);
 
     const camera = this.getCamera();
     const normal = camera.viewPlaneNormal;
@@ -159,25 +192,52 @@ class VolumeViewport extends BaseVolumeViewport {
 
   /**
    * It sets the orientation for the camera, the orientation can be one of the
-   * following: axial, sagittal, coronal, default. Use the `Enums.OrientationAxis`
-   * to set the orientation. The "default" orientation is the orientation that
-   * the volume was acquired in (scan axis)
+   * following: axial, sagittal, coronal, acquisition. Use the `Enums.OrientationAxis`
+   * to set the orientation. The "acquisition" orientation is the orientation that
+   * the volume was acquired in (scan axis).
    *
    * @param orientation - The orientation to set the camera to.
    * @param immediate - Whether the `Viewport` should be rendered as soon as the camera is set.
    */
   public setOrientation(
     orientation: OrientationAxis | OrientationVectors,
-    immediate = true
+    immediate = true,
+    suppressEvents = false
   ): void {
     let viewPlaneNormal, viewUp;
 
     // check if the orientation is a string or an object
     if (typeof orientation === 'string') {
-      if (MPR_CAMERA_VALUES[orientation]) {
+      if (orientation === OrientationAxis.ACQUISITION) {
+        // Acquisition orientation is determined from the volume data
+        ({ viewPlaneNormal, viewUp } = super._getAcquisitionPlaneOrientation());
+      } else if (orientation === OrientationAxis.REFORMAT) {
+        // Generic reformat - auto-detect closest orientation
+        ({ viewPlaneNormal, viewUp } = getCameraVectors(this, {
+          useViewportNormal: true,
+        }));
+      } else if (
+        orientation === OrientationAxis.AXIAL_REFORMAT ||
+        orientation === OrientationAxis.SAGITTAL_REFORMAT ||
+        orientation === OrientationAxis.CORONAL_REFORMAT
+      ) {
+        // Extract base orientation from reformat type
+        let baseOrientation: OrientationAxis;
+        if (orientation === OrientationAxis.AXIAL_REFORMAT) {
+          baseOrientation = OrientationAxis.AXIAL;
+        } else if (orientation === OrientationAxis.SAGITTAL_REFORMAT) {
+          baseOrientation = OrientationAxis.SAGITTAL;
+        } else {
+          baseOrientation = OrientationAxis.CORONAL;
+        }
+
+        // Use viewport normal (for reformat) but specify base orientation (for reference)
+        ({ viewPlaneNormal, viewUp } = getCameraVectors(this, {
+          useViewportNormal: true,
+          orientation: baseOrientation,
+        }));
+      } else if (MPR_CAMERA_VALUES[orientation]) {
         ({ viewPlaneNormal, viewUp } = MPR_CAMERA_VALUES[orientation]);
-      } else if (orientation === 'acquisition') {
-        ({ viewPlaneNormal, viewUp } = this._getAcquisitionPlaneOrientation());
       } else {
         throw new Error(
           `Invalid orientation: ${orientation}. Use Enums.OrientationAxis instead.`
@@ -190,10 +250,11 @@ class VolumeViewport extends BaseVolumeViewport {
       });
 
       this.viewportProperties.orientation = orientation;
-      this.resetCamera();
+      // Suppress events to prevent CAMERA_RESET from triggering render before camera is ready
+      this.resetCamera({ suppressEvents: true });
     } else {
       ({ viewPlaneNormal, viewUp } = orientation);
-      this.applyViewOrientation(orientation);
+      this.applyViewOrientation(orientation, true, suppressEvents);
     }
 
     if (immediate) {
@@ -224,33 +285,31 @@ class VolumeViewport extends BaseVolumeViewport {
     }
   }
 
-  private _getAcquisitionPlaneOrientation(): OrientationVectors {
-    const actorEntry = this.getDefaultActor();
+  private _setViewPlaneToReformatOrientation(
+    orientation: OrientationAxis,
+    imageVolume: IImageVolume
+  ): void {
+    let viewPlaneNormal, viewUp;
 
-    if (!actorEntry) {
-      return;
+    if (imageVolume) {
+      const { direction } = imageVolume;
+      ({ viewPlaneNormal, viewUp } = calculateCameraPosition(
+        direction.slice(0, 3) as Point3,
+        direction.slice(3, 6) as Point3,
+        direction.slice(6, 9) as Point3,
+        orientation
+      ));
+    } else {
+      ({ viewPlaneNormal, viewUp } = this._getAcquisitionPlaneOrientation());
     }
 
-    // Todo: fix this after we add the volumeId reference to actorEntry later
-    // in the segmentation refactor
-    const volumeId = this.getVolumeId();
-
-    const imageVolume = cache.getVolume(volumeId);
-
-    if (!imageVolume) {
-      throw new Error(
-        `imageVolume with id: ${volumeId} does not exist in cache`
-      );
-    }
-
-    const { direction } = imageVolume;
-    const viewPlaneNormal = direction.slice(6, 9).map((x) => -x) as Point3;
-    const viewUp = (direction.slice(3, 6) as Point3).map((x) => -x) as Point3;
-
-    return {
+    this.setCamera({
       viewPlaneNormal,
       viewUp,
-    };
+    });
+
+    this.initialViewUp = viewUp;
+    this.resetCamera();
   }
 
   private _setViewPlaneToAcquisitionPlane(imageVolume: IImageVolume): void {
@@ -513,12 +572,15 @@ class VolumeViewport extends BaseVolumeViewport {
    * have the same affect, excluding end/looping conditions.
    */
   public getCurrentImageIdIndex = (
-    volumeId?: string,
+    volumeId: string = this.getVolumeId(),
     useSlabThickness = true
   ): number => {
+    if (!volumeId) {
+      return 0;
+    }
     const { currentStepIndex } = getVolumeViewportScrollInfo(
       this,
-      volumeId || this.getVolumeId(),
+      volumeId,
       useSlabThickness
     );
     return currentStepIndex;
@@ -774,16 +836,7 @@ class VolumeViewport extends BaseVolumeViewport {
     }
     setDefaultVolumeVOI(volumeActor.actor as vtkVolume, imageVolume);
 
-    if (isImageActor(volumeActor)) {
-      const transferFunction = (volumeActor.actor as ImageActor)
-        .getProperty()
-        .getRGBTransferFunction(0);
-
-      setTransferFunctionNodes(
-        transferFunction,
-        this.initialTransferFunctionNodes
-      );
-    }
+    this._restoreVolumeRenderingDefaults(volumeActor, volumeId);
 
     const eventDetails = {
       ...super.getVOIModifiedEventDetail(volumeId),

@@ -211,7 +211,20 @@ addButtonToToolbar({
  */
 async function run() {
   // Init Cornerstone and related libraries
-  await initDemo();
+  const config = (window as any).IS_TILED
+    ? { core: { renderingEngineMode: 'tiled' } }
+    : {};
+  await initDemo(config);
+
+  const defaultToolStyles =
+    cornerstoneTools.annotation.config.style.getDefaultToolStyles();
+
+  defaultToolStyles.global.showHandlesAlways = true;
+  defaultToolStyles.global.showGrabCursor = true;
+
+  cornerstoneTools.annotation.config.style.setDefaultToolStyles(
+    defaultToolStyles
+  );
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(LengthTool);

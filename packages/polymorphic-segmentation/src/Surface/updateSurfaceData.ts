@@ -21,9 +21,8 @@ const {
 } = cornerstoneTools;
 
 export async function updateSurfaceData(segmentationId) {
-  const surfacesObj = await computeSurfaceFromLabelmapSegmentation(
-    segmentationId
-  );
+  const surfacesObj =
+    await computeSurfaceFromLabelmapSegmentation(segmentationId);
 
   if (!surfacesObj) {
     return;
@@ -103,6 +102,10 @@ export async function updateSurfaceData(segmentationId) {
             type: SegmentationRepresentations.Surface,
           }
         );
+
+        if (!surfaceRepresentation) {
+          return;
+        }
 
         return [surfaceRepresentation].map((surfaceRepresentation) => {
           segmentation.representationData.Surface.geometryIds.set(

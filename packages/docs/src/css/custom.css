@@ -389,6 +389,10 @@ html[data-theme='light'] .tsd-flag-public {
   width: 200px;
 }
 
+#open-ptct-button p {
+  margin: 0px;
+}
+
 a.card > h2 {
   font-size: 1.5rem;
 }

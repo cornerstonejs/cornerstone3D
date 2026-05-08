@@ -1,5 +1,7 @@
 ---
 id: basic-segmentation-tools
+title: Segmentation Tools
+summary: Comprehensive guide to implementing segmentation tools in Cornerstone3D, including brush tools, volume loading, and rendering segmentations across multiple viewports
 ---
 
 # Segmentation Tools

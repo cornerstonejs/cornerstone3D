@@ -16,7 +16,7 @@ import * as cornerstoneTools from '@cornerstonejs/tools';
 import type { PolySegConversionOptions } from '../types';
 
 const { WorkerTypes } = cornerstoneTools.Enums;
-const { getAnnotation } = cornerstoneTools.annotation.state;
+const { segmentation } = cornerstoneTools;
 
 const workerManager = getWebWorkerManager();
 
@@ -55,7 +55,10 @@ export async function convertContourToVolumeLabelmap(
     segmentationVolume;
 
   const { segmentIndices, annotationUIDsInSegmentMap } =
-    _getAnnotationMapFromSegmentation(contourRepresentationData, options);
+    segmentation.utilities.getAnnotationMapFromSegmentation(
+      contourRepresentationData,
+      options
+    );
 
   triggerWorkerProgress(eventTarget, 0);
 
@@ -121,14 +124,16 @@ export async function convertContourToStackLabelmap(
   });
 
   // create
-  const segImages = await imageLoader.createAndCacheDerivedLabelmapImages(
-    imageIds
-  );
+  const segImages =
+    await imageLoader.createAndCacheDerivedLabelmapImages(imageIds);
 
   const segmentationImageIds = segImages.map((it) => it.imageId);
 
   const { segmentIndices, annotationUIDsInSegmentMap } =
-    _getAnnotationMapFromSegmentation(contourRepresentationData, options);
+    segmentation.utilities.getAnnotationMapFromSegmentation(
+      contourRepresentationData,
+      options
+    );
 
   // information for the referenced to the segmentation image
   // Define constant to hold segmentation information
@@ -231,53 +236,4 @@ export async function convertContourToStackLabelmap(
   return {
     imageIds: segImageIds,
   };
-}
-
-function _getAnnotationMapFromSegmentation(
-  contourRepresentationData: ToolsTypes.ContourSegmentationData,
-  options: PolySegConversionOptions = {}
-) {
-  const annotationMap = contourRepresentationData.annotationUIDsMap;
-
-  const segmentIndices = options.segmentIndices?.length
-    ? options.segmentIndices
-    : Array.from(annotationMap.keys());
-
-  const annotationUIDsInSegmentMap = new Map<number, unknown>();
-  segmentIndices.forEach((index) => {
-    const annotationUIDsInSegment = annotationMap.get(index);
-
-    // Todo: there is a bug right now where the annotationUIDsInSegment has both
-    // children and parent annotations, so we need to filter out the parent
-    // annotations only
-
-    let uids = Array.from(annotationUIDsInSegment);
-
-    uids = uids.filter(
-      (uid) =>
-        !(getAnnotation(uid) as ToolsTypes.Annotation).parentAnnotationUID
-    );
-
-    const annotations = uids.map((uid) => {
-      const annotation = getAnnotation(uid) as ToolsTypes.ContourAnnotation;
-      const hasChildAnnotations = annotation.childAnnotationUIDs?.length;
-
-      return {
-        polyline: annotation.data.contour.polyline,
-        referencedImageId: annotation.metadata.referencedImageId,
-        holesPolyline:
-          hasChildAnnotations &&
-          annotation.childAnnotationUIDs.map((childUID) => {
-            const childAnnotation = getAnnotation(
-              childUID
-            ) as ToolsTypes.ContourAnnotation;
-            return childAnnotation.data.contour.polyline;
-          }),
-      };
-    });
-
-    annotationUIDsInSegmentMap.set(index, annotations);
-  });
-
-  return { segmentIndices, annotationUIDsInSegmentMap };
 }

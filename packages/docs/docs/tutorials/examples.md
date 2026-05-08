@@ -1,6 +1,7 @@
 ---
 id: examples
 title: Examples
+summary: Guide to accessing, debugging, and running Cornerstone3D example applications, with instructions for local development and source code exploration
 ---
 
 import Link from '@docusaurus/Link';
@@ -29,7 +30,7 @@ being called.
 
 <!-- /For some reason vimeo gives CORS errors for embed -->
 <div style={{padding:"56.25% 0 0 0", position:"relative"}}>
-    <iframe src="https://player.vimeo.com/video/694244249?h=06d45e5a5f&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479&amp;dnt=1"
+    <iframe src="https://player.vimeo.com/video/843234360?h=06d45e5a5f&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479&amp;dnt=1"
     frameBorder="0" allow="cross-origin-isolated" allowFullScreen style= {{ position:"absolute",top:0,left:0,width:"100%",height:"100%"}} title="Examples"></iframe>
 </div>
 
@@ -45,7 +46,7 @@ suggest the name of the example you are looking for if you make a typo.
 ```bash
 
 1. Clone the repository
-2. `yarn install`
+2. `yarn install --frozen-lockfile`
 3. `yarn run example petct` \// this should be run from the root of the repository
 
 ```
@@ -53,4 +54,11 @@ suggest the name of the example you are looking for if you make a typo.
 :::note Important
 Use the root of the repository as the working directory when running the example.
 Previously, you had to run the example in each package directory. This is no longer the case.
+:::
+
+:::danger
+In general run `yarn install` with the `--frozen-lockfile` flag to help avoid
+supply chain attacks by enforcing reproducible dependencies. That is, if the
+`yarn.lock` file is clean and does NOT reference compromised packages, then
+no compromised packages should land on your machine by using this flag.
 :::

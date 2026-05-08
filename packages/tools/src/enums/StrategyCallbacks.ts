@@ -4,6 +4,14 @@
  */
 enum StrategyCallbacks {
   /**
+   * Computes the cursor geometry (handles) in world space before rendering.
+   */
+  CalculateCursorGeometry = 'calculateCursorGeometry',
+  /**
+   * Renders the cursor overlay (e.g. SVG) using the geometry computed above.
+   */
+  RenderCursor = 'renderCursor',
+  /**
    * startStrategy is called at the start of a strategy, typically on mouse down
    * Note this is separate from preview and the endings for preview, which could
    * be called alternatively, but this may be nested within a preview.

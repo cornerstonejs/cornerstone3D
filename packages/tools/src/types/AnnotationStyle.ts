@@ -13,13 +13,19 @@ type Properties =
   | 'textBoxBackground'
   | 'textBoxLinkLineWidth'
   | 'textBoxLinkLineDash'
+  | 'textBoxLinkLineColor'
+  | 'textBoxMargin'
+  | 'textBoxBorderRadius'
   | 'locked'
   | 'fillColor'
   | 'fillOpacity'
   | 'textbox'
   | 'shadow'
   | 'visibility'
-  | 'markerSize';
+  | 'markerSize'
+  | 'angleArcLineDash'
+  | 'pointerStrokeWidth'
+  | 'showHandlesAlways';
 
 export type AnnotationStyle = {
   [key in `${Properties}${States}${Modes}`]?:

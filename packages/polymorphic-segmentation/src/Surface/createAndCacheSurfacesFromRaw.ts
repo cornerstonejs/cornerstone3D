@@ -44,6 +44,9 @@ export async function createAndCacheSurfacesFromRaw(
       );
     }
 
+    if (!rawSurfaceData.data?.points) {
+      throw new Error('No points found for surface');
+    }
     const closedSurface = {
       id: `segmentation_${segmentation.segmentationId}_surface_${segmentIndex}`,
       color,

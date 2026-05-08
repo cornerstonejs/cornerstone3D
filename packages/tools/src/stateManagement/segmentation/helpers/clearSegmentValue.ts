@@ -1,12 +1,16 @@
-import { cache } from '@cornerstonejs/core';
+import { cache, utilities } from '@cornerstonejs/core';
 import { getSegmentation } from '../getSegmentation';
 import { triggerSegmentationDataModified } from '../triggerSegmentationEvents';
+import { createLabelmapMemo } from '../../../utilities/segmentation/createLabelmapMemo';
+
+const { DefaultHistoryMemo } = utilities.HistoryMemo;
 
 /**
  * Clears the specified segment value from a segmentation.
  *
  * @param segmentationId - The unique identifier of the segmentation.
  * @param segmentIndex - The index of the segment to be cleared.
+ * @param options - Optional. recordHistory: when true, record this clear in history. Caller must start group recording if grouping is desired.
  *
  * @throws {Error} If the segmentation type is not supported (currently only labelmap is supported).
  *
@@ -17,7 +21,8 @@ import { triggerSegmentationDataModified } from '../triggerSegmentationEvents';
  */
 export function clearSegmentValue(
   segmentationId: string,
-  segmentIndex: number
+  segmentIndex: number,
+  options?: { recordHistory?: boolean }
 ) {
   const segmentation = getSegmentation(segmentationId);
 
@@ -37,11 +42,20 @@ export function clearSegmentValue(
         }
 
         const { voxelManager } = item;
+        const memo = options?.recordHistory
+          ? createLabelmapMemo(segmentationId, voxelManager)
+          : null;
+        const useVoxelManager = memo?.voxelManager ?? voxelManager;
+
         voxelManager.forEach(({ value, index }) => {
           if (value === segmentIndex) {
-            voxelManager.setAtIndex(index, 0);
+            useVoxelManager.setAtIndex(index, 0);
           }
         });
+
+        if (memo?.commitMemo()) {
+          DefaultHistoryMemo.push(memo);
+        }
       });
     }
 

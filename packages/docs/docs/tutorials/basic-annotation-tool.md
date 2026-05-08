@@ -1,5 +1,7 @@
 ---
 id: basic-annotation-tool
+title: Annotation Tools
+summary: Guide for implementing annotation tools in Cornerstone3D, including tool configuration, viewport setup, and interactive annotation of medical images
 ---
 
 # Annotation Tools

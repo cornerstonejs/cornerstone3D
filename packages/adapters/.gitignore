@@ -1,4 +1,7 @@
+# Ignore the version.js because it is generated
+src/version.ts
 
+# Misc items
 *.sw*
 *~
 

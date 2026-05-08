@@ -32,6 +32,7 @@ import { getPolySeg } from '../../../config';
 import { computeAndAddRepresentation } from '../../../utilities/segmentation/computeAndAddRepresentation';
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
 import { defaultSegmentationStateManager } from '../../../stateManagement/segmentation/SegmentationStateManager';
+import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 
 // 255 itself is used as preview color, so basically
 // we have 254 colors to use for the segments if we are using the preview.
@@ -126,7 +127,6 @@ async function render(
       segmentationId,
       SegmentationRepresentations.Labelmap,
       () => polySeg.computeLabelmapData(segmentationId, { viewport }),
-      () => null,
       () => {
         defaultSegmentationStateManager.processLabelmapRepresentationAddition(
           viewport.id,
@@ -200,6 +200,7 @@ async function render(
   }
 
   for (const labelmapActorEntry of labelmapActorEntries) {
+    // call the function to set the color and opacity
     _setLabelmapColorAndOpacity(
       viewport.id,
       labelmapActorEntry,
@@ -312,7 +313,7 @@ function _setLabelmapColorAndOpacity(
   }
 
   ofun.setClamping(false);
-  const labelmapActor = labelmapActorEntry.actor as vtkVolume;
+  const labelmapActor = labelmapActorEntry.actor as vtkVolume | vtkImageSlice;
 
   // @ts-ignore - fix type in vtk
   const { preLoad } = labelmapActor.get?.('preLoad') || { preLoad: null };
@@ -328,7 +329,6 @@ function _setLabelmapColorAndOpacity(
   if (renderOutline) {
     // @ts-ignore - fix type in vtk
     labelmapActor.getProperty().setUseLabelOutline(renderOutline);
-
     // @ts-ignore - fix type in vtk
     labelmapActor.getProperty().setLabelOutlineOpacity(outlineOpacity);
 
@@ -358,7 +358,7 @@ function _setLabelmapColorAndOpacity(
     }
 
     labelmapActor.getProperty().setLabelOutlineThickness(outlineWidths);
-
+    // Mark the actor as modified to ensure the changes are applied
     labelmapActor.modified();
     labelmapActor.getProperty().modified();
     labelmapActor.getMapper().modified();
@@ -524,7 +524,20 @@ async function _addLabelmapToViewport(
   return result || undefined;
 }
 
+/**
+ * Function to call when segmentation representation is updated
+ *
+ * @param viewport
+ * @returns
+ */
+function getUpdateFunction(
+  viewport: Types.IVolumeViewport | Types.IStackViewport
+): (segmentationId: string) => Promise<void> | null {
+  return;
+}
+
 export default {
+  getUpdateFunction,
   render,
   removeRepresentation,
 };

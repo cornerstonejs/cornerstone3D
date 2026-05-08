@@ -4,15 +4,21 @@ import {
   eventTarget,
   imageLoadPoolManager,
   cache,
+  metaData,
+  utilities,
+  triggerEvent,
 } from '@cornerstonejs/core';
 import { addToolState, getToolState, type StackPrefetchData } from './state';
 import {
   getStackData,
   requestType,
-  priority,
   clearFromImageIds,
   getPromiseRemovedHandler,
 } from './stackPrefetchUtils';
+import { Events } from '../../enums';
+import type { EventTypes } from '../../types';
+
+const { imageRetrieveMetadataProvider } = utilities;
 
 let configuration = {
   maxImagesToPrefetch: Infinity,
@@ -28,6 +34,8 @@ let resetPrefetchTimeout;
 // Starting the prefetch quickly isn't an issue as the main image is already being
 // loaded, so a 5 ms prefetch delay is fine
 const resetPrefetchDelay = 5;
+
+const priorities = {};
 
 /**
  * Call this to enable stack context sensitive prefetch.  Should be called
@@ -58,8 +66,9 @@ const resetPrefetchDelay = 5;
  *     * Up to 100 images in the direction of travel will be prefetched
  *
  * @param element - to prefetch on
+ * @param priority - priority to be used for the request manager
  */
-const enable = (element): void => {
+const enable = (element, priority = 0): void => {
   const stack = getStackData(element);
   if (!stack) {
     return;
@@ -71,7 +80,9 @@ const enable = (element): void => {
 
   updateToolState(element);
 
-  prefetch(element);
+  priorities[element] = priority;
+
+  prefetch(element, priority);
 
   element.removeEventListener(Enums.Events.STACK_NEW_IMAGE, onImageUpdated);
   element.addEventListener(Enums.Events.STACK_NEW_IMAGE, onImageUpdated);
@@ -88,7 +99,7 @@ const enable = (element): void => {
   );
 };
 
-function prefetch(element) {
+function prefetch(element, priority = 0) {
   const stack = getStackData(element);
   if (!stack) {
     return;
@@ -190,7 +201,7 @@ function prefetch(element) {
           stats.initialTime = Date.now() - stats.start;
           stats.initialSize = stats.imageIds.size;
           updateToolState(element, usage);
-          prefetch(element);
+          prefetch(element, priority);
         } else if (stats.imageIds.size) {
           stats.fillTime = Date.now() - stats.start;
           const { size } = stats.imageIds;
@@ -214,12 +225,34 @@ function prefetch(element) {
         }
       }
     }
+
+    // If all requests are complete, trigger the STACK_PREFETCH_COMPLETE event,
+    // providing the last imageId and triggering element so that the stack can
+    // be identified
+    if (stackPrefetch.indicesToRequest.length === 0) {
+      const eventDetail: EventTypes.StackPrefetchCompleteEventDetail = {
+        element: element,
+        lastPrefetchedImageId: imageId,
+      };
+      triggerEvent(eventTarget, Events.STACK_PREFETCH_COMPLETE, eventDetail);
+    }
   }
 
-  const requestFn = (imageId, options) =>
-    imageLoader
+  const requestFn = (imageId, options) => {
+    const { retrieveOptions = {} } =
+      metaData.get(
+        imageRetrieveMetadataProvider.IMAGE_RETRIEVE_CONFIGURATION,
+        imageId,
+        'stack'
+      ) || {};
+    options.retrieveOptions = {
+      ...options.retrieveOptions,
+      ...(retrieveOptions.default || Object.values(retrieveOptions)?.[0] || {}),
+    };
+    return imageLoader
       .loadAndCacheImage(imageId, options)
       .then(() => doneCallback(imageId));
+  };
 
   stackPrefetch.indicesToRequest.forEach((imageIdIndex) => {
     const imageId = stack.imageIds[imageIdIndex];
@@ -253,7 +286,7 @@ function onImageUpdated(e) {
     // An exception will be thrown because the element will not be enabled anymore
     try {
       updateToolState(element);
-      prefetch(element);
+      prefetch(element, priorities[element]);
     } catch (error) {
       return;
     }

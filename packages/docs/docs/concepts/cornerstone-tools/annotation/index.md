@@ -1,6 +1,7 @@
 ---
 id: index
 title: Annotations
+summary: Core concept in Cornerstone3DTools for managing interactive medical image measurements and markups, with APIs for state management, selection, locking, and styling
 ---
 
 import DocCardList from '@theme/DocCardList';

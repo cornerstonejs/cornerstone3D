@@ -3,6 +3,7 @@ import {
   getEnabledElement,
   utilities as csUtils,
   StackViewport,
+  ECGViewport,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -22,7 +23,6 @@ import type { UltrasoundDirectionalAnnotation } from '../../types/ToolSpecificAn
 import {
   drawHandle as drawHandleSvg,
   drawLine as drawLineSvg,
-  drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
 import { state } from '../../store/state';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
@@ -115,58 +115,26 @@ class UltrasoundDirectionalTool extends AnnotationTool {
 
     const worldPos = currentPoints.world;
     const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
+    const { viewport } = enabledElement;
 
-    if (!(viewport instanceof StackViewport)) {
+    if (
+      !(viewport instanceof StackViewport) &&
+      !(viewport instanceof ECGViewport)
+    ) {
       throw new Error(
-        'UltrasoundDirectionalTool can only be used on a StackViewport'
+        'UltrasoundDirectionalTool can only be used on a StackViewport or ECGViewport'
       );
     }
 
     hideElementCursor(element);
     this.isDrawing = true;
 
-    const camera = viewport.getCamera();
-    const { viewPlaneNormal, viewUp } = camera;
-
-    const referencedImageId = this.getReferencedImageId(
-      viewport,
-      worldPos,
-      viewPlaneNormal,
-      viewUp
+    const annotation = <UltrasoundDirectionalAnnotation>(
+      this.createAnnotation(evt, [
+        <Types.Point3>[...worldPos],
+        <Types.Point3>[...worldPos],
+      ])
     );
-
-    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
-
-    const annotation = {
-      highlighted: true,
-      invalidated: true,
-      metadata: {
-        toolName: this.getToolName(),
-        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
-        viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID,
-        referencedImageId,
-      },
-      data: {
-        handles: {
-          points: [<Types.Point3>[...worldPos], <Types.Point3>[...worldPos]],
-          activeHandleIndex: null,
-          textBox: {
-            hasMoved: false,
-            worldPosition: <Types.Point3>[0, 0, 0],
-            worldBoundingBox: {
-              topLeft: <Types.Point3>[0, 0, 0],
-              topRight: <Types.Point3>[0, 0, 0],
-              bottomLeft: <Types.Point3>[0, 0, 0],
-              bottomRight: <Types.Point3>[0, 0, 0],
-            },
-          },
-        },
-        label: '',
-        cachedStats: {},
-      },
-    };
 
     addAnnotation(annotation, element);
 
@@ -743,59 +711,28 @@ class UltrasoundDirectionalTool extends AnnotationTool {
 
       // draw another line from first point to the
 
-      const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
-      if (!options.visibility) {
-        data.handles.textBox = {
-          hasMoved: false,
-          worldPosition: <Types.Point3>[0, 0, 0],
-          worldBoundingBox: {
-            topLeft: <Types.Point3>[0, 0, 0],
-            topRight: <Types.Point3>[0, 0, 0],
-            bottomLeft: <Types.Point3>[0, 0, 0],
-            bottomRight: <Types.Point3>[0, 0, 0],
-          },
-        };
-        continue;
-      }
-
       const textLines = this.configuration.getTextLines(
         data,
         targetId,
         this.configuration
       );
-
-      if (!data.handles.textBox.hasMoved) {
-        // linked to the vertex by default
-        const canvasTextBoxCoords = canvasCoordinates[1];
-
-        data.handles.textBox.worldPosition =
-          viewport.canvasToWorld(canvasTextBoxCoords);
+      const vertexAnchor: Types.Point2[] = [
+        canvasCoordinates[1],
+        canvasCoordinates[1],
+      ];
+      if (
+        !this.renderLinkedTextBoxAnnotation({
+          enabledElement,
+          svgDrawingHelper,
+          annotation,
+          styleSpecifier,
+          textLines,
+          canvasCoordinates,
+          placementPoints: vertexAnchor,
+        })
+      ) {
+        continue;
       }
-
-      const textBoxPosition = viewport.worldToCanvas(
-        data.handles.textBox.worldPosition
-      );
-
-      const textBoxUID = '1';
-      const boundingBox = drawLinkedTextBoxSvg(
-        svgDrawingHelper,
-        annotationUID,
-        textBoxUID,
-        textLines,
-        textBoxPosition,
-        canvasCoordinates,
-        {},
-        options
-      );
-
-      const { x: left, y: top, width, height } = boundingBox;
-
-      data.handles.textBox.worldBoundingBox = {
-        topLeft: viewport.canvasToWorld([left, top]),
-        topRight: viewport.canvasToWorld([left + width, top]),
-        bottomLeft: viewport.canvasToWorld([left, top + height]),
-        bottomRight: viewport.canvasToWorld([left + width, top + height]),
-      };
     }
 
     return renderStatus;

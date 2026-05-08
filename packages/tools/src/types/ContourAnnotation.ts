@@ -16,6 +16,8 @@ export enum ContourWindingDirection {
 export type ContourAnnotationData = {
   data: {
     cachedStats?: Record<string, unknown>;
+    /** @deprecated Use contour.polyline */
+    polyline?: Types.Point3[];
     contour: {
       polyline: Types.Point3[];
       closed: boolean;

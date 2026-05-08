@@ -25,6 +25,8 @@ export type ToolBinding = {
   passive?: boolean;
   // Initial bindings
   bindings?: Types.IToolBinding[];
+  // Sets as the default active tool on primary mouse button
+  selected?: boolean;
 };
 
 /**
@@ -88,7 +90,9 @@ export default function addManipulationBindings(
     maxZoomScale: 4000,
   });
   if (is3DViewport) {
-    toolGroup.addTool(TrackballRotateTool.toolName);
+    toolGroup.addTool(TrackballRotateTool.toolName, {
+      rotateSampleDistanceFactor: 2,
+    });
   } else {
     toolGroup.addTool(StackScrollTool.toolName);
   }

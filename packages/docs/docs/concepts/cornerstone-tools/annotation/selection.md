@@ -1,6 +1,7 @@
 ---
 id: selection
 title: Selection
+summary: API for selecting annotations via Shift+click interaction or programmatically, with methods to retrieve selected annotations by tool type
 ---
 
 # Selection

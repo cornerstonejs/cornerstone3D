@@ -1,5 +1,7 @@
 ---
 id: documentation
+title: Writing Documentation
+summary: Guidelines for writing and updating documentation for Cornerstone3D, including instructions for running the documentation server locally and troubleshooting common issues
 ---
 
 # Writing Documentation

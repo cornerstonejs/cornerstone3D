@@ -3,7 +3,8 @@ import {
   convertRGBColorByPlane,
   convertYBRFullByPixel,
   convertYBRFullByPlane,
-  convertPALETTECOLOR,
+  convertPaletteColor,
+  convertPaletteColorWithFetch,
 } from './colorSpaceConverters/index';
 
 import { default as wadouri } from './wadouri/index';
@@ -29,7 +30,8 @@ const cornerstoneDICOMImageLoader = {
   convertRGBColorByPlane,
   convertYBRFullByPixel,
   convertYBRFullByPlane,
-  convertPALETTECOLOR,
+  convertPaletteColor,
+  convertPaletteColorWithFetch,
   wadouri,
   wadors,
   init,
@@ -54,7 +56,8 @@ export {
   convertRGBColorByPlane,
   convertYBRFullByPixel,
   convertYBRFullByPlane,
-  convertPALETTECOLOR,
+  convertPaletteColorWithFetch,
+  convertPaletteColor,
   wadouri,
   wadors,
   init,

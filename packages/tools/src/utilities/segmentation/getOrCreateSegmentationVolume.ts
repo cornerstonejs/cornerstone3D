@@ -3,6 +3,7 @@ import {
   volumeLoader,
   utilities,
   type Types,
+  ImageVolume,
 } from '@cornerstonejs/core';
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
 import type {
@@ -11,13 +12,17 @@ import type {
 } from '../../types/LabelmapTypes';
 
 function getOrCreateSegmentationVolume(
-  segmentationId
+  segmentationId: string
 ): Types.IImageVolume | undefined {
   const { representationData } = getSegmentation(segmentationId);
+  if (!representationData.Labelmap) {
+    return;
+  }
+
   let { volumeId } =
     representationData.Labelmap as LabelmapSegmentationDataVolume;
 
-  let segVolume;
+  let segVolume: ImageVolume;
   if (volumeId) {
     segVolume = cache.getVolume(volumeId);
 
@@ -35,7 +40,7 @@ function getOrCreateSegmentationVolume(
   // because we've already ensured the stack constructs a volume,
   // making the scenario for multi-image non-consistent metadata is not likely.
 
-  if (!labelmapImageIds || labelmapImageIds.length === 1) {
+  if (!labelmapImageIds || labelmapImageIds.length === 0) {
     return;
   }
 

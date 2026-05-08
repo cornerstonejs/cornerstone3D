@@ -26,6 +26,7 @@ import * as state from './segmentationState';
 import * as config from './config';
 import * as segmentIndex from './segmentIndex';
 import * as triggerSegmentationEvents from './triggerSegmentationEvents';
+import * as utilities from './utilities';
 import { convertStackToVolumeLabelmap } from './helpers/convertStackToVolumeLabelmap';
 import { computeVolumeLabelmapFromStack } from './helpers/computeVolumeLabelmapFromStack';
 import { clearSegmentValue } from './helpers/clearSegmentValue';
@@ -44,6 +45,13 @@ import {
   getLabelmapImageIdsForImageId,
 } from './getCurrentLabelmapImageIdForViewport';
 import { getActiveSegmentation } from './getActiveSegmentation';
+import {
+  addSegmentationListener,
+  addDefaultSegmentationListener,
+  removeSegmentationListener,
+  removeAllSegmentationListeners,
+} from './segmentationEventManager';
+
 const helpers = {
   clearSegmentValue,
   convertStackToVolumeLabelmap,
@@ -70,6 +78,11 @@ export {
   addSurfaceRepresentationToViewportMap,
   addSegmentations,
   updateSegmentations,
+  // Listener management
+  addSegmentationListener,
+  addDefaultSegmentationListener,
+  removeSegmentationListener,
+  removeAllSegmentationListeners,
   // name spaces
   state,
   activeSegmentation,
@@ -77,6 +90,7 @@ export {
   config,
   segmentIndex,
   triggerSegmentationEvents,
+  utilities,
   helpers,
   removeSegment,
   getLabelmapImageIds,

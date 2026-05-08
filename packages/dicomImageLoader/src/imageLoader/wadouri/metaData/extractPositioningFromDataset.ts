@@ -1,12 +1,13 @@
-import getNumberValues from './getNumberValues';
+import type { DataSet } from 'dicom-parser';
 import isNMReconstructable from '../../isNMReconstructable';
+import getNumberValues from './getNumberValues';
 
 /**
  * Get a subpart of Image Type dicom tag defined by index
  * @param {*} dataSet
  * @param {*} index 0 based index of the subtype
  */
-function getImageTypeSubItemFromDataset(dataSet, index) {
+function getImageTypeSubItemFromDataset(dataSet: DataSet, index: number) {
   const imageType = dataSet.string('x00080008');
 
   if (imageType) {
@@ -25,8 +26,8 @@ function getImageTypeSubItemFromDataset(dataSet, index) {
  * @param {*} dataSet
  * @returns
  */
-function extractOrientationFromNMMultiframeDataset(dataSet) {
-  let imageOrientationPatient;
+function extractOrientationFromNMMultiframeDataset(dataSet: DataSet) {
+  let imageOrientationPatient: number[] | undefined;
   const modality = dataSet.string('x00080060');
 
   if (modality?.includes('NM')) {
@@ -52,8 +53,8 @@ function extractOrientationFromNMMultiframeDataset(dataSet) {
  * @param {*} dataSet
  * @returns
  */
-function extractPositionFromNMMultiframeDataset(dataSet) {
-  let imagePositionPatient;
+function extractPositionFromNMMultiframeDataset(dataSet: DataSet) {
+  let imagePositionPatient: number[] | undefined;
   const modality = dataSet.string('x00080060');
 
   if (modality?.includes('NM')) {
@@ -80,11 +81,14 @@ function extractPositionFromNMMultiframeDataset(dataSet) {
  * @param {*} dataSet
  * @returns
  */
-function extractOrientationFromDataset(dataSet) {
+function extractOrientationFromDataset(dataSet: DataSet) {
   let imageOrientationPatient = getNumberValues(dataSet, 'x00200037', 6);
 
   // Trying to get the orientation from the Plane Orientation Sequence
-  if (!imageOrientationPatient && dataSet.elements.x00209116) {
+  if (
+    !imageOrientationPatient &&
+    dataSet.elements.x00209116?.items?.[0]?.dataSet
+  ) {
     imageOrientationPatient = getNumberValues(
       dataSet.elements.x00209116.items[0].dataSet,
       'x00200037',
@@ -111,11 +115,14 @@ function extractOrientationFromDataset(dataSet) {
  * @param {*} dataSet
  * @returns
  */
-function extractPositionFromDataset(dataSet) {
+function extractPositionFromDataset(dataSet: DataSet) {
   let imagePositionPatient = getNumberValues(dataSet, 'x00200032', 3);
 
   // Trying to get the position from the Plane Position Sequence
-  if (!imagePositionPatient && dataSet.elements.x00209113) {
+  if (
+    !imagePositionPatient &&
+    dataSet.elements.x00209113?.items?.[0]?.dataSet
+  ) {
     imagePositionPatient = getNumberValues(
       dataSet.elements.x00209113.items[0].dataSet,
       'x00200032',
@@ -138,12 +145,12 @@ function extractPositionFromDataset(dataSet) {
  * @param {*} dataSet
  * @returns
  */
-function extractSpacingFromDataset(dataSet) {
+function extractSpacingFromDataset(dataSet: DataSet) {
   let pixelSpacing = getNumberValues(dataSet, 'x00280030', 2);
 
   // If pixelSpacing not valid to this point, trying to get the spacing
   // from the Pixel Measures Sequence
-  if (!pixelSpacing && dataSet.elements.x00289110) {
+  if (!pixelSpacing && dataSet.elements.x00289110?.items?.[0]?.dataSet) {
     pixelSpacing = getNumberValues(
       dataSet.elements.x00289110.items[0].dataSet,
       'x00280030',
@@ -160,8 +167,8 @@ function extractSpacingFromDataset(dataSet) {
  * @param {*} dataSet
  * @returns
  */
-function extractSliceThicknessFromDataset(dataSet) {
-  let sliceThickness;
+function extractSliceThicknessFromDataset(dataSet: DataSet) {
+  let sliceThickness: number | undefined;
 
   if (dataSet.elements.x00180050) {
     sliceThickness = dataSet.floatString('x00180050');
@@ -178,9 +185,9 @@ function extractSliceThicknessFromDataset(dataSet) {
 }
 
 export {
-  getImageTypeSubItemFromDataset,
   extractOrientationFromDataset,
   extractPositionFromDataset,
-  extractSpacingFromDataset,
   extractSliceThicknessFromDataset,
+  extractSpacingFromDataset,
+  getImageTypeSubItemFromDataset,
 };

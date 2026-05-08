@@ -1,5 +1,7 @@
 ---
 id: overview
+title: Overview
+summary: Introduction to Cornerstone3D library and its capabilities for medical image visualization, including rendering, manipulation, annotation, and segmentation features
 ---
 
 import Link from '@docusaurus/Link';

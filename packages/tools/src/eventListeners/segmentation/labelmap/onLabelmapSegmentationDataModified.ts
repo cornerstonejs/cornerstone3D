@@ -11,6 +11,11 @@ import { performStackLabelmapUpdate } from './performStackLabelmapUpdate';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
 import { getViewportIdsWithSegmentation } from '../../../stateManagement/segmentation/getViewportIdsWithSegmentation';
 
+const getViewportByViewportId = (viewportId: string) => {
+  const enabledElement = getEnabledElementByViewportId(viewportId);
+  return enabledElement?.viewport ?? undefined;
+};
+
 /** A callback function that is called when the segmentation data is modified which
  *  often is as a result of tool interactions e.g., scissors, eraser, etc.
  */
@@ -24,19 +29,19 @@ const onLabelmapSegmentationDataModified = function (
   const viewportIds = getViewportIdsWithSegmentation(segmentationId);
 
   const hasVolumeViewport = viewportIds.some((viewportId) => {
-    const { viewport } = getEnabledElementByViewportId(viewportId);
+    const viewport = getViewportByViewportId(viewportId);
     return viewport instanceof VolumeViewport;
   });
 
   const hasStackViewport = viewportIds.some((viewportId) => {
-    const { viewport } = getEnabledElementByViewportId(viewportId);
+    const viewport = getViewportByViewportId(viewportId);
     return viewport instanceof StackViewport;
   });
 
   const hasBothStackAndVolume = hasVolumeViewport && hasStackViewport;
 
   viewportIds.forEach((viewportId) => {
-    const { viewport } = getEnabledElementByViewportId(viewportId);
+    const viewport = getViewportByViewportId(viewportId);
 
     if (viewport instanceof VolumeViewport) {
       // For combined stack and volume scenarios in the rendering engine, updating only affected

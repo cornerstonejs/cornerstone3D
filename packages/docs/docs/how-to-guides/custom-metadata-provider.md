@@ -1,5 +1,7 @@
 ---
 id: custom-metadata-provider
+title: Custom Metadata Provider
+summary: Instructions for creating and registering a custom metadata provider to store and retrieve image metadata for Cornerstone3D
 ---
 
 # Custom Metadata Provider

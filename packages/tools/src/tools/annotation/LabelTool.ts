@@ -136,7 +136,7 @@ class LabelTool extends AnnotationTool {
   static hydrate = (
     viewportId: string,
     position: Types.Point3,
-    text: string,
+    label: string,
     options?: {
       annotationUID?: string;
     }
@@ -164,7 +164,7 @@ class LabelTool extends AnnotationTool {
     const annotation = {
       annotationUID: options?.annotationUID || csUtils.uuidv4(),
       data: {
-        text,
+        label,
         handles: {
           points: [position],
         },
@@ -202,44 +202,16 @@ class LabelTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
-    const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
 
     hideElementCursor(element);
     this.isDrawing = true;
 
-    const camera = viewport.getCamera();
-    const { viewPlaneNormal, viewUp } = camera;
-
-    const referencedImageId = this.getReferencedImageId(
-      viewport,
-      worldPos,
-      viewPlaneNormal,
-      viewUp
+    const annotation = <LabelAnnotation>(
+      this.createAnnotation(evt, [
+        <Types.Point3>[...worldPos],
+        <Types.Point3>[...worldPos],
+      ])
     );
-
-    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
-
-    const annotation = {
-      annotationUID: null as string,
-      highlighted: true,
-      invalidated: true,
-      metadata: {
-        toolName: this.getToolName(),
-        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
-        viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID,
-        referencedImageId,
-        ...viewport.getViewReference({ points: [worldPos] }),
-      },
-      data: {
-        text: '',
-        handles: {
-          points: [<Types.Point3>[...worldPos], <Types.Point3>[...worldPos]],
-        },
-        label: '',
-      },
-    };
 
     addAnnotation(annotation, element);
 
@@ -258,15 +230,15 @@ class LabelTool extends AnnotationTool {
     evt.preventDefault();
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
-    this.configuration.getTextCallback((text) => {
-      if (!text) {
+    this.configuration.getTextCallback((label) => {
+      if (!label) {
         removeAnnotation(annotation.annotationUID);
         triggerAnnotationRenderForViewportIds(viewportIdsToRender);
         this.isDrawing = false;
         return;
       }
       resetElementCursor(element);
-      annotation.data.text = text;
+      annotation.data.label = label;
 
       triggerAnnotationCompleted(annotation);
 
@@ -279,10 +251,10 @@ class LabelTool extends AnnotationTool {
   };
 
   handleSelectedCallback(
-    evt: EventTypes.InteractionEventType,
-    annotation: Annotation,
-    handle: ToolHandle,
-    interactionType: InteractionTypes
+    _evt: EventTypes.InteractionEventType,
+    _annotation: Annotation,
+    _handle: ToolHandle,
+    _interactionType: InteractionTypes
   ): void {}
 
   toolSelectedCallback = (
@@ -383,8 +355,8 @@ class LabelTool extends AnnotationTool {
     triggerAnnotationModified(annotation, element, ChangeTypes.LabelChange);
   };
 
-  _doneChangingTextCallback(element, annotation, updatedText): void {
-    annotation.data.text = updatedText;
+  _doneChangingTextCallback(element, annotation, updatedLabel): void {
+    annotation.data.label = updatedLabel;
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
       element,
@@ -603,7 +575,7 @@ class LabelTool extends AnnotationTool {
         continue;
       }
 
-      if (!data.text) {
+      if (!data.label) {
         continue;
       }
 
@@ -614,7 +586,7 @@ class LabelTool extends AnnotationTool {
         svgDrawingHelper,
         annotationUID,
         textBoxUID,
-        [data.text],
+        [data.label],
         canvasCoordinates,
         {
           ...options,

@@ -4,7 +4,12 @@ import {
   checkForScreenshot,
   screenShotPaths,
   simulateClicksOnElement,
+  waitForViewportsRendered,
 } from './utils/index';
+
+const delayBetweenClicks = async (page: any) => {
+  await waitForViewportsRendered(page);
+};
 
 test.beforeEach(async ({ page }) => {
   await visitExample(page, 'labelmapSegmentationTools', 10000);
@@ -37,6 +42,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
+    await delayBetweenClicks(page);
     await simulateClicksOnElement({
       locator: secondCanvas,
       points: [
@@ -58,6 +64,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
+    await delayBetweenClicks(page);
     await simulateClicksOnElement({
       locator: thirdCanvas,
       points: [
@@ -113,6 +120,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
+    await delayBetweenClicks(page);
     await simulateClicksOnElement({
       locator: secondCanvas,
       points: [
@@ -134,6 +142,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
+    await delayBetweenClicks(page);
     await simulateClicksOnElement({
       locator: thirdCanvas,
       points: [
@@ -155,6 +164,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
+    await delayBetweenClicks(page);
 
     await page
       .getByRole('combobox')
@@ -181,6 +191,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
+    await delayBetweenClicks(page);
     await simulateClicksOnElement({
       locator: secondCanvas,
       points: [
@@ -202,6 +213,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
+    await delayBetweenClicks(page);
     await simulateClicksOnElement({
       locator: thirdCanvas,
       points: [
@@ -261,6 +273,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
+    await delayBetweenClicks(page);
     await simulateClicksOnElement({
       locator: secondCanvas,
       points: [
@@ -282,6 +295,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
+    await delayBetweenClicks(page);
     await simulateClicksOnElement({
       locator: thirdCanvas,
       points: [
@@ -341,6 +355,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
+    await delayBetweenClicks(page);
     await simulateClicksOnElement({
       locator: secondCanvas,
       points: [
@@ -362,6 +377,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
+    await delayBetweenClicks(page);
     await simulateClicksOnElement({
       locator: thirdCanvas,
       points: [
@@ -383,6 +399,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
+    await delayBetweenClicks(page);
 
     await page
       .getByRole('combobox')
@@ -409,6 +426,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
+    await delayBetweenClicks(page);
     await simulateClicksOnElement({
       locator: secondCanvas,
       points: [
@@ -430,6 +448,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
+    await delayBetweenClicks(page);
     await simulateClicksOnElement({
       locator: thirdCanvas,
       points: [
@@ -495,6 +514,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
+    await delayBetweenClicks(page);
     await simulateClicksOnElement({
       locator: secondCanvas,
       points: [
@@ -516,6 +536,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
+    await delayBetweenClicks(page);
     await simulateClicksOnElement({
       locator: thirdCanvas,
       points: [
@@ -556,6 +577,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
       .getByRole('combobox')
       .first()
       .selectOption({ label: 'RectangleScissor' });
+
     await simulateClicksOnElement({
       locator: firstCanvas,
       points: [
@@ -569,6 +591,8 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
+    await delayBetweenClicks(page);
+
     await simulateClicksOnElement({
       locator: secondCanvas,
       points: [
@@ -582,6 +606,8 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
+    await delayBetweenClicks(page);
+
     await simulateClicksOnElement({
       locator: thirdCanvas,
       points: [
@@ -595,6 +621,8 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
+
+    await waitForViewportsRendered(page);
     await checkForScreenshot(
       page,
       screenshotLocator,
@@ -616,15 +644,16 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
       locator: firstCanvas,
       points: [
         {
-          x: 190,
+          x: 290,
           y: 270,
         },
         {
-          x: 230,
+          x: 330,
           y: 320,
         },
       ],
     });
+    await delayBetweenClicks(page);
     await simulateClicksOnElement({
       locator: secondCanvas,
       points: [
@@ -638,6 +667,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
+    await delayBetweenClicks(page);
 
     await simulateClicksOnElement({
       locator: thirdCanvas,
@@ -652,6 +682,8 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
+
+    await waitForViewportsRendered(page);
     await checkForScreenshot(
       page,
       screenshotLocator,
@@ -682,6 +714,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
+    await delayBetweenClicks(page);
     await simulateClicksOnElement({
       locator: secondCanvas,
       points: [
@@ -695,6 +728,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
+    await delayBetweenClicks(page);
     await simulateClicksOnElement({
       locator: thirdCanvas,
       points: [
@@ -738,6 +772,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
+    await delayBetweenClicks(page);
     await simulateClicksOnElement({
       locator: secondCanvas,
       points: [
@@ -751,6 +786,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
+    await delayBetweenClicks(page);
     await simulateClicksOnElement({
       locator: thirdCanvas,
       points: [
@@ -764,6 +800,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
+    await delayBetweenClicks(page);
 
     await page
       .getByRole('combobox')
@@ -782,6 +819,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
+    await delayBetweenClicks(page);
     await simulateClicksOnElement({
       locator: secondCanvas,
       points: [
@@ -795,6 +833,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
+    await delayBetweenClicks(page);
     await simulateClicksOnElement({
       locator: thirdCanvas,
       points: [
@@ -834,6 +873,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
   //       },
   //     ],
   //   });
+  //   await delayBetweenClicks(page);
   //   await simulateClicksOnElement({
   //     locator: secondCanvas,
   //     points: [
@@ -843,6 +883,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
   //       },
   //     ],
   //   });
+  //   await delayBetweenClicks(page);
   //   await simulateClicksOnElement({
   //     locator: thirdCanvas,
   //     points: [

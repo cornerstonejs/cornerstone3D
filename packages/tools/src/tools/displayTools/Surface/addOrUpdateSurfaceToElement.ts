@@ -1,4 +1,3 @@
-import { getEnabledElement } from '@cornerstonejs/core';
 import { utilities, type Types } from '@cornerstonejs/core';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
@@ -10,13 +9,10 @@ import {
 } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
 
 function addOrUpdateSurfaceToElement(
-  element: HTMLDivElement,
+  viewport: Types.IVolumeViewport,
   surface: Types.ISurface,
   segmentationId: string
 ): void {
-  const enabledElement = getEnabledElement(element);
-  const { viewport } = enabledElement;
-
   const surfaceActorEntry = getSurfaceActorEntry(
     viewport.id,
     segmentationId,

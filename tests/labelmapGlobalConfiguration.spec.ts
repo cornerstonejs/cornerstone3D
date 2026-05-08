@@ -21,7 +21,7 @@ test.describe('Labelmap Global Configuration', async () => {
     test('should render the segmentations using the default global configuration', async ({
       page,
     }) => {
-      const canvas = await page.locator('canvas');
+      const canvas = await page.locator('canvas.cornerstone-canvas');
 
       await checkForScreenshot(
         page,
@@ -33,7 +33,7 @@ test.describe('Labelmap Global Configuration', async () => {
 
   test.describe('when toggling inactive segmentations', async () => {
     test('should hide the inactive segmentation', async ({ page }) => {
-      const canvas = await page.locator('canvas');
+      const canvas = await page.locator('canvas.cornerstone-canvas');
 
       await page
         .getByRole('button', { name: 'toggle render inactive' })
@@ -49,7 +49,7 @@ test.describe('Labelmap Global Configuration', async () => {
 
   test.describe('when toggling outline rendering', async () => {
     test('should render segmentations with no outline', async ({ page }) => {
-      const canvas = await page.locator('canvas');
+      const canvas = await page.locator('canvas.cornerstone-canvas');
 
       await page
         .getByRole('button', { name: 'toggle outline rendering' })
@@ -65,7 +65,7 @@ test.describe('Labelmap Global Configuration', async () => {
 
   test.describe('when toggling fill rendering', async () => {
     test('should not fill the active segmentation', async ({ page }) => {
-      const canvas = await page.locator('canvas');
+      const canvas = await page.locator('canvas.cornerstone-canvas');
 
       await page.getByRole('button', { name: 'toggle fill rendering' }).click();
       await checkForScreenshot(
@@ -80,7 +80,7 @@ test.describe('Labelmap Global Configuration', async () => {
     test('should render the active segmentation with the new outline width', async ({
       page,
     }) => {
-      const canvas = await page.locator('canvas');
+      const canvas = await page.locator('canvas.cornerstone-canvas');
 
       await page.locator('#outlineWidthActive').fill('5');
       await checkForScreenshot(
@@ -95,7 +95,7 @@ test.describe('Labelmap Global Configuration', async () => {
     test('should render the active segmentation with the new outline alpha', async ({
       page,
     }) => {
-      const canvas = await page.locator('canvas');
+      const canvas = await page.locator('canvas.cornerstone-canvas');
 
       await page.locator('#outlineWidthActive').fill('5');
       await page.locator('#outlineAlphaActive').fill('0');
@@ -111,7 +111,7 @@ test.describe('Labelmap Global Configuration', async () => {
     test('should render the inactive segmentation with the new outline width', async ({
       page,
     }) => {
-      const canvas = await page.locator('canvas');
+      const canvas = await page.locator('canvas.cornerstone-canvas');
 
       await page.locator('#outlineWidthInactive').fill('5');
       await checkForScreenshot(
@@ -126,7 +126,7 @@ test.describe('Labelmap Global Configuration', async () => {
     test('should render the active segmentation with the new fill alpha', async ({
       page,
     }) => {
-      const canvas = await page.locator('canvas');
+      const canvas = await page.locator('canvas.cornerstone-canvas');
 
       await page.locator('#fillAlphaActive').fill('25');
       await checkForScreenshot(
@@ -141,7 +141,7 @@ test.describe('Labelmap Global Configuration', async () => {
     test('should render the inactive segmentation with the new fill alpha', async ({
       page,
     }) => {
-      const canvas = await page.locator('canvas');
+      const canvas = await page.locator('canvas.cornerstone-canvas');
 
       await page.locator('#fillAlphaInactive').fill('20');
       await checkForScreenshot(

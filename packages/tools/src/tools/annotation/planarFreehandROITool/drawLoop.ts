@@ -18,7 +18,7 @@ import {
   triggerContourAnnotationCompleted,
 } from '../../../stateManagement/annotation/helpers/state';
 import type { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
-import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
+import { resolveVectorToPeak } from './findOpenUShapedContourVectorToPeak';
 import { polyline } from '../../../utilities/math';
 import { removeAnnotation } from '../../../stateManagement/annotation/annotationState';
 import { ContourWindingDirection } from '../../../types/ContourAnnotation';
@@ -237,9 +237,9 @@ function completeDrawClosedContour(
     return false;
   }
 
-  const { annotation, viewportIdsToRender } = this.commonData;
+  const { annotation, viewportIdsToRender, movingTextBox } = this.commonData;
   const enabledElement = getEnabledElement(element);
-  const { viewport, renderingEngine } = enabledElement;
+  const { viewport } = enabledElement;
 
   // Convert annotation to world coordinates
   addCanvasPointsToArray(
@@ -267,7 +267,7 @@ function completeDrawClosedContour(
 
   const { textBox } = annotation.data.handles;
 
-  if (!textBox?.hasMoved) {
+  if (!textBox?.hasMoved && !movingTextBox) {
     triggerContourAnnotationCompleted(annotation, contourHoleProcessingEnabled);
   }
 
@@ -330,9 +330,9 @@ function completeDrawOpenContour(
     return false;
   }
 
-  const { annotation, viewportIdsToRender } = this.commonData;
+  const { annotation, viewportIdsToRender, movingTextBox } = this.commonData;
   const enabledElement = getEnabledElement(element);
-  const { viewport, renderingEngine } = enabledElement;
+  const { viewport } = enabledElement;
 
   const updatedPoints = shouldSmooth(this.configuration, annotation)
     ? getInterpolatedPoints(this.configuration, canvasPoints)
@@ -361,13 +361,25 @@ function completeDrawOpenContour(
     worldPoints[worldPoints.length - 1],
   ];
 
-  // If the annotation is an open U-shaped annotation, find the annotation vector.
-  if (annotation.data.isOpenUShapeContour) {
-    annotation.data.openUShapeContourVectorToPeak =
-      findOpenUShapedContourVectorToPeak(canvasPoints, viewport);
+  // Apply configured U-shape mode if the annotation doesn't already have one.
+  if (
+    !annotation.data.isOpenUShapeContour &&
+    this.configuration?.openUShapeContour
+  ) {
+    annotation.data.isOpenUShapeContour = this.configuration.openUShapeContour;
   }
 
-  if (!textBox.hasMoved) {
+  // If the annotation is an open U-shaped annotation, find the annotation vector
+  // to the peak point (variant-dependent).
+  if (annotation.data.isOpenUShapeContour) {
+    annotation.data.openUShapeContourVectorToPeak = resolveVectorToPeak(
+      canvasPoints,
+      viewport,
+      annotation.data.isOpenUShapeContour
+    );
+  }
+
+  if (!textBox.hasMoved && !movingTextBox) {
     triggerContourAnnotationCompleted(annotation, contourHoleProcessingEnabled);
   }
 
@@ -517,8 +529,6 @@ function haltDrawing(
   if (shouldHaltDrawing(canvasPoints, subPixelResolution)) {
     // Remove annotation instead of completing it.
     const { annotation, viewportIdsToRender } = this.commonData;
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
     removeAnnotation(annotation.annotationUID);
 

@@ -1,5 +1,5 @@
-import Segmentation_3X from "./Segmentation_3X";
-import Segmentation_4X from "./Segmentation_4X";
+import Segmentation_3X from './Segmentation_3X';
+import Segmentation_4X from './Segmentation_4X';
 
 /**
  * generateSegmentation - Generates a DICOM Segmentation object given cornerstoneTools data.
@@ -11,30 +11,30 @@ import Segmentation_4X from "./Segmentation_4X";
  * @returns {Object}
  */
 function generateSegmentation(
-    images,
-    labelmaps3DorBrushData,
-    options = { includeSliceSpacing: true },
-    cornerstoneToolsVersion = 4
+  images,
+  labelmaps3DorBrushData,
+  options = { includeSliceSpacing: true },
+  cornerstoneToolsVersion = 4
 ) {
-    if (cornerstoneToolsVersion === 4) {
-        return Segmentation_4X.generateSegmentation(
-            images,
-            labelmaps3DorBrushData,
-            options
-        );
-    }
-
-    if (cornerstoneToolsVersion === 3) {
-        return Segmentation_3X.generateSegmentation(
-            images,
-            labelmaps3DorBrushData,
-            options
-        );
-    }
-
-    console.warn(
-        `No generateSegmentation adapter for cornerstone version ${cornerstoneToolsVersion}, exiting.`
+  if (cornerstoneToolsVersion === 4) {
+    return Segmentation_4X.generateSegmentation(
+      images,
+      labelmaps3DorBrushData,
+      options
     );
+  }
+
+  if (cornerstoneToolsVersion === 3) {
+    return Segmentation_3X.generateSegmentation(
+      images,
+      labelmaps3DorBrushData,
+      options
+    );
+  }
+
+  console.warn(
+    `No generateSegmentation adapter for cornerstone version ${cornerstoneToolsVersion}, exiting.`
+  );
 }
 
 /**
@@ -52,34 +52,34 @@ function generateSegmentation(
  *                    segment metadata can be derived.
  */
 function generateToolState(
-    imageIds,
-    arrayBuffer,
-    metadataProvider,
-    skipOverlapping = false,
-    tolerance = 1e-3,
-    cornerstoneToolsVersion = 4
+  imageIds,
+  arrayBuffer,
+  metadataProvider,
+  skipOverlapping = false,
+  tolerance = 1e-3,
+  cornerstoneToolsVersion = 4
 ) {
-    if (cornerstoneToolsVersion === 4) {
-        return Segmentation_4X.generateToolState(
-            imageIds,
-            arrayBuffer,
-            metadataProvider,
-            skipOverlapping,
-            tolerance
-        );
-    }
-
-    if (cornerstoneToolsVersion === 3) {
-        return Segmentation_3X.generateToolState(
-            imageIds,
-            arrayBuffer,
-            metadataProvider
-        );
-    }
-
-    console.warn(
-        `No generateToolState adapter for cornerstone version ${cornerstoneToolsVersion}, exiting.`
+  if (cornerstoneToolsVersion === 4) {
+    return Segmentation_4X.generateToolState(
+      imageIds,
+      arrayBuffer,
+      metadataProvider,
+      skipOverlapping,
+      tolerance
     );
+  }
+
+  if (cornerstoneToolsVersion === 3) {
+    return Segmentation_3X.generateToolState(
+      imageIds,
+      arrayBuffer,
+      metadataProvider
+    );
+  }
+
+  console.warn(
+    `No generateToolState adapter for cornerstone version ${cornerstoneToolsVersion}, exiting.`
+  );
 }
 
 /**
@@ -91,22 +91,22 @@ function generateToolState(
  * @returns {Blob}           description
  */
 function fillSegmentation(
-    segmentation,
-    inputLabelmaps3D,
-    options = { includeSliceSpacing: true },
-    cornerstoneToolsVersion = 4
+  segmentation,
+  inputLabelmaps3D,
+  options = { includeSliceSpacing: true },
+  cornerstoneToolsVersion = 4
 ) {
-    if (cornerstoneToolsVersion === 4) {
-        return Segmentation_4X.fillSegmentation(
-            segmentation,
-            inputLabelmaps3D,
-            options
-        );
-    }
-
-    console.warn(
-        `No generateSegmentation adapter for cornerstone version ${cornerstoneToolsVersion}, exiting.`
+  if (cornerstoneToolsVersion === 4) {
+    return Segmentation_4X.fillSegmentation(
+      segmentation,
+      inputLabelmaps3D,
+      options
     );
+  }
+
+  console.warn(
+    `No generateSegmentation adapter for cornerstone version ${cornerstoneToolsVersion}, exiting.`
+  );
 }
 
 export { generateSegmentation, generateToolState, fillSegmentation };

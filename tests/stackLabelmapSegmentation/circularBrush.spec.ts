@@ -26,6 +26,8 @@ test('Stack Segmentation - Circular Brush Tool', async ({
     closePath: true,
   });
 
+  await page.waitForTimeout(1500);
+
   await checkForScreenshot(
     page,
     canvas,

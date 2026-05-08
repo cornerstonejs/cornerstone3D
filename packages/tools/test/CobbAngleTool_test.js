@@ -272,7 +272,8 @@ describe('CobbAngleTool:', () => {
         const targets = Array.from(Object.keys(data));
         expect(targets.length).toBe(1);
 
-        expect(Math.round(data[targets[0]].angle)).toBe(135);
+        // we changed the camera FOV so this is changing too
+        expect(Math.round(data[targets[0]].angle)).toBe(136);
 
         annotation.state.removeAnnotation(cobbAngleAnnotation.annotationUID);
         done();

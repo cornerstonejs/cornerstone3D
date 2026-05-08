@@ -1,8 +1,16 @@
-import { getWebWorkerManager } from '@cornerstonejs/core';
+import { getWebWorkerManager, utilities } from '@cornerstonejs/core';
 
 let registered = false;
 
-export function registerPolySegWorker() {
+export type PolySegInitOptions = {
+  maxWorkerInstances?: number;
+  overwrite?: boolean;
+  autoTerminateOnIdle?: {
+    enabled?: boolean;
+    idleTimeThreshold?: number;
+  };
+};
+export function registerPolySegWorker(userOptions?: PolySegInitOptions) {
   if (registered) {
     return;
   }
@@ -23,13 +31,15 @@ export function registerPolySegWorker() {
 
   const workerManager = getWebWorkerManager();
 
-  const options = {
+  const defaultOptions = {
     maxWorkerInstances: 1,
     autoTerminateOnIdle: {
       enabled: true,
       idleTimeThreshold: 2000,
     },
   };
+
+  const options = utilities.deepMerge(defaultOptions, userOptions);
 
   workerManager.registerWorker('polySeg', workerFn, options);
 }

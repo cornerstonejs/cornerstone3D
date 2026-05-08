@@ -225,10 +225,7 @@ export default class ToolGroup {
     // Handle the newly added viewport's mouse cursor
     const toolName = this.getActivePrimaryMouseButtonTool();
 
-    const runtimeSettings = Settings.getRuntimeSettings();
-    if (runtimeSettings.get('useCursors')) {
-      this.setViewportsCursorByToolName(toolName);
-    }
+    this.setViewportsCursorByToolName(toolName);
 
     const eventDetail = {
       toolGroupId: this.id,
@@ -400,19 +397,18 @@ export default class ToolGroup {
     this.toolOptions[toolName] = toolOptions;
     this._toolInstances[toolName].mode = Active;
 
-    // reset the mouse cursor if tool has left click binding
-    const runtimeSettings = Settings.getRuntimeSettings();
-    const useCursor = runtimeSettings.get('useCursors');
-
-    if (this._hasMousePrimaryButtonBinding(toolBindingsOptions) && useCursor) {
-      this.setViewportsCursorByToolName(toolName);
-    } else {
+    if (!this._hasMousePrimaryButtonBinding(toolBindingsOptions)) {
       // reset to default cursor only if there is no other tool with primary binding
       const activeToolIdentifier = this.getActivePrimaryMouseButtonTool();
-      if (!activeToolIdentifier && useCursor) {
+      if (!activeToolIdentifier) {
         const cursor = MouseCursor.getDefinedCursor('default');
         this._setCursorForViewports(cursor);
       }
+      toolInstance.isPrimary = false;
+    } else {
+      // reset the mouse cursor if tool has left click binding
+      this.setViewportsCursorByToolName(toolName);
+      toolInstance.isPrimary = true;
     }
 
     // if it is a primary tool binding, we should store it as the previous primary tool
@@ -502,6 +498,7 @@ export default class ToolGroup {
 
     this.toolOptions[toolName] = toolOptions;
     toolInstance.mode = mode;
+    toolInstance.isPrimary = false;
 
     if (typeof toolInstance.onSetToolPassive === 'function') {
       toolInstance.onSetToolPassive();
@@ -663,6 +660,11 @@ export default class ToolGroup {
   }
 
   _setCursorForViewports(cursor: MouseCursor): void {
+    const runtimeSettings = Settings.getRuntimeSettings();
+    if (!runtimeSettings.get('useCursors')) {
+      return;
+    }
+
     this.viewportsInfo.forEach(({ renderingEngineId, viewportId }) => {
       const enabledElement = getEnabledElementByIds(
         viewportId,

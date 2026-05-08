@@ -79,16 +79,14 @@ workerManager.registerWorker('test-worker', workerFn, options);
 addButtonToToolbar({
   title: 'Run a heavy task off the main thread',
   onClick: () => {
-    document.getElementById(
-      'sleep-result'
-    ).innerText = `Running a heavy task off the main thread for 5 seconds...`;
+    document.getElementById('sleep-result').innerText =
+      `Running a heavy task off the main thread for 5 seconds...`;
 
     workerManager
       .executeTask('test-worker', 'sleep', { time: 5000 })
       .then((result) => {
-        document.getElementById(
-          'sleep-result'
-        ).innerText = `Heavy task completed!`;
+        document.getElementById('sleep-result').innerText =
+          `Heavy task completed!`;
       })
       .catch((error) => {
         console.error('error', error);
@@ -99,16 +97,14 @@ addButtonToToolbar({
 addButtonToToolbar({
   title: 'Calculate Fibonacci number 43',
   onClick: () => {
-    document.getElementById(
-      'fib-result'
-    ).innerText = `Calculating Fibonacci number 43...`;
+    document.getElementById('fib-result').innerText =
+      `Calculating Fibonacci number 43...`;
 
     workerManager
       .executeTask('test-worker', 'fib', { value: 43 })
       .then((result) => {
-        document.getElementById(
-          'fib-result'
-        ).innerText = `Fibonacci number 43 is ${result}`;
+        document.getElementById('fib-result').innerText =
+          `Fibonacci number 43 is ${result}`;
       })
       .catch((error) => {
         console.error('error', error);

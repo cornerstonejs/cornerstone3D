@@ -94,6 +94,10 @@ async function calculateVolumeStatistics({
   // Get the strategy data
   const strategyData = prepareVolumeStrategyDataForWorker(operationData);
 
+  if (!strategyData) {
+    return;
+  }
+
   const {
     segmentationVoxelManager,
     imageVoxelManager,
@@ -131,6 +135,10 @@ async function calculateVolumeStatistics({
     direction: imageData.getDirection(),
   };
 
+  if (!imageInfo.scalarData?.length) {
+    return;
+  }
+
   const stats = await getWebWorkerManager().executeTask(
     'compute',
     'calculateSegmentsStatisticsVolume',
@@ -138,6 +146,7 @@ async function calculateVolumeStatistics({
       segmentationInfo,
       imageInfo,
       indices,
+      unit,
       mode,
     }
   );

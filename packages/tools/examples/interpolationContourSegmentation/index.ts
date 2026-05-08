@@ -236,7 +236,7 @@ Deleting:
 
 content.append(instructions);
 
-let shouldInterpolate = false;
+let shouldInterpolate = true;
 function addToggleInterpolationButton(toolGroupIds) {
   addButtonToToolbar({
     title: 'Toggle interpolation',

@@ -2,14 +2,8 @@ import { vec3 } from 'gl-matrix';
 import { utilities as csUtils, StackViewport } from '@cornerstonejs/core';
 import type { Types, BaseVolumeViewport } from '@cornerstonejs/core';
 
-import {
-  getBoundingBoxAroundShapeIJK,
-  getBoundingBoxAroundShapeWorld,
-} from '../../../utilities/boundingBox';
-import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
+import { getBoundingBoxAroundShapeIJK } from '../../../utilities/boundingBox';
 import type { LabelmapToolOperationData } from '../../../types';
-import { getStrategyData } from './utils/getStrategyData';
-import { isAxisAlignedRectangle } from '../../../utilities/rectangleROITool/isAxisAlignedRectangle';
 import BrushStrategy from './BrushStrategy';
 import type { Composition, InitializedOperationData } from './BrushStrategy';
 import { StrategyCallbacks } from '../../../enums';
@@ -26,10 +20,8 @@ const initializeRectangle = {
   [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
     const {
       points, // bottom, top, left, right
-      imageVoxelManager,
       viewport,
       segmentationImageData,
-      segmentationVoxelManager,
     } = operationData;
 
     // Happens on a preview setup
@@ -91,19 +83,26 @@ function createPointInRectangle(
     segmentationImageData.getDimensions()
   );
 
-  const isStackViewport = viewport instanceof StackViewport;
+  // Rectangle corners in world: [topLeft, topRight, bottomRight, bottomLeft]
+  const [p0, p1, p2, p3] = points;
+  // Two axes in the plane
+  const axisU = vec3.create();
+  const axisV = vec3.create();
+  vec3.subtract(axisU, p1, p0); // p0 -> p1
+  vec3.subtract(axisV, p3, p0); // p0 -> p3
+  const uLen = vec3.length(axisU);
+  const vLen = vec3.length(axisV);
+  vec3.normalize(axisU, axisU);
+  vec3.normalize(axisV, axisV);
+  // Plane normal
+  const normal = vec3.create();
+  vec3.cross(normal, axisU, axisV);
+  vec3.normalize(normal, normal);
 
-  // Are we working with 2D rectangle in axis aligned viewport view or not
-  const isAligned =
-    isStackViewport || isAxisAlignedRectangle(rectangleCornersIJK);
-
+  // For tolerance in the normal direction
   const direction = segmentationImageData.getDirection();
   const spacing = segmentationImageData.getSpacing();
   const { viewPlaneNormal } = viewport.getCamera();
-
-  // In case that we are working on oblique, our EPS is really the spacing in the
-  // normal direction, since we can't really test each voxel against a 2D rectangle
-  // we need some tolerance in the normal direction.
   const EPS = csUtils.getSpacingInNormalDirection(
     {
       direction,
@@ -112,27 +111,25 @@ function createPointInRectangle(
     viewPlaneNormal
   );
 
-  const pointsBoundsLPS = getBoundingBoxAroundShapeWorld(points);
-  let [[xMin, xMax], [yMin, yMax], [zMin, zMax]] = pointsBoundsLPS;
-
-  // Update the bounds with +/- EPS
-  xMin -= EPS;
-  xMax += EPS;
-  yMin -= EPS;
-  yMax += EPS;
-  zMin -= EPS;
-  zMax += EPS;
-
-  const pointInShapeFn = isAligned
-    ? () => true
-    : (pointLPS) => {
-        const [x, y, z] = pointLPS;
-        const xInside = x >= xMin && x <= xMax;
-        const yInside = y >= yMin && y <= yMax;
-        const zInside = z >= zMin && z <= zMax;
-
-        return xInside && yInside && zInside;
-      };
+  // Function to check if a point is inside the oblique rectangle
+  const pointInShapeFn = (pointLPS) => {
+    // Vector from p0 to point
+    const v = vec3.create();
+    vec3.subtract(v, pointLPS, p0);
+    // Project onto axes
+    const u = vec3.dot(v, axisU);
+    const vproj = vec3.dot(v, axisV);
+    // Project onto normal
+    const d = Math.abs(vec3.dot(v, normal));
+    // Check bounds with tolerance in normal direction
+    return (
+      u >= -EPS &&
+      u <= uLen + EPS &&
+      vproj >= -EPS &&
+      vproj <= vLen + EPS &&
+      d <= EPS
+    );
+  };
 
   return { boundsIJK, pointInShapeFn };
 }

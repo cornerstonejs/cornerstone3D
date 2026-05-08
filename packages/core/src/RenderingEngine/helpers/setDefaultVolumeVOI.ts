@@ -91,6 +91,7 @@ function getVOIFromMetadata(imageVolume: IImageVolume): VOIRange | undefined {
         voi.voiLUTFunction = voiLutModule?.voiLUTFunction;
       }
       const { windowWidth, windowCenter } = voiLutModule;
+
       const width = Array.isArray(windowWidth) ? windowWidth[0] : windowWidth;
       const center = Array.isArray(windowCenter)
         ? windowCenter[0]
@@ -111,6 +112,11 @@ function getVOIFromMetadata(imageVolume: IImageVolume): VOIRange | undefined {
       Number(voi.windowCenter),
       voi.voiLUTFunction
     );
+
+    if (isNaN(lower) || isNaN(upper)) {
+      return;
+    }
+
     return { lower, upper };
   }
 

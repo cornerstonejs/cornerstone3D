@@ -7,6 +7,7 @@ import { triggerAnnotationModified } from '../../stateManagement/annotation/help
 import { ChangeTypes } from '../../enums';
 import type { ContourSegmentationAnnotation } from '../../types';
 import { drawPolyline as drawPolylineSvg } from '../../drawingSvg';
+import AnnotationToPointData from '../../utilities/contours/AnnotationToPointData';
 
 class LivewireContourSegmentationTool extends LivewireContourTool {
   static toolName = 'LivewireContourSegmentationTool';
@@ -84,8 +85,10 @@ class LivewireContourSegmentationTool extends LivewireContourTool {
       }
 
       // Regenerate the updated data based on the updated handles
+      // Interpolating the closed handle displays very weirdly so stop at
+      // count-1, and manually close the livewire to have it fully interpolated
       const acceptedPath = new LivewirePath();
-      for (let i = 0; i < count; i++) {
+      for (let i = 0; i < count - 1; i++) {
         scissors.startSearch(worldToSlice(points[i]));
         const path = scissors.findPathToPoint(
           worldToSlice(points[(i + 1) % count])
@@ -157,6 +160,10 @@ class LivewireContourSegmentationTool extends LivewireContourTool {
   protected isContourSegmentationTool(): boolean {
     // Re-enable contour segmentation behavior disabled by LivewireContourTool
     return true;
+  }
+
+  static {
+    AnnotationToPointData.register(this);
   }
 }
 

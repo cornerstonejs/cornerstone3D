@@ -142,9 +142,8 @@ addButtonToToolbar({
     );
     console.log('White=', white);
     viewport.setAverageWhite(white);
-    document.getElementById(
-      'Color Correct'
-    ).innerText = `Avg Color: ${white.join(',')}`;
+    document.getElementById('Color Correct').innerText =
+      `Avg Color: ${white.join(',')}`;
     currentWhite = -1;
   },
 });

@@ -21,10 +21,16 @@ export default function getScalingParameters(metaData, imageId: string) {
     modality,
   };
 
-  const suvFactor = metaData.get('scalingModule', imageId) || {};
+  const scalingModules = metaData.get('scalingModule', imageId) || {};
 
   return {
     ...scalingParameters,
-    ...(modality === 'PT' && { suvbw: suvFactor.suvbw }),
+    ...(modality === 'PT' && { suvbw: scalingModules.suvbw }),
+    ...(modality === 'RTDOSE' && {
+      doseGridScaling: scalingModules.DoseGridScaling,
+      doseSummation: scalingModules.DoseSummation,
+      doseType: scalingModules.DoseType,
+      doseUnit: scalingModules.DoseUnit,
+    }),
   };
 }

@@ -14,11 +14,15 @@ import { defaultSegmentationStateManager } from './SegmentationStateManager';
 export function getCurrentLabelmapImageIdForViewport(
   viewportId: string,
   segmentationId: string
-) {
+): string | undefined {
   const imageIds = getCurrentLabelmapImageIdsForViewport(
     viewportId,
     segmentationId
   );
+
+  if (!imageIds?.length) {
+    return;
+  }
 
   return imageIds[0];
 }

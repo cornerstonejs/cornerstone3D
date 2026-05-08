@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import { getEnabledElementByViewportId } from '@cornerstonejs/core';
 import type {
   RenderingConfig,
   RepresentationPublicInput,
@@ -6,9 +6,14 @@ import type {
 import CORNERSTONE_COLOR_LUT from '../../constants/COLOR_LUT';
 import { triggerAnnotationRenderForViewportIds } from '../../utilities/triggerAnnotationRenderForViewportIds';
 import { SegmentationRepresentations } from '../../enums';
-import { triggerSegmentationModified } from './triggerSegmentationEvents';
+import {
+  triggerSegmentationModified,
+  triggerSegmentationDataModified,
+} from './triggerSegmentationEvents';
 import { addColorLUT } from './addColorLUT';
 import { defaultSegmentationStateManager } from './SegmentationStateManager';
+import { addDefaultSegmentationListener } from './segmentationEventManager';
+import { getActiveSegmentIndex, setActiveSegmentIndex } from './segmentIndex';
 
 function internalAddSegmentationRepresentation(
   viewportId: string,
@@ -29,8 +34,37 @@ function internalAddSegmentationRepresentation(
     renderingConfig
   );
 
+  const { viewport } = getEnabledElementByViewportId(viewportId) || {};
+
+  if (viewport) {
+    addDefaultSegmentationListener(
+      viewport,
+      segmentationId,
+      representationInput.type
+    );
+  }
+
+  // Initialize the active segment index to the first available segment if none is currently set
+  if (!getActiveSegmentIndex(segmentationId)) {
+    let firstSegmentIndex = 1;
+    const segmentation =
+      defaultSegmentationStateManager.getSegmentation(segmentationId);
+
+    if (segmentation) {
+      const segmentKeys = Object.keys(segmentation.segments);
+      if (segmentKeys.length > 0) {
+        firstSegmentIndex = segmentKeys.map((k) => Number(k)).sort()[0];
+      }
+      setActiveSegmentIndex(segmentationId, firstSegmentIndex);
+    }
+  }
+
   if (representationInput.type === SegmentationRepresentations.Contour) {
     triggerAnnotationRenderForViewportIds([viewportId]);
+  }
+
+  if (representationInput.type === SegmentationRepresentations.Surface) {
+    triggerSegmentationDataModified(segmentationId);
   }
 
   triggerSegmentationModified(segmentationId);

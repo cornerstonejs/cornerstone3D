@@ -1,6 +1,7 @@
 ---
 id: locking
 title: Locking
+summary: API for preventing accidental changes to annotations by locking them, with methods to lock/unlock individual or all annotations
 ---
 
 # Locking

@@ -6,3 +6,4 @@ export { simulateClicksOnElement } from './simulateClicksOnElement';
 export { simulateDrawPath } from './simulateDrawPath';
 export { reduceViewportsSize } from './reduceViewportsSize';
 export { attemptAction } from './attemptAction';
+export { waitForViewportsRendered } from './waitForViewportsRendered';

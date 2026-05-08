@@ -29,9 +29,9 @@ function xhrRequest(
 
   // Make the request for the DICOM P10 SOP Instance
   const promise: LoaderXhrRequestPromise<ArrayBuffer> =
-    new Promise<ArrayBuffer>((resolve, reject) => {
+    new Promise<ArrayBuffer>(async (resolve, reject) => {
       options.open(xhr, url, defaultHeaders, params);
-      const beforeSendHeaders = options.beforeSend(
+      const beforeSendHeaders = await options.beforeSend(
         xhr,
         imageId,
         defaultHeaders,

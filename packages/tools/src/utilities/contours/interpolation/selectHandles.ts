@@ -4,24 +4,37 @@ import type { PointsArray3 } from './interpolate';
 
 const { PointsManager } = utilities;
 
+export interface SelectHandlesOptions {
+  handleCount?: number;
+  isOpenUShapeContour?: boolean;
+}
+
 /**
  * Selects handles by looking for local maximums in the angle that the local
  * vector makes
  *
  * @param polyline - an array of points, usually the polyline for the contour to
  *        select handles from.
- * @param handleCount - a guideline for how many handles to create
+ * @param options - optional configuration object
+ * @param options.handleCount - a guideline for how many handles to create (default: 12)
+ * @param options.isOpenUShapeContour - whether the contour is an open U-shaped contour
  */
 export default function selectHandles(
   polyline: PointsArray3,
-  handleCount = 12
+  options: SelectHandlesOptions = {}
 ): PointsArray3 {
+  const { handleCount = 12, isOpenUShapeContour } = options;
   const handles = PointsManager.create3(handleCount) as PointsArray3;
   handles.sources = [];
   const { sources: destPoints } = handles;
   const { length, sources: sourcePoints = [] } = polyline;
   // The distance used for figuring out the local angle of a line
   const distance = 5;
+  if (isOpenUShapeContour) {
+    const handles = polyline.subselect(handleCount);
+    handles.push(polyline.getPoint(polyline.length - 1));
+    return handles;
+  }
   if (length < distance * 3) {
     return polyline.subselect(handleCount);
   }

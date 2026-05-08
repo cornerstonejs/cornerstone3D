@@ -4,6 +4,7 @@ import {
   Enums,
   volumeLoader,
   getRenderingEngine,
+  eventTarget,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -47,6 +48,20 @@ element.style.width = '500px';
 element.style.height = '500px';
 
 content.appendChild(element);
+
+// Create element to display colormap event details
+const eventDetailsElement = document.createElement('div');
+eventDetailsElement.id = 'event-details';
+eventDetailsElement.style.margin = '10px';
+eventDetailsElement.style.padding = '10px';
+eventDetailsElement.style.border = '1px solid #ccc';
+eventDetailsElement.style.backgroundColor = '#f8f8f8';
+eventDetailsElement.style.fontFamily = 'monospace';
+eventDetailsElement.style.maxHeight = '150px';
+eventDetailsElement.style.overflow = 'auto';
+eventDetailsElement.innerText = 'Colormap modification events will appear here';
+
+content.appendChild(eventDetailsElement);
 // ============================= //
 
 addSliderToToolbar({
@@ -62,6 +77,26 @@ addSliderToToolbar({
 
     viewport.setProperties(
       { colormap: { opacity: Number(value) } },
+      ptVolumeId
+    );
+    viewport.render();
+  },
+});
+
+// New slider for PET threshold
+addSliderToToolbar({
+  title: 'PET Threshold',
+  range: [0, 5],
+  step: 0.1,
+  defaultValue: 2.5,
+  onSelectedValueChange: (value) => {
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IBaseVolumeViewport;
+
+    viewport.setProperties(
+      { colormap: { threshold: Number(value) } },
       ptVolumeId
     );
     viewport.render();
@@ -180,6 +215,32 @@ addDropdownToToolbar({
   },
 });
 
+// Add event listener for colormap modification
+function addColormapEventListener() {
+  element.addEventListener(Enums.Events.COLORMAP_MODIFIED, function (event) {
+    const { volumeId, colormap } = event.detail;
+    if (volumeId === ptVolumeId) {
+      const opacity = colormap.opacity; // Second value is max opacity
+      const threshold = colormap.threshold;
+
+      // get the max opacity from value
+      const opacityToUse = Array.isArray(opacity)
+        ? opacity.reduce((max, current) => Math.max(max, current.opacity), 0)
+        : opacity;
+
+      const details = {
+        type: 'Colormap Modified',
+        volumeId,
+        threshold: threshold.toFixed(2),
+        opacity: opacityToUse.toFixed(2),
+        timestamp: new Date().toLocaleTimeString(),
+      };
+
+      eventDetailsElement.innerText = JSON.stringify(details, null, 2);
+    }
+  });
+}
+
 /**
  * Runs the demo
  */
@@ -226,6 +287,9 @@ async function run() {
   const viewport = renderingEngine.getViewport(
     viewportId
   ) as Types.IVolumeViewport;
+
+  // Setup event listener for colormap modifications
+  addColormapEventListener();
 
   // Define a volume in memory
   const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {

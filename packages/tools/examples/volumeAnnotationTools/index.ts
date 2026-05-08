@@ -79,7 +79,10 @@ content.append(instructions);
  */
 async function run() {
   // Init Cornerstone and related libraries
-  await initDemo();
+  const config = (window as any).IS_TILED
+    ? { core: { renderingEngineMode: 'tiled' } }
+    : {};
+  await initDemo(config);
 
   const toolGroupId = 'STACK_TOOL_GROUP_ID';
 
@@ -170,7 +173,7 @@ async function run() {
         orientation: {
           // Random oblique orientation
           viewUp: <Types.Point3>[
-            -0.5962687530844388, 0.5453181550345819, -0.5891448751239446,
+            0.7070766143169096, 0.009237043481146607, -0.7070766143169096,
           ],
           viewPlaneNormal: <Types.Point3>[
             -0.5962687530844388, 0.5453181550345819, -0.5891448751239446,

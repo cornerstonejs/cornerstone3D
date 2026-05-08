@@ -1,5 +1,7 @@
 ---
 id: related-libraries
+title: Related Libraries
+summary: Overview of libraries related to Cornerstone3D, including its history, relationship to vtk.js for 3D rendering, and integration with the OHIF Viewer
 ---
 
 # Related Libraries

@@ -16,7 +16,7 @@ import {
 } from '../../../utilities/planarFreehandROITool/smoothPoints';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
 import updateContourPolyline from '../../../utilities/contours/updateContourPolyline';
-import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
+import { resolveVectorToPeak } from './findOpenUShapedContourVectorToPeak';
 import { triggerAnnotationModified } from '../../../stateManagement/annotation/helpers/state';
 
 const { addCanvasPointsToArray, getSubPixelSpacingAndXYDirections } = polyline;
@@ -595,8 +595,11 @@ function completeOpenContourEdit(element: HTMLDivElement) {
 
     // If the annotation is an open U-shaped annotation, find the annotation vector.
     if (annotation.data.isOpenUShapeContour) {
-      annotation.data.openUShapeContourVectorToPeak =
-        findOpenUShapedContourVectorToPeak(fusedCanvasPoints, viewport);
+      annotation.data.openUShapeContourVectorToPeak = resolveVectorToPeak(
+        fusedCanvasPoints,
+        viewport,
+        annotation.data.isOpenUShapeContour
+      );
     }
 
     triggerAnnotationModified(annotation, element);

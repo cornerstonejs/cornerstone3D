@@ -4,7 +4,7 @@ export type CanvasCoordinates = [
   Types.Point2, // bottom
   Types.Point2, // top
   Types.Point2, // left
-  Types.Point2 // right
+  Types.Point2, // right
 ];
 
 /**

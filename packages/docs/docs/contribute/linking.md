@@ -1,5 +1,7 @@
 ---
 id: linking
+title: Linking Cornerstone Libraries
+summary: Step-by-step guide for linking local Cornerstone libraries with OHIF for development, including troubleshooting tips and workflows for multiple libraries
 ---
 
 # Linking Cornerstone Libraries with OHIF for Development

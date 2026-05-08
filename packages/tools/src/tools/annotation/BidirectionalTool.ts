@@ -24,13 +24,11 @@ import {
 import {
   drawLine as drawLineSvg,
   drawHandles as drawHandlesSvg,
-  drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
 import { state } from '../../store/state';
-import { ChangeTypes, Events } from '../../enums';
+import { ChangeTypes, Events, MeasurementType } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import * as lineSegment from '../../utilities/math/line';
-import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import {
   resetElementCursor,
   hideElementCursor,
@@ -48,6 +46,7 @@ import type { BidirectionalAnnotation } from '../../types/ToolSpecificAnnotation
 
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
+import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -135,60 +134,17 @@ class BidirectionalTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
-    const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
 
     this.isDrawing = true;
 
-    const camera = viewport.getCamera();
-    const { viewPlaneNormal, viewUp } = camera;
-
-    const referencedImageId = this.getReferencedImageId(
-      viewport,
-      worldPos,
-      viewPlaneNormal,
-      viewUp
-    );
-
-    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
-
-    const annotation: BidirectionalAnnotation = {
-      highlighted: true,
-      invalidated: true,
-      metadata: {
-        toolName: this.getToolName(),
-        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
-        viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID,
-        referencedImageId,
-        ...viewport.getViewReference({ points: [worldPos] }),
-      },
-      data: {
-        handles: {
-          points: [
-            // long
-            <Types.Point3>[...worldPos],
-            <Types.Point3>[...worldPos],
-            // short
-            <Types.Point3>[...worldPos],
-            <Types.Point3>[...worldPos],
-          ],
-          textBox: {
-            hasMoved: false,
-            worldPosition: <Types.Point3>[0, 0, 0],
-            worldBoundingBox: {
-              topLeft: <Types.Point3>[0, 0, 0],
-              topRight: <Types.Point3>[0, 0, 0],
-              bottomLeft: <Types.Point3>[0, 0, 0],
-              bottomRight: <Types.Point3>[0, 0, 0],
-            },
-          },
-          activeHandleIndex: null,
-        },
-        label: '',
-        cachedStats: {},
-      },
-    };
+    const annotation = <BidirectionalAnnotation>this.createAnnotation(evt, [
+      // long
+      <Types.Point3>[...worldPos],
+      <Types.Point3>[...worldPos],
+      // short
+      <Types.Point3>[...worldPos],
+      <Types.Point3>[...worldPos],
+    ]);
 
     addAnnotation(annotation, element);
 
@@ -240,7 +196,7 @@ class BidirectionalTool extends AnnotationTool {
     } = this.hydrateBase<BidirectionalTool>(
       BidirectionalTool,
       enabledElement,
-      [],
+      axis[0],
       options
     );
 
@@ -1179,14 +1135,17 @@ class BidirectionalTool extends AnnotationTool {
         activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]];
       }
 
-      if (activeHandleCanvasCoords) {
+      const showHandlesAlways = Boolean(
+        getStyleProperty('showHandlesAlways', {} as StyleSpecifier)
+      );
+      if (activeHandleCanvasCoords || showHandlesAlways) {
         const handleGroupUID = '0';
 
         drawHandlesSvg(
           svgDrawingHelper,
           annotationUID,
           handleGroupUID,
-          activeHandleCanvasCoords,
+          showHandlesAlways ? canvasCoordinates : activeHandleCanvasCoords,
           {
             color,
           }
@@ -1230,59 +1189,22 @@ class BidirectionalTool extends AnnotationTool {
 
       renderStatus = true;
 
-      const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
-      if (!options.visibility) {
-        data.handles.textBox = {
-          hasMoved: false,
-          worldPosition: <Types.Point3>[0, 0, 0],
-          worldBoundingBox: {
-            topLeft: <Types.Point3>[0, 0, 0],
-            topRight: <Types.Point3>[0, 0, 0],
-            bottomLeft: <Types.Point3>[0, 0, 0],
-            bottomRight: <Types.Point3>[0, 0, 0],
-          },
-        };
-        continue;
-      }
-
       const textLines = this.configuration.getTextLines(data, targetId);
       if (!textLines || textLines.length === 0) {
         continue;
       }
-
-      let canvasTextBoxCoords;
-
-      if (!data.handles.textBox.hasMoved) {
-        canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
-
-        data.handles.textBox.worldPosition =
-          viewport.canvasToWorld(canvasTextBoxCoords);
+      if (
+        !this.renderLinkedTextBoxAnnotation({
+          enabledElement,
+          svgDrawingHelper,
+          annotation,
+          styleSpecifier,
+          textLines,
+          canvasCoordinates,
+        })
+      ) {
+        continue;
       }
-
-      const textBoxPosition = viewport.worldToCanvas(
-        data.handles.textBox.worldPosition
-      );
-
-      const textBoxUID = '1';
-      const boundingBox = drawLinkedTextBoxSvg(
-        svgDrawingHelper,
-        annotationUID,
-        textBoxUID,
-        textLines,
-        textBoxPosition,
-        canvasCoordinates,
-        {},
-        options
-      );
-
-      const { x: left, y: top, width, height } = boundingBox;
-
-      data.handles.textBox.worldBoundingBox = {
-        topLeft: viewport.canvasToWorld([left, top]),
-        topRight: viewport.canvasToWorld([left + width, top]),
-        bottomLeft: viewport.canvasToWorld([left, top + height]),
-        bottomRight: viewport.canvasToWorld([left + width, top + height]),
-      };
     }
 
     return renderStatus;
@@ -1328,14 +1250,6 @@ class BidirectionalTool extends AnnotationTool {
     return wouldPutThroughShortAxis;
   };
 
-  _calculateLength(pos1, pos2) {
-    const dx = pos1[0] - pos2[0];
-    const dy = pos1[1] - pos2[1];
-    const dz = pos1[2] - pos2[2];
-
-    return Math.sqrt(dx * dx + dy * dy + dz * dz);
-  }
-
   _calculateCachedStats = (annotation, renderingEngine, enabledElement) => {
     const { data } = annotation;
     const { element } = enabledElement.viewport;
@@ -1361,41 +1275,56 @@ class BidirectionalTool extends AnnotationTool {
       }
 
       const { imageData, dimensions } = image;
-      const index1 = transformWorldToIndex(imageData, worldPos1);
-      const index2 = transformWorldToIndex(imageData, worldPos2);
-      const index3 = transformWorldToIndex(imageData, worldPos3);
-      const index4 = transformWorldToIndex(imageData, worldPos4);
+      const handles = data.handles.points.map((point) =>
+        imageData.worldToIndex(point)
+      );
 
-      const handles1 = [index1, index2];
-      const handles2 = [index3, index4];
+      const handles1 = handles.slice(0, 2);
+      const handles2 = handles.slice(2, 4);
 
-      const { scale: scale1, unit: units1 } = getCalibratedLengthUnitsAndScale(
-        image,
+      const calibrate = getCalibratedLengthUnitsAndScale(image, handles);
+
+      const dist1 = BidirectionalTool.calculateLengthInIndex(
+        calibrate,
         handles1
       );
-
-      const { scale: scale2, unit: units2 } = getCalibratedLengthUnitsAndScale(
-        image,
+      const dist2 = BidirectionalTool.calculateLengthInIndex(
+        calibrate,
         handles2
       );
-
-      const dist1 = this._calculateLength(worldPos1, worldPos2) / scale1;
-      const dist2 = this._calculateLength(worldPos3, worldPos4) / scale2;
+      const { unit } = calibrate;
       const length = dist1 > dist2 ? dist1 : dist2;
       const width = dist1 > dist2 ? dist2 : dist1;
 
-      const unit = dist1 > dist2 ? units1 : units2;
-      const widthUnit = dist1 > dist2 ? units2 : units1;
+      // Previously the width could end up with a different unit - that is a really
+      // bad idea because it means that US measurements can be very weird, so
+      // just use a single unit now based on all the coordinates.
+      const widthUnit = unit;
 
-      this._isInsideVolume(index1, index2, index3, index4, dimensions)
-        ? (this.isHandleOutsideImage = false)
-        : (this.isHandleOutsideImage = true);
+      this.isHandleOutsideImage = !BidirectionalTool.isInsideVolume(
+        dimensions,
+        handles
+      );
 
       cachedStats[targetId] = {
         length,
         width,
         unit,
         widthUnit,
+        statsArray: [
+          {
+            value: length,
+            name: 'height',
+            unit,
+            type: MeasurementType.Linear,
+          },
+          {
+            value: width,
+            name: 'width',
+            unit,
+            type: MeasurementType.Linear,
+          },
+        ],
       };
     }
 
@@ -1408,15 +1337,6 @@ class BidirectionalTool extends AnnotationTool {
     }
 
     return cachedStats;
-  };
-
-  _isInsideVolume = (index1, index2, index3, index4, dimensions): boolean => {
-    return (
-      csUtils.indexWithinDimensions(index1, dimensions) &&
-      csUtils.indexWithinDimensions(index2, dimensions) &&
-      csUtils.indexWithinDimensions(index3, dimensions) &&
-      csUtils.indexWithinDimensions(index4, dimensions)
-    );
   };
 
   _getSignedAngle = (vector1, vector2) => {

@@ -37,7 +37,7 @@ export default class VoxelManager<T> {
   public sourceVoxelManager: IVoxelManager<T>;
   public isInObject: (pointLPS, pointIJK) => boolean;
   public readonly dimensions: Point3;
-  public readonly numberOfComponents;
+  public readonly numberOfComponents: number;
   public getCompleteScalarDataArray?: () => ArrayLike<number>;
   public setCompleteScalarDataArray?: (scalarData: ArrayLike<number>) => void;
 
@@ -100,7 +100,7 @@ export default class VoxelManager<T> {
     this._set = options._set;
     this._id = options._id || '';
     this._getConstructor = options._getConstructor;
-    this.numberOfComponents = this.numberOfComponents || 1;
+    this.numberOfComponents = options.numberOfComponents || 1;
     this.scalarData = options.scalarData as PixelDataTypedArray;
     this._getScalarData = options._getScalarData;
     this._updateScalarData = options._updateScalarData;

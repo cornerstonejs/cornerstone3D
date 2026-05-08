@@ -1,4 +1,5 @@
 import type {
+  IBaseStreamingImageVolume,
   ICache,
   IImage,
   IGeometry,
@@ -504,8 +505,6 @@ class Cache {
       timeStamp: Date.now(),
       sizeInBytes: 0,
     };
-
-    this._imageCache.set(imageId, cachedImage);
 
     // For some reason we need to put it here after the rework of volumes
     this._imageCache.set(imageId, cachedImage);
@@ -1195,7 +1194,7 @@ class Cache {
   public getVolume = (
     volumeId: string,
     allowPartialMatch = false
-  ): IImageVolume | undefined => {
+  ): IImageVolume | IBaseStreamingImageVolume | undefined => {
     if (volumeId === undefined) {
       throw new Error('getVolume: volumeId must not be undefined');
     }

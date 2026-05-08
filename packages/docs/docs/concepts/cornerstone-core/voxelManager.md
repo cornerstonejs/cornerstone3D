@@ -1,6 +1,7 @@
 ---
 id: voxelManager
 title: Voxel Manager
+summary: Component for efficiently handling voxel data access and manipulation in volumes, optimizing memory usage and performance through targeted data access methods
 ---
 
 # VoxelManager Documentation

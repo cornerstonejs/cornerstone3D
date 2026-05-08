@@ -39,6 +39,14 @@ export const getSegmentationDataForWorker = (
   segmentIndices
 ) => {
   const segmentation = getSegmentation(segmentationId);
+  if (!segmentation?.representationData) {
+    console.debug(
+      'getSegmentationDataForWorker: segmentation missing or not ready',
+      segmentationId
+    );
+    return null;
+  }
+
   const { representationData } = segmentation;
 
   const { Labelmap } = representationData;
@@ -201,7 +209,7 @@ export const getImageReferenceInfo = (segVolumeId, segImageIds) => {
   const scalingModule = metaData.get('scalingModule', refImageId);
 
   const modalityUnitOptions = {
-    isPreScaled: Boolean(refImage.preScale?.scaled),
+    isPreScaled: Boolean(refImage?.preScale?.scaled),
     isSuvScaled: typeof scalingModule?.suvbw === 'number',
   };
 

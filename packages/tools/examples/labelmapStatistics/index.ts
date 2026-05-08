@@ -275,9 +275,8 @@ async function run() {
   // Create a stack of images
   const imageIdsArray = imageIds.slice(0, 10);
   // Create segmentation images for the stack
-  const segImages = await imageLoader.createAndCacheDerivedLabelmapImages(
-    imageIdsArray
-  );
+  const segImages =
+    await imageLoader.createAndCacheDerivedLabelmapImages(imageIdsArray);
 
   // Instantiate a rendering engine
   renderingEngine = new RenderingEngine(renderingEngineId);

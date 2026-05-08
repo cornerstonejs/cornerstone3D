@@ -22,12 +22,10 @@ import { midPoint2 } from '../../utilities/math/midPoint';
 import {
   drawHandles as drawHandlesSvg,
   drawLine as drawLineSvg,
-  drawLinkedTextBox as drawLinkedTextBoxSvg,
   drawTextBox as drawTextBoxSvg,
 } from '../../drawingSvg';
 import { state } from '../../store/state';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 
 import {
@@ -48,6 +46,7 @@ import type {
 import type { CobbAngleAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
+import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
 
 class CobbAngleTool extends AnnotationTool {
   static toolName = 'CobbAngle';
@@ -107,54 +106,16 @@ class CobbAngleTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
-    const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
 
     hideElementCursor(element);
     this.isDrawing = true;
 
-    const camera = viewport.getCamera();
-    const { viewPlaneNormal, viewUp } = camera;
-
-    const referencedImageId = this.getReferencedImageId(
-      viewport,
-      worldPos,
-      viewPlaneNormal,
-      viewUp
+    const annotation = <CobbAngleAnnotation>(
+      this.createAnnotation(evt, [
+        <Types.Point3>[...worldPos],
+        <Types.Point3>[...worldPos],
+      ])
     );
-
-    const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
-
-    const annotation = {
-      highlighted: true,
-      invalidated: true,
-      metadata: {
-        toolName: this.getToolName(),
-        viewPlaneNormal: <Types.Point3>[...viewPlaneNormal],
-        viewUp: <Types.Point3>[...viewUp],
-        FrameOfReferenceUID,
-        referencedImageId,
-        ...viewport.getViewReference({ points: [worldPos] }),
-      },
-      data: {
-        handles: {
-          points: [<Types.Point3>[...worldPos], <Types.Point3>[...worldPos]],
-          activeHandleIndex: null,
-          textBox: {
-            hasMoved: false,
-            worldPosition: <Types.Point3>[0, 0, 0],
-            worldBoundingBox: {
-              topLeft: <Types.Point3>[0, 0, 0],
-              topRight: <Types.Point3>[0, 0, 0],
-              bottomLeft: <Types.Point3>[0, 0, 0],
-              bottomRight: <Types.Point3>[0, 0, 0],
-            },
-          },
-        },
-        label: '',
-        cachedStats: {},
-      },
-    };
 
     addAnnotation(annotation, element);
 
@@ -704,7 +665,6 @@ class CobbAngleTool extends AnnotationTool {
       return renderStatus;
     }
 
-    const targetId = this.getTargetId(viewport);
     const renderingEngine = viewport.getRenderingEngine();
 
     const styleSpecifier: StyleSpecifier = {
@@ -719,6 +679,7 @@ class CobbAngleTool extends AnnotationTool {
       const { annotationUID, data } = annotation;
       const { points, activeHandleIndex } = data.handles;
 
+      const targetId = this.getTargetId(viewport, data);
       styleSpecifier.annotationUID = annotationUID;
 
       const { color, lineWidth, lineDash } = this.getAnnotationStyle({
@@ -787,7 +748,10 @@ class CobbAngleTool extends AnnotationTool {
         continue;
       }
 
-      if (activeHandleCanvasCoords) {
+      const showHandlesAlways = Boolean(
+        getStyleProperty('showHandlesAlways', {} as StyleSpecifier)
+      );
+      if (activeHandleCanvasCoords || showHandlesAlways) {
         const handleGroupUID = '0';
 
         drawHandlesSvg(
@@ -805,11 +769,11 @@ class CobbAngleTool extends AnnotationTool {
 
       const firstLine = [canvasCoordinates[0], canvasCoordinates[1]] as [
         Types.Point2,
-        Types.Point2
+        Types.Point2,
       ];
       const secondLine = [canvasCoordinates[2], canvasCoordinates[3]] as [
         Types.Point2,
-        Types.Point2
+        Types.Point2,
       ];
 
       let lineUID = 'line1';
@@ -897,56 +861,26 @@ class CobbAngleTool extends AnnotationTool {
         continue;
       }
 
-      const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
-      if (!options.visibility) {
-        data.handles.textBox = {
-          hasMoved: false,
-          worldPosition: <Types.Point3>[0, 0, 0],
-          worldBoundingBox: {
-            topLeft: <Types.Point3>[0, 0, 0],
-            topRight: <Types.Point3>[0, 0, 0],
-            bottomLeft: <Types.Point3>[0, 0, 0],
-            bottomRight: <Types.Point3>[0, 0, 0],
-          },
-        };
+      const textLines = this.configuration.getTextLines(data, targetId);
+      if (
+        !this.renderLinkedTextBoxAnnotation({
+          enabledElement,
+          svgDrawingHelper,
+          annotation,
+          styleSpecifier,
+          textLines: textLines ?? [],
+          canvasCoordinates,
+          textBoxUID: 'cobbAngleText',
+        })
+      ) {
         continue;
       }
 
-      const textLines = this.configuration.getTextLines(data, targetId);
-
-      if (!data.handles.textBox.hasMoved) {
-        const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
-
-        data.handles.textBox.worldPosition =
-          viewport.canvasToWorld(canvasTextBoxCoords);
-      }
-
-      const textBoxPosition = viewport.worldToCanvas(
-        data.handles.textBox.worldPosition
-      );
-
-      const textBoxUID = 'cobbAngleText';
-      const boundingBox = drawLinkedTextBoxSvg(
-        svgDrawingHelper,
-        annotationUID,
-        textBoxUID,
-        textLines,
-        textBoxPosition,
-        canvasCoordinates,
-        {},
-        options
-      );
-
-      const { x: left, y: top, width, height } = boundingBox;
-
-      data.handles.textBox.worldBoundingBox = {
-        topLeft: viewport.canvasToWorld([left, top]),
-        topRight: viewport.canvasToWorld([left + width, top]),
-        bottomLeft: viewport.canvasToWorld([left, top + height]),
-        bottomRight: viewport.canvasToWorld([left + width, top + height]),
-      };
-
       if (this.configuration.showArcLines) {
+        const textBoxStyleOptions = this.getLinkedTextBoxStyle(
+          styleSpecifier,
+          annotation
+        );
         const arc1TextBoxUID = 'arcAngle1';
 
         const arc1TextLine = [
@@ -962,7 +896,7 @@ class CobbAngleTool extends AnnotationTool {
           arc1TextLine,
           arch1TextPosCanvas,
           {
-            ...options,
+            ...textBoxStyleOptions,
             padding: 3,
           }
         );
@@ -982,7 +916,7 @@ class CobbAngleTool extends AnnotationTool {
           arc2TextLine,
           arch2TextPosCanvas,
           {
-            ...options,
+            ...textBoxStyleOptions,
             padding: 3,
           }
         );
@@ -1036,11 +970,11 @@ class CobbAngleTool extends AnnotationTool {
 
     const firstLine = [canvasPoints[0], canvasPoints[1]] as [
       Types.Point2,
-      Types.Point2
+      Types.Point2,
     ];
     const secondLine = [canvasPoints[2], canvasPoints[3]] as [
       Types.Point2,
-      Types.Point2
+      Types.Point2,
     ];
 
     const mid1 = midPoint2(firstLine[0], firstLine[1]);

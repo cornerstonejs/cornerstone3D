@@ -146,7 +146,7 @@ const computeWorker = {
     };
   },
   calculateSegmentsStatisticsVolume: (args) => {
-    const { mode, indices } = args;
+    const { mode, indices, unit } = args;
     const { segmentation, image } = computeWorker.getArgsFromInfo(args);
 
     const { voxelManager: segVoxelManager, spacing: segmentationSpacing } =
@@ -173,8 +173,8 @@ const computeWorker = {
     // Get statistics based on the mode
     const stats = SegmentStatsCalculator.getStatistics({
       spacing: segmentationSpacing,
-      unit: 'mm',
       mode,
+      unit,
     });
 
     return stats;

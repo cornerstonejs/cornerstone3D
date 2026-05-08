@@ -82,6 +82,15 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
+  const defaultToolStyles =
+    cornerstoneTools.annotation.config.style.getDefaultToolStyles();
+
+  defaultToolStyles.global.pointerStrokeWidth = 2.5;
+
+  cornerstoneTools.annotation.config.style.setDefaultToolStyles(
+    defaultToolStyles
+  );
+
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(LengthTool);
 

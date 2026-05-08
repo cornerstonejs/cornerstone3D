@@ -13,6 +13,7 @@ import {
 
 import type { SegmentationRenderedEventDetail } from '../../types/EventTypes';
 import Representations from '../../enums/SegmentationRepresentations';
+import { getSegmentation } from './getSegmentation';
 import { getSegmentationRepresentations } from './getSegmentationRepresentation';
 import type { SegmentationRepresentation } from '../../types/SegmentationStateTypes';
 import surfaceDisplay from '../../tools/displayTools/Surface/surfaceDisplay';
@@ -22,6 +23,7 @@ import { addTool } from '../../store/addTool';
 import { state } from '../../store/state';
 import PlanarFreehandContourSegmentationTool from '../../tools/annotation/PlanarFreehandContourSegmentationTool';
 import { getToolGroupForViewport } from '../../store/ToolGroupManager';
+import { addDefaultSegmentationListener } from './segmentationEventManager';
 
 const renderers = {
   [Representations.Labelmap]: labelmapDisplay,
@@ -40,6 +42,7 @@ const planarContourToolName = PlanarFreehandContourSegmentationTool.toolName;
  */
 class SegmentationRenderingEngine {
   private _needsRender: Set<string> = new Set();
+  private _pendingRenderQueue: string[][] = [];
   private _animationFrameSet = false;
   private _animationFrameHandle: number | null = null;
   public hasBeenDestroyed: boolean;
@@ -116,11 +119,15 @@ class SegmentationRenderingEngine {
   }
 
   private _setViewportsToBeRenderedNextFrame(viewportIds: string[]) {
+    if (this._animationFrameSet) {
+      // If a render is already scheduled, queue this set for after the current one
+      this._pendingRenderQueue.push(viewportIds);
+      return;
+    }
     // Add the viewports to the set of flagged viewports
     viewportIds.forEach((viewportId) => {
       this._needsRender.add(viewportId);
     });
-
     // Render any flagged viewports
     this._render();
   }
@@ -156,6 +163,14 @@ class SegmentationRenderingEngine {
     // Allow RAF to be called again
     this._animationFrameSet = false;
     this._animationFrameHandle = null;
+
+    // If there are pending viewportId sets, schedule the next one
+    if (this._pendingRenderQueue.length > 0) {
+      const nextViewportIds = this._pendingRenderQueue.shift();
+      if (nextViewportIds && nextViewportIds.length > 0) {
+        this._setViewportsToBeRenderedNextFrame(nextViewportIds);
+      }
+    }
   };
 
   _triggerRender(viewportId?: string) {
@@ -171,8 +186,6 @@ class SegmentationRenderingEngine {
       return;
     }
 
-    const viewportRenderList = [];
-
     // Render each segmentationData, in each viewport
     const segmentationRenderList = segmentationRepresentations.map(
       (representation: SegmentationRepresentation) => {
@@ -183,11 +196,21 @@ class SegmentationRenderingEngine {
         }
 
         const display = renderers[representation.type];
+        const segmentation = getSegmentation(representation.segmentationId);
+        const existingRepresentation =
+          segmentation.representationData[representation.type] !== undefined;
 
         try {
           // @ts-ignore
-          const viewportId = display.render(viewport, representation);
-          viewportRenderList.push(viewportId);
+          display.render(viewport, representation).then(() => {
+            if (!existingRepresentation) {
+              addDefaultSegmentationListener(
+                viewport,
+                representation.segmentationId,
+                representation.type
+              );
+            }
+          });
         } catch (error) {
           console.error(error);
         }

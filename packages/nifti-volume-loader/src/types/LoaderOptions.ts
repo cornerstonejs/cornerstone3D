@@ -3,5 +3,5 @@ export interface LoaderOptions {
     xhr: XMLHttpRequest,
     defaultHeaders: Record<string, string>,
     url: string
-  ) => Record<string, string> | void;
+  ) => Promise<Record<string, string> | void> | Record<string, string> | void;
 }

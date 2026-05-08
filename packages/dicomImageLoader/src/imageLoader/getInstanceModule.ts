@@ -1,9 +1,13 @@
+import { metaData } from '@cornerstonejs/core';
+
 /**
  * Retrieves metadata from a DICOM image and returns it as an object with capitalized keys.
  * @param imageId - the imageId
  * @param metaDataProvider - The metadata provider either wadors or wadouri
  * @param types - An array of metadata types to retrieve.
  * @returns An object containing the retrieved metadata with capitalized keys.
+ *
+ * @deprecated Use the getInstanceModule in metaData instead.
  */
 function getInstanceModule(imageId, metaDataProvider, types) {
   const result = {};
@@ -15,7 +19,7 @@ function getInstanceModule(imageId, metaDataProvider, types) {
         for (const key in data) {
           if (key in data) {
             // each tag should get capitalized to match dcmjs style. Todo: move all of the tags to dcmjs style
-            const capitalizedKey = capitalizeTag(key);
+            const capitalizedKey = metaData.toUpperCamelTag(key);
             capitalizedData[capitalizedKey] = data[key];
           }
         }
@@ -28,9 +32,6 @@ function getInstanceModule(imageId, metaDataProvider, types) {
 
   return result;
 }
-
-const capitalizeTag = (tag: string) =>
-  tag.charAt(0).toUpperCase() + tag.slice(1);
 
 const instanceModuleNames = [
   'multiframeModule',

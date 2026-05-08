@@ -97,7 +97,16 @@ content.append(instructions);
  */
 async function run() {
   // Init Cornerstone and related libraries
-  await csRenderInit();
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const debugMode = urlParams.get('debug') === 'true';
+
+  await csRenderInit({
+    debug: {
+      statsOverlay: debugMode,
+    },
+  });
+
   await csToolsInit();
 
   const toolGroupId = 'NAVIGATION_TOOL_GROUP_ID';

@@ -88,6 +88,7 @@ instructions.innerText = `
   Basic controls:
   - Click/Drag anywhere in the viewport to move the center of the crosshairs.
   - Drag a reference line to move it, scrolling the other views.
+  - Use the Crosshair Style dropdown to switch to a minimal crosshair.
 
   Advanced controls: Hover over a line and find the following two handles:
   - Square (closest to center): Drag these to change the thickness of the MIP slab in that plane.
@@ -227,6 +228,68 @@ addToggleButtonToToolbar({
   defaultToggle: false,
   onClick: (toggle) => {
     synchronizer.setEnabled(toggle);
+  },
+});
+
+addDropdownToToolbar({
+  labelText: 'Center Point Size',
+  options: {
+    values: [0, 1, 2, 3, 4, 5],
+    defaultValue: 0,
+  },
+  onSelectedValueChange: (selectedValue) => {
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+
+    const crosshairsInstance = toolGroup.getToolInstance(
+      CrosshairsTool.toolName
+    );
+    const oldConfiguration = crosshairsInstance.configuration;
+
+    const newCenterPointConfig = {
+      ...oldConfiguration.centerPoint,
+      enabled: +selectedValue > 0,
+      size: +selectedValue,
+    };
+
+    crosshairsInstance.configuration = {
+      ...oldConfiguration,
+      centerPoint: newCenterPointConfig,
+    };
+
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    renderingEngine.render();
+  },
+});
+
+addDropdownToToolbar({
+  labelText: 'Crosshair Style',
+  options: {
+    values: Array.from(CrosshairsTool.minimalModeExamples.keys()),
+    labels: Array.from(CrosshairsTool.minimalModeExamples.keys()),
+    defaultValue: 'Default',
+  },
+  onSelectedValueChange: (selectedValue) => {
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+
+    const crosshairsInstance = toolGroup.getToolInstance(
+      CrosshairsTool.toolName
+    );
+    const minimalConfiguration =
+      CrosshairsTool.minimalModeExamples.get(selectedValue);
+
+    if (!minimalConfiguration) {
+      return;
+    }
+
+    const oldConfiguration = crosshairsInstance.configuration;
+
+    crosshairsInstance.configuration = {
+      ...oldConfiguration,
+      minimal: { ...minimalConfiguration },
+    };
+
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    renderingEngine.render();
   },
 });
 

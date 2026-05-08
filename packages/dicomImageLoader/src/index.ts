@@ -3,7 +3,8 @@ import {
   convertRGBColorByPlane,
   convertYBRFullByPixel,
   convertYBRFullByPlane,
-  convertPALETTECOLOR,
+  convertPaletteColor,
+  convertPaletteColorWithFetch,
 } from './imageLoader/colorSpaceConverters/index';
 
 import { default as wadouri } from './imageLoader/wadouri/index';
@@ -20,7 +21,11 @@ import { default as getPixelData } from './imageLoader/wadors/getPixelData';
 import { internal } from './imageLoader/internal/index';
 import * as constants from './constants';
 import type * as Types from './types';
-import { decodeImageFrame } from './decodeImageFrameWorker';
+import {
+  decodeImageFrame,
+  postProcessDecodedPixels,
+} from './decodeImageFrameWorker';
+import { initializers, decoders } from './shared/decoders';
 
 const cornerstoneDICOMImageLoader = {
   constants,
@@ -28,7 +33,8 @@ const cornerstoneDICOMImageLoader = {
   convertRGBColorByPlane,
   convertYBRFullByPixel,
   convertYBRFullByPlane,
-  convertPALETTECOLOR,
+  convertPaletteColor,
+  convertPaletteColorWithFetch,
   wadouri,
   wadors,
   init,
@@ -42,6 +48,9 @@ const cornerstoneDICOMImageLoader = {
   isJPEGBaseline8BitColor,
   internal,
   decodeImageFrame,
+  postProcessDecodedPixels,
+  initializers,
+  decoders,
 };
 
 export {
@@ -50,7 +59,8 @@ export {
   convertRGBColorByPlane,
   convertYBRFullByPixel,
   convertYBRFullByPlane,
-  convertPALETTECOLOR,
+  convertPaletteColor,
+  convertPaletteColorWithFetch,
   wadouri,
   wadors,
   init,
@@ -64,6 +74,9 @@ export {
   isJPEGBaseline8BitColor,
   internal,
   decodeImageFrame,
+  postProcessDecodedPixels,
+  initializers,
+  decoders,
 };
 
 export type { Types };

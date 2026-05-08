@@ -8,6 +8,7 @@ import drawLine from './drawLine';
 import drawHeight from './drawHeight';
 import drawPolyline from './drawPolyline';
 import drawPath from './drawPath';
+import drawFan from './drawFan';
 import drawLinkedTextBox from './drawLinkedTextBox';
 import drawRect from './drawRect';
 import drawRectByCoordinates from './drawRectByCoordinates';
@@ -22,6 +23,7 @@ export {
   drawCircle,
   drawEllipse,
   drawEllipseByCoordinates,
+  drawFan,
   drawHandles,
   drawHandle,
   drawLine,
