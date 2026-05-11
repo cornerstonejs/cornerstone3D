@@ -39,6 +39,7 @@ import type {
   ViewReference,
   IVolumeViewport,
   ICamera,
+  ViewportPreset,
 } from '../types';
 import type { VoiModifiedEventDetail } from '../types/EventTypes';
 import type { PlaneRestriction, ViewportInput } from '../types/IViewport';
@@ -1228,13 +1229,17 @@ abstract class BaseVolumeViewport extends Viewport {
   /**
    * Sets the specified preset for the volume with the given ID
    *
-   * @param presetName - The name of the preset to apply (e.g., "CT-Bone").
+   * @param presetNameOrObj - The preset to apply, either as a name (e.g. "CT-Bone") or as a ViewportPreset object.
    * @param volumeId - The ID of the volume to set the preset for.
    * @param suppressEvents - If `true`, events will not be emitted during the preset application.
    *
    * @returns void
    */
-  private setPreset(presetNameOrObj, volumeId, suppressEvents) {
+  private setPreset(
+    presetNameOrObj: string | ViewportPreset,
+    volumeId: string,
+    suppressEvents: boolean
+  ) {
     const applicableVolumeActorInfo = this._getApplicableVolumeActor(volumeId);
 
     if (!applicableVolumeActorInfo) {
@@ -1243,13 +1248,10 @@ abstract class BaseVolumeViewport extends Viewport {
 
     const { volumeActor } = applicableVolumeActorInfo;
 
-    let preset = presetNameOrObj;
-
-    if (typeof preset === 'string') {
-      preset = VIEWPORT_PRESETS.find((preset) => {
-        return preset.name === presetNameOrObj;
-      });
-    }
+    const preset: ViewportPreset | undefined =
+      typeof presetNameOrObj === 'string'
+        ? VIEWPORT_PRESETS.find((p) => p.name === presetNameOrObj)
+        : presetNameOrObj;
 
     if (!preset) {
       return;
@@ -1257,7 +1259,7 @@ abstract class BaseVolumeViewport extends Viewport {
 
     applyPreset(volumeActor, preset);
 
-    this.viewportProperties.preset = preset;
+    this.viewportProperties.preset = preset.name;
     this.render();
 
     if (!suppressEvents) {
