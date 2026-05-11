@@ -204,6 +204,14 @@ export default class SegmentationStateManager {
    * @param {string} segmentationId - The ID of the segmentation to remove.
    */
   removeSegmentation(segmentationId: string): void {
+    // Clean up image ID reference maps to prevent stale entries accumulating on reload
+    this._stackLabelmapImageIdReferenceMap.delete(segmentationId);
+    for (const key of this._labelmapImageIdReferenceMap.keys()) {
+      if (key.startsWith(`${segmentationId}-`)) {
+        this._labelmapImageIdReferenceMap.delete(key);
+      }
+    }
+
     this.updateState((state) => {
       // Use Array.prototype.filter to create a new array instead of reassigning
       const filteredSegmentations = state.segmentations.filter(
