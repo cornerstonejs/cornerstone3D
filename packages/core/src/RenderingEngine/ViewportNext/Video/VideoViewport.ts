@@ -766,7 +766,7 @@ class VideoViewport extends ViewportNext<
 
     try {
       await element.play().catch(() => undefined);
-    } catch {
+    } catch (_error) {
       // Some environments reject the initial play request; seeking still helps.
     }
 
