@@ -103,6 +103,7 @@ export type PlanarCpuVolumeRendering = MountedRendering<{
   compositeActor?: boolean;
   sampledSliceState?: {
     image: IImage;
+    samplingMode: 'source-slice' | 'viewport';
     focalPoint: Point3;
     translationReferenceFocalPoint: Point3;
     right: Point3;
@@ -111,6 +112,8 @@ export type PlanarCpuVolumeRendering = MountedRendering<{
     spacingInNormalDirection: number;
     canvasWidth: number;
     canvasHeight: number;
+    parallelScale: number;
+    scaleRatio: number;
     interpolationType: InterpolationType;
   };
   pendingVolumeLoadCallback?: boolean;

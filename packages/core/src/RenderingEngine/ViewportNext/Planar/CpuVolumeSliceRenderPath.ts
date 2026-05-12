@@ -44,7 +44,7 @@ export class CpuVolumeSliceRenderPath
   async addData(
     ctx: PlanarCpuVolumeAdapterContext,
     data: LoadedData,
-    options: DataAddOptions
+    _options: DataAddOptions
   ): Promise<RenderPathAttachment<PlanarDataPresentation>> {
     const payload: PlanarPayload = data as unknown as LoadedData<PlanarPayload>;
 
@@ -382,15 +382,13 @@ export class CpuVolumeSliceRenderPath
     if (layerCanvasWasResized) {
       runtime.renderingInvalidated = true;
     }
-    const shouldResample =
-      runtime.renderingInvalidated ||
-      this.sampler.needsResample({
-        sampledSliceState: runtime.sampledSliceState,
-        width: ctx.cpu.canvas.width,
-        height: ctx.cpu.canvas.height,
-        camera: activeSourceICamera,
-        dataPresentation: runtime.dataPresentation,
-      });
+    const shouldResample = this.sampler.needsResample({
+      sampledSliceState: runtime.sampledSliceState,
+      width: ctx.cpu.canvas.width,
+      height: ctx.cpu.canvas.height,
+      camera: activeSourceICamera,
+      dataPresentation: runtime.dataPresentation,
+    });
 
     const sampledSliceState = shouldResample
       ? (runtime.sampledSliceState = this.sampler.sampleSliceImage({

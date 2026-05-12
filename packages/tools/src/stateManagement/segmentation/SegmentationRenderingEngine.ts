@@ -12,7 +12,6 @@ import {
 } from '../../enums';
 
 import type { SegmentationRenderedEventDetail } from '../../types/EventTypes';
-import Representations from '../../enums/SegmentationRepresentations';
 import { getSegmentation } from './getSegmentation';
 import { getSegmentationRepresentations } from './getSegmentationRepresentation';
 import type { SegmentationRepresentation } from '../../types/SegmentationStateTypes';
@@ -204,8 +203,9 @@ class SegmentationRenderingEngine {
           });
         }
 
-        try {
-          display.render(viewport, representation).then(() => {
+        return display
+          .render(viewport, representation)
+          .then(() => {
             if (!existingRepresentation) {
               addDefaultSegmentationListener(
                 viewport,
@@ -213,15 +213,20 @@ class SegmentationRenderingEngine {
                 representation.type
               );
             }
-          });
-        } catch (error) {
-          console.error(error);
-        }
 
-        return Promise.resolve({
-          segmentationId: representation.segmentationId,
-          type: representation.type,
-        });
+            return {
+              segmentationId: representation.segmentationId,
+              type: representation.type,
+            };
+          })
+          .catch((error) => {
+            console.error(error);
+
+            return {
+              segmentationId: representation.segmentationId,
+              type: representation.type,
+            };
+          });
       }
     );
 

@@ -1,6 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
 
-import { getConfig } from '../../../config';
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
 import compositions from './compositions';
 import { getStrategyData } from './utils/getStrategyData';
@@ -13,6 +12,7 @@ import {
   prepareOverlapOperationData,
 } from './utils/labelmapOverlap';
 import type { LabelmapEditTransaction } from '../../../stateManagement/segmentation/helpers/labelmapSegmentationState';
+import { shouldUseLazyLabelmapEditing } from '../utils/shouldUseLazyLabelmapEditing';
 
 export type InitializedOperationData = LabelmapToolOperationDataAny & {
   // Allow initialization that is operation specific by keying on the name
@@ -257,8 +257,9 @@ export default class BrushStrategy {
       return;
     }
 
-    const isLazyLabelmapEditing =
-      getConfig().segmentation?.overwriteMode !== undefined;
+    const isLazyLabelmapEditing = shouldUseLazyLabelmapEditing(
+      initializedData.viewport
+    );
     const shouldPrepareOverlap =
       !isLazyLabelmapEditing || !initializedData.previewOnHover;
     const originalSegmentationVoxelManager =

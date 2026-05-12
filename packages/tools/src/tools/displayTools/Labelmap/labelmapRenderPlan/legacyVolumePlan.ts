@@ -11,6 +11,7 @@ import type {
   LabelmapSegmentationData,
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
+  LabelmapLayer,
 } from '../../../../types/LabelmapTypes';
 import type {
   LabelmapRenderingConfig,
@@ -20,7 +21,10 @@ import {
   triggerSegmentationDataModified,
   triggerSegmentationModified,
 } from '../../../../stateManagement/segmentation/triggerSegmentationEvents';
-import { getLabelmaps } from '../../../../stateManagement/segmentation/helpers/labelmapSegmentationState';
+import {
+  getLabelmaps,
+  getOrCreateLabelmapVolume,
+} from '../../../../stateManagement/segmentation/helpers/labelmapSegmentationState';
 import { addVolumesAsIndependentComponents } from '../addVolumesAsIndependentComponents';
 import { createLabelmapRepresentationUID } from '../labelmapRepresentationUID';
 import { createLabelmapRenderPlan } from './createLabelmapRenderPlan';
@@ -77,7 +81,7 @@ function getExpectedVolumeLabelmapRepresentationUIDs(
   segmentationId: string
 ): string[] {
   return getLabelmaps(segmentation)
-    .filter((layer) => !!layer.volumeId)
+    .filter(canResolveLayerAsVolume)
     .map((layer) =>
       createLabelmapRepresentationUID({
         segmentationId,
@@ -110,9 +114,7 @@ async function mountLegacyVolumeLabelmap({
   const volumeCompatibleViewport = viewport as Types.IVolumeViewport & {
     getVolumeId?: () => string;
   };
-  const labelmapLayers = getLabelmaps(segmentation).filter(
-    (layer) => !!layer.volumeId
-  );
+  const labelmapLayers = getVolumeBackedLabelmapLayers(segmentation);
 
   if (!labelmapLayers.length) {
     const volumeLabelMapData = labelMapData as LabelmapSegmentationDataVolume;
@@ -210,6 +212,39 @@ async function mountLegacyVolumeLabelmap({
     volumeInputs,
     segmentationId,
   });
+}
+
+function canResolveLayerAsVolume(layer: LabelmapLayer): boolean {
+  return Boolean(
+    layer.volumeId || layer.geometryVolumeId || layer.imageIds?.length
+  );
+}
+
+function getVolumeBackedLabelmapLayers(segmentation: Segmentation): Array<
+  LabelmapLayer & {
+    volumeId: string;
+  }
+> {
+  return getLabelmaps(segmentation)
+    .map((layer) => {
+      if (layer.volumeId) {
+        return layer as LabelmapLayer & { volumeId: string };
+      }
+
+      const volume = getOrCreateLabelmapVolume(layer);
+
+      if (!volume?.volumeId) {
+        return;
+      }
+
+      return {
+        ...layer,
+        volumeId: volume.volumeId,
+      };
+    })
+    .filter((layer): layer is LabelmapLayer & { volumeId: string } =>
+      Boolean(layer)
+    );
 }
 
 /**

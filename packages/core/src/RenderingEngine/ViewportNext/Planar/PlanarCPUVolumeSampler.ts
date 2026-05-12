@@ -25,6 +25,7 @@ type SampledVoxelValue = number | ColorSample;
 
 export type PlanarCPUSampledSliceState = {
   image: IImage;
+  samplingMode: 'source-slice' | 'viewport';
   focalPoint: Point3;
   translationReferenceFocalPoint: Point3;
   right: Point3;
@@ -33,6 +34,8 @@ export type PlanarCPUSampledSliceState = {
   spacingInNormalDirection: number;
   canvasWidth: number;
   canvasHeight: number;
+  parallelScale: number;
+  scaleRatio: number;
   interpolationType: InterpolationType;
 };
 
@@ -376,7 +379,7 @@ export default class PlanarCPUVolumeSampler {
     sampledSliceState?: PlanarCPUSampledSliceState;
     width: number;
     height: number;
-    camera: ICamera<unknown>;
+    camera: ICamera<unknown> & { presentationScale?: Point2 };
     dataPresentation?: PlanarDataPresentation;
   }): boolean {
     const { sampledSliceState, width, height, camera, dataPresentation } = args;
@@ -397,15 +400,33 @@ export default class PlanarCPUVolumeSampler {
       Math.abs(dot(focalDelta, sampledSliceState.right)) / columnPixelSpacing;
     const shiftYPixels =
       Math.abs(dot(focalDelta, sampledSliceState.up)) / rowPixelSpacing;
+    const samplingMode = sampledSliceState.samplingMode ?? 'viewport';
+    const parallelScale = Math.max(camera.parallelScale ?? 1, EPSILON);
+    const scaleRatio = getPlanarScaleRatio(camera.presentationScale);
+    const orientationChanged =
+      !arePointsClose(sampledSliceState.right, right) ||
+      !arePointsClose(sampledSliceState.up, up) ||
+      !arePointsClose(sampledSliceState.normal, normal);
+    const sliceChanged =
+      deltaInNormal > sampledSliceState.spacingInNormalDirection * 0.5;
+
+    if (samplingMode === 'source-slice') {
+      return (
+        sampledSliceState.interpolationType !== interpolationType ||
+        orientationChanged ||
+        sliceChanged
+      );
+    }
 
     return (
       sampledSliceState.canvasWidth !== width ||
       sampledSliceState.canvasHeight !== height ||
       sampledSliceState.interpolationType !== interpolationType ||
-      !arePointsClose(sampledSliceState.right, right) ||
-      !arePointsClose(sampledSliceState.up, up) ||
-      !arePointsClose(sampledSliceState.normal, normal) ||
-      deltaInNormal > sampledSliceState.spacingInNormalDirection * 0.5 ||
+      orientationChanged ||
+      sliceChanged ||
+      Math.abs(sampledSliceState.parallelScale - parallelScale) >
+        parallelScale * 1e-4 ||
+      Math.abs(sampledSliceState.scaleRatio - scaleRatio) > 1e-4 ||
       shiftXPixels > sampledSliceState.image.width * 0.35 ||
       shiftYPixels > sampledSliceState.image.height * 0.35
     );
@@ -425,19 +446,20 @@ export default class PlanarCPUVolumeSampler {
       numberOfComponents === 1 && this.shouldPreserveFloatScalarSamples(volume);
     const interpolationType =
       dataPresentation?.interpolationType ?? InterpolationType.LINEAR;
-    // The orthogonal fast path extracts source voxels directly. Keep it for
-    // nearest-neighbor rendering, but use the continuous sampler for linear
-    // interpolation so fused PET slices are sampled at canvas resolution.
-    const orthogonalSlice =
-      interpolationType === InterpolationType.NEAREST
-        ? this.trySampleOrthogonalSliceFromVoxelManager(
-            volume,
-            camera,
-            right,
-            up,
-            normal
-          )
-        : undefined;
+    // PT linear keeps viewport scalar sampling so SUV interpolation happens
+    // before CPU colormapping; other orthogonal planes can reuse source rows.
+    const canUseOrthogonalSourceSlice =
+      interpolationType === InterpolationType.NEAREST ||
+      !preserveFloatScalarSamples;
+    const orthogonalSlice = canUseOrthogonalSourceSlice
+      ? this.trySampleOrthogonalSliceFromVoxelManager(
+          volume,
+          camera,
+          right,
+          up,
+          normal
+        )
+      : undefined;
     const fallbackRange = this.getFallbackStoredRange(volume);
     const voiRange = this.getResolvedVOIRange(
       dataPresentation?.voiRange,
@@ -459,6 +481,7 @@ export default class PlanarCPUVolumeSampler {
           orthogonalSlice.numberOfComponents,
           voiRange
         ),
+        samplingMode: 'source-slice',
         focalPoint: vec3.clone(camera.focalPoint as unknown as vec3) as Point3,
         translationReferenceFocalPoint: vec3.clone(
           orthogonalSlice.translationReferenceFocalPoint as unknown as vec3
@@ -472,6 +495,8 @@ export default class PlanarCPUVolumeSampler {
         ),
         canvasWidth: width,
         canvasHeight: height,
+        parallelScale: Math.max(camera.parallelScale ?? 1, EPSILON),
+        scaleRatio: getPlanarScaleRatio(camera.presentationScale),
         interpolationType,
       };
     }
@@ -589,6 +614,7 @@ export default class PlanarCPUVolumeSampler {
         numberOfComponents,
         voiRange
       ),
+      samplingMode: 'viewport',
       focalPoint: vec3.clone(camera.focalPoint as unknown as vec3) as Point3,
       translationReferenceFocalPoint: vec3.clone(
         camera.focalPoint as unknown as vec3
@@ -602,6 +628,8 @@ export default class PlanarCPUVolumeSampler {
       ),
       canvasWidth: width,
       canvasHeight: height,
+      parallelScale,
+      scaleRatio: getPlanarScaleRatio(camera.presentationScale),
       interpolationType,
     };
   }

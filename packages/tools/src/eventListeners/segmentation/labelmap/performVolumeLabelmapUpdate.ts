@@ -1,7 +1,11 @@
 import { cache, eventTarget, triggerEvent, Enums } from '@cornerstonejs/core';
 
 import type { SegmentationRepresentations } from '../../../enums';
-import type { LabelmapSegmentationDataVolume } from '../../../types/LabelmapTypes';
+import type {
+  LabelmapLayer,
+  LabelmapSegmentationDataVolume,
+} from '../../../types/LabelmapTypes';
+import { getOrCreateLabelmapVolume } from '../../../stateManagement/segmentation/helpers/labelmapSegmentationState';
 
 /**
  * Updates the labelmap volume in GPU for volume viewports
@@ -18,18 +22,10 @@ export function performVolumeLabelmapUpdate({
   const labelmapData = representationData[
     type
   ] as LabelmapSegmentationDataVolume;
-  const volumeIds = Object.values(labelmapData?.labelmaps ?? {})
-    .map((layer) => layer.volumeId)
-    .filter(Boolean) || [labelmapData.volumeId];
+  const volumes = getVolumesToUpdate(labelmapData);
 
-  volumeIds.forEach((volumeId) => {
-    const segmentationVolume = cache.getVolume(volumeId);
-
-    if (!segmentationVolume) {
-      return;
-    }
-
-    const { imageData, vtkOpenGLTexture } = segmentationVolume;
+  volumes.forEach((segmentationVolume) => {
+    const { imageData, vtkOpenGLTexture, voxelManager } = segmentationVolume;
 
     let slicesToUpdate;
     if (modifiedSlicesToUse?.length > 0) {
@@ -44,6 +40,7 @@ export function performVolumeLabelmapUpdate({
         vtkOpenGLTexture.setUpdatedFrame(i);
       });
 
+    voxelManager?.invalidateCache?.();
     imageData.modified();
 
     const numberOfFrames =
@@ -58,4 +55,30 @@ export function performVolumeLabelmapUpdate({
       framesProcessed: numberOfFrames,
     });
   });
+}
+
+function getVolumesToUpdate(
+  labelmapData: LabelmapSegmentationDataVolume
+): Array<NonNullable<ReturnType<typeof cache.getVolume>>> {
+  const volumes: Array<NonNullable<ReturnType<typeof cache.getVolume>>> = [];
+  const seenVolumeIds = new Set<string>();
+
+  const addVolume = (volume?: ReturnType<typeof cache.getVolume>) => {
+    if (!volume?.volumeId || seenVolumeIds.has(volume.volumeId)) {
+      return;
+    }
+
+    seenVolumeIds.add(volume.volumeId);
+    volumes.push(volume);
+  };
+
+  Object.values(labelmapData?.labelmaps ?? {}).forEach(
+    (layer: LabelmapLayer) => {
+      addVolume(getOrCreateLabelmapVolume(layer));
+    }
+  );
+
+  addVolume(labelmapData?.volumeId && cache.getVolume(labelmapData.volumeId));
+
+  return volumes;
 }

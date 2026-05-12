@@ -30,8 +30,8 @@ import {
 import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportIds';
 import LabelmapBaseTool from './LabelmapBaseTool';
 import { getStrategyData } from './strategies/utils/getStrategyData';
-import { getConfig } from '../../config';
 import LazyBrushEditController from './utils/LazyBrushEditController';
+import { shouldUseLazyLabelmapEditing } from './utils/shouldUseLazyLabelmapEditing';
 
 /**
  * @public
@@ -186,8 +186,8 @@ class BrushTool extends LabelmapBaseTool {
     this.rejectPreview();
   }
 
-  private _isLazyLabelmapEditingEnabled(): boolean {
-    return getConfig().segmentation?.overwriteMode !== undefined;
+  private _isLazyLabelmapEditingEnabled(viewport?: Types.IViewport): boolean {
+    return shouldUseLazyLabelmapEditing(viewport ?? this._hoverData?.viewport);
   }
 
   private _resetLazyEditState(): void {
@@ -269,7 +269,7 @@ class BrushTool extends LabelmapBaseTool {
     this._calculateCursor(element, canvasPoint);
     this._resetLazyEditState();
 
-    if (this._isLazyLabelmapEditingEnabled()) {
+    if (this._isLazyLabelmapEditingEnabled(this._hoverData.viewport)) {
       this._lazyEdit.appendStrokePoint(worldPoint);
       this._captureLazyPreviewCircle();
     }
@@ -479,7 +479,7 @@ class BrushTool extends LabelmapBaseTool {
 
     this._calculateCursor(element, currentCanvas);
 
-    if (this._isLazyLabelmapEditingEnabled()) {
+    if (this._isLazyLabelmapEditingEnabled(this._hoverData.viewport)) {
       this._lazyEdit.appendStrokePoint(currentWorld);
       this._captureLazyPreviewCircle();
       this._previewData.preview = null;
@@ -544,7 +544,9 @@ class BrushTool extends LabelmapBaseTool {
     if (!operationData) {
       return;
     }
-    const isLazyLabelmapEditing = this._isLazyLabelmapEditingEnabled();
+    const isLazyLabelmapEditing = this._isLazyLabelmapEditingEnabled(
+      this._hoverData?.viewport
+    );
 
     if (isLazyLabelmapEditing && this._previewData.isDrag) {
       operationData.strokePointsWorld = this._lazyEdit
