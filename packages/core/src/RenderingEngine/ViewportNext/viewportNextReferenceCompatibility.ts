@@ -232,27 +232,27 @@ function isReferencedImageCompatible(
     return true;
   }
 
-  const referencedImageURI = getReferencedImageURI(viewRef);
+  const referencedImageURIs = getReferencedImageURIs(viewRef);
 
-  if (!referencedImageURI) {
+  if (!referencedImageURIs.length) {
     return true;
   }
 
-  const imageURIs = getContextImageURIs(context);
+  const imageURIEntries = getContextImageURIEntries(context);
 
-  if (!imageURIs.length) {
+  if (!imageURIEntries.length) {
     return false;
   }
 
   const currentImageIdIndex = context.currentImageIdIndex ?? 0;
-  const currentImageURI = imageURIs[currentImageIdIndex];
+  const currentImageURIEntry = imageURIEntries[currentImageIdIndex];
 
-  if (currentImageURI === referencedImageURI) {
+  if (imageURIEntryMatches(currentImageURIEntry, referencedImageURIs)) {
     return true;
   }
 
-  const foundSliceIndex = imageURIs.findIndex(
-    (imageURI) => imageURI === referencedImageURI
+  const foundSliceIndex = imageURIEntries.findIndex((imageURIEntry) =>
+    imageURIEntryMatches(imageURIEntry, referencedImageURIs)
   );
 
   if (foundSliceIndex === -1) {
@@ -268,7 +268,7 @@ function isReferencedImageCompatible(
   }
 
   const rangeEndSliceIndex = getReferencedImageRangeEndIndex(
-    imageURIs,
+    imageURIEntries,
     viewRef
   );
 
@@ -355,40 +355,75 @@ function isSliceIndexCompatible(
   return isIndexInImageRange(sliceIndex, context.imageIds);
 }
 
-function getReferencedImageURI(viewRef: ViewReference): string | undefined {
-  if (viewRef.referencedImageURI) {
-    return viewRef.referencedImageURI;
-  }
-
-  if (viewRef.referencedImageId) {
-    return imageIdToURI(viewRef.referencedImageId);
-  }
+function getReferencedImageURIs(viewRef: ViewReference): string[] {
+  return uniqueStrings([
+    viewRef.referencedImageURI,
+    ...(viewRef.referencedImageId
+      ? getImageIdCompatibleURIs(viewRef.referencedImageId)
+      : []),
+  ]);
 }
 
 function getReferencedImageRangeEndIndex(
-  imageURIs: string[],
+  imageURIEntries: string[][],
   viewRef: ViewReference
 ): number | undefined {
   const rangeEndImageURI =
     viewRef.multiSliceReference &&
-    getReferencedImageURI(viewRef.multiSliceReference);
+    getReferencedImageURIs(viewRef.multiSliceReference);
 
-  if (!rangeEndImageURI) {
+  if (!rangeEndImageURI?.length) {
     return;
   }
 
-  const rangeEndSliceIndex = imageURIs.findIndex(
-    (imageURI) => imageURI === rangeEndImageURI
+  const rangeEndSliceIndex = imageURIEntries.findIndex((imageURIEntry) =>
+    imageURIEntryMatches(imageURIEntry, rangeEndImageURI)
   );
 
   return rangeEndSliceIndex === -1 ? undefined : rangeEndSliceIndex;
 }
 
-function getContextImageURIs(context: ViewportNextReferenceContext): string[] {
-  return uniqueStrings([
-    ...(context.imageIds || []).map((imageId) => imageIdToURI(imageId)),
-    ...(context.imageURIs || []),
-  ]);
+function getContextImageURIEntries(
+  context: ViewportNextReferenceContext
+): string[][] {
+  const imageURIEntries = (context.imageIds || []).map((imageId) =>
+    getImageIdCompatibleURIs(imageId)
+  );
+  const knownImageURIs = new Set<string>();
+
+  for (const imageURIEntry of imageURIEntries) {
+    for (const imageURI of imageURIEntry) {
+      knownImageURIs.add(imageURI);
+    }
+  }
+
+  for (const imageURI of context.imageURIs || []) {
+    if (!knownImageURIs.has(imageURI)) {
+      imageURIEntries.push([imageURI]);
+      knownImageURIs.add(imageURI);
+    }
+  }
+
+  return imageURIEntries;
+}
+
+function getImageIdCompatibleURIs(imageId: string): string[] {
+  return uniqueStrings([imageIdToURI(imageId), getLegacyImageIdURI(imageId)]);
+}
+
+function getLegacyImageIdURI(imageId: string): string {
+  const colonIndex = imageId.indexOf(':');
+
+  return colonIndex === -1 ? imageId : imageId.substring(colonIndex + 1);
+}
+
+function imageURIEntryMatches(
+  imageURIEntry: string[] | undefined,
+  referencedImageURIs: string[]
+): boolean {
+  return Boolean(
+    imageURIEntry?.some((imageURI) => referencedImageURIs.includes(imageURI))
+  );
 }
 
 function getContextDataIds(context: ViewportNextReferenceContext): string[] {

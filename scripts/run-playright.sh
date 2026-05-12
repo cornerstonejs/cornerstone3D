@@ -53,9 +53,9 @@ if [[ "$RUN_ALL_MODES" == "true" ]]; then
   PASSTHROUGH_ARGS+=("${PLAYWRIGHT_ARGS[@]+"${PLAYWRIGHT_ARGS[@]}"}")
 
   declare -a MODES=("legacy" "compat" "next")
-  declare -A MODE_EXIT_CODES=()
-  declare -A MODE_DURATIONS=()
-  declare -A MODE_LOG_FILES=()
+  declare -a MODE_EXIT_CODES=()
+  declare -a MODE_DURATIONS=()
+  declare -a MODE_LOG_FILES=()
   OVERALL_EXIT=0
 
   compute_mode_slug() {
@@ -145,14 +145,14 @@ if [[ "$RUN_ALL_MODES" == "true" ]]; then
       PLAYWRIGHT_SKIP_REBUILD=true \
         bash "$SCRIPT_PATH" "${MODE_ARGS[@]+"${MODE_ARGS[@]}"}" "${PASSTHROUGH_ARGS[@]+"${PASSTHROUGH_ARGS[@]}"}"
     fi
-    MODE_EXIT_CODES[$mode]=$?
+    MODE_EXIT_CODES[$mode_index]=$?
     set -e
     END_TIME=$(date +%s)
-    MODE_DURATIONS[$mode]=$((END_TIME - START_TIME))
-    MODE_LOG_FILES[$mode]="$(find_latest_log "$(compute_mode_slug "$mode")")"
+    MODE_DURATIONS[$mode_index]=$((END_TIME - START_TIME))
+    MODE_LOG_FILES[$mode_index]="$(find_latest_log "$(compute_mode_slug "$mode")")"
 
-    if [[ "${MODE_EXIT_CODES[$mode]}" -ne 0 ]]; then
-      OVERALL_EXIT="${MODE_EXIT_CODES[$mode]}"
+    if [[ "${MODE_EXIT_CODES[$mode_index]}" -ne 0 ]]; then
+      OVERALL_EXIT="${MODE_EXIT_CODES[$mode_index]}"
     fi
     mode_index=$((mode_index + 1))
   done
@@ -162,6 +162,7 @@ if [[ "$RUN_ALL_MODES" == "true" ]]; then
   echo " Summary"
   echo "============================================================"
   first_mode="true"
+  summary_index=0
   for mode in "${MODES[@]}"; do
     if [[ "$first_mode" == "true" ]]; then
       first_mode="false"
@@ -169,15 +170,15 @@ if [[ "$RUN_ALL_MODES" == "true" ]]; then
       echo
       echo "  ------------------------------------------------------------"
     fi
-    code="${MODE_EXIT_CODES[$mode]}"
-    duration_str="$(format_duration "${MODE_DURATIONS[$mode]:-0}")"
+    code="${MODE_EXIT_CODES[$summary_index]}"
+    duration_str="$(format_duration "${MODE_DURATIONS[$summary_index]:-0}")"
     if [[ "$code" -eq 0 ]]; then
       echo "  $mode: PASS  (${duration_str})"
     else
       echo "  $mode: FAIL  (exit $code, ${duration_str})"
     fi
-    summarize_log "${MODE_LOG_FILES[$mode]:-}"
-    log_file="${MODE_LOG_FILES[$mode]:-}"
+    summarize_log "${MODE_LOG_FILES[$summary_index]:-}"
+    log_file="${MODE_LOG_FILES[$summary_index]:-}"
     if [[ -n "$log_file" ]]; then
       run_dir="$(dirname "$log_file")"
       html_index="$run_dir/html-report/index.html"
@@ -188,6 +189,7 @@ if [[ "$RUN_ALL_MODES" == "true" ]]; then
         echo "    Report: $run_dir/html-report (index.html not found)"
       fi
     fi
+    summary_index=$((summary_index + 1))
   done
 
   exit "$OVERALL_EXIT"
@@ -237,9 +239,13 @@ fi
 declare -a SELECTED_TESTS=()
 
 if [[ "$SUITE" == "next" ]]; then
-  mapfile -t SELECTED_TESTS < <(find "$ROOT_DIR/tests/nextViewport" -name '*.spec.ts' | sort)
+  while IFS= read -r test_file; do
+    SELECTED_TESTS+=("$test_file")
+  done < <(find "$ROOT_DIR/tests/nextViewport" -name '*.spec.ts' | sort)
 else
-  mapfile -t SELECTED_TESTS < <(find "$ROOT_DIR/tests" -name '*.spec.ts' -not -path '*/nextViewport/*' | sort)
+  while IFS= read -r test_file; do
+    SELECTED_TESTS+=("$test_file")
+  done < <(find "$ROOT_DIR/tests" -name '*.spec.ts' -not -path '*/nextViewport/*' | sort)
 fi
 
 PROJECTS_DESC="chromium"
