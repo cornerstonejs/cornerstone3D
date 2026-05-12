@@ -1,5 +1,5 @@
 import { cache } from '@cornerstonejs/core';
-import { utilities, metaData } from '@cornerstonejs/metadata';
+import { utilities } from '@cornerstonejs/metadata';
 
 import dataSetCacheManager from './wadouri/dataSetCacheManager';
 import wadorsMetaDataManager from './wadors/metaDataManager';
@@ -8,9 +8,10 @@ import wadorsRegister from './wadors/register';
 
 /**
  * Register the WADO-URI and WADO-RS image loaders.
- * On each call (e.g. re-init), clears all relevant caches and providers so
- * the new registration is used consistently (ensures lifecycle and loader
- * tests see fresh requests for both legacy and NATURAL paths).
+ * On each call (e.g. re-init), clears loader-owned caches so the new
+ * registration is used consistently. Global metadata providers are preserved
+ * because applications may register their providers before initializing the
+ * DICOM image loader.
  *
  * @param options.useLegacyMetadataProvider - When true, registers the
  *   legacy wadouri/wadors metadata providers. Default is false (new design).
@@ -22,7 +23,6 @@ function registerLoaders(options?: {
   dataSetCacheManager.purge();
   wadorsMetaDataManager.purge();
   utilities.clearCacheData();
-  metaData.removeAllProviders();
 
   wadorsRegister(options);
   wadouriRegister(options);

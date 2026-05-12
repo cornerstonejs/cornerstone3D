@@ -101,6 +101,7 @@ describe('dicomImageLoader - WADO-URI', () => {
     wadouri.dataSetCacheManager.purge();
     cache.purgeCache();
     imageLoader.unregisterAllImageLoaders();
+    metaData.removeAllProviders();
   });
 
   it('should allow customising the http request with beforeSend', async () => {
@@ -191,6 +192,7 @@ describe('dicomImageLoader - WADO-URI', () => {
       wadouri.dataSetCacheManager.purge();
       cache.purgeCache();
       imageLoader.unregisterAllImageLoaders();
+      metaData.removeAllProviders();
     });
 
     it('should allow customising the http request with beforeSend', async () => {
