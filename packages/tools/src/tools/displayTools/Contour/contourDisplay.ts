@@ -38,6 +38,13 @@ function removeRepresentation(
     return;
   }
 
+  const viewportProcessed = processedViewportSegmentations.get(viewportId);
+  if (viewportProcessed) {
+    viewportProcessed.delete(segmentationId);
+  }
+
+  removeContourFromElement(viewportId, segmentationId);
+
   const { viewport } = enabledElement;
 
   if (!renderImmediate) {
