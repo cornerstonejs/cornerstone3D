@@ -3,6 +3,7 @@
   "description": "Cornerstone.js Monorepo Root",
   "private": true,
   "workspaces": [
+    "packages/codemods",
     "packages/metadata",
     "packages/utils",
     "packages/adapters",
