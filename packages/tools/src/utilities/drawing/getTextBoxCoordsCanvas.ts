@@ -212,20 +212,41 @@ function _findSvgLayer(element: HTMLDivElement): Element | null {
 }
 
 /**
- * Determine the handles that have the min/max x and y values.
- * Handles single-point annotations (e.g. Probe): left/right/top/bottom all equal that point.
+ * Determine the handles that have the min/max x and y values across the full
+ * annotation geometry.
+ *
+ * Handles single-point annotations (e.g. Probe): left/right/top/bottom all
+ * equal that point.
  */
 function _determineCorners(canvasPoints: Array<Types.Point2>) {
-  const p0 = canvasPoints[0];
-  if (!p0 || canvasPoints.length < 2) {
+  const validPoints = canvasPoints.filter(Boolean);
+  const p0 = validPoints[0];
+
+  if (!p0 || validPoints.length < 2) {
     return { left: p0, right: p0, top: p0, bottom: p0 };
   }
-  const handlesLeftToRight = [canvasPoints[0], canvasPoints[1]].sort(_compareX);
-  const handlesTopToBottom = [canvasPoints[0], canvasPoints[1]].sort(_compareY);
-  const left = handlesLeftToRight[0];
-  const right = handlesLeftToRight[handlesLeftToRight.length - 1];
-  const top = handlesTopToBottom[0];
-  const bottom = handlesTopToBottom[handlesTopToBottom.length - 1];
+
+  let left = p0;
+  let right = p0;
+  let top = p0;
+  let bottom = p0;
+
+  for (let i = 1; i < validPoints.length; i++) {
+    const point = validPoints[i];
+
+    if (point[0] < left[0]) {
+      left = point;
+    }
+    if (point[0] > right[0]) {
+      right = point;
+    }
+    if (point[1] < top[1]) {
+      top = point;
+    }
+    if (point[1] > bottom[1]) {
+      bottom = point;
+    }
+  }
 
   return {
     left,
@@ -233,13 +254,6 @@ function _determineCorners(canvasPoints: Array<Types.Point2>) {
     bottom,
     right,
   };
-
-  function _compareX(a, b) {
-    return a[0] < b[0] ? -1 : 1;
-  }
-  function _compareY(a, b) {
-    return a[1] < b[1] ? -1 : 1;
-  }
 }
 
 /**

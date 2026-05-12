@@ -9,7 +9,12 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addDropdownToToolbar,
-  addButtonToToolbar,
+  viewportId,
+  renderingEngineId,
+  addUploadToToolbar,
+  toolGroupId,
+  imageIds,
+  setImageIds,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import dicomImageLoader from '@cornerstonejs/dicom-image-loader';
@@ -34,14 +39,13 @@ const {
   ToolGroupManager,
   ArrowAnnotateTool,
   PlanarFreehandROITool,
+  StackScrollTool,
   Enums: csToolsEnums,
   utilities,
 } = cornerstoneTools;
 
 const { ViewportType, Events } = Enums;
 const { MouseBindings } = csToolsEnums;
-const renderingEngineId = 'myRenderingEngine';
-const viewportId = 'CT_STACK';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -99,7 +103,7 @@ element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
 });
 // ============================= //
 
-const toolGroupId = 'STACK_TOOL_GROUP_ID';
+addUploadToToolbar();
 
 const toolsNames = [
   LengthTool.toolName,
@@ -243,6 +247,7 @@ async function run() {
   cornerstoneTools.addTool(CobbAngleTool);
   cornerstoneTools.addTool(ArrowAnnotateTool);
   cornerstoneTools.addTool(PlanarFreehandROITool);
+  cornerstoneTools.addTool(StackScrollTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
   // Any viewport using the group
@@ -260,6 +265,7 @@ async function run() {
   toolGroup.addTool(CobbAngleTool.toolName);
   toolGroup.addTool(ArrowAnnotateTool.toolName);
   toolGroup.addTool(PlanarFreehandROITool.toolName);
+  toolGroup.addTool(StackScrollTool.toolName);
 
   // Set the initial state of the tools, here we set one tool active on left click.
   // This means left click will draw that tool.
@@ -270,6 +276,17 @@ async function run() {
       },
     ],
   });
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Wheel,
+      },
+      {
+        mouseButton: MouseBindings.Auxiliary,
+      },
+    ],
+  });
+
   // We set all the other tools passive here, this means that any state is rendered, and editable
   // But aren't actively being drawn (see the toolModes example for information)
   toolGroup.setToolPassive(HeightTool.toolName);
@@ -283,28 +300,36 @@ async function run() {
   toolGroup.setToolPassive(ArrowAnnotateTool.toolName);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
-  const imageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
-    SeriesInstanceUID:
-      '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
-  });
-
+  setImageIds(
+    await createImageIdsAndCacheMetaData({
+      StudyInstanceUID:
+        '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
+      SeriesInstanceUID:
+        '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
+      wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+    })
+  );
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
   calibrationFunctions.userCalibration = function calibrationSelected() {
-    utilities.calibrateImageSpacing(
-      imageIds[0],
-      renderingEngine,
-      this.calibration
+    imageIds.forEach((imageId) =>
+      utilities.calibrateImageSpacing(
+        imageId,
+        renderingEngine,
+        this.calibration
+      )
     );
   };
   calibrationFunctions.applyMetadata = function applyMetadata() {
-    const instance = wadors.metaDataManager.get(imageIds[0]);
-    Object.assign(instance, this.metadata);
-    utilities.calibrateImageSpacing(imageIds[0], renderingEngine, null);
+    imageIds.forEach((imageId) => {
+      const instance = wadors.metaDataManager.get(imageId);
+      if (!instance) {
+        console.warn('Can only apply image id update to metadata managed data');
+      }
+      Object.assign(instance, this.metadata);
+      utilities.calibrateImageSpacing(imageId, renderingEngine, null);
+    });
   };
 
   // Create a stack viewport

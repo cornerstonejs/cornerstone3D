@@ -42,6 +42,7 @@ function normalizeSegmentationInput(
   const segmentation = {
     segmentationId,
     label: config?.label ?? null,
+    fallbackLabel: config?.fallbackLabel ?? null,
     cachedStats: config?.cachedStats ?? {},
     segments: normalizedSegments,
     segmentOrder:

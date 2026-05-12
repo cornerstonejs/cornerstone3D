@@ -1,7 +1,7 @@
-import Segmentation from "./Segmentation";
+import Segmentation from './Segmentation';
 
 const VTKjsSEG = {
-    Segmentation
+  Segmentation,
 };
 
 export { VTKjsSEG };

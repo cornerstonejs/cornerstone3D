@@ -1,4 +1,4 @@
-import { getEnabledElement } from '@cornerstonejs/core';
+import { getEnabledElement, eventTarget, Enums } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { vec3, vec2 } from 'gl-matrix';
 import { Events, ToolModes, StrategyCallbacks } from '../../enums';
@@ -32,6 +32,7 @@ import LabelmapBaseTool from './LabelmapBaseTool';
 import { getStrategyData } from './strategies/utils/getStrategyData';
 import LazyBrushEditController from './utils/LazyBrushEditController';
 import { shouldUseLazyLabelmapEditing } from './utils/shouldUseLazyLabelmapEditing';
+import { getActiveSegmentation } from '../../stateManagement/segmentation/getActiveSegmentation';
 
 /**
  * @public
@@ -243,6 +244,20 @@ class BrushTool extends LabelmapBaseTool {
     const { element, currentPoints } = eventData;
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
+
+    const activeSegmentation = getActiveSegmentation(viewport.id);
+    if (!activeSegmentation) {
+      const event = new CustomEvent(Enums.Events.ERROR_EVENT, {
+        detail: {
+          type: 'Segmentation',
+          message:
+            'No active segmentation detected, create a segmentation representation before using the brush tool',
+        },
+        cancelable: true,
+      });
+      eventTarget.dispatchEvent(event);
+      return false;
+    }
 
     // @ts-expect-error
     this._editData = this.createEditData(element);

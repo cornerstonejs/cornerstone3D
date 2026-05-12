@@ -142,8 +142,10 @@ function setupTestEnvironment({
   };
 }
 
+const testLog = utilities.logger.getLogger('cs3d', 'test');
+
 function cleanupTestEnvironment(options = {}) {
-  console.debug('running cleanupTestEnvironment');
+  testLog.debug('running cleanupTestEnvironment');
   const {
     renderingEngineId,
     toolGroupIds = [],
@@ -176,8 +178,7 @@ function cleanupTestEnvironment(options = {}) {
 
   // Remove the metadata provider
   if (removeMetadataProvider && metaData) {
-    metaData.removeProvider(fakeMetaDataProvider);
-    metaData.removeProvider(utilities.calibratedPixelSpacingMetadataProvider);
+    metaData.removeAllProviders();
   }
 
   // Unregister all image loaders

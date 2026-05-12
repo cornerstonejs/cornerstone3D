@@ -3,6 +3,8 @@
 // '<rootDir>' warning:
 // Strings should avoid referencing the node_modules directory (prefer require.resolve)
 
+const path = require('path');
+
 module.exports = {
   // roots: ['<rootDir>/src'],
   testMatch: ['<rootDir>/test/**/*.jest.js'],
@@ -11,6 +13,8 @@ module.exports = {
   moduleFileExtensions: ['js', 'jsx', 'ts', 'tsx'],
   transformIgnorePatterns: ['<rootDir>/node_modules/(?!@kitware/.*)'],
   moduleNameMapper: {
+    // Resolve from node_modules so workspace alias does not map this package
+    '^@cornerstonejs/calculate-suv$': path.resolve(__dirname, 'node_modules/@cornerstonejs/calculate-suv'),
     '\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$':
       '<rootDir>/src/__mocks__/fileMock.js',
     '\\.(css|less)$': 'identity-obj-proxy',

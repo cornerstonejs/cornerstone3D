@@ -9,7 +9,7 @@ import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransf
 import { loadAndCacheImage } from '../../loaders/imageLoader';
 import * as metaData from '../../metaData';
 import * as windowLevel from '../../utilities/windowLevel';
-import { RequestType } from '../../enums';
+import { MetadataModules, RequestType } from '../../enums';
 import cache from '../../cache/cache';
 
 const PRIORITY = 0;
@@ -81,7 +81,7 @@ function handlePreScaledVolume(imageVolume: IImageVolume, voi: VOIRange) {
   const imageId = imageIds[imageIdIndex];
 
   const generalSeriesModule =
-    metaData.get('generalSeriesModule', imageId) || {};
+    metaData.get(MetadataModules.GENERAL_SERIES, imageId) || {};
 
   /**
    * If the volume is prescaled and the modality is PT Sometimes you get super high
@@ -112,7 +112,7 @@ function getVOIFromMetadata(imageVolume: IImageVolume): VOIRange | undefined {
   if (imageIds?.length) {
     const imageIdIndex = Math.floor(imageIds.length / 2);
     const imageId = imageIds[imageIdIndex];
-    const voiLutModule = metaData.get('voiLutModule', imageId);
+    const voiLutModule = metaData.get(MetadataModules.VOI_LUT, imageId);
     if (voiLutModule && voiLutModule.windowWidth && voiLutModule.windowCenter) {
       if (voiLutModule?.voiLUTFunction) {
         voi = {};
@@ -168,9 +168,10 @@ async function getVOIFromMiddleSliceMinMax(
   const imageIdIndex = Math.floor(imageIds.length / 2);
   const imageId = imageVolume.imageIds[imageIdIndex];
   const generalSeriesModule =
-    metaData.get('generalSeriesModule', imageId) || {};
+    metaData.get(MetadataModules.GENERAL_SERIES, imageId) || {};
   const { modality } = generalSeriesModule;
-  const modalityLutModule = metaData.get('modalityLutModule', imageId) || {};
+  const modalityLutModule =
+    metaData.get(MetadataModules.MODALITY_LUT, imageId) || {};
 
   const scalingParameters: ScalingParameters = {
     rescaleSlope: modalityLutModule.rescaleSlope,
@@ -180,7 +181,7 @@ async function getVOIFromMiddleSliceMinMax(
 
   let scalingParametersToUse;
   if (modality === 'PT') {
-    const suvFactor = metaData.get('scalingModule', imageId);
+    const suvFactor = metaData.get(MetadataModules.SCALING, imageId);
 
     if (suvFactor) {
       scalingParametersToUse = {

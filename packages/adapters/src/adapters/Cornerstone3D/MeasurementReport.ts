@@ -24,6 +24,7 @@ import { copySeriesTags } from '../helpers/copySeriesTags';
 import { toPoint3 } from '../helpers/toPoint3';
 import {
   COMMENT_CODE,
+  CONTROL_POINTS_CODE,
   metaSRAnnotation,
   NO_IMAGE_ID,
   TEXT_ANNOTATION_POSITION,
@@ -52,6 +53,11 @@ const COMMENT = {
 const COMMENT_POSITION = {
   CodingSchemeDesignator: TEXT_ANNOTATION_POSITION.schemeDesignator,
   CodeValue: TEXT_ANNOTATION_POSITION.value,
+};
+
+const CONTROL_POINTS = {
+  CodingSchemeDesignator: CONTROL_POINTS_CODE.schemeDesignator,
+  CodeValue: CONTROL_POINTS_CODE.value,
 };
 
 const FINDING_SITE = { CodingSchemeDesignator: 'SCT', CodeValue: '363698007' };
@@ -158,6 +164,33 @@ export interface MeasurementAdapter {
   ): Record<string, unknown>;
 }
 
+/**
+ *  Returns true when a SCOORD/SCOORD3D content item is tagged with a secondary
+ *  (i.e. non-primary) SCOORD code.
+ *  For example, the control-points code is distinguished from the primary polyline
+ *  SCOORD points code.
+ *  Handles ConceptNameCodeSequence as either a plain object (parsed DICOM)
+ *  or a single-item array (in-memory build). */
+function isSecondaryScoordGroup(group: {
+  ValueType?: string;
+  ConceptNameCodeSequence?: unknown;
+}): boolean {
+  if (group.ValueType !== 'SCOORD' && group.ValueType !== 'SCOORD3D') {
+    return false;
+  }
+  const conceptNameCodeSequence = group.ConceptNameCodeSequence;
+  const conceptCode = Array.isArray(conceptNameCodeSequence)
+    ? conceptNameCodeSequence[0]
+    : conceptNameCodeSequence;
+  return (
+    !!conceptCode &&
+    (conceptCode as { CodingSchemeDesignator?: string })
+      .CodingSchemeDesignator === CONTROL_POINTS.CodingSchemeDesignator &&
+    (conceptCode as { CodeValue?: string }).CodeValue ===
+      CONTROL_POINTS.CodeValue
+  );
+}
+
 export default class MeasurementReport {
   public static CORNERSTONE_3D_TAG = CORNERSTONE_3D_TAG;
 
@@ -204,7 +237,16 @@ export default class MeasurementReport {
     if (!ConceptNameCodeSequence) {
       return;
     }
-    const { CodingSchemeDesignator, CodeValue } = ConceptNameCodeSequence;
+    // ConceptNameCodeSequence may be a plain object or a single-item array
+    // depending on whether the data comes from an in-memory build or a parsed
+    // DICOM dataset — handle both forms.
+    const seq = Array.isArray(ConceptNameCodeSequence)
+      ? ConceptNameCodeSequence[0]
+      : ConceptNameCodeSequence;
+    if (!seq) {
+      return;
+    }
+    const { CodingSchemeDesignator, CodeValue } = seq;
     return (
       (CodingSchemeDesignator == code.CodingSchemeDesignator &&
         CodeValue == code.CodeValue) ||
@@ -377,12 +419,16 @@ export default class MeasurementReport {
     toolType,
   }): SpatialCoordinatesData {
     const contentSequenceArr = toArray(NUMGroup.ContentSequence);
-    const SCOORDGroup = contentSequenceArr.find(
-      (group) => group.ValueType === 'SCOORD'
-    );
-    const SCOORD3DGroup = contentSequenceArr.find(
-      (group) => group.ValueType === 'SCOORD3D'
-    );
+    const SCOORDGroup =
+      contentSequenceArr.find(
+        (group) =>
+          group.ValueType === 'SCOORD' && !isSecondaryScoordGroup(group)
+      ) ?? contentSequenceArr.find((group) => group.ValueType === 'SCOORD');
+    const SCOORD3DGroup =
+      contentSequenceArr.find(
+        (group) =>
+          group.ValueType === 'SCOORD3D' && !isSecondaryScoordGroup(group)
+      ) ?? contentSequenceArr.find((group) => group.ValueType === 'SCOORD3D');
 
     const result: SpatialCoordinatesData =
       (SCOORD3DGroup &&
@@ -412,6 +458,7 @@ export default class MeasurementReport {
     findingSiteGroups,
     commentGroup,
     commentPositionGroup,
+    controlPointsGroup,
     toolType,
   }) {
     const {
@@ -451,6 +498,18 @@ export default class MeasurementReport {
         hasMoved: true,
         worldPosition: textBoxCoords[0],
       };
+    }
+
+    if (controlPointsGroup) {
+      const controlPoints = scoordToWorld(
+        {
+          is3DMeasurement: !referencedImageId,
+          referencedImageId,
+        },
+        controlPointsGroup
+      );
+
+      state.annotation.data.handles.points = controlPoints;
     }
 
     state.finding = finding;
@@ -501,13 +560,22 @@ export default class MeasurementReport {
     const commentPositionGroup = contentSequenceArr.find((group) =>
       this.codeValueMatch(group, COMMENT_POSITION)
     );
+    let controlPointsGroup = contentSequenceArr.find((group) =>
+      this.codeValueMatch(group, CONTROL_POINTS)
+    );
+    const NUMGroupForLookup = contentSequenceArr.find(
+      (group) => group.ValueType === 'NUM'
+    );
+    if (!controlPointsGroup && NUMGroupForLookup?.ContentSequence) {
+      controlPointsGroup = toArray(NUMGroupForLookup.ContentSequence).find(
+        (item) => this.codeValueMatch(item, CONTROL_POINTS)
+      );
+    }
     const findingSiteGroups =
       contentSequenceArr.filter((group) =>
         this.codeValueMatch(group, FINDING_SITE, FINDING_SITE_OLD)
       ) || [];
-    const NUMGroup = contentSequenceArr.find(
-      (group) => group.ValueType === 'NUM'
-    ) || {
+    const NUMGroup = NUMGroupForLookup || {
       ContentSequence: contentSequenceArr.filter(
         (group) =>
           group.ValueType === 'SCOORD' || group.ValueType === 'SCOORD3D'
@@ -522,6 +590,7 @@ export default class MeasurementReport {
       findingSiteGroups,
       commentGroup,
       commentPositionGroup,
+      controlPointsGroup,
       toolType,
     });
 

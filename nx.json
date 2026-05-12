@@ -13,15 +13,18 @@
   "targetDefaults": {
     "build": {
       "inputs": ["noMarkdown"],
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build"],
+      "outputs": ["{projectRoot}/dist/**"]
     },
     "build:all": {
       "inputs": ["noMarkdown"],
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build"],
+      "outputs": ["{projectRoot}/dist/**"]
     },
     "build:esm": {
       "inputs": ["noMarkdown"],
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build"],
+      "outputs": ["{projectRoot}/dist/**"]
     },
     "test": {
       "inputs": ["noMarkdown"],

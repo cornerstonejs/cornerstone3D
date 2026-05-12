@@ -126,7 +126,6 @@ import {
   viewportSupportsVolumeURI,
 } from './viewportCapabilities';
 export { updatePlaneRestriction } from './updatePlaneRestriction';
-
 const getViewportModality = (viewport: IViewport, volumeId?: string) =>
   _getViewportModality(viewport, volumeId, cache.getVolume);
 

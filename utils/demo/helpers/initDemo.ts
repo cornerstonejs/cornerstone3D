@@ -34,7 +34,12 @@ export default async function initDemo(config: any = {}) {
   const toolsConfig = demoConfig?.tools || {};
 
   initProviders();
-  cornerstoneDICOMImageLoader.init(demoConfig?.dicomImageLoader);
+  cornerstoneDICOMImageLoader.init({
+    ...(demoConfig?.dicomImageLoader || {}),
+    ...(demoConfig?.useLegacyMetadataProvider !== undefined
+      ? { useLegacyMetadataProvider: demoConfig.useLegacyMetadataProvider }
+      : {}),
+  });
   initVolumeLoader();
 
   await csRenderInit({

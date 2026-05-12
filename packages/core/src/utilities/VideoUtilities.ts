@@ -2,6 +2,7 @@ import { vec3 } from 'gl-matrix';
 import { MetadataModules } from '../enums';
 import type { Point3 } from '../types';
 import * as metaData from '../metaData';
+import isVideoTransferSyntax from './isVideoTransferSyntax';
 
 export interface VideoImageMetadata {
   bitsAllocated: number;
@@ -79,9 +80,9 @@ export function getVideoImageDataMetadata(imageId: string): VideoImageMetadata {
 export function loadVideoStreamMetadata(
   imageId: string
 ): LoadedVideoStreamMetadata {
-  const imageUrlModule = metaData.get(MetadataModules.IMAGE_URL, imageId);
+  const renderedUrl = getRenderedVideoUrl(imageId);
 
-  if (!imageUrlModule?.rendered) {
+  if (!renderedUrl) {
     throw new Error(
       `Video Image ID ${imageId} does not have a rendered video view`
     );
@@ -89,14 +90,48 @@ export function loadVideoStreamMetadata(
 
   const generalSeries = metaData.get(MetadataModules.GENERAL_SERIES, imageId);
   const cine = metaData.get(MetadataModules.CINE, imageId) || {};
+  const instance = metaData.get(MetadataModules.INSTANCE, imageId);
+  const frameTime = cine.frameTime ?? cine.FrameTime;
 
   return {
-    renderedUrl: imageUrlModule.rendered,
-    modality: generalSeries?.Modality,
+    renderedUrl,
+    modality: generalSeries?.Modality ?? generalSeries?.modality,
     metadata: getVideoImageDataMetadata(imageId),
-    cineRate: cine.cineRate,
-    numberOfFrames: cine.numberOfFrames,
+    cineRate:
+      cine.cineRate ??
+      cine.recommendedDisplayFrameRate ??
+      (frameTime ? 1000 / Number(frameTime) : undefined),
+    numberOfFrames: cine.numberOfFrames ?? instance?.NumberOfFrames,
   };
+}
+
+function getRenderedVideoUrl(imageId: string): string | undefined {
+  const imageUrlModule = metaData.get(MetadataModules.IMAGE_URL, imageId);
+
+  if (imageUrlModule?.rendered) {
+    return imageUrlModule.rendered;
+  }
+
+  const transferSyntax = metaData.get(MetadataModules.TRANSFER_SYNTAX, imageId);
+  const isVideo =
+    transferSyntax?.isVideo ||
+    isVideoTransferSyntax(transferSyntax?.transferSyntaxUID);
+
+  if (!isVideo) {
+    return;
+  }
+
+  const imageUrl = imageId.startsWith('wadors:')
+    ? imageId.substring(7)
+    : imageId;
+
+  if (!imageUrl.includes('/frames/')) {
+    return;
+  }
+
+  return imageUrl
+    .replace('/frames/', '/rendered/')
+    .replace(/\/rendered\/\d+($|[?#])/, '/rendered$1');
 }
 
 export function normalizeVideoPlaybackInfo(args: {

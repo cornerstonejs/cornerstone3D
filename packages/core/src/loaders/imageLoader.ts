@@ -1,5 +1,6 @@
 import cache from '../cache/cache';
 import Events from '../enums/Events';
+import MetadataModules from '../enums/MetadataModules';
 import eventTarget from '../eventTarget';
 import genericMetadataProvider from '../utilities/genericMetadataProvider';
 import { getBufferConfiguration } from '../utilities/getBufferConfiguration';
@@ -259,7 +260,10 @@ export function createAndCacheDerivedImage(
   const { imageId, skipCreateBuffer, onCacheAdd, voxelRepresentation } =
     options;
 
-  const imagePlaneModule = metaData.get('imagePlaneModule', referencedImageId);
+  const imagePlaneModule = metaData.get(
+    MetadataModules.IMAGE_PLANE,
+    referencedImageId
+  );
 
   const length = imagePlaneModule.rows * imagePlaneModule.columns;
 
@@ -274,35 +278,38 @@ export function createAndCacheDerivedImage(
   );
   const derivedImageId = imageId;
   const referencedImagePlaneMetadata = metaData.get(
-    'imagePlaneModule',
+    MetadataModules.IMAGE_PLANE,
     referencedImageId
   );
 
   genericMetadataProvider.add(derivedImageId, {
-    type: 'imagePlaneModule',
+    type: MetadataModules.IMAGE_PLANE,
     metadata: referencedImagePlaneMetadata,
   });
 
   const referencedImageGeneralSeriesMetadata = metaData.get(
-    'generalSeriesModule',
+    MetadataModules.GENERAL_SERIES,
     referencedImageId
   );
 
   genericMetadataProvider.add(derivedImageId, {
-    type: 'generalSeriesModule',
+    type: MetadataModules.GENERAL_SERIES,
     metadata: referencedImageGeneralSeriesMetadata,
   });
 
   genericMetadataProvider.add(derivedImageId, {
-    type: 'generalImageModule',
+    type: MetadataModules.GENERAL_IMAGE,
     metadata: {
       instanceNumber: options.instanceNumber,
     },
   });
 
-  const imagePixelModule = metaData.get('imagePixelModule', referencedImageId);
+  const imagePixelModule = metaData.get(
+    MetadataModules.IMAGE_PIXEL,
+    referencedImageId
+  );
   genericMetadataProvider.add(derivedImageId, {
-    type: 'imagePixelModule',
+    type: MetadataModules.IMAGE_PIXEL,
     metadata: {
       ...imagePixelModule,
       bitsAllocated: 8,
@@ -500,7 +507,7 @@ export function createAndCacheLocalImage(
   };
 
   // Add metadata to genericMetadataProvider
-  ['imagePlaneModule', 'imagePixelModule'].forEach((type) => {
+  [MetadataModules.IMAGE_PLANE, MetadataModules.IMAGE_PIXEL].forEach((type) => {
     genericMetadataProvider.add(imageId, {
       type,
       metadata: metadata[type] || {},

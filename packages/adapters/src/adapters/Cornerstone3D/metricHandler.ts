@@ -1,13 +1,13 @@
 export interface AdditionalMetrics {
-    mean?: number;
-    stdDev?: number;
-    max?: number;
-    min?: number;
-    area?: number;
-    radius?: number;
-    modalityUnit?: string;
-    areaUnit?: string;
-    [key: string]: number | string | undefined;
+  mean?: number;
+  stdDev?: number;
+  max?: number;
+  min?: number;
+  area?: number;
+  radius?: number;
+  modalityUnit?: string;
+  areaUnit?: string;
+  [key: string]: number | string | undefined;
 }
 
 /**
@@ -27,38 +27,34 @@ export interface AdditionalMetrics {
  */
 
 export function extractAllNUMGroups(
-    MeasurementGroup,
-    referencedSOPInstanceUID
+  MeasurementGroup,
+  referencedSOPInstanceUID
 ) {
-    const numGroupsBySOPInstanceUID = {};
+  const numGroupsBySOPInstanceUID = {};
 
-    if (MeasurementGroup.ContentSequence) {
-        MeasurementGroup.ContentSequence.forEach(item => {
-            if (item.ValueType === "NUM" && item.ConceptNameCodeSequence) {
-                const codeMeaning = item.ConceptNameCodeSequence.CodeMeaning;
-                const numericValue = item.MeasuredValueSequence?.NumericValue;
-                const unitCode =
-                    item.MeasuredValueSequence?.MeasurementUnitsCodeSequence
-                        ?.CodeValue;
+  if (MeasurementGroup.ContentSequence) {
+    MeasurementGroup.ContentSequence.forEach((item) => {
+      if (item.ValueType === 'NUM' && item.ConceptNameCodeSequence) {
+        const codeMeaning = item.ConceptNameCodeSequence.CodeMeaning;
+        const numericValue = item.MeasuredValueSequence?.NumericValue;
+        const unitCode =
+          item.MeasuredValueSequence?.MeasurementUnitsCodeSequence?.CodeValue;
 
-                if (numericValue !== undefined && referencedSOPInstanceUID) {
-                    if (!numGroupsBySOPInstanceUID[referencedSOPInstanceUID]) {
-                        numGroupsBySOPInstanceUID[referencedSOPInstanceUID] =
-                            {};
-                    }
+        if (numericValue !== undefined && referencedSOPInstanceUID) {
+          if (!numGroupsBySOPInstanceUID[referencedSOPInstanceUID]) {
+            numGroupsBySOPInstanceUID[referencedSOPInstanceUID] = {};
+          }
 
-                    numGroupsBySOPInstanceUID[referencedSOPInstanceUID][
-                        codeMeaning
-                    ] = {
-                        value: numericValue,
-                        unit: unitCode || ""
-                    };
-                }
-            }
-        });
-    }
+          numGroupsBySOPInstanceUID[referencedSOPInstanceUID][codeMeaning] = {
+            value: numericValue,
+            unit: unitCode || '',
+          };
+        }
+      }
+    });
+  }
 
-    return numGroupsBySOPInstanceUID;
+  return numGroupsBySOPInstanceUID;
 }
 
 /**
@@ -78,59 +74,59 @@ export function extractAllNUMGroups(
  */
 
 export function restoreAdditionalMetrics(numGroups): AdditionalMetrics {
-    const additionalMetrics: AdditionalMetrics = {};
-    let modalityUnit: string = "";
+  const additionalMetrics: AdditionalMetrics = {};
+  let modalityUnit: string = '';
 
-    const metricMapping = {
-        Mean: "mean",
-        "Standard Deviation": "stdDev",
-        Maximum: "max",
-        Minimum: "min",
-        Area: "area",
-        Radius: "radius",
-        Perimeter: "perimeter",
-        Length: "length",
-        Width: "width"
-    };
+  const metricMapping = {
+    Mean: 'mean',
+    'Standard Deviation': 'stdDev',
+    Maximum: 'max',
+    Minimum: 'min',
+    Area: 'area',
+    Radius: 'radius',
+    Perimeter: 'perimeter',
+    Length: 'length',
+    Width: 'width',
+  };
 
-    // Define what kind of unit each metric type should use
-    const unitCategory = {
-        area: "areaUnit",
-        radius: "radiusUnit",
-        width: "widthUnit"
-    };
+  // Define what kind of unit each metric type should use
+  const unitCategory = {
+    area: 'areaUnit',
+    radius: 'radiusUnit',
+    width: 'widthUnit',
+  };
 
-    for (const [codeMeaning, metricKey] of Object.entries(metricMapping)) {
-        const group = numGroups[codeMeaning];
-        if (!group) {
-            continue;
-        }
-
-        const { value, unit } = group;
-        if (value == null) {
-            continue;
-        }
-
-        additionalMetrics[metricKey] = value;
-
-        if (!unit) {
-            continue;
-        }
-        if (!modalityUnit) {
-            modalityUnit = unit;
-        }
-
-        const category = unitCategory[metricKey];
-        if (category) {
-            if (!additionalMetrics[category]) {
-                additionalMetrics[category] = unit;
-            }
-        } else {
-            additionalMetrics[`${metricKey}Unit`] = unit;
-        }
+  for (const [codeMeaning, metricKey] of Object.entries(metricMapping)) {
+    const group = numGroups[codeMeaning];
+    if (!group) {
+      continue;
     }
 
-    additionalMetrics.modalityUnit = modalityUnit;
+    const { value, unit } = group;
+    if (value == null) {
+      continue;
+    }
 
-    return additionalMetrics;
+    additionalMetrics[metricKey] = value;
+
+    if (!unit) {
+      continue;
+    }
+    if (!modalityUnit) {
+      modalityUnit = unit;
+    }
+
+    const category = unitCategory[metricKey];
+    if (category) {
+      if (!additionalMetrics[category]) {
+        additionalMetrics[category] = unit;
+      }
+    } else {
+      additionalMetrics[`${metricKey}Unit`] = unit;
+    }
+  }
+
+  additionalMetrics.modalityUnit = modalityUnit;
+
+  return additionalMetrics;
 }
