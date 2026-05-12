@@ -1,0 +1,15 @@
+version: '1'
+nodes:
+  - id: rendering-engine-viewport-accessors
+    name: RenderingEngine viewport accessor migration
+    steps:
+      - name: Apply RenderingEngine viewport accessor transform
+        js-ast-grep:
+          js_file: scripts/rendering-engine-viewport-accessors.ts
+          language: tsx
+          include:
+            - '**/*.{js,jsx,ts,tsx}'
+          exclude:
+            - '**/node_modules/**'
+            - '**/dist/**'
+            - '**/build/**'

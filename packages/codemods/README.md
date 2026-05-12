@@ -1,46 +1,32 @@
-# @cornerstonejs/codemods
+# Cornerstone3D Codemods
 
-Codemods for Cornerstone3D migrations. These transforms are implemented with
-[jscodeshift](https://github.com/facebook/jscodeshift), so they can run through
-the package CLI or directly through the jscodeshift CLI.
+Codemod registry packages for Cornerstone3D migrations. These are published to
+the Codemod registry so users run them with `npx codemod`.
 
 ## Usage
 
-List available transforms:
+Run the full Cornerstone3D v5 migration:
 
 ```sh
-npx @cornerstonejs/codemods --list
+npx codemod cornerstone3d/5 -t .
 ```
 
-Run a transform:
+Run only the Viewport Next migration:
 
 ```sh
-npx @cornerstonejs/codemods rendering-engine-viewport-accessors src
+npx codemod cornerstone3d/5/viewport-next -t .
 ```
 
-Preview changes without writing files:
+## Registry Packages
 
-```sh
-npx @cornerstonejs/codemods rendering-engine-viewport-accessors src --dry-run
-```
+This workspace currently includes:
 
-Run the transform through jscodeshift directly:
+- `cornerstone3d/5`: runs all available Cornerstone3D v5 migration packages in
+  the recommended order.
+- `cornerstone3d/5/viewport-next`: migrates removed RenderingEngine viewport
+  accessor APIs.
 
-```sh
-npx jscodeshift \
-  -t node_modules/@cornerstonejs/codemods/src/transforms/rendering-engine-viewport-accessors.js \
-  src \
-  --extensions=js,jsx,ts,tsx \
-  --parser=tsx
-```
-
-## Transforms
-
-This package currently includes 1 transform.
-
-### `rendering-engine-viewport-accessors`
-
-Migrates removed rendering-engine viewport accessors:
+The Viewport Next migration changes:
 
 - `getStackViewports()` -> `getViewports().filter(utilities.viewportSupportsStackCompatibility)`
 - `getVolumeViewports()` -> `getViewports().filter(utilities.viewportSupportsVolumeCompatibility)`
@@ -51,8 +37,46 @@ capability guard.
 
 ## Development
 
-Run tests:
+Validate all registry packages:
 
 ```sh
-yarn workspace @cornerstonejs/codemods test
+cd packages/codemods
+yarn validate:registry
 ```
+
+Run the JSSG fixture tests:
+
+```sh
+cd packages/codemods
+yarn test
+```
+
+Run a local registry package against a target checkout:
+
+```sh
+npx codemod workflow run -w packages/codemods/registry/cornerstone3d/5/viewport-next -t /path/to/project
+```
+
+## Registry Publishing
+
+The package is intentionally private to npm. Publishing happens through the
+Codemod registry packages under `packages/codemods/registry`.
+
+To publish `cornerstone3d/5`:
+
+```sh
+git tag cornerstone3d/5@v0.1.0
+git push origin cornerstone3d/5@v0.1.0
+```
+
+To publish `cornerstone3d/5/viewport-next`:
+
+```sh
+git tag cornerstone3d/5/viewport-next@v0.1.0
+git push origin cornerstone3d/5/viewport-next@v0.1.0
+```
+
+`Publish Codemod Registry Entry` resolves those tags to directories under
+`packages/codemods/registry/` and publishes them with
+`codemod/publish-action@v1`. `Validate Codemod Registry Entries` checks pull
+requests and pushes to `main`.

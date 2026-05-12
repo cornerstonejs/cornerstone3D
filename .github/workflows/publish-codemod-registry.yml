@@ -1,0 +1,52 @@
+name: Publish Codemod Registry Entry
+
+on:
+  push:
+    tags:
+      - 'cornerstone3d/**@v*'
+  workflow_dispatch:
+    inputs:
+      registry_entry:
+        description: 'Registry entry under packages/codemods/registry, e.g. cornerstone3d/5/viewport-next'
+        required: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Resolve registry entry path
+        id: resolve
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            REGISTRY_ENTRY="${{ github.event.inputs.registry_entry }}"
+          else
+            TAG="${GITHUB_REF#refs/tags/}"
+            REGISTRY_ENTRY="${TAG%@v*}"
+          fi
+
+          PACKAGE_PATH="packages/codemods/registry/${REGISTRY_ENTRY}"
+
+          if [ ! -f "${PACKAGE_PATH}/codemod.yaml" ]; then
+            echo "No codemod.yaml found at ${PACKAGE_PATH}" >&2
+            exit 1
+          fi
+
+          echo "path=${PACKAGE_PATH}" >> "$GITHUB_OUTPUT"
+
+      - name: Validate registry entry
+        run: npx codemod workflow validate -w "${{ steps.resolve.outputs.path }}"
+
+      - name: Publish registry entry
+        uses: codemod/publish-action@v1
+        with:
+          path: ${{ steps.resolve.outputs.path }}
