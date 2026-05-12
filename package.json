@@ -221,6 +221,6 @@
     "socket.io-parser": "4.2.6",
     "handlebars": "4.7.9",
     "path-to-regexp": "0.1.13",
-    "protobufjs": "7.5.5"
+    "protobufjs": "7.5.8"
   }
 }

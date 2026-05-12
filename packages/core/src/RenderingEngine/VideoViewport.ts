@@ -296,7 +296,7 @@ class VideoViewport extends Viewport {
         await this.videoElement.play();
         this.renderWhilstPlaying();
       }
-    } catch {
+    } catch (_error) {
       // No-op, an exception sometimes gets thrown on the initial play, not
       // quite sure why.  Catching it prevents displaying an error
     }
