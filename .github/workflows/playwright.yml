@@ -17,7 +17,7 @@ jobs:
         include:
           - node-version: 20
             mode: legacy
-            run_args: '--all --project=chromium'
+            run_args: '--project=chromium'
             collect_coverage: true
           - node-version: 20
             mode: compatibility
