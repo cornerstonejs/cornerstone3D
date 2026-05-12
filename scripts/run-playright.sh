@@ -5,6 +5,8 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRIPT_PATH="${BASH_SOURCE[0]}"
 TIMESTAMP="$(date '+%Y%m%d-%H%M%S')"
+DEFAULT_REBUILD_PACKAGES="core,tools,dicomImageLoader"
+DEFAULT_BUILD_NODE_OPTIONS="--max_old_space_size=32896"
 SUITE="legacy"
 FORCE_COMPAT="false"
 FORCE_CPU_RENDERING="false"
@@ -38,6 +40,27 @@ for arg in "$@"; do
       ;;
   esac
 done
+
+should_skip_rebuild_value() {
+  local value="${1:-}"
+  value="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')"
+  [[ "$value" == "1" || "$value" == "true" || "$value" == "yes" ]]
+}
+
+build_static_examples() {
+  local packages="${PLAYWRIGHT_REBUILD_PACKAGES:-$DEFAULT_REBUILD_PACKAGES}"
+  local build_node_options="${PLAYWRIGHT_BUILD_NODE_OPTIONS:-$DEFAULT_BUILD_NODE_OPTIONS}"
+
+  echo "Building static examples for Playwright"
+  echo "Packages: $packages"
+  echo
+
+  NODE_OPTIONS="$build_node_options" \
+    node "$ROOT_DIR/utils/ExampleRunner/build-all-examples-cli.js" \
+      --build \
+      --fromRoot \
+      --packages "$packages"
+}
 
 if [[ "$RUN_ALL_MODES" == "true" ]]; then
   declare -a PASSTHROUGH_ARGS=()
@@ -271,6 +294,14 @@ if [[ "$FORCE_REBUILD" == "true" ]]; then
 else
   PLAYWRIGHT_SKIP_REBUILD_VALUE="${PLAYWRIGHT_SKIP_REBUILD:-}"
 fi
+
+if ! should_skip_rebuild_value "$PLAYWRIGHT_SKIP_REBUILD_VALUE"; then
+  build_static_examples
+fi
+
+# Playwright starts webServer before globalSetup. Build here so the static
+# server has files to serve, then skip the duplicate globalSetup rebuild.
+PLAYWRIGHT_SKIP_REBUILD_VALUE="true"
 
 set +e
 PLAYWRIGHT_USE_BUNDLED_CHROMIUM=true \
