@@ -2,6 +2,7 @@ import { cache } from '@cornerstonejs/core';
 import { utilities, metaData } from '@cornerstonejs/metadata';
 
 import dataSetCacheManager from './wadouri/dataSetCacheManager';
+import wadorsMetaDataManager from './wadors/metaDataManager';
 import wadouriRegister from './wadouri/register';
 import wadorsRegister from './wadors/register';
 
@@ -19,6 +20,7 @@ function registerLoaders(options?: {
 }): void {
   cache.purgeCache();
   dataSetCacheManager.purge();
+  wadorsMetaDataManager.purge();
   utilities.clearCacheData();
   metaData.removeAllProviders();
 

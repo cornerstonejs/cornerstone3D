@@ -66,3 +66,29 @@ describe('dicomImageLoader - WADO-RS', () => {
     });
   }
 });
+
+describe('dicomImageLoader - WADO-RS default metadata registration', () => {
+  beforeEach(() => {
+    dicomImageLoaderInit();
+  });
+
+  afterEach(() => {
+    wadors.metaDataManager.purge();
+    cache.purgeCache();
+    imageLoader.unregisterAllImageLoaders();
+  });
+
+  it('should read legacy WADO-RS metadata when default providers are registered', () => {
+    const test = WADO_RS_TESTS[0];
+    const [frame] = test.frames;
+    const [metadataModuleName, expectedModuleValues] = Object.entries(
+      frame.metadataModule
+    )[0];
+
+    wadors.metaDataManager.add(test.wadorsUrl, test.wadorsMetadata);
+
+    const actualModuleValue = metaData.get(metadataModuleName, test.wadorsUrl);
+
+    expect(actualModuleValue).toEqual(expectedModuleValues);
+  });
+});
