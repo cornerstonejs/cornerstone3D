@@ -1248,18 +1248,18 @@ abstract class BaseVolumeViewport extends Viewport {
 
     const { volumeActor } = applicableVolumeActorInfo;
 
-    const preset: ViewportPreset | undefined =
+    const viewportPreset: ViewportPreset | undefined =
       typeof presetNameOrObj === 'string'
-        ? VIEWPORT_PRESETS.find((p) => p.name === presetNameOrObj)
+        ? VIEWPORT_PRESETS.find((preset) => preset.name === presetNameOrObj)
         : presetNameOrObj;
 
-    if (!preset) {
+    if (!viewportPreset) {
       return;
     }
 
-    applyPreset(volumeActor, preset);
+    applyPreset(volumeActor, viewportPreset);
 
-    this.viewportProperties.preset = preset.name;
+    this.viewportProperties.preset = viewportPreset.name;
     this.render();
 
     if (!suppressEvents) {
@@ -1267,7 +1267,7 @@ abstract class BaseVolumeViewport extends Viewport {
         viewportId: this.id,
         volumeId: applicableVolumeActorInfo.volumeId,
         actor: volumeActor,
-        presetName: preset.name,
+        presetName: viewportPreset.name,
       });
     }
   }
