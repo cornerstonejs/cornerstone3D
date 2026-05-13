@@ -8,13 +8,13 @@ the Codemod registry so users run them with `npx codemod`.
 Run the full Cornerstone3D v5 migration:
 
 ```sh
-npx codemod cornerstone3d/5 -t .
+npx codemod cornerstone3d/5
 ```
 
 Run only the Viewport Next migration:
 
 ```sh
-npx codemod cornerstone3d/5/viewport-next -t .
+npx codemod cornerstone3d/5/viewport-next
 ```
 
 ## Registry Packages
@@ -37,14 +37,21 @@ capability guard.
 
 ## Development
 
-Validate all registry packages:
+Validate all registry packages and run fixture tests:
+
+```sh
+cd packages/codemods
+yarn validate
+```
+
+Validate only registry workflow metadata:
 
 ```sh
 cd packages/codemods
 yarn validate:registry
 ```
 
-Run the JSSG fixture tests:
+Run only the JSSG fixture tests:
 
 ```sh
 cd packages/codemods
@@ -54,7 +61,8 @@ yarn test
 Run a local registry package against a target checkout:
 
 ```sh
-npx codemod workflow run -w packages/codemods/registry/cornerstone3d/5/viewport-next -t /path/to/project
+cd packages/codemods
+npx codemod workflow run -w registry/cornerstone3d/5/viewport-next -t /path/to/project --dry-run
 ```
 
 ## Registry Publishing
@@ -62,18 +70,20 @@ npx codemod workflow run -w packages/codemods/registry/cornerstone3d/5/viewport-
 The package is intentionally private to npm. Publishing happens through the
 Codemod registry packages under `packages/codemods/registry`.
 
-To publish `cornerstone3d/5`:
-
-```sh
-git tag cornerstone3d/5@v0.1.0
-git push origin cornerstone3d/5@v0.1.0
-```
+Publish migration packages before aggregate packages that reference them.
 
 To publish `cornerstone3d/5/viewport-next`:
 
 ```sh
 git tag cornerstone3d/5/viewport-next@v0.1.0
 git push origin cornerstone3d/5/viewport-next@v0.1.0
+```
+
+To publish `cornerstone3d/5`:
+
+```sh
+git tag cornerstone3d/5@v0.1.0
+git push origin cornerstone3d/5@v0.1.0
 ```
 
 `Publish Codemod Registry Entry` resolves those tags to directories under

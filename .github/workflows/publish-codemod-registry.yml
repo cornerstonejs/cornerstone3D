@@ -24,6 +24,9 @@ jobs:
         with:
           node-version: 20
 
+      - name: Enable Corepack
+        run: corepack enable
+
       - name: Resolve registry entry path
         id: resolve
         run: |
@@ -42,9 +45,19 @@ jobs:
           fi
 
           echo "path=${PACKAGE_PATH}" >> "$GITHUB_OUTPUT"
+          echo "registry_entry=${REGISTRY_ENTRY}" >> "$GITHUB_OUTPUT"
 
       - name: Validate registry entry
         run: npx codemod workflow validate -w "${{ steps.resolve.outputs.path }}"
+
+      - name: Run codemod fixture tests
+        run: yarn --cwd packages/codemods test
+
+      - name: Verify aggregate dependencies are published
+        if: steps.resolve.outputs.registry_entry == 'cornerstone3d/5'
+        run: |
+          TARGET="$(mktemp -d)"
+          npx codemod run cornerstone3d/5/viewport-next --dry-run -t "$TARGET" --allow-dirty --no-interactive
 
       - name: Publish registry entry
         uses: codemod/publish-action@v1

@@ -19,6 +19,7 @@
     "clean:deep": "yarn run clean && shx rm -rf node_modules",
     "dev": "yarn run test",
     "test": "npx codemod jssg test -l tsx registry/cornerstone3d/5/viewport-next/scripts/rendering-engine-viewport-accessors.ts registry/cornerstone3d/5/viewport-next/tests",
+    "validate": "yarn run validate:registry && yarn run test",
     "validate:registry": "node scripts/validate-registry-packages.mjs",
     "lint": "oxlint ."
   },

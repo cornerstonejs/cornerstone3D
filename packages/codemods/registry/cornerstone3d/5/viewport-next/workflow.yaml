@@ -7,6 +7,7 @@ nodes:
         js-ast-grep:
           js_file: scripts/rendering-engine-viewport-accessors.ts
           language: tsx
+          base_path: .
           include:
             - '**/*.{js,jsx,ts,tsx}'
           exclude:

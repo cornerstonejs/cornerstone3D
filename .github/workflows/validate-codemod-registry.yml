@@ -27,5 +27,8 @@ jobs:
         with:
           node-version: 20
 
+      - name: Enable Corepack
+        run: corepack enable
+
       - name: Validate registry packages
-        run: node packages/codemods/scripts/validate-registry-packages.mjs
+        run: yarn --cwd packages/codemods validate
