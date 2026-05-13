@@ -1,4 +1,4 @@
-import { cache, volumeLoader } from '@cornerstonejs/core';
+import { cache, imageLoader, volumeLoader } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import type { Segmentation } from '../../../types/SegmentationStateTypes';
 import type {
@@ -52,6 +52,12 @@ function removeLabelmap(segmentation: Segmentation, labelmapId: string): void {
 function getOrCreateLabelmapVolume(
   layer: LabelmapLayer
 ): Types.IImageVolume | undefined {
+  const mergedVolume = getOrCreateMergedStackLabelmapVolume(layer);
+
+  if (mergedVolume) {
+    return mergedVolume;
+  }
+
   const existingVolumeId = layer.volumeId ?? layer.geometryVolumeId;
 
   if (existingVolumeId) {
@@ -82,6 +88,106 @@ function getOrCreateLabelmapVolume(
   }
 
   return volumeLoader.createAndCacheVolumeFromImagesSync(volumeId, imageIds);
+}
+
+function getOrCreateMergedStackLabelmapVolume(
+  layer: LabelmapLayer
+): Types.IImageVolume | undefined {
+  if (layer.volumeId || !hasDuplicateReferencedImageIds(layer)) {
+    return;
+  }
+
+  const volumeId = layer.geometryVolumeId ?? `${layer.labelmapId}-geometry`;
+  const cachedVolume = cache.getVolume(volumeId);
+
+  if (cachedVolume) {
+    return cachedVolume as Types.IImageVolume;
+  }
+
+  const referencedImageIds = layer.referencedImageIds ?? [];
+  const imageIds = layer.imageIds ?? [];
+  const imageIdsByReferencedImageId = new Map<string, string[]>();
+
+  referencedImageIds.forEach((referencedImageId, index) => {
+    const imageId = imageIds[index];
+
+    if (!referencedImageId || !imageId) {
+      return;
+    }
+
+    const imageIdsForReference =
+      imageIdsByReferencedImageId.get(referencedImageId) ?? [];
+
+    imageIdsForReference.push(imageId);
+    imageIdsByReferencedImageId.set(referencedImageId, imageIdsForReference);
+  });
+
+  const mergedReferencedImageIds = Array.from(
+    imageIdsByReferencedImageId.keys()
+  );
+
+  if (!mergedReferencedImageIds.length) {
+    return;
+  }
+
+  let mergedImageIndex = 0;
+  const mergedImages = imageLoader.createAndCacheDerivedImages(
+    mergedReferencedImageIds,
+    {
+      getDerivedImageId: () => `${volumeId}-image-${mergedImageIndex++}`,
+      targetBuffer: { type: 'Uint8Array' },
+    }
+  );
+
+  mergedImages.forEach((mergedImage) => {
+    const sourceImageIds = imageIdsByReferencedImageId.get(
+      mergedImage.referencedImageId
+    );
+
+    if (!sourceImageIds?.length) {
+      return;
+    }
+
+    const targetVoxelManager = mergedImage.voxelManager;
+    const scalarDataLength = targetVoxelManager.getScalarDataLength();
+
+    sourceImageIds.forEach((sourceImageId) => {
+      const sourceImage = cache.getImage(sourceImageId);
+      const sourceVoxelManager = sourceImage?.voxelManager;
+
+      if (!sourceVoxelManager) {
+        return;
+      }
+
+      const sourceScalarDataLength = sourceVoxelManager.getScalarDataLength();
+      const length = Math.min(scalarDataLength, sourceScalarDataLength);
+
+      for (let index = 0; index < length; index++) {
+        const value = Number(sourceVoxelManager.getAtIndex(index));
+
+        if (value !== 0) {
+          targetVoxelManager.setAtIndex(index, value);
+        }
+      }
+    });
+  });
+
+  layer.geometryVolumeId = volumeId;
+
+  return volumeLoader.createAndCacheVolumeFromImagesSync(
+    volumeId,
+    mergedImages.map((image) => image.imageId)
+  );
+}
+
+function hasDuplicateReferencedImageIds(layer: LabelmapLayer): boolean {
+  const referencedImageIds = layer.referencedImageIds;
+
+  if (!referencedImageIds?.length) {
+    return false;
+  }
+
+  return new Set(referencedImageIds).size < referencedImageIds.length;
 }
 
 function getLabelmapIds(segmentation: Segmentation): string[] {

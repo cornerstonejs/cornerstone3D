@@ -145,10 +145,22 @@ class LabelmapImageReferenceResolver {
     getLabelmaps(segmentation).forEach((layer) => {
       const referencedImageIds =
         layer.referencedImageIds ?? viewportImageIds ?? [];
-      const referencedIndex = referencedImageIds.indexOf(referenceImageId);
+      const referencedIndices = referencedImageIds.reduce<number[]>(
+        (indices, candidateImageId, index) => {
+          if (candidateImageId === referenceImageId) {
+            indices.push(index);
+          }
+          return indices;
+        },
+        []
+      );
 
-      if (referencedIndex !== -1 && layer.imageIds?.[referencedIndex]) {
-        labelmapImageIds.push(layer.imageIds[referencedIndex]);
+      if (referencedIndices.length) {
+        referencedIndices.forEach((referencedIndex) => {
+          if (layer.imageIds?.[referencedIndex]) {
+            labelmapImageIds.push(layer.imageIds[referencedIndex]);
+          }
+        });
         return;
       }
 

@@ -149,7 +149,7 @@ export default {
         Math.floor((bottom[0] + top[0]) / 2),
         Math.floor((bottom[1] + top[1]) / 2),
       ] as Types.Point2;
-      const radius = Math.abs(bottom[1] - Math.floor((bottom[1] + top[1]) / 2));
+      const radius = Math.round(Math.abs(bottom[1] - center[1]));
 
       circleGeometries.push({ center, radius });
     }
