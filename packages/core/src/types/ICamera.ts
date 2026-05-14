@@ -35,6 +35,8 @@ interface ICamera {
   clippingRange?: Point2;
   /** Aspect Ratio */
   aspectRatio?: Point2;
+  /** Anamorphic Stretch */
+  isFitViewportAfterStretch?: boolean;
 }
 
 interface ResetCameraOptions {

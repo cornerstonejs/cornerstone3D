@@ -1041,6 +1041,60 @@ class StackViewport extends Viewport {
     };
   }
 
+  /**
+   * set the aspect ratio on Viewport
+   * @param aspectRatio - aspect ratio to set to Viewport
+   * @param isFitViewportAfterStretch - change aspect ratio in anamorphic
+   */
+  private setAspectRatioForViewport(
+    aspectRatio: Point2,
+    isFitViewportAfterStretch: boolean = true
+  ): void {
+    const { viewport, image } = this._cpuFallbackEnabledElement;
+
+    if (!isFitViewportAfterStretch) {
+      viewport.aspectRatio = aspectRatio;
+      return;
+    }
+
+    const { clientWidth, clientHeight } = this.element;
+    const { rowPixelSpacing, columnPixelSpacing, width, height } = image;
+
+    const getRatioValue = ([x, y]: Point2) => x / y;
+    const oldRatioValue = getRatioValue(viewport.aspectRatio || [1, 1]);
+    const newRatioValue = getRatioValue(aspectRatio);
+
+    const canvasRatio = clientWidth / clientHeight;
+    const baseHeight = clientHeight * rowPixelSpacing * 0.5;
+
+    const calculateFitParallelScale = (rVal: number): number => {
+      const effectiveWidth = width * columnPixelSpacing * rVal;
+      const effectiveHeight = height * rowPixelSpacing;
+
+      // Determine if fitting the image is constrained by the canvas width or height
+      if (effectiveWidth / effectiveHeight > canvasRatio) {
+        return baseHeight / (clientWidth / effectiveWidth);
+      }
+
+      const fitPScale = effectiveHeight * 0.5;
+      // Adjust scale for narrow aspect ratios to ensure the image remains fully visible
+      return rVal < 1 ? fitPScale / rVal : fitPScale;
+    };
+
+    // Calculate the scaling multiplier needed to keep the zoom relative after the ratio change
+    const ratioFactor =
+      calculateFitParallelScale(newRatioValue) /
+      calculateFitParallelScale(oldRatioValue);
+
+    viewport.aspectRatio = aspectRatio;
+
+    if (viewport.parallelScale) {
+      viewport.parallelScale *= ratioFactor;
+      // Keep the CPU scale property in sync with the updated viewport geometry
+      viewport.scale = baseHeight / viewport.parallelScale;
+    }
+  }
+
   private setCameraCPU(cameraInterface: ICamera): void {
     const { viewport, image } = this._cpuFallbackEnabledElement;
     const previousCamera = this.getCameraCPU();
@@ -1052,6 +1106,7 @@ class StackViewport extends Viewport {
       flipHorizontal,
       flipVertical,
       aspectRatio,
+      isFitViewportAfterStretch,
     } = cameraInterface;
 
     const { clientHeight } = this.element;
@@ -1107,7 +1162,7 @@ class StackViewport extends Viewport {
     }
 
     if (aspectRatio) {
-      viewport.aspectRatio = aspectRatio;
+      this.setAspectRatioForViewport(aspectRatio, isFitViewportAfterStretch);
     }
 
     if (flipHorizontal !== undefined || flipVertical !== undefined) {
@@ -1162,19 +1217,21 @@ class StackViewport extends Viewport {
     return aspectRatio ?? this.options?.aspectRatio ?? [1, 1];
   }
 
-  public setAspectRatioCPU(value: Point2, storeAsInitialCamera = false): void {
+  public setAspectRatioCPU(
+    value: Point2,
+    isFitViewportAfterStretch = true,
+    storeAsInitialCamera = false
+  ): void {
     const camera = this.getCameraCPU();
     if (storeAsInitialCamera) {
       this.options.aspectRatio = value;
     }
 
-    this.setCamera(
-      {
-        ...camera,
-        aspectRatio: value,
-      },
-      storeAsInitialCamera
-    );
+    this.setCameraCPU({
+      ...camera,
+      aspectRatio: value,
+      isFitViewportAfterStretch,
+    });
   }
 
   private setFlipCPU({ flipHorizontal, flipVertical }: FlipDirection): void {

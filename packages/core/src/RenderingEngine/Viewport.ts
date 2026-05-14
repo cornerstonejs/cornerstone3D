@@ -1432,7 +1432,11 @@ class Viewport {
    * @param storeAsInitialCamera - Whether to store the updated camera state as the initial camera.
    *                               Defaults to `false`.
    */
-  public setAspectRatio(value: Point2, storeAsInitialCamera = false): void {
+  public setAspectRatio(
+    value: Point2,
+    isFitViewportAfterStretch = true,
+    storeAsInitialCamera = false
+  ): void {
     const camera = this.getCamera();
     if (storeAsInitialCamera) {
       this.options.aspectRatio = value;
@@ -1442,6 +1446,7 @@ class Viewport {
       {
         ...camera,
         aspectRatio: value,
+        isFitViewportAfterStretch,
       },
       storeAsInitialCamera
     );
@@ -1563,6 +1568,62 @@ class Viewport {
   }
 
   /**
+   * set the aspect ratio on VTK Camera
+   * @param aspectRatio - aspect ratio to set to VTKCamera
+   * @param isFitViewportAfterStretch - change aspect ratio in anamorphic
+   */
+  private setAspectRatioForVTKCamera(
+    aspectRatio: Point2,
+    isFitViewportAfterStretch: boolean = true
+  ): void {
+    const vtkCamera = this.getVtkActiveCamera() as extendedVtkCamera;
+
+    if (!isFitViewportAfterStretch) {
+      vtkCamera.setAspectRatio(aspectRatio);
+      return;
+    }
+
+    const getRatioValue = ([x, y]: Point2) => x / y;
+    const oldRatioValue = getRatioValue(
+      (vtkCamera.getAspectRatio() as Point2) || [1, 1]
+    );
+    const newRatioValue = getRatioValue(aspectRatio);
+
+    vtkCamera.setAspectRatio(aspectRatio);
+
+    const imageData = this.getDefaultImageData();
+    if (!imageData) return;
+
+    // Calculates the parallel scale required to fit the volume within the canvas for a given aspect ratio.
+    const getFitScale = (rVal: number): number => {
+      const { widthWorld, heightWorld } = getCubeSizeInView(
+        imageData,
+        vtkCamera.getViewPlaneNormal() as Point3,
+        vtkCamera.getViewUp() as Point3
+      );
+
+      const canvasAspectRatio = this.sWidth / this.sHeight;
+      const effectiveWidth = widthWorld * rVal;
+      const effectiveImageRatio = effectiveWidth / heightWorld;
+
+      // Determine scale based on whether the width or height is the limiting constraint (Letterboxing)
+      let fitScale =
+        effectiveImageRatio > canvasAspectRatio
+          ? effectiveWidth / (2 * canvasAspectRatio)
+          : heightWorld / 2;
+
+      // Adjust scale to prevent vertical compression when the aspect ratio favors the Y-axis
+      if (rVal < 1) fitScale /= rVal;
+
+      return fitScale;
+    };
+
+    // Apply the relative difference in fit scales to the current camera zoom (parallelScale)
+    const ratioFactor = getFitScale(newRatioValue) / getFitScale(oldRatioValue);
+    vtkCamera.setParallelScale(vtkCamera.getParallelScale() * ratioFactor);
+  }
+
+  /**
    * Set the camera parameters
    * @param cameraInterface - ICamera
    * @param storeAsInitialCamera - to set the provided camera as the initial one,
@@ -1586,6 +1647,7 @@ class Viewport {
       flipVertical,
       clippingRange,
       aspectRatio,
+      isFitViewportAfterStretch,
     } = cameraInterface;
 
     // Note: Flip camera should be two separate calls since
@@ -1648,7 +1710,7 @@ class Viewport {
     }
 
     if (aspectRatio) {
-      vtkCamera.setAspectRatio(aspectRatio);
+      this.setAspectRatioForVTKCamera(aspectRatio, isFitViewportAfterStretch);
     }
 
     // update clipping range only if focal point changed of a new actor is added

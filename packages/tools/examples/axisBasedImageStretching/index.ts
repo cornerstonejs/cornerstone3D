@@ -22,6 +22,7 @@ import {
   annotationTools,
   contourTools,
   labelmapTools,
+  addCheckboxToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -236,6 +237,15 @@ addSliderToToolbar({
   },
 });
 
+let isFitViewportAfterStretch = true;
+addCheckboxToToolbar({
+  title: 'Fit to Viewport after stretch',
+  checked: isFitViewportAfterStretch,
+  onChange: (checked: boolean) => {
+    isFitViewportAfterStretch = checked;
+  },
+});
+
 let stretchAxis = ['Stretch X', 'Stretch Y'];
 let selectedAxis = stretchAxis[0];
 
@@ -260,7 +270,7 @@ const setStretch = (value) => {
     if (!vp) {
       return;
     }
-    vp.setAspectRatio([sx, sy]);
+    vp.setAspectRatio([sx, sy], isFitViewportAfterStretch);
     vp.render();
   });
 };
@@ -283,7 +293,7 @@ addDropdownToToolbar({
       if (!vp) {
         return;
       }
-      vp.setAspectRatio(aspect);
+      vp.setAspectRatio(aspect, isFitViewportAfterStretch);
       vp.render();
     });
   },
@@ -296,7 +306,6 @@ addDropdownToToolbar({
   },
   onSelectedValueChange: (nameAsStringOrNumber) => {
     const name = String(nameAsStringOrNumber);
-    (document.getElementById('stretchSlider') as HTMLInputElement).value = '10';
     setStretch(1);
     selectedAxis = name;
   },
@@ -305,11 +314,12 @@ addDropdownToToolbar({
 addSliderToToolbar({
   id: 'stretchSlider',
   title: 'Stretch Value',
-  range: [1, 100],
-  defaultValue: 10,
+  range: [1, 10],
+  defaultValue: 1,
   onSelectedValueChange: (valueAsStringOrNumber) => {
     const value = Number(valueAsStringOrNumber);
-    setStretch(value / 10);
+    console.log(value);
+    setStretch(value);
   },
 });
 
