@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "@cornerstonejs/nifti-volume-loader",
   "version": "5.0.0-beta.2",
   "description": "Nifti Image Loader for Cornerstone3D",
