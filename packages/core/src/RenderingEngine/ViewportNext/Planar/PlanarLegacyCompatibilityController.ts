@@ -66,6 +66,7 @@ export type PlanarLegacyCompatibilityHost = {
 class PlanarLegacyCompatibilityController {
   private readonly managedDataIds = new Set<string>();
   private readonly volumeDataIds = new Map<string, string>();
+  private stackSetRequestId = 0;
   private readonly properties = new Map<
     string,
     PlanarLegacyViewportProperties
@@ -116,29 +117,38 @@ class PlanarLegacyCompatibilityController {
       throw new Error('[PlanarViewport] Cannot set an empty stack');
     }
 
+    const requestId = ++this.stackSetRequestId;
     const dataId = this.getLegacyStackDataId();
     const clampedImageIdIndex = Math.min(
       Math.max(0, currentImageIdIndex),
       imageIds.length - 1
     );
+    let registered = false;
 
-    this.registerDataSet(dataId, {
-      imageIds,
-      initialImageIdIndex: clampedImageIdIndex,
-    });
     try {
-      this.host.removeBindingsExcept(new Set([dataId]));
+      this.host.removeBindingsExcept(new Set());
+      this.registerDataSet(dataId, {
+        imageIds,
+        initialImageIdIndex: clampedImageIdIndex,
+      });
+      registered = true;
 
       await this.host.setData(dataId, {
         orientation: this.host.getRequestedOrientation(),
       });
+
+      if (requestId !== this.stackSetRequestId) {
+        return imageIds[clampedImageIdIndex];
+      }
 
       const resolvedImageId =
         await this.host.setImageIdIndex(clampedImageIdIndex);
 
       return this.host.getCurrentImageId() || resolvedImageId;
     } catch (error) {
-      this.removeData(dataId);
+      if (registered && requestId === this.stackSetRequestId) {
+        this.removeData(dataId);
+      }
       throw error;
     }
   }

@@ -1,8 +1,11 @@
 import { ActorRenderMode } from '../src/types';
+import { OrientationAxis } from '../src/enums';
 import {
   PlanarMountedData,
   PlanarViewReferenceController,
 } from '../src/RenderingEngine/ViewportNext/Planar';
+import PlanarLegacyCompatibilityController from '../src/RenderingEngine/ViewportNext/Planar/PlanarLegacyCompatibilityController';
+import viewportNextDataSetMetadataProvider from '../src/utilities/viewportNextDataSetMetadataProvider';
 
 function createBinding({
   actorUID,
@@ -46,6 +49,134 @@ function createMountedData(bindings) {
     removeData: (dataId) => bindings.delete(dataId),
   });
 }
+
+function createLegacyStackHarness({ deferSetData = false } = {}) {
+  const element = document.createElement('div');
+  const viewportId = 'CT_STACK';
+  const dataId = `__planar_v2__:${viewportId}:stack`;
+  const pendingSetData = [];
+  let controller;
+  let hasBinding = false;
+  let currentImageIds = [];
+
+  function finishSetData(requestedDataId) {
+    const registered = viewportNextDataSetMetadataProvider.get(
+      viewportNextDataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
+      requestedDataId
+    );
+
+    if (!registered) {
+      throw new Error(`Missing metadata for ${requestedDataId}`);
+    }
+
+    currentImageIds = registered.imageIds;
+    hasBinding = true;
+  }
+
+  const host = {
+    getElement: () => element,
+    getViewportId: () => viewportId,
+    getRequestedOrientation: () => OrientationAxis.ACQUISITION,
+    prepareVolumeCompatibilityCamera: jest.fn(),
+    setData: jest.fn((requestedDataId) => {
+      if (hasBinding) {
+        hasBinding = false;
+        controller.removeData(requestedDataId);
+      }
+
+      if (!deferSetData) {
+        finishSetData(requestedDataId);
+        return Promise.resolve();
+      }
+
+      return new Promise((resolve) => {
+        pendingSetData.push(() => {
+          finishSetData(requestedDataId);
+          resolve();
+        });
+      });
+    }),
+    setDataList: jest.fn(),
+    setImageIdIndex: jest.fn(async (imageIdIndex) => {
+      return currentImageIds[imageIdIndex];
+    }),
+    getCurrentImageId: () => currentImageIds[0],
+    render: jest.fn(),
+    removeBindingsExcept: jest.fn((keepDataIds) => {
+      if (hasBinding && !keepDataIds.has(dataId)) {
+        hasBinding = false;
+        controller.removeData(dataId);
+      }
+    }),
+    setCameraOrientation: jest.fn(),
+    setDataPresentationState: jest.fn(),
+    setDataPresentation: jest.fn(),
+    getDataPresentation: jest.fn(),
+    getCameraOrientation: jest.fn(),
+    getCurrentPlanarRendering: jest.fn(),
+    getActiveDataId: () => (hasBinding ? dataId : undefined),
+    getFirstBoundDataId: () => (hasBinding ? dataId : undefined),
+    findDataIdByVolumeId: jest.fn(),
+    getBindingActor: jest.fn(),
+    getDefaultVOIRange: jest.fn(),
+    getImageCount: () => currentImageIds.length,
+    getMaxImageIdIndex: () => Math.max(0, currentImageIds.length - 1),
+  };
+
+  controller = new PlanarLegacyCompatibilityController(host);
+
+  return {
+    controller,
+    dataId,
+    getCurrentImageIds: () => currentImageIds,
+    host,
+    pendingSetData,
+  };
+}
+
+describe('Planar legacy stack compatibility', () => {
+  afterEach(() => {
+    viewportNextDataSetMetadataProvider.clear();
+  });
+
+  it('replaces the legacy stack without unregistering replacement metadata', async () => {
+    const { controller, dataId, getCurrentImageIds, host } =
+      createLegacyStackHarness();
+
+    await controller.setStack(['image:old']);
+    await expect(controller.setStack(['image:new'])).resolves.toBe('image:new');
+
+    expect(host.setData).toHaveBeenCalledTimes(2);
+    expect(getCurrentImageIds()).toEqual(['image:new']);
+    expect(
+      viewportNextDataSetMetadataProvider.get(
+        viewportNextDataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
+        dataId
+      )
+    ).toEqual({
+      imageIds: ['image:new'],
+      initialImageIdIndex: 0,
+    });
+  });
+
+  it('ignores stale stack completions from overlapping replacements', async () => {
+    const { controller, getCurrentImageIds, host, pendingSetData } =
+      createLegacyStackHarness({ deferSetData: true });
+
+    const firstSetStack = controller.setStack(['image:first']);
+    const secondSetStack = controller.setStack(['image:second']);
+
+    expect(host.setData).toHaveBeenCalledTimes(2);
+    pendingSetData.pop()();
+    await expect(secondSetStack).resolves.toBe('image:second');
+    expect(getCurrentImageIds()).toEqual(['image:second']);
+    expect(host.setImageIdIndex).toHaveBeenCalledTimes(1);
+
+    pendingSetData.pop()();
+    await expect(firstSetStack).resolves.toBe('image:first');
+    expect(host.setImageIdIndex).toHaveBeenCalledTimes(1);
+  });
+});
 
 describe('Planar mounted-data orchestration', () => {
   it('promotes one source and returns actors with source before overlays', () => {

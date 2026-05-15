@@ -446,10 +446,15 @@ abstract class ViewportNext<
   protected async addLoadedData(
     dataId: DataId,
     data: LoadedData,
-    options: DataAddOptions
-  ): Promise<void> {
+    options: DataAddOptions,
+    shouldIgnore?: () => boolean
+  ): Promise<boolean> {
     if (this.isDestroyed) {
       throw new Error('Viewport has been destroyed');
+    }
+
+    if (shouldIgnore?.()) {
+      return false;
     }
 
     const path = this.renderPathResolver.resolve<TContext>(
@@ -466,6 +471,11 @@ abstract class ViewportNext<
     }
 
     const attachment = await renderPath.addData(ctx, data, options);
+
+    if (shouldIgnore?.()) {
+      attachment.removeData();
+      return false;
+    }
 
     if (this.isDestroyed) {
       attachment.removeData();
@@ -508,6 +518,8 @@ abstract class ViewportNext<
     binding.applyViewState(this.viewState);
     this._debug.renderModes[dataId] = attachment.rendering.renderMode;
     this.render();
+
+    return true;
   }
 
   protected removeAllData(): void {

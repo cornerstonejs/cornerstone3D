@@ -4,6 +4,7 @@ import { ActorRenderMode } from '../../../types';
 import type {
   ActorEntry,
   ICamera,
+  IImage,
   IVolumeInput,
   Point2,
   Point3,
@@ -108,6 +109,18 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
     }
 
     return ids;
+  }
+
+  get csImage(): IImage | undefined {
+    return this.getCornerstoneImage();
+  }
+
+  getCornerstoneImage(): IImage | undefined {
+    const planarData = this.getCurrentBinding()?.data as
+      | { image?: IImage }
+      | undefined;
+
+    return planarData?.image;
   }
 
   getAllVolumeIds(): string[] {

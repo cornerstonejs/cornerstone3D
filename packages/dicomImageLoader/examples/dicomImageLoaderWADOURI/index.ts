@@ -67,6 +67,7 @@ const element = document.querySelector(
 
 const toolGroupId = 'myToolGroup';
 let viewport;
+let loadRequestId = 0;
 
 async function run() {
   // Init Cornerstone and related libraries
@@ -149,14 +150,23 @@ async function run() {
 async function loadAndViewImage(imageId) {
   // Set the stack on the viewport
   const start = new Date().getTime();
+  const requestId = ++loadRequestId;
+
   viewport.setStack([imageId]).then(
     () => {
+      if (requestId !== loadRequestId) {
+        return;
+      }
+
       // Set the VOI of the stack
       // viewport.setProperties({ voiRange: ctVoiRange });
       // Render the image
       viewport.render();
 
-      const image = viewport.csImage;
+      const image =
+        typeof viewport.getCornerstoneImage === 'function'
+          ? viewport.getCornerstoneImage()
+          : viewport.csImage;
       if (!image) {
         console.error('Image failed to load');
         return;
@@ -272,6 +282,10 @@ async function loadAndViewImage(imageId) {
         image.decodeTimeInMS != null ? image.decodeTimeInMS + 'ms' : '';
     },
     function (err) {
+      if (requestId !== loadRequestId) {
+        return;
+      }
+
       throw err;
     }
   );

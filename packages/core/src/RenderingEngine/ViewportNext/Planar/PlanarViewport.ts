@@ -81,7 +81,6 @@ import type {
   PlanarEffectiveRenderMode,
   PlanarPayload,
   PlanarRegisteredDataSet,
-  PlanarResolvedICamera,
   PlanarSetDataOptions,
   PlanarViewPresentation,
   PlanarViewPresentationSelector,
@@ -121,6 +120,7 @@ class PlanarViewport extends ViewportNext<
   private readonly mountedData: PlanarMountedData;
   private readonly viewReferences: PlanarViewReferenceController;
   private cpuCanvas?: HTMLCanvasElement;
+  private setDataRequestId = 0;
 
   // ── Static ───────────────────────────────────────────────────────────
 
@@ -303,6 +303,14 @@ class PlanarViewport extends ViewportNext<
     dataId: string,
     options: PlanarSetDataOptions = {}
   ): Promise<void> {
+    await this.addDataInternal(dataId, options);
+  }
+
+  private async addDataInternal(
+    dataId: string,
+    options: PlanarSetDataOptions = {},
+    shouldIgnore?: () => boolean
+  ): Promise<void> {
     const role = this.mountedData.resolveBindingRole(options);
     const resolvedOptions: PlanarSetDataOptions = {
       ...options,
@@ -311,15 +319,28 @@ class PlanarViewport extends ViewportNext<
     const { data, resolvedOrientation, selectedPath } =
       await this.loadPlanarData(dataId, resolvedOptions);
 
+    if (shouldIgnore?.()) {
+      return;
+    }
+
     if (role === 'source') {
       this.mountedData.promoteSourceDataId(dataId);
       this.applyLoadedPlanarViewState(resolvedOrientation, data, selectedPath);
     }
 
-    await this.addLoadedData(dataId, data, {
-      renderMode: selectedPath.renderMode,
-      role,
-    });
+    const added = await this.addLoadedData(
+      dataId,
+      data,
+      {
+        renderMode: selectedPath.renderMode,
+        role,
+      },
+      shouldIgnore
+    );
+
+    if (!added) {
+      return;
+    }
 
     this.setDefaultDataPresentation(dataId, {
       visible: true,
@@ -333,11 +354,18 @@ class PlanarViewport extends ViewportNext<
     dataId: string,
     options: PlanarSetDataOptions = {}
   ): Promise<void> {
+    const requestId = ++this.setDataRequestId;
+    const isStale = () => requestId !== this.setDataRequestId;
+
     this.removeAllData();
-    await this.addData(dataId, {
-      ...options,
-      role: 'source',
-    });
+    await this.addDataInternal(
+      dataId,
+      {
+        ...options,
+        role: 'source',
+      },
+      isStale
+    );
   }
 
   /**
