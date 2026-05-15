@@ -5,9 +5,6 @@ jest.mock('../src/metaData', () => ({
 
 import { OrientationAxis, VOILUTFunctionType } from '../src/enums';
 import { ActorRenderMode } from '../src/types';
-import calculateTransform from '../src/RenderingEngine/helpers/cpuFallback/rendering/calculateTransform';
-import canvasToPixel from '../src/RenderingEngine/helpers/cpuFallback/rendering/canvasToPixel';
-import getDefaultViewport from '../src/RenderingEngine/helpers/cpuFallback/rendering/getDefaultViewport';
 import * as metaData from '../src/metaData';
 import {
   PlanarStackResolvedView,
@@ -15,12 +12,7 @@ import {
   resolvePlanarRenderPathProjection,
   resolvePlanarStackImageIdIndex,
 } from '../src/RenderingEngine/ViewportNext/Planar';
-import {
-  resolvePlanarCpuImageDisplayedArea,
-  resolvePlanarCpuViewportScale,
-} from '../src/RenderingEngine/ViewportNext/Planar/planarCpuViewportMath';
-import { resolvePlanarICamera } from '../src/RenderingEngine/ViewportNext/Planar/planarRenderCamera';
-import { createPlanarImageSliceBasis } from '../src/RenderingEngine/ViewportNext/Planar/planarSliceBasis';
+import { resolvePlanarCpuImageDisplayedArea } from '../src/RenderingEngine/ViewportNext/Planar/planarCpuViewportMath';
 
 function createImage(imageId = 'image-1') {
   return {
@@ -434,7 +426,7 @@ describe('Planar resolved cameras', () => {
     ).toBe(2);
   });
 
-  it('uses pixel-center lattice scaling for cpu stack image transforms', () => {
+  it('uses vtk half-voxel physical domain for stack image transforms', () => {
     const image = {
       ...createImage(),
       columns: 512,
@@ -447,41 +439,44 @@ describe('Planar resolved cameras', () => {
     canvas.width = 500;
     canvas.height = 500;
 
-    const activeSourceICamera = resolvePlanarICamera({
-      sliceBasis: createPlanarImageSliceBasis({
-        canvasHeight: canvas.height,
-        canvasWidth: canvas.width,
-        image,
-      }),
+    const state = {
       canvasHeight: canvas.height,
       canvasWidth: canvas.width,
-    });
-    const enabledElement = {
-      canvas,
+      currentImageIdIndex: 0,
+      frameOfReferenceUID: 'image-for',
       image,
-      renderingTools: {},
-      viewport: getDefaultViewport(canvas, image),
+      maxImageIdIndex: 0,
     };
-
-    enabledElement.viewport.displayedArea =
-      resolvePlanarCpuImageDisplayedArea(image);
-    enabledElement.viewport.scale = resolvePlanarCpuViewportScale({
-      canvas,
-      parallelScale: activeSourceICamera.parallelScale,
-      columnPixelSpacing: image.columnPixelSpacing,
-      rowPixelSpacing: image.rowPixelSpacing,
+    const vtkCamera = new PlanarStackResolvedView({
+      ...state,
+      usePixelGridCenter: false,
     });
-    enabledElement.transform = calculateTransform(enabledElement);
+    const cpuCamera = new PlanarStackResolvedView({
+      ...state,
+      usePixelGridCenter: true,
+    });
 
-    expect(
-      canvasToPixel(enabledElement, [0, canvas.height / 2])[0]
-    ).toBeCloseTo(0.5, 5);
-    expect(
-      canvasToPixel(enabledElement, [canvas.width, canvas.height / 2])[0]
-    ).toBeCloseTo(511.5, 5);
+    for (const camera of [vtkCamera, cpuCamera]) {
+      expectPoint3Close(
+        camera.canvasToWorld([0, canvas.height / 2]),
+        [-0.5, 255.5, 0]
+      );
+      expectPoint3Close(
+        camera.canvasToWorld([canvas.width, canvas.height / 2]),
+        [511.5, 255.5, 0]
+      );
+      expectPoint2Close(camera.worldToCanvas([-0.5, 255.5, 0]), [
+        0,
+        canvas.height / 2,
+      ]);
+      expectPoint2Close(camera.worldToCanvas([511.5, 255.5, 0]), [
+        canvas.width,
+        canvas.height / 2,
+      ]);
+    }
   });
 
-  it('uses half-pixel crop bounds for cpu stack image rasterization', () => {
+  it('uses source pixel edge bounds for cpu stack image rasterization', () => {
     const image = {
       ...createImage(),
       columns: 512,
@@ -494,12 +489,12 @@ describe('Planar resolved cameras', () => {
 
     expect(resolvePlanarCpuImageDisplayedArea(image)).toEqual({
       tlhc: {
-        x: 1.5,
-        y: 1.5,
+        x: 1,
+        y: 1,
       },
       brhc: {
-        x: 512.5,
-        y: 512.5,
+        x: 512,
+        y: 512,
       },
       rowPixelSpacing: 0.976562,
       columnPixelSpacing: 0.976562,

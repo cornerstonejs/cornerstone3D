@@ -7,8 +7,6 @@ import {
 import { ActorRenderMode } from '../../../types';
 import type {
   ActorEntry,
-  CPUIImageData,
-  IBaseVolumeViewport,
   ICamera,
   IImage,
   IStackInput,
@@ -62,10 +60,6 @@ import {
   normalizePlanarScale,
   type PlanarScaleInput,
 } from './planarCameraScale';
-import {
-  canvasToWorldPlanarCpuImage,
-  worldToCanvasPlanarCpuImage,
-} from './planarCpuImageTransforms';
 import type { DerivedPlanarPresentation } from './planarRenderCamera';
 import {
   getPlanarViewStateCanvasDimensions,
@@ -967,24 +961,9 @@ class PlanarViewport extends ViewportNext<
   // ====================================================================
 
   /**
-   * Converts canvas-space to world-space. Uses the CPU image transform
-   * when in CPU render mode, otherwise delegates to the resolved view.
+   * Converts canvas-space to world-space through the resolved semantic view.
    */
   canvasToWorld(canvasPos: Point2): Point3 {
-    const rendering = this.getCurrentPlanarRendering();
-
-    if (rendering?.renderMode === ActorRenderMode.CPU_IMAGE) {
-      const imageData = this.getImageData() as CPUIImageData | undefined;
-
-      if (imageData) {
-        return canvasToWorldPlanarCpuImage(
-          rendering.enabledElement,
-          imageData,
-          canvasPos
-        );
-      }
-    }
-
     const resolvedView = this.getResolvedView();
 
     if (!resolvedView) {
@@ -995,24 +974,9 @@ class PlanarViewport extends ViewportNext<
   }
 
   /**
-   * Converts world-space to canvas-space. Uses the CPU image transform
-   * when in CPU render mode, otherwise delegates to the resolved view.
+   * Converts world-space to canvas-space through the resolved semantic view.
    */
   worldToCanvas(worldPos: Point3): Point2 {
-    const rendering = this.getCurrentPlanarRendering();
-
-    if (rendering?.renderMode === ActorRenderMode.CPU_IMAGE) {
-      const imageData = this.getImageData() as CPUIImageData | undefined;
-
-      if (imageData) {
-        return worldToCanvasPlanarCpuImage(
-          rendering.enabledElement,
-          imageData,
-          worldPos
-        );
-      }
-    }
-
     const resolvedView = this.getResolvedView();
 
     if (!resolvedView) {
@@ -1602,7 +1566,7 @@ class PlanarViewport extends ViewportNext<
         getCurrentImageId: () => this.getCurrentImageId(),
         getImageIds: () => this.getImageIds(),
         type: ViewportType.ORTHOGRAPHIC,
-      } as unknown as IBaseVolumeViewport,
+      },
       {
         useViewportNormal: true,
         ...(baseOrientation ? { orientation: baseOrientation } : {}),

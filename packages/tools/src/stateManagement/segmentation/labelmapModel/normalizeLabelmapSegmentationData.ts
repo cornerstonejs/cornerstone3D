@@ -14,6 +14,7 @@ type LabelmapSegmentationWithState = LabelmapSegmentationData & {
   segmentBindings: {
     [segmentIndex: number]: SegmentLabelmapBindingState;
   };
+  primaryLabelmapId: string;
 };
 
 function getSegmentOrder(segmentation: Segmentation): number[] {
@@ -52,6 +53,31 @@ function createPrimaryLabelmapLayer(
   };
 }
 
+function resolvePrimaryLabelmapId(
+  segmentation: Segmentation,
+  labelmapData: LabelmapSegmentationData
+): string {
+  const storedLabelmapId = labelmapData.primaryLabelmapId;
+
+  if (storedLabelmapId && labelmapData.labelmaps?.[storedLabelmapId]) {
+    return storedLabelmapId;
+  }
+
+  const fallbackLabelmapId =
+    Object.keys(labelmapData.labelmaps ?? {})[0] ??
+    getPrimaryLabelmapId(segmentation.segmentationId);
+
+  labelmapData.primaryLabelmapId = fallbackLabelmapId;
+
+  return fallbackLabelmapId;
+}
+
+/**
+ * Normalizes sparse or legacy labelmap representation data into the current
+ * internal state shape. This mutates the segmentation so later render paths and
+ * state helpers can use stable labelmap and segment binding maps without
+ * rebuilding the default layer identity on every call.
+ */
 function ensureLabelmapState(
   segmentation: Segmentation
 ): LabelmapSegmentationWithState | undefined {
@@ -61,44 +87,27 @@ function ensureLabelmapState(
     return;
   }
 
-  if (
-    !labelmapData.labelmaps ||
-    Object.keys(labelmapData.labelmaps).length === 0
-  ) {
-    const labelmapId = getPrimaryLabelmapId(segmentation.segmentationId);
-    labelmapData.labelmaps = {
-      [labelmapId]: createPrimaryLabelmapLayer(
-        segmentation,
-        labelmapData,
-        labelmapId
-      ),
-    };
-  }
+  labelmapData.labelmaps ||= {};
 
-  if (!labelmapData.segmentBindings) {
-    labelmapData.segmentBindings = {};
-  }
-
-  if (!labelmapData.sourceRepresentationName) {
-    labelmapData.sourceRepresentationName = SOURCE_REPRESENTATION_NAME;
-  }
-
-  const labelmapIds = Object.keys(labelmapData.labelmaps);
-  const fallbackLabelmapId =
-    labelmapIds[0] ?? getPrimaryLabelmapId(segmentation.segmentationId);
-  labelmapData.labelmaps[fallbackLabelmapId] ??= createPrimaryLabelmapLayer(
+  const primaryLabelmapId = resolvePrimaryLabelmapId(
     segmentation,
-    labelmapData,
-    fallbackLabelmapId
+    labelmapData
   );
 
+  labelmapData.labelmaps[primaryLabelmapId] ||= createPrimaryLabelmapLayer(
+    segmentation,
+    labelmapData,
+    primaryLabelmapId
+  );
+
+  labelmapData.segmentBindings ||= {};
+  labelmapData.sourceRepresentationName ||= SOURCE_REPRESENTATION_NAME;
+
   getSegmentOrder(segmentation).forEach((segmentIndex) => {
-    if (!labelmapData.segmentBindings[segmentIndex]) {
-      labelmapData.segmentBindings[segmentIndex] = {
-        labelmapId: fallbackLabelmapId,
-        labelValue: segmentIndex,
-      };
-    }
+    labelmapData.segmentBindings[segmentIndex] ||= {
+      labelmapId: primaryLabelmapId,
+      labelValue: segmentIndex,
+    };
   });
 
   Object.values(labelmapData.labelmaps).forEach((layer) => {

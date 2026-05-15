@@ -18,6 +18,13 @@ import getDefaultViewport from '../../helpers/cpuFallback/rendering/getDefaultVi
 import getSpacingInNormalDirection from '../../../utilities/getSpacingInNormalDirection';
 import type { PlanarDataPresentation } from './PlanarViewportTypes';
 import { getPlanarScaleRatio } from './planarCameraScale';
+import PlanarCPUScalarViewportSampler from './PlanarCPUScalarViewportSampler';
+import {
+  getIndexMajorAxis,
+  getNearestVoxelIndex,
+  getSpatiallyClampedContinuousIndex,
+  SOURCE_SLICE_INDEX_TOLERANCE,
+} from './planarCPUVolumeSamplingUtils';
 
 type SliceArray = PixelDataTypedArray;
 type ColorSample = number[];
@@ -38,6 +45,8 @@ export type PlanarCPUSampledSliceState = {
   scaleRatio: number;
   interpolationType: InterpolationType;
 };
+
+export type PlanarCPUVolumeResampleDecision = 'resample' | 'reuse' | 'defer';
 
 type OrthogonalSliceSampleResult = {
   scalarData: SliceArray;
@@ -65,45 +74,6 @@ function subtractPoints(a: Point3, b: Point3): Point3 {
 
 function arePointsClose(a: Point3, b: Point3, tolerance = 1e-4): boolean {
   return vec3.distance(a as unknown as vec3, b as unknown as vec3) <= tolerance;
-}
-
-function getIndexMajorAxis(
-  volume: IImageVolume,
-  worldVector: Point3,
-  majorThreshold = 0.995
-): { axis: 0 | 1 | 2; sign: 1 | -1 } | undefined {
-  const row = volume.direction.slice(0, 3) as Point3;
-  const col = volume.direction.slice(3, 6) as Point3;
-  const scan = volume.direction.slice(6, 9) as Point3;
-  const components = [
-    dot(worldVector, row),
-    dot(worldVector, col),
-    dot(worldVector, scan),
-  ] as [number, number, number];
-  const absComponents = components.map((value) => Math.abs(value)) as [
-    number,
-    number,
-    number,
-  ];
-  const maxValue = Math.max(...absComponents);
-  const axis = absComponents.indexOf(maxValue) as 0 | 1 | 2;
-
-  if (maxValue < majorThreshold) {
-    return;
-  }
-
-  const secondary = absComponents
-    .filter((_value, index) => index !== axis)
-    .some((value) => value > 1 - majorThreshold);
-
-  if (secondary) {
-    return;
-  }
-
-  return {
-    axis,
-    sign: components[axis] >= 0 ? 1 : -1,
-  };
 }
 
 function indexToWorld(volume: IImageVolume, ijk: Point3): Point3 {
@@ -156,6 +126,7 @@ function worldVectorToContinuousIndexDelta(
 
 export default class PlanarCPUVolumeSampler {
   private sampleSequence = 0;
+  private scalarViewportSampler = new PlanarCPUScalarViewportSampler();
   private scalarRangeCache = new WeakMap<
     NonNullable<IImageVolume['voxelManager']>,
     { min: number; max: number }
@@ -165,6 +136,7 @@ export default class PlanarCPUVolumeSampler {
     voxelManager: NonNullable<IImageVolume['voxelManager']>
   ): void {
     this.scalarRangeCache.delete(voxelManager);
+    this.scalarViewportSampler.clearCachedVoxelManager(voxelManager);
   }
 
   private getScalarDataRange(
@@ -172,11 +144,9 @@ export default class PlanarCPUVolumeSampler {
   ): { min: number; max: number } {
     let scalarData: ArrayLike<number>;
 
-    if (voxelManager.getCompleteScalarDataArray) {
-      scalarData = voxelManager.getCompleteScalarDataArray();
-    } else {
-      scalarData = voxelManager.getScalarData();
-    }
+    scalarData =
+      this.scalarViewportSampler.getCompleteScalarDataArray(voxelManager) ??
+      voxelManager.getScalarData();
 
     let min = Infinity;
     let max = -Infinity;
@@ -381,11 +351,30 @@ export default class PlanarCPUVolumeSampler {
     height: number;
     camera: ICamera<unknown> & { presentationScale?: Point2 };
     dataPresentation?: PlanarDataPresentation;
+    deferViewportResample?: boolean;
   }): boolean {
-    const { sampledSliceState, width, height, camera, dataPresentation } = args;
+    return this.getResampleDecision(args) !== 'reuse';
+  }
+
+  public getResampleDecision(args: {
+    sampledSliceState?: PlanarCPUSampledSliceState;
+    width: number;
+    height: number;
+    camera: ICamera<unknown> & { presentationScale?: Point2 };
+    dataPresentation?: PlanarDataPresentation;
+    deferViewportResample?: boolean;
+  }): PlanarCPUVolumeResampleDecision {
+    const {
+      sampledSliceState,
+      width,
+      height,
+      camera,
+      dataPresentation,
+      deferViewportResample = false,
+    } = args;
 
     if (!sampledSliceState) {
-      return true;
+      return 'resample';
     }
 
     const { right, up, normal } = this.getCameraBasis(camera);
@@ -409,27 +398,35 @@ export default class PlanarCPUVolumeSampler {
       !arePointsClose(sampledSliceState.normal, normal);
     const sliceChanged =
       deltaInNormal > sampledSliceState.spacingInNormalDirection * 0.5;
-
-    if (samplingMode === 'source-slice') {
-      return (
-        sampledSliceState.interpolationType !== interpolationType ||
-        orientationChanged ||
-        sliceChanged
-      );
-    }
-
-    return (
+    const requiresImmediateResample =
       sampledSliceState.canvasWidth !== width ||
       sampledSliceState.canvasHeight !== height ||
       sampledSliceState.interpolationType !== interpolationType ||
       orientationChanged ||
-      sliceChanged ||
+      sliceChanged;
+
+    if (requiresImmediateResample) {
+      return 'resample';
+    }
+
+    if (samplingMode === 'source-slice') {
+      return 'reuse';
+    }
+
+    const viewportSampleNeedsRefresh =
       Math.abs(sampledSliceState.parallelScale - parallelScale) >
         parallelScale * 1e-4 ||
       Math.abs(sampledSliceState.scaleRatio - scaleRatio) > 1e-4 ||
+      shiftXPixels > 1e-3 ||
+      shiftYPixels > 1e-3 ||
       shiftXPixels > sampledSliceState.image.width * 0.35 ||
-      shiftYPixels > sampledSliceState.image.height * 0.35
-    );
+      shiftYPixels > sampledSliceState.image.height * 0.35;
+
+    if (!viewportSampleNeedsRefresh) {
+      return 'reuse';
+    }
+
+    return deferViewportResample ? 'defer' : 'resample';
   }
 
   public sampleSliceImage(args: {
@@ -438,26 +435,33 @@ export default class PlanarCPUVolumeSampler {
     height: number;
     camera: ICamera<unknown> & { presentationScale?: Point2 };
     dataPresentation?: PlanarDataPresentation;
+    useViewportSamplingForLinear?: boolean;
   }): PlanarCPUSampledSliceState {
-    const { volume, width, height, camera, dataPresentation } = args;
+    const {
+      volume,
+      width,
+      height,
+      camera,
+      dataPresentation,
+      useViewportSamplingForLinear = true,
+    } = args;
     const { right, up, normal } = this.getCameraBasis(camera);
     const numberOfComponents = this.getVolumeNumberOfComponents(volume);
     const preserveFloatScalarSamples =
       numberOfComponents === 1 && this.shouldPreserveFloatScalarSamples(volume);
     const interpolationType =
       dataPresentation?.interpolationType ?? InterpolationType.LINEAR;
-    // PT linear keeps viewport scalar sampling so SUV interpolation happens
-    // before CPU colormapping; other orthogonal planes can reuse source rows.
     const canUseOrthogonalSourceSlice =
       interpolationType === InterpolationType.NEAREST ||
-      !preserveFloatScalarSamples;
+      !useViewportSamplingForLinear;
     const orthogonalSlice = canUseOrthogonalSourceSlice
       ? this.trySampleOrthogonalSliceFromVoxelManager(
           volume,
           camera,
           right,
           up,
-          normal
+          normal,
+          interpolationType
         )
       : undefined;
     const fallbackRange = this.getFallbackStoredRange(volume);
@@ -551,42 +555,66 @@ export default class PlanarCPUVolumeSampler {
       centerIndex[1] + startIndexDelta[1],
       centerIndex[2] + startIndexDelta[2],
     ] as Point3;
-    const sampleIndex = [...rowStartIndex] as Point3;
     let sampledMin = Infinity;
     let sampledMax = -Infinity;
 
-    for (let y = 0; y < height; y++) {
-      sampleIndex[0] = rowStartIndex[0];
-      sampleIndex[1] = rowStartIndex[1];
-      sampleIndex[2] = rowStartIndex[2];
+    const scalarViewportSample = this.scalarViewportSampler.sampleAxisAligned({
+      volume,
+      voxelManager,
+      pixelData: sliceScalarData,
+      width,
+      height,
+      rowStartIndex,
+      xStepIndexDelta,
+      yStepIndexDelta,
+      right,
+      up,
+      normal,
+      interpolationType,
+      numberOfComponents,
+      fallbackMin: fallbackRange.min,
+      fallbackMax: fallbackRange.max,
+    });
 
-      for (let x = 0; x < width; x++) {
-        const sampledValue = this.sampleVoxelAtContinuousIndex(
-          voxelManager,
-          volume.dimensions,
-          sampleIndex,
-          numberOfComponents,
-          interpolationType
-        );
-        const valueRange = this.writeVoxelValue({
-          pixelData: sliceScalarData,
-          pixelIndex: y * width + x,
-          voxelValue: sampledValue,
-          numberOfComponents,
-          fallbackMin: fallbackRange.min,
-          fallbackMax: fallbackRange.max,
-        });
+    if (scalarViewportSample) {
+      sampledMin = scalarViewportSample.min;
+      sampledMax = scalarViewportSample.max;
+    } else {
+      const sampleIndex = [...rowStartIndex] as Point3;
 
-        sampledMin = Math.min(sampledMin, valueRange.min);
-        sampledMax = Math.max(sampledMax, valueRange.max);
-        sampleIndex[0] += xStepIndexDelta[0];
-        sampleIndex[1] += xStepIndexDelta[1];
-        sampleIndex[2] += xStepIndexDelta[2];
+      for (let y = 0; y < height; y++) {
+        sampleIndex[0] = rowStartIndex[0];
+        sampleIndex[1] = rowStartIndex[1];
+        sampleIndex[2] = rowStartIndex[2];
+
+        for (let x = 0; x < width; x++) {
+          const sampledValue = this.sampleVoxelAtContinuousIndex(
+            voxelManager,
+            volume.dimensions,
+            sampleIndex,
+            numberOfComponents,
+            interpolationType
+          );
+          const valueRange = this.writeVoxelValue({
+            pixelData: sliceScalarData,
+            pixelIndex: y * width + x,
+            voxelValue: sampledValue,
+            numberOfComponents,
+            fallbackMin: fallbackRange.min,
+            fallbackMax: fallbackRange.max,
+          });
+
+          sampledMin = Math.min(sampledMin, valueRange.min);
+          sampledMax = Math.max(sampledMax, valueRange.max);
+          sampleIndex[0] += xStepIndexDelta[0];
+          sampleIndex[1] += xStepIndexDelta[1];
+          sampleIndex[2] += xStepIndexDelta[2];
+        }
+
+        rowStartIndex[0] += yStepIndexDelta[0];
+        rowStartIndex[1] += yStepIndexDelta[1];
+        rowStartIndex[2] += yStepIndexDelta[2];
       }
-
-      rowStartIndex[0] += yStepIndexDelta[0];
-      rowStartIndex[1] += yStepIndexDelta[1];
-      rowStartIndex[2] += yStepIndexDelta[2];
     }
 
     const minPixelValue = Number.isFinite(sampledMin)
@@ -639,7 +667,8 @@ export default class PlanarCPUVolumeSampler {
     camera: ICamera<unknown>,
     right: Point3,
     up: Point3,
-    normal: Point3
+    normal: Point3,
+    interpolationType: InterpolationType
   ): OrthogonalSliceSampleResult | undefined {
     const voxelManager = volume.voxelManager;
 
@@ -671,13 +700,37 @@ export default class PlanarCPUVolumeSampler {
       volume,
       camera.focalPoint as Point3
     );
-    const normalIndex = Math.max(
-      0,
-      Math.min(
-        volume.dimensions[normalAxis.axis] - 1,
-        Math.round(continuousIndex[normalAxis.axis])
-      )
-    );
+    const continuousNormalIndex = continuousIndex[normalAxis.axis];
+    const roundedNormalIndex = Math.round(continuousNormalIndex);
+    const normalUpperBound = volume.dimensions[normalAxis.axis] - 0.5;
+
+    if (
+      continuousNormalIndex < -0.5 - SOURCE_SLICE_INDEX_TOLERANCE ||
+      continuousNormalIndex > normalUpperBound + SOURCE_SLICE_INDEX_TOLERANCE
+    ) {
+      return;
+    }
+
+    if (
+      interpolationType !== InterpolationType.NEAREST &&
+      Math.abs(continuousNormalIndex - roundedNormalIndex) >
+        SOURCE_SLICE_INDEX_TOLERANCE
+    ) {
+      return;
+    }
+
+    const normalIndex =
+      interpolationType === InterpolationType.NEAREST
+        ? Math.min(
+            volume.dimensions[normalAxis.axis] - 1,
+            Math.max(0, getNearestVoxelIndex(continuousNormalIndex))
+          )
+        : roundedNormalIndex;
+
+    if (normalIndex < 0 || normalIndex >= volume.dimensions[normalAxis.axis]) {
+      return;
+    }
+
     const referenceIndex = [
       (volume.dimensions[0] - 1) / 2,
       (volume.dimensions[1] - 1) / 2,
@@ -759,11 +812,22 @@ export default class PlanarCPUVolumeSampler {
     numberOfComponents: number,
     interpolationType: InterpolationType
   ): SampledVoxelValue {
+    const clampedIndex = getSpatiallyClampedContinuousIndex(
+      dimensions,
+      continuousIndex
+    );
+
+    if (!clampedIndex) {
+      return numberOfComponents < 2
+        ? NaN
+        : this.createDefaultColorSample(numberOfComponents);
+    }
+
     if (numberOfComponents < 2) {
       return VoxelManager.sampleAtContinuousIndex(
         voxelManager,
         dimensions,
-        continuousIndex,
+        clampedIndex,
         interpolationType
       );
     }
@@ -772,13 +836,13 @@ export default class PlanarCPUVolumeSampler {
       ? this.sampleNearestColorAtContinuousIndex(
           voxelManager,
           dimensions,
-          continuousIndex,
+          clampedIndex,
           numberOfComponents
         )
       : this.sampleLinearColorAtContinuousIndex(
           voxelManager,
           dimensions,
-          continuousIndex,
+          clampedIndex,
           numberOfComponents
         );
   }

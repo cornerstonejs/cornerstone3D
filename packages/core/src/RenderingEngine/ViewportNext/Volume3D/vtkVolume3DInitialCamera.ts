@@ -32,21 +32,17 @@ export function getInitialVolume3DCamera(
   const bounds = imageData.getBounds();
   const focalPoint = [0, 0, 0] as Point3;
   const dimensions = imageData.getDimensions();
-  const middleIJK = dimensions.map((dimension) =>
-    Math.floor(dimension / 2)
+  const middleIJK = dimensions.map(
+    (dimension) => (dimension - 1) / 2
   ) as Point3;
 
   imageData.indexToWorld(middleIJK, focalPoint);
 
-  let { widthWorld, heightWorld } = getCubeSizeInView(
+  const { widthWorld, heightWorld } = getCubeSizeInView(
     imageData,
     viewPlaneNormal,
     viewUp
   );
-
-  const spacing = imageData.getSpacing();
-  widthWorld = Math.max(spacing[0], widthWorld - spacing[0]);
-  heightWorld = Math.max(spacing[1], heightWorld - spacing[1]);
 
   const canvasWidth =
     ctx.vtk.canvas.width || ctx.viewport.element.clientWidth || 1;

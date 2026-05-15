@@ -478,7 +478,7 @@ function resolveCPUImageViewportTranslationFromFocalPoint(
     enabledElement.canvas.width / 2,
     enabledElement.canvas.height / 2,
   ]);
-  const targetPoint = worldToCPUImagePoint(image, focalPoint);
+  const targetPoint = worldToCPUImageDrawPoint(enabledElement, focalPoint);
   const shift = correctShift(
     {
       x: targetPoint[0] - referencePoint[0],
@@ -537,10 +537,22 @@ function resolveCPUImageViewportTranslation(
   };
 }
 
-function worldToCPUImagePoint(image: IImage, worldPos: Point3): Point2 {
+function worldToCPUImageDrawPoint(
+  enabledElement: CPUFallbackEnabledElement,
+  worldPos: Point3
+): Point2 {
+  const { image, viewport } = enabledElement;
+
+  if (!image) {
+    return [0, 0];
+  }
+
   const { spacing, direction, origin } = getImageDataMetadata(image);
   const rowVector = direction.slice(0, 3) as Point3;
   const columnVector = direction.slice(3, 6) as Point3;
+  const displayedArea = viewport.displayedArea;
+  const sourceX = (displayedArea?.tlhc.x ?? 1) - 1;
+  const sourceY = (displayedArea?.tlhc.y ?? 1) - 1;
   const diff = vec3.subtract(
     vec3.create(),
     worldPos as unknown as vec3,
@@ -548,8 +560,10 @@ function worldToCPUImagePoint(image: IImage, worldPos: Point3): Point2 {
   );
 
   return [
-    vec3.dot(diff, rowVector as unknown as vec3) / spacing[0],
-    vec3.dot(diff, columnVector as unknown as vec3) / spacing[1],
+    vec3.dot(diff, rowVector as unknown as vec3) / spacing[0] + 0.5 - sourceX,
+    vec3.dot(diff, columnVector as unknown as vec3) / spacing[1] +
+      0.5 -
+      sourceY,
   ];
 }
 

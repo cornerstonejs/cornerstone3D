@@ -58,6 +58,13 @@ interface Cornerstone3DConfig {
       };
       cpuVolume?: {
         /**
+         * When true, LINEAR CPU volume slices are sampled into a viewport-sized
+         * image even when an orthogonal source slice could be reused. This
+         * improves GPU parity for reconstructed planes. Set to false to keep
+         * the source-slice shortcut.
+         */
+        useViewportSamplingForLinear?: boolean;
+        /**
          * Minimum delay between CPU volume re-renders triggered by
          * progressive IMAGE_VOLUME_MODIFIED updates. Defaults to 50ms.
          * A value of 0 disables throttling and preserves immediate rendering

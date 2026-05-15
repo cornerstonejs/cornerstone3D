@@ -11,12 +11,12 @@ export function resolvePlanarCpuImageDisplayedArea(
 ): CPUFallbackViewport['displayedArea'] {
   return {
     tlhc: {
-      x: 1.5,
-      y: 1.5,
+      x: 1,
+      y: 1,
     },
     brhc: {
-      x: Math.max(image.columns + 0.5, 1.5),
-      y: Math.max(image.rows + 0.5, 1.5),
+      x: Math.max(image.columns, 1),
+      y: Math.max(image.rows, 1),
     },
     rowPixelSpacing: image.rowPixelSpacing ?? 1,
     columnPixelSpacing: image.columnPixelSpacing ?? 1,

@@ -13,6 +13,7 @@ function syncLegacyLabelmapData(segmentation: Segmentation): void {
 
   const firstSegmentIndex = getSegmentOrder(segmentation)[0] ?? 1;
   const primaryLabelmapId =
+    labelmapState.primaryLabelmapId ??
     labelmapState.segmentBindings[firstSegmentIndex]?.labelmapId ??
     Object.keys(labelmapState.labelmaps)[0];
   const primaryLayer = labelmapState.labelmaps[primaryLabelmapId];

@@ -38,6 +38,7 @@ import type {
   PlanarResolvedICamera,
 } from './PlanarViewportTypes';
 import type { PlanarSliceBasis } from './planarSliceBasis';
+import setVtkCameraClippingRange from '../setVtkCameraClippingRange';
 import {
   MIN_PLANAR_SCALE,
   normalizePlanarScale,
@@ -621,20 +622,7 @@ export function applyPlanarICameraToActor(args: {
 export function setPlanarVolumeCameraClippingRange(
   renderer: vtkRenderer
 ): void {
-  const camera = renderer.getActiveCamera();
-
-  if (camera.getParallelProjection()) {
-    camera.setClippingRange(
-      -RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE,
-      RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
-    );
-    return;
-  }
-
-  camera.setClippingRange(
-    RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS,
-    RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
-  );
+  setVtkCameraClippingRange(renderer.getActiveCamera());
 }
 
 /**

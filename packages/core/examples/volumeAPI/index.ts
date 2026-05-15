@@ -5,6 +5,7 @@ import {
   volumeLoader,
   getRenderingEngine,
 } from '@cornerstonejs/core';
+import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -16,6 +17,15 @@ import {
   setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
 
+const {
+  PanTool,
+  ZoomTool,
+  StackScrollTool,
+  ToolGroupManager,
+  Enums: csToolsEnums,
+} = cornerstoneTools;
+const { MouseBindings } = csToolsEnums;
+
 // This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
@@ -25,6 +35,7 @@ const { ViewportType } = Enums;
 
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_SAGITTAL_STACK';
+const toolGroupId = 'volumeAPIToolGroup';
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -320,6 +331,32 @@ async function run() {
   const viewport = renderingEngine.getViewport(
     viewportId
   ) as Types.IVolumeViewport;
+
+  cornerstoneTools.addTool(StackScrollTool);
+  cornerstoneTools.addTool(PanTool);
+  cornerstoneTools.addTool(ZoomTool);
+
+  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+  toolGroup.addViewport(viewportId, renderingEngineId);
+
+  toolGroup.addTool(StackScrollTool.toolName);
+  toolGroup.addTool(PanTool.toolName);
+  toolGroup.addTool(ZoomTool.toolName);
+
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [
+      { mouseButton: MouseBindings.Primary },
+      { mouseButton: MouseBindings.Wheel },
+    ],
+  });
+  toolGroup.setToolActive(PanTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Auxiliary }],
+  });
+  toolGroup.setToolActive(ZoomTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Secondary }],
+  });
+
+  element.addEventListener('contextmenu', (e) => e.preventDefault());
 
   // Define a volume in memory
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {

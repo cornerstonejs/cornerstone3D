@@ -210,6 +210,7 @@ function getLabelmapDataById(
     imageIds: layer.imageIds,
     referencedImageIds: layer.referencedImageIds,
     sourceRepresentationName: labelmapState.sourceRepresentationName,
+    primaryLabelmapId: labelmapId,
     labelmaps: {
       [labelmapId]: layer,
     },

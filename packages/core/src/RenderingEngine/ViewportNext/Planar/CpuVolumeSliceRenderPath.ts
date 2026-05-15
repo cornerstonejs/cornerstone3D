@@ -36,6 +36,8 @@ import {
   worldToCanvasPlanarRenderPathProjection,
 } from './planarRenderPathProjection';
 
+const DEFERRED_VIEWPORT_RESAMPLE_DELAY_MS = 80;
+
 export class CpuVolumeSliceRenderPath
   implements RenderPath<PlanarCpuVolumeAdapterContext>
 {
@@ -136,10 +138,13 @@ export class CpuVolumeSliceRenderPath
             const shouldResampleOnDeferredPass =
               eventType === Events.IMAGE_VOLUME_LOADING_COMPLETED;
 
-            payload.imageVolume.voxelManager?.invalidateCache?.();
-            this.sampler.clearCachedScalarRange(
-              payload.imageVolume.voxelManager
-            );
+            const voxelManager = payload.imageVolume.voxelManager;
+
+            voxelManager?.invalidateCache?.();
+            if (voxelManager) {
+              this.sampler.clearCachedScalarRange(voxelManager);
+            }
+            cancelDeferredViewportResample(rendering);
             rendering.pendingVolumeLoadCallback = false;
             rendering.sampledSliceState = undefined;
             rendering.renderingInvalidated = true;
@@ -172,8 +177,12 @@ export class CpuVolumeSliceRenderPath
               if (shouldResampleOnDeferredPass) {
                 // The completion event can arrive before the streamed voxel
                 // buffer is fully stable for CPU sampling. Retry one frame
-                // later, but keep progressive IMAGE_VOLUME_MODIFIED updates on
-                // their lighter redraw path.
+                // later with a fresh scalar cache, but keep progressive
+                // IMAGE_VOLUME_MODIFIED updates on their lighter redraw path.
+                voxelManager?.invalidateCache?.();
+                if (voxelManager) {
+                  this.sampler.clearCachedScalarRange(voxelManager);
+                }
                 rendering.sampledSliceState = undefined;
                 rendering.renderingInvalidated = true;
               }
@@ -382,23 +391,40 @@ export class CpuVolumeSliceRenderPath
     if (layerCanvasWasResized) {
       runtime.renderingInvalidated = true;
     }
-    const shouldResample = this.sampler.needsResample({
-      sampledSliceState: runtime.sampledSliceState,
-      width: ctx.cpu.canvas.width,
-      height: ctx.cpu.canvas.height,
-      camera: activeSourceICamera,
-      dataPresentation: runtime.dataPresentation,
-    });
+    const useViewportSamplingForLinear =
+      getUseViewportSamplingForLinearCPUVolume();
+    const resampleDecision = runtime.forceHighQualityResample
+      ? 'resample'
+      : this.sampler.getResampleDecision({
+          sampledSliceState: runtime.sampledSliceState,
+          width: ctx.cpu.canvas.width,
+          height: ctx.cpu.canvas.height,
+          camera: activeSourceICamera,
+          dataPresentation: runtime.dataPresentation,
+          deferViewportResample: useViewportSamplingForLinear,
+        });
+    const shouldResample = resampleDecision === 'resample';
 
-    const sampledSliceState = shouldResample
-      ? (runtime.sampledSliceState = this.sampler.sampleSliceImage({
+    if (resampleDecision === 'defer') {
+      scheduleDeferredViewportResample(ctx, runtime);
+    } else {
+      cancelDeferredViewportResample(runtime);
+    }
+
+    let sampledSliceState = runtime.sampledSliceState;
+
+    if (shouldResample) {
+      runtime.forceHighQualityResample = false;
+      sampledSliceState = runtime.sampledSliceState =
+        this.sampler.sampleSliceImage({
           volume: runtime.imageVolume,
           width: ctx.cpu.canvas.width,
           height: ctx.cpu.canvas.height,
           camera: activeSourceICamera,
           dataPresentation: runtime.dataPresentation,
-        }))
-      : runtime.sampledSliceState;
+          useViewportSamplingForLinear,
+        });
+    }
 
     if (!sampledSliceState) {
       return;
@@ -464,6 +490,7 @@ export class CpuVolumeSliceRenderPath
   ): void {
     const { removeStreamingSubscriptions } = rendering;
 
+    cancelDeferredViewportResample(rendering);
     removeStreamingSubscriptions?.();
   }
 
@@ -563,6 +590,38 @@ function getCpuVolumeModifiedThrottleMs(): number {
   }
 
   return Math.max(0, Math.trunc(throttleMs));
+}
+
+function getUseViewportSamplingForLinearCPUVolume(): boolean {
+  return (
+    getConfiguration().rendering?.planar?.cpuVolume
+      ?.useViewportSamplingForLinear === true
+  );
+}
+
+function scheduleDeferredViewportResample(
+  ctx: PlanarCpuVolumeAdapterContext,
+  rendering: PlanarCpuVolumeRendering
+): void {
+  cancelDeferredViewportResample(rendering);
+
+  rendering.deferredResampleTimeoutId = window.setTimeout(() => {
+    rendering.deferredResampleTimeoutId = undefined;
+    rendering.forceHighQualityResample = true;
+    rendering.renderingInvalidated = true;
+    ctx.display.renderNow();
+  }, DEFERRED_VIEWPORT_RESAMPLE_DELAY_MS);
+}
+
+function cancelDeferredViewportResample(
+  rendering: PlanarCpuVolumeRendering
+): void {
+  if (rendering.deferredResampleTimeoutId === undefined) {
+    return;
+  }
+
+  window.clearTimeout(rendering.deferredResampleTimeoutId);
+  rendering.deferredResampleTimeoutId = undefined;
 }
 
 export class CpuVolumeSlicePath

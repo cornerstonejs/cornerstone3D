@@ -20,16 +20,15 @@ export function rotateToViewCoordinates(
   const viewRight = vec3.cross(vec3.create(), viewPlaneNormal, viewUp);
   vec3.normalize(viewRight, viewRight);
 
-  // Get the 8 corners of the cube from the extent
-  const extent = imageData.getExtent();
-  // extent format: [xMin, xMax, yMin, yMax, zMin, zMax]
-  // Max extent values are inside dimensions, so add 1 to get outside dimensions
-  const xMin = extent[0];
-  const xMax = extent[1] + 1;
-  const yMin = extent[2];
-  const yMax = extent[3] + 1;
-  const zMin = extent[4];
-  const zMax = extent[5] + 1;
+  // vtkImageData renders the image domain as a half-voxel padded spatial
+  // extent, e.g. [0, 9] becomes [-0.5, 9.5].
+  const spatialExtent = imageData.getSpatialExtent();
+  const xMin = spatialExtent[0];
+  const xMax = spatialExtent[1];
+  const yMin = spatialExtent[2];
+  const yMax = spatialExtent[3];
+  const zMin = spatialExtent[4];
+  const zMax = spatialExtent[5];
 
   // Generate all 8 corners in index space
   const corners: Point3[] = [

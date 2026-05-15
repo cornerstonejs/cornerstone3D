@@ -117,6 +117,8 @@ export type PlanarCpuVolumeRendering = MountedRendering<{
     interpolationType: InterpolationType;
   };
   pendingVolumeLoadCallback?: boolean;
+  deferredResampleTimeoutId?: number;
+  forceHighQualityResample?: boolean;
   removeStreamingSubscriptions?: () => void;
 }>;
 

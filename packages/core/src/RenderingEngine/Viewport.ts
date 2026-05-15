@@ -427,7 +427,7 @@ class Viewport {
     // If the pan has been applied, we need to be able
     // apply the pan back
     const dimensions = imageData.getDimensions();
-    const middleIJK = dimensions.map((d) => Math.floor(d / 2));
+    const middleIJK = dimensions.map((d) => (d - 1) / 2);
 
     const idx = [middleIJK[0], middleIJK[1], middleIJK[2]] as ReadonlyVec3;
     const centeredFocalPoint = imageData.indexToWorld(idx, vec3.create());
@@ -1159,28 +1159,19 @@ class Viewport {
 
     if (imageData) {
       const dimensions = imageData.getDimensions();
-      const middleIJK = dimensions.map((d) => Math.floor(d / 2));
+      const middleIJK = dimensions.map((d) => (d - 1) / 2);
       const idx = [middleIJK[0], middleIJK[1], middleIJK[2]] as ReadonlyVec3;
       // Modifies the focal point in place, as this hits the vtk indexToWorld function
       imageData.indexToWorld(idx, focalPoint);
     }
 
-    let { widthWorld, heightWorld } = imageData
+    const { widthWorld, heightWorld } = imageData
       ? getCubeSizeInView(imageData, viewPlaneNormal, viewUp)
       : this._getWorldDistanceViewUpAndViewRight(
           bounds,
           viewUp,
           viewPlaneNormal
         );
-
-    if (imageData) {
-      const spacing = imageData.getSpacing();
-      // This change corresponds to the spacing calculation for previous version
-      // stack viewports, but is technically incorrect and results in an image
-      // a tiny bit too large for the viewport.
-      widthWorld = Math.max(spacing[0], widthWorld - spacing[0]);
-      heightWorld = Math.max(spacing[1], heightWorld - spacing[1]);
-    }
 
     const canvasSize = [this.sWidth, this.sHeight];
 

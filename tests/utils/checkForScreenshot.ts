@@ -39,7 +39,7 @@ const checkForScreenshot = async (
   for (let i = 0; i < attempts; i++) {
     try {
       await expect(locator).toHaveScreenshot(resolvedScreenshotPath, {
-        maxDiffPixelRatio: 0.05,
+        maxDiffPixelRatio: 0,
       });
       return true;
     } catch (error) {

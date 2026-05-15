@@ -66,6 +66,7 @@ export type LabelmapSegmentationDataShared = {
   segmentBindings?: {
     [segmentIndex: number]: SegmentLabelmapBindingState;
   };
+  primaryLabelmapId?: string;
   sourceRepresentationName?: string;
 };
 

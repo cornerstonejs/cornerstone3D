@@ -1,9 +1,8 @@
 import '@kitware/vtk.js/Rendering/Profiles/Volume';
 import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
-import { RENDERING_DEFAULTS } from '../../../constants';
 import { Events, ViewportType } from '../../../enums';
 import eventTarget from '../../../eventTarget';
-import type { IImageData, Point2, Point3 } from '../../../types';
+import type { IImageData, IImageVolume, Point2, Point3 } from '../../../types';
 import createLinearRGBTransferFunction from '../../../utilities/createLinearRGBTransferFunction';
 import invertRgbTransferFunction from '../../../utilities/invertRgbTransferFunction';
 import { updateOpacity as updateVolumeOpacity } from '../../../utilities/colormap';
@@ -30,6 +29,7 @@ import type {
 } from './3dViewportTypes';
 import applyVolume3DCamera from './applyVolume3DCamera';
 import { getInitialVolume3DCamera } from './vtkVolume3DInitialCamera';
+import setVtkCameraClippingRange from '../setVtkCameraClippingRange';
 
 export class VtkVolume3DRenderPath
   implements RenderPath<Volume3DVtkVolumeAdapterContext>
@@ -302,22 +302,12 @@ function applySampleDistanceMultiplier(
 }
 
 function setCameraClippingRange(ctx: Volume3DVtkVolumeAdapterContext): void {
-  const activeCamera = ctx.vtk.renderer.getActiveCamera();
-
-  if (activeCamera.getParallelProjection()) {
-    activeCamera.setClippingRange(
-      -RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE,
-      RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
-    );
-  } else {
-    activeCamera.setClippingRange(
-      RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS,
-      RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE
-    );
-  }
+  setVtkCameraClippingRange(ctx.vtk.renderer.getActiveCamera());
 }
 
-function buildVolumeImageData(imageVolume): IImageData | undefined {
+function buildVolumeImageData(
+  imageVolume: IImageVolume
+): IImageData | undefined {
   const vtkImageData = imageVolume.imageData;
 
   if (!vtkImageData) {

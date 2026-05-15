@@ -128,6 +128,14 @@ export function getCanvasCssDimensions(canvas: HTMLCanvasElement): {
   };
 }
 
+function getDisplayedAreaSource(
+  enabledElement: CPUFallbackEnabledElement
+): Point2 {
+  const displayedArea = enabledElement.viewport.displayedArea;
+
+  return [(displayedArea?.tlhc.x ?? 1) - 1, (displayedArea?.tlhc.y ?? 1) - 1];
+}
+
 export function canvasToWorldCPUImage(
   enabledElement: CPUFallbackEnabledElement,
   image: IImage,
@@ -135,12 +143,15 @@ export function canvasToWorldCPUImage(
 ): Point3 {
   const [px, py] = canvasToPixel(enabledElement, canvasPos);
   const { origin, spacing, direction } = getImageDataMetadata(image);
+  const [sourceX, sourceY] = getDisplayedAreaSource(enabledElement);
   const iVector = direction.slice(0, 3) as Point3;
   const jVector = direction.slice(3, 6) as Point3;
   const worldPos = [...origin] as Point3;
+  const imageX = px + sourceX - 0.5;
+  const imageY = py + sourceY - 0.5;
 
-  vec3.scaleAndAdd(worldPos, origin, iVector, px * spacing[0]);
-  vec3.scaleAndAdd(worldPos, worldPos, jVector, py * spacing[1]);
+  vec3.scaleAndAdd(worldPos, origin, iVector, imageX * spacing[0]);
+  vec3.scaleAndAdd(worldPos, worldPos, jVector, imageY * spacing[1]);
 
   return worldPos;
 }
@@ -153,10 +164,11 @@ export function worldToCanvasCPUImage(
   const { spacing, direction, origin } = getImageDataMetadata(image);
   const iVector = direction.slice(0, 3) as Point3;
   const jVector = direction.slice(3, 6) as Point3;
+  const [sourceX, sourceY] = getDisplayedAreaSource(enabledElement);
   const diff = vec3.subtract(vec3.create(), worldPos, origin);
   const indexPoint: Point2 = [
-    vec3.dot(diff, iVector) / spacing[0],
-    vec3.dot(diff, jVector) / spacing[1],
+    vec3.dot(diff, iVector) / spacing[0] + 0.5 - sourceX,
+    vec3.dot(diff, jVector) / spacing[1] + 0.5 - sourceY,
   ];
 
   return pixelToCanvas(enabledElement, indexPoint);

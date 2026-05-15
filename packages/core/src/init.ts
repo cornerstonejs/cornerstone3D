@@ -35,6 +35,7 @@ const defaultConfig: Cornerstone3DConfig = {
         volume: 64 * 1024 * 1024,
       },
       cpuVolume: {
+        useViewportSamplingForLinear: true,
         volumeModifiedThrottleMs: 5000,
       },
     },

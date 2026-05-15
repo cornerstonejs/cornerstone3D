@@ -40,6 +40,10 @@ class LabelmapImageReferenceResolver {
     const labelmapData = representationData.Labelmap;
     let labelmapImageIds;
 
+    if (!labelmapData) {
+      return;
+    }
+
     if (labelmapData?.labelmaps) {
       return Array.from(
         new Set(
@@ -53,10 +57,7 @@ class LabelmapImageReferenceResolver {
     if ((labelmapData as LabelmapSegmentationDataStack).imageIds) {
       labelmapImageIds = (labelmapData as LabelmapSegmentationDataStack)
         .imageIds;
-    } else if (
-      !labelmapImageIds &&
-      (labelmapData as LabelmapSegmentationDataVolume).volumeId
-    ) {
+    } else if ((labelmapData as LabelmapSegmentationDataVolume).volumeId) {
       const volumeId = (labelmapData as LabelmapSegmentationDataVolume)
         .volumeId;
 
@@ -322,6 +323,12 @@ class LabelmapImageReferenceResolver {
       : undefined;
   }
 
+  /**
+   * @deprecated Compatibility path for the old stack-labelmap API. New labelmap
+   * layers should carry referencedImageIds so callers can use
+   * getReferencedImageIdToCurrentImageIdMap without scanning every stack image
+   * against every labelmap image.
+   */
   private updateAllLabelmapSegmentationImageReferences(
     viewportId: string,
     segmentationId: string
