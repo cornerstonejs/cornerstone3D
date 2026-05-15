@@ -70,7 +70,7 @@ type RequestPool = {
  * ### Requests between types
  * There are different types of requests, and each type starves the next request
  * type, under the assumption that they are needed in order for fetching.
- * The total number of requests is set by the setMaxCOncurrentRequests, defaulting to 10
+ * The total number of requests is set by the setMaxConcurrentRequests, defaulting to 10
  * concurrent requests.
  */
 class RequestPoolManager {
@@ -324,7 +324,9 @@ class RequestPoolManager {
       this.maxConcurrentRequests - this.outstandingRequests
     );
     let available = this.maxConcurrentRequests - this.outstandingRequests;
-    // Allow 1 interaction request always
+    // The && available after checking for > 0 means it uses the available requests as a positive value
+    // Then, allow 1 interaction request always
+    // Only allow 0 requests for other types - this is the || 0 part to get a 0 result rather than a false one
     const hasRemainingInteractionRequests = this.sendRequests(
       RequestType.Interaction,
       (available > 0 && available) ||
