@@ -1297,43 +1297,36 @@ class SplineROITool extends ContourSegmentationBaseTool {
       const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
 
       const { imageData } = image;
-      const { scale, areaUnit } = getCalibratedLengthUnitsAndScale(
-        image,
-        () => {
-          const {
-            maxX: canvasMaxX,
-            maxY: canvasMaxY,
-            minX: canvasMinX,
-            minY: canvasMinY,
-          } = math.polyline.getAABB(canvasCoordinates);
+      const { areaUnit } = getCalibratedLengthUnitsAndScale(image, () => {
+        const {
+          maxX: canvasMaxX,
+          maxY: canvasMaxY,
+          minX: canvasMinX,
+          minY: canvasMinY,
+        } = math.polyline.getAABB(canvasCoordinates);
 
-          const topLeftBBWorld = viewport.canvasToWorld([
-            canvasMinX,
-            canvasMinY,
-          ]);
+        const topLeftBBWorld = viewport.canvasToWorld([canvasMinX, canvasMinY]);
 
-          const topLeftBBIndex = utilities.transformWorldToIndex(
-            imageData,
-            topLeftBBWorld
-          );
+        const topLeftBBIndex = utilities.transformWorldToIndex(
+          imageData,
+          topLeftBBWorld
+        );
 
-          const bottomRightBBWorld = viewport.canvasToWorld([
-            canvasMaxX,
-            canvasMaxY,
-          ]);
+        const bottomRightBBWorld = viewport.canvasToWorld([
+          canvasMaxX,
+          canvasMaxY,
+        ]);
 
-          const bottomRightBBIndex = utilities.transformWorldToIndex(
-            imageData,
-            bottomRightBBWorld
-          );
+        const bottomRightBBIndex = utilities.transformWorldToIndex(
+          imageData,
+          bottomRightBBWorld
+        );
 
-          return [topLeftBBIndex, bottomRightBBIndex];
-        }
-      );
-      let area = math.polyline.getArea(canvasCoordinates) / scale / scale;
-
+        return [topLeftBBIndex, bottomRightBBIndex];
+      });
       // Convert from canvas_pixels ^2 to mm^2
-      area *= deltaInX * deltaInY;
+      const area =
+        math.polyline.getArea(canvasCoordinates) * deltaInX * deltaInY;
 
       cachedStats[targetId] = {
         Modality: metadata.Modality,
