@@ -6,6 +6,7 @@ import {
   setTitleAndDescription,
   createImageIdsAndCacheMetaData,
   getLocalUrl,
+  getVideoImageIdFromImageIds,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -332,9 +333,10 @@ async function run() {
   });
 
   // Only one SOP instances is DICOM, so find it
-  const videoId = imageIds.find(
-    (it) => it.indexOf('2.25.179478223177027022014772769075050874231') !== -1
-  );
+  const videoId = getVideoImageIdFromImageIds(imageIds);
+  if (!videoId) {
+    throw new Error('No video display set found in series');
+  }
 
   addAnnotationListeners();
 

@@ -17,6 +17,15 @@ import contourSegmentationToolBindings from './contourSegmentationToolBindings';
 import contourTools from './contourTools';
 import createElement from './createElement';
 import createImageIdsAndCacheMetaData from './createImageIdsAndCacheMetaData';
+export {
+  splitDisplaySetsFromImageIds,
+  getVideoImageIdFromImageIds,
+  getPrimaryStackFrameImageIds,
+  getVolumeFrameImageIds,
+  get4DDimensionGroupImageIds,
+  get4DVolumeImageIds,
+  getNaturalizedInstanceForDisplaySetSplit,
+} from './splitDisplaySetsFromImageIds';
 import createInfoSection from './createInfoSection';
 import downloadSurfacesData from './downloadSurfacesData';
 import getLocalUrl from './getLocalUrl';

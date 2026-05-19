@@ -50,6 +50,11 @@
       "node": "./dist/esm/utilities/*.js",
       "types": "./dist/esm/utilities/*.d.ts"
     },
+    "./displayset": {
+      "import": "./dist/esm/displayset/index.js",
+      "node": "./dist/esm/displayset/index.js",
+      "types": "./dist/esm/displayset/index.d.ts"
+    },
     "./types": {
       "types": "./dist/esm/types/index.d.ts"
     },
@@ -76,6 +81,7 @@
     "dev": "tsc --project ./tsconfig.json --watch",
     "api-check": "api-extractor --debug run",
     "lint": "oxlint .",
+    "test:unit": "jest --config ../../jest.config.js --testPathPattern=packages/metadata",
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {

@@ -7,6 +7,7 @@ import {
   initDemo,
   setTitleAndDescription,
   createImageIdsAndCacheMetaData,
+  getVideoImageIdFromImageIds,
   getLocalUrl,
   addManipulationBindings,
   addVideoTime,
@@ -307,10 +308,10 @@ async function run() {
       getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
-  // Only one SOP instances is DICOM, so find it
-  const videoId = imageIds.find(
-    (it) => it.indexOf('2.25.179478223177027022014772769075050874231') !== -1
-  );
+  const videoId = getVideoImageIdFromImageIds(imageIds);
+  if (!videoId) {
+    throw new Error('No video display set found in series');
+  }
 
   addAnnotationListeners();
   // Add annotation tools to Cornerstone3D

@@ -7,6 +7,7 @@ import {
   setTitleAndDescription,
   createImageIdsAndCacheMetaData,
   getLocalUrl,
+  getVideoImageIdFromImageIds,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -175,14 +176,10 @@ async function run() {
       getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
-  // The default DICOMweb loader splits up the video into one image id per frame,
-  // but the video viewport needs a single combined reference, so find the first
-  // reference and use that one.
-  // Also, the series has more than one object in it, and the video viewport
-  // can only display a single video at a time.
-  const videoId = imageIds.find(
-    (it) => it.indexOf('2.25.179478223177027022014772769075050874231') !== -1
-  );
+  const videoId = getVideoImageIdFromImageIds(imageIds);
+  if (!videoId) {
+    throw new Error('No video display set found in series');
+  }
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);

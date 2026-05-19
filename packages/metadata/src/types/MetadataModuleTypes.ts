@@ -102,6 +102,16 @@ export interface CompressedFrameDataMetadata {
   pixelData: ArrayBufferView | ArrayBufferView[];
 }
 
+/** Display set metadata cached per imageId. */
+export interface DisplaySetModuleMetadata {
+  displaySetInstanceUID: string;
+  /** Allowed viewport types; index 0 is preferred. */
+  viewportTypes: readonly string[];
+  getPreferredViewportType(): string;
+  getFrameImageIds(): ReadonlySet<string>;
+  getUnderlyingImageIds(): ReadonlySet<string>;
+}
+
 /**
  * Maps metadata module names (MetadataModules enum values or literal strings) to their
  * return types. Used by getTyped() to infer the return type from the module type argument.
@@ -119,4 +129,5 @@ export interface MetadataModuleType {
   frameModule: FrameMetadata;
   transferSyntax: TransferSyntaxMetadata;
   compressedFrameData: CompressedFrameDataMetadata;
+  displaySetModule: DisplaySetModuleMetadata;
 }
