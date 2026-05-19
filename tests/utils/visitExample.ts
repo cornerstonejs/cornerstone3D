@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import { configureTestRequestPool } from './configureTestRequestPool';
 
 /**
  * Visit the example page
@@ -37,5 +38,8 @@ export const visitExample = async (
   if (waitForDom) {
     await page.waitForLoadState('domcontentloaded');
   }
+
+  await configureTestRequestPool(page);
+
   await page.waitForTimeout(delay);
 };

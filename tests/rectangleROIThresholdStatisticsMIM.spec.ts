@@ -1,8 +1,19 @@
 import { test, expect } from 'playwright-test-coverage';
-import { visitExample, simulateClicksOnElement } from './utils/index';
+import {
+  visitExample,
+  simulateClicksOnElement,
+  waitForViewportsRendered,
+  waitForVolumeFramesLoaded,
+} from './utils/index';
+
+const volumeId = 'cornerstoneStreamingImageVolume:PT_VOLUME_ID';
+const segmentationId = 'MY_SEGMENTATION_ID';
+
+test.describe.configure({ mode: 'serial' });
 
 test.beforeEach(async ({ page }) => {
   await visitExample(page, 'rectangleROIStartEndThresholdWithSegmentation');
+  await waitForViewportsRendered(page, { waitVolumeLoad: false });
 });
 
 const testCases = [
@@ -93,9 +104,9 @@ testCases.forEach(
     test(name, async ({ page }) => {
       // Jump to slice - Move to utils?
       const jumpToSlice = async (sliceIndex) => {
-        await page.evaluate((index) => {
+        await page.evaluate(async (index) => {
           const cornerstone = window.cornerstone;
-          cornerstone.utilities.jumpToSlice(
+          await cornerstone.utilities.jumpToSlice(
             cornerstone.getEnabledElementByViewportId('PT_AXIAL').viewport
               .element,
             { imageIndex: index }
@@ -112,8 +123,9 @@ testCases.forEach(
         await page.locator('#thresholdMaxRelative').uncheck();
       }
 
-      // Goto start slice
+      // Goto start slice and wait for frames needed for the ROI range
       await jumpToSlice(startSlice);
+      await waitForVolumeFramesLoaded(page, volumeId, startSlice, endSlice);
 
       // Define region
       const locator = page.locator('canvas').first();
@@ -128,8 +140,9 @@ testCases.forEach(
       // Set start slice
       await page.getByRole('button', { name: 'Set Start Slice' }).click();
 
-      // Goto end slice
+      // Goto end slice (re-wait in case scrolling prioritized other frames)
       await jumpToSlice(endSlice);
+      await waitForVolumeFramesLoaded(page, volumeId, startSlice, endSlice);
 
       // Set end slice
       await page.getByRole('button', { name: 'Set End Slice' }).click();
@@ -140,29 +153,34 @@ testCases.forEach(
       // Run threshold over ROI
       await page.getByRole('button', { name: 'Run Segmentation' }).click();
 
-      // Get calculations
-      const stats = await page.evaluate(() => {
-        // Access csTools from window object
-        const cornerstoneTools = window.cornerstoneTools;
+      // getStatistics is async and can return undefined if voxel data is not ready
+      const stats = await page.waitForFunction(
+        async ({ segmentationId: segId }) => {
+          const cornerstoneTools = window.cornerstoneTools;
+          const result =
+            await cornerstoneTools.utilities.segmentation.getStatistics({
+              segmentationId: segId,
+              segmentIndices: 1,
+              mode: 'individual',
+            });
 
-        // calculate Statistics over threshold region
-        const segmentationId = 'MY_SEGMENTATION_ID'; // from example page
-        return cornerstoneTools.utilities.segmentation.getStatistics({
-          segmentationId,
-          segmentIndices: 1,
-          mode: 'individual',
-        });
-      });
+          return result?.['1'] ? result : null;
+        },
+        { segmentationId },
+        { timeout: 30000, polling: 250 }
+      );
+
+      const statsValue = await stats.jsonValue();
 
       // Check Calculations
       for (const stat in expectedStats) {
         if (stat === 'lesionGlycolysis' || stat === 'volume') {
           await expect
-            .soft(stats['1'][stat].value / 1000)
+            .soft(statsValue['1'][stat].value / 1000)
             .toBeCloseTo(expectedStats[stat], 1);
         } else {
           await expect
-            .soft(stats['1'][stat].value)
+            .soft(statsValue['1'][stat].value)
             .toBeCloseTo(expectedStats[stat], 2);
         }
       }
