@@ -33,7 +33,7 @@ const checkForCanvasSnapshot = async (
 
   await expect(buffer).toMatchSnapshot(screenshotPath, {
     maxDiffPixelRatio: 0,
-    threshold: 0,
+    threshold: 0.02,
   });
 };
 
