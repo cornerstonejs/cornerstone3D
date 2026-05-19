@@ -4,16 +4,98 @@ title: 'React, Vue, Angular, etc.'
 summary: Guide for integrating Cornerstone3D with popular frontend frameworks, including configuration examples for Vite and Webpack with troubleshooting tips
 ---
 
-Here are some examples of how to use cornerstone3D with React, Vue, Angular, vite-based frameworks, etc.
-We have made it easy to use cornerstone3D with your favorite framework.
+Here are some examples of how to use Cornerstone3D with React, Vue, Angular, and Vite-based frameworks.
 
-Follow the links below to see how to use cornerstone3D with your favorite framework.
+**Example repositories:**
 
-- [Cornerstone3D with vite-based React](https://github.com/cornerstonejs/vite-react-cornerstone3d)
-- [Cornerstone3D with vite-based Vue](https://github.com/cornerstonejs/vue-cornerstone3d)
+- [Cornerstone3D with Vite + React](https://github.com/cornerstonejs/vite-react-cornerstone3d)
+- [Cornerstone3D with Vite + Vue](https://github.com/cornerstonejs/vue-cornerstone3d)
 - [Cornerstone3D with Angular](https://github.com/cornerstonejs/angular-cornerstone3d)
   - [Community maintained project](https://github.com/yanqzsu/ng-cornerstone)
 - [Cornerstone3D with Next.js](https://github.com/cornerstonejs/nextjs-cornerstone3d)
+
+---
+
+## Setup and install
+
+### Prerequisites
+
+- **Node.js** (e.g. 18+ or 20+ depending on the template)
+- **npm** or **yarn**
+
+### Vue (Vite)
+
+1. Clone or create a Vite + Vue project and install dependencies:
+
+   ```bash
+   npm install
+   # or: yarn
+   ```
+
+2. **Required setup:**
+   - **Vite config:** Use `@originjs/vite-plugin-commonjs` for `dicom-parser`, set `optimizeDeps.exclude: ['@cornerstonejs/dicom-image-loader']`, `optimizeDeps.include: ['dicom-parser']`, and `worker: { format: 'es' }`. See [Vite basic setup](#basic-setup) below.
+   - **Subpath:** For running under a subpath (e.g. `/subpath/`), set `base` from `process.env.BASE_PATH` and use scripts like `dev:subpath` / `build:subpath` that set `BASE_PATH=/subpath/`. The Vue template uses `cross-env` for this.
+
+3. **How to run:**
+   - **Dev (root):** `npm run dev` → open http://localhost:5173/
+   - **Build (root):** `npm run build` → output in `dist/`
+   - **Preview (root):** `npm run preview` → open http://localhost:4173/
+   - **Dev (subpath):** `npm run dev:subpath` → open http://localhost:5173/subpath/
+   - **Build (subpath):** `npm run build:subpath` then `npm run preview:subpath` (or use `npm run dev:subpath` to test).
+
+### Angular
+
+1. Install dependencies (this runs **postinstall** scripts that set up the build):
+
+   ```bash
+   npm install
+   ```
+
+2. **Required setup:**
+   - **Postinstall / prebuild:** The project uses scripts to create Node stubs (`fs`/`path`) for the browser build and to bundle the DICOM image loader worker and copy codec WASM. These run on `npm install` and before `npm run build` (via `prebuild`). The **preview** script runs them before building so the production bundle has the worker and codecs.
+   - **Serve:** In development, `@cornerstonejs/dicom-image-loader` is excluded from prebundle so the worker loads correctly.
+   - **Assets:** Codec `.wasm` files are copied from `node_modules` into the build via `angular.json` assets; the worker is generated into `public/cs-dicom-loader/` (and that folder is typically gitignored).
+
+3. **How to run:**
+   - **Dev (root):** `npm start` or `npm run dev` → open http://localhost:4200/
+   - **Build (root):** `npm run build` → output in `dist/angular-vite-6/`
+   - **Preview (root):** `npm run preview` → builds then serves at http://localhost:4201/ (use this if the dev server doesn’t load images correctly).
+   - **Dev (subpath):** `npm run dev:subpath` → open http://localhost:4200/subpath/
+   - **Build (subpath):** `npm run build:subpath` → then run the preview script or serve `dist/angular-vite-6/browser` with the app under `/subpath/`.
+   - **Preview (subpath):** `npm run preview:subpath` → builds for subpath then serves at http://localhost:4202/.
+
+   For production, deploy the contents of `dist/angular-vite-6/browser` and serve it at `/` or at your subpath.
+
+### React (Vite)
+
+1. Install dependencies:
+
+   ```bash
+   npm install
+   # or: yarn
+   ```
+
+2. **Required setup:**
+   - **Vite config:** Same as Vue: CommonJS plugin for `dicom-parser`, exclude `@cornerstonejs/dicom-image-loader` from `optimizeDeps`, include `dicom-parser`, and `worker: { format: 'es' }`. Optionally use a Cornerstone WASM plugin or `base` for subpath.
+   - **Subpath:** Set `base: '/subpath/'` in `vite.config.ts` (or from env) for build/preview under a subpath; optionally use `setConfiguration({ wasmBasePath })` or a plugin for WASM base path.
+
+3. **How to run:**
+   - **Dev (root):** `npm run dev` → open http://localhost:5173/
+   - **Build:** `npm run build` → output in `dist/`
+   - **Preview (root):** `npm run preview` → open http://localhost:4173/
+   - **Subpath:** Set `base: '/subpath/'` in config, then build and preview (or run dev with that base) and open the app at `http://localhost:5173/subpath/` or the preview URL with `/subpath/`.
+
+**Quick reference:**
+
+| Framework    | Install       | Dev (root)    | Build           | Preview / prod-like                    |
+| ------------ | ------------- | ------------- | --------------- | -------------------------------------- |
+| Vue (Vite)   | `npm install` | `npm run dev` | `npm run build` | `npm run preview`                      |
+| Angular      | `npm install` | `npm start`   | `npm run build` | `npm run preview` (builds then serves) |
+| React (Vite) | `npm install` | `npm run dev` | `npm run build` | `npm run preview`                      |
+
+For subpath, use the `dev:subpath` / `build:subpath` / `preview:subpath` scripts where available (Vue, Angular) or set `base` in Vite config (React/Vue).
+
+---
 
 ## Vite
 
