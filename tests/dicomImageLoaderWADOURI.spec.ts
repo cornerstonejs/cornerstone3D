@@ -6,6 +6,7 @@ import {
   screenShotPaths,
   waitForImageRendered,
 } from './utils/index';
+import { dicomDimensions } from '../packages/dicomImageLoader/examples/dicomImageLoaderWADOURI/dicomDimensions';
 
 test.beforeEach(async ({ page }) => {
   await visitExample(page, 'dicomImageLoaderWADOURI');
@@ -39,7 +40,47 @@ function getExpectedWadoImageId(imagePath: string) {
   return `wadouri:https://raw.githubusercontent.com/cornerstonejs/cornerstone3D/main/packages/dicomImageLoader/testImages/${imagePath}`;
 }
 
+async function ensureViewportFitsImage(page: Page, imagePath: string) {
+  const dim = dicomDimensions[imagePath];
+  if (!dim) {
+    return;
+  }
+
+  const viewport = page.viewportSize();
+  const needsWidth = dim.columns + 64;
+  const needsHeight = dim.rows + 200;
+
+  if (
+    !viewport ||
+    viewport.width < needsWidth ||
+    viewport.height < needsHeight
+  ) {
+    await page.setViewportSize({
+      width: Math.max(viewport?.width ?? 0, needsWidth),
+      height: Math.max(viewport?.height ?? 0, needsHeight),
+    });
+  }
+}
+
+async function waitForCanvasSize(
+  page: Page,
+  expected: { columns: number; rows: number }
+) {
+  await page.waitForFunction(
+    ({ width, height }) => {
+      const canvas = document.querySelector(
+        '#cornerstone-element canvas'
+      ) as HTMLCanvasElement | null;
+      return !!canvas && canvas.width === width && canvas.height === height;
+    },
+    { width: expected.columns, height: expected.rows },
+    { timeout: 15000 }
+  );
+}
+
 async function selectImageAndWaitForRender(page: Page, imagePath: string) {
+  await ensureViewportFitsImage(page, imagePath);
+
   await waitForImageRendered(
     page,
     () => page.locator('#imageSelector').selectOption(imagePath),
@@ -47,6 +88,11 @@ async function selectImageAndWaitForRender(page: Page, imagePath: string) {
       expectedImageId: getExpectedWadoImageId(imagePath),
     }
   );
+
+  const dim = dicomDimensions[imagePath];
+  if (dim) {
+    await waitForCanvasSize(page, dim);
+  }
 }
 
 test.describe('Dicom Image Loader WADOURI', async () => {
