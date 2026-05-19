@@ -2034,8 +2034,15 @@ class StackViewport extends Viewport {
           let max = 0;
 
           for (let i = 0; i < numPixels; i++) {
-            const rescaledPixel = Math.floor(
-              (pixelData[i] - intercept) / slope
+            // Float32 precision can place pixelData[i] a hair below `intercept`
+            // (which is derived from a JS Number that differs from the Float32
+            // representation), making the floor produce -1. Storing -1 into a
+            // Uint16Array wraps to 65535 and renders as white. Clamp to the
+            // valid Uint16 range to avoid spurious bright pixels at the
+            // image's min/max values.
+            const rescaledPixel = Math.max(
+              0,
+              Math.min(65535, Math.floor((pixelData[i] - intercept) / slope))
             );
 
             intPixelData[i] = rescaledPixel;
