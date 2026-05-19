@@ -48,7 +48,7 @@ export function getCenterAndRadiusInCanvas(
 
   return {
     center: center,
-    radius,
+    radius: Math.round(radius),
   };
 }
 
