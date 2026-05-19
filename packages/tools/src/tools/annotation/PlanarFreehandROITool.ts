@@ -901,7 +901,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     deltaInX,
     deltaInY,
   }) {
-    const { scale, areaUnit, unit } = calibratedScale;
+    const { areaUnit, unit } = calibratedScale;
 
     const { voxelManager } = viewport.getImageData();
 
@@ -926,9 +926,8 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       kMax = Math.max(kMax, worldPosIndex[2]);
     }
 
-    let area = polyline.getArea(canvasCoordinates) / scale / scale;
     // Convert from canvas_pixels ^2 to mm^2
-    area *= deltaInX * deltaInY;
+    const area = polyline.getArea(canvasCoordinates) * deltaInX * deltaInY;
 
     const perimeter = PlanarFreehandROITool.calculateLengthInIndex(
       calibratedScale,

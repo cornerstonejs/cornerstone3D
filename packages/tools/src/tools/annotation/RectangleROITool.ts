@@ -867,14 +867,14 @@ class RectangleROITool extends AnnotationTool {
         const handles = [pos1Index, pos2Index];
         const calibrate = getCalibratedLengthUnitsAndScale(image, handles);
 
-        const width = RectangleROITool.calculateLengthInIndex(
-          calibrate,
-          indexHandles.slice(0, 2)
-        );
-        const height = RectangleROITool.calculateLengthInIndex(
-          calibrate,
-          indexHandles.slice(2, 4)
-        );
+        const width = RectangleROITool.calculateLengthInIndex(calibrate, [
+          indexHandles[0],
+          indexHandles[1],
+        ]);
+        const height = RectangleROITool.calculateLengthInIndex(calibrate, [
+          indexHandles[0],
+          indexHandles[2],
+        ]);
         const area = Math.abs(width * height);
         const { areaUnit } = calibrate;
 
