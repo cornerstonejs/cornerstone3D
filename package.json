@@ -78,7 +78,7 @@
     "@babel/plugin-transform-private-methods": "7.28.6",
     "@babel/plugin-transform-runtime": "7.26.10",
     "@babel/plugin-transform-typescript": "7.28.6",
-    "@babel/preset-env": "7.26.9",
+    "@babel/preset-env": "7.29.5",
     "@babel/preset-react": "7.26.3",
     "@babel/preset-typescript": "7.26.0",
     "@babel/runtime": "7.26.10",
@@ -211,6 +211,7 @@
     "socket.io-parser": "4.2.6",
     "handlebars": "4.7.9",
     "path-to-regexp": "0.1.13",
-    "protobufjs": "7.5.5"
+    "protobufjs": "7.5.8",
+    "fast-uri": "3.1.2"
   }
 }
