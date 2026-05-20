@@ -43,6 +43,7 @@ overrides:
   fast-uri: 3.1.2
   webpack: 5.105.0
   mdast-util-to-hast: 13.2.1
+  '@remix-run/router': 1.23.2
 
 auditConfig:
   ignoreGhsas:
