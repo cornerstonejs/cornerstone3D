@@ -1,9 +1,11 @@
 import { utilities } from 'dcmjs';
 import MeasurementReport from './MeasurementReport';
 import BaseAdapter3D from './BaseAdapter3D';
-import { toScoord, validateNumericValue } from '../helpers';
+import { utilities as csUtilities } from '@cornerstonejs/core';
+import { toScoord } from '../helpers';
 
 const { Length: TID300Length } = utilities.TID300;
+const { toFiniteNumber } = csUtilities;
 
 const LENGTH = 'Length';
 
@@ -76,7 +78,7 @@ export default class Length extends BaseAdapter3D {
     return {
       point1,
       point2,
-      distance: validateNumericValue(distance),
+      distance: toFiniteNumber(distance),
       trackingIdentifierTextValue: this.trackingIdentifierTextValue,
       finding,
       findingSites: findingSites || [],

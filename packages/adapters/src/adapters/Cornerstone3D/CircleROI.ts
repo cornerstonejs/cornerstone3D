@@ -1,10 +1,13 @@
 import { utilities } from 'dcmjs';
+import { utilities as csUtilities } from '@cornerstonejs/core';
 import MeasurementReport from './MeasurementReport';
 import BaseAdapter3D from './BaseAdapter3D';
-import { toScoord, validateNumericValue } from '../helpers';
+import { toScoord } from '../helpers';
+
 import { extractAllNUMGroups, restoreAdditionalMetrics } from './metricHandler';
 
 const { Circle: TID300Circle } = utilities.TID300;
+const { toFiniteNumber } = csUtilities;
 
 class CircleROI extends BaseAdapter3D {
   static {
@@ -93,16 +96,16 @@ class CircleROI extends BaseAdapter3D {
     const perimeter = 2 * Math.PI * radius;
 
     return {
-      area: validateNumericValue(area),
+      area: toFiniteNumber(area),
       areaUnit,
-      perimeter: validateNumericValue(perimeter),
+      perimeter: toFiniteNumber(perimeter),
       modalityUnit,
       radiusUnit,
-      radius: validateNumericValue(radius),
-      max: validateNumericValue(max),
-      min: validateNumericValue(min),
-      stdDev: validateNumericValue(stdDev),
-      mean: validateNumericValue(mean),
+      radius: toFiniteNumber(radius),
+      max: toFiniteNumber(max),
+      min: toFiniteNumber(min),
+      stdDev: toFiniteNumber(stdDev),
+      mean: toFiniteNumber(mean),
       points: [center, end],
       trackingIdentifierTextValue: this.trackingIdentifierTextValue,
       finding,

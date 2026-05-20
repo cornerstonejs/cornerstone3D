@@ -1,14 +1,12 @@
 import { utilities } from 'dcmjs';
 import MeasurementReport from './MeasurementReport';
-import {
-  scoordToWorld,
-  toScoord,
-  toArray,
-  validateNumericValue,
-} from '../helpers';
+import { utilities as csUtilities } from '@cornerstonejs/core';
+import { scoordToWorld, toScoord, toArray } from '../helpers';
+
 import BaseAdapter3D from './BaseAdapter3D';
 
 const { Bidirectional: TID300Bidirectional } = utilities.TID300;
+const { toFiniteNumber } = csUtilities;
 
 const LONG_AXIS = 'Long Axis';
 const SHORT_AXIS = 'Short Axis';
@@ -142,8 +140,8 @@ class Bidirectional extends BaseAdapter3D {
         point1: shortAxisStartImage,
         point2: shortAxisEndImage,
       },
-      longAxisLength: validateNumericValue(length),
-      shortAxisLength: validateNumericValue(width),
+      longAxisLength: toFiniteNumber(length),
+      shortAxisLength: toFiniteNumber(width),
       unit,
       trackingIdentifierTextValue: this.trackingIdentifierTextValue,
       finding: finding,
