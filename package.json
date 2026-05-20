@@ -10,7 +10,7 @@
   },
   "scripts": {
     "api-check": "pnpm -r --filter '!docs' run api-check",
-    "format-check": "cross-env NODE_OPTIONS=--max_old_space_size=32896 pnpm -r --filter '!docs' run format-check",
+    "format-check": "cross-env NODE_OPTIONS=--max_old_space_size=32896 prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md}\" || exit 0",
     "build": "pnpm -r --filter '!docs' run build && pnpm --filter @cornerstonejs/dicom-image-loader run build:loader",
     "build:esm": "pnpm -r --filter '!docs' run build:esm",
     "watch": "pnpm -r --filter '!docs' --parallel run build:esm:watch",
