@@ -46,7 +46,7 @@ setTitleAndDescription(
   'This example demonstrates two stack viewports where one has segmentation and one does not. Both viewports are synchronized using the image slice synchronizer, and the scroll tool is active on both. You can draw segmentation on the left viewport and scroll through both viewports which will stay in sync.'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 

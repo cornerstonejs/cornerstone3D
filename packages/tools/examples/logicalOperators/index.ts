@@ -56,7 +56,7 @@ setTitleAndDescription(
   'Here we demonstrate how to use logical operations to combine two segments in a new segment'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 

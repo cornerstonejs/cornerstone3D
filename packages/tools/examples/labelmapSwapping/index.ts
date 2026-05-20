@@ -44,7 +44,7 @@ setTitleAndDescription(
   'Here we demonstrate how to display labelmaps on a volume viewport, and swap which labelmap is being displayed'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const element = document.createElement('div');
 

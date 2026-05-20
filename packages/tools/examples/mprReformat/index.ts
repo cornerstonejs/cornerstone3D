@@ -54,7 +54,7 @@ setTitleAndDescription(
   'Here we demonstrate how to set up the MPR with reformat orientations. Each viewport (axial, sagittal, coronal) can be reformatted while maintaining its relationship to its base orientation using REFORMAT_AXIAL, REFORMAT_SAGITTAL, and REFORMAT_CORONAL.'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 

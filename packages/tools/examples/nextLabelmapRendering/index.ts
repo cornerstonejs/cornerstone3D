@@ -36,7 +36,7 @@ setTitleAndDescription(
   'Here we demonstrate rendering of a mock ellipsoid labelmap over source data'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 

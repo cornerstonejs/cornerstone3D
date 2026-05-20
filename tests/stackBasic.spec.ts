@@ -2,6 +2,7 @@ import { test } from 'playwright-test-coverage';
 import {
   visitExample,
   checkForScreenshot,
+  checkForCanvasSnapshot,
   screenShotPaths,
 } from './utils/index';
 
@@ -13,10 +14,9 @@ test.describe('Basic Stack', async () => {
   test('should display a single DICOM image in a Stack viewport', async ({
     page,
   }) => {
-    const locator = page.locator('.cornerstone-canvas');
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      locator,
+      ".cornerstone-canvas",
       screenShotPaths.stackBasic.viewport
     );
   });

@@ -44,7 +44,7 @@ setTitleAndDescription(
   'Demonstrates sphere brush painting with useSliceRendering enabled.'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 

@@ -1,6 +1,7 @@
 import { test } from 'playwright-test-coverage';
 import {
   checkForScreenshot,
+  checkForCanvasSnapshot,
   visitExample,
   screenShotPaths,
 } from './utils/index';
@@ -30,11 +31,9 @@ test.describe('Labelmap Global Configuration', async () => {
     test('should render the segmentations using the default global configuration', async ({
       page,
     }) => {
-      const canvas = await page.locator('canvas.cornerstone-canvas');
-
-      await checkForScreenshot(
+      await checkForCanvasSnapshot(
         page,
-        canvas,
+        ".cornerstone-canvas",
         screenShotPaths.labelmapGlobalConfiguration.defaultGlobalConfig
       );
     });

@@ -42,7 +42,7 @@ setTitleAndDescription(
   'Here we demonstrate how to import or export a DICOM SEG from a Cornerstone3D stack.'
 );
 
-const size = '500px';
+const size = '512px';
 const skipOverlapping = false;
 
 function viewportSupportsStackCompatibility(viewport: unknown): viewport is {

@@ -53,7 +53,7 @@ setTitleAndDescription(
   'This example demonstrates how to synchronize the image slice of a stack viewport (first two) with the image slice of a volume viewport (right most) or another stack viewport. When you scroll through the stack, the other viewports will scroll to the same image slice. Each viewport can be source or target of the synchronization.'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 

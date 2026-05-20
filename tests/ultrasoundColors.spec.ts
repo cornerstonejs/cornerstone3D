@@ -2,6 +2,7 @@ import { test } from 'playwright-test-coverage';
 import {
   visitExample,
   checkForScreenshot,
+  checkForCanvasSnapshot,
   screenShotPaths,
 } from './utils/index';
 

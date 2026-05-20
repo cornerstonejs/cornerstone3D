@@ -1,6 +1,7 @@
 import { test } from 'playwright-test-coverage';
 import {
   checkForScreenshot,
+  checkForCanvasSnapshot,
   visitExample,
   screenShotPaths,
 } from './utils/index';
@@ -13,11 +14,9 @@ test.describe('Swapping labelmap segmentations on a viewport', async () => {
   test('should load the default segmentation with two segments (circles)', async ({
     page,
   }) => {
-    const canvas = await page.locator('canvas.cornerstone-canvas');
-
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      canvas,
+      ".cornerstone-canvas",
       screenShotPaths.labelmapSwapping.defaultSegmentation
     );
   });

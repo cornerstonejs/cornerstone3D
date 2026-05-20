@@ -2,6 +2,7 @@ import { test } from 'playwright-test-coverage';
 import {
   visitExample,
   checkForScreenshot,
+  checkForCanvasSnapshot,
   screenShotPaths,
 } from './utils/index';
 
@@ -14,10 +15,9 @@ test.describe('Basic Volume', async () => {
     page,
   }) => {
     // Now take the screenshot
-    const locator = page.locator('.cornerstone-canvas');
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      locator,
+      ".cornerstone-canvas",
       screenShotPaths.volumeBasic.viewport
     );
   });

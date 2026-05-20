@@ -39,8 +39,8 @@ const content = document.getElementById('content');
 
 const element1 = document.createElement('div');
 element1.id = 'cornerstone-element1';
-element1.style.width = '500px';
-element1.style.height = '500px';
+element1.style.width = '512px';
+element1.style.height = '512px';
 
 const paraElement = document.createElement('p');
 const paraText = document.createTextNode('volume viewport');
@@ -52,18 +52,18 @@ rowElement.style.justifyContent = 'space-between';
 
 const element2 = document.createElement('div');
 element2.id = 'cornerstone-element2';
-element2.style.width = '500px';
-element2.style.height = '500px';
+element2.style.width = '512px';
+element2.style.height = '512px';
 
 const element3 = document.createElement('div');
 element3.id = 'cornerstone-element3';
-element3.style.width = '500px';
-element3.style.height = '500px';
+element3.style.width = '512px';
+element3.style.height = '512px';
 
 const element4 = document.createElement('div');
 element4.id = 'cornerstone-element4';
-element4.style.width = '500px';
-element4.style.height = '500px';
+element4.style.width = '512px';
+element4.style.height = '512px';
 
 rowElement.appendChild(element2);
 rowElement.appendChild(element3);
