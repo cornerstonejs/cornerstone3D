@@ -64,10 +64,6 @@ const useSliceRendering =
   getBooleanUrlParam('sliceRendering');
 const segmentationRenderingMode = useSliceRendering ? 'slice' : 'volume';
 
-function getNextExampleBackground(): Types.Point3 {
-  return getBooleanUrlParam('cpu') ? [0, 0, 0] : [0, 0.2, 0];
-}
-
 setTitleAndDescription(
   'Basic manual labelmap Segmentation tools',
   'Here we demonstrate manual segmentation tools with selectable volume and slice labelmap rendering.'
@@ -431,7 +427,7 @@ async function run() {
       element,
       defaultOptions: {
         orientation,
-        background: getNextExampleBackground(),
+        background: [0, 0.2, 0] as Types.Point3,
       },
     }))
   );

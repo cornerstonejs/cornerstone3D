@@ -11,7 +11,6 @@ import {
   addDropdownToToolbar,
   addToggleButtonToToolbar,
   createImageIdsAndCacheMetaData,
-  getExampleBackground,
   initDemo,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
@@ -333,7 +332,7 @@ async function run() {
       type: ViewportType.STACK,
       element: stackElement,
       defaultOptions: {
-        background: getExampleBackground() as Types.Point3,
+        background: [0.2, 0, 0.2] as Types.Point3,
       },
     },
     {
@@ -342,7 +341,7 @@ async function run() {
       element: axialElement,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
-        background: getExampleBackground() as Types.Point3,
+        background: [0.2, 0, 0.2] as Types.Point3,
       },
     },
     {
@@ -351,7 +350,7 @@ async function run() {
       element: sagittalElement,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
-        background: getExampleBackground() as Types.Point3,
+        background: [0.2, 0, 0.2] as Types.Point3,
       },
     },
     {
@@ -360,7 +359,7 @@ async function run() {
       element: coronalElement,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
-        background: getExampleBackground() as Types.Point3,
+        background: [0.2, 0, 0.2] as Types.Point3,
       },
     },
   ]);

@@ -13,7 +13,6 @@ import {
   addButtonToToolbar,
   addBrushSizeSlider,
   addSegmentIndexDropdown,
-  getExampleBackground,
 } from '../../../../utils/demo/helpers';
 const { DefaultHistoryMemo } = utilities.HistoryMemo;
 
@@ -472,7 +471,7 @@ async function run() {
       type: ViewportType.STACK,
       element: element1,
       defaultOptions: {
-        background: getExampleBackground(),
+        background: [0.2, 0, 0.2],
       },
     },
     {
@@ -480,7 +479,7 @@ async function run() {
       type: ViewportType.STACK,
       element: element2,
       defaultOptions: {
-        background: getExampleBackground(),
+        background: [0.2, 0, 0.2],
       },
     },
   ];

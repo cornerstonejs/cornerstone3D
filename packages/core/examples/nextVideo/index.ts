@@ -12,7 +12,6 @@ import {
   createImageIdsAndCacheMetaData,
   getLocalUrl,
 } from '../../../../utils/demo/helpers';
-import { getBooleanUrlParam } from '../../../../utils/demo/helpers/exampleParameters';
 
 // This is for debugging purposes
 console.warn(
@@ -24,10 +23,6 @@ const { ViewportType, Events } = Enums;
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'videoNextViewport';
 const videoDataId = 'video-next:primary';
-
-function getNextExampleBackground(): Types.Point3 {
-  return getBooleanUrlParam('cpu') ? [0, 0, 0] : [0, 0.2, 0];
-}
 
 setTitleAndDescription(
   'Video ViewportNext API',
@@ -120,7 +115,7 @@ async function run() {
     type: ViewportType.VIDEO_NEXT,
     element,
     defaultOptions: {
-      background: getNextExampleBackground(),
+      background: [0, 0.2, 0] as Types.Point3,
     },
   });
 

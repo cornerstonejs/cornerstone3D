@@ -37,7 +37,6 @@ import {
   createAndCacheGeometriesFromSurfaces,
 } from './createAndCacheGeometriesFromSurfaces';
 import { createAndCacheGeometriesFromContours } from './createAndCacheGeometriesFromContours';
-import { getExampleBackground } from './exampleParameters';
 export * from './constants';
 export * from './addUploadToToolbar';
 
@@ -77,5 +76,4 @@ export {
   createAndCacheGeometriesFromContours,
   createAndCacheGeometriesFromSurfaces,
   createAndCacheGeometriesFromOneSurface,
-  getExampleBackground,
 };

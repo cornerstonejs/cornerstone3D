@@ -17,7 +17,6 @@ import {
   addButtonToToolbar,
   addManipulationBindings,
 } from '../../../../utils/demo/helpers';
-import { getBooleanUrlParam } from '../../../../utils/demo/helpers/exampleParameters';
 
 // This is for debugging purposes
 console.warn(
@@ -31,10 +30,6 @@ const { ViewportType } = Enums;
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'wsiNextViewport';
 const wsiDataId = 'wsi-next:primary';
-
-function getNextExampleBackground(): Types.Point3 {
-  return getBooleanUrlParam('cpu') ? [0, 0, 0] : [0, 0.2, 0];
-}
 
 setTitleAndDescription(
   'WSI ViewportNext',
@@ -100,7 +95,7 @@ async function run() {
     type: ViewportType.WHOLE_SLIDE_NEXT,
     element,
     defaultOptions: {
-      background: getNextExampleBackground(),
+      background: [0, 0.2, 0] as Types.Point3,
     },
   });
 

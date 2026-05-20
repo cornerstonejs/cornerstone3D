@@ -10,7 +10,6 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
-import { getBooleanUrlParam } from '../../../../utils/demo/helpers/exampleParameters';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 console.warn(
@@ -33,10 +32,6 @@ const volumeName = 'CT_VOLUME_ID';
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
 const volumeId = `${volumeLoaderScheme}:${volumeName}`;
 const dataId = 'volume-annotation-tools-next:source';
-
-function getNextExampleBackground(): Types.Point3 {
-  return getBooleanUrlParam('cpu') ? [0, 0, 0] : [0, 0.2, 0];
-}
 
 setTitleAndDescription(
   'Annotation Tools On Volumes',
@@ -172,7 +167,7 @@ async function run() {
       element,
       defaultOptions: {
         orientation,
-        background: getNextExampleBackground(),
+        background: [0, 0.2, 0] as Types.Point3,
       },
     }))
   );

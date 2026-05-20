@@ -15,7 +15,6 @@ import {
   addBrushSizeSlider,
   addSegmentIndexDropdown,
 } from '../../../../utils/demo/helpers';
-import { getBooleanUrlParam } from '../../../../utils/demo/helpers/exampleParameters';
 
 const { DefaultHistoryMemo } = utilities.HistoryMemo;
 
@@ -50,10 +49,6 @@ const viewportId2 = 'STACK_VIEWPORT_2';
 const toolGroupId = 'TOOL_GROUP_ID';
 const ctDataId = 'stack-labelmap-segmentation-next:ct';
 const mgDataId = 'stack-labelmap-segmentation-next:mg';
-
-function getNextExampleBackground(): Types.Point3 {
-  return getBooleanUrlParam('cpu') ? [0, 0, 0] : [0, 0.2, 0];
-}
 
 setTitleAndDescription(
   'Segmentation in StackViewport',
@@ -444,7 +439,7 @@ async function run() {
       type: ViewportType.PLANAR_NEXT,
       element: element1,
       defaultOptions: {
-        background: getNextExampleBackground(),
+        background: [0, 0.2, 0] as Types.Point3,
       },
     },
     {
@@ -452,7 +447,7 @@ async function run() {
       type: ViewportType.PLANAR_NEXT,
       element: element2,
       defaultOptions: {
-        background: getNextExampleBackground(),
+        background: [0, 0.2, 0] as Types.Point3,
       },
     },
   ]);

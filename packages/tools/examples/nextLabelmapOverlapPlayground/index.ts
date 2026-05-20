@@ -14,7 +14,6 @@ import {
   initDemo,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
-import { getBooleanUrlParam } from '../../../../utils/demo/helpers/exampleParameters';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   getConfig as getToolsConfig,
@@ -67,10 +66,6 @@ const brushStrategies = {
   [brushInstanceNames.CircularEraser]: 'ERASE_INSIDE_CIRCLE',
   [brushInstanceNames.SphereEraser]: 'ERASE_INSIDE_SPHERE',
 };
-
-function getNextExampleBackground(): Types.Point3 {
-  return getBooleanUrlParam('cpu') ? [0, 0, 0] : [0, 0.2, 0];
-}
 
 const content = document.getElementById('content');
 
@@ -339,7 +334,7 @@ async function run() {
       type: ViewportType.PLANAR_NEXT,
       element: stackElement,
       defaultOptions: {
-        background: getNextExampleBackground(),
+        background: [0, 0.2, 0] as Types.Point3,
       },
     },
     {
@@ -348,7 +343,7 @@ async function run() {
       element: axialElement,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
-        background: getNextExampleBackground(),
+        background: [0, 0.2, 0] as Types.Point3,
       },
     },
     {
@@ -357,7 +352,7 @@ async function run() {
       element: sagittalElement,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
-        background: getNextExampleBackground(),
+        background: [0, 0.2, 0] as Types.Point3,
       },
     },
     {
@@ -366,7 +361,7 @@ async function run() {
       element: coronalElement,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
-        background: getNextExampleBackground(),
+        background: [0, 0.2, 0] as Types.Point3,
       },
     },
   ]);

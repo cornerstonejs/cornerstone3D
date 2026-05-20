@@ -11,7 +11,6 @@ import {
   getLocalUrl,
   annotationTools,
 } from '../../../../utils/demo/helpers';
-import { getBooleanUrlParam } from '../../../../utils/demo/helpers/exampleParameters';
 
 // This is for debugging purposes
 console.warn(
@@ -30,10 +29,6 @@ const StudyInstanceUID = '1.3.76.13.65829.2.20130125082826.1072139.2';
 const SeriesInstanceUID = '1.3.6.1.4.1.20029.40.20130125105919.5407.1';
 const wadoRsRoot =
   getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb';
-
-function getNextExampleBackground(): Types.Point3 {
-  return getBooleanUrlParam('cpu') ? [0, 0, 0] : [0, 0.2, 0];
-}
 
 setTitleAndDescription(
   'ECG ViewportNext',
@@ -115,7 +110,7 @@ async function run() {
     type: ViewportType.ECG_NEXT,
     element,
     defaultOptions: {
-      background: getNextExampleBackground(),
+      background: [0, 0.2, 0] as Types.Point3,
     },
   });
 

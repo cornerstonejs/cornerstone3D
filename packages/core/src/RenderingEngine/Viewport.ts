@@ -427,7 +427,11 @@ class Viewport {
     // If the pan has been applied, we need to be able
     // apply the pan back
     const dimensions = imageData.getDimensions();
-    const middleIJK = dimensions.map((d) => (d - 1) / 2);
+    const middleIJK = getVolumeCenterIJK(
+      dimensions,
+      imageData.getDirection(),
+      viewPlaneNormal
+    );
 
     const idx = [middleIJK[0], middleIJK[1], middleIJK[2]] as ReadonlyVec3;
     const centeredFocalPoint = imageData.indexToWorld(idx, vec3.create());
@@ -1159,7 +1163,11 @@ class Viewport {
 
     if (imageData) {
       const dimensions = imageData.getDimensions();
-      const middleIJK = dimensions.map((d) => (d - 1) / 2);
+      const middleIJK = getVolumeCenterIJK(
+        dimensions,
+        imageData.getDirection(),
+        viewPlaneNormal
+      );
       const idx = [middleIJK[0], middleIJK[1], middleIJK[2]] as ReadonlyVec3;
       // Modifies the focal point in place, as this hits the vtk indexToWorld function
       imageData.indexToWorld(idx, focalPoint);
@@ -2230,6 +2238,51 @@ class Viewport {
   ) {
     throw new Error('Unsupported operation setDataList');
   }
+}
+
+/**
+ * Compute the IJK index of the volume center for use as a camera focal point.
+ *
+ * Mirrors 3D Slicer's behavior in vtkMRMLSliceLogic::FitSliceToVolumes +
+ * SnapSliceOffsetToIJK: center the focal point on the volume's geometric
+ * center, then snap *only* the slice-direction axis to the nearest integer
+ * voxel center so the camera doesn't land between two slices. The in-plane
+ * axes use the continuous geometric center `(d - 1) / 2`.
+ *
+ * The slice direction is taken to be the IJK axis whose world-space direction
+ * is most aligned with `viewPlaneNormal`. For axial/sagittal/coronal MPR this
+ * is exact; for oblique MPR this is an approximation (a single IJK axis is
+ * picked rather than projecting along the normal).
+ */
+function getVolumeCenterIJK(
+  dimensions: number[],
+  direction: ArrayLike<number>,
+  viewPlaneNormal: ArrayLike<number>
+): number[] {
+  const ijkAxes: vec3[] = [
+    [direction[0], direction[1], direction[2]] as vec3,
+    [direction[3], direction[4], direction[5]] as vec3,
+    [direction[6], direction[7], direction[8]] as vec3,
+  ];
+  const normal = [
+    viewPlaneNormal[0],
+    viewPlaneNormal[1],
+    viewPlaneNormal[2],
+  ] as vec3;
+
+  let sliceAxis = 0;
+  let maxDot = -1;
+  for (let i = 0; i < 3; i++) {
+    const dot = Math.abs(vec3.dot(ijkAxes[i], normal));
+    if (dot > maxDot) {
+      maxDot = dot;
+      sliceAxis = i;
+    }
+  }
+
+  return dimensions.map((d, i) =>
+    i === sliceAxis ? Math.floor(d / 2) : (d - 1) / 2
+  );
 }
 
 export default Viewport;

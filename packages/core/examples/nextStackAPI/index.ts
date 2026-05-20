@@ -28,10 +28,6 @@ const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_STACK_NEXT';
 const stackDataId = 'stack-api-next:primary';
 
-function getNextExampleBackground(): Types.Point3 {
-  return getBooleanUrlParam('cpu') ? [0, 0, 0] : [0, 0.2, 0];
-}
-
 function parseStackReadyDelayMs(): number {
   const raw = getStringUrlParam('stackReadyDelayMs');
   if (!raw) {
@@ -271,7 +267,7 @@ async function run() {
     type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
-      background: getNextExampleBackground(),
+      background: [0, 0.2, 0] as Types.Point3,
     },
   });
 

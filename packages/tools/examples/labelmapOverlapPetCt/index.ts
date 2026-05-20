@@ -11,7 +11,6 @@ import {
   addDropdownToToolbar,
   addToggleButtonToToolbar,
   createImageIdsAndCacheMetaData,
-  getExampleBackground,
   initDemo,
   setTitleAndDescription,
   setCtTransferFunctionForVolumeActor,
@@ -317,7 +316,7 @@ async function run() {
 
   // Create rendering engine and viewports
   const renderingEngine = new RenderingEngine(renderingEngineId);
-  const background = getExampleBackground() as Types.Point3;
+  const background = [0.2, 0, 0.2] as Types.Point3;
 
   renderingEngine.setViewports([
     {

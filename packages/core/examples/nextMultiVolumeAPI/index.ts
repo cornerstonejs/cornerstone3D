@@ -46,10 +46,6 @@ const ptVolumeName = 'PT_VOLUME_ID_NEXT';
 const ptVolumeId = `${volumeLoaderScheme}:${ptVolumeName}`;
 const PET_DEFAULT_OPACITY = getDefaultPetOpacity();
 
-function getNextExampleBackground(): Types.Point3 {
-  return getBooleanUrlParam('cpu') ? [0, 0, 0] : [0, 0.2, 0];
-}
-
 function getViewport(): PlanarViewport {
   return getRenderingEngine(renderingEngineId).getViewport(
     viewportId
@@ -261,7 +257,7 @@ async function run() {
     element,
     defaultOptions: {
       orientation: defaultOrientation,
-      background: getNextExampleBackground(),
+      background: [0, 0.2, 0] as Types.Point3,
     },
   });
 

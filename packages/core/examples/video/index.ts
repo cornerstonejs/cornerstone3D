@@ -10,7 +10,6 @@ import {
   addButtonToToolbar,
   createImageIdsAndCacheMetaData,
   getLocalUrl,
-  getExampleBackground,
 } from '../../../../utils/demo/helpers';
 
 // This is for debugging purposes
@@ -132,7 +131,7 @@ async function run() {
     type: ViewportType.VIDEO,
     element,
     defaultOptions: {
-      background: getExampleBackground() as Types.Point3,
+      background: [0.2, 0, 0.2] as Types.Point3,
     },
   };
 

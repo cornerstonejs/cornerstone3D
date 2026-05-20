@@ -11,7 +11,6 @@ import {
   setTitleAndDescription,
   addDropdownToToolbar,
 } from '../../../../utils/demo/helpers';
-import { getBooleanUrlParam } from '../../../../utils/demo/helpers/exampleParameters';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import { KeyboardBindings } from '../../src/enums';
 import { StackScrollOutOfBoundsEvent } from 'core/src/types/EventTypes';
@@ -42,10 +41,6 @@ const leftClickTools = [
 ];
 const defaultLeftClickTool = leftClickTools[0];
 let currentLeftClickTool = leftClickTools[0];
-
-function getNextExampleBackground(): Types.Point3 {
-  return getBooleanUrlParam('cpu') ? [0, 0, 0] : [0, 0.2, 0];
-}
 
 setTitleAndDescription(
   'Basic Stack Manipulation',
@@ -202,7 +197,7 @@ async function run() {
     type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
-      background: getNextExampleBackground(),
+      background: [0, 0.2, 0] as Types.Point3,
     },
   });
 

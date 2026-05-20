@@ -86,11 +86,26 @@ function setLabelmapColorAndOpacity(
     type: SegmentationRepresentations.Labelmap,
   });
 
-  const cfun = vtkColorTransferFunction.newInstance();
-  const ofun = vtkPiecewiseFunction.newInstance();
+  // Reuse the persistent cfun/ofun stored on the segmentation representation
+  // config. The legacy code on main also mutates these in place rather than
+  // creating fresh instances each call — swapping the transfer functions on
+  // a vtkVolumeProperty can otherwise reset internal cached state that
+  // affects how scalar opacity accumulates during ray casting, producing
+  // visibly fainter segmentations.
+  const renderingConfig = segmentationRepresentation.config;
+  const cfun = renderingConfig.cfun;
+  const ofun = renderingConfig.ofun;
+  cfun.removeAllPoints();
+  ofun.removeAllPoints();
 
-  const colorNodes = [{ x: 0, r: 0, g: 0, b: 0, midpoint: 0.5, sharpness: 0 }];
-  const opacityNodes = [{ x: 0, y: 0, midpoint: 0.5, sharpness: 0 }];
+  // sharpness=1.0 gives sharp/step-like transitions between adjacent label
+  // values; sharpness=0 would interpolate opacities between labels, which for
+  // a discrete labelmap means the volume raycaster gets reduced effective
+  // opacity at sub-voxel sample positions (visible as faint segmentations).
+  const colorNodes = [
+    { x: 0, r: 0, g: 0, b: 0, midpoint: 0.5, sharpness: 1.0 },
+  ];
+  const opacityNodes = [{ x: 0, y: 0, midpoint: 0.5, sharpness: 1.0 }];
 
   labelValueEntries.forEach(({ labelValue, segmentIndex }) => {
     const segmentColor = colorLUT[segmentIndex];
@@ -117,7 +132,7 @@ function setLabelmapColorAndOpacity(
       g: segmentColor[1] / MAX_NUMBER_COLORS,
       b: segmentColor[2] / MAX_NUMBER_COLORS,
       midpoint: 0.5,
-      sharpness: 0,
+      sharpness: 1.0,
     });
 
     if (renderFill) {
@@ -129,14 +144,14 @@ function setLabelmapColorAndOpacity(
         x: labelValue,
         y: segmentOpacity,
         midpoint: 0.5,
-        sharpness: 0,
+        sharpness: 1.0,
       });
     } else {
       opacityNodes.push({
         x: labelValue,
         y: 0.01,
         midpoint: 0.5,
-        sharpness: 0,
+        sharpness: 1.0,
       });
     }
   });
