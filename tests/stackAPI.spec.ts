@@ -12,6 +12,11 @@ test.beforeEach(async ({ page }) => {
 test.describe.configure({ mode: 'serial' });
 
 test.describe('Stack Viewport API', async () => {
+  test('should display the initial image -- @debug', async ({ page }) => {
+    const locator = page.locator('.cornerstone-canvas');
+    await checkForScreenshot(page, locator, screenShotPaths.stackAPI.initial);
+  });
+
   test('should set VOI range correctly -- @debug', async ({ page }) => {
     await page.getByRole('button', { name: 'Set VOI Range' }).click();
     const locator = page.locator('.cornerstone-canvas');
