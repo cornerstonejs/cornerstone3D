@@ -51,3 +51,14 @@ area by the user.
 (in images below, a certain threshold is set to create a segmentation)
 
 ![](../../../assets/threshold-segmentation-tool.gif)
+
+## Region Segment Plus (one-click)
+
+`RegionSegmentPlusFloodFillTool` segments with a **single primary click** using 3D intensity
+flood fill. Initial tolerance (intensity band), optional slice/planar bounds, and island
+cleanup are configured on the tool rather than by drawing seeds.
+
+The GPU grow-cut one-click tool shipped on `origin/main` as `RegionSegmentPlusTool` is now
+`RegionSegmentPlusGrowCutTool` and is **deprecated**. See the
+[Region Segment Plus migration guide](../../../migration-guides/4x/region-segment-plus)
+for updating registrations, `toolName`, and configuration.

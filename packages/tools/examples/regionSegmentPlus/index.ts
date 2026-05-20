@@ -25,7 +25,8 @@ console.warn(
 );
 
 const {
-  RegionSegmentPlusTool,
+  RegionSegmentPlusFloodFillTool,
+  RegionSegmentPlusGrowCutTool,
   WindowLevelTool,
   segmentation,
   ToolGroupManager,
@@ -36,7 +37,21 @@ const {
 const { ViewportType, Events: csCoreEvents } = Enums;
 const { MouseBindings, KeyboardBindings } = csToolsEnums;
 
-/** Default intensity strategy for this example (canvas disk, 10 CSS px radius). */
+/** Default one-click tool (flood fill with auto initial parameters). */
+const DEFAULT_ONE_CLICK_TOOL = RegionSegmentPlusFloodFillTool.toolName;
+
+const ONE_CLICK_TOOL_OPTIONS = [
+  {
+    value: RegionSegmentPlusFloodFillTool.toolName,
+    label: 'Region Segment Plus (flood fill)',
+  },
+  {
+    value: RegionSegmentPlusGrowCutTool.toolName,
+    label: 'Region Segment Plus (grow cut) (deprecated)',
+  },
+] as const;
+
+/** Default intensity strategy for flood fill (canvas disk, 10 CSS px radius). */
 const DEFAULT_FILL_STRATEGY = 'canvasDiskTriClassLarge' as const;
 
 /** Initial toolbar + tool configuration (single source for `addTool` and checkbox `checked`). */
@@ -45,32 +60,48 @@ const initialRegionSegPlusIslandExternal = true;
 const initialRegionSegPlusIslandInternal = true;
 const initialRegionSegPlusIslandVerbose = false;
 const initialRegionSegPlusMaxDeltaK = 25;
-const initialRegionSegPlusMaxDeltaIJ = 512;
+const initialRegionSegPlusMaxDeltaIJ = 25;
 
 /**
  * Primary binding = one-click region segment. Tool class is registered explicitly
  * before addManipulationBindings — that helper skips addTool for toolMap entries
  * once its module `registered` flag is true (e.g. after opening another example).
  */
+const floodFillToolConfiguration = {
+  hoverPrecheckEnabled: initialRegionSegPlusHoverPrecheck,
+  intensityRangeStrategy: DEFAULT_FILL_STRATEGY,
+  maxDeltaK: initialRegionSegPlusMaxDeltaK,
+  maxDeltaIJ: initialRegionSegPlusMaxDeltaIJ,
+  floodFillIslandRemoval: {
+    removeExternalIslands: initialRegionSegPlusIslandExternal,
+    removeInternalIslands: initialRegionSegPlusIslandInternal,
+    verboseLogging: initialRegionSegPlusIslandVerbose,
+  },
+};
+
 const regionSegmentPlusToolMap = new Map([
   [
-    RegionSegmentPlusTool.toolName,
+    DEFAULT_ONE_CLICK_TOOL,
     {
       selected: true,
+      configuration: floodFillToolConfiguration,
+    },
+  ],
+  [
+    RegionSegmentPlusGrowCutTool.toolName,
+    {
       configuration: {
-        hoverPrecheckEnabled: initialRegionSegPlusHoverPrecheck,
-        intensityRangeStrategy: DEFAULT_FILL_STRATEGY,
-        maxDeltaK: initialRegionSegPlusMaxDeltaK,
-        maxDeltaIJ: initialRegionSegPlusMaxDeltaIJ,
-        floodFillIslandRemoval: {
-          removeExternalIslands: initialRegionSegPlusIslandExternal,
-          removeInternalIslands: initialRegionSegPlusIslandInternal,
-          verboseLogging: initialRegionSegPlusIslandVerbose,
-        },
+        islandRemoval: { enabled: false },
       },
     },
   ],
 ]);
+
+let activeOneClickToolName: string = DEFAULT_ONE_CLICK_TOOL;
+
+function isFloodFillOneClickTool(toolName: string): boolean {
+  return toolName === RegionSegmentPlusFloodFillTool.toolName;
+}
 
 const WADO_RS_ROOT = 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb';
 
@@ -101,6 +132,7 @@ const SELECT_ID_STUDY = 'region-seg-plus-study';
 const SELECT_ID_LEFT = 'region-seg-plus-left-series';
 const SELECT_ID_PT = 'region-seg-plus-pt-series';
 const SELECT_ID_FILL_STRATEGY = 'region-seg-plus-fill-strategy';
+const SELECT_ID_ONE_CLICK_TOOL = 'region-seg-plus-one-click-tool';
 
 const FILL_STRATEGY_OPTIONS = [
   {
@@ -260,7 +292,8 @@ function attachStackStatusListeners() {
 // prettier-ignore
 createInfoSection(content)
   .addInstruction('Study drives both series lists; changing study reloads left and right. Scouts/localizers never appear.')
-  .addInstruction('Primary click (default): Region Segment Plus. Hover precheck is off by default (second toolbar row); enable it to require a short stable hover before segmenting.')
+  .addInstruction('Primary click (default): Region Segment Plus flood fill. Use the one-click tool dropdown to switch to the deprecated grow-cut variant.')
+  .addInstruction('Flood fill: hover precheck is off by default; enable it to require a short stable hover before segmenting.')
   .addInstruction('Intensity strategy changes log to the console; each segment click logs the resolved raw intensity band from runFloodFillSegmentation.')
   .addInstruction('Canvas disk small/large are separate intensity options (3 px vs 10 px); the green circle matches the active choice.')
   .addInstruction('Flood fill (default mode): toolbar checkboxes toggle external/internal island removal and verbose island-removal logs (growCut logger).')
@@ -270,9 +303,10 @@ createInfoSection(content)
 
 const updateFloodBoundsConfig = cstUtils.throttle(
   ({ maxDeltaK, maxDeltaIJ }) => {
-    const toolInstance = toolGroup.getToolInstance(
-      RegionSegmentPlusTool.toolName
-    );
+    if (!isFloodFillOneClickTool(activeOneClickToolName)) {
+      return;
+    }
+    const toolInstance = toolGroup.getToolInstance(activeOneClickToolName);
     const { configuration: config } = toolInstance;
 
     if (maxDeltaK !== undefined) {
@@ -532,7 +566,8 @@ function replaceSeriesSelectOptions(
 async function run() {
   await initDemo({});
 
-  cornerstoneTools.addTool(RegionSegmentPlusTool);
+  cornerstoneTools.addTool(RegionSegmentPlusFloodFillTool);
+  cornerstoneTools.addTool(RegionSegmentPlusGrowCutTool);
   cornerstoneTools.addTool(WindowLevelTool);
 
   toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
@@ -580,7 +615,7 @@ async function run() {
         return;
       }
       const toolInstance = toolGroup?.getToolInstance?.(
-        RegionSegmentPlusTool.toolName
+        activeOneClickToolName
       ) as {
         cancelActiveOperation?: () => boolean;
       } | null;
@@ -785,6 +820,51 @@ async function run() {
     },
   });
 
+  const setFloodFillToolbarVisible = (visible: boolean) => {
+    const display = visible ? '' : 'none';
+    intensityToolbar.style.display = display;
+    floodBoundsToolbar.style.display = display;
+    for (const id of [
+      'region-seg-plus-island-external',
+      'region-seg-plus-island-internal',
+      'region-seg-plus-island-verbose',
+    ]) {
+      const el = document.getElementById(id);
+      if (el?.parentElement) {
+        el.parentElement.style.display = display;
+      }
+    }
+  };
+
+  const setActiveOneClickTool = (toolName: string) => {
+    if (!toolGroup || toolName === activeOneClickToolName) {
+      return;
+    }
+    toolGroup.setToolPassive(activeOneClickToolName);
+    toolGroup.setToolActive(toolName, {
+      bindings: [{ mouseButton: MouseBindings.Primary }],
+    });
+    activeOneClickToolName = toolName;
+    setFloodFillToolbarVisible(isFloodFillOneClickTool(toolName));
+    console.info('[regionSegmentPlus] active one-click tool', { toolName });
+  };
+
+  addDropdownToToolbar({
+    labelText: 'One-click tool',
+    id: SELECT_ID_ONE_CLICK_TOOL,
+    container: segmentationToolbar,
+    options: {
+      labels: ONE_CLICK_TOOL_OPTIONS.map((o) => o.label),
+      values: ONE_CLICK_TOOL_OPTIONS.map((o) => o.value),
+      defaultValue: DEFAULT_ONE_CLICK_TOOL,
+    },
+    onSelectedValueChange: (value) => {
+      setActiveOneClickTool(String(value));
+    },
+  });
+
+  setFloodFillToolbarVisible(true);
+
   addDropdownToToolbar({
     labelText: 'Intensity / fill range',
     id: SELECT_ID_FILL_STRATEGY,
@@ -802,7 +882,10 @@ async function run() {
         value,
         label: opt?.label,
       });
-      toolGroup.setToolConfiguration(RegionSegmentPlusTool.toolName, {
+      if (!isFloodFillOneClickTool(activeOneClickToolName)) {
+        return;
+      }
+      toolGroup.setToolConfiguration(activeOneClickToolName, {
         intensityRangeStrategy: value,
       });
     },
@@ -846,7 +929,7 @@ async function run() {
     checked: initialRegionSegPlusHoverPrecheck,
     container: segmentationToolbar,
     onChange: (checked) => {
-      toolGroup.setToolConfiguration(RegionSegmentPlusTool.toolName, {
+      toolGroup.setToolConfiguration(activeOneClickToolName, {
         hoverPrecheckEnabled: checked,
       });
     },
@@ -855,9 +938,12 @@ async function run() {
   const mergeFloodFillIslandRemoval = (
     partial: Record<string, boolean | undefined>
   ) => {
-    const inst = toolGroup.getToolInstance(RegionSegmentPlusTool.toolName);
+    if (!isFloodFillOneClickTool(activeOneClickToolName)) {
+      return;
+    }
+    const inst = toolGroup.getToolInstance(activeOneClickToolName);
     const prev = inst.configuration.floodFillIslandRemoval ?? {};
-    toolGroup.setToolConfiguration(RegionSegmentPlusTool.toolName, {
+    toolGroup.setToolConfiguration(activeOneClickToolName, {
       floodFillIslandRemoval: { ...prev, ...partial },
     });
   };
@@ -900,7 +986,7 @@ async function run() {
     title: 'Shrink',
     container: operationsToolbar,
     onClick: async () => {
-      toolGroup.getToolInstance(RegionSegmentPlusTool.toolName).shrink();
+      toolGroup.getToolInstance(activeOneClickToolName).shrink();
     },
   });
 
@@ -908,7 +994,7 @@ async function run() {
     title: 'Expand',
     container: operationsToolbar,
     onClick: async () => {
-      toolGroup.getToolInstance(RegionSegmentPlusTool.toolName).expand();
+      toolGroup.getToolInstance(activeOneClickToolName).expand();
     },
   });
 

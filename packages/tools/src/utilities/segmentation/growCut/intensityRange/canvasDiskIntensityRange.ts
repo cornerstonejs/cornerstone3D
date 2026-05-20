@@ -1,4 +1,4 @@
-import { utilities as csUtils } from '@cornerstonejs/core';
+import { utilities as csUtils, metaData } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import type { NumberVoxelManager } from '@cornerstonejs/core/utilities';
 import type { ViewportVoiMappingForTool } from '../getViewportVoiMappingForVolume';
@@ -19,10 +19,16 @@ const LETTERBOX_ZERO_FRACTION_TRIM = 0.12;
 const LETTERBOX_TRIM_MIN_NONZERO_MAX = 32;
 const LETTERBOX_TRIM_MIN_REMAINING = 24;
 
-function trimLetterboxPaddingZeros(samples: number[]): {
+function trimLetterboxPaddingZeros(
+  samples: number[],
+  opts?: { preserveZeroSamples?: boolean }
+): {
   trimmed: number[];
   didTrim: boolean;
 } {
+  if (opts?.preserveZeroSamples) {
+    return { trimmed: samples.slice(), didTrim: false };
+  }
   const n = samples.length;
   if (n < 16) {
     return { trimmed: samples.slice(), didTrim: false };
@@ -48,6 +54,64 @@ function trimLetterboxPaddingZeros(samples: number[]): {
     return { trimmed: samples.slice(), didTrim: false };
   }
   return { trimmed: filtered, didTrim: true };
+}
+
+function toFiniteNumber(value: unknown): number | undefined {
+  const num =
+    typeof value === 'number'
+      ? value
+      : typeof value === 'string'
+        ? Number(value)
+        : NaN;
+  return Number.isFinite(num) ? num : undefined;
+}
+
+function getPixelPaddingRangeAtSlice(
+  referencedVolume: Types.IImageVolume,
+  sliceIndex: number
+): { min: number; max: number } | null {
+  const imageIds = referencedVolume.imageIds;
+  if (!Array.isArray(imageIds) || !imageIds.length) {
+    return null;
+  }
+
+  const imageId = imageIds[sliceIndex];
+  if (!imageId) {
+    return null;
+  }
+
+  const instance = metaData.get('instance', imageId) as
+    | Record<string, unknown>
+    | undefined;
+  if (!instance) {
+    return null;
+  }
+
+  const ppv = toFiniteNumber(instance.PixelPaddingValue);
+  const pprl = toFiniteNumber(instance.PixelPaddingRangeLimit);
+  if (ppv === undefined && pprl === undefined) {
+    return null;
+  }
+
+  const a = ppv ?? pprl;
+  const b = pprl ?? ppv;
+  if (a === undefined || b === undefined) {
+    return null;
+  }
+
+  return { min: Math.min(a, b), max: Math.max(a, b) };
+}
+
+function isPixelPaddingSeed(
+  referencedVolume: Types.IImageVolume,
+  ijkStart: Types.Point3,
+  seedScalar: number
+): boolean {
+  const range = getPixelPaddingRangeAtSlice(referencedVolume, ijkStart[2]);
+  if (!range) {
+    return false;
+  }
+  return seedScalar >= range.min && seedScalar <= range.max;
 }
 
 /**
@@ -496,18 +560,24 @@ export function getCanvasDiskIntensityRange(
     return null;
   }
 
+  const ci = (cy * cw + cx) * 4;
+  const centerByte = renderedDisplayByte255(data, ci);
+  const centerSample = centerByte / 255;
+  const seedIsPixelPadding = isPixelPaddingSeed(
+    referencedVolume,
+    ijkStart,
+    startValue
+  );
+  const preserveZeroSamples = centerByte === 0 && !seedIsPixelPadding;
+
   const rawDiskSampleCount = samples255.length;
   const { trimmed: workBytes, didTrim: letterboxTrimmed } =
-    trimLetterboxPaddingZeros(samples255);
+    trimLetterboxPaddingZeros(samples255, { preserveZeroSamples });
   workBytes.sort((a, b) => a - b);
   const samples = workBytes.map((v) => v / 255);
   const spread = samples[samples.length - 1] - samples[0];
   const mode = opts.mode ?? 'triClass';
   const maxRangeFraction = opts.maxRangeFraction ?? 0.25;
-
-  const ci = (cy * cw + cx) * 4;
-  const centerByte = renderedDisplayByte255(data, ci);
-  const centerSample = centerByte / 255;
 
   let dLo: number;
   let dHi: number;
