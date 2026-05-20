@@ -265,9 +265,6 @@ const screenShotPaths = {
     afterReformat: 'mpr-reformat-after.png',
     afterInteraction: 'mpr-reformat-after-interaction.png',
   },
-  contextPoolRenderingEngine: {
-    viewport: 'viewport.png',
-  },
   volumeAnnotation: {
     lengthTool: 'lengthTool.png',
   },
