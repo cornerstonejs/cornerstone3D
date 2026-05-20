@@ -2,6 +2,7 @@ import { test } from 'playwright-test-coverage';
 import {
   visitExample,
   checkForScreenshot,
+  checkForCanvasSnapshot,
   screenShotPaths,
 } from './utils/index';
 
@@ -13,8 +14,11 @@ test.describe.configure({ mode: 'serial' });
 
 test.describe('Stack Viewport API', async () => {
   test('should display the initial image -- @debug', async ({ page }) => {
-    const locator = page.locator('.cornerstone-canvas');
-    await checkForScreenshot(page, locator, screenShotPaths.stackAPI.initial);
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
+      screenShotPaths.stackAPI.initial
+    );
   });
 
   test('should set VOI range correctly -- @debug', async ({ page }) => {
