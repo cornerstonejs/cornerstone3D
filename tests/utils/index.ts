@@ -1,5 +1,4 @@
 export { visitExample } from './visitExample';
-export { checkForScreenshot } from './checkForScreenshot';
 export { checkForCanvasSnapshot } from './checkForCanvasSnapshot';
 export { screenShotPaths } from './screenShotPaths';
 export { simulateDrag } from './simulateDrag';

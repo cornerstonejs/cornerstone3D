@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import {
   createExampleUrl,
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   expectViewportNextRuntime,
   screenShotPaths,
 } from '../utils/index';
@@ -149,12 +149,15 @@ test.describe('Stack Position Next display area', () => {
   test('captures native ViewportNext display area presets', async ({
     page,
   }) => {
-    const locator = page.locator(STACK_POSITION_ELEMENT);
-
     for (const screenshotCase of screenshotCases) {
       await test.step(screenshotCase.name, async () => {
         await selectDisplayAreaPreset(page, screenshotCase.name);
-        await checkForScreenshot(page, locator, screenshotCase.screenshotPath);
+        await checkForCanvasSnapshot(
+          page,
+          '',
+          screenshotCase.screenshotPath,
+          0
+        );
       });
     }
   });

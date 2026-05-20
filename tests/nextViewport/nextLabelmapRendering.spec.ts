@@ -1,9 +1,8 @@
 import { expect, test } from '@playwright/test';
 import {
   createExampleUrl,
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   expectViewportNextRuntime,
-  getVisibleViewportCanvas,
   screenShotPaths,
 } from '../utils/index';
 
@@ -104,24 +103,23 @@ test.describe('Labelmap Rendering - Next (GPU)', () => {
   test('should render labelmap in all orientations (next GPU)', async ({
     page,
   }) => {
-    const axial = getVisibleViewportCanvas(page, 0);
-    const coronal = getVisibleViewportCanvas(page, 1);
-    const sagittal = getVisibleViewportCanvas(page, 2);
-
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      axial,
-      screenShotPaths.labelmapRenderingNext.axial
+      '',
+      screenShotPaths.labelmapRenderingNext.axial,
+      0
     );
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      coronal,
-      screenShotPaths.labelmapRenderingNext.coronal
+      '',
+      screenShotPaths.labelmapRenderingNext.coronal,
+      1
     );
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      sagittal,
-      screenShotPaths.labelmapRenderingNext.sagittal
+      '',
+      screenShotPaths.labelmapRenderingNext.sagittal,
+      2
     );
   });
 });
@@ -165,24 +163,23 @@ test.describe('Labelmap Rendering - Next (CPU)', () => {
   test('should render labelmap in all orientations (next CPU)', async ({
     page,
   }) => {
-    const axial = getVisibleViewportCanvas(page, 0);
-    const coronal = getVisibleViewportCanvas(page, 1);
-    const sagittal = getVisibleViewportCanvas(page, 2);
-
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      axial,
-      screenShotPaths.labelmapRenderingNext.cpuAxial
+      '',
+      screenShotPaths.labelmapRenderingNext.cpuAxial,
+      0
     );
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      coronal,
-      screenShotPaths.labelmapRenderingNext.cpuCoronal
+      '',
+      screenShotPaths.labelmapRenderingNext.cpuCoronal,
+      1
     );
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      sagittal,
-      screenShotPaths.labelmapRenderingNext.cpuSagittal
+      '',
+      screenShotPaths.labelmapRenderingNext.cpuSagittal,
+      2
     );
   });
 });

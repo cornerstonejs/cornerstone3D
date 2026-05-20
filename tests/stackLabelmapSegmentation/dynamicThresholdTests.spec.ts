@@ -1,6 +1,6 @@
 import { test } from 'playwright-test-coverage';
 import {
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   visitExample,
   screenShotPaths,
   simulateDrawPath,
@@ -31,10 +31,11 @@ test('Stack Segmentation - Dynamic Threshold Tool - Initial Highlight', async ({
   await pause(1000);
 
   await page.waitForTimeout(1500);
-  await checkForScreenshot(
+  await checkForCanvasSnapshot(
     page,
-    canvas,
-    screenShotPaths.stackSegmentation.dynamicThresholdInitialHighlightedPixels
+    '',
+    screenShotPaths.stackSegmentation.dynamicThresholdInitialHighlightedPixels,
+    0
   );
 });
 
@@ -54,10 +55,11 @@ test('Stack Segmentation - Dynamic Threshold Tool - Highlight Contour', async ({
 
   await page.waitForTimeout(1500);
 
-  await checkForScreenshot(
+  await checkForCanvasSnapshot(
     page,
-    canvas,
-    screenShotPaths.stackSegmentation.dynamicThresholdHighlightedContour
+    '',
+    screenShotPaths.stackSegmentation.dynamicThresholdHighlightedContour,
+    0
   );
 });
 
@@ -79,9 +81,10 @@ test('Stack Segmentation - Dynamic Threshold Tool - Confirm Contour', async ({
 
   await page.waitForTimeout(1500);
 
-  await checkForScreenshot(
+  await checkForCanvasSnapshot(
     page,
-    canvas,
-    screenShotPaths.stackSegmentation.dynamicThresholdConfirmedContour
+    '',
+    screenShotPaths.stackSegmentation.dynamicThresholdConfirmedContour,
+    0
   );
 });

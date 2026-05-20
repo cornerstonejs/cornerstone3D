@@ -2,7 +2,7 @@ import type { Page } from '@playwright/test';
 import { test, expect } from 'playwright-test-coverage';
 import {
   visitExample,
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   screenShotPaths,
 } from './utils/index';
 
@@ -109,12 +109,15 @@ test.beforeEach(async ({ page }) => {
 
 test.describe('Stack Position display area', () => {
   test('captures known-correct display area presets', async ({ page }) => {
-    const locator = page.locator(STACK_POSITION_ELEMENT);
-
     for (const screenshotCase of screenshotCases) {
       await test.step(screenshotCase.name, async () => {
         await selectDisplayAreaPreset(page, screenshotCase.name);
-        await checkForScreenshot(page, locator, screenshotCase.screenshotPath);
+        await checkForCanvasSnapshot(
+          page,
+          '',
+          screenshotCase.screenshotPath,
+          0
+        );
       });
     }
   });

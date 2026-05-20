@@ -1,10 +1,8 @@
 import { test } from 'playwright-test-coverage';
 import {
-  checkForScreenshot,
   checkForCanvasSnapshot,
   visitExample,
   screenShotPaths,
-  getVisibleViewportCanvas,
 } from './utils/index';
 
 test.beforeEach(async ({ page, context }) => {

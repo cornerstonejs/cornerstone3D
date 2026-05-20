@@ -1,6 +1,6 @@
 import { test } from 'playwright-test-coverage';
 import {
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   visitExample,
   screenShotPaths,
   getVisibleViewportCanvas,
@@ -28,9 +28,10 @@ test('Stack Segmentation - Rectangle Scissor Tool with segmentation 2', async ({
   await drawRectangleScissor(page, canvas);
   await page.waitForTimeout(1500);
 
-  await checkForScreenshot(
+  await checkForCanvasSnapshot(
     page,
-    canvas,
-    screenShotPaths.stackSegmentation.rectangleScissorSegmentation1
+    '',
+    screenShotPaths.stackSegmentation.rectangleScissorSegmentation1,
+    0
   );
 });

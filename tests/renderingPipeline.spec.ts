@@ -1,7 +1,7 @@
 import type { Page, Locator } from '@playwright/test';
 import { test, expect } from 'playwright-test-coverage';
 import {
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   visitExample,
   screenShotPaths,
   getVisibleViewportCanvas,
@@ -26,13 +26,14 @@ test.skip('Rendering Pipelines for GPU', async () => {
       // Wait 5 seconds for rendering to complete
       await page.waitForTimeout(5000);
 
-      const canvases = await getCanvases(page);
+      const viewportCount = 2;
 
-      for (let i = 0; i < canvases.length; i++) {
-        await checkForScreenshot(
+      for (let i = 0; i < viewportCount; i++) {
+        await checkForCanvasSnapshot(
           page,
-          canvases[i],
-          screenShotPaths.renderingPipelines[`${option.key}${i + 1}`]
+          '',
+          screenShotPaths.renderingPipelines[`${option.key}${i + 1}`],
+          i
         );
       }
     });
@@ -79,11 +80,11 @@ async function checkCPURendering(page: Page) {
   });
   expect(isUsingCPU).toBe(true);
 
-  const canvas = getVisibleViewportCanvas(page, 0);
-  await checkForScreenshot(
+  await checkForCanvasSnapshot(
     page,
-    canvas,
-    screenShotPaths.renderingPipelinesCPU.cpuRendering
+    '',
+    screenShotPaths.renderingPipelinesCPU.cpuRendering,
+    0
   );
 }
 

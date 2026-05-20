@@ -1,7 +1,7 @@
 import { test } from 'playwright-test-coverage';
 import {
   visitExample,
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   screenShotPaths,
 } from './utils/index';
 
@@ -34,11 +34,11 @@ test.describe('Context Pool Rendering Engine', async () => {
   test('should display context pool rendering engine example', async ({
     page,
   }) => {
-    const locator = page.locator('#viewportContainer');
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      locator,
-      screenShotPaths.contextPoolRenderingEngine.viewport
+      '',
+      screenShotPaths.contextPoolRenderingEngine.viewport,
+      0
     );
   });
 });

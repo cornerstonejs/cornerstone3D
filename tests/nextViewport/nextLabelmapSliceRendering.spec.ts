@@ -1,9 +1,8 @@
 import { test, expect } from '@playwright/test';
 import {
   createExampleUrl,
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   expectViewportNextRuntime,
-  getVisibleViewportCanvas,
   getSegmentationActorClassNames,
   screenShotPaths,
 } from '../utils/index';
@@ -68,24 +67,23 @@ test.describe('Labelmap Slice Rendering - Next (GPU)', () => {
   test('should render labelmap with useSliceRendering in all orientations (next GPU)', async ({
     page,
   }) => {
-    const axial = getVisibleViewportCanvas(page, 0);
-    const coronal = getVisibleViewportCanvas(page, 1);
-    const sagittal = getVisibleViewportCanvas(page, 2);
-
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      axial,
-      screenShotPaths.labelmapSliceRenderingNext.axial
+      '',
+      screenShotPaths.labelmapSliceRenderingNext.axial,
+      0
     );
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      coronal,
-      screenShotPaths.labelmapSliceRenderingNext.coronal
+      '',
+      screenShotPaths.labelmapSliceRenderingNext.coronal,
+      1
     );
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      sagittal,
-      screenShotPaths.labelmapSliceRenderingNext.sagittal
+      '',
+      screenShotPaths.labelmapSliceRenderingNext.sagittal,
+      2
     );
   });
 

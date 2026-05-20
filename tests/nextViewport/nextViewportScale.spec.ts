@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import {
   createExampleUrl,
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   expectViewportNextRuntime,
   screenShotPaths,
   setupRenderTracking,
@@ -65,7 +65,6 @@ test.describe('Next viewport two-axis scale', () => {
   });
 
   test('captures scale presets and fit modes', async ({ page }) => {
-    const locator = page.locator(SCALE_ROW);
     const cases = [
       {
         button: 'Scale [1, 1]',
@@ -132,7 +131,12 @@ test.describe('Next viewport two-axis scale', () => {
           screenshotCase.scaleMode,
           screenshotCase.viewportScale
         );
-        await checkForScreenshot(page, locator, screenshotCase.screenshotPath);
+        await checkForCanvasSnapshot(
+          page,
+          '',
+          screenshotCase.screenshotPath,
+          [0, 1]
+        );
       });
     }
   });
@@ -140,17 +144,16 @@ test.describe('Next viewport two-axis scale', () => {
   test('keeps sliders synchronized after preset scale changes', async ({
     page,
   }) => {
-    const locator = page.locator(SCALE_ROW);
-
     await clickToolbarButton(page, 'Wide [2, 1]');
     await expectScaleState(page, 2, 1, 'fit');
 
     await page.locator(SCALE_X_SLIDER).press('ArrowLeft');
     await expectScaleState(page, 1.95, 1, 'fit');
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      locator,
-      screenShotPaths.nextViewportScale.wideSliderNudge
+      '',
+      screenShotPaths.nextViewportScale.wideSliderNudge,
+      [0, 1]
     );
   });
 });

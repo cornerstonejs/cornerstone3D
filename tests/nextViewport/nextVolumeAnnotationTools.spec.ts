@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import {
   createExampleUrl,
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   expectViewportNextRuntime,
   getVisibleViewportCanvas,
   screenShotPaths,
@@ -149,9 +149,9 @@ async function manipulateAndScreenshotAll(
   await zoomOffCenter(page, coronal, { startFrac: [0.6, 0.4], dy: 50 });
   await panViewport(page, coronal, 10, 35);
 
-  await checkForScreenshot(page, axial, paths.axial);
-  await checkForScreenshot(page, sagittal, paths.sagittal);
-  await checkForScreenshot(page, coronal, paths.coronal);
+  await checkForCanvasSnapshot(page, '', paths.axial, 0);
+  await checkForCanvasSnapshot(page, '', paths.sagittal, 1);
+  await checkForCanvasSnapshot(page, '', paths.coronal, 2);
 }
 
 // ---------------------------------------------------------------------------
@@ -196,10 +196,11 @@ test.describe('Volume Annotation - Next (GPU)', () => {
   test('should draw a length measurement (next GPU)', async ({ page }) => {
     const locator = getVisibleViewportCanvas(page, 0);
     await drawLengthMeasurement(page, locator);
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      locator,
-      screenShotPaths.volumeAnnotationNext.length
+      '',
+      screenShotPaths.volumeAnnotationNext.length,
+      0
     );
   });
 
@@ -208,10 +209,11 @@ test.describe('Volume Annotation - Next (GPU)', () => {
   }) => {
     const sagittal = getVisibleViewportCanvas(page, 1);
     await drawLengthMeasurement(page, sagittal);
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      sagittal,
-      screenShotPaths.volumeAnnotationNext.sagittal
+      '',
+      screenShotPaths.volumeAnnotationNext.sagittal,
+      1
     );
   });
 
@@ -271,10 +273,11 @@ test.describe('Volume Annotation - Next (CPU)', () => {
   test('should draw a length measurement (next CPU)', async ({ page }) => {
     const locator = getVisibleViewportCanvas(page, 0);
     await drawLengthMeasurement(page, locator);
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      locator,
-      screenShotPaths.volumeAnnotationNext.cpuLength
+      '',
+      screenShotPaths.volumeAnnotationNext.cpuLength,
+      0
     );
   });
 
@@ -283,10 +286,11 @@ test.describe('Volume Annotation - Next (CPU)', () => {
   }) => {
     const sagittal = getVisibleViewportCanvas(page, 1);
     await drawLengthMeasurement(page, sagittal);
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      sagittal,
-      screenShotPaths.volumeAnnotationNext.cpuSagittal
+      '',
+      screenShotPaths.volumeAnnotationNext.cpuSagittal,
+      1
     );
   });
 

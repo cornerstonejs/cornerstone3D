@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import {
   createExampleUrl,
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   expectViewportNextRuntime,
   getVisibleViewportCanvas,
   screenShotPaths,
@@ -69,32 +69,27 @@ function createStackAPITests(
 ) {
   test(`should set VOI range (${mode})`, async ({ page }) => {
     await page.getByRole('button', { name: 'Set VOI Range' }).click();
-    const locator = getVisibleViewportCanvas(page);
-    await checkForScreenshot(page, locator, paths.setVoi);
+    await checkForCanvasSnapshot(page, '', paths.setVoi, 0);
   });
 
   test(`should move to next image (${mode})`, async ({ page }) => {
     await page.getByRole('button', { name: 'Next Image' }).click();
-    const locator = getVisibleViewportCanvas(page);
-    await checkForScreenshot(page, locator, paths.nextImage);
+    await checkForCanvasSnapshot(page, '', paths.nextImage, 0);
   });
 
   test(`should flip horizontally (${mode})`, async ({ page }) => {
     await page.getByRole('button', { name: 'Flip H' }).click();
-    const locator = getVisibleViewportCanvas(page);
-    await checkForScreenshot(page, locator, paths.flipH);
+    await checkForCanvasSnapshot(page, '', paths.flipH, 0);
   });
 
   test(`should rotate absolute 150 (${mode})`, async ({ page }) => {
     await page.getByRole('button', { name: 'Rotate Absolute 150' }).click();
-    const locator = getVisibleViewportCanvas(page);
-    await checkForScreenshot(page, locator, paths.rotate);
+    await checkForCanvasSnapshot(page, '', paths.rotate, 0);
   });
 
   test(`should invert (${mode})`, async ({ page }) => {
     await page.getByRole('button', { name: 'Invert' }).click();
-    const locator = getVisibleViewportCanvas(page);
-    await checkForScreenshot(page, locator, paths.invert);
+    await checkForCanvasSnapshot(page, '', paths.invert, 0);
   });
 
   test(`should reset after random transforms (${mode})`, async ({ page }) => {
@@ -103,8 +98,7 @@ function createStackAPITests(
       .click();
     await page.getByRole('button', { name: 'Rotate Random' }).click();
     await page.getByRole('button', { name: 'Reset Viewport' }).click();
-    const locator = getVisibleViewportCanvas(page);
-    await checkForScreenshot(page, locator, paths.reset);
+    await checkForCanvasSnapshot(page, '', paths.reset, 0);
   });
 }
 

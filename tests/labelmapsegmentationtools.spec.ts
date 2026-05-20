@@ -1,7 +1,7 @@
 import { test } from 'playwright-test-coverage';
 import {
   visitExample,
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   screenShotPaths,
   simulateClicksOnElement,
   setupRenderTracking,
@@ -25,7 +25,6 @@ test.beforeEach(async ({ page }) => {
 
 test.describe('Basic manual labelmap Segmentation tools', async () => {
   test('should render and allow usage of circle brush', async ({ page }) => {
-    const screenshotLocator = page.locator('#content > div');
     const firstCanvas = page.locator('.cornerstone-canvas').nth(0);
     const secondCanvas = page.locator('.cornerstone-canvas').nth(1);
     const thirdCanvas = page.locator('.cornerstone-canvas').nth(2);
@@ -94,15 +93,15 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      screenshotLocator,
-      screenShotPaths.labelmapSegmentationTools.circularBrush
+      '',
+      screenShotPaths.labelmapSegmentationTools.circularBrush,
+      [0, 1, 2]
     );
   });
 
   test('should render and allow usage of circle eraser', async ({ page }) => {
-    const screenshotLocator = page.locator('#content > div');
     const firstCanvas = page.locator('.cornerstone-canvas').nth(0);
     const secondCanvas = page.locator('.cornerstone-canvas').nth(1);
     const thirdCanvas = page.locator('.cornerstone-canvas').nth(2);
@@ -243,15 +242,15 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      screenshotLocator,
-      screenShotPaths.labelmapSegmentationTools.circularEraser
+      '',
+      screenShotPaths.labelmapSegmentationTools.circularEraser,
+      [0, 1, 2]
     );
   });
 
   test('should render and allow usage of sphere brush', async ({ page }) => {
-    const screenshotLocator = page.locator('#content > div');
     const firstCanvas = page.locator('.cornerstone-canvas').nth(0);
     const secondCanvas = page.locator('.cornerstone-canvas').nth(1);
     const thirdCanvas = page.locator('.cornerstone-canvas').nth(2);
@@ -325,15 +324,15 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      screenshotLocator,
-      screenShotPaths.labelmapSegmentationTools.sphereBrush
+      '',
+      screenShotPaths.labelmapSegmentationTools.sphereBrush,
+      [0, 1, 2]
     );
   });
 
   test('should render and allow usage of sphere eraser', async ({ page }) => {
-    const screenshotLocator = page.locator('#content > div');
     const firstCanvas = page.locator('.cornerstone-canvas').nth(0);
     const secondCanvas = page.locator('.cornerstone-canvas').nth(1);
     const thirdCanvas = page.locator('.cornerstone-canvas').nth(2);
@@ -478,17 +477,17 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      screenshotLocator,
-      screenShotPaths.labelmapSegmentationTools.sphereEraser
+      '',
+      screenShotPaths.labelmapSegmentationTools.sphereEraser,
+      [0, 1, 2]
     );
   });
 
   test('should render and allow usage of threshold circle', async ({
     page,
   }) => {
-    const screenshotLocator = page.locator('#content > div');
     const firstCanvas = page.locator('.cornerstone-canvas').nth(0);
     const secondCanvas = page.locator('.cornerstone-canvas').nth(1);
     const thirdCanvas = page.locator('.cornerstone-canvas').nth(2);
@@ -566,17 +565,17 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      screenshotLocator,
-      screenShotPaths.labelmapSegmentationTools.thresholdCircle
+      '',
+      screenShotPaths.labelmapSegmentationTools.thresholdCircle,
+      [0, 1, 2]
     );
   });
 
   test('should render and allow usage of rectangle scissor', async ({
     page,
   }) => {
-    const screenshotLocator = page.locator('#content > div');
     const firstCanvas = page.locator('.cornerstone-canvas').nth(0);
     const secondCanvas = page.locator('.cornerstone-canvas').nth(1);
     const thirdCanvas = page.locator('.cornerstone-canvas').nth(2);
@@ -631,15 +630,15 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
     });
 
     await waitForRenderSettled(page);
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      screenshotLocator,
-      screenShotPaths.labelmapSegmentationTools.rectangleScissor
+      '',
+      screenShotPaths.labelmapSegmentationTools.rectangleScissor,
+      [0, 1, 2]
     );
   });
 
   test('should render and allow usage of circle scissor', async ({ page }) => {
-    const screenshotLocator = page.locator('#content > div');
     const firstCanvas = page.locator('.cornerstone-canvas').nth(0);
     const secondCanvas = page.locator('.cornerstone-canvas').nth(1);
     const thirdCanvas = page.locator('.cornerstone-canvas').nth(2);
@@ -692,15 +691,15 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
     });
 
     await waitForRenderSettled(page);
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      screenshotLocator,
-      screenShotPaths.labelmapSegmentationTools.circleScissor
+      '',
+      screenShotPaths.labelmapSegmentationTools.circleScissor,
+      [0, 1, 2]
     );
   });
 
   test('should render and allow usage of sephere scissor', async ({ page }) => {
-    const screenshotLocator = page.locator('#content > div');
     const firstCanvas = page.locator('.cornerstone-canvas').nth(0);
     const secondCanvas = page.locator('.cornerstone-canvas').nth(1);
     const thirdCanvas = page.locator('.cornerstone-canvas').nth(2);
@@ -750,15 +749,15 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      screenshotLocator,
-      screenShotPaths.labelmapSegmentationTools.sphereScissor
+      '',
+      screenShotPaths.labelmapSegmentationTools.sphereScissor,
+      [0, 1, 2]
     );
   });
 
   test('should render and allow usage of eraser scissor', async ({ page }) => {
-    const screenshotLocator = page.locator('#content > div');
     const firstCanvas = page.locator('.cornerstone-canvas').nth(0);
     const secondCanvas = page.locator('.cornerstone-canvas').nth(1);
     const thirdCanvas = page.locator('.cornerstone-canvas').nth(2);
@@ -855,10 +854,11 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      screenshotLocator,
-      screenShotPaths.labelmapSegmentationTools.scissorEraser
+      '',
+      screenShotPaths.labelmapSegmentationTools.scissorEraser,
+      [0, 1, 2]
     );
   });
 

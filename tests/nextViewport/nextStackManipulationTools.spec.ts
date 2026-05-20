@@ -1,7 +1,7 @@
 import { test } from '@playwright/test';
 import {
   createExampleUrl,
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   expectViewportNextRuntime,
   getVisibleViewportCanvas,
   screenShotPaths,
@@ -85,20 +85,22 @@ test.describe('Stack Manipulation - Next (GPU)', () => {
   }) => {
     const locator = getVisibleViewportCanvas(page);
     await zoomOffCenter(page, locator);
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      locator,
-      screenShotPaths.stackManipulationToolsNext.zoom
+      '',
+      screenShotPaths.stackManipulationToolsNext.zoom,
+      0
     );
   });
 
   test('should pan with middle click (next GPU)', async ({ page }) => {
     const locator = getVisibleViewportCanvas(page);
     await panViewport(page, locator, 50, 30);
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      locator,
-      screenShotPaths.stackManipulationToolsNext.pan
+      '',
+      screenShotPaths.stackManipulationToolsNext.pan,
+      0
     );
   });
 
@@ -106,10 +108,11 @@ test.describe('Stack Manipulation - Next (GPU)', () => {
     const locator = getVisibleViewportCanvas(page);
     await zoomOffCenter(page, locator);
     await panViewport(page, locator, 40, -20);
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      locator,
-      screenShotPaths.stackManipulationToolsNext.zoomAndPan
+      '',
+      screenShotPaths.stackManipulationToolsNext.zoomAndPan,
+      0
     );
   });
 });
@@ -136,20 +139,22 @@ test.describe('Stack Manipulation - Next (CPU)', () => {
   }) => {
     const locator = getVisibleViewportCanvas(page);
     await zoomOffCenter(page, locator);
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      locator,
-      screenShotPaths.stackManipulationToolsNext.cpuZoom
+      '',
+      screenShotPaths.stackManipulationToolsNext.cpuZoom,
+      0
     );
   });
 
   test('should pan with middle click (next CPU)', async ({ page }) => {
     const locator = getVisibleViewportCanvas(page);
     await panViewport(page, locator, 50, 30);
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      locator,
-      screenShotPaths.stackManipulationToolsNext.cpuPan
+      '',
+      screenShotPaths.stackManipulationToolsNext.cpuPan,
+      0
     );
   });
 
@@ -157,10 +162,11 @@ test.describe('Stack Manipulation - Next (CPU)', () => {
     const locator = getVisibleViewportCanvas(page);
     await zoomOffCenter(page, locator);
     await panViewport(page, locator, 40, -20);
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      locator,
-      screenShotPaths.stackManipulationToolsNext.cpuZoomAndPan
+      '',
+      screenShotPaths.stackManipulationToolsNext.cpuZoomAndPan,
+      0
     );
   });
 });

@@ -1,6 +1,5 @@
 import { test } from 'playwright-test-coverage';
 import {
-  checkForScreenshot,
   checkForCanvasSnapshot,
   visitExample,
   screenShotPaths,
@@ -24,12 +23,10 @@ test.describe('Swapping labelmap segmentations on a viewport', async () => {
   test('should swap the segmentation after clicking on "Swap Segmentation" button', async ({
     page,
   }) => {
-    const canvas = await page.locator('canvas.cornerstone-canvas');
-
     await page.getByRole('button', { name: 'Swap Segmentation' }).click();
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      canvas,
+      'canvas.cornerstone-canvas',
       screenShotPaths.labelmapSwapping.swappedSegmentation
     );
   });

@@ -1,7 +1,7 @@
 import { test } from '@playwright/test';
 import {
   createExampleUrl,
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   expectViewportNextRuntime,
   getVisibleViewportCanvas,
   screenShotPaths,
@@ -141,11 +141,11 @@ test.describe('Labelmap Overlap Playground - Next', () => {
     await paintOverlapOnStack(page);
     await disableActivePrimaryTool(page);
 
-    const locator = page.locator('#content > div');
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      locator,
-      screenShotPaths.labelmapOverlapNext.viewport
+      '',
+      screenShotPaths.labelmapOverlapNext.viewport,
+      [0, 1, 2, 3]
     );
   });
 });

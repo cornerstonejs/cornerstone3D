@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import {
   createExampleUrl,
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   expectViewportNextRuntime,
   screenShotPaths,
 } from '../utils/index';
@@ -45,8 +45,12 @@ test.describe('Video ViewportNext', () => {
   });
 
   test('should render video data', async ({ page }) => {
-    const locator = page.locator('#cornerstone-element');
-    await checkForScreenshot(page, locator, screenShotPaths.videoNext.viewport);
+    await checkForCanvasSnapshot(
+      page,
+      '',
+      screenShotPaths.videoNext.viewport,
+      0
+    );
   });
 
   test('should resize through the rendering engine', async ({ page }) => {

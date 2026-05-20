@@ -1,6 +1,6 @@
 import { test } from 'playwright-test-coverage';
 import {
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   visitExample,
   screenShotPaths,
   simulateDrawPath,
@@ -29,9 +29,10 @@ test('Stack Segmentation - Circular Brush Tool', async ({
 
   await page.waitForTimeout(1500);
 
-  await checkForScreenshot(
+  await checkForCanvasSnapshot(
     page,
-    canvas,
-    screenShotPaths.stackSegmentation.circularBrushSegment1
+    '',
+    screenShotPaths.stackSegmentation.circularBrushSegment1,
+    0
   );
 });

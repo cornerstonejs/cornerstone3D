@@ -1,6 +1,6 @@
 import { test } from 'playwright-test-coverage';
 import {
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   visitExample,
   screenShotPaths,
   simulateDrawPath,
@@ -28,8 +28,6 @@ test('Stack Segmentation - Sphere Brush Tool', async ({
     closePath: true,
   });
 
-  const secondViewport = getVisibleViewportCanvas(page, 1);
-
   await page.evaluate(() => {
     // Access cornerstone directly from the window object
     const cornerstone = window.cornerstone;
@@ -51,9 +49,10 @@ test('Stack Segmentation - Sphere Brush Tool', async ({
 
   await page.waitForTimeout(1500);
 
-  await checkForScreenshot(
+  await checkForCanvasSnapshot(
     page,
-    secondViewport,
-    screenShotPaths.stackSegmentation.sphereBrush
+    '',
+    screenShotPaths.stackSegmentation.sphereBrush,
+    1
   );
 });

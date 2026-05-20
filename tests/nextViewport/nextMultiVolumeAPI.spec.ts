@@ -1,9 +1,8 @@
 import { test } from '@playwright/test';
 import {
   createExampleUrl,
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   expectViewportNextRuntime,
-  getVisibleViewportCanvas,
   screenShotPaths,
 } from '../utils/index';
 
@@ -30,8 +29,7 @@ function navigateToExample(params?: Record<string, string>) {
 
 function createMultiVolumeTests(mode: string, screenshotPath: string) {
   test(`should render fused multi-volume data (${mode})`, async ({ page }) => {
-    const locator = getVisibleViewportCanvas(page);
-    await checkForScreenshot(page, locator, screenshotPath);
+    await checkForCanvasSnapshot(page, '', screenshotPath, 0);
   });
 }
 

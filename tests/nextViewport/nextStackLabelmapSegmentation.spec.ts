@@ -1,7 +1,7 @@
 import { test } from '@playwright/test';
 import {
   createExampleUrl,
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   expectViewportNextRuntime,
   getVisibleViewportCanvas,
   screenShotPaths,
@@ -66,11 +66,11 @@ test.describe('Stack Labelmap Segmentation - Next (GPU)', () => {
 
   test('should paint a brush stroke (next GPU)', async ({ page }) => {
     await paintBrushStroke(page);
-    const locator = getVisibleViewportCanvas(page);
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      locator,
-      screenShotPaths.stackLabelmapSegNext.brush
+      '',
+      screenShotPaths.stackLabelmapSegNext.brush,
+      0
     );
   });
 });
@@ -103,11 +103,11 @@ test.describe('Stack Labelmap Segmentation - Next (CPU)', () => {
 
   test('should paint a brush stroke (next CPU)', async ({ page }) => {
     await paintBrushStroke(page);
-    const locator = getVisibleViewportCanvas(page);
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      locator,
-      screenShotPaths.stackLabelmapSegNext.cpuBrush
+      '',
+      screenShotPaths.stackLabelmapSegNext.cpuBrush,
+      0
     );
   });
 });

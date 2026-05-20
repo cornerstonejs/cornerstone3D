@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import {
   createExampleUrl,
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   expectViewportNextRuntime,
   getVisibleViewportCanvas,
   getSegmentationActorClassNames,
@@ -119,11 +119,11 @@ test.describe('Labelmap Slice Rendering Tools - Next', () => {
   }) => {
     await selectSphereBrushAndPaint(page);
     await disableActivePrimaryTool(page);
-    const locator = page.locator('#content > div');
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      locator,
-      screenShotPaths.labelmapSliceRenderingToolsNext.sphereBrush
+      '',
+      screenShotPaths.labelmapSliceRenderingToolsNext.sphereBrush,
+      [0, 1, 2]
     );
   });
 

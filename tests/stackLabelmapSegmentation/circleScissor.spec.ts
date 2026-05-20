@@ -1,6 +1,6 @@
 import { test } from 'playwright-test-coverage';
 import {
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   visitExample,
   screenShotPaths,
   getVisibleViewportCanvas,
@@ -25,9 +25,10 @@ test('Stack Segmentation - Circular Scissor Tool with segmentation 1', async ({
   await drawCircleScissor(page, canvas);
   await page.waitForTimeout(1500);
 
-  await checkForScreenshot(
+  await checkForCanvasSnapshot(
     page,
-    canvas,
-    screenShotPaths.stackSegmentation.circularScissorSegmentation1
+    '',
+    screenShotPaths.stackSegmentation.circularScissorSegmentation1,
+    0
   );
 });

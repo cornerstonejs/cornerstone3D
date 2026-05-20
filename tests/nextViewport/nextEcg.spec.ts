@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import {
   createExampleUrl,
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   expectViewportNextRuntime,
   screenShotPaths,
 } from '../utils/index';
@@ -46,8 +46,12 @@ test.describe('ECG ViewportNext', () => {
   });
 
   test('should render ECG waveform', async ({ page }) => {
-    const locator = page.locator('#cornerstone-element');
-    await checkForScreenshot(page, locator, screenShotPaths.ecgNext.viewport);
+    await checkForCanvasSnapshot(
+      page,
+      '',
+      screenShotPaths.ecgNext.viewport,
+      0
+    );
   });
 
   test('should resize through the rendering engine', async ({ page }) => {

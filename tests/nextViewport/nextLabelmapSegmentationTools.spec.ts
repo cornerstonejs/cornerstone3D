@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import {
   createExampleUrl,
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   expectViewportNextRuntime,
   getVisibleViewportCanvas,
   screenShotPaths,
@@ -252,11 +252,11 @@ test.describe('Labelmap Segmentation Tools - Next (GPU)', () => {
     await expectPaintedSegmentation(page);
     await disableActivePrimaryTool(page);
     await waitForRedBrushRendering(page);
-    const locator = page.locator('#content > div');
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      locator,
-      screenShotPaths.labelmapSegToolsNext.sphereBrush
+      '',
+      screenShotPaths.labelmapSegToolsNext.sphereBrush,
+      [0, 1, 2]
     );
   });
 });
@@ -319,11 +319,11 @@ test.describe('Labelmap Segmentation Tools - Next (CPU)', () => {
     await selectSphereBrushAndPaint(page);
     await expectPaintedSegmentation(page);
     await disableActivePrimaryTool(page);
-    const locator = page.locator('#content > div');
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      locator,
-      screenShotPaths.labelmapSegToolsNext.cpuSphereBrush
+      '',
+      screenShotPaths.labelmapSegToolsNext.cpuSphereBrush,
+      [0, 1, 2]
     );
   });
 });

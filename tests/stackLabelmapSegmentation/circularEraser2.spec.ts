@@ -1,6 +1,6 @@
 import { test } from 'playwright-test-coverage';
 import {
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   visitExample,
   screenShotPaths,
   simulateDrawPath,
@@ -53,9 +53,10 @@ test('Stack Segmentation - Circular Eraser Tool with segmentation 2', async ({
     }
   );
 
-  await checkForScreenshot(
+  await checkForCanvasSnapshot(
     page,
-    canvas,
-    screenShotPaths.stackSegmentation.circularEraserSegmentation2
+    '',
+    screenShotPaths.stackSegmentation.circularEraserSegmentation2,
+    0
   );
 });

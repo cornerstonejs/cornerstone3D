@@ -1,7 +1,7 @@
 import { test } from '@playwright/test';
 import {
   createExampleUrl,
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   expectViewportNextRuntime,
   screenShotPaths,
 } from '../utils/index';
@@ -45,7 +45,11 @@ test.describe('WSI ViewportNext', () => {
   });
 
   test('should render WSI data', async ({ page }) => {
-    const locator = page.locator('#cornerstone-element');
-    await checkForScreenshot(page, locator, screenShotPaths.wsiNext.viewport);
+    await checkForCanvasSnapshot(
+      page,
+      '',
+      screenShotPaths.wsiNext.viewport,
+      0
+    );
   });
 });
