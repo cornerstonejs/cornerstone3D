@@ -64,6 +64,12 @@ export default class SegmentationStateManager {
   private _labelmapImageIdReferenceMap = new Map<string, string[]>();
 
   /**
+   * An index mapping each segmentationId to the set of keys it owns in
+   * _labelmapImageIdReferenceMap
+   */
+  private _labelmapKeysBySegmentationId = new Map<string, Set<string>>();
+
+  /**
    * Creates an instance of SegmentationStateManager.
    * @param {string} [uid] - Optional unique identifier for the manager.
    */
@@ -112,6 +118,7 @@ export default class SegmentationStateManager {
   resetState(): void {
     this._stackLabelmapImageIdReferenceMap.clear();
     this._labelmapImageIdReferenceMap.clear();
+    this._labelmapKeysBySegmentationId.clear();
     this.state = Object.freeze(
       csUtils.deepClone(initialDefaultState) as SegmentationState
     );
@@ -204,6 +211,17 @@ export default class SegmentationStateManager {
    * @param {string} segmentationId - The ID of the segmentation to remove.
    */
   removeSegmentation(segmentationId: string): void {
+    // Clean up image ID reference maps to prevent stale entries accumulating on reload
+    this._stackLabelmapImageIdReferenceMap.delete(segmentationId);
+
+    const keys = this._labelmapKeysBySegmentationId.get(segmentationId);
+    if (keys) {
+      for (const key of keys) {
+        this._labelmapImageIdReferenceMap.delete(key);
+      }
+      this._labelmapKeysBySegmentationId.delete(segmentationId);
+    }
+
     this.updateState((state) => {
       // Use Array.prototype.filter to create a new array instead of reassigning
       const filteredSegmentations = state.segmentations.filter(
@@ -880,12 +898,20 @@ export default class SegmentationStateManager {
 
     if (!this._labelmapImageIdReferenceMap.has(key)) {
       this._labelmapImageIdReferenceMap.set(key, [labelmapImageId]);
-      return;
+    } else {
+      const currentValues = this._labelmapImageIdReferenceMap.get(key);
+      const newValues = Array.from(
+        new Set([...currentValues, labelmapImageId])
+      );
+      this._labelmapImageIdReferenceMap.set(key, newValues);
     }
 
-    const currentValues = this._labelmapImageIdReferenceMap.get(key);
-    const newValues = Array.from(new Set([...currentValues, labelmapImageId]));
-    this._labelmapImageIdReferenceMap.set(key, newValues);
+    let keys = this._labelmapKeysBySegmentationId.get(segmentationId);
+    if (!keys) {
+      keys = new Set();
+      this._labelmapKeysBySegmentationId.set(segmentationId, keys);
+    }
+    keys.add(key);
   }
 
   _setActiveSegmentation(

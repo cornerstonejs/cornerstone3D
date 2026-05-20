@@ -3,6 +3,68 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.22.9](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.8...v4.22.9) (2026-05-19)
+
+### Bug Fixes
+
+- **measurements:** handle multiple angle tools on same slice to avoid rendering error on scroll ([#2724](https://github.com/cornerstonejs/cornerstone3D/issues/2724)) ([c0e7efc](https://github.com/cornerstonejs/cornerstone3D/commit/c0e7efc0619d584e8426cd33517cb89ba3597eec))
+
+## [4.22.8](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.7...v4.22.8) (2026-05-15)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [4.22.7](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.6...v4.22.7) (2026-05-15)
+
+### Bug Fixes
+
+- **annotations:** incorrect area calculation for livewire, spline, rectangle, and planar freehand ROI tools ([#2734](https://github.com/cornerstonejs/cornerstone3D/issues/2734)) ([c8a96e9](https://github.com/cornerstonejs/cornerstone3D/commit/c8a96e9a025a51e70f0c20f217827fdd036aa4c5))
+
+## [4.22.6](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.5...v4.22.6) (2026-05-12)
+
+### Bug Fixes
+
+- **segmentation:** fully remove segmentations from viewport on delete after reload ([#2729](https://github.com/cornerstonejs/cornerstone3D/issues/2729)) ([0e186bd](https://github.com/cornerstonejs/cornerstone3D/commit/0e186bd7a804d706df1bb9ee263378e09726b087))
+
+## [4.22.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.4...v4.22.5) (2026-05-12)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [4.22.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.3...v4.22.4) (2026-05-06)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [4.22.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.2...v4.22.3) (2026-04-23)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [4.22.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.1...v4.22.2) (2026-04-21)
+
+### Bug Fixes
+
+- **tools:** propagate flip state to magnify viewport in MagnifyTool and AdvancedMagnifyTool ([#2705](https://github.com/cornerstonejs/cornerstone3D/issues/2705)) ([a04369f](https://github.com/cornerstonejs/cornerstone3D/commit/a04369fc5c63f7ec753551b15a8d4fd162412924))
+
+## [4.22.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.0...v4.22.1) (2026-04-21)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+# [4.22.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.9...v4.22.0) (2026-04-20)
+
+### Features
+
+- **OrientationControllerTool:** expose widget color and ambient configuration ([#2682](https://github.com/cornerstonejs/cornerstone3D/issues/2682)) ([2f62ac0](https://github.com/cornerstonejs/cornerstone3D/commit/2f62ac0a51d146b4e9d5347bc41091726d2ce39e))
+
+## [4.21.9](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.8...v4.21.9) (2026-04-20)
+
+### Bug Fixes
+
+- **tools:** make VolumeCroppingTool target vtkVolume actor (overlay-safe) ([#2668](https://github.com/cornerstonejs/cornerstone3D/issues/2668)) ([d6baa68](https://github.com/cornerstonejs/cornerstone3D/commit/d6baa685a25255432a810c4bc552fb795fdac70e))
+
+## [4.21.8](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.7...v4.21.8) (2026-04-20)
+
+### Bug Fixes
+
+- Orientation Controller - always on top ([#2671](https://github.com/cornerstonejs/cornerstone3D/issues/2671)) ([a854224](https://github.com/cornerstonejs/cornerstone3D/commit/a854224fd1691311d9fe043059f36c8347264dfa))
+
 ## [4.21.7](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.6...v4.21.7) (2026-04-16)
 
 **Note:** Version bump only for package @cornerstonejs/tools
