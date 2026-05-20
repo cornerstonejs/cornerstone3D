@@ -16,16 +16,17 @@ interface CheckForCanvasSnapshotOptions {
  * Compares the raw pixel buffer of one or more <canvas> elements against a
  * baseline PNG.
  *
- * Unlike `toHaveScreenshot`, this does not crop the rendered page. The PNG is
- * produced from `canvas.toDataURL('image/png')`, decoupled from CSS layout and
- * from any DOM that happens to overlap the canvas region. Any sibling `<svg>`
- * annotation layer in the same `[data-viewport-uid]` element is rasterized on
- * top of the canvas before encoding so that tool overlays are included.
+ * Output dimensions always match the canvas backing-store size (or, for the
+ * multi-viewport composite, the union of those sizes). The sibling SVG
+ * annotation layer is rasterized on top so tool overlays are included.
+ * Non-canvas/non-SVG HTML overlays (e.g. CSS-positioned border divs the
+ * stackPosition example uses) are NOT captured by design — capturing them
+ * required either an SVG `foreignObject` (taints the canvas in Chromium) or
+ * a Playwright element screenshot (couples output size to CSS layout).
  *
  * Pass `viewportIndex` as a single number to capture the Nth
- * `[data-viewport-uid]` element, or as an array to composite multiple viewports
- * into a single PNG using their real DOM offsets (matches the visual layout
- * the old container-level screenshot used to produce).
+ * `[data-viewport-uid]` element, or as an array to composite multiple
+ * viewports into a single PNG using their real DOM offsets.
  *
  * Captures are pixel-stability-polled: the snapshot is only encoded once the
  * canvas (+SVG) data URL has been identical for `stableMs` consecutive ms, so
@@ -62,7 +63,7 @@ const checkForCanvasSnapshot = async (
       .waitFor({ state: 'visible', timeout: 30000 });
   }
 
-  const base64 = await page.evaluate(
+  const base64: string = await page.evaluate(
     async ({ selector, indices, stableMs, timeoutMs }) => {
       type ViewportTarget = {
         canvas: HTMLCanvasElement;
@@ -111,7 +112,8 @@ const checkForCanvasSnapshot = async (
           const vp = canvas.closest(
             '[data-viewport-uid]'
           ) as HTMLElement | null;
-          const svg = (vp?.querySelector('svg') as SVGSVGElement | null) ?? null;
+          const svg =
+            (vp?.querySelector('svg') as SVGSVGElement | null) ?? null;
           const r = canvas.getBoundingClientRect();
           targets.push({
             canvas,
@@ -140,19 +142,30 @@ const checkForCanvasSnapshot = async (
         }
       };
 
+      const compositeOne = async (
+        ctx: CanvasRenderingContext2D,
+        target: ViewportTarget,
+        ox: number,
+        oy: number
+      ) => {
+        const { canvas, svg } = target;
+        ctx.drawImage(canvas, ox, oy);
+        if (svg) {
+          const img = await svgToImage(svg);
+          ctx.drawImage(img, ox, oy, canvas.width, canvas.height);
+        }
+      };
+
       const capture = async (): Promise<string> => {
         const targets = resolveTargets();
         if (targets.length === 1) {
-          const { canvas, svg } = targets[0];
-          if (!svg) return canvas.toDataURL('image/png');
+          const { canvas } = targets[0];
           const out = document.createElement('canvas');
           out.width = canvas.width;
           out.height = canvas.height;
           const ctx = out.getContext('2d');
           if (!ctx) throw new Error('failed to get 2d context');
-          ctx.drawImage(canvas, 0, 0);
-          const img = await svgToImage(svg);
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          await compositeOne(ctx, targets[0], 0, 0);
           return out.toDataURL('image/png');
         }
 
@@ -174,14 +187,10 @@ const checkForCanvasSnapshot = async (
         const ctx = out.getContext('2d');
         if (!ctx) throw new Error('failed to get 2d context');
 
-        for (const { canvas, svg, rect } of targets) {
-          const ox = Math.round((rect.x - minX) * dpr);
-          const oy = Math.round((rect.y - minY) * dpr);
-          ctx.drawImage(canvas, ox, oy);
-          if (svg) {
-            const img = await svgToImage(svg);
-            ctx.drawImage(img, ox, oy, canvas.width, canvas.height);
-          }
+        for (const target of targets) {
+          const ox = Math.round((target.rect.x - minX) * dpr);
+          const oy = Math.round((target.rect.y - minY) * dpr);
+          await compositeOne(ctx, target, ox, oy);
         }
         return out.toDataURL('image/png');
       };

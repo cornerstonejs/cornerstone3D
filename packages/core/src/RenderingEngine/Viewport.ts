@@ -2254,7 +2254,7 @@ class Viewport {
  * is exact; for oblique MPR this is an approximation (a single IJK axis is
  * picked rather than projecting along the normal).
  */
-function getVolumeCenterIJK(
+export function getVolumeCenterIJK(
   dimensions: number[],
   direction: ArrayLike<number>,
   viewPlaneNormal: ArrayLike<number>
