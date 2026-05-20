@@ -15,7 +15,7 @@ commands:
       - run:
           name: Install pnpm
           command: |
-            npm install -g pnpm@11.1.1
+            sudo corepack enable
             pnpm --version
 
 jobs:
