@@ -46,6 +46,7 @@ import { BasicStatsCalculator } from '../../utilities/math/basic';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
 import { KeyboardBindings, ChangeTypes, MeasurementType } from '../../enums';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
+import normalizeFloatingPointIndexBounds from '../../utilities/boundingBox/normalizeFloatingPointIndexBounds';
 
 const { pointCanProjectOnLine } = polyline;
 const { EPSILON } = CONSTANTS;
@@ -917,29 +918,19 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     for (let j = 0; j < points.length; j++) {
       const worldPosIndex = indexPoints[j];
 
-      // For X and Y we compute the ROI bounds in the image grid. Using floor ensures
-      // the bounding box starts at the containing pixel index (top-left pixel in the
-      // image grid).
-      const xi = Math.floor(worldPosIndex[0]);
-      const yi = Math.floor(worldPosIndex[1]);
+      iMin = Math.min(iMin, worldPosIndex[0]);
+      iMax = Math.max(iMax, worldPosIndex[0]);
 
-      iMin = Math.min(iMin, xi);
-      iMax = Math.max(iMax, xi);
+      jMin = Math.min(jMin, worldPosIndex[1]);
+      jMax = Math.max(jMax, worldPosIndex[1]);
 
-      jMin = Math.min(jMin, yi);
-      jMax = Math.max(jMax, yi);
-
-      // Each slice represents a voxel slab with a finite thickness, and the voxel
-      // index corresponds to the center of that slab. When converting world
-      // coordinates back to index space, floating-point precision can produce
-      // slightly offset fractional indices. Rounding ensures the annotation
-      // maps to the nearest slice instead of unintentionally shifting to an adjacent
-      // slice.
-      const zi = Math.round(worldPosIndex[2]);
-
-      kMin = Math.min(kMin, zi);
-      kMax = Math.max(kMax, zi);
+      kMin = Math.min(kMin, worldPosIndex[2]);
+      kMax = Math.max(kMax, worldPosIndex[2]);
     }
+
+    [iMin, iMax] = normalizeFloatingPointIndexBounds(iMin, iMax);
+    [jMin, jMax] = normalizeFloatingPointIndexBounds(jMin, jMax);
+    [kMin, kMax] = normalizeFloatingPointIndexBounds(kMin, kMax);
 
     // Convert from canvas_pixels ^2 to mm^2
     const area = polyline.getArea(canvasCoordinates) * deltaInX * deltaInY;
