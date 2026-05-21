@@ -4,6 +4,7 @@ import {
   checkForCanvasSnapshot,
   screenShotPaths,
   simulateClicksOnElement,
+  simulateDrawPath,
   setupRenderTracking,
   waitForViewportsRendered,
   waitForRenderSettled,
@@ -499,7 +500,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
     await page
       .getByRole('combobox')
       .nth(1)
-      .selectOption({ label: 'CT Bone: (200, 1000)' });
+      .selectOption({ label: 'CT Soft Tissue: (-100, 200)' });
     await simulateClicksOnElement({
       locator: firstCanvas,
       points: [
@@ -584,50 +585,26 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
       .getByRole('combobox')
       .first()
       .selectOption({ label: 'RectangleScissor' });
+    await waitForRenderSettled(page);
 
-    await simulateClicksOnElement({
-      locator: firstCanvas,
-      points: [
-        {
-          x: 190,
-          y: 270,
-        },
-        {
-          x: 230,
-          y: 320,
-        },
-      ],
-    });
+    // Scissor tools need a real mousedown→move→mouseup drag, not separate
+    // clicks, so use simulateDrawPath to define each rectangle.
+    await simulateDrawPath(page, firstCanvas, [
+      [190, 270],
+      [230, 320],
+    ]);
     await delayBetweenClicks(page);
 
-    await simulateClicksOnElement({
-      locator: secondCanvas,
-      points: [
-        {
-          x: 226,
-          y: 294,
-        },
-        {
-          x: 260,
-          y: 340,
-        },
-      ],
-    });
+    await simulateDrawPath(page, secondCanvas, [
+      [226, 294],
+      [260, 340],
+    ]);
     await delayBetweenClicks(page);
 
-    await simulateClicksOnElement({
-      locator: thirdCanvas,
-      points: [
-        {
-          x: 206,
-          y: 258,
-        },
-        {
-          x: 240,
-          y: 300,
-        },
-      ],
-    });
+    await simulateDrawPath(page, thirdCanvas, [
+      [206, 258],
+      [240, 300],
+    ]);
 
     await waitForRenderSettled(page);
     await checkForCanvasSnapshot(
@@ -647,48 +624,24 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
       .getByRole('combobox')
       .first()
       .selectOption({ label: 'CircleScissor' });
-    await simulateClicksOnElement({
-      locator: firstCanvas,
-      points: [
-        {
-          x: 290,
-          y: 270,
-        },
-        {
-          x: 330,
-          y: 320,
-        },
-      ],
-    });
-    await delayBetweenClicks(page);
-    await simulateClicksOnElement({
-      locator: secondCanvas,
-      points: [
-        {
-          x: 190,
-          y: 270,
-        },
-        {
-          x: 230,
-          y: 320,
-        },
-      ],
-    });
+    await waitForRenderSettled(page);
+
+    await simulateDrawPath(page, firstCanvas, [
+      [290, 270],
+      [330, 320],
+    ]);
     await delayBetweenClicks(page);
 
-    await simulateClicksOnElement({
-      locator: thirdCanvas,
-      points: [
-        {
-          x: 190,
-          y: 270,
-        },
-        {
-          x: 230,
-          y: 320,
-        },
-      ],
-    });
+    await simulateDrawPath(page, secondCanvas, [
+      [190, 270],
+      [230, 320],
+    ]);
+    await delayBetweenClicks(page);
+
+    await simulateDrawPath(page, thirdCanvas, [
+      [190, 270],
+      [230, 320],
+    ]);
 
     await waitForRenderSettled(page);
     await checkForCanvasSnapshot(
@@ -708,47 +661,26 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
       .getByRole('combobox')
       .first()
       .selectOption({ label: 'SphereScissor' });
-    await simulateClicksOnElement({
-      locator: firstCanvas,
-      points: [
-        {
-          x: 190,
-          y: 270,
-        },
-        {
-          x: 230,
-          y: 320,
-        },
-      ],
-    });
+    await waitForRenderSettled(page);
+
+    await simulateDrawPath(page, firstCanvas, [
+      [190, 270],
+      [230, 320],
+    ]);
     await delayBetweenClicks(page);
-    await simulateClicksOnElement({
-      locator: secondCanvas,
-      points: [
-        {
-          x: 226,
-          y: 294,
-        },
-        {
-          x: 260,
-          y: 340,
-        },
-      ],
-    });
+
+    await simulateDrawPath(page, secondCanvas, [
+      [226, 294],
+      [260, 340],
+    ]);
     await delayBetweenClicks(page);
-    await simulateClicksOnElement({
-      locator: thirdCanvas,
-      points: [
-        {
-          x: 206,
-          y: 258,
-        },
-        {
-          x: 240,
-          y: 300,
-        },
-      ],
-    });
+
+    await simulateDrawPath(page, thirdCanvas, [
+      [206, 258],
+      [240, 300],
+    ]);
+
+    await waitForRenderSettled(page);
     await checkForCanvasSnapshot(
       page,
       '',
@@ -766,94 +698,50 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
       .getByRole('combobox')
       .first()
       .selectOption({ label: 'SphereScissor' });
-    await simulateClicksOnElement({
-      locator: firstCanvas,
-      points: [
-        {
-          x: 190,
-          y: 270,
-        },
-        {
-          x: 230,
-          y: 320,
-        },
-      ],
-    });
+    await waitForRenderSettled(page);
+
+    await simulateDrawPath(page, firstCanvas, [
+      [190, 270],
+      [230, 320],
+    ]);
     await delayBetweenClicks(page);
-    await simulateClicksOnElement({
-      locator: secondCanvas,
-      points: [
-        {
-          x: 226,
-          y: 294,
-        },
-        {
-          x: 260,
-          y: 340,
-        },
-      ],
-    });
+
+    await simulateDrawPath(page, secondCanvas, [
+      [226, 294],
+      [260, 340],
+    ]);
     await delayBetweenClicks(page);
-    await simulateClicksOnElement({
-      locator: thirdCanvas,
-      points: [
-        {
-          x: 206,
-          y: 258,
-        },
-        {
-          x: 240,
-          y: 300,
-        },
-      ],
-    });
+
+    await simulateDrawPath(page, thirdCanvas, [
+      [206, 258],
+      [240, 300],
+    ]);
     await delayBetweenClicks(page);
 
     await page
       .getByRole('combobox')
       .first()
       .selectOption({ label: 'ScissorsEraser' });
-    await simulateClicksOnElement({
-      locator: firstCanvas,
-      points: [
-        {
-          x: 190,
-          y: 270,
-        },
-        {
-          x: 230,
-          y: 320,
-        },
-      ],
-    });
+    await waitForRenderSettled(page);
+
+    await simulateDrawPath(page, firstCanvas, [
+      [190, 270],
+      [230, 320],
+    ]);
     await delayBetweenClicks(page);
-    await simulateClicksOnElement({
-      locator: secondCanvas,
-      points: [
-        {
-          x: 226,
-          y: 294,
-        },
-        {
-          x: 260,
-          y: 340,
-        },
-      ],
-    });
+
+    await simulateDrawPath(page, secondCanvas, [
+      [226, 294],
+      [260, 340],
+    ]);
     await delayBetweenClicks(page);
-    await simulateClicksOnElement({
-      locator: thirdCanvas,
-      points: [
-        {
-          x: 206,
-          y: 258,
-        },
-        {
-          x: 240,
-          y: 300,
-        },
-      ],
-    });
+
+    await simulateDrawPath(page, thirdCanvas, [
+      [206, 258],
+      [240, 300],
+    ]);
+
+    await waitForRenderSettled(page);
     await checkForCanvasSnapshot(
       page,
       '',

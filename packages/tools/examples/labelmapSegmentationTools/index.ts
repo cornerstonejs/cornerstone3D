@@ -187,6 +187,13 @@ thresholdOptions.set('CT Fat: (-150, -70)', {
     dynamicRadius: 0,
   },
 });
+thresholdOptions.set('CT Soft Tissue: (-100, 200)', {
+  threshold: {
+    range: [-100, 200] as Types.Point2,
+    isDynamic: false,
+    dynamicRadius: 0,
+  },
+});
 thresholdOptions.set('CT Bone: (200, 1000)', {
   threshold: {
     range: [200, 1000] as Types.Point2,
