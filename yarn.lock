@@ -6352,10 +6352,10 @@ dateformat@^3.0.3:
   resolved "https://registry.yarnpkg.com/dateformat/-/dateformat-3.0.3.tgz#a6e37499a4d9a9cf85ef5872044d62901c9889ae"
   integrity sha512-jyCETtSl3VMZMWeRo7iY1FL19ges1t55hMo5yaam4Jrsm5EPL89UQkoQRyiI+Yf4k8r2ZpdngkV8hr1lIdjb3Q==
 
-dcmjs@0.49.4, dcmjs@^0.41.0:
-  version "0.49.4"
-  resolved "https://registry.yarnpkg.com/dcmjs/-/dcmjs-0.49.4.tgz#833c014eb9e36a6859c80a860b0fb231d9bfeaf8"
-  integrity sha512-w77Gde5JvLjg37FyGIAsTB+oWZIqkO/5NvBeheEVKy6k9XjBgeGsoAbVAByjuGAFLpGqRbf9iWI0edBq87yu/g==
+dcmjs@0.51.1, dcmjs@^0.41.0:
+  version "0.51.1"
+  resolved "https://registry.yarnpkg.com/dcmjs/-/dcmjs-0.51.1.tgz#6bce64fbb0fde4479613e6a621dcaf22e43ac16f"
+  integrity sha512-6hJbygOiWvIZHtAh/uRkNU119q3SE/+76lMvq9g3bGq8wky66sHGxJMjB2g/86ewOYmVMrAaIr4Q8tcJEQlwJg==
   dependencies:
     "@babel/runtime-corejs3" "^7.22.5"
     adm-zip "^0.5.10"
