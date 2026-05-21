@@ -22,6 +22,7 @@ import type { IImage, IImageVolume, Point3 } from '../../../types';
 import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
 import { getCubeSizeInView } from '../../../utilities/getPlaneCubeIntersectionDimensions';
 import getSpacingInNormalDirection from '../../../utilities/getSpacingInNormalDirection';
+import { getVolumeCenterIJK } from '../../Viewport';
 import {
   getCpuEquivalentParallelScale,
   getOrthogonalVolumeSliceGeometry,
@@ -240,18 +241,30 @@ function buildImageVolumeCorners(imageVolume: IImageVolume): Point3[] {
  * Returns the world-space center of a volume, computed from the midpoint
  * of the voxel-center index domain. Falls back to averaging the bounding-box
  * corners if vtkImageData is unavailable.
+ *
+ * When `viewPlaneNormal` is supplied, the slice-direction axis is snapped to
+ * `Math.floor(d / 2)` via `getVolumeCenterIJK`, matching legacy resetCamera
+ * behavior. Without this snap, even-dimensioned slice axes (e.g. 512) land on
+ * `(d - 1) / 2 = 255.5` and the VTK reslice mapper rounds the focal point to
+ * the adjacent voxel, producing a one-slice offset on initial render.
  */
-function getGeometricImageVolumeCenter(imageVolume: IImageVolume): Point3 {
+function getGeometricImageVolumeCenter(
+  imageVolume: IImageVolume,
+  viewPlaneNormal?: Point3
+): Point3 {
   const imageData = imageVolume.imageData;
 
   if (imageData) {
-    const [dx, dy, dz] = imageData.getDimensions();
+    const dimensions = imageData.getDimensions();
+    const ijk = viewPlaneNormal
+      ? getVolumeCenterIJK(
+          dimensions,
+          imageData.getDirection(),
+          viewPlaneNormal
+        )
+      : dimensions.map((d) => (d - 1) / 2);
 
-    return imageData.indexToWorld([
-      (dx - 1) / 2,
-      (dy - 1) / 2,
-      (dz - 1) / 2,
-    ]) as Point3;
+    return imageData.indexToWorld(ijk as [number, number, number]) as Point3;
   }
 
   const corners = buildImageVolumeCorners(imageVolume);
@@ -611,7 +624,10 @@ export function createPlanarVolumeSliceBasis(args: {
 
   return buildPlanarVolumeSliceBasis({
     ...args,
-    center: getGeometricImageVolumeCenter(imageVolume),
+    center: getGeometricImageVolumeCenter(
+      imageVolume,
+      cameraValues?.viewPlaneNormal
+    ),
     ...sliceFitMetrics,
   });
 }
