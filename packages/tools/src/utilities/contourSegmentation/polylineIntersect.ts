@@ -3,6 +3,7 @@ import { checkIntersection, cleanupPolylines } from './sharedOperations';
 import { intersectPolylines } from '../math/polyline';
 import arePolylinesIdentical from '../math/polyline/arePolylinesIdentical';
 import { areViewReferencesEqual } from './areViewReferencesEqual';
+import containsPoints from '../math/polyline/containsPoints';
 
 /**
  * Performs the intersection operation on two sets of polylines.
@@ -31,7 +32,9 @@ export function intersectPolylinesSets(
         continue;
       }
       const intersection = checkIntersection(polyA.polyline, polyB.polyline);
-      if (intersection.hasIntersection && !intersection.isContourHole) {
+      if (intersection.isContourHole) {
+        result.push({ ...polyA });
+      } else if (intersection.hasIntersection) {
         const intersectionRegions = cleanupPolylines(
           intersectPolylines(polyA.polyline, polyB.polyline)
         );
@@ -43,6 +46,9 @@ export function intersectPolylinesSets(
             });
           });
         }
+      } else if (containsPoints(polyA.polyline, polyB.polyline)) {
+        // polyB is entirely inside polyA — the intersection is polyB itself
+        result.push({ ...polyB });
       }
     }
   }
