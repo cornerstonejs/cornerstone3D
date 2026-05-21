@@ -6,6 +6,10 @@ import {
   EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID,
   RLE_LOSSLESS_TRANSFER_SYNTAX_UID,
 } from '../encodePixelData';
+import {
+  applyPerFrameFunctionalGroups,
+  normalizeSharedFunctionalGroupsSequence,
+} from './perFrameFunctionalGroups.js';
 
 const { MetadataModules } = Enums;
 const { SEGImageNormalizer } = normalizers;
@@ -207,31 +211,37 @@ function fillLabelmapSegmentation(
     vr: 'UI',
   };
 
-  // Keep normalizer-generated per-frame items for the filtered input images.
-  dataset.PerFrameFunctionalGroupsSequence = (
-    dataset.PerFrameFunctionalGroupsSequence ?? []
-  ).filter(Boolean);
-
   const sourceImageSequence = images
     .map((image) => getReferencedSourceImageSequenceItem(image, metadata))
     .filter((item) => item.ReferencedSOPInstanceUID);
 
   if (sourceImageSequence.length) {
     dataset.SourceImageSequence = sourceImageSequence;
-    dataset.PerFrameFunctionalGroupsSequence =
-      dataset.PerFrameFunctionalGroupsSequence.map((group, index) => {
-        const sourceImageSequenceItem = sourceImageSequence[index];
-        if (!sourceImageSequenceItem) {
-          return group;
-        }
+  }
 
-        return {
-          ...group,
-          DerivationImageSequence: {
-            SourceImageSequence: [sourceImageSequenceItem],
-          },
-        };
-      });
+  const perFrameInputs = validFrameIndices.map((_, outputIndex) => {
+    const image = images[outputIndex];
+    const sourceImageSequenceItem = getReferencedSourceImageSequenceItem(
+      image,
+      metadata
+    );
+    const priorGroup =
+      dataset.PerFrameFunctionalGroupsSequence?.[outputIndex] ?? {};
+
+    return {
+      referencedSegmentNumber: 1,
+      sourceImageSequenceItem,
+      planeOrientationSequence: priorGroup?.PlaneOrientationSequence,
+      planePositionSequence: priorGroup?.PlanePositionSequence,
+    };
+  });
+
+  const validPerFrameInputs = perFrameInputs.filter(
+    (frame) => frame.sourceImageSequenceItem?.ReferencedSOPInstanceUID
+  );
+
+  if (validPerFrameInputs.length) {
+    applyPerFrameFunctionalGroups(dataset, validPerFrameInputs);
   }
 
   const sopInstanceUIDs = new Set(
@@ -283,15 +293,32 @@ function generateSegmentation(
 
   if (shouldExportBitmap) {
     const transferSyntaxUid = resolveTransferSyntaxUid(options);
+    const labelmap3D = Array.isArray(labelmaps) ? labelmaps[0] : labelmaps;
+    const nonEmptyFrameIndices =
+      labelmap3D?.labelmaps2D
+        ?.map((frame, index) =>
+          frame?.pixelData && hasAnySegment(frame.pixelData) ? index : -1
+        )
+        .filter((index) => index >= 0) ?? [];
+    const filteredImages = nonEmptyFrameIndices.length
+      ? nonEmptyFrameIndices.map((index) => images[index]).filter(Boolean)
+      : images;
+
     const segmentation = _createMultiframeSegmentationFromReferencedImages(
-      images,
+      filteredImages,
       metadata,
       options
     );
-    const segmentationResult = fillBitmapSegmentation(segmentation, labelmaps, {
-      ...options,
-      transferSyntaxUid: EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID,
-    });
+    const segmentationResult = fillBitmapSegmentation(
+      segmentation,
+      labelmaps,
+      {
+        ...options,
+        transferSyntaxUid: EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID,
+      },
+      filteredImages,
+      metadata
+    );
     const { frames, bitsAllocated } = getFrameArrayFromBitmapDataset(
       segmentationResult.dataset
     );
@@ -418,8 +445,8 @@ function _createMultiframeSegmentationFromReferencedImages(
     );
   }
 
-  multiframe.SharedFunctionalGroupsSequence ||= {};
-  multiframe.SharedFunctionalGroupsSequence.PixelMeasuresSequence = {};
+  normalizeSharedFunctionalGroupsSequence(multiframe);
+  multiframe.SharedFunctionalGroupsSequence.PixelMeasuresSequence ||= {};
   multiframe.PerFrameFunctionalGroupsSequence ||= [];
   for (let index = 0; index < images.length; index++) {
     multiframe.PerFrameFunctionalGroupsSequence[index] ||= {

@@ -39,8 +39,12 @@ function generateToolState(
  * (e.g. dataset or instanceMeta.dataset). Uncompressed pixel data is obtained via imageLoader.loadImage(segImageId).
  *
  * @param referencedImageIds - An array of referenced image IDs e.g., CT, MR etc.
- * @param segImageId - Image ID for the SEG instance (loadable via imageLoader; instance metadata must be registered).
- * @param options - { metadataProvider, tolerance }
+ * @param segImageId - Image ID for the SEG instance (metadata via metadataProvider; may be base or frame-qualified).
+ * @param options - { metadataProvider, tolerance, frameImageIds, getFrameImageId, decodeImageData, allowLegacyDatasetDecode }
+ *   frameImageIds: per-frame loadable imageIds; adapters decode one frame per id when multiframe.
+ *   getFrameImageId: optional (baseSegImageId, frameNumber) => frame imageId when frameImageIds are not pre-built.
+ *   decodeImageData(frameImageId, frameNumber): optional per-frame decode; default uses imageLoader.loadImage per frame.
+ *   allowLegacyDatasetDecode: use dataset PixelData or a single full-volume decode on segImageId when available.
  *
  * @returns An object containing:
  *          - `labelMapImages`: Array of label map images for each label map.
@@ -58,7 +62,9 @@ function createFromDICOMSegBuffer(
     metadataProvider,
     tolerance = 1e-3,
     parserType = 'bitmap',
-    decodeImageData,
+    frameImageIds = undefined,
+    getFrameImageId = undefined,
+    decodeImageData = undefined,
     allowLegacyDatasetDecode = false,
   }
 ) {
@@ -69,6 +75,8 @@ function createFromDICOMSegBuffer(
     {
       tolerance,
       parserType,
+      frameImageIds,
+      getFrameImageId,
       decodeImageData,
       allowLegacyDatasetDecode,
     }

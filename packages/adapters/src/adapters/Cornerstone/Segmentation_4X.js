@@ -8,7 +8,8 @@ import {
 import ndarray from 'ndarray';
 import getDatasetsFromImages from '../helpers/getDatasetsFromImages';
 import checkOrientation from '../helpers/checkOrientation';
-import { utilities as csUtilities } from '@cornerstonejs/core';
+import { utilities as csUtilities, Enums } from '@cornerstonejs/core';
+import { applyPerFrameFunctionalGroups } from '../Cornerstone3D/Segmentation/perFrameFunctionalGroups';
 
 import { Events } from '../enums';
 
@@ -69,10 +70,43 @@ export function generateSegmentation(
  *
  * @returns {object} The filled segmentation object.
  */
+function labelmapFrameContainsSegment(pixelData, segmentIndex) {
+  if (!pixelData) {
+    return false;
+  }
+
+  for (let i = 0; i < pixelData.length; i++) {
+    if (pixelData[i] === segmentIndex) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function getReferencedSourceImageSequenceItemFromImage(image, metadata) {
+  const imageData =
+    metadata?.get?.(Enums.MetadataModules.IMAGE_DATA, image?.imageId) || {};
+  const referencedSOPInstanceUID = imageData.SOPInstanceUID;
+  const frameMatch = image?.imageId?.match?.(/[?&]frame=(\d+)/);
+  const referencedFrameNumber = frameMatch ? Number(frameMatch[1]) : undefined;
+  const item = {
+    ReferencedSOPInstanceUID: referencedSOPInstanceUID,
+  };
+
+  if (Number.isFinite(referencedFrameNumber) && referencedFrameNumber > 0) {
+    item.ReferencedFrameNumber = referencedFrameNumber;
+  }
+
+  return item;
+}
+
 export function fillSegmentation(
   segmentation,
   inputLabelmaps3D,
-  userOptions = {}
+  userOptions = {},
+  images = [],
+  metadata = null
 ) {
   const options = Object.assign(
     {},
@@ -85,8 +119,8 @@ export function fillSegmentation(
     ? inputLabelmaps3D
     : [inputLabelmaps3D];
 
-  let numberOfFrames = 0;
   const referencedFramesPerLabelmap = [];
+  const frameDescriptors = [];
 
   for (
     let labelmapIndex = 0;
@@ -94,12 +128,12 @@ export function fillSegmentation(
     labelmapIndex++
   ) {
     const labelmap3D = labelmaps3D[labelmapIndex];
-    const { labelmaps2D, metadata } = labelmap3D;
+    const { labelmaps2D, metadata: segmentMetadata } = labelmap3D;
 
     const referencedFramesPerSegment = [];
 
-    for (let i = 1; i < metadata.length; i++) {
-      if (metadata[i]) {
+    for (let i = 1; i < segmentMetadata.length; i++) {
+      if (segmentMetadata[i]) {
         referencedFramesPerSegment[i] = [];
       }
     }
@@ -107,19 +141,68 @@ export function fillSegmentation(
     for (let i = 0; i < labelmaps2D.length; i++) {
       const labelmap2D = labelmaps2D[i];
 
-      if (labelmaps2D[i]) {
-        const { segmentsOnLabelmap } = labelmap2D;
-
-        segmentsOnLabelmap.forEach((segmentIndex) => {
-          if (segmentIndex !== 0) {
-            referencedFramesPerSegment[segmentIndex].push(i);
-            numberOfFrames++;
-          }
-        });
+      if (!labelmap2D?.pixelData) {
+        continue;
       }
+
+      const { segmentsOnLabelmap } = labelmap2D;
+
+      segmentsOnLabelmap.forEach((segmentIndex) => {
+        if (
+          segmentIndex !== 0 &&
+          segmentMetadata[segmentIndex] &&
+          referencedFramesPerSegment[segmentIndex] &&
+          labelmapFrameContainsSegment(labelmap2D.pixelData, segmentIndex)
+        ) {
+          referencedFramesPerSegment[segmentIndex].push(i);
+        }
+      });
     }
 
     referencedFramesPerLabelmap[labelmapIndex] = referencedFramesPerSegment;
+  }
+
+  let numberOfFrames = 0;
+
+  for (
+    let labelmapIndex = 0;
+    labelmapIndex < labelmaps3D.length;
+    labelmapIndex++
+  ) {
+    const referencedFramesPerSegment =
+      referencedFramesPerLabelmap[labelmapIndex];
+    const labelmap3D = labelmaps3D[labelmapIndex];
+    const { metadata: segmentMetadata } = labelmap3D;
+
+    for (
+      let segmentIndex = 1;
+      segmentIndex < referencedFramesPerSegment.length;
+      segmentIndex++
+    ) {
+      const referencedFrameIndicies = referencedFramesPerSegment[segmentIndex];
+
+      if (!referencedFrameIndicies?.length || !segmentMetadata[segmentIndex]) {
+        continue;
+      }
+
+      const labelmaps = _getLabelmapsFromReferencedFrameIndicies(
+        labelmap3D,
+        referencedFrameIndicies
+      );
+
+      if (
+        !labelmaps.length ||
+        !labelmaps.some((frame) => frame?.length && frame.some((v) => v !== 0))
+      ) {
+        continue;
+      }
+
+      numberOfFrames += referencedFrameIndicies.length;
+    }
+  }
+
+  if (numberOfFrames === 0) {
+    throw new Error('No non-empty segmentation frames found for SEG export');
   }
 
   segmentation.setNumberOfFrames(numberOfFrames);
@@ -133,7 +216,7 @@ export function fillSegmentation(
       referencedFramesPerLabelmap[labelmapIndex];
 
     const labelmap3D = labelmaps3D[labelmapIndex];
-    const { metadata } = labelmap3D;
+    const { metadata: segmentMetadata } = labelmap3D;
 
     for (
       let segmentIndex = 1;
@@ -142,26 +225,58 @@ export function fillSegmentation(
     ) {
       const referencedFrameIndicies = referencedFramesPerSegment[segmentIndex];
 
-      if (referencedFrameIndicies) {
-        // Frame numbers start from 1.
-        const referencedFrameNumbers = referencedFrameIndicies.map(
-          (element) => {
-            return element + 1;
-          }
-        );
-        const segmentMetadata = metadata[segmentIndex];
-        const labelmaps = _getLabelmapsFromReferencedFrameIndicies(
-          labelmap3D,
-          referencedFrameIndicies
-        );
-
-        segmentation.addSegmentFromLabelmap(
-          segmentMetadata,
-          labelmaps,
-          segmentIndex,
-          referencedFrameNumbers
-        );
+      if (!referencedFrameIndicies?.length || !segmentMetadata[segmentIndex]) {
+        continue;
       }
+
+      const labelmaps = _getLabelmapsFromReferencedFrameIndicies(
+        labelmap3D,
+        referencedFrameIndicies
+      );
+
+      if (
+        !labelmaps.length ||
+        !labelmaps.some((frame) => frame?.length && frame.some((v) => v !== 0))
+      ) {
+        continue;
+      }
+
+      // Frame numbers start from 1.
+      const referencedFrameNumbers = referencedFrameIndicies.map(
+        (element) => element + 1
+      );
+
+      referencedFrameNumbers.forEach((frameNumber) => {
+        frameDescriptors.push({
+          referencedSegmentNumber: segmentIndex,
+          sourceFrameIndex: frameNumber - 1,
+        });
+      });
+
+      segmentation.addSegmentFromLabelmap(
+        segmentMetadata[segmentIndex],
+        labelmaps,
+        segmentIndex,
+        referencedFrameNumbers
+      );
+    }
+  }
+
+  if (frameDescriptors.length && images?.length && metadata) {
+    const perFrameInputs = frameDescriptors
+      .map((desc) => ({
+        referencedSegmentNumber: desc.referencedSegmentNumber,
+        sourceImageSequenceItem: getReferencedSourceImageSequenceItemFromImage(
+          images[desc.sourceFrameIndex],
+          metadata
+        ),
+      }))
+      .filter(
+        (frame) => frame.sourceImageSequenceItem?.ReferencedSOPInstanceUID
+      );
+
+    if (perFrameInputs.length) {
+      applyPerFrameFunctionalGroups(segmentation.dataset, perFrameInputs);
     }
   }
   const transferSyntaxUid =

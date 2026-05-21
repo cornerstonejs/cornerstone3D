@@ -112,54 +112,210 @@ function decodeFromDatasetPixelData(multiframe) {
   return normalizeDecodedPixelData(decoded);
 }
 
-async function defaultDecodeImageData(segImageId) {
-  const segImage = await imageLoader.loadImage(segImageId);
+type DecodeFrameImageData = (
+  frameImageId: string,
+  frameNumber: number
+) => Promise<
+  | ArrayLike<number>
+  | ArrayLike<number>[]
+  | Uint8Array
+  | Uint16Array
+  | (Uint8Array | Uint16Array)[]
+>;
+
+function getSegNumberOfFrames(multiframe: Record<string, unknown>): number {
+  const fromTag = Number(multiframe.NumberOfFrames);
+  if (fromTag > 0) {
+    return fromTag;
+  }
+  const perFrame = multiframe.PerFrameFunctionalGroupsSequence;
+  if (Array.isArray(perFrame) && perFrame.length > 0) {
+    return perFrame.length;
+  }
+  return 1;
+}
+
+/** Expands WADO-RS …/frames/1 into one imageId per frame when frameImageIds are not supplied. */
+function expandWadorsFrameImageIds(
+  segImageId: string,
+  numberOfFrames: number
+): string[] {
+  const frameMatch = segImageId.match(/(.*\/frames\/)(\d+)(.*)$/);
+  if (!frameMatch || numberOfFrames <= 1) {
+    return [segImageId];
+  }
+
+  const prefix = frameMatch[1];
+  const suffix = frameMatch[3] || '';
+  const frameImageIds: string[] = [];
+
+  for (let frameNumber = 1; frameNumber <= numberOfFrames; frameNumber++) {
+    frameImageIds.push(`${prefix}${frameNumber}${suffix}`);
+  }
+
+  return frameImageIds;
+}
+
+function resolveFrameImageIds({
+  segImageId,
+  numberOfFrames,
+  frameImageIds,
+  getFrameImageId,
+}: {
+  segImageId: string;
+  numberOfFrames: number;
+  frameImageIds?: string[];
+  getFrameImageId?: (baseSegImageId: string, frameNumber: number) => string;
+}): string[] {
+  if (frameImageIds?.length) {
+    return frameImageIds;
+  }
+
+  if (getFrameImageId) {
+    return Array.from({ length: numberOfFrames }, (_, index) =>
+      getFrameImageId(segImageId, index + 1)
+    );
+  }
+
+  const wadorsFrameIds = expandWadorsFrameImageIds(segImageId, numberOfFrames);
+  if (wadorsFrameIds.length > 1) {
+    return wadorsFrameIds;
+  }
+
+  return numberOfFrames > 1
+    ? Array.from({ length: numberOfFrames }, () => segImageId)
+    : [segImageId];
+}
+
+function unpackFramePixelDataIfNeeded(
+  framePixelData: Uint8Array | Uint16Array,
+  multiframe: Record<string, unknown>,
+  sliceLength: number
+) {
+  const bitsStored = Number(multiframe.BitsStored);
+  if (bitsStored === 1 && framePixelData.length < sliceLength) {
+    const packed =
+      framePixelData instanceof Uint8Array
+        ? framePixelData
+        : new Uint8Array(framePixelData);
+    return BitArray.unpack(packed);
+  }
+  return framePixelData;
+}
+
+async function defaultDecodeFrameImageData(
+  frameImageId: string,
+  _frameNumber: number
+) {
+  const segImage = await imageLoader.loadImage(frameImageId);
   return segImage?.getPixelData?.();
 }
 
 async function decodeSegPixelData({
   segImageId,
   multiframe,
-  decodeImageData = defaultDecodeImageData,
+  frameImageIds,
+  getFrameImageId,
+  decodeImageData = defaultDecodeFrameImageData,
   allowLegacyDatasetDecode = false,
 }: {
   segImageId: string;
   multiframe: Record<string, unknown>;
-  decodeImageData?: (
-    imageId: string
-  ) => Promise<
-    | ArrayLike<number>
-    | ArrayLike<number>[]
-    | Uint8Array
-    | Uint16Array
-    | (Uint8Array | Uint16Array)[]
-  >;
+  frameImageIds?: string[];
+  getFrameImageId?: (baseSegImageId: string, frameNumber: number) => string;
+  decodeImageData?: DecodeFrameImageData;
   allowLegacyDatasetDecode?: boolean;
 }) {
-  const segPixelData = await decodeImageData(segImageId);
-
-  if (!segPixelData) {
-    throw new Error(
-      `No decoded pixel data found for SEG imageId: ${segImageId}`
-    );
-  }
-
-  const normalizedDecodedPixelData = normalizeDecodedPixelData(segPixelData);
+  const rows = Number(multiframe.Rows);
+  const columns = Number(multiframe.Columns);
+  const sliceLength = rows * columns;
+  const numberOfFrames = getSegNumberOfFrames(multiframe);
   const expectedVoxelCount = getExpectedVoxelCount(multiframe);
-  let decodedPixelData = normalizedDecodedPixelData;
+  const resolvedFrameImageIds = resolveFrameImageIds({
+    segImageId,
+    numberOfFrames,
+    frameImageIds,
+    getFrameImageId,
+  });
 
-  if (
-    allowLegacyDatasetDecode &&
-    normalizedDecodedPixelData.length !== expectedVoxelCount
-  ) {
+  if (allowLegacyDatasetDecode) {
     const datasetDecodedPixelData = decodeFromDatasetPixelData(multiframe);
-
-    if (datasetDecodedPixelData) {
-      decodedPixelData = datasetDecodedPixelData;
+    if (
+      datasetDecodedPixelData &&
+      datasetDecodedPixelData.length === expectedVoxelCount
+    ) {
+      return { decodedPixelData: datasetDecodedPixelData, expectedVoxelCount };
     }
   }
 
-  return { decodedPixelData, expectedVoxelCount };
+  // Legacy: a single decode on the metadata segImageId may return the full multiframe buffer.
+  const legacyFullVolume = await decodeImageData(segImageId, 0);
+  if (legacyFullVolume) {
+    const normalizedLegacy = normalizeDecodedPixelData(legacyFullVolume);
+    if (normalizedLegacy.length === expectedVoxelCount) {
+      return { decodedPixelData: normalizedLegacy, expectedVoxelCount };
+    }
+    if (numberOfFrames <= 1) {
+      return { decodedPixelData: normalizedLegacy, expectedVoxelCount };
+    }
+  }
+
+  if (numberOfFrames <= 1) {
+    const frameImageId = resolvedFrameImageIds[0] || segImageId;
+    const framePixelData = await decodeImageData(frameImageId, 1);
+    if (!framePixelData) {
+      throw new Error(
+        `No decoded pixel data found for SEG imageId: ${frameImageId}`
+      );
+    }
+    const normalized = normalizeDecodedPixelData(framePixelData);
+    const decodedPixelData = unpackFramePixelDataIfNeeded(
+      normalized as Uint8Array,
+      multiframe,
+      sliceLength
+    );
+    return { decodedPixelData, expectedVoxelCount };
+  }
+
+  const perFramePixelData: (Uint8Array | Uint16Array)[] = [];
+
+  for (let frameIndex = 0; frameIndex < numberOfFrames; frameIndex++) {
+    const frameNumber = frameIndex + 1;
+    const frameImageId = resolvedFrameImageIds[frameIndex];
+
+    if (!frameImageId) {
+      throw new Error(
+        `Missing SEG frame imageId at frame ${frameNumber} (expected ${numberOfFrames} frame imageIds)`
+      );
+    }
+
+    const framePixelData = await decodeImageData(frameImageId, frameNumber);
+
+    if (!framePixelData) {
+      throw new Error(
+        `No decoded pixel data found for SEG frame imageId: ${frameImageId}`
+      );
+    }
+
+    let normalizedFrame = normalizeDecodedPixelData(framePixelData) as
+      | Uint8Array
+      | Uint16Array;
+
+    normalizedFrame = unpackFramePixelDataIfNeeded(
+      normalizedFrame,
+      multiframe,
+      sliceLength
+    ) as Uint8Array | Uint16Array;
+
+    perFramePixelData.push(
+      normalizedFrame.subarray(0, sliceLength) as Uint8Array | Uint16Array
+    );
+  }
+
+  return {
+    decodedPixelData: normalizeDecodedPixelData(perFramePixelData),
+    expectedVoxelCount,
+  };
 }
 
 const updateSegmentsOnFrame = ({
@@ -250,7 +406,9 @@ async function createLabelmapsFromBufferInternal(
     TypedArrayConstructor = Uint8Array,
     maxBytesPerChunk,
     parserType = 'bitmap',
-    decodeImageData = defaultDecodeImageData,
+    frameImageIds,
+    getFrameImageId,
+    decodeImageData = defaultDecodeFrameImageData,
     allowLegacyDatasetDecode = false,
   } = options ?? {};
 
@@ -301,6 +459,8 @@ async function createLabelmapsFromBufferInternal(
   const { decodedPixelData, expectedVoxelCount } = await decodeSegPixelData({
     segImageId,
     multiframe,
+    frameImageIds,
+    getFrameImageId,
     decodeImageData,
     allowLegacyDatasetDecode,
   });
