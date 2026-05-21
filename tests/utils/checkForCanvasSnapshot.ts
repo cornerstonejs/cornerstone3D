@@ -143,7 +143,23 @@ const checkForCanvasSnapshot = async (
           svg.setAttribute('width', String(cssW));
           svg.setAttribute('height', String(cssH));
         }
+        // Hide ephemeral cursors (brush, threshold, etc.) so snapshots stay
+        // stable across runs — they track the last mouse position, which
+        // drifts ±1px between runs and produces anti-aliased diffs along the
+        // cursor stroke. Anything tagged with data-id="brush-cursor" gets
+        // its display toggled off during serialization, then restored.
+        const cursorNodes = svg.querySelectorAll<SVGElement>(
+          '[data-id="brush-cursor"]'
+        );
+        const cursorPrevDisplay: string[] = [];
+        cursorNodes.forEach((n) => {
+          cursorPrevDisplay.push(n.style.display);
+          n.style.display = 'none';
+        });
         const xml = new XMLSerializer().serializeToString(svg);
+        cursorNodes.forEach((n, i) => {
+          n.style.display = cursorPrevDisplay[i];
+        });
         if (prevW === null) svg.removeAttribute('width');
         else svg.setAttribute('width', prevW);
         if (prevH === null) svg.removeAttribute('height');
@@ -390,7 +406,7 @@ const checkForCanvasSnapshot = async (
 
   await expect(buffer).toMatchSnapshot(screenshotPath, {
     maxDiffPixelRatio: 0,
-    threshold: 0.02,
+    threshold: 0.01,
   });
 };
 

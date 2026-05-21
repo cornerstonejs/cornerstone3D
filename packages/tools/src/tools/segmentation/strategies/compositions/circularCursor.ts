@@ -187,7 +187,8 @@ export default {
           strokeOpacity: 1,
           lineDash:
             this.centerSegmentIndexInfo.segmentIndex === 0 ? [1, 2] : null,
-        }
+        },
+        'brush-cursor'
       );
     }
 
@@ -205,7 +206,8 @@ export default {
         dynamicRadiusInCanvas,
         {
           color,
-        }
+        },
+        'brush-cursor'
       );
     }
   },
