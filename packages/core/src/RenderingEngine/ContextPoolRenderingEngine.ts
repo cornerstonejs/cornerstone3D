@@ -33,6 +33,11 @@ import type { VtkOffscreenMultiRenderWindow } from '../types';
  */
 class ContextPoolRenderingEngine extends BaseRenderingEngine {
   private contextPool: WebGLContextPool;
+  private _pendingResizeArgs: {
+    vtkDrivenViewports: (IStackViewport | IVolumeViewport)[];
+    keepCamera: boolean;
+    immediate: boolean;
+  } | null = null;
 
   constructor(id?: string) {
     super(id);
@@ -197,8 +202,8 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
    * Only updates the VTK offscreen size when the displayed size (canvas client size in device pixels)
    * differs from the current rendered size (canvas.width/height). The on-screen canvas dimensions
    * are updated only when the VTK render result is copied in _copyToOnscreenCanvas, avoiding
-   * flicker during resize. If a render is already scheduled, resize is deferred until the next
-   * resize() call.
+   * flicker during resize. If a render is already scheduled, the resize is deferred and applied
+   * automatically once the pending frame has been rendered.
    */
   protected _resizeVTKViewports(
     vtkDrivenViewports: (IStackViewport | IVolumeViewport)[],
@@ -236,6 +241,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     }
 
     if (this._animationFrameSet) {
+      this._pendingResizeArgs = { vtkDrivenViewports, keepCamera, immediate };
       return;
     }
 
@@ -310,6 +316,13 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
     this._animationFrameSet = false;
     this._animationFrameHandle = null;
+
+    if (this._pendingResizeArgs) {
+      const { vtkDrivenViewports, keepCamera, immediate } =
+        this._pendingResizeArgs;
+      this._pendingResizeArgs = null;
+      this._resizeVTKViewports(vtkDrivenViewports, keepCamera, immediate);
+    }
 
     // Trigger all events after rendering is complete
     eventDetails.forEach((eventDetail) => {

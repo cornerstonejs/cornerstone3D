@@ -150,4 +150,57 @@ describe('RenderingEngineAPI -- ', () => {
       expect(stackViewports.length).toBe(1);
     });
   });
+
+  describe("RenderingEngine doesn't drop frames", function () {
+    let renderingEngine;
+
+    beforeEach(function () {
+      const testEnv = setupTestEnvironment({
+        renderingEngineId,
+      });
+      renderingEngine = testEnv.renderingEngine;
+    });
+
+    afterEach(function () {
+      cleanupTestEnvironment({
+        renderingEngineId,
+      });
+    });
+
+    it('should update canvas dimensions when resize() is called while a render is pending', function (done) {
+      const element1 = createViewports(renderingEngine, {
+        viewportId: axialViewportId,
+        viewportType: ViewportType.STACK,
+        width: 400,
+        height: 400,
+        useEnableElement: true,
+      });
+
+      const element2 = createViewports(renderingEngine, {
+        viewportId: sagittalViewportId,
+        viewportType: ViewportType.STACK,
+        width: 400,
+        height: 400,
+        useEnableElement: true,
+      });
+
+      renderingEngine.renderViewport(sagittalViewportId);
+
+      element1.style.width = '250px';
+      element1.style.height = '250px';
+
+      renderingEngine.resize(false, true);
+
+      requestAnimationFrame(() => {
+        const viewport1 = renderingEngine.getViewport(axialViewportId);
+        if (!viewport1) {
+          done();
+          return;
+        }
+        expect(viewport1.sWidth).toBe(250);
+        expect(viewport1.sHeight).toBe(250);
+        done();
+      });
+    });
+  });
 });
