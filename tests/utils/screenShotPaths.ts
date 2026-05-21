@@ -66,6 +66,8 @@ const screenShotPaths = {
     flipLeftBottomHalf: 'flipLeftBottomHalf.png',
   },
   nextStackPosition: {
+    // Position presets diverge from legacy by tiny anti-aliasing margins (~0.6%);
+    // keep next-only baselines so the strict threshold can stay maxDiffPixelRatio=0.
     centerFull: 'centerFull.png',
     centerWithBorder: 'centerWithBorder.png',
     centerHalf: 'centerHalf.png',
@@ -81,9 +83,9 @@ const screenShotPaths = {
     rightTopHalf: 'rightTopHalf.png',
     leftBottomHalf: 'leftBottomHalf.png',
     rightBottomHalf: 'rightBottomHalf.png',
+    flipLeftBottomHalf: 'flipLeftBottomHalf.png',
     rotate90LeftTopHalf: 'rotate90LeftTopHalf.png',
     rotate180RightTopHalf: 'rotate180RightTopHalf.png',
-    flipLeftBottomHalf: 'flipLeftBottomHalf.png',
     flipRotate180RightBottomHalf: 'flipRotate180RightBottomHalf.png',
   },
   stackProperties: {
@@ -172,6 +174,8 @@ const screenShotPaths = {
     sagittal: 'sagittal.png',
   },
   labelmapRenderingNext: {
+    // Next layout renders 3 orientations side-by-side (1264x512 stitched -> 421x512 per slice)
+    // while legacy uses a single full 512x512 viewport; baselines can't share.
     axial: 'axial.png',
     coronal: 'coronal.png',
     sagittal: 'sagittal.png',
@@ -294,6 +298,8 @@ const screenShotPaths = {
     cpuViewport: 'cpu-viewport.png',
   },
   labelmapSegToolsNext: {
+    // Next layout (1263x512 multi-viewport) differs from legacy's 1024x1024;
+    // baselines can't share.
     sphereBrush: 'sphereBrush.png',
     cpuSphereBrush: 'cpu-sphereBrush.png',
   },
@@ -313,12 +319,13 @@ const screenShotPaths = {
     sphereBrush: 'sphereBrush.png',
   },
   stackAPINext: {
-    setVoi: 'setVoi.png',
-    nextImage: 'nextImage.png',
-    flipH: 'flipH.png',
+    setVoi: '../../stackAPI.spec.ts/setVoiRange.png',
+    nextImage: '../../stackAPI.spec.ts/nextImage.png',
+    flipH: '../../stackAPI.spec.ts/flipH.png',
+    // Next rotation diverges from legacy by ~15% (different rotation pivot/origin); keep next-only.
     rotate: 'rotate.png',
-    invert: 'invert.png',
-    reset: 'reset.png',
+    invert: '../../stackAPI.spec.ts/invert.png',
+    reset: '../../stackAPI.spec.ts/resetViewport.png',
     cpuSetVoi: 'cpu-setVoi.png',
     cpuNextImage: 'cpu-nextImage.png',
     cpuFlipH: 'cpu-flipH.png',

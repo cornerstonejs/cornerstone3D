@@ -1,5 +1,47 @@
-import { expect } from '@playwright/test';
+import { expect, test as testApi } from '@playwright/test';
 import type { Page } from 'playwright';
+import * as fs from 'fs';
+import * as path from 'path';
+import { PNG } from 'pngjs';
+
+/** Inline per-pixel comparison matching the spirit of playwright's threshold:
+ *  count a pixel as different when any channel diverges by more than
+ *  `threshold * 255`. The diff buffer (if provided) gets red on diverging
+ *  pixels and a faded copy of the expected on identical ones. */
+function diffPng(
+  actual: Buffer,
+  expected: Buffer,
+  diff: Buffer | null,
+  width: number,
+  height: number,
+  threshold: number
+): number {
+  const cutoff = threshold * 255;
+  let differing = 0;
+  for (let i = 0; i < width * height; i++) {
+    const p = i * 4;
+    const dr = Math.abs(actual[p] - expected[p]);
+    const dg = Math.abs(actual[p + 1] - expected[p + 1]);
+    const db = Math.abs(actual[p + 2] - expected[p + 2]);
+    const same = Math.max(dr, dg, db) <= cutoff;
+    if (!same) differing++;
+    if (diff) {
+      if (same) {
+        // Faded baseline so diff PNGs stay legible.
+        diff[p] = expected[p] / 2 + 128;
+        diff[p + 1] = expected[p + 1] / 2 + 128;
+        diff[p + 2] = expected[p + 2] / 2 + 128;
+        diff[p + 3] = 255;
+      } else {
+        diff[p] = 255;
+        diff[p + 1] = 0;
+        diff[p + 2] = 0;
+        diff[p + 3] = 255;
+      }
+    }
+  }
+  return differing;
+}
 
 interface CheckForCanvasSnapshotOptions {
   /**
@@ -413,10 +455,140 @@ const checkForCanvasSnapshot = async (
 
   const buffer = Buffer.from(base64, 'base64');
 
+  // Paths containing `..` reference a shared baseline owned by a different
+  // spec (e.g. a next-viewport test that should match the legacy stack
+  // baseline). Playwright's toMatchSnapshot enforces that the resolved file
+  // stays inside the test's own snapshot/output directory, so cross-spec
+  // sharing has to bypass it and compare buffers manually.
+  if (screenshotPath.includes('..')) {
+    await compareAgainstSharedBaseline(buffer, screenshotPath, {
+      threshold,
+      maxDiffPixelRatio,
+    });
+    return;
+  }
+
   await expect(buffer).toMatchSnapshot(screenshotPath, {
     maxDiffPixelRatio,
     threshold,
   });
 };
+
+/**
+ * Compares an in-memory PNG buffer against a baseline owned by a sibling
+ * spec. The path is resolved relative to where Playwright would have stored
+ * a same-spec baseline (`tests/screenshots/<project>/<testFile>/`), so
+ * `../../foo.spec.ts/bar.png` lands at `tests/screenshots/<project>/foo.spec.ts/bar.png`.
+ *
+ * On mismatch we still emit -actual.png / -diff.png attachments into the
+ * test's output dir, so the HTML report and our diff viewer behave the same
+ * as for first-party baselines.
+ */
+async function compareAgainstSharedBaseline(
+  buffer: Buffer,
+  screenshotPath: string,
+  opts: { threshold: number; maxDiffPixelRatio: number }
+): Promise<void> {
+  const info = testApi.info();
+  // Use playwright's own snapshot-path resolver to find this test's baseline
+  // directory, then traverse from there. Avoids us guessing config.rootDir vs
+  // project.testDir semantics across playwright versions.
+  const sameSpecAnchor = info.snapshotPath('__compat_anchor__.png');
+  const snapshotDir = path.dirname(sameSpecAnchor);
+  // Mirror Playwright's sanitizeForFilePath on the leaf filename so a shared
+  // reference like `../../legacy.spec.ts/dcm_x.1.2.png` resolves to the real
+  // on-disk file `dcm-x-1-2.png` that Playwright wrote from the legacy spec.
+  // The same regex Playwright uses (playwright-core/lib/server/utils/fileUtils.js).
+  const dirPart = path.dirname(screenshotPath);
+  const ext = path.extname(screenshotPath);
+  const stem = path.basename(screenshotPath, ext);
+  const sanitizedStem = stem.replace(
+    // eslint-disable-next-line no-control-regex
+    /[\x00-\x2C\x2E-\x2F\x3A-\x40\x5B-\x60\x7B-\x7F]+/g,
+    '-'
+  );
+  const expectedPath = path.resolve(
+    snapshotDir,
+    dirPart,
+    `${sanitizedStem}${ext}`
+  );
+  const screenshotBase = path.basename(screenshotPath, path.extname(screenshotPath));
+
+  const writeAttachments = async (
+    actual: Buffer,
+    expected: Buffer | null,
+    diff: Buffer | null
+  ) => {
+    const stamp = `${screenshotBase}-${Date.now()}`;
+    const actualPath = info.outputPath(`${stamp}-actual.png`);
+    fs.writeFileSync(actualPath, actual);
+    await info.attach(`${screenshotBase}-actual`, {
+      path: actualPath,
+      contentType: 'image/png',
+    });
+    if (expected) {
+      const expectedOut = info.outputPath(`${stamp}-expected.png`);
+      fs.writeFileSync(expectedOut, expected);
+      await info.attach(`${screenshotBase}-expected`, {
+        path: expectedOut,
+        contentType: 'image/png',
+      });
+    }
+    if (diff) {
+      const diffOut = info.outputPath(`${stamp}-diff.png`);
+      fs.writeFileSync(diffOut, diff);
+      await info.attach(`${screenshotBase}-diff`, {
+        path: diffOut,
+        contentType: 'image/png',
+      });
+    }
+  };
+
+  if (!fs.existsSync(expectedPath)) {
+    if (info.config.updateSnapshots === 'all' || info.config.updateSnapshots === 'missing') {
+      fs.mkdirSync(path.dirname(expectedPath), { recursive: true });
+      fs.writeFileSync(expectedPath, buffer);
+      console.warn(`Wrote shared baseline: ${expectedPath}`);
+      return;
+    }
+    await writeAttachments(buffer, null, null);
+    throw new Error(
+      `Shared baseline not found at ${expectedPath} (referenced via ${screenshotPath}). ` +
+        `Run with --update-snapshots from the legacy spec to create it.`
+    );
+  }
+
+  const expectedBuffer = fs.readFileSync(expectedPath);
+  const actual = PNG.sync.read(buffer);
+  const expected = PNG.sync.read(expectedBuffer);
+
+  if (actual.width !== expected.width || actual.height !== expected.height) {
+    const diffImage = new PNG({ width: actual.width, height: actual.height });
+    await writeAttachments(buffer, expectedBuffer, PNG.sync.write(diffImage));
+    throw new Error(
+      `Shared baseline size mismatch: expected ${expected.width}x${expected.height} ` +
+        `(${expectedPath}), received ${actual.width}x${actual.height}.`
+    );
+  }
+
+  const diffImage = new PNG({ width: actual.width, height: actual.height });
+  const totalPixels = actual.width * actual.height;
+  const diffPixels = diffPng(
+    actual.data as Buffer,
+    expected.data as Buffer,
+    diffImage.data as Buffer,
+    actual.width,
+    actual.height,
+    opts.threshold
+  );
+  const ratio = totalPixels > 0 ? diffPixels / totalPixels : 0;
+  if (ratio > opts.maxDiffPixelRatio) {
+    await writeAttachments(buffer, expectedBuffer, PNG.sync.write(diffImage));
+    throw new Error(
+      `Shared baseline mismatch: ${diffPixels} pixels (ratio ${ratio.toFixed(4)}) ` +
+        `differ vs ${expectedPath}, above maxDiffPixelRatio ${opts.maxDiffPixelRatio}.`
+    );
+  }
+}
 
 export { checkForCanvasSnapshot };

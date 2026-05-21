@@ -14,11 +14,11 @@ import { dicomDimensions } from '../../packages/dicomImageLoader/examples/dicomI
 // the ViewportNext implementation is exercised end-to-end.
 //
 // The 45 baselines are dcm2jpg-derived (DICOM ground truth) and live under
-// `tests/screenshots/<project>/dicomImageLoaderWADOURI.spec.ts/`. The matching
-// `tests/screenshots/<project>/nextViewport/nextDicomImageLoaderWADOURI.spec.ts`
-// directory is a symlink to the legacy directory so both specs share the
-// same baselines and we don't duplicate 45 PNGs.
+// `tests/screenshots/<project>/dicomImageLoaderWADOURI.spec.ts/`. We point at
+// them via a `../../` prefix so checkForCanvasSnapshot's shared-baseline path
+// resolves to the legacy folder -- no duplicated PNGs.
 const EXAMPLE = 'dicomImageLoaderWADOURI';
+const LEGACY_BASELINE_PREFIX = '../../dicomImageLoaderWADOURI.spec.ts/';
 
 function getExpectedWadoImageId(imagePath: string) {
   if (imagePath.startsWith('TG_18')) {
@@ -132,7 +132,8 @@ test.describe('ViewportNext: Dicom Image Loader WADOURI', async () => {
       await checkForCanvasSnapshot(
         page,
         '.cornerstone-canvas',
-        screenShotPaths.dicomImageLoaderWADOURI[snapshotKey]
+        LEGACY_BASELINE_PREFIX +
+          screenShotPaths.dicomImageLoaderWADOURI[snapshotKey]
       );
     });
   }
