@@ -39,7 +39,7 @@ const checkForCanvasSnapshot = async (
   viewportIndex?: number | number[],
   options: CheckForCanvasSnapshotOptions = {}
 ) => {
-  const { stableMs = 300, timeoutMs = 5000 } = options;
+  const { stableMs = 300, timeoutMs = 8000 } = options;
   const indices =
     typeof viewportIndex === 'number'
       ? [viewportIndex]
@@ -156,43 +156,89 @@ const checkForCanvasSnapshot = async (
         }
       };
 
-      const capture = async (): Promise<string> => {
+      const isCanvasUniform = (canvas: HTMLCanvasElement): boolean => {
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return false;
+        const w = canvas.width;
+        const h = canvas.height;
+        if (w === 0 || h === 0) return true;
+        const x = (frac: number) =>
+          Math.min(w - 1, Math.max(0, Math.floor(w * frac)));
+        const y = (frac: number) =>
+          Math.min(h - 1, Math.max(0, Math.floor(h * frac)));
+        const points: Array<[number, number]> = [
+          [x(0), y(0)],
+          [x(1), y(0)],
+          [x(0), y(1)],
+          [x(1), y(1)],
+          [x(0.5), y(0.5)],
+          [x(0.25), y(0.25)],
+          [x(0.75), y(0.25)],
+          [x(0.25), y(0.75)],
+          [x(0.75), y(0.75)],
+          [x(0.5), y(0.25)],
+          [x(0.25), y(0.5)],
+          [x(0.75), y(0.5)],
+          [x(0.5), y(0.75)],
+        ];
+        let first: string | null = null;
+        try {
+          for (const [px, py] of points) {
+            const d = ctx.getImageData(px, py, 1, 1).data;
+            const key = `${d[0]},${d[1]},${d[2]},${d[3]}`;
+            if (first === null) first = key;
+            else if (key !== first) return false;
+          }
+        } catch {
+          return false;
+        }
+        return true;
+      };
+
+      const capture = async (): Promise<{
+        url: string;
+        uniform: boolean;
+      }> => {
         const targets = resolveTargets();
+        let out: HTMLCanvasElement;
         if (targets.length === 1) {
           const { canvas } = targets[0];
-          const out = document.createElement('canvas');
+          out = document.createElement('canvas');
           out.width = canvas.width;
           out.height = canvas.height;
           const ctx = out.getContext('2d');
           if (!ctx) throw new Error('failed to get 2d context');
           await compositeOne(ctx, targets[0], 0, 0);
-          return out.toDataURL('image/png');
-        }
+        } else {
+          let minX = Infinity;
+          let minY = Infinity;
+          let maxX = -Infinity;
+          let maxY = -Infinity;
+          for (const { rect } of targets) {
+            if (rect.x < minX) minX = rect.x;
+            if (rect.y < minY) minY = rect.y;
+            if (rect.x + rect.w > maxX) maxX = rect.x + rect.w;
+            if (rect.y + rect.h > maxY) maxY = rect.y + rect.h;
+          }
+          const first = targets[0];
+          const dpr =
+            first.rect.w > 0 ? first.canvas.width / first.rect.w : 1;
+          out = document.createElement('canvas');
+          out.width = Math.round((maxX - minX) * dpr);
+          out.height = Math.round((maxY - minY) * dpr);
+          const ctx = out.getContext('2d');
+          if (!ctx) throw new Error('failed to get 2d context');
 
-        let minX = Infinity;
-        let minY = Infinity;
-        let maxX = -Infinity;
-        let maxY = -Infinity;
-        for (const { rect } of targets) {
-          if (rect.x < minX) minX = rect.x;
-          if (rect.y < minY) minY = rect.y;
-          if (rect.x + rect.w > maxX) maxX = rect.x + rect.w;
-          if (rect.y + rect.h > maxY) maxY = rect.y + rect.h;
+          for (const target of targets) {
+            const ox = Math.round((target.rect.x - minX) * dpr);
+            const oy = Math.round((target.rect.y - minY) * dpr);
+            await compositeOne(ctx, target, ox, oy);
+          }
         }
-        const first = targets[0];
-        const dpr = first.rect.w > 0 ? first.canvas.width / first.rect.w : 1;
-        const out = document.createElement('canvas');
-        out.width = Math.round((maxX - minX) * dpr);
-        out.height = Math.round((maxY - minY) * dpr);
-        const ctx = out.getContext('2d');
-        if (!ctx) throw new Error('failed to get 2d context');
-
-        for (const target of targets) {
-          const ox = Math.round((target.rect.x - minX) * dpr);
-          const oy = Math.round((target.rect.y - minY) * dpr);
-          await compositeOne(ctx, target, ox, oy);
-        }
-        return out.toDataURL('image/png');
+        return {
+          url: out.toDataURL('image/png'),
+          uniform: isCanvasUniform(out),
+        };
       };
 
       const stripPrefix = (dataUrl: string) => {
@@ -201,31 +247,120 @@ const checkForCanvasSnapshot = async (
       };
 
       if (stableMs <= 0) {
-        return stripPrefix(await capture());
+        return stripPrefix((await capture()).url);
       }
 
-      const intervalMs = 100;
-      const startTime = Date.now();
-      let lastUrl = '';
-      let firstStableAt = 0;
-      while (true) {
-        const url = await capture();
-        const now = Date.now();
-        if (url === lastUrl) {
-          if (now - firstStableAt >= stableMs) {
+      // Debounce stability against cornerstone activity. We listen for:
+      //   - render events on each viewport element (paint occurred)
+      //   - load events on the global eventTarget (image/volume arrived)
+      // Anything that resets the idle timer means more content is on the way,
+      // so a labelmap-only canvas waiting on a volume to load doesn't get
+      // declared stable prematurely.
+      const elementEvents = [
+        'CORNERSTONE_IMAGE_RENDERED',
+        'CORNERSTONE_VOLUME_NEW_IMAGE',
+        'CORNERSTONE_STACK_NEW_IMAGE',
+      ];
+      const targetEvents = [
+        'CORNERSTONE_IMAGE_LOADED',
+        'CORNERSTONE_VOLUME_LOADED',
+        'CORNERSTONE_IMAGE_VOLUME_LOADING_COMPLETED',
+      ];
+      const lastActivity = { ts: 0 };
+      const onActivity = () => {
+        lastActivity.ts = Date.now();
+      };
+      const seedTargets = resolveTargets();
+      const listenerEls = new Set<HTMLElement>();
+      for (const t of seedTargets) {
+        const vp = t.canvas.closest('[data-viewport-uid]') as HTMLElement | null;
+        if (vp) listenerEls.add(vp);
+      }
+      for (const el of listenerEls) {
+        for (const evt of elementEvents)
+          el.addEventListener(evt, onActivity);
+      }
+      const cs = (
+        window as unknown as {
+          cornerstone?: { eventTarget?: EventTarget };
+        }
+      ).cornerstone;
+      const csTarget = cs?.eventTarget;
+      if (csTarget) {
+        for (const evt of targetEvents) csTarget.addEventListener(evt, onActivity);
+      }
+      const detach = () => {
+        for (const el of listenerEls) {
+          for (const evt of elementEvents)
+            el.removeEventListener(evt, onActivity);
+        }
+        if (csTarget) {
+          for (const evt of targetEvents)
+            csTarget.removeEventListener(evt, onActivity);
+        }
+      };
+
+      try {
+        const intervalMs = 100;
+        const loadTimeoutMs = Math.min(3000, timeoutMs);
+        const startTime = Date.now();
+        let contentSeen = false;
+        let lastUrl = '';
+        let urlStableAt = 0;
+        while (true) {
+          const { url, uniform } = await capture();
+          const now = Date.now();
+
+          if (!contentSeen) {
+            // A uniformly-blank canvas means rendering hasn't happened yet.
+            // Wait for content, or fall through after loadTimeoutMs (covers
+            // legitimately-uniform final images like an all-black slice).
+            if (!uniform || now - startTime >= loadTimeoutMs) {
+              contentSeen = true;
+              lastUrl = url;
+              urlStableAt = now;
+            }
+          } else {
+            if (url !== lastUrl) {
+              lastUrl = url;
+              urlStableAt = now;
+            }
+            const urlIdle = now - urlStableAt;
+            const eventIdle =
+              lastActivity.ts > 0 ? now - lastActivity.ts : Infinity;
+            // Two acceptance paths:
+            //   1. Events have fired and have been idle for stableMs (the
+            //      common case when async loads are involved).
+            //   2. No cornerstone events ever fired (e.g., page fully
+            //      rendered before the listener attached). After loadTimeoutMs
+            //      we fall back to plain url stability.
+            const eventBased =
+              lastActivity.ts > 0 &&
+              eventIdle >= stableMs &&
+              urlIdle >= stableMs;
+            const noEventFallback =
+              lastActivity.ts === 0 &&
+              now - startTime >= loadTimeoutMs &&
+              urlIdle >= stableMs;
+            if (eventBased || noEventFallback) {
+              return stripPrefix(url);
+            }
+          }
+
+          if (now - startTime >= timeoutMs) {
+            console.warn(
+              `checkForCanvasSnapshot: ${
+                contentSeen
+                  ? `did not stabilize after ${timeoutMs}ms`
+                  : `canvas content never appeared in ${timeoutMs}ms (still uniform)`
+              }; capturing last frame`
+            );
             return stripPrefix(url);
           }
-        } else {
-          firstStableAt = now;
-          lastUrl = url;
+          await new Promise((r) => setTimeout(r, intervalMs));
         }
-        if (now - startTime >= timeoutMs) {
-          console.warn(
-            `checkForCanvasSnapshot: canvas did not stabilize after ${timeoutMs}ms; capturing last frame`
-          );
-          return stripPrefix(url);
-        }
-        await new Promise((r) => setTimeout(r, intervalMs));
+      } finally {
+        detach();
       }
     },
     { selector: canvasSelector, indices, stableMs, timeoutMs }
