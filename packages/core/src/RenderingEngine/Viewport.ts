@@ -1206,7 +1206,9 @@ class Viewport {
       -focalPointToSet[2]
     );
 
-    const initialAspectRatio = this.options?.aspectRatio || [1, 1];
+    const targetAspectRatio = resetAspectRatio
+      ? this.options?.aspectRatio || ([1, 1] as Point2)
+      : this.getAspectRatio();
 
     this.setCamera({
       parallelScale: resetZoom ? parallelScale : previousCamera.parallelScale,
@@ -1215,7 +1217,8 @@ class Viewport {
       viewAngle: 90,
       viewUp: viewUpToSet,
       clippingRange: clippingRangeToUse,
-      aspectRatio: resetAspectRatio && initialAspectRatio,
+      aspectRatio: targetAspectRatio,
+      isFitViewportAfterStretch: false,
     });
 
     const modifiedCamera = this.getCamera();
@@ -1583,10 +1586,16 @@ class Viewport {
       return;
     }
 
+    const currentAspect = (vtkCamera.getAspectRatio() as Point2) || [1, 1];
+    if (
+      currentAspect[0] === aspectRatio[0] &&
+      currentAspect[1] === aspectRatio[1]
+    ) {
+      return;
+    }
+
     const getRatioValue = ([x, y]: Point2) => x / y;
-    const oldRatioValue = getRatioValue(
-      (vtkCamera.getAspectRatio() as Point2) || [1, 1]
-    );
+    const oldRatioValue = getRatioValue(currentAspect);
     const newRatioValue = getRatioValue(aspectRatio);
 
     vtkCamera.setAspectRatio(aspectRatio);
@@ -1621,6 +1630,21 @@ class Viewport {
     // Apply the relative difference in fit scales to the current camera zoom (parallelScale)
     const ratioFactor = getFitScale(newRatioValue) / getFitScale(oldRatioValue);
     vtkCamera.setParallelScale(vtkCamera.getParallelScale() * ratioFactor);
+
+    // Keep baseline cameras synced to get the correct zoom after stretching.
+    // If not, the saved zoom value will drift from 1.0 even when the image fits the screen.
+    if (this.initialCamera?.parallelScale) {
+      this.initialCamera = {
+        ...this.initialCamera,
+        parallelScale: this.initialCamera.parallelScale * ratioFactor,
+      };
+    }
+    if (this.fitToCanvasCamera?.parallelScale) {
+      this.fitToCanvasCamera = {
+        ...this.fitToCanvasCamera,
+        parallelScale: this.fitToCanvasCamera.parallelScale * ratioFactor,
+      };
+    }
   }
 
   /**
@@ -2182,11 +2206,11 @@ class Viewport {
       this.setDisplayArea(displayArea);
     }
     this.setZoom(zoom);
-    if (pan) {
-      this.setPan(vec2.scale([0, 0], pan, zoom) as Point2);
-    }
-
     this.setAspectRatio(aspectRatio);
+    if (pan) {
+      const [aspectX, aspectY] = aspectRatio;
+      this.setPan([pan[0] * zoom * aspectX, pan[1] * zoom * aspectY] as Point2);
+    }
 
     // flip operation requires another re-render to take effect, so unfortunately
     // right now if the view presentation requires a flip, it will flicker. The
