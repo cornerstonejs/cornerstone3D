@@ -1,6 +1,5 @@
 import { expect } from '@playwright/test';
 import type { Page } from 'playwright';
-import { resolveCompatibilityScreenshotPath } from './compatibilityMode';
 
 interface CheckForCanvasSnapshotOptions {
   /**
@@ -414,13 +413,10 @@ const checkForCanvasSnapshot = async (
 
   const buffer = Buffer.from(base64, 'base64');
 
-  await expect(buffer).toMatchSnapshot(
-    resolveCompatibilityScreenshotPath(screenshotPath),
-    {
-      maxDiffPixelRatio,
-      threshold,
-    }
-  );
+  await expect(buffer).toMatchSnapshot(screenshotPath, {
+    maxDiffPixelRatio,
+    threshold,
+  });
 };
 
 export { checkForCanvasSnapshot };

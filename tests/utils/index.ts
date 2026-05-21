@@ -18,6 +18,5 @@ export {
 } from './waitForViewportsRendered';
 export {
   isCompatibilityMode,
-  resolveCompatibilityScreenshotPath,
   validateCompatibilityRuntime,
 } from './compatibilityMode';

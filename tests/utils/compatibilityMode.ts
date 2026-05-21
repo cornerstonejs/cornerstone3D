@@ -12,36 +12,6 @@ export function isCompatibilityMode(): boolean {
   return shouldForceViewportNext() || shouldForceCpuRendering();
 }
 
-function getCompatibilityModePathPrefix(): string | null {
-  if (!isCompatibilityMode()) {
-    return null;
-  }
-
-  const parts = ['compatibility'];
-
-  if (shouldForceViewportNext()) {
-    parts.push('compat');
-  }
-
-  if (shouldForceCpuRendering()) {
-    parts.push('cpu');
-  }
-
-  return parts.join('/');
-}
-
-export function resolveCompatibilityScreenshotPath(
-  screenshotPath: string
-): string {
-  const prefix = getCompatibilityModePathPrefix();
-
-  if (!prefix) {
-    return screenshotPath;
-  }
-
-  return `${prefix}/${screenshotPath}`;
-}
-
 export async function validateCompatibilityRuntime(
   page: Page,
   title?: string
