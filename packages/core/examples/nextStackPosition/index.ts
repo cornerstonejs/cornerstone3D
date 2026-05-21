@@ -193,19 +193,37 @@ addButtonToToolbar({
 });
 
 function addDisplayAreaGuides() {
-  const divNode = document.createElement('div');
-  divNode.setAttribute(
-    'style',
-    'left:25%; top: 25%; width:25%; height:25%; border: 1px solid green; position: absolute; z-index: 2; pointer-events: none'
-  );
-  element.appendChild(divNode);
-
-  const div2Node = document.createElement('div');
-  div2Node.setAttribute(
-    'style',
-    'left: 50%; top: 50%; width:25%; height:25%; border: 1px solid red; position: absolute; z-index: 2; pointer-events: none'
-  );
-  element.appendChild(div2Node);
+  // Draw the display-area reference boxes inside the SVG annotation layer so
+  // they are captured by canvas-based snapshot tests; DOM-only overlays get
+  // skipped by checkForCanvasSnapshot (legacy stackPosition does this same
+  // dance for the same reason).
+  const svgNode = document
+    .getElementsByClassName('svg-layer')
+    .item(0) as SVGSVGElement | null;
+  if (!svgNode) {
+    return;
+  }
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const makeRect = (
+    x: string,
+    y: string,
+    w: string,
+    h: string,
+    stroke: string
+  ) => {
+    const rect = document.createElementNS(SVG_NS, 'rect');
+    rect.setAttribute('x', x);
+    rect.setAttribute('y', y);
+    rect.setAttribute('width', w);
+    rect.setAttribute('height', h);
+    rect.setAttribute('fill', 'none');
+    rect.setAttribute('stroke', stroke);
+    rect.setAttribute('stroke-width', '1');
+    rect.setAttribute('vector-effect', 'non-scaling-stroke');
+    return rect;
+  };
+  svgNode.appendChild(makeRect('25%', '25%', '25%', '25%', 'green'));
+  svgNode.appendChild(makeRect('50%', '50%', '25%', '25%', 'red'));
 }
 
 async function run() {

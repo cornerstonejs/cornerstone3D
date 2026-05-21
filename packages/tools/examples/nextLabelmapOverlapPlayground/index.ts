@@ -334,7 +334,7 @@ async function run() {
       type: ViewportType.PLANAR_NEXT,
       element: stackElement,
       defaultOptions: {
-        background: [0, 0.2, 0] as Types.Point3,
+        background: [0.2, 0, 0.2] as Types.Point3,
       },
     },
     {
@@ -343,7 +343,7 @@ async function run() {
       element: axialElement,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
-        background: [0, 0.2, 0] as Types.Point3,
+        background: [0.2, 0, 0.2] as Types.Point3,
       },
     },
     {
@@ -352,7 +352,7 @@ async function run() {
       element: sagittalElement,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
-        background: [0, 0.2, 0] as Types.Point3,
+        background: [0.2, 0, 0.2] as Types.Point3,
       },
     },
     {
@@ -361,7 +361,7 @@ async function run() {
       element: coronalElement,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
-        background: [0, 0.2, 0] as Types.Point3,
+        background: [0.2, 0, 0.2] as Types.Point3,
       },
     },
   ]);

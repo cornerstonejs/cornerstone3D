@@ -61,17 +61,20 @@ const viewportGrid = document.createElement('div');
 
 viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
+viewportGrid.style.flexWrap = 'wrap';
 
 const element1 = document.createElement('div');
 element1.oncontextmenu = () => false;
 element1.style.width = size;
 element1.style.height = size;
+element1.style.flexShrink = '0';
 viewportGrid.appendChild(element1);
 
 const element2 = document.createElement('div');
 element2.oncontextmenu = () => false;
 element2.style.width = size;
 element2.style.height = size;
+element2.style.flexShrink = '0';
 viewportGrid.appendChild(element2);
 
 content.appendChild(viewportGrid);
@@ -439,7 +442,7 @@ async function run() {
       type: ViewportType.PLANAR_NEXT,
       element: element1,
       defaultOptions: {
-        background: [0, 0.2, 0] as Types.Point3,
+        background: [0.2, 0, 0.2] as Types.Point3,
       },
     },
     {
@@ -447,7 +450,7 @@ async function run() {
       type: ViewportType.PLANAR_NEXT,
       element: element2,
       defaultOptions: {
-        background: [0, 0.2, 0] as Types.Point3,
+        background: [0.2, 0, 0.2] as Types.Point3,
       },
     },
   ]);

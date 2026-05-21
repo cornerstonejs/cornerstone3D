@@ -108,7 +108,7 @@ async function run() {
       element,
       defaultOptions: {
         orientation,
-        background: [0, 0.2, 0] as Types.Point3,
+        background: [0.2, 0, 0.2] as Types.Point3,
       },
     }))
   );

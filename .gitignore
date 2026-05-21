@@ -4,6 +4,11 @@ node_modules
 .nyc_output
 .nx
 .vscode/settings.json
+
+# Local-only interactive diff viewers (see tests/utils/compat-diff-build.py
+# and tests/utils/next-vs-legacy-build.py). Regenerated from current
+# baselines + latest test runs; never committed.
+tests/compat-diff/
 # builds
 build
 # dist

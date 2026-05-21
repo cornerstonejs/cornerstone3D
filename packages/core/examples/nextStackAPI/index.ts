@@ -267,7 +267,7 @@ async function run() {
     type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
-      background: [0, 0.2, 0] as Types.Point3,
+      background: [0.2, 0, 0.2] as Types.Point3,
     },
   });
 
