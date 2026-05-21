@@ -127,7 +127,27 @@ const checkForCanvasSnapshot = async (
       const svgToImage = async (
         svg: SVGSVGElement
       ): Promise<HTMLImageElement> => {
+        // The svg-layer is sized via CSS (`width: 100%; height: 100%`) and has
+        // no explicit width/height attributes. Once serialized into a data URL
+        // and loaded as an <img>, that CSS no longer applies, so the browser
+        // falls back to SVG's default 300x150 viewport — clipping anything
+        // beyond (e.g. crosshair reference lines drawn in absolute canvas
+        // pixels). Stamp explicit width/height attributes so the SVG renders
+        // at the real canvas size before drawImage scales it.
+        const rect = svg.getBoundingClientRect();
+        const cssW = rect.width || svg.clientWidth || 0;
+        const cssH = rect.height || svg.clientHeight || 0;
+        const prevW = svg.getAttribute('width');
+        const prevH = svg.getAttribute('height');
+        if (cssW > 0 && cssH > 0) {
+          svg.setAttribute('width', String(cssW));
+          svg.setAttribute('height', String(cssH));
+        }
         const xml = new XMLSerializer().serializeToString(svg);
+        if (prevW === null) svg.removeAttribute('width');
+        else svg.setAttribute('width', prevW);
+        if (prevH === null) svg.removeAttribute('height');
+        else svg.setAttribute('height', prevH);
         const blob = new Blob([xml], {
           type: 'image/svg+xml;charset=utf-8',
         });
