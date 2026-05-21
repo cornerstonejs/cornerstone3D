@@ -34,8 +34,7 @@ export function applyPerFrameFunctionalGroups(dataset, frames) {
   const existing = dataset.PerFrameFunctionalGroupsSequence;
   const existingList = Array.isArray(existing) ? existing : [];
 
-  dataset.NumberOfFrames = validFrames.length;
-  dataset.PerFrameFunctionalGroupsSequence = validFrames.map((frame, index) => {
+  const nextSequence = validFrames.map((frame, index) => {
     const prior =
       existingList[index] && typeof existingList[index] === 'object'
         ? existingList[index]
@@ -62,4 +61,7 @@ export function applyPerFrameFunctionalGroups(dataset, frames) {
 
     return group;
   });
+
+  dataset.PerFrameFunctionalGroupsSequence = nextSequence;
+  dataset.NumberOfFrames = nextSequence.length;
 }

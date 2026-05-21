@@ -1,9 +1,10 @@
-import { normalizers, derivations, data as dcmjsData } from 'dcmjs';
+import { normalizers, derivations } from 'dcmjs';
 import { Enums } from '@cornerstonejs/core';
 import { fillSegmentation as fillBitmapSegmentation } from '../../Cornerstone/Segmentation_4X';
 import {
   encodeFramesToTransferSyntax,
   EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID,
+  getBitmapFramesFromDataset,
   RLE_LOSSLESS_TRANSFER_SYNTAX_UID,
 } from '../encodePixelData';
 import {
@@ -14,7 +15,6 @@ import {
 const { MetadataModules } = Enums;
 const { SEGImageNormalizer } = normalizers;
 const { Segmentation: SegmentationDerivation } = derivations;
-const { BitArray } = dcmjsData;
 const LABELMAP_SEG_SOP_CLASS_UID = '1.2.840.10008.5.1.4.1.1.66.7';
 const BITMAP_SEG_SOP_CLASS_UID = '1.2.840.10008.5.1.4.1.1.66.4';
 
@@ -27,58 +27,33 @@ type Options = IOptions & {
 };
 
 function resolveTransferSyntaxUid(options: Options = {}) {
-  return (
+  const transferSyntaxUid =
     (options.transferSyntaxUid as string) ||
-    (options.transferSyntaxUID as string) ||
-    RLE_LOSSLESS_TRANSFER_SYNTAX_UID
-  );
+    (options.transferSyntaxUID as string);
+
+  if (!transferSyntaxUid) {
+    return EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID;
+  }
+
+  return transferSyntaxUid;
 }
 
-function getFrameArrayFromBitmapDataset(dataset) {
-  const numberOfFrames = Number(dataset.NumberOfFrames) || 1;
-  const rows = Number(dataset.Rows);
-  const columns = Number(dataset.Columns);
-  const samplesPerFrame = rows * columns;
-  const bitsAllocated = Number(dataset.BitsAllocated);
-  const pixelData = dataset.PixelData;
-
-  if (!pixelData) {
-    throw new Error('Bitmap SEG dataset has no PixelData');
-  }
-
-  if (bitsAllocated === 1) {
-    const packed =
-      pixelData instanceof Uint8Array ? pixelData : new Uint8Array(pixelData);
-    const unpacked = BitArray.unpack(packed);
-    const frames: Uint8Array[] = [];
-
-    for (let i = 0; i < numberOfFrames; i++) {
-      const start = i * samplesPerFrame;
-      frames.push(unpacked.slice(start, start + samplesPerFrame));
-    }
-
-    return { frames, bitsAllocated };
-  }
-
-  if (bitsAllocated <= 8) {
-    const buffer =
-      pixelData instanceof Uint8Array ? pixelData : new Uint8Array(pixelData);
-    const frames: Uint8Array[] = [];
-    for (let i = 0; i < numberOfFrames; i++) {
-      const start = i * samplesPerFrame;
-      frames.push(buffer.slice(start, start + samplesPerFrame));
-    }
-    return { frames, bitsAllocated };
-  }
-
-  const buffer =
-    pixelData instanceof Uint16Array ? pixelData : new Uint16Array(pixelData);
-  const frames: Uint16Array[] = [];
-  for (let i = 0; i < numberOfFrames; i++) {
-    const start = i * samplesPerFrame;
-    frames.push(buffer.slice(start, start + samplesPerFrame));
-  }
-  return { frames, bitsAllocated };
+function applySegDatasetTransferSyntax(
+  dataset: Record<string, unknown>,
+  transferSyntaxUid: string,
+  pixelData: unknown,
+  pixelDataVR: string
+) {
+  dataset.PixelData = pixelData;
+  dataset._vrMap = (dataset._vrMap as Record<string, string>) || {};
+  (dataset._vrMap as Record<string, string>).PixelData = pixelDataVR;
+  dataset._meta = (dataset._meta as Record<string, unknown>) || {};
+  (
+    dataset._meta as Record<string, { Value: string[]; vr: string }>
+  ).TransferSyntaxUID = {
+    Value: [transferSyntaxUid],
+    vr: 'UI',
+  };
 }
 
 function hasAnySegment(pixelData: ArrayLike<number>) {
@@ -197,13 +172,12 @@ function fillLabelmapSegmentation(
     frames: framePixelData,
     bitsAllocated: 8,
   });
-  dataset.PixelData = pixelData;
-  dataset._vrMap.PixelData = pixelDataVR;
-  dataset._meta ||= {};
-  dataset._meta.TransferSyntaxUID = {
-    Value: [transferSyntaxUid],
-    vr: 'UI',
-  };
+  applySegDatasetTransferSyntax(
+    dataset,
+    transferSyntaxUid,
+    pixelData,
+    pixelDataVR
+  );
 
   dataset._meta ||= {};
   dataset._meta.MediaStorageSOPClassUID = {
@@ -315,11 +289,12 @@ function generateSegmentation(
       {
         ...options,
         transferSyntaxUid: EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID,
+        skipTransferSyntaxMeta: true,
       },
       filteredImages,
       metadata
     );
-    const { frames, bitsAllocated } = getFrameArrayFromBitmapDataset(
+    const { frames, bitsAllocated } = getBitmapFramesFromDataset(
       segmentationResult.dataset
     );
     const { pixelData, pixelDataVR } = encodeFramesToTransferSyntax({
@@ -328,15 +303,14 @@ function generateSegmentation(
       bitsAllocated,
     });
 
-    segmentationResult.dataset.PixelData = pixelData;
-    segmentationResult.dataset._vrMap ||= {};
-    segmentationResult.dataset._vrMap.PixelData = pixelDataVR;
+    applySegDatasetTransferSyntax(
+      segmentationResult.dataset,
+      transferSyntaxUid,
+      pixelData,
+      pixelDataVR
+    );
     segmentationResult.dataset.SOPClassUID = BITMAP_SEG_SOP_CLASS_UID;
     segmentationResult.dataset._meta ||= {};
-    segmentationResult.dataset._meta.TransferSyntaxUID = {
-      Value: [transferSyntaxUid],
-      vr: 'UI',
-    };
     segmentationResult.dataset._meta.MediaStorageSOPClassUID = {
       Value: [BITMAP_SEG_SOP_CLASS_UID],
       vr: 'UI',

@@ -1,19 +1,15 @@
 import { generateToolState as generateToolStateCornerstoneLegacy } from '../../Cornerstone/Segmentation';
-import { createLabelmapsFromBufferInternal } from './labelmapImagesFromBuffer';
+import {
+  createLabelmapsFromDICOMBuffer,
+  createLabelmapsFromSegImageIds,
+} from './labelmapImagesFromBuffer';
 
 /**
  * generateToolState - Given a set of cornerstoneTools imageIds and a Segmentation buffer,
  * derive cornerstoneTools toolState and brush metadata.
  *
- * @param   imageIds - An array of the imageIds.
- * @param   arrayBuffer - The SEG arrayBuffer.
- * @param   skipOverlapping - skip checks for overlapping segs, default value false.
- * @param   tolerance - default value 1.e-3.
- *
- * @returns a list of array buffer for each labelMap
- *  an object from which the segment metadata can be derived
- *  list containing the track of segments per frame
- *  list containing the track of segments per frame for each labelMap (available only for the overlapping case).
+ * Legacy API: parses the Part 10 buffer and decodes pixels from dataset PixelData,
+ * then delegates to createLabelmapsFromSegImageIds with synthetic frame imageIds.
  */
 function generateToolState(
   imageIds,
@@ -23,37 +19,39 @@ function generateToolState(
   tolerance = 1e-3,
   cs3dVersion = 4
 ) {
-  return generateToolStateCornerstoneLegacy(
+  if (cs3dVersion !== 4) {
+    return generateToolStateCornerstoneLegacy(
+      imageIds,
+      arrayBuffer,
+      metadataProvider,
+      skipOverlapping,
+      tolerance,
+      cs3dVersion
+    );
+  }
+
+  return createLabelmapsFromDICOMBuffer(
     imageIds,
     arrayBuffer,
     metadataProvider,
-    skipOverlapping,
-    tolerance,
-    cs3dVersion
+    {
+      tolerance,
+      parserType: 'bitmap',
+    }
   );
 }
 
 /**
- * Creates a segmentation tool state from a set of image IDs and a SEG instance loaded via its imageId.
- * The naturalized SEG dataset must be available from metadataProvider.get('instance', segImageId)
- * (e.g. dataset or instanceMeta.dataset). Uncompressed pixel data is obtained via imageLoader.loadImage(segImageId).
+ * Creates labelmap images from a SEG instance via per-frame imageIds (OHIF / imageLoader path).
  *
- * @param referencedImageIds - An array of referenced image IDs e.g., CT, MR etc.
- * @param segImageId - Image ID for the SEG instance (metadata via metadataProvider; may be base or frame-qualified).
- * @param options - { metadataProvider, tolerance, frameImageIds, getFrameImageId, decodeImageData, allowLegacyDatasetDecode }
- *   frameImageIds: per-frame loadable imageIds; adapters decode one frame per id when multiframe.
- *   getFrameImageId: optional (baseSegImageId, frameNumber) => frame imageId when frameImageIds are not pre-built.
- *   decodeImageData(frameImageId, frameNumber): optional per-frame decode; default uses imageLoader.loadImage per frame.
- *   allowLegacyDatasetDecode: use dataset PixelData or a single full-volume decode on segImageId when available.
+ * @param referencedImageIds - Referenced CT/MR imageIds
+ * @param segImageId - SEG instance imageId for metadata (base or frame-qualified)
+ * @param options.metadataProvider - Required metadata provider
+ * @param options.frameImageIds - Per-frame loadable SEG imageIds
+ * @param options.getFrameImageId - Optional (baseSegImageId, frameNumber) => frame imageId
+ * @param options.decodeImageData - Optional (frameImageId, frameNumber) => pixel data; defaults to imageLoader
  *
- * @returns An object containing:
- *          - `labelMapImages`: Array of label map images for each label map.
- *          - `segMetadata`: Metadata related to the segmentation segments.
- *          - `segmentsOnFrame`: 2D array tracking segments per frame.
- *          - `centroids`: Map of centroid coordinates for each segment.
- *          - `overlappingSegments`: Boolean indicating if segments are overlapping.
- *
- * @throws Will throw an error if instance metadata is missing or if the loaded image has no getPixelData().
+ * Pixel encoding uses only the provided frame imageIds and decoder (no dataset PixelData shortcut).
  */
 function createFromDICOMSegBuffer(
   referencedImageIds,
@@ -65,10 +63,9 @@ function createFromDICOMSegBuffer(
     frameImageIds = undefined,
     getFrameImageId = undefined,
     decodeImageData = undefined,
-    allowLegacyDatasetDecode = false,
   }
 ) {
-  return createLabelmapsFromBufferInternal(
+  return createLabelmapsFromSegImageIds(
     referencedImageIds,
     segImageId,
     metadataProvider,
@@ -78,9 +75,13 @@ function createFromDICOMSegBuffer(
       frameImageIds,
       getFrameImageId,
       decodeImageData,
-      allowLegacyDatasetDecode,
     }
   );
 }
 
-export { generateToolState, createFromDICOMSegBuffer };
+export {
+  generateToolState,
+  createFromDICOMSegBuffer,
+  createLabelmapsFromSegImageIds,
+  createLabelmapsFromDICOMBuffer,
+};

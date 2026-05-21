@@ -10,6 +10,11 @@ import getDatasetsFromImages from '../helpers/getDatasetsFromImages';
 import checkOrientation from '../helpers/checkOrientation';
 import { utilities as csUtilities, Enums } from '@cornerstonejs/core';
 import { applyPerFrameFunctionalGroups } from '../Cornerstone3D/Segmentation/perFrameFunctionalGroups';
+import {
+  encodeFramesToTransferSyntax,
+  getBitmapFramesFromDataset,
+  RLE_LOSSLESS_TRANSFER_SYNTAX_UID as RLE_TS_UID,
+} from '../Cornerstone3D/encodePixelData';
 
 import { Events } from '../enums';
 
@@ -285,41 +290,69 @@ export function fillSegmentation(
     RLE_LOSSLESS_TRANSFER_SYNTAX_UID;
 
   if (transferSyntaxUid === RLE_LOSSLESS_TRANSFER_SYNTAX_UID) {
-    const rleEncodedFrames = encode(
-      segmentation.dataset.PixelData,
-      numberOfFrames,
-      segmentation.dataset.Rows,
-      segmentation.dataset.Columns
-    );
+    const isBinaryBitmap =
+      segmentation.dataset.SegmentationType === 'BINARY' &&
+      Number(segmentation.dataset.BitsAllocated) === 1;
 
-    // Must use fractional now to RLE encode, as the DICOM standard only allows BitStored && BitsAllocated
-    // to be 1 for BINARY. This is not ideal and there should be a better format for compression in this manner
-    // added to the standard.
-    segmentation.assignToDataset({
-      BitsAllocated: '8',
-      BitsStored: '8',
-      HighBit: '7',
-      SegmentationType: 'FRACTIONAL',
-      SegmentationFractionalType: 'PROBABILITY',
-      MaximumFractionalValue: '255',
-    });
+    if (isBinaryBitmap) {
+      segmentation.bitPackPixelData();
+      const { frames, bitsAllocated } = getBitmapFramesFromDataset(
+        segmentation.dataset
+      );
+      const { pixelData, pixelDataVR } = encodeFramesToTransferSyntax({
+        transferSyntaxUID: RLE_TS_UID,
+        frames,
+        bitsAllocated,
+      });
 
-    segmentation.dataset._meta.TransferSyntaxUID = {
-      Value: [RLE_LOSSLESS_TRANSFER_SYNTAX_UID],
-      vr: 'UI',
-    };
-    segmentation.dataset.SpecificCharacterSet = 'ISO_IR 192';
-    segmentation.dataset._vrMap.PixelData = 'OB';
-    segmentation.dataset.PixelData = rleEncodedFrames;
+      segmentation.dataset.PixelData = pixelData;
+      segmentation.dataset._vrMap.PixelData = pixelDataVR;
+      if (!options.skipTransferSyntaxMeta) {
+        segmentation.dataset._meta.TransferSyntaxUID = {
+          Value: [RLE_LOSSLESS_TRANSFER_SYNTAX_UID],
+          vr: 'UI',
+        };
+      }
+      segmentation.dataset.SpecificCharacterSet = 'ISO_IR 192';
+    } else {
+      const rleEncodedFrames = encode(
+        segmentation.dataset.PixelData,
+        numberOfFrames,
+        segmentation.dataset.Rows,
+        segmentation.dataset.Columns
+      );
+
+      // Fractional/8-bit labelmaps: legacy dcmjs row RLE (not valid for 1-bit packed binary).
+      segmentation.assignToDataset({
+        BitsAllocated: '8',
+        BitsStored: '8',
+        HighBit: '7',
+        SegmentationType: 'FRACTIONAL',
+        SegmentationFractionalType: 'PROBABILITY',
+        MaximumFractionalValue: '255',
+      });
+
+      if (!options.skipTransferSyntaxMeta) {
+        segmentation.dataset._meta.TransferSyntaxUID = {
+          Value: [RLE_LOSSLESS_TRANSFER_SYNTAX_UID],
+          vr: 'UI',
+        };
+      }
+      segmentation.dataset.SpecificCharacterSet = 'ISO_IR 192';
+      segmentation.dataset._vrMap.PixelData = 'OB';
+      segmentation.dataset.PixelData = rleEncodedFrames;
+    }
   } else if (
     transferSyntaxUid === EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID
   ) {
     // For explicit VR little endian, at least bitpack the data.
     segmentation.bitPackPixelData();
-    segmentation.dataset._meta.TransferSyntaxUID = {
-      Value: [EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID],
-      vr: 'UI',
-    };
+    if (!options.skipTransferSyntaxMeta) {
+      segmentation.dataset._meta.TransferSyntaxUID = {
+        Value: [EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID],
+        vr: 'UI',
+      };
+    }
   } else {
     throw new Error(
       `Unsupported SEG transfer syntax: ${transferSyntaxUid}. ` +
@@ -1185,18 +1218,46 @@ export function insertOverlappingPixelDataPlanar(
   }
 }
 
+function getReferencedSegmentNumberFromIdentificationSequence(
+  segmentIdentificationSequence
+) {
+  if (!segmentIdentificationSequence) {
+    return undefined;
+  }
+
+  const normalized = Array.isArray(segmentIdentificationSequence)
+    ? segmentIdentificationSequence[0]
+    : segmentIdentificationSequence;
+
+  return normalized?.ReferencedSegmentNumber;
+}
+
+function getSharedFunctionalGroupsSequence(multiframe) {
+  const shared = multiframe?.SharedFunctionalGroupsSequence;
+
+  if (Array.isArray(shared)) {
+    return shared.length > 0 ? shared[0] : undefined;
+  }
+
+  return shared;
+}
+
 export const getSegmentIndex = (multiframe, frame) => {
-  const { PerFrameFunctionalGroupsSequence, SharedFunctionalGroupsSequence } =
-    multiframe;
-  const PerFrameFunctionalGroups = PerFrameFunctionalGroupsSequence[frame];
-  return PerFrameFunctionalGroups &&
-    PerFrameFunctionalGroups.SegmentIdentificationSequence
-    ? PerFrameFunctionalGroups.SegmentIdentificationSequence
-        .ReferencedSegmentNumber
-    : SharedFunctionalGroupsSequence.SegmentIdentificationSequence
-      ? SharedFunctionalGroupsSequence.SegmentIdentificationSequence
-          .ReferencedSegmentNumber
-      : undefined;
+  const { PerFrameFunctionalGroupsSequence } = multiframe;
+  const PerFrameFunctionalGroups = PerFrameFunctionalGroupsSequence?.[frame];
+  const fromPerFrame = getReferencedSegmentNumberFromIdentificationSequence(
+    PerFrameFunctionalGroups?.SegmentIdentificationSequence
+  );
+
+  if (fromPerFrame !== undefined) {
+    return fromPerFrame;
+  }
+
+  const shared = getSharedFunctionalGroupsSequence(multiframe);
+
+  return getReferencedSegmentNumberFromIdentificationSequence(
+    shared?.SegmentIdentificationSequence
+  );
 };
 
 export function insertPixelDataPlanar(
@@ -1489,16 +1550,17 @@ export function getImageIdOfSourceImageBySourceImageSequence(
     } else if (baseImageId.includes('dicomfile:')) {
       // dicomfile base 1, despite having frame=
       return baseImageId.replace(/frame=\d+/, `frame=${ReferencedFrameNumber}`);
-    } else if (baseImageId.includes('frame=')) {
-      return baseImageId.replace(
-        /frame=\d+/,
-        `frame=${ReferencedFrameNumber - 1}`
-      );
+    } else if (
+      baseImageId.includes('frame=') ||
+      baseImageId.includes('wadouri:')
+    ) {
+      // OHIF local/wadouri use 1-based ?frame= / &frame= (same as dicomfile:).
+      return baseImageId.replace(/frame=\d+/, `frame=${ReferencedFrameNumber}`);
     } else {
       if (baseImageId.includes('wadors:')) {
         return `${baseImageId}/frames/${ReferencedFrameNumber}`;
       } else {
-        return `${baseImageId}?frame=${ReferencedFrameNumber - 1}`;
+        return `${baseImageId}?frame=${ReferencedFrameNumber}`;
       }
     }
   }

@@ -1,5 +1,358 @@
+import { utilities as dcmjsUtilities } from 'dcmjs';
+
+const { decode: decodeDcmjsRleRows } = dcmjsUtilities.compression;
+
 const RLE_LOSSLESS_TRANSFER_SYNTAX_UID = '1.2.840.10008.1.2.5';
 const EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID = '1.2.840.10008.1.2.1';
+
+function getTransferSyntaxUid(multiframe: Record<string, unknown>): string {
+  const meta = multiframe._meta as
+    | { TransferSyntaxUID?: { Value?: string[] } }
+    | undefined;
+  const fromMeta = meta?.TransferSyntaxUID?.Value?.[0];
+
+  if (fromMeta) {
+    return fromMeta;
+  }
+
+  if (typeof multiframe.TransferSyntaxUID === 'string') {
+    return multiframe.TransferSyntaxUID;
+  }
+
+  return EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID;
+}
+
+function getSegNumberOfFramesFromDataset(
+  multiframe: Record<string, unknown>
+): number {
+  const fromTag = Number(multiframe.NumberOfFrames);
+  if (fromTag > 0) {
+    return fromTag;
+  }
+
+  const perFrame = multiframe.PerFrameFunctionalGroupsSequence;
+  if (Array.isArray(perFrame) && perFrame.length > 0) {
+    return perFrame.length;
+  }
+
+  return 1;
+}
+
+/**
+ * Decodes one DICOM RLE-lossless fragment into packed bytes (one sample plane).
+ */
+function decodeRleLosslessToPackedBytes(
+  rleData: ArrayBuffer | Uint8Array,
+  packedByteLength: number
+): Uint8Array {
+  const frameData =
+    rleData instanceof Uint8Array ? rleData : new Uint8Array(rleData);
+  const header = new DataView(
+    frameData.buffer,
+    frameData.byteOffset,
+    frameData.byteLength
+  );
+  const data = new Int8Array(
+    frameData.buffer,
+    frameData.byteOffset,
+    frameData.byteLength
+  );
+  const out = new Uint8Array(packedByteLength);
+  const numSegments = header.getInt32(0, true);
+
+  for (let s = 0; s < numSegments; s++) {
+    let outIndex = numSegments === 1 ? 0 : s * packedByteLength;
+    let inIndex = header.getInt32((s + 1) * 4, true);
+    let maxIndex = header.getInt32((s + 2) * 4, true);
+
+    if (maxIndex === 0) {
+      maxIndex = frameData.length;
+    }
+
+    const endOfSegment =
+      numSegments === 1 ? packedByteLength : (s + 1) * packedByteLength;
+
+    while (inIndex < maxIndex && outIndex < endOfSegment) {
+      const n = data[inIndex++];
+
+      if (n >= 0 && n <= 127) {
+        for (let i = 0; i < n + 1 && outIndex < endOfSegment; ++i) {
+          out[outIndex++] = data[inIndex++] & 0xff;
+        }
+      } else if (n <= -1 && n >= -127) {
+        const value = data[inIndex++] & 0xff;
+        for (let j = 0; j < -n + 1 && outIndex < endOfSegment; ++j) {
+          out[outIndex++] = value;
+        }
+      }
+    }
+  }
+
+  return out;
+}
+
+/**
+ * Decodes all SEG frames from an in-memory naturalized multiframe (buffer / legacy path).
+ */
+function decodeSegFramesFromMultiframe(
+  multiframe: Record<string, unknown>
+): ArrayLike<number>[] {
+  const rows = Number(multiframe.Rows);
+  const columns = Number(multiframe.Columns);
+  const samplesPerFrame = rows * columns;
+  const bitsAllocated = Number(multiframe.BitsAllocated);
+  const numberOfFrames = getSegNumberOfFramesFromDataset(multiframe);
+  const transferSyntaxUid = getTransferSyntaxUid(multiframe);
+
+  if (!multiframe.PixelData) {
+    throw new Error('SEG dataset has no PixelData');
+  }
+
+  if (bitsAllocated === 1) {
+    if (transferSyntaxUid === RLE_LOSSLESS_TRANSFER_SYNTAX_UID) {
+      const encodedFrames = Array.isArray(multiframe.PixelData)
+        ? multiframe.PixelData
+        : [multiframe.PixelData];
+      const bytesPerFrame = getBytesForBinaryFrame(samplesPerFrame);
+      const frames: Uint8Array[] = [];
+
+      for (let frameIndex = 0; frameIndex < numberOfFrames; frameIndex++) {
+        const rleFrame = encodedFrames[frameIndex];
+
+        if (!rleFrame) {
+          frames.push(new Uint8Array(samplesPerFrame));
+          continue;
+        }
+
+        const packed = decodeRleLosslessToPackedBytes(rleFrame, bytesPerFrame);
+        frames.push(unpackBinaryFrameFromPacked(packed, samplesPerFrame));
+      }
+
+      return frames;
+    }
+
+    return getBitmapFramesFromDataset(multiframe).frames;
+  }
+
+  if (transferSyntaxUid === RLE_LOSSLESS_TRANSFER_SYNTAX_UID) {
+    const encodedFrames = Array.isArray(multiframe.PixelData)
+      ? multiframe.PixelData
+      : [multiframe.PixelData];
+    const decoded = decodeDcmjsRleRows(
+      encodedFrames,
+      rows,
+      columns
+    ) as Uint8Array;
+    const frames: Uint8Array[] = [];
+
+    for (let frameIndex = 0; frameIndex < numberOfFrames; frameIndex++) {
+      const start = frameIndex * samplesPerFrame;
+      frames.push(decoded.subarray(start, start + samplesPerFrame));
+    }
+
+    return frames;
+  }
+
+  const buffer = asUint8PixelData(multiframe.PixelData);
+  const frames: Uint8Array[] = [];
+
+  for (let frameIndex = 0; frameIndex < numberOfFrames; frameIndex++) {
+    const start = frameIndex * samplesPerFrame;
+    frames.push(buffer.subarray(start, start + samplesPerFrame));
+  }
+
+  return frames;
+}
+
+function createDecodeImageDataFromMultiframe(
+  multiframe: Record<string, unknown>
+) {
+  let cachedFrames: ArrayLike<number>[] | null = null;
+
+  return async (_frameImageId: string, frameNumber: number) => {
+    if (!cachedFrames) {
+      cachedFrames = decodeSegFramesFromMultiframe(multiframe);
+    }
+
+    const frame = cachedFrames[frameNumber - 1];
+
+    if (!frame) {
+      throw new Error(`No SEG frame at index ${frameNumber}`);
+    }
+
+    return frame;
+  };
+}
+
+function getBytesForBinaryFrame(numPixels: number) {
+  return Math.ceil(numPixels / 8);
+}
+
+function asUint8PixelData(pixelData: unknown): Uint8Array {
+  if (pixelData instanceof Uint8Array) {
+    return pixelData;
+  }
+
+  if (pixelData instanceof ArrayBuffer) {
+    return new Uint8Array(pixelData);
+  }
+
+  if (Array.isArray(pixelData)) {
+    if (pixelData.length === 1) {
+      return new Uint8Array(pixelData[0] as ArrayBuffer);
+    }
+
+    throw new Error(
+      'Multiframe encapsulated PixelData fragments cannot be converted to binary frames for re-encoding'
+    );
+  }
+
+  return new Uint8Array(pixelData as ArrayLike<number>);
+}
+
+/** Normalizes 0/1 or 0/255 binary mask samples to 0/1. */
+function normalizeBinaryFrameTo01(frame: ArrayLike<number>): Uint8Array {
+  const normalized = new Uint8Array(frame.length);
+
+  for (let i = 0; i < frame.length; i++) {
+    normalized[i] = frame[i] ? 1 : 0;
+  }
+
+  return normalized;
+}
+
+/**
+ * Unpacks one binary frame from packed bytes where the first pixel is bit 0 of byte 0
+ * (DICOM / explicit LEI re-encode convention).
+ */
+function unpackBinaryFrameFromPacked(
+  packed: Uint8Array,
+  samplesPerFrame: number
+): Uint8Array {
+  const frame = new Uint8Array(samplesPerFrame);
+
+  for (let i = 0; i < samplesPerFrame; i++) {
+    const bytePos = i >> 3;
+    const bitPos = i % 8;
+    frame[i] = packed[bytePos] & (1 << bitPos) ? 1 : 0;
+  }
+
+  return frame;
+}
+
+/**
+ * Unpacks one frame from a continuous bit stream (dcmjs BitArray.pack across all frames).
+ */
+function unpackBinaryFrameFromContinuousPack(
+  packed: Uint8Array,
+  samplesPerFrame: number,
+  frameIndex: number
+): Uint8Array {
+  const frame = new Uint8Array(samplesPerFrame);
+  const bitOffset = frameIndex * samplesPerFrame;
+
+  for (let i = 0; i < samplesPerFrame; i++) {
+    const bitIndex = bitOffset + i;
+    const bytePos = bitIndex >> 3;
+    const bitPos = bitIndex % 8;
+    frame[i] = packed[bytePos] & (1 << bitPos) ? 1 : 0;
+  }
+
+  return frame;
+}
+
+/**
+ * Extracts per-frame 0/1 binary masks from a bitmap SEG dataset's PixelData.
+ * Supports byte-per-pixel (pre-bitPack), per-frame-aligned packed, or continuous packed layouts.
+ */
+function getBitmapFramesFromDataset(dataset: {
+  NumberOfFrames?: number | string;
+  Rows?: number | string;
+  Columns?: number | string;
+  BitsAllocated?: number | string;
+  PixelData?: unknown;
+}) {
+  const numberOfFrames = Number(dataset.NumberOfFrames) || 1;
+  const rows = Number(dataset.Rows);
+  const columns = Number(dataset.Columns);
+  const samplesPerFrame = rows * columns;
+  const bitsAllocated = Number(dataset.BitsAllocated);
+
+  if (!dataset.PixelData) {
+    throw new Error('Bitmap SEG dataset has no PixelData');
+  }
+
+  if (bitsAllocated === 1) {
+    const buffer = asUint8PixelData(dataset.PixelData);
+    const bytesPerFrame = getBytesForBinaryFrame(samplesPerFrame);
+    const unpackedFrameBytes = samplesPerFrame * numberOfFrames;
+    const perFramePackedBytes = bytesPerFrame * numberOfFrames;
+    const continuousPackedBytes = getBytesForBinaryFrame(
+      samplesPerFrame * numberOfFrames
+    );
+    const frames: Uint8Array[] = [];
+
+    if (buffer.length === unpackedFrameBytes) {
+      for (let frameIndex = 0; frameIndex < numberOfFrames; frameIndex++) {
+        const start = frameIndex * samplesPerFrame;
+        frames.push(
+          normalizeBinaryFrameTo01(
+            buffer.subarray(start, start + samplesPerFrame)
+          )
+        );
+      }
+    } else if (buffer.length === perFramePackedBytes) {
+      for (let frameIndex = 0; frameIndex < numberOfFrames; frameIndex++) {
+        const framePacked = buffer.subarray(
+          frameIndex * bytesPerFrame,
+          (frameIndex + 1) * bytesPerFrame
+        );
+        frames.push(unpackBinaryFrameFromPacked(framePacked, samplesPerFrame));
+      }
+    } else if (buffer.length === continuousPackedBytes) {
+      for (let frameIndex = 0; frameIndex < numberOfFrames; frameIndex++) {
+        frames.push(
+          unpackBinaryFrameFromContinuousPack(
+            buffer,
+            samplesPerFrame,
+            frameIndex
+          )
+        );
+      }
+    } else {
+      throw new Error(
+        `Unexpected 1-bit SEG PixelData length ${buffer.length} for ${numberOfFrames} frame(s) of ${samplesPerFrame} pixels`
+      );
+    }
+
+    return { frames, bitsAllocated };
+  }
+
+  if (bitsAllocated <= 8) {
+    const buffer = asUint8PixelData(dataset.PixelData);
+    const frames: Uint8Array[] = [];
+
+    for (let frameIndex = 0; frameIndex < numberOfFrames; frameIndex++) {
+      const start = frameIndex * samplesPerFrame;
+      frames.push(buffer.slice(start, start + samplesPerFrame));
+    }
+
+    return { frames, bitsAllocated };
+  }
+
+  const buffer =
+    dataset.PixelData instanceof Uint16Array
+      ? dataset.PixelData
+      : new Uint16Array(dataset.PixelData as ArrayBuffer);
+  const frames: Uint16Array[] = [];
+
+  for (let frameIndex = 0; frameIndex < numberOfFrames; frameIndex++) {
+    const start = frameIndex * samplesPerFrame;
+    frames.push(buffer.slice(start, start + samplesPerFrame));
+  }
+
+  return { frames, bitsAllocated };
+}
 
 function packBits(samples: ArrayLike<number>) {
   const output: number[] = [];
@@ -207,4 +560,10 @@ export function encodeFramesToTransferSyntax({
 export {
   RLE_LOSSLESS_TRANSFER_SYNTAX_UID,
   EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID,
+  getBitmapFramesFromDataset,
+  bitPackBinaryFrame,
+  unpackBinaryFrameFromPacked,
+  decodeSegFramesFromMultiframe,
+  createDecodeImageDataFromMultiframe,
+  getSegNumberOfFramesFromDataset,
 };

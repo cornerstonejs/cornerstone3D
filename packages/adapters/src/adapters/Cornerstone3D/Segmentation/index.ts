@@ -3,6 +3,8 @@ import { generateLabelMaps2DFrom3D } from './generateLabelMaps2DFrom3D';
 import {
   generateToolState,
   createFromDICOMSegBuffer,
+  createLabelmapsFromSegImageIds,
+  createLabelmapsFromDICOMBuffer,
 } from './generateToolState';
 
 export {
@@ -10,4 +12,6 @@ export {
   generateSegmentation,
   generateToolState,
   createFromDICOMSegBuffer,
+  createLabelmapsFromSegImageIds,
+  createLabelmapsFromDICOMBuffer,
 };
