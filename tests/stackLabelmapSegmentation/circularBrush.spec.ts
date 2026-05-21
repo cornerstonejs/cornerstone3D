@@ -33,6 +33,7 @@ test('Stack Segmentation - Circular Brush Tool', async ({
     page,
     '',
     screenShotPaths.stackSegmentation.circularBrushSegment1,
-    0
+    0,
+    { threshold: 0.01 }
   );
 });

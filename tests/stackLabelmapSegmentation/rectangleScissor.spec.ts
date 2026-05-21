@@ -32,6 +32,7 @@ test('Stack Segmentation - Rectangle Scissor Tool with segmentation 2', async ({
     page,
     '',
     screenShotPaths.stackSegmentation.rectangleScissorSegmentation1,
-    0
+    0,
+    { threshold: 0.01 }
   );
 });

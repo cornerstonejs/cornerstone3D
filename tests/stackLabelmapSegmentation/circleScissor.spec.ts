@@ -29,6 +29,7 @@ test('Stack Segmentation - Circular Scissor Tool with segmentation 1', async ({
     page,
     '',
     screenShotPaths.stackSegmentation.circularScissorSegmentation1,
-    0
+    0,
+    { threshold: 0.01 }
   );
 });

@@ -98,7 +98,8 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
       page,
       '',
       screenShotPaths.labelmapSegmentationTools.circularBrush,
-      [0, 1, 2]
+      [0, 1, 2],
+      { threshold: 0.01 }
     );
   });
 
@@ -247,7 +248,8 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
       page,
       '',
       screenShotPaths.labelmapSegmentationTools.circularEraser,
-      [0, 1, 2]
+      [0, 1, 2],
+      { threshold: 0.01 }
     );
   });
 
@@ -329,7 +331,8 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
       page,
       '',
       screenShotPaths.labelmapSegmentationTools.sphereBrush,
-      [0, 1, 2]
+      [0, 1, 2],
+      { threshold: 0.01 }
     );
   });
 
@@ -482,7 +485,8 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
       page,
       '',
       screenShotPaths.labelmapSegmentationTools.sphereEraser,
-      [0, 1, 2]
+      [0, 1, 2],
+      { threshold: 0.01 }
     );
   });
 
@@ -570,7 +574,8 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
       page,
       '',
       screenShotPaths.labelmapSegmentationTools.thresholdCircle,
-      [0, 1, 2]
+      [0, 1, 2],
+      { threshold: 0.01 }
     );
   });
 
@@ -611,7 +616,8 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
       page,
       '',
       screenShotPaths.labelmapSegmentationTools.rectangleScissor,
-      [0, 1, 2]
+      [0, 1, 2],
+      { threshold: 0.01 }
     );
   });
 
@@ -648,7 +654,8 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
       page,
       '',
       screenShotPaths.labelmapSegmentationTools.circleScissor,
-      [0, 1, 2]
+      [0, 1, 2],
+      { threshold: 0.01 }
     );
   });
 
@@ -685,7 +692,8 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
       page,
       '',
       screenShotPaths.labelmapSegmentationTools.sphereScissor,
-      [0, 1, 2]
+      [0, 1, 2],
+      { threshold: 0.01 }
     );
   });
 
@@ -746,7 +754,8 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
       page,
       '',
       screenShotPaths.labelmapSegmentationTools.scissorEraser,
-      [0, 1, 2]
+      [0, 1, 2],
+      { threshold: 0.01 }
     );
   });
 

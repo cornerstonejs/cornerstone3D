@@ -35,7 +35,8 @@ test('Stack Segmentation - Dynamic Threshold Tool - Initial Highlight', async ({
     page,
     '',
     screenShotPaths.stackSegmentation.dynamicThresholdInitialHighlightedPixels,
-    0
+    0,
+    { threshold: 0.01 }
   );
 });
 
@@ -59,7 +60,8 @@ test('Stack Segmentation - Dynamic Threshold Tool - Highlight Contour', async ({
     page,
     '',
     screenShotPaths.stackSegmentation.dynamicThresholdHighlightedContour,
-    0
+    0,
+    { threshold: 0.01 }
   );
 });
 
@@ -85,6 +87,7 @@ test('Stack Segmentation - Dynamic Threshold Tool - Confirm Contour', async ({
     page,
     '',
     screenShotPaths.stackSegmentation.dynamicThresholdConfirmedContour,
-    0
+    0,
+    { threshold: 0.01 }
   );
 });

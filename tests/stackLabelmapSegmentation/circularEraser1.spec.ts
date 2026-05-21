@@ -49,6 +49,7 @@ test('Stack Segmentation - Circular Eraser Tool with segmentation 1', async ({
     page,
     '',
     screenShotPaths.stackSegmentation.circularEraserSegmentation1,
-    0
+    0,
+    { threshold: 0.01 }
   );
 });

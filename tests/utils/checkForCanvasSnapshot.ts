@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test';
 import type { Page } from 'playwright';
+import { resolveCompatibilityScreenshotPath } from './compatibilityMode';
 
 interface CheckForCanvasSnapshotOptions {
   /**
@@ -10,6 +11,10 @@ interface CheckForCanvasSnapshotOptions {
   stableMs?: number;
   /** Cap on stability waiting; falls back to last capture after this. */
   timeoutMs?: number;
+  /** Per-pixel color tolerance passed to toMatchSnapshot. Default 0.005. */
+  threshold?: number;
+  /** Allowed fraction of differing pixels. Default 0. */
+  maxDiffPixelRatio?: number;
 }
 
 /**
@@ -39,7 +44,12 @@ const checkForCanvasSnapshot = async (
   viewportIndex?: number | number[],
   options: CheckForCanvasSnapshotOptions = {}
 ) => {
-  const { stableMs = 300, timeoutMs = 8000 } = options;
+  const {
+    stableMs = 300,
+    timeoutMs = 8000,
+    threshold = 0.005,
+    maxDiffPixelRatio = 0,
+  } = options;
   const indices =
     typeof viewportIndex === 'number'
       ? [viewportIndex]
@@ -404,10 +414,13 @@ const checkForCanvasSnapshot = async (
 
   const buffer = Buffer.from(base64, 'base64');
 
-  await expect(buffer).toMatchSnapshot(screenshotPath, {
-    maxDiffPixelRatio: 0,
-    threshold: 0.01,
-  });
+  await expect(buffer).toMatchSnapshot(
+    resolveCompatibilityScreenshotPath(screenshotPath),
+    {
+      maxDiffPixelRatio,
+      threshold,
+    }
+  );
 };
 
 export { checkForCanvasSnapshot };

@@ -53,6 +53,7 @@ test('Stack Segmentation - Sphere Brush Tool', async ({
     page,
     '',
     screenShotPaths.stackSegmentation.sphereBrush,
-    1
+    1,
+    { threshold: 0.01 }
   );
 });
