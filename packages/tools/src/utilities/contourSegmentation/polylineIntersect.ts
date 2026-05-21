@@ -3,7 +3,6 @@ import { checkIntersection, cleanupPolylines } from './sharedOperations';
 import { intersectPolylines } from '../math/polyline';
 import arePolylinesIdentical from '../math/polyline/arePolylinesIdentical';
 import { areViewReferencesEqual } from './areViewReferencesEqual';
-import containsPoints from '../math/polyline/containsPoints';
 
 /**
  * Performs the intersection operation on two sets of polylines.
@@ -46,7 +45,7 @@ export function intersectPolylinesSets(
             });
           });
         }
-      } else if (containsPoints(polyA.polyline, polyB.polyline)) {
+      } else if (intersection.isTargetInsideSource) {
         // polyB is entirely inside polyA — the intersection is polyB itself
         result.push({ ...polyB });
       }

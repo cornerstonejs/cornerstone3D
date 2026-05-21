@@ -69,6 +69,7 @@ export function checkIntersection(
 ): {
   hasIntersection: boolean;
   isContourHole: boolean;
+  isTargetInsideSource: boolean;
 } {
   const sourceAABB = math.polyline.getAABB(sourcePolyline);
   const targetAABB = math.polyline.getAABB(targetPolyline);
@@ -76,7 +77,11 @@ export function checkIntersection(
   const aabbIntersect = math.aabb.intersectAABB(sourceAABB, targetAABB);
 
   if (!aabbIntersect) {
-    return { hasIntersection: false, isContourHole: false };
+    return {
+      hasIntersection: false,
+      isContourHole: false,
+      isTargetInsideSource: false,
+    };
   }
 
   const lineSegmentsIntersect = math.polyline.intersectPolyline(
@@ -89,9 +94,15 @@ export function checkIntersection(
     !lineSegmentsIntersect &&
     math.polyline.containsPoints(targetPolyline, sourcePolyline);
 
+  // Target's points are all inside source -> target is a hole inside source
+  const isTargetInsideSource =
+    !lineSegmentsIntersect &&
+    !isContourHole &&
+    math.polyline.containsPoints(sourcePolyline, targetPolyline);
+
   const hasIntersection = lineSegmentsIntersect || isContourHole;
 
-  return { hasIntersection, isContourHole };
+  return { hasIntersection, isContourHole, isTargetInsideSource };
 }
 
 /**

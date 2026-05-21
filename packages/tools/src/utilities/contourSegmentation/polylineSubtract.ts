@@ -75,9 +75,7 @@ export function subtractPolylineSets(
               });
             }
           }
-        } else if (
-          containsPoints(currentPolyline.polyline, polylineB.polyline)
-        ) {
+        } else if (intersection.isTargetInsideSource) {
           const existingHoles = currentPolyline.holePolylines ?? [];
           const isInsideExistingHole = existingHoles.some((hole) =>
             containsPoints(hole, polylineB.polyline)
@@ -102,9 +100,7 @@ export function subtractPolylineSets(
               ],
             });
           }
-        } else if (
-          containsPoints(polylineB.polyline, currentPolyline.polyline)
-        ) {
+        } else if (intersection.isContourHole) {
           // Minuend is fully inside the subtrahend — removed entirely.
           continue;
         } else {
