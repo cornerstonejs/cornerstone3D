@@ -3,7 +3,8 @@ import type { Types } from '@cornerstonejs/core';
 
 async function decodeRLE(
   imageFrame: Types.IImageFrame,
-  pixelData: ByteArray
+  pixelData: ByteArray,
+  options?: { expandOneBitPlanar?: boolean }
 ): Promise<Types.IImageFrame> {
   if (imageFrame.bitsAllocated === 8) {
     if (imageFrame.planarConfiguration) {
@@ -14,7 +15,7 @@ async function decodeRLE(
   } else if (imageFrame.bitsAllocated === 16) {
     return decode16(imageFrame, pixelData);
   } else if (imageFrame.bitsAllocated === 1) {
-    if (imageFrame.planarConfiguration) {
+    if (!options?.expandOneBitPlanar) {
       return decode8Planar(imageFrame, pixelData, true);
     }
 
@@ -42,7 +43,7 @@ function unpackOneBitInterleaved(packed: Uint8Array, pixelsPerFrame: number) {
   return unpacked;
 }
 
-function unpackOneBitPlanar(
+export function unpackOneBitPlanar(
   packed: Uint8Array,
   imageFrame: Types.IImageFrame,
   frameSize: number
@@ -64,7 +65,7 @@ function unpackOneBitPlanar(
   return unpacked;
 }
 
-function decode1(imageFrame: Types.IImageFrame, pixelData: ByteArray) {
+export function decode1(imageFrame: Types.IImageFrame, pixelData: ByteArray) {
   decode8(imageFrame, pixelData, true);
 
   const pixelsPerFrame =
