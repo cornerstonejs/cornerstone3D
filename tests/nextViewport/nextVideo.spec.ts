@@ -1,7 +1,6 @@
 import { expect, test } from '@playwright/test';
 import {
   createExampleUrl,
-  checkForCanvasSnapshot,
   expectViewportNextRuntime,
   screenShotPaths,
 } from '../utils/index';
@@ -45,12 +44,17 @@ test.describe('Video ViewportNext', () => {
   });
 
   test('should render video data', async ({ page }) => {
-    await checkForCanvasSnapshot(
-      page,
-      '',
-      screenShotPaths.videoNext.viewport,
-      0
-    );
+    // VideoViewport draws into an HTML <video> element, not the main canvas,
+    // so checkForCanvasSnapshot captures only the background. Use Playwright's
+    // element screenshot on the viewport container instead so the actual
+    // frame ends up in the baseline.
+    const viewport = page.locator('[data-viewport-uid]').first();
+    await viewport.waitFor({ state: 'visible' });
+    const buffer = await viewport.screenshot();
+    await expect(buffer).toMatchSnapshot(screenShotPaths.videoNext.viewport, {
+      threshold: 0.005,
+      maxDiffPixelRatio: 0,
+    });
   });
 
   test('should resize through the rendering engine', async ({ page }) => {

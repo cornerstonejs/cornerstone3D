@@ -34,20 +34,26 @@ function navigateToExample(params?: Record<string, string>) {
 }
 
 async function drawLengthMeasurement(page, locator) {
+  // Mirror tests/utils/simulateDrag.ts so the resulting length line endpoints
+  // are pixel-identical to the legacy volumeAnnotation baseline (drag from
+  // canvas center to center + (100, 100), clamped to the canvas bounds).
   const box = await locator.boundingBox();
 
   if (!box) {
     throw new Error('Canvas element is not visible');
   }
 
-  const startX = box.x + box.width * 0.3;
-  const startY = box.y + box.height * 0.3;
-  const endX = box.x + box.width * 0.7;
-  const endY = box.y + box.height * 0.7;
+  const centerX = box.x + box.width / 2;
+  const centerY = box.y + box.height / 2;
+  const maxMoveX = Math.min(100, box.x + box.width - centerX);
+  const maxMoveY = Math.min(100, box.y + box.height - centerY);
+  const endX = centerX + maxMoveX;
+  const endY = centerY + maxMoveY;
 
-  await page.mouse.click(startX, startY);
-  await page.waitForTimeout(200);
-  await page.mouse.click(endX, endY);
+  await page.mouse.move(centerX, centerY);
+  await page.mouse.down();
+  await page.mouse.move(endX, endY);
+  await page.mouse.up();
   await page.waitForTimeout(500);
 }
 

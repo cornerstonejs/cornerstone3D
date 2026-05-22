@@ -34,12 +34,18 @@ function navigateToExample(params?: Record<string, string>) {
 }
 
 async function selectSphereBrushAndPaint(page) {
+  // Click into axial + sagittal + coronal with the same point sequence as
+  // the legacy labelmapsegmentationtools sphere-brush test (and the matching
+  // nextLabelmapSegmentationTools test) -- otherwise sagittal/coronal stay
+  // empty in the baseline even though the brush works in the demo.
   await page
     .getByRole('combobox')
     .first()
     .selectOption({ label: 'SphereBrush' });
 
   const firstCanvas = getVisibleViewportCanvas(page, 0);
+  const secondCanvas = getVisibleViewportCanvas(page, 1);
+  const thirdCanvas = getVisibleViewportCanvas(page, 2);
 
   await simulateClicksOnElement({
     locator: firstCanvas,
@@ -48,6 +54,26 @@ async function selectSphereBrushAndPaint(page) {
       { x: 226, y: 274 },
       { x: 195, y: 302 },
       { x: 218, y: 301 },
+    ],
+  });
+  await page.waitForTimeout(500);
+  await simulateClicksOnElement({
+    locator: secondCanvas,
+    points: [
+      { x: 226, y: 294 },
+      { x: 217, y: 324 },
+      { x: 210, y: 350 },
+      { x: 199, y: 379 },
+    ],
+  });
+  await page.waitForTimeout(500);
+  await simulateClicksOnElement({
+    locator: thirdCanvas,
+    points: [
+      { x: 206, y: 258 },
+      { x: 205, y: 230 },
+      { x: 203, y: 198 },
+      { x: 202, y: 165 },
     ],
   });
 

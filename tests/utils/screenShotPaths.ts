@@ -273,10 +273,18 @@ const screenShotPaths = {
   },
   volumeAnnotation: {
     lengthTool: 'lengthTool.png',
+    axialManip: 'axial-manip.png',
+    sagittalManip: 'sagittal-manip.png',
+    coronalManip: 'coronal-manip.png',
   },
   volumeAnnotationNext: {
     length: 'length.png',
     sagittal: 'sagittal.png',
+    // Manipulation outputs diverge from legacy by 25% (GPU) / 81% (CPU)
+    // because legacy ORTHOGRAPHIC and next PLANAR_NEXT viewports map the
+    // same scroll/zoom/pan inputs to different camera/slice deltas. Legacy
+    // baselines still exist under volumeAnnotation.spec.ts/*-manip.png for
+    // standalone coverage; revisit sharing once next reaches input parity.
     axialManip: 'axial-manip.png',
     sagittalManip: 'sagittal-manip.png',
     coronalManip: 'coronal-manip.png',
@@ -306,7 +314,11 @@ const screenShotPaths = {
     cpuSphereBrush: 'cpu-sphereBrush.png',
   },
   stackLabelmapSegNext: {
-    brush: 'brush.png',
+    // Brush stroke matches the legacy stackLabelmapSegmentation/circularBrush
+    // baseline pixel-for-pixel after switching to the same drawPath inputs.
+    // CPU runtime renders slightly differently -- keep that one next-only.
+    brush:
+      '../../stackLabelmapSegmentation/circularBrush.spec.ts/circularBrushSegment1.png',
     cpuBrush: 'cpu-brush.png',
   },
   labelmapOverlapNext: {

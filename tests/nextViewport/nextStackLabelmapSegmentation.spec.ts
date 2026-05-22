@@ -5,8 +5,9 @@ import {
   expectViewportNextRuntime,
   getVisibleViewportCanvas,
   screenShotPaths,
-  simulateDrag,
+  simulateDrawPath,
 } from '../utils/index';
+import { rightArmBoneContour } from '../stackLabelmapSegmentation/utils/constants';
 
 const EXAMPLE = 'nextStackLabelmapSegmentation';
 const SETTLE_MS = 10000;
@@ -32,9 +33,17 @@ function navigateToExample(params?: Record<string, string>) {
 
 test.describe.configure({ mode: 'serial' });
 
+// Match the legacy stackLabelmapSegmentation/circularBrush.spec.ts inputs:
+// select the CircularBrush dropdown, then draw the rightArmBoneContour with
+// path interpolation + closure so the resulting segmentation mask matches
+// pixel-for-pixel.
 async function paintBrushStroke(page) {
-  const canvas = getVisibleViewportCanvas(page);
-  await simulateDrag(page, canvas);
+  await page.getByRole('combobox').first().selectOption('CircularBrush');
+  const canvas = getVisibleViewportCanvas(page, 0);
+  await simulateDrawPath(page, canvas, rightArmBoneContour, {
+    interpolateSteps: true,
+    closePath: true,
+  });
   await page.waitForTimeout(1500);
 }
 

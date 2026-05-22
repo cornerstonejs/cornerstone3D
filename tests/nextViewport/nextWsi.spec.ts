@@ -1,7 +1,6 @@
-import { test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import {
   createExampleUrl,
-  checkForCanvasSnapshot,
   expectViewportNextRuntime,
   screenShotPaths,
 } from '../utils/index';
@@ -45,11 +44,16 @@ test.describe('WSI ViewportNext', () => {
   });
 
   test('should render WSI data', async ({ page }) => {
-    await checkForCanvasSnapshot(
-      page,
-      '',
-      screenShotPaths.wsiNext.viewport,
-      0
-    );
+    // WSIViewport renders through dicom-microscopy-viewer's tile DOM, not
+    // through the main canvas, so checkForCanvasSnapshot captures only the
+    // background color. Take an element screenshot of the viewport container
+    // so the actual tiles end up in the baseline.
+    const viewport = page.locator('[data-viewport-uid]').first();
+    await viewport.waitFor({ state: 'visible' });
+    const buffer = await viewport.screenshot();
+    await expect(buffer).toMatchSnapshot(screenShotPaths.wsiNext.viewport, {
+      threshold: 0.005,
+      maxDiffPixelRatio: 0,
+    });
   });
 });
