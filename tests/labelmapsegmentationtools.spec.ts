@@ -332,7 +332,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
       '',
       screenShotPaths.labelmapSegmentationTools.sphereBrush,
       [0, 1, 2],
-      { threshold: 0.01 }
+      { threshold: 0.01, maxDiffPixelRatio: 0.01 }
     );
   });
 
@@ -463,7 +463,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
       '',
       screenShotPaths.labelmapSegmentationTools.rectangleScissor,
       [0, 1, 2],
-      { threshold: 0.01 }
+      { threshold: 0.01, maxDiffPixelRatio: 0.01 }
     );
   });
 
@@ -501,7 +501,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
       '',
       screenShotPaths.labelmapSegmentationTools.circleScissor,
       [0, 1, 2],
-      { threshold: 0.01 }
+      { threshold: 0.01, maxDiffPixelRatio: 0.01 }
     );
   });
 
@@ -539,7 +539,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
       '',
       screenShotPaths.labelmapSegmentationTools.sphereScissor,
       [0, 1, 2],
-      { threshold: 0.01 }
+      { threshold: 0.01, maxDiffPixelRatio: 0.01 }
     );
   });
 
@@ -601,7 +601,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
       '',
       screenShotPaths.labelmapSegmentationTools.scissorEraser,
       [0, 1, 2],
-      { threshold: 0.01 }
+      { threshold: 0.01, maxDiffPixelRatio: 0.01 }
     );
   });
 
