@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.22.10](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.9...v4.22.10) (2026-05-22)
+
+### Bug Fixes
+
+- **core:** move animationFrameSet guard after sWidth/sHeight update ([#2741](https://github.com/cornerstonejs/cornerstone3D/issues/2741)) ([62a7762](https://github.com/cornerstonejs/cornerstone3D/commit/62a7762953feae68a81855d9c7bf84f1fd3a3877))
+
 ## [4.22.9](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.8...v4.22.9) (2026-05-19)
 
 **Note:** Version bump only for package @cornerstonejs/core
