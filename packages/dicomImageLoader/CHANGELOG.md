@@ -1,7 +1,19 @@
-# Change Log
+﻿# Change Log
 
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
+
+## [4.22.9](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.8...v4.22.9) (2026-05-19)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
+## [4.22.8](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.7...v4.22.8) (2026-05-15)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
+# [5.0.0-beta.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.0-beta.1...v5.0.0-beta.2) (2026-05-15)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
 
 # [5.0.0-beta.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.18.3...v5.0.0-beta.1) (2026-02-27)
 
@@ -2326,7 +2338,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 ### Features
 
-- **ultrasound:** add ULTRASOUND_ENHANCED_REGION and CALIBRATION to wadouri metadata pr… ([#1358](https://github.com/cornerstonejs/cornerstone3D/issues/1358)) ([17a4e12](https://github.com/cornerstonejs/cornerstone3D/commit/17a4e12128c8e67a46c02c80cd47b07f6e563829))
+- **ultrasound:** add ULTRASOUND_ENHANCED_REGION and CALIBRATION to wadouri metadata prâ€¦ ([#1358](https://github.com/cornerstonejs/cornerstone3D/issues/1358)) ([17a4e12](https://github.com/cornerstonejs/cornerstone3D/commit/17a4e12128c8e67a46c02c80cd47b07f6e563829))
 
 ## [1.80.4](https://github.com/cornerstonejs/cornerstone3D/compare/v1.80.3...v1.80.4) (2024-06-27)
 
@@ -3693,7 +3705,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 ### Features
 
-- 🎸 Allow optional in-worker scaling and buffer redirection ([c504bb1](https://github.com/cornerstonejs/cornerstone3D-beta/commit/c504bb16ee150d3e616a2fd9966fe8275163d28a))
+- ðŸŽ¸ Allow optional in-worker scaling and buffer redirection ([c504bb1](https://github.com/cornerstonejs/cornerstone3D-beta/commit/c504bb16ee150d3e616a2fd9966fe8275163d28a))
 - add 16 bit data type scale under a decode flag ([#501](https://github.com/cornerstonejs/cornerstone3D-beta/issues/501)) ([1b47073](https://github.com/cornerstonejs/cornerstone3D-beta/commit/1b47073d8f526dc49d9cdcfd57a42c691e2969d2))
 - Add beforeProcessing hook to WADO-URI XMLHttpRequest ([#338](https://github.com/cornerstonejs/cornerstone3D-beta/issues/338)) ([43dbacb](https://github.com/cornerstonejs/cornerstone3D-beta/commit/43dbacbd11fd9388355f48cf6daabc1e391acde9))
 - Add HTJ2K - release attempt ([c65218e](https://github.com/cornerstonejs/cornerstone3D-beta/commit/c65218ef61bb54e7afa64d7e1600ac91e0ef9def))
@@ -3914,7 +3926,7 @@ Co-authored-by: Alireza <ar.sedghi@gmail.com>
 
 ### Features
 
-- 🎸 Allow optional in-worker scaling and buffer redirection ([c504bb1](https://github.com/cornerstonejs/cornerstone3D-beta/commit/c504bb16ee150d3e616a2fd9966fe8275163d28a))
+- ðŸŽ¸ Allow optional in-worker scaling and buffer redirection ([c504bb1](https://github.com/cornerstonejs/cornerstone3D-beta/commit/c504bb16ee150d3e616a2fd9966fe8275163d28a))
 - add 16 bit data type scale under a decode flag ([#501](https://github.com/cornerstonejs/cornerstone3D-beta/issues/501)) ([1b47073](https://github.com/cornerstonejs/cornerstone3D-beta/commit/1b47073d8f526dc49d9cdcfd57a42c691e2969d2))
 - Add beforeProcessing hook to WADO-URI XMLHttpRequest ([#338](https://github.com/cornerstonejs/cornerstone3D-beta/issues/338)) ([43dbacb](https://github.com/cornerstonejs/cornerstone3D-beta/commit/43dbacbd11fd9388355f48cf6daabc1e391acde9))
 - Add HTJ2K - release attempt ([c65218e](https://github.com/cornerstonejs/cornerstone3D-beta/commit/c65218ef61bb54e7afa64d7e1600ac91e0ef9def))

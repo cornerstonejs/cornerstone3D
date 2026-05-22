@@ -26,6 +26,10 @@ class LabelmapImageReferenceResolver {
     Map<string, string>
   >();
   private readonly labelmapImageIdReferenceMap = new Map<string, string[]>();
+  // Index mapping each segmentationId to the set of keys it owns in
+  // labelmapImageIdReferenceMap, so removeSegmentation can purge entries in
+  // O(k) without scanning the whole map.
+  private readonly keysBySegmentationId = new Map<string, Set<string>>();
 
   constructor(getSegmentation: GetSegmentation) {
     this.getSegmentation = getSegmentation;
@@ -34,6 +38,32 @@ class LabelmapImageReferenceResolver {
   reset(): void {
     this.stackLabelmapImageIdReferenceMap.clear();
     this.labelmapImageIdReferenceMap.clear();
+    this.keysBySegmentationId.clear();
+  }
+
+  removeSegmentation(segmentationId: string): void {
+    this.stackLabelmapImageIdReferenceMap.delete(segmentationId);
+    const keys = this.keysBySegmentationId.get(segmentationId);
+    if (keys) {
+      for (const key of keys) {
+        this.labelmapImageIdReferenceMap.delete(key);
+      }
+      this.keysBySegmentationId.delete(segmentationId);
+    }
+  }
+
+  private setLabelmapImageIds(
+    segmentationId: string,
+    key: string,
+    labelmapImageIds: string[]
+  ): void {
+    this.labelmapImageIdReferenceMap.set(key, labelmapImageIds);
+    let keys = this.keysBySegmentationId.get(segmentationId);
+    if (!keys) {
+      keys = new Set();
+      this.keysBySegmentationId.set(segmentationId, keys);
+    }
+    keys.add(key);
   }
 
   getLabelmapImageIds(representationData: RepresentationsData) {
@@ -191,7 +221,7 @@ class LabelmapImageReferenceResolver {
       segmentationId,
       referenceImageId,
     });
-    this.labelmapImageIdReferenceMap.set(key, resolvedImageIds);
+    this.setLabelmapImageIds(segmentationId, key, resolvedImageIds);
 
     if (!this.stackLabelmapImageIdReferenceMap.has(segmentationId)) {
       this.stackLabelmapImageIdReferenceMap.set(segmentationId, new Map());
@@ -392,13 +422,13 @@ class LabelmapImageReferenceResolver {
     const key = this.generateMapKey({ segmentationId, referenceImageId });
 
     if (!this.labelmapImageIdReferenceMap.has(key)) {
-      this.labelmapImageIdReferenceMap.set(key, [labelmapImageId]);
+      this.setLabelmapImageIds(segmentationId, key, [labelmapImageId]);
       return;
     }
 
     const currentValues = this.labelmapImageIdReferenceMap.get(key) ?? [];
     const newValues = Array.from(new Set([...currentValues, labelmapImageId]));
-    this.labelmapImageIdReferenceMap.set(key, newValues);
+    this.setLabelmapImageIds(segmentationId, key, newValues);
   }
 
   private generateMapKey({ segmentationId, referenceImageId }) {
