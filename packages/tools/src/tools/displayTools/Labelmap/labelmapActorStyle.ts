@@ -12,7 +12,7 @@ import { internalGetHiddenSegmentIndices } from '../../../stateManagement/segmen
 import { getSegmentBinding } from '../../../stateManagement/segmentation/helpers/labelmapSegmentationState';
 import { segmentationStyle } from '../../../stateManagement/segmentation/SegmentationStyle';
 import type { LabelmapStyle } from '../../../types/LabelmapTypes';
-import type { SegmentationRepresentation } from '../../../types/SegmentationStateTypes';
+import type { LabelmapRepresentation } from '../../../types/SegmentationStateTypes';
 import { getLabelmapForActorReference } from './volumeLabelmapImageMapper';
 
 const MAX_NUMBER_COLORS = 255;
@@ -20,7 +20,7 @@ const MAX_NUMBER_COLORS = 255;
 function setLabelmapColorAndOpacity(
   viewportId: string,
   labelmapActorEntry: Types.ActorEntry,
-  segmentationRepresentation: SegmentationRepresentation
+  segmentationRepresentation: LabelmapRepresentation
 ): void {
   const { segmentationId } = segmentationRepresentation;
   const { colorLUTIndex } = segmentationRepresentation;
