@@ -37,6 +37,11 @@ async function drawLengthMeasurement(page, locator) {
   // Mirror tests/utils/simulateDrag.ts so the resulting length line endpoints
   // are pixel-identical to the legacy volumeAnnotation baseline (drag from
   // canvas center to center + (100, 100), clamped to the canvas bounds).
+  // The example's flex-wrap layout pushes the third viewport below the
+  // default 1280x720 browser viewport, so scroll it into view first; mouse
+  // coordinates are viewport-relative and would otherwise miss the canvas.
+  await locator.scrollIntoViewIfNeeded();
+
   const box = await locator.boundingBox();
 
   if (!box) {
