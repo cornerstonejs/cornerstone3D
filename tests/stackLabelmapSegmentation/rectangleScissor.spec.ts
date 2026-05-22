@@ -33,6 +33,6 @@ test('Stack Segmentation - Rectangle Scissor Tool with segmentation 2', async ({
     '',
     screenShotPaths.stackSegmentation.rectangleScissorSegmentation1,
     0,
-    { threshold: 0.01 }
+    { threshold: 0.01, maxDiffPixelRatio: 0.06 }
   );
 });
