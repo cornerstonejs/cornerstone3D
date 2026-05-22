@@ -56,6 +56,11 @@ export type PlanarImageMapperRendering = MountedRendering<{
   defaultVOIRange?: VOIRange;
   dataPresentation?: PlanarDataPresentation;
   loadRequestId: number;
+  // Target index of the most recent applyViewState request. Used by the
+  // dedup check to avoid re-loading on no-op camera changes while still
+  // letting back-to-back navigation calls (e.g. Next then Previous) issue
+  // a fresh load even while a previous load is still in flight.
+  lastRequestedImageIdIndex?: number;
 }>;
 
 /**
@@ -76,6 +81,8 @@ export type PlanarCpuImageRendering = MountedRendering<{
   fitScale: number;
   loadRequestId: number;
   renderingInvalidated: boolean;
+  // See PlanarImageMapperRendering.lastRequestedImageIdIndex.
+  lastRequestedImageIdIndex?: number;
 }>;
 
 /**

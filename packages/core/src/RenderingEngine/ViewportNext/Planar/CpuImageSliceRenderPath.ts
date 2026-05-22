@@ -197,7 +197,12 @@ export class CpuImageSliceRenderPath
       );
     }
 
-    if (nextImageIdIndex === rendering.currentImageIdIndex) {
+    // See VtkImageMapperRenderPath for context on why this dedupes against
+    // lastRequestedImageIdIndex instead of currentImageIdIndex.
+    const dedupTarget =
+      rendering.lastRequestedImageIdIndex ?? rendering.currentImageIdIndex;
+
+    if (nextImageIdIndex === dedupTarget) {
       return;
     }
 
@@ -205,6 +210,7 @@ export class CpuImageSliceRenderPath
       return;
     }
 
+    rendering.lastRequestedImageIdIndex = nextImageIdIndex;
     const requestId = ++rendering.loadRequestId;
 
     void loadAndCacheImage(imageIds[nextImageIdIndex]).then((image) => {

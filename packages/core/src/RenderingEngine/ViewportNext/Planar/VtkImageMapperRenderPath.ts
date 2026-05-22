@@ -182,7 +182,17 @@ export class VtkImageMapperRenderPath
       }
     }
 
-    if (nextImageIdIndex === rendering.currentImageIdIndex) {
+    // Dedup against the *last requested* index — not the currently rendered
+    // one — so back-to-back navigation calls (e.g. Next then Previous) still
+    // queue the second load when the first is in flight. Before this fix the
+    // sequence `setImageIdIndex(1)` then `setImageIdIndex(0)` would early-out
+    // on the second call because `currentImageIdIndex` was still 0 (the load
+    // for index 1 hadn't completed), so the index-0 load never issued and
+    // the stale index-1 load eventually rendered.
+    const dedupTarget =
+      rendering.lastRequestedImageIdIndex ?? rendering.currentImageIdIndex;
+
+    if (nextImageIdIndex === dedupTarget) {
       return;
     }
 
@@ -190,6 +200,7 @@ export class VtkImageMapperRenderPath
       return;
     }
 
+    rendering.lastRequestedImageIdIndex = nextImageIdIndex;
     const requestId = ++rendering.loadRequestId;
 
     void loadAndCacheImage(imageIds[nextImageIdIndex]).then((image) => {
