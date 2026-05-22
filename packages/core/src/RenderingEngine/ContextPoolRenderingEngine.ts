@@ -235,10 +235,6 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       return;
     }
 
-    if (this._animationFrameSet) {
-      return;
-    }
-
     for (const vp of viewportsNeedingResize) {
       const canvas = getOrCreateCanvas(vp.element);
       const displayedWidth = Math.round(canvas.clientWidth * devicePixelRatio);
@@ -250,6 +246,10 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
       vp.sWidth = targetWidth;
       vp.sHeight = targetHeight;
+    }
+
+    if (this._animationFrameSet) {
+      return;
     }
 
     if (vtkDrivenViewports.length) {
