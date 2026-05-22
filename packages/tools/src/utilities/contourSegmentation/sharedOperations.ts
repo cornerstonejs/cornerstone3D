@@ -94,7 +94,7 @@ export function checkIntersection(
     !lineSegmentsIntersect &&
     math.polyline.containsPoints(targetPolyline, sourcePolyline);
 
-  // Target's points are all inside source -> target is a hole inside source
+  // Target is fully contained inside source (no edge crossings)
   const isTargetInsideSource =
     !lineSegmentsIntersect &&
     !isContourHole &&
