@@ -480,9 +480,15 @@ const checkForCanvasSnapshot = async (
 /**
  * In compatibility mode, segmentation-heavy tests render with subtly different
  * edge anti-aliasing than the legacy path, so we keep a sibling `compat-<name>`
- * baseline next to the legacy one. If that compat baseline exists (or we're
- * updating snapshots), use it; otherwise fall back to the legacy baseline so
- * tests that haven't diverged keep sharing a single PNG.
+ * baseline next to the legacy one. If that compat baseline already exists we
+ * use it; otherwise compat falls back to the legacy baseline so tests that
+ * don't visibly diverge keep sharing one source of truth.
+ *
+ * Compat baselines are only created on demand: run with
+ * `--update-snapshots=all` and a `-g` filter that selects the tests you want
+ * to fork. Plain `--update-snapshots` (Playwright's default `missing` mode)
+ * does NOT auto-create compat baselines — that would silently fork every
+ * compat-mode test instead of only the segmentation ones.
  */
 function resolveCompatScreenshotPath(screenshotPath: string): string {
   if (!isCompatibilityMode()) return screenshotPath;
@@ -491,10 +497,10 @@ function resolveCompatScreenshotPath(screenshotPath: string): string {
   const compatName = `compat-${baseName}`;
   const info = testApi.info();
   const compatFullPath = info.snapshotPath(compatName);
-  const updateMode = info.config.updateSnapshots;
-  const updatingSnapshots =
-    updateMode === 'all' || updateMode === 'changed' || updateMode === 'missing';
-  if (updatingSnapshots || fs.existsSync(compatFullPath)) {
+  if (fs.existsSync(compatFullPath)) {
+    return compatName;
+  }
+  if (info.config.updateSnapshots === 'all') {
     return compatName;
   }
   return screenshotPath;
