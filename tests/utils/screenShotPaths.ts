@@ -130,7 +130,6 @@ const screenShotPaths = {
     circularBrush: 'circularBrush.png',
     circularEraser: 'circularEraser.png',
     sphereBrush: 'sphereBrush.png',
-    sphereEraser: 'sphereEraser.png',
     thresholdCircle: 'thresholdCircle.png',
     rectangleScissor: 'rectangleScissor.png',
     circleScissor: 'circleScissor.png',

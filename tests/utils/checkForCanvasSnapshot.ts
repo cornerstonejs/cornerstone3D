@@ -3,6 +3,7 @@ import type { Page } from 'playwright';
 import * as fs from 'fs';
 import * as path from 'path';
 import { PNG } from 'pngjs';
+import { isCompatibilityMode } from './compatibilityMode';
 
 /** Inline per-pixel comparison matching the spirit of playwright's threshold:
  *  count a pixel as different when any channel diverges by more than
@@ -468,11 +469,36 @@ const checkForCanvasSnapshot = async (
     return;
   }
 
-  await expect(buffer).toMatchSnapshot(screenshotPath, {
+  const effectiveScreenshotPath = resolveCompatScreenshotPath(screenshotPath);
+
+  await expect(buffer).toMatchSnapshot(effectiveScreenshotPath, {
     maxDiffPixelRatio,
     threshold,
   });
 };
+
+/**
+ * In compatibility mode, segmentation-heavy tests render with subtly different
+ * edge anti-aliasing than the legacy path, so we keep a sibling `compat-<name>`
+ * baseline next to the legacy one. If that compat baseline exists (or we're
+ * updating snapshots), use it; otherwise fall back to the legacy baseline so
+ * tests that haven't diverged keep sharing a single PNG.
+ */
+function resolveCompatScreenshotPath(screenshotPath: string): string {
+  if (!isCompatibilityMode()) return screenshotPath;
+  const baseName = path.basename(screenshotPath);
+  if (baseName.startsWith('compat-')) return screenshotPath;
+  const compatName = `compat-${baseName}`;
+  const info = testApi.info();
+  const compatFullPath = info.snapshotPath(compatName);
+  const updateMode = info.config.updateSnapshots;
+  const updatingSnapshots =
+    updateMode === 'all' || updateMode === 'changed' || updateMode === 'missing';
+  if (updatingSnapshots || fs.existsSync(compatFullPath)) {
+    return compatName;
+  }
+  return screenshotPath;
+}
 
 /**
  * Compares an in-memory PNG buffer against a baseline owned by a sibling

@@ -171,7 +171,7 @@ async function run() {
     wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
-  const smallVolumeImageIds = [imageIds[0], imageIds[1]];
+  const smallVolumeImageIds = [imageIds[0], imageIds[1], imageIds[2]];
 
   // Define a volume in memory
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
