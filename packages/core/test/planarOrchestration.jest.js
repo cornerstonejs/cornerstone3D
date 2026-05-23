@@ -1,10 +1,10 @@
 import { ActorRenderMode } from '../src/types';
-import { OrientationAxis } from '../src/enums';
-import {
-  PlanarMountedData,
-  PlanarViewReferenceController,
-} from '../src/RenderingEngine/GenericViewport/Planar';
-import PlanarLegacyCompatibilityController from '../src/RenderingEngine/GenericViewport/Planar/PlanarLegacyCompatibilityController';
+import { Events, OrientationAxis } from '../src/enums';
+import PlanarMountedData from '../src/RenderingEngine/GenericViewport/Planar/PlanarMountedData';
+import PlanarViewReferenceController from '../src/RenderingEngine/GenericViewport/Planar/PlanarViewReferenceController';
+import PlanarLegacyCompatibilityController, {
+  PLANAR_LEGACY_PER_IMAGE_DEFAULT_PROPERTIES_LIMIT,
+} from '../src/RenderingEngine/GenericViewport/Planar/PlanarLegacyCompatibilityController';
 import genericViewportDataSetMetadataProvider from '../src/utilities/genericViewportDataSetMetadataProvider';
 
 function createBinding({
@@ -128,6 +128,7 @@ function createLegacyStackHarness({ deferSetData = false } = {}) {
   return {
     controller,
     dataId,
+    element,
     getCurrentImageIds: () => currentImageIds,
     host,
     pendingSetData,
@@ -175,6 +176,60 @@ describe('Planar legacy stack compatibility', () => {
     pendingSetData.pop()();
     await expect(firstSetStack).resolves.toBe('image:first');
     expect(host.setImageIdIndex).toHaveBeenCalledTimes(1);
+  });
+
+  it('evicts oldest per-image default properties beyond the compatibility cache limit', async () => {
+    const { controller, element, host } = createLegacyStackHarness();
+
+    await controller.setStack(['image:active']);
+
+    for (
+      let index = 0;
+      index <= PLANAR_LEGACY_PER_IMAGE_DEFAULT_PROPERTIES_LIMIT;
+      index++
+    ) {
+      controller.setDefaultProperties({ invert: true }, `image:${index}`);
+    }
+
+    host.setDataPresentationState.mockClear();
+    element.dispatchEvent(
+      new CustomEvent(Events.STACK_NEW_IMAGE, {
+        detail: {
+          imageId: 'image:0',
+        },
+      })
+    );
+
+    expect(host.setDataPresentationState).not.toHaveBeenCalled();
+
+    element.dispatchEvent(
+      new CustomEvent(Events.STACK_NEW_IMAGE, {
+        detail: {
+          imageId: `image:${PLANAR_LEGACY_PER_IMAGE_DEFAULT_PROPERTIES_LIMIT}`,
+        },
+      })
+    );
+
+    expect(host.setDataPresentationState).toHaveBeenCalledTimes(1);
+  });
+
+  it('prunes per-image default properties that do not belong to a replacement stack', async () => {
+    const { controller, element, host } = createLegacyStackHarness();
+
+    await controller.setStack(['image:old']);
+    controller.setDefaultProperties({ invert: true }, 'image:old');
+    await controller.setStack(['image:new']);
+
+    host.setDataPresentationState.mockClear();
+    element.dispatchEvent(
+      new CustomEvent(Events.STACK_NEW_IMAGE, {
+        detail: {
+          imageId: 'image:old',
+        },
+      })
+    );
+
+    expect(host.setDataPresentationState).not.toHaveBeenCalled();
   });
 });
 

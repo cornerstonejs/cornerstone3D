@@ -27,6 +27,8 @@ import type {
   PlanarSetDataOptions,
 } from './PlanarViewportTypes';
 
+export const PLANAR_LEGACY_PER_IMAGE_DEFAULT_PROPERTIES_LIMIT = 2048;
+
 export type PlanarLegacyCompatibilityHost = {
   getElement(): HTMLDivElement;
   getViewportId(): string;
@@ -94,7 +96,7 @@ class PlanarLegacyCompatibilityController {
     }
 
     const perImageProps = imageId
-      ? this.perImageIdDefaultProperties.get(imageId)
+      ? this.getPerImageDefaultProperties(imageId)
       : undefined;
     const globalProps = this.globalDefaultProperties.get(targetDataId);
     const propsToApply = perImageProps || globalProps;
@@ -143,6 +145,8 @@ class PlanarLegacyCompatibilityController {
 
       const resolvedImageId =
         await this.host.setImageIdIndex(clampedImageIdIndex);
+
+      this.prunePerImageDefaultProperties(new Set(imageIds));
 
       return this.host.getCurrentImageId() || resolvedImageId;
     } catch (error) {
@@ -238,7 +242,7 @@ class PlanarLegacyCompatibilityController {
       return;
     }
 
-    this.perImageIdDefaultProperties.set(
+    this.setPerImageDefaultProperties(
       imageId,
       clonePlanarLegacyProperties(properties)
     );
@@ -271,7 +275,7 @@ class PlanarLegacyCompatibilityController {
     const currentImageId = this.host.getCurrentImageId();
     const defaultProperties =
       (currentImageId
-        ? this.perImageIdDefaultProperties.get(currentImageId)
+        ? this.getPerImageDefaultProperties(currentImageId)
         : undefined) ||
       this.globalDefaultProperties.get(targetDataId) ||
       {};
@@ -803,6 +807,58 @@ class PlanarLegacyCompatibilityController {
       if (mappedDataId === dataId) {
         return volumeId;
       }
+    }
+  }
+
+  private getPerImageDefaultProperties(
+    imageId: string
+  ): PlanarLegacyViewportProperties | undefined {
+    const properties = this.perImageIdDefaultProperties.get(imageId);
+
+    if (properties) {
+      this.perImageIdDefaultProperties.delete(imageId);
+      this.perImageIdDefaultProperties.set(imageId, properties);
+    }
+
+    return properties;
+  }
+
+  private setPerImageDefaultProperties(
+    imageId: string,
+    properties: PlanarLegacyViewportProperties
+  ): void {
+    if (this.perImageIdDefaultProperties.has(imageId)) {
+      this.perImageIdDefaultProperties.delete(imageId);
+    }
+
+    this.perImageIdDefaultProperties.set(imageId, properties);
+    this.evictPerImageDefaultProperties();
+  }
+
+  private prunePerImageDefaultProperties(validImageIds: Set<string>): void {
+    for (const imageId of this.perImageIdDefaultProperties.keys()) {
+      if (!validImageIds.has(imageId)) {
+        this.perImageIdDefaultProperties.delete(imageId);
+      }
+    }
+
+    this.evictPerImageDefaultProperties();
+  }
+
+  private evictPerImageDefaultProperties(): void {
+    while (
+      this.perImageIdDefaultProperties.size >
+      PLANAR_LEGACY_PER_IMAGE_DEFAULT_PROPERTIES_LIMIT
+    ) {
+      const oldestImageId = this.perImageIdDefaultProperties
+        .keys()
+        .next().value;
+
+      if (oldestImageId === undefined) {
+        return;
+      }
+
+      this.perImageIdDefaultProperties.delete(oldestImageId);
     }
   }
 
