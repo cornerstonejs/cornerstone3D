@@ -85,6 +85,7 @@ export default function addPolylinesToSegmentation(
         {
           points: holePolylineCanvas,
           closed: true,
+          targetWindingDirection: ContourWindingDirection.CounterClockwise,
         },
         viewport
       );
