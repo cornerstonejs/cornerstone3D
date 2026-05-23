@@ -62,10 +62,49 @@ type OrthogonalSliceSampleResult = {
   translationReferenceFocalPoint: Point3;
 };
 
+type SampleValueRange = {
+  min: number;
+  max: number;
+};
+
 const MAX_POOLED_SLICE_ARRAYS_PER_SHAPE = 1;
 
 function dot(a: Point3, b: Point3): number {
   return vec3.dot(a as unknown as vec3, b as unknown as vec3);
+}
+
+function clampFiniteSample(
+  value: number,
+  fallbackMin: number,
+  fallbackMax: number,
+  round: boolean
+): number {
+  if (!Number.isFinite(value)) {
+    return fallbackMin;
+  }
+
+  let clampedValue = value;
+
+  if (clampedValue < fallbackMin) {
+    clampedValue = fallbackMin;
+  } else if (clampedValue > fallbackMax) {
+    clampedValue = fallbackMax;
+  }
+
+  return round ? Math.round(clampedValue) : clampedValue;
+}
+
+function expandSampleValueRange(
+  sampleRange: SampleValueRange,
+  value: number
+): void {
+  if (value < sampleRange.min) {
+    sampleRange.min = value;
+  }
+
+  if (value > sampleRange.max) {
+    sampleRange.max = value;
+  }
 }
 
 function subtractPoints(a: Point3, b: Point3): Point3 {
@@ -581,8 +620,10 @@ export default class PlanarCPUVolumeSampler {
       centerIndex[1] + startIndexDelta[1],
       centerIndex[2] + startIndexDelta[2],
     ] as Point3;
-    let sampledMin = Infinity;
-    let sampledMax = -Infinity;
+    const sampledRange: SampleValueRange = {
+      min: Infinity,
+      max: -Infinity,
+    };
 
     const scalarViewportSample = this.scalarViewportSampler.sampleAxisAligned({
       volume,
@@ -603,8 +644,8 @@ export default class PlanarCPUVolumeSampler {
     });
 
     if (scalarViewportSample) {
-      sampledMin = scalarViewportSample.min;
-      sampledMax = scalarViewportSample.max;
+      sampledRange.min = scalarViewportSample.min;
+      sampledRange.max = scalarViewportSample.max;
     } else {
       const sampleIndex = [...rowStartIndex] as Point3;
 
@@ -621,17 +662,16 @@ export default class PlanarCPUVolumeSampler {
             numberOfComponents,
             interpolationType
           );
-          const valueRange = this.writeVoxelValue({
-            pixelData: sliceScalarData,
-            pixelIndex: y * width + x,
-            voxelValue: sampledValue,
-            numberOfComponents,
-            fallbackMin: fallbackRange.min,
-            fallbackMax: fallbackRange.max,
-          });
 
-          sampledMin = Math.min(sampledMin, valueRange.min);
-          sampledMax = Math.max(sampledMax, valueRange.max);
+          this.writeVoxelValue(
+            sliceScalarData,
+            y * width + x,
+            sampledValue,
+            numberOfComponents,
+            fallbackRange.min,
+            fallbackRange.max,
+            sampledRange
+          );
           sampleIndex[0] += xStepIndexDelta[0];
           sampleIndex[1] += xStepIndexDelta[1];
           sampleIndex[2] += xStepIndexDelta[2];
@@ -643,16 +683,16 @@ export default class PlanarCPUVolumeSampler {
       }
     }
 
-    const minPixelValue = Number.isFinite(sampledMin)
+    const minPixelValue = Number.isFinite(sampledRange.min)
       ? preserveFloatScalarSamples
-        ? sampledMin
-        : Math.floor(sampledMin)
+        ? sampledRange.min
+        : Math.floor(sampledRange.min)
       : fallbackRange.min;
     const maxPixelValue =
-      Number.isFinite(sampledMax) && sampledMax > sampledMin
+      Number.isFinite(sampledRange.max) && sampledRange.max > sampledRange.min
         ? preserveFloatScalarSamples
-          ? sampledMax
-          : Math.ceil(sampledMax)
+          ? sampledRange.max
+          : Math.ceil(sampledRange.max)
         : Math.max(minPixelValue + 1, fallbackRange.max);
 
     return {
@@ -782,41 +822,41 @@ export default class PlanarCPUVolumeSampler {
       SliceArrayConstructor,
       outputWidth * outputHeight * numberOfComponents
     );
-    let min = Infinity;
-    let max = -Infinity;
+    const sampleRange: SampleValueRange = {
+      min: Infinity,
+      max: -Infinity,
+    };
+    const ijk = [0, 0, 0] as Point3;
+
+    ijk[normalAxis.axis] = normalIndex;
 
     for (let y = 0; y < outputHeight; y++) {
+      ijk[downAxis] = downSign > 0 ? y : outputHeight - 1 - y;
+
       for (let x = 0; x < outputWidth; x++) {
-        const ijk = [0, 0, 0] as Point3;
-
-        ijk[normalAxis.axis] = normalIndex;
         ijk[rightAxis.axis] = rightSign > 0 ? x : outputWidth - 1 - x;
-        ijk[downAxis] = downSign > 0 ? y : outputHeight - 1 - y;
 
-        const valueRange = this.writeVoxelValue({
-          pixelData: scalarData,
-          pixelIndex: y * outputWidth + x,
-          voxelValue: voxelManager.getAtIJK(
-            ijk[0],
-            ijk[1],
-            ijk[2]
-          ) as SampledVoxelValue,
+        this.writeVoxelValue(
+          scalarData,
+          y * outputWidth + x,
+          voxelManager.getAtIJK(ijk[0], ijk[1], ijk[2]) as SampledVoxelValue,
           numberOfComponents,
-          fallbackMin: fallbackRange.min,
-          fallbackMax: fallbackRange.max,
-        });
-
-        min = Math.min(min, valueRange.min);
-        max = Math.max(max, valueRange.max);
+          fallbackRange.min,
+          fallbackRange.max,
+          sampleRange
+        );
       }
     }
 
-    if (!Number.isFinite(min)) {
-      min = fallbackRange.min;
+    if (!Number.isFinite(sampleRange.min)) {
+      sampleRange.min = fallbackRange.min;
     }
 
-    if (!Number.isFinite(max) || max <= min) {
-      max = Math.max(min + 1, fallbackRange.max);
+    if (
+      !Number.isFinite(sampleRange.max) ||
+      sampleRange.max <= sampleRange.min
+    ) {
+      sampleRange.max = Math.max(sampleRange.min + 1, fallbackRange.max);
     }
 
     return {
@@ -825,8 +865,12 @@ export default class PlanarCPUVolumeSampler {
       height: outputHeight,
       columnPixelSpacing: volume.spacing[rightAxis.axis],
       rowPixelSpacing: volume.spacing[downAxis],
-      minPixelValue: preserveFloatScalarSamples ? min : Math.floor(min),
-      maxPixelValue: preserveFloatScalarSamples ? max : Math.ceil(max),
+      minPixelValue: preserveFloatScalarSamples
+        ? sampleRange.min
+        : Math.floor(sampleRange.min),
+      maxPixelValue: preserveFloatScalarSamples
+        ? sampleRange.max
+        : Math.ceil(sampleRange.max),
       numberOfComponents,
       translationReferenceFocalPoint,
     };
@@ -999,61 +1043,46 @@ export default class PlanarCPUVolumeSampler {
     return Array.from({ length: numberOfComponents }, () => 0);
   }
 
-  private writeVoxelValue(args: {
-    pixelData: SliceArray;
-    pixelIndex: number;
-    voxelValue: SampledVoxelValue;
-    numberOfComponents: number;
-    fallbackMin: number;
-    fallbackMax: number;
-  }): { min: number; max: number } {
-    const {
-      pixelData,
-      pixelIndex,
-      voxelValue,
-      numberOfComponents,
-      fallbackMin,
-      fallbackMax,
-    } = args;
-
+  private writeVoxelValue(
+    pixelData: SliceArray,
+    pixelIndex: number,
+    voxelValue: SampledVoxelValue,
+    numberOfComponents: number,
+    fallbackMin: number,
+    fallbackMax: number,
+    sampleRange: SampleValueRange
+  ): void {
     if (numberOfComponents < 2) {
       const scalar = Number(voxelValue);
       const preserveFloatScalarSamples =
         pixelData instanceof Float32Array || pixelData instanceof Float64Array;
-      const clampedValue = Number.isFinite(scalar)
-        ? preserveFloatScalarSamples
-          ? Math.min(fallbackMax, Math.max(fallbackMin, scalar))
-          : Math.round(Math.min(fallbackMax, Math.max(fallbackMin, scalar)))
-        : fallbackMin;
+      const clampedValue = clampFiniteSample(
+        scalar,
+        fallbackMin,
+        fallbackMax,
+        !preserveFloatScalarSamples
+      );
 
       pixelData[pixelIndex] = clampedValue;
-
-      return {
-        min: clampedValue,
-        max: clampedValue,
-      };
+      expandSampleValueRange(sampleRange, clampedValue);
+      return;
     }
 
     const color = this.toColorSample(voxelValue, numberOfComponents);
     const baseIndex = pixelIndex * numberOfComponents;
-    let min = Infinity;
-    let max = -Infinity;
 
     for (let component = 0; component < numberOfComponents; component++) {
       const value = Number(color[component]);
-      const clampedValue = Number.isFinite(value)
-        ? Math.round(Math.min(fallbackMax, Math.max(fallbackMin, value)))
-        : fallbackMin;
+      const clampedValue = clampFiniteSample(
+        value,
+        fallbackMin,
+        fallbackMax,
+        true
+      );
 
       pixelData[baseIndex + component] = clampedValue;
-      min = Math.min(min, clampedValue);
-      max = Math.max(max, clampedValue);
+      expandSampleValueRange(sampleRange, clampedValue);
     }
-
-    return {
-      min: Number.isFinite(min) ? min : fallbackMin,
-      max: Number.isFinite(max) ? max : fallbackMin,
-    };
   }
 
   private getVolumeNumberOfComponents(volume: IImageVolume): number {
