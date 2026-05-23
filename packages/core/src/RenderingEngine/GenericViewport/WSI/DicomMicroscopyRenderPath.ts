@@ -18,6 +18,7 @@ import type {
 
 const EVENT_POSTRENDER = 'postrender';
 
+/** @internal */
 export class DicomMicroscopyRenderPath
   implements RenderPath<WSIViewportRenderContext>
 {
@@ -152,6 +153,7 @@ export class DicomMicroscopyRenderPath
   }
 }
 
+/** @internal */
 export class DicomMicroscopyPath
   implements RenderPathDefinition<WSIViewportRenderContext>
 {

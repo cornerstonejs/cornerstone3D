@@ -15,6 +15,7 @@ export interface ECGChannelData {
   max: number;
 }
 
+/** @internal */
 export interface ECGWaveformPayload {
   channels: ECGChannelData[];
   numberOfChannels: number;
@@ -57,6 +58,7 @@ export interface ECGViewportInput {
 
 export type ECGGenericViewportInput = ECGViewportInput;
 
+/** @internal */
 export interface ChannelLayout {
   channel: ECGChannelData;
   itemHeight: number;
@@ -64,6 +66,7 @@ export interface ChannelLayout {
   baseline: number;
 }
 
+/** @internal */
 export interface RenderWindowMetrics {
   ecgWidth: number;
   ecgHeight: number;
@@ -73,6 +76,7 @@ export interface RenderWindowMetrics {
   yOffsetCanvas: number;
 }
 
+/** @internal */
 export interface ECGCanvasRenderContext extends BaseViewportRenderContext {
   type: 'ecg';
   element: HTMLDivElement;
@@ -80,6 +84,7 @@ export interface ECGCanvasRenderContext extends BaseViewportRenderContext {
   canvasContext: CanvasRenderingContext2D;
 }
 
+/** @internal */
 export type ECGCanvasRendering = MountedRendering<{
   renderMode: 'signal2d';
   canvas: HTMLCanvasElement;

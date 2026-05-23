@@ -18,6 +18,7 @@ import type {
 import { normalizeVideoPlaybackInfo } from '../../../utilities/VideoUtilities';
 import { resolveVideoCanvasMapping } from './videoViewportCamera';
 
+/** @internal */
 export class HtmlVideoRenderPath
   implements RenderPath<VideoElementRenderContext>
 {
@@ -198,6 +199,7 @@ export class HtmlVideoRenderPath
   }
 }
 
+/** @internal */
 export class HtmlVideoPath
   implements RenderPathDefinition<VideoElementRenderContext>
 {

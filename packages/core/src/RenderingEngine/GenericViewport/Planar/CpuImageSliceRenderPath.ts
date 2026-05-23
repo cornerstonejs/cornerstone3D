@@ -60,6 +60,7 @@ import {
   worldToCanvasPlanarRenderPathProjection,
 } from './planarRenderPathProjection';
 
+/** @internal */
 export class CpuImageSliceRenderPath
   implements RenderPath<PlanarCpuImageAdapterContext>
 {
@@ -348,6 +349,7 @@ export class CpuImageSliceRenderPath
   }
 }
 
+/** @internal */
 export class CpuImageSlicePath
   implements
     RenderPathDefinition<

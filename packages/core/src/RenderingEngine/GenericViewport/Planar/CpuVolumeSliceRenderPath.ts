@@ -38,6 +38,7 @@ import {
 
 const DEFERRED_VIEWPORT_RESAMPLE_DELAY_MS = 80;
 
+/** @internal */
 export class CpuVolumeSliceRenderPath
   implements RenderPath<PlanarCpuVolumeAdapterContext>
 {
@@ -624,6 +625,7 @@ function cancelDeferredViewportResample(
   rendering.deferredResampleTimeoutId = undefined;
 }
 
+/** @internal */
 export class CpuVolumeSlicePath
   implements
     RenderPathDefinition<

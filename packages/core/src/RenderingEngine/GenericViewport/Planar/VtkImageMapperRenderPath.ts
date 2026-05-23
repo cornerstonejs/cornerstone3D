@@ -48,6 +48,7 @@ import {
   resolvePlanarRenderPathProjection,
 } from './planarRenderPathProjection';
 
+/** @internal */
 export class VtkImageMapperRenderPath
   implements RenderPath<PlanarVtkImageAdapterContext>
 {
@@ -309,6 +310,7 @@ export class VtkImageMapperRenderPath
   }
 }
 
+/** @internal */
 export class VtkImageMapperPath
   implements
     RenderPathDefinition<

@@ -10,6 +10,7 @@ import type { ViewportCameraBase } from '../ViewportCameraTypes';
 import type { VideoImageMetadata } from '../../../utilities/VideoUtilities';
 import type { VOIRange } from '../../../types';
 
+/** @internal */
 export interface VideoStreamPayload {
   renderedUrl: string;
   fps: number;
@@ -50,11 +51,13 @@ export interface VideoViewportInput {
 
 export type VideoGenericViewportInput = VideoViewportInput;
 
+/** @internal */
 export interface VideoElementRenderContext extends BaseViewportRenderContext {
   type: 'video';
   element: HTMLDivElement;
 }
 
+/** @internal */
 export type VideoElementRendering = MountedRendering<{
   renderMode: 'video2d';
   element: HTMLVideoElement;

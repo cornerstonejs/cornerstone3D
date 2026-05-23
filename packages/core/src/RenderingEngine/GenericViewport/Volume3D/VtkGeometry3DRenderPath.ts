@@ -33,6 +33,7 @@ import type {
 } from './viewport3DTypes';
 import applyVolume3DCamera from './applyVolume3DCamera';
 
+/** @internal */
 export class VtkGeometry3DRenderPath
   implements RenderPath<Volume3DVtkGeometryAdapterContext>
 {
@@ -153,6 +154,7 @@ export class VtkGeometry3DRenderPath
   }
 }
 
+/** @internal */
 export class VtkGeometry3DPath
   implements
     RenderPathDefinition<

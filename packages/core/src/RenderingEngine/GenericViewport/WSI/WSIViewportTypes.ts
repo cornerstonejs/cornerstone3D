@@ -24,11 +24,13 @@ export interface WSIDataSetOptions {
   webClient: WSIClientLike;
 }
 
+/** @internal */
 export interface WSIRegisteredDataSet {
   imageIds: string[];
   options: WSIDataSetOptions;
 }
 
+/** @internal */
 export interface WSIPayload {
   imageIds: string[];
   client: WSIClientLike;
@@ -56,6 +58,7 @@ export interface WSIProperties {
 
 export type WSIDataPresentation = WSIPresentationProps & WSIProperties;
 
+/** @internal */
 export interface WSIDataProvider extends DataProvider {
   load(dataId: string): Promise<LoadedData<WSIPayload>>;
 }
@@ -64,17 +67,19 @@ export interface WSIViewportInput {
   id: string;
   element: HTMLDivElement;
   renderingEngineId: string;
-  dataProvider?: WSIDataProvider;
+  dataProvider?: DataProvider;
   renderPathResolver?: RenderPathResolver;
 }
 
 export type WSIGenericViewportInput = WSIViewportInput;
 
+/** @internal */
 export interface WSIViewportRenderContext extends BaseViewportRenderContext {
   type: 'wsi';
   element: HTMLDivElement;
 }
 
+/** @internal */
 export type WSIRendering = MountedRendering<{
   renderMode: 'wsi2d';
   microscopyElement: HTMLDivElement;

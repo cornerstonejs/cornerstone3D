@@ -128,8 +128,11 @@ export interface RenderPathResolver {
   ): RenderPathDefinition<TContext, BaseViewportRenderContext>;
 }
 
-export interface DataProvider {
-  load(dataId: DataId, options?: unknown): Promise<LoadedData>;
+export interface DataProvider<
+  TData extends object = object,
+  TOptions = unknown,
+> {
+  load(dataId: DataId, options?: TOptions): Promise<LoadedData<TData>>;
 }
 
 export interface ViewportDataBinding<TPresentation = unknown>

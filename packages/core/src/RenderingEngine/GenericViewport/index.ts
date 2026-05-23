@@ -3,7 +3,6 @@ export {
   DefaultRenderPathResolver,
 } from './DefaultRenderPathResolver';
 export { default as GenericViewport } from './GenericViewport';
-export { default as ResolvedViewportView } from './ResolvedViewportView';
 export type {
   CameraFrame,
   CameraScale,
@@ -41,103 +40,63 @@ export {
 } from './ViewportArchitectureTypes';
 export { default as ECGViewport } from './ECG';
 export {
-  CanvasECGPath,
-  CanvasECGRenderPath,
   createDefaultECGRenderPaths,
   createECGRenderPathResolver,
   DefaultECGDataProvider,
-  ECGResolvedView,
 } from './ECG';
 export type {
   ECGCamera,
-  ECGCanvasRenderContext,
-  ECGCanvasRendering,
   ECGDataPresentation,
   ECGChannelData,
   ECGPresentationProps,
+  ECGProperties,
   ECGViewportInput,
   ECGGenericViewportInput,
-  ECGWaveformPayload,
 } from './ECG';
 export { default as VideoViewport } from './Video';
 export {
   createDefaultVideoRenderPaths,
   createVideoRenderPathResolver,
   DefaultVideoDataProvider,
-  HtmlVideoPath,
-  HtmlVideoRenderPath,
-  VideoResolvedView,
 } from './Video';
 export type {
   VideoCamera,
   VideoDataPresentation,
-  VideoElementRenderContext,
-  VideoElementRendering,
   VideoPresentationProps,
-  VideoStreamPayload,
+  VideoProperties,
   VideoViewportInput,
   VideoGenericViewportInput,
 } from './Video';
 export { default as PlanarViewport } from './Planar';
 export {
-  BasePlanarResolvedView,
   createDefaultPlanarRenderPaths,
   createPlanarRenderPathResolver,
-  CpuImageSlicePath,
-  CpuImageSliceRenderPath,
   DefaultPlanarDataProvider,
-  PlanarStackResolvedView,
-  PlanarVolumeResolvedView,
-  VtkImageMapperPath,
-  VtkImageMapperRenderPath,
-  VtkVolumeSlicePath,
-  VtkVolumeSliceRenderPath,
 } from './Planar';
 export type {
   PlanarViewState,
   PlanarDataPresentation,
-  PlanarDataProvider,
-  PlanarDataLoadOptions,
   PlanarOrientation,
-  PlanarPayload,
   PlanarPresentationProps,
-  PlanarReferenceContext,
-  PlanarRegisteredDataSet,
+  PlanarProperties,
   PlanarRenderMode,
   PlanarSetDataOptions,
   PlanarViewportInput,
   PlanarViewportInputOptions,
-  PlanarViewportRenderContext,
 } from './Planar';
 export { default as VolumeViewport3DV2 } from './Volume3D';
 export {
   createDefaultVolume3DRenderPaths,
   createVolume3DRenderPathResolver,
   DefaultVolume3DDataProvider,
-  Volume3DResolvedView,
-  VtkGeometry3DPath,
-  VtkGeometry3DRenderPath,
-  VtkVolume3DPath,
-  VtkVolume3DRenderPath,
 } from './Volume3D';
 export type {
   Volume3DCamera,
   Volume3DDataPresentation,
-  Volume3DDataProvider,
-  Volume3DGeometryPayload,
-  Volume3DGeometryRendering,
   Volume3DPresentationProps,
   Volume3DProperties,
-  Volume3DRegisteredDataSet,
-  Volume3DRenderMode,
-  Volume3DRendering,
   Volume3DRequestedRenderMode,
   Volume3DSetDataOptions,
-  Volume3DViewportRenderContext,
-  Volume3DVolumePayload,
-  Volume3DVolumeRendering,
-  Volume3DVtkGeometryAdapterContext,
-  Volume3DVtkVolumeAdapterContext,
   VolumeViewport3DV2Input,
 } from './Volume3D';
 export { default as WSIViewport } from './WSI';
@@ -145,20 +104,14 @@ export {
   createDefaultWSIRenderPaths,
   createWSIRenderPathResolver,
   DefaultWSIDataProvider,
-  DicomMicroscopyPath,
-  DicomMicroscopyRenderPath,
-  WSIResolvedView,
 } from './WSI';
 export type {
   WSICamera,
   WSIDataPresentation,
-  WSIDataProvider,
   WSIDataSetOptions,
-  WSIPayload,
   WSIPresentationProps,
-  WSIRendering,
+  WSIProperties,
   WSIViewState,
   WSIViewportInput,
-  WSIViewportRenderContext,
   WSIGenericViewportInput,
 } from './WSI';

@@ -41,6 +41,7 @@ export type PlanarRenderMode =
   | 'webgl2d'
   | ActorRenderMode.VTK_IMAGE
   | ActorRenderMode.VTK_VOLUME_SLICE;
+/** @internal */
 export type PlanarEffectiveRenderMode =
   | ActorRenderMode.CPU_IMAGE
   | 'webgl2d'
@@ -54,6 +55,7 @@ export type PlanarOrientation =
   | OrientationAxis.SAGITTAL
   | OrientationVectors;
 
+/** @internal */
 export interface PlanarRegisteredDataSet {
   imageIds: string[];
   initialImageIdIndex?: number;
@@ -73,6 +75,7 @@ export interface PlanarSetDataOptions {
   role?: BindingRole;
 }
 
+/** @internal */
 export interface PlanarDataLoadOptions {
   acquisitionOrientation?: PlanarViewState['orientation'];
   orientation: PlanarOrientation;
@@ -80,6 +83,7 @@ export interface PlanarDataLoadOptions {
   volumeId: string;
 }
 
+/** @internal */
 export interface PlanarPayload {
   imageIds: string[];
   initialImageIdIndex: number;
@@ -139,6 +143,7 @@ export interface PlanarViewState {
   displayArea?: PlanarDisplayArea;
 }
 
+/** @internal */
 export interface PlanarResolvedICamera extends ICamera<PlanarScaleInput> {
   presentationScale?: Point2;
   scaleMode?: CameraScaleMode;
@@ -152,14 +157,17 @@ export interface PlanarProperties {
 
 export type PlanarDataPresentation = PlanarPresentationProps & PlanarProperties;
 
+/** @internal */
 export interface PlanarRenderPathRuntime {
   renderMode: PlanarEffectiveRenderMode;
 }
 
+/** @internal */
 export interface PlanarActiveViewRuntime {
   activeSourceICamera?: PlanarResolvedICamera;
 }
 
+/** @internal */
 export interface PlanarDataProvider extends DataProvider {
   load(
     dataId: string,
@@ -170,10 +178,11 @@ export interface PlanarDataProvider extends DataProvider {
 export interface PlanarViewportInput
   extends Omit<ViewportInput, 'defaultOptions'> {
   defaultOptions: PlanarViewportInputOptions;
-  dataProvider?: PlanarDataProvider;
+  dataProvider?: DataProvider;
   renderPathResolver?: RenderPathResolver;
 }
 
+/** @internal */
 export interface PlanarViewportRenderContext extends BaseViewportRenderContext {
   renderingEngineId: string;
   type: 'planar';
@@ -210,24 +219,28 @@ type PlanarContextBase = Pick<
   'viewportId' | 'renderingEngineId' | 'type'
 >;
 
+/** @internal */
 export type PlanarCpuImageAdapterContext = PlanarContextBase &
   Pick<
     PlanarViewportRenderContext,
     'viewport' | 'renderPath' | 'view' | 'display' | 'cpu'
   >;
 
+/** @internal */
 export type PlanarCpuVolumeAdapterContext = PlanarContextBase &
   Pick<
     PlanarViewportRenderContext,
     'viewport' | 'renderPath' | 'view' | 'display' | 'cpu'
   >;
 
+/** @internal */
 export type PlanarVtkImageAdapterContext = PlanarContextBase &
   Pick<
     PlanarViewportRenderContext,
     'viewport' | 'renderPath' | 'view' | 'display' | 'vtk'
   >;
 
+/** @internal */
 export type PlanarVtkVolumeAdapterContext = PlanarContextBase &
   Pick<
     PlanarViewportRenderContext,

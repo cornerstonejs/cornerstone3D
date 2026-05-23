@@ -41,6 +41,7 @@ import { applyPlanarVolumePresentation } from './planarVolumePresentation';
 
 const SLICE_OVERLAY_DEPTH_EPSILON = 1e-4;
 
+/** @internal */
 export class VtkVolumeSliceRenderPath
   implements RenderPath<PlanarVtkVolumeAdapterContext>
 {
@@ -306,6 +307,7 @@ export class VtkVolumeSliceRenderPath
   }
 }
 
+/** @internal */
 export class VtkVolumeSlicePath
   implements
     RenderPathDefinition<

@@ -26,6 +26,7 @@ import type {
 } from './ECGViewportTypes';
 import { resolveECGCanvasMapping } from './ecgViewportCamera';
 
+/** @internal */
 export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
   async addData(
     ctx: ECGCanvasRenderContext,
@@ -100,6 +101,7 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
   }
 }
 
+/** @internal */
 export class CanvasECGPath
   implements RenderPathDefinition<ECGCanvasRenderContext>
 {

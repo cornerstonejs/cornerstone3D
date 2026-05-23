@@ -25,9 +25,11 @@ import type {
 } from '../ViewportArchitectureTypes';
 import type { ViewportCameraBase } from '../ViewportCameraTypes';
 
+/** @internal */
 export type Volume3DRenderMode = 'vtkVolume3d' | 'vtkGeometry3d';
 export type Volume3DRequestedRenderMode = Volume3DRenderMode | 'auto';
 
+/** @internal */
 export interface Volume3DRegisteredDataSet {
   geometryId?: string;
   geometryLoadOptions?: GeometryOptions;
@@ -40,6 +42,7 @@ export interface Volume3DSetDataOptions {
   role?: BindingRole;
 }
 
+/** @internal */
 export interface Volume3DVolumePayload {
   imageIds: string[];
   imageVolume: IImageVolume;
@@ -47,12 +50,14 @@ export interface Volume3DVolumePayload {
   volumeId: string;
 }
 
+/** @internal */
 export interface Volume3DGeometryPayload {
   geometry: IGeometry;
   geometryId: string;
   renderMode: 'vtkGeometry3d';
 }
 
+/** @internal */
 export type Volume3DPayload = Volume3DVolumePayload | Volume3DGeometryPayload;
 
 export interface Volume3DPresentationProps extends BasePresentationProps {
@@ -71,6 +76,7 @@ export type Volume3DDataPresentation = Volume3DPresentationProps &
 
 export interface Volume3DCamera extends ICamera, ViewportCameraBase<Point3> {}
 
+/** @internal */
 export interface Volume3DDataProvider extends DataProvider {
   load(
     dataId: string,
@@ -81,10 +87,11 @@ export interface Volume3DDataProvider extends DataProvider {
 }
 
 export interface VolumeViewport3DV2Input extends ViewportInput {
-  dataProvider?: Volume3DDataProvider;
+  dataProvider?: DataProvider;
   renderPathResolver?: RenderPathResolver;
 }
 
+/** @internal */
 export interface Volume3DViewportRenderContext
   extends BaseViewportRenderContext {
   type: '3d';
@@ -106,9 +113,12 @@ type Volume3DContextBase = Pick<
   'display' | 'type' | 'viewport' | 'viewportId' | 'vtk'
 >;
 
+/** @internal */
 export type Volume3DVtkVolumeAdapterContext = Volume3DContextBase;
+/** @internal */
 export type Volume3DVtkGeometryAdapterContext = Volume3DContextBase;
 
+/** @internal */
 export type Volume3DVolumeRendering = MountedRendering<{
   renderMode: 'vtkVolume3d';
   actorEntryUID: string;
@@ -119,12 +129,14 @@ export type Volume3DVolumeRendering = MountedRendering<{
   removeStreamingSubscriptions?: () => void;
 }>;
 
+/** @internal */
 export type Volume3DGeometryRendering = MountedRendering<{
   renderMode: 'vtkGeometry3d';
   actors: ActorEntry[];
   frameOfReferenceUID?: string;
 }>;
 
+/** @internal */
 export type Volume3DRendering =
   | Volume3DVolumeRendering
   | Volume3DGeometryRendering;

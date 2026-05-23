@@ -1,24 +1,16 @@
 export { DefaultWSIDataProvider } from './DefaultWSIDataProvider';
 export {
-  DicomMicroscopyPath,
-  DicomMicroscopyRenderPath,
-} from './DicomMicroscopyRenderPath';
-export {
   createDefaultWSIRenderPaths,
   createWSIRenderPathResolver,
 } from './WSIRenderPathResolver';
-export { default as WSIResolvedView } from './WSIResolvedView';
 export { default } from './WSIViewport';
 export type {
   WSICamera,
   WSIDataPresentation,
-  WSIDataProvider,
   WSIDataSetOptions,
-  WSIPayload,
   WSIPresentationProps,
-  WSIRendering,
+  WSIProperties,
   WSIViewState,
   WSIViewportInput,
-  WSIViewportRenderContext,
   WSIGenericViewportInput,
 } from './WSIViewportTypes';

@@ -31,6 +31,7 @@ import applyVolume3DCamera from './applyVolume3DCamera';
 import { getInitialVolume3DCamera } from './vtkVolume3DInitialCamera';
 import setVtkCameraClippingRange from '../setVtkCameraClippingRange';
 
+/** @internal */
 export class VtkVolume3DRenderPath
   implements RenderPath<Volume3DVtkVolumeAdapterContext>
 {
@@ -180,6 +181,7 @@ export class VtkVolume3DRenderPath
   }
 }
 
+/** @internal */
 export class VtkVolume3DPath
   implements
     RenderPathDefinition<
