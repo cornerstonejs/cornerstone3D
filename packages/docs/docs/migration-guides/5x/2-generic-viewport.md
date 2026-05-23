@@ -54,6 +54,16 @@ internally:
 Direct Generic viewport types use the new APIs. Remapped legacy viewport types use
 compatibility adapters that preserve legacy methods such as `setStack()`,
 `setVolumes()`, `setVideo()`, `setEcg()`, and `setWSI()` where applicable.
+Keep those API families separate for a given viewport instance: use the legacy
+methods on compatibility viewports, or use Generic methods such as `setData()`,
+`setDataList()`, and `addData()` on direct Generic viewports. Mixing legacy data
+mounting with direct Generic data mounting on the same viewport can leave legacy
+presentation defaults and Generic data state out of sync.
+
+Code that branches on `viewport.type` should also account for the runtime type.
+Direct planar Generic viewports report `ViewportType.PLANAR_NEXT`; remapped stack
+and orthographic compatibility adapters still expose their requested legacy type
+while delegating to the planar Generic implementation internally.
 
 ## Removed Rendering Engine Accessors
 
@@ -273,6 +283,12 @@ viewport.setCamera({ position });
 Use `focalPoint`, `parallelScale`, `setViewState()`, `setViewPresentation()`,
 or view-reference APIs instead.
 
+Lower-level planar camera helpers are available for custom synchronizers and
+tooling that need to derive renderer cameras without going through a viewport:
+`resolvePlanarICamera()`, `derivePlanarPresentation()`, and
+`applyPlanarICameraToRenderer()`. Treat these as helper APIs around the planar
+camera model rather than as the primary viewport control surface.
+
 ## Planar Camera State Differences
 
 Planar Generic viewports store zoom-to-point anchors as semantic view state.
@@ -282,6 +298,10 @@ invertible across slice changes: cine or synchronization code that stores a
 camera on slice N, replays it on slice M, and later returns to slice N can see
 anchor drift. Use view references for spatial slice synchronization, and treat
 view presentation as display-only state.
+
+When both `viewState.displayArea.scaleMode` and `viewState.scaleMode` are set,
+the display-area scale mode wins. Set only one of those fields unless the
+display area is intentionally overriding the broader view-state scaling mode.
 
 `PlanarViewport.resetCamera({ resetPan, resetZoom })` resets pan, zoom, and
 rotation presentation state. It does not reset the current slice, orientation,

@@ -4,6 +4,11 @@ export {
   createPlanarRenderPathResolver,
 } from './PlanarRenderPathResolver';
 export {
+  applyPlanarICameraToRenderer,
+  derivePlanarPresentation,
+  resolvePlanarICamera,
+} from './planarRenderCamera';
+export {
   BasePlanarResolvedView,
   PlanarStackResolvedView,
   PlanarVolumeResolvedView,
@@ -25,4 +30,5 @@ export type {
   PlanarViewPresentation,
   PlanarViewPresentationSelector,
   PlanarSliceState,
+  PlanarResolvedICamera,
 } from './PlanarViewportTypes';

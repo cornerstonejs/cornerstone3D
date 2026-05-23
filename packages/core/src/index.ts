@@ -38,9 +38,12 @@ import VideoGenericViewport, {
   DefaultVideoDataProvider,
 } from './RenderingEngine/GenericViewport/Video';
 import PlanarViewport, {
+  applyPlanarICameraToRenderer,
   createDefaultPlanarRenderPaths,
   createPlanarRenderPathResolver,
+  derivePlanarPresentation,
   DefaultPlanarDataProvider,
+  resolvePlanarICamera,
 } from './RenderingEngine/GenericViewport/Planar';
 import VolumeViewport3DV2, {
   createDefaultVolume3DRenderPaths,
@@ -53,6 +56,7 @@ import WSIGenericViewport, {
   DefaultWSIDataProvider,
 } from './RenderingEngine/GenericViewport/WSI';
 export type { ViewportDataReference } from './RenderingEngine/GenericViewport';
+export type { PlanarResolvedICamera } from './RenderingEngine/GenericViewport/Planar';
 import Viewport from './RenderingEngine/Viewport';
 import eventTarget from './eventTarget';
 import { version } from './version';
@@ -144,9 +148,12 @@ const renderingEngineExportsV2 = {
   createVideoRenderPathResolver,
   DefaultVideoDataProvider,
   PlanarViewport,
+  applyPlanarICameraToRenderer,
   createDefaultPlanarRenderPaths,
   createPlanarRenderPathResolver,
+  derivePlanarPresentation,
   DefaultPlanarDataProvider,
+  resolvePlanarICamera,
   VolumeViewport3DV2,
   createDefaultVolume3DRenderPaths,
   createVolume3DRenderPathResolver,
@@ -242,9 +249,12 @@ export {
   createVideoRenderPathResolver,
   DefaultVideoDataProvider,
   PlanarViewport,
+  applyPlanarICameraToRenderer,
   createDefaultPlanarRenderPaths,
   createPlanarRenderPathResolver,
+  derivePlanarPresentation,
   DefaultPlanarDataProvider,
+  resolvePlanarICamera,
   VolumeViewport3DV2,
   createDefaultVolume3DRenderPaths,
   createVolume3DRenderPathResolver,

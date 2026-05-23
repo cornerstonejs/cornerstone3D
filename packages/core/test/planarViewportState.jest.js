@@ -1,6 +1,8 @@
 import { Events } from '../src/enums';
 import PlanarViewport from '../src/RenderingEngine/GenericViewport/Planar/PlanarViewport';
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
+import genericViewportDataSetMetadataProvider from '../src/utilities/genericViewportDataSetMetadataProvider';
+import imageIdToURI from '../src/utilities/imageIdToURI';
 
 let viewportCounter = 0;
 
@@ -60,6 +62,7 @@ describe('PlanarViewport view state', () => {
     }
 
     created = [];
+    genericViewportDataSetMetadataProvider.clear();
     jest.clearAllMocks();
   });
 
@@ -168,5 +171,101 @@ describe('PlanarViewport view state', () => {
     expect(pan[0]).toBeCloseTo(60, 5);
     expect(pan[1]).toBeCloseTo(0, 5);
     expect(viewport.getViewState().anchorCanvas[0]).toBeCloseTo(0.8, 5);
+  });
+
+  it('rejects invalid custom orientation vectors', () => {
+    const { viewport } = track(createViewport());
+
+    expect(() =>
+      viewport.setViewState({
+        orientation: {
+          viewPlaneNormal: [0, 0, 0],
+        },
+      })
+    ).toThrow(/finite non-zero Point3/);
+
+    expect(() =>
+      viewport.setViewState({
+        orientation: {
+          viewPlaneNormal: [1, 0, 0],
+          viewUp: [1, 0, 0],
+        },
+      })
+    ).toThrow(/must be orthogonal/);
+  });
+
+  it('scopes renderImageObject metadata to the viewport instance', async () => {
+    const first = track(createViewport());
+    const second = track(createViewport());
+    const imageId = 'same-image-id';
+    const firstImage = { imageId };
+    const secondImage = { imageId };
+    const firstDataId = `image-object:${first.viewport.id}:${imageIdToURI(
+      imageId
+    )}`;
+    const secondDataId = `image-object:${second.viewport.id}:${imageIdToURI(
+      imageId
+    )}`;
+
+    first.viewport.setData = jest.fn(() => Promise.resolve());
+    second.viewport.setData = jest.fn(() => Promise.resolve());
+
+    await first.viewport.renderImageObject(firstImage);
+    await second.viewport.renderImageObject(secondImage);
+
+    expect(first.viewport.setData).toHaveBeenCalledWith(firstDataId, {
+      orientation: expect.anything(),
+    });
+    expect(second.viewport.setData).toHaveBeenCalledWith(secondDataId, {
+      orientation: expect.anything(),
+    });
+    expect(
+      genericViewportDataSetMetadataProvider.get(
+        genericViewportDataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
+        firstDataId
+      ).image
+    ).toBe(firstImage);
+    expect(
+      genericViewportDataSetMetadataProvider.get(
+        genericViewportDataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
+        secondDataId
+      ).image
+    ).toBe(secondImage);
+    expect(
+      genericViewportDataSetMetadataProvider.get(
+        genericViewportDataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
+        imageId
+      )
+    ).toBeUndefined();
+  });
+
+  it('removes stale renderImageObject metadata when replacing the image', async () => {
+    const { viewport } = track(createViewport());
+    const firstImage = { imageId: 'first-image-id' };
+    const secondImage = { imageId: 'second-image-id' };
+    const firstDataId = `image-object:${viewport.id}:${imageIdToURI(
+      firstImage.imageId
+    )}`;
+    const secondDataId = `image-object:${viewport.id}:${imageIdToURI(
+      secondImage.imageId
+    )}`;
+
+    viewport.setData = jest.fn(() => Promise.resolve());
+
+    await viewport.renderImageObject(firstImage);
+    await viewport.renderImageObject(secondImage);
+
+    expect(
+      genericViewportDataSetMetadataProvider.get(
+        genericViewportDataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
+        firstDataId
+      )
+    ).toBeUndefined();
+    expect(
+      genericViewportDataSetMetadataProvider.get(
+        genericViewportDataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
+        secondDataId
+      ).image
+    ).toBe(secondImage);
   });
 });

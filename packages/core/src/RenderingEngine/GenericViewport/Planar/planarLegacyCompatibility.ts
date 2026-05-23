@@ -2,6 +2,7 @@ import type BlendModes from '../../../enums/BlendModes';
 import type {
   ColormapPublic,
   OrientationVectors,
+  Point3,
   StackViewportProperties,
   VolumeViewportProperties,
 } from '../../../types';
@@ -9,6 +10,9 @@ import type {
   PlanarDataPresentation,
   PlanarOrientation,
 } from './PlanarViewportTypes';
+
+const ORIENTATION_VECTOR_EPSILON = 1e-6;
+const ORIENTATION_DOT_EPSILON = 1e-3;
 
 export type PlanarLegacyViewportProperties = Partial<
   Omit<StackViewportProperties & VolumeViewportProperties, 'orientation'> &
@@ -76,6 +80,27 @@ export function isPlanarOrientationVectors(
   );
 }
 
+function normalizeOrientationVector(
+  vector: Point3 | undefined,
+  fieldName: string
+): Point3 {
+  const [x, y, z] = vector || [];
+  const length = Math.hypot(x, y, z);
+
+  if (
+    !Number.isFinite(x) ||
+    !Number.isFinite(y) ||
+    !Number.isFinite(z) ||
+    length < ORIENTATION_VECTOR_EPSILON
+  ) {
+    throw new Error(
+      `[PlanarViewport] Invalid orientation vector ${fieldName}. Expected a finite non-zero Point3.`
+    );
+  }
+
+  return [x / length, y / length, z / length];
+}
+
 export function clonePlanarOrientation(
   orientation: PlanarOrientation | undefined
 ): PlanarOrientation | undefined {
@@ -84,11 +109,25 @@ export function clonePlanarOrientation(
   }
 
   const clone: OrientationVectors = {
-    viewPlaneNormal: [...orientation.viewPlaneNormal],
+    viewPlaneNormal: normalizeOrientationVector(
+      orientation.viewPlaneNormal,
+      'viewPlaneNormal'
+    ),
   };
 
   if (orientation.viewUp) {
-    clone.viewUp = [...orientation.viewUp];
+    clone.viewUp = normalizeOrientationVector(orientation.viewUp, 'viewUp');
+
+    const dot =
+      clone.viewPlaneNormal[0] * clone.viewUp[0] +
+      clone.viewPlaneNormal[1] * clone.viewUp[1] +
+      clone.viewPlaneNormal[2] * clone.viewUp[2];
+
+    if (Math.abs(dot) > ORIENTATION_DOT_EPSILON) {
+      throw new Error(
+        '[PlanarViewport] Invalid orientation vectors. viewPlaneNormal and viewUp must be orthogonal.'
+      );
+    }
   }
 
   return clone;

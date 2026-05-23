@@ -100,6 +100,18 @@ type PlanarSetOrientationInput =
   | OrientationAxis.SAGITTAL_REFORMAT
   | OrientationVectors;
 
+type ResolvedPlanarViewportView = NonNullable<
+  ReturnType<typeof resolvePlanarViewportView>
+>;
+
+type ResolvedViewCache = {
+  data?: LoadedData<PlanarPayload>;
+  frameOfReferenceUID: string;
+  rendering?: PlanarRendering;
+  resolvedView: ResolvedPlanarViewportView;
+  viewState: PlanarViewState;
+};
+
 class PlanarViewport extends GenericViewport<
   PlanarViewState,
   PlanarDataPresentation,
@@ -120,6 +132,8 @@ class PlanarViewport extends GenericViewport<
   private readonly mountedData: PlanarMountedData;
   private readonly viewReferences: PlanarViewReferenceController;
   private cpuCanvas?: HTMLCanvasElement;
+  private renderImageObjectDataId?: string;
+  private resolvedViewCache?: ResolvedViewCache;
   private setDataRequestId = 0;
 
   // ── Static ───────────────────────────────────────────────────────────
@@ -138,9 +152,6 @@ class PlanarViewport extends GenericViewport<
     this.sHeight = args.sHeight;
     this.defaultOptions = cloneViewportOptions(args.defaultOptions || {});
     this.options = cloneViewportOptions(this.defaultOptions);
-    this.element.style.position = this.element.style.position || 'relative';
-    this.element.style.overflow = 'hidden';
-    this.element.style.background = this.element.style.background || '#000';
     this.canvasToWorld = this.canvasToWorld.bind(this);
     this.worldToCanvas = this.worldToCanvas.bind(this);
     this.dataProvider = args.dataProvider || new DefaultPlanarDataProvider();
@@ -179,6 +190,10 @@ class PlanarViewport extends GenericViewport<
         '[PlanarViewport] No renderer available. Ensure WebGL is supported and the rendering engine has been properly initialized.'
       );
     }
+
+    this.element.style.position = this.element.style.position || 'relative';
+    this.element.style.overflow = 'hidden';
+    this.element.style.background = this.element.style.background || '#000';
 
     const vtkCanvas = args.canvas;
     const viewportElement = this.element.querySelector(
@@ -304,6 +319,7 @@ class PlanarViewport extends GenericViewport<
     options: PlanarSetDataOptions = {}
   ): Promise<void> {
     await this.addDataInternal(dataId, options);
+    this.clearResolvedViewCache();
   }
 
   private async addDataInternal(
@@ -342,6 +358,7 @@ class PlanarViewport extends GenericViewport<
       return;
     }
 
+    this.clearResolvedViewCache();
     this.setDefaultDataPresentation(dataId, {
       visible: true,
     });
@@ -357,6 +374,7 @@ class PlanarViewport extends GenericViewport<
     const requestId = ++this.setDataRequestId;
     const isStale = () => requestId !== this.setDataRequestId;
 
+    this.clearResolvedViewCache();
     this.removeAllData();
     await this.addDataInternal(
       dataId,
@@ -373,6 +391,7 @@ class PlanarViewport extends GenericViewport<
    * removed dataset was active.
    */
   removeData(dataId: string): void {
+    this.clearResolvedViewCache();
     super.removeData(dataId);
     this.mountedData.handleRemovedData(dataId);
 
@@ -403,14 +422,26 @@ class PlanarViewport extends GenericViewport<
    * Renders a single image object by setting it as a one-image stack.
    */
   renderImageObject(image: IImage): Promise<void> {
-    genericViewportDataSetMetadataProvider.add(image.imageId, {
+    const dataId = `image-object:${this.id}:${imageIdToURI(image.imageId)}`;
+
+    if (
+      this.renderImageObjectDataId &&
+      this.renderImageObjectDataId !== dataId
+    ) {
+      genericViewportDataSetMetadataProvider.remove(
+        this.renderImageObjectDataId
+      );
+    }
+
+    this.renderImageObjectDataId = dataId;
+    genericViewportDataSetMetadataProvider.add(dataId, {
       image,
       imageIds: [image.imageId],
       initialImageIdIndex: 0,
       kind: 'planar',
     });
 
-    return this.setData(image.imageId, {
+    return this.setData(dataId, {
       orientation: this.resolveRequestedOrientation(),
     });
   }
@@ -581,8 +612,25 @@ class PlanarViewport extends GenericViewport<
       ...viewStatePatch,
     };
 
+    this.clearResolvedViewCache();
     this.viewState = this.normalizeViewState(next);
     this.modified(previousCamera);
+  }
+
+  setDataPresentation(
+    dataId: string,
+    props: Partial<PlanarDataPresentation>
+  ): void {
+    this.clearResolvedViewCache();
+    super.setDataPresentation(dataId, props);
+  }
+
+  protected override setDataPresentationState(
+    dataId: string,
+    props: PlanarDataPresentation
+  ): void {
+    this.clearResolvedViewCache();
+    super.setDataPresentationState(dataId, props);
   }
 
   /**
@@ -802,7 +850,7 @@ class PlanarViewport extends GenericViewport<
       sliceIndex?: number;
     } = {}
   ) {
-    return this.resolveViewState(this.viewState, args);
+    return this.resolveCachedViewState(this.viewState, args);
   }
 
   /**
@@ -1238,6 +1286,7 @@ class PlanarViewport extends GenericViewport<
       return;
     }
 
+    this.clearResolvedViewCache();
     const { clientHeight, clientWidth } = this.element;
     const { canvas } = this.renderContext.cpu;
     const devicePixelRatio = window.devicePixelRatio || 1;
@@ -1272,6 +1321,14 @@ class PlanarViewport extends GenericViewport<
   // ====================================================================
 
   protected override onDestroy(): void {
+    this.clearResolvedViewCache();
+    if (this.renderImageObjectDataId) {
+      genericViewportDataSetMetadataProvider.remove(
+        this.renderImageObjectDataId
+      );
+      this.renderImageObjectDataId = undefined;
+    }
+
     this.cpuCanvas?.remove();
     this.cpuCanvas = undefined;
     this.mountedData.clearActiveDataId();
@@ -1533,6 +1590,7 @@ class PlanarViewport extends GenericViewport<
           imageIdIndex: planarData.initialImageIdIndex,
         };
 
+    this.clearResolvedViewCache();
     this.viewState = this.normalizeViewState({
       ...this.viewState,
       slice,
@@ -1706,15 +1764,68 @@ class PlanarViewport extends GenericViewport<
       sliceIndex?: number;
     } = {}
   ) {
+    const data = this.getPlanarData();
+    const rendering = this.getCurrentPlanarRendering();
     return resolvePlanarViewportView({
       viewState,
-      data: this.getPlanarData(),
+      data,
       frameOfReferenceUID:
         args.frameOfReferenceUID ?? this.resolveFrameOfReferenceUID(),
       renderContext: this.renderContext,
-      rendering: this.getCurrentPlanarRendering(),
+      rendering,
       sliceIndex: args.sliceIndex,
     });
+  }
+
+  private resolveCachedViewState(
+    viewState: PlanarViewState,
+    args: {
+      frameOfReferenceUID?: string;
+      sliceIndex?: number;
+    } = {}
+  ) {
+    if (args.frameOfReferenceUID || typeof args.sliceIndex === 'number') {
+      return this.resolveViewState(viewState, args);
+    }
+
+    const data = this.getPlanarData();
+    const rendering = this.getCurrentPlanarRendering();
+    const frameOfReferenceUID = this.resolveFrameOfReferenceUID();
+    const cache = this.resolvedViewCache;
+
+    if (
+      cache &&
+      cache.viewState === viewState &&
+      cache.data === data &&
+      cache.rendering === rendering &&
+      cache.frameOfReferenceUID === frameOfReferenceUID
+    ) {
+      return cache.resolvedView;
+    }
+
+    const resolvedView = resolvePlanarViewportView({
+      viewState,
+      data,
+      frameOfReferenceUID,
+      renderContext: this.renderContext,
+      rendering,
+    });
+
+    if (resolvedView) {
+      this.resolvedViewCache = {
+        data,
+        frameOfReferenceUID,
+        rendering,
+        resolvedView,
+        viewState,
+      };
+    }
+
+    return resolvedView;
+  }
+
+  private clearResolvedViewCache(): void {
+    this.resolvedViewCache = undefined;
   }
 
   private resolveFrameOfReferenceUID(): string {
@@ -1782,6 +1893,7 @@ class PlanarViewport extends GenericViewport<
   private applyResolvedViewState(nextCamera: PlanarViewState): void {
     const previousCamera = this.getResolvedCameraForEvent();
 
+    this.clearResolvedViewCache();
     this.viewState = this.normalizeViewState(nextCamera);
     this.modified(previousCamera);
   }
