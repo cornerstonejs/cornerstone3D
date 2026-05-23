@@ -583,6 +583,28 @@ describe('PlanarCPUVolumeSampler resampling decisions', () => {
     expect(getAtIJK).not.toHaveBeenCalled();
   });
 
+  it('reuses released slice arrays for matching CPU volume sample shapes', () => {
+    const sampler = new PlanarCPUVolumeSampler();
+    const volume = createTestVolume();
+    const sampleArgs = {
+      volume,
+      width: 2,
+      height: 2,
+      camera: createCoronalCamera([1.5, 1.5, 1.5]),
+      dataPresentation: {
+        interpolationType: InterpolationType.LINEAR,
+      },
+    };
+    const firstSampledSliceState = sampler.sampleSliceImage(sampleArgs);
+    const firstScalarData = firstSampledSliceState.image.getPixelData();
+
+    sampler.releaseSampledSliceState(firstSampledSliceState);
+
+    const secondSampledSliceState = sampler.sampleSliceImage(sampleArgs);
+
+    expect(secondSampledSliceState.image.getPixelData()).toBe(firstScalarData);
+  });
+
   it('reuses fixed-axis viewport geometry across normal-only slice changes', () => {
     const sampler = new PlanarCPUVolumeSampler();
     const { volume } = createScalarDataTestVolume();

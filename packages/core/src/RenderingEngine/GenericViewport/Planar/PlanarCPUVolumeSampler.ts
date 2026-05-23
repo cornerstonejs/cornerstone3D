@@ -27,6 +27,8 @@ import {
 } from './planarCPUVolumeSamplingUtils';
 
 type SliceArray = PixelDataTypedArray;
+type SliceArrayConstructor = new (length: number) => SliceArray;
+type NamedSliceArrayConstructor = SliceArrayConstructor & { name?: string };
 type ColorSample = number[];
 type SampledVoxelValue = number | ColorSample;
 
@@ -59,6 +61,8 @@ type OrthogonalSliceSampleResult = {
   numberOfComponents: number;
   translationReferenceFocalPoint: Point3;
 };
+
+const MAX_POOLED_SLICE_ARRAYS_PER_SHAPE = 1;
 
 function dot(a: Point3, b: Point3): number {
   return vec3.dot(a as unknown as vec3, b as unknown as vec3);
@@ -131,12 +135,33 @@ export default class PlanarCPUVolumeSampler {
     NonNullable<IImageVolume['voxelManager']>,
     { min: number; max: number }
   >();
+  private readonly sliceArrayPool = new Map<string, SliceArray[]>();
 
   public clearCachedScalarRange(
     voxelManager: NonNullable<IImageVolume['voxelManager']>
   ): void {
     this.scalarRangeCache.delete(voxelManager);
     this.scalarViewportSampler.clearCachedVoxelManager(voxelManager);
+  }
+
+  public releaseSampledSliceState(
+    sampledSliceState?: PlanarCPUSampledSliceState
+  ): void {
+    const scalarData = sampledSliceState?.image.getPixelData?.();
+
+    if (
+      !scalarData ||
+      !ArrayBuffer.isView(scalarData) ||
+      scalarData instanceof DataView
+    ) {
+      return;
+    }
+
+    this.releaseSliceArray(scalarData as SliceArray);
+  }
+
+  public clearSliceArrayPool(): void {
+    this.sliceArrayPool.clear();
   }
 
   private getScalarDataRange(
@@ -547,7 +572,8 @@ export default class PlanarCPUVolumeSampler {
       numberOfComponents,
       preserveFloatScalarSamples
     );
-    const sliceScalarData = new SliceArrayConstructor(
+    const sliceScalarData = this.acquireSliceArray(
+      SliceArrayConstructor,
       width * height * numberOfComponents
     );
     const rowStartIndex = [
@@ -752,7 +778,8 @@ export default class PlanarCPUVolumeSampler {
       numberOfComponents,
       preserveFloatScalarSamples
     );
-    const scalarData = new SliceArrayConstructor(
+    const scalarData = this.acquireSliceArray(
+      SliceArrayConstructor,
       outputWidth * outputHeight * numberOfComponents
     );
     let min = Infinity;
@@ -1052,7 +1079,7 @@ export default class PlanarCPUVolumeSampler {
     maxPixelValue: number,
     numberOfComponents: number,
     preserveFloatScalarSamples = false
-  ): new (length: number) => SliceArray {
+  ): SliceArrayConstructor {
     if (numberOfComponents > 1) {
       return volume.voxelManager?.getConstructor() || Uint8Array;
     }
@@ -1070,6 +1097,51 @@ export default class PlanarCPUVolumeSampler {
     }
 
     return Int32Array;
+  }
+
+  private acquireSliceArray(
+    SliceArrayConstructor: SliceArrayConstructor,
+    length: number
+  ): SliceArray {
+    const key = this.getSliceArrayPoolKey(SliceArrayConstructor, length);
+    const bucket = this.sliceArrayPool.get(key);
+    const reusable = bucket?.pop();
+
+    if (reusable) {
+      return reusable;
+    }
+
+    return new SliceArrayConstructor(length);
+  }
+
+  private releaseSliceArray(scalarData: SliceArray): void {
+    const SliceArrayConstructor =
+      scalarData.constructor as SliceArrayConstructor;
+    const key = this.getSliceArrayPoolKey(
+      SliceArrayConstructor,
+      scalarData.length
+    );
+    let bucket = this.sliceArrayPool.get(key);
+
+    if (!bucket) {
+      bucket = [];
+      this.sliceArrayPool.set(key, bucket);
+    }
+
+    if (bucket.length < MAX_POOLED_SLICE_ARRAYS_PER_SHAPE) {
+      bucket.push(scalarData);
+    }
+  }
+
+  private getSliceArrayPoolKey(
+    SliceArrayConstructor: SliceArrayConstructor,
+    length: number
+  ): string {
+    const constructorName =
+      (SliceArrayConstructor as NamedSliceArrayConstructor).name ||
+      'SliceArray';
+
+    return `${constructorName}:${length}`;
   }
 
   private createSliceImage(

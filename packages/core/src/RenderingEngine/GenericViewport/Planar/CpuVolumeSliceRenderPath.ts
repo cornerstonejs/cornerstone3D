@@ -147,7 +147,7 @@ export class CpuVolumeSliceRenderPath
             }
             cancelDeferredViewportResample(rendering);
             rendering.pendingVolumeLoadCallback = false;
-            rendering.sampledSliceState = undefined;
+            this.releaseSampledSliceState(rendering);
             rendering.renderingInvalidated = true;
 
             if (eventType === Events.IMAGE_VOLUME_MODIFIED) {
@@ -184,7 +184,7 @@ export class CpuVolumeSliceRenderPath
                 if (voxelManager) {
                   this.sampler.clearCachedScalarRange(voxelManager);
                 }
-                rendering.sampledSliceState = undefined;
+                this.releaseSampledSliceState(rendering);
                 rendering.renderingInvalidated = true;
               }
 
@@ -196,7 +196,7 @@ export class CpuVolumeSliceRenderPath
         return () => {
           isActive = false;
           rendering.pendingVolumeLoadCallback = false;
-          rendering.sampledSliceState = undefined;
+          this.releaseSampledSliceState(rendering);
 
           if (pendingAnimationFrameId !== undefined) {
             window.cancelAnimationFrame(pendingAnimationFrameId);
@@ -415,6 +415,7 @@ export class CpuVolumeSliceRenderPath
     let sampledSliceState = runtime.sampledSliceState;
 
     if (shouldResample) {
+      this.releaseSampledSliceState(runtime);
       runtime.forceHighQualityResample = false;
       sampledSliceState = runtime.sampledSliceState =
         this.sampler.sampleSliceImage({
@@ -493,6 +494,8 @@ export class CpuVolumeSliceRenderPath
 
     cancelDeferredViewportResample(rendering);
     removeStreamingSubscriptions?.();
+    this.releaseSampledSliceState(rendering);
+    this.sampler.clearSliceArrayPool?.();
   }
 
   private syncRenderCamera(
@@ -528,6 +531,11 @@ export class CpuVolumeSliceRenderPath
         imageIdIndex: rendering.currentImageIdIndex,
       });
     }
+  }
+
+  private releaseSampledSliceState(rendering: PlanarCpuVolumeRendering): void {
+    this.sampler.releaseSampledSliceState?.(rendering.sampledSliceState);
+    rendering.sampledSliceState = undefined;
   }
 }
 
