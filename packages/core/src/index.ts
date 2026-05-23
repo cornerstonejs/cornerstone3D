@@ -26,22 +26,22 @@ import {
   viewportHasPan,
   viewportHasZoom,
   ResolvedViewportView,
-  ViewportNext,
-} from './RenderingEngine/ViewportNext';
-import ECGViewportNext, {
+  GenericViewport,
+} from './RenderingEngine/GenericViewport';
+import ECGGenericViewport, {
   CanvasECGPath,
   createDefaultECGRenderPaths,
   createECGRenderPathResolver,
   DefaultECGDataProvider,
   ECGResolvedView,
-} from './RenderingEngine/ViewportNext/ECG';
-import VideoViewportNext, {
+} from './RenderingEngine/GenericViewport/ECG';
+import VideoGenericViewport, {
   createDefaultVideoRenderPaths,
   createVideoRenderPathResolver,
   DefaultVideoDataProvider,
   HtmlVideoPath,
   VideoResolvedView,
-} from './RenderingEngine/ViewportNext/Video';
+} from './RenderingEngine/GenericViewport/Video';
 import PlanarViewport, {
   BasePlanarResolvedView,
   createDefaultPlanarRenderPaths,
@@ -52,7 +52,7 @@ import PlanarViewport, {
   PlanarVolumeResolvedView,
   VtkImageMapperPath,
   VtkVolumeSlicePath,
-} from './RenderingEngine/ViewportNext/Planar';
+} from './RenderingEngine/GenericViewport/Planar';
 import VolumeViewport3DV2, {
   createDefaultVolume3DRenderPaths,
   createVolume3DRenderPathResolver,
@@ -60,15 +60,15 @@ import VolumeViewport3DV2, {
   Volume3DResolvedView,
   VtkGeometry3DPath,
   VtkVolume3DPath,
-} from './RenderingEngine/ViewportNext/Volume3D';
-import WSIViewportNext, {
+} from './RenderingEngine/GenericViewport/Volume3D';
+import WSIGenericViewport, {
   createDefaultWSIRenderPaths,
   createWSIRenderPathResolver,
   DefaultWSIDataProvider,
   DicomMicroscopyPath,
   WSIResolvedView,
-} from './RenderingEngine/ViewportNext/WSI';
-export type { ViewportDataReference } from './RenderingEngine/ViewportNext';
+} from './RenderingEngine/GenericViewport/WSI';
+export type { ViewportDataReference } from './RenderingEngine/GenericViewport';
 import Viewport from './RenderingEngine/Viewport';
 import eventTarget from './eventTarget';
 import { version } from './version';
@@ -96,7 +96,7 @@ import * as metaData from './metaData';
 import {
   init,
   getShouldUseCPURendering,
-  getUseViewportNext,
+  getUseGenericViewport,
   isCornerstoneInitialized,
   setUseCPURendering,
   setPreferSizeOverAccuracy,
@@ -148,17 +148,17 @@ import {
 export * from './loaders/decimatedVolumeLoader';
 
 const renderingEngineExportsV2 = {
-  ViewportNext,
+  GenericViewport,
   ResolvedViewportView,
   DefaultRenderPathResolver,
   defaultRenderPathResolver,
-  ECGViewportNext,
+  ECGGenericViewport,
   CanvasECGPath,
   createDefaultECGRenderPaths,
   createECGRenderPathResolver,
   DefaultECGDataProvider,
   ECGResolvedView,
-  VideoViewportNext,
+  VideoGenericViewport,
   createDefaultVideoRenderPaths,
   createVideoRenderPathResolver,
   HtmlVideoPath,
@@ -182,7 +182,7 @@ const renderingEngineExportsV2 = {
   VtkGeometry3DPath,
   DefaultVolume3DDataProvider,
   Volume3DResolvedView,
-  WSIViewportNext,
+  WSIGenericViewport,
   createDefaultWSIRenderPaths,
   createWSIRenderPathResolver,
   DicomMicroscopyPath,
@@ -226,9 +226,9 @@ export {
   VideoViewport,
   WSIViewport,
   ECGViewport,
-  ECGViewportNext,
+  ECGGenericViewport,
   ECGResolvedView,
-  ViewportNext,
+  GenericViewport,
   ResolvedViewportView,
   viewportHasCanvasWorldTransform,
   viewportHasFrameOfReferenceUID,
@@ -276,7 +276,7 @@ export {
   createDefaultECGRenderPaths,
   createECGRenderPathResolver,
   DefaultECGDataProvider,
-  VideoViewportNext,
+  VideoGenericViewport,
   createDefaultVideoRenderPaths,
   createVideoRenderPathResolver,
   HtmlVideoPath,
@@ -297,7 +297,7 @@ export {
   VtkVolume3DPath,
   VtkGeometry3DPath,
   DefaultVolume3DDataProvider,
-  WSIViewportNext,
+  WSIGenericViewport,
   createDefaultWSIRenderPaths,
   createWSIRenderPathResolver,
   DicomMicroscopyPath,
@@ -312,8 +312,8 @@ export {
   setUseCPURendering,
   setPreferSizeOverAccuracy,
   resetUseCPURendering,
-  // ViewportNext
-  getUseViewportNext,
+  // GenericViewport
+  getUseGenericViewport,
   // Geometry Loader
   geometryLoader,
   cornerstoneMeshLoader,

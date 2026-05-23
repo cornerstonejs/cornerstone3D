@@ -71,7 +71,7 @@ export interface ActorEntry {
   uid: string;
   /** actual actor object */
   actor: Actor | VolumeActor | ImageActor | ICanvasActor;
-  /** VTK actor/mapper proxy used by compatibility layers such as Viewport Next */
+  /** VTK actor/mapper proxy used by compatibility layers such as Generic Viewport */
   actorMapper?: ActorMapperProxy;
   /** the id of the referenced object (e.g., volume) from which this actor is derived or created*/
   referencedId?: string;

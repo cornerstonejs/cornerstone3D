@@ -157,7 +157,7 @@ import type GeometryLoaderFn from './GeometryLoaderFn';
 
 import type { RenderingEngineModeType } from './RenderingEngineMode';
 import type { VtkOffscreenMultiRenderWindow } from './VtkOffscreenMultiRenderWindow';
-import type { ViewportDataReference } from '../RenderingEngine/ViewportNext';
+import type { ViewportDataReference } from '../RenderingEngine/GenericViewport';
 
 export type * from './MetadataModuleTypes';
 export type * from './InstanceTypes';

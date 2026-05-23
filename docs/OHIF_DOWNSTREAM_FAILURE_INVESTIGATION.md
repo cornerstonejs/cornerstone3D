@@ -38,7 +38,7 @@ has the following steps:
 
 OHIF unit tests, OHIF e2e tests, and the cornerstone-side linker
 (`scripts/link-ohif-cornerstone-node-modules.mjs`) never ran. Whatever
-behavior changes are gated behind `?type=next` / `useViewportNext` /
+behavior changes are gated behind `?type=next` / `useGenericViewport` /
 `ViewportType.PLANAR_NEXT` were not exercised in this CI run.
 
 ## Why the OHIF ref resolved to a missing branch
@@ -96,13 +96,13 @@ under our control in this repository.
 The user's mental model: legacy `StackViewport` / `VolumeViewport` /
 `VideoViewport` consumers (i.e. OHIF) go through the existing code
 paths unchanged. `ViewportType.PLANAR_NEXT`, `ViewportType.VIDEO_NEXT`,
-etc. and the `useViewportNext` core config are opt-in. If OHIF doesn't
+etc. and the `useGenericViewport` core config are opt-in. If OHIF doesn't
 flip those switches, its rendering should behave exactly like
 pre-refactor cornerstone3D.
 
 A few specific reasons that holds in this branch:
 
-- `PlanarRenderPathDecisionService` and `useViewportNext` are only
+- `PlanarRenderPathDecisionService` and `useGenericViewport` are only
   consulted when an application explicitly sets `renderingEngineMode`
   or instantiates a `*_NEXT` viewport type. OHIF master/beta does
   neither.

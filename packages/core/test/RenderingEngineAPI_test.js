@@ -163,13 +163,13 @@ describe('RenderingEngineAPI -- ', () => {
     });
   });
 
-  describe('RenderingEngine Enable/Disable API with Viewport Next:', function () {
+  describe('RenderingEngine Enable/Disable API with Generic Viewport:', function () {
     let renderingEngine;
 
     beforeEach(function () {
       const testEnv = setupTestEnvironment({
         renderingEngineId,
-        useViewportNext: true,
+        useGenericViewport: true,
       });
       renderingEngine = testEnv.renderingEngine;
     });
@@ -208,7 +208,7 @@ describe('RenderingEngineAPI -- ', () => {
       expect(viewport.type).toBe(ViewportType.ECG_NEXT);
     });
 
-    it('should resize remapped custom-pipeline Next viewports without legacy camera APIs', function () {
+    it('should resize remapped custom-pipeline Generic viewports without legacy camera APIs', function () {
       createViewports(renderingEngine, {
         viewportId: customOrientationViewportId,
         viewportType: ViewportType.ECG,

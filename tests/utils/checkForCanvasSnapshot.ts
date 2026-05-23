@@ -457,7 +457,7 @@ const checkForCanvasSnapshot = async (
   const buffer = Buffer.from(base64, 'base64');
 
   // Paths containing `..` reference a shared baseline owned by a different
-  // spec (e.g. a next-viewport test that should match the legacy stack
+  // spec (e.g. a generic-viewport test that should match the legacy stack
   // baseline). Playwright's toMatchSnapshot enforces that the resolved file
   // stays inside the test's own snapshot/output directory, so cross-spec
   // sharing has to bypass it and compare buffers manually.

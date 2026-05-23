@@ -10,7 +10,7 @@ import viewportTypeUsesCustomRenderingPipeline, {
 import getOrCreateCanvas from './helpers/getOrCreateCanvas';
 import {
   getShouldUseCPURendering,
-  getUseViewportNext,
+  getUseGenericViewport,
   isCornerstoneInitialized,
   getConfiguration,
 } from '../init';
@@ -134,7 +134,7 @@ abstract class BaseRenderingEngine {
     // 2.b) Retrieving the list of viewports for calculation of the new size for
     // offScreen canvas.
 
-    // Route based on the viewport's declared pipeline. Some Next viewports still
+    // Route based on the viewport's declared pipeline. Some Generic viewports still
     // need VTK backing even when global CPU rendering is enabled.
     if (!viewportUsesCustomRenderingPipeline) {
       this.enableVTKjsDrivenViewport(viewportInput);
@@ -469,7 +469,7 @@ abstract class BaseRenderingEngine {
     const { defaultOptions } = viewportInputEntry;
 
     // Remap legacy types to Next when the flag is set
-    if (getUseViewportNext()) {
+    if (getUseGenericViewport()) {
       const remapped = BaseRenderingEngine.NEXT_TYPE_REMAP[type];
       if (remapped) {
         type = remapped;
@@ -496,7 +496,7 @@ abstract class BaseRenderingEngine {
     return {
       ...viewportInputEntry,
       requestedType:
-        requestedType !== type || getUseViewportNext()
+        requestedType !== type || getUseGenericViewport()
           ? requestedType
           : undefined,
       type,

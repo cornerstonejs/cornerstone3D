@@ -11,10 +11,10 @@ Run the full Cornerstone3D v5 migration:
 npx codemod cornerstone3d/5
 ```
 
-Run only the Viewport Next migration:
+Run only the Generic Viewport migration:
 
 ```sh
-npx codemod cornerstone3d/5/viewport-next
+npx codemod cornerstone3d/5/generic-viewport
 ```
 
 ## Registry Packages
@@ -23,10 +23,10 @@ This workspace currently includes:
 
 - `cornerstone3d/5`: runs all available Cornerstone3D v5 migration packages in
   the recommended order.
-- `cornerstone3d/5/viewport-next`: migrates removed RenderingEngine viewport
+- `cornerstone3d/5/generic-viewport`: migrates removed RenderingEngine viewport
   accessor APIs.
 
-The Viewport Next migration changes:
+The Generic Viewport migration changes:
 
 - `getStackViewports()` -> `getViewports().filter(utilities.viewportSupportsStackCompatibility)`
 - `getVolumeViewports()` -> `getViewports().filter(utilities.viewportSupportsVolumeCompatibility)`
@@ -62,7 +62,7 @@ Run a local registry package against a target checkout:
 
 ```sh
 cd packages/codemods
-npx codemod workflow run -w registry/cornerstone3d/5/viewport-next -t /path/to/project --dry-run
+npx codemod workflow run -w registry/cornerstone3d/5/generic-viewport -t /path/to/project --dry-run
 ```
 
 ## Registry Publishing
@@ -72,11 +72,11 @@ Codemod registry packages under `packages/codemods/registry`.
 
 Publish migration packages before aggregate packages that reference them.
 
-To publish `cornerstone3d/5/viewport-next`:
+To publish `cornerstone3d/5/generic-viewport`:
 
 ```sh
-git tag cornerstone3d/5/viewport-next@v0.1.0
-git push origin cornerstone3d/5/viewport-next@v0.1.0
+git tag cornerstone3d/5/generic-viewport@v0.1.0
+git push origin cornerstone3d/5/generic-viewport@v0.1.0
 ```
 
 To publish `cornerstone3d/5`:

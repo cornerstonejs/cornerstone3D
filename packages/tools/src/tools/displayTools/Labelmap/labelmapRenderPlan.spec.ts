@@ -19,7 +19,7 @@ jest.mock('@cornerstonejs/core', () => ({
   },
   utilities: {
     uuidv4: jest.fn(() => 'generated-volume-id'),
-    viewportNextDataSetMetadataProvider: {
+    genericViewportDataSetMetadataProvider: {
       add: jest.fn(),
       remove: jest.fn(),
     },

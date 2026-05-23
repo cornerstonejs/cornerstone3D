@@ -11,8 +11,8 @@ import {
   PlanarVolumeResolvedView,
   resolvePlanarRenderPathProjection,
   resolvePlanarStackImageIdIndex,
-} from '../src/RenderingEngine/ViewportNext/Planar';
-import { resolvePlanarCpuImageDisplayedArea } from '../src/RenderingEngine/ViewportNext/Planar/planarCpuViewportMath';
+} from '../src/RenderingEngine/GenericViewport/Planar';
+import { resolvePlanarCpuImageDisplayedArea } from '../src/RenderingEngine/GenericViewport/Planar/planarCpuViewportMath';
 
 function createImage(imageId = 'image-1') {
   return {

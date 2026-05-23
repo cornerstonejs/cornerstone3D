@@ -6,8 +6,8 @@ jest.mock('../src/RenderingEngine/helpers/cpuFallback/drawImageSync', () => ({
 import { Events, InterpolationType } from '../src/enums';
 import { ActorRenderMode } from '../src/types';
 import drawImageSync from '../src/RenderingEngine/helpers/cpuFallback/drawImageSync';
-import { CpuVolumeSliceRenderPath } from '../src/RenderingEngine/ViewportNext/Planar/CpuVolumeSliceRenderPath';
-import PlanarCPUVolumeSampler from '../src/RenderingEngine/ViewportNext/Planar/PlanarCPUVolumeSampler';
+import { CpuVolumeSliceRenderPath } from '../src/RenderingEngine/GenericViewport/Planar/CpuVolumeSliceRenderPath';
+import PlanarCPUVolumeSampler from '../src/RenderingEngine/GenericViewport/Planar/PlanarCPUVolumeSampler';
 import eventTarget from '../src/eventTarget';
 
 function createCanvas(width = 256, height = 256) {

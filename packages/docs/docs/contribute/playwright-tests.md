@@ -165,16 +165,16 @@ Examples:
 reports/legacy-playwright/<timestamp>/
 reports/compat-playwright/<timestamp>/
 reports/compat-cpu-playwright/<timestamp>/
-reports/next-viewport-playwright/<timestamp>/
+reports/generic-viewport-playwright/<timestamp>/
 ```
 
 Supported wrapper flags:
 
 - `--compat`: open example pages with `?type=next`.
 - `--cpu`: open example pages with `?cpu=1`.
-- `--next`: run only `tests/nextViewport/**/*.spec.ts`.
+- `--next`: run only `tests/genericViewport/**/*.spec.ts`.
 
-`--next` on Playwright is different from `--next` on Karma. Playwright uses it to select the `tests/nextViewport` suite only. Karma uses it as a convenience mode that runs compatibility and CPU passes.
+`--next` on Playwright is different from `--next` on Karma. Playwright uses it to select the `tests/genericViewport` suite only. Karma uses it as a convenience mode that runs compatibility and CPU passes.
 
 Any other arguments are passed directly to `playwright test`, so you can still use the normal Playwright CLI:
 

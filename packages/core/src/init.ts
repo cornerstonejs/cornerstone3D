@@ -229,14 +229,14 @@ function getShouldUseCPURendering(): boolean {
 }
 
 /**
- * Returns whether ViewportNext compatibility adapters are enabled.
- * When true, legacy viewport types are internally routed to ViewportNext-backed
+ * Returns whether GenericViewport compatibility adapters are enabled.
+ * When true, legacy viewport types are internally routed to GenericViewport-backed
  * implementations while preserving the legacy public API surface for rollout.
  * @returns true if viewport Next remapping is enabled.
  * @category Initialization
  */
-function getUseViewportNext(): boolean {
-  return config.rendering.useViewportNext === true;
+function getUseGenericViewport(): boolean {
+  return config.rendering.useGenericViewport === true;
 }
 
 /**
@@ -298,7 +298,7 @@ async function peerImport(moduleId: string) {
 export {
   init,
   getShouldUseCPURendering,
-  getUseViewportNext,
+  getUseGenericViewport,
   isCornerstoneInitialized,
   setUseCPURendering,
   setPreferSizeOverAccuracy,

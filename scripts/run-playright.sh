@@ -88,7 +88,7 @@ if [[ "$RUN_ALL_MODES" == "true" ]]; then
       cpu_suffix="-cpu"
     fi
     case "$mode" in
-      next) echo "next-viewport-playwright" ;;
+      next) echo "generic-viewport-playwright" ;;
       *)    echo "${mode}${cpu_suffix}-playwright" ;;
     esac
   }
@@ -253,7 +253,7 @@ if [[ "$FORCE_CPU_RENDERING" == "true" ]]; then
 fi
 
 if [[ "$SUITE" == "next" ]]; then
-  RUN_SLUG="next-viewport-playwright"
+  RUN_SLUG="generic-viewport-playwright"
 else
   RUN_SLUG="${VIEWPORT_MODE}${CPU_MODE_SUFFIX}-playwright"
 fi
@@ -264,11 +264,11 @@ declare -a SELECTED_TESTS=()
 if [[ "$SUITE" == "next" ]]; then
   while IFS= read -r test_file; do
     SELECTED_TESTS+=("$test_file")
-  done < <(find "$ROOT_DIR/tests/nextViewport" -name '*.spec.ts' | sort)
+  done < <(find "$ROOT_DIR/tests/genericViewport" -name '*.spec.ts' | sort)
 else
   while IFS= read -r test_file; do
     SELECTED_TESTS+=("$test_file")
-  done < <(find "$ROOT_DIR/tests" -name '*.spec.ts' -not -path '*/nextViewport/*' | sort)
+  done < <(find "$ROOT_DIR/tests" -name '*.spec.ts' -not -path '*/genericViewport/*' | sort)
 fi
 
 PROJECTS_DESC="chromium"

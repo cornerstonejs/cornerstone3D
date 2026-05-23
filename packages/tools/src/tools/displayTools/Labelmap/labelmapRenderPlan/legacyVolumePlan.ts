@@ -29,9 +29,9 @@ import { addVolumesAsIndependentComponents } from '../addVolumesAsIndependentCom
 import { createLabelmapRepresentationUID } from '../labelmapRepresentationUID';
 import { createLabelmapRenderPlan } from './createLabelmapRenderPlan';
 import {
-  addLabelmapToPlanarNextViewport,
+  addLabelmapToPlanarGenericViewport,
   isPlanarNextVolumeViewport,
-} from './planarNextVolumeLabelmap';
+} from './planarGenericVolumeLabelmap';
 import type {
   LabelmapRenderPlan,
   LabelmapRenderPlanMountResult,
@@ -172,7 +172,7 @@ async function mountLegacyVolumeLabelmap({
   }));
 
   if (isPlanarNextVolumeViewport(viewport)) {
-    return addLabelmapToPlanarNextViewport({
+    return addLabelmapToPlanarGenericViewport({
       blendMode,
       labelmapLayers,
       segmentationId,

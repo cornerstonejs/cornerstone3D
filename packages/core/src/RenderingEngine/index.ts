@@ -9,20 +9,20 @@ import VolumeViewport3D from './VolumeViewport3D';
 import {
   defaultRenderPathResolver,
   DefaultRenderPathResolver,
-  ViewportNext,
-} from './ViewportNext';
-import ECGViewportNext, {
+  GenericViewport,
+} from './GenericViewport';
+import ECGGenericViewport, {
   CanvasECGPath,
   createDefaultECGRenderPaths,
   createECGRenderPathResolver,
   DefaultECGDataProvider,
-} from './ViewportNext/ECG';
-import VideoViewportNext, {
+} from './GenericViewport/ECG';
+import VideoGenericViewport, {
   createDefaultVideoRenderPaths,
   createVideoRenderPathResolver,
   DefaultVideoDataProvider,
   HtmlVideoPath,
-} from './ViewportNext/Video';
+} from './GenericViewport/Video';
 import PlanarViewport, {
   createDefaultPlanarRenderPaths,
   createPlanarRenderPathResolver,
@@ -30,32 +30,32 @@ import PlanarViewport, {
   DefaultPlanarDataProvider,
   VtkImageMapperPath,
   VtkVolumeSlicePath,
-} from './ViewportNext/Planar';
+} from './GenericViewport/Planar';
 import VolumeViewport3DV2, {
   createDefaultVolume3DRenderPaths,
   createVolume3DRenderPathResolver,
   DefaultVolume3DDataProvider,
   VtkGeometry3DPath,
   VtkVolume3DPath,
-} from './ViewportNext/Volume3D';
-import WSIViewportNext, {
+} from './GenericViewport/Volume3D';
+import WSIGenericViewport, {
   createDefaultWSIRenderPaths,
   createWSIRenderPathResolver,
   DefaultWSIDataProvider,
   DicomMicroscopyPath,
-} from './ViewportNext/WSI';
+} from './GenericViewport/WSI';
 export * from './helpers';
 
 const renderingEngineExportsV2 = {
-  ViewportNext,
+  GenericViewport,
   DefaultRenderPathResolver,
   defaultRenderPathResolver,
-  ECGViewportNext,
+  ECGGenericViewport,
   CanvasECGPath,
   createDefaultECGRenderPaths,
   createECGRenderPathResolver,
   DefaultECGDataProvider,
-  VideoViewportNext,
+  VideoGenericViewport,
   createDefaultVideoRenderPaths,
   createVideoRenderPathResolver,
   HtmlVideoPath,
@@ -73,7 +73,7 @@ const renderingEngineExportsV2 = {
   VtkVolume3DPath,
   VtkGeometry3DPath,
   DefaultVolume3DDataProvider,
-  WSIViewportNext,
+  WSIGenericViewport,
   createDefaultWSIRenderPaths,
   createWSIRenderPathResolver,
   DicomMicroscopyPath,
@@ -89,15 +89,15 @@ export {
   VolumeViewport,
   VolumeViewport3D,
   StackViewport,
-  ViewportNext,
+  GenericViewport,
   DefaultRenderPathResolver,
   defaultRenderPathResolver,
-  ECGViewportNext,
+  ECGGenericViewport,
   CanvasECGPath,
   createDefaultECGRenderPaths,
   createECGRenderPathResolver,
   DefaultECGDataProvider,
-  VideoViewportNext,
+  VideoGenericViewport,
   createDefaultVideoRenderPaths,
   createVideoRenderPathResolver,
   HtmlVideoPath,
@@ -115,7 +115,7 @@ export {
   VtkVolume3DPath,
   VtkGeometry3DPath,
   DefaultVolume3DDataProvider,
-  WSIViewportNext,
+  WSIGenericViewport,
   createDefaultWSIRenderPaths,
   createWSIRenderPathResolver,
   DicomMicroscopyPath,

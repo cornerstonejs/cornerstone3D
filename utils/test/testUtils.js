@@ -32,7 +32,7 @@ import {
   Enums as csToolsEnums,
 } from '@cornerstonejs/tools';
 
-const viewportNextConfigurationStack = [];
+const genericViewportConfigurationStack = [];
 const cpuRenderingConfigurationStack = [];
 const KARMA_CURRENT_SPEC_FULL_NAME = '__karmaCurrentSpecFullName';
 const KARMA_LAST_SPEC_FULL_NAME = '__karmaLastSpecFullName';
@@ -74,7 +74,7 @@ function setupTestEnvironment({
   toolActivations = {},
   viewportIds = [],
   options = {},
-  useViewportNext = false,
+  useGenericViewport = false,
 } = {}) {
   // Initialize csTools3d and add specified tools
   window.devicePixelRatio = 1;
@@ -82,13 +82,13 @@ function setupTestEnvironment({
   initCore();
 
   const renderingConfiguration = getConfiguration().rendering;
-  const resolvedUseViewportNext = useViewportNext || getForcedCompatFromKarma();
+  const resolvedUseGenericViewport = useGenericViewport || getForcedCompatFromKarma();
   const resolvedUseCpuRendering =
     getShouldUseCPURendering() || getForcedCpuRenderingFromKarma();
 
-  viewportNextConfigurationStack.push(renderingConfiguration.useViewportNext);
+  genericViewportConfigurationStack.push(renderingConfiguration.useGenericViewport);
   cpuRenderingConfigurationStack.push(renderingConfiguration.useCPURendering);
-  renderingConfiguration.useViewportNext = resolvedUseViewportNext;
+  renderingConfiguration.useGenericViewport = resolvedUseGenericViewport;
   setUseCPURendering(resolvedUseCpuRendering, false);
   initTools();
   tools.forEach((tool) => addTool(tool));
@@ -210,11 +210,11 @@ function cleanupTestEnvironment(options = {}) {
 
   cache.setMaxCacheSize(ONE_GB);
 
-  const previousUseViewportNext = viewportNextConfigurationStack.pop();
+  const previousUseGenericViewport = genericViewportConfigurationStack.pop();
   const previousUseCpuRendering = cpuRenderingConfigurationStack.pop();
 
-  if (previousUseViewportNext !== undefined) {
-    getConfiguration().rendering.useViewportNext = previousUseViewportNext;
+  if (previousUseGenericViewport !== undefined) {
+    getConfiguration().rendering.useGenericViewport = previousUseGenericViewport;
   }
 
   if (previousUseCpuRendering !== undefined) {

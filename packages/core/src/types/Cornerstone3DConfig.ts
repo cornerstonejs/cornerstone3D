@@ -79,10 +79,10 @@ interface Cornerstone3DConfig {
     };
     /**
      * When true, legacy viewport types (STACK, ORTHOGRAPHIC, VIDEO, ECG,
-     * WHOLE_SLIDE) are internally backed by ViewportNext implementations
+     * WHOLE_SLIDE) are internally backed by GenericViewport implementations
      * through legacy compatibility adapters at viewport creation time.
      */
-    useViewportNext?: boolean;
+    useGenericViewport?: boolean;
   };
 
   debug: {

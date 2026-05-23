@@ -6,16 +6,16 @@ import VolumeViewport3D from '../VolumeViewport3D';
 import VideoViewport from '../VideoViewport';
 import WSIViewport from '../WSIViewport';
 import LegacyECGViewport from '../ECGViewport';
-import ECGViewport from '../ViewportNext/ECG/ECGViewport';
-import PlanarViewport from '../ViewportNext/Planar/PlanarViewport';
-import PlanarViewportLegacyAdapter from '../ViewportNext/Planar/PlanarViewportLegacyAdapter';
-import NextVideoViewport from '../ViewportNext/Video/VideoViewport';
-import VideoViewportLegacyAdapter from '../ViewportNext/Video/VideoViewportLegacyAdapter';
-import VolumeViewport3DV2 from '../ViewportNext/Volume3D/3dViewport';
-import VolumeViewport3DLegacyAdapter from '../ViewportNext/Volume3D/VolumeViewport3DLegacyAdapter';
-import NextWSIViewport from '../ViewportNext/WSI/WSIViewport';
-import WSIViewportLegacyAdapter from '../ViewportNext/WSI/WSIViewportLegacyAdapter';
-import ECGViewportLegacyAdapter from '../ViewportNext/ECG/ECGViewportLegacyAdapter';
+import ECGViewport from '../GenericViewport/ECG/ECGViewport';
+import PlanarViewport from '../GenericViewport/Planar/PlanarViewport';
+import PlanarViewportLegacyAdapter from '../GenericViewport/Planar/PlanarViewportLegacyAdapter';
+import NextVideoViewport from '../GenericViewport/Video/VideoViewport';
+import VideoViewportLegacyAdapter from '../GenericViewport/Video/VideoViewportLegacyAdapter';
+import VolumeViewport3DV2 from '../GenericViewport/Volume3D/3dViewport';
+import VolumeViewport3DLegacyAdapter from '../GenericViewport/Volume3D/VolumeViewport3DLegacyAdapter';
+import NextWSIViewport from '../GenericViewport/WSI/WSIViewport';
+import WSIViewportLegacyAdapter from '../GenericViewport/WSI/WSIViewportLegacyAdapter';
+import ECGViewportLegacyAdapter from '../GenericViewport/ECG/ECGViewportLegacyAdapter';
 import type {
   ViewportInput,
   IViewport,

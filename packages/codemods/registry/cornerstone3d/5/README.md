@@ -17,11 +17,11 @@ npx codemod cornerstone3d/5 --dry-run
 
 ## Included Migrations
 
-- `cornerstone3d/5/viewport-next`: replaces removed RenderingEngine viewport
+- `cornerstone3d/5/generic-viewport`: replaces removed RenderingEngine viewport
   accessor APIs with Cornerstone3D v5 compatible viewport APIs.
 
 ## Publishing
 
 Publish child migration packages before publishing this aggregate package. The
-workflow resolves `cornerstone3d/5/viewport-next` from the Codemod registry at
+workflow resolves `cornerstone3d/5/generic-viewport` from the Codemod registry at
 runtime.

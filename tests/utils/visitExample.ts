@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { validateCompatibilityRuntime } from './compatibilityMode';
 
-function shouldForceViewportNext() {
+function shouldForceGenericViewport() {
   return process.env.PLAYWRIGHT_FORCE_COMPAT === 'true';
 }
 
@@ -99,7 +99,7 @@ export const visitExample = async (
   if (href) {
     const exampleUrl = new URL(href, page.url());
 
-    if (shouldForceViewportNext()) {
+    if (shouldForceGenericViewport()) {
       exampleUrl.searchParams.set('type', 'next');
     }
 
@@ -112,10 +112,10 @@ export const visitExample = async (
     const link = page.locator(`a:has-text("${title}")`).first();
     await link.click();
 
-    if (shouldForceViewportNext() || shouldForceCpuRendering()) {
+    if (shouldForceGenericViewport() || shouldForceCpuRendering()) {
       const exampleUrl = new URL(page.url());
 
-      if (shouldForceViewportNext()) {
+      if (shouldForceGenericViewport()) {
         exampleUrl.searchParams.set('type', 'next');
       }
 

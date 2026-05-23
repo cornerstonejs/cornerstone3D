@@ -1,5 +1,5 @@
 import type LegacyWSIViewport from '../RenderingEngine/WSIViewport';
-import type WSIViewport from '../RenderingEngine/ViewportNext/WSI/WSIViewport';
+import type WSIViewport from '../RenderingEngine/GenericViewport/WSI/WSIViewport';
 
 type IWSIViewport = LegacyWSIViewport | WSIViewport;
 

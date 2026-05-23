@@ -256,7 +256,7 @@ export class StatsOverlay implements StatsInstance {
   }
 
   /**
-   * Collects every viewport's ViewportNext binding debug state from the
+   * Collects every viewport's GenericViewport binding debug state from the
    * rendering engine cache and pushes a role-aware list to the bindings panel.
    */
   private updateRenderModesPanel(): void {

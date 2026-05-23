@@ -1,6 +1,6 @@
 import { expect, type Page } from '@playwright/test';
 
-function shouldForceViewportNext(): boolean {
+function shouldForceGenericViewport(): boolean {
   return process.env.PLAYWRIGHT_FORCE_COMPAT === 'true';
 }
 
@@ -9,7 +9,7 @@ function shouldForceCpuRendering(): boolean {
 }
 
 export function isCompatibilityMode(): boolean {
-  return shouldForceViewportNext() || shouldForceCpuRendering();
+  return shouldForceGenericViewport() || shouldForceCpuRendering();
 }
 
 export async function validateCompatibilityRuntime(
@@ -25,7 +25,7 @@ export async function validateCompatibilityRuntime(
     const cornerstone = (window as typeof window & {
       cornerstone?: {
         getShouldUseCPURendering?: () => boolean;
-        getUseViewportNext?: () => boolean;
+        getUseGenericViewport?: () => boolean;
       };
     }).cornerstone;
 
@@ -33,19 +33,19 @@ export async function validateCompatibilityRuntime(
       url: window.location.href,
       typeParam: searchParams.get('type'),
       cpuParam: searchParams.get('cpu'),
-      useViewportNext: cornerstone?.getUseViewportNext?.(),
+      useGenericViewport: cornerstone?.getUseGenericViewport?.(),
       useCPURendering: cornerstone?.getShouldUseCPURendering?.(),
     };
   });
 
-  if (shouldForceViewportNext()) {
+  if (shouldForceGenericViewport()) {
     expect(
       runtime.typeParam,
       `${title ?? 'example'} should be opened with ?type=next`
     ).toBe('next');
     expect(
-      runtime.useViewportNext,
-      `${title ?? 'example'} should enable ViewportNext compatibility`
+      runtime.useGenericViewport,
+      `${title ?? 'example'} should enable GenericViewport compatibility`
     ).toBe(true);
   }
 

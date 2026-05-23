@@ -71,7 +71,7 @@ test.describe('Volume Annotation Tools', async () => {
     );
   });
 
-  // Manipulation baselines lifted from the next-viewport spec so both legacy
+  // Manipulation baselines lifted from the generic-viewport spec so both legacy
   // and next can share a single source of truth (next GPU+CPU baselines now
   // point at these files via `../../volumeAnnotation.spec.ts/`).
   test('should scroll, zoom, and pan all viewports', async ({ page }) => {

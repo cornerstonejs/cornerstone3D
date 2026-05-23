@@ -3,7 +3,7 @@ import { PANEL_CONFIG, PANEL_CONFIGS } from './constants';
 import { PanelType } from './enums';
 
 /**
- * Text panel that displays each viewport's ViewportNext bindings from its
+ * Text panel that displays each viewport's GenericViewport bindings from its
  * internal debug map plus public actor metadata.
  */
 export class RenderModesPanel implements Panel {

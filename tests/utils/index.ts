@@ -9,7 +9,7 @@ export { attemptAction } from './attemptAction';
 export { getVisibleViewportCanvas } from './getVisibleViewportCanvas';
 export { createExampleUrl } from './createExampleUrl';
 export { getSegmentationActorClassNames } from './getSegmentationActorClassNames';
-export { expectViewportNextRuntime } from './expectViewportNextRuntime';
+export { expectGenericViewportRuntime } from './expectGenericViewportRuntime';
 export { waitForImageRendered } from './waitForImageRendered';
 export {
   setupRenderTracking,

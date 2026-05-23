@@ -383,19 +383,19 @@ function getDataPresentationTarget(viewport):
       dataId: string;
     }
   | undefined {
-  const nextViewport = viewport as ViewportWithDataPresentation;
-  const dataId = nextViewport.getSourceDataId?.();
+  const genericViewport = viewport as ViewportWithDataPresentation;
+  const dataId = genericViewport.getSourceDataId?.();
 
   if (
     !dataId ||
-    typeof nextViewport.getDataPresentation !== 'function' ||
-    typeof nextViewport.setDataPresentation !== 'function'
+    typeof genericViewport.getDataPresentation !== 'function' ||
+    typeof genericViewport.setDataPresentation !== 'function'
   ) {
     return;
   }
 
   return {
-    viewport: nextViewport,
+    viewport: genericViewport,
     dataId,
   };
 }

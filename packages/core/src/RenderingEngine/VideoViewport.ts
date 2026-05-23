@@ -186,7 +186,7 @@ class VideoViewport extends Viewport {
     );
   }
 
-  /** ViewportNext compat shim – delegates to setVideo. */
+  /** GenericViewport compat shim – delegates to setVideo. */
   public setDataList(
     entries: Array<{ dataId: string; options?: Record<string, unknown> }>
   ) {

@@ -3,9 +3,9 @@ import { OrientationAxis } from '../src/enums';
 import {
   PlanarMountedData,
   PlanarViewReferenceController,
-} from '../src/RenderingEngine/ViewportNext/Planar';
-import PlanarLegacyCompatibilityController from '../src/RenderingEngine/ViewportNext/Planar/PlanarLegacyCompatibilityController';
-import viewportNextDataSetMetadataProvider from '../src/utilities/viewportNextDataSetMetadataProvider';
+} from '../src/RenderingEngine/GenericViewport/Planar';
+import PlanarLegacyCompatibilityController from '../src/RenderingEngine/GenericViewport/Planar/PlanarLegacyCompatibilityController';
+import genericViewportDataSetMetadataProvider from '../src/utilities/genericViewportDataSetMetadataProvider';
 
 function createBinding({
   actorUID,
@@ -60,8 +60,8 @@ function createLegacyStackHarness({ deferSetData = false } = {}) {
   let currentImageIds = [];
 
   function finishSetData(requestedDataId) {
-    const registered = viewportNextDataSetMetadataProvider.get(
-      viewportNextDataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
+    const registered = genericViewportDataSetMetadataProvider.get(
+      genericViewportDataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
       requestedDataId
     );
 
@@ -136,7 +136,7 @@ function createLegacyStackHarness({ deferSetData = false } = {}) {
 
 describe('Planar legacy stack compatibility', () => {
   afterEach(() => {
-    viewportNextDataSetMetadataProvider.clear();
+    genericViewportDataSetMetadataProvider.clear();
   });
 
   it('replaces the legacy stack without unregistering replacement metadata', async () => {
@@ -149,8 +149,8 @@ describe('Planar legacy stack compatibility', () => {
     expect(host.setData).toHaveBeenCalledTimes(2);
     expect(getCurrentImageIds()).toEqual(['image:new']);
     expect(
-      viewportNextDataSetMetadataProvider.get(
-        viewportNextDataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
+      genericViewportDataSetMetadataProvider.get(
+        genericViewportDataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
         dataId
       )
     ).toEqual({

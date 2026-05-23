@@ -10,13 +10,13 @@ type DemoConfig = {
           volume?: number;
         };
       };
-      useViewportNext?: boolean;
+      useGenericViewport?: boolean;
     };
   };
 };
 
 type DemoWindow = Window & {
-  __DEMO_USE_VIEWPORT_NEXT__?: boolean;
+  __DEMO_USE_GENERIC_VIEWPORT__?: boolean;
 };
 
 function getUrlParam(name: string): string | null {
@@ -32,27 +32,27 @@ export function getStringUrlParam(name: string): string | null {
   return getUrlParam(name);
 }
 
-function getGlobalViewportNextOverride(): boolean {
-  return Boolean((window as DemoWindow).__DEMO_USE_VIEWPORT_NEXT__);
+function getGlobalGenericViewportOverride(): boolean {
+  return Boolean((window as DemoWindow).__DEMO_USE_GENERIC_VIEWPORT__);
 }
 
-function getViewportNextOverrideActive(): boolean {
-  return getGlobalViewportNextOverride() || getUrlParam('type') === 'next';
+function getGenericViewportOverrideActive(): boolean {
+  return getGlobalGenericViewportOverride() || getUrlParam('type') === 'next';
 }
 
 /**
- * Reads the ViewportNext override from either `?type=next` or a dedicated
- * example global and merges `useViewportNext: true` into the demo config so
+ * Reads the GenericViewport override from either `?type=next` or a dedicated
+ * example global and merges `useGenericViewport: true` into the demo config so
  * that the RenderingEngine automatically remaps legacy viewport types to their
  * V2 equivalents.
  */
 export function applyViewportTypeOverride(config: DemoConfig = {}): DemoConfig {
-  if (getViewportNextOverrideActive()) {
-    console.log('[exampleParameters] ViewportNext override active');
+  if (getGenericViewportOverrideActive()) {
+    console.log('[exampleParameters] GenericViewport override active');
     return utilities.deepMerge(config, {
       core: {
         rendering: {
-          useViewportNext: true,
+          useGenericViewport: true,
         },
       },
     });

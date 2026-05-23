@@ -27,7 +27,7 @@ for arg in "$@"; do
 done
 
 # --next implies both compat and cpu runs
-# It runs the same tests but forces ViewportNext + CPU rendering
+# It runs the same tests but forces GenericViewport + CPU rendering
 if [[ "$USE_NEXT" == "true" ]]; then
   echo "Running karma in --next mode (compat + cpu)"
   echo

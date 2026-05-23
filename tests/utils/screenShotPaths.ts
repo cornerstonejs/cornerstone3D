@@ -65,7 +65,7 @@ const screenShotPaths = {
     rightBottomHalf: 'rightBottomHalf.png',
     flipLeftBottomHalf: 'flipLeftBottomHalf.png',
   },
-  nextStackPosition: {
+  genericStackPosition: {
     // 16 display-area presets render pixel-identically to legacy after the
     // background + SVG-rectangle alignment, so share those baselines.
     centerFull: '../../stackPosition.spec.ts/centerFull.png',
@@ -350,7 +350,7 @@ const screenShotPaths = {
     cpuInvert: '../../stackAPI.spec.ts/invert.png',
     cpuReset: '../../stackAPI.spec.ts/resetViewport.png',
   },
-  nextViewportScale: {
+  genericViewportScale: {
     scale1x1: 'scale-1x1.png',
     uniform1p5: 'scale-uniform-1p5.png',
     wide2x1: 'scale-wide-2x1.png',

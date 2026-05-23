@@ -153,7 +153,7 @@ function _imageChangeEventListener(evt) {
       return;
     }
 
-    // ViewportNext (PLANAR_NEXT) does not fire PRE_STACK_NEW_IMAGE when
+    // GenericViewport (PLANAR_NEXT) does not fire PRE_STACK_NEW_IMAGE when
     // scrolling, so handle stack labelmap sync on CAMERA_MODIFIED instead.
     const isPlanarNext = viewport.type === Enums.ViewportType.PLANAR_NEXT;
     if (!isPlanarNext) {
