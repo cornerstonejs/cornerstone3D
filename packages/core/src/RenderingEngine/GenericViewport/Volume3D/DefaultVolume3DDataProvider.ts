@@ -12,7 +12,7 @@ import type {
   Volume3DGeometryPayload,
   Volume3DRegisteredDataSet,
   Volume3DVolumePayload,
-} from './3dViewportTypes';
+} from './viewport3DTypes';
 
 export class DefaultVolume3DDataProvider implements Volume3DDataProvider {
   async load(

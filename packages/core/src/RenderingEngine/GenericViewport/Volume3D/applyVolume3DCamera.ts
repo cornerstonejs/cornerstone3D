@@ -1,7 +1,7 @@
 import type {
   Volume3DCamera,
   Volume3DViewportRenderContext,
-} from './3dViewportTypes';
+} from './viewport3DTypes';
 
 export default function applyVolume3DCamera(
   ctx: Pick<Volume3DViewportRenderContext, 'vtk'>,

@@ -30,7 +30,7 @@ import type {
   Volume3DDataPresentation,
   Volume3DViewportRenderContext,
   Volume3DVtkGeometryAdapterContext,
-} from './3dViewportTypes';
+} from './viewport3DTypes';
 import applyVolume3DCamera from './applyVolume3DCamera';
 
 export class VtkGeometry3DRenderPath

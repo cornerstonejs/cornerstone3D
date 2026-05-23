@@ -11,7 +11,7 @@ import PlanarViewport from '../GenericViewport/Planar/PlanarViewport';
 import PlanarViewportLegacyAdapter from '../GenericViewport/Planar/PlanarViewportLegacyAdapter';
 import NextVideoViewport from '../GenericViewport/Video/VideoViewport';
 import VideoViewportLegacyAdapter from '../GenericViewport/Video/VideoViewportLegacyAdapter';
-import VolumeViewport3DV2 from '../GenericViewport/Volume3D/3dViewport';
+import VolumeViewport3DV2 from '../GenericViewport/Volume3D/viewport3D';
 import VolumeViewport3DLegacyAdapter from '../GenericViewport/Volume3D/VolumeViewport3DLegacyAdapter';
 import NextWSIViewport from '../GenericViewport/WSI/WSIViewport';
 import WSIViewportLegacyAdapter from '../GenericViewport/WSI/WSIViewportLegacyAdapter';

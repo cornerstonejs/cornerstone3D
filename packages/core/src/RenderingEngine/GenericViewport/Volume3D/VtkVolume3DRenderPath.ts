@@ -26,7 +26,7 @@ import type {
   Volume3DVolumePayload,
   Volume3DVolumeRendering,
   Volume3DVtkVolumeAdapterContext,
-} from './3dViewportTypes';
+} from './viewport3DTypes';
 import applyVolume3DCamera from './applyVolume3DCamera';
 import { getInitialVolume3DCamera } from './vtkVolume3DInitialCamera';
 import setVtkCameraClippingRange from '../setVtkCameraClippingRange';

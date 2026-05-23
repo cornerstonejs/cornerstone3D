@@ -5,7 +5,7 @@ import {
   worldToCanvasContextPool,
 } from '../../helpers/vtkCanvasCoordinateTransforms';
 import ResolvedViewportView from '../ResolvedViewportView';
-import type { Volume3DCamera } from './3dViewportTypes';
+import type { Volume3DCamera } from './viewport3DTypes';
 
 type Volume3DResolvedViewState = {
   camera: Volume3DCamera & ICamera;

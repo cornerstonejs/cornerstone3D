@@ -12,13 +12,13 @@ import type {
 import applyPreset from '../../../utilities/applyPreset';
 import triggerEvent from '../../../utilities/triggerEvent';
 import genericViewportDataSetMetadataProvider from '../../../utilities/genericViewportDataSetMetadataProvider';
-import VolumeViewport3DV2 from './3dViewport';
+import VolumeViewport3DV2 from './viewport3D';
 import type {
   Volume3DCamera,
   Volume3DDataPresentation,
   Volume3DRegisteredDataSet,
   Volume3DVolumeRendering,
-} from './3dViewportTypes';
+} from './viewport3DTypes';
 
 class VolumeViewport3DLegacyAdapter extends VolumeViewport3DV2 {
   private readonly managedDataIds = new Set<string>();

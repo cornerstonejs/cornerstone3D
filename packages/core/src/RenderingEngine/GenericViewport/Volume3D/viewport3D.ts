@@ -37,7 +37,7 @@ import type {
   Volume3DSetDataOptions,
   Volume3DViewportRenderContext,
   VolumeViewport3DV2Input,
-} from './3dViewportTypes';
+} from './viewport3DTypes';
 
 class VolumeViewport3DV2 extends GenericViewport<
   Volume3DCamera,

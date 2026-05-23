@@ -12,7 +12,7 @@ export {
   createVolume3DRenderPathResolver,
 } from './Volume3DRenderPathResolver';
 export { default as Volume3DResolvedView } from './Volume3DResolvedView';
-export { default } from './3dViewport';
+export { default } from './viewport3D';
 export type {
   Volume3DCamera,
   Volume3DDataPresentation,
@@ -32,4 +32,4 @@ export type {
   Volume3DVtkGeometryAdapterContext,
   Volume3DVtkVolumeAdapterContext,
   VolumeViewport3DV2Input,
-} from './3dViewportTypes';
+} from './viewport3DTypes';

@@ -8,7 +8,7 @@ import { getVolumeCenterIJK } from '../../Viewport';
 import type {
   Volume3DCamera,
   Volume3DVtkVolumeAdapterContext,
-} from './3dViewportTypes';
+} from './viewport3DTypes';
 
 const VOLUME_3D_RADIUS_MULTIPLIER = 10;
 
