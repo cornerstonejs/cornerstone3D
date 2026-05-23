@@ -15,6 +15,22 @@ import type { LabelmapStyle } from '../../../types/LabelmapTypes';
 import type { LabelmapRepresentation } from '../../../types/SegmentationStateTypes';
 import { getLabelmapForActorReference } from './volumeLabelmapImageMapper';
 
+type LabelmapTransferFunctions = {
+  cfun: vtkColorTransferFunction;
+  ofun: vtkPiecewiseFunction;
+};
+
+// Each labelmap actor needs its own cfun/ofun because overlap mode can produce
+// multiple actors per representation (one per labelmap layer), and each layer
+// has its own labelValue -> segmentIndex mapping. Sharing a single pair via
+// representation.config caused the second actor's rebuild to overwrite the
+// first actor's color table, since both actors held the same reference. We
+// still mutate in place to avoid resetting cached vtkVolumeProperty state.
+const actorTransferFunctions = new WeakMap<
+  vtkVolume | vtkImageSlice,
+  LabelmapTransferFunctions
+>();
+
 const MAX_NUMBER_COLORS = 255;
 
 function setLabelmapColorAndOpacity(
@@ -86,15 +102,8 @@ function setLabelmapColorAndOpacity(
     type: SegmentationRepresentations.Labelmap,
   });
 
-  // Reuse the persistent cfun/ofun stored on the segmentation representation
-  // config. The legacy code on main also mutates these in place rather than
-  // creating fresh instances each call — swapping the transfer functions on
-  // a vtkVolumeProperty can otherwise reset internal cached state that
-  // affects how scalar opacity accumulates during ray casting, producing
-  // visibly fainter segmentations.
-  const renderingConfig = segmentationRepresentation.config;
-  const cfun = renderingConfig.cfun;
-  const ofun = renderingConfig.ofun;
+  const labelmapActor = labelmapActorEntry.actor as vtkVolume | vtkImageSlice;
+  const { cfun, ofun } = getOrCreateTransferFunctions(labelmapActor);
   cfun.removeAllPoints();
   ofun.removeAllPoints();
 
@@ -160,7 +169,6 @@ function setLabelmapColorAndOpacity(
   ofun.setNodes(opacityNodes);
 
   ofun.setClamping(false);
-  const labelmapActor = labelmapActorEntry.actor as vtkVolume | vtkImageSlice;
   const actorMapper = labelmapActorEntry.actorMapper as
     | {
         mapper?: {
@@ -233,6 +241,23 @@ function setLabelmapColorAndOpacity(
   labelmapActor.modified();
   labelmapActor.getProperty().modified();
   labelmapMapper?.modified?.();
+}
+
+function getOrCreateTransferFunctions(
+  actor: vtkVolume | vtkImageSlice
+): LabelmapTransferFunctions {
+  const existing = actorTransferFunctions.get(actor);
+  if (existing) {
+    return existing;
+  }
+
+  const cfun = vtkColorTransferFunction.newInstance();
+  const ofun = vtkPiecewiseFunction.newInstance();
+  ofun.addPoint(0, 0);
+  const created = { cfun, ofun };
+
+  actorTransferFunctions.set(actor, created);
+  return created;
 }
 
 function getLabelmapConfig(
