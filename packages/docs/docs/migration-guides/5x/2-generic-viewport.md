@@ -273,6 +273,23 @@ viewport.setCamera({ position });
 Use `focalPoint`, `parallelScale`, `setViewState()`, `setViewPresentation()`,
 or view-reference APIs instead.
 
+## Planar Camera State Differences
+
+Planar Generic viewports store zoom-to-point anchors as semantic view state.
+When a stored anchor is replayed on another slice, the anchor is projected onto
+the current slice plane. This keeps the camera on-plane, but it is not
+invertible across slice changes: cine or synchronization code that stores a
+camera on slice N, replays it on slice M, and later returns to slice N can see
+anchor drift. Use view references for spatial slice synchronization, and treat
+view presentation as display-only state.
+
+`PlanarViewport.resetCamera({ resetPan, resetZoom })` resets pan, zoom, and
+rotation presentation state. It does not reset the current slice, orientation,
+or flip state. Legacy stack and volume viewports reset more acquisition-camera
+state during `resetCamera`, so migration code that relies on that behavior
+should explicitly call `setImageIdIndex`, `setOrientation`, or `setViewState`
+for those fields.
+
 ## Event And Enabled Element Notes
 
 Some event and enabled-element fields are now optional because not every Next

@@ -63,7 +63,9 @@ export function normalizePlanarViewState(
       OrientationAxis.ACQUISITION,
     flipHorizontal: viewState.flipHorizontal === true,
     flipVertical: viewState.flipVertical === true,
-    anchorCanvas: viewState.anchorCanvas ?? [0.5, 0.5],
+    anchorCanvas: viewState.anchorCanvas
+      ? [...viewState.anchorCanvas]
+      : [0.5, 0.5],
     scale: clonePlanarScale(viewState.scale),
     scaleMode: normalizePlanarScaleMode(
       viewState.displayArea?.scaleMode ?? viewState.scaleMode

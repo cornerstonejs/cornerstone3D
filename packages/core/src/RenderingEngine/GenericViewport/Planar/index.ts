@@ -3,6 +3,13 @@ export {
   createDefaultPlanarRenderPaths,
   createPlanarRenderPathResolver,
 } from './PlanarRenderPathResolver';
+export {
+  BasePlanarResolvedView,
+  PlanarStackResolvedView,
+  PlanarVolumeResolvedView,
+  resolvePlanarStackImageIdIndex,
+} from './PlanarResolvedView';
+export { resolvePlanarRenderPathProjection } from './planarRenderPathProjection';
 export { default, default as PlanarViewport } from './PlanarViewport';
 export type {
   PlanarViewState,

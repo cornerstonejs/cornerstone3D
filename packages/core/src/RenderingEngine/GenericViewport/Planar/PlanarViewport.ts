@@ -568,6 +568,24 @@ class PlanarViewport extends GenericViewport<
   }
 
   /**
+   * Merges partial Planar view-state updates into the viewport state.
+   */
+  public override setViewState(viewStatePatch: Partial<PlanarViewState>): void {
+    if (this.isDestroyed) {
+      return;
+    }
+
+    const previousCamera = this.getResolvedCameraForEvent();
+    const next = {
+      ...this.viewState,
+      ...viewStatePatch,
+    };
+
+    this.viewState = this.normalizeViewState(next);
+    this.modified(previousCamera);
+  }
+
+  /**
    * Returns the current rotation angle in degrees.
    */
   getRotation(): number {
@@ -718,7 +736,7 @@ class PlanarViewport extends GenericViewport<
   getPan(): Point2 {
     const resolvedView = this.getResolvedView();
 
-    return resolvedView ? resolvedView.pan : [0, 0];
+    return resolvedView ? resolvedView.pan : this.getFallbackPan();
   }
 
   /** @deprecated Legacy shim for `setPan(...)`. */
@@ -732,20 +750,9 @@ class PlanarViewport extends GenericViewport<
       return;
     }
 
-    const currentPan = this.getPan();
-    const [ax, ay] = this.viewState.anchorCanvas ?? [0.5, 0.5];
-    const { height: canvasHeight, width: canvasWidth } =
-      this.getCurrentCanvasDimensions();
-    const deltaX = nextPan[0] - currentPan[0];
-    const deltaY = nextPan[1] - currentPan[1];
-
-    this.setViewState({
-      anchorCanvas: [
-        ax + deltaX / Math.max(canvasWidth, 1),
-        ay + deltaY / Math.max(canvasHeight, 1),
-      ],
-      displayArea: undefined,
-    });
+    this.applyResolvedViewState(
+      this.getFallbackViewStateWithPan(this.viewState, nextPan)
+    );
   }
 
   /**
@@ -782,10 +789,7 @@ class PlanarViewport extends GenericViewport<
    * Returns the raw planar view state.
    */
   getViewState(): PlanarViewState {
-    return {
-      ...this.viewState,
-      displayArea: cloneDisplayArea(this.viewState.displayArea),
-    };
+    return normalizePlanarViewState(this.viewState);
   }
 
   /**
@@ -798,15 +802,7 @@ class PlanarViewport extends GenericViewport<
       sliceIndex?: number;
     } = {}
   ) {
-    return resolvePlanarViewportView({
-      viewState: this.viewState,
-      data: this.getPlanarData(),
-      frameOfReferenceUID:
-        args.frameOfReferenceUID ?? this.resolveFrameOfReferenceUID(),
-      renderContext: this.renderContext,
-      rendering: this.getCurrentPlanarRendering(),
-      sliceIndex: args.sliceIndex,
-    });
+    return this.resolveViewState(this.viewState, args);
   }
 
   /**
@@ -922,11 +918,22 @@ class PlanarViewport extends GenericViewport<
       nextCamera.scaleMode = 'fit';
     }
 
-    this.setViewState(nextCamera);
-
     if (pan) {
-      this.setPan([pan[0] * nextScale[0], pan[1] * nextScale[1]]);
+      const targetPan: Point2 = [pan[0] * nextScale[0], pan[1] * nextScale[1]];
+      const baseViewState = this.normalizeViewState({
+        ...this.viewState,
+        ...nextCamera,
+      });
+      const resolvedView = this.resolveViewState(baseViewState);
+      const nextViewState = resolvedView
+        ? resolvedView.withPan(targetPan).state.viewState
+        : this.getFallbackViewStateWithPan(baseViewState, targetPan);
+
+      this.applyResolvedViewState(nextViewState);
+      return;
     }
+
+    this.setViewState(nextCamera);
   }
 
   // ====================================================================
@@ -1169,6 +1176,9 @@ class PlanarViewport extends GenericViewport<
 
   /**
    * Resets rotation and optionally resets pan and zoom.
+   *
+   * This intentionally leaves navigation and orientation state unchanged:
+   * slice, orientation, and flips must be reset explicitly through view state.
    *
    * @param options - Flags controlling whether pan and zoom are reset.
    * @returns Always `true` for compatibility with legacy viewport contracts.
@@ -1689,8 +1699,59 @@ class PlanarViewport extends GenericViewport<
     return this.getCurrentBinding()?.rendering as PlanarRendering | undefined;
   }
 
+  private resolveViewState(
+    viewState: PlanarViewState,
+    args: {
+      frameOfReferenceUID?: string;
+      sliceIndex?: number;
+    } = {}
+  ) {
+    return resolvePlanarViewportView({
+      viewState,
+      data: this.getPlanarData(),
+      frameOfReferenceUID:
+        args.frameOfReferenceUID ?? this.resolveFrameOfReferenceUID(),
+      renderContext: this.renderContext,
+      rendering: this.getCurrentPlanarRendering(),
+      sliceIndex: args.sliceIndex,
+    });
+  }
+
   private resolveFrameOfReferenceUID(): string {
     return this.viewReferences.resolveFrameOfReferenceUID();
+  }
+
+  private getFallbackPan(viewState = this.viewState): Point2 {
+    const anchorCanvas = viewState.anchorCanvas ?? [0.5, 0.5];
+    const anchorWorld = viewState.anchorWorld ?? [0, 0, 0];
+    const { height, width } = this.getCurrentCanvasDimensions();
+    const [scaleX, scaleY] = normalizePlanarScale(viewState.scale);
+
+    return [
+      (0 - anchorWorld[0]) * scaleX + (anchorCanvas[0] - 0.5) * width,
+      (0 - anchorWorld[1]) * scaleY + (anchorCanvas[1] - 0.5) * height,
+    ];
+  }
+
+  private getFallbackViewStateWithPan(
+    viewState: PlanarViewState,
+    nextPan: Point2
+  ): PlanarViewState {
+    const currentPan = this.getFallbackPan(viewState);
+    const [ax, ay] = viewState.anchorCanvas ?? [0.5, 0.5];
+    const { height: canvasHeight, width: canvasWidth } =
+      this.getCurrentCanvasDimensions();
+    const deltaX = nextPan[0] - currentPan[0];
+    const deltaY = nextPan[1] - currentPan[1];
+
+    return this.normalizeViewState({
+      ...viewState,
+      anchorCanvas: [
+        ax + deltaX / Math.max(canvasWidth, 1),
+        ay + deltaY / Math.max(canvasHeight, 1),
+      ],
+      displayArea: undefined,
+    });
   }
 
   private buildFallbackCanvasToWorld(canvasPos: Point2): Point3 {
@@ -1719,10 +1780,16 @@ class PlanarViewport extends GenericViewport<
   }
 
   private applyResolvedViewState(nextCamera: PlanarViewState): void {
-    const previousCamera = this.getCameraForEvent();
+    const previousCamera = this.getResolvedCameraForEvent();
 
     this.viewState = this.normalizeViewState(nextCamera);
     this.modified(previousCamera);
+  }
+
+  private getResolvedCameraForEvent(): ICamera | undefined {
+    return this.getResolvedView()?.toICamera() as unknown as
+      | ICamera
+      | undefined;
   }
 
   protected getCameraForEvent(): ICamera {
@@ -1732,16 +1799,7 @@ class PlanarViewport extends GenericViewport<
       return resolvedView.toICamera() as unknown as ICamera;
     }
 
-    return {
-      parallelProjection: true,
-      focalPoint: [0, 0, 0],
-      position: [0, 0, 1],
-      parallelScale: 1,
-      viewPlaneNormal: [0, 0, 1],
-      viewUp: [0, -1, 0],
-      presentationScale: [1, 1],
-      scale: [1, 1],
-    } as unknown as ICamera;
+    return this.getViewState() as unknown as ICamera;
   }
 
   private getCurrentPresentation(): DerivedPlanarPresentation | undefined {
