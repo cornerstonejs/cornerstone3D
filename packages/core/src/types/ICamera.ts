@@ -33,6 +33,17 @@ interface ICamera {
   flipVertical?: boolean;
   /** clipping range */
   clippingRange?: Point2;
+  /** Aspect Ratio */
+  aspectRatio?: Point2;
+  /** Anamorphic Stretch */
+  isFitViewportAfterStretch?: boolean;
 }
 
-export type { ICamera as default };
+interface ResetCameraOptions {
+  resetPan?: boolean;
+  resetZoom?: boolean;
+  resetToCenter?: boolean;
+  resetAspectRatio?: boolean;
+}
+
+export type { ICamera as default, ResetCameraOptions };
