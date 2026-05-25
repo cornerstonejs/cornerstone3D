@@ -3,7 +3,7 @@ import type { Types } from '@cornerstonejs/core';
 /**
  * Converts floating-point min/max index bounds to integer voxel indices.
  *
- * For planar annotations (delta <= 1), floating-point drift from world-to-index
+ * For planar annotations (delta ≤ 1), floating-point drift from world-to-index
  * conversion can map to adjacent slices. Collapsing to a single rounded index
  * keeps planar ROIs on the intended slice across viewport types.
  *
