@@ -79,7 +79,7 @@ function clonePoint2(point: Point2): Point2 {
 abstract class BasePlanarResolvedView<
   TState extends BasePlanarResolvedViewState,
 > extends ResolvedViewportView<TState, PlanarResolvedICamera> {
-  private cachedSliceBasis?: PlanarSliceBasis;
+  protected cachedSliceBasis?: PlanarSliceBasis;
   private cachedPresentation?: ReturnType<typeof derivePlanarPresentation>;
 
   get pan(): Point2 {
@@ -298,14 +298,18 @@ class PlanarVolumeResolvedView extends BasePlanarResolvedView<PlanarVolumeResolv
   constructor(
     state: Omit<PlanarVolumeResolvedViewState, 'viewState'> & {
       viewState?: PlanarViewState;
+      sliceBasis?: PlanarSliceBasis;
     }
   ) {
+    const { sliceBasis, ...stateWithoutSliceBasis } = state;
+
     super({
-      ...state,
+      ...stateWithoutSliceBasis,
       viewState: normalizePlanarViewState(
         state.viewState || createDefaultPlanarViewState()
       ),
     });
+    this.cachedSliceBasis = sliceBasis;
   }
 
   indexToWorld(index: Point3): Point3 | undefined {
@@ -386,12 +390,17 @@ export function resolvePlanarViewportView(args: {
   imageIds?: string[];
   rendering?: PlanarRendering;
   renderContext: PlanarViewResolutionRenderContext;
+  canvasDimensions?: {
+    canvasHeight: number;
+    canvasWidth: number;
+  };
   sliceIndex?: number;
 }): PlanarStackResolvedView | PlanarVolumeResolvedView | undefined {
   const {
     data,
     frameOfReferenceUID,
     imageIds,
+    canvasDimensions,
     renderContext,
     rendering,
     sliceIndex,
@@ -401,10 +410,12 @@ export function resolvePlanarViewportView(args: {
     return;
   }
 
-  const { canvasHeight, canvasWidth } = getPlanarViewStateCanvasDimensions({
-    renderContext,
-    rendering,
-  });
+  const { canvasHeight, canvasWidth } =
+    canvasDimensions ??
+    getPlanarViewStateCanvasDimensions({
+      renderContext,
+      rendering,
+    });
   const requestedViewState = args.viewState;
 
   if (
@@ -468,14 +479,15 @@ export function resolvePlanarViewportView(args: {
             viewState: resolvedViewState,
             fallbackImageIdIndex: rendering.currentImageIdIndex,
           });
-    const { currentImageIdIndex, maxImageIdIndex } = createSliceBasis({
-      viewState: resolvedViewState,
-      canvasHeight,
-      canvasWidth,
-      imageIdIndex: resolvedImageIdIndex,
-      imageVolume: rendering.imageVolume,
-      orientation: resolvedViewState.orientation,
-    });
+    const { currentImageIdIndex, maxImageIdIndex, sliceBasis } =
+      createSliceBasis({
+        viewState: resolvedViewState,
+        canvasHeight,
+        canvasWidth,
+        imageIdIndex: resolvedImageIdIndex,
+        imageVolume: rendering.imageVolume,
+        orientation: resolvedViewState.orientation,
+      });
 
     return new PlanarVolumeResolvedView({
       viewState: resolvedViewState,
@@ -485,6 +497,7 @@ export function resolvePlanarViewportView(args: {
       frameOfReferenceUID,
       imageVolume: rendering.imageVolume,
       maxImageIdIndex,
+      sliceBasis,
       usePixelGridCenter:
         rendering.renderMode === ActorRenderMode.CPU_VOLUME &&
         shouldUsePlanarCpuVolumeSliceBasis(

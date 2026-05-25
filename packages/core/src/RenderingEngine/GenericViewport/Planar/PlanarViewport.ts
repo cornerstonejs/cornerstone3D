@@ -105,10 +105,14 @@ type ResolvedPlanarViewportView = NonNullable<
 >;
 
 type ResolvedViewCache = {
+  activeDataId?: string;
+  canvasHeight: number;
+  canvasWidth: number;
   data?: LoadedData<PlanarPayload>;
   frameOfReferenceUID: string;
   rendering?: PlanarRendering;
   resolvedView: ResolvedPlanarViewportView;
+  revision: number;
   viewState: PlanarViewState;
 };
 
@@ -141,6 +145,7 @@ class PlanarViewport extends GenericViewport<
   private cpuCanvas?: HTMLCanvasElement;
   private renderImageObjectDataId?: string;
   private resolvedViewCache?: ResolvedViewCache;
+  private resolvedViewCacheRevision = 0;
   private setDataRequestId = 0;
 
   // ── Static ───────────────────────────────────────────────────────────
@@ -182,8 +187,10 @@ class PlanarViewport extends GenericViewport<
       getViewState: () => this.viewState,
       getVolumeSliceWorldPointForImageIdIndex: (imageIdIndex) =>
         this.getVolumeSliceWorldPointForImageIdIndex(imageIdIndex),
-      promoteSourceDataId: (dataId) =>
-        this.mountedData.promoteSourceDataId(dataId),
+      promoteSourceDataId: (dataId) => {
+        this.clearResolvedViewCache();
+        this.mountedData.promoteSourceDataId(dataId);
+      },
       render: () => this.render(),
       setImageIdIndex: (imageIdIndex) => this.setImageIdIndex(imageIdIndex),
       setViewState: (viewStatePatch) => this.setViewState(viewStatePatch),
@@ -239,6 +246,7 @@ class PlanarViewport extends GenericViewport<
       viewport: {
         element: this.element,
         getActiveDataId: () => this.mountedData.getActiveDataId(),
+        invalidateResolvedView: () => this.clearResolvedViewCache(),
         getViewState: () => this.getViewState(),
         isCurrentDataId: (dataId) =>
           this.getCurrentBinding()?.data.id === dataId,
@@ -888,11 +896,19 @@ class PlanarViewport extends GenericViewport<
       flipHorizontal,
       flipVertical,
     } = viewPresSel;
-    const currentZoom = this.getZoom();
-    const currentScale = this.getScale();
+    const resolvedView = this.getResolvedView();
+    let currentScale: Point2 | undefined;
+    const getCurrentScale = (): Point2 => {
+      currentScale ||=
+        resolvedView?.scale ?? clonePlanarScale(this.viewState.scale);
+
+      return currentScale;
+    };
 
     if (rotation) {
-      target.rotation = this.getRotation();
+      target.rotation =
+        resolvedView?.rotation ??
+        normalizePlanarRotation(this.viewState.rotation);
     }
 
     if (displayArea) {
@@ -900,19 +916,23 @@ class PlanarViewport extends GenericViewport<
     }
 
     if (zoom) {
-      target.zoom = currentZoom;
+      target.zoom =
+        resolvedView?.zoom ?? getPlanarScaleZoom(this.viewState.scale);
     }
 
     if (scale) {
-      target.scale = clonePlanarScale(currentScale);
+      target.scale = clonePlanarScale(getCurrentScale());
     }
 
     if (pan) {
-      const currentPan = this.getPan();
+      const scaleForPan = getCurrentScale();
+      const currentPan = resolvedView
+        ? resolvedView.pan
+        : this.getFallbackPan();
 
       target.pan = [
-        currentPan[0] / currentScale[0],
-        currentPan[1] / currentScale[1],
+        currentPan[0] / scaleForPan[0],
+        currentPan[1] / scaleForPan[1],
       ];
     }
 
@@ -1813,15 +1833,29 @@ class PlanarViewport extends GenericViewport<
 
     const data = this.getPlanarData();
     const rendering = this.getCurrentPlanarRendering();
+    const activeDataId = this.mountedData.getActiveDataId();
     const frameOfReferenceUID = this.resolveFrameOfReferenceUID();
     const cache = this.resolvedViewCache;
 
+    if (!rendering) {
+      return this.resolveViewState(viewState, args);
+    }
+
+    const { canvasHeight, canvasWidth } = getPlanarViewStateCanvasDimensions({
+      renderContext: this.renderContext,
+      rendering,
+    });
+
     if (
       cache &&
+      cache.activeDataId === activeDataId &&
       cache.viewState === viewState &&
       cache.data === data &&
       cache.rendering === rendering &&
-      cache.frameOfReferenceUID === frameOfReferenceUID
+      cache.frameOfReferenceUID === frameOfReferenceUID &&
+      cache.canvasHeight === canvasHeight &&
+      cache.canvasWidth === canvasWidth &&
+      cache.revision === this.resolvedViewCacheRevision
     ) {
       return cache.resolvedView;
     }
@@ -1832,14 +1866,22 @@ class PlanarViewport extends GenericViewport<
       frameOfReferenceUID,
       renderContext: this.renderContext,
       rendering,
+      canvasDimensions: {
+        canvasHeight,
+        canvasWidth,
+      },
     });
 
     if (resolvedView) {
       this.resolvedViewCache = {
+        activeDataId,
+        canvasHeight,
+        canvasWidth,
         data,
         frameOfReferenceUID,
         rendering,
         resolvedView,
+        revision: this.resolvedViewCacheRevision,
         viewState,
       };
     }
@@ -1849,6 +1891,7 @@ class PlanarViewport extends GenericViewport<
 
   private clearResolvedViewCache(): void {
     this.resolvedViewCache = undefined;
+    this.resolvedViewCacheRevision += 1;
   }
 
   private resolveFrameOfReferenceUID(): string {

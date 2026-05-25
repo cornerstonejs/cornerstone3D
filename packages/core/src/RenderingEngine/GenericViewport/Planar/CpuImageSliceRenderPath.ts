@@ -702,6 +702,7 @@ async function updateRenderedImage(args: {
   rendering.defaultVOIRange = getDefaultImageVOIRange(image);
   rendering.fitScale = getCPUFallbackScalarScale(defaultViewport.scale);
   rendering.renderingInvalidated = true;
+  ctx.viewport.invalidateResolvedView();
   rendering.compatibilityActor
     .getMapper()
     .getInputData()

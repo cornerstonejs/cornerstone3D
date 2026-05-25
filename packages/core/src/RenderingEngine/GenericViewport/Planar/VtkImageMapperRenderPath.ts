@@ -366,6 +366,7 @@ async function updateRenderedImage(args: {
   rendering.imageData = imageData;
   rendering.currentImageIdIndex = imageIdIndex;
   rendering.defaultVOIRange = getDefaultImageVOIRange(image);
+  ctx.viewport.invalidateResolvedView();
 
   if (imageData.getPointData().getScalars().getNumberOfComponents() > 1) {
     actor.getProperty().setIndependentComponents(false);

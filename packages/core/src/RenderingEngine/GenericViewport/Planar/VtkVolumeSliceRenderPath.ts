@@ -225,9 +225,15 @@ export class VtkVolumeSliceRenderPath
     });
     const imageIdIndexChanged =
       projection.currentImageIdIndex !== rendering.currentImageIdIndex;
+    const maxImageIdIndexChanged =
+      projection.maxImageIdIndex !== rendering.maxImageIdIndex;
 
     rendering.currentImageIdIndex = projection.currentImageIdIndex;
     rendering.maxImageIdIndex = projection.maxImageIdIndex;
+
+    if (imageIdIndexChanged || maxImageIdIndexChanged) {
+      ctx.viewport.invalidateResolvedView();
+    }
 
     updateVolumeSlicePlane(rendering.mapper, projection.activeSourceICamera);
     updateVolumeSliceActorDepthOffset(

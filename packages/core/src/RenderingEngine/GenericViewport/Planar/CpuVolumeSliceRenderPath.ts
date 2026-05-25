@@ -518,10 +518,16 @@ export class CpuVolumeSliceRenderPath
     const { currentImageIdIndex, maxImageIdIndex } = projection;
     const imageIdIndexChanged =
       currentImageIdIndex !== rendering.currentImageIdIndex;
+    const maxImageIdIndexChanged =
+      maxImageIdIndex !== rendering.maxImageIdIndex;
 
     rendering.currentImageIdIndex = currentImageIdIndex;
     rendering.maxImageIdIndex = maxImageIdIndex;
     rendering.renderingInvalidated = true;
+
+    if (imageIdIndexChanged || maxImageIdIndexChanged) {
+      ctx.viewport.invalidateResolvedView();
+    }
 
     if (imageIdIndexChanged) {
       triggerPlanarVolumeNewImage(ctx, {

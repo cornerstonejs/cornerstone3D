@@ -189,6 +189,7 @@ export interface PlanarViewportRenderContext extends BaseViewportRenderContext {
   viewport: {
     element: HTMLDivElement;
     getActiveDataId(): string | undefined;
+    invalidateResolvedView(): void;
     getViewState(): PlanarViewState;
     isCurrentDataId(dataId: string): boolean;
     getOverlayActors(): ActorEntry[];

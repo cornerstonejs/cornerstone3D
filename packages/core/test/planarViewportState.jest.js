@@ -1,10 +1,13 @@
-import { Events, OrientationAxis } from '../src/enums';
+import { Events, MetadataModules, OrientationAxis } from '../src/enums';
+import { ActorRenderMode } from '../src/types';
+import * as metaData from '../src/metaData';
 import PlanarViewport from '../src/RenderingEngine/GenericViewport/Planar/PlanarViewport';
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
 import genericViewportDataSetMetadataProvider from '../src/utilities/genericViewportDataSetMetadataProvider';
 import imageIdToURI from '../src/utilities/imageIdToURI';
 
 let viewportCounter = 0;
+let metadataProviders = [];
 
 function createViewport(defaultOptions = {}) {
   const renderingEngineId = `planar-test-engine-${viewportCounter++}`;
@@ -52,6 +55,92 @@ function createViewport(defaultOptions = {}) {
   };
 }
 
+function createPlanarImage(imageId, rows = 10, columns = 20) {
+  return {
+    imageId,
+    rows,
+    columns,
+    width: columns,
+    height: rows,
+    rowPixelSpacing: 1,
+    columnPixelSpacing: 1,
+    sizeInBytes: rows * columns * 2,
+    windowCenter: 0,
+    windowWidth: 1,
+  };
+}
+
+function addPlanarImageMetadata(imageIds) {
+  const imageIdSet = new Set(imageIds);
+  const provider = (type, imageId) => {
+    if (!imageIdSet.has(imageId)) {
+      return;
+    }
+
+    if (type === MetadataModules.IMAGE_PIXEL) {
+      return {
+        bitsAllocated: 16,
+        bitsStored: 16,
+        highBit: 15,
+        photometricInterpretation: 'MONOCHROME2',
+        pixelRepresentation: 0,
+        samplesPerPixel: 1,
+      };
+    }
+
+    if (type === MetadataModules.GENERAL_SERIES) {
+      return {
+        modality: 'CT',
+      };
+    }
+
+    if (type === MetadataModules.IMAGE_PLANE) {
+      return {
+        columnCosines: [0, 1, 0],
+        columnPixelSpacing: 1,
+        imageOrientationPatient: [1, 0, 0, 0, 1, 0],
+        imagePositionPatient: [0, 0, 0],
+        rowCosines: [1, 0, 0],
+        rowPixelSpacing: 1,
+      };
+    }
+  };
+
+  metaData.addProvider(provider, 10000);
+  metadataProviders.push(provider);
+}
+
+function mountStackBinding(viewport, images) {
+  const dataId = `stack:${viewport.id}`;
+  const rendering = {
+    actorEntryUID: `${dataId}:actor`,
+    currentImage: images[0],
+    currentImageIdIndex: 0,
+    imageData: {},
+    loadRequestId: 0,
+    renderMode: ActorRenderMode.VTK_IMAGE,
+  };
+  const binding = {
+    applyViewState: jest.fn(),
+    data: {
+      id: dataId,
+      type: 'image',
+      image: images[0],
+      imageIds: images.map((image) => image.imageId),
+    },
+    getFrameOfReferenceUID: () => 'planar-test-frame',
+    removeData: jest.fn(),
+    rendering,
+    role: 'source',
+    updateDataPresentation: jest.fn(),
+  };
+
+  viewport.bindings.set(dataId, binding);
+  viewport.mountedData.promoteSourceDataId(dataId);
+
+  return { binding, dataId, rendering };
+}
+
 describe('PlanarViewport view state', () => {
   let created = [];
 
@@ -62,6 +151,10 @@ describe('PlanarViewport view state', () => {
     }
 
     created = [];
+    for (const provider of metadataProviders) {
+      metaData.removeProvider(provider);
+    }
+    metadataProviders = [];
     genericViewportDataSetMetadataProvider.clear();
     jest.clearAllMocks();
   });
@@ -171,6 +264,71 @@ describe('PlanarViewport view state', () => {
     expect(pan[0]).toBeCloseTo(60, 5);
     expect(pan[1]).toBeCloseTo(0, 5);
     expect(viewport.getViewState().anchorCanvas[0]).toBeCloseTo(0.8, 5);
+  });
+
+  it('caches the current resolved view snapshot', () => {
+    const { viewport } = track(createViewport());
+    const image = createPlanarImage('cache-image-1');
+
+    addPlanarImageMetadata([image.imageId]);
+    mountStackBinding(viewport, [image]);
+
+    const firstResolvedView = viewport.getResolvedView();
+    const secondResolvedView = viewport.getResolvedView();
+
+    expect(secondResolvedView).toBe(firstResolvedView);
+  });
+
+  it('invalidates the resolved view cache when view state changes', () => {
+    const { viewport } = track(createViewport());
+    const image = createPlanarImage('cache-image-2');
+
+    addPlanarImageMetadata([image.imageId]);
+    mountStackBinding(viewport, [image]);
+
+    const firstResolvedView = viewport.getResolvedView();
+
+    viewport.setViewState({ scale: [2, 2] });
+
+    expect(viewport.getResolvedView()).not.toBe(firstResolvedView);
+  });
+
+  it('invalidates the resolved view cache when render paths swap image state', () => {
+    const { viewport } = track(createViewport());
+    const firstImage = createPlanarImage('cache-image-3');
+    const secondImage = createPlanarImage('cache-image-4');
+    const { rendering } = mountStackBinding(viewport, [
+      firstImage,
+      secondImage,
+    ]);
+
+    addPlanarImageMetadata([firstImage.imageId, secondImage.imageId]);
+
+    const firstResolvedView = viewport.getResolvedView();
+
+    rendering.currentImage = secondImage;
+    rendering.currentImageIdIndex = 1;
+    viewport.renderContext.viewport.invalidateResolvedView();
+
+    const nextResolvedView = viewport.getResolvedView();
+
+    expect(nextResolvedView).not.toBe(firstResolvedView);
+    expect(nextResolvedView.state.image).toBe(secondImage);
+  });
+
+  it('does not cache explicit slice-index resolved view snapshots', () => {
+    const { viewport } = track(createViewport());
+    const image = createPlanarImage('cache-image-5');
+
+    addPlanarImageMetadata([image.imageId]);
+    mountStackBinding(viewport, [image]);
+
+    const currentResolvedView = viewport.getResolvedView();
+    const firstExplicitSliceView = viewport.getResolvedView({ sliceIndex: 0 });
+    const secondExplicitSliceView = viewport.getResolvedView({ sliceIndex: 0 });
+
+    expect(firstExplicitSliceView).not.toBe(secondExplicitSliceView);
+    expect(viewport.getResolvedView()).toBe(currentResolvedView);
   });
 
   it('resets orientation and flips while honoring pan and zoom flags', () => {
