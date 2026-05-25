@@ -207,6 +207,10 @@ export function projectAnchorWorldToCurrentPlane(
  *   2. `panFromAnchorCanvas` — the offset caused by the anchor being placed
  *      at a non-center canvas location (e.g. zoom-to-cursor).
  *
+ * @experimental Exposed for custom synchronizers and tooling. Less stable
+ *   than the core viewport API; signatures may change before 3.0 stable.
+ *   Prefer the `planarHelpers` namespace re-export over importing directly.
+ *
  * @param args.sliceBasis - The geometric basis for the current slice.
  * @param args.camera - The semantic camera (may be undefined for defaults).
  * @param args.canvasWidth - Current canvas width in CSS pixels.
@@ -413,6 +417,10 @@ function getResolvedPanOffset(args: {
  *   3. `focalPoint = sliceCenterWorld - worldOffset`.
  *   4. `position = focalPoint + viewPlaneNormal * cameraDistance`.
  *
+ * @experimental Exposed for custom synchronizers and tooling. Less stable
+ *   than the core viewport API; signatures may change before 3.0 stable.
+ *   Prefer the `planarHelpers` namespace re-export over importing directly.
+ *
  * @param args.sliceBasis - The geometric basis for the current slice.
  * @param args.camera - The semantic camera (may be undefined for defaults).
  * @param args.canvasWidth - Current canvas width in CSS pixels.
@@ -477,6 +485,10 @@ export function resolvePlanarICamera(args: {
 /**
  * Pushes a resolved ICamera onto a vtkRenderer's active camera.
  * Returns the applied camera, or undefined if the camera was incomplete.
+ *
+ * @experimental Exposed for custom synchronizers and tooling. Less stable
+ *   than the core viewport API; signatures may change before 3.0 stable.
+ *   Prefer the `planarHelpers` namespace re-export over importing directly.
  *
  * @param args.renderer - The VTK renderer whose camera will be updated.
  * @param args.activeSourceICamera - The resolved ICamera to apply.

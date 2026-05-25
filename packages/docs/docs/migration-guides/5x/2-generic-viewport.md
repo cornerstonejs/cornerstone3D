@@ -284,9 +284,30 @@ Use `focalPoint`, `parallelScale`, `setViewState()`, `setViewPresentation()`,
 or view-reference APIs instead.
 
 Lower-level planar camera helpers are available for custom synchronizers and
-tooling that need to derive renderer cameras without going through a viewport:
-`resolvePlanarICamera()`, `derivePlanarPresentation()`, and
-`applyPlanarICameraToRenderer()`. Treat these as helper APIs around the planar
+tooling that need to derive renderer cameras without going through a viewport.
+They are grouped under a `planarHelpers` namespace export to signal that they
+sit a tier below the stable viewport API and may change before 3.0 stable:
+
+```ts
+import { planarHelpers } from '@cornerstonejs/core';
+
+const sliceBasis = planarHelpers.createImageSliceBasis({
+  image,
+  canvasWidth,
+  canvasHeight,
+});
+const icamera = planarHelpers.resolveICamera({
+  sliceBasis,
+  camera: viewState,
+  canvasWidth,
+  canvasHeight,
+});
+planarHelpers.applyToRenderer({ renderer, activeSourceICamera: icamera });
+```
+
+The namespace also exposes `derivePresentation` (canvas-space pan/zoom/rotation
+without the world-space focal-point step) and `createVolumeSliceBasis` (for
+volume-backed planar viewports). Treat these as helper APIs around the planar
 camera model rather than as the primary viewport control surface.
 
 ## Planar Camera State Differences

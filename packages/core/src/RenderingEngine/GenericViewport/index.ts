@@ -69,12 +69,10 @@ export type {
 } from './Video';
 export { default as PlanarViewport } from './Planar';
 export {
-  applyPlanarICameraToRenderer,
   createDefaultPlanarRenderPaths,
   createPlanarRenderPathResolver,
-  derivePlanarPresentation,
   DefaultPlanarDataProvider,
-  resolvePlanarICamera,
+  planarHelpers,
 } from './Planar';
 export type {
   PlanarViewState,
@@ -84,6 +82,7 @@ export type {
   PlanarProperties,
   PlanarRenderMode,
   PlanarSetDataOptions,
+  PlanarSliceBasis,
   PlanarViewportInput,
   PlanarViewportInputOptions,
   PlanarResolvedICamera,

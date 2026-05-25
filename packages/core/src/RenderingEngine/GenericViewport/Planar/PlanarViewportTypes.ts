@@ -143,7 +143,6 @@ export interface PlanarViewState {
   displayArea?: PlanarDisplayArea;
 }
 
-/** @internal */
 export interface PlanarResolvedICamera extends ICamera<PlanarScaleInput> {
   presentationScale?: Point2;
   scaleMode?: CameraScaleMode;
