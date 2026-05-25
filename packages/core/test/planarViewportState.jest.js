@@ -1,4 +1,4 @@
-import { Events } from '../src/enums';
+import { Events, OrientationAxis } from '../src/enums';
 import PlanarViewport from '../src/RenderingEngine/GenericViewport/Planar/PlanarViewport';
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
 import genericViewportDataSetMetadataProvider from '../src/utilities/genericViewportDataSetMetadataProvider';
@@ -6,7 +6,7 @@ import imageIdToURI from '../src/utilities/imageIdToURI';
 
 let viewportCounter = 0;
 
-function createViewport() {
+function createViewport(defaultOptions = {}) {
   const renderingEngineId = `planar-test-engine-${viewportCounter++}`;
   const viewportId = `planar-test-viewport-${viewportCounter}`;
   const element = document.createElement('div');
@@ -41,7 +41,7 @@ function createViewport() {
     canvas: vtkCanvas,
     sWidth: 200,
     sHeight: 100,
-    defaultOptions: {},
+    defaultOptions,
   });
 
   return {
@@ -171,6 +171,62 @@ describe('PlanarViewport view state', () => {
     expect(pan[0]).toBeCloseTo(60, 5);
     expect(pan[1]).toBeCloseTo(0, 5);
     expect(viewport.getViewState().anchorCanvas[0]).toBeCloseTo(0.8, 5);
+  });
+
+  it('resets orientation and flips while honoring pan and zoom flags', () => {
+    const { viewport } = track(
+      createViewport({
+        orientation: OrientationAxis.CORONAL,
+      })
+    );
+
+    viewport.setViewState({
+      anchorCanvas: [0.25, 0.75],
+      anchorWorld: [4, 5, 6],
+      flipHorizontal: true,
+      flipVertical: true,
+      orientation: OrientationAxis.SAGITTAL,
+      rotation: 45,
+      scale: [2, 3],
+    });
+
+    viewport.resetCamera({
+      resetPan: false,
+      resetZoom: false,
+    });
+
+    const state = viewport.getViewState();
+
+    expect(state.anchorCanvas).toEqual([0.25, 0.75]);
+    expect(state.anchorWorld).toEqual([4, 5, 6]);
+    expect(state.flipHorizontal).toBe(false);
+    expect(state.flipVertical).toBe(false);
+    expect(state.orientation).toBe(OrientationAxis.CORONAL);
+    expect(state.rotation).toBe(0);
+    expect(state.scale).toEqual([2, 3]);
+  });
+
+  it('can preserve orientation and flips when resetCamera opts out', () => {
+    const { viewport } = track(createViewport());
+
+    viewport.setViewState({
+      flipHorizontal: true,
+      flipVertical: true,
+      orientation: OrientationAxis.SAGITTAL,
+      rotation: 45,
+    });
+
+    viewport.resetCamera({
+      resetOrientation: false,
+      resetFlip: false,
+    });
+
+    const state = viewport.getViewState();
+
+    expect(state.flipHorizontal).toBe(true);
+    expect(state.flipVertical).toBe(true);
+    expect(state.orientation).toBe(OrientationAxis.SAGITTAL);
+    expect(state.rotation).toBe(0);
   });
 
   it('rejects invalid custom orientation vectors', () => {

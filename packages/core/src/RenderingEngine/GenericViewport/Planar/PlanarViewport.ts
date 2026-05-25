@@ -112,6 +112,13 @@ type ResolvedViewCache = {
   viewState: PlanarViewState;
 };
 
+type PlanarResetCameraOptions = {
+  resetPan?: boolean;
+  resetZoom?: boolean;
+  resetOrientation?: boolean;
+  resetFlip?: boolean;
+};
+
 class PlanarViewport extends GenericViewport<
   PlanarViewState,
   PlanarDataPresentation,
@@ -1223,28 +1230,44 @@ class PlanarViewport extends GenericViewport<
   }
 
   /**
-   * Resets rotation and optionally resets pan and zoom.
+   * Resets camera presentation back to the viewport defaults.
    *
-   * This intentionally leaves navigation and orientation state unchanged:
-   * slice, orientation, and flips must be reset explicitly through view state.
+   * Navigation state such as the current slice remains unchanged.
    *
-   * @param options - Flags controlling whether pan and zoom are reset.
+   * @param options - Flags controlling which camera fields are reset.
    * @returns Always `true` for compatibility with legacy viewport contracts.
    */
-  resetCamera(options?: { resetPan?: boolean; resetZoom?: boolean }): boolean {
-    const { resetPan = true, resetZoom = true } = options || {};
-    this.setViewState({
-      ...(resetPan
-        ? {
-            anchorWorld: undefined,
-            anchorCanvas: [0.5, 0.5] as [number, number],
-          }
-        : {}),
-      ...(resetZoom
-        ? { scale: [1, 1] as Point2, scaleMode: 'fit' as const }
-        : {}),
+  resetCamera(options?: PlanarResetCameraOptions): boolean {
+    const {
+      resetPan = true,
+      resetZoom = true,
+      resetOrientation = true,
+      resetFlip = true,
+    } = options || {};
+    const nextCamera: Partial<PlanarViewState> = {
       rotation: 0,
-    });
+    };
+
+    if (resetPan) {
+      nextCamera.anchorWorld = undefined;
+      nextCamera.anchorCanvas = [0.5, 0.5];
+    }
+
+    if (resetZoom) {
+      nextCamera.scale = [1, 1];
+      nextCamera.scaleMode = 'fit';
+    }
+
+    if (resetOrientation) {
+      nextCamera.orientation = this.resolveRequestedOrientation();
+    }
+
+    if (resetFlip) {
+      nextCamera.flipHorizontal = false;
+      nextCamera.flipVertical = false;
+    }
+
+    this.setViewState(nextCamera);
     this.triggerCameraResetEvent();
 
     return true;
