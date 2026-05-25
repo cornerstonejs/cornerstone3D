@@ -16,7 +16,8 @@ import type { CanvasCoordinates } from '../../../types';
 
 const sphereComposition = {
   [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
-    const { points, viewport, segmentationImageData } = operationData;
+    const { points, viewport, segmentationImageData, viewUp, viewPlaneNormal } =
+      operationData;
 
     // Happens on a preview setup
     if (!points) {
@@ -39,11 +40,6 @@ const sphereComposition = {
       center as Types.Point3
     );
 
-    const baseExtent = getSphereBoundsInfoFromViewport(
-      points.slice(0, 2) as [Types.Point3, Types.Point3],
-      segmentationImageData,
-      viewport
-    );
     const canvasCoordinates = points.map((p) =>
       viewport.worldToCanvas(p)
     ) as CanvasCoordinates;
@@ -66,88 +62,54 @@ const sphereComposition = {
         ? vec3.distance(points[2], points[3]) / 2 / aspectRatio[0]
         : 0;
 
-    const strokeCenters =
-      operationData.strokePointsWorld &&
-      operationData.strokePointsWorld.length > 0
-        ? operationData.strokePointsWorld
-        : [operationData.centerWorld];
+    const normalizedViewUp = vec3.fromValues(viewUp[0], viewUp[1], viewUp[2]);
+    vec3.normalize(normalizedViewUp, normalizedViewUp);
 
-    // The original implementation recalculated the expensive sphere bounds for
-    // every interpolated point. That repeats a handful of world-to-index
-    // conversions per sample, which adds up quickly during fast brushes. We
-    // know each stroke point simply translates the same sphere, so we can reuse
-    // the base bounds and slide them by the delta in IJK space instead.
-    const baseBounds = baseExtent.boundsIJK;
-    const baseCenterIJK = operationData.centerIJK;
-    const boundsForStroke = strokeCenters.reduce<Types.BoundsIJK | null>(
-      (acc, centerPoint) => {
-        if (!centerPoint) {
-          return acc;
-        }
+    const normalizedPlaneNormal = vec3.fromValues(
+      viewPlaneNormal[0],
+      viewPlaneNormal[1],
+      viewPlaneNormal[2]
+    );
+    vec3.normalize(normalizedPlaneNormal, normalizedPlaneNormal);
 
-        const translatedCenterIJK = transformWorldToIndex(
-          segmentationImageData,
-          centerPoint as Types.Point3
-        );
-        const deltaIJK = [
-          translatedCenterIJK[0] - baseCenterIJK[0],
-          translatedCenterIJK[1] - baseCenterIJK[1],
-          translatedCenterIJK[2] - baseCenterIJK[2],
-        ];
+    const viewRight = vec3.create();
+    vec3.cross(viewRight, normalizedViewUp, normalizedPlaneNormal);
+    vec3.normalize(viewRight, viewRight);
 
-        const translatedBounds: Types.BoundsIJK = [
-          [baseBounds[0][0] + deltaIJK[0], baseBounds[0][1] + deltaIJK[0]],
-          [baseBounds[1][0] + deltaIJK[1], baseBounds[1][1] + deltaIJK[1]],
-          [baseBounds[2][0] + deltaIJK[2], baseBounds[2][1] + deltaIJK[2]],
-        ];
+    // Calculate radius in world units
+    const radiusWorld = vec3.distance(points[0], points[1]) / 2;
 
-        if (!acc) {
-          return translatedBounds;
-        }
-
-        return [
-          [
-            Math.min(acc[0][0], translatedBounds[0][0]),
-            Math.max(acc[0][1], translatedBounds[0][1]),
-          ],
-          [
-            Math.min(acc[1][0], translatedBounds[1][0]),
-            Math.max(acc[1][1], translatedBounds[1][1]),
-          ],
-          [
-            Math.min(acc[2][0], translatedBounds[2][0]),
-            Math.max(acc[2][1], translatedBounds[2][1]),
-          ],
-        ] as Types.BoundsIJK;
-      },
-      null
+    // Get the center in IJK
+    const centerIJK = transformWorldToIndex(
+      segmentationImageData,
+      center as Types.Point3
     );
 
-    const boundsToUse = boundsForStroke ?? baseExtent.boundsIJK;
+    // Get the spacing of the volume to convert world radius to IJK "radius"
+    const spacing = segmentationImageData.getSpacing();
+    const radiusIJK = [
+      radiusWorld / spacing[0],
+      radiusWorld / spacing[1],
+      radiusWorld / spacing[2],
+    ];
 
-    if (segmentationImageData) {
-      const dimensions = segmentationImageData.getDimensions();
-      // Clamp once at the end to keep the bounds valid for downstream
-      // iteration. We were clamping each partial result previously, which was
-      // redundant and still left us doing extra work when a drag crossed the
-      // image edges.
-      operationData.isInObjectBoundsIJK = [
-        [
-          Math.max(0, Math.min(boundsToUse[0][0], dimensions[0] - 1)),
-          Math.max(0, Math.min(boundsToUse[0][1], dimensions[0] - 1)),
-        ],
-        [
-          Math.max(0, Math.min(boundsToUse[1][0], dimensions[1] - 1)),
-          Math.max(0, Math.min(boundsToUse[1][1], dimensions[1] - 1)),
-        ],
-        [
-          Math.max(0, Math.min(boundsToUse[2][0], dimensions[2] - 1)),
-          Math.max(0, Math.min(boundsToUse[2][1], dimensions[2] - 1)),
-        ],
-      ] as Types.BoundsIJK;
-    } else {
-      operationData.isInObjectBoundsIJK = boundsToUse;
-    }
+    // Define bounds that always encompass the sphere
+    const boundsIJK = [
+      [
+        Math.floor(centerIJK[0] - radiusIJK[0]),
+        Math.ceil(centerIJK[0] + radiusIJK[0]),
+      ],
+      [
+        Math.floor(centerIJK[1] - radiusIJK[1]),
+        Math.ceil(centerIJK[1] + radiusIJK[1]),
+      ],
+      [
+        Math.floor(centerIJK[2] - radiusIJK[2]),
+        Math.ceil(centerIJK[2] + radiusIJK[2]),
+      ],
+    ];
+
+    operationData.isInObjectBoundsIJK = boundsIJK as Types.BoundsIJK;
 
     operationData.isInObject = createEllipseInPoint(cornersInWorld, {
       strokePointsWorld: operationData.strokePointsWorld,
@@ -155,6 +117,9 @@ const sphereComposition = {
       xRadius,
       yRadius,
       aspectRatio,
+      viewRight,
+      viewUp: normalizedViewUp,
+      viewNormal: normalizedPlaneNormal,
     });
     // }
   },

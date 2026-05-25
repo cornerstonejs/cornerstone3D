@@ -2,7 +2,6 @@ import { vec3 } from 'gl-matrix';
 import { utilities as csUtils, StackViewport } from '@cornerstonejs/core';
 import type { Types, BaseVolumeViewport } from '@cornerstonejs/core';
 
-import { getBoundingBoxAroundShapeIJK } from '../../../utilities/boundingBox';
 import type { LabelmapToolOperationData } from '../../../types';
 import BrushStrategy from './BrushStrategy';
 import type { Composition, InitializedOperationData } from './BrushStrategy';
@@ -67,51 +66,99 @@ function createPointInRectangle(
   points: Types.Point3[],
   segmentationImageData: vtkImageData
 ) {
-  let rectangleCornersIJK = points.map((world) => {
-    return transformWorldToIndex(segmentationImageData, world);
-  });
+  /**
+   * Ensure stable rectangle ordering.
+   * Prevents incorrect axis construction on rotated views.
+   */
+  function orderPoints(pts: Types.Point3[]) {
+    const center = vec3.create();
 
-  // math round
-  rectangleCornersIJK = rectangleCornersIJK.map((point) => {
-    return point.map((coord) => {
-      return Math.round(coord);
+    pts.forEach((p) => vec3.add(center, center, p));
+
+    vec3.scale(center, center, 1 / pts.length);
+
+    return [...pts].sort((a, b) => {
+      const angleA = Math.atan2(a[1] - center[1], a[0] - center[0]);
+
+      const angleB = Math.atan2(b[1] - center[1], b[0] - center[0]);
+
+      return angleA - angleB;
     });
-  });
+  }
 
-  const boundsIJK = getBoundingBoxAroundShapeIJK(
-    rectangleCornersIJK,
-    segmentationImageData.getDimensions()
+  const orderedPoints = orderPoints(points);
+
+  const [p0, p1, p2, p3] = orderedPoints;
+
+  // Convert rectangle corners to IJK.
+  const rectangleCornersIJK = orderedPoints.map((world) =>
+    transformWorldToIndex(segmentationImageData, world)
   );
 
-  // Rectangle corners in world: [topLeft, topRight, bottomRight, bottomLeft]
-  const [p0, p1, p2, p3] = points;
-  // Two axes in the plane
+  // Bounding box in IJK space.
+  const dims = segmentationImageData.getDimensions();
+
+  const cornerIValues = rectangleCornersIJK.map((p) => p[0]);
+  const cornerJValues = rectangleCornersIJK.map((p) => p[1]);
+  const cornerKValues = rectangleCornersIJK.map((p) => p[2]);
+
+  const boundsIJK = [
+    [
+      Math.max(0, Math.floor(Math.min(...cornerIValues))),
+      Math.min(dims[0] - 1, Math.ceil(Math.max(...cornerIValues))),
+    ],
+    [
+      Math.max(0, Math.floor(Math.min(...cornerJValues))),
+      Math.min(dims[1] - 1, Math.ceil(Math.max(...cornerJValues))),
+    ],
+    [
+      Math.max(0, Math.floor(Math.min(...cornerKValues))),
+      Math.min(dims[2] - 1, Math.ceil(Math.max(...cornerKValues))),
+    ],
+  ] as Types.BoundsIJK;
+
   const axisU = vec3.create();
   const axisV = vec3.create();
+
   vec3.subtract(axisU, p1, p0); // p0 -> p1
   vec3.subtract(axisV, p3, p0); // p0 -> p3
+
   const uLen = vec3.length(axisU);
   const vLen = vec3.length(axisV);
+
   vec3.normalize(axisU, axisU);
   vec3.normalize(axisV, axisV);
+
   // Plane normal
   const normal = vec3.create();
   vec3.cross(normal, axisU, axisV);
   vec3.normalize(normal, normal);
 
-  // For tolerance in the normal direction
-  const direction = segmentationImageData.getDirection();
   const spacing = segmentationImageData.getSpacing();
-  const { viewPlaneNormal } = viewport.getCamera();
-  const EPS = csUtils.getSpacingInNormalDirection(
+
+  const direction = segmentationImageData.getDirection();
+
+  // Proper spacing along rectangle normal.
+  // Important for oblique orientations.
+  const projectedSpacing = csUtils.getSpacingInNormalDirection(
     {
       direction,
       spacing,
     },
-    viewPlaneNormal
+    normal as Types.Point3
   );
 
-  // Function to check if a point is inside the oblique rectangle
+  // Use a slightly thicker slab to avoid sparse voxel sampling
+  // artifacts on oblique planes.
+  // Using full projected spacing gives more stable voxel occupancy.
+  const thickness = projectedSpacing;
+
+  // Small tolerance helps stable edge coverage
+  // without excessive overfill
+  const inPlaneSpacing = Math.min(spacing[0], spacing[1]);
+
+  const inPlaneTolerance = inPlaneSpacing / 2;
+
   const pointInShapeFn = (pointLPS) => {
     // Vector from p0 to point
     const v = vec3.create();
@@ -120,14 +167,17 @@ function createPointInRectangle(
     const u = vec3.dot(v, axisU);
     const vproj = vec3.dot(v, axisV);
     // Project onto normal
-    const d = Math.abs(vec3.dot(v, normal));
-    // Check bounds with tolerance in normal direction
+    const distanceToPlane = Math.abs(vec3.dot(v, normal));
+
+    // Check:
+    // 1. Inside rectangle bounds (with tolerance)
+    // 2. Close enough to plane (slice constraint)
     return (
-      u >= -EPS &&
-      u <= uLen + EPS &&
-      vproj >= -EPS &&
-      vproj <= vLen + EPS &&
-      d <= EPS
+      u >= -inPlaneTolerance &&
+      u <= uLen + inPlaneTolerance &&
+      vproj >= -inPlaneTolerance &&
+      vproj <= vLen + inPlaneTolerance &&
+      distanceToPlane <= thickness
     );
   };
 
