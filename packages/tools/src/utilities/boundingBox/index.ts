@@ -3,13 +3,13 @@ import {
   getBoundingBoxAroundShapeIJK,
   getBoundingBoxAroundShapeWorld,
 } from './getBoundingBoxAroundShape';
-import normalizeFloatingPointIndexBounds from './normalizeFloatingPointIndexBounds';
+import snapIndexBounds from './snapIndexBounds';
 
 export {
   extend2DBoundingBoxInViewAxis,
   getBoundingBoxAroundShapeIJK,
   getBoundingBoxAroundShapeWorld,
-  normalizeFloatingPointIndexBounds,
+  snapIndexBounds,
   // backwards compatibility
   getBoundingBoxAroundShapeIJK as getBoundingBoxAroundShape,
 };

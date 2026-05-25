@@ -9,10 +9,7 @@ import type { Types } from '@cornerstonejs/core';
  *
  * For bounds spanning multiple voxels (delta > 1), floor/ceil preserves coverage.
  */
-function normalizeFloatingPointIndexBounds(
-  min: number,
-  max: number
-): Types.Point2 {
+function snapIndexBounds(min: number, max: number): Types.Point2 {
   const delta = max - min;
 
   if (delta <= 1) {
@@ -24,4 +21,4 @@ function normalizeFloatingPointIndexBounds(
   return [Math.floor(min), Math.ceil(max)];
 }
 
-export default normalizeFloatingPointIndexBounds;
+export default snapIndexBounds;

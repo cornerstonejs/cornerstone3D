@@ -46,7 +46,7 @@ import { BasicStatsCalculator } from '../../utilities/math/basic';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
 import { KeyboardBindings, ChangeTypes, MeasurementType } from '../../enums';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
-import normalizeFloatingPointIndexBounds from '../../utilities/boundingBox/normalizeFloatingPointIndexBounds';
+import snapIndexBounds from '../../utilities/boundingBox/snapIndexBounds';
 
 const { pointCanProjectOnLine } = polyline;
 const { EPSILON } = CONSTANTS;
@@ -928,9 +928,9 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       kMax = Math.max(kMax, worldPosIndex[2]);
     }
 
-    [iMin, iMax] = normalizeFloatingPointIndexBounds(iMin, iMax);
-    [jMin, jMax] = normalizeFloatingPointIndexBounds(jMin, jMax);
-    [kMin, kMax] = normalizeFloatingPointIndexBounds(kMin, kMax);
+    [iMin, iMax] = snapIndexBounds(iMin, iMax);
+    [jMin, jMax] = snapIndexBounds(jMin, jMax);
+    [kMin, kMax] = snapIndexBounds(kMin, kMax);
 
     // Convert from canvas_pixels ^2 to mm^2
     const area = polyline.getArea(canvasCoordinates) * deltaInX * deltaInY;
