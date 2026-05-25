@@ -1,5 +1,6 @@
 {
   "lockfileVersion": 1,
+  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "root",
@@ -119,7 +120,7 @@
     },
     "packages/adapters": {
       "name": "@cornerstonejs/adapters",
-      "version": "4.22.7",
+      "version": "4.22.10",
       "dependencies": {
         "@babel/runtime-corejs2": "7.26.10",
         "buffer": "6.0.3",
@@ -128,17 +129,17 @@
         "ndarray": "1.0.19",
       },
       "devDependencies": {
-        "@cornerstonejs/core": "4.22.7",
-        "@cornerstonejs/tools": "4.22.7",
+        "@cornerstonejs/core": "4.22.10",
+        "@cornerstonejs/tools": "4.22.10",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "4.22.7",
-        "@cornerstonejs/tools": "4.22.7",
+        "@cornerstonejs/core": "4.22.10",
+        "@cornerstonejs/tools": "4.22.10",
       },
     },
     "packages/ai": {
       "name": "@cornerstonejs/ai",
-      "version": "4.22.7",
+      "version": "4.22.10",
       "dependencies": {
         "@babel/runtime-corejs2": "7.26.10",
         "buffer": "6.0.3",
@@ -150,17 +151,17 @@
         "onnxruntime-web": "1.17.1",
       },
       "devDependencies": {
-        "@cornerstonejs/core": "4.22.7",
-        "@cornerstonejs/tools": "4.22.7",
+        "@cornerstonejs/core": "4.22.10",
+        "@cornerstonejs/tools": "4.22.10",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "4.22.7",
-        "@cornerstonejs/tools": "4.22.7",
+        "@cornerstonejs/core": "4.22.10",
+        "@cornerstonejs/tools": "4.22.10",
       },
     },
     "packages/core": {
       "name": "@cornerstonejs/core",
-      "version": "4.22.7",
+      "version": "4.22.10",
       "dependencies": {
         "@kitware/vtk.js": "34.15.1",
         "comlink": "4.4.2",
@@ -170,7 +171,7 @@
     },
     "packages/dicomImageLoader": {
       "name": "@cornerstonejs/dicom-image-loader",
-      "version": "4.22.7",
+      "version": "4.22.10",
       "dependencies": {
         "@cornerstonejs/codec-charls": "1.2.3",
         "@cornerstonejs/codec-libjpeg-turbo-8bit": "1.2.2",
@@ -183,73 +184,74 @@
         "uuid": "9.0.1",
       },
       "devDependencies": {
-        "@cornerstonejs/core": "4.22.7",
+        "@cornerstonejs/core": "4.22.10",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "4.22.7",
+        "@cornerstonejs/core": "4.22.10",
         "dicom-parser": "1.8.21",
       },
     },
     "packages/labelmap-interpolation": {
       "name": "@cornerstonejs/labelmap-interpolation",
-      "version": "4.22.7",
+      "version": "4.22.10",
       "dependencies": {
         "@itk-wasm/morphological-contour-interpolation": "1.1.0",
         "itk-wasm": "1.0.0-b.165",
       },
       "devDependencies": {
-        "@cornerstonejs/core": "4.22.7",
-        "@cornerstonejs/tools": "4.22.7",
+        "@cornerstonejs/core": "4.22.10",
+        "@cornerstonejs/tools": "4.22.10",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "4.22.7",
-        "@cornerstonejs/tools": "4.22.7",
+        "@cornerstonejs/core": "4.22.10",
+        "@cornerstonejs/tools": "4.22.10",
         "@kitware/vtk.js": "34.15.1",
       },
     },
     "packages/nifti-volume-loader": {
       "name": "@cornerstonejs/nifti-volume-loader",
-      "version": "4.22.7",
+      "version": "4.22.10",
       "dependencies": {
         "nifti-reader-js": "0.6.9",
       },
       "devDependencies": {
-        "@cornerstonejs/core": "4.22.7",
+        "@cornerstonejs/core": "4.22.10",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "4.22.7",
+        "@cornerstonejs/core": "4.22.10",
       },
     },
     "packages/polymorphic-segmentation": {
       "name": "@cornerstonejs/polymorphic-segmentation",
-      "version": "4.22.7",
+      "version": "4.22.10",
       "dependencies": {
         "@icr/polyseg-wasm": "0.4.0",
       },
       "devDependencies": {
-        "@cornerstonejs/core": "4.22.7",
-        "@cornerstonejs/tools": "4.22.7",
+        "@cornerstonejs/core": "4.22.10",
+        "@cornerstonejs/tools": "4.22.10",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "4.22.7",
-        "@cornerstonejs/tools": "4.22.7",
+        "@cornerstonejs/core": "4.22.10",
+        "@cornerstonejs/tools": "4.22.10",
         "@kitware/vtk.js": "34.15.1",
       },
     },
     "packages/tools": {
       "name": "@cornerstonejs/tools",
-      "version": "4.22.7",
+      "version": "4.22.10",
       "dependencies": {
         "@types/offscreencanvas": "2019.7.3",
+        "clipper2-ts": "2.0.1",
         "comlink": "4.4.2",
         "lodash.get": "4.4.2",
       },
       "devDependencies": {
-        "@cornerstonejs/core": "4.22.7",
+        "@cornerstonejs/core": "4.22.10",
         "canvas": "3.2.0",
       },
       "peerDependencies": {
-        "@cornerstonejs/core": "4.22.7",
+        "@cornerstonejs/core": "4.22.10",
         "@kitware/vtk.js": "34.15.1",
         "@types/d3-array": "3.2.1",
         "@types/d3-interpolate": "3.0.4",
@@ -1486,6 +1488,8 @@
     "cli-truncate": ["cli-truncate@3.1.0", "", { "dependencies": { "slice-ansi": "^5.0.0", "string-width": "^5.0.0" } }, "sha512-wfOBkjXteqSnI59oPcJkcPl/ZmwvMMOj340qUIY1SKZCv0B9Cf4D4fAucRkIKQmsIuYK3x1rrgU7MeGRruiuiA=="],
 
     "cli-width": ["cli-width@4.1.0", "", {}, "sha512-ouuZd4/dm2Sw5Gmqy6bGyNNNe1qt9RpmxveLSO7KcgsTnU7RXfsw+/bukWGo1abgBiMAic068rclZsO4IWmmxQ=="],
+
+    "clipper2-ts": ["clipper2-ts@2.0.1", "", {}, "sha512-raIgNMpYN/PFYk/T9iRzaG99rf5nlXBWL1FyAdR3wjEYSzJy+pPfolLH5bCdRqCFQqn/eYUsF1jb3cQEMxmWGw=="],
 
     "cliui": ["cliui@9.0.1", "", { "dependencies": { "string-width": "^7.2.0", "strip-ansi": "^7.1.0", "wrap-ansi": "^9.0.0" } }, "sha512-k7ndgKhwoQveBL+/1tqGJYNz097I7WOvwbmmU2AR5+magtbjPWQTS1C5vzGkBC8Ym8UWRzfKUzUUqFLypY4Q+w=="],
 

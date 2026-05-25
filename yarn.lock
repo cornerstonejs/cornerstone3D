@@ -5618,6 +5618,11 @@ cli-width@^4.1.0:
   resolved "https://registry.yarnpkg.com/cli-width/-/cli-width-4.1.0.tgz#42daac41d3c254ef38ad8ac037672130173691c5"
   integrity sha512-ouuZd4/dm2Sw5Gmqy6bGyNNNe1qt9RpmxveLSO7KcgsTnU7RXfsw+/bukWGo1abgBiMAic068rclZsO4IWmmxQ==
 
+clipper2-ts@2.0.1:
+  version "2.0.1"
+  resolved "https://registry.npmjs.org/clipper2-ts/-/clipper2-ts-2.0.1.tgz#f696089d9b463f9e58fa3bb4abdd2fa51e5df32d"
+  integrity sha512-raIgNMpYN/PFYk/T9iRzaG99rf5nlXBWL1FyAdR3wjEYSzJy+pPfolLH5bCdRqCFQqn/eYUsF1jb3cQEMxmWGw==
+
 cliui@^6.0.0:
   version "6.0.0"
   resolved "https://registry.yarnpkg.com/cliui/-/cliui-6.0.0.tgz#511d702c0c4e41ca156d7d0e96021f23e13225b1"

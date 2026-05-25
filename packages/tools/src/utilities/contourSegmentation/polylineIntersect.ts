@@ -1,55 +1,20 @@
 import type { PolylineInfoCanvas } from './polylineInfoTypes';
-import { checkIntersection, cleanupPolylines } from './sharedOperations';
-import { intersectPolylines } from '../math/polyline';
-import arePolylinesIdentical from '../math/polyline/arePolylinesIdentical';
-import { areViewReferencesEqual } from './areViewReferencesEqual';
+import { runBooleanOpByView } from './polylineSetOps';
+import { BooleanOp } from './clipperBooleanOps';
 
 /**
- * Performs the intersection operation on two sets of polylines.
- * Returns polylines that are present in both sets (by polyline and viewReference),
- * or the intersected regions if the polylines overlap.
+ * Intersect two sets of polylines. Returns polygons (with holes) representing
+ * overlapping regions between the two sets, grouped by view reference.
  *
- * @param set1 The first set of PolylineInfoCanvas
- * @param set2 The second set of PolylineInfoCanvas
- * @returns Array of PolylineInfoCanvas representing the intersection
+ * Clipper handles all spatial relationships uniformly:
+ * - Disjoint polygons → empty result
+ * - Edge crossings → intersection region
+ * - One polygon fully inside another → the inner polygon
+ * - Holes in either input are subtracted from the intersection naturally
  */
 export function intersectPolylinesSets(
   set1: PolylineInfoCanvas[],
   set2: PolylineInfoCanvas[]
 ): PolylineInfoCanvas[] {
-  if (!set1.length || !set2.length) {
-    return [];
-  }
-  const result: PolylineInfoCanvas[] = [];
-  for (const polyA of set1) {
-    for (const polyB of set2) {
-      if (!areViewReferencesEqual(polyA.viewReference, polyB.viewReference)) {
-        continue; // Skip if view references are not equal
-      }
-      if (arePolylinesIdentical(polyA.polyline, polyB.polyline)) {
-        result.push({ ...polyA });
-        continue;
-      }
-      const intersection = checkIntersection(polyA.polyline, polyB.polyline);
-      if (intersection.isContourHole) {
-        result.push({ ...polyA });
-      } else if (intersection.hasIntersection) {
-        const intersectionRegions = cleanupPolylines(
-          intersectPolylines(polyA.polyline, polyB.polyline)
-        );
-        if (intersectionRegions && intersectionRegions.length > 0) {
-          intersectionRegions.forEach((region) => {
-            result.push({
-              polyline: region,
-              viewReference: polyA.viewReference,
-            });
-          });
-        }
-      } else if (intersection.isTargetInsideSource) {
-        // polyB is entirely inside polyA — the intersection is polyB itself
-        result.push({ ...polyB });
-      }
-    }
-  }
-  return result;
+  return runBooleanOpByView(set1, set2, BooleanOp.Intersection);
 }
