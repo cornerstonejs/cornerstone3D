@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.22.11](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.10...v4.22.11) (2026-05-25)
+
+### Bug Fixes
+
+- **sr:** adapt 3.10 SR reports to new DCMJS structural changes ([#2643](https://github.com/cornerstonejs/cornerstone3D/issues/2643)) ([8b386fa](https://github.com/cornerstonejs/cornerstone3D/commit/8b386fadf5f786058343076c053b9c3ced194233))
+
 ## [4.22.10](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.9...v4.22.10) (2026-05-22)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
