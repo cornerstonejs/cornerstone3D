@@ -785,7 +785,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         continue;
       }
 
-      const { imageData, metadata } = image;
+      const { imageData, metadata, voxelManager } = image;
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
       const modalityUnitOptions = {
@@ -861,6 +861,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         points,
         imageData,
         metadata,
+        voxelManager,
         cachedStats,
         modalityUnit,
         calibratedScale,
@@ -894,6 +895,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     points,
     imageData,
     metadata,
+    voxelManager,
     cachedStats,
     targetId,
     modalityUnit,
@@ -903,8 +905,6 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     deltaInY,
   }) {
     const { areaUnit, unit } = calibratedScale;
-
-    const { voxelManager } = viewport.getImageData();
 
     const indexPoints = points.map((point) => imageData.worldToIndex(point));
 
