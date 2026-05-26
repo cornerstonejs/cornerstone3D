@@ -910,43 +910,6 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     const { areaUnit, unit } = calibratedScale;
 
     const indexPoints = points.map((point) => imageData.worldToIndex(point));
-    const dims = imageData.getDimensions();
-
-    let iMin = Number.MAX_SAFE_INTEGER;
-    let iMax = Number.MIN_SAFE_INTEGER;
-    let jMin = Number.MAX_SAFE_INTEGER;
-    let jMax = Number.MIN_SAFE_INTEGER;
-    let kMin = Number.MAX_SAFE_INTEGER;
-    let kMax = Number.MIN_SAFE_INTEGER;
-
-    for (let j = 0; j < points.length; j++) {
-      const worldPosIndex = indexPoints[j];
-
-      iMin = Math.min(iMin, worldPosIndex[0]);
-      iMax = Math.max(iMax, worldPosIndex[0]);
-
-      jMin = Math.min(jMin, worldPosIndex[1]);
-      jMax = Math.max(jMax, worldPosIndex[1]);
-
-      kMin = Math.min(kMin, worldPosIndex[2]);
-      kMax = Math.max(kMax, worldPosIndex[2]);
-    }
-
-    // Clamp the accumulated bounds into the image extent so the bounding box
-    // never spills outside the volume. Clamping the min/max here is equivalent
-    // to clamping every point (clamp is monotonic, so it commutes with
-    // min/max) but avoids the per-point allocation. The values are left
-    // unfloored so snapIndexBounds can still detect planar (delta <= 1) ROIs.
-    iMin = Math.max(0, Math.min(dims[0] - 1, iMin));
-    iMax = Math.max(0, Math.min(dims[0] - 1, iMax));
-    jMin = Math.max(0, Math.min(dims[1] - 1, jMin));
-    jMax = Math.max(0, Math.min(dims[1] - 1, jMax));
-    kMin = Math.max(0, Math.min(dims[2] - 1, kMin));
-    kMax = Math.max(0, Math.min(dims[2] - 1, kMax));
-
-    [iMin, iMax] = snapIndexBounds(iMin, iMax);
-    [jMin, jMax] = snapIndexBounds(jMin, jMax);
-    [kMin, kMax] = snapIndexBounds(kMin, kMax);
 
     // Convert from canvas_pixels ^2 to mm^2
     const area = polyline.getArea(canvasCoordinates) * deltaInX * deltaInY;
@@ -957,74 +920,116 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       closed
     );
 
-    // Expand bounding box
-    const iDelta = 0.01 * (iMax - iMin);
-    const jDelta = 0.01 * (jMax - jMin);
-    const kDelta = 0.01 * (kMax - kMin);
+    let pointsInShape = [];
+    const visited = new Set<string>();
 
-    iMin = Math.floor(iMin - iDelta);
-    iMax = Math.ceil(iMax + iDelta);
-    jMin = Math.floor(jMin - jDelta);
-    jMax = Math.ceil(jMax + jDelta);
-    kMin = Math.floor(kMin - kDelta);
-    kMax = Math.ceil(kMax + kDelta);
+    // Viewport-space ROI sampling for both orthogonal and oblique MPR views.
+    //
+    // Instead of iterating a 3D IJK bounding box, we rasterize the ROI in
+    // canvas space, project each canvas pixel back to world space, convert
+    // to IJK, and sample the corresponding voxel.
+    //
+    // This avoids the instability of voxel-driven scanline traversal in
+    // oblique views, where IJK iteration order no longer matches canvas
+    // row order, leading to missing voxels and invalid statistics.
+    //
+    // Complexity scales with projected ROI size rather than IJK volume,
+    // making it stable and efficient for all viewport orientations.
 
-    const boundsIJK = [
-      [iMin, iMax],
-      [jMin, jMax],
-      [kMin, kMax],
-    ] as [Types.Point2, Types.Point2, Types.Point2];
+    const {
+      maxX: canvasMaxX,
+      maxY: canvasMaxY,
+      minX: canvasMinX,
+      minY: canvasMinY,
+    } = math.polyline.getAABB(canvasCoordinates);
 
-    const worldPosEnd = imageData.indexToWorld([iMax, jMax, kMax]);
-    const canvasPosEnd = viewport.worldToCanvas(worldPosEnd);
+    const startX = Math.floor(canvasMinX);
+    const endX = Math.ceil(canvasMaxX);
+    const startY = Math.floor(canvasMinY);
+    const endY = Math.ceil(canvasMaxY);
 
-    let curRow = 0;
-    let intersections = [];
-    let intersectionCounter = 0;
+    const dimensions = imageData.getDimensions();
+    const canvasMaxXPadded = endX + 1;
 
-    let pointsInShape;
-    if (voxelManager) {
-      pointsInShape = voxelManager.forEach(
-        this.configuration.statsCalculator.statsCallback,
-        {
-          imageData,
-          isInObject: (pointLPS, _pointIJK) => {
-            let result = true;
-            const point = viewport.worldToCanvas(pointLPS);
-            if (point[1] != curRow) {
-              intersectionCounter = 0;
-              curRow = point[1];
-              intersections = getLineSegmentIntersectionsCoordinates(
-                canvasCoordinates,
-                point,
-                [canvasPosEnd[0], point[1]]
-              );
-              intersections.sort(
-                (function (index) {
-                  return function (a, b) {
-                    return a[index] === b[index]
-                      ? 0
-                      : a[index] < b[index]
-                        ? -1
-                        : 1;
-                  };
-                })(0)
-              );
-            }
-            if (intersections.length && point[0] > intersections[0][0]) {
-              intersections.shift();
-              intersectionCounter++;
-            }
-            if (intersectionCounter % 2 === 0) {
-              result = false;
-            }
-            return result;
-          },
-          boundsIJK,
-          returnPoints: this.configuration.storePointData,
-        }
+    for (let cy = startY; cy <= endY; cy++) {
+      // Compute all intersections of the polygon with this scanline row
+      const intersections = getLineSegmentIntersectionsCoordinates(
+        canvasCoordinates,
+        [startX - 1, cy] as Types.Point2,
+        [canvasMaxXPadded, cy] as Types.Point2
       );
+
+      if (!intersections || intersections.length === 0) {
+        continue;
+      }
+
+      // Sort intersections by X coordinate
+      intersections.sort((a, b) => a[0] - b[0]);
+
+      // Walk through intersection pairs (entry/exit)
+      for (let i = 0; i + 1 < intersections.length; i += 2) {
+        const xEnter = Math.ceil(intersections[i][0]);
+        const xExit = Math.floor(intersections[i + 1][0]);
+
+        for (let cx = xEnter; cx <= xExit; cx++) {
+          const canvasPoint: Types.Point2 = [cx, cy];
+          const worldPoint = viewport.canvasToWorld(canvasPoint);
+          const indexPoint = csUtils.transformWorldToIndex(
+            imageData,
+            worldPoint
+          );
+
+          // Nearest-neighbor: round to closest voxel
+          const ijkPoint: Types.Point3 = [
+            Math.round(indexPoint[0]),
+            Math.round(indexPoint[1]),
+            Math.round(indexPoint[2]),
+          ];
+
+          // Bounds check
+          if (
+            ijkPoint[0] < 0 ||
+            ijkPoint[0] >= dimensions[0] ||
+            ijkPoint[1] < 0 ||
+            ijkPoint[1] >= dimensions[1] ||
+            ijkPoint[2] < 0 ||
+            ijkPoint[2] >= dimensions[2]
+          ) {
+            continue;
+          }
+
+          const value = voxelManager.getAtIJKPoint(ijkPoint);
+
+          if (value === undefined || value === null) {
+            continue;
+          }
+
+          const key = `${ijkPoint[0]}_${ijkPoint[1]}_${ijkPoint[2]}`;
+
+          // avoid duplicate voxels
+          if (visited.has(key)) {
+            continue;
+          }
+
+          visited.add(key);
+
+          const sample = {
+            value: value as number,
+            pointLPS: worldPoint as Types.Point3,
+            pointIJK: ijkPoint,
+          };
+
+          pointsInShape.push(sample);
+
+          this.configuration.statsCalculator.statsCallback({
+            value: value as number,
+            pointLPS: worldPoint as Types.Point3,
+            pointIJK: ijkPoint,
+          });
+        }
+      }
     }
+
     const stats = this.configuration.statsCalculator.getStatistics();
 
     const namedArea: Statistics = {
