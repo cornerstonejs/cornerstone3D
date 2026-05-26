@@ -13,12 +13,15 @@ import type BlendModes from '../../../enums/BlendModes';
 import clonePoint3 from '../../../utilities/clonePoint3';
 import hasOwn from '../../../utilities/hasOwn';
 import genericViewportDataSetMetadataProvider from '../../../utilities/genericViewportDataSetMetadataProvider';
+import { viewportProjection } from '../viewportProjection';
 import type { PlanarLegacyViewportProperties } from './planarLegacyCompatibility';
 import PlanarLegacyCompatibilityController from './PlanarLegacyCompatibilityController';
 import PlanarViewport from './PlanarViewport';
 import type { PlanarScaleInput } from './planarCameraScale';
+import { cloneDisplayArea } from './planarViewState';
 import type {
   PlanarResolvedICamera,
+  PlanarViewPresentation,
   PlanarViewState,
 } from './PlanarViewportTypes';
 
@@ -93,6 +96,32 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
     }
 
     this.setViewState(viewStatePatch);
+  }
+
+  /**
+   * Compatibility wrapper for legacy callers. Next viewports should use
+   * viewport projection to derive view state, then call `setViewState`.
+   */
+  setViewPresentation(viewPres?: PlanarViewPresentation): void {
+    if (!viewPres) {
+      return;
+    }
+
+    if (hasOwn(viewPres, 'displayArea')) {
+      this.options = {
+        ...this.options,
+        displayArea: cloneDisplayArea(viewPres.displayArea),
+      };
+    }
+
+    const nextViewState = viewportProjection.withPresentation<
+      PlanarViewState,
+      PlanarViewPresentation
+    >(this, viewPres);
+
+    if (nextViewState) {
+      this.setViewState(nextViewState);
+    }
   }
 
   get volumeIds(): Set<string> {

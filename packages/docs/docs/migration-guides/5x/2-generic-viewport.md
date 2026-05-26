@@ -263,14 +263,21 @@ viewport code should use semantic APIs:
 ```ts
 viewport.setViewState({
   flipHorizontal: true,
-});
-
-viewport.setViewPresentation({
   rotation: 90,
 });
 
-viewport.setScale(1.5);
-viewport.setPan([40, -20]);
+viewport.updateViewState(({ rotation = 0 }) => ({
+  rotation: rotation + 30,
+}));
+
+const nextViewState = viewportProjection.withPresentation(viewport, {
+  zoom: 1.5,
+  pan: [40, -20],
+});
+
+if (nextViewState) {
+  viewport.setViewState(nextViewState);
+}
 ```
 
 For planar compatibility adapters, position-only camera patches are not
@@ -280,29 +287,29 @@ supported:
 viewport.setCamera({ position });
 ```
 
-Use `focalPoint`, `parallelScale`, `setViewState()`, `setViewPresentation()`,
-or view-reference APIs instead.
+Use `focalPoint`, `parallelScale`, `setViewState()`, `updateViewState()`,
+viewport projection, or view-reference APIs instead.
 
 Lower-level planar camera helpers are available for custom synchronizers and
 tooling that need to derive renderer cameras without going through a viewport.
-They are grouped under a `planarHelpers` namespace export to signal that they
-sit a tier below the stable viewport API and may change before 3.0 stable:
+They are grouped under a `planarProjection` namespace export to signal that
+they sit a tier below the stable viewport API and may change before 3.0 stable:
 
 ```ts
-import { planarHelpers } from '@cornerstonejs/core';
+import { planarProjection } from '@cornerstonejs/core';
 
-const sliceBasis = planarHelpers.createImageSliceBasis({
+const sliceBasis = planarProjection.createImageSliceBasis({
   image,
   canvasWidth,
   canvasHeight,
 });
-const icamera = planarHelpers.resolveICamera({
+const icamera = planarProjection.resolveICamera({
   sliceBasis,
   camera: viewState,
   canvasWidth,
   canvasHeight,
 });
-planarHelpers.applyToRenderer({ renderer, activeSourceICamera: icamera });
+planarProjection.applyToRenderer({ renderer, activeSourceICamera: icamera });
 ```
 
 The namespace also exposes `derivePresentation` (canvas-space pan/zoom/rotation

@@ -203,13 +203,6 @@ abstract class GenericViewport<
   }
 
   /**
-   * Applies a viewport-family-specific view-presentation snapshot.
-   */
-  setViewPresentation(_viewPresentation?: TViewPresentation): void {
-    // Subclasses can implement.
-  }
-
-  /**
    * Returns a spatial reference for the current viewport state.
    */
   getViewReference(_specifier: ViewReferenceSpecifier = {}): ViewReference {
@@ -332,6 +325,26 @@ abstract class GenericViewport<
    */
   getViewState(): TViewState {
     return this.viewState;
+  }
+
+  /**
+   * Computes a view-state patch from the current state, then applies it through
+   * `setViewState` so normalization, events, and render invalidation stay in
+   * the canonical mutation path.
+   */
+  updateViewState(
+    updater:
+      | Partial<TViewState>
+      | ((viewState: TViewState) => Partial<TViewState> | void)
+  ): void {
+    const patch =
+      typeof updater === 'function' ? updater(this.getViewState()) : updater;
+
+    if (!patch) {
+      return;
+    }
+
+    this.setViewState(patch);
   }
 
   // ====================================================================

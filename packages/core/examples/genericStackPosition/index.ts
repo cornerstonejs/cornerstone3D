@@ -4,6 +4,7 @@ import {
   Enums,
   getRenderingEngine,
   utilities,
+  viewportProjection,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -28,6 +29,24 @@ type DisplayAreaSize = number | [number, number];
 
 let viewport: PlanarViewport;
 let displayArea: Types.ViewPresentation | 'none' = 'none';
+
+/**
+ * Applies portable presentation edits through projection, then mutates the
+ * Planar view state explicitly.
+ */
+function applyPlanarProjectionPresentation(
+  viewport: PlanarViewport,
+  presentation: Types.ViewPresentation
+): void {
+  const nextViewState = viewportProjection.withPresentation<
+    Parameters<PlanarViewport['setViewState']>[0],
+    Types.ViewPresentation
+  >(viewport, presentation);
+
+  if (nextViewState) {
+    viewport.setViewState(nextViewState);
+  }
+}
 
 setTitleAndDescription(
   'Stack Position Next',
@@ -62,8 +81,7 @@ element.addEventListener(Events.CAMERA_MODIFIED, () => {
     return;
   }
 
-  const { flipHorizontal = false } = viewport.getViewState();
-  const { rotation = 0 } = viewport.getViewPresentation();
+  const { flipHorizontal = false, rotation = 0 } = viewport.getViewState();
 
   rotationInfo.innerText = `Rotation: ${Math.round(rotation)}`;
   flipHorizontalInfo.innerText = `Flip horizontal: ${flipHorizontal}`;
@@ -148,7 +166,7 @@ addDropdownToToolbar({
     }
 
     displayArea = selectedDisplayArea;
-    viewport.setViewPresentation(selectedDisplayArea);
+    applyPlanarProjectionPresentation(viewport, selectedDisplayArea);
     viewport.render();
   },
 });
@@ -170,9 +188,10 @@ addButtonToToolbar({
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
-    const { rotation = 0 } = viewport.getViewPresentation();
 
-    viewport.setViewPresentation({ rotation: rotation + 30 });
+    viewport.updateViewState(({ rotation = 0 }) => ({
+      rotation: rotation + 30,
+    }));
     viewport.render();
   },
 });

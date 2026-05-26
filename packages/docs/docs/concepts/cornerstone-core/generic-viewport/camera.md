@@ -23,6 +23,19 @@ computed snapshot for the current canvas, data, and state. Renderer projections
 are commands sent to VTK, CPU canvas, DOM, OpenLayers, or another runtime.
 Runtime engine state is private to that renderer.
 
+For cross-viewport tooling and synchronizers, use the Viewport Projection
+construct instead of treating `ICamera` as a universal camera model. Viewport
+Projection exposes capability-checked transforms, semantic scale and position,
+and optional renderer-camera output. See
+[Viewport Projection](./viewport-projection.md).
+
+> **Naming note.** "Viewport Projection" uses _projection_ in the mathematical
+> sense — projecting semantic viewport state onto presentation, transforms, and
+> renderer output. It is distinct from VTK's parallel-vs-perspective projection
+> (`parallelProjection`), which is a renderer-matrix setting carried on the
+> resolved `ICamera`. The two concepts coexist in the same code paths but
+> describe different layers.
+
 ## Contract Matrix
 
 | Concept            | Owns                                                                                                                 | Does Not Own                                              |

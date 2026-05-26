@@ -10,6 +10,8 @@ import {
   defaultRenderPathResolver,
   DefaultRenderPathResolver,
   GenericViewport,
+  ViewportProjectionService,
+  viewportProjection,
 } from './GenericViewport';
 import ECGGenericViewport, {
   createDefaultECGRenderPaths,
@@ -25,11 +27,13 @@ import PlanarViewport, {
   createDefaultPlanarRenderPaths,
   createPlanarRenderPathResolver,
   DefaultPlanarDataProvider,
+  planarProjection,
 } from './GenericViewport/Planar';
 import VolumeViewport3DV2, {
   createDefaultVolume3DRenderPaths,
   createVolume3DRenderPathResolver,
   DefaultVolume3DDataProvider,
+  volume3DProjection,
 } from './GenericViewport/Volume3D';
 import WSIGenericViewport, {
   createDefaultWSIRenderPaths,
@@ -37,11 +41,39 @@ import WSIGenericViewport, {
   DefaultWSIDataProvider,
 } from './GenericViewport/WSI';
 export * from './helpers';
+export type {
+  ProjectionPosition,
+  ProjectionPresentation,
+  ProjectionRequest,
+  ProjectionScale,
+  ProjectionSnapshot,
+  ProjectionSpaces,
+  ProjectionTransforms,
+  ProjectionWriteOptions,
+  ViewportProjectionAdapter,
+} from './GenericViewport';
+export type {
+  PlanarDisplayArea,
+  PlanarProjectionPresentation,
+  PlanarProjectionRequest,
+  PlanarProjectionSnapshot,
+  PlanarViewPresentation,
+  PlanarViewPresentationSelector,
+  PlanarViewState,
+} from './GenericViewport/Planar';
+export type {
+  Volume3DCamera,
+  Volume3DProjectionPresentation,
+  Volume3DProjectionRequest,
+  Volume3DProjectionSnapshot,
+} from './GenericViewport/Volume3D';
 
 const renderingEngineExportsV2 = {
   GenericViewport,
   DefaultRenderPathResolver,
   defaultRenderPathResolver,
+  ViewportProjectionService,
+  viewportProjection,
   ECGGenericViewport,
   createDefaultECGRenderPaths,
   createECGRenderPathResolver,
@@ -54,10 +86,12 @@ const renderingEngineExportsV2 = {
   createDefaultPlanarRenderPaths,
   createPlanarRenderPathResolver,
   DefaultPlanarDataProvider,
+  planarProjection,
   VolumeViewport3DV2,
   createDefaultVolume3DRenderPaths,
   createVolume3DRenderPathResolver,
   DefaultVolume3DDataProvider,
+  volume3DProjection,
   WSIGenericViewport,
   createDefaultWSIRenderPaths,
   createWSIRenderPathResolver,
@@ -76,6 +110,8 @@ export {
   GenericViewport,
   DefaultRenderPathResolver,
   defaultRenderPathResolver,
+  ViewportProjectionService,
+  viewportProjection,
   ECGGenericViewport,
   createDefaultECGRenderPaths,
   createECGRenderPathResolver,
@@ -88,10 +124,12 @@ export {
   createDefaultPlanarRenderPaths,
   createPlanarRenderPathResolver,
   DefaultPlanarDataProvider,
+  planarProjection,
   VolumeViewport3DV2,
   createDefaultVolume3DRenderPaths,
   createVolume3DRenderPathResolver,
   DefaultVolume3DDataProvider,
+  volume3DProjection,
   WSIGenericViewport,
   createDefaultWSIRenderPaths,
   createWSIRenderPathResolver,

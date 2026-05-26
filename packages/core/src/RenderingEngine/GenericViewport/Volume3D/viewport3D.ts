@@ -28,6 +28,11 @@ import { DefaultVolume3DDataProvider } from './DefaultVolume3DDataProvider';
 import { createVolume3DRenderPathResolver } from './Volume3DRenderPathResolver';
 import Volume3DResolvedView from './Volume3DResolvedView';
 import applyVolume3DCamera from './applyVolume3DCamera';
+import {
+  getVolume3DProjectionSnapshot,
+  volume3DProjectionAdapter,
+  type Volume3DProjectionSnapshot,
+} from './volume3DProjectionAdapter';
 import type {
   Volume3DCamera,
   Volume3DPayload,
@@ -304,9 +309,9 @@ class VolumeViewport3DV2 extends GenericViewport<
    * @returns The current 3D camera wrapped as a view-presentation payload.
    */
   getViewPresentation(): { camera: Volume3DCamera & ICamera } {
-    return {
-      camera: this.getViewState(),
-    };
+    return volume3DProjectionAdapter.getPresentation(
+      this.getProjectionSnapshot()
+    );
   }
 
   getViewReference(
@@ -349,32 +354,6 @@ class VolumeViewport3DV2 extends GenericViewport<
     }
 
     return viewReference;
-  }
-
-  /**
-   * Applies a 3D camera payload or wrapped view-presentation payload.
-   *
-   * @param viewPresentation - Camera payload or wrapped view-presentation
-   * object to apply.
-   */
-  setViewPresentation(
-    viewPresentation?:
-      | { camera?: Partial<Volume3DCamera> }
-      | Partial<Volume3DCamera>
-  ): void {
-    if (!viewPresentation) {
-      return;
-    }
-
-    if (isVolume3DViewPresentation(viewPresentation)) {
-      if (viewPresentation.camera) {
-        this.setViewState(viewPresentation.camera);
-      }
-
-      return;
-    }
-
-    this.setViewState(viewPresentation);
   }
 
   /**
@@ -547,6 +526,29 @@ class VolumeViewport3DV2 extends GenericViewport<
     this.primaryDataId = undefined;
   }
 
+  /**
+   * Resolves the current VTK-backed 3D camera through the projection adapter
+   * without making the adapter responsible for mutating the viewport.
+   */
+  private getProjectionSnapshot(): Volume3DProjectionSnapshot {
+    const snapshot = getVolume3DProjectionSnapshot({
+      viewport: this,
+      canvasHeight: this.canvas.clientHeight || this.element.clientHeight,
+      canvasWidth: this.canvas.clientWidth || this.element.clientWidth,
+      camera: this.getViewState(),
+      frameOfReferenceUID: this.resolveFrameOfReferenceUID(),
+      resolvedView: this.getResolvedView(),
+    });
+
+    if (!snapshot) {
+      throw new Error(
+        '[VolumeViewport3DV2] Unable to resolve projection snapshot'
+      );
+    }
+
+    return snapshot;
+  }
+
   protected getCurrentBinding() {
     if (this.primaryDataId) {
       return this.getBinding(this.primaryDataId) ?? this.getFirstBinding();
@@ -690,16 +692,6 @@ class VolumeViewport3DV2 extends GenericViewport<
 }
 
 export default VolumeViewport3DV2;
-
-function isVolume3DViewPresentation(
-  viewPresentation: unknown
-): viewPresentation is { camera?: Partial<Volume3DCamera> } {
-  return (
-    Boolean(viewPresentation) &&
-    typeof viewPresentation === 'object' &&
-    'camera' in viewPresentation
-  );
-}
 
 function isVolume3DData(data: LoadedData): data is LoadedData<Volume3DPayload> {
   if (typeof data !== 'object' || data === null) {

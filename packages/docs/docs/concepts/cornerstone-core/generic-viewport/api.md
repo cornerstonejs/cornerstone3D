@@ -183,14 +183,26 @@ Navigation and view appearance are separate from per-dataset appearance.
 ```ts
 viewport.setViewState({
   flipHorizontal: true,
-});
-
-viewport.setViewPresentation({
   rotation: 90,
 });
 
-viewport.setScale(1.5);
-viewport.setPan([40, -20]);
+viewport.updateViewState(({ rotation = 0 }) => ({
+  rotation: rotation + 30,
+}));
+```
+
+Use viewport projection when the input is a portable presentation patch rather
+than native view state:
+
+```ts
+const nextViewState = viewportProjection.withPresentation(viewport, {
+  zoom: 1.5,
+  pan: [40, -20],
+});
+
+if (nextViewState) {
+  viewport.setViewState(nextViewState);
+}
 viewport.render();
 ```
 
@@ -295,12 +307,39 @@ otherViewport.setViewReference(reference);
 otherViewport.render();
 ```
 
-Use view presentation when only pan, zoom, rotation, flips, and display area
-should be copied.
+Use projection presentation when only pan, zoom, rotation, flips, and display
+area should be copied between compatible viewport families. The presentation
+shape is adapter-specific, so this is appropriate for Planar Next to Planar
+Next. Do not treat it as a universal cross-family camera copy; use view
+references or a synchronizer that explicitly maps scale and position semantics
+for that case.
 
 ```ts
-const presentation = viewport.getViewPresentation();
+const presentation = viewportProjection.getPresentation(viewport, {
+  selector: {
+    displayArea: true,
+    flipHorizontal: true,
+    flipVertical: true,
+    pan: true,
+    rotation: true,
+    zoom: true,
+  },
+});
 
-otherViewport.setViewPresentation(presentation);
-otherViewport.render();
+if (!presentation) {
+  return;
+}
+
+// `withPresentation` is pure: it translates the presentation for the target
+// viewport, but it does not mutate the target or schedule rendering.
+const nextViewState = viewportProjection.withPresentation(
+  otherViewport,
+  presentation
+);
+
+if (nextViewState) {
+  // `setViewState` remains the single mutation path for Next viewports.
+  otherViewport.setViewState(nextViewState);
+  otherViewport.render();
+}
 ```

@@ -137,23 +137,6 @@ class ECGViewport extends GenericViewport<
     return target;
   }
 
-  setViewPresentation(viewPres?: ViewPresentation): void {
-    if (!viewPres) {
-      return;
-    }
-
-    const nextZoom = Math.max(viewPres.zoom ?? this.getZoom(), 0.001);
-
-    this.setViewState({
-      scale: nextZoom,
-      scaleMode: 'fit',
-    });
-
-    if (viewPres.pan) {
-      this.setPan([viewPres.pan[0] * nextZoom, viewPres.pan[1] * nextZoom]);
-    }
-  }
-
   getViewReference(_specifier: ViewReferenceSpecifier = {}): ViewReference {
     const dataId = this.getFirstBinding()?.data.id;
 

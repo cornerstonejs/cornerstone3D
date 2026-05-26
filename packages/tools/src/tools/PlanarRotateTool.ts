@@ -5,6 +5,10 @@ import { BaseTool } from './base';
 import angleBetweenLines from '../utilities/math/angle/angleBetweenLines';
 import type { PublicToolProps, ToolProps, EventTypes } from '../types';
 import getViewportICamera from '../utilities/getViewportICamera';
+import {
+  applyViewportPresentation,
+  getViewportPresentation,
+} from '../utilities/viewportPresentation';
 
 /**
  * The PlanarRotateTool is a tool that allows the user to rotate
@@ -92,17 +96,23 @@ class PlanarRotateTool extends BaseTool {
       mat4.rotate(rotMat, rotMat, rotAngle, viewPlaneNormal);
       const rotatedViewUp = vec3.transformMat4(vec3.create(), viewUp, rotMat);
       viewport.setCamera({ viewUp: rotatedViewUp as Types.Point3 });
-    } else if (
-      typeof viewport.getViewPresentation === 'function' &&
-      typeof viewport.setViewPresentation === 'function'
-    ) {
-      const { rotation = 0 } = viewport.getViewPresentation();
+    } else {
+      const presentation = getViewportPresentation(viewport) as
+        | { rotation?: number }
+        | undefined;
 
-      viewport.setViewPresentation({
+      if (!presentation) {
+        return;
+      }
+
+      const { rotation = 0 } = presentation;
+      const didApply = applyViewportPresentation(viewport, {
         rotation: (rotation + angle + 360) % 360,
       });
-    } else {
-      return;
+
+      if (!didApply) {
+        return;
+      }
     }
 
     viewport.render();

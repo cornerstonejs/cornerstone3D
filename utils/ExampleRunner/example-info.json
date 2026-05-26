@@ -149,6 +149,10 @@
         "name": "Apply view reference and/or presentation parameters",
         "description": "Demonstrates how to apply various view/reference presentation parameters."
       },
+      "viewportProjection": {
+        "name": "Viewport Projection Registry",
+        "description": "Demonstrates projection snapshots and presentation writes for Planar Next and Volume 3D Next viewports."
+      },
       "stackToVolume": {
         "name": "Stack to Volume Viewport",
         "description": "Demonstrates how to convert a Stack Viewport to a Volume Viewport"
@@ -202,6 +206,10 @@
       "stackManipulationTools": {
         "name": "Stack Manipulation Tools",
         "description": "Demonstrates several manipulation tools (window/level, pan, zoom) as well as Stack Viewport-specific scrolling"
+      },
+      "viewportProjectionSynchronizer": {
+        "name": "Viewport Projection Synchronizer",
+        "description": "Demonstrates a custom tool-driven synchronizer for Planar Next viewports using the projection registry."
       },
       "stackManipulationToolsTouch": {
         "name": "Stack Manipulation Tools Touch",

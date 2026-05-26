@@ -161,9 +161,13 @@ export interface ViewportController<
   getResolvedView():
     | ResolvedViewportView<unknown, ICamera<unknown>>
     | undefined;
+  updateViewState(
+    updater:
+      | Partial<TViewState>
+      | ((viewState: TViewState) => Partial<TViewState> | void)
+  ): void;
   setDataPresentation(dataId: DataId, props: Partial<TDataPresentation>): void;
   getDataPresentation(dataId: DataId): TDataPresentation | undefined;
-  setViewPresentation(viewPresentation?: TViewPresentation): void;
   getViewPresentation(
     selector?: ViewPresentationSelector
   ): TViewPresentation | undefined;

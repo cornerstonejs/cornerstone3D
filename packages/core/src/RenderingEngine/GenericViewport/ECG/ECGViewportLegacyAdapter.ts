@@ -1,4 +1,4 @@
-import type { ECGViewportProperties } from '../../../types';
+import type { ECGViewportProperties, ViewPresentation } from '../../../types';
 import ECGViewport from './ECGViewport';
 
 class ECGViewportLegacyAdapter extends ECGViewport {
@@ -63,6 +63,27 @@ class ECGViewportLegacyAdapter extends ECGViewport {
     this.setDataPresentation(dataId, {
       visibleChannels: waveform.channels.map((_channel, index) => index),
     });
+  }
+
+  /**
+   * Compatibility wrapper for legacy callers. Next viewports should mutate
+   * their native view state directly.
+   */
+  setViewPresentation(viewPres?: ViewPresentation): void {
+    if (!viewPres) {
+      return;
+    }
+
+    const nextZoom = Math.max(viewPres.zoom ?? this.getZoom(), 0.001);
+
+    this.setViewState({
+      scale: nextZoom,
+      scaleMode: 'fit',
+    });
+
+    if (viewPres.pan) {
+      this.setPan([viewPres.pan[0] * nextZoom, viewPres.pan[1] * nextZoom]);
+    }
   }
 }
 

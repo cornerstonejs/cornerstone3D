@@ -250,13 +250,25 @@ Now, use semantic viewport APIs:
 ```ts
 viewport.setScale(viewport.getScale() * 1.25);
 viewport.setPan([40, -20]);
-viewport.setViewPresentation({ rotation: 90 });
+
+viewport.updateViewState(({ rotation = 0 }) => ({
+  rotation: rotation + 30,
+}));
+
+const nextViewState = viewportProjection.withPresentation(viewport, {
+  rotation: 90,
+});
+
+if (nextViewState) {
+  viewport.setViewState(nextViewState);
+}
+
 viewport.setViewState({ flipHorizontal: true });
 viewport.render();
 ```
 
 Legacy adapters still support camera-style calls for older code. Clean Next
-code should use view state and presentation APIs.
+code should use view state and viewport projection APIs.
 
 ## Slice Navigation
 

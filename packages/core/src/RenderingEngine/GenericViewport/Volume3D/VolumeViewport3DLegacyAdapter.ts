@@ -12,6 +12,7 @@ import type {
 import applyPreset from '../../../utilities/applyPreset';
 import triggerEvent from '../../../utilities/triggerEvent';
 import genericViewportDataSetMetadataProvider from '../../../utilities/genericViewportDataSetMetadataProvider';
+import { viewportProjection } from '../viewportProjection';
 import VolumeViewport3DV2 from './viewport3D';
 import type {
   Volume3DCamera,
@@ -38,6 +39,33 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3DV2 {
 
   setCamera(cameraPatch: Partial<Volume3DCamera>): void {
     this.setViewState(cameraPatch);
+  }
+
+  /**
+   * Compatibility wrapper for legacy callers. Next viewports should use
+   * viewport projection to derive view state, then call `setViewState`.
+   */
+  setViewPresentation(
+    viewPresentation?:
+      | { camera?: Partial<Volume3DCamera> }
+      | Partial<Volume3DCamera>
+  ): void {
+    if (!viewPresentation) {
+      return;
+    }
+
+    const presentation: { camera?: Partial<Volume3DCamera> } =
+      isVolume3DViewPresentation(viewPresentation)
+        ? viewPresentation
+        : { camera: viewPresentation as Partial<Volume3DCamera> };
+    const nextCamera = viewportProjection.withPresentation<
+      Volume3DCamera,
+      { camera?: Partial<Volume3DCamera> }
+    >(this, presentation);
+
+    if (nextCamera) {
+      this.setViewState(nextCamera);
+    }
   }
 
   async setVolumes(
@@ -394,3 +422,13 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3DV2 {
 }
 
 export default VolumeViewport3DLegacyAdapter;
+
+function isVolume3DViewPresentation(
+  viewPresentation: unknown
+): viewPresentation is { camera?: Partial<Volume3DCamera> } {
+  return (
+    Boolean(viewPresentation) &&
+    typeof viewPresentation === 'object' &&
+    'camera' in viewPresentation
+  );
+}

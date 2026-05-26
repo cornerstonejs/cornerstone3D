@@ -4,6 +4,7 @@ import {
   Enums,
   getRenderingEngine,
   utilities,
+  viewportProjection,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -43,6 +44,24 @@ let activeTarget: ScaleTarget = 'both';
 let scaleX = 1;
 let scaleY = 1;
 const viewportInfo = new Map<string, HTMLDivElement>();
+
+/**
+ * Applies portable presentation edits through projection, then mutates the
+ * Planar view state explicitly.
+ */
+function applyPlanarProjectionPresentation(
+  viewport: PlanarViewport,
+  presentation: Types.ViewPresentation
+): void {
+  const nextViewState = viewportProjection.withPresentation<
+    Parameters<PlanarViewport['setViewState']>[0],
+    Types.ViewPresentation
+  >(viewport, presentation);
+
+  if (nextViewState) {
+    viewport.setViewState(nextViewState);
+  }
+}
 
 setTitleAndDescription(
   'Generic Viewport Scale',
@@ -189,7 +208,7 @@ function applyDisplayAreaScaleMode(
   setScaleState([1, 1]);
 
   for (const viewport of getTargetViewports()) {
-    viewport.setViewPresentation({
+    applyPlanarProjectionPresentation(viewport, {
       displayArea: {
         imageArea: [1, 1],
         imageCanvasPoint: {

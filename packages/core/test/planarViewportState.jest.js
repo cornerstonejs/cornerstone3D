@@ -1,6 +1,16 @@
-import { Events, MetadataModules, OrientationAxis } from '../src/enums';
+import {
+  Events,
+  MetadataModules,
+  OrientationAxis,
+  ViewportType,
+} from '../src/enums';
 import { ActorRenderMode } from '../src/types';
 import * as metaData from '../src/metaData';
+import {
+  planarProjection,
+  viewportProjection,
+  volume3DProjection,
+} from '../src/RenderingEngine/GenericViewport';
 import PlanarViewport from '../src/RenderingEngine/GenericViewport/Planar/PlanarViewport';
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
 import genericViewportDataSetMetadataProvider from '../src/utilities/genericViewportDataSetMetadataProvider';
@@ -164,6 +174,16 @@ describe('PlanarViewport view state', () => {
     return viewportContext;
   }
 
+  function applyProjectionPresentation(viewport, presentation) {
+    const nextViewState = viewportProjection.withPresentation(
+      viewport,
+      presentation
+    );
+
+    expect(nextViewState).toBeDefined();
+    viewport.setViewState(nextViewState);
+  }
+
   it('returns a cloned view state snapshot', () => {
     const { viewport } = track(createViewport());
     const anchorCanvas = [0.25, 0.75];
@@ -228,12 +248,30 @@ describe('PlanarViewport view state', () => {
     expect(events).toHaveLength(0);
   });
 
-  it('applies view-presentation pan in a single state write', () => {
+  it('does not expose a view-presentation mutation method on Planar Next', () => {
+    const { viewport } = track(createViewport());
+
+    expect(viewport.setViewPresentation).toBeUndefined();
+  });
+
+  it('updates native camera state through updateViewState', () => {
+    const { viewport } = track(createViewport());
+
+    viewport.updateViewState(({ rotation = 0 }) => ({
+      rotation: rotation + 30,
+      scale: [1.5, 1.5],
+    }));
+
+    expect(viewport.getViewState().rotation).toBe(30);
+    expect(viewport.getViewState().scale).toEqual([1.5, 1.5]);
+  });
+
+  it('applies projection presentation pan in a single state write', () => {
     const { renderingEngine, viewport } = track(createViewport());
 
     renderingEngine.renderViewport.mockClear();
 
-    viewport.setViewPresentation({
+    applyProjectionPresentation(viewport, {
       zoom: 2,
       pan: [10, -5],
       rotation: 15,
@@ -246,6 +284,169 @@ describe('PlanarViewport view state', () => {
     expect(presentation.pan[0]).toBeCloseTo(10, 5);
     expect(presentation.pan[1]).toBeCloseTo(-5, 5);
     expect(presentation.rotation).toBe(15);
+  });
+
+  it('exposes the current planar camera through the projection registry', () => {
+    const { viewport } = track(createViewport());
+
+    applyProjectionPresentation(viewport, {
+      zoom: 2,
+      pan: [10, -5],
+      rotation: 15,
+    });
+
+    const snapshot = viewportProjection.get(viewport);
+    const presentation = planarProjection.adapter.getPresentation(snapshot);
+    const registryPresentation = viewportProjection.getPresentation(viewport);
+
+    expect(snapshot.kind).toBe('planar');
+    expect(snapshot.adapterId).toBe('planar');
+    expect(snapshot.presentation.scale.kind).toBe('fit');
+    expect(snapshot.presentation.position.kind).toBe('anchor');
+    expect(registryPresentation.zoom).toBeCloseTo(2, 5);
+    expect(presentation.zoom).toBeCloseTo(2, 5);
+    expect(presentation.pan[0]).toBeCloseTo(10, 5);
+    expect(presentation.pan[1]).toBeCloseTo(-5, 5);
+    expect(presentation.rotation).toBe(15);
+  });
+
+  it('exposes resolved planar projection capabilities and transforms', () => {
+    const { viewport } = track(createViewport());
+    const image = createPlanarImage('projection-image-1');
+
+    addPlanarImageMetadata([image.imageId]);
+    mountStackBinding(viewport, [image]);
+
+    viewport.setViewState({
+      anchorCanvas: [0.5, 0.5],
+      anchorWorld: [5, 4, 0],
+      scale: [1.5, 1.5],
+      scaleMode: 'fitWidth',
+    });
+
+    const snapshot = viewportProjection.get(viewport);
+    const worldPoint = snapshot.transforms.canvasToWorld([100, 50]);
+    const canvasPoint = snapshot.transforms.worldToCanvas(worldPoint);
+
+    expect(snapshot.spaces).toEqual({
+      canvas: true,
+      image: true,
+      renderer: true,
+      world: true,
+    });
+    expect(snapshot.frameOfReferenceUID).toBe('planar-test-frame');
+    expect(snapshot.presentation.scale.kind).toBe('fitWidth');
+    expect(snapshot.presentation.position).toEqual({
+      kind: 'anchor',
+      worldPoint: [5, 4, 0],
+      canvasPoint: [0.5, 0.5],
+    });
+    expect(snapshot.rendererCamera).toBeDefined();
+    expect(worldPoint).toHaveLength(3);
+    expect(canvasPoint).toHaveLength(2);
+  });
+
+  it('round-trips planar presentation patches through the projection registry', () => {
+    const { viewport } = track(createViewport());
+    const initialState = viewport.getViewState();
+
+    const nextViewState = viewportProjection.withPresentation(viewport, {
+      zoom: 2,
+      pan: [10, -5],
+      rotation: 30,
+    });
+
+    expect(viewport.getViewState()).toEqual(initialState);
+
+    viewport.setViewState(nextViewState);
+
+    const presentation = viewportProjection.getPresentation(viewport);
+
+    expect(presentation.zoom).toBeCloseTo(2, 5);
+    expect(presentation.pan[0]).toBeCloseTo(10, 5);
+    expect(presentation.pan[1]).toBeCloseTo(-5, 5);
+    expect(presentation.rotation).toBe(30);
+  });
+
+  it('can clear display area through view-presentation projection writes', () => {
+    const { viewport } = track(createViewport());
+
+    viewport.setDisplayArea({
+      imageArea: [0.5, 0.5],
+      type: 'FIT',
+    });
+
+    applyProjectionPresentation(viewport, {
+      displayArea: undefined,
+    });
+
+    expect(viewport.getViewState().displayArea).toBeUndefined();
+    expect(viewport.getDisplayArea()).toBeUndefined();
+  });
+
+  it('exposes volume3d cameras through the projection registry', () => {
+    const element = document.createElement('div');
+    const camera = {
+      focalPoint: [1, 2, 3],
+      parallelProjection: true,
+      parallelScale: 50,
+      position: [1, 2, 103],
+      rotation: 0,
+      viewPlaneNormal: [0, 0, 1],
+      viewUp: [0, 1, 0],
+    };
+    const resolvedView = {
+      canvasToWorld: jest.fn(([x, y]) => [x, y, 7]),
+      getFrameOfReferenceUID: jest.fn(() => 'resolved-volume-frame'),
+      toICamera: jest.fn(() => camera),
+      worldToCanvas: jest.fn(([x, y]) => [x, y]),
+    };
+    const viewport = {
+      element,
+      type: ViewportType.VOLUME_3D_NEXT,
+      getFrameOfReferenceUID: () => 'volume-frame',
+      getResolvedView: () => resolvedView,
+      getViewState: () => camera,
+    };
+
+    Object.defineProperty(element, 'clientWidth', {
+      configurable: true,
+      value: 200,
+    });
+    Object.defineProperty(element, 'clientHeight', {
+      configurable: true,
+      value: 100,
+    });
+
+    const snapshot = viewportProjection.get(viewport);
+    const nextCamera = viewportProjection.withPresentation(viewport, {
+      camera: { parallelScale: 25 },
+    });
+
+    expect(snapshot.kind).toBe('volume3d');
+    expect(snapshot.adapterId).toBe('volume3d');
+    expect(snapshot.frameOfReferenceUID).toBe('resolved-volume-frame');
+    expect(snapshot.spaces).toEqual({
+      canvas: true,
+      renderer: true,
+      world: true,
+    });
+    expect(snapshot.presentation.position).toEqual({
+      kind: 'focalPoint',
+      worldPoint: [1, 2, 3],
+    });
+    expect(snapshot.presentation.scale).toEqual({
+      kind: 'physical',
+      mmPerCanvasPixel: 1,
+    });
+    expect(volume3DProjection.adapter.getPresentation(snapshot).camera).toEqual(
+      expect.objectContaining(camera)
+    );
+    expect(snapshot.transforms.canvasToWorld([3, 4])).toEqual([3, 4, 7]);
+    expect(snapshot.transforms.worldToCanvas([3, 4, 7])).toEqual([3, 4]);
+    expect(snapshot.rendererCamera).toEqual(expect.objectContaining(camera));
+    expect(snapshot.rendererCamera).not.toBe(camera);
+    expect(nextCamera.parallelScale).toBe(25);
   });
 
   it('derives fallback setPan deltas from the existing anchor', () => {

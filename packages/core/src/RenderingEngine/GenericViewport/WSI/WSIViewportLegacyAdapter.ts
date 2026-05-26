@@ -4,6 +4,7 @@ import type {
   Point2,
   Point3,
   VOIRange,
+  ViewPresentation,
   WSIViewportProperties,
 } from '../../../types';
 import { MetadataModules } from '../../../enums';
@@ -152,6 +153,30 @@ class WSIViewportLegacyAdapter extends WSIViewport {
         upper: 255,
       },
     });
+  }
+
+  /**
+   * Compatibility wrapper for legacy callers. Next viewports should mutate
+   * their native view state directly.
+   */
+  setViewPresentation(viewPres?: ViewPresentation): void {
+    if (!viewPres) {
+      return;
+    }
+
+    const cameraPatch: Partial<WSIViewState> = {};
+
+    if (typeof viewPres.zoom === 'number') {
+      cameraPatch.zoom = viewPres.zoom;
+    }
+
+    if (typeof viewPres.rotation === 'number') {
+      cameraPatch.rotation = viewPres.rotation;
+    }
+
+    if (Object.keys(cameraPatch).length) {
+      this.setViewState(cameraPatch);
+    }
   }
 
   setVOI(voiRange: VOIRange): void {

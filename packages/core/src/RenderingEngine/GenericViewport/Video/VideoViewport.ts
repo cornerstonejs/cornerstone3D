@@ -176,23 +176,6 @@ class VideoViewport extends GenericViewport<
     return target;
   }
 
-  setViewPresentation(viewPres?: ViewPresentation): void {
-    if (!viewPres) {
-      return;
-    }
-
-    const nextZoom = Math.max(viewPres.zoom ?? this.getZoom(), 0.001);
-    this.setViewState({
-      rotation: viewPres.rotation ?? this.getResolvedView()?.rotation ?? 0,
-      scale: nextZoom,
-      scaleMode: 'fit',
-    });
-
-    if (viewPres.pan) {
-      this.setPan([viewPres.pan[0] * nextZoom, viewPres.pan[1] * nextZoom]);
-    }
-  }
-
   getViewReference(
     viewRefSpecifier: ViewReferenceSpecifier = {}
   ): ViewReference {

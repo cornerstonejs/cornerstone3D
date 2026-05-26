@@ -226,26 +226,6 @@ export default class WSIViewport extends GenericViewport<
     return target;
   }
 
-  setViewPresentation(viewPres?: ViewPresentation): void {
-    if (!viewPres) {
-      return;
-    }
-
-    const cameraPatch: Partial<WSIViewState> = {};
-
-    if (typeof viewPres.zoom === 'number') {
-      cameraPatch.zoom = viewPres.zoom;
-    }
-
-    if (typeof viewPres.rotation === 'number') {
-      cameraPatch.rotation = viewPres.rotation;
-    }
-
-    if (Object.keys(cameraPatch).length) {
-      this.setViewState(cameraPatch);
-    }
-  }
-
   getViewReference(_specifier: ViewReferenceSpecifier = {}): ViewReference {
     const dataId = this.getCurrentBinding()?.data.id;
 

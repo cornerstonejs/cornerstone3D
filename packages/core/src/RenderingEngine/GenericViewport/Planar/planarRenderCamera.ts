@@ -209,7 +209,7 @@ export function projectAnchorWorldToCurrentPlane(
  *
  * @experimental Exposed for custom synchronizers and tooling. Less stable
  *   than the core viewport API; signatures may change before 3.0 stable.
- *   Prefer the `planarHelpers` namespace re-export over importing directly.
+ *   Prefer the `planarProjection` namespace re-export over importing directly.
  *
  * @param args.sliceBasis - The geometric basis for the current slice.
  * @param args.camera - The semantic camera (may be undefined for defaults).
@@ -419,7 +419,7 @@ function getResolvedPanOffset(args: {
  *
  * @experimental Exposed for custom synchronizers and tooling. Less stable
  *   than the core viewport API; signatures may change before 3.0 stable.
- *   Prefer the `planarHelpers` namespace re-export over importing directly.
+ *   Prefer the `planarProjection` namespace re-export over importing directly.
  *
  * @param args.sliceBasis - The geometric basis for the current slice.
  * @param args.camera - The semantic camera (may be undefined for defaults).
@@ -488,7 +488,7 @@ export function resolvePlanarICamera(args: {
  *
  * @experimental Exposed for custom synchronizers and tooling. Less stable
  *   than the core viewport API; signatures may change before 3.0 stable.
- *   Prefer the `planarHelpers` namespace re-export over importing directly.
+ *   Prefer the `planarProjection` namespace re-export over importing directly.
  *
  * @param args.renderer - The VTK renderer whose camera will be updated.
  * @param args.activeSourceICamera - The resolved ICamera to apply.

@@ -27,7 +27,6 @@ import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
 import genericViewportDataSetMetadataProvider from '../../../utilities/genericViewportDataSetMetadataProvider';
 import triggerEvent from '../../../utilities/triggerEvent';
 import getMinMax from '../../../utilities/getMinMax';
-import hasOwn from '../../../utilities/hasOwn';
 import renderingEngineCache from '../../renderingEngineCache';
 import { getCameraVectors } from '../../helpers/getCameraVectors';
 import type {
@@ -55,12 +54,18 @@ import {
   normalizePlanarViewState,
 } from './planarViewState';
 import {
-  clonePlanarScale,
-  getPlanarScaleZoom,
   normalizePlanarScale,
   type PlanarScaleInput,
 } from './planarCameraScale';
 import type { DerivedPlanarPresentation } from './planarRenderCamera';
+import {
+  getPlanarProjectionPan,
+  getPlanarProjectionScale,
+  getPlanarProjectionSnapshot,
+  getPlanarProjectionZoom,
+  planarProjectionAdapter,
+  type PlanarProjectionSnapshot,
+} from './planarProjectionAdapter';
 import {
   getPlanarViewStateCanvasDimensions,
   resolvePlanarViewportView,
@@ -622,6 +627,14 @@ class PlanarViewport extends GenericViewport<
     }
 
     const previousCamera = this.getResolvedCameraForEvent();
+
+    if (Object.prototype.hasOwnProperty.call(viewStatePatch, 'displayArea')) {
+      this.options = {
+        ...this.options,
+        displayArea: cloneDisplayArea(viewStatePatch.displayArea),
+      };
+    }
+
     const next = {
       ...this.viewState,
       ...viewStatePatch,
@@ -749,18 +762,14 @@ class PlanarViewport extends GenericViewport<
 
   /** @deprecated Legacy shim for `getZoom()`. */
   getZoom(): number {
-    return (
-      this.getResolvedView()?.zoom ?? getPlanarScaleZoom(this.viewState.scale)
-    );
+    return getPlanarProjectionZoom(this.getProjectionSnapshot());
   }
 
   /**
    * Returns the current native two-axis Planar scale.
    */
   getScale(): Point2 {
-    return (
-      this.getResolvedView()?.scale ?? clonePlanarScale(this.viewState.scale)
-    );
+    return getPlanarProjectionScale(this.getProjectionSnapshot());
   }
 
   /** @deprecated Legacy shim for `setZoom(...)`. */
@@ -797,9 +806,7 @@ class PlanarViewport extends GenericViewport<
 
   /** @deprecated Legacy shim for `getPan()`. */
   getPan(): Point2 {
-    const resolvedView = this.getResolvedView();
-
-    return resolvedView ? resolvedView.pan : this.getFallbackPan();
+    return getPlanarProjectionPan(this.getProjectionSnapshot());
   }
 
   /** @deprecated Legacy shim for `setPan(...)`. */
@@ -886,129 +893,10 @@ class PlanarViewport extends GenericViewport<
       flipVertical: true,
     }
   ): PlanarViewPresentation {
-    const target: PlanarViewPresentation = {};
-    const {
-      rotation,
-      displayArea,
-      zoom,
-      scale,
-      pan,
-      flipHorizontal,
-      flipVertical,
-    } = viewPresSel;
-    const resolvedView = this.getResolvedView();
-    let currentScale: Point2 | undefined;
-    const getCurrentScale = (): Point2 => {
-      currentScale ||=
-        resolvedView?.scale ?? clonePlanarScale(this.viewState.scale);
-
-      return currentScale;
-    };
-
-    if (rotation) {
-      target.rotation =
-        resolvedView?.rotation ??
-        normalizePlanarRotation(this.viewState.rotation);
-    }
-
-    if (displayArea) {
-      target.displayArea = this.getDisplayArea();
-    }
-
-    if (zoom) {
-      target.zoom =
-        resolvedView?.zoom ?? getPlanarScaleZoom(this.viewState.scale);
-    }
-
-    if (scale) {
-      target.scale = clonePlanarScale(getCurrentScale());
-    }
-
-    if (pan) {
-      const scaleForPan = getCurrentScale();
-      const currentPan = resolvedView
-        ? resolvedView.pan
-        : this.getFallbackPan();
-
-      target.pan = [
-        currentPan[0] / scaleForPan[0],
-        currentPan[1] / scaleForPan[1],
-      ];
-    }
-
-    if (flipHorizontal) {
-      target.flipHorizontal = this.viewState.flipHorizontal ?? false;
-    }
-
-    if (flipVertical) {
-      target.flipVertical = this.viewState.flipVertical ?? false;
-    }
-
-    return target;
-  }
-
-  /**
-   * Applies view-presentation values such as pan, zoom, and rotation.
-   *
-   * @param viewPres - View-presentation values to apply to the viewport.
-   */
-  setViewPresentation(viewPres?: PlanarViewPresentation): void {
-    if (!viewPres) {
-      return;
-    }
-
-    const {
-      pan,
-      rotation = this.getRotation(),
-      flipHorizontal = this.viewState.flipHorizontal ?? false,
-      flipVertical = this.viewState.flipVertical ?? false,
-    } = viewPres;
-    const hasZoom = hasOwn(viewPres, 'zoom');
-    const hasScale = hasOwn(viewPres, 'scale');
-    const hasDisplayArea = hasOwn(viewPres, 'displayArea');
-    const nextScale = hasScale
-      ? normalizePlanarScale(viewPres.scale)
-      : normalizePlanarScale(viewPres.zoom ?? this.getScale());
-    const nextCamera: Partial<PlanarViewState> = {
-      flipHorizontal,
-      flipVertical,
-      rotation,
-    };
-
-    if (hasDisplayArea) {
-      const displayArea = cloneDisplayArea(viewPres.displayArea);
-
-      this.options = {
-        ...this.options,
-        displayArea,
-      };
-
-      nextCamera.anchorCanvas = [0.5, 0.5];
-      nextCamera.anchorWorld = undefined;
-      nextCamera.displayArea = displayArea;
-      nextCamera.scale = hasZoom || hasScale ? nextScale : [1, 1];
-      nextCamera.scaleMode = displayArea?.scaleMode ?? 'fit';
-    } else if (hasZoom || hasScale || !this.viewState.displayArea) {
-      nextCamera.scale = nextScale;
-      nextCamera.scaleMode = 'fit';
-    }
-
-    if (pan) {
-      const targetPan: Point2 = [pan[0] * nextScale[0], pan[1] * nextScale[1]];
-      const baseViewState = this.normalizeViewState({
-        ...this.viewState,
-        ...nextCamera,
-      });
-      const resolvedView = this.resolveViewState(baseViewState);
-      const nextViewState = resolvedView
-        ? resolvedView.withPan(targetPan).state.viewState
-        : this.getFallbackViewStateWithPan(baseViewState, targetPan);
-
-      this.applyResolvedViewState(nextViewState);
-      return;
-    }
-
-    this.setViewState(nextCamera);
+    return planarProjectionAdapter.getPresentation(
+      this.getProjectionSnapshot(),
+      viewPresSel
+    );
   }
 
   // ====================================================================
@@ -1818,6 +1706,31 @@ class PlanarViewport extends GenericViewport<
       rendering,
       sliceIndex: args.sliceIndex,
     });
+  }
+
+  /**
+   * Resolves the current viewport state through the Planar projection adapter
+   * without exposing projection construction as part of the viewport API.
+   */
+  private getProjectionSnapshot(): PlanarProjectionSnapshot {
+    const { height: canvasHeight, width: canvasWidth } =
+      this.getCurrentCanvasDimensions();
+    const snapshot = getPlanarProjectionSnapshot({
+      viewport: this,
+      canvasHeight,
+      canvasWidth,
+      displayArea: this.getDisplayArea(),
+      frameOfReferenceUID: this.resolveFrameOfReferenceUID(),
+      resolvedView: this.getResolvedView(),
+      resolveViewState: (viewState) => this.resolveViewState(viewState),
+      viewState: this.viewState,
+    });
+
+    if (!snapshot) {
+      throw new Error('[PlanarViewport] Unable to resolve projection snapshot');
+    }
+
+    return snapshot;
   }
 
   private resolveCachedViewState(

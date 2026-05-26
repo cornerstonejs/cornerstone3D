@@ -4,6 +4,13 @@ import {
   resolvePlanarICamera,
 } from './planarRenderCamera';
 import {
+  getPlanarProjectionPan,
+  getPlanarProjectionScale,
+  getPlanarProjectionSnapshot,
+  getPlanarProjectionZoom,
+  planarProjectionAdapter,
+} from './planarProjectionAdapter';
+import {
   createPlanarImageSliceBasis,
   createPlanarVolumeSliceBasis,
 } from './planarSliceBasis';
@@ -14,18 +21,29 @@ export {
   createPlanarRenderPathResolver,
 } from './PlanarRenderPathResolver';
 /**
- * Lower-level planar camera helpers for custom synchronizers and tooling
- * that need to derive renderer cameras without going through a viewport.
+ * Lower-level planar projection helpers for custom synchronizers and tooling
+ * that need resolved snapshots or renderer cameras without going through a
+ * viewport method.
  * These are advertised as a tier below the core viewport API — signatures
  * may change before 3.0 stable.
  */
-export const planarHelpers = {
+export const planarProjection = {
+  adapter: planarProjectionAdapter,
+  getSnapshot: getPlanarProjectionSnapshot,
+  getZoom: getPlanarProjectionZoom,
+  getScale: getPlanarProjectionScale,
+  getPan: getPlanarProjectionPan,
   resolveICamera: resolvePlanarICamera,
   derivePresentation: derivePlanarPresentation,
   applyToRenderer: applyPlanarICameraToRenderer,
   createImageSliceBasis: createPlanarImageSliceBasis,
   createVolumeSliceBasis: createPlanarVolumeSliceBasis,
 };
+export type {
+  PlanarProjectionPresentation,
+  PlanarProjectionRequest,
+  PlanarProjectionSnapshot,
+} from './planarProjectionAdapter';
 export {
   BasePlanarResolvedView,
   PlanarStackResolvedView,
