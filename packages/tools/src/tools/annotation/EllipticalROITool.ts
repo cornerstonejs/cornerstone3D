@@ -1059,15 +1059,15 @@ class EllipticalROITool extends AnnotationTool {
         const aspect = getCalibratedAspect(image);
         const indexHandles = points.map((p) => imageData.worldToIndex(p));
 
-        const width = EllipticalROITool.calculateLengthInIndex(calibrate, [
-          indexHandles[2],
-          indexHandles[3],
-        ]);
+        const width = EllipticalROITool.calculateLengthInIndex(
+          calibrate,
+          indexHandles.slice(2, 4)
+        );
 
-        const height = EllipticalROITool.calculateLengthInIndex(calibrate, [
-          indexHandles[0],
-          indexHandles[1],
-        ]);
+        const height = EllipticalROITool.calculateLengthInIndex(
+          calibrate,
+          indexHandles.slice(0, 2)
+        );
 
         const area = Math.abs(Math.PI * (width / 2) * (height / aspect / 2));
 
