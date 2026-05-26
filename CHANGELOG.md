@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [4.22.12](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.11...v4.22.12) (2026-05-25)
+
+**Note:** Version bump only for package root
+
+## [4.22.11](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.10...v4.22.11) (2026-05-25)
+
+### Bug Fixes
+
+- **sr:** adapt 3.10 SR reports to new DCMJS structural changes ([#2643](https://github.com/cornerstonejs/cornerstone3D/issues/2643)) ([8b386fa](https://github.com/cornerstonejs/cornerstone3D/commit/8b386fadf5f786058343076c053b9c3ced194233))
+
+## [4.22.10](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.9...v4.22.10) (2026-05-22)
+
+### Bug Fixes
+
+- **core:** move animationFrameSet guard after sWidth/sHeight update ([#2741](https://github.com/cornerstonejs/cornerstone3D/issues/2741)) ([62a7762](https://github.com/cornerstonejs/cornerstone3D/commit/62a7762953feae68a81855d9c7bf84f1fd3a3877))
+
 ## [4.22.9](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.8...v4.22.9) (2026-05-19)
 
 ### Bug Fixes

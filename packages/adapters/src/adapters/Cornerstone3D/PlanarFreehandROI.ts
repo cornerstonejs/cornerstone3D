@@ -95,7 +95,9 @@ class PlanarFreehandROI extends BaseAdapter3D {
     if (referencedImageId) {
       state.annotation.data.cachedStats = {
         [`imageId:${referencedImageId}`]: {
-          area: NUMGroup ? NUMGroup.MeasuredValueSequence.NumericValue : null,
+          ...(!isOpenContour && NUMGroup
+            ? { area: NUMGroup.MeasuredValueSequence.NumericValue }
+            : {}),
           ...restoreAdditionalMetrics(measurementNUMGroups),
         },
       };
