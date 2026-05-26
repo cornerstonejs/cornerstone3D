@@ -1,5 +1,5 @@
 import type { ViewAnchor } from '../ViewportCameraTypes';
-import type { VideoCamera, VideoProperties } from './VideoViewportTypes';
+import type { VideoViewState, VideoProperties } from './VideoViewportTypes';
 
 export interface VideoCanvasMapping {
   left: number;
@@ -23,7 +23,7 @@ interface VideoCanvasMappingInput {
   objectFit?: VideoProperties['objectFit'];
 }
 
-export function createDefaultVideoCamera(): VideoCamera {
+export function createDefaultVideoViewState(): VideoViewState {
   return {
     currentTimeSeconds: 0,
     anchorCanvas: [0.5, 0.5],
@@ -33,7 +33,9 @@ export function createDefaultVideoCamera(): VideoCamera {
   };
 }
 
-export function normalizeVideoCamera(camera: VideoCamera): VideoCamera {
+export function normalizeVideoViewState(
+  camera: VideoViewState
+): VideoViewState {
   return {
     ...(camera.currentTimeSeconds !== undefined
       ? { currentTimeSeconds: Math.max(0, camera.currentTimeSeconds) }
@@ -52,7 +54,7 @@ export function normalizeVideoCamera(camera: VideoCamera): VideoCamera {
 
 export function resolveVideoCanvasMapping(
   input: VideoCanvasMappingInput & {
-    camera?: VideoCamera;
+    camera?: VideoViewState;
   }
 ): VideoCanvasMapping | undefined {
   const {

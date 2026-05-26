@@ -5,7 +5,6 @@ import type {
   MountedRendering,
   RenderPathResolver,
 } from '../ViewportArchitectureTypes';
-import type ICamera from '../../../types/ICamera';
 import type { ViewportCameraBase } from '../ViewportCameraTypes';
 
 export interface ECGChannelData {
@@ -31,9 +30,7 @@ export interface ECGPresentationProps extends BasePresentationProps {
   visibleChannels?: number[];
 }
 
-export interface ECGCamera
-  extends ViewportCameraBase<[number, number]>,
-    ICamera {
+export interface ECGViewState extends ViewportCameraBase<[number, number]> {
   timeRange: [number, number];
   valueRange: [number, number];
   scrollOffset?: number;
@@ -90,6 +87,6 @@ export type ECGCanvasRendering = MountedRendering<{
   canvas: HTMLCanvasElement;
   canvasContext: CanvasRenderingContext2D;
   metrics: RenderWindowMetrics;
-  currentCamera?: ECGCamera;
+  currentCamera?: ECGViewState;
   currentDataPresentation?: ECGDataPresentation;
 }>;

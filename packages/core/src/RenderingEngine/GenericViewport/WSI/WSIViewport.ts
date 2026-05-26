@@ -3,8 +3,6 @@ import type {
   CPUIImageData,
   Point2,
   Point3,
-  ViewPresentation,
-  ViewPresentationSelector,
   ViewReference,
   ViewReferenceSpecifier,
 } from '../../../types';
@@ -207,25 +205,6 @@ export default class WSIViewport extends GenericViewport<
     return this.getWSIData()?.imageIds[0];
   }
 
-  getViewPresentation(
-    viewPresSel: ViewPresentationSelector = {
-      zoom: true,
-      rotation: true,
-    }
-  ): ViewPresentation {
-    const target: ViewPresentation = {};
-
-    if (viewPresSel.zoom) {
-      target.zoom = this.getZoom();
-    }
-
-    if (viewPresSel.rotation) {
-      target.rotation = this.getRotation();
-    }
-
-    return target;
-  }
-
   getViewReference(_specifier: ViewReferenceSpecifier = {}): ViewReference {
     const dataId = this.getCurrentBinding()?.data.id;
 
@@ -388,11 +367,11 @@ export default class WSIViewport extends GenericViewport<
     return 0;
   }
 
-  private applyResolvedViewState(nextCamera: WSIViewState): void {
-    const previousCamera = this.getCameraForEvent();
-
-    this.viewState = this.normalizeViewState(nextCamera);
-    this.modified(previousCamera);
+  /**
+   * Applies a resolved WSI view state through the canonical mutation path.
+   */
+  private applyResolvedViewState(nextViewState: WSIViewState): void {
+    this.setViewState(nextViewState);
   }
 
   render(): void {

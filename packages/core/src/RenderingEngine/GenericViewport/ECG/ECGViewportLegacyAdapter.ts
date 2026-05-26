@@ -1,4 +1,10 @@
-import type { ECGViewportProperties, ViewPresentation } from '../../../types';
+import type {
+  ECGViewportProperties,
+  ViewPresentation,
+  ViewPresentationSelector,
+} from '../../../types';
+import { viewportProjection } from '../viewportProjection';
+import type { ECGViewState } from './ECGViewportTypes';
 import ECGViewport from './ECGViewport';
 
 class ECGViewportLegacyAdapter extends ECGViewport {
@@ -66,23 +72,33 @@ class ECGViewportLegacyAdapter extends ECGViewport {
   }
 
   /**
-   * Compatibility wrapper for legacy callers. Next viewports should mutate
-   * their native view state directly.
+   * Compatibility wrapper for legacy callers. Next viewports should read
+   * presentation through `viewportProjection.getPresentation`.
+   */
+  getViewPresentation(
+    selector?: ViewPresentationSelector
+  ): ViewPresentation | undefined {
+    return viewportProjection.getPresentation<ViewPresentation>(this, {
+      selector,
+    });
+  }
+
+  /**
+   * Compatibility wrapper for legacy callers. Next viewports should use
+   * viewport projection to derive view state, then call `setViewState`.
    */
   setViewPresentation(viewPres?: ViewPresentation): void {
     if (!viewPres) {
       return;
     }
 
-    const nextZoom = Math.max(viewPres.zoom ?? this.getZoom(), 0.001);
+    const nextViewState = viewportProjection.withPresentation<
+      ECGViewState,
+      ViewPresentation
+    >(this, viewPres);
 
-    this.setViewState({
-      scale: nextZoom,
-      scaleMode: 'fit',
-    });
-
-    if (viewPres.pan) {
-      this.setPan([viewPres.pan[0] * nextZoom, viewPres.pan[1] * nextZoom]);
+    if (nextViewState) {
+      this.setViewState(nextViewState);
     }
   }
 }

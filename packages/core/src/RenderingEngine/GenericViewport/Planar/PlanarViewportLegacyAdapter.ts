@@ -22,6 +22,7 @@ import { cloneDisplayArea } from './planarViewState';
 import type {
   PlanarResolvedICamera,
   PlanarViewPresentation,
+  PlanarViewPresentationSelector,
   PlanarViewState,
 } from './PlanarViewportTypes';
 
@@ -96,6 +97,18 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
     }
 
     this.setViewState(viewStatePatch);
+  }
+
+  /**
+   * Compatibility wrapper for legacy callers. Next viewports should read
+   * presentation through `viewportProjection.getPresentation`.
+   */
+  getViewPresentation(
+    selector?: PlanarViewPresentationSelector
+  ): PlanarViewPresentation | undefined {
+    return viewportProjection.getPresentation<PlanarViewPresentation>(this, {
+      selector,
+    });
   }
 
   /**

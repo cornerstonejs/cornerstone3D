@@ -23,6 +23,35 @@ computed snapshot for the current canvas, data, and state. Renderer projections
 are commands sent to VTK, CPU canvas, DOM, OpenLayers, or another runtime.
 Runtime engine state is private to that renderer.
 
+Clean Next viewport instances do not expose `getViewPresentation()` or
+`setViewPresentation()`. Presentation is a projection-service concern:
+
+```ts
+import { viewportProjection } from '@cornerstonejs/core';
+
+const presentation = viewportProjection.getPresentation(viewport, {
+  selector: {
+    pan: true,
+    zoom: true,
+    rotation: true,
+  },
+});
+
+const nextViewState = viewportProjection.withPresentation(viewport, {
+  zoom: 2,
+  pan: [20, -10],
+});
+
+if (nextViewState) {
+  viewport.setViewState(nextViewState);
+}
+```
+
+`viewportProjection.withPresentation()` is pure. It translates the presentation
+patch into the viewport family's native `ViewState`, but it does not mutate the
+viewport and it does not render. `setViewState()` and `updateViewState()` remain
+the only clean Next viewport mutation paths.
+
 For cross-viewport tooling and synchronizers, use the Viewport Projection
 construct instead of treating `ICamera` as a universal camera model. Viewport
 Projection exposes capability-checked transforms, semantic scale and position,
@@ -97,21 +126,79 @@ rendering code resolves a canvas mapping from:
 The resolved canvas mapping supplies pan, zoom, and canvas/world conversion for
 tools and renderers. It is not persisted as a camera.
 
+Video projection reports intrinsic media-pixel coordinates:
+
+- `ProjectionPosition.kind === 'mediaPoint'`
+- `ProjectionScale.kind === 'nativePixel'`
+
+ECG projection reports signal coordinates:
+
+- world tuples are `[sampleIndex, amplitudeValue, channelIndex]`
+- `ProjectionPosition.kind === 'signalPoint'`
+- `ProjectionScale.kind === 'signal'`
+
 ## 3D And WSI Exceptions
 
 3D viewports are runtime-camera-backed. The VTK active camera remains the source
 of truth, `getViewState()` reads from VTK, and `setViewState()` applies to VTK.
 
 Whole-slide image viewports have semantic `WSIViewState`, but they synchronize
-with OpenLayers before reads and after map interactions.
+with OpenLayers before reads and after map interactions. Their projection
+adapter exposes slide/world transforms, zoom, rotation, and renderer-camera
+output through `viewportProjection`.
+
+## Camera Patch Migration
+
+Legacy code often wrote durable camera fields:
+
+```ts
+viewport.setCamera({
+  focalPoint,
+  position,
+  parallelScale,
+});
+```
+
+For direct Next viewports, prefer native state or projection writes:
+
+```ts
+viewport.updateViewState((viewState) => ({
+  ...viewState,
+  anchorWorld: [x, y, z],
+}));
+```
+
+```ts
+const nextViewState = viewportProjection.withPresentation(viewport, {
+  zoom: 2,
+});
+
+if (nextViewState) {
+  viewport.setViewState(nextViewState);
+}
+```
+
+Use `ViewReference` for spatial navigation across slices or datasets:
+
+```ts
+const reference = sourceViewport.getViewReference();
+
+targetViewport.setViewReference(reference);
+targetViewport.render();
+```
+
+Use `setCamera()` only on legacy compatibility adapters. Position-only camera
+patches are not a stable Next-state operation because Next view state stores
+semantic anchors, slice locators, and scale, not durable renderer position.
 
 ## Legacy Compatibility
 
 Legacy adapters are the compatibility boundary for `ICamera`.
 
-Clean Generic viewports expose `getViewState()`, `setViewState()`, and
-`getResolvedView()`. Legacy adapters expose `getCamera()` and `setCamera()` for
-old APIs and legacy camera events.
+Clean Generic viewports expose `getViewState()`, `setViewState()`,
+`updateViewState()`, and `getResolvedView()`. Legacy adapters expose
+`getCamera()`, `setCamera()`, `getViewPresentation()`, and
+`setViewPresentation()` for old APIs and legacy camera events.
 
 For planar adapters:
 

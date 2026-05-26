@@ -268,7 +268,64 @@ viewport.render();
 ```
 
 Legacy adapters still support camera-style calls for older code. Clean Next
-code should use view state and viewport projection APIs.
+code should use view state and viewport projection APIs. Direct Next viewports
+do not expose `getViewPresentation()`, `setViewPresentation()`, `getCamera()`,
+or `setCamera()` as durable control APIs.
+
+Before:
+
+```ts
+const presentation = viewport.getViewPresentation();
+
+viewport.setViewPresentation({
+  ...presentation,
+  zoom: presentation.zoom * 2,
+});
+```
+
+Now:
+
+```ts
+const presentation = viewportProjection.getPresentation(viewport);
+const nextViewState = viewportProjection.withPresentation(viewport, {
+  zoom: (presentation?.zoom ?? 1) * 2,
+});
+
+if (nextViewState) {
+  viewport.setViewState(nextViewState);
+}
+```
+
+Before:
+
+```ts
+viewport.setCamera({
+  focalPoint,
+  position,
+});
+```
+
+Now, use a view reference for spatial navigation or a presentation patch for
+display navigation:
+
+```ts
+targetViewport.setViewReference(sourceViewport.getViewReference());
+targetViewport.render();
+```
+
+```ts
+const nextViewState = viewportProjection.withPresentation(viewport, {
+  zoom: 1.5,
+});
+
+if (nextViewState) {
+  viewport.setViewState(nextViewState);
+}
+```
+
+If you are changing a native field such as planar orientation, a video media
+anchor, or ECG signal range, update the native view state directly with
+`setViewState()` or `updateViewState()`.
 
 ## Slice Navigation
 
@@ -347,7 +404,7 @@ binding, instead of requiring a separate volume-rendering overlay path.
 3. Replace `setStack()` and `setVolumes()` with `setDataList()` or `addData()`.
 4. Move VOI, colormap, opacity, blend mode, and visibility to
    `setDataPresentation(dataId, ...)`.
-5. Replace clean-code camera patches with view state, view presentation, pan,
+5. Replace clean-code camera patches with view state, viewport projection, pan,
    zoom, and view reference APIs.
 6. Enable `useSliceRendering` for labelmap segmentation overlays that should
    render through the slice path.

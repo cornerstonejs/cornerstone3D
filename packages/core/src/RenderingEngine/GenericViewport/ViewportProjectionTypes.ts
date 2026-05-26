@@ -15,7 +15,12 @@ export type ProjectionScale =
   | { kind: 'fitHeight'; value: number }
   | { kind: 'displayArea'; value: number; area: DisplayArea }
   | { kind: 'nativePixel'; pixelsPerCanvasPixel: number }
-  | { kind: 'physical'; mmPerCanvasPixel: number };
+  | { kind: 'physical'; mmPerCanvasPixel: number }
+  | {
+      kind: 'signal';
+      samplesPerCanvasPixel: number;
+      valueUnitsPerCanvasPixel: number;
+    };
 
 /**
  * Semantic position declarations exposed by projection snapshots.
@@ -27,6 +32,14 @@ export type ProjectionScale =
 export type ProjectionPosition =
   | { kind: 'anchor'; worldPoint?: Point3; canvasPoint: Point2 }
   | { kind: 'imagePoint'; imagePoint: Point2; canvasPoint: Point2 }
+  | { kind: 'mediaPoint'; mediaPoint: Point2; canvasPoint: Point2 }
+  | {
+      kind: 'signalPoint';
+      sampleIndex: number;
+      value: number;
+      channelIndex: number;
+      canvasPoint: Point2;
+    }
   | { kind: 'focalPoint'; worldPoint: Point3 };
 
 /**

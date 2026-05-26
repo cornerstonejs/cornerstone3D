@@ -7,13 +7,13 @@ import {
   type VideoCanvasMapping,
 } from './videoViewportCamera';
 import type {
-  VideoCamera,
+  VideoViewState,
   VideoProperties,
   VideoStreamPayload,
 } from './VideoViewportTypes';
 
 type VideoResolvedViewState = {
-  viewState: VideoCamera;
+  viewState: VideoViewState;
   containerHeight: number;
   containerWidth: number;
   frameOfReferenceUID?: string;
@@ -144,7 +144,7 @@ class VideoResolvedView extends ResolvedViewportView<VideoResolvedViewState> {
     return this.cachedCanvasMapping;
   }
 
-  private cloneWithViewState(viewState: VideoCamera): VideoResolvedView {
+  private cloneWithViewState(viewState: VideoViewState): VideoResolvedView {
     return new VideoResolvedView({
       ...this.state,
       viewState,

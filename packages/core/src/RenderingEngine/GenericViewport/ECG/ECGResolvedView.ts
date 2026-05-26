@@ -12,14 +12,14 @@ import {
   type ECGCanvasMapping,
 } from './ecgViewportCamera';
 import type {
-  ECGCamera,
+  ECGViewState,
   ECGDataPresentation,
   ECGWaveformPayload,
   RenderWindowMetrics,
 } from './ECGViewportTypes';
 
 type ECGResolvedViewState = {
-  viewState: ECGCamera;
+  viewState: ECGViewState;
   canvas: HTMLCanvasElement;
   dataPresentation?: ECGDataPresentation;
   frameOfReferenceUID: string;
@@ -177,7 +177,7 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
     });
   }
 
-  private cloneWithViewState(viewState: ECGCamera): ECGResolvedView {
+  private cloneWithViewState(viewState: ECGViewState): ECGResolvedView {
     return new ECGResolvedView({
       ...this.state,
       viewState,

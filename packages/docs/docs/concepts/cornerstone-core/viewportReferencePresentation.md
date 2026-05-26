@@ -26,8 +26,12 @@ Some specific use cases for this are:
   - Uses `getViewReference` with a specific image position to get references to
     images in between or related to nearby annotations to interpolate
 - Resizing and sync display presentation
-  - Uses `getViewPresentation` to get old presentation information and then
-    restores with `setViewPresentation(viewPres)`
+  - Legacy viewports use `getViewPresentation` to get old presentation
+    information and then restore with `setViewPresentation(viewPres)`
+  - Direct Generic/Next viewports read presentation with
+    `viewportProjection.getPresentation(viewport)` and apply the returned
+    native view state from `viewportProjection.withPresentation(...)` with
+    `viewport.setViewState(...)`
 
 ## View Reference
 
@@ -154,12 +158,17 @@ Some typical uses cases for view presentation are:
 - Resizing of viewports, used to remember the relative positions so that the
   image remains in the same "relative" position.
 
-## `setViewReference` and `setViewPresentation`
+## `setViewReference` and View Presentation
 
-The `viewport.setViewReference` and `viewport.setViewPresentation` navigate
-to the specified reference and apply the given presentation. If both are being
-applied, then the view reference must be applied first. A render is required
-afterwards to complete the view change since multiple parts of the view may be affected.
+The `viewport.setViewReference` API navigates to the specified reference. Legacy
+viewport classes and compatibility adapters also expose
+`viewport.setViewPresentation` to apply presentation directly. Direct
+Generic/Next viewports do not expose that mutation API; use
+`viewportProjection.withPresentation(...)` to translate a presentation patch to
+the viewport family's native `ViewState`, then call `viewport.setViewState(...)`.
+If both reference and presentation are being applied, then the view reference
+must be applied first. A render is required afterwards to complete the view
+change since multiple parts of the view may be affected.
 
 Some example code is shown below for various uses. This assumes that
 `viewports` is an array of viewports of various types, and that `viewport` is
@@ -236,7 +245,7 @@ function resize() {
   const renderingEngine = getRenderingEngine(renderingEngineId);
 
   if (renderingEngine) {
-    // Store the presentation from before for after
+    // Legacy viewport path: store the presentation from before for after.
     const presentations = viewports.map((viewport) =>
       viewport.getViewPresentation()
     );
@@ -253,4 +262,26 @@ function resize() {
 }
 
 resizeObserver.observe(viewportGrid);
+```
+
+For direct Generic/Next viewports, keep presentation reads and writes on the
+projection service:
+
+```javascript
+const presentations = viewports.map((viewport) =>
+  viewportProjection.getPresentation(viewport)
+);
+
+renderingEngine.resize(true, false);
+
+viewports.forEach((viewport, index) => {
+  const nextViewState = viewportProjection.withPresentation(
+    viewport,
+    presentations[index]
+  );
+
+  if (nextViewState) {
+    viewport.setViewState(nextViewState);
+  }
+});
 ```

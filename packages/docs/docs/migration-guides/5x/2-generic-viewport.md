@@ -229,6 +229,8 @@ For example, direct `PLANAR_NEXT` code should use `setDataList()` instead of
 Generic Viewport separates viewport navigation from per-data appearance:
 
 - View presentation: pan, zoom or scale, rotation, flips, and display area.
+  Direct Next viewports expose this through `viewportProjection`, not viewport
+  instance methods.
 - Data presentation: VOI, opacity, colormap, blend mode, interpolation, and
   visibility for one mounted dataset.
 
@@ -258,7 +260,9 @@ data presentation internally.
 ## Camera Compatibility
 
 Legacy adapters still expose `getCamera()` and `setCamera()`, but clean Next
-viewport code should use semantic APIs:
+viewport code should use semantic APIs. `ViewState` is the viewport source of
+truth. `setViewState()` and `updateViewState()` are the only direct Next
+mutation paths.
 
 ```ts
 viewport.setViewState({
@@ -278,6 +282,51 @@ const nextViewState = viewportProjection.withPresentation(viewport, {
 if (nextViewState) {
   viewport.setViewState(nextViewState);
 }
+```
+
+Read presentation through the projection service:
+
+```ts
+const presentation = viewportProjection.getPresentation(viewport, {
+  selector: {
+    pan: true,
+    zoom: true,
+    rotation: true,
+  },
+});
+```
+
+Direct Next viewports do not expose `getViewPresentation()` or
+`setViewPresentation()`. Legacy compatibility adapters may still expose those
+methods and delegate them through `viewportProjection.withPresentation(...)`
+followed by `setViewState(...)`.
+
+Before:
+
+```ts
+viewport.setCamera({
+  focalPoint,
+  position,
+});
+```
+
+Now, for display navigation:
+
+```ts
+const nextViewState = viewportProjection.withPresentation(viewport, {
+  zoom: 2,
+});
+
+if (nextViewState) {
+  viewport.setViewState(nextViewState);
+}
+```
+
+For spatial navigation across viewports, use references:
+
+```ts
+targetViewport.setViewReference(sourceViewport.getViewReference());
+targetViewport.render();
 ```
 
 For planar compatibility adapters, position-only camera patches are not
@@ -372,5 +421,5 @@ Then migrate in this order:
    loading calls with logical data ids plus `setDataList()`.
 5. Move clean Next presentation code from `setProperties()` to
    `setDataPresentation(dataId, ...)`.
-6. Replace durable camera-state storage with view presentation or view
-   reference APIs.
+6. Replace durable camera-state storage with `ViewState`,
+   `viewportProjection`, or view reference APIs.

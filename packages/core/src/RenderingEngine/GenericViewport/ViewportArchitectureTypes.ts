@@ -1,8 +1,6 @@
 import type { ActorEntry, ICamera, Point2, Point3 } from '../../types';
 import type {
   ReferenceCompatibleOptions,
-  ViewPresentation,
-  ViewPresentationSelector,
   ViewReference,
   ViewReferenceSpecifier,
 } from '../../types/IViewport';
@@ -144,7 +142,6 @@ export interface ViewportDataBinding<TPresentation = unknown>
 export interface ViewportController<
   TViewState = unknown,
   TDataPresentation = unknown,
-  TViewPresentation = ViewPresentation,
 > {
   readonly id: ViewportId;
   readonly type: ViewportType;
@@ -168,9 +165,6 @@ export interface ViewportController<
   ): void;
   setDataPresentation(dataId: DataId, props: Partial<TDataPresentation>): void;
   getDataPresentation(dataId: DataId): TDataPresentation | undefined;
-  getViewPresentation(
-    selector?: ViewPresentationSelector
-  ): TViewPresentation | undefined;
   setViewReference(viewReference: ViewReference): void;
   getViewReference(specifier?: ViewReferenceSpecifier): ViewReference;
   getViewReferenceId(specifier?: ViewReferenceSpecifier): string;

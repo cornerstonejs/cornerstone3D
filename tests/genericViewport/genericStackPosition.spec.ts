@@ -162,7 +162,7 @@ test.describe('Stack Position Next display area', () => {
     }
   });
 
-  test('applies rotation presets through the native view presentation', async ({
+  test('applies rotation presets through native view state', async ({
     page,
   }) => {
     await selectDisplayAreaPreset(page, '90 Left Top Half');

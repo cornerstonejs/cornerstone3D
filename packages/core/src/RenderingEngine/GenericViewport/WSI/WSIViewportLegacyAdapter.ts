@@ -5,12 +5,14 @@ import type {
   Point3,
   VOIRange,
   ViewPresentation,
+  ViewPresentationSelector,
   WSIViewportProperties,
 } from '../../../types';
 import { MetadataModules } from '../../../enums';
 import * as metaData from '../../../metaData';
 import genericViewportDataSetMetadataProvider from '../../../utilities/genericViewportDataSetMetadataProvider';
 import type { WSIClientLike } from '../../../utilities/WSIUtilities';
+import { viewportProjection } from '../viewportProjection';
 import { canvasToIndexForWSI } from './wsiTransformUtils';
 import WSIViewport from './WSIViewport';
 import type { WSICamera, WSIViewState } from './WSIViewportTypes';
@@ -156,26 +158,33 @@ class WSIViewportLegacyAdapter extends WSIViewport {
   }
 
   /**
-   * Compatibility wrapper for legacy callers. Next viewports should mutate
-   * their native view state directly.
+   * Compatibility wrapper for legacy callers. Next viewports should read
+   * presentation through `viewportProjection.getPresentation`.
+   */
+  getViewPresentation(
+    selector?: ViewPresentationSelector
+  ): ViewPresentation | undefined {
+    return viewportProjection.getPresentation<ViewPresentation>(this, {
+      selector,
+    });
+  }
+
+  /**
+   * Compatibility wrapper for legacy callers. Next viewports should use
+   * viewport projection to derive view state, then call `setViewState`.
    */
   setViewPresentation(viewPres?: ViewPresentation): void {
     if (!viewPres) {
       return;
     }
 
-    const cameraPatch: Partial<WSIViewState> = {};
+    const nextViewState = viewportProjection.withPresentation<
+      WSIViewState,
+      ViewPresentation
+    >(this, viewPres);
 
-    if (typeof viewPres.zoom === 'number') {
-      cameraPatch.zoom = viewPres.zoom;
-    }
-
-    if (typeof viewPres.rotation === 'number') {
-      cameraPatch.rotation = viewPres.rotation;
-    }
-
-    if (Object.keys(cameraPatch).length) {
-      this.setViewState(cameraPatch);
+    if (nextViewState) {
+      this.setViewState(nextViewState);
     }
   }
 

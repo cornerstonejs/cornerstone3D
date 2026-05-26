@@ -12,6 +12,9 @@ export {
  * Lower-level 3D projection helpers for custom synchronizers and tooling.
  * This namespace is less stable than the core viewport API while the generic
  * projection service settles.
+ *
+ * @experimental Advanced helper namespace; prefer `viewportProjection` for
+ * stable application-level presentation reads and writes.
  */
 export const volume3DProjection = {
   adapter: volume3DProjectionAdapter,

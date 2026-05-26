@@ -1,8 +1,6 @@
 import GenericViewport from '../GenericViewport';
 import type {
   Point2,
-  ViewPresentation,
-  ViewPresentationSelector,
   ViewReference,
   ViewReferenceSpecifier,
 } from '../../../types';
@@ -20,7 +18,7 @@ import type {
 import { getGenericViewportSourceDataId } from '../genericViewportDataSetAccess';
 import type { GenericViewportReferenceContext } from '../genericViewportReferenceCompatibility';
 import type {
-  VideoCamera,
+  VideoViewState,
   VideoDataPresentation,
   VideoElementRenderContext,
   VideoElementRendering,
@@ -28,14 +26,14 @@ import type {
   VideoViewportInput,
 } from './VideoViewportTypes';
 import {
-  createDefaultVideoCamera,
-  normalizeVideoCamera,
+  createDefaultVideoViewState,
+  normalizeVideoViewState,
 } from './videoViewportCamera';
 import { createVideoRenderPathResolver } from './VideoRenderPathResolver';
 import VideoResolvedView from './VideoResolvedView';
 
 class VideoViewport extends GenericViewport<
-  VideoCamera,
+  VideoViewState,
   VideoDataPresentation,
   VideoElementRenderContext
 > {
@@ -71,7 +69,7 @@ class VideoViewport extends GenericViewport<
       type: 'video',
       element: this.element,
     };
-    this.viewState = createDefaultVideoCamera();
+    this.viewState = createDefaultVideoViewState();
 
     this.element.setAttribute('data-viewport-uid', this.id);
     this.element.setAttribute(
@@ -118,7 +116,7 @@ class VideoViewport extends GenericViewport<
         );
       }
 
-      this.viewState = createDefaultVideoCamera();
+      this.viewState = createDefaultVideoViewState();
 
       if (videoData.frameRange[0] > 1) {
         this.viewState.currentTimeSeconds = frameNumberToTimeSeconds(
@@ -147,33 +145,6 @@ class VideoViewport extends GenericViewport<
       this.untrackVideoElement();
       this.trackVideoElement();
     }
-  }
-
-  getViewPresentation(
-    viewPresSel: ViewPresentationSelector = {
-      rotation: true,
-      zoom: true,
-      pan: true,
-    }
-  ): ViewPresentation {
-    const target: ViewPresentation = {};
-    const { rotation, zoom, pan } = viewPresSel;
-    const currentZoom = this.getZoom();
-
-    if (rotation) {
-      target.rotation = this.getResolvedView()?.rotation ?? 0;
-    }
-
-    if (zoom) {
-      target.zoom = currentZoom;
-    }
-
-    if (pan) {
-      const currentPan = this.getPan();
-      target.pan = [currentPan[0] / currentZoom, currentPan[1] / currentZoom];
-    }
-
-    return target;
   }
 
   getViewReference(
@@ -592,7 +563,7 @@ class VideoViewport extends GenericViewport<
     const { currentTimeSeconds } = this.viewState;
 
     this.viewState = this.normalizeViewState({
-      ...createDefaultVideoCamera(),
+      ...createDefaultVideoViewState(),
       currentTimeSeconds,
     });
     this.modified(previousCamera);
@@ -623,8 +594,10 @@ class VideoViewport extends GenericViewport<
   /**
    * Clamps and normalizes video camera values before storage.
    */
-  protected override normalizeViewState(viewState: VideoCamera): VideoCamera {
-    return normalizeVideoCamera(viewState);
+  protected override normalizeViewState(
+    viewState: VideoViewState
+  ): VideoViewState {
+    return normalizeVideoViewState(viewState);
   }
 
   /**
@@ -724,11 +697,11 @@ class VideoViewport extends GenericViewport<
     this.trackedVideoElement = undefined;
   }
 
-  private applyResolvedViewState(nextCamera: VideoCamera): void {
-    const previousCamera = this.getCameraForEvent();
-
-    this.viewState = this.normalizeViewState(nextCamera);
-    this.modified(previousCamera);
+  /**
+   * Applies a resolved Video view state through the canonical mutation path.
+   */
+  private applyResolvedViewState(nextViewState: VideoViewState): void {
+    this.setViewState(nextViewState);
   }
 
   private async primeInitialFrame(

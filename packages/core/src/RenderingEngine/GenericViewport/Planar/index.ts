@@ -26,6 +26,9 @@ export {
  * viewport method.
  * These are advertised as a tier below the core viewport API — signatures
  * may change before 3.0 stable.
+ *
+ * @experimental Advanced helper namespace; prefer `viewportProjection` for
+ * stable application-level presentation reads and writes.
  */
 export const planarProjection = {
   adapter: planarProjectionAdapter,

@@ -1,6 +1,6 @@
 import type { Point2 } from '../../../types';
 import type { ViewAnchor } from '../ViewportCameraTypes';
-import type { ECGCamera, RenderWindowMetrics } from './ECGViewportTypes';
+import type { ECGViewState, RenderWindowMetrics } from './ECGViewportTypes';
 
 export interface ECGCanvasMapping {
   anchorWorld: [number, number];
@@ -14,10 +14,10 @@ export interface ECGCanvasMapping {
   yOffset: number;
 }
 
-export function createDefaultECGCamera(args: {
+export function createDefaultECGViewState(args: {
   timeRange: [number, number];
   valueRange: [number, number];
-}): ECGCamera {
+}): ECGViewState {
   return {
     timeRange: [...args.timeRange] as [number, number],
     valueRange: [...args.valueRange] as [number, number],
@@ -29,7 +29,7 @@ export function createDefaultECGCamera(args: {
   };
 }
 
-export function normalizeECGCamera(camera: ECGCamera): ECGCamera {
+export function normalizeECGViewState(camera: ECGViewState): ECGViewState {
   return {
     timeRange: [...camera.timeRange] as [number, number],
     valueRange: [...camera.valueRange] as [number, number],
@@ -50,7 +50,7 @@ export function normalizeECGCamera(camera: ECGCamera): ECGCamera {
 
 export function resolveECGCanvasMapping(args: {
   metrics: RenderWindowMetrics;
-  camera?: ECGCamera;
+  camera?: ECGViewState;
   canvas: HTMLCanvasElement;
 }): ECGCanvasMapping {
   const { metrics, camera, canvas } = args;

@@ -150,7 +150,7 @@
         "description": "Demonstrates how to apply various view/reference presentation parameters."
       },
       "viewportProjection": {
-        "name": "Viewport Projection Registry",
+        "name": "Viewport Projection Service",
         "description": "Demonstrates projection snapshots and presentation writes for Planar Next and Volume 3D Next viewports."
       },
       "stackToVolume": {
@@ -209,7 +209,7 @@
       },
       "viewportProjectionSynchronizer": {
         "name": "Viewport Projection Synchronizer",
-        "description": "Demonstrates a custom tool-driven synchronizer for Planar Next viewports using the projection registry."
+        "description": "Demonstrates a custom tool-driven synchronizer for Planar Next viewports using the projection service."
       },
       "stackManipulationToolsTouch": {
         "name": "Stack Manipulation Tools Touch",

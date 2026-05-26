@@ -8,8 +8,6 @@ import type {
   Mat3,
   Point2,
   Point3,
-  ViewPresentation,
-  ViewPresentationSelector,
   ViewReference,
   ViewReferenceSpecifier,
 } from '../../../types';
@@ -17,7 +15,7 @@ import { DefaultECGDataProvider } from './DefaultECGDataProvider';
 import { createECGRenderPathResolver } from './ECGRenderPathResolver';
 import type { GenericViewportReferenceContext } from '../genericViewportReferenceCompatibility';
 import type {
-  ECGCamera,
+  ECGViewState,
   ECGCanvasRenderContext,
   ECGCanvasRendering,
   ECGDataPresentation,
@@ -25,15 +23,15 @@ import type {
   ECGWaveformPayload,
 } from './ECGViewportTypes';
 import {
-  createDefaultECGCamera,
-  normalizeECGCamera,
+  createDefaultECGViewState,
+  normalizeECGViewState,
 } from './ecgViewportCamera';
 import ECGResolvedView from './ECGResolvedView';
 
 const ECG_AMPLITUDE_INDEX_SIZE = 65536;
 
 class ECGViewport extends GenericViewport<
-  ECGCamera,
+  ECGViewState,
   ECGDataPresentation,
   ECGCanvasRenderContext
 > {
@@ -68,7 +66,7 @@ class ECGViewport extends GenericViewport<
       canvas: this.canvas,
       canvasContext: this.canvasContext,
     };
-    this.viewState = createDefaultECGCamera({
+    this.viewState = createDefaultECGViewState({
       timeRange: [0, 1],
       valueRange: [-1, 1],
     });
@@ -100,7 +98,7 @@ class ECGViewport extends GenericViewport<
         amplitudeScale: 1,
         showGrid: true,
       });
-      this.viewState = createDefaultECGCamera({
+      this.viewState = createDefaultECGViewState({
         timeRange: [0, durationMs],
         valueRange: getDefaultECGValueRange(waveform),
       });
@@ -113,28 +111,6 @@ class ECGViewport extends GenericViewport<
 
   getWaveformData(): ECGWaveformPayload | null {
     return this.getWaveformBindingData() ?? null;
-  }
-
-  getViewPresentation(
-    viewPresSel: ViewPresentationSelector = {
-      zoom: true,
-      pan: true,
-    }
-  ): ViewPresentation {
-    const target: ViewPresentation = {};
-    const { zoom, pan } = viewPresSel;
-    const currentZoom = this.getZoom();
-
-    if (zoom) {
-      target.zoom = currentZoom;
-    }
-
-    if (pan) {
-      const currentPan = this.getPan();
-      target.pan = [currentPan[0] / currentZoom, currentPan[1] / currentZoom];
-    }
-
-    return target;
   }
 
   getViewReference(_specifier: ViewReferenceSpecifier = {}): ViewReference {
@@ -166,8 +142,8 @@ class ECGViewport extends GenericViewport<
     );
   }
 
-  protected override normalizeViewState(viewState: ECGCamera): ECGCamera {
-    return normalizeECGCamera(viewState);
+  protected override normalizeViewState(viewState: ECGViewState): ECGViewState {
+    return normalizeECGViewState(viewState);
   }
 
   protected getReferenceViewContexts(): GenericViewportReferenceContext[] {
@@ -297,7 +273,7 @@ class ECGViewport extends GenericViewport<
    */
   resetCamera(): boolean {
     const previousCamera = this.getCameraForEvent();
-    this.viewState = createDefaultECGCamera({
+    this.viewState = createDefaultECGViewState({
       timeRange: this.viewState.timeRange,
       valueRange: this.viewState.valueRange,
     });
@@ -458,11 +434,11 @@ class ECGViewport extends GenericViewport<
     });
   }
 
-  private applyResolvedViewState(nextCamera: ECGCamera): void {
-    const previousCamera = this.getCameraForEvent();
-
-    this.viewState = this.normalizeViewState(nextCamera);
-    this.modified(previousCamera);
+  /**
+   * Applies a resolved ECG view state through the canonical mutation path.
+   */
+  private applyResolvedViewState(nextViewState: ECGViewState): void {
+    this.setViewState(nextViewState);
   }
 }
 

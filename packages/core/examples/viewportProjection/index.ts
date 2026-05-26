@@ -57,8 +57,8 @@ type Volume3DProjectionPatch = {
 };
 
 setTitleAndDescription(
-  'Viewport Projection Registry',
-  'Shows how Planar Next and Volume 3D Next viewports expose projection snapshots and write compatible presentation changes through the shared registry.'
+  'Viewport Projection Service',
+  'Shows how Planar Next and Volume 3D Next viewports expose projection snapshots and write compatible presentation changes through the shared projection service.'
 );
 
 const content = document.getElementById('content');
@@ -106,6 +106,7 @@ function createViewportPanel(
   panel.appendChild(element);
 
   const info = document.createElement('pre');
+  info.id = `${viewportId}-projection-info`;
   info.style.margin = '0';
   info.style.minHeight = '154px';
   info.style.fontSize = '12px';
@@ -254,7 +255,7 @@ function getVolumeViewport(): VolumeViewport3DV2 {
 }
 
 /**
- * Refreshes projection snapshots through the registry and updates the page.
+ * Refreshes projection snapshots through the projection service and updates the page.
  */
 function updateProjectionInfo(action = 'manual snapshot refresh'): void {
   projectionUpdateCount += 1;
@@ -278,7 +279,7 @@ function updateProjectionInfo(action = 'manual snapshot refresh'): void {
 }
 
 /**
- * Applies a Planar presentation patch through the registry before mutating the viewport.
+ * Applies a Planar presentation patch through the projection service before mutating the viewport.
  */
 function applyPlanarProjectionPatch(): void {
   const viewport = getPlanarViewport();
@@ -301,7 +302,7 @@ function applyPlanarProjectionPatch(): void {
 }
 
 /**
- * Applies a Volume 3D camera patch through the registry before mutating the viewport.
+ * Applies a Volume 3D camera patch through the projection service before mutating the viewport.
  */
 function applyVolumeProjectionPatch(): void {
   const viewport = getVolumeViewport();
@@ -376,7 +377,7 @@ addButtonToToolbar({
 });
 
 /**
- * Runs the projection registry demo.
+ * Runs the projection service demo.
  */
 async function run() {
   await initDemo();

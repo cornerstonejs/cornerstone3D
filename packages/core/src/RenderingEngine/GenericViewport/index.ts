@@ -8,6 +8,21 @@ export {
   viewportProjection,
 } from './viewportProjection';
 export type {
+  BuiltInViewportProjectionByKind,
+  BuiltInViewportProjectionByType,
+  BuiltInViewportProjectionKind,
+  BuiltInViewportProjectionType,
+  ProjectionPresentationForKind,
+  ProjectionPresentationForViewport,
+  ProjectionPresentationForViewportType,
+  ProjectionSnapshotForKind,
+  ProjectionSnapshotForViewport,
+  ProjectionSnapshotForViewportType,
+  ProjectionViewStateForKind,
+  ProjectionViewStateForViewport,
+  ProjectionViewStateForViewportType,
+} from './viewportProjection';
+export type {
   ProjectionPosition,
   ProjectionPresentation,
   ProjectionRequest,
@@ -58,11 +73,15 @@ export {
   createDefaultECGRenderPaths,
   createECGRenderPathResolver,
   DefaultECGDataProvider,
+  ecgProjection,
 } from './ECG';
 export type {
-  ECGCamera,
+  ECGViewState,
   ECGDataPresentation,
   ECGChannelData,
+  ECGProjectionPresentation,
+  ECGProjectionRequest,
+  ECGProjectionSnapshot,
   ECGPresentationProps,
   ECGProperties,
   ECGViewportInput,
@@ -73,10 +92,14 @@ export {
   createDefaultVideoRenderPaths,
   createVideoRenderPathResolver,
   DefaultVideoDataProvider,
+  videoProjection,
 } from './Video';
 export type {
-  VideoCamera,
+  VideoViewState,
   VideoDataPresentation,
+  VideoProjectionPresentation,
+  VideoProjectionRequest,
+  VideoProjectionSnapshot,
   VideoPresentationProps,
   VideoProperties,
   VideoViewportInput,
@@ -129,11 +152,15 @@ export {
   createDefaultWSIRenderPaths,
   createWSIRenderPathResolver,
   DefaultWSIDataProvider,
+  wsiProjection,
 } from './WSI';
 export type {
   WSICamera,
   WSIDataPresentation,
   WSIDataSetOptions,
+  WSIProjectionPresentation,
+  WSIProjectionRequest,
+  WSIProjectionSnapshot,
   WSIPresentationProps,
   WSIProperties,
   WSIViewState,

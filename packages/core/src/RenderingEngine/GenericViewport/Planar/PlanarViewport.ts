@@ -63,7 +63,6 @@ import {
   getPlanarProjectionScale,
   getPlanarProjectionSnapshot,
   getPlanarProjectionZoom,
-  planarProjectionAdapter,
   type PlanarProjectionSnapshot,
 } from './planarProjectionAdapter';
 import {
@@ -87,8 +86,6 @@ import type {
   PlanarPayload,
   PlanarRegisteredDataSet,
   PlanarSetDataOptions,
-  PlanarViewPresentation,
-  PlanarViewPresentationSelector,
   PlanarViewportRenderContext,
   PlanarViewportInput,
   PlanarViewportInputOptions,
@@ -131,8 +128,7 @@ type PlanarResetCameraOptions = {
 class PlanarViewport extends GenericViewport<
   PlanarViewState,
   PlanarDataPresentation,
-  PlanarViewportRenderContext,
-  PlanarViewPresentation
+  PlanarViewportRenderContext
 > {
   readonly type = ViewportType.PLANAR_NEXT;
   readonly renderingEngineId: string;
@@ -873,30 +869,6 @@ class PlanarViewport extends GenericViewport<
     } = {}
   ) {
     return this.resolveCachedViewState(this.viewState, args);
-  }
-
-  /**
-   * Returns the current planar view-presentation snapshot.
-   *
-   * @param viewPresSel - Selector describing which presentation fields to
-   * populate in the returned object.
-   * @returns The selected planar view-presentation fields.
-   */
-  getViewPresentation(
-    viewPresSel: PlanarViewPresentationSelector = {
-      rotation: true,
-      displayArea: true,
-      zoom: true,
-      scale: true,
-      pan: true,
-      flipHorizontal: true,
-      flipVertical: true,
-    }
-  ): PlanarViewPresentation {
-    return planarProjectionAdapter.getPresentation(
-      this.getProjectionSnapshot(),
-      viewPresSel
-    );
   }
 
   // ====================================================================

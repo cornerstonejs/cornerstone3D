@@ -17,7 +17,7 @@ import type {
   RenderPath,
 } from '../ViewportArchitectureTypes';
 import type {
-  ECGCamera,
+  ECGViewState,
   ECGCanvasRenderContext,
   ECGCanvasRendering,
   ECGDataPresentation,
@@ -79,7 +79,7 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
   }
 
   private applyViewState(rendering: ECGCanvasRendering, camera: unknown): void {
-    rendering.currentCamera = camera as ECGCamera;
+    rendering.currentCamera = camera as ECGViewState;
   }
 
   private getFrameOfReferenceUID(
@@ -119,7 +119,7 @@ export class CanvasECGPath
 
 function getEffectiveTransform(
   metrics: RenderWindowMetrics,
-  camera: ECGCamera | undefined,
+  camera: ECGViewState | undefined,
   canvas: HTMLCanvasElement
 ): { effectiveRatio: number; xOffset: number; yOffset: number } {
   const mapping = resolveECGCanvasMapping({
@@ -137,7 +137,7 @@ function getEffectiveTransform(
 
 function computeTimeWindow(
   waveform: ECGWaveformPayload,
-  camera: ECGCamera
+  camera: ECGViewState
 ): {
   startMs: number;
   endMs: number;

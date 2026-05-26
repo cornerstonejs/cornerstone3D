@@ -88,6 +88,7 @@ receive state from the viewport and project it into renderer-specific commands.
 Generic Viewport separates two kinds of presentation:
 
 - View presentation: pan, zoom or scale, rotation, flips, and display area.
+  Direct Next viewports read and write this through `viewportProjection`.
 - Data presentation: VOI, opacity, colormap, blend mode, interpolation, and
   visibility for one mounted dataset.
 
@@ -96,10 +97,12 @@ having independent VOI, color, and opacity.
 
 ## Camera In Brief
 
-Clean Generic viewports prefer semantic state over durable VTK-style camera fields.
-For planar, video, and ECG, the viewport state is the source of truth and the
-runtime camera or canvas transform is derived from it. Legacy camera APIs remain
-available through compatibility adapters. The full camera contract is covered
-in the camera page.
+Clean Generic viewports prefer semantic state over durable VTK-style camera
+fields. For planar, video, ECG, and WSI, the viewport state is the source of
+truth and the runtime camera, canvas transform, media transform, signal
+transform, or OpenLayers view is derived from it. 3D Next is runtime-camera
+backed, but still participates in the projection service. Legacy camera APIs
+remain available through compatibility adapters. The full camera contract is
+covered in the camera page.
 
 <DocCardList items={useCurrentSidebarCategory().items}/>

@@ -5,7 +5,6 @@ import type {
   MountedRendering,
   RenderPathResolver,
 } from '../ViewportArchitectureTypes';
-import type ICamera from '../../../types/ICamera';
 import type { ViewportCameraBase } from '../ViewportCameraTypes';
 import type { VideoImageMetadata } from '../../../utilities/VideoUtilities';
 import type { VOIRange } from '../../../types';
@@ -23,9 +22,7 @@ export interface VideoStreamPayload {
 
 export interface VideoPresentationProps extends BasePresentationProps {}
 
-export interface VideoCamera
-  extends ViewportCameraBase<[number, number]>,
-    ICamera {
+export interface VideoViewState extends ViewportCameraBase<[number, number]> {
   currentTimeSeconds?: number;
 }
 
@@ -61,5 +58,5 @@ export interface VideoElementRenderContext extends BaseViewportRenderContext {
 export type VideoElementRendering = MountedRendering<{
   renderMode: 'video2d';
   element: HTMLVideoElement;
-  currentCamera?: VideoCamera;
+  currentCamera?: VideoViewState;
 }>;

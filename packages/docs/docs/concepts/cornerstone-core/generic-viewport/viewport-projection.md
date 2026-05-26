@@ -61,12 +61,18 @@ The family namespaces are intentionally exported as advanced helpers:
 
 - `planarProjection`
 - `volume3DProjection`
+- `videoProjection`
+- `ecgProjection`
+- `wsiProjection`
 
 Use those namespaces when building a custom synchronizer, tool, test, or new
 viewport family that needs lower-level snapshot or renderer-camera behavior.
 They are a tier below the core viewport methods and may change while the
 Generic Viewport API is still settling. Application code should prefer
-viewport methods unless it is deliberately working at this projection seam.
+`viewportProjection.getPresentation()` and
+`viewportProjection.withPresentation()` for presentation reads and writes.
+Direct Next viewport instances intentionally do not expose
+`getViewPresentation()` or `setViewPresentation()`.
 
 ## Core Types
 
@@ -130,11 +136,24 @@ type ProjectionScale =
   | { kind: 'fitHeight'; value: number }
   | { kind: 'displayArea'; value: number; area: DisplayArea }
   | { kind: 'nativePixel'; pixelsPerCanvasPixel: number }
-  | { kind: 'physical'; mmPerCanvasPixel: number };
+  | { kind: 'physical'; mmPerCanvasPixel: number }
+  | {
+      kind: 'signal';
+      samplesPerCanvasPixel: number;
+      valueUnitsPerCanvasPixel: number;
+    };
 
 type ProjectionPosition =
   | { kind: 'anchor'; worldPoint?: Point3; canvasPoint: Point2 }
   | { kind: 'imagePoint'; imagePoint: Point2; canvasPoint: Point2 }
+  | { kind: 'mediaPoint'; mediaPoint: Point2; canvasPoint: Point2 }
+  | {
+      kind: 'signalPoint';
+      sampleIndex: number;
+      value: number;
+      channelIndex: number;
+      canvasPoint: Point2;
+    }
   | { kind: 'focalPoint'; worldPoint: Point3 };
 ```
 
@@ -158,10 +177,32 @@ const projection = viewportProjection.get(viewport, {
 The service is package/global, not per rendering engine. That keeps custom
 synchronizers and advanced tools independent from rendering-engine ownership.
 
+Built-in viewport types and explicit `kind` requests have typed helper aliases
+for downstream code:
+
+```ts
+import type {
+  ProjectionPresentationForKind,
+  ProjectionSnapshotForKind,
+  ProjectionViewStateForKind,
+} from '@cornerstonejs/core';
+
+type PlanarSnapshot = ProjectionSnapshotForKind<'planar'>;
+type PlanarPresentation = ProjectionPresentationForKind<'planar'>;
+type PlanarViewState = ProjectionViewStateForKind<'planar'>;
+```
+
+When the viewport instance has a literal Next viewport type, the service can
+infer those same types from the viewport argument. Explicit `kind` requests are
+available for custom synchronizers that only know a viewport as `unknown`.
+
 Built-in adapters are registered for:
 
 - `planarProjection`
 - `volume3DProjection`
+- `videoProjection`
+- `ecgProjection`
+- `wsiProjection`
 
 The advanced namespaces expose lower-level helpers for code that intentionally
 works below the core viewport API.
@@ -229,8 +270,45 @@ if (nextState) {
 
 Next viewports intentionally do not expose `setViewPresentation`. The
 projection service is the portable write layer, and `setViewState` remains the
-only Next viewport mutation primitive. Legacy compatibility adapters may still
-expose `setViewPresentation` for older code.
+only Next viewport mutation primitive. They also do not expose
+`getViewPresentation`; use `viewportProjection.getPresentation(viewport,
+{ selector })` instead. Legacy compatibility adapters may still expose
+`getViewPresentation` and `setViewPresentation` for older code.
+
+Before, legacy or compatibility code might do this:
+
+```ts
+const presentation = viewport.getViewPresentation({
+  pan: true,
+  zoom: true,
+});
+
+viewport.setViewPresentation({
+  zoom: presentation.zoom * 2,
+});
+```
+
+Direct Next code should do this:
+
+```ts
+const presentation = viewportProjection.getPresentation(viewport, {
+  selector: {
+    pan: true,
+    zoom: true,
+  },
+});
+
+const nextViewState = viewportProjection.withPresentation(viewport, {
+  zoom: (presentation?.zoom ?? 1) * 2,
+});
+
+if (nextViewState) {
+  viewport.setViewState(nextViewState);
+}
+```
+
+Do not make a custom projection adapter mutate its viewport. It should return
+native view state and let the caller decide whether to call `setViewState`.
 
 ## Adding A New Adapter
 
@@ -262,22 +340,28 @@ Volume3D projection uses:
 - physical canvas spacing derived from `parallelScale`
 - `ICamera` as renderer output
 
+Video projection uses:
+
+- `VideoViewState` as semantic state
+- intrinsic media-pixel coordinates for world/canvas conversion
+- `mediaPoint` position tags
+- `nativePixel` scale tags
+- optional renderer-camera output for legacy interop
+
+ECG projection uses:
+
+- `ECGViewState` as semantic state
+- signal tuples shaped as `[sampleIndex, amplitudeValue, channelIndex]`
+- `signalPoint` position tags
+- `signal` scale tags with samples and value units per canvas pixel
+- optional renderer-camera output for legacy interop
+
+WSI projection uses:
+
+- `WSIViewState` synchronized from OpenLayers
+- slide/world transforms from the WSI resolved view
+- `anchor` position tags
+- physical scale when renderer-camera output can provide it
+
 This gives cross-viewport callers one projection interface while preserving
 the real differences between viewport families.
-
-Planar and Volume3D are the first complete adapters because they are the
-current Generic Viewport families with real spatial camera/projection behavior.
-They are also the families most tools and synchronizers need to reason about
-generically.
-
-Other viewport families should not be forced into this shape just to make the
-projection service look complete:
-
-- WSI likely deserves a future adapter, but its scale and position semantics
-  should be expressed in slide/image/pyramid terms.
-- Video is primarily temporal 2D media unless the projection vocabulary grows
-  media-frame and normalized-media spaces.
-- ECG is signal space: time and amplitude axes, not camera/world space.
-
-Add those adapters only after their scale, position, and transform tags are
-defined in terms that callers can safely branch on.

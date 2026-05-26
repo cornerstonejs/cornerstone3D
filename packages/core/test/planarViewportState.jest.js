@@ -248,9 +248,10 @@ describe('PlanarViewport view state', () => {
     expect(events).toHaveLength(0);
   });
 
-  it('does not expose a view-presentation mutation method on Planar Next', () => {
+  it('does not expose view-presentation methods on Planar Next', () => {
     const { viewport } = track(createViewport());
 
+    expect(viewport.getViewPresentation).toBeUndefined();
     expect(viewport.setViewPresentation).toBeUndefined();
   });
 
@@ -278,7 +279,7 @@ describe('PlanarViewport view state', () => {
     });
 
     expect(renderingEngine.renderViewport).toHaveBeenCalledTimes(1);
-    const presentation = viewport.getViewPresentation();
+    const presentation = viewportProjection.getPresentation(viewport);
 
     expect(presentation.zoom).toBeCloseTo(2, 5);
     expect(presentation.pan[0]).toBeCloseTo(10, 5);
@@ -286,7 +287,7 @@ describe('PlanarViewport view state', () => {
     expect(presentation.rotation).toBe(15);
   });
 
-  it('exposes the current planar camera through the projection registry', () => {
+  it('exposes the current planar camera through the projection service', () => {
     const { viewport } = track(createViewport());
 
     applyProjectionPresentation(viewport, {
@@ -297,13 +298,13 @@ describe('PlanarViewport view state', () => {
 
     const snapshot = viewportProjection.get(viewport);
     const presentation = planarProjection.adapter.getPresentation(snapshot);
-    const registryPresentation = viewportProjection.getPresentation(viewport);
+    const servicePresentation = viewportProjection.getPresentation(viewport);
 
     expect(snapshot.kind).toBe('planar');
     expect(snapshot.adapterId).toBe('planar');
     expect(snapshot.presentation.scale.kind).toBe('fit');
     expect(snapshot.presentation.position.kind).toBe('anchor');
-    expect(registryPresentation.zoom).toBeCloseTo(2, 5);
+    expect(servicePresentation.zoom).toBeCloseTo(2, 5);
     expect(presentation.zoom).toBeCloseTo(2, 5);
     expect(presentation.pan[0]).toBeCloseTo(10, 5);
     expect(presentation.pan[1]).toBeCloseTo(-5, 5);
@@ -346,7 +347,7 @@ describe('PlanarViewport view state', () => {
     expect(canvasPoint).toHaveLength(2);
   });
 
-  it('round-trips planar presentation patches through the projection registry', () => {
+  it('round-trips planar presentation patches through the projection service', () => {
     const { viewport } = track(createViewport());
     const initialState = viewport.getViewState();
 
@@ -384,7 +385,7 @@ describe('PlanarViewport view state', () => {
     expect(viewport.getDisplayArea()).toBeUndefined();
   });
 
-  it('exposes volume3d cameras through the projection registry', () => {
+  it('exposes volume3d cameras through the projection service', () => {
     const element = document.createElement('div');
     const camera = {
       focalPoint: [1, 2, 3],

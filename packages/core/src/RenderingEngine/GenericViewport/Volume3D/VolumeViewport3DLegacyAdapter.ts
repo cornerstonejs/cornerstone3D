@@ -42,6 +42,16 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3DV2 {
   }
 
   /**
+   * Compatibility wrapper for legacy callers. Next viewports should read
+   * presentation through `viewportProjection.getPresentation`.
+   */
+  getViewPresentation(): { camera: Volume3DCamera & ICamera } | undefined {
+    return viewportProjection.getPresentation<{
+      camera: Volume3DCamera & ICamera;
+    }>(this);
+  }
+
+  /**
    * Compatibility wrapper for legacy callers. Next viewports should use
    * viewport projection to derive view state, then call `setViewState`.
    */

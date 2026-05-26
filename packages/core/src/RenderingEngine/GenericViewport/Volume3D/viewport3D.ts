@@ -30,7 +30,6 @@ import Volume3DResolvedView from './Volume3DResolvedView';
 import applyVolume3DCamera from './applyVolume3DCamera';
 import {
   getVolume3DProjectionSnapshot,
-  volume3DProjectionAdapter,
   type Volume3DProjectionSnapshot,
 } from './volume3DProjectionAdapter';
 import type {
@@ -47,10 +46,9 @@ import type {
 class VolumeViewport3DV2 extends GenericViewport<
   Volume3DCamera,
   Volume3DDataPresentation,
-  Volume3DViewportRenderContext,
-  { camera: Volume3DCamera & ICamera }
+  Volume3DViewportRenderContext
 > {
-  readonly type: ViewportType = ViewportType.VOLUME_3D_NEXT;
+  readonly type = ViewportType.VOLUME_3D_NEXT;
   readonly renderingEngineId: string;
   readonly canvas: HTMLCanvasElement;
   sWidth: number;
@@ -299,19 +297,6 @@ class VolumeViewport3DV2 extends GenericViewport<
       frameOfReferenceUID: this.resolveFrameOfReferenceUID(),
       renderer: this.getRenderer(),
     });
-  }
-
-  // TrackballRotateTool preserves 3D view state across resize by round-tripping
-  // through these view-presentation methods.
-  /**
-   * Returns the current 3D view-presentation payload.
-   *
-   * @returns The current 3D camera wrapped as a view-presentation payload.
-   */
-  getViewPresentation(): { camera: Volume3DCamera & ICamera } {
-    return volume3DProjectionAdapter.getPresentation(
-      this.getProjectionSnapshot()
-    );
   }
 
   getViewReference(

@@ -19,8 +19,6 @@ import type ViewportType from '../../enums/ViewportType';
 import type ResolvedViewportView from './ResolvedViewportView';
 import type {
   ReferenceCompatibleOptions,
-  ViewPresentation,
-  ViewPresentationSelector,
   ViewReference,
   ViewReferenceSpecifier,
   RenderingEngineResizeOptions,
@@ -57,9 +55,7 @@ abstract class GenericViewport<
   TViewState extends object,
   TDataPresentation = unknown,
   TContext extends BaseViewportRenderContext = BaseViewportRenderContext,
-  TViewPresentation = ViewPresentation,
-> implements
-    ViewportController<TViewState, TDataPresentation, TViewPresentation>
+> implements ViewportController<TViewState, TDataPresentation>
 {
   // ── Abstract fields ──────────────────────────────────────────────────
 
@@ -190,16 +186,6 @@ abstract class GenericViewport<
    */
   getDataRole(dataId: DataId): BindingRole | undefined {
     return this.getBinding(dataId)?.role;
-  }
-
-  /**
-   * Returns a viewport-family-specific view-presentation snapshot when
-   * implemented by the concrete viewport.
-   */
-  getViewPresentation(
-    _selector?: ViewPresentationSelector
-  ): TViewPresentation | undefined {
-    return undefined;
   }
 
   /**

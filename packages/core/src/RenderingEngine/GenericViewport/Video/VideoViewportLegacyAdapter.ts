@@ -3,9 +3,14 @@ import type {
   VideoViewportProperties,
   VOIRange,
   ViewPresentation,
+  ViewPresentationSelector,
 } from '../../../types';
 import type { Point2 } from '../../../types';
-import type { VideoDataPresentation } from './VideoViewportTypes';
+import { viewportProjection } from '../viewportProjection';
+import type {
+  VideoDataPresentation,
+  VideoViewState,
+} from './VideoViewportTypes';
 import VideoViewport from './VideoViewport';
 
 class VideoViewportLegacyAdapter extends VideoViewport {
@@ -71,23 +76,33 @@ class VideoViewportLegacyAdapter extends VideoViewport {
   }
 
   /**
-   * Compatibility wrapper for legacy callers. Next viewports should mutate
-   * their native view state directly.
+   * Compatibility wrapper for legacy callers. Next viewports should read
+   * presentation through `viewportProjection.getPresentation`.
+   */
+  getViewPresentation(
+    selector?: ViewPresentationSelector
+  ): ViewPresentation | undefined {
+    return viewportProjection.getPresentation<ViewPresentation>(this, {
+      selector,
+    });
+  }
+
+  /**
+   * Compatibility wrapper for legacy callers. Next viewports should use
+   * viewport projection to derive view state, then call `setViewState`.
    */
   setViewPresentation(viewPres?: ViewPresentation): void {
     if (!viewPres) {
       return;
     }
 
-    const nextZoom = Math.max(viewPres.zoom ?? this.getZoom(), 0.001);
-    this.setViewState({
-      rotation: viewPres.rotation ?? this.getResolvedView()?.rotation ?? 0,
-      scale: nextZoom,
-      scaleMode: 'fit',
-    });
+    const nextViewState = viewportProjection.withPresentation<
+      VideoViewState,
+      ViewPresentation
+    >(this, viewPres);
 
-    if (viewPres.pan) {
-      this.setPan([viewPres.pan[0] * nextZoom, viewPres.pan[1] * nextZoom]);
+    if (nextViewState) {
+      this.setViewState(nextViewState);
     }
   }
 

@@ -74,7 +74,7 @@ const projectionInfo = new Map<string, HTMLPreElement>();
 
 setTitleAndDescription(
   'Viewport Projection Synchronizer',
-  'Demonstrates a custom tool-driven synchronizer that copies Planar Next view presentation through the viewport projection registry.'
+  'Demonstrates a custom tool-driven synchronizer that copies Planar Next view presentation through the viewport projection service.'
 );
 
 const content = document.getElementById('content');
@@ -128,6 +128,7 @@ function createViewportPanel(
   panel.appendChild(element);
 
   const info = document.createElement('pre');
+  info.id = `${viewportId}-projection-info`;
   info.style.margin = '0';
   info.style.minHeight = '118px';
   info.style.fontSize = '12px';

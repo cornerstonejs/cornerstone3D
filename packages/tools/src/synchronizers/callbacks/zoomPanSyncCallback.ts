@@ -32,7 +32,7 @@ function viewportHasViewStateSetter(
 }
 
 /**
- * Synchronizes zoom and pan through the viewport projection registry when both
+ * Synchronizes zoom and pan through the viewport projection service when both
  * viewports expose projection adapters.
  */
 function syncProjectionZoomPan(

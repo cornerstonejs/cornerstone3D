@@ -3,8 +3,10 @@ import {
   RenderingEngine,
   Enums,
   getRenderingEngine,
+  viewportProjection,
   utilities,
 } from '@cornerstonejs/core';
+import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   initDemo,
   setTitleAndDescription,
@@ -19,14 +21,16 @@ console.warn(
 );
 
 const { ViewportType, Events } = Enums;
+const { ToolGroupManager } = cornerstoneTools;
 
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'videoGenericViewport';
+const toolGroupId = 'videoNextToolGroup';
 const videoDataId = 'video-next:primary';
 
 setTitleAndDescription(
   'Video GenericViewport API',
-  'Demonstrates the clean GenericViewport video API using dataset registration and setDataList.'
+  'Demonstrates the clean GenericViewport video API using dataset registration and setDataList. Right-drag to pan, scroll to zoom.'
 );
 
 const content = document.getElementById('content');
@@ -37,11 +41,19 @@ element.style.height = '512px';
 
 content.appendChild(element);
 
+element.oncontextmenu = (e) => e.preventDefault();
+
 const info = document.createElement('div');
 content.appendChild(info);
 
 const rotationInfo = document.createElement('div');
 info.appendChild(rotationInfo);
+
+const zoomInfo = document.createElement('div');
+info.appendChild(zoomInfo);
+
+const panInfo = document.createElement('div');
+info.appendChild(panInfo);
 
 const flipHorizontalInfo = document.createElement('div');
 info.appendChild(flipHorizontalInfo);
@@ -60,9 +72,13 @@ element.addEventListener(Events.CAMERA_MODIFIED, () => {
 
   const { flipHorizontal = false, flipVertical = false } =
     viewport.getViewState();
-  const { rotation } = viewport.getViewPresentation();
+  const { rotation, zoom } =
+    viewportProjection.getPresentation<Types.ViewPresentation>(viewport) || {};
+  const currentPan = viewport.getPan();
 
   rotationInfo.innerText = `Rotation: ${Math.round(rotation || 0)}`;
+  zoomInfo.innerText = `Zoom: ${(zoom ?? viewport.getZoom()).toFixed(2)}`;
+  panInfo.innerText = `Pan: [${Math.round(currentPan[0])}, ${Math.round(currentPan[1])}]`;
   flipHorizontalInfo.innerText = `Flip horizontal: ${flipHorizontal}`;
   flipVerticalInfo.innerText = `Flip vertical: ${flipVertical}`;
 });
@@ -91,8 +107,40 @@ addButtonToToolbar({
   },
 });
 
+addButtonToToolbar({
+  title: 'Reset View',
+  onClick: () => {
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as VideoGenericViewport;
+
+    viewport.resetCamera();
+  },
+});
+
 async function run() {
   await initDemo();
+
+  const { PanTool, ZoomTool } = cornerstoneTools;
+  const { MouseBindings } = cornerstoneTools.Enums;
+
+  cornerstoneTools.addTool(PanTool);
+  cornerstoneTools.addTool(ZoomTool);
+
+  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+  toolGroup.addTool(PanTool.toolName);
+  toolGroup.addTool(ZoomTool.toolName, {
+    minZoomScale: 0.001,
+    maxZoomScale: 4000,
+  });
+
+  toolGroup.setToolActive(PanTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Secondary }],
+  });
+  toolGroup.setToolActive(ZoomTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Wheel }],
+  });
 
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID: '2.25.96975534054447904995905761963464388233',
@@ -119,6 +167,8 @@ async function run() {
       background: [0, 0.2, 0] as Types.Point3,
     },
   });
+
+  toolGroup.addViewport(viewportId, renderingEngineId);
 
   const viewport =
     renderingEngine.getViewport<VideoGenericViewport>(viewportId);

@@ -8,7 +8,7 @@ import type {
 import type { Point2, Point3 } from '../../../types';
 import ViewportType from '../../../enums/ViewportType';
 import type {
-  VideoCamera,
+  VideoViewState,
   VideoDataPresentation,
   VideoElementRenderContext,
   VideoElementRendering,
@@ -107,7 +107,7 @@ export class HtmlVideoRenderPath
     camera: unknown,
     data: VideoStreamPayload
   ): void {
-    const videoCamera = camera as VideoCamera;
+    const videoCamera = camera as VideoViewState;
     const { element } = rendering;
     const rotation = videoCamera.rotation ?? 0;
     const mapping = this.getCanvasMapping(element, videoCamera);
@@ -171,7 +171,7 @@ export class HtmlVideoRenderPath
     ];
   }
 
-  private getCanvasMapping(element: HTMLVideoElement, camera?: VideoCamera) {
+  private getCanvasMapping(element: HTMLVideoElement, camera?: VideoViewState) {
     const container = element.parentElement;
 
     return resolveVideoCanvasMapping({

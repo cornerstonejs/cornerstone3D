@@ -21,6 +21,7 @@ slice-rendering configuration.
 import {
   Enums,
   RenderingEngine,
+  viewportProjection,
   utilities,
   type PlanarViewport,
 } from '@cornerstonejs/core';
@@ -179,6 +180,9 @@ utilities.genericViewportDataSetMetadataProvider.add(labelmapDataId, {
 ## Update View State
 
 Navigation and view appearance are separate from per-dataset appearance.
+For direct Next viewports, `ViewState` is the only mutable viewport source of
+truth. Use `setViewState()` for patches and `updateViewState()` for
+read-modify-write changes.
 
 ```ts
 viewport.setViewState({
@@ -192,7 +196,8 @@ viewport.updateViewState(({ rotation = 0 }) => ({
 ```
 
 Use viewport projection when the input is a portable presentation patch rather
-than native view state:
+rather than native view state. The projection service is pure: it returns the
+next native `ViewState`, and the caller applies it.
 
 ```ts
 const nextViewState = viewportProjection.withPresentation(viewport, {
@@ -205,6 +210,22 @@ if (nextViewState) {
 }
 viewport.render();
 ```
+
+Read presentation through the same service:
+
+```ts
+const presentation = viewportProjection.getPresentation(viewport, {
+  selector: {
+    pan: true,
+    zoom: true,
+    rotation: true,
+  },
+});
+```
+
+Do not call `viewport.getViewPresentation()` or
+`viewport.setViewPresentation()` on direct Next viewports. Those methods are
+kept only on legacy compatibility adapters.
 
 Use `setImageIdIndex()` for index-style navigation. For volume-backed data,
 the viewport resolves the requested index into a volume slice point internally.

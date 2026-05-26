@@ -33,11 +33,13 @@ import ECGGenericViewport, {
   createDefaultECGRenderPaths,
   createECGRenderPathResolver,
   DefaultECGDataProvider,
+  ecgProjection,
 } from './RenderingEngine/GenericViewport/ECG';
 import VideoGenericViewport, {
   createDefaultVideoRenderPaths,
   createVideoRenderPathResolver,
   DefaultVideoDataProvider,
+  videoProjection,
 } from './RenderingEngine/GenericViewport/Video';
 import PlanarViewport, {
   createDefaultPlanarRenderPaths,
@@ -55,19 +57,45 @@ import WSIGenericViewport, {
   createDefaultWSIRenderPaths,
   createWSIRenderPathResolver,
   DefaultWSIDataProvider,
+  wsiProjection,
 } from './RenderingEngine/GenericViewport/WSI';
 export type {
+  BuiltInViewportProjectionByKind,
+  BuiltInViewportProjectionByType,
+  BuiltInViewportProjectionKind,
+  BuiltInViewportProjectionType,
+  ProjectionPresentationForKind,
+  ProjectionPresentationForViewport,
+  ProjectionPresentationForViewportType,
   ProjectionPosition,
   ProjectionPresentation,
   ProjectionRequest,
   ProjectionScale,
+  ProjectionSnapshotForKind,
+  ProjectionSnapshotForViewport,
+  ProjectionSnapshotForViewportType,
   ProjectionSnapshot,
   ProjectionSpaces,
   ProjectionTransforms,
+  ProjectionViewStateForKind,
+  ProjectionViewStateForViewport,
+  ProjectionViewStateForViewportType,
   ProjectionWriteOptions,
   ViewportDataReference,
   ViewportProjectionAdapter,
 } from './RenderingEngine/GenericViewport';
+export type {
+  ECGProjectionPresentation,
+  ECGProjectionRequest,
+  ECGProjectionSnapshot,
+  ECGViewState,
+} from './RenderingEngine/GenericViewport/ECG';
+export type {
+  VideoProjectionPresentation,
+  VideoProjectionRequest,
+  VideoProjectionSnapshot,
+  VideoViewState,
+} from './RenderingEngine/GenericViewport/Video';
 export type {
   PlanarResolvedICamera,
   PlanarSliceBasis,
@@ -79,6 +107,12 @@ export type {
   PlanarViewPresentationSelector,
   PlanarViewState,
 } from './RenderingEngine/GenericViewport/Planar';
+export type {
+  WSIProjectionPresentation,
+  WSIProjectionRequest,
+  WSIProjectionSnapshot,
+  WSIViewState,
+} from './RenderingEngine/GenericViewport/WSI';
 export type {
   Volume3DCamera,
   Volume3DProjectionPresentation,
@@ -171,10 +205,12 @@ const renderingEngineExportsV2 = {
   createDefaultECGRenderPaths,
   createECGRenderPathResolver,
   DefaultECGDataProvider,
+  ecgProjection,
   VideoGenericViewport,
   createDefaultVideoRenderPaths,
   createVideoRenderPathResolver,
   DefaultVideoDataProvider,
+  videoProjection,
   PlanarViewport,
   createDefaultPlanarRenderPaths,
   createPlanarRenderPathResolver,
@@ -189,6 +225,7 @@ const renderingEngineExportsV2 = {
   createDefaultWSIRenderPaths,
   createWSIRenderPathResolver,
   DefaultWSIDataProvider,
+  wsiProjection,
 };
 
 // Add new types here so that they can be imported singly as required.
@@ -273,10 +310,12 @@ export {
   createDefaultECGRenderPaths,
   createECGRenderPathResolver,
   DefaultECGDataProvider,
+  ecgProjection,
   VideoGenericViewport,
   createDefaultVideoRenderPaths,
   createVideoRenderPathResolver,
   DefaultVideoDataProvider,
+  videoProjection,
   PlanarViewport,
   createDefaultPlanarRenderPaths,
   createPlanarRenderPathResolver,
@@ -291,6 +330,7 @@ export {
   createDefaultWSIRenderPaths,
   createWSIRenderPathResolver,
   DefaultWSIDataProvider,
+  wsiProjection,
   renderingEngineExportsV2,
   //
   imageLoadPoolManager as requestPoolManager,
