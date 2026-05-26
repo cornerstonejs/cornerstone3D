@@ -2,6 +2,7 @@ import type { OrientationAxis } from '../enums';
 import type OrientationVectors from './OrientationVectors';
 import type DisplayArea from './displayArea';
 import type RGB from './RGB';
+import type Point2 from './Point2';
 
 /**
  * This type defines the shape of viewport input options, so we can throw when it is incorrect.
@@ -20,6 +21,8 @@ interface ViewportInputOptions {
    * parallel projection of a stack viewport or volume viewport using viewport input options.
    */
   parallelProjection?: boolean;
+  /** aspect ratio as [width, height] */
+  aspectRatio?: Point2;
 }
 
 export type { ViewportInputOptions as default };
