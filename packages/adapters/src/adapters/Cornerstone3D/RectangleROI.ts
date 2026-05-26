@@ -6,6 +6,7 @@ import { toScoords } from '../helpers';
 import MeasurementReport from './MeasurementReport';
 import BaseAdapter3D from './BaseAdapter3D';
 import { extractAllNUMGroups, restoreAdditionalMetrics } from './metricHandler';
+import { mapUnitFromUCUM } from './unitMapper';
 
 const { Polyline: TID300Polyline } = utilities.TID300;
 const { toFiniteNumber } = csUtilities;
@@ -58,14 +59,20 @@ export class RectangleROI extends BaseAdapter3D {
     );
     const measurementNUMGroups = allNUMGroups[referencedSOPInstanceUID] || {};
 
+    const restoredMetrics = restoreAdditionalMetrics(measurementNUMGroups);
+    const rawAreaUnit =
+      areaGroup?.MeasuredValueSequence?.[0]?.MeasurementUnitsCodeSequence;
+    const areaUnitFromSR = rawAreaUnit?.CodeValue;
+    const mappedAreaUnit = areaUnitFromSR
+      ? mapUnitFromUCUM(areaUnitFromSR)
+      : restoredMetrics.areaUnit;
+
     const cachedStats = referencedImageId
       ? {
           [`imageId:${referencedImageId}`]: {
             area: areaGroup?.MeasuredValueSequence?.[0]?.NumericValue || 0,
-            areaUnit:
-              areaGroup?.MeasuredValueSequence?.[0]
-                ?.MeasurementUnitsCodeSequence?.CodeValue,
-            ...restoreAdditionalMetrics(measurementNUMGroups),
+            areaUnit: mappedAreaUnit,
+            ...restoredMetrics,
           },
         }
       : {};

@@ -108,6 +108,7 @@ export * from './getPlaneCubeIntersectionDimensions';
 export * from './rotateToViewCoordinates';
 import { asArray } from './asArray';
 import { toFiniteNumber } from './toNumber';
+import { getNormalizedAspectRatio } from './getNormalizedAspectRatio';
 export { updatePlaneRestriction } from './updatePlaneRestriction';
 
 const getViewportModality = (viewport: IViewport, volumeId?: string) =>
@@ -216,4 +217,5 @@ export {
   calculateNeighborhoodStats,
   asArray,
   toFiniteNumber,
+  getNormalizedAspectRatio,
 };
