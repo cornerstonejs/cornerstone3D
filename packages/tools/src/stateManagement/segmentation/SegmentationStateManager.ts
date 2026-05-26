@@ -180,11 +180,8 @@ export default class SegmentationStateManager {
         ensureLabelmapState(newSegmentation);
         syncLegacyLabelmapData(newSegmentation);
       }
-      if (
-        newSegmentation.representationData.Labelmap &&
-        'volumeId' in newSegmentation.representationData.Labelmap &&
-        !('imageIds' in newSegmentation.representationData.Labelmap)
-      ) {
+      const labelmapData = newSegmentation.representationData.Labelmap;
+      if (labelmapData?.volumeId && !('imageIds' in labelmapData)) {
         const imageIds = this.getLabelmapImageIds(
           newSegmentation.representationData
         );
@@ -261,6 +258,11 @@ export default class SegmentationStateManager {
         viewportId,
         'for segmentation',
         segmentationId
+      );
+      triggerSegmentationRepresentationModified(
+        viewportId,
+        segmentationId,
+        type
       );
       return;
     }
@@ -437,7 +439,7 @@ export default class SegmentationStateManager {
 
     const { representationData } = segmentation;
 
-    const isBaseVolumeSegmentation = 'volumeId' in representationData.Labelmap;
+    const isBaseVolumeSegmentation = !!representationData.Labelmap.volumeId;
     if (!volumeViewport && !isBaseVolumeSegmentation) {
       // Stack Viewport
       !this.updateLabelmapSegmentationImageReferences(

@@ -1,6 +1,7 @@
 import {
   Events,
   OrientationAxis,
+  ViewportStatus,
   ViewportType,
   VOILUTFunctionType,
 } from '../../../enums';
@@ -264,6 +265,12 @@ class PlanarViewport extends GenericViewport<
         },
         renderNow: () => {
           this.render();
+        },
+        setNeedsRender: () => {
+          this.setNeedsRender();
+        },
+        markRendered: () => {
+          this.setRendered();
         },
         activateRenderMode: (renderMode: PlanarEffectiveRenderMode) => {
           this.renderContext.renderPath.renderMode = renderMode;
@@ -1178,7 +1185,7 @@ class PlanarViewport extends GenericViewport<
    * No-op called by the rendering engine after completing a frame.
    */
   setRendered(): void {
-    // no-op
+    super.setRendered();
   }
 
   /**
@@ -1212,6 +1219,12 @@ class PlanarViewport extends GenericViewport<
       return;
     }
 
+    if (!this.bindings.size) {
+      this.viewportStatus = ViewportStatus.NO_DATA;
+      return;
+    }
+
+    this.setNeedsRender();
     this.renderContext.cpu.composition.renderPassId += 1;
 
     if (!this.renderBindings()) {

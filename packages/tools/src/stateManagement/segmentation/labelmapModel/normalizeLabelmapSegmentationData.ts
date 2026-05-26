@@ -42,15 +42,29 @@ function createPrimaryLabelmapLayer(
   labelmapData: LabelmapSegmentationData,
   labelmapId = getPrimaryLabelmapId(segmentation.segmentationId)
 ): LabelmapLayer {
-  return {
+  const layer: LabelmapLayer = {
     labelmapId,
     type: getPrimaryLabelmapType(labelmapData),
-    volumeId: labelmapData.volumeId,
-    referencedVolumeId: labelmapData.referencedVolumeId,
-    referencedImageIds: labelmapData.referencedImageIds,
-    imageIds: labelmapData.imageIds,
     labelToSegmentIndex: {},
   };
+
+  if (labelmapData.volumeId != null) {
+    layer.volumeId = labelmapData.volumeId;
+  }
+
+  if (labelmapData.referencedVolumeId != null) {
+    layer.referencedVolumeId = labelmapData.referencedVolumeId;
+  }
+
+  if (labelmapData.referencedImageIds != null) {
+    layer.referencedImageIds = labelmapData.referencedImageIds;
+  }
+
+  if (labelmapData.imageIds != null) {
+    layer.imageIds = labelmapData.imageIds;
+  }
+
+  return layer;
 }
 
 function resolvePrimaryLabelmapId(

@@ -4,6 +4,20 @@ import {
   getSegmentOrder,
 } from './normalizeLabelmapSegmentationData';
 import { getLabelmaps } from './labelmapLayerStore';
+import { forEachLabelmapImageReference } from './labelmapImageIdMapping';
+
+function syncOptionalLegacyProperty<T extends object, K extends keyof T>(
+  target: T,
+  key: K,
+  value: T[K]
+): void {
+  if (value == null) {
+    delete target[key];
+    return;
+  }
+
+  target[key] = value;
+}
 
 function syncLegacyLabelmapData(segmentation: Segmentation): void {
   const labelmapState = ensureLabelmapState(segmentation);
@@ -22,10 +36,18 @@ function syncLegacyLabelmapData(segmentation: Segmentation): void {
     return;
   }
 
-  labelmapState.volumeId = primaryLayer.volumeId;
-  labelmapState.referencedVolumeId = primaryLayer.referencedVolumeId;
-  labelmapState.imageIds = primaryLayer.imageIds;
-  labelmapState.referencedImageIds = primaryLayer.referencedImageIds;
+  syncOptionalLegacyProperty(labelmapState, 'volumeId', primaryLayer.volumeId);
+  syncOptionalLegacyProperty(
+    labelmapState,
+    'referencedVolumeId',
+    primaryLayer.referencedVolumeId
+  );
+  syncOptionalLegacyProperty(labelmapState, 'imageIds', primaryLayer.imageIds);
+  syncOptionalLegacyProperty(
+    labelmapState,
+    'referencedImageIds',
+    primaryLayer.referencedImageIds
+  );
 }
 
 function getReferencedImageIdToCurrentImageIdMap(
@@ -33,20 +55,16 @@ function getReferencedImageIdToCurrentImageIdMap(
 ): Map<string, string[]> {
   const map = new Map<string, string[]>();
   getLabelmaps(segmentation).forEach((layer) => {
-    const referencedImageIds = layer.referencedImageIds ?? layer.imageIds ?? [];
-    const imageIds = layer.imageIds ?? [];
-
-    referencedImageIds.forEach((referenceImageId, index) => {
-      if (!imageIds[index]) {
-        return;
+    forEachLabelmapImageReference(
+      layer,
+      (referenceImageId, labelmapImageId) => {
+        const values = map.get(referenceImageId) ?? [];
+        if (!values.includes(labelmapImageId)) {
+          values.push(labelmapImageId);
+        }
+        map.set(referenceImageId, values);
       }
-
-      const values = map.get(referenceImageId) ?? [];
-      if (!values.includes(imageIds[index])) {
-        values.push(imageIds[index]);
-      }
-      map.set(referenceImageId, values);
-    });
+    );
   });
 
   return map;

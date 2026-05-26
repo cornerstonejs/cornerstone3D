@@ -2,6 +2,7 @@ import type * as EventTypes from '../../types/EventTypes';
 import type ICamera from '../../types/ICamera';
 import type { Point2, Point3 } from '../../types';
 import Events from '../../enums/Events';
+import ViewportStatus from '../../enums/ViewportStatus';
 import triggerEvent from '../../utilities/triggerEvent';
 import type {
   BaseViewportRenderContext,
@@ -63,6 +64,7 @@ abstract class GenericViewport<
   readonly element: HTMLDivElement;
   abstract readonly type: ViewportType;
   abstract readonly renderingEngineId: string;
+  public viewportStatus: ViewportStatus = ViewportStatus.NO_DATA;
 
   // ── Protected fields ─────────────────────────────────────────────────
 
@@ -381,7 +383,21 @@ abstract class GenericViewport<
    * their render paths own concrete runtime state.
    */
   setRendered(): void {
-    // no-op
+    if (
+      this.viewportStatus === ViewportStatus.NO_DATA ||
+      this.viewportStatus === ViewportStatus.LOADING
+    ) {
+      return;
+    }
+
+    this.viewportStatus = ViewportStatus.RENDERED;
+  }
+
+  /**
+   * Marks the viewport as waiting for a render pass without scheduling one.
+   */
+  setNeedsRender(): void {
+    this.viewportStatus = ViewportStatus.NEEDS_RENDER;
   }
 
   /**
@@ -517,6 +533,7 @@ abstract class GenericViewport<
 
     binding.applyViewState(this.viewState);
     this._debug.renderModes[dataId] = attachment.rendering.renderMode;
+    this.viewportStatus = ViewportStatus.PRE_RENDER;
     this.render();
 
     return true;

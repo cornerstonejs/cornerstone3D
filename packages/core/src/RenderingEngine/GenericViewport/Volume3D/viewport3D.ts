@@ -69,7 +69,7 @@ class VolumeViewport3DV2 extends GenericViewport<
   }
 
   setRendered(): void {
-    // no-op -- rendering engine calls this after completing a frame
+    super.setRendered();
   }
 
   constructor(args: VolumeViewport3DV2Input) {

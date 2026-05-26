@@ -198,6 +198,8 @@ export interface PlanarViewportRenderContext extends BaseViewportRenderContext {
   display: {
     requestRender(): void;
     renderNow(): void;
+    setNeedsRender(): void;
+    markRendered(): void;
     activateRenderMode(renderMode: PlanarEffectiveRenderMode): void;
   };
   cpu: {

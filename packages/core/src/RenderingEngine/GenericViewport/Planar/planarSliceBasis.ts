@@ -64,6 +64,7 @@ export interface PlanarSliceBasis {
 
 const MIN_CAMERA_DISTANCE = 1;
 const MIN_SLICE_SPACING = 1e-6;
+const ORTHONORMAL_EPSILON = 1e-6;
 
 type VolumeSliceFitMetrics = {
   fitParallelScale: number;
@@ -97,6 +98,26 @@ function createFallbackVolumeSliceFitMetrics(): VolumeSliceFitMetrics {
     sliceWidthWorld: MIN_CAMERA_DISTANCE * 2,
     sliceHeightWorld: MIN_CAMERA_DISTANCE * 2,
   };
+}
+
+function isOne(value: number): boolean {
+  return Math.abs(Math.abs(value) - 1) < ORTHONORMAL_EPSILON;
+}
+
+function isUnitAxis(direction: ArrayLike<number>, offset: number): boolean {
+  return (
+    isOne(direction[offset]) ||
+    isOne(direction[offset + 1]) ||
+    isOne(direction[offset + 2])
+  );
+}
+
+function isOrthonormalDirection(direction: ArrayLike<number>): boolean {
+  return (
+    isUnitAxis(direction, 0) &&
+    isUnitAxis(direction, 3) &&
+    isUnitAxis(direction, 6)
+  );
 }
 
 /**
@@ -220,6 +241,23 @@ function buildImageVolumeCorners(imageVolume: IImageVolume): Point3[] {
 
   if (!imageData) {
     return [];
+  }
+
+  const direction = imageData.getDirection();
+
+  if (isOrthonormalDirection(direction)) {
+    const bounds = imageData.extentToBounds(imageData.getExtent());
+
+    return [
+      [bounds[0], bounds[2], bounds[4]],
+      [bounds[0], bounds[2], bounds[5]],
+      [bounds[0], bounds[3], bounds[4]],
+      [bounds[0], bounds[3], bounds[5]],
+      [bounds[1], bounds[2], bounds[4]],
+      [bounds[1], bounds[2], bounds[5]],
+      [bounds[1], bounds[3], bounds[4]],
+      [bounds[1], bounds[3], bounds[5]],
+    ];
   }
 
   const [dx, dy, dz] = imageData.getDimensions();

@@ -222,10 +222,18 @@ function subscribeToVolumeEvents(
   };
 
   eventTarget.addEventListener(Events.IMAGE_VOLUME_MODIFIED, handleProgress);
+  eventTarget.addEventListener(
+    Events.IMAGE_VOLUME_LOADING_COMPLETED,
+    handleProgress
+  );
 
   return () => {
     eventTarget.removeEventListener(
       Events.IMAGE_VOLUME_MODIFIED,
+      handleProgress
+    );
+    eventTarget.removeEventListener(
+      Events.IMAGE_VOLUME_LOADING_COMPLETED,
       handleProgress
     );
   };

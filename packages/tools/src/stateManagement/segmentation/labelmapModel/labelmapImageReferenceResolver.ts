@@ -16,6 +16,7 @@ import { ensureLabelmapState } from './normalizeLabelmapSegmentationData';
 import { getLabelmaps } from './labelmapLayerStore';
 import { getLabelmapForSegment } from './labelmapSegmentBindings';
 import { getReferencedImageIdToCurrentImageIdMap } from './labelmapLegacyAdapter';
+import { getLabelmapImageIdsForReferencedImageId } from './labelmapImageIdMapping';
 
 type GetSegmentation = (segmentationId: string) => Segmentation | undefined;
 
@@ -75,13 +76,22 @@ class LabelmapImageReferenceResolver {
     }
 
     if (labelmapData?.labelmaps) {
-      return Array.from(
-        new Set(
-          Object.values(labelmapData.labelmaps)
-            .flatMap((layer) => layer.imageIds ?? [])
-            .filter(Boolean)
-        )
+      const imageIds = Object.values(labelmapData.labelmaps).flatMap(
+        (layer) => {
+          if (layer.imageIds?.length) {
+            return layer.imageIds;
+          }
+
+          if (layer.volumeId) {
+            return (cache.getVolume(layer.volumeId) as Types.IImageVolume)
+              ?.imageIds;
+          }
+
+          return [];
+        }
       );
+
+      return Array.from(new Set(imageIds.filter(Boolean)));
     }
 
     if ((labelmapData as LabelmapSegmentationDataStack).imageIds) {
@@ -174,24 +184,11 @@ class LabelmapImageReferenceResolver {
     const labelmapImageIds: string[] = [];
 
     getLabelmaps(segmentation).forEach((layer) => {
-      const referencedImageIds =
-        layer.referencedImageIds ?? viewportImageIds ?? [];
-      const referencedIndices = referencedImageIds.reduce<number[]>(
-        (indices, candidateImageId, index) => {
-          if (candidateImageId === referenceImageId) {
-            indices.push(index);
-          }
-          return indices;
-        },
-        []
-      );
+      const referencedLabelmapImageIds =
+        getLabelmapImageIdsForReferencedImageId(layer, referenceImageId);
 
-      if (referencedIndices.length) {
-        referencedIndices.forEach((referencedIndex) => {
-          if (layer.imageIds?.[referencedIndex]) {
-            labelmapImageIds.push(layer.imageIds[referencedIndex]);
-          }
-        });
+      if (referencedLabelmapImageIds.length) {
+        labelmapImageIds.push(...referencedLabelmapImageIds);
         return;
       }
 

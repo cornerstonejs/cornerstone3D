@@ -2249,10 +2249,13 @@ class Viewport {
  * voxel center so the camera doesn't land between two slices. The in-plane
  * axes use the continuous geometric center `(d - 1) / 2`.
  *
- * The slice direction is taken to be the IJK axis whose world-space direction
- * is most aligned with `viewPlaneNormal`. For axial/sagittal/coronal MPR this
- * is exact; for oblique MPR this is an approximation (a single IJK axis is
- * picked rather than projecting along the normal).
+ * The snap only fires when `viewPlaneNormal` is aligned with an IJK axis
+ * (axis-aligned MPR of an axis-aligned acquisition). For oblique acquisitions
+ * the IJK axes are tilted relative to the requested MPR plane, so projecting
+ * onto a single IJK axis is an approximation -- snapping there shifts the
+ * focal point by ~0.5 voxel in world space and can flip the displayed slice
+ * index. In that case we fall back to the continuous geometric center on all
+ * axes, matching the pre-snap behavior.
  */
 export function getVolumeCenterIJK(
   dimensions: number[],
@@ -2280,8 +2283,12 @@ export function getVolumeCenterIJK(
     }
   }
 
+  // Only snap when the slice axis is exactly aligned with viewPlaneNormal.
+  // EPSILON matches the orthonormal tolerance used elsewhere (1e-3).
+  const isAxisAligned = Math.abs(maxDot - 1) < 1e-3;
+
   return dimensions.map((d, i) =>
-    i === sliceAxis ? Math.floor(d / 2) : (d - 1) / 2
+    i === sliceAxis && isAxisAligned ? Math.floor(d / 2) : (d - 1) / 2
   );
 }
 

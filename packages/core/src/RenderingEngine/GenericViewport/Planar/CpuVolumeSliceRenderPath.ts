@@ -168,6 +168,7 @@ export class CpuVolumeSliceRenderPath
               return;
             }
 
+            ctx.display.setNeedsRender();
             pendingAnimationFrameId = window.requestAnimationFrame(() => {
               pendingAnimationFrameId = undefined;
 
@@ -367,6 +368,7 @@ export class CpuVolumeSliceRenderPath
         runtime.pendingVolumeLoadCallback = true;
         runtime.imageVolume.load();
       }
+      ctx.display.setNeedsRender();
       return;
     }
 
@@ -470,6 +472,7 @@ export class CpuVolumeSliceRenderPath
 
     runtime.renderingInvalidated = false;
     compositeLayerCanvas(ctx, runtime);
+    ctx.display.markRendered();
     triggerEvent(ctx.viewport.element, Events.IMAGE_RENDERED, {
       element: ctx.viewport.element,
       viewportId: ctx.viewportId,
@@ -619,6 +622,7 @@ function scheduleDeferredViewportResample(
   rendering: PlanarCpuVolumeRendering
 ): void {
   cancelDeferredViewportResample(rendering);
+  ctx.display.setNeedsRender();
 
   rendering.deferredResampleTimeoutId = window.setTimeout(() => {
     rendering.deferredResampleTimeoutId = undefined;

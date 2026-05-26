@@ -290,6 +290,7 @@ export class CpuImageSliceRenderPath
 
     renderCPUImage(rendering);
     renderCompatibilityOverlayActors(ctx);
+    ctx.display.markRendered();
     triggerEvent(ctx.viewport.element, Events.IMAGE_RENDERED, {
       element: ctx.viewport.element,
       viewportId: ctx.viewportId,

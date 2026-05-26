@@ -6,6 +6,10 @@ import type {
   LabelmapLayer,
 } from '../../../types/LabelmapTypes';
 import { ensureLabelmapState } from './normalizeLabelmapSegmentationData';
+import {
+  forEachLabelmapImageReference,
+  hasMultipleLabelmapImagesPerReferencedImageId,
+} from './labelmapImageIdMapping';
 
 function getLabelmap(
   segmentation: Segmentation,
@@ -104,17 +108,9 @@ function getOrCreateMergedStackLabelmapVolume(
     return cachedVolume as Types.IImageVolume;
   }
 
-  const referencedImageIds = layer.referencedImageIds ?? [];
-  const imageIds = layer.imageIds ?? [];
   const imageIdsByReferencedImageId = new Map<string, string[]>();
 
-  referencedImageIds.forEach((referencedImageId, index) => {
-    const imageId = imageIds[index];
-
-    if (!referencedImageId || !imageId) {
-      return;
-    }
-
+  forEachLabelmapImageReference(layer, (referencedImageId, imageId) => {
     const imageIdsForReference =
       imageIdsByReferencedImageId.get(referencedImageId) ?? [];
 
@@ -181,13 +177,7 @@ function getOrCreateMergedStackLabelmapVolume(
 }
 
 function hasDuplicateReferencedImageIds(layer: LabelmapLayer): boolean {
-  const referencedImageIds = layer.referencedImageIds;
-
-  if (!referencedImageIds?.length) {
-    return false;
-  }
-
-  return new Set(referencedImageIds).size < referencedImageIds.length;
+  return hasMultipleLabelmapImagesPerReferencedImageId(layer);
 }
 
 function getLabelmapIds(segmentation: Segmentation): string[] {
