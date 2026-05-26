@@ -837,6 +837,22 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
 
       const calibratedScale = getCalibratedLengthUnitsAndScale(image, handles);
 
+      // Using an arbitrary start point (canvasPoint), calculate the
+      // mm spacing for the canvas in the X and Y directions.
+      const canvasPoint = canvasCoordinates[0];
+      const originalWorldPoint = viewport.canvasToWorld(canvasPoint);
+      const deltaXPoint = viewport.canvasToWorld([
+        canvasPoint[0] + 1,
+        canvasPoint[1],
+      ]);
+      const deltaYPoint = viewport.canvasToWorld([
+        canvasPoint[0],
+        canvasPoint[1] + 1,
+      ]);
+
+      const deltaInX = vec3.distance(originalWorldPoint, deltaXPoint);
+      const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
+
       const statsArgs = {
         targetId,
         viewport,
@@ -847,6 +863,8 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         cachedStats,
         modalityUnit,
         calibratedScale,
+        deltaInX,
+        deltaInY,
       };
       if (closed) {
         this.updateClosedCachedStats(statsArgs);
@@ -880,6 +898,8 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     modalityUnit,
     canvasCoordinates,
     calibratedScale,
+    deltaInX,
+    deltaInY,
   }) {
     const { areaUnit, unit } = calibratedScale;
 
