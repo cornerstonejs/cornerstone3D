@@ -161,9 +161,11 @@ Some typical uses cases for view presentation are:
 ## `setViewReference` and View Presentation
 
 The `viewport.setViewReference` API navigates to the specified reference. Legacy
-viewport classes and compatibility adapters also expose
-`viewport.setViewPresentation` to apply presentation directly. Direct
-Generic/Next viewports do not expose that mutation API; use
+viewport classes and temporary compatibility adapters also expose
+`viewport.setViewPresentation` to apply presentation directly, but that legacy
+presentation mutation helper should be expected to be removed from the
+compatibility layer in a later breaking release. Direct Generic/Next viewports
+do not expose that mutation API; use
 `viewportProjection.withPresentation(...)` to translate a presentation patch to
 the viewport family's native `ViewState`, then call `viewport.setViewState(...)`.
 If both reference and presentation are being applied, then the view reference

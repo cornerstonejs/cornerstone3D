@@ -258,15 +258,18 @@ viewport.setDataPresentation(dataId, {
 ```
 
 Legacy compatibility adapters keep `setProperties()` and map those values to
-data presentation internally.
+data presentation internally for migration only. Because the adapters are
+temporary, code that can move directly to Next should use
+`setDataPresentation()` instead.
 
 ## Camera Compatibility
 
 Legacy adapters still expose `getCamera()` and `setCamera()`, but clean Next
 viewport code should use semantic APIs. Treat those adapter methods as
-temporary migration compatibility, not as a stable Next camera API. `ViewState`
-is the viewport source of truth. `setViewState()` and `updateViewState()` are
-the direct Next mutation paths.
+temporary migration compatibility that should be expected to be removed in a
+later breaking release, not as a stable Next camera API. `ViewState` is the
+viewport source of truth. `setViewState()` and `updateViewState()` are the
+direct Next mutation paths.
 
 ```ts
 viewport.setViewState({
@@ -303,8 +306,9 @@ const presentation = viewportProjection.getPresentation(viewport, {
 Direct Next viewports do not expose `getViewPresentation()` or
 `setViewPresentation()`. Legacy compatibility adapters may still expose those
 methods and delegate them through `viewportProjection.withPresentation(...)`
-followed by `setViewState(...)`. Those compatibility methods are temporary and
-should not be used in new Next code.
+followed by `setViewState(...)`. Those compatibility methods are temporary,
+should not be used in new Next code, and should be expected to be removed in a
+later breaking release.
 
 Before:
 
@@ -389,10 +393,11 @@ display area is intentionally overriding the broader view-state scaling mode.
 rotation, orientation, and flip presentation state by default. It does not reset
 the current slice. Pass `resetOrientation: false` or `resetFlip: false` to keep
 those fields. Legacy stack and volume viewports expose `resetCamera` through
-compatibility adapters, but that name is a temporary migration API. New Next
-code should call `resetViewState` on direct Next viewports and explicitly call
-`setImageIdIndex`, `setOrientation`, or `setViewState` for fields that should
-not follow the default reset.
+compatibility adapters, but that name is a temporary migration API that should
+be expected to be removed in a later breaking release. New Next code should call
+`resetViewState` on direct Next viewports and explicitly call
+`setImageIdIndex`, `setOrientation`, or `setViewState` for fields that should not
+follow the default reset.
 
 ## Event And Enabled Element Notes
 
