@@ -107,6 +107,7 @@ export * from './getPixelSpacingInformation';
 export * from './getPlaneCubeIntersectionDimensions';
 export * from './rotateToViewCoordinates';
 import { asArray } from './asArray';
+import { toFiniteNumber } from './toNumber';
 import { getNormalizedAspectRatio } from './getNormalizedAspectRatio';
 export { updatePlaneRestriction } from './updatePlaneRestriction';
 
@@ -215,5 +216,6 @@ export {
   buildMetadata,
   calculateNeighborhoodStats,
   asArray,
+  toFiniteNumber,
   getNormalizedAspectRatio,
 };

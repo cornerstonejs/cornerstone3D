@@ -1,11 +1,14 @@
 import MeasurementReport from './MeasurementReport';
 import { utilities } from 'dcmjs';
+import { utilities as csUtilities } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 import BaseAdapter3D from './BaseAdapter3D';
 import { extractAllNUMGroups, restoreAdditionalMetrics } from './metricHandler';
 import { toScoords, toArray } from '../helpers';
 import ControlPointPolyline from './ControlPointPolyline';
 import { SPLINE_TYPE_CODE } from './constants';
+
+const { toFiniteNumber } = csUtilities;
 
 /** Contour/polyline SR logic is shared by LivewireContour, registered as a subtype. */
 class PlanarFreehandROI extends BaseAdapter3D {
@@ -144,13 +147,13 @@ class PlanarFreehandROI extends BaseAdapter3D {
       /** From cachedStats */
       points,
       controlPoints,
-      area,
+      area: toFiniteNumber(area),
       areaUnit,
-      perimeter: perimeter ?? length,
+      perimeter: toFiniteNumber(perimeter ?? length),
       modalityUnit,
-      mean,
-      max,
-      stdDev,
+      mean: toFiniteNumber(mean),
+      max: toFiniteNumber(max),
+      stdDev: toFiniteNumber(stdDev),
       /** Other */
       splineType: data.spline?.type,
       trackingIdentifierTextValue: this.trackingIdentifierTextValue,

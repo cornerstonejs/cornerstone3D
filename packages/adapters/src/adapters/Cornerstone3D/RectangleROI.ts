@@ -1,12 +1,15 @@
 import { utilities } from 'dcmjs';
+import { utilities as csUtilities } from '@cornerstonejs/core';
 
 import { toScoords } from '../helpers';
+
 import MeasurementReport from './MeasurementReport';
 import BaseAdapter3D from './BaseAdapter3D';
 import { extractAllNUMGroups, restoreAdditionalMetrics } from './metricHandler';
 import { mapUnitFromUCUM } from './unitMapper';
 
 const { Polyline: TID300Polyline } = utilities.TID300;
+const { toFiniteNumber } = csUtilities;
 
 export class RectangleROI extends BaseAdapter3D {
   static {
@@ -102,11 +105,11 @@ export class RectangleROI extends BaseAdapter3D {
 
     return {
       points: [corners[0], corners[1], corners[3], corners[2], corners[0]],
-      area,
-      perimeter,
-      max,
-      mean,
-      stdDev,
+      area: toFiniteNumber(area),
+      perimeter: toFiniteNumber(perimeter),
+      max: toFiniteNumber(max),
+      mean: toFiniteNumber(mean),
+      stdDev: toFiniteNumber(stdDev),
       areaUnit,
       modalityUnit,
       trackingIdentifierTextValue: this.trackingIdentifierTextValue,
