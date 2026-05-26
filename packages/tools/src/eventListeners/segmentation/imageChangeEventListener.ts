@@ -238,7 +238,7 @@ function _imageChangeEventListener(evt) {
     // if one or more actors were added to the viewport
     // we need to trigger a segmentation render
     if (shouldTriggerSegmentationRender) {
-      triggerSegmentationRender(viewportId);
+      triggerSegmentationRender(viewportId, true);
     }
 
     viewport.render();
