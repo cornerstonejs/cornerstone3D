@@ -71,9 +71,15 @@ interface Cornerstone3DConfig {
    * This function returns an imported module for the given module id.
    * It allows replacing broken packing system imports with external importers
    * that perform lazy imports.
+   * When the config does not handle the moduleId, it may call the optional
+   * fallback (when provided) and return its result.
    */
-  // eslint-disable-next-line
-  peerImport?: (moduleId: string) => Promise<any>;
+  /* eslint-disable @typescript-eslint/no-explicit-any -- peerImport is dynamic; module/return type varies by caller */
+  peerImport?: (
+    moduleId: string,
+    fallback?: () => Promise<any>
+  ) => Promise<any>;
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 }
 
 export type { Cornerstone3DConfig as default };

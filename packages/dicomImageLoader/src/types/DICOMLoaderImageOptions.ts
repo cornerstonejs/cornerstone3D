@@ -16,6 +16,7 @@ export interface DICOMLoaderImageOptions {
     offset: number;
     rows?: number;
     columns?: number;
+    scalingType?: 'replicate' | string;
   };
   loader?: LoadRequestFunction;
   decodeLevel?: number;

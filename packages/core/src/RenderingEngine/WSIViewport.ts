@@ -507,7 +507,9 @@ class WSIViewport extends Viewport {
    * as a globalThis.browserImportFunction taking the package name, and a set
    * of options defining how to get the value out of the package.
    */
-  public static getDicomMicroscopyViewer = async () => {
+  // dicom-microscopy-viewer is a peer dependency with no types; use any for its API
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public static getDicomMicroscopyViewer = async (): Promise<any> => {
     return peerImport('dicom-microscopy-viewer');
   };
 
