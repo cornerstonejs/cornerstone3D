@@ -268,10 +268,11 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
         resetViewStateForResize?: () => boolean;
       };
 
-      (
-        resizeResetViewport.resetViewStateForResize ??
-        resizeResetViewport.resetCameraForResize
-      )?.();
+      if (resizeResetViewport.resetViewStateForResize) {
+        resizeResetViewport.resetViewStateForResize();
+      } else {
+        resizeResetViewport.resetCameraForResize?.();
+      }
 
       const displayArea = vp.getDisplayArea();
 
