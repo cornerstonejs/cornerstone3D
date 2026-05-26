@@ -139,7 +139,7 @@ addButtonToToolbar({
   onClick: () => {
     const viewport = getViewport();
 
-    viewport.resetCamera();
+    viewport.resetViewState();
     viewport.render();
   },
 });
@@ -193,7 +193,7 @@ addDropdownToToolbar({
             ],
           },
         });
-        viewport.resetCamera();
+        viewport.resetViewState();
         break;
     }
 

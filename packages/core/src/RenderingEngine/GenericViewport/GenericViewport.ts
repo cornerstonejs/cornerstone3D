@@ -404,9 +404,10 @@ abstract class GenericViewport<
   }
 
   /**
-   * Resets view state for viewport families that support a camera-like reset.
+   * Resets viewport-owned view state for viewport families that support a
+   * navigation reset.
    */
-  resetCamera(): boolean {
+  resetViewState(_options?: unknown): boolean {
     return false;
   }
 
@@ -427,7 +428,7 @@ abstract class GenericViewport<
     this.resize();
 
     if (!keepCamera) {
-      this.resetCamera();
+      this.resetViewState();
     }
   }
 

@@ -335,8 +335,8 @@ function applyVolumeProjectionPatch(): void {
  * Restores both viewports and refreshes the projection diagnostics.
  */
 function resetProjectionViewports(): void {
-  getPlanarViewport().resetCamera();
-  getVolumeViewport().resetCamera();
+  getPlanarViewport().resetViewState();
+  getVolumeViewport().resetViewState();
   updateProjectionInfo('reset projection viewports');
 }
 

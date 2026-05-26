@@ -286,7 +286,7 @@ function resetProjectionSync(): void {
   for (const viewportId of viewportIds) {
     const viewport = getViewport(viewportId);
 
-    viewport.resetCamera();
+    viewport.resetViewState();
     viewport.render();
   }
 

@@ -137,6 +137,24 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
     }
   }
 
+  /**
+   * Compatibility wrapper for legacy callers. Direct Next viewports should use
+   * `resetViewState`.
+   */
+  resetCamera(
+    options?: Parameters<PlanarViewport['resetViewState']>[0]
+  ): boolean {
+    return this.resetViewState(options);
+  }
+
+  /**
+   * Compatibility wrapper for rendering engines and legacy callers that still
+   * use the resize-specific camera reset hook.
+   */
+  resetCameraForResize(): boolean {
+    return this.resetViewStateForResize();
+  }
+
   get volumeIds(): Set<string> {
     const ids = new Set<string>();
 

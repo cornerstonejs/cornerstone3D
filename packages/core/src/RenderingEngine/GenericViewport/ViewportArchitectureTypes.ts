@@ -163,6 +163,7 @@ export interface ViewportController<
       | Partial<TViewState>
       | ((viewState: TViewState) => Partial<TViewState> | void)
   ): void;
+  resetViewState(options?: unknown): boolean;
   setDataPresentation(dataId: DataId, props: Partial<TDataPresentation>): void;
   getDataPresentation(dataId: DataId): TDataPresentation | undefined;
   setViewReference(viewReference: ViewReference): void;

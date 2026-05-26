@@ -118,7 +118,7 @@ type ResolvedViewCache = {
   viewState: PlanarViewState;
 };
 
-type PlanarResetCameraOptions = {
+type PlanarResetViewStateOptions = {
   resetPan?: boolean;
   resetZoom?: boolean;
   resetOrientation?: boolean;
@@ -1110,14 +1110,14 @@ class PlanarViewport extends GenericViewport<
   }
 
   /**
-   * Resets camera presentation back to the viewport defaults.
+   * Resets view state presentation back to the viewport defaults.
    *
    * Navigation state such as the current slice remains unchanged.
    *
-   * @param options - Flags controlling which camera fields are reset.
+   * @param options - Flags controlling which view-state fields are reset.
    * @returns Always `true` for compatibility with legacy viewport contracts.
    */
-  resetCamera(options?: PlanarResetCameraOptions): boolean {
+  resetViewState(options?: PlanarResetViewStateOptions): boolean {
     const {
       resetPan = true,
       resetZoom = true,
@@ -1154,13 +1154,13 @@ class PlanarViewport extends GenericViewport<
   }
 
   /**
-   * Resets camera state after a resize using the same behavior as
-   * `resetCamera`.
+   * Resets view state after a resize using the same behavior as
+   * `resetViewState`.
    *
    * @returns Always `true` for compatibility with legacy viewport contracts.
    */
-  resetCameraForResize(): boolean {
-    return this.resetCamera();
+  resetViewStateForResize(): boolean {
+    return this.resetViewState();
   }
 
   // ====================================================================

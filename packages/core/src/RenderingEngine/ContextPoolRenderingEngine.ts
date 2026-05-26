@@ -263,9 +263,15 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       const prevCamera = vp.getCamera();
       const rotation = vp.getRotation?.() ?? 0;
       const { flipHorizontal } = prevCamera;
+      const resizeResetViewport = vp as IViewport & {
+        resetCameraForResize?: () => boolean;
+        resetViewStateForResize?: () => boolean;
+      };
+
       (
-        vp as IViewport & { resetCameraForResize?: () => boolean }
-      ).resetCameraForResize?.();
+        resizeResetViewport.resetViewStateForResize ??
+        resizeResetViewport.resetCameraForResize
+      )?.();
 
       const displayArea = vp.getDisplayArea();
 

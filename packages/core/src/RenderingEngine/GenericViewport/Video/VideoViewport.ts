@@ -554,7 +554,7 @@ class VideoViewport extends GenericViewport<
   /**
    * Resets layout navigation while preserving the current video time.
    */
-  resetCamera(): boolean {
+  resetViewState(): boolean {
     if (this.isDestroyed) {
       return false;
     }

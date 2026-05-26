@@ -271,7 +271,7 @@ class ECGViewport extends GenericViewport<
   /**
    * Resets pan and zoom to defaults and re-renders.
    */
-  resetCamera(): boolean {
+  resetViewState(): boolean {
     const previousCamera = this.getCameraForEvent();
     this.viewState = createDefaultECGViewState({
       timeRange: this.viewState.timeRange,

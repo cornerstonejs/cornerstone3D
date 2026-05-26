@@ -78,6 +78,22 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3DV2 {
     }
   }
 
+  /**
+   * Compatibility wrapper for legacy callers. Direct Next viewports should use
+   * `resetViewState`.
+   */
+  resetCamera(): boolean {
+    return this.resetViewState();
+  }
+
+  /**
+   * Compatibility wrapper for rendering engines and legacy callers that still
+   * use the resize-specific camera reset hook.
+   */
+  resetCameraForResize(): boolean {
+    return this.resetViewStateForResize();
+  }
+
   async setVolumes(
     volumeInputArray: IVolumeInput[],
     immediate = false,

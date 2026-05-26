@@ -54,6 +54,9 @@ internally:
 Direct Generic viewport types use the new APIs. Remapped legacy viewport types use
 compatibility adapters that preserve legacy methods such as `setStack()`,
 `setVolumes()`, `setVideo()`, `setEcg()`, and `setWSI()` where applicable.
+These adapters are a temporary migration layer, not the long-term Next API
+surface, and their legacy helpers should be expected to be removed in a later
+breaking release.
 Keep those API families separate for a given viewport instance: use the legacy
 methods on compatibility viewports, or use Generic methods such as `setData()`,
 `setDataList()`, and `addData()` on direct Generic viewports. Mixing legacy data
@@ -260,9 +263,10 @@ data presentation internally.
 ## Camera Compatibility
 
 Legacy adapters still expose `getCamera()` and `setCamera()`, but clean Next
-viewport code should use semantic APIs. `ViewState` is the viewport source of
-truth. `setViewState()` and `updateViewState()` are the only direct Next
-mutation paths.
+viewport code should use semantic APIs. Treat those adapter methods as
+temporary migration compatibility, not as a stable Next camera API. `ViewState`
+is the viewport source of truth. `setViewState()` and `updateViewState()` are
+the direct Next mutation paths.
 
 ```ts
 viewport.setViewState({
@@ -299,7 +303,8 @@ const presentation = viewportProjection.getPresentation(viewport, {
 Direct Next viewports do not expose `getViewPresentation()` or
 `setViewPresentation()`. Legacy compatibility adapters may still expose those
 methods and delegate them through `viewportProjection.withPresentation(...)`
-followed by `setViewState(...)`.
+followed by `setViewState(...)`. Those compatibility methods are temporary and
+should not be used in new Next code.
 
 Before:
 
@@ -380,12 +385,14 @@ When both `viewState.displayArea.scaleMode` and `viewState.scaleMode` are set,
 the display-area scale mode wins. Set only one of those fields unless the
 display area is intentionally overriding the broader view-state scaling mode.
 
-`PlanarViewport.resetCamera({ resetPan, resetZoom })` resets pan, zoom, and
-rotation presentation state. It does not reset the current slice, orientation,
-or flip state. Legacy stack and volume viewports reset more acquisition-camera
-state during `resetCamera`, so migration code that relies on that behavior
-should explicitly call `setImageIdIndex`, `setOrientation`, or `setViewState`
-for those fields.
+`PlanarViewport.resetViewState({ resetPan, resetZoom })` resets pan, zoom,
+rotation, orientation, and flip presentation state by default. It does not reset
+the current slice. Pass `resetOrientation: false` or `resetFlip: false` to keep
+those fields. Legacy stack and volume viewports expose `resetCamera` through
+compatibility adapters, but that name is a temporary migration API. New Next
+code should call `resetViewState` on direct Next viewports and explicitly call
+`setImageIdIndex`, `setOrientation`, or `setViewState` for fields that should
+not follow the default reset.
 
 ## Event And Enabled Element Notes
 

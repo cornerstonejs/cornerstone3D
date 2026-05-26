@@ -188,6 +188,14 @@ class WSIViewportLegacyAdapter extends WSIViewport {
     }
   }
 
+  /**
+   * Compatibility wrapper for legacy callers. Direct Next viewports should use
+   * `resetViewState`.
+   */
+  resetCamera(): boolean {
+    return this.resetViewState();
+  }
+
   setVOI(voiRange: VOIRange): void {
     const dataId = this.getActiveDataId();
 

@@ -106,6 +106,14 @@ class VideoViewportLegacyAdapter extends VideoViewport {
     }
   }
 
+  /**
+   * Compatibility wrapper for legacy callers. Direct Next viewports should use
+   * `resetViewState`.
+   */
+  resetCamera(): boolean {
+    return this.resetViewState();
+  }
+
   getProperties(): VideoViewportProperties {
     const dataId = this.getFirstBinding()?.data.id;
     const dataPresentation = dataId

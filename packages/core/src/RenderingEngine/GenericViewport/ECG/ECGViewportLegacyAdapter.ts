@@ -101,6 +101,14 @@ class ECGViewportLegacyAdapter extends ECGViewport {
       this.setViewState(nextViewState);
     }
   }
+
+  /**
+   * Compatibility wrapper for legacy callers. Direct Next viewports should use
+   * `resetViewState`.
+   */
+  resetCamera(): boolean {
+    return this.resetViewState();
+  }
 }
 
 export default ECGViewportLegacyAdapter;

@@ -50,7 +50,8 @@ if (nextViewState) {
 `viewportProjection.withPresentation()` is pure. It translates the presentation
 patch into the viewport family's native `ViewState`, but it does not mutate the
 viewport and it does not render. `setViewState()` and `updateViewState()` remain
-the only clean Next viewport mutation paths.
+the clean Next paths for arbitrary view-state changes; `resetViewState()` is the
+clean reset helper.
 
 For cross-viewport tooling and synchronizers, use the Viewport Projection
 construct instead of treating `ICamera` as a universal camera model. Viewport
@@ -193,11 +194,15 @@ semantic anchors, slice locators, and scale, not durable renderer position.
 
 ## Legacy Compatibility
 
-Legacy adapters are the compatibility boundary for `ICamera`.
+Legacy adapters are the temporary migration boundary for `ICamera`. They exist
+to keep older applications running while code moves to direct Next viewports,
+and they should not be treated as the long-term Next API surface. Plan for these
+compatibility camera methods to be removed in a later breaking release.
 
 Clean Generic viewports expose `getViewState()`, `setViewState()`,
-`updateViewState()`, and `getResolvedView()`. Legacy adapters expose
-`getCamera()`, `setCamera()`, `getViewPresentation()`, and
+`updateViewState()`, `resetViewState()`, and `getResolvedView()`. Legacy
+adapters expose `getCamera()`, `setCamera()`, `resetCamera()`,
+`getViewPresentation()`, and
 `setViewPresentation()` for old APIs and legacy camera events.
 
 For planar adapters:

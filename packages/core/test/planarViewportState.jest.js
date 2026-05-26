@@ -253,6 +253,8 @@ describe('PlanarViewport view state', () => {
 
     expect(viewport.getViewPresentation).toBeUndefined();
     expect(viewport.setViewPresentation).toBeUndefined();
+    expect(viewport.resetCamera).toBeUndefined();
+    expect(viewport.resetViewState).toBeInstanceOf(Function);
   });
 
   it('updates native camera state through updateViewState', () => {
@@ -550,7 +552,7 @@ describe('PlanarViewport view state', () => {
       scale: [2, 3],
     });
 
-    viewport.resetCamera({
+    viewport.resetViewState({
       resetPan: false,
       resetZoom: false,
     });
@@ -566,7 +568,7 @@ describe('PlanarViewport view state', () => {
     expect(state.scale).toEqual([2, 3]);
   });
 
-  it('can preserve orientation and flips when resetCamera opts out', () => {
+  it('can preserve orientation and flips when resetViewState opts out', () => {
     const { viewport } = track(createViewport());
 
     viewport.setViewState({
@@ -576,7 +578,7 @@ describe('PlanarViewport view state', () => {
       rotation: 45,
     });
 
-    viewport.resetCamera({
+    viewport.resetViewState({
       resetOrientation: false,
       resetFlip: false,
     });

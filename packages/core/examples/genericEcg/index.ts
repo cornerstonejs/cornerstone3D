@@ -158,7 +158,7 @@ async function run() {
   addButtonToToolbar({
     title: 'Reset View',
     onClick: () => {
-      viewport.resetCamera();
+      viewport.resetViewState();
     },
   });
 

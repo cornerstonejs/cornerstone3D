@@ -215,9 +215,10 @@ for legacy viewport families.
 ## When To Care
 
 Most application code should use `setViewState` for native viewport mutation,
+`resetViewState` for the viewport family's default navigation reset,
 `getViewReference` / `setViewReference` for spatial navigation, and
-`canvasToWorld` / `worldToCanvas` for coordinate conversion. Use projection
-when code needs a portable presentation layer across viewport families.
+`canvasToWorld` / `worldToCanvas` for coordinate conversion. Use projection when
+code needs a portable presentation layer across viewport families.
 
 Use Viewport Projection when you are writing:
 
@@ -273,7 +274,9 @@ projection service is the portable write layer, and `setViewState` remains the
 only Next viewport mutation primitive. They also do not expose
 `getViewPresentation`; use `viewportProjection.getPresentation(viewport,
 { selector })` instead. Legacy compatibility adapters may still expose
-`getViewPresentation` and `setViewPresentation` for older code.
+`getViewPresentation` and `setViewPresentation` for older code, but those
+adapters are a temporary migration layer and their legacy camera/presentation
+methods should be expected to disappear in a later breaking release.
 
 Before, legacy or compatibility code might do this:
 

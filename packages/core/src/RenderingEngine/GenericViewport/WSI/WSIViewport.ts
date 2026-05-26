@@ -228,7 +228,7 @@ export default class WSIViewport extends GenericViewport<
     // No-op for current whole-slide workflows.
   }
 
-  resetCamera(): boolean {
+  resetViewState(): boolean {
     return true;
   }
 

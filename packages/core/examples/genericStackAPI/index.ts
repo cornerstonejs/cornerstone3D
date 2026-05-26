@@ -215,7 +215,7 @@ addToolbarButton({
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-    viewport.resetCamera();
+    viewport.resetViewState();
     viewport.setScale(1.35);
     viewport.setPan([42, -28]);
     viewport.render();
@@ -241,7 +241,7 @@ addToolbarButton({
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-    viewport.resetCamera();
+    viewport.resetViewState();
     viewport.setDataPresentation(stackDataId, {
       colormap: undefined,
       invert: false,

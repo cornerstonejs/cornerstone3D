@@ -161,12 +161,22 @@ describe('ViewportProjectionService', () => {
   it('does not expose view-presentation methods on non-planar Next viewports', () => {
     expect(VideoViewport.prototype.getViewPresentation).toBeUndefined();
     expect(VideoViewport.prototype.setViewPresentation).toBeUndefined();
+    expect(VideoViewport.prototype.resetCamera).toBeUndefined();
+    expect(VideoViewport.prototype.resetViewState).toBeInstanceOf(Function);
     expect(ECGViewport.prototype.getViewPresentation).toBeUndefined();
     expect(ECGViewport.prototype.setViewPresentation).toBeUndefined();
+    expect(ECGViewport.prototype.resetCamera).toBeUndefined();
+    expect(ECGViewport.prototype.resetViewState).toBeInstanceOf(Function);
     expect(WSIViewport.prototype.getViewPresentation).toBeUndefined();
     expect(WSIViewport.prototype.setViewPresentation).toBeUndefined();
+    expect(WSIViewport.prototype.resetCamera).toBeUndefined();
+    expect(WSIViewport.prototype.resetViewState).toBeInstanceOf(Function);
     expect(VolumeViewport3DV2.prototype.getViewPresentation).toBeUndefined();
     expect(VolumeViewport3DV2.prototype.setViewPresentation).toBeUndefined();
+    expect(VolumeViewport3DV2.prototype.resetCamera).toBeUndefined();
+    expect(VolumeViewport3DV2.prototype.resetViewState).toBeInstanceOf(
+      Function
+    );
   });
 
   it('exposes Video projections in media-pixel space', () => {

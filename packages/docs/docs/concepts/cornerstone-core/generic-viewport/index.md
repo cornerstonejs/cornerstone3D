@@ -102,7 +102,9 @@ fields. For planar, video, ECG, and WSI, the viewport state is the source of
 truth and the runtime camera, canvas transform, media transform, signal
 transform, or OpenLayers view is derived from it. 3D Next is runtime-camera
 backed, but still participates in the projection service. Legacy camera APIs
-remain available through compatibility adapters. The full camera contract is
-covered in the camera page.
+remain available through temporary compatibility adapters; those adapters are
+not the long-term Next API surface and their legacy helpers are expected to be
+removed in a later breaking release. The full camera contract is covered in the
+camera page.
 
 <DocCardList items={useCurrentSidebarCategory().items}/>

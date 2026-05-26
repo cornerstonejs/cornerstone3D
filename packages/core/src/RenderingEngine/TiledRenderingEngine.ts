@@ -312,7 +312,14 @@ class TiledRenderingEngine extends BaseRenderingEngine {
       const prevCamera = vp.getCamera();
       const rotation = vp.getRotation();
       const { flipHorizontal } = prevCamera;
-      vp.resetCameraForResize();
+      const resizeResetViewport = vp as (IStackViewport | IVolumeViewport) & {
+        resetViewStateForResize?: () => boolean;
+      };
+
+      (
+        resizeResetViewport.resetViewStateForResize ??
+        resizeResetViewport.resetCameraForResize
+      )();
 
       const displayArea = vp.getDisplayArea();
 

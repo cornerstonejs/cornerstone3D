@@ -267,10 +267,12 @@ viewport.setViewState({ flipHorizontal: true });
 viewport.render();
 ```
 
-Legacy adapters still support camera-style calls for older code. Clean Next
-code should use view state and viewport projection APIs. Direct Next viewports
-do not expose `getViewPresentation()`, `setViewPresentation()`, `getCamera()`,
-or `setCamera()` as durable control APIs.
+Legacy adapters still support camera-style calls for older code. They are a
+temporary migration layer and should be considered removable compatibility API,
+not a durable Next control surface. Clean Next code should use view state and
+viewport projection APIs. Direct Next viewports do not expose
+`getViewPresentation()`, `setViewPresentation()`, `getCamera()`, or
+`setCamera()` as durable control APIs.
 
 Before:
 
@@ -325,7 +327,9 @@ if (nextViewState) {
 
 If you are changing a native field such as planar orientation, a video media
 anchor, or ECG signal range, update the native view state directly with
-`setViewState()` or `updateViewState()`.
+`setViewState()` or `updateViewState()`. Use `resetViewState()` for the clean
+Next reset operation; `resetCamera()` belongs to temporary legacy adapters and
+should not be used in new Next code.
 
 ## Slice Navigation
 

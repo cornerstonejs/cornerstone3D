@@ -229,7 +229,7 @@ function resetTargetViewports(): void {
   setScaleState([1, 1]);
 
   for (const viewport of getTargetViewports()) {
-    viewport.resetCamera();
+    viewport.resetViewState();
     viewport.setScale([1, 1]);
     viewport.render();
   }

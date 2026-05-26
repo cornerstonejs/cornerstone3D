@@ -182,7 +182,8 @@ utilities.genericViewportDataSetMetadataProvider.add(labelmapDataId, {
 Navigation and view appearance are separate from per-dataset appearance.
 For direct Next viewports, `ViewState` is the only mutable viewport source of
 truth. Use `setViewState()` for patches and `updateViewState()` for
-read-modify-write changes.
+read-modify-write changes. Use `resetViewState()` when you want the viewport
+family's default navigation reset.
 
 ```ts
 viewport.setViewState({
@@ -193,6 +194,8 @@ viewport.setViewState({
 viewport.updateViewState(({ rotation = 0 }) => ({
   rotation: rotation + 30,
 }));
+
+viewport.resetViewState();
 ```
 
 Use viewport projection when the input is a portable presentation patch rather
@@ -225,7 +228,8 @@ const presentation = viewportProjection.getPresentation(viewport, {
 
 Do not call `viewport.getViewPresentation()` or
 `viewport.setViewPresentation()` on direct Next viewports. Those methods are
-kept only on legacy compatibility adapters.
+kept only on temporary legacy compatibility adapters and should be expected to
+be removed from that compatibility layer in a later breaking release.
 
 Use `setImageIdIndex()` for index-style navigation. For volume-backed data,
 the viewport resolves the requested index into a volume slice point internally.

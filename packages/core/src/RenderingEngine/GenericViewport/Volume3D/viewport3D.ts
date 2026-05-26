@@ -452,11 +452,11 @@ class VolumeViewport3DV2 extends GenericViewport<
   }
 
   /**
-   * Resets the VTK camera and clipping range.
+   * Resets the VTK-backed view state and clipping range.
    *
    * @returns Always `true` for compatibility with legacy viewport contracts.
    */
-  resetCamera(): boolean {
+  resetViewState(): boolean {
     const previousCamera = this.getCameraForEvent();
     const renderer = this.getRenderer();
 
@@ -471,13 +471,13 @@ class VolumeViewport3DV2 extends GenericViewport<
   }
 
   /**
-   * Resets the 3D camera after resize using the same behavior as
-   * `resetCamera`.
+   * Resets the 3D view state after resize using the same behavior as
+   * `resetViewState`.
    *
    * @returns Always `true` for compatibility with legacy viewport contracts.
    */
-  resetCameraForResize(): boolean {
-    return this.resetCamera();
+  resetViewStateForResize(): boolean {
+    return this.resetViewState();
   }
 
   /**

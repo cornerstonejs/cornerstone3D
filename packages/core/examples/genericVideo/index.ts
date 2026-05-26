@@ -115,7 +115,7 @@ addButtonToToolbar({
       viewportId
     ) as VideoGenericViewport;
 
-    viewport.resetCamera();
+    viewport.resetViewState();
   },
 });
 
