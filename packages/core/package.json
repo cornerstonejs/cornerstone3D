@@ -81,14 +81,14 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@cornerstonejs/utils": "5.0.0-beta.3",
+    "@cornerstonejs/utils": "workspace:*",
     "@kitware/vtk.js": "34.15.1",
     "comlink": "4.4.2",
     "gl-matrix": "3.4.3",
     "loglevel": "1.9.2"
   },
   "devDependencies": {
-    "@cornerstonejs/metadata": "5.0.0-beta.3"
+    "@cornerstonejs/metadata": "workspace:*"
   },
   "peerDependencies": {
     "@cornerstonejs/metadata": ">=5.0.0-beta.1 <6.0.0-0",

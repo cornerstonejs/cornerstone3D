@@ -79,7 +79,7 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@cornerstonejs/utils": "5.0.0-beta.3",
+    "@cornerstonejs/utils": "workspace:*",
     "@cornerstonejs/calculate-suv": "1.0.3",
     "dcmjs": "0.50.1",
     "gl-matrix": "3.4.3"

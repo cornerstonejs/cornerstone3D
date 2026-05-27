@@ -27,6 +27,7 @@ overrides:
   path-to-regexp: 0.1.13
   protobufjs: 7.5.8
   fast-uri: 3.1.2
+  tmp: 0.2.6
   webpack: 5.105.0
   mdast-util-to-hast: 13.2.1
   '@remix-run/router': 1.23.2
@@ -380,10 +381,10 @@ importers:
         version: 1.0.19
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.0.0-beta.3
+        specifier: workspace:*
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.0.0-beta.3
+        specifier: workspace:*
         version: link:../tools
 
   packages/ai:
@@ -414,16 +415,16 @@ importers:
         version: 1.17.1
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.0.0-beta.3
+        specifier: workspace:*
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.0.0-beta.3
+        specifier: workspace:*
         version: link:../tools
 
   packages/core:
     dependencies:
       '@cornerstonejs/utils':
-        specifier: 5.0.0-beta.3
+        specifier: workspace:*
         version: link:../utils
       '@kitware/vtk.js':
         specifier: 34.15.1
@@ -439,7 +440,7 @@ importers:
         version: 1.9.2
     devDependencies:
       '@cornerstonejs/metadata':
-        specifier: 5.0.0-beta.3
+        specifier: workspace:*
         version: link:../metadata
 
   packages/dicomImageLoader:
@@ -473,10 +474,10 @@ importers:
         version: 9.0.1
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.0.0-beta.3
+        specifier: workspace:*
         version: link:../core
       '@cornerstonejs/metadata':
-        specifier: 5.0.0-beta.3
+        specifier: workspace:*
         version: link:../metadata
 
   packages/docs:
@@ -574,10 +575,10 @@ importers:
         version: 1.0.0-b.165
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.0.0-beta.3
+        specifier: workspace:*
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.0.0-beta.3
+        specifier: workspace:*
         version: link:../tools
 
   packages/metadata:
@@ -586,7 +587,7 @@ importers:
         specifier: 1.0.3
         version: 1.0.3
       '@cornerstonejs/utils':
-        specifier: 5.0.0-beta.3
+        specifier: workspace:*
         version: link:../utils
       dcmjs:
         specifier: 0.50.1
@@ -602,7 +603,7 @@ importers:
         version: 0.6.9
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.0.0-beta.3
+        specifier: workspace:*
         version: link:../core
 
   packages/polymorphic-segmentation:
@@ -615,10 +616,10 @@ importers:
         version: 34.15.1(@babel/preset-env@7.29.5(@babel/core@7.29.0))(autoprefixer@10.5.0(postcss@8.5.3))(webpack@5.105.0(@swc/core@1.15.33)(cssnano@6.1.2(postcss@8.5.3))(postcss@8.5.3)(webpack-cli@5.1.4))(wslink@2.5.0)
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.0.0-beta.3
+        specifier: workspace:*
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.0.0-beta.3
+        specifier: workspace:*
         version: link:../tools
 
   packages/tools:
@@ -652,7 +653,7 @@ importers:
         version: 4.4.2
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.0.0-beta.3
+        specifier: workspace:*
         version: link:../core
       canvas:
         specifier: 3.2.0
@@ -8771,10 +8772,6 @@ packages:
     resolution: {integrity: sha512-84cglkRILFxdtA8hAvLNdMrtBpPNBTrQ9/ulg0FA7xLMnD6mifv+enAIeRmvtv+WgdCE+LPGOfQmtJRrVaIVhQ==}
     engines: {node: '>=20'}
 
-  os-tmpdir@1.0.2:
-    resolution: {integrity: sha512-D2FR03Vir7FIu45XBY20mTb+/ZSWB00sjU9jdQXt83gDrI4Ztz5Fs7/yy74g2N5SVQY4xY1qDr4rNddwYRVX0g==}
-    engines: {node: '>=0.10.0'}
-
   oxc-parser@0.74.0:
     resolution: {integrity: sha512-2tDN/ttU8WE6oFh8EzKNam7KE7ZXSG5uXmvX85iNzxdJfMssDWcj3gpYzZi1E04XuE7m3v1dVWl/8BE886vPGw==}
     engines: {node: '>=20.0.0'}
@@ -10956,16 +10953,8 @@ packages:
     resolution: {integrity: sha512-WMi/OQ2axVTf/ykqCQgXiIct+mSQDFdH2fkwhPwgEwvJ1kSzZRiinb0zF2Xb8u4+OqPChmyI6MEu4EezNJz+FQ==}
     hasBin: true
 
-  tmp@0.0.33:
-    resolution: {integrity: sha512-jRCJlojKnZ3addtTOjdIqoRuPEKBvNXcGYqzO6zWZX8KfKEpnGY5jfggJQ3EjKuu8D4bJRr0y+cYJFmYbImXGw==}
-    engines: {node: '>=0.6.0'}
-
-  tmp@0.2.4:
-    resolution: {integrity: sha512-UdiSoX6ypifLmrfQ/XfiawN6hkjSBpCjhKxxZcWlUUmoXLaCKQU0bx4HF/tdDK2uzRuchf1txGvrWBzYREssoQ==}
-    engines: {node: '>=14.14'}
-
-  tmp@0.2.5:
-    resolution: {integrity: sha512-voyz6MApa1rQGUxT3E+BK7/ROe8itEx7vD8/HEvt4xwXucvQ5G5oeEiHkmHZJuBO21RpOf+YYm9MOivj709jow==}
+  tmp@0.2.6:
+    resolution: {integrity: sha512-5sJPdPjfI5Kx+qbrDesxkglRBxW//g7hCsqspEjwkewGvBMGIKMOTKzLt1hFVJzyadba3lDUN20O9qhvbQUSTA==}
     engines: {node: '>=14.14'}
 
   tmpl@1.0.5:
@@ -21098,7 +21087,7 @@ snapshots:
       rimraf: 3.0.2
       socket.io: 4.8.3
       source-map: 0.6.1
-      tmp: 0.2.5
+      tmp: 0.2.6
       ua-parser-js: 0.7.41
       yargs: 16.2.0
     transitivePeerDependencies:
@@ -22605,7 +22594,7 @@ snapshots:
       strip-bom: 3.0.0
       supports-color: 7.2.0
       tar-stream: 2.2.0
-      tmp: 0.2.4
+      tmp: 0.2.6
       tree-kill: 1.2.2
       tsconfig-paths: 4.2.0
       tslib: 2.8.1
@@ -22789,8 +22778,6 @@ snapshots:
       log-symbols: 7.0.1
       stdin-discarder: 0.3.2
       string-width: 8.2.1
-
-  os-tmpdir@1.0.2: {}
 
   oxc-parser@0.74.0:
     dependencies:
@@ -23062,7 +23049,7 @@ snapshots:
       rimraf: 2.7.1
       semver: 7.7.1
       slash: 2.0.0
-      tmp: 0.0.33
+      tmp: 0.2.6
       yaml: 2.9.0
 
   path-browserify@1.0.1: {}
@@ -25355,13 +25342,7 @@ snapshots:
     dependencies:
       tldts-core: 6.1.86
 
-  tmp@0.0.33:
-    dependencies:
-      os-tmpdir: 1.0.2
-
-  tmp@0.2.4: {}
-
-  tmp@0.2.5: {}
+  tmp@0.2.6: {}
 
   tmpl@1.0.5: {}
 
