@@ -1057,16 +1057,22 @@ class EllipticalROITool extends AnnotationTool {
         const isEmptyArea = worldWidth === 0 && worldHeight === 0;
 
         const handles = [pos1Index, pos2Index];
-        const { scale, areaUnit } = getCalibratedLengthUnitsAndScale(
-          image,
-          handles
-        );
+        const calibrate = getCalibratedLengthUnitsAndScale(image, handles);
+        const { areaUnit } = calibrate;
         const aspect = getCalibratedAspect(image);
-        const area = Math.abs(
-          Math.PI *
-            (worldWidth / scale / 2) *
-            (worldHeight / aspect / scale / 2)
+        const indexHandles = points.map((p) => imageData.worldToIndex(p));
+
+        const width = EllipticalROITool.calculateLengthInIndex(
+          calibrate,
+          indexHandles.slice(2, 4)
         );
+
+        const height = EllipticalROITool.calculateLengthInIndex(
+          calibrate,
+          indexHandles.slice(0, 2)
+        );
+
+        const area = Math.abs(Math.PI * (width / 2) * (height / aspect / 2));
 
         const pixelUnitsOptions = {
           isPreScaled: isViewportPreScaled(viewport, targetId),

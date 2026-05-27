@@ -193,6 +193,7 @@ import {
   setVolumesForViewports,
   addVolumesToViewports,
   addImageSlicesToViewports,
+  getProjectionScaleMatrix,
 } from './RenderingEngine/helpers';
 
 export * from './loaders/decimatedVolumeLoader';
@@ -332,6 +333,7 @@ export {
   DefaultWSIDataProvider,
   wsiProjection,
   renderingEngineExportsV2,
+  getProjectionScaleMatrix,
   //
   imageLoadPoolManager as requestPoolManager,
   imageRetrievalPoolManager,

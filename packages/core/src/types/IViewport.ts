@@ -332,6 +332,11 @@ export interface ViewPresentation {
    * The flip vertical value is true if the view is flipped vertically.
    */
   flipVertical?: boolean;
+
+  /**
+   * The aspect ratio is how the viewport image is stretched and the default is [1,1].
+   */
+  aspectRatio?: Point2;
 }
 
 /**
@@ -361,6 +366,7 @@ export interface ViewPresentationSelector {
   displayArea?: boolean;
   zoom?: boolean;
   pan?: boolean;
+  aspectRatio?: boolean;
   flipHorizontal?: boolean;
   flipVertical?: boolean;
   // Transfer function relative parameters

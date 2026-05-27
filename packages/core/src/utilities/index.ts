@@ -125,6 +125,7 @@ import {
   viewportSupportsVolumeId,
   viewportSupportsVolumeURI,
 } from './viewportCapabilities';
+import { getNormalizedAspectRatio } from './getNormalizedAspectRatio';
 export { updatePlaneRestriction } from './updatePlaneRestriction';
 const getViewportModality = (viewport: IViewport, volumeId?: string) =>
   _getViewportModality(viewport, volumeId, cache.getVolume);
@@ -247,4 +248,5 @@ export {
   viewportSupportsVolumeCompatibility,
   viewportSupportsVolumeId,
   viewportSupportsVolumeURI,
+  getNormalizedAspectRatio,
 };

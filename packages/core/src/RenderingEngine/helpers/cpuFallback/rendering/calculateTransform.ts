@@ -29,6 +29,7 @@ export default function (
   scale?: number
 ): CPUFallbackTransform {
   const transform = new Transform();
+  const aspectRatio = enabledElement.viewport.aspectRatio;
 
   if (!enabledElement.viewport.displayedArea) {
     return transform;
@@ -137,9 +138,14 @@ export default function (
     transform.rotate((angle * Math.PI) / 180);
   }
 
-  if (scale !== undefined) {
+  if (scale !== undefined && aspectRatio === undefined) {
     // Apply the font scale
     transform.scale(scale, scale);
+  }
+
+  if (aspectRatio !== undefined && scale === undefined) {
+    const [scaleX, scaleY] = aspectRatio;
+    transform.scale(scaleX, scaleY);
   }
 
   // Apply Flip if required
