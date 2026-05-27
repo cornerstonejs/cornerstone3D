@@ -8,7 +8,7 @@ import VideoResolvedView from '../src/RenderingEngine/GenericViewport/Video/Vide
 import ECGViewport from '../src/RenderingEngine/GenericViewport/ECG/ECGViewport';
 import ECGResolvedView from '../src/RenderingEngine/GenericViewport/ECG/ECGResolvedView';
 import WSIViewport from '../src/RenderingEngine/GenericViewport/WSI/WSIViewport';
-import VolumeViewport3DV2 from '../src/RenderingEngine/GenericViewport/Volume3D/viewport3D';
+import VolumeViewport3D from '../src/RenderingEngine/GenericViewport/Volume3D/viewport3D';
 
 function createAdapter(id, viewportTypes = ['testViewport']) {
   return {
@@ -171,12 +171,10 @@ describe('ViewportProjectionService', () => {
     expect(WSIViewport.prototype.setViewPresentation).toBeUndefined();
     expect(WSIViewport.prototype.resetCamera).toBeUndefined();
     expect(WSIViewport.prototype.resetViewState).toBeInstanceOf(Function);
-    expect(VolumeViewport3DV2.prototype.getViewPresentation).toBeUndefined();
-    expect(VolumeViewport3DV2.prototype.setViewPresentation).toBeUndefined();
-    expect(VolumeViewport3DV2.prototype.resetCamera).toBeUndefined();
-    expect(VolumeViewport3DV2.prototype.resetViewState).toBeInstanceOf(
-      Function
-    );
+    expect(VolumeViewport3D.prototype.getViewPresentation).toBeUndefined();
+    expect(VolumeViewport3D.prototype.setViewPresentation).toBeUndefined();
+    expect(VolumeViewport3D.prototype.resetCamera).toBeUndefined();
+    expect(VolumeViewport3D.prototype.resetViewState).toBeInstanceOf(Function);
   });
 
   it('exposes Video projections in media-pixel space', () => {

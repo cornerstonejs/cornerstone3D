@@ -227,7 +227,7 @@ function createActorEntries(geometry: IGeometry) {
   }
 
   throw new Error(
-    `[VolumeViewport3DV2] Geometry type ${geometry.type} is not supported in 3D Next rendering`
+    `[VolumeViewport3D] Geometry type ${geometry.type} is not supported in 3D Next rendering`
   );
 }
 

@@ -86,7 +86,7 @@ export interface Volume3DDataProvider extends DataProvider {
   ): Promise<LoadedData<Volume3DPayload>>;
 }
 
-export interface VolumeViewport3DV2Input extends ViewportInput {
+export interface VolumeViewport3DInput extends ViewportInput {
   dataProvider?: DataProvider;
   renderPathResolver?: RenderPathResolver;
 }

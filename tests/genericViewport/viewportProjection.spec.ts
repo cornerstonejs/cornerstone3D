@@ -210,7 +210,7 @@ test.describe('Viewport Projection Service example', () => {
       {
         renderingEngineId: PROJECTION_ENGINE_ID,
         viewportId: VOLUME_VIEWPORT_ID,
-        constructorName: 'VolumeViewport3DV2',
+        constructorName: 'VolumeViewport3D',
         type: 'volume3dNext',
         renderModesByDataId: {
           [VOLUME_DATA_ID]: 'vtkVolume3d',

@@ -13,7 +13,7 @@ import applyPreset from '../../../utilities/applyPreset';
 import triggerEvent from '../../../utilities/triggerEvent';
 import genericViewportDataSetMetadataProvider from '../../../utilities/genericViewportDataSetMetadataProvider';
 import { viewportProjection } from '../viewportProjection';
-import VolumeViewport3DV2 from './viewport3D';
+import VolumeViewport3D from './viewport3D';
 import type {
   Volume3DCamera,
   Volume3DDataPresentation,
@@ -21,7 +21,7 @@ import type {
   Volume3DVolumeRendering,
 } from './viewport3DTypes';
 
-class VolumeViewport3DLegacyAdapter extends VolumeViewport3DV2 {
+class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
   private readonly managedDataIds = new Set<string>();
   private readonly volumeDataIds = new Map<string, string>();
   private readonly legacyProperties = new Map<
@@ -414,7 +414,7 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3DV2 {
   }
 
   private getLegacyVolumeDataId(volumeId: string): string {
-    return `__volume3d_v2__:${this.id}:volume:${volumeId}`;
+    return `__volume3d__:${this.id}:volume:${volumeId}`;
   }
 
   private forgetData(dataId: string): void {

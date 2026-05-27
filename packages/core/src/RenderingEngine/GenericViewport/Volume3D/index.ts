@@ -33,5 +33,5 @@ export type {
   Volume3DProperties,
   Volume3DRequestedRenderMode,
   Volume3DSetDataOptions,
-  VolumeViewport3DV2Input,
+  VolumeViewport3DInput,
 } from './viewport3DTypes';

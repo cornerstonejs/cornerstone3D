@@ -5,7 +5,7 @@ import ContextPoolRenderingEngine from './ContextPoolRenderingEngine';
 import getRenderingEngine from './getRenderingEngine';
 import VolumeViewport from './VolumeViewport';
 import StackViewport from './StackViewport';
-import VolumeViewport3D from './VolumeViewport3D';
+import LegacyVolumeViewport3D from './VolumeViewport3D';
 import {
   defaultRenderPathResolver,
   DefaultRenderPathResolver,
@@ -31,7 +31,7 @@ import PlanarViewport, {
   DefaultPlanarDataProvider,
   planarProjection,
 } from './GenericViewport/Planar';
-import VolumeViewport3DV2, {
+import VolumeViewport3D, {
   createDefaultVolume3DRenderPaths,
   createVolume3DRenderPathResolver,
   DefaultVolume3DDataProvider,
@@ -123,7 +123,7 @@ const renderingEngineExportsV2 = {
   createPlanarRenderPathResolver,
   DefaultPlanarDataProvider,
   planarProjection,
-  VolumeViewport3DV2,
+  VolumeViewport3D,
   createDefaultVolume3DRenderPaths,
   createVolume3DRenderPathResolver,
   DefaultVolume3DDataProvider,
@@ -142,7 +142,7 @@ export {
   TiledRenderingEngine,
   ContextPoolRenderingEngine,
   VolumeViewport,
-  VolumeViewport3D,
+  LegacyVolumeViewport3D,
   StackViewport,
   GenericViewport,
   DefaultRenderPathResolver,
@@ -164,7 +164,7 @@ export {
   createPlanarRenderPathResolver,
   DefaultPlanarDataProvider,
   planarProjection,
-  VolumeViewport3DV2,
+  VolumeViewport3D,
   createDefaultVolume3DRenderPaths,
   createVolume3DRenderPathResolver,
   DefaultVolume3DDataProvider,

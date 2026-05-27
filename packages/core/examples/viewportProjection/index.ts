@@ -4,7 +4,7 @@ import type {
   ProjectionScale,
   ProjectionSnapshot,
   Types,
-  VolumeViewport3DV2,
+  VolumeViewport3D,
 } from '@cornerstonejs/core';
 import {
   CONSTANTS,
@@ -53,7 +53,7 @@ type PlanarProjectionPatch = {
   zoom?: number;
 };
 type Volume3DProjectionPatch = {
-  camera?: Parameters<VolumeViewport3DV2['setViewState']>[0];
+  camera?: Parameters<VolumeViewport3D['setViewState']>[0];
 };
 
 setTitleAndDescription(
@@ -248,10 +248,10 @@ function getPlanarViewport(): PlanarViewport {
 /**
  * Looks up the Volume 3D Next viewport used by this example.
  */
-function getVolumeViewport(): VolumeViewport3DV2 {
+function getVolumeViewport(): VolumeViewport3D {
   return getRenderingEngine(renderingEngineId).getViewport(
     volumeViewportId
-  ) as VolumeViewport3DV2;
+  ) as VolumeViewport3D;
 }
 
 /**
@@ -314,7 +314,7 @@ function applyVolumeProjectionPatch(): void {
   }
 
   const nextViewState = viewportProjection.withPresentation<
-    Parameters<VolumeViewport3DV2['setViewState']>[0],
+    Parameters<VolumeViewport3D['setViewState']>[0],
     Volume3DProjectionPatch
   >(viewport, {
     camera: {
@@ -343,7 +343,7 @@ function resetProjectionViewports(): void {
 /**
  * Applies a volume-rendering preset to the current Volume 3D actor.
  */
-function applyVolumeRenderingPreset(viewport: VolumeViewport3DV2): void {
+function applyVolumeRenderingPreset(viewport: VolumeViewport3D): void {
   const preset = CONSTANTS.VIEWPORT_PRESETS.find(
     ({ name }) => name === volumePresetName
   );

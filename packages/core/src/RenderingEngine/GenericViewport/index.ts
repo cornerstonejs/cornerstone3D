@@ -128,7 +128,7 @@ export type {
   PlanarProjectionRequest,
   PlanarProjectionSnapshot,
 } from './Planar';
-export { default as VolumeViewport3DV2 } from './Volume3D';
+export { default as VolumeViewport3D } from './Volume3D';
 export {
   createDefaultVolume3DRenderPaths,
   createVolume3DRenderPathResolver,
@@ -145,7 +145,7 @@ export type {
   Volume3DProjectionPresentation,
   Volume3DProjectionRequest,
   Volume3DProjectionSnapshot,
-  VolumeViewport3DV2Input,
+  VolumeViewport3DInput,
 } from './Volume3D';
 export { default as WSIViewport } from './WSI';
 export {

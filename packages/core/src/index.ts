@@ -12,7 +12,7 @@ import createVolumeMapper, {
 } from './RenderingEngine/helpers/createVolumeMapper';
 export * from './RenderingEngine/helpers/getOrCreateCanvas';
 import VolumeViewport from './RenderingEngine/VolumeViewport';
-import VolumeViewport3D from './RenderingEngine/VolumeViewport3D';
+import LegacyVolumeViewport3D from './RenderingEngine/VolumeViewport3D';
 import BaseVolumeViewport from './RenderingEngine/BaseVolumeViewport';
 import StackViewport from './RenderingEngine/StackViewport';
 import VideoViewport from './RenderingEngine/VideoViewport';
@@ -47,7 +47,7 @@ import PlanarViewport, {
   DefaultPlanarDataProvider,
   planarProjection,
 } from './RenderingEngine/GenericViewport/Planar';
-import VolumeViewport3DV2, {
+import VolumeViewport3D, {
   createDefaultVolume3DRenderPaths,
   createVolume3DRenderPathResolver,
   DefaultVolume3DDataProvider,
@@ -217,7 +217,7 @@ const renderingEngineExportsV2 = {
   createPlanarRenderPathResolver,
   DefaultPlanarDataProvider,
   planarProjection,
-  VolumeViewport3DV2,
+  VolumeViewport3D,
   createDefaultVolume3DRenderPaths,
   createVolume3DRenderPathResolver,
   DefaultVolume3DDataProvider,
@@ -259,6 +259,7 @@ export {
   // Rendering Engine
   BaseVolumeViewport,
   VolumeViewport,
+  LegacyVolumeViewport3D,
   VolumeViewport3D,
   Viewport,
   StackViewport,
@@ -322,7 +323,6 @@ export {
   createPlanarRenderPathResolver,
   DefaultPlanarDataProvider,
   planarProjection,
-  VolumeViewport3DV2,
   createDefaultVolume3DRenderPaths,
   createVolume3DRenderPathResolver,
   DefaultVolume3DDataProvider,

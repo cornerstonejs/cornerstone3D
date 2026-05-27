@@ -40,10 +40,10 @@ import type {
   Volume3DRendering,
   Volume3DSetDataOptions,
   Volume3DViewportRenderContext,
-  VolumeViewport3DV2Input,
+  VolumeViewport3DInput,
 } from './viewport3DTypes';
 
-class VolumeViewport3DV2 extends GenericViewport<
+class VolumeViewport3D extends GenericViewport<
   Volume3DCamera,
   Volume3DDataPresentation,
   Volume3DViewportRenderContext
@@ -72,7 +72,7 @@ class VolumeViewport3DV2 extends GenericViewport<
     super.setRendered();
   }
 
-  constructor(args: VolumeViewport3DV2Input) {
+  constructor(args: VolumeViewport3DInput) {
     super(args);
     this.renderingEngineId = args.renderingEngineId;
     this.canvas = args.canvas;
@@ -91,7 +91,7 @@ class VolumeViewport3DV2 extends GenericViewport<
 
     if (!renderer) {
       throw new Error(
-        '[VolumeViewport3DV2] No renderer available. Ensure WebGL is supported and the rendering engine has been properly initialized.'
+        '[VolumeViewport3D] No renderer available. Ensure WebGL is supported and the rendering engine has been properly initialized.'
       );
     }
 
@@ -527,7 +527,7 @@ class VolumeViewport3DV2 extends GenericViewport<
 
     if (!snapshot) {
       throw new Error(
-        '[VolumeViewport3DV2] Unable to resolve projection snapshot'
+        '[VolumeViewport3D] Unable to resolve projection snapshot'
       );
     }
 
@@ -644,7 +644,7 @@ class VolumeViewport3DV2 extends GenericViewport<
   ): Volume3DRendering {
     if (!isVolume3DRendering(binding.rendering)) {
       throw new Error(
-        '[VolumeViewport3DV2] Binding render mode is not a supported 3D rendering'
+        '[VolumeViewport3D] Binding render mode is not a supported 3D rendering'
       );
     }
 
@@ -676,7 +676,7 @@ class VolumeViewport3DV2 extends GenericViewport<
   }
 }
 
-export default VolumeViewport3DV2;
+export default VolumeViewport3D;
 
 function isVolume3DData(data: LoadedData): data is LoadedData<Volume3DPayload> {
   if (typeof data !== 'object' || data === null) {

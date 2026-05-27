@@ -23,7 +23,7 @@ export class DefaultVolume3DDataProvider implements Volume3DDataProvider {
   ): Promise<LoadedData<Volume3DVolumePayload | Volume3DGeometryPayload>> {
     if (!options) {
       throw new Error(
-        `[VolumeViewport3DV2] No load options were provided for ${dataId}`
+        `[VolumeViewport3D] No load options were provided for ${dataId}`
       );
     }
 
@@ -32,7 +32,7 @@ export class DefaultVolume3DDataProvider implements Volume3DDataProvider {
     if (options.renderMode === 'vtkVolume3d') {
       if (!dataSet?.imageIds?.length) {
         throw new Error(
-          `[VolumeViewport3DV2] No registered volume dataset for ${dataId}`
+          `[VolumeViewport3D] No registered volume dataset for ${dataId}`
         );
       }
 
