@@ -215,6 +215,10 @@ export default class BaseAdapter3D {
     return tidArguments;
   }
 
+  /**
+   * Retrieve cached stats using either the referenced imageId
+   * or the volumeId, depending on which key was used to store them.
+   */
   public static getCachedStats(cachedStats, metadata) {
     const { referencedImageId, volumeId } = metadata;
     return (
