@@ -427,22 +427,20 @@ async function run() {
   const rightViewport = getViewport(rightViewportId);
 
   await Promise.all([
-    leftViewport.setDataList([
-      {
-        dataId: leftDataId,
-        options: {},
-      },
-    ]),
-    rightViewport.setDataList([
-      {
-        dataId: rightDataId,
-        options: {},
-      },
-    ]),
+    leftViewport.setDisplaySets({
+      displaySetId: leftDataId,
+      options: {},
+    }),
+    rightViewport.setDisplaySets({
+      displaySetId: rightDataId,
+      options: {},
+    }),
   ]);
 
-  leftViewport.setDataPresentation(leftDataId, { voiRange: ctVoiRange });
-  rightViewport.setDataPresentation(rightDataId, { voiRange: ctVoiRange });
+  leftViewport.setDisplaySetPresentation(leftDataId, { voiRange: ctVoiRange });
+  rightViewport.setDisplaySetPresentation(rightDataId, {
+    voiRange: ctVoiRange,
+  });
   const initialRightViewState = viewportProjection.withPresentation<
     Parameters<PlanarViewport['setViewState']>[0],
     ProjectionSyncPresentation

@@ -20,7 +20,9 @@ export async function expectGenericViewportRuntime(
             getViewport?: (viewportId: string) => {
               constructor?: { name?: string };
               type?: string;
-              getDataRenderMode?: (dataId: string) => string | undefined;
+              getDisplaySetRenderMode?: (
+                displaySetId: string
+              ) => string | undefined;
             } | null;
           } | null;
         };
@@ -41,7 +43,7 @@ export async function expectGenericViewportRuntime(
       const renderModesByDataId = Object.fromEntries(
         Object.keys(item.renderModesByDataId).map((dataId) => [
           dataId,
-          viewport.getDataRenderMode?.(dataId),
+          viewport.getDisplaySetRenderMode?.(dataId),
         ])
       );
 

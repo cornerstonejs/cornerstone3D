@@ -160,7 +160,7 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
     }
 
     if (Object.keys(presentationPatch).length) {
-      this.setDataPresentation(targetDataId, presentationPatch);
+      this.setDisplaySetPresentation(targetDataId, presentationPatch);
     }
 
     if (properties.preset !== undefined) {
@@ -195,7 +195,7 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
     const defaults = this.defaultLegacyProperties.get(targetDataId) || {};
     this.legacyProperties.set(targetDataId, { ...defaults });
 
-    this.setDataPresentation(targetDataId, {
+    this.setDisplaySetPresentation(targetDataId, {
       voiRange: defaults.voiRange,
       invert: defaults.invert,
       interpolationType: defaults.interpolationType,
@@ -264,9 +264,9 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
         this.removeBindingsExcept(new Set(dataIds));
       }
 
-      await this.setDataList(
-        dataIds.map((dataId) => ({
-          dataId,
+      await this.setDisplaySets(
+        ...dataIds.map((dataId) => ({
+          displaySetId: dataId,
           options: { renderMode: 'vtkVolume3d' as const },
         }))
       );
@@ -275,7 +275,7 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
         const dataId = dataIds[index];
 
         if (volumeInput.visibility !== undefined) {
-          this.setDataPresentation(dataId, {
+          this.setDisplaySetPresentation(dataId, {
             visible: volumeInput.visibility,
           });
         }

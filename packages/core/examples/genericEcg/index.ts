@@ -122,7 +122,7 @@ async function run() {
     kind: 'ecg',
     sourceDataId: ecgImageId,
   });
-  await viewport.setDataList([{ dataId: ecgDataId }]);
+  await viewport.setDisplaySets({ displaySetId: ecgDataId });
 
   const { width: ecgWidth, height: ecgHeight } =
     viewport.getContentDimensions();
@@ -174,7 +174,7 @@ async function run() {
           return;
         }
 
-        const current = viewport.getDataPresentation(ecgDataId) || {};
+        const current = viewport.getDisplaySetPresentation(ecgDataId) || {};
         const nextVisibleChannels = new Set(
           current.visibleChannels ||
             waveform.channels.map((_channel, channelIndex) => channelIndex)
@@ -186,7 +186,7 @@ async function run() {
           nextVisibleChannels.delete(index);
         }
 
-        viewport.setDataPresentation(ecgDataId, {
+        viewport.setDisplaySetPresentation(ecgDataId, {
           visibleChannels: Array.from(nextVisibleChannels).sort(
             (a, b) => a - b
           ),

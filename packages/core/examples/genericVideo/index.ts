@@ -30,7 +30,7 @@ const videoDataId = 'video-next:primary';
 
 setTitleAndDescription(
   'Video GenericViewport API',
-  'Demonstrates the clean GenericViewport video API using dataset registration and setDataList. Right-drag to pan, scroll to zoom.'
+  'Demonstrates the clean GenericViewport video API using dataset registration and setDisplaySets. Right-drag to pan, scroll to zoom.'
 );
 
 const content = document.getElementById('content');
@@ -178,7 +178,7 @@ async function run() {
     sourceDataId: videoId,
   });
 
-  await viewport.setDataList([{ dataId: videoDataId }]);
+  await viewport.setDisplaySets({ displaySetId: videoDataId });
 }
 
 run();

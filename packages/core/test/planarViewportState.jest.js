@@ -628,17 +628,19 @@ describe('PlanarViewport view state', () => {
       imageId
     )}`;
 
-    first.viewport.setData = jest.fn(() => Promise.resolve());
-    second.viewport.setData = jest.fn(() => Promise.resolve());
+    first.viewport.setDisplaySets = jest.fn(() => Promise.resolve());
+    second.viewport.setDisplaySets = jest.fn(() => Promise.resolve());
 
     await first.viewport.renderImageObject(firstImage);
     await second.viewport.renderImageObject(secondImage);
 
-    expect(first.viewport.setData).toHaveBeenCalledWith(firstDataId, {
-      orientation: expect.anything(),
+    expect(first.viewport.setDisplaySets).toHaveBeenCalledWith({
+      displaySetId: firstDataId,
+      options: { orientation: expect.anything() },
     });
-    expect(second.viewport.setData).toHaveBeenCalledWith(secondDataId, {
-      orientation: expect.anything(),
+    expect(second.viewport.setDisplaySets).toHaveBeenCalledWith({
+      displaySetId: secondDataId,
+      options: { orientation: expect.anything() },
     });
     expect(
       genericViewportDataSetMetadataProvider.get(
@@ -671,7 +673,7 @@ describe('PlanarViewport view state', () => {
       secondImage.imageId
     )}`;
 
-    viewport.setData = jest.fn(() => Promise.resolve());
+    viewport.setDisplaySets = jest.fn(() => Promise.resolve());
 
     await viewport.renderImageObject(firstImage);
     await viewport.renderImageObject(secondImage);

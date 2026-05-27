@@ -192,7 +192,7 @@ async function run() {
     imageIds,
     options: { webClient: client },
   });
-  await viewport.setDataList([{ dataId }]);
+  await viewport.setDisplaySets({ displaySetId: dataId });
 
   toolGroup.addViewport(viewportId, renderingEngineId);
 }

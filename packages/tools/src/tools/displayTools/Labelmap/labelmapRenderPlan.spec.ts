@@ -253,7 +253,7 @@ describe('labelmapRenderPlan', () => {
     const viewport = {
       id: 'viewport-id',
       type: 'planarNext',
-      addData: jest.fn(),
+      addDisplaySet: jest.fn(),
       getActors: jest.fn(() => [
         {
           representationUID: 'segmentation-id-Labelmap-stack-layer-id',
@@ -271,7 +271,7 @@ describe('labelmapRenderPlan', () => {
       getViewState: jest.fn(() => ({ orientation: 'axial' })),
       getVolumeId: jest.fn(() => 'source-volume-id'),
       render: jest.fn(),
-      setDataPresentation: jest.fn(),
+      setDisplaySetPresentation: jest.fn(),
       setViewReference: jest.fn(),
     };
     const segmentation = {
@@ -316,14 +316,14 @@ describe('labelmapRenderPlan', () => {
     });
 
     expect(getOrCreateLabelmapVolumeMock).toHaveBeenCalledWith(stackLayer);
-    expect(viewport.addData).toHaveBeenCalledWith(
+    expect(viewport.addDisplaySet).toHaveBeenCalledWith(
       'segmentation-id-Labelmap-stack-layer-id',
       {
         orientation: 'axial',
         role: 'overlay',
       }
     );
-    expect(viewport.setDataPresentation).toHaveBeenCalledWith(
+    expect(viewport.setDisplaySetPresentation).toHaveBeenCalledWith(
       'segmentation-id-Labelmap-stack-layer-id',
       {
         blendMode: 1,

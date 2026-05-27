@@ -256,15 +256,13 @@ async function run() {
         viewportId
       ) as PlanarViewport;
 
-      await viewport.setDataList([
-        {
-          dataId,
-          options: {
-            orientation,
-          },
+      await viewport.setDisplaySets({
+        displaySetId: dataId,
+        options: {
+          orientation,
         },
-      ]);
-      viewport.setDataPresentation(dataId, { voiRange: ctVoiRange });
+      });
+      viewport.setDisplaySetPresentation(dataId, { voiRange: ctVoiRange });
     })
   );
 

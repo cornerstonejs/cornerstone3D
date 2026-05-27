@@ -203,7 +203,7 @@ addButtonToToolbar({
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     viewport.resetViewState();
-    viewport.setDataPresentation(stackDataId, {
+    viewport.setDisplaySetPresentation(stackDataId, {
       colormap: undefined,
       invert: false,
     });
@@ -275,12 +275,10 @@ async function run() {
     initialImageIdIndex: 0,
   });
 
-  await viewport.setDataList([
-    {
-      dataId: stackDataId,
-      options: {},
-    },
-  ]);
+  await viewport.setDisplaySets({
+    displaySetId: stackDataId,
+    options: {},
+  });
 
   viewport.render();
   addDisplayAreaGuides();

@@ -9,7 +9,7 @@ import ECGViewport from './ECGViewport';
 
 class ECGViewportLegacyAdapter extends ECGViewport {
   async setEcg(imageId: string): Promise<void> {
-    await this.setDataList([{ dataId: imageId }]);
+    await this.setDisplaySets({ displaySetId: imageId });
   }
 
   setChannelVisibility(index: number, visible: boolean): void {
@@ -20,7 +20,7 @@ class ECGViewportLegacyAdapter extends ECGViewport {
       return;
     }
 
-    const current = this.getDataPresentation(dataId) || {};
+    const current = this.getDisplaySetPresentation(dataId) || {};
     const nextVisibleChannels = new Set(
       current.visibleChannels || waveform.channels.map((_channel, i) => i)
     );
@@ -31,7 +31,7 @@ class ECGViewportLegacyAdapter extends ECGViewport {
       nextVisibleChannels.delete(index);
     }
 
-    this.setDataPresentation(dataId, {
+    this.setDisplaySetPresentation(dataId, {
       visibleChannels: Array.from(nextVisibleChannels).sort((a, b) => a - b),
     });
   }
@@ -43,7 +43,7 @@ class ECGViewportLegacyAdapter extends ECGViewport {
       return;
     }
 
-    this.setDataPresentation(dataId, {
+    this.setDisplaySetPresentation(dataId, {
       visibleChannels: props.visibleChannels,
     });
   }
@@ -53,7 +53,7 @@ class ECGViewportLegacyAdapter extends ECGViewport {
 
     return {
       visibleChannels: dataId
-        ? this.getDataPresentation(dataId)?.visibleChannels
+        ? this.getDisplaySetPresentation(dataId)?.visibleChannels
         : undefined,
     };
   }
@@ -66,7 +66,7 @@ class ECGViewportLegacyAdapter extends ECGViewport {
       return;
     }
 
-    this.setDataPresentation(dataId, {
+    this.setDisplaySetPresentation(dataId, {
       visibleChannels: waveform.channels.map((_channel, index) => index),
     });
   }

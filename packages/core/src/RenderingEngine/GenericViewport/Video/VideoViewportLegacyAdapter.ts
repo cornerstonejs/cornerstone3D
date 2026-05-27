@@ -28,7 +28,7 @@ class VideoViewportLegacyAdapter extends VideoViewport {
   }
 
   async setVideo(imageId: string, frameNumber?: number): Promise<this> {
-    await this.setDataList([{ dataId: imageId }]);
+    await this.setDisplaySets({ displaySetId: imageId });
 
     if (typeof frameNumber === 'number') {
       this.setFrameNumber(frameNumber);
@@ -67,7 +67,7 @@ class VideoViewportLegacyAdapter extends VideoViewport {
     }
 
     if (Object.keys(dataPresentation).length) {
-      this.setDataPresentation(dataId, dataPresentation);
+      this.setDisplaySetPresentation(dataId, dataPresentation);
     }
 
     if (Object.keys(viewPresentation).length) {
@@ -117,7 +117,7 @@ class VideoViewportLegacyAdapter extends VideoViewport {
   getProperties(): VideoViewportProperties {
     const dataId = this.getFirstBinding()?.data.id;
     const dataPresentation = dataId
-      ? this.getDataPresentation(dataId)
+      ? this.getDisplaySetPresentation(dataId)
       : undefined;
     const viewPresentation = this.getViewPresentation();
 
@@ -138,7 +138,7 @@ class VideoViewportLegacyAdapter extends VideoViewport {
       return;
     }
 
-    this.setDataPresentation(dataId, {
+    this.setDisplaySetPresentation(dataId, {
       invert: false,
       loop: true,
       muted: true,
@@ -158,7 +158,7 @@ class VideoViewportLegacyAdapter extends VideoViewport {
       return;
     }
 
-    this.setDataPresentation(dataId, { voiRange });
+    this.setDisplaySetPresentation(dataId, { voiRange });
   }
 
   setAverageWhite(averageWhite: [number, number, number]): void {
@@ -168,7 +168,7 @@ class VideoViewportLegacyAdapter extends VideoViewport {
       return;
     }
 
-    this.setDataPresentation(dataId, { averageWhite });
+    this.setDisplaySetPresentation(dataId, { averageWhite });
   }
 }
 

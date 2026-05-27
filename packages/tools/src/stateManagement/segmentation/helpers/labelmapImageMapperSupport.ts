@@ -22,11 +22,13 @@ export type VolumeViewportLabelmapImageMapperState = {
 type ViewportLabelmapImageMapperCompatibilityViewport = Types.IViewport & {
   getCamera?: () => Pick<Types.ICamera, 'viewPlaneNormal' | 'viewUp'>;
   getCurrentImageIdIndex?: () => number;
-  getDataRenderMode?: (
-    dataId: string
+  getDisplaySetRenderMode?: (
+    displaySetId: string
   ) => Types.ActorRenderMode | string | undefined;
-  getDataRole?: (dataId: string) => 'source' | 'overlay' | undefined;
-  getDataPresentation?: (dataId: string) => {
+  getDisplaySetRole?: (
+    displaySetId: string
+  ) => 'source' | 'overlay' | undefined;
+  getDisplaySetPresentation?: (dataId: string) => {
     blendMode?: Enums.BlendModes;
     slabThickness?: number;
   };
@@ -91,7 +93,7 @@ function getPlanarPrimaryRenderMode(
   const primaryDataId = getPlanarPrimaryDataId(viewport);
 
   if (primaryDataId) {
-    const renderMode = viewport.getDataRenderMode?.(primaryDataId);
+    const renderMode = viewport.getDisplaySetRenderMode?.(primaryDataId);
 
     if (renderMode) {
       return renderMode;
@@ -139,7 +141,7 @@ function getPlanarPrimaryDataId(
   return (
     Object.entries(renderModes).find(
       ([dataId, renderMode]) =>
-        viewport.getDataRole?.(dataId) === 'source' &&
+        viewport.getDisplaySetRole?.(dataId) === 'source' &&
         renderMode === ActorRenderMode.VTK_VOLUME_SLICE
     )?.[0] ??
     Object.entries(renderModes).find(
@@ -194,14 +196,14 @@ function isPoint3Like(value: unknown): value is ArrayLike<number> {
 function getPlanarVolumeDataPresentation(
   viewport: ViewportLabelmapImageMapperCompatibilityViewport
 ) {
-  if (!viewport.getDataPresentation) {
+  if (!viewport.getDisplaySetPresentation) {
     return;
   }
 
   const primaryDataId = getPlanarPrimaryDataId(viewport);
 
   return primaryDataId
-    ? viewport.getDataPresentation(primaryDataId)
+    ? viewport.getDisplaySetPresentation(primaryDataId)
     : undefined;
 }
 

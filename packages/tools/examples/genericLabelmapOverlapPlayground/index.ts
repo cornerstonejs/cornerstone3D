@@ -385,12 +385,10 @@ async function run() {
   const stackViewport = renderingEngine.getViewport(
     viewportIds.STACK
   ) as PlanarViewport;
-  await stackViewport.setDataList([
-    {
-      dataId: stackDataId,
-      options: {},
-    },
-  ]);
+  await stackViewport.setDisplaySets({
+    displaySetId: stackDataId,
+    options: {},
+  });
 
   const volumeViewportInputs = [
     {
@@ -413,14 +411,12 @@ async function run() {
         viewportId
       ) as PlanarViewport;
 
-      await viewport.setDataList([
-        {
-          dataId: volumeDataId,
-          options: {
-            orientation,
-          },
+      await viewport.setDisplaySets({
+        displaySetId: volumeDataId,
+        options: {
+          orientation,
         },
-      ]);
+      });
     })
   );
 

@@ -478,7 +478,9 @@ type DebugBindingsViewport = {
     renderModes?: unknown;
   };
   getActors?: () => DebugActorEntry[];
-  getDataRole?: (dataId: string) => RenderModePanelBinding['role'] | undefined;
+  getDisplaySetRole?: (
+    displaySetId: string
+  ) => RenderModePanelBinding['role'] | undefined;
   getDefaultActor?: () => DebugActorEntry | undefined;
   getSourceDataId?: () => string | undefined;
 };
@@ -488,7 +490,7 @@ function resolveBindingRole(
   dataId: string,
   sourceDataId?: string
 ): RenderModePanelBinding['role'] {
-  const role = viewport.getDataRole?.(dataId);
+  const role = viewport.getDisplaySetRole?.(dataId);
 
   if (role === 'source' || role === 'overlay') {
     return role;

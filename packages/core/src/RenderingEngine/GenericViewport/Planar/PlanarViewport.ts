@@ -313,39 +313,55 @@ class PlanarViewport extends GenericViewport<
   // ====================================================================
 
   /**
-   * Adds one or more logical planar datasets to the viewport.
+   * Replaces all mounted planar display sets with the provided ones. The first
+   * entry is mounted as the source binding; subsequent entries default to the
+   * overlay role unless they specify one explicitly.
    *
-   * @param entries - List of datasets to add, each with its own options for
+   * @param entries - Display sets to mount, each with its own options for
    * orientation and binding role resolution.
    */
-  async setDataList(
-    entries: Array<{ dataId: string; options?: PlanarSetDataOptions }>
+  async setDisplaySets(
+    ...entries: Array<{ displaySetId: string; options?: PlanarSetDataOptions }>
   ): Promise<void> {
-    for (const [index, { dataId, options = {} }] of entries.entries()) {
+    const requestId = ++this.setDataRequestId;
+    const isStale = () => requestId !== this.setDataRequestId;
+
+    this.clearResolvedViewCache();
+    this.removeAllData();
+
+    for (const [index, { displaySetId, options = {} }] of entries.entries()) {
+      if (isStale()) {
+        return;
+      }
+
       const role = options.role ?? (index === 0 ? 'source' : 'overlay');
-      await this.addData(dataId, {
-        ...options,
-        role,
-      });
+      await this.addDisplaySetInternal(
+        displaySetId,
+        {
+          ...options,
+          role,
+        },
+        isStale
+      );
     }
   }
 
   /**
-   * Adds a single logical planar dataset.
+   * Adds a single logical planar display set.
    *
-   * @param dataId - Logical dataset id to add.
+   * @param displaySetId - Logical display set id to add.
    * @param options - Semantic orientation and binding options. The render path
    * is inferred from the registered dataset and viewport configuration.
    */
-  async addData(
-    dataId: string,
+  async addDisplaySet(
+    displaySetId: string,
     options: PlanarSetDataOptions = {}
   ): Promise<void> {
-    await this.addDataInternal(dataId, options);
+    await this.addDisplaySetInternal(displaySetId, options);
     this.clearResolvedViewCache();
   }
 
-  private async addDataInternal(
+  private async addDisplaySetInternal(
     dataId: string,
     options: PlanarSetDataOptions = {},
     shouldIgnore?: () => boolean
@@ -385,28 +401,6 @@ class PlanarViewport extends GenericViewport<
     this.setDefaultDataPresentation(dataId, {
       visible: true,
     });
-  }
-
-  /**
-   * Replaces all mounted planar datasets with a single logical planar dataset.
-   */
-  async setData(
-    dataId: string,
-    options: PlanarSetDataOptions = {}
-  ): Promise<void> {
-    const requestId = ++this.setDataRequestId;
-    const isStale = () => requestId !== this.setDataRequestId;
-
-    this.clearResolvedViewCache();
-    this.removeAllData();
-    await this.addDataInternal(
-      dataId,
-      {
-        ...options,
-        role: 'source',
-      },
-      isStale
-    );
   }
 
   /**
@@ -464,8 +458,11 @@ class PlanarViewport extends GenericViewport<
       kind: 'planar',
     });
 
-    return this.setData(dataId, {
-      orientation: this.resolveRequestedOrientation(),
+    return this.setDisplaySets({
+      displaySetId: dataId,
+      options: {
+        orientation: this.resolveRequestedOrientation(),
+      },
     });
   }
 
@@ -519,7 +516,7 @@ class PlanarViewport extends GenericViewport<
           stackInput.useWorldCoordinateImageData === true,
       });
 
-      await this.addData(dataId, {
+      await this.addDisplaySet(dataId, {
         role: 'overlay',
       });
 
@@ -648,12 +645,23 @@ class PlanarViewport extends GenericViewport<
     this.modified(previousCamera);
   }
 
-  setDataPresentation(
-    dataId: string,
+  setDisplaySetPresentation(props: Partial<PlanarDataPresentation>): void;
+  setDisplaySetPresentation(
+    displaySetId: string,
     props: Partial<PlanarDataPresentation>
+  ): void;
+  setDisplaySetPresentation(
+    displaySetIdOrProps: string | Partial<PlanarDataPresentation>,
+    maybeProps?: Partial<PlanarDataPresentation>
   ): void {
     this.clearResolvedViewCache();
-    super.setDataPresentation(dataId, props);
+
+    if (typeof displaySetIdOrProps === 'string') {
+      super.setDisplaySetPresentation(displaySetIdOrProps, maybeProps ?? {});
+      return;
+    }
+
+    super.setDisplaySetPresentation(displaySetIdOrProps);
   }
 
   protected override setDataPresentationState(
@@ -1327,8 +1335,7 @@ class PlanarViewport extends GenericViewport<
           orientation: this.resolveRequestedOrientation(),
         });
       },
-      setData: (dataId, options) => this.setData(dataId, options),
-      setDataList: (entries) => this.setDataList(entries),
+      setDisplaySets: (...entries) => this.setDisplaySets(...entries),
       setImageIdIndex: (imageIdIndex) => this.setImageIdIndex(imageIdIndex),
       getCurrentImageId: () => this.getCurrentImageId(),
       render: () => this.render(),
@@ -1344,10 +1351,11 @@ class PlanarViewport extends GenericViewport<
       setDataPresentationState: (dataId, presentation) => {
         this.setDataPresentationState(dataId, presentation);
       },
-      setDataPresentation: (dataId, presentation) => {
-        this.setDataPresentation(dataId, presentation);
+      setDisplaySetPresentation: (displaySetId, presentation) => {
+        this.setDisplaySetPresentation(displaySetId, presentation);
       },
-      getDataPresentation: (dataId) => this.getDataPresentation(dataId),
+      getDisplaySetPresentation: (dataId) =>
+        this.getDisplaySetPresentation(dataId),
       getCameraOrientation: () => this.viewState.orientation,
       getCurrentPlanarRendering: () => this.getCurrentPlanarRendering(),
       getActiveDataId: () => this.mountedData.getActiveDataId(),

@@ -69,9 +69,10 @@ Every mounted dataset has a binding role:
 - `source` is the active dataset that defines the view.
 - `overlay` is drawn in the same view, aligned to the source.
 
-`setDataList()` makes the first entry the source by default and later entries
-overlays. `addData()` can explicitly add an overlay later. This replaces a lot
-of the old "stack vs volume vs actor overlay" branching with one binding model.
+`setDisplaySets()` makes the first entry the source by default and later
+entries overlays. `addDisplaySet()` can explicitly add an overlay later. This
+replaces a lot of the old "stack vs volume vs actor overlay" branching with
+one binding model.
 
 ## Render Paths
 

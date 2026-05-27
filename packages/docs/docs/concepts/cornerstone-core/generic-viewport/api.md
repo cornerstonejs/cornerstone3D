@@ -6,9 +6,9 @@ summary: Practical Generic Viewport API examples for data, overlays, presentatio
 
 # API
 
-The Generic Viewport API is centered on logical data ids. Register the data once,
-mount it into a viewport, then update view state and data presentation
-independently.
+The Generic Viewport API is centered on logical display set ids. Register the
+display set once, mount it into a viewport, then update view state and data
+presentation independently.
 
 ## Create A Planar Generic Viewport
 
@@ -48,36 +48,35 @@ runtime rendering configuration and thresholds.
 ## Add Stack Data
 
 Register stack-like data with the metadata provider, then mount it with
-`setDataList()`.
+`setDisplaySets()`.
 
 ```ts
-const stackDataId = 'ct-stack';
+const stackDisplaySetId = 'ct-stack';
 
-utilities.genericViewportDataSetMetadataProvider.add(stackDataId, {
+utilities.genericViewportDataSetMetadataProvider.add(stackDisplaySetId, {
   kind: 'planar',
   imageIds,
   initialImageIdIndex: 0,
 });
 
-await viewport.setDataList([
-  {
-    dataId: stackDataId,
-  },
-]);
+await viewport.setDisplaySets({
+  displaySetId: stackDisplaySetId,
+});
 
-viewport.setDataPresentation(stackDataId, {
+viewport.setDisplaySetPresentation(stackDisplaySetId, {
   voiRange: { lower: -1500, upper: 2500 },
 });
 
 viewport.render();
 ```
 
-The first entry in `setDataList()` becomes the source binding unless a role is
-provided explicitly.
+`setDisplaySets()` is variadic; the first entry becomes the source binding
+unless a role is provided explicitly. Each call replaces all currently mounted
+display sets.
 
-`setDataList()`, `setData()`, and `addData()` do not return runtime rendering
-ids. Use the `dataId` you provided for later presentation updates, removal, and
-view-reference operations.
+`setDisplaySets()` and `addDisplaySet()` do not return runtime rendering ids.
+Use the `displaySetId` you provided for later presentation updates, removal,
+and view-reference operations.
 
 ## Add Volume Slice Data
 
@@ -94,14 +93,12 @@ utilities.genericViewportDataSetMetadataProvider.add(ctDataId, {
   volumeId: ctVolumeId,
 });
 
-await viewport.setDataList([
-  {
-    dataId: ctDataId,
-    options: {
-      orientation: Enums.OrientationAxis.SAGITTAL,
-    },
+await viewport.setDisplaySets({
+  displaySetId: ctDataId,
+  options: {
+    orientation: Enums.OrientationAxis.SAGITTAL,
   },
-]);
+});
 ```
 
 The same calls work for CPU or GPU volume slicing. Configure CPU/GPU preference
@@ -123,12 +120,12 @@ utilities.genericViewportDataSetMetadataProvider.add(ptDataId, {
   volumeId: ptVolumeId,
 });
 
-await viewport.addData(ptDataId, {
+await viewport.addDisplaySet(ptDataId, {
   orientation: Enums.OrientationAxis.SAGITTAL,
   role: 'overlay',
 });
 
-viewport.setDataPresentation(ptDataId, {
+viewport.setDisplaySetPresentation(ptDataId, {
   colormap: {
     name: 'hsv',
     opacity: 0.4,
@@ -138,31 +135,31 @@ viewport.setDataPresentation(ptDataId, {
 viewport.render();
 ```
 
-`setDataList()` can also mount source and overlays together:
+`setDisplaySets()` can also mount source and overlays together:
 
 ```ts
-await viewport.setDataList([
+await viewport.setDisplaySets(
   {
-    dataId: ctDataId,
+    displaySetId: ctDataId,
     options: {
       orientation: Enums.OrientationAxis.SAGITTAL,
       role: 'source',
     },
   },
   {
-    dataId: ptDataId,
+    displaySetId: ptDataId,
     options: {
       orientation: Enums.OrientationAxis.SAGITTAL,
       role: 'overlay',
     },
-  },
-]);
+  }
+);
 ```
 
 Use `reference` only when the registered data is semantically derived from
 another object. Source stack and volume data usually do not need it because
-their `dataId`, `imageIds`, and optional `volumeId` are already the public
-identity.
+their `displaySetId`, `imageIds`, and optional `volumeId` are already the
+public identity.
 
 ```ts
 utilities.genericViewportDataSetMetadataProvider.add(labelmapDataId, {
@@ -238,23 +235,31 @@ the viewport resolves the requested index into a volume slice point internally.
 await viewport.setImageIdIndex(viewport.getCurrentImageIdIndex() + 1);
 ```
 
-## Update Data Presentation
+## Update Display Set Presentation
 
-Data presentation is scoped to one mounted data id.
+Display set presentation is scoped to one mounted display set id. Call
+`setDisplaySetPresentation` with just `props` to apply the update to the
+current source binding, or with an explicit `displaySetId` to target a
+specific binding.
 
 ```ts
-viewport.setDataPresentation(ctDataId, {
+viewport.setDisplaySetPresentation(ctDataId, {
   voiRange: { lower: -1500, upper: 2500 },
 });
 
-viewport.setDataPresentation(ptDataId, {
+viewport.setDisplaySetPresentation(ptDataId, {
   visible: false,
+});
+
+// Apply to the current source binding when the id is omitted.
+viewport.setDisplaySetPresentation({
+  voiRange: { lower: -1000, upper: 1000 },
 });
 
 viewport.render();
 ```
 
-This is the preferred place for VOI, opacity, colormap, blend mode,
+This is the preferred place for VOI, opacity, colormap, invert, blend mode,
 interpolation, and visibility.
 
 ## Labelmap Segmentations
@@ -305,12 +310,12 @@ The segmentation display tool registers each labelmap layer as overlay data in
 the viewport:
 
 ```ts
-await viewport.addData(labelmapDataId, {
+await viewport.addDisplaySet(labelmapDataId, {
   orientation: viewport.getViewState().orientation,
   role: 'overlay',
 });
 
-viewport.setDataPresentation(labelmapDataId, {
+viewport.setDisplaySetPresentation(labelmapDataId, {
   blendMode: Enums.BlendModes.COMPOSITE,
   visible: true,
 });

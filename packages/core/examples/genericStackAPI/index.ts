@@ -100,7 +100,7 @@ addToolbarButton({
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-    viewport.setDataPresentation(stackDataId, {
+    viewport.setDisplaySetPresentation(stackDataId, {
       voiRange: { upper: 2500, lower: -1500 },
     });
     viewport.render();
@@ -200,9 +200,10 @@ addToolbarButton({
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
-    const { invert = false } = viewport.getDataPresentation(stackDataId) || {};
+    const { invert = false } =
+      viewport.getDisplaySetPresentation(stackDataId) || {};
 
-    viewport.setDataPresentation(stackDataId, {
+    viewport.setDisplaySetPresentation(stackDataId, {
       invert: !invert,
     });
     viewport.render();
@@ -228,7 +229,7 @@ addToolbarButton({
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-    viewport.setDataPresentation(stackDataId, {
+    viewport.setDisplaySetPresentation(stackDataId, {
       colormap: { name: 'hsv' },
     });
     viewport.render();
@@ -242,7 +243,7 @@ addToolbarButton({
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     viewport.resetViewState();
-    viewport.setDataPresentation(stackDataId, {
+    viewport.setDisplaySetPresentation(stackDataId, {
       colormap: undefined,
       invert: false,
       voiRange: ctVoiRange,
@@ -282,13 +283,11 @@ async function run() {
     initialImageIdIndex: 0,
   });
 
-  await viewport.setDataList([
-    {
-      dataId: stackDataId,
-      options: {},
-    },
-  ]);
-  viewport.setDataPresentation(stackDataId, { voiRange: ctVoiRange });
+  await viewport.setDisplaySets({
+    displaySetId: stackDataId,
+    options: {},
+  });
+  viewport.setDisplaySetPresentation(stackDataId, { voiRange: ctVoiRange });
   viewport.render();
 
   const delayMs = parseStackReadyDelayMs();

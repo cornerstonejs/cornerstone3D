@@ -143,7 +143,7 @@ async function run() {
   ) as Types.IVideoViewport;
 
   // Set the video on the viewport
-  await viewport.setDataList([{ dataId: videoId }]);
+  await viewport.setDisplaySets({ displaySetId: videoId });
 
   // Set the VOI of the stack
   // viewport.setProperties({ voiRange: ctVoiRange });

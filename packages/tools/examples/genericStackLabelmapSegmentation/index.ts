@@ -479,18 +479,14 @@ async function run() {
     initialImageIdIndex: 0,
   });
 
-  await viewport.setDataList([
-    {
-      dataId: ctDataId,
-      options: {},
-    },
-  ]);
-  await viewport2.setDataList([
-    {
-      dataId: mgDataId,
-      options: {},
-    },
-  ]);
+  await viewport.setDisplaySets({
+    displaySetId: ctDataId,
+    options: {},
+  });
+  await viewport2.setDisplaySets({
+    displaySetId: mgDataId,
+    options: {},
+  });
 
   cornerstoneTools.utilities.stackContextPrefetch.enable(element1);
   cornerstoneTools.utilities.stackContextPrefetch.enable(element2);

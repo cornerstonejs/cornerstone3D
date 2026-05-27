@@ -356,7 +356,7 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
           this.findBindingDataIdByActorEntryUID(actorEntryUID);
 
         if (bindingDataId) {
-          if (this.getDataRole(bindingDataId) === 'overlay') {
+          if (this.getDisplaySetRole(bindingDataId) === 'overlay') {
             genericViewportDataSetMetadataProvider.remove(bindingDataId);
           }
           this.removeData(bindingDataId);

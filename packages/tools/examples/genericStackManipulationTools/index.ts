@@ -210,12 +210,10 @@ async function run() {
     imageIds,
   });
 
-  await viewport.setDataList([
-    {
-      dataId,
-      options: {},
-    },
-  ]);
+  await viewport.setDisplaySets({
+    displaySetId: dataId,
+    options: {},
+  });
 
   cornerstoneTools.utilities.stackPrefetch.enable(viewport.element);
   viewport.render();

@@ -132,15 +132,22 @@ class VolumeViewport3D extends GenericViewport<
   }
 
   /**
-   * Adds one or more 3D datasets.
+   * Replaces all mounted 3D display sets with the provided ones. The first
+   * entry is mounted as the source binding; subsequent entries default to the
+   * overlay role unless they specify one explicitly.
    *
-   * @param entries - List of datasets to add, each with its own render-mode options.
+   * @param entries - Display sets to mount, each with its own render-mode options.
    */
-  async setDataList(
-    entries: Array<{ dataId: string; options?: Volume3DSetDataOptions }>
+  async setDisplaySets(
+    ...entries: Array<{
+      displaySetId: string;
+      options?: Volume3DSetDataOptions;
+    }>
   ): Promise<void> {
-    for (const [index, { dataId, options = {} }] of entries.entries()) {
-      await this.addData(dataId, {
+    this.removeAllData();
+
+    for (const [index, { displaySetId, options = {} }] of entries.entries()) {
+      await this.addDisplaySet(displaySetId, {
         ...options,
         role: options.role ?? (index === 0 ? 'source' : 'overlay'),
       });
@@ -148,45 +155,34 @@ class VolumeViewport3D extends GenericViewport<
   }
 
   /**
-   * Adds a single 3D dataset and selects the effective 3D render mode.
+   * Adds a single 3D display set and selects the effective 3D render mode.
    *
-   * @param dataId - Logical dataset id to add.
+   * @param displaySetId - Logical display set id to add.
    * @param options - Requested 3D render-mode options.
    */
-  async addData(
-    dataId: string,
+  async addDisplaySet(
+    displaySetId: string,
     options: Volume3DSetDataOptions | DataAddOptions = {}
   ): Promise<void> {
     const volumeOptions = options as Volume3DSetDataOptions;
-    const renderMode = this.resolveRenderMode(dataId, volumeOptions.renderMode);
-    await super.addData(dataId, {
+    const renderMode = this.resolveRenderMode(
+      displaySetId,
+      volumeOptions.renderMode
+    );
+    await super.addDisplaySet(displaySetId, {
       renderMode,
       role: volumeOptions.role,
     });
 
     if (renderMode === 'vtkVolume3d' && volumeOptions.role === 'source') {
-      this.primaryDataId = dataId;
+      this.primaryDataId = displaySetId;
     }
 
-    this.setDefaultDataPresentation(dataId, {
+    this.setDefaultDataPresentation(displaySetId, {
       visible: true,
       opacity: 1,
     });
     this.viewState = this.getViewState();
-  }
-
-  /**
-   * Replaces all mounted 3D datasets with a single logical 3D dataset.
-   */
-  async setData(
-    dataId: string,
-    options: Volume3DSetDataOptions | DataAddOptions = {}
-  ): Promise<void> {
-    this.removeAllData();
-    await this.addData(dataId, {
-      ...options,
-      role: 'source',
-    });
   }
 
   /**

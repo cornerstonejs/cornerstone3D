@@ -34,9 +34,8 @@ export type PlanarLegacyCompatibilityHost = {
   getViewportId(): string;
   getRequestedOrientation(): PlanarViewState['orientation'];
   prepareVolumeCompatibilityCamera(): void;
-  setData(dataId: string, options: PlanarSetDataOptions): Promise<void>;
-  setDataList(
-    entries: Array<{ dataId: string; options?: PlanarSetDataOptions }>
+  setDisplaySets(
+    ...entries: Array<{ displaySetId: string; options?: PlanarSetDataOptions }>
   ): Promise<void>;
   setImageIdIndex(imageIdIndex: number): Promise<string>;
   getCurrentImageId(): string | undefined;
@@ -47,11 +46,11 @@ export type PlanarLegacyCompatibilityHost = {
     dataId: string,
     presentation: PlanarDataPresentation
   ): void;
-  setDataPresentation(
-    dataId: string,
+  setDisplaySetPresentation(
+    displaySetId: string,
     presentation: Partial<PlanarDataPresentation>
   ): void;
-  getDataPresentation(dataId: string): PlanarDataPresentation | undefined;
+  getDisplaySetPresentation(dataId: string): PlanarDataPresentation | undefined;
   getCameraOrientation(): PlanarViewState['orientation'];
   getCurrentPlanarRendering(): PlanarRendering | undefined;
   getActiveDataId(): string | undefined;
@@ -135,8 +134,11 @@ class PlanarLegacyCompatibilityController {
       });
       registered = true;
 
-      await this.host.setData(dataId, {
-        orientation: this.host.getRequestedOrientation(),
+      await this.host.setDisplaySets({
+        displaySetId: dataId,
+        options: {
+          orientation: this.host.getRequestedOrientation(),
+        },
       });
 
       if (requestId !== this.stackSetRequestId) {
@@ -300,7 +302,7 @@ class PlanarLegacyCompatibilityController {
   getProperties(volumeId?: string): PlanarLegacyViewportProperties {
     const targetDataId = this.resolveTargetDataId(volumeId);
     const dataPresentation = targetDataId
-      ? this.host.getDataPresentation(targetDataId)
+      ? this.host.getDisplaySetPresentation(targetDataId)
       : undefined;
     const legacyProperties = targetDataId
       ? this.properties.get(targetDataId)
@@ -348,7 +350,7 @@ class PlanarLegacyCompatibilityController {
     }
 
     const storedBlendMode =
-      this.host.getDataPresentation(targetDataId)?.blendMode;
+      this.host.getDisplaySetPresentation(targetDataId)?.blendMode;
 
     if (storedBlendMode !== undefined) {
       return storedBlendMode;
@@ -391,7 +393,7 @@ class PlanarLegacyCompatibilityController {
       );
 
       this.properties.set(dataId, nextProperties);
-      this.host.setDataPresentation(dataId, { blendMode });
+      this.host.setDisplaySetPresentation(dataId, { blendMode });
     });
 
     if (immediate) {
@@ -505,16 +507,18 @@ class PlanarLegacyCompatibilityController {
       };
       const existingSourceDataId = this.host.getActiveDataId();
 
-      await this.host.setDataList(
-        dataIds.map((dataId, index) => {
+      await this.host.setDisplaySets(
+        ...dataIds.map((dataId, index) => {
           const shouldMountAsSource =
             index === 0 && (replaceExisting || !existingSourceDataId);
 
           return {
-            dataId,
+            displaySetId: dataId,
             options: {
               ...sharedOptions,
-              role: shouldMountAsSource ? 'source' : 'overlay',
+              role: shouldMountAsSource
+                ? ('source' as const)
+                : ('overlay' as const),
             },
           };
         })
@@ -524,7 +528,7 @@ class PlanarLegacyCompatibilityController {
         const dataId = dataIds[index];
 
         if (volumeInput.visibility !== undefined) {
-          this.host.setDataPresentation(dataId, {
+          this.host.setDisplaySetPresentation(dataId, {
             visible: volumeInput.visibility,
           });
         }
@@ -536,13 +540,13 @@ class PlanarLegacyCompatibilityController {
           );
 
           this.properties.set(dataId, nextProperties);
-          this.host.setDataPresentation(dataId, {
+          this.host.setDisplaySetPresentation(dataId, {
             blendMode: volumeInput.blendMode,
           });
         }
 
         if (volumeInput.slabThickness !== undefined) {
-          this.host.setDataPresentation(dataId, {
+          this.host.setDisplaySetPresentation(dataId, {
             slabThickness: volumeInput.slabThickness,
           });
         }

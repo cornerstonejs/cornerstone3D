@@ -59,9 +59,9 @@ function updatePetColormap(patch: {
 }) {
   const viewport = getViewport();
   const currentColormap =
-    viewport.getDataPresentation(ptDataId)?.colormap || {};
+    viewport.getDisplaySetPresentation(ptDataId)?.colormap || {};
 
-  viewport.setDataPresentation(ptDataId, {
+  viewport.setDisplaySetPresentation(ptDataId, {
     colormap: {
       ...currentColormap,
       ...patch,
@@ -127,7 +127,7 @@ addButtonToToolbar({
   onClick: () => {
     const viewport = getViewport();
 
-    viewport.setDataPresentation(ctDataId, {
+    viewport.setDisplaySetPresentation(ctDataId, {
       voiRange: { lower: -1500, upper: 2500 },
     });
     viewport.render();
@@ -148,9 +148,10 @@ addButtonToToolbar({
   title: 'toggle PET',
   onClick: () => {
     const viewport = getViewport();
-    const visible = viewport.getDataPresentation(ptDataId)?.visible ?? true;
+    const visible =
+      viewport.getDisplaySetPresentation(ptDataId)?.visible ?? true;
 
-    viewport.setDataPresentation(ptDataId, {
+    viewport.setDisplaySetPresentation(ptDataId, {
       visible: !visible,
     });
     viewport.render();
@@ -304,25 +305,25 @@ async function run() {
     volumeId: ptVolumeId,
   });
 
-  await viewport.setDataList([
+  await viewport.setDisplaySets(
     {
-      dataId: ctDataId,
+      displaySetId: ctDataId,
       options: {
         orientation: defaultOrientation,
       },
     },
     {
-      dataId: ptDataId,
+      displaySetId: ptDataId,
       options: {
         orientation: defaultOrientation,
       },
-    },
-  ]);
+    }
+  );
 
-  viewport.setDataPresentation(ctDataId, {
+  viewport.setDisplaySetPresentation(ctDataId, {
     voiRange: ctVoiRange,
   });
-  viewport.setDataPresentation(ptDataId, {
+  viewport.setDisplaySetPresentation(ptDataId, {
     colormap: {
       name: 'hsv',
       opacity: PET_DEFAULT_OPACITY,

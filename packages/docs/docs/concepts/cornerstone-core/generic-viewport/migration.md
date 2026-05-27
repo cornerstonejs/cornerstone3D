@@ -65,21 +65,19 @@ stackViewport.render();
 Now:
 
 ```ts
-const dataId = 'ct-stack';
+const displaySetId = 'ct-stack';
 
-utilities.genericViewportDataSetMetadataProvider.add(dataId, {
+utilities.genericViewportDataSetMetadataProvider.add(displaySetId, {
   kind: 'planar',
   imageIds,
   initialImageIdIndex: 0,
 });
 
-await viewport.setDataList([
-  {
-    dataId,
-  },
-]);
+await viewport.setDisplaySets({
+  displaySetId,
+});
 
-viewport.setDataPresentation(dataId, {
+viewport.setDisplaySetPresentation(displaySetId, {
   voiRange: { lower: -1500, upper: 2500 },
 });
 viewport.render();
@@ -103,25 +101,23 @@ await volumeViewport.setVolumes([
 Now:
 
 ```ts
-const dataId = 'ct-volume';
+const displaySetId = 'ct-volume';
 
-utilities.genericViewportDataSetMetadataProvider.add(dataId, {
+utilities.genericViewportDataSetMetadataProvider.add(displaySetId, {
   kind: 'planar',
   imageIds,
   initialImageIdIndex: Math.floor(imageIds.length / 2),
   volumeId,
 });
 
-await viewport.setDataList([
-  {
-    dataId,
-    options: {
-      orientation: Enums.OrientationAxis.AXIAL,
-    },
+await viewport.setDisplaySets({
+  displaySetId,
+  options: {
+    orientation: Enums.OrientationAxis.AXIAL,
   },
-]);
+});
 
-viewport.setDataPresentation(dataId, {
+viewport.setDisplaySetPresentation(displaySetId, {
   voiRange,
   colormap,
 });
@@ -151,24 +147,24 @@ volumeViewport.setProperties(
 Now, source and overlay are explicit data bindings:
 
 ```ts
-await viewport.setDataList([
+await viewport.setDisplaySets(
   {
-    dataId: ctDataId,
+    displaySetId: ctDataId,
     options: {
       orientation: Enums.OrientationAxis.SAGITTAL,
       role: 'source',
     },
   },
   {
-    dataId: ptDataId,
+    displaySetId: ptDataId,
     options: {
       orientation: Enums.OrientationAxis.SAGITTAL,
       role: 'overlay',
     },
-  },
-]);
+  }
+);
 
-viewport.setDataPresentation(ptDataId, {
+viewport.setDisplaySetPresentation(ptDataId, {
   colormap: {
     name: 'hsv',
     opacity: 0.4,
@@ -193,18 +189,18 @@ utilities.genericViewportDataSetMetadataProvider.add(overlayDataId, {
   initialImageIdIndex: 0,
 });
 
-await viewport.addData(overlayDataId, {
+await viewport.addDisplaySet(overlayDataId, {
   role: 'overlay',
 });
 
-viewport.setDataPresentation(overlayDataId, {
+viewport.setDisplaySetPresentation(overlayDataId, {
   opacity: 0.5,
   visible: true,
 });
 ```
 
 The compatibility `addImages()` path still exists for image overlays, but new
-code should use data ids and bindings directly.
+code should use display set ids and bindings directly.
 
 ## VOI, Colormap, Opacity, And Visibility
 
@@ -221,7 +217,7 @@ viewport.setProperties({
 Now:
 
 ```ts
-viewport.setDataPresentation(dataId, {
+viewport.setDisplaySetPresentation(displaySetId, {
   voiRange,
   colormap,
   invert: true,
@@ -229,8 +225,8 @@ viewport.setDataPresentation(dataId, {
 });
 ```
 
-This makes presentation explicitly per data binding, which matters when the
-viewport has both source and overlay data.
+This makes presentation explicitly per display set binding, which matters when
+the viewport has both source and overlay display sets.
 
 ## Pan, Zoom, Rotation, And Flips
 
@@ -405,10 +401,11 @@ binding, instead of requiring a separate volume-rendering overlay path.
 
 1. Move viewport creation to `ViewportType.PLANAR_NEXT` for planar 2D stack and
    volume-slice workflows.
-2. Register each source or overlay as a logical data id.
-3. Replace `setStack()` and `setVolumes()` with `setDataList()` or `addData()`.
+2. Register each source or overlay as a logical display set id.
+3. Replace `setStack()` and `setVolumes()` with `setDisplaySets()` or
+   `addDisplaySet()`.
 4. Move VOI, colormap, opacity, blend mode, and visibility to
-   `setDataPresentation(dataId, ...)`.
+   `setDisplaySetPresentation(displaySetId, ...)`.
 5. Replace clean-code camera patches with view state, viewport projection, pan,
    zoom, and view reference APIs.
 6. Enable `useSliceRendering` for labelmap segmentation overlays that should

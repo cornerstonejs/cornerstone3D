@@ -78,7 +78,9 @@ function createLegacyStackHarness({ deferSetData = false } = {}) {
     getViewportId: () => viewportId,
     getRequestedOrientation: () => OrientationAxis.ACQUISITION,
     prepareVolumeCompatibilityCamera: jest.fn(),
-    setData: jest.fn((requestedDataId) => {
+    setDisplaySets: jest.fn((...entries) => {
+      const requestedDataId = entries[0]?.displaySetId;
+
       if (hasBinding) {
         hasBinding = false;
         controller.removeData(requestedDataId);
@@ -96,7 +98,6 @@ function createLegacyStackHarness({ deferSetData = false } = {}) {
         });
       });
     }),
-    setDataList: jest.fn(),
     setImageIdIndex: jest.fn(async (imageIdIndex) => {
       return currentImageIds[imageIdIndex];
     }),
@@ -110,8 +111,8 @@ function createLegacyStackHarness({ deferSetData = false } = {}) {
     }),
     setCameraOrientation: jest.fn(),
     setDataPresentationState: jest.fn(),
-    setDataPresentation: jest.fn(),
-    getDataPresentation: jest.fn(),
+    setDisplaySetPresentation: jest.fn(),
+    getDisplaySetPresentation: jest.fn(),
     getCameraOrientation: jest.fn(),
     getCurrentPlanarRendering: jest.fn(),
     getActiveDataId: () => (hasBinding ? dataId : undefined),
@@ -147,7 +148,7 @@ describe('Planar legacy stack compatibility', () => {
     await controller.setStack(['image:old']);
     await expect(controller.setStack(['image:new'])).resolves.toBe('image:new');
 
-    expect(host.setData).toHaveBeenCalledTimes(2);
+    expect(host.setDisplaySets).toHaveBeenCalledTimes(2);
     expect(getCurrentImageIds()).toEqual(['image:new']);
     expect(
       genericViewportDataSetMetadataProvider.get(
@@ -167,7 +168,7 @@ describe('Planar legacy stack compatibility', () => {
     const firstSetStack = controller.setStack(['image:first']);
     const secondSetStack = controller.setStack(['image:second']);
 
-    expect(host.setData).toHaveBeenCalledTimes(2);
+    expect(host.setDisplaySets).toHaveBeenCalledTimes(2);
     pendingSetData.pop()();
     await expect(secondSetStack).resolves.toBe('image:second');
     expect(getCurrentImageIds()).toEqual(['image:second']);

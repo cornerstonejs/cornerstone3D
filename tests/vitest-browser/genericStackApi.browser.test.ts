@@ -224,16 +224,14 @@ async function renderNextStackViewport() {
     initialImageIdIndex: 0,
   });
 
-  await viewport.setDataList([
-    {
-      dataId: stackDataId,
-      options: {
-        renderMode: 'vtkImage',
-      },
+  await viewport.setDisplaySets({
+    displaySetId: stackDataId,
+    options: {
+      renderMode: 'vtkImage',
     },
-  ]);
+  });
 
-  viewport.setDataPresentation(stackDataId, {
+  viewport.setDisplaySetPresentation(stackDataId, {
     interpolationType: InterpolationType.NEAREST,
   });
 

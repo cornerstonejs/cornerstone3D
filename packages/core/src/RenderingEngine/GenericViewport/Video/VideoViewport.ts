@@ -83,23 +83,28 @@ class VideoViewport extends GenericViewport<
   // ====================================================================
 
   /**
-   * Adds one or more video datasets using the HTML video render path.
+   * Replaces all mounted video display sets with the provided ones using the
+   * HTML video render path. The first entry is mounted as the source binding.
    *
-   * @param entries - List of datasets to add.
+   * @param entries - Video display sets to mount.
    */
-  async setDataList(entries: Array<{ dataId: string }>): Promise<void> {
-    for (const [index, { dataId }] of entries.entries()) {
-      await this.addData(dataId, {
+  async setDisplaySets(
+    ...entries: Array<{ displaySetId: string }>
+  ): Promise<void> {
+    this.removeAllData();
+
+    for (const [index, { displaySetId }] of entries.entries()) {
+      await this.addDisplaySet(displaySetId, {
         renderMode: 'video2d',
         role: index === 0 ? 'source' : 'overlay',
       });
-      const binding = this.getBinding(dataId);
+      const binding = this.getBinding(displaySetId);
 
       if (!binding) {
         continue;
       }
 
-      this.setDefaultDataPresentation(dataId, {
+      this.setDefaultDataPresentation(displaySetId, {
         visible: true,
         opacity: 1,
         playbackRate: 1,
@@ -112,7 +117,7 @@ class VideoViewport extends GenericViewport<
 
       if (!videoData) {
         throw new Error(
-          `[VideoViewport] Loaded data for ${dataId} is not a valid video stream`
+          `[VideoViewport] Loaded data for ${displaySetId} is not a valid video stream`
         );
       }
 
@@ -287,7 +292,7 @@ class VideoViewport extends GenericViewport<
         )?.frameOfReferenceUID || videoData.renderedUrl,
       intrinsicHeight: videoElement.videoHeight || this.element.clientHeight,
       intrinsicWidth: videoElement.videoWidth || this.element.clientWidth,
-      objectFit: this.getDataPresentation(videoData.id)?.objectFit,
+      objectFit: this.getDisplaySetPresentation(videoData.id)?.objectFit,
       payload: videoData,
     });
   }
@@ -389,7 +394,7 @@ class VideoViewport extends GenericViewport<
       return;
     }
 
-    this.setDataPresentation(dataId, {
+    this.setDisplaySetPresentation(dataId, {
       playbackRate,
     });
   }

@@ -26,14 +26,14 @@ type PlanarNextVolumeViewport = Types.IViewport & {
   };
   getActors?: () => Types.ActorEntry[];
   render?: () => void;
-  addData: (
-    dataId: string,
+  addDisplaySet: (
+    displaySetId: string,
     options: {
       orientation?: unknown;
       role?: 'source' | 'overlay';
     }
   ) => Promise<void>;
-  setDataPresentation: (
+  setDisplaySetPresentation: (
     dataId: string,
     props: {
       blendMode?: Enums.BlendModes;
@@ -54,8 +54,8 @@ function isPlanarNextVolumeViewport(
     typeof genericViewport.getVolumeId === 'function' &&
     typeof genericViewport.getViewReference === 'function' &&
     typeof genericViewport.getViewState === 'function' &&
-    typeof genericViewport.addData === 'function' &&
-    typeof genericViewport.setDataPresentation === 'function' &&
+    typeof genericViewport.addDisplaySet === 'function' &&
+    typeof genericViewport.setDisplaySetPresentation === 'function' &&
     typeof genericViewport.setViewReference === 'function'
   );
 }
@@ -125,11 +125,11 @@ async function addLabelmapToPlanarGenericViewport(args: {
       volumeId: layer.volumeId,
     });
 
-    await viewport.addData(dataId, {
+    await viewport.addDisplaySet(dataId, {
       orientation: requestedOrientation,
       role: 'overlay',
     });
-    viewport.setDataPresentation(dataId, {
+    viewport.setDisplaySetPresentation(dataId, {
       blendMode,
       visible: visibility,
     });

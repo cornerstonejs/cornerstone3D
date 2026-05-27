@@ -99,31 +99,49 @@ export default class WSIViewport extends GenericViewport<
     };
   }
 
-  async setDataList(entries: Array<{ dataId: string }>): Promise<void> {
-    for (const [index, { dataId }] of entries.entries()) {
-      await this.addData(dataId, {
+  async setDisplaySets(
+    ...entries: Array<{ displaySetId: string }>
+  ): Promise<void> {
+    this.removeAllData();
+
+    for (const [index, { displaySetId }] of entries.entries()) {
+      await this.addDisplaySet(displaySetId, {
         renderMode: 'wsi2d',
         role: index === 0 ? 'source' : 'overlay',
       });
 
-      this.setDefaultDataPresentation(dataId, {
+      this.setDefaultDataPresentation(displaySetId, {
         visible: true,
         opacity: 1,
       });
-      this.activeDataId = dataId;
+      this.activeDataId = displaySetId;
     }
 
     this.syncCameraFromView();
     this.applyVOIToRendering();
   }
 
-  setDataPresentation(
-    dataId: string,
+  setDisplaySetPresentation(props: Partial<WSIDataPresentation>): void;
+  setDisplaySetPresentation(
+    displaySetId: string,
     props: Partial<WSIDataPresentation>
+  ): void;
+  setDisplaySetPresentation(
+    displaySetIdOrProps: string | Partial<WSIDataPresentation>,
+    maybeProps?: Partial<WSIDataPresentation>
   ): void {
-    super.setDataPresentation(dataId, props);
+    if (typeof displaySetIdOrProps === 'string') {
+      super.setDisplaySetPresentation(displaySetIdOrProps, maybeProps ?? {});
 
-    if (dataId === this.getActiveDataId()) {
+      if (displaySetIdOrProps === this.getActiveDataId()) {
+        this.applyVOIToRendering();
+      }
+      return;
+    }
+
+    super.setDisplaySetPresentation(displaySetIdOrProps);
+
+    if (this.getActiveDataId()) {
       this.applyVOIToRendering();
     }
   }
@@ -454,7 +472,7 @@ export default class WSIViewport extends GenericViewport<
   private applyVOIToRendering(): void {
     const activeDataId = this.getActiveDataId();
     const dataPresentation = activeDataId
-      ? this.getDataPresentation(activeDataId)
+      ? this.getDisplaySetPresentation(activeDataId)
       : undefined;
     const filter = buildWSIColorTransform(
       dataPresentation?.voiRange || {

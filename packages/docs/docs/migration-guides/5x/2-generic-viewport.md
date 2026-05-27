@@ -58,10 +58,10 @@ These adapters are a temporary migration layer, not the long-term Next API
 surface, and their legacy helpers should be expected to be removed in a later
 breaking release.
 Keep those API families separate for a given viewport instance: use the legacy
-methods on compatibility viewports, or use Generic methods such as `setData()`,
-`setDataList()`, and `addData()` on direct Generic viewports. Mixing legacy data
-mounting with direct Generic data mounting on the same viewport can leave legacy
-presentation defaults and Generic data state out of sync.
+methods on compatibility viewports, or use Generic methods such as
+`setDisplaySets()` and `addDisplaySet()` on direct Generic viewports. Mixing
+legacy data mounting with direct Generic data mounting on the same viewport
+can leave legacy presentation defaults and Generic data state out of sync.
 
 Code that branches on `viewport.type` should also account for the runtime type.
 Direct planar Generic viewports report `ViewportType.PLANAR_NEXT`; remapped stack
@@ -166,37 +166,37 @@ capability guards when you need to know what operations are supported.
 
 ## Generic `setDataIds()` Is Replaced
 
-The generic base `Viewport.setDataIds()` API has been replaced by
-`setDataList()`.
+The generic base `Viewport.setDataIds()` API has been replaced by the variadic
+`setDisplaySets()`.
 
-Direct Generic viewport code should register logical data ids and then mount them:
+Direct Generic viewport code should register logical display set ids and then
+mount them:
 
 ```ts
 import { Enums, utilities, type PlanarViewport } from '@cornerstonejs/core';
 
 const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
-const dataId = 'ct-stack';
+const displaySetId = 'ct-stack';
 
-utilities.genericViewportDataSetMetadataProvider.add(dataId, {
+utilities.genericViewportDataSetMetadataProvider.add(displaySetId, {
   kind: 'planar',
   imageIds,
   initialImageIdIndex: 0,
 });
 
-await viewport.setDataList([
-  {
-    dataId,
-    options: {
-      orientation: Enums.OrientationAxis.AXIAL,
-    },
+await viewport.setDisplaySets({
+  displaySetId,
+  options: {
+    orientation: Enums.OrientationAxis.AXIAL,
   },
-]);
+});
 ```
 
-For a volume-backed planar slice, include the `volumeId` in the registered data:
+For a volume-backed planar slice, include the `volumeId` in the registered
+display set:
 
 ```ts
-utilities.genericViewportDataSetMetadataProvider.add(dataId, {
+utilities.genericViewportDataSetMetadataProvider.add(displaySetId, {
   kind: 'planar',
   imageIds,
   initialImageIdIndex: Math.floor(imageIds.length / 2),
@@ -212,10 +212,10 @@ await viewport.setStack(imageIds);
 await viewport.setVolumes([{ volumeId }]);
 ```
 
-## Direct Generic Viewports Use Data APIs
+## Direct Generic Viewports Use Display Set APIs
 
-These direct Generic viewport types should use `setDataList()`, `setData()`, or
-`addData()`:
+These direct Generic viewport types should use `setDisplaySets()` or
+`addDisplaySet()`:
 
 - `ViewportType.PLANAR_NEXT`
 - `ViewportType.VIDEO_NEXT`
@@ -224,7 +224,7 @@ These direct Generic viewport types should use `setDataList()`, `setData()`, or
 - `ViewportType.VOLUME_3D_NEXT`
 
 Do not assume direct Generic viewports expose the legacy data-loading method names.
-For example, direct `PLANAR_NEXT` code should use `setDataList()` instead of
+For example, direct `PLANAR_NEXT` code should use `setDisplaySets()` instead of
 `setStack()` or `setVolumes()`.
 
 ## Presentation Is Split By Scope
@@ -250,7 +250,7 @@ viewport.setProperties({
 Direct Next API:
 
 ```ts
-viewport.setDataPresentation(dataId, {
+viewport.setDisplaySetPresentation(displaySetId, {
   voiRange,
   colormap,
   invert: true,
@@ -258,9 +258,9 @@ viewport.setDataPresentation(dataId, {
 ```
 
 Legacy compatibility adapters keep `setProperties()` and map those values to
-data presentation internally for migration only. Because the adapters are
-temporary, code that can move directly to Next should use
-`setDataPresentation()` instead.
+display set presentation internally for migration only. Because the adapters
+are temporary, code that can move directly to Next should use
+`setDisplaySetPresentation()` instead.
 
 ## Camera Compatibility
 
@@ -430,8 +430,8 @@ Then migrate in this order:
 3. If enabling `rendering.useGenericViewport`, audit `viewport.type` checks for
    legacy types that now run as Next runtime types.
 4. For direct Generic viewports, replace generic `setDataIds()` and legacy data
-   loading calls with logical data ids plus `setDataList()`.
+   loading calls with logical display set ids plus `setDisplaySets()`.
 5. Move clean Next presentation code from `setProperties()` to
-   `setDataPresentation(dataId, ...)`.
+   `setDisplaySetPresentation(displaySetId, ...)`.
 6. Replace durable camera-state storage with `ViewState`,
    `viewportProjection`, or view reference APIs.

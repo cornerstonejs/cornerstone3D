@@ -435,26 +435,22 @@ async function run() {
   });
 
   await Promise.all([
-    stackViewport.setDataList([
-      {
-        dataId: stackDataId,
-        options: {},
+    stackViewport.setDisplaySets({
+      displaySetId: stackDataId,
+      options: {},
+    }),
+    volumeViewport.setDisplaySets({
+      displaySetId: volumeDataId,
+      options: {
+        orientation: OrientationAxis.SAGITTAL,
       },
-    ]),
-    volumeViewport.setDataList([
-      {
-        dataId: volumeDataId,
-        options: {
-          orientation: OrientationAxis.SAGITTAL,
-        },
-      },
-    ]),
+    }),
   ]);
 
-  stackViewport.setDataPresentation(stackDataId, {
+  stackViewport.setDisplaySetPresentation(stackDataId, {
     voiRange: ctVoiRange,
   });
-  volumeViewport.setDataPresentation(volumeDataId, {
+  volumeViewport.setDisplaySetPresentation(volumeDataId, {
     voiRange: ctVoiRange,
   });
 

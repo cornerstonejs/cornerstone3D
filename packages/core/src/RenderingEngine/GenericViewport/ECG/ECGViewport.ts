@@ -80,17 +80,22 @@ class ECGViewport extends GenericViewport<
   }
 
   /**
-   * Adds one or more waveform datasets using the canvas ECG render path.
+   * Replaces all mounted waveform display sets with the provided ones using
+   * the canvas ECG render path.
    *
-   * @param entries - List of datasets to add.
+   * @param entries - Waveform display sets to mount.
    */
-  async setDataList(entries: Array<{ dataId: string }>): Promise<void> {
-    for (const { dataId } of entries) {
-      const waveform = await this.loadWaveformData(dataId);
+  async setDisplaySets(
+    ...entries: Array<{ displaySetId: string }>
+  ): Promise<void> {
+    this.removeAllData();
+
+    for (const { displaySetId } of entries) {
+      const waveform = await this.loadWaveformData(displaySetId);
       const durationMs =
         (waveform.numberOfSamples / waveform.samplingFrequency) * 1000;
 
-      this.setDefaultDataPresentation(dataId, {
+      this.setDefaultDataPresentation(displaySetId, {
         visible: true,
         opacity: 1,
         visibleChannels: waveform.channels.map((_channel, index) => index),
@@ -103,7 +108,7 @@ class ECGViewport extends GenericViewport<
         valueRange: getDefaultECGValueRange(waveform),
       });
 
-      await this.addLoadedData(dataId, waveform, {
+      await this.addLoadedData(displaySetId, waveform, {
         renderMode: 'signal2d',
       });
     }
@@ -208,7 +213,7 @@ class ECGViewport extends GenericViewport<
 
     const dataId = waveform.id;
     const visibleChannels = new Set(
-      this.getDataPresentation(dataId)?.visibleChannels ||
+      this.getDisplaySetPresentation(dataId)?.visibleChannels ||
         waveform.channels.map((_channel, index) => index)
     );
 
@@ -427,7 +432,7 @@ class ECGViewport extends GenericViewport<
     return new ECGResolvedView({
       viewState: this.viewState,
       canvas: this.canvas,
-      dataPresentation: this.getDataPresentation(waveform.id),
+      dataPresentation: this.getDisplaySetPresentation(waveform.id),
       frameOfReferenceUID: `ecg-viewport-${this.id}`,
       metrics: rendering.metrics,
       waveform,

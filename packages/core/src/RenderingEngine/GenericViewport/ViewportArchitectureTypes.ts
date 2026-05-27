@@ -146,10 +146,9 @@ export interface ViewportController<
   readonly id: ViewportId;
   readonly type: ViewportType;
 
-  addData(dataId: DataId, options: DataAddOptions): Promise<void>;
-  setData(dataId: DataId, options: DataAddOptions): Promise<void>;
-  setDataList(
-    entries: Array<{ dataId: DataId; options?: unknown }>
+  addDisplaySet(displaySetId: DataId, options: DataAddOptions): Promise<void>;
+  setDisplaySets(
+    ...entries: Array<{ displaySetId: DataId; options?: unknown }>
   ): Promise<void>;
   removeData(dataId: DataId): void;
 
@@ -164,8 +163,12 @@ export interface ViewportController<
       | ((viewState: TViewState) => Partial<TViewState> | void)
   ): void;
   resetViewState(options?: unknown): boolean;
-  setDataPresentation(dataId: DataId, props: Partial<TDataPresentation>): void;
-  getDataPresentation(dataId: DataId): TDataPresentation | undefined;
+  setDisplaySetPresentation(props: Partial<TDataPresentation>): void;
+  setDisplaySetPresentation(
+    displaySetId: DataId,
+    props: Partial<TDataPresentation>
+  ): void;
+  getDisplaySetPresentation(dataId: DataId): TDataPresentation | undefined;
   setViewReference(viewReference: ViewReference): void;
   getViewReference(specifier?: ViewReferenceSpecifier): ViewReference;
   getViewReferenceId(specifier?: ViewReferenceSpecifier): string;
@@ -173,8 +176,6 @@ export interface ViewportController<
     viewReference: ViewReference,
     options?: ReferenceCompatibleOptions
   ): boolean;
-  getDataRenderMode(dataId: DataId): string | undefined;
-  getDataRole(dataId: DataId): BindingRole | undefined;
 
   render(): void;
   setRendered(): void;

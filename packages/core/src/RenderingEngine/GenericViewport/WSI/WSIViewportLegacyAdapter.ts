@@ -109,7 +109,7 @@ class WSIViewportLegacyAdapter extends WSIViewport {
       },
     });
 
-    return this.setDataList([{ dataId }]);
+    return this.setDisplaySets({ displaySetId: dataId });
   }
 
   async setWSI(imageIds: string[], client: WSIClientLike) {
@@ -125,7 +125,7 @@ class WSIViewportLegacyAdapter extends WSIViewport {
       return;
     }
 
-    this.setDataPresentation(dataId, {
+    this.setDisplaySetPresentation(dataId, {
       voiRange: props.voiRange,
     });
   }
@@ -133,7 +133,7 @@ class WSIViewportLegacyAdapter extends WSIViewport {
   getProperties(): WSIViewportProperties {
     const dataId = this.getActiveDataId();
     const dataPresentation = dataId
-      ? this.getDataPresentation(dataId)
+      ? this.getDisplaySetPresentation(dataId)
       : undefined;
 
     return {
@@ -148,7 +148,7 @@ class WSIViewportLegacyAdapter extends WSIViewport {
       return;
     }
 
-    this.setDataPresentation(dataId, {
+    this.setDisplaySetPresentation(dataId, {
       averageWhite: undefined,
       voiRange: {
         lower: 0,
@@ -203,7 +203,7 @@ class WSIViewportLegacyAdapter extends WSIViewport {
       return;
     }
 
-    this.setDataPresentation(dataId, { voiRange });
+    this.setDisplaySetPresentation(dataId, { voiRange });
   }
 
   setAverageWhite(averageWhite: [number, number, number]): void {
@@ -213,7 +213,7 @@ class WSIViewportLegacyAdapter extends WSIViewport {
       return;
     }
 
-    this.setDataPresentation(dataId, { averageWhite });
+    this.setDisplaySetPresentation(dataId, { averageWhite });
   }
 }
 

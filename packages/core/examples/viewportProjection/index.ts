@@ -435,26 +435,22 @@ async function run() {
   });
 
   await Promise.all([
-    planarViewport.setDataList([
-      {
-        dataId: planarDataId,
-        options: {},
+    planarViewport.setDisplaySets({
+      displaySetId: planarDataId,
+      options: {},
+    }),
+    volumeViewport.setDisplaySets({
+      displaySetId: volumeDataId,
+      options: {
+        renderMode: 'vtkVolume3d',
       },
-    ]),
-    volumeViewport.setDataList([
-      {
-        dataId: volumeDataId,
-        options: {
-          renderMode: 'vtkVolume3d',
-        },
-      },
-    ]),
+    }),
   ]);
 
-  planarViewport.setDataPresentation(planarDataId, {
+  planarViewport.setDisplaySetPresentation(planarDataId, {
     voiRange: ctVoiRange,
   });
-  volumeViewport.setDataPresentation(volumeDataId, {
+  volumeViewport.setDisplaySetPresentation(volumeDataId, {
     sampleDistanceMultiplier: 1,
   });
   applyVolumeRenderingPreset(volumeViewport);

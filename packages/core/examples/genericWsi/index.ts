@@ -109,7 +109,7 @@ async function run() {
     kind: 'wsi',
     options: { webClient: client },
   });
-  await viewport.setDataList([{ dataId: wsiDataId }]);
+  await viewport.setDisplaySets({ displaySetId: wsiDataId });
 
   toolGroup.addViewport(viewportId, renderingEngineId);
 }

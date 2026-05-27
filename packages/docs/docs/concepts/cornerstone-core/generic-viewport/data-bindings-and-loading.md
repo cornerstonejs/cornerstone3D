@@ -32,12 +32,12 @@ Bindings receive `applyViewState(viewState)` whenever the viewport navigation
 state changes. This replaces the older `updateCamera()` language because the
 binding is applying viewport state, not owning camera truth.
 
-The viewport keeps bindings keyed by data id. That means tools and application
-code can update a single mounted dataset without reaching into actors or mapper
-objects:
+The viewport keeps bindings keyed by display set id. That means tools and
+application code can update a single mounted display set without reaching into
+actors or mapper objects:
 
 ```ts
-viewport.setDataPresentation(petDataId, {
+viewport.setDisplaySetPresentation(petDataId, {
   visible: false,
 });
 
@@ -97,7 +97,7 @@ await segmentation.addLabelmapRepresentationToViewportMap({
 Internally, that representation maps to overlay data:
 
 ```ts
-await viewport.addData(labelmapDataId, {
+await viewport.addDisplaySet(labelmapDataId, {
   orientation: viewport.getViewState().orientation,
   role: 'overlay',
 });

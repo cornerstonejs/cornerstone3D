@@ -327,8 +327,10 @@ type ViewportWithLegacyVOIProperties = {
 
 type ViewportWithDataPresentation = {
   getSourceDataId?: () => string | undefined;
-  getDataPresentation?: (dataId: string) => ViewportVOIProperties | undefined;
-  setDataPresentation?: (
+  getDisplaySetPresentation?: (
+    dataId: string
+  ) => ViewportVOIProperties | undefined;
+  setDisplaySetPresentation?: (
     dataId: string,
     props: Partial<ViewportVOIProperties>
   ) => void;
@@ -348,7 +350,9 @@ function getViewportVOIProperties(viewport): ViewportVOIProperties | undefined {
     return;
   }
 
-  const dataPresentation = target.viewport.getDataPresentation?.(target.dataId);
+  const dataPresentation = target.viewport.getDisplaySetPresentation?.(
+    target.dataId
+  );
   const defaultVOIRange = target.viewport.getDefaultVOIRange?.(target.dataId);
 
   return {
@@ -374,7 +378,7 @@ function setViewportVOIProperties(
     return;
   }
 
-  target.viewport.setDataPresentation?.(target.dataId, props);
+  target.viewport.setDisplaySetPresentation?.(target.dataId, props);
 }
 
 function getDataPresentationTarget(viewport):
@@ -388,8 +392,8 @@ function getDataPresentationTarget(viewport):
 
   if (
     !dataId ||
-    typeof genericViewport.getDataPresentation !== 'function' ||
-    typeof genericViewport.setDataPresentation !== 'function'
+    typeof genericViewport.getDisplaySetPresentation !== 'function' ||
+    typeof genericViewport.setDisplaySetPresentation !== 'function'
   ) {
     return;
   }
