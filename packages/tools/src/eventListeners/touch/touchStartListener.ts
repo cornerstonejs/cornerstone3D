@@ -1,4 +1,8 @@
-import { getEnabledElement, triggerEvent } from '@cornerstonejs/core';
+import {
+  getEnabledElement,
+  triggerEvent,
+  utilities,
+} from '@cornerstonejs/core';
 import Events from '../../enums/Events';
 import { Swipe } from '../../enums/Touch';
 
@@ -126,10 +130,8 @@ const defaultTapState: ITouchTapListenerState = {
   tapToleranceMs: 300,
 };
 
-let state: ITouchStartListenerState = JSON.parse(JSON.stringify(defaultState));
-let tapState: ITouchTapListenerState = JSON.parse(
-  JSON.stringify(defaultTapState)
-);
+let state: ITouchStartListenerState = utilities.deepClone(defaultState);
+let tapState: ITouchTapListenerState = utilities.deepClone(defaultTapState);
 
 function triggerEventCallback(ele, name, eventDetail) {
   return triggerEvent(ele, name, eventDetail);
@@ -373,7 +375,7 @@ function _onTouchEnd(evt: TouchEvent): void {
   _checkTouchTap(evt);
 
   // reset to default state
-  state = JSON.parse(JSON.stringify(defaultState));
+  state = utilities.deepClone(defaultState);
   document.removeEventListener('touchmove', _onTouchDrag);
   document.removeEventListener('touchend', _onTouchEnd);
 }
@@ -441,7 +443,7 @@ function _checkTouchTap(evt: TouchEvent): void {
       taps: tapState.taps,
     };
     triggerEventCallback(eventDetail.element, TOUCH_TAP, eventDetail);
-    tapState = JSON.parse(JSON.stringify(defaultTapState));
+    tapState = utilities.deepClone(defaultTapState);
   }, tapState.tapToleranceMs);
 }
 
@@ -484,19 +486,44 @@ function _updateTouchEventsLastPoints(
   element: HTMLDivElement,
   lastPoints: ITouchPoints[]
 ): ITouchPoints[] {
-  const { viewport } = getEnabledElement(element);
+  const { viewport } = getEnabledElement(element) || {};
+
+  if (!viewport) {
+    return lastPoints;
+  }
+
   // Need to update the world point to be calculated from the current reference frame,
   // Which might have changed since the last interaction.
-  return lastPoints.map((lp) => {
-    const world = viewport.canvasToWorld(lp.canvas);
-    return {
-      page: lp.page,
-      client: lp.client,
-      canvas: lp.canvas,
-      world,
-      touch: lp.touch,
-    };
-  });
+  return lastPoints
+    .map((lp) => {
+      let world;
+
+      try {
+        world = viewport.canvasToWorld(lp.canvas);
+      } catch (error) {
+        if (isNoMountedDataError(error)) {
+          return;
+        }
+
+        throw error;
+      }
+
+      return {
+        page: lp.page,
+        client: lp.client,
+        canvas: lp.canvas,
+        world,
+        touch: lp.touch,
+      };
+    })
+    .filter(Boolean) as ITouchPoints[];
+}
+
+function isNoMountedDataError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    error.message.includes('because no data is mounted')
+  );
 }
 
 export default touchStartListener;

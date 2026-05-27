@@ -21,4 +21,5 @@ export default function (options?: { useLegacyMetadataProvider?: boolean }) {
   }
 
   registerDefaultProviders();
+  metaData.addProvider(metaDataProvider);
 }

@@ -38,7 +38,7 @@ setTitleAndDescription(
   'This example shows how to sync the crosshair cursors between 3 viewports (2 Stack viewports and 1 Volume viewport with a slightly different orientation). To disable other cursors, set disableCursor to on and then disable and reactivate the tool.'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 

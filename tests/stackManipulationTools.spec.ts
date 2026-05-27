@@ -1,7 +1,7 @@
 import { test } from 'playwright-test-coverage';
 import {
   visitExample,
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   screenShotPaths,
   simulateDrag,
 } from './utils/index';
@@ -17,9 +17,9 @@ test.describe('Basic Stack Manipulation', async () => {
     await page.getByRole('combobox').selectOption('WindowLevel');
     const locator = page.locator('.cornerstone-canvas');
     await simulateDrag(page, locator);
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      locator,
+      '.cornerstone-canvas',
       screenShotPaths.stackManipulationTools.windowLevel
     );
   });
@@ -29,9 +29,9 @@ test.describe('Basic Stack Manipulation', async () => {
     await page.getByRole('combobox').selectOption('PlanarRotate');
     const locator = page.locator('.cornerstone-canvas');
     await simulateDrag(page, locator);
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      locator,
+      '.cornerstone-canvas',
       screenShotPaths.stackManipulationTools.planarRotate
     );
   });

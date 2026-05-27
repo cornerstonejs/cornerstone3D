@@ -35,9 +35,21 @@ program
     '--fromRoot',
     'A flag to set that this is being run from the root of the repo'
   )
+  .option(
+    '--packages <list>',
+    'Restrict to a comma-separated list of packages under ./packages (e.g. core,tools)'
+  )
   .parse(process.argv);
 
 const options = program.opts();
+const packageAllowlist = options.packages
+  ? new Set(
+      String(options.packages)
+        .split(',')
+        .map((entry) => entry.trim())
+        .filter(Boolean)
+    )
+  : null;
 
 function getSplitedPath(filePath) {
   return filePath.split(/[/\\]/);
@@ -47,34 +59,64 @@ function validPath(str) {
   return str.replace(/\\\\/g, '/');
 }
 
+const rspackBin = validPath(
+  path.join(
+    rootPath,
+    'node_modules',
+    '.bin',
+    process.platform === 'win32' ? 'rspack.cmd' : 'rspack'
+  )
+);
+
 // ----------------------------------------------------------------------------
 // Find examples
 // ----------------------------------------------------------------------------
 if (options.fromRoot === true) {
-  configuration = {
-    examples: [
-      { path: 'packages/core/examples', regexp: 'index.ts' },
-      { path: 'packages/tools/examples', regexp: 'index.ts' },
-      { path: 'packages/ai/examples', regexp: 'index.ts' },
-      { path: 'packages/labelmap-interpolation/examples', regexp: 'index.ts' },
-      {
-        path: 'packages/polymorphic-segmentation/examples',
-        regexp: 'index.ts',
-      },
-      {
-        path: 'packages/dicomImageLoader/examples',
-        regexp: 'index.ts',
-      },
-      {
-        path: 'packages/nifti-volume-loader/examples',
-        regexp: 'index.ts',
-      },
-      {
-        path: 'packages/adapters/examples',
-        regexp: 'index.ts',
-      },
-    ],
-  };
+  const allPackages = [
+    { package: 'core', path: 'packages/core/examples', regexp: 'index.ts' },
+    { package: 'tools', path: 'packages/tools/examples', regexp: 'index.ts' },
+    { package: 'ai', path: 'packages/ai/examples', regexp: 'index.ts' },
+    {
+      package: 'labelmap-interpolation',
+      path: 'packages/labelmap-interpolation/examples',
+      regexp: 'index.ts',
+    },
+    {
+      package: 'polymorphic-segmentation',
+      path: 'packages/polymorphic-segmentation/examples',
+      regexp: 'index.ts',
+    },
+    {
+      package: 'dicomImageLoader',
+      path: 'packages/dicomImageLoader/examples',
+      regexp: 'index.ts',
+    },
+    {
+      package: 'nifti-volume-loader',
+      path: 'packages/nifti-volume-loader/examples',
+      regexp: 'index.ts',
+    },
+    {
+      package: 'adapters',
+      path: 'packages/adapters/examples',
+      regexp: 'index.ts',
+    },
+  ];
+
+  const filteredPackages = packageAllowlist
+    ? allPackages.filter((entry) => packageAllowlist.has(entry.package))
+    : allPackages;
+
+  if (packageAllowlist && filteredPackages.length === 0) {
+    console.error(
+      `=> Error: --packages filter matched no package in the allowlist. Provided: ${[
+        ...packageAllowlist,
+      ].join(',')}`
+    );
+    process.exit(1);
+  }
+
+  configuration = { examples: filteredPackages };
 } else {
   configuration = {
     examples: [{ path: '../examples', regexp: 'index.ts' }],
@@ -109,11 +151,16 @@ if (configuration.examples) {
           exampleName = fullPath.pop();
         }
 
-        currentExamples[exampleName] = './' + file;
-        console.debug(' -', exampleName, ':', file);
-        exampleCount++;
+        if (
+          filterExamples.length === 0 ||
+          filterExamples.indexOf(exampleName) !== -1
+        ) {
+          currentExamples[exampleName] = './' + file;
+          console.debug(' -', exampleName, ':', file);
+          exampleCount++;
 
-        allExamplePaths[exampleName] = validPath(path.resolve(file));
+          allExamplePaths[exampleName] = validPath(path.resolve(file));
+        }
       });
   });
 
@@ -162,8 +209,10 @@ if (configuration.examples) {
     );
     shell.ShellString(conf).to(webpackConfigPath);
 
-    shell.exec(`rspack build --config ${webpackConfigPath}`);
+    shell.exec(`${rspackBin} build --config ${webpackConfigPath}`);
   } else {
-    shell.exec(`rspack serve  --host 0.0.0.0 --config ${webpackConfigPath}`);
+    shell.exec(
+      `${rspackBin} serve --host 0.0.0.0 --config ${webpackConfigPath}`
+    );
   }
 }

@@ -42,23 +42,27 @@ setTitleAndDescription(
   'Here we demonstrate rendering of a mock ellipsoid labelmap over source data'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 
 viewportGrid.style.display = 'flex';
 viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
+viewportGrid.style.flexWrap = 'wrap';
 
 const element1 = document.createElement('div');
 const element2 = document.createElement('div');
 const element3 = document.createElement('div');
 element1.style.width = size;
 element1.style.height = size;
+element1.style.flexShrink = '0';
 element2.style.width = size;
 element2.style.height = size;
+element2.style.flexShrink = '0';
 element3.style.width = size;
 element3.style.height = size;
+element3.style.flexShrink = '0';
 
 viewportGrid.appendChild(element1);
 viewportGrid.appendChild(element2);
@@ -109,7 +113,7 @@ async function run() {
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
-        background: <Types.Point3>[0.2, 0, 0.2],
+        background: [0.2, 0, 0.2] as Types.Point3,
       },
     },
     {
@@ -118,7 +122,7 @@ async function run() {
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
-        background: <Types.Point3>[0.2, 0, 0.2],
+        background: [0.2, 0, 0.2] as Types.Point3,
       },
     },
     {
@@ -127,7 +131,7 @@ async function run() {
       element: element3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
-        background: <Types.Point3>[0.2, 0, 0.2],
+        background: [0.2, 0, 0.2] as Types.Point3,
       },
     },
   ];

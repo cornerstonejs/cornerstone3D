@@ -13,8 +13,22 @@ jobs:
     runs-on: self-hosted
     strategy:
       fail-fast: false
+      max-parallel: 3
       matrix:
-        node-version: [24]
+        include:
+          - node-version: 20
+            mode: legacy
+            run_args: '--project=chromium'
+            collect_coverage: true
+          - node-version: 20
+            mode: compatibility
+            run_args: '--compat --project=chromium'
+            collect_coverage: false
+          - node-version: 20
+            mode: next
+            run_args: '--next --project=chromium'
+            collect_coverage: false
+    name: Playwright (${{ matrix.mode }})
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -26,13 +40,20 @@ jobs:
           cache: 'pnpm'
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install chromium
       - name: Run Playwright tests
         env:
           CI: true
+          COVERAGE: ${{ matrix.collect_coverage && 'true' || '' }}
           PLAYWRIGHT_HTML_OPEN: never
         run: |
           export NODE_OPTIONS="--max_old_space_size=10192"
-          pnpm exec nyc --reporter=html playwright test --max-failures=10 --retries=1
+          if [ "${{ matrix.collect_coverage }}" = "true" ]; then
+            pnpm exec nyc --reporter=html ./scripts/run-playright.sh ${{ matrix.run_args }}
+          else
+            ./scripts/run-playright.sh ${{ matrix.run_args }}
+          fi
       - name: Upload Playwright report and test results
         if: failure()
         uses: actions/upload-artifact@v4
@@ -44,12 +65,20 @@ jobs:
             tests/test-results/
           retention-days: 7
       - name: create the coverage report
+        if: ${{ matrix.collect_coverage }}
         run: |
           pnpm exec nyc report --reporter=lcov --reporter=text
       - name: Upload the coverage report to GitHub Actions Artifacts
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && matrix.collect_coverage }}
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report-pr
           path: coverage
+          retention-days: 7
+      - name: Upload Playwright reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.mode }}
+          path: reports/*playwright
           retention-days: 7

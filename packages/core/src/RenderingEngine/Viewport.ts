@@ -38,6 +38,7 @@ import type {
   ViewPresentationSelector,
   DataSetOptions,
   PlaneRestriction,
+  RenderingEngineResizeOptions,
 } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
 import type IImageCalibration from '../types/IImageCalibration';
@@ -165,7 +166,6 @@ class Viewport {
     this.suppressEvents = props.defaultOptions.suppressEvents
       ? props.defaultOptions.suppressEvents
       : false;
-    //this.options = structuredClone(props.defaultOptions);
     this.options = deepClone(props.defaultOptions);
     this.isDisabled = false;
   }
@@ -185,6 +185,30 @@ class Viewport {
 
   static get useCustomRenderingPipeline(): boolean {
     return false;
+  }
+
+  public getUseCustomRenderingPipeline(): boolean {
+    return (this.constructor as typeof Viewport).useCustomRenderingPipeline;
+  }
+
+  /**
+   * RenderingEngine-owned resize hook for custom-pipeline viewports. Legacy
+   * viewports keep the previous camera-preserving behavior by default.
+   */
+  public resizeForRenderingEngine({
+    keepCamera = true,
+  }: RenderingEngineResizeOptions = {}): void {
+    if (typeof this.resize === 'function') {
+      this.resize();
+    }
+
+    const previousCamera = keepCamera ? this.getCamera() : undefined;
+
+    this.resetCamera();
+
+    if (previousCamera) {
+      this.setCamera(previousCamera);
+    }
   }
 
   /**
@@ -235,6 +259,15 @@ class Viewport {
       }
     });
   };
+
+  public dispose(): void {
+    // Legacy viewports do not own extra teardown beyond the rendering engine
+    // reset path and widget cleanup above.
+  }
+
+  public destroy(): void {
+    this.dispose();
+  }
 
   /**
    * Indicate that the image has been rendered.
@@ -328,7 +361,7 @@ class Viewport {
    * @param immediate - If `true`, renders the viewport after the options are set.
    */
   public setOptions(options: ViewportInputOptions, immediate = false): void {
-    this.options = structuredClone(options);
+    this.options = deepClone(options);
 
     // TODO When this is needed we need to move the camera position.
     // We can steal some logic from the tools we build to do this.
@@ -346,7 +379,7 @@ class Viewport {
    * @param immediate - If `true`, renders the viewport after the options are reset.
    */
   public reset(immediate = false) {
-    this.options = structuredClone(this.defaultOptions);
+    this.options = deepClone(this.defaultOptions);
 
     // TODO When this is needed we need to move the camera position.
     // We can steal some logic from the tools we build to do this.
@@ -396,7 +429,11 @@ class Viewport {
     // If the pan has been applied, we need to be able
     // apply the pan back
     const dimensions = imageData.getDimensions();
-    const middleIJK = dimensions.map((d) => Math.floor(d / 2));
+    const middleIJK = getVolumeCenterIJK(
+      dimensions,
+      imageData.getDirection(),
+      viewPlaneNormal
+    );
 
     const idx = [middleIJK[0], middleIJK[1], middleIJK[2]] as ReadonlyVec3;
     const centeredFocalPoint = imageData.indexToWorld(idx, vec3.create());
@@ -1130,28 +1167,23 @@ class Viewport {
 
     if (imageData) {
       const dimensions = imageData.getDimensions();
-      const middleIJK = dimensions.map((d) => Math.floor(d / 2));
+      const middleIJK = getVolumeCenterIJK(
+        dimensions,
+        imageData.getDirection(),
+        viewPlaneNormal
+      );
       const idx = [middleIJK[0], middleIJK[1], middleIJK[2]] as ReadonlyVec3;
       // Modifies the focal point in place, as this hits the vtk indexToWorld function
       imageData.indexToWorld(idx, focalPoint);
     }
 
-    let { widthWorld, heightWorld } = imageData
+    const { widthWorld, heightWorld } = imageData
       ? getCubeSizeInView(imageData, viewPlaneNormal, viewUp)
       : this._getWorldDistanceViewUpAndViewRight(
           bounds,
           viewUp,
           viewPlaneNormal
         );
-
-    if (imageData) {
-      const spacing = imageData.getSpacing();
-      // This change corresponds to the spacing calculation for previous version
-      // stack viewports, but is technically incorrect and results in an image
-      // a tiny bit too large for the viewport.
-      widthWorld = Math.max(spacing[0], widthWorld - spacing[0]);
-      heightWorld = Math.max(spacing[1], heightWorld - spacing[1]);
-    }
 
     const canvasSize = [this.sWidth, this.sHeight];
 
@@ -2181,7 +2213,7 @@ class Viewport {
   /**
    * Navigates to the image specified by the viewRef.
    */
-  public setViewReference(viewRef: ViewReference) {
+  public setViewReference(_viewRef: ViewReference) {
     // No-op
   }
 
@@ -2361,11 +2393,66 @@ class Viewport {
   }
 
   /**
-   * This is a wrapper for setStack/setVideo/etc
+   * Sets one or more datasets on the viewport. Legacy viewports should
+   * override this to delegate to their specific data setter.
    */
-  public setDataIds(_imageIds: string[], _options?: DataSetOptions) {
-    throw new Error('Unsupported operatoin setDataIds');
+  public setDataList(
+    _entries: Array<{ dataId: string; options?: DataSetOptions }>
+  ) {
+    throw new Error('Unsupported operation setDataList');
   }
+}
+
+/**
+ * Compute the IJK index of the volume center for use as a camera focal point.
+ *
+ * Mirrors 3D Slicer's behavior in vtkMRMLSliceLogic::FitSliceToVolumes +
+ * SnapSliceOffsetToIJK: center the focal point on the volume's geometric
+ * center, then snap *only* the slice-direction axis to the nearest integer
+ * voxel center so the camera doesn't land between two slices. The in-plane
+ * axes use the continuous geometric center `(d - 1) / 2`.
+ *
+ * The snap only fires when `viewPlaneNormal` is aligned with an IJK axis
+ * (axis-aligned MPR of an axis-aligned acquisition). For oblique acquisitions
+ * the IJK axes are tilted relative to the requested MPR plane, so projecting
+ * onto a single IJK axis is an approximation -- snapping there shifts the
+ * focal point by ~0.5 voxel in world space and can flip the displayed slice
+ * index. In that case we fall back to the continuous geometric center on all
+ * axes, matching the pre-snap behavior.
+ */
+export function getVolumeCenterIJK(
+  dimensions: number[],
+  direction: ArrayLike<number>,
+  viewPlaneNormal: ArrayLike<number>
+): number[] {
+  const ijkAxes: vec3[] = [
+    [direction[0], direction[1], direction[2]] as vec3,
+    [direction[3], direction[4], direction[5]] as vec3,
+    [direction[6], direction[7], direction[8]] as vec3,
+  ];
+  const normal = [
+    viewPlaneNormal[0],
+    viewPlaneNormal[1],
+    viewPlaneNormal[2],
+  ] as vec3;
+
+  let sliceAxis = 0;
+  let maxDot = -1;
+  for (let i = 0; i < 3; i++) {
+    const dot = Math.abs(vec3.dot(ijkAxes[i], normal));
+    if (dot > maxDot) {
+      maxDot = dot;
+      sliceAxis = i;
+    }
+  }
+
+  // Only snap when the slice axis is exactly aligned with viewPlaneNormal.
+  // EPSILON matches the orthonormal tolerance used elsewhere (1e-3).
+  const isAxisAligned = Math.abs(maxDot - 1) < 1e-3;
+
+  return dimensions.map((d, i) =>
+    i === sliceAxis && isAxisAligned ? Math.floor(d / 2) : (d - 1) / 2
+  );
 }
 
 export default Viewport;

@@ -142,6 +142,23 @@ module.exports = {
             'concepts/cornerstone-core/geometryLoader',
             'concepts/cornerstone-core/cache',
             'concepts/cornerstone-core/viewports',
+            {
+              type: 'category',
+              label: 'Generic Viewport',
+              collapsed: true,
+              link: {
+                type: 'doc',
+                id: 'concepts/cornerstone-core/generic-viewport/index',
+              },
+              items: [
+                'concepts/cornerstone-core/generic-viewport/api',
+                'concepts/cornerstone-core/generic-viewport/render-paths',
+                'concepts/cornerstone-core/generic-viewport/data-bindings-and-loading',
+                'concepts/cornerstone-core/generic-viewport/camera',
+                'concepts/cornerstone-core/generic-viewport/viewport-projection',
+                'concepts/cornerstone-core/generic-viewport/migration',
+              ],
+            },
             'concepts/cornerstone-core/renderingEngine',
             'concepts/cornerstone-core/requestPoolManager',
             'concepts/cornerstone-core/webWorker',
