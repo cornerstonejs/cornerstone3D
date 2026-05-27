@@ -57,7 +57,7 @@ setTitleAndDescription(
   'Here we demonstrate how to use spline and livewire segmentation ROI tools on a video viewport'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 let viewport;

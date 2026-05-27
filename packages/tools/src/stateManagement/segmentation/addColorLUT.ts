@@ -3,6 +3,9 @@ import { defaultSegmentationStateManager } from './SegmentationStateManager';
 import { getNextColorLUTIndex } from './getNextColorLUTIndex';
 import CORNERSTONE_COLOR_LUT from '../../constants/COLOR_LUT';
 
+const PREVIEW_COLOR_INDEX = 255;
+const MINIMUM_COLOR_LUT_ENTRIES = PREVIEW_COLOR_INDEX + 1;
+
 /**
  * Add a color LUT to the segmentation state manager
  * @param colorLUT - The color LUT array to add.
@@ -35,10 +38,16 @@ export function addColorLUT(colorLUT: Types.ColorLUT, index?: number): number {
     return color as Types.Color;
   });
 
-  // Ensure the colorLUT has at least 255 entries
-  if (colorLUTToUse.length < 255) {
+  // Preview labelmaps use index 255, so the LUT needs entries 0..255.
+  if (colorLUTToUse.length < MINIMUM_COLOR_LUT_ENTRIES) {
     const missingColorLUTs = CORNERSTONE_COLOR_LUT.slice(colorLUTToUse.length);
     colorLUTToUse = [...colorLUTToUse, ...missingColorLUTs] as Types.ColorLUT;
+  }
+
+  while (colorLUTToUse.length < MINIMUM_COLOR_LUT_ENTRIES) {
+    const paletteIndex =
+      ((colorLUTToUse.length - 1) % (CORNERSTONE_COLOR_LUT.length - 1)) + 1;
+    colorLUTToUse.push([...CORNERSTONE_COLOR_LUT[paletteIndex]] as Types.Color);
   }
 
   segmentationStateManager.addColorLUT(colorLUTToUse, indexToUse);

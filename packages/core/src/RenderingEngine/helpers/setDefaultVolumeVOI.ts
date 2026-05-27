@@ -1,9 +1,11 @@
 import type {
+  ImageActor,
   VolumeActor,
   IImageVolume,
   VOIRange,
   ScalingParameters,
 } from '../../types';
+import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import { loadAndCacheImage } from '../../loaders/imageLoader';
 import * as metaData from '../../metaData';
 import * as windowLevel from '../../utilities/windowLevel';
@@ -23,17 +25,13 @@ const REQUEST_TYPE = RequestType.Prefetch;
  * @param imageVolume - The image volume that we want to set the VOI for.
  */
 async function setDefaultVolumeVOI(
-  volumeActor: VolumeActor,
+  volumeActor: VolumeActor | ImageActor,
   imageVolume: IImageVolume
 ): Promise<void> {
-  let voi = getVOIFromMetadata(imageVolume);
-
-  if (!voi && imageVolume.imageIds.length) {
-    voi = await getVOIFromMiddleSliceMinMax(imageVolume);
-    voi = handlePreScaledVolume(imageVolume, voi);
-  }
+  const voi = await getDefaultVolumeVOIRange(imageVolume);
 
   if (
+    !voi ||
     (voi.lower === 0 && voi.upper === 0) ||
     voi.lower === undefined ||
     voi.upper === undefined
@@ -41,10 +39,40 @@ async function setDefaultVolumeVOI(
     return;
   }
 
-  volumeActor
-    .getProperty()
-    .getRGBTransferFunction(0)
-    .setMappingRange(voi.lower, voi.upper);
+  ensureRGBTransferFunction(volumeActor).setMappingRange(voi.lower, voi.upper);
+}
+
+function ensureRGBTransferFunction(volumeActor: VolumeActor | ImageActor) {
+  const property = volumeActor.getProperty();
+  let transferFunction = property.getRGBTransferFunction(0);
+
+  if (transferFunction) {
+    return transferFunction;
+  }
+
+  transferFunction = vtkColorTransferFunction.newInstance();
+  transferFunction.addRGBPoint(0, 0, 0, 0);
+  transferFunction.addRGBPoint(1, 1, 1, 1);
+  property.setRGBTransferFunction(0, transferFunction);
+
+  if ('setUseLookupTableScalarRange' in property) {
+    property.setUseLookupTableScalarRange?.(true);
+  }
+
+  return transferFunction;
+}
+
+export async function getDefaultVolumeVOIRange(
+  imageVolume: IImageVolume
+): Promise<VOIRange | undefined> {
+  let voi = getVOIFromMetadata(imageVolume);
+
+  if (!voi && imageVolume.imageIds.length) {
+    voi = await getVOIFromMiddleSliceMinMax(imageVolume);
+    voi = handlePreScaledVolume(imageVolume, voi);
+  }
+
+  return voi;
 }
 
 function handlePreScaledVolume(imageVolume: IImageVolume, voi: VOIRange) {

@@ -1,0 +1,37 @@
+{
+  "name": "@cornerstonejs/codemods",
+  "version": "5.0.0-beta.1",
+  "description": "Codemod registry packages for Cornerstone3D migrations",
+  "private": true,
+  "keywords": [
+    "cornerstone3d",
+    "codemod",
+    "migration"
+  ],
+  "repository": "https://github.com/cornerstonejs/cornerstone3D",
+  "sideEffects": false,
+  "scripts": {
+    "build": "node -e \"console.log('codemods package does not require a build step')\"",
+    "build:esm": "yarn run build",
+    "build:esm:watch": "yarn run build",
+    "build:all": "yarn run build",
+    "clean": "shx rm -rf dist",
+    "clean:deep": "yarn run clean && shx rm -rf node_modules",
+    "dev": "yarn run test",
+    "test": "npx codemod jssg test -l tsx registry/cornerstone3d/5/generic-viewport/scripts/rendering-engine-viewport-accessors.ts registry/cornerstone3d/5/generic-viewport/tests",
+    "validate": "yarn run validate:registry && yarn run test",
+    "validate:registry": "node scripts/validate-registry-packages.mjs",
+    "lint": "oxlint ."
+  },
+  "contributors": [
+    {
+      "name": "Cornerstone.js Contributors",
+      "url": "https://github.com/orgs/cornerstonejs/people"
+    }
+  ],
+  "license": "MIT",
+  "funding": {
+    "type": "individual",
+    "url": "https://ohif.org/donate"
+  }
+}

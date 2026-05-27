@@ -1,14 +1,99 @@
+import type { Page } from '@playwright/test';
 import { test } from 'playwright-test-coverage';
 import {
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   visitExample,
   screenShotPaths,
+  waitForImageRendered,
 } from './utils/index';
+import { dicomDimensions } from '../packages/dicomImageLoader/examples/dicomImageLoaderWADOURI/dicomDimensions';
 
-const TIME_OUT = 3000;
 test.beforeEach(async ({ page }) => {
   await visitExample(page, 'dicomImageLoaderWADOURI');
 });
+
+test.afterEach(async ({ page }) => {
+  if (page.isClosed()) {
+    return;
+  }
+
+  await page.evaluate(() => {
+    const cornerstone = (
+      window as unknown as {
+        cornerstone?: {
+          getRenderingEngines?: () => Array<{ destroy?: () => void }>;
+        };
+      }
+    ).cornerstone;
+
+    cornerstone
+      ?.getRenderingEngines?.()
+      ?.forEach((renderingEngine) => renderingEngine.destroy?.());
+  });
+});
+
+function getExpectedWadoImageId(imagePath: string) {
+  if (imagePath.startsWith('TG_18')) {
+    return `wadouri:https://raw.githubusercontent.com/OHIF/viewer-testdata/master/dcm/tg18/${imagePath.substring(6)}`;
+  }
+
+  return `wadouri:https://raw.githubusercontent.com/cornerstonejs/cornerstone3D/main/packages/dicomImageLoader/testImages/${imagePath}`;
+}
+
+async function ensureViewportFitsImage(page: Page, imagePath: string) {
+  const dim = dicomDimensions[imagePath];
+  if (!dim) {
+    return;
+  }
+
+  const viewport = page.viewportSize();
+  const needsWidth = dim.columns + 64;
+  const needsHeight = dim.rows + 200;
+
+  if (
+    !viewport ||
+    viewport.width < needsWidth ||
+    viewport.height < needsHeight
+  ) {
+    await page.setViewportSize({
+      width: Math.max(viewport?.width ?? 0, needsWidth),
+      height: Math.max(viewport?.height ?? 0, needsHeight),
+    });
+  }
+}
+
+async function waitForCanvasSize(
+  page: Page,
+  expected: { columns: number; rows: number }
+) {
+  await page.waitForFunction(
+    ({ width, height }) => {
+      const canvas = document.querySelector(
+        '#cornerstone-element canvas'
+      ) as HTMLCanvasElement | null;
+      return !!canvas && canvas.width === width && canvas.height === height;
+    },
+    { width: expected.columns, height: expected.rows },
+    { timeout: 15000 }
+  );
+}
+
+async function selectImageAndWaitForRender(page: Page, imagePath: string) {
+  await ensureViewportFitsImage(page, imagePath);
+
+  await waitForImageRendered(
+    page,
+    () => page.locator('#imageSelector').selectOption(imagePath),
+    {
+      expectedImageId: getExpectedWadoImageId(imagePath),
+    }
+  );
+
+  const dim = dicomDimensions[imagePath];
+  if (dim) {
+    await waitForCanvasSize(page, dim);
+  }
+}
 
 test.describe('Dicom Image Loader WADOURI', async () => {
   /**
@@ -17,19 +102,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load a dicom image with JPEGLSLosslessTransferSyntax', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption(
-        'CTImage.dcm_JPEGLSLosslessTransferSyntax_1.2.840.10008.1.2.4.80.dcm'
-      );
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'CTImage.dcm_JPEGLSLosslessTransferSyntax_1.2.840.10008.1.2.4.80.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'dcm_JPEGLSLosslessTransferSyntax_1.2.840.10008.1.2.4.80'
       ]
@@ -42,19 +122,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load a dicom image with JPEGLSLossyTransferSyntax', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption(
-        'CTImage.dcm_JPEGLSLossyTransferSyntax_1.2.840.10008.1.2.4.81.dcm'
-      );
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'CTImage.dcm_JPEGLSLossyTransferSyntax_1.2.840.10008.1.2.4.81.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'dcm_JPEGLSLossyTransferSyntax_1.2.840.10008.1.2.4.81'
       ]
@@ -67,19 +142,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load a dicom image with JPEGProcess1TransferSyntax', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption(
-        'CTImage.dcm_JPEGProcess1TransferSyntax_1.2.840.10008.1.2.4.50.dcm'
-      );
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'CTImage.dcm_JPEGProcess1TransferSyntax_1.2.840.10008.1.2.4.50.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'dcm_JPEGProcess1TransferSyntax_1.2.840.10008.1.2.4.50'
       ]
@@ -92,19 +162,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load a dicom image with RLELosslessTransferSyntax', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption(
-        'CTImage.dcm_RLELosslessTransferSyntax_1.2.840.10008.1.2.5.dcm'
-      );
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'CTImage.dcm_RLELosslessTransferSyntax_1.2.840.10008.1.2.5.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'dcm_RLELosslessTransferSyntax_1.2.840.10008.1.2.5'
       ]
@@ -117,19 +182,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load a dicom image with JPEGProcess14TransferSyntax', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption(
-        'CTImage.dcm_JPEGProcess14TransferSyntax_1.2.840.10008.1.2.4.57.dcm'
-      );
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'CTImage.dcm_JPEGProcess14TransferSyntax_1.2.840.10008.1.2.4.57.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'dcm_JPEGProcess14TransferSyntax_1.2.840.10008.1.2.4.57'
       ]
@@ -142,19 +202,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load a dicom image with JPEGProcess14SV1TransferSyntax', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption(
-        'CTImage.dcm_JPEGProcess14SV1TransferSyntax_1.2.840.10008.1.2.4.70.dcm'
-      );
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'CTImage.dcm_JPEGProcess14SV1TransferSyntax_1.2.840.10008.1.2.4.70.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'dcm_JPEGProcess14SV1TransferSyntax_1.2.840.10008.1.2.4.70'
       ]
@@ -167,19 +222,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load a dicom image with JPEG2000LosslessOnlyTransferSyntax', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption(
-        'CTImage.dcm_JPEG2000LosslessOnlyTransferSyntax_1.2.840.10008.1.2.4.90.dcm'
-      );
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'CTImage.dcm_JPEG2000LosslessOnlyTransferSyntax_1.2.840.10008.1.2.4.90.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'dcm_JPEG2000LosslessOnlyTransferSyntax_1.2.840.10008.1.2.4.90'
       ]
@@ -192,19 +242,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load a dicom image with JPEG2000TransferSyntax', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption(
-        'CTImage.dcm_JPEG2000TransferSyntax_1.2.840.10008.1.2.4.91.dcm'
-      );
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'CTImage.dcm_JPEG2000TransferSyntax_1.2.840.10008.1.2.4.91.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'dcm_JPEG2000TransferSyntax_1.2.840.10008.1.2.4.91'
       ]
@@ -212,43 +257,17 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   });
 
   /**
-   * Test to load a dicom image with DeflatedExplicitVRLittleEndianTransferSyntax
-   */
-  test.skip('should load a dicom image with DeflatedExplicitVRLittleEndianTransferSyntax', async ({
-    page,
-  }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption(
-        'CTImage.dcm_DeflatedExplicitVRLittleEndianTransferSyntax_1.2.840.10008.1.2.1.99.dcm'
-      );
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(3000);
-
-    await checkForScreenshot(
-      page,
-      locator,
-      screenShotPaths.dicomImageLoaderWADOURI['1.2.840.10008.1.2.1.99']
-    );
-  });
-
-  /**
    * Test to load a dicom image TestPattern_JPEG-Baseline_YBR422.dcm
    */
   test('should load TestPattern_JPEG-Baseline_YBR422.dcm', async ({ page }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TestPattern_JPEG-Baseline_YBR422.dcm');
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'TestPattern_JPEG-Baseline_YBR422.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'TestPattern_JPEG-Baseline_YBR422'
       ]
@@ -261,17 +280,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load TestPattern_JPEG-Baseline_YBRFull.dcm', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TestPattern_JPEG-Baseline_YBRFull.dcm');
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'TestPattern_JPEG-Baseline_YBRFull.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'TestPattern_JPEG-Baseline_YBRFull'
       ]
@@ -282,17 +298,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
    * Test to load a dicom image TestPattern_JPEG-Lossless_RGB.dcm
    */
   test('should load TestPattern_JPEG-Lossless_RGB.dcm', async ({ page }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TestPattern_JPEG-Lossless_RGB.dcm');
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'TestPattern_JPEG-Lossless_RGB.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI['TestPattern_JPEG-Lossless_RGB']
     );
   });
@@ -301,17 +314,11 @@ test.describe('Dicom Image Loader WADOURI', async () => {
    * Test to load a dicom image TestPattern_JPEG-LS-Lossless.dcm
    */
   test('should load TestPattern_JPEG-LS-Lossless.dcm', async ({ page }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TestPattern_JPEG-LS-Lossless.dcm');
+    await selectImageAndWaitForRender(page, 'TestPattern_JPEG-LS-Lossless.dcm');
 
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      locator,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI['TestPattern_JPEG-LS-Lossless']
     );
   });
@@ -320,17 +327,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
    * Test to load a dicom image TestPattern_JPEG-LS-NearLossless.dcm
    */
   test('should load TestPattern_JPEG-LS-NearLossless.dcm', async ({ page }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TestPattern_JPEG-LS-NearLossless.dcm');
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'TestPattern_JPEG-LS-NearLossless.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'TestPattern_JPEG-LS-NearLossless'
       ]
@@ -341,17 +345,11 @@ test.describe('Dicom Image Loader WADOURI', async () => {
    * Test to load a dicom image TestPattern_Palette_16.dcm
    */
   test('should load TestPattern_Palette_16.dcm', async ({ page }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TestPattern_Palette_16.dcm');
+    await selectImageAndWaitForRender(page, 'TestPattern_Palette_16.dcm');
 
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      locator,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI['TestPattern_Palette_16']
     );
   });
@@ -360,17 +358,11 @@ test.describe('Dicom Image Loader WADOURI', async () => {
    * Test to load a dicom image TestPattern_Palette.dcm
    */
   test('should load TestPattern_Palette.dcm', async ({ page }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TestPattern_Palette.dcm');
+    await selectImageAndWaitForRender(page, 'TestPattern_Palette.dcm');
 
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      locator,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI['TestPattern_Palette']
     );
   });
@@ -379,15 +371,11 @@ test.describe('Dicom Image Loader WADOURI', async () => {
    * Test to load a dicom image TestPattern_RGB.dcm
    */
   test('should load TestPattern_RGB.dcm', async ({ page }) => {
-    await page.locator('#imageSelector').selectOption('TestPattern_RGB.dcm');
+    await selectImageAndWaitForRender(page, 'TestPattern_RGB.dcm');
 
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      locator,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI['TestPattern_RGB']
     );
   });
@@ -398,17 +386,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load TG_18-luminance-1K/TG18-AD/TG18-AD-1k-01.dcm', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TG_18-luminance-1K/TG18-AD/TG18-AD-1k-01.dcm');
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'TG_18-luminance-1K/TG18-AD/TG18-AD-1k-01.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'TG_18-luminance-1K/TG18-AD/TG18-AD-1k-01'
       ]
@@ -421,17 +406,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load TG_18-luminance-1K/TG18-CT/TG18-CT-1k-01.dcm', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TG_18-luminance-1K/TG18-CT/TG18-CT-1k-01.dcm');
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'TG_18-luminance-1K/TG18-CT/TG18-CT-1k-01.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'TG_18-luminance-1K/TG18-CT/TG18-CT-1k-01'
       ]
@@ -444,17 +426,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load TG_18-luminance-1K/TG18-LN/TG18-LN-1k-01.dcm', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TG_18-luminance-1K/TG18-LN/TG18-LN-1k-01.dcm');
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'TG_18-luminance-1K/TG18-LN/TG18-LN-1k-01.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'TG_18-luminance-1K/TG18-LN/TG18-LN-1k-01'
       ]
@@ -467,17 +446,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load TG_18-luminance-1K/TG18-LN/TG18-LN-1k-04.dcm', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TG_18-luminance-1K/TG18-LN/TG18-LN-1k-04.dcm');
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'TG_18-luminance-1K/TG18-LN/TG18-LN-1k-04.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'TG_18-luminance-1K/TG18-LN/TG18-LN-1k-04'
       ]
@@ -490,17 +466,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load TG_18-luminance-1K/TG18-LN/TG18-LN-1k-09.dcm', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TG_18-luminance-1K/TG18-LN/TG18-LN-1k-09.dcm');
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'TG_18-luminance-1K/TG18-LN/TG18-LN-1k-09.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'TG_18-luminance-1K/TG18-LN/TG18-LN-1k-09'
       ]
@@ -513,17 +486,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load TG_18-luminance-1K/TG18-LN/TG18-LN-1k-13.dcm', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TG_18-luminance-1K/TG18-LN/TG18-LN-1k-13.dcm');
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'TG_18-luminance-1K/TG18-LN/TG18-LN-1k-13.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'TG_18-luminance-1K/TG18-LN/TG18-LN-1k-13'
       ]
@@ -536,17 +506,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load TG_18-luminance-1K/TG18-LN/TG18-LN-1k-18.dcm', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TG_18-luminance-1K/TG18-LN/TG18-LN-1k-18.dcm');
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'TG_18-luminance-1K/TG18-LN/TG18-LN-1k-18.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'TG_18-luminance-1K/TG18-LN/TG18-LN-1k-18'
       ]
@@ -559,17 +526,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load TG_18-luminance-1K/TG18-MP/TG18-MP-1k-01.dcm', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TG_18-luminance-1K/TG18-MP/TG18-MP-1k-01.dcm');
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'TG_18-luminance-1K/TG18-MP/TG18-MP-1k-01.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'TG_18-luminance-1K/TG18-MP/TG18-MP-1k-01'
       ]
@@ -582,17 +546,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load TG_18-luminance-1K/TG18-UN/TG18-UN-1k-01.dcm', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TG_18-luminance-1K/TG18-UN/TG18-UN-1k-01.dcm');
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'TG_18-luminance-1K/TG18-UN/TG18-UN-1k-01.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'TG_18-luminance-1K/TG18-UN/TG18-UN-1k-01'
       ]
@@ -605,17 +566,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load TG_18-luminance-1K/TG18-UNL/TG18-UNL-1k-01.dcm', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TG_18-luminance-1K/TG18-UNL/TG18-UNL-1k-01.dcm');
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'TG_18-luminance-1K/TG18-UNL/TG18-UNL-1k-01.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'TG_18-luminance-1K/TG18-UNL/TG18-UNL-1k-01'
       ]
@@ -628,17 +586,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load TG_18-multi-1K/TG18-BR/TG18-BR-1k-01.dcm', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TG_18-multi-1K/TG18-BR/TG18-BR-1k-01.dcm');
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'TG_18-multi-1K/TG18-BR/TG18-BR-1k-01.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'TG_18-multi-1K/TG18-BR/TG18-BR-1k-01'
       ]
@@ -651,17 +606,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load TG_18-multi-1K/TG18-QC/TG18-QC-1k-01.dcm', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TG_18-multi-1K/TG18-QC/TG18-QC-1k-01.dcm');
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'TG_18-multi-1K/TG18-QC/TG18-QC-1k-01.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'TG_18-multi-1K/TG18-QC/TG18-QC-1k-01'
       ]
@@ -674,17 +626,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load TG_18-multi-1K/TG18-pQC/TG18-PQC-1k-01.dcm', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TG_18-multi-1K/TG18-pQC/TG18-PQC-1k-01.dcm');
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'TG_18-multi-1K/TG18-pQC/TG18-PQC-1k-01.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'TG_18-multi-1K/TG18-pQC/TG18-PQC-1k-01'
       ]
@@ -697,17 +646,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load TG_18-noise-1k/TG18-AFC/TG18-AFC-1k-01.dcm', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TG_18-noise-1k/TG18-AFC/TG18-AFC-1k-01.dcm');
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'TG_18-noise-1k/TG18-AFC/TG18-AFC-1k-01.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'TG_18-noise-1k/TG18-AFC/TG18-AFC-1k-01'
       ]
@@ -720,17 +666,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load TG_18-noise-1k/TG18-NS/TG18-NS-1k-01.dcm', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TG_18-noise-1k/TG18-NS/TG18-NS-1k-01.dcm');
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'TG_18-noise-1k/TG18-NS/TG18-NS-1k-01.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'TG_18-noise-1k/TG18-NS/TG18-NS-1k-01'
       ]
@@ -743,17 +686,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load TG_18-noise-1k/TG18-NS/TG18-NS-1k-02.dcm', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TG_18-noise-1k/TG18-NS/TG18-NS-1k-02.dcm');
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'TG_18-noise-1k/TG18-NS/TG18-NS-1k-02.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'TG_18-noise-1k/TG18-NS/TG18-NS-1k-02'
       ]
@@ -766,17 +706,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load TG_18-noise-1k/TG18-NS/TG18-NS-1k-03.dcm', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TG_18-noise-1k/TG18-NS/TG18-NS-1k-03.dcm');
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'TG_18-noise-1k/TG18-NS/TG18-NS-1k-03.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'TG_18-noise-1k/TG18-NS/TG18-NS-1k-03'
       ]
@@ -789,17 +726,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load TG_18-resolution-2k/TG18-CX/TG18-CX-2k-01.dcm', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TG_18-resolution-2k/TG18-CX/TG18-CX-2k-01.dcm');
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'TG_18-resolution-2k/TG18-CX/TG18-CX-2k-01.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'TG_18-resolution-2k/TG18-CX/TG18-CX-2k-01'
       ]
@@ -812,17 +746,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load TG_18-resolution-2k/TG18-LPH/TG18-LPH-2k-01.dcm', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TG_18-resolution-2k/TG18-LPH/TG18-LPH-2k-01.dcm');
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(3000);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'TG_18-resolution-2k/TG18-LPH/TG18-LPH-2k-01.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'TG_18-resolution-2k/TG18-LPH/TG18-LPH-2k-01'
       ]
@@ -835,17 +766,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load TG_18-resolution-2k/TG18-LPV/TG18-LPV-2k-01.dcm', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TG_18-resolution-2k/TG18-LPV/TG18-LPV-2k-01.dcm');
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'TG_18-resolution-2k/TG18-LPV/TG18-LPV-2k-01.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'TG_18-resolution-2k/TG18-LPV/TG18-LPV-2k-01'
       ]
@@ -858,17 +786,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load TG_18-resolution-2k/TG18-LPV/TG18-LPV-2k-02.dcm', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TG_18-resolution-2k/TG18-LPV/TG18-LPV-2k-02.dcm');
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'TG_18-resolution-2k/TG18-LPV/TG18-LPV-2k-02.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'TG_18-resolution-2k/TG18-LPV/TG18-LPV-2k-02'
       ]
@@ -881,17 +806,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load TG_18-resolution-2k/TG18-LPV/TG18-LPV-2k-03.dcm', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TG_18-resolution-2k/TG18-LPV/TG18-LPV-2k-03.dcm');
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'TG_18-resolution-2k/TG18-LPV/TG18-LPV-2k-03.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'TG_18-resolution-2k/TG18-LPV/TG18-LPV-2k-03'
       ]
@@ -904,17 +826,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load TG_18-resolution-2k/TG18-PX/TG18-PX-2k-01.dcm', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TG_18-resolution-2k/TG18-PX/TG18-PX-2k-01.dcm');
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'TG_18-resolution-2k/TG18-PX/TG18-PX-2k-01.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'TG_18-resolution-2k/TG18-PX/TG18-PX-2k-01'
       ]
@@ -927,17 +846,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load TG_18-resolution-2k/TG18-RH/TG18-RH-2k-01.dcm', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TG_18-resolution-2k/TG18-RH/TG18-RH-2k-01.dcm');
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'TG_18-resolution-2k/TG18-RH/TG18-RH-2k-01.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'TG_18-resolution-2k/TG18-RH/TG18-RH-2k-01'
       ]
@@ -950,17 +866,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load TG_18-resolution-2k/TG18-RH/TG18-RH-2k-02.dcm', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TG_18-resolution-2k/TG18-RH/TG18-RH-2k-02.dcm');
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'TG_18-resolution-2k/TG18-RH/TG18-RH-2k-02.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'TG_18-resolution-2k/TG18-RH/TG18-RH-2k-02'
       ]
@@ -973,17 +886,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load TG_18-resolution-2k/TG18-RH/TG18-RH-2k-03.dcm', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TG_18-resolution-2k/TG18-RH/TG18-RH-2k-03.dcm');
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'TG_18-resolution-2k/TG18-RH/TG18-RH-2k-03.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'TG_18-resolution-2k/TG18-RH/TG18-RH-2k-03'
       ]
@@ -996,17 +906,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load TG_18-resolution-2k/TG18-RV/TG18-RV-2k-01.dcm', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TG_18-resolution-2k/TG18-RV/TG18-RV-2k-01.dcm');
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'TG_18-resolution-2k/TG18-RV/TG18-RV-2k-01.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'TG_18-resolution-2k/TG18-RV/TG18-RV-2k-01'
       ]
@@ -1019,17 +926,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load TG_18-resolution-2k/TG18-RV/TG18-RV-2k-02.dcm', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TG_18-resolution-2k/TG18-RV/TG18-RV-2k-02.dcm');
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'TG_18-resolution-2k/TG18-RV/TG18-RV-2k-02.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'TG_18-resolution-2k/TG18-RV/TG18-RV-2k-02'
       ]
@@ -1042,17 +946,14 @@ test.describe('Dicom Image Loader WADOURI', async () => {
   test('should load TG_18-resolution-2k/TG18-RV/TG18-RV-2k-03.dcm', async ({
     page,
   }) => {
-    await page
-      .locator('#imageSelector')
-      .selectOption('TG_18-resolution-2k/TG18-RV/TG18-RV-2k-03.dcm');
-
-    const locator = page.locator('.cornerstone-canvas');
-
-    await page.waitForTimeout(TIME_OUT);
-
-    await checkForScreenshot(
+    await selectImageAndWaitForRender(
       page,
-      locator,
+      'TG_18-resolution-2k/TG18-RV/TG18-RV-2k-03.dcm'
+    );
+
+    await checkForCanvasSnapshot(
+      page,
+      '.cornerstone-canvas',
       screenShotPaths.dicomImageLoaderWADOURI[
         'TG_18-resolution-2k/TG18-RV/TG18-RV-2k-03'
       ]

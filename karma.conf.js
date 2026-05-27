@@ -26,12 +26,18 @@ process.env.CHROME_BIN = require('puppeteer').executablePath();
  * https://github.com/codymikol/karma-webpack?tab=readme-ov-file#default-webpack-configuration
  */
 const outputPath = path.join(os.tmpdir(), '_karma_webpack_') + Math.floor(Math.random() * 1000000)
+const forceCompat = process.env.FORCE_COMPAT === 'true';
+const forceCpuRendering = process.env.FORCE_CPU_RENDERING === 'true';
+const grepPattern = process.env.KARMA_GREP;
 
 /** @param {import('karma').Config} config */
 module.exports = function (config) {
   config.set({
     reporters: ['junit', 'coverage', 'spec'],
     client: {
+      forceCpuRendering,
+      forceCompat,
+      args: grepPattern ? ['--grep', grepPattern] : [],
       jasmine: {
         random: false, // don't randomize the order of tests
         stopOnFailure: false,
@@ -43,11 +49,10 @@ module.exports = function (config) {
       clearContext: false,
     },
     concurrency: 1,
-    // Uncomment this out to capture all logging
-    // browserConsoleLogOptions: {
-    //   terminal: true,
-    //   level: '',
-    // },
+    browserConsoleLogOptions: {
+      terminal: true,
+      level: 'log',
+    },
     specReporter: {
       maxLogLines: 5, // limit number of lines logged per test
       suppressSummary: true, // do not print summary
@@ -78,11 +83,18 @@ module.exports = function (config) {
     ],
     frameworks: ['jasmine', 'webpack'],
     files: [
-      'packages/core/test/**/*_test.js',
-      'packages/tools/test/**/*_test.js',
+      ...(process.env.KARMA_PACKAGE === 'core' ? [] : ['packages/tools/test/**/*_test.js']),
+      ...(process.env.KARMA_PACKAGE === 'tools' ? [] : ['packages/core/test/**/*_test.js']),
       // Serve dicomImageLoad test images
       {
         pattern: 'packages/dicomImageLoader/testImages/**/*',
+        watched: false,
+        included: false,
+        served: true
+      },
+      // Compat-mode baselines for dynamic comparison
+      {
+        pattern: 'karma-baselines/**/*.png',
         watched: false,
         included: false,
         served: true
@@ -99,8 +111,8 @@ module.exports = function (config) {
       }
     ],
     proxies: {
-      // Simplified path to access test images in tests
       '/testImages/': '/base/packages/dicomImageLoader/testImages/',
+      '/karma-baselines/': '/base/karma-baselines/',
     },
     preprocessors: {
       'packages/core/test/**/*_test.js': ['webpack'],

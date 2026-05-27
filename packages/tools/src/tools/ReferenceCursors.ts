@@ -253,7 +253,16 @@ class ReferenceCursors extends AnnotationDisplayTool {
   //checks if we need to update the annotation position due to camera changes
   onCameraModified = (evt: Types.EventTypes.CameraModifiedEvent): void => {
     const eventDetail = evt.detail;
-    const { element, previousCamera, camera } = eventDetail;
+    const { previousCamera, camera } = eventDetail;
+    const element =
+      eventDetail.element ||
+      (evt.currentTarget as HTMLDivElement | null) ||
+      (evt.target as HTMLDivElement | null);
+
+    if (!element || !previousCamera) {
+      return;
+    }
+
     const enabledElement = getEnabledElement(element);
     const viewport = enabledElement.viewport as
       | Types.IVolumeViewport

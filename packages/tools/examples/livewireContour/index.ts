@@ -39,7 +39,7 @@ const viewoprtsContainer = document.createElement('div');
 
 Object.assign(viewoprtsContainer.style, {
   display: 'grid',
-  height: '500px',
+  height: '512px',
   gridTemplateColumns: '1fr 1fr 1fr',
   gap: '5px',
 });

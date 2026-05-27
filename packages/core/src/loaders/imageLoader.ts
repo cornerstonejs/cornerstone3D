@@ -1,6 +1,7 @@
 import cache from '../cache/cache';
 import Events from '../enums/Events';
 import MetadataModules from '../enums/MetadataModules';
+import { ImageQualityStatus } from '../enums';
 import eventTarget from '../eventTarget';
 import genericMetadataProvider from '../utilities/genericMetadataProvider';
 import { getBufferConfiguration } from '../utilities/getBufferConfiguration';
@@ -19,6 +20,7 @@ import type {
   PixelDataTypedArray,
   ImagePlaneModuleMetadata,
   ImagePixelModuleMetadata,
+  RetrieveOptions,
 } from '../types';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import * as metaData from '../metaData';
@@ -29,6 +31,7 @@ export interface ImageLoaderOptions {
   requestType: string;
   additionalDetails?: Record<string, unknown>;
   ignoreCache?: boolean;
+  retrieveOptions?: RetrieveOptions;
 }
 
 interface LocalImageOptions {
@@ -69,6 +72,15 @@ type DerivedImageOptions = LocalImageOptions & {
 const imageLoaders = {};
 let unknownImageLoader;
 
+function getRequestedImageQualityStatus(
+  options: ImageLoaderOptions
+): ImageQualityStatus {
+  return (
+    options.retrieveOptions?.imageQualityStatus ??
+    ImageQualityStatus.FULL_RESOLUTION
+  );
+}
+
 /**
  * Loads an image using a registered Cornerstone Image Loader.
  *
@@ -85,13 +97,32 @@ function loadImageFromImageLoader(
   options: ImageLoaderOptions
 ): IImageLoadObject {
   // Attempt to retrieve the image from cache
-  const cachedImageLoadObject = cache.getImageLoadObject(imageId);
+  const cachedImageLoadObject =
+    !options.ignoreCache && cache.getImageLoadObject(imageId);
 
   if (cachedImageLoadObject) {
     // This is an in-progress image, which someone else is loading, so just
     // handle the response directly.
     handleImageLoadPromise(cachedImageLoadObject.promise, imageId);
     return cachedImageLoadObject;
+  }
+
+  // Progressive retrieval intentionally leaves partial images in the cache
+  // while scheduling a final request. Never replace this with a quality-blind
+  // cache.getImage(imageId) shortcut, or the final request can resolve to the
+  // partial image and the volume will never receive full-resolution data.
+  const cachedImage =
+    !options.ignoreCache &&
+    cache.getImage(imageId, getRequestedImageQualityStatus(options));
+
+  if (cachedImage) {
+    const imageLoadObject = {
+      promise: Promise.resolve(cachedImage),
+    };
+
+    handleImageLoadPromise(imageLoadObject.promise, imageId);
+
+    return imageLoadObject;
   }
 
   // Determine the appropriate image loader based on the image scheme

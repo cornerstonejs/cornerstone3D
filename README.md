@@ -175,6 +175,29 @@ Cornerstone has adopted a [Code of Conduct](./CODE_OF_CONDUCT.md) that we expect
 
 Read our guide on [How-to Contribute](https://cornerstonejs.org/docs/category/contributing) and about our [Issue Triage process](https://v3-docs.ohif.org/development/our-process).
 
+### Testing
+
+The repository has three browser-level test paths:
+
+- [`scripts/run-karma.sh`](./scripts/run-karma.sh) for legacy and compatibility rendering/tool tests.
+- [`scripts/run-playright.sh`](./scripts/run-playright.sh) for end-to-end example coverage, including the Generic viewport suite.
+- [`vitest.browser.config.ts`](./vitest.browser.config.ts) for low-level browser-mode rendering tests.
+
+Start with:
+
+```bash
+./scripts/run-karma.sh
+./scripts/run-playright.sh
+yarn test:vitest:browser
+```
+
+Detailed usage, wrapper flags, report output, and baseline management live in the contributor docs:
+
+- [Writing Karma Tests](https://www.cornerstonejs.org/docs/contribute/karma-tests)
+- [Writing Playwright Tests](https://www.cornerstonejs.org/docs/contribute/playwright-tests)
+
+Vitest browser-mode tests currently live only in-repo. Use `yarn test:vitest:browser`, `yarn test:vitest:browser:update`, and `yarn test:vitest:browser:ui`. The test files are matched from `tests/vitest-browser/**/*.browser.test.ts`.
+
 ### License
 
 Cornerstone is [MIT licensed](./LICENSE).

@@ -49,7 +49,7 @@ setTitleAndDescription(
   'Generates a 3D volume using the SUM, AVERAGE, or SUBTRACT operators for a 4D time series.\nEnter the dimension group numbers to use separated by commas (ex: 0,1,3,4) then press "Set Dimension Groups". \nNote: the index for the dimension groups starts at 0'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 

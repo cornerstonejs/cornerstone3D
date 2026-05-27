@@ -59,7 +59,7 @@ const element1 = document.createElement('div');
 element1.oncontextmenu = () => false;
 
 element1.style.width = size;
-element1.style.height = '500px';
+element1.style.height = '512px';
 
 viewportGrid.appendChild(element1);
 

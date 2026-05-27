@@ -76,12 +76,12 @@ export default async function createImageIdsAndCacheMetaData({
       SOPInstanceUIDToUse.trim() +
       '/frames/1';
 
-    if (useLegacyWadoRs) {
-      cornerstoneDICOMImageLoader.wadors.metaDataManager.add(
-        imageId,
-        instanceMetaData
-      );
-    } else {
+    cornerstoneDICOMImageLoader.wadors.metaDataManager.add(
+      imageId,
+      instanceMetaData
+    );
+
+    if (!useLegacyWadoRs) {
       addDicomWebInstance(imageId, instanceMetaData);
     }
 

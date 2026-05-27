@@ -52,7 +52,7 @@ setTitleAndDescription(
   'Here we demonstrate how to export a DICOM SEG from a Cornerstone3D volume.'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 

@@ -82,7 +82,7 @@
   },
   "dependencies": {
     "@cornerstonejs/utils": "5.0.0-beta.3",
-    "@kitware/vtk.js": "34.15.1",
+    "@kitware/vtk.js": "35.5.3",
     "comlink": "4.4.2",
     "gl-matrix": "3.4.3",
     "loglevel": "1.9.2"

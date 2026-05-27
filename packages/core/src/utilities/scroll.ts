@@ -1,5 +1,6 @@
 import { Events } from '../enums';
-import { StackViewport, VolumeViewport } from '../RenderingEngine';
+import StackViewport from '../RenderingEngine/StackViewport';
+import VolumeViewport from '../RenderingEngine/VolumeViewport';
 import type {
   ScrollOptions,
   EventTypes,

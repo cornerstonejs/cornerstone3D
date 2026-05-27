@@ -1,8 +1,11 @@
-import type { IVolumeViewport } from '../types';
 import {
   getRenderingEngines,
   getRenderingEngine,
 } from '../RenderingEngine/getRenderingEngine';
+import {
+  viewportSupportsVolumeActors,
+  type VolumeActorViewport,
+} from './viewportCapabilities';
 
 /**
  * Returns the viewports containing the same volume actors (all actors) the same
@@ -17,9 +20,9 @@ import {
  * @returns array of viewports that have the same volume actor as the target viewport
  */
 function getVolumeViewportsContainingSameVolumes(
-  targetViewport: IVolumeViewport,
+  targetViewport: VolumeActorViewport,
   renderingEngineId?: string
-): IVolumeViewport[] {
+): VolumeActorViewport[] {
   // If rendering engine is not provided, use all rendering engines
   let renderingEngines;
   if (renderingEngineId) {
@@ -28,11 +31,13 @@ function getVolumeViewportsContainingSameVolumes(
     renderingEngines = getRenderingEngines();
   }
 
-  const sameVolumesViewports = [];
+  const sameVolumesViewports: VolumeActorViewport[] = [];
 
   renderingEngines.forEach((renderingEngine) => {
     const targetActors = targetViewport.getActors();
-    const viewports = renderingEngine.getVolumeViewports();
+    const viewports = renderingEngine
+      .getViewports()
+      .filter(viewportSupportsVolumeActors);
 
     for (const vp of viewports) {
       const vpActors = vp.getActors();

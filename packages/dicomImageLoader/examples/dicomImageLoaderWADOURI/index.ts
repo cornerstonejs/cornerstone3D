@@ -1,4 +1,5 @@
 import htmlStr from './layout';
+import { dicomDimensions } from './dicomDimensions';
 import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
@@ -67,10 +68,33 @@ const element = document.querySelector(
 
 const toolGroupId = 'myToolGroup';
 let viewport;
+let renderingEngine;
+let loadRequestId = 0;
+
+function applyCanvasSize(imagePath: string) {
+  const dim = dicomDimensions[imagePath];
+  if (!dim) {
+    console.warn(
+      `No DICOM dimensions registered for ${imagePath}; canvas not resized.`
+    );
+    return;
+  }
+
+  element.style.width = `${dim.columns}px`;
+  element.style.height = `${dim.rows}px`;
+
+  if (renderingEngine) {
+    renderingEngine.resize(true, false);
+  }
+}
 
 async function run() {
   // Init Cornerstone and related libraries
-  await initDemo();
+  await initDemo({
+    dicomImageLoader: {
+      maxWebWorkers: 1,
+    },
+  });
 
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(WindowLevelTool);
@@ -124,7 +148,7 @@ async function run() {
 
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
-  const renderingEngine = new RenderingEngine(renderingEngineId);
+  renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create a stack viewport
   const viewportId = 'CT_STACK';
@@ -145,14 +169,23 @@ async function run() {
 async function loadAndViewImage(imageId) {
   // Set the stack on the viewport
   const start = new Date().getTime();
+  const requestId = ++loadRequestId;
+
   viewport.setStack([imageId]).then(
     () => {
+      if (requestId !== loadRequestId) {
+        return;
+      }
+
       // Set the VOI of the stack
       // viewport.setProperties({ voiRange: ctVoiRange });
       // Render the image
       viewport.render();
 
-      const image = viewport.csImage;
+      const image =
+        typeof viewport.getCornerstoneImage === 'function'
+          ? viewport.getCornerstoneImage()
+          : viewport.csImage;
       if (!image) {
         console.error('Image failed to load');
         return;
@@ -268,6 +301,10 @@ async function loadAndViewImage(imageId) {
         image.decodeTimeInMS != null ? image.decodeTimeInMS + 'ms' : '';
     },
     function (err) {
+      if (requestId !== loadRequestId) {
+        return;
+      }
+
       throw err;
     }
   );
@@ -289,6 +326,8 @@ function handleImageSelection(event) {
   console.log('Selected file:', selectedFile);
 
   if (selectedFile) {
+    applyCanvasSize(selectedFile);
+
     let url;
 
     if (selectedFile.startsWith('TG_18')) {

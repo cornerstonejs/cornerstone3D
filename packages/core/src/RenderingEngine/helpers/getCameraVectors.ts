@@ -14,6 +14,11 @@ export interface CameraPositionConfig {
   useViewportNormal?: boolean;
 }
 
+export type CameraVectorViewport = Pick<
+  Types.IBaseVolumeViewport,
+  'getActors' | 'getCamera' | 'getCurrentImageId' | 'getImageIds' | 'type'
+>;
+
 /**
  * Calculate camera position values based on DICOM image orientation vectors.
  *
@@ -245,7 +250,7 @@ export function calculateCameraPosition(
  * ```
  */
 export function getCameraVectors(
-  viewport: Types.IBaseVolumeViewport,
+  viewport: CameraVectorViewport,
   config?: CameraPositionConfig
 ) {
   if (!viewport.getActors()?.length) {
