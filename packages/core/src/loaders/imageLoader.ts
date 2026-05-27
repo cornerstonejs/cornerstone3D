@@ -107,6 +107,10 @@ function loadImageFromImageLoader(
     return cachedImageLoadObject;
   }
 
+  // Progressive retrieval intentionally leaves partial images in the cache
+  // while scheduling a final request. Never replace this with a quality-blind
+  // cache.getImage(imageId) shortcut, or the final request can resolve to the
+  // partial image and the volume will never receive full-resolution data.
   const cachedImage =
     !options.ignoreCache &&
     cache.getImage(imageId, getRequestedImageQualityStatus(options));

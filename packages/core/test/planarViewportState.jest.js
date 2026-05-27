@@ -271,7 +271,10 @@ describe('PlanarViewport view state', () => {
 
   it('applies projection presentation pan in a single state write', () => {
     const { renderingEngine, viewport } = track(createViewport());
+    const image = createPlanarImage('presentation-pan-image');
 
+    addPlanarImageMetadata([image.imageId]);
+    mountStackBinding(viewport, [image]);
     renderingEngine.renderViewport.mockClear();
 
     applyProjectionPresentation(viewport, {

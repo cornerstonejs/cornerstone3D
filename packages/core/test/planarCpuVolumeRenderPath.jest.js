@@ -69,7 +69,9 @@ function createContext(canvas = createCanvas()) {
     },
     display: {
       activateRenderMode: jest.fn(),
+      markRendered: jest.fn(),
       renderNow: jest.fn(),
+      setNeedsRender: jest.fn(),
     },
     cpu: {
       canvas,

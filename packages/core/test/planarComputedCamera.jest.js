@@ -53,6 +53,8 @@ function createImageVolume() {
     imageData: {
       getDimensions: () => [8, 10, 12],
       getDirection: () => [1, 0, 0, 0, 1, 0, 0, 0, 1],
+      getExtent: () => [0, 7, 0, 9, 0, 11],
+      extentToBounds: () => [10, 17, 20, 38, 30, 63],
       indexToWorld: ([i, j, k]) => [10 + i, 20 + j * 2, 30 + k * 3],
     },
   };
