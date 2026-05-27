@@ -285,6 +285,16 @@ abstract class GenericViewport<
     return cc.worldToCanvas(worldPos);
   }
 
+  /**
+   * Returns the current axis-based stretch as `[scaleX, scaleY]`. The new
+   * generic viewport pipeline does not apply axis-based stretching for now, so this
+   * defaults to `[1, 1]`. Subclasses that support aspect-ratio stretching
+   * should override.
+   */
+  getAspectRatio(): Point2 {
+    return [1, 1];
+  }
+
   // ====================================================================
   // Public API -- view state
   // ====================================================================
