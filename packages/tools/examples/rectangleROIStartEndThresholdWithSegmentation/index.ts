@@ -13,11 +13,11 @@ import {
   addButtonToToolbar,
   addCheckboxToToolbar,
   addInputToToolbar,
-  setPetTransferFunctionForVolumeActor,
-  getLocalUrl,
+  setCtTransferFunctionForVolumeActor,
+  setPetColorMapTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-
+import perfusionColorMap from './preset';
 // This is for debugging purposes
 console.warn(
   'Click on index.ts to open source code for this example --------->'
@@ -39,9 +39,13 @@ const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 
 // Define a unique id for the volume
-const volumeName = 'PT_VOLUME_ID'; // Id of the volume less loader prefix
-const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
-const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
+const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
+
+const ctVolumeName = 'CT_VOLUME_ID';
+const ctVolumeId = `${volumeLoaderScheme}:${ctVolumeName}`;
+
+const ptVolumeName = 'PT_VOLUME_ID';
+const ptVolumeId = `${volumeLoaderScheme}:${ptVolumeName}`;
 
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
@@ -242,7 +246,13 @@ addButtonToToolbar({
   onClick: () => {
     const annotations = cornerstoneTools.annotation.state.getAllAnnotations();
     const labelmapVolume = cache.getVolume(segmentationId);
-    const volume = cache.getVolume(volumeId);
+
+    if (!annotations || annotations.length === 0) {
+      alert('Please draw an annotation first.');
+      return;
+    }
+
+    const volume = cache.getVolume(ptVolumeId);
 
     const annotationUIDs = annotations.map((a) => {
       return a.annotationUID;
@@ -260,9 +270,11 @@ addButtonToToolbar({
         annotations[0],
         volume
       );
-      lower = thresholdLower * annotationMaxValue;
-      console.log(annotationMaxValue);
-      console.log(lower);
+      if (annotationMaxValue !== -Infinity) {
+        lower = thresholdLower * annotationMaxValue;
+        console.log(annotationMaxValue);
+        console.log(lower);
+      }
     }
 
     //const volume = cache.getVolumes()[0]; // 0 is volume loaded
@@ -323,7 +335,7 @@ addCheckboxToToolbar({
 
 async function addSegmentationsToState() {
   // Create a segmentation of the same resolution as the source data
-  volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
+  volumeLoader.createAndCacheDerivedLabelmapVolume(ptVolumeId, {
     volumeId: segmentationId,
   });
 
@@ -365,6 +377,13 @@ async function run() {
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(StackScrollTool.toolName);
 
+  const isPreferredTargetId = (
+    viewport: any,
+    targetInfo: { targetId: string; cachedState: any }
+  ) => {
+    return targetInfo.targetId.includes('PT_');
+  };
+
   // Segmentation Tools
   toolGroup.addTool(RectangleROIStartEndThresholdTool.toolName, {
     /* Define if the stats are calculated while drawing the annotation or at the end */
@@ -373,6 +392,7 @@ async function run() {
     storePointData: true,
     /*Set a custom wait time */
     throttleTimeout: 100,
+    isPreferredTargetId,
   });
 
   toolGroup.setToolActive(RectangleROIStartEndThresholdTool.toolName, {
@@ -399,22 +419,32 @@ async function run() {
     bindings: [{ mouseButton: MouseBindings.Wheel }],
   });
 
-  // Get Cornerstone imageIds for the source data and fetch metadata into RAM
-  const imageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID: '1.2.840.113619.2.290.3.3767434740.226.1600859119.501', // Water phantom
-    //'1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463', // Original
+  const wadoRsRoot = 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb';
+  const StudyInstanceUID =
+    '1.3.6.1.4.1.14519.5.2.1.7009.2403.871108593056125491804754960339';
 
+  // Get Cornerstone imageIds and fetch metadata into RAM
+  const ctImageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID,
     SeriesInstanceUID:
-      '2.16.840.1.114362.1.12114306.25269253871.642214905.509.634', // PT AC192
-    //'1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015', // Original
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.367700692008930469189923116409',
+    wadoRsRoot,
+  });
 
-    wadoRsRoot:
-      getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+  const ptImageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID,
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.780462962868572737240023906400',
+    wadoRsRoot,
   });
 
   // Define a volume in memory
-  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
-    imageIds,
+  const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
+    imageIds: ctImageIds,
+  });
+  // Define a volume in memory
+  const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
+    imageIds: ptImageIds,
   });
 
   // Add some segmentations based on the source data volume
@@ -465,23 +495,41 @@ async function run() {
   toolGroup.addViewport(viewportId2, renderingEngineId);
   toolGroup.addViewport(viewportId3, renderingEngineId);
 
-  // Set the volume to load
-  volume.load();
+  // Set the volumes to load
+  ptVolume.load();
+  ctVolume.load();
 
   // Set volumes on the viewports
   await setVolumesForViewports(
     renderingEngine,
-    [{ volumeId, callback: setPetTransferFunctionForVolumeActor }],
+    [
+      {
+        volumeId: ctVolumeId,
+        callback: setCtTransferFunctionForVolumeActor,
+      },
+      {
+        volumeId: ptVolumeId,
+        callback: ({ volumeActor }) =>
+          setPetColorMapTransferFunctionForVolumeActor({
+            volumeActor,
+            preset: perfusionColorMap,
+          }),
+      },
+    ],
     [viewportId1, viewportId2, viewportId3]
   );
 
-  // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(viewportId1, [
-    {
-      segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    },
-  ]);
+  // Add the segmentation representation to the viewports
+  const segmentationRepresentation = {
+    segmentationId,
+    type: csToolsEnums.SegmentationRepresentations.Labelmap,
+  };
+
+  await segmentation.addLabelmapRepresentationToViewportMap({
+    [viewportId1]: [segmentationRepresentation],
+    [viewportId2]: [segmentationRepresentation],
+    [viewportId3]: [segmentationRepresentation],
+  });
 
   // Render the image
   renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);
