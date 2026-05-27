@@ -111,6 +111,6 @@ The metadata cache in 5.x is a new shared layer that can be reused by different 
 - Migration guidance:
   - Keep `convertMultiframeImageIds(...)` for generating frame imageIds.
   - Store or fetch NATURALIZED/source metadata using canonical base imageId.
-  - Resolve per-frame metadata via `INSTANCE`/derived modules using frame imageIds, and rely on provider filters for frame<->base normalization.
+  - Resolve per-frame metadata via `INSTANCE`/derived modules using frame imageIds, and rely on provider filters for `frame<->base` normalization.
 
 <DocCardList items={useCurrentSidebarCategory().items.filter(item => item.docId !== 'migration-guides/5x/index')}/>
