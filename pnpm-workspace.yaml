@@ -18,6 +18,7 @@ strictPeerDependencies: false
 linkWorkspacePackages: true
 preferWorkspacePackages: true
 minimumReleaseAge: 2880
+frozenLockfile: true
 
 overrides:
   '@babel/helper-create-class-features-plugin': 7.28.3
