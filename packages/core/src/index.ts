@@ -195,6 +195,16 @@ import {
   addImageSlicesToViewports,
   getProjectionScaleMatrix,
 } from './RenderingEngine/helpers';
+import {
+  registerViewportType,
+  isRegisteredViewportType,
+} from './RenderingEngine/helpers/viewportTypeToViewportClass';
+export type {
+  ViewportType,
+  ViewportTypeConstants,
+  ViewportTypeRegistry,
+} from './types/ViewportTypeRegistry';
+export type { ViewportTypesMap } from './enums/ViewportTypes';
 
 export * from './loaders/decimatedVolumeLoader';
 
@@ -334,6 +344,8 @@ export {
   wsiProjection,
   renderingEngineExportsV2,
   getProjectionScaleMatrix,
+  registerViewportType,
+  isRegisteredViewportType,
   //
   imageLoadPoolManager as requestPoolManager,
   imageRetrievalPoolManager,

@@ -63,6 +63,73 @@ methods on compatibility viewports, or use Generic methods such as
 legacy data mounting with direct Generic data mounting on the same viewport
 can leave legacy presentation defaults and Generic data state out of sync.
 
+## Extending Viewport Types (New Pattern)
+
+Built-in and extension viewport type names live on **`Enums.ViewportTypes`**, a
+runtime constants map in the enums package (not the legacy `ViewportType` enum).
+
+- **Built-ins:** `Enums.ViewportTypes.STACK`, `Enums.ViewportTypes.PLANAR_NEXT`, etc.
+- **Extensions:** `registerViewportType({ name: 'PET', ... })` then `Enums.ViewportTypes.PET`
+- **Types:** augment `ViewportTypeConstants` in `.d.ts` (and `ViewportTypeRegistry` for
+  the wire-value union). `Enums.ViewportTypes` is typed from `ViewportTypeConstants`,
+  so new keys pick up the correct literal types automatically.
+
+The deprecated `Enums.ViewportType` enum is unchanged at runtime and is **not**
+extended when you register new types.
+
+### 1) Add type augmentation in your extension
+
+```ts
+// my-extension/src/viewportTypes.d.ts
+import '@cornerstonejs/core';
+
+declare module '@cornerstonejs/core' {
+  interface ViewportTypeRegistry {
+    'myOrg:pet': 'myOrg:pet';
+  }
+
+  interface ViewportTypeConstants {
+    readonly PET: 'myOrg:pet';
+  }
+}
+```
+
+### 2) Register the type at runtime
+
+```ts
+import { registerViewportType } from '@cornerstonejs/core';
+
+registerViewportType({
+  name: 'PET',
+  type: 'myOrg:pet',
+  ViewportClass: PetViewport,
+});
+```
+
+After registration, `Enums.ViewportTypes.PET === 'myOrg:pet'`.
+
+### 3) Enable elements using the registered constant
+
+```ts
+import { Enums } from '@cornerstonejs/core';
+
+renderingEngine.enableElement({
+  viewportId: 'petViewport',
+  element,
+  type: Enums.ViewportTypes.PET,
+});
+```
+
+Notes:
+
+- Call `registerViewportType(...)` in your extension entry module **before** any
+  `enableElement(...)` that uses `Enums.ViewportTypes.PET`.
+- `declare module` only affects TypeScript; it does not register constructors.
+  Runtime registration is required.
+- Use namespaced wire values in `type` (for example, `myOrg:pet`) to avoid collisions.
+- You may still use the wire string directly (`type: 'myOrg:pet'`) if you prefer;
+  `Enums.ViewportTypes.PET` is the enum-like ergonomic accessor.
+
 Code that branches on `viewport.type` should also account for the runtime type.
 Direct planar Generic viewports report `ViewportType.PLANAR_NEXT`; remapped stack
 and orthographic compatibility adapters still expose their requested legacy type
