@@ -179,5 +179,5 @@
     "not ie < 11",
     "not op_mini all"
   ],
-  "packageManager": "pnpm@11.1.1"
+  "packageManager": "pnpm@11.4.0"
 }

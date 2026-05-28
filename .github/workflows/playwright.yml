@@ -16,15 +16,15 @@ jobs:
       max-parallel: 3
       matrix:
         include:
-          - node-version: 20
+          - node-version: 24
             mode: legacy
             run_args: '--project=chromium'
             collect_coverage: true
-          - node-version: 20
+          - node-version: 24
             mode: compatibility
             run_args: '--compat --project=chromium'
             collect_coverage: false
-          - node-version: 20
+          - node-version: 24
             mode: next
             run_args: '--next --project=chromium'
             collect_coverage: false
@@ -33,7 +33,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
         with:
-          version: 11.1.1
+          version: 11.4.0
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
