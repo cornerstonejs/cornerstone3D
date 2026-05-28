@@ -29,6 +29,7 @@ jobs:
     timeout-minutes: 120
     env:
       PNPM_VERSION: 11.4.0
+      BUN_VERSION: 1.2.23
       NODE_VERSION: 24
       OHIF_REF: master
       OHIF_DIR: ohif
@@ -66,6 +67,14 @@ jobs:
         with:
           version: ${{ env.PNPM_VERSION }}
 
+      # OHIF (a bun/yarn project) is installed with bun so it gets an isolated
+      # node_modules instead of being pulled into this repo's pnpm workspace,
+      # which mixes jest copies and breaks jest-runner (leakDetector error).
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
@@ -101,24 +110,24 @@ jobs:
 
       - name: Install OHIF dependencies
         working-directory: ${{ env.OHIF_DIR }}
-        run: pnpm install --frozen-lockfile
+        run: bun install
 
       - name: Link local Cornerstone packages into OHIF node_modules
         run: node scripts/link-ohif-cornerstone-node-modules.mjs ${{ env.OHIF_DIR }}
 
       - name: Run OHIF unit tests
         working-directory: ${{ env.OHIF_DIR }}
-        run: pnpm run test:unit:ci
+        run: bun run test:unit:ci
 
       - name: Install Playwright browsers
         working-directory: ${{ env.OHIF_DIR }}
-        run: pnpm exec playwright install
+        run: npx playwright install --with-deps chromium
 
       - name: Run OHIF e2e tests
         working-directory: ${{ env.OHIF_DIR }}
         env:
           PLAYWRIGHT_HTML_OPEN: never
-        run: pnpm run test:e2e:ci -- --max-failures=10 --retries=1
+        run: bun run test:e2e:ci
 
       - name: Upload OHIF Playwright artifacts
         if: always()
