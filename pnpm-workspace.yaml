@@ -17,6 +17,7 @@ nodeLinker: hoisted
 strictPeerDependencies: false
 linkWorkspacePackages: true
 preferWorkspacePackages: true
+minimumReleaseAge: 2880
 
 overrides:
   '@babel/helper-create-class-features-plugin': 7.28.3
@@ -41,7 +42,8 @@ overrides:
   path-to-regexp: 0.1.13
   protobufjs: 7.5.8
   fast-uri: 3.1.2
-  tmp: 0.2.6
+  tmp: 0.2.5
+  make-fetch-happen: 15.0.5
   webpack: 5.105.0
   mdast-util-to-hast: 13.2.1
   '@remix-run/router': 1.23.2
