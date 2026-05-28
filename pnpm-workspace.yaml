@@ -17,6 +17,7 @@ nodeLinker: hoisted
 strictPeerDependencies: false
 linkWorkspacePackages: true
 preferWorkspacePackages: true
+frozenLockfile: true
 
 overrides:
   '@babel/helper-create-class-features-plugin': 7.28.3
