@@ -7,7 +7,7 @@ settings:
 overrides:
   '@babel/helper-create-class-features-plugin': 7.28.3
   caniuse-lite: 1.0.30001767
-  axios: 1.15.2
+  axios: 1.16.1
   buffer: 6.0.3
   node-forge: 1.4.0
   canvas: 3.2.0
@@ -4652,8 +4652,8 @@ packages:
     resolution: {integrity: sha512-wvUjBtSGN7+7SjNpq/9M2Tg350UZD3q62IFZLbRAR1bSMlCo1ZaeW+BJ+D090e4hIIZLBcTDWe4Mh4jvUDajzQ==}
     engines: {node: '>= 0.4'}
 
-  axios@1.15.2:
-    resolution: {integrity: sha512-wLrXxPtcrPTsNlJmKjkPnNPK2Ihe0hn0wGSaTEiHRPxwjvJwT3hKmXF4dpqxmPO9SoNb2FsYXj/xEo0gHN+D5A==}
+  axios@1.16.1:
+    resolution: {integrity: sha512-caYkukvroVPO8KrzuJEb50Hm07KwfBZPEC3VeFHTsqWHvKTsy54hjJz9BS/cdaypROE2rH6xvm9mHX4fgWkr3A==}
 
   babel-jest@30.2.0:
     resolution: {integrity: sha512-0YiBEOxWqKkSQWL9nNGGEgndoeL0ZpWrbLMNL5u/Kaxrli3Eaxlt3ZtIDktEvXt4L/R9r3ODr2zKwGM/2BjxVw==}
@@ -14836,7 +14836,7 @@ snapshots:
 
   '@itk-wasm/dam@1.1.1':
     dependencies:
-      axios: 1.15.2
+      axios: 1.16.1(supports-color@7.2.0)
       commander: 10.0.1
       decompress: 4.2.1
       files-from-path: 1.1.4
@@ -14844,12 +14844,14 @@ snapshots:
       tar: 7.5.11
     transitivePeerDependencies:
       - debug
+      - supports-color
 
   '@itk-wasm/morphological-contour-interpolation@1.1.0':
     dependencies:
       itk-wasm: 1.0.0-b.173
     transitivePeerDependencies:
       - debug
+      - supports-color
 
   '@jasminejs/reporters@1.0.0': {}
 
@@ -17045,9 +17047,9 @@ snapshots:
 
   adm-zip@0.5.17: {}
 
-  agent-base@6.0.2:
+  agent-base@6.0.2(supports-color@7.2.0):
     dependencies:
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@7.2.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -17249,13 +17251,15 @@ snapshots:
     dependencies:
       possible-typed-array-names: 1.1.0
 
-  axios@1.15.2:
+  axios@1.16.1(supports-color@7.2.0):
     dependencies:
       follow-redirects: 1.16.0
       form-data: 4.0.5
+      https-proxy-agent: 5.0.1(supports-color@7.2.0)
       proxy-from-env: 2.1.0
     transitivePeerDependencies:
       - debug
+      - supports-color
 
   babel-jest@30.2.0(@babel/core@7.29.7):
     dependencies:
@@ -18310,9 +18314,11 @@ snapshots:
     dependencies:
       ms: 2.0.0
 
-  debug@4.3.4:
+  debug@4.3.4(supports-color@7.2.0):
     dependencies:
       ms: 2.1.2
+    optionalDependencies:
+      supports-color: 7.2.0
 
   debug@4.4.3:
     dependencies:
@@ -19046,7 +19052,7 @@ snapshots:
 
   extract-zip@2.0.1:
     dependencies:
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@7.2.0)
       get-stream: 5.2.0
       yauzl: 2.10.0
     optionalDependencies:
@@ -19864,10 +19870,10 @@ snapshots:
       quick-lru: 5.1.1
       resolve-alpn: 1.2.1
 
-  https-proxy-agent@5.0.1:
+  https-proxy-agent@5.0.1(supports-color@7.2.0):
     dependencies:
-      agent-base: 6.0.2
-      debug: 4.3.4
+      agent-base: 6.0.2(supports-color@7.2.0)
+      debug: 4.3.4(supports-color@7.2.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -20326,7 +20332,7 @@ snapshots:
       '@itk-wasm/dam': 1.1.1
       '@thewtex/zstddec': 0.2.1
       '@types/emscripten': 1.40.0
-      axios: 1.15.2
+      axios: 1.16.1(supports-color@7.2.0)
       comlink: 4.4.2
       commander: 11.1.0
       fs-extra: 11.3.5
@@ -20336,13 +20342,14 @@ snapshots:
       wasm-feature-detect: 1.8.0
     transitivePeerDependencies:
       - debug
+      - supports-color
 
   itk-wasm@1.0.0-b.173:
     dependencies:
       '@itk-wasm/dam': 1.1.1
       '@thewtex/zstddec': 0.2.1
       '@types/emscripten': 1.40.0
-      axios: 1.15.2
+      axios: 1.16.1(supports-color@7.2.0)
       chalk: 5.6.2
       comlink: 4.4.2
       commander: 11.1.0
@@ -20353,6 +20360,7 @@ snapshots:
       wasm-feature-detect: 1.8.0
     transitivePeerDependencies:
       - debug
+      - supports-color
 
   jackspeak@3.4.3:
     dependencies:
@@ -21161,7 +21169,7 @@ snapshots:
     dependencies:
       chalk: 5.3.0
       commander: 11.0.0
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@7.2.0)
       execa: 7.2.0
       lilconfig: 2.1.0
       listr2: 6.6.1(enquirer@2.3.6)
@@ -22361,7 +22369,7 @@ snapshots:
       ansi-styles: 4.3.0
       argparse: 2.0.1
       asynckit: 0.4.0
-      axios: 1.15.2
+      axios: 1.16.1(supports-color@7.2.0)
       balanced-match: 4.0.3
       base64-js: 1.5.1
       bl: 4.1.0
@@ -23801,10 +23809,10 @@ snapshots:
   puppeteer@13.7.0(encoding@0.1.13):
     dependencies:
       cross-fetch: 3.1.5(encoding@0.1.13)
-      debug: 4.3.4
+      debug: 4.3.4(supports-color@7.2.0)
       devtools-protocol: 0.0.981744
       extract-zip: 2.0.1
-      https-proxy-agent: 5.0.1
+      https-proxy-agent: 5.0.1(supports-color@7.2.0)
       pkg-dir: 4.2.0
       progress: 2.0.3
       proxy-from-env: 1.1.0
