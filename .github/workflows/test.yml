@@ -32,10 +32,9 @@ jobs:
           JUNIT_REPORT_PATH: ./junit/
           JUNIT_REPORT_NAME: test-results.xml
 
+      # Runs only if the unit tests above passed, so a failure here clearly
+      # means the Karma tests failed (not the unit tests).
       - name: Run Karma tests
-        # Run even if the Jest step failed, so the two suites report
-        # their pass/fail status independently.
-        if: always()
         run: pnpm run test:ci
         env:
           JUNIT_REPORT_PATH: ./junit/
