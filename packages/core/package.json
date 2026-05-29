@@ -69,26 +69,26 @@
   },
   "scripts": {
     "prebuild": "node ../../scripts/generate-version.js ./",
-    "build:esm": "yarn run prebuild && tsc --project ./tsconfig.json",
+    "build:esm": "pnpm run prebuild && tsc --project ./tsconfig.json",
     "build:esm:watch": "tsc --project ./tsconfig.json --watch",
     "clean": "rm -rf node_modules/.cache/storybook && shx rm -rf dist",
-    "clean:deep": "yarn run clean && shx rm -rf node_modules",
-    "build": "yarn run build:esm",
-    "build:all": "yarn run build:esm",
+    "clean:deep": "pnpm run clean && shx rm -rf node_modules",
+    "build": "pnpm run build:esm",
+    "build:all": "pnpm run build:esm",
     "dev": "tsc --project ./tsconfig.json --watch",
     "api-check": "api-extractor --debug run ",
     "lint": "oxlint .",
-    "prepublishOnly": "yarn run build"
+    "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@cornerstonejs/utils": "5.0.0-beta.3",
+    "@cornerstonejs/utils": "workspace:*",
     "@kitware/vtk.js": "35.5.3",
     "comlink": "4.4.2",
     "gl-matrix": "3.4.3",
     "loglevel": "1.9.2"
   },
   "devDependencies": {
-    "@cornerstonejs/metadata": "5.0.0-beta.3"
+    "@cornerstonejs/metadata": "workspace:*"
   },
   "peerDependencies": {
     "@cornerstonejs/metadata": ">=5.0.0-beta.1 <6.0.0-0",
