@@ -26,8 +26,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run unit tests
-        run: pnpm run test:unit:ci
+      - name: Run unit tests (Jest)
+        run: pnpm run test:unit
+        env:
+          JUNIT_REPORT_PATH: ./junit/
+          JUNIT_REPORT_NAME: test-results.xml
+
+      - name: Run Karma tests
+        # Run even if the Jest step failed, so the two suites report
+        # their pass/fail status independently.
+        if: always()
+        run: pnpm run test:ci
         env:
           JUNIT_REPORT_PATH: ./junit/
           JUNIT_REPORT_NAME: test-results.xml

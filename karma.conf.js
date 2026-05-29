@@ -237,6 +237,15 @@ module.exports = function (config) {
           '--no-sandbox',
           '--ignore-gpu-blacklist',
           '--remote-debugging-port=9229',
+          // vtk.js needs a WebGL context. Headless Chrome only provides one via
+          // a software (SwiftShader) GL backend. Older bundled Chromium enabled
+          // this by default, but Chrome 110+ requires it to be explicitly opted
+          // into - without these flags vtk.js' get3DContext() returns null and
+          // tests fail with "no webgl context". Unknown flags are ignored by
+          // older Chrome, so this is safe across versions.
+          '--use-gl=angle',
+          '--use-angle=swiftshader',
+          '--enable-unsafe-swiftshader',
         ],
       },
     },
