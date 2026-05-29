@@ -42,7 +42,7 @@ The downstream validation is defined in
 [`.github/workflows/ohif-downstream.yml`](.github/workflows/ohif-downstream.yml).
 It runs on every CS3D pull request and `workflow_dispatch`:
 
-1. Checks out the CS3D PR branch and builds it (`bun run build:esm`).
+1. Checks out the CS3D PR branch and builds it (`pnpm run build:esm`).
 2. Checks out the OHIF Viewer at a ref resolved for that run: by default
    `master`; on pull requests you can override with a line in the PR description
    (see below); on `workflow_dispatch` you can set the `ohif_ref` input.
@@ -91,7 +91,7 @@ so you can iterate without publishing:
 
 ### Link
 
-From the **CS3D repo root**, after building (`bun run build:esm`):
+From the **CS3D repo root**, after building (`pnpm run build:esm`):
 
 ```bash
 node scripts/link-ohif-cornerstone-node-modules.mjs /path/to/ohif
@@ -113,7 +113,7 @@ following packages are linked:
 | `@cornerstonejs/polymorphic-segmentation` | `packages/polymorphic-segmentation` |
 | `@cornerstonejs/tools` | `packages/tools` |
 
-After linking, start OHIF's dev server (`yarn dev` or `bun run dev`) and any
+After linking, start OHIF's dev server (`pnpm run dev`) and any
 changes you make in CS3D (after rebuilding) will be reflected immediately.
 
 ### Unlink
@@ -124,7 +124,7 @@ To restore the registry-installed packages:
 node scripts/unlink-ohif-cornerstone-node-modules.mjs /path/to/ohif
 ```
 
-This removes the symlinks and runs `yarn install --frozen-lockfile` in the OHIF
+This removes the symlinks and runs `pnpm install --frozen-lockfile` in the OHIF
 directory to restore the original packages.
 
 ### Typical workflow
@@ -132,32 +132,32 @@ directory to restore the original packages.
 ```bash
 # 1. Build CS3D
 cd /path/to/cornerstone3D
-bun install --frozen-lockfile
-bun run build:esm
+pnpm install --frozen-lockfile
+pnpm run build:esm
 
 # 2. Link into OHIF
 node scripts/link-ohif-cornerstone-node-modules.mjs /path/to/ohif
 
 # 3. Start OHIF
 cd /path/to/ohif
-yarn dev
+pnpm run dev
 
 # 4. Iterate — rebuild CS3D after changes:
 cd /path/to/cornerstone3D
-bun run build:esm
+pnpm run build:esm
 # OHIF dev server picks up changes automatically
 
 # 5. When done, unlink
 node scripts/unlink-ohif-cornerstone-node-modules.mjs /path/to/ohif
 ```
 
-> **Tip:** For the `yarn link` based approach (useful when working on a single
+> **Tip:** For the `pnpm link` based approach (useful when working on a single
 > package rather than the full set), see the
 > [Linking Cornerstone Libraries](packages/docs/docs/contribute/linking.md) doc.
 
 ## Troubleshooting
 
-If unit tests fail with **\"Cannot find module '../build/Release/canvas.node'\"**, the native `canvas` addon wasn’t built. Run `yarn rebuild:canvas` (or `npm run rebuild:canvas`); if that doesn’t fix it, see [docs/troubleshooting.md](docs/troubleshooting.md#unit-tests-cannot-find-module-buildreleasecanvasnode).
+If unit tests fail with **\"Cannot find module '../build/Release/canvas.node'\"**, the native `canvas` addon wasn’t built. Run `pnpm run rebuild:canvas`; if that doesn’t fix it, see [docs/troubleshooting.md](docs/troubleshooting.md#unit-tests-cannot-find-module-buildreleasecanvasnode).
 
 ## Support
 

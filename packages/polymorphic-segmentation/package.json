@@ -28,16 +28,16 @@
     "prebuild": "node ../../scripts/generate-version.js ./",
     "test": "jest --testTimeout 60000",
     "clean": "rimraf dist",
-    "build": "yarn run build:esm",
-    "build:esm": "yarn run prebuild && tsc --project ./tsconfig.json",
+    "build": "pnpm run build:esm",
+    "build:esm": "pnpm run prebuild && tsc --project ./tsconfig.json",
     "build:esm:watch": "tsc --project ./tsconfig.json --watch",
     "dev": "tsc --project ./tsconfig.json --watch",
-    "build:all": "yarn run build:esm",
+    "build:all": "pnpm run build:esm",
     "start": "tsc --project ./tsconfig.json --watch",
     "format": "prettier --write 'src/**/*.js' 'test/**/*.js'",
     "lint": "oxlint .",
     "api-check": "api-extractor --debug run ",
-    "prepublishOnly": "yarn clean && yarn build"
+    "prepublishOnly": "pnpm run clean && pnpm run build"
   },
   "repository": {
     "type": "git",
@@ -53,8 +53,8 @@
     "@icr/polyseg-wasm": "0.4.0"
   },
   "devDependencies": {
-    "@cornerstonejs/core": "5.0.0-beta.3",
-    "@cornerstonejs/tools": "5.0.0-beta.3"
+    "@cornerstonejs/core": "workspace:*",
+    "@cornerstonejs/tools": "workspace:*"
   },
   "peerDependencies": {
     "@cornerstonejs/core": ">=5.0.0-beta.1 <6.0.0-0",

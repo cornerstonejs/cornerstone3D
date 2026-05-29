@@ -59,12 +59,12 @@
   "scripts": {
     "test": "jest --testTimeout 60000",
     "build": "rollup -c rollup.config.mjs",
-    "build:esm": "yarn run prebuild && rollup -c rollup.config.mjs",
+    "build:esm": "pnpm run prebuild && rollup -c rollup.config.mjs",
     "build:esm:watch": "rollup --watch -c rollup.config.mjs",
     "clean": "rm -rf node_modules/.cache/storybook && shx rm -rf dist",
-    "clean:deep": "yarn run clean && shx rm -rf node_modules",
+    "clean:deep": "pnpm run clean && shx rm -rf node_modules",
     "dev": "rollup --watch  -c rollup.config.mjs",
-    "build:all": "yarn build",
+    "build:all": "pnpm run build",
     "api-check": "echo 'No API check for this package'",
     "start": "rollup --watch -c rollup.config.mjs",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,css,md}\" \"test/**/*.{js,jsx,ts,tsx,json,css,md}\" \"examples/**/*.{js,jsx,ts,tsx,json,css,md}\" \"*.{js,mjs,json,md}\"",
@@ -89,8 +89,8 @@
     "ndarray": "1.0.19"
   },
   "devDependencies": {
-    "@cornerstonejs/core": "5.0.0-beta.3",
-    "@cornerstonejs/tools": "5.0.0-beta.3"
+    "@cornerstonejs/core": "workspace:*",
+    "@cornerstonejs/tools": "workspace:*"
   },
   "peerDependencies": {
     "@cornerstonejs/core": ">=5.0.0-beta.1 <6.0.0-0",
