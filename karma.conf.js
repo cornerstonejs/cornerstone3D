@@ -1,8 +1,33 @@
 // @ts-check
 const path = require('path');
 const os = require('os');
+const fs = require('fs');
 
-process.env.CHROME_BIN = require('puppeteer').executablePath();
+/**
+ * Resolve the Chrome/Chromium binary that karma-chrome-launcher should use.
+ *
+ * Historically this unconditionally set CHROME_BIN to puppeteer's bundled
+ * Chromium path. Under pnpm, puppeteer's optional download (an install script)
+ * may not have run, in which case `executablePath()` still returns a path that
+ * does not exist on disk - karma then fails with "Cannot start ChromeHeadless /
+ * Can not find the binary ...". To stay robust:
+ *   1. Honor a CHROME_BIN already provided by the environment (e.g. a system
+ *      Chrome installed by CI).
+ *   2. Otherwise fall back to puppeteer's Chromium, but only if it actually
+ *      exists on disk.
+ *   3. Otherwise leave CHROME_BIN unset so karma-chrome-launcher can auto-detect
+ *      an installed Chrome.
+ */
+if (!process.env.CHROME_BIN) {
+  try {
+    const puppeteerChrome = require('puppeteer').executablePath();
+    if (puppeteerChrome && fs.existsSync(puppeteerChrome)) {
+      process.env.CHROME_BIN = puppeteerChrome;
+    }
+  } catch (err) {
+    // puppeteer not installed / no bundled Chromium - rely on a system Chrome.
+  }
+}
 
 /**
  *
