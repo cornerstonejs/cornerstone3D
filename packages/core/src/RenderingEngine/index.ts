@@ -5,7 +5,7 @@ import ContextPoolRenderingEngine from './ContextPoolRenderingEngine';
 import getRenderingEngine from './getRenderingEngine';
 import VolumeViewport from './VolumeViewport';
 import StackViewport from './StackViewport';
-import LegacyVolumeViewport3D from './VolumeViewport3D';
+import VolumeViewport3D from './VolumeViewport3D';
 import {
   defaultRenderPathResolver,
   DefaultRenderPathResolver,
@@ -31,7 +31,7 @@ import PlanarViewport, {
   DefaultPlanarDataProvider,
   planarProjection,
 } from './GenericViewport/Planar';
-import VolumeViewport3D, {
+import GenericVolumeViewport3D, {
   createDefaultVolume3DRenderPaths,
   createVolume3DRenderPathResolver,
   DefaultVolume3DDataProvider,
@@ -123,7 +123,7 @@ const renderingEngineExportsV2 = {
   createPlanarRenderPathResolver,
   DefaultPlanarDataProvider,
   planarProjection,
-  VolumeViewport3D,
+  VolumeViewport3D: GenericVolumeViewport3D,
   createDefaultVolume3DRenderPaths,
   createVolume3DRenderPathResolver,
   DefaultVolume3DDataProvider,
@@ -135,6 +135,8 @@ const renderingEngineExportsV2 = {
   wsiProjection,
 };
 
+const LegacyVolumeViewport3D = VolumeViewport3D;
+
 export {
   getRenderingEngine,
   RenderingEngine,
@@ -144,6 +146,7 @@ export {
   VolumeViewport,
   LegacyVolumeViewport3D,
   StackViewport,
+  GenericVolumeViewport3D,
   GenericViewport,
   DefaultRenderPathResolver,
   defaultRenderPathResolver,

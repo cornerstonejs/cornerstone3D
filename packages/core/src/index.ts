@@ -12,7 +12,7 @@ import createVolumeMapper, {
 } from './RenderingEngine/helpers/createVolumeMapper';
 export * from './RenderingEngine/helpers/getOrCreateCanvas';
 import VolumeViewport from './RenderingEngine/VolumeViewport';
-import LegacyVolumeViewport3D from './RenderingEngine/VolumeViewport3D';
+import VolumeViewport3D from './RenderingEngine/VolumeViewport3D';
 import BaseVolumeViewport from './RenderingEngine/BaseVolumeViewport';
 import StackViewport from './RenderingEngine/StackViewport';
 import VideoViewport from './RenderingEngine/VideoViewport';
@@ -47,7 +47,7 @@ import PlanarViewport, {
   DefaultPlanarDataProvider,
   planarProjection,
 } from './RenderingEngine/GenericViewport/Planar';
-import VolumeViewport3D, {
+import GenericVolumeViewport3D, {
   createDefaultVolume3DRenderPaths,
   createVolume3DRenderPathResolver,
   DefaultVolume3DDataProvider,
@@ -217,7 +217,7 @@ const renderingEngineExportsV2 = {
   createPlanarRenderPathResolver,
   DefaultPlanarDataProvider,
   planarProjection,
-  VolumeViewport3D,
+  VolumeViewport3D: GenericVolumeViewport3D,
   createDefaultVolume3DRenderPaths,
   createVolume3DRenderPathResolver,
   DefaultVolume3DDataProvider,
@@ -228,6 +228,8 @@ const renderingEngineExportsV2 = {
   DefaultWSIDataProvider,
   wsiProjection,
 };
+
+const LegacyVolumeViewport3D = VolumeViewport3D;
 
 // Add new types here so that they can be imported singly as required.
 export type {
@@ -261,6 +263,7 @@ export {
   VolumeViewport,
   LegacyVolumeViewport3D,
   VolumeViewport3D,
+  GenericVolumeViewport3D,
   Viewport,
   StackViewport,
   VideoViewport,

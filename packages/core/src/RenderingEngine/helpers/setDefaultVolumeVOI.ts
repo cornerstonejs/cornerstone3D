@@ -67,12 +67,35 @@ export async function getDefaultVolumeVOIRange(
 ): Promise<VOIRange | undefined> {
   let voi = getVOIFromMetadata(imageVolume);
 
-  if (!voi && imageVolume.imageIds.length) {
+  if (
+    !voi &&
+    imageVolume.imageIds.length &&
+    shouldUseImageIdsForVOI(imageVolume)
+  ) {
     voi = await getVOIFromMiddleSliceMinMax(imageVolume);
     voi = handlePreScaledVolume(imageVolume, voi);
   }
 
   return voi;
+}
+
+function shouldUseImageIdsForVOI(imageVolume: IImageVolume): boolean {
+  const { imageIds, referencedImageIds } = imageVolume;
+
+  if (referencedImageIds?.length) {
+    return true;
+  }
+
+  const imageId = imageIds[Math.floor(imageIds.length / 2)];
+
+  // Derived images are cache-only image objects created from another source.
+  // Generated geometry/labelmap image IDs can also be cache-only and may not
+  // have an image loader scheme at all; those should not drive default VOI.
+  if (!imageId || imageId.startsWith('derived:')) {
+    return false;
+  }
+
+  return imageId.includes(':');
 }
 
 function handlePreScaledVolume(imageVolume: IImageVolume, voi: VOIRange) {
