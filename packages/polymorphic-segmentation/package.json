@@ -55,7 +55,7 @@
   "peerDependencies": {
     "@cornerstonejs/core": "4.22.13",
     "@cornerstonejs/tools": "4.22.13",
-    "@kitware/vtk.js": "34.15.1"
+    "@kitware/vtk.js": "36.1.1"
   },
   "devDependencies": {
     "@cornerstonejs/core": "4.22.13",
