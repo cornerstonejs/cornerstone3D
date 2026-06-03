@@ -198,6 +198,10 @@ class TiledRenderingEngine extends BaseRenderingEngine {
 
     const viewport = new ViewportClass(viewportInput) as unknown as IViewport;
 
+    // Preserve the originally-requested (legacy) type so callers can branch on it
+    // even when compat remapping changed the runtime `type` (e.g. STACK -> PLANAR_NEXT).
+    viewport.requestedType = viewportInputEntry.requestedType ?? type;
+
     // 5. Storing the viewports
     this._viewports.set(viewportId, viewport);
 
