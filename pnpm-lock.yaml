@@ -428,6 +428,8 @@ importers:
         specifier: workspace:*
         version: link:../tools
 
+  packages/codemods: {}
+
   packages/core:
     dependencies:
       '@cornerstonejs/utils':

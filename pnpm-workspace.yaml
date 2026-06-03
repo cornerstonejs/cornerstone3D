@@ -9,6 +9,7 @@ packages:
   - packages/polymorphic-segmentation
   - packages/tools
   - packages/ai
+  - packages/codemods
   - packages/labelmap-interpolation
   - addOns/externals/*
   - addOns/local/*
