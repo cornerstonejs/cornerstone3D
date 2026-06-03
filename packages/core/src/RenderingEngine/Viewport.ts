@@ -100,6 +100,14 @@ class Viewport {
   /** Type of viewport */
   readonly type: ViewportType;
   /**
+   * The viewport type originally requested by the caller, before any internal
+   * compatibility remap (e.g. STACK/ORTHOGRAPHIC requested as PLANAR_NEXT when
+   * `rendering.useGenericViewport` is enabled). Equals `type` when not remapped.
+   * Set by the rendering engine at creation. Use this when branching on the
+   * legacy viewport type so the branch is transparent across compat adapters.
+   */
+  requestedType?: ViewportType;
+  /**
    * The amount by which the images are inset in a viewport by default.
    */
   protected insetImageMultiplier = getConfiguration().rendering

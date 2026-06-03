@@ -598,6 +598,10 @@ abstract class BaseRenderingEngine {
     const ViewportClass = getViewportClassForInput(viewportInputEntry);
     const viewport = new ViewportClass(viewportInput);
 
+    // Custom-pipeline viewports are not remapped, so the requested type equals `type`.
+    // Recorded for parity with the remapped paths so callers can always read it.
+    (viewport as unknown as IViewport).requestedType = type;
+
     // 5. Storing the viewports
     this._viewports.set(viewportId, viewport as unknown as IViewport);
 
