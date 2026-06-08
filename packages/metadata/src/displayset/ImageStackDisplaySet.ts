@@ -41,6 +41,7 @@ function collectFrameImageIds(
  */
 export class ImageStackDisplaySet extends BaseDisplaySet {
   protected readonly instances: NaturalizedInstance[];
+  isMultiFrame: boolean;
 
   constructor(options: ImageStackDisplaySetOptions) {
     const instances = options.instances ?? [];
@@ -56,16 +57,13 @@ export class ImageStackDisplaySet extends BaseDisplaySet {
       underlyingImageIds: underlyingList,
     });
     this.instances = instances;
+    this.isMultiFrame = instances.some(
+      (instance) => Number(instance.NumberOfFrames) > 1
+    );
   }
 
   getInstances(): readonly NaturalizedInstance[] {
     return this.instances;
-  }
-
-  get isMultiFrame(): boolean {
-    return this.instances.some(
-      (instance) => Number(instance.NumberOfFrames) > 1
-    );
   }
 
   static fromInstances(

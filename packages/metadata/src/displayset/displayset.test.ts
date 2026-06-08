@@ -146,4 +146,35 @@ describe('displayset split utilities', () => {
     expect(groups).toHaveLength(1);
     expect(groups[0].instances).toHaveLength(1);
   });
+
+  it('spreads matched-rule customAttributes flat onto the display set', () => {
+    const multiFrameInstances: NaturalizedInstance[] = [
+      {
+        imageId: 'wadors:mf',
+        Modality: 'XA',
+        SOPClassUID: '1.2.840.10008.5.1.4.1.1.12.1',
+        Rows: 512,
+        NumberOfFrames: 30,
+        SliceLocation: 0,
+        SeriesInstanceUID: 'series-mf',
+        InstanceNumber: 1,
+      },
+    ];
+    const groups = splitSeriesInstanceGroupsFromImageIds(['wadors:mf'], {
+      getNaturalizedInstance: () => multiFrameInstances[0],
+      splitRules: defaultDisplaySetSplitRules,
+    });
+    expect(groups[0].matchedRule.id).toBe('multiFrame');
+
+    const displaySet = createDisplaySetFromGroup(groups[0], { splitNumber: 2 });
+    // customAttributes for the multiFrame rule are spread onto the instance.
+    expect((displaySet as unknown as { isClip: boolean }).isClip).toBe(true);
+    expect(
+      (displaySet as unknown as { numImageFrames: number }).numImageFrames
+    ).toBe(30);
+    expect((displaySet as unknown as { splitNumber: number }).splitNumber).toBe(
+      2
+    );
+    expect(displaySet.viewportTypes).toEqual(['stack']);
+  });
 });

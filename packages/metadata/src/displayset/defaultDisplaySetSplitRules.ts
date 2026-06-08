@@ -66,6 +66,12 @@ export const defaultDisplaySetSplitRules: SplitRule[] = [
     }),
   },
 
+  /**
+   * This rule splits off images containing an undefined bValue from the
+   * 4d b-value containing images, since the undefined versions are not
+   * part of the 4d data set.  That prevents applying incorrect 4d rendering
+   * to the 3d portion.
+   */
   {
     id: 'mixedDimensionalityBValue',
     viewportTypes: ['stack', 'volume', 'volume3d'],
@@ -99,7 +105,7 @@ export const defaultDisplaySetSplitRules: SplitRule[] = [
     id: 'volume3d',
     viewportTypes: ['volume3d', 'volume', 'stack'],
     makeSeriesInfo: (instances, seriesInfo) => {
-      const modality = instances[0]?.Modality;
+      const modality = instances[0].Modality;
       if (modality && VOLUME_MODALITIES.has(modality) && instances.length > 1) {
         seriesInfo.supportsVolume3d = true;
       }

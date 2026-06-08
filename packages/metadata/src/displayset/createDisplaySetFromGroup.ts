@@ -3,13 +3,77 @@ import { ImageStackDisplaySet } from './ImageStackDisplaySet';
 import { isEcgInstance } from './isEcgInstance';
 import { isVideoInstance } from './isVideoInstance';
 import type { IDisplaySet } from './IDisplaySet';
-import type { GroupedInstanceBucket } from './types';
+import type { GroupedInstanceBucket, ViewportTypeHint } from './types';
 import { getViewportTypesForGroup } from './viewportTypes';
 
 export type CreateDisplaySetFromGroupOptions = {
   displaySetInstanceUID?: string;
   frameImageIds?: Iterable<string>;
+  /** 0-based index of this group among the series' split groups. */
+  splitNumber?: number;
+  descriptionName?: string;
 };
+
+/**
+ * Returns true unless `key` resolves to a read-only accessor (getter without a
+ * setter) somewhere on the display set's prototype chain, so custom attributes
+ * never clobber a computed getter.
+ */
+function isAssignable(target: object, key: string): boolean {
+  let obj: object | null = target;
+  while (obj) {
+    const descriptor = Object.getOwnPropertyDescriptor(obj, key);
+    if (descriptor) {
+      if (descriptor.get || descriptor.set) {
+        return typeof descriptor.set === 'function';
+      }
+      return descriptor.writable !== false;
+    }
+    obj = Object.getPrototypeOf(obj);
+  }
+  return true;
+}
+
+/**
+ * Runs the matched rule's `customAttributes` (if any) and spreads the returned
+ * attributes flat onto the display set. A `viewportTypes` key in the returned
+ * attributes overrides the rule's default viewport types. Keys backed by a
+ * read-only getter on the display set are skipped rather than overridden.
+ */
+function applyCustomAttributes(
+  displaySet: IDisplaySet,
+  group: GroupedInstanceBucket,
+  viewportTypes: readonly ViewportTypeHint[],
+  options: CreateDisplaySetFromGroupOptions
+): void {
+  const { instances, matchedRule } = group;
+  const first = instances[0];
+  if (!matchedRule.customAttributes || !first) {
+    return;
+  }
+
+  const sopClassUids = [
+    ...new Set(instances.map((i) => i.SOPClassUID).filter(Boolean)),
+  ];
+  const isMultiFrame = Number(first.NumberOfFrames) > 1;
+
+  const attributes = matchedRule.customAttributes(
+    { instance: first, isMultiFrame, sopClassUids, viewportTypes },
+    {
+      instances,
+      splitNumber: options.splitNumber,
+      descriptionName: options.descriptionName,
+    }
+  );
+
+  if (attributes) {
+    for (const [key, value] of Object.entries(attributes)) {
+      if (isAssignable(displaySet, key)) {
+        (displaySet as Record<string, unknown>)[key] = value;
+      }
+    }
+  }
+}
 
 /**
  * Builds cornerstone display set metadata for a grouped instance bucket.
@@ -26,20 +90,25 @@ export function createDisplaySetFromGroup(
     `display-set-${instances[0]?.imageId ?? 'unknown'}`;
 
   const first = instances[0];
+  let displaySet: IDisplaySet;
+
   if (first && (isVideoInstance(first) || isEcgInstance(first))) {
-    return new BaseDisplaySet({
+    const imageIds = instances.map((i) => i.imageId).filter(Boolean);
+    displaySet = new BaseDisplaySet({
       displaySetInstanceUID,
       viewportTypes,
-      frameImageIds:
-        options.frameImageIds ??
-        instances.map((i) => i.imageId).filter(Boolean),
-      underlyingImageIds: instances.map((i) => i.imageId).filter(Boolean),
+      frameImageIds: options.frameImageIds ?? imageIds,
+      underlyingImageIds: imageIds,
+    });
+  } else {
+    displaySet = ImageStackDisplaySet.fromInstances(instances, {
+      displaySetInstanceUID,
+      viewportTypes,
+      frameImageIds: options.frameImageIds,
     });
   }
 
-  return ImageStackDisplaySet.fromInstances(instances, {
-    displaySetInstanceUID,
-    viewportTypes,
-    frameImageIds: options.frameImageIds,
-  });
+  applyCustomAttributes(displaySet, group, viewportTypes, options);
+
+  return displaySet;
 }
