@@ -159,6 +159,11 @@ import type { RenderingEngineModeType } from './RenderingEngineMode';
 import type { VtkOffscreenMultiRenderWindow } from './VtkOffscreenMultiRenderWindow';
 import type { ViewportDataReference } from '../RenderingEngine/GenericViewport';
 import type { ResetCameraOptions } from './ICamera';
+import type {
+  ViewportType,
+  ViewportTypeConstants,
+  ViewportTypeRegistry,
+} from './ViewportTypeRegistry';
 
 export type * from './MetadataModuleTypes';
 export type * from './InstanceTypes';
@@ -321,6 +326,9 @@ export type {
   RenderingEngineModeType,
   VtkOffscreenMultiRenderWindow,
   ViewportDataReference,
+  ViewportType,
+  ViewportTypeRegistry,
+  ViewportTypeConstants,
 };
 
 export { ActorRenderMode };

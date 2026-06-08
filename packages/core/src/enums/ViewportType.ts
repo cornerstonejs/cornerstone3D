@@ -1,6 +1,13 @@
 /**
  * ViewportType enum for cornerstone-render which defines the type of viewport.
  * It can be either STACK, PERSPECTIVE, ORTHOGRAPHIC.
+ *
+ * @deprecated Use `ViewportTypes` from `@cornerstonejs/core` enums instead:
+ * - Built-ins: `Enums.ViewportTypes.STACK`, `Enums.ViewportTypes.PLANAR_NEXT`, etc.
+ * - Extensions: `registerViewportType({ name: 'PET', ... })` then `Enums.ViewportTypes.PET`
+ * - Types: augment `ViewportTypeRegistry` / `ViewportTypeConstants`
+ *
+ * This enum remains for backward compatibility but is not extended at runtime.
  */
 enum ViewportType {
   /**
