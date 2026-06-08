@@ -119,7 +119,13 @@ jobs:
           cd packages/docs
           # Run netlify-cli via npx to avoid the pnpm global-bin-dir / PATH setup
           # issue ("global bin directory ... is not in PATH") on the runner.
-          npx -y netlify-cli deploy --dir=build --prod
+          #
+          # --no-build is required: the docs are already built above ("Build docs"),
+          # and newer netlify-cli versions otherwise re-run the site's UI-configured
+          # build command on deploy, which resolves the publish dir against the UI
+          # "base" (packages/docs) and doubles it to packages/docs/packages/docs/build.
+          # We just upload the local build/ directory as-is.
+          npx -y netlify-cli deploy --no-build --dir=build --prod
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
