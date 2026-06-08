@@ -1,5 +1,6 @@
 import type { mat4 } from 'gl-matrix';
 import { Events as EVENTS, VideoEnums as VideoViewportEnum } from '../enums';
+import type { DataId } from './GenericViewport/ViewportArchitectureTypes';
 import type {
   VideoViewportProperties,
   Point3,
@@ -194,6 +195,27 @@ class VideoViewport extends Viewport {
       return;
     }
     return this.setVideo(entries[0].dataId);
+  }
+
+  /**
+   * Mounts display sets on the viewport, mirroring the GenericViewport
+   * `setDisplaySets` API. The `displaySetId` is the video imageId (callers
+   * typically pass `displaySet.instances[0].imageId`); the first entry is loaded
+   * as the video source.
+   *
+   * @param entries - display set entries to mount; the first is used as the source.
+   */
+  public async setDisplaySets(
+    ...entries: Array<{ displaySetId: DataId; options?: unknown }>
+  ): Promise<void> {
+    const [entry] = entries;
+    if (!entry?.displaySetId) {
+      throw new Error(
+        '[VideoViewport] setDisplaySets requires a displaySetId to render as video'
+      );
+    }
+
+    await this.setVideo(entry.displaySetId);
   }
 
   /**

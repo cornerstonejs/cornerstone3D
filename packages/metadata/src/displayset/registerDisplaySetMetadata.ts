@@ -3,8 +3,8 @@ import { addTyped } from '../metaData';
 import type { IDisplaySet } from './IDisplaySet';
 
 export type RegisterDisplaySetMetadataOptions = {
-  /** Register on frame ids in addition to underlying ids. */
-  includeFrameImageIds?: boolean;
+  /** Register on frame-level imageIds in addition to underlying ids. */
+  includeImageIds?: boolean;
 };
 
 /**
@@ -17,13 +17,13 @@ export function registerDisplaySetMetadata(
 ): void {
   const idsToRegister = new Set<string>(imageIds);
 
-  if (options.includeFrameImageIds) {
-    for (const frameId of displaySet.getFrameImageIds()) {
+  if (options.includeImageIds) {
+    for (const frameId of displaySet.imageIds) {
       idsToRegister.add(frameId);
     }
   }
 
-  for (const underlyingId of displaySet.getUnderlyingImageIds()) {
+  for (const underlyingId of displaySet.underlyingImageIds) {
     idsToRegister.add(underlyingId);
   }
 

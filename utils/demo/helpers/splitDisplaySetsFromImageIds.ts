@@ -1,4 +1,4 @@
-import { metaData } from '@cornerstonejs/core';
+import { Enums, metaData } from '@cornerstonejs/core';
 import {
   createDisplaySetFromGroup,
   defaultDisplaySetSplitRules,
@@ -7,8 +7,43 @@ import {
   type IDisplaySet,
   type NaturalizedInstance,
 } from '@cornerstonejs/metadata';
+import createImageIdsAndCacheMetaData from './createImageIdsAndCacheMetaData';
+
+export type CreateDisplaySetsOptions = {
+  StudyInstanceUID: string;
+  SeriesInstanceUID: string;
+  SOPInstanceUID?: string;
+  wadoRsRoot: string;
+  client?: unknown;
+  convertMultiframe?: boolean;
+  useLegacyWadoRs?: boolean;
+};
 
 const { splitImageIdsBy4DTags } = metadataUtilities;
+const { ViewportType } = Enums;
+
+/** Maps a display set's preferred viewport type hint to a cornerstone ViewportType. */
+const VIEWPORT_TYPE_BY_PREFERRED_HINT: Record<string, Enums.ViewportType> = {
+  stack: ViewportType.STACK,
+  volume: ViewportType.ORTHOGRAPHIC,
+  volume3d: ViewportType.VOLUME_3D,
+  video: ViewportType.VIDEO,
+  wholeslide: ViewportType.WHOLE_SLIDE,
+  ecg: ViewportType.ECG,
+};
+
+/**
+ * Resolves the cornerstone {@link Enums.ViewportType} to enable for a display
+ * set, based on its preferred viewport type. Falls back to a stack viewport.
+ */
+export function getViewportTypeForDisplaySet(
+  displaySet: IDisplaySet
+): Enums.ViewportType {
+  return (
+    VIEWPORT_TYPE_BY_PREFERRED_HINT[displaySet.preferredViewportType] ??
+    ViewportType.STACK
+  );
+}
 
 export type Select4DDimensionGroupsOptions = {
   /** 1-based inclusive start dimension group (default 1) */
@@ -108,12 +143,22 @@ export function splitDisplaySetsFromImageIds(
 
   return groups.map(group =>
     createDisplaySetFromGroup(group, {
-      frameImageIds: collectFrameImageIdsForGroup(
-        seriesImageIds,
-        group.instances
-      ),
+      imageIds: collectFrameImageIdsForGroup(seriesImageIds, group.instances),
     })
   );
+}
+
+/**
+ * Fetches a series' imageIds (caching its metadata) and splits them into
+ * display sets using the default split rules. This combines
+ * {@link createImageIdsAndCacheMetaData} with {@link splitDisplaySetsFromImageIds}
+ * so examples can go straight from a series query to display sets.
+ */
+export async function createDisplaySets(
+  options: CreateDisplaySetsOptions
+): Promise<IDisplaySet[]> {
+  const seriesImageIds = await createImageIdsAndCacheMetaData(options);
+  return splitDisplaySetsFromImageIds(seriesImageIds);
 }
 
 /**
@@ -124,14 +169,14 @@ export function getVideoImageIdFromImageIds(
 ): string | undefined {
   const displaySets = splitDisplaySetsFromImageIds(seriesImageIds);
   const videoDisplaySet = displaySets.find(
-    displaySet => displaySet.getPreferredViewportType() === 'video'
+    displaySet => displaySet.preferredViewportType === 'video'
   );
 
   if (!videoDisplaySet) {
     return undefined;
   }
 
-  return [...videoDisplaySet.getUnderlyingImageIds()][0];
+  return videoDisplaySet.underlyingImageIds[0];
 }
 
 /**
@@ -144,7 +189,7 @@ export function getPrimaryStackFrameImageIds(
 
   const primaryDisplaySet =
     displaySets.find(displaySet => {
-      const preferred = displaySet.getPreferredViewportType();
+      const preferred = displaySet.preferredViewportType;
       return preferred === 'stack' || preferred === 'volume3d';
     }) ?? displaySets[0];
 
@@ -152,7 +197,7 @@ export function getPrimaryStackFrameImageIds(
     return seriesImageIds;
   }
 
-  const frameImageIds = [...primaryDisplaySet.getFrameImageIds()];
+  const frameImageIds = [...primaryDisplaySet.imageIds];
   return frameImageIds.length ? frameImageIds : seriesImageIds;
 }
 
@@ -164,10 +209,10 @@ export function getVolumeFrameImageIds(seriesImageIds: string[]): string[] {
 
   const volumeDisplaySet =
     displaySets.find(
-      displaySet => displaySet.getPreferredViewportType() === 'volume3d'
+      displaySet => displaySet.preferredViewportType === 'volume3d'
     ) ??
     displaySets.find(
-      displaySet => displaySet.getPreferredViewportType() === 'volume'
+      displaySet => displaySet.preferredViewportType === 'volume'
     ) ??
     displaySets[0];
 
@@ -175,7 +220,7 @@ export function getVolumeFrameImageIds(seriesImageIds: string[]): string[] {
     return seriesImageIds;
   }
 
-  const frameImageIds = [...volumeDisplaySet.getFrameImageIds()];
+  const frameImageIds = [...volumeDisplaySet.imageIds];
   return frameImageIds.length ? frameImageIds : seriesImageIds;
 }
 

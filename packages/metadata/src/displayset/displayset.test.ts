@@ -54,7 +54,7 @@ describe('displayset split utilities', () => {
     expect(groups[0].matchedRule.id).toBe('volume3d');
     const displaySet = createDisplaySetFromGroup(groups[0]);
     expect(displaySet.viewportTypes[0]).toBe('volume3d');
-    expect(displaySet.getPreferredViewportType()).toBe('volume3d');
+    expect(displaySet.preferredViewportType).toBe('volume3d');
   });
 
   it('video rule uses video viewportTypes', () => {
@@ -71,6 +71,9 @@ describe('displayset split utilities', () => {
     const displaySet = createDisplaySetFromGroup(groups[0]);
     expect(displaySet.viewportTypes).toEqual(['video']);
     expect(getPreferredViewportType(displaySet.viewportTypes)).toBe('video');
+    // The video display set exposes its instances so consumers (e.g. the video
+    // viewport's setDisplaySets) can resolve the source imageId directly.
+    expect(displaySet.instances[0]?.imageId).toBe('wadors:video');
   });
 
   it('ecg rule uses ecg viewportTypes', () => {
@@ -121,9 +124,9 @@ describe('displayset split utilities', () => {
       displaySetInstanceUID: 'uid-1',
       viewportTypes: ['stack', 'volume', 'volume3d'],
     });
-    expect(displaySet.getUnderlyingImageIds().size).toBe(2);
+    expect(displaySet.underlyingImageIds.length).toBe(2);
     expect(displaySet.viewportTypes[0]).toBe('stack');
-    expect(displaySet.getPreferredViewportType()).toBe('stack');
+    expect(displaySet.preferredViewportType).toBe('stack');
   });
 
   it('groups by default image rule into a single bucket', () => {
@@ -167,14 +170,11 @@ describe('displayset split utilities', () => {
     expect(groups[0].matchedRule.id).toBe('multiFrame');
 
     const displaySet = createDisplaySetFromGroup(groups[0], { splitNumber: 2 });
-    // customAttributes for the multiFrame rule are spread onto the instance.
-    expect((displaySet as unknown as { isClip: boolean }).isClip).toBe(true);
-    expect(
-      (displaySet as unknown as { numImageFrames: number }).numImageFrames
-    ).toBe(30);
-    expect((displaySet as unknown as { splitNumber: number }).splitNumber).toBe(
-      2
-    );
+    // customAttributes for the multiFrame rule are spread flat onto the display
+    // set; the keys are type-declared via the IDisplaySet extension.
+    expect(displaySet.isClip).toBe(true);
+    expect(displaySet.numImageFrames).toBe(30);
+    expect(displaySet.splitNumber).toBe(2);
     expect(displaySet.viewportTypes).toEqual(['stack']);
   });
 });

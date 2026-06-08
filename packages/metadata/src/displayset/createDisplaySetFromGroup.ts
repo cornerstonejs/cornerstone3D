@@ -4,11 +4,14 @@ import { isEcgInstance } from './isEcgInstance';
 import { isVideoInstance } from './isVideoInstance';
 import type { IDisplaySet } from './IDisplaySet';
 import type { GroupedInstanceBucket, ViewportTypeHint } from './types';
-import { getViewportTypesForGroup } from './viewportTypes';
+import {
+  getPreferredViewportType,
+  getViewportTypesForGroup,
+} from './viewportTypes';
 
 export type CreateDisplaySetFromGroupOptions = {
   displaySetInstanceUID?: string;
-  frameImageIds?: Iterable<string>;
+  imageIds?: Iterable<string>;
   /** 0-based index of this group among the series' split groups. */
   splitNumber?: number;
   descriptionName?: string;
@@ -36,9 +39,11 @@ function isAssignable(target: object, key: string): boolean {
 
 /**
  * Runs the matched rule's `customAttributes` (if any) and spreads the returned
- * attributes flat onto the display set. A `viewportTypes` key in the returned
- * attributes overrides the rule's default viewport types. Keys backed by a
- * read-only getter on the display set are skipped rather than overridden.
+ * attributes flat onto the display set (shared attributes are declared on
+ * IDisplaySet). A `viewportTypes` key in the returned attributes overrides the
+ * rule's default viewport types; `preferredViewportType` is kept in sync
+ * afterwards. Keys backed by a read-only accessor on the display set are skipped
+ * rather than overridden.
  */
 function applyCustomAttributes(
   displaySet: IDisplaySet,
@@ -66,13 +71,21 @@ function applyCustomAttributes(
     }
   );
 
-  if (attributes) {
-    for (const [key, value] of Object.entries(attributes)) {
-      if (isAssignable(displaySet, key)) {
-        (displaySet as Record<string, unknown>)[key] = value;
-      }
+  if (!attributes) {
+    return;
+  }
+
+  for (const [key, value] of Object.entries(attributes)) {
+    if (isAssignable(displaySet, key)) {
+      (displaySet as unknown as Record<string, unknown>)[key] = value;
     }
   }
+
+  // Keep the preferred viewport attribute consistent if customAttributes
+  // overrode the allowed viewport types.
+  displaySet.preferredViewportType = getPreferredViewportType(
+    displaySet.viewportTypes
+  );
 }
 
 /**
@@ -97,14 +110,15 @@ export function createDisplaySetFromGroup(
     displaySet = new BaseDisplaySet({
       displaySetInstanceUID,
       viewportTypes,
-      frameImageIds: options.frameImageIds ?? imageIds,
+      instances,
+      imageIds: options.imageIds ?? imageIds,
       underlyingImageIds: imageIds,
     });
   } else {
     displaySet = ImageStackDisplaySet.fromInstances(instances, {
       displaySetInstanceUID,
       viewportTypes,
-      frameImageIds: options.frameImageIds,
+      imageIds: options.imageIds,
     });
   }
 

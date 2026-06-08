@@ -6,8 +6,8 @@ import {
   addDropdownToToolbar,
   initDemo,
   setTitleAndDescription,
-  createImageIdsAndCacheMetaData,
-  getVideoImageIdFromImageIds,
+  createDisplaySets,
+  getViewportTypeForDisplaySet,
   getLocalUrl,
   addManipulationBindings,
   addVideoTime,
@@ -29,7 +29,6 @@ const {
 
 const { AnnotationMultiSlice } = cornerstoneTools.utilities;
 
-const { ViewportType } = Enums;
 const { MouseBindings, KeyboardBindings, Events: toolsEvents } = csToolsEnums;
 
 const toolGroupId = 'VIDEO_TOOL_GROUP_ID';
@@ -301,17 +300,18 @@ async function run() {
   await initDemo();
 
   // Get Cornerstone imageIds and fetch metadata into RAM
-  const imageIds = await createImageIdsAndCacheMetaData({
+  const displaySets = await createDisplaySets({
     StudyInstanceUID: '2.25.96975534054447904995905761963464388233',
     SeriesInstanceUID: '2.25.15054212212536476297201250326674987992',
     wadoRsRoot:
       getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
-  const videoId = getVideoImageIdFromImageIds(imageIds);
-  if (!videoId) {
-    throw new Error('No video display set found in series');
+  const [displaySet] = displaySets;
+  if (!displaySet) {
+    throw new Error('No display set found in series');
   }
+  const videoId = displaySet.instances[0].imageId;
 
   addAnnotationListeners();
   // Add annotation tools to Cornerstone3D
@@ -354,7 +354,7 @@ async function run() {
 
   const viewportInput = {
     viewportId,
-    type: ViewportType.VIDEO,
+    type: getViewportTypeForDisplaySet(displaySet),
     element,
     defaultOptions: {
       background: <Types.Point3>[0.2, 0, 0.2],
@@ -371,7 +371,7 @@ async function run() {
   // Set the video on the viewport
   // Will be `<dicomwebRoot>/studies/<studyUID>/series/<seriesUID>/instances/<instanceUID>/rendered?accept=video/mp4`
   // on a compliant DICOMweb endpoint
-  await viewport.setVideo(videoId, 1);
+  await viewport.setDisplaySets({ displaySetId: videoId });
   addVideoTime(element, viewport);
 }
 

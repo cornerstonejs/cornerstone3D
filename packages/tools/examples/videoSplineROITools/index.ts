@@ -2,8 +2,8 @@ import type { Types } from '@cornerstonejs/core';
 import { RenderingEngine, Enums } from '@cornerstonejs/core';
 import {
   initDemo,
-  createImageIdsAndCacheMetaData,
-  getVideoImageIdFromImageIds,
+  createDisplaySets,
+  getViewportTypeForDisplaySet,
   setTitleAndDescription,
   addDropdownToToolbar,
   addSliderToToolbar,
@@ -28,7 +28,6 @@ const {
   Enums: csToolsEnums,
 } = cornerstoneTools;
 
-const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'VIDEO_STACK';
@@ -277,17 +276,18 @@ async function run() {
   addManipulationBindings(toolGroup);
 
   // Get Cornerstone imageIds and fetch metadata into RAM
-  const imageIds = await createImageIdsAndCacheMetaData({
+  const displaySets = await createDisplaySets({
     StudyInstanceUID: '2.25.96975534054447904995905761963464388233',
     SeriesInstanceUID: '2.25.15054212212536476297201250326674987992',
     wadoRsRoot:
       getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
-  const videoId = getVideoImageIdFromImageIds(imageIds);
-  if (!videoId) {
-    throw new Error('No video display set found in series');
+  const [displaySet] = displaySets;
+  if (!displaySet) {
+    throw new Error('No display set found in series');
   }
+  const videoId = displaySet.instances[0].imageId;
 
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
@@ -295,7 +295,7 @@ async function run() {
   // Create a stack viewport
   const viewportInput = {
     viewportId,
-    type: ViewportType.VIDEO,
+    type: getViewportTypeForDisplaySet(displaySet),
     element,
     defaultOptions: {
       background: <Types.Point3>[0.2, 0, 0.2],
@@ -313,7 +313,7 @@ async function run() {
   );
 
   // Set the stack on the viewport
-  await viewport.setVideo(videoId, 25);
+  await viewport.setDisplaySets({ displaySetId: videoId });
   viewport.play();
 }
 

@@ -7,8 +7,8 @@ import {
 import * as cornerstone from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
-  createImageIdsAndCacheMetaData,
-  getVideoImageIdFromImageIds,
+  createDisplaySets,
+  getViewportTypeForDisplaySet,
   initDemo,
   addDropdownToToolbar,
   setTitleAndDescription,
@@ -34,7 +34,6 @@ const {
 } = cornerstoneTools;
 
 const { MouseBindings } = csToolsEnums;
-const { ViewportType } = Enums;
 
 // Define a unique id for the volume
 let renderingEngine;
@@ -191,17 +190,18 @@ async function run() {
 
   const toolGroup = setupTools(toolGroupId);
 
-  const imageIds = await createImageIdsAndCacheMetaData({
+  const displaySets = await createDisplaySets({
     StudyInstanceUID: '2.25.96975534054447904995905761963464388233',
     SeriesInstanceUID: '2.25.15054212212536476297201250326674987992',
     wadoRsRoot:
       getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
-  const videoId = getVideoImageIdFromImageIds(imageIds);
-  if (!videoId) {
-    throw new Error('No video display set found in series');
+  const [displaySet] = displaySets;
+  if (!displaySet) {
+    throw new Error('No display set found in series');
   }
+  const videoId = displaySet.instances[0].imageId;
 
   // Instantiate a rendering engine
   renderingEngine = new RenderingEngine(renderingEngineId);
@@ -210,7 +210,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId,
-      type: ViewportType.VIDEO,
+      type: getViewportTypeForDisplaySet(displaySet),
       element: element1,
     },
   ];
@@ -220,7 +220,7 @@ async function run() {
 
   const imageIdsArray = [videoId];
 
-  await viewport.setVideo(videoId, 1);
+  await viewport.setDisplaySets({ displaySetId: videoId });
   addVideoTime(viewportGrid, viewport);
   // We need the map on all image ids
   const allImageIds = viewport.getImageIds();

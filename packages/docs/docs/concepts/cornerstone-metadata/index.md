@@ -65,6 +65,50 @@ flow, required providers must be re-registered after init.
 This is especially important during migration from older code paths where
 provider registration happened once and relied on persistent global state.
 
+## Display sets and their attributes
+
+The module organizes a series' instances into **display sets** via split rules
+(`splitSeriesInstanceGroupsFromImageIds` + `createDisplaySetFromGroup`). A
+display set implements `IDisplaySet`, which declares the **common attributes**
+read from a display set as plain data — not accessor methods — so it behaves
+like the OHIF display set object:
+
+```ts
+const displaySet = createDisplaySetFromGroup(group);
+
+displaySet.displaySetInstanceUID;
+displaySet.viewportTypes; // readonly ViewportTypeHint[]
+displaySet.preferredViewportType; // viewportTypes[0]
+displaySet.instances; // readonly NaturalizedInstance[]
+displaySet.imageIds; // frame-level, renderable image ids
+displaySet.underlyingImageIds; // SOP-level image ids (one per instance)
+```
+
+### Adding new display set attributes
+
+- **Shared / common attributes** belong on `IDisplaySet` directly. Declare them
+  optional unless every display set populates them. Many are produced by a split
+  rule's `customAttributes` callback and spread flat onto the display set in
+  `createDisplaySetFromGroup` (for example `isMultiFrame`, `isClip`,
+  `numImageFrames`, `splitNumber`).
+- **App- or extension-specific attributes** that are not part of the common model
+  should be added through **TypeScript module augmentation**, so they stay
+  type-checked without widening the shared surface:
+
+  ```ts
+  // my-extension.ts — in an extension or the consuming app
+  import '@cornerstonejs/metadata';
+
+  declare module '@cornerstonejs/metadata' {
+    interface IDisplaySet {
+      /** Whether this display set supports window/level. */
+      supportsWindowLevel?: boolean;
+    }
+  }
+  ```
+
+Keep augmented attributes optional — not all display set types define them.
+
 ## Package boundaries
 
 - `@cornerstonejs/metadata`: metadata ingestion, provider chains, normalized

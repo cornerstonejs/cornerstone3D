@@ -107,9 +107,12 @@ export interface DisplaySetModuleMetadata {
   displaySetInstanceUID: string;
   /** Allowed viewport types; index 0 is preferred. */
   viewportTypes: readonly string[];
-  getPreferredViewportType(): string;
-  getFrameImageIds(): ReadonlySet<string>;
-  getUnderlyingImageIds(): ReadonlySet<string>;
+  /** Preferred viewport type (equivalent to `viewportTypes[0]`). */
+  preferredViewportType: string;
+  /** Frame-level, renderable image ids. */
+  imageIds: readonly string[];
+  /** Underlying (SOP-level) image ids. */
+  underlyingImageIds: readonly string[];
 }
 
 /**

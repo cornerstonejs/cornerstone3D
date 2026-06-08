@@ -3,10 +3,10 @@ import type { NaturalizedInstance, ViewportTypeHint } from './types';
 
 export type ImageStackDisplaySetOptions = Omit<
   BaseDisplaySetOptions,
-  'frameImageIds' | 'underlyingImageIds'
+  'imageIds' | 'underlyingImageIds'
 > & {
   instances?: NaturalizedInstance[];
-  frameImageIds?: Iterable<string>;
+  imageIds?: Iterable<string>;
   underlyingImageIds?: Iterable<string>;
 };
 
@@ -20,27 +20,26 @@ function collectUnderlyingImageIds(instances: NaturalizedInstance[]): string[] {
   return ids;
 }
 
-function collectFrameImageIds(
+function collectImageIds(
   instances: NaturalizedInstance[],
   underlyingImageIds: string[]
 ): string[] {
-  const frameIds: string[] = [];
+  const imageIds: string[] = [];
   for (const instance of instances) {
     if (instance.imageId) {
-      frameIds.push(instance.imageId);
+      imageIds.push(instance.imageId);
     }
   }
-  if (frameIds.length === 0) {
+  if (imageIds.length === 0) {
     return [...underlyingImageIds];
   }
-  return frameIds;
+  return imageIds;
 }
 
 /**
  * Image/stack display set metadata with underlying vs frame image id semantics.
  */
 export class ImageStackDisplaySet extends BaseDisplaySet {
-  protected readonly instances: NaturalizedInstance[];
   isMultiFrame: boolean;
 
   constructor(options: ImageStackDisplaySetOptions) {
@@ -48,22 +47,18 @@ export class ImageStackDisplaySet extends BaseDisplaySet {
     const underlyingImageIds =
       options.underlyingImageIds ?? collectUnderlyingImageIds(instances);
     const underlyingList = [...underlyingImageIds];
-    const frameImageIds =
-      options.frameImageIds ?? collectFrameImageIds(instances, underlyingList);
+    const imageIds =
+      options.imageIds ?? collectImageIds(instances, underlyingList);
 
     super({
       ...options,
-      frameImageIds,
+      instances,
+      imageIds,
       underlyingImageIds: underlyingList,
     });
-    this.instances = instances;
     this.isMultiFrame = instances.some(
       (instance) => Number(instance.NumberOfFrames) > 1
     );
-  }
-
-  getInstances(): readonly NaturalizedInstance[] {
-    return this.instances;
   }
 
   static fromInstances(
@@ -71,7 +66,7 @@ export class ImageStackDisplaySet extends BaseDisplaySet {
     options?: {
       displaySetInstanceUID?: string;
       viewportTypes?: readonly ViewportTypeHint[];
-      frameImageIds?: Iterable<string>;
+      imageIds?: Iterable<string>;
     }
   ): ImageStackDisplaySet {
     const displaySetInstanceUID =
@@ -83,7 +78,7 @@ export class ImageStackDisplaySet extends BaseDisplaySet {
       displaySetInstanceUID,
       viewportTypes: options?.viewportTypes ?? ['stack', 'volume', 'volume3d'],
       instances,
-      frameImageIds: options?.frameImageIds,
+      imageIds: options?.imageIds,
     });
   }
 

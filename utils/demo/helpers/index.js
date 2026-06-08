@@ -19,7 +19,9 @@ import createElement from './createElement';
 import createImageIdsAndCacheMetaData from './createImageIdsAndCacheMetaData';
 export {
   splitDisplaySetsFromImageIds,
+  createDisplaySets,
   getVideoImageIdFromImageIds,
+  getViewportTypeForDisplaySet,
   getPrimaryStackFrameImageIds,
   getVolumeFrameImageIds,
   get4DDimensionGroupImageIds,
