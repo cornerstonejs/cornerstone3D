@@ -22,11 +22,11 @@ jobs:
       contents: read
       pull-requests: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v6.0.3
+      - uses: pnpm/action-setup@v6.0.8
         with:
           version: 11.4.0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6.4.0
         with:
           node-version: '24'
           cache: 'pnpm'
@@ -127,7 +127,12 @@ jobs:
           # Use an ABSOLUTE --dir: netlify-cli resolves a relative --dir against the
           # git repo root (not the shell cwd), so "--dir=build" from packages/docs
           # pointed it at <repo>/build, which does not exist.
-          npx -y netlify-cli deploy --no-build --dir="$GITHUB_WORKSPACE/packages/docs/build" --prod
+          #
+          # --filter docs: with --no-build, netlify-cli does not read the site's UI
+          # "base" (packages/docs) and instead scans the repo, finds the pnpm
+          # workspace, and refuses to deploy ("multiple projects detected"). Naming
+          # the docs workspace package (package.json "name": "docs") disambiguates it.
+          npx -y netlify-cli deploy --no-build --filter docs --dir="$GITHUB_WORKSPACE/packages/docs/build" --prod
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
