@@ -15,6 +15,10 @@ import {
   utilities,
 } from '@cornerstonejs/core';
 
+function isUnsafeKey(key: string): boolean {
+  return key === '__proto__' || key === 'constructor' || key === 'prototype';
+}
+
 /**
  * This is the default annotation manager. It stores annotations by default
  * based on the FrameOfReferenceUID. However, it is possible to override the
@@ -211,6 +215,10 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
     const { FrameOfReferenceUID, toolName } = metadata;
 
     groupKey = groupKey || FrameOfReferenceUID;
+
+    if (isUnsafeKey(groupKey) || isUnsafeKey(toolName)) {
+      return;
+    }
 
     const annotations = this.annotations;
 

@@ -7,6 +7,7 @@ const program = new Command();
 var path = require('path');
 var shell = require('shelljs');
 var fs = require('fs');
+var { spawnSync } = require('child_process');
 var examples = {};
 var basePath = path.resolve('');
 var webpackConfigPath = path.join(
@@ -209,10 +210,14 @@ if (configuration.examples) {
     );
     shell.ShellString(conf).to(webpackConfigPath);
 
-    shell.exec(`${rspackBin} build --config ${webpackConfigPath}`);
+    spawnSync(rspackBin, ['build', '--config', webpackConfigPath], {
+      stdio: 'inherit',
+    });
   } else {
-    shell.exec(
-      `${rspackBin} serve --host 0.0.0.0 --config ${webpackConfigPath}`
+    spawnSync(
+      rspackBin,
+      ['serve', '--host', '0.0.0.0', '--config', webpackConfigPath],
+      { stdio: 'inherit' }
     );
   }
 }

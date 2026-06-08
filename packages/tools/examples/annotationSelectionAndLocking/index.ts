@@ -68,8 +68,10 @@ const renderingEngineId = 'myRenderingEngine';
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
 
 function randomIntFromInterval(min, max) {
-  // min and max included
-  return Math.floor(Math.random() * (max - min + 1) + min);
+  const range = max - min + 1;
+  const buf = new Uint32Array(1);
+  crypto.getRandomValues(buf);
+  return min + (buf[0] % range);
 }
 
 addButtonToToolbar({

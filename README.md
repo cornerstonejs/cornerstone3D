@@ -9,6 +9,21 @@ Cornerstone is a set of JavaScript libraries that can be used to build web-based
 
 [Learn how to use Cornerstone3D in your project](https://www.cornerstonejs.org/docs/getting-started/overview).
 
+## Local Setup
+
+This repository is pinned to pnpm 11.4.0 via `packageManager`. Use Corepack to
+run the pinned version:
+
+```bash
+corepack enable
+pnpm install --frozen-lockfile
+```
+
+The repo disables pnpm's own package-manager auto-switching because some
+standalone pnpm installs try to download a platform-specific pnpm binary and
+can fail before any install command runs. Corepack and CI still use the pinned
+pnpm version.
+
 ## Documentation
 
 You can find the Cornerstone documentation [on the website](https://cornerstonejs.org/).

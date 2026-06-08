@@ -197,8 +197,7 @@ function setCrossHairPosition(pickedPoint) {
 
 function addSphere(viewport, point) {
   if (!sphereActor) {
-    // Generate a random string for the sphere UID
-    const randomUID = 'sphere_' + Math.random().toString(36).substring(2, 15);
+    const randomUID = 'sphere_' + crypto.randomUUID();
 
     const sphereSource = vtkSphereSource.newInstance();
     sphereSource.setCenter(point);

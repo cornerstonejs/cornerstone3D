@@ -62,6 +62,56 @@ build_static_examples() {
       --packages "$packages"
 }
 
+# Fail fast if the Playwright port is already occupied by a *foreign* server.
+# Playwright's webServer.reuseExistingServer (true locally) will silently reuse
+# whatever is already on the port instead of serving .static-examples. If that is
+# something else (e.g. a Docker/Grafana container on 3333), every test times out
+# waiting for example links. Catch that here instead of after a full build + run.
+preflight_examples_server() {
+  if should_skip_rebuild_value "${PLAYWRIGHT_SKIP_PREFLIGHT:-}"; then
+    return 0
+  fi
+
+  local port base_url body
+  port="${PLAYWRIGHT_PORT:-3333}"
+  base_url="${PLAYWRIGHT_BASE_URL:-${PLAYWRIGHT_EXAMPLE_BASE_URL:-http://localhost:${port}}}"
+
+  # Nothing has started our examples server yet (Playwright starts it later), so a
+  # response here can only be a pre-existing server occupying the port.
+  body="$(curl -sS -L --max-time 5 "$base_url" 2>/dev/null || true)"
+
+  if [[ -z "$body" ]]; then
+    return 0  # port free / nothing responding -> Playwright will serve the examples
+  fi
+
+  # Recognize our own examples server. `serve .static-examples` returns an
+  # auto-generated directory listing ("Files within .static-examples/"); a built
+  # examples index uses id="demo-title" / "CornerstoneJS Examples". Match any of
+  # these so reuse is allowed in both cases. A foreign server (e.g. Grafana) has none.
+  if printf '%s' "$body" | grep -qE 'static-examples|demo-title|CornerstoneJS Examples'; then
+    echo "Preflight: reusing existing Cornerstone examples server at $base_url"
+    return 0
+  fi
+
+  {
+    echo
+    echo "ERROR: $base_url is already serving something that is NOT the Cornerstone examples."
+    echo "Playwright would reuse that server (reuseExistingServer) and every test would time"
+    echo "out waiting for example links. Aborting before wasting a full build + run."
+    echo
+    echo "Listening on port $port:"
+    lsof -nP -iTCP:"$port" -sTCP:LISTEN 2>/dev/null | sed 's/^/  /' || true
+    echo
+    echo "Fix one of:"
+    echo "  - Free the port (stop the offending process/container), then re-run; or"
+    echo "  - Use a free port:   PLAYWRIGHT_PORT=<port> PLAYWRIGHT_REUSE_EXISTING_SERVER=false $SCRIPT_PATH $*"
+    echo "  - Bypass this check: PLAYWRIGHT_SKIP_PREFLIGHT=true $SCRIPT_PATH $*"
+  } >&2
+  exit 1
+}
+
+preflight_examples_server
+
 if [[ "$RUN_ALL_MODES" == "true" ]]; then
   declare -a PASSTHROUGH_ARGS=()
   if [[ "$USE_ALL_PROJECTS" == "true" ]]; then

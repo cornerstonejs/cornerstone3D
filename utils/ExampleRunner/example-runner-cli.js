@@ -4,6 +4,7 @@
 var { program } = require('commander');
 var path = require('path');
 var shell = require('shelljs');
+const { spawnSync } = require('child_process');
 const readline = require('readline');
 
 var examples = {};
@@ -292,11 +293,15 @@ function run() {
     // shell.cd(exBasePath);
     // You can run this with --no-cache after the serve to prevent caching
     // which can help when doing certain types of development.
-    shell.exec(
-      `${rspackBin} serve --host 0.0.0.0 ${
-        options.https ? '--https' : ''
-      } --config ${webpackConfigPath}`
-    );
+    const rspackArgs = [
+      'serve',
+      '--host',
+      '0.0.0.0',
+      ...(options.https ? ['--https'] : []),
+      '--config',
+      webpackConfigPath,
+    ];
+    spawnSync(rspackBin, rspackArgs, { stdio: 'inherit', shell: false });
   } else {
     console.log('=> To run an example:');
     console.log('  $ npm run example -- PUT_YOUR_EXAMPLE_NAME_HERE\n');
