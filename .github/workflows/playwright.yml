@@ -7,37 +7,81 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   playwright-tests:
-    timeout-minutes: 60
+    timeout-minutes: 120
     runs-on: self-hosted
     strategy:
       fail-fast: false
+      max-parallel: 3
       matrix:
-        node-version: [20]
+        include:
+          - node-version: 24
+            mode: legacy
+            run_args: '--project=chromium'
+            collect_coverage: true
+          - node-version: 24
+            mode: compatibility
+            run_args: '--compat --project=chromium'
+            collect_coverage: false
+          - node-version: 24
+            mode: next
+            run_args: '--next --project=chromium'
+            collect_coverage: false
+    name: Playwright (${{ matrix.mode }})
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
+      - uses: pnpm/action-setup@v4
         with:
-          bun-version: 1.2.23
+          version: 11.4.0
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
       - name: Install dependencies
-        run: bun install --frozen-lockfile
-      # - name: Install Playwright browsers
-      #   run: bun x playwright install-deps chromium
+        run: pnpm install --frozen-lockfile
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install chromium
       - name: Run Playwright tests
+        env:
+          CI: true
+          COVERAGE: ${{ matrix.collect_coverage && 'true' || '' }}
+          PLAYWRIGHT_HTML_OPEN: never
         run: |
           export NODE_OPTIONS="--max_old_space_size=10192"
-          bun run test:e2e:coverage
+          if [ "${{ matrix.collect_coverage }}" = "true" ]; then
+            pnpm exec nyc --reporter=html ./scripts/run-playright.sh ${{ matrix.run_args }}
+          else
+            ./scripts/run-playright.sh ${{ matrix.run_args }}
+          fi
+      - name: Upload Playwright report and test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results-${{ github.sha }}
+          if-no-files-found: warn
+          path: |
+            tests/playwright-report/
+            tests/test-results/
+          retention-days: 7
       - name: create the coverage report
+        if: ${{ matrix.collect_coverage }}
         run: |
-          bun nyc report --reporter=lcov --reporter=text
+          pnpm exec nyc report --reporter=lcov --reporter=text
       - name: Upload the coverage report to GitHub Actions Artifacts
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && matrix.collect_coverage }}
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report-pr
           path: coverage
+          retention-days: 7
+      - name: Upload Playwright reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.mode }}
+          path: reports/*playwright
           retention-days: 7

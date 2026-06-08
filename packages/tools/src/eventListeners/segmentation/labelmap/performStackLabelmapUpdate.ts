@@ -1,14 +1,9 @@
-import {
-  cache,
-  utilities as csUtils,
-  VolumeViewport,
-  getEnabledElementByViewportId,
-} from '@cornerstonejs/core';
+import { getEnabledElementByViewportId, type Types } from '@cornerstonejs/core';
 
 import { SegmentationRepresentations } from '../../../enums';
-import { getLabelmapActorEntries } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
 import { getSegmentationRepresentations } from '../../../stateManagement/segmentation/getSegmentationRepresentation';
-import { getCurrentLabelmapImageIdsForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
+import getViewportLabelmapRenderMode from '../../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
+import { syncStackLabelmapActors } from '../../../tools/displayTools/Labelmap/syncStackLabelmapActors';
 
 /**
  * Updates the labelmap for stack viewports
@@ -43,33 +38,18 @@ export function performStackLabelmapUpdate({
 
       const { viewport } = enabledElement;
 
-      if (viewport instanceof VolumeViewport) {
+      if (getViewportLabelmapRenderMode(viewport) !== 'image') {
         return;
       }
 
-      const actorEntries = getLabelmapActorEntries(viewportId, segmentationId);
-
-      if (!actorEntries?.length) {
+      if (
+        typeof (viewport as { getCurrentImageId?: () => string })
+          .getCurrentImageId !== 'function'
+      ) {
         return;
       }
 
-      actorEntries.forEach((actorEntry, i) => {
-        const segImageData = actorEntry.actor.getMapper().getInputData();
-
-        const currentSegmentationImageIds =
-          getCurrentLabelmapImageIdsForViewport(viewportId, segmentationId);
-
-        const segmentationImage = cache.getImage(
-          currentSegmentationImageIds[i]
-        );
-        segImageData.modified();
-
-        // update the cache with the new image data
-        csUtils.updateVTKImageDataWithCornerstoneImage(
-          segImageData,
-          segmentationImage
-        );
-      });
+      syncStackLabelmapActors(viewport as Types.IStackViewport, segmentationId);
     });
   });
 }

@@ -126,7 +126,7 @@ setTitleAndDescription(
   'Here we demonstrate usage of the Start en End ROI tool'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 

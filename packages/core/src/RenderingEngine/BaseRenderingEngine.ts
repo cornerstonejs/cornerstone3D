@@ -4,18 +4,19 @@ import eventTarget from '../eventTarget';
 import uuidv4 from '../utilities/uuidv4';
 import triggerEvent from '../utilities/triggerEvent';
 import ViewportType from '../enums/ViewportType';
-import BaseVolumeViewport from './BaseVolumeViewport';
-import StackViewport from './StackViewport';
-import viewportTypeUsesCustomRenderingPipeline from './helpers/viewportTypeUsesCustomRenderingPipeline';
+import viewportTypeUsesCustomRenderingPipeline, {
+  viewportUsesCustomRenderingPipeline,
+} from './helpers/viewportTypeUsesCustomRenderingPipeline';
 import getOrCreateCanvas from './helpers/getOrCreateCanvas';
 import {
   getShouldUseCPURendering,
+  getUseGenericViewport,
   isCornerstoneInitialized,
   getConfiguration,
 } from '../init';
 import type IStackViewport from '../types/IStackViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
-import viewportTypeToViewportClass from './helpers/viewportTypeToViewportClass';
+import { getViewportClassForInput } from './helpers/viewportTypeToViewportClass';
 import ViewportStatus from '../enums/ViewportStatus';
 
 import type * as EventTypes from '../types/EventTypes';
@@ -133,9 +134,9 @@ abstract class BaseRenderingEngine {
     // 2.b) Retrieving the list of viewports for calculation of the new size for
     // offScreen canvas.
 
-    // If the viewport being added uses a custom pipeline, or we aren't using
-    // GPU rendering, we don't need to resize the offscreen canvas.
-    if (!this.useCPURendering && !viewportUsesCustomRenderingPipeline) {
+    // Route based on the viewport's declared pipeline. Some Generic viewports still
+    // need VTK backing even when global CPU rendering is enabled.
+    if (!viewportUsesCustomRenderingPipeline) {
       this.enableVTKjsDrivenViewport(viewportInput);
     } else {
       // 3 Add the requested viewport to rendering Engine
@@ -179,12 +180,10 @@ abstract class BaseRenderingEngine {
     // 4. Remove the related renderer from the offScreenMultiRenderWindow
     if (
       !viewportTypeUsesCustomRenderingPipeline(viewport.type) &&
-      !this.useCPURendering
+      this.offscreenMultiRenderWindow
     ) {
       // Only remove renderer if offscreenMultiRenderWindow exists (not in ContextPoolRenderingEngine)
-      if (this.offscreenMultiRenderWindow) {
-        this.offscreenMultiRenderWindow.removeRenderer(viewportId);
-      }
+      this.offscreenMultiRenderWindow.removeRenderer(viewportId);
     }
 
     // 5. Remove the requested viewport from the rendering engine
@@ -205,6 +204,10 @@ abstract class BaseRenderingEngine {
     // time which would interfere with each other. So we just let the enable
     // to call resize, and also resize getting called by applications on the
     // DOM resize event.
+  }
+
+  public disableViewport(viewportId: string): void {
+    this.disableElement(viewportId);
   }
 
   /**
@@ -259,10 +262,7 @@ abstract class BaseRenderingEngine {
     const customRenderingViewportInputEntries: NormalizedViewportInput[] = [];
 
     viewportInputEntries.forEach((vpie) => {
-      if (
-        !this.useCPURendering &&
-        !viewportTypeUsesCustomRenderingPipeline(vpie.type)
-      ) {
+      if (!viewportTypeUsesCustomRenderingPipeline(vpie.type)) {
         vtkDrivenViewportInputEntries.push(vpie);
       } else {
         customRenderingViewportInputEntries.push(vpie);
@@ -298,7 +298,7 @@ abstract class BaseRenderingEngine {
     const customRenderingViewports = [];
 
     viewports.forEach((vpie) => {
-      if (!viewportTypeUsesCustomRenderingPipeline(vpie.type)) {
+      if (!viewportUsesCustomRenderingPipeline(vpie)) {
         vtkDrivenViewports.push(vpie);
       } else {
         customRenderingViewports.push(vpie);
@@ -323,8 +323,8 @@ abstract class BaseRenderingEngine {
    *
    * @returns viewport
    */
-  public getViewport(viewportId: string): IViewport {
-    return this._viewports?.get(viewportId);
+  public getViewport<T = IViewport>(viewportId: string): T {
+    return this._viewports?.get(viewportId) as T;
   }
 
   /**
@@ -336,60 +336,6 @@ abstract class BaseRenderingEngine {
     this._throwIfDestroyed();
 
     return this._getViewportsAsArray();
-  }
-
-  /**
-   * Retrieves a stack viewport by its ID. used just for type safety
-   *
-   * @param viewportId - The ID of the viewport to retrieve.
-   * @returns The stack viewport with the specified ID.
-   * @throws Error if the viewport with the given ID does not exist or is not a StackViewport.
-   */
-  public getStackViewport(viewportId: string): IStackViewport {
-    this._throwIfDestroyed();
-
-    const viewport = this.getViewport(viewportId);
-
-    if (!viewport) {
-      throw new Error(`Viewport with Id ${viewportId} does not exist`);
-    }
-
-    if (!(viewport instanceof StackViewport)) {
-      throw new Error(`Viewport with Id ${viewportId} is not a StackViewport.`);
-    }
-
-    return viewport;
-  }
-
-  /**
-   * Filters all the available viewports and return the stack viewports
-   * @returns stack viewports registered on the rendering Engine
-   */
-  public getStackViewports(): IStackViewport[] {
-    this._throwIfDestroyed();
-
-    const viewports = this.getViewports();
-
-    return viewports.filter(
-      (vp) => vp instanceof StackViewport
-    ) as IStackViewport[];
-  }
-  /**
-   * Return all the viewports that are volume viewports
-   * @returns An array of VolumeViewport objects.
-   */
-  public getVolumeViewports(): IVolumeViewport[] {
-    this._throwIfDestroyed();
-
-    const viewports = this.getViewports();
-
-    const isVolumeViewport = (
-      viewport: IViewport
-    ): viewport is BaseVolumeViewport => {
-      return viewport instanceof BaseVolumeViewport;
-    };
-
-    return viewports.filter(isVolumeViewport) as IVolumeViewport[];
   }
 
   /**
@@ -450,25 +396,28 @@ abstract class BaseRenderingEngine {
 
     StatsOverlay.cleanup();
 
-    // remove vtk rendered first before resetting the viewport
-    if (!this.useCPURendering) {
-      const viewports = this._getViewportsAsArray();
+    const viewports = this._getViewportsAsArray();
+
+    this._reset();
+
+    if (this.offscreenMultiRenderWindow) {
       viewports.forEach((vp) => {
-        if (this.offscreenMultiRenderWindow) {
+        if (
+          this.offscreenMultiRenderWindow &&
+          !viewportUsesCustomRenderingPipeline(vp) &&
+          this.offscreenMultiRenderWindow.getRenderer(vp.id)
+        ) {
           this.offscreenMultiRenderWindow.removeRenderer(vp.id);
         }
       });
 
       // Free up WebGL resources
-      if (this.offscreenMultiRenderWindow) {
-        this.offscreenMultiRenderWindow.delete();
-      }
+      this.offscreenMultiRenderWindow.delete();
 
       // Make sure all references go stale and are garbage collected.
       delete this.offscreenMultiRenderWindow;
     }
 
-    this._reset();
     renderingEngineCache.delete(this.id);
 
     this.hasBeenDestroyed = true;
@@ -495,10 +444,38 @@ abstract class BaseRenderingEngine {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
 
+  /**
+   * Map from legacy viewport types to their Next equivalents.
+   * The remapped type is used internally for the render path and pipeline
+   * selection, while the original requested type is retained so viewport
+   * creation can choose a legacy adapter instead of a raw Next class.
+   */
+  private static readonly NEXT_TYPE_REMAP: Partial<
+    Record<ViewportType, ViewportType>
+  > = {
+    [ViewportType.STACK]: ViewportType.PLANAR_NEXT,
+    [ViewportType.ORTHOGRAPHIC]: ViewportType.PLANAR_NEXT,
+    [ViewportType.VIDEO]: ViewportType.VIDEO_NEXT,
+    [ViewportType.WHOLE_SLIDE]: ViewportType.WHOLE_SLIDE_NEXT,
+    [ViewportType.ECG]: ViewportType.ECG_NEXT,
+    [ViewportType.VOLUME_3D]: ViewportType.VOLUME_3D_NEXT,
+  };
+
   private _normalizeViewportInputEntry(
     viewportInputEntry: PublicViewportInput
   ) {
-    const { type, defaultOptions } = viewportInputEntry;
+    const requestedType = viewportInputEntry.type;
+    let { type } = viewportInputEntry;
+    const { defaultOptions } = viewportInputEntry;
+
+    // Remap legacy types to Next when the flag is set
+    if (getUseGenericViewport()) {
+      const remapped = BaseRenderingEngine.NEXT_TYPE_REMAP[type];
+      if (remapped) {
+        type = remapped;
+      }
+    }
+
     let options = defaultOptions;
 
     if (!options || Object.keys(options).length === 0) {
@@ -508,7 +485,7 @@ abstract class BaseRenderingEngine {
         displayArea: null,
       };
 
-      if (type === ViewportType.ORTHOGRAPHIC) {
+      if (requestedType === ViewportType.ORTHOGRAPHIC) {
         options = {
           ...options,
           orientation: OrientationAxis.AXIAL,
@@ -518,6 +495,11 @@ abstract class BaseRenderingEngine {
 
     return {
       ...viewportInputEntry,
+      requestedType:
+        requestedType !== type || getUseGenericViewport()
+          ? requestedType
+          : undefined,
+      type,
       defaultOptions: options,
     };
   }
@@ -537,28 +519,15 @@ abstract class BaseRenderingEngine {
   }
 
   private _resizeUsingCustomResizeHandler(
-    customRenderingViewports: StackViewport[],
+    customRenderingViewports: IViewport[],
     keepCamera = true,
     immediate = true
   ) {
-    // 1. If viewport has a custom resize method, call it here.
+    // Custom-pipeline viewports own their resize/camera semantics.
     customRenderingViewports.forEach((vp) => {
-      if (typeof vp.resize === 'function') {
-        vp.resize();
-      }
+      vp.resizeForRenderingEngine({ keepCamera });
     });
 
-    // 3. Reset viewport cameras
-    customRenderingViewports.forEach((vp) => {
-      const prevCamera = vp.getCamera();
-      vp.resetCamera();
-
-      if (keepCamera) {
-        vp.setCamera(prevCamera);
-      }
-    });
-
-    // 2. If render is immediate: Render all
     if (immediate) {
       this.render();
     }
@@ -626,11 +595,15 @@ abstract class BaseRenderingEngine {
     };
 
     // 4. Create a proper viewport based on the type of the viewport
-    const ViewportType = viewportTypeToViewportClass[type];
-    const viewport = new ViewportType(viewportInput);
+    const ViewportClass = getViewportClassForInput(viewportInputEntry);
+    const viewport = new ViewportClass(viewportInput);
+
+    // Custom-pipeline viewports are not remapped, so the requested type equals `type`.
+    // Recorded for parity with the remapped paths so callers can always read it.
+    (viewport as unknown as IViewport).requestedType = type;
 
     // 5. Storing the viewports
-    this._viewports.set(viewportId, viewport);
+    this._viewports.set(viewportId, viewport as unknown as IViewport);
 
     const eventDetail: EventTypes.ElementEnabledEventDetail = {
       element,
@@ -654,12 +627,10 @@ abstract class BaseRenderingEngine {
    * Returns the offscreen multi-render window used for rendering.
    */
   public getOffscreenMultiRenderWindow(
-    viewportId?: string
+    _viewportId?: string
   ): VtkOffscreenMultiRenderWindow {
-    if (this.useCPURendering) {
-      throw new Error(
-        'Offscreen multi render window is not available when using CPU rendering.'
-      );
+    if (!this.offscreenMultiRenderWindow) {
+      throw new Error('Offscreen multi render window is not available.');
     }
     return this.offscreenMultiRenderWindow;
   }
@@ -738,6 +709,12 @@ abstract class BaseRenderingEngine {
     // Trigger first before removing the data attributes, as we need the enabled
     // element to remove tools associated with the viewport
     triggerEvent(eventTarget, Events.ELEMENT_DISABLED, eventDetail);
+
+    (
+      viewport as IViewport & {
+        destroy?: () => void;
+      }
+    ).destroy?.();
 
     element.removeAttribute('data-viewport-uid');
     element.removeAttribute('data-rendering-engine-uid');

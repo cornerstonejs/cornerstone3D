@@ -28,11 +28,13 @@ jobs:
     runs-on: self-hosted
     timeout-minutes: 120
     env:
-      BUN_VERSION: 1.3.11
+      PNPM_VERSION: 11.4.0
+      BUN_VERSION: 1.2.23
       NODE_VERSION: 24
+      OHIF_REF: master
       OHIF_DIR: ohif
       # Update to force a rebuild of the OHIF integration
-      BUILD_INDEX: 0
+      BUILD_INDEX: 1
     steps:
       - name: Checkout Cornerstone
         uses: actions/checkout@v4
@@ -60,6 +62,14 @@ jobs:
           echo "[build-context] OHIF ref: ${{ env.OHIF_REF }}"
           echo "[build-context] ═══════════════════════════════════════════════════════════════"
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      # OHIF (a bun/yarn project) is installed with bun so it gets an isolated
+      # node_modules instead of being pulled into this repo's pnpm workspace,
+      # which mixes jest copies and breaks jest-runner (leakDetector error).
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
         with:
@@ -69,12 +79,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
 
       - name: Install Cornerstone dependencies
-        run: bun install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
-      - name: Build local Cornerstone packages for OHIF
-        run: bun run build:esm
+      - name: Build local Cornerstone packages for OHIF (includes metadata)
+        run: pnpm run build:esm
 
       - name: Checkout OHIF
         uses: actions/checkout@v4
@@ -99,7 +110,7 @@ jobs:
 
       - name: Install OHIF dependencies
         working-directory: ${{ env.OHIF_DIR }}
-        run: bun install --frozen-lockfile
+        run: bun install
 
       - name: Link local Cornerstone packages into OHIF node_modules
         run: node scripts/link-ohif-cornerstone-node-modules.mjs ${{ env.OHIF_DIR }}
@@ -110,7 +121,7 @@ jobs:
 
       - name: Install Playwright browsers
         working-directory: ${{ env.OHIF_DIR }}
-        run: npx playwright install
+        run: npx playwright install --with-deps chromium
 
       - name: Run OHIF e2e tests
         working-directory: ${{ env.OHIF_DIR }}

@@ -35,31 +35,15 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 - **security:** Update various dependencies to fix security vulnerabilities. ([#2736](https://github.com/cornerstonejs/cornerstone3D/issues/2736)) ([f8385af](https://github.com/cornerstonejs/cornerstone3D/commit/f8385afe4116f8e824f2480b7a5c0c032c1e5da0))
 
-## [4.22.7](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.6...v4.22.7) (2026-05-15)
+# [5.0.0-beta.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.0-beta.1...v5.0.0-beta.2) (2026-05-15)
 
 ### Bug Fixes
 
 - **annotations:** incorrect area calculation for livewire, spline, rectangle, and planar freehand ROI tools ([#2734](https://github.com/cornerstonejs/cornerstone3D/issues/2734)) ([c8a96e9](https://github.com/cornerstonejs/cornerstone3D/commit/c8a96e9a025a51e70f0c20f217827fdd036aa4c5))
-
-## [4.22.6](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.5...v4.22.6) (2026-05-12)
-
-### Bug Fixes
-
 - **segmentation:** fully remove segmentations from viewport on delete after reload ([#2729](https://github.com/cornerstonejs/cornerstone3D/issues/2729)) ([0e186bd](https://github.com/cornerstonejs/cornerstone3D/commit/0e186bd7a804d706df1bb9ee263378e09726b087))
-
-## [4.22.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.4...v4.22.5) (2026-05-12)
-
-**Note:** Version bump only for package root
-
-## [4.22.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.3...v4.22.4) (2026-05-06)
-
-**Note:** Version bump only for package root
-
-## [4.22.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.2...v4.22.3) (2026-04-23)
-
-### Bug Fixes
-
 - **security:** Patch protobufjs for CVE-2026-41242 ([#2712](https://github.com/cornerstonejs/cornerstone3D/issues/2712)) ([7027290](https://github.com/cornerstonejs/cornerstone3D/commit/7027290d168d91829f608a6c2f3c39c995e28c31))
+
+# [5.0.0-beta.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.18.3...v5.0.0-beta.1) (2026-02-27)
 
 ## [4.22.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.1...v4.22.2) (2026-04-21)
 

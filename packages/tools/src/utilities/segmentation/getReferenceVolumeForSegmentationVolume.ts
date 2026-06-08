@@ -31,9 +31,20 @@ export function getReferenceVolumeForSegmentationVolume(
   } else {
     // find the volume based on the imageIds
     const imageIds = segmentationVolume.imageIds;
-    const image = cache.getImage(imageIds[0]);
+    const segmentationImageId = imageIds?.[0];
+    if (!segmentationImageId) {
+      return null;
+    }
+
+    const image = cache.getImage(segmentationImageId);
+    if (!image) {
+      return null;
+    }
+
     const referencedImageId = image.referencedImageId;
-    let volumeInfo = cache.getVolumeContainingImageId(referencedImageId);
+    let volumeInfo = referencedImageId
+      ? cache.getVolumeContainingImageId(referencedImageId)
+      : undefined;
     if (!volumeInfo?.volume) {
       // If no volume contains the referenced image ID, the volume may have been
       // built from the segmentation's image IDs (e.g. createAndCacheVolumeFromImages

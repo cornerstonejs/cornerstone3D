@@ -43,7 +43,7 @@ setTitleAndDescription(
   'Here, we demonstrate how you can use the Segment Label Tool in both stack and volume viewports to hover and visualize the label of the segment that is below it. It works after some deliberate delay.'
 );
 
-const size = '500px';
+const size = '512px';
 
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');

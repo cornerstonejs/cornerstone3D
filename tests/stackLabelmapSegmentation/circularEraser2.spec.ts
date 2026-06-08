@@ -1,9 +1,10 @@
 import { test } from 'playwright-test-coverage';
 import {
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   visitExample,
   screenShotPaths,
   simulateDrawPath,
+  getVisibleViewportCanvas,
 } from '../utils/index';
 import { rightArmBoneContour } from './utils/constants';
 
@@ -19,7 +20,7 @@ test('Stack Segmentation - Circular Eraser Tool with segmentation 2', async ({
 }) => {
   await page.getByRole('combobox').first().selectOption('CircularBrush');
 
-  const canvas = await page.locator('canvas').first();
+  const canvas = getVisibleViewportCanvas(page, 0);
 
   await simulateDrawPath(page, canvas, [...rightArmBoneContour, [120, 150]], {
     interpolateSteps: true,
@@ -52,9 +53,11 @@ test('Stack Segmentation - Circular Eraser Tool with segmentation 2', async ({
     }
   );
 
-  await checkForScreenshot(
+  await checkForCanvasSnapshot(
     page,
-    canvas,
-    screenShotPaths.stackSegmentation.circularEraserSegmentation2
+    '',
+    screenShotPaths.stackSegmentation.circularEraserSegmentation2,
+    0,
+    { threshold: 0.01, maxDiffPixelRatio: 0.06 }
   );
 });

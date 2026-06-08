@@ -15,6 +15,7 @@ import {
   addSliderToToolbar,
   setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
+import { getStringUrlParam } from '../../../../utils/demo/helpers/exampleParameters';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 // This is for debugging purposes
@@ -72,23 +73,27 @@ setTitleAndDescription(
   'Here we demonstrate manual segmentation tools'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 
 viewportGrid.style.display = 'flex';
 viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
+viewportGrid.style.flexWrap = 'wrap';
 
 const element1 = document.createElement('div');
 const element2 = document.createElement('div');
 const element3 = document.createElement('div');
 element1.style.width = size;
 element1.style.height = size;
+element1.style.flexShrink = '0';
 element2.style.width = size;
 element2.style.height = size;
+element2.style.flexShrink = '0';
 element3.style.width = size;
 element3.style.height = size;
+element3.style.flexShrink = '0';
 
 // Disable right click context menu so we can have right click tools
 element1.oncontextmenu = (e) => e.preventDefault();
@@ -182,6 +187,13 @@ thresholdOptions.set('CT Fat: (-150, -70)', {
     dynamicRadius: 0,
   },
 });
+thresholdOptions.set('CT Soft Tissue: (-100, 200)', {
+  threshold: {
+    range: [-100, 200] as Types.Point2,
+    isDynamic: false,
+    dynamicRadius: 0,
+  },
+});
 thresholdOptions.set('CT Bone: (200, 1000)', {
   threshold: {
     range: [200, 1000] as Types.Point2,
@@ -259,8 +271,20 @@ async function addSegmentationsToState() {
  * Runs the demo
  */
 async function run() {
+  const overwriteMode = getStringUrlParam('overwriteMode');
   // Init Cornerstone and related libraries
-  await initDemo();
+  await initDemo({
+    tools: {
+      segmentation: {
+        overwriteMode:
+          overwriteMode === 'all' ||
+          overwriteMode === 'visible' ||
+          overwriteMode === 'none'
+            ? overwriteMode
+            : undefined,
+      },
+    },
+  });
 
   // This is not necessary, but makes the images appear faster
   utilities.imageRetrieveMetadataProvider.add(
@@ -423,7 +447,7 @@ async function run() {
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
-        background: <Types.Point3>[0, 0, 0],
+        background: [0.2, 0, 0.2] as Types.Point3,
       },
     },
     {
@@ -432,7 +456,7 @@ async function run() {
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
-        background: <Types.Point3>[0, 0, 0],
+        background: [0.2, 0, 0.2] as Types.Point3,
       },
     },
     {
@@ -441,7 +465,7 @@ async function run() {
       element: element3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
-        background: <Types.Point3>[0, 0, 0],
+        background: [0.2, 0, 0.2] as Types.Point3,
       },
     },
   ];

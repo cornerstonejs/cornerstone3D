@@ -364,6 +364,10 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
             currentTexture.getTextureParameters();
 
           const dataType = imageData.get('dataType').dataType;
+          const textureNumberOfComponents =
+            imageData.getPointData()?.getScalars()?.getNumberOfComponents?.() ??
+            imageData.get('numberOfComponents').numberOfComponents ??
+            1;
 
           let shouldReset = true;
 
@@ -371,7 +375,12 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
             if (previousTextureParameters?.width === dims[0]) {
               if (previousTextureParameters?.height === dims[1]) {
                 if (previousTextureParameters?.depth === dims[2]) {
-                  shouldReset = false;
+                  if (
+                    previousTextureParameters?.numberOfComponents ===
+                    textureNumberOfComponents
+                  ) {
+                    shouldReset = false;
+                  }
                 }
               }
             }
@@ -388,7 +397,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
               width: dims[0],
               height: dims[1],
               depth: dims[2],
-              numberOfComponents: numIComps,
+              numberOfComponents: textureNumberOfComponents,
               dataType,
             });
 
@@ -398,7 +407,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
               width: dims[0],
               height: dims[1],
               depth: dims[2],
-              numComps: numIComps,
+              numComps: textureNumberOfComponents,
               dataType,
               data: null,
             });

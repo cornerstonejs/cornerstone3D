@@ -414,7 +414,7 @@ class GrowCutBaseTool extends BaseTool {
     const derivedVolume = new ImageVolume({
       volumeId,
       dataType: volumeProps.dataType,
-      metadata: structuredClone(volumeProps.metadata),
+      metadata: csUtils.deepClone(volumeProps.metadata),
       dimensions: volumeProps.dimensions,
       spacing: volumeProps.spacing,
       origin: volumeProps.origin,

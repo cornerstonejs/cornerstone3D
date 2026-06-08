@@ -1,4 +1,5 @@
 import * as metaData from '../metaData';
+import { MetadataModules } from '../enums';
 import isEqual from './isEqual';
 
 /**
@@ -16,11 +17,16 @@ function isValidVolume(imageIds: string[]): boolean {
 
   const imageId0 = imageIds[0];
 
-  const { modality, seriesInstanceUID } = metaData.get(
-    'generalSeriesModule',
-    imageId0
-  );
+  const generalSeries = metaData.get(MetadataModules.GENERAL_SERIES, imageId0);
+  if (!generalSeries) {
+    return false;
+  }
+  const { modality, seriesInstanceUID } = generalSeries;
 
+  const imagePlane = metaData.get(MetadataModules.IMAGE_PLANE, imageId0);
+  if (!imagePlane) {
+    return false;
+  }
   const {
     imageOrientationPatient,
     pixelSpacing,
@@ -28,7 +34,7 @@ function isValidVolume(imageIds: string[]): boolean {
     columns,
     rows,
     usingDefaultValues,
-  } = metaData.get('imagePlaneModule', imageId0);
+  } = imagePlane;
 
   if (usingDefaultValues) {
     return false;
@@ -48,12 +54,14 @@ function isValidVolume(imageIds: string[]): boolean {
 
   for (let i = 0; i < imageIds.length; i++) {
     const imageId = imageIds[i];
-    const { modality, seriesInstanceUID } = metaData.get(
-      'generalSeriesModule',
-      imageId
-    );
-    const { imageOrientationPatient, pixelSpacing, columns, rows } =
-      metaData.get('imagePlaneModule', imageId);
+    const general = metaData.get(MetadataModules.GENERAL_SERIES, imageId);
+    const plane = metaData.get(MetadataModules.IMAGE_PLANE, imageId);
+    if (!general || !plane) {
+      validVolume = false;
+      break;
+    }
+    const { modality, seriesInstanceUID } = general;
+    const { imageOrientationPatient, pixelSpacing, columns, rows } = plane;
 
     if (seriesInstanceUID !== baseMetadata.seriesInstanceUID) {
       validVolume = false;

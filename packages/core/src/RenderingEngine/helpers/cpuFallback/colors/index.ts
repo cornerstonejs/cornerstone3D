@@ -1,4 +1,2 @@
-import { getColormap, getColormapsList } from './colormap';
-import LookupTable from './lookupTable';
-
-export { getColormap, getColormapsList, LookupTable };
+export * from './colormap';
+export { default as LookupTable } from './lookupTable';

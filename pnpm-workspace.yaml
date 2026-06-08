@@ -1,0 +1,71 @@
+packages:
+  - packages/metadata
+  - packages/utils
+  - packages/adapters
+  - packages/core
+  - packages/dicomImageLoader
+  - packages/docs
+  - packages/nifti-volume-loader
+  - packages/polymorphic-segmentation
+  - packages/tools
+  - packages/ai
+  - packages/codemods
+  - packages/labelmap-interpolation
+  - addOns/externals/*
+  - addOns/local/*
+
+nodeLinker: hoisted
+strictPeerDependencies: false
+linkWorkspacePackages: true
+preferWorkspacePackages: true
+minimumReleaseAge: 2880
+frozenLockfile: true
+
+overrides:
+  '@babel/helper-create-class-features-plugin': 7.28.3
+  caniuse-lite: 1.0.30001767
+  axios: 1.16.1
+  buffer: 6.0.3
+  node-forge: 1.4.0
+  canvas: 3.2.0
+  tar-fs: 2.1.4
+  body-parser: 1.20.3
+  ws: 8.18.3
+  qs: 6.14.1
+  lodash: 4.18.1
+  tar: 7.5.11
+  shelljs: 0.10.0
+  rollup: 3.30.0
+  serialize-javascript: 7.0.4
+  svgo: 3.3.3
+  flatted: 3.4.2
+  socket.io-parser: 4.2.6
+  handlebars: 4.7.9
+  path-to-regexp: 0.1.13
+  protobufjs: 7.5.8
+  fast-uri: 3.1.2
+  tmp: 0.2.6
+  make-fetch-happen: 15.0.5
+  webpack: 5.105.0
+  mdast-util-to-hast: 13.2.1
+  '@remix-run/router': 1.23.2
+  '@types/minimatch': 3.0.5
+
+auditConfig:
+  ignoreGhsas:
+    - GHSA-5j98-mcp5-4vw2
+    - GHSA-3ppc-4f35-3m26
+    - GHSA-7r86-cg39-jmmj
+    - GHSA-23c5-xmqv-rm74
+    - GHSA-c2c7-rcm5-vvqj
+
+allowBuilds:
+  '@swc/core': true
+  canvas: true
+  core-js: true
+  core-js-pure: true
+  esbuild: true
+  nx: false
+  protobufjs: true
+  puppeteer: true
+  unrs-resolver: false
