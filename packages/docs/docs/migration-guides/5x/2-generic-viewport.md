@@ -63,6 +63,125 @@ methods on compatibility viewports, or use Generic methods such as
 legacy data mounting with direct Generic data mounting on the same viewport
 can leave legacy presentation defaults and Generic data state out of sync.
 
+## Extending Viewport Types (New Pattern)
+
+### When you actually need a new viewport type
+
+The built-in viewport types cover a fixed set of render paths: stack and volume
+image slices, 3D volumes, whole-slide tiles, video frames, and ECG waveforms.
+You only need to register a _new_ type when you want a viewport to draw
+something none of those render paths model.
+
+A good example is a **3D contour viewport for a digital twin**. Cornerstone can
+already render contour geometry — for example DICOM RT Structure Set contours —
+but only as a segmentation _overlay_ aligned to an image source view. A
+digital-twin view instead makes the contour geometry the **primary source
+data**: there is no underlying image, so the contour itself defines the view,
+including navigation and camera. No built-in source render path models contour
+geometry as the primary data, so a custom `Contour3D` viewport class owns its
+own data shape, render path, and view state while still participating in the
+rendering engine, projection service, and tooling like any other viewport.
+
+Rule of thumb: register a new type only for a genuinely new **data shape** or
+**render path**. If you can express what you need with an existing viewport's
+source/overlay bindings and presentation, do that instead.
+
+### Registering the type
+
+Built-in and extension viewport type names live on **`Enums.ViewportTypes`**, a
+runtime constants map in the enums package (not the legacy `ViewportType` enum).
+
+- **Built-ins:** `Enums.ViewportTypes.STACK`, `Enums.ViewportTypes.PLANAR_NEXT`, etc.
+- **Extensions:** `registerViewportType({ name: 'Contour3D', ... })` then `Enums.ViewportTypes.Contour3D`
+- **Types:** augment `ViewportTypeConstants` (and `ViewportTypeRegistry` for the
+  wire-value union) from the constants you export. `Enums.ViewportTypes` is typed
+  from `ViewportTypeConstants`, so new keys pick up the correct literal types
+  automatically.
+
+The deprecated `Enums.ViewportType` enum is unchanged at runtime and is **not**
+extended when you register new types.
+
+### 1) Declare the name and type augmentation in one place
+
+Export the name and wire value as constants and derive the type augmentation
+from them. The literal strings then live in exactly one file and every other
+step imports the constants instead of retyping them. Because this file now
+carries runtime values it is a regular `.ts` module, not a `.d.ts` (a `.d.ts`
+is type-only and cannot emit the `export const`s).
+
+```ts
+// my-extension/src/viewportTypes.ts
+import '@cornerstonejs/core';
+
+// Single source of truth for this extension's viewport type.
+export const CONTOUR_3D_NAME = 'Contour3D';
+export const CONTOUR_3D_TYPE = 'myOrg:contour3d';
+
+declare module '@cornerstonejs/core' {
+  interface ViewportTypeRegistry {
+    [CONTOUR_3D_TYPE]: typeof CONTOUR_3D_TYPE;
+  }
+
+  interface ViewportTypeConstants {
+    readonly [CONTOUR_3D_NAME]: typeof CONTOUR_3D_TYPE;
+  }
+}
+```
+
+The computed keys are valid because both constants have string-literal types, so
+`Enums.ViewportTypes.Contour3D` and the `'myOrg:contour3d'` wire value are both
+derived from these two declarations.
+
+### 2) Register the type at runtime
+
+Import the constants and pass them straight to `registerViewportType`. The call
+is typed against the step 1 augmentation: `name` is constrained to a declared
+key and `type` is pinned to that key's wire value, so a mismatched pair is a
+compile-time error. Importing `viewportTypes.ts` here also pulls in its `declare
+module` augmentation, so the new name is present on `Enums.ViewportTypes`
+wherever this module is loaded.
+
+```ts
+import { registerViewportType } from '@cornerstonejs/core';
+import { CONTOUR_3D_NAME, CONTOUR_3D_TYPE } from './viewportTypes';
+
+registerViewportType({
+  name: CONTOUR_3D_NAME,
+  type: CONTOUR_3D_TYPE,
+  ViewportClass: Contour3DViewport,
+});
+```
+
+After this runs, `Enums.ViewportTypes.Contour3D === 'myOrg:contour3d'`.
+
+### 3) Enable elements using the registered type
+
+Reuse the same constant, or use the `Enums.ViewportTypes` accessor once
+registration has populated it:
+
+```ts
+import { Enums } from '@cornerstonejs/core';
+import { CONTOUR_3D_TYPE } from './viewportTypes';
+
+renderingEngine.enableElement({
+  viewportId: 'digitalTwinViewport',
+  element,
+  type: CONTOUR_3D_TYPE, // or Enums.ViewportTypes.Contour3D
+});
+```
+
+Notes:
+
+- Call `registerViewportType(...)` in your extension entry module **before** any
+  `enableElement(...)` that uses `Enums.ViewportTypes.Contour3D`.
+- `declare module` only affects TypeScript; it does not register constructors.
+  Runtime registration is required.
+- Use namespaced wire values (for example, `myOrg:contour3d`) to avoid
+  collisions across extensions.
+- Import `CONTOUR_3D_TYPE`/`CONTOUR_3D_NAME` rather than retyping the literals.
+  `Enums.ViewportTypes.Contour3D` is the enum-like ergonomic accessor and is
+  equivalent to `CONTOUR_3D_TYPE` after registration.
+
 Code that branches on `viewport.type` should also account for the runtime type.
 Direct planar Generic viewports report `ViewportType.PLANAR_NEXT`; remapped stack
 and orthographic compatibility adapters still expose their requested legacy type

@@ -1,4 +1,4 @@
-import { getOrCreateCanvas } from '../../helpers';
+import getOrCreateCanvas from '../../helpers/getOrCreateCanvas';
 import type { LoadedData } from '../ViewportArchitectureTypes';
 import GenericViewport from '../GenericViewport';
 import { ViewportType } from '../../../enums';

@@ -13,6 +13,11 @@ The goal is to move application code from viewport-class-specific behavior to
 logical data ids, inferred render paths, bindings, view state, and data
 presentation.
 
+If you need to add custom viewport types from extensions, use `Enums.ViewportTypes`
+(register with `registerViewportType`, then `Enums.ViewportTypes.<NAME>`) as
+documented in the
+[5.x Generic Viewport migration guide](../../../../migration-guides/5x/2-generic-viewport.md#extending-viewport-types-new-pattern).
+
 ## Stack Or Volume Viewport Selection
 
 Before, the viewport type usually encoded the data shape:
