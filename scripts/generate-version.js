@@ -36,8 +36,10 @@ export const version = '${versionData.version}';\n`;
 // Determine the src directory
 const srcDir = path.join(packagePath, 'src');
 if (!fs.existsSync(srcDir)) {
-  console.error(`Error: src directory not found at ${srcDir}`);
-  process.exit(1);
+  // Packages without a src directory (e.g. private codemods, the docs site)
+  // have nowhere to stamp version.ts. Skip rather than fail the release.
+  console.log(`Skipping ${packagePath}: no src directory`);
+  process.exit(0);
 }
 
 // Write the version.ts file
