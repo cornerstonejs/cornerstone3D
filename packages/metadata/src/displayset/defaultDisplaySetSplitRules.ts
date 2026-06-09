@@ -1,6 +1,7 @@
 import { isEcgInstance } from './isEcgInstance';
 import { isImageSopClass } from './isImageSopClass';
 import { isVideoInstance } from './isVideoInstance';
+import { isWsiInstance } from './isWsiInstance';
 import type { SplitRule } from './types';
 
 const VOLUME_MODALITIES = new Set(['CT', 'MR', 'PT', 'NM']);
@@ -28,6 +29,17 @@ export const defaultDisplaySetSplitRules: SplitRule[] = [
     splitKey: ['SOPInstanceUID'],
     customAttributes: () => ({
       viewportTypes: ['ecg'],
+    }),
+  },
+
+  {
+    id: 'wholeslide',
+    viewportTypes: ['wholeslide'],
+    // All microscopy levels of a series form a single whole-slide display set.
+    ruleSelector: (instance) => isWsiInstance(instance),
+    splitKey: ['SeriesInstanceUID'],
+    customAttributes: () => ({
+      viewportTypes: ['wholeslide'],
     }),
   },
 
@@ -103,7 +115,8 @@ export const defaultDisplaySetSplitRules: SplitRule[] = [
 
   {
     id: 'volume3d',
-    viewportTypes: ['volume3d', 'volume', 'stack'],
+    // Default volumetric series to MPR (volume); 3D is an extra allowed type.
+    viewportTypes: ['volume', 'volume3d', 'stack'],
     makeSeriesInfo: (instances, seriesInfo) => {
       const modality = instances[0].Modality;
       if (modality && VOLUME_MODALITIES.has(modality) && instances.length > 1) {
@@ -113,7 +126,7 @@ export const defaultDisplaySetSplitRules: SplitRule[] = [
     ruleSelector: (_instance, seriesInfo) => !!seriesInfo.supportsVolume3d,
     splitKey: ['SeriesInstanceUID'],
     customAttributes: () => ({
-      viewportTypes: ['volume3d', 'volume', 'stack'],
+      viewportTypes: ['volume', 'volume3d', 'stack'],
     }),
   },
 

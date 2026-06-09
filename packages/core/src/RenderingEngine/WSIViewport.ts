@@ -19,6 +19,7 @@ import triggerEvent from '../utilities/triggerEvent';
 import type { DataSetOptions } from '../types/IViewport';
 import eventTarget from '../eventTarget';
 import imageIdToURI from '../utilities/imageIdToURI';
+import { getGenericViewportWSIDataSet } from './GenericViewport/genericViewportDataSetAccess';
 import {
   addWSIMiniNavigationOverlayCss,
   type WSIClientLike,
@@ -583,6 +584,9 @@ class WSIViewport extends Viewport {
   }
 
   public async setWSI(imageIds: string[], client: WSIClientLike) {
+    // Setting WSI data directly resets any display-set bookkeeping; the
+    // setDisplaySets override re-records after calling this.
+    this.clearDisplaySets();
     this.microscopyElement.style.background = 'black';
     this.microscopyElement.innerText = 'Loading';
     this.imageIds = imageIds;
@@ -624,6 +628,38 @@ class WSIViewport extends Viewport {
       '--ol-subtle-background-color': 'rgba(78, 78, 78, 0.5)',
       background: 'none',
     });
+  }
+
+  /**
+   * Mounts display sets on the viewport, mirroring the GenericViewport
+   * `setDisplaySets` API. The `displaySetId` is resolved through the registered
+   * generic-viewport dataset metadata (see `genericViewportDataSetMetadataProvider`)
+   * to its WSI `imageIds` and `webClient`, which are loaded via `setWSI`. The
+   * mounted entries are recorded via `super.setDisplaySets` so
+   * {@link getDisplaySets} reports them.
+   *
+   * @param entries - display set entries to mount; the first is used as the WSI source.
+   */
+  public async setDisplaySets(
+    ...entries: Array<{ displaySetId: string; options?: unknown }>
+  ): Promise<void> {
+    const [entry] = entries;
+    if (!entry?.displaySetId) {
+      throw new Error(
+        '[WSIViewport] setDisplaySets requires a displaySetId to render whole slide imaging'
+      );
+    }
+
+    const dataSet = getGenericViewportWSIDataSet(entry.displaySetId);
+    if (!dataSet?.imageIds?.length || !dataSet.options?.webClient) {
+      throw new Error(
+        `[WSIViewport] No registered WSI dataset (imageIds + webClient) for display set ${entry.displaySetId}`
+      );
+    }
+
+    // setWSI clears the recorded display sets; record them again afterwards.
+    await this.setWSI(dataSet.imageIds, dataSet.options.webClient);
+    super.setDisplaySets(...entries);
   }
 
   public postrender = () => {

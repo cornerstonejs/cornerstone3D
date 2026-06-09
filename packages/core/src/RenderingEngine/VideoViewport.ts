@@ -1,6 +1,7 @@
 import type { mat4 } from 'gl-matrix';
 import { Events as EVENTS, VideoEnums as VideoViewportEnum } from '../enums';
 import type { DataId } from './GenericViewport/ViewportArchitectureTypes';
+import { getGenericViewportSourceDataId } from './GenericViewport/genericViewportDataSetAccess';
 import type {
   VideoViewportProperties,
   Point3,
@@ -215,7 +216,14 @@ class VideoViewport extends Viewport {
       );
     }
 
-    await this.setVideo(entry.displaySetId);
+    // Resolve the display set to its source video imageId. When the id is not
+    // registered in the generic-viewport dataset metadata it is returned as-is,
+    // so callers passing the video imageId directly keep working.
+    const sourceDataId = getGenericViewportSourceDataId(entry.displaySetId);
+
+    // setVideo clears the recorded display sets; record them again afterwards.
+    await this.setVideo(sourceDataId);
+    super.setDisplaySets(...entries);
   }
 
   /**
@@ -224,6 +232,9 @@ class VideoViewport extends Viewport {
    * with the rendered endpoint being the raw video in video/mp4 format.
    */
   public setVideo(imageId: string, frameNumber?: number): Promise<unknown> {
+    // Setting a raw video directly resets any display-set bookkeeping; the
+    // setDisplaySets override re-records after calling this.
+    this.clearDisplaySets();
     this.imageId = Array.isArray(imageId) ? imageId[0] : imageId;
     const stream = loadVideoStreamMetadata(imageId);
 

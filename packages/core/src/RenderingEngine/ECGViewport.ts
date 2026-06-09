@@ -15,6 +15,7 @@ import { Transform } from './helpers/cpuFallback/rendering/transform';
 import triggerEvent from '../utilities/triggerEvent';
 import Viewport from './Viewport';
 import { getOrCreateCanvas } from './helpers';
+import { getGenericViewportSourceDataId } from './GenericViewport/genericViewportDataSetAccess';
 import {
   ECG_CHANNEL_SPACING,
   computeECGChannelLayouts,
@@ -109,6 +110,9 @@ class ECGViewport extends Viewport {
    * @param imageId - A DICOM image ID whose metadata includes waveform data
    */
   public async setEcg(imageId: string): Promise<void> {
+    // Setting ECG data directly resets any display-set bookkeeping; the
+    // setDisplaySets override re-records after calling this.
+    this.clearDisplaySets();
     this.imageId = imageId;
     const { waveform, calibration } = await loadECGWaveform(imageId);
 
@@ -133,6 +137,32 @@ class ECGViewport extends Viewport {
     this.recalculateHeight();
     this.refreshRenderValues();
     this.renderFrame();
+  }
+
+  /**
+   * Mounts display sets on the viewport, mirroring the GenericViewport
+   * `setDisplaySets` API. The `displaySetId` is resolved through the registered
+   * generic-viewport dataset metadata (see `genericViewportDataSetMetadataProvider`)
+   * to its source ECG imageId, which is loaded via `setEcg`. The mounted entries
+   * are recorded via `super.setDisplaySets` so {@link getDisplaySets} reports them.
+   *
+   * @param entries - display set entries to mount; the first is used as the ECG source.
+   */
+  public async setDisplaySets(
+    ...entries: Array<{ displaySetId: string; options?: unknown }>
+  ): Promise<void> {
+    const [entry] = entries;
+    if (!entry?.displaySetId) {
+      throw new Error(
+        '[ECGViewport] setDisplaySets requires a displaySetId to render an ECG waveform'
+      );
+    }
+
+    const sourceDataId = getGenericViewportSourceDataId(entry.displaySetId);
+
+    // setEcg clears the recorded display sets; record them again afterwards.
+    await this.setEcg(sourceDataId);
+    super.setDisplaySets(...entries);
   }
 
   /**

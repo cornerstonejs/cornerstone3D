@@ -133,6 +133,14 @@ class Viewport {
   sHeight: number;
   /** a Map containing the actor uid and actors */
   _actors: Map<string, ActorEntry>;
+  /**
+   * Records the display sets currently mounted on the viewport. Populated by the
+   * type-specific {@link setDisplaySets} overrides (via `super.setDisplaySets`)
+   * and cleared whenever raw data is set directly (e.g. `setStack`), so that
+   * {@link getDisplaySets} reflects only display-set-driven content.
+   */
+  protected _displaySets: Array<{ displaySetId: string; options?: unknown }> =
+    [];
   /** Default options for the viewport which includes orientation, viewPlaneNormal and backgroundColor */
   readonly defaultOptions: ViewportInputOptions;
   /** options for the viewport which includes orientation axis, backgroundColor and displayArea */
@@ -2408,6 +2416,46 @@ class Viewport {
     _entries: Array<{ dataId: string; options?: DataSetOptions }>
   ) {
     throw new Error('Unsupported operation setDataList');
+  }
+
+  /**
+   * Records the display sets currently shown on the viewport. The base
+   * implementation only stores the entries so that {@link getDisplaySets} can
+   * report them; type-specific viewports override this to actually load the data
+   * (via their native setter such as `setStack`/`setVolumes`/`setVideo`) and then
+   * call `super.setDisplaySets(...entries)` to record what was mounted.
+   *
+   * Because the native data setters clear the recorded list (see
+   * {@link clearDisplaySets}), driving a viewport with a raw data setter -
+   * without going through `setDisplaySets` - leaves `getDisplaySets()` empty,
+   * correctly reflecting that the viewport is not display-set driven.
+   *
+   * @param entries - the display set entries that were mounted; the first entry
+   *   is the source and any subsequent entries are overlays.
+   */
+  public setDisplaySets(
+    ...entries: Array<{ displaySetId: string; options?: unknown }>
+  ): void | Promise<void> {
+    this._displaySets = entries;
+  }
+
+  /**
+   * Returns the display sets currently recorded as mounted on the viewport.
+   * Empty when the viewport was driven by a raw data setter instead of
+   * {@link setDisplaySets}.
+   */
+  public getDisplaySets(): Array<{ displaySetId: string; options?: unknown }> {
+    return this._displaySets;
+  }
+
+  /**
+   * Clears the recorded display sets. Native data setters call this so that
+   * setting raw data without {@link setDisplaySets} resets the stored list. The
+   * `setDisplaySets` overrides rely on ordering: they run their native data
+   * setter first (which clears) and then call `super.setDisplaySets` to record.
+   */
+  protected clearDisplaySets(): void {
+    this._displaySets = [];
   }
 }
 

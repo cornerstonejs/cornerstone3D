@@ -2,6 +2,7 @@ import { BaseDisplaySet } from './BaseDisplaySet';
 import { ImageStackDisplaySet } from './ImageStackDisplaySet';
 import { isEcgInstance } from './isEcgInstance';
 import { isVideoInstance } from './isVideoInstance';
+import { isWsiInstance } from './isWsiInstance';
 import type { IDisplaySet } from './IDisplaySet';
 import type { GroupedInstanceBucket, ViewportTypeHint } from './types';
 import {
@@ -105,7 +106,10 @@ export function createDisplaySetFromGroup(
   const first = instances[0];
   let displaySet: IDisplaySet;
 
-  if (first && (isVideoInstance(first) || isEcgInstance(first))) {
+  if (
+    first &&
+    (isVideoInstance(first) || isEcgInstance(first) || isWsiInstance(first))
+  ) {
     const imageIds = instances.map((i) => i.imageId).filter(Boolean);
     displaySet = new BaseDisplaySet({
       displaySetInstanceUID,

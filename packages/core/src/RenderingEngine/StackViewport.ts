@@ -9,6 +9,7 @@ import eventTarget from '../eventTarget';
 import * as metaData from '../metaData';
 import { getImageDataMetadata as getImageDataMetadataUtil } from '../utilities/getImageDataMetadata';
 import { coreLog } from '../utilities/logger';
+import { getGenericViewportImageDataSet } from './GenericViewport/genericViewportDataSetAccess';
 
 import type {
   ActorEntry,
@@ -1906,6 +1907,10 @@ class StackViewport extends Viewport {
   ): Promise<string> {
     this._throwIfDestroyed();
 
+    // Setting a raw stack directly resets any display-set bookkeeping; the
+    // setDisplaySets override re-records after calling this.
+    this.clearDisplaySets();
+
     this.imageIds = imageIds;
 
     if (currentImageIdIndex > imageIds.length) {
@@ -1961,6 +1966,43 @@ class StackViewport extends Viewport {
     triggerEvent(this.element, Events.VIEWPORT_NEW_IMAGE_SET, eventDetail);
 
     return imageId;
+  }
+
+  /**
+   * Mounts display sets on the viewport, mirroring the GenericViewport
+   * `setDisplaySets` API. Each `displaySetId` is resolved through the registered
+   * generic-viewport dataset metadata (see `genericViewportDataSetMetadataProvider`)
+   * to its `imageIds`; the first entry is loaded as the stack. The mounted
+   * entries are recorded via `super.setDisplaySets` so {@link getDisplaySets}
+   * reports them.
+   *
+   * @param entries - display set entries to mount; the first is used as the stack source.
+   */
+  public async setDisplaySets(
+    ...entries: Array<{ displaySetId: string; options?: unknown }>
+  ): Promise<void> {
+    const [entry] = entries;
+    if (!entry?.displaySetId) {
+      throw new Error(
+        '[StackViewport] setDisplaySets requires a displaySetId to render as a stack'
+      );
+    }
+
+    const dataSet = getGenericViewportImageDataSet(entry.displaySetId);
+    if (!dataSet?.imageIds?.length) {
+      throw new Error(
+        `[StackViewport] No registered imageIds for display set ${entry.displaySetId}`
+      );
+    }
+
+    const initialImageIdIndex =
+      typeof dataSet.initialImageIdIndex === 'number'
+        ? dataSet.initialImageIdIndex
+        : 0;
+
+    // setStack clears the recorded display sets; record them again afterwards.
+    await this.setStack(dataSet.imageIds, initialImageIdIndex);
+    super.setDisplaySets(...entries);
   }
 
   /**
