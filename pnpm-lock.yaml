@@ -6,6 +6,7 @@ settings:
 
 overrides:
   '@babel/helper-create-class-features-plugin': 7.28.3
+  '@babel/helper-compilation-targets': 7.29.7
   caniuse-lite: 1.0.30001767
   axios: 1.16.1
   buffer: 6.0.3
