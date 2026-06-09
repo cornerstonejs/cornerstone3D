@@ -216,6 +216,9 @@ importers:
       fs-extra:
         specifier: 10.1.0
         version: 10.1.0
+      glob:
+        specifier: 10.5.0
+        version: 10.5.0
       html-webpack-plugin:
         specifier: 5.6.3
         version: 5.6.3(@rspack/core@1.6.0)(webpack@5.105.0(@swc/core@1.15.33)(cssnano@6.1.2(postcss@8.5.3))(postcss@8.5.3)(webpack-cli@5.1.4))
@@ -20382,7 +20385,7 @@ snapshots:
   jasmine@6.0.0:
     dependencies:
       '@jasminejs/reporters': 1.0.0
-      glob: 13.0.6
+      glob: 10.5.0
       jasmine-core: 6.0.1
 
   javascript-natural-sort@0.7.1: {}
@@ -22145,7 +22148,7 @@ snapshots:
       array-differ: 3.0.0
       array-union: 2.1.0
       arrify: 2.0.1
-      minimatch: 3.0.5
+      minimatch: 3.1.5
 
   murmurhash3js-revisited@3.0.0: {}
 
