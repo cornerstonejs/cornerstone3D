@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [5.0.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.13...v5.0.0) (2026-06-09)
+
+### Bug Fixes
+
+- Build path deployment issue ([2df1eb1](https://github.com/cornerstonejs/cornerstone3D/commit/2df1eb11ee874d81ace95fe3b4d32ae0d12120d1))
+- glob version on release mismatch ([#2757](https://github.com/cornerstonejs/cornerstone3D/issues/2757)) ([b89dbb3](https://github.com/cornerstonejs/cornerstone3D/commit/b89dbb339a8e321ab3849ec32f0962d32bc1c374))
+- Try to fix main deploy ([#2756](https://github.com/cornerstonejs/cornerstone3D/issues/2756)) ([303a09c](https://github.com/cornerstonejs/cornerstone3D/commit/303a09cf54782e75d6c27b51c90dac04b64c0f67))
+- Try to just deploy without the docs build ([97154f2](https://github.com/cornerstonejs/cornerstone3D/commit/97154f29bae6b2790e877e569e2a71d9391663eb))
+- Use newer actions and support pnpm build ([9a47f1e](https://github.com/cornerstonejs/cornerstone3D/commit/9a47f1e28955829d989b8f1752b3cdc00a3e00d1))
+
+### Features
+
+- Build issue with pnpm and beta merge ([#2755](https://github.com/cornerstonejs/cornerstone3D/issues/2755)) ([71f6bb6](https://github.com/cornerstonejs/cornerstone3D/commit/71f6bb6dd3fe550b9b553b8e6774e5ed1ba18db6))
+- Cornerstone3D 5.0 ([#2748](https://github.com/cornerstonejs/cornerstone3D/issues/2748)) ([aa68c90](https://github.com/cornerstonejs/cornerstone3D/commit/aa68c904b8ba6abfcbf05fbb510bb10a17ea7028)), closes [#2638](https://github.com/cornerstonejs/cornerstone3D/issues/2638) [#2639](https://github.com/cornerstonejs/cornerstone3D/issues/2639) [#2625](https://github.com/cornerstonejs/cornerstone3D/issues/2625) [#2666](https://github.com/cornerstonejs/cornerstone3D/issues/2666) [#2635](https://github.com/cornerstonejs/cornerstone3D/issues/2635)
+- extensible viewport types ([#2747](https://github.com/cornerstonejs/cornerstone3D/issues/2747)) ([b52dcfb](https://github.com/cornerstonejs/cornerstone3D/commit/b52dcfbad5004c5dd81340971189942ba73e2d56)), closes [#2638](https://github.com/cornerstonejs/cornerstone3D/issues/2638) [#2639](https://github.com/cornerstonejs/cornerstone3D/issues/2639) [#2625](https://github.com/cornerstonejs/cornerstone3D/issues/2625) [#2666](https://github.com/cornerstonejs/cornerstone3D/issues/2666) [#2635](https://github.com/cornerstonejs/cornerstone3D/issues/2635)
+
 ## [4.22.13](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.12...v4.22.13) (2026-05-26)
 
 **Note:** Version bump only for package root

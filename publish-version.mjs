@@ -132,6 +132,9 @@ async function run() {
     '--create-release',
     'github',
     '--no-push',
+    // The repo enforces frozenLockfile via pnpm-workspace.yaml, but lerna must
+    // update the lockfile after bumping versions. Relax it for this one install.
+    '--npm-client-args=--no-frozen-lockfile',
   ]);
 
   // Generate version files for each package
