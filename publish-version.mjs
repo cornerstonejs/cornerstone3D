@@ -182,9 +182,10 @@ async function run() {
   // creating releases, because lerna only creates a release when it pushes the
   // tag itself. As a result npm kept publishing while GitHub Releases froze.
   //
-  // We now create the release explicitly, after pushing the tag, reusing the
-  // same GH_TOKEN. This is best-effort: a missing token or an API error logs a
-  // warning but never fails the build/release (the npm publish step is separate).
+  // We now create the release explicitly via the gh CLI, after pushing the tag,
+  // reusing the same GH_TOKEN. This is best-effort: a missing token or a CLI
+  // error logs a warning but never fails the build/release (the npm publish step
+  // is separate).
   await createGithubRelease(tagName, nextVersion.trim());
 
   console.log('Version set using lerna');
@@ -203,62 +204,26 @@ async function createGithubRelease(tagName, version) {
     return;
   }
 
-  let owner;
-  let repo;
+  // gh reads GH_TOKEN/GITHUB_TOKEN from the environment and infers the repo from
+  // the origin remote. --verify-tag ensures the tag we just pushed exists before
+  // creating the release.
   try {
-    const { stdout: remoteUrl } = await execa('git', [
-      'config',
-      '--get',
-      'remote.origin.url',
+    await execa('gh', [
+      'release',
+      'create',
+      tagName,
+      '--title',
+      tagName,
+      '--generate-notes',
+      '--verify-tag',
+      ...(version.includes('-') ? ['--prerelease'] : []),
     ]);
-    const match = remoteUrl
-      .trim()
-      .match(/github\.com[:/]+([^/]+)\/(.+?)(?:\.git)?\/?$/);
-    if (!match) {
-      console.warn(
-        `Could not parse owner/repo from "${remoteUrl}" - skipping GitHub release for ${tagName}`
-      );
-      return;
-    }
-    [, owner, repo] = match;
+    console.log(`Created GitHub release ${tagName}`);
   } catch (err) {
     console.warn(
-      `Could not resolve remote origin URL (non-fatal): ${err.message}`
-    );
-    return;
-  }
-
-  try {
-    const response = await fetch(
-      `https://api.github.com/repos/${owner}/${repo}/releases`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${ghToken}`,
-          Accept: 'application/vnd.github+json',
-          'X-GitHub-Api-Version': '2022-11-28',
-          'User-Agent': `${repo}-release`,
-        },
-        body: JSON.stringify({
-          tag_name: tagName,
-          name: tagName,
-          generate_release_notes: true,
-          prerelease: version.includes('-'),
-        }),
-      }
-    );
-
-    if (response.ok) {
-      console.log(`Created GitHub release ${tagName}`);
-    } else {
-      const detail = await response.text();
-      console.warn(
-        `GitHub release creation for ${tagName} failed (${response.status}, non-fatal): ${detail}`
-      );
-    }
-  } catch (err) {
-    console.warn(
-      `GitHub release creation for ${tagName} errored (non-fatal): ${err.message}`
+      `GitHub release creation for ${tagName} failed (non-fatal): ${
+        err.shortMessage || err.message
+      }`
     );
   }
 }
