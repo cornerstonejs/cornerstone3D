@@ -84,6 +84,9 @@
       "types": "./dist/esm/version.d.ts"
     }
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "prebuild": "node ../../scripts/generate-version.js ./",
     "build:esm": "pnpm run prebuild && tsc --project ./tsconfig.json",
