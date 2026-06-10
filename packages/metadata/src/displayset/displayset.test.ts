@@ -42,7 +42,7 @@ describe('displayset split utilities', () => {
     expect(resolved.map((i) => i.imageId)).toEqual(['wadors:2', 'wadors:1']);
   });
 
-  it('default rules group multi-slice CT as volume3d preferred', () => {
+  it('default rules group multi-slice CT as volume (MPR) preferred', () => {
     const groups = splitSeriesInstanceGroupsFromImageIds(
       instances.map((i) => i.imageId!),
       {
@@ -53,8 +53,11 @@ describe('displayset split utilities', () => {
     expect(groups).toHaveLength(1);
     expect(groups[0].matchedRule.id).toBe('volume3d');
     const displaySet = createDisplaySetFromGroup(groups[0]);
-    expect(displaySet.viewportTypes[0]).toBe('volume3d');
-    expect(displaySet.preferredViewportType).toBe('volume3d');
+    // The volume3d rule defaults volumetric series to MPR (volume); volume3d
+    // remains an allowed-but-not-preferred viewport type.
+    expect(displaySet.viewportTypes[0]).toBe('volume');
+    expect(displaySet.viewportTypes).toContain('volume3d');
+    expect(displaySet.preferredViewportType).toBe('volume');
   });
 
   it('video rule uses video viewportTypes', () => {
