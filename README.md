@@ -1,13 +1,28 @@
 # [Cornerstone.js](https://cornerstonejs.org/) &middot; ![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)
 
-Cornerstone is a set of JavaScript libraries that can be used to build web-based medical imaging applications. It provides a framework to build radiology applications such as the [OHIF Viewer](https://ohif.org/).
+Cornerstone is a set of JavaScript libraries that can be used to build web-based medical imaging applications. It provides a framework to build radiology applications such as the [OHIF Viewer](https://ohif.org/)
 
 - **Fast:** Cornerstone leverages WebGL to provide high-performance image rendering and WebAssembly for fast image decompression.
 - **Flexible:** Cornerstone provides APIs for defining custom image, volume, and metadata loading schemes, allowing developers to easily connect with proprietary image archives.
 - **Community Driven:** Cornerstone is supported by the [Open Health Imaging Foundation](https://ohif.org/). We publish our roadmap and welcome contributions and collaboration.
-- **Standards Compliant:** Cornerstone's core focus is Radiology, so it provides DICOMweb compatibility out-of-the-box.
+- **Standards Compliant:** Cornerstone's core focus is Radiology, so it provides DICOMweb compatibility out-of-the-box
 
 [Learn how to use Cornerstone3D in your project](https://www.cornerstonejs.org/docs/getting-started/overview).
+
+## Local Setup
+
+This repository is pinned to pnpm 11.4.0 via `packageManager`. Use Corepack to
+run the pinned version:
+
+```bash
+corepack enable
+pnpm install --frozen-lockfile
+```
+
+The repo disables pnpm's own package-manager auto-switching because some
+standalone pnpm installs try to download a platform-specific pnpm binary and
+can fail before any install command runs. Corepack and CI still use the pinned
+pnpm version.
 
 ## Documentation
 
@@ -42,7 +57,7 @@ The downstream validation is defined in
 [`.github/workflows/ohif-downstream.yml`](.github/workflows/ohif-downstream.yml).
 It runs on every CS3D pull request and `workflow_dispatch`:
 
-1. Checks out the CS3D PR branch and builds it (`bun run build:esm`).
+1. Checks out the CS3D PR branch and builds it (`pnpm run build:esm`).
 2. Checks out the OHIF Viewer at a ref resolved for that run: by default
    `master`; on pull requests you can override with a line in the PR description
    (see below); on `workflow_dispatch` you can set the `ohif_ref` input.
@@ -91,7 +106,7 @@ so you can iterate without publishing:
 
 ### Link
 
-From the **CS3D repo root**, after building (`bun run build:esm`):
+From the **CS3D repo root**, after building (`pnpm run build:esm`):
 
 ```bash
 node scripts/link-ohif-cornerstone-node-modules.mjs /path/to/ohif
@@ -108,11 +123,12 @@ following packages are linked:
 | `@cornerstonejs/core` | `packages/core` |
 | `@cornerstonejs/dicom-image-loader` | `packages/dicomImageLoader` |
 | `@cornerstonejs/labelmap-interpolation` | `packages/labelmap-interpolation` |
+| `@cornerstonejs/metadata` | `packages/metadata` |
 | `@cornerstonejs/nifti-volume-loader` | `packages/nifti-volume-loader` |
 | `@cornerstonejs/polymorphic-segmentation` | `packages/polymorphic-segmentation` |
 | `@cornerstonejs/tools` | `packages/tools` |
 
-After linking, start OHIF's dev server (`yarn dev` or `bun run dev`) and any
+After linking, start OHIF's dev server (`pnpm run dev`) and any
 changes you make in CS3D (after rebuilding) will be reflected immediately.
 
 ### Unlink
@@ -123,7 +139,7 @@ To restore the registry-installed packages:
 node scripts/unlink-ohif-cornerstone-node-modules.mjs /path/to/ohif
 ```
 
-This removes the symlinks and runs `yarn install --frozen-lockfile` in the OHIF
+This removes the symlinks and runs `pnpm install --frozen-lockfile` in the OHIF
 directory to restore the original packages.
 
 ### Typical workflow
@@ -131,28 +147,32 @@ directory to restore the original packages.
 ```bash
 # 1. Build CS3D
 cd /path/to/cornerstone3D
-bun install --frozen-lockfile
-bun run build:esm
+pnpm install --frozen-lockfile
+pnpm run build:esm
 
 # 2. Link into OHIF
 node scripts/link-ohif-cornerstone-node-modules.mjs /path/to/ohif
 
 # 3. Start OHIF
 cd /path/to/ohif
-yarn dev
+pnpm run dev
 
 # 4. Iterate — rebuild CS3D after changes:
 cd /path/to/cornerstone3D
-bun run build:esm
+pnpm run build:esm
 # OHIF dev server picks up changes automatically
 
 # 5. When done, unlink
 node scripts/unlink-ohif-cornerstone-node-modules.mjs /path/to/ohif
 ```
 
-> **Tip:** For the `yarn link` based approach (useful when working on a single
+> **Tip:** For the `pnpm link` based approach (useful when working on a single
 > package rather than the full set), see the
 > [Linking Cornerstone Libraries](packages/docs/docs/contribute/linking.md) doc.
+
+## Troubleshooting
+
+If unit tests fail with **\"Cannot find module '../build/Release/canvas.node'\"**, the native `canvas` addon wasn’t built. Run `pnpm run rebuild:canvas`; if that doesn’t fix it, see [docs/troubleshooting.md](docs/troubleshooting.md#unit-tests-cannot-find-module-buildreleasecanvasnode).
 
 ## Support
 
@@ -169,6 +189,29 @@ Cornerstone has adopted a [Code of Conduct](./CODE_OF_CONDUCT.md) that we expect
 ### [Contributing Guide](https://cornerstonejs.org/docs/category/contributing)
 
 Read our guide on [How-to Contribute](https://cornerstonejs.org/docs/category/contributing) and about our [Issue Triage process](https://v3-docs.ohif.org/development/our-process).
+
+### Testing
+
+The repository has three browser-level test paths:
+
+- [`scripts/run-karma.sh`](./scripts/run-karma.sh) for legacy and compatibility rendering/tool tests.
+- [`scripts/run-playright.sh`](./scripts/run-playright.sh) for end-to-end example coverage, including the Generic viewport suite.
+- [`vitest.browser.config.ts`](./vitest.browser.config.ts) for low-level browser-mode rendering tests.
+
+Start with:
+
+```bash
+./scripts/run-karma.sh
+./scripts/run-playright.sh
+yarn test:vitest:browser
+```
+
+Detailed usage, wrapper flags, report output, and baseline management live in the contributor docs:
+
+- [Writing Karma Tests](https://www.cornerstonejs.org/docs/contribute/karma-tests)
+- [Writing Playwright Tests](https://www.cornerstonejs.org/docs/contribute/playwright-tests)
+
+Vitest browser-mode tests currently live only in-repo. Use `yarn test:vitest:browser`, `yarn test:vitest:browser:update`, and `yarn test:vitest:browser:ui`. The test files are matched from `tests/vitest-browser/**/*.browser.test.ts`.
 
 ### License
 

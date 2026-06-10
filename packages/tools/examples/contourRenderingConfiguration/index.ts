@@ -46,7 +46,7 @@ setTitleAndDescription(
   'Here we demonstrate how to configure the contour rendering. This example downloads the contour data.'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 

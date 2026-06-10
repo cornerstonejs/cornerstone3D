@@ -43,7 +43,7 @@ setTitleAndDescription(
   'Here we demonstrate that the segmentation resolution need not be the same as the source data.'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 

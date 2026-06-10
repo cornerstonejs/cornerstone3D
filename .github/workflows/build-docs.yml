@@ -22,16 +22,17 @@ jobs:
       contents: read
       pull-requests: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@v6.0.3
+      - uses: pnpm/action-setup@v6.0.8
         with:
-          bun-version: 1.2.23
-      - uses: actions/setup-node@v4
+          version: 11.4.0
+      - uses: actions/setup-node@v6.4.0
         with:
-          node-version: 20 # Or your desired Node version
+          node-version: '24'
+          cache: 'pnpm'
 
       - name: Install root dependencies
-        run: bun install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       # Removed Playwright tests and coverage generation steps
 
@@ -41,66 +42,70 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           MERGE_COMMIT_SHA: ${{ github.sha }}
         run: |
-          # Find the PR associated with the merge commit SHA
-          # Note: This relies on the merge commit being directly pushed to main
-          PR_DATA=$(gh pr list --state merged --search "$MERGE_COMMIT_SHA" --json number,headRefOid --jq '.[0]')
-          if [ -z "$PR_DATA" ]; then
-            echo "Could not find merged PR for commit $MERGE_COMMIT_SHA."
-            # Decide how to handle - fail, or maybe generate coverage now?
-            # For now, let's fail.
-            exit 1
-          fi
-          PR_HEAD_SHA=$(echo "$PR_DATA" | jq -r '.headRefOid')
-          PR_NUMBER=$(echo "$PR_DATA" | jq -r '.number')
-          echo "Found PR Number: $PR_NUMBER"
-          echo "Found PR Head SHA: $PR_HEAD_SHA"
+          # Coverage is a best-effort enhancement bundled into the docs site. A push
+          # to main may have no associated PR (e.g. a direct push or a squash where
+          # the search misses) or no completed playwright run carrying the coverage
+          # artifact. None of that should block the docs deploy, so this step never
+          # fails - it only reports whether coverage is available via an output.
+          COVERAGE_AVAILABLE=false
 
-          # Find the latest workflow run ID for the playwright workflow on the PR head commit
-          # Uses the workflow file name 'playwright.yml'
-          # Remove the --status success flag to find any run
-          RUN_ID=$(gh run list --workflow playwright.yml --commit "$PR_HEAD_SHA" --event pull_request --json databaseId --jq '.[0].databaseId')
+          # Find the PR associated with the merge commit SHA.
+          PR_DATA=$(gh pr list --state merged --search "$MERGE_COMMIT_SHA" --json number,headRefOid --jq '.[0]' 2>/dev/null || echo "")
+          if [ -z "$PR_DATA" ] || [ "$PR_DATA" = "null" ]; then
+            echo "::warning::No merged PR found for commit $MERGE_COMMIT_SHA - skipping coverage, continuing deploy."
+          else
+            PR_HEAD_SHA=$(echo "$PR_DATA" | jq -r '.headRefOid')
+            PR_NUMBER=$(echo "$PR_DATA" | jq -r '.number')
+            echo "Found PR #$PR_NUMBER (head SHA: $PR_HEAD_SHA)"
 
-          if [ -z "$RUN_ID" ]; then
-            echo "Could not find any 'playwright.yml' run for PR $PR_NUMBER (Head SHA: $PR_HEAD_SHA)."
-            # Decide how to handle - maybe try finding the artifact from the merge commit run if that exists?
-            # For now, let's fail.
-            exit 1
+            # Find the latest playwright.yml run on the PR head commit (carries the
+            # coverage-report-pr artifact).
+            RUN_ID=$(gh run list --workflow playwright.yml --commit "$PR_HEAD_SHA" --event pull_request --json databaseId --jq '.[0].databaseId' 2>/dev/null || echo "")
+            if [ -z "$RUN_ID" ] || [ "$RUN_ID" = "null" ]; then
+              echo "::warning::No playwright.yml run found for PR #$PR_NUMBER (head SHA: $PR_HEAD_SHA) - skipping coverage, continuing deploy."
+            else
+              echo "Found playwright run ID: $RUN_ID"
+              echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+              COVERAGE_AVAILABLE=true
+            fi
           fi
-          echo "Found Run ID: $RUN_ID"
-          echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
+
+          echo "coverage_available=$COVERAGE_AVAILABLE" >> "$GITHUB_OUTPUT"
 
       - name: Download coverage artifact from PR run
+        if: steps.find_pr_run.outputs.coverage_available == 'true'
+        id: download_coverage
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p ./coverage-artifact
-          gh run download ${{ steps.find_pr_run.outputs.run_id }} -n coverage-report-pr --dir ./coverage-artifact
-          # Check if download was successful (e.g., check if files exist)
-          if [ ! -f ./coverage-artifact/base.css ]; then
-            echo "Failed to download or find expected files in artifact 'coverage-report-pr' from run ${{ steps.find_pr_run.outputs.run_id }}."
-            exit 1
+          # Treat a missing/failed artifact as non-fatal: warn and skip coverage
+          # rather than failing the deploy.
+          if gh run download ${{ steps.find_pr_run.outputs.run_id }} -n coverage-report-pr --dir ./coverage-artifact && [ -f ./coverage-artifact/base.css ]; then
+            echo "Coverage artifact downloaded successfully."
+            echo "downloaded=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Could not download artifact 'coverage-report-pr' from run ${{ steps.find_pr_run.outputs.run_id }} - skipping coverage, continuing deploy."
+            echo "downloaded=false" >> "$GITHUB_OUTPUT"
           fi
-          echo "Artifact downloaded successfully."
 
       - name: Install docs dependencies
-        run: cd packages/docs && bun install
+        run: pnpm install --frozen-lockfile
 
       - name: Copy coverage to docs static directory
+        if: steps.download_coverage.outputs.downloaded == 'true'
         run: |
           # Copy files from the downloaded artifact directory
           mkdir -p packages/docs/static/coverage
           cp -r ./coverage-artifact/* packages/docs/static/coverage/
-          # Copy specific asset files from the downloaded artifact root to static root
-          cp ./coverage-artifact/base.css packages/docs/static/
-          cp ./coverage-artifact/block-navigation.js packages/docs/static/
-          cp ./coverage-artifact/prettify.css packages/docs/static/
-          cp ./coverage-artifact/prettify.js packages/docs/static/
-          cp ./coverage-artifact/favicon.png packages/docs/static/
-          cp ./coverage-artifact/sort-arrow-sprite.png packages/docs/static/
-          cp ./coverage-artifact/sorter.js packages/docs/static/
+          # Copy specific asset files from the downloaded artifact root to static root.
+          # Tolerate a missing asset so a partial artifact doesn't fail the deploy.
+          for f in base.css block-navigation.js prettify.css prettify.js favicon.png sort-arrow-sprite.png sorter.js; do
+            cp "./coverage-artifact/$f" packages/docs/static/ 2>/dev/null || echo "::warning::coverage asset '$f' not found in artifact"
+          done
 
       - name: Build docs
-        run: cd packages/docs && bun run build:docs
+        run: pnpm --filter docs run build:docs
         # This runs
         # 1. prepare-markdown-files.js - which copies markdown files to /docs/llm directory
         #    making them available at cornerstonejs.org/docs/llm/[folder]/[filename.md]
@@ -109,13 +114,25 @@ jobs:
         # 3. generate-llms-full-txt.js - which creates a llms-full.txt file containing
         #    the concatenated content of all documentation files
 
-      - name: Install Netlify CLI
-        run: bun add -g netlify-cli
-
       - name: Deploy to Netlify
         run: |
-          cd packages/docs
-          netlify deploy --dir=build --prod
+          # Run netlify-cli via npx to avoid the pnpm global-bin-dir / PATH setup
+          # issue ("global bin directory ... is not in PATH") on the runner.
+          #
+          # --no-build stops newer netlify-cli from re-running the site's
+          # UI-configured build command on deploy (which also doubled the publish
+          # dir via the UI "base" setting). The docs are already built above
+          # ("Build docs") into packages/docs/build.
+          #
+          # Use an ABSOLUTE --dir: netlify-cli resolves a relative --dir against the
+          # git repo root (not the shell cwd), so "--dir=build" from packages/docs
+          # pointed it at <repo>/build, which does not exist.
+          #
+          # --filter docs: with --no-build, netlify-cli does not read the site's UI
+          # "base" (packages/docs) and instead scans the repo, finds the pnpm
+          # workspace, and refuses to deploy ("multiple projects detected"). Naming
+          # the docs workspace package (package.json "name": "docs") disambiguates it.
+          npx -y netlify-cli deploy --no-build --filter docs --dir="$GITHUB_WORKSPACE/packages/docs/build" --prod
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}

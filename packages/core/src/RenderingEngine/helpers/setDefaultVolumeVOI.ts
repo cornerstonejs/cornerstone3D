@@ -1,13 +1,15 @@
 import type {
+  ImageActor,
   VolumeActor,
   IImageVolume,
   VOIRange,
   ScalingParameters,
 } from '../../types';
+import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import { loadAndCacheImage } from '../../loaders/imageLoader';
 import * as metaData from '../../metaData';
 import * as windowLevel from '../../utilities/windowLevel';
-import { RequestType } from '../../enums';
+import { MetadataModules, RequestType } from '../../enums';
 import cache from '../../cache/cache';
 
 const PRIORITY = 0;
@@ -23,17 +25,13 @@ const REQUEST_TYPE = RequestType.Prefetch;
  * @param imageVolume - The image volume that we want to set the VOI for.
  */
 async function setDefaultVolumeVOI(
-  volumeActor: VolumeActor,
+  volumeActor: VolumeActor | ImageActor,
   imageVolume: IImageVolume
 ): Promise<void> {
-  let voi = getVOIFromMetadata(imageVolume);
-
-  if (!voi && imageVolume.imageIds.length) {
-    voi = await getVOIFromMiddleSliceMinMax(imageVolume);
-    voi = handlePreScaledVolume(imageVolume, voi);
-  }
+  const voi = await getDefaultVolumeVOIRange(imageVolume);
 
   if (
+    !voi ||
     (voi.lower === 0 && voi.upper === 0) ||
     voi.lower === undefined ||
     voi.upper === undefined
@@ -41,10 +39,63 @@ async function setDefaultVolumeVOI(
     return;
   }
 
-  volumeActor
-    .getProperty()
-    .getRGBTransferFunction(0)
-    .setMappingRange(voi.lower, voi.upper);
+  ensureRGBTransferFunction(volumeActor).setMappingRange(voi.lower, voi.upper);
+}
+
+function ensureRGBTransferFunction(volumeActor: VolumeActor | ImageActor) {
+  const property = volumeActor.getProperty();
+  let transferFunction = property.getRGBTransferFunction(0);
+
+  if (transferFunction) {
+    return transferFunction;
+  }
+
+  transferFunction = vtkColorTransferFunction.newInstance();
+  transferFunction.addRGBPoint(0, 0, 0, 0);
+  transferFunction.addRGBPoint(1, 1, 1, 1);
+  property.setRGBTransferFunction(0, transferFunction);
+
+  if ('setUseLookupTableScalarRange' in property) {
+    property.setUseLookupTableScalarRange?.(true);
+  }
+
+  return transferFunction;
+}
+
+export async function getDefaultVolumeVOIRange(
+  imageVolume: IImageVolume
+): Promise<VOIRange | undefined> {
+  let voi = getVOIFromMetadata(imageVolume);
+
+  if (
+    !voi &&
+    imageVolume.imageIds.length &&
+    shouldUseImageIdsForVOI(imageVolume)
+  ) {
+    voi = await getVOIFromMiddleSliceMinMax(imageVolume);
+    voi = handlePreScaledVolume(imageVolume, voi);
+  }
+
+  return voi;
+}
+
+function shouldUseImageIdsForVOI(imageVolume: IImageVolume): boolean {
+  const { imageIds, referencedImageIds } = imageVolume;
+
+  if (referencedImageIds?.length) {
+    return true;
+  }
+
+  const imageId = imageIds[Math.floor(imageIds.length / 2)];
+
+  // Derived images are cache-only image objects created from another source.
+  // Generated geometry/labelmap image IDs can also be cache-only and may not
+  // have an image loader scheme at all; those should not drive default VOI.
+  if (!imageId || imageId.startsWith('derived:')) {
+    return false;
+  }
+
+  return imageId.includes(':');
 }
 
 function handlePreScaledVolume(imageVolume: IImageVolume, voi: VOIRange) {
@@ -53,7 +104,7 @@ function handlePreScaledVolume(imageVolume: IImageVolume, voi: VOIRange) {
   const imageId = imageIds[imageIdIndex];
 
   const generalSeriesModule =
-    metaData.get('generalSeriesModule', imageId) || {};
+    metaData.get(MetadataModules.GENERAL_SERIES, imageId) || {};
 
   /**
    * If the volume is prescaled and the modality is PT Sometimes you get super high
@@ -84,7 +135,7 @@ function getVOIFromMetadata(imageVolume: IImageVolume): VOIRange | undefined {
   if (imageIds?.length) {
     const imageIdIndex = Math.floor(imageIds.length / 2);
     const imageId = imageIds[imageIdIndex];
-    const voiLutModule = metaData.get('voiLutModule', imageId);
+    const voiLutModule = metaData.get(MetadataModules.VOI_LUT, imageId);
     if (voiLutModule && voiLutModule.windowWidth && voiLutModule.windowCenter) {
       if (voiLutModule?.voiLUTFunction) {
         voi = {};
@@ -140,9 +191,10 @@ async function getVOIFromMiddleSliceMinMax(
   const imageIdIndex = Math.floor(imageIds.length / 2);
   const imageId = imageVolume.imageIds[imageIdIndex];
   const generalSeriesModule =
-    metaData.get('generalSeriesModule', imageId) || {};
+    metaData.get(MetadataModules.GENERAL_SERIES, imageId) || {};
   const { modality } = generalSeriesModule;
-  const modalityLutModule = metaData.get('modalityLutModule', imageId) || {};
+  const modalityLutModule =
+    metaData.get(MetadataModules.MODALITY_LUT, imageId) || {};
 
   const scalingParameters: ScalingParameters = {
     rescaleSlope: modalityLutModule.rescaleSlope,
@@ -152,7 +204,7 @@ async function getVOIFromMiddleSliceMinMax(
 
   let scalingParametersToUse;
   if (modality === 'PT') {
-    const suvFactor = metaData.get('scalingModule', imageId);
+    const suvFactor = metaData.get(MetadataModules.SCALING, imageId);
 
     if (suvFactor) {
       scalingParametersToUse = {

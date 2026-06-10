@@ -70,6 +70,7 @@ export default {
       segmentationVoxelManager,
       memo,
       segmentIndex,
+      labelValue,
       centerSegmentIndexInfo,
     } = operationData || {};
 
@@ -87,7 +88,10 @@ export default {
         }
       } else {
         if (oldValue === previewSegmentIndex) {
-          labelmapMemo.voxelManager.setAtIndex(index, segmentIndex);
+          labelmapMemo.voxelManager.setAtIndex(
+            index,
+            labelValue ?? segmentIndex
+          );
         }
       }
     };

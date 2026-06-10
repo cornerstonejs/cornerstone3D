@@ -38,6 +38,10 @@ import {
   calculateAdaptiveSphereRadius,
 } from '../utilities/draw3D';
 import { isDragOwnedBy } from '../utilities/interactionDragCoordinator';
+import {
+  applyViewportPresentation,
+  getViewportPresentation,
+} from '../utilities/viewportPresentation';
 
 /**
  * VolumeCroppingTool provides manipulatable spheres and real-time volume cropping capabilities.
@@ -285,9 +289,9 @@ class VolumeCroppingTool extends BaseTool {
               return;
             }
             const { viewport } = element;
-            const viewPresentation = viewport.getViewPresentation();
+            const viewPresentation = getViewportPresentation(viewport);
             viewport.resetCamera();
-            viewport.setViewPresentation(viewPresentation);
+            applyViewportPresentation(viewport, viewPresentation);
             viewport.render();
           });
           resizeObserver.observe(element);

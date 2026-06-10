@@ -1,0 +1,8 @@
+version: '1'
+nodes:
+  - id: generic-viewport
+    name: RenderingEngine viewport accessor migration
+    steps:
+      - name: Apply RenderingEngine viewport accessor transform
+        codemod:
+          source: cornerstone3d/5/generic-viewport

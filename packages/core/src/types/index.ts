@@ -24,14 +24,17 @@ import type {
   ViewPresentation,
   ViewPresentationSelector,
   ViewportInput,
+  RenderingEngineResizeOptions,
 } from './IViewport';
 import type {
   VolumeActor,
   Actor,
   ActorEntry,
+  ActorMapperProxy,
   ImageActor,
   ICanvasActor,
 } from './IActor';
+import { ActorRenderMode } from './IActor';
 import type {
   IImageLoadObject,
   IVolumeLoadObject,
@@ -154,6 +157,13 @@ import type GeometryLoaderFn from './GeometryLoaderFn';
 
 import type { RenderingEngineModeType } from './RenderingEngineMode';
 import type { VtkOffscreenMultiRenderWindow } from './VtkOffscreenMultiRenderWindow';
+import type { ViewportDataReference } from '../RenderingEngine/GenericViewport';
+import type { ResetCameraOptions } from './ICamera';
+import type {
+  ViewportType,
+  ViewportTypeConstants,
+  ViewportTypeRegistry,
+} from './ViewportTypeRegistry';
 
 export type * from './MetadataModuleTypes';
 export type * from './InstanceTypes';
@@ -164,6 +174,7 @@ export type {
   //
   IBaseStreamingImageVolume,
   ICamera,
+  ResetCameraOptions,
   IStackViewport,
   IVideoViewport,
   IECGViewport,
@@ -200,6 +211,7 @@ export type {
   ViewPresentationSelector,
   ReferenceCompatibleOptions,
   ViewReferenceSpecifier,
+  RenderingEngineResizeOptions,
   StackViewportProperties,
   VolumeViewportProperties,
   ViewportProperties,
@@ -207,6 +219,7 @@ export type {
   VolumeActor,
   Actor,
   ActorEntry,
+  ActorMapperProxy,
   ImageActor,
   ICanvasActor,
   IImageLoadObject,
@@ -312,4 +325,10 @@ export type {
   RLEVoxelMap,
   RenderingEngineModeType,
   VtkOffscreenMultiRenderWindow,
+  ViewportDataReference,
+  ViewportType,
+  ViewportTypeRegistry,
+  ViewportTypeConstants,
 };
+
+export { ActorRenderMode };

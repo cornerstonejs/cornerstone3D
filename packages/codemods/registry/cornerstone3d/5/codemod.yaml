@@ -1,0 +1,19 @@
+schema_version: '1.0'
+name: 'cornerstone3d/5'
+version: '0.1.0'
+description: 'Apply all available Cornerstone3D v5 migration transforms in the recommended order.'
+author: 'Cornerstone.js Contributors'
+license: 'MIT'
+workflow: 'workflow.yaml'
+repository: 'https://github.com/cornerstonejs/cornerstone3D'
+category: 'migration'
+targets:
+  languages: ['typescript', 'tsx', 'javascript', 'jsx']
+keywords:
+  - cornerstone3d
+  - migration
+  - upgrade
+  - v5
+registry:
+  access: 'public'
+  visibility: 'public'
