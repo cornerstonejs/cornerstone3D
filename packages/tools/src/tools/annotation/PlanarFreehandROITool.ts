@@ -46,6 +46,7 @@ import { BasicStatsCalculator } from '../../utilities/math/basic';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
 import { KeyboardBindings, ChangeTypes, MeasurementType } from '../../enums';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
+import snapIndexBounds from '../../utilities/boundingBox/snapIndexBounds';
 
 const { pointCanProjectOnLine } = polyline;
 const { EPSILON } = CONSTANTS;
@@ -784,7 +785,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         continue;
       }
 
-      const { imageData, metadata } = image;
+      const { imageData, metadata, voxelManager } = image;
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
       const modalityUnitOptions = {
@@ -860,6 +861,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         points,
         imageData,
         metadata,
+        voxelManager,
         cachedStats,
         modalityUnit,
         calibratedScale,
@@ -893,6 +895,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     points,
     imageData,
     metadata,
+    voxelManager,
     cachedStats,
     targetId,
     modalityUnit,
@@ -902,8 +905,6 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     deltaInY,
   }) {
     const { areaUnit, unit } = calibratedScale;
-
-    const { voxelManager } = viewport.getImageData();
 
     const indexPoints = points.map((point) => imageData.worldToIndex(point));
 
@@ -915,7 +916,8 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     let kMax = Number.MIN_SAFE_INTEGER;
 
     for (let j = 0; j < points.length; j++) {
-      const worldPosIndex = indexPoints[j].map(Math.floor);
+      const worldPosIndex = indexPoints[j];
+
       iMin = Math.min(iMin, worldPosIndex[0]);
       iMax = Math.max(iMax, worldPosIndex[0]);
 
@@ -925,6 +927,10 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       kMin = Math.min(kMin, worldPosIndex[2]);
       kMax = Math.max(kMax, worldPosIndex[2]);
     }
+
+    [iMin, iMax] = snapIndexBounds(iMin, iMax);
+    [jMin, jMax] = snapIndexBounds(jMin, jMax);
+    [kMin, kMax] = snapIndexBounds(kMin, kMax);
 
     // Convert from canvas_pixels ^2 to mm^2
     const area = polyline.getArea(canvasCoordinates) * deltaInX * deltaInY;
