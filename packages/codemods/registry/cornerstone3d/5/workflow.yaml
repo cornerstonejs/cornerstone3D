@@ -5,4 +5,4 @@ nodes:
     steps:
       - name: Apply RenderingEngine viewport accessor transform
         codemod:
-          source: cornerstone3d/5/generic-viewport
+          source: '@cornerstonejs/cornerstone3d-5-generic-viewport'

@@ -57,7 +57,7 @@ jobs:
         if: steps.resolve.outputs.registry_entry == 'cornerstone3d/5'
         run: |
           TARGET="$(mktemp -d)"
-          npx codemod run cornerstone3d/5/generic-viewport --dry-run -t "$TARGET" --allow-dirty --no-interactive
+          npx codemod run @cornerstonejs/cornerstone3d-5-generic-viewport --dry-run -t "$TARGET" --allow-dirty --no-interactive
 
       - name: Publish registry entry
         uses: codemod/publish-action@v1

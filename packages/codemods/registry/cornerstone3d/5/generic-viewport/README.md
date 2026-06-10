@@ -6,13 +6,13 @@ compatible viewport APIs.
 ## Usage
 
 ```sh
-npx codemod cornerstone3d/5/generic-viewport
+npx codemod @cornerstonejs/cornerstone3d-5-generic-viewport
 ```
 
 To preview changes before writing files:
 
 ```sh
-npx codemod cornerstone3d/5/generic-viewport --dry-run
+npx codemod @cornerstonejs/cornerstone3d-5-generic-viewport --dry-run
 ```
 
 ## Changes
