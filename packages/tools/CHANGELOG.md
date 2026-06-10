@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.0.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.0...v5.0.1) (2026-06-10)
+
+### Bug Fixes
+
+- **annotation:** prevent closed freehand ROI stat mismatch between stack and volume viewports ([#2717](https://github.com/cornerstonejs/cornerstone3D/issues/2717)) ([2861fd5](https://github.com/cornerstonejs/cornerstone3D/commit/2861fd581fa7515558a7b44c4b306177a16d9a87))
+
 # [5.0.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.13...v5.0.0) (2026-06-09)
 
 ### Features
