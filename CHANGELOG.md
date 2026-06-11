@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.0.4](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.3...v5.0.4) (2026-06-11)
+
+### Bug Fixes
+
+- Build github release ([c8f93bc](https://github.com/cornerstonejs/cornerstone3D/commit/c8f93bc73f351d6a85107c34bc62f638b538d1a4))
+
 ## [5.0.3](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.2...v5.0.3) (2026-06-11)
 
 ### Bug Fixes
