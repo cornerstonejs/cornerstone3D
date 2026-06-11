@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.0.5](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.4...v5.0.5) (2026-06-11)
+
+### Bug Fixes
+
+- shellquote issue in cs3d and update for old security highs ([#2761](https://github.com/cornerstonejs/cornerstone3D/issues/2761)) ([4caa5b9](https://github.com/cornerstonejs/cornerstone3D/commit/4caa5b96de6f6e749033da5f8e22d6315f52f66c))
+
 ## [5.0.4](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.3...v5.0.4) (2026-06-11)
 
 ### Bug Fixes
