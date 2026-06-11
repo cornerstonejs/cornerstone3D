@@ -11,7 +11,7 @@ Cornerstone is a set of JavaScript libraries that can be used to build web-based
 
 ## Local Setup
 
-This repository is pinned to pnpm 11.4.0 via `packageManager`. Use Corepack to
+This repository is pinned to pnpm 11.5.2 via `packageManager`. Use Corepack to
 run the pinned version:
 
 ```bash

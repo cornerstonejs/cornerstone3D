@@ -28,7 +28,7 @@ jobs:
     runs-on: self-hosted
     timeout-minutes: 120
     env:
-      PNPM_VERSION: 11.4.0
+      PNPM_VERSION: 11.5.2
       BUN_VERSION: 1.2.23
       NODE_VERSION: 24
       OHIF_REF: master

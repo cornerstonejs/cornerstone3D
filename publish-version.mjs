@@ -204,26 +204,68 @@ async function createGithubRelease(tagName, version) {
     return;
   }
 
-  // gh reads GH_TOKEN/GITHUB_TOKEN from the environment and infers the repo from
-  // the origin remote. --verify-tag ensures the tag we just pushed exists before
-  // creating the release.
+  // Resolve owner/repo from the origin remote (what the gh CLI used to infer).
+  let repoSlug;
   try {
-    await execa('gh', [
-      'release',
-      'create',
-      tagName,
-      '--title',
-      tagName,
-      '--generate-notes',
-      '--verify-tag',
-      ...(version.includes('-') ? ['--prerelease'] : []),
+    const { stdout: remoteUrl } = await execa('git', [
+      'config',
+      '--get',
+      'remote.origin.url',
     ]);
+    // Match both SSH (git@github.com:owner/repo.git) and HTTPS
+    // (https://github.com/owner/repo[.git]) forms.
+    const match = remoteUrl
+      .trim()
+      .match(/github\.com[:/]([^/]+\/[^/]+?)(?:\.git)?$/);
+    if (!match) {
+      throw new Error(`could not parse owner/repo from "${remoteUrl.trim()}"`);
+    }
+    repoSlug = match[1];
+  } catch (err) {
+    console.warn(
+      `GitHub release creation for ${tagName} skipped (non-fatal) - could not ` +
+        `determine repo from origin remote: ${err.shortMessage || err.message}`
+    );
+    return;
+  }
+
+  // Create the release via the GitHub REST API using fetch (built into Node 24).
+  // We deliberately do NOT shell out to the gh CLI: gh is not installed in the
+  // CircleCI cimg/node image (FROM cimg/base, neither bundles it), which is why
+  // releases silently stopped after lerna switched to --no-push. curl would work
+  // too but means shell-escaping a JSON body, so fetch is cleaner. The tag was
+  // already pushed above, so the API attaches the release to the existing tag,
+  // and generate_release_notes mirrors the old `gh ... --generate-notes`.
+  try {
+    const response = await fetch(
+      `https://api.github.com/repos/${repoSlug}/releases`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${ghToken}`,
+          Accept: 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+          'Content-Type': 'application/json',
+          'User-Agent': 'cornerstone3D-release-script',
+        },
+        body: JSON.stringify({
+          tag_name: tagName,
+          name: tagName,
+          generate_release_notes: true,
+          prerelease: version.includes('-'),
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`GitHub API responded ${response.status}: ${body}`);
+    }
+
     console.log(`Created GitHub release ${tagName}`);
   } catch (err) {
     console.warn(
-      `GitHub release creation for ${tagName} failed (non-fatal): ${
-        err.shortMessage || err.message
-      }`
+      `GitHub release creation for ${tagName} failed (non-fatal): ${err.message}`
     );
   }
 }
