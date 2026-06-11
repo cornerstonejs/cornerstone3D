@@ -33,11 +33,9 @@ jobs:
             collect_coverage: false
     name: Playwright (${{ matrix.mode }})
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 11.5.2
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6.0.3
+      - uses: pnpm/action-setup@v6.0.8
+      - uses: actions/setup-node@v6.4.0
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
@@ -59,7 +57,7 @@ jobs:
           fi
       - name: Upload Playwright report and test results
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: playwright-results-${{ github.sha }}
           if-no-files-found: warn
@@ -73,14 +71,14 @@ jobs:
           pnpm exec nyc report --reporter=lcov --reporter=text
       - name: Upload the coverage report to GitHub Actions Artifacts
         if: ${{ !cancelled() && matrix.collect_coverage }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: coverage-report-pr
           path: coverage
           retention-days: 7
       - name: Upload Playwright reports
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: playwright-report-${{ matrix.mode }}
           path: reports/*playwright
