@@ -2,12 +2,14 @@
   "name": "@cornerstonejs/codemods",
   "version": "5.0.1",
   "description": "Codemod registry packages for Cornerstone3D migrations",
-  "private": true,
   "keywords": [
     "cornerstone3d",
     "codemod",
     "migration"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "repository": "https://github.com/cornerstonejs/cornerstone3D",
   "sideEffects": false,
   "scripts": {

@@ -8,23 +8,23 @@ the Codemod registry so users run them with `npx codemod`.
 Run the full Cornerstone3D v5 migration:
 
 ```sh
-npx codemod cornerstone3d/5
+npx codemod @cornerstonejs/cornerstone3d-5
 ```
 
 Run only the Generic Viewport migration:
 
 ```sh
-npx codemod cornerstone3d/5/generic-viewport
+npx codemod @cornerstonejs/cornerstone3d-5-generic-viewport
 ```
 
 ## Registry Packages
 
 This workspace currently includes:
 
-- `cornerstone3d/5`: runs all available Cornerstone3D v5 migration packages in
-  the recommended order.
-- `cornerstone3d/5/generic-viewport`: migrates removed RenderingEngine viewport
-  accessor APIs.
+- `@cornerstonejs/cornerstone3d-5`: runs all available Cornerstone3D v5
+  migration packages in the recommended order.
+- `@cornerstonejs/cornerstone3d-5-generic-viewport`: migrates removed
+  RenderingEngine viewport accessor APIs.
 
 The Generic Viewport migration changes:
 
