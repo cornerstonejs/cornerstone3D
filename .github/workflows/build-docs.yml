@@ -14,6 +14,11 @@ concurrency:
 
 jobs:
   build-and-deploy-docs:
+    # Skip the docs deploy on automated version-bump commits. These were previously
+    # suppressed by the "[skip ci]" in the bump-commit message, which was removed so the
+    # release workflow's tag trigger can fire (see publish-version.mjs). A version bump
+    # only changes version numbers, so there is nothing new to deploy.
+    if: ${{ !startsWith(github.event.head_commit.message, 'chore(version):') }}
     timeout-minutes: 60
     runs-on: ubuntu-latest
     # Need permissions to read actions and pull requests

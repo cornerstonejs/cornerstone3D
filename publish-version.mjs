@@ -120,11 +120,13 @@ async function run() {
   // Run lerna version without pushing
   // lerna will update package.json files and create a commit
   //
-  // NOTE: --create-release github is intentionally NOT passed here. lerna only
-  // creates the GitHub release when it pushes the tag itself, and we run with
-  // --no-push (so the version bump + generated files land as a single amended
-  // commit). The GitHub release is created explicitly after the tag is pushed,
-  // below.
+  // NOTE: the commit message intentionally does NOT include "[skip ci]". The GitHub
+  // Release is now created by the .github/workflows/release.yml workflow, which triggers
+  // on the pushed "v*" tag — and GitHub Actions honors "[skip ci]" on the tagged commit,
+  // which would suppress that trigger and silently skip every release. The cost of dropping
+  // "[skip ci]" is that this bump commit re-triggers the CircleCI publish workflow on main;
+  // the NPM_PUBLISH job guards against that (and the resulting infinite re-publish loop,
+  // since version.mjs always computes a new version) by halting on "chore(version)" commits.
   await execa('npx', [
     'lerna',
     'version',
@@ -133,7 +135,7 @@ async function run() {
     '--exact',
     '--force-publish',
     '--message',
-    `chore(version): Update package versions to ${nextVersion} [skip ci]`,
+    `chore(version): Update package versions to ${nextVersion}`,
     '--conventional-commits',
     '--no-push',
     // The repo enforces frozenLockfile via pnpm-workspace.yaml, but lerna must
