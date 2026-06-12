@@ -44,16 +44,19 @@ function generateToolState(
 /**
  * Creates labelmap images from a SEG instance via per-frame imageIds (OHIF / imageLoader path).
  *
+ * Note: despite the historical `createFromDICOMSegBuffer` name, this does NOT take a
+ * Part 10 ArrayBuffer. The second argument is a SEG instance imageId; pixels are
+ * sourced from the provided per-frame imageIds and decoder. Use
+ * {@link createLabelmapsFromDICOMBuffer} / {@link generateToolState} for the buffer path.
+ *
  * @param referencedImageIds - Referenced CT/MR imageIds
  * @param segImageId - SEG instance imageId for metadata (base or frame-qualified)
  * @param options.metadataProvider - Required metadata provider
  * @param options.frameImageIds - Per-frame loadable SEG imageIds
  * @param options.getFrameImageId - Optional (baseSegImageId, frameNumber) => frame imageId
  * @param options.decodeImageData - Optional (frameImageId, frameNumber) => pixel data; defaults to imageLoader
- *
- * Pixel encoding uses only the provided frame imageIds and decoder (no dataset PixelData shortcut).
  */
-function createFromDICOMSegBuffer(
+function createFromDicomSegImageId(
   referencedImageIds,
   segImageId,
   {
@@ -81,7 +84,7 @@ function createFromDICOMSegBuffer(
 
 export {
   generateToolState,
-  createFromDICOMSegBuffer,
+  createFromDicomSegImageId,
   createLabelmapsFromSegImageIds,
   createLabelmapsFromDICOMBuffer,
 };

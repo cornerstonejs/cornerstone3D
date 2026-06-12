@@ -54,3 +54,48 @@ iterable/enumerable on the object itself.
 - When building instance data from naturalized metadata, prefer the
   `combineFramesInstance` utility so downstream modules receive the expected
   base object shape.
+
+## SEG adapter: `createFromDICOMSegBuffer` renamed to `createFromDicomSegImageId`
+
+### What Changed
+
+`adaptersSEG.Cornerstone3D.Segmentation.createFromDICOMSegBuffer` has been
+renamed to `createFromDicomSegImageId`. Its second argument is a SEG instance
+`imageId` (with pixels sourced from the provided per-frame `imageId`s /
+decoder) — it does **not** accept a Part 10 `ArrayBuffer`, despite the previous
+name implying a buffer.
+
+```ts
+// 4.x
+const results =
+  await adaptersSEG.Cornerstone3D.Segmentation.createFromDICOMSegBuffer(
+    referencedImageIds,
+    arrayBuffer, // <-- ArrayBuffer
+    { metadataProvider }
+  );
+
+// 5.x
+const results =
+  await adaptersSEG.Cornerstone3D.Segmentation.createFromDicomSegImageId(
+    referencedImageIds,
+    segImageId, // <-- SEG instance imageId
+    { metadataProvider, frameImageIds }
+  );
+```
+
+### Why This Matters
+
+The rename was deliberate: the second argument changed contract entirely
+(`ArrayBuffer` -> `imageId`) while keeping the same position. Renaming turns
+what would have been a silent runtime failure (an `ArrayBuffer` passed where an
+`imageId` is expected) into an immediate, obvious error, rather than shipping a
+same-named function with an incompatible contract and no deprecation path.
+
+### Migration Guidance
+
+- If you load a SEG via per-frame `imageId`s (the OHIF / imageLoader path),
+  switch the call to `createFromDicomSegImageId` and pass the SEG instance
+  `imageId` as the second argument.
+- If you still have a Part 10 `ArrayBuffer`, use `createLabelmapsFromDICOMBuffer`
+  (`(referencedImageIds, arrayBuffer, metadataProvider, options)`) or
+  `generateToolState`, which retain the buffer-based entry point.

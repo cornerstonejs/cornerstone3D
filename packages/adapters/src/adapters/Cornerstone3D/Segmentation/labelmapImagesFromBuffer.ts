@@ -208,12 +208,14 @@ function normalizeDecodedPixelData(pixelData) {
     );
 
     if (hasUint16Frame) {
+      // Promote any non-16-bit frame to Uint16Array by VALUE (each segment
+      // index copied, length preserved) — NOT a byte reinterpret. Decoded
+      // frames arrive from the imageLoader as typed arrays matching their true
+      // bit depth, so a Uint8Array frame holds genuine 8-bit segment indices
+      // that must keep their values when widened. A `new Uint16Array(buffer)`
+      // byte reinterpretation would halve the length and corrupt the indices.
       const normalizedFrames = pixelData.map((frame) =>
-        frame instanceof Uint16Array
-          ? frame
-          : frame instanceof Uint8Array
-            ? new Uint16Array(frame)
-            : new Uint16Array(frame)
+        frame instanceof Uint16Array ? frame : new Uint16Array(frame)
       );
       const totalLength = normalizedFrames.reduce(
         (acc, frame) => acc + frame.length,

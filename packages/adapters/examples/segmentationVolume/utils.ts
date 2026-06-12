@@ -83,12 +83,10 @@ export async function loadSegmentation(arrayBuffer: ArrayBuffer, state) {
   const { referenceImageIds } = state;
 
   const { labelMapImages } =
-    await Cornerstone3D.Segmentation.createFromDICOMSegBuffer(
+    await Cornerstone3D.Segmentation.createLabelmapsFromDICOMBuffer(
       referenceImageIds,
       arrayBuffer,
-      {
-        metadataProvider: metaData,
-      }
+      metaData
     );
 
   await createSegmentation({ state, labelMapImages });
