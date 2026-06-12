@@ -1,16 +1,9 @@
-import {
-  cache,
-  utilities as csUtils,
-  VolumeViewport,
-  getEnabledElementByViewportId,
-} from '@cornerstonejs/core';
+import { getEnabledElementByViewportId, type Types } from '@cornerstonejs/core';
 
 import { SegmentationRepresentations } from '../../../enums';
-import { getLabelmapActorEntries } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
 import { getSegmentationRepresentations } from '../../../stateManagement/segmentation/getSegmentationRepresentation';
-import { getCurrentLabelmapImageIdsForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
-
-const log = csUtils.logger.toolsLog.getLogger('performStackLabelmapUpdate');
+import getViewportLabelmapRenderMode from '../../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
+import { syncStackLabelmapActors } from '../../../tools/displayTools/Labelmap/syncStackLabelmapActors';
 
 /**
  * Updates the labelmap for stack viewports
@@ -45,50 +38,18 @@ export function performStackLabelmapUpdate({
 
       const { viewport } = enabledElement;
 
-      if (viewport instanceof VolumeViewport) {
+      if (getViewportLabelmapRenderMode(viewport) !== 'image') {
         return;
       }
 
-      const actorEntries = getLabelmapActorEntries(viewportId, segmentationId);
-
-      if (!actorEntries?.length) {
+      if (
+        typeof (viewport as { getCurrentImageId?: () => string })
+          .getCurrentImageId !== 'function'
+      ) {
         return;
       }
 
-      const currentSegmentationImageIds = getCurrentLabelmapImageIdsForViewport(
-        viewportId,
-        segmentationId
-      );
-      const imageIdsArray = currentSegmentationImageIds ?? [];
-      const imageIdsLength = imageIdsArray.length;
-
-      actorEntries.forEach((actorEntry, i) => {
-        const segImageData = actorEntry.actor.getMapper().getInputData();
-
-        const imageId = currentSegmentationImageIds?.[i];
-        if (imageId === undefined) {
-          log.error(
-            'Stack labelmap update skipped: labelmap imageId is undefined for actor index i (getImage would throw).',
-            i,
-            actorEntries.length,
-            imageIdsLength,
-            [...imageIdsArray],
-            currentSegmentationImageIds?.[i],
-            viewportId,
-            segmentationId
-          );
-          return;
-        }
-
-        const segmentationImage = cache.getImage(imageId);
-        segImageData.modified();
-
-        // update the cache with the new image data
-        csUtils.updateVTKImageDataWithCornerstoneImage(
-          segImageData,
-          segmentationImage
-        );
-      });
+      syncStackLabelmapActors(viewport as Types.IStackViewport, segmentationId);
     });
   });
 }

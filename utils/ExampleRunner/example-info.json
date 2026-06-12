@@ -149,6 +149,10 @@
         "name": "Apply view reference and/or presentation parameters",
         "description": "Demonstrates how to apply various view/reference presentation parameters."
       },
+      "viewportProjection": {
+        "name": "Viewport Projection Service",
+        "description": "Demonstrates projection snapshots and presentation writes for Planar Next and Volume 3D Next viewports."
+      },
       "stackToVolume": {
         "name": "Stack to Volume Viewport",
         "description": "Demonstrates how to convert a Stack Viewport to a Volume Viewport"
@@ -176,6 +180,10 @@
       "smoothing": {
         "name": "Image Smoothing For Stack & Volume Viewports",
         "description": "Demonstrates how to apply image smoothing to stack and volume viewports"
+      },
+      "axisBasedImageStretching": {
+        "name": "Axis-based Image Stretching",
+        "description": "Here we demonstrate axis based stretching with annotation and segmentation tools"
       }
     },
     "tools-basic": {
@@ -202,6 +210,10 @@
       "stackManipulationTools": {
         "name": "Stack Manipulation Tools",
         "description": "Demonstrates several manipulation tools (window/level, pan, zoom) as well as Stack Viewport-specific scrolling"
+      },
+      "viewportProjectionSynchronizer": {
+        "name": "Viewport Projection Synchronizer",
+        "description": "Demonstrates a custom tool-driven synchronizer for Planar Next viewports using the projection service."
       },
       "stackManipulationToolsTouch": {
         "name": "Stack Manipulation Tools Touch",
@@ -355,6 +367,14 @@
         "name": "Labelmap Segmentation Rendering",
         "description": "Demonstrates how to add a Labelmap to the viewports for rendering"
       },
+      "labelmapSliceRendering": {
+        "name": "Labelmap Slice Rendering (useSliceRendering)",
+        "description": "Demonstrates labelmap rendering with useSliceRendering to avoid 3D texture allocation"
+      },
+      "labelmapSliceRenderingTools": {
+        "name": "Labelmap Slice Rendering Tools (useSliceRendering)",
+        "description": "Demonstrates sphere brush painting with useSliceRendering enabled"
+      },
       "contourRendering": {
         "name": "Contour Segmentation Representation",
         "description": "Demonstrates how to use the Contour Segmentation Representation"
@@ -386,6 +406,14 @@
       "labelmapSegmentationTools": {
         "name": "Segmentation Tools (Labelmap) - Brush, Scissors",
         "description": "Demonstrates how to use manual segmentation tools to modify the segmentation data"
+      },
+      "labelmapOverlapPlayground": {
+        "name": "Labelmap Overlap Playground",
+        "description": "Minimal overlap demo with brush and eraser variants, segment selection, and an Allow Overlap toggle for legacy, cpu=true, and type=next."
+      },
+      "labelmapOverlapPetCt": {
+        "name": "Labelmap Overlap PET-CT",
+        "description": "Segmentation drawn on CT (top row) is also displayed on PET (bottom row). Demonstrates cross-volume labelmap rendering."
       },
       "labelmapStatistics": {
         "name": "Labelmap Statistics",
