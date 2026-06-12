@@ -120,11 +120,13 @@ async function run() {
   // Run lerna version without pushing
   // lerna will update package.json files and create a commit
   //
-  // NOTE: --create-release github is intentionally NOT passed here. lerna only
-  // creates the GitHub release when it pushes the tag itself, and we run with
-  // --no-push (so the version bump + generated files land as a single amended
-  // commit). The GitHub release is created explicitly after the tag is pushed,
-  // below.
+  // NOTE: the commit message intentionally does NOT include "[skip ci]". The GitHub
+  // Release is now created by the .github/workflows/release.yml workflow, which triggers
+  // on the pushed "v*" tag — and GitHub Actions honors "[skip ci]" on the tagged commit,
+  // which would suppress that trigger and silently skip every release. The cost of dropping
+  // "[skip ci]" is that this bump commit re-triggers the CircleCI publish workflow on main;
+  // the NPM_PUBLISH job guards against that (and the resulting infinite re-publish loop,
+  // since version.mjs always computes a new version) by halting on "chore(version)" commits.
   await execa('npx', [
     'lerna',
     'version',
@@ -133,7 +135,7 @@ async function run() {
     '--exact',
     '--force-publish',
     '--message',
-    `chore(version): Update package versions to ${nextVersion} [skip ci]`,
+    `chore(version): Update package versions to ${nextVersion}`,
     '--conventional-commits',
     '--no-push',
     // The repo enforces frozenLockfile via pnpm-workspace.yaml, but lerna must
@@ -174,100 +176,16 @@ async function run() {
   console.log('Pushing tag...');
   await execa('git', ['push', 'origin', tagName]);
 
-  // Create the GitHub release for the tag we just pushed.
+  // The GitHub Release for this tag is created by the GitHub Actions workflow at
+  // .github/workflows/release.yml, which triggers on the "v*" tag we just pushed and
+  // authenticates with the built-in GITHUB_TOKEN (contents: write).
   //
-  // Historically `lerna version --create-release github` created this release,
-  // authenticating with the GH_TOKEN environment variable. When lerna switched
-  // to --no-push (to land the version bump as a single amended commit) it stopped
-  // creating releases, because lerna only creates a release when it pushes the
-  // tag itself. As a result npm kept publishing while GitHub Releases froze.
-  //
-  // We now create the release explicitly via the gh CLI, after pushing the tag,
-  // reusing the same GH_TOKEN. This is best-effort: a missing token or a CLI
-  // error logs a warning but never fails the build/release (the npm publish step
-  // is separate).
-  await createGithubRelease(tagName, nextVersion.trim());
+  // It used to be created here via the REST API + a GH_TOKEN PAT, but that PAT lived in
+  // CircleCI's environment (separate from GitHub's secret store) and drifted out of sync,
+  // causing 403 "Resource not accessible by personal access token" failures. Moving release
+  // creation to Actions removes the cross-system token entirely.
 
   console.log('Version set using lerna');
-}
-
-// Best-effort GitHub release creation for an already-pushed tag. Never throws;
-// any failure is logged as a warning so it cannot fail the release.
-async function createGithubRelease(tagName, version) {
-  const ghToken = process.env.GH_TOKEN || process.env.GITHUB_TOKEN;
-
-  if (!ghToken) {
-    console.warn(
-      `GH_TOKEN/GITHUB_TOKEN not set - skipping GitHub release creation for ${tagName}. ` +
-        'Set GH_TOKEN in the CircleCI project/context environment to enable releases.'
-    );
-    return;
-  }
-
-  // Resolve owner/repo from the origin remote (what the gh CLI used to infer).
-  let repoSlug;
-  try {
-    const { stdout: remoteUrl } = await execa('git', [
-      'config',
-      '--get',
-      'remote.origin.url',
-    ]);
-    // Match both SSH (git@github.com:owner/repo.git) and HTTPS
-    // (https://github.com/owner/repo[.git]) forms.
-    const match = remoteUrl
-      .trim()
-      .match(/github\.com[:/]([^/]+\/[^/]+?)(?:\.git)?$/);
-    if (!match) {
-      throw new Error(`could not parse owner/repo from "${remoteUrl.trim()}"`);
-    }
-    repoSlug = match[1];
-  } catch (err) {
-    console.warn(
-      `GitHub release creation for ${tagName} skipped (non-fatal) - could not ` +
-        `determine repo from origin remote: ${err.shortMessage || err.message}`
-    );
-    return;
-  }
-
-  // Create the release via the GitHub REST API using fetch (built into Node 24).
-  // We deliberately do NOT shell out to the gh CLI: gh is not installed in the
-  // CircleCI cimg/node image (FROM cimg/base, neither bundles it), which is why
-  // releases silently stopped after lerna switched to --no-push. curl would work
-  // too but means shell-escaping a JSON body, so fetch is cleaner. The tag was
-  // already pushed above, so the API attaches the release to the existing tag,
-  // and generate_release_notes mirrors the old `gh ... --generate-notes`.
-  try {
-    const response = await fetch(
-      `https://api.github.com/repos/${repoSlug}/releases`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${ghToken}`,
-          Accept: 'application/vnd.github+json',
-          'X-GitHub-Api-Version': '2022-11-28',
-          'Content-Type': 'application/json',
-          'User-Agent': 'cornerstone3D-release-script',
-        },
-        body: JSON.stringify({
-          tag_name: tagName,
-          name: tagName,
-          generate_release_notes: true,
-          prerelease: version.includes('-'),
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const body = await response.text();
-      throw new Error(`GitHub API responded ${response.status}: ${body}`);
-    }
-
-    console.log(`Created GitHub release ${tagName}`);
-  } catch (err) {
-    console.warn(
-      `GitHub release creation for ${tagName} failed (non-fatal): ${err.message}`
-    );
-  }
 }
 
 async function unlinkFile(filePath) {
