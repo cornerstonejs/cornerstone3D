@@ -6,7 +6,7 @@
   "sideEffects": false,
   "engines": {
     "node": ">=24",
-    "pnpm": ">=11"
+    "pnpm": ">=11.5.2"
   },
   "scripts": {
     "api-check": "pnpm -r --filter=!docs run api-check",
