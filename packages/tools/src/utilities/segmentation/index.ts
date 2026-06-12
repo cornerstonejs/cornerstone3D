@@ -37,6 +37,7 @@ import * as validateLabelmap from './validateLabelmap';
 import { computeStackLabelmapFromVolume } from '../../stateManagement/segmentation/helpers/computeStackLabelmapFromVolume';
 import { computeVolumeLabelmapFromStack } from '../../stateManagement/segmentation/helpers/computeVolumeLabelmapFromStack';
 import { getReferenceVolumeForSegmentationVolume } from './getReferenceVolumeForSegmentationVolume';
+import { getReferenceVolumeForSegmentation } from './getReferenceVolumeForSegmentation';
 import { getSegmentLargestBidirectional } from './getSegmentLargestBidirectional';
 import { computeMetabolicStats } from './computeMetabolicStats';
 
@@ -74,6 +75,7 @@ export {
   computeStackLabelmapFromVolume,
   computeVolumeLabelmapFromStack,
   getReferenceVolumeForSegmentationVolume,
+  getReferenceVolumeForSegmentation,
   getSegmentLargestBidirectional,
   computeMetabolicStats,
 };

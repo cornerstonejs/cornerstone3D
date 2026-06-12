@@ -1,6 +1,9 @@
 import * as Comlink from 'comlink';
 import { RequestType } from '../enums';
 import { RequestPoolManager } from '../requestPool/requestPoolManager';
+import { workerLog } from '../utilities/logger';
+
+const registrationLog = workerLog.getLogger('registration');
 
 export type WebWorkerManagerOptions = {
   /**
@@ -69,7 +72,9 @@ class CentralizedWorkerManager {
     } = options;
 
     if (this.workerRegistry[workerName] && !overwrite) {
-      console.warn(`Worker type '${workerName}' is already registered...`);
+      registrationLog.warn(
+        `Worker type '${workerName}' is already registered...`
+      );
       return;
     }
 

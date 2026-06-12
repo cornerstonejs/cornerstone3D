@@ -167,6 +167,11 @@ export interface ViewReference {
   FrameOfReferenceUID?: string;
 
   /**
+   * Logical dataset id for the referenced data.
+   */
+  dataId?: string;
+
+  /**
    * A referenced plane identifies one or more planes.
    * Currently this has a point within the plane to identify the focal depth
    * (but NOT the focal point), and up to two coplanar vectors.
@@ -258,6 +263,11 @@ export interface ViewReference {
    *
    */
   sliceIndex?: number;
+
+  /**
+   * 1-based dimension group number for dynamic/dimensional data.
+   */
+  dimensionGroupNumber?: number;
 
   /**
    * VolumeId that the referencedImageId was chosen from
@@ -378,6 +388,10 @@ export type DataSetOptions = {
 
 type IViewport = Viewport;
 
+interface RenderingEngineResizeOptions {
+  keepCamera?: boolean;
+}
+
 /**
  * Public Interface for viewport input to get enabled/disabled or set
  */
@@ -399,6 +413,8 @@ interface NormalizedViewportInput {
   viewportId: string;
   /** type of the viewport */
   type: ViewportType;
+  /** original requested type before any internal remapping */
+  requestedType?: ViewportType;
   /** options for the viewport */
   defaultOptions: ViewportInputOptions;
 }
@@ -408,6 +424,7 @@ interface InternalViewportInput {
   canvas: HTMLCanvasElement;
   viewportId: string;
   type: ViewportType;
+  requestedType?: ViewportType;
   defaultOptions: ViewportInputOptions;
 }
 
@@ -415,6 +432,7 @@ interface ViewportInput {
   id: string;
   renderingEngineId: string;
   type: ViewportType;
+  requestedType?: ViewportType;
   element: HTMLDivElement;
   sx: number;
   sy: number;
@@ -426,6 +444,7 @@ interface ViewportInput {
 
 export type {
   IViewport,
+  RenderingEngineResizeOptions,
   ViewportInput,
   PublicViewportInput,
   InternalViewportInput,

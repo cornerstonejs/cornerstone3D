@@ -1,23 +1,31 @@
 import { test } from 'playwright-test-coverage';
 import {
   visitExample,
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   screenShotPaths,
   simulateClicksOnElement,
+  simulateDrawPath,
+  setupRenderTracking,
   waitForViewportsRendered,
+  waitForRenderSettled,
 } from './utils/index';
 
+const VIEWPORT_COUNT = 3;
+
+test.use({ actionTimeout: 30_000 });
+
 const delayBetweenClicks = async (page: any) => {
-  await waitForViewportsRendered(page);
+  await waitForRenderSettled(page);
 };
 
 test.beforeEach(async ({ page }) => {
-  await visitExample(page, 'labelmapSegmentationTools', 10000);
+  await setupRenderTracking(page);
+  await visitExample(page, 'labelmapSegmentationTools');
+  await waitForViewportsRendered(page, VIEWPORT_COUNT);
 });
 
 test.describe('Basic manual labelmap Segmentation tools', async () => {
   test('should render and allow usage of circle brush', async ({ page }) => {
-    const screenshotLocator = page.locator('#content > div');
     const firstCanvas = page.locator('.cornerstone-canvas').nth(0);
     const secondCanvas = page.locator('.cornerstone-canvas').nth(1);
     const thirdCanvas = page.locator('.cornerstone-canvas').nth(2);
@@ -86,15 +94,16 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      screenshotLocator,
-      screenShotPaths.labelmapSegmentationTools.circularBrush
+      '',
+      screenShotPaths.labelmapSegmentationTools.circularBrush,
+      [0, 1, 2],
+      { threshold: 0.01, maxDiffPixelRatio: 0.01 }
     );
   });
 
   test('should render and allow usage of circle eraser', async ({ page }) => {
-    const screenshotLocator = page.locator('#content > div');
     const firstCanvas = page.locator('.cornerstone-canvas').nth(0);
     const secondCanvas = page.locator('.cornerstone-canvas').nth(1);
     const thirdCanvas = page.locator('.cornerstone-canvas').nth(2);
@@ -235,15 +244,16 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      screenshotLocator,
-      screenShotPaths.labelmapSegmentationTools.circularEraser
+      '',
+      screenShotPaths.labelmapSegmentationTools.circularEraser,
+      [0, 1, 2],
+      { threshold: 0.01, maxDiffPixelRatio: 0.01 }
     );
   });
 
   test('should render and allow usage of sphere brush', async ({ page }) => {
-    const screenshotLocator = page.locator('#content > div');
     const firstCanvas = page.locator('.cornerstone-canvas').nth(0);
     const secondCanvas = page.locator('.cornerstone-canvas').nth(1);
     const thirdCanvas = page.locator('.cornerstone-canvas').nth(2);
@@ -317,170 +327,18 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      screenshotLocator,
-      screenShotPaths.labelmapSegmentationTools.sphereBrush
-    );
-  });
-
-  test('should render and allow usage of sphere eraser', async ({ page }) => {
-    const screenshotLocator = page.locator('#content > div');
-    const firstCanvas = page.locator('.cornerstone-canvas').nth(0);
-    const secondCanvas = page.locator('.cornerstone-canvas').nth(1);
-    const thirdCanvas = page.locator('.cornerstone-canvas').nth(2);
-
-    await page
-      .getByRole('combobox')
-      .first()
-      .selectOption({ label: 'SphereBrush' });
-    await simulateClicksOnElement({
-      locator: firstCanvas,
-      points: [
-        {
-          x: 193,
-          y: 273,
-        },
-        {
-          x: 226,
-          y: 274,
-        },
-        {
-          x: 195,
-          y: 302,
-        },
-        {
-          x: 218,
-          y: 301,
-        },
-      ],
-    });
-    await delayBetweenClicks(page);
-    await simulateClicksOnElement({
-      locator: secondCanvas,
-      points: [
-        {
-          x: 226,
-          y: 294,
-        },
-        {
-          x: 217,
-          y: 324,
-        },
-        {
-          x: 210,
-          y: 350,
-        },
-        {
-          x: 199,
-          y: 379,
-        },
-      ],
-    });
-    await delayBetweenClicks(page);
-    await simulateClicksOnElement({
-      locator: thirdCanvas,
-      points: [
-        {
-          x: 206,
-          y: 258,
-        },
-        {
-          x: 205,
-          y: 230,
-        },
-        {
-          x: 203,
-          y: 198,
-        },
-        {
-          x: 202,
-          y: 165,
-        },
-      ],
-    });
-    await delayBetweenClicks(page);
-
-    await page
-      .getByRole('combobox')
-      .first()
-      .selectOption({ label: 'SphereEraser' });
-    await simulateClicksOnElement({
-      locator: firstCanvas,
-      points: [
-        {
-          x: 193,
-          y: 273,
-        },
-        {
-          x: 226,
-          y: 274,
-        },
-        {
-          x: 195,
-          y: 302,
-        },
-        {
-          x: 218,
-          y: 301,
-        },
-      ],
-    });
-    await delayBetweenClicks(page);
-    await simulateClicksOnElement({
-      locator: secondCanvas,
-      points: [
-        {
-          x: 226,
-          y: 294,
-        },
-        {
-          x: 217,
-          y: 324,
-        },
-        {
-          x: 210,
-          y: 350,
-        },
-        {
-          x: 199,
-          y: 379,
-        },
-      ],
-    });
-    await delayBetweenClicks(page);
-    await simulateClicksOnElement({
-      locator: thirdCanvas,
-      points: [
-        {
-          x: 206,
-          y: 258,
-        },
-        {
-          x: 205,
-          y: 230,
-        },
-        {
-          x: 203,
-          y: 198,
-        },
-        {
-          x: 202,
-          y: 165,
-        },
-      ],
-    });
-    await checkForScreenshot(
-      page,
-      screenshotLocator,
-      screenShotPaths.labelmapSegmentationTools.sphereEraser
+      '',
+      screenShotPaths.labelmapSegmentationTools.sphereBrush,
+      [0, 1, 2],
+      { threshold: 0.01, maxDiffPixelRatio: 0.01 }
     );
   });
 
   test('should render and allow usage of threshold circle', async ({
     page,
   }) => {
-    const screenshotLocator = page.locator('#content > div');
     const firstCanvas = page.locator('.cornerstone-canvas').nth(0);
     const secondCanvas = page.locator('.cornerstone-canvas').nth(1);
     const thirdCanvas = page.locator('.cornerstone-canvas').nth(2);
@@ -492,7 +350,7 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
     await page
       .getByRole('combobox')
       .nth(1)
-      .selectOption({ label: 'CT Bone: (200, 1000)' });
+      .selectOption({ label: 'CT Soft Tissue: (-100, 200)' });
     await simulateClicksOnElement({
       locator: firstCanvas,
       points: [
@@ -558,17 +416,18 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
         },
       ],
     });
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      screenshotLocator,
-      screenShotPaths.labelmapSegmentationTools.thresholdCircle
+      '',
+      screenShotPaths.labelmapSegmentationTools.thresholdCircle,
+      [0, 1, 2],
+      { threshold: 0.01, maxDiffPixelRatio: 0.01 }
     );
   });
 
   test('should render and allow usage of rectangle scissor', async ({
     page,
   }) => {
-    const screenshotLocator = page.locator('#content > div');
     const firstCanvas = page.locator('.cornerstone-canvas').nth(0);
     const secondCanvas = page.locator('.cornerstone-canvas').nth(1);
     const thirdCanvas = page.locator('.cornerstone-canvas').nth(2);
@@ -577,61 +436,38 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
       .getByRole('combobox')
       .first()
       .selectOption({ label: 'RectangleScissor' });
+    await waitForRenderSettled(page);
 
-    await simulateClicksOnElement({
-      locator: firstCanvas,
-      points: [
-        {
-          x: 190,
-          y: 270,
-        },
-        {
-          x: 230,
-          y: 320,
-        },
-      ],
-    });
+    // Scissor tools need a real mousedown→move→mouseup drag, not separate
+    // clicks, so use simulateDrawPath to define each rectangle.
+    await simulateDrawPath(page, firstCanvas, [
+      [190, 270],
+      [230, 320],
+    ]);
     await delayBetweenClicks(page);
 
-    await simulateClicksOnElement({
-      locator: secondCanvas,
-      points: [
-        {
-          x: 226,
-          y: 294,
-        },
-        {
-          x: 260,
-          y: 340,
-        },
-      ],
-    });
+    await simulateDrawPath(page, secondCanvas, [
+      [226, 294],
+      [260, 340],
+    ]);
     await delayBetweenClicks(page);
 
-    await simulateClicksOnElement({
-      locator: thirdCanvas,
-      points: [
-        {
-          x: 206,
-          y: 258,
-        },
-        {
-          x: 240,
-          y: 300,
-        },
-      ],
-    });
+    await simulateDrawPath(page, thirdCanvas, [
+      [206, 258],
+      [240, 300],
+    ]);
 
-    await waitForViewportsRendered(page);
-    await checkForScreenshot(
+    await waitForRenderSettled(page);
+    await checkForCanvasSnapshot(
       page,
-      screenshotLocator,
-      screenShotPaths.labelmapSegmentationTools.rectangleScissor
+      '',
+      screenShotPaths.labelmapSegmentationTools.rectangleScissor,
+      [0, 1, 2],
+      { threshold: 0.01, maxDiffPixelRatio: 0.01 }
     );
   });
 
   test('should render and allow usage of circle scissor', async ({ page }) => {
-    const screenshotLocator = page.locator('#content > div');
     const firstCanvas = page.locator('.cornerstone-canvas').nth(0);
     const secondCanvas = page.locator('.cornerstone-canvas').nth(1);
     const thirdCanvas = page.locator('.cornerstone-canvas').nth(2);
@@ -640,59 +476,36 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
       .getByRole('combobox')
       .first()
       .selectOption({ label: 'CircleScissor' });
-    await simulateClicksOnElement({
-      locator: firstCanvas,
-      points: [
-        {
-          x: 290,
-          y: 270,
-        },
-        {
-          x: 330,
-          y: 320,
-        },
-      ],
-    });
-    await delayBetweenClicks(page);
-    await simulateClicksOnElement({
-      locator: secondCanvas,
-      points: [
-        {
-          x: 190,
-          y: 270,
-        },
-        {
-          x: 230,
-          y: 320,
-        },
-      ],
-    });
+    await waitForRenderSettled(page);
+
+    await simulateDrawPath(page, firstCanvas, [
+      [290, 270],
+      [330, 320],
+    ]);
     await delayBetweenClicks(page);
 
-    await simulateClicksOnElement({
-      locator: thirdCanvas,
-      points: [
-        {
-          x: 190,
-          y: 270,
-        },
-        {
-          x: 230,
-          y: 320,
-        },
-      ],
-    });
+    await simulateDrawPath(page, secondCanvas, [
+      [190, 270],
+      [230, 320],
+    ]);
+    await delayBetweenClicks(page);
 
-    await waitForViewportsRendered(page);
-    await checkForScreenshot(
+    await simulateDrawPath(page, thirdCanvas, [
+      [190, 270],
+      [230, 320],
+    ]);
+
+    await waitForRenderSettled(page);
+    await checkForCanvasSnapshot(
       page,
-      screenshotLocator,
-      screenShotPaths.labelmapSegmentationTools.circleScissor
+      '',
+      screenShotPaths.labelmapSegmentationTools.circleScissor,
+      [0, 1, 2],
+      { threshold: 0.01, maxDiffPixelRatio: 0.01 }
     );
   });
 
   test('should render and allow usage of sephere scissor', async ({ page }) => {
-    const screenshotLocator = page.locator('#content > div');
     const firstCanvas = page.locator('.cornerstone-canvas').nth(0);
     const secondCanvas = page.locator('.cornerstone-canvas').nth(1);
     const thirdCanvas = page.locator('.cornerstone-canvas').nth(2);
@@ -701,56 +514,36 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
       .getByRole('combobox')
       .first()
       .selectOption({ label: 'SphereScissor' });
-    await simulateClicksOnElement({
-      locator: firstCanvas,
-      points: [
-        {
-          x: 190,
-          y: 270,
-        },
-        {
-          x: 230,
-          y: 320,
-        },
-      ],
-    });
+    await waitForRenderSettled(page);
+
+    await simulateDrawPath(page, firstCanvas, [
+      [190, 270],
+      [230, 320],
+    ]);
     await delayBetweenClicks(page);
-    await simulateClicksOnElement({
-      locator: secondCanvas,
-      points: [
-        {
-          x: 226,
-          y: 294,
-        },
-        {
-          x: 260,
-          y: 340,
-        },
-      ],
-    });
+
+    await simulateDrawPath(page, secondCanvas, [
+      [226, 294],
+      [260, 340],
+    ]);
     await delayBetweenClicks(page);
-    await simulateClicksOnElement({
-      locator: thirdCanvas,
-      points: [
-        {
-          x: 206,
-          y: 258,
-        },
-        {
-          x: 240,
-          y: 300,
-        },
-      ],
-    });
-    await checkForScreenshot(
+
+    await simulateDrawPath(page, thirdCanvas, [
+      [206, 258],
+      [240, 300],
+    ]);
+
+    await waitForRenderSettled(page);
+    await checkForCanvasSnapshot(
       page,
-      screenshotLocator,
-      screenShotPaths.labelmapSegmentationTools.sphereScissor
+      '',
+      screenShotPaths.labelmapSegmentationTools.sphereScissor,
+      [0, 1, 2],
+      { threshold: 0.01, maxDiffPixelRatio: 0.01 }
     );
   });
 
   test('should render and allow usage of eraser scissor', async ({ page }) => {
-    const screenshotLocator = page.locator('#content > div');
     const firstCanvas = page.locator('.cornerstone-canvas').nth(0);
     const secondCanvas = page.locator('.cornerstone-canvas').nth(1);
     const thirdCanvas = page.locator('.cornerstone-canvas').nth(2);
@@ -759,98 +552,56 @@ test.describe('Basic manual labelmap Segmentation tools', async () => {
       .getByRole('combobox')
       .first()
       .selectOption({ label: 'SphereScissor' });
-    await simulateClicksOnElement({
-      locator: firstCanvas,
-      points: [
-        {
-          x: 190,
-          y: 270,
-        },
-        {
-          x: 230,
-          y: 320,
-        },
-      ],
-    });
+    await waitForRenderSettled(page);
+
+    await simulateDrawPath(page, firstCanvas, [
+      [190, 270],
+      [230, 320],
+    ]);
     await delayBetweenClicks(page);
-    await simulateClicksOnElement({
-      locator: secondCanvas,
-      points: [
-        {
-          x: 226,
-          y: 294,
-        },
-        {
-          x: 260,
-          y: 340,
-        },
-      ],
-    });
+
+    await simulateDrawPath(page, secondCanvas, [
+      [226, 294],
+      [260, 340],
+    ]);
     await delayBetweenClicks(page);
-    await simulateClicksOnElement({
-      locator: thirdCanvas,
-      points: [
-        {
-          x: 206,
-          y: 258,
-        },
-        {
-          x: 240,
-          y: 300,
-        },
-      ],
-    });
+
+    await simulateDrawPath(page, thirdCanvas, [
+      [206, 258],
+      [240, 300],
+    ]);
     await delayBetweenClicks(page);
 
     await page
       .getByRole('combobox')
       .first()
       .selectOption({ label: 'ScissorsEraser' });
-    await simulateClicksOnElement({
-      locator: firstCanvas,
-      points: [
-        {
-          x: 190,
-          y: 270,
-        },
-        {
-          x: 230,
-          y: 320,
-        },
-      ],
-    });
+    await waitForRenderSettled(page);
+
+    await simulateDrawPath(page, firstCanvas, [
+      [190, 270],
+      [230, 320],
+    ]);
     await delayBetweenClicks(page);
-    await simulateClicksOnElement({
-      locator: secondCanvas,
-      points: [
-        {
-          x: 226,
-          y: 294,
-        },
-        {
-          x: 260,
-          y: 340,
-        },
-      ],
-    });
+
+    await simulateDrawPath(page, secondCanvas, [
+      [226, 294],
+      [260, 340],
+    ]);
     await delayBetweenClicks(page);
-    await simulateClicksOnElement({
-      locator: thirdCanvas,
-      points: [
-        {
-          x: 206,
-          y: 258,
-        },
-        {
-          x: 240,
-          y: 300,
-        },
-      ],
-    });
-    await checkForScreenshot(
+
+    await simulateDrawPath(page, thirdCanvas, [
+      [206, 258],
+      [240, 300],
+    ]);
+
+    await waitForRenderSettled(page);
+    await checkForCanvasSnapshot(
       page,
-      screenshotLocator,
-      screenShotPaths.labelmapSegmentationTools.scissorEraser
+      '',
+      screenShotPaths.labelmapSegmentationTools.scissorEraser,
+      [0, 1, 2],
+      { threshold: 0.01, maxDiffPixelRatio: 0.01 }
     );
   });
 

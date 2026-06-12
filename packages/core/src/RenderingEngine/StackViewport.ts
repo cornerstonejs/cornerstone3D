@@ -1,9 +1,7 @@
-import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import type { vtkImageData as vtkImageDataType } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import extendedVtkCamera from './vtkClasses/extendedVtkCamera';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
-import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import { mat4, vec2, vec3 } from 'gl-matrix';
@@ -59,10 +57,13 @@ import { isEqual } from '../utilities/isEqual';
 import invertRgbTransferFunction from '../utilities/invertRgbTransferFunction';
 import imageRetrieveMetadataProvider from '../utilities/imageRetrieveMetadataProvider';
 import imageIdToURI from '../utilities/imageIdToURI';
+import getVOIRangeFromWindowLevel from '../utilities/getVOIRangeFromWindowLevel';
 
 import Viewport from './Viewport';
 import drawImageSync from './helpers/cpuFallback/drawImageSync';
+import { resolveCPUFallbackColormap } from './helpers/cpuFallback/colors';
 import { getImagePlaneModule } from '../utilities/buildMetadata';
+import { createEmptyVTKImageData } from './helpers/planarImageRendering';
 
 import {
   Events,
@@ -82,7 +83,7 @@ import pixelToCanvas from './helpers/cpuFallback/rendering/pixelToCanvas';
 import resize from './helpers/cpuFallback/rendering/resize';
 
 import cache from '../cache/cache';
-import { getConfiguration, getShouldUseCPURendering } from '../init';
+import { getShouldUseCPURendering } from '../init';
 import { createProgressive } from '../loaders/ProgressiveRetrieveImages';
 import type {
   StackViewportNewStackEventDetail,
@@ -215,9 +216,11 @@ class StackViewport extends Viewport {
     this.useCPURendering = getShouldUseCPURendering();
     this._configureRenderingPipeline();
 
-    this.useCPURendering
-      ? this._resetCPUFallbackElement()
-      : this._resetGPUViewport();
+    if (this.useCPURendering) {
+      this._resetCPUFallbackElement();
+    } else {
+      this._resetGPUViewport();
+    }
 
     this.currentImageIdIndex = 0;
     this.targetImageIdIndex = 0;
@@ -270,9 +273,11 @@ class StackViewport extends Viewport {
       }
     }
 
-    const result = this.useCPURendering
-      ? this._resetCPUFallbackElement()
-      : this._resetGPUViewport();
+    if (this.useCPURendering) {
+      this._resetCPUFallbackElement();
+    } else {
+      this._resetGPUViewport();
+    }
   }
 
   private _resetCPUFallbackElement() {
@@ -1477,7 +1482,7 @@ class StackViewport extends Viewport {
         voiLUTFunction: image.voiLUTFunction,
       };
 
-      const { lower, upper } = windowLevelUtil.toLowHighRange(
+      const { lower, upper } = getVOIRangeFromWindowLevel(
         wwToUse,
         wcToUse,
         image.voiLUTFunction
@@ -1847,24 +1852,14 @@ class StackViewport extends Viewport {
     numberOfComponents,
     pixelArray,
   }) {
-    const values = new pixelArray.constructor(pixelArray.length);
-
-    // Todo: I guess nothing should be done for use16bit?
-    const scalarArray = vtkDataArray.newInstance({
-      name: 'Pixels',
-      numberOfComponents: numberOfComponents,
-      values: values,
+    return createEmptyVTKImageData({
+      origin,
+      direction,
+      dimensions,
+      spacing,
+      numberOfComponents,
+      pixelArray: new pixelArray.constructor(pixelArray.length),
     });
-
-    const imageData = vtkImageData.newInstance();
-
-    imageData.setDimensions(dimensions);
-    imageData.setSpacing(spacing);
-    imageData.setDirection(direction);
-    imageData.setOrigin(origin);
-    imageData.getPointData().setScalars(scalarArray);
-
-    return imageData;
   }
   /**
    * Creates vtkImagedata based on the image object, it creates
@@ -2130,8 +2125,15 @@ class StackViewport extends Viewport {
           let max = 0;
 
           for (let i = 0; i < numPixels; i++) {
-            const rescaledPixel = Math.floor(
-              (pixelData[i] - intercept) / slope
+            // Float32 precision can place pixelData[i] a hair below `intercept`
+            // (which is derived from a JS Number that differs from the Float32
+            // representation), making the floor produce -1. Storing -1 into a
+            // Uint16Array wraps to 65535 and renders as white. Clamp to the
+            // valid Uint16 range to avoid spurious bright pixels at the
+            // image's min/max values.
+            const rescaledPixel = Math.max(
+              0,
+              Math.min(65535, Math.floor((pixelData[i] - intercept) / slope))
             );
 
             intPixelData[i] = rescaledPixel;
@@ -2303,7 +2305,8 @@ class StackViewport extends Viewport {
 
   public getLoaderImageOptions(imageId: string) {
     const imageIdIndex = this.imageIds.indexOf(imageId);
-    const { transferSyntaxUID } = metaData.get('transferSyntax', imageId) || {};
+    const { transferSyntaxUID } =
+      metaData.get(MetadataModules.TRANSFER_SYNTAX, imageId) || {};
 
     const options = {
       useRGBA: false,
@@ -2408,7 +2411,7 @@ class StackViewport extends Viewport {
     );
 
     const { windowCenter, windowWidth, voiLUTFunction } = viewport.voi;
-    this.voiRange = windowLevelUtil.toLowHighRange(
+    this.voiRange = getVOIRangeFromWindowLevel(
       windowWidth,
       windowCenter,
       voiLUTFunction
@@ -2646,7 +2649,7 @@ class StackViewport extends Viewport {
     }
     const { windowCenter, windowWidth, voiLUTFunction } = image;
 
-    let voiRange = this._getVOIRangeFromWindowLevel(
+    let voiRange = getVOIRangeFromWindowLevel(
       windowWidth,
       windowCenter,
       voiLUTFunction
@@ -2681,27 +2684,6 @@ class StackViewport extends Viewport {
 
   private _getDefaultPTPrescaledVOIRange() {
     return { lower: 0, upper: 5 };
-  }
-
-  private _getVOIRangeFromWindowLevel(
-    windowWidth: number | number[],
-    windowCenter: number | number[],
-    voiLUTFunction: VOILUTFunctionType = VOILUTFunctionType.LINEAR
-  ): { lower: number; upper: number } | undefined {
-    let center, width;
-
-    if (typeof windowCenter === 'number' && typeof windowWidth === 'number') {
-      center = windowCenter;
-      width = windowWidth;
-    } else if (Array.isArray(windowCenter) && Array.isArray(windowWidth)) {
-      center = windowCenter[0];
-      width = windowWidth[0];
-    }
-
-    // If center and width are defined, convert them to low-high range
-    if (center !== undefined && width !== undefined) {
-      return windowLevelUtil.toLowHighRange(width, center, voiLUTFunction);
-    }
   }
 
   /**
@@ -3232,7 +3214,7 @@ class StackViewport extends Viewport {
   private _getVOIRangeForCurrentImage() {
     const { windowCenter, windowWidth, voiLUTFunction } = this.csImage;
 
-    return this._getVOIRangeFromWindowLevel(
+    return getVOIRangeFromWindowLevel(
       windowWidth,
       windowCenter,
       voiLUTFunction
@@ -3559,11 +3541,18 @@ class StackViewport extends Viewport {
     this.render();
   }
 
-  private setColormapCPU(colormapData: CPUFallbackColormapData) {
+  private setColormapCPU(
+    colormapData: CPUFallbackColormapData | ColormapPublic
+  ) {
     this.colormap = colormapData;
-    const colormap = colormapUtils.getColormap(colormapData.name);
+    const colormap = resolveCPUFallbackColormap(colormapData);
 
-    this._cpuFallbackEnabledElement.viewport.colormap = colormap;
+    if (colormap) {
+      this._cpuFallbackEnabledElement.viewport.colormap = colormap;
+    } else {
+      delete this._cpuFallbackEnabledElement.viewport.colormap;
+    }
+
     this._cpuFallbackEnabledElement.renderingTools = {};
 
     this.fillWithBackgroundColor();
@@ -3583,10 +3572,7 @@ class StackViewport extends Viewport {
     const actor = ActorEntry.actor as ImageActor;
     const actorProp = actor.getProperty();
     const rgbTransferFunction = actorProp.getRGBTransferFunction();
-
-    const colormapObj =
-      colormapUtils.getColormap(colormap.name) ||
-      vtkColorMaps.getPresetByName(colormap.name);
+    const colormapObj = colormapUtils.resolveColormap(colormap.name);
 
     if (!rgbTransferFunction) {
       const cfun = vtkColorTransferFunction.newInstance();

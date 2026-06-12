@@ -1,7 +1,7 @@
 import { test } from 'playwright-test-coverage';
 import {
   visitExample,
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   screenShotPaths,
 } from './utils/index';
 
@@ -12,18 +12,16 @@ test.beforeEach(async ({ page }) => {
 test.describe('Ultrasound Colors', async () => {
   test('should render the ultrasound colors correctly', async ({ page }) => {
     const totalSlices = 7;
-    let locator = page.locator('.cornerstone-canvas');
 
     for (let i = 1; i <= totalSlices; i++) {
-      await checkForScreenshot(
+      await checkForCanvasSnapshot(
         page,
-        locator,
+        '.cornerstone-canvas',
         screenShotPaths.ultrasoundColors[`slice${i}`]
       );
 
       if (i < totalSlices) {
         await page.getByRole('button', { name: 'Scroll' }).click();
-        locator = page.locator('.cornerstone-canvas');
       }
     }
   });

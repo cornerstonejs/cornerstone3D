@@ -36,7 +36,7 @@ const segmentationId = 'MY_SEGMENTATION_ID';
 
 // ======== Set up page ======== //
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 
 const inlineContainer = document.createElement('div');

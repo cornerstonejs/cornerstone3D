@@ -1,6 +1,6 @@
 import type { DataSet } from 'dicom-parser';
-import * as dicomParser from 'dicom-parser';
 import { xhrRequest } from '../internal/index';
+import { parseDicom } from './parseDicomWithInflater';
 import dataSetFromPartialContent from './dataset-from-partial-content';
 import type {
   LoadRequestFunction,
@@ -143,7 +143,7 @@ function load(
                 }
               );
             } else {
-              dataSet = dicomParser.parseDicom(byteArray);
+              dataSet = parseDicom(byteArray);
             }
           } catch (error) {
             return reject(error);
