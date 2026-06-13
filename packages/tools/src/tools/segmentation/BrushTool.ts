@@ -1,4 +1,4 @@
-import { getEnabledElement, eventTarget } from '@cornerstonejs/core';
+import { getEnabledElement, eventTarget, Enums } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { vec3, vec2 } from 'gl-matrix';
 import { Events, ToolModes, StrategyCallbacks } from '../../enums';
@@ -30,6 +30,9 @@ import {
 import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportIds';
 import LabelmapBaseTool from './LabelmapBaseTool';
 import { getStrategyData } from './strategies/utils/getStrategyData';
+import LazyBrushEditController from './utils/LazyBrushEditController';
+import { shouldUseLazyLabelmapEditing } from './utils/shouldUseLazyLabelmapEditing';
+import { getActiveSegmentation } from '../../stateManagement/segmentation/getActiveSegmentation';
 
 /**
  * @public
@@ -42,6 +45,7 @@ class BrushTool extends LabelmapBaseTool {
     canvas: Types.Point2;
     world: Types.Point3;
   } | null = null;
+  private _lazyEdit = new LazyBrushEditController();
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -164,7 +168,7 @@ class BrushTool extends LabelmapBaseTool {
     super(toolProps, defaultToolProps);
   }
 
-  onSetToolPassive = (evt) => {
+  onSetToolPassive = (_evt) => {
     this.disableCursor();
   };
 
@@ -172,13 +176,65 @@ class BrushTool extends LabelmapBaseTool {
     this.disableCursor();
   };
 
-  onSetToolDisabled = (evt) => {
+  onSetToolDisabled = (_evt) => {
     this.disableCursor();
   };
 
   private disableCursor() {
+    this._clearPendingLazyPreviewCleanup();
     this._hoverData = undefined;
+    this._resetLazyEditState();
     this.rejectPreview();
+  }
+
+  private _isLazyLabelmapEditingEnabled(viewport?: Types.IViewport): boolean {
+    return shouldUseLazyLabelmapEditing(viewport ?? this._hoverData?.viewport);
+  }
+
+  private _resetLazyEditState(): void {
+    this._lazyEdit.reset();
+  }
+
+  private _clearPendingLazyPreviewCleanup(): void {
+    this._lazyEdit.clearPendingCleanup();
+  }
+
+  private _refreshCursor(
+    element: HTMLDivElement,
+    centerCanvas: Types.Point2
+  ): void {
+    this._hoverData = this.createHoverData(element, centerCanvas);
+    if (!this._hoverData) {
+      return;
+    }
+
+    this._calculateCursor(element, centerCanvas);
+
+    BrushTool.activeCursorTool = this;
+    triggerAnnotationRenderForViewportUIDs(this._hoverData.viewportIdsToRender);
+  }
+
+  private _scheduleLazyPreviewCleanup(
+    element: HTMLDivElement,
+    centerCanvas: Types.Point2,
+    viewportId: string,
+    segmentationId: string
+  ): void {
+    this._lazyEdit.scheduleCleanup({
+      element,
+      centerCanvas,
+      viewportId,
+      segmentationId,
+      refreshCursor: this._refreshCursor.bind(this),
+    });
+  }
+
+  private _captureLazyPreviewCircle(): void {
+    if (!this._isLazyLabelmapEditingEnabled() || !this._hoverData) {
+      return;
+    }
+
+    this._lazyEdit.capturePreviewCircle(this._hoverData);
   }
 
   preMouseDownCallback = (
@@ -188,6 +244,20 @@ class BrushTool extends LabelmapBaseTool {
     const { element, currentPoints } = eventData;
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
+
+    const activeSegmentation = getActiveSegmentation(viewport.id);
+    if (!activeSegmentation) {
+      const event = new CustomEvent(Enums.Events.ERROR_EVENT, {
+        detail: {
+          type: 'Segmentation',
+          message:
+            'No active segmentation detected, create a segmentation representation before using the brush tool',
+        },
+        cancelable: true,
+      });
+      eventTarget.dispatchEvent(event);
+      return false;
+    }
 
     // @ts-expect-error
     this._editData = this.createEditData(element);
@@ -210,9 +280,16 @@ class BrushTool extends LabelmapBaseTool {
       world: vec3.clone(worldPoint) as Types.Point3,
     };
 
-    const hoverData = this._hoverData || this.createHoverData(element);
+    this._hoverData = this.createHoverData(element, canvasPoint);
+    this._calculateCursor(element, canvasPoint);
+    this._resetLazyEditState();
 
-    triggerAnnotationRenderForViewportUIDs(hoverData.viewportIdsToRender);
+    if (this._isLazyLabelmapEditingEnabled(this._hoverData.viewport)) {
+      this._lazyEdit.appendStrokePoint(worldPoint);
+      this._captureLazyPreviewCircle();
+    }
+
+    triggerAnnotationRenderForViewportUIDs(this._hoverData.viewportIdsToRender);
 
     const operationData = this.getOperationData(element);
     if (!operationData) {
@@ -306,6 +383,10 @@ class BrushTool extends LabelmapBaseTool {
     const operationData = this.getOperationData(this._previewData.element) as
       | LabelmapToolOperationDataStack
       | LabelmapToolOperationDataVolume;
+    if (!operationData) {
+      return;
+    }
+
     const enabledElement = getEnabledElement(this._previewData.element);
     if (!enabledElement) {
       return;
@@ -349,16 +430,7 @@ class BrushTool extends LabelmapBaseTool {
     const { element } = eventData;
     const { currentPoints } = eventData;
     const centerCanvas = currentPoints.canvas;
-    this._hoverData = this.createHoverData(element, centerCanvas);
-
-    this._calculateCursor(element, centerCanvas);
-
-    if (!this._hoverData) {
-      return;
-    }
-
-    BrushTool.activeCursorTool = this;
-    triggerAnnotationRenderForViewportUIDs(this._hoverData.viewportIdsToRender);
+    this._refreshCursor(element, centerCanvas);
   }
 
   private _dragCallback = (evt: EventTypes.InteractionEventType): void => {
@@ -368,6 +440,10 @@ class BrushTool extends LabelmapBaseTool {
     const { viewport } = enabledElement;
 
     this.updateCursor(evt);
+
+    if (!this._hoverData) {
+      return;
+    }
 
     const { viewportIdsToRender } = this._hoverData;
 
@@ -412,25 +488,34 @@ class BrushTool extends LabelmapBaseTool {
     ]) as Types.Point3;
 
     this._hoverData = this.createHoverData(element, currentCanvas);
+    if (!this._hoverData) {
+      return;
+    }
 
     this._calculateCursor(element, currentCanvas);
 
-    const operationData = this.getOperationData(element);
-    if (!operationData) {
-      return;
-    }
-    // Hand the strategy the exact stroke segment we just traversed so it can
-    // paint a continuous capsule in one pass instead of trying to infer the
-    // path from scattered samples.
-    operationData.strokePointsWorld = [
-      vec3.clone(this._lastDragInfo.world) as Types.Point3,
-      vec3.clone(currentWorld) as Types.Point3,
-    ];
+    if (this._isLazyLabelmapEditingEnabled(this._hoverData.viewport)) {
+      this._lazyEdit.appendStrokePoint(currentWorld);
+      this._captureLazyPreviewCircle();
+      this._previewData.preview = null;
+    } else {
+      const operationData = this.getOperationData(element);
+      if (!operationData) {
+        return;
+      }
+      // Hand the strategy the exact stroke segment we just traversed so it can
+      // paint a continuous capsule in one pass instead of trying to infer the
+      // path from scattered samples.
+      operationData.strokePointsWorld = [
+        vec3.clone(this._lastDragInfo.world) as Types.Point3,
+        vec3.clone(currentWorld) as Types.Point3,
+      ];
 
-    this._previewData.preview = this.applyActiveStrategy(
-      enabledElement,
-      operationData
-    );
+      this._previewData.preview = this.applyActiveStrategy(
+        enabledElement,
+        operationData
+      );
+    }
 
     const currentCanvasClone = vec2.clone(currentCanvas) as Types.Point2;
     this._lastDragInfo = {
@@ -445,12 +530,17 @@ class BrushTool extends LabelmapBaseTool {
     this._previewData.startPoint = currentCanvasClone;
   };
 
-  private _calculateCursor(element, centerCanvas) {
+  private _calculateCursor(element, _centerCanvas) {
     const enabledElement = getEnabledElement(element);
+    const operationData = this.getOperationData(element);
+
+    if (!enabledElement || !operationData) {
+      return;
+    }
 
     this.applyActiveStrategyCallback(
       enabledElement,
-      this.getOperationData(element),
+      operationData,
       StrategyCallbacks.CalculateCursorGeometry
     );
   }
@@ -469,9 +559,18 @@ class BrushTool extends LabelmapBaseTool {
     if (!operationData) {
       return;
     }
-    // Don't re-fill when the preview is showing and the user clicks again
-    // otherwise the new area of hover may get filled, which is unexpected
-    if (!this._previewData.preview && !this._previewData.isDrag) {
+    const isLazyLabelmapEditing = this._isLazyLabelmapEditingEnabled(
+      this._hoverData?.viewport
+    );
+
+    if (isLazyLabelmapEditing && this._previewData.isDrag) {
+      operationData.strokePointsWorld = this._lazyEdit
+        .getStrokePointsWorld()
+        .map((point) => vec3.clone(point) as Types.Point3);
+      this.applyActiveStrategy(enabledElement, operationData);
+    } else if (!this._previewData.preview && !this._previewData.isDrag) {
+      // Don't re-fill when the preview is showing and the user clicks again
+      // otherwise the new area of hover may get filled, which is unexpected
       this.applyActiveStrategy(enabledElement, operationData);
     }
 
@@ -481,11 +580,24 @@ class BrushTool extends LabelmapBaseTool {
 
     resetElementCursor(element);
 
-    this.updateCursor(evt);
-
     this._editData = null;
 
     this._lastDragInfo = null;
+
+    if (isLazyLabelmapEditing && this._previewData.isDrag) {
+      this._scheduleLazyPreviewCleanup(
+        element,
+        evt.detail.currentPoints.canvas as Types.Point2,
+        enabledElement.viewport.id,
+        operationData.segmentationId
+      );
+      triggerAnnotationRenderForViewportUIDs(
+        this._hoverData.viewportIdsToRender
+      );
+    } else {
+      this._resetLazyEditState();
+      this.updateCursor(evt);
+    }
 
     this.applyActiveStrategyCallback(
       enabledElement,
@@ -503,9 +615,15 @@ class BrushTool extends LabelmapBaseTool {
       return;
     }
     const enabledElement = getEnabledElement(element);
+    const operationData = this.getOperationData(element);
+
+    if (!enabledElement || !operationData) {
+      return;
+    }
+
     const stats = this.applyActiveStrategyCallback(
       enabledElement,
-      this.getOperationData(element),
+      operationData,
       StrategyCallbacks.GetStatistics,
       segmentIndices
     );
@@ -527,9 +645,14 @@ class BrushTool extends LabelmapBaseTool {
     if (!enabledElement) {
       return;
     }
+    const operationData = this.getOperationData(element);
+    if (!operationData) {
+      return;
+    }
+
     this.applyActiveStrategyCallback(
       enabledElement,
-      this.getOperationData(element),
+      operationData,
       StrategyCallbacks.RejectPreview
     );
 
@@ -557,10 +680,15 @@ class BrushTool extends LabelmapBaseTool {
       return;
     }
     const enabledElement = getEnabledElement(element);
+    const operationData = this.getOperationData(element);
+
+    if (!enabledElement || !operationData) {
+      return;
+    }
 
     this._previewData.preview = this.applyActiveStrategyCallback(
       enabledElement,
-      this.getOperationData(element),
+      operationData,
       StrategyCallbacks.Interpolate,
       config.configuration
     );

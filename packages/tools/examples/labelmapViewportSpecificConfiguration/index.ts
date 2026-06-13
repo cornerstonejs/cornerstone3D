@@ -47,7 +47,7 @@ setTitleAndDescription(
   'Here we demonstrate how to change the configuration of how a specific segmentation is rendered in a viewport. We have two viewports, each with a different toolgroup. The left viewport uses a toolgroup with global configuration for segmentation representation. The right viewport uses a toolgroup with its own scoped segmentation representation. Toggling the outline rendering for this toolgroup, the viewport will display the tool group scoped representation over the global one.'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 

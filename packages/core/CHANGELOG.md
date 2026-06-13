@@ -3,6 +3,159 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.0.8](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.7...v5.0.8) (2026-06-12)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [5.0.7](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.6...v5.0.7) (2026-06-12)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [5.0.6](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.5...v5.0.6) (2026-06-12)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [5.0.5](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.4...v5.0.5) (2026-06-11)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [5.0.4](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.3...v5.0.4) (2026-06-11)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [5.0.3](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.2...v5.0.3) (2026-06-11)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [5.0.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.1...v5.0.2) (2026-06-11)
+
+### Bug Fixes
+
+- codemod publish and docs 5x ([#2759](https://github.com/cornerstonejs/cornerstone3D/issues/2759)) ([0a4064d](https://github.com/cornerstonejs/cornerstone3D/commit/0a4064dc81a2f36c04ec3fc7e68c6aebbdc7ccdb)), closes [#2612](https://github.com/cornerstonejs/cornerstone3D/issues/2612)
+
+## [5.0.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.0...v5.0.1) (2026-06-10)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+# [5.0.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.13...v5.0.0) (2026-06-09)
+
+### Features
+
+- Cornerstone3D 5.0 ([#2748](https://github.com/cornerstonejs/cornerstone3D/issues/2748)) ([aa68c90](https://github.com/cornerstonejs/cornerstone3D/commit/aa68c904b8ba6abfcbf05fbb510bb10a17ea7028)), closes [#2638](https://github.com/cornerstonejs/cornerstone3D/issues/2638) [#2639](https://github.com/cornerstonejs/cornerstone3D/issues/2639) [#2625](https://github.com/cornerstonejs/cornerstone3D/issues/2625) [#2666](https://github.com/cornerstonejs/cornerstone3D/issues/2666) [#2635](https://github.com/cornerstonejs/cornerstone3D/issues/2635)
+- extensible viewport types ([#2747](https://github.com/cornerstonejs/cornerstone3D/issues/2747)) ([b52dcfb](https://github.com/cornerstonejs/cornerstone3D/commit/b52dcfbad5004c5dd81340971189942ba73e2d56)), closes [#2638](https://github.com/cornerstonejs/cornerstone3D/issues/2638) [#2639](https://github.com/cornerstonejs/cornerstone3D/issues/2639) [#2625](https://github.com/cornerstonejs/cornerstone3D/issues/2625) [#2666](https://github.com/cornerstonejs/cornerstone3D/issues/2666) [#2635](https://github.com/cornerstonejs/cornerstone3D/issues/2635)
+
+## [4.22.13](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.12...v4.22.13) (2026-05-26)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.22.12](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.11...v4.22.12) (2026-05-25)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.22.11](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.10...v4.22.11) (2026-05-25)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.22.10](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.9...v4.22.10) (2026-05-22)
+
+### Bug Fixes
+
+- **core:** move animationFrameSet guard after sWidth/sHeight update ([#2741](https://github.com/cornerstonejs/cornerstone3D/issues/2741)) ([62a7762](https://github.com/cornerstonejs/cornerstone3D/commit/62a7762953feae68a81855d9c7bf84f1fd3a3877))
+
+## [4.22.9](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.8...v4.22.9) (2026-05-19)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.22.8](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.7...v4.22.8) (2026-05-15)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+# [5.0.0-beta.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.0-beta.1...v5.0.0-beta.2) (2026-05-15)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+# [5.0.0-beta.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.18.3...v5.0.0-beta.1) (2026-02-27)
+
+## [4.22.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.1...v4.22.2) (2026-04-21)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.22.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.0...v4.22.1) (2026-04-21)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+# [4.22.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.9...v4.22.0) (2026-04-20)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.21.9](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.8...v4.21.9) (2026-04-20)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.21.8](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.7...v4.21.8) (2026-04-20)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.21.7](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.6...v4.21.7) (2026-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.21.6](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.5...v4.21.6) (2026-04-16)
+
+### Bug Fixes
+
+- **viewport:** restore default visual properties on reset in VolumeViewport3D and VolumeViewport ([#2693](https://github.com/cornerstonejs/cornerstone3D/issues/2693)) ([d1a7097](https://github.com/cornerstonejs/cornerstone3D/commit/d1a709707c58c7780d7838ac95a8ef8783e45cfd))
+
+## [4.21.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.4...v4.21.5) (2026-04-14)
+
+### Bug Fixes
+
+- sam model exception ([#2637](https://github.com/cornerstonejs/cornerstone3D/issues/2637)) ([0fccf54](https://github.com/cornerstonejs/cornerstone3D/commit/0fccf54df585199e64a1e7c5fa9f5bf4d0a48e93))
+
+## [4.21.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.3...v4.21.4) (2026-04-14)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.21.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.2...v4.21.3) (2026-04-13)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.21.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.1...v4.21.2) (2026-04-10)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.21.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.0...v4.21.1) (2026-04-10)
+
+### Bug Fixes
+
+- Minimal changes to get linking to work for ohif-downstream ([#2689](https://github.com/cornerstonejs/cornerstone3D/issues/2689)) ([b2d771b](https://github.com/cornerstonejs/cornerstone3D/commit/b2d771b13010a9018acbdf5427fbc635d0ddd8a7))
+
+# [4.21.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.20.4...v4.21.0) (2026-04-06)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.20.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.20.3...v4.20.4) (2026-04-02)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.20.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.20.2...v4.20.3) (2026-04-02)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.20.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.20.1...v4.20.2) (2026-04-02)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [4.20.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.20.0...v4.20.1) (2026-03-31)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+# [4.20.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.19.4...v4.20.0) (2026-03-16)
+
+### Features
+
+- **ohif-downstream:** Add CI workflow and scripts for OHIF downstream validation and testing ([#2657](https://github.com/cornerstonejs/cornerstone3D/issues/2657)) ([cc4b7cb](https://github.com/cornerstonejs/cornerstone3D/commit/cc4b7cb76d18679780bc2b8bc38f4da7f328fd29))
+
 ## [4.19.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.19.3...v4.19.4) (2026-03-13)
 
 **Note:** Version bump only for package @cornerstonejs/core

@@ -27,6 +27,8 @@ export interface IAnnotatedRhombicuboctahedronActorInitialValues
   showEdgeFaces?: boolean;
   showCornerFaces?: boolean;
   scale?: number;
+  edgeColor?: number[];
+  cornerColor?: number[];
 }
 
 export interface vtkAnnotatedRhombicuboctahedronActor extends vtkActor {

@@ -3,6 +3,150 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.0.8](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.7...v5.0.8) (2026-06-12)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [5.0.7](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.6...v5.0.7) (2026-06-12)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [5.0.6](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.5...v5.0.6) (2026-06-12)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [5.0.5](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.4...v5.0.5) (2026-06-11)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [5.0.4](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.3...v5.0.4) (2026-06-11)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [5.0.3](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.2...v5.0.3) (2026-06-11)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [5.0.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.1...v5.0.2) (2026-06-11)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [5.0.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.0...v5.0.1) (2026-06-10)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [5.0.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.13...v5.0.0) (2026-06-09)
+
+### Features
+
+- Cornerstone3D 5.0 ([#2748](https://github.com/cornerstonejs/cornerstone3D/issues/2748)) ([aa68c90](https://github.com/cornerstonejs/cornerstone3D/commit/aa68c904b8ba6abfcbf05fbb510bb10a17ea7028)), closes [#2638](https://github.com/cornerstonejs/cornerstone3D/issues/2638) [#2639](https://github.com/cornerstonejs/cornerstone3D/issues/2639) [#2625](https://github.com/cornerstonejs/cornerstone3D/issues/2625) [#2666](https://github.com/cornerstonejs/cornerstone3D/issues/2666) [#2635](https://github.com/cornerstonejs/cornerstone3D/issues/2635)
+
+## [4.22.13](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.12...v4.22.13) (2026-05-26)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.22.12](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.11...v4.22.12) (2026-05-25)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.22.11](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.10...v4.22.11) (2026-05-25)
+
+### Bug Fixes
+
+- **sr:** adapt 3.10 SR reports to new DCMJS structural changes ([#2643](https://github.com/cornerstonejs/cornerstone3D/issues/2643)) ([8b386fa](https://github.com/cornerstonejs/cornerstone3D/commit/8b386fadf5f786058343076c053b9c3ced194233))
+
+## [4.22.10](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.9...v4.22.10) (2026-05-22)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.22.9](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.8...v4.22.9) (2026-05-19)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.22.8](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.7...v4.22.8) (2026-05-15)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [5.0.0-beta.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.0-beta.1...v5.0.0-beta.2) (2026-05-15)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [5.0.0-beta.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.18.3...v5.0.0-beta.1) (2026-02-27)
+
+## [4.22.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.1...v4.22.2) (2026-04-21)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.22.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.0...v4.22.1) (2026-04-21)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [4.22.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.9...v4.22.0) (2026-04-20)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.21.9](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.8...v4.21.9) (2026-04-20)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.21.8](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.7...v4.21.8) (2026-04-20)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.21.7](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.6...v4.21.7) (2026-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.21.6](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.5...v4.21.6) (2026-04-16)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.21.5](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.4...v4.21.5) (2026-04-14)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.21.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.3...v4.21.4) (2026-04-14)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.21.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.2...v4.21.3) (2026-04-13)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.21.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.1...v4.21.2) (2026-04-10)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.21.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.21.0...v4.21.1) (2026-04-10)
+
+### Bug Fixes
+
+- Minimal changes to get linking to work for ohif-downstream ([#2689](https://github.com/cornerstonejs/cornerstone3D/issues/2689)) ([b2d771b](https://github.com/cornerstonejs/cornerstone3D/commit/b2d771b13010a9018acbdf5427fbc635d0ddd8a7))
+
+# [4.21.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.20.4...v4.21.0) (2026-04-06)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.20.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.20.3...v4.20.4) (2026-04-02)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.20.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.20.2...v4.20.3) (2026-04-02)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.20.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.20.1...v4.20.2) (2026-04-02)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+## [4.20.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.20.0...v4.20.1) (2026-03-31)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
+# [4.20.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.19.4...v4.20.0) (2026-03-16)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
 ## [4.19.4](https://github.com/cornerstonejs/cornerstone3D/compare/v4.19.3...v4.19.4) (2026-03-13)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
@@ -3377,16 +3521,16 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 ### Bug Fixes
 
-- 🐛 adding readme notes ([#191](https://github.com/dcmjs-org/dcmjs/issues/191)) ([459260d](https://github.com/dcmjs-org/dcmjs/commit/459260d6e2a6f905729ddf68b1f12d3140b53849))
-- 🐛 fix array format regression from commit 70b24332783d63c9db2ed21d512d9f7b526c5222 ([#236](https://github.com/dcmjs-org/dcmjs/issues/236)) ([5441063](https://github.com/dcmjs-org/dcmjs/commit/5441063d0395ede6d9f8bd3ac0d92ee14f6ef209))
-- 🐛 Fix rotation mapping for SEG cornerstone adapter ([#151](https://github.com/dcmjs-org/dcmjs/issues/151)) ([3fab68c](https://github.com/dcmjs-org/dcmjs/commit/3fab68cbfd95f82820663b9fc99a2b0cd07e43c8))
-- 🐛 Harden Segmentation import for different possible SEGs ([#146](https://github.com/dcmjs-org/dcmjs/issues/146)) ([c4952bc](https://github.com/dcmjs-org/dcmjs/commit/c4952bc5842bab80a5d928de0d860f89afc8f400))
-- 🐛 IDC Re [#2003](https://github.com/dcmjs-org/dcmjs/issues/2003): fix regression in parsing segmentation orietations ([#220](https://github.com/dcmjs-org/dcmjs/issues/220)) ([5c0c6a8](https://github.com/dcmjs-org/dcmjs/commit/5c0c6a85e67b25ce5f39412ced37d8e825691481))
-- 🐛 IDC2733: find segmentations reference source image Ids ([#253](https://github.com/dcmjs-org/dcmjs/issues/253)) ([f3e7101](https://github.com/dcmjs-org/dcmjs/commit/f3e71016dffa233bf0fb912cc7cf413718b8a1a9))
-- 🐛 ignore frames without SourceImageSequence information when loading a segmentation ([#198](https://github.com/dcmjs-org/dcmjs/issues/198)) ([82709c4](https://github.com/dcmjs-org/dcmjs/commit/82709c4a8a317aa1354244010300ab9b902802dd))
-- 🐛 indentation in nearlyEqual ([#202](https://github.com/dcmjs-org/dcmjs/issues/202)) ([989d6c9](https://github.com/dcmjs-org/dcmjs/commit/989d6c9a80686425563c55424ac1795e6a06cd7b))
-- 🐛 relax condition in nearlyEquals check for detecting numbers near to zero ([#304](https://github.com/dcmjs-org/dcmjs/issues/304)) ([974cddd](https://github.com/dcmjs-org/dcmjs/commit/974cddd785c076f1ac0211b534a7c0b82a4ba68a))
-- 🐛 When converting to multiframe, fix IPP issues ([#152](https://github.com/dcmjs-org/dcmjs/issues/152)) ([80496e4](https://github.com/dcmjs-org/dcmjs/commit/80496e422152c1a3dfd850a145011dd3dc632964))
+- ðŸ› adding readme notes ([#191](https://github.com/dcmjs-org/dcmjs/issues/191)) ([459260d](https://github.com/dcmjs-org/dcmjs/commit/459260d6e2a6f905729ddf68b1f12d3140b53849))
+- ðŸ› fix array format regression from commit 70b24332783d63c9db2ed21d512d9f7b526c5222 ([#236](https://github.com/dcmjs-org/dcmjs/issues/236)) ([5441063](https://github.com/dcmjs-org/dcmjs/commit/5441063d0395ede6d9f8bd3ac0d92ee14f6ef209))
+- ðŸ› Fix rotation mapping for SEG cornerstone adapter ([#151](https://github.com/dcmjs-org/dcmjs/issues/151)) ([3fab68c](https://github.com/dcmjs-org/dcmjs/commit/3fab68cbfd95f82820663b9fc99a2b0cd07e43c8))
+- ðŸ› Harden Segmentation import for different possible SEGs ([#146](https://github.com/dcmjs-org/dcmjs/issues/146)) ([c4952bc](https://github.com/dcmjs-org/dcmjs/commit/c4952bc5842bab80a5d928de0d860f89afc8f400))
+- ðŸ› IDC Re [#2003](https://github.com/dcmjs-org/dcmjs/issues/2003): fix regression in parsing segmentation orietations ([#220](https://github.com/dcmjs-org/dcmjs/issues/220)) ([5c0c6a8](https://github.com/dcmjs-org/dcmjs/commit/5c0c6a85e67b25ce5f39412ced37d8e825691481))
+- ðŸ› IDC2733: find segmentations reference source image Ids ([#253](https://github.com/dcmjs-org/dcmjs/issues/253)) ([f3e7101](https://github.com/dcmjs-org/dcmjs/commit/f3e71016dffa233bf0fb912cc7cf413718b8a1a9))
+- ðŸ› ignore frames without SourceImageSequence information when loading a segmentation ([#198](https://github.com/dcmjs-org/dcmjs/issues/198)) ([82709c4](https://github.com/dcmjs-org/dcmjs/commit/82709c4a8a317aa1354244010300ab9b902802dd))
+- ðŸ› indentation in nearlyEqual ([#202](https://github.com/dcmjs-org/dcmjs/issues/202)) ([989d6c9](https://github.com/dcmjs-org/dcmjs/commit/989d6c9a80686425563c55424ac1795e6a06cd7b))
+- ðŸ› relax condition in nearlyEquals check for detecting numbers near to zero ([#304](https://github.com/dcmjs-org/dcmjs/issues/304)) ([974cddd](https://github.com/dcmjs-org/dcmjs/commit/974cddd785c076f1ac0211b534a7c0b82a4ba68a))
+- ðŸ› When converting to multiframe, fix IPP issues ([#152](https://github.com/dcmjs-org/dcmjs/issues/152)) ([80496e4](https://github.com/dcmjs-org/dcmjs/commit/80496e422152c1a3dfd850a145011dd3dc632964))
 - **adapter:** Removed comment around getTID300RepresentationArguments 'tool' parameter ([#322](https://github.com/dcmjs-org/dcmjs/issues/322)) ([d8f05ff](https://github.com/dcmjs-org/dcmjs/commit/d8f05ffb9ef1b5cce254980a597b4c428ffdfb6e)), closes [#306](https://github.com/dcmjs-org/dcmjs/issues/306)
 - **adapters:** Measurement reports can throw exceptions that prevent loading ([#458](https://github.com/dcmjs-org/dcmjs/issues/458)) ([7bc7d8a](https://github.com/dcmjs-org/dcmjs/commit/7bc7d8aaeb5aa0df91c24e278665d14f590ec234))
 - **adapters:** Update rollup to newer version ([#407](https://github.com/dcmjs-org/dcmjs/issues/407)) ([543675f](https://github.com/dcmjs-org/dcmjs/commit/543675f1269f8b739764291b1c27b40470c48c63))
@@ -3562,16 +3706,16 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 ### Bug Fixes
 
-- 🐛 adding readme notes ([#191](https://github.com/dcmjs-org/dcmjs/issues/191)) ([459260d](https://github.com/dcmjs-org/dcmjs/commit/459260d6e2a6f905729ddf68b1f12d3140b53849))
-- 🐛 fix array format regression from commit 70b24332783d63c9db2ed21d512d9f7b526c5222 ([#236](https://github.com/dcmjs-org/dcmjs/issues/236)) ([5441063](https://github.com/dcmjs-org/dcmjs/commit/5441063d0395ede6d9f8bd3ac0d92ee14f6ef209))
-- 🐛 Fix rotation mapping for SEG cornerstone adapter ([#151](https://github.com/dcmjs-org/dcmjs/issues/151)) ([3fab68c](https://github.com/dcmjs-org/dcmjs/commit/3fab68cbfd95f82820663b9fc99a2b0cd07e43c8))
-- 🐛 Harden Segmentation import for different possible SEGs ([#146](https://github.com/dcmjs-org/dcmjs/issues/146)) ([c4952bc](https://github.com/dcmjs-org/dcmjs/commit/c4952bc5842bab80a5d928de0d860f89afc8f400))
-- 🐛 IDC Re [#2003](https://github.com/dcmjs-org/dcmjs/issues/2003): fix regression in parsing segmentation orietations ([#220](https://github.com/dcmjs-org/dcmjs/issues/220)) ([5c0c6a8](https://github.com/dcmjs-org/dcmjs/commit/5c0c6a85e67b25ce5f39412ced37d8e825691481))
-- 🐛 IDC2733: find segmentations reference source image Ids ([#253](https://github.com/dcmjs-org/dcmjs/issues/253)) ([f3e7101](https://github.com/dcmjs-org/dcmjs/commit/f3e71016dffa233bf0fb912cc7cf413718b8a1a9))
-- 🐛 ignore frames without SourceImageSequence information when loading a segmentation ([#198](https://github.com/dcmjs-org/dcmjs/issues/198)) ([82709c4](https://github.com/dcmjs-org/dcmjs/commit/82709c4a8a317aa1354244010300ab9b902802dd))
-- 🐛 indentation in nearlyEqual ([#202](https://github.com/dcmjs-org/dcmjs/issues/202)) ([989d6c9](https://github.com/dcmjs-org/dcmjs/commit/989d6c9a80686425563c55424ac1795e6a06cd7b))
-- 🐛 relax condition in nearlyEquals check for detecting numbers near to zero ([#304](https://github.com/dcmjs-org/dcmjs/issues/304)) ([974cddd](https://github.com/dcmjs-org/dcmjs/commit/974cddd785c076f1ac0211b534a7c0b82a4ba68a))
-- 🐛 When converting to multiframe, fix IPP issues ([#152](https://github.com/dcmjs-org/dcmjs/issues/152)) ([80496e4](https://github.com/dcmjs-org/dcmjs/commit/80496e422152c1a3dfd850a145011dd3dc632964))
+- ðŸ› adding readme notes ([#191](https://github.com/dcmjs-org/dcmjs/issues/191)) ([459260d](https://github.com/dcmjs-org/dcmjs/commit/459260d6e2a6f905729ddf68b1f12d3140b53849))
+- ðŸ› fix array format regression from commit 70b24332783d63c9db2ed21d512d9f7b526c5222 ([#236](https://github.com/dcmjs-org/dcmjs/issues/236)) ([5441063](https://github.com/dcmjs-org/dcmjs/commit/5441063d0395ede6d9f8bd3ac0d92ee14f6ef209))
+- ðŸ› Fix rotation mapping for SEG cornerstone adapter ([#151](https://github.com/dcmjs-org/dcmjs/issues/151)) ([3fab68c](https://github.com/dcmjs-org/dcmjs/commit/3fab68cbfd95f82820663b9fc99a2b0cd07e43c8))
+- ðŸ› Harden Segmentation import for different possible SEGs ([#146](https://github.com/dcmjs-org/dcmjs/issues/146)) ([c4952bc](https://github.com/dcmjs-org/dcmjs/commit/c4952bc5842bab80a5d928de0d860f89afc8f400))
+- ðŸ› IDC Re [#2003](https://github.com/dcmjs-org/dcmjs/issues/2003): fix regression in parsing segmentation orietations ([#220](https://github.com/dcmjs-org/dcmjs/issues/220)) ([5c0c6a8](https://github.com/dcmjs-org/dcmjs/commit/5c0c6a85e67b25ce5f39412ced37d8e825691481))
+- ðŸ› IDC2733: find segmentations reference source image Ids ([#253](https://github.com/dcmjs-org/dcmjs/issues/253)) ([f3e7101](https://github.com/dcmjs-org/dcmjs/commit/f3e71016dffa233bf0fb912cc7cf413718b8a1a9))
+- ðŸ› ignore frames without SourceImageSequence information when loading a segmentation ([#198](https://github.com/dcmjs-org/dcmjs/issues/198)) ([82709c4](https://github.com/dcmjs-org/dcmjs/commit/82709c4a8a317aa1354244010300ab9b902802dd))
+- ðŸ› indentation in nearlyEqual ([#202](https://github.com/dcmjs-org/dcmjs/issues/202)) ([989d6c9](https://github.com/dcmjs-org/dcmjs/commit/989d6c9a80686425563c55424ac1795e6a06cd7b))
+- ðŸ› relax condition in nearlyEquals check for detecting numbers near to zero ([#304](https://github.com/dcmjs-org/dcmjs/issues/304)) ([974cddd](https://github.com/dcmjs-org/dcmjs/commit/974cddd785c076f1ac0211b534a7c0b82a4ba68a))
+- ðŸ› When converting to multiframe, fix IPP issues ([#152](https://github.com/dcmjs-org/dcmjs/issues/152)) ([80496e4](https://github.com/dcmjs-org/dcmjs/commit/80496e422152c1a3dfd850a145011dd3dc632964))
 - **adapter:** Removed comment around getTID300RepresentationArguments 'tool' parameter ([#322](https://github.com/dcmjs-org/dcmjs/issues/322)) ([d8f05ff](https://github.com/dcmjs-org/dcmjs/commit/d8f05ffb9ef1b5cce254980a597b4c428ffdfb6e)), closes [#306](https://github.com/dcmjs-org/dcmjs/issues/306)
 - **add check for nullable numeric string vrs:** adds a check for nullable numeric strinv vrs ([#150](https://github.com/dcmjs-org/dcmjs/issues/150)) ([75046c4](https://github.com/dcmjs-org/dcmjs/commit/75046c4e1b2830dd3a32dc8d6938f6def71940a5))
 - **anonymizer:** [FIX & TESTS] cleanTags : check if param is undefined. Add 3 test ([#308](https://github.com/dcmjs-org/dcmjs/issues/308)) ([44d23d6](https://github.com/dcmjs-org/dcmjs/commit/44d23d6a9e347fcf049053129d4d7323a9258b71))
