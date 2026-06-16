@@ -86,6 +86,47 @@ export class PlanarRenderPathDecisionService {
     };
   }
 
+  /**
+   * Non-throwing companion to {@link select}: reports whether the dataset can be
+   * rendered in the requested orientation/configuration, without selecting a
+   * render mode. Lets callers (e.g. OHIF MPR/orientation controls) pre-check an
+   * orientation before requesting it, instead of relying on `select()` throwing.
+   *
+   * Keep the renderability rules here in sync with `select()` above.
+   */
+  canRender(
+    dataSet: PlanarRegisteredDataSet,
+    options: PlanarRenderPathDecisionOptions = {}
+  ): boolean {
+    if (!dataSet.imageIds.length) {
+      return false;
+    }
+
+    const orientation = options.orientation || OrientationAxis.ACQUISITION;
+    const acquisitionOrientation = getPlanarAcquisitionOrientation(
+      dataSet.imageIds
+    );
+    const isAcquisitionPath =
+      orientation === OrientationAxis.ACQUISITION ||
+      (acquisitionOrientation !== undefined &&
+        orientation === acquisitionOrientation);
+    const useVolumePath = isVolumeBackedDataSet(dataSet, isAcquisitionPath);
+
+    if (
+      !isAcquisitionPath &&
+      !useVolumePath &&
+      !dataSet.useWorldCoordinateImageData
+    ) {
+      return false;
+    }
+
+    if (useVolumePath && !supportsVolumeRendering(dataSet)) {
+      return false;
+    }
+
+    return true;
+  }
+
   private selectImageRenderMode(
     dataSet: PlanarRegisteredDataSet,
     options: PlanarRenderPathDecisionOptions

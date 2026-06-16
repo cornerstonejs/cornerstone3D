@@ -43,6 +43,7 @@ import {
 } from '../genericViewportDataSetAccess';
 import { DefaultPlanarDataProvider } from './DefaultPlanarDataProvider';
 import { createPlanarRenderPathResolver } from './PlanarRenderPathResolver';
+import { defaultPlanarRenderPathDecisionService } from './PlanarRenderPathDecisionService';
 import {
   normalizePlanarOrientation,
   selectPlanarRenderPath,
@@ -328,7 +329,7 @@ class PlanarViewport extends GenericViewport<
     const isStale = () => requestId !== this.setDataRequestId;
 
     this.clearResolvedViewCache();
-    this.removeAllData();
+    this.removeReplaceableData(entries);
 
     for (const [index, { displaySetId, options = {} }] of entries.entries()) {
       if (isStale()) {
@@ -1233,6 +1234,41 @@ class PlanarViewport extends GenericViewport<
   }
 
   /**
+   * Reports whether the viewport could render the given orientation for the
+   * current (or a specified) source data, without throwing.
+   *
+   * Acquisition-aligned orientations are always renderable; reformatted
+   * orientations (AXIAL/SAGITTAL/CORONAL) require volume-backed data. Use this
+   * to pre-check before `setOrientation()` / `setViewState({ orientation })`
+   * (for example to enable/disable an MPR control) instead of relying on the
+   * render-path decision service throwing on an unsupported request.
+   *
+   * @param orientation - The orientation to test.
+   * @param dataId - Optional display set id; defaults to the active source.
+   * @returns `true` when the orientation can be rendered for the data.
+   */
+  canRenderOrientation(
+    orientation: PlanarSetOrientationInput,
+    dataId?: string
+  ): boolean {
+    const targetDataId = dataId ?? this.getSourceDataId();
+
+    if (!targetDataId) {
+      return false;
+    }
+
+    const dataSet = this.getDataSet(targetDataId);
+
+    if (!dataSet) {
+      return false;
+    }
+
+    return defaultPlanarRenderPathDecisionService.canRender(dataSet, {
+      orientation: this.resolveSetOrientation(orientation),
+    });
+  }
+
+  /**
    * Resets view state presentation back to the viewport defaults.
    *
    * Navigation state such as the current slice remains unchanged.
@@ -1550,6 +1586,64 @@ class PlanarViewport extends GenericViewport<
 
   protected getCurrentBinding() {
     return this.mountedData.getCurrentBinding();
+  }
+
+  /**
+   * Tears down currently-mounted data ahead of a `setDisplaySets` replace, but
+   * preserves externally-managed segmentation overlays when the source is being
+   * re-set to the same display set.
+   *
+   * The segmentation display tool mounts labelmap overlays out-of-band (via
+   * `addDisplaySet`), so a full teardown on every `setDisplaySets` would blank a
+   * hydrated segmentation whenever the source is re-applied (e.g. when an
+   * application re-runs its viewport-data sync). When the source changes (or no
+   * source is being set), everything is removed so a stale segmentation cannot
+   * leak across datasets.
+   */
+  private removeReplaceableData(
+    entries: Array<{ displaySetId: string; options?: PlanarSetDataOptions }>
+  ): void {
+    const nextSourceId = this.resolveNextSourceId(entries);
+    const preserveSegmentationOverlays =
+      nextSourceId !== undefined && nextSourceId === this.getSourceDataId();
+
+    for (const dataId of Array.from(this.bindings.keys())) {
+      if (
+        preserveSegmentationOverlays &&
+        this.isSegmentationOverlayBinding(dataId)
+      ) {
+        continue;
+      }
+
+      this.removeData(dataId);
+    }
+  }
+
+  /**
+   * Resolves which entry will become the source binding for a `setDisplaySets`
+   * call: the entry explicitly flagged `role: 'source'`, otherwise the first.
+   */
+  private resolveNextSourceId(
+    entries: Array<{ displaySetId: string; options?: PlanarSetDataOptions }>
+  ): string | undefined {
+    const explicitSource = entries.find(
+      (entry) => entry.options?.role === 'source'
+    );
+
+    return explicitSource?.displaySetId ?? entries[0]?.displaySetId;
+  }
+
+  /**
+   * Returns whether a mounted binding is an externally-managed segmentation
+   * overlay (an overlay-role binding whose registered data references a
+   * segmentation).
+   */
+  private isSegmentationOverlayBinding(dataId: string): boolean {
+    if (this.getDisplaySetRole(dataId) !== 'overlay') {
+      return false;
+    }
+
+    return this.getDataSet(dataId)?.reference?.kind === 'segmentation';
   }
 
   private getDataSet(dataId: string): PlanarRegisteredDataSet | undefined {
