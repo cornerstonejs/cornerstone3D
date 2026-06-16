@@ -3,6 +3,7 @@ import {
   BaseVolumeViewport,
   getRenderingEngine,
   StackViewport,
+  utilities,
 } from '@cornerstonejs/core';
 
 /**
@@ -55,6 +56,12 @@ export default function voiSyncCallback(
     }
   } else if (tViewport instanceof StackViewport) {
     tViewport.setProperties(tProperties);
+  } else if (utilities.isGenericViewport(tViewport)) {
+    // Direct Generic ("next") viewports expose presentation per display set
+    // rather than setProperties; apply VOI/invert/colormap to the source
+    // binding. Reacts to the VOI_MODIFIED / COLORMAP_MODIFIED events now emitted
+    // by the native presentation path.
+    tViewport.setDisplaySetPresentation(tProperties);
   } else {
     throw new Error('Viewport type not supported.');
   }
