@@ -72,6 +72,14 @@ export interface PlanarSetDataOptions {
     image?: number;
     volume?: number;
   };
+  /**
+   * Forces this display set to render through the CPU path regardless of the
+   * global rendering configuration or byte-size thresholds. Use when an
+   * individual display set / overlay must be CPU-rendered (e.g. to bound GPU
+   * memory). When omitted, the render path is decided by the global rendering
+   * configuration, WebGL availability, and the CPU thresholds above.
+   */
+  forceCPU?: boolean;
   role?: BindingRole;
 }
 

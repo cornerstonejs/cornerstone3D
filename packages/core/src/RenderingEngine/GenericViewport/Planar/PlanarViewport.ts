@@ -1678,6 +1678,9 @@ class PlanarViewport extends GenericViewport<
     const selectedPath = selectPlanarRenderPath(dataSet, {
       orientation: resolvedOrientation,
       cpuThresholds: options.cpuThresholds,
+      // Per-mount CPU force: webGLAvailable=false routes the decision to the CPU
+      // path. Left undefined otherwise so global config + thresholds decide.
+      webGLAvailable: options.forceCPU ? false : undefined,
     });
     const data = await (this.dataProvider as PlanarDataProvider).load(dataId, {
       acquisitionOrientation: selectedPath.acquisitionOrientation,
