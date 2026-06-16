@@ -1,8 +1,10 @@
 import type {
   ActorEntry,
+  IGenericViewport,
   IStackViewport,
   IViewport,
   IVolumeViewport,
+  ViewportContentMode,
 } from '../types';
 
 export type ImageSliceViewport = IViewport &
@@ -100,4 +102,61 @@ export function viewportSupportsVolumeActors(
     viewportSupportsVolumeId(viewport) &&
     viewportHasMethod(viewport, 'getActors')
   );
+}
+
+/**
+ * Narrows a viewport to the direct Generic ("next") viewport surface
+ * (`setDisplaySets` / `setDisplaySetPresentation` / `setViewState` and the
+ * related data/view-state APIs).
+ *
+ * Use this instead of `instanceof PlanarViewport` (or a `viewport.type` check)
+ * when code needs the native-next API rather than the legacy stack/volume
+ * method surface. A viewport created with a legacy compatibility adapter is
+ * intentionally NOT matched: it exposes the legacy methods, not the direct
+ * Generic surface.
+ */
+export function isGenericViewport(
+  viewport: unknown
+): viewport is IGenericViewport {
+  return (
+    viewportHasMethod(viewport, 'setDisplaySets') &&
+    viewportHasMethod(viewport, 'setDisplaySetPresentation') &&
+    viewportHasMethod(viewport, 'setViewState')
+  );
+}
+
+/**
+ * Returns the content-true mode of the viewport's bound source data when the
+ * viewport can classify it (i.e. exposes `getCurrentMode`), otherwise
+ * `undefined`.
+ *
+ * Unlike the capability guards above (which test method presence), this reports
+ * what the viewport is actually showing — the question a `PLANAR_NEXT` viewport
+ * cannot answer through `viewportSupportsImageSlices` /
+ * `viewportSupportsVolumeId` alone, since it supports both regardless of
+ * content. See {@link ViewportContentMode}.
+ */
+export function getViewportContentMode(
+  viewport: unknown
+): ViewportContentMode | undefined {
+  return viewportHasMethod(viewport, 'getCurrentMode')
+    ? (viewport as IGenericViewport).getCurrentMode()
+    : undefined;
+}
+
+/**
+ * Returns `true` when the viewport is currently rendering volume-backed content
+ * (a volume slice or a 3D volume). Content-true; see {@link getViewportContentMode}.
+ */
+export function viewportIsInVolumeMode(viewport: unknown): boolean {
+  const mode = getViewportContentMode(viewport);
+  return mode === 'volume' || mode === 'volume3d';
+}
+
+/**
+ * Returns `true` when the viewport is currently rendering image-id stack
+ * content. Content-true; see {@link getViewportContentMode}.
+ */
+export function viewportIsInStackMode(viewport: unknown): boolean {
+  return getViewportContentMode(viewport) === 'stack';
 }

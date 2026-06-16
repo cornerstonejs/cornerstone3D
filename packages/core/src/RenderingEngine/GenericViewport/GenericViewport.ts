@@ -1,6 +1,6 @@
 import type * as EventTypes from '../../types/EventTypes';
 import type ICamera from '../../types/ICamera';
-import type { Point2, Point3 } from '../../types';
+import type { Point2, Point3, ViewportContentMode } from '../../types';
 import Events from '../../enums/Events';
 import ViewportStatus from '../../enums/ViewportStatus';
 import triggerEvent from '../../utilities/triggerEvent';
@@ -193,6 +193,22 @@ abstract class GenericViewport<
     displaySetId: DataId
   ): TDataPresentation | undefined {
     return this.getDataPresentationState(displaySetId);
+  }
+
+  /**
+   * Content-true classification of the currently bound source data.
+   *
+   * The duck-typing capability guards (`viewportSupportsImageSlices`,
+   * `viewportSupportsVolumeId`, ...) report which methods a viewport exposes,
+   * not what it is showing, so a single generic viewport reports support for
+   * both stack and volume operations regardless of its bound content. This
+   * method answers the content question instead, derived from the mounted
+   * source binding. The base implementation only distinguishes "has bound data"
+   * from "empty"; concrete viewport families override it to report `stack`,
+   * `volume`, `volume3d`, etc. See {@link ViewportContentMode}.
+   */
+  getCurrentMode(): ViewportContentMode {
+    return this.getSourceBinding() ? 'unknown' : 'empty';
   }
 
   /**
@@ -632,7 +648,28 @@ abstract class GenericViewport<
 
     this.setDataPresentationState(displaySetId, nextPresentation);
 
+    // Notify only when the change targets a mounted dataset so that listeners
+    // (VOI/colormap UI, synchronizers) react to applied presentation changes.
+    if (this.bindings.has(displaySetId)) {
+      this.notifyDataPresentationModified(displaySetId, props);
+    }
+
     return nextPresentation;
+  }
+
+  /**
+   * Hook invoked after a per-display-set presentation update is applied through
+   * the public `setDisplaySetPresentation` path and the target display set is
+   * mounted. Concrete viewport families override this to emit their
+   * presentation-modified events (e.g. `VOI_MODIFIED`, `COLORMAP_MODIFIED`) so
+   * application UI and synchronizers can react to programmatic and tool-driven
+   * presentation changes. The base implementation is intentionally a no-op.
+   */
+  protected notifyDataPresentationModified(
+    _displaySetId: DataId,
+    _props: Partial<TDataPresentation>
+  ): void {
+    // Subclasses emit presentation-modified events; base viewports do not.
   }
 
   // ====================================================================
@@ -744,6 +781,22 @@ abstract class GenericViewport<
     | ViewportDataBinding<TDataPresentation>
     | undefined {
     return this.bindings.values().next().value;
+  }
+
+  /**
+   * Returns the active source binding (the dataset that defines the view),
+   * falling back to the first mounted binding when no explicit `source` role is
+   * present. Used for content-mode classification and source-scoped queries.
+   */
+  protected getSourceBinding():
+    | ViewportDataBinding<TDataPresentation>
+    | undefined {
+    for (const binding of this.bindings.values()) {
+      if (binding.role === 'source') {
+        return binding;
+      }
+    }
+    return this.getFirstBinding();
   }
 
   /**

@@ -124,6 +124,10 @@ import {
   viewportSupportsVolumeCompatibility,
   viewportSupportsVolumeId,
   viewportSupportsVolumeURI,
+  isGenericViewport,
+  getViewportContentMode,
+  viewportIsInVolumeMode,
+  viewportIsInStackMode,
 } from './viewportCapabilities';
 import { getNormalizedAspectRatio } from './getNormalizedAspectRatio';
 export { updatePlaneRestriction } from './updatePlaneRestriction';
@@ -248,5 +252,9 @@ export {
   viewportSupportsVolumeCompatibility,
   viewportSupportsVolumeId,
   viewportSupportsVolumeURI,
+  isGenericViewport,
+  getViewportContentMode,
+  viewportIsInVolumeMode,
+  viewportIsInStackMode,
   getNormalizedAspectRatio,
 };

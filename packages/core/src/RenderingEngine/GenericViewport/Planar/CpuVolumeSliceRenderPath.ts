@@ -219,6 +219,7 @@ export class CpuVolumeSliceRenderPath
       acquisitionOrientation: rendering.acquisitionOrientation,
       imageIds: rendering.imageIds,
       imageIdIndex: rendering.currentImageIdIndex,
+      maxImageIdIndex: rendering.maxImageIdIndex,
     });
 
     return {
@@ -538,6 +539,7 @@ export class CpuVolumeSliceRenderPath
         acquisitionOrientation: rendering.acquisitionOrientation,
         imageIds: rendering.imageIds,
         imageIdIndex: rendering.currentImageIdIndex,
+        maxImageIdIndex: rendering.maxImageIdIndex,
       });
     }
   }

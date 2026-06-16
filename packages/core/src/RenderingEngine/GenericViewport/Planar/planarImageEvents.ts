@@ -35,6 +35,7 @@ export function triggerPlanarVolumeNewImage(
     acquisitionOrientation?: PlanarViewState['orientation'];
     imageIds: string[];
     imageIdIndex: number | undefined;
+    maxImageIdIndex: number;
   }
 ): void {
   const orientation = params.camera?.orientation;
@@ -53,8 +54,19 @@ export function triggerPlanarVolumeNewImage(
       imageId: params.imageIds[params.imageIdIndex],
       imageIdIndex: params.imageIdIndex,
     });
-    return;
+  } else {
+    triggerPlanarNewImage(ctx);
   }
 
-  triggerPlanarNewImage(ctx);
+  // A volume-backed slice change must also emit VOLUME_NEW_IMAGE so that
+  // volume-aware consumers (volume scroll indicators, MPR slice synchronizers,
+  // segmentation slice tracking) react. The native volume-slice path previously
+  // emitted only STACK_NEW_IMAGE, which those consumers do not listen for, so
+  // every slice change on a PLANAR_NEXT volume viewport was missed.
+  triggerEvent(ctx.viewport.element, Events.VOLUME_NEW_IMAGE, {
+    imageIndex: params.imageIdIndex ?? 0,
+    numberOfSlices: params.maxImageIdIndex + 1,
+    viewportId: ctx.viewportId,
+    renderingEngineId: ctx.renderingEngineId,
+  });
 }

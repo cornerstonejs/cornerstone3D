@@ -18,6 +18,7 @@ import type {
   VOIRange,
   ViewReference,
   ViewReferenceSpecifier,
+  ViewportContentMode,
 } from '../../../types';
 import cache from '../../../cache/cache';
 import type { PlaneRestriction } from '../../../types/IViewport';
@@ -577,6 +578,97 @@ class PlanarViewport extends GenericViewport<
     return this.mountedData.getActiveDataId();
   }
 
+  /**
+   * Content-true classification of the bound source data for a planar viewport.
+   *
+   * A `PLANAR_NEXT` viewport renders both image-id stacks and volume slices, so
+   * its content mode is derived from the active source binding's render mode
+   * (and, as a fallback, from whether a source volume id is bound) rather than
+   * from the viewport type. Returns `empty` when no source data is mounted.
+   */
+  getCurrentMode(): ViewportContentMode {
+    const binding = this.getSourceBinding();
+
+    if (!binding) {
+      return 'empty';
+    }
+
+    const renderMode = binding.rendering.renderMode;
+
+    if (
+      renderMode === ActorRenderMode.VTK_VOLUME ||
+      renderMode === ActorRenderMode.VTK_VOLUME_SLICE ||
+      renderMode === ActorRenderMode.CPU_VOLUME
+    ) {
+      return 'volume';
+    }
+
+    if (
+      renderMode === ActorRenderMode.VTK_IMAGE ||
+      renderMode === ActorRenderMode.CPU_IMAGE
+    ) {
+      return 'stack';
+    }
+
+    // Render mode not yet resolved; fall back to bound-data inspection.
+    return this.getVolumeId() ? 'volume' : 'stack';
+  }
+
+  /**
+   * Emits the legacy-named presentation events (`VOI_MODIFIED`,
+   * `COLORMAP_MODIFIED`) when a per-display-set presentation update changes the
+   * VOI, invert, or colormap of a mounted dataset.
+   *
+   * The native presentation write path previously emitted no event, so OHIF's
+   * VOI sliders, colorbar, window-level readout, and VOI/colormap
+   * synchronizers went stale after any programmatic or tool-driven
+   * `setDisplaySetPresentation` change on a direct `PLANAR_NEXT` viewport. The
+   * legacy compatibility adapter keeps emitting `COLORMAP_MODIFIED` through its
+   * own path (which applies presentation via `setDataPresentationState`
+   * directly, not through `mergeDataPresentation`), so this hook does not
+   * double-fire for compatibility viewports.
+   */
+  protected notifyDataPresentationModified(
+    displaySetId: string,
+    props: Partial<PlanarDataPresentation>
+  ): void {
+    if (this.suppressEvents) {
+      return;
+    }
+
+    const voiTouched = 'voiRange' in props || 'invert' in props;
+    const colormapTouched = 'colormap' in props;
+
+    if (!voiTouched && !colormapTouched) {
+      return;
+    }
+
+    const presentation = this.getDisplaySetPresentation(displaySetId);
+    const volumeId = this.getVolumeId();
+
+    if (voiTouched) {
+      const range = props.voiRange ?? presentation?.voiRange;
+
+      if (range) {
+        triggerEvent(this.element, Events.VOI_MODIFIED, {
+          viewportId: this.id,
+          range,
+          volumeId,
+          invert: props.invert ?? presentation?.invert,
+          colormap: presentation?.colormap,
+        });
+      }
+    }
+
+    if (colormapTouched && props.colormap) {
+      triggerEvent(this.element, Events.COLORMAP_MODIFIED, {
+        viewportId: this.id,
+        colormap: props.colormap,
+        volumeId,
+      });
+    }
+  }
+
   getDefaultVOIRange(dataId?: string): VOIRange | undefined {
     return this.mountedData.getDefaultVOIRange(dataId);
   }
@@ -608,6 +700,22 @@ class PlanarViewport extends GenericViewport<
    */
   getSliceIndex(): number {
     return this.getCurrentImageIdIndex();
+  }
+
+  /**
+   * Returns the number of navigable slices for the current source data.
+   *
+   * For image/stack content this is the number of image ids; for volume-slice
+   * content it is the slice count along the current view direction. This is the
+   * native equivalent of the legacy stack/volume `getNumberOfSlices()` and is
+   * what `csUtils.jumpToSlice`, scroll, and image-slice synchronizers rely on
+   * for a `PLANAR_NEXT` viewport (which is not a `StackViewport`, so it takes
+   * the slice-count navigation branch).
+   *
+   * @returns The total slice count for the active source data.
+   */
+  getNumberOfSlices(): number {
+    return Math.max(this.getImageIds().length, this.getMaxImageIdIndex() + 1);
   }
 
   // ====================================================================

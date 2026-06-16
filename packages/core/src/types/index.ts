@@ -26,6 +26,8 @@ import type {
   ViewportInput,
   RenderingEngineResizeOptions,
 } from './IViewport';
+import type IGenericViewport from './IGenericViewport';
+import type { ViewportContentMode } from './IGenericViewport';
 import type {
   VolumeActor,
   Actor,
@@ -205,6 +207,8 @@ export type {
   IRegisterImageLoader,
   IStreamingVolumeProperties,
   IViewport,
+  IGenericViewport,
+  ViewportContentMode,
   ViewReference,
   DataSetOptions as ImageSetOptions,
   ViewPresentation,
