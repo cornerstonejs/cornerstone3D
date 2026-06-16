@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import { getRenderingEngine } from '@cornerstonejs/core';
+import { getRenderingEngine, utilities } from '@cornerstonejs/core';
 import type { Synchronizer } from '../../store';
 
 /**
@@ -29,6 +29,17 @@ export default function cameraSyncCallback(
 
   const tViewport = renderingEngine.getViewport(targetViewport.viewportId);
 
-  tViewport.setCamera(camera);
+  if (utilities.isGenericViewport(tViewport)) {
+    // Direct Generic ("next") viewports do not expose setCamera. Camera-position
+    // synchronization across viewports is expressed natively by copying the
+    // source viewport's spatial view reference onto the target.
+    const sViewport = renderingEngine.getViewport(sourceViewport.viewportId);
+    tViewport.setViewReference(sViewport.getViewReference());
+  } else {
+    (tViewport as Types.IStackViewport | Types.IVolumeViewport).setCamera(
+      camera
+    );
+  }
+
   tViewport.render();
 }
