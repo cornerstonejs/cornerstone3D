@@ -43,6 +43,11 @@ export type Segmentation = {
     [segmentIndex: number]: Segment;
   };
   /**
+   * Explicit segment order for display and iteration. When omitted, the
+   * normalized insertion/numeric order is used.
+   */
+  segmentOrder?: number[];
+  /**
    * Representations of the segmentation. Each segmentation "can" be viewed
    * in various representations. For instance, if a DICOM SEG is loaded, the main
    * representation is the labelmap. However, for DICOM RT the main representation
@@ -63,6 +68,7 @@ export type LabelmapRenderingConfig = {
   colorLUTIndex: number;
   // segmentation blend mode if desired
   blendMode?: coreEnums.BlendModes;
+  useSliceRendering?: boolean;
 };
 
 export type ContourRenderingConfig = {};
@@ -127,6 +133,7 @@ export type SegmentationPublicInput = {
     segments?: {
       [segmentIndex: number]: Partial<Segment>;
     };
+    segmentOrder?: number[];
     label?: string;
     fallbackLabel?: string;
     // segmentation level stats
@@ -144,5 +151,6 @@ export type RepresentationPublicInput = {
   config?: {
     colorLUTOrIndex?: Types.ColorLUT | number;
     blendMode?: coreEnums.BlendModes;
+    useSliceRendering?: boolean;
   };
 };

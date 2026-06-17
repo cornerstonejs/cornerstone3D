@@ -1,4 +1,4 @@
-import { getEnabledElementByViewportId } from '@cornerstonejs/core';
+import { getEnabledElementByViewportId, utilities } from '@cornerstonejs/core';
 import type {
   RenderingConfig,
   RepresentationPublicInput,
@@ -82,9 +82,7 @@ function getColorLUTIndex(config: RepresentationPublicInput['config']): number {
 
   // If no colorLUTOrIndex provided, get next available index and add default LUT
   if (colorLUTOrIndex === undefined) {
-    const index = addColorLUT(
-      JSON.parse(JSON.stringify(CORNERSTONE_COLOR_LUT))
-    );
+    const index = addColorLUT(utilities.deepClone(CORNERSTONE_COLOR_LUT));
     return index;
   }
 
@@ -103,7 +101,7 @@ function getColorLUTIndex(config: RepresentationPublicInput['config']): number {
   }
 
   // Fallback: use default LUT with next available index
-  const index = addColorLUT(JSON.parse(JSON.stringify(CORNERSTONE_COLOR_LUT)));
+  const index = addColorLUT(utilities.deepClone(CORNERSTONE_COLOR_LUT));
   return index;
 }
 

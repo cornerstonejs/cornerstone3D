@@ -1,5 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import * as metaData from '../metaData';
+import { MetadataModules } from '../enums';
 import { getConfiguration } from '../init';
 
 /**
@@ -46,7 +47,7 @@ export default function calculateSpacingBetweenImageIds(
   const {
     imagePositionPatient: referenceImagePositionPatient,
     imageOrientationPatient,
-  } = metaData.get('imagePlaneModule', imageIds[0]);
+  } = metaData.get(MetadataModules.IMAGE_PLANE, imageIds[0]);
 
   if (imageIds.length === 1) {
     const {
@@ -55,7 +56,7 @@ export default function calculateSpacingBetweenImageIds(
       columnPixelSpacing,
       rowPixelSpacing,
       pixelSpacing,
-    } = metaData.get('imagePlaneModule', imageIds[0]);
+    } = metaData.get(MetadataModules.IMAGE_PLANE, imageIds[0]);
 
     if (sliceThickness) return sliceThickness;
     if (spacingBetweenSlices) return spacingBetweenSlices;
@@ -99,7 +100,10 @@ export default function calculateSpacingBetweenImageIds(
   let spacing: number;
 
   function getDistance(imageId: string) {
-    const { imagePositionPatient } = metaData.get('imagePlaneModule', imageId);
+    const { imagePositionPatient } = metaData.get(
+      MetadataModules.IMAGE_PLANE,
+      imageId
+    );
     const positionVector = vec3.create();
 
     // Convert imagePositionPatient to vec3
@@ -144,7 +148,7 @@ export default function calculateSpacingBetweenImageIds(
     ];
 
     const metadataForMiddleImage = metaData.get(
-      'imagePlaneModule',
+      MetadataModules.IMAGE_PLANE,
       prefetchedImageIds[1]
     );
 
@@ -177,7 +181,7 @@ export default function calculateSpacingBetweenImageIds(
     columnPixelSpacing,
     rowPixelSpacing,
     pixelSpacing,
-  } = metaData.get('imagePlaneModule', imageIds[0]);
+  } = metaData.get(MetadataModules.IMAGE_PLANE, imageIds[0]);
 
   const { strictZSpacingForVolumeViewport } = getConfiguration().rendering;
 

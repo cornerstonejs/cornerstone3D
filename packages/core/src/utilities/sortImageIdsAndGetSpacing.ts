@@ -1,5 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import * as metaData from '../metaData';
+import { MetadataModules } from '../enums';
 import calculateSpacingBetweenImageIds from './calculateSpacingBetweenImageIds';
 import type { Point3 } from '../types';
 
@@ -24,7 +25,7 @@ export default function sortImageIdsAndGetSpacing(
   const {
     imagePositionPatient: referenceImagePositionPatient,
     imageOrientationPatient,
-  } = metaData.get('imagePlaneModule', imageIds[0]);
+  } = metaData.get(MetadataModules.IMAGE_PLANE, imageIds[0]);
 
   if (!scanAxisNormal) {
     const rowCosineVec = vec3.fromValues(
@@ -50,7 +51,10 @@ export default function sortImageIdsAndGetSpacing(
   let sortedImageIds: string[];
 
   function getDistance(imageId: string) {
-    const { imagePositionPatient } = metaData.get('imagePlaneModule', imageId);
+    const { imagePositionPatient } = metaData.get(
+      MetadataModules.IMAGE_PLANE,
+      imageId
+    );
 
     const positionVector = vec3.create();
 
@@ -99,7 +103,7 @@ export default function sortImageIdsAndGetSpacing(
   }
 
   const { imagePositionPatient: origin } = metaData.get(
-    'imagePlaneModule',
+    MetadataModules.IMAGE_PLANE,
     sortedImageIds[0]
   );
 

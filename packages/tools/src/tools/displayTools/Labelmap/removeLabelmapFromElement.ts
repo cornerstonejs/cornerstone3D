@@ -1,5 +1,5 @@
 import { getEnabledElement } from '@cornerstonejs/core';
-import { getLabelmapActorEntries } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
+import { removeLabelmapRepresentationFromViewport } from './labelmapRenderPlan';
 
 /**
  * Remove the labelmap segmentation representation from the viewport's HTML Element.
@@ -17,10 +17,7 @@ function removeLabelmapFromElement(
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;
 
-  const actorEntries = getLabelmapActorEntries(viewport.id, segmentationId);
-  if (actorEntries?.length) {
-    viewport.removeActors(actorEntries.map((entry) => entry.uid));
-  }
+  removeLabelmapRepresentationFromViewport(viewport, segmentationId);
 }
 
 export default removeLabelmapFromElement;

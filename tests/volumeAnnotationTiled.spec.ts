@@ -1,7 +1,7 @@
 import { test } from 'playwright-test-coverage';
 import {
   visitExample,
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   screenShotPaths,
   simulateDrag,
 } from './utils/index';
@@ -15,10 +15,11 @@ test.describe('Volume Annotation Tools - Tiled', async () => {
   test('should draw a length measurement on the viewport', async ({ page }) => {
     const locator = page.locator('.cornerstone-canvas').nth(0);
     await simulateDrag(page, locator);
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      locator,
-      screenShotPaths.volumeAnnotationTiled.lengthTool
+      '',
+      screenShotPaths.volumeAnnotationTiled.lengthTool,
+      0
     );
   });
 });

@@ -2,16 +2,8 @@ import { eventTarget, type Types } from '@cornerstonejs/core';
 import { Events, SegmentationRepresentations } from '../../enums';
 import { triggerSegmentationModified } from './triggerSegmentationEvents';
 import debounce from '../../utilities/debounce';
-import surfaceDisplay from '../../tools/displayTools/Surface/surfaceDisplay';
-import contourDisplay from '../../tools/displayTools/Contour/contourDisplay';
-import labelmapDisplay from '../../tools/displayTools/Labelmap/labelmapDisplay';
 import { getSegmentation } from './getSegmentation';
-
-const renderers = {
-  [SegmentationRepresentations.Labelmap]: labelmapDisplay,
-  [SegmentationRepresentations.Contour]: contourDisplay,
-  [SegmentationRepresentations.Surface]: surfaceDisplay,
-};
+import { getSegmentationRepresentationDisplay } from './SegmentationRepresentationDisplayRegistry';
 
 /**
  * Tracks event listeners for each segmentation and representation type.
@@ -33,7 +25,9 @@ export function addDefaultSegmentationListener(
   representationType: SegmentationRepresentations
 ) {
   const updateFunction =
-    renderers[representationType].getUpdateFunction(viewport);
+    getSegmentationRepresentationDisplay(representationType)?.getUpdateFunction(
+      viewport
+    );
   if (updateFunction) {
     addSegmentationListener(segmentationId, representationType, updateFunction);
   }

@@ -28,6 +28,7 @@ import {
 
 import { getSegmentation } from '../../stateManagement/segmentation/segmentationState';
 import LabelmapBaseTool from './LabelmapBaseTool';
+import getViewportICamera from '../../utilities/getViewportICamera';
 import getEllipseWorldCoordinates from '../../utilities/getEllipseWorldCoordinates';
 import { getCenterAndRadiusInCanvas } from '../../utilities/getCenterAndRadiusInCanvas';
 
@@ -108,8 +109,14 @@ class SphereScissorsTool extends LabelmapBaseTool {
 
     this.isDrawing = true;
 
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const { viewPlaneNormal, viewUp } = camera;
+
+    if (!viewPlaneNormal || !viewUp) {
+      throw new Error(
+        'Unable to resolve viewport view plane for scissors tool'
+      );
+    }
 
     const activeSegmentationRepresentation =
       activeSegmentation.getActiveSegmentation(viewport.id);

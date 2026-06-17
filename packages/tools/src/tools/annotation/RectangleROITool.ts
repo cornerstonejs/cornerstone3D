@@ -47,6 +47,7 @@ import type {
 import type { RectangleROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
+import { viewportSupportsImageSlices } from '../../utilities/viewportCapabilities';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
@@ -674,7 +675,9 @@ class RectangleROITool extends AnnotationTool {
           // at the referencedImageId
           for (const targetId in data.cachedStats) {
             if (targetId.startsWith('imageId')) {
-              const viewports = renderingEngine.getStackViewports();
+              const viewports = renderingEngine
+                .getViewports()
+                .filter(viewportSupportsImageSlices);
 
               const invalidatedStack = viewports.find((vp) => {
                 // The stack viewport that contains the imageId but is not
