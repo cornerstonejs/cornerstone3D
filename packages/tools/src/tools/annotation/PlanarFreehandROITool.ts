@@ -701,7 +701,8 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       return;
     }
 
-    if (annotation.invalidated) {
+    const { data } = annotation as PlanarFreehandROIAnnotation;
+    if (annotation.invalidated || !data.cachedStats[targetId]) {
       this._calculateStatsIfActive(
         annotation,
         targetId,
@@ -723,7 +724,13 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     renderingEngine,
     enabledElement
   ) {
-    const activeAnnotationUID = this.commonData?.annotation.annotationUID;
+    //Avoid crash at the begining of drawing
+    const polylinePoints = annotation.data?.contour?.polyline;
+    if (!polylinePoints || polylinePoints.length < 3) {
+      return;
+    }
+
+    const activeAnnotationUID = this.commonData?.annotation?.annotationUID;
 
     if (
       annotation.annotationUID === activeAnnotationUID &&
@@ -773,9 +780,15 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     const { polyline: points, closed } = data.contour;
 
     const targetIds = Object.keys(cachedStats);
+    const currentTargetId = this.getTargetId(viewport);
 
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
+
+      if (targetId !== currentTargetId) {
+        continue;
+      }
+
       const image = this.getTargetImageData(targetId);
 
       // If image does not exists for the targetId, skip. This can be due
