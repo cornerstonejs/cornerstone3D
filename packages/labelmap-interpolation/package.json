@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/labelmap-interpolation",
-  "version": "5.0.9",
+  "version": "5.0.10",
   "description": "Labelmap Interpolation utility for Cornerstone3D",
   "files": [
     "dist"
@@ -55,12 +55,12 @@
     "itk-wasm": "1.0.0-b.165"
   },
   "devDependencies": {
-    "@cornerstonejs/core": "5.0.9",
-    "@cornerstonejs/tools": "5.0.9"
+    "@cornerstonejs/core": "5.0.10",
+    "@cornerstonejs/tools": "5.0.10"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "5.0.9",
-    "@cornerstonejs/tools": "5.0.9",
+    "@cornerstonejs/core": "5.0.10",
+    "@cornerstonejs/tools": "5.0.10",
     "@kitware/vtk.js": "35.5.3"
   }
 }
