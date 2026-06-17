@@ -3,9 +3,10 @@ import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
-import { InterpolationType } from '../../enums';
+import { InterpolationType, VOILUTFunctionType } from '../../enums';
 import type { ColormapPublic, IImage, Point3, VOIRange } from '../../types';
 import createLinearRGBTransferFunction from '../../utilities/createLinearRGBTransferFunction';
+import createSigmoidRGBTransferFunction from '../../utilities/createSigmoidRGBTransferFunction';
 import getVOIRangeFromWindowLevel from '../../utilities/getVOIRangeFromWindowLevel';
 import { getImageDataMetadata } from '../../utilities/getImageDataMetadata';
 import invertRgbTransferFunction from '../../utilities/invertRgbTransferFunction';
@@ -26,6 +27,7 @@ export interface PlanarImagePresentation {
   interpolationType?: InterpolationType;
   colormap?: ColormapPublic;
   voiRange?: VOIRange;
+  voiLUTFunction?: VOILUTFunctionType;
   invert?: boolean;
 }
 
@@ -116,9 +118,10 @@ export function getPlanarCameraState(renderer: vtkRenderer): PlanarCameraState {
 export function applyPlanarImagePresentation(args: {
   actor: vtkImageSlice;
   defaultVOIRange?: VOIRange;
+  defaultVOILUTFunction?: VOILUTFunctionType;
   props?: PlanarImagePresentation;
 }): void {
-  const { actor, defaultVOIRange, props } = args;
+  const { actor, defaultVOIRange, defaultVOILUTFunction, props } = args;
   const property = actor.getProperty();
   const voiRange = props?.voiRange ?? defaultVOIRange;
 
@@ -146,6 +149,7 @@ export function applyPlanarImagePresentation(args: {
     colormap: props?.colormap,
     invert: props?.invert,
     voiRange,
+    voiLUTFunction: props?.voiLUTFunction ?? defaultVOILUTFunction,
   });
 
   property.setUseLookupTableScalarRange(true);
@@ -156,12 +160,15 @@ export function createPlanarRGBTransferFunction(args: {
   colormap?: ColormapPublic;
   invert?: boolean;
   voiRange: VOIRange;
+  voiLUTFunction?: VOILUTFunctionType;
 }): vtkColorTransferFunction {
-  const { colormap, invert, voiRange } = args;
+  const { colormap, invert, voiRange, voiLUTFunction } = args;
   const transferFunction =
     colormap?.name !== undefined
       ? createColormapTransferFunction(colormap, voiRange)
-      : createLinearRGBTransferFunction(voiRange);
+      : voiLUTFunction === VOILUTFunctionType.SAMPLED_SIGMOID
+        ? createSigmoidRGBTransferFunction(voiRange)
+        : createLinearRGBTransferFunction(voiRange);
 
   if (invert) {
     invertRgbTransferFunction(transferFunction);

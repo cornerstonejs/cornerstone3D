@@ -25,6 +25,7 @@ import type {
   VtkOffscreenMultiRenderWindow,
 } from '../types';
 import { getViewportClassForInput } from './helpers/viewportTypeToViewportClass';
+import { isGenericViewport } from '../utilities/viewportCapabilities';
 
 /**
  * ContextPoolRenderingEngine extends BaseRenderingEngine to provide parallel rendering
@@ -199,6 +200,31 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
   }
 
   /**
+   * Returns the displayed size (in device pixels) of a viewport's container.
+   *
+   * For native Generic ("next") viewports the on-screen canvas returned by
+   * getOrCreateCanvas (the .cornerstone-canvas / VTK target) can report
+   * clientWidth/Height === 0 when the CPU render path is active and that canvas
+   * is hidden in favor of the CPU canvas. Measuring from the viewport element
+   * instead always reflects the real container size, so native viewports are
+   * detected on container resize and their resize() (which refits the active
+   * CPU/VTK canvas) actually runs. Legacy viewports keep measuring their canvas.
+   */
+  private _getDisplayedSize(vp: IViewport): {
+    displayedWidth: number;
+    displayedHeight: number;
+  } {
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const sizeSource = isGenericViewport(vp)
+      ? vp.element
+      : getOrCreateCanvas(vp.element);
+    return {
+      displayedWidth: Math.round(sizeSource.clientWidth * devicePixelRatio),
+      displayedHeight: Math.round(sizeSource.clientHeight * devicePixelRatio),
+    };
+  }
+
+  /**
    * Resizes viewports that use VTK.js for rendering.
    * Only updates the VTK offscreen size when the displayed size (canvas client size in device pixels)
    * differs from the current rendered size (canvas.width/height). The on-screen canvas dimensions
@@ -211,16 +237,11 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     keepCamera = true,
     immediate = true
   ) {
-    const devicePixelRatio = window.devicePixelRatio || 1;
-
     // Compute target display size (pixels the canvas is actually displayed at) for each viewport
     const viewportsNeedingResize: (IStackViewport | IVolumeViewport)[] = [];
     for (const vp of vtkDrivenViewports) {
       const canvas = getOrCreateCanvas(vp.element);
-      const displayedWidth = Math.round(canvas.clientWidth * devicePixelRatio);
-      const displayedHeight = Math.round(
-        canvas.clientHeight * devicePixelRatio
-      );
+      const { displayedWidth, displayedHeight } = this._getDisplayedSize(vp);
 
       if (displayedWidth === 0 || displayedHeight === 0) {
         continue;
@@ -242,11 +263,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     }
 
     for (const vp of viewportsNeedingResize) {
-      const canvas = getOrCreateCanvas(vp.element);
-      const displayedWidth = Math.round(canvas.clientWidth * devicePixelRatio);
-      const displayedHeight = Math.round(
-        canvas.clientHeight * devicePixelRatio
-      );
+      const { displayedWidth, displayedHeight } = this._getDisplayedSize(vp);
       const targetWidth = Math.max(VIEWPORT_MIN_SIZE, displayedWidth);
       const targetHeight = Math.max(VIEWPORT_MIN_SIZE, displayedHeight);
 
@@ -264,6 +281,14 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
     vtkDrivenViewports.forEach((vp) => {
       vp.resize?.();
+
+      if (isGenericViewport(vp)) {
+        // Generic ("next") viewports (PlanarViewport / PLANAR_NEXT) refit
+        // inside their own resize() (recompute fitScale + reapply presentation
+        // with scaleMode 'fit') and do NOT expose the legacy getCamera/setCamera/
+        // setViewPresentation surface. Skip the legacy snapshot/restore dance.
+        return;
+      }
 
       const prevCamera = vp.getCamera();
       const rotation = vp.getRotation?.() ?? 0;

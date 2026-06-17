@@ -4,6 +4,7 @@ import type {
   BlendModes,
   InterpolationType,
   OrientationAxis,
+  VOILUTFunctionType,
 } from '../../../enums';
 import type {
   ActorEntry,
@@ -108,6 +109,7 @@ export interface PlanarPayload {
 export interface PlanarPresentationProps extends BasePresentationProps {
   colormap?: ColormapPublic;
   voiRange?: VOIRange;
+  voiLUTFunction?: VOILUTFunctionType;
   invert?: boolean;
 }
 

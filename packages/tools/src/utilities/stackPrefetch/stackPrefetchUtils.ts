@@ -1,5 +1,6 @@
-import { getEnabledElement, StackViewport, Enums } from '@cornerstonejs/core';
+import { getEnabledElement, Enums, utilities } from '@cornerstonejs/core';
 import { getToolState } from './state';
+import { viewportSupportsImageSlices } from '../viewportCapabilities';
 
 export const requestType = Enums.RequestType.Prefetch;
 export const priority = 0;
@@ -51,7 +52,10 @@ export function getStackData(element) {
 
   const { viewport } = enabledElement;
 
-  if (!(viewport instanceof StackViewport)) {
+  if (
+    !viewportSupportsImageSlices(viewport) ||
+    utilities.viewportIsInVolumeMode(viewport)
+  ) {
     // we shouldn't throw error here, since the viewport might have
     // changed from stack to volume during prefetch
     return null;

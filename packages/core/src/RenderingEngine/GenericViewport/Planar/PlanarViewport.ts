@@ -403,6 +403,15 @@ class PlanarViewport extends GenericViewport<
     this.setDefaultDataPresentation(dataId, {
       visible: true,
     });
+
+    if (role === 'source') {
+      // Emit an initial CAMERA_MODIFIED for the source binding only, mirroring
+      // legacy StackViewport's first-image triggerCameraEvent. Overlays and
+      // orientation markers paint their first frame off this event. Trigger the
+      // event directly rather than routing through modified() to avoid a
+      // redundant render (addLoadedData already rendered).
+      this.triggerCameraModifiedEvent(this.getCameraForEvent());
+    }
   }
 
   /**

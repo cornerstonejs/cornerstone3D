@@ -133,6 +133,7 @@ export class VtkImageMapperRenderPath
     applyPlanarImagePresentation({
       actor: rendering.actor,
       defaultVOIRange: rendering.defaultVOIRange,
+      defaultVOILUTFunction: rendering.currentImage?.voiLUTFunction,
       props: {
         interpolationType: InterpolationType.LINEAR,
         ...dataPresentation,
@@ -375,6 +376,7 @@ async function updateRenderedImage(args: {
   applyPlanarImagePresentation({
     actor,
     defaultVOIRange: rendering.defaultVOIRange,
+    defaultVOILUTFunction: image.voiLUTFunction,
     props: {
       interpolationType:
         dataPresentation?.interpolationType ?? InterpolationType.LINEAR,
