@@ -100,12 +100,17 @@ export function getLabelmapActorEntries(
  */
 export function getLabelmapActorEntry(
   viewportId: string,
-  segmentationId: string
+  segmentationId: string,
+  referencedId?: string
 ) {
-  return getActorEntry(viewportId, segmentationId, (actor) =>
-    (actor.representationUID as string)?.startsWith(
-      `${segmentationId}-${SegmentationRepresentations.Labelmap}`
-    )
+  return getActorEntry(
+    viewportId,
+    segmentationId,
+    (actor) =>
+      (actor.representationUID as string)?.startsWith(
+        `${segmentationId}-${SegmentationRepresentations.Labelmap}`
+      ) &&
+      (!referencedId || actor.referencedId === referencedId)
   );
 }
 

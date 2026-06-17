@@ -1,0 +1,89 @@
+{
+  "name": "@cornerstonejs/utils",
+  "version": "5.0.8",
+  "description": "Cornerstone3D shared utility helpers",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "repository": "https://github.com/cornerstonejs/cornerstone3D",
+  "files": [
+    "./dist/"
+  ],
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "node": "./dist/esm/index.js",
+      "types": "./dist/esm/index.d.ts"
+    },
+    "./utilities": {
+      "import": "./dist/esm/utilities/index.js",
+      "node": "./dist/esm/utilities/index.js",
+      "types": "./dist/esm/utilities/index.d.ts"
+    },
+    "./utilities/object": {
+      "import": "./dist/esm/utilities/object/index.js",
+      "node": "./dist/esm/utilities/object/index.js",
+      "types": "./dist/esm/utilities/object/index.d.ts"
+    },
+    "./utilities/object/*": {
+      "import": "./dist/esm/utilities/object/*.js",
+      "node": "./dist/esm/utilities/object/*.js",
+      "types": "./dist/esm/utilities/object/*.d.ts"
+    },
+    "./utilities/math": {
+      "import": "./dist/esm/utilities/math/index.js",
+      "node": "./dist/esm/utilities/math/index.js",
+      "types": "./dist/esm/utilities/math/index.d.ts"
+    },
+    "./utilities/math/*": {
+      "import": "./dist/esm/utilities/math/*.js",
+      "node": "./dist/esm/utilities/math/*.js",
+      "types": "./dist/esm/utilities/math/*.d.ts"
+    },
+    "./utilities/logging": {
+      "import": "./dist/esm/utilities/logging/index.js",
+      "node": "./dist/esm/utilities/logging/index.js",
+      "types": "./dist/esm/utilities/logging/index.d.ts"
+    },
+    "./utilities/logging/*": {
+      "import": "./dist/esm/utilities/logging/*.js",
+      "node": "./dist/esm/utilities/logging/*.js",
+      "types": "./dist/esm/utilities/logging/*.d.ts"
+    },
+    "./version": {
+      "import": "./dist/esm/version.js",
+      "node": "./dist/esm/version.js",
+      "types": "./dist/esm/version.d.ts"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "prebuild": "node ../../scripts/generate-version.js ./",
+    "build:esm": "pnpm run prebuild && tsc --project ./tsconfig.json",
+    "build:esm:watch": "tsc --project ./tsconfig.json --watch",
+    "clean": "rm -rf node_modules/.cache/storybook && shx rm -rf dist",
+    "clean:deep": "pnpm run clean && shx rm -rf node_modules",
+    "build": "pnpm run build:esm",
+    "build:all": "pnpm run build:esm",
+    "dev": "tsc --project ./tsconfig.json --watch",
+    "api-check": "api-extractor --debug run",
+    "lint": "oxlint .",
+    "prepublishOnly": "pnpm run build"
+  },
+  "dependencies": {
+    "dcmjs": "0.50.1"
+  },
+  "contributors": [
+    {
+      "name": "Cornerstone.js Contributors",
+      "url": "https://github.com/orgs/cornerstonejs/people"
+    }
+  ],
+  "license": "MIT",
+  "funding": {
+    "type": "individual",
+    "url": "https://ohif.org/donate"
+  }
+}

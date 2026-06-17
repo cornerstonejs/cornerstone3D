@@ -48,7 +48,7 @@ setTitleAndDescription(
   'Here we demonstrate how to use the Planar Freehand Annotation Tool to draw 2D open and closed ROIs'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 

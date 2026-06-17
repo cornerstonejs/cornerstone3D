@@ -1,9 +1,10 @@
 import { test } from 'playwright-test-coverage';
 import {
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   visitExample,
   screenShotPaths,
   simulateDrawPath,
+  getVisibleViewportCanvas,
 } from '../utils/index';
 import { leftArmContour } from './utils/constants';
 import locatorToPageCoord from '../utils/locatorToPageCoord';
@@ -22,7 +23,7 @@ test('Stack Segmentation - Dynamic Threshold Tool - Initial Highlight', async ({
   await page.getByRole('combobox').first().selectOption('DynamicThreshold');
   await page.getByRole('slider').fill('25');
 
-  const canvas = await page.locator('canvas').first();
+  const canvas = getVisibleViewportCanvas(page, 0);
   const canvasPoint = leftArmContour[0];
   const pagePoint = await locatorToPageCoord(canvas, canvasPoint);
 
@@ -30,10 +31,12 @@ test('Stack Segmentation - Dynamic Threshold Tool - Initial Highlight', async ({
   await pause(1000);
 
   await page.waitForTimeout(1500);
-  await checkForScreenshot(
+  await checkForCanvasSnapshot(
     page,
-    canvas,
-    screenShotPaths.stackSegmentation.dynamicThresholdInitialHighlightedPixels
+    '',
+    screenShotPaths.stackSegmentation.dynamicThresholdInitialHighlightedPixels,
+    0,
+    { threshold: 0.01, maxDiffPixelRatio: 0.1 }
   );
 });
 
@@ -45,7 +48,7 @@ test('Stack Segmentation - Dynamic Threshold Tool - Highlight Contour', async ({
   await page.getByRole('combobox').first().selectOption('DynamicThreshold');
   await page.getByRole('slider').fill('25');
 
-  const canvas = await page.locator('canvas').first();
+  const canvas = getVisibleViewportCanvas(page, 0);
 
   await simulateDrawPath(page, canvas, leftArmContour, {
     interpolateSteps: true,
@@ -53,10 +56,12 @@ test('Stack Segmentation - Dynamic Threshold Tool - Highlight Contour', async ({
 
   await page.waitForTimeout(1500);
 
-  await checkForScreenshot(
+  await checkForCanvasSnapshot(
     page,
-    canvas,
-    screenShotPaths.stackSegmentation.dynamicThresholdHighlightedContour
+    '',
+    screenShotPaths.stackSegmentation.dynamicThresholdHighlightedContour,
+    0,
+    { threshold: 0.01, maxDiffPixelRatio: 0.1 }
   );
 });
 
@@ -68,7 +73,7 @@ test('Stack Segmentation - Dynamic Threshold Tool - Confirm Contour', async ({
   await page.getByRole('combobox').first().selectOption('DynamicThreshold');
   await page.getByRole('slider').fill('25');
 
-  const canvas = await page.locator('canvas').first();
+  const canvas = getVisibleViewportCanvas(page, 0);
 
   await simulateDrawPath(page, canvas, leftArmContour, {
     interpolateSteps: true,
@@ -78,9 +83,11 @@ test('Stack Segmentation - Dynamic Threshold Tool - Confirm Contour', async ({
 
   await page.waitForTimeout(1500);
 
-  await checkForScreenshot(
+  await checkForCanvasSnapshot(
     page,
-    canvas,
-    screenShotPaths.stackSegmentation.dynamicThresholdConfirmedContour
+    '',
+    screenShotPaths.stackSegmentation.dynamicThresholdConfirmedContour,
+    0,
+    { threshold: 0.01, maxDiffPixelRatio: 0.1 }
   );
 });
