@@ -311,7 +311,7 @@ function createPointInEllipse(
   if (!cornersInWorld || cornersInWorld.length !== 4) {
     throw new Error('createPointInEllipse: cornersInWorld must have 4 points');
   }
-  const [topLeft, bottomRight, bottomLeft, topRight] = cornersInWorld;
+  const [topLeft, bottomRight, , topRight] = cornersInWorld;
 
   const aspectRatio = options.aspectRatio || [1, 1];
   const segmentationImageData = options.segmentationImageData;
@@ -343,16 +343,11 @@ function createPointInEllipse(
   vec3.scale(center, center, 0.5);
 
   // Calculate a SINGLE original radius to ensure the base shape is a circle.
-  // We'll use the width (major axis) as the definitive diameter.
+  // We'll use the width (major axis) as the definitive diameter. Only the
+  // length is needed here; the in-plane directions come from viewRight/viewUp.
   const majorAxisVec = vec3.create();
   vec3.subtract(majorAxisVec, topRight, topLeft);
   const originalRadius = vec3.length(majorAxisVec) / 2;
-  vec3.normalize(majorAxisVec, majorAxisVec); // This is the 'X' direction vector
-
-  // We still need the minor axis for its direction, but not its length.
-  const minorAxisVec = vec3.create();
-  vec3.subtract(minorAxisVec, bottomLeft, topLeft);
-  vec3.normalize(minorAxisVec, minorAxisVec); // This is the 'Y' direction vector
 
   //Apply the inverse aspect ratio stretch CORRECTLY and ALWAYS the same way.
   // To counteract the viewport's stretching and make the shape appear circular,

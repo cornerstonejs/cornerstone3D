@@ -1,8 +1,7 @@
 import { vec3 } from 'gl-matrix';
-import { utilities as csUtils, StackViewport } from '@cornerstonejs/core';
-import type { Types, BaseVolumeViewport } from '@cornerstonejs/core';
+import { utilities as csUtils } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 
-import type { LabelmapToolOperationData } from '../../../types';
 import BrushStrategy from './BrushStrategy';
 import type { Composition, InitializedOperationData } from './BrushStrategy';
 import { StrategyCallbacks } from '../../../enums';
@@ -11,15 +10,74 @@ import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 
 const { transformWorldToIndex } = csUtils;
 
-type OperationData = LabelmapToolOperationData & {
-  points: [Types.Point3, Types.Point3, Types.Point3, Types.Point3];
-};
+/**
+ * Orders the (coplanar) rectangle corners into a consistent winding order so
+ * the in-plane axes can be reconstructed reliably on any view orientation.
+ *
+ * An in-plane 2D basis (e1, e2) is derived from the corners themselves: e1 is
+ * the longest centroid-to-corner vector, the plane normal is the largest cross
+ * product of e1 with the other radials, and e2 = normal × e1. The corners are
+ * then sorted by their polar angle in that basis, which yields a
+ * non-self-intersecting winding regardless of how the plane is oriented in
+ * world space. The winding direction (CW vs CCW) is not canonicalized; callers
+ * must treat the two in-plane axes symmetrically.
+ */
+export function orderRectangleCorners(pts: Types.Point3[]): Types.Point3[] {
+  if (pts.length < 3) {
+    return [...pts];
+  }
+
+  const center = vec3.create();
+  pts.forEach((p) => vec3.add(center, center, p));
+  vec3.scale(center, center, 1 / pts.length);
+
+  // Vectors from the centroid to each corner.
+  const radials = pts.map((p) => vec3.subtract(vec3.create(), p, center));
+
+  // First in-plane axis: the longest radial. For a real rectangle this is
+  // always non-degenerate, and it lives in the plane by construction.
+  let axisInPlane = radials[0];
+  let maxLenSq = vec3.squaredLength(axisInPlane);
+  for (const radial of radials) {
+    const lenSq = vec3.squaredLength(radial);
+    if (lenSq > maxLenSq) {
+      maxLenSq = lenSq;
+      axisInPlane = radial;
+    }
+  }
+  const e1 = vec3.normalize(vec3.create(), axisInPlane);
+
+  // Plane normal: the cross product of e1 with the most independent radial
+  // (the one yielding the largest cross product magnitude).
+  const normal = vec3.create();
+  const candidate = vec3.create();
+  for (const radial of radials) {
+    vec3.cross(candidate, e1, radial);
+    if (vec3.squaredLength(candidate) > vec3.squaredLength(normal)) {
+      vec3.copy(normal, candidate);
+    }
+  }
+  vec3.normalize(normal, normal);
+
+  // Second in-plane axis, orthogonal to e1 within the plane.
+  const e2 = vec3.normalize(
+    vec3.create(),
+    vec3.cross(vec3.create(), normal, e1)
+  );
+
+  return [...pts].sort((a, b) => {
+    const ra = vec3.subtract(vec3.create(), a, center);
+    const rb = vec3.subtract(vec3.create(), b, center);
+    const angleA = Math.atan2(vec3.dot(ra, e2), vec3.dot(ra, e1));
+    const angleB = Math.atan2(vec3.dot(rb, e2), vec3.dot(rb, e1));
+    return angleA - angleB;
+  });
+}
 
 const initializeRectangle = {
   [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
     const {
       points, // bottom, top, left, right
-      viewport,
       segmentationImageData,
     } = operationData;
 
@@ -40,18 +98,8 @@ const initializeRectangle = {
       center as Types.Point3
     );
 
-    // 2. Find the extent of the ellipse (circle) in IJK index space of the image
-
-    // const { boundsIJK, pointInShapeFn } = createPointInRectangle(
-    //   viewport,
-    //   points,
-    //   segmentationImageData
-    // );
-    // segmentationVoxelManager.boundsIJK = boundsIJK;
-    // imageVoxelManager.isInObject = pointInShapeFn;
-
+    // Find the extent of the rectangle in IJK index space of the image.
     const { boundsIJK, pointInShapeFn } = createPointInRectangle(
-      viewport as BaseVolumeViewport,
       points,
       segmentationImageData
     );
@@ -62,33 +110,12 @@ const initializeRectangle = {
 } as Composition;
 
 function createPointInRectangle(
-  viewport: BaseVolumeViewport,
   points: Types.Point3[],
   segmentationImageData: vtkImageData
 ) {
-  /**
-   * Ensure stable rectangle ordering.
-   * Prevents incorrect axis construction on rotated views.
-   */
-  function orderPoints(pts: Types.Point3[]) {
-    const center = vec3.create();
+  const orderedPoints = orderRectangleCorners(points);
 
-    pts.forEach((p) => vec3.add(center, center, p));
-
-    vec3.scale(center, center, 1 / pts.length);
-
-    return [...pts].sort((a, b) => {
-      const angleA = Math.atan2(a[1] - center[1], a[0] - center[0]);
-
-      const angleB = Math.atan2(b[1] - center[1], b[0] - center[0]);
-
-      return angleA - angleB;
-    });
-  }
-
-  const orderedPoints = orderPoints(points);
-
-  const [p0, p1, p2, p3] = orderedPoints;
+  const [p0, p1, , p3] = orderedPoints;
 
   // Convert rectangle corners to IJK.
   const rectangleCornersIJK = orderedPoints.map((world) =>
