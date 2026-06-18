@@ -42,8 +42,14 @@ export default function voiSyncCallback(
   if (options?.syncInvertState && invertStateChanged) {
     tProperties.invert = invert;
   }
-  if (options?.syncColormap && colormap) {
-    tProperties.colormap = colormap;
+  if (options?.syncColormap && colormap?.name) {
+    // Only synchronize the colormap identity (its name). Opacity and threshold are per-volume
+    // properties already applied from the hanging protocol; re-propagating them here re-applies a
+    // *scalar* opacity to the target — getColormap falls back to getMaxOpacity, and setThreshold
+    // rebuilds the opacity function via getMaxOpacity — which collapses a fusion {value,opacity}[]
+    // array to a single value. That turns the transparent (value 0 -> opacity 0) background opaque
+    // on the synced viewports (OHIF #2633: TMTV fusion background color inconsistency).
+    tProperties.colormap = { name: colormap.name };
   }
 
   if (tViewport instanceof BaseVolumeViewport) {
