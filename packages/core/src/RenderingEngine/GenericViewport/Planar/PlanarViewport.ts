@@ -11,6 +11,7 @@ import type {
   ICamera,
   IImage,
   IStackInput,
+  ImageActor,
   OrientationVectors,
   Point2,
   Point3,
@@ -20,6 +21,7 @@ import type {
   ViewReferenceSpecifier,
   ViewportContentMode,
 } from '../../../types';
+import { isImageActor } from '../../../utilities/actorCheck';
 import cache from '../../../cache/cache';
 import type { PlaneRestriction } from '../../../types/IViewport';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
@@ -444,6 +446,31 @@ class PlanarViewport extends GenericViewport<
    */
   getDefaultActor(): ActorEntry | undefined {
     return this.mountedData.getDefaultActor();
+  }
+
+  /**
+   * Retrieves an image actor from the viewport actors. Mirrors the legacy
+   * Viewport.getImageActor so VOI/colorbar tooling that depends on it keeps
+   * working on native PLANAR_NEXT viewports. CPU render paths (e.g. CPU stack
+   * slice rendering) have no VTK image actor, so this returns null there and
+   * callers fall back to a default range instead of throwing.
+   *
+   * @param volumeId - Optional id of the volume whose image actor is wanted.
+   * @returns The image actor if present, otherwise null.
+   */
+  getImageActor(volumeId?: string): ImageActor | null {
+    const actorEntries = this.getActors();
+
+    let actorEntry = actorEntries[0];
+    if (volumeId) {
+      actorEntry = actorEntries.find((a) => a.referencedId === volumeId);
+    }
+
+    if (!actorEntry || !isImageActor(actorEntry)) {
+      return null;
+    }
+
+    return actorEntry.actor as ImageActor;
   }
 
   /**
