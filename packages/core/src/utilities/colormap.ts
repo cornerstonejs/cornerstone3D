@@ -302,6 +302,39 @@ function getMaxOpacity(volumeActor) {
   return maxOpacity;
 }
 
+/**
+ * Populates a matched colormap's `opacity` and `threshold` from a stored colormap, falling back
+ * to the live actor-derived values so both fields are always present on the result.
+ *
+ * - `opacity`: a stored array is a hanging-protocol opacity mapping and is preserved (deep-cloned
+ *   so callers cannot mutate the stored values). A stored number, or no stored value at all,
+ *   means the threshold slider is in play, so the actor's max opacity is read instead.
+ * - `threshold`: an explicitly stored `null` is preserved (it clears thresholding); otherwise the
+ *   actor-derived threshold value is used.
+ *
+ * @param matchedColormap - the colormap matched from the actor's RGB transfer function (mutated)
+ * @param storedColormap - the colormap stored on the viewport, if any
+ * @param volumeActor - the VTK volume actor to read live opacity/threshold values from
+ * @returns the `matchedColormap`, with `opacity` and `threshold` populated
+ */
+function resolveColormapOpacityThreshold(
+  matchedColormap: ColormapPublic,
+  storedColormap: ColormapPublic | undefined,
+  volumeActor
+): ColormapPublic {
+  const storedOpacity = storedColormap?.opacity;
+  const storedThreshold = storedColormap?.threshold;
+
+  matchedColormap.opacity = Array.isArray(storedOpacity)
+    ? storedOpacity.map((item) => ({ ...item }))
+    : getMaxOpacity(volumeActor);
+
+  matchedColormap.threshold =
+    storedThreshold === null ? null : getThresholdValue(volumeActor);
+
+  return matchedColormap;
+}
+
 export {
   getColormap,
   getColormapNames,
@@ -310,4 +343,5 @@ export {
   findMatchingColormap,
   getThresholdValue,
   getMaxOpacity,
+  resolveColormapOpacityThreshold,
 };

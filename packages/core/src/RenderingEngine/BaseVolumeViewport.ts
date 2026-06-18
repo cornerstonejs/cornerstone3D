@@ -51,8 +51,7 @@ import {
   findMatchingColormap,
   updateOpacity as colormapUpdateOpacity,
   updateThreshold as colormapUpdateThreshold,
-  getThresholdValue,
-  getMaxOpacity,
+  resolveColormapOpacityThreshold,
 } from '../utilities/colormap';
 import getAcquisitionPlaneOrientation from '../utilities/getAcquisitionPlaneOrientation';
 import {
@@ -1390,34 +1389,14 @@ abstract class BaseVolumeViewport extends Viewport {
     // getColormap used to always read opacity and threshold from the VTK actor, which overwrote
     // values that came from the hanging protocol (e.g. an opacity array like
     // [{value: 0, opacity: 0}, ...] was replaced by a single number from the actor), breaking
-    // TMTV and similar flows. Without a stored colormap there is nothing to preserve, so fall
-    // back to the actor-derived values.
-    const storedColormap = this.viewportProperties.colormap;
-
-    if (!storedColormap) {
-      matchedColormap.opacity = getMaxOpacity(volumeActor);
-      matchedColormap.threshold = getThresholdValue(volumeActor);
-      return matchedColormap;
-    }
-
-    const { opacity, threshold } = storedColormap;
-
-    // A number means the threshold slider (added in v3.11/3.12) is in play, so read the current
-    // value from the actor; otherwise preserve the hanging-protocol opacity mapping array.
-    if (typeof opacity === 'number') {
-      matchedColormap.opacity = getMaxOpacity(volumeActor);
-    } else if (opacity !== undefined) {
-      matchedColormap.opacity = opacity.map((item) => ({ ...item }));
-    }
-
-    if (typeof threshold === 'number') {
-      matchedColormap.threshold = getThresholdValue(volumeActor);
-    } else if ('threshold' in storedColormap) {
-      // preserve an explicitly stored null/undefined threshold
-      matchedColormap.threshold = threshold;
-    }
-
-    return matchedColormap;
+    // TMTV and similar flows. resolveColormapOpacityThreshold preserves a stored opacity/threshold
+    // mapping when one exists and falls back to the actor-derived value otherwise, so the returned
+    // colormap always carries both fields.
+    return resolveColormapOpacityThreshold(
+      matchedColormap,
+      this.viewportProperties.colormap,
+      volumeActor
+    );
   };
 
   /**

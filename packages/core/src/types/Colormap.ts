@@ -19,8 +19,9 @@ interface ColormapPublic {
   name?: string;
   /** opacity value or mapping */
   opacity?: OpacityMapping[] | number;
-  /** threshold value (0-1) for opacity mapping - values below the threshold will be transparent */
-  threshold?: number;
+  /** threshold value (0-1) for opacity mapping - values below the threshold will be transparent.
+   * An explicit null clears thresholding. */
+  threshold?: number | null;
   /** midpoint mapping between values to opacity if the colormap
    * is getting used for fusion, this is an array of arrays which
    * each array containing 2 values, the first value is the value
