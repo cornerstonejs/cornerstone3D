@@ -1,5 +1,5 @@
 import { normalizers, derivations } from 'dcmjs';
-import { Enums, utilities } from '@cornerstonejs/core';
+import { Enums } from '@cornerstonejs/core';
 import { fillSegmentation as fillBitmapSegmentation } from '../../Cornerstone/Segmentation_4X';
 import {
   encodeFramesToTransferSyntax,
@@ -9,6 +9,7 @@ import {
 } from '../encodePixelData';
 import {
   applyPerFrameFunctionalGroups,
+  getReferencedSourceImageSequenceItem,
   normalizeSharedFunctionalGroupsSequence,
 } from './perFrameFunctionalGroups.js';
 
@@ -77,49 +78,6 @@ function normalizeFramePixelData(pixelData: ArrayLike<number>) {
   }
 
   return frame;
-}
-
-function getReferencedFrameNumber(imageId, metadata) {
-  if (!imageId) {
-    return undefined;
-  }
-
-  // Prefer the metadata provider's own frame extraction when it offers one — it
-  // understands the full set of imageId shapes the host app produces (wadors
-  // `/frames/N` as well as `?frame=N` / `&frame=N`). Fall back to the core
-  // FrameRange helper (handles `/frames/N` and `frameNumber=N`) so that
-  // provider-agnostic callers still resolve multi-frame references. The prior
-  // one-off `/[?&]frame=/` regex silently dropped the wadors form.
-  const providerFrame = metadata?.getFrameInformationFromURL?.(imageId);
-  const frameNumber =
-    providerFrame != null
-      ? Number(providerFrame)
-      : utilities.FrameRange.imageIdToFrameStart(imageId);
-
-  return Number.isFinite(frameNumber) ? frameNumber : undefined;
-}
-
-function getReferencedSourceImageSequenceItem(image, metadata) {
-  const imageData =
-    metadata.get(MetadataModules.IMAGE_DATA, image?.imageId) || {};
-  const referencedSOPInstanceUID = imageData.SOPInstanceUID;
-
-  const referencedFrameNumber = getReferencedFrameNumber(
-    image?.imageId,
-    metadata
-  );
-  const item: {
-    ReferencedSOPInstanceUID: string;
-    ReferencedFrameNumber?: number;
-  } = {
-    ReferencedSOPInstanceUID: referencedSOPInstanceUID,
-  };
-
-  if (Number.isFinite(referencedFrameNumber) && referencedFrameNumber > 0) {
-    item.ReferencedFrameNumber = referencedFrameNumber;
-  }
-
-  return item;
 }
 
 function fillLabelmapSegmentation(

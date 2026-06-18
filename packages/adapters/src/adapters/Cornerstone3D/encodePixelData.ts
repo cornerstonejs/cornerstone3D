@@ -459,14 +459,16 @@ function getRleSegmentsForFrame(
   }
 
   if (bitsAllocated === 16) {
-    const lowByteSegment = new Uint8Array(frame.length);
     const highByteSegment = new Uint8Array(frame.length);
+    const lowByteSegment = new Uint8Array(frame.length);
     for (let i = 0; i < frame.length; i++) {
       const sample = frame[i] & 0xffff;
-      lowByteSegment[i] = sample & 0xff;
       highByteSegment[i] = (sample >> 8) & 0xff;
+      lowByteSegment[i] = sample & 0xff;
     }
-    return [lowByteSegment, highByteSegment];
+    // DICOM PS3.5 Annex G orders RLE byte segments most-significant-byte first
+    // (segment 0 = high byte), matching the dicomImageLoader decode16 reader.
+    return [highByteSegment, lowByteSegment];
   }
 
   throw new Error(

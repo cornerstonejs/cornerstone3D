@@ -5,6 +5,66 @@
  * - DerivationImageSequence[0].SourceImageSequence[0] (ReferencedSOPInstanceUID, optional ReferencedFrameNumber)
  */
 
+import { Enums, utilities } from '@cornerstonejs/core';
+
+const { MetadataModules } = Enums;
+
+/**
+ * Resolves the 1-based DICOM frame number referenced by an imageId.
+ *
+ * Prefer the metadata provider's own frame extraction when it offers one — it
+ * understands the full set of imageId shapes the host app produces (wadors
+ * `/frames/N` as well as `?frame=N` / `&frame=N`). Fall back to the core
+ * FrameRange helper (handles `/frames/N` and `frameNumber=N`) so that
+ * provider-agnostic callers still resolve multi-frame references. A one-off
+ * `/[?&]frame=/` regex silently drops the wadors form, so it must not be used.
+ *
+ * @param {string} imageId
+ * @param {object} metadata - metadata provider
+ * @returns {number|undefined}
+ */
+export function getReferencedFrameNumber(imageId, metadata) {
+  if (!imageId) {
+    return undefined;
+  }
+
+  const providerFrame = metadata?.getFrameInformationFromURL?.(imageId);
+  const frameNumber =
+    providerFrame != null
+      ? Number(providerFrame)
+      : utilities.FrameRange.imageIdToFrameStart(imageId);
+
+  return Number.isFinite(frameNumber) ? frameNumber : undefined;
+}
+
+/**
+ * Builds a SourceImageSequence item (ReferencedSOPInstanceUID + optional
+ * ReferencedFrameNumber) for a cornerstone image, using the shared frame
+ * extraction so all SEG export paths resolve multi-frame references identically.
+ *
+ * @param {{ imageId?: string }} image
+ * @param {object} metadata - metadata provider
+ * @returns {{ ReferencedSOPInstanceUID: string, ReferencedFrameNumber?: number }}
+ */
+export function getReferencedSourceImageSequenceItem(image, metadata) {
+  const imageData =
+    metadata?.get?.(MetadataModules.IMAGE_DATA, image?.imageId) || {};
+  const referencedFrameNumber = getReferencedFrameNumber(
+    image?.imageId,
+    metadata
+  );
+
+  const item = {
+    ReferencedSOPInstanceUID: imageData.SOPInstanceUID,
+  };
+
+  if (Number.isFinite(referencedFrameNumber) && referencedFrameNumber > 0) {
+    item.ReferencedFrameNumber = referencedFrameNumber;
+  }
+
+  return item;
+}
+
 export function normalizeSharedFunctionalGroupsSequence(dataset) {
   const shared = dataset.SharedFunctionalGroupsSequence;
 

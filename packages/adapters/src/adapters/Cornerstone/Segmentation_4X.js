@@ -8,8 +8,11 @@ import {
 import ndarray from 'ndarray';
 import getDatasetsFromImages from '../helpers/getDatasetsFromImages';
 import checkOrientation from '../helpers/checkOrientation';
-import { utilities as csUtilities, Enums } from '@cornerstonejs/core';
-import { applyPerFrameFunctionalGroups } from '../Cornerstone3D/Segmentation/perFrameFunctionalGroups';
+import { utilities as csUtilities } from '@cornerstonejs/core';
+import {
+  applyPerFrameFunctionalGroups,
+  getReferencedSourceImageSequenceItem,
+} from '../Cornerstone3D/Segmentation/perFrameFunctionalGroups';
 import {
   encodeFramesToTransferSyntax,
   getBitmapFramesFromDataset,
@@ -87,23 +90,6 @@ function labelmapFrameContainsSegment(pixelData, segmentIndex) {
   }
 
   return false;
-}
-
-function getReferencedSourceImageSequenceItemFromImage(image, metadata) {
-  const imageData =
-    metadata?.get?.(Enums.MetadataModules.IMAGE_DATA, image?.imageId) || {};
-  const referencedSOPInstanceUID = imageData.SOPInstanceUID;
-  const frameMatch = image?.imageId?.match?.(/[?&]frame=(\d+)/);
-  const referencedFrameNumber = frameMatch ? Number(frameMatch[1]) : undefined;
-  const item = {
-    ReferencedSOPInstanceUID: referencedSOPInstanceUID,
-  };
-
-  if (Number.isFinite(referencedFrameNumber) && referencedFrameNumber > 0) {
-    item.ReferencedFrameNumber = referencedFrameNumber;
-  }
-
-  return item;
 }
 
 export function fillSegmentation(
@@ -271,7 +257,7 @@ export function fillSegmentation(
     const perFrameInputs = frameDescriptors
       .map((desc) => ({
         referencedSegmentNumber: desc.referencedSegmentNumber,
-        sourceImageSequenceItem: getReferencedSourceImageSequenceItemFromImage(
+        sourceImageSequenceItem: getReferencedSourceImageSequenceItem(
           images[desc.sourceFrameIndex],
           metadata
         ),

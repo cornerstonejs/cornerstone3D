@@ -4,7 +4,9 @@ import type { Types } from '@cornerstonejs/core';
 async function decodeRLE(
   imageFrame: Types.IImageFrame,
   pixelData: ByteArray,
-  options?: { expandOneBitPlanar?: boolean }
+  // For 1-bit RLE, the bits are unpacked as separate planes by default. Set
+  // `interleavedOneBit: true` to unpack them as a single interleaved plane instead.
+  options?: { interleavedOneBit?: boolean }
 ): Promise<Types.IImageFrame> {
   if (imageFrame.bitsAllocated === 8) {
     if (imageFrame.planarConfiguration) {
@@ -15,11 +17,11 @@ async function decodeRLE(
   } else if (imageFrame.bitsAllocated === 16) {
     return decode16(imageFrame, pixelData);
   } else if (imageFrame.bitsAllocated === 1) {
-    if (!options?.expandOneBitPlanar) {
-      return decode8Planar(imageFrame, pixelData, true);
+    if (options?.interleavedOneBit) {
+      return decode1(imageFrame, pixelData);
     }
 
-    return decode1(imageFrame, pixelData);
+    return decode8Planar(imageFrame, pixelData, true);
   }
 
   throw new Error('unsupported pixel format for RLE');
