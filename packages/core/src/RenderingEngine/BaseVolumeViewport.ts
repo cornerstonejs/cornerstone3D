@@ -1387,33 +1387,34 @@ abstract class BaseVolumeViewport extends Viewport {
 
     const matchedColormap = findMatchingColormap(RGBPoints, volumeActor) || {};
 
-    // getColormap used to always read opacity and threshold from the VTK actor. That overwrote
-    // values that came from the hanging protocol. When the protocol sends opacity as an array
-    // (e.g. [{value: 0, opacity: 0}, ...]), it was replaced by a single number from the actor,
-    // and TMTV and similar flows broke. The threshold slider (added in v3.11/3.12) needs the
-    // current value from the actor when the user moves the slider. So we branch: if the stored
-    // value is a number (slider case), read from the actor; otherwise use the stored value so
-    // hanging protocol arrays and explicit null are preserved.
+    // getColormap used to always read opacity and threshold from the VTK actor, which overwrote
+    // values that came from the hanging protocol (e.g. an opacity array like
+    // [{value: 0, opacity: 0}, ...] was replaced by a single number from the actor), breaking
+    // TMTV and similar flows. Without a stored colormap there is nothing to preserve, so fall
+    // back to the actor-derived values.
     const storedColormap = this.viewportProperties.colormap;
 
-    if (
-      storedColormap?.opacity !== undefined &&
-      typeof storedColormap.opacity === 'number'
-    ) {
+    if (!storedColormap) {
       matchedColormap.opacity = getMaxOpacity(volumeActor);
-    } else if (storedColormap?.opacity !== undefined) {
-      matchedColormap.opacity = Array.isArray(storedColormap.opacity)
-        ? storedColormap.opacity.map((item) => ({ ...item }))
-        : storedColormap.opacity;
+      matchedColormap.threshold = getThresholdValue(volumeActor);
+      return matchedColormap;
     }
 
-    if (
-      storedColormap?.threshold !== undefined &&
-      typeof storedColormap.threshold === 'number'
-    ) {
+    const { opacity, threshold } = storedColormap;
+
+    // A number means the threshold slider (added in v3.11/3.12) is in play, so read the current
+    // value from the actor; otherwise preserve the hanging-protocol opacity mapping array.
+    if (typeof opacity === 'number') {
+      matchedColormap.opacity = getMaxOpacity(volumeActor);
+    } else if (opacity !== undefined) {
+      matchedColormap.opacity = opacity.map((item) => ({ ...item }));
+    }
+
+    if (typeof threshold === 'number') {
       matchedColormap.threshold = getThresholdValue(volumeActor);
-    } else if (storedColormap && 'threshold' in storedColormap) {
-      matchedColormap.threshold = storedColormap.threshold;
+    } else if ('threshold' in storedColormap) {
+      // preserve an explicitly stored null/undefined threshold
+      matchedColormap.threshold = threshold;
     }
 
     return matchedColormap;
