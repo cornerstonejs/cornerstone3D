@@ -137,6 +137,11 @@ export class ImageVolume {
     this.origin = origin;
     this.direction = direction;
     this.dataType = dataType;
+    this.hasPixelSpacing =
+      Number.isFinite(spacing[0]) &&
+      spacing[0] > 0 &&
+      Number.isFinite(spacing[1]) &&
+      spacing[1] > 0;
 
     this.vtkOpenGLTexture = vtkStreamingOpenGLTexture.newInstance();
     this.vtkOpenGLTexture.setVolumeId(volumeId);

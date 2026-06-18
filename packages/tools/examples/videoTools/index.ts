@@ -19,25 +19,7 @@ console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
-const {
-  LengthTool,
-  HeightTool,
-  KeyImageTool,
-  ProbeTool,
-  RectangleROITool,
-  EllipticalROITool,
-  CircleROITool,
-  BidirectionalTool,
-  AngleTool,
-  CobbAngleTool,
-  ArrowAnnotateTool,
-  PlanarFreehandROITool,
-  LivewireContourTool,
-
-  VideoRedactionTool,
-  ToolGroupManager,
-  Enums: csToolsEnums,
-} = cornerstoneTools;
+const { ToolGroupManager, Enums: csToolsEnums } = cornerstoneTools;
 
 const { ViewportType } = Enums;
 const { MouseBindings, KeyboardBindings, Events: toolsEvents } = csToolsEnums;
@@ -65,8 +47,8 @@ const element = document.createElement('div');
 element.oncontextmenu = (e) => e.preventDefault();
 
 element.id = 'cornerstone-element';
-element.style.width = '500px';
-element.style.height = '500px';
+element.style.width = '512px';
+element.style.height = '512px';
 
 content.appendChild(element);
 

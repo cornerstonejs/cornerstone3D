@@ -1,5 +1,8 @@
-import type { IVolumeViewport } from '../types';
 import { getRenderingEngines } from '../RenderingEngine/getRenderingEngine';
+import {
+  viewportSupportsVolumeId,
+  type VolumeIdViewport,
+} from './viewportCapabilities';
 
 /**
  * Retrieves viewports containing a specific volume ID.
@@ -7,14 +10,16 @@ import { getRenderingEngines } from '../RenderingEngine/getRenderingEngine';
  * @param volumeId - The ID of the volume to search for within viewports.
  * @returns An array of volume viewports that contain the specified volume ID.
  */
-function getViewportsWithVolumeId(volumeId: string): IVolumeViewport[] {
+function getViewportsWithVolumeId(volumeId: string): VolumeIdViewport[] {
   // If rendering engine is not provided, use all rendering engines
   const renderingEngines = getRenderingEngines();
 
-  const targetViewports: IVolumeViewport[] = [];
+  const targetViewports: VolumeIdViewport[] = [];
 
   renderingEngines.forEach((renderingEngine) => {
-    const viewports = renderingEngine.getVolumeViewports();
+    const viewports = renderingEngine
+      .getViewports()
+      .filter(viewportSupportsVolumeId);
     const filteredViewports = viewports.filter((vp) =>
       vp.hasVolumeId(volumeId)
     );

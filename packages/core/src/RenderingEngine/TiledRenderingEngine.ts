@@ -2,14 +2,10 @@ import BaseRenderingEngine, { VIEWPORT_MIN_SIZE } from './BaseRenderingEngine';
 import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
-import ViewportType from '../enums/ViewportType';
-import VolumeViewport from './VolumeViewport';
-import StackViewport from './StackViewport';
 import viewportTypeUsesCustomRenderingPipeline from './helpers/viewportTypeUsesCustomRenderingPipeline';
 import getOrCreateCanvas from './helpers/getOrCreateCanvas';
 import type IStackViewport from '../types/IStackViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
-import VolumeViewport3D from './VolumeViewport3D';
 import { vtkOffscreenMultiRenderWindow } from './vtkClasses';
 
 import type * as EventTypes from '../types/EventTypes';
@@ -19,6 +15,7 @@ import type {
   NormalizedViewportInput,
   IViewport,
 } from '../types/IViewport';
+import { getViewportClassForInput } from './helpers/viewportTypeToViewportClass';
 
 interface ViewportDisplayCoords {
   sxStartDisplayCoords: number;
@@ -65,6 +62,12 @@ class TiledRenderingEngine extends BaseRenderingEngine {
     super(id);
 
     if (!this.useCPURendering) {
+      this.ensureOffscreenResources();
+    }
+  }
+
+  private ensureOffscreenResources(): void {
+    if (!this.offscreenMultiRenderWindow) {
       this.offscreenMultiRenderWindow =
         vtkOffscreenMultiRenderWindow.newInstance();
       this.offScreenCanvasContainer = document.createElement('div');
@@ -82,6 +85,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
   protected enableVTKjsDrivenViewport(
     viewportInputEntry: NormalizedViewportInput
   ) {
+    this.ensureOffscreenResources();
     const viewports = this._getViewportsAsArray();
     const viewportsDrivenByVtkJs = viewports.filter(
       (vp) => viewportTypeUsesCustomRenderingPipeline(vp.type) === false
@@ -131,6 +135,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
       xOffset: number;
     }
   ): void {
+    this.ensureOffscreenResources();
     const { element, canvas, viewportId, type, defaultOptions } =
       viewportInputEntry;
 
@@ -185,21 +190,17 @@ class TiledRenderingEngine extends BaseRenderingEngine {
     } as ViewportInput;
 
     // 4. Create a proper viewport based on the type of the viewport
-    let viewport: IViewport;
-    if (type === ViewportType.STACK) {
-      // 4.a Create stack viewport
-      viewport = new StackViewport(viewportInput);
-    } else if (
-      type === ViewportType.ORTHOGRAPHIC ||
-      type === ViewportType.PERSPECTIVE
-    ) {
-      // 4.b Create a volume viewport
-      viewport = new VolumeViewport(viewportInput);
-    } else if (type === ViewportType.VOLUME_3D) {
-      viewport = new VolumeViewport3D(viewportInput);
-    } else {
+    const ViewportClass = getViewportClassForInput(viewportInputEntry);
+
+    if (!ViewportClass) {
       throw new Error(`Viewport Type ${type} is not supported`);
     }
+
+    const viewport = new ViewportClass(viewportInput) as unknown as IViewport;
+
+    // Preserve the originally-requested (legacy) type so callers can branch on it
+    // even when compat remapping changed the runtime `type` (e.g. STACK -> PLANAR_NEXT).
+    viewport.requestedType = viewportInputEntry.requestedType ?? type;
 
     // 5. Storing the viewports
     this._viewports.set(viewportId, viewport);
@@ -210,7 +211,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
       renderingEngineId: this.id,
     };
 
-    if (!viewport.suppressEvents) {
+    if (!(viewport as { suppressEvents?: boolean }).suppressEvents) {
       triggerEvent(eventTarget, Events.ELEMENT_ENABLED, eventDetail);
     }
   }
@@ -315,7 +316,15 @@ class TiledRenderingEngine extends BaseRenderingEngine {
       const prevCamera = vp.getCamera();
       const rotation = vp.getRotation();
       const { flipHorizontal } = prevCamera;
-      vp.resetCameraForResize();
+      const resizeResetViewport = vp as (IStackViewport | IVolumeViewport) & {
+        resetViewStateForResize?: () => boolean;
+      };
+
+      if (resizeResetViewport.resetViewStateForResize) {
+        resizeResetViewport.resetViewStateForResize();
+      } else {
+        resizeResetViewport.resetCameraForResize();
+      }
 
       const displayArea = vp.getDisplayArea();
 
@@ -347,7 +356,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
   protected _renderFlaggedViewports = () => {
     this._throwIfDestroyed();
 
-    if (!this.useCPURendering) {
+    if (this.offscreenMultiRenderWindow) {
       this.performVtkDrawCall();
     }
 
@@ -404,8 +413,10 @@ class TiledRenderingEngine extends BaseRenderingEngine {
     for (let i = 0; i < renderers.length; i++) {
       const { renderer, id } = renderers[i];
 
-      // Requesting viewports that need rendering to be rendered only
-      if (this._needsRender.has(id)) {
+      // Requesting viewports that need rendering to be rendered only.
+      // Also enable overlay renderers linked to a viewport (id = viewportId::suffix).
+      const viewportId = id.split('::')[0];
+      if (this._needsRender.has(viewportId)) {
         renderer.setDraw(true);
       } else {
         renderer.setDraw(false);
@@ -444,7 +455,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
       eventDetail =
         viewport.customRenderViewportToCanvas() as EventTypes.ImageRenderedEventDetail;
     } else {
-      if (this.useCPURendering) {
+      if (!this.offscreenMultiRenderWindow) {
         throw new Error(
           'GPU not available, and using a viewport with no custom render pipeline.'
         );

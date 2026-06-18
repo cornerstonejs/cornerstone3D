@@ -66,8 +66,8 @@ export const getSegmentationDataForWorker = (
     imageIds: segImageIds,
   };
 
-  let reconstructableVolume = false;
-  if (segImageIds) {
+  let reconstructableVolume = Boolean(segVolumeId);
+  if (!reconstructableVolume && segImageIds) {
     const refImageIds = segImageIds.map((imageId) => {
       const image = cache.getImage(imageId);
       return image.referencedImageId;

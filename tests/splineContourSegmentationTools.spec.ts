@@ -1,7 +1,7 @@
 import { test } from 'playwright-test-coverage';
 import type { Page, Locator } from '@playwright/test';
 import {
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   visitExample,
   screenShotPaths,
 } from './utils/index';
@@ -21,9 +21,9 @@ test.describe('Spline Contour Segmentation Tools', async () => {
       canvas,
       segmentIndex: undefined,
     });
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      canvas,
+      'canvas.cornerstone-canvas',
       screenShotPaths.splineContourSegmentationTools.catmullRomSplineROI
     );
   });
@@ -38,9 +38,9 @@ test.describe('Spline Contour Segmentation Tools', async () => {
       canvas,
       segmentIndex: undefined,
     });
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      canvas,
+      'canvas.cornerstone-canvas',
       screenShotPaths.splineContourSegmentationTools.linearSplineROI
     );
   });
@@ -55,9 +55,9 @@ test.describe('Spline Contour Segmentation Tools', async () => {
       canvas,
       segmentIndex: undefined,
     });
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      canvas,
+      'canvas.cornerstone-canvas',
       screenShotPaths.splineContourSegmentationTools.bsplineROI
     );
   });
@@ -74,9 +74,9 @@ test.describe('Spline Contour Segmentation Tools', async () => {
     });
     await drawLinearSplineOnViewportCenter({ page, canvas, segmentIndex: 2 });
     await drawBSplineOnViewportRight({ page, canvas, segmentIndex: 3 });
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      canvas,
+      'canvas.cornerstone-canvas',
       screenShotPaths.splineContourSegmentationTools.splinesOnSegmentTwo
     );
   });
@@ -104,9 +104,9 @@ test.describe('Spline Contour Segmentation Tools', async () => {
       canvas,
       segmentIndex: 3,
     });
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      canvas,
+      'canvas.cornerstone-canvas',
       screenShotPaths.splineContourSegmentationTools.splinesOnSegmentTwo
     );
   });
