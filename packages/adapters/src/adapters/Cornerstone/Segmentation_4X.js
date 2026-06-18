@@ -254,21 +254,32 @@ export function fillSegmentation(
   }
 
   if (frameDescriptors.length && images?.length && metadata) {
-    const perFrameInputs = frameDescriptors
-      .map((desc) => ({
-        referencedSegmentNumber: desc.referencedSegmentNumber,
-        sourceImageSequenceItem: getReferencedSourceImageSequenceItem(
-          images[desc.sourceFrameIndex],
-          metadata
-        ),
-      }))
-      .filter(
-        (frame) => frame.sourceImageSequenceItem?.ReferencedSOPInstanceUID
+    // Every SEG frame must reference a resolvable source SOP Instance UID.
+    // Reject rather than silently dropping frames: a dropped frame would make
+    // the per-frame functional groups disagree with the encoded PixelData and
+    // produce a SEG whose source-image references are unreliable.
+    const perFrameInputs = frameDescriptors.map((desc) => {
+      const sourceImageSequenceItem = getReferencedSourceImageSequenceItem(
+        images[desc.sourceFrameIndex],
+        metadata
       );
 
-    if (perFrameInputs.length) {
-      applyPerFrameFunctionalGroups(segmentation.dataset, perFrameInputs);
-    }
+      if (!sourceImageSequenceItem?.ReferencedSOPInstanceUID) {
+        throw new Error(
+          `Cannot resolve a source ReferencedSOPInstanceUID for SEG frame ` +
+            `(sourceFrameIndex ${desc.sourceFrameIndex}, segment ` +
+            `${desc.referencedSegmentNumber}). Refusing to write a SEG with ` +
+            `unreliable source image references.`
+        );
+      }
+
+      return {
+        referencedSegmentNumber: desc.referencedSegmentNumber,
+        sourceImageSequenceItem,
+      };
+    });
+
+    applyPerFrameFunctionalGroups(segmentation.dataset, perFrameInputs);
   }
   const transferSyntaxUid =
     options.transferSyntaxUid ??

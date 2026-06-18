@@ -173,12 +173,25 @@ function fillLabelmapSegmentation(
     dataset.SourceImageSequence = sourceImageSequence;
   }
 
+  // Every SEG frame must reference a resolvable source SOP Instance UID.
+  // Reject rather than silently dropping frames, otherwise the per-frame
+  // functional groups would disagree with the encoded PixelData and produce a
+  // SEG with unreliable source image references.
   const perFrameInputs = validFrameIndices.map((_, outputIndex) => {
     const image = images[outputIndex];
     const sourceImageSequenceItem = getReferencedSourceImageSequenceItem(
       image,
       metadata
     );
+
+    if (!sourceImageSequenceItem?.ReferencedSOPInstanceUID) {
+      throw new Error(
+        `Cannot resolve a source ReferencedSOPInstanceUID for labelmap SEG ` +
+          `frame ${outputIndex}. Refusing to write a SEG with unreliable ` +
+          `source image references.`
+      );
+    }
+
     const priorGroup =
       dataset.PerFrameFunctionalGroupsSequence?.[outputIndex] ?? {};
 
@@ -190,13 +203,7 @@ function fillLabelmapSegmentation(
     };
   });
 
-  const validPerFrameInputs = perFrameInputs.filter(
-    (frame) => frame.sourceImageSequenceItem?.ReferencedSOPInstanceUID
-  );
-
-  if (validPerFrameInputs.length) {
-    applyPerFrameFunctionalGroups(dataset, validPerFrameInputs);
-  }
+  applyPerFrameFunctionalGroups(dataset, perFrameInputs);
 
   const sopInstanceUIDs = new Set(
     images
@@ -271,7 +278,11 @@ function generateSegmentation(
         transferSyntaxUid: EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID,
         skipTransferSyntaxMeta: true,
       },
-      filteredImages,
+      // Pass the full, unfiltered images: fillSegmentation references source
+      // images by the original labelmap frame index, so the array must stay
+      // aligned 1:1 with labelmaps2D. Passing filteredImages here would shift
+      // every reference once any interior frame is empty.
+      images,
       metadata
     );
     const { frames, bitsAllocated } = getBitmapFramesFromDataset(
