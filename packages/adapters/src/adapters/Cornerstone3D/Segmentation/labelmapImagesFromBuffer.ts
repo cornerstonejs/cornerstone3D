@@ -613,15 +613,23 @@ async function createLabelmapsFromSegImageIds(
     frameImageIds,
     getFrameImageId,
     decodeImageData = defaultDecodeFrameImageData,
+    // Callers that already hold the normalized SEG dataset (e.g. the buffer
+    // path) can pass it directly to avoid a metadata-provider round-trip. Some
+    // providers (notably OHIF's) short-circuit `get('instance', ...)` before
+    // consulting custom metadata, so a synthetic SEG imageId is not retrievable.
+    multiframe: providedMultiframe = undefined,
   } = options ?? {};
 
-  const instanceMeta = metadataProvider.get('instance', segImageId);
-  if (!instanceMeta) {
-    throw new Error(
-      `No instance metadata found for SEG imageId: ${segImageId}. Ensure the SEG instance is registered in the metadata provider (e.g. after loading the image).`
-    );
+  let multiframe = providedMultiframe;
+  if (!multiframe) {
+    const instanceMeta = metadataProvider.get('instance', segImageId);
+    if (!instanceMeta) {
+      throw new Error(
+        `No instance metadata found for SEG imageId: ${segImageId}. Ensure the SEG instance is registered in the metadata provider (e.g. after loading the image).`
+      );
+    }
+    multiframe = instanceMeta.dataset ?? instanceMeta;
   }
-  const multiframe = instanceMeta.dataset ?? instanceMeta;
 
   prepareSegMultiframeMetadata(multiframe);
 
@@ -1543,6 +1551,9 @@ async function createLabelmapsFromDICOMBuffer(
       ...options,
       frameImageIds,
       decodeImageData,
+      // Pass the parsed dataset directly so the SEG metadata does not have to be
+      // resolved back out of the provider via the synthetic buffer imageId.
+      multiframe,
     }
   );
 }

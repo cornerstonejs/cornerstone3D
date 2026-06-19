@@ -82,9 +82,40 @@ function createFromDicomSegImageId(
   );
 }
 
+/**
+ * @deprecated Renamed/split in 5.x. This wrapper is kept for backward
+ * compatibility and will be removed in a future major.
+ *
+ * It preserves the original 4.x contract — a Part 10 SEG `ArrayBuffer` as the
+ * second argument — by parsing the buffer and delegating to
+ * {@link createLabelmapsFromDICOMBuffer}.
+ *
+ * - For the buffer path, prefer {@link createLabelmapsFromDICOMBuffer} or
+ *   {@link generateToolState}.
+ * - For the per-frame `imageId` path (OHIF / imageLoader), use
+ *   {@link createFromDicomSegImageId}, whose second argument is a SEG instance
+ *   `imageId` rather than an `ArrayBuffer`.
+ */
+function createFromDICOMSegBuffer(
+  referencedImageIds,
+  arrayBuffer,
+  { metadataProvider, tolerance = 1e-3 }
+) {
+  return createLabelmapsFromDICOMBuffer(
+    referencedImageIds,
+    arrayBuffer,
+    metadataProvider,
+    {
+      tolerance,
+      parserType: 'bitmap',
+    }
+  );
+}
+
 export {
   generateToolState,
   createFromDicomSegImageId,
+  createFromDICOMSegBuffer,
   createLabelmapsFromSegImageIds,
   createLabelmapsFromDICOMBuffer,
 };

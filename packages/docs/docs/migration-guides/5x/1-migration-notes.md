@@ -55,15 +55,23 @@ iterable/enumerable on the object itself.
   `combineFramesInstance` utility so downstream modules receive the expected
   base object shape.
 
-## SEG adapter: `createFromDICOMSegBuffer` renamed to `createFromDicomSegImageId`
+## SEG adapter: `createFromDICOMSegBuffer` deprecated in favor of `createFromDicomSegImageId`
 
 ### What Changed
 
-`adaptersSEG.Cornerstone3D.Segmentation.createFromDICOMSegBuffer` has been
-renamed to `createFromDicomSegImageId`. Its second argument is a SEG instance
-`imageId` (with pixels sourced from the provided per-frame `imageId`s /
-decoder) — it does **not** accept a Part 10 `ArrayBuffer`, despite the previous
-name implying a buffer.
+A new `adaptersSEG.Cornerstone3D.Segmentation.createFromDicomSegImageId` entry
+point has been added. Its second argument is a SEG instance `imageId` (with
+pixels sourced from the provided per-frame `imageId`s / decoder) — it does
+**not** accept a Part 10 `ArrayBuffer`, despite the older name implying a
+buffer.
+
+`createFromDICOMSegBuffer` is **not removed**. It remains exported as a
+deprecated alias that preserves its original 4.x contract (a Part 10
+`ArrayBuffer` as the second argument) by delegating to
+`createLabelmapsFromDICOMBuffer`. Existing buffer-based callers continue to work
+unchanged; no major version bump is required to upgrade. New code should migrate
+to `createFromDicomSegImageId` (for the per-frame `imageId` path) or
+`createLabelmapsFromDICOMBuffer` (for the buffer path).
 
 ```ts
 // 4.x
@@ -85,11 +93,13 @@ const results =
 
 ### Why This Matters
 
-The rename was deliberate: the second argument changed contract entirely
-(`ArrayBuffer` -> `imageId`) while keeping the same position. Renaming turns
-what would have been a silent runtime failure (an `ArrayBuffer` passed where an
-`imageId` is expected) into an immediate, obvious error, rather than shipping a
-same-named function with an incompatible contract and no deprecation path.
+The new name exists because the per-frame `imageId` path changed the second
+argument contract entirely (`ArrayBuffer` -> `imageId`). Rather than silently
+repurpose the same-named function with an incompatible contract, the new
+behavior lives under the new name `createFromDicomSegImageId`. The original
+`createFromDICOMSegBuffer` is retained as a deprecated alias that keeps its old
+`ArrayBuffer` contract, so existing callers keep working without code changes
+and the upgrade does not require a major version bump.
 
 ### The `frameImageIds` option
 
@@ -144,3 +154,6 @@ Single-frame SEG, WADO-RS, and WADO-URI imageIds do not require `frameImageIds`.
 - If you still have a Part 10 `ArrayBuffer`, use `createLabelmapsFromDICOMBuffer`
   (`(referencedImageIds, arrayBuffer, metadataProvider, options)`) or
   `generateToolState`, which retain the buffer-based entry point.
+- Existing `createFromDICOMSegBuffer(referencedImageIds, arrayBuffer, { metadataProvider })`
+  calls keep working unchanged — the function is now a deprecated alias for the
+  buffer path. Migrate at your own pace to `createLabelmapsFromDICOMBuffer`.
