@@ -3,8 +3,44 @@ import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransf
 import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 
 import type { ColormapPublic, ColormapRegistration } from '../types';
+import type { OpacityMapping } from '../types/Colormap';
 import isEqual from './isEqual';
 import { actorIsA } from './actorCheck';
+
+/**
+ * Per-actor opacity specification. The rendered scalar-opacity function is always derived from
+ * these three orthogonal pieces, which means none of them can clobber another:
+ *  - `overall`: a single scalar level (e.g. the fusion/master slider value).
+ *  - `mapping`: an optional per-value shape (e.g. a hanging-protocol opacity array). Its per-point
+ *    opacities are *scaled* by `overall` -> rendered_opacity(v) = overall * mapping(v).
+ *  - `threshold`: an optional cutoff; values below it render fully transparent.
+ *
+ * It is kept off to the side (keyed by the volume actor) so that changing one piece (slider,
+ * threshold, or the mapping) re-derives the function from the others instead of reading back the
+ * already-collapsed function from the actor (which is what historically flattened arrays).
+ */
+interface OpacitySpec {
+  overall: number;
+  mapping?: OpacityMapping[];
+  threshold?: number | null;
+}
+
+const opacitySpecByActor = new WeakMap<object, OpacitySpec>();
+
+/**
+ * Returns the stored opacity spec for an actor, or a best-effort spec reconstructed from the
+ * actor for volumes that were set up outside this system.
+ */
+function getOpacitySpec(volumeActor): OpacitySpec {
+  const stored = opacitySpecByActor.get(volumeActor);
+  if (stored) {
+    return stored;
+  }
+  return {
+    overall: getMaxOpacity(volumeActor),
+    threshold: getThresholdValue(volumeActor),
+  };
+}
 
 const _colormaps = new Map();
 
@@ -194,16 +230,101 @@ export function setColorMapTransferFunctionForVolumeActor(volumeInfo) {
  * Updates only the opacity value while preserving threshold
  */
 export function updateOpacity(volumeActor, newOpacity) {
-  const currentThreshold = getThresholdValue(volumeActor);
-  updateOpacityWithThreshold(volumeActor, newOpacity, currentThreshold);
+  // newOpacity is the scalar "overall" level (e.g. the slider). Preserve the per-value mapping
+  // and threshold and just re-scale.
+  const spec = getOpacitySpec(volumeActor);
+  applyOpacitySpec(volumeActor, { ...spec, overall: newOpacity });
 }
 
 /**
- * Updates only the threshold while preserving opacity
+ * Updates only the threshold while preserving the overall level and the per-value mapping.
  */
 export function updateThreshold(volumeActor, newThreshold) {
-  const currentOpacity = getMaxOpacity(volumeActor);
-  updateOpacityWithThreshold(volumeActor, currentOpacity, newThreshold);
+  const spec = getOpacitySpec(volumeActor);
+  applyOpacitySpec(volumeActor, { ...spec, threshold: newThreshold });
+}
+
+/**
+ * Updates the per-value opacity mapping (and optionally the overall level), preserving the
+ * threshold. Pass `overall` to set both at once (e.g. when applying a synced colormap).
+ */
+export function updateOpacityMapping(
+  volumeActor,
+  mapping: OpacityMapping[],
+  overall?: number
+) {
+  const spec = getOpacitySpec(volumeActor);
+  applyOpacitySpec(volumeActor, {
+    ...spec,
+    mapping,
+    ...(overall !== undefined && { overall }),
+  });
+}
+
+/**
+ * Reads back the current opacity spec for an actor in public-colormap shape: a scalar `opacity`
+ * (the overall level), the per-value `opacityMapping` (if any), and the `threshold`.
+ */
+export function getOpacityState(volumeActor): {
+  opacity: number;
+  opacityMapping?: OpacityMapping[];
+  threshold: number | null;
+} {
+  const spec = opacitySpecByActor.get(volumeActor);
+  if (spec) {
+    return {
+      opacity: spec.overall,
+      opacityMapping: spec.mapping,
+      threshold: spec.threshold ?? null,
+    };
+  }
+  return {
+    opacity: getMaxOpacity(volumeActor),
+    opacityMapping: undefined,
+    threshold: getThresholdValue(volumeActor),
+  };
+}
+
+/**
+ * Derives and applies the scalar-opacity function from an opacity spec, then stores the spec on
+ * the actor so later overall/threshold/mapping changes can re-derive without flattening.
+ */
+function applyOpacitySpec(volumeActor, spec: OpacitySpec) {
+  const overall = spec.overall ?? 1;
+  const threshold = spec.threshold ?? null;
+  const mapping = spec.mapping;
+
+  opacitySpecByActor.set(volumeActor, { overall, mapping, threshold });
+
+  if (mapping?.length) {
+    const ofun = vtkPiecewiseFunction.newInstance();
+    const sorted = [...mapping].sort((a, b) => a.value - b.value);
+
+    if (threshold !== null) {
+      // Keep the mapping shape (scaled by overall) but force everything below the threshold to
+      // be fully transparent, with a sharp transition at the threshold.
+      const span =
+        Math.abs(sorted[sorted.length - 1].value - sorted[0].value) || 1;
+      const delta = span * 0.001;
+      ofun.addPoint(sorted[0].value, 0);
+      ofun.addPoint(threshold - delta, 0);
+      sorted.forEach(({ value, opacity }) => {
+        if (value >= threshold) {
+          ofun.addPoint(value, opacity * overall);
+        }
+      });
+    } else {
+      sorted.forEach(({ value, opacity }) => {
+        ofun.addPoint(value, opacity * overall);
+      });
+    }
+
+    volumeActor.getProperty().setScalarOpacity(0, ofun);
+    return;
+  }
+
+  // No per-value mapping: a uniform `overall` opacity with an optional threshold.
+  updateOpacityWithThreshold(volumeActor, overall, threshold);
 }
 
 /**
@@ -302,39 +423,6 @@ function getMaxOpacity(volumeActor) {
   return maxOpacity;
 }
 
-/**
- * Populates a matched colormap's `opacity` and `threshold` from a stored colormap, falling back
- * to the live actor-derived values so both fields are always present on the result.
- *
- * - `opacity`: a stored array is a hanging-protocol opacity mapping and is preserved (deep-cloned
- *   so callers cannot mutate the stored values). A stored number, or no stored value at all,
- *   means the threshold slider is in play, so the actor's max opacity is read instead.
- * - `threshold`: an explicitly stored `null` is preserved (it clears thresholding); otherwise the
- *   actor-derived threshold value is used.
- *
- * @param matchedColormap - the colormap matched from the actor's RGB transfer function (mutated)
- * @param storedColormap - the colormap stored on the viewport, if any
- * @param volumeActor - the VTK volume actor to read live opacity/threshold values from
- * @returns the `matchedColormap`, with `opacity` and `threshold` populated
- */
-function resolveColormapOpacityThreshold(
-  matchedColormap: ColormapPublic,
-  storedColormap: ColormapPublic | undefined,
-  volumeActor
-): ColormapPublic {
-  const storedOpacity = storedColormap?.opacity;
-  const storedThreshold = storedColormap?.threshold;
-
-  matchedColormap.opacity = Array.isArray(storedOpacity)
-    ? storedOpacity.map((item) => ({ ...item }))
-    : getMaxOpacity(volumeActor);
-
-  matchedColormap.threshold =
-    storedThreshold === null ? null : getThresholdValue(volumeActor);
-
-  return matchedColormap;
-}
-
 export {
   getColormap,
   getColormapNames,
@@ -343,5 +431,4 @@ export {
   findMatchingColormap,
   getThresholdValue,
   getMaxOpacity,
-  resolveColormapOpacityThreshold,
 };
