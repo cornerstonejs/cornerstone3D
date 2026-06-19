@@ -1,11 +1,17 @@
 import { BaseTool } from './base';
 import { Events } from '../enums';
 
-import { getEnabledElement, StackViewport, Enums } from '@cornerstonejs/core';
+import {
+  getEnabledElement,
+  StackViewport,
+  Enums,
+  utilities as csUtils,
+} from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import type { EventTypes, PublicToolProps, ToolProps, IPoints } from '../types';
 import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
+import { getViewportPresentation } from '../utilities/viewportPresentation';
 import { state } from '../store/state';
 
 import {
@@ -50,6 +56,11 @@ class MagnifyTool extends BaseTool {
 
     if (viewport instanceof StackViewport) {
       referencedImageId = targetId.split('imageId:')[1];
+    } else if (csUtils.isGenericViewport(viewport)) {
+      // Native PLANAR_NEXT stack-mode viewport: the current image id directly.
+      referencedImageId = (
+        viewport as unknown as { getCurrentImageId?: () => string }
+      ).getCurrentImageId?.();
     }
 
     return referencedImageId;
@@ -61,7 +72,10 @@ class MagnifyTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
 
-    if (!(viewport instanceof StackViewport)) {
+    if (
+      !(viewport instanceof StackViewport) &&
+      !csUtils.isGenericViewport(viewport)
+    ) {
       throw new Error('MagnifyTool only works on StackViewports');
     }
 
@@ -112,12 +126,31 @@ class MagnifyTool extends BaseTool {
     } = this.editData;
     const { viewport } = enabledElement;
     const { element } = viewport;
-    const viewportProperties = viewport.getProperties();
+    // The loupe mirrors the source viewport's appearance. Native PLANAR_NEXT has no
+    // getProperties/getViewPresentation; read its VOI/LUT via getDisplaySetPresentation
+    // and its rotation/flip via the projection-aware getViewportPresentation helper.
+    const nativeSource = csUtils.isGenericViewport(viewport)
+      ? (viewport as unknown as {
+          getSourceDataId?: () => string | undefined;
+          getDisplaySetPresentation?: (
+            dataId?: string
+          ) => Record<string, unknown>;
+        })
+      : undefined;
+    const viewportProperties = nativeSource
+      ? (nativeSource.getDisplaySetPresentation?.(
+          nativeSource.getSourceDataId?.()
+        ) ?? {})
+      : viewport.getProperties();
     const {
       rotation: originalViewportRotation,
       flipHorizontal: originalViewportFlipHorizontal,
       flipVertical: originalViewportFlipVertical,
-    } = viewport.getViewPresentation();
+    } = (getViewportPresentation(viewport) ?? {}) as {
+      rotation?: number;
+      flipHorizontal?: boolean;
+      flipVertical?: boolean;
+    };
 
     const { canvas: canvasPos, world: worldPos } = currentPoints;
 
@@ -173,11 +206,15 @@ class MagnifyTool extends BaseTool {
         flipVertical: originalViewportFlipVertical,
       });
 
-      // Use the original viewport for the base for parallelScale
-      const { parallelScale } = viewport.getCamera();
-
       const { focalPoint, position, viewPlaneNormal } =
         magnifyViewport.getCamera();
+
+      // Use the source viewport's parallelScale as the magnification base. Native
+      // PLANAR_NEXT has no getCamera/parallelScale, so fall back to the loupe
+      // viewport's own (fit) parallelScale, which renders the same image.
+      const { parallelScale } = csUtils.isGenericViewport(viewport)
+        ? magnifyViewport.getCamera()
+        : viewport.getCamera();
 
       const distance = Math.sqrt(
         Math.pow(focalPoint[0] - position[0], 2) +
