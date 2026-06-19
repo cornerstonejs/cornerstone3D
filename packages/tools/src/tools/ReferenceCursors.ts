@@ -13,6 +13,7 @@ import {
 import { isAnnotationVisible } from '../stateManagement/annotation/annotationVisibility';
 import { drawLine } from '../drawingSvg';
 import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters';
+import getViewportICamera from '../utilities/getViewportICamera';
 import type {
   EventTypes,
   PublicToolProps,
@@ -148,7 +149,7 @@ class ReferenceCursors extends AnnotationDisplayTool {
 
     this.isDrawing = true;
 
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const { viewPlaneNormal, viewUp } = camera;
     if (!viewPlaneNormal || !viewUp) {
       throw new Error('Camera not found');
@@ -314,7 +315,7 @@ class ReferenceCursors extends AnnotationDisplayTool {
     if (!viewport) {
       return [];
     }
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const { viewPlaneNormal, focalPoint } = camera;
     if (!viewPlaneNormal || !focalPoint) {
       return [];
@@ -482,7 +483,7 @@ class ReferenceCursors extends AnnotationDisplayTool {
         viewport.setImageIdIndex(closestIndex);
       }
     } else if (viewport instanceof VolumeViewport) {
-      const { focalPoint, viewPlaneNormal } = viewport.getCamera();
+      const { focalPoint, viewPlaneNormal } = getViewportICamera(viewport);
       if (!focalPoint || !viewPlaneNormal) {
         return;
       }
@@ -518,6 +519,49 @@ class ReferenceCursors extends AnnotationDisplayTool {
         if (renderingEngine) {
           renderingEngine.renderViewport(viewport.id);
         }
+      }
+    } else if (utilities.isGenericViewport(viewport)) {
+      // Native PLANAR_NEXT (stack or volume mode) is neither StackViewport nor
+      // VolumeViewport. Move the rendering plane to the cursor along the view-plane
+      // normal via the view reference (snaps to the nearest slice); it has no setCamera.
+      // (The instanceof checks above narrow `viewport` to never here, so cast back.)
+      const nativeViewport = viewport as unknown as Types.IViewport & {
+        setViewReference?: (ref: Types.ViewReference) => void;
+      };
+      const { focalPoint, viewPlaneNormal } =
+        getViewportICamera(nativeViewport);
+      if (!focalPoint || !viewPlaneNormal) {
+        return;
+      }
+      const plane = utilities.planar.planeEquation(viewPlaneNormal, focalPoint);
+      const currentDistance = utilities.planar.planeDistanceToPoint(
+        plane,
+        currentMousePosition,
+        true
+      );
+      if (Math.abs(currentDistance) < 0.5) {
+        return;
+      }
+      const normalizedViewPlane = vec3.normalize(
+        vec3.create(),
+        vec3.fromValues(...viewPlaneNormal)
+      );
+      const scaledPlaneNormal = vec3.scale(
+        vec3.create(),
+        normalizedViewPlane,
+        currentDistance
+      );
+      const newFocalPoint = vec3.add(
+        vec3.create(),
+        vec3.fromValues(...focalPoint),
+        scaledPlaneNormal
+      ) as Types.Point3;
+      nativeViewport.setViewReference?.({
+        cameraFocalPoint: newFocalPoint,
+      } as Types.ViewReference);
+      const renderingEngine = nativeViewport.getRenderingEngine();
+      if (renderingEngine) {
+        renderingEngine.renderViewport(nativeViewport.id);
       }
     }
   }
