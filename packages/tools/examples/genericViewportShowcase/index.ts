@@ -197,11 +197,17 @@ function getReferenceLineControllable(): boolean {
 }
 
 function getReferenceLineDraggableRotatable(): boolean {
-  // Rotation is intentionally disabled for native MPR viewports for now.
-  return false;
+  // Must be true for the crosshairs to be interactive: it gates both the
+  // reference-line grab (drag-to-translate, which reslices the other MPR
+  // viewports - the "jump") and the center gap. Rotation drag itself is a
+  // no-op on native PLANAR_NEXT (the tool gates OPERATION.ROTATE off for
+  // GenericViewports), so the rotation handles render but are inert for now.
+  return true;
 }
 
 function getReferenceLineSlabThicknessControlsOn(): boolean {
+  // Slab-thickness handles stay off: slab control is not supported on native
+  // PLANAR_NEXT yet.
   return false;
 }
 
