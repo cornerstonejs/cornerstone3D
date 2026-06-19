@@ -146,6 +146,20 @@ describe('getBitmapFramesFromDataset', () => {
     expect(Array.from(frames[1])).toEqual([0, 0, 4, 0]);
   });
 
+  it('reads a 16-bit labelmap layout', () => {
+    const { frames, bitsAllocated } = getBitmapFramesFromDataset({
+      ...baseDataset,
+      BitsAllocated: 16,
+      // values > 255 exercise the 16-bit path that the 8-bit branch can't carry
+      PixelData: new Uint16Array([1, 2, 0, 300, 0, 0, 4, 40000]),
+    });
+
+    expect(bitsAllocated).toBe(16);
+    expect(frames[0]).toBeInstanceOf(Uint16Array);
+    expect(Array.from(frames[0])).toEqual([1, 2, 0, 300]);
+    expect(Array.from(frames[1])).toEqual([0, 0, 4, 40000]);
+  });
+
   it('throws on an unexpected 1-bit PixelData length', () => {
     expect(() =>
       getBitmapFramesFromDataset({

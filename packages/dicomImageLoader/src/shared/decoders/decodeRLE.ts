@@ -189,8 +189,6 @@ function decode8Planar(
   imageFrame.pixelData = new Uint8Array(outFrame);
 
   if (isOneBit) {
-    const pixelsPerPlane = imageFrame.rows * imageFrame.columns;
-
     imageFrame.pixelData = unpackOneBitPlanar(
       imageFrame.pixelData as Uint8Array,
       imageFrame,

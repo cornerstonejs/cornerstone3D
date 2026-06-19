@@ -305,6 +305,32 @@ function expandWadorsFrameImageIds(
   return frameImageIds;
 }
 
+const WADO_URI_FRAME_SCHEME = /^(wadouri:|dicomfile:)/;
+
+/**
+ * Expands a WADO-URI / local SEG imageId into one imageId per frame using the
+ * `?frame=N` / `&frame=N` (1-based) convention. Returns `[segImageId]` when the
+ * scheme is not WADO-URI-style or the SEG is single-frame.
+ */
+function expandWadoUriFrameImageIds(
+  segImageId: string,
+  numberOfFrames: number
+): string[] {
+  if (numberOfFrames <= 1 || !WADO_URI_FRAME_SCHEME.test(segImageId)) {
+    return [segImageId];
+  }
+
+  const base = segImageId.split('&frame=')[0].split('?frame=')[0];
+  const separator = base.includes('?') ? '&' : '?';
+  const frameImageIds: string[] = [];
+
+  for (let frameNumber = 1; frameNumber <= numberOfFrames; frameNumber++) {
+    frameImageIds.push(`${base}${separator}frame=${frameNumber}`);
+  }
+
+  return frameImageIds;
+}
+
 function resolveFrameImageIds({
   segImageId,
   numberOfFrames,
@@ -326,9 +352,21 @@ function resolveFrameImageIds({
     );
   }
 
+  // The adapter can only synthesize per-frame imageIds for schemes whose
+  // frame-addressing convention it knows: WADO-RS (`.../frames/N`) and WADO-URI
+  // (`?frame=N` / `&frame=N`). For any other scheme the caller must supply
+  // frameImageIds or getFrameImageId.
   const wadorsFrameIds = expandWadorsFrameImageIds(segImageId, numberOfFrames);
   if (wadorsFrameIds.length > 1) {
     return wadorsFrameIds;
+  }
+
+  const wadoUriFrameIds = expandWadoUriFrameImageIds(
+    segImageId,
+    numberOfFrames
+  );
+  if (wadoUriFrameIds.length > 1) {
+    return wadoUriFrameIds;
   }
 
   return numberOfFrames > 1
@@ -1529,4 +1567,5 @@ export {
   createLabelmapsFromDICOMBuffer,
   createLabelmapsFromBufferInternal,
   decodeSegPixelDataFromFrameIds,
+  resolveFrameImageIds,
 };

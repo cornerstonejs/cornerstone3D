@@ -36,8 +36,10 @@ function makeLabelmap3D(labelmaps2D) {
 
 function makeMetadata(sopByImageId) {
   return {
-    get: (_module, imageId) =>
-      imageId && sopByImageId[imageId]
+    // fillSegmentation resolves source SOP Instance UIDs via the 'ImageData'
+    // module; gate on it so a regression that queries the wrong module fails.
+    get: (module, imageId) =>
+      module === 'ImageData' && imageId && sopByImageId[imageId]
         ? { SOPInstanceUID: sopByImageId[imageId] }
         : {},
     // Keep frame resolution deterministic (never falls through to FrameRange).
