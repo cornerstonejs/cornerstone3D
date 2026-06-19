@@ -76,6 +76,11 @@ class VolumeViewport3D extends GenericViewport<
     super(args);
     this.renderingEngineId = args.renderingEngineId;
     this.canvas = args.canvas;
+    // The 3D viewport renders VTK directly to this on-screen canvas (it has no CPU
+    // canvas like PlanarViewport). When the same element previously hosted a CPU
+    // PlanarViewport, that viewport hid this shared canvas (display:none) in favor of
+    // its cpuCanvas; ensure it is visible again so the volume rendering is shown.
+    this.canvas.style.display = '';
     this.sWidth = args.sWidth;
     this.sHeight = args.sHeight;
     this.defaultOptions = args.defaultOptions || {};
