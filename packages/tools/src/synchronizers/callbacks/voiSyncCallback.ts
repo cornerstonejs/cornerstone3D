@@ -43,6 +43,10 @@ export default function voiSyncCallback(
     tProperties.invert = invert;
   }
   if (options?.syncColormap && colormap) {
+    // The colormap carries the scalar overall opacity, the per-value opacity mapping, and the
+    // threshold as separate fields, so the target re-derives its opacity function (overall *
+    // mapping, with threshold cutoff) without collapsing the mapping to a single value. This keeps
+    // both the initial fusion display and slider/threshold changes synchronized correctly.
     tProperties.colormap = colormap;
   }
 

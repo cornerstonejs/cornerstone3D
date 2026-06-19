@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.0.11](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.10...v5.0.11) (2026-06-19)
+
+### Bug Fixes
+
+- tmtv backgound color inconsistency ([#2719](https://github.com/cornerstonejs/cornerstone3D/issues/2719)) ([89f1df0](https://github.com/cornerstonejs/cornerstone3D/commit/89f1df0b6cc17a73987c3581507b4a775cd67eb1))
+
 ## [5.0.10](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.9...v5.0.10) (2026-06-17)
 
 ### Bug Fixes
