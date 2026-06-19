@@ -1,9 +1,11 @@
-import { utilities as dcmjsUtilities } from 'dcmjs';
+import { constants, utilities as dcmjsUtilities } from 'dcmjs';
 
 const { decode: decodeDcmjsRleRows } = dcmjsUtilities.compression;
 
+// dcmjs has no named constant for RLE Lossless, so keep it declared here.
 const RLE_LOSSLESS_TRANSFER_SYNTAX_UID = '1.2.840.10008.1.2.5';
-const EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID = '1.2.840.10008.1.2.1';
+const EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID =
+  constants.EXPLICIT_LITTLE_ENDIAN;
 
 function getTransferSyntaxUid(multiframe: Record<string, unknown>): string {
   const meta = multiframe._meta as
@@ -60,30 +62,36 @@ function decodeRleLosslessToPackedBytes(
   const out = new Uint8Array(packedByteLength);
   const numSegments = header.getInt32(0, true);
 
-  for (let s = 0; s < numSegments; s++) {
-    let outIndex = numSegments === 1 ? 0 : s * packedByteLength;
-    let inIndex = header.getInt32((s + 1) * 4, true);
-    let maxIndex = header.getInt32((s + 2) * 4, true);
+  // This decoder produces a single packed sample plane (see the function's
+  // docstring) and only sizes `out` for one segment. Binary (1-bit) SEG RLE
+  // frames always carry exactly one segment; multi-byte planes are decoded
+  // elsewhere via dcmjs. Reject anything else rather than silently dropping
+  // the extra segments' data.
+  if (numSegments !== 1) {
+    throw new Error(
+      `Expected a single RLE segment for SEG re-encode, got ${numSegments}`
+    );
+  }
 
-    if (maxIndex === 0) {
-      maxIndex = frameData.length;
-    }
+  let outIndex = 0;
+  let inIndex = header.getInt32(4, true);
+  let maxIndex = header.getInt32(8, true);
 
-    const endOfSegment =
-      numSegments === 1 ? packedByteLength : (s + 1) * packedByteLength;
+  if (maxIndex === 0) {
+    maxIndex = frameData.length;
+  }
 
-    while (inIndex < maxIndex && outIndex < endOfSegment) {
-      const n = data[inIndex++];
+  while (inIndex < maxIndex && outIndex < packedByteLength) {
+    const n = data[inIndex++];
 
-      if (n >= 0 && n <= 127) {
-        for (let i = 0; i < n + 1 && outIndex < endOfSegment; ++i) {
-          out[outIndex++] = data[inIndex++] & 0xff;
-        }
-      } else if (n <= -1 && n >= -127) {
-        const value = data[inIndex++] & 0xff;
-        for (let j = 0; j < -n + 1 && outIndex < endOfSegment; ++j) {
-          out[outIndex++] = value;
-        }
+    if (n >= 0 && n <= 127) {
+      for (let i = 0; i < n + 1 && outIndex < packedByteLength; ++i) {
+        out[outIndex++] = data[inIndex++] & 0xff;
+      }
+    } else if (n <= -1 && n >= -127) {
+      const value = data[inIndex++] & 0xff;
+      for (let j = 0; j < -n + 1 && outIndex < packedByteLength; ++j) {
+        out[outIndex++] = value;
       }
     }
   }
