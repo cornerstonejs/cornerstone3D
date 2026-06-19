@@ -3,9 +3,81 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
-## [4.22.3](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.2...v4.22.3) (2026-04-23)
+## [5.0.10](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.9...v5.0.10) (2026-06-17)
 
 **Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
+## [5.0.9](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.8...v5.0.9) (2026-06-17)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
+## [5.0.8](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.7...v5.0.8) (2026-06-12)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
+## [5.0.7](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.6...v5.0.7) (2026-06-12)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
+## [5.0.6](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.5...v5.0.6) (2026-06-12)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
+## [5.0.5](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.4...v5.0.5) (2026-06-11)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
+## [5.0.4](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.3...v5.0.4) (2026-06-11)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
+## [5.0.3](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.2...v5.0.3) (2026-06-11)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
+## [5.0.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.1...v5.0.2) (2026-06-11)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
+## [5.0.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.0...v5.0.1) (2026-06-10)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
+# [5.0.0](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.13...v5.0.0) (2026-06-09)
+
+### Features
+
+- Cornerstone3D 5.0 ([#2748](https://github.com/cornerstonejs/cornerstone3D/issues/2748)) ([aa68c90](https://github.com/cornerstonejs/cornerstone3D/commit/aa68c904b8ba6abfcbf05fbb510bb10a17ea7028)), closes [#2638](https://github.com/cornerstonejs/cornerstone3D/issues/2638) [#2639](https://github.com/cornerstonejs/cornerstone3D/issues/2639) [#2625](https://github.com/cornerstonejs/cornerstone3D/issues/2625) [#2666](https://github.com/cornerstonejs/cornerstone3D/issues/2666) [#2635](https://github.com/cornerstonejs/cornerstone3D/issues/2635)
+
+## [4.22.13](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.12...v4.22.13) (2026-05-26)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
+## [4.22.12](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.11...v4.22.12) (2026-05-25)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
+## [4.22.11](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.10...v4.22.11) (2026-05-25)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
+## [4.22.10](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.9...v4.22.10) (2026-05-22)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
+## [4.22.9](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.8...v4.22.9) (2026-05-19)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
+## [4.22.8](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.7...v4.22.8) (2026-05-15)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
+# [5.0.0-beta.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.0-beta.1...v5.0.0-beta.2) (2026-05-15)
+
+**Note:** Version bump only for package @cornerstonejs/polymorphic-segmentation
+
+# [5.0.0-beta.1](https://github.com/cornerstonejs/cornerstone3D/compare/v4.18.3...v5.0.0-beta.1) (2026-02-27)
 
 ## [4.22.2](https://github.com/cornerstonejs/cornerstone3D/compare/v4.22.1...v4.22.2) (2026-04-21)
 

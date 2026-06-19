@@ -1,12 +1,10 @@
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
-import labelmapDisplay from '../../tools/displayTools/Labelmap/labelmapDisplay';
-import contourDisplay from '../../tools/displayTools/Contour/contourDisplay';
 
 import { getSegmentationRepresentations } from './getSegmentationRepresentation';
 import { getEnabledElementByViewportId } from '@cornerstonejs/core';
 import { defaultSegmentationStateManager } from './SegmentationStateManager';
-import { surfaceDisplay } from '../../tools/displayTools/Surface';
 import { removeSegmentationListener } from './segmentationEventManager';
+import { getSegmentationRepresentationDisplay } from './SegmentationRepresentationDisplayRegistry';
 
 /**
  * Removes a segmentation representation from a viewport.
@@ -180,25 +178,20 @@ function _removeRepresentationObject(
   });
 
   representations.forEach((representation) => {
-    if (representation.type === SegmentationRepresentations.Labelmap) {
-      labelmapDisplay.removeRepresentation(
+    const display = getSegmentationRepresentationDisplay(representation.type);
+
+    if (display) {
+      display.removeRepresentation(
         viewportId,
         representation.segmentationId,
         immediate
       );
-    } else if (representation.type === SegmentationRepresentations.Contour) {
-      contourDisplay.removeRepresentation(
-        viewportId,
-        representation.segmentationId,
-        immediate
-      );
-    } else if (representation.type === SegmentationRepresentations.Surface) {
-      surfaceDisplay.removeRepresentation(
-        viewportId,
-        representation.segmentationId,
-        immediate
+    } else {
+      console.warn(
+        `No display registered for segmentation representation type ${representation.type}.`
       );
     }
+
     // Remove any active listeners for this representation
     removeSegmentationListener(
       representation.segmentationId,

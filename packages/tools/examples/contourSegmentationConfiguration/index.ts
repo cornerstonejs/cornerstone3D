@@ -37,7 +37,7 @@ setTitleAndDescription(
   'Here, we demonstrate how you can customize the appearance of one contour segmentation in two different toolGroups. As you see, the same segmentation is able to appear differently in different toolGroups. As you can see the left viewport has a dashed and thicker line for the same contour segmentation.'
 );
 
-const size = '500px';
+const size = '512px';
 
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');

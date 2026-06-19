@@ -1,6 +1,7 @@
 import type Point3 from '../types/Point3';
 import type BoundsIJK from '../types/BoundsIJK';
 import type { PixelDataTypedArray } from '../types';
+import { deepClone } from './deepClone';
 
 /**
  * The RLERun specifies a contigous run of values for a row,
@@ -110,7 +111,7 @@ export default class RLEVoxelMap<T> {
     source: RLEVoxelMap<T>
   ) {
     for (const [index, row] of source.rows) {
-      destination.rows.set(index, structuredClone(row));
+      destination.rows.set(index, deepClone(row));
     }
   }
 

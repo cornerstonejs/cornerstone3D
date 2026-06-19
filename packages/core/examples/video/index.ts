@@ -18,7 +18,6 @@ console.warn(
 );
 
 const { ViewportType, Events } = Enums;
-
 // ======== Constants ======= //
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'videoViewport';
@@ -32,8 +31,8 @@ setTitleAndDescription(
 const content = document.getElementById('content');
 const element = document.createElement('div');
 element.id = 'cornerstone-element';
-element.style.width = '500px';
-element.style.height = '500px';
+element.style.width = '512px';
+element.style.height = '512px';
 
 content.appendChild(element);
 
@@ -143,14 +142,14 @@ async function run() {
     viewportId
   ) as Types.IVideoViewport;
 
-  // Set the stack on the viewport
-  await viewport.setVideo(videoId);
+  // Set the video on the viewport
+  await viewport.setDisplaySets({ displaySetId: videoId });
 
   // Set the VOI of the stack
   // viewport.setProperties({ voiRange: ctVoiRange });
 
   // Render the image
-  viewport.play();
+  // viewport.play();
 }
 
 run();
