@@ -134,6 +134,7 @@ function fakeMetaDataProvider(type, imageId) {
     rgb,
     PT = false,
     id,
+    ipp = [0, 0, sliceIndex],
   } = imageInfo;
 
   const modality = PT ? 'PT' : 'MR';
@@ -173,7 +174,7 @@ function fakeMetaDataProvider(type, imageId) {
       imageOrientationPatient: [1, 0, 0, 0, 1, 0],
       rowCosines: [1, 0, 0],
       columnCosines: [0, 1, 0],
-      imagePositionPatient: [0, 0, sliceIndex],
+      imagePositionPatient: ipp,
       pixelSpacing: [xSpacing, ySpacing],
       rowPixelSpacing: ySpacing,
       columnPixelSpacing: xSpacing,
