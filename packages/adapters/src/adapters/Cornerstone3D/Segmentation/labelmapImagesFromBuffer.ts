@@ -598,6 +598,12 @@ const getReferencedImageIdFromPerFrameGroup = ({
 /**
  * Creates labelmap images from a SEG instance using per-frame imageIds and a decode callback.
  * This is the primary entry point for OHIF and other hosts that load pixels via imageLoader.
+ *
+ * `options.frameImageIds` is optional: it is the list of per-frame imageIds the
+ * segmentation contains (as produced when the SEG object is loaded). It only
+ * needs to be supplied for data sources whose imageIds do not follow the
+ * DICOMweb (WADO-RS) or WADO-URI conventions — for those, the per-frame list is
+ * derived automatically from `segImageId` (see `resolveFrameImageIds`).
  */
 async function createLabelmapsFromSegImageIds(
   referencedImageIds,

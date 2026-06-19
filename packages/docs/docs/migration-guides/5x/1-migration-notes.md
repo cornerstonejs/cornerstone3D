@@ -101,19 +101,23 @@ behavior lives under the new name `createFromDicomSegImageId`. The original
 `ArrayBuffer` contract, so existing callers keep working without code changes
 and the upgrade does not require a major version bump.
 
-### The `frameImageIds` option
+### The `frameImageIds` option (optional)
 
-`frameImageIds` is the list of loadable imageIds — one per SEG frame — that the
-adapter passes to the image loader to read pixel data. It exists because of the
-underlying change in how pixels are obtained.
+`frameImageIds` is **optional** and most integrations never need to set it.
 
-The old buffer-based path decoded the entire SEG from a single Part 10
-`ArrayBuffer` held in memory, so individual frames never needed their own
-imageIds. The new path instead loads each frame's pixels through the image
-loader, which means it needs one addressable imageId **per frame**.
+It is the list of loadable imageIds — one per SEG frame — that the adapter
+passes to the image loader to read pixel data. In other words, it is the set of
+frames the segmentation contains, exactly as produced when the segmentation
+object is loaded. It exists because of a change in how pixels are obtained: the
+old buffer-based path decoded the entire SEG from a single Part 10 `ArrayBuffer`
+held in memory, so individual frames never needed their own imageIds, whereas
+the new path loads each frame's pixels through the image loader and therefore
+needs one addressable imageId **per frame**.
 
-The adapter can only build that per-frame list itself when the SEG `imageId`
-uses a frame-addressing convention it recognizes:
+You only need to pass it for **data sources whose imageIds do not follow the
+DICOMweb (WADO-RS) or WADO-URI conventions.** When the SEG `imageId` uses a
+frame-addressing scheme the adapter recognizes, the per-frame list is derived
+automatically and `frameImageIds` can be omitted:
 
 - **WADO-RS / DICOMweb** — frames are separate resources (`.../frames/1`,
   `.../frames/2`, …), so the list is derived by substituting the frame number.
@@ -123,28 +127,34 @@ uses a frame-addressing convention it recognizes:
 For any other imageId form (custom schemes, blob/object URLs that are not
 WADO-URI, application-specific loaders, etc.) there is no general rule for
 turning a base `imageId` into per-frame imageIds, so the adapter cannot
-auto-generate the list. In those cases you must pass `frameImageIds` explicitly
-(or a `getFrameImageId(segImageId, frameNumber)` callback). If you omit it for an
+auto-generate the list. In those cases pass `frameImageIds` explicitly (or a
+`getFrameImageId(segImageId, frameNumber)` callback). If you omit it for an
 unrecognized multi-frame `imageId`, every frame falls back to the same base
 `imageId` and decodes identical pixels.
 
 ```ts
-// Multi-frame SEG on a non-WADO scheme: provide the per-frame imageIds.
+// Single-frame SEG, WADO-RS, and WADO-URI imageIds: frameImageIds is not needed.
+const results =
+  await adaptersSEG.Cornerstone3D.Segmentation.createFromDicomSegImageId(
+    referencedImageIds,
+    segImageId,
+    { metadataProvider }
+  );
+
+// Non-WADO scheme only: provide the per-frame imageIds from loading the SEG.
 const results =
   await adaptersSEG.Cornerstone3D.Segmentation.createFromDicomSegImageId(
     referencedImageIds,
     segImageId,
     {
       metadataProvider,
-      frameImageIds, // one loadable imageId per frame
+      frameImageIds, // one loadable imageId per SEG frame
     }
   );
 
 // Or supply a builder instead of the full list:
 //   getFrameImageId: (segImageId, frameNumber) => `${segImageId}?frame=${frameNumber}`
 ```
-
-Single-frame SEG, WADO-RS, and WADO-URI imageIds do not require `frameImageIds`.
 
 ### Migration Guidance
 

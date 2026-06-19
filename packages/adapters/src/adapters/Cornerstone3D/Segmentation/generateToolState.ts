@@ -52,9 +52,16 @@ function generateToolState(
  * @param referencedImageIds - Referenced CT/MR imageIds
  * @param segImageId - SEG instance imageId for metadata (base or frame-qualified)
  * @param options.metadataProvider - Required metadata provider
- * @param options.frameImageIds - Per-frame loadable SEG imageIds
- * @param options.getFrameImageId - Optional (baseSegImageId, frameNumber) => frame imageId
- * @param options.decodeImageData - Optional (frameImageId, frameNumber) => pixel data; defaults to imageLoader
+ * @param [options.frameImageIds] - Optional. The list of per-frame loadable
+ *   imageIds that make up the segmentation — i.e. the frames produced when the
+ *   segmentation object is loaded. Only required for data sources whose
+ *   imageIds do NOT follow the DICOMweb (WADO-RS) or WADO-URI conventions; for
+ *   those the per-frame list is derived automatically from `segImageId` and
+ *   does not need to be passed.
+ * @param [options.getFrameImageId] - Optional `(baseSegImageId, frameNumber) => frame imageId`
+ *   builder, an alternative to passing the full `frameImageIds` list.
+ * @param [options.decodeImageData] - Optional `(frameImageId, frameNumber) => pixel data`;
+ *   defaults to the cornerstone image loader.
  */
 function createFromDicomSegImageId(
   referencedImageIds,
