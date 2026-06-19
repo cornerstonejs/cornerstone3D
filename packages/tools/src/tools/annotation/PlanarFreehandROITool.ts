@@ -702,7 +702,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     }
 
     const { data, invalidated } = annotation;
-    const cachedStats = data && data.cachedStats;
+    const cachedStats = data?.cachedStats;
 
     if (invalidated || !cachedStats?.[targetId]) {
       this._calculateStatsIfActive(
@@ -920,15 +920,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     let kMax = Number.MIN_SAFE_INTEGER;
 
     for (let j = 0; j < points.length; j++) {
-      // Keep the raw (unfloored) index values so that snapIndexBounds can
-      // correctly detect planar (delta <= 1) ROIs below. Clamp to the image
-      // dimensions to avoid out-of-bounds bounds, operating on a copy so the
-      // original indexPoints (used for the perimeter calculation) are untouched.
-      const worldPosIndex = indexPoints[j].slice();
-
-      worldPosIndex[0] = Math.max(0, Math.min(dims[0] - 1, worldPosIndex[0]));
-      worldPosIndex[1] = Math.max(0, Math.min(dims[1] - 1, worldPosIndex[1]));
-      worldPosIndex[2] = Math.max(0, Math.min(dims[2] - 1, worldPosIndex[2]));
+      const worldPosIndex = indexPoints[j];
 
       iMin = Math.min(iMin, worldPosIndex[0]);
       iMax = Math.max(iMax, worldPosIndex[0]);
@@ -939,6 +931,18 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       kMin = Math.min(kMin, worldPosIndex[2]);
       kMax = Math.max(kMax, worldPosIndex[2]);
     }
+
+    // Clamp the accumulated bounds into the image extent so the bounding box
+    // never spills outside the volume. Clamping the min/max here is equivalent
+    // to clamping every point (clamp is monotonic, so it commutes with
+    // min/max) but avoids the per-point allocation. The values are left
+    // unfloored so snapIndexBounds can still detect planar (delta <= 1) ROIs.
+    iMin = Math.max(0, Math.min(dims[0] - 1, iMin));
+    iMax = Math.max(0, Math.min(dims[0] - 1, iMax));
+    jMin = Math.max(0, Math.min(dims[1] - 1, jMin));
+    jMax = Math.max(0, Math.min(dims[1] - 1, jMax));
+    kMin = Math.max(0, Math.min(dims[2] - 1, kMin));
+    kMax = Math.max(0, Math.min(dims[2] - 1, kMax));
 
     [iMin, iMax] = snapIndexBounds(iMin, iMax);
     [jMin, jMax] = snapIndexBounds(jMin, jMax);
