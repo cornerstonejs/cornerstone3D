@@ -15,6 +15,7 @@ overrides:
   tar-fs: 2.1.4
   body-parser: 1.20.3
   ws: 8.21.0
+  undici@<6.27.0: 6.27.0
   qs: 6.14.1
   lodash: 4.18.1
   tar: 7.5.11
@@ -11389,8 +11390,8 @@ packages:
   undici-types@6.19.8:
     resolution: {integrity: sha512-ve2KP6f/JnbPBFyobGHuerC9g1FYGn/F8n1LWTwNxCEzd6IfqTwUQcNXgEtmmQ6DlRrC1hrSrBnCZPokRrDHjw==}
 
-  undici@6.26.0:
-    resolution: {integrity: sha512-4yqz8a3n5HmGTlsbADNtr/dJlhkh/55Rq798G6ibiULcXbDtaLpTl1pvdqcbFfeoj3iSi52lePFM7h9H21cw/A==}
+  undici@6.27.0:
+    resolution: {integrity: sha512-YmfV3YnEDzXRC5lZ2jWtWWHKGUm1zIt8AhesR1tens+HTNv+YZlN/dp6G727LOvMJ8xjP9Be7Y2Sdr96LDm+pg==}
     engines: {node: '>=18.17'}
 
   unicode-canonical-property-names-ecmascript@2.0.1:
@@ -22246,7 +22247,7 @@ snapshots:
       semver: 7.7.2
       tar: 7.5.11
       tinyglobby: 0.2.16
-      undici: 6.26.0
+      undici: 6.27.0
       which: 6.0.1
 
   node-int64@0.4.0: {}
@@ -25494,7 +25495,7 @@ snapshots:
 
   undici-types@6.19.8: {}
 
-  undici@6.26.0: {}
+  undici@6.27.0: {}
 
   unicode-canonical-property-names-ecmascript@2.0.1: {}
 
