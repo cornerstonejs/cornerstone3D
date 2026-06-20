@@ -214,6 +214,15 @@ class PlanarViewport extends GenericViewport<
     this.element.style.position = this.element.style.position || 'relative';
     this.element.style.overflow = 'hidden';
     this.element.style.background = this.element.style.background || '#000';
+    // Establish a stacking context on the viewport element so the cpuCanvas /
+    // viewport-element z-index layering applied below stays contained. Because
+    // this element is position:relative with z-index:auto it is not a stacking
+    // context on its own, so the viewport-element's z-index:1 would otherwise
+    // leak into the host's stacking context and paint the rendered canvas above
+    // any overlays the host renders as siblings of this element (e.g. OHIF's
+    // corner overlays / orientation markers). isolation keeps the element at the
+    // same stack level relative to its siblings while containing its children.
+    this.element.style.isolation = 'isolate';
 
     const vtkCanvas = args.canvas;
     const viewportElement = this.element.querySelector(

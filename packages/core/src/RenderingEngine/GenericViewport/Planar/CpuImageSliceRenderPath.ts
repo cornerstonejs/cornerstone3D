@@ -78,6 +78,7 @@ export class CpuImageSliceRenderPath
     ctx.display.activateRenderMode(ActorRenderMode.CPU_IMAGE);
 
     let rendering: PlanarCpuImageRendering;
+    markCpuImagePreScaled(payload.image);
     const compatibilityActor = new CanvasActor(
       {
         getImageData: () => this.getImageData(rendering),
@@ -576,6 +577,19 @@ function worldToCPUImageDrawPoint(
   ];
 }
 
+/**
+ * Mirror legacy StackViewport._setCSImage: when the cached image's pixel data is
+ * already pre-scaled (modality rescale baked in), flag it so the CPUFallback
+ * renderer skips the modality LUT. Without this the renderer
+ * (generateLut/getDefaultViewport/renderGrayscaleImage all branch on
+ * image.isPreScaled) re-applies slope/intercept on top of already-scaled data,
+ * shifting every pixel down by the rescale intercept — e.g. a CT renders far too
+ * dark, with only the densest bone surviving the window.
+ */
+function markCpuImagePreScaled(image: IImage): void {
+  image.isPreScaled = image.preScale?.scaled;
+}
+
 export function buildPlanarImageData(
   image: IImage,
   frameOfReferenceUID?: string
@@ -693,6 +707,7 @@ async function updateRenderedImage(args: {
 }): Promise<void> {
   const { ctx, dataId, image, imageIdIndex, props, rendering } = args;
   const enabledElement = rendering.enabledElement;
+  markCpuImagePreScaled(image);
   const camera = ctx.viewport.getViewState();
   const defaultViewport = getDefaultViewport(ctx.cpu.canvas, image);
   const previousViewport = enabledElement.viewport;
