@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.0.13](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.12...v5.0.13) (2026-06-20)
+
+### Bug Fixes
+
+- stack viewport colormap preserve and 4d local improved support ([#2679](https://github.com/cornerstonejs/cornerstone3D/issues/2679)) ([5f192ff](https://github.com/cornerstonejs/cornerstone3D/commit/5f192ff5d879fbb02cee9b7a776562df594eb0a8))
+
 ## [5.0.12](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.11...v5.0.12) (2026-06-19)
 
 **Note:** Version bump only for package @cornerstonejs/core
