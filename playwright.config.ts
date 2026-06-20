@@ -1,42 +1,92 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const reuseExistingServer =
+  process.env.PLAYWRIGHT_REUSE_EXISTING_SERVER === 'true'
+    ? true
+    : process.env.PLAYWRIGHT_REUSE_EXISTING_SERVER === 'false'
+      ? false
+      : !process.env.CI;
+
+const video =
+  process.env.PLAYWRIGHT_VIDEO === 'off' ? 'off' : 'retain-on-failure';
+const playwrightPort = Number(process.env.PLAYWRIGHT_PORT || 3333);
+const playwrightBaseURL =
+  process.env.PLAYWRIGHT_BASE_URL ||
+  process.env.PLAYWRIGHT_EXAMPLE_BASE_URL ||
+  `http://localhost:${playwrightPort}`;
+
+const useBundledChromium =
+  process.env.PLAYWRIGHT_USE_BUNDLED_CHROMIUM === 'true' ||
+  process.env.PLAYWRIGHT_CHROMIUM_CHANNEL === 'bundled';
+const vitestBrowserTestIgnore = '**/vitest-browser/**';
+
+const chromiumProjectUse = {
+  ...devices['Desktop Chrome'],
+  ...(useBundledChromium
+    ? {}
+    : { channel: process.env.PLAYWRIGHT_CHROMIUM_CHANNEL || 'chrome' }),
+  deviceScaleFactor: 1,
+};
+
 export default defineConfig({
   testDir: './tests',
+  testIgnore: [vitestBrowserTestIgnore],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
+  globalSetup: './playwright.globalSetup.ts',
   retries: process.env.CI ? 3 : 0,
-  workers: process.env.CI ? 16 : undefined,
+  workers: Number(process.env.PLAYWRIGHT_WORKERS) || 8,
   timeout: 120 * 1000,
   snapshotPathTemplate:
     'tests/screenshots{/projectName}/{testFilePath}/{arg}{ext}',
   outputDir: './tests/test-results',
-  reporter: [
-    [
-      process.env.CI ? 'blob' : 'html',
-      { outputFolder: './packages/docs/static/playwright-report' },
-    ],
-  ],
+  // In CI, blob feeds docs merge workflows; HTML goes under tests/ for artifact upload.
+  reporter: process.env.CI
+    ? [
+        ['blob', { outputFolder: './packages/docs/static/playwright-report' }],
+        [
+          'html',
+          {
+            open: 'never',
+            outputFolder:
+              process.env.PLAYWRIGHT_HTML_OUTPUT_DIR ||
+              './tests/playwright-report',
+          },
+        ],
+      ]
+    : [
+        [
+          'html',
+          {
+            outputFolder:
+              process.env.PLAYWRIGHT_HTML_OUTPUT_DIR ||
+              './packages/docs/static/playwright-report',
+            open: 'never',
+          },
+        ],
+      ],
   use: {
-    baseURL: 'http://localhost:3333',
+    baseURL: playwrightBaseURL,
+    actionTimeout: 30000,
     trace: 'on-first-retry',
-    video: 'on',
+    video,
   },
 
   projects: [
     {
       name: 'slow-tests',
       testMatch: /.+@slow.+/,
-      use: { ...devices['Desktop Chrome'], deviceScaleFactor: 1 },
+      use: chromiumProjectUse,
     },
     {
       name: 'chromium',
-      testIgnore: /.+@slow.+/,
-      use: { ...devices['Desktop Chrome'], deviceScaleFactor: 1 },
+      testIgnore: [/.+@slow.+/, vitestBrowserTestIgnore],
+      use: chromiumProjectUse,
     },
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'], deviceScaleFactor: 1 },
-      testIgnore: ['**/renderingPipeline.spec.ts'],
+      testIgnore: ['**/renderingPipeline.spec.ts', vitestBrowserTestIgnore],
     },
     {
       name: 'Mobile Safari',
@@ -48,6 +98,7 @@ export default defineConfig({
         isMobile: true,
       },
       testIgnore: [
+        vitestBrowserTestIgnore,
         '**/labelmapsegmentationtools.spec.ts',
         '**/splineContourSegmentationTools.spec.ts',
         '**/interpolationContourSegmentation.spec.ts',
@@ -67,6 +118,7 @@ export default defineConfig({
         isMobile: true,
       },
       testIgnore: [
+        vitestBrowserTestIgnore,
         '**/labelmapsegmentationtools.spec.ts',
         '**/splineContourSegmentationTools.spec.ts',
         '**/interpolationContourSegmentation.spec.ts',
@@ -77,9 +129,13 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'cross-env COVERAGE=true nyc bun build-and-serve-static-examples',
-    url: 'http://localhost:3333',
-    reuseExistingServer: !process.env.CI,
+    command: `npx serve .static-examples --listen ${playwrightPort}`,
+    url: playwrightBaseURL,
+    reuseExistingServer,
+    gracefulShutdown: {
+      signal: 'SIGTERM',
+      timeout: 5000,
+    },
     timeout: 500 * 1000,
   },
 });

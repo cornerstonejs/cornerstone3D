@@ -10,6 +10,10 @@ import { mat4, vec3 } from 'gl-matrix';
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
 import { BaseTool } from './base';
 import { getToolGroup } from '../store/ToolGroupManager';
+import {
+  applyViewportPresentation,
+  getViewportPresentation,
+} from '../utilities/viewportPresentation';
 
 class TrackballRotateTool extends BaseTool {
   static toolName;
@@ -108,11 +112,11 @@ class TrackballRotateTool extends BaseTool {
             }
             const { viewport } = element;
 
-            const viewPresentation = viewport.getViewPresentation();
+            const viewPresentation = getViewportPresentation(viewport);
 
             viewport.resetCamera();
 
-            viewport.setViewPresentation(viewPresentation);
+            applyViewportPresentation(viewport, viewPresentation);
             viewport.render();
           });
 

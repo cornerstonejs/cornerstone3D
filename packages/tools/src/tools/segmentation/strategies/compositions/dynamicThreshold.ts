@@ -3,6 +3,7 @@ import type { Types } from '@cornerstonejs/core';
 import type { InitializedOperationData } from '../BrushStrategy';
 import type BoundsIJK from '../../../../types/BoundsIJK';
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
+import getViewportICamera from '../../../../utilities/getViewportICamera';
 
 /**
  * Initializes the threshold values for the dynamic threshold.
@@ -37,7 +38,11 @@ export default {
     const boundsIJK = segmentationVoxelManager.getBoundsIJK();
     const { range: oldThreshold, dynamicRadius = 0 } = configuration.threshold;
     const useDelta = oldThreshold ? 0 : dynamicRadius;
-    const { viewPlaneNormal } = viewport.getCamera();
+    const { viewPlaneNormal } = getViewportICamera(viewport);
+
+    if (!viewPlaneNormal) {
+      return;
+    }
 
     const nestedBounds = boundsIJK.map((ijk, idx) => {
       const [min, max] = ijk;

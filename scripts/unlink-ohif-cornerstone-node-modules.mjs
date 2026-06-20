@@ -42,6 +42,8 @@ const localPackages = {
   core: 'packages/core',
   'dicom-image-loader': 'packages/dicomImageLoader',
   'labelmap-interpolation': 'packages/labelmap-interpolation',
+  metadata: 'packages/metadata',
+  utils: 'packages/utils',
   'nifti-volume-loader': 'packages/nifti-volume-loader',
   'polymorphic-segmentation': 'packages/polymorphic-segmentation',
   tools: 'packages/tools',
@@ -69,12 +71,12 @@ if (removed === 0) {
 }
 
 // Restore packages from registry
-console.log('\nRestoring packages from registry (yarn install --frozen-lockfile)...');
+console.log('\nRestoring packages from registry (pnpm install --frozen-lockfile)...');
 try {
-  execSync('yarn install --frozen-lockfile', { cwd: ohifDir, stdio: 'inherit' });
+  execSync('pnpm install --frozen-lockfile', { cwd: ohifDir, stdio: 'inherit' });
 } catch {
   console.log('Frozen lockfile install failed, retrying without --frozen-lockfile...');
-  execSync('yarn install', { cwd: ohifDir, stdio: 'inherit' });
+  execSync('pnpm install', { cwd: ohifDir, stdio: 'inherit' });
 }
 
 console.log('\nDone. Packages restored from registry.');

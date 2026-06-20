@@ -4,6 +4,11 @@ node_modules
 .nyc_output
 .nx
 .vscode/settings.json
+
+# Local-only interactive diff viewers (see tests/utils/compat-diff-build.py
+# and tests/utils/next-vs-legacy-build.py). Regenerated from current
+# baselines + latest test runs; never committed.
+tests/compat-diff/
 # builds
 build
 # dist
@@ -22,6 +27,9 @@ build
 # Backup files created by various tools
 *.bak
 *~
+
+# Watchman cookies
+.watchman-cookie-*
 
 lerna-debug.log
 npm-debug.log*
@@ -52,15 +60,16 @@ temp/
 junit/
 junit.xml
 coverage/
+reports/
 /test-results/
-/playwright-report/
+/playwright-report*/
 /blob-report/
 /playwright/.cache/
 /tests/test-results/
-/tests/playwright-report/
+/tests/playwright-report*/
 
 # Add Playwright HTML report output from playwright.config.ts
-/packages/docs/static/playwright-report/
+/packages/docs/static/playwright-report*/
 .cursor
 
 **/.claude/settings.local.json
@@ -68,3 +77,4 @@ CLAUDE.md
 # External repositories
 vtk-js/
 .ohif-downstream/
+auth.json

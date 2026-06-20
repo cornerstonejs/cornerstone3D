@@ -45,6 +45,7 @@ import type {
 import type { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
+import { viewportSupportsImageSlices } from '../../utilities/viewportCapabilities';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 
 const { transformWorldToIndex } = csUtils;
@@ -493,26 +494,30 @@ class ProbeTool extends AnnotationTool {
         if (viewport instanceof VolumeViewport) {
           const { referencedImageId } = annotation.metadata;
 
-          // invalidate all the relevant stackViewports if they are not
-          // at the referencedImageId
-          for (const targetId in data.cachedStats) {
-            if (targetId.startsWith('imageId')) {
-              const viewports = renderingEngine.getStackViewports();
+          // invalidate all the relevant stack-like viewports if they are not
+          // at the referencedImageId (skip if metadata/referencedImageId missing)
+          if (referencedImageId) {
+            for (const targetId in data.cachedStats) {
+              if (targetId.startsWith('imageId')) {
+                const viewports = renderingEngine
+                  .getViewports()
+                  .filter(viewportSupportsImageSlices);
 
-              const invalidatedStack = viewports.find((vp) => {
-                // The stack viewport that contains the imageId but is not
-                // showing it currently
-                const referencedImageURI =
-                  csUtils.imageIdToURI(referencedImageId);
-                const hasImageURI = vp.hasImageURI(referencedImageURI);
-                const currentImageURI = csUtils.imageIdToURI(
-                  vp.getCurrentImageId()
-                );
-                return hasImageURI && currentImageURI !== referencedImageURI;
-              });
+                const invalidatedStack = viewports.find((vp) => {
+                  const currentImageId = vp.getCurrentImageId();
+                  if (!currentImageId) return false;
+                  // The stack viewport that contains the imageId but is not
+                  // showing it currently
+                  const referencedImageURI =
+                    csUtils.imageIdToURI(referencedImageId);
+                  const hasImageURI = vp.hasImageURI(referencedImageURI);
+                  const currentImageURI = csUtils.imageIdToURI(currentImageId);
+                  return hasImageURI && currentImageURI !== referencedImageURI;
+                });
 
-              if (invalidatedStack) {
-                delete data.cachedStats[targetId];
+                if (invalidatedStack) {
+                  delete data.cachedStats[targetId];
+                }
               }
             }
           }

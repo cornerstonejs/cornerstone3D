@@ -18,19 +18,19 @@ function setup(document) {
   const content = document.getElementById('content');
 
   // Form
-  // const form = document.createElement('form');
-  // form.style.marginBottom = '20px';
-  // const formInput = document.createElement('input');
-  // formInput.id = 'selectFile';
-  // formInput.type = 'file';
-  // form.appendChild(formInput);
+  const form = document.createElement('form');
+  form.style.marginBottom = '20px';
+  const formInput = document.createElement('input');
+  formInput.id = 'selectFile';
+  formInput.type = 'file';
+  form.appendChild(formInput);
 
   // image div
   const element = document.createElement('div');
   element.oncontextmenu = (e) => e.preventDefault();
   element.id = 'cornerstone-element';
-  element.style.width = '500px';
-  element.style.height = '500px';
+  element.style.width = '512px';
+  element.style.height = '512px';
 
   const div = document.createElement('div');
   div.style.display = 'flex';
@@ -60,7 +60,7 @@ function setup(document) {
   createMetadataRow('Window Width', metadata);
   createMetadataRow('Window Center', metadata);
 
-  // content.appendChild(form);
+  content.appendChild(form);
   content.appendChild(div);
 
   return { element };

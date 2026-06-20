@@ -17,7 +17,6 @@ import { getSegmentIndexAtWorldPoint } from '../../utilities/segmentation';
 import { state } from '../../store/state';
 import type { Segmentation } from '../../types/SegmentationStateTypes';
 import { drawTextBox as drawTextBoxSvg } from '../../drawingSvg';
-import type { Point2 } from 'packages/core/dist/esm/types';
 
 /**
  * Represents a tool used for segment selection. It is used to select a segment
@@ -199,7 +198,7 @@ class SegmentLabelTool extends BaseTool {
     const textBoxPosition = [
       canvasCoordinates[0] + offset,
       canvasCoordinates[1] + offset,
-    ] as Point2;
+    ] as Types.Point2;
 
     const boundingBox = drawTextBoxSvg(
       svgDrawingHelper,

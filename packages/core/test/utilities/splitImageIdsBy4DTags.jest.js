@@ -2,7 +2,7 @@ import {
   handleMultiframe4D,
   generateFrameImageId,
 } from '../../src/utilities/splitImageIdsBy4DTags';
-import * as metaData from '../../src/metaData';
+import { metaData } from '@cornerstonejs/metadata';
 import {
   describe,
   it,
@@ -13,18 +13,16 @@ import {
 } from '@jest/globals';
 
 describe('splitImageIdsBy4DTags - Multiframe 4D Functions', () => {
-  let originalMetaDataGet;
   let mockMetaDataGet;
 
   beforeEach(() => {
-    originalMetaDataGet = metaData.get;
-    mockMetaDataGet = jest.fn();
-    metaData.get = mockMetaDataGet;
+    mockMetaDataGet = jest
+      .spyOn(metaData, 'get')
+      .mockImplementation(() => undefined);
   });
 
   afterEach(() => {
-    metaData.get = originalMetaDataGet;
-    jest.clearAllMocks();
+    jest.restoreAllMocks();
   });
 
   describe('generateFrameImageId', () => {

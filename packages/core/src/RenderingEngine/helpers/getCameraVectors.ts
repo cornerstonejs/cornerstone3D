@@ -14,6 +14,11 @@ export interface CameraPositionConfig {
   useViewportNormal?: boolean;
 }
 
+export type CameraVectorViewport = Pick<
+  Types.IBaseVolumeViewport,
+  'getActors' | 'getCamera' | 'getCurrentImageId' | 'getImageIds' | 'type'
+>;
+
 /**
  * Calculate camera position values based on DICOM image orientation vectors.
  *
@@ -245,7 +250,7 @@ export function calculateCameraPosition(
  * ```
  */
 export function getCameraVectors(
-  viewport: Types.IBaseVolumeViewport,
+  viewport: CameraVectorViewport,
   config?: CameraPositionConfig
 ) {
   if (!viewport.getActors()?.length) {
@@ -262,7 +267,10 @@ export function getCameraVectors(
   if (!imageId) {
     return;
   }
-  const { imageOrientationPatient } = metaData.get('imagePlaneModule', imageId);
+  const { imageOrientationPatient } = metaData.get(
+    Enums.MetadataModules.IMAGE_PLANE,
+    imageId
+  );
   const rowCosineVec = vec3.fromValues(
     imageOrientationPatient[0],
     imageOrientationPatient[1],
