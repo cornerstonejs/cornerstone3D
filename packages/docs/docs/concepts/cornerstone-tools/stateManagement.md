@@ -46,27 +46,20 @@ const annotation = {
 Annotation may have properties specific to their own tools, but must contain viewPlaneNormal, UID and tool. Developers will be able to interact with the annotations manager with the following API:
 
 ```js
-// Adds annotation
-annotationManager.addAnnotation(annotation);
+// Adds annotation. By default, the groupKey is the FrameOfReferenceUID.
+// The groupKey can be obtained with `annotationManager.getGroupKey(element)` where `element` is the enabled element.
+annotationManager.addAnnotation(annotation, groupKey);
 
 // Remove the annotations given the annotation reference.
-annotationManager.removeAnnotation(annotation.annotationUID);
+annotationManager.removeAnnotation(annotationUID);
 
 // Returns the full annotations for a given Frame of Reference.
 // Optional: If a toolName is given only returns the annotations for that tool.
 // Optional: If a annotationUID is given, only that specific annotation is returned.
-annotationManager.getAnnotationsByFrameOfReference(
-  FrameOfReferenceUID,
-  toolName,
-  annotationUID
-);
+annotationManager.getAnnotations(groupKey, toolName);
 
 // A helper which returns the single annotation entry matching the UID.
 // Less efficient than getAnnotationsByFrameOfReference with all arguments, but allows
 // you to find the annotation if you don't have all the information.
 annotationManager.getAnnotation(annotationUID);
-
-// Deletes the annotation found by the given UID.
-// Less efficient than removeAnnotation, but can be called if you have only the UID.
-annotationManager.removeAnnotation(annotationUID);
 ```
