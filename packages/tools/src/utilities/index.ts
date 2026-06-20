@@ -61,6 +61,7 @@ import { moveAnnotationToViewPlane } from './moveAnnotationToViewPlane';
 import { safeStructuredClone } from './safeStructuredClone';
 import getOrCreateImageVolume from './segmentation/getOrCreateImageVolume';
 import * as usFanExtraction from '../tools/annotation/UltrasoundPleuraBLineTool/utils/fanExtraction';
+import { jumpToFocalPoint } from './genericViewportToolHelpers';
 
 export {
   math,
@@ -114,4 +115,5 @@ export {
   moveAnnotationToViewPlane,
   safeStructuredClone,
   getOrCreateImageVolume,
+  jumpToFocalPoint,
 };

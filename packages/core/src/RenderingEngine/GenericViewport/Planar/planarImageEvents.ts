@@ -63,10 +63,16 @@ export function triggerPlanarVolumeNewImage(
   // segmentation slice tracking) react. The native volume-slice path previously
   // emitted only STACK_NEW_IMAGE, which those consumers do not listen for, so
   // every slice change on a PLANAR_NEXT volume viewport was missed.
-  triggerEvent(ctx.viewport.element, Events.VOLUME_NEW_IMAGE, {
-    imageIndex: params.imageIdIndex ?? 0,
-    numberOfSlices: params.maxImageIdIndex + 1,
-    viewportId: ctx.viewportId,
-    renderingEngineId: ctx.renderingEngineId,
-  });
+  //
+  // Only emit when the slice index is known: defaulting an unknown index to 0
+  // would incorrectly snap volume-aware consumers to the first slice (this
+  // happens on oblique/reformatted planes that do not map to a discrete index).
+  if (typeof params.imageIdIndex === 'number') {
+    triggerEvent(ctx.viewport.element, Events.VOLUME_NEW_IMAGE, {
+      imageIndex: params.imageIdIndex,
+      numberOfSlices: params.maxImageIdIndex + 1,
+      viewportId: ctx.viewportId,
+      renderingEngineId: ctx.renderingEngineId,
+    });
+  }
 }

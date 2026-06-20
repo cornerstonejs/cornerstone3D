@@ -682,7 +682,8 @@ class PlanarViewport extends GenericViewport<
       return;
     }
 
-    const voiTouched = 'voiRange' in props || 'invert' in props;
+    const voiTouched =
+      'voiRange' in props || 'invert' in props || 'voiLUTFunction' in props;
     const colormapTouched = 'colormap' in props;
 
     if (!voiTouched && !colormapTouched) {
@@ -690,7 +691,15 @@ class PlanarViewport extends GenericViewport<
     }
 
     const presentation = this.getDisplaySetPresentation(displaySetId);
-    const volumeId = this.getVolumeId();
+    // Use the modified display set's own volume id so VOI/colormap changes on an
+    // overlay/fusion display set do not emit the active source's volumeId (which
+    // would make downstream synchronizers update the wrong actor). Fall back to
+    // the active source volume id only when the modified set is the source.
+    const volumeId =
+      this.getDataSet(displaySetId)?.volumeId ??
+      (displaySetId === this.getSourceDataId()
+        ? this.getVolumeId()
+        : undefined);
 
     if (voiTouched) {
       const range = props.voiRange ?? presentation?.voiRange;
@@ -700,6 +709,7 @@ class PlanarViewport extends GenericViewport<
           viewportId: this.id,
           range,
           volumeId,
+          VOILUTFunction: props.voiLUTFunction ?? presentation?.voiLUTFunction,
           invert: props.invert ?? presentation?.invert,
           colormap: presentation?.colormap,
         });
@@ -761,7 +771,16 @@ class PlanarViewport extends GenericViewport<
    * @returns The total slice count for the active source data.
    */
   getNumberOfSlices(): number {
-    return Math.max(this.getImageIds().length, this.getMaxImageIdIndex() + 1);
+    const imageCount = this.getImageIds().length;
+
+    // No source data mounted: report zero navigable slices. Without this guard
+    // getMaxImageIdIndex() falls back to 0 and the Math.max below would report a
+    // phantom single slice for an empty viewport.
+    if (!imageCount) {
+      return 0;
+    }
+
+    return Math.max(imageCount, this.getMaxImageIdIndex() + 1);
   }
 
   /**

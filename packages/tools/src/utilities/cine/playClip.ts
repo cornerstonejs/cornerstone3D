@@ -549,7 +549,11 @@ function _createGenericViewportCinePlayContext(
       return viewport.getSliceIndex();
     },
     get frameTimeVectorEnabled(): boolean {
-      return viewport.getCurrentMode?.() === 'stack';
+      // Frame-time-vector timing applies only to acquired multi-frame image-id
+      // stacks. Only stack-mode generic viewports report 'stack' here (volume,
+      // video, ecg, wsi return other modes), so this intentionally disables
+      // frame-time-vector playback for every non-stack generic family.
+      return viewport.getCurrentMode() === 'stack';
     },
     waitForRenderedCount: 0,
     scroll(delta: number): void {

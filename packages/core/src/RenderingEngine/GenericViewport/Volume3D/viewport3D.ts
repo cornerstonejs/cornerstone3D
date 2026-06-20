@@ -455,14 +455,59 @@ class VolumeViewport3D extends GenericViewport<
   /**
    * Resets the VTK-backed view state and clipping range.
    *
+   * Mirrors the legacy `VolumeViewport3D.resetCamera` semantics for the
+   * options that 3D-camera tooling relies on:
+   * - `resetZoom: false` keeps the current parallel scale (zoom) instead of
+   *   refitting to bounds. (OrientationControllerTool animates orientation with
+   *   `resetZoom: false`; VolumeCroppingControlTool also forwards options.)
+   * - `resetPan: false` / `resetToCenter: false` keep the current focal point
+   *   and position rather than recentering on the bounds.
+   *
+   * `vtkRenderer.resetCamera()` preserves the current view direction
+   * (viewPlaneNormal) and viewUp - it only repositions the camera along the
+   * existing direction of projection and recomputes the parallel scale - so an
+   * orientation applied via `setViewState` immediately before this call is not
+   * clobbered.
+   *
+   * @param options - Reset options matching the legacy `resetCamera` contract.
    * @returns Always `true` for compatibility with legacy viewport contracts.
    */
-  resetViewState(): boolean {
+  resetViewState(options?: {
+    resetPan?: boolean;
+    resetZoom?: boolean;
+    resetToCenter?: boolean;
+  }): boolean {
+    const {
+      resetPan = true,
+      resetZoom = true,
+      resetToCenter = true,
+    } = options || {};
+
     const previousCamera = this.getCameraForEvent();
     const renderer = this.getRenderer();
+    const camera = renderer.getActiveCamera();
+
+    const previousParallelScale = camera.getParallelScale();
+    const previousPosition = camera.getPosition();
+    const previousFocalPoint = camera.getFocalPoint();
 
     renderer.resetCamera();
     renderer.resetCameraClippingRange();
+
+    // resetCamera() always recomputes the parallel scale (zoom) to fit the
+    // bounds; restore the previous zoom when the caller opts out.
+    if (!resetZoom) {
+      camera.setParallelScale(previousParallelScale);
+    }
+
+    // resetCamera() recenters the focal point on the bounds; restore the
+    // previous pan/center when the caller opts out of recentering.
+    if (!resetPan || !resetToCenter) {
+      camera.setFocalPoint(...previousFocalPoint);
+      camera.setPosition(...previousPosition);
+      renderer.resetCameraClippingRange();
+    }
+
     this.viewState = this.getViewState();
     this.render();
     this.triggerCameraModifiedEvent(previousCamera);

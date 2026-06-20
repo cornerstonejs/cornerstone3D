@@ -32,7 +32,10 @@ export default function cameraSyncCallback(
   if (utilities.isGenericViewport(tViewport)) {
     // Direct Generic ("next") viewports do not expose setCamera. Camera-position
     // synchronization across viewports is expressed natively by copying the
-    // source viewport's spatial view reference onto the target.
+    // source viewport's spatial view reference onto the target. The CAMERA_MODIFIED
+    // event detail only carries an ICamera (no ViewReference), so we read the
+    // reference live from the source viewport rather than from the event snapshot;
+    // any sync lag from the live read is inherent to the event not carrying one.
     const sViewport = renderingEngine.getViewport(sourceViewport.viewportId);
     tViewport.setViewReference(sViewport.getViewReference());
   } else {

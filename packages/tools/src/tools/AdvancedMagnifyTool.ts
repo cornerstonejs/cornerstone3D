@@ -51,7 +51,7 @@ import type { AdvancedMagnifyAnnotation } from '../types/ToolSpecificAnnotationT
 
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
 import getViewportICamera from '../utilities/getViewportICamera';
-import { getViewportPresentation } from '../utilities/viewportPresentation';
+import { getNativeSourceProperties } from '../utilities/genericViewportToolHelpers';
 import type { StyleSpecifier } from '../types/AnnotationStyle';
 import { getCanvasCircleRadius } from '../utilities/math/circle';
 
@@ -224,10 +224,11 @@ class AdvancedMagnifyTool extends AnnotationTool {
     // The base getReferencedImageId derives the image id by string-splitting the
     // targetId, which on a native viewport is a frameOfReference-prefixed id and
     // yields a bogus value. Read the current image id directly (mirrors MagnifyTool).
+    // currentImageId may be undefined for a reconstructed/volume plane; it is only
+    // stored as annotation metadata and tolerated (the loupe is built from
+    // getImageIds()/getCurrentImageIdIndex()).
     const referencedImageId = isNativeSource
-      ? (
-          viewport as unknown as { getCurrentImageId?: () => string }
-        ).getCurrentImageId?.()
+      ? getNativeSourceProperties(viewport).currentImageId
       : this.getReferencedImageId(viewport, worldPos, viewPlaneNormal, viewUp);
 
     const annotationUID = csUtils.uuidv4();
@@ -1705,15 +1706,12 @@ class AdvancedMagnifyViewport {
     );
 
     // Native PLANAR_NEXT has no getCamera; read flip state through the projection-aware
-    // getViewportPresentation helper. The loupe (legacy STACK) still exposes getCamera.
-    const { flipHorizontal, flipVertical } = csUtils.isGenericViewport(
-      sourceViewport
-    )
-      ? ((getViewportPresentation(sourceViewport) ?? {}) as {
-          flipHorizontal?: boolean;
-          flipVertical?: boolean;
-        })
-      : sourceViewport.getCamera();
+    // helper. The loupe (legacy STACK) still exposes getCamera.
+    const native = csUtils.isGenericViewport(sourceViewport)
+      ? getNativeSourceProperties(sourceViewport)
+      : undefined;
+    const { flipHorizontal, flipVertical } =
+      native ?? sourceViewport.getCamera();
 
     const { focalPoint, position, viewPlaneNormal } =
       magnifyViewport.getCamera();
@@ -1761,20 +1759,7 @@ class AdvancedMagnifyViewport {
     // presentation keyed by the source data id (mirrors MagnifyTool). The loupe is a
     // legacy STACK viewport, so setProperties below still works.
     const sourceProperties = isNativeSource
-      ? ((
-          sourceViewport as unknown as {
-            getSourceDataId?: () => string | undefined;
-            getDisplaySetPresentation?: (
-              dataId?: string
-            ) => Record<string, unknown>;
-          }
-        ).getDisplaySetPresentation?.(
-          (
-            sourceViewport as unknown as {
-              getSourceDataId?: () => string | undefined;
-            }
-          ).getSourceDataId?.()
-        ) ?? {})
+      ? getNativeSourceProperties(sourceViewport).properties
       : sourceViewport.getProperties();
     const imageData = magnifyViewport.getImageData();
 

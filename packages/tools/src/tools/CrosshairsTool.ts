@@ -40,6 +40,10 @@ import {
   hideElementCursor,
 } from '../cursors/elementCursor';
 import liangBarksyClip from '../utilities/math/vec2/liangBarksyClip';
+import {
+  getSlabThicknessOrDefault,
+  jumpToFocalPoint,
+} from '../utilities/genericViewportToolHelpers';
 
 import * as lineSegment from '../utilities/math/line';
 import type {
@@ -508,13 +512,7 @@ class CrosshairsTool extends AnnotationTool {
         if (csUtils.isGenericViewport(viewport)) {
           // Native PLANAR_NEXT has no setCamera; the move is purely along the view
           // plane normal (a scroll), so navigate by view reference (snaps to slice).
-          (
-            viewport as unknown as {
-              setViewReference?: (ref: Types.ViewReference) => void;
-            }
-          ).setViewReference?.({
-            cameraFocalPoint: newFocalPoint,
-          } as Types.ViewReference);
+          jumpToFocalPoint(viewport, newFocalPoint);
         } else {
           viewport.setCamera({
             focalPoint: newFocalPoint,
@@ -1150,9 +1148,7 @@ class CrosshairsTool extends AnnotationTool {
         matrix
       );
 
-      const slabThicknessValue = csUtils.isGenericViewport(otherViewport)
-        ? RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS
-        : otherViewport.getSlabThickness();
+      const slabThicknessValue = getSlabThicknessOrDefault(otherViewport);
       const worldOrthoVectorFromCenter: Types.Point3 = [
         ...worldUnitOrthoVectorFromCenter,
       ];
@@ -1540,9 +1536,7 @@ class CrosshairsTool extends AnnotationTool {
             }
           );
         }
-        const slabThicknessValue = csUtils.isGenericViewport(otherViewport)
-          ? RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS
-          : otherViewport.getSlabThickness();
+        const slabThicknessValue = getSlabThicknessOrDefault(otherViewport);
         if (slabThicknessValue > 0.5 && viewportSlabThicknessControlsOn) {
           // draw slab thickness reference lines
           lineUID = `${lineIndex}STOne`;
@@ -2520,9 +2514,7 @@ class CrosshairsTool extends AnnotationTool {
             ];
             vec3.normalize(normalizedProjectedDelta, normalizedProjectedDelta);
 
-            let slabThicknessValue = csUtils.isGenericViewport(otherViewport)
-              ? RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS
-              : otherViewport.getSlabThickness();
+            let slabThicknessValue = getSlabThicknessOrDefault(otherViewport);
             if (
               csUtils.isOpposite(
                 normalizedProjectedDirection,
@@ -2669,13 +2661,7 @@ class CrosshairsTool extends AnnotationTool {
         if (csUtils.isGenericViewport(viewport)) {
           // Pure along-normal scroll; native has no setCamera, so navigate by view
           // reference (snaps to nearest slice).
-          (
-            viewport as unknown as {
-              setViewReference?: (ref: Types.ViewReference) => void;
-            }
-          ).setViewReference?.({
-            cameraFocalPoint: newFocalPoint,
-          } as Types.ViewReference);
+          jumpToFocalPoint(viewport, newFocalPoint);
         } else {
           viewport.setCamera({
             focalPoint: newFocalPoint,

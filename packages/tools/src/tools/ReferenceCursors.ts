@@ -34,6 +34,7 @@ import {
   resetElementCursor,
 } from '../cursors/elementCursor';
 import { getToolGroup } from '../store/ToolGroupManager';
+import { jumpToFocalPoint } from '../utilities/genericViewportToolHelpers';
 
 /**
  * ReferenceCursors is a tool that will show your cursors position in all other elements in the toolGroup if they have a matching FrameOfReference relative to its position in world space.
@@ -461,9 +462,7 @@ class ReferenceCursors extends AnnotationDisplayTool {
     return renderStatus;
   };
 
-  updateViewportImage(
-    viewport: Types.IStackViewport | Types.IVolumeViewport
-  ): void {
+  updateViewportImage(viewport: Types.IViewport): void {
     const currentMousePosition = this._currentCursorWorldPosition;
 
     if (!currentMousePosition || currentMousePosition.some((e) => isNaN(e))) {
@@ -524,12 +523,7 @@ class ReferenceCursors extends AnnotationDisplayTool {
       // Native PLANAR_NEXT (stack or volume mode) is neither StackViewport nor
       // VolumeViewport. Move the rendering plane to the cursor along the view-plane
       // normal via the view reference (snaps to the nearest slice); it has no setCamera.
-      // (The instanceof checks above narrow `viewport` to never here, so cast back.)
-      const nativeViewport = viewport as unknown as Types.IViewport & {
-        setViewReference?: (ref: Types.ViewReference) => void;
-      };
-      const { focalPoint, viewPlaneNormal } =
-        getViewportICamera(nativeViewport);
+      const { focalPoint, viewPlaneNormal } = getViewportICamera(viewport);
       if (!focalPoint || !viewPlaneNormal) {
         return;
       }
@@ -556,12 +550,10 @@ class ReferenceCursors extends AnnotationDisplayTool {
         vec3.fromValues(...focalPoint),
         scaledPlaneNormal
       ) as Types.Point3;
-      nativeViewport.setViewReference?.({
-        cameraFocalPoint: newFocalPoint,
-      } as Types.ViewReference);
-      const renderingEngine = nativeViewport.getRenderingEngine();
+      jumpToFocalPoint(viewport, newFocalPoint);
+      const renderingEngine = viewport.getRenderingEngine();
       if (renderingEngine) {
-        renderingEngine.renderViewport(nativeViewport.id);
+        renderingEngine.renderViewport(viewport.id);
       }
     }
   }

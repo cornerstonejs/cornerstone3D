@@ -682,10 +682,13 @@ class VolumeCroppingControlTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     // Use orientation property for matching
     let orientation = null;
-    if (enabledElement.viewport && enabledElement.viewport.getCamera) {
-      orientation = getOrientationFromNormal(
-        getViewportICamera(enabledElement.viewport).viewPlaneNormal
-      );
+    if (enabledElement.viewport) {
+      // Use the lane-agnostic camera read so orientation also resolves on native
+      // (generic) viewports, which do not expose the legacy getCamera method.
+      const { viewPlaneNormal } = getViewportICamera(enabledElement.viewport);
+      if (viewPlaneNormal) {
+        orientation = getOrientationFromNormal(viewPlaneNormal);
+      }
     }
 
     // Filter annotations for this orientation
