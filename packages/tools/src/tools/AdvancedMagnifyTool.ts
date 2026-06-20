@@ -230,13 +230,6 @@ class AdvancedMagnifyTool extends AnnotationTool {
         ).getCurrentImageId?.()
       : this.getReferencedImageId(viewport, worldPos, viewPlaneNormal, viewUp);
 
-    console.debug(
-      '[AdvancedMagnify] addNewAnnotation source lane:',
-      isNativeSource ? 'next' : 'legacy',
-      'referencedImageId:',
-      referencedImageId
-    );
-
     const annotationUID = csUtils.uuidv4();
     const magnifyViewportId = csUtils.uuidv4();
     const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
@@ -1379,13 +1372,6 @@ class AdvancedMagnifyViewport {
       const parallelScaleSource = (worldPerPixel * sourceHeight) / 2;
       const canvasRatio = magnifyViewport.canvas.offsetWidth / sourceWidth;
 
-      console.debug('[AdvancedMagnify] native parallelScale reconstruction:', {
-        worldPerPixel,
-        sourceWidth,
-        sourceHeight,
-        parallelScaleSource,
-      });
-
       return parallelScaleSource * (1 / zoomFactor) * canvasRatio;
     }
 
@@ -1494,13 +1480,6 @@ class AdvancedMagnifyViewport {
       type: isNativeSource ? Enums.ViewportType.STACK : sourceViewport.type,
       defaultOptions: isNativeSource ? {} : { ...sourceViewportOptions },
     };
-
-    console.debug(
-      '[AdvancedMagnify] cloning loupe viewport, source lane:',
-      isNativeSource ? 'next (legacy STACK loupe)' : 'legacy',
-      'type:',
-      viewportInput.type
-    );
 
     renderingEngine.enableElement(viewportInput);
 
