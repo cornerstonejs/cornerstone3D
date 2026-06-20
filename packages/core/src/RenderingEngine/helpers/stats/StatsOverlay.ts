@@ -269,6 +269,7 @@ export class StatsOverlay implements StatsInstance {
     const entries: Array<{
       renderingEngineId: string;
       viewportId: string;
+      viewportType: string;
       bindings: RenderModePanelBinding[];
     }> = [];
 
@@ -284,6 +285,7 @@ export class StatsOverlay implements StatsInstance {
         entries.push({
           renderingEngineId: renderingEngine.id,
           viewportId: viewport.id,
+          viewportType: viewport.type,
           bindings: this.getViewportBindingDebugEntries(
             debugViewport,
             (renderModes as Record<string, string> | undefined) ?? {}

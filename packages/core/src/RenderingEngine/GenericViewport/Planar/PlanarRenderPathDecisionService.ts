@@ -81,7 +81,7 @@ export class PlanarRenderPathDecisionService {
       acquisitionOrientation,
       renderMode: useVolumePath
         ? this.selectVolumeRenderMode(dataSet, options)
-        : this.selectImageRenderMode(dataSet, options),
+        : this.selectImageRenderMode(options),
       volumeId,
     };
   }
@@ -128,10 +128,9 @@ export class PlanarRenderPathDecisionService {
   }
 
   private selectImageRenderMode(
-    dataSet: PlanarRegisteredDataSet,
     options: PlanarRenderPathDecisionOptions
   ): PlanarEffectiveRenderMode {
-    return this.shouldUseCPUForImage(dataSet, options)
+    return this.shouldUseCPUForImage(options)
       ? ActorRenderMode.CPU_IMAGE
       : ActorRenderMode.VTK_IMAGE;
   }
@@ -146,21 +145,19 @@ export class PlanarRenderPathDecisionService {
   }
 
   private shouldUseCPUForImage(
-    dataSet: PlanarRegisteredDataSet,
     options: PlanarRenderPathDecisionOptions
   ): boolean {
     if (options.webGLAvailable === false) {
       return true;
     }
 
-    const configuredCpuThresholds = getConfiguredPlanarCpuThresholds();
-
-    return shouldUseCPU(
-      dataSet.imageIds,
-      options.cpuThresholds?.image ??
-        configuredCpuThresholds?.image ??
-        DEFAULT_PLANAR_CPU_IMAGE_THRESHOLD
-    );
+    // The GPU image path renders a single slice at a time (see
+    // createVTKImageDataFromImage), so neither stack depth nor per-slice size
+    // changes the GPU texture cost. Match the legacy StackViewport: the image
+    // render path falls back to CPU only when GPU rendering is globally
+    // unavailable. (Size-based fallback remains for the volume path, which does
+    // upload the full volume to the GPU.)
+    return getShouldUseCPURendering();
   }
 
   private shouldUseCPUForVolume(

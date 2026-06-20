@@ -65,6 +65,7 @@ export class RenderModesPanel implements Panel {
     entries: Array<{
       renderingEngineId: string;
       viewportId: string;
+      viewportType: string;
       bindings: RenderModePanelBinding[];
     }>
   ): void {
@@ -90,11 +91,20 @@ export class RenderModesPanel implements Panel {
       heading.title = viewportId;
       heading.style.cssText = `
         display:flex;
+        align-items:center;
         justify-content:space-between;
         gap:8px;
         margin-bottom:6px;
         color:#ffd84d;
         font-weight:700;
+      `;
+
+      const left = document.createElement('div');
+      left.style.cssText = `
+        display:flex;
+        align-items:center;
+        gap:6px;
+        min-width:0;
       `;
 
       const name = document.createElement('span');
@@ -105,7 +115,27 @@ export class RenderModesPanel implements Panel {
         text-overflow:ellipsis;
         white-space:nowrap;
       `;
-      heading.appendChild(name);
+      left.appendChild(name);
+
+      if (entry.viewportType) {
+        const type = document.createElement('span');
+        type.textContent = entry.viewportType;
+        type.title = entry.viewportType;
+        type.style.cssText = `
+          flex:0 0 auto;
+          padding:2px 6px;
+          background:rgba(255, 204, 0, 0.14);
+          border:1px solid rgba(255, 204, 0, 0.4);
+          border-radius:3px;
+          color:#ffe08a;
+          font-size:${PANEL_CONFIG.FONT_SIZE}px;
+          font-weight:700;
+          letter-spacing:0.03em;
+        `;
+        left.appendChild(type);
+      }
+
+      heading.appendChild(left);
 
       const count = document.createElement('span');
       count.textContent = `${bindings.length} binding${bindings.length === 1 ? '' : 's'}`;
