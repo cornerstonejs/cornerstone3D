@@ -581,8 +581,20 @@ export function buildPlanarImageData(
   frameOfReferenceUID?: string
 ): CPUIImageData {
   const metadata = getImageDataMetadata(image);
-  const { calibration, dimensions, direction, modality, origin, spacing } =
-    metadata;
+  const { dimensions, direction, modality, origin, spacing } = metadata;
+  // getImageDataMetadata().calibration is the DICOM calibration module; the USER
+  // calibration (CalibrationLine -> calibratedPixelSpacing provider) is stored
+  // separately, so merge it on top — mirroring legacy StackViewport.getImageData()
+  // (`calibration: { ...csImage.calibration, ...this.calibration }`). Without this,
+  // native getImageData().calibration ignores user calibration and length tools never
+  // rescale after calibrateImageSpacing().
+  const userCalibration = metaData.get(
+    'calibratedPixelSpacing',
+    image.imageId
+  ) as Record<string, unknown> | undefined;
+  const calibration = userCalibration
+    ? { ...metadata.calibration, ...userCalibration }
+    : metadata.calibration;
   const rowVector = direction.slice(0, 3) as Point3;
   const columnVector = direction.slice(3, 6) as Point3;
   const scalarData =

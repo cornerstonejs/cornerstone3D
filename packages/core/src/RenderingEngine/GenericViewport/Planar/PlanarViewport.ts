@@ -755,6 +755,41 @@ class PlanarViewport extends GenericViewport<
     return Math.max(this.getImageIds().length, this.getMaxImageIdIndex() + 1);
   }
 
+  /**
+   * Re-applies the calibrated pixel spacing for an image (CS-12). The native
+   * counterpart of `StackViewport.calibrateSpacing`.
+   *
+   * The caller (the tools `calibrateImageSpacing` utility) first adds the calibration
+   * to the `calibratedPixelSpacingMetadataProvider`; this method then re-renders and
+   * emits `IMAGE_SPACING_CALIBRATED` so annotation tools invalidate their cached stats
+   * and recompute lengths against the new calibration. The native data path reads
+   * `calibration` fresh from `getImageData()` on every access (see
+   * `buildPlanarImageData` -> `getImageDataMetadata` -> `buildMetadata`), so there is
+   * no cached spacing to rebuild — the event + render are the whole job.
+   *
+   * Defining this method is also what makes `viewportSupportsStackCalibration` return
+   * true for a native viewport, so `calibrateImageSpacing` routes here instead of
+   * skipping the viewport (it has no legacy `setStack` to fall back to).
+   *
+   * @param imageId - the imageId whose calibration changed
+   */
+  public calibrateSpacing(imageId: string): void {
+    this.render();
+
+    const cpuImageData = this.getImageData() as
+      | { calibration?: unknown; imageData?: unknown }
+      | undefined;
+
+    triggerEvent(this.element, Events.IMAGE_SPACING_CALIBRATED, {
+      element: this.element,
+      viewportId: this.id,
+      renderingEngineId: this.renderingEngineId,
+      imageId,
+      calibration: cpuImageData?.calibration,
+      imageData: cpuImageData?.imageData,
+    });
+  }
+
   // ====================================================================
   // Public API -- camera & navigation
   // ====================================================================
