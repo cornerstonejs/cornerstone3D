@@ -29,7 +29,7 @@ jobs:
     timeout-minutes: 120
     env:
       BUN_VERSION: 1.2.23
-      NODE_VERSION: 24
+      NODE_VERSION: 24.15.0
       OHIF_REF: master
       OHIF_DIR: ohif
       # Update to force a rebuild of the OHIF integration
