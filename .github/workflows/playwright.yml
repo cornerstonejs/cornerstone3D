@@ -13,7 +13,7 @@ permissions:
 jobs:
   playwright-tests:
     timeout-minutes: 120
-    runs-on: [self-hosted, nashua]
+    runs-on: [nashua]
     strategy:
       fail-fast: false
       max-parallel: 3
