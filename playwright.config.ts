@@ -70,6 +70,9 @@ export default defineConfig({
     actionTimeout: 30000,
     trace: 'on-first-retry',
     video,
+    launchOptions: {
+      args: ['--use-gl=egl'],
+    },
   },
 
   projects: [
