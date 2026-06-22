@@ -51,9 +51,9 @@ jobs:
         run: |
           export NODE_OPTIONS="--max_old_space_size=10192"
           if [ "${{ matrix.collect_coverage }}" = "true" ]; then
-            pnpm exec nyc --reporter=html ./scripts/run-playright.sh ${{ matrix.run_args }}
+            bash scripts/ci/with-nashua-lock.sh pnpm exec nyc --reporter=html ./scripts/run-playright.sh ${{ matrix.run_args }}
           else
-            ./scripts/run-playright.sh ${{ matrix.run_args }}
+            bash scripts/ci/with-nashua-lock.sh ./scripts/run-playright.sh ${{ matrix.run_args }}
           fi
       - name: Upload Playwright report and test results
         if: failure()

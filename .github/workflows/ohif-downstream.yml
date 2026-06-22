@@ -124,7 +124,7 @@ jobs:
         working-directory: ${{ env.OHIF_DIR }}
         env:
           PLAYWRIGHT_HTML_OPEN: never
-        run: bun run test:e2e:ci
+        run: bash "$GITHUB_WORKSPACE/scripts/ci/with-nashua-lock.sh" bun run test:e2e:ci
 
       - name: Upload OHIF Playwright artifacts
         if: always()
