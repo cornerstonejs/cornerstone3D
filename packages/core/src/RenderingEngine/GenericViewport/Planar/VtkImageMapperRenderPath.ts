@@ -87,10 +87,16 @@ export class VtkImageMapperRenderPath
       loadRequestId: 0,
     };
 
-    triggerPlanarNewImage(ctx, {
-      image: payload.image,
-      imageIdIndex: payload.initialImageIdIndex,
-    });
+    // STACK_NEW_IMAGE drives the source slice scrollbar/thumb. Only the source
+    // binding represents a displayed-slice change; overlays (e.g. a segmentation
+    // labelmap) must not fire it, otherwise adding/replacing the overlay snaps
+    // the scrollbar to the overlay's own index (0) instead of the current slice.
+    if (options.role !== 'overlay') {
+      triggerPlanarNewImage(ctx, {
+        image: payload.image,
+        imageIdIndex: payload.initialImageIdIndex,
+      });
+    }
 
     return {
       rendering,
@@ -417,7 +423,11 @@ async function updateRenderedImage(args: {
     }
   }
 
-  triggerPlanarNewImage(ctx, { image, imageIdIndex });
+  // Only the source binding's slice change should drive the slice scrollbar; an
+  // overlay (segmentation) slice update must not emit STACK_NEW_IMAGE.
+  if (projection?.isSourceBinding) {
+    triggerPlanarNewImage(ctx, { image, imageIdIndex });
+  }
   ctx.display.requestRender();
 }
 
