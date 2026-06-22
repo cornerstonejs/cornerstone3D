@@ -14,7 +14,12 @@ import type {
 } from './PlanarViewportTypes';
 
 export const DEFAULT_PLANAR_CPU_IMAGE_THRESHOLD = 64 * 1024 * 1024;
-export const DEFAULT_PLANAR_CPU_VOLUME_THRESHOLD = 64 * 1024 * 1024;
+// Default to no size-based CPU fallback for volumes: a non-finite threshold makes
+// shouldUseCPU() return false on size, so volumes render on the GPU (matching the
+// legacy ORTHOGRAPHIC viewport) unless the GPU is globally unavailable. A finite
+// cap forced ordinary MPR volumes onto the CPU_VOLUME path. Callers can still opt
+// into size-based fallback via rendering.planar.cpuThresholds.volume.
+export const DEFAULT_PLANAR_CPU_VOLUME_THRESHOLD = Number.POSITIVE_INFINITY;
 
 export interface SelectedPlanarRenderPath {
   acquisitionOrientation?: PlanarViewState['orientation'];
@@ -155,8 +160,9 @@ export class PlanarRenderPathDecisionService {
     // createVTKImageDataFromImage), so neither stack depth nor per-slice size
     // changes the GPU texture cost. Match the legacy StackViewport: the image
     // render path falls back to CPU only when GPU rendering is globally
-    // unavailable. (Size-based fallback remains for the volume path, which does
-    // upload the full volume to the GPU.)
+    // unavailable. The volume path supports an opt-in size-based fallback (it
+    // uploads the full volume to the GPU), but that is disabled by default so
+    // ordinary volumes render on the GPU like the legacy ORTHOGRAPHIC viewport.
     return getShouldUseCPURendering();
   }
 

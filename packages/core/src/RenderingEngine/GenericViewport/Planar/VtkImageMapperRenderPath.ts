@@ -8,6 +8,7 @@ import {
   ViewportType,
 } from '../../../enums';
 import { loadAndCacheImage } from '../../../loaders/imageLoader';
+import { updateVTKImageDataWithCornerstoneImage } from '../../../utilities/updateVTKImageDataWithCornerstoneImage';
 import * as metaData from '../../../metaData';
 import { ActorRenderMode } from '../../../types';
 import type { CPUIImageData, IImage, Point3 } from '../../../types';
@@ -360,9 +361,23 @@ async function updateRenderedImage(args: {
     args;
   const camera = ctx.viewport.getViewState();
   const { actor, mapper } = rendering;
-  const imageData = createVTKImageDataFromImage(image);
 
-  mapper.setInputData(imageData);
+  // Reuse the existing vtkImageData and replace its scalars in place when the
+  // incoming slice matches it (same dimensions / data type / components),
+  // mirroring legacy StackViewport._updateActorToDisplayImageId. Allocating a
+  // fresh vtkImageData per slice forces VTK to build a new GPU texture on every
+  // scroll, and the first render after that swap draws before the new texture
+  // has uploaded - a one-frame black flash. Updating the scalars in place keeps
+  // the same texture (re-uploaded within the same render), so there is no flash.
+  let imageData = rendering.imageData;
+
+  if (imageData && canReuseImageDataForImage(imageData, image)) {
+    updateVTKImageDataWithCornerstoneImage(imageData, image);
+  } else {
+    imageData = createVTKImageDataFromImage(image);
+    mapper.setInputData(imageData);
+  }
+
   rendering.currentImage = image;
   rendering.imageData = imageData;
   rendering.currentImageIdIndex = imageIdIndex;
@@ -404,6 +419,41 @@ async function updateRenderedImage(args: {
 
   triggerPlanarNewImage(ctx, { image, imageIdIndex });
   ctx.display.requestRender();
+}
+
+/**
+ * Whether an incoming image can have its scalars written into an existing
+ * vtkImageData (reusing the same GPU texture) instead of allocating a new one.
+ * Mirrors the safety-critical part of legacy
+ * StackViewport._checkVTKImageDataMatchesCornerstoneImage: the in-place scalar
+ * set is only valid when dimensions, data type and component count match.
+ */
+function canReuseImageDataForImage(
+  imageData: ReturnType<typeof createVTKImageDataFromImage>,
+  image: IImage
+): boolean {
+  const scalars = imageData.getPointData?.()?.getScalars?.();
+
+  if (!scalars) {
+    return false;
+  }
+
+  const [xVoxels, yVoxels] = imageData.getDimensions();
+
+  if (xVoxels !== image.columns || yVoxels !== image.rows) {
+    return false;
+  }
+
+  if (
+    scalars.getDataType() !==
+    image.voxelManager.getScalarData().constructor.name
+  ) {
+    return false;
+  }
+
+  const incomingComponents = image.color ? 3 : 1;
+
+  return scalars.getNumberOfComponents() === incomingComponents;
 }
 
 function applyPlanarImageActorTransforms(
