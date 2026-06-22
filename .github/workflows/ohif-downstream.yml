@@ -25,7 +25,7 @@ concurrency:
 jobs:
   ohif-downstream:
     name: OHIF downstream tests against this PR
-    runs-on: self-hosted
+    runs-on: [nashua]
     timeout-minutes: 120
     env:
       BUN_VERSION: 1.2.23
