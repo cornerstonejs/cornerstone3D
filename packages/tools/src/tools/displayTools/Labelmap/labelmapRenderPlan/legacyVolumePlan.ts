@@ -140,23 +140,43 @@ async function mountLegacyVolumeLabelmap({
   // Add dimension check before deciding to use independent components
   if (useIndependentComponents) {
     const referenceVolumeId = volumeCompatibleViewport.getVolumeId?.();
-    const baseVolume = cache.getVolume(referenceVolumeId);
-    const segVolume = cache.getVolume(labelmapLayers[0]?.volumeId);
+    const segLabelmapVolumeId = labelmapLayers[0]?.volumeId;
+    // Independent-components (edge-projection) rendering requires BOTH the
+    // viewport's base/reference volume and the segmentation volume to be present
+    // and cached. On a freshly-mounted volume viewport the base actor may not be
+    // added yet (getVolumeId() returns undefined), and the seg volume may not be
+    // cached yet. Guard both lookups so we never call cache.getVolume(undefined)
+    // (which throws "getVolume: volumeId must not be undefined"), falling back to
+    // regular volume addition when either is absent.
+    const baseVolume = referenceVolumeId
+      ? cache.getVolume(referenceVolumeId)
+      : undefined;
+    const segVolume = segLabelmapVolumeId
+      ? cache.getVolume(segLabelmapVolumeId)
+      : undefined;
 
-    const segDims = segVolume.dimensions;
-    const refDims = baseVolume.dimensions;
-
-    if (
-      segDims[0] !== refDims[0] ||
-      segDims[1] !== refDims[1] ||
-      segDims[2] !== refDims[2]
-    ) {
-      // If dimensions don't match, fallback to regular volume addition
+    if (!baseVolume || !segVolume) {
       useIndependentComponents = false;
       blendMode = Enums.BlendModes.MAXIMUM_INTENSITY_BLEND;
       console.debug(
-        'Dimensions mismatch - falling back to regular volume addition'
+        'Independent components unavailable (missing reference or segmentation volume) - falling back to regular volume addition'
       );
+    } else {
+      const segDims = segVolume.dimensions;
+      const refDims = baseVolume.dimensions;
+
+      if (
+        segDims[0] !== refDims[0] ||
+        segDims[1] !== refDims[1] ||
+        segDims[2] !== refDims[2]
+      ) {
+        // If dimensions don't match, fallback to regular volume addition
+        useIndependentComponents = false;
+        blendMode = Enums.BlendModes.MAXIMUM_INTENSITY_BLEND;
+        console.debug(
+          'Dimensions mismatch - falling back to regular volume addition'
+        );
+      }
     }
   }
 

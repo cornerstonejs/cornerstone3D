@@ -1,6 +1,19 @@
 import type { Types } from '@cornerstonejs/core';
 import { getRenderingEngine, utilities } from '@cornerstonejs/core';
 import type { Synchronizer } from '../../store';
+import {
+  applyViewportPresentation,
+  getViewportPresentation,
+} from '../../utilities/viewportPresentation';
+
+// A ViewReference deliberately excludes zoom/pan (see IViewport ViewReference
+// docs), so for Generic ("next") viewports we transport them separately to match
+// the legacy setCamera(camera) path, which carried parallelScale (zoom) + the
+// in-plane focal point (pan). Mirrors zoomPanSyncCallback's selector.
+const ZOOM_PAN_SELECTOR: Types.ViewPresentationSelector = {
+  pan: true,
+  zoom: true,
+};
 
 /**
  * Synchronizer callback to synchronize the camera by updating all camera
@@ -38,6 +51,16 @@ export default function cameraSyncCallback(
     // any sync lag from the live read is inherent to the event not carrying one.
     const sViewport = renderingEngine.getViewport(sourceViewport.viewportId);
     tViewport.setViewReference(sViewport.getViewReference());
+
+    // Slice/orientation come from the view reference above; copy zoom + pan
+    // explicitly so they stay in lockstep like the legacy full-camera copy did.
+    // applyViewportPresentation is a no-op for targets without a projection
+    // adapter, so this is safe for any next-viewport family.
+    const zoomPanPresentation = getViewportPresentation(
+      sViewport,
+      ZOOM_PAN_SELECTOR
+    );
+    applyViewportPresentation(tViewport, zoomPanPresentation);
   } else {
     (tViewport as Types.IStackViewport | Types.IVolumeViewport).setCamera(
       camera
