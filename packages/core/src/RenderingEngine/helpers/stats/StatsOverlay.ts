@@ -303,20 +303,40 @@ export class StatsOverlay implements StatsInstance {
   ): RenderModePanelBinding[] {
     const actors = viewport.getActors?.() ?? [];
     const sourceDataId = viewport.getSourceDataId?.();
+    const renderModeEntries = Object.entries(renderModes);
 
-    return Object.entries(renderModes).map(([dataId, renderMode]) => {
-      const role = resolveBindingRole(viewport, dataId, sourceDataId);
-      const actor =
-        role === 'source'
-          ? viewport.getDefaultActor?.()
-          : findActorForDataId(actors, dataId);
+    if (renderModeEntries.length) {
+      return renderModeEntries.map(([dataId, renderMode]) => {
+        const role = resolveBindingRole(viewport, dataId, sourceDataId);
+        const actor =
+          role === 'source'
+            ? viewport.getDefaultActor?.()
+            : findActorForDataId(actors, dataId);
+
+        return {
+          actorUID: actor?.uid,
+          dataId,
+          referencedId: actor?.referencedId,
+          renderMode,
+          role,
+        };
+      });
+    }
+
+    // Legacy viewports do not expose a GenericViewport `_debug.renderModes`
+    // map, so derive the rows directly from the actors. This lets the debug
+    // overlay show the same actor UID / referencedId info for legacy viewports
+    // (e.g. to compare whether a labelmap actor is reused or recreated across
+    // slices) instead of an empty bindings panel.
+    return actors.map((actor) => {
+      const dataId = actor.representationUID ?? actor.uid ?? '';
 
       return {
-        actorUID: actor?.uid,
+        actorUID: actor.uid,
         dataId,
-        referencedId: actor?.referencedId,
-        renderMode,
-        role,
+        referencedId: actor.referencedId,
+        renderMode: '-',
+        role: resolveBindingRole(viewport, dataId, sourceDataId),
       };
     });
   }
