@@ -800,7 +800,14 @@ class PlanarViewport extends GenericViewport<
       return 0;
     }
 
-    return Math.max(imageCount, this.getMaxImageIdIndex() + 1);
+    // getMaxImageIdIndex() returns the view-direction slice count - 1 when the
+    // volume-slice render path provides it (so a reformatted/oblique plane
+    // reports its own slice count), and falls back to imageCount - 1 otherwise.
+    // Use it directly: maxing against the acquisition imageCount over-reported
+    // reformatted directions whose slice count is smaller than the acquisition
+    // image count, pushing scroll/cine/jump past the real slice range. The
+    // fallback keeps the stack / pre-binding count equal to imageCount.
+    return this.getMaxImageIdIndex() + 1;
   }
 
   /**
