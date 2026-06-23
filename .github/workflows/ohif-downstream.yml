@@ -118,7 +118,7 @@ jobs:
 
       - name: Install Playwright browsers
         working-directory: ${{ env.OHIF_DIR }}
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium
 
       - name: Run OHIF e2e tests
         working-directory: ${{ env.OHIF_DIR }}
