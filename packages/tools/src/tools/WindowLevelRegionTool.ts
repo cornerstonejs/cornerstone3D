@@ -356,15 +356,55 @@ class WindowLevelRegionTool extends AnnotationTool {
     );
     const windowCenter = minMaxMean.mean;
 
-    const voiLutFunction = viewport.getProperties().VOILUTFunction;
+    // Native ("next") viewports expose no get/setProperties; the VOI lives in the
+    // per-display-set presentation. Bridge both read (VOI LUT function) and write
+    // (the computed VOI range) so the region tool applies the window level on
+    // native viewports too (legacy keeps using get/setProperties).
+    const nativeViewport = viewport as unknown as {
+      getSourceDataId?: () => string | undefined;
+      getDisplaySetPresentation?: (
+        dataId: string
+      ) => { voiLUTFunction?: unknown } | undefined;
+      setDisplaySetPresentation?: (
+        dataId: string,
+        props: { voiRange: Types.VOIRange }
+      ) => void;
+    };
+    const isGeneric = utilities.isGenericViewport(viewport);
+    const sourceDataId = isGeneric
+      ? nativeViewport.getSourceDataId?.()
+      : undefined;
+
+    const voiLutFunction = isGeneric
+      ? sourceDataId
+        ? nativeViewport.getDisplaySetPresentation?.(sourceDataId)
+            ?.voiLUTFunction
+        : undefined
+      : (
+          viewport as unknown as {
+            getProperties: () => { VOILUTFunction?: unknown };
+          }
+        ).getProperties().VOILUTFunction;
 
     const voiRange = utilities.windowLevel.toLowHighRange(
       windowWidth,
       windowCenter,
-      voiLutFunction
+      voiLutFunction as Parameters<
+        typeof utilities.windowLevel.toLowHighRange
+      >[2]
     );
 
-    viewport.setProperties({ voiRange });
+    if (isGeneric) {
+      if (sourceDataId) {
+        nativeViewport.setDisplaySetPresentation?.(sourceDataId, { voiRange });
+      }
+    } else {
+      (
+        viewport as unknown as {
+          setProperties: (props: { voiRange: Types.VOIRange }) => void;
+        }
+      ).setProperties({ voiRange });
+    }
     viewport.render();
   };
 
