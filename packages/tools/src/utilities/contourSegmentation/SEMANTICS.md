@@ -100,9 +100,11 @@ The cursor may start **anywhere** — inside an existing polygon's solid,
 inside one of its holes, or completely outside any polygon. The starting
 position does NOT change the polarity; this is purely a subtractive gesture.
 
-Mechanic: the stroke is collected as a closed polygon, then subtracted from
-every existing polygon in the same segment that it overlaps. Polygons that
-are not overlapped pass through unchanged.
+Mechanic: the stroke is collected as a closed polygon, then a single
+Difference op runs on the whole segment with the stroke as the clip.
+Every polygon on the same plane is in the operation; polygons that have no
+spatial overlap with the stroke pass through unchanged as an algebraic
+consequence (`A − B = A` when `A ∩ B = ∅`), not because they are filtered out.
 
 Mapped op: `segment := segment − {stroke}`.
 
@@ -146,10 +148,15 @@ starting positions include:
 The starting position does NOT change the polarity; this is purely an
 additive gesture.
 
-Mechanic: the stroke is collected as a NEW closed polygon. That new polygon
-is then unioned with every existing polygon in the same segment that it
-touches. Polygons that are not touched pass through unchanged; if the
-stroke touches none, it remains as a fresh disjoint polygon in the segment.
+Mechanic: the stroke is collected as a NEW closed polygon, then a single
+Union op runs on the whole segment with the stroke as the clip. Every
+polygon on the same plane is in the operation; polygons that have no
+spatial overlap with the stroke survive in the result as themselves, as an
+algebraic consequence (`A ∪ B` includes both when `A ∩ B = ∅`), not because
+they are filtered out. If the stroke overlaps nothing, it appears in the
+result as a fresh disjoint polygon — including the case where the stroke
+sits inside another polygon's hole without touching the hole boundary,
+which produces a new top-level polygon nested in the hole per §1.2.
 
 Mapped op: `segment := segment ∪ {stroke}`.
 
@@ -260,8 +267,34 @@ hole.
 The toolbar operations between two whole segments A and B. Either may contain
 multiple polygons; each polygon may have holes.
 
-For each polygon in A and each in B, on a matching view reference, Clipper
-runs once per view-reference group with A as subject and B as clip.
+### 5.0 Applicability — what counts as "participating"
+
+**The only criterion for a polygon to participate in an op is matching view
+reference (same plane).** Spatial overlap is NOT required.
+
+Within a view-reference group, every polygon in A is part of the subject set
+and every polygon in B is part of the clip set, regardless of whether they
+spatially overlap each other. Clipper runs once per group. Polygons sit
+exactly where the geometry says they sit, and the algebra of the chosen op
+decides what's in the result.
+
+Concrete cases that follow directly from "same plane is sufficient":
+
+- A and B are entirely disjoint (no spatial overlap). They are still both
+  in the operation. `A ∪ B` returns both; `A − B` returns A; `A ∩ B` is
+  empty; `A ⊕ B` returns both.
+- A has a hole H, B sits entirely inside H (B does not overlap A's solid).
+  Both are still in the operation. `A ∪ B` returns A with its hole AND B
+  as a separate top-level polygon spatially nested inside the hole (per
+  §1.2 / §6 Case E). `A − B` returns A unchanged (B has nothing to subtract
+  from inside A's empty region). `A ∩ B` is empty. `A ⊕ B` = `A ∪ B`.
+- A consists of two disjoint polygons P₁ and P₂, B overlaps only P₁. Both
+  P₁ and P₂ are subjects; P₂ passes through unchanged because the algebra
+  says so, not because it was filtered out.
+
+The phrasing "passes through unchanged" elsewhere in this document is an
+algebraic outcome, never an inclusion gate. Implementations must NOT skip a
+polygon just because it doesn't overlap anything in the opposite set.
 
 ### 5.1 Union: `A := A ∪ B`
 
