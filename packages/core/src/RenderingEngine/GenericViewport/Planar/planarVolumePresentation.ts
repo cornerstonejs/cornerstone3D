@@ -127,17 +127,30 @@ function buildColormapOpacityPoints(args: {
   fallbackOpacity: number;
 }): Array<[number, number]> {
   const { colormap, range, fallbackOpacity } = args;
-  const delta = Math.max(Math.abs(range.upper - range.lower) * 0.001, 1e-3);
+  const span = range.upper - range.lower;
+  const delta = Math.max(Math.abs(span) * 0.001, 1e-3);
+  // OpacityMapping.value and ColormapPublic.threshold are normalized [0,1]
+  // fractions of the VOI range (see ColormapPublic docs: the minimum value maps
+  // to 0 opacity and the maximum value to 1 opacity). Map them onto the actual
+  // scalar range so an overlay opacity array (e.g. a PT/CT fusion colormap)
+  // attenuates by scalar value like the numeric opacity path (applyVolumeOpacity),
+  // which already spans the VOI range. Without this the points land at raw scalars
+  // (0.1 -> 0.1 SUV), making essentially all tissue opaque and hiding the
+  // underlying source slice in a fusion.
+  const toScalar = (normalized: number) => range.lower + normalized * span;
   const threshold =
     colormap.threshold !== undefined
-      ? Math.max(range.lower, Math.min(range.upper, colormap.threshold))
+      ? Math.max(
+          range.lower,
+          Math.min(range.upper, toScalar(colormap.threshold))
+        )
       : undefined;
 
   if (Array.isArray(colormap.opacity) && colormap.opacity.length) {
     const sortedPoints = colormap.opacity
       .map(({ opacity, value }) => ({
         opacity: clampToUnit(opacity),
-        value,
+        value: toScalar(value),
       }))
       .sort((a, b) => a.value - b.value);
 
