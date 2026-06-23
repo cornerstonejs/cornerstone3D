@@ -72,6 +72,13 @@ export class VtkImageMapperRenderPath
     ctx.display.activateRenderMode(ActorRenderMode.VTK_IMAGE);
     mapper.setInputData(imageData);
     actor.setMapper(mapper);
+    // Multi-component images (e.g. RGB ultrasound) must render as direct color.
+    // Without this vtk treats the components as independent scalars mapped through
+    // a (grayscale) transfer function and the frame renders black. Mirrors
+    // StackViewport's actor setup.
+    if (imageData.getPointData().getScalars().getNumberOfComponents() > 1) {
+      actor.getProperty().setIndependentComponents(false);
+    }
     ctx.vtk.renderer.addActor(actor);
     const rendering: PlanarImageMapperRendering = {
       renderMode: ActorRenderMode.VTK_IMAGE,
