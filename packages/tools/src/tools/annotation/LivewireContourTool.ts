@@ -224,7 +224,24 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       throw new Error('Viewport not supported');
     }
     scalarData = csUtils.convertToGrayscale(scalarData, width, height);
-    const { voiRange } = viewport.getProperties();
+    // Native ("next") viewports expose no getProperties; read the effective VOI
+    // from the per-binding presentation, falling back to the computed default VOI.
+    let voiRange: Types.VOIRange;
+    if (csUtils.isGenericViewport(viewport)) {
+      const nativeViewport = viewport as Types.IViewport & {
+        getSourceDataId?: () => string | undefined;
+        getDisplaySetPresentation?: (
+          dataId?: string
+        ) => { voiRange?: Types.VOIRange } | undefined;
+        getDefaultVOIRange?: (dataId?: string) => Types.VOIRange | undefined;
+      };
+      const dataId = nativeViewport.getSourceDataId?.();
+      voiRange = (nativeViewport.getDisplaySetPresentation?.(dataId)
+        ?.voiRange ??
+        nativeViewport.getDefaultVOIRange?.(dataId)) as Types.VOIRange;
+    } else {
+      ({ voiRange } = viewport.getProperties());
+    }
     const startPos = worldToSlice(worldPos);
 
     this.scissors = LivewireScissors.createInstanceFromRawPixelData(
