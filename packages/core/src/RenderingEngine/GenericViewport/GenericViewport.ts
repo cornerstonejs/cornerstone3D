@@ -4,6 +4,8 @@ import type { Point2, Point3, ViewportContentMode } from '../../types';
 import Events from '../../enums/Events';
 import ViewportStatus from '../../enums/ViewportStatus';
 import triggerEvent from '../../utilities/triggerEvent';
+import renderingEngineCache from '../renderingEngineCache';
+import type { IRenderingEngine } from '../../types';
 import type {
   BaseViewportRenderContext,
   BindingRole,
@@ -259,6 +261,16 @@ abstract class GenericViewport<
       this.getResolvedView()?.getFrameOfReferenceUID() ??
       `${this.type}-viewport-${this.id}`
     );
+  }
+
+  /**
+   * Returns the rendering engine that owns this viewport. Tools and utilities
+   * rely on this method existing on every viewport (legacy Viewport provides
+   * it); without it, calls like `viewport.getRenderingEngine()` threw on native
+   * generic viewports.
+   */
+  getRenderingEngine(): IRenderingEngine {
+    return renderingEngineCache.get(this.renderingEngineId);
   }
 
   // ====================================================================
