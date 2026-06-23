@@ -46,6 +46,7 @@ import { BasicStatsCalculator } from '../../utilities/math/basic';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
 import { KeyboardBindings, ChangeTypes, MeasurementType } from '../../enums';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
+import snapIndexBounds from '../../utilities/boundingBox/snapIndexBounds';
 
 const { pointCanProjectOnLine } = polyline;
 const { EPSILON } = CONSTANTS;
@@ -700,7 +701,10 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       return;
     }
 
-    if (annotation.invalidated) {
+    const { data, invalidated } = annotation;
+    const cachedStats = data?.cachedStats;
+
+    if (invalidated || !cachedStats?.[targetId]) {
       this._calculateStatsIfActive(
         annotation,
         targetId,
@@ -784,7 +788,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         continue;
       }
 
-      const { imageData, metadata } = image;
+      const { imageData, metadata, voxelManager } = image;
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
       const modalityUnitOptions = {
@@ -860,6 +864,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         points,
         imageData,
         metadata,
+        voxelManager,
         cachedStats,
         modalityUnit,
         calibratedScale,
@@ -893,6 +898,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     points,
     imageData,
     metadata,
+    voxelManager,
     cachedStats,
     targetId,
     modalityUnit,
@@ -903,9 +909,8 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
   }) {
     const { areaUnit, unit } = calibratedScale;
 
-    const { voxelManager } = viewport.getImageData();
-
     const indexPoints = points.map((point) => imageData.worldToIndex(point));
+    const dims = imageData.getDimensions();
 
     let iMin = Number.MAX_SAFE_INTEGER;
     let iMax = Number.MIN_SAFE_INTEGER;
@@ -915,7 +920,8 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     let kMax = Number.MIN_SAFE_INTEGER;
 
     for (let j = 0; j < points.length; j++) {
-      const worldPosIndex = indexPoints[j].map(Math.floor);
+      const worldPosIndex = indexPoints[j];
+
       iMin = Math.min(iMin, worldPosIndex[0]);
       iMax = Math.max(iMax, worldPosIndex[0]);
 
@@ -925,6 +931,22 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       kMin = Math.min(kMin, worldPosIndex[2]);
       kMax = Math.max(kMax, worldPosIndex[2]);
     }
+
+    // Clamp the accumulated bounds into the image extent so the bounding box
+    // never spills outside the volume. Clamping the min/max here is equivalent
+    // to clamping every point (clamp is monotonic, so it commutes with
+    // min/max) but avoids the per-point allocation. The values are left
+    // unfloored so snapIndexBounds can still detect planar (delta <= 1) ROIs.
+    iMin = Math.max(0, Math.min(dims[0] - 1, iMin));
+    iMax = Math.max(0, Math.min(dims[0] - 1, iMax));
+    jMin = Math.max(0, Math.min(dims[1] - 1, jMin));
+    jMax = Math.max(0, Math.min(dims[1] - 1, jMax));
+    kMin = Math.max(0, Math.min(dims[2] - 1, kMin));
+    kMax = Math.max(0, Math.min(dims[2] - 1, kMax));
+
+    [iMin, iMax] = snapIndexBounds(iMin, iMax);
+    [jMin, jMax] = snapIndexBounds(jMin, jMax);
+    [kMin, kMax] = snapIndexBounds(kMin, kMax);
 
     // Convert from canvas_pixels ^2 to mm^2
     const area = polyline.getArea(canvasCoordinates) * deltaInX * deltaInY;

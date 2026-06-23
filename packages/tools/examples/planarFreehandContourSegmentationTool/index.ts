@@ -52,7 +52,7 @@ setTitleAndDescription(
   'Demonstrates how to create contour segmentations using planar freehand ROI tool'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 

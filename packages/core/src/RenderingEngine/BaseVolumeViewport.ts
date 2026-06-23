@@ -1,7 +1,5 @@
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
-import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
-import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 
 import { vec2, vec3 } from 'gl-matrix';
 import type { mat4 } from 'gl-matrix';
@@ -52,9 +50,10 @@ import {
   findMatchingColormap,
   updateOpacity as colormapUpdateOpacity,
   updateThreshold as colormapUpdateThreshold,
-  getThresholdValue,
-  getMaxOpacity,
+  updateOpacityMapping as colormapUpdateOpacityMapping,
+  getOpacityState,
 } from '../utilities/colormap';
+import getAcquisitionPlaneOrientation from '../utilities/getAcquisitionPlaneOrientation';
 import {
   getTransferFunctionNodes,
   setTransferFunctionNodes,
@@ -83,6 +82,7 @@ import { isContextPoolRenderingEngine } from './helpers/isContextPoolRenderingEn
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import mprCameraValues from '../constants/mprCameraValues';
 import { isInvalidNumber } from './helpers/isInvalidNumber';
+import getVolumeViewReferenceId from '../utilities/getVolumeViewReferenceId';
 import {
   createSharpeningRenderPass,
   createSmoothingRenderPass,
@@ -297,13 +297,7 @@ abstract class BaseVolumeViewport extends Viewport {
     const { volumeActor } = applicableVolumeActorInfo;
 
     const cfun = vtkColorTransferFunction.newInstance();
-    let colormapObj = colormapUtils.getColormap(colormap.name);
-
-    const { name } = colormap;
-
-    if (!colormapObj) {
-      colormapObj = vtkColorMaps.getPresetByName(name);
-    }
+    const colormapObj = colormapUtils.resolveColormap(colormap.name);
 
     if (!colormapObj) {
       throw new Error(`Colormap ${colormap} not found`);
@@ -323,6 +317,13 @@ abstract class BaseVolumeViewport extends Viewport {
     // colormap for Volume A if Volume B's colormap was the last one applied.
     this.viewportProperties.colormap = colormap;
 
+    // Seed the opacity spec from the incoming colormap (if it carries opacity/mapping) BEFORE the
+    // events below fire. setColormap emits VOI_MODIFIED/COLORMAP_MODIFIED ahead of setProperties'
+    // separate setOpacity call, so without this getColormap would report a flattened fallback and
+    // any synchronizer listening to those events would propagate a flattened opacity to the other
+    // viewports — re-introducing the TMTV fusion red background.
+    this._applyColormapOpacity(colormap, volumeActor);
+
     if (!suppressEvents) {
       const completeColormap = this.getColormap(volumeId);
 
@@ -333,6 +334,32 @@ abstract class BaseVolumeViewport extends Viewport {
       };
       triggerEvent(this.element, Events.VOI_MODIFIED, eventDetail);
       triggerEvent(this.element, Events.COLORMAP_MODIFIED, eventDetail);
+    }
+  }
+
+  /**
+   * Applies the opacity carried by a public colormap to the volume actor. Opacity has two
+   * orthogonal parts that must not overwrite each other:
+   *  - a scalar "overall" level (e.g. the fusion/master slider), and
+   *  - a per-value mapping (e.g. a hanging-protocol opacity array).
+   * For backward compatibility an array passed in `opacity` is treated as the mapping. The
+   * rendered function is overall * mapping(v), derived from a per-actor spec so a later slider or
+   * threshold change re-derives instead of flattening (see utilities/colormap). If the colormap
+   * carries neither, the existing spec is left untouched (e.g. a pure LUT-name change).
+   */
+  private _applyColormapOpacity(colormap: ColormapPublic, volumeActor): void {
+    const mapping = Array.isArray(colormap.opacityMapping)
+      ? colormap.opacityMapping
+      : Array.isArray(colormap.opacity)
+        ? colormap.opacity
+        : undefined;
+    const overall =
+      typeof colormap.opacity === 'number' ? colormap.opacity : undefined;
+
+    if (mapping !== undefined) {
+      colormapUpdateOpacityMapping(volumeActor, mapping, overall);
+    } else if (overall !== undefined) {
+      colormapUpdateOpacity(volumeActor, overall);
     }
   }
 
@@ -351,22 +378,16 @@ abstract class BaseVolumeViewport extends Viewport {
     }
     const { volumeActor } = applicableVolumeActorInfo;
 
-    const ofun = vtkPiecewiseFunction.newInstance();
-    if (typeof colormap.opacity === 'number') {
-      // Use the new utility to update opacity while preserving threshold
-      colormapUpdateOpacity(volumeActor, colormap.opacity);
-    } else {
-      colormap.opacity.forEach(({ opacity, value }) => {
-        ofun.addPoint(value, opacity);
-      });
-      volumeActor.getProperty().setScalarOpacity(0, ofun);
-    }
+    this._applyColormapOpacity(colormap, volumeActor);
 
     if (!this.viewportProperties.colormap) {
       this.viewportProperties.colormap = {};
     }
 
-    this.viewportProperties.colormap.opacity = colormap.opacity;
+    // Mirror the resolved state (scalar opacity + per-value mapping) into the stored colormap.
+    const { opacity, opacityMapping } = getOpacityState(volumeActor);
+    this.viewportProperties.colormap.opacity = opacity;
+    this.viewportProperties.colormap.opacityMapping = opacityMapping;
 
     const matchedColormap = this.getColormap(volumeId);
     const eventDetail = {
@@ -1059,7 +1080,7 @@ abstract class BaseVolumeViewport extends Viewport {
     if (colormap?.name) {
       this.setColormap(colormap, volumeId, suppressEvents);
     }
-    if (colormap?.opacity != null) {
+    if (colormap?.opacity != null || colormap?.opacityMapping != null) {
       this.setOpacity(colormap, volumeId);
     }
     if (colormap?.threshold != null) {
@@ -1392,11 +1413,12 @@ abstract class BaseVolumeViewport extends Viewport {
 
     const matchedColormap = findMatchingColormap(RGBPoints, volumeActor) || {};
 
-    const threshold = getThresholdValue(volumeActor);
-    const opacity = getMaxOpacity(volumeActor);
-
-    matchedColormap.threshold = threshold;
+    // Report the scalar overall opacity (as a number, for the slider) alongside the per-value
+    // mapping, so both can be read back and synchronized without one collapsing the other.
+    const { opacity, opacityMapping, threshold } = getOpacityState(volumeActor);
     matchedColormap.opacity = opacity;
+    matchedColormap.opacityMapping = opacityMapping;
+    matchedColormap.threshold = threshold;
 
     return matchedColormap;
   };
@@ -2318,14 +2340,7 @@ abstract class BaseVolumeViewport extends Viewport {
       );
     }
 
-    const { direction } = imageVolume;
-    const viewPlaneNormal = direction.slice(6, 9).map((x) => -x) as Point3;
-    const viewUp = (direction.slice(3, 6) as Point3).map((x) => -x) as Point3;
-
-    return {
-      viewPlaneNormal,
-      viewUp,
-    };
+    return getAcquisitionPlaneOrientation(imageVolume);
   }
 
   /**
@@ -2448,12 +2463,13 @@ abstract class BaseVolumeViewport extends Viewport {
 
     const currentIndex = this.getSliceIndex();
     sliceIndex ??= currentIndex;
-    const { viewPlaneNormal, focalPoint } = this.getCamera();
-    const querySeparator = volumeId.includes('?') ? '&' : '?';
-    // Format each element of viewPlaneNormal to 3 decimal places
-    // to avoid floating point precision issues
-    const formattedNormal = viewPlaneNormal.map((v) => v.toFixed(3)).join(',');
-    return `volumeId:${volumeId}${querySeparator}sliceIndex=${sliceIndex}&viewPlaneNormal=${formattedNormal}`;
+    const { viewPlaneNormal } = this.getCamera();
+
+    return getVolumeViewReferenceId({
+      sliceIndex,
+      viewPlaneNormal,
+      volumeId,
+    });
   }
 
   private _addVolumeId(volumeId: string): void {

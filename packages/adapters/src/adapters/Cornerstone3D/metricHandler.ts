@@ -1,3 +1,12 @@
+import { mapUnitFromUCUM } from './unitMapper';
+
+const INTENSITY_METRICS = new Set([
+  'Mean',
+  'Standard Deviation',
+  'Maximum',
+  'Minimum',
+]);
+
 export interface AdditionalMetrics {
   mean?: number;
   stdDev?: number;
@@ -45,9 +54,14 @@ export function extractAllNUMGroups(
             numGroupsBySOPInstanceUID[referencedSOPInstanceUID] = {};
           }
 
+          let unit = '';
+          if (unitCode) {
+            unit = resolveUnit(codeMeaning, unitCode);
+          }
+
           numGroupsBySOPInstanceUID[referencedSOPInstanceUID][codeMeaning] = {
             value: numericValue,
-            unit: unitCode || '',
+            unit,
           };
         }
       }
@@ -91,8 +105,14 @@ export function restoreAdditionalMetrics(numGroups): AdditionalMetrics {
 
   // Define what kind of unit each metric type should use
   const unitCategory = {
+    mean: 'modalityUnit',
+    stdDev: 'modalityUnit',
+    max: 'modalityUnit',
+    min: 'modalityUnit',
     area: 'areaUnit',
     radius: 'radiusUnit',
+    perimeter: 'unit',
+    length: 'unit',
     width: 'widthUnit',
   };
 
@@ -112,21 +132,60 @@ export function restoreAdditionalMetrics(numGroups): AdditionalMetrics {
     if (!unit) {
       continue;
     }
-    if (!modalityUnit) {
-      modalityUnit = unit;
+
+    const mappedUnit = mapUnitFromUCUM(unit);
+
+    if (!mappedUnit) {
+      continue;
+    }
+
+    if (INTENSITY_METRICS.has(codeMeaning) && !modalityUnit) {
+      modalityUnit = mappedUnit;
     }
 
     const category = unitCategory[metricKey];
     if (category) {
       if (!additionalMetrics[category]) {
-        additionalMetrics[category] = unit;
+        additionalMetrics[category] = mappedUnit;
       }
     } else {
-      additionalMetrics[`${metricKey}Unit`] = unit;
+      additionalMetrics[`${metricKey}Unit`] = mappedUnit;
     }
   }
 
   additionalMetrics.modalityUnit = modalityUnit;
 
   return additionalMetrics;
+}
+
+/**
+ * Handles dimensionless UCUM units ("1"), intensity metrics (unitless),
+ * and geometric metrics such as Area (squared units).
+ *
+ * @param codeMeaning - DICOM Concept Name (e.g. "Mean", "Area")
+ * @param unitCode - Measurement Units Code Sequence
+ * @returns Formatted unit string or empty string if unitless
+ */
+
+function resolveUnit(
+  codeMeaning: string,
+  unitCode?: {
+    CodeValue: string;
+    CodeMeaning: string;
+  }
+): string {
+  if (!unitCode) {
+    return '';
+  }
+
+  const { CodeValue, CodeMeaning } = unitCode;
+
+  if (CodeValue === '1') {
+    if (!INTENSITY_METRICS.has(codeMeaning) && codeMeaning === 'Area') {
+      return `${CodeMeaning}\u00B2`;
+    }
+    return INTENSITY_METRICS.has(codeMeaning) ? '' : CodeMeaning;
+  }
+
+  return CodeValue;
 }

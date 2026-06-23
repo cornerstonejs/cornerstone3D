@@ -42,8 +42,17 @@ setTitleAndDescription(
   'Here we demonstrate how to import or export a DICOM SEG from a Cornerstone3D stack.'
 );
 
-const size = '500px';
+const size = '512px';
 const skipOverlapping = false;
+
+function viewportSupportsStackCompatibility(viewport: unknown): viewport is {
+  setStack(imageIds: string[], currentImageIdIndex?: number): Promise<string>;
+} {
+  return (
+    typeof (viewport as { setStack?: unknown } | undefined)?.setStack ===
+    'function'
+  );
+}
 
 const demoToolbar = document.getElementById('demo-toolbar');
 
@@ -120,7 +129,13 @@ function loadDicom() {
 
   toolGroup.addViewport(viewportIds[0], renderingEngineId);
 
-  const viewport = state.renderingEngine.getStackViewport(viewportIds[0]);
+  const viewport = state.renderingEngine.getViewport(viewportIds[0]);
+
+  if (!viewportSupportsStackCompatibility(viewport)) {
+    throw new Error(
+      `Viewport ${viewportIds[0]} does not implement the stack compatibility API`
+    );
+  }
 
   viewport.setStack(state.referenceImageIds);
   cornerstoneTools.utilities.stackContextPrefetch.enable(element1);
