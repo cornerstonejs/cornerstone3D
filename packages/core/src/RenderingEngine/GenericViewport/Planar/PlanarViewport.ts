@@ -491,6 +491,18 @@ class PlanarViewport extends GenericViewport<
   }
 
   /**
+   * Returns the vtk image data backing the default image actor, mirroring the
+   * legacy `Viewport.getDefaultImageData`. Tools (e.g. the ONNX auto-pilot
+   * segmentation controller) call this directly on the viewport; native
+   * PLANAR_NEXT viewports previously threw
+   * `getDefaultImageData is not a function`. Returns undefined when no VTK image
+   * actor is mounted (e.g. CPU render paths).
+   */
+  getDefaultImageData() {
+    return this.getImageActor()?.getMapper().getInputData();
+  }
+
+  /**
    * Renders a single image object by setting it as a one-image stack.
    */
   renderImageObject(image: IImage): Promise<void> {
