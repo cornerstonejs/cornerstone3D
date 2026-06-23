@@ -70,7 +70,11 @@ class ReferenceLines extends AnnotationDisplayTool {
       this.configuration.sourceViewportId
     ) as Types.IVolumeViewport;
 
-    if (!sourceViewport?.getImageData()) {
+    // Optional-chain the call: native ("next") viewports without image geometry
+    // (e.g. video) do not implement getImageData, and reference lines do not
+    // apply to them. Calling the missing method directly threw on every
+    // camera-modified event.
+    if (!sourceViewport?.getImageData?.()) {
       return;
     }
 
