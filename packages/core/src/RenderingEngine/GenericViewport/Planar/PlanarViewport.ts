@@ -1430,20 +1430,21 @@ class PlanarViewport extends GenericViewport<
   }
 
   /**
-   * Resets the per-display-set presentation (VOI / window level, colormap and
-   * inversion) back to the computed defaults for a single display set.
+   * Resets the stored per-display-set presentation (VOI / window level,
+   * colormap and inversion) back to the computed defaults for a single display
+   * set. This is the reset counterpart to `setDisplaySetPresentation` /
+   * `getDisplaySetPresentation`; the next viewport intentionally has no
+   * get/set Properties, so it does not use the legacy `*Properties` naming.
    *
    * Clearing the stored presentation override makes the render path fall back
    * to its defaults on the next apply (default VOI, no colormap, no inversion).
-   * This is the native `PLANAR_NEXT` counterpart to
-   * `StackViewport`/`VolumeViewport.resetProperties`, which OHIF's "Reset View"
-   * command relies on; view/camera state is reset separately by
-   * `resetViewState`. Without it, "Reset View" left the window level at the
+   * "Reset View" relies on it (view/camera state is reset separately by
+   * `resetViewState`); without it, "Reset View" left the window level at the
    * user-modified value on direct generic viewports.
    *
    * @param dataId - Optional display set id; defaults to the active source.
    */
-  resetProperties(dataId?: string): void {
+  resetDisplaySetPresentation(dataId?: string): void {
     if (this.isDestroyed) {
       return;
     }
