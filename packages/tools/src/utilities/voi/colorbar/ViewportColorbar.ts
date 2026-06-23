@@ -67,6 +67,26 @@ class ViewportColorbar extends Colorbar {
 
       viewport.setProperties({ voiRange }, volumeId);
       viewportsContainingVolumeUID.forEach((vp) => vp.render());
+    } else if (utilities.isGenericViewport(viewport)) {
+      // Direct Generic ("next") viewports have no setProperties; VOI is applied
+      // through the display-set presentation. _volumeId is the bound dataId when
+      // known (multi-volume/fusion); otherwise the single-argument overload
+      // targets the viewport's default binding.
+      const genericViewport = viewport as unknown as {
+        setDisplaySetPresentation: (
+          dataIdOrProps: string | { voiRange: ColorbarVOIRange },
+          props?: { voiRange: ColorbarVOIRange }
+        ) => void;
+        render: () => void;
+      };
+      const { _volumeId: dataId } = this;
+
+      if (dataId) {
+        genericViewport.setDisplaySetPresentation(dataId, { voiRange });
+      } else {
+        genericViewport.setDisplaySetPresentation({ voiRange });
+      }
+      genericViewport.render();
     }
   }
 
@@ -86,15 +106,22 @@ class ViewportColorbar extends Colorbar {
 
     let imageRange;
     if (!scalarData) {
-      // use voxel manager instead
-      if (!volumeId) {
-        throw new Error(
-          'volumeId is required when scalarData is not available'
-        );
+      // Streaming volumes (legacy and native PLANAR_NEXT) keep pixels in a
+      // voxelManager rather than on the vtk point data. Prefer the voxelManager
+      // attached to the mapper input data - it is present for both viewport
+      // families and does not require a volumeId. A direct PLANAR_NEXT viewport
+      // exposes no getAllVolumeIds, so callers cannot always supply one; only
+      // fall back to a cached volume lookup when the input voxelManager is
+      // unavailable, and default the range instead of throwing.
+      const inputVoxelManager = imageData.get('voxelManager')?.voxelManager;
+      const volume = volumeId ? cache.getVolume(volumeId) : undefined;
+      const voxelManager = inputVoxelManager ?? volume?.voxelManager;
+
+      if (!voxelManager?.getRange) {
+        return defaultImageRange;
       }
 
-      const volume = cache.getVolume(volumeId);
-      const [minValue, maxValue] = volume.voxelManager.getRange();
+      const [minValue, maxValue] = voxelManager.getRange();
       imageRange = [minValue, maxValue];
     } else {
       imageRange = scalarData.getRange();
