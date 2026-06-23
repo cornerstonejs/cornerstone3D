@@ -49,7 +49,19 @@ export default function cameraSyncCallback(
     // event detail only carries an ICamera (no ViewReference), so we read the
     // reference live from the source viewport rather than from the event snapshot;
     // any sync lag from the live read is inherent to the event not carrying one.
-    const sViewport = renderingEngine.getViewport(sourceViewport.viewportId);
+    // Resolve the source viewport through its own rendering engine: when source
+    // and target live in different engines, the target's engine returns undefined
+    // for the source id and the reads below would throw. Bail out if it cannot be
+    // resolved.
+    const sourceRenderingEngine = getRenderingEngine(
+      sourceViewport.renderingEngineId
+    );
+    const sViewport = sourceRenderingEngine?.getViewport(
+      sourceViewport.viewportId
+    );
+    if (!sViewport) {
+      return;
+    }
     tViewport.setViewReference(sViewport.getViewReference());
 
     // Slice/orientation come from the view reference above; copy zoom + pan
