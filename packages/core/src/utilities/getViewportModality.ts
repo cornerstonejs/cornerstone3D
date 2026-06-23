@@ -49,9 +49,13 @@ function _getViewportModality(
     // window-level drag use the wrong (non-PT) multipliers. Fall back to the
     // default actor when no id was given.
     const actors = genericViewport.getActors?.() ?? [];
+    // Match the volume id exactly, then by the `<scheme>:<dataId>` suffix (a
+    // display-set dataId maps to a volume id ending in `:<dataId>`). Anchoring to
+    // the separator avoids the unintended-actor matches a loose substring search
+    // could produce in a fusion viewport.
     const matchedActor = volumeId
       ? (actors.find((actor) => actor.referencedId === volumeId) ??
-        actors.find((actor) => actor.referencedId?.includes(volumeId)))
+        actors.find((actor) => actor.referencedId?.endsWith(`:${volumeId}`)))
       : undefined;
     const resolvedVolumeId =
       matchedActor?.referencedId ??

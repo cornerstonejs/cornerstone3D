@@ -27,9 +27,13 @@ function isViewportPreScaled(
       (
         viewport as { getActors?: () => Array<{ referencedId?: string }> }
       ).getActors?.() ?? [];
+    // Match the targetId exactly, then by the `<scheme>:<dataId>` suffix (a
+    // display-set dataId maps to a volume id ending in `:<dataId>`). Anchoring to
+    // the separator avoids the unintended-actor matches a loose substring search
+    // could produce in a fusion viewport.
     const matchedActor =
       actors.find((actor) => actor.referencedId === targetId) ??
-      actors.find((actor) => actor.referencedId?.includes(targetId));
+      actors.find((actor) => actor.referencedId?.endsWith(`:${targetId}`));
     const volumeId =
       matchedActor?.referencedId ?? utilities.getVolumeId(targetId);
     const volume = cache.getVolume(volumeId);
