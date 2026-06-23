@@ -101,6 +101,21 @@ jobs:
     steps:
       - attach_workspace:
           at: ~/repo
+      # The version-bump commit created by publish-version.mjs no longer carries "[skip ci]"
+      # (that suppressed the GitHub Actions release workflow that fires on the pushed tag).
+      # As a result this bump commit re-triggers TEST_AND_RELEASE on main. version.mjs ALWAYS
+      # computes a new version, so without this guard that would be an infinite publish loop.
+      # Halt here when HEAD is a version-bump commit. (circleci-agent step halt stops only this
+      # job, which is sufficient: NPM_PUBLISH is the terminal job and the only one that publishes.)
+      - run:
+          name: Skip republish on version-bump commits
+          command: |
+            MSG=$(git log -1 --pretty=%s)
+            echo "HEAD commit subject: $MSG"
+            if echo "$MSG" | grep -qE '^chore\(version\): Update package versions'; then
+              echo "Version-bump commit detected - nothing new to publish. Halting job."
+              circleci-agent step halt
+            fi
       - install_pnpm
       - run:
           name: Avoid hosts unknown for github

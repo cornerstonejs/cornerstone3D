@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/core",
-  "version": "5.0.5",
+  "version": "5.0.13",
   "description": "Cornerstone3D Core",
   "module": "./dist/esm/index.js",
   "types": "./dist/esm/index.d.ts",
@@ -84,18 +84,18 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@cornerstonejs/utils": "5.0.5",
+    "@cornerstonejs/utils": "5.0.13",
     "@kitware/vtk.js": "35.5.3",
     "comlink": "4.4.2",
     "gl-matrix": "3.4.3",
     "loglevel": "1.9.2"
   },
   "devDependencies": {
-    "@cornerstonejs/metadata": "5.0.5"
+    "@cornerstonejs/metadata": "5.0.13"
   },
   "peerDependencies": {
-    "@cornerstonejs/metadata": "5.0.5",
-    "@cornerstonejs/utils": "5.0.5"
+    "@cornerstonejs/metadata": "5.0.13",
+    "@cornerstonejs/utils": "5.0.13"
   },
   "contributors": [
     {
