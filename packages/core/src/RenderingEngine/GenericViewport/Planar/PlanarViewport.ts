@@ -1429,6 +1429,47 @@ class PlanarViewport extends GenericViewport<
     return this.resetViewState();
   }
 
+  /**
+   * Resets the per-display-set presentation (VOI / window level, colormap and
+   * inversion) back to the computed defaults for a single display set.
+   *
+   * Clearing the stored presentation override makes the render path fall back
+   * to its defaults on the next apply (default VOI, no colormap, no inversion).
+   * This is the native `PLANAR_NEXT` counterpart to
+   * `StackViewport`/`VolumeViewport.resetProperties`, which OHIF's "Reset View"
+   * command relies on; view/camera state is reset separately by
+   * `resetViewState`. Without it, "Reset View" left the window level at the
+   * user-modified value on direct generic viewports.
+   *
+   * @param dataId - Optional display set id; defaults to the active source.
+   */
+  resetProperties(dataId?: string): void {
+    if (this.isDestroyed) {
+      return;
+    }
+
+    const targetDataId = dataId ?? this.getSourceDataId();
+
+    if (!targetDataId) {
+      return;
+    }
+
+    // Drop the stored override so the render path's `updateDataPresentation`
+    // reapplies its defaults (mirrors PlanarLegacyCompatibilityController).
+    this.setDataPresentationState(targetDataId, {} as PlanarDataPresentation);
+
+    // `setDataPresentationState` does not emit (only the public merge path
+    // notifies), so surface the now-default VOI to OHIF's window-level readout,
+    // colorbar, sliders, and VOI synchronizers.
+    const defaultVOIRange = this.getDefaultVOIRange(targetDataId);
+
+    if (defaultVOIRange) {
+      this.notifyDataPresentationModified(targetDataId, {
+        voiRange: defaultVOIRange,
+      });
+    }
+  }
+
   // ====================================================================
   // Public API -- lifecycle
   // ====================================================================
