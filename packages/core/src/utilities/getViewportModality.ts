@@ -36,12 +36,27 @@ function _getViewportModality(
   // on a PLANAR_NEXT viewport instead of throwing "Invalid viewport type".
   if (isGenericViewport(viewport)) {
     const genericViewport = viewport as IViewport & {
+      getActors?: () => Array<{ referencedId?: string }>;
       getDefaultActor?: () => { referencedId?: string } | undefined;
       getImageData?: () => { metadata?: { Modality?: string } } | undefined;
     };
 
+    // The passed `volumeId` may be a display-set dataId (the identifier VOI
+    // tooling and the colorbar use), not the cache volume id. Map it to the
+    // matching actor's referencedId (the real volume id) before the cache
+    // lookup, otherwise getVolume misses and we fall back to the source layer's
+    // modality - e.g. reporting CT for the PT layer of a fusion, which makes
+    // window-level drag use the wrong (non-PT) multipliers. Fall back to the
+    // default actor when no id was given.
+    const actors = genericViewport.getActors?.() ?? [];
+    const matchedActor = volumeId
+      ? (actors.find((actor) => actor.referencedId === volumeId) ??
+        actors.find((actor) => actor.referencedId?.includes(volumeId)))
+      : undefined;
     const resolvedVolumeId =
-      volumeId ?? genericViewport.getDefaultActor?.()?.referencedId;
+      matchedActor?.referencedId ??
+      volumeId ??
+      genericViewport.getDefaultActor?.()?.referencedId;
     const volume = resolvedVolumeId ? getVolume(resolvedVolumeId) : undefined;
 
     if (volume?.metadata?.Modality) {
