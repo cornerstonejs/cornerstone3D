@@ -66,11 +66,25 @@ class WindowLevelTool extends BaseTool {
       modality = volume.metadata.Modality;
       isPreScaled = volume.scaling && Object.keys(volume.scaling).length > 0;
     } else if (properties.voiRange) {
-      modality = (viewport as unknown as { modality: string }).modality;
       ({ lower, upper } = properties.voiRange);
-      const { preScale = { scaled: false } } = viewport.getImageData?.() || {};
+      const imageData = (viewport.getImageData?.() || {}) as {
+        preScale?: { scaled?: boolean; scalingParameters?: { suvbw?: number } };
+        metadata?: { Modality?: string };
+        scaling?: Record<string, unknown>;
+      };
+      const { preScale = { scaled: false }, metadata, scaling } = imageData;
+      // StackViewport exposes `modality` + `preScale.scalingParameters`. A
+      // direct Generic ("next") viewport has neither; its getImageData() carries
+      // `metadata.Modality` and the volume `scaling` (the same SUV scaling object
+      // a legacy VolumeViewport checks). Recognize both so a prescaled PT next
+      // viewport takes the gentle fixed-width PT path (5/clientHeight) instead of
+      // the aggressive dynamic-range multiplier that also moved window width.
+      modality =
+        (viewport as unknown as { modality?: string }).modality ??
+        metadata?.Modality;
       isPreScaled =
-        preScale.scaled && preScale.scalingParameters?.suvbw !== undefined;
+        (preScale.scaled && preScale.scalingParameters?.suvbw !== undefined) ||
+        (!!scaling && Object.keys(scaling).length > 0);
     } else {
       throw new Error('Viewport is not a valid type');
     }

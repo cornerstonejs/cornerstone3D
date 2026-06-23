@@ -247,7 +247,7 @@ describe('labelmapRenderPlan', () => {
   it('mounts stack-backed labelmap layers as stable PlanarNext volume overlays', async () => {
     const stackLayer = {
       labelmapId: 'stack-layer-id',
-      type: 'stack',
+      storageKind: 'stack',
       imageIds: ['labelmap-image-1', 'labelmap-image-2'],
     };
     const viewport = {

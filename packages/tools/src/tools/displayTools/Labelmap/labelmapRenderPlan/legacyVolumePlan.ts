@@ -126,7 +126,7 @@ async function mountLegacyVolumeLabelmap({
 
     labelmapLayers.push({
       labelmapId: volumeId,
-      type: 'volume',
+      storageKind: 'volume',
       volumeId,
       imageIds: cache.getVolume(volumeId)?.imageIds,
     });

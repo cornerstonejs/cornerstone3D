@@ -58,10 +58,35 @@ export default function voiSyncCallback(
     tViewport.setProperties(tProperties);
   } else if (utilities.isGenericViewport(tViewport)) {
     // Direct Generic ("next") viewports expose presentation per display set
-    // rather than setProperties; apply VOI/invert/colormap to the source
-    // binding. Reacts to the VOI_MODIFIED / COLORMAP_MODIFIED events now emitted
-    // by the native presentation path.
-    tViewport.setDisplaySetPresentation(tProperties);
+    // rather than setProperties. Map the source change's volumeId to THIS
+    // viewport's binding so a fusion overlay (e.g. PT) update lands on the PT
+    // binding and not the default source (CT) - the next analogue of the legacy
+    // `setProperties(props, volumeId)` fusion path. Without this the PT colormap/
+    // VOI sync colors the CT background. Fall back to the default binding when the
+    // viewport has no matching binding (single-volume viewports).
+    const genericViewport = tViewport as typeof tViewport & {
+      findDataIdByVolumeId?: (volumeId: string) => string | undefined;
+      setDisplaySetPresentation: (
+        dataIdOrProps: string | typeof tProperties,
+        props?: typeof tProperties
+      ) => void;
+    };
+    const dataId = volumeId
+      ? genericViewport.findDataIdByVolumeId?.(volumeId)
+      : undefined;
+
+    if (dataId) {
+      genericViewport.setDisplaySetPresentation(dataId, tProperties);
+    } else if (!volumeId) {
+      // No source volume id (e.g. a stack VOI change) - apply to the default
+      // binding.
+      genericViewport.setDisplaySetPresentation(tProperties);
+    }
+    // else: the source change names a volume this viewport does not have bound
+    // (e.g. a fusion-overlay colormap sync that arrives before the overlay is
+    // mounted here). Skip rather than fall back to the default binding, which
+    // would wrongly color the source (CT) actor. The overlay receives its own
+    // colormap at mount, so no update is lost.
   } else {
     throw new Error('Viewport type not supported.');
   }

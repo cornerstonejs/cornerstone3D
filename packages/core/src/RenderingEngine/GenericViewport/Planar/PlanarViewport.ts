@@ -472,7 +472,15 @@ class PlanarViewport extends GenericViewport<
 
     let actorEntry = actorEntries[0];
     if (volumeId) {
-      actorEntry = actorEntries.find((a) => a.referencedId === volumeId);
+      // Match by actor referencedId first (e.g. the prefixed volume id
+      // "cornerstoneStreamingImageVolume:<uid>"). VOI/colorbar tooling, however,
+      // identifies a layer by its display-set id (the presentation dataId, a bare
+      // uid), which is not the referencedId. Fall back to resolving that dataId
+      // through the binding so a fused viewport's per-layer colorbar reads the
+      // correct actor (e.g. the PT layer) instead of defaulting to the source.
+      actorEntry =
+        actorEntries.find((a) => a.referencedId === volumeId) ??
+        this.mountedData.getActorForDataId(volumeId);
     }
 
     if (!actorEntry || !isImageActor(actorEntry)) {

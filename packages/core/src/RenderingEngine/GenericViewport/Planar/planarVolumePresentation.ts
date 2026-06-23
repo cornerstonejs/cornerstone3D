@@ -106,7 +106,18 @@ function applyColormapOpacity(args: {
     return;
   }
 
-  const range = resolveVolumeOpacityRange(actor, voiRange);
+  // A `threshold` is an ABSOLUTE scalar value (SUV / pixel value) spanning the
+  // full voxel data range, matching the legacy volume path
+  // (updateOpacityWithThreshold, which clamps to voxelManager.getRange()) and
+  // OHIF's ThresholdMenu (slider bounds = voxel range). An opacity ARRAY's
+  // normalized [0,1] values instead map over the VOI range (round-2 fusion
+  // behavior). Pick the domain accordingly so a threshold of e.g. 15 SUV is not
+  // clamped to a narrow VOI upper (which made everything transparent).
+  const range =
+    colormap.threshold !== undefined
+      ? (getActorScalarRange(actor) ??
+        resolveVolumeOpacityRange(actor, voiRange))
+      : resolveVolumeOpacityRange(actor, voiRange);
   const opacityFunction = vtkPiecewiseFunction.newInstance();
   const points = buildColormapOpacityPoints({
     colormap,
@@ -129,7 +140,7 @@ function buildColormapOpacityPoints(args: {
   const { colormap, range, fallbackOpacity } = args;
   const span = range.upper - range.lower;
   const delta = Math.max(Math.abs(span) * 0.001, 1e-3);
-  // OpacityMapping.value and ColormapPublic.threshold are normalized [0,1]
+  // An opacity ARRAY's `value`s (OpacityMapping.value) are normalized [0,1]
   // fractions of the VOI range (see ColormapPublic docs: the minimum value maps
   // to 0 opacity and the maximum value to 1 opacity). Map them onto the actual
   // scalar range so an overlay opacity array (e.g. a PT/CT fusion colormap)
@@ -138,12 +149,13 @@ function buildColormapOpacityPoints(args: {
   // (0.1 -> 0.1 SUV), making essentially all tissue opaque and hiding the
   // underlying source slice in a fusion.
   const toScalar = (normalized: number) => range.lower + normalized * span;
+  // `colormap.threshold`, by contrast, is an ABSOLUTE scalar value (SUV / pixel
+  // value): the legacy volume path (updateOpacityWithThreshold) clamps it straight
+  // to the voxel range, and OHIF's ThresholdMenu emits values in pixel units. So
+  // it is clamped to the range directly, NOT passed through toScalar.
   const threshold =
     colormap.threshold !== undefined
-      ? Math.max(
-          range.lower,
-          Math.min(range.upper, toScalar(colormap.threshold))
-        )
+      ? Math.max(range.lower, Math.min(range.upper, colormap.threshold))
       : undefined;
 
   if (Array.isArray(colormap.opacity) && colormap.opacity.length) {
@@ -300,6 +312,48 @@ function getVolumeNumberOfComponents(actor: vtkImageSlice): number {
     imageDataMetadata?.numberOfComponents ??
     1
   );
+}
+
+/**
+ * Returns the full voxel data range of the volume behind an actor (the streaming
+ * volume's voxelManager range, mirroring the legacy threshold path), falling back
+ * to the vtk scalar range. Used as the domain for an absolute opacity threshold,
+ * which is expressed in voxel/SUV units rather than the (often narrower) VOI range.
+ */
+function getActorScalarRange(actor: vtkImageSlice): VOIRange | undefined {
+  const mapperInputData = actor.getMapper()?.getInputData?.();
+  const voxelManager = (
+    mapperInputData?.get?.('voxelManager') as
+      | { voxelManager?: { getRange?: () => [number, number] } }
+      | undefined
+  )?.voxelManager;
+
+  const voxelRange = voxelManager?.getRange?.();
+
+  if (
+    voxelRange &&
+    Number.isFinite(voxelRange[0]) &&
+    Number.isFinite(voxelRange[1]) &&
+    voxelRange[1] > voxelRange[0]
+  ) {
+    return { lower: voxelRange[0], upper: voxelRange[1] };
+  }
+
+  const scalarRange = mapperInputData
+    ?.getPointData?.()
+    ?.getScalars?.()
+    ?.getRange?.();
+
+  if (
+    scalarRange &&
+    Number.isFinite(scalarRange[0]) &&
+    Number.isFinite(scalarRange[1]) &&
+    scalarRange[1] > scalarRange[0]
+  ) {
+    return { lower: scalarRange[0], upper: scalarRange[1] };
+  }
+
+  return undefined;
 }
 
 function resolveVolumeOpacityRange(
