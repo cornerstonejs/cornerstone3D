@@ -17,6 +17,8 @@ import clamp from './clamp';
 import isOpposite from './isOpposite';
 import getClosestImageId from './getClosestImageId';
 import getSpacingInNormalDirection from './getSpacingInNormalDirection';
+import getInPlaneSpacingAndXYDirections from './getInPlaneSpacingAndXYDirections';
+import iterateOverPlane from './iterateOverPlane';
 import getTargetVolumeAndSpacingInNormalDir from './getTargetVolumeAndSpacingInNormalDir';
 import getVolumeActorCorners from './getVolumeActorCorners';
 import indexWithinDimensions from './indexWithinDimensions';
@@ -158,6 +160,8 @@ export {
   convertColorArrayToRgbString,
   getClosestImageId,
   getSpacingInNormalDirection,
+  getInPlaneSpacingAndXYDirections,
+  iterateOverPlane,
   getTargetVolumeAndSpacingInNormalDir,
   getVolumeActorCorners,
   indexWithinDimensions,

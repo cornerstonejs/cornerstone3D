@@ -257,6 +257,7 @@ module.exports = {
                 'concepts/cornerstone-tools/segmentation/config',
                 'concepts/cornerstone-tools/segmentation/segment-index',
                 'concepts/cornerstone-tools/segmentation/segmentation-tools',
+                'concepts/cornerstone-tools/segmentation/planar-fill-iteration',
                 'concepts/cornerstone-tools/segmentation/cursor-strategies',
                 'concepts/cornerstone-tools/segmentation/segmentation-contour',
               ],
