@@ -18,21 +18,38 @@ export default function getScalingParameters(metaData, imageId: string) {
   const rescaleSlope = modalityLutModule.rescaleSlope;
   const rescaleIntercept = modalityLutModule.rescaleIntercept;
 
-  // Identity transform (slope 1, intercept 0) is implicitly non-prescaled; do not set preScale.
+  const scalingModules = metaData.get('scalingModule', imageId) || {};
+
+  // Modality-specific scaling (PT SUV body weight, RTDOSE dose grid scaling)
+  // must be applied even when the modality LUT is an identity transform. PET
+  // stored in counts (e.g. Philips CNTS) commonly has rescaleSlope 1 /
+  // intercept 0 while still requiring suvbw to convert to SUV, so this is
+  // checked before the identity-transform short-circuit below.
+  const hasPTScaling =
+    modality === 'PT' &&
+    typeof scalingModules.suvbw === 'number' &&
+    !isNaN(scalingModules.suvbw);
+  const hasDoseScaling =
+    modality === 'RTDOSE' &&
+    typeof scalingModules.DoseGridScaling === 'number' &&
+    !isNaN(scalingModules.DoseGridScaling);
+
+  // Identity transform (slope 1, intercept 0) with no modality-specific scaling
+  // is implicitly non-prescaled; do not set preScale.
   if (
     rescaleSlope === 1 &&
-    (rescaleIntercept === 0 || rescaleIntercept == null)
+    (rescaleIntercept === 0 || rescaleIntercept == null) &&
+    !hasPTScaling &&
+    !hasDoseScaling
   ) {
     return undefined;
   }
 
   const scalingParameters = {
-    rescaleSlope,
-    rescaleIntercept,
+    rescaleSlope: rescaleSlope ?? 1,
+    rescaleIntercept: rescaleIntercept ?? 0,
     modality,
   };
-
-  const scalingModules = metaData.get('scalingModule', imageId) || {};
 
   return {
     ...scalingParameters,
