@@ -272,6 +272,37 @@ type DecodeFrameImageData = (
   | (Uint8Array | Uint16Array)[]
 >;
 
+/** Default cap on concurrent SEG frame fetch/decode operations. */
+const DEFAULT_SEG_FRAME_DECODE_CONCURRENCY = 16;
+
+/**
+ * Maps items through an async fn with at most `limit` concurrent calls,
+ * preserving input order in the result array. Used to overlap SEG frame
+ * fetch/decode instead of awaiting each frame serially: a pool of `limit`
+ * workers pulls the next frame index as soon as it finishes the previous one,
+ * keeping up to `limit` requests in flight at all times.
+ */
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T, index: number) => Promise<R>
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let nextIndex = 0;
+
+  const worker = async () => {
+    while (nextIndex < items.length) {
+      const index = nextIndex++;
+      results[index] = await fn(items[index], index);
+    }
+  };
+
+  const poolSize = Math.max(1, Math.min(limit, items.length));
+  await Promise.all(Array.from({ length: poolSize }, worker));
+
+  return results;
+}
+
 function getSegNumberOfFrames(multiframe: Record<string, unknown>): number {
   const fromTag = Number(multiframe.NumberOfFrames);
   if (fromTag > 0) {
@@ -431,12 +462,14 @@ async function decodeSegPixelDataFromFrameIds({
   frameImageIds,
   getFrameImageId,
   decodeImageData = defaultDecodeFrameImageData,
+  concurrency = DEFAULT_SEG_FRAME_DECODE_CONCURRENCY,
 }: {
   segImageId: string;
   multiframe: Record<string, unknown>;
   frameImageIds?: string[];
   getFrameImageId?: (baseSegImageId: string, frameNumber: number) => string;
   decodeImageData: DecodeFrameImageData;
+  concurrency?: number;
 }) {
   const rows = Number(multiframe.Rows);
   const columns = Number(multiframe.Columns);
@@ -467,40 +500,44 @@ async function decodeSegPixelDataFromFrameIds({
     return { decodedPixelData, expectedVoxelCount };
   }
 
-  const perFramePixelData: (Uint8Array | Uint16Array)[] = [];
+  // Fetch/decode frames with bounded concurrency so up to `concurrency`
+  // requests overlap instead of awaiting each frame serially. Order is
+  // preserved by mapWithConcurrency, keeping perFramePixelData frame-aligned.
+  const perFramePixelData = await mapWithConcurrency(
+    resolvedFrameImageIds.slice(0, numberOfFrames),
+    concurrency,
+    async (frameImageId, frameIndex) => {
+      const frameNumber = frameIndex + 1;
 
-  for (let frameIndex = 0; frameIndex < numberOfFrames; frameIndex++) {
-    const frameNumber = frameIndex + 1;
-    const frameImageId = resolvedFrameImageIds[frameIndex];
+      if (!frameImageId) {
+        throw new Error(
+          `Missing SEG frame imageId at frame ${frameNumber} (expected ${numberOfFrames} frame imageIds)`
+        );
+      }
 
-    if (!frameImageId) {
-      throw new Error(
-        `Missing SEG frame imageId at frame ${frameNumber} (expected ${numberOfFrames} frame imageIds)`
-      );
+      const framePixelData = await decodeImageData(frameImageId, frameNumber);
+
+      if (!framePixelData) {
+        throw new Error(
+          `No decoded pixel data found for SEG frame imageId: ${frameImageId}`
+        );
+      }
+
+      let normalizedFrame = normalizeDecodedPixelData(framePixelData) as
+        | Uint8Array
+        | Uint16Array;
+
+      normalizedFrame = unpackFramePixelDataIfNeeded(
+        normalizedFrame,
+        multiframe,
+        sliceLength
+      ) as Uint8Array | Uint16Array;
+
+      return normalizedFrame.subarray(0, sliceLength) as
+        | Uint8Array
+        | Uint16Array;
     }
-
-    const framePixelData = await decodeImageData(frameImageId, frameNumber);
-
-    if (!framePixelData) {
-      throw new Error(
-        `No decoded pixel data found for SEG frame imageId: ${frameImageId}`
-      );
-    }
-
-    let normalizedFrame = normalizeDecodedPixelData(framePixelData) as
-      | Uint8Array
-      | Uint16Array;
-
-    normalizedFrame = unpackFramePixelDataIfNeeded(
-      normalizedFrame,
-      multiframe,
-      sliceLength
-    ) as Uint8Array | Uint16Array;
-
-    perFramePixelData.push(
-      normalizedFrame.subarray(0, sliceLength) as Uint8Array | Uint16Array
-    );
-  }
+  );
 
   return {
     decodedPixelData: normalizeDecodedPixelData(perFramePixelData),
@@ -619,6 +656,8 @@ async function createLabelmapsFromSegImageIds(
     frameImageIds,
     getFrameImageId,
     decodeImageData = defaultDecodeFrameImageData,
+    // Max number of SEG frames fetched/decoded concurrently (default 16).
+    concurrency = DEFAULT_SEG_FRAME_DECODE_CONCURRENCY,
     // Callers that already hold the normalized SEG dataset (e.g. the buffer
     // path) can pass it directly to avoid a metadata-provider round-trip. Some
     // providers (notably OHIF's) short-circuit `get('instance', ...)` before
@@ -682,6 +721,7 @@ async function createLabelmapsFromSegImageIds(
       frameImageIds,
       getFrameImageId,
       decodeImageData,
+      concurrency,
     });
   const sliceLength = multiframe.Rows * multiframe.Columns;
 
