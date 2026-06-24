@@ -40,13 +40,16 @@ import type {
 } from '../../types/ToolSpecificAnnotationTypes';
 import type { PlanarFreehandROICommonData } from '../../utilities/math/polyline/planarFreehandROIInternalTypes';
 
-import { getLineSegmentIntersectionsCoordinates } from '../../utilities/math/polyline';
+import { getIntersectionIterator } from '../../utilities/math/polyline';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
 import { KeyboardBindings, ChangeTypes, MeasurementType } from '../../enums';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
-import snapIndexBounds from '../../utilities/boundingBox/snapIndexBounds';
+import {
+  getCanvasVoxelSamplingStep,
+  sampleVoxelsFromCanvas,
+} from '../../utilities/sampleVoxelsFromCanvas';
 
 const { pointCanProjectOnLine } = polyline;
 const { EPSILON } = CONSTANTS;
@@ -920,9 +923,6 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       closed
     );
 
-    let pointsInShape = [];
-    const visited = new Set<string>();
-
     // Viewport-space ROI sampling for both orthogonal and oblique MPR views.
     //
     // Instead of iterating a 3D IJK bounding box, we rasterize the ROI in
@@ -936,99 +936,19 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     // Complexity scales with projected ROI size rather than IJK volume,
     // making it stable and efficient for all viewport orientations.
 
-    const {
-      maxX: canvasMaxX,
-      maxY: canvasMaxY,
-      minX: canvasMinX,
-      minY: canvasMinY,
-    } = math.polyline.getAABB(canvasCoordinates);
+    const canvasStep = getCanvasVoxelSamplingStep(viewport, imageData);
+    const pixelIterator = getIntersectionIterator(
+      canvasCoordinates,
+      canvasStep
+    );
 
-    const startX = Math.floor(canvasMinX);
-    const endX = Math.ceil(canvasMaxX);
-    const startY = Math.floor(canvasMinY);
-    const endY = Math.ceil(canvasMaxY);
-
-    const dimensions = imageData.getDimensions();
-    const canvasMaxXPadded = endX + 1;
-
-    for (let cy = startY; cy <= endY; cy++) {
-      // Compute all intersections of the polygon with this scanline row
-      const intersections = getLineSegmentIntersectionsCoordinates(
-        canvasCoordinates,
-        [startX - 1, cy] as Types.Point2,
-        [canvasMaxXPadded, cy] as Types.Point2
-      );
-
-      if (!intersections || intersections.length === 0) {
-        continue;
-      }
-
-      // Sort intersections by X coordinate
-      intersections.sort((a, b) => a[0] - b[0]);
-
-      // Walk through intersection pairs (entry/exit)
-      for (let i = 0; i + 1 < intersections.length; i += 2) {
-        const xEnter = Math.ceil(intersections[i][0]);
-        const xExit = Math.floor(intersections[i + 1][0]);
-
-        for (let cx = xEnter; cx <= xExit; cx++) {
-          const canvasPoint: Types.Point2 = [cx, cy];
-          const worldPoint = viewport.canvasToWorld(canvasPoint);
-          const indexPoint = csUtils.transformWorldToIndex(
-            imageData,
-            worldPoint
-          );
-
-          // Nearest-neighbor: round to closest voxel
-          const ijkPoint: Types.Point3 = [
-            Math.round(indexPoint[0]),
-            Math.round(indexPoint[1]),
-            Math.round(indexPoint[2]),
-          ];
-
-          // Bounds check
-          if (
-            ijkPoint[0] < 0 ||
-            ijkPoint[0] >= dimensions[0] ||
-            ijkPoint[1] < 0 ||
-            ijkPoint[1] >= dimensions[1] ||
-            ijkPoint[2] < 0 ||
-            ijkPoint[2] >= dimensions[2]
-          ) {
-            continue;
-          }
-
-          const value = voxelManager.getAtIJKPoint(ijkPoint);
-
-          if (value === undefined || value === null) {
-            continue;
-          }
-
-          const key = `${ijkPoint[0]}_${ijkPoint[1]}_${ijkPoint[2]}`;
-
-          // avoid duplicate voxels
-          if (visited.has(key)) {
-            continue;
-          }
-
-          visited.add(key);
-
-          const sample = {
-            value: value as number,
-            pointLPS: worldPoint as Types.Point3,
-            pointIJK: ijkPoint,
-          };
-
-          pointsInShape.push(sample);
-
-          this.configuration.statsCalculator.statsCallback({
-            value: value as number,
-            pointLPS: worldPoint as Types.Point3,
-            pointIJK: ijkPoint,
-          });
-        }
-      }
-    }
+    const pointsInShape = sampleVoxelsFromCanvas({
+      iterator: pixelIterator,
+      imageData,
+      viewport,
+      voxelManager,
+      statsCallback: this.configuration.statsCalculator.statsCallback,
+    });
 
     const stats = this.configuration.statsCalculator.getStatistics();
 
