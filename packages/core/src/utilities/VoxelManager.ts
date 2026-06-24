@@ -430,7 +430,10 @@ export default class VoxelManager<T> {
     if (this._getScalarData) {
       const scalarData = this._getScalarData();
       if (storeScalarData) {
-        console.log('Not transient, should store value', scalarData);
+        // Retain the expanded scalar data so subsequent calls return it
+        // directly instead of re-expanding (e.g. re-running the RLE decode)
+        // on every access. Callers opt in because this trades memory for speed.
+        this.scalarData = scalarData as PixelDataTypedArray;
       }
       return scalarData as PixelDataTypedArray;
     }
