@@ -184,3 +184,36 @@ export function applyBoolean(
 
   return polyTreeToPolygons(tree);
 }
+
+/**
+ * Decompose a single, possibly self-intersecting, polyline into simple
+ * (non-self-intersecting) rings.
+ *
+ * A figure-eight comes back as two rings that touch at the crossing point;
+ * a simple polygon comes back unchanged (as a single ring). This is the
+ * EvenOdd self-union Clipper performs when given a subject and no clip — it
+ * resolves the self-intersection into the smallest set of simple rings whose
+ * even-odd fill equals the original.
+ *
+ * Holes (rings Clipper marks as interior under even-odd) are returned flat
+ * alongside outers; the caller decides how to re-associate them.
+ */
+export function splitSelfIntersections(
+  polyline: Types.Point2[]
+): PolygonWithHoles[] {
+  if (polyline.length < 3) {
+    return [];
+  }
+
+  const tree = new PolyTreeD();
+  Clipper.booleanOpDWithPolyTree(
+    ClipType.Union,
+    [point2ToPathD(polyline)],
+    null,
+    tree,
+    FillRule.EvenOdd,
+    PRECISION
+  );
+
+  return polyTreeToPolygons(tree);
+}

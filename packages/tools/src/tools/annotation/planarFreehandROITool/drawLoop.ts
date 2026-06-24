@@ -22,6 +22,7 @@ import { resolveVectorToPeak } from './findOpenUShapedContourVectorToPeak';
 import { polyline } from '../../../utilities/math';
 import { removeAnnotation } from '../../../stateManagement/annotation/annotationState';
 import { ContourWindingDirection } from '../../../types/ContourAnnotation';
+import { bridgeSelfIntersectingPolyline } from '../../../utilities/contourSegmentation/bridgeWeaklyConnected';
 
 const {
   addCanvasPointsToArray,
@@ -159,9 +160,21 @@ function mouseDragDrawCallback(evt: EventTypes.InteractionEventType): void {
   } else {
     const crossingIndex = this.findCrossingIndexDuringCreate(evt);
 
-    if (crossingIndex !== undefined) {
-      // If we have crossed our drawing line, create a closed contour and then
-      // start an edit.
+    // Only treat a self-crossing as "close the contour" when it happens near
+    // the start of the stroke (the cross-back-to-close gesture). A crossing
+    // elsewhere is an intentional self-intersection — e.g. a figure-eight — so
+    // keep drawing and resolve it into a single contour at completion.
+    const crossingClosesContour =
+      crossingIndex !== undefined &&
+      pointsAreWithinCloseContourProximity(
+        canvasPoints[0],
+        canvasPoints[crossingIndex],
+        this.configuration.closeContourProximity
+      );
+
+    if (crossingClosesContour) {
+      // If we have crossed our drawing line near the start, create a closed
+      // contour and then start an edit.
       this.applyCreateOnCross(evt, crossingIndex);
     } else {
       const numPointsAdded = addCanvasPointsToArray(
@@ -251,9 +264,14 @@ function completeDrawClosedContour(
   // Remove last point which will be a duplicate now.
   canvasPoints.pop();
 
-  const updatedPoints = shouldSmooth(this.configuration, annotation)
+  const smoothedPoints = shouldSmooth(this.configuration, annotation)
     ? getInterpolatedPoints(this.configuration, canvasPoints)
     : canvasPoints;
+
+  // If the contour crosses itself (e.g. a figure-eight), stitch the lobes into
+  // a single weakly-simple contour rather than letting it stay self-intersecting
+  // (which renders/loads incorrectly). Simple contours are returned unchanged.
+  const updatedPoints = bridgeSelfIntersectingPolyline(smoothedPoints);
 
   this.updateContourPolyline(
     annotation,

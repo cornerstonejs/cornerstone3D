@@ -16,8 +16,10 @@ import { ContourWindingDirection } from '../../types/ContourAnnotation';
 import {
   applyBoolean,
   BooleanOp,
+  splitSelfIntersections,
   type PolygonWithHoles,
 } from './clipperBooleanOps';
+import { unifyWeaklyConnectedPolygons } from './bridgeWeaklyConnected';
 import {
   convertContourPolylineToCanvasSpace,
   createNewAnnotationFromPolyline,
@@ -90,9 +92,25 @@ function applyStroke(
     return { outer, holes: holes.length ? holes : undefined };
   });
 
-  const clips: PolygonWithHoles[] = [{ outer: sourcePolyline }];
+  // A self-intersecting stroke (e.g. a figure-eight) is decomposed up front
+  // into simple rings so it is handled consistently whether or not there are
+  // existing same-segment targets to boolean against.
+  const clips: PolygonWithHoles[] = splitSelfIntersections(sourcePolyline);
+  if (clips.length === 0) {
+    removeAnnotationCompletely(sourceAnnotation);
+    return;
+  }
 
-  const resultPolygons = applyBoolean(subjects, clips, op);
+  const booleanResult = applyBoolean(subjects, clips, op);
+
+  // For ADD (§3.4), rings that touch only at a point are the two lobes of a
+  // single drawn shape that Clipper was forced to split. Re-stitch them into
+  // one weakly-simple contour so the figure-eight stays a single annotation.
+  // SUBTRACT keeps the split — a pinch from erasing genuinely makes two pieces.
+  const resultPolygons =
+    op === BooleanOp.Union
+      ? unifyWeaklyConnectedPolygons(booleanResult)
+      : booleanResult;
 
   // Collect every annotation we're about to discard.
   const toRemove: ContourSegmentationAnnotation[] = [sourceAnnotation];

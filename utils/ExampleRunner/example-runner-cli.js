@@ -301,7 +301,14 @@ function run() {
       '--config',
       webpackConfigPath,
     ];
-    spawnSync(rspackBin, rspackArgs, { stdio: 'inherit', shell: false });
+    // On Windows the rspack binary is a .cmd wrapper. Recent Node versions
+    // (the CVE-2024-27980 fix) refuse to spawn .cmd/.bat files unless the
+    // shell option is enabled, returning EINVAL instead. Use shell: true on
+    // win32 so the wrapper can run.
+    spawnSync(rspackBin, rspackArgs, {
+      stdio: 'inherit',
+      shell: process.platform === 'win32',
+    });
   } else {
     console.log('=> To run an example:');
     console.log('  $ npm run example -- PUT_YOUR_EXAMPLE_NAME_HERE\n');

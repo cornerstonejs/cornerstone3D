@@ -206,12 +206,13 @@ When an edit causes the polygon to self-intersect, or causes the edited
 polygon to overlap a sibling polygon in the same segment, the result is the
 **UNION** of all touching pieces.
 
-| Topology event                                                  | Result                                                                                    |
-| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| Outer ring pinches into a figure-eight                          | Polygon splits into two polygons (one outer ring becomes two)                             |
-| Edited polygon's outer now overlaps sibling B (same segment)    | New polygon = (edited polygon) ∪ B; sibling B removed                                     |
-| Edited polygon's outer touches one of its own holes             | Hole opens to the boundary; that hole disappears, replaced by an indentation in the outer |
-| Edited polygon's outer crosses a polygon in a different segment | No interaction (segment independence)                                                     |
+| Topology event                                                  | Result                                                                                                                                      |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Outer ring pinches into a figure-eight (ADD)                    | Stays ONE polygon: the two lobes are keyhole-bridged at the crossing into a single weakly-simple contour whose path traverses both (see §8) |
+| Outer ring pinches into a figure-eight (SUBTRACT)               | Polygon splits into two polygons — erasing a neck genuinely separates the pieces                                                            |
+| Edited polygon's outer now overlaps sibling B (same segment)    | New polygon = (edited polygon) ∪ B; sibling B removed                                                                                       |
+| Edited polygon's outer touches one of its own holes             | Hole opens to the boundary; that hole disappears, replaced by an indentation in the outer                                                   |
+| Edited polygon's outer crosses a polygon in a different segment | No interaction (segment independence)                                                                                                       |
 
 The user explicitly does not want XOR here: an edit overlapping an existing
 polygon means "merge these", not "punch out their intersection."
@@ -765,3 +766,27 @@ For §3 / §4 (cursor), the same machinery runs with:
 ring, with §3.4 triggering when a self-intersection is detected post-edit.
 That detection currently lives in the freehand tool, not the boolean-op
 pipeline.
+
+### Keyhole bridging (figure-eight under ADD)
+
+Clipper only ever emits _simple_ (non-self-intersecting) rings, so a polygon
+that is connected only at a point — the crossing of a hand-drawn figure-eight
+— comes back from `applyBoolean` as two rings that touch at that point.
+Storing those as two annotations both mis-represents the single drawn shape
+and round-trips poorly.
+
+For ADD, `applyContourStroke`:
+
+1. Decomposes the (possibly self-intersecting) stroke into simple rings up
+   front with `splitSelfIntersections` (an EvenOdd self-union), so the
+   figure-eight is handled the same way whether or not there are existing
+   same-segment targets to boolean against.
+2. After the boolean op, passes the result through
+   `unifyWeaklyConnectedPolygons`: outer rings whose vertices come within
+   `TOUCH_EPS` of each other are union-find grouped and keyhole-bridged into a
+   single weakly-simple ring (a zero-width slit at the contact point), with one
+   lobe reversed if needed so both wind the same way. Genuinely disjoint rings
+   are left as separate polygons.
+
+SUBTRACT deliberately skips step 2: a pinch produced by erasing should remain
+two pieces.
