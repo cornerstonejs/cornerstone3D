@@ -58,6 +58,13 @@ export interface IGenericViewport extends IViewport {
   resetViewState(options?: unknown): boolean;
   /** Content-true classification of the bound source data; see {@link ViewportContentMode}. */
   getCurrentMode(): ViewportContentMode;
+  /**
+   * Resolves the currently referenced image id from the active view state, when
+   * the bound source data can be expressed as an image id (stack / vtkImage
+   * content and axially aligned volume slices). Returns `undefined` for content
+   * with no single source image (e.g. oblique/orthogonal volume reslices).
+   */
+  getCurrentImageId(): string | undefined;
 }
 
 export type { IGenericViewport as default };
