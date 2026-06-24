@@ -12,6 +12,7 @@ import {
 } from './triggerSegmentationEvents';
 import { addColorLUT } from './addColorLUT';
 import { defaultSegmentationStateManager } from './SegmentationStateManager';
+import { viewportReferencesSegmentationImages } from './helpers/viewportReferencesSegmentationImages';
 import { addDefaultSegmentationListener } from './segmentationEventManager';
 import { getActiveSegmentIndex, setActiveSegmentIndex } from './segmentIndex';
 
@@ -20,6 +21,23 @@ function internalAddSegmentationRepresentation(
   representationInput: RepresentationPublicInput
 ) {
   const { segmentationId, config } = representationInput;
+
+  // Only associate a labelmap with a viewport that actually displays the images
+  // the labelmap applies to. A viewport that shows none of them - e.g. a
+  // different series that merely shares a frame of reference, or an unrelated
+  // single-image series - must not receive the representation: it can mount
+  // nothing useful, yet the forced re-render of it in the shared rendering engine
+  // blanks the unrelated series. MPR views of the referenced series still match,
+  // because the volume's imageIds are the referenced series' imageIds.
+  if (
+    representationInput.type === SegmentationRepresentations.Labelmap &&
+    !viewportReferencesSegmentationImages(
+      getEnabledElementByViewportId(viewportId)?.viewport,
+      segmentationId
+    )
+  ) {
+    return;
+  }
 
   // need to be able to override from the outside
   const renderingConfig: RenderingConfig = {
