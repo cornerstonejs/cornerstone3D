@@ -1,4 +1,6 @@
-import type { IViewport } from './IViewport';
+import type { IViewport, ViewReference } from './IViewport';
+import type ICamera from './ICamera';
+import type ResolvedViewportView from '../RenderingEngine/GenericViewport/ResolvedViewportView';
 
 /**
  * The content a Generic ("next") viewport is currently rendering.
@@ -51,6 +53,11 @@ export interface IGenericViewport extends IViewport {
   addDisplaySet(displaySetId: string, options: unknown): Promise<void>;
   removeData(displaySetId: string): void;
   setDisplaySetPresentation(props: unknown): void;
+  /**
+   * Overload targeting a specific bound dataId (multi-volume / fusion); the
+   * single-argument form targets the viewport's default binding.
+   */
+  setDisplaySetPresentation(dataId: string, props: unknown): void;
   getDisplaySetPresentation(displaySetId: string): unknown;
   setViewState(viewStatePatch: unknown): void;
   getViewState(): unknown;
@@ -58,6 +65,17 @@ export interface IGenericViewport extends IViewport {
   resetViewState(options?: unknown): boolean;
   /** Content-true classification of the bound source data; see {@link ViewportContentMode}. */
   getCurrentMode(): ViewportContentMode;
+  /**
+   * Applies a spatial reference (frame of reference + plane) to the current view
+   * state. Implemented across all Generic families via the base GenericViewport.
+   */
+  setViewReference(viewReference: ViewReference): void;
+  /**
+   * The resolved semantic view (camera + spatial basis) the viewport derives
+   * from its bound data and view state. Native viewports have no legacy
+   * `getCamera()`; callers bridge through this (see `getViewportICamera`).
+   */
+  getResolvedView(): ResolvedViewportView<unknown, ICamera<unknown>> | undefined;
   /**
    * Resolves the currently referenced image id from the active view state, when
    * the bound source data can be expressed as an image id (stack / vtkImage

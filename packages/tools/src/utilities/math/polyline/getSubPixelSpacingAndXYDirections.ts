@@ -34,10 +34,7 @@ const getSubPixelSpacingAndXYDirections = (
   const isGeneric = csUtils.isGenericViewport(viewport);
   const isImageSlice =
     viewport instanceof StackViewport ||
-    (isGeneric &&
-      (
-        viewport as unknown as { getCurrentMode?: () => string }
-      ).getCurrentMode?.() === 'stack');
+    (isGeneric && csUtils.getViewportContentMode(viewport) === 'stack');
 
   if (isImageSlice) {
     // Check XY directions

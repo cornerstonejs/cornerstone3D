@@ -27,18 +27,10 @@ export function jumpToFocalPoint(
   viewport: Types.IViewport,
   cameraFocalPoint: Types.Point3
 ): void {
-  (
-    viewport as unknown as {
-      setViewReference?: (ref: Types.ViewReference) => void;
-    }
-  ).setViewReference?.({ cameraFocalPoint } as Types.ViewReference);
+  if (csUtils.isGenericViewport(viewport)) {
+    viewport.setViewReference({ cameraFocalPoint } as Types.ViewReference);
+  }
 }
-
-type NativeSourceViewport = Types.IViewport & {
-  getSourceDataId?: () => string | undefined;
-  getDisplaySetPresentation?: (dataId?: string) => Record<string, unknown>;
-  getCurrentImageId?: () => string | undefined;
-};
 
 export interface NativeSourceProperties {
   /** VOI/LUT properties read via getDisplaySetPresentation. */
@@ -57,9 +49,17 @@ export interface NativeSourceProperties {
 export function getNativeSourceProperties(
   viewport: Types.IViewport
 ): NativeSourceProperties {
-  const v = viewport as NativeSourceViewport;
+  if (!csUtils.viewportSupportsDisplaySetPresentation(viewport)) {
+    return { properties: {} };
+  }
+  const sourceDataId = viewport.getSourceDataId();
   const properties = {
-    ...(v.getDisplaySetPresentation?.(v.getSourceDataId?.()) ?? {}),
+    ...((sourceDataId
+      ? (viewport.getDisplaySetPresentation(sourceDataId) as Record<
+          string,
+          unknown
+        >)
+      : {}) ?? {}),
   } as Record<string, unknown>;
   // Generic viewports expose the VOI LUT function as `voiLUTFunction`, but the
   // legacy viewport `setProperties` (used by the Magnify loupes) reads the
@@ -79,6 +79,6 @@ export function getNativeSourceProperties(
     rotation: presentation.rotation,
     flipHorizontal: presentation.flipHorizontal,
     flipVertical: presentation.flipVertical,
-    currentImageId: v.getCurrentImageId?.(),
+    currentImageId: viewport.getCurrentImageId(),
   };
 }

@@ -360,31 +360,22 @@ class WindowLevelRegionTool extends AnnotationTool {
     // per-display-set presentation. Bridge both read (VOI LUT function) and write
     // (the computed VOI range) so the region tool applies the window level on
     // native viewports too (legacy keeps using get/setProperties).
-    const nativeViewport = viewport as unknown as {
-      getSourceDataId?: () => string | undefined;
-      getDisplaySetPresentation?: (
-        dataId: string
-      ) => { voiLUTFunction?: unknown } | undefined;
-      setDisplaySetPresentation?: (
-        dataId: string,
-        props: { voiRange: Types.VOIRange }
-      ) => void;
-    };
-    const isGeneric = utilities.isGenericViewport(viewport);
-    const sourceDataId = isGeneric
-      ? nativeViewport.getSourceDataId?.()
+    const presentationViewport = utilities.viewportSupportsDisplaySetPresentation(
+      viewport
+    )
+      ? viewport
       : undefined;
+    const sourceDataId = presentationViewport?.getSourceDataId();
 
-    const voiLutFunction = isGeneric
+    const voiLutFunction = presentationViewport
       ? sourceDataId
-        ? nativeViewport.getDisplaySetPresentation?.(sourceDataId)
-            ?.voiLUTFunction
+        ? (
+            presentationViewport.getDisplaySetPresentation(sourceDataId) as
+              | { voiLUTFunction?: unknown }
+              | undefined
+          )?.voiLUTFunction
         : undefined
-      : (
-          viewport as unknown as {
-            getProperties: () => { VOILUTFunction?: unknown };
-          }
-        ).getProperties().VOILUTFunction;
+      : viewport.getProperties().VOILUTFunction;
 
     const voiRange = utilities.windowLevel.toLowHighRange(
       windowWidth,
@@ -394,16 +385,14 @@ class WindowLevelRegionTool extends AnnotationTool {
       >[2]
     );
 
-    if (isGeneric) {
+    if (presentationViewport) {
       if (sourceDataId) {
-        nativeViewport.setDisplaySetPresentation?.(sourceDataId, { voiRange });
+        presentationViewport.setDisplaySetPresentation(sourceDataId, {
+          voiRange,
+        });
       }
     } else {
-      (
-        viewport as unknown as {
-          setProperties: (props: { voiRange: Types.VOIRange }) => void;
-        }
-      ).setProperties({ voiRange });
+      viewport.setProperties({ voiRange });
     }
     viewport.render();
   };

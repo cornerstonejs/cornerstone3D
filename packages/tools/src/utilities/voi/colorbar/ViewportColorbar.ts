@@ -53,7 +53,10 @@ class ViewportColorbar extends Colorbar {
   protected onVoiChange(voiRange: ColorbarVOIRange) {
     super.onVoiChange(voiRange);
 
-    const { viewport } = this.enabledElement;
+    // Widen to IViewport so isGenericViewport can narrow below: the enabled
+    // element types viewport as IStackViewport | IVolumeViewport, which the
+    // instanceof branches exhaust to `never` before the generic check.
+    const viewport: Types.IViewport = this.enabledElement.viewport;
 
     if (viewport instanceof StackViewport) {
       viewport.setProperties({
@@ -72,21 +75,14 @@ class ViewportColorbar extends Colorbar {
       // through the display-set presentation. _volumeId is the bound dataId when
       // known (multi-volume/fusion); otherwise the single-argument overload
       // targets the viewport's default binding.
-      const genericViewport = viewport as unknown as {
-        setDisplaySetPresentation: (
-          dataIdOrProps: string | { voiRange: ColorbarVOIRange },
-          props?: { voiRange: ColorbarVOIRange }
-        ) => void;
-        render: () => void;
-      };
       const { _volumeId: dataId } = this;
 
       if (dataId) {
-        genericViewport.setDisplaySetPresentation(dataId, { voiRange });
+        viewport.setDisplaySetPresentation(dataId, { voiRange });
       } else {
-        genericViewport.setDisplaySetPresentation({ voiRange });
+        viewport.setDisplaySetPresentation({ voiRange });
       }
-      genericViewport.render();
+      viewport.render();
     }
   }
 

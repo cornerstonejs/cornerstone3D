@@ -391,11 +391,7 @@ class CrosshairsTool extends AnnotationTool {
         // Native PLANAR_NEXT has no resetCamera/resetSlabThickness; resetViewState
         // resets pan/zoom/orientation/flip (slice/navigation is preserved and there
         // is no slab concept). Wrapped by the caller's _ignoreFiredEvents guard.
-        (
-          viewport as unknown as {
-            resetViewState?: (opts?: Record<string, boolean>) => void;
-          }
-        ).resetViewState?.({
+        viewport.resetViewState({
           resetPan,
           resetZoom,
           resetOrientation: resetRotation,

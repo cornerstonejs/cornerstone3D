@@ -5,6 +5,7 @@ import type {
   IViewport,
   IVolumeViewport,
   ViewportContentMode,
+  VOIRange,
 } from '../types';
 
 export type ImageSliceViewport = IViewport &
@@ -122,6 +123,28 @@ export function isGenericViewport(
     viewportHasMethod(viewport, 'setDisplaySets') &&
     viewportHasMethod(viewport, 'setDisplaySetPresentation') &&
     viewportHasMethod(viewport, 'setViewState')
+  );
+}
+
+/**
+ * A Generic ("next") viewport that also exposes the per-display-set source/VOI
+ * accessors. These live only on the `PlanarViewport` family (not video / WSI /
+ * ECG / 3D), so they are gated by a focused guard rather than declared on
+ * `IGenericViewport` — narrowing to this lets the VOI-region / livewire tools
+ * read the bound dataId and its default VOI without an inline cast.
+ */
+export type DisplaySetPresentationViewport = IGenericViewport & {
+  getSourceDataId(): string | undefined;
+  getDefaultVOIRange(dataId?: string): VOIRange | undefined;
+};
+
+export function viewportSupportsDisplaySetPresentation(
+  viewport: unknown
+): viewport is DisplaySetPresentationViewport {
+  return (
+    isGenericViewport(viewport) &&
+    viewportHasMethod(viewport, 'getSourceDataId') &&
+    viewportHasMethod(viewport, 'getDefaultVOIRange')
   );
 }
 

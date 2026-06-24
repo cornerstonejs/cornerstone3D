@@ -227,18 +227,19 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     // Native ("next") viewports expose no getProperties; read the effective VOI
     // from the per-binding presentation, falling back to the computed default VOI.
     let voiRange: Types.VOIRange;
-    if (csUtils.isGenericViewport(viewport)) {
-      const nativeViewport = viewport as Types.IViewport & {
-        getSourceDataId?: () => string | undefined;
-        getDisplaySetPresentation?: (
-          dataId?: string
-        ) => { voiRange?: Types.VOIRange } | undefined;
-        getDefaultVOIRange?: (dataId?: string) => Types.VOIRange | undefined;
-      };
-      const dataId = nativeViewport.getSourceDataId?.();
-      voiRange = (nativeViewport.getDisplaySetPresentation?.(dataId)
-        ?.voiRange ??
-        nativeViewport.getDefaultVOIRange?.(dataId)) as Types.VOIRange;
+    // Widen so the capability guard can narrow; the enabled element types
+    // viewport as IStackViewport | IVolumeViewport.
+    const sourceViewport: Types.IViewport = viewport;
+    if (csUtils.viewportSupportsDisplaySetPresentation(sourceViewport)) {
+      const dataId = sourceViewport.getSourceDataId();
+      voiRange = (((dataId
+        ? (
+            sourceViewport.getDisplaySetPresentation(dataId) as
+              | { voiRange?: Types.VOIRange }
+              | undefined
+          )?.voiRange
+        : undefined) ?? sourceViewport.getDefaultVOIRange(dataId)) ??
+        undefined) as Types.VOIRange;
     } else {
       ({ voiRange } = viewport.getProperties());
     }
