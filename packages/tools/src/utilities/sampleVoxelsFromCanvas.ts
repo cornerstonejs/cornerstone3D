@@ -64,8 +64,8 @@ type statsCallback = ({
  * @param options.viewport - The active Cornerstone3D viewport context.
  * @param options.imageData - The underlying VTK or CPU image volume data.
  * @param options.voxelManager - voxelManager instance for accessing voxel values at IJK coordinates.
- * @param options.statsCallback - A callback function invoked for each sampled voxel, receiving its value and coordinates.
- * @returns An array of sampled voxel data, each containing the voxel value, LPS coordinates, and IJK coordinates.
+ * @param options.statsCallback - A callback invoked once per unique IJK voxel sampled.
+ * @returns An array of unique sampled voxels, each containing the voxel value, LPS coordinates, and IJK coordinates.
  */
 export function sampleVoxelsFromCanvas({
   iterator,
@@ -85,7 +85,8 @@ export function sampleVoxelsFromCanvas({
   pointIJK: Types.Point3;
 }[] {
   const dimensions = imageData.getDimensions();
-  let pointsInShape = [];
+  const pointsInShape = [];
+  const visitedIJK = new Set<string>();
 
   for (const [cx, cy] of iterator) {
     const canvasPoint: Types.Point2 = [cx, cy];
@@ -115,6 +116,12 @@ export function sampleVoxelsFromCanvas({
       pointLPS: worldPoint as Types.Point3,
       pointIJK: ijkPoint,
     };
+
+    const ijkKey = `${ijkPoint[0]},${ijkPoint[1]},${ijkPoint[2]}`;
+    if (visitedIJK.has(ijkKey)) {
+      continue;
+    }
+    visitedIJK.add(ijkKey);
 
     pointsInShape.push(sample);
     statsCallback(sample);
