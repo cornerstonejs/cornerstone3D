@@ -152,6 +152,17 @@ class PlanarViewport extends GenericViewport<
   private renderImageObjectDataId?: string;
   private resolvedViewCache?: ResolvedViewCache;
   private resolvedViewCacheRevision = 0;
+  // Canvas CSS dimensions, cached to avoid a forced layout reflow on every
+  // resolveCachedViewState()/coordinate-transform call. Reading clientWidth/
+  // clientHeight synchronously flushes layout; during annotation rendering (e.g.
+  // many DICOM RT contours) the SVG annotation layer is written between those
+  // reads, so each read becomes a reflow (layout thrash). The canvas CSS size
+  // only changes on resize(), which clears this cache, so the hot resolve and
+  // transform paths can safely reuse the cached value within a frame.
+  private cachedCanvasDimensions?: {
+    canvasHeight: number;
+    canvasWidth: number;
+  };
   private setDataRequestId = 0;
 
   // ── Static ───────────────────────────────────────────────────────────
@@ -1517,6 +1528,9 @@ class PlanarViewport extends GenericViewport<
     }
 
     this.clearResolvedViewCache();
+    // The canvas CSS size may have changed; drop the cached dimensions so the
+    // next resolve/transform re-reads clientWidth/clientHeight exactly once.
+    this.cachedCanvasDimensions = undefined;
     const { clientHeight, clientWidth } = this.element;
     const { canvas } = this.renderContext.cpu;
     const devicePixelRatio = window.devicePixelRatio || 1;
@@ -2106,6 +2120,37 @@ class PlanarViewport extends GenericViewport<
     return snapshot;
   }
 
+  /**
+   * Returns the canvas CSS dimensions, reading clientWidth/clientHeight at most
+   * once per resize() rather than on every call. clientWidth/clientHeight force
+   * a synchronous layout reflow when layout is dirty; the annotation rendering
+   * loop (worldToCanvas per contour point, interleaved with SVG writes) would
+   * otherwise thrash layout. Canvas CSS size only changes on resize(), which
+   * invalidates this cache.
+   */
+  private getCachedPlanarCanvasDimensions(rendering: PlanarRendering): {
+    canvasHeight: number;
+    canvasWidth: number;
+  } {
+    const cached = this.cachedCanvasDimensions;
+    if (cached) {
+      return cached;
+    }
+
+    const dimensions = getPlanarViewStateCanvasDimensions({
+      renderContext: this.renderContext,
+      rendering,
+    });
+
+    // Don't cache a transient 0x0 read (canvas not laid out yet); recompute
+    // until the element has real dimensions so a stale zero never sticks.
+    if (dimensions.canvasHeight > 0 && dimensions.canvasWidth > 0) {
+      this.cachedCanvasDimensions = dimensions;
+    }
+
+    return dimensions;
+  }
+
   private resolveCachedViewState(
     viewState: PlanarViewState,
     args: {
@@ -2127,10 +2172,8 @@ class PlanarViewport extends GenericViewport<
       return this.resolveViewState(viewState, args);
     }
 
-    const { canvasHeight, canvasWidth } = getPlanarViewStateCanvasDimensions({
-      renderContext: this.renderContext,
-      rendering,
-    });
+    const { canvasHeight, canvasWidth } =
+      this.getCachedPlanarCanvasDimensions(rendering);
 
     if (
       cache &&
@@ -2287,10 +2330,8 @@ class PlanarViewport extends GenericViewport<
     const rendering = this.getCurrentPlanarRendering();
 
     if (rendering) {
-      const { canvasHeight, canvasWidth } = getPlanarViewStateCanvasDimensions({
-        renderContext: this.renderContext,
-        rendering,
-      });
+      const { canvasHeight, canvasWidth } =
+        this.getCachedPlanarCanvasDimensions(rendering);
 
       return {
         width: canvasWidth || this.element.clientWidth,
