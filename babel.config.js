@@ -10,7 +10,6 @@ module.exports = (api) => {
       '@babel/preset-typescript',
     ],
     plugins: [
-      'babel-plugin-istanbul',
       '@babel/plugin-proposal-class-properties',
       '@babel/plugin-transform-runtime',
       '@babel/plugin-transform-typescript',

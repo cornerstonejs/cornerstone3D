@@ -54,7 +54,7 @@ setTitleAndDescription(
   'Here we demonstrate crosshairs linking three orthogonal views of the same data. You can select the blend mode that will be used if you modify the slab thickness of the crosshairs by dragging the control points.'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 
@@ -88,6 +88,7 @@ instructions.innerText = `
   Basic controls:
   - Click/Drag anywhere in the viewport to move the center of the crosshairs.
   - Drag a reference line to move it, scrolling the other views.
+  - Use the Crosshair Style dropdown to switch to a minimal crosshair.
 
   Advanced controls: Hover over a line and find the following two handles:
   - Square (closest to center): Drag these to change the thickness of the MIP slab in that plane.
@@ -253,6 +254,38 @@ addDropdownToToolbar({
     crosshairsInstance.configuration = {
       ...oldConfiguration,
       centerPoint: newCenterPointConfig,
+    };
+
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    renderingEngine.render();
+  },
+});
+
+addDropdownToToolbar({
+  labelText: 'Crosshair Style',
+  options: {
+    values: Array.from(CrosshairsTool.minimalModeExamples.keys()),
+    labels: Array.from(CrosshairsTool.minimalModeExamples.keys()),
+    defaultValue: 'Default',
+  },
+  onSelectedValueChange: (selectedValue) => {
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+
+    const crosshairsInstance = toolGroup.getToolInstance(
+      CrosshairsTool.toolName
+    );
+    const minimalConfiguration =
+      CrosshairsTool.minimalModeExamples.get(selectedValue);
+
+    if (!minimalConfiguration) {
+      return;
+    }
+
+    const oldConfiguration = crosshairsInstance.configuration;
+
+    crosshairsInstance.configuration = {
+      ...oldConfiguration,
+      minimal: { ...minimalConfiguration },
     };
 
     const renderingEngine = getRenderingEngine(renderingEngineId);

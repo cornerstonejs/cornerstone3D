@@ -16,12 +16,10 @@ import { isAnnotationLocked } from '../../stateManagement/annotation/annotationL
 import {
   drawHandles as drawHandlesSvg,
   drawRect as drawRectSvg,
-  drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import throttle from '../../utilities/throttle';
 import debounce from '../../utilities/debounce';
-import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import getWorldWidthAndHeightFromCorners from '../../utilities/planar/getWorldWidthAndHeightFromCorners';
 
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
@@ -109,6 +107,26 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
         this.configuration.throttleTimeout
       );
     }
+  }
+
+  private _isCoordinateTuple(
+    value: unknown
+  ): value is Types.Point3 | vec3 | Float32Array | Float64Array {
+    return Array.isArray(value) || ArrayBuffer.isView(value);
+  }
+
+  private _resolveViewPlaneCoordinate(
+    coordinate: number | Types.Point3 | vec3 | Float32Array | Float64Array,
+    viewPlaneNormal: Types.Point3
+  ): number {
+    if (this._isCoordinateTuple(coordinate)) {
+      return this._getCoordinateForViewplaneNormal(
+        coordinate as Types.Point3,
+        viewPlaneNormal
+      );
+    }
+
+    return coordinate;
   }
 
   /**
@@ -214,7 +232,10 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     // update the projection points in 3D space, since we are projecting
     // the points to the slice plane, we need to make sure the points are
     // computed for later export
-    this._computeProjectionPoints(annotation, imageVolume);
+    this._computeProjectionPoints(
+      annotation as RectangleROIStartEndThresholdAnnotation,
+      imageVolume
+    );
 
     addAnnotation(annotation, element);
 
@@ -276,6 +297,10 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     const targetId = this.getTargetId(enabledElement.viewport);
     const imageVolume = cache.getVolume(targetId.split(/volumeId:|\?/)[1]);
 
+    this._computeProjectionPoints(
+      annotation as RectangleROIStartEndThresholdAnnotation,
+      imageVolume
+    );
     this._computePointsInsideVolume(
       annotation,
       targetId,
@@ -292,7 +317,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     }
   };
 
-  //Now works for axial, sagitall and coronal
+  //Now works for axial, sagittal and coronal
   _computeProjectionPoints(
     annotation: RectangleROIStartEndThresholdAnnotation,
     imageVolume: Types.IImageVolume
@@ -300,7 +325,14 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     const { data, metadata } = annotation;
     const { viewPlaneNormal, spacingInNormal } = metadata;
     const { imageData } = imageVolume;
-    const { startCoordinate, endCoordinate } = data;
+    const startCoordinate = this._resolveViewPlaneCoordinate(
+      data.startCoordinate as number | Types.Point3,
+      viewPlaneNormal
+    );
+    const endCoordinate = this._resolveViewPlaneCoordinate(
+      data.endCoordinate as number | Types.Point3,
+      viewPlaneNormal
+    );
     const { points } = data.handles;
 
     const startIJK = transformWorldToIndex(imageData, points[0]);
@@ -558,30 +590,27 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       const focalPoint = viewport.getCamera().focalPoint;
       const viewplaneNormal = viewport.getCamera().viewPlaneNormal;
 
-      let startCoord: number | vec3 = startCoordinate;
-      let endCoord: number | vec3 = endCoordinate;
+      let startCoord: number = this._resolveViewPlaneCoordinate(
+        startCoordinate as number | Types.Point3,
+        viewplaneNormal
+      );
+      let endCoord: number = this._resolveViewPlaneCoordinate(
+        endCoordinate as number | Types.Point3,
+        viewplaneNormal
+      );
 
-      if (Array.isArray(startCoordinate)) {
-        startCoord = this._getCoordinateForViewplaneNormal(
-          startCoord,
-          viewplaneNormal
-        );
+      if (this._isCoordinateTuple(startCoordinate)) {
         const indexOfDirection =
           this._getIndexOfCoordinatesForViewplaneNormal(viewplaneNormal);
 
         data.handles.points.forEach((point) => {
-          point[indexOfDirection] = startCoord as number;
+          point[indexOfDirection] = startCoord;
         });
 
         data.startCoordinate = startCoord;
       }
 
-      if (Array.isArray(endCoordinate)) {
-        endCoord = this._getCoordinateForViewplaneNormal(
-          endCoord,
-          viewplaneNormal
-        );
-        data.endCoordinate = endCoord;
+      if (this._isCoordinateTuple(endCoordinate)) {
         data.endCoordinate = endCoord;
       }
 
@@ -687,57 +716,22 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       renderStatus = true;
 
       if (this.configuration.showTextBox) {
-        const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
-        if (!options.visibility) {
-          data.handles.textBox = {
-            hasMoved: false,
-            worldPosition: <Types.Point3>[0, 0, 0],
-            worldBoundingBox: {
-              topLeft: <Types.Point3>[0, 0, 0],
-              topRight: <Types.Point3>[0, 0, 0],
-              bottomLeft: <Types.Point3>[0, 0, 0],
-              bottomRight: <Types.Point3>[0, 0, 0],
-            },
-          };
-          continue;
-        }
-
         const textLines = this.configuration.getTextLines(data, { metadata });
         if (!textLines || textLines.length === 0) {
           continue;
         }
-
-        if (!data.handles.textBox.hasMoved) {
-          const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
-
-          data.handles.textBox.worldPosition =
-            viewport.canvasToWorld(canvasTextBoxCoords);
+        if (
+          !this.renderLinkedTextBoxAnnotation({
+            enabledElement,
+            svgDrawingHelper,
+            annotation,
+            styleSpecifier,
+            textLines,
+            canvasCoordinates,
+          })
+        ) {
+          continue;
         }
-
-        const textBoxPosition = viewport.worldToCanvas(
-          data.handles.textBox.worldPosition
-        );
-
-        const textBoxUID = '1';
-        const boundingBox = drawLinkedTextBoxSvg(
-          svgDrawingHelper,
-          annotationUID,
-          textBoxUID,
-          textLines,
-          textBoxPosition,
-          canvasCoordinates,
-          {},
-          options
-        );
-
-        const { x: left, y: top, width, height } = boundingBox;
-
-        data.handles.textBox.worldBoundingBox = {
-          topLeft: viewport.canvasToWorld([left, top]),
-          topRight: viewport.canvasToWorld([left + width, top]),
-          bottomLeft: viewport.canvasToWorld([left, top + height]),
-          bottomRight: viewport.canvasToWorld([left + width, top + height]),
-        };
       }
     }
 

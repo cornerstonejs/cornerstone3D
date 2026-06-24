@@ -1664,6 +1664,8 @@ class AdvancedMagnifyViewport {
       this.zoomFactor
     );
 
+    const { flipHorizontal, flipVertical } = sourceViewport.getCamera();
+
     const { focalPoint, position, viewPlaneNormal } =
       magnifyViewport.getCamera();
 
@@ -1689,6 +1691,8 @@ class AdvancedMagnifyViewport {
       parallelScale,
       focalPoint: updatedFocalPoint,
       position: updatedPosition,
+      flipHorizontal,
+      flipVertical,
     });
   }
 
