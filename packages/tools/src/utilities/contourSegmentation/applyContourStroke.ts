@@ -66,6 +66,9 @@ function applyStroke(
     console.warn(
       `${DEFAULT_CONTOUR_SEG_TOOL_NAME} is not registered. Cannot apply stroke.`
     );
+    // The source stroke is meant to be consumed by the operation; discard it
+    // so we don't leave an orphaned, never-applied annotation in state.
+    removeAnnotationCompletely(sourceAnnotation);
     return;
   }
 
@@ -140,7 +143,6 @@ function applyStroke(
     );
     addAnnotation(parent, element);
     addContourSegmentationAnnotation(parent);
-    triggerAnnotationModified(parent, element);
 
     polygon.holes?.forEach((holePolyline) => {
       if (holePolyline.length < 3) {
@@ -156,6 +158,10 @@ function applyStroke(
       addChildAnnotation(parent, hole);
       triggerAnnotationModified(hole, element);
     });
+
+    // Fire the parent's modified event only after all holes are attached,
+    // so listeners observe the parent with its complete child structure.
+    triggerAnnotationModified(parent, element);
   }
 
   updateViewportsForAnnotations(viewport, toRemove);

@@ -5,6 +5,7 @@ import { convertContourPolylineToCanvasSpace } from './sharedOperations';
 import { getViewReferenceFromAnnotation } from './getViewReferenceFromAnnotation';
 import { runBooleanOpByView } from './polylineSetOps';
 import { BooleanOp } from './clipperBooleanOps';
+import { getChildAnnotations } from '../../stateManagement/annotation/annotationState';
 
 /**
  * Union two sets of polylines. Overlapping polygons in the same view reference
@@ -47,13 +48,24 @@ export function unifyAnnotationPolylines(
 ): PolylineInfoCanvas[] {
   const toInfo = (
     annotation: ContourSegmentationAnnotation
-  ): PolylineInfoCanvas => ({
-    polyline: convertContourPolylineToCanvasSpace(
-      annotation.data.contour.polyline,
-      viewport
-    ),
-    viewReference: getViewReferenceFromAnnotation(annotation),
-  });
+  ): PolylineInfoCanvas => {
+    // Holes are stored as child annotations with opposite winding; convert
+    // them alongside the outer polyline so Union can preserve them.
+    const holePolylines = getChildAnnotations(annotation).map((child) =>
+      convertContourPolylineToCanvasSpace(
+        (child as ContourSegmentationAnnotation).data.contour.polyline,
+        viewport
+      )
+    );
+    return {
+      polyline: convertContourPolylineToCanvasSpace(
+        annotation.data.contour.polyline,
+        viewport
+      ),
+      viewReference: getViewReferenceFromAnnotation(annotation),
+      ...(holePolylines.length ? { holePolylines } : {}),
+    };
+  };
   return unifyPolylineSets(
     annotationsSetA.map(toInfo),
     annotationsSetB.map(toInfo)
