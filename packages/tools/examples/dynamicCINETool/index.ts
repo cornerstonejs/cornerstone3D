@@ -106,7 +106,7 @@ function initLayout() {
 
 // Creates all viewports elements and add the instructions
 function initViewportLayout() {
-  const size = '500px';
+  const size = '512px';
   const content = document.getElementById('content');
   const viewportGrid = document.createElement('div');
   const elements = [];

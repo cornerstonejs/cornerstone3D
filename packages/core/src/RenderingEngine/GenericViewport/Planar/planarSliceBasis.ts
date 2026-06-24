@@ -1,0 +1,692 @@
+/**
+ * planarSliceBasis -- Builds the geometric basis that anchors a planar
+ * slice in world space.
+ *
+ * A `PlanarSliceBasis` is the second tier of the three-tier camera pipeline:
+ *   PlanarViewState (user model) -> PlanarSliceBasis (geometric basis) -> ICamera (render camera)
+ *
+ * It encapsulates the properties of a specific cross-section through an image
+ * or volume -- its center, orientation, and the scale at which the slice fits
+ * the canvas exactly (zoom = 1). Downstream modules (`planarRenderCamera`)
+ * combine a PlanarSliceBasis with user-level pan/zoom/rotation to produce a
+ * renderer-ready ICamera.
+ *
+ * Two factory functions are provided:
+ *   - `createPlanarImageSliceBasis` -- for single-image (stack) paths.
+ *   - `createPlanarVolumeSliceBasis` -- for volume-slice paths (arbitrary
+ *     orthogonal orientations with per-slice indexing).
+ */
+import { vec3 } from 'gl-matrix';
+import { InterpolationType, OrientationAxis } from '../../../enums';
+import type { IImage, IImageVolume, Point3 } from '../../../types';
+import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
+import { getCubeSizeInView } from '../../../utilities/getPlaneCubeIntersectionDimensions';
+import getSpacingInNormalDirection from '../../../utilities/getSpacingInNormalDirection';
+import { getVolumeCenterIJK } from '../../Viewport';
+import {
+  getCpuEquivalentParallelScale,
+  getOrthogonalVolumeSliceGeometry,
+} from './planarAdapterCoordinateTransforms';
+import { getPlanarViewStateVectors } from './planarOrientationVectors';
+import { getSafeCanvasDimension, normalizePoint3 } from './planarMath';
+import type { PlanarViewState } from './PlanarViewportTypes';
+
+/**
+ * The geometric basis for a single planar cross-section through image data.
+ *
+ * @property sliceCenterWorld - The world-space center of this slice (the default
+ *   focal point when pan is zero).
+ * @property viewPlaneNormal - Unit vector perpendicular to the slice plane,
+ *   pointing toward the camera.
+ * @property viewUp - Unit vector defining the "up" direction in the slice
+ *   plane (before user rotation is applied).
+ * @property fitParallelScale - The parallelScale value at which the full
+ *   slice exactly fits the canvas (i.e. zoom = 1). Computed from image
+ *   dimensions, spacing, and canvas aspect ratio.
+ * @property sliceWidthWorld - Width of the displayed slice in world units
+ *   before canvas aspect-ratio fitting is applied.
+ * @property sliceHeightWorld - Height of the displayed slice in world units
+ *   before canvas aspect-ratio fitting is applied.
+ * @property cameraDistance - Distance from the focal point to the camera
+ *   position along the viewPlaneNormal. For single images this is a nominal
+ *   value (1); for volumes it spans the full depth so clipping captures the
+ *   entire volume.
+ */
+export interface PlanarSliceBasis {
+  sliceCenterWorld: Point3;
+  viewPlaneNormal: Point3;
+  viewUp: Point3;
+  fitParallelScale: number;
+  sliceWidthWorld: number;
+  sliceHeightWorld: number;
+  cameraDistance: number;
+}
+
+const MIN_CAMERA_DISTANCE = 1;
+const MIN_SLICE_SPACING = 1e-6;
+const ORTHONORMAL_EPSILON = 1e-6;
+
+type VolumeSliceFitMetrics = {
+  fitParallelScale: number;
+  sliceWidthWorld: number;
+  sliceHeightWorld: number;
+};
+
+function getFitParallelScaleFromWorldSize(args: {
+  canvasWidth: number;
+  canvasHeight: number;
+  widthWorld: number;
+  heightWorld: number;
+}): number {
+  const { canvasHeight, canvasWidth, heightWorld, widthWorld } = args;
+  const safeCanvasWidth = getSafeCanvasDimension(canvasWidth);
+  const safeCanvasHeight = getSafeCanvasDimension(canvasHeight);
+  const safeWidthWorld = Math.max(widthWorld, MIN_SLICE_SPACING);
+  const safeHeightWorld = Math.max(heightWorld, MIN_SLICE_SPACING);
+  const sliceAspectRatio = safeWidthWorld / safeHeightWorld;
+  const canvasAspectRatio = safeCanvasWidth / safeCanvasHeight;
+  const scaleFactor = sliceAspectRatio / canvasAspectRatio;
+
+  return scaleFactor < 1
+    ? safeHeightWorld / 2
+    : (safeHeightWorld * scaleFactor) / 2;
+}
+
+function createFallbackVolumeSliceFitMetrics(): VolumeSliceFitMetrics {
+  return {
+    fitParallelScale: MIN_CAMERA_DISTANCE,
+    sliceWidthWorld: MIN_CAMERA_DISTANCE * 2,
+    sliceHeightWorld: MIN_CAMERA_DISTANCE * 2,
+  };
+}
+
+function isOne(value: number): boolean {
+  return Math.abs(Math.abs(value) - 1) < ORTHONORMAL_EPSILON;
+}
+
+function isUnitAxis(direction: ArrayLike<number>, offset: number): boolean {
+  return (
+    isOne(direction[offset]) ||
+    isOne(direction[offset + 1]) ||
+    isOne(direction[offset + 2])
+  );
+}
+
+function isOrthonormalDirection(direction: ArrayLike<number>): boolean {
+  return (
+    isUnitAxis(direction, 0) &&
+    isUnitAxis(direction, 3) &&
+    isUnitAxis(direction, 6)
+  );
+}
+
+/**
+ * Creates a section basis for a single DICOM image (stack path).
+ *
+ * The slice plane is derived from the image's direction cosines:
+ *   - Row vector = first 3 elements of the direction matrix.
+ *   - Column vector = next 3 elements.
+ *   - viewPlaneNormal = negated normal (row x column), pointing toward camera.
+ *   - viewUp = negated column vector (DICOM column runs top-to-bottom,
+ *     but screen Y runs bottom-to-top in VTK convention).
+ *
+ * sliceCenterWorld is the geometric center of the image in world space,
+ * computed by offsetting the origin by half the image extent along each axis.
+ *
+ * @param args.image - The decoded DICOM image providing geometry metadata.
+ * @param args.canvasWidth - Current canvas width in CSS pixels.
+ * @param args.canvasHeight - Current canvas height in CSS pixels.
+ * @returns A PlanarSliceBasis anchored to this image's plane.
+ */
+function buildPlanarImageSliceBasis(args: {
+  image: IImage;
+  canvasWidth: number;
+  canvasHeight: number;
+  rowOffset: number;
+  columnOffset: number;
+  rowsForFit: number;
+  columnsForFit: number;
+}): PlanarSliceBasis {
+  const {
+    canvasHeight,
+    canvasWidth,
+    columnOffset,
+    columnsForFit,
+    image,
+    rowOffset,
+    rowsForFit,
+  } = args;
+  const { direction, origin } = getImageDataMetadata(image);
+  const rowVector = direction.slice(0, 3) as Point3;
+  const columnVector = direction.slice(3, 6) as Point3;
+  const viewPlaneNormal = direction
+    .slice(6, 9)
+    .map((value) => -value) as Point3;
+  const viewUp = columnVector.map((value) => -value) as Point3;
+  const sliceCenterWorld = [...origin] as Point3;
+  const sliceWidthWorld =
+    Math.max(columnsForFit, 1) * (image.columnPixelSpacing || 1);
+  const sliceHeightWorld =
+    Math.max(rowsForFit, 1) * (image.rowPixelSpacing || 1);
+  // Stack images must resolve the same slice basis regardless of whether the
+  // pixels are drawn through VTK or the CPU fallback. Keeping the center and
+  // fit geometry shared prevents render-mode switches from nudging the camera.
+  vec3.scaleAndAdd(
+    sliceCenterWorld as unknown as vec3,
+    sliceCenterWorld as unknown as vec3,
+    rowVector as unknown as vec3,
+    rowOffset
+  );
+  vec3.scaleAndAdd(
+    sliceCenterWorld as unknown as vec3,
+    sliceCenterWorld as unknown as vec3,
+    columnVector as unknown as vec3,
+    columnOffset
+  );
+
+  return {
+    sliceCenterWorld,
+    viewPlaneNormal: vec3.clone(viewPlaneNormal as unknown as vec3) as Point3,
+    viewUp,
+    fitParallelScale: getCpuEquivalentParallelScale({
+      canvasHeight,
+      canvasWidth,
+      columnPixelSpacing: image.columnPixelSpacing || 1,
+      columns: columnsForFit,
+      rowPixelSpacing: image.rowPixelSpacing || 1,
+      rows: rowsForFit,
+    }),
+    sliceWidthWorld,
+    sliceHeightWorld,
+    cameraDistance: 1,
+  };
+}
+
+export function createPlanarImageSliceBasis(args: {
+  image: IImage;
+  canvasWidth: number;
+  canvasHeight: number;
+}): PlanarSliceBasis {
+  const { image } = args;
+  const { dimensions, spacing } = getImageDataMetadata(image);
+
+  return buildPlanarImageSliceBasis({
+    ...args,
+    rowOffset: ((dimensions[0] - 1) / 2) * spacing[0],
+    columnOffset: ((dimensions[1] - 1) / 2) * spacing[1],
+    rowsForFit: Math.max(image.rows, 1),
+    columnsForFit: Math.max(image.columns, 1),
+  });
+}
+
+/**
+ * CPU stack rendering reuses the VTK-compatible image slice basis so that the
+ * semantic camera is invariant across render modes.
+ */
+export function createPlanarCpuImageSliceBasis(args: {
+  image: IImage;
+  canvasWidth: number;
+  canvasHeight: number;
+}): PlanarSliceBasis {
+  return createPlanarImageSliceBasis(args);
+}
+
+/**
+ * Computes the 8 world-space corners of a volume's bounding box.
+ * Used by `getSliceMetrics` to determine the range of slice positions
+ * along an arbitrary viewing direction.
+ */
+function buildImageVolumeCorners(imageVolume: IImageVolume): Point3[] {
+  const imageData = imageVolume.imageData;
+
+  if (!imageData) {
+    return [];
+  }
+
+  const direction = imageData.getDirection();
+
+  if (isOrthonormalDirection(direction)) {
+    const bounds = imageData.extentToBounds(imageData.getExtent());
+
+    return [
+      [bounds[0], bounds[2], bounds[4]],
+      [bounds[0], bounds[2], bounds[5]],
+      [bounds[0], bounds[3], bounds[4]],
+      [bounds[0], bounds[3], bounds[5]],
+      [bounds[1], bounds[2], bounds[4]],
+      [bounds[1], bounds[2], bounds[5]],
+      [bounds[1], bounds[3], bounds[4]],
+      [bounds[1], bounds[3], bounds[5]],
+    ];
+  }
+
+  const [dx, dy, dz] = imageData.getDimensions();
+  const cornersIdx = [
+    [0, 0, 0],
+    [dx - 1, 0, 0],
+    [0, dy - 1, 0],
+    [dx - 1, dy - 1, 0],
+    [0, 0, dz - 1],
+    [dx - 1, 0, dz - 1],
+    [0, dy - 1, dz - 1],
+    [dx - 1, dy - 1, dz - 1],
+  ] as Point3[];
+
+  return cornersIdx.map((it) => imageData.indexToWorld(it)) as Point3[];
+}
+
+/**
+ * Returns the world-space center of a volume, computed from the midpoint
+ * of the voxel-center index domain. Falls back to averaging the bounding-box
+ * corners if vtkImageData is unavailable.
+ *
+ * When `viewPlaneNormal` is supplied, the slice-direction axis is snapped to
+ * `Math.floor(d / 2)` via `getVolumeCenterIJK`, matching legacy resetCamera
+ * behavior. Without this snap, even-dimensioned slice axes (e.g. 512) land on
+ * `(d - 1) / 2 = 255.5` and the VTK reslice mapper rounds the focal point to
+ * the adjacent voxel, producing a one-slice offset on initial render.
+ */
+function getGeometricImageVolumeCenter(
+  imageVolume: IImageVolume,
+  viewPlaneNormal?: Point3
+): Point3 {
+  const imageData = imageVolume.imageData;
+
+  if (imageData) {
+    const dimensions = imageData.getDimensions();
+    const ijk = viewPlaneNormal
+      ? getVolumeCenterIJK(
+          dimensions,
+          imageData.getDirection(),
+          viewPlaneNormal
+        )
+      : dimensions.map((d) => (d - 1) / 2);
+
+    return imageData.indexToWorld(ijk as [number, number, number]) as Point3;
+  }
+
+  const corners = buildImageVolumeCorners(imageVolume);
+
+  if (!corners.length) {
+    return [0, 0, 0];
+  }
+
+  const center = vec3.create();
+
+  for (const corner of corners) {
+    vec3.add(center, center, corner as unknown as vec3);
+  }
+
+  return vec3.scale(center, center, 1 / corners.length) as Point3;
+}
+
+/**
+ * Computes the min/max projections of a volume's corners onto the
+ * viewPlaneNormal, along with the spacing between adjacent slices and
+ * the maximum valid slice index.
+ *
+ * These metrics are used by `createPlanarVolumeSliceBasis` to position
+ * the sliceCenterWorld at the correct depth for a given imageIdIndex.
+ */
+function getSliceMetrics(args: {
+  imageVolume: IImageVolume;
+  viewPlaneNormal: Point3;
+}) {
+  const { imageVolume, viewPlaneNormal } = args;
+  const corners = buildImageVolumeCorners(imageVolume);
+  const spacingInNormalDirection = Math.max(
+    getSpacingInNormalDirection(imageVolume, viewPlaneNormal),
+    MIN_SLICE_SPACING
+  );
+
+  if (!corners.length) {
+    return {
+      min: 0,
+      max: 0,
+      spacingInNormalDirection,
+      maxImageIdIndex: 0,
+    };
+  }
+
+  const projectedValues = corners.map((corner) =>
+    vec3.dot(corner as unknown as vec3, viewPlaneNormal as unknown as vec3)
+  );
+  const min = Math.min(...projectedValues);
+  const max = Math.max(...projectedValues);
+  const maxImageIdIndex = Math.max(
+    0,
+    Math.round((max - min) / spacingInNormalDirection)
+  );
+
+  return {
+    min,
+    max,
+    spacingInNormalDirection,
+    maxImageIdIndex,
+  };
+}
+
+/**
+ * Clamps an imageIdIndex to [0, maxImageIdIndex]. If the index is undefined,
+ * derives the centered slice index using the same projection math as the
+ * legacy volume viewport scroll utilities.
+ */
+function resolveCenteredImageIdIndex(args: {
+  centerProjection: number;
+  min: number;
+  max: number;
+  maxImageIdIndex: number;
+}): number {
+  const { centerProjection, min, max, maxImageIdIndex } = args;
+  const range = max - min;
+
+  if (!(range > 0) || maxImageIdIndex === 0) {
+    return 0;
+  }
+
+  const fraction = (centerProjection - min) / range;
+  const floatingImageIdIndex = fraction * maxImageIdIndex;
+
+  return Math.round(floatingImageIdIndex);
+}
+
+function clampImageIdIndex(args: {
+  imageIdIndex: number | undefined;
+  centerProjection: number;
+  min: number;
+  max: number;
+  maxImageIdIndex: number;
+}): number {
+  const { centerProjection, imageIdIndex, max, maxImageIdIndex, min } = args;
+
+  if (typeof imageIdIndex !== 'number') {
+    return resolveCenteredImageIdIndex({
+      centerProjection,
+      min,
+      max,
+      maxImageIdIndex,
+    });
+  }
+
+  return Math.min(Math.max(0, imageIdIndex), maxImageIdIndex);
+}
+
+export function resolvePlanarVolumeImageIdIndex(args: {
+  viewState?: PlanarViewState;
+  fallbackImageIdIndex?: number;
+}): number | undefined {
+  const { viewState, fallbackImageIdIndex } = args;
+  const slice = viewState?.slice;
+
+  if (slice?.kind === 'volumePoint') {
+    return;
+  }
+
+  if (slice?.kind === 'stackIndex') {
+    return slice.imageIdIndex;
+  }
+
+  if (viewState?.orientation === OrientationAxis.ACQUISITION) {
+    return fallbackImageIdIndex;
+  }
+}
+
+/**
+ * Computes the `fitParallelScale` for a volume slice viewed from a given
+ * orientation. Uses `getOrthogonalVolumeSliceGeometry` to determine the
+ * effective rows/columns/spacing of the visible cross-section, then
+ * delegates to `getCpuEquivalentParallelScale` for aspect-ratio-aware
+ * scale computation.
+ */
+function getCpuVolumeSliceFitMetrics(args: {
+  imageVolume: IImageVolume;
+  viewPlaneNormal: Point3;
+  viewUp: Point3;
+  canvasWidth: number;
+  canvasHeight: number;
+}): VolumeSliceFitMetrics {
+  const { imageVolume, viewPlaneNormal, viewUp, canvasWidth, canvasHeight } =
+    args;
+  const geometry = getOrthogonalVolumeSliceGeometry({
+    dimensions: imageVolume.dimensions,
+    direction: imageVolume.direction,
+    spacing: imageVolume.spacing,
+    viewPlaneNormal,
+    viewUp,
+  });
+
+  if (geometry) {
+    const columns = Math.max(geometry.columns, 1);
+    const rows = Math.max(geometry.rows, 1);
+    const sliceWidthWorld = columns * geometry.columnPixelSpacing;
+    const sliceHeightWorld = rows * geometry.rowPixelSpacing;
+
+    return {
+      fitParallelScale: getCpuEquivalentParallelScale({
+        canvasHeight: getSafeCanvasDimension(canvasHeight),
+        canvasWidth: getSafeCanvasDimension(canvasWidth),
+        columnPixelSpacing: geometry.columnPixelSpacing,
+        columns,
+        rowPixelSpacing: geometry.rowPixelSpacing,
+        rows,
+      }),
+      sliceWidthWorld,
+      sliceHeightWorld,
+    };
+  }
+
+  const imageData = imageVolume.imageData;
+
+  if (imageData) {
+    const { widthWorld, heightWorld } = getCubeSizeInView(
+      imageData,
+      viewPlaneNormal,
+      viewUp
+    );
+
+    if (widthWorld > 0 && heightWorld > 0) {
+      return {
+        fitParallelScale: getFitParallelScaleFromWorldSize({
+          canvasHeight,
+          canvasWidth,
+          widthWorld,
+          heightWorld,
+        }),
+        sliceWidthWorld: widthWorld,
+        sliceHeightWorld: heightWorld,
+      };
+    }
+  }
+
+  return createFallbackVolumeSliceFitMetrics();
+}
+
+/**
+ * Creates a section basis for a volume viewed from an orthogonal orientation.
+ *
+ * The orientation (axial, sagittal, coronal, or custom) determines the
+ * viewPlaneNormal and viewUp vectors. The imageIdIndex selects which slice
+ * along the normal to display.
+ *
+ * Slice positioning works by:
+ *   1. Computing the volume's bounding box projection onto the viewPlaneNormal.
+ *   2. Mapping `imageIdIndex` to a depth within [min, max] at `spacingInNormalDirection` intervals.
+ *   3. Offsetting the volume center along the normal to reach that depth.
+ *
+ * @param args.canvasWidth - Current canvas width in CSS pixels.
+ * @param args.canvasHeight - Current canvas height in CSS pixels.
+ * @param args.imageIdIndex - Desired slice index; defaults to the middle slice if undefined.
+ * @param args.imageVolume - The loaded volume providing geometry and vtkImageData.
+ * @param args.orientation - Orientation axis or custom orientation vectors.
+ * @returns The section basis, the clamped slice index, and the maximum valid index.
+ */
+function buildPlanarVolumeSliceBasis(args: {
+  canvasWidth: number;
+  canvasHeight: number;
+  imageIdIndex?: number;
+  imageVolume: IImageVolume;
+  orientation?: PlanarViewState['orientation'];
+  viewState?: PlanarViewState;
+  center: Point3;
+  fitParallelScale: number;
+  sliceWidthWorld: number;
+  sliceHeightWorld: number;
+}): {
+  sliceBasis: PlanarSliceBasis;
+  currentImageIdIndex: number;
+  maxImageIdIndex: number;
+} {
+  const {
+    center,
+    fitParallelScale,
+    imageIdIndex,
+    imageVolume,
+    orientation,
+    sliceHeightWorld,
+    sliceWidthWorld,
+    viewState,
+  } = args;
+  const cameraValues = getPlanarViewStateVectors({
+    imageVolume,
+    orientation,
+  });
+
+  if (!cameraValues) {
+    return {
+      sliceBasis: {
+        sliceCenterWorld: [0, 0, 0],
+        viewPlaneNormal: [0, 0, 1],
+        viewUp: [0, -1, 0],
+        fitParallelScale: MIN_CAMERA_DISTANCE,
+        sliceWidthWorld: MIN_CAMERA_DISTANCE * 2,
+        sliceHeightWorld: MIN_CAMERA_DISTANCE * 2,
+        cameraDistance: MIN_CAMERA_DISTANCE,
+      },
+      currentImageIdIndex: 0,
+      maxImageIdIndex: 0,
+    };
+  }
+
+  const viewPlaneNormal = normalizePoint3(cameraValues.viewPlaneNormal);
+  const viewUp = normalizePoint3(cameraValues.viewUp);
+  const { max, maxImageIdIndex, min, spacingInNormalDirection } =
+    getSliceMetrics({
+      imageVolume,
+      viewPlaneNormal,
+    });
+  const centerProjection = vec3.dot(
+    center as unknown as vec3,
+    viewPlaneNormal as unknown as vec3
+  );
+  const volumePoint =
+    viewState?.slice?.kind === 'volumePoint'
+      ? viewState.slice.sliceWorldPoint
+      : undefined;
+  const requestedSliceProjection = Math.min(
+    max,
+    Math.max(
+      min,
+      volumePoint
+        ? vec3.dot(
+            volumePoint as unknown as vec3,
+            viewPlaneNormal as unknown as vec3
+          )
+        : centerProjection
+    )
+  );
+  const currentImageIdIndex = clampImageIdIndex({
+    imageIdIndex,
+    centerProjection: requestedSliceProjection,
+    min,
+    max,
+    maxImageIdIndex,
+  });
+
+  // Project volume center onto the viewing direction to compute the
+  // scalar offset needed to reach the target slice depth.
+  const targetProjection =
+    typeof imageIdIndex === 'number'
+      ? Math.min(max, min + currentImageIdIndex * spacingInNormalDirection)
+      : requestedSliceProjection;
+  const scalarOffset = targetProjection - centerProjection;
+  const sliceCenterWorld = vec3.scaleAndAdd(
+    vec3.create(),
+    center as unknown as vec3,
+    viewPlaneNormal as unknown as vec3,
+    scalarOffset
+  ) as Point3;
+
+  // cameraDistance spans the full volume depth so the clipping range
+  // can capture the entire volume when needed.
+  const cameraDistance = Math.max(max - min, spacingInNormalDirection, 1);
+
+  return {
+    sliceBasis: {
+      sliceCenterWorld,
+      viewPlaneNormal,
+      viewUp,
+      fitParallelScale,
+      sliceWidthWorld,
+      sliceHeightWorld,
+      cameraDistance,
+    },
+    currentImageIdIndex,
+    maxImageIdIndex,
+  };
+}
+
+export function createPlanarVolumeSliceBasis(args: {
+  canvasWidth: number;
+  canvasHeight: number;
+  imageIdIndex?: number;
+  imageVolume: IImageVolume;
+  orientation?: PlanarViewState['orientation'];
+  viewState?: PlanarViewState;
+}): {
+  sliceBasis: PlanarSliceBasis;
+  currentImageIdIndex: number;
+  maxImageIdIndex: number;
+} {
+  const { imageVolume, orientation } = args;
+  const cameraValues = getPlanarViewStateVectors({
+    imageVolume,
+    orientation,
+  });
+  const sliceFitMetrics = cameraValues
+    ? getCpuVolumeSliceFitMetrics({
+        ...args,
+        viewPlaneNormal: cameraValues.viewPlaneNormal,
+        viewUp: cameraValues.viewUp,
+      })
+    : createFallbackVolumeSliceFitMetrics();
+
+  return buildPlanarVolumeSliceBasis({
+    ...args,
+    center: getGeometricImageVolumeCenter(
+      imageVolume,
+      cameraValues?.viewPlaneNormal
+    ),
+    ...sliceFitMetrics,
+  });
+}
+
+export function createPlanarCpuVolumeSliceBasis(args: {
+  canvasWidth: number;
+  canvasHeight: number;
+  imageIdIndex?: number;
+  imageVolume: IImageVolume;
+  orientation?: PlanarViewState['orientation'];
+  viewState?: PlanarViewState;
+}): {
+  sliceBasis: PlanarSliceBasis;
+  currentImageIdIndex: number;
+  maxImageIdIndex: number;
+} {
+  return createPlanarVolumeSliceBasis(args);
+}
+
+export function shouldUsePlanarCpuVolumeSliceBasis(
+  interpolationType: InterpolationType = InterpolationType.LINEAR
+): boolean {
+  return interpolationType === InterpolationType.NEAREST;
+}

@@ -40,7 +40,7 @@ setTitleAndDescription(
   'This example demonstrates how to render and synchronize a segmentation across multiple Orthographic Viewports displaying different volumes. It showcases the ability to interact with the segmentation in one viewport and see the changes reflected in the others.'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 

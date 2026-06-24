@@ -24,7 +24,8 @@ describe('createPointInEllipse', () => {
         [-2, 0, 0] as Types.Point3,
         [2, 0, 0] as Types.Point3,
       ],
-      radius: 1,
+      xRadius: 1,
+      yRadius: 1,
     });
 
     expect(predicate([0, 0, 0] as Types.Point3)).toBe(true);
