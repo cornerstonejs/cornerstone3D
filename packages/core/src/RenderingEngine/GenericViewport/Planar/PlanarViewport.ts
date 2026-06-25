@@ -426,6 +426,22 @@ class PlanarViewport extends GenericViewport<
       visible: true,
     });
 
+    // `setDefaultDataPresentation` -> `setDataPresentationState` does not emit
+    // (only the public merge path notifies), so a freshly-mounted display set
+    // never surfaced its default VOI. Legacy Stack/Volume viewports emit
+    // VOI_MODIFIED at load; mirror that here so OHIF's window-level readout,
+    // the colorbar, and VOI synchronizers update when the display set changes.
+    // Runs per binding (source and each overlay) with that binding's own dataId,
+    // and `notifyDataPresentationModified` resolves the matching volumeId/event
+    // internally. Mirrors the `resetDisplaySetPresentation` precedent below.
+    const mountedPresentation = this.getDisplaySetPresentation(dataId);
+    const voiRange =
+      mountedPresentation?.voiRange ?? this.getDefaultVOIRange(dataId);
+
+    if (voiRange) {
+      this.notifyDataPresentationModified(dataId, { voiRange });
+    }
+
     if (role === 'source') {
       // Emit an initial CAMERA_MODIFIED for the source binding only, mirroring
       // legacy StackViewport's first-image triggerCameraEvent. Overlays and
