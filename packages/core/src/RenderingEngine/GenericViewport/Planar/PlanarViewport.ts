@@ -1956,9 +1956,16 @@ class PlanarViewport extends GenericViewport<
       renderMode === ActorRenderMode.CPU_VOLUME
         ? createPlanarCpuVolumeSliceBasis
         : createPlanarVolumeSliceBasis;
+    // The acquisition orientation honors an explicitly carried initial slice but
+    // otherwise centers the volume, matching legacy and the reformatted
+    // (sagittal/coronal) orientations. Previously a defaulted index of 0 (e.g.
+    // the MPR hanging protocol, which supplies no initial slice) pinned the
+    // acquisition viewport to the first slice instead of the center, so the
+    // scrollbar sat at the top. `|| undefined` maps the default 0 to "center"
+    // while preserving a real carried slice (> 0).
     const initialImageIdIndex =
       orientation === OrientationAxis.ACQUISITION
-        ? planarData.initialImageIdIndex
+        ? planarData.initialImageIdIndex || undefined
         : undefined;
     const { sliceBasis } = createSliceBasis({
       canvasHeight: height,
