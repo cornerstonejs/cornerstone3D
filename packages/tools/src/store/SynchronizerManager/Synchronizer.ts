@@ -207,15 +207,13 @@ class Synchronizer {
 
     this._sourceViewports.splice(index, 1);
 
-    //@ts-ignore
     eventSource.removeEventListener(this._eventName, this._eventListener);
 
-    this._auxiliaryEvents.forEach(({ name, source }) => {
+    this._auxiliaryEvents.forEach(({ name, source = 'element' }) => {
       const target =
         source === 'element'
           ? this.getViewportElement(viewportInfo)
           : eventTarget;
-      //@ts-ignore
       target.removeEventListener(name, this._eventListener);
     });
 

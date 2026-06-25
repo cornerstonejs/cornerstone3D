@@ -26,6 +26,7 @@ describe('Synchronizer:', () => {
   afterEach(function () {
     testUtils.cleanupTestEnvironment({
       renderingEngineId: renderingEngineId,
+      synchronizerId: 'testSynchronizer',
     });
   });
 
@@ -48,7 +49,7 @@ describe('Synchronizer:', () => {
     };
 
     const synchronizer = SynchronizerManager.createSynchronizer(
-      'axialSync',
+      'testSynchronizer',
       'testEvent',
       eventListener
     );
@@ -69,6 +70,58 @@ describe('Synchronizer:', () => {
     synchronizer.addSource(viewport1Info);
 
     element1.dispatchEvent(new CustomEvent('testEvent', {}));
+
+    expect(eventListenerCallCount).toEqual(1);
+  });
+
+  it('Should successfully remove auxilary event handlers on viewport removal', function () {
+    const [element1, _] = testUtils.createViewports(renderingEngine, [
+      {
+        viewportType: ViewportType.ORTHOGRAPHIC,
+        orientation: Enums.OrientationAxis.AXIAL,
+        viewportId: viewportId1,
+      },
+      {
+        viewportType: ViewportType.ORTHOGRAPHIC,
+        orientation: Enums.OrientationAxis.AXIAL,
+        viewportId: viewportId2,
+      },
+    ]);
+    let eventListenerCallCount = 0;
+    const eventListener = () => {
+      console.log('eventListener called');
+      eventListenerCallCount += 1;
+    };
+
+    const synchronizer = SynchronizerManager.createSynchronizer(
+      'testSynchronizer',
+      'testEvent',
+      eventListener,
+      {
+        auxiliaryEvents: [
+          {
+            name: 'auxiliaryEvent',
+          },
+        ],
+      }
+    );
+
+    const viewport1Info = {
+      renderingEngineId: renderingEngine.id,
+      viewportId: renderingEngine.getViewport(viewportId1).id,
+    };
+    const viewport2Info = {
+      renderingEngineId: renderingEngine.id,
+      viewportId: renderingEngine.getViewport(viewportId2).id,
+    };
+    synchronizer.addSource(viewport1Info);
+    synchronizer.addTarget(viewport2Info);
+    // we need a source so the event is fired, so remove and add the source back.
+    // there should be one event listener active after this
+    synchronizer.removeSource(viewport1Info);
+    synchronizer.addSource(viewport1Info);
+
+    element1.dispatchEvent(new CustomEvent('auxiliaryEvent', {}));
 
     expect(eventListenerCallCount).toEqual(1);
   });
