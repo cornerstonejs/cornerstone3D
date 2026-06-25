@@ -1741,6 +1741,23 @@ class PlanarViewport extends GenericViewport<
 
   private getActiveImageIdIndex(): number {
     const binding = this.getCurrentBinding();
+
+    // For volume-slice content, derive the index from the resolved view (the
+    // current camera/projection) rather than the stored scalar — mirroring
+    // legacy VolumeViewport.getSliceIndex, which reads the camera focal point as
+    // the single source of truth. rendering.currentImageIdIndex tracks the
+    // camera on each render but can lag a post-mount camera carry (e.g. the
+    // layout-selector MPR restoring the prior stack slice via setViewReference),
+    // which would decouple the scrollbar/scroll index from the rendered slice.
+    // Falls back to the stored scalar when no resolved view is available.
+    if (this.getCurrentMode() === 'volume') {
+      const resolvedImageIdIndex =
+        this.getResolvedView()?.state?.currentImageIdIndex;
+      if (typeof resolvedImageIdIndex === 'number') {
+        return resolvedImageIdIndex;
+      }
+    }
+
     const currentImageIdIndex = (
       binding?.rendering as { currentImageIdIndex?: number } | undefined
     )?.currentImageIdIndex;
