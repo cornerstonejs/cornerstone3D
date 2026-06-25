@@ -43,12 +43,28 @@ export function syncStackLabelmapActors(
   );
 
   let shouldTriggerSegmentationRender = false;
-  let shouldRenderViewport = staleActorEntries.length > 0;
+  let shouldRenderViewport = false;
 
-  if (staleActorEntries.length) {
+  // The legacy StackViewport renders directly from each actor's vtkImageData
+  // and does not track labelmap actors through the generic-viewport data
+  // registry. On scroll we can therefore swap an existing actor's underlying
+  // labelmap image in place instead of destroying it and allocating a fresh
+  // vtkImageData + TypedArray for every slice. The destroy/recreate path leaks
+  // because vtk.js internal caches retain the discarded objects, growing the
+  // heap linearly while scrolling. Registry-backed viewports (PlanarViewport
+  // and its legacy adapter) own their actors by dataId, so we keep their
+  // existing remove/recreate flow to avoid desyncing that state.
+  const canReuseActorsInPlace =
+    typeof (viewport as { removeData?: unknown }).removeData !== 'function';
+
+  const removeStaleActorEntries = (actorEntries: Types.ActorEntry[]) => {
+    if (!actorEntries.length) {
+      return;
+    }
+
     const legacyActorEntryUIDs: string[] = [];
 
-    staleActorEntries.forEach((actorEntry) => {
+    actorEntries.forEach((actorEntry) => {
       if (
         removeLabelmapRepresentationData(viewport, segmentationId, actorEntry)
       ) {
@@ -63,6 +79,18 @@ export function syncStackLabelmapActors(
     }
 
     shouldTriggerSegmentationRender = true;
+    shouldRenderViewport = true;
+  };
+
+  // Actors eligible to be reused in place for a new slice's labelmap. Each is
+  // consumed at most once so overlapping segments (multiple labelmap groups on
+  // the same slice) cannot steal one another's actor.
+  const reusableActorEntries = canReuseActorsInPlace
+    ? [...staleActorEntries]
+    : [];
+
+  if (!canReuseActorsInPlace) {
+    removeStaleActorEntries(staleActorEntries);
   }
 
   const renderMode = getViewportLabelmapRenderMode(viewport);
@@ -92,6 +120,53 @@ export function syncStackLabelmapActors(
     )?.find((actorEntry) => actorEntry.referencedId === derivedImageId);
 
     if (!segmentationActorEntry) {
+      // Reuse a stale actor in place when supported, so scrolling does not
+      // churn vtk.js objects. shift() consumes the actor so two derived images
+      // (overlapping segment groups) never resolve to the same actor.
+      const reusableActorEntry = reusableActorEntries.shift();
+
+      if (reusableActorEntry) {
+        const reusableActorMapper = reusableActorEntry.actorMapper as
+          | {
+              mapper?: {
+                getInputData: () => unknown;
+              };
+            }
+          | undefined;
+        const reusableMapper = reusableActorMapper?.mapper
+          ? reusableActorMapper.mapper
+          : reusableActorEntry.actor.getMapper();
+        const reusableImageData = reusableMapper.getInputData();
+
+        // Floating-point drift between slices means the segmentation origin can
+        // differ slightly from the current image; realign it so the labelmap
+        // renders at the correct location after reuse.
+        if (typeof reusableImageData.setOrigin === 'function') {
+          reusableImageData.setOrigin(currentOrigin);
+        }
+
+        reusableImageData.modified();
+
+        if (reusableImageData.setDerivedImage) {
+          reusableImageData.setDerivedImage(derivedImage);
+        } else {
+          utilities.updateVTKImageDataWithCornerstoneImage(
+            reusableImageData,
+            derivedImage
+          );
+        }
+
+        reusableActorEntry.referencedId = derivedImageId;
+        reusableActorEntry.representationUID = createLabelmapRepresentationUID({
+          segmentationId,
+          referencedId: derivedImage.imageId,
+        });
+
+        shouldTriggerSegmentationRender = true;
+        shouldRenderViewport = true;
+        return;
+      }
+
       const representationUID = createLabelmapRepresentationUID({
         segmentationId,
         referencedId: derivedImage.imageId,
@@ -184,6 +259,10 @@ export function syncStackLabelmapActors(
 
     shouldRenderViewport = true;
   });
+
+  // Any reusable actors left over (the new slice has fewer labelmap groups than
+  // the previous one) are genuinely stale and must be removed.
+  removeStaleActorEntries(reusableActorEntries);
 
   if (shouldTriggerSegmentationRender) {
     triggerSegmentationRender(viewport.id);

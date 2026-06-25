@@ -2494,7 +2494,10 @@ class StackViewport extends Viewport {
   public addImages(stackInputs: IStackInput[]) {
     const actors = [];
     stackInputs.forEach((stackInput) => {
-      const { imageId, ...rest } = stackInput;
+      // Destructure `callback` out so it is not captured by the spread below.
+      // Otherwise the callback closure (which can reference a large vtkImageData)
+      // gets persisted on the long-lived actor entry, leaking that memory.
+      const { imageId, callback, ...rest } = stackInput;
       const image = cache.getImage(imageId);
 
       const { origin, dimensions, direction, spacing, numberOfComponents } =
@@ -2510,15 +2513,15 @@ class StackViewport extends Viewport {
       });
       const imageActor = this.createActorMapper(imagedata);
       if (imageActor) {
+        if (callback) {
+          callback({ imageActor, imageId: stackInput.imageId });
+        }
         actors.push({
           uid: stackInput.actorUID ?? uuidv4(),
           actor: imageActor,
           referencedId: imageId,
           ...rest,
         });
-        if (stackInput.callback) {
-          stackInput.callback({ imageActor, imageId: stackInput.imageId });
-        }
       }
     });
     this.addActors(actors);
