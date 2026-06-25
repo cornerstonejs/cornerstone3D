@@ -111,23 +111,6 @@ export class VtkVolumeSliceRenderPath
       ctx.display.requestRender();
     });
 
-    // Reconcile the seeded slice index with the camera-projected slice before
-    // emitting the first VOLUME_NEW_IMAGE. currentImageIdIndex is seeded from
-    // the raw initialImageIdIndex (0, or a carried stack index on a stack->MPR
-    // switch), but the camera renders the centered/reference slice. Seeding the
-    // scrollbar source from the projection keeps the scrollbar in sync with the
-    // displayed slice (single source of truth, mirroring legacy getSliceIndex).
-    const initialProjection = resolvePlanarRenderPathProjection({
-      ctx,
-      dataId: data.id,
-      rendering,
-      viewState: ctx.viewport.getViewState(),
-    });
-    if (initialProjection) {
-      rendering.currentImageIdIndex = initialProjection.currentImageIdIndex;
-      rendering.maxImageIdIndex = initialProjection.maxImageIdIndex;
-    }
-
     triggerPlanarVolumeNewImage(ctx, {
       camera: ctx.viewport.getViewState(),
       acquisitionOrientation: rendering.acquisitionOrientation,
