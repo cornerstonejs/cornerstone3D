@@ -5,6 +5,7 @@ import { convertContourPolylineToCanvasSpace } from './sharedOperations';
 import { getViewReferenceFromAnnotation } from './getViewReferenceFromAnnotation';
 import { runBooleanOpByView } from './polylineSetOps';
 import { BooleanOp } from './clipperBooleanOps';
+import { getChildAnnotations } from '../../stateManagement/annotation/annotationState';
 
 /**
  * Subtract polylines in `polylinesSetB` from `polylinesSetA`. Holes are
@@ -47,14 +48,22 @@ export function subtractAnnotationPolylines(
   const toInfo = (
     annotation: ContourSegmentationAnnotation
   ): PolylineInfoCanvas => {
-    const info: PolylineInfoCanvas = {
+    // Holes are stored as child annotations with opposite winding; convert
+    // them alongside the outer polyline so the subtraction respects them.
+    const holePolylines = getChildAnnotations(annotation).map((child) =>
+      convertContourPolylineToCanvasSpace(
+        (child as ContourSegmentationAnnotation).data.contour.polyline,
+        viewport
+      )
+    );
+    return {
       polyline: convertContourPolylineToCanvasSpace(
         annotation.data.contour.polyline,
         viewport
       ),
       viewReference: getViewReferenceFromAnnotation(annotation),
+      ...(holePolylines.length ? { holePolylines } : {}),
     };
-    return info;
   };
   return subtractPolylineSets(
     baseAnnotations.map(toInfo),

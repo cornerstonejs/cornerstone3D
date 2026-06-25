@@ -104,7 +104,8 @@ export function checkIntersection(
     !isContourHole &&
     math.polyline.containsPoints(sourcePolyline, targetPolyline);
 
-  const hasIntersection = lineSegmentsIntersect || isContourHole;
+  const hasIntersection =
+    lineSegmentsIntersect || isContourHole || isTargetInsideSource;
 
   return { hasIntersection, isContourHole, isTargetInsideSource };
 }
