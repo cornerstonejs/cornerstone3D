@@ -36,7 +36,7 @@ class Synchronizer {
   private _eventName: string;
   private _auxiliaryEvents: auxiliaryEvent[];
   private _eventHandler: ISynchronizerEventHandler;
-  private _eventListener: CallableFunction;
+  private _eventListener: EventListenerOrEventListenerObject;
   private _eventSource: eventSource;
   private _ignoreFiredEvents: boolean;
   private _sourceViewports: Array<Types.IViewportId>;
