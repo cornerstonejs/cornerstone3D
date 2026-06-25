@@ -38,7 +38,9 @@ export default function getScalingParameters(metaData, imageId: string) {
     typeof scalingModules.suvbw === 'number' &&
     !isNaN(scalingModules.suvbw);
   const hasDoseScaling =
-    modality === 'RTDOSE' && typeof scalingModules.DoseGridScaling === 'number';
+    modality === 'RTDOSE' &&
+    typeof scalingModules.DoseGridScaling === 'number' &&
+    !isNaN(scalingModules.DoseGridScaling);
 
   // Identity transform (slope 1, intercept 0) with no modality-specific scaling
   // is implicitly non-prescaled; do not set preScale.
