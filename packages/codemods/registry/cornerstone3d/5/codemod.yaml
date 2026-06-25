@@ -1,5 +1,5 @@
 schema_version: '1.0'
-name: 'cornerstone3d/5'
+name: '@cornerstonejs/cornerstone3d-5'
 version: '0.1.0'
 description: 'Apply all available Cornerstone3D v5 migration transforms in the recommended order.'
 author: 'Cornerstone.js Contributors'

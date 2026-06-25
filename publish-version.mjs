@@ -119,6 +119,14 @@ async function run() {
 
   // Run lerna version without pushing
   // lerna will update package.json files and create a commit
+  //
+  // NOTE: the commit message intentionally does NOT include "[skip ci]". The GitHub
+  // Release is now created by the .github/workflows/release.yml workflow, which triggers
+  // on the pushed "v*" tag — and GitHub Actions honors "[skip ci]" on the tagged commit,
+  // which would suppress that trigger and silently skip every release. The cost of dropping
+  // "[skip ci]" is that this bump commit re-triggers the CircleCI publish workflow on main;
+  // the NPM_PUBLISH job guards against that (and the resulting infinite re-publish loop,
+  // since version.mjs always computes a new version) by halting on "chore(version)" commits.
   await execa('npx', [
     'lerna',
     'version',
@@ -127,10 +135,8 @@ async function run() {
     '--exact',
     '--force-publish',
     '--message',
-    `chore(version): Update package versions to ${nextVersion} [skip ci]`,
+    `chore(version): Update package versions to ${nextVersion}`,
     '--conventional-commits',
-    '--create-release',
-    'github',
     '--no-push',
     // The repo enforces frozenLockfile via pnpm-workspace.yaml, but lerna must
     // update the lockfile after bumping versions. Relax it for this one install.
@@ -169,6 +175,15 @@ async function run() {
 
   console.log('Pushing tag...');
   await execa('git', ['push', 'origin', tagName]);
+
+  // The GitHub Release for this tag is created by the GitHub Actions workflow at
+  // .github/workflows/release.yml, which triggers on the "v*" tag we just pushed and
+  // authenticates with the built-in GITHUB_TOKEN (contents: write).
+  //
+  // It used to be created here via the REST API + a GH_TOKEN PAT, but that PAT lived in
+  // CircleCI's environment (separate from GitHub's secret store) and drifted out of sync,
+  // causing 403 "Resource not accessible by personal access token" failures. Moving release
+  // creation to Actions removes the cross-system token entirely.
 
   console.log('Version set using lerna');
 }

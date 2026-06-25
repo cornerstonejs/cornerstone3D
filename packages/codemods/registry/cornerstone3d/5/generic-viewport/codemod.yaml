@@ -1,5 +1,5 @@
 schema_version: '1.0'
-name: 'cornerstone3d/5/generic-viewport'
+name: '@cornerstonejs/cornerstone3d-5-generic-viewport'
 version: '0.1.0'
 description: 'Replace removed RenderingEngine viewport accessors with Cornerstone3D v5 compatible viewport APIs.'
 author: 'Cornerstone.js Contributors'

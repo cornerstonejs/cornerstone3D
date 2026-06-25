@@ -12,10 +12,34 @@ if (!packagePath) {
   process.exit(1);
 }
 
-// Get the root directory (two levels up from scripts/)
-const rootDir = path.resolve(__dirname, '..');
+// Only stamp version.ts for packages that are actually published. Published
+// packages set publishConfig.access to 'public'; anything else (e.g. the private
+// docs site) is skipped rather than failing the release.
+const packageJsonPath = path.join(packagePath, 'package.json');
+let packageJson;
+try {
+  packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+} catch (error) {
+  console.log(`Skipping ${packagePath}: could not read package.json`);
+  process.exit(0);
+}
 
-// Read the version.json file from the root directory
+if (packageJson.publishConfig?.access !== 'public') {
+  console.log(`Skipping ${packagePath}: publishConfig.access is not 'public'`);
+  process.exit(0);
+}
+
+// A published package may still have no src directory (e.g. the codemods
+// registry package). There is nowhere to stamp version.ts, so skip rather than
+// fail the release.
+const srcDir = path.join(packagePath, 'src');
+if (!fs.existsSync(srcDir)) {
+  console.log(`Skipping ${packagePath}: no src directory`);
+  process.exit(0);
+}
+
+// Read the version.json file from the root directory (two levels up from scripts/)
+const rootDir = path.resolve(__dirname, '..');
 const versionJsonPath = path.join(rootDir, 'version.json');
 let versionData;
 
@@ -32,15 +56,6 @@ const versionContent = `/**
  * Do not modify this file directly
  */
 export const version = '${versionData.version}';\n`;
-
-// Determine the src directory
-const srcDir = path.join(packagePath, 'src');
-if (!fs.existsSync(srcDir)) {
-  // Packages without a src directory (e.g. private codemods, the docs site)
-  // have nowhere to stamp version.ts. Skip rather than fail the release.
-  console.log(`Skipping ${packagePath}: no src directory`);
-  process.exit(0);
-}
 
 // Write the version.ts file
 const versionFilePath = path.join(srcDir, 'version.ts');

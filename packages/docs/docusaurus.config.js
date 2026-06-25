@@ -73,8 +73,8 @@ module.exports = {
           ],
         },
         {
-          to: '/docs/migration-guides/4x',
-          label: '4.0 Migration Guides',
+          to: '/docs/migration-guides/5x',
+          label: '5.0 Migration Guides',
           position: 'left',
           className: 'new-badge',
         },
@@ -223,7 +223,7 @@ module.exports = {
           onlyIncludeVersions: ['current'],
           versions: {
             current: {
-              label: `4.0 (Latest)`,
+              label: `5.0 (Latest)`,
             },
           },
         },

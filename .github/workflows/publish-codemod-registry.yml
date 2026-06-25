@@ -18,9 +18,9 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.3
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6.4.0
         with:
           node-version: 20
 
@@ -57,7 +57,7 @@ jobs:
         if: steps.resolve.outputs.registry_entry == 'cornerstone3d/5'
         run: |
           TARGET="$(mktemp -d)"
-          npx codemod run cornerstone3d/5/generic-viewport --dry-run -t "$TARGET" --allow-dirty --no-interactive
+          npx codemod run @cornerstonejs/cornerstone3d-5-generic-viewport --dry-run -t "$TARGET" --allow-dirty --no-interactive
 
       - name: Publish registry entry
         uses: codemod/publish-action@v1
