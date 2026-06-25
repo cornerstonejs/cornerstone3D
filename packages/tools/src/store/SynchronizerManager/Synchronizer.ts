@@ -36,6 +36,7 @@ class Synchronizer {
   private _eventName: string;
   private _auxiliaryEvents: auxiliaryEvent[];
   private _eventHandler: ISynchronizerEventHandler;
+  private _eventListener: CallableFunction;
   private _eventSource: eventSource;
   private _ignoreFiredEvents: boolean;
   private _sourceViewports: Array<Types.IViewportId>;
@@ -53,6 +54,7 @@ class Synchronizer {
     this._enabled = true;
     this._eventName = eventName;
     this._eventHandler = eventHandler;
+    this._eventListener = this._onEvent.bind(this);
     this._ignoreFiredEvents = false;
     this._sourceViewports = [];
     this._targetViewports = [];
@@ -130,12 +132,12 @@ class Synchronizer {
     const eventSource =
       this._eventSource === 'element' ? viewport.element : eventTarget;
 
-    eventSource.addEventListener(this._eventName, this._onEvent.bind(this));
+    eventSource.addEventListener(this._eventName, this._eventListener);
 
     // Use a default source of 'element' if not provided just like we do for the main event.
     this._auxiliaryEvents.forEach(({ name, source = 'element' }) => {
       const target = source === 'element' ? viewport.element : eventTarget;
-      target.addEventListener(name, this._onEvent.bind(this));
+      target.addEventListener(name, this._eventListener);
     });
 
     this._updateDisableHandlers();
@@ -206,7 +208,7 @@ class Synchronizer {
     this._sourceViewports.splice(index, 1);
 
     //@ts-ignore
-    eventSource.removeEventListener(this._eventName, this._eventHandler);
+    eventSource.removeEventListener(this._eventName, this._eventListener);
 
     this._auxiliaryEvents.forEach(({ name, source }) => {
       const target =
@@ -214,7 +216,7 @@ class Synchronizer {
           ? this.getViewportElement(viewportInfo)
           : eventTarget;
       //@ts-ignore
-      target.removeEventListener(name, this._eventHandler);
+      target.removeEventListener(name, this._eventListener);
     });
 
     this._updateDisableHandlers();
