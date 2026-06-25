@@ -8,6 +8,7 @@ import type { ColormapPublic, IImage, Point3, VOIRange } from '../../types';
 import createLinearRGBTransferFunction from '../../utilities/createLinearRGBTransferFunction';
 import createSigmoidRGBTransferFunction from '../../utilities/createSigmoidRGBTransferFunction';
 import getVOIRangeFromWindowLevel from '../../utilities/getVOIRangeFromWindowLevel';
+import isPTPrescaledWithSUV from '../../utilities/isPTPrescaledWithSUV';
 import { getImageDataMetadata } from '../../utilities/getImageDataMetadata';
 import invertRgbTransferFunction from '../../utilities/invertRgbTransferFunction';
 import { resolveColormap } from '../../utilities/colormap';
@@ -96,6 +97,14 @@ export function createVTKImageDataFromImage(image: IImage): vtkImageData {
 }
 
 export function getDefaultImageVOIRange(image: IImage): VOIRange | undefined {
+  // Mirror legacy StackViewport._getInitialVOIRange: a prescaled PT (SUV) image
+  // defaults to a 0-5 VOI range rather than its raw DICOM window center/width,
+  // which is too wide for PET and skews the display. Keyed off the loader-set
+  // preScale fields (not image.isPreScaled, which the native path never sets).
+  if (isPTPrescaledWithSUV(image)) {
+    return { lower: 0, upper: 5 };
+  }
+
   return getVOIRangeFromWindowLevel(
     image.windowWidth,
     image.windowCenter,
