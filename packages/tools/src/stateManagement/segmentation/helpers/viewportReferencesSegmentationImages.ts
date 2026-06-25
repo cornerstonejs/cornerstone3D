@@ -1,6 +1,37 @@
-import type { Types } from '@cornerstonejs/core';
+import { cache, type Types } from '@cornerstonejs/core';
 import { getSegmentation } from '../getSegmentation';
 import { getLabelmaps } from '../labelmapModel';
+
+/**
+ * The source (referenced) imageIds a labelmap layer applies to.
+ *
+ * Prefer an explicit `referencedImageIds` list. Otherwise derive the source
+ * images from each labelmap image's `referencedImageId` (a derived labelmap
+ * image points back at the source image it overlays). We must NOT fall back to
+ * the layer's own `imageIds`: those are the labelmap image ids, which never
+ * equal the viewport's source image ids, so the suitability check would wrongly
+ * fail for any layer created without an explicit `referencedImageIds` list
+ * (e.g. via `createAndCacheDerivedLabelmapImage`). Returns `[]` when the source
+ * cannot be determined yet, so callers stay permissive.
+ */
+function getLayerReferencedImageIds(layer): string[] {
+  if (layer.referencedImageIds?.length) {
+    return layer.referencedImageIds;
+  }
+
+  const labelmapImageIds =
+    layer.imageIds ??
+    (layer.volumeId
+      ? (cache.getVolume(layer.volumeId) as Types.IImageVolume)?.imageIds
+      : undefined) ??
+    [];
+
+  return labelmapImageIds
+    .map(
+      (labelmapImageId) => cache.getImage(labelmapImageId)?.referencedImageId
+    )
+    .filter(Boolean) as string[];
+}
 
 /**
  * Determines whether a viewport is a suitable destination for a labelmap
@@ -32,8 +63,8 @@ export function viewportReferencesSegmentationImages(
     return true;
   }
 
-  const referencedImageIds = getLabelmaps(segmentation).flatMap(
-    (layer) => layer.referencedImageIds ?? layer.imageIds ?? []
+  const referencedImageIds = getLabelmaps(segmentation).flatMap((layer) =>
+    getLayerReferencedImageIds(layer)
   );
 
   if (!referencedImageIds.length) {
