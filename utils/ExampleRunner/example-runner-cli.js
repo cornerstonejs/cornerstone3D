@@ -301,7 +301,12 @@ function run() {
       '--config',
       webpackConfigPath,
     ];
-    spawnSync(rspackBin, rspackArgs, { stdio: 'inherit', shell: false });
+    // Use shell: true so that the rspack `.cmd`/`.ps1` shim can be spawned on
+    // Windows. Node 20.12+/22+/24 reject spawning `.cmd` files with
+    // `shell: false` (EINVAL), which otherwise causes this to exit silently
+    // without starting the dev server. The bin path is quoted to tolerate
+    // spaces when running through a shell.
+    spawnSync(`"${rspackBin}"`, rspackArgs, { stdio: 'inherit', shell: true });
   } else {
     console.log('=> To run an example:');
     console.log('  $ npm run example -- PUT_YOUR_EXAMPLE_NAME_HERE\n');

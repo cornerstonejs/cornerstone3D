@@ -1,5 +1,6 @@
 import { BaseVolumeViewport, cache, utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
+import { vec3 } from 'gl-matrix';
 import { SegmentationRepresentations } from '../../enums';
 import {
   getSegmentation,
@@ -179,7 +180,24 @@ export function getSegmentIndexAtWorldForContour(
   const contourData = segmentation.representationData.Contour;
 
   const segmentIndices = Array.from(contourData.annotationUIDsMap.keys());
-  const { viewPlaneNormal } = viewport.getCamera();
+  const { viewPlaneNormal, focalPoint } = viewport.getCamera();
+
+  // Half the spacing in the normal direction defines the slab around the
+  // current slice. A contour is only considered for the hover lookup when its
+  // plane falls within that slab, otherwise contours from other slices (which
+  // share the same view plane normal) would match because the point-in-polyline
+  // test projects to 2D and ignores the slice (normal) axis.
+  // This is the same within-slice test used by `filterAnnotationsWithinSlice`
+  // (abs distance from the focal point along the normal < half slice spacing),
+  // which is how the renderer decides which contours belong to the slice.
+  const imageData = viewport.getImageData();
+  const spacingInNormalDirection = imageData
+    ? utilities.getSpacingInNormalDirection(
+        { direction: imageData.direction, spacing: imageData.spacing },
+        viewPlaneNormal
+      )
+    : 0;
+  const halfSpacingInNormalDirection = spacingInNormalDirection / 2;
 
   for (const segmentIndex of segmentIndices) {
     const annotationsSet = contourData.annotationUIDsMap.get(segmentIndex);
@@ -203,6 +221,22 @@ export function getSegmentIndexAtWorldForContour(
         !utilities.isEqual(viewPlaneNormal, annotation.metadata.viewPlaneNormal)
       ) {
         continue;
+      }
+
+      // Skip contours that are not on the currently displayed slice. The
+      // distance between the contour plane and the camera focal point, measured
+      // along the view plane normal, must be within half the slice spacing.
+      if (halfSpacingInNormalDirection > 0) {
+        const distanceToSlice = Math.abs(
+          vec3.dot(
+            vec3.sub(vec3.create(), focalPoint, polyline[0]),
+            viewPlaneNormal as vec3
+          )
+        );
+
+        if (distanceToSlice > halfSpacingInNormalDirection) {
+          continue;
+        }
       }
 
       // This function checks whether we are inside the contour. It does not

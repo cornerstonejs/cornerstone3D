@@ -40,7 +40,8 @@ const renderingEngineId = 'myRenderingEngine';
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Segment Label Tool in Both Stack and Volume Viewport',
-  'Here, we demonstrate how you can use the Segment Label Tool in both stack and volume viewports to hover and visualize the label of the segment that is below it. It works after some deliberate delay.'
+  'Here, we demonstrate how you can use the Segment Label Tool in both stack and volume viewports to hover and visualize the label of the segment that is below it. It works after some deliberate delay. ' +
+    'The bottom-right (volume contour) viewport seeds Segment 1 and Segment 2 on different slices: hovering empty space on Segment 1’s slice must NOT show Segment 2’s name.'
 );
 
 const size = '512px';
@@ -283,6 +284,12 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
       representation: {
         type: csToolsEnums.SegmentationRepresentations.Contour,
       },
+      config: {
+        segments: {
+          1: { label: 'Segment 1' },
+          2: { label: 'Segment 2' },
+        },
+      },
     },
   ]);
 
@@ -294,14 +301,31 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
     },
   ]);
 
+  // Place segment 1 and segment 2 on DIFFERENT slices to demonstrate that the
+  // hovered label is scoped to the current slice.
+  // addMockContourSegmentation projects the contour onto the
+  // viewport's current focal plane, so we seed segment 1, scroll one slice,
+  // seed segment 2, then scroll back.
+  const volumeContourViewport = renderingEngine.getViewport(viewportId4);
+
   addMockContourSegmentation({
     segmentationId: volumeSegContourId,
-    viewport: renderingEngine.getViewport(viewportId4),
+    viewport: volumeContourViewport,
     contours: [
       {
         segmentIndex: 1,
         radius: 75,
       },
+    ],
+  });
+
+  // Move to the adjacent slice and seed segment 2 there.
+  volumeContourViewport.scroll(1);
+
+  addMockContourSegmentation({
+    segmentationId: volumeSegContourId,
+    viewport: volumeContourViewport,
+    contours: [
       {
         segmentIndex: 2,
         radius: 75,
@@ -309,6 +333,10 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
       },
     ],
   });
+
+  // Scroll back to segment 1's slice so the bug is reproducible on load.
+  volumeContourViewport.scroll(-1);
+  renderingEngine.render();
 }
 
 async function _handleStackViewports(stackImageIds: string[]) {
