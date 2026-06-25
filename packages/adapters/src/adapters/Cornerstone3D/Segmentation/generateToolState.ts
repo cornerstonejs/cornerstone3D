@@ -62,6 +62,8 @@ function generateToolState(
  *   builder, an alternative to passing the full `frameImageIds` list.
  * @param [options.decodeImageData] - Optional `(frameImageId, frameNumber) => pixel data`;
  *   defaults to the cornerstone image loader.
+ * @param [options.concurrency] - Optional max number of SEG frames fetched/decoded
+ *   concurrently. Defaults to the loader's own default (16) when omitted.
  */
 function createFromDicomSegImageId(
   referencedImageIds,
@@ -73,6 +75,7 @@ function createFromDicomSegImageId(
     frameImageIds = undefined,
     getFrameImageId = undefined,
     decodeImageData = undefined,
+    concurrency = undefined,
   }
 ) {
   return createLabelmapsFromSegImageIds(
@@ -85,6 +88,7 @@ function createFromDicomSegImageId(
       frameImageIds,
       getFrameImageId,
       decodeImageData,
+      concurrency,
     }
   );
 }
