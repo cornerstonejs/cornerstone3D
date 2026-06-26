@@ -313,6 +313,14 @@ class WindowLevelRegionTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
     const imageData = windowLevel.extractWindowLevelRegionToolData(viewport);
+
+    // No slice pixel data available (e.g. a reformatted/oblique native volume
+    // plane); skip applying the region window level rather than dereferencing
+    // undefined below.
+    if (!imageData) {
+      return;
+    }
+
     const { data } = annotation;
     const { points } = data.handles;
 
@@ -360,11 +368,10 @@ class WindowLevelRegionTool extends AnnotationTool {
     // per-display-set presentation. Bridge both read (VOI LUT function) and write
     // (the computed VOI range) so the region tool applies the window level on
     // native viewports too (legacy keeps using get/setProperties).
-    const presentationViewport = utilities.viewportSupportsDisplaySetPresentation(
-      viewport
-    )
-      ? viewport
-      : undefined;
+    const presentationViewport =
+      utilities.viewportSupportsDisplaySetPresentation(viewport)
+        ? viewport
+        : undefined;
     const sourceDataId = presentationViewport?.getSourceDataId();
 
     const voiLutFunction = presentationViewport
@@ -390,6 +397,12 @@ class WindowLevelRegionTool extends AnnotationTool {
         presentationViewport.setDisplaySetPresentation(sourceDataId, {
           voiRange,
         });
+      } else {
+        // No resolvable source binding id (e.g. getSourceDataId() is undefined).
+        // The single-argument form targets the current binding, so the window
+        // level is applied rather than silently dropped; it is a no-op only when
+        // the viewport has no bound data at all.
+        presentationViewport.setDisplaySetPresentation({ voiRange });
       }
     } else {
       viewport.setProperties({ voiRange });

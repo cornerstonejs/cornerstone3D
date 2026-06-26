@@ -66,7 +66,17 @@ function extractImageDataGeneric(viewport: Types.IGenericViewport) {
   const imageId = viewport.getCurrentImageId();
 
   if (!imageId) {
-    throw new Error('Viewport not supported');
+    // A volume-mode native viewport on a reformatted (sagittal / coronal /
+    // oblique) plane resolves to no single backing cornerstone image, so there
+    // is no per-image slice to read here. Degrade gracefully (the caller skips
+    // the region window level) instead of throwing, which would abort the tool
+    // interaction. Full reformatted-slice region window-leveling for native
+    // volume viewports needs slice-view plumbing on the generic viewport and is
+    // tracked as a follow-up.
+    console.warn(
+      'WindowLevelRegionTool: the current native viewport slice has no backing image (reformatted/oblique volume plane); skipping region window level.'
+    );
+    return undefined;
   }
 
   const image = cache.getImage(imageId);
