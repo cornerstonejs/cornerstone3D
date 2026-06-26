@@ -65,6 +65,13 @@ type RegionSegmentPlusFloodFillToolData = GrowCutToolData & {
 
 const DISK_PREVIEW_SVG_ATTR = 'data-cornerstone-region-segment-plus-disk';
 
+/**
+ * Plain circle cursor (no plus indicator) used in the ready/hover state when the
+ * disk-sampling preview is not available to act as the indicator itself.
+ */
+const CIRCLE_CURSOR =
+  "url(\"data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%3E%3Ccircle%20cx='12'%20cy='12'%20r='9'%20fill='none'%20stroke='%2300dc82'%20stroke-width='2'/%3E%3C/svg%3E\") 12 12, crosshair";
+
 class RegionSegmentPlusFloodFillTool extends GrowCutBaseTool {
   static toolName = 'RegionSegmentPlusFloodFill';
   protected growCutData: RegionSegmentPlusFloodFillToolData | null;
@@ -145,6 +152,18 @@ class RegionSegmentPlusFloodFillTool extends GrowCutBaseTool {
   private usesCanvasDiskStrategy(): boolean {
     const strategy = this.getIntensityStrategyConfig().strategy;
     return strategy === 'canvasDiskTriClass' || strategy === 'canvasDiskRange';
+  }
+
+  /**
+   * Ready/hover cursor: a simple circle with no plus indicator. When the
+   * canvas-disk strategy is active the disk-sampling preview already draws a
+   * circle that tracks the pointer, so we hide the native cursor and let that
+   * circle be the indicator; otherwise fall back to a plain circle cursor.
+   */
+  private setReadyCursor(element: HTMLDivElement): void {
+    element.style.cursor = this.usesCanvasDiskStrategy()
+      ? 'none'
+      : CIRCLE_CURSOR;
   }
 
   private removeDiskSamplingPreview(): void {
@@ -267,7 +286,7 @@ class RegionSegmentPlusFloodFillTool extends GrowCutBaseTool {
 
     if (!this.configuration.hoverPrecheckEnabled) {
       this.allowedToProceed = true;
-      element.style.cursor = 'copy';
+      this.setReadyCursor(element);
       return;
     }
 
@@ -295,7 +314,7 @@ class RegionSegmentPlusFloodFillTool extends GrowCutBaseTool {
 
     if (!this.configuration.hoverPrecheckEnabled) {
       this.allowedToProceed = true;
-      element.style.cursor = 'copy';
+      this.setReadyCursor(element);
       const enabledElement = getEnabledElement(element);
       if (enabledElement?.viewport) {
         enabledElement.viewport.render();
@@ -421,9 +440,11 @@ class RegionSegmentPlusFloodFillTool extends GrowCutBaseTool {
       if (!element) {
         return;
       }
-      element.style.cursor = this.configuration.hoverPrecheckEnabled
-        ? 'default'
-        : 'copy';
+      if (this.configuration.hoverPrecheckEnabled) {
+        element.style.cursor = 'default';
+      } else {
+        this.setReadyCursor(element);
+      }
     };
 
     const setupOk = super.preMouseDownCallback(evt);
