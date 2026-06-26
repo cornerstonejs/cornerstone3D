@@ -1487,7 +1487,17 @@ class StackViewport extends Viewport {
   }
 
   private setVOICPU(voiRange: VOIRange, options: SetVOIOptions = {}): void {
-    const { suppressEvents = false } = options;
+    const { suppressEvents = false, voiUpdatedWithSetProperties = false } =
+      options;
+
+    // Latch the user-set lock before any early-return, matching setVOIGPU.
+    // Without this the CPU path never marks the VOI as user-set, so a stack
+    // reset / reload reverts to the image's stored window (see setStack guard
+    // and _getInitialVOIRange / _getVOIFromCache).
+    if (!this.voiUpdatedWithSetProperties) {
+      this.voiUpdatedWithSetProperties = voiUpdatedWithSetProperties;
+    }
+
     // TODO: Account for VOILUTFunction
     const { viewport, image } = this._cpuFallbackEnabledElement;
 
