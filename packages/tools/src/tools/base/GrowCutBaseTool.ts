@@ -33,6 +33,7 @@ import { getCurrentLabelmapImageIdForViewport } from '../../stateManagement/segm
 import type { GrowCutOneClickOptions } from '../../utilities/segmentation/growCut/runOneClickGrowCut';
 
 const { transformWorldToIndex, transformIndexToWorld } = csUtils;
+const { growCutLog } = csUtils.logger;
 
 type GrowCutToolData = {
   metadata: Types.ViewReference & {
@@ -70,6 +71,7 @@ class GrowCutBaseTool extends BaseTool {
   static toolName;
   protected growCutData: GrowCutToolData | null;
   private static lastGrowCutCommand = null;
+  private activeAbortController: AbortController | null = null;
   protected seeds: {
     positiveSeedIndices: Set<number>;
     negativeSeedIndices: Set<number>;
@@ -95,9 +97,7 @@ class GrowCutBaseTool extends BaseTool {
     super(toolProps, baseToolProps);
   }
 
-  async preMouseDownCallback(
-    evt: EventTypes.MouseDownActivateEventType
-  ): Promise<boolean> {
+  preMouseDownCallback(evt: EventTypes.MouseDownActivateEventType): boolean {
     const eventData = evt.detail;
     const { element, currentPoints } = eventData;
     const { world: worldPoint } = currentPoints;
@@ -105,12 +105,18 @@ class GrowCutBaseTool extends BaseTool {
     const { viewport, renderingEngine } = enabledElement;
 
     const { viewUp } = viewport.getCamera();
+    const labelmapSegmentationData = this.getLabelmapSegmentationData(viewport);
+
+    if (!labelmapSegmentationData) {
+      return false;
+    }
+
     const {
       segmentationId,
       segmentIndex,
       labelmapVolumeId,
       referencedVolumeId,
-    } = await this.getLabelmapSegmentationData(viewport);
+    } = labelmapSegmentationData;
 
     if (!this._isOrthogonalView(viewport, referencedVolumeId)) {
       throw new Error('Oblique view is not supported yet');
@@ -168,57 +174,97 @@ class GrowCutBaseTool extends BaseTool {
     let shrinkExpandAccumulator = 0;
 
     const growCutCommand = async ({ shrinkExpandAmount = 0 } = {}) => {
-      if (shrinkExpandAmount !== 0) {
-        this.seeds = null;
-      }
-      shrinkExpandAccumulator += shrinkExpandAmount;
+      // Each (re)play needs its own abort controller. The command is replayed by
+      // shrink()/expand()/refresh() after the initial run has cleared
+      // activeAbortController, so a controller captured once would be invisible
+      // to cancelActiveOperation() and could carry a stale aborted signal.
+      const abortController = new AbortController();
+      this.activeAbortController = abortController;
+      try {
+        if (shrinkExpandAmount !== 0) {
+          this.seeds = null;
+        }
+        shrinkExpandAccumulator += shrinkExpandAmount;
 
-      const newPositiveStdDevMultiplier = Math.max(
-        0.1,
-        config.positiveStdDevMultiplier + shrinkExpandAccumulator
-      );
+        const newPositiveStdDevMultiplier = Math.max(
+          0.1,
+          config.positiveStdDevMultiplier + shrinkExpandAccumulator
+        );
 
-      // Adjust negativeSeedMargin based on shrinkExpandAmount
-      // When shrinking (negative amount), reduce margin to sample negatives closer to positives
-      // When expanding (positive amount), increase margin
-      const negativeSeedMargin =
-        shrinkExpandAmount < 0
-          ? Math.max(
-              1,
-              DEFAULT_NEGATIVE_SEED_MARGIN -
-                Math.abs(shrinkExpandAccumulator) * 3
-            )
-          : DEFAULT_NEGATIVE_SEED_MARGIN + shrinkExpandAccumulator * 3;
+        // Adjust negativeSeedMargin based on shrinkExpandAmount
+        // When shrinking (negative amount), reduce margin to sample negatives closer to positives
+        // When expanding (positive amount), increase margin
+        const negativeSeedMargin =
+          shrinkExpandAmount < 0
+            ? Math.max(
+                1,
+                DEFAULT_NEGATIVE_SEED_MARGIN -
+                  Math.abs(shrinkExpandAccumulator) * 3
+              )
+            : DEFAULT_NEGATIVE_SEED_MARGIN + shrinkExpandAccumulator * 3;
 
-      const updatedGrowCutData = {
-        ...growCutData,
-        options: {
-          ...(growCutData.options || {}),
-          positiveSeedValue: segmentIndex,
-          negativeSeedValue: 255,
+        const updatedGrowCutData = {
+          ...growCutData,
+          options: {
+            ...(growCutData.options || {}),
+            positiveSeedValue: segmentIndex,
+            negativeSeedValue: 255,
+            positiveStdDevMultiplier: newPositiveStdDevMultiplier,
+            negativeSeedMargin,
+            isCancelled: () => abortController.signal.aborted,
+          },
+        };
+
+        const segmentationMode = config.segmentationMode ?? 'floodfill_full';
+        growCutLog.info('run command', {
+          segmentationMode,
+          shrinkExpandAmount,
+          shrinkExpandAccumulator,
           positiveStdDevMultiplier: newPositiveStdDevMultiplier,
           negativeSeedMargin,
-        },
-      };
+          isPartialVolume: !!config.isPartialVolume,
+        });
 
-      const growcutLabelmap = await this.getGrowCutLabelmap(updatedGrowCutData);
+        const growcutLabelmap =
+          await this.getGrowCutLabelmap(updatedGrowCutData);
 
-      const { isPartialVolume } = config;
+        const { isPartialVolume } = config;
 
-      const fn = isPartialVolume
-        ? this.applyPartialGrowCutLabelmap
-        : this.applyGrowCutLabelmap;
+        const fn = isPartialVolume
+          ? this.applyPartialGrowCutLabelmap
+          : this.applyGrowCutLabelmap;
 
-      fn(segmentationId, segmentIndex, labelmap, growcutLabelmap);
+        if (growcutLabelmap !== labelmap) {
+          fn(segmentationId, segmentIndex, labelmap, growcutLabelmap);
+        } else {
+          triggerSegmentationDataModified(segmentationId);
+        }
 
-      this._removeIslands(updatedGrowCutData);
+        // Skip _removeIslands when using flood fill - island removal is already done in runFloodFillSegmentation
+        if (segmentationMode !== 'floodfill_full') {
+          this._removeIslands(updatedGrowCutData);
+        }
+      } finally {
+        if (this.activeAbortController === abortController) {
+          this.activeAbortController = null;
+        }
+      }
     };
 
     await growCutCommand();
-
     GrowCutBaseTool.lastGrowCutCommand = growCutCommand;
-
     this.growCutData = null;
+  }
+
+  public cancelActiveOperation(): boolean {
+    if (
+      !this.activeAbortController ||
+      this.activeAbortController.signal.aborted
+    ) {
+      return false;
+    }
+    this.activeAbortController.abort();
+    return true;
   }
 
   protected applyPartialGrowCutLabelmap(
@@ -302,11 +348,12 @@ class GrowCutBaseTool extends BaseTool {
     }
   }
 
-  protected async getLabelmapSegmentationData(viewport: Types.IViewport) {
+  protected getLabelmapSegmentationData(viewport: Types.IViewport) {
     const activeSeg = activeSegmentation.getActiveSegmentation(viewport.id);
 
     if (!activeSeg) {
-      throw new Error('No active segmentation found');
+      console.warn('No active segmentation found for viewport', viewport.id);
+      return;
     }
 
     const { segmentationId } = activeSeg;
@@ -372,11 +419,9 @@ class GrowCutBaseTool extends BaseTool {
 
       referencedVolumeId = imageVolume
         ? imageVolume.volumeId
-        : (
-            await volumeLoader.createAndCacheVolumeFromImagesSync(
-              volumeId,
-              referencedImageIds
-            )
+        : volumeLoader.createAndCacheVolumeFromImagesSync(
+            volumeId,
+            referencedImageIds
           ).volumeId;
     }
 

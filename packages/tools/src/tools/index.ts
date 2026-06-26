@@ -46,6 +46,8 @@ import KeyImageTool from './annotation/KeyImageTool';
 import AnnotationEraserTool from './AnnotationEraserTool';
 import RegionSegmentTool from './annotation/RegionSegmentTool';
 import RegionSegmentPlusTool from './annotation/RegionSegmentPlusTool';
+import RegionSegmentPlusFloodFillTool from './annotation/RegionSegmentPlusFloodFillTool';
+import RegionSegmentPlusGrowCutTool from './annotation/RegionSegmentPlusGrowCutTool';
 import WholeBodySegmentTool from './annotation/WholeBodySegmentTool';
 import LabelmapBaseTool from './segmentation/LabelmapBaseTool';
 
@@ -133,6 +135,8 @@ export {
   VolumeRotateTool,
   RegionSegmentTool,
   RegionSegmentPlusTool,
+  RegionSegmentPlusFloodFillTool,
+  RegionSegmentPlusGrowCutTool,
   WholeBodySegmentTool,
   LabelmapBaseTool,
   SegmentBidirectionalTool,

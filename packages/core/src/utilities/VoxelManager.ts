@@ -1755,8 +1755,9 @@ export default class VoxelManager<T> {
     // storing an RLE representation, which doesn't have an up front size.
     image.sizeInBytes = DEFAULT_RLE_SIZE;
   }
-
-  public static;
 }
+
+export type NumberVoxelManager = VoxelManager<number>;
+export type RGBVoxelManager = VoxelManager<RGB>;
 
 export type { VoxelManager };

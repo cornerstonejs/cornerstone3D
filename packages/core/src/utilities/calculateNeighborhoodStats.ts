@@ -1,26 +1,25 @@
-import type { PixelDataTypedArray, Point3 } from '../types';
+import type { Point3 } from '../types';
+import type { NumberVoxelManager } from './VoxelManager';
 
 type NeighborhoodStats = {
   mean: number;
   stdDev: number;
   count: number;
 };
+
 /**
- * Calculates statistical properties (mean, standard deviation) of a neighborhood around a center point in a 3D volume.
- * @param scalarData - The array containing voxel intensity values
- * @param dimensions - The dimensions of the volume [width, height, depth]
- * @param centerIjk - The center point coordinates in IJK space
- * @param radius - The radius of the neighborhood to analyze in pixels
- * @returns An object containing the mean, standard deviation, and count of voxels in the neighborhood
+ * Mean and standard deviation over a cubic neighborhood, using the voxel manager's
+ * `getAtIJK` (no full scalar buffer required).
+ * @param mapValue - If set, each sample is passed through this before mean/std (e.g. VOI-mapped intensity).
  */
 export function calculateNeighborhoodStats(
-  scalarData: PixelDataTypedArray,
+  voxelManager: NumberVoxelManager,
   dimensions: Point3,
   centerIjk: Point3,
-  radius: number
+  radius: number,
+  mapValue?: (v: number) => number
 ): NeighborhoodStats {
   const [width, height, numSlices] = dimensions;
-  const numPixelsPerSlice = width * height;
 
   let sum = 0;
   let sumSq = 0;
@@ -41,8 +40,8 @@ export function calculateNeighborhoodStats(
           continue;
         }
 
-        const index = z * numPixelsPerSlice + y * width + x;
-        const value = scalarData[index];
+        const raw = voxelManager.getAtIJK(x, y, z);
+        const value = mapValue ? mapValue(raw) : raw;
         sum += value;
         sumSq += value * value;
         count++;
@@ -51,18 +50,24 @@ export function calculateNeighborhoodStats(
   }
 
   if (count === 0) {
-    const centerIndex = cz * numPixelsPerSlice + cy * width + cx;
-    if (centerIndex >= 0 && centerIndex < scalarData.length) {
-      const centerValue = scalarData[centerIndex];
+    if (
+      cx >= 0 &&
+      cx < width &&
+      cy >= 0 &&
+      cy < height &&
+      cz >= 0 &&
+      cz < numSlices
+    ) {
+      const raw = voxelManager.getAtIJK(cx, cy, cz);
+      const centerValue = mapValue ? mapValue(raw) : raw;
       return { mean: centerValue, stdDev: 0, count: 1 };
-    } else {
-      return { mean: 0, stdDev: 0, count: 0 }; // Or throw error
     }
+    return { mean: 0, stdDev: 0, count: 0 };
   }
 
   const mean = sum / count;
   const variance = sumSq / count - mean * mean;
-  const stdDev = Math.sqrt(Math.max(0, variance)); // Ensure non-negative variance
+  const stdDev = Math.sqrt(Math.max(0, variance));
 
   return { mean, stdDev, count };
 }

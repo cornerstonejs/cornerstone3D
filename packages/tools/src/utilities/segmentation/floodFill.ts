@@ -5,66 +5,99 @@ import type {
 } from '../../types';
 import type { Types } from '@cornerstonejs/core';
 
+/** Fully processed (popped and expanded). After fill, only this bit remains on buffer cells. */
+const VISITED_BUF_DONE = 1;
+/** Pending on DFS stack — avoids pushing the same cell twice before it is popped. */
+const VISITED_BUF_ON_STACK = 2;
+
 /**
- * floodFill.js - Taken from MIT OSS lib - https://github.com/tuzz/n-dimensional-flood-fill
- * Refactored to ES6.  Fixed the bounds/visits checks to use integer keys, restricting the
- * total search spacing to +/- 32k in each dimension, but resulting in about a hundred time
- * performance gain for larger regions since JavaScript does not have a hash map to allow the
- * map to work on keys.
+ * N-dimensional flood fill (based on https://github.com/tuzz/n-dimensional-flood-fill).
+ * Async API: yields to the event loop periodically and can await per-slice loading for 3D data.
  *
- * @param getter The getter to the elements of your data structure,
- *                          e.g. getter(x,y) for a 2D interpretation of your structure.
- * @param seed The seed for your fill. The dimensionality is inferred
- *                        by the number of dimensions of the seed.
- * @param options.onFlood - An optional callback to execute when each pixel is flooded.
- *                             e.g. onFlood(x,y).
- * @param options.onBoundary - An optional callback to execute whenever a boundary is reached.
- *                                a boundary could be another segmentIndex, or the edge of your
- *                                data structure (i.e. when your getter returns undefined).
- * @param options.equals - An optional equality method for your datastructure.
- *                            Default is simply value1 = value2.
- * @param options.diagonals - Whether you allow flooding through diagonals. Defaults to false.
- * @param options.bounds - An optional min/max value bounds in the form boundsIJK.  Allows controlling
- *                         the fill to a single plane.
- * @param options.filter - An optional filter function to include/exclude points.
- *                         If the filter returns false, then the point is excluded.
- *
- * @returns Flood fill results
+ * @returns Promise resolving to flooded points.
  */
-function floodFill(
+async function floodFill(
   getter: FloodFillGetter,
   seed: Types.Point2 | Types.Point3,
   options: FloodFillOptions = {}
-): FloodFillResult {
+): Promise<FloodFillResult> {
   const onFlood = options.onFlood;
   const onBoundary = options.onBoundary;
   const equals = options.equals;
   const filter = options.filter;
+  const planar = options.planar === true;
   const diagonals = options.diagonals || false;
+  const bounds = options.bounds;
+  const ensureSliceLoaded = options.ensureSliceLoaded;
+  const yieldEvery = options.yieldEvery ?? 500;
+
+  const is3D = seed.length === 3;
+  if (is3D && ensureSliceLoaded) {
+    await ensureSliceLoaded(seed[2] as number);
+  }
+
   const startNode = get(seed);
   const permutations = prunedPermutations();
-  const stack = [];
-  const flooded = [];
-  const visits = new Set();
-  const bounds = options.bounds;
+  const stack: {
+    currentArgs: Types.Point2 | Types.Point3;
+    previousArgs?: Types.Point2 | Types.Point3;
+  }[] = [];
+  const flooded: Types.Point2[] | Types.Point3[] = [];
+  const visitedBuffer = options.visitedBuffer;
+  /** All visited keys when not using {@link visitedBuffer}; OOB keys when using dense buffer. */
+  const visitsSet = new Set<number>();
+  let iteration = 0;
+
+  if (visitedBuffer) {
+    const [sx, sy, sz = 0] = seed;
+    const sli = linearVisitIndex(sx, sy, sz);
+    if (sli >= 0) {
+      visitedBuffer.data[sli] |= VISITED_BUF_ON_STACK;
+    }
+  }
 
   stack.push({ currentArgs: seed });
 
-  while (stack.length > 0) {
-    flood(stack.pop());
+  async function yieldIfNeeded() {
+    iteration++;
+    if (yieldEvery > 0 && iteration % yieldEvery === 0) {
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    }
   }
 
-  return {
-    flooded,
-  };
+  while (stack.length > 0) {
+    await yieldIfNeeded();
+    const job = stack.pop();
+    await flood(job);
+  }
 
-  function flood(job) {
+  return { flooded };
+
+  async function flood(job: {
+    currentArgs: Types.Point2 | Types.Point3;
+    previousArgs?: Types.Point2 | Types.Point3;
+  }) {
     const getArgs = job.currentArgs;
     const prevArgs = job.previousArgs;
 
-    if (visited(getArgs)) {
+    const [vx, vy, vz = 0] = getArgs;
+    if (visitedBuffer) {
+      const li0 = linearVisitIndex(vx, vy, vz);
+      if (li0 >= 0) {
+        if ((visitedBuffer.data[li0] & VISITED_BUF_DONE) !== 0) {
+          return;
+        }
+      } else if (visitsSet.has(packVisitedKey(vx, vy, vz))) {
+        return;
+      }
+    } else if (visitsSet.has(packVisitedKey(vx, vy, vz))) {
       return;
     }
+
+    if (is3D && ensureSliceLoaded) {
+      await ensureSliceLoaded((getArgs as Types.Point3)[2]);
+    }
+
     markAsVisited(getArgs);
 
     if (member(getArgs)) {
@@ -75,62 +108,115 @@ function floodFill(
     }
   }
 
-  /**
-   * Indicates if the key has been visited.
-   * @param key is a 2 or 3 element vector with values -32768...32767
-   */
-  function visited(key) {
-    const [x, y, z = 0] = key;
-    // Use an integer key value for checking visited, since JavaScript does not
-    // provide a generic hash key indexed hash map.
-    const iKey = x + 32768 + 65536 * (y + 32768 + 65536 * (z + 32768));
-    return visits.has(iKey);
+  function packVisitedKey(x: number, y: number, z: number): number {
+    return x + 32768 + 65536 * (y + 32768 + 65536 * (z + 32768));
   }
 
-  function markAsVisited(key) {
-    const [x, y, z = 0] = key;
-    const iKey = x + 32768 + 65536 * (y + 32768 + 65536 * (z + 32768));
-    visits.add(iKey);
+  /** @returns linear index, or -1 if out of volume / invalid for the buffer layout */
+  function linearVisitIndex(x: number, y: number, z: number): number {
+    if (!visitedBuffer) {
+      return -1;
+    }
+    const w = visitedBuffer.width;
+    const h = visitedBuffer.height;
+    if (x < 0 || x >= w || y < 0 || y >= h) {
+      return -1;
+    }
+    if (visitedBuffer.depth === undefined) {
+      return x + y * w;
+    }
+    const d = visitedBuffer.depth;
+    if (z < 0 || z >= d) {
+      return -1;
+    }
+    return x + y * w + z * w * h;
   }
 
-  function member(getArgs) {
+  /** Set / sparse OOB path only; dense buffer uses explicit DONE vs ON_STACK in pushAdjacent. */
+  function visited(key: Types.Point2 | Types.Point3) {
+    const [x, y, z = 0] = key;
+    if (visitedBuffer) {
+      const li = linearVisitIndex(x, y, z);
+      if (li >= 0) {
+        return (visitedBuffer.data[li] & VISITED_BUF_DONE) !== 0;
+      }
+      return visitsSet.has(packVisitedKey(x, y, z));
+    }
+    return visitsSet.has(packVisitedKey(x, y, z));
+  }
+
+  function markAsVisited(key: Types.Point2 | Types.Point3) {
+    const [x, y, z = 0] = key;
+    if (visitedBuffer) {
+      const li = linearVisitIndex(x, y, z);
+      if (li >= 0) {
+        const v = visitedBuffer.data[li];
+        visitedBuffer.data[li] = (v & ~VISITED_BUF_ON_STACK) | VISITED_BUF_DONE;
+        return;
+      }
+      visitsSet.add(packVisitedKey(x, y, z));
+      return;
+    }
+    visitsSet.add(packVisitedKey(x, y, z));
+  }
+
+  function member(getArgs: Types.Point2 | Types.Point3) {
     const node = get(getArgs);
-
     return equals ? equals(node, startNode) : node === startNode;
   }
 
-  function markAsFlooded(getArgs) {
-    flooded.push(getArgs);
+  function markAsFlooded(getArgs: Types.Point2 | Types.Point3) {
+    flooded.push(getArgs as Types.Point2 & Types.Point3);
     if (onFlood) {
-      //@ts-ignore
+      // @ts-expect-error spread tuple
       onFlood(...getArgs);
     }
   }
 
-  function markAsBoundary(prevArgs) {
+  function markAsBoundary(prevArgs: Types.Point2 | Types.Point3 | undefined) {
+    if (prevArgs === undefined) {
+      return;
+    }
     const [x, y, z = 0] = prevArgs;
-    // Use an integer key value for checking visited, since JavaScript does not
-    // provide a generic hash key indexed hash map.
-    const iKey = x + 32768 + 65536 * (y + 32768 + 65536 * (z + 32768));
+    const iKey = packVisitedKey(x, y, z);
     bounds?.set(iKey, prevArgs);
     if (onBoundary) {
-      //@ts-ignore
+      // @ts-expect-error spread tuple
       onBoundary(...prevArgs);
     }
   }
 
-  function pushAdjacent(getArgs) {
+  function pushAdjacent(getArgs: Types.Point2 | Types.Point3) {
     for (let i = 0; i < permutations.length; i += 1) {
       const perm = permutations[i];
-      const nextArgs = getArgs.slice(0);
+      const nextArgs = getArgs.slice(0) as Types.Point2 | Types.Point3;
 
       for (let j = 0; j < getArgs.length; j += 1) {
         nextArgs[j] += perm[j];
       }
+      if (
+        planar &&
+        is3D &&
+        (nextArgs as Types.Point3)[2] !== (seed as Types.Point3)[2]
+      ) {
+        continue;
+      }
       if (filter?.(nextArgs) === false) {
         continue;
       }
-      if (visited(nextArgs)) {
+      const [nx, ny, nz = 0] = nextArgs;
+      if (visitedBuffer) {
+        const li = linearVisitIndex(nx, ny, nz);
+        if (li >= 0) {
+          const v = visitedBuffer.data[li];
+          if ((v & (VISITED_BUF_DONE | VISITED_BUF_ON_STACK)) !== 0) {
+            continue;
+          }
+          visitedBuffer.data[li] = v | VISITED_BUF_ON_STACK;
+        } else if (visited(nextArgs)) {
+          continue;
+        }
+      } else if (visited(nextArgs)) {
         continue;
       }
 
@@ -141,66 +227,47 @@ function floodFill(
     }
   }
 
-  function get(getArgs) {
-    //@ts-ignore
+  function get(getArgs: Types.Point2 | Types.Point3) {
+    // @ts-expect-error spread tuple
     return getter(...getArgs);
   }
 
-  // This is a significant performance hit - should be done as a wrapper
-  // only when needed.
-  // function safely(f, args) {
-  //   try {
-  //     return f(...args);
-  //   } catch (error) {
-  //     return;
-  //   }
-  // }
-
   function prunedPermutations() {
-    const permutations = permute(seed.length);
-
-    return permutations.filter(function (perm) {
+    const allPerms = permute(seed.length);
+    return allPerms.filter(function (perm) {
       const count = countNonZeroes(perm);
-
       return count !== 0 && (count === 1 || diagonals);
     });
   }
 
-  function permute(length) {
-    const perms = [];
-
-    const permutation = function (string) {
-      return string.split('').map(function (c) {
+  function permute(length: number) {
+    const perms: number[][] = [];
+    const permutation = function (str: string) {
+      return str.split('').map(function (c) {
         return parseInt(c, 10) - 1;
       });
     };
-
     for (let i = 0; i < Math.pow(3, length); i += 1) {
       const string = lpad(i.toString(3), '0', length);
-
       perms.push(permutation(string));
     }
-
     return perms;
   }
 }
 
-function countNonZeroes(array) {
+function countNonZeroes(array: number[]) {
   let count = 0;
-
   for (let i = 0; i < array.length; i += 1) {
     if (array[i] !== 0) {
       count += 1;
     }
   }
-
   return count;
 }
 
-function lpad(string, character, length) {
+function lpad(string: string, character: string, length: number) {
   const array = new Array(length + 1);
   const pad = array.join(character);
-
   return (pad + string).slice(-length);
 }
 
