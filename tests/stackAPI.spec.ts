@@ -22,6 +22,34 @@ test.describe('Stack Viewport API', async () => {
 
   test('should set VOI range correctly -- @debug', async ({ page }) => {
     await page.getByRole('button', { name: 'Set VOI Range' }).click();
+    // TEMP DIAGNOSTIC — read viewport VOI state immediately and after a settle,
+    // to distinguish "state wrong" (override/flag) from "render wrong".
+    const read = () =>
+      page.evaluate(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const cs = (window as any).cornerstone;
+        const engines = cs.getRenderingEngines?.() ?? [];
+        const vp = engines[0]?.getViewports?.()[0];
+        if (!vp) {
+          return {
+            err: 'no viewport',
+            csKeys: Object.keys(cs || {}).slice(0, 40),
+            engines: engines.length,
+          };
+        }
+        const p = vp.getProperties();
+        return { voiRange: p.voiRange, locked: p.voiUpdatedWithSetProperties };
+      });
+    const immediate = await read();
+    await page.waitForTimeout(2000);
+    const delayed = await read();
+    // eslint-disable-next-line no-console
+    console.log(
+      'VOI_DIAG immediate=' +
+        JSON.stringify(immediate) +
+        ' delayed=' +
+        JSON.stringify(delayed)
+    );
     await checkForCanvasSnapshot(
       page,
       '.cornerstone-canvas',
