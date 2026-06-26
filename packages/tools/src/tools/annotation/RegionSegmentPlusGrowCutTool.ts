@@ -77,7 +77,7 @@ class RegionSegmentPlusGrowCutTool extends GrowCutBaseTool {
     }, this.configuration.mouseStabilityDelay || 500);
   }
 
-  async onMouseStable(
+  onMouseStable(
     evt: EventTypes.MouseMoveEventType,
     worldPoint: Types.Point3,
     element: HTMLDivElement
@@ -87,9 +87,14 @@ class RegionSegmentPlusGrowCutTool extends GrowCutBaseTool {
       return;
     }
 
-    await super.preMouseDownCallback(
+    const setupOk = super.preMouseDownCallback(
       evt as EventTypes.MouseDownActivateEventType
     );
+    if (!setupOk || !this.growCutData) {
+      this.allowedToProceed = false;
+      element.style.cursor = 'not-allowed';
+      return;
+    }
 
     const refVolume = cache.getVolume(
       this.growCutData.segmentation.referencedVolumeId

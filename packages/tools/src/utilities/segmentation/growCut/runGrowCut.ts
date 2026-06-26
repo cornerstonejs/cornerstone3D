@@ -205,7 +205,9 @@ async function runGrowCutCore(
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
 
-  const volumeRangeBuffer = new Float32Array([volumeRange]);
+  // WGSL requires a uniform buffer struct to be a multiple of 16 bytes, so the
+  // single-f32 `VolumeRange` struct must be padded out from 4 to 16 bytes.
+  const volumeRangeBuffer = new Float32Array([volumeRange, 0, 0, 0]);
   const gpuVolumeRangeBuffer = device.createBuffer({
     size: volumeRangeBuffer.byteLength,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -567,7 +569,12 @@ async function runGrowCutCore(
   });
 
   const commandEncoder = device.createCommandEncoder();
-  const outputLabelmapBufferIndex = (numIterations + 1) % 2;
+  // Derive the final ping-pong buffer from iterations actually executed, not the
+  // planned maximum: the loop can stop early (cancelled/time_limit/converged),
+  // and iteration 0 only initializes strength. Reading the planned buffer would
+  // drop the last GPU result on early stops.
+  const outputLabelmapBufferIndex =
+    iterationsCompleted <= 1 ? 0 : (iterationsCompleted - 1) % 2;
   const labelmapStagingBuffer = device.createBuffer({
     size: BUFFER_SIZE,
     usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,

@@ -165,8 +165,6 @@ class GrowCutBaseTool extends BaseTool {
   }
 
   protected async runGrowCut() {
-    const abortController = new AbortController();
-    this.activeAbortController = abortController;
     const { growCutData, configuration: config } = this;
     const {
       segmentation: { segmentationId, segmentIndex, labelmapVolumeId },
@@ -176,79 +174,86 @@ class GrowCutBaseTool extends BaseTool {
     let shrinkExpandAccumulator = 0;
 
     const growCutCommand = async ({ shrinkExpandAmount = 0 } = {}) => {
-      if (shrinkExpandAmount !== 0) {
-        this.seeds = null;
-      }
-      shrinkExpandAccumulator += shrinkExpandAmount;
+      // Each (re)play needs its own abort controller. The command is replayed by
+      // shrink()/expand()/refresh() after the initial run has cleared
+      // activeAbortController, so a controller captured once would be invisible
+      // to cancelActiveOperation() and could carry a stale aborted signal.
+      const abortController = new AbortController();
+      this.activeAbortController = abortController;
+      try {
+        if (shrinkExpandAmount !== 0) {
+          this.seeds = null;
+        }
+        shrinkExpandAccumulator += shrinkExpandAmount;
 
-      const newPositiveStdDevMultiplier = Math.max(
-        0.1,
-        config.positiveStdDevMultiplier + shrinkExpandAccumulator
-      );
+        const newPositiveStdDevMultiplier = Math.max(
+          0.1,
+          config.positiveStdDevMultiplier + shrinkExpandAccumulator
+        );
 
-      // Adjust negativeSeedMargin based on shrinkExpandAmount
-      // When shrinking (negative amount), reduce margin to sample negatives closer to positives
-      // When expanding (positive amount), increase margin
-      const negativeSeedMargin =
-        shrinkExpandAmount < 0
-          ? Math.max(
-              1,
-              DEFAULT_NEGATIVE_SEED_MARGIN -
-                Math.abs(shrinkExpandAccumulator) * 3
-            )
-          : DEFAULT_NEGATIVE_SEED_MARGIN + shrinkExpandAccumulator * 3;
+        // Adjust negativeSeedMargin based on shrinkExpandAmount
+        // When shrinking (negative amount), reduce margin to sample negatives closer to positives
+        // When expanding (positive amount), increase margin
+        const negativeSeedMargin =
+          shrinkExpandAmount < 0
+            ? Math.max(
+                1,
+                DEFAULT_NEGATIVE_SEED_MARGIN -
+                  Math.abs(shrinkExpandAccumulator) * 3
+              )
+            : DEFAULT_NEGATIVE_SEED_MARGIN + shrinkExpandAccumulator * 3;
 
-      const updatedGrowCutData = {
-        ...growCutData,
-        options: {
-          ...(growCutData.options || {}),
-          positiveSeedValue: segmentIndex,
-          negativeSeedValue: 255,
+        const updatedGrowCutData = {
+          ...growCutData,
+          options: {
+            ...(growCutData.options || {}),
+            positiveSeedValue: segmentIndex,
+            negativeSeedValue: 255,
+            positiveStdDevMultiplier: newPositiveStdDevMultiplier,
+            negativeSeedMargin,
+            isCancelled: () => abortController.signal.aborted,
+          },
+        };
+
+        const segmentationMode = config.segmentationMode ?? 'floodfill_full';
+        growCutLog.info('run command', {
+          segmentationMode,
+          shrinkExpandAmount,
+          shrinkExpandAccumulator,
           positiveStdDevMultiplier: newPositiveStdDevMultiplier,
           negativeSeedMargin,
-          isCancelled: () => abortController.signal.aborted,
-        },
-      };
+          isPartialVolume: !!config.isPartialVolume,
+        });
 
-      const segmentationMode = config.segmentationMode ?? 'floodfill_full';
-      growCutLog.info('run command', {
-        segmentationMode,
-        shrinkExpandAmount,
-        shrinkExpandAccumulator,
-        positiveStdDevMultiplier: newPositiveStdDevMultiplier,
-        negativeSeedMargin,
-        isPartialVolume: !!config.isPartialVolume,
-      });
+        const growcutLabelmap =
+          await this.getGrowCutLabelmap(updatedGrowCutData);
 
-      const growcutLabelmap = await this.getGrowCutLabelmap(updatedGrowCutData);
+        const { isPartialVolume } = config;
 
-      const { isPartialVolume } = config;
+        const fn = isPartialVolume
+          ? this.applyPartialGrowCutLabelmap
+          : this.applyGrowCutLabelmap;
 
-      const fn = isPartialVolume
-        ? this.applyPartialGrowCutLabelmap
-        : this.applyGrowCutLabelmap;
+        if (growcutLabelmap !== labelmap) {
+          fn(segmentationId, segmentIndex, labelmap, growcutLabelmap);
+        } else {
+          triggerSegmentationDataModified(segmentationId);
+        }
 
-      if (growcutLabelmap !== labelmap) {
-        fn(segmentationId, segmentIndex, labelmap, growcutLabelmap);
-      } else {
-        triggerSegmentationDataModified(segmentationId);
-      }
-
-      // Skip _removeIslands when using flood fill - island removal is already done in runFloodFillSegmentation
-      if (segmentationMode !== 'floodfill_full') {
-        this._removeIslands(updatedGrowCutData);
+        // Skip _removeIslands when using flood fill - island removal is already done in runFloodFillSegmentation
+        if (segmentationMode !== 'floodfill_full') {
+          this._removeIslands(updatedGrowCutData);
+        }
+      } finally {
+        if (this.activeAbortController === abortController) {
+          this.activeAbortController = null;
+        }
       }
     };
 
-    try {
-      await growCutCommand();
-      GrowCutBaseTool.lastGrowCutCommand = growCutCommand;
-      this.growCutData = null;
-    } finally {
-      if (this.activeAbortController === abortController) {
-        this.activeAbortController = null;
-      }
-    }
+    await growCutCommand();
+    GrowCutBaseTool.lastGrowCutCommand = growCutCommand;
+    this.growCutData = null;
   }
 
   public cancelActiveOperation(): boolean {

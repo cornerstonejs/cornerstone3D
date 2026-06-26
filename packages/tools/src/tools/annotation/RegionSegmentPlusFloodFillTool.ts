@@ -405,6 +405,10 @@ class RegionSegmentPlusFloodFillTool extends GrowCutBaseTool {
   }
 
   preMouseDownCallback(evt: EventTypes.MouseDownActivateEventType): boolean {
+    if (this.segmentationInProgress) {
+      return false;
+    }
+
     if (this.configuration.hoverPrecheckEnabled && !this.allowedToProceed) {
       return false;
     }

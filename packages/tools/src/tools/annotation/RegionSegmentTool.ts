@@ -106,9 +106,9 @@ class RegionSegmentTool extends GrowCutBaseTool {
 
     try {
       await this.runGrowCut();
+    } finally {
       this._deactivateDraw(element);
       this.growCutData = null;
-    } finally {
       this.segmentationInProgress = false;
       resetElementCursor(element);
       triggerAnnotationRenderForViewportUIDs([viewport.id]);
