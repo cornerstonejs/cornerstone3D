@@ -1966,7 +1966,14 @@ class StackViewport extends Viewport {
     this.stackInvalidated = true;
     this.flipVertical = false;
     this.flipHorizontal = false;
-    this.voiRange = null;
+    // Preserve a user-locked VOI across the stack reset. Nulling it here makes
+    // _getInitialVOIRange / _getVOIFromCache fall back to the image's stored
+    // window on the next load (their guards require this.voiRange to be truthy),
+    // silently discarding a range the user set via setProperties. Only clear it
+    // when the VOI is not locked (resetProperties clears the lock flag).
+    if (!this.voiUpdatedWithSetProperties) {
+      this.voiRange = null;
+    }
     this.interpolationType = InterpolationType.LINEAR;
     this.invert = false;
     this.viewportStatus = ViewportStatus.LOADING;
