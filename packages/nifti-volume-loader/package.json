@@ -14,42 +14,50 @@
   "sideEffects": false,
   "exports": {
     ".": {
+      "types": "./dist/esm/index.d.ts",
       "import": "./dist/esm/index.js",
-      "types": "./dist/esm/index.d.ts"
+      "default": "./dist/esm/index.js"
     },
     "./helpers": {
+      "types": "./dist/esm/helpers/index.d.ts",
       "import": "./dist/esm/helpers/index.js",
-      "types": "./dist/esm/helpers/index.d.ts"
+      "default": "./dist/esm/helpers/index.js"
     },
     "./helpers/*": {
+      "types": "./dist/esm/helpers/*.d.ts",
       "import": "./dist/esm/helpers/*.js",
-      "types": "./dist/esm/helpers/*.d.ts"
+      "default": "./dist/esm/helpers/*.js"
     },
     "./constants": {
+      "types": "./dist/esm/constants/index.d.ts",
       "import": "./dist/esm/constants/index.js",
-      "types": "./dist/esm/constants/index.d.ts"
+      "default": "./dist/esm/constants/index.js"
     },
     "./constants/*": {
+      "types": "./dist/esm/constants/*.d.ts",
       "import": "./dist/esm/constants/*.js",
-      "types": "./dist/esm/constants/*.d.ts"
+      "default": "./dist/esm/constants/*.js"
     },
     "./enums": {
+      "types": "./dist/esm/enums/index.d.ts",
       "import": "./dist/esm/enums/index.js",
-      "types": "./dist/esm/enums/index.d.ts"
+      "default": "./dist/esm/enums/index.js"
     },
     "./enums/*": {
+      "types": "./dist/esm/enums/*.d.ts",
       "import": "./dist/esm/enums/*.js",
-      "types": "./dist/esm/enums/*.d.ts"
+      "default": "./dist/esm/enums/*.js"
     },
     "./version": {
-      "node": "./dist/esm/version.js",
+      "types": "./dist/esm/version.d.ts",
       "import": "./dist/esm/version.js",
-      "types": "./dist/esm/version.d.ts"
-    }
+      "default": "./dist/esm/version.js"
+    },
+    "./package.json": "./package.json"
   },
   "scripts": {
     "prebuild": "node ../../scripts/generate-version.js ./",
-    "build:esm": "pnpm run prebuild && tsc --project ./tsconfig.json",
+    "build:esm": "pnpm run prebuild && tsc --project ./tsconfig.json && node ../../scripts/write-dist-esm-package-json.js ./",
     "build:esm:watch": "tsc --project ./tsconfig.json --watch",
     "build:all": "pnpm run build:esm",
     "dev": "tsc --project ./tsconfig.json --watch",
