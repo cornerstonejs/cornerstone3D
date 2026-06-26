@@ -1564,6 +1564,16 @@ class StackViewport extends Viewport {
       voiUpdatedWithSetProperties = false,
     } = options;
 
+    // Lock the VOI as user-set BEFORE the early-return below. Otherwise a
+    // setProperties() call whose range happens to equal the current/default
+    // range short-circuits here and the lock flag never latches, leaving the
+    // viewport looking user-configured while a later metadata-driven reload
+    // (see _getInitialVOIRange / _getVOIFromCache) silently reverts it to the
+    // image's stored window.
+    if (!this.voiUpdatedWithSetProperties) {
+      this.voiUpdatedWithSetProperties = voiUpdatedWithSetProperties;
+    }
+
     if (
       voiRange &&
       this.voiRange &&
@@ -1628,11 +1638,6 @@ class StackViewport extends Viewport {
     }
 
     this.voiRange = voiRangeToUse;
-
-    // if voiRange is set by setProperties we need to lock it if it is not locked already
-    if (!this.voiUpdatedWithSetProperties) {
-      this.voiUpdatedWithSetProperties = voiUpdatedWithSetProperties;
-    }
 
     if (suppressEvents) {
       return;
