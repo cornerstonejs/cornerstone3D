@@ -5,6 +5,7 @@
  */
 
 export const simulateDrag = async (page, locator) => {
+  await locator.scrollIntoViewIfNeeded();
   const box = await locator.boundingBox();
   if (!box) {
     throw new Error('Element is not visible');
@@ -22,6 +23,14 @@ export const simulateDrag = async (page, locator) => {
 
   await page.mouse.move(centerX, centerY);
   await page.mouse.down();
-  await page.mouse.move(newX, newY);
+  // Move to the end point in discrete steps so the gesture is delivered as a
+  // continuous stream of mousemove events. A single jump to the end point is
+  // unreliable across environments: the lone move can be coalesced/dropped, so
+  // the tool records a near-zero drag (e.g. a ~0.5mm length instead of the
+  // intended ~138mm, or an unchanged window level) and the snapshot diverges.
+  // Stepping makes the drag deterministic. Matches zoomOffCenter elsewhere.
+  await page.mouse.move(newX, newY, { steps: 10 });
   await page.mouse.up();
+  // Let the tool commit the annotation / property change before the snapshot.
+  await page.waitForTimeout(100);
 };
