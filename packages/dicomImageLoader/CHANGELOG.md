@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.0.14](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.13...v5.0.14) (2026-06-25)
+
+### Bug Fixes
+
+- **dicomImageLoader:** keep PT/RTDOSE scaling for identity modality LUT ([#2767](https://github.com/cornerstonejs/cornerstone3D/issues/2767)) ([fcab92d](https://github.com/cornerstonejs/cornerstone3D/commit/fcab92de53f7de5f2b0342def9a5d0d116898bae))
+
 ## [5.0.13](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.12...v5.0.13) (2026-06-20)
 
 ### Bug Fixes
