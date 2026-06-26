@@ -3,12 +3,15 @@ import type { Types } from '@cornerstonejs/core';
 export type ViewportVoiMappingForTool = {
   voiRange: { lower: number; upper: number };
   VOILUTFunction?: string;
+  /** Viewport invert flag (e.g. PET AC). Needed so display luma inverse-maps to the right raw end. */
+  invert?: boolean;
 };
 
 type ViewportWithProps = Types.IViewport & {
   getProperties?: (volumeId?: string) => {
     voiRange?: { lower: number; upper: number };
     VOILUTFunction?: string;
+    invert?: boolean;
   } | null;
 };
 
@@ -36,5 +39,6 @@ export function getViewportVoiMappingForVolume(
   return {
     voiRange: { lower, upper },
     VOILUTFunction: props.VOILUTFunction,
+    invert: props.invert === true,
   };
 }

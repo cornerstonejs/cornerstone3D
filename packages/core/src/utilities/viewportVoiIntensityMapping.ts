@@ -7,6 +7,12 @@ const Y_EPS = 1e-6;
 export type ViewportVoiMappingProps = {
   voiRange: { lower: number; upper: number };
   VOILUTFunction?: string | VOILUTFunctionType;
+  /**
+   * When true the viewport renders the VOI inverted (e.g. PET AC), so the
+   * displayed intensity is `1 − mapped`. Both the forward and inverse maps must
+   * honor this or sampled display luma will inverse-map to the wrong raw end.
+   */
+  invert?: boolean;
 };
 
 /**
@@ -20,6 +26,7 @@ export function mapScalarToViewportVoiIntensity(
   const { lower, upper } = props.voiRange;
   const span = upper - lower;
   const fn = props.VOILUTFunction as string | undefined;
+  const applyInvert = (y: number) => (props.invert === true ? 1 - y : y);
 
   if (fn === VOILUTFunctionType.SAMPLED_SIGMOID || fn === 'SIGMOID') {
     const { windowCenter, windowWidth } = windowLevelUtil.toWindowLevel(
@@ -27,13 +34,13 @@ export function mapScalarToViewportVoiIntensity(
       upper
     );
     const w = Math.max(Math.abs(windowWidth), 1e-12);
-    return 1 / (1 + Math.exp((-4 * (value - windowCenter)) / w));
+    return applyInvert(1 / (1 + Math.exp((-4 * (value - windowCenter)) / w)));
   }
 
   if (span === 0 || !Number.isFinite(span)) {
-    return 0;
+    return applyInvert(0);
   }
-  return clamp01((value - lower) / span);
+  return applyInvert(clamp01((value - lower) / span));
 }
 
 /**
@@ -46,7 +53,10 @@ export function mapViewportVoiIntensityToScalar(
 ): number {
   const { lower, upper } = props.voiRange;
   const fn = props.VOILUTFunction as string | undefined;
-  const y = clamp01(mapped01);
+  // Undo display inversion before mapping back to a stored scalar so the
+  // round-trip with mapScalarToViewportVoiIntensity is exact.
+  const y =
+    props.invert === true ? clamp01(1 - clamp01(mapped01)) : clamp01(mapped01);
 
   if (fn === VOILUTFunctionType.SAMPLED_SIGMOID || fn === 'SIGMOID') {
     const { windowCenter, windowWidth } = windowLevelUtil.toWindowLevel(

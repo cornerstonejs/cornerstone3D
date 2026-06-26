@@ -656,14 +656,31 @@ export function getCanvasDiskIntensityRange(
   let bandLo = Math.min(rawMin, rawMax);
   let bandHi = Math.max(rawMin, rawMax);
   const [volMin, volMax] = vm.getRange();
-  /** Display 255 / 0: include all stored values that saturate to white / black on screen. */
+  /**
+   * Display 255 / 0: include all stored values that saturate to white / black on
+   * screen. Which raw end that is depends on inversion: with a normal LUT white is
+   * the high scalar and black the low; an inverted LUT (e.g. PET AC) flips both, so
+   * pinning the wrong end here is exactly what sweeps the band across the whole
+   * volume and floods everything.
+   */
+  const invert = opts.voi.invert === true;
   const bandHiByte = Math.min(255, Math.max(0, Math.round(dHi * 255)));
   const bandLoByte = Math.min(255, Math.max(0, Math.round(dLo * 255)));
-  if (bandHiByte >= 255) {
-    bandHi = volMax;
+  const reachesDisplayWhite = bandHiByte >= 255;
+  const reachesDisplayBlack = bandLoByte <= 0;
+  if (reachesDisplayWhite) {
+    if (invert) {
+      bandLo = volMin;
+    } else {
+      bandHi = volMax;
+    }
   }
-  if (bandLoByte <= 0) {
-    bandLo = volMin;
+  if (reachesDisplayBlack) {
+    if (invert) {
+      bandHi = volMax;
+    } else {
+      bandLo = volMin;
+    }
   }
   const volSpan = Math.abs(volMax - volMin) || 1;
   const eps = Math.max(1e-9, volSpan * 1e-12);
