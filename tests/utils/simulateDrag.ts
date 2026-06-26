@@ -5,6 +5,16 @@
  */
 
 export const simulateDrag = async (page, locator) => {
+  // Mirror the genericViewport drawLengthMeasurement helper, which draws
+  // reliably on the self-hosted runner: scroll the target into view so its
+  // boundingBox (and therefore the mouse coordinates) is accurate, and let the
+  // tool/render settle after the gesture. Without the scroll the legacy
+  // examples' layout can leave the canvas boundingBox stale, so the drag lands
+  // off-target and the tool records a near-zero gesture (e.g. a ~0.5mm length
+  // instead of ~138mm, or an unchanged window level). Kept as a single move (no
+  // intermediate steps) so path-integrating tools like planar-rotate are
+  // unaffected.
+  await locator.scrollIntoViewIfNeeded();
   const box = await locator.boundingBox();
   if (!box) {
     throw new Error('Element is not visible');
@@ -24,4 +34,7 @@ export const simulateDrag = async (page, locator) => {
   await page.mouse.down();
   await page.mouse.move(newX, newY);
   await page.mouse.up();
+  // Let the tool commit the annotation / property change and the viewport
+  // re-render before the snapshot is captured.
+  await page.waitForTimeout(500);
 };
