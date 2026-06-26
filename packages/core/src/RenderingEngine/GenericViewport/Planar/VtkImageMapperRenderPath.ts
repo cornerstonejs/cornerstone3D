@@ -17,6 +17,7 @@ import {
   applyPlanarImagePresentation,
   createVTKImageDataFromImage,
   getDefaultImageVOIRange,
+  updateVTKImageDataGeometryFromImage,
 } from '../../helpers/planarImageRendering';
 import type {
   DataAddOptions,
@@ -88,7 +89,7 @@ export class VtkImageMapperRenderPath
       mapper,
       imageData,
       useWorldCoordinateImageData: payload.useWorldCoordinateImageData,
-      currentImageIdIndex: payload.initialImageIdIndex,
+      currentImageIdIndex: payload.initialImageIdIndex ?? 0,
       defaultVOIRange: getDefaultImageVOIRange(payload.image),
       dataPresentation: undefined,
       loadRequestId: 0,
@@ -101,7 +102,7 @@ export class VtkImageMapperRenderPath
     if (options.role !== 'overlay') {
       triggerPlanarNewImage(ctx, {
         image: payload.image,
-        imageIdIndex: payload.initialImageIdIndex,
+        imageIdIndex: payload.initialImageIdIndex ?? 0,
       });
     }
 
@@ -386,6 +387,12 @@ async function updateRenderedImage(args: {
 
   if (imageData && canReuseImageDataForImage(imageData, image)) {
     updateVTKImageDataWithCornerstoneImage(imageData, image);
+    // Reuse keeps the previous frame's geometry; refresh origin/direction/spacing
+    // to the new frame's image plane. Multi-frame stacks (e.g. ultrasound cine)
+    // place each frame at a distinct world position and the camera follows that
+    // plane on scroll, so a stale origin leaves the actor off the focal plane and
+    // the viewport renders black from the second frame onward.
+    updateVTKImageDataGeometryFromImage(imageData, image);
   } else {
     imageData = createVTKImageDataFromImage(image);
     mapper.setInputData(imageData);
@@ -468,6 +475,15 @@ function canReuseImageDataForImage(
     return false;
   }
 
+  // The component count must match what the vtkImageData is actually built with
+  // (createVTKImageDataFromImage). In this path a color image's vtkImageData is
+  // always 3-component: getImageDataMetadata derives numberOfComponents from the
+  // photometric interpretation (RGB/YBR -> 3) and updateVTKImageDataWithCornerstoneImage
+  // down-converts an RGBA (4-component) source to RGB in place. So the post-transform
+  // count is 3 for color and 1 otherwise - do NOT use image.rgba / a raw 4 here, or a
+  // fresh RGBA frame (rgba still true, numberOfComponents unset) would mis-report 4,
+  // never match the 3-component imageData, and force a recreate (new GPU texture)
+  // on every scroll - the one-frame black flash this reuse path exists to prevent.
   const incomingComponents = image.color ? 3 : 1;
 
   return scalars.getNumberOfComponents() === incomingComponents;

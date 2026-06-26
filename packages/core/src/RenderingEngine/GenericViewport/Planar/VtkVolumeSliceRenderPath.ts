@@ -86,7 +86,7 @@ export class VtkVolumeSliceRenderPath
       imageIds: payload.imageIds,
       acquisitionOrientation: payload.acquisitionOrientation,
       mapper,
-      currentImageIdIndex: payload.initialImageIdIndex,
+      currentImageIdIndex: payload.initialImageIdIndex ?? 0,
       maxImageIdIndex: payload.imageIds.length - 1,
       defaultVOIRange: defaultRange
         ? { lower: defaultRange[0], upper: defaultRange[1] }

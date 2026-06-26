@@ -96,6 +96,27 @@ export function createVTKImageDataFromImage(image: IImage): vtkImageData {
   return imageData;
 }
 
+/**
+ * Refreshes an existing vtkImageData's geometry (origin, direction, spacing) to
+ * match a new cornerstone image, mirroring what createVTKImageDataFromImage sets
+ * on a freshly built one. The reuse-in-place scroll path only rewrites scalars
+ * via updateVTKImageDataWithCornerstoneImage, so without this the actor keeps the
+ * previous frame's image plane. Multi-frame stacks (e.g. ultrasound cine) place
+ * each frame at a distinct world position and the camera follows that plane on
+ * scroll, so a stale origin leaves the actor off the focal plane and the viewport
+ * renders black from the second frame onward. Dimensions are intentionally left
+ * untouched - the reuse path only runs when they already match.
+ */
+export function updateVTKImageDataGeometryFromImage(
+  imageData: vtkImageData,
+  image: IImage
+): void {
+  const { direction, origin, spacing } = getImageDataMetadata(image);
+  imageData.setOrigin(origin);
+  imageData.setDirection(new Float32Array(Array.from(direction)));
+  imageData.setSpacing(spacing);
+}
+
 export function getDefaultImageVOIRange(image: IImage): VOIRange | undefined {
   // Mirror legacy StackViewport._getInitialVOIRange: a prescaled PT (SUV) image
   // defaults to a 0-5 VOI range rather than its raw DICOM window center/width,

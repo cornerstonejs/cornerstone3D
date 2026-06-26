@@ -108,7 +108,7 @@ export class CpuImageSliceRenderPath
       actorEntryUID: uuidv4(),
       enabledElement,
       compatibilityActor,
-      currentImageIdIndex: payload.initialImageIdIndex,
+      currentImageIdIndex: payload.initialImageIdIndex ?? 0,
       defaultVOIRange: getDefaultImageVOIRange(payload.image),
       dataPresentation: undefined,
       fitScale: getCPUFallbackScalarScale(enabledElement.viewport.scale),
@@ -118,7 +118,7 @@ export class CpuImageSliceRenderPath
 
     triggerPlanarNewImage(ctx, {
       image: payload.image,
-      imageIdIndex: payload.initialImageIdIndex,
+      imageIdIndex: payload.initialImageIdIndex ?? 0,
     });
 
     return {

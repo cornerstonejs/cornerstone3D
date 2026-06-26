@@ -95,7 +95,11 @@ export interface PlanarDataLoadOptions {
 /** @internal */
 export interface PlanarPayload {
   imageIds: string[];
-  initialImageIdIndex: number;
+  // Undefined means "no initial slice was requested" - the volume acquisition
+  // view centers in that case (see createInitialVolumeSliceState). A concrete
+  // number (including an explicit 0) is honored. Consumers that need a scalar
+  // placeholder index default it locally with `?? 0`.
+  initialImageIdIndex?: number;
   volumeId: string;
   renderMode: PlanarEffectiveRenderMode;
   acquisitionOrientation?: PlanarViewState['orientation'];

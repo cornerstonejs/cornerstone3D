@@ -1931,7 +1931,8 @@ class PlanarViewport extends GenericViewport<
         )
       : {
           kind: 'stackIndex' as const,
-          imageIdIndex: planarData.initialImageIdIndex,
+          // A stack opens at slice 0 when no initial index was requested.
+          imageIdIndex: planarData.initialImageIdIndex ?? 0,
         };
 
     this.clearResolvedViewCache();
@@ -1958,14 +1959,14 @@ class PlanarViewport extends GenericViewport<
         : createPlanarVolumeSliceBasis;
     // The acquisition orientation honors an explicitly carried initial slice but
     // otherwise centers the volume, matching legacy and the reformatted
-    // (sagittal/coronal) orientations. Previously a defaulted index of 0 (e.g.
-    // the MPR hanging protocol, which supplies no initial slice) pinned the
-    // acquisition viewport to the first slice instead of the center, so the
-    // scrollbar sat at the top. `|| undefined` maps the default 0 to "center"
-    // while preserving a real carried slice (> 0).
+    // (sagittal/coronal) orientations. "No slice requested" now propagates as
+    // undefined all the way from the data provider (it no longer defaults to 0),
+    // so we can pass the index through directly: undefined -> center, while a
+    // real carried slice - including an explicit 0 - is honored instead of being
+    // collapsed to center.
     const initialImageIdIndex =
       orientation === OrientationAxis.ACQUISITION
-        ? planarData.initialImageIdIndex || undefined
+        ? planarData.initialImageIdIndex
         : undefined;
     const { sliceBasis } = createSliceBasis({
       canvasHeight: height,

@@ -84,7 +84,7 @@ export class CpuVolumeSliceRenderPath
         ctx.cpu.canvas.width,
         ctx.cpu.canvas.height
       ),
-      currentImageIdIndex: payload.initialImageIdIndex,
+      currentImageIdIndex: payload.initialImageIdIndex ?? 0,
       maxImageIdIndex: payload.imageIds.length - 1,
       defaultVOIRange,
       renderingInvalidated: true,
