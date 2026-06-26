@@ -16,7 +16,7 @@ jobs:
     runs-on: self-hosted
     strategy:
       fail-fast: false
-      max-parallel: 3
+      max-parallel: 2
       matrix:
         include:
           - node-version: 24
