@@ -106,7 +106,7 @@
   },
   "scripts": {
     "prebuild": "node ../../scripts/generate-version.js ./",
-    "build:esm": "pnpm run prebuild && tsc --project ./tsconfig.json && node ../../scripts/write-dist-esm-package-json.js ./",
+    "build:esm": "pnpm run prebuild && tsc --project ./tsconfig.json && tsc-alias -p ./tsconfig.json --resolve-full-paths && node ../../scripts/write-dist-esm-package-json.js ./",
     "build:esm:watch": "tsc --project ./tsconfig.json --watch",
     "build:umd": "cross-env NODE_ENV=production webpack --config .webpack/webpack.prod.js",
     "build:all": "pnpm run build:umd && pnpm run build:esm",

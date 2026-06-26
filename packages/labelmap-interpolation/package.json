@@ -32,7 +32,7 @@
     "clean": "rimraf dist",
     "clean:deep": "pnpm run clean && shx rm -rf node_modules",
     "build": "pnpm run build:esm",
-    "build:esm": "pnpm run prebuild && tsc --project ./tsconfig.json && node ../../scripts/write-dist-esm-package-json.js ./",
+    "build:esm": "pnpm run prebuild && tsc --project ./tsconfig.json && tsc-alias -p ./tsconfig.json --resolve-full-paths && node ../../scripts/write-dist-esm-package-json.js ./",
     "build:esm:watch": "tsc --project ./tsconfig.json --watch",
     "dev": "tsc --project ./tsconfig.json --watch",
     "build:all": "pnpm run build:esm",

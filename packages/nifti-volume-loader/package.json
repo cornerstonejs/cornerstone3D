@@ -57,7 +57,7 @@
   },
   "scripts": {
     "prebuild": "node ../../scripts/generate-version.js ./",
-    "build:esm": "pnpm run prebuild && tsc --project ./tsconfig.json && node ../../scripts/write-dist-esm-package-json.js ./",
+    "build:esm": "pnpm run prebuild && tsc --project ./tsconfig.json && tsc-alias -p ./tsconfig.json --resolve-full-paths && node ../../scripts/write-dist-esm-package-json.js ./",
     "build:esm:watch": "tsc --project ./tsconfig.json --watch",
     "build:all": "pnpm run build:esm",
     "dev": "tsc --project ./tsconfig.json --watch",

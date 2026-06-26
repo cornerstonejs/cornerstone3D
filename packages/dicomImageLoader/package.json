@@ -76,7 +76,7 @@
   "scripts": {
     "build:loader": "pnpm run build:all && pnpm run copy-dts",
     "build": "pnpm run build:esm",
-    "build:esm": "tsc --project ./tsconfig.json && node ../../scripts/write-dist-esm-package-json.js ./",
+    "build:esm": "tsc --project ./tsconfig.json && tsc-alias -p ./tsconfig.json --resolve-full-paths && node ../../scripts/write-dist-esm-package-json.js ./",
     "build:esm:watch": "tsc --project ./tsconfig.json --watch",
     "build:umd:dynamic": "cross-env NODE_ENV=production webpack --config .webpack/webpack-dynamic-import.js",
     "build:umd:bundle": "cross-env NODE_ENV=production webpack --config .webpack/webpack-bundle.js",
