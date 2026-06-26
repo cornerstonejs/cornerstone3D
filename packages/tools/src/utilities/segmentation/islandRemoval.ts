@@ -304,6 +304,21 @@ export default class IslandRemoval {
     const sourceVoxelManager =
       previewVoxelManager.sourceVoxelManager ?? previewVoxelManager;
 
+    // External island removal is inherently a delta operation: it clears the
+    // voxels this run added that are not connected to the click. That delta only
+    // exists on a preview layer. Without one (a plain segmentation voxel
+    // manager), there is no way to distinguish voxels added now from voxels
+    // accepted earlier, so this becomes a no-op for accepted data. Warn so the
+    // skipped cleanup is explicit rather than silent.
+    if (!previewVoxelManager.sourceVoxelManager) {
+      islandRemovalLog.warn(
+        'islandRemoval: removeExternalIslands has no preview layer; ' +
+          'external island cleanup of accepted voxels is skipped. ' +
+          'Run island removal through a preview layer to clear external islands.'
+      );
+      return 0;
+    }
+
     // Next, iterate over all points which were set to a new value in the preview
     // For everything NOT connected to something in set of clicked points,
     // remove it from the preview.
