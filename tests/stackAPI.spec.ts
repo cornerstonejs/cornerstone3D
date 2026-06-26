@@ -21,35 +21,24 @@ test.describe('Stack Viewport API', async () => {
   });
 
   test('should set VOI range correctly -- @debug', async ({ page }) => {
-    await page.getByRole('button', { name: 'Set VOI Range' }).click();
-    // TEMP DIAGNOSTIC — read viewport VOI state immediately and after a settle,
-    // to distinguish "state wrong" (override/flag) from "render wrong".
-    const read = () =>
-      page.evaluate(() => {
+    // Wait for the example's run() to finish applying its initial VOI before
+    // interacting. On slow/self-hosted runners the stack image can still be
+    // loading when the page is "ready", so without this the click lands before
+    // run()'s setProperties(ctVoiRange) executes — and that late default-VOI
+    // call then overwrites the range this test sets, leaving the snapshot at the
+    // image's stored window. isComputedVOI flips to false once a
+    // setProperties-driven VOI has been applied, which marks run() as done.
+    await page.waitForFunction(
+      () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const cs = (window as any).cornerstone;
-        const engines = cs.getRenderingEngines?.() ?? [];
-        const vp = engines[0]?.getViewports?.()[0];
-        if (!vp) {
-          return {
-            err: 'no viewport',
-            csKeys: Object.keys(cs || {}).slice(0, 40),
-            engines: engines.length,
-          };
-        }
-        const p = vp.getProperties();
-        return { voiRange: p.voiRange, locked: p.voiUpdatedWithSetProperties };
-      });
-    const immediate = await read();
-    await page.waitForTimeout(2000);
-    const delayed = await read();
-    // eslint-disable-next-line no-console
-    console.log(
-      'VOI_DIAG immediate=' +
-        JSON.stringify(immediate) +
-        ' delayed=' +
-        JSON.stringify(delayed)
+        const vp = cs?.getRenderingEngines?.()[0]?.getViewports?.()[0];
+        return vp?.getProperties?.()?.isComputedVOI === false;
+      },
+      undefined,
+      { timeout: 30000 }
     );
+    await page.getByRole('button', { name: 'Set VOI Range' }).click();
     await checkForCanvasSnapshot(
       page,
       '.cornerstone-canvas',
