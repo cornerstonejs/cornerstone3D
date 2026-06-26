@@ -93,8 +93,13 @@ export function getSegmentIndexAtWorldForLabelmap(
         continue;
       }
 
-      const labelValue =
-        segmentationVolume.imageData.getScalarValueFromWorld(worldPoint);
+      const voxelManager =
+        segmentationVolume.voxelManager as Types.IVoxelManager<number>;
+      const indexIJK = utilities.transformWorldToIndex(
+        segmentationVolume.imageData,
+        worldPoint
+      );
+      const labelValue = voxelManager.getAtIJKPoint(indexIJK as Types.Point3);
 
       if (!labelValue) {
         continue;
