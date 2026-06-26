@@ -116,16 +116,16 @@ export default function validateAndSortVolumeIds(imageIds, options = {}) {
   const diffs = [];
   for (let i = 1; i < projectedPositions.length; i++) {
     const d = Math.abs(projectedPositions[i] - projectedPositions[i - 1]);
-    if (d > 1e-6) {
-      diffs.push(d);
+    // Any zero gap means a duplicate/co-located slice, even if other gaps are
+    // valid (e.g. [0, 1, 1, 2]). Skipping zeros here would hide that.
+    if (d <= 1e-6) {
+      return {
+        valid: false,
+        sortedImageIds,
+        reason: 'zero or duplicate slice spacing',
+      };
     }
-  }
-  if (!diffs.length) {
-    return {
-      valid: false,
-      sortedImageIds,
-      reason: 'zero or duplicate slice spacing',
-    };
+    diffs.push(d);
   }
 
   const medianSpacing = getMedian(diffs);

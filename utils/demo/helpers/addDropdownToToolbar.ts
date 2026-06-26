@@ -36,17 +36,37 @@ function applyDropdownOptions(
     values = [...map.keys()],
     labels,
     defaultValue,
-    defaultIndex = defaultValue === undefined && 0,
+    defaultIndex: explicitDefaultIndex,
   } = options as any;
 
-  const existingPlaceholder = elSelect.querySelector('option[data-loading="true"]');
-  if (existingPlaceholder) {
-    existingPlaceholder.remove();
+  const existingLoading = elSelect.querySelector('option[data-loading="true"]');
+  if (existingLoading) {
+    existingLoading.remove();
+  }
+
+  // Preserve a configured placeholder (disabled prompt) across re-render. Detach
+  // it before clearing, then re-add it as the first, selected option.
+  const placeholderOption = elSelect.querySelector<HTMLOptionElement>(
+    'option[data-placeholder="true"]'
+  );
+  if (placeholderOption) {
+    placeholderOption.remove();
   }
 
   while (elSelect.options.length > 0) {
     elSelect.remove(0);
   }
+
+  if (placeholderOption) {
+    placeholderOption.selected = true;
+    elSelect.append(placeholderOption);
+  }
+
+  // Only auto-select the first value when there is no placeholder prompt to keep
+  // selected. An explicitly configured defaultIndex still wins.
+  const defaultIndex =
+    explicitDefaultIndex ??
+    (defaultValue === undefined && !placeholderOption ? 0 : -1);
 
   values.forEach((value, index) => {
     const elOption = document.createElement('option');
@@ -129,6 +149,9 @@ export default function addDropDownToToolbar(config: configDropdown): void {
       },
       html: config.placeholder,
     });
+    // Marked so applyDropdownOptions can preserve it across (re)render instead of
+    // wiping it and silently auto-selecting the first real value.
+    elOption.dataset.placeholder = 'true';
     elSelect.append(elOption);
   }
 

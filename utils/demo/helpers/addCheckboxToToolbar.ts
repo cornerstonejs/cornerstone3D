@@ -72,6 +72,6 @@ export default function addCheckboxToToolbar(config: configCheckbox): void {
   elInput.checked = !!checked;
 
   const textSpan = document.createElement('span');
-  textSpan.innerHTML = title;
+  textSpan.textContent = title;
   elLabel.appendChild(textSpan);
 }

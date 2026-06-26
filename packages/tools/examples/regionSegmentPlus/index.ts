@@ -484,6 +484,12 @@ async function addSegmentationToState(imageIds, segId) {
   ]);
 }
 
+// Latest load token per viewport. The study selector and the left/right series
+// selectors can all trigger a load for the same viewport concurrently; only the
+// most recent one for a given viewport is allowed to mutate state, so a slower
+// older load cannot restore stale data after a newer selection has finished.
+const viewportLoadTokens = new Map<string, number>();
+
 async function loadStackWithSegmentation({
   viewportId,
   viewport,
@@ -499,13 +505,17 @@ async function loadStackWithSegmentation({
   studyInstanceUID: string;
   seriesInstanceUID: string;
 }) {
+  const loadToken = (viewportLoadTokens.get(viewportId) ?? 0) + 1;
+  viewportLoadTokens.set(viewportId, loadToken);
+  const isStale = () => viewportLoadTokens.get(viewportId) !== loadToken;
+
   segmentation.removeSegmentation(segmentationId);
 
   const validation = await validateAndSortSeriesForStack(
     studyInstanceUID,
     seriesInstanceUID
   );
-  let imageIds = validation.sortedImageIds;
+  const imageIds = validation.sortedImageIds;
 
   if (!validation.valid || !imageIds?.length) {
     console.warn(
@@ -514,11 +524,20 @@ async function loadStackWithSegmentation({
     return;
   }
 
+  if (isStale()) {
+    return;
+  }
   await addSegmentationToState(imageIds, segmentationId);
 
+  if (isStale()) {
+    return;
+  }
   const mid = Math.min(Math.floor(imageIds.length / 2), imageIds.length - 1);
   await viewport.setStack(imageIds, Math.max(0, mid));
 
+  if (isStale()) {
+    return;
+  }
   cornerstoneTools.utilities.stackContextPrefetch.enable(element);
 
   await segmentation.addSegmentationRepresentations(viewportId, [
@@ -528,6 +547,9 @@ async function loadStackWithSegmentation({
     },
   ]);
 
+  if (isStale()) {
+    return;
+  }
   segmentation.activeSegmentation.setActiveSegmentation(
     viewportId,
     segmentationId
@@ -716,6 +738,10 @@ async function run() {
     };
   })();
 
+  // Bumped on every study change so an in-flight handler whose study has been
+  // superseded can bail before mutating the dropdowns/viewports.
+  let studySelectionGeneration = 0;
+
   addDropdownToToolbar({
     labelText: 'Study',
     id: SELECT_ID_STUDY,
@@ -726,55 +752,81 @@ async function run() {
       defaultValue: currentStudyUID,
     },
     onSelectedValueChange: async (uid) => {
-      currentStudyUID = String(uid);
+      const requestedStudyUID = String(uid);
+      const myGeneration = ++studySelectionGeneration;
+      const isStale = () => myGeneration !== studySelectionGeneration;
+
+      currentStudyUID = requestedStudyUID;
       seriesValidationCache.clear();
-      const nextSeries = await fetchStudySeries(currentStudyUID);
-      const nextLeft = await filterValidStackSeries(
-        currentStudyUID,
-        nonPtSeriesNoScout(nextSeries),
-        'left'
-      );
-      const nextPt = await filterValidStackSeries(
-        currentStudyUID,
-        ptSeriesNoScout(nextSeries),
-        'right/PT'
-      );
-      if (!nextLeft.length || !nextPt.length) {
-        console.error(
-          `Study ${currentStudyUID}: need non-PT (non-scout) and PT (non-scout). Got left ${nextLeft.length}, PT ${nextPt.length}`
+
+      try {
+        const nextSeries = await fetchStudySeries(requestedStudyUID);
+        if (isStale()) {
+          return;
+        }
+        const nextLeft = await filterValidStackSeries(
+          requestedStudyUID,
+          nonPtSeriesNoScout(nextSeries),
+          'left'
         );
-        return;
-      }
-      const left0 = defaultLeftSeries(nextLeft);
-      const pt0 = defaultPtSeries(nextPt);
-      if (!left0 || !pt0) {
-        console.error(
-          `Study ${currentStudyUID}: could not resolve default left or PT series`
+        if (isStale()) {
+          return;
+        }
+        const nextPt = await filterValidStackSeries(
+          requestedStudyUID,
+          ptSeriesNoScout(nextSeries),
+          'right/PT'
         );
-        return;
+        if (isStale()) {
+          return;
+        }
+        if (!nextLeft.length || !nextPt.length) {
+          console.error(
+            `Study ${requestedStudyUID}: need non-PT (non-scout) and PT (non-scout). Got left ${nextLeft.length}, PT ${nextPt.length}`
+          );
+          return;
+        }
+        const left0 = defaultLeftSeries(nextLeft);
+        const pt0 = defaultPtSeries(nextPt);
+        if (!left0 || !pt0) {
+          console.error(
+            `Study ${requestedStudyUID}: could not resolve default left or PT series`
+          );
+          return;
+        }
+        replaceSeriesSelectOptions(
+          SELECT_ID_LEFT,
+          nextLeft,
+          left0.seriesInstanceUID
+        );
+        replaceSeriesSelectOptions(SELECT_ID_PT, nextPt, pt0.seriesInstanceUID);
+        await loadStackWithSegmentation({
+          viewportId: viewportIdCt,
+          viewport: viewportCt,
+          element: elementCt,
+          segmentationId: segmentationIdCt,
+          studyInstanceUID: requestedStudyUID,
+          seriesInstanceUID: left0.seriesInstanceUID,
+        });
+        if (isStale()) {
+          return;
+        }
+        await loadStackWithSegmentation({
+          viewportId: viewportIdPt,
+          viewport: viewportPt,
+          element: elementPt,
+          segmentationId: segmentationIdPt,
+          studyInstanceUID: requestedStudyUID,
+          seriesInstanceUID: pt0.seriesInstanceUID,
+        });
+      } catch (err) {
+        if (!isStale()) {
+          console.error(
+            `Study ${requestedStudyUID}: failed to load study series`,
+            err
+          );
+        }
       }
-      replaceSeriesSelectOptions(
-        SELECT_ID_LEFT,
-        nextLeft,
-        left0.seriesInstanceUID
-      );
-      replaceSeriesSelectOptions(SELECT_ID_PT, nextPt, pt0.seriesInstanceUID);
-      await loadStackWithSegmentation({
-        viewportId: viewportIdCt,
-        viewport: viewportCt,
-        element: elementCt,
-        segmentationId: segmentationIdCt,
-        studyInstanceUID: currentStudyUID,
-        seriesInstanceUID: left0.seriesInstanceUID,
-      });
-      await loadStackWithSegmentation({
-        viewportId: viewportIdPt,
-        viewport: viewportPt,
-        element: elementPt,
-        segmentationId: segmentationIdPt,
-        studyInstanceUID: currentStudyUID,
-        seriesInstanceUID: pt0.seriesInstanceUID,
-      });
     },
   });
 
