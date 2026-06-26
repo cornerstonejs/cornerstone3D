@@ -1597,6 +1597,17 @@ class StackViewport extends Viewport {
 
     const defaultActor = this.getDefaultActor();
     if (!defaultActor) {
+      // The image actor does not exist yet (the stack image is still loading).
+      // Record the requested range anyway so the pending load's
+      // _getInitialVOIRange / _getVOIFromCache restores it instead of falling
+      // back to the image's stored window — their guards require this.voiRange
+      // to be truthy. Without this, a setProperties({ voiRange }) issued before
+      // the image finishes loading is silently lost (the VOI ends up null, then
+      // the load resets it to the metadata window). This happens on slower/
+      // self-hosted runners where load completes after setProperties is called.
+      if (typeof voiRange !== 'undefined') {
+        this.voiRange = voiRange;
+      }
       return;
     }
 
