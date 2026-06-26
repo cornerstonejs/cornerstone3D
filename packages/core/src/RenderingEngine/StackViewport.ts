@@ -1487,17 +1487,7 @@ class StackViewport extends Viewport {
   }
 
   private setVOICPU(voiRange: VOIRange, options: SetVOIOptions = {}): void {
-    const { suppressEvents = false, voiUpdatedWithSetProperties = false } =
-      options;
-
-    // Latch the user-set lock before any early-return, matching setVOIGPU.
-    // Without this the CPU path never marks the VOI as user-set, so a stack
-    // reset / reload reverts to the image's stored window (see setStack guard
-    // and _getInitialVOIRange / _getVOIFromCache).
-    if (!this.voiUpdatedWithSetProperties) {
-      this.voiUpdatedWithSetProperties = voiUpdatedWithSetProperties;
-    }
-
+    const { suppressEvents = false } = options;
     // TODO: Account for VOILUTFunction
     const { viewport, image } = this._cpuFallbackEnabledElement;
 
@@ -1574,16 +1564,6 @@ class StackViewport extends Viewport {
       voiUpdatedWithSetProperties = false,
     } = options;
 
-    // Lock the VOI as user-set BEFORE the early-return below. Otherwise a
-    // setProperties() call whose range happens to equal the current/default
-    // range short-circuits here and the lock flag never latches, leaving the
-    // viewport looking user-configured while a later metadata-driven reload
-    // (see _getInitialVOIRange / _getVOIFromCache) silently reverts it to the
-    // image's stored window.
-    if (!this.voiUpdatedWithSetProperties) {
-      this.voiUpdatedWithSetProperties = voiUpdatedWithSetProperties;
-    }
-
     if (
       voiRange &&
       this.voiRange &&
@@ -1597,17 +1577,6 @@ class StackViewport extends Viewport {
 
     const defaultActor = this.getDefaultActor();
     if (!defaultActor) {
-      // The image actor does not exist yet (the stack image is still loading).
-      // Record the requested range anyway so the pending load's
-      // _getInitialVOIRange / _getVOIFromCache restores it instead of falling
-      // back to the image's stored window — their guards require this.voiRange
-      // to be truthy. Without this, a setProperties({ voiRange }) issued before
-      // the image finishes loading is silently lost (the VOI ends up null, then
-      // the load resets it to the metadata window). This happens on slower/
-      // self-hosted runners where load completes after setProperties is called.
-      if (typeof voiRange !== 'undefined') {
-        this.voiRange = voiRange;
-      }
       return;
     }
 
@@ -1659,6 +1628,11 @@ class StackViewport extends Viewport {
     }
 
     this.voiRange = voiRangeToUse;
+
+    // if voiRange is set by setProperties we need to lock it if it is not locked already
+    if (!this.voiUpdatedWithSetProperties) {
+      this.voiUpdatedWithSetProperties = voiUpdatedWithSetProperties;
+    }
 
     if (suppressEvents) {
       return;
@@ -1987,14 +1961,7 @@ class StackViewport extends Viewport {
     this.stackInvalidated = true;
     this.flipVertical = false;
     this.flipHorizontal = false;
-    // Preserve a user-locked VOI across the stack reset. Nulling it here makes
-    // _getInitialVOIRange / _getVOIFromCache fall back to the image's stored
-    // window on the next load (their guards require this.voiRange to be truthy),
-    // silently discarding a range the user set via setProperties. Only clear it
-    // when the VOI is not locked (resetProperties clears the lock flag).
-    if (!this.voiUpdatedWithSetProperties) {
-      this.voiRange = null;
-    }
+    this.voiRange = null;
     this.interpolationType = InterpolationType.LINEAR;
     this.invert = false;
     this.viewportStatus = ViewportStatus.LOADING;
