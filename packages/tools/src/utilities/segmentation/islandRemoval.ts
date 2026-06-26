@@ -71,6 +71,12 @@ export default class IslandRemoval {
   private maxInternalRemove = 128;
   /** When true, log bounds, normalizer mapping, per-click flood, and voxel counts. */
   private verboseLogging = false;
+  /**
+   * True when the caller supplied a real preview layer (the input voxel manager
+   * had a `sourceVoxelManager`). External island removal is only meaningful with
+   * a preview layer to hold the per-run delta. See {@link removeExternalIslands}.
+   */
+  private usingPreviewLayer = false;
 
   constructor(options?: {
     maxInternalRemove?: number;
@@ -115,6 +121,7 @@ export default class IslandRemoval {
    */
   initialize(viewport, segmentationVoxels, options) {
     const hasSource = !!segmentationVoxels.sourceVoxelManager;
+    this.usingPreviewLayer = hasSource;
     const segmentationVoxelManager = hasSource
       ? segmentationVoxels.sourceVoxelManager
       : segmentationVoxels;
@@ -306,11 +313,12 @@ export default class IslandRemoval {
 
     // External island removal is inherently a delta operation: it clears the
     // voxels this run added that are not connected to the click. That delta only
-    // exists on a preview layer. Without one (a plain segmentation voxel
-    // manager), there is no way to distinguish voxels added now from voxels
-    // accepted earlier, so this becomes a no-op for accepted data. Warn so the
-    // skipped cleanup is explicit rather than silent.
-    if (!previewVoxelManager.sourceVoxelManager) {
+    // exists on a preview layer. When the caller passed a plain segmentation
+    // voxel manager (no preview layer), `initialize` synthesizes a history
+    // wrapper whose source still holds the accepted voxels, so clearing the
+    // preview override reverts straight back to the accepted value — a no-op for
+    // accepted data. Warn so the skipped cleanup is explicit rather than silent.
+    if (!this.usingPreviewLayer) {
       islandRemovalLog.warn(
         'islandRemoval: removeExternalIslands has no preview layer; ' +
           'external island cleanup of accepted voxels is skipped. ' +
