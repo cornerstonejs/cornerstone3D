@@ -55,10 +55,11 @@ test.describe('WSI GenericViewport', () => {
       threshold: 0.005,
       // The dicom-microscopy-viewer scale-bar overlay ("1000 µm") re-rasterizes
       // its glyphs slightly differently across CI environments, plus sub-pixel
-      // tile-edge AA — together ~0.0014 of the frame. Allow a small diff ratio
-      // rather than an exact match (same approach as genericEcg) so the existing
-      // baseline keeps working without per-environment regeneration.
-      maxDiffPixelRatio: 0.01,
+      // tile-edge AA — together ~0.0014 of the frame (measured). The budget is
+      // set to ~2x that to absorb run-to-run variation while staying tight
+      // enough to catch a real overlay/tile regression, and lets the existing
+      // baseline keep working without per-environment regeneration.
+      maxDiffPixelRatio: 0.003,
     });
   });
 });
