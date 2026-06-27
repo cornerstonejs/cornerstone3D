@@ -134,12 +134,12 @@ async function drawSpline({ page, canvas, points, segmentIndex = 1 }) {
     // On the self-hosted runner back-to-back canvas clicks are otherwise dropped
     // and the contour is drawn with missing points (e.g. a tiny sliver instead
     // of the full ROI), which is the real cause of the spline snapshot diffs —
-    // not a fill-rendering difference.
-    await page.waitForTimeout(50);
+    // not a fill-rendering difference. 50ms was not always enough.
+    await page.waitForTimeout(150);
   }
 
-  // Wait a few milliseconds otherwise the spline does not close
-  await new Promise((resolve) => setTimeout(resolve, 200));
+  // Let the spline close and settle before the snapshot.
+  await new Promise((resolve) => setTimeout(resolve, 400));
 }
 
 async function drawCatmullROMSplineOnViewportLeft({
