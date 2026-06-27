@@ -651,7 +651,7 @@ class WSIViewport extends Viewport {
       );
     }
 
-    await this.setWSI(dataSet.imageIds, dataSet.options.webClient);
+    return this.setDataIds(dataSet.imageIds, dataSet.options);
   }
 
   public postrender = () => {
