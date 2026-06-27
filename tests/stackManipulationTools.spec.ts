@@ -16,7 +16,9 @@ test.describe('Basic Stack Manipulation', async () => {
   }) => {
     await page.getByRole('combobox').selectOption('WindowLevel');
     const locator = page.locator('.cornerstone-canvas');
-    await simulateDrag(page, locator);
+    // Stepped motion so the window-level drag registers reliably on the
+    // self-hosted runner.
+    await simulateDrag(page, locator, { steps: 10 });
     await checkForCanvasSnapshot(
       page,
       '.cornerstone-canvas',

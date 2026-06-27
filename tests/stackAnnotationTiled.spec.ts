@@ -14,7 +14,7 @@ test.beforeEach(async ({ page, context }) => {
 test.describe('Stack Annotation Tools - Tiled', async () => {
   test('should draw a length measurement on the viewport', async ({ page }) => {
     const locator = page.locator('.cornerstone-canvas').nth(0);
-    await simulateDrag(page, locator);
+    await simulateDrag(page, locator, { steps: 10 });
     await checkForCanvasSnapshot(
       page,
       '',

@@ -130,6 +130,12 @@ async function drawSpline({ page, canvas, points, segmentIndex = 1 }) {
         y: point[1],
       },
     });
+    // Pause between control-point clicks so each one registers before the next.
+    // On the self-hosted runner back-to-back canvas clicks are otherwise dropped
+    // and the contour is drawn with missing points (e.g. a tiny sliver instead
+    // of the full ROI), which is the real cause of the spline snapshot diffs —
+    // not a fill-rendering difference.
+    await page.waitForTimeout(50);
   }
 
   // Wait a few milliseconds otherwise the spline does not close
