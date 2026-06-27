@@ -19,7 +19,10 @@ test.describe('Volume Annotation Tools - Tiled', async () => {
       page,
       '',
       screenShotPaths.volumeAnnotationTiled.lengthTool,
-      0
+      0,
+      // Absorb sub-pixel font drift on the "138 mm" label across CI
+      // environments; a missing/mis-drawn annotation differs by far more.
+      { maxDiffPixelRatio: 0.003 }
     );
   });
 });

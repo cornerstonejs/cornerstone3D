@@ -32,6 +32,13 @@ export const simulateDrag = async (page, locator) => {
 
   await page.mouse.move(centerX, centerY);
   await page.mouse.down();
+  // Let the tool enter its drawing/active state from the mousedown before the
+  // move. On the self-hosted runner the down->move->up can otherwise fire faster
+  // than the annotation tool finishes setting up its move handler, so the move
+  // is missed and the gesture is recorded as near-zero (a ~0.5mm length instead
+  // of ~138mm). A single move is kept so path-integrating tools (planar-rotate)
+  // are unaffected.
+  await page.waitForTimeout(100);
   await page.mouse.move(newX, newY);
   await page.mouse.up();
   // Let the tool commit the annotation / property change and the viewport

@@ -18,7 +18,12 @@ test.describe('Stack Annotation Tools', async () => {
       page,
       '',
       screenShotPaths.stackAnnotation.lengthTool,
-      0
+      0,
+      // The measurement line/handles are deterministic, but the "138 mm" label
+      // re-rasterizes a few sub-pixels differently across CI environments. Allow
+      // a small diff ratio to absorb that font drift while still catching a
+      // missing/mis-drawn annotation (which differs by far more).
+      { maxDiffPixelRatio: 0.003 }
     );
   });
 });
