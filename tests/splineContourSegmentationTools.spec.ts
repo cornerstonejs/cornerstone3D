@@ -120,48 +120,21 @@ async function updateSplineStyleInputs({ page, splineStyle }) {
   }
 }
 
-// The control points are authored in the 512x512 canvas backing-store space
-// (the snapshot size). `canvas.click({ position })` is in the element's CSS
-// pixel space, which equals the backing store only when the canvas is rendered
-// at 512 CSS px. When scaleToCanvas is set, scale the points by the live
-// boundingBox so a click lands at the intended backing-store location no matter
-// what CSS size the runner gives the canvas. bspline's points reach the right
-// edge (x up to 464), so on a wider canvas they map far off-target and the
-// contour is drawn clipped (a tiny sliver) — this scaling makes it
-// resolution-independent.
-const AUTHORED_CANVAS_SIZE = 512;
-
-async function drawSpline({
-  page,
-  canvas,
-  points,
-  segmentIndex = 1,
-  scaleToCanvas = false,
-}) {
+async function drawSpline({ page, canvas, points, segmentIndex = 1 }) {
   await page.getByRole('combobox').first().selectOption(String(segmentIndex));
 
-  const box = scaleToCanvas ? await canvas.boundingBox() : null;
-  if (scaleToCanvas && !box) {
-    throw new Error('drawSpline: canvas is not visible');
-  }
-  if (box) {
-    // TEMP DIAGNOSTIC: confirm the canvas CSS size vs the 512 authoring size.
-    // eslint-disable-next-line no-console
-    console.log(`SPLINE_BOX ${box.width}x${box.height}`);
-  }
-  const toPosition = (point) =>
-    box
-      ? {
-          x: (point[0] * box.width) / AUTHORED_CANVAS_SIZE,
-          y: (point[1] * box.height) / AUTHORED_CANVAS_SIZE,
-        }
-      : { x: point[0], y: point[1] };
-
   for (const point of points) {
-    await canvas.click({ position: toPosition(point) });
+    await canvas.click({
+      position: {
+        x: point[0],
+        y: point[1],
+      },
+    });
     // Pause between control-point clicks so each one registers before the next.
     // On the self-hosted runner back-to-back canvas clicks are otherwise dropped
-    // and the contour is drawn with missing points.
+    // and the contour is drawn with missing points (e.g. a tiny sliver instead
+    // of the full ROI), which is the real cause of the spline snapshot diffs —
+    // not a fill-rendering difference. 50ms was not always enough.
     await page.waitForTimeout(150);
   }
 
@@ -240,7 +213,5 @@ async function drawBSplineOnViewportRight({ page, canvas, segmentIndex }) {
     [398, 49],
   ];
 
-  // bspline reaches the right edge of the canvas, so it must be drawn relative
-  // to the live canvas size to land on-target on any runner.
-  await drawSpline({ page, canvas, points, segmentIndex, scaleToCanvas: true });
+  await drawSpline({ page, canvas, points, segmentIndex });
 }
