@@ -30,6 +30,7 @@ import {
   type WSITransformUtilitiesLike,
   type WSIViewerLike,
 } from '../utilities/WSIUtilities';
+import { getGenericViewportWSIDataSet } from './GenericViewport/genericViewportDataSetAccess';
 
 let WSIUtilFunctions: WSITransformUtilitiesLike | null = null;
 const EVENT_POSTRENDER = 'postrender';
@@ -624,6 +625,33 @@ class WSIViewport extends Viewport {
       '--ol-subtle-background-color': 'rgba(78, 78, 78, 0.5)',
       background: 'none',
     });
+  }
+
+  /**
+   * Renders a registered whole-slide display set. The dataset (imageIds +
+   * webClient) must first be registered with
+   * `utilities.genericViewportDataSetMetadataProvider` keyed by `displaySetId`.
+   * This reads from the same registry as the GenericViewport WSI data provider,
+   * so the same caller code drives both the legacy and generic render paths.
+   */
+  public async setDisplaySets(
+    ...entries: Array<{ displaySetId: string; options?: unknown }>
+  ): Promise<void> {
+    const [entry] = entries;
+    if (!entry?.displaySetId) {
+      throw new Error(
+        '[WSIViewport] setDisplaySets requires a displaySetId to render whole slide imaging'
+      );
+    }
+
+    const dataSet = getGenericViewportWSIDataSet(entry.displaySetId);
+    if (!dataSet?.imageIds?.length || !dataSet.options?.webClient) {
+      throw new Error(
+        `[WSIViewport] No registered WSI dataset (imageIds + webClient) for display set ${entry.displaySetId}`
+      );
+    }
+
+    await this.setWSI(dataSet.imageIds, dataSet.options.webClient);
   }
 
   public postrender = () => {
