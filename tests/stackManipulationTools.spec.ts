@@ -16,6 +16,9 @@ test.beforeEach(async ({ page }) => {
 // the gesture isn't applied mid-re-render. Best-effort: if the tool change does
 // not re-render, fall through rather than hang.
 async function selectToolAndSettle(page, toolName: string) {
+  // Brief settle so the viewport is idle before the tool select, matching the
+  // spline pre-settle that stabilized the slow-runner re-render race.
+  await page.waitForTimeout(1000);
   try {
     await waitForImageRendered(
       page,

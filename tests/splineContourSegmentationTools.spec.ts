@@ -121,11 +121,18 @@ async function updateSplineStyleInputs({ page, splineStyle }) {
   }
 }
 
-async function drawSpline({ page, canvas, points, segmentIndex = 1, preSettleMs = 0 }) {
-  // bspline is the one stubborn case: give the viewport extra time to be fully
-  // idle before triggering the segment re-render, so the wait-rendered below has
-  // a clean starting point. Scoped to bspline (preSettleMs) — the other splines
-  // are accepted as flaky-with-retries.
+async function drawSpline({
+  page,
+  canvas,
+  points,
+  segmentIndex = 1,
+  preSettleMs = 1000,
+}) {
+  // Let the viewport go fully idle before triggering the segment re-render, so
+  // the wait-rendered below starts from a clean state. On the self-hosted runner
+  // the segment-select re-render blanks the base image for a while (see below),
+  // and a brief settle before it makes the subsequent wait reliable. Applied to
+  // all spline draws.
   if (preSettleMs) {
     await page.waitForTimeout(preSettleMs);
   }
@@ -235,5 +242,5 @@ async function drawBSplineOnViewportRight({ page, canvas, segmentIndex }) {
     [398, 49],
   ];
 
-  await drawSpline({ page, canvas, points, segmentIndex, preSettleMs: 1000 });
+  await drawSpline({ page, canvas, points, segmentIndex });
 }
