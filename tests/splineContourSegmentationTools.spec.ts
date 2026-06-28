@@ -4,6 +4,7 @@ import {
   checkForCanvasSnapshot,
   visitExample,
   screenShotPaths,
+  waitForImageRendered,
 } from './utils/index';
 
 test.beforeEach(async ({ page }) => {
@@ -121,7 +122,25 @@ async function updateSplineStyleInputs({ page, splineStyle }) {
 }
 
 async function drawSpline({ page, canvas, points, segmentIndex = 1 }) {
-  await page.getByRole('combobox').first().selectOption(String(segmentIndex));
+  // Activating/creating the segment fires a full viewport.render() (contour
+  // display -> viewport.render()). On the self-hosted runner that render is slow
+  // (GPU readback stalls) so the viewport sits on the cleared background for a
+  // few hundred ms. Wait for that render to finish before placing control
+  // points — otherwise the early clicks land while the canvas is blank /
+  // mid-re-render and the contour is drawn at the wrong coordinates (a garbled
+  // ROI: real cause of the spline snapshot diffs, not a fill-rendering issue).
+  // Best-effort: if selecting the segment doesn't re-render (already active),
+  // fall through rather than hang.
+  try {
+    await waitForImageRendered(
+      page,
+      () =>
+        page.getByRole('combobox').first().selectOption(String(segmentIndex)),
+      { elementSelector: '[data-viewport-uid]', timeout: 8000 }
+    );
+  } catch {
+    // no re-render was triggered; nothing to wait for
+  }
 
   for (const point of points) {
     await canvas.click({
@@ -130,11 +149,7 @@ async function drawSpline({ page, canvas, points, segmentIndex = 1 }) {
         y: point[1],
       },
     });
-    // Pause between control-point clicks so each one registers before the next.
-    // On the self-hosted runner back-to-back canvas clicks are otherwise dropped
-    // and the contour is drawn with missing points (e.g. a tiny sliver instead
-    // of the full ROI), which is the real cause of the spline snapshot diffs —
-    // not a fill-rendering difference. 50ms was not always enough.
+    // Small pause between control-point clicks so each registers in order.
     await page.waitForTimeout(150);
   }
 
