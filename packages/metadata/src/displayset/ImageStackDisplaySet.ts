@@ -98,6 +98,9 @@ export class ImageStackDisplaySet extends BaseDisplaySet {
         (instance): instance is NaturalizedInstance => instance !== undefined
       );
 
-    return ImageStackDisplaySet.fromInstances(instances, options);
+    return ImageStackDisplaySet.fromInstances(instances, {
+      ...options,
+      imageIds,
+    });
   }
 }

@@ -93,7 +93,10 @@ export const defaultDisplaySetSplitRules: SplitRule[] = [
    */
   {
     id: 'mixedDimensionalityBValue',
-    viewportTypes: ['stack', 'volume', 'volume3d'],
+    // Both subgroups are multi-slice MR; default them to MPR (volume) like any
+    // volumetric MR series. This rule matches before `volume3d`, so listing
+    // stack first here would regress the defined-b-value subgroup to a stack.
+    viewportTypes: ['volume', 'volume3d', 'stack'],
     // Gates on instances[0].Modality (assumes a homogeneous-modality series),
     // then scans all instances for the mix of defined/undefined b-values.
     series: ({ instances }) => {

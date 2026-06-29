@@ -26,10 +26,10 @@ export class BaseDisplaySet implements IDisplaySet {
   constructor(options: BaseDisplaySetOptions) {
     this.displaySetId = options.displaySetId;
     this.viewportTypes = options.viewportTypes?.length
-      ? options.viewportTypes
+      ? [...options.viewportTypes]
       : ['stack'];
     this.preferredViewportType = getPreferredViewportType(this.viewportTypes);
-    this.instances = options.instances ?? [];
+    this.instances = [...(options.instances ?? [])];
     this.imageIds = [...new Set(options.imageIds ?? [])];
     this.underlyingImageIds = [...new Set(options.underlyingImageIds ?? [])];
   }

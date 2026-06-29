@@ -283,7 +283,9 @@ async function run() {
       getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
-  const [displaySet] = displaySets;
+  const displaySet =
+    displaySets.find((ds) => ds.preferredViewportType === 'video') ??
+    displaySets[0];
   if (!displaySet) {
     throw new Error('No display set found in series');
   }

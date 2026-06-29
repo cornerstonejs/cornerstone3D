@@ -1537,7 +1537,14 @@ abstract class BaseVolumeViewport extends Viewport {
         const volume = await createAndCacheVolume(volumeId, {
           imageIds: dataSet.imageIds,
         });
-        volume.load();
+        // Streaming load is intentionally not awaited; route failures to a
+        // viewport-scoped log instead of an unhandled promise rejection.
+        volume.load().catch((error) => {
+          console.error(
+            `[VolumeViewport] Failed to load volume ${volumeId} for display set ${entry.displaySetId}`,
+            error
+          );
+        });
       }
 
       const volumeInput = {

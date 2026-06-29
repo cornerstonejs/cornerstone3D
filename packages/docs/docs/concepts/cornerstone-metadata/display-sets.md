@@ -39,6 +39,7 @@ import {
   splitImageIdsBySplitRules,
   createDisplaySetFromGroup,
   defaultDisplaySetSplitRules,
+  metaData,
   type IDisplaySet,
   type NaturalizedInstance,
 } from '@cornerstonejs/metadata';
@@ -189,7 +190,7 @@ import type { SplitRule } from '@cornerstonejs/metadata';
 
 const mixedDimensionalityBValue: SplitRule = {
   id: 'mixedDimensionalityBValue',
-  viewportTypes: ['stack', 'volume', 'volume3d'],
+  viewportTypes: ['volume', 'volume3d', 'stack'],
   // Computed once over the whole series; returned, not mutated onto shared state.
   series: ({ instances }) => ({
     mixedBValue:

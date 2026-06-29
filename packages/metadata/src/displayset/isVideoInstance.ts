@@ -12,14 +12,14 @@ const SECONDARY_CAPTURE_SOP_CLASS_UIDS = new Set([
   '1.2.840.10008.5.1.4.1.1.7.4',
 ]);
 
-function getTransferSyntaxUid(
-  instance: NaturalizedInstance
-): string | undefined {
+function getTransferSyntaxUids(instance: NaturalizedInstance): string[] {
   const tsuid =
     instance.AvailableTransferSyntaxUID ||
     instance.TransferSyntaxUID ||
     instance['00083002'];
-  return Array.isArray(tsuid) ? tsuid[0] : tsuid;
+  return (Array.isArray(tsuid) ? tsuid : [tsuid]).filter(
+    (value): value is string => typeof value === 'string' && value.length > 0
+  );
 }
 
 /**
@@ -35,8 +35,8 @@ function getTransferSyntaxUid(
  * @returns true when the instance should be rendered as video.
  */
 export function isVideoInstance(instance: NaturalizedInstance): boolean {
-  const tsuid = getTransferSyntaxUid(instance);
-  if (tsuid && videoUIDs.has(tsuid)) {
+  const tsuids = getTransferSyntaxUids(instance);
+  if (tsuids.some((tsuid) => videoUIDs.has(tsuid))) {
     return true;
   }
 

@@ -178,10 +178,13 @@ function renderDetails(row: Row, viewport: Types.IViewport, status: string) {
     ['getDisplaySets()', `[${recorded}]`],
   ];
 
-  row.detailsElement.innerHTML = '';
+  row.detailsElement.replaceChildren();
   for (const [label, value] of lines) {
     const line = document.createElement('div');
-    line.innerHTML = `<strong>${label}:</strong> ${value}`;
+    const strong = document.createElement('strong');
+    strong.textContent = `${label}:`;
+    line.appendChild(strong);
+    line.append(` ${value}`);
     row.detailsElement.appendChild(line);
   }
   if (status) {

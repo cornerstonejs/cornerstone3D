@@ -332,7 +332,9 @@ async function run() {
   });
 
   // Only one SOP instances is DICOM, so find it
-  const [displaySet] = displaySets;
+  const displaySet =
+    displaySets.find((ds) => ds.preferredViewportType === 'video') ??
+    displaySets[0];
   if (!displaySet) {
     throw new Error('No display set found in series');
   }
