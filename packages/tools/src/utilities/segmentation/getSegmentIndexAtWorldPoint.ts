@@ -1,14 +1,18 @@
 import { BaseVolumeViewport, cache, utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import { vec3 } from 'gl-matrix';
 import { SegmentationRepresentations } from '../../enums';
 import {
   getSegmentation,
   getCurrentLabelmapImageIdsForViewport,
 } from '../../stateManagement/segmentation/segmentationState';
-import type { ContourSegmentationAnnotation, Segmentation } from '../../types';
+import type {
+  Annotation,
+  ContourSegmentationAnnotation,
+  Segmentation,
+} from '../../types';
 import { getAnnotation } from '../../stateManagement';
 import { isPointInsidePolyline3D } from '../math/polyline';
+import filterAnnotationsForDisplay from '../planar/filterAnnotationsForDisplay';
 import { getLabelmapActorEntry } from '../../stateManagement/segmentation/helpers/getSegmentationActor';
 import getViewportLabelmapRenderMode from '../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
 import {
@@ -179,72 +183,41 @@ export function getSegmentIndexAtWorldForContour(
 ): number {
   const contourData = segmentation.representationData.Contour;
 
-  const segmentIndices = Array.from(contourData.annotationUIDsMap.keys());
-  const { viewPlaneNormal, focalPoint } = viewport.getCamera();
-
-  // Half the spacing in the normal direction defines the slab around the
-  // current slice. A contour is only considered for the hover lookup when its
-  // plane falls within that slab, otherwise contours from other slices (which
-  // share the same view plane normal) would match because the point-in-polyline
-  // test projects to 2D and ignores the slice (normal) axis.
-  // This is the same within-slice test used by `filterAnnotationsWithinSlice`
-  // (abs distance from the focal point along the normal < half slice spacing),
-  // which is how the renderer decides which contours belong to the slice.
-  const imageData = viewport.getImageData();
-  const spacingInNormalDirection = imageData
-    ? utilities.getSpacingInNormalDirection(
-        { direction: imageData.direction, spacing: imageData.spacing },
-        viewPlaneNormal
-      )
-    : 0;
-  const halfSpacingInNormalDirection = spacingInNormalDirection / 2;
-
-  for (const segmentIndex of segmentIndices) {
-    const annotationsSet = contourData.annotationUIDsMap.get(segmentIndex);
-
-    if (!annotationsSet) {
-      continue;
-    }
-
-    for (const annotationUID of annotationsSet) {
+  // Map every contour annotation back to its segment index so we can restrict
+  // the search to the annotations the viewport is actually displaying.
+  const segmentIndexByAnnotation = new Map<Annotation, number>();
+  for (const [segmentIndex, annotationUIDs] of contourData.annotationUIDsMap) {
+    for (const annotationUID of annotationUIDs) {
       const annotation = getAnnotation(
         annotationUID
       ) as ContourSegmentationAnnotation;
 
-      if (!annotation) {
-        continue;
+      if (annotation) {
+        segmentIndexByAnnotation.set(annotation, Number(segmentIndex));
       }
+    }
+  }
 
-      const { polyline } = annotation.data.contour;
+  // Only consider contours displayed on the current slice. Reusing the same
+  // filter the renderer applies (filterAnnotationsWithinSlice for volume
+  // viewports, isReferenceViewable for stack viewports) ensures a contour from
+  // another slice is not matched - its polyline shares the view plane normal and
+  // the point-in-polyline test projects to 2D, so it would otherwise contain the
+  // point even though it belongs to a different slice.
+  const displayableAnnotations = filterAnnotationsForDisplay(
+    viewport,
+    Array.from(segmentIndexByAnnotation.keys())
+  );
 
-      if (
-        !utilities.isEqual(viewPlaneNormal, annotation.metadata.viewPlaneNormal)
-      ) {
-        continue;
-      }
+  for (const annotation of displayableAnnotations) {
+    const { polyline } = (annotation as ContourSegmentationAnnotation).data
+      .contour;
 
-      // Skip contours that are not on the currently displayed slice. The
-      // distance between the contour plane and the camera focal point, measured
-      // along the view plane normal, must be within half the slice spacing.
-      if (halfSpacingInNormalDirection > 0) {
-        const distanceToSlice = Math.abs(
-          vec3.dot(
-            vec3.sub(vec3.create(), focalPoint, polyline[0]),
-            viewPlaneNormal as vec3
-          )
-        );
-
-        if (distanceToSlice > halfSpacingInNormalDirection) {
-          continue;
-        }
-      }
-
-      // This function checks whether we are inside the contour. It does not
-      // check if we are exactly on the contour, which is highly unlikely given
-      // the canvas pixel resolution of 1 decimal place we have by design.
-      if (isPointInsidePolyline3D(worldPoint, polyline)) {
-        return Number(segmentIndex);
-      }
+    // This function checks whether we are inside the contour. It does not
+    // check if we are exactly on the contour, which is highly unlikely given
+    // the canvas pixel resolution of 1 decimal place we have by design.
+    if (isPointInsidePolyline3D(worldPoint, polyline)) {
+      return segmentIndexByAnnotation.get(annotation);
     }
   }
 }
