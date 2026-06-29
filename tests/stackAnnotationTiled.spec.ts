@@ -8,7 +8,7 @@ import {
 
 test.beforeEach(async ({ page, context }) => {
   await context.addInitScript(() => (window.IS_TILED = true));
-  await visitExample(page, 'stackAnnotationTools');
+  await visitExample(page, 'stackAnnotationTools', 1000);
 });
 
 test.describe('Stack Annotation Tools - Tiled', async () => {

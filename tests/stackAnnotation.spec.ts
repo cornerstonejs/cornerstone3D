@@ -7,7 +7,7 @@ import {
 } from './utils/index';
 
 test.beforeEach(async ({ page }) => {
-  await visitExample(page, 'stackAnnotationTools');
+  await visitExample(page, 'stackAnnotationTools', 1000);
 });
 
 test.describe('Stack Annotation Tools', async () => {
