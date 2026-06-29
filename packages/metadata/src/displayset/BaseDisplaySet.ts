@@ -3,7 +3,7 @@ import type { NaturalizedInstance, ViewportTypeHint } from './types';
 import { getPreferredViewportType } from './viewportTypes';
 
 export type BaseDisplaySetOptions = {
-  displaySetInstanceUID: string;
+  displaySetId: string;
   viewportTypes?: readonly ViewportTypeHint[];
   instances?: NaturalizedInstance[];
   imageIds?: Iterable<string>;
@@ -16,7 +16,7 @@ export type BaseDisplaySetOptions = {
  * data-attribute rationale and the extension pattern for additional attributes).
  */
 export class BaseDisplaySet implements IDisplaySet {
-  displaySetInstanceUID: string;
+  displaySetId: string;
   viewportTypes: readonly ViewportTypeHint[];
   preferredViewportType: ViewportTypeHint;
   readonly instances: readonly NaturalizedInstance[];
@@ -24,7 +24,7 @@ export class BaseDisplaySet implements IDisplaySet {
   readonly underlyingImageIds: readonly string[];
 
   constructor(options: BaseDisplaySetOptions) {
-    this.displaySetInstanceUID = options.displaySetInstanceUID;
+    this.displaySetId = options.displaySetId;
     this.viewportTypes = options.viewportTypes?.length
       ? options.viewportTypes
       : ['stack'];

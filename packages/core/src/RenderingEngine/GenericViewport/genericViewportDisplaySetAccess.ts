@@ -39,18 +39,18 @@ export type GenericViewportRegisteredDisplaySet =
   | GenericViewportWSIDisplaySet;
 
 export function getGenericViewportRegisteredDisplaySet(
-  dataId: string
+  displaySetId: string
 ): GenericViewportRegisteredDisplaySet | undefined {
   return genericViewportDisplaySetMetadataProvider.get(
     genericViewportDisplaySetMetadataProvider.VIEWPORT_V2_DISPLAY_SET,
-    dataId
+    displaySetId
   ) as GenericViewportRegisteredDisplaySet | undefined;
 }
 
 export function getGenericViewportImageDisplaySet(
-  dataId: string
+  displaySetId: string
 ): GenericViewportImageDisplaySet | undefined {
-  const registered = getGenericViewportRegisteredDisplaySet(dataId);
+  const registered = getGenericViewportRegisteredDisplaySet(displaySetId);
 
   if (isStringArray(registered)) {
     return {
@@ -66,9 +66,9 @@ export function getGenericViewportImageDisplaySet(
 }
 
 export function getGenericViewportPlanarDisplaySet(
-  dataId: string
+  displaySetId: string
 ): GenericViewportPlanarDisplaySet | undefined {
-  const registered = getGenericViewportRegisteredDisplaySet(dataId);
+  const registered = getGenericViewportRegisteredDisplaySet(displaySetId);
 
   if (isStringArray(registered)) {
     return {
@@ -88,9 +88,9 @@ export function getGenericViewportPlanarDisplaySet(
 }
 
 export function getGenericViewportWSIDisplaySet(
-  dataId: string
+  displaySetId: string
 ): GenericViewportWSIDisplaySet | undefined {
-  const registered = getGenericViewportRegisteredDisplaySet(dataId);
+  const registered = getGenericViewportRegisteredDisplaySet(displaySetId);
 
   if (isGenericViewportWSIDisplaySet(registered)) {
     return registered;
@@ -115,8 +115,8 @@ export function getGenericViewportWSIDisplaySet(
   }
 }
 
-export function getGenericViewportSourceDataId(dataId: string): string {
-  const registered = getGenericViewportRegisteredDisplaySet(dataId);
+export function getGenericViewportSourceDataId(displaySetId: string): string {
+  const registered = getGenericViewportRegisteredDisplaySet(displaySetId);
 
   if (typeof registered === 'string') {
     return registered;
@@ -130,7 +130,7 @@ export function getGenericViewportSourceDataId(dataId: string): string {
     return registered.sourceDataId;
   }
 
-  return dataId;
+  return displaySetId;
 }
 
 export function isGenericViewportImageDisplaySet(

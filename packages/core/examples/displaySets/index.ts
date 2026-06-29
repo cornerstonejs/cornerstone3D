@@ -250,7 +250,7 @@ function buildRow(
 ): Row {
   // The viewport/registry `displaySetId` is the display set's instance UID; the
   // split rules keep it unique per series (e.g. the DWI mixed-b-value split).
-  const displaySetId = displaySet.displaySetInstanceUID;
+  const displaySetId = displaySet.displaySetId;
   const viewportId = `displaySets-vp-${seriesIndex}-${dsIndex}`;
 
   const rowElement = document.createElement('div');

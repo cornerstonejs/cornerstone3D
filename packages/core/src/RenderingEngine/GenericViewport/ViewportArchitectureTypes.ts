@@ -22,7 +22,7 @@ import type ResolvedViewportView from './ResolvedViewportView';
  */
 
 export type ViewportId = string;
-export type DataId = string;
+export type DisplaySetId = string;
 export type KnownViewportRenderContext =
   | 'planar'
   | 'video'
@@ -58,7 +58,7 @@ export interface BasePresentationProps {
 }
 
 export type LoadedData<TData extends object = object> = {
-  id: DataId;
+  id: DisplaySetId;
   type: LogicalDataType;
 } & TData;
 
@@ -130,7 +130,7 @@ export interface DataProvider<
   TData extends object = object,
   TOptions = unknown,
 > {
-  load(dataId: DataId, options?: TOptions): Promise<LoadedData<TData>>;
+  load(dataId: DisplaySetId, options?: TOptions): Promise<LoadedData<TData>>;
 }
 
 export interface ViewportDataBinding<TPresentation = unknown>
@@ -146,9 +146,12 @@ export interface ViewportController<
   readonly id: ViewportId;
   readonly type: ViewportType;
 
-  addDisplaySet(displaySetId: DataId, options: DataAddOptions): Promise<void>;
+  addDisplaySet(
+    displaySetId: DisplaySetId,
+    options: DataAddOptions
+  ): Promise<void>;
   setDisplaySets(
-    ...entries: Array<{ displaySetId: DataId; options?: unknown }>
+    ...entries: Array<{ displaySetId: DisplaySetId; options?: unknown }>
   ): Promise<void>;
   /**
    * Returns the display sets currently mounted on the viewport, in mount order
@@ -156,8 +159,8 @@ export interface ViewportController<
    * `Viewport.getDisplaySets()` shape so code can read mounted display sets
    * uniformly across the legacy and generic viewport hierarchies.
    */
-  getDisplaySets(): Array<{ displaySetId: DataId; options?: unknown }>;
-  removeData(dataId: DataId): void;
+  getDisplaySets(): Array<{ displaySetId: DisplaySetId; options?: unknown }>;
+  removeData(displaySetId: DisplaySetId): void;
 
   setViewState(viewState: Partial<TViewState>): void;
   getViewState(): TViewState;
@@ -172,10 +175,12 @@ export interface ViewportController<
   resetViewState(options?: unknown): boolean;
   setDisplaySetPresentation(props: Partial<TDataPresentation>): void;
   setDisplaySetPresentation(
-    displaySetId: DataId,
+    displaySetId: DisplaySetId,
     props: Partial<TDataPresentation>
   ): void;
-  getDisplaySetPresentation(dataId: DataId): TDataPresentation | undefined;
+  getDisplaySetPresentation(
+    displaySetId: DisplaySetId
+  ): TDataPresentation | undefined;
   setViewReference(viewReference: ViewReference): void;
   getViewReference(specifier?: ViewReferenceSpecifier): ViewReference;
   getViewReferenceId(specifier?: ViewReferenceSpecifier): string;

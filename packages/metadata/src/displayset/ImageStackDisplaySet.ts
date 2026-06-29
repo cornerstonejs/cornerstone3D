@@ -64,18 +64,18 @@ export class ImageStackDisplaySet extends BaseDisplaySet {
   static fromInstances(
     instances: NaturalizedInstance[],
     options?: {
-      displaySetInstanceUID?: string;
+      displaySetId?: string;
       viewportTypes?: readonly ViewportTypeHint[];
       imageIds?: Iterable<string>;
     }
   ): ImageStackDisplaySet {
-    const displaySetInstanceUID =
-      options?.displaySetInstanceUID ??
+    const displaySetId =
+      options?.displaySetId ??
       instances[0]?.SeriesInstanceUID ??
       `display-set-${instances[0]?.imageId ?? 'unknown'}`;
 
     return new ImageStackDisplaySet({
-      displaySetInstanceUID,
+      displaySetId,
       viewportTypes: options?.viewportTypes ?? ['stack', 'volume', 'volume3d'],
       instances,
       imageIds: options?.imageIds,
@@ -88,7 +88,7 @@ export class ImageStackDisplaySet extends BaseDisplaySet {
       imageId: string
     ) => NaturalizedInstance | undefined,
     options?: {
-      displaySetInstanceUID?: string;
+      displaySetId?: string;
       viewportTypes?: readonly ViewportTypeHint[];
     }
   ): ImageStackDisplaySet {

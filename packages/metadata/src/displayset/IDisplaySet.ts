@@ -34,7 +34,7 @@ import type { NaturalizedInstance, ViewportTypeHint } from './types';
  */
 export interface IDisplaySet {
   /** Unique identifier for this display set. */
-  displaySetInstanceUID: string;
+  displaySetId: string;
   /**
    * Allowed viewport types for this display set.
    * `viewportTypes[0]` is the preferred viewport type.

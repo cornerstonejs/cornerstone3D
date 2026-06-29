@@ -11,7 +11,7 @@ import {
 } from './viewportTypes';
 
 export type CreateDisplaySetFromGroupOptions = {
-  displaySetInstanceUID?: string;
+  displaySetId?: string;
   imageIds?: Iterable<string>;
   /** 0-based index of this group among the series' split groups. */
   splitNumber?: number;
@@ -29,7 +29,7 @@ const RESERVED_ATTRIBUTE_KEYS = new Set<string>([
   'imageIds',
   'underlyingImageIds',
   'instances',
-  'displaySetInstanceUID',
+  'displaySetId',
 ]);
 
 /**
@@ -117,19 +117,18 @@ export function createDisplaySetFromGroup(
   const viewportTypes = getViewportTypesForGroup(group);
   const { instances } = group;
   // A single series can split into multiple display sets (e.g. the DWI
-  // mixed-b-value split), so the default identity folds in the 0-based
-  // `splitNumber` to stay unique within a series rather than collapsing every
-  // split to the bare SeriesInstanceUID. This UID is the value callers pass to a
-  // viewport as `displaySetId` - the viewport/registry id is the display set
-  // instance UID.
-  const baseInstanceUID =
+  // mixed-b-value split), so the default id folds in the 0-based `splitNumber`
+  // to stay unique within a series rather than collapsing every split to the
+  // bare SeriesInstanceUID. This is the same value callers pass to a viewport as
+  // `displaySetId` - the metadata id and the viewport/registry id are one.
+  const baseDisplaySetId =
     instances[0]?.SeriesInstanceUID ??
     `display-set-${instances[0]?.imageId ?? 'unknown'}`;
-  const displaySetInstanceUID =
-    options.displaySetInstanceUID ??
+  const displaySetId =
+    options.displaySetId ??
     (options.splitNumber
-      ? `${baseInstanceUID}:${options.splitNumber}`
-      : baseInstanceUID);
+      ? `${baseDisplaySetId}:${options.splitNumber}`
+      : baseDisplaySetId);
 
   const first = instances[0];
   let displaySet: IDisplaySet;
@@ -140,7 +139,7 @@ export function createDisplaySetFromGroup(
   ) {
     const imageIds = instances.map((i) => i.imageId).filter(Boolean);
     displaySet = new BaseDisplaySet({
-      displaySetInstanceUID,
+      displaySetId,
       viewportTypes,
       instances,
       imageIds: options.imageIds ?? imageIds,
@@ -148,7 +147,7 @@ export function createDisplaySetFromGroup(
     });
   } else {
     displaySet = ImageStackDisplaySet.fromInstances(instances, {
-      displaySetInstanceUID,
+      displaySetId,
       viewportTypes,
       imageIds: options.imageIds,
     });

@@ -150,7 +150,7 @@ const HINT_TO_VIEWPORT_TYPE: Record<string, Enums.ViewportType> = {
   ecg: ViewportType.ECG,
 };
 
-const displaySetId = displaySet.displaySetInstanceUID;
+const displaySetId = displaySet.displaySetId;
 
 // 1. Register the renderable data so the viewport can resolve `displaySetId`.
 //    stack/volume use { imageIds }; video/ecg use { kind, sourceDataId };
@@ -259,7 +259,7 @@ const mixedDimensionalityBValue: SplitRule = {
 To customize splitting, prepend your own rules to (or replace) the defaults and
 pass the result as `splitRules`. `customAttributes` may set any attribute, but
 the resolved data fields a display set is built from — `imageIds`,
-`underlyingImageIds`, `instances`, and `displaySetInstanceUID` — are reserved and
+`underlyingImageIds`, `instances`, and `displaySetId` — are reserved and
 cannot be overwritten, so the underlying-vs-frame image id invariant the
 viewports rely on always holds.
 
@@ -287,7 +287,7 @@ like the OHIF display set object:
 ```ts
 const displaySet = createDisplaySetFromGroup(group);
 
-displaySet.displaySetInstanceUID;
+displaySet.displaySetId;
 displaySet.viewportTypes; // readonly ViewportTypeHint[]
 displaySet.preferredViewportType; // viewportTypes[0]
 displaySet.instances; // readonly NaturalizedInstance[]

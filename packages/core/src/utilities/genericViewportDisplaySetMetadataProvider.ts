@@ -7,20 +7,20 @@ let state: Record<string, unknown> = {};
 const genericViewportDisplaySetMetadataProvider = {
   VIEWPORT_V2_DISPLAY_SET,
 
-  add(dataId: string, dataSet: unknown): void {
-    state[dataId] = dataSet;
+  add(displaySetId: string, dataSet: unknown): void {
+    state[displaySetId] = dataSet;
   },
 
-  get(type: string, dataId: string): unknown {
+  get(type: string, displaySetId: string): unknown {
     if (type !== VIEWPORT_V2_DISPLAY_SET) {
       return;
     }
 
-    return state[dataId];
+    return state[displaySetId];
   },
 
-  remove(dataId: string): void {
-    delete state[dataId];
+  remove(displaySetId: string): void {
+    delete state[displaySetId];
   },
 
   clear(): void {

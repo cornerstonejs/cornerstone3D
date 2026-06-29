@@ -1,6 +1,6 @@
 import type { mat4 } from 'gl-matrix';
 import { Events as EVENTS, VideoEnums as VideoViewportEnum } from '../enums';
-import type { DataId } from './GenericViewport/ViewportArchitectureTypes';
+import type { DisplaySetId } from './GenericViewport/ViewportArchitectureTypes';
 import { getGenericViewportSourceDataId } from './GenericViewport/genericViewportDisplaySetAccess';
 import type {
   VideoViewportProperties,
@@ -209,7 +209,7 @@ class VideoViewport extends Viewport {
    * @param entries - display set entries to mount; the first is used as the source.
    */
   public async setDisplaySets(
-    ...entries: Array<{ displaySetId: DataId; options?: unknown }>
+    ...entries: Array<{ displaySetId: DisplaySetId; options?: unknown }>
   ): Promise<void> {
     await this.mountDisplaySets(entries, async (entry) => {
       // Resolve the display set to its source video imageId. When the id is not

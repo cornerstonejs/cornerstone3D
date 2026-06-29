@@ -125,7 +125,7 @@ describe('displayset split utilities', () => {
 
   it('ImageStackDisplaySet exposes underlying and frame ids', () => {
     const displaySet = ImageStackDisplaySet.fromInstances(instances, {
-      displaySetInstanceUID: 'uid-1',
+      displaySetId: 'uid-1',
       viewportTypes: ['stack', 'volume', 'volume3d'],
     });
     expect(displaySet.underlyingImageIds.length).toBe(2);
@@ -255,7 +255,7 @@ describe('displayset split utilities', () => {
           imageIds: ['evil-frame'],
           underlyingImageIds: ['evil-underlying'],
           instances: [],
-          displaySetInstanceUID: 'evil-uid',
+          displaySetId: 'evil-uid',
           // ... while non-reserved custom attributes are still applied.
           customFlag: true,
         }),
@@ -263,19 +263,19 @@ describe('displayset split utilities', () => {
     };
 
     const displaySet = createDisplaySetFromGroup(group, {
-      displaySetInstanceUID: 'good-uid',
+      displaySetId: 'good-uid',
     });
 
     expect(displaySet.imageIds).toEqual(['wadors:reserved']);
     expect(displaySet.underlyingImageIds).toEqual(['wadors:reserved']);
     expect(displaySet.instances).toHaveLength(1);
-    expect(displaySet.displaySetInstanceUID).toBe('good-uid');
+    expect(displaySet.displaySetId).toBe('good-uid');
     expect((displaySet as unknown as Record<string, unknown>).customFlag).toBe(
       true
     );
   });
 
-  it('derives unique displaySetInstanceUIDs for splits of one series', () => {
+  it('derives unique displaySetIds for splits of one series', () => {
     const seriesUID = 'series-split';
     const makeGroup = (imageId: string): InstanceGroup => ({
       instances: [
@@ -290,8 +290,8 @@ describe('displayset split utilities', () => {
     });
 
     // A series can split into multiple display sets (the DWI case); the split
-    // index keeps their instance UIDs - used as the viewport `displaySetId` -
-    // unique instead of all collapsing to the bare SeriesInstanceUID.
+    // index keeps their displaySetIds - used as the viewport id - unique
+    // instead of all collapsing to the bare SeriesInstanceUID.
     const ds0 = createDisplaySetFromGroup(makeGroup('wadors:s0'), {
       splitNumber: 0,
     });
@@ -299,8 +299,8 @@ describe('displayset split utilities', () => {
       splitNumber: 1,
     });
 
-    expect(ds0.displaySetInstanceUID).toBe(seriesUID);
-    expect(ds1.displaySetInstanceUID).toBe(`${seriesUID}:1`);
-    expect(ds0.displaySetInstanceUID).not.toBe(ds1.displaySetInstanceUID);
+    expect(ds0.displaySetId).toBe(seriesUID);
+    expect(ds1.displaySetId).toBe(`${seriesUID}:1`);
+    expect(ds0.displaySetId).not.toBe(ds1.displaySetId);
   });
 });
