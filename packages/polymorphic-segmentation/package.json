@@ -12,14 +12,16 @@
   },
   "exports": {
     ".": {
+      "types": "./dist/esm/index.d.ts",
       "import": "./dist/esm/index.js",
-      "types": "./dist/esm/index.d.ts"
+      "default": "./dist/esm/index.js"
     },
     "./version": {
-      "node": "./dist/esm/version.js",
+      "types": "./dist/esm/version.d.ts",
       "import": "./dist/esm/version.js",
-      "types": "./dist/esm/version.d.ts"
-    }
+      "default": "./dist/esm/version.js"
+    },
+    "./package.json": "./package.json"
   },
   "publishConfig": {
     "access": "public"
@@ -29,7 +31,7 @@
     "test": "jest --testTimeout 60000",
     "clean": "rimraf dist",
     "build": "pnpm run build:esm",
-    "build:esm": "pnpm run prebuild && tsc --project ./tsconfig.json",
+    "build:esm": "pnpm run prebuild && tsc --project ./tsconfig.json && tsc-alias -p ./tsconfig.json --resolve-full-paths && node ../../scripts/write-dist-esm-package-json.js ./",
     "build:esm:watch": "tsc --project ./tsconfig.json --watch",
     "dev": "tsc --project ./tsconfig.json --watch",
     "build:all": "pnpm run build:esm",
