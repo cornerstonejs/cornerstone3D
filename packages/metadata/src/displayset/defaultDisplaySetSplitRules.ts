@@ -16,29 +16,29 @@ export const defaultDisplaySetSplitRules: SplitRule[] = [
   {
     id: 'video',
     viewportTypes: ['video'],
-    ruleSelector: (instance) => isVideoInstance(instance),
-    splitKey: ['SOPInstanceUID'],
+    matches: (instance) => isVideoInstance(instance),
+    groupBy: ['SOPInstanceUID'],
   },
 
   {
     id: 'ecg',
     viewportTypes: ['ecg'],
-    ruleSelector: (instance) => isEcgInstance(instance),
-    splitKey: ['SOPInstanceUID'],
+    matches: (instance) => isEcgInstance(instance),
+    groupBy: ['SOPInstanceUID'],
   },
 
   {
     id: 'wholeslide',
     viewportTypes: ['wholeslide'],
     // All microscopy levels of a series form a single whole-slide display set.
-    ruleSelector: (instance) => isWsiInstance(instance),
-    splitKey: ['SeriesInstanceUID'],
+    matches: (instance) => isWsiInstance(instance),
+    groupBy: ['SeriesInstanceUID'],
   },
 
   {
     id: 'singleImageModality',
     viewportTypes: ['stack'],
-    ruleSelector: (instance) =>
+    matches: (instance) =>
       ['CR', 'DX', 'MG'].includes(instance.Modality ?? '') &&
       isImageInstance(instance) &&
       !!instance.Rows,
@@ -47,7 +47,7 @@ export const defaultDisplaySetSplitRules: SplitRule[] = [
     // the bucket series-scoped (the entry point is per-series, but this stays
     // correct if ever fed multiple series). The `/64` rounding is a deliberately
     // fuzzy bucket and can straddle a boundary (480 -> 8, 544 -> 9).
-    splitKey: [
+    groupBy: [
       'SeriesInstanceUID',
       (instance) =>
         `rows=${Math.round(Number(instance.Rows) / 64)}&cols=${Math.round(Number(instance.Columns) / 64)}`,
@@ -70,8 +70,8 @@ export const defaultDisplaySetSplitRules: SplitRule[] = [
       seriesInfo.isMultiFrame =
         Number(NumberOfFrames) > 1 && SliceLocation !== undefined;
     },
-    ruleSelector: (_instance, seriesInfo) => !!seriesInfo.isMultiFrame,
-    splitKey: ['SeriesInstanceUID', 'InstanceNumber'],
+    matches: (_instance, seriesInfo) => !!seriesInfo.isMultiFrame,
+    groupBy: ['SeriesInstanceUID', 'InstanceNumber'],
     customAttributes: ({ isMultiFrame }, options) => {
       // NumberOfFrames is frequently naturalized as a string (e.g. '30'); coerce
       // it so numImageFrames matches its declared `number` type.
@@ -113,8 +113,8 @@ export const defaultDisplaySetSplitRules: SplitRule[] = [
         seriesInfo.mixedBValue = true;
       }
     },
-    ruleSelector: (_instance, seriesInfo) => !!seriesInfo.mixedBValue,
-    splitKey: [
+    matches: (_instance, seriesInfo) => !!seriesInfo.mixedBValue,
+    groupBy: [
       'SeriesInstanceUID',
       (instance) => instance.DiffusionBValue === undefined,
     ],
@@ -134,13 +134,13 @@ export const defaultDisplaySetSplitRules: SplitRule[] = [
         seriesInfo.supportsVolume3d = true;
       }
     },
-    ruleSelector: (_instance, seriesInfo) => !!seriesInfo.supportsVolume3d,
-    splitKey: ['SeriesInstanceUID'],
+    matches: (_instance, seriesInfo) => !!seriesInfo.supportsVolume3d,
+    groupBy: ['SeriesInstanceUID'],
   },
 
   {
     id: 'defaultImageRule',
     viewportTypes: ['stack', 'volume', 'volume3d'],
-    ruleSelector: (instance) => isImageInstance(instance) && !!instance.Rows,
+    matches: (instance) => isImageInstance(instance) && !!instance.Rows,
   },
 ];

@@ -57,11 +57,19 @@ export type SplitRule = {
   id?: string;
   /** Allowed viewport types; index 0 is the preferred viewport type. */
   viewportTypes?: readonly ViewportTypeHint[];
-  ruleSelector?: (
-    instance: NaturalizedInstance,
-    seriesInfo: SeriesInfo
-  ) => boolean;
-  splitKey?: (
+  /**
+   * Predicate deciding whether this rule claims a given instance. Omit to match
+   * every instance (a catch-all rule). Evaluated in rule order; first match wins.
+   */
+  matches?: (instance: NaturalizedInstance, seriesInfo: SeriesInfo) => boolean;
+  /**
+   * Recipe for the bucket an instance is grouped under once this rule claims it:
+   * an ordered list of tag names and/or extractor functions. Instances whose
+   * parts are all equal land in the same group (one group -> one display set).
+   * Defaults to `['SeriesInstanceUID']` (one group per series). The computed
+   * result is stored on the produced {@link InstanceGroup} as `splitKey`.
+   */
+  groupBy?: (
     | string
     | ((instance: NaturalizedInstance, seriesInfo: SeriesInfo) => unknown)
   )[];

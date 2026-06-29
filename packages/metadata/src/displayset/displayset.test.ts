@@ -139,7 +139,7 @@ describe('displayset split utilities', () => {
       {
         id: 'defaultImageRule',
         viewportTypes: ['stack'],
-        ruleSelector: (instance) =>
+        matches: (instance) =>
           instance.SOPClassUID === '1.2.840.10008.5.1.4.1.1.2' &&
           !!instance.Rows,
       },
@@ -309,17 +309,17 @@ describe('displayset split utilities', () => {
       { imageId: 'a', Modality: 'XA' },
       { imageId: 'b', Modality: 'NM' },
     ];
-    // Two different rules whose splitKey functions return the same string.
+    // Two different rules whose groupBy functions return the same string.
     const rules: SplitRule[] = [
       {
         id: 'ruleA',
-        ruleSelector: (i) => i.Modality === 'XA',
-        splitKey: [() => 'same'],
+        matches: (i) => i.Modality === 'XA',
+        groupBy: [() => 'same'],
       },
       {
         id: 'ruleB',
-        ruleSelector: (i) => i.Modality === 'NM',
-        splitKey: [() => 'same'],
+        matches: (i) => i.Modality === 'NM',
+        groupBy: [() => 'same'],
       },
     ];
     const seriesInfo = buildSeriesInfo(insts, rules);
@@ -371,8 +371,8 @@ describe('displayset split utilities', () => {
     const rules: SplitRule[] = [
       {
         id: 'ct',
-        ruleSelector: (i) => i.Modality === 'CT',
-        splitKey: ['imageId'],
+        matches: (i) => i.Modality === 'CT',
+        groupBy: ['imageId'],
       },
     ];
     const seriesInfo = buildSeriesInfo(insts, rules);

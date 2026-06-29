@@ -20,8 +20,8 @@ function buildSplitKey(
   splitRule: SplitRule,
   ruleDiscriminator: string | number
 ): string {
-  const splitKey = splitRule.splitKey ?? ['SeriesInstanceUID'];
-  const parts = splitKey.map((key) =>
+  const groupBy = splitRule.groupBy ?? ['SeriesInstanceUID'];
+  const parts = groupBy.map((key) =>
     typeof key === 'function' ? key(instance, seriesInfo) : instance[key]
   );
   return JSON.stringify([ruleDiscriminator, ...parts]);
@@ -53,10 +53,7 @@ export function groupInstancesBySplitRules(
 
     for (let ruleIndex = 0; ruleIndex < splitRules.length; ruleIndex++) {
       const splitRule = splitRules[ruleIndex];
-      if (
-        splitRule.ruleSelector &&
-        !splitRule.ruleSelector(instance, seriesInfo)
-      ) {
+      if (splitRule.matches && !splitRule.matches(instance, seriesInfo)) {
         continue;
       }
 

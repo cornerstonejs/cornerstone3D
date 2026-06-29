@@ -39,6 +39,9 @@ export function buildSeriesInfo(
   const seriesInfo: SeriesInfo = {
     NumberOfSeriesRelatedInstances,
     numberOfFrames,
+    // `numImageFrames` mirrors `numberOfFrames` here purely for OHIF parity (the
+    // display-set shape exposes `numImageFrames`); they intentionally hold the
+    // same series-level frame count.
     numImageFrames: numberOfFrames,
     numberOfNonImageObjects,
     numberOfSOPInstanceUIDsPerSeries,

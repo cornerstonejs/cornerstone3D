@@ -160,16 +160,16 @@ rule). Rules are evaluated **in order, first match wins per instance**.
 
 A `SplitRule` has up to five parts:
 
-| Field              | Purpose                                                                                                                                   |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `ruleSelector`     | Returns true if an instance belongs to this rule. Omit to match everything.                                                               |
-| `splitKey`         | Keys (tag names or functions) that partition matched instances into separate display sets.                                                |
-| `updateSeriesInfo` | Runs once per series **before** selection and **mutates** `seriesInfo` to set flags read by `ruleSelector` (the return value is ignored). |
-| `viewportTypes`    | Allowed viewport types for the produced display sets; index `0` is preferred.                                                             |
-| `customAttributes` | Returns extra attributes spread flat onto the display set (e.g. `isClip`, `numImageFrames`).                                              |
+| Field              | Purpose                                                                                                                              |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `matches`          | Returns true if an instance belongs to this rule. Omit to match everything.                                                          |
+| `groupBy`          | Keys (tag names or functions) that partition matched instances into separate display sets.                                           |
+| `updateSeriesInfo` | Runs once per series **before** selection and **mutates** `seriesInfo` to set flags read by `matches` (the return value is ignored). |
+| `viewportTypes`    | Allowed viewport types for the produced display sets; index `0` is preferred.                                                        |
+| `customAttributes` | Returns extra attributes spread flat onto the display set (e.g. `isClip`, `numImageFrames`).                                         |
 
 The DWI fix is a good worked example — a series-level pass flags the mixed
-series, and `splitKey` then separates the b-value frames from the
+series, and `groupBy` then separates the b-value frames from the
 undefined-b-value frames:
 
 ```ts
@@ -193,9 +193,9 @@ const mixedDimensionalityBValue: SplitRule = {
     }
   },
   // Only applies once the series-level pass flagged the series.
-  ruleSelector: (_instance, seriesInfo) => !!seriesInfo.mixedBValue,
+  matches: (_instance, seriesInfo) => !!seriesInfo.mixedBValue,
   // Two display sets: undefined-b-value frames split off from the rest.
-  splitKey: [
+  groupBy: [
     'SeriesInstanceUID',
     (instance) => instance.DiffusionBValue === undefined,
   ],
@@ -212,7 +212,7 @@ on always holds.
 A few engine guarantees worth knowing when writing rules:
 
 - **Buckets are namespaced by rule.** Two different rules can never merge into
-  one display set even if their `splitKey` values coincide.
+  one display set even if their `groupBy` values coincide.
 - **Group order is deterministic.** Groups come back sorted by a stable,
   rule-namespaced key, so a series' display sets — and any id derived from their
   position — are stable regardless of the order the image ids were passed in.
