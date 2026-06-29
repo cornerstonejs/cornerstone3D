@@ -1,24 +1,549 @@
 import { eventTarget, imageLoader, triggerEvent } from '@cornerstonejs/core';
 import { utilities as cstUtils } from '@cornerstonejs/tools';
-import { data as dcmjsData, normalizers, utilities } from 'dcmjs';
+import { data as dcmjsData, normalizers } from 'dcmjs';
 import ndarray from 'ndarray';
 import checkOrientation from '../../helpers/checkOrientation';
+import {
+  createDecodeImageDataFromMultiframe,
+  getSegNumberOfFramesFromDataset,
+  unpackBinaryFrameFromPacked,
+} from '../encodePixelData';
 import {
   alignPixelDataWithSourceData,
   calculateCentroid,
   findReferenceSourceImageId,
+  getImageIdOfSourceImageBySourceImageSequence,
   getSegmentIndex,
   getSegmentMetadata,
   getValidOrientations,
   readFromUnpackedChunks,
-  unpackPixelData,
 } from '../../Cornerstone/Segmentation_4X';
 import { compactMergeSegmentDataWithoutInformationLoss } from './compactMergeSegData';
+import { normalizeSharedFunctionalGroupsSequence } from './perFrameFunctionalGroups';
 import { Events } from '../../enums';
 
 const { DicomMessage, DicomMetaDictionary } = dcmjsData;
 const { Normalizer } = normalizers;
-const { decode } = utilities.compression;
+const LABELMAP_SEG_SOP_CLASS_UID = '1.2.840.10008.5.1.4.1.1.66.7';
+const BUFFER_SEG_IMAGE_ID = 'cornerstone-adapters-buffer-seg:0';
+
+/** Frame-agnostic imageId for SOP UID → imageId maps (multiframe stacks). */
+function stripFrameQualifiersFromImageId(imageId: string): string {
+  if (!imageId) {
+    return imageId;
+  }
+
+  if (imageId.includes('/frames/')) {
+    return imageId.replace(/\/frames\/\d+.*$/, '');
+  }
+
+  return imageId.split('&frame=')[0].split('?frame=')[0];
+}
+
+function prepareSegMultiframeMetadata(multiframe: Record<string, unknown>) {
+  normalizeSharedFunctionalGroupsSequence(multiframe);
+
+  const perFrame = multiframe.PerFrameFunctionalGroupsSequence;
+
+  if (perFrame && !Array.isArray(perFrame)) {
+    multiframe.PerFrameFunctionalGroupsSequence = [perFrame];
+  }
+}
+
+function getFrameNumberFromImageId(imageId: string): number | undefined {
+  const frameQueryMatch = imageId.match(/(?:&|\?)frame=(\d+)/);
+  if (frameQueryMatch) {
+    return Number(frameQueryMatch[1]);
+  }
+
+  const wadorsFrameMatch = imageId.match(/\/frames\/(\d+)/);
+  if (wadorsFrameMatch) {
+    return Number(wadorsFrameMatch[1]);
+  }
+
+  return undefined;
+}
+
+/**
+ * Maps a resolved reference imageId (possibly built from stripped SOP base + frame)
+ * to an imageId that exists in the OHIF/Cornerstone stack and imageIdMaps.
+ */
+function resolveStackImageId(
+  imageId: string | undefined,
+  referencedImageIds: string[],
+  metadataProvider?,
+  segFrameIndex?: number
+): string | undefined {
+  if (!imageId) {
+    return segFrameIndex !== undefined &&
+      segFrameIndex < referencedImageIds.length
+      ? referencedImageIds[segFrameIndex]
+      : undefined;
+  }
+
+  if (referencedImageIds.includes(imageId)) {
+    return imageId;
+  }
+
+  const strippedTarget = stripFrameQualifiersFromImageId(imageId);
+  const targetFrame = getFrameNumberFromImageId(imageId);
+
+  for (const refId of referencedImageIds) {
+    if (stripFrameQualifiersFromImageId(refId) !== strippedTarget) {
+      continue;
+    }
+
+    if (targetFrame === undefined) {
+      return refId;
+    }
+
+    const refFrame = getFrameNumberFromImageId(refId) ?? 1;
+
+    if (refFrame === targetFrame) {
+      return refId;
+    }
+  }
+
+  if (metadataProvider?.get) {
+    const { sopInstanceUID } =
+      metadataProvider.get('generalImageModule', imageId) || {};
+
+    if (sopInstanceUID) {
+      for (const refId of referencedImageIds) {
+        const refSop = metadataProvider.get(
+          'generalImageModule',
+          refId
+        )?.sopInstanceUID;
+
+        if (refSop !== sopInstanceUID) {
+          continue;
+        }
+
+        if (targetFrame === undefined) {
+          return refId;
+        }
+
+        const refFrame = getFrameNumberFromImageId(refId) ?? 1;
+
+        if (refFrame === targetFrame) {
+          return refId;
+        }
+      }
+    }
+  }
+
+  if (
+    segFrameIndex !== undefined &&
+    segFrameIndex < referencedImageIds.length
+  ) {
+    return referencedImageIds[segFrameIndex];
+  }
+
+  return undefined;
+}
+
+function ensureImageIdMapsEntry(
+  imageId: string,
+  referencedImageIds: string[],
+  imageIdMaps: {
+    indices: Record<string, number>;
+    metadata: Record<string, Record<string, unknown>>;
+  },
+  metadataProvider,
+  segFrameIndex?: number
+) {
+  const stackImageId = resolveStackImageId(
+    imageId,
+    referencedImageIds,
+    metadataProvider,
+    segFrameIndex
+  );
+
+  if (!stackImageId) {
+    return undefined;
+  }
+
+  if (imageIdMaps.indices[stackImageId] === undefined) {
+    const index = referencedImageIds.indexOf(stackImageId);
+
+    if (index === -1) {
+      return undefined;
+    }
+
+    imageIdMaps.indices[stackImageId] = index;
+    imageIdMaps.metadata[stackImageId] =
+      imageIdMaps.metadata[stackImageId] ||
+      metadataProvider.get('instance', stackImageId);
+  }
+
+  return stackImageId;
+}
+
+function chunkPixelData(
+  pixelData,
+  options: { maxBytesPerChunk?: number } = {}
+) {
+  const { maxBytesPerChunk = Number.POSITIVE_INFINITY } = options;
+
+  if (pixelData.length <= maxBytesPerChunk) {
+    return [pixelData];
+  }
+
+  const chunks = [];
+  for (let offset = 0; offset < pixelData.length; offset += maxBytesPerChunk) {
+    chunks.push(pixelData.subarray(offset, offset + maxBytesPerChunk));
+  }
+
+  return chunks;
+}
+
+function normalizeDecodedPixelData(pixelData) {
+  if (Array.isArray(pixelData)) {
+    if (pixelData.length === 1) {
+      return normalizeDecodedPixelData(pixelData[0]);
+    }
+
+    const hasUint16Frame = pixelData.some(
+      (frame) => frame instanceof Uint16Array
+    );
+
+    if (hasUint16Frame) {
+      // Promote any non-16-bit frame to Uint16Array by VALUE (each segment
+      // index copied, length preserved) — NOT a byte reinterpret. Decoded
+      // frames arrive from the imageLoader as typed arrays matching their true
+      // bit depth, so a Uint8Array frame holds genuine 8-bit segment indices
+      // that must keep their values when widened. A `new Uint16Array(buffer)`
+      // byte reinterpretation would halve the length and corrupt the indices.
+      const normalizedFrames = pixelData.map((frame) =>
+        frame instanceof Uint16Array ? frame : new Uint16Array(frame)
+      );
+      const totalLength = normalizedFrames.reduce(
+        (acc, frame) => acc + frame.length,
+        0
+      );
+      const combined = new Uint16Array(totalLength);
+      let offset = 0;
+      for (const frame of normalizedFrames) {
+        combined.set(frame, offset);
+        offset += frame.length;
+      }
+      return combined;
+    }
+
+    const normalizedFrames = pixelData.map((frame) =>
+      frame instanceof Uint8Array ? frame : new Uint8Array(frame)
+    );
+    const totalLength = normalizedFrames.reduce(
+      (acc, frame) => acc + frame.length,
+      0
+    );
+    const combined = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const frame of normalizedFrames) {
+      combined.set(frame, offset);
+      offset += frame.length;
+    }
+    return combined;
+  }
+
+  if (pixelData instanceof Uint8Array || pixelData instanceof Uint16Array) {
+    return pixelData;
+  }
+
+  return new Uint8Array(pixelData);
+}
+
+function getExpectedVoxelCount(multiframe) {
+  const numberOfFrames =
+    Number(multiframe.NumberOfFrames) ||
+    multiframe.PerFrameFunctionalGroupsSequence?.length ||
+    1;
+  return multiframe.Rows * multiframe.Columns * numberOfFrames;
+}
+
+type DecodeFrameImageData = (
+  frameImageId: string,
+  frameNumber: number
+) => Promise<
+  | ArrayLike<number>
+  | ArrayLike<number>[]
+  | Uint8Array
+  | Uint16Array
+  | (Uint8Array | Uint16Array)[]
+>;
+
+/** Default cap on concurrent SEG frame fetch/decode operations. */
+const DEFAULT_SEG_FRAME_DECODE_CONCURRENCY = 16;
+
+/**
+ * Maps items through an async fn with at most `limit` concurrent calls,
+ * preserving input order in the result array. Used to overlap SEG frame
+ * fetch/decode instead of awaiting each frame serially: a pool of `limit`
+ * workers pulls the next frame index as soon as it finishes the previous one,
+ * keeping up to `limit` requests in flight at all times.
+ */
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T, index: number) => Promise<R>
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let nextIndex = 0;
+
+  const worker = async () => {
+    while (nextIndex < items.length) {
+      const index = nextIndex++;
+      results[index] = await fn(items[index], index);
+    }
+  };
+
+  const poolSize = Math.max(1, Math.min(limit, items.length));
+  await Promise.all(Array.from({ length: poolSize }, worker));
+
+  return results;
+}
+
+function getSegNumberOfFrames(multiframe: Record<string, unknown>): number {
+  const fromTag = Number(multiframe.NumberOfFrames);
+  if (fromTag > 0) {
+    return fromTag;
+  }
+  const perFrame = multiframe.PerFrameFunctionalGroupsSequence;
+  if (Array.isArray(perFrame) && perFrame.length > 0) {
+    return perFrame.length;
+  }
+  return 1;
+}
+
+/** Expands WADO-RS …/frames/1 into one imageId per frame when frameImageIds are not supplied. */
+function expandWadorsFrameImageIds(
+  segImageId: string,
+  numberOfFrames: number
+): string[] {
+  const frameMatch = segImageId.match(/(.*\/frames\/)(\d+)(.*)$/);
+  if (!frameMatch || numberOfFrames <= 1) {
+    return [segImageId];
+  }
+
+  const prefix = frameMatch[1];
+  const suffix = frameMatch[3] || '';
+  const frameImageIds: string[] = [];
+
+  for (let frameNumber = 1; frameNumber <= numberOfFrames; frameNumber++) {
+    frameImageIds.push(`${prefix}${frameNumber}${suffix}`);
+  }
+
+  return frameImageIds;
+}
+
+const WADO_URI_FRAME_SCHEME = /^(wadouri:|dicomfile:)/;
+
+/**
+ * Expands a WADO-URI / local SEG imageId into one imageId per frame using the
+ * `?frame=N` / `&frame=N` (1-based) convention. Returns `[segImageId]` when the
+ * scheme is not WADO-URI-style or the SEG is single-frame.
+ */
+function expandWadoUriFrameImageIds(
+  segImageId: string,
+  numberOfFrames: number
+): string[] {
+  if (numberOfFrames <= 1 || !WADO_URI_FRAME_SCHEME.test(segImageId)) {
+    return [segImageId];
+  }
+
+  const base = segImageId.split('&frame=')[0].split('?frame=')[0];
+  const separator = base.includes('?') ? '&' : '?';
+  const frameImageIds: string[] = [];
+
+  for (let frameNumber = 1; frameNumber <= numberOfFrames; frameNumber++) {
+    frameImageIds.push(`${base}${separator}frame=${frameNumber}`);
+  }
+
+  return frameImageIds;
+}
+
+function resolveFrameImageIds({
+  segImageId,
+  numberOfFrames,
+  frameImageIds,
+  getFrameImageId,
+}: {
+  segImageId: string;
+  numberOfFrames: number;
+  frameImageIds?: string[];
+  getFrameImageId?: (baseSegImageId: string, frameNumber: number) => string;
+}): string[] {
+  if (frameImageIds?.length) {
+    return frameImageIds;
+  }
+
+  if (getFrameImageId) {
+    return Array.from({ length: numberOfFrames }, (_, index) =>
+      getFrameImageId(segImageId, index + 1)
+    );
+  }
+
+  // The adapter can only synthesize per-frame imageIds for schemes whose
+  // frame-addressing convention it knows: WADO-RS (`.../frames/N`) and WADO-URI
+  // (`?frame=N` / `&frame=N`). For any other scheme the caller must supply
+  // frameImageIds or getFrameImageId.
+  const wadorsFrameIds = expandWadorsFrameImageIds(segImageId, numberOfFrames);
+  if (wadorsFrameIds.length > 1) {
+    return wadorsFrameIds;
+  }
+
+  const wadoUriFrameIds = expandWadoUriFrameImageIds(
+    segImageId,
+    numberOfFrames
+  );
+  if (wadoUriFrameIds.length > 1) {
+    return wadoUriFrameIds;
+  }
+
+  return numberOfFrames > 1
+    ? Array.from({ length: numberOfFrames }, () => segImageId)
+    : [segImageId];
+}
+
+function unpackFramePixelDataIfNeeded(
+  framePixelData: Uint8Array | Uint16Array,
+  multiframe: Record<string, unknown>,
+  sliceLength: number
+) {
+  const bitsStored = Number(multiframe.BitsStored);
+  if (bitsStored === 1 && framePixelData.length < sliceLength) {
+    const packed =
+      framePixelData instanceof Uint8Array
+        ? framePixelData
+        : new Uint8Array(framePixelData);
+    return unpackBinaryFrameFromPacked(packed, sliceLength);
+  }
+  return framePixelData;
+}
+
+function ensureInstanceOnMetadataProvider(
+  metadataProvider: {
+    get: (type: string, imageId: string) => unknown;
+    addCustomMetadata?: (
+      imageId: string,
+      type: string,
+      metadata: unknown
+    ) => void;
+    add?: (imageId: string, type: string, metadata: unknown) => void;
+  },
+  segImageId: string,
+  multiframe: Record<string, unknown>
+) {
+  if (metadataProvider.get('instance', segImageId)) {
+    return;
+  }
+
+  if (metadataProvider.addCustomMetadata) {
+    metadataProvider.addCustomMetadata(segImageId, 'instance', multiframe);
+    return;
+  }
+
+  if (metadataProvider.add) {
+    metadataProvider.add(segImageId, 'instance', multiframe);
+  }
+}
+
+async function defaultDecodeFrameImageData(
+  frameImageId: string,
+  _frameNumber: number
+) {
+  const segImage = await imageLoader.loadImage(frameImageId);
+  return segImage?.getPixelData?.();
+}
+
+async function decodeSegPixelDataFromFrameIds({
+  segImageId,
+  multiframe,
+  frameImageIds,
+  getFrameImageId,
+  decodeImageData = defaultDecodeFrameImageData,
+  concurrency = DEFAULT_SEG_FRAME_DECODE_CONCURRENCY,
+}: {
+  segImageId: string;
+  multiframe: Record<string, unknown>;
+  frameImageIds?: string[];
+  getFrameImageId?: (baseSegImageId: string, frameNumber: number) => string;
+  decodeImageData: DecodeFrameImageData;
+  concurrency?: number;
+}) {
+  const rows = Number(multiframe.Rows);
+  const columns = Number(multiframe.Columns);
+  const sliceLength = rows * columns;
+  const numberOfFrames = getSegNumberOfFrames(multiframe);
+  const expectedVoxelCount = getExpectedVoxelCount(multiframe);
+  const resolvedFrameImageIds = resolveFrameImageIds({
+    segImageId,
+    numberOfFrames,
+    frameImageIds,
+    getFrameImageId,
+  });
+
+  if (numberOfFrames <= 1) {
+    const frameImageId = resolvedFrameImageIds[0] || segImageId;
+    const framePixelData = await decodeImageData(frameImageId, 1);
+    if (!framePixelData) {
+      throw new Error(
+        `No decoded pixel data found for SEG imageId: ${frameImageId}`
+      );
+    }
+    const normalized = normalizeDecodedPixelData(framePixelData);
+    const decodedPixelData = unpackFramePixelDataIfNeeded(
+      normalized as Uint8Array,
+      multiframe,
+      sliceLength
+    );
+    return { decodedPixelData, expectedVoxelCount };
+  }
+
+  // Fetch/decode frames with bounded concurrency so up to `concurrency`
+  // requests overlap instead of awaiting each frame serially. Order is
+  // preserved by mapWithConcurrency, keeping perFramePixelData frame-aligned.
+  const perFramePixelData = await mapWithConcurrency(
+    resolvedFrameImageIds.slice(0, numberOfFrames),
+    concurrency,
+    async (frameImageId, frameIndex) => {
+      const frameNumber = frameIndex + 1;
+
+      if (!frameImageId) {
+        throw new Error(
+          `Missing SEG frame imageId at frame ${frameNumber} (expected ${numberOfFrames} frame imageIds)`
+        );
+      }
+
+      const framePixelData = await decodeImageData(frameImageId, frameNumber);
+
+      if (!framePixelData) {
+        throw new Error(
+          `No decoded pixel data found for SEG frame imageId: ${frameImageId}`
+        );
+      }
+
+      let normalizedFrame = normalizeDecodedPixelData(framePixelData) as
+        | Uint8Array
+        | Uint16Array;
+
+      normalizedFrame = unpackFramePixelDataIfNeeded(
+        normalizedFrame,
+        multiframe,
+        sliceLength
+      ) as Uint8Array | Uint16Array;
+
+      return normalizedFrame.subarray(0, sliceLength) as
+        | Uint8Array
+        | Uint16Array;
+    }
+  );
+
+  return {
+    decodedPixelData: normalizeDecodedPixelData(perFramePixelData),
+    expectedVoxelCount,
+  };
+}
 
 const updateSegmentsOnFrame = ({
   segmentsOnFrame,
@@ -52,36 +577,111 @@ const extractInfoFromPerFrameFunctionalGroups = ({
   sopUIDImageIdIndexMap,
   multiframe,
 }) => {
+  const derivationImageSequence =
+    PerFrameFunctionalGroups?.DerivationImageSequence;
+  const normalizedDerivationImageSequence = Array.isArray(
+    derivationImageSequence
+  )
+    ? derivationImageSequence[0]
+    : derivationImageSequence;
+  const sourceImageSequence =
+    normalizedDerivationImageSequence?.SourceImageSequence;
+  const normalizedSourceImageSequence = Array.isArray(sourceImageSequence)
+    ? sourceImageSequence[0]
+    : sourceImageSequence;
   const referencedSOPInstanceUid =
-    PerFrameFunctionalGroups.DerivationImageSequence[0].SourceImageSequence[0]
-      .ReferencedSOPInstanceUID;
-  const referencedImageId = sopUIDImageIdIndexMap[referencedSOPInstanceUid];
+    normalizedSourceImageSequence?.ReferencedSOPInstanceUID;
+  const referencedImageId =
+    referencedSOPInstanceUid && normalizedSourceImageSequence
+      ? getImageIdOfSourceImageBySourceImageSequence(
+          normalizedSourceImageSequence,
+          sopUIDImageIdIndexMap
+        )
+      : undefined;
   const segmentIndex = getSegmentIndex(multiframe, sequenceIndex);
 
   return { referencedSOPInstanceUid, referencedImageId, segmentIndex };
 };
 
-async function createLabelmapsFromBufferInternal(
+const getReferencedImageIdFromPerFrameGroup = ({
+  perFrameFunctionalGroup,
+  sopUIDImageIdIndexMap,
+}) => {
+  const derivationImageSequence =
+    perFrameFunctionalGroup?.DerivationImageSequence;
+  const normalizedDerivationImageSequence = Array.isArray(
+    derivationImageSequence
+  )
+    ? derivationImageSequence[0]
+    : derivationImageSequence;
+  const sourceImageSequence =
+    normalizedDerivationImageSequence?.SourceImageSequence;
+  const normalizedSourceImageSequence = Array.isArray(sourceImageSequence)
+    ? sourceImageSequence[0]
+    : sourceImageSequence;
+  const referencedSOPInstanceUID =
+    normalizedSourceImageSequence?.ReferencedSOPInstanceUID;
+
+  if (!referencedSOPInstanceUID || !normalizedSourceImageSequence) {
+    return;
+  }
+
+  return getImageIdOfSourceImageBySourceImageSequence(
+    normalizedSourceImageSequence,
+    sopUIDImageIdIndexMap
+  );
+};
+
+/**
+ * Creates labelmap images from a SEG instance using per-frame imageIds and a decode callback.
+ * This is the primary entry point for OHIF and other hosts that load pixels via imageLoader.
+ *
+ * `options.frameImageIds` is optional: it is the list of per-frame imageIds the
+ * segmentation contains (as produced when the SEG object is loaded). It only
+ * needs to be supplied for data sources whose imageIds do not follow the
+ * DICOMweb (WADO-RS) or WADO-URI conventions — for those, the per-frame list is
+ * derived automatically from `segImageId` (see `resolveFrameImageIds`).
+ */
+async function createLabelmapsFromSegImageIds(
   referencedImageIds,
-  arrayBuffer,
+  segImageId,
   metadataProvider,
   options
 ) {
   const {
     tolerance = 1e-3,
     TypedArrayConstructor = Uint8Array,
-    maxBytesPerChunk = 199000000,
-  } = options;
-  const dicomData = DicomMessage.readFile(arrayBuffer);
-  const dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
-  dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
-  const multiframe = Normalizer.normalizeToDataset([dataset]);
+    maxBytesPerChunk,
+    parserType = 'bitmap',
+    frameImageIds,
+    getFrameImageId,
+    decodeImageData = defaultDecodeFrameImageData,
+    // Max number of SEG frames fetched/decoded concurrently (default 16).
+    concurrency = DEFAULT_SEG_FRAME_DECODE_CONCURRENCY,
+    // Callers that already hold the normalized SEG dataset (e.g. the buffer
+    // path) can pass it directly to avoid a metadata-provider round-trip. Some
+    // providers (notably OHIF's) short-circuit `get('instance', ...)` before
+    // consulting custom metadata, so a synthetic SEG imageId is not retrievable.
+    multiframe: providedMultiframe = undefined,
+  } = options ?? {};
+
+  let multiframe = providedMultiframe;
+  if (!multiframe) {
+    const instanceMeta = metadataProvider.get('instance', segImageId);
+    if (!instanceMeta) {
+      throw new Error(
+        `No instance metadata found for SEG imageId: ${segImageId}. Ensure the SEG instance is registered in the metadata provider (e.g. after loading the image).`
+      );
+    }
+    multiframe = instanceMeta.dataset ?? instanceMeta;
+  }
+
+  prepareSegMultiframeMetadata(multiframe);
 
   const imagePlaneModule = metadataProvider.get(
     'imagePlaneModule',
     referencedImageIds[0]
   );
-
   const generalSeriesModule = metadataProvider.get(
     'generalSeriesModule',
     referencedImageIds[0]
@@ -108,33 +708,39 @@ async function createLabelmapsFromBufferInternal(
   const validOrientations = getValidOrientations(ImageOrientationPatient);
   const segMetadata = getSegmentMetadata(multiframe, SeriesInstanceUID);
 
-  const TransferSyntaxUID = multiframe._meta.TransferSyntaxUID.Value[0];
-
-  let pixelData;
   let pixelDataChunks;
 
-  if (TransferSyntaxUID === '1.2.840.10008.1.2.5') {
-    const rleEncodedFrames = Array.isArray(multiframe.PixelData)
-      ? multiframe.PixelData
-      : [multiframe.PixelData];
-
-    pixelData = decode(rleEncodedFrames, multiframe.Rows, multiframe.Columns);
-
-    if (multiframe.BitsStored === 1) {
-      console.warn('No implementation for rle + bit packing.');
-
-      return;
-    }
-
-    // Todo: need to test this with rle data
-    pixelDataChunks = [pixelData];
-  } else {
-    pixelDataChunks = unpackPixelData(multiframe, { maxBytesPerChunk });
-
-    if (!pixelDataChunks) {
-      throw new Error('Fractional segmentations are not yet supported');
-    }
+  if (multiframe.SegmentationType === 'FRACTIONAL') {
+    throw new Error('Fractional segmentations are not yet supported');
   }
+
+  const { decodedPixelData, expectedVoxelCount } =
+    await decodeSegPixelDataFromFrameIds({
+      segImageId,
+      multiframe,
+      frameImageIds,
+      getFrameImageId,
+      decodeImageData,
+      concurrency,
+    });
+  const sliceLength = multiframe.Rows * multiframe.Columns;
+
+  const unpackedPixelData =
+    Number(multiframe.BitsStored) === 1 &&
+    decodedPixelData.length < expectedVoxelCount
+      ? unpackBinaryFrameFromPacked(
+          decodedPixelData instanceof Uint8Array
+            ? decodedPixelData
+            : new Uint8Array(decodedPixelData),
+          sliceLength
+        )
+      : decodedPixelData;
+  const decodedFrameCount = Math.max(
+    1,
+    Math.floor(unpackedPixelData.length / sliceLength)
+  );
+
+  pixelDataChunks = chunkPixelData(unpackedPixelData, { maxBytesPerChunk });
 
   const orientation = checkOrientation(
     multiframe,
@@ -146,7 +752,6 @@ async function createLabelmapsFromBufferInternal(
     ],
     tolerance
   );
-
   // Pre-compute the sop UID to imageId index map so that in the for loop
   // we don't have to call metadataProvider.get() for each imageId over
   // and over again.
@@ -155,7 +760,15 @@ async function createLabelmapsFromBufferInternal(
       'generalImageModule',
       imageId
     );
-    acc[sopInstanceUID] = imageId;
+
+    if (!sopInstanceUID) {
+      return acc;
+    }
+
+    if (!acc[sopInstanceUID]) {
+      acc[sopInstanceUID] = stripFrameQualifiersFromImageId(imageId);
+    }
+
     return acc;
   }, {});
 
@@ -218,6 +831,8 @@ async function createLabelmapsFromBufferInternal(
       sopUIDImageIdIndexMap,
       imageIdMaps,
       TypedArrayConstructor,
+      parserType,
+      decodedFrameCount,
     });
 
   // calculate the centroid of each segment
@@ -264,6 +879,8 @@ export function insertPixelDataPlanar({
   segmentsPixelIndices,
   sopUIDImageIdIndexMap,
   imageIdMaps,
+  parserType,
+  decodedFrameCount,
 }) {
   const {
     SharedFunctionalGroupsSequence,
@@ -279,7 +896,15 @@ export function insertPixelDataPlanar({
       : undefined;
   const sliceLength = Columns * Rows;
 
-  const groupsLen = PerFrameFunctionalGroupsSequence.length;
+  const metadataFrameCount =
+    Number(multiframe.NumberOfFrames) ||
+    PerFrameFunctionalGroupsSequence.length;
+  const groupsLenFromMetadata =
+    PerFrameFunctionalGroupsSequence.length || metadataFrameCount;
+  const groupsLen =
+    typeof decodedFrameCount === 'number'
+      ? Math.min(groupsLenFromMetadata, decodedFrameCount)
+      : groupsLenFromMetadata;
 
   let overlapping = false;
   // Below, we chunk the processing of the frames to avoid blocking the main thread
@@ -298,8 +923,14 @@ export function insertPixelDataPlanar({
 
         const ImageOrientationPatientI =
           sharedImageOrientationPatient ||
-          PerFrameFunctionalGroups.PlaneOrientationSequence
-            .ImageOrientationPatient;
+          PerFrameFunctionalGroups?.PlaneOrientationSequence
+            ?.ImageOrientationPatient;
+
+        if (!ImageOrientationPatientI) {
+          throw new Error(
+            `SEG frame ${i + 1} is missing ImageOrientationPatient in per-frame and shared functional groups.`
+          );
+        }
 
         const view = readFromUnpackedChunks(
           pixelDataChunks,
@@ -335,7 +966,7 @@ export function insertPixelDataPlanar({
           segmentsPixelIndices.set(segmentIndex, {});
         }
 
-        const imageId = findReferenceSourceImageId(
+        let imageId = findReferenceSourceImageId(
           multiframe,
           i,
           referencedImageIds,
@@ -344,6 +975,10 @@ export function insertPixelDataPlanar({
           sopUIDImageIdIndexMap
         );
 
+        if (!imageId && i < referencedImageIds.length) {
+          imageId = referencedImageIds[i];
+        }
+
         if (!imageId) {
           console.warn(
             "Image not present in stack, can't import frame : " + i + '.'
@@ -351,7 +986,30 @@ export function insertPixelDataPlanar({
           return;
         }
 
-        const sourceImageMetadata = imageIdMaps.metadata[imageId];
+        const stackImageId = ensureImageIdMapsEntry(
+          imageId,
+          referencedImageIds,
+          imageIdMaps,
+          metadataProvider,
+          i
+        );
+
+        if (!stackImageId) {
+          console.warn(
+            `Image not present in stack, can't import frame : ${i}.`
+          );
+          return;
+        }
+
+        const sourceImageMetadata = imageIdMaps.metadata[stackImageId];
+
+        if (!sourceImageMetadata) {
+          console.warn(
+            `No instance metadata for referenced image at frame : ${i}.`
+          );
+          return;
+        }
+
         if (
           Rows !== sourceImageMetadata.Rows ||
           Columns !== sourceImageMetadata.Columns
@@ -363,7 +1021,7 @@ export function insertPixelDataPlanar({
           );
         }
 
-        const imageIdIndex = imageIdMaps.indices[imageId];
+        const imageIdIndex = imageIdMaps.indices[stackImageId];
         const labelmapImage = labelMapImages[imageIdIndex];
         const labelmap2DView = labelmapImage.getPixelData();
         const imageVoxelManager = labelmapImage.voxelManager;
@@ -438,7 +1096,6 @@ export function insertPixelDataPlanar({
       const sharedPlaneOrientation =
         multiframe.SharedFunctionalGroupsSequence.PlaneOrientationSequence
           ?.ImageOrientationPatient;
-
       for (
         let i = firstIndex;
         i < firstIndex + imagesPerChunk && i < groupsLen;
@@ -447,12 +1104,13 @@ export function insertPixelDataPlanar({
         const PerFrameFunctionalGroups = pfSeq[i];
         const ImageOrientationPatientI =
           sharedPlaneOrientation ||
-          PerFrameFunctionalGroups.PlaneOrientationSequence
-            .ImageOrientationPatient;
-        // Use slice to get the correct frame (TypedArray)
-        const view = pixelDataChunks.subarray(
+          PerFrameFunctionalGroups?.PlaneOrientationSequence
+            ?.ImageOrientationPatient ||
+          validOrientations[0];
+        const view = readFromUnpackedChunks(
+          pixelDataChunks,
           i * sliceLength,
-          (i + 1) * sliceLength
+          sliceLength
         );
         const pixelDataI2D = ndarray(view, [Rows, Columns]);
         const alignedPixelDataI = alignPixelDataWithSourceData(
@@ -467,7 +1125,7 @@ export function insertPixelDataPlanar({
               'This is not yet supported. Aborting segmentation loading.'
           );
         }
-        const imageId = findReferenceSourceImageId(
+        let imageId = findReferenceSourceImageId(
           multiframe,
           i,
           referencedImageIds,
@@ -476,12 +1134,46 @@ export function insertPixelDataPlanar({
           sopUIDImageIdIndexMap
         );
         if (!imageId) {
+          imageId = getReferencedImageIdFromPerFrameGroup({
+            perFrameFunctionalGroup: PerFrameFunctionalGroups,
+            sopUIDImageIdIndexMap,
+          });
+        }
+
+        if (!imageId && i < referencedImageIds.length) {
+          imageId = referencedImageIds[i];
+        }
+        if (!imageId) {
           console.warn(
             `Image not present in stack, can't import frame : ${i}.`
           );
           continue;
         }
-        const sourceImageMetadata = imageIdMaps.metadata[imageId];
+
+        const stackImageId = ensureImageIdMapsEntry(
+          imageId,
+          referencedImageIds,
+          imageIdMaps,
+          metadataProvider,
+          i
+        );
+
+        if (!stackImageId) {
+          console.warn(
+            `Image not present in stack, can't import frame : ${i}.`
+          );
+          continue;
+        }
+
+        const sourceImageMetadata = imageIdMaps.metadata[stackImageId];
+
+        if (!sourceImageMetadata) {
+          console.warn(
+            `No instance metadata for referenced image at frame : ${i}.`
+          );
+          continue;
+        }
+
         if (
           Rows !== sourceImageMetadata.Rows ||
           Columns !== sourceImageMetadata.Columns
@@ -492,9 +1184,10 @@ export function insertPixelDataPlanar({
               'Aborting segmentation loading. '
           );
         }
-        const imageIdIndex = imageIdMaps.indices[imageId];
+        const imageIdIndex = imageIdMaps.indices[stackImageId];
         const labelmapImage = labelMapImages[imageIdIndex];
         const labelmap2DView = labelmapImage.getPixelData(); // TypedArray
+        const imageVoxelManager = labelmapImage.voxelManager;
         const data = alignedPixelDataI.data;
         let segmentsOnFrameArr = segmentsOnFrame[imageIdIndex];
         if (!segmentsOnFrameArr) {
@@ -506,7 +1199,11 @@ export function insertPixelDataPlanar({
         for (let k = 0, len = data.length; k < len; ++k) {
           const segIdx = data[k];
           if (segIdx !== 0) {
-            labelmap2DView[k] = segIdx;
+            if (imageVoxelManager) {
+              imageVoxelManager.setAtIndex(k, segIdx);
+            } else {
+              labelmap2DView[k] = segIdx;
+            }
             if (!segSet.has(segIdx)) {
               segmentsOnFrameArr.push(segIdx);
               segSet.add(segIdx);
@@ -534,7 +1231,12 @@ export function insertPixelDataPlanar({
       }
     };
 
-    if (multiframe.SegmentationType === 'LABELMAP') {
+    const isLabelmapSegmentation =
+      parserType === 'labelmap' ||
+      multiframe.SOPClassUID === LABELMAP_SEG_SOP_CLASS_UID ||
+      multiframe.SegmentationType === 'LABELMAP';
+
+    if (isLabelmapSegmentation) {
       // If the segmentation is a labelmap, we can process it in chunks
       processLabelmapChunk(0);
     } else {
@@ -860,4 +1562,67 @@ const getSegmentData = ({
   return segmentData;
 };
 
-export { createLabelmapsFromBufferInternal };
+/**
+ * Legacy entry: parse a Part 10 buffer, decode pixels from dataset PixelData, and
+ * delegate to createLabelmapsFromSegImageIds with synthetic frame imageIds.
+ */
+async function createLabelmapsFromDICOMBuffer(
+  referencedImageIds,
+  arrayBuffer,
+  metadataProvider,
+  options: Record<string, unknown> = {}
+) {
+  const dicomData = DicomMessage.readFile(arrayBuffer);
+  const dataset = DicomMetaDictionary.naturalizeDataset(dicomData.dict);
+  dataset._meta = DicomMetaDictionary.namifyDataset(dicomData.meta);
+  const multiframe = Normalizer.normalizeToDataset([dataset]);
+
+  const segImageId =
+    (options.segImageId as string | undefined) ?? BUFFER_SEG_IMAGE_ID;
+  ensureInstanceOnMetadataProvider(metadataProvider, segImageId, multiframe);
+
+  const numberOfFrames = getSegNumberOfFramesFromDataset(multiframe);
+  const frameImageIds = Array.from(
+    { length: numberOfFrames },
+    (_, index) => `${segImageId}#frame=${index + 1}`
+  );
+
+  const decodeImageData = createDecodeImageDataFromMultiframe(multiframe);
+
+  return createLabelmapsFromSegImageIds(
+    referencedImageIds,
+    segImageId,
+    metadataProvider,
+    {
+      ...options,
+      frameImageIds,
+      decodeImageData,
+      // Pass the parsed dataset directly so the SEG metadata does not have to be
+      // resolved back out of the provider via the synthetic buffer imageId.
+      multiframe,
+    }
+  );
+}
+
+/** @deprecated Use createLabelmapsFromSegImageIds */
+async function createLabelmapsFromBufferInternal(
+  referencedImageIds,
+  segImageId,
+  metadataProvider,
+  options
+) {
+  return createLabelmapsFromSegImageIds(
+    referencedImageIds,
+    segImageId,
+    metadataProvider,
+    options
+  );
+}
+
+export {
+  createLabelmapsFromSegImageIds,
+  createLabelmapsFromDICOMBuffer,
+  createLabelmapsFromBufferInternal,
+  decodeSegPixelDataFromFrameIds,
+  resolveFrameImageIds,
+};

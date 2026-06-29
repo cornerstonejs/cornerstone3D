@@ -3,7 +3,10 @@ import type { Types } from '@cornerstonejs/core';
 
 async function decodeRLE(
   imageFrame: Types.IImageFrame,
-  pixelData: ByteArray
+  pixelData: ByteArray,
+  // For 1-bit RLE, the bits are unpacked as separate planes by default. Set
+  // `interleavedOneBit: true` to unpack them as a single interleaved plane instead.
+  options?: { interleavedOneBit?: boolean }
 ): Promise<Types.IImageFrame> {
   if (imageFrame.bitsAllocated === 8) {
     if (imageFrame.planarConfiguration) {
@@ -13,14 +16,78 @@ async function decodeRLE(
     return decode8(imageFrame, pixelData);
   } else if (imageFrame.bitsAllocated === 16) {
     return decode16(imageFrame, pixelData);
+  } else if (imageFrame.bitsAllocated === 1) {
+    if (options?.interleavedOneBit) {
+      return decode1(imageFrame, pixelData);
+    }
+
+    return decode8Planar(imageFrame, pixelData, true);
   }
 
   throw new Error('unsupported pixel format for RLE');
 }
 
-function decode8(imageFrame: Types.IImageFrame, pixelData: ByteArray) {
+function getFrameSize(imageFrame: Types.IImageFrame, isOneBit = false) {
+  const pixelCount = imageFrame.rows * imageFrame.columns;
+
+  return isOneBit ? Math.ceil(pixelCount / 8) : pixelCount;
+}
+
+function unpackOneBitInterleaved(packed: Uint8Array, pixelsPerFrame: number) {
+  const unpacked = new Uint8Array(pixelsPerFrame);
+
+  for (let i = 0; i < pixelsPerFrame; i++) {
+    const bytePos = Math.floor(i / 8);
+    const bitPos = i % 8;
+    unpacked[i] = packed[bytePos] & (1 << bitPos) ? 1 : 0;
+  }
+
+  return unpacked;
+}
+
+export function unpackOneBitPlanar(
+  packed: Uint8Array,
+  imageFrame: Types.IImageFrame,
+  frameSize: number
+) {
+  const pixelsPerPlane = imageFrame.rows * imageFrame.columns;
+  const unpacked = new Uint8Array(pixelsPerPlane * imageFrame.samplesPerPixel);
+
+  for (let s = 0; s < imageFrame.samplesPerPixel; s++) {
+    const planeOffset = s * frameSize;
+
+    for (let i = 0; i < pixelsPerPlane; i++) {
+      const bytePos = planeOffset + Math.floor(i / 8);
+      const bitPos = i % 8;
+      unpacked[s * pixelsPerPlane + i] =
+        packed[bytePos] & (1 << bitPos) ? 1 : 0;
+    }
+  }
+
+  return unpacked;
+}
+
+export function decode1(imageFrame: Types.IImageFrame, pixelData: ByteArray) {
+  decode8(imageFrame, pixelData, true);
+
+  const pixelsPerFrame =
+    imageFrame.rows * imageFrame.columns * imageFrame.samplesPerPixel;
+
+  imageFrame.pixelData = unpackOneBitInterleaved(
+    imageFrame.pixelData as Uint8Array,
+    pixelsPerFrame
+  );
+
+  return imageFrame;
+}
+
+function decode8(
+  imageFrame: Types.IImageFrame,
+  pixelData: ByteArray,
+  isOneBit = false
+) {
   const frameData = pixelData;
-  const frameSize = imageFrame.rows * imageFrame.columns;
+  const frameSize = getFrameSize(imageFrame, isOneBit);
   const outFrame = new ArrayBuffer(frameSize * imageFrame.samplesPerPixel);
   const header = new DataView(frameData.buffer, frameData.byteOffset);
   const data = new Int8Array(frameData.buffer, frameData.byteOffset);
@@ -69,9 +136,13 @@ function decode8(imageFrame: Types.IImageFrame, pixelData: ByteArray) {
   return imageFrame;
 }
 
-function decode8Planar(imageFrame: Types.IImageFrame, pixelData: ByteArray) {
+function decode8Planar(
+  imageFrame: Types.IImageFrame,
+  pixelData: ByteArray,
+  isOneBit = false
+) {
   const frameData = pixelData;
-  const frameSize = imageFrame.rows * imageFrame.columns;
+  const frameSize = getFrameSize(imageFrame, isOneBit);
   const outFrame = new ArrayBuffer(frameSize * imageFrame.samplesPerPixel);
   const header = new DataView(frameData.buffer, frameData.byteOffset);
   const data = new Int8Array(frameData.buffer, frameData.byteOffset);
@@ -116,6 +187,14 @@ function decode8Planar(imageFrame: Types.IImageFrame, pixelData: ByteArray) {
     }
   }
   imageFrame.pixelData = new Uint8Array(outFrame);
+
+  if (isOneBit) {
+    imageFrame.pixelData = unpackOneBitPlanar(
+      imageFrame.pixelData as Uint8Array,
+      imageFrame,
+      frameSize
+    );
+  }
 
   return imageFrame;
 }

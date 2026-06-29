@@ -7,6 +7,7 @@ import { Enums as csCoreEnums, type Types } from '@cornerstonejs/core';
 
 import createImage from '../createImage';
 import getPixelData from './getPixelData';
+import { loadImageFromCompressedFrameRegistry } from './loadImageFromRegistry';
 import type { DICOMLoaderIImage, DICOMLoaderImageOptions } from '../../types';
 
 const { ProgressiveIterator } = utilities;
@@ -125,6 +126,21 @@ function loadImage(
   imageId: string,
   options: CornerstoneWadoRsLoaderOptions = {}
 ): Types.IImageLoadObject {
+  // If a full Part 10 instance was prefetched/registered into the NATURALIZED
+  // metadata registry, serve this frame from there instead of a per-frame
+  // /frames/N request. Returns undefined (and we fall through to the network)
+  // when nothing is registered for this frame.
+  const registryPromise = loadImageFromCompressedFrameRegistry(
+    imageId,
+    options
+  );
+  if (registryPromise) {
+    return {
+      promise: registryPromise as Promise<Types.IImage>,
+      cancelFn: undefined,
+    };
+  }
+
   const imageRetrievalPool = getImageRetrievalPool();
 
   const start = new Date().getTime();

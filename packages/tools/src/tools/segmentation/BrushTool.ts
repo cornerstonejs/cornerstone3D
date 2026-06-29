@@ -281,6 +281,9 @@ class BrushTool extends LabelmapBaseTool {
     };
 
     this._hoverData = this.createHoverData(element, canvasPoint);
+    if (!this._hoverData) {
+      return false;
+    }
     this._calculateCursor(element, canvasPoint);
     this._resetLazyEditState();
 

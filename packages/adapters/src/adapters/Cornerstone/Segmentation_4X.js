@@ -9,6 +9,15 @@ import ndarray from 'ndarray';
 import getDatasetsFromImages from '../helpers/getDatasetsFromImages';
 import checkOrientation from '../helpers/checkOrientation';
 import { utilities as csUtilities } from '@cornerstonejs/core';
+import {
+  applyPerFrameFunctionalGroups,
+  getReferencedSourceImageSequenceItem,
+} from '../Cornerstone3D/Segmentation/perFrameFunctionalGroups';
+import {
+  encodeFramesToTransferSyntax,
+  getBitmapFramesFromDataset,
+  RLE_LOSSLESS_TRANSFER_SYNTAX_UID as RLE_TS_UID,
+} from '../Cornerstone3D/encodePixelData';
 
 import { Events } from '../enums';
 
@@ -24,6 +33,8 @@ const { BitArray, DicomMessage, DicomMetaDictionary } = dcmjsData;
 const { Normalizer } = normalizers;
 const { Segmentation: SegmentationDerivation } = derivations;
 const { encode, decode } = utilities.compression;
+const RLE_LOSSLESS_TRANSFER_SYNTAX_UID = '1.2.840.10008.1.2.5';
+const EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID = '1.2.840.10008.1.2.1';
 
 /**
  *
@@ -34,7 +45,7 @@ const { encode, decode } = utilities.compression;
  */
 const generateSegmentationDefaultOptions = {
   includeSliceSpacing: true,
-  rleEncode: false,
+  transferSyntaxUid: RLE_LOSSLESS_TRANSFER_SYNTAX_UID,
 };
 
 /**
@@ -67,10 +78,26 @@ export function generateSegmentation(
  *
  * @returns {object} The filled segmentation object.
  */
+function labelmapFrameContainsSegment(pixelData, segmentIndex) {
+  if (!pixelData) {
+    return false;
+  }
+
+  for (let i = 0; i < pixelData.length; i++) {
+    if (pixelData[i] === segmentIndex) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 export function fillSegmentation(
   segmentation,
   inputLabelmaps3D,
-  userOptions = {}
+  userOptions = {},
+  images = [],
+  metadata = null
 ) {
   const options = Object.assign(
     {},
@@ -83,8 +110,8 @@ export function fillSegmentation(
     ? inputLabelmaps3D
     : [inputLabelmaps3D];
 
-  let numberOfFrames = 0;
   const referencedFramesPerLabelmap = [];
+  const frameDescriptors = [];
 
   for (
     let labelmapIndex = 0;
@@ -92,12 +119,12 @@ export function fillSegmentation(
     labelmapIndex++
   ) {
     const labelmap3D = labelmaps3D[labelmapIndex];
-    const { labelmaps2D, metadata } = labelmap3D;
+    const { labelmaps2D, metadata: segmentMetadata } = labelmap3D;
 
     const referencedFramesPerSegment = [];
 
-    for (let i = 1; i < metadata.length; i++) {
-      if (metadata[i]) {
+    for (let i = 1; i < segmentMetadata.length; i++) {
+      if (segmentMetadata[i]) {
         referencedFramesPerSegment[i] = [];
       }
     }
@@ -105,19 +132,68 @@ export function fillSegmentation(
     for (let i = 0; i < labelmaps2D.length; i++) {
       const labelmap2D = labelmaps2D[i];
 
-      if (labelmaps2D[i]) {
-        const { segmentsOnLabelmap } = labelmap2D;
-
-        segmentsOnLabelmap.forEach((segmentIndex) => {
-          if (segmentIndex !== 0) {
-            referencedFramesPerSegment[segmentIndex].push(i);
-            numberOfFrames++;
-          }
-        });
+      if (!labelmap2D?.pixelData) {
+        continue;
       }
+
+      const { segmentsOnLabelmap } = labelmap2D;
+
+      segmentsOnLabelmap.forEach((segmentIndex) => {
+        if (
+          segmentIndex !== 0 &&
+          segmentMetadata[segmentIndex] &&
+          referencedFramesPerSegment[segmentIndex] &&
+          labelmapFrameContainsSegment(labelmap2D.pixelData, segmentIndex)
+        ) {
+          referencedFramesPerSegment[segmentIndex].push(i);
+        }
+      });
     }
 
     referencedFramesPerLabelmap[labelmapIndex] = referencedFramesPerSegment;
+  }
+
+  let numberOfFrames = 0;
+
+  for (
+    let labelmapIndex = 0;
+    labelmapIndex < labelmaps3D.length;
+    labelmapIndex++
+  ) {
+    const referencedFramesPerSegment =
+      referencedFramesPerLabelmap[labelmapIndex];
+    const labelmap3D = labelmaps3D[labelmapIndex];
+    const { metadata: segmentMetadata } = labelmap3D;
+
+    for (
+      let segmentIndex = 1;
+      segmentIndex < referencedFramesPerSegment.length;
+      segmentIndex++
+    ) {
+      const referencedFrameIndicies = referencedFramesPerSegment[segmentIndex];
+
+      if (!referencedFrameIndicies?.length || !segmentMetadata[segmentIndex]) {
+        continue;
+      }
+
+      const labelmaps = _getLabelmapsFromReferencedFrameIndicies(
+        labelmap3D,
+        referencedFrameIndicies
+      );
+
+      if (
+        !labelmaps.length ||
+        !labelmaps.some((frame) => frame?.length && frame.some((v) => v !== 0))
+      ) {
+        continue;
+      }
+
+      numberOfFrames += referencedFrameIndicies.length;
+    }
+  }
+
+  if (numberOfFrames === 0) {
+    throw new Error('No non-empty segmentation frames found for SEG export');
   }
 
   segmentation.setNumberOfFrames(numberOfFrames);
@@ -131,7 +207,7 @@ export function fillSegmentation(
       referencedFramesPerLabelmap[labelmapIndex];
 
     const labelmap3D = labelmaps3D[labelmapIndex];
-    const { metadata } = labelmap3D;
+    const { metadata: segmentMetadata } = labelmap3D;
 
     for (
       let segmentIndex = 1;
@@ -140,58 +216,145 @@ export function fillSegmentation(
     ) {
       const referencedFrameIndicies = referencedFramesPerSegment[segmentIndex];
 
-      if (referencedFrameIndicies) {
-        // Frame numbers start from 1.
-        const referencedFrameNumbers = referencedFrameIndicies.map(
-          (element) => {
-            return element + 1;
-          }
-        );
-        const segmentMetadata = metadata[segmentIndex];
-        const labelmaps = _getLabelmapsFromReferencedFrameIndicies(
-          labelmap3D,
-          referencedFrameIndicies
-        );
-
-        segmentation.addSegmentFromLabelmap(
-          segmentMetadata,
-          labelmaps,
-          segmentIndex,
-          referencedFrameNumbers
-        );
+      if (!referencedFrameIndicies?.length || !segmentMetadata[segmentIndex]) {
+        continue;
       }
+
+      const labelmaps = _getLabelmapsFromReferencedFrameIndicies(
+        labelmap3D,
+        referencedFrameIndicies
+      );
+
+      if (
+        !labelmaps.length ||
+        !labelmaps.some((frame) => frame?.length && frame.some((v) => v !== 0))
+      ) {
+        continue;
+      }
+
+      // Frame numbers start from 1.
+      const referencedFrameNumbers = referencedFrameIndicies.map(
+        (element) => element + 1
+      );
+
+      referencedFrameNumbers.forEach((frameNumber) => {
+        frameDescriptors.push({
+          referencedSegmentNumber: segmentIndex,
+          sourceFrameIndex: frameNumber - 1,
+        });
+      });
+
+      segmentation.addSegmentFromLabelmap(
+        segmentMetadata[segmentIndex],
+        labelmaps,
+        segmentIndex,
+        referencedFrameNumbers
+      );
     }
   }
-  if (options.rleEncode) {
-    const rleEncodedFrames = encode(
-      segmentation.dataset.PixelData,
-      numberOfFrames,
-      segmentation.dataset.Rows,
-      segmentation.dataset.Columns
-    );
 
-    // Must use fractional now to RLE encode, as the DICOM standard only allows BitStored && BitsAllocated
-    // to be 1 for BINARY. This is not ideal and there should be a better format for compression in this manner
-    // added to the standard.
-    segmentation.assignToDataset({
-      BitsAllocated: '8',
-      BitsStored: '8',
-      HighBit: '7',
-      SegmentationType: 'FRACTIONAL',
-      SegmentationFractionalType: 'PROBABILITY',
-      MaximumFractionalValue: '255',
+  if (frameDescriptors.length && images?.length && metadata) {
+    // Every SEG frame must reference a resolvable source SOP Instance UID.
+    // Reject rather than silently dropping frames: a dropped frame would make
+    // the per-frame functional groups disagree with the encoded PixelData and
+    // produce a SEG whose source-image references are unreliable.
+    const perFrameInputs = frameDescriptors.map((desc) => {
+      const sourceImageSequenceItem = getReferencedSourceImageSequenceItem(
+        images[desc.sourceFrameIndex],
+        metadata
+      );
+
+      if (!sourceImageSequenceItem?.ReferencedSOPInstanceUID) {
+        throw new Error(
+          `Cannot resolve a source ReferencedSOPInstanceUID for SEG frame ` +
+            `(sourceFrameIndex ${desc.sourceFrameIndex}, segment ` +
+            `${desc.referencedSegmentNumber}). Refusing to write a SEG with ` +
+            `unreliable source image references.`
+        );
+      }
+
+      return {
+        referencedSegmentNumber: desc.referencedSegmentNumber,
+        sourceImageSequenceItem,
+      };
     });
 
-    segmentation.dataset._meta.TransferSyntaxUID = {
-      Value: ['1.2.840.10008.1.2.5'],
-      vr: 'UI',
-    };
-    segmentation.dataset.SpecificCharacterSet = 'ISO_IR 192';
-    segmentation.dataset._vrMap.PixelData = 'OB';
-    segmentation.dataset.PixelData = rleEncodedFrames;
-  } else {
-    // If no rleEncoding, at least bitpack the data.
+    applyPerFrameFunctionalGroups(segmentation.dataset, perFrameInputs);
+  }
+  const transferSyntaxUid =
+    options.transferSyntaxUid ??
+    options.transferSyntaxUID ??
+    RLE_LOSSLESS_TRANSFER_SYNTAX_UID;
+
+  if (transferSyntaxUid === RLE_LOSSLESS_TRANSFER_SYNTAX_UID) {
+    const isBinaryBitmap =
+      segmentation.dataset.SegmentationType === 'BINARY' &&
+      Number(segmentation.dataset.BitsAllocated) === 1;
+
+    if (isBinaryBitmap) {
+      segmentation.bitPackPixelData();
+      const { frames, bitsAllocated } = getBitmapFramesFromDataset(
+        segmentation.dataset
+      );
+      const { pixelData, pixelDataVR } = encodeFramesToTransferSyntax({
+        transferSyntaxUID: RLE_TS_UID,
+        frames,
+        bitsAllocated,
+      });
+
+      segmentation.dataset.PixelData = pixelData;
+      segmentation.dataset._vrMap.PixelData = pixelDataVR;
+      if (!options.skipTransferSyntaxMeta) {
+        segmentation.dataset._meta.TransferSyntaxUID = {
+          Value: [RLE_LOSSLESS_TRANSFER_SYNTAX_UID],
+          vr: 'UI',
+        };
+      }
+      segmentation.dataset.SpecificCharacterSet = 'ISO_IR 192';
+    } else {
+      const rleEncodedFrames = encode(
+        segmentation.dataset.PixelData,
+        numberOfFrames,
+        segmentation.dataset.Rows,
+        segmentation.dataset.Columns
+      );
+
+      // Fractional/8-bit labelmaps: legacy dcmjs row RLE (not valid for 1-bit packed binary).
+      segmentation.assignToDataset({
+        BitsAllocated: '8',
+        BitsStored: '8',
+        HighBit: '7',
+        SegmentationType: 'FRACTIONAL',
+        SegmentationFractionalType: 'PROBABILITY',
+        MaximumFractionalValue: '255',
+      });
+
+      if (!options.skipTransferSyntaxMeta) {
+        segmentation.dataset._meta.TransferSyntaxUID = {
+          Value: [RLE_LOSSLESS_TRANSFER_SYNTAX_UID],
+          vr: 'UI',
+        };
+      }
+      segmentation.dataset.SpecificCharacterSet = 'ISO_IR 192';
+      segmentation.dataset._vrMap.PixelData = 'OB';
+      segmentation.dataset.PixelData = rleEncodedFrames;
+    }
+  } else if (
+    transferSyntaxUid === EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID
+  ) {
+    // For explicit VR little endian, at least bitpack the data.
     segmentation.bitPackPixelData();
+    if (!options.skipTransferSyntaxMeta) {
+      segmentation.dataset._meta.TransferSyntaxUID = {
+        Value: [EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID],
+        vr: 'UI',
+      };
+    }
+  } else {
+    throw new Error(
+      `Unsupported SEG transfer syntax: ${transferSyntaxUid}. ` +
+        `Supported: ${RLE_LOSSLESS_TRANSFER_SYNTAX_UID}, ${EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID}`
+    );
   }
 
   return segmentation;
@@ -1052,18 +1215,46 @@ export function insertOverlappingPixelDataPlanar(
   }
 }
 
+function getReferencedSegmentNumberFromIdentificationSequence(
+  segmentIdentificationSequence
+) {
+  if (!segmentIdentificationSequence) {
+    return undefined;
+  }
+
+  const normalized = Array.isArray(segmentIdentificationSequence)
+    ? segmentIdentificationSequence[0]
+    : segmentIdentificationSequence;
+
+  return normalized?.ReferencedSegmentNumber;
+}
+
+function getSharedFunctionalGroupsSequence(multiframe) {
+  const shared = multiframe?.SharedFunctionalGroupsSequence;
+
+  if (Array.isArray(shared)) {
+    return shared.length > 0 ? shared[0] : undefined;
+  }
+
+  return shared;
+}
+
 export const getSegmentIndex = (multiframe, frame) => {
-  const { PerFrameFunctionalGroupsSequence, SharedFunctionalGroupsSequence } =
-    multiframe;
-  const PerFrameFunctionalGroups = PerFrameFunctionalGroupsSequence[frame];
-  return PerFrameFunctionalGroups &&
-    PerFrameFunctionalGroups.SegmentIdentificationSequence
-    ? PerFrameFunctionalGroups.SegmentIdentificationSequence
-        .ReferencedSegmentNumber
-    : SharedFunctionalGroupsSequence.SegmentIdentificationSequence
-      ? SharedFunctionalGroupsSequence.SegmentIdentificationSequence
-          .ReferencedSegmentNumber
-      : undefined;
+  const { PerFrameFunctionalGroupsSequence } = multiframe;
+  const PerFrameFunctionalGroups = PerFrameFunctionalGroupsSequence?.[frame];
+  const fromPerFrame = getReferencedSegmentNumberFromIdentificationSequence(
+    PerFrameFunctionalGroups?.SegmentIdentificationSequence
+  );
+
+  if (fromPerFrame !== undefined) {
+    return fromPerFrame;
+  }
+
+  const shared = getSharedFunctionalGroupsSequence(multiframe);
+
+  return getReferencedSegmentNumberFromIdentificationSequence(
+    shared?.SegmentIdentificationSequence
+  );
 };
 
 export function insertPixelDataPlanar(
@@ -1356,16 +1547,17 @@ export function getImageIdOfSourceImageBySourceImageSequence(
     } else if (baseImageId.includes('dicomfile:')) {
       // dicomfile base 1, despite having frame=
       return baseImageId.replace(/frame=\d+/, `frame=${ReferencedFrameNumber}`);
-    } else if (baseImageId.includes('frame=')) {
-      return baseImageId.replace(
-        /frame=\d+/,
-        `frame=${ReferencedFrameNumber - 1}`
-      );
+    } else if (
+      baseImageId.includes('frame=') ||
+      baseImageId.includes('wadouri:')
+    ) {
+      // OHIF local/wadouri use 1-based ?frame= / &frame= (same as dicomfile:).
+      return baseImageId.replace(/frame=\d+/, `frame=${ReferencedFrameNumber}`);
     } else {
       if (baseImageId.includes('wadors:')) {
         return `${baseImageId}/frames/${ReferencedFrameNumber}`;
       } else {
-        return `${baseImageId}?frame=${ReferencedFrameNumber - 1}`;
+        return `${baseImageId}?frame=${ReferencedFrameNumber}`;
       }
     }
   }

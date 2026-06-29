@@ -1,10 +1,23 @@
 import { normalizers, derivations } from 'dcmjs';
 import { Enums } from '@cornerstonejs/core';
-import { fillSegmentation } from '../../Cornerstone/Segmentation_4X';
+import { fillSegmentation as fillBitmapSegmentation } from '../../Cornerstone/Segmentation_4X';
+import {
+  encodeFramesToTransferSyntax,
+  EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID,
+  getBitmapFramesFromDataset,
+  RLE_LOSSLESS_TRANSFER_SYNTAX_UID,
+} from '../encodePixelData';
+import {
+  applyPerFrameFunctionalGroups,
+  getReferencedSourceImageSequenceItem,
+  normalizeSharedFunctionalGroupsSequence,
+} from './perFrameFunctionalGroups.js';
 
 const { MetadataModules } = Enums;
 const { SEGImageNormalizer } = normalizers;
 const { Segmentation: SegmentationDerivation } = derivations;
+const LABELMAP_SEG_SOP_CLASS_UID = '1.2.840.10008.5.1.4.1.1.66.7';
+const BITMAP_SEG_SOP_CLASS_UID = '1.2.840.10008.5.1.4.1.1.66.4';
 
 interface IOptions {
   predecessorImageId?: string;
@@ -13,6 +26,215 @@ interface IOptions {
 type Options = IOptions & {
   [key: string]: number | boolean | unknown | string;
 };
+
+function resolveTransferSyntaxUid(options: Options = {}) {
+  const transferSyntaxUid =
+    (options.transferSyntaxUid as string) ||
+    (options.transferSyntaxUID as string);
+
+  if (!transferSyntaxUid) {
+    return EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID;
+  }
+
+  return transferSyntaxUid;
+}
+
+function applySegDatasetTransferSyntax(
+  dataset: Record<string, unknown>,
+  transferSyntaxUid: string,
+  pixelData: unknown,
+  pixelDataVR: string
+) {
+  dataset.PixelData = pixelData;
+  dataset._vrMap = (dataset._vrMap as Record<string, string>) || {};
+  (dataset._vrMap as Record<string, string>).PixelData = pixelDataVR;
+  dataset._meta = (dataset._meta as Record<string, unknown>) || {};
+  (
+    dataset._meta as Record<string, { Value: string[]; vr: string }>
+  ).TransferSyntaxUID = {
+    Value: [transferSyntaxUid],
+    vr: 'UI',
+  };
+}
+
+function hasAnySegment(pixelData: ArrayLike<number>) {
+  for (let i = 0; i < pixelData.length; i++) {
+    if (pixelData[i] !== 0) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function normalizeFramePixelData(pixelData: ArrayLike<number>) {
+  if (pixelData instanceof Uint8Array) {
+    return pixelData;
+  }
+
+  const frame = new Uint8Array(pixelData.length);
+  for (let i = 0; i < pixelData.length; i++) {
+    frame[i] = pixelData[i];
+  }
+
+  return frame;
+}
+
+function fillLabelmapSegmentation(
+  segmentation,
+  inputLabelmaps3D,
+  metadata,
+  images,
+  options: Options = {}
+) {
+  const labelmap3D = Array.isArray(inputLabelmaps3D)
+    ? inputLabelmaps3D[0]
+    : inputLabelmaps3D;
+  const labelmaps2D = labelmap3D?.labelmaps2D ?? [];
+  const segmentSequence =
+    labelmap3D?.metadata?.filter(Boolean)?.map((segment) => ({ ...segment })) ??
+    [];
+  const validFrameIndices: number[] = [];
+
+  for (let i = 0; i < labelmaps2D.length; i++) {
+    const labelmap2D = labelmaps2D[i];
+
+    if (!labelmap2D?.pixelData) {
+      continue;
+    }
+
+    if (!hasAnySegment(labelmap2D.pixelData)) {
+      continue;
+    }
+
+    validFrameIndices.push(i);
+  }
+
+  if (!validFrameIndices.length) {
+    throw new Error('No non-empty labelmap frames found for SEG export');
+  }
+
+  const firstFrame = labelmaps2D[validFrameIndices[0]];
+  const rows = firstFrame.rows;
+  const columns = firstFrame.columns;
+  const frameLength = rows * columns;
+  const numberOfFrames = validFrameIndices.length;
+
+  const combinedPixelData = new Uint8Array(frameLength * numberOfFrames);
+  const framePixelData: Uint8Array[] = [];
+  validFrameIndices.forEach((frameIndex, outputIndex) => {
+    const source = normalizeFramePixelData(labelmaps2D[frameIndex].pixelData);
+    combinedPixelData.set(source, outputIndex * frameLength);
+    framePixelData.push(source);
+  });
+
+  const { dataset } = segmentation;
+  dataset.NumberOfFrames = numberOfFrames;
+  dataset.Rows = rows;
+  dataset.Columns = columns;
+  dataset.SOPClassUID = LABELMAP_SEG_SOP_CLASS_UID;
+  dataset.SegmentationType = 'LABELMAP';
+  if (segmentSequence.length) {
+    dataset.SegmentSequence = segmentSequence;
+  }
+  dataset.BitsAllocated = '8';
+  dataset.BitsStored = '8';
+  dataset.HighBit = '7';
+  dataset.PixelRepresentation = '0';
+  delete dataset.MaximumFractionalValue;
+  delete dataset.SegmentationFractionalType;
+  dataset.SpecificCharacterSet = 'ISO_IR 192';
+  dataset._vrMap ||= {};
+
+  const transferSyntaxUid = resolveTransferSyntaxUid(options);
+  const { pixelData, pixelDataVR } = encodeFramesToTransferSyntax({
+    transferSyntaxUID: transferSyntaxUid,
+    frames: framePixelData,
+    bitsAllocated: 8,
+  });
+  applySegDatasetTransferSyntax(
+    dataset,
+    transferSyntaxUid,
+    pixelData,
+    pixelDataVR
+  );
+
+  dataset._meta ||= {};
+  dataset._meta.MediaStorageSOPClassUID = {
+    Value: [LABELMAP_SEG_SOP_CLASS_UID],
+    vr: 'UI',
+  };
+
+  const sourceImageSequence = images
+    .map((image) => getReferencedSourceImageSequenceItem(image, metadata))
+    .filter((item) => item.ReferencedSOPInstanceUID);
+
+  if (sourceImageSequence.length) {
+    dataset.SourceImageSequence = sourceImageSequence;
+  }
+
+  // Every SEG frame must reference a resolvable source SOP Instance UID.
+  // Reject rather than silently dropping frames, otherwise the per-frame
+  // functional groups would disagree with the encoded PixelData and produce a
+  // SEG with unreliable source image references.
+  const perFrameInputs = validFrameIndices.map((_, outputIndex) => {
+    const image = images[outputIndex];
+    const sourceImageSequenceItem = getReferencedSourceImageSequenceItem(
+      image,
+      metadata
+    );
+
+    if (!sourceImageSequenceItem?.ReferencedSOPInstanceUID) {
+      throw new Error(
+        `Cannot resolve a source ReferencedSOPInstanceUID for labelmap SEG ` +
+          `frame ${outputIndex}. Refusing to write a SEG with unreliable ` +
+          `source image references.`
+      );
+    }
+
+    const priorGroup =
+      dataset.PerFrameFunctionalGroupsSequence?.[outputIndex] ?? {};
+
+    return {
+      referencedSegmentNumber: 1,
+      sourceImageSequenceItem,
+      planeOrientationSequence: priorGroup?.PlaneOrientationSequence,
+      planePositionSequence: priorGroup?.PlanePositionSequence,
+    };
+  });
+
+  applyPerFrameFunctionalGroups(dataset, perFrameInputs);
+
+  const sopInstanceUIDs = new Set(
+    images
+      .map(
+        (image) =>
+          metadata.get(MetadataModules.IMAGE_DATA, image?.imageId)
+            ?.SOPInstanceUID
+      )
+      .filter(Boolean)
+  );
+  const referencedSeriesSequence = dataset.ReferencedSeriesSequence;
+  const referencedSeries = Array.isArray(referencedSeriesSequence)
+    ? referencedSeriesSequence[0]
+    : referencedSeriesSequence;
+
+  if (referencedSeries?.ReferencedInstanceSequence && sopInstanceUIDs.size) {
+    const referencedInstances = Array.isArray(
+      referencedSeries.ReferencedInstanceSequence
+    )
+      ? referencedSeries.ReferencedInstanceSequence
+      : [referencedSeries.ReferencedInstanceSequence];
+
+    referencedSeries.ReferencedInstanceSequence = referencedInstances.filter(
+      (instance) =>
+        instance?.ReferencedSOPInstanceUID &&
+        sopInstanceUIDs.has(instance.ReferencedSOPInstanceUID)
+    );
+  }
+
+  return segmentation;
+}
 
 /**
  * generateSegmentation - Generates a DICOM Segmentation object given cornerstoneTools data.
@@ -26,12 +248,101 @@ function generateSegmentation(
   metadata,
   options: Options = {}
 ) {
+  const requestedSOPClassUID =
+    (options?.sopClassUID as string) || LABELMAP_SEG_SOP_CLASS_UID;
+  const shouldExportBitmap = requestedSOPClassUID === BITMAP_SEG_SOP_CLASS_UID;
+
+  if (shouldExportBitmap) {
+    const transferSyntaxUid = resolveTransferSyntaxUid(options);
+    const labelmap3D = Array.isArray(labelmaps) ? labelmaps[0] : labelmaps;
+    const nonEmptyFrameIndices =
+      labelmap3D?.labelmaps2D
+        ?.map((frame, index) =>
+          frame?.pixelData && hasAnySegment(frame.pixelData) ? index : -1
+        )
+        .filter((index) => index >= 0) ?? [];
+    const filteredImages = nonEmptyFrameIndices.length
+      ? nonEmptyFrameIndices.map((index) => images[index]).filter(Boolean)
+      : images;
+
+    const segmentation = _createMultiframeSegmentationFromReferencedImages(
+      filteredImages,
+      metadata,
+      options
+    );
+    const segmentationResult = fillBitmapSegmentation(
+      segmentation,
+      labelmaps,
+      {
+        ...options,
+        transferSyntaxUid: EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID,
+        skipTransferSyntaxMeta: true,
+      },
+      // Pass the full, unfiltered images: fillSegmentation references source
+      // images by the original labelmap frame index, so the array must stay
+      // aligned 1:1 with labelmaps2D. Passing filteredImages here would shift
+      // every reference once any interior frame is empty.
+      images,
+      metadata
+    );
+    const { frames, bitsAllocated } = getBitmapFramesFromDataset(
+      segmentationResult.dataset
+    );
+    const { pixelData, pixelDataVR } = encodeFramesToTransferSyntax({
+      transferSyntaxUID: transferSyntaxUid,
+      frames,
+      bitsAllocated,
+    });
+
+    applySegDatasetTransferSyntax(
+      segmentationResult.dataset,
+      transferSyntaxUid,
+      pixelData,
+      pixelDataVR
+    );
+    segmentationResult.dataset.SOPClassUID = BITMAP_SEG_SOP_CLASS_UID;
+    segmentationResult.dataset._meta ||= {};
+    segmentationResult.dataset._meta.MediaStorageSOPClassUID = {
+      Value: [BITMAP_SEG_SOP_CLASS_UID],
+      vr: 'UI',
+    };
+
+    const predecessorImageId = options?.predecessorImageId;
+    if (predecessorImageId) {
+      const predecessor = metadata.get(
+        MetadataModules.PREDECESSOR_SEQUENCE,
+        predecessorImageId
+      );
+      Object.assign(segmentationResult, predecessor);
+    }
+
+    return segmentationResult;
+  }
+
+  const labelmap3D = Array.isArray(labelmaps) ? labelmaps[0] : labelmaps;
+  const nonEmptyFrameIndices =
+    labelmap3D?.labelmaps2D
+      ?.map((frame, index) =>
+        frame?.pixelData && hasAnySegment(frame.pixelData) ? index : -1
+      )
+      .filter((index) => index >= 0) ?? [];
+  const filteredImages = nonEmptyFrameIndices.length
+    ? nonEmptyFrameIndices.map((index) => images[index]).filter(Boolean)
+    : images;
+
   const segmentation = _createMultiframeSegmentationFromReferencedImages(
-    images,
+    filteredImages,
     metadata,
     options
   );
-  const segmentationResult = fillSegmentation(segmentation, labelmaps, options);
+  const segmentationResult = fillLabelmapSegmentation(
+    segmentation,
+    labelmaps,
+    metadata,
+    filteredImages,
+    options
+  );
+
   const predecessorImageId = options?.predecessorImageId;
   if (predecessorImageId) {
     const predecessor = metadata.get(
@@ -99,8 +410,8 @@ function _createMultiframeSegmentationFromReferencedImages(
     );
   }
 
-  multiframe.SharedFunctionalGroupsSequence ||= {};
-  multiframe.SharedFunctionalGroupsSequence.PixelMeasuresSequence = {};
+  normalizeSharedFunctionalGroupsSequence(multiframe);
+  multiframe.SharedFunctionalGroupsSequence.PixelMeasuresSequence ||= {};
   multiframe.PerFrameFunctionalGroupsSequence ||= [];
   for (let index = 0; index < images.length; index++) {
     multiframe.PerFrameFunctionalGroupsSequence[index] ||= {
