@@ -30,7 +30,10 @@ async function hoverAt(
   position: { x: number; y: number }
 ): Promise<void> {
   await viewport.hover({
-    position: { x: Math.max(position.x - 6, 0), y: Math.max(position.y - 6, 0) },
+    position: {
+      x: Math.max(position.x - 6, 0),
+      y: Math.max(position.y - 6, 0),
+    },
   });
   await viewport.hover({ position });
   // SegmentLabelTool default hoverTimeout is 100ms; give it room plus a render.
@@ -53,7 +56,7 @@ async function getHoverPositions(viewport: Locator, page: Page) {
 }
 
 test.beforeEach(async ({ page }) => {
-  await visitExample(page, 'segmentLabel');
+  await visitExample(page, 'segmentLabel', 1500);
 
   // The example seeds contours asynchronously (after the volume loads and a
   // slice scroll). Waiting for both segments to have contour annotations is a
@@ -90,6 +93,7 @@ test.describe('Segment Label Tool - hover is scoped to the current slice', () =>
     page,
   }) => {
     const viewport = page.locator(`[data-viewport-uid="${VIEWPORT_UID}"]`);
+    await viewport.scrollIntoViewIfNeeded();
     const { segment2Projection } = await getHoverPositions(viewport, page);
 
     // Hovering empty space on Segment 1's slice, where Segment 2 (on the next
