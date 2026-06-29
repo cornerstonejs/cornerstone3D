@@ -14,7 +14,7 @@
 export const simulateDrag = async (
   page,
   locator,
-  { steps, delay }: { steps?: number; delay?: number } = {}
+  { steps }: { steps?: number } = {}
 ) => {
   // Scroll the target into view so its boundingBox (and therefore the mouse
   // coordinates) is accurate; the legacy examples' layout can otherwise leave a
@@ -37,16 +37,7 @@ export const simulateDrag = async (
 
   await page.mouse.move(centerX, centerY);
   await page.mouse.down();
-  if (delay) {
-    const deltaX = newX / steps;
-    const deltaY = newY / steps;
-    for (let i = 1; i <= steps; i++) {
-      await page.waitForTimeout(delay);
-      await page.mouse.move(centerX + deltaX * i, centerY + deltaY * i);
-    }
-  } else {
-    await page.mouse.move(newX, newY, steps ? { steps } : undefined);
-  }
+  await page.mouse.move(newX, newY, steps ? { steps } : undefined);
   await page.mouse.up();
   // Let the tool commit the annotation / property change and the viewport
   // re-render before the snapshot is captured.
