@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.0.16](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.15...v5.0.16) (2026-06-29)
+
+### Bug Fixes
+
+- **security:** add undici and linkify-it to pnpm-workspace.yaml as resolutions ([#2776](https://github.com/cornerstonejs/cornerstone3D/issues/2776)) ([f6c001c](https://github.com/cornerstonejs/cornerstone3D/commit/f6c001cf39268fb51a20ed108183640293ec9a0d))
+
 ## [5.0.15](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.14...v5.0.15) (2026-06-29)
 
 **Note:** Version bump only for package root
