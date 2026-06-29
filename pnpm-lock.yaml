@@ -39,6 +39,8 @@ overrides:
   minimatch@>=10.0.0 <10.2.3: 10.2.5
   form-data: 4.0.6
   vite: 8.0.16
+  undici: 6.27.0
+  linkify-it: 5.0.1
 
 importers:
   .:
@@ -396,10 +398,10 @@ importers:
         version: 1.0.19
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.0.14
+        specifier: 5.0.16
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.0.14
+        specifier: 5.0.16
         version: link:../tools
 
   packages/ai:
@@ -430,10 +432,10 @@ importers:
         version: 1.17.1
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.0.14
+        specifier: 5.0.16
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.0.14
+        specifier: 5.0.16
         version: link:../tools
 
   packages/codemods: {}
@@ -441,7 +443,7 @@ importers:
   packages/core:
     dependencies:
       '@cornerstonejs/utils':
-        specifier: 5.0.14
+        specifier: 5.0.16
         version: link:../utils
       '@kitware/vtk.js':
         specifier: 35.5.3
@@ -457,7 +459,7 @@ importers:
         version: 1.9.2
     devDependencies:
       '@cornerstonejs/metadata':
-        specifier: 5.0.14
+        specifier: 5.0.16
         version: link:../metadata
 
   packages/dicomImageLoader:
@@ -491,10 +493,10 @@ importers:
         version: 9.0.1
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.0.14
+        specifier: 5.0.16
         version: link:../core
       '@cornerstonejs/metadata':
-        specifier: 5.0.14
+        specifier: 5.0.16
         version: link:../metadata
 
   packages/docs:
@@ -592,10 +594,10 @@ importers:
         version: 1.0.0-b.165
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.0.14
+        specifier: 5.0.16
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.0.14
+        specifier: 5.0.16
         version: link:../tools
 
   packages/metadata:
@@ -604,7 +606,7 @@ importers:
         specifier: 1.0.3
         version: 1.0.3
       '@cornerstonejs/utils':
-        specifier: 5.0.14
+        specifier: 5.0.16
         version: link:../utils
       dcmjs:
         specifier: 0.50.1
@@ -620,7 +622,7 @@ importers:
         version: 0.6.9
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.0.14
+        specifier: 5.0.16
         version: link:../core
 
   packages/polymorphic-segmentation:
@@ -633,10 +635,10 @@ importers:
         version: 35.5.3(@babel/preset-env@7.29.5(@babel/core@7.26.10))(autoprefixer@10.4.21(postcss@8.5.3))(wslink@2.5.0)
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.0.14
+        specifier: 5.0.16
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.0.14
+        specifier: 5.0.16
         version: link:../tools
 
   packages/tools:
@@ -670,7 +672,7 @@ importers:
         version: 4.4.2
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.0.14
+        specifier: 5.0.16
         version: link:../core
       canvas:
         specifier: 3.2.0
@@ -12932,10 +12934,10 @@ packages:
       }
     engines: { node: ^12.20.0 || ^14.13.1 || >=16.0.0 }
 
-  linkify-it@5.0.0:
+  linkify-it@5.0.1:
     resolution:
       {
-        integrity: sha512-5aHCbzQRADcdP+ATqnDuhhJ/MRIqDkZX5pyjFHRRysS8vZ5AbqGEoFIb6pYHPZ+L/OC2Lc+xT8uHVVR5CAK/wQ==,
+        integrity: sha512-wVoTjP4Q6R0NW5hiZkVJaFZPWgtXfoGF+6LucL3/FtiNjmcHhYjEr5f1Kqjirc1nBW07J/ZuRFumqr2oqccEWg==,
       }
 
   lint-staged@13.3.0:
@@ -18808,10 +18810,10 @@ packages:
         integrity: sha512-ve2KP6f/JnbPBFyobGHuerC9g1FYGn/F8n1LWTwNxCEzd6IfqTwUQcNXgEtmmQ6DlRrC1hrSrBnCZPokRrDHjw==,
       }
 
-  undici@6.26.0:
+  undici@6.27.0:
     resolution:
       {
-        integrity: sha512-4yqz8a3n5HmGTlsbADNtr/dJlhkh/55Rq798G6ibiULcXbDtaLpTl1pvdqcbFfeoj3iSi52lePFM7h9H21cw/A==,
+        integrity: sha512-YmfV3YnEDzXRC5lZ2jWtWWHKGUm1zIt8AhesR1tens+HTNv+YZlN/dp6G727LOvMJ8xjP9Be7Y2Sdr96LDm+pg==,
       }
     engines: { node: '>=18.17' }
 
@@ -29036,7 +29038,7 @@ snapshots:
 
   lines-and-columns@2.0.3: {}
 
-  linkify-it@5.0.0:
+  linkify-it@5.0.1:
     dependencies:
       uc.micro: 2.1.0
 
@@ -29253,7 +29255,7 @@ snapshots:
     dependencies:
       argparse: 2.0.1
       entities: 4.5.0
-      linkify-it: 5.0.0
+      linkify-it: 5.0.1
       mdurl: 2.0.0
       punycode.js: 2.3.1
       uc.micro: 2.1.0
@@ -30078,7 +30080,7 @@ snapshots:
       semver: 7.7.2
       tar: 7.5.11
       tinyglobby: 0.2.16
-      undici: 6.26.0
+      undici: 6.27.0
       which: 6.0.1
 
   node-int64@0.4.0: {}
@@ -33326,7 +33328,7 @@ snapshots:
 
   undici-types@6.19.8: {}
 
-  undici@6.26.0: {}
+  undici@6.27.0: {}
 
   unicode-canonical-property-names-ecmascript@2.0.1: {}
 
