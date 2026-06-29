@@ -35,6 +35,7 @@ export {
   isImageSopClass,
   isVideoInstance,
   isEcgInstance,
+  isWsiInstance,
   getViewportTypesForRule,
   getPreferredViewportType,
   getViewportTypesForGroup,

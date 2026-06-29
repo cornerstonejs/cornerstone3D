@@ -4,9 +4,14 @@ import { createDisplaySetFromGroup } from './createDisplaySetFromGroup';
 import { defaultDisplaySetSplitRules } from './defaultDisplaySetSplitRules';
 import { groupInstancesBySplitRules } from './groupInstancesBySplitRules';
 import { ImageStackDisplaySet } from './ImageStackDisplaySet';
+import { isVideoInstance } from './isVideoInstance';
 import { resolveInstances } from './resolveInstances';
 import { splitSeriesInstanceGroupsFromImageIds } from './splitSeriesInstanceGroupsFromImageIds';
-import type { NaturalizedInstance, SplitRule } from './types';
+import type {
+  GroupedInstanceBucket,
+  NaturalizedInstance,
+  SplitRule,
+} from './types';
 import { getPreferredViewportType } from './viewportTypes';
 
 describe('displayset split utilities', () => {
@@ -179,5 +184,98 @@ describe('displayset split utilities', () => {
     expect(displaySet.numImageFrames).toBe(30);
     expect(displaySet.splitNumber).toBe(2);
     expect(displaySet.viewportTypes).toEqual(['stack']);
+  });
+
+  it('coerces a string NumberOfFrames to a numeric numImageFrames', () => {
+    const multiFrameInstances: NaturalizedInstance[] = [
+      {
+        imageId: 'wadors:mf-str',
+        Modality: 'XA',
+        SOPClassUID: '1.2.840.10008.5.1.4.1.1.12.1',
+        Rows: 512,
+        // Naturalized DICOM frequently yields NumberOfFrames as a string.
+        NumberOfFrames: '30' as unknown as number,
+        SliceLocation: 0,
+        SeriesInstanceUID: 'series-mf-str',
+        InstanceNumber: 1,
+      },
+    ];
+    const groups = splitSeriesInstanceGroupsFromImageIds(['wadors:mf-str'], {
+      getNaturalizedInstance: () => multiFrameInstances[0],
+      splitRules: defaultDisplaySetSplitRules,
+    });
+    expect(groups[0].matchedRule.id).toBe('multiFrame');
+
+    const displaySet = createDisplaySetFromGroup(groups[0]);
+    expect(displaySet.numImageFrames).toBe(30);
+    expect(typeof displaySet.numImageFrames).toBe('number');
+  });
+
+  it('classifies an MPEG2 transfer syntax instance as video', () => {
+    // MPEG2 Main Profile @ Main Level - in the shared videoUIDs list but absent
+    // from the previously hard-coded subset, so this guards against regressing
+    // back to a second drifting list.
+    const mpeg2Instance: NaturalizedInstance = {
+      imageId: 'wadors:mpeg2',
+      // A non-video image SOP class so only the transfer syntax can match.
+      SOPClassUID: '1.2.840.10008.5.1.4.1.1.7',
+      TransferSyntaxUID: '1.2.840.10008.1.2.4.100',
+      Modality: 'OT',
+    };
+    expect(isVideoInstance(mpeg2Instance)).toBe(true);
+  });
+
+  it('buildSeriesInfo and grouping are safe on an empty instance list', () => {
+    // buildSeriesInfo runs every rule's makeSeriesInfo, several of which read
+    // instances[0]; it must not throw when called with no instances.
+    expect(() =>
+      buildSeriesInfo([], defaultDisplaySetSplitRules)
+    ).not.toThrow();
+
+    const seriesInfo = buildSeriesInfo([], defaultDisplaySetSplitRules);
+    expect(seriesInfo.NumberOfSeriesRelatedInstances).toBe(0);
+    expect(
+      groupInstancesBySplitRules([], defaultDisplaySetSplitRules, seriesInfo)
+    ).toEqual([]);
+  });
+
+  it('does not let customAttributes clobber resolved data fields', () => {
+    const stackInstances: NaturalizedInstance[] = [
+      {
+        imageId: 'wadors:reserved',
+        SOPClassUID: '1.2.840.10008.5.1.4.1.1.2',
+        Rows: 512,
+        SeriesInstanceUID: 'series-reserved',
+        InstanceNumber: 1,
+      },
+    ];
+    const group: GroupedInstanceBucket = {
+      instances: stackInstances,
+      matchedRule: {
+        id: 'reserved-clobber',
+        viewportTypes: ['stack'],
+        customAttributes: () => ({
+          // Reserved data fields must be ignored ...
+          imageIds: ['evil-frame'],
+          underlyingImageIds: ['evil-underlying'],
+          instances: [],
+          displaySetInstanceUID: 'evil-uid',
+          // ... while non-reserved custom attributes are still applied.
+          customFlag: true,
+        }),
+      },
+    };
+
+    const displaySet = createDisplaySetFromGroup(group, {
+      displaySetInstanceUID: 'good-uid',
+    });
+
+    expect(displaySet.imageIds).toEqual(['wadors:reserved']);
+    expect(displaySet.underlyingImageIds).toEqual(['wadors:reserved']);
+    expect(displaySet.instances).toHaveLength(1);
+    expect(displaySet.displaySetInstanceUID).toBe('good-uid');
+    expect((displaySet as unknown as Record<string, unknown>).customFlag).toBe(
+      true
+    );
   });
 });

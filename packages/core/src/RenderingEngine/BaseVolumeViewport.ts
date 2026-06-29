@@ -1512,48 +1512,41 @@ abstract class BaseVolumeViewport extends Viewport {
    * generic-viewport dataset metadata (see `genericViewportDataSetMetadataProvider`)
    * to its `imageIds`; a volume is created/cached from them (if not already
    * present) and loaded via `setVolumes`. Per-entry `options` (e.g. `callback`,
-   * `blendMode`, `slabThickness`) are forwarded to the volume input. The mounted
-   * entries are recorded via `super.setDisplaySets` so {@link getDisplaySets}
-   * reports them.
+   * `blendMode`, `slabThickness`) are forwarded to the volume input. Resolution
+   * and loading run inside {@link mountDisplaySets}, which records the mounted
+   * entries after `setVolumes` so {@link getDisplaySets} reports them.
    *
    * @param entries - display set entries to mount; the first provides the volume.
    */
   public async setDisplaySets(
     ...entries: Array<{ displaySetId: string; options?: unknown }>
   ): Promise<void> {
-    const [entry] = entries;
-    if (!entry?.displaySetId) {
-      throw new Error(
-        '[VolumeViewport] setDisplaySets requires a displaySetId to render as a volume'
+    await this.mountDisplaySets(entries, async (entry) => {
+      const dataSet = getGenericViewportImageDataSet(entry.displaySetId);
+      if (!dataSet?.imageIds?.length) {
+        throw new Error(
+          `[VolumeViewport] No registered imageIds for display set ${entry.displaySetId}`
+        );
+      }
+
+      const volumeId = resolveViewportVolumeId(
+        (dataSet.volumeId as string) ?? entry.displaySetId
       );
-    }
 
-    const dataSet = getGenericViewportImageDataSet(entry.displaySetId);
-    if (!dataSet?.imageIds?.length) {
-      throw new Error(
-        `[VolumeViewport] No registered imageIds for display set ${entry.displaySetId}`
-      );
-    }
+      if (!cache.getVolume(volumeId)) {
+        const volume = await createAndCacheVolume(volumeId, {
+          imageIds: dataSet.imageIds,
+        });
+        volume.load();
+      }
 
-    const volumeId = resolveViewportVolumeId(
-      (dataSet.volumeId as string) ?? entry.displaySetId
-    );
+      const volumeInput = {
+        volumeId,
+        ...((entry.options as Record<string, unknown>) ?? {}),
+      } as IVolumeInput;
 
-    if (!cache.getVolume(volumeId)) {
-      const volume = await createAndCacheVolume(volumeId, {
-        imageIds: dataSet.imageIds,
-      });
-      volume.load();
-    }
-
-    const volumeInput = {
-      volumeId,
-      ...((entry.options as Record<string, unknown>) ?? {}),
-    } as IVolumeInput;
-
-    // setVolumes clears the recorded display sets; record them again afterwards.
-    await this.setVolumes([volumeInput]);
-    super.setDisplaySets(...entries);
+      await this.setVolumes([volumeInput]);
+    });
   }
 
   /**

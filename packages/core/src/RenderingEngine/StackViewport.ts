@@ -1996,37 +1996,30 @@ class StackViewport extends Viewport {
    * Mounts display sets on the viewport, mirroring the GenericViewport
    * `setDisplaySets` API. Each `displaySetId` is resolved through the registered
    * generic-viewport dataset metadata (see `genericViewportDataSetMetadataProvider`)
-   * to its `imageIds`; the first entry is loaded as the stack. The mounted
-   * entries are recorded via `super.setDisplaySets` so {@link getDisplaySets}
-   * reports them.
+   * to its `imageIds`; the first entry is loaded as the stack. Resolution and
+   * loading run inside {@link mountDisplaySets}, which records the mounted
+   * entries after `setStack` so {@link getDisplaySets} reports them.
    *
    * @param entries - display set entries to mount; the first is used as the stack source.
    */
   public async setDisplaySets(
     ...entries: Array<{ displaySetId: string; options?: unknown }>
   ): Promise<void> {
-    const [entry] = entries;
-    if (!entry?.displaySetId) {
-      throw new Error(
-        '[StackViewport] setDisplaySets requires a displaySetId to render as a stack'
-      );
-    }
+    await this.mountDisplaySets(entries, async (entry) => {
+      const dataSet = getGenericViewportImageDataSet(entry.displaySetId);
+      if (!dataSet?.imageIds?.length) {
+        throw new Error(
+          `[StackViewport] No registered imageIds for display set ${entry.displaySetId}`
+        );
+      }
 
-    const dataSet = getGenericViewportImageDataSet(entry.displaySetId);
-    if (!dataSet?.imageIds?.length) {
-      throw new Error(
-        `[StackViewport] No registered imageIds for display set ${entry.displaySetId}`
-      );
-    }
+      const initialImageIdIndex =
+        typeof dataSet.initialImageIdIndex === 'number'
+          ? dataSet.initialImageIdIndex
+          : 0;
 
-    const initialImageIdIndex =
-      typeof dataSet.initialImageIdIndex === 'number'
-        ? dataSet.initialImageIdIndex
-        : 0;
-
-    // setStack clears the recorded display sets; record them again afterwards.
-    await this.setStack(dataSet.imageIds, initialImageIdIndex);
-    super.setDisplaySets(...entries);
+      await this.setStack(dataSet.imageIds, initialImageIdIndex);
+    });
   }
 
   /**

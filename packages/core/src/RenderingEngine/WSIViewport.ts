@@ -634,32 +634,25 @@ class WSIViewport extends Viewport {
    * Mounts display sets on the viewport, mirroring the GenericViewport
    * `setDisplaySets` API. The `displaySetId` is resolved through the registered
    * generic-viewport dataset metadata (see `genericViewportDataSetMetadataProvider`)
-   * to its WSI `imageIds` and `webClient`, which are loaded via `setWSI`. The
-   * mounted entries are recorded via `super.setDisplaySets` so
-   * {@link getDisplaySets} reports them.
+   * to its WSI `imageIds` and `webClient`, which are loaded via `setWSI`.
+   * Resolution and loading run inside {@link mountDisplaySets}, which records
+   * the mounted entries after `setWSI` so {@link getDisplaySets} reports them.
    *
    * @param entries - display set entries to mount; the first is used as the WSI source.
    */
   public async setDisplaySets(
     ...entries: Array<{ displaySetId: string; options?: unknown }>
   ): Promise<void> {
-    const [entry] = entries;
-    if (!entry?.displaySetId) {
-      throw new Error(
-        '[WSIViewport] setDisplaySets requires a displaySetId to render whole slide imaging'
-      );
-    }
+    await this.mountDisplaySets(entries, async (entry) => {
+      const dataSet = getGenericViewportWSIDataSet(entry.displaySetId);
+      if (!dataSet?.imageIds?.length || !dataSet.options?.webClient) {
+        throw new Error(
+          `[WSIViewport] No registered WSI dataset (imageIds + webClient) for display set ${entry.displaySetId}`
+        );
+      }
 
-    const dataSet = getGenericViewportWSIDataSet(entry.displaySetId);
-    if (!dataSet?.imageIds?.length || !dataSet.options?.webClient) {
-      throw new Error(
-        `[WSIViewport] No registered WSI dataset (imageIds + webClient) for display set ${entry.displaySetId}`
-      );
-    }
-
-    // setWSI clears the recorded display sets; record them again afterwards.
-    await this.setWSI(dataSet.imageIds, dataSet.options.webClient);
-    super.setDisplaySets(...entries);
+      await this.setWSI(dataSet.imageIds, dataSet.options.webClient);
+    });
   }
 
   public postrender = () => {

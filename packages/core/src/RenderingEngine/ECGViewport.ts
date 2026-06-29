@@ -143,26 +143,19 @@ class ECGViewport extends Viewport {
    * Mounts display sets on the viewport, mirroring the GenericViewport
    * `setDisplaySets` API. The `displaySetId` is resolved through the registered
    * generic-viewport dataset metadata (see `genericViewportDataSetMetadataProvider`)
-   * to its source ECG imageId, which is loaded via `setEcg`. The mounted entries
-   * are recorded via `super.setDisplaySets` so {@link getDisplaySets} reports them.
+   * to its source ECG imageId, which is loaded via `setEcg`. Resolution and
+   * loading run inside {@link mountDisplaySets}, which records the mounted
+   * entries after `setEcg` so {@link getDisplaySets} reports them.
    *
    * @param entries - display set entries to mount; the first is used as the ECG source.
    */
   public async setDisplaySets(
     ...entries: Array<{ displaySetId: string; options?: unknown }>
   ): Promise<void> {
-    const [entry] = entries;
-    if (!entry?.displaySetId) {
-      throw new Error(
-        '[ECGViewport] setDisplaySets requires a displaySetId to render an ECG waveform'
-      );
-    }
-
-    const sourceDataId = getGenericViewportSourceDataId(entry.displaySetId);
-
-    // setEcg clears the recorded display sets; record them again afterwards.
-    await this.setEcg(sourceDataId);
-    super.setDisplaySets(...entries);
+    await this.mountDisplaySets(entries, async (entry) => {
+      const sourceDataId = getGenericViewportSourceDataId(entry.displaySetId);
+      await this.setEcg(sourceDataId);
+    });
   }
 
   /**

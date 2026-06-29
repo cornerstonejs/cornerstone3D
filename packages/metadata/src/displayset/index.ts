@@ -20,6 +20,7 @@ export type { CreateDisplaySetFromGroupOptions } from './createDisplaySetFromGro
 export { isImageSopClass } from './isImageSopClass';
 export { isVideoInstance } from './isVideoInstance';
 export { isEcgInstance } from './isEcgInstance';
+export { isWsiInstance } from './isWsiInstance';
 export {
   getViewportTypesForRule,
   getPreferredViewportType,

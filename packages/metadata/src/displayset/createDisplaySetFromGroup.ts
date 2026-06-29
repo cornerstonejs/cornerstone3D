@@ -19,6 +19,20 @@ export type CreateDisplaySetFromGroupOptions = {
 };
 
 /**
+ * Resolved data fields that custom attributes must never overwrite. They are
+ * declared `readonly` on the display set, but `readonly` is erased at runtime,
+ * so the constructor-assigned fields stay writable - a consumer split rule
+ * returning e.g. `{ imageIds: [...] }` would otherwise clobber the resolved ids
+ * and break the underlying-vs-frame invariant the viewports rely on.
+ */
+const RESERVED_ATTRIBUTE_KEYS = new Set<string>([
+  'imageIds',
+  'underlyingImageIds',
+  'instances',
+  'displaySetInstanceUID',
+]);
+
+/**
  * Returns true unless `key` resolves to a read-only accessor (getter without a
  * setter) somewhere on the display set's prototype chain, so custom attributes
  * never clobber a computed getter.
@@ -43,8 +57,9 @@ function isAssignable(target: object, key: string): boolean {
  * attributes flat onto the display set (shared attributes are declared on
  * IDisplaySet). A `viewportTypes` key in the returned attributes overrides the
  * rule's default viewport types; `preferredViewportType` is kept in sync
- * afterwards. Keys backed by a read-only accessor on the display set are skipped
- * rather than overridden.
+ * afterwards. Reserved data fields (see {@link RESERVED_ATTRIBUTE_KEYS}) and
+ * keys backed by a read-only accessor on the display set are skipped rather than
+ * overridden.
  */
 function applyCustomAttributes(
   displaySet: IDisplaySet,
@@ -77,6 +92,9 @@ function applyCustomAttributes(
   }
 
   for (const [key, value] of Object.entries(attributes)) {
+    if (RESERVED_ATTRIBUTE_KEYS.has(key)) {
+      continue;
+    }
     if (isAssignable(displaySet, key)) {
       (displaySet as unknown as Record<string, unknown>)[key] = value;
     }

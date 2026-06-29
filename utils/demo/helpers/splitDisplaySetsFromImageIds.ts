@@ -54,15 +54,23 @@ export type Select4DDimensionGroupsOptions = {
   lastCount?: number;
 };
 
+// Normalizes a frame-level imageId to its base (frame 1) form. Mirrors the
+// frame patterns handled by `generateFrameImageId` in splitImageIdsBy4DTags so
+// both wadors (`/frames/N`) and wadouri (`?frame=N` or `&frame=N`) ids collapse
+// to frame 1; the regexes preserve any trailing path/query and multi-digit
+// frame numbers instead of slicing off everything after the frame.
 function toBaseImageId(imageId: string): string {
-  const wadorsFrameIndex = imageId.indexOf('/frames/');
-  if (wadorsFrameIndex > 0) {
-    return imageId.slice(0, wadorsFrameIndex + 8) + '1';
+  const wadorsFramePattern = /\/frames\/\d+/;
+  if (wadorsFramePattern.test(imageId)) {
+    return imageId.replace(wadorsFramePattern, '/frames/1');
   }
 
-  const uriFrameIndex = imageId.indexOf('&frame=');
-  if (uriFrameIndex > 0) {
-    return imageId.slice(0, uriFrameIndex + 7) + '1';
+  const queryFramePattern = /([?&])frame=\d+/;
+  if (queryFramePattern.test(imageId)) {
+    return imageId.replace(
+      queryFramePattern,
+      (_match, separator) => `${separator}frame=1`
+    );
   }
 
   return imageId;

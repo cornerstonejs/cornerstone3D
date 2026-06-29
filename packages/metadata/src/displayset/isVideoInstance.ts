@@ -1,3 +1,4 @@
+import { videoUIDs } from '../utilities/isVideoTransferSyntax';
 import type { NaturalizedInstance } from './types';
 
 const VIDEO_SOP_CLASS_UIDS = new Set([
@@ -11,16 +12,6 @@ const SECONDARY_CAPTURE_SOP_CLASS_UIDS = new Set([
   '1.2.840.10008.5.1.4.1.1.7.4',
 ]);
 
-const VIDEO_TRANSFER_SYNTAX_UIDS = new Set([
-  '1.2.840.10008.1.2.4.102',
-  '1.2.840.10008.1.2.4.103',
-  '1.2.840.10008.1.2.4.104',
-  '1.2.840.10008.1.2.4.105',
-  '1.2.840.10008.1.2.4.106',
-  '1.2.840.10008.1.2.4.107',
-  '1.2.840.10008.1.2.4.108',
-]);
-
 function getTransferSyntaxUid(
   instance: NaturalizedInstance
 ): string | undefined {
@@ -31,10 +22,21 @@ function getTransferSyntaxUid(
   return Array.isArray(tsuid) ? tsuid[0] : tsuid;
 }
 
-/** Heuristic aligned with OHIF dicom-video SOP class handler. */
+/**
+ * Heuristic aligned with OHIF's dicom-video SOP class handler. An instance is
+ * treated as video when it is encoded with a video transfer syntax (the shared
+ * {@link videoUIDs} list, e.g. the MPEG2/MPEG4/HEVC families), declares a
+ * dedicated video SOP class, or is a long multi-frame secondary capture.
+ *
+ * The transfer-syntax check reuses {@link videoUIDs} so it stays in sync with
+ * `isVideoTransferSyntax` rather than maintaining a second, drifting list.
+ *
+ * @param instance - the naturalized DICOM instance to classify.
+ * @returns true when the instance should be rendered as video.
+ */
 export function isVideoInstance(instance: NaturalizedInstance): boolean {
   const tsuid = getTransferSyntaxUid(instance);
-  if (tsuid && VIDEO_TRANSFER_SYNTAX_UIDS.has(tsuid)) {
+  if (tsuid && videoUIDs.has(tsuid)) {
     return true;
   }
 

@@ -42,6 +42,16 @@ const IMAGE_STORAGE_SOP_CLASS_UIDS = new Set([
   '1.2.840.10008.5.1.4.1.1.77.1.6',
 ]);
 
+/**
+ * Returns true when the SOP Class UID identifies an image storage class (the
+ * set OHIF's `isImage` recognizes), i.e. an instance that carries pixel data
+ * and can be rendered. Used by the default split rules to keep non-image
+ * objects (e.g. presentation states, structured reports) out of image-oriented
+ * display sets.
+ *
+ * @param sopClassUID - the instance's SOP Class UID; `undefined` returns false.
+ * @returns true if the SOP class is a known image storage class.
+ */
 export function isImageSopClass(sopClassUID?: string): boolean {
   if (!sopClassUID) {
     return false;

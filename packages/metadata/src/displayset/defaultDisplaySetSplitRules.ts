@@ -63,19 +63,29 @@ export const defaultDisplaySetSplitRules: SplitRule[] = [
     id: 'multiFrame',
     viewportTypes: ['stack'],
     makeSeriesInfo: (instances, seriesInfo) => {
-      const { NumberOfFrames, SliceLocation } = instances[0];
+      const first = instances[0];
+      if (!first) {
+        return;
+      }
+      const { NumberOfFrames, SliceLocation } = first;
       seriesInfo.isMultiFrame =
         Number(NumberOfFrames) > 1 && SliceLocation !== undefined;
     },
     ruleSelector: (_instance, seriesInfo) => !!seriesInfo.isMultiFrame,
     splitKey: ['SeriesInstanceUID', 'InstanceNumber'],
-    customAttributes: ({ isMultiFrame }, options) => ({
-      isClip: true,
-      numImageFrames: options.instances[0]?.NumberOfFrames,
-      splitNumber: options.splitNumber,
-      isMultiFrame,
-      viewportTypes: ['stack'],
-    }),
+    customAttributes: ({ isMultiFrame }, options) => {
+      // NumberOfFrames is frequently naturalized as a string (e.g. '30'); coerce
+      // it so numImageFrames matches its declared `number` type.
+      const numberOfFrames = options.instances[0]?.NumberOfFrames;
+      return {
+        isClip: true,
+        numImageFrames:
+          numberOfFrames === undefined ? undefined : Number(numberOfFrames),
+        splitNumber: options.splitNumber,
+        isMultiFrame,
+        viewportTypes: ['stack'],
+      };
+    },
   },
 
   /**
@@ -89,7 +99,7 @@ export const defaultDisplaySetSplitRules: SplitRule[] = [
     viewportTypes: ['stack', 'volume', 'volume3d'],
     makeSeriesInfo: (instances, seriesInfo) => {
       const [instance] = instances;
-      if (instance.Modality !== 'MR') {
+      if (!instance || instance.Modality !== 'MR') {
         return;
       }
       const hasBValue = instances.some((i) => i.DiffusionBValue !== undefined);
@@ -118,7 +128,7 @@ export const defaultDisplaySetSplitRules: SplitRule[] = [
     // Default volumetric series to MPR (volume); 3D is an extra allowed type.
     viewportTypes: ['volume', 'volume3d', 'stack'],
     makeSeriesInfo: (instances, seriesInfo) => {
-      const modality = instances[0].Modality;
+      const modality = instances[0]?.Modality;
       if (modality && VOLUME_MODALITIES.has(modality) && instances.length > 1) {
         seriesInfo.supportsVolume3d = true;
       }

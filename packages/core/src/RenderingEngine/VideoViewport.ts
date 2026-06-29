@@ -202,28 +202,22 @@ class VideoViewport extends Viewport {
    * Mounts display sets on the viewport, mirroring the GenericViewport
    * `setDisplaySets` API. The `displaySetId` is the video imageId (callers
    * typically pass `displaySet.instances[0].imageId`); the first entry is loaded
-   * as the video source.
+   * as the video source. Resolution and loading run inside
+   * {@link mountDisplaySets}, which records the mounted entries after `setVideo`
+   * so {@link getDisplaySets} reports them.
    *
    * @param entries - display set entries to mount; the first is used as the source.
    */
   public async setDisplaySets(
     ...entries: Array<{ displaySetId: DataId; options?: unknown }>
   ): Promise<void> {
-    const [entry] = entries;
-    if (!entry?.displaySetId) {
-      throw new Error(
-        '[VideoViewport] setDisplaySets requires a displaySetId to render as video'
-      );
-    }
-
-    // Resolve the display set to its source video imageId. When the id is not
-    // registered in the generic-viewport dataset metadata it is returned as-is,
-    // so callers passing the video imageId directly keep working.
-    const sourceDataId = getGenericViewportSourceDataId(entry.displaySetId);
-
-    // setVideo clears the recorded display sets; record them again afterwards.
-    await this.setVideo(sourceDataId);
-    super.setDisplaySets(...entries);
+    await this.mountDisplaySets(entries, async (entry) => {
+      // Resolve the display set to its source video imageId. When the id is not
+      // registered in the generic-viewport dataset metadata it is returned
+      // as-is, so callers passing the video imageId directly keep working.
+      const sourceDataId = getGenericViewportSourceDataId(entry.displaySetId);
+      await this.setVideo(sourceDataId);
+    });
   }
 
   /**

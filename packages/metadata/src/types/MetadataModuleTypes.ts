@@ -1,3 +1,5 @@
+import type { IDisplaySet } from '../displayset/IDisplaySet';
+
 export interface DicomDateObject {
   year: number;
   month: number;
@@ -102,19 +104,6 @@ export interface CompressedFrameDataMetadata {
   pixelData: ArrayBufferView | ArrayBufferView[];
 }
 
-/** Display set metadata cached per imageId. */
-export interface DisplaySetModuleMetadata {
-  displaySetInstanceUID: string;
-  /** Allowed viewport types; index 0 is preferred. */
-  viewportTypes: readonly string[];
-  /** Preferred viewport type (equivalent to `viewportTypes[0]`). */
-  preferredViewportType: string;
-  /** Frame-level, renderable image ids. */
-  imageIds: readonly string[];
-  /** Underlying (SOP-level) image ids. */
-  underlyingImageIds: readonly string[];
-}
-
 /**
  * Maps metadata module names (MetadataModules enum values or literal strings) to their
  * return types. Used by getTyped() to infer the return type from the module type argument.
@@ -132,5 +121,12 @@ export interface MetadataModuleType {
   frameModule: FrameMetadata;
   transferSyntax: TransferSyntaxMetadata;
   compressedFrameData: CompressedFrameDataMetadata;
-  displaySetModule: DisplaySetModuleMetadata;
+  /**
+   * The display set stored by `registerDisplaySetMetadata` and resolved by the
+   * display set provider. This is the full {@link IDisplaySet} (including
+   * `instances` and any split-rule attributes such as `isClip`,
+   * `numImageFrames`, `splitNumber`), not a narrowed projection, so a typed
+   * `getTyped(MetadataModules.DISPLAY_SET, imageId)` read matches what is cached.
+   */
+  displaySetModule: IDisplaySet;
 }

@@ -16,6 +16,5 @@ export type {
   FrameMetadata,
   TransferSyntaxMetadata,
   CompressedFrameDataMetadata,
-  DisplaySetModuleMetadata,
   MetadataModuleType,
 } from './MetadataModuleTypes';

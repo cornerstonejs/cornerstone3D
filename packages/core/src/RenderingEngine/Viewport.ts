@@ -135,7 +135,7 @@ class Viewport {
   _actors: Map<string, ActorEntry>;
   /**
    * Records the display sets currently mounted on the viewport. Populated by the
-   * type-specific {@link setDisplaySets} overrides (via `super.setDisplaySets`)
+   * type-specific {@link setDisplaySets} overrides (via {@link mountDisplaySets})
    * and cleared whenever raw data is set directly (e.g. `setStack`), so that
    * {@link getDisplaySets} reflects only display-set-driven content.
    */
@@ -2422,8 +2422,9 @@ class Viewport {
    * Records the display sets currently shown on the viewport. The base
    * implementation only stores the entries so that {@link getDisplaySets} can
    * report them; type-specific viewports override this to actually load the data
-   * (via their native setter such as `setStack`/`setVolumes`/`setVideo`) and then
-   * call `super.setDisplaySets(...entries)` to record what was mounted.
+   * (via their native setter such as `setStack`/`setVolumes`/`setVideo`),
+   * delegating to {@link mountDisplaySets} so the clear-then-record ordering is
+   * applied consistently.
    *
    * Because the native data setters clear the recorded list (see
    * {@link clearDisplaySets}), driving a viewport with a raw data setter -
@@ -2440,6 +2441,48 @@ class Viewport {
   }
 
   /**
+   * Shared template for the type-specific {@link setDisplaySets} overrides. It
+   * keeps the clear-then-record ordering invariant in exactly one place instead
+   * of being copy-pasted per viewport:
+   *
+   * 1. Validate that a source display set (the first entry) was provided.
+   * 2. Run `load`, which resolves the entry to renderable data and hands it to
+   *    the viewport's native data setter (`setStack` / `setVolumes` /
+   *    `setVideo` / `setWSI` / `setEcg`). That native setter calls
+   *    {@link clearDisplaySets}, wiping any previously recorded entries.
+   * 3. Record the mounted entries - only after `load` resolves - so
+   *    {@link getDisplaySets} reflects exactly what was mounted.
+   *
+   * Because recording always happens last, a new viewport cannot accidentally
+   * record before loading (which the native setter would then wipe) or forget
+   * to record at all; both failure modes the previous copy-pasted sequence was
+   * prone to are handled here once.
+   *
+   * @param entries - the display set entries passed to `setDisplaySets`; the
+   *   first is the source and any subsequent entries are overlays.
+   * @param load - resolves the source entry to renderable data and loads it via
+   *   the viewport's native data setter. Receives the validated source entry.
+   */
+  protected async mountDisplaySets<
+    TEntry extends { displaySetId: string; options?: unknown },
+  >(
+    entries: TEntry[],
+    load: (sourceEntry: TEntry) => void | Promise<void>
+  ): Promise<void> {
+    const [entry] = entries;
+    if (!entry?.displaySetId) {
+      throw new Error(
+        `${this.constructor.name}: setDisplaySets requires a displaySetId`
+      );
+    }
+
+    // `load` invokes the native data setter, which clears the recorded display
+    // sets (see clearDisplaySets); record the mounted entries only afterwards.
+    await load(entry);
+    this._displaySets = entries;
+  }
+
+  /**
    * Returns the display sets currently recorded as mounted on the viewport.
    * Empty when the viewport was driven by a raw data setter instead of
    * {@link setDisplaySets}.
@@ -2450,9 +2493,9 @@ class Viewport {
 
   /**
    * Clears the recorded display sets. Native data setters call this so that
-   * setting raw data without {@link setDisplaySets} resets the stored list. The
-   * `setDisplaySets` overrides rely on ordering: they run their native data
-   * setter first (which clears) and then call `super.setDisplaySets` to record.
+   * setting raw data without {@link setDisplaySets} resets the stored list.
+   * {@link mountDisplaySets} relies on this ordering: it runs the native data
+   * setter first (which clears) and then records the mounted entries.
    */
   protected clearDisplaySets(): void {
     this._displaySets = [];
