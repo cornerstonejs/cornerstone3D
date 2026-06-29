@@ -15,7 +15,7 @@ import { Transform } from './helpers/cpuFallback/rendering/transform';
 import triggerEvent from '../utilities/triggerEvent';
 import Viewport from './Viewport';
 import { getOrCreateCanvas } from './helpers';
-import { getGenericViewportSourceDataId } from './GenericViewport/genericViewportDataSetAccess';
+import { getGenericViewportSourceDataId } from './GenericViewport/genericViewportDisplaySetAccess';
 import {
   ECG_CHANNEL_SPACING,
   computeECGChannelLayouts,
@@ -142,7 +142,7 @@ class ECGViewport extends Viewport {
   /**
    * Mounts display sets on the viewport, mirroring the GenericViewport
    * `setDisplaySets` API. The `displaySetId` is resolved through the registered
-   * generic-viewport dataset metadata (see `genericViewportDataSetMetadataProvider`)
+   * generic-viewport dataset metadata (see `genericViewportDisplaySetMetadataProvider`)
    * to its source ECG imageId, which is loaded via `setEcg`. Resolution and
    * loading run inside {@link mountDisplaySets}, which records the mounted
    * entries after `setEcg` so {@link getDisplaySets} reports them.

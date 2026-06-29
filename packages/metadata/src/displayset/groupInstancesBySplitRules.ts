@@ -1,5 +1,5 @@
 import type {
-  GroupedInstanceBucket,
+  InstanceGroup,
   NaturalizedInstance,
   SeriesInfo,
   SplitRule,
@@ -19,13 +19,14 @@ function buildSplitKey(
 }
 
 /**
- * Groups instances into buckets using the first matching split rule per instance.
+ * Groups instances into instance groups using the first matching split rule per
+ * instance.
  */
 export function groupInstancesBySplitRules(
   instances: NaturalizedInstance[],
   splitRules: SplitRule[],
   seriesInfo: SeriesInfo
-): GroupedInstanceBucket[] {
+): InstanceGroup[] {
   const instancesMap = new Map<
     string,
     { instances: NaturalizedInstance[]; matchedRule: SplitRule }

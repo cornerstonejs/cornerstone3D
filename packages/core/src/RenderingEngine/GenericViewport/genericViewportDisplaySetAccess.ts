@@ -1,15 +1,15 @@
 import type { IImage } from '../../types';
 import type { WSIClientLike } from '../../utilities/WSIUtilities';
-import genericViewportDataSetMetadataProvider from '../../utilities/genericViewportDataSetMetadataProvider';
+import genericViewportDisplaySetMetadataProvider from '../../utilities/genericViewportDisplaySetMetadataProvider';
 import type { ViewportDataReference } from './ViewportArchitectureTypes';
 
-export interface GenericViewportImageDataSet {
+export interface GenericViewportImageDisplaySet {
   imageIds: string[];
   [key: string]: unknown;
 }
 
-export interface GenericViewportPlanarDataSet
-  extends GenericViewportImageDataSet {
+export interface GenericViewportPlanarDisplaySet
+  extends GenericViewportImageDisplaySet {
   kind?: 'planar';
   initialImageIdIndex?: number;
   volumeId?: string;
@@ -17,12 +17,12 @@ export interface GenericViewportPlanarDataSet
   reference?: ViewportDataReference;
 }
 
-export interface GenericViewportSourceAliasDataSet {
+export interface GenericViewportSourceAliasDisplaySet {
   kind: 'video' | 'ecg';
   sourceDataId: string;
 }
 
-export interface GenericViewportWSIDataSet {
+export interface GenericViewportWSIDisplaySet {
   kind: 'wsi';
   imageIds: string[];
   options: {
@@ -31,26 +31,26 @@ export interface GenericViewportWSIDataSet {
   };
 }
 
-export type GenericViewportRegisteredData =
+export type GenericViewportRegisteredDisplaySet =
   | string
   | string[]
-  | GenericViewportPlanarDataSet
-  | GenericViewportSourceAliasDataSet
-  | GenericViewportWSIDataSet;
+  | GenericViewportPlanarDisplaySet
+  | GenericViewportSourceAliasDisplaySet
+  | GenericViewportWSIDisplaySet;
 
-export function getGenericViewportRegisteredData(
+export function getGenericViewportRegisteredDisplaySet(
   dataId: string
-): GenericViewportRegisteredData | undefined {
-  return genericViewportDataSetMetadataProvider.get(
-    genericViewportDataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
+): GenericViewportRegisteredDisplaySet | undefined {
+  return genericViewportDisplaySetMetadataProvider.get(
+    genericViewportDisplaySetMetadataProvider.VIEWPORT_V2_DISPLAY_SET,
     dataId
-  ) as GenericViewportRegisteredData | undefined;
+  ) as GenericViewportRegisteredDisplaySet | undefined;
 }
 
-export function getGenericViewportImageDataSet(
+export function getGenericViewportImageDisplaySet(
   dataId: string
-): GenericViewportImageDataSet | undefined {
-  const registered = getGenericViewportRegisteredData(dataId);
+): GenericViewportImageDisplaySet | undefined {
+  const registered = getGenericViewportRegisteredDisplaySet(dataId);
 
   if (isStringArray(registered)) {
     return {
@@ -58,17 +58,17 @@ export function getGenericViewportImageDataSet(
     };
   }
 
-  if (!isGenericViewportImageDataSet(registered)) {
+  if (!isGenericViewportImageDisplaySet(registered)) {
     return;
   }
 
   return registered;
 }
 
-export function getGenericViewportPlanarDataSet(
+export function getGenericViewportPlanarDisplaySet(
   dataId: string
-): GenericViewportPlanarDataSet | undefined {
-  const registered = getGenericViewportRegisteredData(dataId);
+): GenericViewportPlanarDisplaySet | undefined {
+  const registered = getGenericViewportRegisteredDisplaySet(dataId);
 
   if (isStringArray(registered)) {
     return {
@@ -76,7 +76,7 @@ export function getGenericViewportPlanarDataSet(
     };
   }
 
-  if (!isGenericViewportImageDataSet(registered)) {
+  if (!isGenericViewportImageDisplaySet(registered)) {
     return;
   }
 
@@ -84,15 +84,15 @@ export function getGenericViewportPlanarDataSet(
     return;
   }
 
-  return registered as GenericViewportPlanarDataSet;
+  return registered as GenericViewportPlanarDisplaySet;
 }
 
-export function getGenericViewportWSIDataSet(
+export function getGenericViewportWSIDisplaySet(
   dataId: string
-): GenericViewportWSIDataSet | undefined {
-  const registered = getGenericViewportRegisteredData(dataId);
+): GenericViewportWSIDisplaySet | undefined {
+  const registered = getGenericViewportRegisteredDisplaySet(dataId);
 
-  if (isGenericViewportWSIDataSet(registered)) {
+  if (isGenericViewportWSIDisplaySet(registered)) {
     return registered;
   }
 
@@ -116,7 +116,7 @@ export function getGenericViewportWSIDataSet(
 }
 
 export function getGenericViewportSourceDataId(dataId: string): string {
-  const registered = getGenericViewportRegisteredData(dataId);
+  const registered = getGenericViewportRegisteredDisplaySet(dataId);
 
   if (typeof registered === 'string') {
     return registered;
@@ -126,22 +126,22 @@ export function getGenericViewportSourceDataId(dataId: string): string {
     return registered[0];
   }
 
-  if (isGenericViewportSourceAliasDataSet(registered)) {
+  if (isGenericViewportSourceAliasDisplaySet(registered)) {
     return registered.sourceDataId;
   }
 
   return dataId;
 }
 
-export function isGenericViewportImageDataSet(
+export function isGenericViewportImageDisplaySet(
   value: unknown
-): value is GenericViewportImageDataSet {
+): value is GenericViewportImageDisplaySet {
   return isRecord(value) && isStringArray(value.imageIds);
 }
 
-export function isGenericViewportWSIDataSet(
+export function isGenericViewportWSIDisplaySet(
   value: unknown
-): value is GenericViewportWSIDataSet {
+): value is GenericViewportWSIDisplaySet {
   return (
     isRecord(value) &&
     value.kind === 'wsi' &&
@@ -151,9 +151,9 @@ export function isGenericViewportWSIDataSet(
   );
 }
 
-export function isGenericViewportSourceAliasDataSet(
+export function isGenericViewportSourceAliasDisplaySet(
   value: unknown
-): value is GenericViewportSourceAliasDataSet {
+): value is GenericViewportSourceAliasDisplaySet {
   return (
     isRecord(value) &&
     (value.kind === 'video' || value.kind === 'ecg') &&

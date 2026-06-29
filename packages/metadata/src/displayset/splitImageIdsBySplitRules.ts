@@ -1,9 +1,9 @@
 import { buildSeriesInfo } from './buildSeriesInfo';
 import { groupInstancesBySplitRules } from './groupInstancesBySplitRules';
 import { resolveInstances } from './resolveInstances';
-import type { GroupedInstanceBucket, SplitContext, SplitRule } from './types';
+import type { InstanceGroup, SplitContext, SplitRule } from './types';
 
-export type SplitSeriesInstanceGroupsOptions = SplitContext & {
+export type SplitImageIdsBySplitRulesOptions = SplitContext & {
   splitRules: SplitRule[];
   onMissingImageId?: (imageId: string) => void;
 };
@@ -11,10 +11,10 @@ export type SplitSeriesInstanceGroupsOptions = SplitContext & {
 /**
  * Primary entrypoint: splits a series represented by metadata imageIds into instance groups.
  */
-export function splitSeriesInstanceGroupsFromImageIds(
+export function splitImageIdsBySplitRules(
   imageIds: string[],
-  options: SplitSeriesInstanceGroupsOptions
-): GroupedInstanceBucket[] {
+  options: SplitImageIdsBySplitRulesOptions
+): InstanceGroup[] {
   const { getNaturalizedInstance, splitRules, onMissingImageId } = options;
 
   const instances = resolveInstances(imageIds, getNaturalizedInstance, {

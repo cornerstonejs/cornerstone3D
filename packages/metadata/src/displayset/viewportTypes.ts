@@ -1,8 +1,4 @@
-import type {
-  GroupedInstanceBucket,
-  SplitRule,
-  ViewportTypeHint,
-} from './types';
+import type { InstanceGroup, SplitRule, ViewportTypeHint } from './types';
 
 const DEFAULT_VIEWPORT_TYPES: readonly ViewportTypeHint[] = ['stack'];
 
@@ -38,15 +34,15 @@ export function getPreferredViewportType(
 }
 
 /**
- * Resolves the allowed viewport types for a grouped instance bucket from the
- * rule that produced it. Convenience wrapper around
- * {@link getViewportTypesForRule} for a {@link GroupedInstanceBucket}.
+ * Resolves the allowed viewport types for an instance group from the rule that
+ * produced it. Convenience wrapper around {@link getViewportTypesForRule} for an
+ * {@link InstanceGroup}.
  *
- * @param group - the grouped instance bucket (carries its `matchedRule`).
+ * @param group - the instance group (carries its `matchedRule`).
  * @returns the group's allowed viewport types; index 0 is preferred.
  */
 export function getViewportTypesForGroup(
-  group: GroupedInstanceBucket
+  group: InstanceGroup
 ): readonly ViewportTypeHint[] {
   return getViewportTypesForRule(group.matchedRule);
 }

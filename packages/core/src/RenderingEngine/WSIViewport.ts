@@ -19,7 +19,7 @@ import triggerEvent from '../utilities/triggerEvent';
 import type { DataSetOptions } from '../types/IViewport';
 import eventTarget from '../eventTarget';
 import imageIdToURI from '../utilities/imageIdToURI';
-import { getGenericViewportWSIDataSet } from './GenericViewport/genericViewportDataSetAccess';
+import { getGenericViewportWSIDisplaySet } from './GenericViewport/genericViewportDisplaySetAccess';
 import {
   addWSIMiniNavigationOverlayCss,
   type WSIClientLike,
@@ -544,7 +544,7 @@ class WSIViewport extends Viewport {
       return;
     }
     const { dataId } = entries[0];
-    const dataSet = metaData.get('genericViewportDataSet', dataId) as
+    const dataSet = metaData.get('genericViewportDisplaySet', dataId) as
       | { imageIds?: string[]; options?: { webClient?: WSIClientLike } }
       | undefined;
 
@@ -633,7 +633,7 @@ class WSIViewport extends Viewport {
   /**
    * Mounts display sets on the viewport, mirroring the GenericViewport
    * `setDisplaySets` API. The `displaySetId` is resolved through the registered
-   * generic-viewport dataset metadata (see `genericViewportDataSetMetadataProvider`)
+   * generic-viewport dataset metadata (see `genericViewportDisplaySetMetadataProvider`)
    * to its WSI `imageIds` and `webClient`, which are loaded via `setWSI`.
    * Resolution and loading run inside {@link mountDisplaySets}, which records
    * the mounted entries after `setWSI` so {@link getDisplaySets} reports them.
@@ -644,7 +644,7 @@ class WSIViewport extends Viewport {
     ...entries: Array<{ displaySetId: string; options?: unknown }>
   ): Promise<void> {
     await this.mountDisplaySets(entries, async (entry) => {
-      const dataSet = getGenericViewportWSIDataSet(entry.displaySetId);
+      const dataSet = getGenericViewportWSIDisplaySet(entry.displaySetId);
       if (!dataSet?.imageIds?.length || !dataSet.options?.webClient) {
         throw new Error(
           `[WSIViewport] No registered WSI dataset (imageIds + webClient) for display set ${entry.displaySetId}`

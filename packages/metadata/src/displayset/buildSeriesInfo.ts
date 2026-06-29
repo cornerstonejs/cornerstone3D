@@ -4,12 +4,12 @@ import type { NaturalizedInstance, SeriesInfo, SplitRule } from './types';
  * Builds series-level metadata used by split rule selectors.
  *
  * Safe to call with an empty `instances` list: it returns zeroed counts and
- * does not invoke any rule's `makeSeriesInfo` (those may destructure
+ * does not invoke any rule's `updateSeriesInfo` (those may destructure
  * `instances[0]`), so this exported helper - like
- * {@link splitSeriesInstanceGroupsFromImageIds} - never throws on empty input.
+ * {@link splitImageIdsBySplitRules} - never throws on empty input.
  *
  * @param instances - naturalized instances for the series.
- * @param splitRules - rules whose `makeSeriesInfo` hooks contribute series-level
+ * @param splitRules - rules whose `updateSeriesInfo` hooks contribute series-level
  *   flags (skipped entirely when `instances` is empty).
  * @returns the aggregated series info consumed by rule selectors.
  */
@@ -46,7 +46,7 @@ export function buildSeriesInfo(
 
   if (instances.length) {
     for (const splitRule of splitRules) {
-      splitRule.makeSeriesInfo?.(instances, seriesInfo);
+      splitRule.updateSeriesInfo?.(instances, seriesInfo);
     }
   }
 

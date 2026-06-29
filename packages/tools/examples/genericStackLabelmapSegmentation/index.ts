@@ -468,12 +468,12 @@ async function run() {
     await imageLoader.createAndCacheDerivedLabelmapImages(mgImageIds);
   const mgStackImageIds = [...mgImageIds, ctImageIds[2]];
 
-  utilities.genericViewportDataSetMetadataProvider.add(ctDataId, {
+  utilities.genericViewportDisplaySetMetadataProvider.add(ctDataId, {
     kind: 'planar',
     imageIds: ctImageIds,
     initialImageIdIndex: 0,
   });
-  utilities.genericViewportDataSetMetadataProvider.add(mgDataId, {
+  utilities.genericViewportDisplaySetMetadataProvider.add(mgDataId, {
     kind: 'planar',
     imageIds: mgStackImageIds,
     initialImageIdIndex: 0,

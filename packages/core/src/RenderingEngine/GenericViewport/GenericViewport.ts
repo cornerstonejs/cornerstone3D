@@ -138,6 +138,21 @@ abstract class GenericViewport<
   }
 
   /**
+   * Returns the display sets currently mounted on the viewport, in mount order
+   * (source binding first, then overlays). Derived from the live bindings, so
+   * it always reflects what is actually rendered - including overlays and any
+   * `removeData` calls. The per-entry `options` carry the binding `role`.
+   */
+  getDisplaySets(): Array<{ displaySetId: DataId; options?: unknown }> {
+    return Array.from(this.bindings.entries()).map(
+      ([displaySetId, binding]) => ({
+        displaySetId,
+        options: { role: binding.role },
+      })
+    );
+  }
+
+  /**
    * Removes a dataset binding and its stored presentation state, then
    * triggers a re-render so the viewport reflects the removal.
    */

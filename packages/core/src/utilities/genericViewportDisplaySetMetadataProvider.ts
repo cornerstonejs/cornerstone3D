@@ -1,18 +1,18 @@
 import { addProvider } from '../metaData';
 
-const VIEWPORT_V2_DATA_SET = 'genericViewportDataSet';
+const VIEWPORT_V2_DISPLAY_SET = 'genericViewportDisplaySet';
 
 let state: Record<string, unknown> = {};
 
-const genericViewportDataSetMetadataProvider = {
-  VIEWPORT_V2_DATA_SET,
+const genericViewportDisplaySetMetadataProvider = {
+  VIEWPORT_V2_DISPLAY_SET,
 
   add(dataId: string, dataSet: unknown): void {
     state[dataId] = dataSet;
   },
 
   get(type: string, dataId: string): unknown {
-    if (type !== VIEWPORT_V2_DATA_SET) {
+    if (type !== VIEWPORT_V2_DISPLAY_SET) {
       return;
     }
 
@@ -28,6 +28,6 @@ const genericViewportDataSetMetadataProvider = {
   },
 };
 
-addProvider(genericViewportDataSetMetadataProvider.get);
+addProvider(genericViewportDisplaySetMetadataProvider.get);
 
-export default genericViewportDataSetMetadataProvider;
+export default genericViewportDisplaySetMetadataProvider;

@@ -65,7 +65,7 @@ export type SplitRule = {
     | string
     | ((instance: NaturalizedInstance, seriesInfo: SeriesInfo) => unknown)
   )[];
-  makeSeriesInfo?: (
+  updateSeriesInfo?: (
     instances: NaturalizedInstance[],
     seriesInfo: SeriesInfo
   ) => SeriesInfo | void;
@@ -79,7 +79,7 @@ export type SplitContext = {
   getNaturalizedInstance: (imageId: string) => NaturalizedInstance | undefined;
 };
 
-export type GroupedInstanceBucket = {
+export type InstanceGroup = {
   instances: NaturalizedInstance[];
   matchedRule: SplitRule;
 };

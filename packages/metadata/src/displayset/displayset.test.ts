@@ -6,12 +6,8 @@ import { groupInstancesBySplitRules } from './groupInstancesBySplitRules';
 import { ImageStackDisplaySet } from './ImageStackDisplaySet';
 import { isVideoInstance } from './isVideoInstance';
 import { resolveInstances } from './resolveInstances';
-import { splitSeriesInstanceGroupsFromImageIds } from './splitSeriesInstanceGroupsFromImageIds';
-import type {
-  GroupedInstanceBucket,
-  NaturalizedInstance,
-  SplitRule,
-} from './types';
+import { splitImageIdsBySplitRules } from './splitImageIdsBySplitRules';
+import type { InstanceGroup, NaturalizedInstance, SplitRule } from './types';
 import { getPreferredViewportType } from './viewportTypes';
 
 describe('displayset split utilities', () => {
@@ -48,7 +44,7 @@ describe('displayset split utilities', () => {
   });
 
   it('default rules group multi-slice CT as volume (MPR) preferred', () => {
-    const groups = splitSeriesInstanceGroupsFromImageIds(
+    const groups = splitImageIdsBySplitRules(
       instances.map((i) => i.imageId!),
       {
         getNaturalizedInstance: (id) => instances.find((i) => i.imageId === id),
@@ -71,7 +67,7 @@ describe('displayset split utilities', () => {
       SOPClassUID: '1.2.840.10008.5.1.4.1.1.77.1.4.1',
       Modality: 'US',
     };
-    const groups = splitSeriesInstanceGroupsFromImageIds(['wadors:video'], {
+    const groups = splitImageIdsBySplitRules(['wadors:video'], {
       getNaturalizedInstance: () => videoInstance,
       splitRules: defaultDisplaySetSplitRules,
     });
@@ -90,7 +86,7 @@ describe('displayset split utilities', () => {
       SOPClassUID: '1.2.840.10008.5.1.4.1.1.9.1.1',
       Modality: 'ECG',
     };
-    const groups = splitSeriesInstanceGroupsFromImageIds(['wadors:ecg'], {
+    const groups = splitImageIdsBySplitRules(['wadors:ecg'], {
       getNaturalizedInstance: () => ecgInstance,
       splitRules: defaultDisplaySetSplitRules,
     });
@@ -116,7 +112,7 @@ describe('displayset split utilities', () => {
         SeriesInstanceUID: 'series-mr',
       },
     ];
-    const groups = splitSeriesInstanceGroupsFromImageIds(
+    const groups = splitImageIdsBySplitRules(
       mrInstances.map((i) => i.imageId!),
       {
         getNaturalizedInstance: (id) =>
@@ -137,7 +133,7 @@ describe('displayset split utilities', () => {
     expect(displaySet.preferredViewportType).toBe('stack');
   });
 
-  it('groups by default image rule into a single bucket', () => {
+  it('groups by default image rule into a single group', () => {
     const singleInstance = [instances[0]];
     const rules: SplitRule[] = [
       {
@@ -171,7 +167,7 @@ describe('displayset split utilities', () => {
         InstanceNumber: 1,
       },
     ];
-    const groups = splitSeriesInstanceGroupsFromImageIds(['wadors:mf'], {
+    const groups = splitImageIdsBySplitRules(['wadors:mf'], {
       getNaturalizedInstance: () => multiFrameInstances[0],
       splitRules: defaultDisplaySetSplitRules,
     });
@@ -200,7 +196,7 @@ describe('displayset split utilities', () => {
         InstanceNumber: 1,
       },
     ];
-    const groups = splitSeriesInstanceGroupsFromImageIds(['wadors:mf-str'], {
+    const groups = splitImageIdsBySplitRules(['wadors:mf-str'], {
       getNaturalizedInstance: () => multiFrameInstances[0],
       splitRules: defaultDisplaySetSplitRules,
     });
@@ -226,7 +222,7 @@ describe('displayset split utilities', () => {
   });
 
   it('buildSeriesInfo and grouping are safe on an empty instance list', () => {
-    // buildSeriesInfo runs every rule's makeSeriesInfo, several of which read
+    // buildSeriesInfo runs every rule's updateSeriesInfo, several of which read
     // instances[0]; it must not throw when called with no instances.
     expect(() =>
       buildSeriesInfo([], defaultDisplaySetSplitRules)
@@ -249,7 +245,7 @@ describe('displayset split utilities', () => {
         InstanceNumber: 1,
       },
     ];
-    const group: GroupedInstanceBucket = {
+    const group: InstanceGroup = {
       instances: stackInstances,
       matchedRule: {
         id: 'reserved-clobber',
@@ -277,5 +273,34 @@ describe('displayset split utilities', () => {
     expect((displaySet as unknown as Record<string, unknown>).customFlag).toBe(
       true
     );
+  });
+
+  it('derives unique displaySetInstanceUIDs for splits of one series', () => {
+    const seriesUID = 'series-split';
+    const makeGroup = (imageId: string): InstanceGroup => ({
+      instances: [
+        {
+          imageId,
+          SOPClassUID: '1.2.840.10008.5.1.4.1.1.4',
+          Rows: 256,
+          SeriesInstanceUID: seriesUID,
+        },
+      ],
+      matchedRule: { id: 'split', viewportTypes: ['stack'] },
+    });
+
+    // A series can split into multiple display sets (the DWI case); the split
+    // index keeps their instance UIDs - used as the viewport `displaySetId` -
+    // unique instead of all collapsing to the bare SeriesInstanceUID.
+    const ds0 = createDisplaySetFromGroup(makeGroup('wadors:s0'), {
+      splitNumber: 0,
+    });
+    const ds1 = createDisplaySetFromGroup(makeGroup('wadors:s1'), {
+      splitNumber: 1,
+    });
+
+    expect(ds0.displaySetInstanceUID).toBe(seriesUID);
+    expect(ds1.displaySetInstanceUID).toBe(`${seriesUID}:1`);
+    expect(ds0.displaySetInstanceUID).not.toBe(ds1.displaySetInstanceUID);
   });
 });

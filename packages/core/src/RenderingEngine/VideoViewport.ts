@@ -1,7 +1,7 @@
 import type { mat4 } from 'gl-matrix';
 import { Events as EVENTS, VideoEnums as VideoViewportEnum } from '../enums';
 import type { DataId } from './GenericViewport/ViewportArchitectureTypes';
-import { getGenericViewportSourceDataId } from './GenericViewport/genericViewportDataSetAccess';
+import { getGenericViewportSourceDataId } from './GenericViewport/genericViewportDisplaySetAccess';
 import type {
   VideoViewportProperties,
   Point3,

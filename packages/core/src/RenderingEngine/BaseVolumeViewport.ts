@@ -63,7 +63,7 @@ import type vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
 
 import { createAndCacheVolume } from '../loaders/volumeLoader';
 import resolveViewportVolumeId from './helpers/resolveViewportVolumeId';
-import { getGenericViewportImageDataSet } from './GenericViewport/genericViewportDataSetAccess';
+import { getGenericViewportImageDisplaySet } from './GenericViewport/genericViewportDisplaySetAccess';
 import createVolumeActor from './helpers/createVolumeActor';
 import volumeNewImageEventDispatcher, {
   resetVolumeNewImageState,
@@ -1509,7 +1509,7 @@ abstract class BaseVolumeViewport extends Viewport {
   /**
    * Mounts display sets on the viewport, mirroring the GenericViewport
    * `setDisplaySets` API. The `displaySetId` is resolved through the registered
-   * generic-viewport dataset metadata (see `genericViewportDataSetMetadataProvider`)
+   * generic-viewport dataset metadata (see `genericViewportDisplaySetMetadataProvider`)
    * to its `imageIds`; a volume is created/cached from them (if not already
    * present) and loaded via `setVolumes`. Per-entry `options` (e.g. `callback`,
    * `blendMode`, `slabThickness`) are forwarded to the volume input. Resolution
@@ -1522,7 +1522,7 @@ abstract class BaseVolumeViewport extends Viewport {
     ...entries: Array<{ displaySetId: string; options?: unknown }>
   ): Promise<void> {
     await this.mountDisplaySets(entries, async (entry) => {
-      const dataSet = getGenericViewportImageDataSet(entry.displaySetId);
+      const dataSet = getGenericViewportImageDisplaySet(entry.displaySetId);
       if (!dataSet?.imageIds?.length) {
         throw new Error(
           `[VolumeViewport] No registered imageIds for display set ${entry.displaySetId}`

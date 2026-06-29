@@ -1,3 +1,5 @@
+import type { NaturalizedInstance } from './types';
+
 /** SOP Class UIDs that represent image storage (aligned with OHIF isImage). */
 const IMAGE_STORAGE_SOP_CLASS_UIDS = new Set([
   '1.2.840.10008.5.1.4.1.1.1',
@@ -43,18 +45,14 @@ const IMAGE_STORAGE_SOP_CLASS_UIDS = new Set([
 ]);
 
 /**
- * Returns true when the SOP Class UID identifies an image storage class (the
- * set OHIF's `isImage` recognizes), i.e. an instance that carries pixel data
- * and can be rendered. Used by the default split rules to keep non-image
- * objects (e.g. presentation states, structured reports) out of image-oriented
- * display sets.
+ * Returns true when the instance is an image storage SOP class (the set OHIF's
+ * `isImage` recognizes), i.e. an instance that carries pixel data and can be
+ * rendered. Used by the default split rules to keep non-image objects (e.g.
+ * presentation states, structured reports) out of image-oriented display sets.
  *
- * @param sopClassUID - the instance's SOP Class UID; `undefined` returns false.
- * @returns true if the SOP class is a known image storage class.
+ * @param instance - the naturalized DICOM instance to classify.
+ * @returns true when the instance's SOP class is a known image storage class.
  */
-export function isImageSopClass(sopClassUID?: string): boolean {
-  if (!sopClassUID) {
-    return false;
-  }
-  return IMAGE_STORAGE_SOP_CLASS_UIDS.has(sopClassUID);
+export function isImageInstance(instance: NaturalizedInstance): boolean {
+  return IMAGE_STORAGE_SOP_CLASS_UIDS.has(instance.SOPClassUID ?? '');
 }

@@ -2458,6 +2458,13 @@ class Viewport {
    * to record at all; both failure modes the previous copy-pasted sequence was
    * prone to are handled here once.
    *
+   * Overlays: the variadic signature already accepts overlay entries (index 1+),
+   * matching the generic viewport `setDisplaySets`. Legacy viewports do not yet
+   * render overlays, so only the source (first) entry is loaded and recorded -
+   * {@link getDisplaySets} stays honest about what is actually shown. Adding
+   * overlay support later is purely additive: load the extra entries here and
+   * record them, with no change to the public signature.
+   *
    * @param entries - the display set entries passed to `setDisplaySets`; the
    *   first is the source and any subsequent entries are overlays.
    * @param load - resolves the source entry to renderable data and loads it via
@@ -2477,9 +2484,11 @@ class Viewport {
     }
 
     // `load` invokes the native data setter, which clears the recorded display
-    // sets (see clearDisplaySets); record the mounted entries only afterwards.
+    // sets (see clearDisplaySets); record the mounted source only afterwards.
+    // Overlays (entries[1+]) are not rendered by legacy viewports yet, so they
+    // are intentionally not recorded - see the overlay note above.
     await load(entry);
-    this._displaySets = entries;
+    this._displaySets = [entry];
   }
 
   /**

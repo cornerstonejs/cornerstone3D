@@ -2,7 +2,7 @@ import { Enums, metaData } from '@cornerstonejs/core';
 import {
   createDisplaySetFromGroup,
   defaultDisplaySetSplitRules,
-  splitSeriesInstanceGroupsFromImageIds,
+  splitImageIdsBySplitRules,
   utilities as metadataUtilities,
   type IDisplaySet,
   type NaturalizedInstance,
@@ -144,13 +144,14 @@ export function splitDisplaySetsFromImageIds(
 ): IDisplaySet[] {
   const instanceLevelImageIds = getInstanceLevelImageIds(seriesImageIds);
 
-  const groups = splitSeriesInstanceGroupsFromImageIds(instanceLevelImageIds, {
+  const groups = splitImageIdsBySplitRules(instanceLevelImageIds, {
     getNaturalizedInstance: getNaturalizedInstanceForDisplaySetSplit,
     splitRules: defaultDisplaySetSplitRules,
   });
 
-  return groups.map(group =>
+  return groups.map((group, splitNumber) =>
     createDisplaySetFromGroup(group, {
+      splitNumber,
       imageIds: collectFrameImageIdsForGroup(seriesImageIds, group.instances),
     })
   );

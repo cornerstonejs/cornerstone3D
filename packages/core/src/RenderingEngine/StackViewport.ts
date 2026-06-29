@@ -9,7 +9,7 @@ import eventTarget from '../eventTarget';
 import * as metaData from '../metaData';
 import { getImageDataMetadata as getImageDataMetadataUtil } from '../utilities/getImageDataMetadata';
 import { coreLog } from '../utilities/logger';
-import { getGenericViewportImageDataSet } from './GenericViewport/genericViewportDataSetAccess';
+import { getGenericViewportImageDisplaySet } from './GenericViewport/genericViewportDisplaySetAccess';
 
 import type {
   ActorEntry,
@@ -1995,7 +1995,7 @@ class StackViewport extends Viewport {
   /**
    * Mounts display sets on the viewport, mirroring the GenericViewport
    * `setDisplaySets` API. Each `displaySetId` is resolved through the registered
-   * generic-viewport dataset metadata (see `genericViewportDataSetMetadataProvider`)
+   * generic-viewport dataset metadata (see `genericViewportDisplaySetMetadataProvider`)
    * to its `imageIds`; the first entry is loaded as the stack. Resolution and
    * loading run inside {@link mountDisplaySets}, which records the mounted
    * entries after `setStack` so {@link getDisplaySets} reports them.
@@ -2006,7 +2006,7 @@ class StackViewport extends Viewport {
     ...entries: Array<{ displaySetId: string; options?: unknown }>
   ): Promise<void> {
     await this.mountDisplaySets(entries, async (entry) => {
-      const dataSet = getGenericViewportImageDataSet(entry.displaySetId);
+      const dataSet = getGenericViewportImageDisplaySet(entry.displaySetId);
       if (!dataSet?.imageIds?.length) {
         throw new Error(
           `[StackViewport] No registered imageIds for display set ${entry.displaySetId}`

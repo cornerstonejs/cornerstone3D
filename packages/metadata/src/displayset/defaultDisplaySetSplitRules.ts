@@ -1,5 +1,5 @@
 import { isEcgInstance } from './isEcgInstance';
-import { isImageSopClass } from './isImageSopClass';
+import { isImageInstance } from './isImageInstance';
 import { isVideoInstance } from './isVideoInstance';
 import { isWsiInstance } from './isWsiInstance';
 import type { SplitRule } from './types';
@@ -48,7 +48,7 @@ export const defaultDisplaySetSplitRules: SplitRule[] = [
     viewportTypes: ['stack'],
     ruleSelector: (instance) =>
       ['CR', 'DX', 'MG'].includes(instance.Modality ?? '') &&
-      isImageSopClass(instance.SOPClassUID) &&
+      isImageInstance(instance) &&
       !!instance.Rows,
     splitKey: [
       (instance) =>
@@ -62,7 +62,7 @@ export const defaultDisplaySetSplitRules: SplitRule[] = [
   {
     id: 'multiFrame',
     viewportTypes: ['stack'],
-    makeSeriesInfo: (instances, seriesInfo) => {
+    updateSeriesInfo: (instances, seriesInfo) => {
       const first = instances[0];
       if (!first) {
         return;
@@ -97,7 +97,7 @@ export const defaultDisplaySetSplitRules: SplitRule[] = [
   {
     id: 'mixedDimensionalityBValue',
     viewportTypes: ['stack', 'volume', 'volume3d'],
-    makeSeriesInfo: (instances, seriesInfo) => {
+    updateSeriesInfo: (instances, seriesInfo) => {
       const [instance] = instances;
       if (!instance || instance.Modality !== 'MR') {
         return;
@@ -127,7 +127,7 @@ export const defaultDisplaySetSplitRules: SplitRule[] = [
     id: 'volume3d',
     // Default volumetric series to MPR (volume); 3D is an extra allowed type.
     viewportTypes: ['volume', 'volume3d', 'stack'],
-    makeSeriesInfo: (instances, seriesInfo) => {
+    updateSeriesInfo: (instances, seriesInfo) => {
       const modality = instances[0]?.Modality;
       if (modality && VOLUME_MODALITIES.has(modality) && instances.length > 1) {
         seriesInfo.supportsVolume3d = true;
@@ -143,8 +143,7 @@ export const defaultDisplaySetSplitRules: SplitRule[] = [
   {
     id: 'defaultImageRule',
     viewportTypes: ['stack', 'volume', 'volume3d'],
-    ruleSelector: (instance) =>
-      isImageSopClass(instance.SOPClassUID) && !!instance.Rows,
+    ruleSelector: (instance) => isImageInstance(instance) && !!instance.Rows,
     customAttributes: () => ({
       viewportTypes: ['stack', 'volume', 'volume3d'],
     }),

@@ -127,7 +127,7 @@ function instanceField(displaySet: DisplaySet, key: string): string {
 function registerDisplaySetData(row: Row) {
   const { displaySetId, displaySet, hint, client } = row;
   const imageIds = [...displaySet.imageIds];
-  const provider = utilities.genericViewportDataSetMetadataProvider;
+  const provider = utilities.genericViewportDisplaySetMetadataProvider;
 
   switch (hint) {
     case 'video':
@@ -248,7 +248,9 @@ function buildRow(
   seriesIndex: number,
   dsIndex: number
 ): Row {
-  const displaySetId = `displaySets:ds-${seriesIndex}-${dsIndex}`;
+  // The viewport/registry `displaySetId` is the display set's instance UID; the
+  // split rules keep it unique per series (e.g. the DWI mixed-b-value split).
+  const displaySetId = displaySet.displaySetInstanceUID;
   const viewportId = `displaySets-vp-${seriesIndex}-${dsIndex}`;
 
   const rowElement = document.createElement('div');

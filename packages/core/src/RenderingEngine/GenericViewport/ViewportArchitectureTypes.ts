@@ -150,6 +150,13 @@ export interface ViewportController<
   setDisplaySets(
     ...entries: Array<{ displaySetId: DataId; options?: unknown }>
   ): Promise<void>;
+  /**
+   * Returns the display sets currently mounted on the viewport, in mount order
+   * (the source binding first, then overlays). Mirrors the legacy
+   * `Viewport.getDisplaySets()` shape so code can read mounted display sets
+   * uniformly across the legacy and generic viewport hierarchies.
+   */
+  getDisplaySets(): Array<{ displaySetId: DataId; options?: unknown }>;
   removeData(dataId: DataId): void;
 
   setViewState(viewState: Partial<TViewState>): void;

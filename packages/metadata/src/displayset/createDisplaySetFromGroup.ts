@@ -4,7 +4,7 @@ import { isEcgInstance } from './isEcgInstance';
 import { isVideoInstance } from './isVideoInstance';
 import { isWsiInstance } from './isWsiInstance';
 import type { IDisplaySet } from './IDisplaySet';
-import type { GroupedInstanceBucket, ViewportTypeHint } from './types';
+import type { InstanceGroup, ViewportTypeHint } from './types';
 import {
   getPreferredViewportType,
   getViewportTypesForGroup,
@@ -63,7 +63,7 @@ function isAssignable(target: object, key: string): boolean {
  */
 function applyCustomAttributes(
   displaySet: IDisplaySet,
-  group: GroupedInstanceBucket,
+  group: InstanceGroup,
   viewportTypes: readonly ViewportTypeHint[],
   options: CreateDisplaySetFromGroupOptions
 ): void {
@@ -108,18 +108,28 @@ function applyCustomAttributes(
 }
 
 /**
- * Builds cornerstone display set metadata for a grouped instance bucket.
+ * Builds cornerstone display set metadata for an instance group.
  */
 export function createDisplaySetFromGroup(
-  group: GroupedInstanceBucket,
+  group: InstanceGroup,
   options: CreateDisplaySetFromGroupOptions = {}
 ): IDisplaySet {
   const viewportTypes = getViewportTypesForGroup(group);
   const { instances } = group;
-  const displaySetInstanceUID =
-    options.displaySetInstanceUID ??
+  // A single series can split into multiple display sets (e.g. the DWI
+  // mixed-b-value split), so the default identity folds in the 0-based
+  // `splitNumber` to stay unique within a series rather than collapsing every
+  // split to the bare SeriesInstanceUID. This UID is the value callers pass to a
+  // viewport as `displaySetId` - the viewport/registry id is the display set
+  // instance UID.
+  const baseInstanceUID =
     instances[0]?.SeriesInstanceUID ??
     `display-set-${instances[0]?.imageId ?? 'unknown'}`;
+  const displaySetInstanceUID =
+    options.displaySetInstanceUID ??
+    (options.splitNumber
+      ? `${baseInstanceUID}:${options.splitNumber}`
+      : baseInstanceUID);
 
   const first = instances[0];
   let displaySet: IDisplaySet;

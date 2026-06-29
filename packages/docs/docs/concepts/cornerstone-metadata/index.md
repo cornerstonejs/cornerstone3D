@@ -85,7 +85,7 @@ separates them into their own display set (see [Split rules](#split-rules)).
 The end-to-end flow has three stages:
 
 1. **Split** a series' image ids into instance groups with
-   `splitSeriesInstanceGroupsFromImageIds` using a set of split rules.
+   `splitImageIdsBySplitRules` using a set of split rules.
 2. **Create** an `IDisplaySet` for each group with `createDisplaySetFromGroup`.
 3. **Consume** each display set — render it on a viewport, and/or cache it in the
    metadata layer so downstream code can resolve it by image id.
@@ -97,7 +97,7 @@ it is just:
 
 ```ts
 import {
-  splitSeriesInstanceGroupsFromImageIds,
+  splitImageIdsBySplitRules,
   createDisplaySetFromGroup,
   defaultDisplaySetSplitRules,
   type IDisplaySet,
@@ -113,7 +113,7 @@ function getNaturalizedInstance(
   return metaData.get('instance', imageId) as NaturalizedInstance | undefined;
 }
 
-const groups = splitSeriesInstanceGroupsFromImageIds(seriesImageIds, {
+const groups = splitImageIdsBySplitRules(seriesImageIds, {
   getNaturalizedInstance,
   splitRules: defaultDisplaySetSplitRules,
 });
@@ -155,7 +155,7 @@ const displaySetId = displaySet.displaySetInstanceUID;
 // 1. Register the renderable data so the viewport can resolve `displaySetId`.
 //    stack/volume use { imageIds }; video/ecg use { kind, sourceDataId };
 //    wsi uses { kind: 'wsi', imageIds, options: { webClient } }.
-utilities.genericViewportDataSetMetadataProvider.add(displaySetId, {
+utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
   imageIds: [...displaySet.imageIds],
 });
 
@@ -218,7 +218,7 @@ A `SplitRule` has up to five parts:
 | ------------------ | ----------------------------------------------------------------------------------------------- |
 | `ruleSelector`     | Returns true if an instance belongs to this rule. Omit to match everything.                     |
 | `splitKey`         | Keys (tag names or functions) that partition matched instances into separate display sets.      |
-| `makeSeriesInfo`   | Runs once per series **before** selection to compute series-level flags read by `ruleSelector`. |
+| `updateSeriesInfo` | Runs once per series **before** selection to compute series-level flags read by `ruleSelector`. |
 | `viewportTypes`    | Allowed viewport types for the produced display sets; index `0` is preferred.                   |
 | `customAttributes` | Returns extra attributes spread flat onto the display set (e.g. `isClip`, `numImageFrames`).    |
 
@@ -233,7 +233,7 @@ const mixedDimensionalityBValue: SplitRule = {
   id: 'mixedDimensionalityBValue',
   viewportTypes: ['stack', 'volume', 'volume3d'],
   // Series-level pass: flag MR series that mix b-value and non-b-value frames.
-  makeSeriesInfo: (instances, seriesInfo) => {
+  updateSeriesInfo: (instances, seriesInfo) => {
     const [instance] = instances;
     if (!instance || instance.Modality !== 'MR') {
       return;
@@ -263,7 +263,7 @@ the resolved data fields a display set is built from — `imageIds`,
 cannot be overwritten, so the underlying-vs-frame image id invariant the
 viewports rely on always holds.
 
-`makeSeriesInfo` is run by `buildSeriesInfo`, which is safe to call with an empty
+`updateSeriesInfo` is run by `buildSeriesInfo`, which is safe to call with an empty
 instance list (it returns zeroed counts without invoking any rule).
 
 ### Instance classifiers
@@ -272,7 +272,7 @@ The default rules rely on small SOP-class/modality heuristics that are also
 exported for reuse, so you can detect a series' kind without re-hardcoding UID
 lists:
 
-- `isImageSopClass(sopClassUID)` — the SOP class carries renderable pixel data.
+- `isImageInstance(instance)` — the SOP class carries renderable pixel data.
 - `isVideoInstance(instance)` — video transfer syntax (reusing the shared
   `videoUIDs` list), a video SOP class, or a long multi-frame secondary capture.
 - `isEcgInstance(instance)` — an ECG / waveform SOP class.

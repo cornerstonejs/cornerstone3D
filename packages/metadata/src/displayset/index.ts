@@ -7,8 +7,8 @@ export { resolveInstances } from './resolveInstances';
 export type { ResolveInstancesOptions } from './resolveInstances';
 export { buildSeriesInfo } from './buildSeriesInfo';
 export { groupInstancesBySplitRules } from './groupInstancesBySplitRules';
-export { splitSeriesInstanceGroupsFromImageIds } from './splitSeriesInstanceGroupsFromImageIds';
-export type { SplitSeriesInstanceGroupsOptions } from './splitSeriesInstanceGroupsFromImageIds';
+export { splitImageIdsBySplitRules } from './splitImageIdsBySplitRules';
+export type { SplitImageIdsBySplitRulesOptions } from './splitImageIdsBySplitRules';
 export {
   registerDisplaySetMetadata,
   type RegisterDisplaySetMetadataOptions,
@@ -17,7 +17,7 @@ export { registerDisplaySetProviders } from './displaySetProvider';
 export { defaultDisplaySetSplitRules } from './defaultDisplaySetSplitRules';
 export { createDisplaySetFromGroup } from './createDisplaySetFromGroup';
 export type { CreateDisplaySetFromGroupOptions } from './createDisplaySetFromGroup';
-export { isImageSopClass } from './isImageSopClass';
+export { isImageInstance } from './isImageInstance';
 export { isVideoInstance } from './isVideoInstance';
 export { isEcgInstance } from './isEcgInstance';
 export { isWsiInstance } from './isWsiInstance';
@@ -33,6 +33,6 @@ export type {
   SplitContext,
   SplitRuleOptions,
   SplitRuleCustomAttributesContext,
-  GroupedInstanceBucket,
+  InstanceGroup,
   ViewportTypeHint,
 } from './types';
