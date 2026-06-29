@@ -29,6 +29,9 @@ export {
 export type {
   NaturalizedInstance,
   SeriesInfo,
+  SeriesFacts,
+  SeriesContext,
+  RuleContext,
   SplitRule,
   SplitContext,
   SplitRuleOptions,

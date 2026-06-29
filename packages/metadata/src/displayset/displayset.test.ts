@@ -144,12 +144,7 @@ describe('displayset split utilities', () => {
           !!instance.Rows,
       },
     ];
-    const seriesInfo = buildSeriesInfo(singleInstance, rules);
-    const groups = groupInstancesBySplitRules(
-      singleInstance,
-      rules,
-      seriesInfo
-    );
+    const groups = groupInstancesBySplitRules(singleInstance, rules);
     expect(groups).toHaveLength(1);
     expect(groups[0].instances).toHaveLength(1);
   });
@@ -222,17 +217,15 @@ describe('displayset split utilities', () => {
   });
 
   it('buildSeriesInfo and grouping are safe on an empty instance list', () => {
-    // buildSeriesInfo runs every rule's updateSeriesInfo, several of which read
-    // instances[0]; it must not throw when called with no instances.
-    expect(() =>
-      buildSeriesInfo([], defaultDisplaySetSplitRules)
-    ).not.toThrow();
+    // buildSeriesInfo only aggregates counts; grouping derives each rule's
+    // `series` facts up front. Both must be safe when given no instances.
+    expect(() => buildSeriesInfo([])).not.toThrow();
 
-    const seriesInfo = buildSeriesInfo([], defaultDisplaySetSplitRules);
+    const seriesInfo = buildSeriesInfo([]);
     expect(seriesInfo.NumberOfSeriesRelatedInstances).toBe(0);
-    expect(
-      groupInstancesBySplitRules([], defaultDisplaySetSplitRules, seriesInfo)
-    ).toEqual([]);
+    expect(groupInstancesBySplitRules([], defaultDisplaySetSplitRules)).toEqual(
+      []
+    );
   });
 
   it('does not let customAttributes clobber resolved data fields', () => {
@@ -322,8 +315,7 @@ describe('displayset split utilities', () => {
         groupBy: [() => 'same'],
       },
     ];
-    const seriesInfo = buildSeriesInfo(insts, rules);
-    const groups = groupInstancesBySplitRules(insts, rules, seriesInfo);
+    const groups = groupInstancesBySplitRules(insts, rules);
 
     // Without rule-namespaced keys these would collapse into one bucket.
     expect(groups).toHaveLength(2);
@@ -363,6 +355,65 @@ describe('displayset split utilities', () => {
     );
   });
 
+  it('series hook splits a mixed-b-value DWI series into two display sets', () => {
+    const mixed: NaturalizedInstance[] = [
+      {
+        imageId: 'b800',
+        Modality: 'MR',
+        SOPClassUID: '1.2.840.10008.5.1.4.1.1.4',
+        Rows: 256,
+        SeriesInstanceUID: 'dwi',
+        DiffusionBValue: 800,
+      },
+      {
+        imageId: 'noB',
+        Modality: 'MR',
+        SOPClassUID: '1.2.840.10008.5.1.4.1.1.4',
+        Rows: 256,
+        SeriesInstanceUID: 'dwi',
+      },
+    ];
+    const groups = splitImageIdsBySplitRules(['b800', 'noB'], {
+      getNaturalizedInstance: (id) => mixed.find((i) => i.imageId === id),
+      splitRules: defaultDisplaySetSplitRules,
+    });
+
+    expect(groups).toHaveLength(2);
+    expect(
+      groups.every((g) => g.matchedRule.id === 'mixedDimensionalityBValue')
+    ).toBe(true);
+  });
+
+  it('series hook leaves a non-mixed DWI series as one volume display set', () => {
+    // Every frame has a b-value, so the mixed-b-value rule must not fire; the
+    // series falls through to the volume3d rule as a single display set.
+    const allBValue: NaturalizedInstance[] = [
+      {
+        imageId: 'b0',
+        Modality: 'MR',
+        SOPClassUID: '1.2.840.10008.5.1.4.1.1.4',
+        Rows: 256,
+        SeriesInstanceUID: 'dwi-uniform',
+        DiffusionBValue: 0,
+      },
+      {
+        imageId: 'b1000',
+        Modality: 'MR',
+        SOPClassUID: '1.2.840.10008.5.1.4.1.1.4',
+        Rows: 256,
+        SeriesInstanceUID: 'dwi-uniform',
+        DiffusionBValue: 1000,
+      },
+    ];
+    const groups = splitImageIdsBySplitRules(['b0', 'b1000'], {
+      getNaturalizedInstance: (id) => allBValue.find((i) => i.imageId === id),
+      splitRules: defaultDisplaySetSplitRules,
+    });
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0].matchedRule.id).toBe('volume3d');
+  });
+
   it('reports instances that match no rule via onUnmatched', () => {
     const insts: NaturalizedInstance[] = [
       { imageId: 'a', Modality: 'CT' },
@@ -375,10 +426,9 @@ describe('displayset split utilities', () => {
         groupBy: ['imageId'],
       },
     ];
-    const seriesInfo = buildSeriesInfo(insts, rules);
     const unmatched: string[] = [];
 
-    const groups = groupInstancesBySplitRules(insts, rules, seriesInfo, (i) =>
+    const groups = groupInstancesBySplitRules(insts, rules, (i) =>
       unmatched.push(i.imageId!)
     );
 

@@ -160,17 +160,29 @@ rule). Rules are evaluated **in order, first match wins per instance**.
 
 A `SplitRule` has up to five parts:
 
-| Field              | Purpose                                                                                                                              |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `matches`          | Returns true if an instance belongs to this rule. Omit to match everything.                                                          |
-| `groupBy`          | Keys (tag names or functions) that partition matched instances into separate display sets.                                           |
-| `updateSeriesInfo` | Runs once per series **before** selection and **mutates** `seriesInfo` to set flags read by `matches` (the return value is ignored). |
-| `viewportTypes`    | Allowed viewport types for the produced display sets; index `0` is preferred.                                                        |
-| `customAttributes` | Returns extra attributes spread flat onto the display set (e.g. `isClip`, `numImageFrames`).                                         |
+| Field              | Purpose                                                                                                                       |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| `matches`          | Returns true if an instance belongs to this rule. Omit to match everything.                                                   |
+| `groupBy`          | Keys (tag names or functions) that partition matched instances into separate display sets.                                    |
+| `series`           | Optional. Runs once per rule per split and **returns** that rule's derived facts; `matches`/`groupBy` read them via `series`. |
+| `viewportTypes`    | Allowed viewport types for the produced display sets; index `0` is preferred.                                                 |
+| `customAttributes` | Returns extra attributes spread flat onto the display set (e.g. `isClip`, `numImageFrames`).                                  |
 
-The DWI fix is a good worked example — a series-level pass flags the mixed
-series, and `groupBy` then separates the b-value frames from the
-undefined-b-value frames:
+Most rules only need `matches` and `groupBy`:
+
+```ts
+{
+  matches: (instance) => isVideoInstance(instance),
+  groupBy: ['SOPInstanceUID'],
+}
+```
+
+Reach for `series` only when a rule needs a value computed from the **whole
+series** and reused by `matches` or `groupBy`. It is optional, runs **once per
+rule per split operation**, and returns derived facts for that rule — it should
+**not** mutate shared state. The DWI fix is the worked example: `series` decides
+whether the series mixes b-value and non-b-value frames, and `groupBy` then
+separates them into two display sets:
 
 ```ts
 import type { SplitRule } from '@cornerstonejs/metadata';
@@ -178,22 +190,15 @@ import type { SplitRule } from '@cornerstonejs/metadata';
 const mixedDimensionalityBValue: SplitRule = {
   id: 'mixedDimensionalityBValue',
   viewportTypes: ['stack', 'volume', 'volume3d'],
-  // Series-level pass: flag MR series that mix b-value and non-b-value frames.
-  updateSeriesInfo: (instances, seriesInfo) => {
-    const [instance] = instances;
-    if (!instance || instance.Modality !== 'MR') {
-      return;
-    }
-    const hasBValue = instances.some((i) => i.DiffusionBValue !== undefined);
-    const missingBValue = instances.some(
-      (i) => i.DiffusionBValue === undefined
-    );
-    if (hasBValue && missingBValue) {
-      seriesInfo.mixedBValue = true;
-    }
-  },
-  // Only applies once the series-level pass flagged the series.
-  matches: (_instance, seriesInfo) => !!seriesInfo.mixedBValue,
+  // Computed once over the whole series; returned, not mutated onto shared state.
+  series: ({ instances }) => ({
+    mixedBValue:
+      instances[0]?.Modality === 'MR' &&
+      instances.some((i) => i.DiffusionBValue !== undefined) &&
+      instances.some((i) => i.DiffusionBValue === undefined),
+  }),
+  // Reads this rule's own derived facts.
+  matches: (_instance, { series }) => series.mixedBValue,
   // Two display sets: undefined-b-value frames split off from the rest.
   groupBy: [
     'SeriesInstanceUID',
@@ -216,14 +221,18 @@ A few engine guarantees worth knowing when writing rules:
 - **Group order is deterministic.** Groups come back sorted by a stable,
   rule-namespaced key, so a series' display sets — and any id derived from their
   position — are stable regardless of the order the image ids were passed in.
-- **`updateSeriesInfo` samples `instances[0]`** for some flags (e.g. multi-frame,
-  volumetric), so it assumes a homogeneous series. A heterogeneous series needs a
-  dedicated rule (as `mixedDimensionalityBValue` does for DWI) to separate it.
+- **`series` samples `instances[0]`** for some facts (e.g. multi-frame,
+  volumetric), so those rules assume a homogeneous series. A heterogeneous series
+  needs a dedicated rule (as `mixedDimensionalityBValue` does for DWI) to
+  separate it.
+- **`series` is scoped to its own rule.** A rule only ever sees the facts its own
+  `series` hook returned; it cannot read another rule's facts, and it must not
+  mutate shared state.
 - **Unmatched instances are dropped.** An instance that matches no rule (e.g. a
   non-image SOP) produces no display set; pass `onUnmatchedInstance` to
   `splitImageIdsBySplitRules` to observe them.
 - **`buildSeriesInfo` is safe on an empty instance list** — it returns zeroed
-  counts without invoking any rule.
+  counts. It aggregates series statistics only and is independent of split rules.
 
 ### Instance classifiers
 

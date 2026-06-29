@@ -1,4 +1,3 @@
-import { buildSeriesInfo } from './buildSeriesInfo';
 import { groupInstancesBySplitRules } from './groupInstancesBySplitRules';
 import { resolveInstances } from './resolveInstances';
 import type {
@@ -40,11 +39,5 @@ export function splitImageIdsBySplitRules(
     return [];
   }
 
-  const seriesInfo = buildSeriesInfo(instances, splitRules);
-  return groupInstancesBySplitRules(
-    instances,
-    splitRules,
-    seriesInfo,
-    onUnmatchedInstance
-  );
+  return groupInstancesBySplitRules(instances, splitRules, onUnmatchedInstance);
 }

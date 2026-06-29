@@ -1,22 +1,16 @@
-import type { NaturalizedInstance, SeriesInfo, SplitRule } from './types';
+import type { NaturalizedInstance, SeriesInfo } from './types';
 
 /**
- * Builds series-level metadata used by split rule selectors.
+ * Aggregates series-level statistics over a series' naturalized instances.
  *
- * Safe to call with an empty `instances` list: it returns zeroed counts and
- * does not invoke any rule's `updateSeriesInfo` (those may destructure
- * `instances[0]`), so this exported helper - like
- * {@link splitImageIdsBySplitRules} - never throws on empty input.
+ * Independent of split rules: a rule derives its own facts through its `series`
+ * hook (see {@link RuleContext}), so this helper only counts and is safe to call
+ * with an empty `instances` list (it returns zeroed counts).
  *
  * @param instances - naturalized instances for the series.
- * @param splitRules - rules whose `updateSeriesInfo` hooks contribute series-level
- *   flags (skipped entirely when `instances` is empty).
- * @returns the aggregated series info consumed by rule selectors.
+ * @returns the aggregated series statistics.
  */
-export function buildSeriesInfo(
-  instances: NaturalizedInstance[],
-  splitRules: SplitRule[] = []
-): SeriesInfo {
+export function buildSeriesInfo(instances: NaturalizedInstance[]): SeriesInfo {
   const NumberOfSeriesRelatedInstances = instances.length;
   let numberOfFrames = 0;
   let numberOfNonImageObjects = 0;
@@ -36,7 +30,7 @@ export function buildSeriesInfo(
     }
   }
 
-  const seriesInfo: SeriesInfo = {
+  return {
     NumberOfSeriesRelatedInstances,
     numberOfFrames,
     // `numImageFrames` mirrors `numberOfFrames` here purely for OHIF parity (the
@@ -46,12 +40,4 @@ export function buildSeriesInfo(
     numberOfNonImageObjects,
     numberOfSOPInstanceUIDsPerSeries,
   };
-
-  if (instances.length) {
-    for (const splitRule of splitRules) {
-      splitRule.updateSeriesInfo?.(instances, seriesInfo);
-    }
-  }
-
-  return seriesInfo;
 }

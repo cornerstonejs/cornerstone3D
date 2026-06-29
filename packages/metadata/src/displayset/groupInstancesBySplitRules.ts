@@ -1,7 +1,7 @@
 import type {
   InstanceGroup,
   NaturalizedInstance,
-  SeriesInfo,
+  RuleContext,
   SplitRule,
 } from './types';
 
@@ -16,13 +16,13 @@ import type {
  */
 function buildSplitKey(
   instance: NaturalizedInstance,
-  seriesInfo: SeriesInfo,
+  context: RuleContext,
   splitRule: SplitRule,
   ruleDiscriminator: string | number
 ): string {
   const groupBy = splitRule.groupBy ?? ['SeriesInstanceUID'];
   const parts = groupBy.map((key) =>
-    typeof key === 'function' ? key(instance, seriesInfo) : instance[key]
+    typeof key === 'function' ? key(instance, context) : instance[key]
   );
   return JSON.stringify([ruleDiscriminator, ...parts]);
 }
@@ -30,6 +30,11 @@ function buildSplitKey(
 /**
  * Groups instances into instance groups using the first matching split rule per
  * instance (rules are evaluated in order; first match wins).
+ *
+ * Each rule's optional `series` hook runs **once** here (per rule, per call) to
+ * derive that rule's series-level facts; those facts are passed to the rule's
+ * `matches` and `groupBy` via the {@link RuleContext}. A rule only ever sees its
+ * own derived facts.
  *
  * Groups are returned in a **deterministic order** (sorted by their bucket key),
  * so a series' display sets - and any identity derived from their position -
@@ -43,9 +48,18 @@ function buildSplitKey(
 export function groupInstancesBySplitRules(
   instances: NaturalizedInstance[],
   splitRules: SplitRule[],
-  seriesInfo: SeriesInfo,
   onUnmatched?: (instance: NaturalizedInstance) => void
 ): InstanceGroup[] {
+  if (!instances.length) {
+    return [];
+  }
+
+  // Derive each rule's series-level facts once for this split operation, so the
+  // per-instance `matches`/`groupBy` only read an already-computed value.
+  const ruleContexts: RuleContext[] = splitRules.map((rule) => ({
+    series: rule.series?.({ instances }) ?? {},
+  }));
+
   const instancesMap = new Map<string, InstanceGroup>();
 
   for (const instance of instances) {
@@ -53,14 +67,15 @@ export function groupInstancesBySplitRules(
 
     for (let ruleIndex = 0; ruleIndex < splitRules.length; ruleIndex++) {
       const splitRule = splitRules[ruleIndex];
-      if (splitRule.matches && !splitRule.matches(instance, seriesInfo)) {
+      const context = ruleContexts[ruleIndex];
+      if (splitRule.matches && !splitRule.matches(instance, context)) {
         continue;
       }
 
       matched = true;
       const key = buildSplitKey(
         instance,
-        seriesInfo,
+        context,
         splitRule,
         splitRule.id ?? ruleIndex
       );

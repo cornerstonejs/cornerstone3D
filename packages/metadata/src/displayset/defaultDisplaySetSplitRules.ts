@@ -61,16 +61,15 @@ export const defaultDisplaySetSplitRules: SplitRule[] = [
     // SliceLocation. The `SliceLocation !== undefined` guard mirrors OHIF - a
     // multi-frame object without a slice location is not treated as a clip here
     // and falls through to the volume/stack rules below.
-    updateSeriesInfo: (instances, seriesInfo) => {
+    series: ({ instances }) => {
       const first = instances[0];
-      if (!first) {
-        return;
-      }
-      const { NumberOfFrames, SliceLocation } = first;
-      seriesInfo.isMultiFrame =
-        Number(NumberOfFrames) > 1 && SliceLocation !== undefined;
+      return {
+        isMultiFrame:
+          Number(first?.NumberOfFrames) > 1 &&
+          first?.SliceLocation !== undefined,
+      };
     },
-    matches: (_instance, seriesInfo) => !!seriesInfo.isMultiFrame,
+    matches: (_instance, { series }) => !!series.isMultiFrame,
     groupBy: ['SeriesInstanceUID', 'InstanceNumber'],
     customAttributes: ({ isMultiFrame }, options) => {
       // NumberOfFrames is frequently naturalized as a string (e.g. '30'); coerce
@@ -97,23 +96,18 @@ export const defaultDisplaySetSplitRules: SplitRule[] = [
     viewportTypes: ['stack', 'volume', 'volume3d'],
     // Gates on instances[0].Modality (assumes a homogeneous-modality series),
     // then scans all instances for the mix of defined/undefined b-values.
-    updateSeriesInfo: (instances, seriesInfo) => {
+    series: ({ instances }) => {
       const [instance] = instances;
       if (!instance || instance.Modality !== 'MR') {
-        return;
+        return { mixedBValue: false };
       }
       const hasBValue = instances.some((i) => i.DiffusionBValue !== undefined);
-      if (!hasBValue) {
-        return;
-      }
       const missingBValue = instances.some(
         (i) => i.DiffusionBValue === undefined
       );
-      if (hasBValue && missingBValue) {
-        seriesInfo.mixedBValue = true;
-      }
+      return { mixedBValue: hasBValue && missingBValue };
     },
-    matches: (_instance, seriesInfo) => !!seriesInfo.mixedBValue,
+    matches: (_instance, { series }) => !!series.mixedBValue,
     groupBy: [
       'SeriesInstanceUID',
       (instance) => instance.DiffusionBValue === undefined,
@@ -128,13 +122,14 @@ export const defaultDisplaySetSplitRules: SplitRule[] = [
     // heterogeneous series (e.g. a localizer first, then a volume) can be
     // misflagged - add a dedicated split rule (as `mixedDimensionalityBValue`
     // does for DWI) when a specific mix must be separated.
-    updateSeriesInfo: (instances, seriesInfo) => {
+    series: ({ instances }) => {
       const modality = instances[0]?.Modality;
-      if (modality && VOLUME_MODALITIES.has(modality) && instances.length > 1) {
-        seriesInfo.supportsVolume3d = true;
-      }
+      return {
+        supportsVolume3d:
+          !!modality && VOLUME_MODALITIES.has(modality) && instances.length > 1,
+      };
     },
-    matches: (_instance, seriesInfo) => !!seriesInfo.supportsVolume3d,
+    matches: (_instance, { series }) => !!series.supportsVolume3d,
     groupBy: ['SeriesInstanceUID'],
   },
 
