@@ -8,8 +8,9 @@ const VOLUME_MODALITIES = new Set(['CT', 'MR', 'PT', 'NM']);
 
 /**
  * Default display-set split rules (OHIF PR parity + video, ECG, volume3d).
- * Rules are evaluated in order; the first match wins.
- * Each rule may set `viewportTypes` where index 0 is the preferred viewport.
+ * Rules are evaluated in order; the first match wins. Each rule's `viewportTypes`
+ * (index 0 = preferred) is applied to the resulting display set, so only rules
+ * that add *other* attributes need a `customAttributes` callback.
  */
 export const defaultDisplaySetSplitRules: SplitRule[] = [
   {
@@ -17,9 +18,6 @@ export const defaultDisplaySetSplitRules: SplitRule[] = [
     viewportTypes: ['video'],
     ruleSelector: (instance) => isVideoInstance(instance),
     splitKey: ['SOPInstanceUID'],
-    customAttributes: () => ({
-      viewportTypes: ['video'],
-    }),
   },
 
   {
@@ -27,9 +25,6 @@ export const defaultDisplaySetSplitRules: SplitRule[] = [
     viewportTypes: ['ecg'],
     ruleSelector: (instance) => isEcgInstance(instance),
     splitKey: ['SOPInstanceUID'],
-    customAttributes: () => ({
-      viewportTypes: ['ecg'],
-    }),
   },
 
   {
@@ -38,9 +33,6 @@ export const defaultDisplaySetSplitRules: SplitRule[] = [
     // All microscopy levels of a series form a single whole-slide display set.
     ruleSelector: (instance) => isWsiInstance(instance),
     splitKey: ['SeriesInstanceUID'],
-    customAttributes: () => ({
-      viewportTypes: ['wholeslide'],
-    }),
   },
 
   {
@@ -50,18 +42,25 @@ export const defaultDisplaySetSplitRules: SplitRule[] = [
       ['CR', 'DX', 'MG'].includes(instance.Modality ?? '') &&
       isImageInstance(instance) &&
       !!instance.Rows,
+    // Split within the series by a coarse size bucket so differently-sized
+    // images (e.g. MG views) become separate stacks. `SeriesInstanceUID` keeps
+    // the bucket series-scoped (the entry point is per-series, but this stays
+    // correct if ever fed multiple series). The `/64` rounding is a deliberately
+    // fuzzy bucket and can straddle a boundary (480 -> 8, 544 -> 9).
     splitKey: [
+      'SeriesInstanceUID',
       (instance) =>
         `rows=${Math.round(Number(instance.Rows) / 64)}&cols=${Math.round(Number(instance.Columns) / 64)}`,
     ],
-    customAttributes: () => ({
-      viewportTypes: ['stack'],
-    }),
   },
 
   {
     id: 'multiFrame',
     viewportTypes: ['stack'],
+    // Assumes a homogeneous series: samples instances[0] for NumberOfFrames /
+    // SliceLocation. The `SliceLocation !== undefined` guard mirrors OHIF - a
+    // multi-frame object without a slice location is not treated as a clip here
+    // and falls through to the volume/stack rules below.
     updateSeriesInfo: (instances, seriesInfo) => {
       const first = instances[0];
       if (!first) {
@@ -83,7 +82,6 @@ export const defaultDisplaySetSplitRules: SplitRule[] = [
           numberOfFrames === undefined ? undefined : Number(numberOfFrames),
         splitNumber: options.splitNumber,
         isMultiFrame,
-        viewportTypes: ['stack'],
       };
     },
   },
@@ -97,6 +95,8 @@ export const defaultDisplaySetSplitRules: SplitRule[] = [
   {
     id: 'mixedDimensionalityBValue',
     viewportTypes: ['stack', 'volume', 'volume3d'],
+    // Gates on instances[0].Modality (assumes a homogeneous-modality series),
+    // then scans all instances for the mix of defined/undefined b-values.
     updateSeriesInfo: (instances, seriesInfo) => {
       const [instance] = instances;
       if (!instance || instance.Modality !== 'MR') {
@@ -118,15 +118,16 @@ export const defaultDisplaySetSplitRules: SplitRule[] = [
       'SeriesInstanceUID',
       (instance) => instance.DiffusionBValue === undefined,
     ],
-    customAttributes: () => ({
-      viewportTypes: ['stack', 'volume', 'volume3d'],
-    }),
   },
 
   {
     id: 'volume3d',
     // Default volumetric series to MPR (volume); 3D is an extra allowed type.
     viewportTypes: ['volume', 'volume3d', 'stack'],
+    // Assumes a homogeneous series: samples instances[0].Modality. A
+    // heterogeneous series (e.g. a localizer first, then a volume) can be
+    // misflagged - add a dedicated split rule (as `mixedDimensionalityBValue`
+    // does for DWI) when a specific mix must be separated.
     updateSeriesInfo: (instances, seriesInfo) => {
       const modality = instances[0]?.Modality;
       if (modality && VOLUME_MODALITIES.has(modality) && instances.length > 1) {
@@ -135,17 +136,11 @@ export const defaultDisplaySetSplitRules: SplitRule[] = [
     },
     ruleSelector: (_instance, seriesInfo) => !!seriesInfo.supportsVolume3d,
     splitKey: ['SeriesInstanceUID'],
-    customAttributes: () => ({
-      viewportTypes: ['volume', 'volume3d', 'stack'],
-    }),
   },
 
   {
     id: 'defaultImageRule',
     viewportTypes: ['stack', 'volume', 'volume3d'],
     ruleSelector: (instance) => isImageInstance(instance) && !!instance.Rows,
-    customAttributes: () => ({
-      viewportTypes: ['stack', 'volume', 'volume3d'],
-    }),
   },
 ];

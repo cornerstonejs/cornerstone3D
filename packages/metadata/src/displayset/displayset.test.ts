@@ -303,4 +303,86 @@ describe('displayset split utilities', () => {
     expect(ds1.displaySetId).toBe(`${seriesUID}:1`);
     expect(ds0.displaySetId).not.toBe(ds1.displaySetId);
   });
+
+  it('namespaces buckets by rule so identical split keys do not merge', () => {
+    const insts: NaturalizedInstance[] = [
+      { imageId: 'a', Modality: 'XA' },
+      { imageId: 'b', Modality: 'NM' },
+    ];
+    // Two different rules whose splitKey functions return the same string.
+    const rules: SplitRule[] = [
+      {
+        id: 'ruleA',
+        ruleSelector: (i) => i.Modality === 'XA',
+        splitKey: [() => 'same'],
+      },
+      {
+        id: 'ruleB',
+        ruleSelector: (i) => i.Modality === 'NM',
+        splitKey: [() => 'same'],
+      },
+    ];
+    const seriesInfo = buildSeriesInfo(insts, rules);
+    const groups = groupInstancesBySplitRules(insts, rules, seriesInfo);
+
+    // Without rule-namespaced keys these would collapse into one bucket.
+    expect(groups).toHaveLength(2);
+    expect(new Set(groups.map((g) => g.matchedRule.id))).toEqual(
+      new Set(['ruleA', 'ruleB'])
+    );
+  });
+
+  it('returns groups in a deterministic order regardless of input order', () => {
+    const mr: NaturalizedInstance[] = [
+      {
+        imageId: 'a',
+        Modality: 'MR',
+        SOPClassUID: '1.2.840.10008.5.1.4.1.1.4',
+        Rows: 256,
+        SeriesInstanceUID: 's',
+        DiffusionBValue: 800,
+      },
+      {
+        imageId: 'b',
+        Modality: 'MR',
+        SOPClassUID: '1.2.840.10008.5.1.4.1.1.4',
+        Rows: 256,
+        SeriesInstanceUID: 's',
+      },
+    ];
+    const options = {
+      getNaturalizedInstance: (id: string) => mr.find((i) => i.imageId === id),
+      splitRules: defaultDisplaySetSplitRules,
+    };
+
+    const forward = splitImageIdsBySplitRules(['a', 'b'], options);
+    const reverse = splitImageIdsBySplitRules(['b', 'a'], options);
+
+    expect(forward.map((g) => g.splitKey)).toEqual(
+      reverse.map((g) => g.splitKey)
+    );
+  });
+
+  it('reports instances that match no rule via onUnmatched', () => {
+    const insts: NaturalizedInstance[] = [
+      { imageId: 'a', Modality: 'CT' },
+      { imageId: 'b', Modality: 'SR' },
+    ];
+    const rules: SplitRule[] = [
+      {
+        id: 'ct',
+        ruleSelector: (i) => i.Modality === 'CT',
+        splitKey: ['imageId'],
+      },
+    ];
+    const seriesInfo = buildSeriesInfo(insts, rules);
+    const unmatched: string[] = [];
+
+    const groups = groupInstancesBySplitRules(insts, rules, seriesInfo, (i) =>
+      unmatched.push(i.imageId!)
+    );
+
+    expect(unmatched).toEqual(['b']);
+    expect(groups).toHaveLength(1);
+  });
 });

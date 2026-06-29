@@ -65,10 +65,14 @@ export type SplitRule = {
     | string
     | ((instance: NaturalizedInstance, seriesInfo: SeriesInfo) => unknown)
   )[];
+  /**
+   * Runs once over the whole series before selection. Contributes series-level
+   * flags by **mutating** the passed `seriesInfo` (the return value is ignored).
+   */
   updateSeriesInfo?: (
     instances: NaturalizedInstance[],
     seriesInfo: SeriesInfo
-  ) => SeriesInfo | void;
+  ) => void;
   customAttributes?: (
     attributes: SplitRuleCustomAttributesContext,
     options: SplitRuleOptions
@@ -82,4 +86,11 @@ export type SplitContext = {
 export type InstanceGroup = {
   instances: NaturalizedInstance[];
   matchedRule: SplitRule;
+  /**
+   * Deterministic, rule-namespaced bucket key this group was collected under.
+   * Stable for a given set of instances regardless of input order, so it can
+   * seed a stable display set identity. Set by `groupInstancesBySplitRules`;
+   * optional so hand-built groups don't need it.
+   */
+  splitKey?: string;
 };
