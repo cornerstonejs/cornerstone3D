@@ -64,6 +64,7 @@ import type {
   Scaling,
   ScalingParameters,
 } from './ScalingParameters';
+import type { ScalingDescriptor } from './ScalingDescriptor';
 import type StackViewportProperties from './StackViewportProperties';
 import type VolumeViewportProperties from './VolumeViewportProperties';
 import type IViewportId from './IViewportId';
@@ -191,6 +192,7 @@ export type {
   IDynamicImageVolume,
   IRenderingEngine,
   ScalingParameters,
+  ScalingDescriptor,
   PTScaling,
   IPointsManager,
   PolyDataPointConfiguration,
