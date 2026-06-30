@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.1.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.1.0...v5.1.1) (2026-06-30)
+
+### Bug Fixes
+
+- more generic viewport push for parity with legacy ([#2766](https://github.com/cornerstonejs/cornerstone3D/issues/2766)) ([6fc0256](https://github.com/cornerstonejs/cornerstone3D/commit/6fc0256bfb8c426e4a93f32f5da4ddd3716d9548))
+
 # [5.1.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.16...v5.1.0) (2026-06-30)
 
 **Note:** Version bump only for package @cornerstonejs/dicom-image-loader
