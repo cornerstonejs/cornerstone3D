@@ -435,18 +435,18 @@ async function run() {
   // --------------------------------------------------------------------------
   // Register display-set metadata
   // --------------------------------------------------------------------------
-  utilities.genericViewportDataSetMetadataProvider.add(acqDataId, {
+  utilities.genericViewportDisplaySetMetadataProvider.add(acqDataId, {
     imageIds,
     kind: 'planar',
     initialImageIdIndex: middleImageIndex,
   });
-  utilities.genericViewportDataSetMetadataProvider.add(mprDataId, {
+  utilities.genericViewportDisplaySetMetadataProvider.add(mprDataId, {
     imageIds,
     kind: 'planar',
     volumeId,
     initialImageIdIndex: middleImageIndex,
   });
-  utilities.genericViewportDataSetMetadataProvider.add(volume3dDataId, {
+  utilities.genericViewportDisplaySetMetadataProvider.add(volume3dDataId, {
     imageIds,
     volumeId,
   });
