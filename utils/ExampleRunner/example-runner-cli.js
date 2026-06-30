@@ -301,7 +301,22 @@ function run() {
       '--config',
       webpackConfigPath,
     ];
-    spawnSync(rspackBin, rspackArgs, { stdio: 'inherit', shell: false });
+    // On Windows the rspack binary is a `.cmd` shim. Since Node's
+    // CVE-2024-27980 hardening, spawning a `.cmd`/`.bat` with `shell: false`
+    // fails with EINVAL, so run it through a shell on win32.
+    const isWin = process.platform === 'win32';
+    const result = spawnSync(rspackBin, rspackArgs, {
+      stdio: 'inherit',
+      shell: isWin,
+    });
+
+    if (result.error) {
+      console.error(`\n=> Failed to start rspack: ${result.error.message}`);
+      process.exit(1);
+    }
+    if (typeof result.status === 'number' && result.status !== 0) {
+      process.exit(result.status);
+    }
   } else {
     console.log('=> To run an example:');
     console.log('  $ npm run example -- PUT_YOUR_EXAMPLE_NAME_HERE\n');

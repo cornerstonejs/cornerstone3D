@@ -21,9 +21,9 @@ import {
   type GenericViewportReferenceContext,
 } from '../genericViewportReferenceCompatibility';
 import {
-  getGenericViewportImageDataSet,
-  isGenericViewportImageDataSet,
-} from '../genericViewportDataSetAccess';
+  getGenericViewportImageDisplaySet,
+  isGenericViewportImageDisplaySet,
+} from '../genericViewportDisplaySetAccess';
 import { DefaultVolume3DDataProvider } from './DefaultVolume3DDataProvider';
 import { createVolume3DRenderPathResolver } from './Volume3DRenderPathResolver';
 import Volume3DResolvedView from './Volume3DResolvedView';
@@ -593,7 +593,7 @@ class VolumeViewport3D extends GenericViewport<
   }
 
   private getDataSet(dataId: string): Volume3DRegisteredDataSet | undefined {
-    const dataSet = getGenericViewportImageDataSet(dataId);
+    const dataSet = getGenericViewportImageDisplaySet(dataId);
 
     if (!isVolume3DRegisteredDataSet(dataSet)) {
       return;
@@ -699,7 +699,7 @@ function isVolume3DRendering(rendering: {
 function isVolume3DRegisteredDataSet(
   value: unknown
 ): value is Volume3DRegisteredDataSet {
-  if (!isGenericViewportImageDataSet(value)) {
+  if (!isGenericViewportImageDisplaySet(value)) {
     return false;
   }
 
