@@ -81,7 +81,15 @@ export function createEmptyVTKImageData(args: {
 export function createVTKImageDataFromImage(image: IImage): vtkImageData {
   const { dimensions, direction, numberOfComponents, origin, spacing } =
     getImageDataMetadata(image);
-  const pixelArray = image.voxelManager.getScalarData();
+  // Own a PRIVATE copy of the scalars rather than wrapping the source image's
+  // voxelManager buffer by reference. The reuse-in-place scroll path
+  // (updateVTKImageDataWithCornerstoneImage -> scalarData.set) overwrites this
+  // actor buffer with the *next* frame's pixels; if it aliased the source
+  // image's cached buffer, scrolling to another slice would corrupt the first
+  // image's cached pixel data, and scrolling back would then render the wrong
+  // (previously displayed) slice. Mirrors legacy StackViewport, whose actor
+  // buffer is independent of the image cache.
+  const pixelArray = image.voxelManager.getScalarData().slice();
   const imageData = createEmptyVTKImageData({
     dimensions,
     direction: Array.from(direction),
