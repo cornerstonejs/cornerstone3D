@@ -69,7 +69,8 @@ export const defaultDisplaySetSplitRules: SplitRule[] = [
           first?.SliceLocation !== undefined,
       };
     },
-    matches: (_instance, { series }) => !!series.isMultiFrame,
+    matches: (instance, { series }) =>
+      !!series.isMultiFrame && isImageInstance(instance) && !!instance.Rows,
     groupBy: ['SeriesInstanceUID', 'InstanceNumber'],
     customAttributes: ({ isMultiFrame }, options) => {
       // NumberOfFrames is frequently naturalized as a string (e.g. '30'); coerce
@@ -110,7 +111,8 @@ export const defaultDisplaySetSplitRules: SplitRule[] = [
       );
       return { mixedBValue: hasBValue && missingBValue };
     },
-    matches: (_instance, { series }) => !!series.mixedBValue,
+    matches: (instance, { series }) =>
+      !!series.mixedBValue && isImageInstance(instance) && !!instance.Rows,
     groupBy: [
       'SeriesInstanceUID',
       (instance) => instance.DiffusionBValue === undefined,
@@ -132,7 +134,8 @@ export const defaultDisplaySetSplitRules: SplitRule[] = [
           !!modality && VOLUME_MODALITIES.has(modality) && instances.length > 1,
       };
     },
-    matches: (_instance, { series }) => !!series.supportsVolume3d,
+    matches: (instance, { series }) =>
+      !!series.supportsVolume3d && isImageInstance(instance) && !!instance.Rows,
     groupBy: ['SeriesInstanceUID'],
   },
 

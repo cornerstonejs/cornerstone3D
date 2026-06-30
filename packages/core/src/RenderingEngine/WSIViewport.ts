@@ -651,7 +651,14 @@ class WSIViewport extends Viewport {
         );
       }
 
-      await this.setWSI(dataSet.imageIds, dataSet.options.webClient);
+      // Call the base loader non-virtually: WSIViewportLegacyAdapter overrides
+      // setWSI to route through setDataIds -> setDisplaySets, which would recurse
+      // back into here indefinitely. Bypassing the override loads the WSI directly.
+      await WSIViewport.prototype.setWSI.call(
+        this,
+        dataSet.imageIds,
+        dataSet.options.webClient
+      );
     });
   }
 

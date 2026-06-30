@@ -77,7 +77,9 @@ export function groupInstancesBySplitRules(
         instance,
         context,
         splitRule,
-        splitRule.id ?? ruleIndex
+        // Always include ruleIndex so two rules that reuse the same `id` can
+        // never collide into one bucket (and inherit the wrong matchedRule).
+        `${ruleIndex}:${splitRule.id ?? ''}`
       );
 
       let group = instancesMap.get(key);

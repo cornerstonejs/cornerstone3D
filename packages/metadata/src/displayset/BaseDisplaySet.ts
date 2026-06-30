@@ -30,7 +30,10 @@ export class BaseDisplaySet implements IDisplaySet {
       : ['stack'];
     this.preferredViewportType = getPreferredViewportType(this.viewportTypes);
     this.instances = [...(options.instances ?? [])];
-    this.imageIds = [...new Set(options.imageIds ?? [])];
-    this.underlyingImageIds = [...new Set(options.underlyingImageIds ?? [])];
+    // Preserve caller cardinality/order: IDisplaySet documents
+    // underlyingImageIds as one entry per instance, so deduping could drop a
+    // legitimate frame-to-instance mapping.
+    this.imageIds = [...(options.imageIds ?? [])];
+    this.underlyingImageIds = [...(options.underlyingImageIds ?? [])];
   }
 }
