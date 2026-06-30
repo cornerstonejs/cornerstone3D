@@ -56,7 +56,7 @@ async function getHoverPositions(viewport: Locator, page: Page) {
 }
 
 test.beforeEach(async ({ page }) => {
-  await visitExample(page, 'segmentLabel', 1500);
+  await visitExample(page, 'segmentLabel');
 
   // The example seeds contours asynchronously (after the volume loads and a
   // slice scroll). Waiting for both segments to have contour annotations is a

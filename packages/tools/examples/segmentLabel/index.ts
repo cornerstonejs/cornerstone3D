@@ -319,8 +319,16 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
     ],
   });
 
-  // Move to the adjacent slice and seed segment 2 there.
-  volumeContourViewport.scroll(1);
+  // Move to the adjacent slice before seeding segment 2.
+  //
+  // viewport.scroll() reads the volume actor's slice range, which is only
+  // available once the actor's bounds have been computed. Immediately after
+  // setVolumesForViewports that is not guaranteed, so an early scroll() is a
+  // silent no-op (slice range collapses to zero steps). On slower/CI machines
+  // that race is lost, both contours get projected onto the SAME slice, and
+  // the slice-scoping demo/test breaks. Retry scroll() until it actually moves
+  // the focal point so segment 2 is guaranteed to land on a different slice.
+  await scrollUntilSliceChanges(volumeContourViewport, 1);
 
   addMockContourSegmentation({
     segmentationId: volumeSegContourId,
@@ -337,6 +345,33 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
   // Scroll back to segment 1's slice so the bug is reproducible on load.
   volumeContourViewport.scroll(-1);
   renderingEngine.render();
+}
+
+/**
+ * Scrolls the volume viewport by `delta` slices, retrying until the camera's
+ * focal point actually moves. This guards against scrolling before the volume
+ * actor's slice range is ready (which makes scroll() a no-op).
+ */
+async function scrollUntilSliceChanges(viewport, delta, maxAttempts = 100) {
+  const focalPointMoved = (a, b) =>
+    Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]) > 1e-6;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const before = viewport.getCamera().focalPoint;
+    viewport.scroll(delta);
+    const after = viewport.getCamera().focalPoint;
+
+    if (focalPointMoved(before, after)) {
+      return;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+
+  console.warn(
+    'segmentLabel example: volume viewport never became scrollable; ' +
+      'segment 2 may have been seeded on the same slice as segment 1.'
+  );
 }
 
 async function _handleStackViewports(stackImageIds: string[]) {
