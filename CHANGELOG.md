@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.1.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.1.1...v5.1.2) (2026-06-30)
+
+### Bug Fixes
+
+- **dicomImageLoader:** reset planarConfiguration to 0 after JPEG Lossless decode ([#2778](https://github.com/cornerstonejs/cornerstone3D/issues/2778)) ([4b413f6](https://github.com/cornerstonejs/cornerstone3D/commit/4b413f670a347428cd557257660279e82ef50147))
+
 ## [5.1.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.1.0...v5.1.1) (2026-06-30)
 
 ### Bug Fixes
