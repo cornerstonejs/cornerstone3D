@@ -8,16 +8,36 @@ import makeVolumeMetadata from './helpers/makeVolumeMetadata';
 import { getArrayConstructor } from './helpers/dataTypeCodeHelper';
 import { getOptions } from './internal';
 
+type DicomMetadata = {
+  Modality?: string;
+  SeriesInstanceUID?: string;
+  SeriesNumber?: number | string;
+  SeriesDescription?: string;
+  WindowCenter?: number | string | Array<number | string>;
+  WindowWidth?: number | string | Array<number | string>;
+  VOILUTFunction?: string;
+  RescaleSlope?: number | string | Array<number | string>;
+  RescaleIntercept?: number | string | Array<number | string>;
+};
+
+type HeaderInfo = {
+  dimensions: number[];
+  direction: mat3;
+  isValid: boolean;
+  message: string;
+  origin: number[];
+  version: number;
+  orientation: number[];
+  spacing: number[];
+  header: unknown;
+  arrayConstructor: any;
+};
+
 export const urlsMap = new Map();
 const NIFTI1_HEADER_SIZE = 348;
 const NIFTI2_HEADER_SIZE = 540;
 const HEADER_CHECK_SIZE = Math.max(NIFTI1_HEADER_SIZE, NIFTI2_HEADER_SIZE);
 
-// Note: I spent several hours attempting to use the stream request in dicomImageLoader,
-// but I couldn't make the decompression work properly and eventually gave up.
-// For some reason, fflate and pako cannot decompress stream data, returning undefined.
-// The decompression stream I'm using here also doesn't work correctly
-// with the streamRequest in dicomImageLoader for an unknown reason.
 export async function fetchArrayBuffer({
   url,
   onProgress,
@@ -26,8 +46,8 @@ export async function fetchArrayBuffer({
   onHeader,
   loadFullVolume = false,
 }) {
-  const _url = new URL(url);
-  const isCompressed = _url.pathname.endsWith('.gz');
+  const parsedUrl = new URL(url);
+  const isCompressed = parsedUrl.pathname.endsWith('.gz');
   let receivedData = new Uint8Array(0);
   let niftiHeader = null;
   const sliceInfo = null;
@@ -58,7 +78,10 @@ export async function fetchArrayBuffer({
     }
     contentLength = response.headers.get('Content-Length');
 
-    const reader = response.body.getReader();
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error('Response body is not readable');
+    }
 
     const decompressionStream = isCompressed
       ? new DecompressionStream('gzip')
@@ -76,10 +99,9 @@ export async function fetchArrayBuffer({
       controller
     ).catch(console.error);
 
-    if (isCompressed) {
+    if (isCompressed && decompressionStream) {
       const decompressedStream = decompressionStream.readable.getReader();
 
-      // eslint-disable-next-line no-constant-condition
       while (true) {
         const { done, value } = await decompressedStream.read();
         if (done) {
@@ -87,7 +109,7 @@ export async function fetchArrayBuffer({
         }
         processChunk(value);
         if (niftiHeader && !loadFullVolume) {
-          controller.abort(); // Abort the fetch request once the header is retrieved
+          controller.abort();
           break;
         }
       }
@@ -127,10 +149,9 @@ export async function fetchArrayBuffer({
     ) {
       niftiHeader = handleNiftiHeader(receivedData);
       if (niftiHeader && niftiHeader.isValid) {
-        controller.abort(); // Abort the fetch request once the header is retrieved
+        controller.abort();
       }
 
-      // create imageIds and cache metadata
       onHeader?.(niftiHeader);
     }
   }
@@ -144,7 +165,6 @@ async function readStream(
   processChunk,
   controller
 ) {
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     const { done, value } = await reader.read();
     if (done) {
@@ -168,18 +188,7 @@ async function readStream(
   }
 }
 
-function handleNiftiHeader(data): {
-  dimensions: number[];
-  direction: mat3;
-  isValid: boolean;
-  message: string;
-  origin: number[];
-  version: number;
-  orientation: number[];
-  spacing: number[];
-  header: unknown;
-  arrayConstructor: unknown;
-} {
+function handleNiftiHeader(data): HeaderInfo {
   if (data.length < HEADER_CHECK_SIZE) {
     // @ts-ignore
     return { isValid: false, message: 'Not enough data to check header' };
@@ -188,14 +197,13 @@ function handleNiftiHeader(data): {
   try {
     const headerBuffer = data.slice(0, HEADER_CHECK_SIZE).buffer;
     const header = NiftiReader.readHeader(headerBuffer);
-
     // @ts-ignore
     const version = header.sizeof_hdr === NIFTI2_HEADER_SIZE ? 2 : 1;
     const { orientation, origin, spacing } = rasToLps(header);
     const { dimensions, direction } = makeVolumeMetadata(
       header,
       orientation,
-      1 // pixelRepresentation
+      1
     );
 
     const arrayConstructor = getArrayConstructor(header.datatypeCode);
@@ -219,7 +227,31 @@ function handleNiftiHeader(data): {
   }
 }
 
-async function fetchAndAllocateNiftiVolume(url) {
+function toFiniteNumber(
+  value: number | string | Array<number | string> | undefined
+): number | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const numberValue = toFiniteNumber(item);
+      if (numberValue !== undefined) {
+        return numberValue;
+      }
+    }
+    return undefined;
+  }
+
+  const numericValue = typeof value === 'number' ? value : parseFloat(value);
+  return Number.isFinite(numericValue) ? numericValue : undefined;
+}
+
+async function fetchAndAllocateNiftiVolume(
+  url: string,
+  dicomMetadata?: DicomMetadata
+) {
   const niftiURL = url;
 
   const onProgress = (loaded, total) => {
@@ -242,20 +274,9 @@ async function fetchAndAllocateNiftiVolume(url) {
       onProgress,
       controller,
       onLoad,
-      onHeader: resolve, // Pass the resolve function to handle image IDs
+      onHeader: resolve,
     });
-  })) as {
-    dimensions: number[];
-    direction: mat3;
-    isValid: boolean;
-    message: string;
-    origin: number[];
-    version: number;
-    orientation: number[];
-    spacing: number[];
-    header: unknown;
-    arrayConstructor: unknown;
-  };
+  })) as HeaderInfo;
 
   const {
     dimensions,
@@ -278,8 +299,9 @@ async function fetchAndAllocateNiftiVolume(url) {
 
   const imageIds = [];
   for (let i = 0; i < numImages; i++) {
-    const imageId = `nifti:${niftiURL}?frame=${i}`;
-    const imageIdIndex = i;
+    const frameIndex = numImages - 1 - i;
+    const imageId = `nifti:${niftiURL}?frame=${frameIndex}`;
+    const imageIdIndex = frameIndex;
     imageIds.push(imageId);
 
     const imageOrientationPatient = [
@@ -309,7 +331,7 @@ async function fetchAndAllocateNiftiVolume(url) {
         )
       ),
     ];
-    // Create metadata for the image
+
     const imagePlaneMetadata = {
       frameOfReferenceUID: '1.2.840.10008.1.4',
       rows: dimensions[1],
@@ -319,7 +341,7 @@ async function fetchAndAllocateNiftiVolume(url) {
       columnCosines: direction.slice(3, 6),
       imagePositionPatient,
       sliceThickness: spacing[2],
-      sliceLocation: origin[2] + i * spacing[2],
+      sliceLocation: origin[2] + frameIndex * spacing[2],
       pixelSpacing: [spacing[0], spacing[1]],
       rowPixelSpacing: spacing[1],
       columnPixelSpacing: spacing[0],
@@ -350,12 +372,12 @@ async function fetchAndAllocateNiftiVolume(url) {
     };
 
     const generalSeriesMetadata = {
-      // modality: 'MR',
-      // seriesInstanceUID: '1.2.840.10008.1.4',
-      // seriesNumber: 1,
-      // studyInstanceUID: '1.2.840.10008.1.4',
       seriesDate: new Date(),
       seriesTime: new Date(),
+      modality: dicomMetadata?.Modality,
+      seriesInstanceUID: dicomMetadata?.SeriesInstanceUID,
+      seriesNumber: dicomMetadata?.SeriesNumber,
+      seriesDescription: dicomMetadata?.SeriesDescription,
     };
 
     utilities.genericMetadataProvider.add(imageId, {
@@ -371,6 +393,36 @@ async function fetchAndAllocateNiftiVolume(url) {
     utilities.genericMetadataProvider.add(imageId, {
       type: 'generalSeriesModule',
       metadata: generalSeriesMetadata,
+    });
+
+    utilities.genericMetadataProvider.add(imageId, {
+      type: 'generalImageModule',
+      metadata: {
+        instanceNumber: i + 1,
+      },
+    });
+
+    const windowCenter = toFiniteNumber(dicomMetadata?.WindowCenter);
+    const windowWidth = toFiniteNumber(dicomMetadata?.WindowWidth);
+
+    if (windowCenter !== undefined && windowWidth !== undefined) {
+      utilities.genericMetadataProvider.add(imageId, {
+        type: 'voiLutModule',
+        metadata: {
+          windowCenter: [windowCenter],
+          windowWidth: [windowWidth],
+          voiLUTFunction: dicomMetadata?.VOILUTFunction || 'LINEAR',
+        },
+      });
+    }
+
+    utilities.genericMetadataProvider.add(imageId, {
+      type: 'modalityLutModule',
+      metadata: {
+        rescaleSlope: 1,
+        rescaleIntercept: 0,
+        modalityLUTSequence: [],
+      },
     });
 
     utilities.genericMetadataProvider.add(imageId, {
@@ -394,8 +446,14 @@ async function fetchAndAllocateNiftiVolume(url) {
   return imageIds;
 }
 
-async function createNiftiImageIdsAndCacheMetadata({ url }) {
-  const imageIds = await fetchAndAllocateNiftiVolume(url);
+async function createNiftiImageIdsAndCacheMetadata({
+  url,
+  dicomMetadata,
+}: {
+  url: string;
+  dicomMetadata?: DicomMetadata;
+}) {
+  const imageIds = await fetchAndAllocateNiftiVolume(url, dicomMetadata);
   return imageIds;
 }
 
