@@ -28,6 +28,7 @@ import {
 } from '../../../drawingSvg';
 import { state } from '../../../store/state';
 import { getViewportIdsWithToolToRender } from '../../../utilities/viewportFilters';
+import getViewportICamera from '../../../utilities/getViewportICamera';
 import triggerAnnotationRenderForViewportIds from '../../../utilities/triggerAnnotationRenderForViewportIds';
 
 import {
@@ -451,11 +452,12 @@ class UltrasoundPleuraBLineTool extends AnnotationTool {
     hideElementCursor(element);
     this.isDrawing = true;
 
+    // Native ("next") viewports expose no getCamera; read orientation via the bridge.
     const {
       viewPlaneNormal,
       viewUp,
       position: cameraPosition,
-    } = viewport.getCamera();
+    } = getViewportICamera(viewport);
     const referencedImageId = this.getReferencedImageId(
       viewport,
       worldPos,

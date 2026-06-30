@@ -65,6 +65,7 @@ export class RenderModesPanel implements Panel {
     entries: Array<{
       renderingEngineId: string;
       viewportId: string;
+      viewportType: string;
       bindings: RenderModePanelBinding[];
     }>
   ): void {
@@ -90,11 +91,20 @@ export class RenderModesPanel implements Panel {
       heading.title = viewportId;
       heading.style.cssText = `
         display:flex;
+        align-items:center;
         justify-content:space-between;
         gap:8px;
         margin-bottom:6px;
         color:#ffd84d;
         font-weight:700;
+      `;
+
+      const left = document.createElement('div');
+      left.style.cssText = `
+        display:flex;
+        align-items:center;
+        gap:6px;
+        min-width:0;
       `;
 
       const name = document.createElement('span');
@@ -105,7 +115,27 @@ export class RenderModesPanel implements Panel {
         text-overflow:ellipsis;
         white-space:nowrap;
       `;
-      heading.appendChild(name);
+      left.appendChild(name);
+
+      if (entry.viewportType) {
+        const type = document.createElement('span');
+        type.textContent = entry.viewportType;
+        type.title = entry.viewportType;
+        type.style.cssText = `
+          flex:0 0 auto;
+          padding:2px 6px;
+          background:rgba(255, 204, 0, 0.14);
+          border:1px solid rgba(255, 204, 0, 0.4);
+          border-radius:3px;
+          color:#ffe08a;
+          font-size:${PANEL_CONFIG.FONT_SIZE}px;
+          font-weight:700;
+          letter-spacing:0.03em;
+        `;
+        left.appendChild(type);
+      }
+
+      heading.appendChild(left);
 
       const count = document.createElement('span');
       count.textContent = `${bindings.length} binding${bindings.length === 1 ? '' : 's'}`;
@@ -140,6 +170,12 @@ export type RenderModePanelBinding = {
   referencedId?: string;
   renderMode: string;
   role: 'source' | 'overlay' | 'data';
+  /** Scalar buffer type backing the actor, e.g. `Uint8Array`. */
+  scalarType?: string;
+  /** Min/max of the actor's scalar data. */
+  scalarRange?: [number, number];
+  /** Number of components per voxel (1 for grayscale, 3 for RGB, ...). */
+  numberOfComponents?: number;
 };
 
 function orderBindings(
@@ -248,9 +284,50 @@ function createBindingRow(binding: RenderModePanelBinding): HTMLDivElement {
     appendField(fields, 'ref', binding.referencedId, 76);
   }
 
+  if (binding.scalarType) {
+    appendField(
+      fields,
+      'type',
+      formatScalarType(binding.scalarType, binding.numberOfComponents),
+      40
+    );
+  }
+
+  if (binding.scalarRange) {
+    appendField(fields, 'range', formatScalarRange(binding.scalarRange), 56);
+  }
+
   row.appendChild(fields);
 
   return row;
+}
+
+/**
+ * Renders the scalar buffer type compactly, dropping the `Array` suffix and
+ * appending the component count for multi-component data, e.g. `Uint8Array`
+ * with 3 components becomes `Uint8 x3`.
+ */
+function formatScalarType(
+  scalarType: string,
+  numberOfComponents?: number
+): string {
+  const friendly = scalarType.replace(/Array$/, '');
+
+  return numberOfComponents && numberOfComponents > 1
+    ? `${friendly} x${numberOfComponents}`
+    : friendly;
+}
+
+function formatScalarRange([min, max]: [number, number]): string {
+  return `${formatScalarValue(min)} .. ${formatScalarValue(max)}`;
+}
+
+function formatScalarValue(value: number): string {
+  if (Number.isInteger(value)) {
+    return String(value);
+  }
+
+  return Number(value.toFixed(2)).toString();
 }
 
 function appendField(

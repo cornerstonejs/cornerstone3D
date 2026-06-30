@@ -84,7 +84,7 @@ export class CpuVolumeSliceRenderPath
         ctx.cpu.canvas.width,
         ctx.cpu.canvas.height
       ),
-      currentImageIdIndex: payload.initialImageIdIndex,
+      currentImageIdIndex: payload.initialImageIdIndex ?? 0,
       maxImageIdIndex: payload.imageIds.length - 1,
       defaultVOIRange,
       renderingInvalidated: true,
@@ -219,6 +219,7 @@ export class CpuVolumeSliceRenderPath
       acquisitionOrientation: rendering.acquisitionOrientation,
       imageIds: rendering.imageIds,
       imageIdIndex: rendering.currentImageIdIndex,
+      maxImageIdIndex: rendering.maxImageIdIndex,
     });
 
     return {
@@ -538,6 +539,7 @@ export class CpuVolumeSliceRenderPath
         acquisitionOrientation: rendering.acquisitionOrientation,
         imageIds: rendering.imageIds,
         imageIdIndex: rendering.currentImageIdIndex,
+        maxImageIdIndex: rendering.maxImageIdIndex,
       });
     }
   }

@@ -18,6 +18,14 @@ export default function getScalingParameters(metaData, imageId: string) {
   const rescaleSlope = modalityLutModule.rescaleSlope;
   const rescaleIntercept = modalityLutModule.rescaleIntercept;
 
+  // Normalize a missing modality LUT to the identity transform (slope 1,
+  // intercept 0) before the short-circuit below. Otherwise a no-LUT image leaves
+  // rescaleSlope undefined, the `=== 1` check fails, and preScale is enabled with
+  // identity params - breaking the createImage.ts contract that no-LUT images
+  // disable preScale unless PT/RTDOSE-specific scaling is present.
+  const normalizedRescaleSlope = rescaleSlope ?? 1;
+  const normalizedRescaleIntercept = rescaleIntercept ?? 0;
+
   const scalingModules = metaData.get('scalingModule', imageId) || {};
 
   // Modality-specific scaling (PT SUV body weight, RTDOSE dose grid scaling)
@@ -37,8 +45,8 @@ export default function getScalingParameters(metaData, imageId: string) {
   // Identity transform (slope 1, intercept 0) with no modality-specific scaling
   // is implicitly non-prescaled; do not set preScale.
   if (
-    rescaleSlope === 1 &&
-    (rescaleIntercept === 0 || rescaleIntercept == null) &&
+    normalizedRescaleSlope === 1 &&
+    normalizedRescaleIntercept === 0 &&
     !hasPTScaling &&
     !hasDoseScaling
   ) {
@@ -46,8 +54,8 @@ export default function getScalingParameters(metaData, imageId: string) {
   }
 
   const scalingParameters = {
-    rescaleSlope: rescaleSlope ?? 1,
-    rescaleIntercept: rescaleIntercept ?? 0,
+    rescaleSlope: normalizedRescaleSlope,
+    rescaleIntercept: normalizedRescaleIntercept,
     modality,
   };
 

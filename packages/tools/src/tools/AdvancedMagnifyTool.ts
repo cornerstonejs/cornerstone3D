@@ -50,6 +50,8 @@ import type {
 import type { AdvancedMagnifyAnnotation } from '../types/ToolSpecificAnnotationTypes';
 
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
+import getViewportICamera from '../utilities/getViewportICamera';
+import { getNativeSourceProperties } from '../utilities/genericViewportToolHelpers';
 import type { StyleSpecifier } from '../types/AnnotationStyle';
 import { getCanvasCircleRadius } from '../utilities/math/circle';
 
@@ -212,15 +214,22 @@ class AdvancedMagnifyTool extends AnnotationTool {
       radius
     ) as [Types.Point3, Types.Point3, Types.Point3, Types.Point3];
 
-    const camera = viewport.getCamera();
-    const { viewPlaneNormal, viewUp } = camera;
+    // Native PLANAR_NEXT ("next") source viewports have no getCamera; read the
+    // orientation through the lane-agnostic getViewportICamera helper instead.
+    const isNativeSource = csUtils.isGenericViewport(viewport);
+    const { viewPlaneNormal, viewUp } = isNativeSource
+      ? getViewportICamera(viewport)
+      : viewport.getCamera();
 
-    const referencedImageId = this.getReferencedImageId(
-      viewport,
-      worldPos,
-      viewPlaneNormal,
-      viewUp
-    );
+    // The base getReferencedImageId derives the image id by string-splitting the
+    // targetId, which on a native viewport is a frameOfReference-prefixed id and
+    // yields a bogus value. Read the current image id directly (mirrors MagnifyTool).
+    // currentImageId may be undefined for a reconstructed/volume plane; it is only
+    // stored as annotation metadata and tolerated (the loupe is built from
+    // getImageIds()/getCurrentImageIdIndex()).
+    const referencedImageId = isNativeSource
+      ? getNativeSourceProperties(viewport).currentImageId
+      : this.getReferencedImageId(viewport, worldPos, viewPlaneNormal, viewUp);
 
     const annotationUID = csUtils.uuidv4();
     const magnifyViewportId = csUtils.uuidv4();
@@ -1006,8 +1015,11 @@ class AdvancedMagnifyViewportManager {
     const { renderingEngineId, viewportId: sourceViewportId } = evt.detail;
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const sourceViewport = renderingEngine.getViewport(sourceViewportId);
+    // Native ("next") viewports expose orientation via getViewportICamera, not getCamera.
     const { viewPlaneNormal: currentViewPlaneNormal } =
-      sourceViewport.getCamera();
+      csUtils.isGenericViewport(sourceViewport)
+        ? getViewportICamera(sourceViewport)
+        : sourceViewport.getCamera();
 
     const magnifyViewportsMapEntries =
       this._getMagnifyViewportsMapEntriesBySourceViewportId(sourceViewportId);
@@ -1343,6 +1355,27 @@ class AdvancedMagnifyViewport {
     magnifyViewport,
     zoomFactor
   ) {
+    if (csUtils.isGenericViewport(viewport)) {
+      // Native PLANAR_NEXT has no getCamera/parallelScale and its on-screen canvas is
+      // hidden (offsetWidth === 0). Reconstruct the source's parallelScale geometrically:
+      // worldPerPixel (vertical) comes from canvasToWorld of two element-space points one
+      // pixel apart, and parallelScale = worldPerPixel * elementHeight / 2. Then apply the
+      // same legacy formula: parallelScaleSource * (1/zoom) * (loupeWidth / sourceWidth).
+      const sourceElement = viewport.element as HTMLElement;
+      const sourceWidth = sourceElement.clientWidth;
+      const sourceHeight = sourceElement.clientHeight;
+      const worldTop = viewport.canvasToWorld([0, 0] as Types.Point2);
+      const worldBottom = viewport.canvasToWorld([0, 1] as Types.Point2);
+      const worldPerPixel = vec3.distance(
+        worldTop as Types.Point3,
+        worldBottom as Types.Point3
+      );
+      const parallelScaleSource = (worldPerPixel * sourceHeight) / 2;
+      const canvasRatio = magnifyViewport.canvas.offsetWidth / sourceWidth;
+
+      return parallelScaleSource * (1 / zoomFactor) * canvasRatio;
+    }
+
     const { parallelScale } = viewport.getCamera();
     const canvasRatio =
       magnifyViewport.canvas.offsetWidth / viewport.canvas.offsetWidth;
@@ -1437,11 +1470,16 @@ class AdvancedMagnifyViewport {
       sourceViewport.getRenderingEngine() as Types.IRenderingEngine;
 
     const { options: sourceViewportOptions } = sourceViewport;
+    // Native PLANAR_NEXT sources have no setStack/setProperties/setCamera, so the loupe
+    // can't be a native viewport. Mirror MagnifyTool: back the loupe with a legacy STACK
+    // viewport so every clone/sync call below uses the legacy API surface. The native
+    // source still feeds it via getImageIds()/getCurrentImageIdIndex().
+    const isNativeSource = csUtils.isGenericViewport(sourceViewport);
     const viewportInput = {
       element: magnifyElement,
       viewportId: magnifyViewportId,
-      type: sourceViewport.type,
-      defaultOptions: { ...sourceViewportOptions },
+      type: isNativeSource ? Enums.ViewportType.STACK : sourceViewport.type,
+      defaultOptions: isNativeSource ? {} : { ...sourceViewportOptions },
     };
 
     renderingEngine.enableElement(viewportInput);
@@ -1450,8 +1488,11 @@ class AdvancedMagnifyViewport {
       renderingEngine.getViewport(magnifyViewportId)
     );
 
-    if (this._isStackViewport(sourceViewport)) {
-      this._cloneStack(sourceViewport, magnifyViewport as Types.IStackViewport);
+    if (isNativeSource || this._isStackViewport(sourceViewport)) {
+      this._cloneStack(
+        sourceViewport as Types.IStackViewport,
+        magnifyViewport as Types.IStackViewport
+      );
     } else if (this._isVolumeViewport(sourceViewport)) {
       this._cloneVolumes(
         sourceViewport,
@@ -1664,7 +1705,13 @@ class AdvancedMagnifyViewport {
       this.zoomFactor
     );
 
-    const { flipHorizontal, flipVertical } = sourceViewport.getCamera();
+    // Native PLANAR_NEXT has no getCamera; read flip state through the projection-aware
+    // helper. The loupe (legacy STACK) still exposes getCamera.
+    const native = csUtils.isGenericViewport(sourceViewport)
+      ? getNativeSourceProperties(sourceViewport)
+      : undefined;
+    const { flipHorizontal, flipVertical } =
+      native ?? sourceViewport.getCamera();
 
     const { focalPoint, position, viewPlaneNormal } =
       magnifyViewport.getCamera();
@@ -1706,7 +1753,14 @@ class AdvancedMagnifyViewport {
   private _syncViewports() {
     const { viewport: sourceViewport } = this._sourceEnabledElement;
     const { viewport: magnifyViewport } = this._enabledElement;
-    const sourceProperties = sourceViewport.getProperties();
+    const isNativeSource = csUtils.isGenericViewport(sourceViewport);
+
+    // Native PLANAR_NEXT has no getProperties; read its VOI/LUT via the display-set
+    // presentation keyed by the source data id (mirrors MagnifyTool). The loupe is a
+    // legacy STACK viewport, so setProperties below still works.
+    const sourceProperties = isNativeSource
+      ? getNativeSourceProperties(sourceViewport).properties
+      : sourceViewport.getProperties();
     const imageData = magnifyViewport.getImageData();
 
     if (!imageData) {
@@ -1716,7 +1770,9 @@ class AdvancedMagnifyViewport {
     magnifyViewport.setProperties(sourceProperties);
     this._syncViewportsCameras(sourceViewport, magnifyViewport);
 
-    if (this._isStackViewport(sourceViewport)) {
+    // Native sources are driven as a stack (legacy STACK loupe); keep the loupe's image
+    // index in sync via getCurrentImageIdIndex(), which native viewports support.
+    if (isNativeSource || this._isStackViewport(sourceViewport)) {
       this._syncStackViewports(
         sourceViewport as Types.IStackViewport,
         magnifyViewport as Types.IStackViewport

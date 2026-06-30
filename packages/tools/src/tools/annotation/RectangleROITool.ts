@@ -28,6 +28,7 @@ import {
 import { state } from '../../store/state';
 import { ChangeTypes, Events } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
+import getViewportICamera from '../../utilities/getViewportICamera';
 import * as rectangle from '../../utilities/math/rectangle';
 import {
   resetElementCursor,
@@ -628,7 +629,9 @@ class RectangleROITool extends AnnotationTool {
         styleSpecifier,
       });
 
-      const { viewPlaneNormal, viewUp } = viewport.getCamera();
+      // Native ("next") viewports expose no getCamera; read view orientation
+      // through the shared ICamera bridge (legacy viewports fall through to getCamera).
+      const { viewPlaneNormal, viewUp } = getViewportICamera(viewport);
 
       // If cachedStats does not exist, or the unit is missing (as part of import/hydration etc.),
       // force to recalculate the stats from the points

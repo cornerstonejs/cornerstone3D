@@ -72,7 +72,7 @@ function makeSegmentation(overrides: Partial<Segmentation> = {}): Segmentation {
         labelmaps: {
           layerA: {
             labelmapId: 'layerA',
-            type: 'stack',
+            storageKind: 'stack',
             imageIds: ['lm-a-0', 'lm-a-1'],
             labelToSegmentIndex: { 1: 1 },
           },

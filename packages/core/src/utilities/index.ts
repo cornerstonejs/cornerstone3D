@@ -93,6 +93,8 @@ import { buildMetadata } from './buildMetadata';
 
 // solving the circular dependency issue
 import { _getViewportModality } from './getViewportModality';
+import { _getScalingDescriptor } from './getScalingDescriptor';
+import { resolveGenericViewportVolumeId } from './resolveGenericViewportVolumeId';
 import cache from '../cache/cache';
 import getDynamicVolumeInfo from './getDynamicVolumeInfo';
 import autoLoad from './autoLoad';
@@ -124,11 +126,18 @@ import {
   viewportSupportsVolumeCompatibility,
   viewportSupportsVolumeId,
   viewportSupportsVolumeURI,
+  isGenericViewport,
+  viewportSupportsDisplaySetPresentation,
+  getViewportContentMode,
+  viewportIsInVolumeMode,
+  viewportIsInStackMode,
 } from './viewportCapabilities';
 import { getNormalizedAspectRatio } from './getNormalizedAspectRatio';
 export { updatePlaneRestriction } from './updatePlaneRestriction';
 const getViewportModality = (viewport: IViewport, volumeId?: string) =>
   _getViewportModality(viewport, volumeId, cache.getVolume);
+const getScalingDescriptor = (viewport: IViewport, targetId?: string) =>
+  _getScalingDescriptor(viewport, targetId, cache.getVolume);
 
 export * from './isEqual';
 
@@ -153,6 +162,8 @@ export {
   getVOIRangeFromWindowLevel,
   isOpposite,
   getViewportModality,
+  getScalingDescriptor,
+  resolveGenericViewportVolumeId,
   windowLevel,
   convertToGrayscale,
   convertColorArrayToRgbString,
@@ -248,5 +259,10 @@ export {
   viewportSupportsVolumeCompatibility,
   viewportSupportsVolumeId,
   viewportSupportsVolumeURI,
+  isGenericViewport,
+  viewportSupportsDisplaySetPresentation,
+  getViewportContentMode,
+  viewportIsInVolumeMode,
+  viewportIsInStackMode,
   getNormalizedAspectRatio,
 };
