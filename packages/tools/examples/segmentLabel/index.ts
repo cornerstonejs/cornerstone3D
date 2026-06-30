@@ -352,7 +352,7 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
  * focal point actually moves. This guards against scrolling before the volume
  * actor's slice range is ready (which makes scroll() a no-op).
  */
-async function scrollUntilSliceChanges(viewport, delta, maxAttempts = 200) {
+async function scrollUntilSliceChanges(viewport, delta, maxAttempts = 500) {
   const focalPointMoved = (a, b) =>
     Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]) > 1e-6;
 
