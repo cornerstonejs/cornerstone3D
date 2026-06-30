@@ -39,20 +39,24 @@ export const simulateDrag = async (
   await page.mouse.down();
   // Let the tool's mousedown handler create the annotation and attach its
   // active-drag move handler before we start moving. On the self-hosted runner,
-  // moving in the same burst as the mousedown can be dropped entirely.
-  await page.waitForTimeout(50);
+  // moving in the same burst as the mousedown can be dropped entirely, so the
+  // active handle never leaves the start point and the snapshot captures a
+  // half-created measurement (a ~0.5mm length instead of ~138mm). Give the
+  // handler generous time to attach under runner load before the first move.
+  await page.waitForTimeout(150);
 
   if (steps && steps > 1) {
     // Deliver the gesture as discrete, individually-flushed mousemoves with a
-    // brief settle between them. A single batched move - even Playwright's
-    // built-in `{ steps }` - can be coalesced/dropped on the self-hosted runner,
-    // leaving the tool with a near-zero gesture (a ~0.5mm length instead of
-    // ~138mm). Pacing the moves makes each one register while keeping the same
-    // end point, so screenshot baselines still match.
+    // settle between them. A single batched move - even Playwright's built-in
+    // `{ steps }` - can be coalesced/dropped on the self-hosted runner, leaving
+    // the tool with a near-zero gesture (a ~0.5mm length instead of ~138mm).
+    // Pacing the moves makes each one register while keeping the same end point,
+    // so screenshot baselines still match. The per-move settle must be large
+    // enough that a loaded runner processes each move before the next arrives.
     for (let i = 1; i <= steps; i++) {
       const t = i / steps;
       await page.mouse.move(centerX + maxMoveX * t, centerY + maxMoveY * t);
-      await page.waitForTimeout(10);
+      await page.waitForTimeout(30);
     }
   } else {
     // Path-integrating tools (e.g. planar-rotate) depend on a single move.
