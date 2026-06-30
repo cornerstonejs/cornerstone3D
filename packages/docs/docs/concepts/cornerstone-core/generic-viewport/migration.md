@@ -72,7 +72,7 @@ Now:
 ```ts
 const displaySetId = 'ct-stack';
 
-utilities.genericViewportDataSetMetadataProvider.add(displaySetId, {
+utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
   kind: 'planar',
   imageIds,
   initialImageIdIndex: 0,
@@ -108,7 +108,7 @@ Now:
 ```ts
 const displaySetId = 'ct-volume';
 
-utilities.genericViewportDataSetMetadataProvider.add(displaySetId, {
+utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
   kind: 'planar',
   imageIds,
   initialImageIdIndex: Math.floor(imageIds.length / 2),
@@ -188,7 +188,7 @@ viewport.addImages([{ imageId }]);
 Now, prefer registering overlay data and using data presentation:
 
 ```ts
-utilities.genericViewportDataSetMetadataProvider.add(overlayDataId, {
+utilities.genericViewportDisplaySetMetadataProvider.add(overlayDataId, {
   kind: 'planar',
   imageIds: [imageId],
   initialImageIdIndex: 0,

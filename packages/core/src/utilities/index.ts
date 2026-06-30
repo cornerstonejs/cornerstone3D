@@ -59,7 +59,7 @@ import { updateVTKImageDataWithCornerstoneImage } from './updateVTKImageDataWith
 import ProgressiveIterator from './ProgressiveIterator';
 import decimate from './decimate';
 import imageRetrieveMetadataProvider from './imageRetrieveMetadataProvider';
-import genericViewportDataSetMetadataProvider from './genericViewportDataSetMetadataProvider';
+import genericViewportDisplaySetMetadataProvider from './genericViewportDisplaySetMetadataProvider';
 import isVideoTransferSyntax from './isVideoTransferSyntax';
 import { getBufferConfiguration } from './getBufferConfiguration';
 import { generateVolumePropsFromImageIds } from './generateVolumePropsFromImageIds';
@@ -194,7 +194,7 @@ export {
   ProgressiveIterator,
   decimate,
   imageRetrieveMetadataProvider,
-  genericViewportDataSetMetadataProvider,
+  genericViewportDisplaySetMetadataProvider,
   transferFunctionUtils,
   updateVTKImageDataWithCornerstoneImage,
   sortImageIdsAndGetSpacing,

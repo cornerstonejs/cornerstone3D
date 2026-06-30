@@ -1,5 +1,7 @@
 import type { mat4 } from 'gl-matrix';
 import { Events as EVENTS, VideoEnums as VideoViewportEnum } from '../enums';
+import type { DisplaySetId } from './GenericViewport/ViewportArchitectureTypes';
+import { getGenericViewportSourceDataId } from './GenericViewport/genericViewportDisplaySetAccess';
 import type {
   VideoViewportProperties,
   Point3,
@@ -197,11 +199,52 @@ class VideoViewport extends Viewport {
   }
 
   /**
+   * Mounts display sets on the viewport, mirroring the GenericViewport
+   * `setDisplaySets` API. The `displaySetId` is the video imageId (callers
+   * typically pass `displaySet.instances[0].imageId`); the first entry is loaded
+   * as the video source. Resolution and loading run inside
+   * {@link mountDisplaySets}, which records the mounted entries after `setVideo`
+   * so {@link getDisplaySets} reports them.
+   *
+   * An optional initial frame can be passed per entry via `options`: an explicit
+   * 1-based `frameNumber`, or a 0-based `viewReference.sliceIndex` (matching
+   * {@link setDataIds}). When neither is provided the video opens on frame 1.
+   *
+   * @param entries - display set entries to mount; the first is used as the source.
+   */
+  public async setDisplaySets(
+    ...entries: Array<{
+      displaySetId: DisplaySetId;
+      options?: {
+        frameNumber?: number;
+        viewReference?: { sliceIndex?: number };
+      };
+    }>
+  ): Promise<void> {
+    await this.mountDisplaySets(entries, async (entry) => {
+      // Resolve the display set to its source video imageId. When the id is not
+      // registered in the generic-viewport dataset metadata it is returned
+      // as-is, so callers passing the video imageId directly keep working.
+      const sourceDataId = getGenericViewportSourceDataId(entry.displaySetId);
+      const { frameNumber, viewReference } = entry.options ?? {};
+      const initialFrame =
+        frameNumber ??
+        (typeof viewReference?.sliceIndex === 'number'
+          ? viewReference.sliceIndex + 1
+          : undefined);
+      await this.setVideo(sourceDataId, initialFrame);
+    });
+  }
+
+  /**
    * Sets the video image id to show and hte frame number.
    * Requirements are to have the imageUrlModule in the metadata
    * with the rendered endpoint being the raw video in video/mp4 format.
    */
   public setVideo(imageId: string, frameNumber?: number): Promise<unknown> {
+    // Setting a raw video directly resets any display-set bookkeeping; the
+    // setDisplaySets override re-records after calling this.
+    this.clearDisplaySets();
     this.imageId = Array.isArray(imageId) ? imageId[0] : imageId;
     const stream = loadVideoStreamMetadata(imageId);
 

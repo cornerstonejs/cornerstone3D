@@ -210,6 +210,12 @@ enum MetadataModules {
    * The per-frame data object is generated from the natural value object - see INSTANCE
    */
   NATURALIZED = 'naturalized',
+
+  /**
+   * Display set metadata for a series group (frame and underlying image ids,
+   * viewport hints). Registered per imageId via addTyped / registerDisplaySetMetadata.
+   */
+  DISPLAY_SET = 'displaySetModule',
 }
 
 export const ADD_MODULE_TYPE_SUFFIX = 'Add';

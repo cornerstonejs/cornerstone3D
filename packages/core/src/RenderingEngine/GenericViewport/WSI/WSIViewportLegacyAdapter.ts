@@ -10,7 +10,7 @@ import type {
 } from '../../../types';
 import { MetadataModules } from '../../../enums';
 import * as metaData from '../../../metaData';
-import genericViewportDataSetMetadataProvider from '../../../utilities/genericViewportDataSetMetadataProvider';
+import genericViewportDisplaySetMetadataProvider from '../../../utilities/genericViewportDisplaySetMetadataProvider';
 import type { WSIClientLike } from '../../../utilities/WSIUtilities';
 import { viewportProjection } from '../viewportProjection';
 import { canvasToIndexForWSI } from './wsiTransformUtils';
@@ -100,7 +100,7 @@ class WSIViewportLegacyAdapter extends WSIViewport {
       );
     }
 
-    genericViewportDataSetMetadataProvider.add(dataId, {
+    genericViewportDisplaySetMetadataProvider.add(dataId, {
       imageIds,
       kind: 'wsi',
       options: {

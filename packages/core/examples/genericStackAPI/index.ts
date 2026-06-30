@@ -277,7 +277,7 @@ async function run() {
   const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
   const stack = [imageIds[0], imageIds[1], imageIds[2]];
 
-  utilities.genericViewportDataSetMetadataProvider.add(stackDataId, {
+  utilities.genericViewportDisplaySetMetadataProvider.add(stackDataId, {
     imageIds: stack,
     kind: 'planar',
     initialImageIdIndex: 0,

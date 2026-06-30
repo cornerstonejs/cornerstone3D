@@ -25,7 +25,7 @@ import type ViewportInputOptions from '../../../types/ViewportInputOptions';
 import { deepClone } from '../../../utilities/deepClone';
 import imageIdToURI from '../../../utilities/imageIdToURI';
 import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
-import genericViewportDataSetMetadataProvider from '../../../utilities/genericViewportDataSetMetadataProvider';
+import genericViewportDisplaySetMetadataProvider from '../../../utilities/genericViewportDisplaySetMetadataProvider';
 import triggerEvent from '../../../utilities/triggerEvent';
 import getMinMax from '../../../utilities/getMinMax';
 import renderingEngineCache from '../../renderingEngineCache';
@@ -37,9 +37,9 @@ import type {
 import GenericViewport from '../GenericViewport';
 import type { GenericViewportReferenceContext } from '../genericViewportReferenceCompatibility';
 import {
-  getGenericViewportImageDataSet,
-  isGenericViewportImageDataSet,
-} from '../genericViewportDataSetAccess';
+  getGenericViewportImageDisplaySet,
+  isGenericViewportImageDisplaySet,
+} from '../genericViewportDisplaySetAccess';
 import { DefaultPlanarDataProvider } from './DefaultPlanarDataProvider';
 import { createPlanarRenderPathResolver } from './PlanarRenderPathResolver';
 import {
@@ -445,13 +445,13 @@ class PlanarViewport extends GenericViewport<
       this.renderImageObjectDataId &&
       this.renderImageObjectDataId !== dataId
     ) {
-      genericViewportDataSetMetadataProvider.remove(
+      genericViewportDisplaySetMetadataProvider.remove(
         this.renderImageObjectDataId
       );
     }
 
     this.renderImageObjectDataId = dataId;
-    genericViewportDataSetMetadataProvider.add(dataId, {
+    genericViewportDisplaySetMetadataProvider.add(dataId, {
       image,
       imageIds: [image.imageId],
       initialImageIdIndex: 0,
@@ -505,7 +505,7 @@ class PlanarViewport extends GenericViewport<
 
       const reference = this.resolveOverlayReference(stackInput, image);
       const dataId = this.resolveOverlayDataId(stackInput, image, reference);
-      genericViewportDataSetMetadataProvider.add(dataId, {
+      genericViewportDisplaySetMetadataProvider.add(dataId, {
         image,
         imageData: stackInput.imageData,
         imageIds: [stackInput.imageId],
@@ -1247,7 +1247,7 @@ class PlanarViewport extends GenericViewport<
   protected override onDestroy(): void {
     this.clearResolvedViewCache();
     if (this.renderImageObjectDataId) {
-      genericViewportDataSetMetadataProvider.remove(
+      genericViewportDisplaySetMetadataProvider.remove(
         this.renderImageObjectDataId
       );
       this.renderImageObjectDataId = undefined;
@@ -1445,7 +1445,7 @@ class PlanarViewport extends GenericViewport<
   }
 
   private getDataSet(dataId: string): PlanarRegisteredDataSet | undefined {
-    const dataSet = getGenericViewportImageDataSet(dataId);
+    const dataSet = getGenericViewportImageDisplaySet(dataId);
 
     if (!isPlanarRegisteredDataSet(dataSet)) {
       return;
@@ -2045,7 +2045,7 @@ function createPlanarImageFromVTKImageData(
 function isPlanarRegisteredDataSet(
   value: unknown
 ): value is PlanarRegisteredDataSet {
-  if (!isGenericViewportImageDataSet(value) || value.imageIds.length === 0) {
+  if (!isGenericViewportImageDisplaySet(value) || value.imageIds.length === 0) {
     return false;
   }
 
