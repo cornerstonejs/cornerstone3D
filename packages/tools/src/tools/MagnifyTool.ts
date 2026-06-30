@@ -48,12 +48,10 @@ class MagnifyTool extends BaseTool {
 
   private _hasBeenRemoved = false;
 
-  _getReferencedImageId(
-    viewport: Types.IStackViewport | Types.IVolumeViewport
-  ): string {
+  _getReferencedImageId(viewport: Types.IViewport): string | undefined {
     const targetId = this.getTargetId(viewport);
 
-    let referencedImageId;
+    let referencedImageId: string | undefined;
 
     if (viewport instanceof StackViewport) {
       referencedImageId = targetId.split('imageId:')[1];
@@ -75,7 +73,9 @@ class MagnifyTool extends BaseTool {
       !(viewport instanceof StackViewport) &&
       !csUtils.isGenericViewport(viewport)
     ) {
-      throw new Error('MagnifyTool only works on StackViewports');
+      throw new Error(
+        'MagnifyTool only works on Stack or native planar viewports'
+      );
     }
 
     const referencedImageId = this._getReferencedImageId(viewport);
