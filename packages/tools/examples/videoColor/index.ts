@@ -273,7 +273,10 @@ async function run() {
   // Set the video on the viewport
   // Will be `<dicomwebRoot>/studies/<studyUID>/series/<seriesUID>/instances/<instanceUID>/rendered?accept=video/mp4`
   // on a compliant DICOMweb endpoint
-  await viewport.setDisplaySets({ displaySetId: videoId });
+  await viewport.setDisplaySets({
+    displaySetId: videoId,
+    options: { frameNumber: 25 },
+  });
 
   viewport.play();
 

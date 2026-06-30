@@ -315,7 +315,10 @@ async function run() {
   );
 
   // Set the stack on the viewport
-  await viewport.setDisplaySets({ displaySetId: videoId });
+  await viewport.setDisplaySets({
+    displaySetId: videoId,
+    options: { frameNumber: 25 },
+  });
   viewport.play();
 }
 

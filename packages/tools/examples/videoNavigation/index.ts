@@ -257,9 +257,11 @@ async function run() {
 
   // Drive the viewport from the display set, mirroring the GenericViewport
   // setDisplaySets API. The displaySetId is the video instance's imageId
-  // (equivalent to the previous viewport.setVideo(videoId) call).
+  // (equivalent to the previous viewport.setVideo(videoId, 25) call); the
+  // initial frame is forwarded through options.frameNumber.
   await viewport.setDisplaySets({
     displaySetId: displaySet.instances[0].imageId,
+    options: { frameNumber: 25 },
   });
 
   viewport.play();

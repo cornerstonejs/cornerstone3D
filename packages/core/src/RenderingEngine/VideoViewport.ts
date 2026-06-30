@@ -206,17 +206,33 @@ class VideoViewport extends Viewport {
    * {@link mountDisplaySets}, which records the mounted entries after `setVideo`
    * so {@link getDisplaySets} reports them.
    *
+   * An optional initial frame can be passed per entry via `options`: an explicit
+   * 1-based `frameNumber`, or a 0-based `viewReference.sliceIndex` (matching
+   * {@link setDataIds}). When neither is provided the video opens on frame 1.
+   *
    * @param entries - display set entries to mount; the first is used as the source.
    */
   public async setDisplaySets(
-    ...entries: Array<{ displaySetId: DisplaySetId; options?: unknown }>
+    ...entries: Array<{
+      displaySetId: DisplaySetId;
+      options?: {
+        frameNumber?: number;
+        viewReference?: { sliceIndex?: number };
+      };
+    }>
   ): Promise<void> {
     await this.mountDisplaySets(entries, async (entry) => {
       // Resolve the display set to its source video imageId. When the id is not
       // registered in the generic-viewport dataset metadata it is returned
       // as-is, so callers passing the video imageId directly keep working.
       const sourceDataId = getGenericViewportSourceDataId(entry.displaySetId);
-      await this.setVideo(sourceDataId);
+      const { frameNumber, viewReference } = entry.options ?? {};
+      const initialFrame =
+        frameNumber ??
+        (typeof viewReference?.sliceIndex === 'number'
+          ? viewReference.sliceIndex + 1
+          : undefined);
+      await this.setVideo(sourceDataId, initialFrame);
     });
   }
 

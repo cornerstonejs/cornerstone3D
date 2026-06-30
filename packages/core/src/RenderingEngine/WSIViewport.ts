@@ -651,6 +651,13 @@ class WSIViewport extends Viewport {
         );
       }
 
+      // Mirror setDataIds: the mini-navigation overlay CSS is injected here
+      // (and only here on this path) so the overview/position controls are
+      // styled. Honors the per-dataset opt-out; the helper is idempotent.
+      if (dataSet.options.miniNavigationOverlay !== false) {
+        addWSIMiniNavigationOverlayCss();
+      }
+
       // Call the base loader non-virtually: WSIViewportLegacyAdapter overrides
       // setWSI to route through setDataIds -> setDisplaySets, which would recurse
       // back into here indefinitely. Bypassing the override loads the WSI directly.
