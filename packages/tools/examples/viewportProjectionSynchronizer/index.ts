@@ -412,12 +412,12 @@ async function run() {
     toolGroup.addViewport(viewportId, renderingEngineId);
   });
 
-  utilities.genericViewportDataSetMetadataProvider.add(leftDataId, {
+  utilities.genericViewportDisplaySetMetadataProvider.add(leftDataId, {
     imageIds,
     kind: 'planar',
     initialImageIdIndex: middleImageIndex,
   });
-  utilities.genericViewportDataSetMetadataProvider.add(rightDataId, {
+  utilities.genericViewportDisplaySetMetadataProvider.add(rightDataId, {
     imageIds,
     kind: 'planar',
     initialImageIdIndex: middleImageIndex,

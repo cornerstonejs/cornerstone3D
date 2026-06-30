@@ -39,8 +39,6 @@ function activateDraw(
   annotation: PlanarFreehandROIAnnotation,
   viewportIdsToRender: string[]
 ): void {
-  this.isDrawing = true;
-
   const eventDetail = evt.detail;
   const { currentPoints, element } = eventDetail;
   const canvasPos = currentPoints.canvas;
@@ -56,9 +54,15 @@ function activateDraw(
       this.configuration.subPixelResolution
     ) || {};
 
+  // Only enter the drawing state once the slice geometry is resolved. Setting
+  // isDrawing before this guard left the tool half-initialized (isDrawing true,
+  // commonData undefined) whenever the geometry could not be computed, which
+  // then crashed renderAnnotationInstance on the next render.
   if (!spacing || !xDir || !yDir) {
     return;
   }
+
+  this.isDrawing = true;
 
   this.drawData = {
     canvasPoints: [canvasPos],

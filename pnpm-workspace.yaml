@@ -57,6 +57,7 @@ overrides:
   'form-data': 4.0.6
   'vite': 8.0.16
   undici: 6.27.0
+  linkify-it: 5.0.1
 
 auditConfig:
   ignoreGhsas: []

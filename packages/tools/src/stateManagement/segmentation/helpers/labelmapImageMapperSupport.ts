@@ -298,7 +298,9 @@ export function shouldUseSliceRendering(
 
   const layers = getLabelmaps(segmentation);
 
-  return layers.length > 1 && layers.some((layer) => layer.type === 'stack');
+  return (
+    layers.length > 1 && layers.some((layer) => layer.storageKind === 'stack')
+  );
 }
 
 export function canRenderVolumeViewportLabelmapAsImage(

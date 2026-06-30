@@ -1,5 +1,6 @@
 export { visitExample } from './visitExample';
 export { checkForCanvasSnapshot } from './checkForCanvasSnapshot';
+export { expectAnnotationText } from './expectAnnotationText';
 export { screenShotPaths } from './screenShotPaths';
 export { simulateDrag } from './simulateDrag';
 export { simulateClicksOnElement } from './simulateClicksOnElement';

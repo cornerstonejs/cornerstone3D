@@ -4,12 +4,17 @@ import {
   eventTarget,
   getEnabledElement,
   getEnabledElementByIds,
+  utilities as csUtils,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { mat4, vec3 } from 'gl-matrix';
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
 import { BaseTool } from './base';
 import { getToolGroup } from '../store/ToolGroupManager';
+import getViewportICamera from '../utilities/getViewportICamera';
+import setViewportCamera, {
+  resetViewportCamera,
+} from '../utilities/setViewportCamera';
 import {
   applyViewportPresentation,
   getViewportPresentation,
@@ -114,7 +119,7 @@ class TrackballRotateTool extends BaseTool {
 
             const viewPresentation = getViewportPresentation(viewport);
 
-            viewport.resetCamera();
+            resetViewportCamera(viewport);
 
             applyViewportPresentation(viewport, viewPresentation);
             viewport.render();
@@ -181,7 +186,7 @@ class TrackballRotateTool extends BaseTool {
     mat4.rotate(transform, transform, angle, axis);
     vec3.transformMat4(newViewUp, viewUp, transform);
 
-    viewport.setCamera({
+    setViewportCamera(viewport, {
       position: newPosition,
       viewUp: newViewUp,
       focalPoint: newFocalPoint,
@@ -196,7 +201,7 @@ class TrackballRotateTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const width = element.clientWidth;
     const height = element.clientHeight;
 

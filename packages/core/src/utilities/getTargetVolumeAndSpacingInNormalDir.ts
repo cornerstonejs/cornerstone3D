@@ -137,14 +137,19 @@ function getSpacingInNormal(
   viewport: IVolumeViewport,
   useSlabThickness = false
 ): number {
-  const { slabThickness } = viewport.getProperties();
-  let spacingInNormalDirection = slabThickness;
-  if (!slabThickness || !useSlabThickness) {
-    spacingInNormalDirection = getSpacingInNormalDirection(
-      imageVolume,
-      viewPlaneNormal
-    );
+  // Native PLANAR_NEXT (generic) volume-mode viewports route through here too
+  // (see filterAnnotationsForDisplay) but do not implement getProperties(); the
+  // slabThickness is only consulted when useSlabThickness is set, so fall back
+  // safely to the geometric spacing when it is unavailable rather than throwing.
+  const slabThickness = (
+    viewport as IVolumeViewport & {
+      getProperties?: () => { slabThickness?: number };
+    }
+  ).getProperties?.()?.slabThickness;
+
+  if (slabThickness && useSlabThickness) {
+    return slabThickness;
   }
 
-  return spacingInNormalDirection;
+  return getSpacingInNormalDirection(imageVolume, viewPlaneNormal);
 }

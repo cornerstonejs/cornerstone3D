@@ -1,5 +1,6 @@
 import { BaseVolumeViewport, cache, utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
+import getViewportICamera from '../getViewportICamera';
 import { SegmentationRepresentations } from '../../enums';
 import {
   getSegmentation,
@@ -184,7 +185,8 @@ export function getSegmentIndexAtWorldForContour(
   const contourData = segmentation.representationData.Contour;
 
   const segmentIndices = Array.from(contourData.annotationUIDsMap.keys());
-  const { viewPlaneNormal } = viewport.getCamera();
+  // Native ("next") viewports expose no getCamera; read orientation via the bridge.
+  const { viewPlaneNormal } = getViewportICamera(viewport);
 
   for (const segmentIndex of segmentIndices) {
     const annotationsSet = contourData.annotationUIDsMap.get(segmentIndex);

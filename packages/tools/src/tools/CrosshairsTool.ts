@@ -34,11 +34,16 @@ import {
 import { state } from '../store/state';
 import { Events } from '../enums';
 import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters';
+import getViewportICamera from '../utilities/getViewportICamera';
 import {
   resetElementCursor,
   hideElementCursor,
 } from '../cursors/elementCursor';
 import liangBarksyClip from '../utilities/math/vec2/liangBarksyClip';
+import {
+  getSlabThicknessOrDefault,
+  jumpToFocalPoint,
+} from '../utilities/genericViewportToolHelpers';
 
 import * as lineSegment from '../utilities/math/line';
 import type {
@@ -56,6 +61,29 @@ import { isAnnotationLocked } from '../stateManagement/annotation/annotationLock
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
 
 const { RENDERING_DEFAULTS } = CONSTANTS;
+
+/**
+ * Displayed canvas size for crosshairs geometry. Native ("next") viewports render to
+ * a separate visible canvas (e.g. the CPU canvas); their `viewport.canvas` is the
+ * hidden cornerstone-canvas (display:none -> clientWidth/clientHeight === 0), which
+ * would collapse the reference-line extents. worldToCanvas already returns coordinates
+ * in the element's displayed space, so use the element size for native; legacy keeps
+ * the canvas size (byte-identical).
+ */
+function getDisplayedCanvasSize(viewport): {
+  clientWidth: number;
+  clientHeight: number;
+} {
+  if (csUtils.isGenericViewport(viewport)) {
+    const { element } = viewport;
+    return {
+      clientWidth: element.clientWidth,
+      clientHeight: element.clientHeight,
+    };
+  }
+  const { clientWidth, clientHeight } = viewport.canvas;
+  return { clientWidth, clientHeight };
+}
 
 export type CrosshairsAnnotationData = AnnotationData & {
   handles: {
@@ -238,7 +266,8 @@ class CrosshairsTool extends AnnotationTool {
     }
     const { FrameOfReferenceUID, viewport } = enabledElement;
     const { element } = viewport;
-    const { position, focalPoint, viewPlaneNormal } = viewport.getCamera();
+    const { position, focalPoint, viewPlaneNormal } =
+      getViewportICamera(viewport);
 
     // Check if there is already annotation for this viewport
     let annotations = this._getAnnotations(enabledElement);
@@ -274,12 +303,10 @@ class CrosshairsTool extends AnnotationTool {
 
     addAnnotation(annotation, element);
 
+    const { clientWidth, clientHeight } = getDisplayedCanvasSize(viewport);
     return {
       normal: viewPlaneNormal,
-      point: viewport.canvasToWorld([
-        viewport.canvas.clientWidth / 2,
-        viewport.canvas.clientHeight / 2,
-      ]),
+      point: viewport.canvasToWorld([clientWidth / 2, clientHeight / 2]),
     };
   };
 
@@ -360,14 +387,26 @@ class CrosshairsTool extends AnnotationTool {
       const resetToCenter = true;
       const resetRotation = true;
       const suppressEvents = true;
-      viewport.resetCamera({
-        resetPan,
-        resetZoom,
-        resetToCenter,
-        resetRotation,
-        suppressEvents,
-      });
-      (viewport as Types.IVolumeViewport).resetSlabThickness();
+      if (csUtils.isGenericViewport(viewport)) {
+        // Native PLANAR_NEXT has no resetCamera/resetSlabThickness; resetViewState
+        // resets pan/zoom/orientation/flip (slice/navigation is preserved and there
+        // is no slab concept). Wrapped by the caller's _ignoreFiredEvents guard.
+        viewport.resetViewState({
+          resetPan,
+          resetZoom,
+          resetOrientation: resetRotation,
+          resetFlip: true,
+        });
+      } else {
+        viewport.resetCamera({
+          resetPan,
+          resetZoom,
+          resetToCenter,
+          resetRotation,
+          suppressEvents,
+        });
+        (viewport as Types.IVolumeViewport).resetSlabThickness();
+      }
       const { element } = viewport;
       let annotations = this._getAnnotations(enabledElement);
       annotations = this.filterInteractableAnnotationsForElement(
@@ -431,7 +470,7 @@ class CrosshairsTool extends AnnotationTool {
           return;
         }
 
-        const camera = viewport.getCamera();
+        const camera = getViewportICamera(viewport);
         const { focalPoint, position, viewPlaneNormal } = camera;
 
         // Calculate the delta between the current camera focal point and the new tool center
@@ -466,10 +505,16 @@ class CrosshairsTool extends AnnotationTool {
           position[2] + scrollDelta[2],
         ];
 
-        viewport.setCamera({
-          focalPoint: newFocalPoint,
-          position: newPosition,
-        });
+        if (csUtils.isGenericViewport(viewport)) {
+          // Native PLANAR_NEXT has no setCamera; the move is purely along the view
+          // plane normal (a scroll), so navigate by view reference (snaps to slice).
+          jumpToFocalPoint(viewport, newFocalPoint);
+        } else {
+          viewport.setCamera({
+            focalPoint: newFocalPoint,
+            position: newPosition,
+          });
+        }
 
         viewport.render();
       });
@@ -694,7 +739,7 @@ class CrosshairsTool extends AnnotationTool {
     const viewportAnnotation =
       filteredToolAnnotations[0] as CrosshairsAnnotation;
 
-    const currentCamera = viewport.getCamera();
+    const currentCamera = getViewportICamera(viewport);
     if (viewportAnnotation) {
       viewportAnnotation.metadata.cameraPosition = [...currentCamera.position];
       viewportAnnotation.metadata.cameraFocalPoint = [
@@ -829,7 +874,7 @@ class CrosshairsTool extends AnnotationTool {
     const { viewport, renderingEngine } = enabledElement;
     const { element } = viewport;
     const annotations = this._getAnnotations(enabledElement);
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const filteredToolAnnotations =
       this.filterInteractableAnnotationsForElement(element, annotations);
 
@@ -847,7 +892,7 @@ class CrosshairsTool extends AnnotationTool {
     // -- Convert these world positions to this canvas.
     // -- Extend/confine this line to fit in this canvas.
     // -- Render this line.
-    const { clientWidth, clientHeight } = viewport.canvas;
+    const { clientWidth, clientHeight } = getDisplayedCanvasSize(viewport);
     const canvasDiagonalLength = Math.sqrt(
       clientWidth * clientWidth + clientHeight * clientHeight
     );
@@ -876,7 +921,7 @@ class CrosshairsTool extends AnnotationTool {
         data.viewportId
       ) as Types.IVolumeViewport;
 
-      const otherCamera = otherViewport.getCamera();
+      const otherCamera = getViewportICamera(otherViewport);
 
       const otherViewportControllable = this._getReferenceLineControllable(
         otherViewport.id
@@ -887,7 +932,8 @@ class CrosshairsTool extends AnnotationTool {
         this._getReferenceLineSlabThicknessControlsOn(otherViewport.id);
 
       // get coordinates for the reference line
-      const { clientWidth, clientHeight } = otherViewport.canvas;
+      const { clientWidth, clientHeight } =
+        getDisplayedCanvasSize(otherViewport);
       const otherCanvasDiagonalLength = Math.sqrt(
         clientWidth * clientWidth + clientHeight * clientHeight
       );
@@ -1098,7 +1144,7 @@ class CrosshairsTool extends AnnotationTool {
         matrix
       );
 
-      const slabThicknessValue = otherViewport.getSlabThickness();
+      const slabThicknessValue = getSlabThicknessOrDefault(otherViewport);
       const worldOrthoVectorFromCenter: Types.Point3 = [
         ...worldUnitOrthoVectorFromCenter,
       ];
@@ -1486,7 +1532,7 @@ class CrosshairsTool extends AnnotationTool {
             }
           );
         }
-        const slabThicknessValue = otherViewport.getSlabThickness();
+        const slabThicknessValue = getSlabThicknessOrDefault(otherViewport);
         if (slabThicknessValue > 0.5 && viewportSlabThicknessControlsOn) {
           // draw slab thickness reference lines
           lineUID = `${lineIndex}STOne`;
@@ -1629,7 +1675,13 @@ class CrosshairsTool extends AnnotationTool {
     // 2. If it is outside, pan the viewport to fit in the toolCenter
 
     const viewport = renderingEngine.getViewport(viewportId);
-    const { clientWidth, clientHeight } = viewport.canvas;
+    // Auto-pan is an in-plane world-space focal-point shift (setCamera), which native
+    // PLANAR_NEXT cannot express (setViewReference snaps to slice). Skip on native;
+    // it is a comfort feature, not correctness. TODO(next): port via setViewState anchorWorld.
+    if (csUtils.isGenericViewport(viewport)) {
+      return;
+    }
+    const { clientWidth, clientHeight } = getDisplayedCanvasSize(viewport);
 
     const toolCenterCanvas = viewport.worldToCanvas(this.toolCenter);
 
@@ -1669,7 +1721,7 @@ class CrosshairsTool extends AnnotationTool {
       visiblePointWorld[2] - this.toolCenter[2],
     ];
 
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const { focalPoint, position } = camera;
 
     const updatedPosition = <Types.Point3>[
@@ -1736,14 +1788,14 @@ class CrosshairsTool extends AnnotationTool {
       return [];
     }
 
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const { viewPlaneNormal, position } = camera;
 
     const viewportsWithDifferentCameras = otherViewportAnnotations.filter(
       (annotation) => {
         const { viewportId } = annotation.data;
         const targetViewport = renderingEngine.getViewport(viewportId);
-        const cameraOfTarget = targetViewport.getCamera();
+        const cameraOfTarget = getViewportICamera(targetViewport);
 
         return !(
           csUtils.isEqual(
@@ -1781,7 +1833,7 @@ class CrosshairsTool extends AnnotationTool {
       return [];
     }
 
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const viewPlaneNormal = camera.viewPlaneNormal;
     vtkMath.normalize(viewPlaneNormal);
 
@@ -1789,7 +1841,7 @@ class CrosshairsTool extends AnnotationTool {
       linkedViewportAnnotations.filter((annotation) => {
         const { viewportId } = annotation.data;
         const otherViewport = renderingEngine.getViewport(viewportId);
-        const otherCamera = otherViewport.getCamera();
+        const otherCamera = getViewportICamera(otherViewport);
         const otherViewPlaneNormal = otherCamera.viewPlaneNormal;
         vtkMath.normalize(otherViewPlaneNormal);
 
@@ -1807,7 +1859,7 @@ class CrosshairsTool extends AnnotationTool {
     annotations
   ) => {
     const { renderingEngine, viewport } = enabledElement;
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const viewPlaneNormal = camera.viewPlaneNormal;
     vtkMath.normalize(viewPlaneNormal);
 
@@ -1837,7 +1889,7 @@ class CrosshairsTool extends AnnotationTool {
       const annotation = otherLinkedViewportAnnotationsFromSameScene[i];
       const { viewportId } = annotation.data;
       const otherViewport = renderingEngine.getViewport(viewportId);
-      const otherCamera = otherViewport.getCamera();
+      const otherCamera = getViewportICamera(otherViewport);
       const otherViewPlaneNormal = otherCamera.viewPlaneNormal;
       vtkMath.normalize(otherViewPlaneNormal);
 
@@ -1857,7 +1909,7 @@ class CrosshairsTool extends AnnotationTool {
         const annotation = otherViewportsAnnotationsWithUniqueCameras[jj];
         const { viewportId } = annotation.data;
         const stockedViewport = renderingEngine.getViewport(viewportId);
-        const cameraOfStocked = stockedViewport.getCamera();
+        const cameraOfStocked = getViewportICamera(stockedViewport);
 
         if (
           csUtils.isEqual(
@@ -1902,7 +1954,7 @@ class CrosshairsTool extends AnnotationTool {
       const { viewportId } = annotation.data;
       const otherViewport = renderingEngine.getViewport(viewportId);
 
-      const otherCamera = otherViewport.getCamera();
+      const otherCamera = getViewportICamera(otherViewport);
       const otherViewPlaneNormal = otherCamera.viewPlaneNormal;
       vtkMath.normalize(otherViewPlaneNormal);
 
@@ -1922,7 +1974,7 @@ class CrosshairsTool extends AnnotationTool {
         const annotation = otherViewportsAnnotationsWithUniqueCameras[jj];
         const { viewportId } = annotation.data;
         const stockedViewport = renderingEngine.getViewport(viewportId);
-        const cameraOfStocked = stockedViewport.getCamera();
+        const cameraOfStocked = getViewportICamera(stockedViewport);
 
         if (
           csUtils.isEqual(
@@ -1960,7 +2012,7 @@ class CrosshairsTool extends AnnotationTool {
 
       const { viewportId } = annotation.data;
       const otherViewport = renderingEngine.getViewport(viewportId);
-      const otherCamera = otherViewport.getCamera();
+      const otherCamera = getViewportICamera(otherViewport);
       const otherViewPlaneNormal = otherCamera.viewPlaneNormal;
       vtkMath.normalize(otherViewPlaneNormal);
 
@@ -1980,7 +2032,7 @@ class CrosshairsTool extends AnnotationTool {
         const annotation = otherViewportsAnnotationsWithUniqueCameras[jj];
         const { viewportId } = annotation.data;
         const stockedViewport = renderingEngine.getViewport(viewportId);
-        const cameraOfStocked = stockedViewport.getCamera();
+        const cameraOfStocked = getViewportICamera(stockedViewport);
 
         if (
           csUtils.isEqual(
@@ -2003,6 +2055,20 @@ class CrosshairsTool extends AnnotationTool {
   };
 
   _checkIfViewportsRenderingSameScene = (viewport, otherViewport) => {
+    // Native PLANAR_NEXT has no getAllVolumeIds; two native viewports render the same
+    // scene when they are bound to the same dataset (view-reference dataId), which is
+    // the MPR case (axial/sagittal/coronal of one volume share a dataId).
+    if (
+      csUtils.isGenericViewport(viewport) ||
+      csUtils.isGenericViewport(otherViewport)
+    ) {
+      const ref = viewport.getViewReference?.();
+      const otherRef = otherViewport.getViewReference?.();
+      const a = ref?.dataId ?? ref?.FrameOfReferenceUID;
+      const b = otherRef?.dataId ?? otherRef?.FrameOfReferenceUID;
+      return !!a && a === b;
+    }
+
     const volumeIds = viewport.getAllVolumeIds();
     const otherVolumeIds = otherViewport.getAllVolumeIds();
 
@@ -2203,6 +2269,13 @@ class CrosshairsTool extends AnnotationTool {
       });
     } else if (handles.activeOperation === OPERATION.ROTATE) {
       // ROTATION
+      // Native PLANAR_NEXT has no setCamera and no validated free-oblique orientation
+      // write, so crosshairs rotation cannot be applied; skip it on native (the rotate
+      // handles are inert rather than throwing). TODO(next): oblique reformat via a
+      // setViewReference orientation write once cornerstone supports it.
+      if (csUtils.isGenericViewport(enabledElement.viewport)) {
+        return;
+      }
       const otherViewportAnnotations =
         this._getAnnotationsForViewportsWithDifferentCameras(
           enabledElement,
@@ -2261,7 +2334,7 @@ class CrosshairsTool extends AnnotationTool {
       // precisely -0.0131233, resulting in the drawn annotations being lost.
       angle = Math.round(angle * 100) / 100;
 
-      const rotationAxis = viewport.getCamera().viewPlaneNormal;
+      const rotationAxis = getViewportICamera(viewport).viewPlaneNormal;
       // @ts-ignore : vtkjs incorrect typing
       const { matrix } = vtkMatrixBuilder
         .buildFromRadian()
@@ -2281,7 +2354,7 @@ class CrosshairsTool extends AnnotationTool {
           data.handles.toolCenter = center;
 
           const otherViewport = renderingEngine.getViewport(data.viewportId);
-          const camera = otherViewport.getCamera();
+          const camera = getViewportICamera(otherViewport);
           const { viewUp, position, focalPoint } = camera;
 
           viewUp[0] += position[0];
@@ -2313,6 +2386,11 @@ class CrosshairsTool extends AnnotationTool {
       });
     } else if (handles.activeOperation === OPERATION.SLAB) {
       // SLAB THICKNESS
+      // Native PLANAR_NEXT has no slab-thickness API (setSlabThickness/
+      // resetSlabThickness); skip the slab operation on native rather than throwing.
+      if (csUtils.isGenericViewport(enabledElement.viewport)) {
+        return;
+      }
       // this should be just the active one under the mouse,
       const otherViewportAnnotations =
         this._getAnnotationsForViewportsWithDifferentCameras(
@@ -2359,7 +2437,7 @@ class CrosshairsTool extends AnnotationTool {
           const otherViewport = renderingEngine.getViewport(
             data.viewportId
           ) as Types.IVolumeViewport;
-          const camera = otherViewport.getCamera();
+          const camera = getViewportICamera(otherViewport);
           const normal = camera.viewPlaneNormal;
 
           const dotProd = vtkMath.dot(delta, normal);
@@ -2432,7 +2510,7 @@ class CrosshairsTool extends AnnotationTool {
             ];
             vec3.normalize(normalizedProjectedDelta, normalizedProjectedDelta);
 
-            let slabThicknessValue = otherViewport.getSlabThickness();
+            let slabThicknessValue = getSlabThicknessOrDefault(otherViewport);
             if (
               csUtils.isOpposite(
                 normalizedProjectedDirection,
@@ -2504,6 +2582,11 @@ class CrosshairsTool extends AnnotationTool {
   };
 
   setSlabThickness(viewport, slabThickness) {
+    // Native PLANAR_NEXT has no slab API (setBlendMode/setSlabThickness). The SLAB
+    // drag operation is already gated off on native; guard here too for safety.
+    if (csUtils.isGenericViewport(viewport)) {
+      return;
+    }
     let actorUIDs;
     const { filterActorUIDsToSetSlabThickness } = this.configuration;
     if (
@@ -2548,7 +2631,7 @@ class CrosshairsTool extends AnnotationTool {
     const { data } = annotation;
 
     const viewport = renderingEngine.getViewport(data.viewportId);
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const normal = camera.viewPlaneNormal;
 
     // Project delta over camera normal
@@ -2571,10 +2654,16 @@ class CrosshairsTool extends AnnotationTool {
       const previousIgnoreFiredEvents = this._ignoreFiredEvents;
       this._ignoreFiredEvents = true;
       try {
-        viewport.setCamera({
-          focalPoint: newFocalPoint,
-          position: newPosition,
-        });
+        if (csUtils.isGenericViewport(viewport)) {
+          // Pure along-normal scroll; native has no setCamera, so navigate by view
+          // reference (snaps to nearest slice).
+          jumpToFocalPoint(viewport, newFocalPoint);
+        } else {
+          viewport.setCamera({
+            focalPoint: newFocalPoint,
+            position: newPosition,
+          });
+        }
       } finally {
         this._ignoreFiredEvents = previousIgnoreFiredEvents;
       }
@@ -2745,7 +2834,7 @@ class CrosshairsTool extends AnnotationTool {
     );
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
-    const { clientWidth, clientHeight } = viewport.canvas;
+    const { clientWidth, clientHeight } = getDisplayedCanvasSize(viewport);
     const canvasDiagonalLength = Math.sqrt(
       clientWidth * clientWidth + clientHeight * clientHeight
     );
@@ -3083,7 +3172,7 @@ class CrosshairsTool extends AnnotationTool {
         return;
       }
 
-      const camera = enabledElement.viewport.getCamera();
+      const camera = getViewportICamera(enabledElement.viewport);
 
       const normal = [...camera.viewPlaneNormal] as Types.Point3;
       const point = [...camera.focalPoint] as Types.Point3;
