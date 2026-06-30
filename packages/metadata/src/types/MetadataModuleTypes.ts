@@ -1,3 +1,5 @@
+import type { IDisplaySet } from '../displayset/IDisplaySet';
+
 export interface DicomDateObject {
   year: number;
   month: number;
@@ -119,4 +121,12 @@ export interface MetadataModuleType {
   frameModule: FrameMetadata;
   transferSyntax: TransferSyntaxMetadata;
   compressedFrameData: CompressedFrameDataMetadata;
+  /**
+   * The display set stored by `registerDisplaySetMetadata` and resolved by the
+   * display set provider. This is the full {@link IDisplaySet} (including
+   * `instances` and any split-rule attributes such as `isClip`,
+   * `numImageFrames`, `splitNumber`), not a narrowed projection, so a typed
+   * `getTyped(MetadataModules.DISPLAY_SET, imageId)` read matches what is cached.
+   */
+  displaySetModule: IDisplaySet;
 }

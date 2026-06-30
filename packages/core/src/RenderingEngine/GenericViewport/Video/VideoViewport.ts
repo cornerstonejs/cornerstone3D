@@ -15,7 +15,7 @@ import type {
   LoadedData,
   ViewportDataBinding,
 } from '../ViewportArchitectureTypes';
-import { getGenericViewportSourceDataId } from '../genericViewportDataSetAccess';
+import { getGenericViewportSourceDataId } from '../genericViewportDisplaySetAccess';
 import type { GenericViewportReferenceContext } from '../genericViewportReferenceCompatibility';
 import type {
   VideoViewState,

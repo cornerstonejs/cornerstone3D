@@ -10,7 +10,7 @@ import type {
   BaseViewportRenderContext,
   BindingRole,
   DataAddOptions,
-  DataId,
+  DisplaySetId,
   DataProvider,
   LoadedData,
   ViewportDataBinding,
@@ -75,10 +75,10 @@ abstract class GenericViewport<
   protected renderContext: TContext;
 
   protected bindings = new Map<
-    DataId,
+    DisplaySetId,
     ViewportDataBinding<TDataPresentation>
   >();
-  protected dataPresentation = new Map<DataId, TDataPresentation>();
+  protected dataPresentation = new Map<DisplaySetId, TDataPresentation>();
   protected viewState!: TViewState;
   protected isDestroyed = false;
 
@@ -103,7 +103,7 @@ abstract class GenericViewport<
    * to the overlay role unless they specify one explicitly.
    */
   async setDisplaySets(
-    ...entries: Array<{ displaySetId: DataId; options?: unknown }>
+    ...entries: Array<{ displaySetId: DisplaySetId; options?: unknown }>
   ): Promise<void> {
     this.removeAllData();
 
@@ -128,7 +128,7 @@ abstract class GenericViewport<
    * through the render-path resolver.
    */
   async addDisplaySet(
-    displaySetId: DataId,
+    displaySetId: DisplaySetId,
     options: DataAddOptions
   ): Promise<void> {
     if (this.isDestroyed) {
@@ -140,10 +140,25 @@ abstract class GenericViewport<
   }
 
   /**
+   * Returns the display sets currently mounted on the viewport, in mount order
+   * (source binding first, then overlays). Derived from the live bindings, so
+   * it always reflects what is actually rendered - including overlays and any
+   * `removeData` calls. The per-entry `options` carry the binding `role`.
+   */
+  getDisplaySets(): Array<{ displaySetId: DisplaySetId; options?: unknown }> {
+    return Array.from(this.bindings.entries()).map(
+      ([displaySetId, binding]) => ({
+        displaySetId,
+        options: { role: binding.role },
+      })
+    );
+  }
+
+  /**
    * Removes a dataset binding and its stored presentation state, then
    * triggers a re-render so the viewport reflects the removal.
    */
-  removeData(displaySetId: DataId): void {
+  removeData(displaySetId: DisplaySetId): void {
     const binding = this.bindings.get(displaySetId);
 
     if (!binding) {
@@ -167,11 +182,11 @@ abstract class GenericViewport<
    */
   setDisplaySetPresentation(props: Partial<TDataPresentation>): void;
   setDisplaySetPresentation(
-    displaySetId: DataId,
+    displaySetId: DisplaySetId,
     props: Partial<TDataPresentation>
   ): void;
   setDisplaySetPresentation(
-    displaySetIdOrProps: DataId | Partial<TDataPresentation>,
+    displaySetIdOrProps: DisplaySetId | Partial<TDataPresentation>,
     maybeProps?: Partial<TDataPresentation>
   ): void {
     if (typeof displaySetIdOrProps === 'string') {
@@ -192,7 +207,7 @@ abstract class GenericViewport<
    * Returns the stored presentation state for a specific dataset.
    */
   getDisplaySetPresentation(
-    displaySetId: DataId
+    displaySetId: DisplaySetId
   ): TDataPresentation | undefined {
     return this.getDataPresentationState(displaySetId);
   }
@@ -503,7 +518,7 @@ abstract class GenericViewport<
    * to the correct render-path runtime.
    */
   protected async addLoadedData(
-    displaySetId: DataId,
+    displaySetId: DisplaySetId,
     data: LoadedData,
     options: DataAddOptions,
     shouldIgnore?: () => boolean
@@ -593,7 +608,7 @@ abstract class GenericViewport<
    * that dataset is already added.
    */
   protected setDataPresentationState(
-    displaySetId: DataId,
+    displaySetId: DisplaySetId,
     props: TDataPresentation
   ): void {
     if (this.isDestroyed) {
@@ -616,7 +631,7 @@ abstract class GenericViewport<
    * display set is not currently mounted.
    */
   protected getDataPresentationState(
-    displaySetId: DataId
+    displaySetId: DisplaySetId
   ): TDataPresentation | undefined {
     return this.dataPresentation.get(displaySetId);
   }
@@ -626,7 +641,7 @@ abstract class GenericViewport<
    * already tracked for that display set.
    */
   protected setDefaultDataPresentation(
-    displaySetId: DataId,
+    displaySetId: DisplaySetId,
     defaults: TDataPresentation
   ): TDataPresentation {
     const nextPresentation = {
@@ -647,7 +662,7 @@ abstract class GenericViewport<
    * forwards the result immediately when mounted.
    */
   protected mergeDataPresentation(
-    displaySetId: DataId,
+    displaySetId: DisplaySetId,
     props: Partial<TDataPresentation>
   ): TDataPresentation {
     const nextPresentation = {
@@ -764,7 +779,7 @@ abstract class GenericViewport<
    * Looks up a binding by dataset identifier.
    */
   protected getBinding(
-    displaySetId: DataId
+    displaySetId: DisplaySetId
   ): ViewportDataBinding<TDataPresentation> | undefined {
     return this.bindings.get(displaySetId);
   }
@@ -773,7 +788,9 @@ abstract class GenericViewport<
    * Internal helper: returns the mounted render mode for a specific dataset
    * when present.
    */
-  protected getDisplaySetRenderMode(displaySetId: DataId): string | undefined {
+  protected getDisplaySetRenderMode(
+    displaySetId: DisplaySetId
+  ): string | undefined {
     return this.getBinding(displaySetId)?.rendering.renderMode;
   }
 
@@ -781,7 +798,9 @@ abstract class GenericViewport<
    * Internal helper: returns the binding role for a mounted dataset when
    * present.
    */
-  protected getDisplaySetRole(displaySetId: DataId): BindingRole | undefined {
+  protected getDisplaySetRole(
+    displaySetId: DisplaySetId
+  ): BindingRole | undefined {
     return this.getBinding(displaySetId)?.role;
   }
 

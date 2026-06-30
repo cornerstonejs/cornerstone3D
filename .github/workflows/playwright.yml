@@ -13,21 +13,21 @@ permissions:
 jobs:
   playwright-tests:
     timeout-minutes: 120
-    runs-on: self-hosted
+    runs-on: [nashua]
     strategy:
       fail-fast: false
       max-parallel: 3
       matrix:
         include:
-          - node-version: 24
+          - node-version: 24.15.0
             mode: legacy
             run_args: '--project=chromium'
             collect_coverage: true
-          - node-version: 24
+          - node-version: 24.15.0
             mode: compatibility
             run_args: '--compat --project=chromium'
             collect_coverage: false
-          - node-version: 24
+          - node-version: 24.15.0
             mode: next
             run_args: '--next --project=chromium'
             collect_coverage: false
@@ -51,9 +51,9 @@ jobs:
         run: |
           export NODE_OPTIONS="--max_old_space_size=10192"
           if [ "${{ matrix.collect_coverage }}" = "true" ]; then
-            pnpm exec nyc --reporter=html ./scripts/run-playright.sh ${{ matrix.run_args }}
+            bash scripts/ci/with-nashua-lock.sh pnpm exec nyc --reporter=html ./scripts/run-playright.sh ${{ matrix.run_args }}
           else
-            ./scripts/run-playright.sh ${{ matrix.run_args }}
+            bash scripts/ci/with-nashua-lock.sh ./scripts/run-playright.sh ${{ matrix.run_args }}
           fi
       - name: Upload Playwright report and test results
         if: failure()
