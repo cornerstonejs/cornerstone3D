@@ -3,7 +3,7 @@ import { createAndCacheVolume } from '../../../loaders/volumeLoader';
 import { ActorRenderMode } from '../../../types';
 import resolveViewportVolumeId from '../../helpers/resolveViewportVolumeId';
 import type { LoadedData } from '../ViewportArchitectureTypes';
-import { getGenericViewportPlanarDataSet } from '../genericViewportDataSetAccess';
+import { getGenericViewportPlanarDisplaySet } from '../genericViewportDisplaySetAccess';
 import type {
   PlanarDataProvider,
   PlanarDataLoadOptions,
@@ -89,7 +89,7 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
   }
 
   private getDataSet(dataId: string): PlanarRegisteredDataSet | undefined {
-    const dataSet = getGenericViewportPlanarDataSet(dataId);
+    const dataSet = getGenericViewportPlanarDisplaySet(dataId);
 
     if (!isPlanarRegisteredDataSet(dataSet)) {
       return;

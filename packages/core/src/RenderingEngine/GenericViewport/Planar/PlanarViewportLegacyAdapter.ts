@@ -12,7 +12,7 @@ import type {
 import type BlendModes from '../../../enums/BlendModes';
 import clonePoint3 from '../../../utilities/clonePoint3';
 import hasOwn from '../../../utilities/hasOwn';
-import genericViewportDataSetMetadataProvider from '../../../utilities/genericViewportDataSetMetadataProvider';
+import genericViewportDisplaySetMetadataProvider from '../../../utilities/genericViewportDisplaySetMetadataProvider';
 import { viewportProjection } from '../viewportProjection';
 import type { PlanarLegacyViewportProperties } from './planarLegacyCompatibility';
 import PlanarLegacyCompatibilityController from './PlanarLegacyCompatibilityController';
@@ -357,7 +357,7 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
 
         if (bindingDataId) {
           if (this.getDisplaySetRole(bindingDataId) === 'overlay') {
-            genericViewportDataSetMetadataProvider.remove(bindingDataId);
+            genericViewportDisplaySetMetadataProvider.remove(bindingDataId);
           }
           this.removeData(bindingDataId);
           didRemoveActor = true;

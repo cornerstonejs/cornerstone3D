@@ -205,7 +205,7 @@ async function run() {
 
   const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-  utilities.genericViewportDataSetMetadataProvider.add(dataId, {
+  utilities.genericViewportDisplaySetMetadataProvider.add(dataId, {
     kind: 'planar',
     imageIds,
   });

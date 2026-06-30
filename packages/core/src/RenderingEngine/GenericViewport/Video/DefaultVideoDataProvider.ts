@@ -1,6 +1,6 @@
 import type { DataProvider, LoadedData } from '../ViewportArchitectureTypes';
 import { loadVideoStreamMetadata } from '../../../utilities/VideoUtilities';
-import { getGenericViewportSourceDataId } from '../genericViewportDataSetAccess';
+import { getGenericViewportSourceDataId } from '../genericViewportDisplaySetAccess';
 import type { VideoStreamPayload } from './VideoViewportTypes';
 
 export class DefaultVideoDataProvider implements DataProvider {
