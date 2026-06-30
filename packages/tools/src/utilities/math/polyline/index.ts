@@ -17,6 +17,8 @@ import getLineSegmentIntersectionsIndexes from './getLineSegmentIntersectionsInd
 import getLineSegmentIntersectionsCoordinates from './getLineSegmentIntersectionsCoordinates';
 import getClosestLineSegmentIntersection from './getClosestLineSegmentIntersection';
 import getSubPixelSpacingAndXYDirections from './getSubPixelSpacingAndXYDirections';
+import getIntersectionIterator from './getIntersectionIterator';
+import computeEffectiveVoxelSpacing from './computeEffectiveVoxelSpacing';
 import pointsAreWithinCloseContourProximity from './pointsAreWithinCloseContourProximity';
 import addCanvasPointsToArray from './addCanvasPointsToArray';
 import pointCanProjectOnLine from './pointCanProjectOnLine';
@@ -42,6 +44,8 @@ export {
   getLineSegmentIntersectionsCoordinates,
   getClosestLineSegmentIntersection,
   getSubPixelSpacingAndXYDirections,
+  getIntersectionIterator,
+  computeEffectiveVoxelSpacing,
   pointsAreWithinCloseContourProximity,
   addCanvasPointsToArray,
   pointCanProjectOnLine,
