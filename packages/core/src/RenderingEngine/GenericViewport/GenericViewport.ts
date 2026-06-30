@@ -693,7 +693,7 @@ abstract class GenericViewport<
    * presentation changes. The base implementation is intentionally a no-op.
    */
   protected notifyDataPresentationModified(
-    _displaySetId: DataId,
+    _displaySetId: DisplaySetId,
     _props: Partial<TDataPresentation>
   ): void {
     // Subclasses emit presentation-modified events; base viewports do not.
