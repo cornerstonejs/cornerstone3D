@@ -7,6 +7,7 @@ import {
   removeDuplicatePoints,
 } from './sharedOperations';
 import arePolylinesIdentical from '../math/polyline/arePolylinesIdentical';
+import containsPoints from '../math/polyline/containsPoints';
 import type { PolylineInfoCanvas } from './polylineInfoTypes';
 import type { ContourSegmentationAnnotation } from '../../types';
 import { getViewReferenceFromAnnotation } from './getViewReferenceFromAnnotation';
@@ -58,19 +59,57 @@ export function subtractPolylineSets(
               polylineB.polyline
             )
           );
+          const existingHoles = currentPolyline.holePolylines ?? [];
           for (const subtractedPolyline of subtractedPolylines) {
             const cleaned = removeDuplicatePoints(subtractedPolyline);
             if (cleaned.length >= 3) {
+              const holesStillInside = existingHoles.filter((hole) =>
+                containsPoints(cleaned, hole)
+              );
               newPolylines.push({
                 polyline: cleaned,
                 viewReference: currentPolyline.viewReference,
+                ...(holesStillInside.length > 0
+                  ? { holePolylines: holesStillInside }
+                  : {}),
               });
             }
           }
+        } else if (intersection.isTargetInsideSource) {
+          const existingHoles = currentPolyline.holePolylines ?? [];
+          const isInsideExistingHole = existingHoles.some((hole) =>
+            containsPoints(hole, polylineB.polyline)
+          );
+          if (isInsideExistingHole) {
+            // It's already in a hole, so subtracting it changes nothing.
+            newPolylines.push({
+              polyline: currentPolyline.polyline,
+              viewReference: currentPolyline.viewReference,
+              ...(currentPolyline.holePolylines
+                ? { holePolylines: currentPolyline.holePolylines }
+                : {}),
+            });
+          } else {
+            // Subtrahend is fully inside the minuend — cut a hole (no edge crossings).
+            newPolylines.push({
+              polyline: currentPolyline.polyline,
+              viewReference: currentPolyline.viewReference,
+              holePolylines: [
+                ...(currentPolyline.holePolylines ?? []),
+                polylineB.polyline,
+              ],
+            });
+          }
+        } else if (intersection.isContourHole) {
+          // Minuend is fully inside the subtrahend — removed entirely.
+          continue;
         } else {
           newPolylines.push({
             polyline: currentPolyline.polyline,
             viewReference: currentPolyline.viewReference,
+            ...(currentPolyline.holePolylines
+              ? { holePolylines: currentPolyline.holePolylines }
+              : {}),
           });
         }
       }
