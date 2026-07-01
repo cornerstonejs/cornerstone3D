@@ -34,10 +34,18 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
       throw new Error('[PlanarViewport] Cannot load an empty planar dataset');
     }
 
+    // A concrete, clamped index is always needed to load a single image below.
     const clampedImageIdIndex = Math.min(
       Math.max(0, dataSet.initialImageIdIndex ?? 0),
       dataSet.imageIds.length - 1
     );
+    // But preserve "no slice requested" (undefined) in the payload so the volume
+    // acquisition view can center instead of pinning to slice 0; an explicit
+    // index (including 0) is clamped and honored downstream.
+    const initialImageIdIndex =
+      dataSet.initialImageIdIndex === undefined
+        ? undefined
+        : clampedImageIdIndex;
 
     if (
       options.renderMode === ActorRenderMode.VTK_VOLUME_SLICE ||
@@ -56,7 +64,7 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
         id: dataId,
         type: 'image',
         imageIds,
-        initialImageIdIndex: clampedImageIdIndex,
+        initialImageIdIndex,
         acquisitionOrientation: options.acquisitionOrientation,
         imageData: dataSet.imageData,
         imageVolume,
@@ -79,7 +87,7 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
       imageIds: dataSet.imageIds,
       image,
       imageData: dataSet.imageData,
-      initialImageIdIndex: clampedImageIdIndex,
+      initialImageIdIndex,
       acquisitionOrientation: options.acquisitionOrientation,
       reference: dataSet.reference,
       renderMode: options.renderMode,

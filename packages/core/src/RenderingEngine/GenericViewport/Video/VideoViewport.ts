@@ -557,6 +557,17 @@ class VideoViewport extends GenericViewport<
   }
 
   /**
+   * Called by the rendering engine render loop for custom-pipeline viewports
+   * (getUseCustomRenderingPipeline returns true). DOM updates happen eagerly in
+   * the render path, so this defers to render(); without it the engine threw
+   * `customRenderViewportToCanvas is not a function` for the next video viewport.
+   * Mirrors the ECG and WSI native viewports.
+   */
+  customRenderViewportToCanvas(): void {
+    this.render();
+  }
+
+  /**
    * Resets layout navigation while preserving the current video time.
    */
   resetViewState(): boolean {

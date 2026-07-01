@@ -32,6 +32,7 @@ import type {
 } from '../../types/ToolSpecificAnnotationTypes';
 
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+import getViewportICamera from '../../utilities/getViewportICamera';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import BidirectionalTool from '../annotation/BidirectionalTool';
 import { getSegmentIndexColor } from '../../stateManagement/segmentation/config/segmentationColor';
@@ -74,7 +75,8 @@ class SegmentBidirectionalTool extends BidirectionalTool {
 
     this.isDrawing = true;
 
-    const camera = viewport.getCamera();
+    // Native ("next") viewports expose no getCamera; read orientation via the bridge.
+    const camera = getViewportICamera(viewport);
     const { viewPlaneNormal, viewUp } = camera;
 
     const referencedImageId = this.getReferencedImageId(

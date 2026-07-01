@@ -8,6 +8,7 @@ import {
   ViewportType,
 } from '../../../enums';
 import { loadAndCacheImage } from '../../../loaders/imageLoader';
+import { updateVTKImageDataWithCornerstoneImage } from '../../../utilities/updateVTKImageDataWithCornerstoneImage';
 import * as metaData from '../../../metaData';
 import { ActorRenderMode } from '../../../types';
 import type { CPUIImageData, IImage, Point3 } from '../../../types';
@@ -16,6 +17,7 @@ import {
   applyPlanarImagePresentation,
   createVTKImageDataFromImage,
   getDefaultImageVOIRange,
+  updateVTKImageDataGeometryFromImage,
 } from '../../helpers/planarImageRendering';
 import type {
   DataAddOptions,
@@ -71,6 +73,13 @@ export class VtkImageMapperRenderPath
     ctx.display.activateRenderMode(ActorRenderMode.VTK_IMAGE);
     mapper.setInputData(imageData);
     actor.setMapper(mapper);
+    // Multi-component images (e.g. RGB ultrasound) must render as direct color.
+    // Without this vtk treats the components as independent scalars mapped through
+    // a (grayscale) transfer function and the frame renders black. Mirrors
+    // StackViewport's actor setup.
+    if (imageData.getPointData().getScalars().getNumberOfComponents() > 1) {
+      actor.getProperty().setIndependentComponents(false);
+    }
     ctx.vtk.renderer.addActor(actor);
     const rendering: PlanarImageMapperRendering = {
       renderMode: ActorRenderMode.VTK_IMAGE,
@@ -80,16 +89,22 @@ export class VtkImageMapperRenderPath
       mapper,
       imageData,
       useWorldCoordinateImageData: payload.useWorldCoordinateImageData,
-      currentImageIdIndex: payload.initialImageIdIndex,
+      currentImageIdIndex: payload.initialImageIdIndex ?? 0,
       defaultVOIRange: getDefaultImageVOIRange(payload.image),
       dataPresentation: undefined,
       loadRequestId: 0,
     };
 
-    triggerPlanarNewImage(ctx, {
-      image: payload.image,
-      imageIdIndex: payload.initialImageIdIndex,
-    });
+    // STACK_NEW_IMAGE drives the source slice scrollbar/thumb. Only the source
+    // binding represents a displayed-slice change; overlays (e.g. a segmentation
+    // labelmap) must not fire it, otherwise adding/replacing the overlay snaps
+    // the scrollbar to the overlay's own index (0) instead of the current slice.
+    if (options.role !== 'overlay') {
+      triggerPlanarNewImage(ctx, {
+        image: payload.image,
+        imageIdIndex: payload.initialImageIdIndex ?? 0,
+      });
+    }
 
     return {
       rendering,
@@ -133,6 +148,7 @@ export class VtkImageMapperRenderPath
     applyPlanarImagePresentation({
       actor: rendering.actor,
       defaultVOIRange: rendering.defaultVOIRange,
+      defaultVOILUTFunction: rendering.currentImage?.voiLUTFunction,
       props: {
         interpolationType: InterpolationType.LINEAR,
         ...dataPresentation,
@@ -359,9 +375,29 @@ async function updateRenderedImage(args: {
     args;
   const camera = ctx.viewport.getViewState();
   const { actor, mapper } = rendering;
-  const imageData = createVTKImageDataFromImage(image);
 
-  mapper.setInputData(imageData);
+  // Reuse the existing vtkImageData and replace its scalars in place when the
+  // incoming slice matches it (same dimensions / data type / components),
+  // mirroring legacy StackViewport._updateActorToDisplayImageId. Allocating a
+  // fresh vtkImageData per slice forces VTK to build a new GPU texture on every
+  // scroll, and the first render after that swap draws before the new texture
+  // has uploaded - a one-frame black flash. Updating the scalars in place keeps
+  // the same texture (re-uploaded within the same render), so there is no flash.
+  let imageData = rendering.imageData;
+
+  if (imageData && canReuseImageDataForImage(imageData, image)) {
+    updateVTKImageDataWithCornerstoneImage(imageData, image);
+    // Reuse keeps the previous frame's geometry; refresh origin/direction/spacing
+    // to the new frame's image plane. Multi-frame stacks (e.g. ultrasound cine)
+    // place each frame at a distinct world position and the camera follows that
+    // plane on scroll, so a stale origin leaves the actor off the focal plane and
+    // the viewport renders black from the second frame onward.
+    updateVTKImageDataGeometryFromImage(imageData, image);
+  } else {
+    imageData = createVTKImageDataFromImage(image);
+    mapper.setInputData(imageData);
+  }
+
   rendering.currentImage = image;
   rendering.imageData = imageData;
   rendering.currentImageIdIndex = imageIdIndex;
@@ -375,6 +411,7 @@ async function updateRenderedImage(args: {
   applyPlanarImagePresentation({
     actor,
     defaultVOIRange: rendering.defaultVOIRange,
+    defaultVOILUTFunction: image.voiLUTFunction,
     props: {
       interpolationType:
         dataPresentation?.interpolationType ?? InterpolationType.LINEAR,
@@ -400,8 +437,56 @@ async function updateRenderedImage(args: {
     }
   }
 
-  triggerPlanarNewImage(ctx, { image, imageIdIndex });
+  // Only the source binding's slice change should drive the slice scrollbar; an
+  // overlay (segmentation) slice update must not emit STACK_NEW_IMAGE.
+  if (projection?.isSourceBinding) {
+    triggerPlanarNewImage(ctx, { image, imageIdIndex });
+  }
   ctx.display.requestRender();
+}
+
+/**
+ * Whether an incoming image can have its scalars written into an existing
+ * vtkImageData (reusing the same GPU texture) instead of allocating a new one.
+ * Mirrors the safety-critical part of legacy
+ * StackViewport._checkVTKImageDataMatchesCornerstoneImage: the in-place scalar
+ * set is only valid when dimensions, data type and component count match.
+ */
+function canReuseImageDataForImage(
+  imageData: ReturnType<typeof createVTKImageDataFromImage>,
+  image: IImage
+): boolean {
+  const scalars = imageData.getPointData?.()?.getScalars?.();
+
+  if (!scalars) {
+    return false;
+  }
+
+  const [xVoxels, yVoxels] = imageData.getDimensions();
+
+  if (xVoxels !== image.columns || yVoxels !== image.rows) {
+    return false;
+  }
+
+  if (
+    scalars.getDataType() !==
+    image.voxelManager.getScalarData().constructor.name
+  ) {
+    return false;
+  }
+
+  // The component count must match what the vtkImageData is actually built with
+  // (createVTKImageDataFromImage). In this path a color image's vtkImageData is
+  // always 3-component: getImageDataMetadata derives numberOfComponents from the
+  // photometric interpretation (RGB/YBR -> 3) and updateVTKImageDataWithCornerstoneImage
+  // down-converts an RGBA (4-component) source to RGB in place. So the post-transform
+  // count is 3 for color and 1 otherwise - do NOT use image.rgba / a raw 4 here, or a
+  // fresh RGBA frame (rgba still true, numberOfComponents unset) would mis-report 4,
+  // never match the 3-component imageData, and force a recreate (new GPU texture)
+  // on every scroll - the one-frame black flash this reuse path exists to prevent.
+  const incomingComponents = image.color ? 3 : 1;
+
+  return scalars.getNumberOfComponents() === incomingComponents;
 }
 
 function applyPlanarImageActorTransforms(
