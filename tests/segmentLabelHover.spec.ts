@@ -3,11 +3,11 @@ import type { Locator, Page } from '@playwright/test';
 import { visitExample, waitForRenderSettled } from './utils/index';
 
 // The volume + contour viewport in the segmentLabel example seeds Segment 1 and
-// Segment 2 on DIFFERENT slices. The SegmentLabelTool must only report the
-// segment on the currently displayed slice under the cursor. Previously the
-// contour hit-test projected to 2D and ignored the slice (normal) axis, so a
-// contour on another slice would match and its name would leak onto empty space
-// of the current slice.
+// Segment 2 several (non-adjacent) slices apart. The SegmentLabelTool must only
+// report the segment on the currently displayed slice under the cursor.
+// Previously the contour hit-test projected to 2D and ignored the slice (normal)
+// axis, so a contour on another slice would match and its name would leak onto
+// empty space of the current slice.
 
 const VIEWPORT_UID = 'viewport4';
 const SEGMENTATION_ID = 'SEGMENTATION_CONTOUR_VOLUME';
@@ -15,6 +15,11 @@ const SEGMENTATION_ID = 'SEGMENTATION_CONTOUR_VOLUME';
 // Matches the mock seeding offset in the example (canvas-pixel offset from the
 // viewport center). Segment 2 lives 150px above the center on its own slice.
 const SEGMENT_2_OFFSET = { x: 0, y: -150 };
+
+// Number of slices between Segment 1 and Segment 2. Must match
+// SEGMENT_SLICE_SEPARATION in packages/tools/examples/segmentLabel/index.ts so
+// that scrolling by this amount lands exactly on Segment 2's slice.
+const SEGMENT_SLICE_SEPARATION = 10;
 
 const labelLocator = (page: Page) =>
   page.locator(
@@ -47,7 +52,7 @@ async function getHoverPositions(viewport: Locator, page: Page) {
   return {
     // Center of the viewport, where Segment 1 sits on the current slice.
     segment1: { x: bbox.width / 2, y: bbox.height / 2 },
-    // Where Segment 2 (on the adjacent slice) projects - empty on this slice.
+    // Where Segment 2 (several slices away) projects - empty on this slice.
     segment2Projection: {
       x: bbox.width / 2 + SEGMENT_2_OFFSET.x / dpr,
       y: bbox.height / 2 + SEGMENT_2_OFFSET.y / dpr,
@@ -96,23 +101,26 @@ test.describe('Segment Label Tool - hover is scoped to the current slice', () =>
     await viewport.scrollIntoViewIfNeeded();
     const { segment2Projection } = await getHoverPositions(viewport, page);
 
-    // Hovering empty space on Segment 1's slice, where Segment 2 (on the next
-    // slice) would project. No label must be drawn.
+    // Hovering empty space on Segment 1's slice, where Segment 2 (several slices
+    // away) would project. No label must be drawn.
     await hoverAt(viewport, segment2Projection);
     await expect(labelLocator(page)).toHaveCount(0);
 
     // Sanity check that the hover machinery and the label itself work: scroll to
     // Segment 2's slice and hover the same spot - now the name must appear.
-    await page.evaluate((viewportId) => {
-      const cornerstone = (window as unknown as { cornerstone?: any })
-        .cornerstone;
-      const viewport = cornerstone
-        ?.getRenderingEngines?.()
-        ?.flatMap((engine) => engine.getViewports())
-        ?.find((candidate) => candidate.id === viewportId);
-      viewport?.scroll(1);
-      viewport?.render();
-    }, VIEWPORT_UID);
+    await page.evaluate(
+      ({ viewportId, separation }) => {
+        const cornerstone = (window as unknown as { cornerstone?: any })
+          .cornerstone;
+        const viewport = cornerstone
+          ?.getRenderingEngines?.()
+          ?.flatMap((engine) => engine.getViewports())
+          ?.find((candidate) => candidate.id === viewportId);
+        viewport?.scroll(separation);
+        viewport?.render();
+      },
+      { viewportId: VIEWPORT_UID, separation: SEGMENT_SLICE_SEPARATION }
+    );
 
     await waitForRenderSettled(page);
 
