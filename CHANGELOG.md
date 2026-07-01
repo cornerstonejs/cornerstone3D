@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.1.3](https://github.com/cornerstonejs/cornerstone3D/compare/v5.1.2...v5.1.3) (2026-07-01)
+
+### Bug Fixes
+
+- **segmentation:** scope SegmentLabelTool hover to the current slice for contours ([#2770](https://github.com/cornerstonejs/cornerstone3D/issues/2770)) ([3dd8fa7](https://github.com/cornerstonejs/cornerstone3D/commit/3dd8fa7093fe7f43cea64ab08d01ff84f091656b))
+
 ## [5.1.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.1.1...v5.1.2) (2026-06-30)
 
 ### Bug Fixes
