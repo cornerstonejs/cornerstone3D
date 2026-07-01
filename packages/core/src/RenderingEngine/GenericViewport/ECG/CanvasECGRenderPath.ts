@@ -31,7 +31,7 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
   async addData(
     ctx: ECGCanvasRenderContext,
     data: LoadedData,
-    options: DataAddOptions
+    _options: DataAddOptions
   ): Promise<RenderPathAttachment<ECGDataPresentation>> {
     const waveform = data as unknown as LoadedData<ECGWaveformPayload>;
 
@@ -199,6 +199,8 @@ function drawFrame(
       currentCamera.timeRange[1] - currentCamera.timeRange[0]
     ),
     valueRange: currentCamera.valueRange,
+    sweepSpeed: currentDataPresentation?.sweepSpeed,
+    sensitivityMmMv: currentDataPresentation?.sensitivityMmMv,
   }) as RenderWindowMetrics;
   const layouts = computeECGChannelLayouts({
     visibleChannels,
@@ -233,9 +235,18 @@ function drawFrame(
     yOffset * dpr
   );
 
-  drawECGGrid(canvasContext, metrics, {
-    showGrid: currentDataPresentation?.showGrid,
-  });
+  drawECGGrid(
+    canvasContext,
+    {
+      ...metrics,
+      sweepSpeed: currentDataPresentation?.sweepSpeed,
+      sensitivityMmMv: currentDataPresentation?.sensitivityMmMv,
+      showAmplitudeLabels: currentDataPresentation?.showAmplitudeLabels,
+    },
+    {
+      showGrid: currentDataPresentation?.showGrid,
+    }
+  );
   drawECGTraces({
     ctx: canvasContext,
     layouts,

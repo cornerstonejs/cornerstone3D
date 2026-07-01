@@ -1,8 +1,9 @@
 import type * as EventTypes from '../../types/EventTypes';
 import type ICamera from '../../types/ICamera';
-import type { Point2, Point3 } from '../../types';
+import type { Point2, Point3, IRenderingEngine } from '../../types';
 import Events from '../../enums/Events';
 import ViewportStatus from '../../enums/ViewportStatus';
+import renderingEngineCache from '../renderingEngineCache';
 import triggerEvent from '../../utilities/triggerEvent';
 import type {
   BaseViewportRenderContext,
@@ -89,6 +90,15 @@ abstract class GenericViewport<
   constructor(args: { id: ViewportId; element: HTMLDivElement }) {
     this.id = args.id;
     this.element = args.element;
+    this.canvasToWorld = this.canvasToWorld.bind(this);
+    this.worldToCanvas = this.worldToCanvas.bind(this);
+  }
+
+  /**
+   * Returns the rendering engine this viewport is registered to.
+   */
+  public getRenderingEngine(): IRenderingEngine {
+    return renderingEngineCache.get(this.renderingEngineId);
   }
 
   // ====================================================================

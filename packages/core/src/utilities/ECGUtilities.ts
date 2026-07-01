@@ -1,6 +1,14 @@
 import { MetadataModules } from '../enums';
 import * as metaData from '../metaData';
 
+/** Default ECG paper speed: 25 mm/s */
+export const ECG_DEFAULT_SWEEP_SPEED_MM_S = 25;
+/** Default ECG amplitude calibration: 10 mm/mV */
+export const ECG_DEFAULT_SENSITIVITY_MM_MV = 10;
+/** Pixels per mm at 1:1 scale (96 DPI nominal; governs grid density) */
+export const ECG_PX_PER_MM = 3.779;
+
+/** @deprecated Use ECG_DEFAULT_SWEEP_SPEED_MM_S and ECG_PX_PER_MM to compute dynamically. */
 export const ECG_SECONDS_WIDTH = 150;
 export const ECG_CHANNEL_SPACING = 5;
 
@@ -219,24 +227,53 @@ export function computeECGRenderMetrics<TChannel extends ECGChannelLike>(args: {
   visibleChannels: TChannel[];
   windowMs: number;
   valueRange: [number, number];
+  /**
+   * Horizontal sweep speed in mm/s. Defaults to `ECG_DEFAULT_SWEEP_SPEED_MM_S` (25 mm/s).
+   * Controls how wide one second of signal is rendered.
+   */
+  sweepSpeed?: number;
+  /**
+   * Amplitude sensitivity in mm/mV. Defaults to `ECG_DEFAULT_SENSITIVITY_MM_MV` (10 mm/mV).
+   * Controls how tall one millivolt of signal is rendered.
+   */
+  sensitivityMmMv?: number;
 }): ECGRenderMetrics {
-  const { canvas, visibleChannels, windowMs, valueRange } = args;
-  const ecgWidth = Math.max(
-    1,
-    Math.ceil((windowMs / 1000) * ECG_SECONDS_WIDTH)
-  );
+  const {
+    canvas,
+    visibleChannels,
+    windowMs,
+    valueRange,
+    sweepSpeed,
+    sensitivityMmMv,
+  } = args;
+  const resolvedSweepSpeed = sweepSpeed ?? ECG_DEFAULT_SWEEP_SPEED_MM_S;
+  // Pixels per second at 1:1 (sweep speed in mm/s × px/mm)
+  const pxPerSecond = resolvedSweepSpeed * ECG_PX_PER_MM;
+  const ecgWidth = Math.max(1, Math.ceil((windowMs / 1000) * pxPerSecond));
+
   const [minValue, maxValue] = valueRange;
   const range = Math.max(1, maxValue - minValue);
-  const canvasAspect =
-    canvas.clientHeight && canvas.clientWidth
-      ? canvas.clientHeight / canvas.clientWidth
-      : 2 / 3;
-  const targetTotalHeight = ecgWidth * canvasAspect;
-  const totalSpacing =
-    ECG_CHANNEL_SPACING * Math.max(1, visibleChannels.length);
-  const heightPerChannel =
-    (targetTotalHeight - totalSpacing) / Math.max(1, visibleChannels.length);
-  const channelScale = heightPerChannel / (range * 1.25);
+  let channelScale: number;
+
+  if (sensitivityMmMv != null && sensitivityMmMv > 0) {
+    // Use clinically calibrated scale: pxPerMv = sensitivityMmMv * ECG_PX_PER_MM
+    // The waveform data is in raw ADC units; each unit = (1 / sensitivityMmMv) mV
+    // so channel scale = sensitivityMmMv * ECG_PX_PER_MM px / unit
+    channelScale = sensitivityMmMv * ECG_PX_PER_MM;
+  } else {
+    // Legacy auto-fit: fill canvas height with amplitude range
+    const canvasAspect =
+      canvas.clientHeight && canvas.clientWidth
+        ? canvas.clientHeight / canvas.clientWidth
+        : 2 / 3;
+    const targetTotalHeight = ecgWidth * canvasAspect;
+    const totalSpacing =
+      ECG_CHANNEL_SPACING * Math.max(1, visibleChannels.length);
+    const heightPerChannel =
+      (targetTotalHeight - totalSpacing) / Math.max(1, visibleChannels.length);
+    channelScale = heightPerChannel / (range * 1.25);
+  }
+
   const ecgHeight = computeECGHeight(visibleChannels, channelScale);
   const worldToCanvasRatio = Math.min(
     canvas.clientWidth / Math.max(1, ecgWidth),
@@ -257,25 +294,57 @@ export function computeECGRenderMetrics<TChannel extends ECGChannelLike>(args: {
 
 export function drawECGGrid(
   ctx: CanvasRenderingContext2D,
-  metrics: ECGGridMetrics,
+  metrics: ECGGridMetrics & {
+    sweepSpeed?: number;
+    sensitivityMmMv?: number;
+    showAmplitudeLabels?: boolean;
+  },
   options?: { showGrid?: boolean }
 ): void {
   if (options?.showGrid === false || metrics.channelScale <= 0) {
     return;
   }
 
-  const { ecgWidth, ecgHeight, channelScale } = metrics;
-  const minLineSpacing = 8;
-  let horizontalGridUnit = 100;
+  const {
+    ecgWidth,
+    ecgHeight,
+    channelScale,
+    sweepSpeed,
+    sensitivityMmMv,
+    showAmplitudeLabels = true,
+  } = metrics;
 
-  while (horizontalGridUnit * channelScale < minLineSpacing) {
-    horizontalGridUnit *= 2;
+  let minorH: number;
+  let majorH: number;
+  let minorV: number;
+  let majorV: number;
+
+  if (
+    sweepSpeed != null &&
+    sweepSpeed > 0 &&
+    sensitivityMmMv != null &&
+    sensitivityMmMv > 0
+  ) {
+    // Calibrated mode: grid lines represent physical mm dimensions.
+    // Standard ECG grids: 1 mm minor blocks, 5 mm major blocks.
+    minorH = ECG_PX_PER_MM;
+    majorH = ECG_PX_PER_MM * 5;
+    minorV = ECG_PX_PER_MM;
+    majorV = ECG_PX_PER_MM * 5;
+  } else {
+    // Legacy auto-fit mode calculations
+    const minLineSpacing = 8;
+    let horizontalGridUnit = 100;
+
+    while (horizontalGridUnit * channelScale < minLineSpacing) {
+      horizontalGridUnit *= 2;
+    }
+
+    minorH = horizontalGridUnit * channelScale;
+    majorH = minorH * 5;
+    minorV = ECG_SECONDS_WIDTH / 25;
+    majorV = ECG_SECONDS_WIDTH / 5;
   }
-
-  const minorH = horizontalGridUnit * channelScale;
-  const majorH = minorH * 5;
-  const minorV = ECG_SECONDS_WIDTH / 25;
-  const majorV = ECG_SECONDS_WIDTH / 5;
 
   ctx.strokeStyle = ECG_RENDERING_COLORS.gridMinor;
   ctx.lineWidth = 0.5;
@@ -312,6 +381,21 @@ export function drawECGGrid(
   }
 
   ctx.stroke();
+
+  // If calibrated, draw millivolt markers on major horizontal lines
+  if (showAmplitudeLabels && sensitivityMmMv != null && sensitivityMmMv > 0) {
+    ctx.fillStyle = ECG_RENDERING_COLORS.label;
+    // Major horizontal grid line = 5mm. At 10mm/mV, 1 major block = 0.5 mV.
+    const mvPerMajor = 5 / sensitivityMmMv;
+    const fontSize = 10;
+    ctx.font = `${fontSize}px monospace`;
+    for (let y = majorH; y <= ecgHeight; y += majorH) {
+      const blockNum = Math.round(y / majorH);
+      // We label baselines or offset increments.
+      const labelText = `${(blockNum * mvPerMajor).toFixed(1)} mV`;
+      ctx.fillText(labelText, 5, y - 2);
+    }
+  }
 }
 
 export function drawECGTraces<TChannel extends ECGChannelLike>(args: {

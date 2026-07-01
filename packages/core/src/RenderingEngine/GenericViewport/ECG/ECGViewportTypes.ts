@@ -38,9 +38,23 @@ export interface ECGViewState extends ViewportCameraBase<[number, number]> {
 
 export interface ECGProperties {
   lineWidth?: number;
+  /**
+   * Horizontal sweep speed in mm/s. Standard ECG paper speed.
+   * Defaults to 25 mm/s. Use 50 mm/s for high-speed recordings.
+   */
   sweepSpeed?: number;
+  /**
+   * Amplitude sensitivity in mm/mV. Standard ECG amplitude calibration.
+   * Defaults to 10 mm/mV (1 mV = 10 mm tall on paper).
+   */
+  sensitivityMmMv?: number;
   amplitudeScale?: number;
   showGrid?: boolean;
+  /**
+   * Whether to render millivolt labels on the Y-axis grid lines.
+   * Defaults to true when sensitivityMmMv is set.
+   */
+  showAmplitudeLabels?: boolean;
 }
 
 export type ECGDataPresentation = ECGPresentationProps & ECGProperties;

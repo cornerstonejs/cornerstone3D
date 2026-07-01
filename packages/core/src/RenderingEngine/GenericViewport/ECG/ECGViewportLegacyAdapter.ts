@@ -45,16 +45,23 @@ class ECGViewportLegacyAdapter extends ECGViewport {
 
     this.setDisplaySetPresentation(dataId, {
       visibleChannels: props.visibleChannels,
+      sweepSpeed: props.sweepSpeed,
+      sensitivityMmMv: props.sensitivityMmMv,
+      showAmplitudeLabels: props.showAmplitudeLabels,
     });
   }
 
   getProperties(): ECGViewportProperties {
     const dataId = this.getFirstBinding()?.data.id;
+    const presentation = dataId
+      ? this.getDisplaySetPresentation(dataId)
+      : undefined;
 
     return {
-      visibleChannels: dataId
-        ? this.getDisplaySetPresentation(dataId)?.visibleChannels
-        : undefined,
+      visibleChannels: presentation?.visibleChannels,
+      sweepSpeed: presentation?.sweepSpeed,
+      sensitivityMmMv: presentation?.sensitivityMmMv,
+      showAmplitudeLabels: presentation?.showAmplitudeLabels,
     };
   }
 
@@ -68,6 +75,9 @@ class ECGViewportLegacyAdapter extends ECGViewport {
 
     this.setDisplaySetPresentation(dataId, {
       visibleChannels: waveform.channels.map((_channel, index) => index),
+      sweepSpeed: undefined,
+      sensitivityMmMv: undefined,
+      showAmplitudeLabels: undefined,
     });
   }
 

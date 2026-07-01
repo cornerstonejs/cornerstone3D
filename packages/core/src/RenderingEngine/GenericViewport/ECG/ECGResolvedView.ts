@@ -61,6 +61,10 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
 
     const channelLayout = channelLayouts[z];
 
+    if (!channelLayout) {
+      return [0, 0, 0];
+    }
+
     return [
       Math.max(
         0,
