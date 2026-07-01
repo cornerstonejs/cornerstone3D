@@ -76,7 +76,6 @@ async function getHoverPositions(viewport: Locator, page: Page) {
 
   return positions;
 }
-}
 
 test.beforeEach(async ({ page }) => {
   await visitExample(page, 'segmentLabel');
