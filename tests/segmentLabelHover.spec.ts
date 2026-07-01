@@ -49,15 +49,33 @@ async function getHoverPositions(viewport: Locator, page: Page) {
   const bbox = await viewport.boundingBox();
   const dpr = await page.evaluate(() => window.devicePixelRatio || 1);
 
-  return {
+  if (!bbox) {
+    throw new Error(`Viewport ${VIEWPORT_UID} is not visible`);
+  }
+
+  const positions = {
     // Center of the viewport, where Segment 1 sits on the current slice.
     segment1: { x: bbox.width / 2, y: bbox.height / 2 },
-    // Where Segment 2 (several slices away) projects - empty on this slice.
+    // Where Segment 2 (on the adjacent slice) projects - empty on this slice.
     segment2Projection: {
       x: bbox.width / 2 + SEGMENT_2_OFFSET.x / dpr,
       y: bbox.height / 2 + SEGMENT_2_OFFSET.y / dpr,
     },
   };
+
+  for (const [name, position] of Object.entries(positions)) {
+    if (
+      position.x < 0 ||
+      position.x > bbox.width ||
+      position.y < 0 ||
+      position.y > bbox.height
+    ) {
+      throw new Error(`${name} hover position is outside ${VIEWPORT_UID}`);
+    }
+  }
+
+  return positions;
+}
 }
 
 test.beforeEach(async ({ page }) => {
