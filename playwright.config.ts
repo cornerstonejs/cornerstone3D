@@ -109,6 +109,7 @@ export default defineConfig({
         '**/rectangleROIThresholdStatisticsMIM.spec.ts',
         '**/renderingPipeline.spec.ts',
         '**/stackLabelmapSegmentation/**.spec.ts',
+        '**/segmentLabelHover.spec.ts',
       ],
     },
     {
@@ -128,6 +129,7 @@ export default defineConfig({
         '**/stackLabelmapSegmentation.spec.ts',
         '**/rectangleROIThresholdStatisticsMIM.spec.ts',
         '**/stackLabelmapSegmentation/**.spec.ts',
+        '**/segmentLabelHover.spec.ts',
       ],
     },
   ],

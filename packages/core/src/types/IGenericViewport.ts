@@ -75,7 +75,9 @@ export interface IGenericViewport extends IViewport {
    * from its bound data and view state. Native viewports have no legacy
    * `getCamera()`; callers bridge through this (see `getViewportICamera`).
    */
-  getResolvedView(): ResolvedViewportView<unknown, ICamera<unknown>> | undefined;
+  getResolvedView():
+    | ResolvedViewportView<unknown, ICamera<unknown>>
+    | undefined;
   /**
    * Resolves the currently referenced image id from the active view state, when
    * the bound source data can be expressed as an image id (stack / vtkImage
