@@ -229,50 +229,113 @@ class GrowCutBaseTool extends BaseTool {
     targetLabelmap: Types.IImageVolume,
     sourceLabelmap: Types.IImageVolume
   ) {
-    const srcLabelmapData =
-      sourceLabelmap.voxelManager.getCompleteScalarDataArray();
     const tgtVoxelManager = targetLabelmap.voxelManager;
+    const srcVoxelManager = sourceLabelmap.voxelManager;
 
     const [srcColumns, srcRows, srcNumSlices] = sourceLabelmap.dimensions;
-    const [tgtColumns, tgtRows] = targetLabelmap.dimensions;
-    const srcPixelsPerSlice = srcColumns * srcRows;
-    const tgtPixelsPerSlice = tgtColumns * tgtRows;
+    const [tgtColumns, tgtRows, tgtNumSlices] = targetLabelmap.dimensions;
 
-    // Since we know labelmap volumes have the same orientation as the referenced
-    // volumes we can calculate the position of the first voxel of each row,
-    // calculate its offset and copy all subsequent voxels without having to
-    // calculated the position of each voxel on by one.
+    // Since we know labelmap volumes have the same orientation as the
+    // referenced volumes, mapping the sub-volume origin into the target index
+    // space (through world space) gives a constant offset between the two
+    // index spaces, and rows can be copied directly between the slice arrays.
+    const originWorld = transformIndexToWorld(
+      sourceLabelmap.imageData,
+      [0, 0, 0]
+    );
+    const [tgtOffsetI, tgtOffsetJ, tgtOffsetK] = transformWorldToIndex(
+      targetLabelmap.imageData,
+      originWorld
+    );
+
+    const srcColumnStart = Math.max(0, -tgtOffsetI);
+    const srcColumnEnd = Math.min(srcColumns, tgtColumns - tgtOffsetI);
+    const srcRowStart = Math.max(0, -tgtOffsetJ);
+    const srcRowEnd = Math.min(srcRows, tgtRows - tgtOffsetJ);
+
+    const changedBounds: Types.BoundsIJK = [
+      [Infinity, -Infinity],
+      [Infinity, -Infinity],
+      [Infinity, -Infinity],
+    ];
+
     for (let srcSlice = 0; srcSlice < srcNumSlices; srcSlice++) {
-      for (let srcRow = 0; srcRow < srcRows; srcRow++) {
-        // Converts coordinates in two steps;
-        //   - from sub-volume index space to world
-        //   - from world space to volume index space
-        //
-        // TODO: create a matrix that coverts the coordinates from sub-volume
-        // index space to volume index space without getting into world space
-        const srcRowIJK: Types.Point3 = [0, srcRow, srcSlice];
-        const rowVoxelWorld = transformIndexToWorld(
-          sourceLabelmap.imageData,
-          srcRowIJK
-        );
-        const tgtRowIJK = transformWorldToIndex(
-          targetLabelmap.imageData,
-          rowVoxelWorld
-        );
-        const [tgtColumn, tgtRow, tgtSlice] = tgtRowIJK;
-        const srcOffset = srcRow * srcColumns + srcSlice * srcPixelsPerSlice;
-        const tgtOffset =
-          tgtColumn + tgtRow * tgtColumns + tgtSlice * tgtPixelsPerSlice;
+      const tgtSlice = tgtOffsetK + srcSlice;
 
-        for (let column = 0; column < srcColumns; column++) {
-          const labelmapValue =
-            srcLabelmapData[srcOffset + column] === segmentIndex
-              ? segmentIndex
-              : 0;
+      if (tgtSlice < 0 || tgtSlice >= tgtNumSlices) {
+        continue;
+      }
 
-          tgtVoxelManager.setAtIndex(tgtOffset + column, labelmapValue);
+      const srcSliceData = srcVoxelManager.getSliceBackingArray(srcSlice);
+      const tgtSliceData = tgtVoxelManager.getSliceBackingArray(tgtSlice);
+      let sliceChanged = false;
+
+      for (let srcRow = srcRowStart; srcRow < srcRowEnd; srcRow++) {
+        const tgtRow = tgtOffsetJ + srcRow;
+        const srcRowOffset = srcRow * srcColumns;
+        const tgtRowOffset = tgtRow * tgtColumns + tgtOffsetI;
+        let firstChangedColumn = -1;
+        let lastChangedColumn = -1;
+
+        if (srcSliceData && tgtSliceData) {
+          for (let column = srcColumnStart; column < srcColumnEnd; column++) {
+            const labelmapValue =
+              srcSliceData[srcRowOffset + column] === segmentIndex
+                ? segmentIndex
+                : 0;
+
+            if (tgtSliceData[tgtRowOffset + column] !== labelmapValue) {
+              tgtSliceData[tgtRowOffset + column] = labelmapValue;
+
+              if (firstChangedColumn === -1) {
+                firstChangedColumn = column;
+              }
+              lastChangedColumn = column;
+            }
+          }
+        } else {
+          // Fallback for volumes that do not expose per-slice backing arrays
+          const srcSliceOffset = srcSlice * srcColumns * srcRows;
+          const tgtSliceOffset = tgtSlice * tgtColumns * tgtRows;
+
+          for (let column = srcColumnStart; column < srcColumnEnd; column++) {
+            const labelmapValue =
+              srcVoxelManager.getAtIndex(
+                srcSliceOffset + srcRowOffset + column
+              ) === segmentIndex
+                ? segmentIndex
+                : 0;
+
+            tgtVoxelManager.setAtIndex(
+              tgtSliceOffset + tgtRowOffset + column,
+              labelmapValue
+            );
+          }
+        }
+
+        if (firstChangedColumn !== -1) {
+          sliceChanged = true;
+          changedBounds[0][0] = Math.min(
+            changedBounds[0][0],
+            tgtOffsetI + firstChangedColumn
+          );
+          changedBounds[0][1] = Math.max(
+            changedBounds[0][1],
+            tgtOffsetI + lastChangedColumn
+          );
+          changedBounds[1][0] = Math.min(changedBounds[1][0], tgtRow);
+          changedBounds[1][1] = Math.max(changedBounds[1][1], tgtRow);
         }
       }
+
+      if (sliceChanged) {
+        changedBounds[2][0] = Math.min(changedBounds[2][0], tgtSlice);
+        changedBounds[2][1] = Math.max(changedBounds[2][1], tgtSlice);
+      }
+    }
+
+    if (changedBounds[2][0] !== Infinity) {
+      tgtVoxelManager.addModifiedRegion(changedBounds);
     }
 
     triggerSegmentationDataModified(segmentationId);

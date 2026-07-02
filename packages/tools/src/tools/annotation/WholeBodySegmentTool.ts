@@ -25,11 +25,9 @@ import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnot
 import getViewportICamera from '../../utilities/getViewportICamera';
 import { growCut } from '../../utilities/segmentation';
 import type { GrowCutBoundingBoxOptions } from '../../utilities/segmentation/growCut';
-import type {
-  GrowCutToolData,
-  RemoveIslandData,
-} from '../base/GrowCutBaseTool';
+import type { GrowCutToolData } from '../base/GrowCutBaseTool';
 import GrowCutBaseTool from '../base/GrowCutBaseTool';
+import IslandRemoval from '../../utilities/segmentation/islandRemoval';
 
 // Positive and negative threshold/range (defaults to CT hounsfield ranges)
 // https://www.sciencedirect.com/topics/medicine-and-dentistry/hounsfield-scale
@@ -229,51 +227,117 @@ class WholeBodySegmentTool extends GrowCutBaseTool {
       positivePixelRange: config.positivePixelRange,
     };
 
-    return growCut.runGrowCutForBoundingBox(
+    const subVolumeLabelmap = await growCut.runGrowCutForBoundingBox(
       referencedVolumeId,
       boundingBoxInfo,
       options
     );
+
+    this._removeIslandsFromSubVolumeLabelmap(growCutData, subVolumeLabelmap);
+
+    return subVolumeLabelmap;
   }
 
-  protected getRemoveIslandData(): RemoveIslandData {
-    const {
-      segmentation: { segmentIndex, referencedVolumeId, labelmapVolumeId },
-    } = this.growCutData;
-    const referencedVolume = cache.getVolume(referencedVolumeId);
-    const labelmapVolume = cache.getVolume(labelmapVolumeId);
-    const referencedVolumeData =
-      referencedVolume.voxelManager.getCompleteScalarDataArray();
-    const labelmapData =
-      labelmapVolume.voxelManager.getCompleteScalarDataArray();
-    const { islandPixelRange } = this.configuration.islandRemoval;
-    const islandPointIndexes = [];
+  /**
+   * Removes the islands (eg: the bed) from the grow cut result while it is
+   * still in sub-volume space, where both the labelmap and the referenced
+   * pixel data are available as contiguous arrays. That is much faster than
+   * removing the islands from the full-size labelmap after the result has
+   * been copied over, and it is equivalent because the grow cut result is
+   * fully contained in the sub-volume.
+   *
+   * Islands that contain at least one pixel in the `islandPixelRange` range
+   * (eg: high density bones) are preserved and all the other ones are removed.
+   * Working with a range is not accurate enough because it may also include
+   * the bed in case a high pixel intensity is found on it. It may also not
+   * include the expected region in case there are no high density bones in
+   * the expected island.
+   *
+   * TODO: improve how it looks for pixels in the islands that need to be segmented
+   */
+  private _removeIslandsFromSubVolumeLabelmap(
+    growCutData: GrowCutToolData,
+    subVolumeLabelmap: Types.IImageVolume
+  ) {
+    const { islandRemoval: config } = this.configuration;
 
-    // Working with a range is not accurate enough because it may also include
-    // the bed in case a high pixel intensity is found on it. It may also not
-    // include the expected region in case there are no high density bones in
-    // the expected island.
-    //
-    // TODO: improve how it looks for pixels in the islands that need to be segmented
+    if (!config.enabled) {
+      return;
+    }
+
+    const {
+      segmentation: { segmentIndex },
+      renderingEngineId,
+      viewportId,
+    } = growCutData;
+    const subVolume = cache.getVolume(subVolumeLabelmap.referencedVolumeId);
+    const referencedData = subVolume.voxelManager.getScalarData();
+    const labelmapData =
+      subVolumeLabelmap.voxelManager.getCompleteScalarDataArray() as Types.PixelDataTypedArray;
+    const { islandPixelRange } = config;
+    const [width, height] = subVolumeLabelmap.dimensions;
+    const pixelsPerSlice = width * height;
+    const ijkIslandPoints: Types.Point3[] = [];
+
     for (let i = 0, len = labelmapData.length; i < len; i++) {
       if (labelmapData[i] !== segmentIndex) {
         continue;
       }
 
-      // Keep all islands that has at least one pixel in the `islandPixelRange` range
-      const pixelValue = referencedVolumeData[i];
+      const pixelValue = referencedData[i];
 
       if (
         pixelValue >= islandPixelRange[0] &&
         pixelValue <= islandPixelRange[1]
       ) {
-        islandPointIndexes.push(i);
+        ijkIslandPoints.push([
+          i % width,
+          Math.floor(i / width) % height,
+          Math.floor(i / pixelsPerSlice),
+        ]);
       }
     }
 
-    return {
-      islandPointIndexes,
-    };
+    if (!ijkIslandPoints.length) {
+      return;
+    }
+
+    // A scalar voxel manager over the contiguous labelmap data keeps all the
+    // island removal reads/writes on the typed array instead of going through
+    // the per-voxel image volume accessors.
+    const labelmapVoxelManager =
+      csUtils.VoxelManager.createScalarVolumeVoxelManager({
+        dimensions: subVolumeLabelmap.dimensions,
+        scalarData: labelmapData,
+        numberOfComponents: 1,
+      }) as Types.IVoxelManager<number>;
+
+    labelmapVoxelManager.setBounds(
+      subVolumeLabelmap.voxelManager.getBoundsIJK()
+    );
+
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+    const viewport = renderingEngine.getViewport(viewportId);
+    const islandRemoval = new IslandRemoval();
+    const initialized = islandRemoval.initialize(
+      viewport,
+      labelmapVoxelManager,
+      {
+        points: ijkIslandPoints,
+        previewSegmentIndex: segmentIndex,
+        segmentIndex,
+      }
+    );
+
+    if (!initialized) {
+      return;
+    }
+
+    islandRemoval.floodFillSegmentIsland();
+    islandRemoval.removeExternalIslands();
+    islandRemoval.removeInternalIslands();
+
+    subVolumeLabelmap.voxelManager.setCompleteScalarDataArray(labelmapData);
   }
 
   private _activateDraw(element: HTMLDivElement): void {

@@ -228,6 +228,59 @@ export default class VoxelManager<T> {
   }
 
   /**
+   * Returns the live backing typed array for the given XY slice, or null when
+   * the voxels of that slice are not stored in a plain per-slice typed array
+   * (e.g. RLE or map backed managers). Writes to the returned array mutate the
+   * volume directly, so callers doing bulk writes must report what they
+   * changed through `addModifiedRegion` for the bounds/modified-slices
+   * bookkeeping that the per-voxel setters normally perform.
+   */
+  public getSliceBackingArray(sliceIndex: number): PixelDataTypedArray | null {
+    if (sliceIndex < 0 || sliceIndex >= this.dimensions[2]) {
+      return null;
+    }
+
+    if (
+      this.scalarData &&
+      !this._scalarDataIsCachedExpansion &&
+      this.numberOfComponents === 1 &&
+      !this.map
+    ) {
+      return this.scalarData.subarray(
+        sliceIndex * this.frameSize,
+        (sliceIndex + 1) * this.frameSize
+      );
+    }
+
+    return null;
+  }
+
+  /**
+   * Records that the given IJK region was modified by a bulk write done
+   * directly on backing arrays (see `getSliceBackingArray`). Expands the
+   * modified bounds, marks the covered slices as modified and drops any
+   * cached scalar expansion, mirroring what the per-voxel setters do.
+   */
+  public addModifiedRegion(bounds: BoundsIJK) {
+    VoxelManager.addBounds(this.boundsIJK, [
+      bounds[0][0],
+      bounds[1][0],
+      bounds[2][0],
+    ]);
+    VoxelManager.addBounds(this.boundsIJK, [
+      bounds[0][1],
+      bounds[1][1],
+      bounds[2][1],
+    ]);
+
+    for (let k = bounds[2][0]; k <= bounds[2][1]; k++) {
+      this.modifiedSlices.add(k);
+    }
+
+    this.invalidateCachedScalarExpansion();
+  }
+
+  /**
    * Converts an index value to a Point3 IJK value
    */
   public toIJK(index: number): Point3 {
@@ -1101,6 +1154,22 @@ export default class VoxelManager<T> {
       sliceVoxelManagers.fill(undefined);
       lastSliceIndex = -1;
       lastSliceVoxelManager = null;
+    };
+
+    voxelManager.getSliceBackingArray = (sliceIndex: number) => {
+      if (numberOfComponents !== 1) {
+        return null;
+      }
+
+      const imageVoxelManager = resolveSliceVoxelManager(sliceIndex);
+
+      // Map/RLE backed slice images expose only a decoded copy of their
+      // pixel data, not a writable backing store.
+      if (!imageVoxelManager || imageVoxelManager.map) {
+        return null;
+      }
+
+      return imageVoxelManager.getScalarData();
     };
 
     voxelManager.getMiddleSliceData = () => {
