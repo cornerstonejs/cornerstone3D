@@ -80,6 +80,44 @@ function feedForSam(emb, points, labels, modelSize = [1024, 1024]) {
   };
 }
 
+const DEFAULT_ORT_WASM_BASE_PATH = '/ort/';
+
+function resolveOrtWasmBaseUrl(basePath = DEFAULT_ORT_WASM_BASE_PATH) {
+  if (/^https?:\/\//.test(basePath)) {
+    return basePath.endsWith('/') ? basePath : `${basePath}/`;
+  }
+
+  const normalizedPath = basePath.startsWith('/') ? basePath : `/${basePath}`;
+
+  return new URL(
+    normalizedPath.endsWith('/') ? normalizedPath : `${normalizedPath}/`,
+    window.location.origin
+  ).href;
+}
+
+function getOrtWasmVariantPrefix(provider: string) {
+  switch (provider) {
+    case 'wasm':
+    case 'cpu':
+      return 'ort-wasm-simd-threaded';
+    default:
+      return 'ort-wasm-simd-threaded.asyncify';
+  }
+}
+
+function configureOrtWasmPaths(
+  provider: string,
+  basePath = DEFAULT_ORT_WASM_BASE_PATH
+) {
+  const baseUrl = resolveOrtWasmBaseUrl(basePath);
+  const variant = getOrtWasmVariantPrefix(provider);
+
+  ort.env.wasm.wasmPaths = {
+    wasm: new URL(`${variant}.wasm`, baseUrl).href,
+    mjs: new URL(`${variant}.mjs`, baseUrl).href,
+  };
+}
+
 /*
     Create a function which will be passed to the promise
     and resolve it when FileReader has finished loading the file.
@@ -1631,6 +1669,7 @@ export default class ONNXSegmentationController {
       threads: 4,
       local: null,
       isSlimSam: false,
+      ortWasmPath: DEFAULT_ORT_WASM_BASE_PATH,
     };
     const vars = query.split('&');
     for (let i = 0; i < vars.length; i++) {
@@ -1641,7 +1680,7 @@ export default class ONNXSegmentationController {
     }
     config.threads = parseInt(String(config.threads));
     config.local = parseInt(config.local);
-    ort.env.wasm.wasmPaths = 'ort/';
+    configureOrtWasmPaths(config.provider, config.ortWasmPath);
     ort.env.wasm.numThreads = config.threads;
     ort.env.wasm.proxy = config.provider == 'wasm';
 
