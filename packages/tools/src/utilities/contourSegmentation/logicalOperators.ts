@@ -26,7 +26,11 @@
  */
 
 import type { Types } from '@cornerstonejs/core';
-import { getAnnotation, removeAnnotation } from '../../stateManagement';
+import {
+  getAnnotation,
+  removeAnnotation,
+  getChildAnnotations,
+} from '../../stateManagement';
 import type {
   ContourSegmentationData,
   ContourSegmentationAnnotation,
@@ -87,9 +91,20 @@ function getPolylinesInfoWorld(
       annotationUID
     ) as ContourSegmentationAnnotation;
     const { polyline } = annotation.data.contour;
+
+    const childAnnotations = getChildAnnotations(annotation);
+    const holePolylines =
+      childAnnotations.length > 0
+        ? childAnnotations.map(
+            (child) =>
+              (child as ContourSegmentationAnnotation).data.contour.polyline
+          )
+        : undefined;
+
     polylinesInfo.push({
       polyline,
       viewReference: getViewReferenceFromAnnotation(annotation),
+      ...(holePolylines ? { holePolylines } : {}),
     });
   }
   return polylinesInfo;
@@ -134,18 +149,32 @@ function extractPolylinesInCanvasSpace(
   }
 
   const polyLinesInfoCanvas1 = polyLinesInfoWorld1.map(
-    ({ polyline, viewReference }) => {
+    ({ polyline, viewReference, holePolylines }) => {
       return {
         polyline: convertContourPolylineToCanvasSpace(polyline, viewport),
         viewReference,
+        ...(holePolylines?.length
+          ? {
+              holePolylines: holePolylines.map((hole) =>
+                convertContourPolylineToCanvasSpace(hole, viewport)
+              ),
+            }
+          : {}),
       };
     }
   );
   const polyLinesInfoCanvas2 = polyLinesInfoWorld2.map(
-    ({ polyline, viewReference }) => {
+    ({ polyline, viewReference, holePolylines }) => {
       return {
         polyline: convertContourPolylineToCanvasSpace(polyline, viewport),
         viewReference,
+        ...(holePolylines?.length
+          ? {
+              holePolylines: holePolylines.map((hole) =>
+                convertContourPolylineToCanvasSpace(hole, viewport)
+              ),
+            }
+          : {}),
       };
     }
   );
@@ -263,12 +292,19 @@ function applyLogicalOperation(
       break;
   }
   // Convert merged polylines back to world space using their associated viewReference
-  const polyLinesWorld = polylinesMerged.map(({ polyline, viewReference }) => {
-    return {
+  const polyLinesWorld: PolylineInfoWorld[] = polylinesMerged.map(
+    ({ polyline, viewReference, holePolylines }) => ({
       polyline: convertContourPolylineToWorld(polyline, viewport),
       viewReference,
-    };
-  });
+      ...(holePolylines?.length
+        ? {
+            holePolylines: holePolylines.map((hole) =>
+              convertContourPolylineToWorld(hole, viewport)
+            ),
+          }
+        : {}),
+    })
+  );
 
   const resultSegment = options;
   const segmentation = getSegmentation(resultSegment.segmentationId);

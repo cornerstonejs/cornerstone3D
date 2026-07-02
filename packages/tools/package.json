@@ -104,6 +104,7 @@
   },
   "dependencies": {
     "@types/offscreencanvas": "2019.7.3",
+    "clipper2-ts": "2.0.1",
     "comlink": "4.4.2",
     "lodash.get": "4.4.2"
   },
