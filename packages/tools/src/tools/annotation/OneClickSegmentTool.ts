@@ -261,26 +261,45 @@ class OneClickSegmentTool extends GrowCutBaseTool {
   }
 
   /**
-   * True when the seed sits on a structure a dry-run already rejected: inside
-   * the rejected region's explored bounding box AND matching its intensity
-   * band. Bands here are one-sided, so any pixel of the same structure
-   * (whatever local maximum the seed snapped to) matches.
+   * Bands describe the same fill when their finite edges agree within a
+   * relative tolerance (infinite sides must match exactly). This is the key
+   * discriminator for verdict caching: a one-sided rejected band like
+   * `[low, Inf)` CONTAINS every hotter structure inside its bounding box
+   * (e.g. a lesion sitting in rejected background haze), so containment must
+   * never be used to inherit a verdict — only same-threshold fills may.
+   */
+  private static bandsAreSimilar(
+    aMin: number,
+    aMax: number,
+    bMin: number,
+    bMax: number
+  ): boolean {
+    const edgeMatches = (a: number, b: number): boolean => {
+      if (!Number.isFinite(a) || !Number.isFinite(b)) {
+        return a === b;
+      }
+      const scale = Math.max(Math.abs(a), Math.abs(b), 1e-6);
+      return Math.abs(a - b) <= 0.25 * scale;
+    };
+    return edgeMatches(aMin, bMin) && edgeMatches(aMax, bMax);
+  }
+
+  /**
+   * True when the probe describes a fill a dry-run already rejected: its seed
+   * is inside the rejected region's explored bounding box AND its band has
+   * essentially the same threshold. A hotter structure inside the box (its
+   * own, higher threshold) does NOT inherit the rejection — it gets its own
+   * dry-run.
    */
   private matchesRejectedRegion(
     viewportId: string,
-    refVolume: Types.IImageVolume,
-    seed: Types.Point3
+    range: NonNullable<AdaptiveRegionProbeResult['range']>
   ): boolean {
     const now = Date.now();
     this.rejectedRegions = this.rejectedRegions.filter(
       (entry) => entry.expiresAt > now
     );
-    const [width, height] = refVolume.dimensions;
-    const scalar = Number(
-      refVolume.voxelManager.getAtIndex(
-        seed[2] * width * height + seed[1] * width + seed[0]
-      )
-    );
+    const seed = range.ijkStart;
     const match = this.rejectedRegions.find((entry) => {
       if (entry.viewportId !== viewportId) {
         return false;
@@ -293,10 +312,11 @@ class OneClickSegmentTool extends GrowCutBaseTool {
           return false;
         }
       }
-      return (
-        Number.isFinite(scalar) &&
-        scalar >= entry.bandMin &&
-        scalar <= entry.bandMax
+      return OneClickSegmentTool.bandsAreSimilar(
+        range.min,
+        range.max,
+        entry.bandMin,
+        entry.bandMax
       );
     });
     if (match) {
@@ -529,14 +549,11 @@ class OneClickSegmentTool extends GrowCutBaseTool {
                 if (!probe.viable || !probe.range) {
                   state = 'blocked';
                 } else if (
-                  this.matchesRejectedRegion(
-                    viewport.id,
-                    refVolume,
-                    probe.range.ijkStart
-                  )
+                  this.matchesRejectedRegion(viewport.id, probe.range)
                 ) {
-                  // This structure was just rejected in 3D — same verdict for
-                  // the whole structure, no flicker, no re-run.
+                  // This same fill was just rejected in 3D — same verdict,
+                  // no flicker, no re-run. Different fills (e.g. a hotter
+                  // lesion inside a rejected background box) re-evaluate.
                   state = 'blocked';
                 } else if (
                   !this.neighborsAgree(
