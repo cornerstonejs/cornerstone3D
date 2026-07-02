@@ -17,7 +17,9 @@ export type optionTypeValues =
 interface configDropdown extends configElement {
   id?: string;
   placeholder?: string;
-  options: optionTypeDefaultValue & optionTypeValues;
+  options:
+    | (optionTypeDefaultValue & optionTypeValues)
+    | Promise<optionTypeDefaultValue & optionTypeValues>;
   onSelectedValueChange: (key: number | string, value?: any) => void;
   toolGroupId?: string | string[];
   label?: configElement;
@@ -25,17 +27,70 @@ interface configDropdown extends configElement {
   container?: HTMLElement;
 }
 
-export default function addDropDownToToolbar(config: configDropdown): void {
-  config.container =
-    config.container ?? document.getElementById('demo-toolbar');
-
+function applyDropdownOptions(
+  elSelect: HTMLSelectElement,
+  options: optionTypeDefaultValue & optionTypeValues
+): Map<string | number, any> | undefined {
   const {
     map,
     values = [...map.keys()],
     labels,
     defaultValue,
-    defaultIndex = defaultValue === undefined && 0,
-  } = config.options as any;
+    defaultIndex: explicitDefaultIndex,
+  } = options as any;
+
+  const existingLoading = elSelect.querySelector('option[data-loading="true"]');
+  if (existingLoading) {
+    existingLoading.remove();
+  }
+
+  // Preserve a configured placeholder (disabled prompt) across re-render. Detach
+  // it before clearing, then re-add it as the first, selected option.
+  const placeholderOption = elSelect.querySelector<HTMLOptionElement>(
+    'option[data-placeholder="true"]'
+  );
+  if (placeholderOption) {
+    placeholderOption.remove();
+  }
+
+  while (elSelect.options.length > 0) {
+    elSelect.remove(0);
+  }
+
+  if (placeholderOption) {
+    placeholderOption.selected = true;
+    elSelect.append(placeholderOption);
+  }
+
+  // Only auto-select the first value when there is no placeholder prompt to keep
+  // selected. An explicitly configured defaultIndex still wins.
+  const defaultIndex =
+    explicitDefaultIndex ??
+    (defaultValue === undefined && !placeholderOption ? 0 : -1);
+
+  values.forEach((value, index) => {
+    const elOption = document.createElement('option');
+    const stringValue = String(value);
+    elOption.value = stringValue;
+    elOption.innerText = labels?.[index] ?? stringValue;
+
+    if (value === defaultValue || index === defaultIndex) {
+      elOption.selected = true;
+
+      if (map) {
+        map.get(value).selected = true;
+      }
+    }
+
+    elSelect.append(elOption);
+  });
+
+  return map;
+}
+
+export default function addDropDownToToolbar(config: configDropdown): void {
+  config.container =
+    config.container ?? document.getElementById('demo-toolbar');
 
   // Create label element if labelText is provided
   if (config.label || config.labelText) {
@@ -60,12 +115,14 @@ export default function addDropDownToToolbar(config: configDropdown): void {
     );
   }
 
+  let currentMap: Map<string | number, any> | undefined;
+
   //
   const fnChange = (evt: Event) => {
     const elSelect = <HTMLSelectElement>evt.target;
     const { value: key } = elSelect;
     if (elSelect) {
-      config.onSelectedValueChange(key, map?.get(key));
+      config.onSelectedValueChange(key, currentMap?.get(key));
     }
   };
 
@@ -92,25 +149,48 @@ export default function addDropDownToToolbar(config: configDropdown): void {
       },
       html: config.placeholder,
     });
+    // Marked so applyDropdownOptions can preserve it across (re)render instead of
+    // wiping it and silently auto-selecting the first real value.
+    elOption.dataset.placeholder = 'true';
     elSelect.append(elOption);
   }
 
-  values.forEach((value, index) => {
-    const elOption = document.createElement('option');
-    const stringValue = String(value);
-    elOption.value = stringValue;
-    elOption.innerText = labels?.[index] ?? stringValue;
+  const maybePromise = config.options as
+    | (optionTypeDefaultValue & optionTypeValues)
+    | Promise<optionTypeDefaultValue & optionTypeValues>;
+  if (typeof (maybePromise as Promise<unknown>)?.then === 'function') {
+    elSelect.disabled = true;
+    const elLoadingOption = document.createElement('option');
+    elLoadingOption.value = '';
+    elLoadingOption.innerText = 'Loading...';
+    elLoadingOption.selected = true;
+    elLoadingOption.dataset.loading = 'true';
+    elSelect.append(elLoadingOption);
 
-    if (value === defaultValue || index === defaultIndex) {
-      elOption.selected = true;
-
-      if (map) {
-        map.get(value).selected = true;
-      }
-    }
-
-    elSelect.append(elOption);
-  });
+    (maybePromise as Promise<optionTypeDefaultValue & optionTypeValues>)
+      .then((resolvedOptions) => {
+        currentMap = applyDropdownOptions(elSelect, resolvedOptions);
+      })
+      .catch((error) => {
+        console.error('addDropdownToToolbar: failed to resolve options', error);
+        const elErrorOption = document.createElement('option');
+        elErrorOption.value = '';
+        elErrorOption.innerText = 'Failed to load';
+        elErrorOption.selected = true;
+        while (elSelect.options.length > 0) {
+          elSelect.remove(0);
+        }
+        elSelect.append(elErrorOption);
+      })
+      .finally(() => {
+        elSelect.disabled = false;
+      });
+  } else {
+    currentMap = applyDropdownOptions(
+      elSelect,
+      maybePromise as optionTypeDefaultValue & optionTypeValues
+    );
+  }
 
   return elSelect;
 }

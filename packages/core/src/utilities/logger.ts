@@ -18,3 +18,7 @@ export const {
   imageConsistencyLog,
 } = logging;
 export type Logger = logging.Logger;
+
+/** One-click flood fill segmentation and island-removal diagnostics. */
+export const growCutLog = toolsLog.getLogger('growCut');
+growCutLog.setLevel('info');

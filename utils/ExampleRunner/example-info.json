@@ -363,6 +363,10 @@
       }
     },
     "tools-segmentation": {
+      "oneClickSegment": {
+        "name": "One-Click Segment Tool",
+        "description": "Single-click lesion segmentation on PET/CT: hover to scout candidates (plus/blocked cursor), click once to segment with a dynamically-derived one-sided threshold, then Shrink/Expand to fine-tune. No configuration."
+      },
       "labelmapRendering": {
         "name": "Labelmap Segmentation Rendering",
         "description": "Demonstrates how to add a Labelmap to the viewports for rendering"
@@ -676,7 +680,6 @@
         "description": "Volume Decimated loading"
       }
     },
-
     "adapters": {
       "segmentationStack": {
         "name": "DICOM SEG Stack",
