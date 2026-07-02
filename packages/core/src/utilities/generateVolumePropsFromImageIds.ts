@@ -132,6 +132,7 @@ function _determineDataType(
       return 'Uint8Array';
 
     case 16:
+    case 12:
       // Temporary fix for 16 bit images to use Float32
       if (canRenderFloat && floatAfterScale) {
         return 'Float32Array';

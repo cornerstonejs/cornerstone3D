@@ -47,7 +47,10 @@ async function decodeJPEGBaseline12BitAsync(
     imageFrame.pixelData = jpeg.getData(imageFrame.columns, imageFrame.rows);
 
     return imageFrame;
-  } else if (imageFrame.bitsAllocated === 16) {
+  } else if (
+    imageFrame.bitsAllocated === 16 ||
+    imageFrame.bitsAllocated === 12
+  ) {
     imageFrame.pixelData = jpeg.getData16(imageFrame.columns, imageFrame.rows);
 
     return imageFrame;
