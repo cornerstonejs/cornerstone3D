@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.1.4](https://github.com/cornerstonejs/cornerstone3D/compare/v5.1.3...v5.1.4) (2026-07-02)
+
+### Bug Fixes
+
+- clipper2 intersection definition ([#2742](https://github.com/cornerstonejs/cornerstone3D/issues/2742)) ([48539da](https://github.com/cornerstonejs/cornerstone3D/commit/48539daae01b79459297bea780c9eb013a324606))
+
 ## [5.1.3](https://github.com/cornerstonejs/cornerstone3D/compare/v5.1.2...v5.1.3) (2026-07-01)
 
 ### Bug Fixes
