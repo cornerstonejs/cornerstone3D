@@ -1,6 +1,7 @@
 import {
   Events,
   OrientationAxis,
+  RenderBackend,
   ViewportStatus,
   ViewportType,
   VOILUTFunctionType,
@@ -1697,7 +1698,19 @@ class PlanarViewport extends GenericViewport<
       swapId !== this.renderPipelineSwapId || this.isDestroyed;
     let changed = false;
 
-    for (const [dataId, binding] of Array.from(this.bindings.entries())) {
+    // Remount the source binding first: overlays without an explicit
+    // renderBackend inherit the source's mounted backend, so the source must
+    // resolve to the new backend before the overlays re-run their decisions
+    // (the source is not guaranteed to be first in insertion order after a
+    // promoteSourceDataId).
+    const sourceBinding = this.getCurrentBinding();
+    const bindingEntries = Array.from(this.bindings.entries());
+    const orderedEntries = [
+      ...bindingEntries.filter(([, binding]) => binding === sourceBinding),
+      ...bindingEntries.filter(([, binding]) => binding !== sourceBinding),
+    ];
+
+    for (const [dataId, binding] of orderedEntries) {
       if (isStale()) {
         return;
       }
@@ -2049,9 +2062,12 @@ class PlanarViewport extends GenericViewport<
     );
     const selectedPath = selectPlanarRenderPath(dataSet, {
       orientation: resolvedOrientation,
-      // Per-mount backend pin/override; undefined leaves the global
-      // renderBackend configuration to decide.
-      renderBackend: options.renderBackend,
+      // Per-mount backend pin/override. Overlays without an explicit pin
+      // follow the source binding's mounted backend rather than the global
+      // configuration; only then does the global renderBackend decide.
+      renderBackend:
+        options.renderBackend ??
+        this.getInheritedOverlayRenderBackend(options.role),
     });
     const data = await (this.dataProvider as PlanarDataProvider).load(dataId, {
       acquisitionOrientation: selectedPath.acquisitionOrientation,
@@ -2065,6 +2081,34 @@ class PlanarViewport extends GenericViewport<
       selectedPath,
       resolvedOrientation,
     };
+  }
+
+  /**
+   * Backend an overlay mount inherits when it carries no explicit
+   * renderBackend: the source binding's mounted backend. Source and overlays
+   * must render through the same backend -- each backend draws to its own
+   * canvas and skips the other's actors -- and the source may be pinned
+   * per-mount to a backend that differs from the global configuration.
+   * Returns undefined for source mounts (they resolve on their own) and when
+   * no source is mounted yet, leaving the global configuration to decide.
+   */
+  private getInheritedOverlayRenderBackend(
+    role: PlanarSetDataOptions['role']
+  ): RenderBackend.GPU | RenderBackend.CPU | undefined {
+    if (role === 'source') {
+      return undefined;
+    }
+
+    switch (this.getCurrentPlanarRendering()?.renderMode) {
+      case ActorRenderMode.CPU_IMAGE:
+      case ActorRenderMode.CPU_VOLUME:
+        return RenderBackend.CPU;
+      case ActorRenderMode.VTK_IMAGE:
+      case ActorRenderMode.VTK_VOLUME_SLICE:
+        return RenderBackend.GPU;
+      default:
+        return undefined;
+    }
   }
 
   private applyLoadedPlanarViewState(

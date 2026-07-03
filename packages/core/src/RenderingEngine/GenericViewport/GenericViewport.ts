@@ -549,12 +549,13 @@ abstract class GenericViewport<
     );
     const renderPath = path.createRenderPath();
     const ctx = path.selectContext?.(this.renderContext) ?? this.renderContext;
-    const existing = this.bindings.get(displaySetId);
 
-    if (existing) {
-      existing.removeData();
-    }
-
+    // Stage the replacement attachment before tearing down any existing one:
+    // if addData rejects, or the request goes stale mid-await, the previous
+    // render path stays mounted and the binding record stays accurate. A
+    // teardown-first order left a dead binding whose recorded renderMode made
+    // a later remount (e.g. switching the render backend back after a failed
+    // swap) skip as a no-op, blanking the display set.
     const attachment = await renderPath.addData(ctx, data, options);
 
     if (shouldIgnore?.()) {
@@ -567,9 +568,12 @@ abstract class GenericViewport<
       throw new Error('Viewport has been destroyed');
     }
 
+    // Whatever is bound now -- the attachment this call is replacing, or one
+    // a concurrent mount installed during the await -- is superseded by the
+    // staged attachment.
     const current = this.bindings.get(displaySetId);
 
-    if (current && current !== existing) {
+    if (current) {
       current.removeData();
     }
 
