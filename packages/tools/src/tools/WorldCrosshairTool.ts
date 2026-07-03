@@ -1067,7 +1067,13 @@ class WorldCrosshairTool extends AnnotationTool {
     const normalDistance = vec3.dot(delta, viewPlaneNormal);
 
     if (jumpMode === 'centered') {
-      navigatePlanarViewportToPoint(viewport, worldPoint);
+      // Match the slice-only branch below: only pin/render when navigation
+      // succeeds, otherwise the viewport would be anchored to a point it
+      // never actually navigated to (e.g. a stack viewport with no valid
+      // closest image).
+      if (!navigatePlanarViewportToPoint(viewport, worldPoint)) {
+        return;
+      }
       // Pin the point to the canvas center fraction; zoom is untouched.
       viewport.setViewState({
         anchorWorld: [worldPoint[0], worldPoint[1], worldPoint[2]],
