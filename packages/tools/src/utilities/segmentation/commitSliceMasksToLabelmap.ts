@@ -21,6 +21,11 @@ type LabelmapCommitVm = {
  * when slice `scalarData` is available; otherwise falls back to `setAtIndex` per voxel.
  *
  * Also builds `floodedPoints` for downstream preview promotion / island removal.
+ *
+ * When `historyVoxelManager` is provided (an RLE history wrapper around the
+ * labelmap's voxel manager), every write goes through it per-voxel so the
+ * original values are recorded for undo — the dense `scalarData.fill` fast
+ * paths are skipped because they would bypass the history layer.
  */
 export function commitSliceMasksToLabelmapVolume({
   labelmapVolume,
@@ -28,18 +33,29 @@ export function commitSliceMasksToLabelmapVolume({
   width: w,
   height: h,
   paintIndex,
+  historyVoxelManager,
 }: {
   labelmapVolume: Types.IImageVolume;
   sliceMasks: Map<number, Uint8Array>;
   width: number;
   height: number;
   paintIndex: number;
+  historyVoxelManager?: Types.IVoxelManager<number>;
 }): { floodedPoints: Types.Point3[]; voxelCount: number } {
   const floodedPoints: Types.Point3[] = [];
   let voxelCount = 0;
 
   const vm = labelmapVolume.voxelManager as unknown as LabelmapCommitVm;
-  const depth = labelmapVolume.dimensions[2];
+  const historyWriter = historyVoxelManager as unknown as
+    | LabelmapCommitVm
+    | undefined;
+  const [labelmapWidth, labelmapHeight, depth] = labelmapVolume.dimensions;
+  if (labelmapWidth !== w || labelmapHeight !== h) {
+    throw new Error(
+      `commitSliceMasksToLabelmapVolume: labelmap in-plane dimensions ` +
+        `${labelmapWidth}x${labelmapHeight} do not match mask dimensions ${w}x${h}`
+    );
+  }
   const frameSize = w * h;
   const expectedLen = frameSize * depth;
 
@@ -73,7 +89,11 @@ export function commitSliceMasksToLabelmapVolume({
       maxY = Math.max(maxY, y);
     };
 
+    // History recording requires per-voxel writes through the wrapper; the
+    // run-fill fast paths write straight into scalar buffers and would leave
+    // the undo map empty.
     const denseScalar =
+      !historyWriter &&
       vm.scalarData &&
       vm.scalarData.length >= expectedLen &&
       typeof vm.scalarData.fill === 'function';
@@ -108,6 +128,7 @@ export function commitSliceMasksToLabelmapVolume({
         | undefined;
 
       if (
+        !historyWriter &&
         svm?.scalarData &&
         svm.scalarData.length >= frameSize &&
         typeof svm.scalarData.fill === 'function'
@@ -131,6 +152,7 @@ export function commitSliceMasksToLabelmapVolume({
         }
         svm.modifiedSlices.add(z);
       } else {
+        const writer = historyWriter ?? vm;
         for (let y = 0; y < h; y++) {
           const row = y * w;
           for (let x = 0; x < w; x++) {
@@ -138,7 +160,7 @@ export function commitSliceMasksToLabelmapVolume({
               continue;
             }
             const index = z * frameSize + row + x;
-            vm.setAtIndex(index, paintIndex);
+            writer.setAtIndex(index, paintIndex);
             floodedPoints.push([x, y, z]);
             voxelCount++;
             sliceTouched = true;

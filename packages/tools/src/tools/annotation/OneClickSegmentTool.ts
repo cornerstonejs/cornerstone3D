@@ -26,6 +26,7 @@ import type { FloodFillIntensityRangeOptions } from '../../utilities/segmentatio
 import { getViewportVoiMappingForVolume } from '../../utilities/segmentation/growCut/getViewportVoiMappingForVolume';
 import { activeSegmentation } from '../../stateManagement/segmentation';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
+import * as LabelmapMemo from '../../utilities/segmentation/createLabelmapMemo';
 import {
   PLUS_CURSOR,
   BLOCKED_CURSOR,
@@ -385,7 +386,9 @@ class OneClickSegmentTool extends GrowCutBaseTool {
     const voxelVolumeMm3 = spacing[0] * spacing[1] * spacing[2];
     const maxDeltaK = this.configuration.maxDeltaK;
     return ({ voxelCount, bbox }) => {
-      if (maxDeltaK) {
+      // Negative maxDeltaK means "unbounded" (same convention as
+      // floodFill3dSliceLazy) — no through-slice self-containment check then.
+      if (typeof maxDeltaK === 'number' && maxDeltaK >= 0) {
         const kExtent = bbox.max[2] - bbox.min[2] + 1;
         if (kExtent >= 2 * maxDeltaK + 1) {
           return false;
@@ -859,17 +862,27 @@ class OneClickSegmentTool extends GrowCutBaseTool {
       band: { min: probe.range.min, max: probe.range.max },
     });
 
-    const filledPoints = await this.fillWithRange(
-      probe.range,
-      {
-        segmentation,
-        viewportId,
-        renderingEngineId,
-      },
-      viewport,
-      labelmapVolume,
-      element
-    );
+    // One click = one undoable history entry.
+    const memo = this.beginLabelmapMemo(segmentation, labelmapVolume);
+    let filledPoints: Types.Point3[];
+    try {
+      filledPoints = await this.fillWithRange(
+        probe.range,
+        {
+          segmentation,
+          viewportId,
+          renderingEngineId,
+        },
+        viewport,
+        labelmapVolume,
+        element,
+        memo
+      );
+    } finally {
+      // Commits + pushes when anything was written; a rejected fill records
+      // nothing and pushes nothing.
+      this.doneEditMemo();
+    }
 
     this.lastClick = {
       expandContext: probe.expandContext,
@@ -899,7 +912,8 @@ class OneClickSegmentTool extends GrowCutBaseTool {
     },
     viewport: Types.IViewport,
     labelmapVolume: Types.IImageVolume,
-    element: HTMLDivElement | undefined
+    element: HTMLDivElement | undefined,
+    memo?: LabelmapMemo.LabelmapMemo
   ): Promise<Types.Point3[]> {
     const { segmentation } = target;
     const { referencedVolumeId, segmentIndex, segmentationId } = segmentation;
@@ -915,6 +929,11 @@ class OneClickSegmentTool extends GrowCutBaseTool {
     let notLesionLike = false;
     try {
       const referencedVolume = cache.getVolume(referencedVolumeId);
+      if (!referencedVolume) {
+        throw new Error(
+          'OneClickSegment: referenced volume is no longer cached; cannot fill.'
+        );
+      }
       const result = await runFloodFillSegmentation({
         referencedVolumeId,
         worldPosition: this.indexToWorld(referencedVolume, range.ijkStart),
@@ -931,6 +950,7 @@ class OneClickSegmentTool extends GrowCutBaseTool {
           isCancelled: () => abortController.signal.aborted,
           maxVoxels: this.computeVoxelBudget(referencedVolume),
           shouldContinueRegion: this.makeRegionShapeGate(referencedVolume),
+          historyVoxelManager: memo?.voxelManager,
           onRejected: ({ voxelCount, bbox }) => {
             notLesionLike = true;
             growCutLog.info('OneClickSegment: fill rejected by shape gate', {
@@ -944,6 +964,9 @@ class OneClickSegmentTool extends GrowCutBaseTool {
         },
       });
       if (!result) {
+        if (abortController.signal.aborted) {
+          throw new Error('OneClickSegment: fill cancelled.');
+        }
         throw new Error(
           notLesionLike
             ? NOT_LESION_MESSAGE
@@ -968,6 +991,26 @@ class OneClickSegmentTool extends GrowCutBaseTool {
     ijk: Types.Point3
   ): Types.Point3 {
     return csUtils.transformIndexToWorld(volume.imageData, ijk) as Types.Point3;
+  }
+
+  /**
+   * Starts recording ONE undoable operation (a click, or one expand/shrink
+   * step) against the labelmap. Every voxel write of the operation must go
+   * through the returned memo's history voxel manager; `doneEditMemo()`
+   * (from BaseTool) then commits it and pushes it onto the shared history
+   * stack, so segmentation undo/redo steps through one-click operations the
+   * same way it does through brush strokes.
+   */
+  private beginLabelmapMemo(
+    segmentation: GrowCutToolData['segmentation'],
+    labelmapVolume: Types.IImageVolume
+  ): LabelmapMemo.LabelmapMemo {
+    const memo = LabelmapMemo.createLabelmapMemo(
+      segmentation.segmentationId,
+      labelmapVolume.voxelManager as Types.IVoxelManager<number>
+    ) as LabelmapMemo.LabelmapMemo;
+    this.memo = memo;
+    return memo;
   }
 
   /** Region size (in-plane px) the growth curve predicts for a tolerance. */
@@ -1072,28 +1115,19 @@ class OneClickSegmentTool extends GrowCutBaseTool {
       predictedRegionPx: this.curveSizeAt(lastClick.expandContext, next),
     });
     const previousTolerance = lastClick.toleranceBytes;
-    void this.refillAtTolerance(next).catch(async (err) => {
+    void this.refillAtTolerance(next).catch((err) => {
       const message = err instanceof Error ? err.message : String(err);
       if (message === NOT_LESION_MESSAGE && direction > 0) {
         // Expanding would break the lesion-like shape (leak into another
-        // structure): restore the previous result (it passed before).
+        // structure). refillAtTolerance already restored the cleared voxels,
+        // so the previous result is intact — just tell the user.
         growCutLog.info(
-          'OneClickSegment: expand blocked by the lesion shape gate; restoring',
+          'OneClickSegment: expand blocked by the lesion shape gate; previous result kept',
           { previousTolerance }
         );
         this.notifySegmentationError(
           'Expanding further would leak beyond a lesion-like shape; kept the previous result.'
         );
-        try {
-          await this.refillAtTolerance(previousTolerance);
-        } catch (restoreErr) {
-          growCutLog.error('OneClickSegment: restore after expand failed', {
-            message:
-              restoreErr instanceof Error
-                ? restoreErr.message
-                : String(restoreErr),
-          });
-        }
         return;
       }
       growCutLog.error('OneClickSegment: expand/shrink failed', { message });
@@ -1120,48 +1154,67 @@ class OneClickSegmentTool extends GrowCutBaseTool {
       return;
     }
 
-    // Clear exactly what the last run painted (voxels island removal already
-    // cleared read as 0 and are skipped), then refill with the new band.
-    const { voxelManager } = labelmapVolume;
-    const [width, height] = labelmapVolume.dimensions;
-    const pixelsPerSlice = width * height;
-    const { segmentIndex } = segmentation;
-    for (const [x, y, z] of lastClick.filledPoints) {
-      const index = z * pixelsPerSlice + y * width + x;
-      if (voxelManager.getAtIndex(index) === segmentIndex) {
-        voxelManager.setAtIndex(index, 0);
-      }
-    }
-
-    const range = resolveAdaptiveBandAtTolerance(
-      lastClick.expandContext,
-      toleranceBytes
-    );
-
+    // One expand/shrink press = one undoable history entry covering BOTH the
+    // clear of the previous result and the refill.
+    const memo = this.beginLabelmapMemo(segmentation, labelmapVolume);
     try {
-      const filledPoints = await this.fillWithRange(
-        range,
-        {
-          segmentation,
-          viewportId,
-          renderingEngineId,
-        },
-        viewport,
-        labelmapVolume,
-        this.lastHoverElement ?? undefined
+      // Clear exactly what the last run painted (voxels island removal
+      // already cleared read as 0 and are skipped), then refill with the new
+      // band. Reads use the labelmap; writes go through the memo so undo
+      // restores the pre-step state.
+      const { voxelManager } = labelmapVolume;
+      const historyVm = memo.voxelManager;
+      const [width, height] = labelmapVolume.dimensions;
+      const pixelsPerSlice = width * height;
+      const { segmentIndex } = segmentation;
+      const clearedIndices: number[] = [];
+      for (const [x, y, z] of lastClick.filledPoints) {
+        const index = z * pixelsPerSlice + y * width + x;
+        if (voxelManager.getAtIndex(index) === segmentIndex) {
+          historyVm.setAtIndex(index, 0);
+          clearedIndices.push(index);
+        }
+      }
+
+      const range = resolveAdaptiveBandAtTolerance(
+        lastClick.expandContext,
+        toleranceBytes
       );
-      lastClick.toleranceBytes = toleranceBytes;
-      lastClick.filledPoints = filledPoints;
-      growCutLog.info('OneClickSegment: refill complete', {
-        toleranceBytes,
-        filledVoxels: filledPoints.length,
-      });
-    } catch (err) {
-      // The previous result was already cleared; reflect that in the UI and
-      // forget the stale points before propagating.
-      lastClick.filledPoints = [];
-      triggerSegmentationDataModified(segmentation.segmentationId);
-      throw err;
+
+      try {
+        const filledPoints = await this.fillWithRange(
+          range,
+          {
+            segmentation,
+            viewportId,
+            renderingEngineId,
+          },
+          viewport,
+          labelmapVolume,
+          this.lastHoverElement ?? undefined,
+          memo
+        );
+        lastClick.toleranceBytes = toleranceBytes;
+        lastClick.filledPoints = filledPoints;
+        growCutLog.info('OneClickSegment: refill complete', {
+          toleranceBytes,
+          filledVoxels: filledPoints.length,
+        });
+      } catch (err) {
+        // The refill did not land (shape gate, cancel, or error). Restore
+        // exactly the voxels the clear removed so a failed step never leaves
+        // the labelmap empty; lastClick keeps the previous points/tolerance.
+        for (const index of clearedIndices) {
+          historyVm.setAtIndex(index, segmentIndex);
+        }
+        triggerSegmentationDataModified(segmentation.segmentationId);
+        throw err;
+      }
+    } finally {
+      // On success this pushes clear+refill as one undo step. On failure the
+      // in-place restore makes the memo a net no-op — still pushed, which
+      // covers the rare case of a partial paint before the error.
+      this.doneEditMemo();
     }
   }
 }

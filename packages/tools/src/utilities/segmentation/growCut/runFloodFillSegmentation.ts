@@ -1,6 +1,6 @@
 import { utilities as csUtils, cache } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import type { NumberVoxelManager } from '@cornerstonejs/core/utilities';
+import type { VoxelManager } from '@cornerstonejs/core/utilities';
 import IslandRemoval from '../floodFillIslandRemoval';
 import { commitSliceMasksToLabelmapVolume } from '../commitSliceMasksToLabelmap';
 import { createEnsureSliceLoadedForVolume } from '../createEnsureSliceLoadedForVolume';
@@ -22,6 +22,8 @@ const {
   mapScalarToViewportVoiIntensity,
   mapMappedBandToRawRange,
 } = csUtils;
+
+type NumberVoxelManager = VoxelManager<number>;
 const { growCutLog: log } = csUtils.logger;
 const ENABLE_VERBOSE_FLOOD_FILL_LOGS = false;
 
@@ -119,6 +121,16 @@ type FloodFillSegmentationOptions = {
     voxelCount: number;
     bbox: { min: Types.Point3; max: Types.Point3 } | null;
   }) => void;
+  /**
+   * RLE history voxel manager wrapping the labelmap's voxel manager (e.g. a
+   * `LabelmapMemo.voxelManager`). When provided, EVERY labelmap write — the
+   * flood commit, preview promotion and island removal — goes through it so
+   * the whole run is recorded as one undoable memo. It also acts as the
+   * preview/delta layer for external island removal. Reads still use the
+   * labelmap's own voxel manager (the history wrapper reads its delta map,
+   * not current state).
+   */
+  historyVoxelManager?: Types.IVoxelManager<number>;
 };
 
 function getDisplayVoiSnapshot(
@@ -430,7 +442,8 @@ function resolveFloodPaintIndices(
 }
 
 function promotePreviewSegmentToFinal(
-  voxelManager: NumberVoxelManager,
+  readVoxelManager: NumberVoxelManager,
+  writeVoxelManager: NumberVoxelManager,
   preview: number,
   final: number,
   points: Types.Point3[],
@@ -440,8 +453,8 @@ function promotePreviewSegmentToFinal(
   for (let i = 0; i < points.length; i++) {
     const [x, y, z] = points[i];
     const index = z * numPixelsPerSlice + y * width + x;
-    if (voxelManager.getAtIndex(index) === preview) {
-      voxelManager.setAtIndex(index, final);
+    if (readVoxelManager.getAtIndex(index) === preview) {
+      writeVoxelManager.setAtIndex(index, final);
     }
   }
 }
@@ -621,6 +634,13 @@ async function runFloodFillSegmentation({
       referencedVolume.voxelManager as unknown as NumberVoxelManager;
     const numPixelsPerSlice = width * height;
 
+    // Reads always come from the labelmap itself; writes go through the
+    // history wrapper when the caller records this run as an undoable memo.
+    const labelmapReadVm =
+      labelmap.voxelManager as unknown as NumberVoxelManager;
+    const labelmapWriteVm = (options.historyVoxelManager ??
+      labelmap.voxelManager) as unknown as NumberVoxelManager;
+
     let positiveMin = clampedRangeMin;
     let positiveMax = clampedRangeMax;
     const seedScalar = Number(refVoxelManager.getAtIJKPoint(ijkStart));
@@ -736,6 +756,15 @@ async function runFloodFillSegmentation({
       return labelmap;
     }
 
+    // A cancelled fill must not paint: bail before touching the labelmap.
+    if (options.isCancelled?.() === true) {
+      log.info('flood fill: cancellation requested; nothing committed', {
+        ijkStart,
+        voxelCountAtCancel: filledVoxelCount,
+      });
+      return null;
+    }
+
     const { floodedPoints, voxelCount: committedVoxels } =
       commitSliceMasksToLabelmapVolume({
         labelmapVolume: labelmap,
@@ -743,6 +772,7 @@ async function runFloodFillSegmentation({
         width,
         height,
         paintIndex,
+        historyVoxelManager: options.historyVoxelManager,
       });
 
     if (committedVoxels === 0 || floodedPoints.length === 0) {
@@ -755,42 +785,27 @@ async function runFloodFillSegmentation({
       return labelmap;
     }
 
-    options.onCommitted?.(floodedPoints);
+    // Reported to `onCommitted` once cleanup is done — internal island removal
+    // can add voxels beyond the raw flood, and callers (e.g. expand/shrink)
+    // treat this set as "exactly what this run painted".
+    let committedPoints = floodedPoints;
 
     log.info('flood fill: complete', {
       voxelCount: floodedPoints.length,
       ijkStart,
       paintIndex,
       usePreview,
-      cancelled: options.isCancelled?.() === true,
     });
 
     const applyExternal = options.applyExternalIslandRemoval !== false;
     const applyInternal =
       options.applyInternalIslandRemoval !== false && applyExternal;
-    const cancelled = options.isCancelled?.() === true;
-    if (cancelled) {
-      if (usePreview) {
-        promotePreviewSegmentToFinal(
-          labelmap.voxelManager as unknown as NumberVoxelManager,
-          paintIndex,
-          segmentIndex,
-          floodedPoints,
-          numPixelsPerSlice,
-          width
-        );
-      }
-      log.info('flood fill: cancellation requested; returning partial result', {
-        voxelCount: floodedPoints.length,
-        segmentIndex,
-      });
-      return labelmap;
-    }
 
     if (!applyExternal && !applyInternal) {
       if (usePreview) {
         promotePreviewSegmentToFinal(
-          labelmap.voxelManager as unknown as NumberVoxelManager,
+          labelmapReadVm,
+          labelmapWriteVm,
           paintIndex,
           segmentIndex,
           floodedPoints,
@@ -798,6 +813,7 @@ async function runFloodFillSegmentation({
           width
         );
       }
+      options.onCommitted?.(committedPoints);
       return labelmap;
     }
     const islandVerbose = options.islandRemovalVerboseLogging === true;
@@ -811,7 +827,7 @@ async function runFloodFillSegmentation({
     const ijkPoints = [ijkStart];
     const initialized = islandRemoval.initialize(
       viewport,
-      labelmap.voxelManager,
+      options.historyVoxelManager ?? labelmap.voxelManager,
       {
         points: ijkPoints,
         segmentIndex,
@@ -824,7 +840,8 @@ async function runFloodFillSegmentation({
       console.warn('Island removal initialization failed.');
       if (usePreview) {
         promotePreviewSegmentToFinal(
-          labelmap.voxelManager as unknown as NumberVoxelManager,
+          labelmapReadVm,
+          labelmapWriteVm,
           paintIndex,
           segmentIndex,
           floodedPoints,
@@ -832,6 +849,7 @@ async function runFloodFillSegmentation({
           width
         );
       }
+      options.onCommitted?.(committedPoints);
       return labelmap;
     }
 
@@ -869,7 +887,7 @@ async function runFloodFillSegmentation({
       const internalPreviewPoints =
         internalModifiedSlices?.length && applyInternal
           ? collectPreviewPointsOnSlices(
-              labelmap.voxelManager as unknown as NumberVoxelManager,
+              labelmapReadVm,
               paintIndex,
               width,
               height,
@@ -880,8 +898,10 @@ async function runFloodFillSegmentation({
         internalPreviewPoints.length > 0
           ? floodedPoints.concat(internalPreviewPoints)
           : floodedPoints;
+      committedPoints = promotionPoints;
       promotePreviewSegmentToFinal(
-        labelmap.voxelManager as unknown as NumberVoxelManager,
+        labelmapReadVm,
+        labelmapWriteVm,
         paintIndex,
         segmentIndex,
         promotionPoints,
@@ -889,6 +909,8 @@ async function runFloodFillSegmentation({
         width
       );
     }
+
+    options.onCommitted?.(committedPoints);
 
     // Debug visibility: verify final voxel values at flooded points before returning.
     if (ENABLE_VERBOSE_FLOOD_FILL_LOGS && floodedPoints.length > 0) {

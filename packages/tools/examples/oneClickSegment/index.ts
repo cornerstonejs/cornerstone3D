@@ -30,6 +30,7 @@ const {
 
 const { ViewportType, Events: csCoreEvents } = Enums;
 const { MouseBindings, KeyboardBindings } = csToolsEnums;
+const { DefaultHistoryMemo } = csUtils.HistoryMemo;
 
 const oneClickToolName = OneClickSegmentTool.toolName;
 
@@ -123,6 +124,7 @@ createInfoSection(content)
   .addInstruction('Hover to scout: the cursor tells you what a click will do. A green plus = a lesion-scale region was confirmed here (one click segments it). A gray dashed circle = still evaluating (or nothing to segment yet). A red no-entry = not segmentable here (flat tissue, noise, or a sprawling non-lesion structure) — clicks there do nothing.')
   .addInstruction('Primary click on a plus: segment the lesion in 3D. The threshold is one-sided and derived from the click, so the hottest core is always included (no interior holes).')
   .addInstruction('Shrink / Expand: step the last segment along its measured growth curve — each press visibly shrinks or grows the region (the previous result is cleared and refilled, so both directions retrace exactly). Esc cancels a long-running fill.')
+  .addInstruction('Undo / Redo (buttons or Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z, Ctrl+Y): every click and every expand/shrink step is one entry in the segmentation history.')
   .addInstruction('Window/Level (Shift+drag) changes what you see and therefore what a click captures.')
   .addInstruction('Middle mouse / Ctrl+drag: Pan · Right click: Zoom · Wheel / Alt+drag: Stack scroll');
 
@@ -227,17 +229,30 @@ async function run() {
   viewport = renderingEngine.getViewport(viewportId);
   toolGroup.addViewport(viewportId, renderingEngineId);
 
-  // Esc cancels a long-running fill.
+  // Esc cancels a long-running fill; Ctrl/Cmd+Z undoes the last click or
+  // expand/shrink step, Ctrl/Cmd+Shift+Z (or Ctrl+Y) redoes it.
   document.addEventListener('keydown', (evt) => {
-    if (evt.key !== 'Escape') {
+    if (evt.key === 'Escape') {
+      const toolInstance = toolGroup?.getToolInstance?.(oneClickToolName) as {
+        cancelActiveOperation?: () => boolean;
+      } | null;
+      if (toolInstance?.cancelActiveOperation?.() === true) {
+        evt.preventDefault();
+        console.info('[oneClickSegment] cancel requested (Esc)');
+      }
       return;
     }
-    const toolInstance = toolGroup?.getToolInstance?.(oneClickToolName) as {
-      cancelActiveOperation?: () => boolean;
-    } | null;
-    if (toolInstance?.cancelActiveOperation?.() === true) {
+    const isModifier = evt.ctrlKey || evt.metaKey;
+    if (isModifier && evt.key.toLowerCase() === 'z') {
       evt.preventDefault();
-      console.info('[oneClickSegment] cancel requested (Esc)');
+      if (evt.shiftKey) {
+        DefaultHistoryMemo.redo();
+      } else {
+        DefaultHistoryMemo.undo();
+      }
+    } else if (isModifier && evt.key.toLowerCase() === 'y') {
+      evt.preventDefault();
+      DefaultHistoryMemo.redo();
     }
   });
 
@@ -267,6 +282,22 @@ async function run() {
     container: operationsToolbar,
     onClick: () => {
       toolGroup.getToolInstance(oneClickToolName).expand();
+    },
+  });
+
+  addButtonToToolbar({
+    title: 'Undo',
+    container: operationsToolbar,
+    onClick: () => {
+      DefaultHistoryMemo.undo();
+    },
+  });
+
+  addButtonToToolbar({
+    title: 'Redo',
+    container: operationsToolbar,
+    onClick: () => {
+      DefaultHistoryMemo.redo();
     },
   });
 
