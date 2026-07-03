@@ -21,6 +21,14 @@ function projectOntoNormal(point, normal) {
   return point[0] * normal[0] + point[1] * normal[1] + point[2] * normal[2];
 }
 
+function hasFiniteValues(values, length) {
+  return (
+    Array.isArray(values) &&
+    values.length >= length &&
+    values.slice(0, length).every((value) => Number.isFinite(Number(value)))
+  );
+}
+
 export default function validateAndSortVolumeIds(imageIds, options = {}) {
   const {
     maxSpacingVariationFraction = 0.1,
@@ -38,9 +46,10 @@ export default function validateAndSortVolumeIds(imageIds, options = {}) {
     };
   }
 
-  let sortedImageIds = imageIds;
+  let sortedImageIds = [...imageIds];
   try {
-    sortedImageIds = sortImageIdsAndGetSpacing(imageIds).sortedImageIds;
+    // Pass a copy: the sorter can reverse the array it is given in place.
+    sortedImageIds = sortImageIdsAndGetSpacing([...imageIds]).sortedImageIds;
   } catch (err) {
     return {
       valid: false,
@@ -53,9 +62,8 @@ export default function validateAndSortVolumeIds(imageIds, options = {}) {
   const firstFor = firstPlane?.frameOfReferenceUID;
   const firstIop = firstPlane?.imageOrientationPatient;
   if (
-    !Array.isArray(firstIop) ||
-    firstIop.length < 6 ||
-    !Array.isArray(firstPlane?.imagePositionPatient) ||
+    !hasFiniteValues(firstIop, 6) ||
+    !hasFiniteValues(firstPlane?.imagePositionPatient, 3) ||
     !firstFor
   ) {
     return {
@@ -94,7 +102,7 @@ export default function validateAndSortVolumeIds(imageIds, options = {}) {
         reason: 'frame of reference changes between slices',
       };
     }
-    if (!Array.isArray(iop) || iop.length < 6 || !Array.isArray(ipp)) {
+    if (!hasFiniteValues(iop, 6) || !hasFiniteValues(ipp, 3)) {
       return {
         valid: false,
         sortedImageIds,

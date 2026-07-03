@@ -249,14 +249,10 @@ export async function floodFill3dSliceLazy(
     }
   }
 
-  let voxelCount = 0;
-  for (const arr of sliceMasks.values()) {
-    for (let i = 0; i < arr.length; i++) {
-      if (arr[i] & FLOOD_SLICE_FLAG_VISITED) {
-        voxelCount++;
-      }
-    }
-  }
+  // Every setVisited is paired with exactly one queue.push (seed included),
+  // and the queue is head-pointer based (never popped), so its length is the
+  // filled count — no need to rescan the allocated full-frame masks.
+  const voxelCount = queue.length;
 
   return {
     sliceMasks,

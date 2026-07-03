@@ -77,7 +77,7 @@ function applyDropdownOptions(
     if (value === defaultValue || index === defaultIndex) {
       elOption.selected = true;
 
-      if (map) {
+      if (map?.has(value)) {
         map.get(value).selected = true;
       }
     }
@@ -173,14 +173,12 @@ export default function addDropDownToToolbar(config: configDropdown): void {
       })
       .catch((error) => {
         console.error('addDropdownToToolbar: failed to resolve options', error);
-        const elErrorOption = document.createElement('option');
-        elErrorOption.value = '';
-        elErrorOption.innerText = 'Failed to load';
-        elErrorOption.selected = true;
-        while (elSelect.options.length > 0) {
-          elSelect.remove(0);
-        }
-        elSelect.append(elErrorOption);
+        // Same render path as success so placeholder/loading bookkeeping stays
+        // consistent; the single error option carries an empty value.
+        currentMap = applyDropdownOptions(elSelect, {
+          values: [''],
+          labels: ['Failed to load'],
+        } as optionTypeDefaultValue & optionTypeValues);
       })
       .finally(() => {
         elSelect.disabled = false;

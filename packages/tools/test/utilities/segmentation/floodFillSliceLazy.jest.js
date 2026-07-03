@@ -60,6 +60,33 @@ describe('floodFill3dSliceLazy budget and shape gate', () => {
     expect(seenStats[0].bbox.max.length).toBe(3);
   });
 
+  it('loads slices through ensureSliceLoaded before reading from them', async () => {
+    // Voxels read as unloaded (undefined) until ensureSliceLoaded marks their
+    // slice; the fill must request every slice it visits.
+    const loaded = new Set();
+    const result = await floodFill3dSliceLazy(
+      (_x, _y, z) => (loaded.has(z) ? 1 : undefined),
+      [20, 20, 1],
+      {
+        width: SIZE,
+        height: SIZE,
+        depth: 3,
+        equals,
+        yieldEvery: 0,
+        maxDeltaIJ: 0,
+        ensureSliceLoaded: async (z) => {
+          loaded.add(z);
+        },
+      }
+    );
+
+    expect(result.truncated).toBe(false);
+    // A 1x1 column through all three slices: the seed plus its two through-
+    // slice neighbors, each only readable after its slice was loaded.
+    expect(result.voxelCount).toBe(3);
+    expect([...loaded].sort((a, b) => a - b)).toEqual([0, 1, 2]);
+  });
+
   it('does not truncate a region that ends on its own within the budget', async () => {
     // Planar 5x5 region bounded by maxDeltaIJ.
     const result = await floodFill3dSliceLazy(getter, [20, 20, 1], {

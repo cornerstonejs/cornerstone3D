@@ -337,6 +337,11 @@ export default class IslandRemoval {
       if (rle.value !== SegmentationEnum.ISLAND) {
         for (let iPrime = rle.start; iPrime < rle.end; iPrime++) {
           const clearPoint = toIJK([iPrime, jPrime, kPrime]);
+          // The preview layer here is a WRITE-THROUGH history voxel manager:
+          // the source already holds this run's values, so reading the source
+          // identifies candidates, and `set(null)` reverts a voxel to its
+          // pre-run value only if this run modified it (no-op otherwise) —
+          // accepted voxels from earlier runs are left untouched.
           const sourceVal = sourceVoxelManager.getAtIJKPoint(clearPoint);
           if (sourceVal === this.previewSegmentIndex) {
             previewVoxelManager.setAtIJKPoint(clearPoint, null);

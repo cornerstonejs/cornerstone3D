@@ -1,6 +1,6 @@
 import { utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import type { NumberVoxelManager } from '@cornerstonejs/core/utilities';
+import type { VoxelManager } from '@cornerstonejs/core/utilities';
 import type {
   FloodFillIntensityRangeOptions,
   FloodFillIntensityRangeResult,
@@ -9,6 +9,8 @@ import type { GetFloodFillIntensityRange } from '../floodFillIntensityRangeTypes
 import { getViewportVoiMappingForVolume } from '../getViewportVoiMappingForVolume';
 import type { ViewportVoiMappingForTool } from '../getViewportVoiMappingForVolume';
 import { DEFAULT_POSITIVE_STD_DEV_MULTIPLIER } from '../constants';
+
+type NumberVoxelManager = VoxelManager<number>;
 
 const {
   transformWorldToIndex,
@@ -787,7 +789,8 @@ export function probeAdaptiveRegion(
   options?: FloodFillIntensityRangeOptions
 ): AdaptiveRegionProbeResult {
   const { dimensions, imageData, spacing } = referencedVolume;
-  const voxelManager = referencedVolume.voxelManager as unknown as NumberVoxelManager;
+  const voxelManager =
+    referencedVolume.voxelManager as unknown as NumberVoxelManager;
   const [width, height] = dimensions;
   const pixelsPerSlice = width * height;
 

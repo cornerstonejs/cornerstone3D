@@ -1,5 +1,7 @@
 import type { Types } from '@cornerstonejs/core';
-import type { NumberVoxelManager } from '@cornerstonejs/core/utilities';
+import type { VoxelManager } from '@cornerstonejs/core/utilities';
+
+type NumberVoxelManager = VoxelManager<number>;
 
 type NeighborhoodStats = {
   mean: number;
