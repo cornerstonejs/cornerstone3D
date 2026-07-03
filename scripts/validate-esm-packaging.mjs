@@ -28,6 +28,10 @@ const nameFilter = args.filter((a) => !a.startsWith('--'));
 
 // Extensions that count as a resolved JS module specifier.
 const JS_EXTS = ['.js', '.mjs', '.cjs', '.json'];
+const NATIVE_NODE_EXTENSION_REQUIRED_PREFIXES = [
+  '@kitware/vtk.js/',
+  'gl-matrix/',
+];
 const GLOB_CHARS = /[*?[\]{}]/;
 
 function assertLiteralPackageDirs(packageDirs) {
@@ -79,14 +83,14 @@ function walk(dir, predicate, out = []) {
   return out;
 }
 
-// Pull every relative module specifier out of a JS/d.ts file.
-function relativeSpecifiers(code) {
+// Pull every module specifier out of a JS/d.ts file.
+function moduleSpecifiers(code) {
   const specs = [];
   const patterns = [
-    /(?:^|[^.\w])(?:import|export)\s[^'"]*?from\s*['"](\.[^'"]+)['"]/g, // import/export ... from '.'
-    /(?:^|[^.\w])import\s*['"](\.[^'"]+)['"]/g, // bare side-effect import '.'
-    /(?:^|[^.\w])import\s*\(\s*['"](\.[^'"]+)['"]\s*\)/g, // dynamic import('.')
-    /(?:^|[^.\w])require\s*\(\s*['"](\.[^'"]+)['"]\s*\)/g, // require('.')
+    /(?:^|[^.\w])(?:import|export)\s[^'"]*?from\s*['"]([^'"]+)['"]/g, // import/export ... from 'x'
+    /(?:^|[^.\w])import\s*['"]([^'"]+)['"]/g, // bare side-effect import 'x'
+    /(?:^|[^.\w])import\s*\(\s*['"]([^'"]+)['"]\s*\)/g, // dynamic import('x')
+    /(?:^|[^.\w])require\s*\(\s*['"]([^'"]+)['"]\s*\)/g, // require('x')
   ];
   for (const re of patterns) {
     let m;
@@ -135,17 +139,32 @@ function checkImportsAndAssets(pkg) {
   const extensionless = [];
   const broken = [];
   const missingAssets = [];
+  const extensionlessRuntimeSubpaths = [];
 
   for (const file of files) {
     const code = readFileSync(file, 'utf8');
     const rel = relative(pkg.dir, file);
+    const specs = moduleSpecifiers(code);
 
-    for (const spec of relativeSpecifiers(code)) {
+    for (const spec of specs.filter((s) => s.startsWith('.'))) {
       const target = resolve(dirname(file), spec);
       if (!hasJsExt(spec)) {
         extensionless.push(`${rel}: '${spec}'`);
       } else if (!resolvesToFile(target)) {
         broken.push(`${rel}: '${spec}' -> not found`);
+      }
+    }
+
+    if (file.endsWith('.js')) {
+      for (const spec of specs) {
+        if (
+          NATIVE_NODE_EXTENSION_REQUIRED_PREFIXES.some((prefix) =>
+            spec.startsWith(prefix)
+          ) &&
+          !hasJsExt(spec)
+        ) {
+          extensionlessRuntimeSubpaths.push(`${rel}: '${spec}'`);
+        }
       }
     }
 
@@ -157,7 +176,13 @@ function checkImportsAndAssets(pkg) {
     }
   }
 
-  return { fileCount: files.length, extensionless, broken, missingAssets };
+  return {
+    fileCount: files.length,
+    extensionless,
+    broken,
+    missingAssets,
+    extensionlessRuntimeSubpaths,
+  };
 }
 
 function checkEsmMarker(pkg) {
@@ -209,14 +234,33 @@ function checkAttw(pkg) {
   }
 }
 
+function getPackageEntrypoint(pkg) {
+  const rootExport = pkg.json.exports?.['.'];
+  if (typeof rootExport === 'string') {
+    return rootExport;
+  }
+  if (rootExport && typeof rootExport === 'object') {
+    return rootExport.import || rootExport.default;
+  }
+  return null;
+}
+
 function checkNodeImport(pkg) {
-  // Import a leaf module (version) in native Node ESM. It has no relative deps
-  // and no DOM/vtk usage, so it isolates ESM resolution from runtime concerns.
-  const versionFile = join(pkg.dir, 'dist', 'esm', 'version.js');
-  if (!existsSync(versionFile)) {
+  // Import the package root export in native Node ESM. This catches unresolved
+  // external subpath imports that are invisible when only a dependency-free leaf
+  // module is imported.
+  const entrypoint = getPackageEntrypoint(pkg);
+  if (!entrypoint) {
     return { skipped: true };
   }
-  const url = pathToFileURL(versionFile).href;
+  const entrypointFile = join(pkg.dir, entrypoint);
+  if (!existsSync(entrypointFile)) {
+    return {
+      skipped: false,
+      error: `${entrypoint} from exports["."] does not exist`,
+    };
+  }
+  const url = pathToFileURL(entrypointFile).href;
   try {
     execFileSync(
       process.execPath,
@@ -227,9 +271,25 @@ function checkNodeImport(pkg) {
   } catch (err) {
     return {
       skipped: false,
-      error: `${err.stderr || err.message}`.split('\n')[0],
+      error: formatNodeImportError(err),
     };
   }
+}
+
+function formatNodeImportError(err) {
+  const out = `${err.stderr || err.message}`.trim();
+  const lines = out
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+  return (
+    lines.find((line) => /^Error \[/.test(line)) ||
+    lines.find((line) =>
+      /^(ReferenceError|TypeError|SyntaxError):/.test(line)
+    ) ||
+    lines[0] ||
+    'native Node import failed'
+  );
 }
 
 async function main() {
@@ -261,8 +321,13 @@ async function main() {
       problems.push(`ESM marker: ${markerError}`);
     }
 
-    const { fileCount, extensionless, broken, missingAssets } =
-      checkImportsAndAssets(pkg);
+    const {
+      fileCount,
+      extensionless,
+      broken,
+      missingAssets,
+      extensionlessRuntimeSubpaths,
+    } = checkImportsAndAssets(pkg);
     for (const e of extensionless) {
       problems.push(`extensionless import: ${e}`);
     }
@@ -271,6 +336,9 @@ async function main() {
     }
     for (const a of missingAssets) {
       problems.push(`missing asset: ${a}`);
+    }
+    for (const s of extensionlessRuntimeSubpaths) {
+      problems.push(`extensionless native-Node runtime import: ${s}`);
     }
 
     const publintErrors = await checkPublint(pkg);
@@ -291,7 +359,7 @@ async function main() {
     }
 
     const importNote = nodeImport.skipped
-      ? 'no version leaf'
+      ? 'no root entrypoint'
       : 'node-import ok';
     if (problems.length) {
       failed.push(pkg.name);
