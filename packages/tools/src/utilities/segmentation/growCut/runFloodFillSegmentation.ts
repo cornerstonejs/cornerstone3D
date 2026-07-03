@@ -459,37 +459,6 @@ function promotePreviewSegmentToFinal(
   }
 }
 
-function collectPreviewPointsOnSlices(
-  voxelManager: NumberVoxelManager,
-  preview: number,
-  width: number,
-  height: number,
-  slices: number[]
-): Types.Point3[] {
-  const out: Types.Point3[] = [];
-  const seen = new Set<number>();
-  const numPixelsPerSlice = width * height;
-  for (let si = 0; si < slices.length; si++) {
-    const k = slices[si];
-    if (!Number.isInteger(k) || k < 0) {
-      continue;
-    }
-    const base = k * numPixelsPerSlice;
-    for (let y = 0; y < height; y++) {
-      const rowBase = base + y * width;
-      for (let x = 0; x < width; x++) {
-        const index = rowBase + x;
-        if (voxelManager.getAtIndex(index) !== preview || seen.has(index)) {
-          continue;
-        }
-        seen.add(index);
-        out.push([x, y, k]);
-      }
-    }
-  }
-  return out;
-}
-
 async function runFloodFillSegmentation({
   referencedVolumeId,
   worldPosition,
@@ -856,7 +825,6 @@ async function runFloodFillSegmentation({
     let islandFloodVoxels = 0;
     let externalClearedVoxels = 0;
     let internalSliceCount: number | undefined;
-    let internalModifiedSlices: number[] | undefined;
 
     if (applyExternal) {
       console.time(FLOOD_FILL_ISLAND_EXTERNAL_TIMING_LABEL);
@@ -867,7 +835,6 @@ async function runFloodFillSegmentation({
         console.time(FLOOD_FILL_ISLAND_INTERNAL_TIMING_LABEL);
         const modifiedSlices = islandRemoval.removeInternalIslands();
         internalSliceCount = modifiedSlices?.length;
-        internalModifiedSlices = modifiedSlices;
         console.timeEnd(FLOOD_FILL_ISLAND_INTERNAL_TIMING_LABEL);
       }
     }
@@ -883,28 +850,26 @@ async function runFloodFillSegmentation({
       islandRemovalVerboseLogging: islandVerbose,
     });
 
+    // Internal island removal paints hole voxels beyond the raw flood. Track
+    // them by the exact points island removal painted — a value-scan of the
+    // modified slices would over-collect same-segment voxels from earlier
+    // operations — so the reported set is complete in BOTH preview and
+    // direct-paint modes.
+    const internalFilledPoints = applyInternal
+      ? islandRemoval.getInternalFilledPoints()
+      : [];
+    committedPoints =
+      internalFilledPoints.length > 0
+        ? floodedPoints.concat(internalFilledPoints)
+        : floodedPoints;
+
     if (usePreview) {
-      const internalPreviewPoints =
-        internalModifiedSlices?.length && applyInternal
-          ? collectPreviewPointsOnSlices(
-              labelmapReadVm,
-              paintIndex,
-              width,
-              height,
-              internalModifiedSlices
-            )
-          : [];
-      const promotionPoints =
-        internalPreviewPoints.length > 0
-          ? floodedPoints.concat(internalPreviewPoints)
-          : floodedPoints;
-      committedPoints = promotionPoints;
       promotePreviewSegmentToFinal(
         labelmapReadVm,
         labelmapWriteVm,
         paintIndex,
         segmentIndex,
-        promotionPoints,
+        committedPoints,
         numPixelsPerSlice,
         width
       );

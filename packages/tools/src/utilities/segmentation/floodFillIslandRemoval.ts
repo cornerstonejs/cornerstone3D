@@ -77,6 +77,8 @@ export default class IslandRemoval {
    * a preview layer to hold the per-run delta. See {@link removeExternalIslands}.
    */
   private usingPreviewLayer = false;
+  /** Exact points the last removeInternalIslands run painted (filled holes). */
+  private internalFilledPoints: Types.Point3[] = [];
 
   constructor(options?: {
     maxInternalRemove?: number;
@@ -379,6 +381,7 @@ export default class IslandRemoval {
     const { segmentSet, previewVoxelManager, previewSegmentIndex } = this;
     const { height, normalizer, width } = segmentSet;
     const { toIJK } = normalizer;
+    this.internalFilledPoints = [];
 
     segmentSet.forEachRow((baseIndex, row) => {
       let lastRle;
@@ -464,6 +467,7 @@ export default class IslandRemoval {
       for (let iPrime = rle.start; iPrime < rle.end; iPrime++) {
         const clearPoint = toIJK(segmentSet.toIJK(baseIndex + iPrime));
         previewVoxelManager.setAtIJKPoint(clearPoint, previewSegmentIndex);
+        this.internalFilledPoints.push(clearPoint);
       }
     });
     const modifiedSlices = previewVoxelManager.getArrayOfModifiedSlices();
@@ -479,6 +483,16 @@ export default class IslandRemoval {
       });
     }
     return modifiedSlices;
+  }
+
+  /**
+   * Exact points the last {@link removeInternalIslands} call painted — the
+   * filled internal holes, beyond the caller's own flood. Lets callers report
+   * the true final painted set without value-scanning slices (which would
+   * over-collect same-segment voxels from earlier operations).
+   */
+  public getInternalFilledPoints(): Types.Point3[] {
+    return this.internalFilledPoints;
   }
 
   /**
