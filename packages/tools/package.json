@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/tools",
-  "version": "5.0.14",
+  "version": "5.1.4",
   "description": "Cornerstone3D Tools",
   "types": "./dist/esm/index.d.ts",
   "module": "./dist/esm/index.js",
@@ -121,15 +121,16 @@
   },
   "dependencies": {
     "@types/offscreencanvas": "2019.7.3",
+    "clipper2-ts": "2.0.1",
     "comlink": "4.4.2",
     "lodash.get": "4.4.2"
   },
   "devDependencies": {
-    "@cornerstonejs/core": "5.0.14",
+    "@cornerstonejs/core": "5.1.4",
     "canvas": "3.2.0"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "5.0.14",
+    "@cornerstonejs/core": "5.1.4",
     "@kitware/vtk.js": "35.5.3",
     "@types/d3-array": "3.2.1",
     "@types/d3-interpolate": "3.0.4",

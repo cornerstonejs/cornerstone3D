@@ -18,6 +18,7 @@ import { registerCompressedFrameDataProvider } from './utilities/metadataProvide
 import { registerScalingFromInstanceProvider } from './utilities/metadataProvider/scalingFromInstance';
 import { registerNaturalizedHandlers } from './utilities/metadataProvider/naturalizedHandlers';
 import { registerImageIdProviders } from './utilities/metadataProvider/imageIdsProviders';
+import { registerDisplaySetProviders } from './displayset/displaySetProvider';
 
 const TYPED_PROVIDER_BRIDGE_PRIORITY = -1000;
 
@@ -62,6 +63,9 @@ export function registerDefaultProviders() {
 
   // Register imageId provider pipeline with front-end cache
   registerImageIdProviders();
+
+  // Display set metadata (OHIF display sets registered per imageId)
+  registerDisplaySetProviders();
 
   // Register data lookup providers
   registerDataLookup();

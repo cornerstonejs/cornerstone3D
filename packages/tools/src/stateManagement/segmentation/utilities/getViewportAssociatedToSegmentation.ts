@@ -3,6 +3,7 @@ import { vec3 } from 'gl-matrix';
 
 import type { ContourSegmentationAnnotation } from '../../../types';
 import { getEnabledElementByViewportId } from '@cornerstonejs/core';
+import getViewportICamera from '../../../utilities/getViewportICamera';
 import { getViewportIdsWithSegmentation } from '../getViewportIdsWithSegmentation';
 
 /**
@@ -67,7 +68,8 @@ export function getViewportWithMatchingViewPlaneNormal(
   vec3.normalize(normalizedAnnotationNormal, annotationViewPlaneNormal as vec3);
 
   for (const viewport of viewports) {
-    const camera = viewport.getCamera();
+    // Native ("next") viewports expose no getCamera; read orientation via the bridge.
+    const camera = getViewportICamera(viewport);
     if (!camera?.viewPlaneNormal) {
       continue;
     }

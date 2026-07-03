@@ -86,7 +86,7 @@ export class VtkVolumeSliceRenderPath
       imageIds: payload.imageIds,
       acquisitionOrientation: payload.acquisitionOrientation,
       mapper,
-      currentImageIdIndex: payload.initialImageIdIndex,
+      currentImageIdIndex: payload.initialImageIdIndex ?? 0,
       maxImageIdIndex: payload.imageIds.length - 1,
       defaultVOIRange: defaultRange
         ? { lower: defaultRange[0], upper: defaultRange[1] }
@@ -116,6 +116,7 @@ export class VtkVolumeSliceRenderPath
       acquisitionOrientation: rendering.acquisitionOrientation,
       imageIds: rendering.imageIds,
       imageIdIndex: rendering.currentImageIdIndex,
+      maxImageIdIndex: rendering.maxImageIdIndex,
     });
 
     return {
@@ -249,6 +250,7 @@ export class VtkVolumeSliceRenderPath
         acquisitionOrientation: rendering.acquisitionOrientation,
         imageIds: rendering.imageIds,
         imageIdIndex: rendering.currentImageIdIndex,
+        maxImageIdIndex: rendering.maxImageIdIndex,
       });
     }
   }

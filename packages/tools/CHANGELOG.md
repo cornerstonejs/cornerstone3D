@@ -3,6 +3,43 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.1.4](https://github.com/cornerstonejs/cornerstone3D/compare/v5.1.3...v5.1.4) (2026-07-02)
+
+### Bug Fixes
+
+- clipper2 intersection definition ([#2742](https://github.com/cornerstonejs/cornerstone3D/issues/2742)) ([48539da](https://github.com/cornerstonejs/cornerstone3D/commit/48539daae01b79459297bea780c9eb013a324606))
+
+## [5.1.3](https://github.com/cornerstonejs/cornerstone3D/compare/v5.1.2...v5.1.3) (2026-07-01)
+
+### Bug Fixes
+
+- **segmentation:** scope SegmentLabelTool hover to the current slice for contours ([#2770](https://github.com/cornerstonejs/cornerstone3D/issues/2770)) ([3dd8fa7](https://github.com/cornerstonejs/cornerstone3D/commit/3dd8fa7093fe7f43cea64ab08d01ff84f091656b))
+
+## [5.1.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.1.1...v5.1.2) (2026-06-30)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [5.1.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.1.0...v5.1.1) (2026-06-30)
+
+### Bug Fixes
+
+- **examples:** use correct genericViewportDisplaySetMetadataProvider name ([#2779](https://github.com/cornerstonejs/cornerstone3D/issues/2779)) ([3230e28](https://github.com/cornerstonejs/cornerstone3D/commit/3230e28fe306173acb3882ddf01a6b34e3029085))
+- more generic viewport push for parity with legacy ([#2766](https://github.com/cornerstonejs/cornerstone3D/issues/2766)) ([6fc0256](https://github.com/cornerstonejs/cornerstone3D/commit/6fc0256bfb8c426e4a93f32f5da4ddd3716d9548))
+
+# [5.1.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.16...v5.1.0) (2026-06-30)
+
+### Features
+
+- Add display set split store logic to metadata ([#2738](https://github.com/cornerstonejs/cornerstone3D/issues/2738)) ([a08cd83](https://github.com/cornerstonejs/cornerstone3D/commit/a08cd83b7ba32d73d5eb4eb5f92fc17bac354fbc))
+
+## [5.0.16](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.15...v5.0.16) (2026-06-29)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
+## [5.0.15](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.14...v5.0.15) (2026-06-29)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
 ## [5.0.14](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.13...v5.0.14) (2026-06-25)
 
 ### Features

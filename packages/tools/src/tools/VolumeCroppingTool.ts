@@ -20,6 +20,10 @@ import {
 } from '@cornerstonejs/core';
 
 import { getToolGroup } from '../store/ToolGroupManager';
+import getViewportICamera from '../utilities/getViewportICamera';
+import setViewportCamera, {
+  resetViewportCamera,
+} from '../utilities/setViewportCamera';
 import { Events } from '../enums';
 
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
@@ -290,7 +294,7 @@ class VolumeCroppingTool extends BaseTool {
             }
             const { viewport } = element;
             const viewPresentation = getViewportPresentation(viewport);
-            viewport.resetCamera();
+            resetViewportCamera(viewport);
             applyViewportPresentation(viewport, viewPresentation);
             viewport.render();
           });
@@ -731,7 +735,7 @@ class VolumeCroppingTool extends BaseTool {
       const enabledElement = getEnabledElement(element);
       const { viewport } = enabledElement;
 
-      const camera = viewport.getCamera();
+      const camera = getViewportICamera(viewport);
       const width = element.clientWidth;
       const height = element.clientHeight;
 
@@ -1769,7 +1773,7 @@ class VolumeCroppingTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const width = element.clientWidth;
     const height = element.clientHeight;
 
@@ -2210,7 +2214,7 @@ class VolumeCroppingTool extends BaseTool {
     mat4.rotate(transform, transform, angle, axis);
     vec3.transformMat4(newViewUp, viewUp, transform);
 
-    viewport.setCamera({
+    setViewportCamera(viewport, {
       position: newPosition,
       viewUp: newViewUp,
       focalPoint: newFocalPoint,

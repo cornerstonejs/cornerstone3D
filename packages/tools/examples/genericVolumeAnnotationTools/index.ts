@@ -186,7 +186,7 @@ async function run() {
 
   volume.load();
 
-  utilities.genericViewportDataSetMetadataProvider.add(dataId, {
+  utilities.genericViewportDisplaySetMetadataProvider.add(dataId, {
     kind: 'planar',
     imageIds,
     initialImageIdIndex: Math.floor(imageIds.length / 2),

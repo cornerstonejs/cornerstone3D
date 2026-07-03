@@ -1,7 +1,7 @@
 import type { DataProvider, LoadedData } from '../ViewportArchitectureTypes';
 import type { ECGWaveformPayload } from './ECGViewportTypes';
 import { loadECGWaveform } from '../../../utilities/ECGUtilities';
-import { getGenericViewportSourceDataId } from '../genericViewportDataSetAccess';
+import { getGenericViewportSourceDataId } from '../genericViewportDisplaySetAccess';
 
 export class DefaultECGDataProvider implements DataProvider {
   async load(dataId: string): Promise<LoadedData<ECGWaveformPayload>> {

@@ -14,7 +14,12 @@ import type {
 } from './PlanarViewportTypes';
 
 export const DEFAULT_PLANAR_CPU_IMAGE_THRESHOLD = 64 * 1024 * 1024;
-export const DEFAULT_PLANAR_CPU_VOLUME_THRESHOLD = 64 * 1024 * 1024;
+// Default to no size-based CPU fallback for volumes: a non-finite threshold makes
+// shouldUseCPU() return false on size, so volumes render on the GPU (matching the
+// legacy ORTHOGRAPHIC viewport) unless the GPU is globally unavailable. A finite
+// cap forced ordinary MPR volumes onto the CPU_VOLUME path. Callers can still opt
+// into size-based fallback via rendering.planar.cpuThresholds.volume.
+export const DEFAULT_PLANAR_CPU_VOLUME_THRESHOLD = Number.POSITIVE_INFINITY;
 
 export interface SelectedPlanarRenderPath {
   acquisitionOrientation?: PlanarViewState['orientation'];
@@ -81,16 +86,56 @@ export class PlanarRenderPathDecisionService {
       acquisitionOrientation,
       renderMode: useVolumePath
         ? this.selectVolumeRenderMode(dataSet, options)
-        : this.selectImageRenderMode(dataSet, options),
+        : this.selectImageRenderMode(options),
       volumeId,
     };
   }
 
-  private selectImageRenderMode(
+  /**
+   * Non-throwing companion to {@link select}: reports whether the dataset can be
+   * rendered in the requested orientation/configuration, without selecting a
+   * render mode. Lets callers (e.g. OHIF MPR/orientation controls) pre-check an
+   * orientation before requesting it, instead of relying on `select()` throwing.
+   *
+   * Keep the renderability rules here in sync with `select()` above.
+   */
+  canRender(
     dataSet: PlanarRegisteredDataSet,
+    options: PlanarRenderPathDecisionOptions = {}
+  ): boolean {
+    if (!dataSet.imageIds.length) {
+      return false;
+    }
+
+    const orientation = options.orientation || OrientationAxis.ACQUISITION;
+    const acquisitionOrientation = getPlanarAcquisitionOrientation(
+      dataSet.imageIds
+    );
+    const isAcquisitionPath =
+      orientation === OrientationAxis.ACQUISITION ||
+      (acquisitionOrientation !== undefined &&
+        orientation === acquisitionOrientation);
+    const useVolumePath = isVolumeBackedDataSet(dataSet, isAcquisitionPath);
+
+    if (
+      !isAcquisitionPath &&
+      !useVolumePath &&
+      !dataSet.useWorldCoordinateImageData
+    ) {
+      return false;
+    }
+
+    if (useVolumePath && !supportsVolumeRendering(dataSet)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  private selectImageRenderMode(
     options: PlanarRenderPathDecisionOptions
   ): PlanarEffectiveRenderMode {
-    return this.shouldUseCPUForImage(dataSet, options)
+    return this.shouldUseCPUForImage(options)
       ? ActorRenderMode.CPU_IMAGE
       : ActorRenderMode.VTK_IMAGE;
   }
@@ -105,21 +150,20 @@ export class PlanarRenderPathDecisionService {
   }
 
   private shouldUseCPUForImage(
-    dataSet: PlanarRegisteredDataSet,
     options: PlanarRenderPathDecisionOptions
   ): boolean {
     if (options.webGLAvailable === false) {
       return true;
     }
 
-    const configuredCpuThresholds = getConfiguredPlanarCpuThresholds();
-
-    return shouldUseCPU(
-      dataSet.imageIds,
-      options.cpuThresholds?.image ??
-        configuredCpuThresholds?.image ??
-        DEFAULT_PLANAR_CPU_IMAGE_THRESHOLD
-    );
+    // The GPU image path renders a single slice at a time (see
+    // createVTKImageDataFromImage), so neither stack depth nor per-slice size
+    // changes the GPU texture cost. Match the legacy StackViewport: the image
+    // render path falls back to CPU only when GPU rendering is globally
+    // unavailable. The volume path supports an opt-in size-based fallback (it
+    // uploads the full volume to the GPU), but that is disabled by default so
+    // ordinary volumes render on the GPU like the legacy ORTHOGRAPHIC viewport.
+    return getShouldUseCPURendering();
   }
 
   private shouldUseCPUForVolume(
