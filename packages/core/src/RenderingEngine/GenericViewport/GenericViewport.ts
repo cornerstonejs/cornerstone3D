@@ -465,6 +465,17 @@ abstract class GenericViewport<
   abstract render(): void;
 
   /**
+   * Re-evaluates render paths after a global rendering-configuration change
+   * (setRenderBackend, or a deprecated CPU-rendering toggle). The default is
+   * a no-op; viewport families that support a live render-path swap override
+   * it. Present on every viewport so the global fan-out in init() can call it
+   * unconditionally.
+   */
+  updateRenderingPipeline(): void {
+    // No-op by default; families with swappable render paths override this.
+  }
+
+  /**
    * Recomputes viewport-owned runtime sizing. Concrete viewport families may
    * override this when they need to resize canvases or external runtimes.
    */

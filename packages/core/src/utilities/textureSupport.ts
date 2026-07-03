@@ -3,7 +3,35 @@ const texWidth = 5;
 const texHeight = 1;
 const pixelToCheck = [1, 1];
 
-function main({ ext, filterType, texData, internalFormat, glDataType }) {
+/**
+ * Per-format results of the offscreen WebGL texture probes. Each flag is true
+ * only when a real draw + readback through that texture format produced the
+ * expected pixels, so a browser that merely advertises an extension but
+ * renders garbage through it (e.g. broken EXT_texture_norm16 on some GPUs)
+ * still reports false.
+ */
+export interface TextureFormatSupport {
+  norm16: boolean;
+  norm16Linear: boolean;
+  float: boolean;
+  floatLinear: boolean;
+  halfFloat: boolean;
+  halfFloatLinear: boolean;
+}
+
+function main({
+  ext,
+  filterType,
+  texData,
+  internalFormat,
+  glDataType,
+}: {
+  ext?: string;
+  filterType: 'NEAREST' | 'LINEAR';
+  texData: ArrayBufferView;
+  internalFormat: (gl: WebGL2RenderingContext, ext?) => number;
+  glDataType: (gl: WebGL2RenderingContext, ext?) => number;
+}) {
   try {
     const canvas = document.createElement('canvas');
     canvas.width = canvasSize;
@@ -108,13 +136,13 @@ function main({ ext, filterType, texData, internalFormat, glDataType }) {
   }
 }
 
-export function getSupportedTextureFormats() {
+export function getSupportedTextureFormats(): TextureFormatSupport {
   const norm16TexData = new Int16Array([
     32767, 2000, 3000, 4000, 5000, 16784, 7000, 8000, 9000, 32767,
   ]);
 
-  // const floatTexData = new Float32Array([0.3, 0.2, 0.3, 0.4, 0.5]);
-  // const halfFloatTexData = new Uint16Array([13517, 12902, 13517, 13926, 14336]);
+  const floatTexData = new Float32Array([0.3, 0.2, 0.3, 0.4, 0.5]);
+  const halfFloatTexData = new Uint16Array([13517, 12902, 13517, 13926, 14336]);
 
   return {
     norm16: main({
@@ -131,30 +159,30 @@ export function getSupportedTextureFormats() {
       internalFormat: (gl, ext) => ext.R16_SNORM_EXT,
       glDataType: (gl) => gl.SHORT,
     }),
-    // float: main({
-    //   filterType: 'NEAREST',
-    //   texData: floatTexData,
-    //   internalFormat: (gl) => gl.R16F,
-    //   glDataType: (gl) => gl.FLOAT,
-    // }),
-    // floatLinear: main({
-    //   ext: 'OES_texture_float_linear',
-    //   filterType: 'LINEAR',
-    //   texData: floatTexData,
-    //   internalFormat: (gl) => gl.R16F,
-    //   glDataType: (gl) => gl.FLOAT,
-    // }),
-    // halfFloat: main({
-    //   filterType: 'NEAREST',
-    //   texData: halfFloatTexData,
-    //   internalFormat: (gl) => gl.R16F,
-    //   glDataType: (gl) => gl.HALF_FLOAT,
-    // }),
-    // halfFloatLinear: main({
-    //   filterType: 'LINEAR',
-    //   texData: halfFloatTexData,
-    //   internalFormat: (gl) => gl.R16F,
-    //   glDataType: (gl) => gl.HALF_FLOAT,
-    // }),
+    float: main({
+      filterType: 'NEAREST',
+      texData: floatTexData,
+      internalFormat: (gl) => gl.R32F,
+      glDataType: (gl) => gl.FLOAT,
+    }),
+    floatLinear: main({
+      ext: 'OES_texture_float_linear',
+      filterType: 'LINEAR',
+      texData: floatTexData,
+      internalFormat: (gl) => gl.R32F,
+      glDataType: (gl) => gl.FLOAT,
+    }),
+    halfFloat: main({
+      filterType: 'NEAREST',
+      texData: halfFloatTexData,
+      internalFormat: (gl) => gl.R16F,
+      glDataType: (gl) => gl.HALF_FLOAT,
+    }),
+    halfFloatLinear: main({
+      filterType: 'LINEAR',
+      texData: halfFloatTexData,
+      internalFormat: (gl) => gl.R16F,
+      glDataType: (gl) => gl.HALF_FLOAT,
+    }),
   };
 }

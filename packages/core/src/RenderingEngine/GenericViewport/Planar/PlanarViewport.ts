@@ -30,11 +30,13 @@ import imageIdToURI from '../../../utilities/imageIdToURI';
 import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
 import genericViewportDisplaySetMetadataProvider from '../../../utilities/genericViewportDisplaySetMetadataProvider';
 import triggerEvent from '../../../utilities/triggerEvent';
+import eventTarget from '../../../eventTarget';
 import getMinMax from '../../../utilities/getMinMax';
 import renderingEngineCache from '../../renderingEngineCache';
 import { getCameraVectors } from '../../helpers/getCameraVectors';
 import type {
   LoadedData,
+  ViewportDataBinding,
   ViewportDataReference,
 } from '../ViewportArchitectureTypes';
 import GenericViewport from '../GenericViewport';
@@ -164,6 +166,15 @@ class PlanarViewport extends GenericViewport<
     canvasWidth: number;
   };
   private setDataRequestId = 0;
+  private renderPipelineSwapId = 0;
+  private lastRenderPathErrorKey?: string;
+  // Original mount options per display set, kept so a live render-backend
+  // switch (updateRenderingPipeline) can re-run the render-path decision with
+  // the same per-mount semantics (orientation, thresholds, backend pins).
+  private readonly mountOptionsByDataId = new Map<
+    string,
+    PlanarSetDataOptions
+  >();
 
   // ── Static ───────────────────────────────────────────────────────────
 
@@ -421,6 +432,7 @@ class PlanarViewport extends GenericViewport<
       return;
     }
 
+    this.mountOptionsByDataId.set(dataId, resolvedOptions);
     this.clearResolvedViewCache();
     this.setDefaultDataPresentation(dataId, {
       visible: true,
@@ -458,6 +470,7 @@ class PlanarViewport extends GenericViewport<
    */
   removeData(dataId: string): void {
     this.clearResolvedViewCache();
+    this.mountOptionsByDataId.delete(dataId);
     super.removeData(dataId);
     this.mountedData.handleRemovedData(dataId);
 
@@ -1621,20 +1634,148 @@ class PlanarViewport extends GenericViewport<
 
     let renderedByAdapter = false;
     const sourceBinding = this.getCurrentBinding();
-
-    sourceBinding?.render?.();
-    renderedByAdapter = renderedByAdapter || Boolean(sourceBinding?.render);
-
-    for (const binding of this.bindings.values()) {
-      if (binding === sourceBinding) {
-        continue;
+    const renderBinding = (
+      binding: ViewportDataBinding<PlanarDataPresentation>,
+      dataId: string
+    ) => {
+      if (!binding.render) {
+        return;
       }
 
-      binding.render?.();
-      renderedByAdapter = renderedByAdapter || Boolean(binding.render);
+      renderedByAdapter = true;
+
+      try {
+        binding.render();
+      } catch (error) {
+        this.reportRenderPathError(error, dataId);
+      }
+    };
+
+    for (const [dataId, binding] of this.bindings.entries()) {
+      if (binding === sourceBinding) {
+        renderBinding(binding, dataId);
+      }
+    }
+
+    for (const [dataId, binding] of this.bindings.entries()) {
+      if (binding !== sourceBinding) {
+        renderBinding(binding, dataId);
+      }
     }
 
     return renderedByAdapter;
+  }
+
+  /**
+   * Live render-backend switch: re-runs the render-path decision for every
+   * mounted display set and remounts, in place, the ones whose effective
+   * render mode changed. The viewport instance, its id, mounted data, view
+   * state (slice/zoom/pan), per-display-set presentation, and tool
+   * annotations all survive -- addLoadedData re-applies presentation and view
+   * state to the rebuilt binding. Display sets pinned via a per-mount
+   * renderBackend re-resolve to the same path and are effectively skipped.
+   *
+   * Called by the global setRenderBackend()/setUseCPURendering() fan-out; the
+   * rebuild is async but the hook itself is fire-and-forget by contract.
+   */
+  override updateRenderingPipeline(): void {
+    void this.applyRenderingPipelineUpdate();
+  }
+
+  private async applyRenderingPipelineUpdate(): Promise<void> {
+    if (this.isDestroyed) {
+      return;
+    }
+
+    const swapId = ++this.renderPipelineSwapId;
+    const isStale = () =>
+      swapId !== this.renderPipelineSwapId || this.isDestroyed;
+    let changed = false;
+
+    for (const [dataId, binding] of Array.from(this.bindings.entries())) {
+      if (isStale()) {
+        return;
+      }
+
+      // Skip bindings that were removed or replaced (e.g. by a concurrent
+      // setDisplaySets) since this pass started.
+      if (this.bindings.get(dataId) !== binding) {
+        continue;
+      }
+
+      const options = this.mountOptionsByDataId.get(dataId) ?? {};
+
+      try {
+        const { data, selectedPath } = await this.loadPlanarData(dataId, {
+          ...options,
+          role: binding.role,
+        });
+
+        if (isStale() || this.bindings.get(dataId) !== binding) {
+          continue;
+        }
+
+        if (selectedPath.renderMode === binding.rendering.renderMode) {
+          continue;
+        }
+
+        const added = await this.addLoadedData(
+          dataId,
+          data,
+          {
+            renderMode: selectedPath.renderMode,
+            role: binding.role,
+          },
+          () => isStale() || this.bindings.get(dataId) !== binding
+        );
+
+        changed = changed || added;
+      } catch (error) {
+        this.reportRenderPathError(error, dataId);
+      }
+    }
+
+    if (isStale() || !changed) {
+      return;
+    }
+
+    // Re-assert the source binding's render mode: every remounted path
+    // activated its own mode while mounting, so with mixed CPU/GPU bindings
+    // the last mount, not the source, may have won the canvas-visibility
+    // toggle.
+    const sourceRenderMode = this.getCurrentPlanarRendering()?.renderMode;
+
+    if (sourceRenderMode) {
+      this.renderContext.display.activateRenderMode(sourceRenderMode);
+    }
+
+    this.clearResolvedViewCache();
+    this.updateBindingsCameraState();
+    this.render();
+  }
+
+  /**
+   * Emits the RENDER_PATH_ERROR degradation signal (and logs) for a render
+   * path that threw while mounting or rendering. Consecutive identical
+   * failures are reported once so a per-frame render error does not flood the
+   * event bus; applications listen for this to offer a backend switch.
+   */
+  private reportRenderPathError(error: unknown, dataId?: string): void {
+    const message = error instanceof Error ? error.message : String(error);
+    const errorKey = `${dataId ?? ''}:${message}`;
+
+    if (errorKey === this.lastRenderPathErrorKey) {
+      return;
+    }
+
+    this.lastRenderPathErrorKey = errorKey;
+    console.error('[PlanarViewport] Render path error', dataId ?? '', error);
+    triggerEvent(eventTarget, Events.RENDER_PATH_ERROR, {
+      renderingEngineId: this.renderingEngineId,
+      viewportId: this.id,
+      dataId,
+      error,
+    });
   }
 
   private requestRenderingEngineRender(): void {
@@ -1892,10 +2033,9 @@ class PlanarViewport extends GenericViewport<
     );
     const selectedPath = selectPlanarRenderPath(dataSet, {
       orientation: resolvedOrientation,
-      cpuThresholds: options.cpuThresholds,
-      // Per-mount CPU force: webGLAvailable=false routes the decision to the CPU
-      // path. Left undefined otherwise so global config + thresholds decide.
-      webGLAvailable: options.forceCPU ? false : undefined,
+      // Per-mount backend pin/override; undefined leaves the global
+      // renderBackend configuration to decide.
+      renderBackend: options.renderBackend,
     });
     const data = await (this.dataProvider as PlanarDataProvider).load(dataId, {
       acquisitionOrientation: selectedPath.acquisitionOrientation,

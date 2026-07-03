@@ -303,6 +303,36 @@ enum Events {
    * Triggers on the viewport's element when the actors are changed via set operator
    */
   ACTORS_CHANGED = 'CORNERSTONE_ACTORS_CHANGED',
+
+  /**
+   * Triggers on the eventTarget after the global render backend changes
+   * (setRenderBackend, or a deprecated CPU-rendering toggle that changed the
+   * effective backend). Detail: `{ previous, current, effectiveBackend, reason }`.
+   */
+  RENDER_BACKEND_CHANGED = 'CORNERSTONE_RENDER_BACKEND_CHANGED',
+
+  /**
+   * Triggers on the eventTarget when one of the rendering engine's WebGL
+   * contexts is lost. Cornerstone does not switch backends on its own;
+   * applications can listen for this to offer the user a switch to CPU
+   * rendering via setRenderBackend('cpu').
+   * Detail: `{ renderingEngineId, contextIndex }`.
+   */
+  WEBGL_CONTEXT_LOST = 'CORNERSTONE_WEBGL_CONTEXT_LOST',
+
+  /**
+   * Triggers on the eventTarget when a previously lost WebGL context is
+   * restored by the browser. Detail: `{ renderingEngineId, contextIndex }`.
+   */
+  WEBGL_CONTEXT_RESTORED = 'CORNERSTONE_WEBGL_CONTEXT_RESTORED',
+
+  /**
+   * Triggers on the eventTarget when a GenericViewport render path throws
+   * while mounting or rendering data. Like WEBGL_CONTEXT_LOST this is a
+   * degradation signal for applications; no automatic backend switch happens.
+   * Detail: `{ renderingEngineId, viewportId, dataId, error }`.
+   */
+  RENDER_PATH_ERROR = 'CORNERSTONE_RENDER_PATH_ERROR',
 }
 
 export default Events;
