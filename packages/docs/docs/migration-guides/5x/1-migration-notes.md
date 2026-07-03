@@ -73,6 +73,9 @@ extensions), not just inside bundlers.
   require no changes.
 - **Native Node now works.** Importing a package on a Node code path no longer
   fails with `ERR_MODULE_NOT_FOUND` due to extensionless specifiers.
+- **CommonJS `require()` is not a supported package entry path.** Consume
+  `@cornerstonejs/*` packages with ESM `import`, dynamic `import()`, or a bundler
+  that resolves the ESM export map.
 
 ### Migration Guidance
 

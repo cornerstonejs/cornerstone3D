@@ -28,9 +28,26 @@ const nameFilter = args.filter((a) => !a.startsWith('--'));
 
 // Extensions that count as a resolved JS module specifier.
 const JS_EXTS = ['.js', '.mjs', '.cjs', '.json'];
+const GLOB_CHARS = /[*?[\]{}]/;
+
+function assertLiteralPackageDirs(packageDirs) {
+  for (const rel of packageDirs) {
+    if (
+      typeof rel !== 'string' ||
+      !rel ||
+      rel.startsWith('!') ||
+      GLOB_CHARS.test(rel)
+    ) {
+      throw new Error(
+        `lerna.json package entry '${rel}' must be a literal package directory, not a glob`
+      );
+    }
+  }
+}
 
 function listPublishedPackages() {
   const lerna = JSON.parse(readFileSync(join(repoRoot, 'lerna.json'), 'utf8'));
+  assertLiteralPackageDirs(lerna.packages);
   const pkgs = [];
   for (const rel of lerna.packages) {
     // lerna.json entries here are literal directories, not globs.
@@ -160,7 +177,7 @@ async function checkPublint(pkg) {
   const { publint } = await import('publint');
   let formatMessage;
   try {
-    ({ formatMessage } = await import('publint'));
+    ({ formatMessage } = await import('publint/utils'));
   } catch {
     formatMessage = null;
   }
