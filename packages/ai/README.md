@@ -5,7 +5,7 @@ This package provides AI interfaces for use with Cornerstone in client-side appl
 ## Key Features
 
 - **ONNX Runtime Web Integration**: The package leverages the ONNX Runtime Web library, enabling AI models to run directly in the browser without relying on server-side execution.
-- **Initial Model - Segment Anything Model (SAM)**: Our first supported model is the Segment Anything Model (SAM) https://segment-anything.com/, designed for segmentation tasks.
+- **Initial Model - Segment Anything Model (SAM)**: Our first supported model is the Segment Anything Model (SAM) https://segment-anything.com/, designed for segmentation tasks. The default preset is **MobileSAM** (Apache 2.0), a faster SAM v1-compatible variant with a TinyViT encoder (~45 MB total download).
 
 ## Getting Started
 
@@ -54,36 +54,49 @@ Huge model (vit_h) - 2.38 GB compressed
 
 - https://ohif-assets-new.s3.us-east-1.amazonaws.com/SAM/sam_h.zip
 
-For the examples we are using the model url and fetch it from the web. If you see in example code we have:
+For the examples we fetch model ONNX files from the web. The default preset is MobileSAM; SAM ViT-B remains available as `sam_b`.
 
 #### URL to the model files
 
 ```js
-const models = {
-  sam_b: [
-    {
-      name: 'sam-b-encoder',
-      url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b_01ec64.encoder-fp16.onnx',
-      size: 180,
-      key: 'encoder',
-    },
-    {
-      name: 'sam-b-decoder',
-      url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b_01ec64.decoder.onnx',
-      size: 17,
-      key: 'decoder',
-    },
-  ],
-};
+import {
+  DEFAULT_SAM_MODEL_NAME,
+  modelsFromPresets,
+  ONNXSegmentationController,
+} from '@cornerstonejs/ai';
 
 const ai = new ONNXSegmentationController({
   listeners: [mlLogger],
-  models,
-  modelName: 'sam_b',
+  models: modelsFromPresets(['mobile_sam', 'sam_b', 'sam_b_quant']),
+  modelName: DEFAULT_SAM_MODEL_NAME,
 });
 ```
 
-which gives the url to the model files.
+To use full SAM ViT-B FP16 instead, set `modelName: 'sam_b'`.
+
+For ViT-B quality with a smaller download (~72 MB zip), use `modelName: 'sam_b_quant'`.
+
+### Model presets and preprocessing
+
+Built-in presets live in `src/samModelPresets.ts`. Each encoder entry can set:
+
+- `feedType` — how `ONNXSegmentationController` builds the encoder tensor (`input_image` for NCHW 0–1, `input_image_hwc` for raw RGB 0–255 HWC).
+- `encoderWidth` / `encoderHeight` — render/encode canvas size (MobileSAM uses 1024×682 per the vietanhdev export config, not 1024×1024).
+
+| Preset | Encoder | Decoder | Notes |
+|--------|---------|---------|-------|
+| `mobile_sam` | `mobile_sam.encoder.onnx` (vietanhdev zip) | `sam_vit_h_4b8939.decoder.onnx` (same zip) | Fast TinyViT encoder; preprocessing baked into ONNX |
+| `sam_b_quant` | `sam_vit_b_01ec64.encoder.quant.onnx` (vietanhdev zip) | `sam_vit_b_01ec64.decoder.quant.onnx` (same zip) | ViT-B quantized; HWC 1024×682 like MobileSAM |
+| `sam_b` | schmuell ViT-B FP16 encoder | schmuell ViT-B decoder | Highest quality; expects pre-normalized NCHW input |
+
+When adding a new SAM v1 ONNX pair:
+
+1. Inspect encoder inputs (rank, layout, dynamic dims) with ONNX Runtime or Netron.
+2. Pair encoder and decoder from the **same** publisher/export.
+3. Set `feedType`, canvas dimensions, and encoding cache key if needed.
+4. Pass `[height, width]` as `orig_im_size` to the decoder (see `feedForSam`).
+
+See also the root [SAM / ONNX model notes](../../README.md#sam--onnx-model-notes-cornerstonejsai).
 
 #### Models in binary
 

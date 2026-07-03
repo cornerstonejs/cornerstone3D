@@ -15,7 +15,12 @@ import {
   getLocalUrl,
   addSegmentIndexDropdown,
 } from '../../../../utils/demo/helpers';
-import { ONNXSegmentationController } from '@cornerstonejs/ai';
+import {
+  ONNXSegmentationController,
+  DEFAULT_SAM_MODEL_NAME,
+  getSamModelOptions,
+  modelsFromPresets,
+} from '@cornerstonejs/ai';
 
 const { ViewportType, OrientationAxis } = Enums;
 const { MouseBindings, SegmentationRepresentations, Events, KeyboardBindings } =
@@ -24,10 +29,9 @@ const { segmentation } = cornerstoneTools;
 
 setTitleAndDescription(
   'Basic Single-Viewport AI Segmentation',
-  'This example demonstrates a simplified setup of a single viewport that can switch between stack and sagittal views. It includes minimal AI segmentation tools (MarkerInclude, MarkerExclude, BoxPrompt) and basic navigation tools (Pan, Zoom, Stack Scroll). Logging is also retained to show decoding and inference times.  Use ctrl+click to MarkerExclude'
+  'Select a SAM model, click Download & load, then segment the CT stack with MarkerInclude, MarkerExclude, or BoxPrompt. Use ctrl+click for MarkerExclude.'
 );
 
-// Logging elements and function
 const logs = [];
 function mlLogger(logName, ...args) {
   console.log(logName, ...args);
@@ -46,31 +50,16 @@ function mlLogger(logName, ...args) {
   element.innerText = args.join(' ');
 }
 
-// Model configuration for segmentation
-const models = {
-  sam_b: [
-    {
-      name: 'sam-b-encoder',
-      url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b_01ec64.encoder-fp16.onnx',
-      size: 180,
-      key: 'encoder',
-    },
-    {
-      name: 'sam-b-decoder',
-      url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b_01ec64.decoder.onnx',
-      size: 17,
-      key: 'decoder',
-    },
-  ],
-};
+const presetNames = ['mobile_sam', 'sam_b', 'sam_b_quant'];
+const models = modelsFromPresets(presetNames);
+const samModelOptions = getSamModelOptions().filter((option) =>
+  presetNames.includes(option.value)
+);
 
-const ai = new ONNXSegmentationController({
-  models,
-  modelName: 'sam_b',
-  listeners: [mlLogger],
-});
-
-ai.enabled = true;
+let ai;
+let selectedModelName = DEFAULT_SAM_MODEL_NAME;
+let demoLoaded = false;
+let isLoadingModel = false;
 
 const toolGroupId = 'DEFAULT_TOOLGROUP_ID';
 const renderingEngineId = 'myRenderingEngine';
@@ -81,26 +70,22 @@ let viewport;
 let activeViewport;
 const currentViewportType = ViewportType.STACK;
 
-// Tools to include: MarkerInclude, MarkerExclude, BoxPrompt, plus pan/zoom/scroll
 const MarkerIncludeToolName = ONNXSegmentationController.MarkerInclude;
 const MarkerExcludeToolName = ONNXSegmentationController.MarkerExclude;
 const BoxPromptToolName = ONNXSegmentationController.BoxPrompt;
 
-// Add the base tools we need
 cornerstoneTools.addTool(cornerstoneTools.PanTool);
 cornerstoneTools.addTool(cornerstoneTools.ZoomTool);
 cornerstoneTools.addTool(cornerstoneTools.StackScrollTool);
-cornerstoneTools.addTool(cornerstoneTools.ProbeTool); // Needed as a base for MarkerInclude/Exclude
-cornerstoneTools.addTool(cornerstoneTools.RectangleROITool); // Base for BoxPrompt
+cornerstoneTools.addTool(cornerstoneTools.ProbeTool);
+cornerstoneTools.addTool(cornerstoneTools.RectangleROITool);
 
-// Create a tool group and add the needed tools
 const toolGroup =
   cornerstoneTools.ToolGroupManager.createToolGroup(toolGroupId);
 
 toolGroup.addTool(cornerstoneTools.ZoomTool.toolName);
 toolGroup.addTool(cornerstoneTools.StackScrollTool.toolName);
 toolGroup.addTool(cornerstoneTools.PanTool.toolName);
-// MarkerInclude - a probe variant
 toolGroup.addToolInstance(
   MarkerIncludeToolName,
   cornerstoneTools.ProbeTool.toolName,
@@ -115,7 +100,6 @@ toolGroup.setToolActive(MarkerIncludeToolName, {
   ],
 });
 
-// MarkerExclude - a probe variant with right-click
 toolGroup.addToolInstance(
   MarkerExcludeToolName,
   cornerstoneTools.ProbeTool.toolName,
@@ -131,18 +115,17 @@ toolGroup.setToolActive(MarkerExcludeToolName, {
 
 cornerstoneTools.annotation.config.style.setToolGroupToolStyles(toolGroupId, {
   [MarkerIncludeToolName]: {
-    color: 'rgb(0, 255, 0)', // Green
+    color: 'rgb(0, 255, 0)',
     colorHighlighted: 'rgb(0, 255, 0)',
     colorSelected: 'rgb(0, 255, 0)',
   },
   [MarkerExcludeToolName]: {
-    color: 'rgb(255, 0, 0)', // Red
+    color: 'rgb(255, 0, 0)',
     colorHighlighted: 'rgb(255, 0, 0)',
     colorSelected: 'rgb(255, 0, 0)',
   },
 });
 
-// BoxPrompt - a rectangle ROI variant with Ctrl+click
 toolGroup.addToolInstance(
   BoxPromptToolName,
   cornerstoneTools.RectangleROITool.toolName,
@@ -154,12 +137,10 @@ toolGroup.setToolActive(BoxPromptToolName, {
   bindings: [{ mouseButton: MouseBindings.Primary }],
 });
 
-// Pan (middle or Ctrl+drag)
 toolGroup.setToolActive(cornerstoneTools.PanTool.toolName, {
   bindings: [{ mouseButton: MouseBindings.Auxiliary }],
 });
 
-// Zoom (right mouse)
 toolGroup.setToolActive(cornerstoneTools.ZoomTool.toolName, {
   bindings: [
     { mouseButton: MouseBindings.Secondary },
@@ -167,7 +148,6 @@ toolGroup.setToolActive(cornerstoneTools.ZoomTool.toolName, {
   ],
 });
 
-// Stack Scroll (mouse wheel or Alt+drag)
 toolGroup.setToolActive(cornerstoneTools.StackScrollTool.toolName, {
   bindings: [{ mouseButton: MouseBindings.Wheel }],
 });
@@ -179,7 +159,21 @@ viewportContainer.style.height = '512px';
 viewportContainer.style.position = 'relative';
 content.appendChild(viewportContainer);
 
-// Logging elements on the page
+const placeholder = document.createElement('div');
+placeholder.style.position = 'absolute';
+placeholder.style.inset = '0';
+placeholder.style.display = 'flex';
+placeholder.style.alignItems = 'center';
+placeholder.style.justifyContent = 'center';
+placeholder.style.padding = '1rem';
+placeholder.style.textAlign = 'center';
+placeholder.style.background = 'rgba(0, 0, 0, 0.85)';
+placeholder.style.color = '#fff';
+placeholder.style.zIndex = '1';
+placeholder.innerText =
+  'Select a SAM model above, then click Download & load to fetch the model and show the CT.';
+viewportContainer.appendChild(placeholder);
+
 const encoderLatency = document.createElement('div');
 encoderLatency.id = 'encoder';
 content.appendChild(encoderLatency);
@@ -192,12 +186,36 @@ const logDiv = document.createElement('div');
 logDiv.id = 'status';
 content.appendChild(logDiv);
 
-// disable context menu
 viewportContainer.oncontextmenu = () => false;
+
+const modelSelectElement = addDropdownToToolbar({
+  labelText: 'SAM model',
+  options: {
+    values: samModelOptions.map((option) => option.value),
+    labels: samModelOptions.map((option) => option.label),
+    defaultValue: DEFAULT_SAM_MODEL_NAME,
+  },
+  onSelectedValueChange: (nameAsStringOrNumber) => {
+    if (demoLoaded || isLoadingModel) {
+      return;
+    }
+    selectedModelName = String(nameAsStringOrNumber);
+  },
+});
+
+const loadButtonElement = addButtonToToolbar({
+  title: 'Download & load',
+  onClick: () => {
+    void loadDemoWithModel();
+  },
+});
 
 addButtonToToolbar({
   title: 'Clear',
   onClick: () => {
+    if (!ai || !activeViewport) {
+      return;
+    }
     ai.clear(activeViewport);
     viewport.render();
   },
@@ -206,10 +224,13 @@ addButtonToToolbar({
 addButtonToToolbar({
   title: 'Remove Points',
   onClick: () => {
-    // Get all prompt annotations and remove them
+    if (!ai || !activeViewport) {
+      return;
+    }
     ai.removePromptAnnotationsWithCache(activeViewport);
   },
 });
+
 const segmentationId = 'segmentationId';
 
 addSegmentIndexDropdown(segmentationId);
@@ -224,23 +245,63 @@ addDropdownToToolbar({
   onSelectedValueChange: (nameAsStringOrNumber) => {
     const name = String(nameAsStringOrNumber);
 
-    // Disable all AI tools first
     toolGroup.setToolDisabled(MarkerIncludeToolName);
     toolGroup.setToolDisabled(MarkerExcludeToolName);
     toolGroup.setToolDisabled(BoxPromptToolName);
 
-    // Enable the selected tool
     toolGroup.setToolActive(name, {
       bindings: [{ mouseButton: MouseBindings.Primary }],
     });
   },
 });
 
-async function updateViewport() {
-  await initDemo();
+function setLoadUiState(loading: boolean, loaded = demoLoaded) {
+  isLoadingModel = loading;
+  if (modelSelectElement) {
+    modelSelectElement.disabled = loading || loaded;
+  }
+  if (loadButtonElement) {
+    loadButtonElement.disabled = loading || loaded;
+    loadButtonElement.innerText = loading
+      ? 'Downloading & loading…'
+      : loaded
+        ? 'Loaded'
+        : 'Download & load';
+  }
+}
 
+async function loadDemoWithModel() {
+  if (demoLoaded || isLoadingModel) {
+    return;
+  }
+
+  setLoadUiState(true);
+  mlLogger('status', `Loading ${selectedModelName}…`);
+
+  try {
+    ai = new ONNXSegmentationController({
+      models,
+      modelName: selectedModelName,
+      listeners: [mlLogger],
+    });
+    ai.enabled = true;
+
+    await setupViewport();
+
+    placeholder.remove();
+    demoLoaded = true;
+    mlLogger('status', `${selectedModelName} ready`);
+  } catch (error) {
+    console.error(error);
+    mlLogger('status', `Failed to load ${selectedModelName}`);
+    ai = undefined;
+  } finally {
+    setLoadUiState(false, demoLoaded);
+  }
+}
+
+async function setupViewport() {
   if (renderingEngine) {
-    // renderingEngine.destroy();
     segmentation.removeAllSegmentationRepresentations();
     segmentation.removeAllSegmentations();
   }
@@ -268,7 +329,6 @@ async function updateViewport() {
     await viewport.setStack(imageIds);
     viewport.render();
   } else {
-    // For sagittal, create volume and set it
     const volume = await volumeLoader.createAndCacheVolume(volumeId, {
       imageIds,
     });
@@ -278,7 +338,6 @@ async function updateViewport() {
     viewport.render();
   }
 
-  // Add a segmentation that will contains the contour annotations
   const segmentationImages =
     await imageLoader.createAndCacheDerivedLabelmapImages(imageIds);
 
@@ -300,7 +359,6 @@ async function updateViewport() {
     [viewport.id]: [{ segmentationId }],
   };
 
-  // Create a segmentation representation associated to the toolGroupId
   await segmentation.addLabelmapRepresentationToViewportMap(segMap);
 
   activeViewport = viewport;
@@ -333,4 +391,4 @@ async function createAndLoadData() {
   return imageIdsFull.reverse();
 }
 
-updateViewport();
+void initDemo();

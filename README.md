@@ -24,6 +24,30 @@ standalone pnpm installs try to download a platform-specific pnpm binary and
 can fail before any install command runs. Corepack and CI still use the pinned
 pnpm version.
 
+## SAM / ONNX model notes (`@cornerstonejs/ai`)
+
+Segment Anything models are **not** all drop-in compatible. Different ONNX exports expect different
+image layout, value range, canvas size, and decoder inputs. The presets in
+`packages/ai/src/samModelPresets.ts` capture what each bundled model needs; if you swap in another
+encoder/decoder pair, match the export’s contract or segmentation will be wrong (often with a large
+spatial offset rather than a clean error).
+
+| Preset | Encoder export | Canvas for encode | Pixel input | `orig_im_size` |
+|--------|----------------|-------------------|-------------|----------------|
+| `mobile_sam` | [vietanhdev](https://huggingface.co/vietanhdev/segment-anything-onnx-models) MobileSAM zip (`--use-preprocess`) | **1024×682** (not square) | HWC float32 RGB **0–255**; mean/std normalization is **inside** the ONNX graph | `[height, width]` of the encoded image (e.g. `[682, 1024]`) |
+| `sam_b_quant` | [vietanhdev](https://huggingface.co/vietanhdev/segment-anything-onnx-models) ViT-B quant zip | **1024×682** | Same HWC / preprocess path as `mobile_sam` | `[682, 1024]` |
+| `sam_b` | [schmuell](https://huggingface.co/schmuell/sam-b-fp16) ViT-B FP16 | **1024×1024** square | NCHW `[1,3,1024,1024]` via `ort.Tensor.fromImage` (**0–1**, divide by 255) | `[height, width]` of the encoded canvas |
+
+**Practical notes:**
+
+- Keep **encoder and decoder from the same export** (e.g. both from a vietanhdev zip). Mixing a MobileSAM encoder with an unrelated decoder usually fails or misaligns masks.
+- Preset fields: `feedType` (`input_image` vs `input_image_hwc`), `encoderWidth`, `encoderHeight`. See `ONNXSegmentationController` and `applyEncoderCanvasSize`.
+- **Embedding cache** keys include a version suffix when preprocessing changes (e.g. `mobile_sam.enc-v3`). After upgrading `@cornerstonejs/ai` or changing presets, hard-refresh and re-encode slices so stale embeddings are not reused.
+- **SAM v1 decoder feeds** include a padding point `(0, 0)` with label `-1` in addition to user prompts.
+- Other families (**SAM 2**, **SAM 3**) use different graphs and are not supported by the current `feedForSam` path.
+
+Implementation details, WASM setup, and examples: [`packages/ai/README.md`](packages/ai/README.md).
+
 ## Documentation
 
 You can find the Cornerstone documentation [on the website](https://cornerstonejs.org/).

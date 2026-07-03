@@ -7,6 +7,10 @@ import {
   addTool,
 } from '@cornerstonejs/tools';
 import ONNXSegmentationController from './ONNXSegmentationController';
+import {
+  DEFAULT_SAM_MODEL_NAME,
+  modelsFromPresets,
+} from './samModelPresets';
 
 /**
  * Represents a tool used for segment selection and AI-assisted segmentation.
@@ -25,24 +29,9 @@ class MarkerLabelmapTool extends LabelmapBaseTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         sourceViewportId: '',
-        modelName: 'sam_b',
+        modelName: DEFAULT_SAM_MODEL_NAME,
         enabled: false,
-        models: {
-          sam_b: [
-            {
-              name: 'sam-b-encoder',
-              url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b_01ec64.encoder-fp16.onnx',
-              size: 180,
-              key: 'encoder',
-            },
-            {
-              name: 'sam-b-decoder',
-              url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b_01ec64.decoder.onnx',
-              size: 17,
-              key: 'decoder',
-            },
-          ],
-        },
+        models: modelsFromPresets(['mobile_sam', 'sam_b', 'sam_b_quant']),
         numRandomPoints: 5,
         searchBreadth: 10,
       },

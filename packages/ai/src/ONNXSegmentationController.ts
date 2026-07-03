@@ -14,6 +14,11 @@ import {
   LabelmapBaseTool,
 } from '@cornerstonejs/tools';
 import { Events as aiEvents } from './enums';
+import {
+  DEFAULT_SAM_MODEL_NAME,
+  modelsFromPresets,
+} from './samModelPresets';
+import { extractZipEntry } from './extractZipEntry';
 
 const { strategies } = cstSegmentation;
 const { fillInsideCircle } = strategies;
@@ -37,16 +42,61 @@ const { triggerSegmentationDataModified } =
 export type ModelType = {
   name: string;
   key: string;
-  url: string;
+  url?: string;
+  zipUrl?: string;
+  zipEntry?: string;
   size: number;
+  feedType?: string;
+  encoderWidth?: number;
+  encoderHeight?: number;
   opt?: Record<string, unknown>;
 };
+
+function getModelCacheKey(model: ModelType) {
+  const source = model.url || `${model.zipUrl}#${model.zipEntry}`;
+
+  return `v3/${source}`;
+}
 
 /**
  * clone tensor
  */
 function cloneTensor(t) {
   return new ort.Tensor(t.type, Float32Array.from(t.data), t.dims);
+}
+
+function getModelComponent(
+  models: Record<string, ModelType[]>,
+  modelName: string,
+  key: string,
+  config?: Record<string, ModelType>
+) {
+  const presetComponents = models[modelName];
+  const fromPreset = presetComponents?.find((component) => component.key === key);
+
+  return fromPreset || config?.[key];
+}
+
+function getEmbeddingTensor(emb) {
+  if (!emb) {
+    throw new Error('Encoder embeddings are not available');
+  }
+
+  if (emb.image_embeddings) {
+    return emb.image_embeddings;
+  }
+
+  if (emb.embeddings) {
+    return emb.embeddings;
+  }
+
+  const outputName = Object.keys(emb).find((name) => emb[name]?.dims);
+
+  if (outputName) {
+    return emb[outputName];
+  }
+
+  throw new Error('Unable to find embeddings in encoder output');
 }
 
 /*
@@ -59,19 +109,25 @@ function feedForSam(emb, points, labels, modelSize = [1024, 1024]) {
   );
   const hasMask = new ort.Tensor(new Float32Array([0]), [1]);
   const originalImageSize = new ort.Tensor(new Float32Array(modelSize), [2]);
-  const pointCoords = new ort.Tensor(new Float32Array(points), [
+
+  const coordPairs = [];
+  for (let i = 0; i < points.length; i += 2) {
+    coordPairs.push(points[i], points[i + 1]);
+  }
+  coordPairs.push(0, 0);
+
+  const pointCoords = new ort.Tensor(new Float32Array(coordPairs), [
     1,
-    points.length / 2,
+    coordPairs.length / 2,
     2,
   ]);
-  const pointLabels = new ort.Tensor(new Float32Array(labels), [
+  const pointLabels = new ort.Tensor(new Float32Array([...labels, -1]), [
     1,
-    labels.length,
+    labels.length + 1,
   ]);
 
-  const key = (emb.image_embeddings && 'image_embeddings') || 'embeddings';
   return {
-    image_embeddings: cloneTensor(emb[key]),
+    image_embeddings: cloneTensor(getEmbeddingTensor(emb)),
     point_coords: pointCoords,
     point_labels: pointLabels,
     mask_input: maskInput,
@@ -80,7 +136,91 @@ function feedForSam(emb, points, labels, modelSize = [1024, 1024]) {
   };
 }
 
+/**
+ * MobileSAM / vietanhdev encoders with --use-preprocess expect HWC float32 RGB in
+ * 0–255 range; mean/std normalization and padding happen inside the ONNX graph.
+ */
+function imageDataToSamHwcTensor(imageData) {
+  const { width, height, data } = imageData;
+  const dst = new Float32Array(height * width * 3);
+
+  for (let i = 0, j = 0; i < data.length; i += 4, j += 3) {
+    dst[j] = data[i];
+    dst[j + 1] = data[i + 1];
+    dst[j + 2] = data[i + 2];
+  }
+
+  return new ort.Tensor('float32', dst, [height, width, 3]);
+}
+
+async function createEncoderInputTensor(
+  imageImageData,
+  modelWidth,
+  modelHeight,
+  feedType = 'input_image'
+) {
+  if (feedType === 'input_image_hwc') {
+    return imageDataToSamHwcTensor(imageImageData);
+  }
+
+  return ort.Tensor.fromImage(imageImageData, {
+    resizedWidth: modelWidth,
+    resizedHeight: modelHeight,
+  });
+}
+
+function createEncoderFeed(tensor, feedType = 'input_image') {
+  if (feedType === 'images') {
+    return { images: tensor };
+  }
+
+  if (feedType === 'pixelValues') {
+    return { pixel_values: tensor };
+  }
+
+  return { input_image: tensor };
+}
+
 const DEFAULT_ORT_WASM_BASE_PATH = '/ort/';
+
+function getEncodingCacheModelKey(modelName) {
+  if (modelName === 'mobile_sam') {
+    return 'mobile_sam.enc-v3';
+  }
+
+  if (modelName === 'sam_b_quant') {
+    return 'sam_b_quant.enc-v1';
+  }
+
+  return modelName;
+}
+
+function applyEncoderCanvasSize(
+  controller,
+  modelName,
+  models,
+  config?: Record<string, ModelType>
+) {
+  const encoder = getModelComponent(models, modelName, 'encoder', config);
+  const width = encoder?.encoderWidth ?? 1024;
+  const height = encoder?.encoderHeight ?? 1024;
+
+  controller.maxWidth = width;
+  controller.maxHeight = height;
+  controller.modelWidth = width;
+  controller.modelHeight = height;
+}
+
+function getViewportImageId(viewport) {
+  const imageId =
+    viewport.getCurrentImageId?.() || viewport.getViewReferenceId?.() || null;
+
+  if (!imageId) {
+    return null;
+  }
+
+  return imageId.startsWith('imageId:') ? imageId.slice(8) : imageId;
+}
 
 function resolveOrtWasmBaseUrl(basePath = DEFAULT_ORT_WASM_BASE_PATH) {
   if (/^https?:\/\//.test(basePath)) {
@@ -209,6 +349,7 @@ export default class ONNXSegmentationController {
    * can be used.
    */
   static MODELS = {
+    ...modelsFromPresets(['mobile_sam', 'sam_b', 'sam_b_quant']),
     sam_l: [
       {
         name: 'sam-l-encoder',
@@ -273,6 +414,9 @@ export default class ONNXSegmentationController {
   protected isGpuInUse = false;
   protected annotationsNeedUpdating = false;
   protected maskImageData;
+  protected isCameraInteractionActive = false;
+  protected cameraInteractionEndTimer: ReturnType<typeof setTimeout> | null =
+    null;
   protected promptAnnotationTypes = [
     ONNXSegmentationController.MarkerInclude,
     ONNXSegmentationController.MarkerExclude,
@@ -366,6 +510,12 @@ export default class ONNXSegmentationController {
       Object.assign(ONNXSegmentationController.MODELS, options.models);
     }
     this.config = this.getConfig(options.modelName);
+    applyEncoderCanvasSize(
+      this,
+      this.config.model,
+      ONNXSegmentationController.MODELS,
+      this.config
+    );
 
     // Ensure we have non-optional properties when assigning
     if (options.islandFillOptions) {
@@ -478,9 +628,8 @@ export default class ONNXSegmentationController {
 
     this.tool = brushInstance;
 
-    desiredImage.imageId =
-      viewport.getCurrentImageId?.() || viewport.getViewReferenceId();
-    if (desiredImage.imageId.startsWith('volumeId:')) {
+    desiredImage.imageId = getViewportImageId(viewport);
+    if (desiredImage.imageId?.startsWith('volumeId:')) {
       desiredImage.sampleImageId = viewport.getImageIds(
         viewport.getVolumeId()
       )[0];
@@ -488,9 +637,20 @@ export default class ONNXSegmentationController {
       desiredImage.sampleImageId = desiredImage.imageId;
     }
 
+    if (viewport.type === Enums.ViewportType.STACK) {
+      viewport.element.addEventListener(
+        Events.STACK_NEW_IMAGE,
+        this.onViewportImageChanged
+      );
+    } else {
+      viewport.element.addEventListener(
+        Events.IMAGE_RENDERED,
+        this.onViewportImageChanged
+      );
+    }
     viewport.element.addEventListener(
-      Events.IMAGE_RENDERED,
-      this.viewportRenderedListener
+      Events.CAMERA_MODIFIED,
+      this.markCameraInteraction
     );
     const boundListener = this.annotationModifiedListener;
     eventTarget.addEventListener(toolsEvents.ANNOTATION_ADDED, boundListener);
@@ -687,22 +847,32 @@ export default class ONNXSegmentationController {
   };
 
   /**
-   * A listener for viewport being rendered that tried loading/encoding the
-   * new image if it is different from the previous image.  Will return before
-   * the image is encoded.  Can be called without binding as it is already
-   * bound to the this object.
-   * The behaviour of the callback is that if the image has changed in terms
-   * of which image (new view reference), then that image is set as the
-   * currently desired encoded image, and a new encoding will be read from
-   * cache or one will be created and stored in cache.
-   *
-   * This does not need to be manually bound, the initViewport will bind
-   * this to the correct rendering messages.
+   * Defers SAM encode/decode while the user pans, zooms, or otherwise moves the
+   * camera so WebGPU/WASM inference does not block viewport interaction.
    */
-  protected viewportRenderedListener = (_event) => {
-    const { viewport, currentImage, desiredImage } = this;
-    desiredImage.imageId =
-      viewport.getCurrentImageId() || viewport.getViewReferenceId();
+  protected markCameraInteraction = () => {
+    this.isCameraInteractionActive = true;
+
+    if (this.cameraInteractionEndTimer) {
+      clearTimeout(this.cameraInteractionEndTimer);
+    }
+
+    this.cameraInteractionEndTimer = setTimeout(() => {
+      this.isCameraInteractionActive = false;
+      this.cameraInteractionEndTimer = null;
+      this.tryLoad();
+    }, 100);
+  };
+
+  /**
+   * Loads or encodes a new viewport image when the displayed slice changes.
+   * Stack viewports listen on STACK_NEW_IMAGE instead of IMAGE_RENDERED so pan
+   * and zoom do not enqueue inference on every frame.
+   */
+  protected onViewportImageChanged = (_event) => {
+    const { viewport, currentImage, desiredImage, sessions } = this;
+    const [session] = sessions;
+    desiredImage.imageId = getViewportImageId(viewport);
     desiredImage.imageIndex = viewport.getCurrentImageIdIndex();
     if (!desiredImage.imageId) {
       return;
@@ -714,7 +884,10 @@ export default class ONNXSegmentationController {
     } else {
       desiredImage.sampleImageId = desiredImage.imageId;
     }
-    if (desiredImage.imageId === currentImage?.imageId) {
+    if (
+      desiredImage.imageId === currentImage?.imageId ||
+      desiredImage.imageId === session?.imageId
+    ) {
       return;
     }
 
@@ -861,8 +1034,21 @@ export default class ONNXSegmentationController {
   public disconnectViewport(viewport) {
     viewport.element.removeEventListener(
       Events.IMAGE_RENDERED,
-      this.viewportRenderedListener
+      this.onViewportImageChanged
     );
+    viewport.element.removeEventListener(
+      Events.STACK_NEW_IMAGE,
+      this.onViewportImageChanged
+    );
+    viewport.element.removeEventListener(
+      Events.CAMERA_MODIFIED,
+      this.markCameraInteraction
+    );
+    if (this.cameraInteractionEndTimer) {
+      clearTimeout(this.cameraInteractionEndTimer);
+      this.cameraInteractionEndTimer = null;
+      this.isCameraInteractionActive = false;
+    }
     const boundListener = this.annotationModifiedListener;
     eventTarget.removeEventListener(
       toolsEvents.ANNOTATION_MODIFIED,
@@ -906,8 +1092,8 @@ export default class ONNXSegmentationController {
         });
         await loader;
       } else {
-        // Only the encoder is needed otherwise
         sessions[i].encoder = sessions[0].encoder;
+        sessions[i].decoder = sessions[0].decoder;
       }
       sessions[i].loader = loader;
     }
@@ -995,7 +1181,10 @@ export default class ONNXSegmentationController {
    * are other high priority tasks to complete.
    */
   protected async handleImage({ imageId, sampleImageId }, imageSession) {
-    if (imageId === imageSession.imageId || this.isGpuInUse || !this.enabled) {
+    if (imageId === imageSession.imageId || !this.enabled) {
+      return;
+    }
+    if (this.isCameraInteractionActive || this.isGpuInUse) {
       return;
     }
     const { viewport, desiredImage } = this;
@@ -1033,7 +1222,7 @@ export default class ONNXSegmentationController {
           ...ONNXSegmentationController.viewportOptions,
         },
         viewReference: null,
-        renderingEngineId: viewport.getRenderingEngine().id,
+        renderingEngineId: `${viewport.getRenderingEngine().id}-sam-encoder`,
       };
       if (imageId.startsWith('volumeId:')) {
         const viewRef = viewport.getViewReference();
@@ -1061,15 +1250,20 @@ export default class ONNXSegmentationController {
           canvas.style.cursor = 'default';
         }
       } else {
-        const t = await ort.Tensor.fromImage(this.imageImageData, {
-          resizedWidth: this.modelWidth,
-          resizedHeight: this.modelHeight,
-        });
-        const { feedType = 'input_image' } = this.config.encoder;
-        const feed = (feedType === 'images' && { images: t }) ||
-          (feedType === 'pixelValues' && { pixel_values: t }) || {
-            input_image: t,
-          };
+        const encoderConfig = getModelComponent(
+          ONNXSegmentationController.MODELS,
+          this.config.model,
+          'encoder',
+          this.config
+        );
+        const { feedType = 'input_image' } = encoderConfig || {};
+        const t = await createEncoderInputTensor(
+          this.imageImageData,
+          this.modelWidth,
+          this.modelHeight,
+          feedType
+        );
+        const feed = createEncoderFeed(t, feedType);
         await imageSession.loader;
         const session = await imageSession.encoder;
         if (!session) {
@@ -1104,6 +1298,10 @@ export default class ONNXSegmentationController {
    */
   protected async runDecode() {
     const { canvas } = this;
+    if (this.isCameraInteractionActive) {
+      this.annotationsNeedUpdating = true;
+      return;
+    }
     if (this.isGpuInUse || !this.currentImage?.imageEmbeddings) {
       return;
     }
@@ -1129,8 +1327,7 @@ export default class ONNXSegmentationController {
   public tryLoad(options = { resetImage: false }) {
     const { viewport, desiredImage } = this;
     if (!desiredImage.imageId || options.resetImage) {
-      desiredImage.imageId =
-        viewport.getCurrentImageId() || viewport.getViewReferenceId();
+      desiredImage.imageId = getViewportImageId(viewport);
       this.currentImage = null;
     }
     // Always use session 0 for the current session
@@ -1195,6 +1392,7 @@ export default class ONNXSegmentationController {
    */
   updateAnnotations(useSession = this.currentImage) {
     if (
+      this.isCameraInteractionActive ||
       this.isGpuInUse ||
       !this.annotationsNeedUpdating ||
       !this.currentImage
@@ -1264,7 +1462,10 @@ export default class ONNXSegmentationController {
   async loadStorageImageEncoding(session, imageId, index = null) {
     try {
       const root = await this.getDirectoryForImageId(session, imageId);
-      const name = this.getFileNameForImageId(imageId, this.config.model);
+      const name = this.getFileNameForImageId(
+        imageId,
+        getEncodingCacheModelKey(this.config.model)
+      );
       if (!root || !name) {
         return null;
       }
@@ -1299,7 +1500,10 @@ export default class ONNXSegmentationController {
     this.imageEncodings.set(imageId, writeData);
     try {
       const root = await this.getDirectoryForImageId(session, imageId);
-      const name = this.getFileNameForImageId(imageId, this.config.model);
+      const name = this.getFileNameForImageId(
+        imageId,
+        getEncodingCacheModelKey(this.config.model)
+      );
       if (!root || !name) {
         return;
       }
@@ -1355,7 +1559,7 @@ export default class ONNXSegmentationController {
           continue;
         }
         // 4 values - RGBA - per pixel
-        const maskIndex = 4 * (i + j * this.maxWidth);
+        const maskIndex = 4 * (i + j * canvas.width);
         const v = data[maskIndex];
 
         const segmentValue = segmentationVoxelManager.getAtIJKPoint(ijkPoint);
@@ -1425,18 +1629,30 @@ export default class ONNXSegmentationController {
     ctx.putImageData(imageImageData, 0, 0);
 
     if (points.length) {
-      // need to wait for encoder to be ready
+      await useSession.loader;
+
       if (!useSession.imageEmbeddings) {
         await useSession.encoder;
       }
 
-      // wait for encoder to deliver embeddings
       const emb = await useSession.imageEmbeddings;
 
-      // the decoder
-      const session = useSession.decoder;
+      if (!emb) {
+        this.log(Loggers.Log, 'Encoder embeddings not ready yet');
+        return;
+      }
 
-      const feed = feedForSam(emb, points, labels);
+      const session = await useSession.decoder;
+
+      if (!session) {
+        this.log(Loggers.Log, 'Decoder session not ready');
+        return;
+      }
+
+      const feed = feedForSam(emb, points, labels, [
+        imageImageData.height,
+        imageImageData.width,
+      ]);
       const res = await session.run(feed);
 
       for (let i = 0; i < points.length; i += 2) {
@@ -1487,7 +1703,52 @@ export default class ONNXSegmentationController {
   /*
    * fetch and cache the ONNX model at the given url/name.
    */
-  async fetchAndCacheModel(url, name) {
+  async fetchAndCacheModel(model: ModelType, options: { skipCache?: boolean } = {}) {
+    const { name } = model;
+    const cacheKey = getModelCacheKey(model);
+
+    if (model.zipUrl && model.zipEntry) {
+      try {
+        const cache = await caches.open('onnx');
+        const cachedResponse = options.skipCache
+          ? undefined
+          : await cache.match(cacheKey);
+
+        if (cachedResponse) {
+          triggerEvent(eventTarget, aiEvents.MODEL_COMPONENT_LOADED, {
+            name,
+            url: cacheKey,
+            status: 'loaded',
+            source: 'cache',
+          });
+          this.log(Loggers.Log, `${name} (cached)`);
+          return cachedResponse.arrayBuffer();
+        }
+
+        triggerEvent(eventTarget, aiEvents.MODEL_COMPONENT_LOADED, {
+          name,
+          url: cacheKey,
+          status: 'loading',
+          source: 'network',
+        });
+
+        const data = await extractZipEntry(model.zipUrl, model.zipEntry);
+        await cache.put(cacheKey, new Response(data));
+        this.log(Loggers.Log, `${name} (network)`);
+        return data;
+      } catch (error) {
+        triggerEvent(eventTarget, aiEvents.MODEL_COMPONENT_LOADED, {
+          name,
+          url: cacheKey,
+          status: 'error',
+          error,
+        });
+        throw error;
+      }
+    }
+
+    const url = model.url;
+
     try {
       const cache = await caches.open('onnx');
       let cachedResponse = await cache.match(url);
@@ -1542,11 +1803,14 @@ export default class ONNXSegmentationController {
     // Get the list of urls to download
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     for (const model of Object.values(models) as ModelType[]) {
-      const cachedResponse = await cache.match(model.url);
+      const cacheKey = getModelCacheKey(model);
+      const cachedResponse = await cache.match(cacheKey);
+
       if (cachedResponse === undefined) {
         missing += model.size;
       }
-      urls.push(model.url);
+
+      urls.push(cacheKey);
     }
 
     // Trigger event for model loading started
@@ -1581,14 +1845,50 @@ export default class ONNXSegmentationController {
         interOpNumThreads: 4,
         intraOpNumThreads: 2,
       };
-      const model_bytes = await this.fetchAndCacheModel(model.url, model.name);
       const extra_opt = model.opt || {};
       const sessionOptions = { ...opt, ...extra_opt };
-      this.config[model.key] = model;
-      imageSession[model.key] = await ort.InferenceSession.create(
+      const cacheKey = getModelCacheKey(model);
+      let model_bytes = await this.fetchAndCacheModel(model);
+      let session = await ort.InferenceSession.create(
         model_bytes,
         sessionOptions
       );
+      const isValidSession =
+        (model.key === 'encoder' &&
+          session.inputNames.includes('input_image')) ||
+        (model.key === 'decoder' &&
+          session.inputNames.includes('image_embeddings'));
+
+      if (!isValidSession) {
+        const cache = await caches.open('onnx');
+        await cache.delete(cacheKey);
+        model_bytes = await this.fetchAndCacheModel(model, { skipCache: true });
+        session = await ort.InferenceSession.create(
+          model_bytes,
+          sessionOptions
+        );
+      }
+
+      if (
+        model.key === 'encoder' &&
+        !session.inputNames.includes('input_image')
+      ) {
+        throw new Error(
+          `Expected an encoder model for ${model.name}, got inputs: ${session.inputNames.join(', ')}`
+        );
+      }
+
+      if (
+        model.key === 'decoder' &&
+        !session.inputNames.includes('image_embeddings')
+      ) {
+        throw new Error(
+          `Expected a decoder model for ${model.name}, got inputs: ${session.inputNames.join(', ')}`
+        );
+      }
+
+      this.config[model.key] = model;
+      imageSession[model.key] = session;
     }
     const stop = performance.now();
     const loadTime = stop - start;
@@ -1657,7 +1957,7 @@ export default class ONNXSegmentationController {
    * Creates a configuration for which encoder/decoder to run.  TODO - move
    * this into the constructor.
    */
-  getConfig(modelName = 'sam_b') {
+  getConfig(modelName = DEFAULT_SAM_MODEL_NAME) {
     if (this.config) {
       return this.config;
     }
