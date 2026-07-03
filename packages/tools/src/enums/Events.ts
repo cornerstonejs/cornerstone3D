@@ -35,6 +35,55 @@ enum Events {
 
   CROSSHAIR_TOOL_CENTER_CHANGED = 'CORNERSTONE_TOOLS_CROSSHAIR_TOOL_CENTER_CHANGED',
 
+  /**
+   * Triggers on the eventTarget when the WorldCrosshairTool ("Reference
+   * Point") world point is set or moved. Fired only when the point actually
+   * changes.
+   */
+  WORLD_CROSSHAIR_POINT_CHANGED = 'CORNERSTONE_TOOLS_WORLD_CROSSHAIR_POINT_CHANGED',
+
+  /**
+   * Triggers on the eventTarget when the WorldCrosshairTool ("Reference
+   * Point") world point is cleared.
+   */
+  WORLD_CROSSHAIR_POINT_CLEARED = 'CORNERSTONE_TOOLS_WORLD_CROSSHAIR_POINT_CLEARED',
+
+  /**
+   * Triggers on the eventTarget when linked viewports are jumped to the
+   * WorldCrosshairTool ("Reference Point") world point.
+   */
+  WORLD_CROSSHAIR_JUMPED_TO_POINT = 'CORNERSTONE_TOOLS_WORLD_CROSSHAIR_JUMPED_TO_POINT',
+
+  /**
+   * Triggers on the eventTarget when the SliceIntersectionTool active/selected
+   * source viewports change.
+   */
+  SLICE_INTERSECTION_SOURCE_CHANGED = 'CORNERSTONE_TOOLS_SLICE_INTERSECTION_SOURCE_CHANGED',
+
+  /**
+   * Triggers on the eventTarget when a SliceIntersectionTool intersection line
+   * is selected.
+   */
+  SLICE_INTERSECTION_LINE_SELECTED = 'CORNERSTONE_TOOLS_SLICE_INTERSECTION_LINE_SELECTED',
+
+  /**
+   * Triggers on the eventTarget when a SliceIntersectionTool manipulation
+   * (translate, rotate or slab thickness) starts.
+   */
+  SLICE_INTERSECTION_MANIPULATION_STARTED = 'CORNERSTONE_TOOLS_SLICE_INTERSECTION_MANIPULATION_STARTED',
+
+  /**
+   * Triggers on the eventTarget when a SliceIntersectionTool manipulation
+   * (translate, rotate or slab thickness) ends.
+   */
+  SLICE_INTERSECTION_MANIPULATION_ENDED = 'CORNERSTONE_TOOLS_SLICE_INTERSECTION_MANIPULATION_ENDED',
+
+  /**
+   * Triggers on the eventTarget when the SliceIntersectionTool changes a
+   * source viewport slab thickness.
+   */
+  SLICE_INTERSECTION_SLAB_THICKNESS_CHANGED = 'CORNERSTONE_TOOLS_SLICE_INTERSECTION_SLAB_THICKNESS_CHANGED',
+
   VOLUMECROPPINGCONTROL_TOOL_CHANGED = 'CORNERSTONE_TOOLS_VOLUMECROPPINGCONTROL_TOOL_CHANGED',
 
   VOLUMECROPPING_TOOL_CHANGED = 'CORNERSTONE_TOOLS_VOLUMECROPPING_TOOL_CHANGED',

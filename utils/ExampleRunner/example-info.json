@@ -555,6 +555,30 @@
         "name": "Crosshairs Binding Modes",
         "description": "Demonstrates Crosshairs as a regular active tool binding on either primary or right click."
       },
+      "worldCrosshair": {
+        "name": "World Crosshair (Reference Point)",
+        "description": "Demonstrates the WorldCrosshairTool: a persistent world-space reference point that stays fixed while viewports scroll, pan and zoom, with off-slice projection display."
+      },
+      "worldCrosshairSliceIntersectionsPetCt": {
+        "name": "World Crosshair + Slice Intersections (PET/CT, Generic Viewports)",
+        "description": "CT and PT rows of native PLANAR_NEXT viewports (2D planar stack plus axial/sagittal/coronal volume slices each) with the WorldCrosshairTool and SliceIntersectionTool independently toggleable."
+      },
+      "sliceIntersections": {
+        "name": "Slice Intersections",
+        "description": "Demonstrates the SliceIntersectionTool rendering true plane-plane intersection lines between viewports, with line drag, rotation and slab thickness handles."
+      },
+      "worldCrosshairAndSliceIntersections": {
+        "name": "World Crosshair + Slice Intersections",
+        "description": "Demonstrates the WorldCrosshairTool and SliceIntersectionTool enabled together while remaining fully independent."
+      },
+      "mprSliceIntersections": {
+        "name": "MPR Slice Intersections",
+        "description": "Demonstrates the SliceIntersectionTool mprTriad source policy on an axial, sagittal, coronal MPR triad."
+      },
+      "tenViewportReferencePoint": {
+        "name": "Ten Viewport Reference Point",
+        "description": "Demonstrates the WorldCrosshairTool reference point and the SliceIntersectionTool activeViewport source policy on a large ten viewport grid without line spam."
+      },
       "mprReformat": {
         "name": "DICOM Reformats in MPR",
         "description": "Aligns MPR viewports to dicom acquisition orientations"

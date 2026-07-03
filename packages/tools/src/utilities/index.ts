@@ -33,6 +33,7 @@ import * as segmentation from './segmentation';
 import * as drawing from './drawing';
 import * as math from './math';
 import * as planar from './planar';
+import * as spatial from './spatial';
 import * as viewportFilters from './viewportFilters';
 import * as orientation from './orientation';
 import * as cine from './cine';
@@ -66,6 +67,7 @@ import { jumpToFocalPoint } from './genericViewportToolHelpers';
 export {
   math,
   planar,
+  spatial,
   viewportFilters,
   drawing,
   debounce,
