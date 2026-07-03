@@ -36,6 +36,7 @@ import {
   projectPointToPlane,
   getDisplayedCanvasSize,
 } from '../utilities/spatial';
+import pickIntensityPointInSlab from '../utilities/pickIntensityPointInSlab';
 import {
   updateWorldCrosshairLines3D,
   removeWorldCrosshairLines3D,
@@ -137,6 +138,15 @@ export type WorldCrosshairToolConfiguration = {
    * programmatic API).
    */
   clickToSet: boolean;
+  /**
+   * When true (default) and the point is set from a viewport rendering an
+   * intensity-projection slab (MIP/MinIP), the point snaps to the
+   * extremal-intensity location along the view normal within the slab - the
+   * anatomy the projection actually shows (e.g. the hottest PET voxel)
+   * instead of the arbitrary central slab plane. Plain slice viewports are
+   * unaffected.
+   */
+  snapToSlabIntensity: boolean;
 
   jumpOnSet: boolean;
   jumpMode: WorldCrosshairJumpMode;
@@ -274,6 +284,7 @@ class WorldCrosshairTool extends AnnotationTool {
 
         autoInitializeOnEnable: true,
         clickToSet: false,
+        snapToSlabIntensity: true,
 
         jumpOnSet: true,
         jumpMode: 'sliceOnly',
@@ -524,11 +535,14 @@ class WorldCrosshairTool extends AnnotationTool {
       return this._getAnnotationOrDetached();
     }
 
-    this.setWorldPoint(currentPoints.world, {
-      sourceViewportId: viewport.id,
-      sourceRenderingEngineId: renderingEngine?.id,
-      frameOfReferenceUID: FrameOfReferenceUID,
-    });
+    this.setWorldPoint(
+      this._resolveInteractionWorldPoint(viewport, currentPoints.world),
+      {
+        sourceViewportId: viewport.id,
+        sourceRenderingEngineId: renderingEngine?.id,
+        frameOfReferenceUID: FrameOfReferenceUID,
+      }
+    );
 
     evt.preventDefault();
     hideElementCursor(element);
@@ -623,12 +637,15 @@ class WorldCrosshairTool extends AnnotationTool {
           currentPoints.world[1],
           currentPoints.world[2],
         ];
-        this.setWorldPoint(currentPoints.world, {
-          sourceViewportId: viewport.id,
-          sourceRenderingEngineId: enabledElement.renderingEngine?.id,
-          frameOfReferenceUID: enabledElement.FrameOfReferenceUID,
-          jump: this.configuration.liveJumpOnShiftMouseMove,
-        });
+        this.setWorldPoint(
+          this._resolveInteractionWorldPoint(viewport, currentPoints.world),
+          {
+            sourceViewportId: viewport.id,
+            sourceRenderingEngineId: enabledElement.renderingEngine?.id,
+            frameOfReferenceUID: enabledElement.FrameOfReferenceUID,
+            jump: this.configuration.liveJumpOnShiftMouseMove,
+          }
+        );
         needsRedraw = true;
       }
     }
@@ -778,11 +795,14 @@ class WorldCrosshairTool extends AnnotationTool {
       currentPoints.world[2],
     ];
 
-    this.setWorldPoint(currentPoints.world, {
-      sourceViewportId: viewport.id,
-      sourceRenderingEngineId: renderingEngine?.id,
-      frameOfReferenceUID: FrameOfReferenceUID,
-    });
+    this.setWorldPoint(
+      this._resolveInteractionWorldPoint(viewport, currentPoints.world),
+      {
+        sourceViewportId: viewport.id,
+        sourceRenderingEngineId: renderingEngine?.id,
+        frameOfReferenceUID: FrameOfReferenceUID,
+      }
+    );
   };
 
   _endCallback = (evt: EventTypes.InteractionEventType): void => {
@@ -1320,16 +1340,68 @@ class WorldCrosshairTool extends AnnotationTool {
   }
 
   /**
+   * Resolves the world point a set interaction should store for a click at
+   * `world` in `viewport`. On viewports rendering an intensity-projection
+   * slab (MIP/MinIP) the point snaps to the extremal-intensity location
+   * along the view normal within the slab (when snapToSlabIntensity is on);
+   * everywhere else the clicked world point is used as-is.
+   */
+  private _resolveInteractionWorldPoint(
+    viewport: Types.IViewport,
+    world: Types.Point3
+  ): Types.Point3 {
+    if (!this.configuration.snapToSlabIntensity) {
+      return world;
+    }
+
+    return pickIntensityPointInSlab(viewport, world) ?? world;
+  }
+
+  /**
+   * Reads the viewport's source display-set slab thickness (mm); 0 when the
+   * viewport has none (non-generic viewports, stacks, plain slices).
+   */
+  private _getSourceSlabThicknessMm(viewport: Types.IViewport): number {
+    if (!csUtils.viewportSupportsDisplaySetPresentation(viewport)) {
+      return 0;
+    }
+
+    const dataId = viewport.getSourceDataId();
+    if (!dataId) {
+      return 0;
+    }
+
+    const presentation = (
+      viewport as unknown as Types.IGenericViewport
+    ).getDisplaySetPresentation(dataId) as
+      | { slabThickness?: number }
+      | undefined;
+    const slabThickness = presentation?.slabThickness;
+
+    return Number.isFinite(slabThickness) && slabThickness > 0
+      ? slabThickness
+      : 0;
+  }
+
+  /**
    * The effective off-slice tolerance for one viewport: at least half its
-   * slice spacing along the view-plane normal. A viewport snapped to its
-   * closest slice (all it can do) then shows the point as in-slice instead
-   * of flickering dashed/solid while the point moves across a coarse grid.
+   * slice spacing along the view-plane normal, and at least half its slab
+   * thickness. A viewport snapped to its closest slice (all it can do) then
+   * shows the point as in-slice instead of flickering dashed/solid while
+   * the point moves across a coarse grid, and a slab viewport (e.g. MIP)
+   * shows any point inside its rendered slab as in-slice.
    */
   private _getEffectiveOffSliceTolerance(
     viewport: Types.IViewport,
     plane: { normal: Types.Point3 },
     baseToleranceMm: number
   ): number {
+    const slabThickness = this._getSourceSlabThicknessMm(viewport);
+    const toleranceMm = Math.max(
+      baseToleranceMm,
+      slabThickness > 0 ? slabThickness / 2 + 1e-2 : 0
+    );
+
     let spacing: number[] | undefined;
     try {
       spacing = (viewport as Types.IVolumeViewport).getImageData?.()
@@ -1339,7 +1411,7 @@ class WorldCrosshairTool extends AnnotationTool {
     }
 
     if (!spacing || spacing.length !== 3) {
-      return baseToleranceMm;
+      return toleranceMm;
     }
 
     const [nx, ny, nz] = plane.normal;
@@ -1349,10 +1421,10 @@ class WorldCrosshairTool extends AnnotationTool {
       Math.abs(nz) * spacing[2];
 
     if (!Number.isFinite(spacingAlongNormal) || spacingAlongNormal <= 0) {
-      return baseToleranceMm;
+      return toleranceMm;
     }
 
-    return Math.max(baseToleranceMm, spacingAlongNormal / 2 + 1e-2);
+    return Math.max(toleranceMm, spacingAlongNormal / 2 + 1e-2);
   }
 
   /**

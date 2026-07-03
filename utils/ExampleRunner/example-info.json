@@ -559,6 +559,10 @@
         "name": "World Crosshair (Reference Point)",
         "description": "Demonstrates the WorldCrosshairTool: a persistent world-space reference point that stays fixed while viewports scroll, pan and zoom, with off-slice projection display."
       },
+      "worldCrosshairMip": {
+        "name": "World Crosshair on MIP",
+        "description": "Demonstrates the WorldCrosshairTool on a PET maximum intensity projection viewport: clicking the MIP snaps the reference point to the hottest voxel along the line of sight and the CT viewports jump to that anatomy."
+      },
       "worldCrosshairSliceIntersectionsPetCt": {
         "name": "World Crosshair + Slice Intersections (PET/CT, Generic Viewports)",
         "description": "CT and PT rows of native PLANAR_NEXT viewports (2D planar stack plus axial/sagittal/coronal volume slices and a 3D bone rendering); one intersection line per plane group drives CT and PT together, with both tools independently toggleable."

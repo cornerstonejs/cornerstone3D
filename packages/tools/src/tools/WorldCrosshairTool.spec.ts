@@ -1,5 +1,5 @@
 import { vec3 } from 'gl-matrix';
-import { eventTarget } from '@cornerstonejs/core';
+import { cache, Enums as csCoreEnums, eventTarget } from '@cornerstonejs/core';
 import WorldCrosshairTool from './WorldCrosshairTool';
 import Events from '../enums/Events';
 
@@ -27,6 +27,10 @@ function createFakePlanarViewport({
   orientation = 'axial' as Orientation,
   focalPoint = [0, 0, 0],
   frameOfReferenceUID = 'FOR1',
+  sourcePresentation = undefined as
+    | { blendMode?: unknown; slabThickness?: number }
+    | undefined,
+  volumeId = undefined as string | undefined,
 }) {
   const normal = ORIENTATION_NORMALS[orientation];
   const camera = {
@@ -57,7 +61,10 @@ function createFakePlanarViewport({
     // --- Generic ("next") surface (isGenericViewport duck-typing) ---
     setDisplaySets: async () => undefined,
     setDisplaySetPresentation: jest.fn(),
-    getDisplaySetPresentation: () => undefined,
+    getDisplaySetPresentation: () => sourcePresentation,
+    getSourceDataId: () => 'fake-source-data',
+    getDefaultVOIRange: () => undefined,
+    getVolumeId: () => volumeId,
     setViewState: jest.fn((patch: Record<string, unknown>) => {
       Object.assign(viewState, patch);
     }),
@@ -440,6 +447,139 @@ describe('WorldCrosshairTool', () => {
       visible: true,
       locked: false,
       cursorWorldPoint: null,
+    });
+  });
+
+  describe('intensity-projection (MIP) slab viewports', () => {
+    const mipPresentation = {
+      blendMode: csCoreEnums.BlendModes.MAXIMUM_INTENSITY_BLEND,
+      slabThickness: 20,
+    };
+
+    /**
+     * 20^3 unit-spacing volume centered on the world origin with one hot
+     * voxel at world (0, 0, 4).
+     */
+    function stubHotVolume(volumeId: string) {
+      jest.spyOn(cache, 'getVolume').mockImplementation(((id: string) =>
+        id === volumeId
+          ? {
+              dimensions: [20, 20, 20],
+              spacing: [1, 1, 1],
+              origin: [-10, -10, -10],
+              direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+              voxelManager: {
+                getAtIJK: (i: number, j: number, k: number) =>
+                  i === 10 && j === 10 && k === 14 ? 100 : 0,
+              },
+            }
+          : undefined) as never);
+    }
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('snaps interaction points to the hottest voxel within the slab', () => {
+      stubHotVolume('mipVolume');
+      const mip = createFakePlanarViewport({
+        id: 'mip',
+        orientation: 'axial',
+        focalPoint: [0, 0, 0],
+        sourcePresentation: mipPresentation,
+        volumeId: 'mipVolume',
+      });
+      const tool = createTool({ viewports: [mip] });
+
+      const resolved = (
+        tool as unknown as {
+          _resolveInteractionWorldPoint: (
+            viewport: unknown,
+            world: number[]
+          ) => number[];
+        }
+      )._resolveInteractionWorldPoint(mip, [0, 0, 0]);
+
+      expect(resolved[0]).toBeCloseTo(0, 6);
+      expect(resolved[1]).toBeCloseTo(0, 6);
+      expect(resolved[2]).toBeCloseTo(4, 6);
+    });
+
+    it('keeps the clicked point when snapToSlabIntensity is disabled or the viewport is a plain slice', () => {
+      stubHotVolume('mipVolume');
+      const mip = createFakePlanarViewport({
+        id: 'mip',
+        orientation: 'axial',
+        focalPoint: [0, 0, 0],
+        sourcePresentation: mipPresentation,
+        volumeId: 'mipVolume',
+      });
+
+      const disabledTool = createTool({
+        viewports: [mip],
+        configuration: { snapToSlabIntensity: false },
+      });
+      expect(
+        (
+          disabledTool as unknown as {
+            _resolveInteractionWorldPoint: (
+              viewport: unknown,
+              world: number[]
+            ) => number[];
+          }
+        )._resolveInteractionWorldPoint(mip, [0, 0, 0])
+      ).toEqual([0, 0, 0]);
+
+      const plain = createFakePlanarViewport({
+        id: 'plain',
+        orientation: 'axial',
+        focalPoint: [0, 0, 0],
+      });
+      const tool = createTool({ viewports: [plain] });
+      expect(
+        (
+          tool as unknown as {
+            _resolveInteractionWorldPoint: (
+              viewport: unknown,
+              world: number[]
+            ) => number[];
+          }
+        )._resolveInteractionWorldPoint(plain, [0, 0, 0])
+      ).toEqual([0, 0, 0]);
+    });
+
+    it('treats points inside the rendered slab as in-slice', () => {
+      const mip = createFakePlanarViewport({
+        id: 'mip',
+        orientation: 'axial',
+        focalPoint: [0, 0, 0],
+        sourcePresentation: {
+          blendMode: csCoreEnums.BlendModes.MAXIMUM_INTENSITY_BLEND,
+          slabThickness: 100,
+        },
+      });
+      const plain = createFakePlanarViewport({
+        id: 'plain',
+        orientation: 'axial',
+        focalPoint: [0, 0, 0],
+      });
+      const tool = createTool({ viewports: [mip, plain] });
+      const getTolerance = (viewport: unknown) =>
+        (
+          tool as unknown as {
+            _getEffectiveOffSliceTolerance: (
+              viewport: unknown,
+              plane: { normal: number[] },
+              base: number
+            ) => number;
+          }
+        )._getEffectiveOffSliceTolerance(viewport, { normal: [0, 0, 1] }, 0.5);
+
+      // Half the slab (plus epsilon): a point 30 mm off the central plane
+      // still renders solid on the MIP.
+      expect(getTolerance(mip)).toBeGreaterThanOrEqual(50);
+      // Plain slices keep the base tolerance.
+      expect(getTolerance(plain)).toBe(0.5);
     });
   });
 });
