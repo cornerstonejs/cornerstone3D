@@ -22,8 +22,19 @@ export default function translateViewportAlongNormal(
     return false;
   }
 
-  const { viewPlaneNormal, focalPoint, position } =
-    getViewportICamera(viewport);
+  // getViewportICamera can throw for viewports without a valid/rendered
+  // camera; guard it the same way getViewportPlane does so a single bad
+  // viewport cannot abort a caller iterating over several of them.
+  let camera;
+  try {
+    camera = getViewportICamera(viewport);
+  } catch {
+    return false;
+  }
+
+  const viewPlaneNormal = camera?.viewPlaneNormal;
+  const focalPoint = camera?.focalPoint;
+  const position = camera?.position;
 
   if (!viewPlaneNormal || !focalPoint || !position) {
     return false;
