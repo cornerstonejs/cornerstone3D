@@ -2,6 +2,7 @@ import { vec3 } from 'gl-matrix';
 import {
   getEnabledElement,
   getEnabledElementByIds,
+  getEnabledElementByViewportId,
   eventTarget,
   triggerEvent,
   utilities as csUtils,
@@ -19,6 +20,7 @@ import {
 } from '../stateManagement/annotation/annotationState';
 import {
   drawCircle as drawCircleSvg,
+  drawLine as drawLineSvg,
   drawTextBox as drawTextBoxSvg,
 } from '../drawingSvg';
 import {
@@ -27,11 +29,17 @@ import {
 } from '../cursors/elementCursor';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
 import getViewportICamera from '../utilities/getViewportICamera';
+import { navigatePlanarViewportToPoint } from '../utilities/genericViewportToolHelpers';
 import {
   getViewportPlane,
   distancePointToPlane,
   projectPointToPlane,
+  getDisplayedCanvasSize,
 } from '../utilities/spatial';
+import {
+  updateWorldCrosshairLines3D,
+  removeWorldCrosshairLines3D,
+} from './worldCrosshair/WorldCrosshairLines3D';
 import type {
   Annotation,
   Annotations,
@@ -78,12 +86,57 @@ export type WorldCrosshairState = {
   cursorWorldPoint?: Types.Point3 | null;
 };
 
+export type WorldCrosshairMarkerStyle = 'crosshair' | 'point';
+
 export type WorldCrosshairToolConfiguration = {
   pointColor: string;
+  /**
+   * Grab radius (px) around the crosshair center for hit-testing; also the
+   * dot radius when markerStyle is 'point'.
+   */
   pointRadius: number;
+  /**
+   * 'crosshair' (default) renders the reference point as a full vertical and
+   * horizontal line intersecting at the point; 'point' renders a filled dot.
+   */
+  markerStyle: WorldCrosshairMarkerStyle;
+  /**
+   * Gap (px) left around the crossing point of the crosshair lines, so the
+   * marker reads as a reference point and never blends into slice
+   * intersection lines.
+   */
+  centerGapRadius: number;
 
+  /**
+   * How the marker renders when the point is off the displayed slice:
+   * 'projectedWithDistance' (dashed + signed mm label), 'projected' (dashed,
+   * no distance information) or 'hide'. Use 'projected' to hide the
+   * above/below distance label.
+   */
   offSliceDisplay: WorldCrosshairOffSliceDisplay;
+  /**
+   * Minimum distance (mm) at which the point counts as off-slice. The
+   * effective tolerance per viewport is at least half that viewport's slice
+   * spacing along its normal: a viewport snapped to its closest slice is
+   * showing the point as well as it can, and renders the marker solid (a
+   * fixed sub-spacing tolerance would flicker dashed/solid on coarse
+   * modalities like PET).
+   */
   offSliceToleranceMm: number;
+
+  /**
+   * When true (default), the tool picks an initial point on enable (the
+   * current slice center of the first linked planar viewport) so the
+   * crosshair renders without requiring a first click. Clearing the point
+   * keeps it cleared until the tool is re-enabled.
+   */
+  autoInitializeOnEnable: boolean;
+  /**
+   * Whether a plain click (without shift) sets/moves the point. Defaults to
+   * false: the point moves only through shift interactions (or the
+   * programmatic API).
+   */
+  clickToSet: boolean;
 
   jumpOnSet: boolean;
   jumpMode: WorldCrosshairJumpMode;
@@ -93,6 +146,18 @@ export type WorldCrosshairToolConfiguration = {
   liveJumpOnShiftMouseMove: boolean;
 
   showIn2D: boolean;
+
+  /** Whether to render the point in the configured 3D viewports. */
+  showIn3D: boolean;
+  /**
+   * Ids of Generic 3D (VOLUME_3D_NEXT) viewports in which the point is
+   * rendered as two world-space intersecting lines. Kept as an explicit list
+   * so 3D viewports (usually in their own tool group for trackball
+   * manipulation) need not join this tool's group.
+   */
+  threeDViewportIds: string[];
+  /** Full length (mm) of each 3D crosshair line. */
+  threeDLineLengthMm: number;
 
   linkPolicy: 'toolGroup' | 'frameOfReferenceUID' | 'explicit';
   /** Viewport ids considered linked when linkPolicy is 'explicit'. */
@@ -121,6 +186,35 @@ function isFinitePoint3(point): point is Types.Point3 {
     point.length === 3 &&
     point.every((v) => Number.isFinite(v))
   );
+}
+
+/**
+ * Parses a CSS color ('rgb(r, g, b)', 'rgba(...)' or '#rrggbb') into
+ * normalized [0, 1] RGB for vtk actors. Falls back to yellow.
+ */
+function parseCssColorToRGB(color: string): [number, number, number] {
+  if (typeof color === 'string') {
+    const rgbMatch = color.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+    if (rgbMatch) {
+      return [
+        Number(rgbMatch[1]) / 255,
+        Number(rgbMatch[2]) / 255,
+        Number(rgbMatch[3]) / 255,
+      ];
+    }
+
+    const hexMatch = color.match(/^#([0-9a-f]{6})$/i);
+    if (hexMatch) {
+      const hex = parseInt(hexMatch[1], 16);
+      return [
+        ((hex >> 16) & 255) / 255,
+        ((hex >> 8) & 255) / 255,
+        (hex & 255) / 255,
+      ];
+    }
+  }
+
+  return [1, 1, 0];
 }
 
 /**
@@ -157,6 +251,12 @@ class WorldCrosshairTool extends AnnotationTool {
 
   private _annotation: WorldCrosshairAnnotation | null = null;
   private _isDragging = false;
+  /**
+   * True once a point exists (set interactively, programmatically or by
+   * auto-initialization) in the current enable cycle; keeps a cleared point
+   * cleared instead of re-auto-initializing on the next render.
+   */
+  private _autoInitialized = false;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -165,9 +265,15 @@ class WorldCrosshairTool extends AnnotationTool {
       configuration: {
         pointColor: 'rgb(255, 255, 0)',
         pointRadius: 4,
+        markerStyle: 'crosshair',
+        // Optional gap around the crossing point (0 disables it).
+        centerGapRadius: 12,
 
         offSliceDisplay: 'projectedWithDistance',
         offSliceToleranceMm: 0.5,
+
+        autoInitializeOnEnable: true,
+        clickToSet: false,
 
         jumpOnSet: true,
         jumpMode: 'sliceOnly',
@@ -177,6 +283,10 @@ class WorldCrosshairTool extends AnnotationTool {
         liveJumpOnShiftMouseMove: true,
 
         showIn2D: true,
+
+        showIn3D: true,
+        threeDViewportIds: [],
+        threeDLineLengthMm: 100,
 
         linkPolicy: 'frameOfReferenceUID',
         explicitLinkedViewportIds: [],
@@ -233,6 +343,7 @@ class WorldCrosshairTool extends AnnotationTool {
 
     if (changed) {
       this._state.worldPoint = newPoint;
+      this._autoInitialized = true;
       this._syncAnnotation();
 
       if (!options.suppressEvents) {
@@ -249,6 +360,9 @@ class WorldCrosshairTool extends AnnotationTool {
       this._jumpLinkedViewports({ suppressEvents: true });
     }
 
+    if (changed) {
+      this._update3DLines();
+    }
     this._renderLinkedViewports();
   }
 
@@ -272,6 +386,7 @@ class WorldCrosshairTool extends AnnotationTool {
     this._state.worldPoint = null;
     this._state.cursorWorldPoint = null;
     this._syncAnnotation();
+    this._update3DLines();
 
     if (!options.suppressEvents) {
       triggerEvent(
@@ -313,6 +428,7 @@ class WorldCrosshairTool extends AnnotationTool {
       return;
     }
     this._state.visible = visible;
+    this._update3DLines();
     this._renderLinkedViewports();
   }
 
@@ -344,6 +460,8 @@ class WorldCrosshairTool extends AnnotationTool {
 
   onSetToolEnabled(): void {
     this._syncAnnotation();
+    this._maybeAutoInitialize();
+    this._update3DLines();
     this._renderLinkedViewports();
   }
 
@@ -357,6 +475,7 @@ class WorldCrosshairTool extends AnnotationTool {
 
   onSetToolDisabled(): void {
     this._isDragging = false;
+    this._autoInitialized = false;
     state.isInteractingWithTool = false;
 
     if (this._annotation?.annotationUID) {
@@ -364,6 +483,9 @@ class WorldCrosshairTool extends AnnotationTool {
     }
     this._annotation = null;
 
+    this._get3DViewports().forEach((viewport) =>
+      removeWorldCrosshairLines3D(viewport, this._getMarkerUIDPrefix())
+    );
     this._renderLinkedViewports();
   }
 
@@ -374,8 +496,9 @@ class WorldCrosshairTool extends AnnotationTool {
   /**
    * Called on mouse down / touch start in empty space: sets the world point
    * from the event world coordinates and starts a drag so the point can be
-   * refined while the button is held. Only planar generic viewports
-   * participate.
+   * refined while the button is held. By default this requires shift to be
+   * held (clickToSet enables plain clicks), and only planar generic
+   * viewports participate.
    */
   addNewAnnotation = (
     evt: EventTypes.InteractionEventType
@@ -385,6 +508,13 @@ class WorldCrosshairTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
 
     if (!enabledElement || this._state.locked) {
+      return this._getAnnotationOrDetached();
+    }
+
+    const nativeEvent = eventDetail.event as MouseEvent | undefined;
+    if (!this.configuration.clickToSet && !nativeEvent?.shiftKey) {
+      // The point only moves through shift interactions; leave the click to
+      // other tools.
       return this._getAnnotationOrDetached();
     }
 
@@ -669,22 +799,29 @@ class WorldCrosshairTool extends AnnotationTool {
   // ===================================================================
 
   /**
-   * Renders the marker for one linked planar viewport. The marker is drawn
-   * at the projection of the world point onto the viewport plane. A point
-   * that is not on the currently displayed slice is drawn dashed/faded (and
-   * optionally labeled with its signed distance) so it never looks like it
-   * lies on the slice.
+   * Renders the marker for one linked planar viewport. By default the
+   * reference point is drawn as a full vertical and horizontal line
+   * intersecting at the projection of the world point onto the viewport
+   * plane ('crosshair' marker style); the 'point' style draws a filled dot
+   * instead. A point that is not on the currently displayed slice is drawn
+   * dashed/faded (and optionally labeled with its signed distance) so it
+   * never looks like it lies on the slice.
    */
   renderAnnotation = (
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: SVGDrawingHelper
   ): boolean => {
+    // Data may not have been mounted yet when the tool was enabled; retry
+    // the auto-initialization lazily from the rendering viewport.
+    this._maybeAutoInitialize(enabledElement);
+
     const { viewport } = enabledElement;
     const { worldPoint, visible } = this._state;
     const {
       showIn2D,
       pointColor,
       pointRadius,
+      markerStyle,
       offSliceDisplay,
       offSliceToleranceMm,
     } = this.configuration;
@@ -714,7 +851,12 @@ class WorldCrosshairTool extends AnnotationTool {
       return false;
     }
 
-    const inSlice = Math.abs(distanceMm) <= offSliceToleranceMm;
+    const toleranceMm = this._getEffectiveOffSliceTolerance(
+      viewport,
+      plane,
+      offSliceToleranceMm
+    );
+    const inSlice = Math.abs(distanceMm) <= toleranceMm;
 
     if (!inSlice && offSliceDisplay === 'hide') {
       return false;
@@ -724,7 +866,15 @@ class WorldCrosshairTool extends AnnotationTool {
       this._annotation?.annotationUID ?? `WorldCrosshair-${this.toolGroupId}`;
     const highlighted = !!this._annotation?.highlighted;
 
-    if (inSlice) {
+    // Off-slice markers are dashed and faded so they cannot be mistaken for
+    // a point lying on this slice.
+    const lineOptions = {
+      color: pointColor,
+      width: highlighted ? 2 : 1,
+      ...(inSlice ? {} : { lineDash: '3,3', strokeOpacity: 0.7 }),
+    };
+
+    if (markerStyle === 'point') {
       drawCircleSvg(
         svgDrawingHelper,
         annotationUID,
@@ -732,50 +882,120 @@ class WorldCrosshairTool extends AnnotationTool {
         canvasPoint,
         pointRadius,
         {
-          color: pointColor,
-          fill: pointColor,
-          width: highlighted ? 2 : 1,
+          ...lineOptions,
+          fill: inSlice ? pointColor : 'transparent',
         },
         `${annotationUID}-marker`
       );
     } else {
-      // Off-slice: dashed, unfilled and faded so it cannot be mistaken for a
-      // point lying on this slice.
-      drawCircleSvg(
-        svgDrawingHelper,
-        annotationUID,
-        'marker-projected',
-        canvasPoint,
-        pointRadius,
-        {
-          color: pointColor,
-          fill: 'transparent',
-          width: highlighted ? 2 : 1,
-          lineDash: '3,3',
-          strokeOpacity: 0.7,
-        },
-        `${annotationUID}-marker-projected`
-      );
+      // 'crosshair': a full vertical and horizontal line intersecting at the
+      // point, with a small gap around the crossing so the marker never
+      // blends into slice intersection lines.
+      const { clientWidth, clientHeight } = getDisplayedCanvasSize(viewport);
+      const gap = Math.max(this.configuration.centerGapRadius ?? 0, 0);
+      const [x, y] = canvasPoint;
 
-      if (offSliceDisplay === 'projectedWithDistance') {
-        const sign = distanceMm >= 0 ? '+' : '-';
-        const label = `${sign}${Math.abs(distanceMm).toFixed(1)} mm`;
+      const segments: Array<[string, Types.Point2, Types.Point2]> = [
+        ['marker-h1', [0, y], [x - gap, y]],
+        ['marker-h2', [x + gap, y], [clientWidth, y]],
+        ['marker-v1', [x, 0], [x, y - gap]],
+        ['marker-v2', [x, y + gap], [x, clientHeight]],
+      ];
 
-        drawTextBoxSvg(
+      segments.forEach(([uid, startPoint, endPoint]) => {
+        const length = Math.hypot(
+          endPoint[0] - startPoint[0],
+          endPoint[1] - startPoint[1]
+        );
+        const towardsPositive =
+          endPoint[0] >= startPoint[0] && endPoint[1] >= startPoint[1];
+        if (length < 1 || !towardsPositive) {
+          return;
+        }
+
+        drawLineSvg(
           svgDrawingHelper,
           annotationUID,
-          'marker-distance',
-          [label],
-          [canvasPoint[0] + pointRadius + 6, canvasPoint[1] - pointRadius - 6],
-          {
-            color: pointColor,
-          }
+          uid,
+          startPoint,
+          endPoint,
+          lineOptions,
+          `${annotationUID}-${uid}`
         );
-      }
+      });
+    }
+
+    if (!inSlice && offSliceDisplay === 'projectedWithDistance') {
+      const sign = distanceMm >= 0 ? '+' : '-';
+      const label = `${sign}${Math.abs(distanceMm).toFixed(1)} mm`;
+
+      drawTextBoxSvg(
+        svgDrawingHelper,
+        annotationUID,
+        'marker-distance',
+        [label],
+        [canvasPoint[0] + pointRadius + 6, canvasPoint[1] + pointRadius + 6],
+        {
+          color: pointColor,
+        }
+      );
     }
 
     return true;
   };
+
+  /**
+   * Picks an initial point (the current slice center of a linked planar
+   * viewport) so the crosshair renders without requiring a first click.
+   * Runs at most once per enable cycle; a subsequent clearWorldPoint keeps
+   * the point cleared.
+   */
+  private _maybeAutoInitialize(enabledElement?: Types.IEnabledElement): void {
+    if (
+      this._autoInitialized ||
+      this._state.worldPoint ||
+      !this.configuration.autoInitializeOnEnable
+    ) {
+      return;
+    }
+
+    let viewport = enabledElement?.viewport;
+    let renderingEngineId = enabledElement?.renderingEngine?.id;
+    let frameOfReferenceUID = enabledElement?.FrameOfReferenceUID;
+
+    if (!viewport) {
+      for (const info of this._getViewportsInfo()) {
+        const candidate = getEnabledElementByIds(
+          info.viewportId,
+          info.renderingEngineId
+        );
+        if (candidate && this._isPlanarViewport(candidate.viewport)) {
+          viewport = candidate.viewport;
+          renderingEngineId = candidate.renderingEngine?.id;
+          frameOfReferenceUID = candidate.FrameOfReferenceUID;
+          break;
+        }
+      }
+    }
+
+    if (!viewport || !this._isPlanarViewport(viewport)) {
+      return;
+    }
+
+    const { focalPoint } = getViewportICamera(viewport);
+    if (!isFinitePoint3(focalPoint)) {
+      return;
+    }
+
+    // setWorldPoint marks _autoInitialized.
+    this.setWorldPoint(focalPoint, {
+      sourceViewportId: viewport.id,
+      sourceRenderingEngineId: renderingEngineId,
+      frameOfReferenceUID:
+        frameOfReferenceUID ?? viewport.getFrameOfReferenceUID?.(),
+      jump: false,
+    });
+  }
 
   // ===================================================================
   // Jumping (native next navigation only)
@@ -825,7 +1045,9 @@ class WorldCrosshairTool extends AnnotationTool {
    * - 'centered' additionally anchors the point to the canvas center; zoom is
    *   still preserved.
    *
-   * The viewport is never rotated and slab thickness is never touched.
+   * Volume-backed slices navigate exactly through the point; image stacks
+   * navigate to the closest image (by per-image plane metadata). The
+   * viewport is never rotated and slab thickness is never touched.
    */
   private _jumpViewportToPoint(
     viewport: Types.IViewport,
@@ -845,9 +1067,7 @@ class WorldCrosshairTool extends AnnotationTool {
     const normalDistance = vec3.dot(delta, viewPlaneNormal);
 
     if (jumpMode === 'centered') {
-      viewport.setViewReference({
-        cameraFocalPoint: [worldPoint[0], worldPoint[1], worldPoint[2]],
-      } as Types.ViewReference);
+      navigatePlanarViewportToPoint(viewport, worldPoint);
       // Pin the point to the canvas center fraction; zoom is untouched.
       viewport.setViewState({
         anchorWorld: [worldPoint[0], worldPoint[1], worldPoint[2]],
@@ -870,14 +1090,69 @@ class WorldCrosshairTool extends AnnotationTool {
       normalDistance
     );
 
-    viewport.setViewReference({
-      cameraFocalPoint: [
+    if (
+      navigatePlanarViewportToPoint(viewport, [
         targetFocalPoint[0],
         targetFocalPoint[1],
         targetFocalPoint[2],
-      ],
-    } as Types.ViewReference);
-    viewport.render();
+      ])
+    ) {
+      viewport.render();
+    }
+  }
+
+  // ===================================================================
+  // 3D support (world-space crosshair lines)
+  // ===================================================================
+
+  /**
+   * Resolves the configured Generic 3D viewports the point is mirrored into.
+   */
+  private _get3DViewports(): Types.IViewport[] {
+    const { threeDViewportIds } = this.configuration;
+    if (!threeDViewportIds?.length) {
+      return [];
+    }
+
+    return threeDViewportIds
+      .map(
+        (viewportId) =>
+          getEnabledElementByViewportId(viewportId)?.viewport as
+            | Types.IViewport
+            | undefined
+      )
+      .filter(
+        (viewport) =>
+          viewport &&
+          viewport.type === ViewportType.VOLUME_3D_NEXT &&
+          csUtils.isGenericViewport(viewport)
+      );
+  }
+
+  /**
+   * Creates, moves or removes the two intersecting world-space lines that
+   * represent the point in the configured 3D viewports.
+   */
+  private _update3DLines(): void {
+    const { showIn3D, threeDLineLengthMm, pointColor } = this.configuration;
+    const { worldPoint, visible } = this._state;
+    const uidPrefix = this._getMarkerUIDPrefix();
+
+    this._get3DViewports().forEach((viewport) => {
+      if (showIn3D && visible && worldPoint) {
+        updateWorldCrosshairLines3D(viewport, worldPoint, {
+          lineLengthMm: threeDLineLengthMm,
+          color: parseCssColorToRGB(pointColor),
+          uidPrefix,
+        });
+      } else {
+        removeWorldCrosshairLines3D(viewport, uidPrefix);
+      }
+    });
+  }
+
+  private _getMarkerUIDPrefix(): string {
+    return `WorldCrosshair-${this.toolGroupId}`;
   }
 
   // ===================================================================
@@ -941,8 +1216,43 @@ class WorldCrosshairTool extends AnnotationTool {
     return viewports;
   }
 
+  /**
+   * O(1) link check for a single viewport (called per viewport on every
+   * annotation render, so it must not rebuild the whole linked list).
+   */
   private _isViewportLinked(viewport: Types.IViewport): boolean {
-    return this._getLinkedViewports().some((vp) => vp.id === viewport.id);
+    if (!this._isPlanarViewport(viewport)) {
+      return false;
+    }
+
+    if (
+      !this._getViewportsInfo().some(
+        ({ viewportId }) => viewportId === viewport.id
+      )
+    ) {
+      return false;
+    }
+
+    const { linkPolicy, explicitLinkedViewportIds } = this.configuration;
+    const { sourceViewportId, frameOfReferenceUID } = this._state;
+
+    if (viewport.id === sourceViewportId) {
+      return true;
+    }
+
+    if (linkPolicy === 'explicit') {
+      return !!explicitLinkedViewportIds?.includes(viewport.id);
+    }
+
+    if (linkPolicy === 'frameOfReferenceUID') {
+      if (!frameOfReferenceUID) {
+        return true;
+      }
+      return viewport.getFrameOfReferenceUID?.() === frameOfReferenceUID;
+    }
+
+    // 'toolGroup'
+    return true;
   }
 
   private _renderLinkedViewports(): void {
@@ -984,10 +1294,12 @@ class WorldCrosshairTool extends AnnotationTool {
     }
 
     const distanceMm = distancePointToPlane(worldPoint, plane);
-    if (
-      Math.abs(distanceMm) > offSliceToleranceMm &&
-      offSliceDisplay === 'hide'
-    ) {
+    const toleranceMm = this._getEffectiveOffSliceTolerance(
+      viewport,
+      plane,
+      offSliceToleranceMm
+    );
+    if (Math.abs(distanceMm) > toleranceMm && offSliceDisplay === 'hide') {
       return null;
     }
 
@@ -999,6 +1311,42 @@ class WorldCrosshairTool extends AnnotationTool {
     }
 
     return canvasPoint;
+  }
+
+  /**
+   * The effective off-slice tolerance for one viewport: at least half its
+   * slice spacing along the view-plane normal. A viewport snapped to its
+   * closest slice (all it can do) then shows the point as in-slice instead
+   * of flickering dashed/solid while the point moves across a coarse grid.
+   */
+  private _getEffectiveOffSliceTolerance(
+    viewport: Types.IViewport,
+    plane: { normal: Types.Point3 },
+    baseToleranceMm: number
+  ): number {
+    let spacing: number[] | undefined;
+    try {
+      spacing = (viewport as Types.IVolumeViewport).getImageData?.()
+        ?.spacing as number[] | undefined;
+    } catch {
+      spacing = undefined;
+    }
+
+    if (!spacing || spacing.length !== 3) {
+      return baseToleranceMm;
+    }
+
+    const [nx, ny, nz] = plane.normal;
+    const spacingAlongNormal =
+      Math.abs(nx) * spacing[0] +
+      Math.abs(ny) * spacing[1] +
+      Math.abs(nz) * spacing[2];
+
+    if (!Number.isFinite(spacingAlongNormal) || spacingAlongNormal <= 0) {
+      return baseToleranceMm;
+    }
+
+    return Math.max(baseToleranceMm, spacingAlongNormal / 2 + 1e-2);
   }
 
   /**

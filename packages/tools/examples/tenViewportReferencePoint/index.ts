@@ -10,7 +10,7 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addManipulationBindings,
-  addButtonToToolbar,
+  addToggleButtonToToolbar,
   ctVoiRange,
   getLocalUrl,
 } from '../../../../utils/demo/helpers';
@@ -25,7 +25,6 @@ const {
   ToolGroupManager,
   Enums: csToolsEnums,
   WorldCrosshairTool,
-  SliceIntersectionTool,
 } = cornerstoneTools;
 
 const { MouseBindings } = csToolsEnums;
@@ -58,7 +57,7 @@ const viewportIds = viewportConfigs.map(({ viewportId }) => viewportId);
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Ten Viewport Reference Point',
-  'A large grid of native PLANAR_NEXT (generic) viewports with both tools: the WorldCrosshairTool reference point appears in every linked viewport, while the SliceIntersectionTool uses the activeViewport source policy so only the active viewport draws its plane in the others. No line spaghetti.'
+  'A large grid of native PLANAR_NEXT (generic) viewports with the WorldCrosshairTool: one persistent world-space reference point appears in every linked viewport.'
 );
 
 const size = '290px';
@@ -84,17 +83,27 @@ const instructions = document.createElement('p');
 instructions.innerText = `
   - Click anywhere to set the reference point: it appears in all ten linked viewports (dashed when off-slice).
   - Scroll viewports: the point stays fixed in world space.
-  - Click or scroll a viewport to make it the active source: only its slice plane is drawn as a line in the other viewports (activeViewport policy), so ten viewports never draw ten sets of lines.
   `;
 
 content.append(instructions);
 
-addButtonToToolbar({
-  title: 'Clear Reference Point',
-  onClick: () => {
-    ToolGroupManager.getToolGroup(toolGroupId)
-      .getToolInstance(WorldCrosshairTool.toolName)
-      .clearWorldPoint();
+addToggleButtonToToolbar({
+  title: 'Center gap',
+  defaultToggle: true,
+  onClick: (toggle) => {
+    const instance = ToolGroupManager.getToolGroup(
+      toolGroupId
+    )?.getToolInstance(WorldCrosshairTool.toolName);
+    if (!instance) {
+      return;
+    }
+    instance.configuration = {
+      ...instance.configuration,
+      centerGapRadius: toggle ? 12 : 0,
+    };
+    cornerstoneTools.utilities.triggerAnnotationRenderForViewportIds(
+      viewportIds
+    );
   },
 });
 
@@ -105,7 +114,6 @@ async function run() {
   await initDemo();
 
   cornerstoneTools.addTool(WorldCrosshairTool);
-  cornerstoneTools.addTool(SliceIntersectionTool);
 
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
@@ -164,20 +172,15 @@ async function run() {
     toolGroup.addViewport(viewportId, renderingEngineId);
   });
 
-  // WorldCrosshairTool first so empty-space clicks set the reference point.
+  // WorldCrosshairTool first so empty-space clicks set the reference point
+  // (classic click-to-set enabled for this demo).
   toolGroup.addTool(WorldCrosshairTool.toolName, {
+    clickToSet: true,
     // In a large grid, jumping ten viewports on every click can be
     // disorienting; set the point without jumping.
     jumpOnSet: false,
   });
-  toolGroup.addTool(SliceIntersectionTool.toolName, {
-    sourcePolicy: 'activeViewport',
-  });
-
   toolGroup.setToolActive(WorldCrosshairTool.toolName, {
-    bindings: [{ mouseButton: MouseBindings.Primary }],
-  });
-  toolGroup.setToolActive(SliceIntersectionTool.toolName, {
     bindings: [{ mouseButton: MouseBindings.Primary }],
   });
 

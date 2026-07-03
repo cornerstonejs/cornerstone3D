@@ -36,6 +36,8 @@ function createFakePlanarViewport({
   frameOfReferenceUID = 'FOR1',
   contentMode = 'volume' as 'volume' | 'stack',
   slabThickness = undefined as number | undefined,
+  /** Snap slice navigation to this grid spacing along the normal (mm). */
+  snapSpacing = 0,
 }) {
   const axes = ORIENTATION_AXES[orientation];
   const camera = {
@@ -45,6 +47,7 @@ function createFakePlanarViewport({
     position: focalPoint.map((v, i) => v + axes.normal[i] * 100),
     parallelScale: 100,
   };
+  const presentationScale: [number, number] = [1, 1];
 
   const dataId = `${id}-data`;
   const presentation: { slabThickness?: number; blendMode?: unknown } = {
@@ -112,7 +115,21 @@ function createFakePlanarViewport({
             viewRef.cameraFocalPoint as never,
             camera.focalPoint as never
           );
-          const distance = vec3.dot(delta, camera.viewPlaneNormal as never);
+          let distance = vec3.dot(delta, camera.viewPlaneNormal as never);
+
+          if (snapSpacing > 0) {
+            // Like real viewports with a coarse slice grid: land on the
+            // nearest slice of the requested position.
+            const currentCoordinate = vec3.dot(
+              camera.focalPoint as never,
+              camera.viewPlaneNormal as never
+            );
+            const targetCoordinate = currentCoordinate + distance;
+            const snappedCoordinate =
+              Math.round(targetCoordinate / snapSpacing) * snapSpacing;
+            distance = snappedCoordinate - currentCoordinate;
+          }
+
           camera.focalPoint = camera.focalPoint.map(
             (v, i) => v + camera.viewPlaneNormal[i] * distance
           );
@@ -120,6 +137,11 @@ function createFakePlanarViewport({
         }
       }
     ),
+    getScale: () => [...presentationScale],
+    setScale: jest.fn((scale: [number, number]) => {
+      presentationScale[0] = scale[0];
+      presentationScale[1] = scale[1];
+    }),
     getResolvedView: () => ({
       toICamera: () => ({
         viewPlaneNormal: [...camera.viewPlaneNormal],
@@ -136,10 +158,7 @@ function createFakePlanarViewport({
         world[1] - camera.focalPoint[1],
         world[2] - camera.focalPoint[2],
       ];
-      // Note: the u/v axes are fixed per fake; tests that reorient a
-      // viewport do not rely on its canvas mapping afterwards.
-      const axesNow = axes;
-      return [dot(rel, axesNow.u) + HALF, dot(rel, axesNow.v) + HALF];
+      return [dot(rel, axes.u) + HALF, dot(rel, axes.v) + HALF];
     },
     canvasToWorld: (canvasPos: number[]) => {
       const du = canvasPos[0] - HALF;
@@ -160,7 +179,10 @@ function createFakePlanarViewport({
 }
 
 /** Legacy viewport stand-in: the tool must ignore it entirely. */
-function createFakeLegacyViewport({ id, orientation = 'axial' as Orientation }) {
+function createFakeLegacyViewport({
+  id,
+  orientation = 'axial' as Orientation,
+}) {
   const axes = ORIENTATION_AXES[orientation];
   const camera = {
     viewPlaneNormal: [...axes.normal],
@@ -182,19 +204,6 @@ function createFakeLegacyViewport({ id, orientation = 'axial' as Orientation }) 
     worldToCanvas: () => [HALF, HALF],
     canvasToWorld: () => [...camera.focalPoint],
     _camera: camera,
-  };
-}
-
-function getPlane(viewport: {
-  getCamera: () => { viewPlaneNormal: number[]; focalPoint: number[] };
-}): Plane {
-  const camera = viewport.getCamera?.() ?? {
-    viewPlaneNormal: viewport['_camera'].viewPlaneNormal,
-    focalPoint: viewport['_camera'].focalPoint,
-  };
-  return {
-    normal: [...camera.viewPlaneNormal] as Plane['normal'],
-    point: [...camera.focalPoint] as Plane['point'],
   };
 }
 
@@ -224,16 +233,16 @@ function createTool({
   return tool;
 }
 
-function computeLines(
-  tool: SliceIntersectionTool,
-  targetViewport: unknown
-) {
+function computeLines(tool: SliceIntersectionTool, targetViewport: unknown) {
   return (
     tool as unknown as {
       _computeLinesForTarget: (viewport) => Array<{
-        sourceViewportId: string;
-        targetViewportId: string;
+        groupId: string;
+        family: string;
+        leaderViewportId: string;
+        memberViewportIds: string[];
         canvasPoints: [number[], number[]];
+        color: string;
       }>;
     }
   )._computeLinesForTarget(targetViewport);
@@ -247,15 +256,12 @@ describe('SliceIntersectionTool', () => {
 
   it('renders no line with only one viewport', () => {
     const only = createFakePlanarViewport({ id: 'only' });
-    const tool = createTool({
-      viewports: [only],
-      configuration: { sourcePolicy: 'allLinked' },
-    });
+    const tool = createTool({ viewports: [only] });
 
     expect(computeLines(tool, only)).toEqual([]);
   });
 
-  it('renders a line for two non-parallel linked slice planes, derived from the actual plane-plane intersection', () => {
+  it('renders one line per other plane group, derived from the actual plane-plane intersection', () => {
     const axial = createFakePlanarViewport({
       id: 'axial',
       orientation: 'axial',
@@ -266,17 +272,15 @@ describe('SliceIntersectionTool', () => {
       orientation: 'sagittal',
       focalPoint: [10, 0, 0],
     });
-    const tool = createTool({
-      viewports: [axial, sagittal],
-      configuration: { sourcePolicy: 'allLinked' },
-    });
+    const tool = createTool({ viewports: [axial, sagittal] });
 
     const lines = computeLines(tool, axial);
     expect(lines).toHaveLength(1);
 
     const [line] = lines;
-    expect(line.sourceViewportId).toBe('sagittal');
-    expect(line.targetViewportId).toBe('axial');
+    expect(line.groupId).toBe('FOR1:sagittal');
+    expect(line.family).toBe('sagittal');
+    expect(line.leaderViewportId).toBe('sagittal');
 
     // Every rendered point, mapped back to world, lies on BOTH planes: the
     // line is the true plane-plane intersection (x=10 on the z=0 plane), not
@@ -292,10 +296,68 @@ describe('SliceIntersectionTool', () => {
       );
     });
 
-    // And the line spans the canvas along the expected direction (x=10 maps
-    // to canvas x = 260 for this fake viewport).
     expect(line.canvasPoints[0][0]).toBeCloseTo(260);
     expect(line.canvasPoints[1][0]).toBeCloseTo(260);
+  });
+
+  it('groups same-plane viewports: duplicates never produce duplicate lines and same-family viewports show no line between each other', () => {
+    // Two axials (CT + PT style), two sagittals, two coronals - all same FoR.
+    const ctAxial = createFakePlanarViewport({
+      id: 'ctAxial',
+      orientation: 'axial',
+    });
+    const ptAxial = createFakePlanarViewport({
+      id: 'ptAxial',
+      orientation: 'axial',
+      focalPoint: [0, 0, 2],
+    });
+    const ctSagittal = createFakePlanarViewport({
+      id: 'ctSagittal',
+      orientation: 'sagittal',
+      focalPoint: [10, 0, 0],
+    });
+    const ptSagittal = createFakePlanarViewport({
+      id: 'ptSagittal',
+      orientation: 'sagittal',
+      focalPoint: [12, 0, 0],
+    });
+    const ctCoronal = createFakePlanarViewport({
+      id: 'ctCoronal',
+      orientation: 'coronal',
+      focalPoint: [0, 20, 0],
+    });
+    const ptCoronal = createFakePlanarViewport({
+      id: 'ptCoronal',
+      orientation: 'coronal',
+      focalPoint: [0, 22, 0],
+    });
+    const tool = createTool({
+      viewports: [
+        ctAxial,
+        ptAxial,
+        ctSagittal,
+        ptSagittal,
+        ctCoronal,
+        ptCoronal,
+      ],
+    });
+
+    // The axial target sees exactly ONE sagittal line and ONE coronal line -
+    // not one per viewport - and no line from the other axial viewport.
+    const lines = computeLines(tool, ctAxial);
+    expect(lines.map((line) => line.groupId).sort()).toEqual([
+      'FOR1:coronal',
+      'FOR1:sagittal',
+    ]);
+
+    const sagittalLine = lines.find((l) => l.family === 'sagittal');
+    expect(sagittalLine.memberViewportIds.sort()).toEqual([
+      'ctSagittal',
+      'ptSagittal',
+    ]);
+
+    // Same for the PT axial viewport.
+    expect(computeLines(tool, ptAxial)).toHaveLength(2);
   });
 
   it('stores no persistent world point and has no legacy toolCenter', () => {
@@ -311,11 +373,9 @@ describe('SliceIntersectionTool', () => {
     const state = tool.getState();
     expect(Object.keys(state).sort()).toEqual(
       [
+        'activeGroupId',
         'activeOperation',
-        'activeSourceViewportId',
         'activeTargetViewportId',
-        'selectedSourceViewportIds',
-        'sourcePolicy',
         'toolGroupId',
       ].sort()
     );
@@ -332,10 +392,7 @@ describe('SliceIntersectionTool', () => {
       orientation: 'sagittal',
       focalPoint: [10, 0, 0],
     });
-    const tool = createTool({
-      viewports: [axial, sagittal],
-      configuration: { sourcePolicy: 'allLinked' },
-    });
+    const tool = createTool({ viewports: [axial, sagittal] });
 
     const before = computeLines(tool, axial);
 
@@ -348,127 +405,13 @@ describe('SliceIntersectionTool', () => {
     (
       worldCrosshair as unknown as Record<string, unknown>
     )._renderLinkedViewports = () => undefined;
-    (
-      worldCrosshair as unknown as Record<string, unknown>
-    )._getLinkedViewports = () => [];
+    (worldCrosshair as unknown as Record<string, unknown>)._getLinkedViewports =
+      () => [];
     worldCrosshair.setWorldPoint([-500, 123, 987]);
 
     const after = computeLines(tool, axial);
     expect(after).toHaveLength(1);
     expect(after[0].canvasPoints).toEqual(before[0].canvasPoints);
-  });
-
-  it('hides same-orientation and parallel planes by default', () => {
-    const axial1 = createFakePlanarViewport({
-      id: 'axial1',
-      orientation: 'axial',
-      focalPoint: [0, 0, 0],
-    });
-    const axial2 = createFakePlanarViewport({
-      id: 'axial2',
-      orientation: 'axial',
-      focalPoint: [0, 0, 25],
-    });
-    const tool = createTool({
-      viewports: [axial1, axial2],
-      configuration: { sourcePolicy: 'debugAll' },
-    });
-
-    // Parallel planes at different offsets: hidden.
-    expect(computeLines(tool, axial1)).toEqual([]);
-    // Same plane: hidden as well.
-    axial2._camera.focalPoint = [0, 0, 0];
-    expect(computeLines(tool, axial1)).toEqual([]);
-  });
-
-  it('activeViewport mode draws lines only from the active source viewport', () => {
-    const axial = createFakePlanarViewport({
-      id: 'axial',
-      orientation: 'axial',
-    });
-    const sagittal = createFakePlanarViewport({
-      id: 'sagittal',
-      orientation: 'sagittal',
-    });
-    const coronal = createFakePlanarViewport({
-      id: 'coronal',
-      orientation: 'coronal',
-    });
-    const tool = createTool({
-      viewports: [axial, sagittal, coronal],
-      configuration: { sourcePolicy: 'activeViewport' },
-    });
-
-    tool.setActiveSourceViewport('sagittal');
-
-    expect(
-      computeLines(tool, axial).map((line) => line.sourceViewportId)
-    ).toEqual(['sagittal']);
-    expect(
-      computeLines(tool, coronal).map((line) => line.sourceViewportId)
-    ).toEqual(['sagittal']);
-    // The active source viewport itself shows no line (no self intersection).
-    expect(computeLines(tool, sagittal)).toEqual([]);
-  });
-
-  it('mprTriad mode draws only the canonical MPR source lines', () => {
-    const axial1 = createFakePlanarViewport({
-      id: 'axial1',
-      orientation: 'axial',
-    });
-    const sagittal = createFakePlanarViewport({
-      id: 'sagittal',
-      orientation: 'sagittal',
-    });
-    const coronal = createFakePlanarViewport({
-      id: 'coronal',
-      orientation: 'coronal',
-    });
-    // A duplicate/follower axial viewport: not canonical.
-    const axial2 = createFakePlanarViewport({
-      id: 'axial2',
-      orientation: 'axial',
-      focalPoint: [0, 0, 40],
-    });
-    const tool = createTool({
-      viewports: [axial1, sagittal, coronal, axial2],
-      configuration: { sourcePolicy: 'mprTriad' },
-    });
-
-    const sourceIds = computeLines(tool, sagittal)
-      .map((line) => line.sourceViewportId)
-      .sort();
-
-    expect(sourceIds).toEqual(['axial1', 'coronal']);
-  });
-
-  it('selectedViewports mode draws only selected source viewport lines', () => {
-    const axial = createFakePlanarViewport({
-      id: 'axial',
-      orientation: 'axial',
-    });
-    const sagittal = createFakePlanarViewport({
-      id: 'sagittal',
-      orientation: 'sagittal',
-    });
-    const coronal = createFakePlanarViewport({
-      id: 'coronal',
-      orientation: 'coronal',
-    });
-    const tool = createTool({
-      viewports: [axial, sagittal, coronal],
-      configuration: {
-        sourcePolicy: 'selectedViewports',
-        selectedSourceViewportIds: ['coronal'],
-      },
-    });
-
-    expect(
-      computeLines(tool, axial).map((line) => line.sourceViewportId)
-    ).toEqual(['coronal']);
-    expect(
-      computeLines(tool, sagittal).map((line) => line.sourceViewportId)
-    ).toEqual(['coronal']);
   });
 
   it('suppresses lines between viewports that are not spatially linked', () => {
@@ -484,144 +427,296 @@ describe('SliceIntersectionTool', () => {
     });
     const tool = createTool({
       viewports: [axial, sagittalOtherFrame],
-      configuration: { sourcePolicy: 'debugAll' },
     });
 
     expect(computeLines(tool, axial)).toEqual([]);
   });
 
-  it('dragging a line translates only the source viewport plane via setViewReference', () => {
+  it('keeps a rotated plane in its sticky family (no group swap past 45 degrees)', () => {
+    const axial = createFakePlanarViewport({
+      id: 'axial',
+      orientation: 'axial',
+    });
+    const coronal = createFakePlanarViewport({
+      id: 'coronal',
+      orientation: 'coronal',
+      focalPoint: [0, 10, 0],
+    });
+    const tool = createTool({ viewports: [axial, coronal] });
+
+    expect(computeLines(tool, axial)[0].groupId).toBe('FOR1:coronal');
+
+    // Rotate the coronal plane 60 degrees around x: its dominant axis is now
+    // z (axial-ish), but the sticky family keeps it coronal.
+    const angle = Math.PI / 3;
+    coronal._camera.viewPlaneNormal = [0, Math.cos(angle), Math.sin(angle)];
+
+    const lines = computeLines(tool, axial);
+    expect(lines).toHaveLength(1);
+    expect(lines[0].groupId).toBe('FOR1:coronal');
+    expect(lines[0].family).toBe('coronal');
+  });
+
+  it('prefers a volume-backed member as the group leader', () => {
+    const stackAxial = createFakePlanarViewport({
+      id: 'stackAxial',
+      orientation: 'axial',
+      contentMode: 'stack',
+    });
+    const volumeAxial = createFakePlanarViewport({
+      id: 'volumeAxial',
+      orientation: 'axial',
+      focalPoint: [0, 0, 5],
+    });
+    const sagittal = createFakePlanarViewport({
+      id: 'sagittal',
+      orientation: 'sagittal',
+    });
+    const tool = createTool({
+      viewports: [stackAxial, volumeAxial, sagittal],
+    });
+
+    const groups = tool.getPlaneGroups();
+    const axialGroup = groups.find((group) => group.family === 'axial');
+
+    expect(axialGroup.viewportIds.sort()).toEqual([
+      'stackAxial',
+      'volumeAxial',
+    ]);
+    expect(axialGroup.leaderViewportId).toBe('volumeAxial');
+  });
+
+  it('dragging a line translates every member of the plane group and nothing else', () => {
     const axial = createFakePlanarViewport({
       id: 'axial',
       orientation: 'axial',
       focalPoint: [0, 0, 0],
     });
-    const sagittal = createFakePlanarViewport({
-      id: 'sagittal',
-      orientation: 'sagittal',
-      focalPoint: [10, 0, 0],
+    const ctCoronal = createFakePlanarViewport({
+      id: 'ctCoronal',
+      orientation: 'coronal',
+      focalPoint: [0, 10, 0],
     });
-    const tool = createTool({ viewports: [axial, sagittal] });
+    const ptCoronal = createFakePlanarViewport({
+      id: 'ptCoronal',
+      orientation: 'coronal',
+      focalPoint: [0, 10, 0],
+    });
+    const tool = createTool({ viewports: [axial, ctCoronal, ptCoronal] });
 
     const applyTranslate = (
       tool as unknown as {
-        _applyTranslate: (viewport, evt) => void;
+        _applyTranslate: (members, evt, editData) => void;
       }
     )._applyTranslate.bind(tool);
 
-    // Drag delta [3, 4, 5]: only its projection on the sagittal normal
-    // ([1, 0, 0]) scrolls the sagittal viewport.
-    applyTranslate(sagittal, {
-      detail: { deltaPoints: { world: [3, 4, 5] } },
-    });
+    // Total drag delta [3, 4, 5]: only its projection on the coronal normal
+    // ([0, 1, 0]) scrolls the coronal group - BOTH coronal viewports.
+    applyTranslate(
+      [ctCoronal, ptCoronal],
+      {
+        detail: {
+          startPoints: { world: [0, 0, 0] },
+          currentPoints: { world: [3, 4, 5] },
+        },
+      },
+      {
+        targetViewportId: 'axial',
+        groupId: 'FOR1:coronal',
+        memberViewportIds: ['ctCoronal', 'ptCoronal'],
+        operation: 'translate',
+      }
+    );
 
-    expect(sagittal.setViewReference).toHaveBeenCalled();
-    expect(sagittal._camera.focalPoint).toEqual([13, 0, 0]);
-    expect(sagittal._camera.position).toEqual([113, 0, 0]);
-    expect(sagittal.render).toHaveBeenCalled();
+    expect(ctCoronal._camera.focalPoint).toEqual([0, 14, 0]);
+    expect(ptCoronal._camera.focalPoint).toEqual([0, 14, 0]);
+    expect(ctCoronal.render).toHaveBeenCalled();
+    expect(ptCoronal.render).toHaveBeenCalled();
 
     // The unrelated (target) viewport camera is untouched.
     expect(axial.setViewReference).not.toHaveBeenCalled();
     expect(axial._camera.focalPoint).toEqual([0, 0, 0]);
-    expect(axial._camera.position).toEqual([0, 0, 100]);
   });
 
-  it('rotating reorients only the intended volume-backed source viewport plane', () => {
-    const axial = createFakePlanarViewport({
-      id: 'axial',
-      orientation: 'axial',
+  it('does not lose drag motion to per-member slice snapping (coarse grids follow the total delta)', () => {
+    // A coarse member (5mm grid, like PET) alongside a fine one.
+    const fineCoronal = createFakePlanarViewport({
+      id: 'fineCoronal',
+      orientation: 'coronal',
       focalPoint: [0, 0, 0],
     });
-    const sagittal = createFakePlanarViewport({
-      id: 'sagittal',
-      orientation: 'sagittal',
+    const coarseCoronal = createFakePlanarViewport({
+      id: 'coarseCoronal',
+      orientation: 'coronal',
       focalPoint: [0, 0, 0],
+      snapSpacing: 5,
     });
-    const tool = createTool({ viewports: [axial, sagittal] });
+    const tool = createTool({ viewports: [fineCoronal, coarseCoronal] });
 
-    const applyRotate = (
+    const applyTranslate = (
       tool as unknown as {
-        _applyRotate: (viewport, evt, editData) => void;
+        _applyTranslate: (members, evt, editData) => void;
       }
-    )._applyRotate.bind(tool);
+    )._applyTranslate.bind(tool);
 
     const editData = {
       targetViewportId: 'axial',
-      sourceViewportId: 'sagittal',
-      operation: 'rotate',
-      pivotWorld: [0, 0, 0],
-      rotationAxis: [0, 0, 1],
+      groupId: 'FOR1:coronal',
+      memberViewportIds: ['fineCoronal', 'coarseCoronal'],
+      operation: 'translate',
     };
-    const rotateEvent = {
-      detail: {
-        currentPoints: { canvas: [HALF + 100, HALF + 100] },
-        deltaPoints: { canvas: [0, 100] },
+    const members = [fineCoronal, coarseCoronal];
+
+    // Two slow 2mm ticks (each below half the 5mm grid). Naive per-tick
+    // integration from the snapped position would leave the coarse member
+    // stuck at 0 forever; anchored targeting lands it on the 5mm slice once
+    // the TOTAL delta crosses half the spacing.
+    applyTranslate(
+      members,
+      {
+        detail: {
+          startPoints: { world: [0, 0, 0] },
+          currentPoints: { world: [0, 2, 0] },
+        },
       },
-    };
-
-    const beforeNormal = [...sagittal._camera.viewPlaneNormal];
-
-    applyRotate(sagittal, rotateEvent, editData);
-
-    // The reorientation went through the native view reference API and the
-    // sagittal normal rotated within the axial plane, around the pivot.
-    expect(sagittal.setViewReference).toHaveBeenCalledWith(
-      expect.objectContaining({
-        viewPlaneNormal: expect.any(Array),
-        viewUp: expect.any(Array),
-        cameraFocalPoint: [0, 0, 0],
-      })
+      editData
     );
-    expect(
-      vec3.dot(sagittal._camera.viewPlaneNormal as never, beforeNormal as never)
-    ).toBeLessThan(0.999);
-    expect(vec3.length(sagittal._camera.viewPlaneNormal as never)).toBeCloseTo(
-      1
+    applyTranslate(
+      members,
+      {
+        detail: {
+          startPoints: { world: [0, 0, 0] },
+          currentPoints: { world: [0, 4, 0] },
+        },
+      },
+      editData
     );
 
-    // The target viewport is untouched.
-    expect(axial._camera.viewPlaneNormal).toEqual([0, 0, 1]);
-    expect(axial.setViewReference).not.toHaveBeenCalled();
-
-    // Image-stack sources cannot be reoriented: the rotate is a no-op.
-    const stack = createFakePlanarViewport({
-      id: 'stack',
-      orientation: 'sagittal',
-      contentMode: 'stack',
-    });
-    applyRotate(stack, rotateEvent, { ...editData, sourceViewportId: 'stack' });
-    expect(stack.setViewReference).not.toHaveBeenCalled();
+    expect(fineCoronal._camera.focalPoint).toEqual([0, 4, 0]);
+    expect(coarseCoronal._camera.focalPoint).toEqual([0, 5, 0]);
   });
 
-  it('slab handles modify only the source viewport slab thickness through the display-set presentation', () => {
+  it('rotating reorients all volume-backed members together and skips stacks', () => {
     const axial = createFakePlanarViewport({
       id: 'axial',
       orientation: 'axial',
       focalPoint: [0, 0, 0],
     });
-    const sagittal = createFakePlanarViewport({
-      id: 'sagittal',
+    const ctSagittal = createFakePlanarViewport({
+      id: 'ctSagittal',
+      orientation: 'sagittal',
+      focalPoint: [0, 0, 0],
+    });
+    const ptSagittal = createFakePlanarViewport({
+      id: 'ptSagittal',
+      orientation: 'sagittal',
+      focalPoint: [0, 0, 0],
+    });
+    const stackSagittal = createFakePlanarViewport({
+      id: 'stackSagittal',
+      orientation: 'sagittal',
+      contentMode: 'stack',
+    });
+    const tool = createTool({
+      viewports: [axial, ctSagittal, ptSagittal, stackSagittal],
+    });
+
+    const applyRotate = (
+      tool as unknown as {
+        _applyRotate: (members, evt, editData) => void;
+      }
+    )._applyRotate.bind(tool);
+
+    const beforeNormal = [...ctSagittal._camera.viewPlaneNormal];
+
+    applyRotate(
+      [ctSagittal, ptSagittal, stackSagittal],
+      {
+        detail: {
+          currentPoints: { canvas: [HALF + 100, HALF + 100] },
+          deltaPoints: { canvas: [0, 100] },
+        },
+      },
+      {
+        targetViewportId: 'axial',
+        groupId: 'FOR1:sagittal',
+        memberViewportIds: ['ctSagittal', 'ptSagittal', 'stackSagittal'],
+        operation: 'rotate',
+        pivotWorld: [0, 0, 0],
+        rotationAxis: [0, 0, 1],
+      }
+    );
+
+    // Both volume members rotated identically...
+    expect(
+      vec3.dot(
+        ctSagittal._camera.viewPlaneNormal as never,
+        beforeNormal as never
+      )
+    ).toBeLessThan(0.999);
+    expect(ctSagittal._camera.viewPlaneNormal).toEqual(
+      ptSagittal._camera.viewPlaneNormal
+    );
+
+    // ...their on-screen scale is re-asserted so fit-based scaling cannot
+    // pulse the zoom while rotating...
+    expect(ctSagittal.setScale).toHaveBeenCalledWith([1, 1]);
+    expect(ptSagittal.setScale).toHaveBeenCalledWith([1, 1]);
+
+    // ...the stack member cannot reorient and was skipped...
+    expect(stackSagittal.setViewReference).not.toHaveBeenCalled();
+
+    // ...and the target viewport is untouched.
+    expect(axial._camera.viewPlaneNormal).toEqual([0, 0, 1]);
+    expect(axial.setViewReference).not.toHaveBeenCalled();
+  });
+
+  it('slab handles modify the slab of every volume-backed member through the display-set presentation', () => {
+    const axial = createFakePlanarViewport({
+      id: 'axial',
+      orientation: 'axial',
+      focalPoint: [0, 0, 0],
+    });
+    const ctSagittal = createFakePlanarViewport({
+      id: 'ctSagittal',
       orientation: 'sagittal',
       focalPoint: [10, 0, 0],
     });
-    const tool = createTool({ viewports: [axial, sagittal] });
+    const ptSagittal = createFakePlanarViewport({
+      id: 'ptSagittal',
+      orientation: 'sagittal',
+      focalPoint: [10, 0, 0],
+    });
+    const tool = createTool({ viewports: [axial, ctSagittal, ptSagittal] });
 
     const applySlabThickness = (
       tool as unknown as {
-        _applySlabThickness: (viewport, evt) => void;
+        _applySlabThickness: (members, evt, editData) => void;
       }
     )._applySlabThickness.bind(tool);
 
     // Cursor 7mm from the sagittal plane -> slab thickness 14mm.
-    applySlabThickness(sagittal, {
-      detail: { currentPoints: { world: [17, 0, 0] } },
-    });
+    applySlabThickness(
+      [ctSagittal, ptSagittal],
+      {
+        detail: { currentPoints: { world: [17, 0, 0] } },
+      },
+      {
+        targetViewportId: 'axial',
+        groupId: 'FOR1:sagittal',
+        memberViewportIds: ['ctSagittal', 'ptSagittal'],
+        operation: 'slabThickness',
+      }
+    );
 
-    expect(sagittal.setDisplaySetPresentation).toHaveBeenCalledWith(
-      sagittal._dataId,
+    expect(ctSagittal.setDisplaySetPresentation).toHaveBeenCalledWith(
+      ctSagittal._dataId,
       expect.objectContaining({ slabThickness: 14 })
     );
-    expect(sagittal._presentation.slabThickness).toBe(14);
+    expect(ptSagittal.setDisplaySetPresentation).toHaveBeenCalledWith(
+      ptSagittal._dataId,
+      expect.objectContaining({ slabThickness: 14 })
+    );
     expect(axial.setDisplaySetPresentation).not.toHaveBeenCalled();
 
     // The tool reads/writes through the viewport API and stores no slab
@@ -633,7 +728,28 @@ describe('SliceIntersectionTool', () => {
     ).toBe(false);
   });
 
-  it('ignores legacy viewports and 3D viewports as targets and sources', () => {
+  it('aligns plane-group members to the group leader plane', () => {
+    const ctCoronal = createFakePlanarViewport({
+      id: 'ctCoronal',
+      orientation: 'coronal',
+      focalPoint: [0, 12, 0],
+    });
+    const ptCoronal = createFakePlanarViewport({
+      id: 'ptCoronal',
+      orientation: 'coronal',
+      focalPoint: [0, 7, 0],
+    });
+    const tool = createTool({ viewports: [ctCoronal, ptCoronal] });
+
+    (tool as unknown as { _alignPlaneGroups: () => void })._alignPlaneGroups();
+
+    // The non-leader member moved along its own normal onto the leader
+    // plane (y = 12); the leader stayed put.
+    expect(ctCoronal._camera.focalPoint).toEqual([0, 12, 0]);
+    expect(ptCoronal._camera.focalPoint).toEqual([0, 12, 0]);
+  });
+
+  it('ignores legacy viewports and 3D viewports as targets and group members', () => {
     const axial = createFakePlanarViewport({
       id: 'axial',
       orientation: 'axial',
@@ -644,12 +760,11 @@ describe('SliceIntersectionTool', () => {
     });
     const tool = createTool({
       viewports: [axial, legacySagittal],
-      configuration: { sourcePolicy: 'debugAll' },
     });
 
     // Legacy viewport as render target: nothing.
     expect(computeLines(tool, legacySagittal)).toEqual([]);
-    // Legacy viewport as source for a planar target: nothing.
+    // Legacy viewport as a group source for a planar target: nothing.
     expect(computeLines(tool, axial)).toEqual([]);
   });
 });

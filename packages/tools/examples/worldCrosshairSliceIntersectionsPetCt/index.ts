@@ -1,7 +1,12 @@
-import type { PlanarViewport, Types } from '@cornerstonejs/core';
+import type {
+  GenericVolumeViewport3D,
+  PlanarViewport,
+  Types,
+} from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
+  CONSTANTS,
   getRenderingEngine,
   utilities,
   eventTarget,
@@ -13,7 +18,6 @@ import {
   setTitleAndDescription,
   addManipulationBindings,
   addToggleButtonToToolbar,
-  addButtonToToolbar,
   ctVoiRange,
   getLocalUrl,
 } from '../../../../utils/demo/helpers';
@@ -29,7 +33,7 @@ const {
   Enums: csToolsEnums,
 } = cornerstoneTools;
 
-const { MouseBindings } = csToolsEnums;
+const { MouseBindings, KeyboardBindings } = csToolsEnums;
 const { ViewportType, OrientationAxis } = Enums;
 
 // ----------------------------------------------------------------------------
@@ -37,6 +41,10 @@ const { ViewportType, OrientationAxis } = Enums;
 // ----------------------------------------------------------------------------
 const renderingEngineId = 'WC_SI_PETCT_ENGINE';
 const toolGroupId = 'WC_SI_PETCT_TOOLGROUP';
+const toolGroup3dId = 'WC_SI_PETCT_3D_TOOLGROUP';
+const ct3dViewportId = 'CT_3D';
+const ct3dDataId = 'wc-si-petct:ct-3d';
+const ct3dPresetName = 'CT-Bone';
 
 const wadoRsRoot =
   getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb';
@@ -124,7 +132,7 @@ const allViewportIds = allViewportSpecs.map(({ viewportId }) => viewportId);
 // ----------------------------------------------------------------------------
 setTitleAndDescription(
   'World Crosshair + Slice Intersections (PET/CT, Generic Viewports)',
-  'Both new tools running exclusively on native PLANAR_NEXT viewports. Top row: CT as a 2D planar stack plus axial/sagittal/coronal volume slices. Bottom row: the PT series of the same study in the same layout. Click to set the shared world reference point; slice intersection lines are true plane-plane intersections. Each tool can be toggled on and off independently.'
+  'Both new tools running exclusively on native Generic viewports. Top row: CT as a 2D planar stack, axial/sagittal/coronal volume slices, and a 3D bone-preset volume rendering that mirrors the reference point as world-space intersecting lines. Bottom row: the PT series of the same study. Viewports showing the same plane (CT + PT + 2D stack) form one plane group: each viewport shows exactly one line per other plane, and dragging a line moves every viewport of that plane together. Each tool can be toggled on and off independently.'
 );
 
 const content = document.getElementById('content');
@@ -171,6 +179,11 @@ const ctRow = createRow();
 const ctElements = ctViewportSpecs.map((spec) =>
   createViewportPanel(ctRow, spec)
 );
+const ct3dElement = createViewportPanel(ctRow, {
+  viewportId: ct3dViewportId,
+  title: 'CT 3D (bone preset)',
+  background: [0.06, 0, 0.1],
+});
 const ptRow = createRow();
 const ptElements = ptViewportSpecs.map((spec) =>
   createViewportPanel(ptRow, spec)
@@ -179,8 +192,8 @@ const allElements = [...ctElements, ...ptElements];
 
 const instructions = document.createElement('p');
 instructions.innerText = `
-  - Reference Point (WorldCrosshairTool): click any viewport to set the yellow world point; all linked viewports jump to it. Scroll/pan/zoom never move it. Off-slice it renders dashed with its distance in mm. Shift+move updates it live; double click the marker to re-jump.
-  - Slice Intersections (SliceIntersectionTool): click or scroll a viewport to make it the active source; its slice plane is drawn as a line in the other viewports. Drag a line to scroll the source plane; hover it for rotation handles (volume slices) and slab thickness handles.
+  - Reference Point (WorldCrosshairTool): the yellow crosshair (with an optional gap at its center) initializes automatically and moves ONLY with shift: hold Shift and move (or drag) the mouse. Linked viewports jump to it and the 3D view shows it as world-space lines. Scroll/pan/zoom never move it; off-slice the lines render dashed with an optional distance label.
+  - Slice Intersections (SliceIntersectionTool): each viewport shows ONE line per other plane (red = axial, yellow = sagittal, green = coronal). Dragging a line scrolls EVERY viewport of that plane (CT and PT together); hover it for rotation handles (reorients the volume slices of that plane) and slab thickness handles near the line end.
   - Use the two toggle buttons to enable/disable each tool independently; they share no state.
   `;
 content.append(instructions);
@@ -225,12 +238,43 @@ addToggleButtonToToolbar({
   },
 });
 
-addButtonToToolbar({
-  title: 'Clear Reference Point',
-  onClick: () => {
-    ToolGroupManager.getToolGroup(toolGroupId)
-      ?.getToolInstance(WorldCrosshairTool.toolName)
-      ?.clearWorldPoint();
+addToggleButtonToToolbar({
+  title: 'Off-slice distance label',
+  defaultToggle: true,
+  onClick: (toggle) => {
+    const instance = ToolGroupManager.getToolGroup(
+      toolGroupId
+    )?.getToolInstance(WorldCrosshairTool.toolName);
+    if (!instance) {
+      return;
+    }
+    instance.configuration = {
+      ...instance.configuration,
+      offSliceDisplay: toggle ? 'projectedWithDistance' : 'projected',
+    };
+    cornerstoneTools.utilities.triggerAnnotationRenderForViewportIds(
+      allViewportIds
+    );
+  },
+});
+
+addToggleButtonToToolbar({
+  title: 'Reference gap',
+  defaultToggle: true,
+  onClick: (toggle) => {
+    const instance = ToolGroupManager.getToolGroup(
+      toolGroupId
+    )?.getToolInstance(WorldCrosshairTool.toolName);
+    if (!instance) {
+      return;
+    }
+    instance.configuration = {
+      ...instance.configuration,
+      centerGapRadius: toggle ? 12 : 0,
+    };
+    cornerstoneTools.utilities.triggerAnnotationRenderForViewportIds(
+      allViewportIds
+    );
   },
 });
 
@@ -287,6 +331,16 @@ async function run() {
     });
   });
 
+  renderingEngine.enableElement({
+    viewportId: ct3dViewportId,
+    type: ViewportType.VOLUME_3D_NEXT,
+    element: ct3dElement,
+    defaultOptions: {
+      orientation: OrientationAxis.CORONAL,
+      background: <Types.Point3>[0.06, 0, 0.1],
+    },
+  });
+
   // ----------------------------------------------------------------------
   // Register display-set metadata: one stack + one shared MPR display set
   // per modality.
@@ -312,6 +366,10 @@ async function run() {
     kind: 'planar',
     volumeId: ptVolumeId,
     initialImageIdIndex: Math.floor(ptImageIds.length / 2),
+  });
+  utilities.genericViewportDisplaySetMetadataProvider.add(ct3dDataId, {
+    imageIds: ctImageIds,
+    volumeId: ctVolumeId,
   });
 
   // ----------------------------------------------------------------------
@@ -360,6 +418,29 @@ async function run() {
   ]);
 
   // ----------------------------------------------------------------------
+  // CT 3D volume rendering (bone preset)
+  // ----------------------------------------------------------------------
+  const ct3dViewport = getRenderingEngine(renderingEngineId).getViewport(
+    ct3dViewportId
+  ) as GenericVolumeViewport3D;
+  await ct3dViewport.setDisplaySets({
+    displaySetId: ct3dDataId,
+    options: { renderMode: 'vtkVolume3d' },
+  });
+  ct3dViewport.setDisplaySetPresentation(ct3dDataId, {
+    sampleDistanceMultiplier: 1,
+  });
+
+  const bonePreset = CONSTANTS.VIEWPORT_PRESETS.find(
+    ({ name }) => name === ct3dPresetName
+  );
+  const ct3dActorEntry = ct3dViewport.getDefaultActor();
+  if (bonePreset && ct3dActorEntry?.actor) {
+    utilities.applyPreset(ct3dActorEntry.actor as never, bonePreset);
+  }
+  ct3dViewport.render();
+
+  // ----------------------------------------------------------------------
   // Tool group: both tools across all eight planar viewports
   // ----------------------------------------------------------------------
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
@@ -371,18 +452,59 @@ async function run() {
 
   // WorldCrosshairTool is added first so clicks in empty space set the
   // reference point; clicks near an intersection line are handled by the
-  // SliceIntersectionTool.
-  toolGroup.addTool(WorldCrosshairTool.toolName);
-  toolGroup.addTool(SliceIntersectionTool.toolName, {
-    sourcePolicy: 'activeViewport',
+  // SliceIntersectionTool. The 3D viewport lives in its own tool group (for
+  // trackball manipulation) and receives the point through the explicit
+  // threeDViewportIds list.
+  toolGroup.addTool(WorldCrosshairTool.toolName, {
+    threeDViewportIds: [ct3dViewportId],
   });
+  toolGroup.addTool(SliceIntersectionTool.toolName);
 
+  // The default manipulation bindings put Zoom on Shift+Primary, which would
+  // swallow shift+drag; the reference point owns ALL the shift interactions
+  // (it initializes automatically and moves only with shift+move /
+  // shift+drag), while plain clicks belong to the slice intersections.
+  toolGroup.setToolActive(cornerstoneTools.ZoomTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Secondary }],
+  });
   toolGroup.setToolActive(WorldCrosshairTool.toolName, {
-    bindings: [{ mouseButton: MouseBindings.Primary }],
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary,
+        modifierKey: KeyboardBindings.Shift,
+      },
+    ],
   });
   toolGroup.setToolActive(SliceIntersectionTool.toolName, {
     bindings: [{ mouseButton: MouseBindings.Primary }],
   });
+
+  // 3D tool group: trackball rotate / pan / zoom for the CT 3D viewport.
+  const toolGroup3d = ToolGroupManager.createToolGroup(toolGroup3dId);
+  addManipulationBindings(toolGroup3d, { is3DViewport: true });
+  // The default manipulation bindings put stack scrolling on the mouse
+  // wheel, which has no meaning for a 3D volume rendering.
+  toolGroup3d.setToolDisabled(cornerstoneTools.StackScrollTool.toolName);
+  toolGroup3d.addViewport(ct3dViewportId, renderingEngineId);
+
+  // Wheel zooms the 3D volume rendering through the native view-state API
+  // (the generic 3D viewport has no legacy zoom surface for the ZoomTool).
+  ct3dElement.addEventListener(
+    'wheel',
+    (evt) => {
+      evt.preventDefault();
+      const viewport = getRenderingEngine(renderingEngineId).getViewport(
+        ct3dViewportId
+      ) as GenericVolumeViewport3D;
+      const vtkCamera = viewport.getVtkActiveCamera();
+      const zoomFactor = evt.deltaY > 0 ? 1.1 : 1 / 1.1;
+      viewport.setViewState({
+        parallelScale: vtkCamera.getParallelScale() * zoomFactor,
+      });
+      viewport.render();
+    },
+    { passive: false }
+  );
 
   renderingEngine.render();
 }

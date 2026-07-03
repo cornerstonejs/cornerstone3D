@@ -29,16 +29,16 @@ import {
 } from '../cursors/elementCursor';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
 import getViewportICamera from '../utilities/getViewportICamera';
+import { navigatePlanarViewportToPoint } from '../utilities/genericViewportToolHelpers';
 import * as lineSegment from '../utilities/math/line';
 import {
   getViewportPlane,
   intersectPlanes,
   distancePointToPlane,
   clipWorldLineToViewportCanvas,
-  areViewportsSpatiallyLinked,
   translateViewportAlongNormal,
 } from '../utilities/spatial';
-import type { Plane, WorldLine, SpatialLinkPolicy } from '../utilities/spatial';
+import type { Plane, WorldLine } from '../utilities/spatial';
 import type {
   Annotation,
   Annotations,
@@ -53,35 +53,53 @@ import type {
 const { ViewportType } = Enums;
 const { RENDERING_DEFAULTS } = CONSTANTS;
 
-/** |dot(normalA, normalB)| above this means "same orientation" (~2.5 deg). */
-const SAME_ORIENTATION_TOLERANCE = 0.999;
-
 /** Canvas proximity (px) used for line hover/hit testing. */
 const LINE_PROXIMITY = 6;
 
 /** Minimum canvas offset (px) for slab handles when the slab is collapsed. */
 const MIN_SLAB_HANDLE_CANVAS_OFFSET = 12;
 
+/**
+ * Where along the clipped line the slab handles anchor (0 = start, 1 = end).
+ * Near one end so handles of crossing lines never overlap at the shared
+ * intersection point.
+ */
+const SLAB_HANDLE_LINE_FRACTION = 0.85;
+
 /** Safety cap for intermediate slice lines, to avoid line spam. */
 const MAX_INTERMEDIATE_LINES = 50;
 
-export type SliceIntersectionSourcePolicy =
-  | 'activeViewport'
-  | 'mprTriad'
-  | 'selectedViewports'
-  | 'allLinked'
-  | 'debugAll';
+export type MprPlaneFamily = 'axial' | 'sagittal' | 'coronal';
 
 export type SliceIntersectionOperation =
   | 'translate'
   | 'rotate'
   | 'slabThickness';
 
+/**
+ * A group of viewports that display the same plane family over the same
+ * frame of reference (e.g. the CT axial slice, the PT axial slice and a 2D
+ * axial acquisition stack together form the "axial" plane group). The group
+ * is what clinicians think of as "the axial plane": it renders as ONE line
+ * in the other viewports, and manipulating that line moves every member.
+ */
+export type SliceIntersectionPlaneGroup = {
+  /** Stable id: `${frameOfReferenceUID}:${family}`. */
+  id: string;
+  family: MprPlaneFamily;
+  frameOfReferenceUID: string;
+  /** All member viewport ids (volume slices and image stacks). */
+  viewportIds: string[];
+  /**
+   * The member whose plane defines the group's rendered line: the first
+   * volume-backed member (rotatable, has a slab), else the first member.
+   */
+  leaderViewportId: string;
+};
+
 export type SliceIntersectionState = {
   toolGroupId: string;
-  sourcePolicy: SliceIntersectionSourcePolicy;
-  selectedSourceViewportIds: string[];
-  activeSourceViewportId?: string;
+  activeGroupId?: string;
   activeTargetViewportId?: string;
   activeOperation?: SliceIntersectionOperation | null;
 };
@@ -92,31 +110,43 @@ export type SliceIntersectionRotationPivotPolicy =
   | 'worldCrosshairPointIfAvailable';
 
 export type SliceIntersectionToolConfiguration = {
-  sourcePolicy: SliceIntersectionSourcePolicy;
-  selectedSourceViewportIds: string[];
-
-  maxSourceViewports: number;
-
-  showSameOrientation: boolean;
-  showParallelPlanes: boolean;
+  /** Draw the center intersection line of each plane group. */
   showCurrentSliceLine: boolean;
+  /** Draw dashed slab boundary lines when the group's slab is > minimum. */
+  showSlabThickness: boolean;
+  /** Draw the first/last slice boundary lines of the group volume. */
   showBoundaryLines: boolean;
+  /** Draw intermediate slice lines between the boundaries (capped). */
   showIntermediateLines: boolean;
 
-  showSlabThickness: boolean;
+  /** Dragging a line translates every member of its plane group. */
   draggable: boolean;
+  /** Rotation handles reorient the volume-backed members of the group. */
   rotatable: boolean;
+  /** Slab handles adjust the slab of the volume-backed members. */
   slabThicknessControls: boolean;
 
   lineWidth: number;
   activeLineWidth: number;
   handleRadius: number;
 
+  /**
+   * On enable, snap every member of a plane group to the group leader's
+   * plane so the single rendered line is true for all members, and keep
+   * them moving together afterwards.
+   */
+  alignGroupsOnEnable: boolean;
+
   rotationPivotPolicy: SliceIntersectionRotationPivotPolicy;
 
-  linkPolicy: SpatialLinkPolicy;
-  /** Viewport links considered linked when linkPolicy is 'explicit'. */
-  explicitLinks: Array<{ sourceViewportId: string; targetViewportId: string }>;
+  /** One color per plane family; stable regardless of oblique rotation. */
+  familyColors: Record<MprPlaneFamily, string>;
+  /** Optional color override per group line. */
+  getLineColor?: (
+    family: MprPlaneFamily,
+    groupId: string,
+    targetViewportId: string
+  ) => string;
 
   /**
    * When true, double clicking an intersection line sets the
@@ -134,33 +164,28 @@ export type SliceIntersectionToolConfiguration = {
   /** Blend mode applied when a slab thickness > minimum is set. */
   slabThicknessBlendMode: Enums.BlendModes;
 
-  getReferenceLineColor?: (
-    sourceViewportId: string,
-    targetViewportId: string
-  ) => string;
-  getReferenceLineControllable?: (
-    sourceViewportId: string,
-    targetViewportId: string
-  ) => boolean;
+  /**
+   * Debug/advanced: draw one line per individual viewport instead of one
+   * line per plane group (and manipulate only that viewport). Never the
+   * clinical default.
+   */
+  perViewportLines: boolean;
 };
 
 export type SliceIntersectionManipulationEventDetail = {
   toolGroupId: string;
-  sourceViewportId: string;
+  /** The manipulated plane group. */
+  groupId: string;
+  family?: MprPlaneFamily;
+  /** All viewports moved by the manipulation. */
+  viewportIds: string[];
   targetViewportId: string;
   operation: SliceIntersectionOperation;
 };
 
-export type SliceIntersectionSourceChangedEventDetail = {
-  toolGroupId: string;
-  sourcePolicy: SliceIntersectionSourcePolicy;
-  activeSourceViewportId?: string;
-  selectedSourceViewportIds: string[];
-};
-
 export type SliceIntersectionLineSelectedEventDetail = {
   toolGroupId: string;
-  sourceViewportId: string;
+  groupId: string;
   targetViewportId: string;
 };
 
@@ -174,17 +199,20 @@ export type SliceIntersectionAnnotation = Annotation & {
 };
 
 /**
- * One intersection line rendered into a target viewport, cached per render
- * pass for hit testing. All geometry is derived from the actual source and
- * target camera planes: it is recomputed on every render and never persisted.
+ * One plane-group line rendered into a target viewport, cached per render
+ * pass for hit testing. All geometry is derived from the actual camera
+ * planes: it is recomputed on every render and never persisted.
  */
 export type RenderedIntersectionLine = {
-  sourceViewportId: string;
+  groupId: string;
+  family: MprPlaneFamily;
+  leaderViewportId: string;
+  memberViewportIds: string[];
   targetViewportId: string;
   /** The world-space plane-plane intersection line. */
   line: WorldLine;
-  /** The source viewport slice plane the line was computed from. */
-  sourcePlane: Plane;
+  /** The group leader's slice plane the line was computed from. */
+  leaderPlane: Plane;
   /** Center line clipped to the target canvas. */
   canvasPoints: [Types.Point2, Types.Point2];
   /** Slab boundary segments (present when slab thickness rendering is on). */
@@ -193,7 +221,6 @@ export type RenderedIntersectionLine = {
   rotateHandles: Types.Point2[];
   /** Slab thickness handle canvas positions (only for the active line). */
   slabHandles: Types.Point2[];
-  controllable: boolean;
   color: string;
   isActive: boolean;
 };
@@ -205,61 +232,53 @@ type PendingHandle = {
 
 type EditData = {
   targetViewportId: string;
-  sourceViewportId: string;
+  groupId: string;
+  family?: MprPlaneFamily;
+  memberViewportIds: string[];
   operation: SliceIntersectionOperation;
   pivotWorld?: Types.Point3;
   rotationAxis?: Types.Point3;
+  /**
+   * Each member's plane point at drag start. Translation targets are
+   * computed as `start + total drag delta` (absolute), never by integrating
+   * per-tick deltas from the member's current (grid-snapped) position -
+   * per-tick integration silently loses any motion smaller than half a
+   * member's slice spacing.
+   */
+  memberStartPlanePoints?: Map<string, Types.Point3>;
+  /**
+   * Each member's presentation scale at drag start, re-asserted after every
+   * orientation write so fit-based scaling does not pulse the zoom while
+   * rotating.
+   */
+  memberStartScales?: Map<string, unknown>;
 };
 
 /**
- * Default per-source line colors, keyed by the dominant axis of the source
- * plane normal (axial-ish red, sagittal-ish yellow, coronal-ish green).
- */
-function defaultColorForSourcePlane(sourcePlane: Plane | null): string {
-  if (!sourcePlane) {
-    return 'rgb(0, 200, 0)';
-  }
-
-  const [x, y, z] = sourcePlane.normal.map(Math.abs);
-
-  if (z >= x && z >= y) {
-    return 'rgb(200, 60, 60)';
-  }
-  if (x >= y && x >= z) {
-    return 'rgb(220, 200, 60)';
-  }
-  return 'rgb(60, 200, 60)';
-}
-
-/**
- * SliceIntersectionTool ("Slice Intersections") renders and manipulates slice
- * plane intersection lines: where does another viewport's slice plane
- * intersect the current viewport's slice plane?
+ * SliceIntersectionTool ("Slice Intersections") renders and manipulates
+ * slice plane intersection lines on Generic (PLANAR_NEXT) viewports.
  *
- * Every rendered line is computed from the actual plane-plane intersection of
- * the source and target viewport camera planes. The tool stores no persistent
- * world point, never reads the legacy CrosshairsTool.toolCenter and never
- * centers lines on the WorldCrosshairTool point.
+ * The tool thinks in PLANES, not viewports: viewports showing the same plane
+ * family over the same frame of reference (e.g. CT axial + PT axial + a 2D
+ * axial stack) form one plane group. Each viewport shows exactly one line
+ * per OTHER plane group - never duplicate near-identical lines - and:
  *
- * Lines can be dragged to translate the source viewport slice plane along its
- * normal, rotated via rotation handles (volume-backed sources only), and the
- * source viewport slab thickness can be adjusted via slab handles. Lines are
- * only drawn between spatially linked viewports, and the default
- * 'activeViewport' source policy keeps large viewport grids readable.
+ * - dragging a line translates every member of that group (each along its
+ *   own normal; stacks snap to their closest image),
+ * - rotation handles reorient the volume-backed members together (stacks
+ *   cannot reorient and keep following translations only),
+ * - slab handles adjust the slab of the volume-backed members.
  *
- * The tool targets the Generic ("next") viewport architecture exclusively: it
- * only operates on direct PLANAR_NEXT viewports through the native view-state
- * API (getResolvedView / setViewReference / setViewState /
- * setDisplaySetPresentation). Legacy stack and volume viewports (and their
- * compatibility adapters) are ignored, and the tool does not render in 3D
- * viewports (v1).
+ * Every rendered line is the true plane-plane intersection of the target
+ * viewport plane and the group leader plane. The tool stores no persistent
+ * world point, has no shared "center", and does not render in 3D viewports.
  */
 class SliceIntersectionTool extends AnnotationTool {
   static toolName;
   /** User-facing label for this tool. */
   static toolLabel = 'Slice Intersections';
 
-  private _activeSourceViewportId?: string;
+  private _activeGroupId?: string;
   private _activeTargetViewportId?: string;
   private _activeOperation: SliceIntersectionOperation | null = null;
 
@@ -267,24 +286,24 @@ class SliceIntersectionTool extends AnnotationTool {
   private _renderedLines = new Map<string, RenderedIntersectionLine[]>();
   private _pendingHandle: PendingHandle | null = null;
   private _editData: EditData | null = null;
+  /**
+   * Sticky per-viewport MPR family (axial/sagittal/coronal), assigned from
+   * the plane's dominant axis the first time a viewport is classified. Kept
+   * stable afterwards so rotating a plane past 45 degrees never reassigns
+   * families mid-drag (which would swap groups and colors).
+   */
+  private _mprFamilyByViewportId = new Map<string, MprPlaneFamily>();
 
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
-        sourcePolicy: 'activeViewport',
-        selectedSourceViewportIds: [],
-
-        maxSourceViewports: 3,
-
-        showSameOrientation: false,
-        showParallelPlanes: false,
         showCurrentSliceLine: true,
+        showSlabThickness: true,
         showBoundaryLines: false,
         showIntermediateLines: false,
 
-        showSlabThickness: true,
         draggable: true,
         rotatable: true,
         slabThicknessControls: true,
@@ -293,15 +312,22 @@ class SliceIntersectionTool extends AnnotationTool {
         activeLineWidth: 2.5,
         handleRadius: 3,
 
+        alignGroupsOnEnable: true,
+
         rotationPivotPolicy: 'currentIntersection',
 
-        linkPolicy: 'frameOfReferenceUID',
-        explicitLinks: [],
+        familyColors: {
+          axial: 'rgb(200, 60, 60)',
+          sagittal: 'rgb(220, 200, 60)',
+          coronal: 'rgb(60, 200, 60)',
+        },
 
         setWorldCrosshairOnIntersectionDoubleClick: false,
         jumpToIntersectionOnDoubleClick: false,
 
         slabThicknessBlendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
+
+        perViewportLines: false,
       },
     }
   ) {
@@ -313,52 +339,35 @@ class SliceIntersectionTool extends AnnotationTool {
   // ===================================================================
 
   /**
-   * Sets the active source viewport (the viewport whose slice plane generates
-   * lines in the other viewports under the 'activeViewport' source policy,
-   * and the source of the active line otherwise).
-   */
-  public setActiveSourceViewport(viewportId: string | undefined): void {
-    if (this._activeSourceViewportId === viewportId) {
-      return;
-    }
-
-    this._activeSourceViewportId = viewportId;
-    this._emitSourceChanged();
-    this._renderToolViewports();
-  }
-
-  /**
-   * Sets the source viewport ids used by the 'selectedViewports' policy.
-   */
-  public setSelectedSourceViewportIds(viewportIds: string[]): void {
-    this.configuration.selectedSourceViewportIds = [...(viewportIds ?? [])];
-    this._emitSourceChanged();
-    this._renderToolViewports();
-  }
-
-  /**
-   * Sets the source policy.
-   */
-  public setSourcePolicy(sourcePolicy: SliceIntersectionSourcePolicy): void {
-    this.configuration.sourcePolicy = sourcePolicy;
-    this._emitSourceChanged();
-    this._renderToolViewports();
-  }
-
-  /**
    * Returns a copy of the tool state.
    */
   public getState(): SliceIntersectionState {
     return {
       toolGroupId: this.toolGroupId,
-      sourcePolicy: this.configuration.sourcePolicy,
-      selectedSourceViewportIds: [
-        ...(this.configuration.selectedSourceViewportIds ?? []),
-      ],
-      activeSourceViewportId: this._activeSourceViewportId,
+      activeGroupId: this._activeGroupId,
       activeTargetViewportId: this._activeTargetViewportId,
       activeOperation: this._activeOperation,
     };
+  }
+
+  /**
+   * Returns the current plane groups (copies).
+   */
+  public getPlaneGroups(): SliceIntersectionPlaneGroup[] {
+    return this._getPlaneGroups().map((group) => ({
+      ...group,
+      viewportIds: [...group.viewportIds],
+    }));
+  }
+
+  /**
+   * Clears the sticky family classification so viewports are re-classified
+   * from their current plane normals (e.g. after programmatically
+   * re-orienting a viewport to a different plane family).
+   */
+  public refreshPlaneFamilies(): void {
+    this._mprFamilyByViewportId.clear();
+    this._renderToolViewports();
   }
 
   // ===================================================================
@@ -366,7 +375,9 @@ class SliceIntersectionTool extends AnnotationTool {
   // ===================================================================
 
   onSetToolEnabled(): void {
-    this._initDefaultActiveSourceViewport();
+    if (this.configuration.alignGroupsOnEnable) {
+      this._alignPlaneGroups();
+    }
     this._renderToolViewports();
   }
 
@@ -382,8 +393,11 @@ class SliceIntersectionTool extends AnnotationTool {
     this._editData = null;
     this._pendingHandle = null;
     this._activeOperation = null;
+    this._activeGroupId = undefined;
+    this._activeTargetViewportId = undefined;
     state.isInteractingWithTool = false;
     this._renderedLines.clear();
+    this._mprFamilyByViewportId.clear();
 
     this._getViewportsInfo().forEach(({ viewportId, renderingEngineId }) => {
       const enabledElement = getEnabledElementByIds(
@@ -405,37 +419,179 @@ class SliceIntersectionTool extends AnnotationTool {
   }
 
   /**
-   * Lines are pure derivations of the source/target cameras, so a camera
-   * change anywhere just needs a re-render of the tool viewports. No tool
-   * state is recomputed or stored here.
-   *
-   * Under the 'activeViewport' source policy, a direct camera change in a
-   * viewport (e.g. the user scrolling it) also makes that viewport the
-   * active source; camera changes caused by tool manipulation are ignored.
+   * Lines are pure derivations of the camera planes, so a camera change just
+   * needs an annotation re-render. To keep slice scrolling responsive, the
+   * re-render is targeted: only viewports that display a line whose group
+   * leader is the modified viewport (plus the modified viewport itself) are
+   * refreshed.
    */
   onCameraModified = (evt: Types.EventTypes.CameraModifiedEvent): void => {
-    if (
-      this.configuration.sourcePolicy === 'activeViewport' &&
-      !state.isInteractingWithTool
-    ) {
-      const viewportId = evt.detail?.viewportId;
-      if (
-        viewportId &&
-        viewportId !== this._activeSourceViewportId &&
-        this._getViewportsInfo().some(
-          (info) => info.viewportId === viewportId
-        )
-      ) {
-        const viewport = this._getViewportById(viewportId);
-        if (viewport && this._isPlanarViewport(viewport)) {
-          this._activeSourceViewportId = viewportId;
-          this._emitSourceChanged();
+    const viewportId = evt.detail?.viewportId;
+
+    if (!viewportId) {
+      this._renderToolViewports();
+      return;
+    }
+
+    const viewportIdsToRender = new Set<string>();
+
+    for (const [targetViewportId, lines] of this._renderedLines) {
+      if (targetViewportId === viewportId) {
+        // The modified viewport's own plane moved: the lines it displays
+        // (from other groups) need re-clipping.
+        if (lines.length) {
+          viewportIdsToRender.add(targetViewportId);
         }
+        continue;
+      }
+
+      if (lines.some((line) => line.leaderViewportId === viewportId)) {
+        viewportIdsToRender.add(targetViewportId);
       }
     }
 
-    this._renderToolViewports();
+    if (viewportIdsToRender.size) {
+      triggerAnnotationRenderForViewportIds([...viewportIdsToRender]);
+    }
   };
+
+  // ===================================================================
+  // Plane groups
+  // ===================================================================
+
+  /**
+   * Returns the sticky MPR family of a planar viewport, classifying it from
+   * the dominant axis of its plane normal on first sight. The assignment is
+   * kept for the lifetime of the tool (until disabled or explicitly
+   * refreshed), so rotating a plane past 45 degrees never moves the viewport
+   * to a different family.
+   */
+  protected _getMprFamily(viewport: Types.IViewport): MprPlaneFamily | null {
+    const cached = this._mprFamilyByViewportId.get(viewport.id);
+    if (cached) {
+      return cached;
+    }
+
+    const plane = getViewportPlane(viewport);
+    if (!plane) {
+      return null;
+    }
+
+    const [x, y, z] = plane.normal.map(Math.abs);
+    const family = z >= x && z >= y ? 'axial' : x >= y ? 'sagittal' : 'coronal';
+
+    this._mprFamilyByViewportId.set(viewport.id, family);
+    return family;
+  }
+
+  /**
+   * Groups the tool-group planar viewports by (frame of reference, sticky
+   * plane family). In the debug `perViewportLines` mode every viewport is
+   * its own group.
+   */
+  protected _getPlaneGroups(): SliceIntersectionPlaneGroup[] {
+    const planarViewports = this._getToolGroupViewports().filter((viewport) =>
+      this._isPlanarViewport(viewport)
+    );
+
+    if (this.configuration.perViewportLines) {
+      return planarViewports
+        .map((viewport) => {
+          const family = this._getMprFamily(viewport);
+          const frameOfReferenceUID = viewport.getFrameOfReferenceUID?.();
+          if (!family || !frameOfReferenceUID) {
+            return null;
+          }
+          return {
+            id: viewport.id,
+            family,
+            frameOfReferenceUID,
+            viewportIds: [viewport.id],
+            leaderViewportId: viewport.id,
+          };
+        })
+        .filter(Boolean) as SliceIntersectionPlaneGroup[];
+    }
+
+    const groups = new Map<string, SliceIntersectionPlaneGroup>();
+
+    planarViewports.forEach((viewport) => {
+      const family = this._getMprFamily(viewport);
+      const frameOfReferenceUID = viewport.getFrameOfReferenceUID?.();
+      if (!family || !frameOfReferenceUID) {
+        return;
+      }
+
+      const id = `${frameOfReferenceUID}:${family}`;
+      let group = groups.get(id);
+      if (!group) {
+        group = {
+          id,
+          family,
+          frameOfReferenceUID,
+          viewportIds: [],
+          leaderViewportId: viewport.id,
+        };
+        groups.set(id, group);
+      }
+
+      group.viewportIds.push(viewport.id);
+
+      // The leader is the first volume-backed member (its plane can rotate
+      // and has a slab); a stack only leads when no volume member exists.
+      const currentLeader = this._getViewportById(group.leaderViewportId);
+      if (
+        !this._isVolumeModeViewport(currentLeader) &&
+        this._isVolumeModeViewport(viewport)
+      ) {
+        group.leaderViewportId = viewport.id;
+      }
+    });
+
+    return [...groups.values()];
+  }
+
+  /**
+   * Snaps every member of each plane group to its group leader's plane
+   * (each member translating along its own normal only), so the single
+   * rendered line is true for all members and the group moves as one from
+   * then on.
+   */
+  protected _alignPlaneGroups(): void {
+    const previousInteracting = state.isInteractingWithTool;
+    state.isInteractingWithTool = true;
+
+    try {
+      this._getPlaneGroups().forEach((group) => {
+        if (group.viewportIds.length < 2) {
+          return;
+        }
+
+        const leader = this._getViewportById(group.leaderViewportId);
+        const leaderPlane = leader && getViewportPlane(leader);
+        if (!leaderPlane) {
+          return;
+        }
+
+        group.viewportIds.forEach((viewportId) => {
+          if (viewportId === group.leaderViewportId) {
+            return;
+          }
+
+          const member = this._getViewportById(viewportId);
+          if (!member || !this._isPlanarViewport(member)) {
+            return;
+          }
+
+          if (navigatePlanarViewportToPoint(member, leaderPlane.point)) {
+            member.render();
+          }
+        });
+      });
+    } finally {
+      state.isInteractingWithTool = previousInteracting;
+    }
+  }
 
   // ===================================================================
   // Rendering
@@ -456,28 +612,27 @@ class SliceIntersectionTool extends AnnotationTool {
 
     const annotation = this._getOrCreateViewportAnnotation(targetViewport);
     const annotationUID =
-      annotation?.annotationUID ??
-      `SliceIntersection-${targetViewport.id}`;
+      annotation?.annotationUID ?? `SliceIntersection-${targetViewport.id}`;
 
     const { lineWidth, activeLineWidth, handleRadius, showCurrentSliceLine } =
       this.configuration;
 
     lines.forEach((lineInfo) => {
-      const { sourceViewportId, canvasPoints, color, isActive } = lineInfo;
+      const { groupId, canvasPoints, color, isActive } = lineInfo;
       const width = isActive ? activeLineWidth : lineWidth;
 
       if (showCurrentSliceLine) {
         drawLineSvg(
           svgDrawingHelper,
           annotationUID,
-          `line-${sourceViewportId}`,
+          `line-${groupId}`,
           canvasPoints[0],
           canvasPoints[1],
           {
             color,
             width,
           },
-          `${annotationUID}-line-${sourceViewportId}`
+          `${annotationUID}-line-${groupId}`
         );
       }
 
@@ -485,7 +640,7 @@ class SliceIntersectionTool extends AnnotationTool {
         drawLineSvg(
           svgDrawingHelper,
           annotationUID,
-          `slab-${sourceViewportId}-${index}`,
+          `slab-${groupId}-${index}`,
           segment[0],
           segment[1],
           {
@@ -501,7 +656,7 @@ class SliceIntersectionTool extends AnnotationTool {
         drawCircleSvg(
           svgDrawingHelper,
           annotationUID,
-          `rotate-handle-${sourceViewportId}-${index}`,
+          `rotate-handle-${groupId}-${index}`,
           handleCanvas,
           handleRadius,
           {
@@ -515,7 +670,7 @@ class SliceIntersectionTool extends AnnotationTool {
         drawCircleSvg(
           svgDrawingHelper,
           annotationUID,
-          `slab-handle-${sourceViewportId}-${index}`,
+          `slab-handle-${groupId}-${index}`,
           handleCanvas,
           handleRadius,
           {
@@ -530,16 +685,16 @@ class SliceIntersectionTool extends AnnotationTool {
   };
 
   /**
-   * Computes the intersection lines to render into a target viewport. Pure
-   * geometry: every line comes from the actual plane-plane intersection of
-   * the source and target camera planes. Never centered on any stored point.
+   * Computes the plane-group lines to render into a target viewport. Pure
+   * geometry: every line is the actual plane-plane intersection of the
+   * target plane and the group leader plane.
    */
   protected _computeLinesForTarget(
     targetViewport: Types.IViewport
   ): RenderedIntersectionLine[] {
     if (!targetViewport || !this._isPlanarViewport(targetViewport)) {
-      // Native-next only: legacy viewports and 3D viewports never render
-      // intersection lines.
+      // Native-next planar only: legacy viewports and 3D viewports never
+      // render intersection lines.
       return [];
     }
 
@@ -548,18 +703,27 @@ class SliceIntersectionTool extends AnnotationTool {
       return [];
     }
 
-    const sourceViewports = this._resolveSourceViewports(
-      targetViewport,
-      targetPlane
-    );
+    const targetFrameOfReferenceUID = targetViewport.getFrameOfReferenceUID?.();
+    if (!targetFrameOfReferenceUID) {
+      return [];
+    }
 
     const lines: RenderedIntersectionLine[] = [];
 
-    sourceViewports.forEach((sourceViewport) => {
-      const lineInfo = this._computeIntersectionForPair(
+    this._getPlaneGroups().forEach((group) => {
+      // Only groups of the same frame of reference are spatially meaningful,
+      // and a viewport never displays its own group's line.
+      if (
+        group.frameOfReferenceUID !== targetFrameOfReferenceUID ||
+        group.viewportIds.includes(targetViewport.id)
+      ) {
+        return;
+      }
+
+      const lineInfo = this._computeLineForGroup(
         targetViewport,
         targetPlane,
-        sourceViewport
+        group
       );
       if (lineInfo) {
         lines.push(lineInfo);
@@ -569,32 +733,25 @@ class SliceIntersectionTool extends AnnotationTool {
     return lines;
   }
 
-  private _computeIntersectionForPair(
+  private _computeLineForGroup(
     targetViewport: Types.IViewport,
     targetPlane: Plane,
-    sourceViewport: Types.IViewport
+    group: SliceIntersectionPlaneGroup
   ): RenderedIntersectionLine | null {
-    const sourcePlane = getViewportPlane(sourceViewport);
-    if (!sourcePlane) {
+    const leaderViewport = this._getViewportById(group.leaderViewportId);
+    if (!leaderViewport) {
       return null;
     }
 
-    const absDot = Math.abs(
-      vec3.dot(targetPlane.normal, sourcePlane.normal)
-    );
-    const sameOrientation = absDot > SAME_ORIENTATION_TOLERANCE;
-
-    if (
-      sameOrientation &&
-      !this.configuration.showSameOrientation &&
-      !this.configuration.showParallelPlanes
-    ) {
+    const leaderPlane = getViewportPlane(leaderViewport);
+    if (!leaderPlane) {
       return null;
     }
 
-    const line = intersectPlanes(targetPlane, sourcePlane);
+    const line = intersectPlanes(targetPlane, leaderPlane);
     if (!line) {
-      // Truly parallel planes have no intersection line to draw.
+      // Parallel planes (e.g. two different families rotated onto each
+      // other) have no intersection line to draw.
       return null;
     }
 
@@ -603,30 +760,28 @@ class SliceIntersectionTool extends AnnotationTool {
       return null;
     }
 
-    const { getReferenceLineColor, getReferenceLineControllable } =
-      this.configuration;
-
+    const { familyColors, getLineColor } = this.configuration;
     const color =
-      getReferenceLineColor?.(sourceViewport.id, targetViewport.id) ??
-      defaultColorForSourcePlane(sourcePlane);
-    const controllable =
-      getReferenceLineControllable?.(sourceViewport.id, targetViewport.id) ??
-      true;
+      getLineColor?.(group.family, group.id, targetViewport.id) ??
+      familyColors?.[group.family] ??
+      'rgb(0, 200, 200)';
 
     const isActive =
-      this._activeSourceViewportId === sourceViewport.id &&
+      this._activeGroupId === group.id &&
       this._activeTargetViewportId === targetViewport.id;
 
     const lineInfo: RenderedIntersectionLine = {
-      sourceViewportId: sourceViewport.id,
+      groupId: group.id,
+      family: group.family,
+      leaderViewportId: group.leaderViewportId,
+      memberViewportIds: [...group.viewportIds],
       targetViewportId: targetViewport.id,
       line,
-      sourcePlane,
+      leaderPlane,
       canvasPoints,
       slabLineSegments: [],
       rotateHandles: [],
       slabHandles: [],
-      controllable,
       color,
       isActive,
     };
@@ -635,40 +790,40 @@ class SliceIntersectionTool extends AnnotationTool {
       lineInfo,
       targetViewport,
       targetPlane,
-      sourceViewport,
-      sourcePlane
+      leaderViewport,
+      leaderPlane
     );
     this._appendBoundaryGeometry(
       lineInfo,
       targetViewport,
       targetPlane,
-      sourceViewport,
-      sourcePlane
+      leaderViewport,
+      leaderPlane
     );
 
-    if (isActive && controllable) {
-      this._appendHandles(lineInfo, targetViewport, sourceViewport);
+    if (isActive) {
+      this._appendHandles(lineInfo, targetViewport, leaderViewport);
     }
 
     return lineInfo;
   }
 
   /**
-   * Intersects a plane parallel to the source plane (offset along the source
+   * Intersects a plane parallel to the leader plane (offset along its
    * normal) with the target plane and clips it to the target canvas.
    */
   private _clipOffsetPlaneIntersection(
     targetViewport: Types.IViewport,
     targetPlane: Plane,
-    sourcePlane: Plane,
+    leaderPlane: Plane,
     offset: number
   ): [Types.Point2, Types.Point2] | null {
     const offsetPlane: Plane = {
-      normal: sourcePlane.normal,
+      normal: leaderPlane.normal,
       point: [
-        sourcePlane.point[0] + sourcePlane.normal[0] * offset,
-        sourcePlane.point[1] + sourcePlane.normal[1] * offset,
-        sourcePlane.point[2] + sourcePlane.normal[2] * offset,
+        leaderPlane.point[0] + leaderPlane.normal[0] * offset,
+        leaderPlane.point[1] + leaderPlane.normal[1] * offset,
+        leaderPlane.point[2] + leaderPlane.normal[2] * offset,
       ],
     };
 
@@ -682,25 +837,25 @@ class SliceIntersectionTool extends AnnotationTool {
 
   /**
    * Slab thickness rendering: two dashed lines at +/- slabThickness / 2
-   * relative to the source slice plane. The slab thickness itself is read
-   * from the source viewport display-set presentation and never stored on
-   * this tool.
+   * relative to the leader slice plane. The slab thickness itself is read
+   * from the viewport display-set presentation and never stored on this
+   * tool.
    */
   private _appendSlabGeometry(
     lineInfo: RenderedIntersectionLine,
     targetViewport: Types.IViewport,
     targetPlane: Plane,
-    sourceViewport: Types.IViewport,
-    sourcePlane: Plane
+    leaderViewport: Types.IViewport,
+    leaderPlane: Plane
   ): void {
     if (
       !this.configuration.showSlabThickness ||
-      !this._isVolumeModeViewport(sourceViewport)
+      !this._isVolumeModeViewport(leaderViewport)
     ) {
       return;
     }
 
-    const slabThickness = this._getSourceSlabThickness(sourceViewport);
+    const slabThickness = this._getSourceSlabThickness(leaderViewport);
     if (
       !slabThickness ||
       slabThickness <= RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS
@@ -712,7 +867,7 @@ class SliceIntersectionTool extends AnnotationTool {
       const segment = this._clipOffsetPlaneIntersection(
         targetViewport,
         targetPlane,
-        sourcePlane,
+        leaderPlane,
         offset
       );
       if (segment) {
@@ -722,15 +877,15 @@ class SliceIntersectionTool extends AnnotationTool {
   }
 
   /**
-   * Optional boundary/intermediate slice lines derived from the source
-   * viewport image bounds along the source normal.
+   * Optional boundary/intermediate slice lines derived from the leader
+   * viewport image bounds along the leader normal.
    */
   private _appendBoundaryGeometry(
     lineInfo: RenderedIntersectionLine,
     targetViewport: Types.IViewport,
     targetPlane: Plane,
-    sourceViewport: Types.IViewport,
-    sourcePlane: Plane
+    leaderViewport: Types.IViewport,
+    leaderPlane: Plane
   ): void {
     const { showBoundaryLines, showIntermediateLines } = this.configuration;
     if (!showBoundaryLines && !showIntermediateLines) {
@@ -738,8 +893,8 @@ class SliceIntersectionTool extends AnnotationTool {
     }
 
     const extent = this._getSourceExtentAlongNormal(
-      sourceViewport,
-      sourcePlane
+      leaderViewport,
+      leaderPlane
     );
     if (!extent) {
       return;
@@ -770,7 +925,7 @@ class SliceIntersectionTool extends AnnotationTool {
       const segment = this._clipOffsetPlaneIntersection(
         targetViewport,
         targetPlane,
-        sourcePlane,
+        leaderPlane,
         offset
       );
       if (segment) {
@@ -785,9 +940,7 @@ class SliceIntersectionTool extends AnnotationTool {
   ): { minOffset: number; maxOffset: number; spacing: number } | null {
     let imageData;
     try {
-      imageData = (
-        sourceViewport as Types.IVolumeViewport
-      ).getImageData?.();
+      imageData = (sourceViewport as Types.IVolumeViewport).getImageData?.();
     } catch {
       return null;
     }
@@ -837,15 +990,15 @@ class SliceIntersectionTool extends AnnotationTool {
   private _appendHandles(
     lineInfo: RenderedIntersectionLine,
     targetViewport: Types.IViewport,
-    sourceViewport: Types.IViewport
+    leaderViewport: Types.IViewport
   ): void {
     const { rotatable, slabThicknessControls, showSlabThickness } =
       this.configuration;
     const [start, end] = lineInfo.canvasPoints;
 
-    // Rotation and slab manipulation require a volume-backed source: image
+    // Rotation and slab manipulation require a volume-backed leader: image
     // stack planes cannot be reoriented and have no slab.
-    const volumeMode = this._isVolumeModeViewport(sourceViewport);
+    const volumeMode = this._isVolumeModeViewport(leaderViewport);
 
     if (rotatable && volumeMode) {
       lineInfo.rotateHandles = [0.25, 0.75].map((fraction) => [
@@ -858,7 +1011,7 @@ class SliceIntersectionTool extends AnnotationTool {
       lineInfo.slabHandles = this._computeSlabHandles(
         lineInfo,
         targetViewport,
-        sourceViewport
+        leaderViewport
       );
     }
   }
@@ -866,35 +1019,39 @@ class SliceIntersectionTool extends AnnotationTool {
   private _computeSlabHandles(
     lineInfo: RenderedIntersectionLine,
     targetViewport: Types.IViewport,
-    sourceViewport: Types.IViewport
+    leaderViewport: Types.IViewport
   ): Types.Point2[] {
     const [start, end] = lineInfo.canvasPoints;
-    const midCanvas: Types.Point2 = [
-      (start[0] + end[0]) / 2,
-      (start[1] + end[1]) / 2,
+
+    // Anchor the slab handles near one end of the line (not the midpoint):
+    // crossing lines share the viewport center, so midpoint handles from a
+    // horizontal and a vertical line would overlap each other.
+    const anchorCanvas: Types.Point2 = [
+      start[0] + (end[0] - start[0]) * SLAB_HANDLE_LINE_FRACTION,
+      start[1] + (end[1] - start[1]) * SLAB_HANDLE_LINE_FRACTION,
     ];
 
-    const slabThickness = this._getSourceSlabThickness(sourceViewport);
-    const midWorld = targetViewport.canvasToWorld(midCanvas);
-    const { normal } = lineInfo.sourcePlane;
+    const slabThickness = this._getSourceSlabThickness(leaderViewport);
+    const anchorWorld = targetViewport.canvasToWorld(anchorCanvas);
+    const { normal } = lineInfo.leaderPlane;
 
     const plusWorld: Types.Point3 = [
-      midWorld[0] + normal[0] * (slabThickness / 2),
-      midWorld[1] + normal[1] * (slabThickness / 2),
-      midWorld[2] + normal[2] * (slabThickness / 2),
+      anchorWorld[0] + normal[0] * (slabThickness / 2),
+      anchorWorld[1] + normal[1] * (slabThickness / 2),
+      anchorWorld[2] + normal[2] * (slabThickness / 2),
     ];
     const plusCanvas = targetViewport.worldToCanvas(plusWorld);
 
     const canvasOffset = Math.hypot(
-      plusCanvas[0] - midCanvas[0],
-      plusCanvas[1] - midCanvas[1]
+      plusCanvas[0] - anchorCanvas[0],
+      plusCanvas[1] - anchorCanvas[1]
     );
 
     if (canvasOffset >= MIN_SLAB_HANDLE_CANVAS_OFFSET) {
       const minusWorld: Types.Point3 = [
-        midWorld[0] - normal[0] * (slabThickness / 2),
-        midWorld[1] - normal[1] * (slabThickness / 2),
-        midWorld[2] - normal[2] * (slabThickness / 2),
+        anchorWorld[0] - normal[0] * (slabThickness / 2),
+        anchorWorld[1] - normal[1] * (slabThickness / 2),
+        anchorWorld[2] - normal[2] * (slabThickness / 2),
       ];
       return [plusCanvas, targetViewport.worldToCanvas(minusWorld)];
     }
@@ -909,134 +1066,14 @@ class SliceIntersectionTool extends AnnotationTool {
 
     return [
       [
-        midCanvas[0] + perpendicular[0] * MIN_SLAB_HANDLE_CANVAS_OFFSET,
-        midCanvas[1] + perpendicular[1] * MIN_SLAB_HANDLE_CANVAS_OFFSET,
+        anchorCanvas[0] + perpendicular[0] * MIN_SLAB_HANDLE_CANVAS_OFFSET,
+        anchorCanvas[1] + perpendicular[1] * MIN_SLAB_HANDLE_CANVAS_OFFSET,
       ],
       [
-        midCanvas[0] - perpendicular[0] * MIN_SLAB_HANDLE_CANVAS_OFFSET,
-        midCanvas[1] - perpendicular[1] * MIN_SLAB_HANDLE_CANVAS_OFFSET,
+        anchorCanvas[0] - perpendicular[0] * MIN_SLAB_HANDLE_CANVAS_OFFSET,
+        anchorCanvas[1] - perpendicular[1] * MIN_SLAB_HANDLE_CANVAS_OFFSET,
       ],
     ];
-  }
-
-  // ===================================================================
-  // Source viewport resolution
-  // ===================================================================
-
-  /**
-   * Resolves which source viewports may generate lines in the given target
-   * viewport, per the configured source policy. Sources must always be
-   * spatially linked to the target, and 3D viewports never participate.
-   */
-  protected _resolveSourceViewports(
-    targetViewport: Types.IViewport,
-    targetPlane: Plane
-  ): Types.IViewport[] {
-    const {
-      sourcePolicy,
-      selectedSourceViewportIds,
-      maxSourceViewports,
-      linkPolicy,
-      explicitLinks,
-    } = this.configuration;
-
-    const candidates = this._getToolGroupViewports().filter(
-      (viewport) =>
-        viewport.id !== targetViewport.id &&
-        this._isPlanarViewport(viewport) &&
-        areViewportsSpatiallyLinked(viewport, targetViewport, {
-          policy: linkPolicy,
-          explicitLinks,
-        })
-    );
-
-    switch (sourcePolicy) {
-      case 'activeViewport': {
-        return candidates.filter(
-          (viewport) => viewport.id === this._activeSourceViewportId
-        );
-      }
-
-      case 'mprTriad': {
-        const canonicalIds = this._getCanonicalMprViewportIds();
-        return candidates.filter((viewport) =>
-          canonicalIds.includes(viewport.id)
-        );
-      }
-
-      case 'selectedViewports': {
-        return candidates
-          .filter((viewport) =>
-            selectedSourceViewportIds?.includes(viewport.id)
-          )
-          .slice(0, maxSourceViewports);
-      }
-
-      case 'allLinked': {
-        return candidates
-          .filter((viewport) => {
-            const sourcePlane = getViewportPlane(viewport);
-            if (!sourcePlane) {
-              return false;
-            }
-            return (
-              Math.abs(vec3.dot(sourcePlane.normal, targetPlane.normal)) <=
-              SAME_ORIENTATION_TOLERANCE
-            );
-          })
-          .slice(0, maxSourceViewports);
-      }
-
-      case 'debugAll': {
-        // Debug/advanced: every spatially linked source, no cap. Never the
-        // clinical default.
-        return candidates;
-      }
-
-      default:
-        return [];
-    }
-  }
-
-  /**
-   * Identifies the canonical axial, sagittal and coronal viewports in the
-   * tool group (the first viewport found for each orientation). Duplicate /
-   * follower viewports of the same orientation are not canonical.
-   */
-  protected _getCanonicalMprViewportIds(): string[] {
-    const canonical: {
-      axial?: string;
-      sagittal?: string;
-      coronal?: string;
-    } = {};
-
-    this._getToolGroupViewports().forEach((viewport) => {
-      if (!this._isPlanarViewport(viewport)) {
-        return;
-      }
-
-      const plane = getViewportPlane(viewport);
-      if (!plane) {
-        return;
-      }
-
-      const [x, y, z] = plane.normal.map(Math.abs);
-
-      let orientation: 'axial' | 'sagittal' | 'coronal' | null = null;
-      if (z > SAME_ORIENTATION_TOLERANCE) {
-        orientation = 'axial';
-      } else if (x > SAME_ORIENTATION_TOLERANCE) {
-        orientation = 'sagittal';
-      } else if (y > SAME_ORIENTATION_TOLERANCE) {
-        orientation = 'coronal';
-      }
-
-      if (orientation && !canonical[orientation]) {
-        canonical[orientation] = viewport.id;
-      }
-    });
-
-    return Object.values(canonical).filter(Boolean) as string[];
   }
 
   // ===================================================================
@@ -1045,9 +1082,7 @@ class SliceIntersectionTool extends AnnotationTool {
 
   /**
    * The tool never creates real annotations from clicks in empty space:
-   * clicking empty canvas never jumps and never stores a point. Under the
-   * 'activeViewport' source policy, a click in a viewport makes it the
-   * active source.
+   * clicking empty canvas never jumps and never stores a point.
    */
   addNewAnnotation = (
     evt: EventTypes.InteractionEventType
@@ -1059,17 +1094,8 @@ class SliceIntersectionTool extends AnnotationTool {
       return this._createDetachedAnnotation();
     }
 
-    const { viewport } = enabledElement;
-
-    if (
-      this.configuration.sourcePolicy === 'activeViewport' &&
-      this._isPlanarViewport(viewport)
-    ) {
-      this.setActiveSourceViewport(viewport.id);
-    }
-
     return (
-      this._getOrCreateViewportAnnotation(viewport) ??
+      this._getOrCreateViewportAnnotation(enabledElement.viewport) ??
       this._createDetachedAnnotation()
     );
   };
@@ -1089,7 +1115,8 @@ class SliceIntersectionTool extends AnnotationTool {
     return !!this._findLineNear(
       enabledElement.viewport.id,
       canvasCoords,
-      LINE_PROXIMITY
+      LINE_PROXIMITY,
+      true
     );
   };
 
@@ -1109,10 +1136,6 @@ class SliceIntersectionTool extends AnnotationTool {
     const lines = this._renderedLines.get(enabledElement.viewport.id) ?? [];
 
     for (const lineInfo of lines) {
-      if (!lineInfo.controllable) {
-        continue;
-      }
-
       const nearRotate = lineInfo.rotateHandles.some(
         (handle) =>
           Math.hypot(
@@ -1144,8 +1167,8 @@ class SliceIntersectionTool extends AnnotationTool {
   }
 
   /**
-   * Click on a line selects it; when dragging is enabled the drag translates
-   * the source viewport slice plane along the source normal.
+   * Click on a line selects its plane group; when dragging is enabled the
+   * drag translates every member of the group.
    */
   toolSelectedCallback = (
     evt: EventTypes.InteractionEventType,
@@ -1168,7 +1191,7 @@ class SliceIntersectionTool extends AnnotationTool {
 
     this._selectLine(lineInfo);
 
-    if (this.configuration.draggable && lineInfo.controllable) {
+    if (this.configuration.draggable) {
       this._startManipulation(element, lineInfo, 'translate');
     }
 
@@ -1266,10 +1289,8 @@ class SliceIntersectionTool extends AnnotationTool {
   };
 
   /**
-   * Hover: highlights the intersection line under the cursor (and shows its
-   * handles). Hovering never switches the active source viewport: that only
-   * happens through clicks, scrolls or the public API, so lines stay
-   * grabbable in the other viewports.
+   * Hover: highlights the plane-group line under the cursor and shows its
+   * handles.
    */
   mouseMoveCallback = (
     evt: EventTypes.MouseMoveEventType,
@@ -1289,17 +1310,20 @@ class SliceIntersectionTool extends AnnotationTool {
     const lineInfo = this._findLineNear(
       viewport.id,
       currentPoints.canvas,
-      LINE_PROXIMITY
+      LINE_PROXIMITY,
+      // Keep the active line (and its handles) while hovering the handles
+      // themselves, which sit at a canvas offset from the line.
+      true
     );
 
     let needsRedraw = false;
 
     if (lineInfo) {
       if (
-        this._activeSourceViewportId !== lineInfo.sourceViewportId ||
+        this._activeGroupId !== lineInfo.groupId ||
         this._activeTargetViewportId !== viewport.id
       ) {
-        this._activeSourceViewportId = lineInfo.sourceViewportId;
+        this._activeGroupId = lineInfo.groupId;
         this._activeTargetViewportId = viewport.id;
         needsRedraw = true;
       }
@@ -1354,7 +1378,9 @@ class SliceIntersectionTool extends AnnotationTool {
 
     this._editData = {
       targetViewportId: lineInfo.targetViewportId,
-      sourceViewportId: lineInfo.sourceViewportId,
+      groupId: lineInfo.groupId,
+      family: lineInfo.family,
+      memberViewportIds: [...lineInfo.memberViewportIds],
       operation,
     };
 
@@ -1434,20 +1460,23 @@ class SliceIntersectionTool extends AnnotationTool {
       return;
     }
 
-    const sourceViewport = this._getViewportById(editData.sourceViewportId);
-    if (!sourceViewport) {
+    const members = editData.memberViewportIds
+      .map((viewportId) => this._getViewportById(viewportId))
+      .filter(Boolean) as Types.IViewport[];
+
+    if (!members.length) {
       return;
     }
 
     switch (editData.operation) {
       case 'translate':
-        this._applyTranslate(sourceViewport, evt);
+        this._applyTranslate(members, evt, editData);
         break;
       case 'rotate':
-        this._applyRotate(sourceViewport, evt, editData);
+        this._applyRotate(members, evt, editData);
         break;
       case 'slabThickness':
-        this._applySlabThickness(sourceViewport, evt);
+        this._applySlabThickness(members, evt, editData);
         break;
     }
 
@@ -1455,49 +1484,88 @@ class SliceIntersectionTool extends AnnotationTool {
   };
 
   /**
-   * Dragging a line translates only the source viewport slice plane along the
-   * source viewport normal (the drag delta projected onto that normal).
+   * Dragging a line translates EVERY member of its plane group: the total
+   * drag delta is projected onto each member's own normal, and each member
+   * navigates to `its start position + that distance` (stacks and coarser
+   * volumes snap to their closest slice of the TRUE position, so no motion
+   * is lost to per-tick snapping). Viewports outside the group never move.
    */
   private _applyTranslate(
-    sourceViewport: Types.IViewport,
-    evt: EventTypes.InteractionEventType
+    members: Types.IViewport[],
+    evt: EventTypes.InteractionEventType,
+    editData: EditData
   ): void {
+    const startWorld = evt.detail.startPoints?.world;
+    const currentWorld = evt.detail.currentPoints?.world;
     const deltaWorld = evt.detail.deltaPoints?.world;
-    if (!deltaWorld) {
+
+    const totalDelta =
+      startWorld && currentWorld
+        ? vec3.subtract(vec3.create(), currentWorld, startWorld)
+        : deltaWorld;
+    if (!totalDelta) {
       return;
     }
 
-    const sourcePlane = getViewportPlane(sourceViewport);
-    if (!sourcePlane) {
-      return;
+    const usingTotalDelta = !!(startWorld && currentWorld);
+    const memberStartPlanePoints =
+      editData?.memberStartPlanePoints ?? new Map<string, Types.Point3>();
+    if (editData) {
+      editData.memberStartPlanePoints = memberStartPlanePoints;
     }
 
-    const scrollDistance = vec3.dot(deltaWorld, sourcePlane.normal);
-    if (translateViewportAlongNormal(sourceViewport, scrollDistance)) {
-      sourceViewport.render();
-    }
+    members.forEach((member) => {
+      const memberPlane = getViewportPlane(member);
+      if (!memberPlane) {
+        return;
+      }
+
+      if (!usingTotalDelta) {
+        // Fallback (no start point available): per-tick integration.
+        const scrollDistance = vec3.dot(
+          totalDelta as Types.Point3,
+          memberPlane.normal
+        );
+        if (translateViewportAlongNormal(member, scrollDistance)) {
+          member.render();
+        }
+        return;
+      }
+
+      let startPlanePoint = memberStartPlanePoints.get(member.id);
+      if (!startPlanePoint) {
+        // First tick: nothing has moved this member yet, so its current
+        // plane point is the drag-start anchor.
+        startPlanePoint = [...memberPlane.point] as Types.Point3;
+        memberStartPlanePoints.set(member.id, startPlanePoint);
+      }
+
+      const distance = vec3.dot(totalDelta as Types.Point3, memberPlane.normal);
+      const targetPoint: Types.Point3 = [
+        startPlanePoint[0] + memberPlane.normal[0] * distance,
+        startPlanePoint[1] + memberPlane.normal[1] * distance,
+        startPlanePoint[2] + memberPlane.normal[2] * distance,
+      ];
+
+      if (navigatePlanarViewportToPoint(member, targetPoint)) {
+        member.render();
+      }
+    });
   }
 
   /**
-   * Dragging a rotation handle rotates only the source viewport slice plane
-   * around the resolved pivot, about the target viewport view-plane normal.
-   *
-   * The rotation is expressed through the native view reference API: the
-   * rotated orientation vectors and the pivot are written with
-   * `setViewReference`, which reorients volume-backed planar viewports.
-   * Image-stack sources cannot be reoriented and are skipped.
+   * Dragging a rotation handle reorients the volume-backed members of the
+   * plane group together around the shared pivot, about the target viewport
+   * view-plane normal. Image stacks cannot be reoriented and are skipped
+   * (they keep following translations only).
    */
   private _applyRotate(
-    sourceViewport: Types.IViewport,
+    members: Types.IViewport[],
     evt: EventTypes.InteractionEventType,
     editData: EditData
   ): void {
     const { pivotWorld, rotationAxis, targetViewportId } = editData;
     if (!pivotWorld || !rotationAxis) {
-      return;
-    }
-
-    if (!this._isVolumeModeViewport(sourceViewport)) {
       return;
     }
 
@@ -1531,9 +1599,7 @@ class SliceIntersectionTool extends AnnotationTool {
       return;
     }
 
-    const cross =
-      dir1[0] * dir2[1] -
-      dir1[1] * dir2[0];
+    const cross = dir1[0] * dir2[1] - dir1[1] * dir2[0];
     if (cross > 0) {
       angle *= -1;
     }
@@ -1541,11 +1607,6 @@ class SliceIntersectionTool extends AnnotationTool {
     // Round so a rotation can be undone by rotating back by the same amount.
     angle = Math.round(angle * 100) / 100;
     if (angle === 0) {
-      return;
-    }
-
-    const { viewPlaneNormal, viewUp } = getViewportICamera(sourceViewport);
-    if (!viewPlaneNormal || !viewUp) {
       return;
     }
 
@@ -1559,72 +1620,122 @@ class SliceIntersectionTool extends AnnotationTool {
       return;
     }
 
-    const newViewPlaneNormal = vec3.transformMat4(
-      vec3.create(),
-      viewPlaneNormal,
-      rotation
-    );
-    const newViewUp = vec3.transformMat4(vec3.create(), viewUp, rotation);
+    editData.memberStartScales ??= new Map();
 
-    (sourceViewport as Types.IGenericViewport).setViewReference({
-      viewPlaneNormal: [
-        newViewPlaneNormal[0],
-        newViewPlaneNormal[1],
-        newViewPlaneNormal[2],
-      ],
-      viewUp: [newViewUp[0], newViewUp[1], newViewUp[2]],
-      cameraFocalPoint: [pivotWorld[0], pivotWorld[1], pivotWorld[2]],
-    } as Types.ViewReference);
-    sourceViewport.render();
+    members.forEach((member) => {
+      if (!this._isVolumeModeViewport(member)) {
+        return;
+      }
+
+      const { viewPlaneNormal, viewUp } = getViewportICamera(member);
+      if (!viewPlaneNormal || !viewUp) {
+        return;
+      }
+
+      const scalableMember = member as Types.IViewport & {
+        getScale?: () => unknown;
+        setScale?: (scale: unknown) => void;
+      };
+
+      // Capture the on-screen scale at drag start: fit-based scaling refits
+      // the new oblique extent on every orientation write, which would pulse
+      // the zoom while rotating.
+      if (!editData.memberStartScales.has(member.id)) {
+        editData.memberStartScales.set(
+          member.id,
+          scalableMember.getScale?.() ?? null
+        );
+      }
+
+      const newViewPlaneNormal = vec3.transformMat4(
+        vec3.create(),
+        viewPlaneNormal,
+        rotation
+      );
+      const newViewUp = vec3.transformMat4(vec3.create(), viewUp, rotation);
+
+      (member as Types.IGenericViewport).setViewReference({
+        viewPlaneNormal: [
+          newViewPlaneNormal[0],
+          newViewPlaneNormal[1],
+          newViewPlaneNormal[2],
+        ],
+        viewUp: [newViewUp[0], newViewUp[1], newViewUp[2]],
+        cameraFocalPoint: [pivotWorld[0], pivotWorld[1], pivotWorld[2]],
+      } as Types.ViewReference);
+
+      const startScale = editData.memberStartScales.get(member.id);
+      if (startScale) {
+        scalableMember.setScale?.(startScale);
+      }
+
+      member.render();
+    });
   }
 
   /**
-   * Dragging a slab handle changes only the source viewport slab thickness:
-   * twice the distance of the cursor from the source slice plane.
+   * Dragging a slab handle sets the slab thickness (twice the distance of
+   * the cursor from the leader slice plane) on every volume-backed member of
+   * the plane group, through the display-set presentation API. No slab state
+   * is stored on the tool.
    */
   private _applySlabThickness(
-    sourceViewport: Types.IViewport,
-    evt: EventTypes.InteractionEventType
+    members: Types.IViewport[],
+    evt: EventTypes.InteractionEventType,
+    editData: EditData
   ): void {
     const currentWorld = evt.detail.currentPoints?.world;
     if (!currentWorld) {
       return;
     }
 
-    const sourcePlane = getViewportPlane(sourceViewport);
-    if (!sourcePlane) {
+    const leader = members.find((member) => this._isVolumeModeViewport(member));
+    const leaderPlane = leader && getViewportPlane(leader);
+    if (!leaderPlane) {
       return;
     }
 
     const slabThickness = Math.max(
       RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS,
-      Math.abs(distancePointToPlane(currentWorld, sourcePlane)) * 2
+      Math.abs(distancePointToPlane(currentWorld, leaderPlane)) * 2
     );
 
-    this._setSourceViewportSlabThickness(sourceViewport, slabThickness);
+    let changed = false;
+    members.forEach((member) => {
+      if (this._setViewportSlabThickness(member, slabThickness)) {
+        changed = true;
+      }
+    });
+
+    if (changed) {
+      triggerEvent(
+        eventTarget,
+        Events.SLICE_INTERSECTION_SLAB_THICKNESS_CHANGED,
+        this._getManipulationDetail('slabThickness', editData)
+      );
+    }
   }
 
   /**
-   * Reads and writes slab thickness exclusively through the source viewport
-   * display-set presentation (the native next API); the tool itself stores
-   * no slab state. Only volume-backed planar sources have a slab.
+   * Writes the slab thickness of one volume-backed member through its
+   * display-set presentation. Returns true when a change was applied.
    */
-  private _setSourceViewportSlabThickness(
-    sourceViewport: Types.IViewport,
+  private _setViewportSlabThickness(
+    viewport: Types.IViewport,
     slabThickness: number
-  ): void {
-    if (!this._isVolumeModeViewport(sourceViewport)) {
-      return;
+  ): boolean {
+    if (!this._isVolumeModeViewport(viewport)) {
+      return false;
     }
 
-    const dataId = this._getSourceDataId(sourceViewport);
+    const dataId = this._getSourceDataId(viewport);
     if (!dataId) {
-      return;
+      return false;
     }
 
-    const currentSlabThickness = this._getSourceSlabThickness(sourceViewport);
+    const currentSlabThickness = this._getSourceSlabThickness(viewport);
     if (Math.abs(currentSlabThickness - slabThickness) < 1e-6) {
-      return;
+      return false;
     }
 
     let blendMode = this.configuration.slabThicknessBlendMode;
@@ -1632,20 +1743,13 @@ class SliceIntersectionTool extends AnnotationTool {
       blendMode = Enums.BlendModes.COMPOSITE;
     }
 
-    (sourceViewport as Types.IGenericViewport).setDisplaySetPresentation(
-      dataId,
-      {
-        slabThickness,
-        blendMode,
-      }
-    );
-    sourceViewport.render();
+    (viewport as Types.IGenericViewport).setDisplaySetPresentation(dataId, {
+      slabThickness,
+      blendMode,
+    });
+    viewport.render();
 
-    triggerEvent(
-      eventTarget,
-      Events.SLICE_INTERSECTION_SLAB_THICKNESS_CHANGED,
-      this._getManipulationDetail('slabThickness')
-    );
+    return true;
   }
 
   /**
@@ -1668,7 +1772,7 @@ class SliceIntersectionTool extends AnnotationTool {
    * thickness and plane rotation.
    */
   private _isVolumeModeViewport(viewport: Types.IViewport): boolean {
-    if (!this._isPlanarViewport(viewport)) {
+    if (!viewport || !this._isPlanarViewport(viewport)) {
       return false;
     }
 
@@ -1687,8 +1791,8 @@ class SliceIntersectionTool extends AnnotationTool {
   }
 
   /**
-   * Reads the source viewport slab thickness from its display-set
-   * presentation; defaults to the minimum slab thickness.
+   * Reads the viewport slab thickness from its display-set presentation;
+   * defaults to the minimum slab thickness.
    */
   private _getSourceSlabThickness(viewport: Types.IViewport): number {
     const dataId = this._getSourceDataId(viewport);
@@ -1778,22 +1882,31 @@ class SliceIntersectionTool extends AnnotationTool {
   // ===================================================================
 
   private _selectLine(lineInfo: RenderedIntersectionLine): void {
-    this._activeSourceViewportId = lineInfo.sourceViewportId;
+    this._activeGroupId = lineInfo.groupId;
     this._activeTargetViewportId = lineInfo.targetViewportId;
 
     triggerEvent(eventTarget, Events.SLICE_INTERSECTION_LINE_SELECTED, {
       toolGroupId: this.toolGroupId,
-      sourceViewportId: lineInfo.sourceViewportId,
+      groupId: lineInfo.groupId,
       targetViewportId: lineInfo.targetViewportId,
     } as SliceIntersectionLineSelectedEventDetail);
   }
 
+  /**
+   * Finds the rendered line near the canvas point. When `includeHandles` is
+   * set, proximity to the line's rotation/slab handles also counts: the slab
+   * handles sit at a canvas offset from the line itself, and hover must not
+   * drop the active state (hiding the handles) while the cursor travels from
+   * the line onto a handle.
+   */
   private _findLineNear(
     viewportId: string,
     canvasCoords: Types.Point2,
-    proximity: number
+    proximity: number,
+    includeHandles = false
   ): RenderedIntersectionLine | null {
     const lines = this._renderedLines.get(viewportId) ?? [];
+    const handleReach = this.configuration.handleRadius + proximity;
 
     for (const lineInfo of lines) {
       const distance = lineSegment.distanceToPoint(
@@ -1804,6 +1917,23 @@ class SliceIntersectionTool extends AnnotationTool {
 
       if (distance <= proximity) {
         return lineInfo;
+      }
+
+      if (includeHandles) {
+        const nearHandle = [
+          ...lineInfo.rotateHandles,
+          ...lineInfo.slabHandles,
+        ].some(
+          (handle) =>
+            Math.hypot(
+              handle[0] - canvasCoords[0],
+              handle[1] - canvasCoords[1]
+            ) <= handleReach
+        );
+
+        if (nearHandle) {
+          return lineInfo;
+        }
       }
     }
 
@@ -1840,22 +1970,6 @@ class SliceIntersectionTool extends AnnotationTool {
     );
     if (viewportIds.length) {
       triggerAnnotationRenderForViewportIds(viewportIds);
-    }
-  }
-
-  private _initDefaultActiveSourceViewport(): void {
-    if (
-      this.configuration.sourcePolicy !== 'activeViewport' ||
-      this._activeSourceViewportId
-    ) {
-      return;
-    }
-
-    const [firstViewport] = this._getToolGroupViewports().filter((viewport) =>
-      this._isPlanarViewport(viewport)
-    );
-    if (firstViewport) {
-      this._activeSourceViewportId = firstViewport.id;
     }
   }
 
@@ -1914,25 +2028,15 @@ class SliceIntersectionTool extends AnnotationTool {
     } as SliceIntersectionAnnotation;
   }
 
-  private _emitSourceChanged(): void {
-    triggerEvent(eventTarget, Events.SLICE_INTERSECTION_SOURCE_CHANGED, {
-      toolGroupId: this.toolGroupId,
-      sourcePolicy: this.configuration.sourcePolicy,
-      activeSourceViewportId: this._activeSourceViewportId,
-      selectedSourceViewportIds: [
-        ...(this.configuration.selectedSourceViewportIds ?? []),
-      ],
-    } as SliceIntersectionSourceChangedEventDetail);
-  }
-
   private _getManipulationDetail(
     operation: SliceIntersectionOperation,
     editData: EditData | null = this._editData
   ): SliceIntersectionManipulationEventDetail {
     return {
       toolGroupId: this.toolGroupId,
-      sourceViewportId:
-        editData?.sourceViewportId ?? this._activeSourceViewportId ?? '',
+      groupId: editData?.groupId ?? this._activeGroupId ?? '',
+      family: editData?.family,
+      viewportIds: editData?.memberViewportIds ?? [],
       targetViewportId:
         editData?.targetViewportId ?? this._activeTargetViewportId ?? '',
       operation,

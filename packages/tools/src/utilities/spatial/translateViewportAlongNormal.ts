@@ -2,7 +2,7 @@ import { vec3 } from 'gl-matrix';
 import { utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import getViewportICamera from '../getViewportICamera';
-import { jumpToFocalPoint } from '../genericViewportToolHelpers';
+import { navigatePlanarViewportToPoint } from '../genericViewportToolHelpers';
 
 /**
  * Moves a viewport camera (position and focal point) along its view-plane
@@ -43,12 +43,11 @@ export default function translateViewportAlongNormal(
   );
 
   if (csUtils.isGenericViewport(viewport)) {
-    jumpToFocalPoint(viewport, [
+    return navigatePlanarViewportToPoint(viewport, [
       newFocalPoint[0],
       newFocalPoint[1],
       newFocalPoint[2],
     ]);
-    return true;
   }
 
   viewport.setCamera({

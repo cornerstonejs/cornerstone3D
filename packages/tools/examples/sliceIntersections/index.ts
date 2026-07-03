@@ -9,7 +9,6 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  addDropdownToToolbar,
   addManipulationBindings,
   ctVoiRange,
   getLocalUrl,
@@ -44,7 +43,7 @@ const renderingEngineId = 'myRenderingEngine';
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Slice Intersections',
-  'The SliceIntersectionTool renders the intersection line of other viewports slice planes with the current viewport plane, running on native PLANAR_NEXT (generic) viewports. Every line is a true plane-plane intersection: there is no shared crosshair center. Drag a line to scroll the source plane; use the handles to rotate it or change its slab thickness.'
+  'The SliceIntersectionTool renders one intersection line per plane (red = axial, yellow = sagittal, green = coronal) on native PLANAR_NEXT (generic) viewports. Every line is a true plane-plane intersection: there is no shared crosshair center. Drag a line to scroll that plane; use the handles to rotate it or change its slab thickness.'
 );
 
 const size = '500px';
@@ -67,34 +66,13 @@ content.appendChild(viewportGrid);
 
 const instructions = document.createElement('p');
 instructions.innerText = `
-  - The default source policy is 'activeViewport': click or scroll a viewport to make it the active source; its slice plane is drawn in the other viewports.
-  - Drag an intersection line to translate the source viewport slice plane along its normal.
-  - Hover a line and drag its round handles (quarter points) to rotate the source plane.
-  - Drag the hollow handles near the line midpoint to change the source viewport slab thickness (dashed boundary lines).
-  - Switch the source policy in the toolbar to compare behaviors.
+  - Each viewport shows one line per other plane: red = axial, yellow = sagittal, green = coronal.
+  - Drag an intersection line to scroll that plane (every viewport showing it follows).
+  - Hover a line and drag its round handles (quarter points) to rotate the plane.
+  - Drag the hollow handles near the line end to change the slab thickness (dashed boundary lines).
   `;
 
 content.append(instructions);
-
-addDropdownToToolbar({
-  labelText: 'Source policy',
-  options: {
-    values: [
-      'activeViewport',
-      'mprTriad',
-      'selectedViewports',
-      'allLinked',
-      'debugAll',
-    ],
-    defaultValue: 'activeViewport',
-  },
-  onSelectedValueChange: (selectedValue) => {
-    const instance = ToolGroupManager.getToolGroup(toolGroupId).getToolInstance(
-      SliceIntersectionTool.toolName
-    );
-    instance.setSourcePolicy(selectedValue);
-  },
-});
 
 /**
  * Runs the demo
@@ -161,10 +139,7 @@ async function run() {
     toolGroup.addViewport(viewportId, renderingEngineId);
   });
 
-  // 'selectedViewports' policy demo data: the axial and sagittal viewports.
-  toolGroup.addTool(SliceIntersectionTool.toolName, {
-    selectedSourceViewportIds: [viewportIds[0], viewportIds[1]],
-  });
+  toolGroup.addTool(SliceIntersectionTool.toolName);
 
   toolGroup.setToolActive(SliceIntersectionTool.toolName, {
     bindings: [{ mouseButton: MouseBindings.Primary }],

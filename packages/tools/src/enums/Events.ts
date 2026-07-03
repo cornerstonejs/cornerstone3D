@@ -55,12 +55,6 @@ enum Events {
   WORLD_CROSSHAIR_JUMPED_TO_POINT = 'CORNERSTONE_TOOLS_WORLD_CROSSHAIR_JUMPED_TO_POINT',
 
   /**
-   * Triggers on the eventTarget when the SliceIntersectionTool active/selected
-   * source viewports change.
-   */
-  SLICE_INTERSECTION_SOURCE_CHANGED = 'CORNERSTONE_TOOLS_SLICE_INTERSECTION_SOURCE_CHANGED',
-
-  /**
    * Triggers on the eventTarget when a SliceIntersectionTool intersection line
    * is selected.
    */
