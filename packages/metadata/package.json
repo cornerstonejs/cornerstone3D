@@ -69,7 +69,7 @@
   "scripts": {
     "prebuild": "node ../../scripts/generate-version.js ./",
     "build:esm": "pnpm run prebuild && tsc --project ./tsconfig.json && tsc-alias -p ./tsconfig.json --resolve-full-paths && node ../../scripts/write-dist-esm-package-json.js ./",
-    "build:esm:watch": "tsc --project ./tsconfig.json --watch",
+    "build:esm:watch": "sh -c 'tsc-alias -p ./tsconfig.json --resolve-full-paths --watch & alias_pid=$!; node ../../scripts/write-dist-esm-package-json.js ./ --watch & writer_pid=$!; trap \"kill $alias_pid $writer_pid\" EXIT; tsc --project ./tsconfig.json --watch'",
     "clean": "rm -rf node_modules/.cache/storybook && shx rm -rf dist",
     "clean:deep": "pnpm run clean && shx rm -rf node_modules",
     "build": "pnpm run build:esm",

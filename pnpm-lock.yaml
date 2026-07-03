@@ -47,7 +47,7 @@ importers:
   .:
     devDependencies:
       '@arethetypeswrong/cli':
-        specifier: ^0.18.4
+        specifier: 0.18.4
         version: 0.18.4
       '@babel/core':
         specifier: 7.26.10
@@ -308,7 +308,7 @@ importers:
         specifier: 3.6.2
         version: 3.6.2
       publint:
-        specifier: ^0.3.21
+        specifier: 0.3.21
         version: 0.3.21
       puppeteer:
         specifier: 13.7.0
@@ -353,7 +353,7 @@ importers:
         specifier: 10.9.2
         version: 10.9.2(@swc/core@1.15.33)(@types/node@20.17.24)(typescript@5.5.4)
       tsc-alias:
-        specifier: ^1.8.17
+        specifier: 1.8.17
         version: 1.8.17
       typescript:
         specifier: 5.5.4

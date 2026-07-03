@@ -522,7 +522,7 @@ const workerEndpoint =
   typeof self !== 'undefined' &&
   typeof self.addEventListener === 'function' &&
   typeof self.postMessage === 'function' &&
-  typeof document === 'undefined'
+  typeof self.document === 'undefined'
     ? self
     : undefined;
 

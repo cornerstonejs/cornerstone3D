@@ -4,34 +4,33 @@
 // from ever regressing. Run AFTER building (dist/esm must exist).
 //
 // Per package it checks:
-//   1. ESM marker     - dist/esm/package.json declares {"type":"module"}
-//   2. Import scan     - every relative import/export in emitted .js and .d.ts
-//                        carries an explicit extension and resolves to a real file
-//   3. Asset URLs      - relative `new URL(x, import.meta.url)` targets exist
-//                        (e.g. the dicom-image-loader decode worker)
-//   4. publint         - no error-level packaging problems
-//   5. attw            - types resolve under the esm-only profile
-//   6. Node import      - a leaf module loads in native Node ESM
+// 1. ESM marker     - dist/esm/package.json declares {"type":"module"}
+// 2. Import scan     - every relative import/export in emitted .js and .d.ts
+//                      carries an explicit extension and resolves to a real file
+// 3. Asset URLs      - relative `new URL(x, import.meta.url)` targets exist
+//                      (e.g. the dicom-image-loader decode worker)
+// 4. publint         - no error-level packaging problems
+// 5. attw            - types resolve under the esm-only profile
+// 6. Node import      - a leaf module loads in native Node ESM
 //
 // Usage: node scripts/validate-esm-packaging.mjs [pkgName ...]
 //        node scripts/validate-esm-packaging.mjs --skip-attw
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import ts from 'typescript';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const require = createRequire(import.meta.url);
 const args = process.argv.slice(2);
 const skipAttw = args.includes('--skip-attw');
 const nameFilter = args.filter((a) => !a.startsWith('--'));
 
 // Extensions that count as a resolved JS module specifier.
 const JS_EXTS = ['.js', '.mjs', '.cjs', '.json'];
-const NATIVE_NODE_EXTENSION_REQUIRED_PREFIXES = [
-  '@kitware/vtk.js/',
-  'gl-matrix/',
-];
 const GLOB_CHARS = /[*?[\]{}]/;
 
 function assertLiteralPackageDirs(packageDirs) {
@@ -83,39 +82,184 @@ function walk(dir, predicate, out = []) {
   return out;
 }
 
-// Pull every module specifier out of a JS/d.ts file.
-function moduleSpecifiers(code) {
+function isStringLiteralNode(node) {
+  return ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node);
+}
+
+// Pull every real module specifier out of a JS/d.ts AST. This deliberately
+// ignores retained comments so examples do not create false packaging failures.
+function moduleSpecifiers(code, file) {
+  const sourceFile = ts.createSourceFile(
+    file,
+    code,
+    ts.ScriptTarget.Latest,
+    true,
+    file.endsWith('.js') ? ts.ScriptKind.JS : ts.ScriptKind.TS
+  );
   const specs = [];
-  const patterns = [
-    /(?:^|[^.\w])(?:import|export)\s[^'"]*?from\s*['"]([^'"]+)['"]/g, // import/export ... from 'x'
-    /(?:^|[^.\w])import\s*['"]([^'"]+)['"]/g, // bare side-effect import 'x'
-    /(?:^|[^.\w])import\s*\(\s*['"]([^'"]+)['"]\s*\)/g, // dynamic import('x')
-    /(?:^|[^.\w])require\s*\(\s*['"]([^'"]+)['"]\s*\)/g, // require('x')
-  ];
-  for (const re of patterns) {
-    let m;
-    while ((m = re.exec(code)) !== null) {
-      specs.push(m[1]);
+
+  function add(node) {
+    if (node && isStringLiteralNode(node)) {
+      specs.push(node.text);
     }
   }
+
+  function visit(node) {
+    if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) {
+      add(node.moduleSpecifier);
+    } else if (ts.isImportTypeNode(node)) {
+      const arg = node.argument;
+      if (ts.isLiteralTypeNode(arg)) {
+        add(arg.literal);
+      }
+    } else if (ts.isExternalModuleReference(node)) {
+      add(node.expression);
+    } else if (ts.isCallExpression(node)) {
+      const [arg] = node.arguments;
+      if (
+        node.expression.kind === ts.SyntaxKind.ImportKeyword ||
+        (ts.isIdentifier(node.expression) && node.expression.text === 'require')
+      ) {
+        add(arg);
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
   return specs;
 }
 
+function isImportMetaUrl(node) {
+  return (
+    ts.isPropertyAccessExpression(node) &&
+    node.name.text === 'url' &&
+    ts.isMetaProperty(node.expression) &&
+    node.expression.keywordToken === ts.SyntaxKind.ImportKeyword &&
+    node.expression.name.text === 'meta'
+  );
+}
+
 // Relative `new URL('...', import.meta.url)` targets (asset/worker references).
-function relativeNewUrlTargets(code) {
+function relativeNewUrlTargets(code, file) {
+  const sourceFile = ts.createSourceFile(
+    file,
+    code,
+    ts.ScriptTarget.Latest,
+    true,
+    file.endsWith('.js') ? ts.ScriptKind.JS : ts.ScriptKind.TS
+  );
   const out = [];
-  const re = /new\s+URL\(\s*['"]([^'"]+)['"]\s*,\s*import\.meta\.url\s*\)/g;
-  let m;
-  while ((m = re.exec(code)) !== null) {
-    if (m[1].startsWith('.')) {
-      out.push(m[1]);
+
+  function visit(node) {
+    const [targetArg, baseArg] = ts.isNewExpression(node)
+      ? node.arguments || []
+      : [];
+    if (
+      ts.isNewExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      node.expression.text === 'URL' &&
+      isStringLiteralNode(targetArg) &&
+      targetArg.text.startsWith('.') &&
+      isImportMetaUrl(baseArg)
+    ) {
+      out.push(targetArg.text);
     }
+
+    ts.forEachChild(node, visit);
   }
+
+  visit(sourceFile);
   return out;
 }
 
 function hasJsExt(spec) {
   return JS_EXTS.some((e) => spec.endsWith(e));
+}
+
+function splitPackageSpecifier(spec) {
+  if (spec.startsWith('@')) {
+    const parts = spec.split('/');
+    if (parts.length < 3) {
+      return null;
+    }
+    return {
+      packageName: `${parts[0]}/${parts[1]}`,
+      subpath: parts.slice(2).join('/'),
+    };
+  }
+
+  const [packageName, ...subpathParts] = spec.split('/');
+  if (!packageName || !subpathParts.length) {
+    return null;
+  }
+  return { packageName, subpath: subpathParts.join('/') };
+}
+
+function tryResolve(spec, paths) {
+  try {
+    require.resolve(spec, { paths });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function tryResolvePath(spec, paths) {
+  try {
+    return require.resolve(spec, { paths });
+  } catch {
+    return null;
+  }
+}
+
+function packageModuleDir(packageName, paths) {
+  const packageJsonPath = tryResolvePath(`${packageName}/package.json`, paths);
+  if (!packageJsonPath) {
+    return null;
+  }
+
+  const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
+  if (typeof packageJson.module !== 'string') {
+    return null;
+  }
+
+  const modulePath = packageJson.module.replace(/^\.\//, '');
+  const moduleDir = dirname(modulePath);
+  return moduleDir === '.' ? '' : moduleDir;
+}
+
+function nativeNodeRuntimeSpecifierTarget(spec, paths) {
+  if (
+    spec.startsWith('.') ||
+    spec.startsWith('/') ||
+    spec.startsWith('node:') ||
+    hasJsExt(spec)
+  ) {
+    return spec;
+  }
+
+  const parsed = splitPackageSpecifier(spec);
+  if (!parsed) {
+    return spec;
+  }
+
+  const directCandidate = `${spec}.js`;
+  if (tryResolve(directCandidate, paths)) {
+    return directCandidate;
+  }
+
+  const moduleDir = packageModuleDir(parsed.packageName, paths);
+  if (
+    moduleDir &&
+    !parsed.subpath.startsWith(`${moduleDir}/`) &&
+    tryResolve(`${parsed.packageName}/${moduleDir}/${parsed.subpath}.js`, paths)
+  ) {
+    return `${parsed.packageName}/${moduleDir}/${parsed.subpath}.js`;
+  }
+
+  return spec;
 }
 
 // Does a `.js`-style specifier resolve to a real emitted file? In a .d.ts the
@@ -144,7 +288,7 @@ function checkImportsAndAssets(pkg) {
   for (const file of files) {
     const code = readFileSync(file, 'utf8');
     const rel = relative(pkg.dir, file);
-    const specs = moduleSpecifiers(code);
+    const specs = moduleSpecifiers(code, file);
 
     for (const spec of specs.filter((s) => s.startsWith('.'))) {
       const target = resolve(dirname(file), spec);
@@ -156,19 +300,18 @@ function checkImportsAndAssets(pkg) {
     }
 
     if (file.endsWith('.js')) {
+      const paths = [pkg.dir, repoRoot];
       for (const spec of specs) {
-        if (
-          NATIVE_NODE_EXTENSION_REQUIRED_PREFIXES.some((prefix) =>
-            spec.startsWith(prefix)
-          ) &&
-          !hasJsExt(spec)
-        ) {
-          extensionlessRuntimeSubpaths.push(`${rel}: '${spec}'`);
+        const targetSpec = nativeNodeRuntimeSpecifierTarget(spec, paths);
+        if (targetSpec !== spec) {
+          extensionlessRuntimeSubpaths.push(
+            `${rel}: '${spec}' -> '${targetSpec}'`
+          );
         }
       }
     }
 
-    for (const spec of relativeNewUrlTargets(code)) {
+    for (const spec of relativeNewUrlTargets(code, file)) {
       const target = resolve(dirname(file), spec);
       if (!existsSync(target)) {
         missingAssets.push(`${rel}: new URL('${spec}') -> not found`);

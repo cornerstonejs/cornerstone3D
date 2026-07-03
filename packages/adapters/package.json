@@ -70,7 +70,7 @@
     "test": "jest --testTimeout 60000",
     "build": "rollup -c rollup.config.mjs && tsc-alias -p ./tsconfig.json --resolve-full-paths && node ../../scripts/write-dist-esm-package-json.js ./",
     "build:esm": "pnpm run prebuild && rollup -c rollup.config.mjs && tsc-alias -p ./tsconfig.json --resolve-full-paths && node ../../scripts/write-dist-esm-package-json.js ./",
-    "build:esm:watch": "rollup --watch -c rollup.config.mjs",
+    "build:esm:watch": "sh -c 'tsc-alias -p ./tsconfig.json --resolve-full-paths --watch & alias_pid=$!; node ../../scripts/write-dist-esm-package-json.js ./ --watch & writer_pid=$!; trap \"kill $alias_pid $writer_pid\" EXIT; rollup --watch -c rollup.config.mjs'",
     "clean": "rm -rf node_modules/.cache/storybook && shx rm -rf dist",
     "clean:deep": "pnpm run clean && shx rm -rf node_modules",
     "dev": "rollup --watch  -c rollup.config.mjs",
