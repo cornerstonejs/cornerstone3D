@@ -3,6 +3,8 @@ import { Events, RenderBackend } from '../src/enums';
 import {
   getEffectiveRenderBackend,
   getRenderBackend,
+  isCornerstoneInitialized,
+  resetInitialization,
   setRenderBackend,
   setUseCPURendering,
 } from '../src/init';
@@ -129,6 +131,18 @@ describe('Planar render backend resolution', () => {
       expect(() => setRenderBackend('turbo')).toThrow();
     });
 
+    it('does not mark cornerstone initialized when called before init()', () => {
+      resetInitialization();
+
+      setRenderBackend('cpu');
+
+      // A pre-init setRenderBackend must leave init() able to run: marking
+      // the library initialized here would turn the later init(configuration)
+      // into a no-op and silently drop the user's configuration.
+      expect(isCornerstoneInitialized()).toBe(false);
+      expect(getRenderBackend()).toBe(RenderBackend.CPU);
+    });
+
     it('emits RENDER_BACKEND_CHANGED with previous/current/effective detail', () => {
       const listener = jest.fn();
       eventTarget.addEventListener(Events.RENDER_BACKEND_CHANGED, listener);
@@ -143,10 +157,7 @@ describe('Planar render backend resolution', () => {
         reason: 'unit-test',
       });
 
-      eventTarget.removeEventListener(
-        Events.RENDER_BACKEND_CHANGED,
-        listener
-      );
+      eventTarget.removeEventListener(Events.RENDER_BACKEND_CHANGED, listener);
     });
 
     it('does not emit when the backend does not change', () => {
@@ -158,10 +169,7 @@ describe('Planar render backend resolution', () => {
       setRenderBackend('cpu');
 
       expect(listener).not.toHaveBeenCalled();
-      eventTarget.removeEventListener(
-        Events.RENDER_BACKEND_CHANGED,
-        listener
-      );
+      eventTarget.removeEventListener(Events.RENDER_BACKEND_CHANGED, listener);
     });
 
     it('emits when the deprecated setUseCPURendering changes the effective backend', () => {
@@ -177,10 +185,7 @@ describe('Planar render backend resolution', () => {
         reason: 'setUseCPURendering',
       });
 
-      eventTarget.removeEventListener(
-        Events.RENDER_BACKEND_CHANGED,
-        listener
-      );
+      eventTarget.removeEventListener(Events.RENDER_BACKEND_CHANGED, listener);
     });
 
     it('does not emit for setUseCPURendering under an explicit gpu pin', () => {
@@ -192,10 +197,7 @@ describe('Planar render backend resolution', () => {
       setUseCPURendering(true);
 
       expect(listener).not.toHaveBeenCalled();
-      eventTarget.removeEventListener(
-        Events.RENDER_BACKEND_CHANGED,
-        listener
-      );
+      eventTarget.removeEventListener(Events.RENDER_BACKEND_CHANGED, listener);
     });
   });
 });

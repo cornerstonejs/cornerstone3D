@@ -167,7 +167,10 @@ class PlanarViewport extends GenericViewport<
   };
   private setDataRequestId = 0;
   private renderPipelineSwapId = 0;
-  private lastRenderPathErrorKey?: string;
+  // Last reported render-path error message per display set; a successful
+  // render clears the entry so a genuine repeat failure after recovery is
+  // reported again.
+  private readonly lastRenderPathErrorByDataId = new Map<string, string>();
   // Original mount options per display set, kept so a live render-backend
   // switch (updateRenderingPipeline) can re-run the render-path decision with
   // the same per-mount semantics (orientation, thresholds, backend pins).
@@ -471,6 +474,7 @@ class PlanarViewport extends GenericViewport<
   removeData(dataId: string): void {
     this.clearResolvedViewCache();
     this.mountOptionsByDataId.delete(dataId);
+    this.lastRenderPathErrorByDataId.delete(dataId);
     super.removeData(dataId);
     this.mountedData.handleRemovedData(dataId);
 
@@ -1646,6 +1650,7 @@ class PlanarViewport extends GenericViewport<
 
       try {
         binding.render();
+        this.lastRenderPathErrorByDataId.delete(dataId);
       } catch (error) {
         this.reportRenderPathError(error, dataId);
       }
@@ -1752,23 +1757,34 @@ class PlanarViewport extends GenericViewport<
     this.clearResolvedViewCache();
     this.updateBindingsCameraState();
     this.render();
+
+    // The rebuilt render paths replaced this viewport's actors. Announce it so
+    // consumers that decorate actors (segmentation representations restyle
+    // their labelmap overlays through this) can re-reconcile against the new
+    // instances; the swap itself cannot know about them.
+    triggerEvent(eventTarget, Events.RENDERING_PIPELINE_CHANGED, {
+      renderingEngineId: this.renderingEngineId,
+      viewportId: this.id,
+    });
   }
 
   /**
    * Emits the RENDER_PATH_ERROR degradation signal (and logs) for a render
-   * path that threw while mounting or rendering. Consecutive identical
-   * failures are reported once so a per-frame render error does not flood the
-   * event bus; applications listen for this to offer a backend switch.
+   * path that threw while mounting or rendering. Repeated identical failures
+   * for a display set are reported once so a per-frame render error does not
+   * flood the event bus; a successful render of that display set clears the
+   * record, so a genuine failure after a recovery is reported again.
+   * Applications listen for this to offer a backend switch.
    */
   private reportRenderPathError(error: unknown, dataId?: string): void {
     const message = error instanceof Error ? error.message : String(error);
-    const errorKey = `${dataId ?? ''}:${message}`;
+    const errorKey = dataId ?? '';
 
-    if (errorKey === this.lastRenderPathErrorKey) {
+    if (this.lastRenderPathErrorByDataId.get(errorKey) === message) {
       return;
     }
 
-    this.lastRenderPathErrorKey = errorKey;
+    this.lastRenderPathErrorByDataId.set(errorKey, message);
     console.error('[PlanarViewport] Render path error', dataId ?? '', error);
     triggerEvent(eventTarget, Events.RENDER_PATH_ERROR, {
       renderingEngineId: this.renderingEngineId,

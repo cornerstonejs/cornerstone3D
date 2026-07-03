@@ -2,10 +2,7 @@ import { vec3 } from 'gl-matrix';
 import cache from '../../../cache/cache';
 import { OrientationAxis, RenderBackend } from '../../../enums';
 import type { RenderBackendValue } from '../../../enums';
-import {
-  getEffectiveRenderBackend,
-  resolveAutoRenderBackend,
-} from '../../../init';
+import { getEffectiveRenderBackend } from '../../../init';
 import * as metaData from '../../../metaData';
 import { ActorRenderMode } from '../../../types';
 import { isValidVolume } from '../../../utilities/isValidVolume';
@@ -150,26 +147,14 @@ export class PlanarRenderPathDecisionService {
   /**
    * Resolves the effective backend for one decision: the per-mount override
    * when present ('auto' resolves from capability detection even when the
-   * global backend is pinned), the global configuration otherwise.
+   * global backend is pinned), the global configuration otherwise. The
+   * precedence ladder itself lives in getEffectiveRenderBackend so it cannot
+   * drift from the global resolution.
    */
   private resolveBackend(
     options: PlanarRenderPathDecisionOptions
   ): RenderBackend.GPU | RenderBackend.CPU {
-    const requested = options.renderBackend;
-
-    if (requested === RenderBackend.GPU) {
-      return RenderBackend.GPU;
-    }
-
-    if (requested === RenderBackend.CPU) {
-      return RenderBackend.CPU;
-    }
-
-    if (requested === RenderBackend.Auto) {
-      return resolveAutoRenderBackend();
-    }
-
-    return getEffectiveRenderBackend();
+    return getEffectiveRenderBackend(options.renderBackend);
   }
 }
 
@@ -256,4 +241,3 @@ function isVolumeBackedDataSet(
 
   return !isAcquisitionPath && supportsVolumeRendering(dataSet);
 }
-

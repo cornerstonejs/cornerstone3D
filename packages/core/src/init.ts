@@ -188,10 +188,17 @@ function resolveAutoRenderBackend(): RenderBackend.GPU | RenderBackend.CPU {
 /**
  * Returns the effective render backend for GenericViewport-based viewports:
  * the configured 'gpu'/'cpu' pin, or the resolved 'auto' decision.
+ *
+ * Pass `override` to resolve a per-mount `renderBackend` option with the same
+ * precedence: 'gpu'/'cpu' pin the result, 'auto' resolves from capability
+ * detection even when the global backend is pinned, and undefined falls back
+ * to the global configuration.
  * @category Initialization
  */
-function getEffectiveRenderBackend(): RenderBackend.GPU | RenderBackend.CPU {
-  const backend = getRenderBackend();
+function getEffectiveRenderBackend(
+  override?: RenderBackend | RenderBackendValue
+): RenderBackend.GPU | RenderBackend.CPU {
+  const backend = (override ?? getRenderBackend()) as RenderBackend;
 
   if (backend === RenderBackend.GPU || backend === RenderBackend.CPU) {
     return backend;
@@ -239,12 +246,14 @@ function setRenderBackend(
   }
 
   // Replace (not mutate) the planar object: before init() it may still be
-  // the shared defaultConfig reference.
+  // the shared defaultConfig reference. Unlike the deprecated toggles, this
+  // must NOT mark the library initialized: a pre-init call would otherwise
+  // turn the later init(configuration) into a no-op, silently dropping the
+  // user's configuration and the no-WebGL CPU fallback.
   config.rendering.planar = {
     ...config.rendering.planar,
     renderBackend: backend,
   };
-  csRenderInitialized = true;
   _updateRenderingPipelinesForAllViewports();
 
   triggerEvent(eventTarget, Events.RENDER_BACKEND_CHANGED, {
@@ -284,14 +293,15 @@ function setPreferSizeOverAccuracy(status: boolean): void {
 /**
  * Whether float (32-bit) textures can be linearly sampled, based on the
  * probed capability profile (OES_texture_float_linear draw + readback).
- * Historically this was a user-agent iOS check; environments without any
- * WebGL context (e.g. unit tests) keep the legacy user-agent behavior so
+ * Historically this was a user-agent iOS check; environments where the probe
+ * cannot run (no WebGL context, e.g. unit tests, or WebGL1-only browsers --
+ * the texture probes require WebGL2) keep the legacy user-agent behavior so
  * data-preparation code paths stay deterministic there.
  */
 function canRenderFloatTextures(): boolean {
   const capabilities = getRenderingCapabilities();
 
-  if (capabilities.webgl) {
+  if (capabilities.webgl2) {
     return capabilities.floatLinear;
   }
 

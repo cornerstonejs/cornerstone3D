@@ -333,6 +333,16 @@ enum Events {
    * Detail: `{ renderingEngineId, viewportId, dataId, error }`.
    */
   RENDER_PATH_ERROR = 'CORNERSTONE_RENDER_PATH_ERROR',
+
+  /**
+   * Triggers on the eventTarget after a viewport finishes rebuilding its
+   * render paths in place (live render-backend switch via setRenderBackend,
+   * or a deprecated CPU-rendering toggle). The viewport's actors were
+   * replaced, so consumers that decorate them (e.g. segmentation
+   * representations) listen for this to re-reconcile and restyle their
+   * overlays. Detail: `{ renderingEngineId, viewportId }`.
+   */
+  RENDERING_PIPELINE_CHANGED = 'CORNERSTONE_RENDERING_PIPELINE_CHANGED',
 }
 
 export default Events;

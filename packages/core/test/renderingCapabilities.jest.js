@@ -121,6 +121,22 @@ describe('renderingCapabilities', () => {
     expect(getSupportedTextureFormats).toHaveBeenCalledTimes(2);
   });
 
+  it('re-probes when WebGL2 availability changes for the same renderer', () => {
+    const gl = createFakeGL('Shared Renderer');
+    getContextSpy = jest
+      .spyOn(HTMLCanvasElement.prototype, 'getContext')
+      .mockImplementation((type) => (type === 'webgl' ? gl : null));
+
+    detectRenderingCapabilities();
+    expect(getSupportedTextureFormats).toHaveBeenCalledTimes(1);
+    getContextSpy.mockRestore();
+
+    mockWebGL('Shared Renderer');
+    detectRenderingCapabilities();
+
+    expect(getSupportedTextureFormats).toHaveBeenCalledTimes(2);
+  });
+
   it('re-probes when the cached probe version is stale', () => {
     mockWebGL();
     detectRenderingCapabilities();

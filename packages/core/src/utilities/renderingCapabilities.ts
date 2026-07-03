@@ -107,7 +107,10 @@ function getWebGLContextInfo(): WebGLContextInfo {
   return info;
 }
 
-function readCachedFormats(renderer: string): TextureFormatSupport | null {
+function readCachedFormats(
+  renderer: string,
+  webgl2: boolean
+): TextureFormatSupport | null {
   try {
     const raw = window.localStorage?.getItem(STORAGE_KEY);
 
@@ -117,9 +120,13 @@ function readCachedFormats(renderer: string): TextureFormatSupport | null {
 
     const parsed = JSON.parse(raw) as CachedCapabilities;
 
+    // The texture probes require WebGL2, so a profile cached on a WebGL1-only
+    // run is all-false; invalidate it when WebGL2 availability changes for
+    // the same renderer (browser update/flag) instead of pinning it forever.
     if (
       parsed?.probeVersion !== RENDERING_CAPABILITIES_PROBE_VERSION ||
       parsed?.renderer !== renderer ||
+      parsed?.webgl2 !== webgl2 ||
       typeof parsed?.formats !== 'object' ||
       parsed?.formats === null
     ) {
@@ -156,14 +163,14 @@ function writeCachedFormats(
  * Runs the capability detection: one cheap context to gather renderer string,
  * WebGL level and MAX_TEXTURE_SIZE, then the texture-format probes.
  *
- * Probe results are cached in localStorage keyed by renderer string and probe
- * version, so repeat page loads on the same GPU skip the probe contexts
- * entirely. Pass `useCache: false` to force a fresh probe run (also refreshes
- * the stored cache).
+ * Probe results are cached in localStorage keyed by renderer string, WebGL2
+ * availability, and probe version, so repeat page loads on the same GPU skip
+ * the probe contexts entirely. Pass `useCache: false` to force a fresh probe
+ * run (also refreshes the stored cache).
  */
-export function detectRenderingCapabilities(
-  { useCache = true }: { useCache?: boolean } = {}
-): RenderingCapabilities {
+export function detectRenderingCapabilities({
+  useCache = true,
+}: { useCache?: boolean } = {}): RenderingCapabilities {
   const contextInfo = getWebGLContextInfo();
 
   if (!contextInfo.webgl) {
@@ -174,7 +181,9 @@ export function detectRenderingCapabilities(
     };
   }
 
-  let formats = useCache ? readCachedFormats(contextInfo.renderer) : null;
+  let formats = useCache
+    ? readCachedFormats(contextInfo.renderer, contextInfo.webgl2)
+    : null;
 
   if (!formats) {
     formats = getSupportedTextureFormats();
@@ -206,9 +215,9 @@ export function getRenderingCapabilities(): RenderingCapabilities {
  * next {@link getRenderingCapabilities} call re-detects. Intended for tests
  * and for applications that want to re-probe after a GPU change.
  */
-export function resetRenderingCapabilities(
-  { clearStorage = false }: { clearStorage?: boolean } = {}
-): void {
+export function resetRenderingCapabilities({
+  clearStorage = false,
+}: { clearStorage?: boolean } = {}): void {
   cachedCapabilities = null;
 
   if (clearStorage) {
