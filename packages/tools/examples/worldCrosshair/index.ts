@@ -217,7 +217,9 @@ async function run() {
     toolGroup.addViewport(viewportId, renderingEngineId);
   });
 
-  toolGroup.addTool(WorldCrosshairTool.toolName);
+  // clickToSet lets a plain primary click set the reference point; the tool
+  // otherwise requires Shift, which would not match the instructions above.
+  toolGroup.addTool(WorldCrosshairTool.toolName, { clickToSet: true });
   toolGroup.setToolActive(WorldCrosshairTool.toolName, {
     bindings: [{ mouseButton: MouseBindings.Primary }],
   });

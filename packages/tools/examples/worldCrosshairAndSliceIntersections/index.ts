@@ -152,9 +152,10 @@ async function run() {
   });
 
   // WorldCrosshairTool is added first so clicks in empty space set the
-  // reference point; clicks near a line are handled by the
-  // SliceIntersectionTool.
-  toolGroup.addTool(WorldCrosshairTool.toolName);
+  // reference point; clicks near a line are grabbed by the
+  // SliceIntersectionTool before this fires. clickToSet enables plain
+  // (non-Shift) clicks so the empty-space behavior above actually works.
+  toolGroup.addTool(WorldCrosshairTool.toolName, { clickToSet: true });
   toolGroup.addTool(SliceIntersectionTool.toolName, {
     sourcePolicy: 'allLinked',
   });
