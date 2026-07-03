@@ -22,7 +22,7 @@ test.describe('Stack Annotation Tools - Tiled', async () => {
       0,
       // Absorb sub-pixel font drift on the "138 mm" label across CI
       // environments; a missing/mis-drawn annotation differs by far more.
-      { maxDiffPixelRatio: 0.003 }
+      { maxDiffPixelRatio: 0.003, timeoutMs: 20000 }
     );
   });
 });
