@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [5.2.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.1.4...v5.2.0) (2026-07-04)
+
+### Features
+
+- **packaging:** native-Node-resolvable ESM (extensions, type:module, exports) + CI ([#2773](https://github.com/cornerstonejs/cornerstone3D/issues/2773)) ([26d7234](https://github.com/cornerstonejs/cornerstone3D/commit/26d7234843aa3150f13deffd0642247d2ee71cd4))
+
 ## [5.1.4](https://github.com/cornerstonejs/cornerstone3D/compare/v5.1.3...v5.1.4) (2026-07-02)
 
 **Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
