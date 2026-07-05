@@ -40,6 +40,9 @@ import {
 import { applyPlanarVolumePresentation } from './planarVolumePresentation';
 
 const SLICE_OVERLAY_DEPTH_EPSILON = 1e-4;
+// Trailing delay before repainting a slab-projecting segmentation overlay
+// after its volume was modified (brush edits fire many events per second).
+const PROJECTING_OVERLAY_RENDER_DELAY_MS = 240;
 
 /** @internal */
 export class VtkVolumeSliceRenderPath
@@ -52,7 +55,7 @@ export class VtkVolumeSliceRenderPath
   ): Promise<RenderPathAttachment<PlanarDataPresentation>> {
     const payload: PlanarPayload = data as unknown as LoadedData<PlanarPayload>;
     const imageVolume = payload.imageVolume;
-    const shouldInvalidateFullTextureOnVolumeModified =
+    const isSegmentationOverlay =
       options.role === 'overlay' && payload.reference?.kind === 'segmentation';
 
     if (!imageVolume) {
@@ -92,20 +95,50 @@ export class VtkVolumeSliceRenderPath
         ? { lower: defaultRange[0], upper: defaultRange[1] }
         : undefined,
       dataPresentation: undefined,
-      removeStreamingSubscriptions: subscribeToVolumeEvents(
-        payload.volumeId,
-        (eventType) => {
-          if (eventType === Events.IMAGE_VOLUME_MODIFIED) {
-            if (shouldInvalidateFullTextureOnVolumeModified) {
-              imageVolume.vtkOpenGLTexture?.modified?.();
-            }
+      isSegmentationOverlay,
+    };
 
-            mapper.modified();
-          }
-
-          ctx.display.requestRender();
+    let deferredProjectionRenderTimer: ReturnType<typeof setTimeout> | null =
+      null;
+    const removeVolumeSubscriptions = subscribeToVolumeEvents(
+      payload.volumeId,
+      (eventType) => {
+        if (eventType === Events.IMAGE_VOLUME_MODIFIED) {
+          // Volume writers (streaming loader, labelmap updates) mark the
+          // modified slices on the shared streaming texture themselves, so
+          // the next render only re-uploads those slices; the mapper just
+          // needs to know its buffers are stale.
+          mapper.modified();
         }
-      ),
+
+        const isProjectingOverlay =
+          rendering.isSegmentationOverlay &&
+          (rendering.dataPresentation?.slabThickness ?? 0) > 0;
+
+        if (!isProjectingOverlay) {
+          ctx.display.requestRender();
+          return;
+        }
+
+        // A slab-projecting overlay (e.g. labelmap over a MIP) re-marches the
+        // whole slab per fragment, which is far too expensive to repeat for
+        // every brush-stroke event; repaint once the modification stream goes
+        // quiet instead of live.
+        if (deferredProjectionRenderTimer !== null) {
+          clearTimeout(deferredProjectionRenderTimer);
+        }
+        deferredProjectionRenderTimer = setTimeout(() => {
+          deferredProjectionRenderTimer = null;
+          ctx.display.requestRender();
+        }, PROJECTING_OVERLAY_RENDER_DELAY_MS);
+      }
+    );
+    rendering.removeStreamingSubscriptions = () => {
+      if (deferredProjectionRenderTimer !== null) {
+        clearTimeout(deferredProjectionRenderTimer);
+        deferredProjectionRenderTimer = null;
+      }
+      removeVolumeSubscriptions();
     };
     imageVolume.load(() => {
       ctx.display.requestRender();
@@ -162,9 +195,16 @@ export class VtkVolumeSliceRenderPath
     props: unknown
   ): void {
     rendering.dataPresentation = props as PlanarDataPresentation | undefined;
+    // Segmentation overlays get their color/opacity transfer functions from
+    // the segmentation styling (setLabelmapColorAndOpacity); rebuilding them
+    // here from a VOI range would overwrite the label colors with a grayscale
+    // ramp. Dropping the default VOI keeps the presentation application to
+    // blend/slab/visibility for those actors.
     applyPlanarVolumePresentation({
       actor: rendering.actor,
-      defaultVOIRange: rendering.defaultVOIRange,
+      defaultVOIRange: rendering.isSegmentationOverlay
+        ? undefined
+        : rendering.defaultVOIRange,
       mapper: rendering.mapper,
       props: rendering.dataPresentation,
     });

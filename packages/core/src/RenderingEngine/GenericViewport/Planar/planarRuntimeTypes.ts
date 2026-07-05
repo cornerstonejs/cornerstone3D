@@ -149,6 +149,7 @@ export type PlanarVolumeSliceRendering = MountedRendering<{
   maxImageIdIndex: number;
   defaultVOIRange?: VOIRange;
   dataPresentation?: PlanarDataPresentation;
+  isSegmentationOverlay?: boolean;
   removeStreamingSubscriptions?: () => void;
 }>;
 

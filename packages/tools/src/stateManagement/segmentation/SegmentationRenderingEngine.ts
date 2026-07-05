@@ -299,9 +299,108 @@ function triggerSegmentationRenderBySegmentationId(
   segmentationRenderingEngine.renderSegmentation(segmentationId);
 }
 
+// Trailing delay before re-rendering a projection-heavy viewport after a
+// segmentation-data modification (brush edits fire many events per second).
+const DEFERRED_SEGMENTATION_RENDER_DELAY_MS = 240;
+const deferredSegmentationRenderTimers = new Map<
+  string,
+  ReturnType<typeof setTimeout>
+>();
+
+/**
+ * Whether re-rendering this viewport's segmentations means re-marching a slab
+ * per fragment (labelmap over MIP style projections), which is too expensive
+ * to repeat for every segmentation-data-modified event.
+ */
+function isProjectionHeavySegmentationViewport(
+  viewport: Types.IViewport
+): boolean {
+  // Legacy volume viewports render labelmap-over-MIP by switching the whole
+  // viewport to the edge-projection blend mode.
+  const blendMode = (
+    viewport as Partial<Types.IVolumeViewport>
+  ).getBlendMode?.();
+
+  if (blendMode === Enums.BlendModes.LABELMAP_EDGE_PROJECTION_BLEND) {
+    return true;
+  }
+
+  // Generic planar viewports are projection-heavy when any of their display
+  // sets renders across a slab (e.g. a MIP source with a projected labelmap
+  // overlay, which inherits the source's slab thickness).
+  const planarViewport = viewport as Partial<{
+    getActors: () => Types.ActorEntry[];
+    getSourceDataId: () => string | undefined;
+    getDisplaySetPresentation: (
+      dataId: string
+    ) => { slabThickness?: number } | undefined;
+  }>;
+
+  if (typeof planarViewport.getDisplaySetPresentation !== 'function') {
+    return false;
+  }
+
+  const dataIds: string[] = [];
+  const sourceDataId = planarViewport.getSourceDataId?.();
+
+  if (sourceDataId) {
+    dataIds.push(sourceDataId);
+  }
+
+  planarViewport.getActors?.().forEach((actorEntry) => {
+    if (actorEntry.representationUID) {
+      dataIds.push(String(actorEntry.representationUID));
+    }
+  });
+
+  return dataIds.some(
+    (dataId) =>
+      (planarViewport.getDisplaySetPresentation(dataId)?.slabThickness ?? 0) > 0
+  );
+}
+
+/**
+ * Segmentation render trigger for high-frequency data modifications (brush
+ * strokes and the like): viewports that are cheap to repaint render live,
+ * while projection-heavy viewports (labelmap over MIP) are re-rendered once
+ * the modification stream goes quiet.
+ */
+function triggerSegmentationRenderForModified(segmentationId?: string): void {
+  const viewportIds =
+    segmentationRenderingEngine._getViewportIdsForSegmentation(segmentationId);
+
+  viewportIds.forEach((viewportId) => {
+    const { viewport } = getEnabledElementByViewportId(viewportId) || {};
+
+    if (!viewport) {
+      return;
+    }
+
+    if (!isProjectionHeavySegmentationViewport(viewport)) {
+      segmentationRenderingEngine.renderSegmentationsForViewport(viewportId);
+      return;
+    }
+
+    const existingTimer = deferredSegmentationRenderTimers.get(viewportId);
+
+    if (existingTimer !== undefined) {
+      clearTimeout(existingTimer);
+    }
+
+    deferredSegmentationRenderTimers.set(
+      viewportId,
+      setTimeout(() => {
+        deferredSegmentationRenderTimers.delete(viewportId);
+        segmentationRenderingEngine.renderSegmentationsForViewport(viewportId);
+      }, DEFERRED_SEGMENTATION_RENDER_DELAY_MS)
+    );
+  });
+}
+
 const segmentationRenderingEngine = new SegmentationRenderingEngine();
 export {
   triggerSegmentationRender,
   triggerSegmentationRenderBySegmentationId,
+  triggerSegmentationRenderForModified,
   segmentationRenderingEngine,
 };
