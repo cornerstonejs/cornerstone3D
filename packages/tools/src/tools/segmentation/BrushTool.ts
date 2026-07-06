@@ -281,6 +281,15 @@ class BrushTool extends LabelmapBaseTool {
     };
 
     this._hoverData = this.createHoverData(element, canvasPoint);
+    if (!this._hoverData) {
+      // Transient state (e.g. no active segment index yet, or the viewport's
+      // camera is not resolvable) - undo the draw activation done above and
+      // bail like the other createHoverData call sites do.
+      this._deactivateDraw(element);
+      resetElementCursor(element);
+      this._editData = null;
+      return false;
+    }
     this._calculateCursor(element, canvasPoint);
     this._resetLazyEditState();
 
