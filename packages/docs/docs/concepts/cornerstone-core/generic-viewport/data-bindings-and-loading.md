@@ -50,7 +50,7 @@ segmentation labelmap, volume, image, geometry, or another data id. It is not an
 actor id and it is not used as runtime actor identity.
 
 ```ts
-utilities.genericViewportDataSetMetadataProvider.add(labelmapDataId, {
+utilities.genericViewportDisplaySetMetadataProvider.add(labelmapDataId, {
   kind: 'planar',
   imageIds: labelmapImageIds,
   reference: {

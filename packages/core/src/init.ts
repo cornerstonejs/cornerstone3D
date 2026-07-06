@@ -32,7 +32,15 @@ const defaultConfig: Cornerstone3DConfig = {
     planar: {
       cpuThresholds: {
         image: 64 * 1024 * 1024,
-        volume: 64 * 1024 * 1024,
+        // No size-based CPU fallback for volumes by default. The GPU volume-slice
+        // path streams the volume through the OpenGL reslice mapper (which splits
+        // across MAX_TEXTURE_SIZE), so a normal diagnostic volume must render on
+        // the GPU just like the legacy ORTHOGRAPHIC viewport did. A finite cap
+        // here forced everyday MPR (e.g. 512x512x295 = ~77M voxels) onto the slow
+        // CPU_VOLUME path. CPU volume rendering stays available as an explicit
+        // opt-in: set a finite threshold here, or force it globally with
+        // setUseCPURendering(true).
+        volume: Infinity,
       },
       cpuVolume: {
         useViewportSamplingForLinear: true,

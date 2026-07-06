@@ -35,7 +35,7 @@ function createPrivateVolumeLabelmap(
 
   return {
     labelmapId: volumeId,
-    type: 'volume',
+    storageKind: 'volume',
     volumeId,
     imageIds: volume.imageIds,
     referencedVolumeId,
@@ -68,7 +68,7 @@ function createPrivateStackLabelmap(
 
   return {
     labelmapId: `${segmentation.segmentationId}-storage-${csUtils.uuidv4()}`,
-    type: 'stack',
+    storageKind: 'stack',
     imageIds: images.map((image) => image.imageId),
     referencedVolumeId: sourceLabelmap.referencedVolumeId,
     referencedImageIds,

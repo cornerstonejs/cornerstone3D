@@ -5,7 +5,7 @@ jest.mock('../src/cache/cache', () => ({
   },
 }));
 
-jest.mock('../src/utilities/genericViewportDataSetMetadataProvider', () => ({
+jest.mock('../src/utilities/genericViewportDisplaySetMetadataProvider', () => ({
   __esModule: true,
   default: {
     add: jest.fn(),
@@ -24,7 +24,7 @@ jest.mock('../src/utilities/transferFunctionUtils', () => ({
 }));
 
 import cache from '../src/cache/cache';
-import metadataProvider from '../src/utilities/genericViewportDataSetMetadataProvider';
+import metadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
 import Events from '../src/enums/Events';
 import PlanarLegacyCompatibilityController from '../src/RenderingEngine/GenericViewport/Planar/PlanarLegacyCompatibilityController';
 

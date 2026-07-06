@@ -4,6 +4,7 @@ import { cache, utilities } from '@cornerstonejs/core';
 import { getClosestImageIdForStackViewport } from '../../../../utilities/annotationHydration';
 
 import { addContourSegmentationAnnotation } from '../../../../utilities/contourSegmentation';
+import getViewportICamera from '../../../../utilities/getViewportICamera';
 
 import { validateGeometry } from './utils';
 import type { ContourRepresentation } from '../../../../types/SegmentationStateTypes';
@@ -54,7 +55,7 @@ function addContourSetsToElement(
     });
 
     const contourSet = geometry.data as Types.IContourSet;
-    const viewPlaneNormal = viewport.getCamera().viewPlaneNormal;
+    const viewPlaneNormal = getViewportICamera(viewport).viewPlaneNormal;
 
     contourSet.contours.forEach((contour) => {
       const { points, color, id } = contour;
@@ -90,7 +91,7 @@ function addContourSetsToElement(
           referencedImageId,
           toolName: 'PlanarFreehandContourSegmentationTool',
           FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
-          viewPlaneNormal: viewport.getCamera().viewPlaneNormal,
+          viewPlaneNormal,
         },
       };
       const annotationGroupSelector = viewport.element;

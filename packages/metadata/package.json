@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/metadata",
-  "version": "5.0.14",
+  "version": "5.2.0",
   "description": "Cornerstone3D Metadata Foundation - Provider chain, DICOM stream parsing, tag modules, and series splitting",
   "module": "./dist/esm/index.js",
   "types": "./dist/esm/index.d.ts",
@@ -11,44 +11,44 @@
   "sideEffects": false,
   "exports": {
     ".": {
+      "types": "./dist/esm/index.d.ts",
       "import": "./dist/esm/index.js",
-      "node": "./dist/esm/index.js",
-      "types": "./dist/esm/index.d.ts"
+      "default": "./dist/esm/index.js"
     },
     "./metaData": {
+      "types": "./dist/esm/metaData.d.ts",
       "import": "./dist/esm/metaData.js",
-      "node": "./dist/esm/metaData.js",
-      "types": "./dist/esm/metaData.d.ts"
+      "default": "./dist/esm/metaData.js"
     },
     "./enums": {
+      "types": "./dist/esm/enums/index.d.ts",
       "import": "./dist/esm/enums/index.js",
-      "node": "./dist/esm/enums/index.js",
-      "types": "./dist/esm/enums/index.d.ts"
+      "default": "./dist/esm/enums/index.js"
     },
     "./enums/*": {
+      "types": "./dist/esm/enums/*.d.ts",
       "import": "./dist/esm/enums/*.js",
-      "node": "./dist/esm/enums/*.js",
-      "types": "./dist/esm/enums/*.d.ts"
+      "default": "./dist/esm/enums/*.js"
     },
     "./utilities": {
+      "types": "./dist/esm/utilities/index.d.ts",
       "import": "./dist/esm/utilities/index.js",
-      "node": "./dist/esm/utilities/index.js",
-      "types": "./dist/esm/utilities/index.d.ts"
+      "default": "./dist/esm/utilities/index.js"
     },
     "./utilities/dicomStream": {
+      "types": "./dist/esm/utilities/dicomStream/index.d.ts",
       "import": "./dist/esm/utilities/dicomStream/index.js",
-      "node": "./dist/esm/utilities/dicomStream/index.js",
-      "types": "./dist/esm/utilities/dicomStream/index.d.ts"
+      "default": "./dist/esm/utilities/dicomStream/index.js"
     },
     "./utilities/metadataProvider": {
+      "types": "./dist/esm/utilities/metadataProvider/index.d.ts",
       "import": "./dist/esm/utilities/metadataProvider/index.js",
-      "node": "./dist/esm/utilities/metadataProvider/index.js",
-      "types": "./dist/esm/utilities/metadataProvider/index.d.ts"
+      "default": "./dist/esm/utilities/metadataProvider/index.js"
     },
     "./utilities/*": {
+      "types": "./dist/esm/utilities/*.d.ts",
       "import": "./dist/esm/utilities/*.js",
-      "node": "./dist/esm/utilities/*.js",
-      "types": "./dist/esm/utilities/*.d.ts"
+      "default": "./dist/esm/utilities/*.js"
     },
     "./types": {
       "types": "./dist/esm/types/index.d.ts"
@@ -57,18 +57,19 @@
       "types": "./dist/esm/types/*.d.ts"
     },
     "./version": {
+      "types": "./dist/esm/version.d.ts",
       "import": "./dist/esm/version.js",
-      "node": "./dist/esm/version.js",
-      "types": "./dist/esm/version.d.ts"
-    }
+      "default": "./dist/esm/version.js"
+    },
+    "./package.json": "./package.json"
   },
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
     "prebuild": "node ../../scripts/generate-version.js ./",
-    "build:esm": "pnpm run prebuild && tsc --project ./tsconfig.json",
-    "build:esm:watch": "tsc --project ./tsconfig.json --watch",
+    "build:esm": "pnpm run prebuild && tsc --project ./tsconfig.json && tsc-alias -p ./tsconfig.json --resolve-full-paths && node ../../scripts/write-dist-esm-package-json.js ./",
+    "build:esm:watch": "sh -c 'tsc-alias -p ./tsconfig.json --resolve-full-paths --watch & alias_pid=$!; node ../../scripts/write-dist-esm-package-json.js ./ --watch & writer_pid=$!; trap \"kill $alias_pid $writer_pid\" EXIT; tsc --project ./tsconfig.json --watch'",
     "clean": "rm -rf node_modules/.cache/storybook && shx rm -rf dist",
     "clean:deep": "pnpm run clean && shx rm -rf node_modules",
     "build": "pnpm run build:esm",
@@ -80,7 +81,7 @@
   },
   "dependencies": {
     "@cornerstonejs/calculate-suv": "1.0.3",
-    "@cornerstonejs/utils": "5.0.14",
+    "@cornerstonejs/utils": "5.2.0",
     "dcmjs": "0.50.1",
     "gl-matrix": "3.4.3"
   },
