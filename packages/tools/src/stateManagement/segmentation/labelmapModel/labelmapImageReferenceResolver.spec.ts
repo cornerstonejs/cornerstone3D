@@ -248,6 +248,7 @@ describe('LabelmapImageReferenceResolver', () => {
         resolver.updateLabelmapSegmentationImageReferences('vp-1', 'seg-1')
       ).toBe('lm-a-0');
       expect(viewport1.isReferenceViewable).toHaveBeenCalledTimes(2);
+      expect(viewport2.isReferenceViewable).toHaveBeenCalledTimes(2);
     });
   });
 
