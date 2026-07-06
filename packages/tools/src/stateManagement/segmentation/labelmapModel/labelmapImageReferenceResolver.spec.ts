@@ -215,6 +215,40 @@ describe('LabelmapImageReferenceResolver', () => {
       );
       expect(result).toBe('lm-a-0');
     });
+
+    it('replays the cached result for the matching viewport scan key', () => {
+      const segmentation = makeSegmentation();
+      getSegmentation.mockReturnValue(segmentation);
+
+      const viewport1 = makeStackViewport({
+        id: 'vp-1',
+        getCurrentImageId: jest.fn(() => 'ref-0'),
+        isReferenceViewable: jest.fn(
+          (ref) => ref.referencedImageId === 'lm-a-0'
+        ),
+      });
+      const viewport2 = makeStackViewport({
+        id: 'vp-2',
+        getCurrentImageId: jest.fn(() => 'ref-0'),
+        isReferenceViewable: jest.fn(
+          (ref) => ref.referencedImageId === 'lm-a-1'
+        ),
+      });
+      getEnabledElementByViewportId.mockImplementation((viewportId) => ({
+        viewport: viewportId === 'vp-1' ? viewport1 : viewport2,
+      }));
+
+      expect(
+        resolver.updateLabelmapSegmentationImageReferences('vp-1', 'seg-1')
+      ).toBe('lm-a-0');
+      expect(
+        resolver.updateLabelmapSegmentationImageReferences('vp-2', 'seg-1')
+      ).toBe('lm-a-1');
+      expect(
+        resolver.updateLabelmapSegmentationImageReferences('vp-1', 'seg-1')
+      ).toBe('lm-a-0');
+      expect(viewport1.isReferenceViewable).toHaveBeenCalledTimes(2);
+    });
   });
 
   describe('getCurrentLabelmapImageIdsForViewport', () => {
