@@ -12,6 +12,7 @@ import {
   resolvePlanarRenderPathProjection,
   resolvePlanarStackImageIdIndex,
 } from '../src/RenderingEngine/GenericViewport/Planar';
+import { CpuImageSliceRenderPath } from '../src/RenderingEngine/GenericViewport/Planar/CpuImageSliceRenderPath';
 import { resolvePlanarCpuImageDisplayedArea } from '../src/RenderingEngine/GenericViewport/Planar/planarCpuViewportMath';
 
 function createImage(imageId = 'image-1') {
@@ -580,5 +581,57 @@ describe('Planar resolved cameras', () => {
 
     expectPoint3Close(camera.indexToWorld([2, 3, 4]), [12, 26, 42]);
     expect(camera.getFrameOfReferenceUID()).toBe('volume-for');
+  });
+});
+
+describe('Planar CPU image render path', () => {
+  it('passes PET modality into the CPU fallback viewport for prescaled stacks', async () => {
+    const canvas = document.createElement('canvas');
+    const image = createImage('pet-image');
+
+    Object.defineProperties(canvas, {
+      clientHeight: { configurable: true, value: 64 },
+      clientWidth: { configurable: true, value: 64 },
+    });
+
+    image.preScale = {
+      enabled: true,
+      scaled: true,
+      scalingParameters: {
+        modality: 'PT',
+        suvbw: 1,
+      },
+    };
+
+    const renderPath = new CpuImageSliceRenderPath();
+    const attachment = await renderPath.addData(
+      {
+        viewportId: 'viewport',
+        renderingEngineId: 'rendering-engine',
+        viewport: {
+          element: document.createElement('div'),
+        },
+        display: {
+          activateRenderMode: jest.fn(),
+        },
+        cpu: {
+          canvas,
+        },
+      },
+      {
+        id: 'pet-stack',
+        type: 'image',
+        image,
+        imageIds: [image.imageId],
+        initialImageIdIndex: 0,
+      },
+      {}
+    );
+
+    expect(attachment.rendering.enabledElement.viewport.modality).toBe('PT');
+    expect(attachment.rendering.enabledElement.viewport.voi).toEqual({
+      windowCenter: 2.5,
+      windowWidth: 5,
+    });
   });
 });

@@ -465,6 +465,17 @@ abstract class GenericViewport<
   abstract render(): void;
 
   /**
+   * Re-evaluates render paths after a global rendering-configuration change
+   * (setRenderBackend, or a deprecated CPU-rendering toggle). The default is
+   * a no-op; viewport families that support a live render-path swap override
+   * it. Present on every viewport so the global fan-out in init() can call it
+   * unconditionally.
+   */
+  updateRenderingPipeline(): void {
+    // No-op by default; families with swappable render paths override this.
+  }
+
+  /**
    * Recomputes viewport-owned runtime sizing. Concrete viewport families may
    * override this when they need to resize canvases or external runtimes.
    */
@@ -538,12 +549,13 @@ abstract class GenericViewport<
     );
     const renderPath = path.createRenderPath();
     const ctx = path.selectContext?.(this.renderContext) ?? this.renderContext;
-    const existing = this.bindings.get(displaySetId);
 
-    if (existing) {
-      existing.removeData();
-    }
-
+    // Stage the replacement attachment before tearing down any existing one:
+    // if addData rejects, or the request goes stale mid-await, the previous
+    // render path stays mounted and the binding record stays accurate. A
+    // teardown-first order left a dead binding whose recorded renderMode made
+    // a later remount (e.g. switching the render backend back after a failed
+    // swap) skip as a no-op, blanking the display set.
     const attachment = await renderPath.addData(ctx, data, options);
 
     if (shouldIgnore?.()) {
@@ -556,9 +568,12 @@ abstract class GenericViewport<
       throw new Error('Viewport has been destroyed');
     }
 
+    // Whatever is bound now -- the attachment this call is replacing, or one
+    // a concurrent mount installed during the await -- is superseded by the
+    // staged attachment.
     const current = this.bindings.get(displaySetId);
 
-    if (current && current !== existing) {
+    if (current) {
       current.removeData();
     }
 
