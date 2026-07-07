@@ -286,18 +286,28 @@ const initializeCircle = {
 
     operationData.isInObjectBoundsIJK = boundsIJK;
 
-    // Multi-point strokes still rely on the capsule predicate via the classic
-    // bounding-box iterator; the integer oblique path covers single-click fills.
-    if (strokeCenters.length <= 1) {
-      operationData.obliqueIntegerFill = createCircleObliqueIntegerFill({
-        viewUp: normalizedViewUp as Types.Point3,
-        viewPlaneNormal: normalizedPlaneNormal as Types.Point3,
-        centerIJK: operationData.centerIJK,
-        segmentationImageData,
-        xRadius,
-        yRadius,
-      });
-    }
+    // Always fill through the integer oblique iterator - both single clicks and
+    // click-drag strokes. It constrains the fill to the view slab using fast
+    // integer u/v/w ranges, which avoids the 3D bleed into adjacent slices that
+    // the axis-aligned bounding-box fallback produced on oblique planes. The
+    // stroke centers make it paint a continuous capsule in one pass.
+    //
+    // The slab thickness follows the view: a thin view fills a single oblique
+    // plane, while a full-thickness (thick-slab) view fills every plane in the
+    // slab so a "circle" paints all voxels through the thickness (a volume fill).
+    // See the oblique fill behavioural description for the matching area
+    // semantics (per-voxel area divided by the number of w planes).
+    const slabThicknessWorld = viewport.getSlabThickness?.();
+    operationData.obliqueIntegerFill = createCircleObliqueIntegerFill({
+      viewUp: normalizedViewUp as Types.Point3,
+      viewPlaneNormal: normalizedPlaneNormal as Types.Point3,
+      centerIJK: operationData.centerIJK,
+      segmentationImageData,
+      xRadius,
+      yRadius,
+      strokeCentersWorld: strokeCenters,
+      slabThicknessWorld,
+    });
   },
 } as Composition;
 

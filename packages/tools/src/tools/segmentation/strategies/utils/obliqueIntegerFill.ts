@@ -1,3 +1,40 @@
+/**
+ * Integer oblique segmentation fills.
+ *
+ * These builders describe a brush shape (circle/ellipse, sphere, rectangle) as
+ * ranges in the unimodular integer lattice `(u, v, w)` of an oblique plane (see
+ * `core` `obliqueIntegerIterator`). The fill enumerates voxels plane-by-plane in
+ * `w`, then `u`, then `v`, using exact integer ranges so it is fast and never
+ * visits a voxel twice.
+ *
+ * ## View slab thickness (behavioural description)
+ *
+ * A circle/ellipse brush is a flat disc on the oblique view plane extruded a
+ * little way along the view normal - an elliptical *cylinder*. The slab
+ * half-thickness (along the normal) controls how deep that cylinder is:
+ *
+ * - **Thin (single-slice) view** - the default. The slab half-width is floored
+ *   at the watertight minimum (~half a voxel measured *along the normal*, i.e.
+ *   half the voxel's city-block projection onto it). This is the thinnest slab
+ *   that still reads as a solid disc in the oblique view: a thinner slab grazes
+ *   the integer lattice at sparse positions and shows up as spaced lines / holes.
+ * - **Full-thickness (thick-slab) view** - the slab half-width comes from the
+ *   view slab thickness, so the cylinder is deep. A "circular" fill then becomes
+ *   a short cylinder (a *volume* fill) and paints all voxels through the depth.
+ *
+ * Note the disc is oblique, so even a one-voxel-thick fill generally intersects
+ * several integer `w` planes; the descriptor's `w` range is the lattice bounding
+ * box that the fill's membership predicate then trims to the exact cylinder - it
+ * is not a count of painted planes.
+ *
+ * ## Area semantics for thick-slab fills
+ *
+ * A thin fill is ~one voxel deep, so its in-plane area is simply the painted
+ * voxel count x voxelArea. A thick-slab fill is a volume, not a planar region:
+ * any *area* computation over its voxels must divide by the through-normal depth
+ * (in voxels) so the extra layers do not over-count the area. This only matters
+ * for area-based measurements; freeform fills that compute no area are unaffected.
+ */
 import type { Types } from '@cornerstonejs/core';
 import { utilities as csUtils } from '@cornerstonejs/core';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
@@ -31,11 +68,6 @@ interface IntRange {
 
 type ObliqueIntegerBasis = ReturnType<typeof createObliqueIntegerBasis>;
 
-interface ObliqueEllipsoidUVW {
-  H: number[];
-  q0: Types.Point3;
-}
-
 interface ObliqueVoxelVisit {
   ijk: Types.Point3;
   u: number;
@@ -51,6 +83,13 @@ interface ObliqueVoxelVisit {
 export interface ObliqueIntegerFillDescriptor {
   basis: ObliqueIntegerBasis;
   dimensions: Types.Point3;
+  /**
+   * The inclusive `w` (through-plane) range of oblique planes to fill. A range
+   * spanning a single `w` is a planar fill; a range spanning several `w` planes
+   * is a volume (thick-slab) fill. See the module behavioural description for the
+   * area semantics: area computations must divide each voxel's area by the number
+   * of `w` planes (`wRange.max - wRange.min + 1`).
+   */
   wRange?: IntRange;
   getURangeForW?: (w: number) => IntRange;
   getVRangeForWU?: (w: number, u: number) => IntRange;
@@ -86,50 +125,106 @@ function viewAxesFromOperationData(operationData: {
   };
 }
 
-function worldLengthPerLatticeStep(
+/** Row-major voxel-to-world matrix `M` (world = M * ijk); columns are the volume
+ * direction axes scaled by voxel spacing. */
+function buildVoxelToWorld(
   direction: mat3 | number[] | Float32Array,
-  spacing: Types.Point3,
-  step: Types.Point3
-): number {
-  const iVec = direction.slice(0, 3) as Types.Point3;
-  const jVec = direction.slice(3, 6) as Types.Point3;
-  const kVec = direction.slice(6, 9) as Types.Point3;
-  const world = [
-    (iVec[0] * step[0] + jVec[0] * step[1] + kVec[0] * step[2]) * spacing[0],
-    (iVec[1] * step[0] + jVec[1] * step[1] + kVec[1] * step[2]) * spacing[1],
-    (iVec[2] * step[0] + jVec[2] * step[1] + kVec[2] * step[2]) * spacing[2],
-  ] as Types.Point3;
-  return vec3.length(world as vec3);
-}
-
-/**
- * Builds a thin-slab ellipsoid in `(u, v, w)` lattice coordinates for a planar
- * ellipse aligned with the viewport axes.
- */
-function planarEllipseEllipsoidUVW(
-  basis: ObliqueIntegerBasis,
-  centerIJK: Types.Point3,
-  radiusU: number,
-  radiusV: number,
-  slabHalfWidth = 0.5
-): ObliqueEllipsoidUVW {
-  const q0 = uvwFromIJK(centerIJK, basis);
-  const H = [
-    1 / (radiusU * radiusU),
-    0,
-    0,
-    0,
-    1 / (radiusV * radiusV),
-    0,
-    0,
-    0,
-    1 / (slabHalfWidth * slabHalfWidth),
+  spacing: Types.Point3
+): number[] {
+  const i = direction.slice(0, 3) as Types.Point3;
+  const j = direction.slice(3, 6) as Types.Point3;
+  const k = direction.slice(6, 9) as Types.Point3;
+  return [
+    i[0] * spacing[0],
+    j[0] * spacing[1],
+    k[0] * spacing[2],
+    i[1] * spacing[0],
+    j[1] * spacing[1],
+    k[1] * spacing[2],
+    i[2] * spacing[0],
+    j[2] * spacing[1],
+    k[2] * spacing[2],
   ];
-  return { H, q0 };
+}
+
+function dot3(a: Types.Point3, b: Types.Point3): number {
+  return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+}
+
+/** The three columns of a row-major 3x3 matrix (voxel-to-world axes). */
+function columns3x3(m: number[]): [Types.Point3, Types.Point3, Types.Point3] {
+  return [
+    [m[0], m[3], m[6]] as Types.Point3,
+    [m[1], m[4], m[7]] as Types.Point3,
+    [m[2], m[5], m[8]] as Types.Point3,
+  ];
 }
 
 /**
- * Integer oblique fill descriptor for a planar circle / ellipse brush.
+ * Minimum world half-thickness (along `viewPlaneNormal`) for the fill slab to be
+ * watertight when viewed along that normal: half the city-block projection of a
+ * single voxel onto the normal, `0.5 · Σ |normal · (axisᵢ · spacingᵢ)|`.
+ *
+ * A thinner slab grazes the integer lattice at sparse in-plane positions, which
+ * shows up as spaced lines / holes on a steep oblique plane; this floor
+ * guarantees every view ray through the disc hits at least one filled voxel.
+ */
+function minSlabHalfWorld(M: number[], viewPlaneNormal: Types.Point3): number {
+  const cols = columns3x3(M);
+  return (
+    0.5 * cols.reduce((sum, c) => sum + Math.abs(dot3(c, viewPlaneNormal)), 0)
+  );
+}
+
+/**
+ * Samples extra world centers along a stroke polyline so consecutive brush
+ * discs overlap. A swept stroke is then the union of those dense discs with no
+ * gaps between samples.
+ */
+function densifyWorldCenters(
+  centers: Types.Point3[],
+  stepWorld: number
+): Types.Point3[] {
+  if (centers.length <= 1 || !(stepWorld > 0)) {
+    return centers;
+  }
+  const out: Types.Point3[] = [centers[0]];
+  for (let i = 1; i < centers.length; i++) {
+    const a = centers[i - 1];
+    const b = centers[i];
+    const dx = b[0] - a[0];
+    const dy = b[1] - a[1];
+    const dz = b[2] - a[2];
+    const length = Math.hypot(dx, dy, dz);
+    const steps = Math.max(1, Math.ceil(length / stepWorld));
+    for (let s = 1; s <= steps; s++) {
+      const t = s / steps;
+      out.push([a[0] + dx * t, a[1] + dy * t, a[2] + dz * t] as Types.Point3);
+    }
+  }
+  return out;
+}
+
+/**
+ * Integer oblique fill descriptor for a circle / ellipse brush (single click or
+ * a swept click-drag stroke).
+ *
+ * The brush is a flat elliptical disc on the oblique view plane extruded through
+ * a thin slab along the view normal - i.e. an elliptical *cylinder*, not an
+ * ellipsoid. Modelling it as a cylinder (constant slab thickness, no rim taper)
+ * keeps the fill watertight all the way to the disc edge; an ellipsoid tapers to
+ * zero thickness at its rim and leaves holes there on oblique planes.
+ *
+ * Voxels are enumerated with the integer oblique iterator over the lattice
+ * bounding box of the cylinder, and an exact world-space membership predicate
+ * (in-plane ellipse union over the densified stroke, within the slab) selects the
+ * fill. The slab half-thickness is floored at {@link minSlabHalfWorld} so a
+ * single click paints a watertight one-voxel-thick oblique disc; a full-thickness
+ * view widens the slab into a volume fill.
+ *
+ * @param operationData.slabThicknessWorld - Optional view slab thickness in world
+ * units. When omitted (or non-positive) the slab is the watertight minimum, so
+ * one oblique plane is painted.
  */
 export function createCircleObliqueIntegerFill(operationData: {
   viewUp: Types.Point3;
@@ -138,12 +233,20 @@ export function createCircleObliqueIntegerFill(operationData: {
   segmentationImageData: vtkImageData;
   xRadius: number;
   yRadius: number;
+  strokeCentersWorld?: Types.Point3[];
+  slabThicknessWorld?: number;
 }): ObliqueIntegerFillDescriptor {
   const { segmentationImageData, centerIJK, xRadius, yRadius } = operationData;
   const { dimensions, direction, spacing } = volumeGeometryFromImageData(
     segmentationImageData
   );
   const { viewRight, viewUp } = viewAxesFromOperationData(operationData);
+  const vn = vec3.normalize(
+    vec3.create(),
+    operationData.viewPlaneNormal as vec3
+  ) as unknown as Types.Point3;
+  const vr = viewRight as Types.Point3;
+  const vu = viewUp as Types.Point3;
 
   const basis = createObliqueIntegerBasis({
     dimensions,
@@ -154,25 +257,133 @@ export function createCircleObliqueIntegerFill(operationData: {
     viewRight,
   });
 
-  const uScale = worldLengthPerLatticeStep(direction, spacing, basis.A);
-  const vScale = worldLengthPerLatticeStep(direction, spacing, basis.B);
-  const radiusU = Math.max(xRadius / uScale, 1);
-  const radiusV = Math.max(yRadius / vScale, 1);
+  // Degenerate brush (e.g. a preview with fewer than two points) - nothing to
+  // fill; an empty w range makes callers fall back cleanly.
+  if (!(xRadius > 0) || !(yRadius > 0)) {
+    return { basis, dimensions, wRange: { min: 1, max: 0 } };
+  }
 
-  const ellipsoid = planarEllipseEllipsoidUVW(
-    basis,
-    centerIJK,
-    radiusU,
-    radiusV
+  // Slab half-thickness (world, along the normal). Floor it at the watertight
+  // minimum; a thicker requested view widens it into a volume fill.
+  const M = buildVoxelToWorld(direction, spacing);
+  const requestedHalf =
+    operationData.slabThicknessWorld && operationData.slabThicknessWorld > 0
+      ? operationData.slabThicknessWorld / 2
+      : 0;
+  const slabHalfWorld = Math.max(
+    requestedHalf,
+    minSlabHalfWorld(M, vn),
+    Number.EPSILON
   );
-  const wRange = getWRangeForUVWEllipsoid(ellipsoid);
+
+  const centersWorld =
+    operationData.strokeCentersWorld &&
+    operationData.strokeCentersWorld.length > 0
+      ? operationData.strokeCentersWorld
+      : [
+          transformIndexToWorld(
+            segmentationImageData,
+            centerIJK
+          ) as Types.Point3,
+        ];
+
+  // Densify so consecutive discs overlap along a drag stroke.
+  const denseCenters = densifyWorldCenters(
+    centersWorld,
+    Math.max(Math.min(xRadius, yRadius) / 2, Number.EPSILON)
+  );
+
+  // Lattice (u, v, w) bounding box of the cylinder - a superset that the
+  // predicate trims exactly. A one-voxel margin covers voxel-center rounding.
+  let minU = Infinity;
+  let minV = Infinity;
+  let minW = Infinity;
+  let maxU = -Infinity;
+  let maxV = -Infinity;
+  let maxW = -Infinity;
+  for (const c of centersWorld) {
+    for (const sr of [-1, 1]) {
+      for (const su of [-1, 1]) {
+        for (const sn of [-1, 1]) {
+          const corner: Types.Point3 = [
+            c[0] +
+              sr * xRadius * vr[0] +
+              su * yRadius * vu[0] +
+              sn * slabHalfWorld * vn[0],
+            c[1] +
+              sr * xRadius * vr[1] +
+              su * yRadius * vu[1] +
+              sn * slabHalfWorld * vn[1],
+            c[2] +
+              sr * xRadius * vr[2] +
+              su * yRadius * vu[2] +
+              sn * slabHalfWorld * vn[2],
+          ];
+          const q = uvwFromIJK(
+            transformWorldToIndex(
+              segmentationImageData,
+              corner
+            ) as Types.Point3,
+            basis
+          );
+          minU = Math.min(minU, q[0]);
+          maxU = Math.max(maxU, q[0]);
+          minV = Math.min(minV, q[1]);
+          maxV = Math.max(maxV, q[1]);
+          minW = Math.min(minW, q[2]);
+          maxW = Math.max(maxW, q[2]);
+        }
+      }
+    }
+  }
+  const uRange: IntRange = {
+    min: Math.floor(minU) - 1,
+    max: Math.ceil(maxU) + 1,
+  };
+  const vRange: IntRange = {
+    min: Math.floor(minV) - 1,
+    max: Math.ceil(maxV) + 1,
+  };
+  const wRange: IntRange = {
+    min: Math.floor(minW) - 1,
+    max: Math.ceil(maxW) + 1,
+  };
+
+  const ix = 1 / (xRadius * xRadius);
+  const iy = 1 / (yRadius * yRadius);
+  const predicate = ({ ijk }: ObliqueVoxelVisit): boolean => {
+    // Test at the voxel's grid point (its rendered center). This must match the
+    // location the renderer draws voxel `ijk` at - `transformIndexToWorld(ijk)`
+    // for a point-data labelmap - otherwise a half-voxel bias shifts the slab off
+    // the drawn plane and the oblique disc straddles two frames.
+    const world = transformIndexToWorld(
+      segmentationImageData,
+      ijk
+    ) as Types.Point3;
+    for (const c of denseCenters) {
+      const dx = world[0] - c[0];
+      const dy = world[1] - c[1];
+      const dz = world[2] - c[2];
+      const np = dx * vn[0] + dy * vn[1] + dz * vn[2];
+      if (Math.abs(np) > slabHalfWorld) {
+        continue;
+      }
+      const xp = dx * vr[0] + dy * vr[1] + dz * vr[2];
+      const yp = dx * vu[0] + dy * vu[1] + dz * vu[2];
+      if (xp * xp * ix + yp * yp * iy <= 1) {
+        return true;
+      }
+    }
+    return false;
+  };
 
   return {
     basis,
     dimensions,
     wRange,
-    getURangeForW: (w) => getURangeForW(ellipsoid, w),
-    getVRangeForWU: (w, u) => getVRangeForWU(ellipsoid, w, u),
+    getURangeForW: () => uRange,
+    getVRangeForWU: () => vRange,
+    predicate,
   };
 }
 
