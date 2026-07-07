@@ -11,6 +11,7 @@ import type { CanvasCoordinates } from '../../../types';
 import { StrategyCallbacks } from '../../../enums';
 import compositions from './compositions';
 import { pointInSphere } from '../../../utilities/math/sphere';
+import { createCircleObliqueIntegerFill } from './utils/obliqueIntegerFill';
 
 const {
   transformWorldToIndex,
@@ -284,6 +285,19 @@ const initializeCircle = {
     });
 
     operationData.isInObjectBoundsIJK = boundsIJK;
+
+    // Multi-point strokes still rely on the capsule predicate via the classic
+    // bounding-box iterator; the integer oblique path covers single-click fills.
+    if (strokeCenters.length <= 1) {
+      operationData.obliqueIntegerFill = createCircleObliqueIntegerFill({
+        viewUp: normalizedViewUp as Types.Point3,
+        viewPlaneNormal: normalizedPlaneNormal as Types.Point3,
+        centerIJK: operationData.centerIJK,
+        segmentationImageData,
+        xRadius,
+        yRadius,
+      });
+    }
   },
 } as Composition;
 

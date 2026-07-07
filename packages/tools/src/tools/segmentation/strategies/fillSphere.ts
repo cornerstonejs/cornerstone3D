@@ -10,6 +10,7 @@ import {
   createEllipseInPoint,
   getEllipseCornersFromCanvasCoordinates,
 } from './fillCircle';
+import { createSphereObliqueIntegerFill } from './utils/obliqueIntegerFill';
 const { transformWorldToIndex, getNormalizedAspectRatio } = csUtils;
 import { getSphereBoundsInfoFromViewport } from '../../../utilities/getSphereBoundsInfo';
 import type { CanvasCoordinates } from '../../../types';
@@ -120,6 +121,14 @@ const sphereComposition = {
       viewRight,
       viewUp: normalizedViewUp,
       viewNormal: normalizedPlaneNormal,
+    });
+
+    operationData.obliqueIntegerFill = createSphereObliqueIntegerFill({
+      viewUp: normalizedViewUp as Types.Point3,
+      viewPlaneNormal: normalizedPlaneNormal as Types.Point3,
+      centerIJK,
+      segmentationImageData,
+      radiusWorld,
     });
     // }
   },

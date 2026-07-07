@@ -13,6 +13,7 @@ import {
 } from './utils/labelmapOverlap';
 import type { LabelmapEditTransaction } from '../../../stateManagement/segmentation/helpers/labelmapSegmentationState';
 import { shouldUseLazyLabelmapEditing } from '../utils/shouldUseLazyLabelmapEditing';
+import type { ObliqueIntegerFillDescriptor } from './utils/obliqueIntegerFill';
 
 export type InitializedOperationData = LabelmapToolOperationDataAny & {
   // Allow initialization that is operation specific by keying on the name
@@ -30,6 +31,11 @@ export type InitializedOperationData = LabelmapToolOperationDataAny & {
   centerWorld: Types.Point3;
   isInObject: (point: Types.Point3) => boolean;
   isInObjectBoundsIJK: Types.BoundsIJK;
+  /**
+   * When set, {@link compositions.regionFill} enumerates voxels with the integer
+   * oblique iterator instead of the axis-aligned IJK bounding box.
+   */
+  obliqueIntegerFill?: ObliqueIntegerFillDescriptor;
   viewport: Types.IViewport;
   imageVoxelManager:
     | Types.IVoxelManager<number>

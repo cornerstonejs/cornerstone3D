@@ -7,6 +7,7 @@ import type { Composition, InitializedOperationData } from './BrushStrategy';
 import { StrategyCallbacks } from '../../../enums';
 import compositions from './compositions';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import { createRectangleObliqueIntegerFill } from './utils/obliqueIntegerFill';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -79,6 +80,8 @@ const initializeRectangle = {
     const {
       points, // bottom, top, left, right
       segmentationImageData,
+      viewUp,
+      viewPlaneNormal,
     } = operationData;
 
     // Happens on a preview setup
@@ -98,23 +101,31 @@ const initializeRectangle = {
       center as Types.Point3
     );
 
+    const orderedPoints = orderRectangleCorners(points);
+
     // Find the extent of the rectangle in IJK index space of the image.
     const { boundsIJK, pointInShapeFn } = createPointInRectangle(
-      points,
+      orderedPoints,
       segmentationImageData
     );
 
     operationData.isInObject = pointInShapeFn;
     operationData.isInObjectBoundsIJK = boundsIJK;
+
+    operationData.obliqueIntegerFill = createRectangleObliqueIntegerFill({
+      viewUp: viewUp as Types.Point3,
+      viewPlaneNormal: viewPlaneNormal as Types.Point3,
+      centerIJK: operationData.centerIJK,
+      segmentationImageData,
+      cornersWorld: orderedPoints,
+    });
   },
 } as Composition;
 
 function createPointInRectangle(
-  points: Types.Point3[],
+  orderedPoints: Types.Point3[],
   segmentationImageData: vtkImageData
 ) {
-  const orderedPoints = orderRectangleCorners(points);
-
   const [p0, p1, , p3] = orderedPoints;
 
   // Convert rectangle corners to IJK.
