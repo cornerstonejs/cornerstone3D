@@ -186,8 +186,18 @@ export function detectRenderingCapabilities({
     : null;
 
   if (!formats) {
-    formats = getSupportedTextureFormats();
-    writeCachedFormats(contextInfo.renderer, contextInfo.webgl2, formats);
+    const probed = getSupportedTextureFormats();
+
+    // A null probe result means the probes could not run (context limit hit,
+    // GPU process restarting, context lost mid-probe) — report no format
+    // support for this load but do NOT persist it, so a transient bad run
+    // costs one re-probe next load instead of poisoning the cache under an
+    // otherwise valid renderer key.
+    if (probed) {
+      writeCachedFormats(contextInfo.renderer, contextInfo.webgl2, probed);
+    }
+
+    formats = probed ?? { ...NO_GPU_FORMATS };
   }
 
   return {

@@ -27,15 +27,6 @@ interface FormatProbe {
   glDataType: (gl: WebGL2RenderingContext, ext?) => number;
 }
 
-const NO_SUPPORT: TextureFormatSupport = {
-  norm16: false,
-  norm16Linear: false,
-  float: false,
-  floatLinear: false,
-  halfFloat: false,
-  halfFloatLinear: false,
-};
-
 /**
  * Creates the single offscreen context and point-sprite program shared by all
  * format probes. Context creation and shader compilation dominate the probe
@@ -160,10 +151,18 @@ function probeFormat(
   }
 }
 
-export function getSupportedTextureFormats(): TextureFormatSupport {
+/**
+ * Probes each texture format through a real draw + readback. Returns `null`
+ * when the probes could not run at all (probe context creation failed — e.g.
+ * the browser's live-context limit was hit — or the context was lost
+ * mid-probe), so callers can tell "probing failed this run" apart from "the
+ * GPU genuinely does not support these formats" and avoid persisting the
+ * former.
+ */
+export function getSupportedTextureFormats(): TextureFormatSupport | null {
   const gl = createProbeContext();
   if (!gl) {
-    return { ...NO_SUPPORT };
+    return null;
   }
 
   const norm16TexData = new Int16Array([
@@ -215,10 +214,14 @@ export function getSupportedTextureFormats(): TextureFormatSupport {
     }),
   };
 
+  // A context lost during the probes yields spurious all-false results
+  // (readPixels returns zeros); report failure instead of fake answers.
+  const contextLost = gl.isContextLost();
+
   const webglLoseContext = gl.getExtension('WEBGL_lose_context');
   if (webglLoseContext) {
     webglLoseContext.loseContext();
   }
 
-  return result;
+  return contextLost ? null : result;
 }

@@ -160,6 +160,30 @@ describe('renderingCapabilities', () => {
     expect(getSupportedTextureFormats).toHaveBeenCalledTimes(2);
   });
 
+  it('reports no format support without persisting when probing fails', () => {
+    mockWebGL();
+    getSupportedTextureFormats.mockReturnValue(null);
+
+    const capabilities = detectRenderingCapabilities();
+
+    expect(capabilities.webgl).toBe(true);
+    expect(capabilities.norm16).toBe(false);
+    expect(capabilities.float).toBe(false);
+    expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull();
+  });
+
+  it('re-probes on the next detection after a failed probe run', () => {
+    mockWebGL();
+    getSupportedTextureFormats.mockReturnValueOnce(null);
+
+    detectRenderingCapabilities();
+    const second = detectRenderingCapabilities();
+
+    expect(getSupportedTextureFormats).toHaveBeenCalledTimes(2);
+    expect(second.norm16).toBe(true);
+    expect(window.localStorage.getItem(STORAGE_KEY)).not.toBeNull();
+  });
+
   it('flags software rasterizers from the renderer string', () => {
     mockWebGL('Google SwiftShader');
 
