@@ -1,6 +1,7 @@
 import { StackViewport, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
+import getViewportICamera from '../../getViewportICamera';
 
 /**
  * Gets the desired spacing for points in the polyline for the
@@ -29,16 +30,29 @@ const getSubPixelSpacingAndXYDirections = (
     return;
   }
 
+  // Native ("next") generic viewports are not StackViewport/VolumeViewport
+  // instances. A stack-mode generic viewport exposes the slice plane directly
+  // through getImageData (like a legacy stack), so it uses the image-direction
+  // path; a volume-mode generic viewport keeps the camera-relative path but
+  // reads the camera through the getViewportICamera bridge (it has no native
+  // getCamera, which previously threw and aborted the draw loop).
+  const isGeneric = csUtils.isGenericViewport(viewport);
+  const isImageSlice =
+    viewport instanceof StackViewport ||
+    (isGeneric && csUtils.getViewportContentMode(viewport) === 'stack');
+
   let viewRight: Types.Point3;
   let viewUp: Types.Point3;
 
-  if (viewport instanceof StackViewport) {
+  if (isImageSlice) {
     // For a stack the image row/column directions are the in-plane axes.
     viewRight = imageData.direction.slice(0, 3) as Types.Point3;
     viewUp = imageData.direction.slice(3, 6) as Types.Point3;
   } else {
     // For a volume the in-plane axes come from the camera.
-    const { viewPlaneNormal, viewUp: cameraViewUp } = viewport.getCamera();
+    const { viewPlaneNormal, viewUp: cameraViewUp } = (
+      isGeneric ? getViewportICamera(viewport) : viewport.getCamera()
+    ) as Types.ICamera;
 
     viewRight = vec3.cross(
       vec3.create(),

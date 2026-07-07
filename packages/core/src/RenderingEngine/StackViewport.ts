@@ -9,6 +9,7 @@ import eventTarget from '../eventTarget';
 import * as metaData from '../metaData';
 import { getImageDataMetadata as getImageDataMetadataUtil } from '../utilities/getImageDataMetadata';
 import { coreLog } from '../utilities/logger';
+import { getGenericViewportImageDisplaySet } from './GenericViewport/genericViewportDisplaySetAccess';
 
 import type {
   ActorEntry,
@@ -977,11 +978,35 @@ class StackViewport extends Viewport {
 
   private _setPropertiesFromCache(): void {
     const voiRange = this._getVOIFromCache();
-    const { interpolationType, invert } = this;
+    const {
+      colormap,
+      VOILUTFunction,
+      interpolationType,
+      invert,
+      sharpening,
+      smoothing,
+    } = this.getProperties();
+
+    if (typeof VOILUTFunction !== 'undefined') {
+      this.setVOILUTFunction(VOILUTFunction, true);
+    }
 
     this.setVOI(voiRange);
+
+    if (typeof colormap !== 'undefined') {
+      this.setColormap(colormap);
+    }
+
     this.setInterpolationType(interpolationType);
     this.setInvertColor(invert);
+
+    if (typeof sharpening !== 'undefined') {
+      this.setSharpening(sharpening);
+    }
+
+    if (typeof smoothing !== 'undefined') {
+      this.setSmoothing(smoothing);
+    }
   }
 
   private getCameraCPU(): Partial<ICamera> {
@@ -1906,6 +1931,10 @@ class StackViewport extends Viewport {
   ): Promise<string> {
     this._throwIfDestroyed();
 
+    // Setting a raw stack directly resets any display-set bookkeeping; the
+    // setDisplaySets override re-records after calling this.
+    this.clearDisplaySets();
+
     this.imageIds = imageIds;
 
     if (currentImageIdIndex > imageIds.length) {
@@ -1961,6 +1990,36 @@ class StackViewport extends Viewport {
     triggerEvent(this.element, Events.VIEWPORT_NEW_IMAGE_SET, eventDetail);
 
     return imageId;
+  }
+
+  /**
+   * Mounts display sets on the viewport, mirroring the GenericViewport
+   * `setDisplaySets` API. Each `displaySetId` is resolved through the registered
+   * generic-viewport dataset metadata (see `genericViewportDisplaySetMetadataProvider`)
+   * to its `imageIds`; the first entry is loaded as the stack. Resolution and
+   * loading run inside {@link mountDisplaySets}, which records the mounted
+   * entries after `setStack` so {@link getDisplaySets} reports them.
+   *
+   * @param entries - display set entries to mount; the first is used as the stack source.
+   */
+  public async setDisplaySets(
+    ...entries: Array<{ displaySetId: string; options?: unknown }>
+  ): Promise<void> {
+    await this.mountDisplaySets(entries, async (entry) => {
+      const dataSet = getGenericViewportImageDisplaySet(entry.displaySetId);
+      if (!dataSet?.imageIds?.length) {
+        throw new Error(
+          `[StackViewport] No registered imageIds for display set ${entry.displaySetId}`
+        );
+      }
+
+      const initialImageIdIndex =
+        typeof dataSet.initialImageIdIndex === 'number'
+          ? dataSet.initialImageIdIndex
+          : 0;
+
+      await this.setStack(dataSet.imageIds, initialImageIdIndex);
+    });
   }
 
   /**
@@ -2522,6 +2581,7 @@ class StackViewport extends Viewport {
       image,
       this._imageData
     );
+    const wasStackInvalidated = this.stackInvalidated;
 
     // const activeCamera = this.getRenderer().getActiveCamera();
     const viewPresentation = this.getViewPresentation();
@@ -2529,7 +2589,7 @@ class StackViewport extends Viewport {
     // Cache camera props so we can trigger one camera changed event after
     // The full transition.
     // const previousCameraProps = this.getCamera();
-    if (sameImageData && !this.stackInvalidated) {
+    if (sameImageData && !wasStackInvalidated) {
       // 3a. If we can reuse it, replace the scalar data under the hood
       this._updateVTKImageDataFromCornerstoneImage(image);
 
@@ -2617,21 +2677,28 @@ class StackViewport extends Viewport {
     //Todo: i'm not sure if this is needed
     // activeCamera.setFreezeFocalPoint(true);
 
-    const monochrome1 =
-      imagePixelModule.photometricInterpretation === 'MONOCHROME1';
+    if (wasStackInvalidated) {
+      const monochrome1 =
+        imagePixelModule.photometricInterpretation === 'MONOCHROME1';
 
-    // invalidate the stack so that we can set the voi range
-    this.stackInvalidated = true;
+      // Keep the metadata-driven reset path only for explicit stack invalidation.
+      this.stackInvalidated = true;
 
-    const voiRange = this._getInitialVOIRange(image);
-    this.setVOI(voiRange, {
-      forceRecreateLUTFunction: !!monochrome1,
-    });
+      const voiRange = this._getInitialVOIRange(image);
+      this.setVOI(voiRange, {
+        forceRecreateLUTFunction: !!monochrome1,
+      });
 
-    this.initialInvert = !!monochrome1;
+      this.initialInvert = !!monochrome1;
 
-    // should carry over the invert color from the previous image if has been applied
-    this.setInvertColor(this.invert || this.initialInvert);
+      // should carry over the invert color from the previous image if has been applied
+      this.setInvertColor(this.invert || this.initialInvert);
+    } else {
+      // Actor recreation can still be needed when imageData cannot be reused
+      // (for example, a scalar type change), but viewport properties remain stack-based.
+      this.stackInvalidated = true;
+      this._setPropertiesFromCache();
+    }
 
     // Saving position of camera on render, to cache the panning
     this.stackInvalidated = false;

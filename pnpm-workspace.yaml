@@ -31,7 +31,7 @@ overrides:
   canvas: 3.2.0
   tar-fs: 2.1.4
   body-parser: 1.20.3
-  ws: 8.18.3
+  ws: 8.21.0
   qs: 6.14.1
   lodash: 4.18.1
   tar: 7.5.11
@@ -43,9 +43,9 @@ overrides:
   socket.io-parser: 4.2.6
   handlebars: 4.7.9
   path-to-regexp: 0.1.13
-  protobufjs: 7.5.8
+  protobufjs: 7.6.1
   fast-uri: 3.1.2
-  tmp: 0.2.6
+  tmp: 0.2.7
   make-fetch-happen: 15.0.5
   webpack: 5.105.0
   mdast-util-to-hast: 13.2.1
@@ -54,6 +54,10 @@ overrides:
   shell-quote: 1.8.4
   'minimatch@<3.1.4': 3.1.5
   'minimatch@>=10.0.0 <10.2.3': 10.2.5
+  'form-data': 4.0.6
+  'vite': 8.0.16
+  undici: 6.27.0
+  linkify-it: 5.0.1
 
 auditConfig:
   ignoreGhsas: []

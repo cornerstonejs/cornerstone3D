@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/adapters",
-  "version": "5.0.8",
+  "version": "5.2.1",
   "description": "Adapters for Cornerstone3D to/from formats including DICOM SR and others",
   "module": "./dist/esm/index.js",
   "types": "./dist/esm/index.d.ts",
@@ -12,55 +12,65 @@
   },
   "exports": {
     ".": {
+      "types": "./dist/esm/index.d.ts",
       "import": "./dist/esm/index.js",
-      "types": "./dist/esm/index.d.ts"
+      "default": "./dist/esm/index.js"
     },
     "./cornerstone": {
+      "types": "./dist/esm/adapters/Cornerstone/index.d.ts",
       "import": "./dist/esm/adapters/Cornerstone/index.js",
-      "types": "./dist/esm/adapters/Cornerstone/index.d.ts"
+      "default": "./dist/esm/adapters/Cornerstone/index.js"
     },
     "./cornerstone/*": {
+      "types": "./dist/esm/adapters/Cornerstone/*.d.ts",
       "import": "./dist/esm/adapters/Cornerstone/*.js",
-      "types": "./dist/esm/adapters/Cornerstone/*.d.ts"
+      "default": "./dist/esm/adapters/Cornerstone/*.js"
     },
     "./cornerstone3D": {
+      "types": "./dist/esm/adapters/Cornerstone3D/index.d.ts",
       "import": "./dist/esm/adapters/Cornerstone3D/index.js",
-      "types": "./dist/esm/adapters/Cornerstone3D/index.d.ts"
+      "default": "./dist/esm/adapters/Cornerstone3D/index.js"
     },
     "./cornerstone3D/*": {
+      "types": "./dist/esm/adapters/Cornerstone3D/*.d.ts",
       "import": "./dist/esm/adapters/Cornerstone3D/*.js",
-      "types": "./dist/esm/adapters/Cornerstone3D/*.d.ts"
+      "default": "./dist/esm/adapters/Cornerstone3D/*.js"
     },
     "./enums": {
+      "types": "./dist/esm/adapters/enums/index.d.ts",
       "import": "./dist/esm/adapters/enums/index.js",
-      "types": "./dist/esm/adapters/enums/index.d.ts"
+      "default": "./dist/esm/adapters/enums/index.js"
     },
     "./enums/*": {
+      "types": "./dist/esm/adapters/enums/*.d.ts",
       "import": "./dist/esm/adapters/enums/*.js",
-      "types": "./dist/esm/adapters/enums/*.d.ts"
+      "default": "./dist/esm/adapters/enums/*.js"
     },
     "./helpers": {
+      "types": "./dist/esm/adapters/helpers/index.d.ts",
       "import": "./dist/esm/adapters/helpers/index.js",
-      "types": "./dist/esm/adapters/helpers/index.d.ts"
+      "default": "./dist/esm/adapters/helpers/index.js"
     },
     "./helpers/*": {
+      "types": "./dist/esm/adapters/helpers/*.d.ts",
       "import": "./dist/esm/adapters/helpers/*.js",
-      "types": "./dist/esm/adapters/helpers/*.d.ts"
+      "default": "./dist/esm/adapters/helpers/*.js"
     },
     "./version": {
-      "node": "./dist/esm/version.js",
+      "types": "./dist/esm/version.d.ts",
       "import": "./dist/esm/version.js",
-      "types": "./dist/esm/version.d.ts"
-    }
+      "default": "./dist/esm/version.js"
+    },
+    "./package.json": "./package.json"
   },
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
     "test": "jest --testTimeout 60000",
-    "build": "rollup -c rollup.config.mjs",
-    "build:esm": "pnpm run prebuild && rollup -c rollup.config.mjs",
-    "build:esm:watch": "rollup --watch -c rollup.config.mjs",
+    "build": "rollup -c rollup.config.mjs && tsc-alias -p ./tsconfig.json --resolve-full-paths && node ../../scripts/write-dist-esm-package-json.js ./",
+    "build:esm": "pnpm run prebuild && rollup -c rollup.config.mjs && tsc-alias -p ./tsconfig.json --resolve-full-paths && node ../../scripts/write-dist-esm-package-json.js ./",
+    "build:esm:watch": "sh -c 'tsc-alias -p ./tsconfig.json --resolve-full-paths --watch & alias_pid=$!; node ../../scripts/write-dist-esm-package-json.js ./ --watch & writer_pid=$!; trap \"kill $alias_pid $writer_pid\" EXIT; rollup --watch -c rollup.config.mjs'",
     "clean": "rm -rf node_modules/.cache/storybook && shx rm -rf dist",
     "clean:deep": "pnpm run clean && shx rm -rf node_modules",
     "dev": "rollup --watch  -c rollup.config.mjs",
@@ -89,11 +99,11 @@
     "ndarray": "1.0.19"
   },
   "devDependencies": {
-    "@cornerstonejs/core": "5.0.8",
-    "@cornerstonejs/tools": "5.0.8"
+    "@cornerstonejs/core": "5.2.1",
+    "@cornerstonejs/tools": "5.2.1"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "5.0.8",
-    "@cornerstonejs/tools": "5.0.8"
+    "@cornerstonejs/core": "5.2.1",
+    "@cornerstonejs/tools": "5.2.1"
   }
 }

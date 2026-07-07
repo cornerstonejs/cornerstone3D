@@ -13,7 +13,7 @@ import {
 } from '../src/RenderingEngine/GenericViewport';
 import PlanarViewport from '../src/RenderingEngine/GenericViewport/Planar/PlanarViewport';
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
-import genericViewportDataSetMetadataProvider from '../src/utilities/genericViewportDataSetMetadataProvider';
+import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
 import imageIdToURI from '../src/utilities/imageIdToURI';
 
 let viewportCounter = 0;
@@ -165,7 +165,7 @@ describe('PlanarViewport view state', () => {
       metaData.removeProvider(provider);
     }
     metadataProviders = [];
-    genericViewportDataSetMetadataProvider.clear();
+    genericViewportDisplaySetMetadataProvider.clear();
     jest.clearAllMocks();
   });
 
@@ -643,20 +643,20 @@ describe('PlanarViewport view state', () => {
       options: { orientation: expect.anything() },
     });
     expect(
-      genericViewportDataSetMetadataProvider.get(
-        genericViewportDataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
+      genericViewportDisplaySetMetadataProvider.get(
+        genericViewportDisplaySetMetadataProvider.VIEWPORT_V2_DISPLAY_SET,
         firstDataId
       ).image
     ).toBe(firstImage);
     expect(
-      genericViewportDataSetMetadataProvider.get(
-        genericViewportDataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
+      genericViewportDisplaySetMetadataProvider.get(
+        genericViewportDisplaySetMetadataProvider.VIEWPORT_V2_DISPLAY_SET,
         secondDataId
       ).image
     ).toBe(secondImage);
     expect(
-      genericViewportDataSetMetadataProvider.get(
-        genericViewportDataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
+      genericViewportDisplaySetMetadataProvider.get(
+        genericViewportDisplaySetMetadataProvider.VIEWPORT_V2_DISPLAY_SET,
         imageId
       )
     ).toBeUndefined();
@@ -679,14 +679,14 @@ describe('PlanarViewport view state', () => {
     await viewport.renderImageObject(secondImage);
 
     expect(
-      genericViewportDataSetMetadataProvider.get(
-        genericViewportDataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
+      genericViewportDisplaySetMetadataProvider.get(
+        genericViewportDisplaySetMetadataProvider.VIEWPORT_V2_DISPLAY_SET,
         firstDataId
       )
     ).toBeUndefined();
     expect(
-      genericViewportDataSetMetadataProvider.get(
-        genericViewportDataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
+      genericViewportDisplaySetMetadataProvider.get(
+        genericViewportDisplaySetMetadataProvider.VIEWPORT_V2_DISPLAY_SET,
         secondDataId
       ).image
     ).toBe(secondImage);

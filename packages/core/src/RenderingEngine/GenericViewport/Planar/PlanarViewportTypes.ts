@@ -4,6 +4,7 @@ import type {
   BlendModes,
   InterpolationType,
   OrientationAxis,
+  VOILUTFunctionType,
 } from '../../../enums';
 import type {
   ActorEntry,
@@ -72,6 +73,14 @@ export interface PlanarSetDataOptions {
     image?: number;
     volume?: number;
   };
+  /**
+   * Forces this display set to render through the CPU path regardless of the
+   * global rendering configuration or byte-size thresholds. Use when an
+   * individual display set / overlay must be CPU-rendered (e.g. to bound GPU
+   * memory). When omitted, the render path is decided by the global rendering
+   * configuration, WebGL availability, and the CPU thresholds above.
+   */
+  forceCPU?: boolean;
   role?: BindingRole;
 }
 
@@ -86,7 +95,11 @@ export interface PlanarDataLoadOptions {
 /** @internal */
 export interface PlanarPayload {
   imageIds: string[];
-  initialImageIdIndex: number;
+  // Undefined means "no initial slice was requested" - the volume acquisition
+  // view centers in that case (see createInitialVolumeSliceState). A concrete
+  // number (including an explicit 0) is honored. Consumers that need a scalar
+  // placeholder index default it locally with `?? 0`.
+  initialImageIdIndex?: number;
   volumeId: string;
   renderMode: PlanarEffectiveRenderMode;
   acquisitionOrientation?: PlanarViewState['orientation'];
@@ -100,6 +113,7 @@ export interface PlanarPayload {
 export interface PlanarPresentationProps extends BasePresentationProps {
   colormap?: ColormapPublic;
   voiRange?: VOIRange;
+  voiLUTFunction?: VOILUTFunctionType;
   invert?: boolean;
 }
 

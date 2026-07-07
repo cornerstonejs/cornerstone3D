@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/utils",
-  "version": "5.0.8",
+  "version": "5.2.1",
   "description": "Cornerstone3D shared utility helpers",
   "module": "./dist/esm/index.js",
   "types": "./dist/esm/index.d.ts",
@@ -11,58 +11,59 @@
   "sideEffects": false,
   "exports": {
     ".": {
+      "types": "./dist/esm/index.d.ts",
       "import": "./dist/esm/index.js",
-      "node": "./dist/esm/index.js",
-      "types": "./dist/esm/index.d.ts"
+      "default": "./dist/esm/index.js"
     },
     "./utilities": {
+      "types": "./dist/esm/utilities/index.d.ts",
       "import": "./dist/esm/utilities/index.js",
-      "node": "./dist/esm/utilities/index.js",
-      "types": "./dist/esm/utilities/index.d.ts"
+      "default": "./dist/esm/utilities/index.js"
     },
     "./utilities/object": {
+      "types": "./dist/esm/utilities/object/index.d.ts",
       "import": "./dist/esm/utilities/object/index.js",
-      "node": "./dist/esm/utilities/object/index.js",
-      "types": "./dist/esm/utilities/object/index.d.ts"
+      "default": "./dist/esm/utilities/object/index.js"
     },
     "./utilities/object/*": {
+      "types": "./dist/esm/utilities/object/*.d.ts",
       "import": "./dist/esm/utilities/object/*.js",
-      "node": "./dist/esm/utilities/object/*.js",
-      "types": "./dist/esm/utilities/object/*.d.ts"
+      "default": "./dist/esm/utilities/object/*.js"
     },
     "./utilities/math": {
+      "types": "./dist/esm/utilities/math/index.d.ts",
       "import": "./dist/esm/utilities/math/index.js",
-      "node": "./dist/esm/utilities/math/index.js",
-      "types": "./dist/esm/utilities/math/index.d.ts"
+      "default": "./dist/esm/utilities/math/index.js"
     },
     "./utilities/math/*": {
+      "types": "./dist/esm/utilities/math/*.d.ts",
       "import": "./dist/esm/utilities/math/*.js",
-      "node": "./dist/esm/utilities/math/*.js",
-      "types": "./dist/esm/utilities/math/*.d.ts"
+      "default": "./dist/esm/utilities/math/*.js"
     },
     "./utilities/logging": {
+      "types": "./dist/esm/utilities/logging/index.d.ts",
       "import": "./dist/esm/utilities/logging/index.js",
-      "node": "./dist/esm/utilities/logging/index.js",
-      "types": "./dist/esm/utilities/logging/index.d.ts"
+      "default": "./dist/esm/utilities/logging/index.js"
     },
     "./utilities/logging/*": {
+      "types": "./dist/esm/utilities/logging/*.d.ts",
       "import": "./dist/esm/utilities/logging/*.js",
-      "node": "./dist/esm/utilities/logging/*.js",
-      "types": "./dist/esm/utilities/logging/*.d.ts"
+      "default": "./dist/esm/utilities/logging/*.js"
     },
     "./version": {
+      "types": "./dist/esm/version.d.ts",
       "import": "./dist/esm/version.js",
-      "node": "./dist/esm/version.js",
-      "types": "./dist/esm/version.d.ts"
-    }
+      "default": "./dist/esm/version.js"
+    },
+    "./package.json": "./package.json"
   },
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
     "prebuild": "node ../../scripts/generate-version.js ./",
-    "build:esm": "pnpm run prebuild && tsc --project ./tsconfig.json",
-    "build:esm:watch": "tsc --project ./tsconfig.json --watch",
+    "build:esm": "pnpm run prebuild && tsc --project ./tsconfig.json && tsc-alias -p ./tsconfig.json --resolve-full-paths && node ../../scripts/write-dist-esm-package-json.js ./",
+    "build:esm:watch": "sh -c 'tsc-alias -p ./tsconfig.json --resolve-full-paths --watch & alias_pid=$!; node ../../scripts/write-dist-esm-package-json.js ./ --watch & writer_pid=$!; trap \"kill $alias_pid $writer_pid\" EXIT; tsc --project ./tsconfig.json --watch'",
     "clean": "rm -rf node_modules/.cache/storybook && shx rm -rf dist",
     "clean:deep": "pnpm run clean && shx rm -rf node_modules",
     "build": "pnpm run build:esm",

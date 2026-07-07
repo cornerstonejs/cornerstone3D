@@ -243,7 +243,7 @@ async function run() {
     toolGroup.addViewport(viewportId, renderingEngineId);
   });
 
-  utilities.genericViewportDataSetMetadataProvider.add(dataId, {
+  utilities.genericViewportDisplaySetMetadataProvider.add(dataId, {
     kind: 'planar',
     imageIds,
     initialImageIdIndex: Math.floor(imageIds.length / 2),

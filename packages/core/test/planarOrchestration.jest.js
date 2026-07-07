@@ -5,7 +5,7 @@ import PlanarViewReferenceController from '../src/RenderingEngine/GenericViewpor
 import PlanarLegacyCompatibilityController, {
   PLANAR_LEGACY_PER_IMAGE_DEFAULT_PROPERTIES_LIMIT,
 } from '../src/RenderingEngine/GenericViewport/Planar/PlanarLegacyCompatibilityController';
-import genericViewportDataSetMetadataProvider from '../src/utilities/genericViewportDataSetMetadataProvider';
+import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
 
 function createBinding({
   actorUID,
@@ -60,8 +60,8 @@ function createLegacyStackHarness({ deferSetData = false } = {}) {
   let currentImageIds = [];
 
   function finishSetData(requestedDataId) {
-    const registered = genericViewportDataSetMetadataProvider.get(
-      genericViewportDataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
+    const registered = genericViewportDisplaySetMetadataProvider.get(
+      genericViewportDisplaySetMetadataProvider.VIEWPORT_V2_DISPLAY_SET,
       requestedDataId
     );
 
@@ -138,7 +138,7 @@ function createLegacyStackHarness({ deferSetData = false } = {}) {
 
 describe('Planar legacy stack compatibility', () => {
   afterEach(() => {
-    genericViewportDataSetMetadataProvider.clear();
+    genericViewportDisplaySetMetadataProvider.clear();
   });
 
   it('replaces the legacy stack without unregistering replacement metadata', async () => {
@@ -151,8 +151,8 @@ describe('Planar legacy stack compatibility', () => {
     expect(host.setDisplaySets).toHaveBeenCalledTimes(2);
     expect(getCurrentImageIds()).toEqual(['image:new']);
     expect(
-      genericViewportDataSetMetadataProvider.get(
-        genericViewportDataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
+      genericViewportDisplaySetMetadataProvider.get(
+        genericViewportDisplaySetMetadataProvider.VIEWPORT_V2_DISPLAY_SET,
         dataId
       )
     ).toEqual({

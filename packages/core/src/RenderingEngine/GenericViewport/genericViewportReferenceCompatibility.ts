@@ -383,21 +383,57 @@ function getReferencedImageRangeEndIndex(
   return rangeEndSliceIndex === -1 ? undefined : rangeEndSliceIndex;
 }
 
+// Cache the compatible URIs for a given imageId. imageId -> URI is a pure,
+// stable mapping, so memoizing it avoids re-parsing the same strings on every
+// reference-compatibility check (these run once per labelmap image while
+// resolving stack segmentation references).
+const imageIdCompatibleURIsCache = new Map<string, string[]>();
+
+// Cache the per-imageId URI entries for a given imageIds array, keyed on the
+// array reference. Reference compatibility is evaluated once per labelmap image
+// when resolving stack segmentation references, so without this the full
+// imageId -> URI mapping is rebuilt O(labelmapImages x stackImages) times per
+// scroll/brush stroke. The imageIds array is replaced (not mutated) when the
+// dataset changes, so reference identity is a safe, self-invalidating key.
+const imageIdsURIEntriesCache = new WeakMap<string[], string[][]>();
+
+function getImageIdsURIEntries(imageIds: string[]): string[][] {
+  let entries = imageIdsURIEntriesCache.get(imageIds);
+
+  if (!entries) {
+    entries = imageIds.map((imageId) => getImageIdCompatibleURIs(imageId));
+    imageIdsURIEntriesCache.set(imageIds, entries);
+  }
+
+  return entries;
+}
+
 function getContextImageURIEntries(
   context: GenericViewportReferenceContext
 ): string[][] {
-  const imageURIEntries = (context.imageIds || []).map((imageId) =>
-    getImageIdCompatibleURIs(imageId)
-  );
+  const baseEntries = context.imageIds?.length
+    ? getImageIdsURIEntries(context.imageIds)
+    : [];
+  const extraImageURIs = context.imageURIs;
+
+  if (!extraImageURIs?.length) {
+    // Common path. Callers only read the entries, so returning the cached
+    // array directly is safe and avoids any per-call allocation.
+    return baseEntries;
+  }
+
+  // Rare path: merge standalone imageURIs not already covered by the cached
+  // imageId-derived entries. Copy first so the cached array is never mutated.
+  const imageURIEntries = baseEntries.slice();
   const knownImageURIs = new Set<string>();
 
-  for (const imageURIEntry of imageURIEntries) {
+  for (const imageURIEntry of baseEntries) {
     for (const imageURI of imageURIEntry) {
       knownImageURIs.add(imageURI);
     }
   }
 
-  for (const imageURI of context.imageURIs || []) {
+  for (const imageURI of extraImageURIs) {
     if (!knownImageURIs.has(imageURI)) {
       imageURIEntries.push([imageURI]);
       knownImageURIs.add(imageURI);
@@ -408,7 +444,14 @@ function getContextImageURIEntries(
 }
 
 function getImageIdCompatibleURIs(imageId: string): string[] {
-  return uniqueStrings([imageIdToURI(imageId), getLegacyImageIdURI(imageId)]);
+  let uris = imageIdCompatibleURIsCache.get(imageId);
+
+  if (!uris) {
+    uris = uniqueStrings([imageIdToURI(imageId), getLegacyImageIdURI(imageId)]);
+    imageIdCompatibleURIsCache.set(imageId, uris);
+  }
+
+  return uris;
 }
 
 function getLegacyImageIdURI(imageId: string): string {
