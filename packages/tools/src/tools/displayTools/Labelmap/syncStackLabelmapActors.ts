@@ -1,5 +1,6 @@
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 import {
   ActorRenderMode,
   cache,
@@ -51,6 +52,15 @@ export function syncStackLabelmapActors(
     getLabelmapActorEntries(viewport.id, segmentationId) ?? [];
   const staleActorEntries = labelmapActorEntries.filter(
     (actorEntry) => !derivedImageIdSet.has(actorEntry.referencedId)
+  );
+
+  // The native (generic) viewport rebuilds the stack labelmap overlay actor per
+  // slice. Carry the outgoing actor's color/opacity style onto the replacement
+  // so it renders translucent (transparent background) from its first frame,
+  // instead of painting opaque over the underlying image until the segmentation
+  // style pass runs - which otherwise reads as a black flash while scrolling.
+  const inheritedLabelmapStyle = captureLabelmapActorStyle(
+    staleActorEntries[0]?.actor as { getProperty?: () => unknown } | undefined
   );
 
   let shouldTriggerSegmentationRender = false;
@@ -160,6 +170,10 @@ export function syncStackLabelmapActors(
             representationUID,
             callback: ({ imageActor }) => {
               imageActor.getMapper().setInputData(imageData);
+              applyInheritedLabelmapStyle(
+                imageActor as never,
+                inheritedLabelmapStyle
+              );
             },
           },
         ]);
@@ -203,4 +217,81 @@ export function syncStackLabelmapActors(
   if (shouldRenderViewport) {
     viewport.render();
   }
+}
+
+/**
+ * Captures the color (RGB transfer function) and opacity style from an existing
+ * labelmap actor so it can be carried onto a replacement actor.
+ */
+function captureLabelmapActorStyle(
+  actor: { getProperty?: () => unknown } | undefined
+): { cfun?: unknown; ofun?: unknown } | undefined {
+  const prop = actor?.getProperty?.() as
+    | {
+        getRGBTransferFunction?: (idx: number) => unknown;
+        getScalarOpacity?: (idx: number) => unknown;
+      }
+    | undefined;
+
+  if (!prop) {
+    return undefined;
+  }
+
+  return {
+    cfun: prop.getRGBTransferFunction?.(0),
+    ofun: prop.getScalarOpacity?.(0),
+  };
+}
+
+/**
+ * Styles a freshly mounted stack labelmap overlay actor so its very first frame
+ * is translucent with a transparent background (label 0), instead of rendering
+ * opaque over the underlying image until setLabelmapColorAndOpacity runs. The
+ * latter would read as a whole-viewport black flash while scrolling a stack
+ * segmentation (the overlay actor is rebuilt per slice on the native viewport).
+ * Inherits the outgoing actor's transfer functions when available so colors are
+ * also correct immediately; the segmentation style pass refreshes them after.
+ */
+function applyInheritedLabelmapStyle(
+  actor:
+    | {
+        getProperty?: () => unknown;
+        setForceTranslucent?: (value: boolean) => void;
+        setForceOpaque?: (value: boolean) => void;
+      }
+    | undefined,
+  style: { cfun?: unknown; ofun?: unknown } | undefined
+): void {
+  const prop = actor?.getProperty?.() as
+    | {
+        setRGBTransferFunction?: (idx: number, fn: unknown) => void;
+        setScalarOpacity?: (idx: number, fn: unknown) => void;
+        setUseLookupTableScalarRange?: (value: boolean) => void;
+        setInterpolationTypeToNearest?: () => void;
+      }
+    | undefined;
+
+  if (!prop) {
+    return;
+  }
+
+  if (style?.cfun && prop.setRGBTransferFunction) {
+    prop.setRGBTransferFunction(0, style.cfun);
+  }
+
+  if (style?.ofun && prop.setScalarOpacity) {
+    prop.setScalarOpacity(0, style.ofun);
+  } else if (prop.setScalarOpacity) {
+    // No inherited opacity (e.g. first mount): default background to transparent.
+    const ofun = vtkPiecewiseFunction.newInstance();
+    ofun.addPoint(0, 0);
+    ofun.addPoint(1, 1);
+    ofun.setClamping(false);
+    prop.setScalarOpacity(0, ofun);
+  }
+
+  prop.setUseLookupTableScalarRange?.(true);
+  prop.setInterpolationTypeToNearest?.();
+  actor?.setForceTranslucent?.(true);
+  actor?.setForceOpaque?.(false);
 }

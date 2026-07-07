@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/ai",
-  "version": "5.0.14",
+  "version": "5.2.1",
   "description": "AI and ML Interfaces for Cornerstone3D",
   "files": [
     "dist"
@@ -12,14 +12,16 @@
   },
   "exports": {
     ".": {
+      "types": "./dist/esm/index.d.ts",
       "import": "./dist/esm/index.js",
-      "types": "./dist/esm/index.d.ts"
+      "default": "./dist/esm/index.js"
     },
     "./version": {
-      "node": "./dist/esm/version.js",
+      "types": "./dist/esm/version.d.ts",
       "import": "./dist/esm/version.js",
-      "types": "./dist/esm/version.d.ts"
-    }
+      "default": "./dist/esm/version.js"
+    },
+    "./package.json": "./package.json"
   },
   "publishConfig": {
     "access": "public"
@@ -30,9 +32,9 @@
     "clean": "rm -rf node_modules/.cache/storybook && shx rm -rf dist",
     "clean:deep": "pnpm run clean && shx rm -rf node_modules",
     "build": "pnpm run build:esm",
-    "build:esm": "pnpm run prebuild && tsc --project ./tsconfig.json",
-    "build:esm:watch": "tsc --project ./tsconfig.json --watch --sourceMap --inlineSources",
-    "dev": "tsc --project ./tsconfig.json --watch --sourceMap --inlineSources",
+    "build:esm": "pnpm run prebuild && tsc --project ./tsconfig.json && tsc-alias -p ./tsconfig.json --resolve-full-paths && node ../../scripts/write-dist-esm-package-json.js ./",
+    "build:esm:watch": "sh -c 'tsc-alias -p ./tsconfig.json --resolve-full-paths --watch & alias_pid=$!; node ../../scripts/write-dist-esm-package-json.js ./ --watch & writer_pid=$!; trap \"kill $alias_pid $writer_pid\" EXIT; tsc --project ./tsconfig.json --watch'",
+    "dev": "tsc --project ./tsconfig.json --watch",
     "build:all": "pnpm run build:esm",
     "start": "tsc --project ./tsconfig.json --watch --sourceMap --inlineSources",
     "format": "prettier --write 'src/**/*.js' 'test/**/*.js'",
@@ -61,11 +63,11 @@
     "onnxruntime-web": "1.17.1"
   },
   "devDependencies": {
-    "@cornerstonejs/core": "5.0.14",
-    "@cornerstonejs/tools": "5.0.14"
+    "@cornerstonejs/core": "5.2.1",
+    "@cornerstonejs/tools": "5.2.1"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "5.0.14",
-    "@cornerstonejs/tools": "5.0.14"
+    "@cornerstonejs/core": "5.2.1",
+    "@cornerstonejs/tools": "5.2.1"
   }
 }

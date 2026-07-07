@@ -18,6 +18,7 @@ import {
   addDropdownToToolbar,
   annotationTools,
   createImageIdsAndCacheMetaData,
+  getPrimaryStackFrameImageIds,
   imageIds,
   setImageIds,
   handleFileSelect,
@@ -175,8 +176,8 @@ addDropdownToToolbar({
     if (!data?.wadoRsRoot) {
       return;
     }
-    setImageIds(await createImageIdsAndCacheMetaData({ ...data }));
-    loadAndViewImages(imageIds);
+    const seriesImageIds = await createImageIdsAndCacheMetaData({ ...data });
+    loadAndViewImages(getPrimaryStackFrameImageIds(seriesImageIds));
   },
 });
 

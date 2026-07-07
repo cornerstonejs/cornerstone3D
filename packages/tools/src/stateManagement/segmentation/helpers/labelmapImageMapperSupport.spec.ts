@@ -166,7 +166,10 @@ describe('shouldUseSliceRendering', () => {
   });
 
   it('returns true when there are multiple layers and at least one is a stack', () => {
-    getLabelmaps.mockReturnValue([{ type: 'volume' }, { type: 'stack' }]);
+    getLabelmaps.mockReturnValue([
+      { storageKind: 'volume' },
+      { storageKind: 'stack' },
+    ]);
     expect(
       shouldUseSliceRendering({
         representationData: { Labelmap: {} },
@@ -175,7 +178,7 @@ describe('shouldUseSliceRendering', () => {
   });
 
   it('returns false when only one labelmap layer exists', () => {
-    getLabelmaps.mockReturnValue([{ type: 'stack' }]);
+    getLabelmaps.mockReturnValue([{ storageKind: 'stack' }]);
     expect(
       shouldUseSliceRendering({
         representationData: { Labelmap: {} },

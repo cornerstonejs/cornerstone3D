@@ -3,10 +3,12 @@ import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
-import { InterpolationType } from '../../enums';
+import { InterpolationType, VOILUTFunctionType } from '../../enums';
 import type { ColormapPublic, IImage, Point3, VOIRange } from '../../types';
 import createLinearRGBTransferFunction from '../../utilities/createLinearRGBTransferFunction';
+import createSigmoidRGBTransferFunction from '../../utilities/createSigmoidRGBTransferFunction';
 import getVOIRangeFromWindowLevel from '../../utilities/getVOIRangeFromWindowLevel';
+import isPTPrescaledWithSUV from '../../utilities/isPTPrescaledWithSUV';
 import { getImageDataMetadata } from '../../utilities/getImageDataMetadata';
 import invertRgbTransferFunction from '../../utilities/invertRgbTransferFunction';
 import { resolveColormap } from '../../utilities/colormap';
@@ -26,6 +28,7 @@ export interface PlanarImagePresentation {
   interpolationType?: InterpolationType;
   colormap?: ColormapPublic;
   voiRange?: VOIRange;
+  voiLUTFunction?: VOILUTFunctionType;
   invert?: boolean;
 }
 
@@ -78,7 +81,15 @@ export function createEmptyVTKImageData(args: {
 export function createVTKImageDataFromImage(image: IImage): vtkImageData {
   const { dimensions, direction, numberOfComponents, origin, spacing } =
     getImageDataMetadata(image);
-  const pixelArray = image.voxelManager.getScalarData();
+  // Own a PRIVATE copy of the scalars rather than wrapping the source image's
+  // voxelManager buffer by reference. The reuse-in-place scroll path
+  // (updateVTKImageDataWithCornerstoneImage -> scalarData.set) overwrites this
+  // actor buffer with the *next* frame's pixels; if it aliased the source
+  // image's cached buffer, scrolling to another slice would corrupt the first
+  // image's cached pixel data, and scrolling back would then render the wrong
+  // (previously displayed) slice. Mirrors legacy StackViewport, whose actor
+  // buffer is independent of the image cache.
+  const pixelArray = image.voxelManager.getScalarData().slice();
   const imageData = createEmptyVTKImageData({
     dimensions,
     direction: Array.from(direction),
@@ -93,7 +104,36 @@ export function createVTKImageDataFromImage(image: IImage): vtkImageData {
   return imageData;
 }
 
+/**
+ * Refreshes an existing vtkImageData's geometry (origin, direction, spacing) to
+ * match a new cornerstone image, mirroring what createVTKImageDataFromImage sets
+ * on a freshly built one. The reuse-in-place scroll path only rewrites scalars
+ * via updateVTKImageDataWithCornerstoneImage, so without this the actor keeps the
+ * previous frame's image plane. Multi-frame stacks (e.g. ultrasound cine) place
+ * each frame at a distinct world position and the camera follows that plane on
+ * scroll, so a stale origin leaves the actor off the focal plane and the viewport
+ * renders black from the second frame onward. Dimensions are intentionally left
+ * untouched - the reuse path only runs when they already match.
+ */
+export function updateVTKImageDataGeometryFromImage(
+  imageData: vtkImageData,
+  image: IImage
+): void {
+  const { direction, origin, spacing } = getImageDataMetadata(image);
+  imageData.setOrigin(origin);
+  imageData.setDirection(new Float32Array(Array.from(direction)));
+  imageData.setSpacing(spacing);
+}
+
 export function getDefaultImageVOIRange(image: IImage): VOIRange | undefined {
+  // Mirror legacy StackViewport._getInitialVOIRange: a prescaled PT (SUV) image
+  // defaults to a 0-5 VOI range rather than its raw DICOM window center/width,
+  // which is too wide for PET and skews the display. Keyed off the loader-set
+  // preScale fields (not image.isPreScaled, which the native path never sets).
+  if (isPTPrescaledWithSUV(image)) {
+    return { lower: 0, upper: 5 };
+  }
+
   return getVOIRangeFromWindowLevel(
     image.windowWidth,
     image.windowCenter,
@@ -116,9 +156,10 @@ export function getPlanarCameraState(renderer: vtkRenderer): PlanarCameraState {
 export function applyPlanarImagePresentation(args: {
   actor: vtkImageSlice;
   defaultVOIRange?: VOIRange;
+  defaultVOILUTFunction?: VOILUTFunctionType;
   props?: PlanarImagePresentation;
 }): void {
-  const { actor, defaultVOIRange, props } = args;
+  const { actor, defaultVOIRange, defaultVOILUTFunction, props } = args;
   const property = actor.getProperty();
   const voiRange = props?.voiRange ?? defaultVOIRange;
 
@@ -146,6 +187,7 @@ export function applyPlanarImagePresentation(args: {
     colormap: props?.colormap,
     invert: props?.invert,
     voiRange,
+    voiLUTFunction: props?.voiLUTFunction ?? defaultVOILUTFunction,
   });
 
   property.setUseLookupTableScalarRange(true);
@@ -156,12 +198,15 @@ export function createPlanarRGBTransferFunction(args: {
   colormap?: ColormapPublic;
   invert?: boolean;
   voiRange: VOIRange;
+  voiLUTFunction?: VOILUTFunctionType;
 }): vtkColorTransferFunction {
-  const { colormap, invert, voiRange } = args;
+  const { colormap, invert, voiRange, voiLUTFunction } = args;
   const transferFunction =
     colormap?.name !== undefined
       ? createColormapTransferFunction(colormap, voiRange)
-      : createLinearRGBTransferFunction(voiRange);
+      : voiLUTFunction === VOILUTFunctionType.SAMPLED_SIGMOID
+        ? createSigmoidRGBTransferFunction(voiRange)
+        : createLinearRGBTransferFunction(voiRange);
 
   if (invert) {
     invertRgbTransferFunction(transferFunction);

@@ -22,7 +22,7 @@ function removeLabelmapRepresentationData(
     return false;
   }
 
-  utilities.genericViewportDataSetMetadataProvider.remove(representationUID);
+  utilities.genericViewportDisplaySetMetadataProvider.remove(representationUID);
   dataViewport.removeData(representationUID);
 
   return true;

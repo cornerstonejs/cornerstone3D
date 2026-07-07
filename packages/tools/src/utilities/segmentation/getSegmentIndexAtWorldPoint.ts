@@ -5,9 +5,14 @@ import {
   getSegmentation,
   getCurrentLabelmapImageIdsForViewport,
 } from '../../stateManagement/segmentation/segmentationState';
-import type { ContourSegmentationAnnotation, Segmentation } from '../../types';
+import type {
+  Annotation,
+  ContourSegmentationAnnotation,
+  Segmentation,
+} from '../../types';
 import { getAnnotation } from '../../stateManagement';
 import { isPointInsidePolyline3D } from '../math/polyline';
+import filterAnnotationsForDisplay from '../planar/filterAnnotationsForDisplay';
 import { getLabelmapActorEntry } from '../../stateManagement/segmentation/helpers/getSegmentationActor';
 import getViewportLabelmapRenderMode from '../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
 import {
@@ -183,39 +188,41 @@ export function getSegmentIndexAtWorldForContour(
 ): number {
   const contourData = segmentation.representationData.Contour;
 
-  const segmentIndices = Array.from(contourData.annotationUIDsMap.keys());
-  const { viewPlaneNormal } = viewport.getCamera();
-
-  for (const segmentIndex of segmentIndices) {
-    const annotationsSet = contourData.annotationUIDsMap.get(segmentIndex);
-
-    if (!annotationsSet) {
-      continue;
-    }
-
-    for (const annotationUID of annotationsSet) {
+  // Map every contour annotation back to its segment index so we can restrict
+  // the search to the annotations the viewport is actually displaying.
+  const segmentIndexByAnnotation = new Map<Annotation, number>();
+  for (const [segmentIndex, annotationUIDs] of contourData.annotationUIDsMap) {
+    for (const annotationUID of annotationUIDs) {
       const annotation = getAnnotation(
         annotationUID
       ) as ContourSegmentationAnnotation;
 
-      if (!annotation) {
-        continue;
+      if (annotation) {
+        segmentIndexByAnnotation.set(annotation, Number(segmentIndex));
       }
+    }
+  }
 
-      const { polyline } = annotation.data.contour;
+  // Only consider contours displayed on the current slice. Reusing the same
+  // filter the renderer applies (filterAnnotationsWithinSlice for volume
+  // viewports, isReferenceViewable for stack viewports) ensures a contour from
+  // another slice is not matched - its polyline shares the view plane normal and
+  // the point-in-polyline test projects to 2D, so it would otherwise contain the
+  // point even though it belongs to a different slice.
+  const displayableAnnotations = filterAnnotationsForDisplay(
+    viewport,
+    Array.from(segmentIndexByAnnotation.keys())
+  );
 
-      if (
-        !utilities.isEqual(viewPlaneNormal, annotation.metadata.viewPlaneNormal)
-      ) {
-        continue;
-      }
+  for (const annotation of displayableAnnotations) {
+    const { polyline } = (annotation as ContourSegmentationAnnotation).data
+      .contour;
 
-      // This function checks whether we are inside the contour. It does not
-      // check if we are exactly on the contour, which is highly unlikely given
-      // the canvas pixel resolution of 1 decimal place we have by design.
-      if (isPointInsidePolyline3D(worldPoint, polyline)) {
-        return Number(segmentIndex);
-      }
+    // This function checks whether we are inside the contour. It does not
+    // check if we are exactly on the contour, which is highly unlikely given
+    // the canvas pixel resolution of 1 decimal place we have by design.
+    if (isPointInsidePolyline3D(worldPoint, polyline)) {
+      return segmentIndexByAnnotation.get(annotation);
     }
   }
 }

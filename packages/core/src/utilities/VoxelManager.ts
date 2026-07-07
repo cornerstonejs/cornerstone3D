@@ -61,6 +61,12 @@ export default class VoxelManager<T> {
 
   public getRange: () => [number, number];
   private scalarData = null as PixelDataTypedArray;
+  // True only when `scalarData` is a cached expansion produced by
+  // `getScalarData(true)` from `_getScalarData` (e.g. an RLE decode), as opposed
+  // to a real backing store. A cached expansion is a snapshot that goes stale
+  // after a voxel write, so the setters invalidate it; a backing store must
+  // never be invalidated. See `getScalarData` / `invalidateCachedScalarExpansion`.
+  private _scalarDataIsCachedExpansion = false;
   // caching for sliceData as it is expensive to get it from the cache
   // I think we need to have a way to invalidate this cache and also have
   // a limit on the number of slices to cache since it can grow indefinitely
@@ -144,6 +150,7 @@ export default class VoxelManager<T> {
     if (changed !== false) {
       this.modifiedSlices.add(k);
       VoxelManager.addBounds(this.boundsIJK, [i, j, k]);
+      this.invalidateCachedScalarExpansion();
     }
 
     return changed;
@@ -200,9 +207,25 @@ export default class VoxelManager<T> {
       const pointIJK = this.toIJK(index);
       this.modifiedSlices.add(pointIJK[2]);
       VoxelManager.addBounds(this.boundsIJK, pointIJK);
+      this.invalidateCachedScalarExpansion();
     }
     return changed;
   };
+
+  /**
+   * Drops a cached scalar-data expansion (see `getScalarData(true)`) after a
+   * voxel write so the next read re-expands from the mutated backing store.
+   * Only a flagged cached expansion is cleared - a real backing store (set via
+   * the constructor or `setScalarData`, or kept fresh by `_updateScalarData`)
+   * is left untouched - so this is a no-op (one boolean check) on the hot path
+   * for the common case where nothing opted into caching.
+   */
+  private invalidateCachedScalarExpansion() {
+    if (this._scalarDataIsCachedExpansion) {
+      this.scalarData = null;
+      this._scalarDataIsCachedExpansion = false;
+    }
+  }
 
   /**
    * Converts an index value to a Point3 IJK value
@@ -430,7 +453,13 @@ export default class VoxelManager<T> {
     if (this._getScalarData) {
       const scalarData = this._getScalarData();
       if (storeScalarData) {
-        console.log('Not transient, should store value', scalarData);
+        // Retain the expanded scalar data so subsequent calls return it
+        // directly instead of re-expanding (e.g. re-running the RLE decode)
+        // on every access. Callers opt in because this trades memory for speed.
+        // Flag it so a later voxel write can invalidate this snapshot (the
+        // backing store is the source of truth) instead of returning stale data.
+        this.scalarData = scalarData as PixelDataTypedArray;
+        this._scalarDataIsCachedExpansion = true;
       }
       return scalarData as PixelDataTypedArray;
     }
@@ -439,7 +468,10 @@ export default class VoxelManager<T> {
   }
 
   public setScalarData(newScalarData: PixelDataTypedArray) {
+    // An explicitly installed backing store is the source of truth, not a
+    // cached expansion, so it must not be invalidated on later writes.
     this.scalarData = newScalarData;
+    this._scalarDataIsCachedExpansion = false;
   }
 
   /**

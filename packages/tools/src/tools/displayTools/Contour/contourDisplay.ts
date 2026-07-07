@@ -8,6 +8,7 @@ import {
 
 import Representations from '../../../enums/SegmentationRepresentations';
 import { handleContourSegmentation } from './contourHandler/handleContourSegmentation';
+import getViewportICamera from '../../../utilities/getViewportICamera';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
 import type { ContourRepresentation } from '../../../types/SegmentationStateTypes';
 import removeContourFromElement from './removeContourFromElement';
@@ -108,7 +109,7 @@ async function render(
 
   // here we need to check if the contour data matches the viewport really.
   let hasContourDataButNotMatchingViewport = false;
-  const viewportNormal = viewport.getCamera().viewPlaneNormal;
+  const viewportNormal = getViewportICamera(viewport).viewPlaneNormal;
 
   if (contourData.annotationUIDsMap) {
     hasContourDataButNotMatchingViewport = !_checkContourNormalsMatchViewport(

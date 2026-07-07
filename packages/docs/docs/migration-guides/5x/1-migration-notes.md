@@ -167,3 +167,38 @@ const results =
 - Existing `createFromDICOMSegBuffer(referencedImageIds, arrayBuffer, { metadataProvider })`
   calls keep working unchanged — the function is now a deprecated alias for the
   buffer path. Migrate at your own pace to `createLabelmapsFromDICOMBuffer`.
+
+## ESM packaging and TypeScript `moduleResolution`
+
+### What Changed
+
+The published `@cornerstonejs/*` packages now declare themselves as ESM
+(`"type": "module"`) and emit relative imports with explicit `.js` extensions in
+both the runtime `.js` files and the `.d.ts` declarations. This makes the
+packages resolve correctly under **native Node ESM** (server-side rendering,
+Node test runners, packaging linters, and Node 25+ which hard-fails on missing
+extensions), not just inside bundlers.
+
+### Why This Matters
+
+- **Bundler consumers are unaffected.** webpack, Vite, Next, and similar tools
+  resolve `./foo` and `./foo.js` identically, so applications such as OHIF
+  require no changes.
+- **Native Node now works.** Importing a package on a Node code path no longer
+  fails with `ERR_MODULE_NOT_FOUND` due to extensionless specifiers.
+- **CommonJS `require()` is not a supported package entry path.** Consume
+  `@cornerstonejs/*` packages with ESM `import`, dynamic `import()`, or a bundler
+  that resolves the ESM export map.
+
+### Migration Guidance
+
+Use a modern TypeScript module resolution mode — `"bundler"`, `"node16"`, or
+`"nodenext"` — which is the default for current toolchains and understands the
+`.js`-extensioned imports inside the shipped `.d.ts` files.
+
+The legacy `moduleResolution: "node"` (a.k.a. `node10`) does **not** map a
+`.js` specifier in a declaration back to its `.d.ts`, and it ignores the package
+`exports` map entirely. On that setting some deep re-exported types may resolve
+as `any` or fail to resolve. This is a **type-resolution** concern only —
+runtime behavior is unaffected — but if you see missing types, switch to
+`"bundler"`/`"node16"`/`"nodenext"`.
