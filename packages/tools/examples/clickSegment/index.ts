@@ -21,7 +21,7 @@ console.warn(
 );
 
 const {
-  OneClickSegmentTool,
+  ClickSegmentTool,
   WindowLevelTool,
   segmentation,
   ToolGroupManager,
@@ -32,16 +32,16 @@ const { ViewportType, Events: csCoreEvents } = Enums;
 const { MouseBindings, KeyboardBindings } = csToolsEnums;
 const { DefaultHistoryMemo } = csUtils.HistoryMemo;
 
-const oneClickToolName = OneClickSegmentTool.toolName;
+const clickToolName = ClickSegmentTool.toolName;
 
 /**
- * Primary mouse binding = one-click lesion segmentation. `OneClickSegmentTool`
+ * Primary mouse binding = click-to-segment lesions. `ClickSegmentTool`
  * needs NO configuration: it derives a one-sided intensity threshold
  * dynamically from the click (a hot lesion is segmented down from its core, so
  * the brightest voxels are never left as holes) and only accepts clicks on a
  * coherent, lesion-scale region.
  */
-const oneClickToolMap = new Map([[oneClickToolName, { selected: true }]]);
+const clickToolMap = new Map([[clickToolName, { selected: true }]]);
 
 const WADO_RS_ROOT = 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb';
 
@@ -51,7 +51,7 @@ const STUDY_INSTANCE_UID =
 const SERIES_INSTANCE_UID =
   '1.3.6.1.4.1.14519.5.2.1.7009.2403.780462962868572737240023906400';
 
-const renderingEngineId = 'oneClickSegmentRenderingEngine';
+const renderingEngineId = 'clickSegmentRenderingEngine';
 const viewportId = 'ONE_CLICK_PT';
 const segmentationId = 'ONE_CLICK_SEGMENT_PT';
 const toolGroupId = 'ONE_CLICK_SEGMENT_TOOL_GROUP';
@@ -61,8 +61,8 @@ let viewport;
 let renderingEngine;
 
 setTitleAndDescription(
-  'One-Click Segment Tool (PET lesion segmentation)',
-  'Single-click lesion segmentation on a whole-body PET series. Hover to scout candidates (the cursor previews whether a click will produce a meaningful, lesion-scale segment), click once to segment, then Shrink/Expand to fine-tune. Nothing to configure.'
+  'Click Segment Tool (PET lesion segmentation)',
+  'Click-to-segment lesions on a whole-body PET series. Hover to scout candidates (the cursor previews whether a click will produce a meaningful, lesion-scale segment), click once to segment, then Shrink/Expand to fine-tune. Nothing to configure.'
 );
 
 const content = document.getElementById('content');
@@ -197,12 +197,12 @@ async function addSegmentationToState(imageIds: string[]) {
 async function run() {
   await initDemo({});
 
-  cornerstoneTools.addTool(OneClickSegmentTool);
+  cornerstoneTools.addTool(ClickSegmentTool);
   cornerstoneTools.addTool(WindowLevelTool);
 
   toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
-  addManipulationBindings(toolGroup, { toolMap: oneClickToolMap });
+  addManipulationBindings(toolGroup, { toolMap: clickToolMap });
 
   toolGroup.addTool(WindowLevelTool.toolName);
   toolGroup.setToolActive(WindowLevelTool.toolName, {
@@ -233,12 +233,12 @@ async function run() {
   // expand/shrink step, Ctrl/Cmd+Shift+Z (or Ctrl+Y) redoes it.
   document.addEventListener('keydown', (evt) => {
     if (evt.key === 'Escape') {
-      const toolInstance = toolGroup?.getToolInstance?.(oneClickToolName) as {
+      const toolInstance = toolGroup?.getToolInstance?.(clickToolName) as {
         cancelActiveOperation?: () => boolean;
       } | null;
       if (toolInstance?.cancelActiveOperation?.() === true) {
         evt.preventDefault();
-        console.info('[oneClickSegment] cancel requested (Esc)');
+        console.info('[clickSegment] cancel requested (Esc)');
       }
       return;
     }
@@ -273,7 +273,7 @@ async function run() {
     title: 'Shrink',
     container: operationsToolbar,
     onClick: () => {
-      toolGroup.getToolInstance(oneClickToolName).shrink();
+      toolGroup.getToolInstance(clickToolName).shrink();
     },
   });
 
@@ -281,7 +281,7 @@ async function run() {
     title: 'Expand',
     container: operationsToolbar,
     onClick: () => {
-      toolGroup.getToolInstance(oneClickToolName).expand();
+      toolGroup.getToolInstance(clickToolName).expand();
     },
   });
 
@@ -332,7 +332,7 @@ async function run() {
     return;
   }
 
-  // Sort into through-plane (spatial) order. The one-click 3D flood fill relies
+  // Sort into through-plane (spatial) order. The click-driven 3D flood fill relies
   // on adjacent stack indices being adjacent slices in patient space, so the
   // stack must be sorted by position rather than left in load/instance order.
   let sortedImageIds = imageIds;
@@ -340,7 +340,7 @@ async function run() {
     sortedImageIds = csUtils.sortImageIdsAndGetSpacing(imageIds).sortedImageIds;
   } catch (err) {
     console.warn(
-      '[oneClickSegment] could not sort images by position; using load order',
+      '[clickSegment] could not sort images by position; using load order',
       err
     );
   }

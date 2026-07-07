@@ -99,10 +99,10 @@ type LastClickState = {
 };
 
 /**
- * One-click segmentation with a trustworthy grow/shrink workflow, built for
+ * Click-to-segment with a trustworthy grow/shrink workflow, built for
  * PET-style hot lesions but modality-agnostic:
  *
- * - **Hover** previews segmentability: plus cursor = one click here produces a
+ * - **Hover** previews segmentability: plus cursor = a click here produces a
  *   meaningful segment; blocked cursor = it will not (flat area, noise speck,
  *   or an unbounded region). Clicks on blocked spots are no-ops.
  * - **Click** derives a one-sided intensity threshold dynamically (everything
@@ -115,8 +115,8 @@ type LastClickState = {
  *
  * There is nothing to configure: no disk radii, no strategies, no deltas.
  */
-class OneClickSegmentTool extends GrowCutBaseTool {
-  static toolName = 'OneClickSegment';
+class ClickSegmentTool extends GrowCutBaseTool {
+  static toolName = 'ClickSegment';
   private segmentationInProgress = false;
   private hoverThrottleTimer: number | null = null;
   private pendingHoverEvent: EventTypes.MouseMoveEventType | null = null;
@@ -313,7 +313,7 @@ class OneClickSegmentTool extends GrowCutBaseTool {
           return false;
         }
       }
-      return OneClickSegmentTool.bandsAreSimilar(
+      return ClickSegmentTool.bandsAreSimilar(
         range.min,
         range.max,
         entry.bandMin,
@@ -810,9 +810,9 @@ class OneClickSegmentTool extends GrowCutBaseTool {
 
     void this.runClick(clickData, worldPoint, element).catch((err) => {
       const message =
-        err instanceof Error ? err.message : 'One-click segmentation failed.';
+        err instanceof Error ? err.message : 'Click segmentation failed.';
       this.notifySegmentationError(message);
-      growCutLog.error('OneClickSegment: segmentation failed', { message });
+      growCutLog.error('ClickSegment: segmentation failed', { message });
     });
 
     return true;
@@ -829,13 +829,13 @@ class OneClickSegmentTool extends GrowCutBaseTool {
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const viewport = renderingEngine?.getViewport(viewportId);
     if (!viewport) {
-      throw new Error('OneClickSegment: viewport not found for click.');
+      throw new Error('ClickSegment: viewport not found for click.');
     }
     const refVolume = cache.getVolume(referencedVolumeId);
     const labelmapVolume = cache.getVolume(labelmapVolumeId);
     if (!refVolume || !labelmapVolume) {
       throw new Error(
-        'OneClickSegment: referenced or labelmap volume not in cache.'
+        'ClickSegment: referenced or labelmap volume not in cache.'
       );
     }
 
@@ -845,7 +845,7 @@ class OneClickSegmentTool extends GrowCutBaseTool {
       this.buildProbeOptions(viewport, viewport.element, referencedVolumeId)
     );
     if (!probe.viable || !probe.range || !probe.expandContext) {
-      growCutLog.info('OneClickSegment: click found no meaningful region', {
+      growCutLog.info('ClickSegment: click found no meaningful region', {
         reason: probe.reason,
         regionAreaMm2: probe.regionAreaMm2,
       });
@@ -855,7 +855,7 @@ class OneClickSegmentTool extends GrowCutBaseTool {
       return;
     }
 
-    growCutLog.info('OneClickSegment: click', {
+    growCutLog.info('ClickSegment: click', {
       worldPoint,
       toleranceBytes: probe.toleranceBytes,
       regionAreaMm2: probe.regionAreaMm2,
@@ -893,7 +893,7 @@ class OneClickSegmentTool extends GrowCutBaseTool {
       viewportId,
       renderingEngineId,
     };
-    growCutLog.info('OneClickSegment: click complete', {
+    growCutLog.info('ClickSegment: click complete', {
       filledVoxels: filledPoints.length,
       segmentIndex,
     });
@@ -931,7 +931,7 @@ class OneClickSegmentTool extends GrowCutBaseTool {
       const referencedVolume = cache.getVolume(referencedVolumeId);
       if (!referencedVolume) {
         throw new Error(
-          'OneClickSegment: referenced volume is no longer cached; cannot fill.'
+          'ClickSegment: referenced volume is no longer cached; cannot fill.'
         );
       }
       const result = await runFloodFillSegmentation({
@@ -953,7 +953,7 @@ class OneClickSegmentTool extends GrowCutBaseTool {
           historyVoxelManager: memo?.voxelManager,
           onRejected: ({ voxelCount, bbox }) => {
             notLesionLike = true;
-            growCutLog.info('OneClickSegment: fill rejected by shape gate', {
+            growCutLog.info('ClickSegment: fill rejected by shape gate', {
               voxelCount,
               bbox,
             });
@@ -965,12 +965,12 @@ class OneClickSegmentTool extends GrowCutBaseTool {
       });
       if (!result) {
         if (abortController.signal.aborted) {
-          throw new Error('OneClickSegment: fill cancelled.');
+          throw new Error('ClickSegment: fill cancelled.');
         }
         throw new Error(
           notLesionLike
             ? NOT_LESION_MESSAGE
-            : 'OneClickSegment: fill produced no result (band rejected).'
+            : 'ClickSegment: fill produced no result (band rejected).'
         );
       }
       triggerSegmentationDataModified(segmentationId);
@@ -1085,7 +1085,7 @@ class OneClickSegmentTool extends GrowCutBaseTool {
       return;
     }
     void this.refillAtTolerance(lastClick.toleranceBytes).catch((err) => {
-      growCutLog.error('OneClickSegment: refresh failed', {
+      growCutLog.error('ClickSegment: refresh failed', {
         message: err instanceof Error ? err.message : String(err),
       });
     });
@@ -1097,18 +1097,18 @@ class OneClickSegmentTool extends GrowCutBaseTool {
     }
     const lastClick = this.lastClick;
     if (!lastClick) {
-      growCutLog.info('OneClickSegment: no click to expand/shrink yet');
+      growCutLog.info('ClickSegment: no click to expand/shrink yet');
       return;
     }
     const next = this.pickNextTolerance(direction);
     if (next === null) {
-      growCutLog.info('OneClickSegment: no further step available', {
+      growCutLog.info('ClickSegment: no further step available', {
         direction: direction > 0 ? 'expand' : 'shrink',
         toleranceBytes: lastClick.toleranceBytes,
       });
       return;
     }
-    growCutLog.info('OneClickSegment: stepping tolerance', {
+    growCutLog.info('ClickSegment: stepping tolerance', {
       direction: direction > 0 ? 'expand' : 'shrink',
       fromToleranceBytes: lastClick.toleranceBytes,
       toToleranceBytes: next,
@@ -1122,7 +1122,7 @@ class OneClickSegmentTool extends GrowCutBaseTool {
         // structure). refillAtTolerance already restored the cleared voxels,
         // so the previous result is intact — just tell the user.
         growCutLog.info(
-          'OneClickSegment: expand blocked by the lesion shape gate; previous result kept',
+          'ClickSegment: expand blocked by the lesion shape gate; previous result kept',
           { previousTolerance }
         );
         this.notifySegmentationError(
@@ -1130,7 +1130,7 @@ class OneClickSegmentTool extends GrowCutBaseTool {
         );
         return;
       }
-      growCutLog.error('OneClickSegment: expand/shrink failed', { message });
+      growCutLog.error('ClickSegment: expand/shrink failed', { message });
     });
   }
 
@@ -1149,7 +1149,7 @@ class OneClickSegmentTool extends GrowCutBaseTool {
     const viewport = renderingEngine?.getViewport(viewportId);
     if (!labelmapVolume || !viewport) {
       growCutLog.warn(
-        'OneClickSegment: labelmap or viewport gone; cannot expand/shrink'
+        'ClickSegment: labelmap or viewport gone; cannot expand/shrink'
       );
       return;
     }
@@ -1196,7 +1196,7 @@ class OneClickSegmentTool extends GrowCutBaseTool {
         );
         lastClick.toleranceBytes = toleranceBytes;
         lastClick.filledPoints = filledPoints;
-        growCutLog.info('OneClickSegment: refill complete', {
+        growCutLog.info('ClickSegment: refill complete', {
           toleranceBytes,
           filledVoxels: filledPoints.length,
         });
@@ -1219,4 +1219,4 @@ class OneClickSegmentTool extends GrowCutBaseTool {
   }
 }
 
-export default OneClickSegmentTool;
+export default ClickSegmentTool;

@@ -1,5 +1,5 @@
 /**
- * Hover cursors shared by the one-click region segmentation tools.
+ * Hover cursors shared by the click-driven region segmentation tools.
  */
 
 /**

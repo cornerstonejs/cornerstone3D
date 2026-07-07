@@ -363,9 +363,9 @@
       }
     },
     "tools-segmentation": {
-      "oneClickSegment": {
-        "name": "One-Click Segment Tool",
-        "description": "Single-click lesion segmentation on PET: hover to scout candidates (plus/blocked cursor), click once to segment with a dynamically-derived one-sided threshold, then Shrink/Expand to fine-tune. No configuration."
+      "clickSegment": {
+        "name": "Click Segment Tool",
+        "description": "Click-to-segment lesions on PET: hover to scout candidates (plus/blocked cursor), click once to segment with a dynamically-derived one-sided threshold, then Shrink/Expand to fine-tune. No configuration."
       },
       "labelmapRendering": {
         "name": "Labelmap Segmentation Rendering",
