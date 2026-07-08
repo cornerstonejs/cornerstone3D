@@ -36,6 +36,9 @@ function internalAddSegmentationRepresentation(
       segmentationId
     )
   ) {
+    console.warn(
+      `Skipping labelmap representation of segmentation "${segmentationId}" on viewport "${viewportId}": the viewport displays none of the images the labelmap applies to.`
+    );
     return;
   }
 

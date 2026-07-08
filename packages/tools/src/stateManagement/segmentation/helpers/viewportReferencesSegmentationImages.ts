@@ -34,9 +34,43 @@ function getLayerReferencedImageIds(layer): string[] {
 }
 
 /**
+ * The imageIds the viewport currently displays. For volume viewports this is
+ * the union across ALL volumes: the no-argument `getImageIds()` reports only
+ * the first (default) volume, which would wrongly suppress a labelmap derived
+ * from a non-default volume (e.g. PT in a CT+PT fusion viewport). Reading the
+ * volume ids and resolving them through the volume cache also avoids
+ * `BaseVolumeViewport.getImageIds`, which throws before any volume actor
+ * exists. Returns `[]` whenever the ids cannot be determined so callers stay
+ * permissive.
+ */
+function getViewportImageIds(viewport: Types.IViewport): string[] {
+  const candidate = viewport as {
+    getAllVolumeIds?: () => string[];
+    getImageIds?: () => string[];
+  };
+
+  try {
+    if (typeof candidate.getAllVolumeIds === 'function') {
+      return candidate
+        .getAllVolumeIds()
+        .flatMap(
+          (volumeId) =>
+            (cache.getVolume(volumeId) as Types.IImageVolume)?.imageIds ?? []
+        );
+    }
+
+    return candidate.getImageIds?.() ?? [];
+  } catch (error) {
+    // A viewport that is not fully set up yet must not break the add flow -
+    // treat its ids as unknown.
+    return [];
+  }
+}
+
+/**
  * Determines whether a viewport is a suitable destination for a labelmap
  * segmentation, i.e. whether it actually displays any of the images the labelmap
- * applies to.
+ * applies to. For volume (including fusion) viewports every volume is considered.
  *
  * A labelmap carries `referencedImageIds` (the source series it was derived
  * from). A viewport (stack or volume) that shows none of those images - e.g. a
@@ -71,8 +105,7 @@ export function viewportReferencesSegmentationImages(
     return true;
   }
 
-  const viewportImageIds =
-    (viewport as { getImageIds?: () => string[] }).getImageIds?.() ?? [];
+  const viewportImageIds = getViewportImageIds(viewport);
 
   if (!viewportImageIds.length) {
     return true;
