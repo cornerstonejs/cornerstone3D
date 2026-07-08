@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.4.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.1...v5.4.2) (2026-07-08)
+
+### Bug Fixes
+
+- **labelmap:** use content-based comparison for segmentsHidden Set ([#2675](https://github.com/cornerstonejs/cornerstone3D/issues/2675)) ([275a1d1](https://github.com/cornerstonejs/cornerstone3D/commit/275a1d184f232bcc5780efc21e2a34fd1c7b97ee))
+- render color points with negative indices ([#2663](https://github.com/cornerstonejs/cornerstone3D/issues/2663)) ([5c0f39d](https://github.com/cornerstonejs/cornerstone3D/commit/5c0f39df70de0c5164c007efa743fd5f9d14c075))
+- update index calculation for x-axis ([#2701](https://github.com/cornerstonejs/cornerstone3D/issues/2701)) ([bcdedf4](https://github.com/cornerstonejs/cornerstone3D/commit/bcdedf444da965bf5c1a8199a3e499e02c7aa3b4))
+
 ## [5.4.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.0...v5.4.1) (2026-07-08)
 
 ### Bug Fixes

@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.4.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.1...v5.4.2) (2026-07-08)
+
+### Bug Fixes
+
+- update index calculation for x-axis ([#2701](https://github.com/cornerstonejs/cornerstone3D/issues/2701)) ([bcdedf4](https://github.com/cornerstonejs/cornerstone3D/commit/bcdedf444da965bf5c1a8199a3e499e02c7aa3b4))
+
 ## [5.4.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.0...v5.4.1) (2026-07-08)
 
 **Note:** Version bump only for package @cornerstonejs/core
