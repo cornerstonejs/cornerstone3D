@@ -4,6 +4,7 @@
 var { program } = require('commander');
 var path = require('path');
 var shell = require('shelljs');
+const { spawnSync } = require('child_process');
 const readline = require('readline');
 
 var examples = {};
@@ -36,6 +37,15 @@ function getSplittedPath(filePath) {
 function validPath(str) {
   return str?.replace(/\\\\/g, '/');
 }
+
+const rspackBin = validPath(
+  path.join(
+    rootPath,
+    'node_modules',
+    '.bin',
+    process.platform === 'win32' ? 'rspack.cmd' : 'rspack'
+  )
+);
 
 function calculateSubstringSimilarity(a, b) {
   let shorter = a;
@@ -195,7 +205,7 @@ if (configuration.examples) {
   closestExampleNames.sort((a, b) => a.similarity - b.similarity);
 
   let topClosestNames = closestExampleNames
-    .filter((item) => item.similarity < -2) // this is arbitrary and can be adjusted, but basically says at least two characters should match sequentially
+    .filter((item) => item.similarity <= -2) // this is arbitrary and can be adjusted, but basically says at least two characters should match sequentially
     .map((item) => item.name);
 
   if (exampleCount === 0 && topClosestNames.length) {
@@ -232,7 +242,7 @@ if (configuration.examples) {
         ) {
           // If user selected a valid example, run that example
           filterExamples[0] = topClosestNames[selectedIndex];
-          filteredExampleCorrectCase = filterExamples;
+          filteredExampleCorrectCase = filterExamples[0];
           rl.close();
           run();
         } else {
@@ -245,6 +255,11 @@ if (configuration.examples) {
         }
       }
     );
+  } else if (exampleCount === 0) {
+    console.log(
+      `\n=> Error: Did not find any examples matching ${filterExamples[0]}`
+    );
+    process.exit(1);
   } else {
     // say name of running example
     run();
@@ -278,11 +293,30 @@ function run() {
     // shell.cd(exBasePath);
     // You can run this with --no-cache after the serve to prevent caching
     // which can help when doing certain types of development.
-    shell.exec(
-      `rspack serve --host 0.0.0.0 ${
-        options.https ? '--https' : ''
-      } --config ${webpackConfigPath}`
-    );
+    const rspackArgs = [
+      'serve',
+      '--host',
+      '0.0.0.0',
+      ...(options.https ? ['--https'] : []),
+      '--config',
+      webpackConfigPath,
+    ];
+    // On Windows the rspack binary is a `.cmd` shim. Since Node's
+    // CVE-2024-27980 hardening, spawning a `.cmd`/`.bat` with `shell: false`
+    // fails with EINVAL, so run it through a shell on win32.
+    const isWin = process.platform === 'win32';
+    const result = spawnSync(rspackBin, rspackArgs, {
+      stdio: 'inherit',
+      shell: isWin,
+    });
+
+    if (result.error) {
+      console.error(`\n=> Failed to start rspack: ${result.error.message}`);
+      process.exit(1);
+    }
+    if (typeof result.status === 'number' && result.status !== 0) {
+      process.exit(result.status);
+    }
   } else {
     console.log('=> To run an example:');
     console.log('  $ npm run example -- PUT_YOUR_EXAMPLE_NAME_HERE\n');

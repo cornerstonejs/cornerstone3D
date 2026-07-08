@@ -151,11 +151,7 @@ export function postProcessDecodedPixels(
       maxAfterScale = scaledValues.max;
     }
   } else if (disableScale) {
-    imageFrame.preScale = {
-      enabled: true,
-      scaled: false,
-    };
-
+    // Do not set imageFrame.preScale when scaling is disabled (e.g. identity slope/intercept).
     minAfterScale = minBeforeScale;
     maxAfterScale = maxBeforeScale;
   }
@@ -522,4 +518,14 @@ const obj = {
   },
 };
 
-expose(obj);
+const workerEndpoint =
+  typeof self !== 'undefined' &&
+  typeof self.addEventListener === 'function' &&
+  typeof self.postMessage === 'function' &&
+  typeof self.document === 'undefined'
+    ? self
+    : undefined;
+
+if (workerEndpoint) {
+  expose(obj, workerEndpoint);
+}

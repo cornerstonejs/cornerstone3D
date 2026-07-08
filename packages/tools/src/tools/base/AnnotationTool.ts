@@ -41,6 +41,7 @@ import ChangeTypes from '../../enums/ChangeTypes';
 import { setAnnotationSelected } from '../../stateManagement/annotation/annotationSelection';
 import { addContourSegmentationAnnotation } from '../../utilities/contourSegmentation';
 import { safeStructuredClone } from '../../utilities/safeStructuredClone';
+import getViewportICamera from '../../utilities/getViewportICamera';
 
 const { DefaultHistoryMemo } = csUtils.HistoryMemo;
 
@@ -756,7 +757,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     const { viewport } = enabledElement;
     const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
 
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const viewPlaneNormal = options.viewplaneNormal ?? camera.viewPlaneNormal;
     const viewUp = options.viewUp ?? camera.viewUp;
 
@@ -794,6 +795,20 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
           viewPlaneNormal,
           viewUp
         );
+      } else if (csUtils.isGenericViewport(viewport)) {
+        // Native ("next") viewports are neither StackViewport nor
+        // BaseVolumeViewport; resolve the referenced image from the viewport's
+        // own view reference, which handles both stack and volume planar modes.
+        // Cast structurally: the param type excludes generic viewports, so the
+        // type guard narrows it to `never` here.
+        const genericViewport = viewport as unknown as {
+          getViewReference?: (specifier?: {
+            points?: Types.Point3[];
+          }) => { referencedImageId?: string } | undefined;
+        };
+        referencedImageId = genericViewport.getViewReference?.({
+          points: [points[0]],
+        })?.referencedImageId;
       } else {
         throw new Error('Unsupported viewport type');
       }

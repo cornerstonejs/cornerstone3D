@@ -1,6 +1,7 @@
 import { vec3, mat4 } from 'gl-matrix';
 import type { Types } from '@cornerstonejs/core';
 import {
+  ActorRenderMode,
   getRenderingEngine,
   metaData,
   utilities,
@@ -15,6 +16,37 @@ const getSpatialRegistration = (targetId, sourceId) =>
     targetId,
     sourceId
   );
+
+function isVolumeSliceViewport(
+  viewport: Types.IStackViewport | Types.IVolumeViewport
+): boolean {
+  if (viewport instanceof VolumeViewport) {
+    return true;
+  }
+
+  // Direct Generic ("next") planar viewports are not VolumeViewport instances;
+  // use their content-true mode to detect volume-backed slice rendering (so the
+  // stack-is-reversed index flip below is applied correctly).
+  if (utilities.viewportIsInVolumeMode(viewport)) {
+    return true;
+  }
+
+  const getDefaultActor = (
+    viewport as Types.IViewport & {
+      getDefaultActor?: () => {
+        actorMapper?: {
+          renderMode?: unknown;
+        };
+      };
+    }
+  ).getDefaultActor;
+  const renderMode = getDefaultActor?.call(viewport)?.actorMapper?.renderMode;
+
+  return (
+    renderMode === ActorRenderMode.CPU_VOLUME ||
+    renderMode === ActorRenderMode.VTK_VOLUME_SLICE
+  );
+}
 
 /**
  * Synchronizer callback to synchronize the source viewport image to the
@@ -117,7 +149,7 @@ export default async function imageSliceSyncCallback(
   );
 
   let imageIndexToSet = closestImageIdIndex2.index;
-  if (tViewport instanceof VolumeViewport) {
+  if (isVolumeSliceViewport(tViewport)) {
     // since in case of volume viewport our stack is reversed, we should
     // reverse the index as well
     imageIndexToSet = targetImageIds.length - closestImageIdIndex2.index - 1;
@@ -125,7 +157,7 @@ export default async function imageSliceSyncCallback(
 
   if (
     closestImageIdIndex2.index !== -1 &&
-    tViewport.getCurrentImageIdIndex() !== closestImageIdIndex2.index
+    tViewport.getCurrentImageIdIndex() !== imageIndexToSet
   ) {
     await utilities.jumpToSlice(tViewport.element, {
       imageIndex: imageIndexToSet,

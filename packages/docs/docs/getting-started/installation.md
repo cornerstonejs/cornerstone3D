@@ -39,6 +39,12 @@ yarn add @icr/polyseg-wasm
 
 If you are using [PNPM](https://pnpm.io), you can install packages by running:
 
+If `pnpm` is not already available in your environment, enable Corepack first:
+
+```bash
+corepack enable
+```
+
 ```bash
 pnpm install @cornerstonejs/core
 pnpm install @cornerstonejs/tools

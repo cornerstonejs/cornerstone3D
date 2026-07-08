@@ -42,7 +42,7 @@ setTitleAndDescription(
   'Here we demonstrate how to import or export a DICOM SEG from a Cornerstone3D volume.'
 );
 
-const size = '500px';
+const size = '512px';
 
 const demoToolbar = document.getElementById('demo-toolbar');
 
@@ -107,7 +107,7 @@ addInstruction(
   "After making changes, click 'Export SEG' to download the updated segmentation as a DICOM SEG file."
 );
 addInstruction(
-  "You can also upload local DICOM images or SEG files by using the 'Import DICOM' and 'Import SEG' buttons."
+  "You can also load local DICOM images or SEG files from disk using the 'Import DICOM' and 'Import SEG' buttons."
 );
 
 const state = {

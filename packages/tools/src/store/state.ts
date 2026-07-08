@@ -1,3 +1,4 @@
+import { utilities } from '@cornerstonejs/core';
 import type { IToolGroup, IToolClassReference } from '../types';
 import type Synchronizer from './SynchronizerManager/Synchronizer';
 import svgNodeCache, { resetSvgNodeCache } from './svgNodeCache';
@@ -45,7 +46,7 @@ let state: ICornerstoneTools3dState = {
 function resetCornerstoneToolsState(): void {
   resetSvgNodeCache();
   state = {
-    ...structuredClone({
+    ...utilities.deepClone({
       ...defaultState,
       svgNodeCache: {},
     }),

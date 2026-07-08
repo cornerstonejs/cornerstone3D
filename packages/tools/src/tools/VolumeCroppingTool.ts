@@ -20,6 +20,10 @@ import {
 } from '@cornerstonejs/core';
 
 import { getToolGroup } from '../store/ToolGroupManager';
+import getViewportICamera from '../utilities/getViewportICamera';
+import setViewportCamera, {
+  resetViewportCamera,
+} from '../utilities/setViewportCamera';
 import { Events } from '../enums';
 
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
@@ -37,6 +41,11 @@ import {
   addLine3DBetweenPoints,
   calculateAdaptiveSphereRadius,
 } from '../utilities/draw3D';
+import { isDragOwnedBy } from '../utilities/interactionDragCoordinator';
+import {
+  applyViewportPresentation,
+  getViewportPresentation,
+} from '../utilities/viewportPresentation';
 
 /**
  * VolumeCroppingTool provides manipulatable spheres and real-time volume cropping capabilities.
@@ -197,6 +206,7 @@ class VolumeCroppingTool extends BaseTool {
   originalClippingPlanes: ClippingPlane[] = [];
   draggingSphereIndex: number | null = null;
   rotatePlanesOnDrag: boolean = false; // If true, dragging rotates clipping planes instead of camera
+  suppressPlaneRotationForCurrentDrag: boolean = false;
   cornerDragOffset: [number, number, number] | null = null;
   faceDragOffset: number | null = null;
   // Store volume direction vectors for non-axis-aligned volumes
@@ -283,9 +293,9 @@ class VolumeCroppingTool extends BaseTool {
               return;
             }
             const { viewport } = element;
-            const viewPresentation = viewport.getViewPresentation();
-            viewport.resetCamera();
-            viewport.setViewPresentation(viewPresentation);
+            const viewPresentation = getViewportPresentation(viewport);
+            resetViewportCamera(viewport);
+            applyViewportPresentation(viewport, viewPresentation);
             viewport.render();
           });
           resizeObserver.observe(element);
@@ -382,8 +392,14 @@ class VolumeCroppingTool extends BaseTool {
     const { element } = eventDetail;
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
-    const actorEntry = viewport.getDefaultActor();
-    const actor = actorEntry.actor as Types.VolumeActor;
+    this.suppressPlaneRotationForCurrentDrag = isDragOwnedBy(
+      viewport.id,
+      'orientation-controller'
+    );
+    const actor = this._getVolumeActor(viewport as Types.IVolumeViewport);
+    if (!actor) {
+      return false;
+    }
     const mapper = actor.getMapper();
 
     const mouseCanvas: [number, number] = [
@@ -479,6 +495,7 @@ class VolumeCroppingTool extends BaseTool {
         this.draggingSphereIndex = null;
         this.cornerDragOffset = null;
         this.faceDragOffset = null;
+        this.suppressPlaneRotationForCurrentDrag = false;
 
         viewport.render();
         this._hasResolutionChanged = false;
@@ -549,6 +566,32 @@ class VolumeCroppingTool extends BaseTool {
    */
   getHandlesVisible() {
     return this.configuration.showHandles;
+  }
+
+  /**
+   * Sets the radius of all cropping handles and re-renders the viewport.
+   *
+   * @param radius - New handle radius in world units
+   */
+  setHandleRadius(radius: number) {
+    this.configuration.sphereRadius = radius;
+
+    this.sphereStates.forEach((state) => {
+      if (state?.sphereSource?.setRadius) {
+        state.sphereSource.setRadius(radius);
+        state.sphereSource.modified();
+      }
+    });
+
+    const viewportsInfo = this._getViewportsInfo();
+    const [viewport3D] = viewportsInfo;
+    if (!viewport3D) {
+      return;
+    }
+
+    const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
+    const viewport = renderingEngine?.getViewport(viewport3D.viewportId);
+    viewport?.render();
   }
 
   /**
@@ -679,7 +722,10 @@ class VolumeCroppingTool extends BaseTool {
       this._onMouseMoveSphere(evt);
     } else {
       const shiftKey = (evt.detail.event as MouseEvent)?.shiftKey ?? false;
-      if (this.rotatePlanesOnDrag === true || shiftKey) {
+      if (
+        (this.rotatePlanesOnDrag === true || shiftKey) &&
+        !this.suppressPlaneRotationForCurrentDrag
+      ) {
         this._rotateClippingPlanes(evt);
         return;
       }
@@ -689,7 +735,7 @@ class VolumeCroppingTool extends BaseTool {
       const enabledElement = getEnabledElement(element);
       const { viewport } = enabledElement;
 
-      const camera = viewport.getCamera();
+      const camera = getViewportICamera(viewport);
       const width = element.clientWidth;
       const height = element.clientHeight;
 
@@ -920,9 +966,11 @@ class VolumeCroppingTool extends BaseTool {
   };
 
   _updateClippingPlanes(viewport) {
-    const actorEntry = viewport.getDefaultActor();
-    const actor = actorEntry.actor;
-    const mapper = actor.getMapper();
+    const actor = this._getVolumeActor(viewport);
+    const mapper = this._getVolumeMapper(viewport);
+    if (!actor || !mapper) {
+      return;
+    }
     const matrix = actor.getMatrix();
 
     if (!this.configuration.showClippingPlanes) {
@@ -1113,14 +1161,14 @@ class VolumeCroppingTool extends BaseTool {
     if (!viewport) {
       return;
     }
-    const volumeActors = viewport.getActors();
-    if (!volumeActors || volumeActors.length === 0) {
+    const volumeActor = this._getVolumeActor(viewport);
+    if (!volumeActor) {
       console.warn(
         'VolumeCroppingTool: No volume actors found in the viewport.'
       );
       return;
     }
-    const imageData = volumeActors[0].actor.getMapper().getInputData();
+    const imageData = volumeActor.getMapper().getInputData();
     if (!imageData) {
       console.warn('VolumeCroppingTool: No image data found for volume actor.');
       return;
@@ -1289,9 +1337,7 @@ class VolumeCroppingTool extends BaseTool {
       }
     });
 
-    const mapper = viewport
-      .getDefaultActor()
-      .actor.getMapper() as vtkVolumeMapper;
+    const mapper = volumeActor.getMapper() as vtkVolumeMapper;
 
     mapper.addClippingPlane(planeXMin);
     mapper.addClippingPlane(planeXMax);
@@ -1334,7 +1380,10 @@ class VolumeCroppingTool extends BaseTool {
     viewport?: Types.IVolumeViewport
   ): Types.VolumeActor | undefined {
     const vp = viewport || this._getViewport();
-    return vp?.getDefaultActor()?.actor as Types.VolumeActor | undefined;
+    return vp
+      ?.getActors?.()
+      ?.find((entry) => entry.actor?.getClassName?.() === 'vtkVolume')
+      ?.actor as Types.VolumeActor | undefined;
   }
 
   _getVolumeMapper(
@@ -1364,7 +1413,10 @@ class VolumeCroppingTool extends BaseTool {
   }
 
   _updateClippingPlanesFromFaceSpheres(viewport) {
-    const mapper = viewport.getDefaultActor().actor.getMapper();
+    const mapper = this._getVolumeMapper(viewport);
+    if (!mapper) {
+      return;
+    }
     // Update origins in originalClippingPlanes
     this.originalClippingPlanes[PLANEINDEX.XMIN].origin = [
       ...this.sphereStates[SPHEREINDEX.XMIN].point,
@@ -1721,7 +1773,7 @@ class VolumeCroppingTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const width = element.clientWidth;
     const height = element.clientHeight;
 
@@ -2162,7 +2214,7 @@ class VolumeCroppingTool extends BaseTool {
     mat4.rotate(transform, transform, angle, axis);
     vec3.transformMat4(newViewUp, viewUp, transform);
 
-    viewport.setCamera({
+    setViewportCamera(viewport, {
       position: newPosition,
       viewUp: newViewUp,
       focalPoint: newFocalPoint,

@@ -2,6 +2,7 @@ import { createSynchronizer } from '../../store/SynchronizerManager';
 import { Enums } from '@cornerstonejs/core';
 import cameraSyncCallback from '../callbacks/cameraSyncCallback';
 import type Synchronizer from '../../store/SynchronizerManager/Synchronizer';
+import type { ISynchronizerEventHandler } from '../../types';
 
 const { CAMERA_MODIFIED } = Enums.Events;
 
@@ -18,7 +19,7 @@ export default function createCameraPositionSynchronizer(
   const cameraPositionSynchronizer = createSynchronizer(
     synchronizerName,
     CAMERA_MODIFIED,
-    cameraSyncCallback
+    cameraSyncCallback as ISynchronizerEventHandler
   );
 
   return cameraPositionSynchronizer;

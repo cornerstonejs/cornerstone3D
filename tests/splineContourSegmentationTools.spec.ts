@@ -1,13 +1,14 @@
 import { test } from 'playwright-test-coverage';
 import type { Page, Locator } from '@playwright/test';
 import {
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   visitExample,
   screenShotPaths,
+  waitForImageRendered,
 } from './utils/index';
 
 test.beforeEach(async ({ page }) => {
-  await visitExample(page, 'splineContourSegmentationTools');
+  await visitExample(page, 'splineContourSegmentationTools', 2000);
 });
 
 test.describe('Spline Contour Segmentation Tools', async () => {
@@ -21,9 +22,9 @@ test.describe('Spline Contour Segmentation Tools', async () => {
       canvas,
       segmentIndex: undefined,
     });
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      canvas,
+      'canvas.cornerstone-canvas',
       screenShotPaths.splineContourSegmentationTools.catmullRomSplineROI
     );
   });
@@ -38,9 +39,9 @@ test.describe('Spline Contour Segmentation Tools', async () => {
       canvas,
       segmentIndex: undefined,
     });
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      canvas,
+      'canvas.cornerstone-canvas',
       screenShotPaths.splineContourSegmentationTools.linearSplineROI
     );
   });
@@ -55,9 +56,9 @@ test.describe('Spline Contour Segmentation Tools', async () => {
       canvas,
       segmentIndex: undefined,
     });
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      canvas,
+      'canvas.cornerstone-canvas',
       screenShotPaths.splineContourSegmentationTools.bsplineROI
     );
   });
@@ -74,9 +75,9 @@ test.describe('Spline Contour Segmentation Tools', async () => {
     });
     await drawLinearSplineOnViewportCenter({ page, canvas, segmentIndex: 2 });
     await drawBSplineOnViewportRight({ page, canvas, segmentIndex: 3 });
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      canvas,
+      'canvas.cornerstone-canvas',
       screenShotPaths.splineContourSegmentationTools.splinesOnSegmentTwo
     );
   });
@@ -104,9 +105,9 @@ test.describe('Spline Contour Segmentation Tools', async () => {
       canvas,
       segmentIndex: 3,
     });
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      canvas,
+      'canvas.cornerstone-canvas',
       screenShotPaths.splineContourSegmentationTools.splinesOnSegmentTwo
     );
   });
@@ -120,8 +121,40 @@ async function updateSplineStyleInputs({ page, splineStyle }) {
   }
 }
 
-async function drawSpline({ page, canvas, points, segmentIndex = 1 }) {
-  await page.getByRole('combobox').first().selectOption(String(segmentIndex));
+async function drawSpline({
+  page,
+  canvas,
+  points,
+  segmentIndex = 1,
+  preSettleMs = 1000,
+}) {
+  // Let the viewport go fully idle before triggering the segment re-render, so
+  // the wait-rendered below starts from a clean state. On the self-hosted runner
+  // the segment-select re-render blanks the base image for a while (see below),
+  // and a brief settle before it makes the subsequent wait reliable. Applied to
+  // all spline draws.
+  if (preSettleMs) {
+    await page.waitForTimeout(preSettleMs);
+  }
+  // Activating/creating the segment fires a full viewport.render() (contour
+  // display -> viewport.render()). On the self-hosted runner that render is slow
+  // (GPU readback stalls) so the viewport sits on the cleared background for a
+  // few hundred ms. Wait for that render to finish before placing control
+  // points — otherwise the early clicks land while the canvas is blank /
+  // mid-re-render and the contour is drawn at the wrong coordinates (a garbled
+  // ROI: real cause of the spline snapshot diffs, not a fill-rendering issue).
+  // Best-effort: if selecting the segment doesn't re-render (already active),
+  // fall through rather than hang.
+  try {
+    await waitForImageRendered(
+      page,
+      () =>
+        page.getByRole('combobox').first().selectOption(String(segmentIndex)),
+      { elementSelector: '[data-viewport-uid]', timeout: 8000 }
+    );
+  } catch {
+    // no re-render was triggered; nothing to wait for
+  }
 
   for (const point of points) {
     await canvas.click({
@@ -130,10 +163,12 @@ async function drawSpline({ page, canvas, points, segmentIndex = 1 }) {
         y: point[1],
       },
     });
+    // Small pause between control-point clicks so each registers in order.
+    await page.waitForTimeout(150);
   }
 
-  // Wait a few milliseconds otherwise the spline does not close
-  await new Promise((resolve) => setTimeout(resolve, 200));
+  // Let the spline close and settle before the snapshot.
+  await new Promise((resolve) => setTimeout(resolve, 400));
 }
 
 async function drawCatmullROMSplineOnViewportLeft({
