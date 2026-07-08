@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/codemods",
-  "version": "5.2.1",
+  "version": "5.3.0",
   "description": "Codemod registry packages for Cornerstone3D migrations",
   "keywords": [
     "cornerstone3d",

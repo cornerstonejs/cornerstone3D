@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [5.3.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.2.2...v5.3.0) (2026-07-07)
+
+### Features
+
+- **rendering:** unify render backend selection with live GPU/CPU switching ([#2782](https://github.com/cornerstonejs/cornerstone3D/issues/2782)) ([92b3d59](https://github.com/cornerstonejs/cornerstone3D/commit/92b3d59fe776fd493251c9debf9e7e532d495311))
+
+## [5.2.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.2.1...v5.2.2) (2026-07-07)
+
+**Note:** Version bump only for package @cornerstonejs/tools
+
 ## [5.2.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.2.0...v5.2.1) (2026-07-06)
 
 **Note:** Version bump only for package @cornerstonejs/tools
