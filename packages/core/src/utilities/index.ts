@@ -70,6 +70,7 @@ import getViewportImageIds from './getViewportImageIds';
 import { getRandomSampleFromArray } from './getRandomSampleFromArray';
 import { getVolumeId } from './getVolumeId';
 import { hasFloatScalingParameters } from './hasFloatScalingParameters';
+import { getScalingMode } from './getScalingMode';
 import { pointInShapeCallback } from './pointInShapeCallback';
 // name spaces
 export * as planar from './planar';
@@ -194,6 +195,7 @@ export {
   getVolumeId,
   color,
   hasFloatScalingParameters,
+  getScalingMode,
   getDynamicVolumeInfo,
   autoLoad,
   scaleArray,
