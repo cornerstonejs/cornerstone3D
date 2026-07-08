@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.4.5](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.4...v5.4.5) (2026-07-08)
+
+### Bug Fixes
+
+- **Synchronizer:** actually remove event listener on source removal ([#2772](https://github.com/cornerstonejs/cornerstone3D/issues/2772)) ([455d78e](https://github.com/cornerstonejs/cornerstone3D/commit/455d78e812518bdaac1b2f335c08ae7261a7a5a7))
+
 ## [5.4.4](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.3...v5.4.4) (2026-07-08)
 
 ### Bug Fixes
