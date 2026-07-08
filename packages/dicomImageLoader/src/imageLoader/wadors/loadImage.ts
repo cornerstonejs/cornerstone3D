@@ -136,11 +136,27 @@ function loadImage(
   );
   if (registryPromise) {
     return {
-      promise: registryPromise as Promise<Types.IImage>,
+      // A registry frame the worker can't decode must not be terminal: fall
+      // back to the network /frames/N path, whose transfer-syntax=*
+      // negotiation lets the server transcode to a decodable syntax.
+      promise: registryPromise.catch((error) => {
+        console.warn(
+          `Failed to decode registry frame data for ${imageId}; falling back to network retrieval`,
+          error
+        );
+        return loadImageFromNetwork(imageId, options).promise;
+      }) as Promise<Types.IImage>,
       cancelFn: undefined,
     };
   }
 
+  return loadImageFromNetwork(imageId, options);
+}
+
+function loadImageFromNetwork(
+  imageId: string,
+  options: CornerstoneWadoRsLoaderOptions = {}
+): Types.IImageLoadObject {
   const imageRetrievalPool = getImageRetrievalPool();
 
   const start = new Date().getTime();
