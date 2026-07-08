@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.4.6](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.5...v5.4.6) (2026-07-08)
+
+### Bug Fixes
+
+- **wsi:** correct point annotation placement on SM/WSI viewports at non-default devicePixelRatioPatch @cornerstonejs/core WSIViewport to stop scaling canvas coordinates bydevicePixelRatio in canvasToIndex/indexToCanvas. WSIViewport sizes its canvasin CSS pixels and its transform works in CSS-pixel space, so the extra DPR ([#2769](https://github.com/cornerstonejs/cornerstone3D/issues/2769)) ([a91cb5d](https://github.com/cornerstonejs/cornerstone3D/commit/a91cb5de36fa1bd0a8e43640b30e77c740f71115))
+
 ## [5.4.5](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.4...v5.4.5) (2026-07-08)
 
 ### Bug Fixes
