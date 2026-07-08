@@ -279,4 +279,90 @@ describe('encodeFramesToTransferSyntax - RLE Lossless', () => {
     expect(Array.from(segments[0])).toEqual([0x12, 0x00, 0xab]);
     expect(Array.from(segments[1])).toEqual([0x34, 0xff, 0x00]);
   });
+
+  it('round-trips an 8-bit frame through the local RLE encoder and decoder', () => {
+    const Rows = 2;
+    const Columns = 3;
+    const frames = [Uint8Array.from([0, 5, 5, 5, 200, 0])];
+
+    const { pixelData } = encodeFramesToTransferSyntax({
+      transferSyntaxUID: RLE_LOSSLESS_TRANSFER_SYNTAX_UID,
+      frames,
+      bitsAllocated: 8,
+    });
+
+    const decoded = decodeSegFramesFromMultiframe({
+      Rows,
+      Columns,
+      BitsAllocated: 8,
+      NumberOfFrames: 1,
+      PixelData: pixelData,
+      _meta: {
+        TransferSyntaxUID: { Value: [RLE_LOSSLESS_TRANSFER_SYNTAX_UID] },
+      },
+    });
+
+    expect(decoded).toHaveLength(1);
+    expect(Array.from(decoded[0])).toEqual(Array.from(frames[0]));
+  });
+
+  it('round-trips a 16-bit (>255 label) frame through the local RLE encoder and decoder', () => {
+    // Regression: 16-bit RLE previously went through dcmjs' single-sample
+    // decoder, which rejects the two segments a 16-bit frame carries and
+    // returned all zeros. Labels >255 must survive the round-trip.
+    const Rows = 2;
+    const Columns = 3;
+    const frames = [Uint16Array.from([0, 300, 300, 65535, 1, 0])];
+
+    const { pixelData } = encodeFramesToTransferSyntax({
+      transferSyntaxUID: RLE_LOSSLESS_TRANSFER_SYNTAX_UID,
+      frames,
+      bitsAllocated: 16,
+    });
+
+    const decoded = decodeSegFramesFromMultiframe({
+      Rows,
+      Columns,
+      BitsAllocated: 16,
+      NumberOfFrames: 1,
+      PixelData: pixelData,
+      _meta: {
+        TransferSyntaxUID: { Value: [RLE_LOSSLESS_TRANSFER_SYNTAX_UID] },
+      },
+    });
+
+    expect(decoded).toHaveLength(1);
+    expect(decoded[0]).toBeInstanceOf(Uint16Array);
+    expect(Array.from(decoded[0])).toEqual(Array.from(frames[0]));
+  });
+});
+
+describe('decodeSegFramesFromMultiframe - uncompressed (Explicit VR LE)', () => {
+  it('decodes 16-bit frames as full 16-bit samples (not halved bytes)', () => {
+    // Regression: the uncompressed 16-bit path sliced a Uint8 byte view by pixel
+    // count, so each "frame" covered only half a real frame and frame values
+    // were corrupted. Two 2x2 16-bit frames must decode to their true values.
+    const Rows = 2;
+    const Columns = 2;
+    const frame0 = Uint16Array.from([0, 300, 300, 0]);
+    const frame1 = Uint16Array.from([1, 2, 40000, 65535]);
+    const combined = Uint16Array.from([...frame0, ...frame1]);
+
+    const decoded = decodeSegFramesFromMultiframe({
+      Rows,
+      Columns,
+      BitsAllocated: 16,
+      NumberOfFrames: 2,
+      PixelData: combined,
+      _meta: {
+        TransferSyntaxUID: {
+          Value: [EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID],
+        },
+      },
+    });
+
+    expect(decoded).toHaveLength(2);
+    expect(Array.from(decoded[0])).toEqual(Array.from(frame0));
+    expect(Array.from(decoded[1])).toEqual(Array.from(frame1));
+  });
 });

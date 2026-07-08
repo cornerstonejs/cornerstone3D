@@ -73,17 +73,24 @@ describe('resolveFrameImageIds', () => {
     ).toEqual(['wadouri:https://x/seg.dcm']);
   });
 
-  it('cannot auto-generate for an unrecognized scheme: repeats the base id', () => {
-    // Documented fallback — callers must pass frameImageIds/getFrameImageId for
-    // schemes the adapter does not know how to address per-frame.
-    const result = resolveFrameImageIds({
-      segImageId: 'custom:opaque-handle',
-      numberOfFrames: 3,
-    });
-    expect(result).toEqual([
-      'custom:opaque-handle',
-      'custom:opaque-handle',
-      'custom:opaque-handle',
-    ]);
+  it('throws for a multiframe unrecognized scheme instead of repeating the base id', () => {
+    // Repeating the base id would decode frame 1 and paint it onto every slice,
+    // silently corrupting the segmentation. Callers must pass frameImageIds /
+    // getFrameImageId for schemes the adapter cannot address per-frame.
+    expect(() =>
+      resolveFrameImageIds({
+        segImageId: 'custom:opaque-handle',
+        numberOfFrames: 3,
+      })
+    ).toThrow(/Cannot derive per-frame imageIds/);
+  });
+
+  it('returns the single base id for an unrecognized scheme when single-frame', () => {
+    expect(
+      resolveFrameImageIds({
+        segImageId: 'custom:opaque-handle',
+        numberOfFrames: 1,
+      })
+    ).toEqual(['custom:opaque-handle']);
   });
 });

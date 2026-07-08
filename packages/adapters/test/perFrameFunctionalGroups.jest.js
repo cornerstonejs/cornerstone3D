@@ -118,4 +118,42 @@ describe('applyPerFrameFunctionalGroups', () => {
     expect(dataset.NumberOfFrames).toBe(1);
     expect(dataset.PerFrameFunctionalGroupsSequence).toHaveLength(1);
   });
+
+  it('omits SegmentIdentificationSequence on the LABELMAP path (no referencedSegmentNumber)', () => {
+    const dataset = {};
+    applyPerFrameFunctionalGroups(dataset, [
+      {
+        // LABELMAP: no referencedSegmentNumber
+        sourceImageSequenceItem: { ReferencedSOPInstanceUID: 'SOP-A' },
+      },
+    ]);
+
+    const [group] = dataset.PerFrameFunctionalGroupsSequence;
+    expect('SegmentIdentificationSequence' in group).toBe(false);
+    expect(
+      group.DerivationImageSequence[0].SourceImageSequence[0]
+        .ReferencedSOPInstanceUID
+    ).toBe('SOP-A');
+  });
+
+  it('strips an inherited SegmentIdentificationSequence when none is provided', () => {
+    const dataset = {
+      PerFrameFunctionalGroupsSequence: [
+        {
+          SegmentIdentificationSequence: { ReferencedSegmentNumber: 7 },
+          PlanePositionSequence: { ImagePositionPatient: [0, 0, 0] },
+        },
+      ],
+    };
+    applyPerFrameFunctionalGroups(dataset, [
+      {
+        sourceImageSequenceItem: { ReferencedSOPInstanceUID: 'SOP-A' },
+      },
+    ]);
+
+    const [group] = dataset.PerFrameFunctionalGroupsSequence;
+    expect('SegmentIdentificationSequence' in group).toBe(false);
+    // Other inherited fields are preserved.
+    expect(group.PlanePositionSequence.ImagePositionPatient).toEqual([0, 0, 0]);
+  });
 });

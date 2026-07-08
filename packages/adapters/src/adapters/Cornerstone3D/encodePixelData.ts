@@ -1,6 +1,4 @@
-import { constants, utilities as dcmjsUtilities } from 'dcmjs';
-
-const { decode: decodeDcmjsRleRows } = dcmjsUtilities.compression;
+import { constants } from 'dcmjs';
 
 // dcmjs has no named constant for RLE Lossless, so keep it declared here.
 const RLE_LOSSLESS_TRANSFER_SYNTAX_UID = '1.2.840.10008.1.2.5';
@@ -41,7 +39,40 @@ function getSegNumberOfFramesFromDataset(
 }
 
 /**
+ * Decodes a single PackBits/RLE byte segment (PS3.5 Annex G) into `outLength`
+ * bytes. `start`/`end` bound the segment's byte range within `data`.
+ */
+function decodeRlePackBitsSegment(
+  data: Int8Array,
+  start: number,
+  end: number,
+  outLength: number
+): Uint8Array {
+  const out = new Uint8Array(outLength);
+  let outIndex = 0;
+  let inIndex = start;
+
+  while (inIndex < end && outIndex < outLength) {
+    const n = data[inIndex++];
+
+    if (n >= 0 && n <= 127) {
+      for (let i = 0; i < n + 1 && outIndex < outLength; ++i) {
+        out[outIndex++] = data[inIndex++] & 0xff;
+      }
+    } else if (n <= -1 && n >= -127) {
+      const value = data[inIndex++] & 0xff;
+      for (let j = 0; j < -n + 1 && outIndex < outLength; ++j) {
+        out[outIndex++] = value;
+      }
+    }
+  }
+
+  return out;
+}
+
+/**
  * Decodes one DICOM RLE-lossless fragment into packed bytes (one sample plane).
+ * Used for the 1-bit binary path, which always carries exactly one segment.
  */
 function decodeRleLosslessToPackedBytes(
   rleData: ArrayBuffer | Uint8Array,
@@ -59,44 +90,91 @@ function decodeRleLosslessToPackedBytes(
     frameData.byteOffset,
     frameData.byteLength
   );
-  const out = new Uint8Array(packedByteLength);
   const numSegments = header.getInt32(0, true);
 
-  // This decoder produces a single packed sample plane (see the function's
-  // docstring) and only sizes `out` for one segment. Binary (1-bit) SEG RLE
-  // frames always carry exactly one segment; multi-byte planes are decoded
-  // elsewhere via dcmjs. Reject anything else rather than silently dropping
-  // the extra segments' data.
+  // Binary (1-bit) SEG RLE frames always carry exactly one segment. Reject
+  // anything else rather than silently dropping the extra segments' data;
+  // multi-byte (8/16-bit) frames are decoded by decodeRleMultiByteFrame.
   if (numSegments !== 1) {
     throw new Error(
       `Expected a single RLE segment for SEG re-encode, got ${numSegments}`
     );
   }
 
-  let outIndex = 0;
-  let inIndex = header.getInt32(4, true);
-  let maxIndex = header.getInt32(8, true);
+  const start = header.getInt32(4, true);
+  let end = header.getInt32(8, true);
 
-  if (maxIndex === 0) {
-    maxIndex = frameData.length;
+  if (end === 0) {
+    end = frameData.length;
   }
 
-  while (inIndex < maxIndex && outIndex < packedByteLength) {
-    const n = data[inIndex++];
+  return decodeRlePackBitsSegment(data, start, end, packedByteLength);
+}
 
-    if (n >= 0 && n <= 127) {
-      for (let i = 0; i < n + 1 && outIndex < packedByteLength; ++i) {
-        out[outIndex++] = data[inIndex++] & 0xff;
-      }
-    } else if (n <= -1 && n >= -127) {
-      const value = data[inIndex++] & 0xff;
-      for (let j = 0; j < -n + 1 && outIndex < packedByteLength; ++j) {
-        out[outIndex++] = value;
-      }
-    }
+/**
+ * Decodes one RLE-lossless SEG frame carrying 8- or 16-bit samples. Mirrors the
+ * encoder in this file (getRleSegmentsForFrame): 8-bit = one byte segment;
+ * 16-bit = segment 0 high byte, segment 1 low byte (PS3.5 Annex G, MSB-first).
+ */
+function decodeRleMultiByteFrame(
+  rleData: ArrayBuffer | Uint8Array,
+  samplesPerFrame: number,
+  bitsAllocated: number
+): Uint8Array | Uint16Array {
+  const frameData =
+    rleData instanceof Uint8Array ? rleData : new Uint8Array(rleData);
+  const header = new DataView(
+    frameData.buffer,
+    frameData.byteOffset,
+    frameData.byteLength
+  );
+  const data = new Int8Array(
+    frameData.buffer,
+    frameData.byteOffset,
+    frameData.byteLength
+  );
+  const numSegments = header.getInt32(0, true);
+  const bytesPerSample = Math.ceil(bitsAllocated / 8);
+
+  if (numSegments !== bytesPerSample) {
+    throw new Error(
+      `Expected ${bytesPerSample} RLE segment(s) for ${bitsAllocated}-bit SEG, got ${numSegments}`
+    );
   }
 
-  return out;
+  const segmentStart = (index: number) => header.getInt32(4 + index * 4, true);
+
+  if (bitsAllocated <= 8) {
+    return decodeRlePackBitsSegment(
+      data,
+      segmentStart(0),
+      frameData.length,
+      samplesPerFrame
+    );
+  }
+
+  // 16-bit: segment 0 = high byte, segment 1 = low byte.
+  const highStart = segmentStart(0);
+  const lowStart = segmentStart(1);
+  const highBytes = decodeRlePackBitsSegment(
+    data,
+    highStart,
+    lowStart,
+    samplesPerFrame
+  );
+  const lowBytes = decodeRlePackBitsSegment(
+    data,
+    lowStart,
+    frameData.length,
+    samplesPerFrame
+  );
+
+  const frame = new Uint16Array(samplesPerFrame);
+  for (let i = 0; i < samplesPerFrame; i++) {
+    frame[i] = ((highBytes[i] << 8) | lowBytes[i]) & 0xffff;
+  }
+
+  return frame;
 }
 
 /**
@@ -143,33 +221,38 @@ function decodeSegFramesFromMultiframe(
   }
 
   if (transferSyntaxUid === RLE_LOSSLESS_TRANSFER_SYNTAX_UID) {
+    // 8/16-bit RLE. dcmjs' single-sample decoder rejects the 2-segment frames a
+    // 16-bit SEG carries (returning all zeros), so decode per-frame here in a
+    // way that mirrors this file's encoder for both 8- and 16-bit.
     const encodedFrames = Array.isArray(multiframe.PixelData)
       ? multiframe.PixelData
       : [multiframe.PixelData];
-    const decoded = decodeDcmjsRleRows(
-      encodedFrames,
-      rows,
-      columns
-    ) as Uint8Array;
-    const frames: Uint8Array[] = [];
+    const frames: (Uint8Array | Uint16Array)[] = [];
 
     for (let frameIndex = 0; frameIndex < numberOfFrames; frameIndex++) {
-      const start = frameIndex * samplesPerFrame;
-      frames.push(decoded.subarray(start, start + samplesPerFrame));
+      const rleFrame = encodedFrames[frameIndex];
+
+      if (!rleFrame) {
+        frames.push(
+          bitsAllocated <= 8
+            ? new Uint8Array(samplesPerFrame)
+            : new Uint16Array(samplesPerFrame)
+        );
+        continue;
+      }
+
+      frames.push(
+        decodeRleMultiByteFrame(rleFrame, samplesPerFrame, bitsAllocated)
+      );
     }
 
     return frames;
   }
 
-  const buffer = asUint8PixelData(multiframe.PixelData);
-  const frames: Uint8Array[] = [];
-
-  for (let frameIndex = 0; frameIndex < numberOfFrames; frameIndex++) {
-    const start = frameIndex * samplesPerFrame;
-    frames.push(buffer.subarray(start, start + samplesPerFrame));
-  }
-
-  return frames;
+  // Uncompressed (Explicit VR LE) 8- or 16-bit frames. getBitmapFramesFromDataset
+  // reads 16-bit PixelData as Uint16Array (by value), avoiding the byte/sample
+  // confusion that halved 16-bit frames when sliced from a Uint8 view.
+  return getBitmapFramesFromDataset(multiframe).frames;
 }
 
 function createDecodeImageDataFromMultiframe(
@@ -362,14 +445,23 @@ function getBitmapFramesFromDataset(dataset: {
   return { frames, bitsAllocated };
 }
 
-function packBits(samples: ArrayLike<number>) {
-  const output: number[] = [];
-  let i = 0;
+/**
+ * PackBits (PS3.5 Annex G) encodes the samples in `[start, end)` into `output`.
+ * Runs never cross the range boundary, which is how the per-row reset in
+ * {@link packBits} keeps runs from spanning image rows.
+ */
+function packBitsRange(
+  samples: ArrayLike<number>,
+  start: number,
+  end: number,
+  output: number[]
+) {
+  let i = start;
 
-  while (i < samples.length) {
+  while (i < end) {
     let replicateRunLength = 1;
     while (
-      i + replicateRunLength < samples.length &&
+      i + replicateRunLength < end &&
       replicateRunLength < 128 &&
       samples[i + replicateRunLength] === samples[i]
     ) {
@@ -384,10 +476,10 @@ function packBits(samples: ArrayLike<number>) {
 
     const literalStart = i;
     i++;
-    while (i < samples.length) {
+    while (i < end) {
       replicateRunLength = 1;
       while (
-        i + replicateRunLength < samples.length &&
+        i + replicateRunLength < end &&
         replicateRunLength < 128 &&
         samples[i + replicateRunLength] === samples[i]
       ) {
@@ -406,6 +498,26 @@ function packBits(samples: ArrayLike<number>) {
     for (let j = literalStart; j < i; j++) {
       output.push(samples[j] & 0xff);
     }
+  }
+}
+
+/**
+ * PackBits-encodes a byte segment. When `rowLength` (bytes per image row) is
+ * supplied and evenly divides the segment, each row is encoded independently so
+ * no run — replicate or literal — spans a row boundary, as PS3.5 Annex G requires
+ * and row-strict decoders/validators enforce. Without it, the whole segment is
+ * encoded as one stream (legacy behavior).
+ */
+function packBits(samples: ArrayLike<number>, rowLength?: number) {
+  const output: number[] = [];
+  const total = samples.length;
+
+  if (rowLength && rowLength > 0 && total % rowLength === 0) {
+    for (let start = 0; start < total; start += rowLength) {
+      packBitsRange(samples, start, start + rowLength, output);
+    }
+  } else {
+    packBitsRange(samples, 0, total, output);
   }
 
   return Uint8Array.from(output);
@@ -484,7 +596,11 @@ function getRleSegmentsForFrame(
   );
 }
 
-function encodeFrameToRle(frame: ArrayLike<number>, bitsAllocated: number) {
+function encodeFrameToRle(
+  frame: ArrayLike<number>,
+  bitsAllocated: number,
+  columns?: number
+) {
   const segmentPlanes = getRleSegmentsForFrame(frame, bitsAllocated);
   if (segmentPlanes.length > 15) {
     throw new Error(
@@ -492,8 +608,20 @@ function encodeFrameToRle(frame: ArrayLike<number>, bitsAllocated: number) {
     );
   }
 
+  // Row length within each byte plane. 8/16-bit planes hold one byte per sample,
+  // so a row is `columns` bytes. 1-bit planes are bit-packed, so a row is only
+  // byte-aligned (and thus per-row encodable) when columns is a multiple of 8.
+  const rowLength =
+    columns && columns > 0
+      ? bitsAllocated === 1
+        ? columns % 8 === 0
+          ? columns / 8
+          : undefined
+        : columns
+      : undefined;
+
   const encodedSegments = segmentPlanes.map((segment) => {
-    const encoded = packBits(segment);
+    const encoded = packBits(segment, rowLength);
     if (encoded.length % 2 === 0) {
       return encoded;
     }
@@ -527,16 +655,22 @@ export function encodeFramesToTransferSyntax({
   transferSyntaxUID,
   frames,
   bitsAllocated,
+  columns,
 }: {
   transferSyntaxUID: string;
   frames: ArrayLike<number>[];
   bitsAllocated: number;
+  // Image width (samples per row). Enables per-row RLE encoding so runs do not
+  // cross row boundaries (PS3.5 Annex G). Optional for backward compatibility.
+  columns?: number;
 }) {
   if (transferSyntaxUID === RLE_LOSSLESS_TRANSFER_SYNTAX_UID) {
     return {
       transferSyntaxUID,
       pixelDataVR: 'OB',
-      pixelData: frames.map((frame) => encodeFrameToRle(frame, bitsAllocated)),
+      pixelData: frames.map((frame) =>
+        encodeFrameToRle(frame, bitsAllocated, columns)
+      ),
     };
   }
 
@@ -576,4 +710,6 @@ export {
   decodeSegFramesFromMultiframe,
   createDecodeImageDataFromMultiframe,
   getSegNumberOfFramesFromDataset,
+  packBits,
+  encodeFrameToRle,
 };

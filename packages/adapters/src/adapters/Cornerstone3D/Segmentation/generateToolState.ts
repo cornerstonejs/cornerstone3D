@@ -10,6 +10,31 @@ import {
  *
  * Legacy API: parses the Part 10 buffer and decodes pixels from dataset PixelData,
  * then delegates to createLabelmapsFromSegImageIds with synthetic frame imageIds.
+ *
+ * ## Return shape (cs3dVersion === 4, the default)
+ * Returns whatever {@link createLabelmapsFromDICOMBuffer} returns:
+ * `{ labelMapImages, segMetadata, segmentsOnFrame, centroids, overlappingSegments }`.
+ *
+ * This is a **breaking change from 4.x**: the old `labelmapBufferArray` and
+ * `segmentsOnFrameArray` fields are gone. Segmentation pixels are now delivered as
+ * cornerstone labelmap images (`labelMapImages`) rather than a single packed
+ * buffer, because the loader creates per-frame derived labelmap images via the
+ * image loader (enabling compressed source images).
+ *
+ * ## `skipOverlapping`
+ * Accepted for signature compatibility but **no longer supported on the default
+ * `cs3dVersion === 4` path** — it is silently ignored there. It is still forwarded
+ * to the legacy implementation on the `cs3dVersion !== 4` branch. The option only
+ * ever mattered to legacy consumers before OHIF supported returning overlapping
+ * segments; the v4 loader always computes overlap and returns it via
+ * `overlappingSegments`, so there is nothing to skip.
+ *
+ * @param imageIds - Referenced source imageIds (e.g. CT/MR stack).
+ * @param arrayBuffer - The Part 10 SEG `ArrayBuffer`.
+ * @param metadataProvider - Metadata provider.
+ * @param skipOverlapping - Legacy-only; ignored when `cs3dVersion === 4`.
+ * @param tolerance - Geometry matching tolerance.
+ * @param cs3dVersion - Cornerstone3D major version; `4` (default) uses the new loader.
  */
 function generateToolState(
   imageIds,

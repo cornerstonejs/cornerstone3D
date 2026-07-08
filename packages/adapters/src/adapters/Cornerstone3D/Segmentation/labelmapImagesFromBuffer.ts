@@ -65,20 +65,76 @@ function getFrameNumberFromImageId(imageId: string): number | undefined {
 }
 
 /**
+ * Determines whether a FRACTIONAL SEG is "pseudo-binary" — i.e. every decoded
+ * pixel is either 0 or `MaximumFractionalValue` — and can therefore be processed
+ * exactly like a BINARY SEG (matching 4.x behavior). Returns false for genuinely
+ * fractional data (intermediate probability values), which is unsupported, and
+ * false when `MaximumFractionalValue` is missing/non-numeric.
+ */
+function isPseudoBinaryFractional(
+  pixelData: ArrayLike<number>,
+  maximumFractionalValue: unknown
+): boolean {
+  const max = Number(maximumFractionalValue);
+  if (!Number.isFinite(max)) {
+    return false;
+  }
+  for (let i = 0; i < pixelData.length; i++) {
+    const value = pixelData[i];
+    if (value !== 0 && value !== max) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * Builds a `SOP Instance UID → source imageId` lookup for a referenced (source)
+ * stack, so the per-frame loop does not have to call `metadataProvider.get()`
+ * for every imageId repeatedly.
+ *
+ * The stored value is the *frame-qualified* imageId (e.g. `…?frame=1`,
+ * `…/frames/1`), NOT a frame-stripped base. A multiframe source series shares a
+ * single SOP Instance UID across all of its frames, so the first frame's fully
+ * qualified id is stored and {@link getImageIdOfSourceImageBySourceImageSequence}
+ * rewrites the frame number from each SEG frame's `ReferencedFrameNumber`.
+ * Storing a stripped base breaks that rewrite for the `?frame=`/`&frame=`
+ * schemes (wadouri / dicomfile) — the regex has nothing to replace, so every SEG
+ * frame collapses onto frame 1 and overlapping segments are dropped. (wadors is
+ * unaffected because the base is re-appended with `/frames/N`.)
+ */
+function buildSopUIDImageIdIndexMap(referencedImageIds, metadataProvider) {
+  return referencedImageIds.reduce((acc, imageId) => {
+    const { sopInstanceUID } =
+      metadataProvider.get('generalImageModule', imageId) ?? {};
+
+    if (!sopInstanceUID) {
+      return acc;
+    }
+
+    if (!acc[sopInstanceUID]) {
+      acc[sopInstanceUID] = imageId;
+    }
+
+    return acc;
+  }, {});
+}
+
+/**
  * Maps a resolved reference imageId (possibly built from stripped SOP base + frame)
  * to an imageId that exists in the OHIF/Cornerstone stack and imageIdMaps.
  */
 function resolveStackImageId(
   imageId: string | undefined,
   referencedImageIds: string[],
-  metadataProvider?,
-  segFrameIndex?: number
+  metadataProvider?
 ): string | undefined {
   if (!imageId) {
-    return segFrameIndex !== undefined &&
-      segFrameIndex < referencedImageIds.length
-      ? referencedImageIds[segFrameIndex]
-      : undefined;
+    // Skip, don't guess: without a resolved reference imageId we cannot know
+    // which slice this frame belongs to. Positional (by-index) mapping would
+    // silently paint the frame onto the wrong slice for sparse or reordered
+    // SEGs, corrupting the segmentation. The caller skips this frame instead.
+    return undefined;
   }
 
   if (referencedImageIds.includes(imageId)) {
@@ -132,13 +188,8 @@ function resolveStackImageId(
     }
   }
 
-  if (
-    segFrameIndex !== undefined &&
-    segFrameIndex < referencedImageIds.length
-  ) {
-    return referencedImageIds[segFrameIndex];
-  }
-
+  // No identity match (imageId, stripped SOP + frame, or SOP UID) was found.
+  // Skip, don't guess by position — see resolveStackImageId's early return.
   return undefined;
 }
 
@@ -149,14 +200,12 @@ function ensureImageIdMapsEntry(
     indices: Record<string, number>;
     metadata: Record<string, Record<string, unknown>>;
   },
-  metadataProvider,
-  segFrameIndex?: number
+  metadataProvider
 ) {
   const stackImageId = resolveStackImageId(
     imageId,
     referencedImageIds,
-    metadataProvider,
-    segFrameIndex
+    metadataProvider
   );
 
   if (!stackImageId) {
@@ -400,9 +449,20 @@ function resolveFrameImageIds({
     return wadoUriFrameIds;
   }
 
-  return numberOfFrames > 1
-    ? Array.from({ length: numberOfFrames }, () => segImageId)
-    : [segImageId];
+  // Multiframe SEG whose scheme we cannot address per-frame. Do NOT fall back to
+  // repeating the base imageId: that decodes frame 1 and paints it onto every
+  // slice, silently corrupting the segmentation. Force the caller to supply the
+  // per-frame ids explicitly.
+  if (numberOfFrames > 1) {
+    throw new Error(
+      `Cannot derive per-frame imageIds for multiframe SEG "${segImageId}" ` +
+        `(${numberOfFrames} frames): its imageId scheme is not WADO-RS ` +
+        `(".../frames/N") or WADO-URI ("?frame=N"/"&frame=N"). Supply ` +
+        `options.frameImageIds or options.getFrameImageId for this data source.`
+    );
+  }
+
+  return [segImageId];
 }
 
 function unpackFramePixelDataIfNeeded(
@@ -710,10 +770,6 @@ async function createLabelmapsFromSegImageIds(
 
   let pixelDataChunks;
 
-  if (multiframe.SegmentationType === 'FRACTIONAL') {
-    throw new Error('Fractional segmentations are not yet supported');
-  }
-
   const { decodedPixelData, expectedVoxelCount } =
     await decodeSegPixelDataFromFrameIds({
       segImageId,
@@ -740,6 +796,21 @@ async function createLabelmapsFromSegImageIds(
     Math.floor(unpackedPixelData.length / sliceLength)
   );
 
+  if (
+    multiframe.SegmentationType === 'FRACTIONAL' &&
+    !isPseudoBinaryFractional(
+      unpackedPixelData,
+      multiframe.MaximumFractionalValue
+    )
+  ) {
+    // 4.x accepted "pseudo-binary" FRACTIONAL objects whose pixels are only 0 or
+    // MaximumFractionalValue and processed them as binary. That still works here
+    // (the fill logic keys off whether a voxel is non-zero, not its magnitude, and
+    // the per-frame segment index comes from the functional groups). Only genuinely
+    // fractional data — intermediate probabilities — remains unsupported.
+    throw new Error('Fractional segmentations are not yet supported');
+  }
+
   pixelDataChunks = chunkPixelData(unpackedPixelData, { maxBytesPerChunk });
 
   const orientation = checkOrientation(
@@ -755,22 +826,10 @@ async function createLabelmapsFromSegImageIds(
   // Pre-compute the sop UID to imageId index map so that in the for loop
   // we don't have to call metadataProvider.get() for each imageId over
   // and over again.
-  const sopUIDImageIdIndexMap = referencedImageIds.reduce((acc, imageId) => {
-    const { sopInstanceUID } = metadataProvider.get(
-      'generalImageModule',
-      imageId
-    );
-
-    if (!sopInstanceUID) {
-      return acc;
-    }
-
-    if (!acc[sopInstanceUID]) {
-      acc[sopInstanceUID] = stripFrameQualifiersFromImageId(imageId);
-    }
-
-    return acc;
-  }, {});
+  const sopUIDImageIdIndexMap = buildSopUIDImageIdIndexMap(
+    referencedImageIds,
+    metadataProvider
+  );
 
   let insertFunction;
 
@@ -975,30 +1034,25 @@ export function insertPixelDataPlanar({
           sopUIDImageIdIndexMap
         );
 
-        if (!imageId && i < referencedImageIds.length) {
-          imageId = referencedImageIds[i];
-        }
-
         if (!imageId) {
           console.warn(
             "Image not present in stack, can't import frame : " + i + '.'
           );
-          return;
+          continue;
         }
 
         const stackImageId = ensureImageIdMapsEntry(
           imageId,
           referencedImageIds,
           imageIdMaps,
-          metadataProvider,
-          i
+          metadataProvider
         );
 
         if (!stackImageId) {
           console.warn(
             `Image not present in stack, can't import frame : ${i}.`
           );
-          return;
+          continue;
         }
 
         const sourceImageMetadata = imageIdMaps.metadata[stackImageId];
@@ -1007,7 +1061,7 @@ export function insertPixelDataPlanar({
           console.warn(
             `No instance metadata for referenced image at frame : ${i}.`
           );
-          return;
+          continue;
         }
 
         if (
@@ -1140,9 +1194,6 @@ export function insertPixelDataPlanar({
           });
         }
 
-        if (!imageId && i < referencedImageIds.length) {
-          imageId = referencedImageIds[i];
-        }
         if (!imageId) {
           console.warn(
             `Image not present in stack, can't import frame : ${i}.`
@@ -1154,8 +1205,7 @@ export function insertPixelDataPlanar({
           imageId,
           referencedImageIds,
           imageIdMaps,
-          metadataProvider,
-          i
+          metadataProvider
         );
 
         if (!stackImageId) {
@@ -1625,4 +1675,6 @@ export {
   createLabelmapsFromBufferInternal,
   decodeSegPixelDataFromFrameIds,
   resolveFrameImageIds,
+  buildSopUIDImageIdIndexMap,
+  isPseudoBinaryFractional,
 };

@@ -5,7 +5,6 @@ import {
   encodeFramesToTransferSyntax,
   EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID,
   getBitmapFramesFromDataset,
-  RLE_LOSSLESS_TRANSFER_SYNTAX_UID,
 } from '../encodePixelData';
 import {
   applyPerFrameFunctionalGroups,
@@ -67,17 +66,135 @@ function hasAnySegment(pixelData: ArrayLike<number>) {
   return false;
 }
 
-function normalizeFramePixelData(pixelData: ArrayLike<number>) {
-  if (pixelData instanceof Uint8Array) {
-    return pixelData;
+/** Normalizes the labelmaps input to an array of labelmap3D objects. */
+function toLabelmap3DArray(inputLabelmaps3D) {
+  if (Array.isArray(inputLabelmaps3D)) {
+    return inputLabelmaps3D.filter(Boolean);
+  }
+  return inputLabelmaps3D ? [inputLabelmaps3D] : [];
+}
+
+/**
+ * Sorted union of frame indices carrying at least one segment across every input
+ * labelmap3D. Shared by the export dispatch (to pick referenced images) and by
+ * fillLabelmapSegmentation (to build output frames) so the two stay aligned even
+ * when more than one labelmap3D is exported.
+ */
+function collectNonEmptyFrameIndices(labelmap3DArray): number[] {
+  const indices = new Set<number>();
+  labelmap3DArray.forEach((labelmap3D) => {
+    const labelmaps2D = labelmap3D?.labelmaps2D ?? [];
+    for (let i = 0; i < labelmaps2D.length; i++) {
+      const frame = labelmaps2D[i];
+      if (frame?.pixelData && hasAnySegment(frame.pixelData)) {
+        indices.add(i);
+      }
+    }
+  });
+  return Array.from(indices).sort((a, b) => a - b);
+}
+
+/** Largest segment value present on any exported frame (decides 8- vs 16-bit). */
+function maxSegmentValue(labelmap3DArray, frameIndices: number[]): number {
+  let max = 0;
+  labelmap3DArray.forEach((labelmap3D) => {
+    const labelmaps2D = labelmap3D?.labelmaps2D ?? [];
+    frameIndices.forEach((frameIndex) => {
+      const pixelData = labelmaps2D[frameIndex]?.pixelData;
+      if (!pixelData) {
+        return;
+      }
+      for (let i = 0; i < pixelData.length; i++) {
+        if (pixelData[i] > max) {
+          max = pixelData[i];
+        }
+      }
+    });
+  });
+  return max;
+}
+
+/** Union of segment metadata across all labelmap3D inputs, ascending by number. */
+function collectSegmentSequence(labelmap3DArray) {
+  const bySegmentNumber = new Map<number, Record<string, unknown>>();
+  labelmap3DArray.forEach((labelmap3D) => {
+    (labelmap3D?.metadata ?? []).forEach((segment, index) => {
+      if (!segment) {
+        return;
+      }
+      const key = Number(segment.SegmentNumber ?? index);
+      if (!bySegmentNumber.has(key)) {
+        bySegmentNumber.set(key, { ...segment });
+      }
+    });
+  });
+  return Array.from(bySegmentNumber.entries())
+    .sort((a, b) => a[0] - b[0])
+    .map(([, segment]) => segment);
+}
+
+/**
+ * Builds the per-frame PlanePositionSequence / PlaneOrientationSequence for a
+ * LABELMAP SEG frame from its source image's imagePlaneModule.
+ *
+ * dcmjs' derive() resets PerFrameFunctionalGroupsSequence to [], so the seeded
+ * plane groups on the input multiframe are gone by the time we fill the output.
+ * Without these, exported LABELMAP frames carry no spatial position and are not
+ * localizable (Slicer / highdicom / dcmqi reject or misplace them). Rebuild them
+ * here from the referenced source image, which is the authoritative geometry.
+ */
+function getPlaneSequencesForImage(
+  image: { imageId?: string } | undefined,
+  metadata
+): {
+  planePositionSequence?: { ImagePositionPatient: number[] };
+  planeOrientationSequence?: { ImageOrientationPatient: number[] };
+} {
+  const imagePlane = metadata?.get?.(
+    MetadataModules.IMAGE_PLANE,
+    image?.imageId
+  );
+
+  if (!imagePlane) {
+    return {};
   }
 
-  const frame = new Uint8Array(pixelData.length);
-  for (let i = 0; i < pixelData.length; i++) {
-    frame[i] = pixelData[i];
+  const result: {
+    planePositionSequence?: { ImagePositionPatient: number[] };
+    planeOrientationSequence?: { ImageOrientationPatient: number[] };
+  } = {};
+
+  const {
+    imagePositionPatient,
+    imageOrientationPatient,
+    rowCosines,
+    columnCosines,
+  } = imagePlane;
+
+  if (
+    Array.isArray(imagePositionPatient) &&
+    imagePositionPatient.length === 3
+  ) {
+    result.planePositionSequence = {
+      ImagePositionPatient: [...imagePositionPatient],
+    };
   }
 
-  return frame;
+  let orientation = imageOrientationPatient;
+  if (
+    (!Array.isArray(orientation) || orientation.length !== 6) &&
+    Array.isArray(rowCosines) &&
+    Array.isArray(columnCosines)
+  ) {
+    orientation = [...rowCosines, ...columnCosines];
+  }
+  if (Array.isArray(orientation) && orientation.length === 6) {
+    result.planeOrientationSequence = {
+      ImageOrientationPatient: [...orientation],
+    };
+  }
+
+  return result;
 }
 
 function fillLabelmapSegmentation(
@@ -87,45 +204,57 @@ function fillLabelmapSegmentation(
   images,
   options: Options = {}
 ) {
-  const labelmap3D = Array.isArray(inputLabelmaps3D)
-    ? inputLabelmaps3D[0]
-    : inputLabelmaps3D;
-  const labelmaps2D = labelmap3D?.labelmaps2D ?? [];
-  const segmentSequence =
-    labelmap3D?.metadata?.filter(Boolean)?.map((segment) => ({ ...segment })) ??
-    [];
-  const validFrameIndices: number[] = [];
-
-  for (let i = 0; i < labelmaps2D.length; i++) {
-    const labelmap2D = labelmaps2D[i];
-
-    if (!labelmap2D?.pixelData) {
-      continue;
-    }
-
-    if (!hasAnySegment(labelmap2D.pixelData)) {
-      continue;
-    }
-
-    validFrameIndices.push(i);
-  }
+  const labelmap3DArray = toLabelmap3DArray(inputLabelmaps3D);
+  const segmentSequence = collectSegmentSequence(labelmap3DArray);
+  const validFrameIndices = collectNonEmptyFrameIndices(labelmap3DArray);
 
   if (!validFrameIndices.length) {
     throw new Error('No non-empty labelmap frames found for SEG export');
   }
 
-  const firstFrame = labelmaps2D[validFrameIndices[0]];
+  // Frame geometry comes from the first labelmap that actually carries the first
+  // exported frame (all input labelmaps share the source stack's grid).
+  const firstFrame = labelmap3DArray
+    .map((labelmap3D) => labelmap3D?.labelmaps2D?.[validFrameIndices[0]])
+    .find(Boolean);
   const rows = firstFrame.rows;
   const columns = firstFrame.columns;
   const frameLength = rows * columns;
   const numberOfFrames = validFrameIndices.length;
 
-  const combinedPixelData = new Uint8Array(frameLength * numberOfFrames);
-  const framePixelData: Uint8Array[] = [];
-  validFrameIndices.forEach((frameIndex, outputIndex) => {
-    const source = normalizeFramePixelData(labelmaps2D[frameIndex].pixelData);
-    combinedPixelData.set(source, outputIndex * frameLength);
-    framePixelData.push(source);
+  // >255 labels cannot fit in 8 bits; widen to 16-bit rather than wrapping mod 256.
+  const maxValue = maxSegmentValue(labelmap3DArray, validFrameIndices);
+  const useUint16 = maxValue > 255;
+  const FrameArray = useUint16 ? Uint16Array : Uint8Array;
+
+  // Overlay every labelmap3D onto each exported frame. A single-valued LABELMAP
+  // cannot represent overlapping segments, so on a voxel claimed by two labelmaps
+  // the later one wins (warned once).
+  let overlapWarned = false;
+  const framePixelData = validFrameIndices.map((frameIndex) => {
+    const frame = new FrameArray(frameLength);
+    labelmap3DArray.forEach((labelmap3D) => {
+      const source = labelmap3D?.labelmaps2D?.[frameIndex]?.pixelData;
+      if (!source) {
+        return;
+      }
+      const len = Math.min(source.length, frameLength);
+      for (let i = 0; i < len; i++) {
+        const value = source[i];
+        if (value === 0) {
+          continue;
+        }
+        if (frame[i] !== 0 && frame[i] !== value && !overlapWarned) {
+          console.warn(
+            'generateSegmentation: overlapping labelmap segments detected on the ' +
+              'same voxel while exporting a LABELMAP SEG; the later labelmap wins.'
+          );
+          overlapWarned = true;
+        }
+        frame[i] = value;
+      }
+    });
+    return frame;
   });
 
   const { dataset } = segmentation;
@@ -137,9 +266,9 @@ function fillLabelmapSegmentation(
   if (segmentSequence.length) {
     dataset.SegmentSequence = segmentSequence;
   }
-  dataset.BitsAllocated = '8';
-  dataset.BitsStored = '8';
-  dataset.HighBit = '7';
+  dataset.BitsAllocated = useUint16 ? '16' : '8';
+  dataset.BitsStored = useUint16 ? '16' : '8';
+  dataset.HighBit = useUint16 ? '15' : '7';
   dataset.PixelRepresentation = '0';
   delete dataset.MaximumFractionalValue;
   delete dataset.SegmentationFractionalType;
@@ -150,7 +279,8 @@ function fillLabelmapSegmentation(
   const { pixelData, pixelDataVR } = encodeFramesToTransferSyntax({
     transferSyntaxUID: transferSyntaxUid,
     frames: framePixelData,
-    bitsAllocated: 8,
+    bitsAllocated: useUint16 ? 16 : 8,
+    columns,
   });
   applySegDatasetTransferSyntax(
     dataset,
@@ -192,14 +322,25 @@ function fillLabelmapSegmentation(
       );
     }
 
+    // The source image's imagePlaneModule is the authoritative geometry. dcmjs
+    // wipes PerFrameFunctionalGroupsSequence in derive(), so the prior group is
+    // normally empty; only fall back to it when the source image lacks a plane.
     const priorGroup =
       dataset.PerFrameFunctionalGroupsSequence?.[outputIndex] ?? {};
+    const planeSequences = getPlaneSequencesForImage(image, metadata);
 
     return {
-      referencedSegmentNumber: 1,
+      // LABELMAP frames carry multiple segment labels as pixel values, so the
+      // SegmentIdentificationSequence macro must be absent (a fixed
+      // ReferencedSegmentNumber would be wrong for labels >= 2). Omitting
+      // referencedSegmentNumber keeps applyPerFrameFunctionalGroups from emitting it.
       sourceImageSequenceItem,
-      planeOrientationSequence: priorGroup?.PlaneOrientationSequence,
-      planePositionSequence: priorGroup?.PlanePositionSequence,
+      planeOrientationSequence:
+        planeSequences.planeOrientationSequence ??
+        priorGroup?.PlaneOrientationSequence,
+      planePositionSequence:
+        planeSequences.planePositionSequence ??
+        priorGroup?.PlanePositionSequence,
     };
   });
 
@@ -241,6 +382,12 @@ function fillLabelmapSegmentation(
  *
  * @param images - An array of the cornerstone image objects, which includes imageId and metadata
  * @param labelmaps - An array of the 3D Volumes that contain the segmentation data.
+ * @param options.sopClassUID - Output SEG SOP Class UID. Defaults to BINARY
+ *   Segmentation (`1.2.840.10008.5.1.4.1.1.66.4`) for broad PACS/viewer
+ *   compatibility. Pass the Label Map Segmentation UID
+ *   (`1.2.840.10008.5.1.4.1.1.66.7`, added to DICOM in 2024) to opt into that
+ *   newer class — note many receivers still reject it. (OHIF selects this via the
+ *   `segmentation.store.defaultMode` datasource customization.)
  */
 function generateSegmentation(
   images,
@@ -249,24 +396,21 @@ function generateSegmentation(
   options: Options = {}
 ) {
   const requestedSOPClassUID =
-    (options?.sopClassUID as string) || LABELMAP_SEG_SOP_CLASS_UID;
+    (options?.sopClassUID as string) || BITMAP_SEG_SOP_CLASS_UID;
   const shouldExportBitmap = requestedSOPClassUID === BITMAP_SEG_SOP_CLASS_UID;
 
   if (shouldExportBitmap) {
     const transferSyntaxUid = resolveTransferSyntaxUid(options);
-    const labelmap3D = Array.isArray(labelmaps) ? labelmaps[0] : labelmaps;
-    const nonEmptyFrameIndices =
-      labelmap3D?.labelmaps2D
-        ?.map((frame, index) =>
-          frame?.pixelData && hasAnySegment(frame.pixelData) ? index : -1
-        )
-        .filter((index) => index >= 0) ?? [];
-    const filteredImages = nonEmptyFrameIndices.length
-      ? nonEmptyFrameIndices.map((index) => images[index]).filter(Boolean)
-      : images;
 
+    // Build the derivation from the full, unfiltered images. dcmjs'
+    // addSegmentFromLabelmap references the source geometry by the ORIGINAL
+    // labelmap frame index (referencedDataset.PerFrameFunctionalGroupsSequence
+    // and ReferencedInstanceSequence are indexed by frameNumber - 1). Filtering
+    // out empty frames here would shorten those arrays and index out of bounds
+    // (TypeError) the moment any leading/interior frame is empty — e.g. a lesion
+    // that starts on slice 10. fillSegmentation is likewise passed full images.
     const segmentation = _createMultiframeSegmentationFromReferencedImages(
-      filteredImages,
+      images,
       metadata,
       options
     );
@@ -278,10 +422,6 @@ function generateSegmentation(
         transferSyntaxUid: EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID,
         skipTransferSyntaxMeta: true,
       },
-      // Pass the full, unfiltered images: fillSegmentation references source
-      // images by the original labelmap frame index, so the array must stay
-      // aligned 1:1 with labelmaps2D. Passing filteredImages here would shift
-      // every reference once any interior frame is empty.
       images,
       metadata
     );
@@ -292,6 +432,7 @@ function generateSegmentation(
       transferSyntaxUID: transferSyntaxUid,
       frames,
       bitsAllocated,
+      columns: Number(segmentationResult.dataset.Columns) || undefined,
     });
 
     applySegDatasetTransferSyntax(
@@ -319,13 +460,12 @@ function generateSegmentation(
     return segmentationResult;
   }
 
-  const labelmap3D = Array.isArray(labelmaps) ? labelmaps[0] : labelmaps;
-  const nonEmptyFrameIndices =
-    labelmap3D?.labelmaps2D
-      ?.map((frame, index) =>
-        frame?.pixelData && hasAnySegment(frame.pixelData) ? index : -1
-      )
-      .filter((index) => index >= 0) ?? [];
+  // Union of non-empty frames across ALL labelmap3D inputs — the same basis
+  // fillLabelmapSegmentation uses — so the referenced/derived images line up with
+  // the frames actually written.
+  const nonEmptyFrameIndices = collectNonEmptyFrameIndices(
+    toLabelmap3DArray(labelmaps)
+  );
   const filteredImages = nonEmptyFrameIndices.length
     ? nonEmptyFrameIndices.map((index) => images[index]).filter(Boolean)
     : images;
@@ -428,4 +568,11 @@ function _createMultiframeSegmentationFromReferencedImages(
   return new SegmentationDerivation([multiframe], options);
 }
 
-export { generateSegmentation };
+export {
+  generateSegmentation,
+  // Exported for unit testing the LABELMAP export frame/segment/bit-depth logic.
+  toLabelmap3DArray,
+  collectNonEmptyFrameIndices,
+  maxSegmentValue,
+  collectSegmentSequence,
+};

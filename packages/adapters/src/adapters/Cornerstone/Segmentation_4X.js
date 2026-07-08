@@ -75,6 +75,14 @@ export function generateSegmentation(
  * @param segmentation - The segmentation object to be filled.
  * @param inputLabelmaps3D - An array of 3D labelmaps, or a single 3D labelmap.
  * @param userOptions - Optional configuration settings. Will override the default options.
+ *   - `transferSyntaxUid` — the output transfer syntax. Defaults to RLE Lossless
+ *     (`1.2.840.10008.1.2.5`); Explicit VR Little Endian
+ *     (`1.2.840.10008.1.2.1`) is also supported. Any other value throws.
+ *   - `rleEncode` — **obsolete / ignored.** This option is no longer read. It
+ *     never worked correctly in prior versions (the old path did not produce a
+ *     valid RLE-encoded SEG), so it has been dropped rather than fixed. RLE
+ *     output is now selected via `transferSyntaxUid` (RLE Lossless is the
+ *     default), and encoding is handled by `encodeFramesToTransferSyntax`.
  *
  * @returns {object} The filled segmentation object.
  */
@@ -300,6 +308,7 @@ export function fillSegmentation(
         transferSyntaxUID: RLE_TS_UID,
         frames,
         bitsAllocated,
+        columns: Number(segmentation.dataset.Columns) || undefined,
       });
 
       segmentation.dataset.PixelData = pixelData;
@@ -1793,11 +1802,16 @@ export function getSegmentMetadata(multiframe, seriesInstanceUid) {
 export function readFromUnpackedChunks(chunks, offset, length) {
   const mapping = getUnpackedOffsetAndLength(chunks, offset, length);
 
+  // Chunks are typically subarray views that share one backing ArrayBuffer, so
+  // `chunk.buffer` is the whole buffer (byte 0 = chunk 0) while the computed
+  // offsets are chunk-relative. Add each chunk's own byteOffset so a view into
+  // chunk N reads chunk N's bytes and not chunk 0's.
   // If all the data is in one chunk, we can just slice that chunk
   if (mapping.start.chunkIndex === mapping.end.chunkIndex) {
+    const chunk = chunks[mapping.start.chunkIndex];
     return new Uint8Array(
-      chunks[mapping.start.chunkIndex].buffer,
-      mapping.start.offset,
+      chunk.buffer,
+      chunk.byteOffset + mapping.start.offset,
       length
     );
   } else {
@@ -1811,7 +1825,11 @@ export function readFromUnpackedChunks(chunks, offset, length) {
         i === mapping.end.chunkIndex ? mapping.end.offset : chunks[i].length;
 
       result.set(
-        new Uint8Array(chunks[i].buffer, start, end - start),
+        new Uint8Array(
+          chunks[i].buffer,
+          chunks[i].byteOffset + start,
+          end - start
+        ),
         resultOffset
       );
       resultOffset += end - start;

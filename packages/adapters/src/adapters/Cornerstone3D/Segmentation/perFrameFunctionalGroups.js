@@ -78,11 +78,17 @@ export function normalizeSharedFunctionalGroupsSequence(dataset) {
 /**
  * @param {object} dataset - SEG dataset
  * @param {Array<{
- *   referencedSegmentNumber: number,
+ *   referencedSegmentNumber?: number,
  *   sourceImageSequenceItem: { ReferencedSOPInstanceUID: string, ReferencedFrameNumber?: number },
  *   planeOrientationSequence?: object,
  *   planePositionSequence?: object,
  * }>} frames
+ *
+ * `referencedSegmentNumber` drives the per-frame `SegmentIdentificationSequence`
+ * macro (one segment per frame — BINARY SEGs). Omit it for LABELMAP SEGs: there a
+ * single frame carries many segment labels as pixel values, so the standard
+ * forbids the macro and a fixed `ReferencedSegmentNumber` would be wrong for any
+ * label other than the one hard-coded.
  */
 export function applyPerFrameFunctionalGroups(dataset, frames) {
   normalizeSharedFunctionalGroupsSequence(dataset);
@@ -100,17 +106,24 @@ export function applyPerFrameFunctionalGroups(dataset, frames) {
         ? existingList[index]
         : {};
 
+    // Drop any inherited SegmentIdentificationSequence when this frame has no
+    // referencedSegmentNumber (LABELMAP path) so the macro is truly absent.
+    const { SegmentIdentificationSequence: _priorSegId, ...priorRest } = prior;
+
     const group = {
-      ...prior,
-      SegmentIdentificationSequence: {
-        ReferencedSegmentNumber: frame.referencedSegmentNumber,
-      },
+      ...priorRest,
       DerivationImageSequence: [
         {
           SourceImageSequence: [frame.sourceImageSequenceItem],
         },
       ],
     };
+
+    if (frame.referencedSegmentNumber != null) {
+      group.SegmentIdentificationSequence = {
+        ReferencedSegmentNumber: frame.referencedSegmentNumber,
+      };
+    }
 
     if (frame.planeOrientationSequence) {
       group.PlaneOrientationSequence = frame.planeOrientationSequence;
