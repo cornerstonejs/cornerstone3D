@@ -20,6 +20,10 @@ import {
 } from '@cornerstonejs/core';
 
 import { getToolGroup } from '../store/ToolGroupManager';
+import getViewportICamera from '../utilities/getViewportICamera';
+import setViewportCamera, {
+  resetViewportCamera,
+} from '../utilities/setViewportCamera';
 import { Events } from '../enums';
 
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
@@ -38,6 +42,10 @@ import {
   calculateAdaptiveSphereRadius,
 } from '../utilities/draw3D';
 import { isDragOwnedBy } from '../utilities/interactionDragCoordinator';
+import {
+  applyViewportPresentation,
+  getViewportPresentation,
+} from '../utilities/viewportPresentation';
 
 /**
  * VolumeCroppingTool provides manipulatable spheres and real-time volume cropping capabilities.
@@ -285,9 +293,9 @@ class VolumeCroppingTool extends BaseTool {
               return;
             }
             const { viewport } = element;
-            const viewPresentation = viewport.getViewPresentation();
-            viewport.resetCamera();
-            viewport.setViewPresentation(viewPresentation);
+            const viewPresentation = getViewportPresentation(viewport);
+            resetViewportCamera(viewport);
+            applyViewportPresentation(viewport, viewPresentation);
             viewport.render();
           });
           resizeObserver.observe(element);
@@ -727,7 +735,7 @@ class VolumeCroppingTool extends BaseTool {
       const enabledElement = getEnabledElement(element);
       const { viewport } = enabledElement;
 
-      const camera = viewport.getCamera();
+      const camera = getViewportICamera(viewport);
       const width = element.clientWidth;
       const height = element.clientHeight;
 
@@ -1765,7 +1773,7 @@ class VolumeCroppingTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const width = element.clientWidth;
     const height = element.clientHeight;
 
@@ -2206,7 +2214,7 @@ class VolumeCroppingTool extends BaseTool {
     mat4.rotate(transform, transform, angle, axis);
     vec3.transformMat4(newViewUp, viewUp, transform);
 
-    viewport.setCamera({
+    setViewportCamera(viewport, {
       position: newPosition,
       viewUp: newViewUp,
       focalPoint: newFocalPoint,

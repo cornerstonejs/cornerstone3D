@@ -9,7 +9,6 @@ import {
   removeAnnotation,
   getChildAnnotations,
   addChildAnnotation,
-  clearParentAnnotation,
 } from '../../stateManagement/annotation/annotationState';
 import { addContourSegmentationAnnotation } from './addContourSegmentationAnnotation';
 import { removeContourSegmentationAnnotation } from './removeContourSegmentationAnnotation';
@@ -17,6 +16,11 @@ import { triggerAnnotationModified } from '../../stateManagement/annotation/help
 import triggerAnnotationRenderForViewportIds from '../triggerAnnotationRenderForViewportIds';
 import { getViewportIdsWithToolToRender } from '../viewportFilters';
 import { hasToolByName } from '../../store/addTool';
+import {
+  applyBoolean,
+  BooleanOp,
+  type PolygonWithHoles,
+} from './clipperBooleanOps';
 
 const TOLERANCE = 1e-10; // Very small tolerance for floating point comparison
 
@@ -69,6 +73,7 @@ export function checkIntersection(
 ): {
   hasIntersection: boolean;
   isContourHole: boolean;
+  isTargetInsideSource: boolean;
 } {
   const sourceAABB = math.polyline.getAABB(sourcePolyline);
   const targetAABB = math.polyline.getAABB(targetPolyline);
@@ -76,7 +81,11 @@ export function checkIntersection(
   const aabbIntersect = math.aabb.intersectAABB(sourceAABB, targetAABB);
 
   if (!aabbIntersect) {
-    return { hasIntersection: false, isContourHole: false };
+    return {
+      hasIntersection: false,
+      isContourHole: false,
+      isTargetInsideSource: false,
+    };
   }
 
   const lineSegmentsIntersect = math.polyline.intersectPolyline(
@@ -89,9 +98,16 @@ export function checkIntersection(
     !lineSegmentsIntersect &&
     math.polyline.containsPoints(targetPolyline, sourcePolyline);
 
-  const hasIntersection = lineSegmentsIntersect || isContourHole;
+  // Target is fully contained inside source (no edge crossings)
+  const isTargetInsideSource =
+    !lineSegmentsIntersect &&
+    !isContourHole &&
+    math.polyline.containsPoints(sourcePolyline, targetPolyline);
 
-  return { hasIntersection, isContourHole };
+  const hasIntersection =
+    lineSegmentsIntersect || isContourHole || isTargetInsideSource;
+
+  return { hasIntersection, isContourHole, isTargetInsideSource };
 }
 
 /**
@@ -154,7 +170,10 @@ export function createPolylineHole(
 }
 
 /**
- * Combines a source polyline with a target polyline using merge or subtract operations.
+ * Combines a source polyline with a target polyline. The source-start-point's
+ * relation to the target's outer ring drives merge (union) vs subtract (difference).
+ * Existing target holes flow through Clipper, so a source that intersects a hole
+ * adjusts the hole geometry correctly instead of being silently preserved.
  */
 export function combinePolylines(
   viewport: Types.IViewport,
@@ -163,7 +182,6 @@ export function combinePolylines(
   sourceAnnotation: ContourSegmentationAnnotation,
   sourcePolyline: Types.Point2[]
 ): void {
-  // Check if the necessary tool for creating new combined contours is registered.
   if (!hasToolByName(DEFAULT_CONTOUR_SEG_TOOL_NAME)) {
     console.warn(
       `${DEFAULT_CONTOUR_SEG_TOOL_NAME} is not registered in cornerstone. Cannot combine polylines.`
@@ -172,118 +190,71 @@ export function combinePolylines(
   }
 
   const sourceStartPoint = sourcePolyline[0];
-  // Determine if the operation should be a merge (union) or subtraction
   const mergePolylines = math.polyline.containsPoint(
     targetPolyline,
     sourceStartPoint
   );
 
   const contourHolesData = getContourHolesData(viewport, targetAnnotation);
-  const unassignedContourHolesSet = new Set(contourHolesData);
-  const reassignedContourHolesMap = new Map<
-    Types.Point2[],
-    typeof contourHolesData
-  >();
+  const subjects: PolygonWithHoles[] = [
+    {
+      outer: targetPolyline,
+      holes: contourHolesData.length
+        ? contourHolesData.map((h) => h.polyline)
+        : undefined,
+    },
+  ];
+  const clips: PolygonWithHoles[] = [{ outer: sourcePolyline }];
 
-  /** Helper to assign a hole to a new parent polyline. */
-  const assignHoleToPolyline = (
-    parentPolyline: Types.Point2[],
-    holeData: (typeof contourHolesData)[0]
-  ) => {
-    let holes = reassignedContourHolesMap.get(parentPolyline);
-    if (!holes) {
-      holes = [];
-      reassignedContourHolesMap.set(parentPolyline, holes);
-    }
-    holes.push(holeData);
-    unassignedContourHolesSet.delete(holeData);
-  };
-
-  const newPolylines: Types.Point2[][] = [];
-
-  if (mergePolylines) {
-    const mergedPolyline = math.polyline.mergePolylines(
-      targetPolyline,
-      sourcePolyline
-    );
-    newPolylines.push(mergedPolyline);
-
-    // When merging, all existing holes remain inside the new merged contour
-    Array.from(unassignedContourHolesSet.keys()).forEach((holeData) =>
-      assignHoleToPolyline(mergedPolyline, holeData)
-    );
-  } else {
-    // Subtract polylines
-    const subtractedPolylines = math.polyline.subtractPolylines(
-      targetPolyline,
-      sourcePolyline
-    );
-
-    subtractedPolylines.forEach((newPolyline) => {
-      newPolylines.push(newPolyline);
-      // Reassign existing holes to the new polyline(s) if they are contained within
-      Array.from(unassignedContourHolesSet.keys()).forEach((holeData) => {
-        const containsHole = math.polyline.containsPoints(
-          newPolyline,
-          holeData.polyline
-        );
-        if (containsHole) {
-          assignHoleToPolyline(newPolyline, holeData);
-        }
-      });
-    });
-  }
-
-  // Detach holes from the old targetAnnotation before it's deleted
-  Array.from(reassignedContourHolesMap.values()).forEach(
-    (contourHolesDataArray) =>
-      contourHolesDataArray.forEach((contourHoleData) =>
-        clearParentAnnotation(contourHoleData.annotation)
-      )
+  const resultPolygons = applyBoolean(
+    subjects,
+    clips,
+    mergePolylines ? BooleanOp.Union : BooleanOp.Difference
   );
 
   const { element } = viewport;
-  const { metadata, data } = targetAnnotation;
-  const { handles, segmentation } = data;
-  const { textBox } = handles;
 
-  // Remove original annotations
-  removeAnnotation(sourceAnnotation.annotationUID);
-  removeAnnotation(targetAnnotation.annotationUID);
-  removeContourSegmentationAnnotation(sourceAnnotation);
-  removeContourSegmentationAnnotation(targetAnnotation);
+  // Replace source, target, and all of target's hole annotations with the
+  // freshly computed geometry — hole annotations may differ if source intersected them.
+  const annotationsToRemove: ContourSegmentationAnnotation[] = [
+    sourceAnnotation,
+    targetAnnotation,
+    ...contourHolesData.map((h) => h.annotation),
+  ];
+  annotationsToRemove.forEach((annotation) => {
+    removeAnnotation(annotation.annotationUID);
+    removeContourSegmentationAnnotation(annotation);
+  });
 
-  // Create new annotations from result polylines
-  const newAnnotations: ContourSegmentationAnnotation[] = [];
-
-  for (let i = 0; i < newPolylines.length; i++) {
-    const polyline = newPolylines[i];
-    if (!polyline || polyline.length < 3) {
-      console.warn(
-        'Skipping creation of new annotation due to invalid polyline:',
-        polyline
-      );
-      continue;
+  resultPolygons.forEach((polygon) => {
+    if (polygon.outer.length < 3) {
+      return;
     }
-
-    const newAnnotation = createNewAnnotationFromPolyline(
+    const parent = createNewAnnotationFromPolyline(
       viewport,
       targetAnnotation,
-      polyline
+      polygon.outer,
+      ContourWindingDirection.Clockwise
     );
+    addAnnotation(parent, element);
+    addContourSegmentationAnnotation(parent);
+    triggerAnnotationModified(parent, element);
 
-    addAnnotation(newAnnotation, element);
-    addContourSegmentationAnnotation(newAnnotation);
-    triggerAnnotationModified(newAnnotation, viewport.element);
-    newAnnotations.push(newAnnotation);
-
-    // Add re-assigned holes as children to this new annotation
-    reassignedContourHolesMap
-      .get(polyline)
-      ?.forEach((holeData) =>
-        addChildAnnotation(newAnnotation, holeData.annotation)
+    polygon.holes?.forEach((holePolyline) => {
+      if (holePolyline.length < 3) {
+        return;
+      }
+      const hole = createNewAnnotationFromPolyline(
+        viewport,
+        targetAnnotation,
+        holePolyline,
+        ContourWindingDirection.CounterClockwise
       );
-  }
+      addAnnotation(hole, element);
+      addChildAnnotation(parent, hole);
+      triggerAnnotationModified(hole, element);
+    });
+  });
 
   updateViewportsForAnnotations(viewport, [targetAnnotation, sourceAnnotation]);
 }
@@ -294,7 +265,8 @@ export function combinePolylines(
 export function createNewAnnotationFromPolyline(
   viewport: Types.IViewport,
   templateAnnotation: ContourSegmentationAnnotation,
-  polyline: Types.Point2[]
+  polyline: Types.Point2[],
+  windingDirection: ContourWindingDirection = ContourWindingDirection.Clockwise
 ): ContourSegmentationAnnotation {
   const startPointWorld = viewport.canvasToWorld(polyline[0]);
   const endPointWorld = viewport.canvasToWorld(polyline[polyline.length - 1]);
@@ -338,7 +310,7 @@ export function createNewAnnotationFromPolyline(
     {
       points: polyline,
       closed: true,
-      targetWindingDirection: ContourWindingDirection.Clockwise,
+      targetWindingDirection: windingDirection,
     },
     viewport
   );

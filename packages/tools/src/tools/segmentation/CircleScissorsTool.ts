@@ -1,8 +1,4 @@
-import {
-  BaseVolumeViewport,
-  cache,
-  getEnabledElement,
-} from '@cornerstonejs/core';
+import { BaseVolumeViewport, getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
@@ -25,6 +21,7 @@ import {
 } from '../../cursors/elementCursor';
 
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+import getViewportICamera from '../../utilities/getViewportICamera';
 import {
   segmentLocking,
   activeSegmentation,
@@ -35,9 +32,15 @@ import {
   getCurrentLabelmapImageIdForViewport,
   getSegmentation,
 } from '../../stateManagement/segmentation/segmentationState';
-import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
+import getViewportLabelmapRenderMode from '../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
 import LabelmapBaseTool from './LabelmapBaseTool';
 import type { LabelmapMemo } from '../../utilities/segmentation/createLabelmapMemo';
+import {
+  getOrCreateLabelmapVolume,
+  resolveLabelmapForSegment,
+} from '../../stateManagement/segmentation/helpers/labelmapSegmentationState';
+import getEllipseWorldCoordinates from '../../utilities/getEllipseWorldCoordinates';
+import getCenterAndRadiusInCanvas from '../../utilities/getCenterAndRadiusInCanvas';
 
 /**
  * Tool for manipulating segmentation data by drawing a circle. It acts on the
@@ -111,7 +114,8 @@ class CircleScissorsTool extends LabelmapBaseTool {
 
     this.isDrawing = true;
 
-    const camera = viewport.getCamera();
+    // Native ("next") viewports expose no getCamera; read orientation via the bridge.
+    const camera = getViewportICamera(viewport);
     const { viewPlaneNormal, viewUp } = camera;
 
     const activeLabelmapSegmentation = activeSegmentation.getActiveSegmentation(
@@ -192,14 +196,27 @@ class CircleScissorsTool extends LabelmapBaseTool {
       imageId: null,
     };
 
-    if (viewport instanceof BaseVolumeViewport) {
-      const { volumeId } = labelmapData as LabelmapSegmentationDataVolume;
-      const segmentation = cache.getVolume(volumeId);
+    const viewportRenderMode = getViewportLabelmapRenderMode(viewport);
+
+    if (
+      viewportRenderMode === 'volume' ||
+      viewport instanceof BaseVolumeViewport
+    ) {
+      const layer = resolveLabelmapForSegment(
+        getSegmentation(segmentationId),
+        segmentIndex
+      );
+      const segmentation = layer ? getOrCreateLabelmapVolume(layer) : undefined;
+
+      if (!segmentation) {
+        return;
+      }
 
       this.editData = {
         ...this.editData,
-        volumeId,
-        referencedVolumeId: segmentation.referencedVolumeId,
+        volumeId: segmentation.volumeId,
+        referencedVolumeId:
+          layer?.referencedVolumeId ?? segmentation.referencedVolumeId,
       };
     } else {
       const segmentationImageId = getCurrentLabelmapImageIdForViewport(
@@ -238,32 +255,14 @@ class CircleScissorsTool extends LabelmapBaseTool {
     const { annotation, viewportIdsToRender, centerCanvas } = this.editData;
     const { data } = annotation;
 
-    // Center of circle in canvas Coordinates
+    // Convert center and current point to world coordinates
+    const centerWorld = canvasToWorld(centerCanvas as Types.Point2);
+    const currentWorld = canvasToWorld(currentCanvasPoints as Types.Point2);
 
-    const dX = Math.abs(currentCanvasPoints[0] - centerCanvas[0]);
-    const dY = Math.abs(currentCanvasPoints[1] - centerCanvas[1]);
-    const radius = Math.sqrt(dX * dX + dY * dY);
-
-    const bottomCanvas: Types.Point2 = [
-      centerCanvas[0],
-      centerCanvas[1] + radius,
-    ];
-    const topCanvas: Types.Point2 = [centerCanvas[0], centerCanvas[1] - radius];
-    const leftCanvas: Types.Point2 = [
-      centerCanvas[0] - radius,
-      centerCanvas[1],
-    ];
-    const rightCanvas: Types.Point2 = [
-      centerCanvas[0] + radius,
-      centerCanvas[1],
-    ];
-
-    data.handles.points = [
-      canvasToWorld(bottomCanvas),
-      canvasToWorld(topCanvas),
-      canvasToWorld(leftCanvas),
-      canvasToWorld(rightCanvas),
-    ];
+    data.handles.points = getEllipseWorldCoordinates(
+      [centerWorld, currentWorld],
+      viewport
+    ) as [Types.Point3, Types.Point3, Types.Point3, Types.Point3];
 
     annotation.invalidated = true;
 
@@ -368,17 +367,7 @@ class CircleScissorsTool extends LabelmapBaseTool {
 
     const data = annotation.data;
     const { points } = data.handles;
-    const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
-
-    const bottom = canvasCoordinates[0];
-    const top = canvasCoordinates[1];
-
-    const center = [
-      Math.floor((bottom[0] + top[0]) / 2),
-      Math.floor((bottom[1] + top[1]) / 2),
-    ];
-
-    const radius = Math.abs(bottom[1] - Math.floor((bottom[1] + top[1]) / 2));
+    const { center, radius } = getCenterAndRadiusInCanvas(points, viewport);
 
     const color = `rgb(${toolMetadata.segmentColor.slice(0, 3)})`;
 

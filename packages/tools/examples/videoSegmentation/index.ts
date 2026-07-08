@@ -7,7 +7,8 @@ import {
 import * as cornerstone from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
-  createImageIdsAndCacheMetaData,
+  createDisplaySets,
+  getViewportTypeForDisplaySet,
   initDemo,
   addDropdownToToolbar,
   setTitleAndDescription,
@@ -33,7 +34,6 @@ const {
 } = cornerstoneTools;
 
 const { MouseBindings } = csToolsEnums;
-const { ViewportType } = Enums;
 
 // Define a unique id for the volume
 let renderingEngine;
@@ -59,7 +59,7 @@ const element1 = document.createElement('div');
 element1.oncontextmenu = () => false;
 
 element1.style.width = size;
-element1.style.height = '500px';
+element1.style.height = '512px';
 
 viewportGrid.appendChild(element1);
 
@@ -190,17 +190,20 @@ async function run() {
 
   const toolGroup = setupTools(toolGroupId);
 
-  const imageIds = await createImageIdsAndCacheMetaData({
+  const displaySets = await createDisplaySets({
     StudyInstanceUID: '2.25.96975534054447904995905761963464388233',
     SeriesInstanceUID: '2.25.15054212212536476297201250326674987992',
     wadoRsRoot:
       getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
-  // Only one SOP instances is DICOM, so find it
-  const videoId = imageIds.find(
-    (it) => it.indexOf('2.25.179478223177027022014772769075050874231') !== -1
-  );
+  const displaySet =
+    displaySets.find((ds) => ds.preferredViewportType === 'video') ??
+    displaySets[0];
+  if (!displaySet) {
+    throw new Error('No display set found in series');
+  }
+  const videoId = displaySet.instances[0].imageId;
 
   // Instantiate a rendering engine
   renderingEngine = new RenderingEngine(renderingEngineId);
@@ -209,7 +212,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId,
-      type: ViewportType.VIDEO,
+      type: getViewportTypeForDisplaySet(displaySet),
       element: element1,
     },
   ];
@@ -219,7 +222,7 @@ async function run() {
 
   const imageIdsArray = [videoId];
 
-  await viewport.setVideo(videoId, 1);
+  await viewport.setDisplaySets({ displaySetId: videoId });
   addVideoTime(viewportGrid, viewport);
   // We need the map on all image ids
   const allImageIds = viewport.getImageIds();

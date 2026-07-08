@@ -224,7 +224,26 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       throw new Error('Viewport not supported');
     }
     scalarData = csUtils.convertToGrayscale(scalarData, width, height);
-    const { voiRange } = viewport.getProperties();
+    // Native ("next") viewports expose no getProperties; read the effective VOI
+    // from the per-binding presentation, falling back to the computed default VOI.
+    let voiRange: Types.VOIRange;
+    // Widen so the capability guard can narrow; the enabled element types
+    // viewport as IStackViewport | IVolumeViewport.
+    const sourceViewport: Types.IViewport = viewport;
+    if (csUtils.viewportSupportsDisplaySetPresentation(sourceViewport)) {
+      const dataId = sourceViewport.getSourceDataId();
+      voiRange = ((dataId
+        ? (
+            sourceViewport.getDisplaySetPresentation(dataId) as
+              | { voiRange?: Types.VOIRange }
+              | undefined
+          )?.voiRange
+        : undefined) ??
+        sourceViewport.getDefaultVOIRange(dataId) ??
+        undefined) as Types.VOIRange;
+    } else {
+      ({ voiRange } = viewport.getProperties());
+    }
     const startPos = worldToSlice(worldPos);
 
     this.scissors = LivewireScissors.createInstanceFromRawPixelData(
@@ -1031,43 +1050,36 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
 
       const { imageData } = image;
-      const { scale, areaUnit } = getCalibratedLengthUnitsAndScale(
-        image,
-        () => {
-          const {
-            maxX: canvasMaxX,
-            maxY: canvasMaxY,
-            minX: canvasMinX,
-            minY: canvasMinY,
-          } = math.polyline.getAABB(canvasCoordinates);
+      const { areaUnit } = getCalibratedLengthUnitsAndScale(image, () => {
+        const {
+          maxX: canvasMaxX,
+          maxY: canvasMaxY,
+          minX: canvasMinX,
+          minY: canvasMinY,
+        } = math.polyline.getAABB(canvasCoordinates);
 
-          const topLeftBBWorld = viewport.canvasToWorld([
-            canvasMinX,
-            canvasMinY,
-          ]);
+        const topLeftBBWorld = viewport.canvasToWorld([canvasMinX, canvasMinY]);
 
-          const topLeftBBIndex = utilities.transformWorldToIndex(
-            imageData,
-            topLeftBBWorld
-          );
+        const topLeftBBIndex = utilities.transformWorldToIndex(
+          imageData,
+          topLeftBBWorld
+        );
 
-          const bottomRightBBWorld = viewport.canvasToWorld([
-            canvasMaxX,
-            canvasMaxY,
-          ]);
+        const bottomRightBBWorld = viewport.canvasToWorld([
+          canvasMaxX,
+          canvasMaxY,
+        ]);
 
-          const bottomRightBBIndex = utilities.transformWorldToIndex(
-            imageData,
-            bottomRightBBWorld
-          );
+        const bottomRightBBIndex = utilities.transformWorldToIndex(
+          imageData,
+          bottomRightBBWorld
+        );
 
-          return [topLeftBBIndex, bottomRightBBIndex];
-        }
-      );
-      let area = math.polyline.getArea(canvasCoordinates) / scale / scale;
-
+        return [topLeftBBIndex, bottomRightBBIndex];
+      });
       // Convert from canvas_pixels ^2 to mm^2
-      area *= deltaInX * deltaInY;
+      const area =
+        math.polyline.getArea(canvasCoordinates) * deltaInX * deltaInY;
 
       cachedStats[targetId] = {
         Modality: metadata.Modality,

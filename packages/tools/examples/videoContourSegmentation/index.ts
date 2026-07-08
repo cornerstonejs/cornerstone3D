@@ -6,7 +6,8 @@ import {
   addSliderToToolbar,
   addDropdownToToolbar,
   addToggleButtonToToolbar,
-  createImageIdsAndCacheMetaData,
+  createDisplaySets,
+  getViewportTypeForDisplaySet,
   createInfoSection,
   initDemo,
   setTitleAndDescription,
@@ -39,7 +40,6 @@ const {
   Enums: csToolsEnums,
   segmentation,
 } = cornerstoneTools;
-const { ViewportType } = Enums;
 
 // Define various constants for the tool definition
 const toolGroupId = 'DEFAULT_TOOLGROUP_ID';
@@ -57,7 +57,7 @@ setTitleAndDescription(
   'Here we demonstrate how to use spline and livewire segmentation ROI tools on a video viewport'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 let viewport;
@@ -250,17 +250,20 @@ async function run() {
   addManipulationBindings(toolGroup, { toolMap });
 
   // Get Cornerstone imageIds and fetch metadata into RAM
-  const imageIds = await createImageIdsAndCacheMetaData({
+  const displaySets = await createDisplaySets({
     StudyInstanceUID: '2.25.96975534054447904995905761963464388233',
     SeriesInstanceUID: '2.25.15054212212536476297201250326674987992',
     wadoRsRoot:
       getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
-  // Only one SOP instances is DICOM, so find it
-  const videoId = imageIds.find(
-    (it) => it.indexOf('2.25.179478223177027022014772769075050874231') !== -1
-  );
+  const displaySet =
+    displaySets.find((ds) => ds.preferredViewportType === 'video') ??
+    displaySets[0];
+  if (!displaySet) {
+    throw new Error('No display set found in series');
+  }
+  const videoId = displaySet.instances[0].imageId;
 
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
@@ -270,7 +273,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId,
-      type: ViewportType.VIDEO,
+      type: getViewportTypeForDisplaySet(displaySet),
       element: element,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
@@ -286,7 +289,7 @@ async function run() {
   addVideoTime(viewportGrid, viewport);
 
   // Set the stack on the viewport
-  await viewport.setVideo(videoId, 1);
+  await viewport.setDisplaySets({ displaySetId: videoId });
 
   // Render the image
   renderingEngine.render();

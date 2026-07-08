@@ -1,6 +1,7 @@
-import { StackViewport } from '@cornerstonejs/core';
+import { StackViewport, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
+import getViewportICamera from '../../getViewportICamera';
 
 const EPSILON = 1e-3;
 
@@ -24,7 +25,18 @@ const getSubPixelSpacingAndXYDirections = (
   let xDir;
   let yDir;
 
-  if (viewport instanceof StackViewport) {
+  // Native ("next") generic viewports are not StackViewport/VolumeViewport
+  // instances. A stack-mode generic viewport exposes the slice plane directly
+  // through getImageData (like a legacy stack), so it uses the image-direction
+  // path; a volume-mode generic viewport keeps the camera-relative path but
+  // reads the camera through the getViewportICamera bridge (it has no native
+  // getCamera, which previously threw and aborted the draw loop).
+  const isGeneric = csUtils.isGenericViewport(viewport);
+  const isImageSlice =
+    viewport instanceof StackViewport ||
+    (isGeneric && csUtils.getViewportContentMode(viewport) === 'stack');
+
+  if (isImageSlice) {
     // Check XY directions
     const imageData = viewport.getImageData();
 
@@ -40,7 +52,9 @@ const getSubPixelSpacingAndXYDirections = (
     // Check volume directions
     const imageData = viewport.getImageData();
     const { direction, spacing: volumeSpacing } = imageData;
-    const { viewPlaneNormal, viewUp } = viewport.getCamera();
+    const { viewPlaneNormal, viewUp } = (
+      isGeneric ? getViewportICamera(viewport) : viewport.getCamera()
+    ) as Types.ICamera;
 
     // Calculate size of spacing vector in normal direction
     const iVector = direction.slice(0, 3) as Types.Point3;

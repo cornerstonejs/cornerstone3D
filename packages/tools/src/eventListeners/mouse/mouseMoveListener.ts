@@ -22,6 +22,10 @@ function mouseMoveListener(evt: MouseEvent) {
   const { renderingEngineId, viewportId } = enabledElement;
 
   const currentPoints = getMouseEventPoints(evt);
+  if (!currentPoints) {
+    return;
+  }
+
   const eventDetail: MouseMoveEventDetail = {
     renderingEngineId,
     viewportId,

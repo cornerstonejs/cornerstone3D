@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/core",
-  "version": "4.22.3",
+  "version": "5.4.3",
   "description": "Cornerstone3D Core",
   "module": "./dist/esm/index.js",
   "types": "./dist/esm/index.d.ts",
@@ -11,49 +11,49 @@
   "sideEffects": false,
   "exports": {
     ".": {
+      "types": "./dist/esm/index.d.ts",
       "import": "./dist/esm/index.js",
-      "node": "./dist/esm/index.js",
-      "types": "./dist/esm/index.d.ts"
+      "default": "./dist/esm/index.js"
     },
     "./utilities": {
+      "types": "./dist/esm/utilities/index.d.ts",
       "import": "./dist/esm/utilities/index.js",
-      "node": "./dist/esm/utilities/index.js",
-      "types": "./dist/esm/utilities/index.d.ts"
+      "default": "./dist/esm/utilities/index.js"
     },
     "./utilities/*": {
+      "types": "./dist/esm/utilities/*.d.ts",
       "import": "./dist/esm/utilities/*.js",
-      "node": "./dist/esm/utilities/*.js",
-      "types": "./dist/esm/utilities/*.d.ts"
+      "default": "./dist/esm/utilities/*.js"
     },
     "./constants": {
+      "types": "./dist/esm/constants/index.d.ts",
       "import": "./dist/esm/constants/index.js",
-      "node": "./dist/esm/constants/index.js",
-      "types": "./dist/esm/constants/index.d.ts"
+      "default": "./dist/esm/constants/index.js"
     },
     "./constants/*": {
+      "types": "./dist/esm/constants/*.d.ts",
       "import": "./dist/esm/constants/*.js",
-      "node": "./dist/esm/constants/*.js",
-      "types": "./dist/esm/constants/*.d.ts"
+      "default": "./dist/esm/constants/*.js"
     },
     "./enums": {
+      "types": "./dist/esm/enums/index.d.ts",
       "import": "./dist/esm/enums/index.js",
-      "node": "./dist/esm/enums/index.js",
-      "types": "./dist/esm/enums/index.d.ts"
+      "default": "./dist/esm/enums/index.js"
     },
     "./enums/*": {
+      "types": "./dist/esm/enums/*.d.ts",
       "import": "./dist/esm/enums/*.js",
-      "node": "./dist/esm/enums/*.js",
-      "types": "./dist/esm/enums/*.d.ts"
+      "default": "./dist/esm/enums/*.js"
     },
     "./loaders": {
+      "types": "./dist/esm/loaders/index.d.ts",
       "import": "./dist/esm/loaders/index.js",
-      "node": "./dist/esm/loaders/index.js",
-      "types": "./dist/esm/loaders/index.d.ts"
+      "default": "./dist/esm/loaders/index.js"
     },
     "./loaders/*": {
+      "types": "./dist/esm/loaders/*.d.ts",
       "import": "./dist/esm/loaders/*.js",
-      "node": "./dist/esm/loaders/*.js",
-      "types": "./dist/esm/loaders/*.d.ts"
+      "default": "./dist/esm/loaders/*.js"
     },
     "./types": {
       "types": "./dist/esm/types/index.d.ts"
@@ -62,29 +62,41 @@
       "types": "./dist/esm/types/*.d.ts"
     },
     "./version": {
+      "types": "./dist/esm/version.d.ts",
       "import": "./dist/esm/version.js",
-      "node": "./dist/esm/version.js",
-      "types": "./dist/esm/version.d.ts"
-    }
+      "default": "./dist/esm/version.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "prebuild": "node ../../scripts/generate-version.js ./",
-    "build:esm": "tsc --project ./tsconfig.json",
-    "build:esm:watch": "tsc --project ./tsconfig.json --watch",
+    "build:esm": "pnpm run prebuild && tsc --project ./tsconfig.json && tsc-alias -p ./tsconfig.json --resolve-full-paths && node ../../scripts/write-dist-esm-package-json.js ./",
+    "build:esm:watch": "sh -c 'tsc-alias -p ./tsconfig.json --resolve-full-paths --watch & alias_pid=$!; node ../../scripts/write-dist-esm-package-json.js ./ --watch & writer_pid=$!; trap \"kill $alias_pid $writer_pid\" EXIT; tsc --project ./tsconfig.json --watch'",
     "clean": "rm -rf node_modules/.cache/storybook && shx rm -rf dist",
-    "clean:deep": "yarn run clean && shx rm -rf node_modules",
-    "build": "yarn run build:esm",
-    "build:all": "yarn run build:esm",
+    "clean:deep": "pnpm run clean && shx rm -rf node_modules",
+    "build": "pnpm run build:esm",
+    "build:all": "pnpm run build:esm",
     "dev": "tsc --project ./tsconfig.json --watch",
     "api-check": "api-extractor --debug run ",
     "lint": "oxlint .",
-    "prepublishOnly": "yarn run build"
+    "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@kitware/vtk.js": "34.15.1",
+    "@cornerstonejs/utils": "5.4.3",
+    "@kitware/vtk.js": "35.5.3",
     "comlink": "4.4.2",
     "gl-matrix": "3.4.3",
     "loglevel": "1.9.2"
+  },
+  "devDependencies": {
+    "@cornerstonejs/metadata": "5.4.3"
+  },
+  "peerDependencies": {
+    "@cornerstonejs/metadata": "5.4.3",
+    "@cornerstonejs/utils": "5.4.3"
   },
   "contributors": [
     {
