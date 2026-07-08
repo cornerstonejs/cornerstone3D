@@ -11,7 +11,8 @@ import {
  * @param orientationString - The orientation.
  * @param labels - Designators per patient axis. Must match the set used to
  *   produce `orientationString`. Defaults to the human (biped) set; pass
- *   {@link QUADRUPED_ORIENTATION_LABELS} for veterinary strings.
+ *   {@link QUADRUPED_TRUNK_ORIENTATION_LABELS} or
+ *   {@link QUADRUPED_HEAD_ORIENTATION_LABELS} for veterinary strings.
  * @returns The inverted orientationString.
  */
 export default function invertOrientationStringLPS(

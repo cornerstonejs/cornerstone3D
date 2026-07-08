@@ -10,8 +10,9 @@ import {
  *
  * @param vector - Input array
  * @param labels - Designators to use for each patient axis. Defaults to the
- *   human (biped) set; pass {@link QUADRUPED_ORIENTATION_LABELS} for veterinary
- *   imaging, per DICOM PS3.3 C.7.6.1.1.1.
+ *   human (biped) set; pass {@link QUADRUPED_TRUNK_ORIENTATION_LABELS} or
+ *   {@link QUADRUPED_HEAD_ORIENTATION_LABELS} for veterinary imaging, per
+ *   DICOM PS3.3 C.7.6.1.1.1 (quadruped designators are body-region-specific).
  * @returns The orientation in the patient coordinate system.
  */
 export default function getOrientationStringLPS(
