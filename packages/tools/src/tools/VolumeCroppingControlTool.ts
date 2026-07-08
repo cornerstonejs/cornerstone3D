@@ -16,6 +16,8 @@ import {
 } from '@cornerstonejs/core';
 
 import { getToolGroup } from '../store/ToolGroupManager';
+import getViewportICamera from '../utilities/getViewportICamera';
+import { resetViewportCamera } from '../utilities/setViewportCamera';
 
 import {
   addAnnotation,
@@ -284,7 +286,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
     }
 
     const { element } = viewport;
-    const { position, focalPoint } = viewport.getCamera();
+    const { position, focalPoint } = getViewportICamera(viewport);
 
     // Check if there is already annotation for this viewport
     let annotations = this._getAnnotations(enabledElement);
@@ -300,7 +302,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
     // Determine orientation from camera normal, fallback to viewportId string
     const orientation = getOrientationFromNormal(
-      viewport.getCamera().viewPlaneNormal
+      getViewportICamera(viewport).viewPlaneNormal
     );
 
     const annotation = {
@@ -436,7 +438,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
       const resetToCenter = true;
       const resetRotation = true;
       const suppressEvents = true;
-      viewport.resetCamera({
+      resetViewportCamera(viewport, {
         resetPan,
         resetZoom,
         resetToCenter,
@@ -680,10 +682,13 @@ class VolumeCroppingControlTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     // Use orientation property for matching
     let orientation = null;
-    if (enabledElement.viewport && enabledElement.viewport.getCamera) {
-      orientation = getOrientationFromNormal(
-        enabledElement.viewport.getCamera().viewPlaneNormal
-      );
+    if (enabledElement.viewport) {
+      // Use the lane-agnostic camera read so orientation also resolves on native
+      // (generic) viewports, which do not expose the legacy getCamera method.
+      const { viewPlaneNormal } = getViewportICamera(enabledElement.viewport);
+      if (viewPlaneNormal) {
+        orientation = getOrientationFromNormal(viewPlaneNormal);
+      }
     }
 
     // Filter annotations for this orientation
@@ -735,7 +740,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
     const { viewport, renderingEngine } = enabledElement;
     const { element } = viewport;
     const annotations = this._getAnnotations(enabledElement);
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const filteredToolAnnotations =
       this.filterInteractableAnnotationsForElement(element, annotations);
 

@@ -151,6 +151,9 @@ import {
   setUseCPURendering,
   setPreferSizeOverAccuracy,
   resetUseCPURendering,
+  getRenderBackend,
+  setRenderBackend,
+  getEffectiveRenderBackend,
   getConfiguration,
   setConfiguration,
   getWebWorkerManager,
@@ -158,6 +161,10 @@ import {
   peerImport,
   resetInitialization,
 } from './init';
+import {
+  getRenderingCapabilities,
+  detectRenderingCapabilities,
+} from './utilities/renderingCapabilities';
 
 // Classes
 import Settings from './Settings';
@@ -358,6 +365,12 @@ export {
   setUseCPURendering,
   setPreferSizeOverAccuracy,
   resetUseCPURendering,
+  // Render backend (gpu | cpu | auto) + capability detection
+  getRenderBackend,
+  setRenderBackend,
+  getEffectiveRenderBackend,
+  getRenderingCapabilities,
+  detectRenderingCapabilities,
   // GenericViewport
   getUseGenericViewport,
   // Geometry Loader

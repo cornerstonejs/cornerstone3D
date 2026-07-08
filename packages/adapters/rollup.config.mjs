@@ -30,7 +30,10 @@ export default [
   // ESM configuration
   {
     external: isExternal,
-    input: pkg.src || 'src/index.ts',
+    // version.ts is not reachable from index.ts, but the package exposes a
+    // "./version" subpath export. With preserveModules, rollup only emits modules
+    // in the graph, so list it as an explicit input to emit dist/esm/version.js.
+    input: [pkg.src || 'src/index.ts', 'src/version.ts'],
     output: [
       {
         dir: 'dist/esm',

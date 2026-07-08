@@ -15,7 +15,7 @@ import type {
   LoadedData,
   ViewportDataBinding,
 } from '../ViewportArchitectureTypes';
-import { getGenericViewportSourceDataId } from '../genericViewportDataSetAccess';
+import { getGenericViewportSourceDataId } from '../genericViewportDisplaySetAccess';
 import type { GenericViewportReferenceContext } from '../genericViewportReferenceCompatibility';
 import type {
   VideoViewState,
@@ -554,6 +554,17 @@ class VideoViewport extends GenericViewport<
     }
 
     // DOM updates are applied immediately in applyViewState/updateDataPresentation
+  }
+
+  /**
+   * Called by the rendering engine render loop for custom-pipeline viewports
+   * (getUseCustomRenderingPipeline returns true). DOM updates happen eagerly in
+   * the render path, so this defers to render(); without it the engine threw
+   * `customRenderViewportToCanvas is not a function` for the next video viewport.
+   * Mirrors the ECG and WSI native viewports.
+   */
+  customRenderViewportToCanvas(): void {
+    this.render();
   }
 
   /**

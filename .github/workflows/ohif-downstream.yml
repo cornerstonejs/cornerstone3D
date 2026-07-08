@@ -25,11 +25,11 @@ concurrency:
 jobs:
   ohif-downstream:
     name: OHIF downstream tests against this PR
-    runs-on: self-hosted
+    runs-on: [nashua]
     timeout-minutes: 120
     env:
       BUN_VERSION: 1.2.23
-      NODE_VERSION: 24
+      NODE_VERSION: 24.15.0
       OHIF_REF: master
       OHIF_DIR: ohif
       # Update to force a rebuild of the OHIF integration
@@ -118,13 +118,13 @@ jobs:
 
       - name: Install Playwright browsers
         working-directory: ${{ env.OHIF_DIR }}
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium
 
       - name: Run OHIF e2e tests
         working-directory: ${{ env.OHIF_DIR }}
         env:
           PLAYWRIGHT_HTML_OPEN: never
-        run: bun run test:e2e:ci
+        run: bash "$GITHUB_WORKSPACE/scripts/ci/with-nashua-lock.sh" bun run test:e2e:ci
 
       - name: Upload OHIF Playwright artifacts
         if: always()
