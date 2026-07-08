@@ -1481,17 +1481,20 @@ describe('wadouri dataSet-layer', () => {
         dataSet: original as any,
         cacheCount: 1,
       };
-      // Seed cacheSizeInBytes bookkeeping the same way `load()` would have.
-      // getInfo() only reports numberOfDataSetsCached from loadedDataSets keys,
-      // so we verify the byte delta indirectly through a second update.
       const replacement = fakeDataSet({}, {}, new Uint8Array(80));
 
       const events: any[] = [];
       const listener = (evt: any) => events.push(evt.detail);
       eventTarget.addEventListener('datasetscachechanged', listener);
 
+      const sizeBefore = dataSetCacheManager.getInfo().cacheSizeInBytes;
       dataSetCacheManager.update('wadouri:update', replacement as any);
+      const sizeAfter = dataSetCacheManager.getInfo().cacheSizeInBytes;
 
+      // update() subtracts the previous dataset's byteArray length (50) and
+      // adds the replacement's (80), so cacheSizeInBytes grows by the 30-byte
+      // delta regardless of its starting value.
+      expect(sizeAfter - sizeBefore).toBe(30);
       expect(loadedDataSets['wadouri:update'].dataSet).toBe(replacement);
       expect(events).toHaveLength(1);
       expect(events[0].action).toBe('updated');
