@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.4.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.0...v5.4.1) (2026-07-08)
+
+### Bug Fixes
+
+- Guard Crosshairs mouse move without annotations ([#2715](https://github.com/cornerstonejs/cornerstone3D/issues/2715)) ([d799d03](https://github.com/cornerstonejs/cornerstone3D/commit/d799d030f4071cfbb9a0fb62f55e5800473b1a06))
+
 # [5.4.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.3.0...v5.4.0) (2026-07-08)
 
 ### Features
