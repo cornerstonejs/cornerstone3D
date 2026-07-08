@@ -58,9 +58,13 @@ function toLowHighRange(
   lower: number;
   upper: number;
 } {
-  // LINEAR formula produces lower === upper when WW <= 1 because (WW-1)
-  // becomes 0. Fall back to LINEAR_EXACT to avoid division by zero. See #2706.
-  if (windowWidth <= 1 && voiLUTFunction === VOILUTFunctionType.LINEAR) {
+  // WW <= 1 makes (WW-1) = 0, so LINEAR/SAMPLED_SIGMOID produce lower === upper
+  // (division by zero). Fall back to LINEAR_EXACT. See #2706.
+  if (
+    windowWidth <= 1 &&
+    (voiLUTFunction === VOILUTFunctionType.LINEAR ||
+      voiLUTFunction === VOILUTFunctionType.SAMPLED_SIGMOID)
+  ) {
     voiLUTFunction = VOILUTFunctionType.LINEAR_EXACT;
   }
 
