@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import { ActorRenderMode, type Types } from '@cornerstonejs/core';
 import type { ViewportLabelmapRenderMode } from '../../../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
 import type { Segmentation } from '../../../../types/SegmentationStateTypes';
 import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/triggerSegmentationEvents';
@@ -7,7 +7,10 @@ import {
   getVolumeLabelmapImageMapperRepresentationUIDs,
   updateVolumeLabelmapImageMapperActors,
 } from '../volumeLabelmapImageMapper';
-import { createLabelmapRenderPlan } from './createLabelmapRenderPlan';
+import {
+  createLabelmapRenderPlan,
+  getActorEntryRenderMode,
+} from './createLabelmapRenderPlan';
 import type { LabelmapRenderPlan } from './types';
 
 function createVolumeSliceImageMapperPlan({
@@ -38,6 +41,12 @@ function createVolumeSliceImageMapperPlan({
         segmentationId,
         segmentation
       ),
+    // An actor surviving from a volume mount (e.g. remounted in place by a
+    // live render-backend switch back to the GPU) shares this plan's
+    // representation UID but not its shape; force a remount through the
+    // image-mapper path.
+    isActorEntryCompatible: (actorEntry) =>
+      !isVolumeMountedActorEntry(actorEntry),
     mount: () =>
       mountVolumeLabelmapImageMapper({
         viewport,
@@ -52,6 +61,16 @@ function createVolumeSliceImageMapperPlan({
         actorEntries,
       }),
   });
+}
+
+function isVolumeMountedActorEntry(actorEntry: Types.ActorEntry): boolean {
+  const renderMode = getActorEntryRenderMode(actorEntry);
+
+  return (
+    renderMode === ActorRenderMode.VTK_VOLUME ||
+    renderMode === ActorRenderMode.VTK_VOLUME_SLICE ||
+    renderMode === ActorRenderMode.CPU_VOLUME
+  );
 }
 
 async function mountVolumeLabelmapImageMapper({

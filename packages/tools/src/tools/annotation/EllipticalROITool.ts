@@ -33,6 +33,7 @@ import {
 import { state } from '../../store/state';
 import { ChangeTypes, Events } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
+import getViewportICamera from '../../utilities/getViewportICamera';
 import getWorldWidthAndHeightFromTwoPoints from '../../utilities/planar/getWorldWidthAndHeightFromTwoPoints';
 import {
   pointInEllipse,
@@ -972,7 +973,9 @@ class EllipticalROITool extends AnnotationTool {
     const { points } = data.handles;
 
     const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
-    const { viewPlaneNormal, viewUp } = viewport.getCamera();
+    // Native ("next") viewports expose no getCamera; read view orientation
+    // through the shared ICamera bridge (legacy viewports fall through to getCamera).
+    const { viewPlaneNormal, viewUp } = getViewportICamera(viewport);
 
     const [topLeftCanvas, bottomRightCanvas] = <Array<Types.Point2>>(
       getCanvasEllipseCorners(canvasCoordinates)

@@ -133,6 +133,14 @@ class Viewport {
   sHeight: number;
   /** a Map containing the actor uid and actors */
   _actors: Map<string, ActorEntry>;
+  /**
+   * Records the display sets currently mounted on the viewport. Populated by the
+   * type-specific {@link setDisplaySets} overrides (via {@link mountDisplaySets})
+   * and cleared whenever raw data is set directly (e.g. `setStack`), so that
+   * {@link getDisplaySets} reflects only display-set-driven content.
+   */
+  protected _displaySets: Array<{ displaySetId: string; options?: unknown }> =
+    [];
   /** Default options for the viewport which includes orientation, viewPlaneNormal and backgroundColor */
   readonly defaultOptions: ViewportInputOptions;
   /** options for the viewport which includes orientation axis, backgroundColor and displayArea */
@@ -2408,6 +2416,98 @@ class Viewport {
     _entries: Array<{ dataId: string; options?: DataSetOptions }>
   ) {
     throw new Error('Unsupported operation setDataList');
+  }
+
+  /**
+   * Records the display sets currently shown on the viewport. The base
+   * implementation only stores the entries so that {@link getDisplaySets} can
+   * report them; type-specific viewports override this to actually load the data
+   * (via their native setter such as `setStack`/`setVolumes`/`setVideo`),
+   * delegating to {@link mountDisplaySets} so the clear-then-record ordering is
+   * applied consistently.
+   *
+   * Because the native data setters clear the recorded list (see
+   * {@link clearDisplaySets}), driving a viewport with a raw data setter -
+   * without going through `setDisplaySets` - leaves `getDisplaySets()` empty,
+   * correctly reflecting that the viewport is not display-set driven.
+   *
+   * @param entries - the display set entries that were mounted; the first entry
+   *   is the source and any subsequent entries are overlays.
+   */
+  public setDisplaySets(
+    ...entries: Array<{ displaySetId: string; options?: unknown }>
+  ): void | Promise<void> {
+    this._displaySets = entries;
+  }
+
+  /**
+   * Shared template for the type-specific {@link setDisplaySets} overrides. It
+   * keeps the clear-then-record ordering invariant in exactly one place instead
+   * of being copy-pasted per viewport:
+   *
+   * 1. Validate that a source display set (the first entry) was provided.
+   * 2. Run `load`, which resolves the entry to renderable data and hands it to
+   *    the viewport's native data setter (`setStack` / `setVolumes` /
+   *    `setVideo` / `setWSI` / `setEcg`). That native setter calls
+   *    {@link clearDisplaySets}, wiping any previously recorded entries.
+   * 3. Record the mounted entries - only after `load` resolves - so
+   *    {@link getDisplaySets} reflects exactly what was mounted.
+   *
+   * Because recording always happens last, a new viewport cannot accidentally
+   * record before loading (which the native setter would then wipe) or forget
+   * to record at all; both failure modes the previous copy-pasted sequence was
+   * prone to are handled here once.
+   *
+   * Overlays: the variadic signature already accepts overlay entries (index 1+),
+   * matching the generic viewport `setDisplaySets`. Legacy viewports do not yet
+   * render overlays, so only the source (first) entry is loaded and recorded -
+   * {@link getDisplaySets} stays honest about what is actually shown. Adding
+   * overlay support later is purely additive: load the extra entries here and
+   * record them, with no change to the public signature.
+   *
+   * @param entries - the display set entries passed to `setDisplaySets`; the
+   *   first is the source and any subsequent entries are overlays.
+   * @param load - resolves the source entry to renderable data and loads it via
+   *   the viewport's native data setter. Receives the validated source entry.
+   */
+  protected async mountDisplaySets<
+    TEntry extends { displaySetId: string; options?: unknown },
+  >(
+    entries: TEntry[],
+    load: (sourceEntry: TEntry) => void | Promise<void>
+  ): Promise<void> {
+    const [entry] = entries;
+    if (!entry?.displaySetId) {
+      throw new Error(
+        `${this.constructor.name}: setDisplaySets requires a displaySetId`
+      );
+    }
+
+    // `load` invokes the native data setter, which clears the recorded display
+    // sets (see clearDisplaySets); record the mounted source only afterwards.
+    // Overlays (entries[1+]) are not rendered by legacy viewports yet, so they
+    // are intentionally not recorded - see the overlay note above.
+    await load(entry);
+    this._displaySets = [entry];
+  }
+
+  /**
+   * Returns the display sets currently recorded as mounted on the viewport.
+   * Empty when the viewport was driven by a raw data setter instead of
+   * {@link setDisplaySets}.
+   */
+  public getDisplaySets(): Array<{ displaySetId: string; options?: unknown }> {
+    return this._displaySets;
+  }
+
+  /**
+   * Clears the recorded display sets. Native data setters call this so that
+   * setting raw data without {@link setDisplaySets} resets the stored list.
+   * {@link mountDisplaySets} relies on this ordering: it runs the native data
+   * setter first (which clears) and then records the mounted entries.
+   */
+  protected clearDisplaySets(): void {
+    this._displaySets = [];
   }
 }
 

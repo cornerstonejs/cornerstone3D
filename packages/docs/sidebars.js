@@ -169,7 +169,10 @@ module.exports = {
           label: 'Metadata',
           link: { type: 'doc', id: 'concepts/cornerstone-metadata/index' },
           collapsed: true,
-          items: ['concepts/cornerstone-metadata/index'],
+          items: [
+            'concepts/cornerstone-metadata/index',
+            'concepts/cornerstone-metadata/display-sets',
+          ],
         },
         {
           type: 'category',

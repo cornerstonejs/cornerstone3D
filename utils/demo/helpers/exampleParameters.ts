@@ -5,10 +5,7 @@ type DemoConfig = {
     rendering?: {
       useCPURendering?: boolean;
       planar?: {
-        cpuThresholds?: {
-          image?: number;
-          volume?: number;
-        };
+        renderBackend?: 'auto' | 'gpu' | 'cpu';
       };
       useGenericViewport?: boolean;
     };
@@ -71,12 +68,12 @@ export function applyUrlParameterOverridesToDemoConfig(
   return utilities.deepMerge(config, {
     core: {
       rendering: {
+        // useCPURendering forces the legacy viewports; the planar
+        // renderBackend pin covers GenericViewport-based viewports (both
+        // image and volume paths), so no threshold overrides are needed.
         useCPURendering: true,
         planar: {
-          cpuThresholds: {
-            image: 0,
-            volume: 0,
-          },
+          renderBackend: 'cpu',
         },
       },
     },

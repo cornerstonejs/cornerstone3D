@@ -1,4 +1,5 @@
 import { AnnotationTool } from '../base';
+import getViewportICamera from '../../utilities/getViewportICamera';
 
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
@@ -101,7 +102,7 @@ class ETDRSGridTool extends AnnotationTool {
 
     this.isDrawing = true;
 
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const { viewPlaneNormal, viewUp } = camera;
 
     const referencedImageId = this.getReferencedImageId(
@@ -174,7 +175,7 @@ class ETDRSGridTool extends AnnotationTool {
       viewport.canvas.width / 2,
       viewport.canvas.height / 2,
     ]);
-    const { viewUp } = viewport.getCamera();
+    const { viewUp } = getViewportICamera(viewport);
     const p2 = vec3.scaleAndAdd(vec3.create(), p1, viewUp, measurement);
 
     // transform the points from world mm to canvas pixels

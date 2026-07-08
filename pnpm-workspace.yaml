@@ -56,9 +56,12 @@ overrides:
   'minimatch@>=10.0.0 <10.2.3': 10.2.5
   'form-data': 4.0.6
   'vite': 8.0.16
+  undici: 6.27.0
+  linkify-it: 5.0.1
 
 auditConfig:
-  ignoreGhsas: []
+  ignoreGhsas:
+    - GHSA-mp2f-45pm-3cg9 # decompress is called only ever decompresses a hash-pinned, hardcoded archive in a dev-only CLI
 
 allowBuilds:
   '@swc/core': true

@@ -529,6 +529,49 @@ function _createDynamicVolumeViewportCinePlayContext(
   };
 }
 
+/**
+ * Cine play context for direct GenericViewport ("next") viewports, which are not
+ * instances of StackViewport/VolumeViewport/VideoViewport. Both stack-mode and
+ * volume-mode generic viewports advance through frames/slices via the semantic
+ * getNumberOfSlices/getSliceIndex API and csUtils.scroll. Frame-time-vector
+ * playback applies only in stack mode (acquired multi-frame); volume reformat
+ * cine uses a fixed frame rate.
+ */
+function _createGenericViewportCinePlayContext(
+  viewport,
+  waitForRendered: number
+): CINETypes.CinePlayContext {
+  return {
+    get numScrollSteps(): number {
+      return viewport.getNumberOfSlices();
+    },
+    get currentStepIndex(): number {
+      return viewport.getSliceIndex();
+    },
+    get frameTimeVectorEnabled(): boolean {
+      // Frame-time-vector timing applies only to acquired multi-frame image-id
+      // stacks. Only stack-mode generic viewports report 'stack' here (volume,
+      // video, ecg, wsi return other modes), so this intentionally disables
+      // frame-time-vector playback for every non-stack generic family.
+      return viewport.getCurrentMode() === 'stack';
+    },
+    waitForRenderedCount: 0,
+    scroll(delta: number): void {
+      const status = viewport.viewportStatus;
+      if (
+        this.waitForRenderedCount <= waitForRendered &&
+        status !== undefined &&
+        status !== ViewportStatus.RENDERED
+      ) {
+        this.waitForRenderedCount++;
+        return;
+      }
+      this.waitForRenderedCount = 0;
+      csUtils.scroll(viewport, { delta, debounceLoading: debounced });
+    },
+  };
+}
+
 function _createCinePlayContext(
   viewport,
   playClipOptions: CINETypes.PlayClipOptions
@@ -554,6 +597,15 @@ function _createCinePlayContext(
 
   if (viewport instanceof VideoViewport) {
     return _createVideoViewportCinePlayContext(
+      viewport,
+      playClipOptions.waitForRendered ?? 30
+    );
+  }
+
+  // Direct GenericViewport ("next") viewports report none of the legacy instanceof
+  // types; route them by capability (stack/volume both scroll via getNumberOfSlices).
+  if (csUtils.isGenericViewport(viewport)) {
+    return _createGenericViewportCinePlayContext(
       viewport,
       playClipOptions.waitForRendered ?? 30
     );

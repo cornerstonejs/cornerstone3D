@@ -35,7 +35,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   globalSetup: './playwright.globalSetup.ts',
   retries: process.env.CI ? 3 : 0,
-  workers: Number(process.env.PLAYWRIGHT_WORKERS) || 8,
+  workers: Number(process.env.PLAYWRIGHT_WORKERS) || 18,
   timeout: 120 * 1000,
   snapshotPathTemplate:
     'tests/screenshots{/projectName}/{testFilePath}/{arg}{ext}',
@@ -70,6 +70,9 @@ export default defineConfig({
     actionTimeout: 30000,
     trace: 'on-first-retry',
     video,
+    launchOptions: {
+      args: ['--use-gl=egl'],
+    },
   },
 
   projects: [
@@ -106,6 +109,7 @@ export default defineConfig({
         '**/rectangleROIThresholdStatisticsMIM.spec.ts',
         '**/renderingPipeline.spec.ts',
         '**/stackLabelmapSegmentation/**.spec.ts',
+        '**/segmentLabelHover.spec.ts',
       ],
     },
     {
@@ -125,6 +129,7 @@ export default defineConfig({
         '**/stackLabelmapSegmentation.spec.ts',
         '**/rectangleROIThresholdStatisticsMIM.spec.ts',
         '**/stackLabelmapSegmentation/**.spec.ts',
+        '**/segmentLabelHover.spec.ts',
       ],
     },
   ],
