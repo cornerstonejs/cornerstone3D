@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.4.3](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.2...v5.4.3) (2026-07-08)
+
+### Bug Fixes
+
+- **drawLine:** SVG line disappeared on Firefox ([#2561](https://github.com/cornerstonejs/cornerstone3D/issues/2561)) ([9b11a0a](https://github.com/cornerstonejs/cornerstone3D/commit/9b11a0ae9c6d244682accafb0dcd0dc7ddce3de5))
+
 ## [5.4.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.1...v5.4.2) (2026-07-08)
 
 ### Bug Fixes
