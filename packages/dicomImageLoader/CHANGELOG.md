@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.4.4](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.3...v5.4.4) (2026-07-08)
+
+**Note:** Version bump only for package @cornerstonejs/dicom-image-loader
+
 ## [5.4.3](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.2...v5.4.3) (2026-07-08)
 
 **Note:** Version bump only for package @cornerstonejs/dicom-image-loader
