@@ -127,6 +127,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
       configuration: {
         preventHandleOutsideImage: false,
         calculateStats: true,
+        allowOpenSplines: false,
         simplifiedSpline: false, // if true, it will convert the annotations to free hand
         getTextLines: defaultGetTextLines,
         /**
@@ -537,7 +538,10 @@ class SplineROITool extends ContourSegmentationBaseTool {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const { canvas: canvasPoint, world: worldPoint } = currentPoints;
-    let closeContour = data.handles.points.length >= 2 && doubleClick;
+    let closeContour =
+      data.handles.points.length >= 2 &&
+      doubleClick &&
+      !this.configuration.allowOpenSplines;
     let addNewPoint = true;
 
     if (data.handles.points.length) {
@@ -557,7 +561,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
 
       if (closestControlPoint?.index === 0) {
         addNewPoint = false;
-        closeContour = true;
+        closeContour = !this.configuration.allowOpenSplines;
       }
     }
 
@@ -569,7 +573,11 @@ class SplineROITool extends ContourSegmentationBaseTool {
     annotation.invalidated = true;
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
-    if (data.contour.closed) {
+    const allowOpenSplines =
+      doubleClick &&
+      this.configuration.allowOpenSplines &&
+      data.handles.points.length >= 3;
+    if (data.contour.closed || allowOpenSplines) {
       this._endCallback(evt);
     }
 

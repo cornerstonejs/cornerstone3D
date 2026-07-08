@@ -3,6 +3,37 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.4.4](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.3...v5.4.4) (2026-07-08)
+
+### Bug Fixes
+
+- **annotations:** use epsilon tolerance for image dimension checks to prevent out-of-bounds errors ([#2708](https://github.com/cornerstonejs/cornerstone3D/issues/2708)) ([703bead](https://github.com/cornerstonejs/cornerstone3D/commit/703beadf69b022a5ad1ba72aae00cbfec4812a04))
+
+## [5.4.3](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.2...v5.4.3) (2026-07-08)
+
+### Bug Fixes
+
+- **drawLine:** SVG line disappeared on Firefox ([#2561](https://github.com/cornerstonejs/cornerstone3D/issues/2561)) ([9b11a0a](https://github.com/cornerstonejs/cornerstone3D/commit/9b11a0ae9c6d244682accafb0dcd0dc7ddce3de5))
+
+## [5.4.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.1...v5.4.2) (2026-07-08)
+
+### Bug Fixes
+
+- **labelmap:** use content-based comparison for segmentsHidden Set ([#2675](https://github.com/cornerstonejs/cornerstone3D/issues/2675)) ([275a1d1](https://github.com/cornerstonejs/cornerstone3D/commit/275a1d184f232bcc5780efc21e2a34fd1c7b97ee))
+- render color points with negative indices ([#2663](https://github.com/cornerstonejs/cornerstone3D/issues/2663)) ([5c0f39d](https://github.com/cornerstonejs/cornerstone3D/commit/5c0f39df70de0c5164c007efa743fd5f9d14c075))
+
+## [5.4.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.0...v5.4.1) (2026-07-08)
+
+### Bug Fixes
+
+- Guard Crosshairs mouse move without annotations ([#2715](https://github.com/cornerstonejs/cornerstone3D/issues/2715)) ([d799d03](https://github.com/cornerstonejs/cornerstone3D/commit/d799d030f4071cfbb9a0fb62f55e5800473b1a06))
+
+# [5.4.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.3.0...v5.4.0) (2026-07-08)
+
+### Features
+
+- add image cpr mapper tool example ([#2665](https://github.com/cornerstonejs/cornerstone3D/issues/2665)) ([04bfcdc](https://github.com/cornerstonejs/cornerstone3D/commit/04bfcdc410ed5b084560c2b1e139fbbf005296a8))
+
 # [5.3.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.2.2...v5.3.0) (2026-07-07)
 
 ### Features
