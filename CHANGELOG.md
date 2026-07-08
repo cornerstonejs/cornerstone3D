@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [5.4.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.3.0...v5.4.0) (2026-07-08)
+
+### Features
+
+- add image cpr mapper tool example ([#2665](https://github.com/cornerstonejs/cornerstone3D/issues/2665)) ([04bfcdc](https://github.com/cornerstonejs/cornerstone3D/commit/04bfcdc410ed5b084560c2b1e139fbbf005296a8))
+
 # [5.3.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.2.2...v5.3.0) (2026-07-07)
 
 ### Features
