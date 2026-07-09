@@ -5,6 +5,7 @@ import {
   createExampleUrl,
   screenShotPaths,
   waitForImageRendered,
+  retryRemoteFixtures,
 } from '../utils/index';
 import { dicomDimensions } from '../../packages/dicomImageLoader/examples/dicomImageLoaderWADOURI/dicomDimensions';
 
@@ -74,6 +75,11 @@ async function selectImageAndWaitForRender(page: Page, imagePath: string) {
     () => page.locator('#imageSelector').selectOption(imagePath),
     {
       expectedImageId: getExpectedWadoImageId(imagePath),
+      // Larger budget than the 30s default: the large TG18 1k/2k images can
+      // legitimately take a while to download+decode on the self-hosted
+      // runner, and retryRemoteFixtures may add a few seconds of backoff on a
+      // transient GitHub-raw failure.
+      timeout: 60000,
     }
   );
 
@@ -84,6 +90,11 @@ async function selectImageAndWaitForRender(page: Page, imagePath: string) {
 }
 
 test.beforeEach(async ({ page }) => {
+  // Every image in this example is fetched over HTTP from
+  // raw.githubusercontent.com, which intermittently rate-limits/drops requests
+  // under the parallel workers on the self-hosted runner. Retry those fetches
+  // with backoff so a single dropped response doesn't fail the image load.
+  await retryRemoteFixtures(page);
   const url = createExampleUrl(EXAMPLE + '.html');
   url.searchParams.set('type', 'next');
   await page.goto(url.toString());
