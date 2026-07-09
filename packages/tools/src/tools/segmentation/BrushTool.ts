@@ -261,11 +261,6 @@ class BrushTool extends LabelmapBaseTool {
 
     // @ts-expect-error
     this._editData = this.createEditData(element);
-    this._activateDraw(element);
-
-    hideElementCursor(element);
-
-    evt.preventDefault();
 
     // This might be a mouse down
     this._previewData.isDrag = false;
@@ -281,6 +276,9 @@ class BrushTool extends LabelmapBaseTool {
     };
 
     this._hoverData = this.createHoverData(element, canvasPoint);
+    if (!this._hoverData) {
+      return false;
+    }
     this._calculateCursor(element, canvasPoint);
     this._resetLazyEditState();
 
@@ -295,6 +293,13 @@ class BrushTool extends LabelmapBaseTool {
     if (!operationData) {
       return false;
     }
+
+    // Bind the draw listeners and hide the cursor only once every guard above
+    // has passed — a `return false` after these would leave the cursor hidden
+    // and the drag listeners attached with no draw in progress.
+    this._activateDraw(element);
+    hideElementCursor(element);
+    evt.preventDefault();
 
     this.applyActiveStrategyCallback(
       enabledElement,

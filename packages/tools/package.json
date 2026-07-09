@@ -113,7 +113,7 @@
     "build": "pnpm run build:esm",
     "clean": "rm -rf node_modules/.cache/storybook && shx rm -rf dist",
     "clean:deep": "pnpm run clean && shx rm -rf node_modules",
-    "dev": "tsc --project ./tsconfig.json --watch",
+    "dev": "tsc --project ./tsconfig.json --watch --sourceMap --inlineSources",
     "lint": "oxlint .",
     "api-check": "api-extractor --debug run ",
     "prepublishOnly": "pnpm run build",

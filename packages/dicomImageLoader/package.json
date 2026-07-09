@@ -91,7 +91,7 @@
     "clean:coverage": "shx rm -rf coverage",
     "doc": "npm run doc:generate && opn documentation/index.html",
     "doc:generate": "npm run clean:docs && jsdoc -c .jsdocrc",
-    "dev": "tsc --project ./tsconfig.json --watch",
+    "dev": "tsc --project ./tsconfig.json --watch --sourceMap --inlineSources",
     "lint": "oxlint .",
     "start": "npm run webpack:dev",
     "start:dev": "webpack-dev-server --config .webpack/webpack-dev",

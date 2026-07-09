@@ -68,13 +68,13 @@
     "clean:deep": "pnpm run clean && shx rm -rf node_modules",
     "build": "pnpm run build:esm",
     "build:all": "pnpm run build:esm",
-    "dev": "tsc --project ./tsconfig.json --watch",
+    "dev": "tsc --project ./tsconfig.json --watch --sourceMap --inlineSources",
     "api-check": "api-extractor --debug run",
     "lint": "oxlint .",
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "dcmjs": "0.50.1"
+    "dcmjs": "0.52.0"
   },
   "contributors": [
     {
