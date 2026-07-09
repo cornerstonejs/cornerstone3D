@@ -8,8 +8,8 @@ import { VtkVolumeSlicePath } from './VtkVolumeSliceRenderPath';
 
 /**
  * The built-in planar render paths (the 'gpu' and 'cpu' backends' modes) plus
- * the render paths of every extension backend registered via
- * `registerRenderBackend({ createRenderPaths })`.
+ * the render paths of every extension backend's render modes registered via
+ * `registerRenderBackend({ renderModes: { image: { createDefinition } } })`.
  */
 export function createDefaultPlanarRenderPaths(): RenderPathDefinition[] {
   return [

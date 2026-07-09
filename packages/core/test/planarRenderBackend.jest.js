@@ -12,6 +12,7 @@ import eventTarget from '../src/eventTarget';
 import cache from '../src/cache/cache';
 import { PlanarRenderPathDecisionService } from '../src/RenderingEngine/GenericViewport/Planar/PlanarRenderPathDecisionService';
 import {
+  __resetRenderBackendRegistry,
   getRenderBackendForRenderMode,
   getRenderSurfaceForRenderMode,
   isRegisteredRenderBackend,
@@ -224,16 +225,22 @@ describe('Planar render backend resolution', () => {
         name: 'FANCY',
         backend: 'test:fancy',
         renderModes: {
-          image: 'test:fancyImage',
-          volume: 'test:fancyVolume',
+          image: {
+            id: 'test:fancyImage',
+            createDefinition: () => fancyRenderPath,
+          },
+          volume: { id: 'test:fancyVolume' },
         },
         surface: 'cpu',
-        createRenderPaths: () => [fancyRenderPath],
       });
       registerRenderBackend({
         backend: 'test:imageOnly',
-        renderModes: { image: 'test:imageOnlyImage' },
+        renderModes: { image: { id: 'test:imageOnlyImage' } },
       });
+    });
+
+    afterAll(() => {
+      __resetRenderBackendRegistry();
     });
 
     it('reports built-in and custom backends as registered', () => {
@@ -315,21 +322,39 @@ describe('Planar render backend resolution', () => {
       expect(() =>
         registerRenderBackend({
           backend: 'test:fancy',
-          renderModes: { image: 'test:other' },
+          renderModes: { image: { id: 'test:other' } },
         })
       ).toThrow(/already registered/);
       expect(() =>
         registerRenderBackend({
           backend: 'auto',
-          renderModes: { image: 'test:other' },
+          renderModes: { image: { id: 'test:other' } },
         })
       ).toThrow(/reserved/);
       expect(() =>
         registerRenderBackend({
           backend: 'test:poacher',
-          renderModes: { image: 'test:fancyImage' },
+          renderModes: { image: { id: 'test:fancyImage' } },
         })
       ).toThrow(/already provided by render backend/);
+      expect(() =>
+        registerRenderBackend({
+          backend: 'test:sameModes',
+          renderModes: {
+            image: { id: 'test:same' },
+            volume: { id: 'test:same' },
+          },
+        })
+      ).toThrow(/distinct render modes/);
+    });
+
+    it('resets registrations and named constants for test isolation', () => {
+      __resetRenderBackendRegistry();
+
+      expect(isRegisteredRenderBackend('test:fancy')).toBe(false);
+      expect(RenderBackends.FANCY).toBeUndefined();
+      // Core backends re-register lazily on the next registry access.
+      expect(isRegisteredRenderBackend('gpu')).toBe(true);
     });
   });
 });

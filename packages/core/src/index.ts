@@ -1,6 +1,6 @@
 import * as Enums from './enums';
 import * as CONSTANTS from './constants';
-import { Events } from './enums';
+import { Events, RenderBackends } from './enums';
 import RenderingEngine, {
   BaseRenderingEngine,
   TiledRenderingEngine,
@@ -221,10 +221,14 @@ export type {
   RenderBackendConstants,
   RenderBackendRegistry,
 } from './types/RenderBackendRegistry';
-export type { RenderBackendsMap } from './enums/RenderBackends';
+export type {
+  RenderBackendsMap,
+  RenderBackendValue,
+} from './enums/RenderBackends';
 export type {
   RegisterRenderBackendOptions,
   RenderBackendDefinition,
+  RenderBackendRenderMode,
   RenderBackendRenderModes,
   RenderSurface,
 } from './RenderingEngine/helpers/renderBackendRegistry';
@@ -384,6 +388,7 @@ export {
   setPreferSizeOverAccuracy,
   resetUseCPURendering,
   // Render backend (gpu | cpu | auto) + capability detection
+  RenderBackends,
   getRenderBackend,
   setRenderBackend,
   getEffectiveRenderBackend,

@@ -69,13 +69,15 @@ registerRenderBackend({
   name: 'WEBGPU',
   backend: 'myOrg:webgpu',
   renderModes: {
-    image: 'myOrg:webgpuImage',
-    volume: 'myOrg:webgpuVolume',
+    image: {
+      id: 'myOrg:webgpuImage',
+      createDefinition: () => new WebGPUImageSlicePath(),
+    },
+    volume: {
+      id: 'myOrg:webgpuVolume',
+      createDefinition: () => new WebGPUVolumeSlicePath(),
+    },
   },
-  createRenderPaths: () => [
-    new WebGPUImageSlicePath(),
-    new WebGPUVolumeSlicePath(),
-  ],
 });
 
 setRenderBackend(Enums.RenderBackends.WEBGPU);
@@ -85,15 +87,15 @@ The definition carries the semantic wiring the viewport needs today:
 
 - `backend` — the wire id, e.g. `'myOrg:webgpu'`. Prefix custom ids with an
   organization namespace; `'auto'` is reserved.
-- `renderModes` — the render mode the backend resolves to per dataset kind.
-  `image` is required; omit `volume` when the backend cannot render
-  volume-backed datasets, in which case selecting it for such a dataset fails
-  with a descriptive error.
-- `createRenderPaths` — a factory returning the planar render path definitions
-  that implement those render modes. It is called once per viewport (each
-  planar viewport owns its render path resolver), so it must return fresh
-  definition instances on every call. See [Render Paths](./render-paths.md)
-  for what a path implements.
+- `renderModes` — the render mode the backend resolves to per dataset kind,
+  co-locating each mode's wire `id` with the `createDefinition` factory for
+  the planar render path definition that implements it (see
+  [Render Paths](./render-paths.md) for what a path implements). The factory
+  is called once per viewport (each planar viewport owns its render path
+  resolver), so it must return a fresh definition instance on every call.
+  `image` is required and its id must differ from `volume`'s; omit `volume`
+  when the backend cannot render volume-backed datasets, in which case
+  selecting it for such a dataset fails with a descriptive error.
 - `surface` — which existing composited canvas the backend's render modes draw
   to, `'vtk'` (default) or `'cpu'`. Custom backends cannot yet register their
   own surface; this is one of the planned extension points noted above.

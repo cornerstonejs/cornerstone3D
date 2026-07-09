@@ -20,30 +20,39 @@ export type RenderSurface = 'vtk' | 'cpu';
 /** The dataset shapes a planar render backend can mount. */
 export type RenderBackendDataKind = 'image' | 'volume';
 
+export interface RenderBackendRenderMode {
+  /** Wire id of the render mode, e.g. 'myOrg:webgpuImage'. */
+  id: string;
+  /**
+   * Planar render path definition implementing this render mode. Called once
+   * per viewport (each PlanarViewport owns its resolver), so it must return a
+   * fresh definition instance on every call. Core backends omit it: their
+   * render paths ship in createDefaultPlanarRenderPaths().
+   */
+  createDefinition?: () => RenderPathDefinition;
+}
+
 export interface RenderBackendRenderModes {
   /** Render mode selected for image-stack (non-volume-backed) mounts. */
-  image: string;
+  image: RenderBackendRenderMode;
   /**
    * Render mode selected for volume-backed mounts. Omit when the backend
    * cannot render volume-backed datasets; selecting the backend for such a
    * dataset then fails with a descriptive error.
    */
-  volume?: string;
+  volume?: RenderBackendRenderMode;
 }
 
 export interface RenderBackendDefinition {
   /** Wire id of the backend, e.g. 'gpu' or 'myOrg:webgpu'. 'auto' is reserved. */
   backend: string;
-  /** Render modes this backend resolves to, by dataset kind. */
+  /**
+   * Render modes this backend resolves to, by dataset kind. Each mode
+   * co-locates its wire id with the render path definition implementing it.
+   */
   renderModes: RenderBackendRenderModes;
   /** Composited canvas the backend's render modes draw to. Default 'vtk'. */
   surface?: RenderSurface;
-  /**
-   * Planar render path definitions implementing the backend's render modes.
-   * Called once per viewport (each PlanarViewport owns its resolver), so it
-   * must return fresh definition instances on every call.
-   */
-  createRenderPaths?: () => RenderPathDefinition[];
 }
 
 type RegisterRenderBackendNamedOptions<
@@ -75,6 +84,7 @@ type InternalRenderBackendDefinition = RenderBackendDefinition & {
 
 const backendDefinitions = new Map<string, InternalRenderBackendDefinition>();
 const renderModeIndex = new Map<string, RenderModeEntry>();
+const registeredConstantNames: Array<keyof RenderBackendConstants> = [];
 let hasRegisteredCoreRenderBackends = false;
 
 function registerCoreRenderBackends() {
@@ -83,21 +93,21 @@ function registerCoreRenderBackends() {
   }
   hasRegisteredCoreRenderBackends = true;
 
-  // Core backends carry no createRenderPaths: their planar render paths are
-  // part of createDefaultPlanarRenderPaths() and are always present.
+  // Core render modes carry no createDefinition: their planar render paths
+  // are part of createDefaultPlanarRenderPaths() and are always present.
   registerRenderBackend({
     backend: RenderBackends.GPU,
     renderModes: {
-      image: ActorRenderMode.VTK_IMAGE,
-      volume: ActorRenderMode.VTK_VOLUME_SLICE,
+      image: { id: ActorRenderMode.VTK_IMAGE },
+      volume: { id: ActorRenderMode.VTK_VOLUME_SLICE },
     },
     surface: 'vtk',
   });
   registerRenderBackend({
     backend: RenderBackends.CPU,
     renderModes: {
-      image: ActorRenderMode.CPU_IMAGE,
-      volume: ActorRenderMode.CPU_VOLUME,
+      image: { id: ActorRenderMode.CPU_IMAGE },
+      volume: { id: ActorRenderMode.CPU_VOLUME },
     },
     surface: 'cpu',
   });
@@ -112,9 +122,9 @@ function registerCoreRenderBackends() {
  *
  * The definition carries the semantic wiring the viewport needs:
  * - `renderModes` tells the planar render-path decision which render mode to
- *   select for image-stack vs volume-backed datasets.
- * - `createRenderPaths` injects the render path implementations for those
- *   modes into every planar viewport's render path resolver.
+ *   select for image-stack vs volume-backed datasets. Each mode co-locates
+ *   its wire id with the `createDefinition` factory that injects the render
+ *   path implementing it into every planar viewport's render path resolver.
  * - `surface` tells the viewport which composited canvas to show while one of
  *   the backend's modes is active.
  *
@@ -134,11 +144,16 @@ function registerCoreRenderBackends() {
  * registerRenderBackend({
  *   name: 'WEBGPU',
  *   backend: 'myOrg:webgpu',
- *   renderModes: { image: 'myOrg:webgpuImage', volume: 'myOrg:webgpuVolume' },
- *   createRenderPaths: () => [
- *     new WebGPUImageSlicePath(),
- *     new WebGPUVolumeSlicePath(),
- *   ],
+ *   renderModes: {
+ *     image: {
+ *       id: 'myOrg:webgpuImage',
+ *       createDefinition: () => new WebGPUImageSlicePath(),
+ *     },
+ *     volume: {
+ *       id: 'myOrg:webgpuVolume',
+ *       createDefinition: () => new WebGPUVolumeSlicePath(),
+ *     },
+ *   },
  * });
  * setRenderBackend(RenderBackends.WEBGPU);
  * ```
@@ -154,7 +169,6 @@ export function registerRenderBackend({
   name,
   renderModes,
   surface = 'vtk',
-  createRenderPaths,
 }: RegisterRenderBackendOptions): void {
   registerCoreRenderBackends();
 
@@ -168,18 +182,24 @@ export function registerRenderBackend({
     throw new Error(`Render backend "${backend}" is already registered`);
   }
 
-  if (!renderModes?.image) {
+  if (!renderModes?.image?.id) {
     throw new Error(
       `Render backend "${backend}" must declare renderModes.image`
     );
   }
 
+  if (renderModes.volume && renderModes.volume.id === renderModes.image.id) {
+    throw new Error(
+      `Render backend "${backend}" must use distinct render modes for image and volume`
+    );
+  }
+
   const modeEntries: Array<[string, RenderBackendDataKind]> = [
-    [renderModes.image, 'image'],
+    [renderModes.image.id, 'image'],
   ];
 
   if (renderModes.volume) {
-    modeEntries.push([renderModes.volume, 'volume']);
+    modeEntries.push([renderModes.volume.id, 'volume']);
   }
 
   for (const [renderMode] of modeEntries) {
@@ -199,7 +219,6 @@ export function registerRenderBackend({
     backend,
     renderModes,
     surface,
-    createRenderPaths,
   });
 
   for (const [renderMode, kind] of modeEntries) {
@@ -215,6 +234,7 @@ export function registerRenderBackend({
       name,
       backend as RenderBackendConstants[typeof name]
     );
+    registeredConstantNames.push(name);
   }
 }
 
@@ -260,7 +280,7 @@ export function getRenderModeForBackend(
     );
   }
 
-  return renderMode;
+  return renderMode.id;
 }
 
 /** Backend that provides `renderMode`, or undefined for unknown modes. */
@@ -298,7 +318,7 @@ export function getRenderSurfaceForRenderMode(
 
 /**
  * Instantiates the planar render path definitions of every registered
- * extension backend (core backends ship their paths in
+ * extension backend's render modes (core backends ship their paths in
  * `createDefaultPlanarRenderPaths`). Called once per planar viewport.
  */
 export function createRegisteredPlanarRenderPaths(): RenderPathDefinition[] {
@@ -307,10 +327,33 @@ export function createRegisteredPlanarRenderPaths(): RenderPathDefinition[] {
   const paths: RenderPathDefinition[] = [];
 
   for (const definition of backendDefinitions.values()) {
-    if (definition.createRenderPaths) {
-      paths.push(...definition.createRenderPaths());
+    const { image, volume } = definition.renderModes;
+    for (const mode of [image, volume]) {
+      if (mode?.createDefinition) {
+        paths.push(mode.createDefinition());
+      }
     }
   }
 
   return paths;
+}
+
+/**
+ * Test-only: wipes all backend registrations (including the lazily registered
+ * core backends) and removes the `Enums.RenderBackends` constants added
+ * through `registerRenderBackend()`. Not part of the public API — import it
+ * from this module directly in test setup/teardown.
+ * @internal
+ */
+export function __resetRenderBackendRegistry(): void {
+  backendDefinitions.clear();
+  renderModeIndex.clear();
+  hasRegisteredCoreRenderBackends = false;
+
+  for (const name of registeredConstantNames) {
+    delete (RenderBackends as Record<keyof RenderBackendConstants, string>)[
+      name
+    ];
+  }
+  registeredConstantNames.length = 0;
 }

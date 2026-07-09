@@ -197,13 +197,28 @@ function resolveAutoRenderBackend(): EffectiveRenderBackend {
  * falls back to the global configuration.
  * @category Initialization
  */
+const warnedUnregisteredBackends = new Set<string>();
+
 function getEffectiveRenderBackend(
   override?: RenderBackendValue
 ): EffectiveRenderBackend {
   const backend = override ?? getRenderBackend();
 
-  if (backend !== RenderBackends.Auto && isRegisteredRenderBackend(backend)) {
-    return backend as EffectiveRenderBackend;
+  if (backend !== RenderBackends.Auto) {
+    if (isRegisteredRenderBackend(backend)) {
+      return backend as EffectiveRenderBackend;
+    }
+
+    // setRenderBackend() rejects unknown values, but a typo in
+    // init(configuration) or an override selected before its backend is
+    // registered would otherwise be silently downgraded to 'auto'.
+    if (!warnedUnregisteredBackends.has(backend)) {
+      warnedUnregisteredBackends.add(backend);
+      console.warn(
+        `[getEffectiveRenderBackend] Unregistered render backend "${backend}"; ` +
+          `falling back to 'auto'. Register custom backends with registerRenderBackend().`
+      );
+    }
   }
 
   return resolveAutoRenderBackend();

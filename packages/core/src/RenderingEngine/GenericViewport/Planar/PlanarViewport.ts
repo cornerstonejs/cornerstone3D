@@ -602,12 +602,17 @@ class PlanarViewport extends GenericViewport<
    */
   async addImages(stackInputs: IStackInput[]): Promise<void> {
     const rendering = this.getCurrentPlanarRendering();
+    const renderMode = rendering?.renderMode;
 
-    if (
-      rendering?.renderMode !== ActorRenderMode.VTK_IMAGE &&
-      rendering?.renderMode !== ActorRenderMode.VTK_VOLUME_SLICE &&
-      rendering?.renderMode !== ActorRenderMode.CPU_IMAGE
-    ) {
+    // Overlay images mount on any registered image mode, and on volume modes
+    // whose surface composites actors (the CPU volume path draws its slice
+    // pixels directly and cannot host overlay actors).
+    const supportsImageOverlays =
+      isImageRenderMode(renderMode) ||
+      (isVolumeRenderMode(renderMode) &&
+        getRenderSurfaceForRenderMode(renderMode) !== 'cpu');
+
+    if (!supportsImageOverlays) {
       return;
     }
 
@@ -2141,7 +2146,7 @@ class PlanarViewport extends GenericViewport<
 
     const { height, width } = this.getCurrentCanvasDimensions();
     const createSliceBasis =
-      renderMode === ActorRenderMode.CPU_VOLUME
+      getRenderSurfaceForRenderMode(renderMode) === 'cpu'
         ? createPlanarCpuVolumeSliceBasis
         : createPlanarVolumeSliceBasis;
     // The acquisition orientation honors an explicitly carried initial slice but
