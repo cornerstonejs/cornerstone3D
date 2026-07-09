@@ -318,7 +318,7 @@ function isProjectionHeavySegmentationViewport(
   // Legacy volume viewports render labelmap-over-MIP by switching the whole
   // viewport to the edge-projection blend mode.
   const blendMode = (
-    viewport as Partial<Types.IVolumeViewport>
+    viewport as Partial<{ getBlendMode: () => Enums.BlendModes }>
   ).getBlendMode?.();
 
   if (blendMode === Enums.BlendModes.LABELMAP_EDGE_PROJECTION_BLEND) {
