@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/polymorphic-segmentation",
-  "version": "5.1.4",
+  "version": "5.4.9",
   "description": "Polymorphic Segmentation utility for Cornerstone3D",
   "files": [
     "dist"
@@ -12,14 +12,16 @@
   },
   "exports": {
     ".": {
+      "types": "./dist/esm/index.d.ts",
       "import": "./dist/esm/index.js",
-      "types": "./dist/esm/index.d.ts"
+      "default": "./dist/esm/index.js"
     },
     "./version": {
-      "node": "./dist/esm/version.js",
+      "types": "./dist/esm/version.d.ts",
       "import": "./dist/esm/version.js",
-      "types": "./dist/esm/version.d.ts"
-    }
+      "default": "./dist/esm/version.js"
+    },
+    "./package.json": "./package.json"
   },
   "publishConfig": {
     "access": "public"
@@ -29,8 +31,8 @@
     "test": "jest --testTimeout 60000",
     "clean": "rimraf dist",
     "build": "pnpm run build:esm",
-    "build:esm": "pnpm run prebuild && tsc --project ./tsconfig.json",
-    "build:esm:watch": "tsc --project ./tsconfig.json --watch",
+    "build:esm": "pnpm run prebuild && tsc --project ./tsconfig.json && tsc-alias -p ./tsconfig.json --resolve-full-paths && node ../../scripts/write-dist-esm-package-json.js ./",
+    "build:esm:watch": "sh -c 'tsc-alias -p ./tsconfig.json --resolve-full-paths --watch & alias_pid=$!; node ../../scripts/write-dist-esm-package-json.js ./ --watch & writer_pid=$!; trap \"kill $alias_pid $writer_pid\" EXIT; tsc --project ./tsconfig.json --watch'",
     "dev": "tsc --project ./tsconfig.json --watch",
     "build:all": "pnpm run build:esm",
     "start": "tsc --project ./tsconfig.json --watch",
@@ -53,12 +55,12 @@
     "@icr/polyseg-wasm": "0.4.0"
   },
   "devDependencies": {
-    "@cornerstonejs/core": "5.1.4",
-    "@cornerstonejs/tools": "5.1.4"
+    "@cornerstonejs/core": "5.4.9",
+    "@cornerstonejs/tools": "5.4.9"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "5.1.4",
-    "@cornerstonejs/tools": "5.1.4",
+    "@cornerstonejs/core": "5.4.9",
+    "@cornerstonejs/tools": "5.4.9",
     "@kitware/vtk.js": "35.5.3"
   }
 }

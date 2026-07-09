@@ -20,6 +20,7 @@ import getSpacingInNormalDirection from './getSpacingInNormalDirection';
 import getTargetVolumeAndSpacingInNormalDir from './getTargetVolumeAndSpacingInNormalDir';
 import getVolumeActorCorners from './getVolumeActorCorners';
 import indexWithinDimensions from './indexWithinDimensions';
+import indexAlmostWithinDimensions from './indexAlmostWithinDimensions';
 import getVolumeViewportsContainingSameVolumes from './getVolumeViewportsContainingSameVolumes';
 import getViewportsWithVolumeId from './getViewportsWithVolumeId';
 import transformWorldToIndex, {
@@ -178,6 +179,7 @@ export {
   getTargetVolumeAndSpacingInNormalDir,
   getVolumeActorCorners,
   indexWithinDimensions,
+  indexAlmostWithinDimensions,
   getVolumeViewportsContainingSameVolumes,
   getViewportsWithVolumeId,
   transformWorldToIndex,

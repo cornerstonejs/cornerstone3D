@@ -12,6 +12,7 @@ export { createExampleUrl } from './createExampleUrl';
 export { getSegmentationActorClassNames } from './getSegmentationActorClassNames';
 export { expectGenericViewportRuntime } from './expectGenericViewportRuntime';
 export { waitForImageRendered } from './waitForImageRendered';
+export { retryRemoteFixtures } from './retryRemoteFixtures';
 export {
   setupRenderTracking,
   waitForViewportsRendered,
