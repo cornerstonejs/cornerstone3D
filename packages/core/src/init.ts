@@ -6,8 +6,10 @@ import CentralizedWebWorkerManager from './webWorkerManager/webWorkerManager';
 import { getRenderingCapabilities } from './utilities/renderingCapabilities';
 import triggerEvent from './utilities/triggerEvent';
 import eventTarget from './eventTarget';
-import { Events, RenderBackend, RenderingEngineModeEnum } from './enums';
+import { Events, RenderBackends, RenderingEngineModeEnum } from './enums';
 import type { RenderBackendValue } from './enums';
+import { isRegisteredRenderBackend } from './RenderingEngine/helpers/renderBackendRegistry';
+import type { EffectiveRenderBackend } from './types/RenderBackendRegistry';
 
 // TODO: change config into a class with methods to better control get/set
 const defaultConfig: Cornerstone3DConfig = {
@@ -37,7 +39,7 @@ const defaultConfig: Cornerstone3DConfig = {
        * backend, 'auto' resolves it from capability detection at init() (and
        * the deprecated useCPURendering flag). See setRenderBackend().
        */
-      renderBackend: RenderBackend.Auto,
+      renderBackend: RenderBackends.Auto,
       cpuVolume: {
         useViewportSamplingForLinear: true,
         volumeModifiedThrottleMs: 5000,
@@ -160,16 +162,14 @@ function getCanUseNorm16Texture(): boolean {
 
 /**
  * Returns the configured render backend preference for planar
- * GenericViewport-based viewports ('auto' | 'gpu' | 'cpu'), stored at
+ * GenericViewport-based viewports ('auto' | 'gpu' | 'cpu' | a backend
+ * registered via `registerRenderBackend()`), stored at
  * `rendering.planar.renderBackend`. Use {@link getEffectiveRenderBackend}
- * for the resolved gpu/cpu decision.
+ * for the resolved concrete-backend decision.
  * @category Initialization
  */
-function getRenderBackend(): RenderBackend {
-  return (
-    (config.rendering.planar?.renderBackend as RenderBackend) ??
-    RenderBackend.Auto
-  );
+function getRenderBackend(): RenderBackendValue {
+  return config.rendering.planar?.renderBackend ?? RenderBackends.Auto;
 }
 
 /**
@@ -179,29 +179,31 @@ function getRenderBackend(): RenderBackend {
  * which resolve against this regardless of the configured global pin.
  * @category Initialization
  */
-function resolveAutoRenderBackend(): RenderBackend.GPU | RenderBackend.CPU {
+function resolveAutoRenderBackend(): EffectiveRenderBackend {
   return config.rendering.useCPURendering
-    ? RenderBackend.CPU
-    : RenderBackend.GPU;
+    ? RenderBackends.CPU
+    : RenderBackends.GPU;
 }
 
 /**
  * Returns the effective render backend for GenericViewport-based viewports:
- * the configured 'gpu'/'cpu' pin, or the resolved 'auto' decision.
+ * the configured concrete-backend pin (any backend registered via
+ * `registerRenderBackend()`, e.g. 'gpu' or 'cpu'), or the resolved 'auto'
+ * decision.
  *
  * Pass `override` to resolve a per-mount `renderBackend` option with the same
- * precedence: 'gpu'/'cpu' pin the result, 'auto' resolves from capability
- * detection even when the global backend is pinned, and undefined falls back
- * to the global configuration.
+ * precedence: a registered backend pins the result, 'auto' resolves from
+ * capability detection even when the global backend is pinned, and undefined
+ * falls back to the global configuration.
  * @category Initialization
  */
 function getEffectiveRenderBackend(
-  override?: RenderBackend | RenderBackendValue
-): RenderBackend.GPU | RenderBackend.CPU {
-  const backend = (override ?? getRenderBackend()) as RenderBackend;
+  override?: RenderBackendValue
+): EffectiveRenderBackend {
+  const backend = override ?? getRenderBackend();
 
-  if (backend === RenderBackend.GPU || backend === RenderBackend.CPU) {
-    return backend;
+  if (backend !== RenderBackends.Auto && isRegisteredRenderBackend(backend)) {
+    return backend as EffectiveRenderBackend;
   }
 
   return resolveAutoRenderBackend();
@@ -220,22 +222,17 @@ function getEffectiveRenderBackend(
  *
  * Emits RENDER_BACKEND_CHANGED on the eventTarget when the value changes.
  *
- * @param backend - 'auto' | 'gpu' | 'cpu'
+ * @param backend - 'auto' or any backend registered via
+ * `registerRenderBackend()` (built-ins: 'gpu' | 'cpu')
  * @param reason - Optional human-readable reason carried on the change event
  * (e.g. 'webgl-context-lost').
  * @category Initialization
  */
-function setRenderBackend(
-  backend: RenderBackend | RenderBackendValue,
-  reason?: string
-): void {
-  if (
-    backend !== RenderBackend.Auto &&
-    backend !== RenderBackend.GPU &&
-    backend !== RenderBackend.CPU
-  ) {
+function setRenderBackend(backend: RenderBackendValue, reason?: string): void {
+  if (backend !== RenderBackends.Auto && !isRegisteredRenderBackend(backend)) {
     throw new Error(
-      `[setRenderBackend] Invalid render backend: ${String(backend)}`
+      `[setRenderBackend] Invalid render backend: ${String(backend)}. ` +
+        `Register custom backends with registerRenderBackend() before selecting them.`
     );
   }
 
@@ -397,7 +394,7 @@ function _updateRenderingPipelinesForAllViewports(): void {
  * event carries the effective transition).
  */
 function _notifyEffectiveBackendChange(
-  previousEffective: RenderBackend,
+  previousEffective: EffectiveRenderBackend,
   reason: string
 ): void {
   const effectiveBackend = getEffectiveRenderBackend();

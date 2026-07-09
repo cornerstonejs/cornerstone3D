@@ -1,5 +1,5 @@
 import { ActorRenderMode } from '../src/types';
-import { Events, RenderBackend } from '../src/enums';
+import { Events, RenderBackends } from '../src/enums';
 import {
   getEffectiveRenderBackend,
   getRenderBackend,
@@ -11,6 +11,13 @@ import {
 import eventTarget from '../src/eventTarget';
 import cache from '../src/cache/cache';
 import { PlanarRenderPathDecisionService } from '../src/RenderingEngine/GenericViewport/Planar/PlanarRenderPathDecisionService';
+import {
+  getRenderBackendForRenderMode,
+  getRenderSurfaceForRenderMode,
+  isRegisteredRenderBackend,
+  registerRenderBackend,
+} from '../src/RenderingEngine/helpers/renderBackendRegistry';
+import { createDefaultPlanarRenderPaths } from '../src/RenderingEngine/GenericViewport/Planar/PlanarRenderPathResolver';
 
 const IMAGE_DATASET = { imageIds: ['plain-img-1'] };
 const VOLUME_DATASET = {
@@ -34,7 +41,7 @@ describe('Planar render backend resolution', () => {
   afterEach(() => {
     getVolumeSpy.mockRestore();
     setUseCPURendering(false, false);
-    setRenderBackend(RenderBackend.Auto);
+    setRenderBackend(RenderBackends.Auto);
     eventTarget.reset();
   });
 
@@ -118,13 +125,13 @@ describe('Planar render backend resolution', () => {
 
   describe('setRenderBackend', () => {
     it('updates the configured and effective backends', () => {
-      expect(getRenderBackend()).toBe(RenderBackend.Auto);
-      expect(getEffectiveRenderBackend()).toBe(RenderBackend.GPU);
+      expect(getRenderBackend()).toBe(RenderBackends.Auto);
+      expect(getEffectiveRenderBackend()).toBe(RenderBackends.GPU);
 
       setRenderBackend('cpu');
 
-      expect(getRenderBackend()).toBe(RenderBackend.CPU);
-      expect(getEffectiveRenderBackend()).toBe(RenderBackend.CPU);
+      expect(getRenderBackend()).toBe(RenderBackends.CPU);
+      expect(getEffectiveRenderBackend()).toBe(RenderBackends.CPU);
     });
 
     it('rejects invalid values', () => {
@@ -140,7 +147,7 @@ describe('Planar render backend resolution', () => {
       // the library initialized here would turn the later init(configuration)
       // into a no-op and silently drop the user's configuration.
       expect(isCornerstoneInitialized()).toBe(false);
-      expect(getRenderBackend()).toBe(RenderBackend.CPU);
+      expect(getRenderBackend()).toBe(RenderBackends.CPU);
     });
 
     it('emits RENDER_BACKEND_CHANGED with previous/current/effective detail', () => {
@@ -151,9 +158,9 @@ describe('Planar render backend resolution', () => {
 
       expect(listener).toHaveBeenCalledTimes(1);
       expect(listener.mock.calls[0][0].detail).toEqual({
-        previous: RenderBackend.Auto,
-        current: RenderBackend.CPU,
-        effectiveBackend: RenderBackend.CPU,
+        previous: RenderBackends.Auto,
+        current: RenderBackends.CPU,
+        effectiveBackend: RenderBackends.CPU,
         reason: 'unit-test',
       });
 
@@ -180,8 +187,8 @@ describe('Planar render backend resolution', () => {
 
       expect(listener).toHaveBeenCalledTimes(1);
       expect(listener.mock.calls[0][0].detail).toMatchObject({
-        previous: RenderBackend.GPU,
-        current: RenderBackend.CPU,
+        previous: RenderBackends.GPU,
+        current: RenderBackends.CPU,
         reason: 'setUseCPURendering',
       });
 
@@ -198,6 +205,131 @@ describe('Planar render backend resolution', () => {
 
       expect(listener).not.toHaveBeenCalled();
       eventTarget.removeEventListener(Events.RENDER_BACKEND_CHANGED, listener);
+    });
+  });
+
+  describe('registered custom backends', () => {
+    const fancyRenderPath = {
+      id: 'test:fancy-image-slice',
+      type: 'planarNext',
+      matches: (data, options) =>
+        data.type === 'image' && options.renderMode === 'test:fancyImage',
+      createRenderPath: () => {
+        throw new Error('not exercised in this test');
+      },
+    };
+
+    beforeAll(() => {
+      registerRenderBackend({
+        name: 'FANCY',
+        backend: 'test:fancy',
+        renderModes: {
+          image: 'test:fancyImage',
+          volume: 'test:fancyVolume',
+        },
+        surface: 'cpu',
+        createRenderPaths: () => [fancyRenderPath],
+      });
+      registerRenderBackend({
+        backend: 'test:imageOnly',
+        renderModes: { image: 'test:imageOnlyImage' },
+      });
+    });
+
+    it('reports built-in and custom backends as registered', () => {
+      expect(isRegisteredRenderBackend('gpu')).toBe(true);
+      expect(isRegisteredRenderBackend('cpu')).toBe(true);
+      expect(isRegisteredRenderBackend('test:fancy')).toBe(true);
+      expect(isRegisteredRenderBackend('auto')).toBe(false);
+      expect(isRegisteredRenderBackend('turbo')).toBe(false);
+    });
+
+    it('adds a named constant on Enums.RenderBackends', () => {
+      expect(RenderBackends.FANCY).toBe('test:fancy');
+      expect(RenderBackends.GPU).toBe('gpu');
+    });
+
+    it('accepts the custom backend in setRenderBackend and resolves it as effective', () => {
+      setRenderBackend(RenderBackends.FANCY);
+
+      expect(getRenderBackend()).toBe('test:fancy');
+      expect(getEffectiveRenderBackend()).toBe('test:fancy');
+    });
+
+    it('selects the custom image and volume render modes', () => {
+      setRenderBackend('test:fancy');
+
+      expect(service.select(IMAGE_DATASET).renderMode).toBe('test:fancyImage');
+      expect(service.select(VOLUME_DATASET).renderMode).toBe(
+        'test:fancyVolume'
+      );
+    });
+
+    it('honors a per-mount custom backend pin over the global backend', () => {
+      setRenderBackend('gpu');
+
+      const { renderMode } = service.select(IMAGE_DATASET, {
+        renderBackend: 'test:fancy',
+      });
+
+      expect(renderMode).toBe('test:fancyImage');
+    });
+
+    it('throws a descriptive error for volume datasets on an image-only backend', () => {
+      setRenderBackend('test:imageOnly');
+
+      expect(service.select(IMAGE_DATASET).renderMode).toBe(
+        'test:imageOnlyImage'
+      );
+      expect(() => service.select(VOLUME_DATASET)).toThrow(
+        /does not support volume-backed rendering/
+      );
+    });
+
+    it('maps render modes back to their backend and surface', () => {
+      expect(getRenderBackendForRenderMode('test:fancyImage')).toBe(
+        'test:fancy'
+      );
+      expect(getRenderBackendForRenderMode(ActorRenderMode.VTK_IMAGE)).toBe(
+        'gpu'
+      );
+      expect(getRenderBackendForRenderMode(ActorRenderMode.CPU_VOLUME)).toBe(
+        'cpu'
+      );
+      expect(getRenderBackendForRenderMode('unknown')).toBeUndefined();
+      expect(getRenderSurfaceForRenderMode('test:fancyImage')).toBe('cpu');
+      expect(getRenderSurfaceForRenderMode(ActorRenderMode.VTK_IMAGE)).toBe(
+        'vtk'
+      );
+      expect(getRenderSurfaceForRenderMode('unknown')).toBe('vtk');
+    });
+
+    it('injects the custom render paths into the default planar render paths', () => {
+      const ids = createDefaultPlanarRenderPaths().map((path) => path.id);
+
+      expect(ids).toContain('test:fancy-image-slice');
+      expect(ids).toContain('planar:cpu-image-slice');
+    });
+
+    it('rejects duplicate backend ids, reserved ids and duplicate render modes', () => {
+      expect(() =>
+        registerRenderBackend({
+          backend: 'test:fancy',
+          renderModes: { image: 'test:other' },
+        })
+      ).toThrow(/already registered/);
+      expect(() =>
+        registerRenderBackend({
+          backend: 'auto',
+          renderModes: { image: 'test:other' },
+        })
+      ).toThrow(/reserved/);
+      expect(() =>
+        registerRenderBackend({
+          backend: 'test:poacher',
+          renderModes: { image: 'test:fancyImage' },
+        })
+      ).toThrow(/already provided by render backend/);
     });
   });
 });

@@ -1,12 +1,18 @@
 import {
   Events,
   OrientationAxis,
-  RenderBackend,
   ViewportStatus,
   ViewportType,
   VOILUTFunctionType,
 } from '../../../enums';
 import { ActorRenderMode } from '../../../types';
+import {
+  getRenderBackendForRenderMode,
+  getRenderSurfaceForRenderMode,
+  isImageRenderMode,
+  isVolumeRenderMode,
+} from '../../helpers/renderBackendRegistry';
+import type { EffectiveRenderBackend } from '../../../types/RenderBackendRegistry';
 import type {
   ActorEntry,
   ICamera,
@@ -584,10 +590,7 @@ class PlanarViewport extends GenericViewport<
   getCanvas(): HTMLCanvasElement {
     const rendering = this.getCurrentPlanarRendering();
 
-    if (
-      rendering?.renderMode === ActorRenderMode.CPU_IMAGE ||
-      rendering?.renderMode === ActorRenderMode.CPU_VOLUME
-    ) {
+    if (getRenderSurfaceForRenderMode(rendering?.renderMode) === 'cpu') {
       return this.renderContext.cpu.canvas;
     }
 
@@ -706,18 +709,16 @@ class PlanarViewport extends GenericViewport<
 
     const renderMode = binding.rendering.renderMode;
 
+    // VTK_VOLUME is not a mode the planar decision service selects (no
+    // registered backend owns it) but compatibility layers can still mount it.
     if (
       renderMode === ActorRenderMode.VTK_VOLUME ||
-      renderMode === ActorRenderMode.VTK_VOLUME_SLICE ||
-      renderMode === ActorRenderMode.CPU_VOLUME
+      isVolumeRenderMode(renderMode)
     ) {
       return 'volume';
     }
 
-    if (
-      renderMode === ActorRenderMode.VTK_IMAGE ||
-      renderMode === ActorRenderMode.CPU_IMAGE
-    ) {
+    if (isImageRenderMode(renderMode)) {
       return 'stack';
     }
 
@@ -1356,10 +1357,7 @@ class PlanarViewport extends GenericViewport<
       imageIds[clampedImageIdIndex] || imageIds[imageIds.length - 1];
     const rendering = this.getCurrentPlanarRendering();
 
-    if (
-      rendering?.renderMode === ActorRenderMode.CPU_VOLUME ||
-      rendering?.renderMode === ActorRenderMode.VTK_VOLUME_SLICE
-    ) {
+    if (isVolumeRenderMode(rendering?.renderMode)) {
       const sliceWorldPoint =
         this.getVolumeSliceWorldPointForImageIdIndex(clampedImageIdIndex);
 
@@ -1820,9 +1818,7 @@ class PlanarViewport extends GenericViewport<
     cpuCanvas: HTMLCanvasElement,
     vtkCanvas: HTMLCanvasElement
   ): void {
-    const useCPUCanvas =
-      renderMode === ActorRenderMode.CPU_IMAGE ||
-      renderMode === ActorRenderMode.CPU_VOLUME;
+    const useCPUCanvas = getRenderSurfaceForRenderMode(renderMode) === 'cpu';
     const viewportElement = this.element.querySelector(
       '.viewport-element'
     ) as HTMLDivElement | null;
@@ -2094,21 +2090,14 @@ class PlanarViewport extends GenericViewport<
    */
   private getInheritedOverlayRenderBackend(
     role: PlanarSetDataOptions['role']
-  ): RenderBackend.GPU | RenderBackend.CPU | undefined {
+  ): EffectiveRenderBackend | undefined {
     if (role === 'source') {
       return undefined;
     }
 
-    switch (this.getCurrentPlanarRendering()?.renderMode) {
-      case ActorRenderMode.CPU_IMAGE:
-      case ActorRenderMode.CPU_VOLUME:
-        return RenderBackend.CPU;
-      case ActorRenderMode.VTK_IMAGE:
-      case ActorRenderMode.VTK_VOLUME_SLICE:
-        return RenderBackend.GPU;
-      default:
-        return undefined;
-    }
+    return getRenderBackendForRenderMode(
+      this.getCurrentPlanarRendering()?.renderMode
+    );
   }
 
   private applyLoadedPlanarViewState(
@@ -2116,9 +2105,7 @@ class PlanarViewport extends GenericViewport<
     planarData: PlanarPayload,
     selectedPath: SelectedPlanarRenderPath
   ): void {
-    const isVolumePath =
-      selectedPath.renderMode === ActorRenderMode.CPU_VOLUME ||
-      selectedPath.renderMode === ActorRenderMode.VTK_VOLUME_SLICE;
+    const isVolumePath = isVolumeRenderMode(selectedPath.renderMode);
     const orientation = normalizePlanarOrientation(
       resolvedOrientation,
       selectedPath.acquisitionOrientation

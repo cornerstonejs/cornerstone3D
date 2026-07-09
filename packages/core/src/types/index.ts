@@ -167,6 +167,11 @@ import type {
   ViewportTypeConstants,
   ViewportTypeRegistry,
 } from './ViewportTypeRegistry';
+import type {
+  EffectiveRenderBackend,
+  RenderBackendConstants,
+  RenderBackendRegistry,
+} from './RenderBackendRegistry';
 
 export type * from './MetadataModuleTypes';
 export type * from './InstanceTypes';
@@ -335,6 +340,9 @@ export type {
   ViewportType,
   ViewportTypeRegistry,
   ViewportTypeConstants,
+  EffectiveRenderBackend,
+  RenderBackendRegistry,
+  RenderBackendConstants,
 };
 
 export { ActorRenderMode };
