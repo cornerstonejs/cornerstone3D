@@ -431,10 +431,20 @@ function getBitmapFramesFromDataset(dataset: {
     return { frames, bitsAllocated };
   }
 
-  const buffer =
-    dataset.PixelData instanceof Uint16Array
-      ? dataset.PixelData
-      : new Uint16Array(dataset.PixelData as ArrayBuffer);
+  // 16-bit. A naturalized Part 10 dataset carries PixelData as a single-element
+  // array of ArrayBuffer ([buffer]) — unwrap through asUint8PixelData (as the
+  // 8-bit branch does) before reinterpreting the raw little-endian bytes as
+  // Uint16 samples. `new Uint16Array([ArrayBuffer])` would build a 1-element
+  // array from the array-like instead.
+  let buffer: Uint16Array;
+  if (dataset.PixelData instanceof Uint16Array) {
+    buffer = dataset.PixelData;
+  } else {
+    const bytes = asUint8PixelData(dataset.PixelData);
+    buffer = new Uint16Array(
+      bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
+    );
+  }
   const frames: Uint16Array[] = [];
 
   for (let frameIndex = 0; frameIndex < numberOfFrames; frameIndex++) {

@@ -3,10 +3,7 @@ import type { Types } from '@cornerstonejs/core';
 
 async function decodeRLE(
   imageFrame: Types.IImageFrame,
-  pixelData: ByteArray,
-  // For 1-bit RLE, the bits are unpacked as separate planes by default. Set
-  // `interleavedOneBit: true` to unpack them as a single interleaved plane instead.
-  options?: { interleavedOneBit?: boolean }
+  pixelData: ByteArray
 ): Promise<Types.IImageFrame> {
   if (imageFrame.bitsAllocated === 8) {
     if (imageFrame.planarConfiguration) {
@@ -17,10 +14,6 @@ async function decodeRLE(
   } else if (imageFrame.bitsAllocated === 16) {
     return decode16(imageFrame, pixelData);
   } else if (imageFrame.bitsAllocated === 1) {
-    if (options?.interleavedOneBit) {
-      return decode1(imageFrame, pixelData);
-    }
-
     return decode8Planar(imageFrame, pixelData, true);
   }
 
@@ -31,18 +24,6 @@ function getFrameSize(imageFrame: Types.IImageFrame, isOneBit = false) {
   const pixelCount = imageFrame.rows * imageFrame.columns;
 
   return isOneBit ? Math.ceil(pixelCount / 8) : pixelCount;
-}
-
-function unpackOneBitInterleaved(packed: Uint8Array, pixelsPerFrame: number) {
-  const unpacked = new Uint8Array(pixelsPerFrame);
-
-  for (let i = 0; i < pixelsPerFrame; i++) {
-    const bytePos = Math.floor(i / 8);
-    const bitPos = i % 8;
-    unpacked[i] = packed[bytePos] & (1 << bitPos) ? 1 : 0;
-  }
-
-  return unpacked;
 }
 
 export function unpackOneBitPlanar(
@@ -65,20 +46,6 @@ export function unpackOneBitPlanar(
   }
 
   return unpacked;
-}
-
-export function decode1(imageFrame: Types.IImageFrame, pixelData: ByteArray) {
-  decode8(imageFrame, pixelData, true);
-
-  const pixelsPerFrame =
-    imageFrame.rows * imageFrame.columns * imageFrame.samplesPerPixel;
-
-  imageFrame.pixelData = unpackOneBitInterleaved(
-    imageFrame.pixelData as Uint8Array,
-    pixelsPerFrame
-  );
-
-  return imageFrame;
 }
 
 function decode8(

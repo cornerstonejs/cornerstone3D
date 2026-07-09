@@ -70,6 +70,30 @@ export function generateSegmentation(
 }
 
 /**
+ * The set of non-zero segment values actually present in a frame's pixel data,
+ * collected in a single pass. `segmentsOnLabelmap` can be stale, so presence is
+ * verified against the pixels — but once per frame, not with one full-frame
+ * scan per listed segment.
+ */
+function segmentsPresentInFrame(pixelData) {
+  const presentSegments = new Set();
+
+  if (!pixelData) {
+    return presentSegments;
+  }
+
+  for (let i = 0; i < pixelData.length; i++) {
+    const value = pixelData[i];
+
+    if (value !== 0) {
+      presentSegments.add(value);
+    }
+  }
+
+  return presentSegments;
+}
+
+/**
  * Fills a given segmentation object with data from the input labelmaps3D
  *
  * @param segmentation - The segmentation object to be filled.
@@ -86,20 +110,6 @@ export function generateSegmentation(
  *
  * @returns {object} The filled segmentation object.
  */
-function labelmapFrameContainsSegment(pixelData, segmentIndex) {
-  if (!pixelData) {
-    return false;
-  }
-
-  for (let i = 0; i < pixelData.length; i++) {
-    if (pixelData[i] === segmentIndex) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
 export function fillSegmentation(
   segmentation,
   inputLabelmaps3D,
@@ -145,13 +155,14 @@ export function fillSegmentation(
       }
 
       const { segmentsOnLabelmap } = labelmap2D;
+      const presentSegments = segmentsPresentInFrame(labelmap2D.pixelData);
 
       segmentsOnLabelmap.forEach((segmentIndex) => {
         if (
           segmentIndex !== 0 &&
           segmentMetadata[segmentIndex] &&
           referencedFramesPerSegment[segmentIndex] &&
-          labelmapFrameContainsSegment(labelmap2D.pixelData, segmentIndex)
+          presentSegments.has(segmentIndex)
         ) {
           referencedFramesPerSegment[segmentIndex].push(i);
         }
@@ -1791,32 +1802,38 @@ export function getSegmentMetadata(multiframe, seriesInstanceUid) {
 }
 
 /**
- * Reads a range of bytes from an array of ArrayBuffer chunks and
- * aggregate them into a new Uint8Array.
+ * Reads a range of SAMPLES (typed-array elements, not bytes) from an array of
+ * typed-array chunks and aggregates them into a new typed array of the same
+ * element type. Chunks may be Uint8Array (8-bit / packed binary) or
+ * Uint16Array (16-bit labelmaps); offsets and lengths are in elements so the
+ * same sample-indexed math works for both widths.
  *
- * @param {ArrayBuffer[]} chunks - An array of ArrayBuffer chunks.
- * @param {number} offset - The offset of the first byte to read.
- * @param {number} length - The number of bytes to read.
- * @returns {Uint8Array} A new Uint8Array containing the requested bytes.
+ * @param {Uint8Array[]|Uint16Array[]} chunks - Typed-array chunks (all the same type).
+ * @param {number} offset - The offset of the first sample to read.
+ * @param {number} length - The number of samples to read.
+ * @returns {Uint8Array|Uint16Array} A view/copy containing the requested samples.
  */
 export function readFromUnpackedChunks(chunks, offset, length) {
   const mapping = getUnpackedOffsetAndLength(chunks, offset, length);
+  const TypedArray = chunks[0]?.constructor ?? Uint8Array;
+  const bytesPerElement = TypedArray.BYTES_PER_ELEMENT ?? 1;
 
   // Chunks are typically subarray views that share one backing ArrayBuffer, so
   // `chunk.buffer` is the whole buffer (byte 0 = chunk 0) while the computed
   // offsets are chunk-relative. Add each chunk's own byteOffset so a view into
-  // chunk N reads chunk N's bytes and not chunk 0's.
+  // chunk N reads chunk N's bytes and not chunk 0's; element offsets are scaled
+  // by the chunk's element width so 16-bit chunks are not read as bytes.
   // If all the data is in one chunk, we can just slice that chunk
   if (mapping.start.chunkIndex === mapping.end.chunkIndex) {
     const chunk = chunks[mapping.start.chunkIndex];
-    return new Uint8Array(
+    return new TypedArray(
       chunk.buffer,
-      chunk.byteOffset + mapping.start.offset,
+      chunk.byteOffset + mapping.start.offset * bytesPerElement,
       length
     );
   } else {
-    // If the data spans multiple chunks, we need to create a new Uint8Array and copy the data from each chunk
-    let result = new Uint8Array(length);
+    // If the data spans multiple chunks, we need to create a new typed array and copy the data from each chunk
+    let result = new TypedArray(length);
     let resultOffset = 0;
 
     for (let i = mapping.start.chunkIndex; i <= mapping.end.chunkIndex; i++) {
@@ -1825,9 +1842,9 @@ export function readFromUnpackedChunks(chunks, offset, length) {
         i === mapping.end.chunkIndex ? mapping.end.offset : chunks[i].length;
 
       result.set(
-        new Uint8Array(
+        new TypedArray(
           chunks[i].buffer,
-          chunks[i].byteOffset + start,
+          chunks[i].byteOffset + start * bytesPerElement,
           end - start
         ),
         resultOffset
