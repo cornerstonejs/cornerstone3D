@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.4.11](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.10...v5.4.11) (2026-07-09)
+
+### Bug Fixes
+
+- Change the shape of the render backend api so it allows register ([#2795](https://github.com/cornerstonejs/cornerstone3D/issues/2795)) ([4ab69f2](https://github.com/cornerstonejs/cornerstone3D/commit/4ab69f234c2c62ac84c56685ab3281910af3ac10))
+
 ## [5.4.10](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.9...v5.4.10) (2026-07-09)
 
 **Note:** Version bump only for package root
