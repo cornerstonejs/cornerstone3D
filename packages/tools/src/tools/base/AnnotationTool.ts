@@ -34,10 +34,14 @@ import type {
   StyleSpecifier,
 } from '../../types/AnnotationStyle';
 import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
+import { drawLinkedTextBox } from '../../drawingSvg';
+import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
+import type { SVGDrawingHelper } from '../../types';
 import ChangeTypes from '../../enums/ChangeTypes';
 import { setAnnotationSelected } from '../../stateManagement/annotation/annotationSelection';
 import { addContourSegmentationAnnotation } from '../../utilities/contourSegmentation';
 import { safeStructuredClone } from '../../utilities/safeStructuredClone';
+import getViewportICamera from '../../utilities/getViewportICamera';
 
 const { DefaultHistoryMemo } = csUtils.HistoryMemo;
 
@@ -373,6 +377,112 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
   }
 
   /**
+   * Renders a linked text box for an annotation using shared visibility, placement,
+   * and worldBoundingBox logic. Call from renderAnnotation when the tool uses a
+   * linked text box (e.g. Length, RectangleROI). The caller must supply textLines
+   * and canvasCoordinates; when text box visibility is off, this method resets
+   * data.handles.textBox and returns false.
+   *
+   * @param options.enabledElement - Cornerstone enabled element
+   * @param options.svgDrawingHelper - SVG drawing helper
+   * @param options.annotation - Annotation whose text box to render
+   * @param options.styleSpecifier - Style specifier for getLinkedTextBoxStyle
+   * @param options.textLines - Lines to display (caller responsibility to compute/skip when empty)
+   * @param options.canvasCoordinates - Canvas anchor points for the link line (and for placement when placementPoints omitted)
+   * @param options.textBoxUID - Optional UID for the text box SVG group (default '1')
+   * @param options.placementPoints - Optional; when provided, used for getTextBoxCoordsCanvas only (e.g. circle ROI uses corners for placement, center for link)
+   * @returns true if the text box was drawn, false if visibility was off (textBox was reset)
+   */
+  protected renderLinkedTextBoxAnnotation(options: {
+    enabledElement: Types.IEnabledElement;
+    svgDrawingHelper: SVGDrawingHelper;
+    annotation: Annotation;
+    styleSpecifier: StyleSpecifier;
+    textLines: string[];
+    canvasCoordinates: Types.Point2[];
+    textBoxUID?: string;
+    placementPoints?: Types.Point2[];
+  }): boolean {
+    const {
+      enabledElement,
+      svgDrawingHelper,
+      annotation,
+      styleSpecifier,
+      textLines,
+      canvasCoordinates,
+      textBoxUID = '1',
+      placementPoints,
+    } = options;
+    const { viewport } = enabledElement;
+    const { element } = viewport;
+    const { annotationUID, data } = annotation;
+
+    const styleOptions = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
+    if (!styleOptions.visibility) {
+      data.handles.textBox = {
+        hasMoved: false,
+        worldPosition: <Types.Point3>[0, 0, 0],
+        worldBoundingBox: {
+          topLeft: <Types.Point3>[0, 0, 0],
+          topRight: <Types.Point3>[0, 0, 0],
+          bottomLeft: <Types.Point3>[0, 0, 0],
+          bottomRight: <Types.Point3>[0, 0, 0],
+        },
+      };
+      return false;
+    }
+
+    if (!data.handles.textBox) {
+      data.handles.textBox = {
+        hasMoved: false,
+        worldPosition: <Types.Point3>[0, 0, 0],
+        worldBoundingBox: {
+          topLeft: <Types.Point3>[0, 0, 0],
+          topRight: <Types.Point3>[0, 0, 0],
+          bottomLeft: <Types.Point3>[0, 0, 0],
+          bottomRight: <Types.Point3>[0, 0, 0],
+        },
+      };
+    }
+
+    const pointsForPlacement = placementPoints ?? canvasCoordinates;
+    if (!data.handles.textBox.hasMoved) {
+      const canvasTextBoxCoords = getTextBoxCoordsCanvas(
+        pointsForPlacement,
+        element,
+        textLines
+      );
+      data.handles.textBox.worldPosition =
+        viewport.canvasToWorld(canvasTextBoxCoords);
+    }
+
+    const textBoxPosition = viewport.worldToCanvas(
+      data.handles.textBox.worldPosition
+    );
+
+    const boundingBox = drawLinkedTextBox(
+      svgDrawingHelper,
+      annotationUID,
+      textBoxUID,
+      textLines,
+      textBoxPosition,
+      canvasCoordinates,
+      {},
+      styleOptions
+    );
+
+    const { x: left, y: top, width, height } = boundingBox;
+    data.handles.textBox.worldBoundingBox = {
+      topLeft: viewport.canvasToWorld([left, top]),
+      topRight: viewport.canvasToWorld([left + width, top]),
+      bottomLeft: viewport.canvasToWorld([left, top + height]),
+      bottomRight: viewport.canvasToWorld([left + width, top + height]),
+    };
+
+    return true;
+  }
+
+  /**
    * Returns true if the viewport is scaled to SUV units
    * @param viewport - The viewport
    * @param targetId - The annotation targetId
@@ -648,7 +758,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     const { viewport } = enabledElement;
     const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
 
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const viewPlaneNormal = options.viewplaneNormal ?? camera.viewPlaneNormal;
     const viewUp = options.viewUp ?? camera.viewUp;
 
@@ -686,6 +796,20 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
           viewPlaneNormal,
           viewUp
         );
+      } else if (csUtils.isGenericViewport(viewport)) {
+        // Native ("next") viewports are neither StackViewport nor
+        // BaseVolumeViewport; resolve the referenced image from the viewport's
+        // own view reference, which handles both stack and volume planar modes.
+        // Cast structurally: the param type excludes generic viewports, so the
+        // type guard narrows it to `never` here.
+        const genericViewport = viewport as unknown as {
+          getViewReference?: (specifier?: {
+            points?: Types.Point3[];
+          }) => { referencedImageId?: string } | undefined;
+        };
+        referencedImageId = genericViewport.getViewReference?.({
+          points: [points[0]],
+        })?.referencedImageId;
       } else {
         throw new Error('Unsupported viewport type');
       }

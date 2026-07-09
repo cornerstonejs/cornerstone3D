@@ -2,13 +2,14 @@ import addBrushSizeSlider from './addBrushSizeSlider';
 import addButtonToToolbar from './addButtonToToolbar';
 import addCheckboxToToolbar from './addCheckboxToToolbar';
 import addDropdownToToolbar from './addDropdownToToolbar';
+import addFillOpacityDropdownToToolbar from './addFillOpacityDropdownToToolbar';
+import addUShapeModeDropdownToToolbar from './addUShapeModeDropdownToToolbar';
 import addInputToToolbar from './addInputToToolbar';
 import addLabelToToolbar from './addLabelToToolbar';
 import addManipulationBindings from './addManipulationBindings';
 import addSegmentIndexDropdown from './addSegmentIndexDropdown';
 import addSliderToToolbar from './addSliderToToolbar';
 import addToggleButtonToToolbar from './addToggleButtonToToolbar';
-import addUploadToToolbar from './addUploadToToolbar';
 import addVideoTime from './addVideoTime';
 import annotationTools from './annotationTools';
 import camera from './camera';
@@ -16,6 +17,17 @@ import contourSegmentationToolBindings from './contourSegmentationToolBindings';
 import contourTools from './contourTools';
 import createElement from './createElement';
 import createImageIdsAndCacheMetaData from './createImageIdsAndCacheMetaData';
+export {
+  splitDisplaySetsFromImageIds,
+  createDisplaySets,
+  getVideoImageIdFromImageIds,
+  getViewportTypeForDisplaySet,
+  getPrimaryStackFrameImageIds,
+  getVolumeFrameImageIds,
+  get4DDimensionGroupImageIds,
+  get4DVolumeImageIds,
+  getNaturalizedInstanceForDisplaySetSplit,
+} from './splitDisplaySetsFromImageIds';
 import createInfoSection from './createInfoSection';
 import downloadSurfacesData from './downloadSurfacesData';
 import getLocalUrl from './getLocalUrl';
@@ -36,19 +48,22 @@ import {
   createAndCacheGeometriesFromSurfaces,
 } from './createAndCacheGeometriesFromSurfaces';
 import { createAndCacheGeometriesFromContours } from './createAndCacheGeometriesFromContours';
+export * from './constants';
+export * from './addUploadToToolbar';
 
 export {
   addBrushSizeSlider,
   addButtonToToolbar,
   addCheckboxToToolbar,
   addDropdownToToolbar,
+  addFillOpacityDropdownToToolbar,
+  addUShapeModeDropdownToToolbar,
   addInputToToolbar,
   addLabelToToolbar,
   addManipulationBindings,
   addSegmentIndexDropdown,
   addSliderToToolbar,
   addToggleButtonToToolbar,
-  addUploadToToolbar,
   addVideoTime,
   annotationTools,
   camera,

@@ -2,7 +2,7 @@ import { createMesh } from './utils/mesh/createMesh';
 import type { IGeometry, IGeometryLoadObject, MeshData } from '../types';
 import { Events } from '../enums';
 import eventTarget from '../eventTarget';
-import { triggerEvent } from '../utilities';
+import triggerEvent from '../utilities/triggerEvent';
 import type { GeometryLoaderOptions } from '../types/GeometryLoaderFn';
 
 function fetchArrayBuffer({

@@ -34,12 +34,10 @@ import type {
   Statistics,
 } from '../../types';
 import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
-import { drawLinkedTextBox } from '../../drawingSvg';
 import type {
   ContourAnnotation,
   PlanarFreehandROIAnnotation,
 } from '../../types/ToolSpecificAnnotationTypes';
-import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import type { PlanarFreehandROICommonData } from '../../utilities/math/polyline/planarFreehandROIInternalTypes';
 
 import { getLineSegmentIntersectionsCoordinates } from '../../utilities/math/polyline';
@@ -48,6 +46,7 @@ import { BasicStatsCalculator } from '../../utilities/math/basic';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
 import { KeyboardBindings, ChangeTypes, MeasurementType } from '../../enums';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
+import snapIndexBounds from '../../utilities/boundingBox/snapIndexBounds';
 
 const { pointCanProjectOnLine } = polyline;
 const { EPSILON } = CONSTANTS;
@@ -702,7 +701,10 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       return;
     }
 
-    if (annotation.invalidated) {
+    const { data, invalidated } = annotation;
+    const cachedStats = data?.cachedStats;
+
+    if (invalidated || !cachedStats?.[targetId]) {
       this._calculateStatsIfActive(
         annotation,
         targetId,
@@ -786,7 +788,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         continue;
       }
 
-      const { imageData, metadata } = image;
+      const { imageData, metadata, voxelManager } = image;
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
       const modalityUnitOptions = {
@@ -862,6 +864,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         points,
         imageData,
         metadata,
+        voxelManager,
         cachedStats,
         modalityUnit,
         calibratedScale,
@@ -895,6 +898,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     points,
     imageData,
     metadata,
+    voxelManager,
     cachedStats,
     targetId,
     modalityUnit,
@@ -903,11 +907,10 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     deltaInX,
     deltaInY,
   }) {
-    const { scale, areaUnit, unit } = calibratedScale;
-
-    const { voxelManager } = viewport.getImageData();
+    const { areaUnit, unit } = calibratedScale;
 
     const indexPoints = points.map((point) => imageData.worldToIndex(point));
+    const dims = imageData.getDimensions();
 
     let iMin = Number.MAX_SAFE_INTEGER;
     let iMax = Number.MIN_SAFE_INTEGER;
@@ -917,7 +920,8 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     let kMax = Number.MIN_SAFE_INTEGER;
 
     for (let j = 0; j < points.length; j++) {
-      const worldPosIndex = indexPoints[j].map(Math.floor);
+      const worldPosIndex = indexPoints[j];
+
       iMin = Math.min(iMin, worldPosIndex[0]);
       iMax = Math.max(iMax, worldPosIndex[0]);
 
@@ -928,9 +932,24 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       kMax = Math.max(kMax, worldPosIndex[2]);
     }
 
-    let area = polyline.getArea(canvasCoordinates) / scale / scale;
+    // Clamp the accumulated bounds into the image extent so the bounding box
+    // never spills outside the volume. Clamping the min/max here is equivalent
+    // to clamping every point (clamp is monotonic, so it commutes with
+    // min/max) but avoids the per-point allocation. The values are left
+    // unfloored so snapIndexBounds can still detect planar (delta <= 1) ROIs.
+    iMin = Math.max(0, Math.min(dims[0] - 1, iMin));
+    iMax = Math.max(0, Math.min(dims[0] - 1, iMax));
+    jMin = Math.max(0, Math.min(dims[1] - 1, jMin));
+    jMax = Math.max(0, Math.min(dims[1] - 1, jMax));
+    kMin = Math.max(0, Math.min(dims[2] - 1, kMin));
+    kMax = Math.max(0, Math.min(dims[2] - 1, kMax));
+
+    [iMin, iMax] = snapIndexBounds(iMin, iMax);
+    [jMin, jMax] = snapIndexBounds(jMin, jMax);
+    [kMin, kMax] = snapIndexBounds(kMin, kMax);
+
     // Convert from canvas_pixels ^2 to mm^2
-    area *= deltaInX * deltaInY;
+    const area = polyline.getArea(canvasCoordinates) * deltaInX * deltaInY;
 
     const perimeter = PlanarFreehandROITool.calculateLengthInIndex(
       calibratedScale,
@@ -1089,11 +1108,6 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       annotationUID: annotation.annotationUID,
     };
 
-    const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
-    if (!options.visibility) {
-      return;
-    }
-
     const textLines = this.configuration.getTextLines(data, targetId);
     if (!textLines || textLines.length === 0) {
       return;
@@ -1102,37 +1116,14 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     const canvasCoordinates = data.contour.polyline.map((p) =>
       viewport.worldToCanvas(p)
     );
-    if (!data.handles.textBox.hasMoved) {
-      const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
-
-      data.handles.textBox.worldPosition =
-        viewport.canvasToWorld(canvasTextBoxCoords);
-    }
-
-    const textBoxPosition = viewport.worldToCanvas(
-      data.handles.textBox.worldPosition
-    );
-
-    const textBoxUID = '1';
-    const boundingBox = drawLinkedTextBox(
+    this.renderLinkedTextBoxAnnotation({
+      enabledElement,
       svgDrawingHelper,
-      annotation.annotationUID ?? '',
-      textBoxUID,
+      annotation,
+      styleSpecifier,
       textLines,
-      textBoxPosition,
       canvasCoordinates,
-      {},
-      options
-    );
-
-    const { x: left, y: top, width, height } = boundingBox;
-
-    data.handles.textBox.worldBoundingBox = {
-      topLeft: viewport.canvasToWorld([left, top]),
-      topRight: viewport.canvasToWorld([left + width, top]),
-      bottomLeft: viewport.canvasToWorld([left, top + height]),
-      bottomRight: viewport.canvasToWorld([left + width, top + height]),
-    };
+    });
   };
 }
 

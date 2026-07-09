@@ -5,21 +5,18 @@ defaults: &defaults
   working_directory: ~/repo
   # https://circleci.com/docs/2.0/circleci-images/#language-image-variants
   docker:
-    - image: cimg/node:20.18.1-browsers
+    - image: cimg/node:24.15.0-browsers
       environment:
         TERM: xterm # Enable colors in term
 
-
 commands:
-  install_bun:
+  install_pnpm:
     steps:
       - run:
-          name: Install Bun
+          name: Install pnpm
           command: |
-            curl -fsSL https://bun.sh/install | bash -s "bun-v1.2.23"
-            echo 'export BUN_INSTALL="$HOME/.bun"' >> $BASH_ENV
-            echo 'export PATH="$BUN_INSTALL/bin:$PATH"' >> $BASH_ENV
-            source $BASH_ENV
+            sudo corepack enable
+            pnpm --version
 
 jobs:
   CHECKOUT:
@@ -27,29 +24,26 @@ jobs:
     steps:
       - checkout
       - run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/repo/.npmrc
-      - install_bun
-      # SECURITY AUDIT
+      - install_pnpm
+      # SECURITY AUDIT - only when pnpm-lock.yaml has changed
       - run:
           name: 'Security Audit - High Risk Vulnerabilities'
           command: |
-            echo "🔍 Running bun audit for security vulnerabilities..."
+            git fetch origin main 2>/dev/null || true
+            BASE_REF=$(git merge-base HEAD origin/main 2>/dev/null)
+            if [[ -z "$BASE_REF" ]]; then
+              echo "Could not determine base ref (e.g. shallow clone or no origin/main), skipping security audit."
+              exit 0
+            fi
+            CHANGED_FILES=$(git diff --name-only origin/main...HEAD 2>/dev/null || echo "")
+            if ! echo "$CHANGED_FILES" | grep -qx 'pnpm-lock.yaml'; then
+              echo "⏭️ pnpm-lock.yaml unchanged - skipping security audit."
+              exit 0
+            fi
+            echo "🔍 pnpm-lock.yaml changed - running pnpm audit for security vulnerabilities..."
             echo "Checking for HIGH-RISK vulnerabilities..."
 
-            # Define ignored vulnerabilities with comments
-            IGNORED_VULNS=(
-              "GHSA-5j98-mcp5-4vw2"  # CVE-2025-64756 - glob is not used on the command line
-              "GHSA-8qq5-rm4j-mr97"  # CVE-2026-23745 - limited to build/dev environments
-              "GHSA-r6q2-hw4h-h46w"  # CVE-2026-23950 - limited to build/dev environments
-              "GHSA-34x7-hfp2-rc4v"  # CVE-2026-24842 - limited to build/dev environments
-            )
-
-            # Build ignore flags
-            IGNORE_FLAGS=""
-            for vuln in "${IGNORED_VULNS[@]}"; do
-              IGNORE_FLAGS="$IGNORE_FLAGS --ignore=$vuln"
-            done
-
-            if bun audit $IGNORE_FLAGS --audit-level high; then
+            if pnpm audit --audit-level high; then
               echo "✅ No high-risk vulnerabilities found"
               echo "🎉 Security audit passed!"
             else
@@ -58,39 +52,40 @@ jobs:
               echo "======================================"
               echo ""
               echo "🔧 To fix these issues:"
-              echo "  1. Run: bun audit"
+              echo "  1. Run: pnpm audit"
               echo "  2. Review the vulnerability details"
               echo "  3. Update affected packages to secure versions"
               echo "  4. Test your changes"
-              echo "  5. Re-run: bun audit --audit-level high"
+              echo "  5. Re-run: pnpm audit --audit-level high"
               echo ""
               echo "📋 Full audit report:"
 
-              bun audit $IGNORE_FLAGS --audit-level low || true
+              pnpm audit || true
 
               echo ""
               echo "❌ This build cannot proceed until high-risk vulnerabilities are resolved."
               exit 1
             fi
-      - run: bun install
+      - run: pnpm install --frozen-lockfile
       - persist_to_workspace:
           root: ~/repo
           paths:
-            - "."
+            - '.'
 
   BUILD:
     <<: *defaults
     steps:
       - attach_workspace:
           at: ~/repo
-      - install_bun
+      - install_pnpm
       - run:
           name: 'Perform the versioning before build'
-          command: bun ./version.mjs
-      - run: bun run build
+          command: node ./version.mjs
+      - run: pnpm run build
       - persist_to_workspace:
           root: ~/repo
           paths:
+            - packages/metadata/dist
             - packages/core/dist
             - packages/tools/dist
             - packages/adapters/dist
@@ -106,7 +101,22 @@ jobs:
     steps:
       - attach_workspace:
           at: ~/repo
-      - install_bun
+      # The version-bump commit created by publish-version.mjs no longer carries "[skip ci]"
+      # (that suppressed the GitHub Actions release workflow that fires on the pushed tag).
+      # As a result this bump commit re-triggers TEST_AND_RELEASE on main. version.mjs ALWAYS
+      # computes a new version, so without this guard that would be an infinite publish loop.
+      # Halt here when HEAD is a version-bump commit. (circleci-agent step halt stops only this
+      # job, which is sufficient: NPM_PUBLISH is the terminal job and the only one that publishes.)
+      - run:
+          name: Skip republish on version-bump commits
+          command: |
+            MSG=$(git log -1 --pretty=%s)
+            echo "HEAD commit subject: $MSG"
+            if echo "$MSG" | grep -qE '^chore\(version\): Update package versions'; then
+              echo "Version-bump commit detected - nothing new to publish. Halting job."
+              circleci-agent step halt
+            fi
+      - install_pnpm
       - run:
           name: Avoid hosts unknown for github
           command:
@@ -114,22 +124,21 @@ jobs:
             no\n" > ~/.ssh/config
       - add_ssh_keys:
           fingerprints:
-            - "7e:0f:5b:bb:e3:7a:2e:2f:b4:85:bd:66:09:69:cb:f2"
+            - '7e:0f:5b:bb:e3:7a:2e:2f:b4:85:bd:66:09:69:cb:f2'
       - run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
       - run: git config --global user.email "contact@ohif.org"
       - run: git config --global user.name "ohif-bot"
       - run:
           name: publish package versions
           command: |
-            bun ./publish-version.mjs
+            node ./publish-version.mjs
       - run:
           name: Again set the NPM registry (was deleted in the version script)
-          command:
-            echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/repo/.npmrc
+          command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/repo/.npmrc
       - run:
           name: publish package dist
           command: |
-            bun ./publish-package.mjs
+            node ./publish-package.mjs
 
 workflows:
   version: 2
@@ -163,5 +172,4 @@ workflows:
       - NPM_PUBLISH:
           requires:
             - BUILD
-
 # VS Code Extension Version: 1.5.1

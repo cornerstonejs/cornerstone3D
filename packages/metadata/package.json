@@ -1,0 +1,99 @@
+{
+  "name": "@cornerstonejs/metadata",
+  "version": "5.4.10",
+  "description": "Cornerstone3D Metadata Foundation - Provider chain, DICOM stream parsing, tag modules, and series splitting",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "repository": "https://github.com/cornerstonejs/cornerstone3D",
+  "files": [
+    "./dist/"
+  ],
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/esm/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "default": "./dist/esm/index.js"
+    },
+    "./metaData": {
+      "types": "./dist/esm/metaData.d.ts",
+      "import": "./dist/esm/metaData.js",
+      "default": "./dist/esm/metaData.js"
+    },
+    "./enums": {
+      "types": "./dist/esm/enums/index.d.ts",
+      "import": "./dist/esm/enums/index.js",
+      "default": "./dist/esm/enums/index.js"
+    },
+    "./enums/*": {
+      "types": "./dist/esm/enums/*.d.ts",
+      "import": "./dist/esm/enums/*.js",
+      "default": "./dist/esm/enums/*.js"
+    },
+    "./utilities": {
+      "types": "./dist/esm/utilities/index.d.ts",
+      "import": "./dist/esm/utilities/index.js",
+      "default": "./dist/esm/utilities/index.js"
+    },
+    "./utilities/dicomStream": {
+      "types": "./dist/esm/utilities/dicomStream/index.d.ts",
+      "import": "./dist/esm/utilities/dicomStream/index.js",
+      "default": "./dist/esm/utilities/dicomStream/index.js"
+    },
+    "./utilities/metadataProvider": {
+      "types": "./dist/esm/utilities/metadataProvider/index.d.ts",
+      "import": "./dist/esm/utilities/metadataProvider/index.js",
+      "default": "./dist/esm/utilities/metadataProvider/index.js"
+    },
+    "./utilities/*": {
+      "types": "./dist/esm/utilities/*.d.ts",
+      "import": "./dist/esm/utilities/*.js",
+      "default": "./dist/esm/utilities/*.js"
+    },
+    "./types": {
+      "types": "./dist/esm/types/index.d.ts"
+    },
+    "./types/*": {
+      "types": "./dist/esm/types/*.d.ts"
+    },
+    "./version": {
+      "types": "./dist/esm/version.d.ts",
+      "import": "./dist/esm/version.js",
+      "default": "./dist/esm/version.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "prebuild": "node ../../scripts/generate-version.js ./",
+    "build:esm": "pnpm run prebuild && tsc --project ./tsconfig.json && tsc-alias -p ./tsconfig.json --resolve-full-paths && node ../../scripts/write-dist-esm-package-json.js ./",
+    "build:esm:watch": "sh -c 'tsc-alias -p ./tsconfig.json --resolve-full-paths --watch & alias_pid=$!; node ../../scripts/write-dist-esm-package-json.js ./ --watch & writer_pid=$!; trap \"kill $alias_pid $writer_pid\" EXIT; tsc --project ./tsconfig.json --watch'",
+    "clean": "rm -rf node_modules/.cache/storybook && shx rm -rf dist",
+    "clean:deep": "pnpm run clean && shx rm -rf node_modules",
+    "build": "pnpm run build:esm",
+    "build:all": "pnpm run build:esm",
+    "dev": "tsc --project ./tsconfig.json --watch",
+    "api-check": "api-extractor --debug run",
+    "lint": "oxlint .",
+    "prepublishOnly": "pnpm run build"
+  },
+  "dependencies": {
+    "@cornerstonejs/calculate-suv": "1.0.3",
+    "@cornerstonejs/utils": "5.4.10",
+    "dcmjs": "0.50.1",
+    "gl-matrix": "3.4.3"
+  },
+  "contributors": [
+    {
+      "name": "Cornerstone.js Contributors",
+      "url": "https://github.com/orgs/cornerstonejs/people"
+    }
+  ],
+  "license": "MIT",
+  "funding": {
+    "type": "individual",
+    "url": "https://ohif.org/donate"
+  }
+}

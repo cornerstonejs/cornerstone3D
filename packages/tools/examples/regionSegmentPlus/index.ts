@@ -53,17 +53,17 @@ viewportGrid.style.display = 'grid';
 viewportGrid.style.gridTemplateColumns = '1fr 1fr';
 viewportGrid.style.gap = '10px';
 viewportGrid.style.width = '1010px';
-viewportGrid.style.height = '500px';
+viewportGrid.style.height = '512px';
 
 const element1 = document.createElement('div');
 element1.oncontextmenu = (e) => e.preventDefault();
-element1.style.width = '500px';
-element1.style.height = '500px';
+element1.style.width = '512px';
+element1.style.height = '512px';
 
 const element2 = document.createElement('div');
 element2.oncontextmenu = (e) => e.preventDefault();
-element2.style.width = '500px';
-element2.style.height = '500px';
+element2.style.width = '512px';
+element2.style.height = '512px';
 
 viewportGrid.appendChild(element1);
 viewportGrid.appendChild(element2);

@@ -18,10 +18,11 @@ import {
   triggerContourAnnotationCompleted,
 } from '../../../stateManagement/annotation/helpers/state';
 import type { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
-import findOpenUShapedContourVectorToPeak from './findOpenUShapedContourVectorToPeak';
+import { resolveVectorToPeak } from './findOpenUShapedContourVectorToPeak';
 import { polyline } from '../../../utilities/math';
 import { removeAnnotation } from '../../../stateManagement/annotation/annotationState';
 import { ContourWindingDirection } from '../../../types/ContourAnnotation';
+import { bridgeSelfIntersectingPolyline } from '../../../utilities/contourSegmentation/bridgeWeaklyConnected';
 
 const {
   addCanvasPointsToArray,
@@ -38,8 +39,6 @@ function activateDraw(
   annotation: PlanarFreehandROIAnnotation,
   viewportIdsToRender: string[]
 ): void {
-  this.isDrawing = true;
-
   const eventDetail = evt.detail;
   const { currentPoints, element } = eventDetail;
   const canvasPos = currentPoints.canvas;
@@ -55,9 +54,15 @@ function activateDraw(
       this.configuration.subPixelResolution
     ) || {};
 
+  // Only enter the drawing state once the slice geometry is resolved. Setting
+  // isDrawing before this guard left the tool half-initialized (isDrawing true,
+  // commonData undefined) whenever the geometry could not be computed, which
+  // then crashed renderAnnotationInstance on the next render.
   if (!spacing || !xDir || !yDir) {
     return;
   }
+
+  this.isDrawing = true;
 
   this.drawData = {
     canvasPoints: [canvasPos],
@@ -159,9 +164,21 @@ function mouseDragDrawCallback(evt: EventTypes.InteractionEventType): void {
   } else {
     const crossingIndex = this.findCrossingIndexDuringCreate(evt);
 
-    if (crossingIndex !== undefined) {
-      // If we have crossed our drawing line, create a closed contour and then
-      // start an edit.
+    // Only treat a self-crossing as "close the contour" when it happens near
+    // the start of the stroke (the cross-back-to-close gesture). A crossing
+    // elsewhere is an intentional self-intersection — e.g. a figure-eight — so
+    // keep drawing and resolve it into a single contour at completion.
+    const crossingClosesContour =
+      crossingIndex !== undefined &&
+      pointsAreWithinCloseContourProximity(
+        canvasPoints[0],
+        canvasPoints[crossingIndex],
+        this.configuration.closeContourProximity
+      );
+
+    if (crossingClosesContour) {
+      // If we have crossed our drawing line near the start, create a closed
+      // contour and then start an edit.
       this.applyCreateOnCross(evt, crossingIndex);
     } else {
       const numPointsAdded = addCanvasPointsToArray(
@@ -237,7 +254,7 @@ function completeDrawClosedContour(
     return false;
   }
 
-  const { annotation, viewportIdsToRender } = this.commonData;
+  const { annotation, viewportIdsToRender, movingTextBox } = this.commonData;
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;
 
@@ -251,9 +268,14 @@ function completeDrawClosedContour(
   // Remove last point which will be a duplicate now.
   canvasPoints.pop();
 
-  const updatedPoints = shouldSmooth(this.configuration, annotation)
+  const smoothedPoints = shouldSmooth(this.configuration, annotation)
     ? getInterpolatedPoints(this.configuration, canvasPoints)
     : canvasPoints;
+
+  // If the contour crosses itself (e.g. a figure-eight), stitch the lobes into
+  // a single weakly-simple contour rather than letting it stay self-intersecting
+  // (which renders/loads incorrectly). Simple contours are returned unchanged.
+  const updatedPoints = bridgeSelfIntersectingPolyline(smoothedPoints);
 
   this.updateContourPolyline(
     annotation,
@@ -267,7 +289,7 @@ function completeDrawClosedContour(
 
   const { textBox } = annotation.data.handles;
 
-  if (!textBox?.hasMoved) {
+  if (!textBox?.hasMoved && !movingTextBox) {
     triggerContourAnnotationCompleted(annotation, contourHoleProcessingEnabled);
   }
 
@@ -330,7 +352,7 @@ function completeDrawOpenContour(
     return false;
   }
 
-  const { annotation, viewportIdsToRender } = this.commonData;
+  const { annotation, viewportIdsToRender, movingTextBox } = this.commonData;
   const enabledElement = getEnabledElement(element);
   const { viewport } = enabledElement;
 
@@ -361,17 +383,25 @@ function completeDrawOpenContour(
     worldPoints[worldPoints.length - 1],
   ];
 
-  // If the annotation is an open U-shaped annotation, find the annotation vector
-  // to the farthest point from the mid point of the closure
+  // Apply configured U-shape mode if the annotation doesn't already have one.
   if (
-    annotation.data.isOpenUShapeContour === true ||
-    annotation.data.isOpenUShapeContour === 'farthestT'
+    !annotation.data.isOpenUShapeContour &&
+    this.configuration?.openUShapeContour
   ) {
-    annotation.data.openUShapeContourVectorToPeak =
-      findOpenUShapedContourVectorToPeak(canvasPoints, viewport);
+    annotation.data.isOpenUShapeContour = this.configuration.openUShapeContour;
   }
 
-  if (!textBox.hasMoved) {
+  // If the annotation is an open U-shaped annotation, find the annotation vector
+  // to the peak point (variant-dependent).
+  if (annotation.data.isOpenUShapeContour) {
+    annotation.data.openUShapeContourVectorToPeak = resolveVectorToPeak(
+      canvasPoints,
+      viewport,
+      annotation.data.isOpenUShapeContour
+    );
+  }
+
+  if (!textBox.hasMoved && !movingTextBox) {
     triggerContourAnnotationCompleted(annotation, contourHoleProcessingEnabled);
   }
 

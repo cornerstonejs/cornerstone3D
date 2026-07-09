@@ -37,6 +37,7 @@ import * as viewportFilters from './viewportFilters';
 import * as orientation from './orientation';
 import * as cine from './cine';
 import * as boundingBox from './boundingBox';
+import * as draw3D from './draw3D';
 import * as planarFreehandROITool from './planarFreehandROITool';
 import * as rectangleROITool from './rectangleROITool';
 import { stackPrefetch, stackContextPrefetch } from './stackPrefetch';
@@ -60,6 +61,7 @@ import { moveAnnotationToViewPlane } from './moveAnnotationToViewPlane';
 import { safeStructuredClone } from './safeStructuredClone';
 import getOrCreateImageVolume from './segmentation/getOrCreateImageVolume';
 import * as usFanExtraction from '../tools/annotation/UltrasoundPleuraBLineTool/utils/fanExtraction';
+import { jumpToFocalPoint } from './genericViewportToolHelpers';
 export * from './defaultGetTextLines';
 
 export {
@@ -92,6 +94,7 @@ export {
   viewport,
   cine,
   boundingBox,
+  draw3D,
   rectangleROITool,
   planarFreehandROITool,
   stackPrefetch,
@@ -113,4 +116,5 @@ export {
   moveAnnotationToViewPlane,
   safeStructuredClone,
   getOrCreateImageVolume,
+  jumpToFocalPoint,
 };

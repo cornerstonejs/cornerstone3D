@@ -860,6 +860,62 @@ describe('renderingCore -- Stack', () => {
       }
     });
 
+    it('Should preserve stack properties when actor recreation is only caused by a data type mismatch', function (done) {
+      testUtils.createViewports(renderingEngine, {
+        viewportId,
+        orientation: Enums.OrientationAxis.AXIAL,
+      });
+
+      const imageInfo1 = {
+        loader: 'fakeImageLoader',
+        name: 'imageURI',
+        rows: 11,
+        columns: 11,
+        barStart: 4,
+        barWidth: 1,
+        xSpacing: 1,
+        ySpacing: 1,
+        sliceIndex: 0,
+        dataType: 'Uint8Array',
+      };
+      const imageInfo2 = {
+        ...imageInfo1,
+        sliceIndex: 1,
+        dataType: 'Uint16Array',
+      };
+
+      const imageId1 = testUtils.encodeImageIdInfo(imageInfo1);
+      const imageId2 = testUtils.encodeImageIdInfo(imageInfo2);
+
+      const vp = renderingEngine.getViewport(viewportId);
+      const expectedVOIRange = { lower: -260, upper: 140 };
+      const expectedColormap = { name: 'hsv' };
+
+      vp.setStack([imageId1, imageId2], 0)
+        .then(() => {
+          vp.setProperties({
+            colormap: expectedColormap,
+            interpolationType: InterpolationType.NEAREST,
+            voiRange: expectedVOIRange,
+            invert: true,
+          });
+
+          return vp.setImageIdIndex(1);
+        })
+        .then(() => {
+          const props = vp.getProperties();
+
+          expect(vp.stackActorReInitialized).toBe(true);
+          expect(props.interpolationType).toBe(InterpolationType.NEAREST);
+          expect(props.invert).toBe(true);
+          expect(props.colormap).toEqual(expectedColormap);
+          expect(props.voiRange).toEqual(expectedVOIRange);
+
+          done();
+        })
+        .catch(done.fail);
+    });
+
     it('Should be able to resetProperties API', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,

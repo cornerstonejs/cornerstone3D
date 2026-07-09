@@ -26,12 +26,11 @@ import {
 import {
   drawCircle as drawCircleSvg,
   drawHandles as drawHandlesSvg,
-  drawLinkedTextBox as drawLinkedTextBoxSvg,
+  drawEllipseByCoordinates,
 } from '../../drawingSvg';
 import { state } from '../../store/state';
 import { ChangeTypes, Events, MeasurementType } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import {
   resetElementCursor,
   hideElementCursor,
@@ -51,18 +50,23 @@ import type { CircleROIAnnotation } from '../../types/ToolSpecificAnnotationType
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
+import { viewportSupportsImageSlices } from '../../utilities/viewportCapabilities';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import {
   getCanvasCircleCorners,
   getCanvasCircleRadius,
 } from '../../utilities/math/circle';
-import { pointInEllipse } from '../../utilities/math/ellipse';
+import {
+  getCanvasEllipseCorners,
+  pointInEllipse,
+} from '../../utilities/math/ellipse';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
 import {
   createGetTextLines,
   type MetricDefinition,
 } from '../../utilities/defaultGetTextLines';
+import getEllipseWorldCoordinates from '../../utilities/getEllipseWorldCoordinates';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -237,13 +241,83 @@ class CircleROITool extends AnnotationTool {
     const { viewport } = enabledElement;
 
     const { points } = annotation.data.handles;
-    const canvasHandles = points.map((p) => viewport.worldToCanvas(p));
-    const canvasCenter = canvasHandles[0];
-    const radius = getCanvasCircleRadius([canvasCenter, canvasHandles[1]]);
-    const radiusPoint = getCanvasCircleRadius([canvasCenter, canvasCoords]);
+    // Get the radius in world units from the drag distance
+    const ellipseWorldCoordinates = getEllipseWorldCoordinates(
+      points.slice(0, 2) as [Types.Point3, Types.Point3],
+      viewport
+    );
 
-    return Math.abs(radiusPoint - radius) < proximity / 2;
+    const ellipseCanvasCoordinates = ellipseWorldCoordinates.map((p) =>
+      viewport.worldToCanvas(p)
+    ) as [Types.Point2, Types.Point2, Types.Point2, Types.Point2];
+    const canvasCorners = getCanvasEllipseCorners(
+      ellipseCanvasCoordinates as [
+        Types.Point2,
+        Types.Point2,
+        Types.Point2,
+        Types.Point2,
+      ]
+    );
+
+    const [canvasPoint1, canvasPoint2] = canvasCorners;
+
+    const minorEllipse = {
+      left: Math.min(canvasPoint1[0], canvasPoint2[0]) + proximity / 2,
+      top: Math.min(canvasPoint1[1], canvasPoint2[1]) + proximity / 2,
+      width: Math.abs(canvasPoint1[0] - canvasPoint2[0]) - proximity,
+      height: Math.abs(canvasPoint1[1] - canvasPoint2[1]) - proximity,
+    };
+
+    const majorEllipse = {
+      left: Math.min(canvasPoint1[0], canvasPoint2[0]) - proximity / 2,
+      top: Math.min(canvasPoint1[1], canvasPoint2[1]) - proximity / 2,
+      width: Math.abs(canvasPoint1[0] - canvasPoint2[0]) + proximity,
+      height: Math.abs(canvasPoint1[1] - canvasPoint2[1]) + proximity,
+    };
+
+    const pointInMinorEllipse = this._pointInEllipseCanvas(
+      minorEllipse,
+      canvasCoords
+    );
+    const pointInMajorEllipse = this._pointInEllipseCanvas(
+      majorEllipse,
+      canvasCoords
+    );
+
+    if (pointInMajorEllipse && !pointInMinorEllipse) {
+      return true;
+    }
+
+    return false;
   };
+
+  /**
+   * This is a temporary function to use the old ellipse's canvas-based
+   * calculation for isPointNearTool, we should move the the world-based
+   * calculation to the tool's isPointNearTool function.
+   *
+   * @param ellipse - The ellipse object
+   * @param location - The location to check
+   * @returns True if the point is inside the ellipse
+   */
+  _pointInEllipseCanvas(ellipse, location: Types.Point2): boolean {
+    const xRadius = ellipse.width / 2;
+    const yRadius = ellipse.height / 2;
+
+    if (xRadius <= 0.0 || yRadius <= 0.0) {
+      return false;
+    }
+
+    const center = [ellipse.left + xRadius, ellipse.top + yRadius];
+    const normalized = [location[0] - center[0], location[1] - center[1]];
+
+    const inEllipse =
+      (normalized[0] * normalized[0]) / (xRadius * xRadius) +
+        (normalized[1] * normalized[1]) / (yRadius * yRadius) <=
+      1.0;
+
+    return inEllipse;
+  }
 
   toolSelectedCallback = (
     evt: EventTypes.InteractionEventType,
@@ -684,7 +758,9 @@ class CircleROITool extends AnnotationTool {
           // at the referencedImageId
           for (const targetId in data.cachedStats) {
             if (targetId.startsWith('imageId')) {
-              const viewports = renderingEngine.getStackViewports();
+              const viewports = renderingEngine
+                .getViewports()
+                .filter(viewportSupportsImageSlices);
 
               const invalidatedStack = viewports.find((vp) => {
                 // The stack viewport that contains the imageId but is not
@@ -748,12 +824,27 @@ class CircleROITool extends AnnotationTool {
 
       const dataId = `${annotationUID}-circle`;
       const circleUID = '0';
-      drawCircleSvg(
+
+      // Get the radius in world units from the drag distance
+      const ellipseWorldCoordinates = getEllipseWorldCoordinates(
+        [points[0], points[1]],
+        viewport
+      );
+
+      const ellipseCanvasCoordinates = ellipseWorldCoordinates.map((p) =>
+        viewport.worldToCanvas(p)
+      ) as [Types.Point2, Types.Point2, Types.Point2, Types.Point2];
+
+      drawEllipseByCoordinates(
         svgDrawingHelper,
         annotationUID,
         circleUID,
-        center,
-        radius,
+        ellipseCanvasCoordinates as [
+          Types.Point2,
+          Types.Point2,
+          Types.Point2,
+          Types.Point2,
+        ],
         {
           color,
           lineDash,
@@ -783,21 +874,6 @@ class CircleROITool extends AnnotationTool {
       renderStatus = true;
 
       if (this.configuration.calculateStats) {
-        const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
-        if (!options.visibility) {
-          data.handles.textBox = {
-            hasMoved: false,
-            worldPosition: <Types.Point3>[0, 0, 0],
-            worldBoundingBox: {
-              topLeft: <Types.Point3>[0, 0, 0],
-              topRight: <Types.Point3>[0, 0, 0],
-              bottomLeft: <Types.Point3>[0, 0, 0],
-              bottomRight: <Types.Point3>[0, 0, 0],
-            },
-          };
-          continue;
-        }
-
         const textLines = this.configuration.getTextLines(
           data,
           this.getMeasurementTargets(viewport, data)
@@ -805,41 +881,20 @@ class CircleROITool extends AnnotationTool {
         if (!textLines || textLines.length === 0) {
           continue;
         }
-
-        // Poor man's cached?
-        let canvasTextBoxCoords;
-
-        if (!data.handles.textBox.hasMoved) {
-          canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCorners);
-
-          data.handles.textBox.worldPosition =
-            viewport.canvasToWorld(canvasTextBoxCoords);
+        const linkAnchorPoints: Types.Point2[] = [center, canvasCoordinates[1]];
+        if (
+          !this.renderLinkedTextBoxAnnotation({
+            enabledElement,
+            svgDrawingHelper,
+            annotation,
+            styleSpecifier,
+            textLines,
+            canvasCoordinates: linkAnchorPoints,
+            placementPoints: canvasCorners,
+          })
+        ) {
+          continue;
         }
-
-        const textBoxPosition = viewport.worldToCanvas(
-          data.handles.textBox.worldPosition
-        );
-
-        const textBoxUID = '1';
-        const boundingBox = drawLinkedTextBoxSvg(
-          svgDrawingHelper,
-          annotationUID,
-          textBoxUID,
-          textLines,
-          textBoxPosition,
-          [center, canvasCoordinates[1]],
-          {},
-          options
-        );
-
-        const { x: left, y: top, width, height } = boundingBox;
-
-        data.handles.textBox.worldBoundingBox = {
-          topLeft: viewport.canvasToWorld([left, top]),
-          topRight: viewport.canvasToWorld([left + width, top]),
-          bottomLeft: viewport.canvasToWorld([left, top + height]),
-          bottomRight: viewport.canvasToWorld([left + width, top + height]),
-        };
       }
     }
 

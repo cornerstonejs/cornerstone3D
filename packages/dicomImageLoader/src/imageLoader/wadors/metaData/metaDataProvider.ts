@@ -1,4 +1,3 @@
-import * as dicomParser from 'dicom-parser';
 import {
   Enums,
   utilities,
@@ -21,12 +20,12 @@ import {
 } from './extractPositioningFromMetadata';
 import { getImageTypeSubItemFromMetadata } from './NMHelpers';
 import isNMReconstructable from '../../isNMReconstructable';
-import {
-  getInstanceModule,
-  instanceModuleNames,
-} from '../../getInstanceModule';
+import { instanceModuleNames } from '../../getInstanceModule';
 import { getUSEnhancedRegions } from './USHelpers';
 
+/**
+ * @deprecated Use addDicomWebInstance from @cornerstonejs/metadata instead.
+ */
 function metaDataProvider(type, imageId) {
   const { MetadataModules } = Enums;
 

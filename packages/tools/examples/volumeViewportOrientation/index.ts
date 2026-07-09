@@ -44,16 +44,22 @@ setTitleAndDescription(
 const content = document.getElementById('content');
 const element = document.createElement('div');
 element.id = 'cornerstone-element';
-element.style.width = '500px';
-element.style.height = '500px';
+element.style.width = '512px';
+element.style.height = '512px';
 element.oncontextmenu = () => false;
 content.appendChild(element);
 // ============================= //
 
 addDropdownToToolbar({
   options: {
-    values: ['axial', 'sagittal', 'coronal', 'acquisition'],
-    defaultValue: 'sagittal',
+    values: [
+      Enums.OrientationAxis.AXIAL,
+      Enums.OrientationAxis.SAGITTAL,
+      Enums.OrientationAxis.CORONAL,
+      Enums.OrientationAxis.ACQUISITION,
+      Enums.OrientationAxis.REFORMAT,
+    ],
+    defaultValue: Enums.OrientationAxis.SAGITTAL,
   },
   onSelectedValueChange: (selectedValue) => {
     // Get the rendering engine

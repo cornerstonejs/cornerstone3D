@@ -1,8 +1,4 @@
-import {
-  BaseVolumeViewport,
-  cache,
-  getEnabledElement,
-} from '@cornerstonejs/core';
+import { BaseVolumeViewport, getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
@@ -23,12 +19,10 @@ import {
   resetElementCursor,
   hideElementCursor,
 } from '../../cursors/elementCursor';
-import type {
-  LabelmapSegmentationDataVolume,
-  LabelmapSegmentationData,
-} from '../../types/LabelmapTypes';
+import type { LabelmapSegmentationData } from '../../types/LabelmapTypes';
 
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+import getViewportICamera from '../../utilities/getViewportICamera';
 import {
   config as segmentationConfig,
   segmentLocking,
@@ -40,7 +34,12 @@ import {
   getCurrentLabelmapImageIdForViewport,
   getSegmentation,
 } from '../../stateManagement/segmentation/segmentationState';
+import getViewportLabelmapRenderMode from '../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
 import LabelmapBaseTool from './LabelmapBaseTool';
+import {
+  getOrCreateLabelmapVolume,
+  resolveLabelmapForSegment,
+} from '../../stateManagement/segmentation/helpers/labelmapSegmentationState';
 
 /**
  * Tool for manipulating segmentation data by drawing a rectangle. It acts on the
@@ -115,7 +114,8 @@ class RectangleScissorsTool extends LabelmapBaseTool {
 
     this.isDrawing = true;
 
-    const camera = viewport.getCamera();
+    // Native ("next") viewports expose no getCamera; read orientation via the bridge.
+    const camera = getViewportICamera(viewport);
     const { viewPlaneNormal, viewUp } = camera;
 
     const activeLabelmapSegmentation = activeSegmentation.getActiveSegmentation(
@@ -189,14 +189,27 @@ class RectangleScissorsTool extends LabelmapBaseTool {
       imageId: null,
     };
 
-    if (viewport instanceof BaseVolumeViewport) {
-      const { volumeId } = labelmapData as LabelmapSegmentationDataVolume;
-      const segmentation = cache.getVolume(volumeId);
+    const viewportRenderMode = getViewportLabelmapRenderMode(viewport);
+
+    if (
+      viewportRenderMode === 'volume' ||
+      viewport instanceof BaseVolumeViewport
+    ) {
+      const layer = resolveLabelmapForSegment(
+        getSegmentation(segmentationId),
+        segmentIndex
+      );
+      const segmentation = layer ? getOrCreateLabelmapVolume(layer) : undefined;
+
+      if (!segmentation) {
+        return;
+      }
 
       this.editData = {
         ...this.editData,
-        volumeId,
-        referencedVolumeId: segmentation.referencedVolumeId,
+        volumeId: segmentation.volumeId,
+        referencedVolumeId:
+          layer?.referencedVolumeId ?? segmentation.referencedVolumeId,
       };
     } else {
       const segmentationImageId = getCurrentLabelmapImageIdForViewport(

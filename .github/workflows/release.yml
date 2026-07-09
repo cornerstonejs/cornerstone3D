@@ -1,0 +1,51 @@
+name: Create GitHub Release
+
+# Creates the GitHub Release for a version tag.
+#
+# The release used to be created inside the CircleCI publish job (publish-version.mjs)
+# via the REST API authenticated with a GH_TOKEN PAT. That PAT had to live in CircleCI's
+# environment, separate from GitHub's own secret store, and drifted out of sync — causing
+# 403 "Resource not accessible by personal access token" failures.
+#
+# Instead, CircleCI does the version bump, npm publish, and tag push; pushing the "v*" tag
+# (via CircleCI's SSH deploy key) triggers this workflow, which creates the release using
+# the built-in GITHUB_TOKEN. No PAT to manage.
+on:
+  push:
+    tags:
+      - 'v*'
+
+# The built-in GITHUB_TOKEN needs write access to Contents to create a release.
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create release for ${{ github.ref_name }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ github.ref_name }}"
+          REPO="${{ github.repository }}"
+
+          # Idempotent: if the tag was re-pushed and the release already exists, do nothing
+          # rather than failing the run.
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            echo "Release $TAG already exists; skipping."
+            exit 0
+          fi
+
+          # A pre-release version contains a hyphen (e.g. v5.1.0-beta.0), mirroring the old
+          # `prerelease: version.includes('-')` logic.
+          PRERELEASE=""
+          if [[ "$TAG" == *-* ]]; then
+            PRERELEASE="--prerelease"
+          fi
+
+          gh release create "$TAG" \
+            --repo "$REPO" \
+            --title "$TAG" \
+            --generate-notes \
+            $PRERELEASE

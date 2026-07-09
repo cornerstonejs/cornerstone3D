@@ -44,7 +44,7 @@ setTitleAndDescription(
   'Here we demonstrate how you can programmatically change the slab thickness of volume for rendering and view them in 3D.'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 

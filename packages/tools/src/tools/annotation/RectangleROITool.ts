@@ -23,14 +23,13 @@ import {
 } from '../../stateManagement/annotation/helpers/state';
 import {
   drawHandles as drawHandlesSvg,
-  drawLinkedTextBox as drawLinkedTextBoxSvg,
   drawRectByCoordinates as drawRectSvg,
 } from '../../drawingSvg';
 import { state } from '../../store/state';
 import { ChangeTypes, Events } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
+import getViewportICamera from '../../utilities/getViewportICamera';
 import * as rectangle from '../../utilities/math/rectangle';
-import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import {
   resetElementCursor,
   hideElementCursor,
@@ -50,6 +49,7 @@ import type {
 import type { RectangleROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
+import { viewportSupportsImageSlices } from '../../utilities/viewportCapabilities';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
@@ -624,7 +624,9 @@ class RectangleROITool extends AnnotationTool {
         styleSpecifier,
       });
 
-      const { viewPlaneNormal, viewUp } = viewport.getCamera();
+      // Native ("next") viewports expose no getCamera; read view orientation
+      // through the shared ICamera bridge (legacy viewports fall through to getCamera).
+      const { viewPlaneNormal, viewUp } = getViewportICamera(viewport);
 
       // If cachedStats does not exist, or the unit is missing (as part of import/hydration etc.),
       // force to recalculate the stats from the points
@@ -669,7 +671,9 @@ class RectangleROITool extends AnnotationTool {
           // at the referencedImageId
           for (const targetId in data.cachedStats) {
             if (targetId.startsWith('imageId')) {
-              const viewports = renderingEngine.getStackViewports();
+              const viewports = renderingEngine
+                .getViewports()
+                .filter(viewportSupportsImageSlices);
 
               const invalidatedStack = viewports.find((vp) => {
                 // The stack viewport that contains the imageId but is not
@@ -747,57 +751,22 @@ class RectangleROITool extends AnnotationTool {
 
       renderStatus = true;
 
-      const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
-      if (!options.visibility) {
-        data.handles.textBox = {
-          hasMoved: false,
-          worldPosition: <Types.Point3>[0, 0, 0],
-          worldBoundingBox: {
-            topLeft: <Types.Point3>[0, 0, 0],
-            topRight: <Types.Point3>[0, 0, 0],
-            bottomLeft: <Types.Point3>[0, 0, 0],
-            bottomRight: <Types.Point3>[0, 0, 0],
-          },
-        };
-        continue;
-      }
-
       const textLines = this.configuration.getTextLines(data, targetIds);
       if (!textLines?.length) {
         continue;
       }
-
-      if (!data.handles.textBox.hasMoved) {
-        const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
-
-        data.handles.textBox.worldPosition =
-          viewport.canvasToWorld(canvasTextBoxCoords);
+      if (
+        !this.renderLinkedTextBoxAnnotation({
+          enabledElement,
+          svgDrawingHelper,
+          annotation,
+          styleSpecifier,
+          textLines,
+          canvasCoordinates,
+        })
+      ) {
+        continue;
       }
-
-      const textBoxPosition = viewport.worldToCanvas(
-        data.handles.textBox.worldPosition
-      );
-
-      const textBoxUID = '1';
-      const boundingBox = drawLinkedTextBoxSvg(
-        svgDrawingHelper,
-        annotationUID,
-        textBoxUID,
-        textLines,
-        textBoxPosition,
-        canvasCoordinates,
-        {},
-        options
-      );
-
-      const { x: left, y: top, width, height } = boundingBox;
-
-      data.handles.textBox.worldBoundingBox = {
-        topLeft: viewport.canvasToWorld([left, top]),
-        topRight: viewport.canvasToWorld([left + width, top]),
-        bottomLeft: viewport.canvasToWorld([left, top + height]),
-        bottomRight: viewport.canvasToWorld([left + width, top + height]),
-      };
     }
 
     return renderStatus;
@@ -897,14 +866,14 @@ class RectangleROITool extends AnnotationTool {
         const handles = [pos1Index, pos2Index];
         const calibrate = getCalibratedLengthUnitsAndScale(image, handles);
 
-        const width = RectangleROITool.calculateLengthInIndex(
-          calibrate,
-          indexHandles.slice(0, 2)
-        );
-        const height = RectangleROITool.calculateLengthInIndex(
-          calibrate,
-          indexHandles.slice(2, 4)
-        );
+        const width = RectangleROITool.calculateLengthInIndex(calibrate, [
+          indexHandles[0],
+          indexHandles[1],
+        ]);
+        const height = RectangleROITool.calculateLengthInIndex(calibrate, [
+          indexHandles[0],
+          indexHandles[2],
+        ]);
         const area = Math.abs(width * height);
         const { areaUnit } = calibrate;
 
