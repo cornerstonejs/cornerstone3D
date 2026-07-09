@@ -8,7 +8,8 @@ import {
   type Types,
 } from '@cornerstonejs/core';
 import { triggerSegmentationRender } from '../../../stateManagement/segmentation/SegmentationRenderingEngine';
-import { viewportReferencesSegmentationImages } from '../../../stateManagement/segmentation/helpers/viewportReferencesSegmentationImages';
+import { isSegmentationOverlayCompatible } from '../../../stateManagement/segmentation/helpers/isSegmentationOverlayCompatible';
+import { SegmentationRepresentations } from '../../../enums';
 import { updateLabelmapSegmentationImageReferences } from '../../../stateManagement/segmentation/updateLabelmapSegmentationImageReferences';
 import { getCurrentLabelmapImageIdsForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import { getLabelmapActorEntries } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
@@ -33,13 +34,19 @@ export function syncStackLabelmapActors(
     return;
   }
 
-  // Skip entirely when this stack viewport is not a suitable destination for the
-  // labelmap (it displays none of the images the labelmap applies to). Without
-  // this, an unrelated series that merely shares a frame of reference gets a
-  // segmentation image actor added to it, which corrupts its image-index overlay
-  // and inflates its navigable image count. The low-level addImages/addActors
-  // stay permissive on purpose - the suitability decision lives here.
-  if (!viewportReferencesSegmentationImages(viewport, segmentationId)) {
+  // Skip entirely when this stack viewport is not a compatible destination for
+  // the labelmap (it displays none of the images the labelmap applies to).
+  // Without this, an unrelated series gets a segmentation image actor added to
+  // it, which corrupts its image-index overlay and inflates its navigable image
+  // count. The low-level addImages/addActors stay permissive on purpose - the
+  // compatibility decision lives in isSegmentationOverlayCompatible.
+  if (
+    !isSegmentationOverlayCompatible(
+      viewport,
+      segmentationId,
+      SegmentationRepresentations.Labelmap
+    )
+  ) {
     return;
   }
 
