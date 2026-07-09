@@ -3,6 +3,30 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.4.10](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.9...v5.4.10) (2026-07-09)
+
+**Note:** Version bump only for package @cornerstonejs/metadata
+
+## [5.4.9](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.8...v5.4.9) (2026-07-08)
+
+**Note:** Version bump only for package @cornerstonejs/metadata
+
+## [5.4.8](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.7...v5.4.8) (2026-07-08)
+
+**Note:** Version bump only for package @cornerstonejs/metadata
+
+## [5.4.7](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.6...v5.4.7) (2026-07-08)
+
+**Note:** Version bump only for package @cornerstonejs/metadata
+
+## [5.4.6](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.5...v5.4.6) (2026-07-08)
+
+**Note:** Version bump only for package @cornerstonejs/metadata
+
+## [5.4.5](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.4...v5.4.5) (2026-07-08)
+
+**Note:** Version bump only for package @cornerstonejs/metadata
+
 ## [5.4.4](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.3...v5.4.4) (2026-07-08)
 
 **Note:** Version bump only for package @cornerstonejs/metadata
