@@ -226,13 +226,12 @@ function fillLabelmapSegmentation(
   const maxValue = maxSegmentValue(labelmap3DArray, validFrameIndices);
   const useUint16 = maxValue > 255;
   const FrameArray = useUint16 ? Uint16Array : Uint8Array;
-
-  // Overlay every labelmap3D onto each exported frame. A single-valued LABELMAP
-  // cannot represent overlapping segments, so on a voxel claimed by two labelmaps
-  // the later one wins (warned once).
+  const bitsAllocated = useUint16 ? 16 : 8;
   let overlapWarned = false;
-  const framePixelData = validFrameIndices.map((frameIndex) => {
+
+  const buildExportFrame = (frameIndex: number) => {
     const frame = new FrameArray(frameLength);
+
     labelmap3DArray.forEach((labelmap3D) => {
       const source = labelmap3D?.labelmaps2D?.[frameIndex]?.pixelData;
       if (!source) {
@@ -254,8 +253,9 @@ function fillLabelmapSegmentation(
         frame[i] = value;
       }
     });
+
     return frame;
-  });
+  };
 
   const { dataset } = segmentation;
   dataset.NumberOfFrames = numberOfFrames;
@@ -278,10 +278,13 @@ function fillLabelmapSegmentation(
   const transferSyntaxUid = resolveTransferSyntaxUid(options);
   const { pixelData, pixelDataVR } = encodeFramesToTransferSyntax({
     transferSyntaxUID: transferSyntaxUid,
-    frames: framePixelData,
-    bitsAllocated: useUint16 ? 16 : 8,
+    buildFrame: (outputIndex) =>
+      buildExportFrame(validFrameIndices[outputIndex]),
+    frameCount: validFrameIndices.length,
+    bitsAllocated,
     columns,
   });
+
   applySegDatasetTransferSyntax(
     dataset,
     transferSyntaxUid,

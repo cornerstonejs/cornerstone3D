@@ -661,30 +661,80 @@ function encodeFrameToRle(
   return frameBytes.buffer;
 }
 
-export function encodeFramesToTransferSyntax({
-  transferSyntaxUID,
-  frames,
-  bitsAllocated,
-  columns,
-}: {
+/** True for native (uncompressed) Explicit VR Little Endian SEG pixel data. */
+export function isUncompressedSegTransferSyntax(
+  transferSyntaxUID: string
+): boolean {
+  return transferSyntaxUID === EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID;
+}
+
+type EncodeFramesToTransferSyntaxArgs = {
   transferSyntaxUID: string;
-  frames: ArrayLike<number>[];
   bitsAllocated: number;
   // Image width (samples per row). Enables per-row RLE encoding so runs do not
   // cross row boundaries (PS3.5 Annex G). Optional for backward compatibility.
   columns?: number;
-}) {
-  if (transferSyntaxUID === RLE_LOSSLESS_TRANSFER_SYNTAX_UID) {
-    return {
-      transferSyntaxUID,
-      pixelDataVR: 'OB',
-      pixelData: frames.map((frame) =>
-        encodeFrameToRle(frame, bitsAllocated, columns)
-      ),
-    };
+} & (
+  | {
+      frames: ArrayLike<number>[];
+      buildFrame?: never;
+      frameCount?: never;
+    }
+  | {
+      frames?: never;
+      buildFrame: (frameIndex: number) => ArrayLike<number>;
+      frameCount: number;
+    }
+);
+
+function resolveFrameAtIndex(
+  args: EncodeFramesToTransferSyntaxArgs,
+  frameIndex: number
+): ArrayLike<number> {
+  if (args.frames) {
+    return args.frames[frameIndex];
   }
 
-  if (transferSyntaxUID === EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID) {
+  return args.buildFrame(frameIndex);
+}
+
+function materializeAllFrames(
+  args: EncodeFramesToTransferSyntaxArgs
+): ArrayLike<number>[] {
+  const frameCount = args.frames?.length ?? args.frameCount;
+
+  return Array.from({ length: frameCount }, (_, frameIndex) =>
+    resolveFrameAtIndex(args, frameIndex)
+  );
+}
+
+function encodeCompressedFrameToTransferSyntax(
+  frame: ArrayLike<number>,
+  transferSyntaxUID: string,
+  bitsAllocated: number,
+  columns?: number
+): ArrayBuffer {
+  if (transferSyntaxUID === RLE_LOSSLESS_TRANSFER_SYNTAX_UID) {
+    return encodeFrameToRle(frame, bitsAllocated, columns);
+  }
+
+  throw new Error(
+    `Unsupported compressed transfer syntax for SEG encoding: ${transferSyntaxUID}. ` +
+      `Supported: ${RLE_LOSSLESS_TRANSFER_SYNTAX_UID}`
+  );
+}
+
+export function encodeFramesToTransferSyntax(
+  args: EncodeFramesToTransferSyntaxArgs
+) {
+  const { transferSyntaxUID, bitsAllocated, columns } = args;
+  const frameCount = args.frames?.length ?? args.frameCount;
+
+  if (isUncompressedSegTransferSyntax(transferSyntaxUID)) {
+    // Uncompressed SEG pixel data is one contiguous buffer; materialize every
+    // frame before concatenation.
+    const frames = materializeAllFrames(args);
+
     if (bitsAllocated === 1) {
       const packedFrames = frames.map((frame) => bitPackBinaryFrame(frame));
       const combinedPacked = concatUint8Frames(packedFrames);
@@ -705,10 +755,25 @@ export function encodeFramesToTransferSyntax({
     };
   }
 
-  throw new Error(
-    `Unsupported transfer syntax for SEG encoding: ${transferSyntaxUID}. ` +
-      `Supported: ${RLE_LOSSLESS_TRANSFER_SYNTAX_UID}, ${EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID}`
-  );
+  // Compressed transfer syntaxes: build and encode one frame at a time so raw
+  // export frames are not all retained in memory during large multiframe SEGs.
+  const pixelData: ArrayBuffer[] = [];
+  for (let frameIndex = 0; frameIndex < frameCount; frameIndex++) {
+    pixelData.push(
+      encodeCompressedFrameToTransferSyntax(
+        resolveFrameAtIndex(args, frameIndex),
+        transferSyntaxUID,
+        bitsAllocated,
+        columns
+      )
+    );
+  }
+
+  return {
+    transferSyntaxUID,
+    pixelDataVR: 'OB',
+    pixelData,
+  };
 }
 
 export {

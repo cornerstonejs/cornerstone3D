@@ -88,6 +88,18 @@ function isPseudoBinaryFractional(
   return true;
 }
 
+function isPseudoBinaryFractionalFromChunks(
+  chunks: ArrayLike<number>[],
+  maximumFractionalValue: unknown
+): boolean {
+  for (const chunk of chunks) {
+    if (!isPseudoBinaryFractional(chunk, maximumFractionalValue)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 /**
  * Builds a `SOP Instance UID → source imageId` lookup for a referenced (source)
  * stack, so the per-frame loop does not have to call `metadataProvider.get()`
@@ -557,7 +569,10 @@ async function decodeSegPixelDataFromFrameIds({
       multiframe,
       sliceLength
     );
-    return { decodedPixelData, expectedVoxelCount };
+    return {
+      pixelDataChunks: [decodedPixelData],
+      expectedVoxelCount,
+    };
   }
 
   // Fetch/decode frames with bounded concurrency so up to `concurrency`
@@ -599,8 +614,10 @@ async function decodeSegPixelDataFromFrameIds({
     }
   );
 
+  // Keep one typed array per frame instead of concatenating into a single
+  // monolithic buffer. readFromUnpackedChunks already reads across chunks.
   return {
-    decodedPixelData: normalizeDecodedPixelData(perFramePixelData),
+    pixelDataChunks: perFramePixelData,
     expectedVoxelCount,
   };
 }
@@ -768,9 +785,7 @@ async function createLabelmapsFromSegImageIds(
   const validOrientations = getValidOrientations(ImageOrientationPatient);
   const segMetadata = getSegmentMetadata(multiframe, SeriesInstanceUID);
 
-  let pixelDataChunks;
-
-  const { decodedPixelData, expectedVoxelCount } =
+  const { pixelDataChunks, expectedVoxelCount } =
     await decodeSegPixelDataFromFrameIds({
       segImageId,
       multiframe,
@@ -781,25 +796,32 @@ async function createLabelmapsFromSegImageIds(
     });
   const sliceLength = multiframe.Rows * multiframe.Columns;
 
-  const unpackedPixelData =
+  // 1-bit packed SEGs may arrive as one continuous packed buffer in a single
+  // chunk; unpack it into per-frame chunks when the sample count is short.
+  let resolvedPixelDataChunks = pixelDataChunks;
+  if (
     Number(multiframe.BitsStored) === 1 &&
-    decodedPixelData.length < expectedVoxelCount
-      ? unpackBinaryFrameFromPacked(
-          decodedPixelData instanceof Uint8Array
-            ? decodedPixelData
-            : new Uint8Array(decodedPixelData),
-          sliceLength
-        )
-      : decodedPixelData;
-  const decodedFrameCount = Math.max(
-    1,
-    Math.floor(unpackedPixelData.length / sliceLength)
+    pixelDataChunks.length === 1 &&
+    pixelDataChunks[0].length < expectedVoxelCount
+  ) {
+    const packed = pixelDataChunks[0];
+    const unpacked = unpackBinaryFrameFromPacked(
+      packed instanceof Uint8Array ? packed : new Uint8Array(packed),
+      sliceLength
+    );
+    resolvedPixelDataChunks = chunkPixelData(unpacked, { maxBytesPerChunk });
+  }
+
+  const totalSamples = resolvedPixelDataChunks.reduce(
+    (sum, chunk) => sum + chunk.length,
+    0
   );
+  const decodedFrameCount = Math.max(1, Math.floor(totalSamples / sliceLength));
 
   if (
     multiframe.SegmentationType === 'FRACTIONAL' &&
-    !isPseudoBinaryFractional(
-      unpackedPixelData,
+    !isPseudoBinaryFractionalFromChunks(
+      resolvedPixelDataChunks,
       multiframe.MaximumFractionalValue
     )
   ) {
@@ -811,7 +833,12 @@ async function createLabelmapsFromSegImageIds(
     throw new Error('Fractional segmentations are not yet supported');
   }
 
-  pixelDataChunks = chunkPixelData(unpackedPixelData, { maxBytesPerChunk });
+  let finalPixelDataChunks = resolvedPixelDataChunks;
+  if (maxBytesPerChunk && maxBytesPerChunk < Number.POSITIVE_INFINITY) {
+    finalPixelDataChunks = resolvedPixelDataChunks.flatMap((chunk) =>
+      chunkPixelData(chunk, { maxBytesPerChunk })
+    );
+  }
 
   const orientation = checkOrientation(
     multiframe,
@@ -880,7 +907,7 @@ async function createLabelmapsFromSegImageIds(
     await insertFunction({
       segmentsOnFrame,
       labelMapImages,
-      pixelDataChunks,
+      pixelDataChunks: finalPixelDataChunks,
       multiframe,
       referencedImageIds,
       validOrientations,

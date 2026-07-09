@@ -280,6 +280,43 @@ describe('encodeFramesToTransferSyntax - RLE Lossless', () => {
     expect(Array.from(segments[1])).toEqual([0x34, 0xff, 0x00]);
   });
 
+  it('encodes lazily via buildFrame without requiring a pre-built frames array', () => {
+    const Rows = 2;
+    const Columns = 2;
+    let buildCount = 0;
+    const frame0 = Uint8Array.from([1, 0, 0, 1]);
+    const frame1 = Uint8Array.from([0, 1, 1, 0]);
+
+    const { pixelData, pixelDataVR } = encodeFramesToTransferSyntax({
+      transferSyntaxUID: RLE_LOSSLESS_TRANSFER_SYNTAX_UID,
+      buildFrame: (frameIndex) => {
+        buildCount++;
+        return frameIndex === 0 ? frame0 : frame1;
+      },
+      frameCount: 2,
+      bitsAllocated: 8,
+    });
+
+    expect(pixelDataVR).toBe('OB');
+    expect(buildCount).toBe(2);
+    expect(Array.isArray(pixelData)).toBe(true);
+    expect(pixelData).toHaveLength(2);
+
+    const decoded = decodeSegFramesFromMultiframe({
+      Rows,
+      Columns,
+      BitsAllocated: 8,
+      NumberOfFrames: 2,
+      PixelData: pixelData,
+      _meta: {
+        TransferSyntaxUID: { Value: [RLE_LOSSLESS_TRANSFER_SYNTAX_UID] },
+      },
+    });
+
+    expect(Array.from(decoded[0])).toEqual(Array.from(frame0));
+    expect(Array.from(decoded[1])).toEqual(Array.from(frame1));
+  });
+
   it('round-trips an 8-bit frame through the local RLE encoder and decoder', () => {
     const Rows = 2;
     const Columns = 3;
