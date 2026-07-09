@@ -94,6 +94,33 @@ function collectNonEmptyFrameIndices(labelmap3DArray): number[] {
   return Array.from(indices).sort((a, b) => a - b);
 }
 
+/**
+ * Maps stack frame indices that carry segmentation to their referenced cornerstone
+ * images. Fails fast when a frame has label data but its source image is not in
+ * the cache — silently dropping those frames desynchronizes export geometry.
+ */
+function resolveReferencedImagesForExport(
+  images: Array<{ imageId?: string } | undefined | null>,
+  frameIndices: number[]
+) {
+  if (!frameIndices.length) {
+    throw new Error('No non-empty labelmap frames found for SEG export');
+  }
+
+  return frameIndices.map((frameIndex) => {
+    const image = images[frameIndex];
+
+    if (!image?.imageId) {
+      throw new Error(
+        `Cannot resolve referenced source image for labelmap stack frame ${frameIndex} ` +
+          `(image not loaded in cache). Load the referenced series before storing the segmentation.`
+      );
+    }
+
+    return image;
+  });
+}
+
 /** Largest segment value present on any exported frame (decides 8- vs 16-bit). */
 function maxSegmentValue(labelmap3DArray, frameIndices: number[]): number {
   let max = 0;
@@ -469,9 +496,10 @@ function generateSegmentation(
   const nonEmptyFrameIndices = collectNonEmptyFrameIndices(
     toLabelmap3DArray(labelmaps)
   );
-  const filteredImages = nonEmptyFrameIndices.length
-    ? nonEmptyFrameIndices.map((index) => images[index]).filter(Boolean)
-    : images;
+  const filteredImages = resolveReferencedImagesForExport(
+    images,
+    nonEmptyFrameIndices
+  );
 
   const segmentation = _createMultiframeSegmentationFromReferencedImages(
     filteredImages,
@@ -512,6 +540,12 @@ function _createMultiframeSegmentationFromReferencedImages(
   metadata,
   options
 ) {
+  if (!images?.length || !images[0]?.imageId) {
+    throw new Error(
+      'Cannot create SEG derivation: no referenced source images were resolved.'
+    );
+  }
+
   const studyImageId = options?.predecessorImageId || images[0].imageId;
   const studyData = metadata.get(MetadataModules.STUDY_DATA, studyImageId);
   const datasets = images.map((image) => {
@@ -576,6 +610,7 @@ export {
   // Exported for unit testing the LABELMAP export frame/segment/bit-depth logic.
   toLabelmap3DArray,
   collectNonEmptyFrameIndices,
+  resolveReferencedImagesForExport,
   maxSegmentValue,
   collectSegmentSequence,
 };

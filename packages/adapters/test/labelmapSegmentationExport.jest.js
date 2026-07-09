@@ -2,6 +2,7 @@ import { describe, it, expect } from '@jest/globals';
 import {
   toLabelmap3DArray,
   collectNonEmptyFrameIndices,
+  resolveReferencedImagesForExport,
   maxSegmentValue,
   collectSegmentSequence,
 } from '../src/adapters/Cornerstone3D/Segmentation/generateSegmentation';
@@ -55,6 +56,24 @@ describe('collectNonEmptyFrameIndices', () => {
       labelmaps2D: [emptyFrame(), { rows: 2, columns: 2 }, frame([3, 0, 0, 0])],
     };
     expect(collectNonEmptyFrameIndices([a])).toEqual([2]);
+  });
+});
+
+describe('resolveReferencedImagesForExport', () => {
+  it('returns one referenced image per non-empty stack frame index', () => {
+    const images = [{ imageId: 'img-0' }, undefined, { imageId: 'img-2' }];
+
+    expect(
+      resolveReferencedImagesForExport(images, [0, 2]).map((img) => img.imageId)
+    ).toEqual(['img-0', 'img-2']);
+  });
+
+  it('throws when a segmented frame has no referenced image in cache', () => {
+    const images = [{ imageId: 'img-0' }, undefined];
+
+    expect(() => resolveReferencedImagesForExport(images, [1])).toThrow(
+      /stack frame 1/
+    );
   });
 });
 
