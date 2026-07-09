@@ -3,13 +3,10 @@ import type { PlanarViewState, PlanarOrientation } from './PlanarViewportTypes';
 import { clonePlanarOrientation } from './planarLegacyCompatibility';
 
 export {
-  DEFAULT_PLANAR_CPU_IMAGE_THRESHOLD,
-  DEFAULT_PLANAR_CPU_VOLUME_THRESHOLD,
   PlanarRenderPathDecisionService,
   defaultPlanarRenderPathDecisionService,
   getPlanarAcquisitionOrientation,
   selectPlanarRenderPath,
-  shouldUseCPU,
 } from './PlanarRenderPathDecisionService';
 export type {
   PlanarRenderPathDecisionOptions,
