@@ -122,6 +122,13 @@ function registerCoreRenderBackends() {
  * and `RenderBackendConstants` (constant names) interfaces in your extension's
  * `.d.ts`.
  *
+ * @experimental Custom backends are not fully functional yet, and this
+ * registration API is intentionally incomplete: the definition is intended to
+ * grow additional parameters describing the backend-specific changes and
+ * behaviours being registered (participation in the 'auto' capability
+ * resolution, backend-owned surface/canvas creation, per-backend degradation
+ * handling). Expect `RegisterRenderBackendOptions` to change.
+ *
  * @example
  * ```ts
  * registerRenderBackend({
