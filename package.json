@@ -24,6 +24,7 @@
     "serve-static-examples": "pnpm dlx serve .static-examples --listen 3333",
     "build-and-serve-static-examples": "cross-env NODE_OPTIONS=--max_old_space_size=32896 pnpm run build-all-examples && pnpm run serve-static-examples",
     "build:all": "pnpm -r --filter=!docs run build:all",
+    "validate:packaging": "node scripts/validate-esm-packaging.mjs",
     "dev": "pnpm run all-examples",
     "docs": "pnpm -r run docs",
     "docs:watch": "pnpm -r run docs:watch",
@@ -58,6 +59,7 @@
     "webpack:watch": "pnpm -r --filter=!docs run webpack:watch"
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "0.18.4",
     "@babel/core": "7.26.10",
     "@babel/plugin-external-helpers": "7.25.9",
     "@babel/plugin-proposal-class-properties": "7.18.6",
@@ -144,6 +146,7 @@
     "postcss-loader": "7.3.4",
     "postcss-preset-env": "8.5.1",
     "prettier": "3.6.2",
+    "publint": "0.3.21",
     "puppeteer": "13.7.0",
     "resemblejs": "5.0.0",
     "rollup": "3.30.0",
@@ -158,6 +161,7 @@
     "stylelint-config-recommended": "12.0.0",
     "ts-loader": "9.5.1",
     "ts-node": "10.9.2",
+    "tsc-alias": "1.8.17",
     "typescript": "5.5.4",
     "url-loader": "4.1.1",
     "vitest": "4.1.8",

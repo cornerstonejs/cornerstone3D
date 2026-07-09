@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/dicom-image-loader",
-  "version": "5.1.4",
+  "version": "5.4.9",
   "description": "Cornerstone Image Loader for DICOM WADO-URI and WADO-RS and Local file",
   "keywords": [
     "DICOM",
@@ -26,49 +26,58 @@
   },
   "exports": {
     ".": {
+      "types": "./dist/esm/index.d.ts",
       "import": "./dist/esm/index.js",
-      "types": "./dist/esm/index.d.ts"
+      "default": "./dist/esm/index.js"
     },
     "./constants": {
+      "types": "./dist/esm/constants/index.d.ts",
       "import": "./dist/esm/constants/index.js",
-      "types": "./dist/esm/constants/index.d.ts"
+      "default": "./dist/esm/constants/index.js"
     },
     "./constants/*": {
+      "types": "./dist/esm/constants/*.d.ts",
       "import": "./dist/esm/constants/*.js",
-      "types": "./dist/esm/constants/*.d.ts"
+      "default": "./dist/esm/constants/*.js"
     },
     "./imageLoader": {
+      "types": "./dist/esm/imageLoader/index.d.ts",
       "import": "./dist/esm/imageLoader/index.js",
-      "types": "./dist/esm/imageLoader/index.d.ts"
+      "default": "./dist/esm/imageLoader/index.js"
     },
     "./wadors": {
+      "types": "./dist/esm/imageLoader/wadors/index.d.ts",
       "import": "./dist/esm/imageLoader/wadors/index.js",
-      "types": "./dist/esm/imageLoader/wadors/index.d.ts"
+      "default": "./dist/esm/imageLoader/wadors/index.js"
     },
     "./wadors/*": {
+      "types": "./dist/esm/imageLoader/wadors/*.d.ts",
       "import": "./dist/esm/imageLoader/wadors/*.js",
-      "types": "./dist/esm/imageLoader/wadors/*.d.ts"
+      "default": "./dist/esm/imageLoader/wadors/*.js"
     },
     "./wadouri": {
+      "types": "./dist/esm/imageLoader/wadouri/index.d.ts",
       "import": "./dist/esm/imageLoader/wadouri/index.js",
-      "types": "./dist/esm/imageLoader/wadouri/index.d.ts"
+      "default": "./dist/esm/imageLoader/wadouri/index.js"
     },
     "./wadouri/*": {
+      "types": "./dist/esm/imageLoader/wadouri/*.d.ts",
       "import": "./dist/esm/imageLoader/wadouri/*.js",
-      "types": "./dist/esm/imageLoader/wadouri/*.d.ts"
+      "default": "./dist/esm/imageLoader/wadouri/*.js"
     },
     "./types": {
       "types": "./dist/esm/types/index.d.ts"
     },
     "./types/*": {
       "types": "./dist/esm/types/*.d.ts"
-    }
+    },
+    "./package.json": "./package.json"
   },
   "scripts": {
     "build:loader": "pnpm run build:all && pnpm run copy-dts",
     "build": "pnpm run build:esm",
-    "build:esm": "tsc --project ./tsconfig.json",
-    "build:esm:watch": "tsc --project ./tsconfig.json --watch",
+    "build:esm": "tsc --project ./tsconfig.json && tsc-alias -p ./tsconfig.json --resolve-full-paths && node ../../scripts/write-dist-esm-package-json.js ./",
+    "build:esm:watch": "sh -c 'tsc-alias -p ./tsconfig.json --resolve-full-paths --watch & alias_pid=$!; node ../../scripts/write-dist-esm-package-json.js ./ --watch & writer_pid=$!; trap \"kill $alias_pid $writer_pid\" EXIT; tsc --project ./tsconfig.json --watch'",
     "build:umd:dynamic": "cross-env NODE_ENV=production webpack --config .webpack/webpack-dynamic-import.js",
     "build:umd:bundle": "cross-env NODE_ENV=production webpack --config .webpack/webpack-bundle.js",
     "build:all": "pnpm run build:esm",
@@ -113,12 +122,12 @@
     "uuid": "9.0.1"
   },
   "devDependencies": {
-    "@cornerstonejs/core": "5.1.4",
-    "@cornerstonejs/metadata": "5.1.4"
+    "@cornerstonejs/core": "5.4.9",
+    "@cornerstonejs/metadata": "5.4.9"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "5.1.4",
-    "@cornerstonejs/metadata": "5.1.4",
+    "@cornerstonejs/core": "5.4.9",
+    "@cornerstonejs/metadata": "5.4.9",
     "dicom-parser": "1.8.21"
   },
   "config": {
