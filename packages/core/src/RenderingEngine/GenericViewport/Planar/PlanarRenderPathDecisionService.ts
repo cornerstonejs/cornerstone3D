@@ -1,10 +1,11 @@
 import { vec3 } from 'gl-matrix';
 import cache from '../../../cache/cache';
-import { OrientationAxis, RenderBackend } from '../../../enums';
+import { OrientationAxis } from '../../../enums';
 import type { RenderBackendValue } from '../../../enums';
 import { getEffectiveRenderBackend } from '../../../init';
 import * as metaData from '../../../metaData';
-import { ActorRenderMode } from '../../../types';
+import { getRenderModeForBackend } from '../../helpers/renderBackendRegistry';
+import type { EffectiveRenderBackend } from '../../../types/RenderBackendRegistry';
 import { isValidVolume } from '../../../utilities/isValidVolume';
 import { getOrientationFromScanAxisNormal } from '../../helpers/getCameraVectors';
 import type {
@@ -29,7 +30,7 @@ export interface PlanarRenderPathDecisionOptions {
    * the global pin. When omitted, the global
    * rendering.planar.renderBackend configuration decides.
    */
-  renderBackend?: RenderBackend | RenderBackendValue;
+  renderBackend?: RenderBackendValue;
 }
 
 /**
@@ -131,17 +132,13 @@ export class PlanarRenderPathDecisionService {
   private selectImageRenderMode(
     options: PlanarRenderPathDecisionOptions
   ): PlanarEffectiveRenderMode {
-    return this.resolveBackend(options) === RenderBackend.CPU
-      ? ActorRenderMode.CPU_IMAGE
-      : ActorRenderMode.VTK_IMAGE;
+    return getRenderModeForBackend(this.resolveBackend(options), 'image');
   }
 
   private selectVolumeRenderMode(
     options: PlanarRenderPathDecisionOptions
   ): PlanarEffectiveRenderMode {
-    return this.resolveBackend(options) === RenderBackend.CPU
-      ? ActorRenderMode.CPU_VOLUME
-      : ActorRenderMode.VTK_VOLUME_SLICE;
+    return getRenderModeForBackend(this.resolveBackend(options), 'volume');
   }
 
   /**
@@ -149,11 +146,12 @@ export class PlanarRenderPathDecisionService {
    * when present ('auto' resolves from capability detection even when the
    * global backend is pinned), the global configuration otherwise. The
    * precedence ladder itself lives in getEffectiveRenderBackend so it cannot
-   * drift from the global resolution.
+   * drift from the global resolution. The backend's render modes come from
+   * its registerRenderBackend() definition.
    */
   private resolveBackend(
     options: PlanarRenderPathDecisionOptions
-  ): RenderBackend.GPU | RenderBackend.CPU {
+  ): EffectiveRenderBackend {
     return getEffectiveRenderBackend(options.renderBackend);
   }
 }

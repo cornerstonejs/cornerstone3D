@@ -1,6 +1,6 @@
 import * as Enums from './enums';
 import * as CONSTANTS from './constants';
-import { Events } from './enums';
+import { Events, RenderBackends } from './enums';
 import RenderingEngine, {
   BaseRenderingEngine,
   TiledRenderingEngine,
@@ -206,12 +206,32 @@ import {
   registerViewportType,
   isRegisteredViewportType,
 } from './RenderingEngine/helpers/viewportTypeToViewportClass';
+import {
+  registerRenderBackend,
+  isRegisteredRenderBackend,
+} from './RenderingEngine/helpers/renderBackendRegistry';
 export type {
   ViewportType,
   ViewportTypeConstants,
   ViewportTypeRegistry,
 } from './types/ViewportTypeRegistry';
 export type { ViewportTypesMap } from './enums/ViewportTypes';
+export type {
+  EffectiveRenderBackend,
+  RenderBackendConstants,
+  RenderBackendRegistry,
+} from './types/RenderBackendRegistry';
+export type {
+  RenderBackendsMap,
+  RenderBackendValue,
+} from './enums/RenderBackends';
+export type {
+  RegisterRenderBackendOptions,
+  RenderBackendDefinition,
+  RenderBackendRenderMode,
+  RenderBackendRenderModes,
+  RenderSurface,
+} from './RenderingEngine/helpers/renderBackendRegistry';
 
 export * from './loaders/decimatedVolumeLoader';
 
@@ -356,6 +376,8 @@ export {
   getProjectionScaleMatrix,
   registerViewportType,
   isRegisteredViewportType,
+  registerRenderBackend,
+  isRegisteredRenderBackend,
   //
   imageLoadPoolManager as requestPoolManager,
   imageRetrievalPoolManager,
@@ -366,6 +388,7 @@ export {
   setPreferSizeOverAccuracy,
   resetUseCPURendering,
   // Render backend (gpu | cpu | auto) + capability detection
+  RenderBackends,
   getRenderBackend,
   setRenderBackend,
   getEffectiveRenderBackend,

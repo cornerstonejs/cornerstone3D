@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/adapters",
-  "version": "5.4.10",
+  "version": "5.4.11",
   "description": "Adapters for Cornerstone3D to/from formats including DICOM SR and others",
   "module": "./dist/esm/index.js",
   "types": "./dist/esm/index.d.ts",
@@ -99,11 +99,11 @@
     "ndarray": "1.0.19"
   },
   "devDependencies": {
-    "@cornerstonejs/core": "5.4.10",
-    "@cornerstonejs/tools": "5.4.10"
+    "@cornerstonejs/core": "5.4.11",
+    "@cornerstonejs/tools": "5.4.11"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "5.4.10",
-    "@cornerstonejs/tools": "5.4.10"
+    "@cornerstonejs/core": "5.4.11",
+    "@cornerstonejs/tools": "5.4.11"
   }
 }
