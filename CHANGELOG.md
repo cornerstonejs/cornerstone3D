@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.4.15](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.14...v5.4.15) (2026-07-10)
+
+### Bug Fixes
+
+- **planar:** remap initialImageIdIndex to the volume imageId ordering ([#2799](https://github.com/cornerstonejs/cornerstone3D/issues/2799)) ([1879a1e](https://github.com/cornerstonejs/cornerstone3D/commit/1879a1e717d4efc2f733b227d914954444f1c724))
+
 ## [5.4.14](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.13...v5.4.14) (2026-07-10)
 
 ### Performance Improvements
