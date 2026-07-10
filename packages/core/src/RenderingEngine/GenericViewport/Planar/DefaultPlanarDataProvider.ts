@@ -60,11 +60,31 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
         ? imageVolume.imageIds
         : dataSet.imageIds;
 
+      // The volume sorts its imageIds by position along the scan axis, which can
+      // reorder (commonly reverse) them relative to the registered dataSet order
+      // the caller computed initialImageIdIndex against. Remap the index through
+      // the imageId so the payload index addresses the slice the caller asked
+      // for in the payload's (volume) ordering.
+      let volumeInitialImageIdIndex = initialImageIdIndex;
+      if (initialImageIdIndex !== undefined && imageIds !== dataSet.imageIds) {
+        const requestedImageId = dataSet.imageIds[initialImageIdIndex];
+        const remappedIndex = imageIds.indexOf(requestedImageId);
+        if (remappedIndex >= 0) {
+          volumeInitialImageIdIndex = remappedIndex;
+        } else {
+          console.warn(
+            `[PlanarViewport] initialImageIdIndex remap failed: imageId ` +
+              `"${requestedImageId}" not found in the volume imageIds; ` +
+              `using the original index ${initialImageIdIndex}`
+          );
+        }
+      }
+
       return {
         id: dataId,
         type: 'image',
         imageIds,
-        initialImageIdIndex,
+        initialImageIdIndex: volumeInitialImageIdIndex,
         acquisitionOrientation: options.acquisitionOrientation,
         imageData: dataSet.imageData,
         imageVolume,
