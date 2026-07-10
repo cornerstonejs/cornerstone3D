@@ -205,19 +205,23 @@ abstract class BaseTool {
 
     /**
      * Includes every candidate display set containing pixel values:
-     * candidates whose modality is one of
+     * segmentation representations (candidates carrying a
+     * `representationUID`) and candidates whose modality is one of
      * {@link BaseTool.NON_PIXEL_DATA_MODALITIES} (eg SEG) are excluded -
      * even when they are the only thing shown - while candidates whose
      * display set (and therefore modality) is unknown, such as legacy
      * stacks, are included.
      *
-     * This is the default filter for the ROI statistics tools.
+     * This is the default filter for the ROI statistics tools, and is what
+     * excludes segmentations from the measurement targets (the candidate
+     * derivation no longer bakes that exclusion in).
      */
-    allPixelData: (({ modality }) =>
-      !modality ||
-      !BaseTool.NON_PIXEL_DATA_MODALITIES.includes(
-        modality
-      )) as MeasurementTargetsFilter,
+    allPixelData: (({ modality, representationUID }) =>
+      !representationUID &&
+      (!modality ||
+        !BaseTool.NON_PIXEL_DATA_MODALITIES.includes(
+          modality
+        ))) as MeasurementTargetsFilter,
 
     /**
      * Creates a filter including the display sets whose modality is one of
@@ -527,9 +531,11 @@ abstract class BaseTool {
 
   /**
    * Builds the list of candidate measurement targets for the given viewport:
-   * one per volume actor being displayed (skipping segmentation
-   * representations), falling back to a single candidate for the default
-   * view reference when there are none.  The candidates are what the
+   * one per volume actor being displayed (including segmentation
+   * representations, which carry a `representationUID` and are excluded by
+   * the default filter rather than skipped here), falling back to a single
+   * candidate for the default view reference when there are none.  The
+   * candidates are what the
    * `targetsFilter` tool configuration chooses from - each carries the
    * display set related parameters (display set, uid, exemplar instance and
    * index) where they are known.
@@ -555,9 +561,12 @@ abstract class BaseTool {
     const actors = viewport.getActors?.() || [];
     for (let index = 0; index < actors.length; index++) {
       const { referencedId, representationUID } = actors[index];
-      // Skip actors not derived from a cached volume (tool/canvas actors)
-      // and segmentation representations (labelmaps etc).
-      if (!referencedId || representationUID) {
+      // Skip actors not derived from a cached volume (tool/canvas actors).
+      // Segmentation representations (labelmaps etc) are kept as candidates
+      // and carry their representationUID, so that the configured
+      // targetsFilter decides whether to include them - excluding
+      // segmentations is the job of the (default) filter, not baked in here.
+      if (!referencedId) {
         continue;
       }
       const volume = cache.getVolume(referencedId);
@@ -581,6 +590,7 @@ abstract class BaseTool {
       candidates.push({
         targetId,
         referencedId,
+        representationUID: representationUID as string,
         displaySet: displaySetInfo?.displaySet,
         displaySetUID: displaySetInfo?.displaySetUID,
         instance,

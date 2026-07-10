@@ -201,11 +201,17 @@ export function getPlanarViewReference(args: {
         })
       : undefined;
 
+  // Include the volumeId unless a frame-of-reference reference was explicitly
+  // requested (forFrameOfReference === true).  A frame-of-reference reference
+  // is not volume specific - it must NOT carry a volumeId so it stays
+  // compatible with any view of the same FrameOfReferenceUID - whereas the
+  // default (undefined) and forFrameOfReference === false both bind to this
+  // volume.  This must match BaseVolumeViewport.getViewReference.
   if (
     rendering &&
     (rendering.renderMode === ActorRenderMode.CPU_VOLUME ||
       rendering.renderMode === ActorRenderMode.VTK_VOLUME_SLICE) &&
-    viewRefSpecifier?.forFrameOfReference !== false
+    viewRefSpecifier?.forFrameOfReference !== true
   ) {
     viewReference.volumeId = args.data?.volumeId;
   }

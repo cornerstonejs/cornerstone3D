@@ -737,6 +737,10 @@ class CircleROITool extends AnnotationTool {
           enabledElement
         );
       } else if (annotation.invalidated) {
+        // A change - recompute (throttled, so slow stats are not recomputed
+        // every frame during a drag).  Clearing stale targets and rebuilding
+        // the cumulative key set is done inside _calculateCachedStats, gated
+        // by the invalidated flag.
         this._throttledCalculateCachedStats(
           annotation,
           viewport,
@@ -924,6 +928,25 @@ class CircleROITool extends AnnotationTool {
     const bottomRightWorld = viewport.canvasToWorld(bottomRightCanvas);
     const { cachedStats } = data;
 
+    // On an actual change (invalidation) drop every cached target so stale
+    // volumes are removed and the (fixed frame of reference) key set is
+    // rebuilt from the current viewport's targets.  This is done at the seam
+    // where the invalidated flag is consumed (and reset below), so during a
+    // drag it only happens when the throttled calculation actually runs -
+    // not every frame.  When not invalidated we keep the existing targets
+    // (possibly seeded by other viewports) and just fill/refresh them.
+    if (wasInvalidated) {
+      // Capture the current targets first (reusing existing keys where the
+      // volume already has stats) so this viewport's volumes keep stable
+      // keys, then drop everything (removing stale/foreign volumes) and
+      // reseed just those targets.
+      const currentTargets = this.getMeasurementTargets(viewport, data);
+      for (const key of Object.keys(cachedStats)) {
+        delete cachedStats[key];
+      }
+      this.ensureCachedStatsTargets(data, currentTargets);
+    }
+
     const targetIds = Object.keys(cachedStats);
 
     for (let i = 0; i < targetIds.length; i++) {
@@ -934,9 +957,9 @@ class CircleROITool extends AnnotationTool {
       // to various reasons such as if the target was a volumeViewport, and
       // the volumeViewport has been decached in the meantime.
       if (!image) {
-        console.warn('image not found for stats:', targetId);
-        // Better clean the stats for this targetId
-        delete cachedStats[targetId];
+        // The key may have been created by another viewport that does have
+        // this volume - leave it in place so that viewport can compute it.
+        // Stale keys are cleared on annotation change, not here.
         continue;
       }
 

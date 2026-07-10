@@ -530,7 +530,29 @@ describe('planarViewReference', () => {
       );
     });
 
-    it('omits volumeId when forFrameOfReference is explicitly false', () => {
+    it('omits volumeId when forFrameOfReference is explicitly true', () => {
+      // A frame-of-reference reference is not volume specific, so it must not
+      // carry a volumeId (must match BaseVolumeViewport.getViewReference).
+      const volume = createImageVolume({ volumeId: 'vol-a', numSlices: 5 });
+      const data = createVolumeData(volume);
+      const rendering = createVolumeRendering(volume, 2);
+      const viewRef = getPlanarViewReference({
+        viewState: axialViewState(2),
+        frameOfReferenceUID: VOLUME_FOR,
+        data,
+        rendering,
+        renderContext,
+        viewRefSpecifier: { forFrameOfReference: true },
+      });
+
+      expect(viewRef.volumeId).toBeUndefined();
+      // referencedImageId is still populated for image-level sync.
+      expect(viewRef.referencedImageId).toBe(volume.imageIds[2]);
+    });
+
+    it('includes volumeId when forFrameOfReference is explicitly false', () => {
+      // Only forFrameOfReference === true drops the volumeId; false (and the
+      // undefined default) bind the reference to this volume.
       const volume = createImageVolume({ volumeId: 'vol-a', numSlices: 5 });
       const data = createVolumeData(volume);
       const rendering = createVolumeRendering(volume, 2);
@@ -543,8 +565,7 @@ describe('planarViewReference', () => {
         viewRefSpecifier: { forFrameOfReference: false },
       });
 
-      expect(viewRef.volumeId).toBeUndefined();
-      // referencedImageId is still populated for image-level sync.
+      expect(viewRef.volumeId).toBe('vol-a');
       expect(viewRef.referencedImageId).toBe(volume.imageIds[2]);
     });
   });

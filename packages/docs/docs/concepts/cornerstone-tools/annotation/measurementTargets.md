@@ -196,9 +196,13 @@ The candidates passed to the filter are built by
   `instance` from the display set's instances or the `instance` metadata of
   the first image id, and `modality` from the instance or the volume
   metadata;
-- actors carrying a `representationUID` (segmentation representations such
-  as labelmaps) and actors not derived from a cached volume (tool/canvas
-  actors) are skipped;
+- actors not derived from a cached volume (tool/canvas actors) are skipped.
+  Segmentation representations (labelmaps etc) are **not** skipped here —
+  they are included as candidates carrying a `representationUID`, and it is
+  the configured filter that decides whether to include them. The default
+  `allPixelData` filter excludes any candidate with a `representationUID`,
+  so segmentations are never measured by default, but a custom filter can
+  opt to include them;
 - when no actor produces a candidate (for example on a stack viewport), a
   single candidate for the viewport's default view reference is used. If the
   viewport displays a registered display set (`setDisplaySets` on the generic

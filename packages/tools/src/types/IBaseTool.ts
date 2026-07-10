@@ -44,6 +44,13 @@ export type MeasurementTargetCandidate = {
   /** The volume/image id backing this display set, when available. */
   referencedId?: string;
   /**
+   * The uid of the segmentation representation backing this candidate, when
+   * the actor is a segmentation representation (labelmap etc) rather than a
+   * plain image/volume.  Filters use this to include or exclude
+   * segmentations; the default `allPixelData` filter excludes them.
+   */
+  representationUID?: string;
+  /**
    * The modality of the display set where available - from the exemplar
    * instance or the backing volume metadata.  Absent when the display set
    * is unknown.
