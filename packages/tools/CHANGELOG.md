@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.4.14](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.13...v5.4.14) (2026-07-10)
+
+### Performance Improvements
+
+- **segmentation:** defer projection-heavy renders and merge only modified slices during labelmap edits ([#2797](https://github.com/cornerstonejs/cornerstone3D/issues/2797)) ([4f52f41](https://github.com/cornerstonejs/cornerstone3D/commit/4f52f41323f6493246e2eca946a2c29d185ff863))
+
 ## [5.4.13](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.12...v5.4.13) (2026-07-10)
 
 ### Bug Fixes

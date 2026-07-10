@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.4.14](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.13...v5.4.14) (2026-07-10)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
 ## [5.4.13](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.12...v5.4.13) (2026-07-10)
 
 **Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
