@@ -18,7 +18,9 @@
  */
 import { vec3 } from 'gl-matrix';
 import { ActorRenderMode } from '../../../types';
+import { isImageRenderMode } from '../../helpers/renderBackendRegistry';
 import type {
+  IImageVolume,
   Point3,
   ReferenceCompatibleOptions,
   ViewReference,
@@ -75,10 +77,7 @@ export function getPlanarReferencedImageId(args: {
     return;
   }
 
-  if (
-    rendering.renderMode === ActorRenderMode.CPU_IMAGE ||
-    rendering.renderMode === ActorRenderMode.VTK_IMAGE
-  ) {
+  if (isImageRenderMode(rendering.renderMode)) {
     const imageIdIndex =
       typeof viewRefSpecifier?.sliceIndex === 'number'
         ? Math.min(
@@ -110,8 +109,10 @@ export function getPlanarReferencedImageId(args: {
     ];
   }
 
+  // Only volume renderings reach this point (image-kind modes return above),
+  // but isImageRenderMode() is not a type guard, so re-assert the shape.
   return getClosestImageId(
-    rendering.imageVolume,
+    (rendering as { imageVolume: IImageVolume }).imageVolume,
     resolvedView.focalPoint,
     resolvedView.viewPlaneNormal
   );

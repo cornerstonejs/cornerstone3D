@@ -209,7 +209,14 @@ import {
 import {
   registerRenderBackend,
   isRegisteredRenderBackend,
+  isImageRenderMode,
+  isVolumeRenderMode,
 } from './RenderingEngine/helpers/renderBackendRegistry';
+import {
+  registerWebGPURenderBackend,
+  isWebGPURenderingAvailable,
+} from './RenderingEngine/helpers/registerWebGPURenderBackend';
+import { getWebGPUViewportDebugInfo } from './RenderingEngine/GenericViewport/Planar/webgpuViewportRenderWindow';
 export type {
   ViewportType,
   ViewportTypeConstants,
@@ -378,6 +385,12 @@ export {
   isRegisteredViewportType,
   registerRenderBackend,
   isRegisteredRenderBackend,
+  isImageRenderMode,
+  isVolumeRenderMode,
+  // WebGPU render backend (experimental)
+  registerWebGPURenderBackend,
+  isWebGPURenderingAvailable,
+  getWebGPUViewportDebugInfo,
   //
   imageLoadPoolManager as requestPoolManager,
   imageRetrievalPoolManager,

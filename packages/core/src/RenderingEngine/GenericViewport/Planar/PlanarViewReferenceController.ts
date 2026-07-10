@@ -1,5 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import { ActorRenderMode } from '../../../types';
+import { isImageRenderMode } from '../../helpers/renderBackendRegistry';
 import type {
   ICamera,
   Point3,
@@ -389,10 +390,7 @@ class PlanarViewReferenceController {
 
     const { rendering } = referenceContext;
 
-    if (
-      rendering.renderMode === ActorRenderMode.CPU_IMAGE ||
-      rendering.renderMode === ActorRenderMode.VTK_IMAGE
-    ) {
+    if (isImageRenderMode(rendering.renderMode)) {
       return this.applyImageViewReference(referenceContext, viewRef);
     }
 

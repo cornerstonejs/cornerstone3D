@@ -1,5 +1,5 @@
-import { ActorRenderMode } from '../../../types';
 import type { Point2, Point3 } from '../../../types';
+import { isImageRenderMode } from '../../helpers/renderBackendRegistry';
 import {
   canvasToWorldPlanarViewState,
   getCanvasCssDimensions,
@@ -61,10 +61,10 @@ export function resolvePlanarRenderPathCurrentImageIdIndex(args: {
     return projection.currentImageIdIndex;
   }
 
-  if (
-    rendering.renderMode === ActorRenderMode.CPU_IMAGE ||
-    rendering.renderMode === ActorRenderMode.VTK_IMAGE
-  ) {
+  // Image-stack render modes (core cpuImage/vtkImage and extension image
+  // modes, e.g. webgpuImage) resolve the slice from the view state; volume
+  // modes keep the rendering's own index.
+  if (isImageRenderMode(rendering.renderMode)) {
     return resolvePlanarStackImageIdIndex({
       fallbackImageIdIndex: rendering.currentImageIdIndex,
       viewState,

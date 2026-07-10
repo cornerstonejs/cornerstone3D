@@ -1,4 +1,4 @@
-import { ActorRenderMode, type Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
@@ -194,10 +194,13 @@ function setLabelmapColorAndOpacity(
 
   const visible = isActiveLabelmap || renderInactiveSegmentations;
 
+  // Any vtk image-slice based labelmap actor needs the translucent/LUT-range
+  // slice properties — detect by actor class rather than enumerating render
+  // modes so extension backends (e.g. the webgpu image mode) are covered.
   const useImageSliceProperties =
-    labelmapActorEntry.actorMapper?.renderMode === ActorRenderMode.VTK_IMAGE ||
-    labelmapActorEntry.actorMapper?.renderMode ===
-      ActorRenderMode.VTK_VOLUME_SLICE;
+    (labelmapActor as { isA?: (className: string) => boolean }).isA?.(
+      'vtkImageSlice'
+    ) === true;
 
   // @ts-ignore - fix type in vtk
   const { preLoad } = labelmapActor.get?.('preLoad') || { preLoad: null };
