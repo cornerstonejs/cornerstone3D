@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/dicom-image-loader",
-  "version": "5.4.10",
+  "version": "5.4.12",
   "description": "Cornerstone Image Loader for DICOM WADO-URI and WADO-RS and Local file",
   "keywords": [
     "DICOM",
@@ -91,7 +91,7 @@
     "clean:coverage": "shx rm -rf coverage",
     "doc": "npm run doc:generate && opn documentation/index.html",
     "doc:generate": "npm run clean:docs && jsdoc -c .jsdocrc",
-    "dev": "tsc --project ./tsconfig.json --watch",
+    "dev": "tsc --project ./tsconfig.json --watch --sourceMap --inlineSources",
     "lint": "oxlint .",
     "start": "npm run webpack:dev",
     "start:dev": "webpack-dev-server --config .webpack/webpack-dev",
@@ -122,12 +122,12 @@
     "uuid": "9.0.1"
   },
   "devDependencies": {
-    "@cornerstonejs/core": "5.4.10",
-    "@cornerstonejs/metadata": "5.4.10"
+    "@cornerstonejs/core": "5.4.12",
+    "@cornerstonejs/metadata": "5.4.12"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "5.4.10",
-    "@cornerstonejs/metadata": "5.4.10",
+    "@cornerstonejs/core": "5.4.12",
+    "@cornerstonejs/metadata": "5.4.12",
     "dicom-parser": "1.8.21"
   },
   "config": {

@@ -30,7 +30,11 @@ class WebGLContextPool {
       const container = document.createElement('div');
       offscreenMultiRenderWindow.setContainer(container);
 
-      attachWebGLContextEvents(offscreenMultiRenderWindow, renderingEngineId, i);
+      attachWebGLContextEvents(
+        offscreenMultiRenderWindow,
+        renderingEngineId,
+        i
+      );
 
       this.contexts.push(offscreenMultiRenderWindow);
       this.offScreenCanvasContainers.push(container);
