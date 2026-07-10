@@ -4,7 +4,6 @@ import type {
   BlendModes,
   InterpolationType,
   OrientationAxis,
-  RenderBackend,
   RenderBackendValue,
   VOILUTFunctionType,
 } from '../../../enums';
@@ -44,13 +43,20 @@ export type PlanarRenderMode =
   | 'webgl2d'
   | ActorRenderMode.VTK_IMAGE
   | ActorRenderMode.VTK_VOLUME_SLICE;
-/** @internal */
+/**
+ * A render mode a planar viewport can mount: the built-in modes plus any mode
+ * declared by an extension backend registered via `registerRenderBackend()`
+ * (the trailing `string & {}` keeps the union open without erasing the
+ * built-in literals from completion).
+ * @internal
+ */
 export type PlanarEffectiveRenderMode =
   | ActorRenderMode.CPU_IMAGE
   | 'webgl2d'
   | ActorRenderMode.VTK_IMAGE
   | ActorRenderMode.VTK_VOLUME_SLICE
-  | ActorRenderMode.CPU_VOLUME;
+  | ActorRenderMode.CPU_VOLUME
+  | (string & {});
 export type PlanarOrientation =
   | OrientationAxis.ACQUISITION
   | OrientationAxis.AXIAL
@@ -81,7 +87,7 @@ export interface PlanarSetDataOptions {
    * setRenderBackend() switches. When omitted, the global configuration
    * decides.
    */
-  renderBackend?: RenderBackend | RenderBackendValue;
+  renderBackend?: RenderBackendValue;
   role?: BindingRole;
 }
 

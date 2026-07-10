@@ -41,6 +41,7 @@ import setCtTransferFunctionForVolumeActor, {
 import setPetColorMapTransferFunctionForVolumeActor from './setPetColorMapTransferFunctionForVolumeActor';
 import setPetTransferFunctionForVolumeActor from './setPetTransferFunctionForVolumeActor';
 import setTitleAndDescription from './setTitleAndDescription';
+import validateAndSortVolumeIds from './validateAndSortVolumeIds';
 import { wadoURICreateImageIds } from './WADOURICreateImageIds';
 
 import {
@@ -83,6 +84,7 @@ export {
   setPetColorMapTransferFunctionForVolumeActor,
   setPetTransferFunctionForVolumeActor,
   setTitleAndDescription,
+  validateAndSortVolumeIds,
   wadoURICreateImageIds,
   createAndCacheGeometriesFromContours,
   createAndCacheGeometriesFromSurfaces,

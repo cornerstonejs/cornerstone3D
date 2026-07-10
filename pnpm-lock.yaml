@@ -15,6 +15,7 @@ overrides:
   tar-fs: 2.1.4
   body-parser: 1.20.3
   ws: 8.21.0
+  undici@<6.27.0: 6.27.0
   qs: 6.14.1
   lodash: 4.18.1
   tar: 7.5.11
@@ -397,8 +398,8 @@ importers:
         specifier: 6.0.3
         version: 6.0.3
       dcmjs:
-        specifier: 0.50.1
-        version: 0.50.1
+        specifier: 0.52.0
+        version: 0.52.0
       gl-matrix:
         specifier: 3.4.3
         version: 3.4.3
@@ -407,10 +408,10 @@ importers:
         version: 1.0.19
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.4.9
+        specifier: 5.4.12
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.4.9
+        specifier: 5.4.12
         version: link:../tools
 
   packages/ai:
@@ -422,8 +423,8 @@ importers:
         specifier: 6.0.3
         version: 6.0.3
       dcmjs:
-        specifier: 0.50.1
-        version: 0.50.1
+        specifier: 0.52.0
+        version: 0.52.0
       gl-matrix:
         specifier: 3.4.3
         version: 3.4.3
@@ -441,10 +442,10 @@ importers:
         version: 1.17.1
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.4.9
+        specifier: 5.4.12
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.4.9
+        specifier: 5.4.12
         version: link:../tools
 
   packages/codemods: {}
@@ -452,7 +453,7 @@ importers:
   packages/core:
     dependencies:
       '@cornerstonejs/utils':
-        specifier: 5.4.9
+        specifier: 5.4.12
         version: link:../utils
       '@kitware/vtk.js':
         specifier: 35.5.3
@@ -468,7 +469,7 @@ importers:
         version: 1.9.2
     devDependencies:
       '@cornerstonejs/metadata':
-        specifier: 5.4.9
+        specifier: 5.4.12
         version: link:../metadata
 
   packages/dicomImageLoader:
@@ -502,10 +503,10 @@ importers:
         version: 9.0.1
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.4.9
+        specifier: 5.4.12
         version: link:../core
       '@cornerstonejs/metadata':
-        specifier: 5.4.9
+        specifier: 5.4.12
         version: link:../metadata
 
   packages/docs:
@@ -603,10 +604,10 @@ importers:
         version: 1.0.0-b.165
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.4.9
+        specifier: 5.4.12
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.4.9
+        specifier: 5.4.12
         version: link:../tools
 
   packages/metadata:
@@ -615,11 +616,11 @@ importers:
         specifier: 1.0.3
         version: 1.0.3
       '@cornerstonejs/utils':
-        specifier: 5.4.9
+        specifier: 5.4.12
         version: link:../utils
       dcmjs:
-        specifier: 0.50.1
-        version: 0.50.1
+        specifier: 0.52.0
+        version: 0.52.0
       gl-matrix:
         specifier: 3.4.3
         version: 3.4.3
@@ -631,7 +632,7 @@ importers:
         version: 0.6.9
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.4.9
+        specifier: 5.4.12
         version: link:../core
 
   packages/polymorphic-segmentation:
@@ -644,10 +645,10 @@ importers:
         version: 35.5.3(@babel/preset-env@7.29.5(@babel/core@7.26.10))(autoprefixer@10.4.21(postcss@8.5.3))(wslink@2.5.0)
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.4.9
+        specifier: 5.4.12
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.4.9
+        specifier: 5.4.12
         version: link:../tools
 
   packages/tools:
@@ -684,7 +685,7 @@ importers:
         version: 4.4.2
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.4.9
+        specifier: 5.4.12
         version: link:../core
       canvas:
         specifier: 3.2.0
@@ -693,8 +694,8 @@ importers:
   packages/utils:
     dependencies:
       dcmjs:
-        specifier: 0.50.1
-        version: 0.50.1
+        specifier: 0.52.0
+        version: 0.52.0
 
 packages:
   '@algolia/abtesting@1.18.1':
@@ -1981,6 +1982,13 @@ packages:
     resolution:
       {
         integrity: sha512-uITFQYO68pMEYR46AHgQoyBg7KPPJDAbGn4jUTIRgCFJIp88MIBUianVOplhZDEec07bp9zIyr4Kp0FCyQzmWg==,
+      }
+    engines: { node: '>=6.9.0' }
+
+  '@babel/runtime-corejs3@7.29.2':
+    resolution:
+      {
+        integrity: sha512-Lc94FOD5+0aXhdb0Tdg3RUtqT6yWbI/BbFWvlaSJ3gAb9Ks+99nHRDKADVqC37er4eCB0fHyWT+y+K3QOvJKbw==,
       }
     engines: { node: '>=6.9.0' }
 
@@ -8830,11 +8838,12 @@ packages:
         integrity: sha512-kr46REomItFeWz+0ck4Wif4uS5VVDWVlwdh5GGaCtTYHWfNQmrcCSiQOkrShc7Dc5zP8vNKrHEdORlZXenlg3w==,
       }
 
-  dcmjs@0.50.1:
+  dcmjs@0.52.0:
     resolution:
       {
-        integrity: sha512-858uKIFD8plzv0lPcvZceA/ZGH/wzZf36wFkQToie3pSWp8YRI88dysQYQI1DJxc6AyGPk6eyf6RwKJbhoiQUw==,
+        integrity: sha512-0/mT9NACKnwnOnkUx7JAqmWxRcUr7HiCoptw1KhN2StNYE0Hy6+tmpI7CU+lJuBc4rFpcMCalvI8QO6JkJ+7Fg==,
       }
+    engines: { node: '>=22.13' }
 
   debounce@1.2.1:
     resolution:
@@ -10789,6 +10798,12 @@ packages:
     resolution:
       {
         integrity: sha512-wcCp8vu8FT22BnvKVPjXa/ICBWRq/zjFfdofZy1WSpQZpphblv12/bOQLBC1rMM7SGOFS9ltVmKOHil5+Ml7gA==,
+      }
+
+  gl-matrix@3.4.4:
+    resolution:
+      {
+        integrity: sha512-latSnyDNt/8zYUB6VIJ6PCh2jBjJX6gnDsoCZ7LyW7GkqrD51EWwa9qCoGixj8YqBtETQK/xY7OmpTF8xz1DdQ==,
       }
 
   glob-parent@5.1.2:
@@ -21238,6 +21253,10 @@ snapshots:
       core-js-pure: 3.49.0
       regenerator-runtime: 0.14.1
 
+  '@babel/runtime-corejs3@7.29.2':
+    dependencies:
+      core-js-pure: 3.49.0
+
   '@babel/runtime@7.26.10':
     dependencies:
       regenerator-runtime: 0.14.1
@@ -26436,11 +26455,11 @@ snapshots:
       ndarray: 1.0.19
       pako: 2.1.0
 
-  dcmjs@0.50.1:
+  dcmjs@0.52.0:
     dependencies:
-      '@babel/runtime-corejs3': 7.26.10
+      '@babel/runtime-corejs3': 7.29.2
       adm-zip: 0.5.17
-      gl-matrix: 3.4.3
+      gl-matrix: 3.4.4
       lodash.clonedeep: 4.5.0
       loglevel: 1.9.2
       ndarray: 1.0.19
@@ -27570,6 +27589,8 @@ snapshots:
   github-slugger@1.5.0: {}
 
   gl-matrix@3.4.3: {}
+
+  gl-matrix@3.4.4: {}
 
   glob-parent@5.1.2:
     dependencies:

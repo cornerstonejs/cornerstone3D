@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/nifti-volume-loader",
-  "version": "5.4.9",
+  "version": "5.4.12",
   "description": "Nifti Image Loader for Cornerstone3D",
   "module": "./dist/esm/index.js",
   "types": "./dist/esm/index.d.ts",
@@ -60,7 +60,7 @@
     "build:esm": "pnpm run prebuild && tsc --project ./tsconfig.json && tsc-alias -p ./tsconfig.json --resolve-full-paths && node ../../scripts/write-dist-esm-package-json.js ./",
     "build:esm:watch": "sh -c 'tsc-alias -p ./tsconfig.json --resolve-full-paths --watch & alias_pid=$!; node ../../scripts/write-dist-esm-package-json.js ./ --watch & writer_pid=$!; trap \"kill $alias_pid $writer_pid\" EXIT; tsc --project ./tsconfig.json --watch'",
     "build:all": "pnpm run build:esm",
-    "dev": "tsc --project ./tsconfig.json --watch",
+    "dev": "tsc --project ./tsconfig.json --watch --sourceMap --inlineSources",
     "build": "pnpm run build:all",
     "clean": "rm -rf node_modules/.cache/storybook && shx rm -rf dist",
     "clean:deep": "pnpm run clean && shx rm -rf node_modules",
@@ -73,10 +73,10 @@
     "nifti-reader-js": "0.6.9"
   },
   "devDependencies": {
-    "@cornerstonejs/core": "5.4.9"
+    "@cornerstonejs/core": "5.4.12"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "5.4.9"
+    "@cornerstonejs/core": "5.4.12"
   },
   "contributors": [
     {
