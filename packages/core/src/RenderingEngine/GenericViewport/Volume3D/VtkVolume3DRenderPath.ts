@@ -313,6 +313,12 @@ function applySampleDistanceMultiplier(
 
 function setCameraClippingRange(ctx: Volume3DVtkVolumeAdapterContext): void {
   setVtkCameraClippingRange(ctx.vtk.renderer.getActiveCamera());
+  // Match legacy VolumeViewport3D: the wide default range above is only a
+  // fallback; resetCameraClippingRange() then pulls the near/far planes tight
+  // around the visible bounds. Volume ray casting derives its sampling from
+  // the clipping range, so leaving it at +/-1e6 quantizes the ray steps and
+  // renders visible banding/streaks.
+  ctx.vtk.renderer.resetCameraClippingRange();
 }
 
 function buildVolumeImageData(
