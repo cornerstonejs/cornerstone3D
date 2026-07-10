@@ -1,5 +1,5 @@
 import type { RenderingEngineModeType } from '../types';
-import type { RenderBackend, RenderBackendValue } from '../enums';
+import type { RenderBackendValue } from '../enums';
 
 interface Cornerstone3DConfig {
   /**
@@ -64,15 +64,16 @@ interface Cornerstone3DConfig {
     webGlContextCount?: number;
     planar?: {
       /**
-       * The render backend preference for planar GenericViewports: 'gpu' and
-       * 'cpu' pin the backend, 'auto' (default) resolves it from the
-       * capability detection performed at init() and the deprecated
-       * useCPURendering flag. Per-display-set `renderBackend` mount options
-       * override this value; use setRenderBackend() to change it at runtime
-       * with a live render-path swap. Legacy viewports (StackViewport et al.)
-       * keep reading `useCPURendering` and are not governed by this flag.
+       * The render backend preference for planar GenericViewports: 'gpu',
+       * 'cpu', or any backend registered via `registerRenderBackend()` pin
+       * the backend, 'auto' (default) resolves it from the capability
+       * detection performed at init() and the deprecated useCPURendering
+       * flag. Per-display-set `renderBackend` mount options override this
+       * value; use setRenderBackend() to change it at runtime with a live
+       * render-path swap. Legacy viewports (StackViewport et al.) keep
+       * reading `useCPURendering` and are not governed by this flag.
        */
-      renderBackend?: RenderBackend | RenderBackendValue;
+      renderBackend?: RenderBackendValue;
       cpuVolume?: {
         /**
          * When true, LINEAR CPU volume slices are sampled into a viewport-sized

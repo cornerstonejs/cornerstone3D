@@ -153,6 +153,7 @@ module.exports = {
               items: [
                 'concepts/cornerstone-core/generic-viewport/api',
                 'concepts/cornerstone-core/generic-viewport/render-paths',
+                'concepts/cornerstone-core/generic-viewport/render-backends',
                 'concepts/cornerstone-core/generic-viewport/data-bindings-and-loading',
                 'concepts/cornerstone-core/generic-viewport/camera',
                 'concepts/cornerstone-core/generic-viewport/viewport-projection',
