@@ -206,6 +206,10 @@
         "name": "Orthographic GenericViewports on the WebGPU render backend",
         "description": "Sagittal and coronal CT MPR through the experimental WebGPU volume-slice render mode, with live backend switching, tools, and a mock labelmap segmentation."
       },
+      "genericWebGPUPetMIP": {
+        "name": "PET projection rendering across GPU backends",
+        "description": "Inverted rotating PET MIP (maximum/minimum/average slab projection) on the WebGPU volume-slice render mode beside a drag-to-rotate CT-Bone 3D volume viewport, with live webgpu/gpu switching."
+      },
       "genericStackPosition": {
         "name": "Stack Position Next",
         "description": "Demonstrates the native Planar GenericViewport display area API."
