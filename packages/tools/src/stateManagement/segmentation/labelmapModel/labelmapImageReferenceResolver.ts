@@ -31,6 +31,17 @@ class LabelmapImageReferenceResolver {
   // labelmapImageIdReferenceMap, so removeSegmentation can purge entries in
   // O(k) without scanning the whole map.
   private readonly keysBySegmentationId = new Map<string, Set<string>>();
+  // Memo of already-performed isReferenceViewable scans. Each scan resolves
+  // every labelmap imageId against the viewport's current image via full
+  // metadata resolution (image plane, slice basis), which costs tens of ms
+  // for multi-layer labelmaps - and the segmentation data-modified pipeline
+  // re-enters this on EVERY brush/erase drag event. Scan keys include the
+  // viewport id and a signature of the labelmap imageId set, so adding/removing
+  // a layer (which changes the set) naturally forces a fresh scan.
+  private readonly completedScanResultsBySegmentationId = new Map<
+    string,
+    Map<string, string | undefined>
+  >();
 
   constructor(getSegmentation: GetSegmentation) {
     this.getSegmentation = getSegmentation;
@@ -40,10 +51,12 @@ class LabelmapImageReferenceResolver {
     this.stackLabelmapImageIdReferenceMap.clear();
     this.labelmapImageIdReferenceMap.clear();
     this.keysBySegmentationId.clear();
+    this.completedScanResultsBySegmentationId.clear();
   }
 
   removeSegmentation(segmentationId: string): void {
     this.stackLabelmapImageIdReferenceMap.delete(segmentationId);
+    this.completedScanResultsBySegmentationId.delete(segmentationId);
     const keys = this.keysBySegmentationId.get(segmentationId);
     if (keys) {
       for (const key of keys) {
@@ -142,11 +155,71 @@ class LabelmapImageReferenceResolver {
       return;
     }
 
-    return this.updateLabelmapSegmentationReferences(
+    const viewport = enabledElement.viewport as Types.IStackViewport;
+    const scanKey = this.generateScanKey('current', viewport, labelmapImageIds);
+    if (scanKey && this.hasCompletedScan(segmentationId, scanKey)) {
+      return this.getCompletedScanResult(segmentationId, scanKey);
+    }
+
+    const result = this.updateLabelmapSegmentationReferences(
       segmentationId,
-      enabledElement.viewport as Types.IStackViewport,
+      viewport,
       labelmapImageIds
     );
+
+    if (scanKey) {
+      this.markCompletedScan(segmentationId, scanKey, result);
+    }
+
+    return result;
+  }
+
+  /** Signature of one isReferenceViewable scan: the viewport's current image
+   *  plus a cheap fingerprint of the labelmap imageId set (count + endpoints),
+   *  so layer additions/removals invalidate naturally. */
+  private generateScanKey(
+    kind: 'current' | 'all',
+    viewport: Types.IStackViewport,
+    labelmapImageIds: string[]
+  ): string | undefined {
+    const referenceImageId =
+      typeof viewport.getCurrentImageId === 'function'
+        ? viewport.getCurrentImageId()
+        : undefined;
+    if (!referenceImageId) {
+      return;
+    }
+    return `${kind}|${viewport.id}|${referenceImageId}|${
+      labelmapImageIds.length
+    }|${labelmapImageIds[0]}|${labelmapImageIds[labelmapImageIds.length - 1]}`;
+  }
+
+  private hasCompletedScan(segmentationId: string, scanKey: string): boolean {
+    return !!this.completedScanResultsBySegmentationId
+      .get(segmentationId)
+      ?.has(scanKey);
+  }
+
+  private getCompletedScanResult(
+    segmentationId: string,
+    scanKey: string
+  ): string | undefined {
+    return this.completedScanResultsBySegmentationId
+      .get(segmentationId)
+      ?.get(scanKey);
+  }
+
+  private markCompletedScan(
+    segmentationId: string,
+    scanKey: string,
+    result?: string
+  ): void {
+    let results = this.completedScanResultsBySegmentationId.get(segmentationId);
+    if (!results) {
+      results = new Map();
+      this.completedScanResultsBySegmentationId.set(segmentationId, results);
+    }
+    results.set(scanKey, result);
   }
 
   getCurrentLabelmapImageIdsForViewport(
@@ -381,6 +454,18 @@ class LabelmapImageReferenceResolver {
     }
 
     const stackViewport = enabledElement.viewport as Types.IStackViewport;
+
+    const scanKey = this.generateScanKey(
+      'all',
+      stackViewport,
+      labelmapImageIds
+    );
+    if (scanKey && this.hasCompletedScan(segmentationId, scanKey)) {
+      return;
+    }
+    if (scanKey) {
+      this.markCompletedScan(segmentationId, scanKey);
+    }
 
     this.updateLabelmapSegmentationReferences(
       segmentationId,

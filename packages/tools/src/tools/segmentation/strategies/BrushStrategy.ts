@@ -7,6 +7,7 @@ import { StrategyCallbacks } from '../../../enums';
 import type { LabelmapToolOperationDataAny } from '../../../types/LabelmapToolOperationData';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { LabelmapMemo } from '../../../utilities/segmentation/createLabelmapMemo';
+import { memoAsStep } from '../../../utilities/segmentation/createLabelmapMemo';
 import {
   eraseCrossLayerOverwrites,
   prepareOverlapOperationData,
@@ -274,10 +275,41 @@ export default class BrushStrategy {
       initializedData.memo?.segmentationVoxelManager !==
       initializedData.segmentationVoxelManager
     ) {
+      // Mid-stroke voxel-manager swap (the segment moved to a private layer):
+      // commit the earlier same-stroke writes and ride them on the new memo so
+      // the whole stroke stays one undo/redo unit.
+      const previousMemo = initializedData.memo;
       initializedData.memo = initializedData.createMemo(
         initializedData.segmentationId,
         initializedData.segmentationVoxelManager
       );
+      if (
+        previousMemo &&
+        previousMemo !== initializedData.memo &&
+        previousMemo.commitMemo?.()
+      ) {
+        (initializedData.memo.priorSteps ||= []).push(memoAsStep(previousMemo));
+      }
+    }
+
+    // Record the segment move (layer registration + bulk voxel move + binding
+    // change) on the stroke's memo, so undo removes the private layer and
+    // returns the segment to its previous layer, and redo replays the move.
+    // The raw step doesn't fire events itself (keeps the labelmap model free
+    // of the event-layer import), so wrap it with the data-modified trigger.
+    const moveStep = initializedData.labelmapEditTransaction?.moveStep;
+    if (moveStep && initializedData.memo) {
+      const { segmentationId } = initializedData;
+      (initializedData.memo.priorSteps ||= []).push({
+        undo: () => {
+          moveStep.undo();
+          triggerSegmentationDataModified(segmentationId);
+        },
+        redo: () => {
+          moveStep.redo();
+          triggerSegmentationDataModified(segmentationId);
+        },
+      });
     }
 
     if (

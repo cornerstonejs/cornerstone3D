@@ -13,10 +13,20 @@ import {
   getSegmentsOnLabelmap,
 } from './labelmapSegmentBindings';
 import { moveSegmentToPrivateLabelmap as defaultMoveSegmentToPrivateLabelmap } from './privateLabelmap';
+import type { LabelmapRestoreStep } from '../../../utilities/segmentation/createLabelmapMemo';
+
+/** A batch of cross-layer erases performed by one strategy fill call, with
+ *  everything needed to reverse/replay it on undo/redo. */
+type CrossLayerEraseRecord = {
+  voxelManager: Types.IVoxelManager<number>;
+  labelValue: number;
+  indices: number[];
+};
 
 type MoveSegmentToPrivateLabelmap = (
   segmentation: Segmentation,
-  segmentIndex: number
+  segmentIndex: number,
+  options?: { moveStepCallback?: (step: LabelmapRestoreStep) => void }
 ) => LabelmapLayer | undefined;
 
 type BeginLabelmapEditTransactionOptions = {
@@ -39,6 +49,10 @@ type LabelmapEditTransaction = {
   protectedSegmentIndices: number[];
   crossLayerEraseBindings: SegmentLabelmapBindingState[];
   movedSegment: boolean;
+  /** Undo/redo step for a segment move performed by this transaction
+   *  (layer registration + bulk voxel move + binding change), for recording
+   *  on the stroke's memo. */
+  moveStep?: LabelmapRestoreStep;
 };
 
 type ResolveLabelmapLayerEditTargetOptions = {
@@ -62,6 +76,9 @@ type EraseLabelmapEditTransactionOptions = {
   isInObject: (point: Types.Point3) => boolean;
   isInObjectBoundsIJK?: Types.BoundsIJK;
   imageId?: string;
+  /** When provided, receives the erased voxels of each touched layer so the
+   *  caller can record them for undo/redo. */
+  crossLayerEraseCallback?: (record: CrossLayerEraseRecord) => void;
 };
 
 function getProtectedSegmentIndicesForLayer(
@@ -197,13 +214,16 @@ function beginLabelmapEditTransaction(
     }
   );
 
+  let moveStep: LabelmapRestoreStep | undefined;
+
   if (shouldMoveSegment) {
     const moveSegmentToPrivateLabelmap =
       options.moveSegmentToPrivateLabelmap ??
       defaultMoveSegmentToPrivateLabelmap;
     const privateLayer = moveSegmentToPrivateLabelmap(
       segmentation,
-      segmentIndex
+      segmentIndex,
+      { moveStepCallback: (step) => (moveStep = step) }
     );
     const privateBinding = getSegmentBinding(segmentation, segmentIndex);
 
@@ -234,6 +254,7 @@ function beginLabelmapEditTransaction(
       overwriteSegmentIndices
     ),
     movedSegment,
+    moveStep,
   };
 }
 
@@ -329,6 +350,7 @@ function eraseVolumeLayer(
     return;
   }
 
+  const erasedIndices: number[] = [];
   volume.voxelManager.forEach(
     ({ value, index, pointIJK }) => {
       if (value !== binding.labelValue) {
@@ -343,12 +365,21 @@ function eraseVolumeLayer(
       }
 
       volume.voxelManager.setAtIndex(index, 0);
+      erasedIndices.push(index);
     },
     {
       imageData: volume.imageData,
       boundsIJK: options.isInObjectBoundsIJK,
     }
   );
+
+  if (erasedIndices.length) {
+    options.crossLayerEraseCallback?.({
+      voxelManager: volume.voxelManager as Types.IVoxelManager<number>,
+      labelValue: binding.labelValue,
+      indices: erasedIndices,
+    });
+  }
 
   volume.voxelManager
     ?.getArrayOfModifiedSlices?.()
@@ -373,6 +404,7 @@ function eraseStackLayer(
     return;
   }
 
+  const erasedIndices: number[] = [];
   voxelManager.forEach(
     ({ value, index, pointIJK }) => {
       if (value !== binding.labelValue) {
@@ -387,12 +419,21 @@ function eraseStackLayer(
       }
 
       voxelManager.setAtIndex(index, 0);
+      erasedIndices.push(index);
     },
     {
       imageData: options.referenceImageData,
       boundsIJK: options.isInObjectBoundsIJK,
     }
   );
+
+  if (erasedIndices.length) {
+    options.crossLayerEraseCallback?.({
+      voxelManager,
+      labelValue: binding.labelValue,
+      indices: erasedIndices,
+    });
+  }
 
   const currentSlice = stackViewport.getCurrentImageIdIndex?.();
   if (typeof currentSlice === 'number') {
@@ -440,6 +481,7 @@ export {
 };
 export type {
   BeginLabelmapEditTransactionOptions,
+  CrossLayerEraseRecord,
   EraseLabelmapEditTransactionOptions,
   LabelmapEditTransaction,
   LabelmapLayerEditTarget,
