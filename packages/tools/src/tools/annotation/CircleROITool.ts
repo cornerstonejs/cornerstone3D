@@ -148,6 +148,10 @@ class CircleROITool extends AnnotationTool {
         getTextLines: defaultGetTextLines,
         statsCalculator: BasicStatsCalculator,
         simplified: true, // If true, only 2 points are used for the handles, otherwise 5 points are used
+        // By default show the statistics of every display set containing
+        // pixel values (eg both CT and PT on a fusion viewport), but never
+        // SEG and the like - see BaseTool.targetFilters for alternatives
+        targetsFilter: AnnotationTool.targetFilters.allPixelData,
       },
     }
   ) {
@@ -694,7 +698,7 @@ class CircleROITool extends AnnotationTool {
       const { handles } = data;
       const { points, activeHandleIndex } = handles;
 
-      const targetId = this.getTargetId(viewport, data);
+      const targetIds = this.getMeasurementTargets(viewport, data);
       styleSpecifier.annotationUID = annotationUID;
 
       const { color, lineWidth, lineDash } = this.getAnnotationStyle({
@@ -714,24 +718,18 @@ class CircleROITool extends AnnotationTool {
 
       const { centerPointRadius } = this.configuration;
 
-      // If cachedStats does not exist, or the unit is missing (as part of import/hydration etc.),
-      // force to recalculate the stats from the points
+      // If cachedStats does not exist for one of the measurement targets, or
+      // the unit is missing (as part of import/hydration etc.), force to
+      // recalculate the stats from the points.  Every filtered target gets
+      // seeded here, so a single (eg fusion) viewport computes the stats for
+      // all of them even when no other viewport has done so.
       if (
-        !data.cachedStats[targetId] ||
-        data.cachedStats[targetId].areaUnit == null
+        this.ensureCachedStatsTargets(
+          data,
+          targetIds,
+          (stats) => stats.areaUnit == null
+        )
       ) {
-        data.cachedStats[targetId] = {
-          Modality: null,
-          area: null,
-          max: null,
-          mean: null,
-          stdDev: null,
-          areaUnit: null,
-          radius: null,
-          radiusUnit: null,
-          perimeter: null,
-        };
-
         this._calculateCachedStats(
           annotation,
           viewport,
@@ -874,10 +872,7 @@ class CircleROITool extends AnnotationTool {
       renderStatus = true;
 
       if (this.configuration.calculateStats) {
-        const textLines = this.configuration.getTextLines(
-          data,
-          this.getMeasurementTargets(viewport, data)
-        );
+        const textLines = this.configuration.getTextLines(data, targetIds);
         if (!textLines || textLines.length === 0) {
           continue;
         }

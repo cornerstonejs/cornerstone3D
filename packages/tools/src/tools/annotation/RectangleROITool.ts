@@ -44,7 +44,6 @@ import type {
   PublicToolProps,
   SVGDrawingHelper,
   Annotation,
-  AnnotationData,
 } from '../../types';
 import type { RectangleROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
@@ -123,6 +122,10 @@ class RectangleROITool extends AnnotationTool {
         calculateStats: true,
         getTextLines: defaultAreaGetTextLines,
         statsCalculator: BasicStatsCalculator,
+        // By default show the statistics of every display set containing
+        // pixel values (eg both CT and PT on a fusion viewport), but never
+        // SEG and the like - see BaseTool.targetFilters for alternatives
+        targetsFilter: AnnotationTool.targetFilters.allPixelData,
       },
     }
   ) {
@@ -615,7 +618,6 @@ class RectangleROITool extends AnnotationTool {
       const { points, activeHandleIndex } = data.handles;
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
-      const targetId = this.getTargetId(viewport, data);
       const targetIds = this.getMeasurementTargets(viewport, data);
       styleSpecifier.annotationUID = annotationUID;
 
@@ -628,21 +630,18 @@ class RectangleROITool extends AnnotationTool {
       // through the shared ICamera bridge (legacy viewports fall through to getCamera).
       const { viewPlaneNormal, viewUp } = getViewportICamera(viewport);
 
-      // If cachedStats does not exist, or the unit is missing (as part of import/hydration etc.),
-      // force to recalculate the stats from the points
+      // If cachedStats does not exist for one of the measurement targets, or
+      // the unit is missing (as part of import/hydration etc.), force to
+      // recalculate the stats from the points.  Every filtered target gets
+      // seeded here, so a single (eg fusion) viewport computes the stats for
+      // all of them even when no other viewport has done so.
       if (
-        !data.cachedStats[targetId] ||
-        data.cachedStats[targetId].areaUnit == null
+        this.ensureCachedStatsTargets(
+          data,
+          targetIds,
+          (stats) => stats.areaUnit == null
+        )
       ) {
-        data.cachedStats[targetId] = {
-          Modality: null,
-          area: null,
-          max: null,
-          mean: null,
-          stdDev: null,
-          areaUnit: null,
-        };
-
         this._calculateCachedStats(
           annotation,
           viewPlaneNormal,

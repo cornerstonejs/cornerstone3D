@@ -77,7 +77,12 @@ import type { SplineCurveSegment } from './SplineCurveSegment';
 import type { SplineLineSegment } from './SplineLineSegment';
 import type { SplineProps } from './SplineProps';
 import type { BidirectionalData } from '../utilities/segmentation/createBidirectionalToolData';
-import type { IBaseTool } from './IBaseTool';
+import type {
+  IBaseTool,
+  MeasurementTargetCandidate,
+  MeasurementTargetsFilter,
+  MeasurementTargetsFilterResult,
+} from './IBaseTool';
 import type { RepresentationStyle } from './../stateManagement/segmentation/SegmentationStyle';
 import type { LogicalOperation } from '../utilities/contourSegmentation';
 import type {
@@ -174,6 +179,9 @@ export type {
   SplineProps,
   // polySeg
   IBaseTool,
+  MeasurementTargetCandidate,
+  MeasurementTargetsFilter,
+  MeasurementTargetsFilterResult,
   RepresentationStyle,
   Segment,
   SegmentationPublicInput,

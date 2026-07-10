@@ -291,6 +291,144 @@ describe('Circle Tool: ', () => {
     }
   });
 
+  it('Should compute statistics for every volume of a fusion viewport', function (done) {
+    const element = testUtils.createViewports(renderingEngine, {
+      viewportId,
+      viewportType: ViewportType.ORTHOGRAPHIC,
+      width: 512,
+      height: 128,
+    });
+
+    // Two volumes with distinct constant values, fused on a single viewport.
+    // The default targetsFilter (allPixelData) should compute the statistics
+    // of BOTH volumes on that one viewport, each over its own pixel data.
+    const makeFusionVolumeId = (id, value) =>
+      testUtils.encodeVolumeIdInfo({
+        loader: 'fakeVolumeLoader',
+        name: 'volumeURIExact',
+        id,
+        rows: 100,
+        columns: 100,
+        slices: 4,
+        xSpacing: 1,
+        ySpacing: 1,
+        zSpacing: 1,
+        exactRegion: {
+          startRow: 0,
+          startColumn: 0,
+          startSlice: 0,
+          endRow: 100,
+          endColumn: 100,
+          endSlice: 4,
+          value,
+        },
+      });
+
+    const baseVolumeId = makeFusionVolumeId('fusionBase', 100);
+    const overlayVolumeId = makeFusionVolumeId('fusionOverlay', 200);
+
+    const vp = renderingEngine.getViewport(viewportId);
+
+    const addEventListenerForAnnotationRendered = () => {
+      element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+        const circleAnnotations = annotation.state.getAnnotations(
+          CircleROITool.toolName,
+          element
+        );
+        expect(circleAnnotations).toBeDefined();
+        expect(circleAnnotations.length).toBe(1);
+
+        const circleAnnotation = circleAnnotations[0];
+        expect(circleAnnotation.invalidated).toBe(false);
+
+        const data = circleAnnotation.data.cachedStats;
+        const targets = Array.from(Object.keys(data));
+        expect(targets.length).toBe(2);
+
+        const baseTarget = targets.find((it) => it.includes(baseVolumeId));
+        const overlayTarget = targets.find((it) =>
+          it.includes(overlayVolumeId)
+        );
+        expect(baseTarget).toBeDefined();
+        expect(overlayTarget).toBeDefined();
+
+        // Each target's statistics come from its own volume, not from the
+        // first/default volume of the viewport
+        expect(data[baseTarget].mean).toBe(100);
+        expect(data[baseTarget].stdDev).toBe(0);
+        expect(data[overlayTarget].mean).toBe(200);
+        expect(data[overlayTarget].stdDev).toBe(0);
+
+        annotation.state.removeAnnotation(circleAnnotation.annotationUID);
+        done();
+      });
+    };
+
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
+      const index1 = [53, 53, 2];
+      const index2 = [54, 54, 2];
+
+      const { imageData } = vp.getImageData();
+
+      const {
+        pageX: pageX1,
+        pageY: pageY1,
+        clientX: clientX1,
+        clientY: clientY1,
+      } = testUtils.createNormalizedMouseEvent(imageData, index1, element, vp);
+      const {
+        pageX: pageX2,
+        pageY: pageY2,
+        clientX: clientX2,
+        clientY: clientY2,
+      } = testUtils.createNormalizedMouseEvent(imageData, index2, element, vp);
+
+      // Mouse Down
+      let evt = new MouseEvent('mousedown', {
+        target: element,
+        buttons: 1,
+        clientX: clientX1,
+        clientY: clientY1,
+        pageX: pageX1,
+        pageY: pageY1,
+      });
+      element.dispatchEvent(evt);
+
+      // Mouse move to put the end somewhere else
+      evt = new MouseEvent('mousemove', {
+        target: element,
+        buttons: 1,
+        clientX: clientX2,
+        clientY: clientY2,
+        pageX: pageX2,
+        pageY: pageY2,
+      });
+      document.dispatchEvent(evt);
+
+      // Mouse Up instantly after
+      evt = new MouseEvent('mouseup');
+
+      addEventListenerForAnnotationRendered();
+      document.dispatchEvent(evt);
+    });
+
+    try {
+      Promise.all([
+        volumeLoader.createAndCacheVolume(baseVolumeId, { imageIds: [] }),
+        volumeLoader.createAndCacheVolume(overlayVolumeId, { imageIds: [] }),
+      ]).then(() => {
+        setVolumesForViewports(
+          renderingEngine,
+          [{ volumeId: baseVolumeId }, { volumeId: overlayVolumeId }],
+          [viewportId]
+        );
+        vp.render();
+      });
+    } catch (e) {
+      done.fail(e);
+    }
+  });
+
   it('Should cancel drawing of a CircleTool annotation', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,

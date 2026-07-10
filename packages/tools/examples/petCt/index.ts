@@ -391,7 +391,13 @@ function setUpToolGroups() {
     filterActorUIDsToSetSlabThickness: [ctVolumeId],
   });
   fusionToolGroup.addTool(RectangleROITool.toolName, {
-    isPreferredTargetId: RectangleROITool.isSpecifiedTargetId(ptVolumeId),
+    // Compute/show statistics for the PT volume of the fusion viewport only,
+    // selected by its volume id.  `targetFilters.forModality('PT')` would
+    // select the same volume by modality instead, and leaving the default
+    // configuration (targetFilters.allPixelData) would compute/show the
+    // statistics of both PT and CT at once.
+    // (This replaces the deprecated `isPreferredTargetId` configuration.)
+    targetsFilter: RectangleROITool.targetFilters.forId(ptVolumeId),
   });
 
   // Here is the difference in the toolGroups used, that we need to specify the

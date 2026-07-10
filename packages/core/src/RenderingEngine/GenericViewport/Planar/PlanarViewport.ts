@@ -1215,9 +1215,22 @@ class PlanarViewport extends GenericViewport<
    * Returns the active image-data object when the current render path exposes
    * one.
    *
-   * @returns The active image-data object, if exposed by the render path.
+   * @param volumeId - Optional: when the viewport displays several volumes
+   * (eg a fusion viewport), return the image data of the binding showing
+   * this volume rather than of the active/default binding.  Mirrors the
+   * legacy `BaseVolumeViewport.getImageData(volumeId?)` signature so
+   * per-target consumers (eg annotation statistics) work on both.
+   * @returns The image-data object, if exposed by the render path.
    */
-  getImageData() {
+  getImageData(volumeId?: string) {
+    if (volumeId) {
+      const dataId = this.findDataIdByVolumeId(volumeId);
+      const binding = dataId ? this.getBinding(dataId) : undefined;
+      const imageData = binding?.getImageData?.();
+      if (imageData) {
+        return imageData;
+      }
+    }
     return this.getCurrentBinding()?.getImageData?.();
   }
 
