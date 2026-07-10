@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.4.13](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.12...v5.4.13) (2026-07-10)
+
+### Features
+
+- add ClickSegmentTool for click-to-segment lesion segmentation ([#2780](https://github.com/cornerstonejs/cornerstone3D/issues/2780)) ([30f3b60](https://github.com/cornerstonejs/cornerstone3D/commit/30f3b60e46baac5d5902f50fd0810a6ab57ca657))
+
 ## [5.4.12](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.11...v5.4.12) (2026-07-09)
 
 ### Bug Fixes

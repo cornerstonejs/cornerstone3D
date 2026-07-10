@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.4.13](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.12...v5.4.13) (2026-07-10)
+
+### Bug Fixes
+
+- **ci:** use medium resource class for NPM_PUBLISH ([#2798](https://github.com/cornerstonejs/cornerstone3D/issues/2798)) ([b285258](https://github.com/cornerstonejs/cornerstone3D/commit/b28525805a351024db7664d56e67c3c2b6d24284))
+- **segmentation:** undoable overlap labelmap strokes, faster eager stroke resolution, brush hover guard ([#2785](https://github.com/cornerstonejs/cornerstone3D/issues/2785)) ([7d7dfb8](https://github.com/cornerstonejs/cornerstone3D/commit/7d7dfb85c8402d3e99512acc65e4a35634125c8f))
+
+### Features
+
+- add ClickSegmentTool for click-to-segment lesion segmentation ([#2780](https://github.com/cornerstonejs/cornerstone3D/issues/2780)) ([30f3b60](https://github.com/cornerstonejs/cornerstone3D/commit/30f3b60e46baac5d5902f50fd0810a6ab57ca657))
+
 ## [5.4.12](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.11...v5.4.12) (2026-07-09)
 
 ### Bug Fixes

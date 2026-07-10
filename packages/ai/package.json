@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/ai",
-  "version": "5.4.12",
+  "version": "5.4.13",
   "description": "AI and ML Interfaces for Cornerstone3D",
   "files": [
     "dist"
@@ -63,11 +63,11 @@
     "onnxruntime-web": "1.17.1"
   },
   "devDependencies": {
-    "@cornerstonejs/core": "5.4.12",
-    "@cornerstonejs/tools": "5.4.12"
+    "@cornerstonejs/core": "5.4.13",
+    "@cornerstonejs/tools": "5.4.13"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "5.4.12",
-    "@cornerstonejs/tools": "5.4.12"
+    "@cornerstonejs/core": "5.4.13",
+    "@cornerstonejs/tools": "5.4.13"
   }
 }
