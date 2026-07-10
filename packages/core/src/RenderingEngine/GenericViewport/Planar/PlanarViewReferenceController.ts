@@ -17,6 +17,7 @@ import {
 } from '../genericViewportReferenceCompatibility';
 import type { LoadedData } from '../ViewportArchitectureTypes';
 import type { PlanarRendering } from './planarRuntimeTypes';
+import { getVolumeImageIdIndexWorldPoint } from './planarSliceBasis';
 import {
   getPlanarReferencedImageId,
   getPlanarViewReference,
@@ -451,7 +452,7 @@ class PlanarViewReferenceController {
     const isOppositeNormal =
       !shouldReorient &&
       this.areNormalsOpposite(currentViewPlaneNormal, effectiveViewPlaneNormal);
-    const nextImageIdIndex = this.resolveVolumeReferenceImageIdIndex(
+    const sliceTarget = this.resolveVolumeReferenceSliceTarget(
       referenceContext,
       normalizedViewRef,
       effectiveViewPlaneNormal,
@@ -472,8 +473,11 @@ class PlanarViewReferenceController {
 
     const sliceWorldPoint =
       normalizedViewRef.cameraFocalPoint ??
-      (typeof nextImageIdIndex === 'number'
-        ? this.host.getVolumeSliceWorldPointForImageIdIndex(nextImageIdIndex)
+      sliceTarget?.sliceWorldPoint ??
+      (typeof sliceTarget?.imageIdIndex === 'number'
+        ? this.host.getVolumeSliceWorldPointForImageIdIndex(
+            sliceTarget.imageIdIndex
+          )
         : undefined);
 
     if (sliceWorldPoint) {
@@ -609,12 +613,27 @@ class PlanarViewReferenceController {
     );
   }
 
-  private resolveVolumeReferenceImageIdIndex(
+  /**
+   * Resolves the slice a volume view reference targets, in one of two forms:
+   *
+   *  - `sliceIndex`-based references address the CAMERA (scroll) ordering —
+   *    the domain of `getResolvedView({ sliceIndex })` / the slice basis — and
+   *    resolve to an `imageIdIndex` in that domain (with the opposite-normal
+   *    flip preserved).
+   *  - imageId-anchored references (`referencedImageId` / a plane point
+   *    snapped via `getClosestImageId`) address the volume's imageId LIST
+   *    ordering, which runs along the scan axis — for the acquisition
+   *    orientation that is the OPPOSITE of the camera ordering. Those resolve
+   *    directly to the slice's exact world center (`sliceWorldPoint`), which
+   *    is ordering-independent; feeding the list index into the camera-order
+   *    basis instead would navigate to the mirrored slice.
+   */
+  private resolveVolumeReferenceSliceTarget(
     referenceContext: PlanarReferenceContext,
     viewRef: ViewReference,
     effectiveViewPlaneNormal: Point3,
     isOppositeNormal: boolean
-  ): number | undefined {
+  ): { imageIdIndex?: number; sliceWorldPoint?: Point3 } | undefined {
     const { rendering } = referenceContext;
 
     if (
@@ -636,7 +655,9 @@ class PlanarViewReferenceController {
         ? maxImageIdIndex - viewRef.sliceIndex
         : viewRef.sliceIndex;
 
-      return Math.min(Math.max(0, targetSliceIndex), maxImageIdIndex);
+      return {
+        imageIdIndex: Math.min(Math.max(0, targetSliceIndex), maxImageIdIndex),
+      };
     }
 
     const referencedImageIndex = this.findImageIdIndexByReference(
@@ -646,7 +667,10 @@ class PlanarViewReferenceController {
     );
 
     if (typeof referencedImageIndex === 'number') {
-      return referencedImageIndex;
+      return this.toVolumeSliceTarget(
+        rendering.imageVolume,
+        referencedImageIndex
+      );
     }
 
     const targetPoint =
@@ -658,13 +682,49 @@ class PlanarViewReferenceController {
         targetPoint,
         effectiveViewPlaneNormal
       );
+      const closestImageIndex = this.findImageIdIndexByReference(
+        imageIds,
+        referencedImageId
+      );
 
-      return this.findImageIdIndexByReference(imageIds, referencedImageId);
+      if (typeof closestImageIndex === 'number') {
+        return this.toVolumeSliceTarget(
+          rendering.imageVolume,
+          closestImageIndex
+        );
+      }
+
+      return;
     }
 
     if (typeof viewRef.sliceIndex === 'number') {
-      return Math.min(Math.max(0, viewRef.sliceIndex), maxImageIdIndex);
+      return {
+        imageIdIndex: Math.min(
+          Math.max(0, viewRef.sliceIndex),
+          maxImageIdIndex
+        ),
+      };
     }
+  }
+
+  /**
+   * Converts an index into the volume's imageId list to a slice target. The
+   * exact world center is preferred; when the volume has no vtkImageData to
+   * compute it from, falls back to treating the index as a camera-order
+   * index (the previous behavior).
+   */
+  private toVolumeSliceTarget(
+    imageVolume: Parameters<typeof getVolumeImageIdIndexWorldPoint>[0],
+    imageIdListIndex: number
+  ): { imageIdIndex?: number; sliceWorldPoint?: Point3 } {
+    const sliceWorldPoint = getVolumeImageIdIndexWorldPoint(
+      imageVolume,
+      imageIdListIndex
+    );
+
+    return sliceWorldPoint
+      ? { sliceWorldPoint }
+      : { imageIdIndex: imageIdListIndex };
   }
 
   private getImageIdsForReferenceContext(

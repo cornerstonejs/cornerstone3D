@@ -321,6 +321,39 @@ function getGeometricImageVolumeCenter(
 }
 
 /**
+ * World-space center of the volume slice that backs `imageVolume.imageIds[k]`.
+ *
+ * Volumes are constructed so `imageIds[k]` is IJK slice k, so the exact slice
+ * center is `indexToWorld([centerI, centerJ, k])`. This is the ordering-safe
+ * way to anchor a slice for an index expressed in the volume's imageId list:
+ * the alternative — walking `min + k * spacing` along the viewPlaneNormal in
+ * `buildPlanarVolumeSliceBasis` — counts slices in CAMERA order, and for the
+ * acquisition orientation the camera normal is the negated scan axis, so an
+ * imageId-list index fed into that walk lands on the mirrored slice (and on
+ * oblique volumes drifts off slice centers, since the corner projections span
+ * the voxel bounding box rather than slice centers).
+ */
+export function getVolumeImageIdIndexWorldPoint(
+  imageVolume: IImageVolume | undefined,
+  imageIdIndex: number
+): Point3 | undefined {
+  const imageData = imageVolume?.imageData;
+
+  if (!imageData) {
+    return;
+  }
+
+  const dimensions = imageData.getDimensions();
+  const k = Math.min(Math.max(0, imageIdIndex), dimensions[2] - 1);
+
+  return imageData.indexToWorld([
+    (dimensions[0] - 1) / 2,
+    (dimensions[1] - 1) / 2,
+    k,
+  ]) as Point3;
+}
+
+/**
  * Computes the min/max projections of a volume's corners onto the
  * viewPlaneNormal, along with the spacing between adjacent slices and
  * the maximum valid slice index.
