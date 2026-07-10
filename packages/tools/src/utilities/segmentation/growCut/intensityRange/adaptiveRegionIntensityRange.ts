@@ -119,6 +119,14 @@ export type AdaptiveRegionProbeResult = {
   regionAreaMm2?: number;
   /** Chosen threshold depth in display-byte units (0..255). */
   toleranceBytes?: number;
+  /**
+   * Present when viable: tolerance level at which each of the clicked pixel's
+   * 4 in-plane neighbors ([-A, +A, -B, +B]) joined the region during the
+   * sweep (-1 = never joined, null = outside the volume). Lets hover
+   * consensus checks vote from this one sweep instead of re-probing each
+   * neighbor with its own full window analysis.
+   */
+  clickNeighborJoinLevels?: Array<number | null>;
   /** Present when viable: context for deterministic expand/shrink. */
   expandContext?: AdaptiveRegionExpandContext;
   /** Growth internals for the selection stage (present on its failures). */
@@ -483,6 +491,27 @@ export function probeAdaptiveRegionCore(
   const curve: CurvePoint[] = [];
   const clickIdx = clickY * wA + clickX;
   let clickJoinLevel = -1;
+  // The click's 4 in-plane neighbors ([-A, +A, -B, +B]): record when each
+  // joins the region, exactly like the click pixel itself. The window always
+  // contains them unless clamped at the volume edge (null = not evaluable).
+  const neighborOffsets: Array<[number, number]> = [
+    [-1, 0],
+    [1, 0],
+    [0, -1],
+    [0, 1],
+  ];
+  const clickNeighborJoinLevels: Array<number | null> = [];
+  const neighborWatch = new Map<number, number>();
+  neighborOffsets.forEach(([dx, dy], slot) => {
+    const x = clickX + dx;
+    const y = clickY + dy;
+    if (x < 0 || x >= wA || y < 0 || y >= wB) {
+      clickNeighborJoinLevels.push(null);
+      return;
+    }
+    clickNeighborJoinLevels.push(-1);
+    neighborWatch.set(y * wA + x, slot);
+  });
   let size = 0;
   let borderTouchLevel = -1;
   let explosionLevel = -1;
@@ -500,6 +529,10 @@ export function probeAdaptiveRegionCore(
         size++;
         if (idx === clickIdx) {
           clickJoinLevel = level;
+        }
+        const watchSlot = neighborWatch.get(idx);
+        if (watchSlot !== undefined) {
+          clickNeighborJoinLevels[watchSlot] = level;
         }
 
         const x = idx % wA;
@@ -716,6 +749,7 @@ export function probeAdaptiveRegionCore(
     regionSizePx: chosen.size,
     regionAreaMm2: chosen.size * pxAreaMm2,
     toleranceBytes,
+    clickNeighborJoinLevels,
     expandContext,
     range: {
       min: rawLo,

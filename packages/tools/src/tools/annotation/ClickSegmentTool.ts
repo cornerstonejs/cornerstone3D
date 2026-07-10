@@ -16,7 +16,6 @@ import { floodFill3dSliceLazy } from '../../utilities/segmentation/floodFillSlic
 import {
   probeAdaptiveRegion,
   resolveAdaptiveBandAtTolerance,
-  resolveInPlaneAxes,
 } from '../../utilities/segmentation/growCut/intensityRange/adaptiveRegionIntensityRange';
 import type {
   AdaptiveRegionExpandContext,
@@ -558,14 +557,7 @@ class ClickSegmentTool extends GrowCutBaseTool {
                   // no flicker, no re-run. Different fills (e.g. a hotter
                   // lesion inside a rejected background box) re-evaluate.
                   state = 'blocked';
-                } else if (
-                  !this.neighborsAgree(
-                    refVolume,
-                    viewport,
-                    currentPoints.world,
-                    options
-                  )
-                ) {
+                } else if (!this.neighborsAgree(probe)) {
                   state = 'blocked';
                 } else {
                   state = 'pending';
@@ -623,51 +615,30 @@ class ClickSegmentTool extends GrowCutBaseTool {
   }
 
   /**
-   * Consensus polling: probes the 4 in-plane neighbors one voxel away and
-   * requires at least {@link CONSENSUS_MIN_NEIGHBOR_VOTES} of them to also be
-   * viable. A lesion is a zone, so its plus verdict should be spatially
-   * stable — not "plus here, blocked one pixel left and right".
+   * Consensus polling: requires at least
+   * {@link CONSENSUS_MIN_NEIGHBOR_VOTES} of the click's 4 in-plane neighbors
+   * (±1 voxel) to belong to the probed region at its chosen tolerance. A
+   * lesion is a zone, so its plus verdict should be spatially stable — not
+   * "plus here, blocked one pixel left and right". The votes are read off the
+   * center probe's own threshold sweep (it records when each neighbor joined
+   * the region), so no additional window analyses run per hover.
    */
-  private neighborsAgree(
-    refVolume: Types.IImageVolume,
-    viewport: Types.IViewport,
-    world: Types.Point3,
-    options: FloodFillIntensityRangeOptions
-  ): boolean {
-    const { imageData } = refVolume;
-    const ijk = csUtils
-      .transformWorldToIndex(imageData, world)
-      .map(Math.round) as Types.Point3;
-    const [axisA, axisB] = resolveInPlaneAxes(refVolume, viewport);
-    const offsets: Array<[number, number]> = [
-      [-1, 0],
-      [1, 0],
-      [0, -1],
-      [0, 1],
-    ];
+  private neighborsAgree(probe: AdaptiveRegionProbeResult): boolean {
+    const joinLevels = probe.clickNeighborJoinLevels;
+    const tolerance = probe.toleranceBytes;
+    if (!joinLevels || typeof tolerance !== 'number') {
+      return true;
+    }
     let votes = 0;
     let evaluated = 0;
-    for (const [da, db] of offsets) {
-      const neighborIjk = [...ijk] as Types.Point3;
-      neighborIjk[axisA] += da;
-      neighborIjk[axisB] += db;
-      if (
-        neighborIjk.some(
-          (value, axis) => value < 0 || value >= refVolume.dimensions[axis]
-        )
-      ) {
+    for (const joinLevel of joinLevels) {
+      if (joinLevel === null) {
+        // Outside the volume — not evaluable.
         continue;
       }
       evaluated++;
-      const neighborWorld = csUtils.transformIndexToWorld(
-        imageData,
-        neighborIjk
-      ) as Types.Point3;
-      if (probeAdaptiveRegion(refVolume, neighborWorld, options).viable) {
+      if (joinLevel >= 0 && joinLevel <= tolerance) {
         votes++;
-      }
-      if (votes >= CONSENSUS_MIN_NEIGHBOR_VOTES) {
-        return true;
       }
     }
     // At the volume edge with too few evaluable neighbors, don't punish.
@@ -800,7 +771,20 @@ class ClickSegmentTool extends GrowCutBaseTool {
       return false;
     }
 
-    const setupOk = await super.preMouseDownCallback(evt);
+    // The base setup throws for unsupported views (e.g. 'Oblique view is not
+    // supported yet'). The hover probe normally blocks such clicks already,
+    // but a click without a fresh probe must fail cleanly, not as a rejected
+    // promise.
+    let setupOk = false;
+    try {
+      setupOk = await super.preMouseDownCallback(evt);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Click segmentation failed.';
+      growCutLog.info('ClickSegment: click setup rejected', { message });
+      this.notifySegmentationError(message);
+      return false;
+    }
     if (!setupOk || !this.growCutData) {
       return false;
     }

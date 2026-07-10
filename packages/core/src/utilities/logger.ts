@@ -19,6 +19,9 @@ export const {
 } = logging;
 export type Logger = logging.Logger;
 
-/** One-click flood fill segmentation and island-removal diagnostics. */
+/**
+ * One-click flood fill segmentation and island-removal diagnostics. Level is
+ * left to the consumer (like the other cs3d loggers); call
+ * `growCutLog.setLevel('info')` in the host app to see the diagnostics.
+ */
 export const growCutLog = toolsLog.getLogger('growCut');
-growCutLog.setLevel('info');

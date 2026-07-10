@@ -27,6 +27,18 @@ type NumberVoxelManager = VoxelManager<number>;
 const { growCutLog: log } = csUtils.logger;
 const ENABLE_VERBOSE_FLOOD_FILL_LOGS = false;
 
+/** console.time/timeEnd wrappers gated behind the verbose flag. */
+const timeStart = (label: string) => {
+  if (ENABLE_VERBOSE_FLOOD_FILL_LOGS) {
+    console.time(label);
+  }
+};
+const timeEnd = (label: string) => {
+  if (ENABLE_VERBOSE_FLOOD_FILL_LOGS) {
+    console.timeEnd(label);
+  }
+};
+
 export type {
   FloodFillIntensityRangeResult,
   FloodFillIntensityRangeOptions,
@@ -202,11 +214,10 @@ function getPositiveIntensityRangeRaw(
     ijkStart[2] < 0 ||
     ijkStart[2] >= numSlices
   ) {
-    log.info('intensity range: click outside volume', {
+    log.warn('intensity range: click outside volume', {
       ijkStart,
       dimensions: [width, height, numSlices],
     });
-    console.warn('Click position is outside volume bounds.');
     return null;
   }
 
@@ -230,8 +241,8 @@ function getPositiveIntensityRangeRaw(
   const startValue = referenceVolumeVoxelManager.getAtIJKPoint(ijkStart);
 
   if (startValue < min || startValue > max) {
-    console.warn(
-      'Clicked voxel intensity is outside the calculated positive range.'
+    log.warn(
+      'intensity range: clicked voxel intensity is outside the calculated positive range'
     );
     return null;
   }
@@ -473,7 +484,7 @@ async function runFloodFillSegmentation({
   labelmapVolume: Types.IImageVolume;
   options?: FloodFillSegmentationOptions;
 }): Promise<Types.IImageVolume | null> {
-  console.time(FLOOD_FILL_PREP_TIMING_LABEL);
+  timeStart(FLOOD_FILL_PREP_TIMING_LABEL);
 
   const referencedVolume = cache.getVolume(referencedVolumeId);
   assertFloodFillLabelmapMatchesRef(referencedVolume, labelmapVolume);
@@ -485,7 +496,7 @@ async function runFloodFillSegmentation({
     options.floodPreviewSegmentIndex
   );
 
-  console.time(FLOOD_FILL_PREP_REF_META);
+  timeStart(FLOOD_FILL_PREP_REF_META);
   const [volMin, volMax] = referencedVolume.voxelManager.getRange();
   const displayVoi = getDisplayVoiSnapshot(viewport, referencedVolumeId);
   log.info('segmentation path: flood fill (floodfill_full)', {
@@ -495,9 +506,9 @@ async function runFloodFillSegmentation({
     floodPreview: usePreview ? paintIndex : null,
     segmentIndex,
   });
-  console.timeEnd(FLOOD_FILL_PREP_REF_META);
+  timeEnd(FLOOD_FILL_PREP_REF_META);
 
-  console.timeEnd(FLOOD_FILL_PREP_TIMING_LABEL);
+  timeEnd(FLOOD_FILL_PREP_TIMING_LABEL);
 
   const voiMapping = getViewportVoiMappingForVolume(
     viewport,
@@ -515,7 +526,7 @@ async function runFloodFillSegmentation({
     voiMapping: voiMapping ?? undefined,
   };
 
-  console.time(FLOOD_FILL_RANGE_TIMING_LABEL);
+  timeStart(FLOOD_FILL_RANGE_TIMING_LABEL);
   const rangeResult = resolveIntensityRange(
     referencedVolume,
     worldPosition,
@@ -524,7 +535,7 @@ async function runFloodFillSegmentation({
     options,
     rangeContext
   );
-  console.timeEnd(FLOOD_FILL_RANGE_TIMING_LABEL);
+  timeEnd(FLOOD_FILL_RANGE_TIMING_LABEL);
 
   if (!rangeResult) {
     log.warn('flood fill: aborted before fill (no intensity range)', {
@@ -595,7 +606,7 @@ async function runFloodFillSegmentation({
     });
   }
 
-  console.time(FLOOD_FILL_RUN_TIMING_LABEL);
+  timeStart(FLOOD_FILL_RUN_TIMING_LABEL);
   try {
     const { dimensions } = referencedVolume;
     const [width, height, numSlices] = dimensions;
@@ -721,7 +732,6 @@ async function runFloodFillSegmentation({
           toleranceMax: positiveMax,
         }
       );
-      console.warn('Flood fill produced no voxels.');
       return labelmap;
     }
 
@@ -750,7 +760,6 @@ async function runFloodFillSegmentation({
         committedVoxels,
         ijkStart,
       });
-      console.warn('Flood fill commit produced no voxels.');
       return labelmap;
     }
 
@@ -805,8 +814,7 @@ async function runFloodFillSegmentation({
     );
 
     if (!initialized) {
-      log.info('island removal: initialize failed', { segmentIndex, ijkStart });
-      console.warn('Island removal initialization failed.');
+      log.warn('island removal: initialize failed', { segmentIndex, ijkStart });
       if (usePreview) {
         promotePreviewSegmentToFinal(
           labelmapReadVm,
@@ -827,15 +835,15 @@ async function runFloodFillSegmentation({
     let internalSliceCount: number | undefined;
 
     if (applyExternal) {
-      console.time(FLOOD_FILL_ISLAND_EXTERNAL_TIMING_LABEL);
+      timeStart(FLOOD_FILL_ISLAND_EXTERNAL_TIMING_LABEL);
       islandFloodVoxels = islandRemoval.floodFillSegmentIsland();
       externalClearedVoxels = islandRemoval.removeExternalIslands();
-      console.timeEnd(FLOOD_FILL_ISLAND_EXTERNAL_TIMING_LABEL);
+      timeEnd(FLOOD_FILL_ISLAND_EXTERNAL_TIMING_LABEL);
       if (applyInternal) {
-        console.time(FLOOD_FILL_ISLAND_INTERNAL_TIMING_LABEL);
+        timeStart(FLOOD_FILL_ISLAND_INTERNAL_TIMING_LABEL);
         const modifiedSlices = islandRemoval.removeInternalIslands();
         internalSliceCount = modifiedSlices?.length;
-        console.timeEnd(FLOOD_FILL_ISLAND_INTERNAL_TIMING_LABEL);
+        timeEnd(FLOOD_FILL_ISLAND_INTERNAL_TIMING_LABEL);
       }
     }
 
@@ -911,7 +919,7 @@ async function runFloodFillSegmentation({
 
     return labelmap;
   } finally {
-    console.timeEnd(FLOOD_FILL_RUN_TIMING_LABEL);
+    timeEnd(FLOOD_FILL_RUN_TIMING_LABEL);
   }
 }
 

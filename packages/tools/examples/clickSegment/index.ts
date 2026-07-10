@@ -13,6 +13,7 @@ import {
   createInfoSection,
   addButtonToToolbar,
   addManipulationBindings,
+  validateAndSortVolumeIds,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -332,16 +333,15 @@ async function run() {
     return;
   }
 
-  // Sort into through-plane (spatial) order. The click-driven 3D flood fill relies
-  // on adjacent stack indices being adjacent slices in patient space, so the
-  // stack must be sorted by position rather than left in load/instance order.
-  let sortedImageIds = imageIds;
-  try {
-    sortedImageIds = csUtils.sortImageIdsAndGetSpacing(imageIds).sortedImageIds;
-  } catch (err) {
+  // Sort into through-plane (spatial) order and validate the series is a
+  // proper volume (consistent orientation and slice spacing, one frame of
+  // reference). The click-driven 3D flood fill relies on adjacent stack
+  // indices being adjacent slices in patient space.
+  const { valid, sortedImageIds, reason } = validateAndSortVolumeIds(imageIds);
+  if (!valid) {
     console.warn(
-      '[clickSegment] could not sort images by position; using load order',
-      err
+      `[clickSegment] series is not a clean volume (${reason}); ` +
+        'segmenting on it anyway, but 3D fills may misbehave across slices'
     );
   }
 
