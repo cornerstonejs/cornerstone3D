@@ -71,6 +71,12 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
         const remappedIndex = imageIds.indexOf(requestedImageId);
         if (remappedIndex >= 0) {
           volumeInitialImageIdIndex = remappedIndex;
+        } else {
+          console.warn(
+            `[PlanarViewport] initialImageIdIndex remap failed: imageId ` +
+              `"${requestedImageId}" not found in the volume imageIds; ` +
+              `using the original index ${initialImageIdIndex}`
+          );
         }
       }
 

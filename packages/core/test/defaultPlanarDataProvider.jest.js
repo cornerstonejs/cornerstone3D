@@ -82,6 +82,29 @@ describe('DefaultPlanarDataProvider', () => {
       expect(payload.initialImageIdIndex).toBe(3);
     });
 
+    it('warns and keeps the original index when the imageId is not in the volume', async () => {
+      const dataSetImageIds = makeImageIds(10);
+      registerDataSet({ imageIds: dataSetImageIds, initialImageIdIndex: 3 });
+      mockVolume(makeImageIds(10).map((id) => `${id}-other`));
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+      try {
+        const provider = new DefaultPlanarDataProvider();
+        const payload = await provider.load(DATA_ID, {
+          orientation: 'acquisition',
+          renderMode: ActorRenderMode.VTK_VOLUME_SLICE,
+          volumeId: 'volume-1',
+        });
+
+        expect(payload.initialImageIdIndex).toBe(3);
+        expect(warnSpy).toHaveBeenCalledWith(
+          expect.stringContaining('initialImageIdIndex remap failed')
+        );
+      } finally {
+        warnSpy.mockRestore();
+      }
+    });
+
     it('preserves "no slice requested" (undefined) so the view can center', async () => {
       const dataSetImageIds = makeImageIds(10);
       registerDataSet({ imageIds: dataSetImageIds });
