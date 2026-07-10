@@ -517,17 +517,52 @@ async function run() {
     { passive: false }
   );
 
-  // 3D viewport: left-button drag orbits the camera.
+  // 3D viewport: left-button drag orbits the camera. While dragging, the
+  // volume mapper's sample distance is coarsened by the same factor the
+  // legacy TrackballRotateTool uses, then restored on release with a final
+  // full-resolution render.
+  const ROTATE_SAMPLE_DISTANCE_FACTOR = 2;
   let dragging = false;
+  let restingSampleDistance: number | undefined;
+
+  const getVolume3dMapper = () => {
+    const viewport = getViewport(volume3dViewportId) as unknown as {
+      getDefaultActor?: () => Types.ActorEntry | undefined;
+    };
+    const actor = viewport?.getDefaultActor?.()?.actor as {
+      getMapper?: () => {
+        getSampleDistance?: () => number;
+        setSampleDistance?: (distance: number) => boolean;
+      };
+    };
+
+    return actor?.getMapper?.();
+  };
+
   elements[1].addEventListener('pointerdown', (evt) => {
     if (evt.button === 0) {
       dragging = true;
       elements[1].setPointerCapture(evt.pointerId);
+
+      const mapper = getVolume3dMapper();
+
+      if (mapper?.getSampleDistance && restingSampleDistance === undefined) {
+        restingSampleDistance = mapper.getSampleDistance();
+        mapper.setSampleDistance?.(
+          restingSampleDistance * ROTATE_SAMPLE_DISTANCE_FACTOR
+        );
+      }
     }
   });
   elements[1].addEventListener('pointerup', (evt) => {
     dragging = false;
     elements[1].releasePointerCapture(evt.pointerId);
+
+    if (restingSampleDistance !== undefined) {
+      getVolume3dMapper()?.setSampleDistance?.(restingSampleDistance);
+      restingSampleDistance = undefined;
+      getViewport(volume3dViewportId)?.render();
+    }
   });
   elements[1].addEventListener('pointermove', (evt) => {
     if (dragging) {
