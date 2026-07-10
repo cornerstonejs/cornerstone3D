@@ -18,7 +18,10 @@ import MetadataModules from './MetadataModules';
 import { GenerateImageType } from './GenerateImageType';
 import VoxelManagerEnum from './VoxelManagerEnum';
 import RenderingEngineModeEnum from './RenderingEngineModeEnum';
-import RenderBackend, { type RenderBackendValue } from './RenderBackend';
+import RenderBackends, {
+  type RenderBackendValue,
+  type RenderBackendsMap,
+} from './RenderBackends';
 
 export {
   Events,
@@ -42,6 +45,7 @@ export {
   VoxelManagerEnum,
   GenerateImageType,
   RenderingEngineModeEnum,
-  RenderBackend,
+  RenderBackends,
   type RenderBackendValue,
+  type RenderBackendsMap,
 };

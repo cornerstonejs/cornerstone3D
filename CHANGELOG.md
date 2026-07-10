@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.4.12](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.11...v5.4.12) (2026-07-09)
+
+### Bug Fixes
+
+- Use the image loader for dicom-seg to allow compressed images ([#2611](https://github.com/cornerstonejs/cornerstone3D/issues/2611)) ([ef48c4a](https://github.com/cornerstonejs/cornerstone3D/commit/ef48c4a2a7581d164b7708fc40080254d19b7b70)), closes [#2572](https://github.com/cornerstonejs/cornerstone3D/issues/2572)
+
+## [5.4.11](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.10...v5.4.11) (2026-07-09)
+
+### Bug Fixes
+
+- Change the shape of the render backend api so it allows register ([#2795](https://github.com/cornerstonejs/cornerstone3D/issues/2795)) ([4ab69f2](https://github.com/cornerstonejs/cornerstone3D/commit/4ab69f234c2c62ac84c56685ab3281910af3ac10))
+
+## [5.4.10](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.9...v5.4.10) (2026-07-09)
+
+**Note:** Version bump only for package root
+
 ## [5.4.9](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.8...v5.4.9) (2026-07-08)
 
 **Note:** Version bump only for package root

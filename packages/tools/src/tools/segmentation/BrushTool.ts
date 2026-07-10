@@ -261,11 +261,6 @@ class BrushTool extends LabelmapBaseTool {
 
     // @ts-expect-error
     this._editData = this.createEditData(element);
-    this._activateDraw(element);
-
-    hideElementCursor(element);
-
-    evt.preventDefault();
 
     // This might be a mouse down
     this._previewData.isDrag = false;
@@ -283,10 +278,8 @@ class BrushTool extends LabelmapBaseTool {
     this._hoverData = this.createHoverData(element, canvasPoint);
     if (!this._hoverData) {
       // Transient state (e.g. no active segment index yet, or the viewport's
-      // camera is not resolvable) - undo the draw activation done above and
-      // bail like the other createHoverData call sites do.
-      this._deactivateDraw(element);
-      resetElementCursor(element);
+      // camera is not resolvable) - clear the edit data assigned above and bail
+      // before the draw listeners are bound below.
       this._editData = null;
       return false;
     }
@@ -304,6 +297,13 @@ class BrushTool extends LabelmapBaseTool {
     if (!operationData) {
       return false;
     }
+
+    // Bind the draw listeners and hide the cursor only once every guard above
+    // has passed — a `return false` after these would leave the cursor hidden
+    // and the drag listeners attached with no draw in progress.
+    this._activateDraw(element);
+    hideElementCursor(element);
+    evt.preventDefault();
 
     this.applyActiveStrategyCallback(
       enabledElement,
