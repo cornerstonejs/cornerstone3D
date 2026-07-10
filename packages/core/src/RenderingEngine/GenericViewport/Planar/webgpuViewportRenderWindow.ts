@@ -1,6 +1,7 @@
 import vtkRenderWindow from '@kitware/vtk.js/Rendering/Core/RenderWindow';
 import vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import vtkWebGPURenderWindow from '@kitware/vtk.js/Rendering/WebGPU/RenderWindow';
+import renderingEngineCache from '../../renderingEngineCache';
 // Registers the WebGPU view-node overrides (renderer, actors, image mappers,
 // textures, ...) on the WebGPU view-node factory so the scene graph can be
 // built for the WebGPU view API.
@@ -71,7 +72,8 @@ export function isWebGPURenderingAvailable(): boolean {
  * Reference-counted so a source binding and overlays share one device/canvas.
  */
 export function acquireWebGPUViewportWindow(
-  viewportId: string
+  viewportId: string,
+  options?: { renderingEngineId?: string }
 ): WebGPUViewportWindow {
   let entry = windowsByViewportId.get(viewportId);
 
@@ -83,7 +85,12 @@ export function acquireWebGPUViewportWindow(
       view as unknown as Parameters<typeof renderWindow.addView>[0]
     );
 
-    const renderer = vtkRenderer.newInstance({ background: [0, 0, 0] });
+    const renderer = vtkRenderer.newInstance({
+      background: resolveViewportBackground(
+        options?.renderingEngineId,
+        viewportId
+      ),
+    });
     renderer.getActiveCamera().setParallelProjection(true);
     renderWindow.addRenderer(renderer);
 
@@ -93,6 +100,28 @@ export function acquireWebGPUViewportWindow(
 
   entry.refCount += 1;
   return entry;
+}
+
+/**
+ * Resolves the viewport's configured background so the WebGPU renderer
+ * clears with the same color the WebGL offscreen renderer would use.
+ */
+function resolveViewportBackground(
+  renderingEngineId: string | undefined,
+  viewportId: string
+): [number, number, number] {
+  try {
+    const viewport = renderingEngineId
+      ? renderingEngineCache.get(renderingEngineId)?.getViewport(viewportId)
+      : undefined;
+    const background = (
+      viewport as { defaultOptions?: { background?: [number, number, number] } }
+    )?.defaultOptions?.background;
+
+    return background ?? [0, 0, 0];
+  } catch {
+    return [0, 0, 0];
+  }
 }
 
 /** Releases one reference; destroys the window when the last binding leaves. */
@@ -194,6 +223,35 @@ export function renderWebGPUViewportWindow(
       finish();
     });
   }
+}
+
+/**
+ * Overrides the background clear color of a viewport's WebGPU window (e.g.
+ * so examples can visually distinguish the webgpu backend from the WebGL
+ * one). No-op when the viewport has no live WebGPU window.
+ */
+export function setWebGPUViewportBackground(
+  viewportId: string,
+  background: [number, number, number]
+): boolean {
+  const entry = windowsByViewportId.get(viewportId);
+
+  if (!entry || entry.destroyed) {
+    return false;
+  }
+
+  const current = entry.renderer.getBackground();
+
+  if (
+    current?.[0] === background[0] &&
+    current?.[1] === background[1] &&
+    current?.[2] === background[2]
+  ) {
+    return false;
+  }
+
+  entry.renderer.setBackground(...background);
+  return true;
 }
 
 /**

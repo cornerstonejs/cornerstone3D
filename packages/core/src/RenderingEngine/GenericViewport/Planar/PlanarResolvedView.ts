@@ -3,6 +3,7 @@ import type { IImage, IImageVolume, Point2, Point3 } from '../../../types';
 import {
   getRenderSurfaceForRenderMode,
   isImageRenderMode,
+  isVolumeRenderMode,
 } from '../../helpers/renderBackendRegistry';
 import clonePoint3 from '../../../utilities/clonePoint3';
 import ResolvedViewportView from '../ResolvedViewportView';
@@ -457,10 +458,13 @@ export function resolvePlanarViewportView(args: {
     });
   }
 
-  if (
-    rendering.renderMode === ActorRenderMode.CPU_VOLUME ||
-    rendering.renderMode === ActorRenderMode.VTK_VOLUME_SLICE
-  ) {
+  if (isVolumeRenderMode(rendering.renderMode)) {
+    // isVolumeRenderMode() is not a type guard; volume-kind renderings share
+    // the volume-slice shape.
+    const volumeRendering = rendering as unknown as Extract<
+      PlanarRendering,
+      { imageVolume: IImageVolume }
+    >;
     const resolvedViewState =
       typeof sliceIndex === 'number'
         ? {
@@ -489,7 +493,7 @@ export function resolvePlanarViewportView(args: {
         canvasHeight,
         canvasWidth,
         imageIdIndex: resolvedImageIdIndex,
-        imageVolume: rendering.imageVolume,
+        imageVolume: volumeRendering.imageVolume,
         orientation: resolvedViewState.orientation,
       });
 
@@ -499,7 +503,7 @@ export function resolvePlanarViewportView(args: {
       canvasWidth,
       currentImageIdIndex,
       frameOfReferenceUID,
-      imageVolume: rendering.imageVolume,
+      imageVolume: volumeRendering.imageVolume,
       maxImageIdIndex,
       sliceBasis,
       usePixelGridCenter:

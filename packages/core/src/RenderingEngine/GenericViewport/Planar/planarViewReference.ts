@@ -18,7 +18,10 @@
  */
 import { vec3 } from 'gl-matrix';
 import { ActorRenderMode } from '../../../types';
-import { isImageRenderMode } from '../../helpers/renderBackendRegistry';
+import {
+  isImageRenderMode,
+  isVolumeRenderMode,
+} from '../../helpers/renderBackendRegistry';
 import type {
   IImageVolume,
   Point3,
@@ -210,8 +213,7 @@ export function getPlanarViewReference(args: {
   // volume.  This must match BaseVolumeViewport.getViewReference.
   if (
     rendering &&
-    (rendering.renderMode === ActorRenderMode.CPU_VOLUME ||
-      rendering.renderMode === ActorRenderMode.VTK_VOLUME_SLICE) &&
+    isVolumeRenderMode(rendering.renderMode) &&
     viewRefSpecifier?.forFrameOfReference !== true
   ) {
     viewReference.volumeId = args.data?.volumeId;

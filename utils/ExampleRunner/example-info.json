@@ -202,6 +202,10 @@
         "name": "Stack GenericViewport on the WebGPU render backend",
         "description": "Renders an image stack through the experimental vtk.js WebGPU render backend with live webgpu/gpu/cpu switching, tools, and a fake labelmap segmentation."
       },
+      "genericWebGPUOrtho": {
+        "name": "Orthographic GenericViewports on the WebGPU render backend",
+        "description": "Sagittal and coronal CT MPR through the experimental WebGPU volume-slice render mode, with live backend switching, tools, and a mock labelmap segmentation."
+      },
       "genericStackPosition": {
         "name": "Stack Position Next",
         "description": "Demonstrates the native Planar GenericViewport display area API."

@@ -1,8 +1,11 @@
 import { vec3 } from 'gl-matrix';
-import { ActorRenderMode } from '../../../types';
-import { isImageRenderMode } from '../../helpers/renderBackendRegistry';
+import {
+  isImageRenderMode,
+  isVolumeRenderMode,
+} from '../../helpers/renderBackendRegistry';
 import type {
   ICamera,
+  IImageVolume,
   Point3,
   ReferenceCompatibleOptions,
   ViewReference,
@@ -634,15 +637,18 @@ class PlanarViewReferenceController {
   ): { imageIdIndex?: number; sliceWorldPoint?: Point3 } | undefined {
     const { rendering } = referenceContext;
 
-    if (
-      rendering.renderMode !== ActorRenderMode.CPU_VOLUME &&
-      rendering.renderMode !== ActorRenderMode.VTK_VOLUME_SLICE
-    ) {
+    if (!isVolumeRenderMode(rendering.renderMode)) {
       return;
     }
 
+    // isVolumeRenderMode() is not a type guard; volume-kind renderings share
+    // the volume-slice shape.
+    const volumeRendering = rendering as unknown as {
+      maxImageIdIndex: number;
+      imageVolume: IImageVolume;
+    };
     const imageIds = this.getImageIdsForReferenceContext(referenceContext);
-    const maxImageIdIndex = rendering.maxImageIdIndex;
+    const maxImageIdIndex = volumeRendering.maxImageIdIndex;
 
     if (
       typeof viewRef.sliceIndex === 'number' &&
@@ -676,7 +682,7 @@ class PlanarViewReferenceController {
 
     if (targetPoint) {
       const referencedImageId = getClosestImageId(
-        rendering.imageVolume,
+        volumeRendering.imageVolume,
         targetPoint,
         effectiveViewPlaneNormal
       );

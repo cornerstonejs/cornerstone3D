@@ -62,11 +62,14 @@ export const WEBGPU_IMAGE_RENDER_MODE = 'webgpuImage';
 
 /**
  * The WebGPU path renders through its own per-viewport vtk.js WebGPU render
- * window and blits into the viewport's `cpu` surface canvas, so its adapter
- * context is the same slice of the root context the CPU image path uses.
+ * window and blits into the viewport's `cpu` surface canvas (same root-context
+ * slice as the CPU image path), plus the `vtk` slice: the resolved camera is
+ * mirrored onto the engine's vtk renderer so camera consumers that read it
+ * (legacy getCamera, tools, the labelmap image-mapper plan) keep working.
  * @internal
  */
-export type PlanarWebGPUImageAdapterContext = PlanarCpuImageAdapterContext;
+export type PlanarWebGPUImageAdapterContext = PlanarCpuImageAdapterContext &
+  Pick<PlanarViewportRenderContext, 'vtk'>;
 
 type PlanarWebGPUImageRendering = Omit<
   PlanarImageMapperRendering,
@@ -121,7 +124,9 @@ export class WebGPUImageMapperRenderPath
       );
     }
 
-    const window = acquireWebGPUViewportWindow(ctx.viewportId);
+    const window = acquireWebGPUViewportWindow(ctx.viewportId, {
+      renderingEngineId: ctx.renderingEngineId,
+    });
     this.window = window;
 
     // 16-bit handling: the vtk.js WebGPU texture manager uploads non-8-bit
@@ -278,6 +283,7 @@ export class WebGPUImageMapperRenderPath
 
     if (projection) {
       this.applyActorAndCamera(rendering, projection);
+      this.mirrorCameraToVtkRenderer(ctx, projection);
     }
 
     // Dedup against the last *requested* index; see VtkImageMapperRenderPath
@@ -331,6 +337,24 @@ export class WebGPUImageMapperRenderPath
     if (projection.isSourceBinding) {
       applyPlanarICameraToRenderer({
         renderer: this.window.renderer,
+        activeSourceICamera: projection.resolvedICamera,
+      });
+    }
+  }
+
+  private mirrorCameraToVtkRenderer(
+    ctx: PlanarWebGPUImageAdapterContext,
+    projection: {
+      resolvedICamera: PlanarResolvedICamera;
+      isSourceBinding: boolean;
+    }
+  ): void {
+    // The engine's offscreen vtk renderer never draws for this self-rendering
+    // viewport, but its camera is the source of truth for legacy getCamera()
+    // and camera-dependent consumers (tools, the labelmap image-mapper plan).
+    if (projection.isSourceBinding) {
+      applyPlanarICameraToRenderer({
+        renderer: ctx.vtk.renderer,
         activeSourceICamera: projection.resolvedICamera,
       });
     }
@@ -393,6 +417,7 @@ export class WebGPUImageMapperRenderPath
 
     if (projection) {
       this.applyActorAndCamera(rendering, projection);
+      this.mirrorCameraToVtkRenderer(ctx, projection);
     }
 
     if (projection?.isSourceBinding) {
@@ -458,6 +483,7 @@ export class WebGPUImageMapperRenderPath
 
     if (projection) {
       this.applyActorAndCamera(rendering, projection);
+      this.mirrorCameraToVtkRenderer(ctx, projection);
     }
 
     ctx.display.renderNow();
@@ -497,6 +523,7 @@ export class WebGPUImageMapperPath
       view: rootContext.view,
       display: rootContext.display,
       cpu: rootContext.cpu,
+      vtk: rootContext.vtk,
     };
   }
 }

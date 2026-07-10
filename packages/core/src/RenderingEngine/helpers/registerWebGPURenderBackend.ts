@@ -6,6 +6,10 @@ import {
   WebGPUImageMapperPath,
   WEBGPU_IMAGE_RENDER_MODE,
 } from '../GenericViewport/Planar/WebGPUImageMapperRenderPath';
+import {
+  WebGPUVolumeSlicePath,
+  WEBGPU_VOLUME_RENDER_MODE,
+} from '../GenericViewport/Planar/WebGPUVolumeSliceRenderPath';
 import { isWebGPURenderingAvailable } from '../GenericViewport/Planar/webgpuViewportRenderWindow';
 
 export { isWebGPURenderingAvailable };
@@ -17,8 +21,7 @@ export const WEBGPU_RENDER_BACKEND = 'webgpu';
 
 /**
  * Registers the experimental WebGPU render backend for GenericViewport
- * planar viewports (image-stack render mode only for now; the volume render
- * mode is not implemented yet).
+ * planar viewports (image-stack and volume-slice/MPR render modes).
  *
  * After registration the backend participates like any other:
  * - `setRenderBackend(Enums.RenderBackends.WEBGPU)` (or `'webgpu'`) globally
@@ -48,6 +51,10 @@ export function registerWebGPURenderBackend(): void {
       image: {
         id: WEBGPU_IMAGE_RENDER_MODE,
         createDefinition: () => new WebGPUImageMapperPath(),
+      },
+      volume: {
+        id: WEBGPU_VOLUME_RENDER_MODE,
+        createDefinition: () => new WebGPUVolumeSlicePath(),
       },
     },
     // The WebGPU path blits into the viewport's `cpu` surface canvas (the

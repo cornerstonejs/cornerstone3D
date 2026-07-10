@@ -4,6 +4,7 @@ import {
   Enums,
   cache,
   utilities,
+  isVolumeRenderMode,
 } from '@cornerstonejs/core';
 import { createLabelmapRepresentationUID } from '../labelmapRepresentationUID';
 import type { LabelmapRenderPlanMountResult } from './types';
@@ -170,16 +171,10 @@ async function addLabelmapToPlanarGenericViewport(args: {
 
 function getPlanarNextVolumeRenderMode(
   viewport: PlanarNextVolumeViewport
-):
-  | Types.ActorRenderMode.CPU_VOLUME
-  | Types.ActorRenderMode.VTK_VOLUME_SLICE
-  | undefined {
+): Types.ActorRenderMode | string | undefined {
   const renderMode = viewport.getDefaultActor?.()?.actorMapper?.renderMode;
 
-  if (
-    renderMode === ActorRenderMode.CPU_VOLUME ||
-    renderMode === ActorRenderMode.VTK_VOLUME_SLICE
-  ) {
+  if (renderMode && isVolumeRenderMode(renderMode)) {
     return renderMode;
   }
 }

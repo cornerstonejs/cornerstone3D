@@ -216,7 +216,10 @@ import {
   registerWebGPURenderBackend,
   isWebGPURenderingAvailable,
 } from './RenderingEngine/helpers/registerWebGPURenderBackend';
-import { getWebGPUViewportDebugInfo } from './RenderingEngine/GenericViewport/Planar/webgpuViewportRenderWindow';
+import {
+  getWebGPUViewportDebugInfo,
+  setWebGPUViewportBackground,
+} from './RenderingEngine/GenericViewport/Planar/webgpuViewportRenderWindow';
 export type {
   ViewportType,
   ViewportTypeConstants,
@@ -391,6 +394,7 @@ export {
   registerWebGPURenderBackend,
   isWebGPURenderingAvailable,
   getWebGPUViewportDebugInfo,
+  setWebGPUViewportBackground,
   //
   imageLoadPoolManager as requestPoolManager,
   imageRetrievalPoolManager,
