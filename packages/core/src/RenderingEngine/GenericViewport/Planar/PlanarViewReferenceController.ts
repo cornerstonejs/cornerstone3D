@@ -29,6 +29,7 @@ import {
   isPlanarPlaneViewable,
 } from './planarViewReference';
 import { resolvePlanarViewportView } from './PlanarResolvedView';
+import { normalizePlanarScale, type PlanarScale } from './planarCameraScale';
 import type { PlanarDataBinding } from './PlanarMountedData';
 import type {
   PlanarPayload,
@@ -492,9 +493,69 @@ class PlanarViewReferenceController {
       return false;
     }
 
+    if (viewStatePatch.orientation) {
+      const scale = this.getReorientationScale(
+        referenceContext,
+        resolvedView,
+        viewStatePatch
+      );
+
+      if (scale) {
+        viewStatePatch.scale = scale;
+      }
+    }
+
     this.host.setViewState(viewStatePatch);
 
     return true;
+  }
+
+  /**
+   * Reorienting through a view reference must not change the on-screen world
+   * scale. The fit parallel scale is recomputed from the new plane's
+   * projected extent -- which varies with obliquity -- while the relative
+   * zoom is carried over, so a rotating view reference would otherwise pulse
+   * in and out as it sweeps the volume. Resolves the hypothetical post-patch
+   * view and returns a rescaled relative zoom that preserves the absolute
+   * parallel scale (a no-op when the resolved scale is unaffected).
+   */
+  private getReorientationScale(
+    referenceContext: PlanarReferenceContext,
+    currentCamera: ICamera<unknown>,
+    viewStatePatch: Partial<PlanarViewState>
+  ): PlanarScale | undefined {
+    const currentParallelScale = currentCamera.parallelScale;
+
+    if (
+      typeof currentParallelScale !== 'number' ||
+      !(currentParallelScale > 0)
+    ) {
+      return;
+    }
+
+    const currentViewState = this.host.getViewState();
+    const nextCamera = resolvePlanarViewportView({
+      viewState: { ...currentViewState, ...viewStatePatch },
+      data: referenceContext.data,
+      frameOfReferenceUID: referenceContext.frameOfReferenceUID,
+      rendering: referenceContext.rendering,
+      renderContext: this.host.getRenderContext(),
+    })?.toICamera();
+    const nextParallelScale = nextCamera?.parallelScale;
+
+    if (typeof nextParallelScale !== 'number' || !(nextParallelScale > 0)) {
+      return;
+    }
+
+    const ratio = nextParallelScale / currentParallelScale;
+
+    if (!Number.isFinite(ratio) || Math.abs(ratio - 1) < 1e-9) {
+      return;
+    }
+
+    const [scaleX, scaleY] = normalizePlanarScale(currentViewState.scale);
+
+    return [scaleX * ratio, scaleY * ratio];
   }
 
   private normalizeVolumeViewReference(
