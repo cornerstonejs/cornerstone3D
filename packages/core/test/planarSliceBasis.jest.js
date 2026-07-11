@@ -15,6 +15,7 @@ import {
   createPlanarCpuImageSliceBasis,
   createPlanarVolumeSliceBasis,
   createPlanarCpuVolumeSliceBasis,
+  getVolumeImageIdIndexWorldPoint,
   resolvePlanarVolumeImageIdIndex,
   shouldUsePlanarCpuVolumeSliceBasis,
 } from '../src/RenderingEngine/GenericViewport/Planar/planarSliceBasis';
@@ -846,6 +847,49 @@ describe('resolvePlanarVolumeImageIdIndex', () => {
 
   it('returns undefined when neither a slice nor a viewState is provided', () => {
     expect(resolvePlanarVolumeImageIdIndex({})).toBeUndefined();
+  });
+});
+
+describe('getVolumeImageIdIndexWorldPoint', () => {
+  it('returns the exact IJK slice center for an imageId-list index', () => {
+    const volume = createOrthonormalVolume();
+
+    // imageIds[2] is IJK slice 2: indexToWorld([4.5, 3.5, 2]).
+    expectPoint3Close(
+      getVolumeImageIdIndexWorldPoint(volume, 2),
+      [102.25, 203.5, 304]
+    );
+  });
+
+  it('follows the k axis wherever it points (flipped-Z volume)', () => {
+    const volume = createFlippedZVolume();
+
+    // The k axis is negated, so slice 2 sits BELOW the origin — the point
+    // tracks the volume geometry, not a world-axis or camera direction.
+    expectPoint3Close(
+      getVolumeImageIdIndexWorldPoint(volume, 2),
+      [102.25, 203.5, 296]
+    );
+  });
+
+  it('clamps the index to the volume k range', () => {
+    const volume = createOrthonormalVolume();
+
+    expectPoint3Close(
+      getVolumeImageIdIndexWorldPoint(volume, 99),
+      [102.25, 203.5, 310]
+    );
+    expectPoint3Close(
+      getVolumeImageIdIndexWorldPoint(volume, -3),
+      [102.25, 203.5, 300]
+    );
+  });
+
+  it('returns undefined without vtkImageData', () => {
+    expect(
+      getVolumeImageIdIndexWorldPoint({ imageData: undefined }, 1)
+    ).toBeUndefined();
+    expect(getVolumeImageIdIndexWorldPoint(undefined, 1)).toBeUndefined();
   });
 });
 

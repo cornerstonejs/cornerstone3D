@@ -86,6 +86,7 @@ import {
 import {
   createPlanarCpuVolumeSliceBasis,
   createPlanarVolumeSliceBasis,
+  getVolumeImageIdIndexWorldPoint,
 } from './planarSliceBasis';
 import type { PlanarRendering } from './planarRuntimeTypes';
 import PlanarMountedData from './PlanarMountedData';
@@ -2160,6 +2161,26 @@ class PlanarViewport extends GenericViewport<
       orientation === OrientationAxis.ACQUISITION
         ? planarData.initialImageIdIndex
         : undefined;
+
+    // An explicit initial slice indexes payload.imageIds (= the volume's
+    // imageId list), so anchor it at that slice's exact IJK center. Feeding the
+    // index into the slice basis instead would count it in camera order — the
+    // acquisition normal is the negated scan axis — and open on the mirrored
+    // slice.
+    if (typeof initialImageIdIndex === 'number') {
+      const sliceWorldPoint = getVolumeImageIdIndexWorldPoint(
+        planarData.imageVolume,
+        initialImageIdIndex
+      );
+
+      if (sliceWorldPoint) {
+        return {
+          kind: 'volumePoint',
+          sliceWorldPoint,
+        };
+      }
+    }
+
     const { sliceBasis } = createSliceBasis({
       canvasHeight: height,
       canvasWidth: width,
