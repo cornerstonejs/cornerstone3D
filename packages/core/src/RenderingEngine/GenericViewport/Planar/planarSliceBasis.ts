@@ -344,7 +344,21 @@ export function getVolumeImageIdIndexWorldPoint(
   }
 
   const dimensions = imageData.getDimensions();
-  const k = Math.min(Math.max(0, imageIdIndex), dimensions[2] - 1);
+  // Dynamic (4D) volumes flatten their imageIds across dimension groups while
+  // dimensions[2] is the slice count of a SINGLE group, so an image from any
+  // later group has a flattened index >= dimensions[2] — clamping that raw
+  // index would pin every such image to the final slice. Map it to its
+  // group-local slice first (the k axis repeats per group).
+  const flatToGroupLocal = (
+    imageVolume as {
+      flatImageIdIndexToImageIdIndex?: (flatImageIdIndex: number) => number;
+    }
+  ).flatImageIdIndexToImageIdIndex;
+  const groupLocalIndex =
+    typeof flatToGroupLocal === 'function'
+      ? flatToGroupLocal.call(imageVolume, Math.max(0, imageIdIndex))
+      : imageIdIndex;
+  const k = Math.min(Math.max(0, groupLocalIndex), dimensions[2] - 1);
 
   return imageData.indexToWorld([
     (dimensions[0] - 1) / 2,
