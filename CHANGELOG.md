@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.4.16](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.15...v5.4.16) (2026-07-11)
+
+### Bug Fixes
+
+- **planar:** anchor imageId-addressed slices at their exact IJK world center ([#2800](https://github.com/cornerstonejs/cornerstone3D/issues/2800)) ([1a63832](https://github.com/cornerstonejs/cornerstone3D/commit/1a6383291ede15e9699e5eb215ee7cd4c65f44c5))
+
 ## [5.4.15](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.14...v5.4.15) (2026-07-10)
 
 ### Bug Fixes
