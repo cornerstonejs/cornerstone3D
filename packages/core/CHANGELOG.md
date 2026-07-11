@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.4.17](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.16...v5.4.17) (2026-07-11)
+
+### Bug Fixes
+
+- **planar:** map dynamic-volume flattened indices to their group-local slice ([#2801](https://github.com/cornerstonejs/cornerstone3D/issues/2801)) ([abc6380](https://github.com/cornerstonejs/cornerstone3D/commit/abc6380346e21f7beb4bf6ff96e5a89be1f8c207))
+
 ## [5.4.16](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.15...v5.4.16) (2026-07-11)
 
 ### Bug Fixes
