@@ -84,9 +84,12 @@ export type MeasurementTargetsFilterResult =
   | 'stop';
 
 /**
- * A configurable filter deciding which of the display sets shown in a
- * viewport an annotation tool computes and displays statistics for.  Set it
- * on the tool configuration as `targetsFilter`.
+ * A filter deciding which of the display sets shown in a viewport an
+ * annotation tool computes and displays statistics for.  It is normally
+ * resolved from the `targetsFilter` tool configuration (a
+ * {@link MeasurementTargetsFilterSpec}) through the `annotationTargetFilter`
+ * metadata providers, but can also be set on the configuration directly as a
+ * function.
  *
  * The filter is called once per candidate display set, in viewport order,
  * with the display set related parameters (display set, uid, exemplar
@@ -105,38 +108,53 @@ export type MeasurementTargetsFilterResult =
  * available; candidates whose display set is unknown (eg legacy stack image
  * ids) have no `imageIds`/`instance`, letting the filter choose whether to
  * include them.
- *
- * See `BaseTool.targetFilters` for ready made filters:
- *
- * ```ts
- * // CT only - shows nothing on viewports without a CT
- * toolGroup.addTool(CircleROITool.toolName, {
- *   targetsFilter: CircleROITool.targetFilters.forModality('CT'),
- * });
- * // PT only - shows nothing on viewports without a PT
- * toolGroup.addTool(CircleROITool.toolName, {
- *   targetsFilter: CircleROITool.targetFilters.forModality('PT'),
- * });
- * // Every display set with pixel values (skips SEG etc) - the ROI tools'
- * // default
- * toolGroup.addTool(CircleROITool.toolName, {
- *   targetsFilter: CircleROITool.targetFilters.allPixelData,
- * });
- * // Just the first display set
- * toolGroup.addTool(CircleROITool.toolName, {
- *   targetsFilter: CircleROITool.targetFilters.first,
- * });
- * // Custom: the first PT display set only, stopping the search once found
- * toolGroup.addTool(CircleROITool.toolName, {
- *   targetsFilter: (displaySetInfo) =>
- *     displaySetInfo.modality === 'PT' ? 'useAndStop' : false,
- * });
- * ```
  */
 export type MeasurementTargetsFilter = (
   displaySetInfo: MeasurementTargetCandidate,
   viewport: Types.IViewport
 ) => MeasurementTargetsFilterResult;
+
+/**
+ * A declarative `targetsFilter` tool configuration, resolved to a
+ * {@link MeasurementTargetsFilter} through the metadata provider chain:
+ *
+ * ```ts
+ * const filter = metaData.getMetaData(
+ *   'annotationTargetFilter',
+ *   targetsFilter.key,
+ *   targetsFilter.options
+ * );
+ * ```
+ *
+ * The built-in provider answers the keys `'first'`, `'all'`,
+ * `'allPixelData'`, `'modality'` (options: `{ modality: 'PT' }` or
+ * `{ modality: ['CT', 'PT'] }`) and `'id'` (options: `{ id: volumeId }`,
+ * a substring match) - see `utilities.annotationTargetFilterProvider`.
+ * Applications add further keys (or override the built-in ones) through
+ * their existing metadata providers.
+ *
+ * ```ts
+ * // PT only - shows nothing on viewports without a PT
+ * toolGroup.addTool(CircleROITool.toolName, {
+ *   targetsFilter: { key: 'modality', options: { modality: 'PT' } },
+ * });
+ * // Every display set with pixel values (skips SEG etc) - the ROI tools'
+ * // default
+ * toolGroup.addTool(CircleROITool.toolName, {
+ *   targetsFilter: { key: 'allPixelData' },
+ * });
+ * // Just the first display set
+ * toolGroup.addTool(CircleROITool.toolName, {
+ *   targetsFilter: { key: 'first' },
+ * });
+ * ```
+ */
+export type MeasurementTargetsFilterSpec = {
+  /** The `annotationTargetFilter` metadata provider key, eg `'modality'`. */
+  key: string;
+  /** Options passed to the provider, eg `{ modality: 'PT' }`. */
+  options?: Record<string, unknown>;
+};
 
 /**
  * General tool configuration.  This is intended to be extended
@@ -151,14 +169,17 @@ export interface ToolConfiguration {
   strategyOptions: any;
 
   /**
-   * Filter deciding which display sets shown in the viewport the tool
-   * computes and displays measurement statistics for.  See
-   * {@link MeasurementTargetsFilter} and `BaseTool.targetFilters`.
-   * The ROI statistics tools default this to `targetFilters.allPixelData`
+   * Decides which display sets shown in the viewport the tool computes and
+   * displays measurement statistics for.  Usually a
+   * {@link MeasurementTargetsFilterSpec} naming an `annotationTargetFilter`
+   * metadata provider key and its options, resolved through the metadata
+   * provider chain; a {@link MeasurementTargetsFilter} function may also be
+   * given directly.
+   * The ROI statistics tools default this to `{ key: 'allPixelData' }`
    * (every display set containing pixel values); tools without a default
    * filter use the viewport's single default target.
    */
-  targetsFilter?: MeasurementTargetsFilter;
+  targetsFilter?: MeasurementTargetsFilterSpec | MeasurementTargetsFilter;
 
   /**
    * @returns true if the given targetId is preferred.

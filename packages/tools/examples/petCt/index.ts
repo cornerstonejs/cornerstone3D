@@ -392,12 +392,12 @@ function setUpToolGroups() {
   });
   fusionToolGroup.addTool(RectangleROITool.toolName, {
     // Compute/show statistics for the PT volume of the fusion viewport only,
-    // selected by its volume id.  `targetFilters.forModality('PT')` would
-    // select the same volume by modality instead, and leaving the default
-    // configuration (targetFilters.allPixelData) would compute/show the
-    // statistics of both PT and CT at once.
+    // selected by its volume id.  { key: 'modality', options: { modality:
+    // 'PT' } } would select the same volume by modality instead, and leaving
+    // the default configuration ({ key: 'allPixelData' }) would compute/show
+    // the statistics of both PT and CT at once.
     // (This replaces the deprecated `isPreferredTargetId` configuration.)
-    targetsFilter: RectangleROITool.targetFilters.forId(ptVolumeId),
+    targetsFilter: { key: 'id', options: { id: ptVolumeId } },
   });
 
   // Here is the difference in the toolGroups used, that we need to specify the

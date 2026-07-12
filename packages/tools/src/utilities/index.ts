@@ -63,6 +63,7 @@ import getOrCreateImageVolume from './segmentation/getOrCreateImageVolume';
 import * as usFanExtraction from '../tools/annotation/UltrasoundPleuraBLineTool/utils/fanExtraction';
 import { jumpToFocalPoint } from './genericViewportToolHelpers';
 export * from './defaultGetTextLines';
+export * from './annotationTargetFilterProvider';
 
 export {
   math,

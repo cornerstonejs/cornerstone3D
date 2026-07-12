@@ -26,10 +26,63 @@ when they are the only thing shown.
 
 ## The `targetsFilter` configuration
 
-Every annotation tool accepts a `targetsFilter` configuration option. The
-filter is called once per candidate display set of the viewport, in order.
-Its first parameter is the display set related information of the candidate,
-and its second parameter is the viewport the filter is applying to:
+Every annotation tool accepts a `targetsFilter` configuration option. It is a
+declarative spec naming an **`annotationTargetFilter` metadata provider key**
+and its options:
+
+```ts
+toolGroup.addTool(CircleROITool.toolName, {
+  targetsFilter: {
+    key: 'modality',
+    options: { modality: 'PT' },
+  },
+});
+```
+
+When selecting the measurement targets, `BaseTool` resolves the spec to a
+filter function through the existing metadata-provider system:
+
+```ts
+const filter = metaData.getMetaData(
+  'annotationTargetFilter',
+  targetsFilter.key,
+  targetsFilter.options
+);
+```
+
+so the generic behaviour of each key is registered once as a metadata
+provider, and the tool configuration only passes the value (`'PT'`, `'CT'`,
+a volume id, ...) as options. No tool class carries its own copy of the
+target-selection API, and applications can supply further target-selection
+behaviour through their existing metadata providers (see
+[Custom filters](#custom-filters) below).
+
+### Built-in provider keys
+
+The built-in provider (`utilities.annotationTargetFilterProvider`, registered
+by `init()`) answers these keys:
+
+| Key              | Options                                              | Selects                                                                                                                                                                         |
+| ---------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `'allPixelData'` | —                                                    | Every display set containing pixel values — the ROI tools' **default**. Excludes segmentation representations and the non-pixel modalities (SEG, RTSTRUCT, RTPLAN, SR, PR, KO). |
+| `'modality'`     | `{ modality: 'PT' }` or `{ modality: ['CT', 'PT'] }` | Display sets whose modality matches. Candidates with an unknown display set/modality are excluded.                                                                              |
+| `'id'`           | `{ id: volumeId }`                                   | Display sets referencing the given display set/volume/image id — a substring match, so partial identifiers such as a contained series UID also work.                            |
+| `'first'`        | —                                                    | Just the first candidate display set (the pre-5.x single-target behaviour).                                                                                                     |
+| `'all'`          | —                                                    | Every candidate display set, including segmentation representations.                                                                                                            |
+
+The built-in keys always resolve: if the provider chain returns nothing for
+them (for example after `metaData.removeAllProviders()`), the built-in
+provider is consulted directly. The built-in provider is registered below the
+default priority, so an application provider registered at the default
+priority can override any of these keys.
+
+### The filter function
+
+The resolved filter (or a function set directly as `targetsFilter` — see
+[Custom filters](#custom-filters)) is called once per candidate display set
+of the viewport, in order. Its first parameter is the display set related
+information of the candidate, and its second parameter is the viewport the
+filter is applying to:
 
 ```ts
 type MeasurementTargetsFilter = (
@@ -66,7 +119,7 @@ search continues:
 | `'stop'`              | skipped          | **stop looking**     |
 
 Return `'useAndStop'` or `'stop'` when no further items should be
-considered — for example `targetFilters.first` is simply
+considered — for example the `'first'` key resolves to simply
 `() => 'useAndStop'`, and a "first PT only" filter is
 `(displaySetInfo) => displaySetInfo.modality === 'PT' ? 'useAndStop' : false`.
 
@@ -91,20 +144,17 @@ candidates (a PT-only filter on a CT viewport, or the default pixel-data
 filter when only a SEG is shown), the annotation is still drawn but no
 statistics are computed or displayed for that viewport.
 
-Ready-made filters are available on every tool class via
-`BaseTool.targetFilters`.
-
 ## Examples
 
 All display sets with pixel values — this is the default configuration for
 the ROI tools, made explicit. Candidates with a non-pixel modality
-(`BaseTool.NON_PIXEL_DATA_MODALITIES`: SEG, RTSTRUCT, RTPLAN, SR, PR, KO)
+(`utilities.NON_PIXEL_DATA_MODALITIES`: SEG, RTSTRUCT, RTPLAN, SR, PR, KO)
 are excluded, while candidates with an unknown display set (legacy stacks)
 are included:
 
 ```ts
 toolGroup.addTool(CircleROITool.toolName, {
-  targetsFilter: CircleROITool.targetFilters.allPixelData,
+  targetsFilter: { key: 'allPixelData' },
 });
 ```
 
@@ -112,7 +162,7 @@ CT statistics only — nothing is shown on viewports without a CT:
 
 ```ts
 toolGroup.addTool(CircleROITool.toolName, {
-  targetsFilter: CircleROITool.targetFilters.forModality('CT'),
+  targetsFilter: { key: 'modality', options: { modality: 'CT' } },
 });
 ```
 
@@ -122,7 +172,7 @@ viewports without a PT):
 
 ```ts
 toolGroup.addTool(CircleROITool.toolName, {
-  targetsFilter: CircleROITool.targetFilters.forModality('PT'),
+  targetsFilter: { key: 'modality', options: { modality: 'PT' } },
 });
 ```
 
@@ -131,7 +181,7 @@ those two modalities:
 
 ```ts
 toolGroup.addTool(CircleROITool.toolName, {
-  targetsFilter: CircleROITool.targetFilters.forModality('CT', 'PT'),
+  targetsFilter: { key: 'modality', options: { modality: ['CT', 'PT'] } },
 });
 ```
 
@@ -139,7 +189,7 @@ Just the first target (the pre-5.x single-target behaviour):
 
 ```ts
 toolGroup.addTool(CircleROITool.toolName, {
-  targetsFilter: CircleROITool.targetFilters.first,
+  targetsFilter: { key: 'first' },
 });
 ```
 
@@ -149,13 +199,48 @@ configuration:
 
 ```ts
 toolGroup.addTool(RectangleROITool.toolName, {
-  targetsFilter: RectangleROITool.targetFilters.forId(ptVolumeId),
+  targetsFilter: { key: 'id', options: { id: ptVolumeId } },
 });
 ```
 
-Custom filters are plain functions, so any selection logic is possible —
-including deciding from the exemplar instance, stopping early, or handling
-unknown display sets explicitly:
+The `tmtv` example wires several of these as separately labelled dropdown
+entries (default both, PT SUV only, CT HU only) on a PT/CT fusion layout,
+and the `petCt` example shows the `id` variant.
+
+## Custom filters
+
+Applications add their own target-selection behaviour through the metadata
+providers they already use — register a provider answering the
+`annotationTargetFilter` type for new keys, then name the key in the tool
+configuration:
+
+```ts
+import { metaData } from '@cornerstonejs/core';
+
+metaData.addProvider((type, key, options) => {
+  if (type !== 'annotationTargetFilter') {
+    return;
+  }
+  if (key === 'suvCapable') {
+    // The filter function receives each candidate display set in turn
+    return ({ instance }) => instance?.Units === 'BQML';
+  }
+});
+
+toolGroup.addTool(CircleROITool.toolName, {
+  targetsFilter: { key: 'suvCapable' },
+});
+```
+
+Providers that do not recognise a key return `undefined`, so the chain falls
+through to the next provider (and finally to the built-in keys). Registering
+a provider at the default priority also overrides the built-in keys, which
+sit below it.
+
+For one-off cases a filter function can also be set directly as the
+`targetsFilter` configuration — any selection logic is possible, including
+deciding from the exemplar instance, stopping early, or handling unknown
+display sets explicitly:
 
 ```ts
 toolGroup.addTool(CircleROITool.toolName, {
@@ -178,10 +263,6 @@ toolGroup.addTool(CircleROITool.toolName, {
     displaySetInfo.modality !== displaySetInfo.previous?.modality,
 });
 ```
-
-The `tmtv` example wires several of these as separately labelled dropdown
-entries (default both, PT SUV only, CT HU only) on a PT/CT fusion layout,
-and the `petCt` example shows the `forId` variant.
 
 ## How it behaves
 

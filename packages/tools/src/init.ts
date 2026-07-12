@@ -1,4 +1,4 @@
-import { eventTarget, Enums } from '@cornerstonejs/core';
+import { eventTarget, Enums, metaData } from '@cornerstonejs/core';
 import { getAnnotationManager } from './stateManagement/annotation/annotationState';
 import { Events as TOOLS_EVENTS } from './enums';
 import { addEnabledElement, removeEnabledElement } from './store';
@@ -21,6 +21,10 @@ import type { Config } from './config';
 import segmentationRemovedListener from './eventListeners/segmentation/segmentationRemovedEventListener';
 import renderingPipelineChangedListener from './eventListeners/segmentation/renderingPipelineChangedListener';
 import { registerBuiltInSegmentationRepresentationDisplays } from './tools/displayTools/registerBuiltInSegmentationRepresentationDisplays';
+import {
+  annotationTargetFilterProvider,
+  ANNOTATION_TARGET_FILTER_PROVIDER_PRIORITY,
+} from './utilities/annotationTargetFilterProvider';
 
 let csToolsInitialized = false;
 
@@ -36,6 +40,13 @@ export function init(defaultConfiguration = {} as Config): void {
   }
 
   registerBuiltInSegmentationRepresentationDisplays();
+  // Resolves the `targetsFilter` tool configuration (annotation measurement
+  // target selection) - registered below the default priority so
+  // application providers can override the built-in keys.
+  metaData.addProvider(
+    annotationTargetFilterProvider,
+    ANNOTATION_TARGET_FILTER_PROVIDER_PRIORITY
+  );
   setConfig(defaultConfiguration);
 
   _addCornerstoneEventListeners();

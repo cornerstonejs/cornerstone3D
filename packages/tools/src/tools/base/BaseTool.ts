@@ -18,6 +18,11 @@ import type {
   MeasurementTargetsFilter,
 } from '../../types';
 
+import {
+  annotationTargetFilterProvider,
+  ANNOTATION_TARGET_FILTER,
+} from '../../utilities/annotationTargetFilterProvider';
+
 const { DefaultHistoryMemo } = csUtils.HistoryMemo;
 
 /**
@@ -121,135 +126,6 @@ abstract class BaseTool {
   }
 
   /**
-   * Modalities whose display sets do not contain measurable pixel values
-   * (segmentations, structured reports etc).  The
-   * `targetFilters.allPixelData` filter excludes candidates with one of
-   * these modalities.
-   */
-  public static readonly NON_PIXEL_DATA_MODALITIES = [
-    'SEG',
-    'RTSTRUCT',
-    'RTPLAN',
-    'SR',
-    'PR',
-    'KO',
-  ];
-
-  /**
-   * Ready made {@link MeasurementTargetsFilter} implementations for the
-   * `targetsFilter` tool configuration option.  The filter decides which of
-   * the display sets shown in a viewport the tool computes and displays
-   * measurement statistics for - on a fusion viewport this allows showing
-   * the statistics of one, several or all of the fused volumes.
-   *
-   * The filter is called once per candidate display set, in viewport order,
-   * receiving the display set related parameters (display set, uid,
-   * exemplar instance, index and the previously chosen candidate) and the
-   * viewport.  It returns, per candidate:
-   * - `true` to include the display set and continue
-   * - `false`/`undefined` to skip it and continue
-   * - `'useAndStop'` to include it and stop looking for further items
-   * - `'stop'` to skip it and stop looking for further items
-   *
-   * The decision should be based on the modality of the display set where
-   * available.  When the display set is unknown (eg a stack viewport using
-   * the legacy set image ids), the candidate has no display set fields and
-   * no modality, and a filter can choose whether to include it based on
-   * that.
-   *
-   * A configured filter's result is authoritative: when it includes no
-   * candidates, no statistics are computed or displayed for the viewport.
-   *
-   * Example configurations:
-   * ```ts
-   * // CT statistics only - shows nothing on viewports without a CT
-   * toolGroup.addTool(CircleROITool.toolName, {
-   *   targetsFilter: CircleROITool.targetFilters.forModality('CT'),
-   * });
-   *
-   * // PT statistics only - shows nothing on viewports without a PT
-   * toolGroup.addTool(CircleROITool.toolName, {
-   *   targetsFilter: CircleROITool.targetFilters.forModality('PT'),
-   * });
-   *
-   * // Every display set containing pixel values (skips SEG etc) - this is
-   * // the default for the ROI tools
-   * toolGroup.addTool(CircleROITool.toolName, {
-   *   targetsFilter: CircleROITool.targetFilters.allPixelData,
-   * });
-   *
-   * // Just the first display set
-   * toolGroup.addTool(CircleROITool.toolName, {
-   *   targetsFilter: CircleROITool.targetFilters.first,
-   * });
-   *
-   * // Custom: the first PT display set only, stopping the search once found
-   * toolGroup.addTool(CircleROITool.toolName, {
-   *   targetsFilter: (displaySetInfo) =>
-   *     displaySetInfo.modality === 'PT' ? 'useAndStop' : false,
-   * });
-   * ```
-   */
-  public static targetFilters = {
-    /**
-     * Includes just the first candidate display set, stopping the search
-     * there.
-     */
-    first: (() => 'useAndStop') as MeasurementTargetsFilter,
-
-    /**
-     * Includes every candidate display set, for example both the CT and the
-     * PT volume on a fusion viewport.
-     */
-    all: (() => true) as MeasurementTargetsFilter,
-
-    /**
-     * Includes every candidate display set containing pixel values:
-     * segmentation representations (candidates carrying a
-     * `representationUID`) and candidates whose modality is one of
-     * {@link BaseTool.NON_PIXEL_DATA_MODALITIES} (eg SEG) are excluded -
-     * even when they are the only thing shown - while candidates whose
-     * display set (and therefore modality) is unknown, such as legacy
-     * stacks, are included.
-     *
-     * This is the default filter for the ROI statistics tools, and is what
-     * excludes segmentations from the measurement targets (the candidate
-     * derivation no longer bakes that exclusion in).
-     */
-    allPixelData: (({ modality, representationUID }) =>
-      !representationUID &&
-      (!modality ||
-        !BaseTool.NON_PIXEL_DATA_MODALITIES.includes(
-          modality
-        ))) as MeasurementTargetsFilter,
-
-    /**
-     * Creates a filter including the display sets whose modality is one of
-     * the given modalities, eg `forModality('PT')` or
-     * `forModality('CT', 'PT')`.  Candidates with an unknown display
-     * set/modality are excluded; include them with a custom filter checking
-     * `!displaySetInfo.imageIds` if needed.
-     */
-    forModality:
-      (...modalities: string[]): MeasurementTargetsFilter =>
-      ({ modality }) =>
-        modalities.includes(modality),
-
-    /**
-     * Creates a filter including the display sets referencing the given
-     * display set, volume or image id.  This is a substring match, so
-     * partial identifiers such as a series UID contained in the id may also
-     * be used.
-     */
-    forId:
-      (id: string): MeasurementTargetsFilter =>
-      ({ displaySetUID, referencedId, targetId }) =>
-        displaySetUID?.includes(id) ||
-        referencedId?.includes(id) ||
-        targetId.includes(id),
-  };
-
-  /**
    * A function generator to test if the target id is the desired one.
    * Used for deciding which set of cached stats is appropriate to display
    * for a given viewport.
@@ -259,8 +135,8 @@ abstract class BaseTool {
    * It is also possible to use series query parameters such as `/series/{seriesUID}/`
    * to generate specific series selections within a stack viewport.
    *
-   * @deprecated Use the `targetsFilter` configuration option with
-   * `BaseTool.targetFilters.forId` instead.
+   * @deprecated Use the `targetsFilter` configuration option instead:
+   * `targetsFilter: { key: 'id', options: { id: desiredVolumeId } }`.
    */
   public static isSpecifiedTargetId(desiredVolumeId: string) {
     // imageId including the target id is a proxy for testing if the
@@ -434,8 +310,9 @@ abstract class BaseTool {
    *
    * This is the primary (first) entry of {@link getMeasurementTargets}, so it
    * honours the `targetsFilter` tool configuration - configuring, for
-   * example, `targetFilters.forModality('PT')` makes the PT volume of a
-   * fusion viewport the target the statistics are stored/read for.
+   * example, `{ key: 'modality', options: { modality: 'PT' } }` makes the PT
+   * volume of a fusion viewport the target the statistics are stored/read
+   * for.
    *
    * @param viewport - viewport to get the targetId for
    * @param data - Optional: The annotation's data object, containing cachedStats.
@@ -454,11 +331,13 @@ abstract class BaseTool {
    * measurement statistics for on the given viewport.
    *
    * The targets are selected by the `targetsFilter` tool configuration
-   * option, called once per candidate display set of the viewport in order
-   * (see {@link BaseTool.targetFilters} for ready made filters).  The filter
-   * receives the display set related parameters - including the previously
-   * chosen candidate - and the viewport, and returns per candidate whether
-   * to include it and whether to stop looking for further items (see
+   * option - usually a `{ key, options }` spec resolved to a filter function
+   * through the `annotationTargetFilter` metadata providers (see
+   * {@link BaseTool.resolveTargetsFilter}) - called once per candidate
+   * display set of the viewport in order.  The filter receives the display
+   * set related parameters - including the previously chosen candidate - and
+   * the viewport, and returns per candidate whether to include it and
+   * whether to stop looking for further items (see
    * {@link MeasurementTargetsFilterResult}).
    *
    * Each returned targetId reuses an existing cachedStats key when
@@ -487,7 +366,7 @@ abstract class BaseTool {
     viewport: Types.IViewport,
     data?: AnnotationData
   ): string[] {
-    const { targetsFilter, isPreferredTargetId } = this.configurationTyped;
+    const { isPreferredTargetId } = this.configurationTyped;
 
     // Legacy option (deprecated) choosing the preferred target from already
     // computed stats.  Checked first so configurations predating
@@ -500,6 +379,7 @@ abstract class BaseTool {
       }
     }
 
+    const targetsFilter = this.resolveTargetsFilter();
     if (targetsFilter) {
       const candidates = this.getMeasurementTargetCandidates(viewport, data);
       const targets: string[] = [];
@@ -527,6 +407,61 @@ abstract class BaseTool {
     throw new Error(
       'getMeasurementTargets: viewport must have a getViewReferenceId method'
     );
+  }
+
+  /** The `targetsFilter` spec keys already warned about as unresolvable. */
+  private static unresolvedFilterKeys = new Set<string>();
+
+  /**
+   * Resolves the `targetsFilter` tool configuration to the
+   * {@link MeasurementTargetsFilter} function to apply.
+   *
+   * The configuration is normally a declarative
+   * {@link MeasurementTargetsFilterSpec} - a provider `key` and its
+   * `options` - resolved through the metadata provider chain as
+   * `metaData.getMetaData('annotationTargetFilter', key, options)`.
+   * Applications provide further target-selection behaviour (or override
+   * the built-in keys) through their existing metadata providers.
+   *
+   * The built-in keys (`'first'`, `'all'`, `'allPixelData'`, `'modality'`,
+   * `'id'` - see `utilities.annotationTargetFilterProvider`, registered by
+   * `init()`) always resolve: when the provider chain returns nothing for a
+   * key (eg after `metaData.removeAllProviders()`), the built-in provider is
+   * consulted directly.
+   *
+   * A filter function set directly on the configuration is returned as is.
+   * When neither resolves the configured key, a warning is logged (once per
+   * key) and undefined is returned, so the viewport's single default target
+   * is used.
+   */
+  protected resolveTargetsFilter(): MeasurementTargetsFilter | undefined {
+    const { targetsFilter } = this.configurationTyped;
+    if (!targetsFilter) {
+      return;
+    }
+    if (typeof targetsFilter === 'function') {
+      return targetsFilter;
+    }
+    const filter =
+      (metaData.getMetaData(
+        ANNOTATION_TARGET_FILTER,
+        targetsFilter.key,
+        targetsFilter.options
+      ) as MeasurementTargetsFilter | undefined) ??
+      annotationTargetFilterProvider(
+        ANNOTATION_TARGET_FILTER,
+        targetsFilter.key,
+        targetsFilter.options
+      );
+    if (!filter && !BaseTool.unresolvedFilterKeys.has(targetsFilter.key)) {
+      BaseTool.unresolvedFilterKeys.add(targetsFilter.key);
+      console.warn(
+        `resolveTargetsFilter: no annotationTargetFilter metadata provider ` +
+          `resolved the targetsFilter key "${targetsFilter.key}" - ` +
+          `using the viewport's default target`
+      );
+    }
+    return filter;
   }
 
   /**

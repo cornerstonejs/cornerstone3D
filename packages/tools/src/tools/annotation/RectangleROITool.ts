@@ -124,8 +124,9 @@ class RectangleROITool extends AnnotationTool {
         statsCalculator: BasicStatsCalculator,
         // By default show the statistics of every display set containing
         // pixel values (eg both CT and PT on a fusion viewport), but never
-        // SEG and the like - see BaseTool.targetFilters for alternatives
-        targetsFilter: AnnotationTool.targetFilters.allPixelData,
+        // SEG and the like - see the annotationTargetFilter metadata
+        // provider keys for alternatives
+        targetsFilter: { key: 'allPixelData' },
       },
     }
   ) {

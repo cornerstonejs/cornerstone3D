@@ -82,6 +82,7 @@ import type {
   MeasurementTargetCandidate,
   MeasurementTargetsFilter,
   MeasurementTargetsFilterResult,
+  MeasurementTargetsFilterSpec,
 } from './IBaseTool';
 import type { RepresentationStyle } from './../stateManagement/segmentation/SegmentationStyle';
 import type { LogicalOperation } from '../utilities/contourSegmentation';
@@ -182,6 +183,7 @@ export type {
   MeasurementTargetCandidate,
   MeasurementTargetsFilter,
   MeasurementTargetsFilterResult,
+  MeasurementTargetsFilterSpec,
   RepresentationStyle,
   Segment,
   SegmentationPublicInput,
