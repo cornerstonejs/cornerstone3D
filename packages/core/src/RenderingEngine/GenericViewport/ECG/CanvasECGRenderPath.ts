@@ -191,6 +191,7 @@ function drawFrame(
 
   ensureECGCanvasSize(canvas);
 
+  const layoutType = currentDataPresentation?.layoutType ?? '12x1';
   const metrics = computeECGRenderMetrics({
     canvas,
     visibleChannels,
@@ -201,10 +202,14 @@ function drawFrame(
     valueRange: currentCamera.valueRange,
     sweepSpeed: currentDataPresentation?.sweepSpeed,
     sensitivityMmMv: currentDataPresentation?.sensitivityMmMv,
+    layoutType,
   }) as RenderWindowMetrics;
   const layouts = computeECGChannelLayouts({
     visibleChannels,
     channelScale: metrics.channelScale,
+    layoutType,
+    numberOfSamples: waveform.numberOfSamples,
+    ecgWidth: metrics.ecgWidth,
   });
   const timeWindow = computeTimeWindow(waveform, currentCamera);
   const dpr = window.devicePixelRatio || 1;

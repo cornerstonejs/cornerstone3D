@@ -40,7 +40,6 @@ const UNIT_MAPPING = {
   [-1]: 'mV',
 };
 
-const EPS = 1e-3;
 const SQUARE = '\xb2';
 
 // everything except REGION/Uncalibrated
@@ -126,14 +125,12 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
     } else if (region && region.physicalUnitsYDirection === -1) {
       const physicalDeltaX = Math.abs(region.physicalDeltaX);
       const physicalDeltaY = Math.abs(region.physicalDeltaY);
-      scale = 1 / physicalDeltaX;
+      // convert seconds per sample to ms per sample
+      scale = 1 / (physicalDeltaX * 1000);
       scaleY = 1 / physicalDeltaY;
 
       calibrationType = 'ECG Region';
-      unit =
-        UNIT_MAPPING[region.physicalUnitsXDirection] ||
-        UNIT_MAPPING[region.physicalUnitsYDirection] ||
-        'unknown';
+      unit = 'ms';
       areaUnit =
         (UNIT_MAPPING[region.physicalUnitsYDirection] || 'px') + SQUARE;
     }
@@ -210,11 +207,16 @@ const getCalibratedProbeUnitsAndValue = (image, handles) => {
 
     calibrationType =
       region.physicalUnitsYDirection === -1 ? 'ECG Region' : 'US Region';
-    values = [xValue, yValue];
-    units = [
-      UNIT_MAPPING[region.physicalUnitsXDirection] ?? 'unknown',
-      UNIT_MAPPING[region.physicalUnitsYDirection] ?? 'unknown',
-    ];
+    if (region.physicalUnitsYDirection === -1) {
+      values = [xValue * 1000, yValue];
+      units = ['ms', UNIT_MAPPING[region.physicalUnitsYDirection] ?? 'unknown'];
+    } else {
+      values = [xValue, yValue];
+      units = [
+        UNIT_MAPPING[region.physicalUnitsXDirection] ?? 'unknown',
+        UNIT_MAPPING[region.physicalUnitsYDirection] ?? 'unknown',
+      ];
+    }
   }
 
   return {

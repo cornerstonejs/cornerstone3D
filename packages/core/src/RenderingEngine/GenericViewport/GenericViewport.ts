@@ -444,12 +444,21 @@ abstract class GenericViewport<
     this.modified();
   }
 
-  /**
-   * Resets viewport-owned view state for viewport families that support a
-   * navigation reset.
-   */
   resetViewState(_options?: unknown): boolean {
     return false;
+  }
+
+  /**
+   * Resets the viewport camera. Delegated to `resetViewState`.
+   */
+  resetCamera(options?: {
+    resetPan?: boolean;
+    resetZoom?: boolean;
+    resetToCenter?: boolean;
+    storeAsInitialCamera?: boolean;
+    resetAspectRatio?: boolean;
+  }): boolean {
+    return this.resetViewState(options);
   }
 
   /**

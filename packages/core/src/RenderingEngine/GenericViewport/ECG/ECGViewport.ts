@@ -3,6 +3,8 @@ import type { LoadedData } from '../ViewportArchitectureTypes';
 import GenericViewport from '../GenericViewport';
 import { ViewportType } from '../../../enums';
 import { getDefaultECGValueRange } from '../../../utilities/ECGUtilities';
+import genericViewportDataSetMetadataProvider from '../../../utilities/genericViewportDataSetMetadataProvider';
+import imageIdToURI from '../../../utilities/imageIdToURI';
 import type {
   CPUIImageData,
   ICamera,
@@ -275,10 +277,13 @@ class ECGViewport extends GenericViewport<
   }
 
   /**
-   * Resets pan and zoom to defaults and re-renders.
+   * Resets pan, zoom, and scroll to defaults while preserving the loaded
+   * time/value range, then re-renders. Called by `resetCamera()` and the
+   * toolbar "Reset View" button.
    */
   resetViewState(): boolean {
     const previousCamera = this.getCameraForEvent();
+
     this.viewState = createDefaultECGViewState({
       timeRange: this.viewState.timeRange,
       valueRange: this.viewState.valueRange,
@@ -406,6 +411,33 @@ class ECGViewport extends GenericViewport<
   }
 
   /**
+   * Returns whether the viewport is rendering the specified imageURI.
+   */
+  hasImageURI(imageURI: string): boolean {
+    const binding = this.getFirstBinding();
+    if (!binding) {
+      return false;
+    }
+
+    const dataId = binding.data.id;
+    if (dataId === imageURI || dataId.includes(imageURI)) {
+      return true;
+    }
+
+    const metadata = genericViewportDataSetMetadataProvider.get(
+      genericViewportDataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
+      dataId
+    ) as { sourceDataId?: string } | undefined;
+    if (metadata?.sourceDataId) {
+      if (imageIdToURI(metadata.sourceDataId) === imageURI) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
    * Returns image data compatible with the Cornerstone tools annotation system.
    * Amplitude is mapped to [0, ECG_AMPLITUDE_INDEX_SIZE) so annotation
    * index bounds checks work correctly across channels.
@@ -447,6 +479,9 @@ class ECGViewport extends GenericViewport<
       imageData,
       scalarData,
       hasPixelSpacing: false,
+      calibration: waveform.calibration as
+        | import('../../../types').IImageCalibration
+        | undefined,
       preScale: { scaled: false },
       metadata: { Modality: 'ECG', FrameOfReferenceUID: '' },
     };

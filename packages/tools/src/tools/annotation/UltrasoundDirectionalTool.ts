@@ -4,6 +4,7 @@ import {
   utilities as csUtils,
   StackViewport,
   ECGViewport,
+  ECGGenericViewport,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -119,10 +120,11 @@ class UltrasoundDirectionalTool extends AnnotationTool {
 
     if (
       !(viewport instanceof StackViewport) &&
-      !(viewport instanceof ECGViewport)
+      !(viewport instanceof ECGViewport) &&
+      !(viewport instanceof ECGGenericViewport)
     ) {
       throw new Error(
-        'UltrasoundDirectionalTool can only be used on a StackViewport or ECGViewport'
+        'UltrasoundDirectionalTool can only be used on a StackViewport, ECGViewport, or ECGGenericViewport'
       );
     }
 
@@ -209,10 +211,10 @@ class UltrasoundDirectionalTool extends AnnotationTool {
   };
 
   toolSelectedCallback(
-    evt: EventTypes.InteractionEventType,
-    annotation: Annotation,
-    interactionType: InteractionTypes,
-    canvasCoords?: Types.Point2
+    _evt: EventTypes.InteractionEventType,
+    _annotation: Annotation,
+    _interactionType: InteractionTypes,
+    _canvasCoords?: Types.Point2
   ): void {
     return;
   }
@@ -233,10 +235,10 @@ class UltrasoundDirectionalTool extends AnnotationTool {
       this.getToolName()
     );
 
-    let movingTextBox = false;
+    let _movingTextBox = false;
     let handleIndex;
     if ((handle as TextBoxHandle).worldPosition) {
-      movingTextBox = true;
+      _movingTextBox = true;
     } else {
       handleIndex = data.handles.points.findIndex((p) => p === handle);
     }
@@ -251,9 +253,6 @@ class UltrasoundDirectionalTool extends AnnotationTool {
     this._activateModify(element);
 
     hideElementCursor(element);
-
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
@@ -289,9 +288,6 @@ class UltrasoundDirectionalTool extends AnnotationTool {
     this._deactivateDraw(element);
     resetElementCursor(element);
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-
     if (
       this.isHandleOutsideImage &&
       this.configuration.preventHandleOutsideImage
@@ -312,7 +308,6 @@ class UltrasoundDirectionalTool extends AnnotationTool {
   _dragCallback = (evt: EventTypes.InteractionEventType): void => {
     this.isDrawing = true;
     const eventDetail = evt.detail;
-    const { element } = eventDetail;
 
     const { annotation, viewportIdsToRender, handleIndex, movingTextBox } =
       this.editData;
@@ -354,9 +349,6 @@ class UltrasoundDirectionalTool extends AnnotationTool {
     }
 
     this.editData.hasMoved = true;
-
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };

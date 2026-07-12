@@ -48,6 +48,7 @@ class ECGViewportLegacyAdapter extends ECGViewport {
       sweepSpeed: props.sweepSpeed,
       sensitivityMmMv: props.sensitivityMmMv,
       showAmplitudeLabels: props.showAmplitudeLabels,
+      layoutType: props.layoutType,
     });
   }
 
@@ -62,6 +63,7 @@ class ECGViewportLegacyAdapter extends ECGViewport {
       sweepSpeed: presentation?.sweepSpeed,
       sensitivityMmMv: presentation?.sensitivityMmMv,
       showAmplitudeLabels: presentation?.showAmplitudeLabels,
+      layoutType: presentation?.layoutType,
     };
   }
 
@@ -78,6 +80,7 @@ class ECGViewportLegacyAdapter extends ECGViewport {
       sweepSpeed: undefined,
       sensitivityMmMv: undefined,
       showAmplitudeLabels: undefined,
+      layoutType: undefined,
     });
   }
 
@@ -110,14 +113,6 @@ class ECGViewportLegacyAdapter extends ECGViewport {
     if (nextViewState) {
       this.setViewState(nextViewState);
     }
-  }
-
-  /**
-   * Compatibility wrapper for legacy callers. Direct Next viewports should use
-   * `resetViewState`.
-   */
-  resetCamera(): boolean {
-    return this.resetViewState();
   }
 }
 

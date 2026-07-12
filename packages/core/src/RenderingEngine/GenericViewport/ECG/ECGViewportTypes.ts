@@ -55,6 +55,14 @@ export interface ECGProperties {
    * Defaults to true when sensitivityMmMv is set.
    */
   showAmplitudeLabels?: boolean;
+  /**
+   * ECG lead layout arrangement:
+   * - '12x1': 12 rows, 1 column. Full duration (10s) per lead. (Default)
+   * - '6x2': 6 rows, 2 columns. 5s duration per lead.
+   * - '3x4': 3 rows, 4 columns. 2.5s duration per lead.
+   * - '3x4+1': 3 rows of 4 columns (2.5s duration) plus 1 continuous rhythm lead (full 10s) at the bottom.
+   */
+  layoutType?: '12x1' | '6x2' | '3x4' | '3x4+1';
 }
 
 export type ECGDataPresentation = ECGPresentationProps & ECGProperties;
