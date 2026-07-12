@@ -302,41 +302,6 @@ class ECGViewport extends GenericViewport<
   }
 
   /**
-   * Sets the legacy-compatible camera projection for this viewport.
-   */
-  setCamera(camera: Partial<ICamera>): void {
-    const resolvedView = this.getResolvedView();
-
-    if (!resolvedView) {
-      return;
-    }
-
-    const { parallelScale, focalPoint } = camera;
-    const viewStatePatch: Partial<ECGViewState> = {};
-
-    if (parallelScale !== undefined) {
-      const rendering = this.getCurrentRendering();
-      if (rendering) {
-        const metrics = rendering.metrics;
-        const scale =
-          this.canvas.clientHeight /
-          2 /
-          Math.max(metrics.worldToCanvasRatio * parallelScale, 0.001);
-        viewStatePatch.scale = Math.max(scale, 0.001);
-      }
-    }
-
-    if (focalPoint !== undefined) {
-      viewStatePatch.anchorWorld = [focalPoint[0], focalPoint[1]];
-      viewStatePatch.anchorCanvas = [0.5, 0.5];
-    }
-
-    if (Object.keys(viewStatePatch).length > 0) {
-      this.setViewState(viewStatePatch);
-    }
-  }
-
-  /**
    * ECG viewports have no rotation.
    */
   getRotation(): number {
