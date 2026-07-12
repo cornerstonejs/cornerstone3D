@@ -97,7 +97,7 @@ jobs:
 
   NPM_PUBLISH:
     <<: *defaults
-    resource_class: small
+    resource_class: medium
     steps:
       - attach_workspace:
           at: ~/repo

@@ -3,6 +3,142 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.4.17](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.16...v5.4.17) (2026-07-11)
+
+### Bug Fixes
+
+- **planar:** map dynamic-volume flattened indices to their group-local slice ([#2801](https://github.com/cornerstonejs/cornerstone3D/issues/2801)) ([abc6380](https://github.com/cornerstonejs/cornerstone3D/commit/abc6380346e21f7beb4bf6ff96e5a89be1f8c207))
+
+## [5.4.16](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.15...v5.4.16) (2026-07-11)
+
+### Bug Fixes
+
+- **planar:** anchor imageId-addressed slices at their exact IJK world center ([#2800](https://github.com/cornerstonejs/cornerstone3D/issues/2800)) ([1a63832](https://github.com/cornerstonejs/cornerstone3D/commit/1a6383291ede15e9699e5eb215ee7cd4c65f44c5))
+
+## [5.4.15](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.14...v5.4.15) (2026-07-10)
+
+### Bug Fixes
+
+- **planar:** remap initialImageIdIndex to the volume imageId ordering ([#2799](https://github.com/cornerstonejs/cornerstone3D/issues/2799)) ([1879a1e](https://github.com/cornerstonejs/cornerstone3D/commit/1879a1e717d4efc2f733b227d914954444f1c724))
+
+## [5.4.14](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.13...v5.4.14) (2026-07-10)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [5.4.13](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.12...v5.4.13) (2026-07-10)
+
+### Features
+
+- add ClickSegmentTool for click-to-segment lesion segmentation ([#2780](https://github.com/cornerstonejs/cornerstone3D/issues/2780)) ([30f3b60](https://github.com/cornerstonejs/cornerstone3D/commit/30f3b60e46baac5d5902f50fd0810a6ab57ca657))
+
+## [5.4.12](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.11...v5.4.12) (2026-07-09)
+
+### Bug Fixes
+
+- Use the image loader for dicom-seg to allow compressed images ([#2611](https://github.com/cornerstonejs/cornerstone3D/issues/2611)) ([ef48c4a](https://github.com/cornerstonejs/cornerstone3D/commit/ef48c4a2a7581d164b7708fc40080254d19b7b70)), closes [#2572](https://github.com/cornerstonejs/cornerstone3D/issues/2572)
+
+## [5.4.11](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.10...v5.4.11) (2026-07-09)
+
+### Bug Fixes
+
+- Change the shape of the render backend api so it allows register ([#2795](https://github.com/cornerstonejs/cornerstone3D/issues/2795)) ([4ab69f2](https://github.com/cornerstonejs/cornerstone3D/commit/4ab69f234c2c62ac84c56685ab3281910af3ac10))
+
+## [5.4.10](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.9...v5.4.10) (2026-07-09)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [5.4.9](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.8...v5.4.9) (2026-07-08)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [5.4.8](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.7...v5.4.8) (2026-07-08)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [5.4.7](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.6...v5.4.7) (2026-07-08)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [5.4.6](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.5...v5.4.6) (2026-07-08)
+
+### Bug Fixes
+
+- **wsi:** correct point annotation placement on SM/WSI viewports at non-default devicePixelRatioPatch @cornerstonejs/core WSIViewport to stop scaling canvas coordinates bydevicePixelRatio in canvasToIndex/indexToCanvas. WSIViewport sizes its canvasin CSS pixels and its transform works in CSS-pixel space, so the extra DPR ([#2769](https://github.com/cornerstonejs/cornerstone3D/issues/2769)) ([a91cb5d](https://github.com/cornerstonejs/cornerstone3D/commit/a91cb5de36fa1bd0a8e43640b30e77c740f71115))
+
+## [5.4.5](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.4...v5.4.5) (2026-07-08)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [5.4.4](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.3...v5.4.4) (2026-07-08)
+
+### Bug Fixes
+
+- **annotations:** use epsilon tolerance for image dimension checks to prevent out-of-bounds errors ([#2708](https://github.com/cornerstonejs/cornerstone3D/issues/2708)) ([703bead](https://github.com/cornerstonejs/cornerstone3D/commit/703beadf69b022a5ad1ba72aae00cbfec4812a04))
+
+## [5.4.3](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.2...v5.4.3) (2026-07-08)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [5.4.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.1...v5.4.2) (2026-07-08)
+
+### Bug Fixes
+
+- update index calculation for x-axis ([#2701](https://github.com/cornerstonejs/cornerstone3D/issues/2701)) ([bcdedf4](https://github.com/cornerstonejs/cornerstone3D/commit/bcdedf444da965bf5c1a8199a3e499e02c7aa3b4))
+
+## [5.4.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.0...v5.4.1) (2026-07-08)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+# [5.4.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.3.0...v5.4.0) (2026-07-08)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+# [5.3.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.2.2...v5.3.0) (2026-07-07)
+
+### Features
+
+- **rendering:** unify render backend selection with live GPU/CPU switching ([#2782](https://github.com/cornerstonejs/cornerstone3D/issues/2782)) ([92b3d59](https://github.com/cornerstonejs/cornerstone3D/commit/92b3d59fe776fd493251c9debf9e7e532d495311))
+
+## [5.2.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.2.1...v5.2.2) (2026-07-07)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [5.2.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.2.0...v5.2.1) (2026-07-06)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+# [5.2.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.1.4...v5.2.0) (2026-07-04)
+
+### Features
+
+- **packaging:** native-Node-resolvable ESM (extensions, type:module, exports) + CI ([#2773](https://github.com/cornerstonejs/cornerstone3D/issues/2773)) ([26d7234](https://github.com/cornerstonejs/cornerstone3D/commit/26d7234843aa3150f13deffd0642247d2ee71cd4))
+
+## [5.1.4](https://github.com/cornerstonejs/cornerstone3D/compare/v5.1.3...v5.1.4) (2026-07-02)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [5.1.3](https://github.com/cornerstonejs/cornerstone3D/compare/v5.1.2...v5.1.3) (2026-07-01)
+
+### Bug Fixes
+
+- **segmentation:** scope SegmentLabelTool hover to the current slice for contours ([#2770](https://github.com/cornerstonejs/cornerstone3D/issues/2770)) ([3dd8fa7](https://github.com/cornerstonejs/cornerstone3D/commit/3dd8fa7093fe7f43cea64ab08d01ff84f091656b))
+
+## [5.1.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.1.1...v5.1.2) (2026-06-30)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [5.1.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.1.0...v5.1.1) (2026-06-30)
+
+### Bug Fixes
+
+- more generic viewport push for parity with legacy ([#2766](https://github.com/cornerstonejs/cornerstone3D/issues/2766)) ([6fc0256](https://github.com/cornerstonejs/cornerstone3D/commit/6fc0256bfb8c426e4a93f32f5da4ddd3716d9548))
+
+# [5.1.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.16...v5.1.0) (2026-06-30)
+
+### Features
+
+- Add display set split store logic to metadata ([#2738](https://github.com/cornerstonejs/cornerstone3D/issues/2738)) ([a08cd83](https://github.com/cornerstonejs/cornerstone3D/commit/a08cd83b7ba32d73d5eb4eb5f92fc17bac354fbc))
+
 ## [5.0.16](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.15...v5.0.16) (2026-06-29)
 
 **Note:** Version bump only for package @cornerstonejs/core

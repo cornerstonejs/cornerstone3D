@@ -153,6 +153,7 @@ module.exports = {
               items: [
                 'concepts/cornerstone-core/generic-viewport/api',
                 'concepts/cornerstone-core/generic-viewport/render-paths',
+                'concepts/cornerstone-core/generic-viewport/render-backends',
                 'concepts/cornerstone-core/generic-viewport/data-bindings-and-loading',
                 'concepts/cornerstone-core/generic-viewport/camera',
                 'concepts/cornerstone-core/generic-viewport/viewport-projection',
@@ -169,7 +170,10 @@ module.exports = {
           label: 'Metadata',
           link: { type: 'doc', id: 'concepts/cornerstone-metadata/index' },
           collapsed: true,
-          items: ['concepts/cornerstone-metadata/index'],
+          items: [
+            'concepts/cornerstone-metadata/index',
+            'concepts/cornerstone-metadata/display-sets',
+          ],
         },
         {
           type: 'category',

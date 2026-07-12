@@ -1,12 +1,19 @@
 import { BaseTool } from './base';
 import { Events } from '../enums';
 
-import { getEnabledElement, StackViewport, Enums } from '@cornerstonejs/core';
+import {
+  getEnabledElement,
+  StackViewport,
+  Enums,
+  utilities as csUtils,
+} from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import type { EventTypes, PublicToolProps, ToolProps, IPoints } from '../types';
 import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
+import { getNativeSourceProperties } from '../utilities/genericViewportToolHelpers';
 import { state } from '../store/state';
+import { vec3 } from 'gl-matrix';
 
 import {
   hideElementCursor,
@@ -41,15 +48,16 @@ class MagnifyTool extends BaseTool {
 
   private _hasBeenRemoved = false;
 
-  _getReferencedImageId(
-    viewport: Types.IStackViewport | Types.IVolumeViewport
-  ): string {
+  _getReferencedImageId(viewport: Types.IViewport): string | undefined {
     const targetId = this.getTargetId(viewport);
 
-    let referencedImageId;
+    let referencedImageId: string | undefined;
 
     if (viewport instanceof StackViewport) {
       referencedImageId = targetId.split('imageId:')[1];
+    } else if (csUtils.isGenericViewport(viewport)) {
+      // Native PLANAR_NEXT stack-mode viewport: the current image id directly.
+      referencedImageId = getNativeSourceProperties(viewport).currentImageId;
     }
 
     return referencedImageId;
@@ -61,8 +69,13 @@ class MagnifyTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
 
-    if (!(viewport instanceof StackViewport)) {
-      throw new Error('MagnifyTool only works on StackViewports');
+    if (
+      !(viewport instanceof StackViewport) &&
+      !csUtils.isGenericViewport(viewport)
+    ) {
+      throw new Error(
+        'MagnifyTool only works on Stack or native planar viewports'
+      );
     }
 
     const referencedImageId = this._getReferencedImageId(viewport);
@@ -112,12 +125,20 @@ class MagnifyTool extends BaseTool {
     } = this.editData;
     const { viewport } = enabledElement;
     const { element } = viewport;
-    const viewportProperties = viewport.getProperties();
+    // The loupe mirrors the source viewport's appearance. Native PLANAR_NEXT has no
+    // getProperties/getViewPresentation; read its VOI/LUT via getDisplaySetPresentation
+    // and its rotation/flip via the projection-aware helper.
+    const native = csUtils.isGenericViewport(viewport)
+      ? getNativeSourceProperties(viewport)
+      : undefined;
+    const viewportProperties = native
+      ? native.properties
+      : viewport.getProperties();
     const {
       rotation: originalViewportRotation,
       flipHorizontal: originalViewportFlipHorizontal,
       flipVertical: originalViewportFlipVertical,
-    } = viewport.getViewPresentation();
+    } = native ?? viewport.getViewPresentation();
 
     const { canvas: canvasPos, world: worldPos } = currentPoints;
 
@@ -173,11 +194,28 @@ class MagnifyTool extends BaseTool {
         flipVertical: originalViewportFlipVertical,
       });
 
-      // Use the original viewport for the base for parallelScale
-      const { parallelScale } = viewport.getCamera();
-
       const { focalPoint, position, viewPlaneNormal } =
         magnifyViewport.getCamera();
+
+      // Use the source viewport's parallelScale as the magnification base.
+      let parallelScale: number;
+      if (csUtils.isGenericViewport(viewport)) {
+        // Native PLANAR_NEXT has no getCamera/parallelScale and its on-screen canvas is
+        // hidden, so reconstruct the source's actual on-screen parallelScale geometrically:
+        // worldPerPixel (vertical) from canvasToWorld of two element-space points 1px apart,
+        // then parallelScale = worldPerPixel * elementHeight / 2. This tracks the source's
+        // pan/zoom (matching legacy), unlike the loupe's own fit parallelScale.
+        const sourceElement = viewport.element as HTMLElement;
+        const worldTop = viewport.canvasToWorld([0, 0] as Types.Point2);
+        const worldBottom = viewport.canvasToWorld([0, 1] as Types.Point2);
+        const worldPerPixel = vec3.distance(
+          worldTop as Types.Point3,
+          worldBottom as Types.Point3
+        );
+        parallelScale = (worldPerPixel * sourceElement.clientHeight) / 2;
+      } else {
+        ({ parallelScale } = viewport.getCamera());
+      }
 
       const distance = Math.sqrt(
         Math.pow(focalPoint[0] - position[0], 2) +

@@ -934,4 +934,198 @@ describe('LengthTool:', () => {
   //     done.fail(e);
   //   }
   // });
+
+  /**
+   * Helper function that draw a length annotation and detect if the annotation was deleted after drawing because it extended outside of the image boundary.
+   * @param {*} done
+   * @param {*} imageInfo1
+   * @param {*} index1 first coordinate to draw the length tool
+   * @param {*} index2 second coordinate to draw the length tool
+   * @param {*} shouldDelete whether the test expect annotation to be deleted after drawing due to going outside of the image boundary
+   */
+  function testAutoDelete(done, imageInfo1, index1, index2, shouldDelete) {
+    // avoid multiple call of done() in case of multiple events being triggered
+    const originalDone = done;
+    done = () => {
+      done = () => {};
+      done.fail = () => {};
+      originalDone();
+    };
+    done.fail = (message) => {
+      done = () => {};
+      done.fail = () => {};
+      originalDone.fail(message);
+    };
+
+    const tool = csTools3d.ToolGroupManager.getToolGroup(
+      'stack'
+    ).getToolInstance(LengthTool.toolName);
+    tool.configuration.preventHandleOutsideImage = true;
+    const element = createViewports(renderingEngine, {
+      viewportType: ViewportType.STACK,
+      width: 512,
+      height: 128,
+      viewportId: viewportId,
+    });
+    const imageId1 = encodeImageIdInfo(imageInfo1);
+    const vp = renderingEngine.getViewport(viewportId);
+    let p1, p2;
+    let trackComplete = false;
+
+    eventTarget.addEventListener(csToolsEvents.ANNOTATION_REMOVED, () => {
+      if (shouldDelete) {
+        done();
+      } else {
+        done.fail('Annotation should not be removed');
+      }
+    });
+
+    const detectNormalCompletion = () => {
+      const lengthAnnotations = annotation.state.getAnnotations(
+        LengthTool.toolName,
+        element
+      );
+      // Can successfully add Length tool to annotationManager
+      expect(lengthAnnotations).toBeDefined();
+      expect(lengthAnnotations.length).toBe(1);
+      const lengthAnnotation = lengthAnnotations[0];
+      expect(lengthAnnotation.metadata.referencedImageId).toBe(imageId1);
+      expect(lengthAnnotation.metadata.toolName).toBe(LengthTool.toolName);
+      if (lengthAnnotation.invalidated) {
+        // ignore this event - wait for further event processing
+        return;
+      }
+      expect(lengthAnnotation.invalidated).toBe(false);
+      const data = lengthAnnotation.data.cachedStats;
+      const targets = Array.from(Object.keys(data));
+      expect(targets.length).toBe(1);
+      expect(data[targets[0]].length).toBe(calculateLength(p1, p2));
+      done();
+    };
+
+    eventTarget.addEventListener(csToolsEvents.ANNOTATION_COMPLETED, () => {
+      try {
+        if (shouldDelete) {
+          done.fail('Annotation should be removed');
+        } else {
+          detectNormalCompletion();
+        }
+      } catch (e) {
+        done.fail(e);
+      }
+    });
+    eventTarget.addEventListener(csToolsEvents.ANNOTATION_MODIFIED, () => {
+      setTimeout(() => {
+        try {
+          if (!trackComplete) {
+            trackComplete = true;
+            const evt1 = new MouseEvent('mouseup');
+            document.dispatchEvent(evt1);
+          } else {
+            detectNormalCompletion();
+          }
+        } catch (e) {
+          done.fail(e);
+        }
+      }, 1);
+    });
+    eventTarget.addEventListener(csToolsEvents.ANNOTATION_ADDED, () => {
+      setTimeout(() => {
+        try {
+          const { imageData } = vp.getImageData();
+          const {
+            pageX: pageX2,
+            pageY: pageY2,
+            clientX: clientX2,
+            clientY: clientY2,
+            worldCoord: worldCoord2,
+          } = createNormalizedMouseEvent(imageData, index2, element, vp);
+          p2 = worldCoord2;
+          // Mouse move to put the end somewhere else
+          const evt = new MouseEvent('mousemove', {
+            target: element,
+            buttons: 1,
+            clientX: clientX2,
+            clientY: clientY2,
+            pageX: pageX2,
+            pageY: pageY2,
+          });
+          document.dispatchEvent(evt);
+        } catch (e) {
+          done.fail(e);
+        }
+      }, 1);
+    });
+
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
+      setTimeout(() => {
+        try {
+          const { imageData } = vp.getImageData();
+          const {
+            pageX: pageX1,
+            pageY: pageY1,
+            clientX: clientX1,
+            clientY: clientY1,
+            worldCoord: worldCoord1,
+          } = createNormalizedMouseEvent(imageData, index1, element, vp);
+          p1 = worldCoord1;
+          // Mouse Down
+          let evt = new MouseEvent('mousedown', {
+            target: element,
+            buttons: 1,
+            clientX: clientX1,
+            clientY: clientY1,
+            pageX: pageX1,
+            pageY: pageY1,
+          });
+          element.dispatchEvent(evt);
+        } catch (e) {
+          done.fail(e);
+        }
+      }, 300);
+    });
+
+    try {
+      vp.setStack([imageId1], 0);
+      renderingEngine.render();
+    } catch (e) {
+      done.fail(e);
+    }
+  }
+
+  it('should not delete annotation inside screen', function (done) {
+    const imageInfo1 = {
+      loader: 'fakeImageLoader',
+      name: 'imageURI',
+      rows: 256,
+      columns: 256,
+      barStart: 10,
+      barWidth: 5,
+      xSpacing: 0.9375,
+      ySpacing: 0.9375,
+      sliceIndex: 0,
+      ipp: [-121.53526258468, -124.04026699066, 86.5300445556641],
+    };
+    const index1 = [113.084, 83.632, 0];
+    const index2 = [115.886, 87.835, 0];
+    testAutoDelete(done, imageInfo1, index1, index2, false);
+  });
+
+  it('should delete annotation outside screen', function (done) {
+    const imageInfo1 = {
+      loader: 'fakeImageLoader',
+      name: 'imageURI',
+      rows: 64,
+      columns: 64,
+      barStart: 10,
+      barWidth: 5,
+      xSpacing: 0.9375,
+      ySpacing: 0.9375,
+      sliceIndex: 0,
+      ipp: [-121.53526258468, -124.04026699066, 86.5300445556641],
+    };
+    const index1 = [113.084, 83.632, 0];
+    const index2 = [115.886, 87.835, 0];
+    testAutoDelete(done, imageInfo1, index1, index2, true);
+  });
 });

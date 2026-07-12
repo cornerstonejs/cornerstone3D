@@ -11,7 +11,7 @@ import type {
 } from '../../../types';
 import applyPreset from '../../../utilities/applyPreset';
 import triggerEvent from '../../../utilities/triggerEvent';
-import genericViewportDataSetMetadataProvider from '../../../utilities/genericViewportDataSetMetadataProvider';
+import genericViewportDisplaySetMetadataProvider from '../../../utilities/genericViewportDisplaySetMetadataProvider';
 import { viewportProjection } from '../viewportProjection';
 import VolumeViewport3D from './viewport3D';
 import type {
@@ -254,7 +254,7 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
           volumeId: volumeInput.volumeId,
         };
 
-        genericViewportDataSetMetadataProvider.add(dataId, dataSet);
+        genericViewportDisplaySetMetadataProvider.add(dataId, dataSet);
         this.managedDataIds.add(dataId);
         this.volumeDataIds.set(volumeInput.volumeId, dataId);
         dataIds.push(dataId);
@@ -422,7 +422,7 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
       return;
     }
 
-    genericViewportDataSetMetadataProvider.remove(dataId);
+    genericViewportDisplaySetMetadataProvider.remove(dataId);
     this.legacyProperties.delete(dataId);
     this.defaultLegacyProperties.delete(dataId);
 
@@ -435,7 +435,7 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
 
   protected override onDestroy(): void {
     for (const dataId of Array.from(this.managedDataIds)) {
-      genericViewportDataSetMetadataProvider.remove(dataId);
+      genericViewportDisplaySetMetadataProvider.remove(dataId);
     }
 
     this.managedDataIds.clear();

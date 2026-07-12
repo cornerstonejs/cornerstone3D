@@ -8,7 +8,7 @@ import {
 } from './utils/index';
 
 test.beforeEach(async ({ page }) => {
-  await visitExample(page, 'splineContourSegmentationTools');
+  await visitExample(page, 'splineContourSegmentationTools', 2000);
 });
 
 test.describe('Spline Contour Segmentation Tools', async () => {

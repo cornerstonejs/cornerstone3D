@@ -6,11 +6,19 @@ import {
   VOILUTFunctionType,
 } from '../../../enums';
 import { ActorRenderMode } from '../../../types';
+import {
+  getRenderBackendForRenderMode,
+  getRenderSurfaceForRenderMode,
+  isImageRenderMode,
+  isVolumeRenderMode,
+} from '../../helpers/renderBackendRegistry';
+import type { EffectiveRenderBackend } from '../../../types/RenderBackendRegistry';
 import type {
   ActorEntry,
   ICamera,
   IImage,
   IStackInput,
+  ImageActor,
   OrientationVectors,
   Point2,
   Point3,
@@ -18,30 +26,35 @@ import type {
   VOIRange,
   ViewReference,
   ViewReferenceSpecifier,
+  ViewportContentMode,
 } from '../../../types';
+import { isImageActor } from '../../../utilities/actorCheck';
 import cache from '../../../cache/cache';
 import type { PlaneRestriction } from '../../../types/IViewport';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
 import { deepClone } from '../../../utilities/deepClone';
 import imageIdToURI from '../../../utilities/imageIdToURI';
 import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
-import genericViewportDataSetMetadataProvider from '../../../utilities/genericViewportDataSetMetadataProvider';
+import genericViewportDisplaySetMetadataProvider from '../../../utilities/genericViewportDisplaySetMetadataProvider';
 import triggerEvent from '../../../utilities/triggerEvent';
+import eventTarget from '../../../eventTarget';
 import getMinMax from '../../../utilities/getMinMax';
 import renderingEngineCache from '../../renderingEngineCache';
 import { getCameraVectors } from '../../helpers/getCameraVectors';
 import type {
   LoadedData,
+  ViewportDataBinding,
   ViewportDataReference,
 } from '../ViewportArchitectureTypes';
 import GenericViewport from '../GenericViewport';
 import type { GenericViewportReferenceContext } from '../genericViewportReferenceCompatibility';
 import {
-  getGenericViewportImageDataSet,
-  isGenericViewportImageDataSet,
-} from '../genericViewportDataSetAccess';
+  getGenericViewportImageDisplaySet,
+  isGenericViewportImageDisplaySet,
+} from '../genericViewportDisplaySetAccess';
 import { DefaultPlanarDataProvider } from './DefaultPlanarDataProvider';
 import { createPlanarRenderPathResolver } from './PlanarRenderPathResolver';
+import { defaultPlanarRenderPathDecisionService } from './PlanarRenderPathDecisionService';
 import {
   normalizePlanarOrientation,
   selectPlanarRenderPath,
@@ -73,6 +86,7 @@ import {
 import {
   createPlanarCpuVolumeSliceBasis,
   createPlanarVolumeSliceBasis,
+  getVolumeImageIdIndexWorldPoint,
 } from './planarSliceBasis';
 import type { PlanarRendering } from './planarRuntimeTypes';
 import PlanarMountedData from './PlanarMountedData';
@@ -148,7 +162,30 @@ class PlanarViewport extends GenericViewport<
   private renderImageObjectDataId?: string;
   private resolvedViewCache?: ResolvedViewCache;
   private resolvedViewCacheRevision = 0;
+  // Canvas CSS dimensions, cached to avoid a forced layout reflow on every
+  // resolveCachedViewState()/coordinate-transform call. Reading clientWidth/
+  // clientHeight synchronously flushes layout; during annotation rendering (e.g.
+  // many DICOM RT contours) the SVG annotation layer is written between those
+  // reads, so each read becomes a reflow (layout thrash). The canvas CSS size
+  // only changes on resize(), which clears this cache, so the hot resolve and
+  // transform paths can safely reuse the cached value within a frame.
+  private cachedCanvasDimensions?: {
+    canvasHeight: number;
+    canvasWidth: number;
+  };
   private setDataRequestId = 0;
+  private renderPipelineSwapId = 0;
+  // Last reported render-path error message per display set; a successful
+  // render clears the entry so a genuine repeat failure after recovery is
+  // reported again.
+  private readonly lastRenderPathErrorByDataId = new Map<string, string>();
+  // Original mount options per display set, kept so a live render-backend
+  // switch (updateRenderingPipeline) can re-run the render-path decision with
+  // the same per-mount semantics (orientation, thresholds, backend pins).
+  private readonly mountOptionsByDataId = new Map<
+    string,
+    PlanarSetDataOptions
+  >();
 
   // ── Static ───────────────────────────────────────────────────────────
 
@@ -210,6 +247,15 @@ class PlanarViewport extends GenericViewport<
     this.element.style.position = this.element.style.position || 'relative';
     this.element.style.overflow = 'hidden';
     this.element.style.background = this.element.style.background || '#000';
+    // Establish a stacking context on the viewport element so the cpuCanvas /
+    // viewport-element z-index layering applied below stays contained. Because
+    // this element is position:relative with z-index:auto it is not a stacking
+    // context on its own, so the viewport-element's z-index:1 would otherwise
+    // leak into the host's stacking context and paint the rendered canvas above
+    // any overlays the host renders as siblings of this element (e.g. OHIF's
+    // corner overlays / orientation markers). isolation keeps the element at the
+    // same stack level relative to its siblings while containing its children.
+    this.element.style.isolation = 'isolate';
 
     const vtkCanvas = args.canvas;
     const viewportElement = this.element.querySelector(
@@ -327,7 +373,7 @@ class PlanarViewport extends GenericViewport<
     const isStale = () => requestId !== this.setDataRequestId;
 
     this.clearResolvedViewCache();
-    this.removeAllData();
+    this.removeReplaceableData(entries);
 
     for (const [index, { displaySetId, options = {} }] of entries.entries()) {
       if (isStale()) {
@@ -397,10 +443,36 @@ class PlanarViewport extends GenericViewport<
       return;
     }
 
+    this.mountOptionsByDataId.set(dataId, resolvedOptions);
     this.clearResolvedViewCache();
     this.setDefaultDataPresentation(dataId, {
       visible: true,
     });
+
+    // `setDefaultDataPresentation` -> `setDataPresentationState` does not emit
+    // (only the public merge path notifies), so a freshly-mounted display set
+    // never surfaced its default VOI. Legacy Stack/Volume viewports emit
+    // VOI_MODIFIED at load; mirror that here so OHIF's window-level readout,
+    // the colorbar, and VOI synchronizers update when the display set changes.
+    // Runs per binding (source and each overlay) with that binding's own dataId,
+    // and `notifyDataPresentationModified` resolves the matching volumeId/event
+    // internally. Mirrors the `resetDisplaySetPresentation` precedent below.
+    const mountedPresentation = this.getDisplaySetPresentation(dataId);
+    const voiRange =
+      mountedPresentation?.voiRange ?? this.getDefaultVOIRange(dataId);
+
+    if (voiRange) {
+      this.notifyDataPresentationModified(dataId, { voiRange });
+    }
+
+    if (role === 'source') {
+      // Emit an initial CAMERA_MODIFIED for the source binding only, mirroring
+      // legacy StackViewport's first-image triggerCameraEvent. Overlays and
+      // orientation markers paint their first frame off this event. Trigger the
+      // event directly rather than routing through modified() to avoid a
+      // redundant render (addLoadedData already rendered).
+      this.triggerCameraModifiedEvent(this.getCameraForEvent());
+    }
   }
 
   /**
@@ -409,6 +481,8 @@ class PlanarViewport extends GenericViewport<
    */
   removeData(dataId: string): void {
     this.clearResolvedViewCache();
+    this.mountOptionsByDataId.delete(dataId);
+    this.lastRenderPathErrorByDataId.delete(dataId);
     super.removeData(dataId);
     this.mountedData.handleRemovedData(dataId);
 
@@ -436,6 +510,51 @@ class PlanarViewport extends GenericViewport<
   }
 
   /**
+   * Retrieves an image actor from the viewport actors. Mirrors the legacy
+   * Viewport.getImageActor so VOI/colorbar tooling that depends on it keeps
+   * working on native PLANAR_NEXT viewports. CPU render paths (e.g. CPU stack
+   * slice rendering) have no VTK image actor, so this returns null there and
+   * callers fall back to a default range instead of throwing.
+   *
+   * @param volumeId - Optional id of the volume whose image actor is wanted.
+   * @returns The image actor if present, otherwise null.
+   */
+  getImageActor(volumeId?: string): ImageActor | null {
+    const actorEntries = this.getActors();
+
+    let actorEntry = actorEntries[0];
+    if (volumeId) {
+      // Match by actor referencedId first (e.g. the prefixed volume id
+      // "cornerstoneStreamingImageVolume:<uid>"). VOI/colorbar tooling, however,
+      // identifies a layer by its display-set id (the presentation dataId, a bare
+      // uid), which is not the referencedId. Fall back to resolving that dataId
+      // through the binding so a fused viewport's per-layer colorbar reads the
+      // correct actor (e.g. the PT layer) instead of defaulting to the source.
+      actorEntry =
+        actorEntries.find((a) => a.referencedId === volumeId) ??
+        this.mountedData.getActorForDataId(volumeId);
+    }
+
+    if (!actorEntry || !isImageActor(actorEntry)) {
+      return null;
+    }
+
+    return actorEntry.actor as ImageActor;
+  }
+
+  /**
+   * Returns the vtk image data backing the default image actor, mirroring the
+   * legacy `Viewport.getDefaultImageData`. Tools (e.g. the ONNX auto-pilot
+   * segmentation controller) call this directly on the viewport; native
+   * PLANAR_NEXT viewports previously threw
+   * `getDefaultImageData is not a function`. Returns undefined when no VTK image
+   * actor is mounted (e.g. CPU render paths).
+   */
+  getDefaultImageData() {
+    return this.getImageActor()?.getMapper().getInputData();
+  }
+
+  /**
    * Renders a single image object by setting it as a one-image stack.
    */
   renderImageObject(image: IImage): Promise<void> {
@@ -445,13 +564,13 @@ class PlanarViewport extends GenericViewport<
       this.renderImageObjectDataId &&
       this.renderImageObjectDataId !== dataId
     ) {
-      genericViewportDataSetMetadataProvider.remove(
+      genericViewportDisplaySetMetadataProvider.remove(
         this.renderImageObjectDataId
       );
     }
 
     this.renderImageObjectDataId = dataId;
-    genericViewportDataSetMetadataProvider.add(dataId, {
+    genericViewportDisplaySetMetadataProvider.add(dataId, {
       image,
       imageIds: [image.imageId],
       initialImageIdIndex: 0,
@@ -472,10 +591,7 @@ class PlanarViewport extends GenericViewport<
   getCanvas(): HTMLCanvasElement {
     const rendering = this.getCurrentPlanarRendering();
 
-    if (
-      rendering?.renderMode === ActorRenderMode.CPU_IMAGE ||
-      rendering?.renderMode === ActorRenderMode.CPU_VOLUME
-    ) {
+    if (getRenderSurfaceForRenderMode(rendering?.renderMode) === 'cpu') {
       return this.renderContext.cpu.canvas;
     }
 
@@ -487,12 +603,17 @@ class PlanarViewport extends GenericViewport<
    */
   async addImages(stackInputs: IStackInput[]): Promise<void> {
     const rendering = this.getCurrentPlanarRendering();
+    const renderMode = rendering?.renderMode;
 
-    if (
-      rendering?.renderMode !== ActorRenderMode.VTK_IMAGE &&
-      rendering?.renderMode !== ActorRenderMode.VTK_VOLUME_SLICE &&
-      rendering?.renderMode !== ActorRenderMode.CPU_IMAGE
-    ) {
+    // Overlay images mount on any registered image mode, and on volume modes
+    // whose surface composites actors (the CPU volume path draws its slice
+    // pixels directly and cannot host overlay actors).
+    const supportsImageOverlays =
+      isImageRenderMode(renderMode) ||
+      (isVolumeRenderMode(renderMode) &&
+        getRenderSurfaceForRenderMode(renderMode) !== 'cpu');
+
+    if (!supportsImageOverlays) {
       return;
     }
 
@@ -505,7 +626,7 @@ class PlanarViewport extends GenericViewport<
 
       const reference = this.resolveOverlayReference(stackInput, image);
       const dataId = this.resolveOverlayDataId(stackInput, image, reference);
-      genericViewportDataSetMetadataProvider.add(dataId, {
+      genericViewportDisplaySetMetadataProvider.add(dataId, {
         image,
         imageData: stackInput.imageData,
         imageIds: [stackInput.imageId],
@@ -577,6 +698,105 @@ class PlanarViewport extends GenericViewport<
     return this.mountedData.getActiveDataId();
   }
 
+  /**
+   * Content-true classification of the bound source data for a planar viewport.
+   *
+   * A `PLANAR_NEXT` viewport renders both image-id stacks and volume slices, so
+   * its content mode is derived from the active source binding's render mode
+   * (and, as a fallback, from whether a source volume id is bound) rather than
+   * from the viewport type. Returns `empty` when no source data is mounted.
+   */
+  getCurrentMode(): ViewportContentMode {
+    const binding = this.getSourceBinding();
+
+    if (!binding) {
+      return 'empty';
+    }
+
+    const renderMode = binding.rendering.renderMode;
+
+    // VTK_VOLUME is not a mode the planar decision service selects (no
+    // registered backend owns it) but compatibility layers can still mount it.
+    if (
+      renderMode === ActorRenderMode.VTK_VOLUME ||
+      isVolumeRenderMode(renderMode)
+    ) {
+      return 'volume';
+    }
+
+    if (isImageRenderMode(renderMode)) {
+      return 'stack';
+    }
+
+    // Render mode not yet resolved; fall back to bound-data inspection.
+    return this.getVolumeId() ? 'volume' : 'stack';
+  }
+
+  /**
+   * Emits the legacy-named presentation events (`VOI_MODIFIED`,
+   * `COLORMAP_MODIFIED`) when a per-display-set presentation update changes the
+   * VOI, invert, or colormap of a mounted dataset.
+   *
+   * The native presentation write path previously emitted no event, so OHIF's
+   * VOI sliders, colorbar, window-level readout, and VOI/colormap
+   * synchronizers went stale after any programmatic or tool-driven
+   * `setDisplaySetPresentation` change on a direct `PLANAR_NEXT` viewport. The
+   * legacy compatibility adapter keeps emitting `COLORMAP_MODIFIED` through its
+   * own path (which applies presentation via `setDataPresentationState`
+   * directly, not through `mergeDataPresentation`), so this hook does not
+   * double-fire for compatibility viewports.
+   */
+  protected notifyDataPresentationModified(
+    displaySetId: string,
+    props: Partial<PlanarDataPresentation>
+  ): void {
+    if (this.suppressEvents) {
+      return;
+    }
+
+    const voiTouched =
+      'voiRange' in props || 'invert' in props || 'voiLUTFunction' in props;
+    const colormapTouched = 'colormap' in props;
+
+    if (!voiTouched && !colormapTouched) {
+      return;
+    }
+
+    const presentation = this.getDisplaySetPresentation(displaySetId);
+    // Use the modified display set's own volume id so VOI/colormap changes on an
+    // overlay/fusion display set do not emit the active source's volumeId (which
+    // would make downstream synchronizers update the wrong actor). Fall back to
+    // the active source volume id only when the modified set is the source.
+    const volumeId =
+      this.getDataSet(displaySetId)?.volumeId ??
+      (displaySetId === this.getSourceDataId()
+        ? this.getVolumeId()
+        : undefined);
+
+    if (voiTouched) {
+      const range = props.voiRange ?? presentation?.voiRange;
+
+      if (range) {
+        triggerEvent(this.element, Events.VOI_MODIFIED, {
+          viewportId: this.id,
+          range,
+          volumeId,
+          VOILUTFunction: props.voiLUTFunction ?? presentation?.voiLUTFunction,
+          invert: props.invert ?? presentation?.invert,
+          colormap: presentation?.colormap,
+        });
+      }
+    }
+
+    if (colormapTouched && props.colormap) {
+      triggerEvent(this.element, Events.COLORMAP_MODIFIED, {
+        viewportId: this.id,
+        colormap: props.colormap,
+        volumeId,
+      });
+    }
+  }
+
   getDefaultVOIRange(dataId?: string): VOIRange | undefined {
     return this.mountedData.getDefaultVOIRange(dataId);
   }
@@ -608,6 +828,73 @@ class PlanarViewport extends GenericViewport<
    */
   getSliceIndex(): number {
     return this.getCurrentImageIdIndex();
+  }
+
+  /**
+   * Returns the number of navigable slices for the current source data.
+   *
+   * For image/stack content this is the number of image ids; for volume-slice
+   * content it is the slice count along the current view direction. This is the
+   * native equivalent of the legacy stack/volume `getNumberOfSlices()` and is
+   * what `csUtils.jumpToSlice`, scroll, and image-slice synchronizers rely on
+   * for a `PLANAR_NEXT` viewport (which is not a `StackViewport`, so it takes
+   * the slice-count navigation branch).
+   *
+   * @returns The total slice count for the active source data.
+   */
+  getNumberOfSlices(): number {
+    const imageCount = this.getImageIds().length;
+
+    // No source data mounted: report zero navigable slices. Without this guard
+    // getMaxImageIdIndex() falls back to 0 and the Math.max below would report a
+    // phantom single slice for an empty viewport.
+    if (!imageCount) {
+      return 0;
+    }
+
+    // getMaxImageIdIndex() returns the view-direction slice count - 1 when the
+    // volume-slice render path provides it (so a reformatted/oblique plane
+    // reports its own slice count), and falls back to imageCount - 1 otherwise.
+    // Use it directly: maxing against the acquisition imageCount over-reported
+    // reformatted directions whose slice count is smaller than the acquisition
+    // image count, pushing scroll/cine/jump past the real slice range. The
+    // fallback keeps the stack / pre-binding count equal to imageCount.
+    return this.getMaxImageIdIndex() + 1;
+  }
+
+  /**
+   * Re-applies the calibrated pixel spacing for an image (CS-12). The native
+   * counterpart of `StackViewport.calibrateSpacing`.
+   *
+   * The caller (the tools `calibrateImageSpacing` utility) first adds the calibration
+   * to the `calibratedPixelSpacingMetadataProvider`; this method then re-renders and
+   * emits `IMAGE_SPACING_CALIBRATED` so annotation tools invalidate their cached stats
+   * and recompute lengths against the new calibration. The native data path reads
+   * `calibration` fresh from `getImageData()` on every access (see
+   * `buildPlanarImageData` -> `getImageDataMetadata` -> `buildMetadata`), so there is
+   * no cached spacing to rebuild — the event + render are the whole job.
+   *
+   * Defining this method is also what makes `viewportSupportsStackCalibration` return
+   * true for a native viewport, so `calibrateImageSpacing` routes here instead of
+   * skipping the viewport (it has no legacy `setStack` to fall back to).
+   *
+   * @param imageId - the imageId whose calibration changed
+   */
+  public calibrateSpacing(imageId: string): void {
+    this.render();
+
+    const cpuImageData = this.getImageData() as
+      | { calibration?: unknown; imageData?: unknown }
+      | undefined;
+
+    triggerEvent(this.element, Events.IMAGE_SPACING_CALIBRATED, {
+      element: this.element,
+      viewportId: this.id,
+      renderingEngineId: this.renderingEngineId,
+      imageId,
+      calibration: cpuImageData?.calibration,
+      imageData: cpuImageData?.imageData,
+    });
   }
 
   // ====================================================================
@@ -1076,10 +1363,7 @@ class PlanarViewport extends GenericViewport<
       imageIds[clampedImageIdIndex] || imageIds[imageIds.length - 1];
     const rendering = this.getCurrentPlanarRendering();
 
-    if (
-      rendering?.renderMode === ActorRenderMode.CPU_VOLUME ||
-      rendering?.renderMode === ActorRenderMode.VTK_VOLUME_SLICE
-    ) {
+    if (isVolumeRenderMode(rendering?.renderMode)) {
       const sliceWorldPoint =
         this.getVolumeSliceWorldPointForImageIdIndex(clampedImageIdIndex);
 
@@ -1122,6 +1406,41 @@ class PlanarViewport extends GenericViewport<
    */
   setOrientation(orientation: PlanarSetOrientationInput): void {
     this.setViewState({ orientation: this.resolveSetOrientation(orientation) });
+  }
+
+  /**
+   * Reports whether the viewport could render the given orientation for the
+   * current (or a specified) source data, without throwing.
+   *
+   * Acquisition-aligned orientations are always renderable; reformatted
+   * orientations (AXIAL/SAGITTAL/CORONAL) require volume-backed data. Use this
+   * to pre-check before `setOrientation()` / `setViewState({ orientation })`
+   * (for example to enable/disable an MPR control) instead of relying on the
+   * render-path decision service throwing on an unsupported request.
+   *
+   * @param orientation - The orientation to test.
+   * @param dataId - Optional display set id; defaults to the active source.
+   * @returns `true` when the orientation can be rendered for the data.
+   */
+  canRenderOrientation(
+    orientation: PlanarSetOrientationInput,
+    dataId?: string
+  ): boolean {
+    const targetDataId = dataId ?? this.getSourceDataId();
+
+    if (!targetDataId) {
+      return false;
+    }
+
+    const dataSet = this.getDataSet(targetDataId);
+
+    if (!dataSet) {
+      return false;
+    }
+
+    return defaultPlanarRenderPathDecisionService.canRender(dataSet, {
+      orientation: this.resolveSetOrientation(orientation),
+    });
   }
 
   /**
@@ -1178,6 +1497,48 @@ class PlanarViewport extends GenericViewport<
     return this.resetViewState();
   }
 
+  /**
+   * Resets the stored per-display-set presentation (VOI / window level,
+   * colormap and inversion) back to the computed defaults for a single display
+   * set. This is the reset counterpart to `setDisplaySetPresentation` /
+   * `getDisplaySetPresentation`; the next viewport intentionally has no
+   * get/set Properties, so it does not use the legacy `*Properties` naming.
+   *
+   * Clearing the stored presentation override makes the render path fall back
+   * to its defaults on the next apply (default VOI, no colormap, no inversion).
+   * "Reset View" relies on it (view/camera state is reset separately by
+   * `resetViewState`); without it, "Reset View" left the window level at the
+   * user-modified value on direct generic viewports.
+   *
+   * @param dataId - Optional display set id; defaults to the active source.
+   */
+  resetDisplaySetPresentation(dataId?: string): void {
+    if (this.isDestroyed) {
+      return;
+    }
+
+    const targetDataId = dataId ?? this.getSourceDataId();
+
+    if (!targetDataId) {
+      return;
+    }
+
+    // Drop the stored override so the render path's `updateDataPresentation`
+    // reapplies its defaults (mirrors PlanarLegacyCompatibilityController).
+    this.setDataPresentationState(targetDataId, {} as PlanarDataPresentation);
+
+    // `setDataPresentationState` does not emit (only the public merge path
+    // notifies), so surface the now-default VOI to OHIF's window-level readout,
+    // colorbar, sliders, and VOI synchronizers.
+    const defaultVOIRange = this.getDefaultVOIRange(targetDataId);
+
+    if (defaultVOIRange) {
+      this.notifyDataPresentationModified(targetDataId, {
+        voiRange: defaultVOIRange,
+      });
+    }
+  }
+
   // ====================================================================
   // Public API -- lifecycle
   // ====================================================================
@@ -1205,6 +1566,9 @@ class PlanarViewport extends GenericViewport<
     }
 
     this.clearResolvedViewCache();
+    // The canvas CSS size may have changed; drop the cached dimensions so the
+    // next resolve/transform re-reads clientWidth/clientHeight exactly once.
+    this.cachedCanvasDimensions = undefined;
     const { clientHeight, clientWidth } = this.element;
     const { canvas } = this.renderContext.cpu;
     const devicePixelRatio = window.devicePixelRatio || 1;
@@ -1247,7 +1611,7 @@ class PlanarViewport extends GenericViewport<
   protected override onDestroy(): void {
     this.clearResolvedViewCache();
     if (this.renderImageObjectDataId) {
-      genericViewportDataSetMetadataProvider.remove(
+      genericViewportDisplaySetMetadataProvider.remove(
         this.renderImageObjectDataId
       );
       this.renderImageObjectDataId = undefined;
@@ -1279,20 +1643,172 @@ class PlanarViewport extends GenericViewport<
 
     let renderedByAdapter = false;
     const sourceBinding = this.getCurrentBinding();
-
-    sourceBinding?.render?.();
-    renderedByAdapter = renderedByAdapter || Boolean(sourceBinding?.render);
-
-    for (const binding of this.bindings.values()) {
-      if (binding === sourceBinding) {
-        continue;
+    const renderBinding = (
+      binding: ViewportDataBinding<PlanarDataPresentation>,
+      dataId: string
+    ) => {
+      if (!binding.render) {
+        return;
       }
 
-      binding.render?.();
-      renderedByAdapter = renderedByAdapter || Boolean(binding.render);
+      renderedByAdapter = true;
+
+      try {
+        binding.render();
+        this.lastRenderPathErrorByDataId.delete(dataId);
+      } catch (error) {
+        this.reportRenderPathError(error, dataId);
+      }
+    };
+
+    for (const [dataId, binding] of this.bindings.entries()) {
+      if (binding === sourceBinding) {
+        renderBinding(binding, dataId);
+      }
+    }
+
+    for (const [dataId, binding] of this.bindings.entries()) {
+      if (binding !== sourceBinding) {
+        renderBinding(binding, dataId);
+      }
     }
 
     return renderedByAdapter;
+  }
+
+  /**
+   * Live render-backend switch: re-runs the render-path decision for every
+   * mounted display set and remounts, in place, the ones whose effective
+   * render mode changed. The viewport instance, its id, mounted data, view
+   * state (slice/zoom/pan), per-display-set presentation, and tool
+   * annotations all survive -- addLoadedData re-applies presentation and view
+   * state to the rebuilt binding. Display sets pinned via a per-mount
+   * renderBackend re-resolve to the same path and are effectively skipped.
+   *
+   * Called by the global setRenderBackend()/setUseCPURendering() fan-out; the
+   * rebuild is async but the hook itself is fire-and-forget by contract.
+   */
+  override updateRenderingPipeline(): void {
+    void this.applyRenderingPipelineUpdate();
+  }
+
+  private async applyRenderingPipelineUpdate(): Promise<void> {
+    if (this.isDestroyed) {
+      return;
+    }
+
+    const swapId = ++this.renderPipelineSwapId;
+    const isStale = () =>
+      swapId !== this.renderPipelineSwapId || this.isDestroyed;
+    let changed = false;
+
+    // Remount the source binding first: overlays without an explicit
+    // renderBackend inherit the source's mounted backend, so the source must
+    // resolve to the new backend before the overlays re-run their decisions
+    // (the source is not guaranteed to be first in insertion order after a
+    // promoteSourceDataId).
+    const sourceBinding = this.getCurrentBinding();
+    const bindingEntries = Array.from(this.bindings.entries());
+    const orderedEntries = [
+      ...bindingEntries.filter(([, binding]) => binding === sourceBinding),
+      ...bindingEntries.filter(([, binding]) => binding !== sourceBinding),
+    ];
+
+    for (const [dataId, binding] of orderedEntries) {
+      if (isStale()) {
+        return;
+      }
+
+      // Skip bindings that were removed or replaced (e.g. by a concurrent
+      // setDisplaySets) since this pass started.
+      if (this.bindings.get(dataId) !== binding) {
+        continue;
+      }
+
+      const options = this.mountOptionsByDataId.get(dataId) ?? {};
+
+      try {
+        const { data, selectedPath } = await this.loadPlanarData(dataId, {
+          ...options,
+          role: binding.role,
+        });
+
+        if (isStale() || this.bindings.get(dataId) !== binding) {
+          continue;
+        }
+
+        if (selectedPath.renderMode === binding.rendering.renderMode) {
+          continue;
+        }
+
+        const added = await this.addLoadedData(
+          dataId,
+          data,
+          {
+            renderMode: selectedPath.renderMode,
+            role: binding.role,
+          },
+          () => isStale() || this.bindings.get(dataId) !== binding
+        );
+
+        changed = changed || added;
+      } catch (error) {
+        this.reportRenderPathError(error, dataId);
+      }
+    }
+
+    if (isStale() || !changed) {
+      return;
+    }
+
+    // Re-assert the source binding's render mode: every remounted path
+    // activated its own mode while mounting, so with mixed CPU/GPU bindings
+    // the last mount, not the source, may have won the canvas-visibility
+    // toggle.
+    const sourceRenderMode = this.getCurrentPlanarRendering()?.renderMode;
+
+    if (sourceRenderMode) {
+      this.renderContext.display.activateRenderMode(sourceRenderMode);
+    }
+
+    this.clearResolvedViewCache();
+    this.updateBindingsCameraState();
+    this.render();
+
+    // The rebuilt render paths replaced this viewport's actors. Announce it so
+    // consumers that decorate actors (segmentation representations restyle
+    // their labelmap overlays through this) can re-reconcile against the new
+    // instances; the swap itself cannot know about them.
+    triggerEvent(eventTarget, Events.RENDERING_PIPELINE_CHANGED, {
+      renderingEngineId: this.renderingEngineId,
+      viewportId: this.id,
+    });
+  }
+
+  /**
+   * Emits the RENDER_PATH_ERROR degradation signal (and logs) for a render
+   * path that threw while mounting or rendering. Repeated identical failures
+   * for a display set are reported once so a per-frame render error does not
+   * flood the event bus; a successful render of that display set clears the
+   * record, so a genuine failure after a recovery is reported again.
+   * Applications listen for this to offer a backend switch.
+   */
+  private reportRenderPathError(error: unknown, dataId?: string): void {
+    const message = error instanceof Error ? error.message : String(error);
+    const errorKey = dataId ?? '';
+
+    if (this.lastRenderPathErrorByDataId.get(errorKey) === message) {
+      return;
+    }
+
+    this.lastRenderPathErrorByDataId.set(errorKey, message);
+    console.error('[PlanarViewport] Render path error', dataId ?? '', error);
+    triggerEvent(eventTarget, Events.RENDER_PATH_ERROR, {
+      renderingEngineId: this.renderingEngineId,
+      viewportId: this.id,
+      dataId,
+      error,
+    });
   }
 
   private requestRenderingEngineRender(): void {
@@ -1308,9 +1824,7 @@ class PlanarViewport extends GenericViewport<
     cpuCanvas: HTMLCanvasElement,
     vtkCanvas: HTMLCanvasElement
   ): void {
-    const useCPUCanvas =
-      renderMode === ActorRenderMode.CPU_IMAGE ||
-      renderMode === ActorRenderMode.CPU_VOLUME;
+    const useCPUCanvas = getRenderSurfaceForRenderMode(renderMode) === 'cpu';
     const viewportElement = this.element.querySelector(
       '.viewport-element'
     ) as HTMLDivElement | null;
@@ -1399,6 +1913,23 @@ class PlanarViewport extends GenericViewport<
 
   private getActiveImageIdIndex(): number {
     const binding = this.getCurrentBinding();
+
+    // For volume-slice content, derive the index from the resolved view (the
+    // current camera/projection) rather than the stored scalar — mirroring
+    // legacy VolumeViewport.getSliceIndex, which reads the camera focal point as
+    // the single source of truth. rendering.currentImageIdIndex tracks the
+    // camera on each render but can lag a post-mount camera carry (e.g. the
+    // layout-selector MPR restoring the prior stack slice via setViewReference),
+    // which would decouple the scrollbar/scroll index from the rendered slice.
+    // Falls back to the stored scalar when no resolved view is available.
+    if (this.getCurrentMode() === 'volume') {
+      const resolvedImageIdIndex =
+        this.getResolvedView()?.state?.currentImageIdIndex;
+      if (typeof resolvedImageIdIndex === 'number') {
+        return resolvedImageIdIndex;
+      }
+    }
+
     const currentImageIdIndex = (
       binding?.rendering as { currentImageIdIndex?: number } | undefined
     )?.currentImageIdIndex;
@@ -1444,8 +1975,66 @@ class PlanarViewport extends GenericViewport<
     return this.mountedData.getCurrentBinding();
   }
 
+  /**
+   * Tears down currently-mounted data ahead of a `setDisplaySets` replace, but
+   * preserves externally-managed segmentation overlays when the source is being
+   * re-set to the same display set.
+   *
+   * The segmentation display tool mounts labelmap overlays out-of-band (via
+   * `addDisplaySet`), so a full teardown on every `setDisplaySets` would blank a
+   * hydrated segmentation whenever the source is re-applied (e.g. when an
+   * application re-runs its viewport-data sync). When the source changes (or no
+   * source is being set), everything is removed so a stale segmentation cannot
+   * leak across datasets.
+   */
+  private removeReplaceableData(
+    entries: Array<{ displaySetId: string; options?: PlanarSetDataOptions }>
+  ): void {
+    const nextSourceId = this.resolveNextSourceId(entries);
+    const preserveSegmentationOverlays =
+      nextSourceId !== undefined && nextSourceId === this.getSourceDataId();
+
+    for (const dataId of Array.from(this.bindings.keys())) {
+      if (
+        preserveSegmentationOverlays &&
+        this.isSegmentationOverlayBinding(dataId)
+      ) {
+        continue;
+      }
+
+      this.removeData(dataId);
+    }
+  }
+
+  /**
+   * Resolves which entry will become the source binding for a `setDisplaySets`
+   * call: the entry explicitly flagged `role: 'source'`, otherwise the first.
+   */
+  private resolveNextSourceId(
+    entries: Array<{ displaySetId: string; options?: PlanarSetDataOptions }>
+  ): string | undefined {
+    const explicitSource = entries.find(
+      (entry) => entry.options?.role === 'source'
+    );
+
+    return explicitSource?.displaySetId ?? entries[0]?.displaySetId;
+  }
+
+  /**
+   * Returns whether a mounted binding is an externally-managed segmentation
+   * overlay (an overlay-role binding whose registered data references a
+   * segmentation).
+   */
+  private isSegmentationOverlayBinding(dataId: string): boolean {
+    if (this.getDisplaySetRole(dataId) !== 'overlay') {
+      return false;
+    }
+
+    return this.getDataSet(dataId)?.reference?.kind === 'segmentation';
+  }
+
   private getDataSet(dataId: string): PlanarRegisteredDataSet | undefined {
-    const dataSet = getGenericViewportImageDataSet(dataId);
+    const dataSet = getGenericViewportImageDisplaySet(dataId);
 
     if (!isPlanarRegisteredDataSet(dataSet)) {
       return;
@@ -1475,7 +2064,12 @@ class PlanarViewport extends GenericViewport<
     );
     const selectedPath = selectPlanarRenderPath(dataSet, {
       orientation: resolvedOrientation,
-      cpuThresholds: options.cpuThresholds,
+      // Per-mount backend pin/override. Overlays without an explicit pin
+      // follow the source binding's mounted backend rather than the global
+      // configuration; only then does the global renderBackend decide.
+      renderBackend:
+        options.renderBackend ??
+        this.getInheritedOverlayRenderBackend(options.role),
     });
     const data = await (this.dataProvider as PlanarDataProvider).load(dataId, {
       acquisitionOrientation: selectedPath.acquisitionOrientation,
@@ -1491,14 +2085,33 @@ class PlanarViewport extends GenericViewport<
     };
   }
 
+  /**
+   * Backend an overlay mount inherits when it carries no explicit
+   * renderBackend: the source binding's mounted backend. Source and overlays
+   * must render through the same backend -- each backend draws to its own
+   * canvas and skips the other's actors -- and the source may be pinned
+   * per-mount to a backend that differs from the global configuration.
+   * Returns undefined for source mounts (they resolve on their own) and when
+   * no source is mounted yet, leaving the global configuration to decide.
+   */
+  private getInheritedOverlayRenderBackend(
+    role: PlanarSetDataOptions['role']
+  ): EffectiveRenderBackend | undefined {
+    if (role === 'source') {
+      return undefined;
+    }
+
+    return getRenderBackendForRenderMode(
+      this.getCurrentPlanarRendering()?.renderMode
+    );
+  }
+
   private applyLoadedPlanarViewState(
     resolvedOrientation: PlanarViewState['orientation'],
     planarData: PlanarPayload,
     selectedPath: SelectedPlanarRenderPath
   ): void {
-    const isVolumePath =
-      selectedPath.renderMode === ActorRenderMode.CPU_VOLUME ||
-      selectedPath.renderMode === ActorRenderMode.VTK_VOLUME_SLICE;
+    const isVolumePath = isVolumeRenderMode(selectedPath.renderMode);
     const orientation = normalizePlanarOrientation(
       resolvedOrientation,
       selectedPath.acquisitionOrientation
@@ -1511,7 +2124,8 @@ class PlanarViewport extends GenericViewport<
         )
       : {
           kind: 'stackIndex' as const,
-          imageIdIndex: planarData.initialImageIdIndex,
+          // A stack opens at slice 0 when no initial index was requested.
+          imageIdIndex: planarData.initialImageIdIndex ?? 0,
         };
 
     this.clearResolvedViewCache();
@@ -1533,13 +2147,40 @@ class PlanarViewport extends GenericViewport<
 
     const { height, width } = this.getCurrentCanvasDimensions();
     const createSliceBasis =
-      renderMode === ActorRenderMode.CPU_VOLUME
+      getRenderSurfaceForRenderMode(renderMode) === 'cpu'
         ? createPlanarCpuVolumeSliceBasis
         : createPlanarVolumeSliceBasis;
+    // The acquisition orientation honors an explicitly carried initial slice but
+    // otherwise centers the volume, matching legacy and the reformatted
+    // (sagittal/coronal) orientations. "No slice requested" now propagates as
+    // undefined all the way from the data provider (it no longer defaults to 0),
+    // so we can pass the index through directly: undefined -> center, while a
+    // real carried slice - including an explicit 0 - is honored instead of being
+    // collapsed to center.
     const initialImageIdIndex =
       orientation === OrientationAxis.ACQUISITION
         ? planarData.initialImageIdIndex
         : undefined;
+
+    // An explicit initial slice indexes payload.imageIds (= the volume's
+    // imageId list), so anchor it at that slice's exact IJK center. Feeding the
+    // index into the slice basis instead would count it in camera order — the
+    // acquisition normal is the negated scan axis — and open on the mirrored
+    // slice.
+    if (typeof initialImageIdIndex === 'number') {
+      const sliceWorldPoint = getVolumeImageIdIndexWorldPoint(
+        planarData.imageVolume,
+        initialImageIdIndex
+      );
+
+      if (sliceWorldPoint) {
+        return {
+          kind: 'volumePoint',
+          sliceWorldPoint,
+        };
+      }
+    }
+
     const { sliceBasis } = createSliceBasis({
       canvasHeight: height,
       canvasWidth: width,
@@ -1673,7 +2314,14 @@ class PlanarViewport extends GenericViewport<
     return this.mountedData.findBindingDataIdByActorEntryUID(actorEntryUID);
   }
 
-  protected findDataIdByVolumeId(volumeId: string): string | undefined {
+  /**
+   * Maps a volume id to its bound display-set (data) id. Public because the
+   * tools VOI synchronizer needs it across the tools<->core boundary; it was
+   * previously reached through a structural cast against this protected member,
+   * which leaked the type contract. Planar-family specific (volume-backed), so
+   * it lives here rather than on IGenericViewport.
+   */
+  public findDataIdByVolumeId(volumeId: string): string | undefined {
     return this.mountedData.findDataIdByVolumeId(volumeId);
   }
 
@@ -1726,6 +2374,37 @@ class PlanarViewport extends GenericViewport<
     return snapshot;
   }
 
+  /**
+   * Returns the canvas CSS dimensions, reading clientWidth/clientHeight at most
+   * once per resize() rather than on every call. clientWidth/clientHeight force
+   * a synchronous layout reflow when layout is dirty; the annotation rendering
+   * loop (worldToCanvas per contour point, interleaved with SVG writes) would
+   * otherwise thrash layout. Canvas CSS size only changes on resize(), which
+   * invalidates this cache.
+   */
+  private getCachedPlanarCanvasDimensions(rendering: PlanarRendering): {
+    canvasHeight: number;
+    canvasWidth: number;
+  } {
+    const cached = this.cachedCanvasDimensions;
+    if (cached) {
+      return cached;
+    }
+
+    const dimensions = getPlanarViewStateCanvasDimensions({
+      renderContext: this.renderContext,
+      rendering,
+    });
+
+    // Don't cache a transient 0x0 read (canvas not laid out yet); recompute
+    // until the element has real dimensions so a stale zero never sticks.
+    if (dimensions.canvasHeight > 0 && dimensions.canvasWidth > 0) {
+      this.cachedCanvasDimensions = dimensions;
+    }
+
+    return dimensions;
+  }
+
   private resolveCachedViewState(
     viewState: PlanarViewState,
     args: {
@@ -1747,10 +2426,8 @@ class PlanarViewport extends GenericViewport<
       return this.resolveViewState(viewState, args);
     }
 
-    const { canvasHeight, canvasWidth } = getPlanarViewStateCanvasDimensions({
-      renderContext: this.renderContext,
-      rendering,
-    });
+    const { canvasHeight, canvasWidth } =
+      this.getCachedPlanarCanvasDimensions(rendering);
 
     if (
       cache &&
@@ -1907,10 +2584,8 @@ class PlanarViewport extends GenericViewport<
     const rendering = this.getCurrentPlanarRendering();
 
     if (rendering) {
-      const { canvasHeight, canvasWidth } = getPlanarViewStateCanvasDimensions({
-        renderContext: this.renderContext,
-        rendering,
-      });
+      const { canvasHeight, canvasWidth } =
+        this.getCachedPlanarCanvasDimensions(rendering);
 
       return {
         width: canvasWidth || this.element.clientWidth,
@@ -2045,7 +2720,7 @@ function createPlanarImageFromVTKImageData(
 function isPlanarRegisteredDataSet(
   value: unknown
 ): value is PlanarRegisteredDataSet {
-  if (!isGenericViewportImageDataSet(value) || value.imageIds.length === 0) {
+  if (!isGenericViewportImageDisplaySet(value) || value.imageIds.length === 0) {
     return false;
   }
 

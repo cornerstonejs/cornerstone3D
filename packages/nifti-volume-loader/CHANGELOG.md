@@ -3,6 +3,118 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.4.17](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.16...v5.4.17) (2026-07-11)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [5.4.16](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.15...v5.4.16) (2026-07-11)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [5.4.15](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.14...v5.4.15) (2026-07-10)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [5.4.14](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.13...v5.4.14) (2026-07-10)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [5.4.13](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.12...v5.4.13) (2026-07-10)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [5.4.12](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.11...v5.4.12) (2026-07-09)
+
+### Bug Fixes
+
+- Use the image loader for dicom-seg to allow compressed images ([#2611](https://github.com/cornerstonejs/cornerstone3D/issues/2611)) ([ef48c4a](https://github.com/cornerstonejs/cornerstone3D/commit/ef48c4a2a7581d164b7708fc40080254d19b7b70)), closes [#2572](https://github.com/cornerstonejs/cornerstone3D/issues/2572)
+
+## [5.4.11](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.10...v5.4.11) (2026-07-09)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [5.4.10](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.9...v5.4.10) (2026-07-09)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [5.4.9](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.8...v5.4.9) (2026-07-08)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [5.4.8](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.7...v5.4.8) (2026-07-08)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [5.4.7](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.6...v5.4.7) (2026-07-08)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [5.4.6](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.5...v5.4.6) (2026-07-08)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [5.4.5](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.4...v5.4.5) (2026-07-08)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [5.4.4](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.3...v5.4.4) (2026-07-08)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [5.4.3](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.2...v5.4.3) (2026-07-08)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [5.4.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.1...v5.4.2) (2026-07-08)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [5.4.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.0...v5.4.1) (2026-07-08)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+# [5.4.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.3.0...v5.4.0) (2026-07-08)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+# [5.3.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.2.2...v5.3.0) (2026-07-07)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [5.2.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.2.1...v5.2.2) (2026-07-07)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [5.2.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.2.0...v5.2.1) (2026-07-06)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+# [5.2.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.1.4...v5.2.0) (2026-07-04)
+
+### Features
+
+- **packaging:** native-Node-resolvable ESM (extensions, type:module, exports) + CI ([#2773](https://github.com/cornerstonejs/cornerstone3D/issues/2773)) ([26d7234](https://github.com/cornerstonejs/cornerstone3D/commit/26d7234843aa3150f13deffd0642247d2ee71cd4))
+
+## [5.1.4](https://github.com/cornerstonejs/cornerstone3D/compare/v5.1.3...v5.1.4) (2026-07-02)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [5.1.3](https://github.com/cornerstonejs/cornerstone3D/compare/v5.1.2...v5.1.3) (2026-07-01)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [5.1.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.1.1...v5.1.2) (2026-06-30)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+## [5.1.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.1.0...v5.1.1) (2026-06-30)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
+# [5.1.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.16...v5.1.0) (2026-06-30)
+
+**Note:** Version bump only for package @cornerstonejs/nifti-volume-loader
+
 ## [5.0.16](https://github.com/cornerstonejs/cornerstone3D/compare/v5.0.15...v5.0.16) (2026-06-29)
 
 **Note:** Version bump only for package @cornerstonejs/nifti-volume-loader

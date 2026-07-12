@@ -1,15 +1,20 @@
 import type * as EventTypes from '../../types/EventTypes';
 import type ICamera from '../../types/ICamera';
-import type { Point2, Point3, IRenderingEngine } from '../../types';
+import type {
+  Point2,
+  Point3,
+  ViewportContentMode,
+  IRenderingEngine,
+} from '../../types';
 import Events from '../../enums/Events';
 import ViewportStatus from '../../enums/ViewportStatus';
-import renderingEngineCache from '../renderingEngineCache';
 import triggerEvent from '../../utilities/triggerEvent';
+import renderingEngineCache from '../renderingEngineCache';
 import type {
   BaseViewportRenderContext,
   BindingRole,
   DataAddOptions,
-  DataId,
+  DisplaySetId,
   DataProvider,
   LoadedData,
   ViewportDataBinding,
@@ -74,10 +79,10 @@ abstract class GenericViewport<
   protected renderContext: TContext;
 
   protected bindings = new Map<
-    DataId,
+    DisplaySetId,
     ViewportDataBinding<TDataPresentation>
   >();
-  protected dataPresentation = new Map<DataId, TDataPresentation>();
+  protected dataPresentation = new Map<DisplaySetId, TDataPresentation>();
   protected viewState!: TViewState;
   protected isDestroyed = false;
 
@@ -111,7 +116,7 @@ abstract class GenericViewport<
    * to the overlay role unless they specify one explicitly.
    */
   async setDisplaySets(
-    ...entries: Array<{ displaySetId: DataId; options?: unknown }>
+    ...entries: Array<{ displaySetId: DisplaySetId; options?: unknown }>
   ): Promise<void> {
     this.removeAllData();
 
@@ -136,7 +141,7 @@ abstract class GenericViewport<
    * through the render-path resolver.
    */
   async addDisplaySet(
-    displaySetId: DataId,
+    displaySetId: DisplaySetId,
     options: DataAddOptions
   ): Promise<void> {
     if (this.isDestroyed) {
@@ -148,10 +153,25 @@ abstract class GenericViewport<
   }
 
   /**
+   * Returns the display sets currently mounted on the viewport, in mount order
+   * (source binding first, then overlays). Derived from the live bindings, so
+   * it always reflects what is actually rendered - including overlays and any
+   * `removeData` calls. The per-entry `options` carry the binding `role`.
+   */
+  getDisplaySets(): Array<{ displaySetId: DisplaySetId; options?: unknown }> {
+    return Array.from(this.bindings.entries()).map(
+      ([displaySetId, binding]) => ({
+        displaySetId,
+        options: { role: binding.role },
+      })
+    );
+  }
+
+  /**
    * Removes a dataset binding and its stored presentation state, then
    * triggers a re-render so the viewport reflects the removal.
    */
-  removeData(displaySetId: DataId): void {
+  removeData(displaySetId: DisplaySetId): void {
     const binding = this.bindings.get(displaySetId);
 
     if (!binding) {
@@ -175,11 +195,11 @@ abstract class GenericViewport<
    */
   setDisplaySetPresentation(props: Partial<TDataPresentation>): void;
   setDisplaySetPresentation(
-    displaySetId: DataId,
+    displaySetId: DisplaySetId,
     props: Partial<TDataPresentation>
   ): void;
   setDisplaySetPresentation(
-    displaySetIdOrProps: DataId | Partial<TDataPresentation>,
+    displaySetIdOrProps: DisplaySetId | Partial<TDataPresentation>,
     maybeProps?: Partial<TDataPresentation>
   ): void {
     if (typeof displaySetIdOrProps === 'string') {
@@ -200,9 +220,25 @@ abstract class GenericViewport<
    * Returns the stored presentation state for a specific dataset.
    */
   getDisplaySetPresentation(
-    displaySetId: DataId
+    displaySetId: DisplaySetId
   ): TDataPresentation | undefined {
     return this.getDataPresentationState(displaySetId);
+  }
+
+  /**
+   * Content-true classification of the currently bound source data.
+   *
+   * The duck-typing capability guards (`viewportSupportsImageSlices`,
+   * `viewportSupportsVolumeId`, ...) report which methods a viewport exposes,
+   * not what it is showing, so a single generic viewport reports support for
+   * both stack and volume operations regardless of its bound content. This
+   * method answers the content question instead, derived from the mounted
+   * source binding. The base implementation only distinguishes "has bound data"
+   * from "empty"; concrete viewport families override it to report `stack`,
+   * `volume`, `volume3d`, etc. See {@link ViewportContentMode}.
+   */
+  getCurrentMode(): ViewportContentMode {
+    return this.getSourceBinding() ? 'unknown' : 'empty';
   }
 
   /**
@@ -432,6 +468,17 @@ abstract class GenericViewport<
   abstract render(): void;
 
   /**
+   * Re-evaluates render paths after a global rendering-configuration change
+   * (setRenderBackend, or a deprecated CPU-rendering toggle). The default is
+   * a no-op; viewport families that support a live render-path swap override
+   * it. Present on every viewport so the global fan-out in init() can call it
+   * unconditionally.
+   */
+  updateRenderingPipeline(): void {
+    // No-op by default; families with swappable render paths override this.
+  }
+
+  /**
    * Recomputes viewport-owned runtime sizing. Concrete viewport families may
    * override this when they need to resize canvases or external runtimes.
    */
@@ -494,7 +541,7 @@ abstract class GenericViewport<
    * to the correct render-path runtime.
    */
   protected async addLoadedData(
-    displaySetId: DataId,
+    displaySetId: DisplaySetId,
     data: LoadedData,
     options: DataAddOptions,
     shouldIgnore?: () => boolean
@@ -514,12 +561,13 @@ abstract class GenericViewport<
     );
     const renderPath = path.createRenderPath();
     const ctx = path.selectContext?.(this.renderContext) ?? this.renderContext;
-    const existing = this.bindings.get(displaySetId);
 
-    if (existing) {
-      existing.removeData();
-    }
-
+    // Stage the replacement attachment before tearing down any existing one:
+    // if addData rejects, or the request goes stale mid-await, the previous
+    // render path stays mounted and the binding record stays accurate. A
+    // teardown-first order left a dead binding whose recorded renderMode made
+    // a later remount (e.g. switching the render backend back after a failed
+    // swap) skip as a no-op, blanking the display set.
     const attachment = await renderPath.addData(ctx, data, options);
 
     if (shouldIgnore?.()) {
@@ -532,9 +580,12 @@ abstract class GenericViewport<
       throw new Error('Viewport has been destroyed');
     }
 
+    // Whatever is bound now -- the attachment this call is replacing, or one
+    // a concurrent mount installed during the await -- is superseded by the
+    // staged attachment.
     const current = this.bindings.get(displaySetId);
 
-    if (current && current !== existing) {
+    if (current) {
       current.removeData();
     }
 
@@ -584,7 +635,7 @@ abstract class GenericViewport<
    * that dataset is already added.
    */
   protected setDataPresentationState(
-    displaySetId: DataId,
+    displaySetId: DisplaySetId,
     props: TDataPresentation
   ): void {
     if (this.isDestroyed) {
@@ -607,7 +658,7 @@ abstract class GenericViewport<
    * display set is not currently mounted.
    */
   protected getDataPresentationState(
-    displaySetId: DataId
+    displaySetId: DisplaySetId
   ): TDataPresentation | undefined {
     return this.dataPresentation.get(displaySetId);
   }
@@ -617,7 +668,7 @@ abstract class GenericViewport<
    * already tracked for that display set.
    */
   protected setDefaultDataPresentation(
-    displaySetId: DataId,
+    displaySetId: DisplaySetId,
     defaults: TDataPresentation
   ): TDataPresentation {
     const nextPresentation = {
@@ -638,7 +689,7 @@ abstract class GenericViewport<
    * forwards the result immediately when mounted.
    */
   protected mergeDataPresentation(
-    displaySetId: DataId,
+    displaySetId: DisplaySetId,
     props: Partial<TDataPresentation>
   ): TDataPresentation {
     const nextPresentation = {
@@ -651,7 +702,28 @@ abstract class GenericViewport<
 
     this.setDataPresentationState(displaySetId, nextPresentation);
 
+    // Notify only when the change targets a mounted dataset so that listeners
+    // (VOI/colormap UI, synchronizers) react to applied presentation changes.
+    if (this.bindings.has(displaySetId)) {
+      this.notifyDataPresentationModified(displaySetId, props);
+    }
+
     return nextPresentation;
+  }
+
+  /**
+   * Hook invoked after a per-display-set presentation update is applied through
+   * the public `setDisplaySetPresentation` path and the target display set is
+   * mounted. Concrete viewport families override this to emit their
+   * presentation-modified events (e.g. `VOI_MODIFIED`, `COLORMAP_MODIFIED`) so
+   * application UI and synchronizers can react to programmatic and tool-driven
+   * presentation changes. The base implementation is intentionally a no-op.
+   */
+  protected notifyDataPresentationModified(
+    _displaySetId: DisplaySetId,
+    _props: Partial<TDataPresentation>
+  ): void {
+    // Subclasses emit presentation-modified events; base viewports do not.
   }
 
   // ====================================================================
@@ -734,7 +806,7 @@ abstract class GenericViewport<
    * Looks up a binding by dataset identifier.
    */
   protected getBinding(
-    displaySetId: DataId
+    displaySetId: DisplaySetId
   ): ViewportDataBinding<TDataPresentation> | undefined {
     return this.bindings.get(displaySetId);
   }
@@ -743,7 +815,9 @@ abstract class GenericViewport<
    * Internal helper: returns the mounted render mode for a specific dataset
    * when present.
    */
-  protected getDisplaySetRenderMode(displaySetId: DataId): string | undefined {
+  protected getDisplaySetRenderMode(
+    displaySetId: DisplaySetId
+  ): string | undefined {
     return this.getBinding(displaySetId)?.rendering.renderMode;
   }
 
@@ -751,7 +825,9 @@ abstract class GenericViewport<
    * Internal helper: returns the binding role for a mounted dataset when
    * present.
    */
-  protected getDisplaySetRole(displaySetId: DataId): BindingRole | undefined {
+  protected getDisplaySetRole(
+    displaySetId: DisplaySetId
+  ): BindingRole | undefined {
     return this.getBinding(displaySetId)?.role;
   }
 
@@ -763,6 +839,22 @@ abstract class GenericViewport<
     | ViewportDataBinding<TDataPresentation>
     | undefined {
     return this.bindings.values().next().value;
+  }
+
+  /**
+   * Returns the active source binding (the dataset that defines the view),
+   * falling back to the first mounted binding when no explicit `source` role is
+   * present. Used for content-mode classification and source-scoped queries.
+   */
+  protected getSourceBinding():
+    | ViewportDataBinding<TDataPresentation>
+    | undefined {
+    for (const binding of this.bindings.values()) {
+      if (binding.role === 'source') {
+        return binding;
+      }
+    }
+    return this.getFirstBinding();
   }
 
   /**

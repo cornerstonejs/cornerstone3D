@@ -1,7 +1,7 @@
 import type { RenderingEngineModeType } from '../types';
+import type { RenderBackendValue } from '../enums';
 
 interface Cornerstone3DConfig {
-  gpuTier?: { tier?: number };
   /**
    * Whether the device is mobile or not.
    */
@@ -20,7 +20,18 @@ interface Cornerstone3DConfig {
     // Read more in the following Pull Request:
     // 1. HalfFloat: https://github.com/Kitware/vtk-js/pull/2046
     // 2. Norm16: https://github.com/Kitware/vtk-js/pull/2058
+    //
+    // Applies to the legacy volume-actor pipeline; GenericViewport render
+    // paths resolve texture formats through the probed capability profile
+    // (see utilities/renderingCapabilities) and do not consult this flag.
     preferSizeOverAccuracy?: boolean;
+    /**
+     * Forces CPU rendering for legacy viewports.
+     * @deprecated For GenericViewport-based viewports use
+     * `renderBackend: 'cpu'` instead. This flag remains the control for
+     * legacy viewports and is still honored by the 'auto' backend
+     * resolution.
+     */
     useCPURendering?: boolean;
     /**
      * Use the legacy camera field of view calculation method which uses bounds
@@ -52,10 +63,17 @@ interface Cornerstone3DConfig {
      */
     webGlContextCount?: number;
     planar?: {
-      cpuThresholds?: {
-        image?: number;
-        volume?: number;
-      };
+      /**
+       * The render backend preference for planar GenericViewports: 'gpu',
+       * 'cpu', or any backend registered via `registerRenderBackend()` pin
+       * the backend, 'auto' (default) resolves it from the capability
+       * detection performed at init() and the deprecated useCPURendering
+       * flag. Per-display-set `renderBackend` mount options override this
+       * value; use setRenderBackend() to change it at runtime with a live
+       * render-path swap. Legacy viewports (StackViewport et al.) keep
+       * reading `useCPURendering` and are not governed by this flag.
+       */
+      renderBackend?: RenderBackendValue;
       cpuVolume?: {
         /**
          * When true, LINEAR CPU volume slices are sampled into a viewport-sized

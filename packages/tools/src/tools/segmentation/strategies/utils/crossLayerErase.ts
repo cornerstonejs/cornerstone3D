@@ -1,4 +1,5 @@
 import { getSegmentation } from '../../../../stateManagement/segmentation/getSegmentation';
+import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/triggerSegmentationEvents';
 import {
   collectCrossLayerEraseBindings,
   eraseLabelmapEditTransactionOverwrites,
@@ -29,6 +30,8 @@ function eraseCrossLayerOverwrites(
     return [];
   }
 
+  const { memo } = operationData;
+
   return eraseLabelmapEditTransactionOverwrites(
     segmentation,
     operationData.labelmapEditTransaction,
@@ -38,6 +41,27 @@ function eraseCrossLayerOverwrites(
       isInObject: operationData.isInObject,
       isInObjectBoundsIJK: operationData.isInObjectBoundsIJK,
       imageId: operationData.imageId,
+      // Record every cross-layer erase on the stroke's memo so undo/redo
+      // restores the other layers too - these writes bypass the memo's own
+      // history voxel manager (they target other layers' voxel managers).
+      crossLayerEraseCallback: memo
+        ? ({ voxelManager, labelValue, indices }) => {
+            (memo.postSteps ||= []).push({
+              undo: () => {
+                for (const index of indices) {
+                  voxelManager.setAtIndex(index, labelValue);
+                }
+                triggerSegmentationDataModified(operationData.segmentationId);
+              },
+              redo: () => {
+                for (const index of indices) {
+                  voxelManager.setAtIndex(index, 0);
+                }
+                triggerSegmentationDataModified(operationData.segmentationId);
+              },
+            });
+          }
+        : undefined,
     }
   );
 }

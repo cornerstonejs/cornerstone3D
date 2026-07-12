@@ -109,7 +109,7 @@ async function addLabelmapToPlanarGenericViewport(args: {
     });
     const dataId = representationUID;
 
-    utilities.genericViewportDataSetMetadataProvider.add(dataId, {
+    utilities.genericViewportDisplaySetMetadataProvider.add(dataId, {
       kind: 'planar',
       imageIds: volume.imageIds,
       initialImageIdIndex: Math.min(

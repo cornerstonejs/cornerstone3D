@@ -3,7 +3,7 @@ import type { LoadedData } from '../ViewportArchitectureTypes';
 import GenericViewport from '../GenericViewport';
 import { ViewportType } from '../../../enums';
 import { getDefaultECGValueRange } from '../../../utilities/ECGUtilities';
-import genericViewportDataSetMetadataProvider from '../../../utilities/genericViewportDataSetMetadataProvider';
+import genericViewportDisplaySetMetadataProvider from '../../../utilities/genericViewportDisplaySetMetadataProvider';
 import imageIdToURI from '../../../utilities/imageIdToURI';
 import type {
   CPUIImageData,
@@ -424,8 +424,8 @@ class ECGViewport extends GenericViewport<
       return true;
     }
 
-    const metadata = genericViewportDataSetMetadataProvider.get(
-      genericViewportDataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
+    const metadata = genericViewportDisplaySetMetadataProvider.get(
+      genericViewportDisplaySetMetadataProvider.VIEWPORT_V2_DISPLAY_SET,
       dataId
     ) as { sourceDataId?: string } | undefined;
     if (metadata?.sourceDataId) {
