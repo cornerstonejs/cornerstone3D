@@ -496,19 +496,6 @@ abstract class GenericViewport<
   }
 
   /**
-   * Resets the viewport camera. Delegated to `resetViewState`.
-   */
-  resetCamera(options?: {
-    resetPan?: boolean;
-    resetZoom?: boolean;
-    resetToCenter?: boolean;
-    storeAsInitialCamera?: boolean;
-    resetAspectRatio?: boolean;
-  }): boolean {
-    return this.resetViewState(options);
-  }
-
-  /**
    * RenderingEngine-owned resize hook for custom-pipeline viewports.
    *
    * Generic viewports own semantic view state, so the rendering engine delegates
