@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [5.5.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.17...v5.5.0) (2026-07-12)
+
+### Features
+
+- **tools:** new world crosshairs and intersect planes ([#2781](https://github.com/cornerstonejs/cornerstone3D/issues/2781)) ([5d1d7fd](https://github.com/cornerstonejs/cornerstone3D/commit/5d1d7fdd9e228180ca66db496fdaaa65a878b8fd))
+
 ## [5.4.17](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.16...v5.4.17) (2026-07-11)
 
 ### Bug Fixes
