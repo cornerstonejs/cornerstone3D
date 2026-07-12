@@ -6,11 +6,15 @@ import type { Types } from '@cornerstonejs/core';
  * Rotates a viewport camera (position, focal point and viewUp) around a world
  * pivot point by the given angle (radians) about the given axis.
  *
+ * LEGACY VIEWPORTS ONLY: this utility works through the free `setCamera`
+ * orientation write that only legacy (stack/volume) viewports expose. Native
+ * generic viewports have no such write and are left untouched (returns
+ * false); rotate those through the view-reference API instead, the way
+ * SliceIntersectionTool does (`setViewReference` with a rotated
+ * viewPlaneNormal/viewUp around the pivot).
+ *
  * The transform is rigid: the camera-to-focal-point distance and the
  * orthogonality of the camera basis are preserved.
- *
- * Native (generic) viewports have no free camera orientation write, so they
- * are left untouched.
  *
  * Returns true when the camera was rotated.
  */

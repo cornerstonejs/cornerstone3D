@@ -34,6 +34,8 @@ import type {
   StyleSpecifier,
 } from '../../types/AnnotationStyle';
 import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
+import { state } from '../../store/state';
+import { Events } from '../../enums';
 import { drawLinkedTextBox } from '../../drawingSvg';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import type { SVGDrawingHelper } from '../../types';
@@ -185,6 +187,94 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     proximity: number,
     interactionType: string
   ): boolean;
+
+  /**
+   * Drag handler wired by `_activateModify`. Tools that use the shared
+   * modify listeners assign this (typically as an arrow-function field).
+   * Loosely typed on purpose: tools narrow the event parameter to the
+   * interaction events they actually handle, and the base class only wires
+   * the callback as an EventListener.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected _dragCallback?: (evt: any) => void;
+
+  /**
+   * End-of-interaction handler wired by `_activateModify`. Tools that use
+   * the shared modify listeners assign this (typically as an arrow-function
+   * field). Loosely typed for the same reason as `_dragCallback`.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected _endCallback?: (evt: any) => void;
+
+  /**
+   * Wires the standard modify-interaction listeners (`_dragCallback` on
+   * drag, `_endCallback` on mouse/touch end) on the element and flags the
+   * global interaction state. Tools with tool-specific listener sets may
+   * override this.
+   */
+  protected _activateModify = (element: HTMLDivElement): void => {
+    state.isInteractingWithTool = true;
+
+    element.addEventListener(
+      Events.MOUSE_UP,
+      this._endCallback as EventListener
+    );
+    element.addEventListener(
+      Events.MOUSE_DRAG,
+      this._dragCallback as EventListener
+    );
+    element.addEventListener(
+      Events.MOUSE_CLICK,
+      this._endCallback as EventListener
+    );
+
+    element.addEventListener(
+      Events.TOUCH_END,
+      this._endCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_DRAG,
+      this._dragCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_TAP,
+      this._endCallback as EventListener
+    );
+  };
+
+  /**
+   * Removes the listeners wired by `_activateModify` and clears the global
+   * interaction state.
+   */
+  protected _deactivateModify = (element: HTMLDivElement): void => {
+    state.isInteractingWithTool = false;
+
+    element.removeEventListener(
+      Events.MOUSE_UP,
+      this._endCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.MOUSE_DRAG,
+      this._dragCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.MOUSE_CLICK,
+      this._endCallback as EventListener
+    );
+
+    element.removeEventListener(
+      Events.TOUCH_END,
+      this._endCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_DRAG,
+      this._dragCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_TAP,
+      this._endCallback as EventListener
+    );
+  };
 
   /**
    * @virtual Event handler for Cornerstone MOUSE_MOVE event.

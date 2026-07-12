@@ -217,6 +217,12 @@ export type RenderedIntersectionLine = {
   canvasPoints: [Types.Point2, Types.Point2];
   /** Slab boundary segments (present when slab thickness rendering is on). */
   slabLineSegments: Array<[Types.Point2, Types.Point2]>;
+  /**
+   * Volume boundary / intermediate slice segments (present when the
+   * corresponding configuration flags are on). Rendered like the slab
+   * segments but kept separate so the fields stay truthful.
+   */
+  boundaryLineSegments: Array<[Types.Point2, Types.Point2]>;
   /** Rotation handle canvas positions (only for the active line). */
   rotateHandles: Types.Point2[];
   /** Slab thickness handle canvas positions (only for the active line). */
@@ -294,6 +300,19 @@ class SliceIntersectionTool extends AnnotationTool {
    */
   private _mprFamilyByViewportId = new Map<string, MprPlaneFamily>();
 
+  /**
+   * Per-pass caches for the plane groups and the viewport-id lookup. A full
+   * render pass computes lines once per target viewport, and each target
+   * walks every group and resolves member viewports by id; without a cache
+   * that is O(V^3) enabled-element/camera resolves per pass. Tool-group
+   * membership cannot change within a synchronous pass, so the caches are
+   * built on first use and dropped in a microtask - they never survive into
+   * the next frame or event.
+   */
+  private _passViewportsById: Map<string, Types.IViewport> | null = null;
+  private _passPlaneGroups: SliceIntersectionPlaneGroup[] | null = null;
+  private _passCacheClearScheduled = false;
+
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
@@ -367,6 +386,7 @@ class SliceIntersectionTool extends AnnotationTool {
    */
   public refreshPlaneFamilies(): void {
     this._mprFamilyByViewportId.clear();
+    this._clearPassCaches();
     this._renderToolViewports();
   }
 
@@ -398,6 +418,7 @@ class SliceIntersectionTool extends AnnotationTool {
     state.isInteractingWithTool = false;
     this._renderedLines.clear();
     this._mprFamilyByViewportId.clear();
+    this._clearPassCaches();
 
     this._getViewportsInfo().forEach(({ viewportId, renderingEngineId }) => {
       const enabledElement = getEnabledElementByIds(
@@ -486,10 +507,18 @@ class SliceIntersectionTool extends AnnotationTool {
 
   /**
    * Groups the tool-group planar viewports by (frame of reference, sticky
-   * plane family). In the debug `perViewportLines` mode every viewport is
-   * its own group.
+   * plane family), cached per pass (see the pass-cache fields). In the debug
+   * `perViewportLines` mode every viewport is its own group.
    */
   protected _getPlaneGroups(): SliceIntersectionPlaneGroup[] {
+    if (!this._passPlaneGroups) {
+      this._passPlaneGroups = this._computePlaneGroups();
+      this._schedulePassCacheClear();
+    }
+    return this._passPlaneGroups;
+  }
+
+  private _computePlaneGroups(): SliceIntersectionPlaneGroup[] {
     const planarViewports = this._getToolGroupViewports().filter((viewport) =>
       this._isPlanarViewport(viewport)
     );
@@ -652,6 +681,22 @@ class SliceIntersectionTool extends AnnotationTool {
         );
       });
 
+      lineInfo.boundaryLineSegments.forEach((segment, index) => {
+        drawLineSvg(
+          svgDrawingHelper,
+          annotationUID,
+          `boundary-${groupId}-${index}`,
+          segment[0],
+          segment[1],
+          {
+            color,
+            width: 1,
+            lineDash: '4,4',
+            strokeOpacity: 0.8,
+          }
+        );
+      });
+
       lineInfo.rotateHandles.forEach((handleCanvas, index) => {
         drawCircleSvg(
           svgDrawingHelper,
@@ -780,6 +825,7 @@ class SliceIntersectionTool extends AnnotationTool {
       leaderPlane,
       canvasPoints,
       slabLineSegments: [],
+      boundaryLineSegments: [],
       rotateHandles: [],
       slabHandles: [],
       color,
@@ -929,7 +975,7 @@ class SliceIntersectionTool extends AnnotationTool {
         offset
       );
       if (segment) {
-        lineInfo.slabLineSegments.push(segment);
+        lineInfo.boundaryLineSegments.push(segment);
       }
     });
   }
@@ -1394,19 +1440,10 @@ class SliceIntersectionTool extends AnnotationTool {
     }
 
     this._activeOperation = operation;
-    state.isInteractingWithTool = true;
     hideElementCursor(element);
-
-    const endCallback = this._endCallback as EventListener;
-    const dragCallback = this._dragCallback as EventListener;
-
-    element.addEventListener(Events.MOUSE_UP, endCallback);
-    element.addEventListener(Events.MOUSE_DRAG, dragCallback);
-    element.addEventListener(Events.MOUSE_CLICK, endCallback);
-
-    element.addEventListener(Events.TOUCH_END, endCallback);
-    element.addEventListener(Events.TOUCH_DRAG, dragCallback);
-    element.addEventListener(Events.TOUCH_TAP, endCallback);
+    // Inherited from AnnotationTool: wires _dragCallback/_endCallback and
+    // flags the global interaction state.
+    this._activateModify(element);
 
     triggerEvent(
       eventTarget,
@@ -1421,18 +1458,7 @@ class SliceIntersectionTool extends AnnotationTool {
   ): void {
     const editData = this._editData;
 
-    const endCallback = this._endCallback as EventListener;
-    const dragCallback = this._dragCallback as EventListener;
-
-    element.removeEventListener(Events.MOUSE_UP, endCallback);
-    element.removeEventListener(Events.MOUSE_DRAG, dragCallback);
-    element.removeEventListener(Events.MOUSE_CLICK, endCallback);
-
-    element.removeEventListener(Events.TOUCH_END, endCallback);
-    element.removeEventListener(Events.TOUCH_DRAG, dragCallback);
-    element.removeEventListener(Events.TOUCH_TAP, endCallback);
-
-    state.isInteractingWithTool = false;
+    this._deactivateModify(element);
     resetElementCursor(element);
 
     this._editData = null;
@@ -1959,9 +1985,36 @@ class SliceIntersectionTool extends AnnotationTool {
     if (!viewportId) {
       return undefined;
     }
-    return this._getToolGroupViewports().find(
-      (viewport) => viewport.id === viewportId
-    );
+
+    if (!this._passViewportsById) {
+      this._passViewportsById = new Map(
+        this._getToolGroupViewports().map((viewport) => [viewport.id, viewport])
+      );
+      this._schedulePassCacheClear();
+    }
+
+    return this._passViewportsById.get(viewportId);
+  }
+
+  private _clearPassCaches(): void {
+    this._passViewportsById = null;
+    this._passPlaneGroups = null;
+  }
+
+  /**
+   * Drops the pass caches once the current synchronous pass completes. A
+   * microtask (rather than a frame callback) keeps the caches valid for
+   * exactly one render/interaction pass.
+   */
+  private _schedulePassCacheClear(): void {
+    if (this._passCacheClearScheduled) {
+      return;
+    }
+    this._passCacheClearScheduled = true;
+    queueMicrotask(() => {
+      this._passCacheClearScheduled = false;
+      this._clearPassCaches();
+    });
   }
 
   private _renderToolViewports(): void {

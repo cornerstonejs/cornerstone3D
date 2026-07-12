@@ -161,9 +161,9 @@ export type WorldCrosshairToolConfiguration = {
   showIn3D: boolean;
   /**
    * Ids of Generic 3D (VOLUME_3D_NEXT) viewports in which the point is
-   * rendered as two world-space intersecting lines. Kept as an explicit list
-   * so 3D viewports (usually in their own tool group for trackball
-   * manipulation) need not join this tool's group.
+   * rendered as three world-space intersecting lines (one per patient
+   * axis). Kept as an explicit list so 3D viewports (usually in their own
+   * tool group for trackball manipulation) need not join this tool's group.
    */
   threeDViewportIds: string[];
   /** Full length (mm) of each 3D crosshair line. */
@@ -348,6 +348,9 @@ class WorldCrosshairTool extends AnnotationTool {
     if (options.sourceRenderingEngineId !== undefined) {
       this._state.sourceRenderingEngineId = options.sourceRenderingEngineId;
     }
+    const frameOfReferenceChanged =
+      options.frameOfReferenceUID !== undefined &&
+      options.frameOfReferenceUID !== this._state.frameOfReferenceUID;
     if (options.frameOfReferenceUID !== undefined) {
       this._state.frameOfReferenceUID = options.frameOfReferenceUID;
     }
@@ -355,8 +358,15 @@ class WorldCrosshairTool extends AnnotationTool {
     if (changed) {
       this._state.worldPoint = newPoint;
       this._autoInitialized = true;
-      this._syncAnnotation();
+    }
 
+    if (changed || frameOfReferenceChanged) {
+      // A frame-of-reference change regroups the annotation even when the
+      // point itself is (near) identical.
+      this._syncAnnotation();
+    }
+
+    if (changed) {
       if (!options.suppressEvents) {
         triggerEvent(
           eventTarget,
@@ -546,7 +556,7 @@ class WorldCrosshairTool extends AnnotationTool {
 
     evt.preventDefault();
     hideElementCursor(element);
-    this._activateModify(element);
+    this._startDrag(element);
 
     return this._getAnnotationOrDetached();
   };
@@ -568,7 +578,7 @@ class WorldCrosshairTool extends AnnotationTool {
 
     annotation.highlighted = true;
     hideElementCursor(element);
-    this._activateModify(element);
+    this._startDrag(element);
     evt.preventDefault();
   };
 
@@ -737,42 +747,20 @@ class WorldCrosshairTool extends AnnotationTool {
 
   cancel = (element: HTMLDivElement): void => {
     if (this._isDragging) {
+      this._isDragging = false;
       this._deactivateModify(element);
       resetElementCursor(element);
     }
   };
 
-  _activateModify = (element: HTMLDivElement): void => {
+  /**
+   * The modify listeners (`_activateModify` / `_deactivateModify`) are
+   * inherited from AnnotationTool; only the drag flag is tool-specific.
+   */
+  private _startDrag(element: HTMLDivElement): void {
     this._isDragging = true;
-    state.isInteractingWithTool = true;
-
-    const endCallback = this._endCallback as EventListener;
-    const dragCallback = this._dragCallback as EventListener;
-
-    element.addEventListener(Events.MOUSE_UP, endCallback);
-    element.addEventListener(Events.MOUSE_DRAG, dragCallback);
-    element.addEventListener(Events.MOUSE_CLICK, endCallback);
-
-    element.addEventListener(Events.TOUCH_END, endCallback);
-    element.addEventListener(Events.TOUCH_DRAG, dragCallback);
-    element.addEventListener(Events.TOUCH_TAP, endCallback);
-  };
-
-  _deactivateModify = (element: HTMLDivElement): void => {
-    this._isDragging = false;
-    state.isInteractingWithTool = false;
-
-    const endCallback = this._endCallback as EventListener;
-    const dragCallback = this._dragCallback as EventListener;
-
-    element.removeEventListener(Events.MOUSE_UP, endCallback);
-    element.removeEventListener(Events.MOUSE_DRAG, dragCallback);
-    element.removeEventListener(Events.MOUSE_CLICK, endCallback);
-
-    element.removeEventListener(Events.TOUCH_END, endCallback);
-    element.removeEventListener(Events.TOUCH_DRAG, dragCallback);
-    element.removeEventListener(Events.TOUCH_TAP, endCallback);
-  };
+    this._activateModify(element);
+  }
 
   _dragCallback = (evt: EventTypes.InteractionEventType): void => {
     const eventDetail = evt.detail;
@@ -808,6 +796,7 @@ class WorldCrosshairTool extends AnnotationTool {
   _endCallback = (evt: EventTypes.InteractionEventType): void => {
     const { element } = evt.detail;
 
+    this._isDragging = false;
     this._deactivateModify(element);
     resetElementCursor(element);
     this._state.cursorWorldPoint = null;
@@ -1002,7 +991,14 @@ class WorldCrosshairTool extends AnnotationTool {
       return;
     }
 
-    const { focalPoint } = getViewportICamera(viewport);
+    // getViewportICamera can throw on a viewport that has not rendered yet
+    // (this runs while iterating possibly-unrendered enabled viewports).
+    let focalPoint;
+    try {
+      ({ focalPoint } = getViewportICamera(viewport));
+    } catch {
+      return;
+    }
     if (!isFinitePoint3(focalPoint)) {
       return;
     }
@@ -1078,7 +1074,14 @@ class WorldCrosshairTool extends AnnotationTool {
       return;
     }
 
-    const { focalPoint, viewPlaneNormal } = getViewportICamera(viewport);
+    // getViewportICamera can throw on a viewport that has not rendered yet.
+    let camera;
+    try {
+      camera = getViewportICamera(viewport);
+    } catch {
+      return;
+    }
+    const { focalPoint, viewPlaneNormal } = camera;
     if (!focalPoint || !viewPlaneNormal) {
       return;
     }
@@ -1156,8 +1159,9 @@ class WorldCrosshairTool extends AnnotationTool {
   }
 
   /**
-   * Creates, moves or removes the two intersecting world-space lines that
-   * represent the point in the configured 3D viewports.
+   * Creates, moves or removes the three intersecting world-space lines (one
+   * per patient axis) that represent the point in the configured 3D
+   * viewports.
    */
   private _update3DLines(): void {
     const { showIn3D, threeDLineLengthMm, pointColor } = this.configuration;
