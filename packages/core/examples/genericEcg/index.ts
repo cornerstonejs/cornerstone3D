@@ -117,6 +117,7 @@ async function run() {
   toolGroup.addViewport(viewportId, renderingEngineId);
 
   const viewport = renderingEngine.getViewport<ECGGenericViewport>(viewportId);
+  (window as any).viewport = viewport;
 
   utilities.genericViewportDataSetMetadataProvider.add(ecgDataId, {
     kind: 'ecg',

@@ -141,6 +141,7 @@ async function run() {
   const viewport = renderingEngine.getViewport(
     viewportId
   ) as Types.IECGViewport;
+  (window as any).viewport = viewport;
 
   // Load ECG data into the viewport (calibration is resolved via metadata provider in ECGViewport)
   await viewport.setEcg(ecgImageId);
