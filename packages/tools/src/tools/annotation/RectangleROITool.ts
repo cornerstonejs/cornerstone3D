@@ -840,6 +840,7 @@ class RectangleROITool extends AnnotationTool {
     }
 
     const targetIds = Object.keys(cachedStats);
+    let isHandleOutsideAnyTarget = false;
 
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
@@ -867,9 +868,14 @@ class RectangleROITool extends AnnotationTool {
       // Check if one of the indexes are inside the volume, this then gives us
       // Some area to do stats over.
 
-      if (this._isInsideVolume(pos1Index, pos2Index, dimensions)) {
-        this.isHandleOutsideImage = false;
+      const isHandleOutsideTarget = !this._isInsideVolume(
+        pos1Index,
+        pos2Index,
+        dimensions
+      );
+      isHandleOutsideAnyTarget ||= isHandleOutsideTarget;
 
+      if (!isHandleOutsideTarget) {
         // Calculate index bounds to iterate over
 
         const iMin = Math.min(pos1Index[0], pos2Index[0]);
@@ -943,13 +949,15 @@ class RectangleROITool extends AnnotationTool {
           modalityUnit,
         };
       } else {
-        this.isHandleOutsideImage = true;
         cachedStats[targetId] = {
           Modality: metadata.Modality,
         };
       }
     }
 
+    // Aggregate every resolved measurement target so deletion under
+    // preventHandleOutsideImage is deterministic across fusion actor order.
+    this.isHandleOutsideImage = isHandleOutsideAnyTarget;
     const invalidated = annotation.invalidated;
     annotation.invalidated = false;
 

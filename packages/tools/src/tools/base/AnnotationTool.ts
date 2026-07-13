@@ -80,11 +80,15 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     viewport,
     ...annotationBaseData
   ): T {
-    // MPR based annotations will be cross FOR by default, while stack will be per-frame
-    return this.createAnnotation(
-      { metadata: viewport.getViewReference({ forFrameOfReference: true }) },
-      ...annotationBaseData
-    ) as T;
+    // MPR based annotations are cross-FOR by default, while stack annotations
+    // remain per-frame. Resolve the normal volume-specific reference first so
+    // legacy VolumeViewport can populate referencedImageId, then remove only
+    // the volume restriction that would prevent the annotation from applying
+    // to other volumes in the same frame of reference.
+    const metadata = viewport.getViewReference();
+    delete metadata.volumeId;
+
+    return this.createAnnotation({ metadata }, ...annotationBaseData) as T;
   }
 
   /**

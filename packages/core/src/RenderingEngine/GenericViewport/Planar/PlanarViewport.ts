@@ -1232,10 +1232,7 @@ class PlanarViewport extends GenericViewport<
     if (volumeId) {
       const dataId = this.findDataIdByVolumeId(volumeId);
       const binding = dataId ? this.getBinding(dataId) : undefined;
-      const imageData = binding?.getImageData?.();
-      if (imageData) {
-        return imageData;
-      }
+      return binding?.getImageData?.();
     }
     return this.getCurrentBinding()?.getImageData?.();
   }
@@ -1301,13 +1298,13 @@ class PlanarViewport extends GenericViewport<
   }
 
   /**
-   * Returns whether the active dataset references the given volume id.
+   * Returns whether any bound dataset references the given volume id.
    *
-   * @param volumeId - Volume id to compare against the active dataset.
-   * @returns `true` when the active dataset references the given volume id.
+   * @param volumeId - Volume id to compare against the bound datasets.
+   * @returns `true` when a source or overlay binding references the volume id.
    */
   hasVolumeId(volumeId: string): boolean {
-    return this.getVolumeId() === volumeId;
+    return this.findDataIdByVolumeId(volumeId) !== undefined;
   }
 
   /**

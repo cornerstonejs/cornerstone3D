@@ -948,6 +948,7 @@ class CircleROITool extends AnnotationTool {
     }
 
     const targetIds = Object.keys(cachedStats);
+    let isHandleOutsideAnyTarget = false;
 
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
@@ -1015,12 +1016,13 @@ class CircleROITool extends AnnotationTool {
       // Check if one of the indexes are inside the volume, this then gives us
       // Some area to do stats over.
 
-      this.isHandleOutsideImage = !BaseTool.isInsideVolume(dimensions, [
+      const isHandleOutsideTarget = !BaseTool.isInsideVolume(dimensions, [
         pos1Index,
         pos2Index,
       ]);
+      isHandleOutsideAnyTarget ||= isHandleOutsideTarget;
 
-      if (!this.isHandleOutsideImage) {
+      if (!isHandleOutsideTarget) {
         const iMin = Math.min(pos1Index[0], pos2Index[0]);
         const iMax = Math.max(pos1Index[0], pos2Index[0]);
 
@@ -1093,6 +1095,10 @@ class CircleROITool extends AnnotationTool {
       }
     }
 
+    // With multiple selected measurement targets, preventHandleOutsideImage
+    // should not depend on actor iteration order. The annotation is valid only
+    // when its handles fit inside every target for which image data resolved.
+    this.isHandleOutsideImage = isHandleOutsideAnyTarget;
     annotation.invalidated = false;
 
     // Dispatching annotation modified
