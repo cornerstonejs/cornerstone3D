@@ -35,12 +35,6 @@ export type MeasurementTargetCandidate = {
   instance?: any;
   /** The index of this display set within the viewport. */
   index: number;
-  /**
-   * The candidate previously chosen (included) by the filter, if any.  This
-   * allows a filter to decide relative to what it has already selected -
-   * for example to select at most one of a given modality.
-   */
-  previous?: MeasurementTargetCandidate;
   /** The volume/image id backing this display set, when available. */
   referencedId?: string;
   /**
@@ -68,38 +62,21 @@ export type MeasurementTargetCandidate = {
 };
 
 /**
- * The value a {@link MeasurementTargetsFilter} returns for one candidate:
- *
- * - `true` - include this display set and continue with the next candidate
- * - `false` (or `undefined`) - skip this display set and continue
- * - `'useAndStop'` - include this display set and **stop looking for further
- *   items**
- * - `'stop'` - do not include this display set and **stop looking for
- *   further items**
- */
-export type MeasurementTargetsFilterResult =
-  | boolean
-  | undefined
-  | 'useAndStop'
-  | 'stop';
-
-/**
  * A configurable filter deciding which of the display sets shown in a
  * viewport an annotation tool computes and displays statistics for.  Set it
  * on the tool configuration as `targetsFilter`.
  *
- * The filter is called once per candidate display set, in viewport order,
- * with the display set related parameters (display set, uid, exemplar
- * instance, index and the previously chosen candidate) and the viewport it
- * is applying to.  Return {@link MeasurementTargetsFilterResult} values to
- * include/skip each candidate; return `'useAndStop'` or `'stop'` to stop
- * looking for further items.
+ * The filter receives the viewport's candidate display sets in viewport
+ * order (see {@link MeasurementTargetCandidate}) and the viewport, and
+ * returns the subset to measure - normally the input array narrowed (and, if
+ * wanted, reordered) with the standard array methods.
  *
- * Every included candidate becomes a measurement target: the first one is
+ * Every returned candidate becomes a measurement target: the first one is
  * the primary target returned by `getTargetId`, and each of them has its
  * statistics computed and displayed - even on a single fusion viewport where
- * the other targets have not been computed elsewhere yet.  Including no
- * candidates means no statistics are computed or displayed for the viewport.
+ * the other targets have not been computed elsewhere yet.  Returning an
+ * empty array means no statistics are computed or displayed for the
+ * viewport.
  *
  * The decision should be based on the modality of the display set where
  * available; candidates whose display set is unknown (eg legacy stack image
@@ -128,17 +105,17 @@ export type MeasurementTargetsFilterResult =
  * toolGroup.addTool(CircleROITool.toolName, {
  *   targetsFilter: measurementTargetFilters.first,
  * });
- * // Custom: the first PT display set only, stopping the search once found
+ * // Custom: the first PT display set only
  * toolGroup.addTool(CircleROITool.toolName, {
- *   targetsFilter: (displaySetInfo) =>
- *     displaySetInfo.modality === 'PT' ? 'useAndStop' : false,
+ *   targetsFilter: (candidates) =>
+ *     candidates.filter((c) => c.modality === 'PT').slice(0, 1),
  * });
  * ```
  */
 export type MeasurementTargetsFilter = (
-  displaySetInfo: MeasurementTargetCandidate,
+  candidates: MeasurementTargetCandidate[],
   viewport: Types.IViewport
-) => MeasurementTargetsFilterResult;
+) => MeasurementTargetCandidate[];
 
 /**
  * General tool configuration.  This is intended to be extended

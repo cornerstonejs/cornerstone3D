@@ -1,7 +1,4 @@
-import type {
-  MeasurementTargetsFilter,
-  MeasurementTargetCandidate,
-} from '../../types';
+import type { MeasurementTargetsFilter } from '../../types';
 
 /**
  * Modalities whose display sets do not contain measurable pixel values
@@ -18,15 +15,16 @@ export const NON_PIXEL_DATA_MODALITIES = [
 ];
 
 /**
- * Includes just the first candidate display set, stopping the search there.
+ * Includes just the first candidate display set.
  */
-export const first: MeasurementTargetsFilter = () => 'useAndStop';
+export const first: MeasurementTargetsFilter = (candidates) =>
+  candidates.slice(0, 1);
 
 /**
  * Includes every candidate display set, for example both the CT and the PT
  * volume on a fusion viewport.
  */
-export const all: MeasurementTargetsFilter = () => true;
+export const all: MeasurementTargetsFilter = (candidates) => candidates;
 
 /**
  * Includes every candidate display set containing pixel values: segmentation
@@ -40,12 +38,12 @@ export const all: MeasurementTargetsFilter = () => true;
  * excludes segmentations from the measurement targets (the candidate
  * derivation no longer bakes that exclusion in).
  */
-export const allPixelData: MeasurementTargetsFilter = ({
-  modality,
-  representationUID,
-}) =>
-  !representationUID &&
-  (!modality || !NON_PIXEL_DATA_MODALITIES.includes(modality));
+export const allPixelData: MeasurementTargetsFilter = (candidates) =>
+  candidates.filter(
+    ({ modality, representationUID }) =>
+      !representationUID &&
+      (!modality || !NON_PIXEL_DATA_MODALITIES.includes(modality))
+  );
 
 /**
  * Creates a filter including the display sets whose modality is one of the
@@ -55,8 +53,8 @@ export const allPixelData: MeasurementTargetsFilter = ({
  */
 export const forModality =
   (...modalities: string[]): MeasurementTargetsFilter =>
-  ({ modality }) =>
-    modalities.includes(modality);
+  (candidates) =>
+    candidates.filter(({ modality }) => modalities.includes(modality));
 
 /**
  * Creates a filter including the display sets referencing the given display
@@ -65,10 +63,13 @@ export const forModality =
  */
 export const forId =
   (id: string): MeasurementTargetsFilter =>
-  ({ displaySetUID, referencedId, targetId }: MeasurementTargetCandidate) =>
-    displaySetUID?.includes(id) ||
-    referencedId?.includes(id) ||
-    targetId.includes(id);
+  (candidates) =>
+    candidates.filter(
+      ({ displaySetUID, referencedId, targetId }) =>
+        displaySetUID?.includes(id) ||
+        referencedId?.includes(id) ||
+        targetId.includes(id)
+    );
 
 /**
  * Ready made {@link MeasurementTargetsFilter} implementations for the
@@ -82,21 +83,15 @@ export const forId =
  * layer that generates the executable filter with a closure (eg
  * `forModality('PT')`) instead of embedding logic in serialized config.
  *
- * The filter is called once per candidate display set, in viewport order,
- * receiving the display set related parameters (display set, uid, exemplar
- * instance, index and the previously chosen candidate) and the viewport.  It
- * returns, per candidate:
- * - `true` to include the display set and continue
- * - `false`/`undefined` to skip it and continue
- * - `'useAndStop'` to include it and stop looking for further items
- * - `'stop'` to skip it and stop looking for further items
+ * The filter receives the viewport's candidate display sets in viewport order
+ * and the viewport, and returns the subset to measure - normally the input
+ * array narrowed with the standard array methods.  The decision should be
+ * based on the modality of the display set where available.  When the display
+ * set is unknown (eg a stack viewport using the legacy set image ids), the
+ * candidate has no display set fields and no modality, and a filter can choose
+ * whether to include it based on that.
  *
- * The decision should be based on the modality of the display set where
- * available.  When the display set is unknown (eg a stack viewport using the
- * legacy set image ids), the candidate has no display set fields and no
- * modality, and a filter can choose whether to include it based on that.
- *
- * A configured filter's result is authoritative: when it includes no
+ * A configured filter's result is authoritative: when it returns no
  * candidates, no statistics are computed or displayed for the viewport.
  *
  * Example configurations:
@@ -124,10 +119,10 @@ export const forId =
  *   targetsFilter: measurementTargetFilters.first,
  * });
  *
- * // Custom: the first PT display set only, stopping the search once found
+ * // Custom: the first PT display set only
  * toolGroup.addTool(CircleROITool.toolName, {
- *   targetsFilter: (displaySetInfo) =>
- *     displaySetInfo.modality === 'PT' ? 'useAndStop' : false,
+ *   targetsFilter: (candidates) =>
+ *     candidates.filter((c) => c.modality === 'PT').slice(0, 1),
  * });
  * ```
  */

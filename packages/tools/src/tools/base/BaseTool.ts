@@ -324,12 +324,9 @@ abstract class BaseTool {
    * measurement statistics for on the given viewport.
    *
    * The targets are selected by the `targetsFilter` tool configuration
-   * option, called once per candidate display set of the viewport in order
-   * (see {@link measurementTargetFilters} for ready made filters).  The filter
-   * receives the display set related parameters - including the previously
-   * chosen candidate - and the viewport, and returns per candidate whether
-   * to include it and whether to stop looking for further items (see
-   * {@link MeasurementTargetsFilterResult}).
+   * option (see {@link measurementTargetFilters} for ready made filters).
+   * The filter receives the viewport's candidate display sets and the
+   * viewport, and returns the subset to measure.
    *
    * Each returned targetId reuses an existing cachedStats key when
    * statistics were already computed for the same volume (possibly by a
@@ -338,7 +335,7 @@ abstract class BaseTool {
    * compute the statistics of every filtered target itself, even when no
    * other viewport has computed them.
    *
-   * A configured filter's result is authoritative: when it includes no
+   * A configured filter's result is authoritative: when it returns no
    * candidates (eg a PT-only filter on a CT viewport, or the default
    * `allPixelData` filter when only a SEG is shown), an empty array is
    * returned and no statistics are computed or displayed.
@@ -372,20 +369,9 @@ abstract class BaseTool {
 
     if (targetsFilter) {
       const candidates = this.getMeasurementTargetCandidates(viewport, data);
-      const targets: string[] = [];
-      let previous: MeasurementTargetCandidate;
-      for (const candidate of candidates) {
-        candidate.previous = previous;
-        const result = targetsFilter(candidate, viewport);
-        if (result === true || result === 'useAndStop') {
-          targets.push(candidate.targetId);
-          previous = candidate;
-        }
-        if (result === 'useAndStop' || result === 'stop') {
-          break;
-        }
-      }
-      return targets;
+      return targetsFilter(candidates, viewport).map(
+        (candidate) => candidate.targetId
+      );
     }
 
     // No filter configured - use the viewport's default method
