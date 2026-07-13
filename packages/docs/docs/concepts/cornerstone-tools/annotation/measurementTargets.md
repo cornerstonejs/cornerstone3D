@@ -102,7 +102,7 @@ import { measurementTargetFilters } from '@cornerstonejs/tools';
 
 All display sets with pixel values — this is the default configuration for
 the ROI tools, made explicit. Candidates with a non-pixel modality
-(`measurementTargetFilters.NON_PIXEL_DATA_MODALITIES`: SEG, RTSTRUCT, RTPLAN, SR, PR, KO)
+(non-pixel modalities: SEG, RTSTRUCT, RTPLAN, SR, PR, KO)
 are excluded, while candidates with an unknown display set (legacy stacks)
 are included:
 
@@ -219,16 +219,16 @@ The candidates passed to the filter are built by
 
 ### targetId computation and reuse
 
-Statistics are keyed in `cachedStats` by view reference ids of the form
-`volumeId:<volumeId>?sliceIndex=...&viewPlaneNormal=...`. For each candidate,
-if the annotation already has a `cachedStats` key for the same volume — the
-key is `volumeId:<volumeId>` followed by `?`, `&` or end-of-string, so
-entries created by another viewport with a different slice or orientation
-still match — that existing key is reused. The annotation's world-space
-geometry, and therefore its statistics, do not depend on the viewing
-orientation, so recomputing per view would only duplicate work and display
-entries. Only when no key exists for the volume is a new targetId generated
-from this viewport's view reference for that volume.
+Statistics are keyed in `cachedStats` by view reference IDs. Volume candidates
+use IDs of the form
+`volumeId:<volumeId>?sliceIndex=...&viewPlaneNormal=...`; stack candidates keep
+using imageId-derived target IDs. For each volume candidate, if the annotation
+already has a `cachedStats` key whose embedded volume ID exactly matches the
+candidate, that existing key is reused. The annotation's world-space geometry,
+and therefore its statistics, do not depend on the viewing orientation, so
+recomputing per view would only duplicate work and display entries. Only when
+no key exists for the volume is a new targetId generated from this viewport's
+view reference for that volume.
 
 ### Seeding and computing multiple statistics
 

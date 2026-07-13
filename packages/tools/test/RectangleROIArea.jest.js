@@ -40,13 +40,7 @@ describe('Rectangle ROI area', () => {
       statsCallback: jest.fn(),
     };
 
-    tool._calculateCachedStats(
-      annotation,
-      [0, 0, 1],
-      [0, 1, 0],
-      {},
-      { viewport }
-    );
+    tool._calculateCachedStats(annotation, [0, 0, 1], [0, 1, 0], { viewport });
 
     expect(annotation.data.cachedStats[targetId].area).toBeCloseTo(27 * 16);
     expect(forEach).toHaveBeenCalledWith(

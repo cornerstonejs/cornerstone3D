@@ -618,7 +618,7 @@ abstract class BaseTool {
     needsUpdate?: (stats) => boolean
   ): boolean {
     let missing = false;
-    const cachedStats = data.cachedStats as Record<string, unknown>;
+    const cachedStats = (data.cachedStats ??= {}) as Record<string, unknown>;
     for (const targetId of targetIds) {
       const stats = cachedStats[targetId];
       if (!stats || needsUpdate?.(stats)) {

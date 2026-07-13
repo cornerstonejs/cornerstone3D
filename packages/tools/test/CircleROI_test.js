@@ -416,14 +416,16 @@ describe('Circle Tool: ', () => {
       Promise.all([
         volumeLoader.createAndCacheVolume(baseVolumeId, { imageIds: [] }),
         volumeLoader.createAndCacheVolume(overlayVolumeId, { imageIds: [] }),
-      ]).then(() => {
-        setVolumesForViewports(
-          renderingEngine,
-          [{ volumeId: baseVolumeId }, { volumeId: overlayVolumeId }],
-          [viewportId]
-        );
-        vp.render();
-      });
+      ])
+        .then(() => {
+          setVolumesForViewports(
+            renderingEngine,
+            [{ volumeId: baseVolumeId }, { volumeId: overlayVolumeId }],
+            [viewportId]
+          );
+          vp.render();
+        })
+        .catch(done.fail);
     } catch (e) {
       done.fail(e);
     }

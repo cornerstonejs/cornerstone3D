@@ -77,10 +77,10 @@ eventDetailsElement.innerText =
 content.appendChild(eventDetailsElement);
 // ============================= //
 
-function getViewport(): PlanarViewport {
-  return getRenderingEngine(renderingEngineId).getViewport(
+function getViewport(): PlanarViewport | undefined {
+  return getRenderingEngine(renderingEngineId)?.getViewport<PlanarViewport>(
     viewportId
-  ) as PlanarViewport;
+  );
 }
 
 function setDimensionGroup(dimensionGroupNumber: number) {
@@ -109,6 +109,9 @@ addDropdownToToolbar({
   },
   onSelectedValueChange: (selectedValue) => {
     const viewport = getViewport();
+    if (!viewport) {
+      return;
+    }
 
     viewport.setOrientation(selectedValue as Enums.OrientationAxis);
     viewport.render();
@@ -118,6 +121,10 @@ addDropdownToToolbar({
 addButtonToToolbar({
   title: 'Play / Stop',
   onClick: () => {
+    if (!volume) {
+      return;
+    }
+
     if (cineIntervalId !== null) {
       stopCine();
       return;

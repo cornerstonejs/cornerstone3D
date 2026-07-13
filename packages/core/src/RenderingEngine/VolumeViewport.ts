@@ -789,6 +789,8 @@ class VolumeViewport extends BaseVolumeViewport {
   ): ViewReference {
     const viewRef = super.getViewReference(viewRefSpecifier);
     if (!viewRef?.volumeId) {
+      // A frame-of-reference-only reference deliberately has no volumeId, so
+      // no specific volume can safely supply a referencedImageId.
       return viewRef;
     }
     const volume = cache.getVolume(viewRef.volumeId);

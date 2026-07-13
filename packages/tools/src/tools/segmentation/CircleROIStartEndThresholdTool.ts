@@ -225,7 +225,6 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
           projectionPoints: [],
           statistics: [],
         },
-        labelmapUID: null,
       },
     };
 

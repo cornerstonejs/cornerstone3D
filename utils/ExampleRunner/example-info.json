@@ -607,9 +607,9 @@
         "name": "PET-CT Fusion + MIPLayout",
         "description": "PT-CT fusion layout with Crosshairs, and synchronized cameras, CT W/L and PET threshold"
       },
-      "tmtv": {
-        "name": "TMTV mode",
-        "description": "Demonstrates how to use the TMTV mode with multiple viewport measurement results"
+      "legacyMultiVolumeMeasurements": {
+        "name": "Legacy Multi-Volume Measurements",
+        "description": "CT-only, PT-only, and fused PT/CT legacy VolumeViewports demonstrating selectable fusion measurement targets."
       },
       "sharedToolState": {
         "name": "Shared Tool State",

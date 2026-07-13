@@ -29,7 +29,12 @@ export function createGetTextLines(
     const targetIds = Array.isArray(targetId) ? targetId : [targetId];
     const cachedVolumeStats = targetIds
       .map((id) => data.cachedStats[id])
-      .filter((it) => it?.mean !== undefined && it?.mean !== null);
+      .filter((stats) =>
+        metrics.some(
+          ({ attribute }) =>
+            stats?.[attribute] !== undefined && stats?.[attribute] !== null
+        )
+      );
 
     if (!cachedVolumeStats.length) {
       return;

@@ -101,7 +101,10 @@ export type AnnotationData = {
   [key: string]: unknown;
 };
 
-export type AnnotationDataStatsByTargetId = AnnotationData & {
+export type AnnotationDataStatsByTargetId = Omit<
+  AnnotationData,
+  'cachedStats'
+> & {
   cachedStats: Record<string, CachedStats>;
 };
 

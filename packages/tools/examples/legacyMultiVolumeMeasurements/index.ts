@@ -1,43 +1,47 @@
-import type { PlanarViewport, Types } from '@cornerstonejs/core';
-import { RenderingEngine, Enums, utilities } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import {
+  Enums,
+  RenderingEngine,
+  setVolumesForViewports,
+  volumeLoader,
+} from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   addDropdownToToolbar,
   createImageIdsAndCacheMetaData,
-  ctVoiRange,
   initDemo,
+  setCtTransferFunctionForVolumeActor,
+  setPetColorMapTransferFunctionForVolumeActor,
+  setPetTransferFunctionForVolumeActor,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
 
 const {
   CircleROITool,
+  Enums: csToolsEnums,
   PanTool,
   RectangleROITool,
   StackScrollTool,
   ToolGroupManager,
   ZoomTool,
-  Enums: csToolsEnums,
   measurementTargetFilters,
 } = cornerstoneTools;
 
 const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 
-const renderingEngineId = 'GENERIC_MULTI_VOLUME_MEASUREMENTS_ENGINE';
+const renderingEngineId = 'LEGACY_MULTI_VOLUME_MEASUREMENTS_ENGINE';
 const singleVolumeToolGroupId =
-  'GENERIC_MULTI_VOLUME_MEASUREMENTS_SINGLE_VOLUME_TOOL_GROUP';
-const fusionToolGroupId = 'GENERIC_MULTI_VOLUME_MEASUREMENTS_FUSION_TOOL_GROUP';
+  'LEGACY_MULTI_VOLUME_MEASUREMENTS_SINGLE_VOLUME_TOOL_GROUP';
+const fusionToolGroupId = 'LEGACY_MULTI_VOLUME_MEASUREMENTS_FUSION_TOOL_GROUP';
 const viewportIds = {
-  ct: 'GENERIC_MEASUREMENTS_CT',
-  pt: 'GENERIC_MEASUREMENTS_PT',
-  fusion: 'GENERIC_MEASUREMENTS_FUSION',
+  ct: 'LEGACY_MEASUREMENTS_CT',
+  pt: 'LEGACY_MEASUREMENTS_PT',
+  fusion: 'LEGACY_MEASUREMENTS_FUSION',
 };
-const ctDataId = 'generic-measurements:ct';
-const ptDataId = 'generic-measurements:pt';
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
-const ctVolumeId = `${volumeLoaderScheme}:GENERIC_MEASUREMENTS_CT_VOLUME`;
-const ptVolumeId = `${volumeLoaderScheme}:GENERIC_MEASUREMENTS_PT_VOLUME`;
-const ptVoiRange = { lower: 0, upper: 5 };
+const ctVolumeId = `${volumeLoaderScheme}:LEGACY_MEASUREMENTS_CT_VOLUME`;
+const ptVolumeId = `${volumeLoaderScheme}:LEGACY_MEASUREMENTS_PT_VOLUME`;
 const orientation = Enums.OrientationAxis.AXIAL;
 const roiToolNames = [RectangleROITool.toolName, CircleROITool.toolName];
 const measurementTargetFilterOptions = {
@@ -50,8 +54,8 @@ let singleVolumeToolGroup;
 let fusionToolGroup;
 
 setTitleAndDescription(
-  'Generic Multi-Volume Measurements',
-  'Three Planar GenericViewports show the same CT/PT study as CT-only, PT-only, and fused PT/CT. Draw an ROI in any viewport: single-volume viewports display one result, while the fused viewport computes and displays both HU and SUV statistics.'
+  'Legacy Multi-Volume Measurements',
+  'Three legacy VolumeViewports show the same CT/PT study as CT-only, PT-only, and fused PT/CT. The measurement-target dropdown changes only the fusion viewport, where an ROI can report HU, SUV, or both.'
 );
 
 const content = document.getElementById('content');
@@ -181,19 +185,6 @@ async function run(): Promise<void> {
     wadoRsRoot,
   });
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(ctDataId, {
-    imageIds: ctImageIds,
-    initialImageIdIndex: Math.floor(ctImageIds.length / 2),
-    kind: 'planar',
-    volumeId: ctVolumeId,
-  });
-  utilities.genericViewportDisplaySetMetadataProvider.add(ptDataId, {
-    imageIds: ptImageIds,
-    initialImageIdIndex: Math.floor(ptImageIds.length / 2),
-    kind: 'planar',
-    volumeId: ptVolumeId,
-  });
-
   const renderingEngine = new RenderingEngine(renderingEngineId);
   const viewportElements = {
     ct: panels.ct.querySelector(`#${viewportIds.ct}`) as HTMLDivElement,
@@ -206,7 +197,7 @@ async function run(): Promise<void> {
   renderingEngine.setViewports(
     Object.entries(viewportIds).map(([key, viewportId]) => ({
       viewportId,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.ORTHOGRAPHIC,
       element: viewportElements[key],
       defaultOptions: {
         orientation,
@@ -259,48 +250,49 @@ async function run(): Promise<void> {
 
   setActiveROITool(RectangleROITool.toolName);
 
-  const ctViewport = renderingEngine.getViewport<PlanarViewport>(
-    viewportIds.ct
-  );
-  const ptViewport = renderingEngine.getViewport<PlanarViewport>(
-    viewportIds.pt
-  );
-  const fusionViewport = renderingEngine.getViewport<PlanarViewport>(
-    viewportIds.fusion
-  );
+  const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
+    imageIds: ctImageIds,
+  });
+  const ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
+    imageIds: ptImageIds,
+  });
+  ctVolume.load();
+  ptVolume.load();
 
-  // Load single-volume viewports first so the fused viewport reuses the same
-  // cached CT/PT volumes when it mounts both display sets.
-  await ctViewport.setDisplaySets({
-    displaySetId: ctDataId,
-    options: { orientation },
-  });
-  await ptViewport.setDisplaySets({
-    displaySetId: ptDataId,
-    options: { orientation },
-  });
-  await fusionViewport.setDisplaySets(
-    {
-      displaySetId: ctDataId,
-      options: { orientation },
-    },
-    {
-      displaySetId: ptDataId,
-      options: { orientation },
-    }
+  await setVolumesForViewports(
+    renderingEngine,
+    [
+      {
+        volumeId: ctVolumeId,
+        callback: setCtTransferFunctionForVolumeActor,
+      },
+    ],
+    [viewportIds.ct]
   );
-
-  ctViewport.setDisplaySetPresentation(ctDataId, { voiRange: ctVoiRange });
-  ptViewport.setDisplaySetPresentation(ptDataId, {
-    voiRange: ptVoiRange,
-    invert: true,
-  });
-  fusionViewport.setDisplaySetPresentation(ctDataId, {
-    voiRange: ctVoiRange,
-  });
-  fusionViewport.setDisplaySetPresentation(ptDataId, {
-    colormap: { name: 'hsv', opacity: 0.5 },
-  });
+  await setVolumesForViewports(
+    renderingEngine,
+    [
+      {
+        volumeId: ptVolumeId,
+        callback: setPetTransferFunctionForVolumeActor,
+      },
+    ],
+    [viewportIds.pt]
+  );
+  await setVolumesForViewports(
+    renderingEngine,
+    [
+      {
+        volumeId: ctVolumeId,
+        callback: setCtTransferFunctionForVolumeActor,
+      },
+      {
+        volumeId: ptVolumeId,
+        callback: setPetColorMapTransferFunctionForVolumeActor,
+      },
+    ],
+    [viewportIds.fusion]
+  );
 
   renderingEngine.renderViewports(Object.values(viewportIds));
 }

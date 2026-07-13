@@ -127,6 +127,14 @@ describe('measurement target regressions', () => {
     ).toBe(variantTarget);
   });
 
+  it('initializes cached stats before seeding measurement targets', () => {
+    const tool = new TestBaseTool();
+    const data = {};
+
+    expect(tool.ensureCachedStatsTargets(data, ['volumeId:ct'])).toBe(true);
+    expect(data.cachedStats).toEqual({ 'volumeId:ct': {} });
+  });
+
   it('keeps referenced images while making created annotations FOR-wide', () => {
     const viewport = {
       getViewReference: jest.fn((specifier) =>

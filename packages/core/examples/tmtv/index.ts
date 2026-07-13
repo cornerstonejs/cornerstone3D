@@ -21,7 +21,6 @@ import * as cornerstoneTools from '@cornerstonejs/tools';
 
 const {
   ToolGroupManager,
-  SynchronizerManager,
   Enums: csToolsEnums,
   WindowLevelTool,
   PanTool,
@@ -39,7 +38,6 @@ const {
   CircleROIStartEndThresholdTool,
   RectangleROIStartEndThresholdTool,
   segmentation,
-  measurementTargetFilters,
 } = cornerstoneTools;
 
 const { MouseBindings, KeyboardBindings } = csToolsEnums;
@@ -97,7 +95,6 @@ const viewportIds = {
       AXIAL: 'FUSION_AXIAL_S1',
       SAGITTAL: 'FUSION_SAGITTAL_S1',
       CORONAL: 'FUSION_CORONAL_S1',
-      OBLIQUE: 'FUSION_OBLIQUE_S1',
     },
     PETMIP: { CORONAL: 'PET_MIP_CORONAL_S1' },
   },
@@ -140,6 +137,9 @@ const studyConfigs = [
   },
 ];
 
+// Store DOM elements
+const elements = {};
+
 // Viewport colors
 const viewportColors = {};
 
@@ -155,48 +155,17 @@ const viewportColors = {};
   viewportColors[studyViewportIds.FUSION.AXIAL] = 'rgb(200, 0, 0)';
   viewportColors[studyViewportIds.FUSION.SAGITTAL] = 'rgb(200, 200, 0)';
   viewportColors[studyViewportIds.FUSION.CORONAL] = 'rgb(0, 200, 0)';
-  viewportColors[studyViewportIds.FUSION.OBLIQUE] = 'rgb(0, 200, 200)';
 });
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'TMTV Mode with Tools',
-  'Two series fused for TMTV with tools available to show how they interact with each other'
+  'Multi-Monitor PET-CT',
+  'Three studies displayed with PET-CT fusion layout, each with separate tool groups but shared rendering engine'
 );
-
-// Named ROI tool instances demonstrating the `targetsFilter` configuration,
-// which selects the display sets a tool computes/shows statistics for based
-// on the modality of the display set.
-const circleROISUVToolName = 'CircleROISUV';
-const rectangleROIHUToolName = 'RectangleROIHU';
-
-const instructions = document.createElement('p');
-instructions.innerText = `Select a tool from the drop down and drag on a viewport to create an ROI:
-- "Rectangle/Circle ROI (all pixel data - default)": the default configuration computes and shows the statistics of every display set containing pixel values, so on the fusion (bottom row) viewports both the CT (HU) and PT (SUV) values appear at once. SEG display sets are never included, even when they are the only thing shown.
-- "Circle ROI (PT SUV only)": configured with measurementTargetFilters.forModality('PT'), it shows the SUV statistics by preference - on the fusion viewports only the PT values appear, and on the CT-only viewports nothing is shown.
-- "Rectangle ROI (CT HU only)": configured with measurementTargetFilters.forModality('CT'), it shows the HU statistics by preference - on the fusion viewports only the CT values appear, and on the PT-only viewports nothing is shown.
-Annotations are shared across the viewports; a fusion viewport computes the statistics of each selected volume itself, even when no other viewport has computed them.
-Use the "Layout" drop down to test the tools on different viewport arrangements: the default CT/PT/Fusion grid with the PET MIP, just the three fusion views, or a mixed layout (CT sagittal, PT coronal and an oblique CT+PT fusion). Annotations survive the layout switches and statistics are recomputed as needed.`;
-document.getElementById('content').appendChild(instructions);
 
 const optionsValues = [
   RectangleROITool.toolName,
-  rectangleROIHUToolName,
   CircleROITool.toolName,
-  circleROISUVToolName,
-  LengthTool.toolName,
-  BidirectionalTool.toolName,
-  WindowLevelTool.toolName,
-  CrosshairsTool.toolName,
-  CircleROIStartEndThresholdTool.toolName,
-  RectangleROIStartEndThresholdTool.toolName,
-];
-
-const optionsLabels = [
-  'Rectangle ROI (all pixel data - default)',
-  'Rectangle ROI (CT HU only)',
-  'Circle ROI (all pixel data - default)',
-  'Circle ROI (PT SUV only)',
   LengthTool.toolName,
   BidirectionalTool.toolName,
   WindowLevelTool.toolName,
@@ -235,11 +204,7 @@ addButtonToToolbar({
 
 // ============================= //
 addDropdownToToolbar({
-  options: {
-    values: optionsValues,
-    labels: optionsLabels,
-    defaultValue: ZoomTool.toolName,
-  },
+  options: { values: optionsValues, defaultValue: ZoomTool.toolName },
   onSelectedValueChange: (toolNameAsStringOrNumber) => {
     const toolName = String(toolNameAsStringOrNumber);
 
@@ -255,9 +220,7 @@ addDropdownToToolbar({
         toolGroup.setToolDisabled(WindowLevelTool.toolName);
         toolGroup.setToolDisabled(CrosshairsTool.toolName);
         toolGroup.setToolPassive(CircleROITool.toolName);
-        toolGroup.setToolPassive(circleROISUVToolName);
         toolGroup.setToolPassive(RectangleROITool.toolName);
-        toolGroup.setToolPassive(rectangleROIHUToolName);
         toolGroup.setToolPassive(LengthTool.toolName);
         toolGroup.setToolPassive(BidirectionalTool.toolName);
         toolGroup.setToolActive(toolName, {
@@ -265,26 +228,6 @@ addDropdownToToolbar({
         });
       });
     });
-  },
-});
-
-// Layouts to test the tools on fusion, CT and PT viewports separately
-const layoutKeys = ['default', 'fusion', 'oblique'];
-const layoutLabels = [
-  'CT / PT / Fusion + PET MIP (default)',
-  'Fusion only (axial, sagittal, coronal)',
-  'CT sagittal / PT coronal / Fusion oblique',
-];
-
-addDropdownToToolbar({
-  labelText: 'Layout',
-  options: {
-    values: layoutKeys,
-    labels: layoutLabels,
-    defaultValue: 'default',
-  },
-  onSelectedValueChange: (layoutKey) => {
-    applyLayout(String(layoutKey)).catch(console.error);
   },
 });
 
@@ -313,262 +256,72 @@ function getReferenceLineSlabThicknessControlsOn(viewportId) {
   return true;
 }
 
-// An oblique orientation halfway between sagittal and coronal, keeping the
-// patient axis vertical.
-const obliqueOrientation = {
-  viewPlaneNormal: <Types.Point3>[Math.SQRT1_2, -Math.SQRT1_2, 0],
-  viewUp: <Types.Point3>[0, 0, 1],
-};
+// Create viewport grid
+function createViewportGrid() {
+  const viewportGrid = document.createElement('div');
 
-/**
- * The viewports making up each layout: which data each shows ('ct', 'pt',
- * 'fusion' or 'mip'), its orientation and its css grid placement.
- * - 'default' is the full CT/PT/Fusion grid with the PET MIP column
- * - 'fusion' shows just the three fusion views
- * - 'oblique' mixes a CT sagittal, a PT coronal and an oblique CT+PT fusion
- */
-function getLayoutViewportSpecs(studyKey, layoutKey) {
-  const v = viewportIds[studyKey];
-  const white = <Types.Point3>[1, 1, 1];
-  const { AXIAL, SAGITTAL, CORONAL } = Enums.OrientationAxis;
+  viewportGrid.style.display = 'grid';
+  viewportGrid.style.gridTemplateRows = `repeat(3, 33.33%)`;
+  viewportGrid.style.gridTemplateColumns = `repeat(12, 8.33%)`;
+  viewportGrid.style.width = '200vw';
+  viewportGrid.style.height = '95vh';
+  viewportGrid.style.gap = '2px';
 
-  switch (layoutKey) {
-    case 'fusion':
-      return [
-        {
-          viewportId: v.FUSION.AXIAL,
-          data: 'fusion',
-          orientation: AXIAL,
-          gridRow: '1',
-          gridColumn: '1',
-        },
-        {
-          viewportId: v.FUSION.SAGITTAL,
-          data: 'fusion',
-          orientation: SAGITTAL,
-          gridRow: '1',
-          gridColumn: '2',
-        },
-        {
-          viewportId: v.FUSION.CORONAL,
-          data: 'fusion',
-          orientation: CORONAL,
-          gridRow: '1',
-          gridColumn: '3',
-        },
-      ];
-    case 'oblique':
-      return [
-        {
-          viewportId: v.CT.SAGITTAL,
-          data: 'ct',
-          orientation: SAGITTAL,
-          gridRow: '1',
-          gridColumn: '1',
-        },
-        {
-          viewportId: v.PT.CORONAL,
-          data: 'pt',
-          orientation: CORONAL,
-          background: white,
-          gridRow: '1',
-          gridColumn: '2',
-        },
-        {
-          viewportId: v.FUSION.OBLIQUE,
-          data: 'fusion',
-          orientation: obliqueOrientation,
-          gridRow: '1',
-          gridColumn: '3',
-        },
-      ];
-    case 'default':
-    default:
-      return [
-        {
-          viewportId: v.CT.AXIAL,
-          data: 'ct',
-          orientation: AXIAL,
-          gridRow: '1',
-          gridColumn: '1',
-        },
-        {
-          viewportId: v.CT.SAGITTAL,
-          data: 'ct',
-          orientation: SAGITTAL,
-          gridRow: '1',
-          gridColumn: '2',
-        },
-        {
-          viewportId: v.CT.CORONAL,
-          data: 'ct',
-          orientation: CORONAL,
-          gridRow: '1',
-          gridColumn: '3',
-        },
-        {
-          viewportId: v.PT.AXIAL,
-          data: 'pt',
-          orientation: AXIAL,
-          background: white,
-          gridRow: '2',
-          gridColumn: '1',
-        },
-        {
-          viewportId: v.PT.SAGITTAL,
-          data: 'pt',
-          orientation: SAGITTAL,
-          background: white,
-          gridRow: '2',
-          gridColumn: '2',
-        },
-        {
-          viewportId: v.PT.CORONAL,
-          data: 'pt',
-          orientation: CORONAL,
-          background: white,
-          gridRow: '2',
-          gridColumn: '3',
-        },
-        {
-          viewportId: v.FUSION.AXIAL,
-          data: 'fusion',
-          orientation: AXIAL,
-          gridRow: '3',
-          gridColumn: '1',
-        },
-        {
-          viewportId: v.FUSION.SAGITTAL,
-          data: 'fusion',
-          orientation: SAGITTAL,
-          gridRow: '3',
-          gridColumn: '2',
-        },
-        {
-          viewportId: v.FUSION.CORONAL,
-          data: 'fusion',
-          orientation: CORONAL,
-          gridRow: '3',
-          gridColumn: '3',
-        },
-        {
-          viewportId: v.PETMIP.CORONAL,
-          data: 'mip',
-          orientation: CORONAL,
-          background: white,
-          gridRow: '1 / span 3',
-          gridColumn: '4',
-        },
-      ];
-  }
-}
+  const content = document.getElementById('content');
+  content.appendChild(viewportGrid);
 
-// The grid container, rebuilt on each layout change
-let viewportGridElement;
+  // Create elements for each study
+  studyConfigs.forEach((config, studyIndex) => {
+    const studyKey = config.studyKey;
+    elements[studyKey] = {};
 
-// Create viewport grid for a layout, returning the element of each viewport
-function buildViewportGrid(specs, layoutKey) {
-  resizeObserver.disconnect();
-  viewportGridElement?.remove();
+    // Create 3x3 grid elements for each study
+    for (let row = 0; row < 3; row++) {
+      for (let col = 0; col < 3; col++) {
+        const element = document.createElement('div');
+        element.style.width = '100%';
+        element.style.height = '100%';
+        element.style.border = '1px solid #333';
+        element.oncontextmenu = (e) => e.preventDefault();
 
-  viewportGridElement = document.createElement('div');
-  viewportGridElement.style.display = 'grid';
-  if (layoutKey === 'default') {
-    viewportGridElement.style.gridTemplateRows = `repeat(3, 33.33%)`;
-    viewportGridElement.style.gridTemplateColumns = `repeat(12, 8.33%)`;
-    viewportGridElement.style.width = '200vw';
-  } else {
-    viewportGridElement.style.gridTemplateRows = '100%';
-    viewportGridElement.style.gridTemplateColumns = 'repeat(3, 33.33%)';
-    viewportGridElement.style.width = '100%';
-  }
-  viewportGridElement.style.height = '95vh';
-  viewportGridElement.style.gap = '2px';
+        // Position in the overall grid - studies side by side
+        const gridRow = row + 1;
+        const gridColumn = studyIndex * 4 + col + 1;
+        element.style.gridRow = String(gridRow);
+        element.style.gridColumn = String(gridColumn);
 
-  document.getElementById('content').appendChild(viewportGridElement);
+        viewportGrid.appendChild(element);
+        resizeObserver.observe(element);
 
-  const elementsByViewportId = {};
-  specs.forEach((spec) => {
-    const element = document.createElement('div');
-    element.style.width = '100%';
-    element.style.height = '100%';
-    element.style.border = '1px solid #333';
-    element.style.gridRow = spec.gridRow;
-    element.style.gridColumn = spec.gridColumn;
-    element.oncontextmenu = (e) => e.preventDefault();
+        // Store element reference
+        const elementKey = `element_${row + 1}_${col + 1}`;
+        elements[studyKey][elementKey] = element;
+      }
+    }
 
-    viewportGridElement.appendChild(element);
-    resizeObserver.observe(element);
-    elementsByViewportId[spec.viewportId] = element;
+    // Create MIP element
+    const mipElement = document.createElement('div');
+    mipElement.style.width = '100%';
+    mipElement.style.height = '100%';
+    mipElement.style.border = '1px solid #333';
+    mipElement.oncontextmenu = (e) => e.preventDefault();
+
+    // Position MIP in the 4th column of each study, spanning 3 rows
+    mipElement.style.gridRow = `1 / span 3`;
+    mipElement.style.gridColumn = String(studyIndex * 4 + 4);
+
+    viewportGrid.appendChild(mipElement);
+    resizeObserver.observe(mipElement);
+    elements[studyKey].element_mip = mipElement;
   });
 
-  return elementsByViewportId;
+  return viewportGrid;
 }
 
-/**
- * Applies one of the layouts: rebuilds the grid, replaces the viewports,
- * re-binds them to their tool groups and synchronizers, sets the volumes and
- * segmentations, and renders.  Annotations live in the annotation state (per
- * frame of reference), so they survive the switch and their statistics are
- * computed on the new viewports as needed.
- */
-async function applyLayout(layoutKey) {
-  if (!renderingEngine || !volumes.study1.ct) {
-    // Still loading - the initial layout is applied by run()
-    return;
-  }
-
-  const studyKey = 'study1';
-  const specs = getLayoutViewportSpecs(studyKey, layoutKey);
-  const elementsByViewportId = buildViewportGrid(specs, layoutKey);
-
-  // Replace all the viewports of the rendering engine with the new set
-  renderingEngine.setViewports(
-    specs.map((spec) => ({
-      viewportId: spec.viewportId,
-      type: ViewportType.ORTHOGRAPHIC,
-      element: elementsByViewportId[spec.viewportId],
-      defaultOptions: {
-        orientation: spec.orientation,
-        ...(spec.background ? { background: spec.background } : {}),
-      },
-    }))
-  );
-
-  // Tool group membership follows the data shown in each viewport
-  const studyToolGroupIds = toolGroupIds[studyKey];
-  const toolGroupIdForData = {
-    ct: studyToolGroupIds.ct,
-    pt: studyToolGroupIds.pt,
-    fusion: studyToolGroupIds.fusion,
-    mip: studyToolGroupIds.mip,
-  };
-  Object.values(toolGroupIdForData).forEach((toolGroupId) => {
-    ToolGroupManager.getToolGroup(toolGroupId)?.removeViewports(
-      renderingEngineId
-    );
-  });
-  specs.forEach((spec) => {
-    ToolGroupManager.getToolGroup(toolGroupIdForData[spec.data])?.addViewport(
-      spec.viewportId,
-      renderingEngineId
-    );
-  });
-
-  await setUpDisplayForLayout(studyKey, specs);
-  setUpSynchronizersForStudy(studyKey, specs);
-  await addSegmentationRepresentationsForViewports(
-    specs.filter((spec) => spec.data !== 'mip').map((spec) => spec.viewportId)
-  );
-  initializeCameraSyncForStudy(studyKey, specs);
-
-  renderingEngine.render();
-}
-
-// Set up tool groups for a study.  The viewports are added to the groups by
-// applyLayout, based on which viewports the current layout contains.
+// Set up tool groups for a study
 function setUpToolGroupsForStudy(studyKey) {
   const studyToolGroupIds = toolGroupIds[studyKey];
+  const studyViewportIds = viewportIds[studyKey];
   const studyVolumeIds = volumeIds[studyKey];
 
   // Create tool groups
@@ -578,6 +331,25 @@ function setUpToolGroupsForStudy(studyKey) {
     studyToolGroupIds.fusion
   );
   const mipToolGroup = ToolGroupManager.createToolGroup(studyToolGroupIds.mip);
+
+  // Add viewports to tool groups
+  ctToolGroup.addViewport(studyViewportIds.CT.AXIAL, renderingEngineId);
+  ctToolGroup.addViewport(studyViewportIds.CT.SAGITTAL, renderingEngineId);
+  ctToolGroup.addViewport(studyViewportIds.CT.CORONAL, renderingEngineId);
+
+  ptToolGroup.addViewport(studyViewportIds.PT.AXIAL, renderingEngineId);
+  ptToolGroup.addViewport(studyViewportIds.PT.SAGITTAL, renderingEngineId);
+  ptToolGroup.addViewport(studyViewportIds.PT.CORONAL, renderingEngineId);
+
+  fusionToolGroup.addViewport(studyViewportIds.FUSION.AXIAL, renderingEngineId);
+  fusionToolGroup.addViewport(
+    studyViewportIds.FUSION.SAGITTAL,
+    renderingEngineId
+  );
+  fusionToolGroup.addViewport(
+    studyViewportIds.FUSION.CORONAL,
+    renderingEngineId
+  );
 
   // Add tools to CT and PT groups
   [ctToolGroup, ptToolGroup].forEach((toolGroup) => {
@@ -591,24 +363,8 @@ function setUpToolGroupsForStudy(studyKey) {
       getReferenceLineDraggableRotatable,
       getReferenceLineSlabThicknessControlsOn,
     });
-    // The default ROI configuration (measurementTargetFilters.allPixelData) shows the
-    // statistics of every display set containing pixel values.
     toolGroup.addTool(RectangleROITool.toolName);
     toolGroup.addTool(CircleROITool.toolName);
-    // Named instances demonstrating modality based filters: the SUV circle
-    // shows PT statistics by preference (and nothing on CT-only viewports),
-    // the HU rectangle shows CT statistics by preference (and nothing on
-    // PT-only viewports).
-    toolGroup.addToolInstance(circleROISUVToolName, CircleROITool.toolName, {
-      targetsFilter: measurementTargetFilters.forModality('PT'),
-    });
-    toolGroup.addToolInstance(
-      rectangleROIHUToolName,
-      RectangleROITool.toolName,
-      {
-        targetsFilter: measurementTargetFilters.forModality('CT'),
-      }
-    );
     toolGroup.addTool(LengthTool.toolName);
     toolGroup.addTool(BidirectionalTool.toolName);
     // if (toolGroup === ptToolGroup) {
@@ -645,27 +401,7 @@ function setUpToolGroupsForStudy(studyKey) {
     getReferenceLineSlabThicknessControlsOn,
     filterActorUIDsToSetSlabThickness: [studyVolumeIds.ct],
   });
-  // On the fusion viewports the `targetsFilter` configuration decides which
-  // of the fused volumes (display sets) the tools compute and display
-  // statistics for.  The default ROI tools show both the CT and PT values
-  // at once (measurementTargetFilters.allPixelData); the named instances restrict the
-  // statistics by modality.
   fusionToolGroup.addTool(RectangleROITool.toolName);
-  fusionToolGroup.addTool(CircleROITool.toolName);
-  fusionToolGroup.addToolInstance(
-    circleROISUVToolName,
-    CircleROITool.toolName,
-    {
-      targetsFilter: measurementTargetFilters.forModality('PT'),
-    }
-  );
-  fusionToolGroup.addToolInstance(
-    rectangleROIHUToolName,
-    RectangleROITool.toolName,
-    {
-      targetsFilter: measurementTargetFilters.forModality('CT'),
-    }
-  );
   fusionToolGroup.addTool(CircleROIStartEndThresholdTool.toolName, {
     calculatePointsInsideVolume: true,
     showTextBox: false,
@@ -721,22 +457,13 @@ function setUpToolGroupsForStudy(studyKey) {
   mipToolGroup.setToolActive(MIPJumpToClickTool.toolName, {
     bindings: [{ mouseButton: MouseBindings.Primary }],
   });
+  mipToolGroup.addViewport(studyViewportIds.PETMIP.CORONAL, renderingEngineId);
 }
 
-// Set up synchronizers for a study, for the viewports of the current layout.
-// Called on each layout change - existing synchronizers are destroyed and
-// recreated with only the viewports present in the layout.
-function setUpSynchronizersForStudy(studyKey, specs) {
+// Set up synchronizers for a study
+function setUpSynchronizersForStudy(studyKey) {
   const studySynchronizerIds = synchronizerIds[studyKey];
   const studyViewportIds = viewportIds[studyKey];
-  const present = new Set(specs.map((spec) => spec.viewportId));
-
-  // Destroy the previous layout's synchronizers so they can be recreated
-  (Object.values(studySynchronizerIds) as string[]).forEach(
-    (synchronizerId) => {
-      SynchronizerManager.destroySynchronizer(synchronizerId);
-    }
-  );
 
   // Create synchronizers
   const axialCameraSync = createCameraPositionSynchronizer(
@@ -771,53 +498,57 @@ function setUpSynchronizersForStudy(studyKey, specs) {
     fusionVoi: fusionVoiSync,
   };
 
-  // Add the present viewports to the camera synchronizers, per orientation
-  const cameraSyncGroups = [
-    {
-      sync: axialCameraSync,
-      syncViewportIds: [
-        studyViewportIds.CT.AXIAL,
-        studyViewportIds.PT.AXIAL,
-        studyViewportIds.FUSION.AXIAL,
-      ],
-    },
-    {
-      sync: sagittalCameraSync,
-      syncViewportIds: [
-        studyViewportIds.CT.SAGITTAL,
-        studyViewportIds.PT.SAGITTAL,
-        studyViewportIds.FUSION.SAGITTAL,
-      ],
-    },
-    {
-      sync: coronalCameraSync,
-      syncViewportIds: [
-        studyViewportIds.CT.CORONAL,
-        studyViewportIds.PT.CORONAL,
-        studyViewportIds.FUSION.CORONAL,
-      ],
-    },
-  ];
-  cameraSyncGroups.forEach(({ sync, syncViewportIds }) => {
-    syncViewportIds
-      .filter((viewportId) => present.has(viewportId))
-      .forEach((viewportId) => {
-        sync.add({ renderingEngineId, viewportId });
-      });
+  // Add viewports to camera synchronizers
+  [
+    studyViewportIds.CT.AXIAL,
+    studyViewportIds.PT.AXIAL,
+    studyViewportIds.FUSION.AXIAL,
+  ].forEach((viewportId) => {
+    axialCameraSync.add({ renderingEngineId, viewportId });
   });
 
-  // Add the present viewports to the VOI synchronizers by the data they show
-  specs.forEach((spec) => {
-    const syncTarget = { renderingEngineId, viewportId: spec.viewportId };
-    if (spec.data === 'ct') {
-      ctVoiSync.add(syncTarget);
-    } else if (spec.data === 'pt' || spec.data === 'mip') {
-      ptVoiSync.add(syncTarget);
-    } else if (spec.data === 'fusion') {
-      fusionVoiSync.add(syncTarget);
-      ctVoiSync.addTarget(syncTarget);
-      ptVoiSync.addTarget(syncTarget);
-    }
+  [
+    studyViewportIds.CT.SAGITTAL,
+    studyViewportIds.PT.SAGITTAL,
+    studyViewportIds.FUSION.SAGITTAL,
+  ].forEach((viewportId) => {
+    sagittalCameraSync.add({ renderingEngineId, viewportId });
+  });
+
+  [
+    studyViewportIds.CT.CORONAL,
+    studyViewportIds.PT.CORONAL,
+    studyViewportIds.FUSION.CORONAL,
+  ].forEach((viewportId) => {
+    coronalCameraSync.add({ renderingEngineId, viewportId });
+  });
+
+  // Add viewports to VOI synchronizers
+  [
+    studyViewportIds.CT.AXIAL,
+    studyViewportIds.CT.SAGITTAL,
+    studyViewportIds.CT.CORONAL,
+  ].forEach((viewportId) => {
+    ctVoiSync.add({ renderingEngineId, viewportId });
+  });
+
+  [
+    studyViewportIds.PT.AXIAL,
+    studyViewportIds.PT.SAGITTAL,
+    studyViewportIds.PT.CORONAL,
+    studyViewportIds.PETMIP.CORONAL,
+  ].forEach((viewportId) => {
+    ptVoiSync.add({ renderingEngineId, viewportId });
+  });
+
+  [
+    studyViewportIds.FUSION.AXIAL,
+    studyViewportIds.FUSION.SAGITTAL,
+    studyViewportIds.FUSION.CORONAL,
+  ].forEach((viewportId) => {
+    fusionVoiSync.add({ renderingEngineId, viewportId });
+    ctVoiSync.addTarget({ renderingEngineId, viewportId });
+    ptVoiSync.addTarget({ renderingEngineId, viewportId });
   });
 }
 
@@ -827,31 +558,48 @@ function initCameraSynchronization(sViewport, tViewport) {
   tViewport.setCamera(camera);
 }
 
-// Initialize camera sync for a study: align each CT/PT viewport with the
-// fusion viewport of the same orientation, when both are in the layout
-function initializeCameraSyncForStudy(studyKey, specs) {
+// Initialize camera sync for a study
+function initializeCameraSyncForStudy(studyKey) {
   const studyViewportIds = viewportIds[studyKey];
-  const present = new Set(specs.map((spec) => spec.viewportId));
 
-  ['AXIAL', 'SAGITTAL', 'CORONAL'].forEach((orientation) => {
-    const fusionViewportId = studyViewportIds.FUSION[orientation];
-    if (!present.has(fusionViewportId)) {
-      return;
-    }
-    const fusionViewport = renderingEngine.getViewport(fusionViewportId);
+  const axialCtViewport = renderingEngine.getViewport(
+    studyViewportIds.CT.AXIAL
+  );
+  const sagittalCtViewport = renderingEngine.getViewport(
+    studyViewportIds.CT.SAGITTAL
+  );
+  const coronalCtViewport = renderingEngine.getViewport(
+    studyViewportIds.CT.CORONAL
+  );
 
-    [
-      studyViewportIds.CT[orientation],
-      studyViewportIds.PT[orientation],
-    ].forEach((viewportId) => {
-      if (present.has(viewportId)) {
-        initCameraSynchronization(
-          fusionViewport,
-          renderingEngine.getViewport(viewportId)
-        );
-      }
-    });
-  });
+  const axialPtViewport = renderingEngine.getViewport(
+    studyViewportIds.PT.AXIAL
+  );
+  const sagittalPtViewport = renderingEngine.getViewport(
+    studyViewportIds.PT.SAGITTAL
+  );
+  const coronalPtViewport = renderingEngine.getViewport(
+    studyViewportIds.PT.CORONAL
+  );
+
+  const axialFusionViewport = renderingEngine.getViewport(
+    studyViewportIds.FUSION.AXIAL
+  );
+  const sagittalFusionViewport = renderingEngine.getViewport(
+    studyViewportIds.FUSION.SAGITTAL
+  );
+  const coronalFusionViewport = renderingEngine.getViewport(
+    studyViewportIds.FUSION.CORONAL
+  );
+
+  initCameraSynchronization(axialFusionViewport, axialCtViewport);
+  initCameraSynchronization(axialFusionViewport, axialPtViewport);
+
+  initCameraSynchronization(sagittalFusionViewport, sagittalCtViewport);
+  initCameraSynchronization(sagittalFusionViewport, sagittalPtViewport);
+
+  initCameraSynchronization(coronalFusionViewport, coronalCtViewport);
+  initCameraSynchronization(coronalFusionViewport, coronalPtViewport);
 }
 
 // Load image IDs for a study
@@ -871,100 +619,183 @@ async function getImageIdsForStudy(config) {
   return { ctImageIds, ptImageIds };
 }
 
-// Set the volumes on the viewports of the current layout, based on the data
-// each viewport shows: the CT volume, the PT volume, both fused, or the PT
-// as a maximum intensity projection.
-async function setUpDisplayForLayout(studyKey, specs) {
-  const studyVolumeIds = volumeIds[studyKey];
-  const viewportIdsForData = (data) =>
-    specs.filter((spec) => spec.data === data).map((spec) => spec.viewportId);
+// Create viewport input array for a study
+function createViewportInputArrayForStudy(config, studyIndex) {
+  const studyKey = config.studyKey;
+  const studyElements = elements[studyKey];
+  const studyViewportIds = viewportIds[studyKey];
 
-  const ctViewportIds = viewportIdsForData('ct');
-  if (ctViewportIds.length) {
-    await setVolumesForViewports(
-      renderingEngine,
-      [
-        {
-          volumeId: studyVolumeIds.ct,
-          callback: setCtTransferFunctionForVolumeActor,
-        },
-      ],
-      ctViewportIds
-    );
-  }
+  // Create viewport input array
+  const viewportInputArray = [
+    {
+      viewportId: studyViewportIds.CT.AXIAL,
+      type: ViewportType.ORTHOGRAPHIC,
+      element: studyElements.element_1_1,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.AXIAL,
+      },
+    },
+    {
+      viewportId: studyViewportIds.CT.SAGITTAL,
+      type: ViewportType.ORTHOGRAPHIC,
+      element: studyElements.element_1_2,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.SAGITTAL,
+      },
+    },
+    {
+      viewportId: studyViewportIds.CT.CORONAL,
+      type: ViewportType.ORTHOGRAPHIC,
+      element: studyElements.element_1_3,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.CORONAL,
+      },
+    },
+    {
+      viewportId: studyViewportIds.PT.AXIAL,
+      type: ViewportType.ORTHOGRAPHIC,
+      element: studyElements.element_2_1,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.AXIAL,
+        background: <Types.Point3>[1, 1, 1],
+      },
+    },
+    {
+      viewportId: studyViewportIds.PT.SAGITTAL,
+      type: ViewportType.ORTHOGRAPHIC,
+      element: studyElements.element_2_2,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.SAGITTAL,
+        background: <Types.Point3>[1, 1, 1],
+      },
+    },
+    {
+      viewportId: studyViewportIds.PT.CORONAL,
+      type: ViewportType.ORTHOGRAPHIC,
+      element: studyElements.element_2_3,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.CORONAL,
+        background: <Types.Point3>[1, 1, 1],
+      },
+    },
+    {
+      viewportId: studyViewportIds.FUSION.AXIAL,
+      type: ViewportType.ORTHOGRAPHIC,
+      element: studyElements.element_3_1,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.AXIAL,
+      },
+    },
+    {
+      viewportId: studyViewportIds.FUSION.SAGITTAL,
+      type: ViewportType.ORTHOGRAPHIC,
+      element: studyElements.element_3_2,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.SAGITTAL,
+      },
+    },
+    {
+      viewportId: studyViewportIds.FUSION.CORONAL,
+      type: ViewportType.ORTHOGRAPHIC,
+      element: studyElements.element_3_3,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.CORONAL,
+      },
+    },
+    {
+      viewportId: studyViewportIds.PETMIP.CORONAL,
+      type: ViewportType.ORTHOGRAPHIC,
+      element: studyElements.element_mip,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.CORONAL,
+        background: <Types.Point3>[1, 1, 1],
+      },
+    },
+  ];
 
-  const ptViewportIds = viewportIdsForData('pt');
-  if (ptViewportIds.length) {
-    await setVolumesForViewports(
-      renderingEngine,
-      [
-        {
-          volumeId: studyVolumeIds.pt,
-          callback: setPetTransferFunctionForVolumeActor,
-        },
-      ],
-      ptViewportIds
-    );
-  }
-
-  const fusionViewportIds = viewportIdsForData('fusion');
-  if (fusionViewportIds.length) {
-    await setVolumesForViewports(
-      renderingEngine,
-      [
-        {
-          volumeId: studyVolumeIds.ct,
-          callback: setCtTransferFunctionForVolumeActor,
-        },
-        {
-          volumeId: studyVolumeIds.pt,
-          callback: setPetColorMapTransferFunctionForVolumeActor,
-        },
-      ],
-      fusionViewportIds
-    );
-  }
-
-  const mipViewportIds = viewportIdsForData('mip');
-  if (mipViewportIds.length) {
-    const ptVolumeDimensions = volumes[studyKey].pt.dimensions;
-
-    const slabThickness = Math.sqrt(
-      ptVolumeDimensions[0] * ptVolumeDimensions[0] +
-        ptVolumeDimensions[1] * ptVolumeDimensions[1] +
-        ptVolumeDimensions[2] * ptVolumeDimensions[2]
-    );
-
-    await setVolumesForViewports(
-      renderingEngine,
-      [
-        {
-          volumeId: studyVolumeIds.pt,
-          callback: setPetTransferFunctionForVolumeActor,
-          blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
-          slabThickness,
-        },
-      ],
-      mipViewportIds
-    );
-  }
+  return viewportInputArray;
 }
 
-// Show the labelmap segmentation on the given viewports (no-op for
-// viewports which already have the representation)
-async function addSegmentationRepresentationsForViewports(
-  segViewportIds: string[]
-) {
-  await Promise.all(
-    segViewportIds.map((viewportId) =>
-      segmentation.addSegmentationRepresentations(viewportId, [
-        {
-          segmentationId,
-          type: csToolsEnums.SegmentationRepresentations.Labelmap,
-        },
-      ])
-    )
+// Set up display for a study
+async function setUpDisplayForStudy(config, studyIndex) {
+  const studyKey = config.studyKey;
+  const studyViewportIds = viewportIds[studyKey];
+  const studyVolumeIds = volumeIds[studyKey];
+
+  // Set volumes on the viewports
+  await setVolumesForViewports(
+    renderingEngine,
+    [
+      {
+        volumeId: studyVolumeIds.ct,
+        callback: setCtTransferFunctionForVolumeActor,
+      },
+    ],
+    [
+      studyViewportIds.CT.AXIAL,
+      studyViewportIds.CT.SAGITTAL,
+      studyViewportIds.CT.CORONAL,
+    ]
   );
+
+  await setVolumesForViewports(
+    renderingEngine,
+    [
+      {
+        volumeId: studyVolumeIds.pt,
+        callback: setPetTransferFunctionForVolumeActor,
+      },
+    ],
+    [
+      studyViewportIds.PT.AXIAL,
+      studyViewportIds.PT.SAGITTAL,
+      studyViewportIds.PT.CORONAL,
+    ]
+  );
+
+  await setVolumesForViewports(
+    renderingEngine,
+    [
+      {
+        volumeId: studyVolumeIds.ct,
+        callback: setCtTransferFunctionForVolumeActor,
+      },
+      {
+        volumeId: studyVolumeIds.pt,
+        callback: setPetColorMapTransferFunctionForVolumeActor,
+      },
+    ],
+    [
+      studyViewportIds.FUSION.AXIAL,
+      studyViewportIds.FUSION.SAGITTAL,
+      studyViewportIds.FUSION.CORONAL,
+    ]
+  );
+
+  // Set up MIP
+  const ptVolume = volumes[studyKey].pt;
+  const ptVolumeDimensions = ptVolume.dimensions;
+
+  const slabThickness = Math.sqrt(
+    ptVolumeDimensions[0] * ptVolumeDimensions[0] +
+      ptVolumeDimensions[1] * ptVolumeDimensions[1] +
+      ptVolumeDimensions[2] * ptVolumeDimensions[2]
+  );
+
+  await setVolumesForViewports(
+    renderingEngine,
+    [
+      {
+        volumeId: studyVolumeIds.pt,
+        callback: setPetTransferFunctionForVolumeActor,
+        blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
+        slabThickness,
+      },
+    ],
+    [studyViewportIds.PETMIP.CORONAL]
+  );
+
+  initializeCameraSyncForStudy(studyKey);
 }
 
 // Set crosshairs to passive after viewports are set up
@@ -1035,7 +866,10 @@ async function run() {
   // Instantiate a rendering engine
   renderingEngine = new RenderingEngine(renderingEngineId);
 
-  // Load all volumes
+  // Create viewport grid
+  createViewportGrid();
+
+  // Load all volumes and set up displays
   for (const config of studyConfigs) {
     const studyKey = config.studyKey;
 
@@ -1060,18 +894,63 @@ async function run() {
   // Add some segmentations based on the source data volume
   await addSegmentationsToState();
 
-  // Set up tool groups for each study; the viewports join the groups when a
-  // layout is applied
+  // Set up tool groups and synchronizers for each study
   for (const config of studyConfigs) {
-    setUpToolGroupsForStudy(config.studyKey);
+    const studyKey = config.studyKey;
+    setUpToolGroupsForStudy(studyKey);
+    setUpSynchronizersForStudy(studyKey);
   }
 
-  // Build the grid and viewports of the default layout, set the volumes,
-  // synchronizers and segmentations, and render
-  await applyLayout('default');
+  // Collect all viewport configurations
+  const allViewportInputs = [];
+  for (let i = 0; i < studyConfigs.length; i++) {
+    const viewportInputs = createViewportInputArrayForStudy(studyConfigs[i], i);
+    allViewportInputs.push(...viewportInputs);
+  }
+
+  // Set all viewports at once
+  renderingEngine.setViewports(allViewportInputs);
+
+  // Set up displays for all studies
+  for (let i = 0; i < studyConfigs.length; i++) {
+    await setUpDisplayForStudy(studyConfigs[i], i);
+  }
 
   // Set crosshairs to passive after all viewports are initialized
   setCrosshairsToPassive();
+
+  Object.values(viewportIds.study1.PT).map(async (viewportId) => {
+    // Add the segmentation representation to the toolgroup
+    await segmentation.addSegmentationRepresentations(viewportId, [
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      },
+    ]);
+  });
+
+  Object.values(viewportIds.study1.CT).map(async (viewportId) => {
+    // Add the segmentation representation to the toolgroup
+    await segmentation.addSegmentationRepresentations(viewportId, [
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      },
+    ]);
+  });
+
+  Object.values(viewportIds.study1.FUSION).map(async (viewportId) => {
+    // Add the segmentation representation to the toolgroup
+    await segmentation.addSegmentationRepresentations(viewportId, [
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+      },
+    ]);
+  });
+
+  // Render all viewports
+  renderingEngine.render();
 }
 
 run();
