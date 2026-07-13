@@ -277,6 +277,10 @@ class BrushTool extends LabelmapBaseTool {
 
     this._hoverData = this.createHoverData(element, canvasPoint);
     if (!this._hoverData) {
+      // Transient state (e.g. no active segment index yet, or the viewport's
+      // camera is not resolvable) - clear the edit data assigned above and bail
+      // before the draw listeners are bound below.
+      this._editData = null;
       return false;
     }
     this._calculateCursor(element, canvasPoint);

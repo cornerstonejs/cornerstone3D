@@ -140,7 +140,12 @@ function configureMetaDataMock() {
           rowCosines: [1, 0, 0],
           frameOfReferenceUID: VOLUME_FOR,
           imageOrientationPatient: [1, 0, 0, 0, 1, 0],
-          imagePositionPatient: [0, 0, numSlices - 1 - index],
+          // Volumes are built so imageIds[k] IS IJK slice k: with the harness's
+          // identity direction and indexToWorld, imageIds[k] sits at world
+          // z = k. (A mirrored z here would model a volume whose imageId list
+          // runs against its own k axis, which createAndCacheVolume never
+          // produces, and would mask ordering bugs in index<->world code.)
+          imagePositionPatient: [0, 0, index],
         };
       }
 
@@ -378,6 +383,9 @@ describe('planarViewReference', () => {
       const data = createVolumeData(volume);
       const rendering = createVolumeRendering(volume, 2);
 
+      // A specifier sliceIndex addresses the CAMERA (scroll) ordering; for the
+      // axial normal [0, 0, -1] camera slice 4 of 5 sits at world z = 0, which
+      // is imageIds[0] (imageIds[k] sits at world z = k).
       expect(
         getPlanarReferencedImageId({
           viewState: axialViewState(2),
@@ -386,7 +394,7 @@ describe('planarViewReference', () => {
           renderContext,
           viewRefSpecifier: { sliceIndex: 4 },
         })
-      ).toBe(volume.imageIds[4]);
+      ).toBe(volume.imageIds[0]);
     });
   });
 
@@ -522,7 +530,10 @@ describe('planarViewReference', () => {
         viewRefSpecifier: { sliceIndex: 4 },
       });
 
-      expect(viewRef.referencedImageId).toBe(volume.imageIds[4]);
+      // sliceIndex counts in CAMERA (scroll) order while referencedImageId
+      // names the image actually displayed there: camera slice 4 sits at
+      // world z = expectedAxialFocalZ(5, 4) = 0 = imageIds[0].
+      expect(viewRef.referencedImageId).toBe(volume.imageIds[0]);
       expect(viewRef.sliceIndex).toBe(4);
       expect(viewRef.cameraFocalPoint[2]).toBeCloseTo(
         expectedAxialFocalZ(5, 4),
@@ -1457,6 +1468,30 @@ describe('PlanarViewReferenceController', () => {
       });
     });
 
+    it('navigates a referencedImageId to that slice`s exact world center, not its camera-order mirror', () => {
+      const { harness, volume } = createHarness();
+
+      harness.controller.setViewReference({
+        FrameOfReferenceUID: volume.metadata.FrameOfReferenceUID,
+        referencedImageId: volume.imageIds[1],
+      });
+
+      // imageIds[k] is IJK slice k, so the target is indexToWorld([1.5, 1.5, 1])
+      // — computed from the volume geometry, NOT via the camera-order
+      // getVolumeSliceWorldPointForImageIdIndex walk (whose ordering runs
+      // against the imageId list for the acquisition/axial normal and would
+      // land on the mirrored slice).
+      expect(
+        harness.getVolumeSliceWorldPointForImageIdIndex
+      ).not.toHaveBeenCalled();
+      expect(harness.getViewState().slice).toEqual({
+        kind: 'volumePoint',
+        sliceWorldPoint: [1.5, 1.5, 1],
+      });
+      // Round-trip: the viewport now reports the referenced image as current.
+      expect(harness.controller.getCurrentImageId()).toBe(volume.imageIds[1]);
+    });
+
     it('resolves a world focal point to the geometrically closest slice', () => {
       const { harness, volume } = createHarness();
 
@@ -1472,7 +1507,7 @@ describe('PlanarViewReferenceController', () => {
         sliceWorldPoint: [0, 0, 2],
       });
       // The volume-point slice state should resolve, geometrically, back to
-      // imageId index 2 (z = numSlices - 1 - index = 5 - 1 - 2 = 2).
+      // imageId index 2 (imageIds[k] sits at world z = k).
       expect(harness.controller.getCurrentImageId()).toBe(volume.imageIds[2]);
     });
 
