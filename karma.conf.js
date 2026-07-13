@@ -215,6 +215,10 @@ module.exports = function (config) {
         fallback: {
           fs: false,
           path: require.resolve('path-browserify'),
+          // vtk.js 36 pulls in xmlbuilder2@4 -> @oozcitak/url, which requires
+          // node's built-in 'url' module. It isn't needed for the XML parsing
+          // exercised by the tests, so stub it out for the browser bundle.
+          url: false,
         },
         alias: {
           '@cornerstonejs/core': path.resolve('packages/core/src/index'),
