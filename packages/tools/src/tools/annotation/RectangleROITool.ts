@@ -53,7 +53,7 @@ import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScale
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
 
-const { transformWorldToIndex } = csUtils;
+const { transformWorldToIndex, transformWorldToIndexContinuous } = csUtils;
 
 /**
  * RectangleROIAnnotation let you draw annotations that measures the statistics
@@ -841,11 +841,11 @@ class RectangleROITool extends AnnotationTool {
 
       const { dimensions, imageData, metadata, voxelManager } = image;
 
-      const indexHandles = worldHandles.map((worldHandle) =>
-        transformWorldToIndex(imageData, worldHandle)
+      const continuousIndexHandles = worldHandles.map((worldHandle) =>
+        transformWorldToIndexContinuous(imageData, worldHandle)
       );
-      const pos1Index = indexHandles[0].map(Math.floor);
-      const pos2Index = indexHandles[3].map(Math.floor);
+      const pos1Index = transformWorldToIndex(imageData, worldHandles[0]);
+      const pos2Index = transformWorldToIndex(imageData, worldHandles[3]);
 
       // Check if one of the indexes are inside the volume, this then gives us
       // Some area to do stats over.
@@ -874,12 +874,12 @@ class RectangleROITool extends AnnotationTool {
         const calibrate = getCalibratedLengthUnitsAndScale(image, handles);
 
         const width = RectangleROITool.calculateLengthInIndex(calibrate, [
-          indexHandles[0],
-          indexHandles[1],
+          continuousIndexHandles[0],
+          continuousIndexHandles[1],
         ]);
         const height = RectangleROITool.calculateLengthInIndex(calibrate, [
-          indexHandles[0],
-          indexHandles[2],
+          continuousIndexHandles[0],
+          continuousIndexHandles[2],
         ]);
         const area = Math.abs(width * height);
         const { areaUnit } = calibrate;
