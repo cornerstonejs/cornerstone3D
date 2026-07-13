@@ -588,9 +588,13 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     targetId: string,
     imageId?: string
   ): boolean {
-    if (viewport instanceof BaseVolumeViewport) {
-      const volumeId = csUtils.getVolumeId(targetId);
-      const volume = cache.getVolume(volumeId);
+    const volumeId = csUtils.getVolumeId(targetId);
+    const volume = cache.getVolume(volumeId);
+
+    // Planar GenericViewports can also use cached volume targets. Prefer the
+    // target volume's scaling whenever one exists, regardless of the viewport
+    // class, so a secondary PT binding in a fused viewport reports SUV units.
+    if (volume) {
       return volume?.scaling?.PT !== undefined;
     }
     const scalingModule: Types.ScalingParameters | undefined =

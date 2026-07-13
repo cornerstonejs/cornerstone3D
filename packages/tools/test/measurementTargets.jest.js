@@ -3,7 +3,7 @@ import {
   registerDefaultProviders,
   registerDisplaySetMetadata,
 } from '@cornerstonejs/metadata';
-import { utilities } from '@cornerstonejs/core';
+import { cache, utilities } from '@cornerstonejs/core';
 import CircleROITool from '../src/tools/annotation/CircleROITool';
 import RectangleROITool from '../src/tools/annotation/RectangleROITool';
 import AnnotationTool from '../src/tools/base/AnnotationTool';
@@ -61,6 +61,7 @@ describe('measurement target regressions', () => {
   afterEach(() => {
     metaData.clear('displaySetModule');
     utilities.genericViewportDisplaySetMetadataProvider.clear();
+    jest.restoreAllMocks();
     jest.clearAllMocks();
   });
 
@@ -148,6 +149,21 @@ describe('measurement target regressions', () => {
       })
     );
     expect(annotation.metadata.volumeId).toBeUndefined();
+  });
+
+  it('uses cached volume SUV scaling for Planar viewport targets', () => {
+    jest.spyOn(cache, 'getVolume').mockReturnValue({
+      scaling: { PT: { suvbw: 1 } },
+    });
+
+    expect(
+      TestAnnotationTool.isSuvScaled(
+        {},
+        'volumeId:pt-volume?sliceIndex=3&viewPlaneNormal=0,0,1',
+        'image:ct'
+      )
+    ).toBe(true);
+    expect(cache.getVolume).toHaveBeenCalledWith('pt-volume');
   });
 
   it('aggregates Circle ROI outside-image state across every target', () => {
