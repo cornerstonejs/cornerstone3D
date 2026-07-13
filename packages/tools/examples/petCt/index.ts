@@ -31,6 +31,7 @@ const {
   TrackballRotateTool,
   VolumeRotateTool,
   RectangleROITool,
+  measurementTargetFilters,
 } = cornerstoneTools;
 
 const { MouseBindings } = csToolsEnums;
@@ -392,12 +393,12 @@ function setUpToolGroups() {
   });
   fusionToolGroup.addTool(RectangleROITool.toolName, {
     // Compute/show statistics for the PT volume of the fusion viewport only,
-    // selected by its volume id.  `targetFilters.forModality('PT')` would
+    // selected by its volume id.  `measurementTargetFilters.forModality('PT')` would
     // select the same volume by modality instead, and leaving the default
-    // configuration (targetFilters.allPixelData) would compute/show the
+    // configuration (measurementTargetFilters.allPixelData) would compute/show the
     // statistics of both PT and CT at once.
     // (This replaces the deprecated `isPreferredTargetId` configuration.)
-    targetsFilter: RectangleROITool.targetFilters.forId(ptVolumeId),
+    targetsFilter: measurementTargetFilters.forId(ptVolumeId),
   });
 
   // Here is the difference in the toolGroups used, that we need to specify the

@@ -39,6 +39,7 @@ const {
   CircleROIStartEndThresholdTool,
   RectangleROIStartEndThresholdTool,
   segmentation,
+  measurementTargetFilters,
 } = cornerstoneTools;
 
 const { MouseBindings, KeyboardBindings } = csToolsEnums;
@@ -172,8 +173,8 @@ const rectangleROIHUToolName = 'RectangleROIHU';
 const instructions = document.createElement('p');
 instructions.innerText = `Select a tool from the drop down and drag on a viewport to create an ROI:
 - "Rectangle/Circle ROI (all pixel data - default)": the default configuration computes and shows the statistics of every display set containing pixel values, so on the fusion (bottom row) viewports both the CT (HU) and PT (SUV) values appear at once. SEG display sets are never included, even when they are the only thing shown.
-- "Circle ROI (PT SUV only)": configured with targetFilters.forModality('PT'), it shows the SUV statistics by preference - on the fusion viewports only the PT values appear, and on the CT-only viewports nothing is shown.
-- "Rectangle ROI (CT HU only)": configured with targetFilters.forModality('CT'), it shows the HU statistics by preference - on the fusion viewports only the CT values appear, and on the PT-only viewports nothing is shown.
+- "Circle ROI (PT SUV only)": configured with measurementTargetFilters.forModality('PT'), it shows the SUV statistics by preference - on the fusion viewports only the PT values appear, and on the CT-only viewports nothing is shown.
+- "Rectangle ROI (CT HU only)": configured with measurementTargetFilters.forModality('CT'), it shows the HU statistics by preference - on the fusion viewports only the CT values appear, and on the PT-only viewports nothing is shown.
 Annotations are shared across the viewports; a fusion viewport computes the statistics of each selected volume itself, even when no other viewport has computed them.
 Use the "Layout" drop down to test the tools on different viewport arrangements: the default CT/PT/Fusion grid with the PET MIP, just the three fusion views, or a mixed layout (CT sagittal, PT coronal and an oblique CT+PT fusion). Annotations survive the layout switches and statistics are recomputed as needed.`;
 document.getElementById('content').appendChild(instructions);
@@ -590,7 +591,7 @@ function setUpToolGroupsForStudy(studyKey) {
       getReferenceLineDraggableRotatable,
       getReferenceLineSlabThicknessControlsOn,
     });
-    // The default ROI configuration (targetFilters.allPixelData) shows the
+    // The default ROI configuration (measurementTargetFilters.allPixelData) shows the
     // statistics of every display set containing pixel values.
     toolGroup.addTool(RectangleROITool.toolName);
     toolGroup.addTool(CircleROITool.toolName);
@@ -599,13 +600,13 @@ function setUpToolGroupsForStudy(studyKey) {
     // the HU rectangle shows CT statistics by preference (and nothing on
     // PT-only viewports).
     toolGroup.addToolInstance(circleROISUVToolName, CircleROITool.toolName, {
-      targetsFilter: CircleROITool.targetFilters.forModality('PT'),
+      targetsFilter: measurementTargetFilters.forModality('PT'),
     });
     toolGroup.addToolInstance(
       rectangleROIHUToolName,
       RectangleROITool.toolName,
       {
-        targetsFilter: RectangleROITool.targetFilters.forModality('CT'),
+        targetsFilter: measurementTargetFilters.forModality('CT'),
       }
     );
     toolGroup.addTool(LengthTool.toolName);
@@ -647,7 +648,7 @@ function setUpToolGroupsForStudy(studyKey) {
   // On the fusion viewports the `targetsFilter` configuration decides which
   // of the fused volumes (display sets) the tools compute and display
   // statistics for.  The default ROI tools show both the CT and PT values
-  // at once (targetFilters.allPixelData); the named instances restrict the
+  // at once (measurementTargetFilters.allPixelData); the named instances restrict the
   // statistics by modality.
   fusionToolGroup.addTool(RectangleROITool.toolName);
   fusionToolGroup.addTool(CircleROITool.toolName);
@@ -655,14 +656,14 @@ function setUpToolGroupsForStudy(studyKey) {
     circleROISUVToolName,
     CircleROITool.toolName,
     {
-      targetsFilter: CircleROITool.targetFilters.forModality('PT'),
+      targetsFilter: measurementTargetFilters.forModality('PT'),
     }
   );
   fusionToolGroup.addToolInstance(
     rectangleROIHUToolName,
     RectangleROITool.toolName,
     {
-      targetsFilter: RectangleROITool.targetFilters.forModality('CT'),
+      targetsFilter: measurementTargetFilters.forModality('CT'),
     }
   );
   fusionToolGroup.addTool(CircleROIStartEndThresholdTool.toolName, {

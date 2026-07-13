@@ -1,4 +1,4 @@
-import { AnnotationTool, BaseTool } from '../base';
+import { AnnotationTool, BaseTool, measurementTargetFilters } from '../base';
 import { vec2, vec3 } from 'gl-matrix';
 
 import {
@@ -150,8 +150,8 @@ class CircleROITool extends AnnotationTool {
         simplified: true, // If true, only 2 points are used for the handles, otherwise 5 points are used
         // By default show the statistics of every display set containing
         // pixel values (eg both CT and PT on a fusion viewport), but never
-        // SEG and the like - see BaseTool.targetFilters for alternatives
-        targetsFilter: AnnotationTool.targetFilters.allPixelData,
+        // SEG and the like - see measurementTargetFilters for alternatives
+        targetsFilter: measurementTargetFilters.allPixelData,
       },
     }
   ) {

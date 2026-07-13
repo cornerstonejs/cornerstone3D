@@ -106,25 +106,27 @@ export type MeasurementTargetsFilterResult =
  * ids) have no `imageIds`/`instance`, letting the filter choose whether to
  * include them.
  *
- * See `BaseTool.targetFilters` for ready made filters:
+ * See `measurementTargetFilters` for ready made filters:
  *
  * ```ts
+ * import { measurementTargetFilters } from '@cornerstonejs/tools';
+ *
  * // CT only - shows nothing on viewports without a CT
  * toolGroup.addTool(CircleROITool.toolName, {
- *   targetsFilter: CircleROITool.targetFilters.forModality('CT'),
+ *   targetsFilter: measurementTargetFilters.forModality('CT'),
  * });
  * // PT only - shows nothing on viewports without a PT
  * toolGroup.addTool(CircleROITool.toolName, {
- *   targetsFilter: CircleROITool.targetFilters.forModality('PT'),
+ *   targetsFilter: measurementTargetFilters.forModality('PT'),
  * });
  * // Every display set with pixel values (skips SEG etc) - the ROI tools'
  * // default
  * toolGroup.addTool(CircleROITool.toolName, {
- *   targetsFilter: CircleROITool.targetFilters.allPixelData,
+ *   targetsFilter: measurementTargetFilters.allPixelData,
  * });
  * // Just the first display set
  * toolGroup.addTool(CircleROITool.toolName, {
- *   targetsFilter: CircleROITool.targetFilters.first,
+ *   targetsFilter: measurementTargetFilters.first,
  * });
  * // Custom: the first PT display set only, stopping the search once found
  * toolGroup.addTool(CircleROITool.toolName, {
@@ -153,8 +155,8 @@ export interface ToolConfiguration {
   /**
    * Filter deciding which display sets shown in the viewport the tool
    * computes and displays measurement statistics for.  See
-   * {@link MeasurementTargetsFilter} and `BaseTool.targetFilters`.
-   * The ROI statistics tools default this to `targetFilters.allPixelData`
+   * {@link MeasurementTargetsFilter} and `measurementTargetFilters`.
+   * The ROI statistics tools default this to `measurementTargetFilters.allPixelData`
    * (every display set containing pixel values); tools without a default
    * filter use the viewport's single default target.
    */

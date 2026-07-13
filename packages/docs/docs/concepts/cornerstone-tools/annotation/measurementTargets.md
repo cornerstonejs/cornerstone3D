@@ -66,7 +66,7 @@ search continues:
 | `'stop'`              | skipped          | **stop looking**     |
 
 Return `'useAndStop'` or `'stop'` when no further items should be
-considered — for example `targetFilters.first` is simply
+considered — for example `measurementTargetFilters.first` is simply
 `() => 'useAndStop'`, and a "first PT only" filter is
 `(displaySetInfo) => displaySetInfo.modality === 'PT' ? 'useAndStop' : false`.
 
@@ -91,20 +91,24 @@ candidates (a PT-only filter on a CT viewport, or the default pixel-data
 filter when only a SEG is shown), the annotation is still drawn but no
 statistics are computed or displayed for that viewport.
 
-Ready-made filters are available on every tool class via
-`BaseTool.targetFilters`.
+Ready-made filters are the pure functions exported from
+`measurementTargetFilters`, defined once outside any tool:
+
+```ts
+import { measurementTargetFilters } from '@cornerstonejs/tools';
+```
 
 ## Examples
 
 All display sets with pixel values — this is the default configuration for
 the ROI tools, made explicit. Candidates with a non-pixel modality
-(`BaseTool.NON_PIXEL_DATA_MODALITIES`: SEG, RTSTRUCT, RTPLAN, SR, PR, KO)
+(`measurementTargetFilters.NON_PIXEL_DATA_MODALITIES`: SEG, RTSTRUCT, RTPLAN, SR, PR, KO)
 are excluded, while candidates with an unknown display set (legacy stacks)
 are included:
 
 ```ts
 toolGroup.addTool(CircleROITool.toolName, {
-  targetsFilter: CircleROITool.targetFilters.allPixelData,
+  targetsFilter: measurementTargetFilters.allPixelData,
 });
 ```
 
@@ -112,7 +116,7 @@ CT statistics only — nothing is shown on viewports without a CT:
 
 ```ts
 toolGroup.addTool(CircleROITool.toolName, {
-  targetsFilter: CircleROITool.targetFilters.forModality('CT'),
+  targetsFilter: measurementTargetFilters.forModality('CT'),
 });
 ```
 
@@ -122,7 +126,7 @@ viewports without a PT):
 
 ```ts
 toolGroup.addTool(CircleROITool.toolName, {
-  targetsFilter: CircleROITool.targetFilters.forModality('PT'),
+  targetsFilter: measurementTargetFilters.forModality('PT'),
 });
 ```
 
@@ -131,7 +135,7 @@ those two modalities:
 
 ```ts
 toolGroup.addTool(CircleROITool.toolName, {
-  targetsFilter: CircleROITool.targetFilters.forModality('CT', 'PT'),
+  targetsFilter: measurementTargetFilters.forModality('CT', 'PT'),
 });
 ```
 
@@ -139,7 +143,7 @@ Just the first target (the pre-5.x single-target behaviour):
 
 ```ts
 toolGroup.addTool(CircleROITool.toolName, {
-  targetsFilter: CircleROITool.targetFilters.first,
+  targetsFilter: measurementTargetFilters.first,
 });
 ```
 
@@ -149,7 +153,7 @@ configuration:
 
 ```ts
 toolGroup.addTool(RectangleROITool.toolName, {
-  targetsFilter: RectangleROITool.targetFilters.forId(ptVolumeId),
+  targetsFilter: measurementTargetFilters.forId(ptVolumeId),
 });
 ```
 
