@@ -1,8 +1,13 @@
-import type { MeasurementTargetsFilter } from '../../types';
+import type {
+  MeasurementTargetCandidate,
+  MeasurementTargetOptions,
+  MeasurementTargetPredicate,
+  MeasurementTargetsFilter,
+} from '../../types';
 
 /**
  * Modalities whose display sets do not contain measurable pixel values
- * (segmentations, structured reports etc).  The {@link allPixelData} filter
+ * (segmentations, structured reports etc).  The {@link isPixelData} predicate
  * excludes candidates with one of these modalities.
  */
 export const NON_PIXEL_DATA_MODALITIES = [
@@ -15,98 +20,129 @@ export const NON_PIXEL_DATA_MODALITIES = [
 ];
 
 /**
- * Includes just the first candidate display set.
+ * The default {@link MeasurementTargetPredicate}: keeps a candidate when it
+ * carries pixel values.  Segmentation representations (candidates carrying a
+ * `representationUID`) and candidates whose modality is one of
+ * {@link NON_PIXEL_DATA_MODALITIES} (eg SEG) are excluded - even when they are
+ * the only thing shown - while candidates whose display set (and therefore
+ * modality) is unknown, such as legacy stacks, are kept.
  */
-export const first: MeasurementTargetsFilter = (candidates) =>
-  candidates.slice(0, 1);
+export const isPixelData: MeasurementTargetPredicate = ({
+  modality,
+  representationUID,
+}) =>
+  !representationUID &&
+  (!modality || !NON_PIXEL_DATA_MODALITIES.includes(modality));
 
 /**
- * Includes every candidate display set, for example both the CT and the PT
- * volume on a fusion viewport.
+ * Whether a candidate is an eligible measurement target: it must contain
+ * pixel values ({@link isPixelData}) and, when a `targetPredicate` is
+ * configured, also satisfy that predicate.  The pixel-data test runs first so
+ * segmentations etc are never measured regardless of the predicate.
+ */
+function isEligible(
+  candidate: MeasurementTargetCandidate,
+  options: MeasurementTargetOptions
+): boolean {
+  if (!isPixelData(candidate, options)) {
+    return false;
+  }
+  const { targetPredicate } = options?.configuration ?? {};
+  return targetPredicate ? targetPredicate(candidate, options) : true;
+}
+
+/**
+ * Chooser including just the first eligible pixel-data candidate display set
+ * (see {@link isEligible}).  Uses `find` so it stops at the first match
+ * instead of building an intermediate array, and returns an empty array when
+ * nothing is eligible.
+ */
+export const firstPixelData: MeasurementTargetsFilter = (
+  candidates,
+  options
+) => {
+  const match = candidates.find((candidate) => isEligible(candidate, options));
+  return match ? [match] : [];
+};
+
+/**
+ * Chooser including every eligible pixel-data candidate display set (see
+ * {@link isEligible}), for example both the CT and the PT volume on a fusion
+ * viewport.  This is the default chooser for the ROI statistics tools.
+ */
+export const allPixelData: MeasurementTargetsFilter = (candidates, options) =>
+  candidates.filter((candidate) => isEligible(candidate, options));
+
+/**
+ * Chooser including just the first candidate display set, whether or not it
+ * contains pixel values.  Unlike {@link firstPixelData} it ignores the
+ * `targetPredicate` - use it as a raw "first target" escape hatch.
+ */
+export const first: MeasurementTargetsFilter = (candidates) =>
+  candidates.length ? [candidates[0]] : [];
+
+/**
+ * Chooser including every candidate display set, whether or not it contains
+ * pixel values.  Unlike {@link allPixelData} it ignores the `targetPredicate`.
  */
 export const all: MeasurementTargetsFilter = (candidates) => candidates;
 
 /**
- * Includes every candidate display set containing pixel values: segmentation
- * representations (candidates carrying a `representationUID`) and candidates
- * whose modality is one of {@link NON_PIXEL_DATA_MODALITIES} (eg SEG) are
- * excluded - even when they are the only thing shown - while candidates whose
- * display set (and therefore modality) is unknown, such as legacy stacks, are
- * included.
- *
- * This is the default filter for the ROI statistics tools, and is what
- * excludes segmentations from the measurement targets (the candidate
- * derivation no longer bakes that exclusion in).
- */
-export const allPixelData: MeasurementTargetsFilter = (candidates) =>
-  candidates.filter(
-    ({ modality, representationUID }) =>
-      !representationUID &&
-      (!modality || !NON_PIXEL_DATA_MODALITIES.includes(modality))
-  );
-
-/**
- * Creates a filter including the display sets whose modality is one of the
- * given modalities, eg `forModality('PT')` or `forModality('CT', 'PT')`.
- * Candidates with an unknown display set/modality are excluded; include them
- * with a custom filter checking `!displaySetInfo.imageIds` if needed.
+ * Creates a {@link MeasurementTargetPredicate} keeping the display sets whose
+ * modality is one of the given modalities, eg `forModality('PT')` or
+ * `forModality('CT', 'PT')`.  Candidates with an unknown display set/modality
+ * are excluded.  Configure it as `targetPredicate`; combine with the
+ * `firstPixelData`/`allPixelData` chooser to take the first or all matches.
  */
 export const forModality =
-  (...modalities: string[]): MeasurementTargetsFilter =>
-  (candidates) =>
-    candidates.filter(({ modality }) => modalities.includes(modality));
+  (...modalities: string[]): MeasurementTargetPredicate =>
+  ({ modality }) =>
+    modalities.includes(modality);
 
 /**
- * Creates a filter including the display sets referencing the given display
- * set, volume or image id.  This is a substring match, so partial identifiers
- * such as a series UID contained in the id may also be used.
+ * Creates a {@link MeasurementTargetPredicate} keeping the display sets
+ * referencing the given display set, volume or image id.  This is a substring
+ * match, so partial identifiers such as a series UID contained in the id may
+ * also be used.  Configure it as `targetPredicate`.
  */
 export const forId =
-  (id: string): MeasurementTargetsFilter =>
-  (candidates) =>
-    candidates.filter(
-      ({ displaySetUID, referencedId, targetId }) =>
-        displaySetUID?.includes(id) ||
-        referencedId?.includes(id) ||
-        targetId.includes(id)
-    );
+  (id: string): MeasurementTargetPredicate =>
+  ({ displaySetUID, referencedId, targetId }) =>
+    displaySetUID?.includes(id) ||
+    referencedId?.includes(id) ||
+    targetId.includes(id);
 
 /**
- * Ready made {@link MeasurementTargetsFilter} implementations for the
- * `targetsFilter` tool configuration option.  The filter decides which of the
- * display sets shown in a viewport a tool computes and displays measurement
- * statistics for - on a fusion viewport this allows showing the statistics of
- * one, several or all of the fused volumes.
+ * Ready made filters for the measurement target selection configuration.  The
+ * selection has two composable halves:
+ *
+ * - `targetsFilter` - a {@link MeasurementTargetsFilter} chooser deciding the
+ *   cardinality (first vs all): {@link firstPixelData}, {@link allPixelData}
+ *   and the raw {@link first}/{@link all}.  It may be set by name, eg
+ *   `targetsFilter: 'firstPixelData'`.
+ * - `targetPredicate` - a {@link MeasurementTargetPredicate} deciding whether
+ *   an individual candidate is eligible: {@link isPixelData} (the default),
+ *   {@link forModality} and {@link forId}.
+ *
+ * Splitting the decision keeps each half a simple function: the predicate
+ * decides one candidate and the chooser decides how many, so the same
+ * `forModality('PT')` predicate means "the first PT" under `firstPixelData`
+ * and "every PT" under `allPixelData`.
+ *
+ * The chooser receives the viewport's candidate display sets in viewport
+ * order and the {@link MeasurementTargetOptions} (the viewport and the tool
+ * configuration), and returns the subset to measure.  A configured chooser's
+ * result is authoritative: when it returns no candidates, no statistics are
+ * computed or displayed for the viewport.
  *
  * These are plain functions, defined here once rather than per tool, so they
  * can be composed or referenced externally - including from a customization
- * layer that generates the executable filter with a closure (eg
+ * layer that generates the executable predicate with a closure (eg
  * `forModality('PT')`) instead of embedding logic in serialized config.
- *
- * The filter receives the viewport's candidate display sets in viewport order
- * and the viewport, and returns the subset to measure - normally the input
- * array narrowed with the standard array methods.  The decision should be
- * based on the modality of the display set where available.  When the display
- * set is unknown (eg a stack viewport using the legacy set image ids), the
- * candidate has no display set fields and no modality, and a filter can choose
- * whether to include it based on that.
- *
- * A configured filter's result is authoritative: when it returns no
- * candidates, no statistics are computed or displayed for the viewport.
  *
  * Example configurations:
  * ```ts
  * import { measurementTargetFilters } from '@cornerstonejs/tools';
- *
- * // CT statistics only - shows nothing on viewports without a CT
- * toolGroup.addTool(CircleROITool.toolName, {
- *   targetsFilter: measurementTargetFilters.forModality('CT'),
- * });
- *
- * // PT statistics only - shows nothing on viewports without a PT
- * toolGroup.addTool(CircleROITool.toolName, {
- *   targetsFilter: measurementTargetFilters.forModality('PT'),
- * });
  *
  * // Every display set containing pixel values (skips SEG etc) - this is the
  * // default for the ROI tools
@@ -114,22 +150,30 @@ export const forId =
  *   targetsFilter: measurementTargetFilters.allPixelData,
  * });
  *
- * // Just the first display set
+ * // CT statistics only - shows nothing on viewports without a CT
  * toolGroup.addTool(CircleROITool.toolName, {
- *   targetsFilter: measurementTargetFilters.first,
+ *   targetsFilter: measurementTargetFilters.allPixelData,
+ *   targetPredicate: measurementTargetFilters.forModality('CT'),
  * });
  *
- * // Custom: the first PT display set only
+ * // Just the first pixel-data display set
  * toolGroup.addTool(CircleROITool.toolName, {
- *   targetsFilter: (candidates) =>
- *     candidates.filter((c) => c.modality === 'PT').slice(0, 1),
+ *   targetsFilter: 'firstPixelData',
+ * });
+ *
+ * // The first PT display set only
+ * toolGroup.addTool(CircleROITool.toolName, {
+ *   targetsFilter: 'firstPixelData',
+ *   targetPredicate: measurementTargetFilters.forModality('PT'),
  * });
  * ```
  */
 export const measurementTargetFilters = {
+  isPixelData,
+  firstPixelData,
+  allPixelData,
   first,
   all,
-  allPixelData,
   forModality,
   forId,
 };

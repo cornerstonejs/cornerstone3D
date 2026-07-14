@@ -1,5 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
 import type BaseTool from '../tools/base/BaseTool';
+import type { AnnotationData } from './AnnotationTypes';
 
 /**
  * The display set related parameters for one candidate measurement target of
@@ -62,14 +63,72 @@ export type MeasurementTargetCandidate = {
 };
 
 /**
- * A configurable filter deciding which of the display sets shown in a
- * viewport an annotation tool computes and displays statistics for.  Set it
- * on the tool configuration as `targetsFilter`.
+ * The context passed to the measurement target filters - the viewport being
+ * measured together with the tool `configuration` (so a filter can read
+ * `configuration.targetPredicate` and any other option) and the annotation
+ * `data` when available.
+ */
+export type MeasurementTargetOptions = {
+  /** The viewport the targets are being selected for. */
+  viewport: Types.IViewport;
+  /** The configuration of the tool the filter is running for. */
+  configuration: ToolConfiguration;
+  /** The annotation data, when the filter is running for an annotation. */
+  data?: AnnotationData;
+};
+
+/**
+ * A per-candidate decider: returns true to keep a single candidate display
+ * set as a measurement target, false to drop it.  Set it on the tool
+ * configuration as `targetPredicate` to narrow the targets the
+ * `targetsFilter` chooser considers - for example
+ * `targetPredicate: measurementTargetFilters.forModality('PT')` restricts a
+ * fusion viewport's measurements to its PT volume.
  *
- * The filter receives the viewport's candidate display sets in viewport
- * order (see {@link MeasurementTargetCandidate}) and the viewport, and
- * returns the subset to measure - normally the input array narrowed (and, if
- * wanted, reordered) with the standard array methods.
+ * A predicate is the simple half of the selection: it decides one candidate
+ * at a time and is reused by whichever chooser is configured, so the same
+ * `forModality('PT')` predicate yields "the first PT" under
+ * {@link MeasurementTargetsFilter} `firstPixelData` and "every PT" under
+ * `allPixelData`, without the predicate knowing how many are wanted.
+ *
+ * The decision should be based on the modality of the display set where
+ * available; candidates whose display set is unknown (eg legacy stack image
+ * ids) have no `imageIds`/`instance`, letting the predicate choose whether to
+ * include them.
+ *
+ * ```ts
+ * import { measurementTargetFilters } from '@cornerstonejs/tools';
+ *
+ * // Only measure PT on a fusion viewport
+ * toolGroup.addTool(CircleROITool.toolName, {
+ *   targetPredicate: measurementTargetFilters.forModality('PT'),
+ * });
+ * // Custom predicate
+ * toolGroup.addTool(CircleROITool.toolName, {
+ *   targetPredicate: (candidate) => candidate.modality === 'PT',
+ * });
+ * ```
+ */
+export type MeasurementTargetPredicate = (
+  candidate: MeasurementTargetCandidate,
+  options: MeasurementTargetOptions
+) => boolean;
+
+/**
+ * A configurable chooser deciding which of the display sets shown in a
+ * viewport an annotation tool computes and displays statistics for.  Set it
+ * on the tool configuration as `targetsFilter`, either as a function or as
+ * the name of one of the ready made `measurementTargetFilters` (eg
+ * `targetsFilter: 'firstPixelData'`).
+ *
+ * The chooser receives the viewport's candidate display sets in viewport
+ * order (see {@link MeasurementTargetCandidate}) and the
+ * {@link MeasurementTargetOptions}, and returns the subset to measure -
+ * normally the input array narrowed (and, if wanted, reordered) with the
+ * standard array methods.  A chooser is responsible only for the cardinality
+ * (first vs all); the eligibility of an individual candidate is delegated to
+ * the configured {@link MeasurementTargetPredicate} (`targetPredicate`), so
+ * the two decisions compose independently.
  *
  * Every returned candidate becomes a measurement target: the first one is
  * the primary target returned by `getTargetId`, and each of them has its
@@ -78,43 +137,30 @@ export type MeasurementTargetCandidate = {
  * empty array means no statistics are computed or displayed for the
  * viewport.
  *
- * The decision should be based on the modality of the display set where
- * available; candidates whose display set is unknown (eg legacy stack image
- * ids) have no `imageIds`/`instance`, letting the filter choose whether to
- * include them.
- *
- * See `measurementTargetFilters` for ready made filters:
+ * See `measurementTargetFilters` for ready made choosers:
  *
  * ```ts
  * import { measurementTargetFilters } from '@cornerstonejs/tools';
  *
- * // CT only - shows nothing on viewports without a CT
- * toolGroup.addTool(CircleROITool.toolName, {
- *   targetsFilter: measurementTargetFilters.forModality('CT'),
- * });
- * // PT only - shows nothing on viewports without a PT
- * toolGroup.addTool(CircleROITool.toolName, {
- *   targetsFilter: measurementTargetFilters.forModality('PT'),
- * });
  * // Every display set with pixel values (skips SEG etc) - the ROI tools'
  * // default
  * toolGroup.addTool(CircleROITool.toolName, {
  *   targetsFilter: measurementTargetFilters.allPixelData,
  * });
- * // Just the first display set
+ * // The first pixel-data display set only, by name
  * toolGroup.addTool(CircleROITool.toolName, {
- *   targetsFilter: measurementTargetFilters.first,
+ *   targetsFilter: 'firstPixelData',
  * });
- * // Custom: the first PT display set only
+ * // Only the PT of a fusion viewport, computed as the primary target
  * toolGroup.addTool(CircleROITool.toolName, {
- *   targetsFilter: (candidates) =>
- *     candidates.filter((c) => c.modality === 'PT').slice(0, 1),
+ *   targetsFilter: 'firstPixelData',
+ *   targetPredicate: measurementTargetFilters.forModality('PT'),
  * });
  * ```
  */
 export type MeasurementTargetsFilter = (
   candidates: MeasurementTargetCandidate[],
-  viewport: Types.IViewport
+  options: MeasurementTargetOptions
 ) => MeasurementTargetCandidate[];
 
 /**
@@ -130,14 +176,30 @@ export interface ToolConfiguration {
   strategyOptions: any;
 
   /**
-   * Filter deciding which display sets shown in the viewport the tool
-   * computes and displays measurement statistics for.  See
-   * {@link MeasurementTargetsFilter} and `measurementTargetFilters`.
-   * The ROI statistics tools default this to `measurementTargetFilters.allPixelData`
-   * (every display set containing pixel values); tools without a default
-   * filter use the viewport's single default target.
+   * Chooser deciding how many of the eligible display sets shown in the
+   * viewport the tool computes and displays measurement statistics for -
+   * first vs all.  A function, or the name of one of the ready made
+   * `measurementTargetFilters` (eg `'firstPixelData'`).  See
+   * {@link MeasurementTargetsFilter}.
+   *
+   * The ROI statistics tools default this to
+   * `measurementTargetFilters.allPixelData` (every display set containing
+   * pixel values); tools without a default chooser use the viewport's single
+   * default target.
    */
-  targetsFilter?: MeasurementTargetsFilter;
+  targetsFilter?: MeasurementTargetsFilter | string;
+
+  /**
+   * Per-candidate predicate narrowing which individual display sets the
+   * `targetsFilter` chooser is allowed to select - when unset, every
+   * pixel-data display set is kept.  See {@link MeasurementTargetPredicate}.
+   *
+   * This is the single-candidate decider: set it to
+   * `measurementTargetFilters.forModality('PT')` to measure only PT, and the
+   * `targetsFilter` chooser decides whether that means the first PT or every
+   * PT.
+   */
+  targetPredicate?: MeasurementTargetPredicate;
 
   /**
    * @returns true if the given targetId is preferred.

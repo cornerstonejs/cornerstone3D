@@ -80,6 +80,8 @@ import type { BidirectionalData } from '../utilities/segmentation/createBidirect
 import type {
   IBaseTool,
   MeasurementTargetCandidate,
+  MeasurementTargetOptions,
+  MeasurementTargetPredicate,
   MeasurementTargetsFilter,
 } from './IBaseTool';
 import type { RepresentationStyle } from './../stateManagement/segmentation/SegmentationStyle';
@@ -179,6 +181,8 @@ export type {
   // polySeg
   IBaseTool,
   MeasurementTargetCandidate,
+  MeasurementTargetOptions,
+  MeasurementTargetPredicate,
   MeasurementTargetsFilter,
   RepresentationStyle,
   Segment,

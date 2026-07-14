@@ -44,10 +44,22 @@ const ctVolumeId = `${volumeLoaderScheme}:LEGACY_MEASUREMENTS_CT_VOLUME`;
 const ptVolumeId = `${volumeLoaderScheme}:LEGACY_MEASUREMENTS_PT_VOLUME`;
 const orientation = Enums.OrientationAxis.AXIAL;
 const roiToolNames = [RectangleROITool.toolName, CircleROITool.toolName];
+// Each option pairs a chooser (targetsFilter) with a per-candidate predicate
+// (targetPredicate).  "all" measures every pixel-data volume; "ct"/"pt"
+// narrow to a single modality while still using the allPixelData chooser.
 const measurementTargetFilterOptions = {
-  all: measurementTargetFilters.allPixelData,
-  ct: measurementTargetFilters.forModality('CT'),
-  pt: measurementTargetFilters.forModality('PT'),
+  all: {
+    targetsFilter: measurementTargetFilters.allPixelData,
+    targetPredicate: null,
+  },
+  ct: {
+    targetsFilter: measurementTargetFilters.allPixelData,
+    targetPredicate: measurementTargetFilters.forModality('CT'),
+  },
+  pt: {
+    targetsFilter: measurementTargetFilters.allPixelData,
+    targetPredicate: measurementTargetFilters.forModality('PT'),
+  },
 };
 
 let singleVolumeToolGroup;
@@ -153,16 +165,16 @@ function setMeasurementTargetFilter(filterName: string): void {
     return;
   }
 
-  const targetsFilter =
+  const configuration =
     measurementTargetFilterOptions[
       filterName as keyof typeof measurementTargetFilterOptions
     ];
-  if (!targetsFilter) {
+  if (!configuration) {
     return;
   }
 
   roiToolNames.forEach((toolName) => {
-    fusionToolGroup.setToolConfiguration(toolName, { targetsFilter });
+    fusionToolGroup.setToolConfiguration(toolName, configuration);
   });
 }
 

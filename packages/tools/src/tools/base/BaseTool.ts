@@ -7,6 +7,7 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import ToolModes from '../../enums/ToolModes';
+import measurementTargetFilters from './measurementTargetFilters';
 import type StrategyCallbacks from '../../enums/StrategyCallbacks';
 import type {
   InteractionTypes,
@@ -15,6 +16,7 @@ import type {
   ToolConfiguration,
   AnnotationData,
   MeasurementTargetCandidate,
+  MeasurementTargetsFilter,
 } from '../../types';
 
 const { DefaultHistoryMemo } = csUtils.HistoryMemo;
@@ -368,10 +370,24 @@ abstract class BaseTool {
     }
 
     if (targetsFilter) {
+      const filter =
+        typeof targetsFilter === 'string'
+          ? ((measurementTargetFilters as Record<string, unknown>)[
+              targetsFilter
+            ] as MeasurementTargetsFilter)
+          : targetsFilter;
+      if (typeof filter !== 'function') {
+        throw new Error(
+          `getMeasurementTargets: unknown targetsFilter "${targetsFilter}"`
+        );
+      }
       const candidates = this.getMeasurementTargetCandidates(viewport, data);
-      return targetsFilter(candidates, viewport).map(
-        (candidate) => candidate.targetId
-      );
+      const options = {
+        viewport,
+        configuration: this.configurationTyped,
+        data,
+      };
+      return filter(candidates, options).map((candidate) => candidate.targetId);
     }
 
     // No filter configured - use the viewport's default method
