@@ -450,6 +450,28 @@ class WSIViewport extends Viewport {
       canvas.width = clientWidth;
       canvas.height = clientHeight;
     }
+    // Preserve fit-relative zoom across container size changes.
+    // Without this, WSIViewport keeps the old OpenLayers resolution, so
+    // exiting full screen (smaller container) leaves the slide zoomed in.
+    const map = this.map;
+    const view = map?.getView?.();
+    if (map && view) {
+      const extent = view.getProjection().getExtent();
+      const oldSize = map.getSize();
+      const oldResolution = view.getResolution();
+      let relativeZoom;
+      if (oldSize && oldResolution) {
+        relativeZoom =
+          view.getResolutionForExtent(extent, oldSize) / oldResolution;
+      }
+      map.updateSize();
+      const newSize = map.getSize();
+      if (relativeZoom && newSize) {
+        view.setResolution(
+          view.getResolutionForExtent(extent, newSize) / relativeZoom
+        );
+      }
+    }
     this.refreshRenderValues();
   };
 
