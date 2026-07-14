@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.5.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.5.0...v5.5.1) (2026-07-13)
+
+### Bug Fixes
+
+- **tools:** preserve continuous measurement coordinates ([#2803](https://github.com/cornerstonejs/cornerstone3D/issues/2803)) ([991251a](https://github.com/cornerstonejs/cornerstone3D/commit/991251a940790e49cb4277f12bf0250981a764ec))
+
 # [5.5.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.17...v5.5.0) (2026-07-12)
 
 ### Features
