@@ -18,7 +18,7 @@ nodeLinker: hoisted
 strictPeerDependencies: false
 linkWorkspacePackages: true
 preferWorkspacePackages: true
-minimumReleaseAge: 30
+minimumReleaseAge: 2880
 frozenLockfile: true
 
 overrides:
