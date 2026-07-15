@@ -70,7 +70,7 @@ type RequestPool = {
  * ### Requests between types
  * There are different types of requests, and each type starves the next request
  * type, under the assumption that they are needed in order for fetching.
- * The total number of requests is set by the setMaxConcurrentRequests, defaulting to 10
+ * The total number of requests is set by the setMaxConcurrentRequests, defaulting to 50
  * concurrent requests.
  */
 class RequestPoolManager {
@@ -83,7 +83,7 @@ class RequestPoolManager {
     [RequestType.Prefetch]: 0,
     [RequestType.Compute]: 0,
   } as Record<RequestType, number>;
-  private maxConcurrentRequests = 10;
+  private maxConcurrentRequests = 50;
 
   /* maximum number of requests of each type. */
   public maxNumRequests: {
