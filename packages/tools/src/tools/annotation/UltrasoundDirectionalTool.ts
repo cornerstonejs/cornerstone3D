@@ -47,7 +47,7 @@ import type {
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getCalibratedProbeUnitsAndValue } from '../../utilities/getCalibratedUnits';
 import { lineSegment } from '../../utilities/math';
-const { transformWorldToIndex } = csUtils;
+const { transformWorldToIndexContinuous } = csUtils;
 
 /**
  * The `UltrasoundDirectionalTool` class is a tool for creating directional ultrasound annotations.
@@ -767,8 +767,8 @@ class UltrasoundDirectionalTool extends AnnotationTool {
       const worldPos1 = data.handles.points[0];
       const worldPos2 = data.handles.points[1];
 
-      const imageIndex1 = transformWorldToIndex(imageData, worldPos1);
-      const imageIndex2 = transformWorldToIndex(imageData, worldPos2);
+      const imageIndex1 = transformWorldToIndexContinuous(imageData, worldPos1);
+      const imageIndex2 = transformWorldToIndexContinuous(imageData, worldPos2);
 
       const { values: values1, units: units1 } =
         getCalibratedProbeUnitsAndValue(image, [imageIndex1]);

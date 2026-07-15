@@ -10,6 +10,8 @@ import PlanarRotateTool from './PlanarRotateTool';
 import ZoomTool from './ZoomTool';
 import MIPJumpToClickTool from './MIPJumpToClickTool';
 import CrosshairsTool from './CrosshairsTool';
+import WorldCrosshairTool from './WorldCrosshairTool';
+import SliceIntersectionTool from './SliceIntersectionTool';
 import MagnifyTool from './MagnifyTool';
 import AdvancedMagnifyTool from './AdvancedMagnifyTool';
 import ReferenceLinesTool from './ReferenceLinesTool';
@@ -88,6 +90,8 @@ export {
   ReferenceCursors,
   // Annotation Tools
   CrosshairsTool,
+  WorldCrosshairTool,
+  SliceIntersectionTool,
   ReferenceLinesTool,
   OverlayGridTool,
   SegmentationIntersectionTool,
