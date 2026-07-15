@@ -104,8 +104,7 @@ test when only a SEG is shown), the annotation is still drawn but no
 statistics are computed or displayed for that viewport.
 
 Ready-made choosers and predicates are the pure functions exported from
-`measurementTargetFilters`, defined once outside any tool. Choosers may also
-be referenced **by name**, eg `targetsFilter: 'firstPixelData'`:
+`measurementTargetFilters`, defined once outside any tool:
 
 ```ts
 import { measurementTargetFilters } from '@cornerstonejs/tools';
@@ -155,12 +154,11 @@ toolGroup.addTool(CircleROITool.toolName, {
 });
 ```
 
-Just the first pixel-data target (the pre-5.x single-target behaviour),
-referencing the chooser by name:
+Just the first pixel-data target (the pre-5.x single-target behaviour):
 
 ```ts
 toolGroup.addTool(CircleROITool.toolName, {
-  targetsFilter: 'firstPixelData',
+  targetsFilter: measurementTargetFilters.firstPixelData,
 });
 ```
 
@@ -169,7 +167,7 @@ predicate:
 
 ```ts
 toolGroup.addTool(CircleROITool.toolName, {
-  targetsFilter: 'firstPixelData',
+  targetsFilter: measurementTargetFilters.firstPixelData,
   targetPredicate: measurementTargetFilters.forModality('PT'),
 });
 ```
@@ -192,7 +190,7 @@ display sets explicitly:
 ```ts
 toolGroup.addTool(CircleROITool.toolName, {
   // Custom predicate: PT only, decided from the exemplar instance
-  targetsFilter: 'firstPixelData',
+  targetsFilter: measurementTargetFilters.firstPixelData,
   targetPredicate: (candidate) => candidate.instance?.Modality === 'PT',
 });
 

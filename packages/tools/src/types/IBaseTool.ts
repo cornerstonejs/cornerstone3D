@@ -117,9 +117,10 @@ export type MeasurementTargetPredicate = (
 /**
  * A configurable chooser deciding which of the display sets shown in a
  * viewport an annotation tool computes and displays statistics for.  Set it
- * on the tool configuration as `targetsFilter`, either as a function or as
- * the name of one of the ready made `measurementTargetFilters` (eg
- * `targetsFilter: 'firstPixelData'`).
+ * on the tool configuration as `targetsFilter`, using one of the ready made
+ * `measurementTargetFilters` (eg
+ * `targetsFilter: measurementTargetFilters.firstPixelData`) or any function
+ * with the same signature.
  *
  * The chooser receives the viewport's candidate display sets in viewport
  * order (see {@link MeasurementTargetCandidate}) and the
@@ -147,13 +148,13 @@ export type MeasurementTargetPredicate = (
  * toolGroup.addTool(CircleROITool.toolName, {
  *   targetsFilter: measurementTargetFilters.allPixelData,
  * });
- * // The first pixel-data display set only, by name
+ * // The first pixel-data display set only
  * toolGroup.addTool(CircleROITool.toolName, {
- *   targetsFilter: 'firstPixelData',
+ *   targetsFilter: measurementTargetFilters.firstPixelData,
  * });
  * // Only the PT of a fusion viewport, computed as the primary target
  * toolGroup.addTool(CircleROITool.toolName, {
- *   targetsFilter: 'firstPixelData',
+ *   targetsFilter: measurementTargetFilters.firstPixelData,
  *   targetPredicate: measurementTargetFilters.forModality('PT'),
  * });
  * ```
@@ -178,16 +179,16 @@ export interface ToolConfiguration {
   /**
    * Chooser deciding how many of the eligible display sets shown in the
    * viewport the tool computes and displays measurement statistics for -
-   * first vs all.  A function, or the name of one of the ready made
-   * `measurementTargetFilters` (eg `'firstPixelData'`).  See
-   * {@link MeasurementTargetsFilter}.
+   * first vs all.  One of the ready made `measurementTargetFilters` (eg
+   * `measurementTargetFilters.firstPixelData`) or any function with the same
+   * signature.  See {@link MeasurementTargetsFilter}.
    *
    * The ROI statistics tools default this to
    * `measurementTargetFilters.allPixelData` (every display set containing
    * pixel values); tools without a default chooser use the viewport's single
    * default target.
    */
-  targetsFilter?: MeasurementTargetsFilter | string;
+  targetsFilter?: MeasurementTargetsFilter;
 
   /**
    * Per-candidate predicate narrowing which individual display sets the

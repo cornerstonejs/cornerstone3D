@@ -118,8 +118,7 @@ export const forId =
  *
  * - `targetsFilter` - a {@link MeasurementTargetsFilter} chooser deciding the
  *   cardinality (first vs all): {@link firstPixelData}, {@link allPixelData}
- *   and the raw {@link first}/{@link all}.  It may be set by name, eg
- *   `targetsFilter: 'firstPixelData'`.
+ *   and the raw {@link first}/{@link all}.
  * - `targetPredicate` - a {@link MeasurementTargetPredicate} deciding whether
  *   an individual candidate is eligible: {@link isPixelData} (the default),
  *   {@link forModality} and {@link forId}.
@@ -158,12 +157,12 @@ export const forId =
  *
  * // Just the first pixel-data display set
  * toolGroup.addTool(CircleROITool.toolName, {
- *   targetsFilter: 'firstPixelData',
+ *   targetsFilter: measurementTargetFilters.firstPixelData,
  * });
  *
  * // The first PT display set only
  * toolGroup.addTool(CircleROITool.toolName, {
- *   targetsFilter: 'firstPixelData',
+ *   targetsFilter: measurementTargetFilters.firstPixelData,
  *   targetPredicate: measurementTargetFilters.forModality('PT'),
  * });
  * ```
