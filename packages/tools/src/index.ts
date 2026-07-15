@@ -26,6 +26,7 @@ import {
   BaseTool,
   AnnotationTool,
   AnnotationDisplayTool,
+  measurementTargetFilters,
   PanTool,
   TrackballRotateTool,
   VolumeCroppingTool,
@@ -108,6 +109,7 @@ export {
   BaseTool,
   AnnotationTool,
   AnnotationDisplayTool,
+  measurementTargetFilters,
   // Manipulation Tools
   PanTool,
   SegmentBidirectionalTool,
