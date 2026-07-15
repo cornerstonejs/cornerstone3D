@@ -67,6 +67,8 @@ import pickIntensityPointInSlab, {
   getSlabIntensityPickContext,
 } from './pickIntensityPointInSlab';
 
+export * from './defaultGetTextLines';
+
 export {
   math,
   planar,

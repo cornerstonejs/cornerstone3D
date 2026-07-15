@@ -1,4 +1,4 @@
-import { AnnotationTool, BaseTool } from '../base';
+import { AnnotationTool, BaseTool, measurementTargetFilters } from '../base';
 import { vec2, vec3 } from 'gl-matrix';
 
 import {
@@ -62,6 +62,10 @@ import {
 } from '../../utilities/math/ellipse';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
+import {
+  createGetTextLines,
+  type MetricDefinition,
+} from '../../utilities/defaultGetTextLines';
 import getEllipseWorldCoordinates from '../../utilities/getEllipseWorldCoordinates';
 
 const { transformWorldToIndex } = csUtils;
@@ -144,6 +148,10 @@ class CircleROITool extends AnnotationTool {
         getTextLines: defaultGetTextLines,
         statsCalculator: BasicStatsCalculator,
         simplified: true, // If true, only 2 points are used for the handles, otherwise 5 points are used
+        // By default show the statistics of every display set containing
+        // pixel values (eg both CT and PT on a fusion viewport), but never
+        // SEG and the like - see measurementTargetFilters for alternatives
+        targetsFilter: measurementTargetFilters.allPixelData,
       },
     }
   ) {
@@ -164,9 +172,7 @@ class CircleROITool extends AnnotationTool {
    * @returns The annotation object.
    *
    */
-  addNewAnnotation = (
-    evt: EventTypes.InteractionEventType
-  ): CircleROIAnnotation => {
+  addNewAnnotation = (evt: EventTypes.InteractionEventType): Annotation => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
@@ -692,7 +698,7 @@ class CircleROITool extends AnnotationTool {
       const { handles } = data;
       const { points, activeHandleIndex } = handles;
 
-      const targetId = this.getTargetId(viewport, data);
+      const targetIds = this.getMeasurementTargets(viewport, data);
       styleSpecifier.annotationUID = annotationUID;
 
       const { color, lineWidth, lineDash } = this.getAnnotationStyle({
@@ -712,24 +718,18 @@ class CircleROITool extends AnnotationTool {
 
       const { centerPointRadius } = this.configuration;
 
-      // If cachedStats does not exist, or the unit is missing (as part of import/hydration etc.),
-      // force to recalculate the stats from the points
+      // If cachedStats does not exist for one of the measurement targets, or
+      // the unit is missing (as part of import/hydration etc.), force to
+      // recalculate the stats from the points.  Every filtered target gets
+      // seeded here, so a single (eg fusion) viewport computes the stats for
+      // all of them even when no other viewport has done so.
       if (
-        !data.cachedStats[targetId] ||
-        data.cachedStats[targetId].areaUnit == null
+        this.ensureCachedStatsTargets(
+          data,
+          targetIds,
+          (stats) => stats.areaUnit == null
+        )
       ) {
-        data.cachedStats[targetId] = {
-          Modality: null,
-          area: null,
-          max: null,
-          mean: null,
-          stdDev: null,
-          areaUnit: null,
-          radius: null,
-          radiusUnit: null,
-          perimeter: null,
-        };
-
         this._calculateCachedStats(
           annotation,
           viewport,
@@ -737,6 +737,10 @@ class CircleROITool extends AnnotationTool {
           enabledElement
         );
       } else if (annotation.invalidated) {
+        // A change - recompute (throttled, so slow stats are not recomputed
+        // every frame during a drag).  Clearing stale targets and rebuilding
+        // the cumulative key set is done inside _calculateCachedStats, gated
+        // by the invalidated flag.
         this._throttledCalculateCachedStats(
           annotation,
           viewport,
@@ -872,7 +876,7 @@ class CircleROITool extends AnnotationTool {
       renderStatus = true;
 
       if (this.configuration.calculateStats) {
-        const textLines = this.configuration.getTextLines(data, targetId);
+        const textLines = this.configuration.getTextLines(data, targetIds);
         if (!textLines || textLines.length === 0) {
           continue;
         }
@@ -924,7 +928,27 @@ class CircleROITool extends AnnotationTool {
     const bottomRightWorld = viewport.canvasToWorld(bottomRightCanvas);
     const { cachedStats } = data;
 
+    // On an actual change (invalidation) drop every cached target so stale
+    // volumes are removed and the (fixed frame of reference) key set is
+    // rebuilt from the current viewport's targets.  This is done at the seam
+    // where the invalidated flag is consumed (and reset below), so during a
+    // drag it only happens when the throttled calculation actually runs -
+    // not every frame.  When not invalidated we keep the existing targets
+    // (possibly seeded by other viewports) and just fill/refresh them.
+    if (wasInvalidated) {
+      // Capture the current targets first (reusing existing keys where the
+      // volume already has stats) so this viewport's volumes keep stable
+      // keys, then drop everything (removing stale/foreign volumes) and
+      // reseed just those targets.
+      const currentTargets = this.getMeasurementTargets(viewport, data);
+      for (const key of Object.keys(cachedStats)) {
+        delete cachedStats[key];
+      }
+      this.ensureCachedStatsTargets(data, currentTargets);
+    }
+
     const targetIds = Object.keys(cachedStats);
+    let isHandleOutsideAnyTarget = false;
 
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
@@ -934,9 +958,9 @@ class CircleROITool extends AnnotationTool {
       // to various reasons such as if the target was a volumeViewport, and
       // the volumeViewport has been decached in the meantime.
       if (!image) {
-        console.warn('image not found for stats:', targetId);
-        // Better clean the stats for this targetId
-        delete cachedStats[targetId];
+        // The key may have been created by another viewport that does have
+        // this volume - leave it in place so that viewport can compute it.
+        // Stale keys are cleared on annotation change, not here.
         continue;
       }
 
@@ -992,12 +1016,13 @@ class CircleROITool extends AnnotationTool {
       // Check if one of the indexes are inside the volume, this then gives us
       // Some area to do stats over.
 
-      this.isHandleOutsideImage = !BaseTool.isInsideVolume(dimensions, [
+      const isHandleOutsideTarget = !BaseTool.isInsideVolume(dimensions, [
         pos1Index,
         pos2Index,
       ]);
+      isHandleOutsideAnyTarget ||= isHandleOutsideTarget;
 
-      if (!this.isHandleOutsideImage) {
+      if (!isHandleOutsideTarget) {
         const iMin = Math.min(pos1Index[0], pos2Index[0]);
         const iMax = Math.max(pos1Index[0], pos2Index[0]);
 
@@ -1070,6 +1095,10 @@ class CircleROITool extends AnnotationTool {
       }
     }
 
+    // With multiple selected measurement targets, preventHandleOutsideImage
+    // should not depend on actor iteration order. The annotation is valid only
+    // when its handles fit inside every target for which image data resolved.
+    this.isHandleOutsideImage = isHandleOutsideAnyTarget;
     annotation.invalidated = false;
 
     // Dispatching annotation modified
@@ -1149,23 +1178,24 @@ class CircleROITool extends AnnotationTool {
 
     triggerAnnotationRenderForViewportIds([viewport.id]);
   };
+
+  static readonly CIRCLE_ROI_METRICS: MetricDefinition[] = [
+    { name: 'Mean', attribute: 'mean', unitAttribute: 'modalityUnit' },
+    { name: 'Max', attribute: 'max', unitAttribute: 'modalityUnit' },
+    { name: 'Min', attribute: 'min', unitAttribute: 'modalityUnit' },
+    { name: 'Std Dev', attribute: 'stdDev', unitAttribute: 'modalityUnit' },
+  ];
+
+  static getTextLines = createGetTextLines(CircleROITool.CIRCLE_ROI_METRICS);
 }
 
-function defaultGetTextLines(data, targetId): string[] {
-  const cachedVolumeStats = data.cachedStats[targetId];
-  const {
-    radius,
-    radiusUnit,
-    area,
-    mean,
-    stdDev,
-    max,
-    min,
-    isEmptyArea,
-    areaUnit,
-    modalityUnit,
-  } = cachedVolumeStats;
+function defaultGetTextLines(data, targetIds: string[]): string[] {
+  const cachedVolumeStats = data.cachedStats[targetIds[0]];
   const textLines: string[] = [];
+  if (!cachedVolumeStats) {
+    return textLines;
+  }
+  const { radius, radiusUnit, area, isEmptyArea, areaUnit } = cachedVolumeStats;
 
   if (csUtils.isNumber(radius)) {
     const radiusLine = isEmptyArea
@@ -1181,19 +1211,9 @@ function defaultGetTextLines(data, targetId): string[] {
     textLines.push(areaLine);
   }
 
-  if (csUtils.isNumber(mean)) {
-    textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
-  }
-
-  if (csUtils.isNumber(max)) {
-    textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
-  }
-  if (csUtils.isNumber(min)) {
-    textLines.push(`Min: ${csUtils.roundNumber(min)} ${modalityUnit}`);
-  }
-
-  if (csUtils.isNumber(stdDev)) {
-    textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
+  const standardTextLines = CircleROITool.getTextLines(data, targetIds);
+  if (standardTextLines) {
+    textLines.push(...standardTextLines);
   }
 
   return textLines;

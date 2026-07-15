@@ -1,4 +1,9 @@
-import { BaseTool, AnnotationTool, AnnotationDisplayTool } from './base';
+import {
+  BaseTool,
+  AnnotationTool,
+  AnnotationDisplayTool,
+  measurementTargetFilters,
+} from './base';
 import PanTool from './PanTool';
 import TrackballRotateTool from './TrackballRotateTool';
 import VolumeCroppingTool from './VolumeCroppingTool';
@@ -75,6 +80,7 @@ export {
   BaseTool,
   AnnotationTool,
   AnnotationDisplayTool,
+  measurementTargetFilters,
   // Manipulation Tools
   PanTool,
   TrackballRotateTool,

@@ -82,10 +82,15 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     viewport,
     ...annotationBaseData
   ): T {
-    return this.createAnnotation(
-      { metadata: viewport.getViewReference() },
-      ...annotationBaseData
-    ) as T;
+    // MPR based annotations are cross-FOR by default, while stack annotations
+    // remain per-frame. Resolve the normal volume-specific reference first so
+    // legacy VolumeViewport can populate referencedImageId, then remove only
+    // the volume restriction that would prevent the annotation from applying
+    // to other volumes in the same frame of reference.
+    const metadata = viewport.getViewReference();
+    delete metadata.volumeId;
+
+    return this.createAnnotation({ metadata }, ...annotationBaseData) as T;
   }
 
   /**
@@ -583,9 +588,13 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     targetId: string,
     imageId?: string
   ): boolean {
-    if (viewport instanceof BaseVolumeViewport) {
-      const volumeId = csUtils.getVolumeId(targetId);
-      const volume = cache.getVolume(volumeId);
+    const volumeId = csUtils.getVolumeId(targetId);
+    const volume = cache.getVolume(volumeId);
+
+    // Planar GenericViewports can also use cached volume targets. Prefer the
+    // target volume's scaling whenever one exists, regardless of the viewport
+    // class, so a secondary PT binding in a fused viewport reports SUV units.
+    if (volume) {
       return volume?.scaling?.PT !== undefined;
     }
     const scalingModule: Types.ScalingParameters | undefined =
