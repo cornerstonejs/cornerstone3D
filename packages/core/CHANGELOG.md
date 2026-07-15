@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.6.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.1...v5.6.2) (2026-07-15)
+
+### Bug Fixes
+
+- **core:** expose getCompleteScalarDataArray on dynamic volume voxel manager ([#2808](https://github.com/cornerstonejs/cornerstone3D/issues/2808)) ([5aae6db](https://github.com/cornerstonejs/cornerstone3D/commit/5aae6db0438c76c4841f8f7b75b621d8656805de))
+
 ## [5.6.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.0...v5.6.1) (2026-07-15)
 
 **Note:** Version bump only for package @cornerstonejs/core
