@@ -1471,6 +1471,14 @@ export default class VoxelManager<T> {
       return voxelGroups[activeDimensionGroup].getCompleteScalarDataArray();
     };
 
+    // Expose the generic scalar-data accessor so consumers that operate on a plain
+    // volume voxel manager (e.g. segmentation statistics) work on dynamic volumes,
+    // returning the currently active dimension group's scalar data.
+    // @ts-ignore
+    voxelManager.getCompleteScalarDataArray = () => {
+      return voxelGroups[activeDimensionGroup].getCompleteScalarDataArray();
+    };
+
     // @ts-ignore
     voxelManager.getCurrentTimePoint = () => {
       console.warn(
