@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/tools",
-  "version": "5.6.2",
+  "version": "5.6.3",
   "description": "Cornerstone3D Tools",
   "types": "./dist/esm/index.d.ts",
   "module": "./dist/esm/index.js",
@@ -126,11 +126,11 @@
     "lodash.get": "4.4.2"
   },
   "devDependencies": {
-    "@cornerstonejs/core": "5.6.2",
+    "@cornerstonejs/core": "5.6.3",
     "canvas": "3.2.0"
   },
   "peerDependencies": {
-    "@cornerstonejs/core": "5.6.2",
+    "@cornerstonejs/core": "5.6.3",
     "@kitware/vtk.js": "36.4.1",
     "@types/d3-array": "3.2.1",
     "@types/d3-interpolate": "3.0.4",
