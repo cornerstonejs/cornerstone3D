@@ -3,6 +3,60 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.6.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.1...v5.6.2) (2026-07-15)
+
+**Note:** Version bump only for package @cornerstonejs/utils
+
+## [5.6.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.0...v5.6.1) (2026-07-15)
+
+**Note:** Version bump only for package @cornerstonejs/utils
+
+# [5.6.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.5.1...v5.6.0) (2026-07-15)
+
+**Note:** Version bump only for package @cornerstonejs/utils
+
+## [5.5.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.5.0...v5.5.1) (2026-07-13)
+
+**Note:** Version bump only for package @cornerstonejs/utils
+
+# [5.5.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.17...v5.5.0) (2026-07-12)
+
+**Note:** Version bump only for package @cornerstonejs/utils
+
+## [5.4.17](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.16...v5.4.17) (2026-07-11)
+
+**Note:** Version bump only for package @cornerstonejs/utils
+
+## [5.4.16](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.15...v5.4.16) (2026-07-11)
+
+**Note:** Version bump only for package @cornerstonejs/utils
+
+## [5.4.15](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.14...v5.4.15) (2026-07-10)
+
+**Note:** Version bump only for package @cornerstonejs/utils
+
+## [5.4.14](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.13...v5.4.14) (2026-07-10)
+
+**Note:** Version bump only for package @cornerstonejs/utils
+
+## [5.4.13](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.12...v5.4.13) (2026-07-10)
+
+**Note:** Version bump only for package @cornerstonejs/utils
+
+## [5.4.12](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.11...v5.4.12) (2026-07-09)
+
+### Bug Fixes
+
+- Use the image loader for dicom-seg to allow compressed images ([#2611](https://github.com/cornerstonejs/cornerstone3D/issues/2611)) ([ef48c4a](https://github.com/cornerstonejs/cornerstone3D/commit/ef48c4a2a7581d164b7708fc40080254d19b7b70)), closes [#2572](https://github.com/cornerstonejs/cornerstone3D/issues/2572)
+
+## [5.4.11](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.10...v5.4.11) (2026-07-09)
+
+**Note:** Version bump only for package @cornerstonejs/utils
+
+## [5.4.10](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.9...v5.4.10) (2026-07-09)
+
+**Note:** Version bump only for package @cornerstonejs/utils
+
 ## [5.4.9](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.8...v5.4.9) (2026-07-08)
 
 **Note:** Version bump only for package @cornerstonejs/utils

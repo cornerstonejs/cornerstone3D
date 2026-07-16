@@ -1,16 +1,21 @@
 import {
+  cache,
+  metaData,
   utilities as csUtils,
   viewportHasPan,
   viewportHasZoom,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import ToolModes from '../../enums/ToolModes';
+import measurementTargetFilters from './measurementTargetFilters';
 import type StrategyCallbacks from '../../enums/StrategyCallbacks';
 import type {
   InteractionTypes,
   ToolProps,
   PublicToolProps,
   ToolConfiguration,
+  AnnotationData,
+  MeasurementTargetCandidate,
 } from '../../types';
 
 const { DefaultHistoryMemo } = csUtils.HistoryMemo;
@@ -124,6 +129,9 @@ abstract class BaseTool {
    * desired volume id when the target is a volume.
    * It is also possible to use series query parameters such as `/series/{seriesUID}/`
    * to generate specific series selections within a stack viewport.
+   *
+   * @deprecated Use the `targetsFilter` configuration option with
+   * `measurementTargetFilters.forId` instead.
    */
   public static isSpecifiedTargetId(desiredVolumeId: string) {
     // imageId including the target id is a proxy for testing if the
@@ -267,7 +275,11 @@ abstract class BaseTool {
         return;
       }
 
-      return viewports[0].getImageData();
+      // Pass the volumeId so that a viewport displaying several volumes (eg
+      // a fusion viewport) returns the image data of this target's volume
+      // rather than of its first/default one - otherwise the statistics of
+      // every target would be computed over the same (first) volume.
+      return (viewports[0] as Types.IVolumeViewport).getImageData(volumeId);
     } else if (targetId.startsWith('videoId:')) {
       // Video id can be multi-valued for the frame information
       const imageURI = csUtils.imageIdToURI(targetId);
@@ -290,37 +302,323 @@ abstract class BaseTool {
    * statistics scoped to that target in the annotations.
    * For StackViewport, targetId is usually derived from the imageId.
    * For VolumeViewport, it's derived from the volumeId.
-   * This method allows prioritizing a specific volumeId from the tool's
-   * configuration if available in the cachedStats.
+   *
+   * This is the primary (first) entry of {@link getMeasurementTargets}, so it
+   * honours the `targetsFilter` tool configuration - configuring, for
+   * example, `measurementTargetFilters.forModality('PT')` makes the PT volume of a
+   * fusion viewport the target the statistics are stored/read for.
    *
    * @param viewport - viewport to get the targetId for
    * @param data - Optional: The annotation's data object, containing cachedStats.
-   * @returns targetId
+   * @returns targetId, or undefined when a configured filter selects no
+   *   targets for this viewport
    */
   protected getTargetId(
     viewport: Types.IViewport,
-    data?: unknown & { cachedStats?: Record<string, unknown> }
+    data?: AnnotationData
   ): string | undefined {
-    const { isPreferredTargetId } = this.configurationTyped; // Get preferred ID from config
+    return this.getMeasurementTargets(viewport, data)[0];
+  }
 
-    // Check if cachedStats is available and contains the preferredVolumeId
+  /**
+   * Gets the array of targetIds the tool should compute and display
+   * measurement statistics for on the given viewport.
+   *
+   * The targets are selected by the `targetsFilter` tool configuration
+   * option (see {@link measurementTargetFilters} for ready made filters).
+   * The filter receives the viewport's candidate display sets and the
+   * viewport, and returns the subset to measure.
+   *
+   * Each returned targetId reuses an existing cachedStats key when
+   * statistics were already computed for the same volume (possibly by a
+   * different viewport), and is otherwise the view reference id of this
+   * viewport for that volume - so a single fusion viewport can seed and
+   * compute the statistics of every filtered target itself, even when no
+   * other viewport has computed them.
+   *
+   * A configured filter's result is authoritative: when it returns no
+   * candidates (eg a PT-only filter on a CT viewport, or the default
+   * `allPixelData` filter when only a SEG is shown), an empty array is
+   * returned and no statistics are computed or displayed.
+   *
+   * The deprecated `isPreferredTargetId` configuration is honoured before
+   * the filter, so existing configurations keep their behaviour.  When
+   * neither selects anything and no filter is configured, the viewport's
+   * default view reference id is the single target.
+   *
+   * **Multi-target selection only works for volumes displayed on screen**
+   *
+   * TODO: Fix this for other fusion types on stack and also for inclusion
+   * of annotation measurements which are not currently on screen.
+   */
+  protected getMeasurementTargets(
+    viewport: Types.IViewport,
+    data?: AnnotationData
+  ): string[] {
+    const { targetsFilter, isPreferredTargetId } = this.configurationTyped;
+
+    // Legacy option (deprecated) choosing the preferred target from already
+    // computed stats.  Checked first so configurations predating
+    // targetsFilter keep working even for tools with a default filter.
     if (isPreferredTargetId && data?.cachedStats) {
       for (const [targetId, cachedStat] of Object.entries(data.cachedStats)) {
         if (isPreferredTargetId(viewport, { targetId, cachedStat })) {
-          return targetId;
+          return [targetId];
         }
       }
     }
 
-    // If not found or not applicable, use the viewport's default method
+    if (targetsFilter) {
+      const candidates = this.getMeasurementTargetCandidates(viewport, data);
+      const options = {
+        viewport,
+        configuration: this.configurationTyped,
+        data,
+      };
+      return targetsFilter(candidates, options).map(
+        (candidate) => candidate.targetId
+      );
+    }
+
+    // No filter configured - use the viewport's default method
     const defaultTargetId = viewport.getViewReferenceId?.();
     if (defaultTargetId) {
-      return defaultTargetId;
+      return [defaultTargetId];
     }
 
     throw new Error(
-      'getTargetId: viewport must have a getViewReferenceId method'
+      'getMeasurementTargets: viewport must have a getViewReferenceId method'
     );
+  }
+
+  /**
+   * Builds the list of candidate measurement targets for the given viewport:
+   * one per volume actor being displayed (including segmentation
+   * representations, which carry a `representationUID` and are excluded by
+   * the default filter rather than skipped here), falling back to a single
+   * candidate for the default view reference when there are none.  The
+   * candidates are what the
+   * `targetsFilter` tool configuration chooses from - each carries the
+   * display set related parameters (display set, uid, exemplar instance and
+   * index) where they are known.
+   *
+   * The candidate modality is taken from the display set where available -
+   * the exemplar instance or volume metadata for volume backed candidates,
+   * or the registered display set of the viewport for the fallback
+   * candidate.  When the display set is unknown (eg a stack viewport using
+   * the legacy set image ids), the candidate has none of the display set
+   * fields, and filters can choose whether to include it based on that.
+   *
+   * When the annotation already has a cachedStats entry for a candidate's
+   * volume (possibly created by another viewport with a different view
+   * reference), the existing key is reused as the targetId so statistics are
+   * shared rather than recomputed per view.
+   */
+  protected getMeasurementTargetCandidates(
+    viewport: Types.IViewport,
+    data?: AnnotationData
+  ): MeasurementTargetCandidate[] {
+    const candidates: MeasurementTargetCandidate[] = [];
+    const displaySets = BaseTool.getViewportDisplaySets(viewport);
+    const actors = viewport.getActors?.() || [];
+    for (let index = 0; index < actors.length; index++) {
+      const { referencedId, representationUID } = actors[index];
+      // Skip actors not derived from a cached volume (tool/canvas actors).
+      // Segmentation representations (labelmaps etc) are kept as candidates
+      // and carry their representationUID, so that the configured
+      // targetsFilter decides whether to include them - excluding
+      // segmentations is the job of the (default) filter, not baked in here.
+      if (!referencedId) {
+        continue;
+      }
+      const volume = cache.getVolume(referencedId);
+      if (!volume) {
+        continue;
+      }
+      const targetId =
+        BaseTool.findCachedStatsTargetId(data, referencedId) ||
+        viewport.getViewReferenceId?.({ volumeId: referencedId });
+      if (!targetId) {
+        continue;
+      }
+      const displaySetInfo = displaySets.find(
+        (displaySet) => displaySet.volumeId === referencedId
+      );
+      const imageIds =
+        displaySetInfo?.imageIds ??
+        (volume.imageIds?.length ? volume.imageIds : undefined);
+      const instance =
+        displaySetInfo?.instance ?? BaseTool.getExemplarInstance(imageIds);
+      candidates.push({
+        targetId,
+        referencedId,
+        representationUID: representationUID as string,
+        displaySet: displaySetInfo?.displaySet,
+        displaySetUID: displaySetInfo?.displaySetUID,
+        instance,
+        modality: (instance?.Modality as string) ?? volume.metadata?.Modality,
+        imageIds,
+        index,
+      });
+    }
+    if (!candidates.length) {
+      const targetId = viewport.getViewReferenceId?.();
+      if (targetId) {
+        const displaySetInfo = displaySets[0];
+        candidates.push({
+          targetId,
+          index: 0,
+          displaySet: displaySetInfo?.displaySet,
+          displaySetUID: displaySetInfo?.displaySetUID,
+          instance: displaySetInfo?.instance,
+          modality: displaySetInfo?.modality,
+          imageIds: displaySetInfo?.imageIds,
+        });
+      }
+    }
+    return candidates;
+  }
+
+  /**
+   * Resolves the display sets a viewport is displaying, when known.
+   * Viewports displaying registered display sets (see `setDisplaySets` on
+   * the generic viewports) resolve through the `displaySetModule` metadata
+   * (an `IDisplaySet` from `@cornerstonejs/metadata`) falling back to the
+   * generic viewport display set registration; legacy viewports (`setStack`
+   * with plain image ids) have no display set, so an empty list is returned
+   * and their candidates carry no display set fields.
+   */
+  protected static getViewportDisplaySets(viewport: Types.IViewport): Array<{
+    displaySetUID: string;
+    displaySet?: unknown;
+    instance?: Record<string, unknown>;
+    imageIds?: string[];
+    volumeId?: string;
+    modality?: string;
+  }> {
+    const displaySets = (
+      viewport as unknown as {
+        getDisplaySets?: () => Array<{ displaySetId: string }>;
+      }
+    ).getDisplaySets?.();
+    if (!displaySets?.length) {
+      return [];
+    }
+    const provider = csUtils.genericViewportDisplaySetMetadataProvider;
+    return displaySets.map(({ displaySetId }) => {
+      const genericRegistration = provider.get(
+        provider.VIEWPORT_V2_DISPLAY_SET,
+        displaySetId
+      );
+      const registeredImageIds = Array.isArray(genericRegistration)
+        ? (genericRegistration as string[])
+        : (genericRegistration as { imageIds?: string[] })?.imageIds;
+      // registerDisplaySetMetadata stores IDisplaySet metadata under image
+      // ids, not the logical displaySetId used by GenericViewport. Resolve
+      // the generic registration first to bridge those two identifiers.
+      const typedDisplaySet = registeredImageIds
+        ?.map(
+          (imageId) =>
+            metaData.get('displaySetModule', imageId) as
+              | {
+                  displaySetId?: string;
+                  imageIds?: readonly string[];
+                  instances?: readonly Record<string, unknown>[];
+                }
+              | undefined
+        )
+        .find((displaySet) => displaySet !== undefined);
+      const imageIds = typedDisplaySet?.imageIds?.length
+        ? Array.from(typedDisplaySet.imageIds)
+        : registeredImageIds;
+      const registered = typedDisplaySet ?? genericRegistration;
+      const instance =
+        typedDisplaySet?.instances?.[0] ??
+        BaseTool.getExemplarInstance(imageIds);
+      return {
+        displaySetUID: typedDisplaySet?.displaySetId ?? displaySetId,
+        displaySet: registered,
+        instance,
+        imageIds,
+        // The typed IDisplaySet owns the rich metadata, while the generic
+        // registration carries the volume binding used to match viewport
+        // actors back to that display set.
+        volumeId: (genericRegistration as { volumeId?: string })?.volumeId,
+        modality:
+          (instance?.Modality as string) ??
+          (imageIds?.length
+            ? (metaData.get('generalSeriesModule', imageIds[0])?.modality as
+                | string
+                | undefined)
+            : undefined),
+      };
+    });
+  }
+
+  /**
+   * Resolves an exemplar (first) instance - naturalized DICOM metadata -
+   * from the image ids of a display set/volume, when available.
+   */
+  protected static getExemplarInstance(
+    imageIds?: string[]
+  ): Record<string, unknown> | undefined {
+    if (!imageIds?.length) {
+      return;
+    }
+    return metaData.get('instance', imageIds[0]) as
+      | Record<string, unknown>
+      | undefined;
+  }
+
+  /**
+   * Finds an existing cachedStats key for the given referenced volume id, if
+   * statistics were already computed for that volume - the keys are view
+   * reference ids of the form `volumeId:<volumeId>?...`, so entries created
+   * by other viewports (with a different slice/orientation) still match.
+   */
+  protected static findCachedStatsTargetId(
+    data: AnnotationData | undefined,
+    referencedId: string
+  ): string | undefined {
+    if (!data?.cachedStats) {
+      return;
+    }
+    return Object.keys(data.cachedStats).find(
+      (key) =>
+        key.startsWith('volumeId:') && csUtils.getVolumeId(key) === referencedId
+    );
+  }
+
+  /**
+   * Ensures a cachedStats entry exists for every measurement target, so that
+   * the tool stats calculators (which iterate the cachedStats keys) compute
+   * statistics for each of them.  This is what allows a single fusion
+   * viewport to compute the statistics of several display sets at once, even
+   * when no other viewport has computed them.
+   *
+   * @param data - the annotation data containing the cachedStats
+   * @param targetIds - the targets to seed (see getMeasurementTargets)
+   * @param needsUpdate - optional test flagging an existing entry as
+   *   incomplete (eg hydrated annotations missing units) and needing to be
+   *   recalculated
+   * @returns true if any entry was added or flagged, meaning the stats need
+   *   to be (re)calculated
+   */
+  protected ensureCachedStatsTargets(
+    data: AnnotationData,
+    targetIds: string[],
+    needsUpdate?: (stats) => boolean
+  ): boolean {
+    let missing = false;
+    const cachedStats = (data.cachedStats ??= {}) as Record<string, unknown>;
+    for (const targetId of targetIds) {
+      const stats = cachedStats[targetId];
+      if (!stats || needsUpdate?.(stats)) {
+        cachedStats[targetId] = {};
+        missing = true;
+      }
+    }
+    return missing;
   }
 
   /**

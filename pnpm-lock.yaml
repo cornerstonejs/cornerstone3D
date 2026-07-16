@@ -15,6 +15,7 @@ overrides:
   tar-fs: 2.1.4
   body-parser: 1.20.3
   ws: 8.21.0
+  undici@<6.27.0: 6.27.0
   qs: 6.14.1
   lodash: 4.18.1
   tar: 7.5.11
@@ -397,8 +398,8 @@ importers:
         specifier: 6.0.3
         version: 6.0.3
       dcmjs:
-        specifier: 0.50.1
-        version: 0.50.1
+        specifier: 0.52.0
+        version: 0.52.0
       gl-matrix:
         specifier: 3.4.3
         version: 3.4.3
@@ -407,10 +408,10 @@ importers:
         version: 1.0.19
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.4.9
+        specifier: 5.6.2
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.4.9
+        specifier: 5.6.2
         version: link:../tools
 
   packages/ai:
@@ -422,8 +423,8 @@ importers:
         specifier: 6.0.3
         version: 6.0.3
       dcmjs:
-        specifier: 0.50.1
-        version: 0.50.1
+        specifier: 0.52.0
+        version: 0.52.0
       gl-matrix:
         specifier: 3.4.3
         version: 3.4.3
@@ -441,10 +442,10 @@ importers:
         version: 1.17.1
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.4.9
+        specifier: 5.6.2
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.4.9
+        specifier: 5.6.2
         version: link:../tools
 
   packages/codemods: {}
@@ -452,11 +453,11 @@ importers:
   packages/core:
     dependencies:
       '@cornerstonejs/utils':
-        specifier: 5.4.9
+        specifier: 5.6.2
         version: link:../utils
       '@kitware/vtk.js':
-        specifier: 35.5.3
-        version: 35.5.3(@babel/preset-env@7.29.5(@babel/core@7.26.10))(autoprefixer@10.4.21(postcss@8.5.3))(wslink@2.5.0)
+        specifier: 36.4.1
+        version: 36.4.1(autoprefixer@10.4.21(postcss@8.5.3))(wslink@2.5.0)
       comlink:
         specifier: 4.4.2
         version: 4.4.2
@@ -468,7 +469,7 @@ importers:
         version: 1.9.2
     devDependencies:
       '@cornerstonejs/metadata':
-        specifier: 5.4.9
+        specifier: 5.6.2
         version: link:../metadata
 
   packages/dicomImageLoader:
@@ -502,10 +503,10 @@ importers:
         version: 9.0.1
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.4.9
+        specifier: 5.6.2
         version: link:../core
       '@cornerstonejs/metadata':
-        specifier: 5.4.9
+        specifier: 5.6.2
         version: link:../metadata
 
   packages/docs:
@@ -596,17 +597,17 @@ importers:
         specifier: 1.1.0
         version: 1.1.0
       '@kitware/vtk.js':
-        specifier: 35.5.3
-        version: 35.5.3(@babel/preset-env@7.29.5(@babel/core@7.26.10))(autoprefixer@10.4.21(postcss@8.5.3))(wslink@2.5.0)
+        specifier: 36.4.1
+        version: 36.4.1(autoprefixer@10.4.21(postcss@8.5.3))(wslink@2.5.0)
       itk-wasm:
         specifier: 1.0.0-b.165
         version: 1.0.0-b.165
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.4.9
+        specifier: 5.6.2
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.4.9
+        specifier: 5.6.2
         version: link:../tools
 
   packages/metadata:
@@ -615,11 +616,11 @@ importers:
         specifier: 1.0.3
         version: 1.0.3
       '@cornerstonejs/utils':
-        specifier: 5.4.9
+        specifier: 5.6.2
         version: link:../utils
       dcmjs:
-        specifier: 0.50.1
-        version: 0.50.1
+        specifier: 0.52.0
+        version: 0.52.0
       gl-matrix:
         specifier: 3.4.3
         version: 3.4.3
@@ -631,7 +632,7 @@ importers:
         version: 0.6.9
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.4.9
+        specifier: 5.6.2
         version: link:../core
 
   packages/polymorphic-segmentation:
@@ -640,21 +641,21 @@ importers:
         specifier: 0.4.0
         version: 0.4.0
       '@kitware/vtk.js':
-        specifier: 35.5.3
-        version: 35.5.3(@babel/preset-env@7.29.5(@babel/core@7.26.10))(autoprefixer@10.4.21(postcss@8.5.3))(wslink@2.5.0)
+        specifier: 36.4.1
+        version: 36.4.1(autoprefixer@10.4.21(postcss@8.5.3))(wslink@2.5.0)
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.4.9
+        specifier: 5.6.2
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.4.9
+        specifier: 5.6.2
         version: link:../tools
 
   packages/tools:
     dependencies:
       '@kitware/vtk.js':
-        specifier: 35.5.3
-        version: 35.5.3(@babel/preset-env@7.29.5(@babel/core@7.26.10))(autoprefixer@10.4.21(postcss@8.5.3))(wslink@2.5.0)
+        specifier: 36.4.1
+        version: 36.4.1(autoprefixer@10.4.21(postcss@8.5.3))(wslink@2.5.0)
       '@types/d3-array':
         specifier: 3.2.1
         version: 3.2.1
@@ -684,7 +685,7 @@ importers:
         version: 4.4.2
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.4.9
+        specifier: 5.6.2
         version: link:../core
       canvas:
         specifier: 3.2.0
@@ -693,8 +694,8 @@ importers:
   packages/utils:
     dependencies:
       dcmjs:
-        specifier: 0.50.1
-        version: 0.50.1
+        specifier: 0.52.0
+        version: 0.52.0
 
 packages:
   '@algolia/abtesting@1.18.1':
@@ -1981,6 +1982,13 @@ packages:
     resolution:
       {
         integrity: sha512-uITFQYO68pMEYR46AHgQoyBg7KPPJDAbGn4jUTIRgCFJIp88MIBUianVOplhZDEec07bp9zIyr4Kp0FCyQzmWg==,
+      }
+    engines: { node: '>=6.9.0' }
+
+  '@babel/runtime-corejs3@7.29.2':
+    resolution:
+      {
+        integrity: sha512-Lc94FOD5+0aXhdb0Tdg3RUtqT6yWbI/BbFWvlaSJ3gAb9Ks+99nHRDKADVqC37er4eCB0fHyWT+y+K3QOvJKbw==,
       }
     engines: { node: '>=6.9.0' }
 
@@ -3886,14 +3894,13 @@ packages:
     peerDependencies:
       tslib: '2'
 
-  '@kitware/vtk.js@35.5.3':
+  '@kitware/vtk.js@36.4.1':
     resolution:
       {
-        integrity: sha512-ebc0HDYbTUGxKttW4u0qab1ZgBOslw9MIMkWULS5GpXMaSF9eDdjn2G1ixO3bkAnZakQ7sGGMw74yzTI86/VlA==,
+        integrity: sha512-vHgiOZTHS7wgEw6Cbuv6vS+zlTx8HgepPqq0UMTWx6T+OcmP2qJCGRpHI1eTPqKcN2SaEHIK7DSsVatTHZ9OPw==,
       }
     hasBin: true
     peerDependencies:
-      '@babel/preset-env': ^7.17.10
       autoprefixer: ^10.4.7
       wslink: '>=1.1.0 || ^2.0.0'
 
@@ -4409,33 +4416,33 @@ packages:
         integrity: sha512-ifLaO34EbbPj0Xgro4G5lP5asESjwHracYJvVaPIyXMuiuXLlhic3S47cBdTb+jfODkTE5YtGCLt3Ay3+J97sA==,
       }
 
-  '@oozcitak/dom@1.15.10':
+  '@oozcitak/dom@2.0.2':
     resolution:
       {
-        integrity: sha512-0JT29/LaxVgRcGKvHmSrUTEvZ8BXvZhGl2LASRUgHqDTC1M5g1pLmVv56IYNyt3bG2CUjDkc67wnyZC14pbQrQ==,
+        integrity: sha512-GjpKhkSYC3Mj4+lfwEyI1dqnsKTgwGy48ytZEhm4A/xnH/8z9M3ZVXKr/YGQi3uCLs1AEBS+x5T2JPiueEDW8w==,
       }
-    engines: { node: '>=8.0' }
+    engines: { node: '>=20.0' }
 
-  '@oozcitak/infra@1.0.8':
+  '@oozcitak/infra@2.0.2':
     resolution:
       {
-        integrity: sha512-JRAUc9VR6IGHOL7OGF+yrvs0LO8SlqGnPAMqyzOuFZPSZSXI7Xf2O9+awQPSMXgIWGtgUf/dA6Hs6X6ySEaWTg==,
+        integrity: sha512-2g+E7hoE2dgCz/APPOEK5s3rMhJvNxSMBrP+U+j1OWsIbtSpWxxlUjq1lU8RIsFJNYv7NMlnVsCuHcUzJW+8vA==,
       }
-    engines: { node: '>=6.0' }
+    engines: { node: '>=20.0' }
 
-  '@oozcitak/url@1.0.4':
+  '@oozcitak/url@3.0.0':
     resolution:
       {
-        integrity: sha512-kDcD8y+y3FCSOvnBI6HJgl00viO/nGbQoCINmQ0h98OhnGITrWR3bOGfwYCthgcrV8AnTJz8MzslTQbC3SOAmw==,
+        integrity: sha512-ZKfET8Ak1wsLAiLWNfFkZc/BraDccuTJKR6svTYc7sVjbR+Iu0vtXdiDMY4o6jaFl5TW2TlS7jbLl4VovtAJWQ==,
       }
-    engines: { node: '>=8.0' }
+    engines: { node: '>=20.0' }
 
-  '@oozcitak/util@8.3.8':
+  '@oozcitak/util@10.0.0':
     resolution:
       {
-        integrity: sha512-T8TbSnGsxo6TDBJx/Sgv/BlVJL3tshxZP7Aq5R1mSnM5OcHY2dQaxLMu2+E8u3gN0MLOzdjurqN4ZRVuzQycOQ==,
+        integrity: sha512-hAX0pT/73190NLqBPPWSdBVGtbY6VOhWYK3qqHqtXQ1gK7kS2yz4+ivsN07hpJ6I3aeMtKP6J6npsEKOAzuTLA==,
       }
-    engines: { node: '>=8.0' }
+    engines: { node: '>=20.0' }
 
   '@oxc-parser/binding-android-arm64@0.74.0':
     resolution:
@@ -6263,10 +6270,10 @@ packages:
         integrity: sha512-ko/gIFJRv177XgZsZcBwnqJN5x/Gien8qNOn0D5bQU/zAzVf9Zt3BlcUiLqhV9y4ARk0GbT3tnUiPNgnTXzc/Q==,
       }
 
-  '@types/webxr@0.5.24':
+  '@types/webxr@0.5.5':
     resolution:
       {
-        integrity: sha512-h8fgEd/DpoS9CBrjEQXR+dIDraopAEfu4wYVNY2tEPwk60stPWhvZMf4Foo5FakuQ7HFZoa8WceaWFervK2Ovg==,
+        integrity: sha512-HVOsSRTQYx3zpVl0c0FBmmmcY/60BkQLzVnpE9M1aG4f2Z0aKlBWfj4XZ2zr++XNBfkQWYcwhGlmuu44RJPDqg==,
       }
 
   '@types/ws@8.18.1':
@@ -8830,11 +8837,12 @@ packages:
         integrity: sha512-kr46REomItFeWz+0ck4Wif4uS5VVDWVlwdh5GGaCtTYHWfNQmrcCSiQOkrShc7Dc5zP8vNKrHEdORlZXenlg3w==,
       }
 
-  dcmjs@0.50.1:
+  dcmjs@0.52.0:
     resolution:
       {
-        integrity: sha512-858uKIFD8plzv0lPcvZceA/ZGH/wzZf36wFkQToie3pSWp8YRI88dysQYQI1DJxc6AyGPk6eyf6RwKJbhoiQUw==,
+        integrity: sha512-0/mT9NACKnwnOnkUx7JAqmWxRcUr7HiCoptw1KhN2StNYE0Hy6+tmpI7CU+lJuBc4rFpcMCalvI8QO6JkJ+7Fg==,
       }
+    engines: { node: '>=22.13' }
 
   debounce@1.2.1:
     resolution:
@@ -10791,6 +10799,12 @@ packages:
         integrity: sha512-wcCp8vu8FT22BnvKVPjXa/ICBWRq/zjFfdofZy1WSpQZpphblv12/bOQLBC1rMM7SGOFS9ltVmKOHil5+Ml7gA==,
       }
 
+  gl-matrix@3.4.4:
+    resolution:
+      {
+        integrity: sha512-latSnyDNt/8zYUB6VIJ6PCh2jBjJX6gnDsoCZ7LyW7GkqrD51EWwa9qCoGixj8YqBtETQK/xY7OmpTF8xz1DdQ==,
+      }
+
   glob-parent@5.1.2:
     resolution:
       {
@@ -10879,13 +10893,6 @@ packages:
         integrity: sha512-awConJSVCHVGND6x3tmMaKcQvwXLhjdkmomy2W+Goaui8YPgYgXJZewhg3fWC+DlfqqQuWg8AwqjGTD2nAPVWg==,
       }
     engines: { node: '>=6' }
-
-  globalthis@1.0.3:
-    resolution:
-      {
-        integrity: sha512-sFdI5LyBiNTHjRd7cGPWapiHWMOXKyuBNX/cWJ3NfzrZQVa8GI/8cofCl74AOVqq9W5kNmguTIzJ/1s2gyI9wA==,
-      }
-    engines: { node: '>= 0.4' }
 
   globby@11.1.0:
     resolution:
@@ -12597,13 +12604,6 @@ packages:
       {
         integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==,
       }
-
-  js-yaml@3.14.0:
-    resolution:
-      {
-        integrity: sha512-/4IbIeHcD9VMHFqDR/gQ7EdZdLimOvW2DdcxFjdyyZ9NsbS+ccrXqVWDtab/lRl5AlUqmpBx8EhPaWR+OtY17A==,
-      }
-    hasBin: true
 
   js-yaml@3.14.2:
     resolution:
@@ -19916,12 +19916,12 @@ packages:
         integrity: sha512-huCv9IH9Tcf95zuYCsQraZtWnJvBtLVE0QHMOs8bWyZAFZNDcYjsPq1nEx8jKA9y+Beo9v+7OBPRisQTjinQMw==,
       }
 
-  xmlbuilder2@3.0.2:
+  xmlbuilder2@4.0.3:
     resolution:
       {
-        integrity: sha512-h4MUawGY21CTdhV4xm3DG9dgsqyhDkZvVJBx88beqX8wJs3VgyGQgAn5VreHuae6unTQxh115aMK5InCVmOIKw==,
+        integrity: sha512-bx8Q1STctnNaaDymWnkfQLKofs0mGNN7rLLapJlGuV3VlvegD7Ls4ggMjE3aUSWItCCzU0PEv45lI87iSigiCA==,
       }
-    engines: { node: '>=12.0' }
+    engines: { node: '>=20.0' }
 
   xmlbuilder@11.0.1:
     resolution:
@@ -21237,6 +21237,10 @@ snapshots:
     dependencies:
       core-js-pure: 3.49.0
       regenerator-runtime: 0.14.1
+
+  '@babel/runtime-corejs3@7.29.2':
+    dependencies:
+      core-js-pure: 3.49.0
 
   '@babel/runtime@7.26.10':
     dependencies:
@@ -23333,24 +23337,22 @@ snapshots:
       '@jsonjoy.com/codegen': 17.67.0(tslib@2.8.1)
       tslib: 2.8.1
 
-  '@kitware/vtk.js@35.5.3(@babel/preset-env@7.29.5(@babel/core@7.26.10))(autoprefixer@10.4.21(postcss@8.5.3))(wslink@2.5.0)':
+  '@kitware/vtk.js@36.4.1(autoprefixer@10.4.21(postcss@8.5.3))(wslink@2.5.0)':
     dependencies:
-      '@babel/preset-env': 7.29.5(@babel/core@7.26.10)
-      '@types/webxr': 0.5.24
+      '@types/webxr': 0.5.5
       autoprefixer: 10.4.21(postcss@8.5.3)
       commander: 9.2.0
       d3-scale: 4.0.2
       fast-deep-equal: 3.1.3
       fflate: 0.7.3
       gl-matrix: 3.4.3
-      globalthis: 1.0.3
       seedrandom: 3.0.5
       shelljs: 0.10.0
       spark-md5: 3.0.2
       utif: 3.1.0
       webworker-promise: 0.5.0
       wslink: 2.5.0
-      xmlbuilder2: 3.0.2
+      xmlbuilder2: 4.0.3
 
   '@leichtgewicht/ip-codec@2.0.5': {}
 
@@ -23844,22 +23846,22 @@ snapshots:
     dependencies:
       '@octokit/openapi-types': 24.2.0
 
-  '@oozcitak/dom@1.15.10':
+  '@oozcitak/dom@2.0.2':
     dependencies:
-      '@oozcitak/infra': 1.0.8
-      '@oozcitak/url': 1.0.4
-      '@oozcitak/util': 8.3.8
+      '@oozcitak/infra': 2.0.2
+      '@oozcitak/url': 3.0.0
+      '@oozcitak/util': 10.0.0
 
-  '@oozcitak/infra@1.0.8':
+  '@oozcitak/infra@2.0.2':
     dependencies:
-      '@oozcitak/util': 8.3.8
+      '@oozcitak/util': 10.0.0
 
-  '@oozcitak/url@1.0.4':
+  '@oozcitak/url@3.0.0':
     dependencies:
-      '@oozcitak/infra': 1.0.8
-      '@oozcitak/util': 8.3.8
+      '@oozcitak/infra': 2.0.2
+      '@oozcitak/util': 10.0.0
 
-  '@oozcitak/util@8.3.8': {}
+  '@oozcitak/util@10.0.0': {}
 
   '@oxc-parser/binding-android-arm64@0.74.0':
     optional: true
@@ -24830,7 +24832,7 @@ snapshots:
 
   '@types/unist@3.0.3': {}
 
-  '@types/webxr@0.5.24': {}
+  '@types/webxr@0.5.5': {}
 
   '@types/ws@8.18.1':
     dependencies:
@@ -26436,11 +26438,11 @@ snapshots:
       ndarray: 1.0.19
       pako: 2.1.0
 
-  dcmjs@0.50.1:
+  dcmjs@0.52.0:
     dependencies:
-      '@babel/runtime-corejs3': 7.26.10
+      '@babel/runtime-corejs3': 7.29.2
       adm-zip: 0.5.17
-      gl-matrix: 3.4.3
+      gl-matrix: 3.4.4
       lodash.clonedeep: 4.5.0
       loglevel: 1.9.2
       ndarray: 1.0.19
@@ -27571,6 +27573,8 @@ snapshots:
 
   gl-matrix@3.4.3: {}
 
+  gl-matrix@3.4.4: {}
+
   glob-parent@5.1.2:
     dependencies:
       is-glob: 4.0.3
@@ -27639,10 +27643,6 @@ snapshots:
       ini: 1.3.8
       kind-of: 6.0.3
       which: 1.3.1
-
-  globalthis@1.0.3:
-    dependencies:
-      define-properties: 1.2.1
 
   globby@11.1.0:
     dependencies:
@@ -28967,11 +28967,6 @@ snapshots:
   js-sha3@0.9.3: {}
 
   js-tokens@4.0.0: {}
-
-  js-yaml@3.14.0:
-    dependencies:
-      argparse: 1.0.10
-      esprima: 4.0.1
 
   js-yaml@3.14.2:
     dependencies:
@@ -34434,13 +34429,12 @@ snapshots:
 
   xml@1.0.1: {}
 
-  xmlbuilder2@3.0.2:
+  xmlbuilder2@4.0.3:
     dependencies:
-      '@oozcitak/dom': 1.15.10
-      '@oozcitak/infra': 1.0.8
-      '@oozcitak/util': 8.3.8
-      '@types/node': 20.17.24
-      js-yaml: 3.14.0
+      '@oozcitak/dom': 2.0.2
+      '@oozcitak/infra': 2.0.2
+      '@oozcitak/util': 10.0.0
+      js-yaml: 4.1.1
 
   xmlbuilder@11.0.1: {}
 

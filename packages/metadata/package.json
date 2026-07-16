@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/metadata",
-  "version": "5.4.9",
+  "version": "5.6.2",
   "description": "Cornerstone3D Metadata Foundation - Provider chain, DICOM stream parsing, tag modules, and series splitting",
   "module": "./dist/esm/index.js",
   "types": "./dist/esm/index.d.ts",
@@ -74,15 +74,15 @@
     "clean:deep": "pnpm run clean && shx rm -rf node_modules",
     "build": "pnpm run build:esm",
     "build:all": "pnpm run build:esm",
-    "dev": "tsc --project ./tsconfig.json --watch",
+    "dev": "tsc --project ./tsconfig.json --watch --sourceMap --inlineSources",
     "api-check": "api-extractor --debug run",
     "lint": "oxlint .",
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
     "@cornerstonejs/calculate-suv": "1.0.3",
-    "@cornerstonejs/utils": "5.4.9",
-    "dcmjs": "0.50.1",
+    "@cornerstonejs/utils": "5.6.2",
+    "dcmjs": "0.52.0",
     "gl-matrix": "3.4.3"
   },
   "contributors": [
