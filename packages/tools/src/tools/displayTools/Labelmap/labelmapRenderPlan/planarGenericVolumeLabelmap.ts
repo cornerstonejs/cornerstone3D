@@ -33,10 +33,18 @@ type PlanarNextVolumeViewport = Types.IViewport & {
       role?: 'source' | 'overlay';
     }
   ) => Promise<void>;
+  getSourceDataId?: () => string | undefined;
+  getDisplaySetPresentation?: (dataId: string) =>
+    | {
+        blendMode?: Enums.BlendModes;
+        slabThickness?: number;
+      }
+    | undefined;
   setDisplaySetPresentation: (
     dataId: string,
     props: {
       blendMode?: Enums.BlendModes;
+      slabThickness?: number;
       visible?: boolean;
     }
   ) => void;
@@ -84,6 +92,13 @@ async function addLabelmapToPlanarGenericViewport(args: {
     ? viewport.getViewReference({ volumeId: sourceVolumeId })
     : viewport.getViewReference();
   const requestedOrientation = viewport.getViewState().orientation;
+  // A slab-projected source (e.g. MIP) shows structures from the whole slab, so
+  // the labelmap must project across the same slab or its labels will only
+  // reflect the current slice and misalign with what the user sees.
+  const sourceDataId = viewport.getSourceDataId?.();
+  const sourceSlabThickness = sourceDataId
+    ? viewport.getDisplaySetPresentation?.(sourceDataId)?.slabThickness
+    : undefined;
   const currentImageIdIndex = Math.max(
     0,
     viewport.getCurrentImageIdIndex?.() ?? 0
@@ -132,6 +147,9 @@ async function addLabelmapToPlanarGenericViewport(args: {
     viewport.setDisplaySetPresentation(dataId, {
       blendMode,
       visible: visibility,
+      ...(sourceSlabThickness !== undefined
+        ? { slabThickness: sourceSlabThickness }
+        : {}),
     });
 
     firstActorEntry ||= viewport
