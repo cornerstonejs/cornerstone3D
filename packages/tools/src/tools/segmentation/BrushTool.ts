@@ -462,8 +462,17 @@ class BrushTool extends LabelmapBaseTool {
   }
 
   private _clearCursor(element: HTMLDivElement): void {
-    const enabledElement = getEnabledElement(element);
+    // The cursor may have been rendered on linked viewports too; rerender
+    // all of them, not just the source viewport, so no stale circle remains.
+    const viewportIdsToRender = this._hoverData?.viewportIdsToRender;
     this._hoverData = undefined;
+
+    if (viewportIdsToRender?.length) {
+      triggerAnnotationRenderForViewportUIDs(viewportIdsToRender);
+      return;
+    }
+
+    const enabledElement = getEnabledElement(element);
     if (enabledElement) {
       triggerAnnotationRenderForViewportUIDs([enabledElement.viewport.id]);
     }

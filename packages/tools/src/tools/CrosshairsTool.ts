@@ -595,7 +595,7 @@ class CrosshairsTool extends AnnotationTool {
 
     hideElementCursor(element);
 
-    this._activateModify(element);
+    this._activateModify(element, evt);
     return filteredAnnotations[0];
   };
 
@@ -661,7 +661,7 @@ class CrosshairsTool extends AnnotationTool {
     // from the camera variables of the viewports and of the slab thickness variable.
     // Remember that the translation and rotation operations operate on the camera
     // variables and not really on the handles. Similar for the slab thickness.
-    this._activateModify(element);
+    this._activateModify(element, evt);
 
     hideElementCursor(element);
 
@@ -700,7 +700,7 @@ class CrosshairsTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
     annotation.highlighted = true;
-    this._activateModify(element);
+    this._activateModify(element, evt);
 
     hideElementCursor(element);
 
@@ -2141,7 +2141,7 @@ class CrosshairsTool extends AnnotationTool {
     return true;
   };
 
-  _activateModify = (element) => {
+  _activateModify = (element, evt?: EventTypes.InteractionEventType) => {
     this._syncVolumeListenersWithToolGroup();
     this._recomputeToolCenterFromAbsoluteCameras({
       emitEvent: false,
@@ -2150,8 +2150,12 @@ class CrosshairsTool extends AnnotationTool {
 
     // mobile sometimes has lingering interaction even when touchEnd triggers
     // this check allows for multiple handles to be active which doesn't affect
-    // tool usage.
-    state.isInteractingWithTool = !this.configuration.mobile?.enabled;
+    // tool usage. The lock is skipped per touch gesture, not per device -
+    // mouse interactions on touch-capable (hybrid) hardware must keep it,
+    // or other active tools would process the same mouse drag.
+    state.isInteractingWithTool = !(
+      this._isTouchInteraction(evt) && this.configuration.mobile?.enabled
+    );
 
     element.addEventListener(Events.MOUSE_UP, this._endCallback);
     element.addEventListener(Events.MOUSE_DRAG, this._dragCallback);
@@ -2161,6 +2165,18 @@ class CrosshairsTool extends AnnotationTool {
     element.addEventListener(Events.TOUCH_DRAG, this._dragCallback);
     element.addEventListener(Events.TOUCH_TAP, this._endCallback);
   };
+
+  private _isTouchInteraction(evt?: EventTypes.InteractionEventType): boolean {
+    const eventName = evt?.detail?.eventName;
+    return (
+      eventName === Events.TOUCH_START ||
+      eventName === Events.TOUCH_START_ACTIVATE ||
+      eventName === Events.TOUCH_DRAG ||
+      eventName === Events.TOUCH_END ||
+      eventName === Events.TOUCH_TAP ||
+      eventName === Events.TOUCH_PRESS
+    );
+  }
 
   _deactivateModify = (element) => {
     state.isInteractingWithTool = false;

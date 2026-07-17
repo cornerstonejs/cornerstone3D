@@ -117,9 +117,10 @@ module.exports = {
     port: ${process.env.CS3D_PORT || 3000},
     historyApiFallback: true,
     ${
-      // CS3D_ALLOW_LAN=1 exposes the dev server on the local network so
-      // examples can be opened from a phone/tablet (touch testing).
-      process.env.CS3D_ALLOW_LAN
+      // CS3D_ALLOW_LAN=1 (exactly '1') exposes the dev server on the local
+      // network so examples can be opened from a phone/tablet (touch
+      // testing); any other value keeps the default localhost-only setup.
+      process.env.CS3D_ALLOW_LAN === '1'
         ? `host: '0.0.0.0',
     allowedHosts: 'all',`
         : `allowedHosts: [

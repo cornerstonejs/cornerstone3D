@@ -65,8 +65,6 @@ const {
   SphereScissorsTool,
   PaintFillTool,
   LabelMapEditWithContourTool,
-  // Reference
-  CrosshairsTool,
 } = cornerstoneTools;
 
 const { MouseBindings } = csToolsEnums;
@@ -87,8 +85,8 @@ setTitleAndDescription(
   'Touch: All Tools',
   'One page to exercise the touch interaction surface on a phone or tablet: ' +
     'manipulation, all measurement tools, labelmap brushing/scissors/fill, ' +
-    'contour labelmap editing, click-to-segment, AdvancedMagnify and ' +
-    'Crosshairs (linking the two volume viewports). Magnify runs on the ' +
+    'contour labelmap editing and AdvancedMagnify, on a sagittal volume ' +
+    'viewport (top) and a stack viewport (bottom). Magnify runs on the ' +
     'stack viewport only. No app-level touch-action is set here - the ' +
     'rendering engine now applies it to viewport elements itself.'
 );
@@ -203,13 +201,8 @@ function setSelectedTool(toolName: string) {
     }
 
     if (previousToolName) {
-      // Passive keeps existing annotations visible and editable; Crosshairs
-      // renders its gizmo even when passive, so it is fully disabled instead.
-      if (previousToolName === CrosshairsTool.toolName) {
-        toolGroup.setToolDisabled(previousToolName);
-      } else {
-        toolGroup.setToolPassive(previousToolName);
-      }
+      // Passive keeps existing annotations visible and editable.
+      toolGroup.setToolPassive(previousToolName);
     }
 
     toolGroup.setToolActive(toolName, {
@@ -541,7 +534,6 @@ async function run() {
     SphereScissorsTool,
     PaintFillTool,
     LabelMapEditWithContourTool,
-    CrosshairsTool,
   ];
 
   toolClasses.forEach((toolClass) => cornerstoneTools.addTool(toolClass));
