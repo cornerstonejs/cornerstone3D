@@ -48,6 +48,28 @@ function prepareSegMultiframeMetadata(multiframe: Record<string, unknown>) {
   if (perFrame && !Array.isArray(perFrame)) {
     multiframe.PerFrameFunctionalGroupsSequence = [perFrame];
   }
+
+  // ImageOrientationPatient can arrive as DICOM DS strings (e.g. from DICOMweb
+  // JSON metadata). Downstream orientation checks compare it against numeric
+  // source cosines with a type-strict equality (utilities.isEqual), so an
+  // in-plane SEG would otherwise be misclassified as orthogonal/out-of-plane.
+  // Normalize it to numbers on the shared and per-frame functional groups.
+  type FunctionalGroup = {
+    PlaneOrientationSequence?: { ImageOrientationPatient?: unknown };
+  };
+  const coerceIop = (group?: FunctionalGroup) => {
+    const seq = group?.PlaneOrientationSequence;
+    if (seq && Array.isArray(seq.ImageOrientationPatient)) {
+      seq.ImageOrientationPatient = seq.ImageOrientationPatient.map(Number);
+    }
+  };
+  coerceIop(multiframe.SharedFunctionalGroupsSequence as FunctionalGroup);
+  const perFrameGroups = multiframe.PerFrameFunctionalGroupsSequence as
+    | FunctionalGroup[]
+    | undefined;
+  if (Array.isArray(perFrameGroups)) {
+    perFrameGroups.forEach(coerceIop);
+  }
 }
 
 function getFrameNumberFromImageId(imageId: string): number | undefined {
