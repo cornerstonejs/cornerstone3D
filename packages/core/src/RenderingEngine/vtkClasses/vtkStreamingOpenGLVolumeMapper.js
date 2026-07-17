@@ -8,6 +8,7 @@ import { getTransferFunctionsHash } from '@kitware/vtk.js/Rendering/OpenGL/Rende
 import { Representation } from '@kitware/vtk.js/Rendering/Core/Property/Constants';
 import { BlendMode } from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants';
 import { getCanUseNorm16Texture } from '../../init';
+import canUseFloatOpacityTexture from './canUseFloatOpacityTexture';
 
 /**
  * vtkStreamingOpenGLVolumeMapper - A derived class of the core vtkOpenGLVolumeMapper class.
@@ -211,11 +212,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       // for this table. Errors in low values of opacity accumulate to
       // visible artifacts. High values of opacity quickly terminate without
       // artifacts.
-      if (
-        model._openGLRenderWindow.getWebgl2() ||
-        (model.context.getExtension('OES_texture_float') &&
-          model.context.getExtension('OES_texture_float_linear'))
-      ) {
+      if (canUseFloatOpacityTexture(model._openGLRenderWindow, model.context)) {
         newOpacityTexture.create2DFromRaw({
           width: oWidth,
           height: 2 * numIComps,
