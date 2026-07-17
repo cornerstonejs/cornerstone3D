@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.6.7](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.6...v5.6.7) (2026-07-17)
+
+### Bug Fixes
+
+- **adapters:** load co-planar SEGs whose ImageOrientationPatient is DICOM strings ([#2816](https://github.com/cornerstonejs/cornerstone3D/issues/2816)) ([057707e](https://github.com/cornerstonejs/cornerstone3D/commit/057707ec94443b10bcf4b3537f042b745d83844d))
+
 ## [5.6.6](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.5...v5.6.6) (2026-07-17)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
