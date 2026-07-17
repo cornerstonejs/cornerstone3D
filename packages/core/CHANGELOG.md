@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.6.4](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.3...v5.6.4) (2026-07-17)
+
+### Bug Fixes
+
+- **core:** render volume viewports without float-linear filtering ([#2810](https://github.com/cornerstonejs/cornerstone3D/issues/2810)) ([3d514b4](https://github.com/cornerstonejs/cornerstone3D/commit/3d514b4b382759b0498be0adc761f5d4e13c5360))
+
 ## [5.6.3](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.2...v5.6.3) (2026-07-16)
 
 ### Bug Fixes
