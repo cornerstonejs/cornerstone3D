@@ -238,6 +238,7 @@ class VolumeCroppingTool extends BaseTool {
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
+      supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         showCornerSpheres: true,
         showHandles: true,

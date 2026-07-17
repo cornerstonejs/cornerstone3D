@@ -431,6 +431,12 @@ function _checkTouchTap(evt: TouchEvent): void {
   tapState.taps += 1;
 
   tapState.tapTimeout = setTimeout(() => {
+    // A new touch gesture is already in progress; emitting the deferred tap
+    // now would interrupt the active tool's touch loop mid-stroke.
+    if (state.isTouchStart) {
+      tapState = utilities.deepClone(defaultTapState);
+      return;
+    }
     const eventDetail: EventTypes.TouchTapEventDetail = {
       event: evt,
       eventName: TOUCH_TAP,

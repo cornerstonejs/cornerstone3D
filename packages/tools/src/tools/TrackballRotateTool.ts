@@ -73,15 +73,21 @@ class TrackballRotateTool extends BaseTool {
       if (this.cleanUp !== null) {
         // Clean up previous event listener
         document.removeEventListener('mouseup', this.cleanUp);
+        document.removeEventListener('touchend', this.cleanUp);
       }
 
       this.cleanUp = () => {
+        // Both listener types are armed below; whichever fires first must
+        // clear the other so no stale once-listener lingers on document.
+        document.removeEventListener('mouseup', this.cleanUp);
+        document.removeEventListener('touchend', this.cleanUp);
         mapper.setSampleDistance(originalSampleDistance);
         viewport.render();
         this._hasResolutionChanged = false;
       };
 
       document.addEventListener('mouseup', this.cleanUp, { once: true });
+      document.addEventListener('touchend', this.cleanUp, { once: true });
     }
     return true;
   };

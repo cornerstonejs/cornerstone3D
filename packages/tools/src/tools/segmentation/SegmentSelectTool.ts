@@ -33,7 +33,7 @@ class SegmentSelectTool extends BaseTool {
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
-      supportedInteractionTypes: ['Mouse', 'Touch'],
+      supportedInteractionTypes: ['Mouse'],
       configuration: {
         hoverTimeout: 100,
         mode: SegmentSelectTool.SelectMode.Border,

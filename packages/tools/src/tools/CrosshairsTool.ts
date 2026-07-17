@@ -44,6 +44,7 @@ import {
   getSlabThicknessOrDefault,
   jumpToFocalPoint,
 } from '../utilities/genericViewportToolHelpers';
+import { isMobile } from '../utilities/touch';
 
 import * as lineSegment from '../utilities/math/line';
 import type {
@@ -165,7 +166,7 @@ class CrosshairsTool extends AnnotationTool {
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
-      supportedInteractionTypes: ['Mouse'],
+      supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         shadow: true,
         // renders a colored circle on top right of the viewports whose color
@@ -219,7 +220,7 @@ class CrosshairsTool extends AnnotationTool {
           size: 2,
         },
         mobile: {
-          enabled: false,
+          enabled: isMobile(),
           opacity: 0.8,
           handleRadius: 9,
           referenceLinesCenterGapRatio: 0.05,
@@ -684,7 +685,7 @@ class CrosshairsTool extends AnnotationTool {
     canvasCoords: Types.Point2,
     proximity: number
   ): boolean => {
-    if (this._pointNearTool(element, annotation, canvasCoords, 6)) {
+    if (this._pointNearTool(element, annotation, canvasCoords, proximity)) {
       return true;
     }
 

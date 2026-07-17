@@ -212,9 +212,20 @@ class SphereScissorsTool extends LabelmapBaseTool {
   };
 
   _dragCallback = (evt: EventTypes.InteractionEventType) => {
-    this.isDrawing = true;
     const eventDetail = evt.detail;
     const { element } = eventDetail;
+
+    const { currentPointsList } =
+      eventDetail as EventTypes.TouchDragEventDetail;
+    if (currentPointsList?.length > 1) {
+      // A second finger reclassifies the gesture (pinch zoom, multi-finger
+      // scroll); drop the rubber band instead of resizing it at the mean
+      // touch point and applying on release.
+      this._cancelTouchDraw(element);
+      return;
+    }
+
+    this.isDrawing = true;
     const { currentPoints } = eventDetail;
     const currentCanvasPoints = currentPoints.canvas;
     const enabledElement = getEnabledElement(element);
@@ -238,6 +249,27 @@ class SphereScissorsTool extends LabelmapBaseTool {
     this.editData.hasMoved = true;
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
+
+  /**
+   * Cancels an in-progress touch draw when the gesture becomes multi-finger:
+   * the rubber band lives only in editData (never in the annotation state),
+   * so teardown plus a render makes it disappear without applying anything.
+   */
+  private _cancelTouchDraw(element: HTMLDivElement): void {
+    if (!this.isDrawing) {
+      return;
+    }
+    const viewportIdsToRender = this.editData?.viewportIdsToRender;
+
+    this._deactivateDraw(element);
+    resetElementCursor(element);
+    this.editData = null;
+    this.isDrawing = false;
+
+    if (viewportIdsToRender) {
+      triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+    }
+  }
 
   _endCallback = (evt: EventTypes.InteractionEventType) => {
     const eventDetail = evt.detail;
