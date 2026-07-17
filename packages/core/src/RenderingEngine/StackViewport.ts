@@ -995,6 +995,15 @@ class StackViewport extends Viewport {
 
     if (typeof colormap !== 'undefined') {
       this.setColormap(colormap);
+      // setColormap rebuilds the RGB transfer function in its default,
+      // non-inverted state, so `this.invert` no longer reflects the actor's
+      // actual LUT. Clear the tracked flag so the setInvertColor below actually
+      // re-applies the inversion instead of being skipped by its no-op guard
+      // (setInvertColorGPU only flips the TF when the requested value differs
+      // from this.invert). Without this, invert is lost when scrolling after a
+      // reset: reset applies a colormap, which is then re-applied on every
+      // scroll and clobbers the inversion.
+      this.invert = false;
     }
 
     this.setInterpolationType(interpolationType);
