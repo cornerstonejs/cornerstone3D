@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.6.5](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.4...v5.6.5) (2026-07-17)
+
+### Bug Fixes
+
+- **security:** update websocket-driver to 0.7.5 ([#2813](https://github.com/cornerstonejs/cornerstone3D/issues/2813)) ([7e7c862](https://github.com/cornerstonejs/cornerstone3D/commit/7e7c862d1eea28da9bc1aa9922e279586e4e1d74))
+
 ## [5.6.4](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.3...v5.6.4) (2026-07-17)
 
 ### Bug Fixes
