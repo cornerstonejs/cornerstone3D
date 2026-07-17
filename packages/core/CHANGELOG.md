@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.6.6](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.5...v5.6.6) (2026-07-17)
+
+### Bug Fixes
+
+- **core:** re-apply invert after colormap when scrolling a stack ([#2814](https://github.com/cornerstonejs/cornerstone3D/issues/2814)) ([0040715](https://github.com/cornerstonejs/cornerstone3D/commit/0040715c0c16c6ba41826d04a5ff757447bec76c))
+
 ## [5.6.5](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.4...v5.6.5) (2026-07-17)
 
 **Note:** Version bump only for package @cornerstonejs/core
