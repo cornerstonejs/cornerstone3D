@@ -20,7 +20,7 @@ import {
   type FakeStackOptions,
 } from './fakeImageStack';
 
-const { Events, OrientationAxis, RenderBackend, ViewportType } = Enums;
+const { Events, OrientationAxis, RenderBackends, ViewportType } = Enums;
 
 export type PlanarRenderMode =
   | 'vtkImage'
@@ -202,7 +202,7 @@ export async function createPlanarViewport(
       displaySetId,
       options: {
         orientation,
-        renderBackend: isCpu ? RenderBackend.CPU : RenderBackend.GPU,
+        renderBackend: isCpu ? RenderBackends.CPU : RenderBackends.GPU,
       },
     });
   } catch (error) {

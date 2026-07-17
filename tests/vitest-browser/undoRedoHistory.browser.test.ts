@@ -40,12 +40,18 @@
 //   `safeStructuredClone`, so redo is byte-exact). This is pinned as test 8
 //   below.
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
-import { cache, eventTarget, imageLoader, utilities } from '@cornerstonejs/core';
+import {
+  cache,
+  eventTarget,
+  imageLoader,
+  utilities,
+} from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   mouseClick,
   mouseDrag,
+  mouseDragPath,
   renderAndWait,
   setupTools,
   waitForAnnotationRendered,
@@ -53,7 +59,13 @@ import {
   type ToolsContext,
 } from './harness';
 
-const { BrushTool, LengthTool, annotation, segmentation } = cornerstoneTools;
+const {
+  BrushTool,
+  LengthTool,
+  PlanarFreehandContourSegmentationTool,
+  annotation,
+  segmentation,
+} = cornerstoneTools;
 const { Events: ToolsEvents, SegmentationRepresentations } =
   cornerstoneTools.Enums;
 const { DefaultHistoryMemo } = utilities.HistoryMemo;
@@ -76,6 +88,10 @@ function resetHistory(): void {
 interface LabelmapHistoryContext extends ToolsContext {
   segmentationId: string;
   labelmapImageIds: string[];
+}
+
+interface ContourHistoryContext extends ToolsContext {
+  segmentationId: string;
 }
 
 /**
@@ -130,6 +146,54 @@ async function setupLabelmapHistoryTest(): Promise<LabelmapHistoryContext> {
   await renderAndWait(ctx.element, ctx.viewport);
 
   return { ...ctx, segmentationId, labelmapImageIds };
+}
+
+async function setupContourHistoryTest(): Promise<ContourHistoryContext> {
+  resetHistory();
+
+  const ctx = await setupTools({
+    tools: [PlanarFreehandContourSegmentationTool],
+    activeTool: PlanarFreehandContourSegmentationTool.toolName,
+    viewport: { width: 400, height: 400 },
+  });
+  const segmentationId = `vitest-history-contour-${utilities.uuidv4()}`;
+
+  segmentation.addSegmentations([
+    {
+      segmentationId,
+      representation: {
+        type: SegmentationRepresentations.Contour,
+      },
+    },
+  ]);
+
+  await segmentation.addSegmentationRepresentations(ctx.viewportId, [
+    {
+      segmentationId,
+      type: SegmentationRepresentations.Contour,
+    },
+  ]);
+  segmentation.activeSegmentation.setActiveSegmentation(
+    ctx.viewportId,
+    segmentationId
+  );
+  segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 1);
+
+  await renderAndWait(ctx.element, ctx.viewport);
+
+  return { ...ctx, segmentationId };
+}
+
+async function drawContour(
+  ctx: ContourHistoryContext,
+  points: [number, number][]
+): Promise<void> {
+  const completed = waitForToolsEvent(
+    eventTarget,
+    ToolsEvents.ANNOTATION_CUT_MERGE_PROCESS_COMPLETED
+  );
+  mouseDragPath(ctx.element, points);
+  await completed;
 }
 
 function readSliceScalarData(imageId: string): Uint8Array {
@@ -554,9 +618,9 @@ describe('undoRedoHistory', () => {
       // Now: paint, undo (consumes the only entry), undo again past the
       // beginning -> second undo must also be a safe no-op.
       await paintAt(ctx, [10, 10]);
-      expect(nonZeroMap(readSliceScalarData(sliceImageId)).size).toBeGreaterThan(
-        0
-      );
+      expect(
+        nonZeroMap(readSliceScalarData(sliceImageId)).size
+      ).toBeGreaterThan(0);
 
       const undone = waitForToolsEvent(
         eventTarget,
@@ -668,6 +732,54 @@ describe('undoRedoHistory', () => {
         (point: Types.Point3) => [...point]
       );
       expect(restoredHandlePoints).toEqual(originalHandlePoints);
+    });
+
+    test('contour merge undo restores the previous contour and redo restores the merged result', async () => {
+      const ctx = await setupContourHistoryTest();
+      active = ctx;
+      const { element } = ctx;
+      const toolName = PlanarFreehandContourSegmentationTool.toolName;
+
+      await drawContour(ctx, [
+        [100, 100],
+        [240, 100],
+        [240, 240],
+        [100, 240],
+        [100, 100],
+      ]);
+
+      const firstAnnotations =
+        annotation.state.getAnnotations(toolName, element) ?? [];
+      expect(firstAnnotations.length).toBe(1);
+      const firstAnnotationUID = firstAnnotations[0].annotationUID;
+
+      await drawContour(ctx, [
+        [180, 160],
+        [300, 160],
+        [300, 280],
+        [180, 280],
+        [180, 160],
+      ]);
+
+      const mergedAnnotations =
+        annotation.state.getAnnotations(toolName, element) ?? [];
+      expect(mergedAnnotations.length).toBe(1);
+      const mergedAnnotationUID = mergedAnnotations[0].annotationUID;
+      expect(mergedAnnotationUID).not.toBe(firstAnnotationUID);
+
+      DefaultHistoryMemo.undo();
+
+      const afterUndo =
+        annotation.state.getAnnotations(toolName, element) ?? [];
+      expect(afterUndo.length).toBe(1);
+      expect(afterUndo[0].annotationUID).toBe(firstAnnotationUID);
+
+      DefaultHistoryMemo.redo();
+
+      const afterRedo =
+        annotation.state.getAnnotations(toolName, element) ?? [];
+      expect(afterRedo.length).toBe(1);
+      expect(afterRedo[0].annotationUID).toBe(mergedAnnotationUID);
     });
   });
 });
