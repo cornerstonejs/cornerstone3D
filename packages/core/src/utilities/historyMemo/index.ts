@@ -240,6 +240,47 @@ export class HistoryMemo {
     this.ring[this.position] = memo;
     return memo;
   }
+
+  /**
+   * Replaces a memo in the current undo item while preserving its position in
+   * history. This is useful when an operation starts with a provisional memo
+   * and later replaces the affected state as part of committing that operation.
+   *
+   * @param item - The replacement memo.
+   * @param condition - Identifies the provisional memo to replace.
+   * @returns True when a matching current memo was replaced.
+   */
+  public replaceCurrentMemo(
+    item: Memo | Memoable,
+    condition: (memo: Memo) => boolean
+  ): boolean {
+    if (!item || this.undoAvailable === 0) {
+      return false;
+    }
+
+    const currentItem = this.ring[this.position];
+    const currentMemos = asArray(currentItem);
+    const memoIndex = currentMemos.findIndex(condition);
+
+    if (memoIndex === -1) {
+      return false;
+    }
+
+    const memo = (item as Memo).restoreMemo
+      ? (item as Memo)
+      : (item as Memoable).createMemo?.();
+    if (!memo) {
+      return false;
+    }
+
+    if (Array.isArray(currentItem)) {
+      currentItem[memoIndex] = memo;
+    } else {
+      this.ring[this.position] = memo;
+    }
+
+    return true;
+  }
 }
 
 /**

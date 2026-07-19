@@ -1,5 +1,10 @@
 import type { Types } from '@cornerstonejs/core';
-import { RenderingEngine, Enums, volumeLoader } from '@cornerstonejs/core';
+import {
+  RenderingEngine,
+  Enums,
+  volumeLoader,
+  utilities as csUtils,
+} from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -20,6 +25,7 @@ console.warn(
 let renderingEngine;
 
 const { KeyboardBindings } = cornerstoneTools.Enums;
+const { DefaultHistoryMemo } = csUtils.HistoryMemo;
 
 const {
   PlanarFreehandContourSegmentationTool,
@@ -49,7 +55,7 @@ let activeSegmentIndex = 0;
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Planar Freehand Contour Segmentation Tool',
-  'Demonstrates how to create contour segmentations using planar freehand ROI tool'
+  'Demonstrates contour segmentation drawing, editing, undo, and redo using the planar freehand ROI tool'
 );
 
 const size = '512px';
@@ -80,6 +86,9 @@ content.appendChild(viewportGrid);
 createInfoSection(content)
   .addInstruction('Select a segment index')
   .addInstruction('Left click and drag to draw a contour')
+  .addInstruction(
+    'Use the Undo/Redo buttons, Ctrl/Cmd+Z to undo, or Ctrl/Cmd+Shift+Z (and Ctrl+Y) to redo'
+  )
   .openNestedSection()
     .addInstruction(
       'Segmentation contours are closed automatically if the mouse button is released before joining the start and end points'
@@ -175,6 +184,39 @@ addDropdownToToolbar({
   onSelectedValueChange: (nameAsStringOrNumber) => {
     updateActiveSegmentIndex(Number(nameAsStringOrNumber));
   },
+});
+
+addButtonToToolbar({
+  id: 'Undo',
+  title: 'Undo',
+  onClick: () => {
+    DefaultHistoryMemo.undo();
+  },
+});
+
+addButtonToToolbar({
+  id: 'Redo',
+  title: 'Redo',
+  onClick: () => {
+    DefaultHistoryMemo.redo();
+  },
+});
+
+document.addEventListener('keydown', (evt) => {
+  const isModifier = evt.ctrlKey || evt.metaKey;
+  const key = evt.key.toLowerCase();
+
+  if (!isModifier || (key !== 'z' && key !== 'y')) {
+    return;
+  }
+
+  evt.preventDefault();
+
+  if (key === 'y' || evt.shiftKey) {
+    DefaultHistoryMemo.redo();
+  } else {
+    DefaultHistoryMemo.undo();
+  }
 });
 
 addToggleButtonToToolbar({
