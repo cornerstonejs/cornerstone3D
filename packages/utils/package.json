@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/utils",
-  "version": "5.6.7",
+  "version": "5.6.8",
   "description": "Cornerstone3D shared utility helpers",
   "module": "./dist/esm/index.js",
   "types": "./dist/esm/index.d.ts",

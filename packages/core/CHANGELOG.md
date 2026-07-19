@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.6.8](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.7...v5.6.8) (2026-07-19)
+
+### Bug Fixes
+
+- **tools:** support contour segmentation undo and redo ([#2817](https://github.com/cornerstonejs/cornerstone3D/issues/2817)) ([5cfd10a](https://github.com/cornerstonejs/cornerstone3D/commit/5cfd10ae280901d8b8d54f1a372ef648600b534c))
+
 ## [5.6.7](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.6...v5.6.7) (2026-07-17)
 
 **Note:** Version bump only for package @cornerstonejs/core
