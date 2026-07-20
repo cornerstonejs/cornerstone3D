@@ -457,8 +457,8 @@ importers:
         specifier: 5.6.8
         version: link:../utils
       '@kitware/vtk.js':
-        specifier: 36.4.1
-        version: 36.4.1(autoprefixer@10.4.21(postcss@8.5.3))(wslink@2.5.0)
+        specifier: 36.4.2
+        version: 36.4.2(autoprefixer@10.4.21(postcss@8.5.3))(wslink@2.5.0)
       comlink:
         specifier: 4.4.2
         version: 4.4.2
@@ -598,8 +598,8 @@ importers:
         specifier: 1.1.0
         version: 1.1.0
       '@kitware/vtk.js':
-        specifier: 36.4.1
-        version: 36.4.1(autoprefixer@10.4.21(postcss@8.5.3))(wslink@2.5.0)
+        specifier: 36.4.2
+        version: 36.4.2(autoprefixer@10.4.21(postcss@8.5.3))(wslink@2.5.0)
       itk-wasm:
         specifier: 1.0.0-b.165
         version: 1.0.0-b.165
@@ -642,8 +642,8 @@ importers:
         specifier: 0.4.0
         version: 0.4.0
       '@kitware/vtk.js':
-        specifier: 36.4.1
-        version: 36.4.1(autoprefixer@10.4.21(postcss@8.5.3))(wslink@2.5.0)
+        specifier: 36.4.2
+        version: 36.4.2(autoprefixer@10.4.21(postcss@8.5.3))(wslink@2.5.0)
     devDependencies:
       '@cornerstonejs/core':
         specifier: 5.6.8
@@ -655,8 +655,8 @@ importers:
   packages/tools:
     dependencies:
       '@kitware/vtk.js':
-        specifier: 36.4.1
-        version: 36.4.1(autoprefixer@10.4.21(postcss@8.5.3))(wslink@2.5.0)
+        specifier: 36.4.2
+        version: 36.4.2(autoprefixer@10.4.21(postcss@8.5.3))(wslink@2.5.0)
       '@types/d3-array':
         specifier: 3.2.1
         version: 3.2.1
@@ -3895,10 +3895,10 @@ packages:
     peerDependencies:
       tslib: '2'
 
-  '@kitware/vtk.js@36.4.1':
+  '@kitware/vtk.js@36.4.2':
     resolution:
       {
-        integrity: sha512-vHgiOZTHS7wgEw6Cbuv6vS+zlTx8HgepPqq0UMTWx6T+OcmP2qJCGRpHI1eTPqKcN2SaEHIK7DSsVatTHZ9OPw==,
+        integrity: sha512-2/vRKoDvBa1rWCvHzyw6TsVlHM3F5xxJvmCP8niVHtmSLITFioYzX92dyQGFJiH/yAeFik/8L80Uvj/kX57XHw==,
       }
     hasBin: true
     peerDependencies:
@@ -23338,7 +23338,7 @@ snapshots:
       '@jsonjoy.com/codegen': 17.67.0(tslib@2.8.1)
       tslib: 2.8.1
 
-  '@kitware/vtk.js@36.4.1(autoprefixer@10.4.21(postcss@8.5.3))(wslink@2.5.0)':
+  '@kitware/vtk.js@36.4.2(autoprefixer@10.4.21(postcss@8.5.3))(wslink@2.5.0)':
     dependencies:
       '@types/webxr': 0.5.5
       autoprefixer: 10.4.21(postcss@8.5.3)
