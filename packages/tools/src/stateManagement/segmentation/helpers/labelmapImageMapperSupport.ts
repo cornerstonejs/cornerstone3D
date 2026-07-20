@@ -3,6 +3,7 @@ import {
   Enums,
   VolumeViewport,
   type Types,
+  isVolumeRenderMode,
 } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 import type { Segmentation } from '../../../types/SegmentationStateTypes';
@@ -71,6 +72,22 @@ function isSupportedImageMapperBlendMode(
   );
 }
 
+/**
+ * Volume-kind render modes whose actor is a GPU image slice (core
+ * vtkVolumeSlice or extension modes such as webgpuVolume) — everything the
+ * image-mapper labelmap plan supports, i.e. all volume modes except the
+ * CanvasActor-based cpuVolume.
+ */
+function isGpuVolumeSliceRenderMode(
+  renderMode: Types.ActorRenderMode | string | undefined
+): boolean {
+  return (
+    !!renderMode &&
+    isVolumeRenderMode(renderMode) &&
+    renderMode !== ActorRenderMode.CPU_VOLUME
+  );
+}
+
 function isPlanarGpuVolumeSliceViewport(
   viewport: Types.IViewport
 ): viewport is ViewportLabelmapImageMapperCompatibilityViewport {
@@ -81,9 +98,8 @@ function isPlanarGpuVolumeSliceViewport(
     return false;
   }
 
-  return (
-    getPlanarPrimaryRenderMode(compatibilityViewport) ===
-    ActorRenderMode.VTK_VOLUME_SLICE
+  return isGpuVolumeSliceRenderMode(
+    getPlanarPrimaryRenderMode(compatibilityViewport)
   );
 }
 
@@ -142,10 +158,10 @@ function getPlanarPrimaryDataId(
     Object.entries(renderModes).find(
       ([dataId, renderMode]) =>
         viewport.getDisplaySetRole?.(dataId) === 'source' &&
-        renderMode === ActorRenderMode.VTK_VOLUME_SLICE
+        isGpuVolumeSliceRenderMode(renderMode)
     )?.[0] ??
-    Object.entries(renderModes).find(
-      ([, renderMode]) => renderMode === ActorRenderMode.VTK_VOLUME_SLICE
+    Object.entries(renderModes).find(([, renderMode]) =>
+      isGpuVolumeSliceRenderMode(renderMode)
     )?.[0]
   );
 }
@@ -421,8 +437,9 @@ export function getVolumeViewportLabelmapImageMapperState(
 
   if (
     isNextPlanarViewport &&
-    getPlanarPrimaryRenderMode(compatibilityViewport) !==
-      ActorRenderMode.VTK_VOLUME_SLICE
+    !isGpuVolumeSliceRenderMode(
+      getPlanarPrimaryRenderMode(compatibilityViewport)
+    )
   ) {
     return {
       key: `unsupported:renderMode:${orientationKey}`,

@@ -1,7 +1,7 @@
 import cache from '../../../cache/cache';
 import type BlendModes from '../../../enums/BlendModes';
 import { Events } from '../../../enums';
-import { ActorRenderMode } from '../../../types';
+import { isVolumeRenderMode } from '../../helpers/renderBackendRegistry';
 import type { ActorEntry, ColormapPublic, IVolumeInput } from '../../../types';
 import triggerEvent from '../../../utilities/triggerEvent';
 import {
@@ -593,11 +593,7 @@ class PlanarLegacyCompatibilityController {
   private getInitialVolumeImageIdIndex(imageCount: number): number {
     const rendering = this.host.getCurrentPlanarRendering();
 
-    if (
-      rendering &&
-      (rendering.renderMode === ActorRenderMode.CPU_VOLUME ||
-        rendering.renderMode === ActorRenderMode.VTK_VOLUME_SLICE)
-    ) {
+    if (rendering && isVolumeRenderMode(rendering.renderMode)) {
       return Math.min(
         Math.max(0, rendering.currentImageIdIndex),
         Math.max(imageCount - 1, 0)

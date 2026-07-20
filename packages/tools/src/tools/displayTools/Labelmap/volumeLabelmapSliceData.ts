@@ -221,6 +221,48 @@ function getSliceState(
   };
 }
 
+/**
+ * Extraction runs on every labelmap edit (per viewport); allocating a fresh
+ * slice buffer each time produced measurable GC pressure during brushing.
+ * Buffers are reused per (viewport, volume, slice geometry); the previous
+ * vtkImageData sharing the buffer is discarded by the caller's
+ * setInputData swap before the next extraction overwrites it.
+ */
+const slicePixelBufferCache = new WeakMap<
+  SliceRenderingViewport,
+  Map<string, Types.PixelDataTypedArray>
+>();
+
+function acquireSlicePixelBuffer(
+  viewport: SliceRenderingViewport,
+  volume: Types.IImageVolume,
+  state: ImageMapperSliceState,
+  length: number,
+  SliceDataConstructor: new (length: number) => Types.PixelDataTypedArray
+): Types.PixelDataTypedArray {
+  let buffers = slicePixelBufferCache.get(viewport);
+
+  if (!buffers) {
+    buffers = new Map();
+    slicePixelBufferCache.set(viewport, buffers);
+  }
+
+  const key = `${volume.volumeId}|${state.xAxis}${state.yAxis}${state.sliceAxis}|${length}`;
+  const existing = buffers.get(key);
+
+  if (
+    existing &&
+    existing.length === length &&
+    existing.constructor === SliceDataConstructor
+  ) {
+    return existing;
+  }
+
+  const buffer = new SliceDataConstructor(length);
+  buffers.set(key, buffer);
+  return buffer;
+}
+
 function createSliceImageData(
   volume: Types.IImageVolume,
   viewport: SliceRenderingViewport
@@ -236,23 +278,56 @@ function createSliceImageData(
   const width = dimensions[state.xAxis];
   const height = dimensions[state.yAxis];
   const SliceDataConstructor = voxelManager.getConstructor();
-  const pixelData = new SliceDataConstructor(width * height);
+  const pixelData = acquireSlicePixelBuffer(
+    viewport,
+    volume,
+    state,
+    width * height,
+    SliceDataConstructor
+  );
 
-  const ijk: Types.Point3 = [0, 0, 0];
-  ijk[state.sliceAxis] = state.sliceIndex;
   const xStart = state.xSign > 0 ? 0 : width - 1;
   const xStep = state.xSign > 0 ? 1 : -1;
   const yStart = state.ySign > 0 ? 0 : height - 1;
   const yStep = state.ySign > 0 ? 1 : -1;
 
-  for (let y = 0, srcY = yStart; y < height; y++, srcY += yStep) {
-    ijk[state.yAxis] = srcY;
-    const rowOffset = y * width;
-    for (let x = 0, srcX = xStart; x < width; x++, srcX += xStep) {
-      ijk[state.xAxis] = srcX;
-      pixelData[rowOffset + x] = Number(
-        voxelManager.getAtIJK(ijk[0], ijk[1], ijk[2])
-      );
+  // Note on obliques: getSliceState() only resolves when the camera axes
+  // align with the volume's IJK axes (within DIRECTION_ALIGNMENT_TOLERANCE);
+  // oblique planes never reach this extraction, so both paths below only
+  // ever run for axis-aligned slices.
+  if (typeof voxelManager.getAtIndex === 'function') {
+    // Fast path: walk flat voxel indices incrementally instead of re-deriving
+    // the index from IJK per voxel. Identical to the getAtIJK loop for every
+    // axis permutation and sign getSliceState can produce.
+    const strides = [1, dimensions[0], dimensions[0] * dimensions[1]];
+    const xStride = strides[state.xAxis] * xStep;
+    const sliceOffset = state.sliceIndex * strides[state.sliceAxis];
+
+    for (let y = 0, srcY = yStart; y < height; y++, srcY += yStep) {
+      const rowOffset = y * width;
+      let index =
+        sliceOffset +
+        srcY * strides[state.yAxis] +
+        xStart * strides[state.xAxis];
+
+      for (let x = 0; x < width; x++, index += xStride) {
+        pixelData[rowOffset + x] = Number(voxelManager.getAtIndex(index));
+      }
+    }
+  } else {
+    // Fallback: original per-voxel IJK lookup.
+    const ijk: Types.Point3 = [0, 0, 0];
+    ijk[state.sliceAxis] = state.sliceIndex;
+
+    for (let y = 0, srcY = yStart; y < height; y++, srcY += yStep) {
+      ijk[state.yAxis] = srcY;
+      const rowOffset = y * width;
+      for (let x = 0, srcX = xStart; x < width; x++, srcX += xStep) {
+        ijk[state.xAxis] = srcX;
+        pixelData[rowOffset + x] = Number(
+          voxelManager.getAtIJK(ijk[0], ijk[1], ijk[2])
+        );
+      }
     }
   }
 

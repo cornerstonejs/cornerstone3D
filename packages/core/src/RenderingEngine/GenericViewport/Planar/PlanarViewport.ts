@@ -606,12 +606,15 @@ class PlanarViewport extends GenericViewport<
     const renderMode = rendering?.renderMode;
 
     // Overlay images mount on any registered image mode, and on volume modes
-    // whose surface composites actors (the CPU volume path draws its slice
-    // pixels directly and cannot host overlay actors).
+    // whose actors live in a vtk scene (the CanvasActor-based cpuVolume path
+    // draws its slice pixels directly and cannot host overlay actors). Note:
+    // this must not key on the composited surface — extension backends such
+    // as webgpu blit into the cpu surface canvas while still hosting vtk
+    // actors.
     const supportsImageOverlays =
       isImageRenderMode(renderMode) ||
       (isVolumeRenderMode(renderMode) &&
-        getRenderSurfaceForRenderMode(renderMode) !== 'cpu');
+        renderMode !== ActorRenderMode.CPU_VOLUME);
 
     if (!supportsImageOverlays) {
       return;

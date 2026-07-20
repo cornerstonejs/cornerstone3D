@@ -3,6 +3,9 @@
     "core-basic": {
       "description": "Basic usage"
     },
+    "generic-viewports": {
+      "description": "Generic Viewports (next architecture)"
+    },
     "tools-basic": {
       "description": "Tools library"
     },
@@ -184,6 +187,92 @@
       "axisBasedImageStretching": {
         "name": "Axis-based Image Stretching",
         "description": "Here we demonstrate axis based stretching with annotation and segmentation tools"
+      }
+    },
+    "generic-viewports": {
+      "genericViewportShowcase": {
+        "name": "GenericViewport (next) Showcase",
+        "description": "Exercises everything migrated to the native next API: acquisition rendering, volume MPR, 3D volume rendering, and migrated tools on GenericViewports."
+      },
+      "genericStackAPI": {
+        "name": "Stack GenericViewport API",
+        "description": "Demonstrates the clean Planar GenericViewport API for stack-like workflows."
+      },
+      "genericWebGPUStack": {
+        "name": "Stack GenericViewport on the WebGPU render backend",
+        "description": "Renders an image stack through the experimental vtk.js WebGPU render backend with live webgpu/gpu/cpu switching, tools, and a fake labelmap segmentation."
+      },
+      "genericWebGPUOrtho": {
+        "name": "Orthographic GenericViewports on the WebGPU render backend",
+        "description": "Sagittal and coronal CT MPR through the experimental WebGPU volume-slice render mode, with live backend switching, tools, and a mock labelmap segmentation."
+      },
+      "genericWebGPUPetMIP": {
+        "name": "PET projection rendering across GPU backends",
+        "description": "Inverted rotating PET MIP (maximum/minimum/average slab projection) on the WebGPU volume-slice render mode beside a drag-to-rotate CT-Bone 3D volume viewport, with live webgpu/gpu switching."
+      },
+      "genericStackPosition": {
+        "name": "Stack Position Next",
+        "description": "Demonstrates the native Planar GenericViewport display area API."
+      },
+      "genericViewportScale": {
+        "name": "Generic Viewport Scale",
+        "description": "Shows scalar and two-axis scale on Planar GenericViewport stack and volume-slice viewports."
+      },
+      "genericMultiVolumeAPI": {
+        "name": "Multi Volume GenericViewport API",
+        "description": "Demonstrates fused CT/PT rendering using the clean Planar GenericViewport multi-dataset API."
+      },
+      "genericRenderBackendSwitch": {
+        "name": "GenericViewport Render Backend Switch",
+        "description": "Live-switches the render backend (gpu | cpu | auto) of GenericViewport-based viewports without a page reload."
+      },
+      "genericPetRenderBackendGrid": {
+        "name": "PET Planar Render Backend Grid",
+        "description": "Four PET Planar GenericViewport viewports pinned to different render backends side by side."
+      },
+      "genericVideo": {
+        "name": "Video GenericViewport API",
+        "description": "Demonstrates the clean GenericViewport video API using dataset registration and setDisplaySets."
+      },
+      "genericEcg": {
+        "name": "ECG GenericViewport",
+        "description": "Displays a 12-lead ECG using the clean GenericViewport ECG API."
+      },
+      "genericWsi": {
+        "name": "WSI GenericViewport",
+        "description": "Demonstrates whole slide imaging with the clean GenericViewport WSI API."
+      },
+      "genericStackManipulationTools": {
+        "name": "Basic Stack Manipulation",
+        "description": "Manipulation tools for a stack viewport."
+      },
+      "genericVolumeAnnotationTools": {
+        "name": "Annotation Tools On Volumes",
+        "description": "Demonstrates how annotation tools can be drawn/rendered on any plane."
+      },
+      "genericStackLabelmapSegmentation": {
+        "name": "Segmentation in StackViewport",
+        "description": "Demonstrates how to render a segmentation in a stack GenericViewport with a mammography image."
+      },
+      "genericLabelmapRendering": {
+        "name": "Labelmap Rendering over source data",
+        "description": "Demonstrates rendering of a mock ellipsoid labelmap over source data."
+      },
+      "genericLabelmapSegmentationTools": {
+        "name": "Basic manual labelmap Segmentation tools",
+        "description": "Demonstrates manual segmentation tools with selectable volume and slice labelmap rendering."
+      },
+      "genericLabelmapSliceRendering": {
+        "name": "Labelmap Slice Rendering (useSliceRendering)",
+        "description": "Demonstrates labelmap rendering with useSliceRendering enabled to avoid 3D texture allocation."
+      },
+      "genericLabelmapSliceRenderingTools": {
+        "name": "Labelmap Slice Rendering Tools (useSliceRendering)",
+        "description": "Demonstrates sphere brush painting with useSliceRendering enabled."
+      },
+      "genericLabelmapOverlapPlayground": {
+        "name": "Labelmap Overlap Playground",
+        "description": "Minimal overlap demo with a stack viewport on top and axial, sagittal, and coronal orthographic viewports below."
       }
     },
     "tools-basic": {
