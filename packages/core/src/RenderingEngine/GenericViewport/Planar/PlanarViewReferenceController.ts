@@ -733,7 +733,7 @@ class PlanarViewReferenceController {
 
     if (typeof referencedImageIndex === 'number') {
       return this.toVolumeSliceTarget(
-        rendering.imageVolume,
+        volumeRendering.imageVolume,
         referencedImageIndex
       );
     }
@@ -754,7 +754,7 @@ class PlanarViewReferenceController {
 
       if (typeof closestImageIndex === 'number') {
         return this.toVolumeSliceTarget(
-          rendering.imageVolume,
+          volumeRendering.imageVolume,
           closestImageIndex
         );
       }
