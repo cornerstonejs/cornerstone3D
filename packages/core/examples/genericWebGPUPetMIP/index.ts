@@ -3,7 +3,6 @@ import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
-  CONSTANTS,
   getRenderingEngine,
   utilities,
   volumeLoader,
@@ -36,12 +35,8 @@ const { ViewportType, Events, OrientationAxis, BlendModes } = Enums;
 const renderingEngineId = 'myRenderingEngine';
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
 const volumeId = `${volumeLoaderScheme}:PT_VOLUME_ID`;
-const ctVolumeId = `${volumeLoaderScheme}:CT_VOLUME_ID`;
 const mipDataId = 'webgpu-pet-mip:planar';
-const volume3dDataId = 'webgpu-pet-mip:volume3d';
 const mipViewportId = 'PT_MIP_PLANAR';
-const volume3dViewportId = 'CT_VOLUME_3D';
-const volumePresetName = 'CT-Bone';
 const MIP_ROTATION_STEP_DEGREES = 6;
 
 const BLEND_MODE_OPTIONS: Record<string, Enums.BlendModes> = {
@@ -66,17 +61,12 @@ function applyMipPresentation(): void {
 
 setTitleAndDescription(
   'PET projection rendering across GPU backends',
-  'Left: a coronal planar GenericViewport rendering an inverted full-volume ' +
+  'A coronal planar GenericViewport rendering an inverted full-volume ' +
     'PET projection (maximum/minimum/average intensity via the slab ' +
     'dropdown and thickness slider). Mouse wheel rotates the projection ' +
-    'around the patient axis (rotating MIP). Right: a true 3D ' +
-    'volume-rendering GenericViewport (VOLUME_3D_NEXT) showing the CT of ' +
-    'the same study with the CT-Bone preset; drag with the left mouse ' +
-    'button to rotate it. Use the buttons to switch the render backend ' +
+    'around the patient axis (rotating MIP). Use the buttons to switch the render backend ' +
     'between webgpu and gpu (WebGL) — the CPU backend is intentionally ' +
-    'omitted. Note: the 3D volume viewport has no WebGPU render mode yet, ' +
-    'so it reports its actual mode in the panel regardless of the selected ' +
-    'backend; its blue tint on webgpu is only a visual cue. Tip: append ' +
+    'omitted. Tip: append ' +
     '?renderBackend=webgpu|gpu to pick the initial backend.'
 );
 
@@ -88,16 +78,13 @@ viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
 viewportGrid.style.flexWrap = 'wrap';
 
-const elements = [mipViewportId, volume3dViewportId].map((viewportId) => {
-  const element = document.createElement('div');
-  element.id = `element-${viewportId}`;
-  element.style.width = size;
-  element.style.height = size;
-  element.style.flexShrink = '0';
-  element.oncontextmenu = (e) => e.preventDefault();
-  viewportGrid.appendChild(element);
-  return element;
-});
+const mipElement = document.createElement('div');
+mipElement.id = `element-${mipViewportId}`;
+mipElement.style.width = size;
+mipElement.style.height = size;
+mipElement.style.flexShrink = '0';
+mipElement.oncontextmenu = (e) => e.preventDefault();
+viewportGrid.appendChild(mipElement);
 
 content.appendChild(viewportGrid);
 
@@ -106,7 +93,7 @@ debugPanel.id = 'webgpu-backend-debug';
 debugPanel.style.border = '1px solid #555';
 debugPanel.style.padding = '8px';
 debugPanel.style.marginTop = '8px';
-debugPanel.style.maxWidth = '1040px';
+debugPanel.style.maxWidth = size;
 debugPanel.style.whiteSpace = 'pre-wrap';
 debugPanel.innerText = 'loading PET volume...';
 content.appendChild(debugPanel);
@@ -122,35 +109,26 @@ function updateDebugPanel(): void {
   lines.push(`configured backend: ${getRenderBackend()}`);
   lines.push(`effective backend: ${getEffectiveRenderBackend()}`);
 
-  for (const [viewportId, dataId] of [
-    [mipViewportId, mipDataId],
-    [volume3dViewportId, volume3dDataId],
-  ]) {
-    const viewport = getViewport(viewportId) as PlanarViewport | undefined;
-    const renderMode = viewport?.getDisplaySetRenderMode?.(dataId);
-    const webgpuInfo = getWebGPUViewportDebugInfo(viewportId);
-    const gpuLine = webgpuInfo
-      ? `WebGPU device ${
-          webgpuInfo.initialized ? 'initialized' : 'initializing...'
-        }${webgpuInfo.adapter ? ` (${webgpuInfo.adapter})` : ''}`
-      : 'WebGL surface';
+  const viewport = getViewport(mipViewportId) as PlanarViewport | undefined;
+  const renderMode = viewport?.getDisplaySetRenderMode?.(mipDataId);
+  const webgpuInfo = getWebGPUViewportDebugInfo(mipViewportId);
+  const gpuLine = webgpuInfo
+    ? `WebGPU device ${
+        webgpuInfo.initialized ? 'initialized' : 'initializing...'
+      }${webgpuInfo.adapter ? ` (${webgpuInfo.adapter})` : ''}`
+    : 'WebGL surface';
 
-    lines.push(
-      `${viewportId}: renderMode=${renderMode ?? '(none)'} | ${gpuLine}`
-    );
-  }
+  lines.push(
+    `${mipViewportId}: renderMode=${renderMode ?? '(none)'} | ${gpuLine}`
+  );
 
   debugPanel.innerText = lines.join('\n');
 }
 
 const WEBGPU_BACKGROUND: [number, number, number] = [0.05, 0.12, 0.3];
-const DEFAULT_BACKGROUND: [number, number, number] = [0.2, 0, 0.2];
 
-// Tints both viewports blue while the webgpu backend is selected so the
-// active backend is visible at a glance. The 3D viewport always renders
-// through WebGL (it has no webgpu render mode), so its background is set on
-// the vtk renderer directly and the tint is purely an example-level cue --
-// the debug panel keeps reporting its real render mode.
+// Tint the viewport blue while the WebGPU backend is selected so the active
+// backend is visible at a glance.
 function applyBackendBackgrounds(): void {
   const isWebGPU = getEffectiveRenderBackend() === 'webgpu';
 
@@ -160,39 +138,12 @@ function applyBackendBackgrounds(): void {
   ) {
     getViewport(mipViewportId)?.render();
   }
-
-  const volume3dViewport = getViewport(volume3dViewportId) as unknown as {
-    getRenderer?: () => {
-      getBackground: () => number[];
-      setBackground: (rgb: number[]) => boolean;
-    };
-    render: () => void;
-  };
-  const renderer = volume3dViewport?.getRenderer?.();
-
-  if (!renderer) {
-    return;
-  }
-
-  const target = isWebGPU ? WEBGPU_BACKGROUND : DEFAULT_BACKGROUND;
-  const current = renderer.getBackground();
-
-  if (
-    current[0] !== target[0] ||
-    current[1] !== target[1] ||
-    current[2] !== target[2]
-  ) {
-    renderer.setBackground([...target]);
-    volume3dViewport.render();
-  }
 }
 
 function switchBackend(backend: string): void {
   setRenderBackend(backend, 'example-toolbar');
   applyBackendBackgrounds();
-  [mipViewportId, volume3dViewportId].forEach((viewportId) =>
-    getViewport(viewportId)?.render()
-  );
+  getViewport(mipViewportId)?.render();
   updateDebugPanel();
 }
 
@@ -262,21 +213,6 @@ function waitForVolumeLoaded(targetVolumeId: string): Promise<void> {
   });
 }
 
-function applyVolumeRenderingPreset(viewport: {
-  getDefaultActor?: () => Types.ActorEntry | undefined;
-}): void {
-  const preset = CONSTANTS.VIEWPORT_PRESETS.find(
-    ({ name }) => name === volumePresetName
-  );
-  const actorEntry = viewport.getDefaultActor?.();
-
-  if (!preset || !actorEntry?.actor) {
-    return;
-  }
-
-  utilities.applyPreset(actorEntry.actor as never, preset);
-}
-
 // Rotates a world vector around an arbitrary axis (Rodrigues rotation).
 function rotateAroundAxis(
   vector: Types.Point3,
@@ -321,69 +257,6 @@ function rotateMipAroundPatientAxis(degrees: number): void {
   viewport.render();
 }
 
-// Left-button drag on the 3D viewport orbits the camera around the focal
-// point: horizontal drag rotates around the view-up axis, vertical drag
-// around the camera's right axis.
-function rotateVolume3dCamera(dxDegrees: number, dyDegrees: number): void {
-  const viewport = getViewport(volume3dViewportId) as unknown as {
-    getViewState?: () => {
-      position?: Types.Point3;
-      focalPoint?: Types.Point3;
-      viewUp?: Types.Point3;
-    };
-    setViewState?: (patch: object) => void;
-    render: () => void;
-  };
-  const state = viewport?.getViewState?.();
-
-  if (!state?.position || !state?.focalPoint || !state?.viewUp) {
-    return;
-  }
-
-  const { position, focalPoint, viewUp } = state;
-  let direction: Types.Point3 = [
-    position[0] - focalPoint[0],
-    position[1] - focalPoint[1],
-    position[2] - focalPoint[2],
-  ];
-  let newViewUp: Types.Point3 = [...viewUp] as Types.Point3;
-
-  direction = rotateAroundAxis(
-    direction,
-    newViewUp,
-    (dxDegrees * Math.PI) / 180
-  );
-
-  const right = vec3.cross(
-    vec3.create(),
-    [newViewUp[0], newViewUp[1], newViewUp[2]],
-    [direction[0], direction[1], direction[2]]
-  );
-  const rightAxis: Types.Point3 = [right[0], right[1], right[2]];
-
-  direction = rotateAroundAxis(
-    direction,
-    rightAxis,
-    (dyDegrees * Math.PI) / 180
-  );
-  newViewUp = rotateAroundAxis(
-    newViewUp,
-    rightAxis,
-    (dyDegrees * Math.PI) / 180
-  );
-
-  viewport.setViewState?.({
-    position: [
-      focalPoint[0] + direction[0],
-      focalPoint[1] + direction[1],
-      focalPoint[2] + direction[2],
-    ] as Types.Point3,
-    focalPoint,
-    viewUp: newViewUp,
-  });
-  viewport.render();
-}
-
 async function run() {
   await initDemo();
 
@@ -407,33 +280,20 @@ async function run() {
     '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463';
   const wadoRsRoot = 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb';
 
-  const [imageIds, ctImageIds] = await Promise.all([
-    createImageIdsAndCacheMetaData({
-      StudyInstanceUID,
-      SeriesInstanceUID:
-        '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
-      wadoRsRoot,
-    }),
-    createImageIdsAndCacheMetaData({
-      StudyInstanceUID,
-      SeriesInstanceUID:
-        '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
-      wadoRsRoot,
-    }),
-  ]);
+  const imageIds = await createImageIdsAndCacheMetaData({
+    StudyInstanceUID,
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.7009.2403.879445243400782656317561081015',
+    wadoRsRoot,
+  });
 
-  const [volume, ctVolume] = await Promise.all([
-    volumeLoader.createAndCacheVolume(volumeId, { imageIds }),
-    volumeLoader.createAndCacheVolume(ctVolumeId, { imageIds: ctImageIds }),
-  ]);
-  const loaded = Promise.all([
-    waitForVolumeLoaded(volumeId),
-    waitForVolumeLoaded(ctVolumeId),
-  ]);
+  const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+    imageIds,
+  });
+  const loaded = waitForVolumeLoaded(volumeId);
   volume.load();
-  ctVolume.load();
   await loaded;
-  debugPanel.innerText = 'PET and CT volumes loaded, mounting viewports...';
+  debugPanel.innerText = 'PET volume loaded, mounting viewport...';
 
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
@@ -441,16 +301,7 @@ async function run() {
     {
       viewportId: mipViewportId,
       type: ViewportType.PLANAR_NEXT,
-      element: elements[0],
-      defaultOptions: {
-        orientation: OrientationAxis.CORONAL,
-        background: [0.2, 0, 0.2] as Types.Point3,
-      },
-    },
-    {
-      viewportId: volume3dViewportId,
-      type: ViewportType.VOLUME_3D_NEXT,
-      element: elements[1],
+      element: mipElement,
       defaultOptions: {
         orientation: OrientationAxis.CORONAL,
         background: [0.2, 0, 0.2] as Types.Point3,
@@ -464,49 +315,25 @@ async function run() {
     initialImageIdIndex: Math.floor(imageIds.length / 2),
     volumeId,
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(volume3dDataId, {
-    imageIds: ctImageIds,
-    volumeId: ctVolumeId,
-  });
-
   const mipViewport = getViewport(mipViewportId) as PlanarViewport;
-  const volume3dViewport = getViewport(volume3dViewportId) as PlanarViewport;
 
-  await Promise.all([
-    mipViewport.setDisplaySets({
-      displaySetId: mipDataId,
-      options: { orientation: OrientationAxis.CORONAL },
-    }),
-    volume3dViewport.setDisplaySets({
-      displaySetId: volume3dDataId,
-      options: { renderMode: 'vtkVolume3d' },
-    }),
-  ]);
+  await mipViewport.setDisplaySets({
+    displaySetId: mipDataId,
+    options: { orientation: OrientationAxis.CORONAL },
+  });
 
   mipViewport.setDisplaySetPresentation(mipDataId, {
     blendMode: currentBlendMode,
     slabThickness: currentSlabThickness,
     invert: currentInvert,
   });
-  volume3dViewport.setDisplaySetPresentation?.(volume3dDataId, {
-    sampleDistanceMultiplier: 1,
-  });
-  applyVolumeRenderingPreset(
-    volume3dViewport as unknown as {
-      getDefaultActor?: () => Types.ActorEntry | undefined;
-    }
-  );
-
-  [mipViewportId, volume3dViewportId].forEach((viewportId) => {
-    const element = document.getElementById(`element-${viewportId}`);
-    element?.addEventListener(Events.IMAGE_RENDERED, () => {
-      applyBackendBackgrounds();
-      updateDebugPanel();
-    });
+  mipElement.addEventListener(Events.IMAGE_RENDERED, () => {
+    applyBackendBackgrounds();
+    updateDebugPanel();
   });
 
   // Rotating MIP: wheel spins the projection around the patient axis.
-  elements[0].addEventListener(
+  mipElement.addEventListener(
     'wheel',
     (evt) => {
       evt.preventDefault();
@@ -517,63 +344,7 @@ async function run() {
     { passive: false }
   );
 
-  // 3D viewport: left-button drag orbits the camera. While dragging, the
-  // volume mapper's sample distance is coarsened by the same factor the
-  // legacy TrackballRotateTool uses, then restored on release with a final
-  // full-resolution render.
-  const ROTATE_SAMPLE_DISTANCE_FACTOR = 2;
-  let dragging = false;
-  let restingSampleDistance: number | undefined;
-
-  const getVolume3dMapper = () => {
-    const viewport = getViewport(volume3dViewportId) as unknown as {
-      getDefaultActor?: () => Types.ActorEntry | undefined;
-    };
-    const actor = viewport?.getDefaultActor?.()?.actor as {
-      getMapper?: () => {
-        getSampleDistance?: () => number;
-        setSampleDistance?: (distance: number) => boolean;
-      };
-    };
-
-    return actor?.getMapper?.();
-  };
-
-  elements[1].addEventListener('pointerdown', (evt) => {
-    if (evt.button === 0) {
-      dragging = true;
-      elements[1].setPointerCapture(evt.pointerId);
-
-      const mapper = getVolume3dMapper();
-
-      if (mapper?.getSampleDistance && restingSampleDistance === undefined) {
-        restingSampleDistance = mapper.getSampleDistance();
-        mapper.setSampleDistance?.(
-          restingSampleDistance * ROTATE_SAMPLE_DISTANCE_FACTOR
-        );
-      }
-    }
-  });
-  elements[1].addEventListener('pointerup', (evt) => {
-    dragging = false;
-    elements[1].releasePointerCapture(evt.pointerId);
-
-    if (restingSampleDistance !== undefined) {
-      getVolume3dMapper()?.setSampleDistance?.(restingSampleDistance);
-      restingSampleDistance = undefined;
-      getViewport(volume3dViewportId)?.render();
-    }
-  });
-  elements[1].addEventListener('pointermove', (evt) => {
-    if (dragging) {
-      // Canvas Y grows downward; negate it so a drag up rotates the body up,
-      // matching the legacy TrackballRotateTool direction convention.
-      rotateVolume3dCamera(-evt.movementX * 0.5, -evt.movementY * 0.5);
-    }
-  });
-
   mipViewport.render();
-  volume3dViewport.render();
   updateDebugPanel();
 }
 

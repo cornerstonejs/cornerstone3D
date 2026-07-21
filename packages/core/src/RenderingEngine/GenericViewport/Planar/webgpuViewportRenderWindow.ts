@@ -18,7 +18,6 @@ interface WebGPUView {
   getInitialized(): boolean;
   getDevice():
     | {
-        onSubmittedWorkDone(): Promise<void>;
         getHandle(): GPUDevice;
       }
     | undefined;
@@ -30,8 +29,8 @@ interface WebGPUView {
 /**
  * A per-viewport WebGPU rendering context: one core vtkRenderWindow with a
  * vtk.js WebGPU view and a single renderer. The WebGPU canvas stays detached
- * from the DOM; frames are blitted into the viewport's visible canvas after
- * the device reports the submitted work done.
+ * from the DOM; frames are blitted into the viewport's visible canvas in the
+ * same task that submits them.
  *
  * This intentionally does NOT go through the engine's shared offscreen
  * OpenGL multi-render-window: the render path that owns this window is
@@ -44,9 +43,8 @@ export interface WebGPUViewportWindow {
   renderer: ReturnType<typeof vtkRenderer.newInstance>;
   refCount: number;
   /**
-   * Set when the last binding releases the window. Deferred blits (the
-   * device work-done promise from the final frame) must bail out instead of
-   * touching the deleted vtk objects.
+   * Set when the last binding releases the window. The initialization
+   * callback must bail out instead of touching the deleted vtk objects.
    */
   destroyed: boolean;
 }
@@ -146,10 +144,13 @@ export function releaseWebGPUViewportWindow(viewportId: string): void {
 
 /**
  * Renders the WebGPU scene and blits the result into `targetCanvas` (the
- * viewport's visible surface canvas). The first frame is inherently
- * asynchronous — the vtk.js WebGPU view acquires its adapter/device on the
- * initial traverse — so the blit (and `onBlitted`) runs once the device
- * reports the submitted work done.
+ * viewport's visible surface canvas). Canvas reads synchronize submitted GPU
+ * work, so the copy must stay in the same task as `traverseAllPasses()`. In
+ * particular, WebKit can retire the presented WebGPU texture before a copy
+ * deferred through `GPUQueue.onSubmittedWorkDone()`, producing a black frame.
+ * The first frame remains asynchronous because vtk.js acquires its adapter and
+ * device during the initial traverse; vtk.js submits that queued traversal
+ * before invoking our initialization callback.
  */
 export function renderWebGPUViewportWindow(
   entry: WebGPUViewportWindow,
@@ -173,54 +174,39 @@ export function renderWebGPUViewportWindow(
   // when the device becomes ready.
   view.traverseAllPasses();
 
-  const finish = () => {
+  const blit = () => {
     if (entry.destroyed) {
       return;
     }
 
-    const device = view.getDevice();
+    const source = view.getCanvas();
+    const context = targetCanvas.getContext('2d');
 
-    if (!device) {
+    if (!source || !context || source.width === 0 || source.height === 0) {
       return;
     }
 
-    void device.onSubmittedWorkDone().then(() => {
-      // The window may have been released while the device work was in
-      // flight (e.g. a live render-backend switch tearing this path down);
-      // the vtk objects are deleted at that point.
-      if (entry.destroyed) {
-        return;
-      }
-
-      const source = view.getCanvas();
-      const context = targetCanvas.getContext('2d');
-
-      if (!source || !context || source.width === 0 || source.height === 0) {
-        return;
-      }
-
-      context.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
-      context.drawImage(
-        source,
-        0,
-        0,
-        source.width,
-        source.height,
-        0,
-        0,
-        targetCanvas.width,
-        targetCanvas.height
-      );
-      onBlitted?.();
-    });
+    context.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
+    context.drawImage(
+      source,
+      0,
+      0,
+      source.width,
+      source.height,
+      0,
+      0,
+      targetCanvas.width,
+      targetCanvas.height
+    );
+    onBlitted?.();
   };
 
   if (view.getInitialized()) {
-    finish();
+    blit();
   } else {
     const subscription = view.onInitialized(() => {
       subscription.unsubscribe();
-      finish();
+      blit();
     });
   }
 }

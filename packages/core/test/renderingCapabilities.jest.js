@@ -1,10 +1,12 @@
 import {
   detectRenderingCapabilities,
+  getFilterableFloatTexturePrecision,
   getRenderingCapabilities,
   resetRenderingCapabilities,
   RENDERING_CAPABILITIES_PROBE_VERSION,
 } from '../src/utilities/renderingCapabilities';
 import { getSupportedTextureFormats } from '../src/utilities/textureSupport';
+import { canRenderFloatTextures } from '../src/init';
 
 jest.mock('../src/utilities/textureSupport', () => ({
   getSupportedTextureFormats: jest.fn(),
@@ -204,5 +206,49 @@ describe('renderingCapabilities', () => {
 
     const third = getRenderingCapabilities();
     expect(third).not.toBe(first);
+  });
+
+  it('uses filterable half-float textures when float32 filtering is unavailable', () => {
+    expect(
+      getFilterableFloatTexturePrecision({
+        ...ALL_FORMATS,
+        floatLinear: false,
+      })
+    ).toBe(16);
+  });
+
+  it('keeps float volume pre-scaling enabled with the iOS capability profile', () => {
+    mockWebGL('Apple GPU');
+    getSupportedTextureFormats.mockReturnValue({
+      ...ALL_FORMATS,
+      floatLinear: false,
+    });
+
+    expect(canRenderFloatTextures()).toBe(true);
+  });
+
+  it('prefers filterable float32 textures when both precisions are available', () => {
+    expect(getFilterableFloatTexturePrecision(ALL_FORMATS)).toBe(32);
+  });
+
+  it('rejects floating-point volume textures when neither precision is filterable', () => {
+    expect(
+      getFilterableFloatTexturePrecision({
+        ...ALL_FORMATS,
+        floatLinear: false,
+        halfFloatLinear: false,
+      })
+    ).toBeNull();
+  });
+
+  it('disables float volume pre-scaling when no float precision is filterable', () => {
+    mockWebGL('Unsupported GPU');
+    getSupportedTextureFormats.mockReturnValue({
+      ...ALL_FORMATS,
+      floatLinear: false,
+      halfFloatLinear: false,
+    });
+
+    expect(canRenderFloatTextures()).toBe(false);
   });
 });
