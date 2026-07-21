@@ -63,11 +63,19 @@ overrides:
   linkify-it: 5.0.1
   websocket-driver: 0.7.5
   adm-zip: 0.6.0
-  'brace-expansion@<5.0.7': 5.0.7
-  'brace-expansion@<1.1.6': 1.1.6
-  'brace-expansion@<2.1.2': 2.1.2
+  # brace-expansion ReDoS (GHSA-3jxr-9vmj-r5cp / CVE-2026-13149). The advisory
+  # patches three separate branches; each rule is scoped to its own major range
+  # so they stay disjoint (an unscoped '<5.0.7' would also catch v1/v2 and force
+  # them onto v5). v1 must go to 1.1.16 — 1.1.6 is itself still vulnerable.
+  'brace-expansion@<1.1.16': 1.1.16
+  'brace-expansion@>=2.0.0 <2.1.2': 2.1.2
+  'brace-expansion@>=3.0.0 <5.0.7': 5.0.7
+  # js-yaml is patched on both major lines: v3 consumers (e.g. gray-matter,
+  # which calls the v3-only yaml.safeLoad) stay on a safe v3, while true v4
+  # consumers are bumped to 4.3.0. The v4 rule is scoped to the v4 range so it
+  # does not catch v3 and force gray-matter onto v4 (breaks Docusaurus builds).
   'js-yaml@<3.15.0': 3.15.0
-  'js-yaml@<4.3.0': 4.3.0
+  'js-yaml@>=4.0.0 <4.3.0': 4.3.0
 
 auditConfig:
   ignoreGhsas:
