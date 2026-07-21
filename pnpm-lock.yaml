@@ -8,7 +8,7 @@ overrides:
   '@babel/helper-create-class-features-plugin': 7.28.3
   '@babel/helper-compilation-targets': 7.29.7
   caniuse-lite: 1.0.30001767
-  axios: 1.18.0
+  axios: 1.18.1
   buffer: 6.0.3
   node-forge: 1.4.0
   canvas: 3.2.0
@@ -35,7 +35,7 @@ overrides:
   mdast-util-to-hast: 13.2.1
   '@remix-run/router': 1.23.2
   '@types/minimatch': 3.0.5
-  shell-quote: 1.9.0
+  shell-quote: 1.10.0
   minimatch@<3.1.4: 3.1.5
   minimatch@>=10.0.0 <10.2.3: 10.2.5
   form-data: 4.0.6
@@ -4709,8 +4709,8 @@ packages:
     resolution: {integrity: sha512-wvUjBtSGN7+7SjNpq/9M2Tg350UZD3q62IFZLbRAR1bSMlCo1ZaeW+BJ+D090e4hIIZLBcTDWe4Mh4jvUDajzQ==}
     engines: {node: '>= 0.4'}
 
-  axios@1.18.0:
-    resolution: {integrity: sha512-E32NzpYKp++W7XRe52rHiXV2ehxmh3wbdgO7MHeFM+vqxLBYHzt0ElkiImtOBxtOmyp0yoC8C6uESVV84Y2/hw==}
+  axios@1.18.1:
+    resolution: {integrity: sha512-3nTvFlvpn9Zu/RkHUqtc7/+al4UpRW5az71ap5zccp6e8RAYEzhMTecX8Dz1wWDYrPpUoB1HAQEGEAEvUr7S9g==}
 
   babel-jest@30.2.0:
     resolution: {integrity: sha512-0YiBEOxWqKkSQWL9nNGGEgndoeL0ZpWrbLMNL5u/Kaxrli3Eaxlt3ZtIDktEvXt4L/R9r3ODr2zKwGM/2BjxVw==}
@@ -10707,8 +10707,8 @@ packages:
     resolution: {integrity: sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==}
     engines: {node: '>=8'}
 
-  shell-quote@1.9.0:
-    resolution: {integrity: sha512-Iov+JwFv/2HcTpcwNMKd8+IWNb8tboQJNQTkAY/LLVK7gGH9jy+LGkVqPxfekHl+yMmiqXszdGWXgkfml7hjqA==}
+  shell-quote@1.10.0:
+    resolution: {integrity: sha512-w1aiOKwKuRgtwAReIIj89puqg+I7GvX4IbLrvmhXbzQsj1+Zwi4VO3+fa6ZF91TWSjIxoEkKnMeHcLEODK5ZXA==}
     engines: {node: '>= 0.4'}
 
   shelljs@0.10.0:
@@ -14988,7 +14988,7 @@ snapshots:
 
   '@itk-wasm/dam@1.1.1':
     dependencies:
-      axios: 1.18.0(supports-color@7.2.0)
+      axios: 1.18.1(supports-color@7.2.0)
       commander: 10.0.1
       decompress: 4.2.1
       files-from-path: 1.1.4
@@ -17415,7 +17415,7 @@ snapshots:
     dependencies:
       possible-typed-array-names: 1.1.0
 
-  axios@1.18.0(supports-color@7.2.0):
+  axios@1.18.1(supports-color@7.2.0):
     dependencies:
       follow-redirects: 1.16.0
       form-data: 4.0.6
@@ -20541,7 +20541,7 @@ snapshots:
       '@itk-wasm/dam': 1.1.1
       '@thewtex/zstddec': 0.2.1
       '@types/emscripten': 1.40.0
-      axios: 1.18.0(supports-color@7.2.0)
+      axios: 1.18.1(supports-color@7.2.0)
       comlink: 4.4.2
       commander: 11.1.0
       fs-extra: 11.3.5
@@ -20558,7 +20558,7 @@ snapshots:
       '@itk-wasm/dam': 1.1.1
       '@thewtex/zstddec': 0.2.1
       '@types/emscripten': 1.40.0
-      axios: 1.18.0(supports-color@7.2.0)
+      axios: 1.18.1(supports-color@7.2.0)
       chalk: 5.6.2
       comlink: 4.4.2
       commander: 11.1.0
@@ -21188,7 +21188,7 @@ snapshots:
   launch-editor@2.13.2:
     dependencies:
       picocolors: 1.1.1
-      shell-quote: 1.9.0
+      shell-quote: 1.10.0
 
   lerc@3.0.0: {}
 
@@ -22581,7 +22581,7 @@ snapshots:
       ansi-styles: 4.3.0
       argparse: 2.0.1
       asynckit: 0.4.0
-      axios: 1.18.0(supports-color@7.2.0)
+      axios: 1.18.1(supports-color@7.2.0)
       balanced-match: 4.0.3
       base64-js: 1.5.1
       bl: 4.1.0
@@ -24142,7 +24142,7 @@ snapshots:
       prompts: 2.4.2
       react-error-overlay: 6.1.0
       recursive-readdir: 2.2.3
-      shell-quote: 1.9.0
+      shell-quote: 1.10.0
       strip-ansi: 6.0.1
       text-table: 0.2.0
       webpack: 5.105.0(@swc/core@1.15.33)(clean-css@5.3.3)(cssnano@6.1.2(postcss@8.5.3))(html-minifier-terser@7.2.0)(postcss@8.5.3)(webpack-cli@5.1.4(webpack-bundle-analyzer@4.10.2)(webpack-dev-server@5.2.2)(webpack@5.105.0))
@@ -24843,7 +24843,7 @@ snapshots:
 
   shebang-regex@3.0.0: {}
 
-  shell-quote@1.9.0: {}
+  shell-quote@1.10.0: {}
 
   shelljs@0.10.0:
     dependencies:
