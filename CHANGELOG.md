@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.6.9](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.8...v5.6.9) (2026-07-21)
+
+### Bug Fixes
+
+- **security:** update dependencies to patch CVEs ([#2819](https://github.com/cornerstonejs/cornerstone3D/issues/2819)) ([91d86a7](https://github.com/cornerstonejs/cornerstone3D/commit/91d86a73f9db770cba2494001358d36a8c906007))
+
 ## [5.6.8](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.7...v5.6.8) (2026-07-19)
 
 ### Bug Fixes
