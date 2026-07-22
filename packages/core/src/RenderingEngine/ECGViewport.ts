@@ -44,18 +44,7 @@ interface ChannelLayout {
 
 /**
  * ECGViewport renders DICOM ECG waveform data on an HTML canvas.
- *
- * @deprecated Use `ViewportType.ECG_NEXT` with the `ECGViewportLegacyAdapter`
- * (or the canonical `GenericViewport/ECG/ECGViewport`) instead.
- * This legacy class extends `Viewport` directly and will be removed in a future
- * major release. The new implementation extends `GenericViewport` and provides
- * the same API via `ECGViewportLegacyAdapter`:
- *
- * ```ts
- * renderingEngine.enableElement({ type: ViewportType.ECG_NEXT, ... });
- * const viewport = renderingEngine.getViewport<ECGGenericViewport>(id);
- * await viewport.setEcg(imageId); // same API, backed by new architecture
- * ```
+ * Based on the VideoViewport custom rendering pipeline pattern.
  */
 class ECGViewport extends Viewport {
   readonly uid: string;
@@ -119,7 +108,6 @@ class ECGViewport extends Viewport {
    * ecgModule metadata provider.
    *
    * @param imageId - A DICOM image ID whose metadata includes waveform data
-   * @deprecated Use `ECGViewportLegacyAdapter.setEcg` (via `ViewportType.ECG_NEXT`) instead.
    */
   public async setEcg(imageId: string): Promise<void> {
     // Setting ECG data directly resets any display-set bookkeeping; the
@@ -172,7 +160,6 @@ class ECGViewport extends Viewport {
 
   /**
    * Toggle visibility of a specific channel.
-   * @deprecated Use `setDisplaySetPresentation` on the `ECG_NEXT` viewport.
    */
   public setChannelVisibility(index: number, visible: boolean): void {
     if (index >= 0 && index < this.channels.length) {
