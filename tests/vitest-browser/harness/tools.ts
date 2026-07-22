@@ -88,7 +88,8 @@ export async function setupTools(
   const viewportCtx = await createPlanarViewport(opts.viewport);
 
   const toolGroupId =
-    opts.toolGroupId ?? nextToolGroupId(`vitest-tools:${viewportCtx.viewportId}`);
+    opts.toolGroupId ??
+    nextToolGroupId(`vitest-tools:${viewportCtx.viewportId}`);
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
   if (!toolGroup) {
@@ -303,6 +304,35 @@ export function mouseDrag(
   }
 
   dispatchMouseUpOnDocument(element, to);
+}
+
+/**
+ * Freehand drag gesture: mousedown at the first canvas point, one mousemove
+ * per remaining point, then mouseup at the final point. This mirrors
+ * {@link mouseDrag} but preserves a caller-supplied path for tools that record
+ * every drag point, such as planar freehand contours.
+ */
+export function mouseDragPath(
+  element: HTMLElement,
+  canvasPoints: [number, number][],
+  opts: { button?: number } = {}
+): void {
+  if (canvasPoints.length < 2) {
+    throw new Error('mouseDragPath requires at least two canvas points');
+  }
+
+  const buttons = opts.button ?? MouseBindings.Primary;
+  const points = canvasPoints.map(roundCanvasPoint);
+  const first = points[0];
+  const last = points[points.length - 1];
+
+  dispatchMouseDownOnElement(element, first, buttons);
+
+  for (let i = 1; i < points.length; i++) {
+    dispatchMouseMoveOnDocument(element, points[i], buttons);
+  }
+
+  dispatchMouseUpOnDocument(element, last);
 }
 
 /**

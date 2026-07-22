@@ -3,6 +3,54 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.6.9](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.8...v5.6.9) (2026-07-21)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
+## [5.6.8](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.7...v5.6.8) (2026-07-19)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
+## [5.6.7](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.6...v5.6.7) (2026-07-17)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
+## [5.6.6](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.5...v5.6.6) (2026-07-17)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
+## [5.6.5](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.4...v5.6.5) (2026-07-17)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
+## [5.6.4](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.3...v5.6.4) (2026-07-17)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
+## [5.6.3](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.2...v5.6.3) (2026-07-16)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
+## [5.6.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.1...v5.6.2) (2026-07-15)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
+## [5.6.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.0...v5.6.1) (2026-07-15)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
+# [5.6.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.5.1...v5.6.0) (2026-07-15)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
+## [5.5.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.5.0...v5.5.1) (2026-07-13)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
+# [5.5.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.17...v5.5.0) (2026-07-12)
+
+**Note:** Version bump only for package @cornerstonejs/ai
+
 ## [5.4.17](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.16...v5.4.17) (2026-07-11)
 
 **Note:** Version bump only for package @cornerstonejs/ai

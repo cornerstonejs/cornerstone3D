@@ -32,6 +32,64 @@ export function jumpToFocalPoint(
   }
 }
 
+/**
+ * Navigates a native (Generic) planar viewport so its displayed slice passes
+ * through (or as close as possible to) the given world point, handling both
+ * content modes:
+ *
+ * - volume-backed slices navigate by `cameraFocalPoint` (exact plane through
+ *   the point, pan untouched);
+ * - image stacks ignore `cameraFocalPoint` in their view-reference handling,
+ *   so the closest image index to the point is resolved from the per-image
+ *   plane metadata and navigated by `sliceIndex`.
+ *
+ * Returns true when a navigation was issued.
+ */
+export function navigatePlanarViewportToPoint(
+  viewport: Types.IViewport,
+  worldPoint: Types.Point3
+): boolean {
+  if (!csUtils.isGenericViewport(viewport)) {
+    return false;
+  }
+
+  const isStackContent = viewport.getCurrentMode?.() === 'stack';
+
+  if (isStackContent) {
+    const stackViewport = viewport as unknown as Types.IStackViewport;
+    if (
+      typeof stackViewport.getImageIds !== 'function' ||
+      typeof stackViewport.getCurrentImageIdIndex !== 'function'
+    ) {
+      return false;
+    }
+
+    let imageIndex: number | null = null;
+    try {
+      imageIndex = csUtils.getClosestStackImageIndexForPoint(
+        worldPoint,
+        stackViewport
+      );
+    } catch {
+      return false;
+    }
+
+    if (imageIndex === null || imageIndex < 0) {
+      return false;
+    }
+
+    viewport.setViewReference({
+      sliceIndex: imageIndex,
+    } as Types.ViewReference);
+    return true;
+  }
+
+  viewport.setViewReference({
+    cameraFocalPoint: [worldPoint[0], worldPoint[1], worldPoint[2]],
+  } as Types.ViewReference);
+  return true;
+}
+
 export interface NativeSourceProperties {
   /** VOI/LUT properties read via getDisplaySetPresentation. */
   properties: Record<string, unknown>;

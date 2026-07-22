@@ -1,4 +1,9 @@
-import { BaseTool, AnnotationTool, AnnotationDisplayTool } from './base';
+import {
+  BaseTool,
+  AnnotationTool,
+  AnnotationDisplayTool,
+  measurementTargetFilters,
+} from './base';
 import PanTool from './PanTool';
 import TrackballRotateTool from './TrackballRotateTool';
 import VolumeCroppingTool from './VolumeCroppingTool';
@@ -10,6 +15,8 @@ import PlanarRotateTool from './PlanarRotateTool';
 import ZoomTool from './ZoomTool';
 import MIPJumpToClickTool from './MIPJumpToClickTool';
 import CrosshairsTool from './CrosshairsTool';
+import WorldCrosshairTool from './WorldCrosshairTool';
+import SliceIntersectionTool from './SliceIntersectionTool';
 import MagnifyTool from './MagnifyTool';
 import AdvancedMagnifyTool from './AdvancedMagnifyTool';
 import ReferenceLinesTool from './ReferenceLinesTool';
@@ -73,6 +80,7 @@ export {
   BaseTool,
   AnnotationTool,
   AnnotationDisplayTool,
+  measurementTargetFilters,
   // Manipulation Tools
   PanTool,
   TrackballRotateTool,
@@ -88,6 +96,8 @@ export {
   ReferenceCursors,
   // Annotation Tools
   CrosshairsTool,
+  WorldCrosshairTool,
+  SliceIntersectionTool,
   ReferenceLinesTool,
   OverlayGridTool,
   SegmentationIntersectionTool,

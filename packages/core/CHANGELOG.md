@@ -3,6 +3,68 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.6.9](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.8...v5.6.9) (2026-07-21)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [5.6.8](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.7...v5.6.8) (2026-07-19)
+
+### Bug Fixes
+
+- **tools:** support contour segmentation undo and redo ([#2817](https://github.com/cornerstonejs/cornerstone3D/issues/2817)) ([5cfd10a](https://github.com/cornerstonejs/cornerstone3D/commit/5cfd10ae280901d8b8d54f1a372ef648600b534c))
+
+## [5.6.7](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.6...v5.6.7) (2026-07-17)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [5.6.6](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.5...v5.6.6) (2026-07-17)
+
+### Bug Fixes
+
+- **core:** re-apply invert after colormap when scrolling a stack ([#2814](https://github.com/cornerstonejs/cornerstone3D/issues/2814)) ([0040715](https://github.com/cornerstonejs/cornerstone3D/commit/0040715c0c16c6ba41826d04a5ff757447bec76c))
+
+## [5.6.5](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.4...v5.6.5) (2026-07-17)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [5.6.4](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.3...v5.6.4) (2026-07-17)
+
+### Bug Fixes
+
+- **core:** render volume viewports without float-linear filtering ([#2810](https://github.com/cornerstonejs/cornerstone3D/issues/2810)) ([3d514b4](https://github.com/cornerstonejs/cornerstone3D/commit/3d514b4b382759b0498be0adc761f5d4e13c5360))
+
+## [5.6.3](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.2...v5.6.3) (2026-07-16)
+
+### Bug Fixes
+
+- **segmentation:** labelmap edge projection over MIP for generic planar viewports ([#2784](https://github.com/cornerstonejs/cornerstone3D/issues/2784)) ([4fcdfa8](https://github.com/cornerstonejs/cornerstone3D/commit/4fcdfa88d41ae79aaf61f255aea90f07e60719a3))
+
+## [5.6.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.1...v5.6.2) (2026-07-15)
+
+### Bug Fixes
+
+- **core:** expose getCompleteScalarDataArray on dynamic volume voxel manager ([#2808](https://github.com/cornerstonejs/cornerstone3D/issues/2808)) ([5aae6db](https://github.com/cornerstonejs/cornerstone3D/commit/5aae6db0438c76c4841f8f7b75b621d8656805de))
+
+## [5.6.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.0...v5.6.1) (2026-07-15)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+# [5.6.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.5.1...v5.6.0) (2026-07-15)
+
+### Features
+
+- add results for different viewports on the fusion view for rectangle/circle ROI ([#2557](https://github.com/cornerstonejs/cornerstone3D/issues/2557)) ([183357e](https://github.com/cornerstonejs/cornerstone3D/commit/183357e17a6b6ce8f97195025dd6023ac8cef7a8))
+
+## [5.5.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.5.0...v5.5.1) (2026-07-13)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+# [5.5.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.17...v5.5.0) (2026-07-12)
+
+### Features
+
+- **tools:** new world crosshairs and intersect planes ([#2781](https://github.com/cornerstonejs/cornerstone3D/issues/2781)) ([5d1d7fd](https://github.com/cornerstonejs/cornerstone3D/commit/5d1d7fdd9e228180ca66db496fdaaa65a878b8fd))
+
 ## [5.4.17](https://github.com/cornerstonejs/cornerstone3D/compare/v5.4.16...v5.4.17) (2026-07-11)
 
 ### Bug Fixes
