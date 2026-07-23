@@ -17,6 +17,9 @@ import clamp from './clamp';
 import isOpposite from './isOpposite';
 import getClosestImageId from './getClosestImageId';
 import getSpacingInNormalDirection from './getSpacingInNormalDirection';
+import getInPlaneSpacingAndXYDirections from './getInPlaneSpacingAndXYDirections';
+import iterateOverPlane from './iterateOverPlane';
+import * as obliqueIntegerIterator from './obliqueIntegerIterator';
 import getTargetVolumeAndSpacingInNormalDir from './getTargetVolumeAndSpacingInNormalDir';
 import getVolumeActorCorners from './getVolumeActorCorners';
 import indexWithinDimensions from './indexWithinDimensions';
@@ -176,6 +179,9 @@ export {
   convertColorArrayToRgbString,
   getClosestImageId,
   getSpacingInNormalDirection,
+  getInPlaneSpacingAndXYDirections,
+  iterateOverPlane,
+  obliqueIntegerIterator,
   getTargetVolumeAndSpacingInNormalDir,
   getVolumeActorCorners,
   indexWithinDimensions,
@@ -277,3 +283,10 @@ export {
   viewportIsInStackMode,
   getNormalizedAspectRatio,
 };
+
+export type {
+  IntRange,
+  ObliqueEllipsoidUVW,
+  ObliqueIntegerBasis,
+  ObliqueVoxelVisit,
+} from './obliqueIntegerIterator';
