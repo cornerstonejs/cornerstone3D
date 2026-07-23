@@ -424,9 +424,14 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       // if it is inside the start/end slice, but not exactly the first or
       // last slice, we render the line in dash, but not the handles
 
-      let isMiddleSlice = false;
-      if (roundedCameraCoordinate === middleCoordinate) {
-        isMiddleSlice = true;
+      let isNearMiddleSlice = false;
+      const targetId = this.getTargetId(viewport);
+      const imageVolume = cache.getVolume(targetId.split(/volumeId:|\?/)[1]);
+      if (
+        Math.abs(roundedCameraCoordinate - middleCoordinate) <
+        csUtils.getSpacingInNormalDirection(imageVolume, viewplaneNormal)
+      ) {
+        isNearMiddleSlice = true;
       }
 
       data.handles.points[0][
@@ -465,7 +470,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
         !isAnnotationLocked(annotationUID) &&
         !this.editData &&
         activeHandleIndex !== null &&
-        isMiddleSlice
+        isNearMiddleSlice
       ) {
         if (this.configuration.simplified) {
           activeHandleCanvasCoords = [canvasCoordinates[activeHandleIndex]];
@@ -491,7 +496,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       let lineWidthToUse = lineWidth;
       let lineDashToUse = lineDash;
 
-      if (isMiddleSlice) {
+      if (isNearMiddleSlice) {
         lineWidthToUse = lineWidth;
         lineDashToUse = []; // Use solid line for real line
       } else {
