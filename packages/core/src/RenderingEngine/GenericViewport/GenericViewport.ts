@@ -1,11 +1,15 @@
 import type * as EventTypes from '../../types/EventTypes';
 import type ICamera from '../../types/ICamera';
-import type { Point2, Point3, ViewportContentMode } from '../../types';
+import type {
+  Point2,
+  Point3,
+  ViewportContentMode,
+  IRenderingEngine,
+} from '../../types';
 import Events from '../../enums/Events';
 import ViewportStatus from '../../enums/ViewportStatus';
 import triggerEvent from '../../utilities/triggerEvent';
 import renderingEngineCache from '../renderingEngineCache';
-import type { IRenderingEngine } from '../../types';
 import type {
   BaseViewportRenderContext,
   BindingRole,
@@ -91,6 +95,15 @@ abstract class GenericViewport<
   constructor(args: { id: ViewportId; element: HTMLDivElement }) {
     this.id = args.id;
     this.element = args.element;
+    this.canvasToWorld = this.canvasToWorld.bind(this);
+    this.worldToCanvas = this.worldToCanvas.bind(this);
+  }
+
+  /**
+   * Returns the rendering engine this viewport is registered to.
+   */
+  public getRenderingEngine(): IRenderingEngine {
+    return renderingEngineCache.get(this.renderingEngineId);
   }
 
   // ====================================================================
@@ -276,16 +289,6 @@ abstract class GenericViewport<
       this.getResolvedView()?.getFrameOfReferenceUID() ??
       `${this.type}-viewport-${this.id}`
     );
-  }
-
-  /**
-   * Returns the rendering engine that owns this viewport. Tools and utilities
-   * rely on this method existing on every viewport (legacy Viewport provides
-   * it); without it, calls like `viewport.getRenderingEngine()` threw on native
-   * generic viewports.
-   */
-  getRenderingEngine(): IRenderingEngine {
-    return renderingEngineCache.get(this.renderingEngineId);
   }
 
   // ====================================================================
@@ -488,10 +491,6 @@ abstract class GenericViewport<
     this.modified();
   }
 
-  /**
-   * Resets viewport-owned view state for viewport families that support a
-   * navigation reset.
-   */
   resetViewState(_options?: unknown): boolean {
     return false;
   }

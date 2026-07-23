@@ -162,6 +162,36 @@ async function run() {
     },
   });
 
+  // Toggle all channels helper
+  let allVisible = true;
+  addButtonToToolbar({
+    title: 'Show/Hide All Traces',
+    onClick: () => {
+      const waveform = viewport.getWaveformData();
+      if (!waveform) return;
+      allVisible = !allVisible;
+      viewport.setDisplaySetPresentation(ecgDataId, {
+        visibleChannels: allVisible ? waveform.channels.map((_, i) => i) : [],
+      });
+      // Synchronize checkboxes
+      const checkboxes = document.querySelectorAll(
+        '#cornerstone-element-container input[type="checkbox"]'
+      ) as NodeListOf<HTMLInputElement>;
+      checkboxes.forEach((cb) => {
+        cb.checked = allVisible;
+      });
+    },
+  });
+
+  // Enable keyboard scrolling: Left/Right Arrow keys scroll the ECG time-window
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowRight') {
+      viewport.scroll({ delta: 0.25 }); // scroll 25% screen forward
+    } else if (event.key === 'ArrowLeft') {
+      viewport.scroll({ delta: -0.25 }); // scroll 25% screen backward
+    }
+  });
+
   const channels = viewport.getVisibleChannels();
   channels.forEach((channel, index) => {
     addCheckboxToToolbar({

@@ -2,9 +2,7 @@ import type { Types } from '@cornerstonejs/core';
 import { getToolGroupForViewport } from '../../store/ToolGroupManager';
 import type { SpatialLinkOptions } from './types';
 
-function getFrameOfReferenceUID(
-  viewport: Types.IViewport
-): string | undefined {
+function getFrameOfReferenceUID(viewport: Types.IViewport): string | undefined {
   return viewport.getFrameOfReferenceUID?.();
 }
 
@@ -100,7 +98,8 @@ export default function areViewportsSpatiallyLinked(
       );
 
       return (
-        !!sourceToolGroup && !!targetToolGroup &&
+        !!sourceToolGroup &&
+        !!targetToolGroup &&
         sourceToolGroup.id === targetToolGroup.id
       );
     }

@@ -31,7 +31,7 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
   async addData(
     ctx: ECGCanvasRenderContext,
     data: LoadedData,
-    options: DataAddOptions
+    _options: DataAddOptions
   ): Promise<RenderPathAttachment<ECGDataPresentation>> {
     const waveform = data as unknown as LoadedData<ECGWaveformPayload>;
 
@@ -191,6 +191,7 @@ function drawFrame(
 
   ensureECGCanvasSize(canvas);
 
+  const layoutType = currentDataPresentation?.layoutType ?? '12x1';
   const metrics = computeECGRenderMetrics({
     canvas,
     visibleChannels,
@@ -199,10 +200,16 @@ function drawFrame(
       currentCamera.timeRange[1] - currentCamera.timeRange[0]
     ),
     valueRange: currentCamera.valueRange,
+    sweepSpeed: currentDataPresentation?.sweepSpeed,
+    sensitivityMmMv: currentDataPresentation?.sensitivityMmMv,
+    layoutType,
   }) as RenderWindowMetrics;
   const layouts = computeECGChannelLayouts({
     visibleChannels,
     channelScale: metrics.channelScale,
+    layoutType,
+    numberOfSamples: waveform.numberOfSamples,
+    ecgWidth: metrics.ecgWidth,
   });
   const timeWindow = computeTimeWindow(waveform, currentCamera);
   const dpr = window.devicePixelRatio || 1;
@@ -233,9 +240,18 @@ function drawFrame(
     yOffset * dpr
   );
 
-  drawECGGrid(canvasContext, metrics, {
-    showGrid: currentDataPresentation?.showGrid,
-  });
+  drawECGGrid(
+    canvasContext,
+    {
+      ...metrics,
+      sweepSpeed: currentDataPresentation?.sweepSpeed,
+      sensitivityMmMv: currentDataPresentation?.sensitivityMmMv,
+      showAmplitudeLabels: currentDataPresentation?.showAmplitudeLabels,
+    },
+    {
+      showGrid: currentDataPresentation?.showGrid,
+    }
+  );
   drawECGTraces({
     ctx: canvasContext,
     layouts,

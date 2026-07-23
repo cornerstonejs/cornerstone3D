@@ -45,16 +45,25 @@ class ECGViewportLegacyAdapter extends ECGViewport {
 
     this.setDisplaySetPresentation(dataId, {
       visibleChannels: props.visibleChannels,
+      sweepSpeed: props.sweepSpeed,
+      sensitivityMmMv: props.sensitivityMmMv,
+      showAmplitudeLabels: props.showAmplitudeLabels,
+      layoutType: props.layoutType,
     });
   }
 
   getProperties(): ECGViewportProperties {
     const dataId = this.getFirstBinding()?.data.id;
+    const presentation = dataId
+      ? this.getDisplaySetPresentation(dataId)
+      : undefined;
 
     return {
-      visibleChannels: dataId
-        ? this.getDisplaySetPresentation(dataId)?.visibleChannels
-        : undefined,
+      visibleChannels: presentation?.visibleChannels,
+      sweepSpeed: presentation?.sweepSpeed,
+      sensitivityMmMv: presentation?.sensitivityMmMv,
+      showAmplitudeLabels: presentation?.showAmplitudeLabels,
+      layoutType: presentation?.layoutType,
     };
   }
 
@@ -68,6 +77,10 @@ class ECGViewportLegacyAdapter extends ECGViewport {
 
     this.setDisplaySetPresentation(dataId, {
       visibleChannels: waveform.channels.map((_channel, index) => index),
+      sweepSpeed: undefined,
+      sensitivityMmMv: undefined,
+      showAmplitudeLabels: undefined,
+      layoutType: undefined,
     });
   }
 
@@ -103,10 +116,10 @@ class ECGViewportLegacyAdapter extends ECGViewport {
   }
 
   /**
-   * Compatibility wrapper for legacy callers. Direct Next viewports should use
+   * Compatibility wrapper for legacy callers. Next viewports should use
    * `resetViewState`.
    */
-  resetCamera(): boolean {
+  resetCamera(_options?: unknown): boolean {
     return this.resetViewState();
   }
 }
