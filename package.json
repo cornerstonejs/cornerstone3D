@@ -164,7 +164,7 @@
     "tsc-alias": "1.8.17",
     "typescript": "5.5.4",
     "url-loader": "4.1.1",
-    "vitest": "4.1.8",
+    "vitest": "4.1.10",
     "webpack": "5.105.0",
     "webpack-bundle-analyzer": "4.10.2",
     "webpack-cli": "5.1.4",
