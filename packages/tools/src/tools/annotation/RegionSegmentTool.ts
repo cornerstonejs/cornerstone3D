@@ -166,6 +166,18 @@ class RegionSegmentTool extends GrowCutBaseTool {
       Events.MOUSE_CLICK,
       this._endCallback as unknown as EventListener
     );
+    element.addEventListener(
+      Events.TOUCH_END,
+      this._endCallback as unknown as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_DRAG,
+      this._dragCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_TAP,
+      this._endCallback as unknown as EventListener
+    );
   }
 
   private _deactivateDraw = (element: HTMLDivElement): void => {
@@ -179,6 +191,18 @@ class RegionSegmentTool extends GrowCutBaseTool {
     );
     element.removeEventListener(
       Events.MOUSE_CLICK,
+      this._endCallback as unknown as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_END,
+      this._endCallback as unknown as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_DRAG,
+      this._dragCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_TAP,
       this._endCallback as unknown as EventListener
     );
   };

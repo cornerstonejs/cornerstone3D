@@ -45,6 +45,9 @@ class BrushTool extends LabelmapBaseTool {
     canvas: Types.Point2;
     world: Types.Point3;
   } | null = null;
+  // Native-event timestamp of the interaction that activated the current draw
+  // loop, used to discard delayed TOUCH_TAP events from a previous gesture.
+  private _drawStartTimeStamp = 0;
   private _lazyEdit = new LazyBrushEditController();
 
   constructor(
@@ -218,14 +221,17 @@ class BrushTool extends LabelmapBaseTool {
     element: HTMLDivElement,
     centerCanvas: Types.Point2,
     viewportId: string,
-    segmentationId: string
+    segmentationId: string,
+    isTouch = false
   ): void {
     this._lazyEdit.scheduleCleanup({
       element,
       centerCanvas,
       viewportId,
       segmentationId,
-      refreshCursor: this._refreshCursor.bind(this),
+      refreshCursor: isTouch
+        ? (cleanupElement: HTMLDivElement) => this._clearCursor(cleanupElement)
+        : this._refreshCursor.bind(this),
     });
   }
 
@@ -265,6 +271,7 @@ class BrushTool extends LabelmapBaseTool {
     // This might be a mouse down
     this._previewData.isDrag = false;
     this._previewData.timerStart = Date.now();
+    this._drawStartTimeStamp = (eventData.event as Event)?.timeStamp ?? 0;
     const canvasPoint = vec2.clone(currentPoints.canvas) as Types.Point2;
     const worldPoint = viewport.canvasToWorld([
       canvasPoint[0],
@@ -284,6 +291,7 @@ class BrushTool extends LabelmapBaseTool {
       return false;
     }
     this._calculateCursor(element, canvasPoint);
+    BrushTool.activeCursorTool = this;
     this._resetLazyEditState();
 
     if (this._isLazyLabelmapEditingEnabled(this._hoverData.viewport)) {
@@ -442,9 +450,47 @@ class BrushTool extends LabelmapBaseTool {
     this._refreshCursor(element, centerCanvas);
   }
 
+  private _isTouchInteraction(evt: EventTypes.InteractionEventType): boolean {
+    const { eventName } = evt.detail;
+    return (
+      eventName === Events.TOUCH_START ||
+      eventName === Events.TOUCH_START_ACTIVATE ||
+      eventName === Events.TOUCH_DRAG ||
+      eventName === Events.TOUCH_END ||
+      eventName === Events.TOUCH_TAP
+    );
+  }
+
+  private _clearCursor(element: HTMLDivElement): void {
+    // The cursor may have been rendered on linked viewports too; rerender
+    // all of them, not just the source viewport, so no stale circle remains.
+    const viewportIdsToRender = this._hoverData?.viewportIdsToRender;
+    this._hoverData = undefined;
+
+    if (viewportIdsToRender?.length) {
+      triggerAnnotationRenderForViewportUIDs(viewportIdsToRender);
+      return;
+    }
+
+    const enabledElement = getEnabledElement(element);
+    if (enabledElement) {
+      triggerAnnotationRenderForViewportUIDs([enabledElement.viewport.id]);
+    }
+  }
+
   private _dragCallback = (evt: EventTypes.InteractionEventType): void => {
     const eventData = evt.detail;
     const { element, currentPoints } = eventData;
+
+    const { currentPointsList } = eventData as EventTypes.TouchDragEventDetail;
+    if (currentPointsList?.length > 1) {
+      // A second finger reclassifies the gesture (pinch zoom, multi-finger
+      // scroll); stop painting and roll the stroke back rather than keep
+      // drawing at the mean touch point.
+      this._cancelTouchStroke(element);
+      return;
+    }
+
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
@@ -539,6 +585,35 @@ class BrushTool extends LabelmapBaseTool {
     this._previewData.startPoint = currentCanvasClone;
   };
 
+  /**
+   * Cancels an in-progress touch stroke: rolls back the voxel writes recorded
+   * so far and tears the draw loop down, so a gesture that turns out to be
+   * multi-finger does not leave paint behind. The memo is committed only to
+   * materialize its undo state and is discarded without reaching the history
+   * stack.
+   */
+  private _cancelTouchStroke(element: HTMLDivElement): void {
+    const { memo } = this;
+    if (memo?.commitMemo?.()) {
+      memo.restoreMemo(true);
+    }
+    this.memo = null;
+
+    this._deactivateDraw(element);
+    resetElementCursor(element);
+
+    this._editData = null;
+    this._lastDragInfo = null;
+    this._previewData.preview = null;
+    this._previewData.isDrag = false;
+    if (this._previewData.timer) {
+      window.clearTimeout(this._previewData.timer);
+      this._previewData.timer = null;
+    }
+    this._resetLazyEditState();
+    this._clearCursor(element);
+  }
+
   private _calculateCursor(element, _centerCanvas) {
     const enabledElement = getEnabledElement(element);
     const operationData = this.getOperationData(element);
@@ -562,6 +637,17 @@ class BrushTool extends LabelmapBaseTool {
   private _endCallback = (evt: EventTypes.InteractionEventType): void => {
     const eventData = evt.detail;
     const { element } = eventData;
+
+    if (eventData.eventName === Events.TOUCH_TAP) {
+      // TOUCH_TAP is dispatched on a delay after touchend, so a tap from a
+      // previous gesture can land while a new stroke is in progress. Only
+      // honor taps belonging to the gesture that activated this draw loop.
+      const tapTimeStamp = (eventData.event as Event)?.timeStamp ?? 0;
+      if (tapTimeStamp < this._drawStartTimeStamp) {
+        return;
+      }
+    }
+
     const enabledElement = getEnabledElement(element);
 
     const operationData = this.getOperationData(element);
@@ -598,14 +684,21 @@ class BrushTool extends LabelmapBaseTool {
         element,
         evt.detail.currentPoints.canvas as Types.Point2,
         enabledElement.viewport.id,
-        operationData.segmentationId
+        operationData.segmentationId,
+        this._isTouchInteraction(evt)
       );
       triggerAnnotationRenderForViewportUIDs(
         this._hoverData.viewportIdsToRender
       );
     } else {
       this._resetLazyEditState();
-      this.updateCursor(evt);
+      if (this._isTouchInteraction(evt)) {
+        // On touch there is no pointer hovering after release, so clear the
+        // cursor instead of re-showing it at the lift point.
+        this._clearCursor(element);
+      } else {
+        this.updateCursor(evt);
+      }
     }
 
     this.applyActiveStrategyCallback(
@@ -720,6 +813,19 @@ class BrushTool extends LabelmapBaseTool {
       Events.MOUSE_CLICK,
       this._endCallback as EventListener
     );
+
+    element.addEventListener(
+      Events.TOUCH_END,
+      this._endCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_DRAG,
+      this._dragCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_TAP,
+      this._endCallback as EventListener
+    );
   };
 
   /**
@@ -736,6 +842,19 @@ class BrushTool extends LabelmapBaseTool {
     );
     element.removeEventListener(
       Events.MOUSE_CLICK,
+      this._endCallback as EventListener
+    );
+
+    element.removeEventListener(
+      Events.TOUCH_END,
+      this._endCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_DRAG,
+      this._dragCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_TAP,
       this._endCallback as EventListener
     );
   };

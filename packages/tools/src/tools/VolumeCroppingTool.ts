@@ -238,6 +238,7 @@ class VolumeCroppingTool extends BaseTool {
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
+      supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         showCornerSpheres: true,
         showHandles: true,
@@ -471,9 +472,16 @@ class VolumeCroppingTool extends BaseTool {
       if (this.cleanUp !== null) {
         // Clean up previous event listener
         document.removeEventListener('mouseup', this.cleanUp);
+        document.removeEventListener('touchend', this.cleanUp);
+        document.removeEventListener('touchcancel', this.cleanUp);
       }
 
       this.cleanUp = () => {
+        // All listener types are armed below; whichever fires first must
+        // clear the others so no stale once-listener lingers on document.
+        document.removeEventListener('mouseup', this.cleanUp);
+        document.removeEventListener('touchend', this.cleanUp);
+        document.removeEventListener('touchcancel', this.cleanUp);
         mapper.setSampleDistance(originalSampleDistance);
 
         // Reset cursor style
@@ -502,6 +510,10 @@ class VolumeCroppingTool extends BaseTool {
       };
 
       document.addEventListener('mouseup', this.cleanUp, { once: true });
+      document.addEventListener('touchend', this.cleanUp, { once: true });
+      // OS-interrupted gestures (incoming call, notification shade) end in
+      // touchcancel, never touchend.
+      document.addEventListener('touchcancel', this.cleanUp, { once: true });
     }
 
     return true;

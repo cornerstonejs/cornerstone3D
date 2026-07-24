@@ -1,10 +1,12 @@
 import getActiveToolForTouchEvent from '../shared/getActiveToolForTouchEvent';
+import getTouchCallbackWithMouseFallback from '../shared/getTouchCallbackWithMouseFallback';
 import { state } from '../../store/state';
 import type { TouchDragEventType } from '../../types/EventTypes';
 
 /**
- * touchDrag - Event handler for touchDrag events. Uses `customCallbackHandler` to fire
- * the `touchDragCallback` function on active tools.
+ * touchDrag - Event handler for touchDrag events. Fires the `touchDragCallback`
+ * function on the active tool, falling back to `mouseDragCallback` for tools
+ * that declare 'Touch' support.
  */
 export default function touchDrag(evt: TouchDragEventType) {
   if (state.isInteractingWithTool) {
@@ -13,11 +15,15 @@ export default function touchDrag(evt: TouchDragEventType) {
 
   const activeTool = getActiveToolForTouchEvent(evt);
 
-  const noFoundToolOrDoesNotHaveTouchDragCallback =
-    !activeTool || typeof activeTool.touchDragCallback !== 'function';
-  if (noFoundToolOrDoesNotHaveTouchDragCallback) {
+  const dragCallback = getTouchCallbackWithMouseFallback(
+    activeTool,
+    'touchDragCallback',
+    'mouseDragCallback'
+  );
+
+  if (!dragCallback) {
     return;
   }
 
-  activeTool.touchDragCallback(evt);
+  dragCallback(evt);
 }
