@@ -19,6 +19,10 @@ import getMinMax from './shared/getMinMax';
 import getPixelDataTypeFromMinMax, {
   validatePixelDataType,
 } from './shared/getPixelDataTypeFromMinMax';
+import {
+  getScalingMode,
+  hasNonIntegerScaling,
+} from './shared/scaling/getScalingMode';
 import isColorImage from './shared/isColorImage';
 
 const imageUtils = {
@@ -77,10 +81,7 @@ export function postProcessDecodedPixels(
   const willScale = options.preScale?.enabled;
 
   const hasFloatRescale =
-    willScale &&
-    Object.values(options.preScale.scalingParameters).some(
-      (v) => typeof v === 'number' && !Number.isInteger(v)
-    );
+    willScale && hasNonIntegerScaling(options.preScale.scalingParameters);
 
   const disableScale =
     !options.preScale.enabled || (!canRenderFloat && hasFloatRescale);
@@ -97,11 +98,17 @@ export function postProcessDecodedPixels(
       maxBeforeScale,
       scalingParameters
     );
-    invalidType = !validatePixelDataType(
-      scaledValues.min,
-      scaledValues.max,
-      typedArrayConstructors[type]
-    );
+    // Non-integer scaling into an integer target truncates. Scaled min/max can
+    // look integer (e.g. [0, 1]) so validatePixelDataType alone isn't enough.
+    // See #2706.
+    const isFloatTarget = typedArrayConstructors[type] === Float32Array;
+    invalidType =
+      (hasFloatRescale && !isFloatTarget) ||
+      !validatePixelDataType(
+        scaledValues.min,
+        scaledValues.max,
+        typedArrayConstructors[type]
+      );
   }
 
   if (type && !invalidType) {
@@ -116,7 +123,8 @@ export function postProcessDecodedPixels(
       options,
       minBeforeScale,
       maxBeforeScale,
-      imageFrame
+      imageFrame,
+      hasFloatRescale
     );
   } else {
     pixelDataArray = _getDefaultPixelDataArray(
@@ -235,10 +243,19 @@ function _handlePreScaleSetup(
   options,
   minBeforeScale,
   maxBeforeScale,
-  imageFrame
+  imageFrame,
+  hasFloatRescale
 ) {
   const scalingParameters = options.preScale.scalingParameters;
   _validateScalingParameters(scalingParameters);
+
+  // Force Float32Array for non-integer scaling; scaled min/max can look integer
+  // (e.g. [0, 1]) and mislead getPixelDataTypeFromMinMax. See #2706.
+  if (hasFloatRescale) {
+    const typedArray = new Float32Array(imageFrame.pixelData.length);
+    typedArray.set(imageFrame.pixelData, 0);
+    return typedArray;
+  }
 
   const scaledValues = _calculateScaledMinMax(
     minBeforeScale,
@@ -263,36 +280,30 @@ function _getDefaultPixelDataArray(min, max, imageFrame) {
 }
 
 function _calculateScaledMinMax(minValue, maxValue, scalingParameters) {
-  const { rescaleSlope, rescaleIntercept, modality, doseGridScaling, suvbw } =
+  const { rescaleSlope, rescaleIntercept, doseGridScaling, suvbw } =
     scalingParameters;
 
-  if (modality === 'PT' && typeof suvbw === 'number' && !isNaN(suvbw)) {
-    return {
-      min: suvbw * (minValue * rescaleSlope + rescaleIntercept),
-      max: suvbw * (maxValue * rescaleSlope + rescaleIntercept),
-    };
-  } else if (
-    modality === 'RTDOSE' &&
-    typeof doseGridScaling === 'number' &&
-    !isNaN(doseGridScaling)
-  ) {
-    return {
-      min: minValue * doseGridScaling,
-      max: maxValue * doseGridScaling,
-    };
-  } else if (
-    typeof rescaleSlope === 'number' &&
-    typeof rescaleIntercept === 'number'
-  ) {
-    return {
-      min: rescaleSlope * minValue + rescaleIntercept,
-      max: rescaleSlope * maxValue + rescaleIntercept,
-    };
-  } else {
-    return {
-      min: minValue,
-      max: maxValue,
-    };
+  switch (getScalingMode(scalingParameters)) {
+    case 'PT_SUV':
+      return {
+        min: suvbw * (minValue * rescaleSlope + rescaleIntercept),
+        max: suvbw * (maxValue * rescaleSlope + rescaleIntercept),
+      };
+    case 'RTDOSE':
+      return {
+        min: minValue * doseGridScaling,
+        max: maxValue * doseGridScaling,
+      };
+    case 'RESCALE':
+      return {
+        min: rescaleSlope * minValue + rescaleIntercept,
+        max: rescaleSlope * maxValue + rescaleIntercept,
+      };
+    default:
+      return {
+        min: minValue,
+        max: maxValue,
+      };
   }
 }
 

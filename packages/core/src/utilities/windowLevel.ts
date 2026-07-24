@@ -58,6 +58,16 @@ function toLowHighRange(
   lower: number;
   upper: number;
 } {
+  // WW <= 1 makes (WW-1) = 0, so LINEAR/SAMPLED_SIGMOID produce lower === upper
+  // (division by zero). Fall back to LINEAR_EXACT. See #2706.
+  if (
+    windowWidth <= 1 &&
+    (voiLUTFunction === VOILUTFunctionType.LINEAR ||
+      voiLUTFunction === VOILUTFunctionType.SAMPLED_SIGMOID)
+  ) {
+    voiLUTFunction = VOILUTFunctionType.LINEAR_EXACT;
+  }
+
   // Note: The SIGMOID function is currently treated the same as LINEAR
   // because we don't have a good way to define "bounds" for it.
   // Remove or statement when fixed
