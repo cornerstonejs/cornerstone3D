@@ -1,5 +1,5 @@
 {
-  "version": "5.6.10",
+  "version": "5.6.11",
   "packages": [
     "packages/codemods",
     "packages/metadata",
