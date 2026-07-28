@@ -590,14 +590,19 @@ export function drawECGTraces<TChannel extends ECGChannelLike>(args: {
       startSample,
       endSample,
     }) => {
-      const defaultStart = startSample !== undefined ? startSample : startIndex;
-      const defaultEnd =
-        endSample !== undefined ? endSample : (endIndex ?? channel.data.length);
+      const layoutStart = startSample ?? 0;
+      const layoutEnd = endSample ?? channel.data.length;
 
-      const resolvedEndIndex = Math.min(defaultEnd, channel.data.length);
+      const windowStart = startIndex !== undefined ? startIndex : layoutStart;
+      const windowEnd = endIndex !== undefined ? endIndex : layoutEnd;
+
       const resolvedStartIndex = Math.max(
-        0,
-        Math.min(defaultStart, resolvedEndIndex - 1)
+        layoutStart,
+        Math.min(windowStart, layoutEnd - 1)
+      );
+      const resolvedEndIndex = Math.min(
+        layoutEnd,
+        Math.max(windowEnd, resolvedStartIndex + 1)
       );
       const sampleCount = Math.max(1, resolvedEndIndex - resolvedStartIndex);
 

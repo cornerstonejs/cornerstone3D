@@ -228,10 +228,10 @@ class UltrasoundDirectionalTool extends AnnotationTool {
       this.getToolName()
     );
 
-    let _movingTextBox = false;
+    let movingTextBox = false;
     let handleIndex;
     if ((handle as TextBoxHandle).worldPosition) {
-      _movingTextBox = true;
+      movingTextBox = true;
     } else {
       handleIndex = data.handles.points.findIndex((p) => p === handle);
     }
@@ -240,6 +240,7 @@ class UltrasoundDirectionalTool extends AnnotationTool {
 
     this.editData = {
       handleIndex,
+      movingTextBox,
       annotation,
       viewportIdsToRender,
     };
