@@ -26,8 +26,18 @@ import type {
 } from './ECGViewportTypes';
 import { resolveECGCanvasMapping } from './ecgViewportCamera';
 
-/** @internal */
+/**
+ * Render path implementation that draws ECG grid, channel labels, and traces on a 2D canvas.
+ * @internal
+ */
 export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
+  /**
+   * Adds an ECG dataset payload to the render path attachment list.
+   * @param ctx - Canvas rendering context.
+   * @param data - ECG waveform dataset payload.
+   * @param _options - Additional attachment options.
+   * @returns Promise resolving to the render path attachment descriptor.
+   */
   async addData(
     ctx: ECGCanvasRenderContext,
     data: LoadedData,

@@ -117,10 +117,19 @@ class ECGViewport extends GenericViewport<
     }
   }
 
+  /**
+   * Returns the active ECG waveform dataset payload mounted on this viewport.
+   * @returns Active waveform payload or null.
+   */
   getWaveformData(): ECGWaveformPayload | null {
     return this.getWaveformBindingData() ?? null;
   }
 
+  /**
+   * Returns a view reference describing the mounted ECG dataset state.
+   * @param _specifier - Optional specifier flags.
+   * @returns View reference representation.
+   */
   getViewReference(_specifier: ViewReferenceSpecifier = {}): ViewReference {
     const dataId = this.getFirstBinding()?.data.id;
 
@@ -132,18 +141,35 @@ class ECGViewport extends GenericViewport<
     };
   }
 
+  /**
+   * Returns a unique string identifier for the view reference.
+   * @param _specifier - Optional specifier flags.
+   * @returns String identifier.
+   */
   getViewReferenceId(_specifier: ViewReferenceSpecifier = {}): string {
     return `imageId:${this.getCurrentImageId()}`;
   }
 
+  /**
+   * Sets the view reference for the viewport.
+   * @param _viewRef - Target view reference.
+   */
   setViewReference(_viewRef: ViewReference): void {
     // ECG viewports always show the single active waveform.
   }
 
+  /**
+   * Returns the current slice index (always 0 for 2D ECG viewports).
+   * @returns Slice index 0.
+   */
   getSliceIndex(): number {
     return 0;
   }
 
+  /**
+   * Returns the current zoom level of the viewport.
+   * @returns Zoom level factor.
+   */
   getZoom(): number {
     return (
       this.getResolvedView()?.zoom ?? Math.max(this.viewState.scale ?? 1, 0.001)
@@ -172,6 +198,11 @@ class ECGViewport extends GenericViewport<
     ];
   }
 
+  /**
+   * Sets the zoom level for the viewport relative to an optional canvas point.
+   * @param zoom - Scale factor to apply.
+   * @param canvasPoint - Optional point in canvas space to zoom relative to.
+   */
   setZoom(zoom: number, canvasPoint?: Point2): void {
     const resolvedView = this.getResolvedView();
 
@@ -188,10 +219,18 @@ class ECGViewport extends GenericViewport<
     });
   }
 
+  /**
+   * Returns the current 2D pan offset of the viewport.
+   * @returns Array containing [x, y] pan coordinates.
+   */
   getPan(): Point2 {
     return this.getResolvedView()?.pan ?? [0, 0];
   }
 
+  /**
+   * Sets the 2D pan offset for the viewport.
+   * @param pan - Target [x, y] pan offset.
+   */
   setPan(pan: Point2): void {
     const resolvedView = this.getResolvedView();
 

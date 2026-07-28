@@ -27,17 +27,27 @@ type ECGResolvedViewState = {
   waveform: ECGWaveformPayload;
 };
 
+/**
+ * Computes coordinate transforms and resolved state for ECG viewport rendering.
+ */
 class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
   private cachedCanvasMapping?: ECGCanvasMapping;
 
+  /** Gets the current zoom scale factor. */
   get zoom(): number {
     return Math.max(this.state.viewState.scale ?? 1, 0.001);
   }
 
+  /** Gets the current 2D pan offset. */
   get pan(): Point2 {
     return getPanForECGCanvasMapping(this.getCanvasMapping());
   }
 
+  /**
+   * Converts a canvas-space point into 3D world-space coordinates.
+   * @param canvasPos - Point in canvas space [x, y].
+   * @returns 3D world point [sampleIndex, amplitude, channelIndex].
+   */
   canvasToWorld(canvasPos: Point2): Point3 {
     const mapping = this.getCanvasMapping();
     const channelLayouts = this.getChannelLayouts();

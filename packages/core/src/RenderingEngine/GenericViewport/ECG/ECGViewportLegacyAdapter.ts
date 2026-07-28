@@ -7,11 +7,24 @@ import { viewportProjection } from '../viewportProjection';
 import type { ECGViewState } from './ECGViewportTypes';
 import ECGViewport from './ECGViewport';
 
+/**
+ * Legacy adapter layer wrapping GenericViewport/ECG to provide backward compatibility
+ * with original ECGViewport API calls.
+ */
 class ECGViewportLegacyAdapter extends ECGViewport {
+  /**
+   * Loads and displays an ECG dataset given its image ID.
+   * @param imageId - Target image ID / display set ID.
+   */
   async setEcg(imageId: string): Promise<void> {
     await this.setDisplaySets({ displaySetId: imageId });
   }
 
+  /**
+   * Sets the visibility of a specific ECG channel trace by index.
+   * @param index - Zero-based index of the target channel.
+   * @param visible - True to display the channel, false to hide.
+   */
   setChannelVisibility(index: number, visible: boolean): void {
     const waveform = this.getWaveformData();
     const dataId = this.getFirstBinding()?.data.id;
@@ -36,6 +49,10 @@ class ECGViewportLegacyAdapter extends ECGViewport {
     });
   }
 
+  /**
+   * Sets presentation properties on the active ECG viewport.
+   * @param props - Object containing presentation properties.
+   */
   setProperties(props: ECGViewportProperties): void {
     const dataId = this.getFirstBinding()?.data.id;
 
