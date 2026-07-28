@@ -57,20 +57,31 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
     ];
 
     // Find the layout cell containing the coordinates
-    const layout =
-      channelLayouts.find((item) => {
-        const xStart = item.xOffset ?? 0;
-        const xEnd = xStart + (item.width ?? this.state.metrics.ecgWidth);
-        // Row heights are stacked vertically; determine boundaries of this row
-        const yStart = item.yOffset - item.itemHeight;
-        const yEnd = item.yOffset;
-        return (
-          subCanvasPos[0] >= xStart &&
-          subCanvasPos[0] <= xEnd &&
-          subCanvasPos[1] >= yStart &&
-          subCanvasPos[1] <= yEnd
-        );
-      }) || channelLayouts[0];
+    let layout = channelLayouts.find((item) => {
+      const xStart = item.xOffset ?? 0;
+      const xEnd = xStart + (item.width ?? this.state.metrics.ecgWidth);
+      // Row heights are stacked vertically; determine boundaries of this row
+      const yStart = item.yOffset - item.itemHeight;
+      const yEnd = item.yOffset;
+      return (
+        subCanvasPos[0] >= xStart &&
+        subCanvasPos[0] <= xEnd &&
+        subCanvasPos[1] >= yStart &&
+        subCanvasPos[1] <= yEnd
+      );
+    });
+
+    if (!layout && channelLayouts.length > 0) {
+      // Pick nearest layout by vertical distance to center line
+      layout = channelLayouts.reduce((nearest, item) => {
+        const itemCenterY = item.yOffset - item.itemHeight / 2;
+        const nearestCenterY = nearest.yOffset - nearest.itemHeight / 2;
+        return Math.abs(subCanvasPos[1] - itemCenterY) <
+          Math.abs(subCanvasPos[1] - nearestCenterY)
+          ? item
+          : nearest;
+      }, channelLayouts[0]);
+    }
 
     if (!layout) {
       return [0, 0, 0];

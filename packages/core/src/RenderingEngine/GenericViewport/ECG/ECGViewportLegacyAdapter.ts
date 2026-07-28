@@ -60,13 +60,24 @@ class ECGViewportLegacyAdapter extends ECGViewport {
       return;
     }
 
-    this.setDisplaySetPresentation(dataId, {
-      visibleChannels: props.visibleChannels,
-      sweepSpeed: props.sweepSpeed,
-      sensitivityMmMv: props.sensitivityMmMv,
-      showAmplitudeLabels: props.showAmplitudeLabels,
-      layoutType: props.layoutType,
-    });
+    const updatedProps: Partial<ECGViewportProperties> = {};
+    if (props.visibleChannels !== undefined) {
+      updatedProps.visibleChannels = props.visibleChannels;
+    }
+    if (props.sweepSpeed !== undefined) {
+      updatedProps.sweepSpeed = props.sweepSpeed;
+    }
+    if (props.sensitivityMmMv !== undefined) {
+      updatedProps.sensitivityMmMv = props.sensitivityMmMv;
+    }
+    if (props.showAmplitudeLabels !== undefined) {
+      updatedProps.showAmplitudeLabels = props.showAmplitudeLabels;
+    }
+    if (props.layoutType !== undefined) {
+      updatedProps.layoutType = props.layoutType;
+    }
+
+    this.setDisplaySetPresentation(dataId, updatedProps);
   }
 
   getProperties(): ECGViewportProperties {

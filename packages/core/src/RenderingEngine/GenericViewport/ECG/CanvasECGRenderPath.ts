@@ -260,7 +260,8 @@ function drawFrame(
     },
     {
       showGrid: currentDataPresentation?.showGrid,
-    }
+    },
+    layouts
   );
   drawECGTraces({
     ctx: canvasContext,

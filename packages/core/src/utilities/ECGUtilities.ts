@@ -56,6 +56,7 @@ export interface ECGChannelLayout<
   col?: number;
   row?: number;
   leadIndex?: number;
+  isRhythm?: boolean;
 }
 
 export interface ECGRenderMetrics {
@@ -232,8 +233,10 @@ export function computeECGHeight<TChannel extends ECGChannelLike>(
   }
 
   let totalHeight = 0;
+  const defaultEmptyRowHeight = 100 * channelScale * 1.25;
   for (let r = 0; r < rowCount; r++) {
-    totalHeight += (rowHeights[r] || 0) + ECG_CHANNEL_SPACING;
+    totalHeight +=
+      (rowHeights[r] || defaultEmptyRowHeight) + ECG_CHANNEL_SPACING;
   }
 
   return totalHeight || 1;
@@ -276,6 +279,7 @@ export function computeECGChannelLayouts<
     row: number;
     col: number;
     leadIndex: number;
+    isRhythm?: boolean;
   }[] = [];
 
   visibleChannels.forEach((channel, index) => {
@@ -294,9 +298,19 @@ export function computeECGChannelLayouts<
     }
   });
 
-  if (layoutType === '3x4+1' && visibleChannels.length > 1) {
-    const rhythmChannel = visibleChannels[1]; // Lead II
-    layoutItems.push({ channel: rhythmChannel, row: 3, col: 0, leadIndex: 1 });
+  if (layoutType === '3x4+1' && visibleChannels.length > 0) {
+    const rhythmChannel =
+      visibleChannels.find((c) => c.name?.toLowerCase().includes('ii')) ||
+      visibleChannels[1] ||
+      visibleChannels[0];
+    const rhythmLeadIndex = visibleChannels.indexOf(rhythmChannel);
+    layoutItems.push({
+      channel: rhythmChannel,
+      row: 3,
+      col: 0,
+      leadIndex: rhythmLeadIndex >= 0 ? rhythmLeadIndex : 1,
+      isRhythm: true,
+    });
   }
 
   const rowHeights = new Array(rowCount).fill(0);
@@ -454,14 +468,18 @@ export function computeECGRenderMetrics<TChannel extends ECGChannelLike>(args: {
   };
 }
 
-export function drawECGGrid(
+export function drawECGGrid<TChannel extends ECGChannelLike = ECGChannelLike>(
   ctx: CanvasRenderingContext2D,
-  metrics: ECGGridMetrics & {
+  metrics: Partial<ECGRenderMetrics> & {
+    ecgWidth: number;
+    ecgHeight: number;
+    channelScale: number;
     sweepSpeed?: number;
     sensitivityMmMv?: number;
     showAmplitudeLabels?: boolean;
   },
-  options?: { showGrid?: boolean }
+  options?: { showGrid?: boolean },
+  layouts?: ECGChannelLayout<TChannel>[]
 ): void {
   if (options?.showGrid === false || metrics.channelScale <= 0) {
     return;
@@ -474,6 +492,7 @@ export function drawECGGrid(
     sweepSpeed,
     sensitivityMmMv,
     showAmplitudeLabels = true,
+    worldToCanvasRatio = 1,
   } = metrics;
 
   let minorH: number;
@@ -508,25 +527,31 @@ export function drawECGGrid(
     majorV = ECG_SECONDS_WIDTH / 5;
   }
 
-  ctx.strokeStyle = ECG_RENDERING_COLORS.gridMinor;
-  ctx.lineWidth = 0.5;
-  ctx.beginPath();
+  const effectiveMinorH = minorH * worldToCanvasRatio;
+  const effectiveMinorV = minorV * worldToCanvasRatio;
 
-  for (let y = minorH; y <= ecgHeight; y += minorH) {
-    if (Math.round(y / minorH) % 5 !== 0) {
-      ctx.moveTo(0, y);
-      ctx.lineTo(ecgWidth, y);
+  // Only draw minor grid lines if spaced at least 4px apart on screen to prevent lag
+  if (effectiveMinorH >= 4 && effectiveMinorV >= 4) {
+    ctx.strokeStyle = ECG_RENDERING_COLORS.gridMinor;
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+
+    for (let y = minorH; y <= ecgHeight; y += minorH) {
+      if (Math.round(y / minorH) % 5 !== 0) {
+        ctx.moveTo(0, y);
+        ctx.lineTo(ecgWidth, y);
+      }
     }
-  }
 
-  for (let x = minorV; x <= ecgWidth; x += minorV) {
-    if (Math.round(x / minorV) % 5 !== 0) {
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, ecgHeight);
+    for (let x = minorV; x <= ecgWidth; x += minorV) {
+      if (Math.round(x / minorV) % 5 !== 0) {
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, ecgHeight);
+      }
     }
-  }
 
-  ctx.stroke();
+    ctx.stroke();
+  }
 
   ctx.strokeStyle = ECG_RENDERING_COLORS.gridMajor;
   ctx.lineWidth = 1;
@@ -544,19 +569,30 @@ export function drawECGGrid(
 
   ctx.stroke();
 
-  // If calibrated, draw millivolt markers on major horizontal lines
-  if (showAmplitudeLabels && sensitivityMmMv != null && sensitivityMmMv > 0) {
+  // Draw per-lead relative millivolt markers on major grid lines relative to channel baseline
+  if (
+    showAmplitudeLabels &&
+    sensitivityMmMv != null &&
+    sensitivityMmMv > 0 &&
+    layouts
+  ) {
     ctx.fillStyle = ECG_RENDERING_COLORS.label;
-    // Major horizontal grid line = 5mm. At 10mm/mV, 1 major block = 0.5 mV.
     const mvPerMajor = 5 / sensitivityMmMv;
     const fontSize = 10;
     ctx.font = `${fontSize}px monospace`;
-    for (let y = majorH; y <= ecgHeight; y += majorH) {
-      const blockNum = Math.round(y / majorH);
-      // We label baselines or offset increments.
-      const labelText = `${(blockNum * mvPerMajor).toFixed(1)} mV`;
-      ctx.fillText(labelText, 5, y - 2);
-    }
+
+    layouts.forEach((layout) => {
+      const { baseline, itemHeight } = layout;
+      const yPlus = baseline - majorH;
+      const yMinus = baseline + majorH;
+
+      if (yPlus >= baseline - itemHeight) {
+        ctx.fillText(`+${mvPerMajor.toFixed(1)} mV`, 5, yPlus - 2);
+      }
+      if (yMinus <= baseline + itemHeight) {
+        ctx.fillText(`-${mvPerMajor.toFixed(1)} mV`, 5, yMinus - 2);
+      }
+    });
   }
 }
 

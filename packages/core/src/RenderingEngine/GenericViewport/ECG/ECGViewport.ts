@@ -358,6 +358,16 @@ class ECGViewport extends GenericViewport<
     } else if (cameraPatch.scale !== undefined && cameraPatch.scale > 0) {
       this.setZoom(cameraPatch.scale);
     }
+
+    if (cameraPatch.focalPoint) {
+      const currentCamera = this.getCamera();
+      if (currentCamera.focalPoint) {
+        const dx = cameraPatch.focalPoint[0] - currentCamera.focalPoint[0];
+        const dy = cameraPatch.focalPoint[1] - currentCamera.focalPoint[1];
+        const currentPan = this.getPan();
+        this.setPan([currentPan[0] + dx, currentPan[1] + dy]);
+      }
+    }
   }
 
   /**

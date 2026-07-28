@@ -175,7 +175,7 @@ async function run() {
       });
       // Synchronize checkboxes
       const checkboxes = document.querySelectorAll(
-        '#cornerstone-element-container input[type="checkbox"]'
+        '#demo-toolbar input[type="checkbox"]'
       ) as NodeListOf<HTMLInputElement>;
       checkboxes.forEach((cb) => {
         cb.checked = allVisible;
