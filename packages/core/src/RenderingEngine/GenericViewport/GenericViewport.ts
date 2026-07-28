@@ -95,8 +95,6 @@ abstract class GenericViewport<
   constructor(args: { id: ViewportId; element: HTMLDivElement }) {
     this.id = args.id;
     this.element = args.element;
-    this.canvasToWorld = this.canvasToWorld.bind(this);
-    this.worldToCanvas = this.worldToCanvas.bind(this);
   }
 
   /**

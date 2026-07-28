@@ -186,9 +186,9 @@ async function run() {
   // Enable keyboard scrolling: Left/Right Arrow keys scroll the ECG time-window
   window.addEventListener('keydown', (event) => {
     if (event.key === 'ArrowRight') {
-      viewport.scroll({ delta: 0.25 }); // scroll 25% screen forward
+      viewport.scroll(0.25); // scroll 25% screen forward
     } else if (event.key === 'ArrowLeft') {
-      viewport.scroll({ delta: -0.25 }); // scroll 25% screen backward
+      viewport.scroll(-0.25); // scroll 25% screen backward
     }
   });
 

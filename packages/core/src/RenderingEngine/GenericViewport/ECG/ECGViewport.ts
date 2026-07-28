@@ -302,6 +302,26 @@ class ECGViewport extends GenericViewport<
   }
 
   /**
+   * Sets camera parameters. Translates parallelScale updates from tools like
+   * ZoomTool into viewport zoom level updates.
+   */
+  setCamera(cameraPatch: Partial<ICamera>): void {
+    if (
+      cameraPatch.parallelScale !== undefined &&
+      cameraPatch.parallelScale > 0
+    ) {
+      const currentCamera = this.getCamera();
+      if (currentCamera.parallelScale) {
+        const ratio = currentCamera.parallelScale / cameraPatch.parallelScale;
+        const currentZoom = this.viewState.scale ?? 1;
+        this.setZoom(currentZoom * ratio);
+      }
+    } else if (cameraPatch.scale !== undefined && cameraPatch.scale > 0) {
+      this.setZoom(cameraPatch.scale);
+    }
+  }
+
+  /**
    * ECG viewports have no rotation.
    */
   getRotation(): number {
@@ -311,15 +331,18 @@ class ECGViewport extends GenericViewport<
   /**
    * Scrolls the ECG viewport horizontally by `delta` viewport-widths.
    *
-   * Positive delta scrolls forward in time (right), negative scrolls back (left).
+   * Matches the Cornerstone viewport scroll convention so OHIF's scroll utility
+   * (which calls `viewport.scroll(delta, debounce, loop)` positionally) works
+   * correctly. Positive delta scrolls forward in time; negative scrolls back.
    * The time window is clamped so it cannot scroll past the start or end of the signal.
    *
-   * @param options - `{ delta: number }` — number of viewport-widths to shift.
-   *   Use `delta = 1` for one full screen forward, `delta = -1` for one full screen back.
-   *   Fractional values (e.g. `0.5`) scroll half a screen.
+   * @param delta - Number of viewport-widths to shift (default 1).
+   *   Use `1` for one full screen forward, `-1` for one full screen back.
+   *   Fractional values (e.g. `0.25`) scroll a quarter screen.
+   * @param _debounceLoading - Ignored; kept for signature compatibility.
+   * @param _loop - Ignored; ECG viewports clamp rather than loop.
    */
-  scroll(options?: { delta?: number }): void {
-    const delta = options?.delta ?? 1;
+  scroll(delta = 1, _debounceLoading = true, _loop = false): void {
     const waveform = this.getWaveformData();
 
     if (!waveform) {

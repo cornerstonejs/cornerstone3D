@@ -435,9 +435,11 @@ export function computeECGRenderMetrics<TChannel extends ECGChannelLike>(args: {
   }
 
   const ecgHeight = computeECGHeight(visibleChannels, channelScale, layoutType);
+  const clientWidth = canvas.clientWidth || canvas.width || ecgWidth;
+  const clientHeight = canvas.clientHeight || canvas.height || ecgHeight;
   const worldToCanvasRatio = Math.min(
-    canvas.clientWidth / Math.max(1, ecgWidth),
-    canvas.clientHeight / Math.max(1, ecgHeight)
+    clientWidth / Math.max(1, ecgWidth),
+    clientHeight / Math.max(1, ecgHeight)
   );
   const drawWidth = ecgWidth * worldToCanvasRatio;
   const drawHeight = ecgHeight * worldToCanvasRatio;
@@ -447,8 +449,8 @@ export function computeECGRenderMetrics<TChannel extends ECGChannelLike>(args: {
     ecgHeight,
     channelScale,
     worldToCanvasRatio,
-    xOffsetCanvas: (canvas.clientWidth - drawWidth) / 2,
-    yOffsetCanvas: (canvas.clientHeight - drawHeight) / 2,
+    xOffsetCanvas: (clientWidth - drawWidth) / 2,
+    yOffsetCanvas: (clientHeight - drawHeight) / 2,
   };
 }
 
