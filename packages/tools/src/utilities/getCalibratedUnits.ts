@@ -234,7 +234,10 @@ const getCalibratedProbeUnitsAndValue = (image, handles) => {
       physicalDeltaX;
 
     calibrationType =
-      region.physicalUnitsYDirection === -1 ? 'ECG Region' : 'US Region';
+      region.physicalUnitsYDirection === -1 ||
+      region.physicalUnitsYDirection === -2
+        ? 'ECG Region'
+        : 'US Region';
     if (region.physicalUnitsYDirection === -1) {
       values = [xValue, yValue];
       units = [
