@@ -18,6 +18,7 @@ const SUPPORTED_PROBE_VARIANT = [
   '4,3', // x: seconds & y : cm
   '4,7', // x: seconds & y : cm/sec
   '4,-1', // x: seconds & y : mV (ECG)
+  '4,-2', // x: seconds (ms) & y : mV (ECG)
 ];
 
 /**
@@ -38,6 +39,8 @@ const UNIT_MAPPING = {
   0xc: 'degrees',
   /** Extension for ECG amplitude (not in DICOM table). */
   [-1]: 'mV',
+  /** Extension for ECG time in milliseconds (not in DICOM table). */
+  [-2]: 'ms',
 };
 
 const SQUARE = '\xb2';
@@ -122,15 +125,40 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
       calibrationType = 'US Region';
       unit = UNIT_MAPPING[region.physicalUnitsXDirection] || 'unknown';
       areaUnit = unit + SQUARE;
-    } else if (region && region.physicalUnitsYDirection === -1) {
+    } else if (
+      region &&
+      (region.physicalUnitsYDirection === -1 ||
+        region.physicalUnitsYDirection === -2)
+    ) {
       const physicalDeltaX = Math.abs(region.physicalDeltaX);
       const physicalDeltaY = Math.abs(region.physicalDeltaY);
-      // convert seconds per sample to ms per sample
-      scale = 1 / (physicalDeltaX * 1000);
+      const isMs = region.physicalUnitsYDirection === -2;
+
+      scale = 1 / (isMs ? physicalDeltaX * 1000 : physicalDeltaX);
       scaleY = 1 / physicalDeltaY;
 
       calibrationType = 'ECG Region';
-      unit = 'ms';
+
+      // Compare physical time (seconds) vs physical amplitude (mV) to determine orientation
+      let isVertical = false;
+      if (handles && handles.length >= 2) {
+        const sampleDelta = Math.abs(handles[1][0] - handles[0][0]);
+        const amplitudeDelta = Math.abs(handles[1][1] - handles[0][1]);
+        const timeInSeconds = sampleDelta * physicalDeltaX;
+        const amplitudeInMv = amplitudeDelta * physicalDeltaY;
+
+        isVertical = amplitudeInMv > timeInSeconds;
+      }
+
+      if (isVertical) {
+        unit = 'mV';
+        scale = scaleY;
+      } else {
+        unit = isMs
+          ? 'ms'
+          : UNIT_MAPPING[region.physicalUnitsXDirection] || 'seconds';
+      }
+
       areaUnit =
         (UNIT_MAPPING[region.physicalUnitsYDirection] || 'px') + SQUARE;
     }
@@ -208,8 +236,15 @@ const getCalibratedProbeUnitsAndValue = (image, handles) => {
     calibrationType =
       region.physicalUnitsYDirection === -1 ? 'ECG Region' : 'US Region';
     if (region.physicalUnitsYDirection === -1) {
+      values = [xValue, yValue];
+      units = [
+        UNIT_MAPPING[region.physicalUnitsXDirection] ?? 'unknown',
+        UNIT_MAPPING[region.physicalUnitsYDirection] ?? 'unknown',
+      ];
+    } else if (region.physicalUnitsYDirection === -2) {
+      // ECG time region: X is in seconds, convert to ms for display; Y is mV amplitude
       values = [xValue * 1000, yValue];
-      units = ['ms', UNIT_MAPPING[region.physicalUnitsYDirection] ?? 'unknown'];
+      units = ['ms', 'mV'];
     } else {
       values = [xValue, yValue];
       units = [
