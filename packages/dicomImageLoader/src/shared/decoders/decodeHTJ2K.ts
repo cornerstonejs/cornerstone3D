@@ -11,6 +11,7 @@ const openjphWasm = new URL(
 );
 
 import type { LoaderDecodeOptions } from '../../types';
+import { resolveWasmUrl, setWasmBasePathFromConfig } from '../wasmBasePath';
 
 const local: {
   codec: HTJ2KModule | undefined;
@@ -38,6 +39,7 @@ function calculateSizeAtDecompositionLevel(
 
 export function initialize(decodeConfig?: LoaderDecodeOptions): Promise<void> {
   local.decodeConfig = decodeConfig;
+  setWasmBasePathFromConfig(decodeConfig);
 
   if (local.codec) {
     return Promise.resolve();
@@ -46,7 +48,7 @@ export function initialize(decodeConfig?: LoaderDecodeOptions): Promise<void> {
   const openJphModule = openJphFactory({
     locateFile: (f) => {
       if (f.endsWith('.wasm')) {
-        return openjphWasm.toString();
+        return resolveWasmUrl('openjphjs.wasm', openjphWasm);
       }
 
       return f;

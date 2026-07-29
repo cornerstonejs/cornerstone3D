@@ -13,6 +13,8 @@ const libjpegTurboWasm = new URL(
   import.meta.url
 );
 import type { Types } from '@cornerstonejs/core';
+import type { LoaderDecodeOptions } from '../../types';
+import { resolveWasmUrl, setWasmBasePathFromConfig } from '../wasmBasePath';
 
 const local: {
   codec: OpenJpegModule;
@@ -22,7 +24,9 @@ const local: {
   decoder: undefined,
 };
 
-function initLibjpegTurbo(): Promise<void> {
+function initLibjpegTurbo(decodeConfig?: LoaderDecodeOptions): Promise<void> {
+  setWasmBasePathFromConfig(decodeConfig);
+
   if (local.codec) {
     return Promise.resolve();
   }
@@ -30,7 +34,7 @@ function initLibjpegTurbo(): Promise<void> {
   const libjpegTurboModule = libjpegTurboFactory({
     locateFile: (f) => {
       if (f.endsWith('.wasm')) {
-        return libjpegTurboWasm.toString();
+        return resolveWasmUrl('libjpegturbowasm_decode.wasm', libjpegTurboWasm);
       }
 
       return f;

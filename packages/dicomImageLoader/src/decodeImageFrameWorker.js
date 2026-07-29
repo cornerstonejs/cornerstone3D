@@ -15,6 +15,7 @@ import decodeJPEG2000 from './shared/decoders/decodeJPEG2000';
 import decodeHTJ2K from './shared/decoders/decodeHTJ2K';
 // Note that the scaling is pixel value scaling, which is applying a modality LUT
 import applyModalityLUT from './shared/scaling/scaleArray';
+import { setWasmBasePathFromConfig } from './shared/wasmBasePath';
 import getMinMax from './shared/getMinMax';
 import getPixelDataTypeFromMinMax, {
   validatePixelDataType,
@@ -362,6 +363,10 @@ export async function decodeImageFrame(
   callbackFn
 ) {
   const start = new Date().getTime();
+
+  // Apply the configured WASM base path before any codec initializes, so the
+  // decoders below resolve their binaries from it.
+  setWasmBasePathFromConfig(decodeConfig);
 
   let decodePromise = null;
 
