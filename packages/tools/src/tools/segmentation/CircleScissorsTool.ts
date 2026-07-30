@@ -21,6 +21,7 @@ import {
 } from '../../cursors/elementCursor';
 
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+import getViewportICamera from '../../utilities/getViewportICamera';
 import {
   segmentLocking,
   activeSegmentation,
@@ -113,7 +114,8 @@ class CircleScissorsTool extends LabelmapBaseTool {
 
     this.isDrawing = true;
 
-    const camera = viewport.getCamera();
+    // Native ("next") viewports expose no getCamera; read orientation via the bridge.
+    const camera = getViewportICamera(viewport);
     const { viewPlaneNormal, viewUp } = camera;
 
     const activeLabelmapSegmentation = activeSegmentation.getActiveSegmentation(

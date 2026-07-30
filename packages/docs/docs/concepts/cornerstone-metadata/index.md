@@ -65,6 +65,19 @@ flow, required providers must be re-registered after init.
 This is especially important during migration from older code paths where
 provider registration happened once and relied on persistent global state.
 
+## Display sets
+
+The metadata layer also organizes a series' instances into **display sets** —
+the unit a viewport renders — via framework-agnostic split rules, exposed as the
+data-shaped `IDisplaySet`. Because this is a large topic (the split pipeline,
+driving a viewport, caching, the split-rule model, and the data model), it has
+its own page:
+
+- **[Display sets](./display-sets.md)** — `splitImageIdsBySplitRules` →
+  `createDisplaySetFromGroup` → driving a viewport via `setDisplaySets` / caching
+  via `registerDisplaySetMetadata`, the split-rule model (with the DWI worked
+  example), and the `IDisplaySet` attributes + module-augmentation pattern.
+
 ## Package boundaries
 
 - `@cornerstonejs/metadata`: metadata ingestion, provider chains, normalized

@@ -42,7 +42,7 @@ export type LabelmapLayerType = 'volume' | 'stack';
 
 export type LabelmapLayer = {
   labelmapId: string;
-  type: LabelmapLayerType;
+  storageKind: LabelmapLayerType;
   volumeId?: string;
   geometryVolumeId?: string;
   referencedVolumeId?: string;

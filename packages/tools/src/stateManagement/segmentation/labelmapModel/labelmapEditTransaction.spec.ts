@@ -55,7 +55,7 @@ function createSegmentation(): Segmentation {
         labelmaps: {
           layerA: {
             labelmapId: 'layerA',
-            type: 'stack',
+            storageKind: 'stack',
             imageIds: ['layerA-image'],
             labelToSegmentIndex: {
               1: 1,
@@ -64,7 +64,7 @@ function createSegmentation(): Segmentation {
           },
           layerB: {
             labelmapId: 'layerB',
-            type: 'stack',
+            storageKind: 'stack',
             imageIds: ['layerB-image'],
             labelToSegmentIndex: {
               1: 3,
@@ -127,7 +127,7 @@ describe('labelmap edit transactions', () => {
     const segmentationVoxelManager = createVoxelManager([0, 2, 0]);
     const privateLayer: LabelmapLayer = {
       labelmapId: 'privateLayer',
-      type: 'stack',
+      storageKind: 'stack',
       imageIds: ['private-image'],
       labelToSegmentIndex: {
         1: 1,
@@ -190,7 +190,7 @@ describe('labelmap edit transactions', () => {
     const segmentationVoxelManager = createVoxelManager([2]);
     const privateLayer: LabelmapLayer = {
       labelmapId: 'privateLayer',
-      type: 'stack',
+      storageKind: 'stack',
       imageIds: ['private-image'],
       labelToSegmentIndex: {
         1: 1,

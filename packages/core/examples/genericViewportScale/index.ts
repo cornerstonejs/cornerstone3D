@@ -422,12 +422,12 @@ async function run() {
   const stackViewport = getViewport(stackViewportId);
   const volumeViewport = getViewport(volumeViewportId);
 
-  utilities.genericViewportDataSetMetadataProvider.add(stackDataId, {
+  utilities.genericViewportDisplaySetMetadataProvider.add(stackDataId, {
     imageIds,
     kind: 'planar',
     initialImageIdIndex: middleImageIndex,
   });
-  utilities.genericViewportDataSetMetadataProvider.add(volumeDataId, {
+  utilities.genericViewportDisplaySetMetadataProvider.add(volumeDataId, {
     imageIds,
     kind: 'planar',
     initialImageIdIndex: middleImageIndex,

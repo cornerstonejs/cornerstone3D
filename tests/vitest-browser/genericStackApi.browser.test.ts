@@ -218,7 +218,7 @@ async function renderNextStackViewport() {
   const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
   const imageId = encodeImageIdInfo(imageInfo);
 
-  utilities.genericViewportDataSetMetadataProvider.add(stackDataId, {
+  utilities.genericViewportDisplaySetMetadataProvider.add(stackDataId, {
     imageIds: [imageId],
     kind: 'planar',
     initialImageIdIndex: 0,
@@ -248,7 +248,7 @@ afterEach(() => {
   cache.purgeCache();
   metaData.removeProvider(fakeMetaDataProvider);
   imageLoader.unregisterAllImageLoaders();
-  utilities.genericViewportDataSetMetadataProvider.clear?.();
+  utilities.genericViewportDisplaySetMetadataProvider.clear?.();
 
   if (previousUseGenericViewport !== undefined) {
     getConfiguration().rendering.useGenericViewport = previousUseGenericViewport;

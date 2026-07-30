@@ -44,7 +44,7 @@ function createPrimaryLabelmapLayer(
 ): LabelmapLayer {
   const layer: LabelmapLayer = {
     labelmapId,
-    type: getPrimaryLabelmapType(labelmapData),
+    storageKind: getPrimaryLabelmapType(labelmapData),
     labelToSegmentIndex: {},
   };
 

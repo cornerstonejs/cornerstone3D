@@ -3,7 +3,7 @@ import { createAndCacheVolume } from '../../../loaders/volumeLoader';
 import { ActorRenderMode } from '../../../types';
 import resolveViewportVolumeId from '../../helpers/resolveViewportVolumeId';
 import type { LoadedData } from '../ViewportArchitectureTypes';
-import { getGenericViewportPlanarDataSet } from '../genericViewportDataSetAccess';
+import { getGenericViewportPlanarDisplaySet } from '../genericViewportDisplaySetAccess';
 import type {
   PlanarDataProvider,
   PlanarDataLoadOptions,
@@ -34,10 +34,18 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
       throw new Error('[PlanarViewport] Cannot load an empty planar dataset');
     }
 
+    // A concrete, clamped index is always needed to load a single image below.
     const clampedImageIdIndex = Math.min(
       Math.max(0, dataSet.initialImageIdIndex ?? 0),
       dataSet.imageIds.length - 1
     );
+    // But preserve "no slice requested" (undefined) in the payload so the volume
+    // acquisition view can center instead of pinning to slice 0; an explicit
+    // index (including 0) is clamped and honored downstream.
+    const initialImageIdIndex =
+      dataSet.initialImageIdIndex === undefined
+        ? undefined
+        : clampedImageIdIndex;
 
     if (
       options.renderMode === ActorRenderMode.VTK_VOLUME_SLICE ||
@@ -52,11 +60,31 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
         ? imageVolume.imageIds
         : dataSet.imageIds;
 
+      // The volume sorts its imageIds by position along the scan axis, which can
+      // reorder (commonly reverse) them relative to the registered dataSet order
+      // the caller computed initialImageIdIndex against. Remap the index through
+      // the imageId so the payload index addresses the slice the caller asked
+      // for in the payload's (volume) ordering.
+      let volumeInitialImageIdIndex = initialImageIdIndex;
+      if (initialImageIdIndex !== undefined && imageIds !== dataSet.imageIds) {
+        const requestedImageId = dataSet.imageIds[initialImageIdIndex];
+        const remappedIndex = imageIds.indexOf(requestedImageId);
+        if (remappedIndex >= 0) {
+          volumeInitialImageIdIndex = remappedIndex;
+        } else {
+          console.warn(
+            `[PlanarViewport] initialImageIdIndex remap failed: imageId ` +
+              `"${requestedImageId}" not found in the volume imageIds; ` +
+              `using the original index ${initialImageIdIndex}`
+          );
+        }
+      }
+
       return {
         id: dataId,
         type: 'image',
         imageIds,
-        initialImageIdIndex: clampedImageIdIndex,
+        initialImageIdIndex: volumeInitialImageIdIndex,
         acquisitionOrientation: options.acquisitionOrientation,
         imageData: dataSet.imageData,
         imageVolume,
@@ -79,7 +107,7 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
       imageIds: dataSet.imageIds,
       image,
       imageData: dataSet.imageData,
-      initialImageIdIndex: clampedImageIdIndex,
+      initialImageIdIndex,
       acquisitionOrientation: options.acquisitionOrientation,
       reference: dataSet.reference,
       renderMode: options.renderMode,
@@ -89,7 +117,7 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
   }
 
   private getDataSet(dataId: string): PlanarRegisteredDataSet | undefined {
-    const dataSet = getGenericViewportPlanarDataSet(dataId);
+    const dataSet = getGenericViewportPlanarDisplaySet(dataId);
 
     if (!isPlanarRegisteredDataSet(dataSet)) {
       return;

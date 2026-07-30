@@ -3,7 +3,7 @@ import {
   loadWSIData,
 } from '../../../utilities/WSIUtilities';
 import type { LoadedData } from '../ViewportArchitectureTypes';
-import { getGenericViewportWSIDataSet } from '../genericViewportDataSetAccess';
+import { getGenericViewportWSIDisplaySet } from '../genericViewportDisplaySetAccess';
 import type {
   WSIDataProvider,
   WSIPayload,
@@ -42,7 +42,7 @@ export class DefaultWSIDataProvider implements WSIDataProvider {
   }
 
   private getDataSet(dataId: string): WSIRegisteredDataSet | undefined {
-    const registered = getGenericViewportWSIDataSet(dataId);
+    const registered = getGenericViewportWSIDisplaySet(dataId);
 
     if (!registered) {
       return;

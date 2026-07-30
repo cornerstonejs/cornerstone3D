@@ -1,9 +1,11 @@
 import { vec3 } from 'gl-matrix';
 import cache from '../../../cache/cache';
 import { OrientationAxis } from '../../../enums';
-import { getConfiguration, getShouldUseCPURendering } from '../../../init';
+import type { RenderBackendValue } from '../../../enums';
+import { getEffectiveRenderBackend } from '../../../init';
 import * as metaData from '../../../metaData';
-import { ActorRenderMode } from '../../../types';
+import { getRenderModeForBackend } from '../../helpers/renderBackendRegistry';
+import type { EffectiveRenderBackend } from '../../../types/RenderBackendRegistry';
 import { isValidVolume } from '../../../utilities/isValidVolume';
 import { getOrientationFromScanAxisNormal } from '../../helpers/getCameraVectors';
 import type {
@@ -13,9 +15,6 @@ import type {
   PlanarRegisteredDataSet,
 } from './PlanarViewportTypes';
 
-export const DEFAULT_PLANAR_CPU_IMAGE_THRESHOLD = 64 * 1024 * 1024;
-export const DEFAULT_PLANAR_CPU_VOLUME_THRESHOLD = 64 * 1024 * 1024;
-
 export interface SelectedPlanarRenderPath {
   acquisitionOrientation?: PlanarViewState['orientation'];
   renderMode: PlanarEffectiveRenderMode;
@@ -24,12 +23,14 @@ export interface SelectedPlanarRenderPath {
 
 export interface PlanarRenderPathDecisionOptions {
   orientation?: PlanarOrientation;
-  cpuThresholds?: {
-    image?: number;
-    volume?: number;
-  };
   useSliceRendering?: boolean;
-  webGLAvailable?: boolean;
+  /**
+   * Per-mount render backend override. 'cpu' and 'gpu' pin this dataset to
+   * that backend; 'auto' resolves from the capability detection regardless of
+   * the global pin. When omitted, the global
+   * rendering.planar.renderBackend configuration decides.
+   */
+  renderBackend?: RenderBackendValue;
 }
 
 /**
@@ -37,9 +38,10 @@ export interface PlanarRenderPathDecisionOptions {
  *
  * Clean Planar Next callers do not pass a render mode. This service derives the
  * internal path from semantic inputs: dataset shape, requested orientation,
- * runtime CPU/GPU configuration, WebGL availability, and segmentation slice
- * rendering configuration. Binding role is deliberately not part of the
- * decision; source and overlays are mounted through the same rules.
+ * and the render backend (per-mount override or global
+ * rendering.planar.renderBackend configuration, with 'auto' resolved from
+ * init-time capability detection). Binding role is deliberately not part of
+ * the decision; source and overlays are mounted through the same rules.
  */
 export class PlanarRenderPathDecisionService {
   select(
@@ -80,64 +82,77 @@ export class PlanarRenderPathDecisionService {
     return {
       acquisitionOrientation,
       renderMode: useVolumePath
-        ? this.selectVolumeRenderMode(dataSet, options)
-        : this.selectImageRenderMode(dataSet, options),
+        ? this.selectVolumeRenderMode(options)
+        : this.selectImageRenderMode(options),
       volumeId,
     };
   }
 
-  private selectImageRenderMode(
+  /**
+   * Non-throwing companion to {@link select}: reports whether the dataset can be
+   * rendered in the requested orientation/configuration, without selecting a
+   * render mode. Lets callers (e.g. OHIF MPR/orientation controls) pre-check an
+   * orientation before requesting it, instead of relying on `select()` throwing.
+   *
+   * Keep the renderability rules here in sync with `select()` above.
+   */
+  canRender(
     dataSet: PlanarRegisteredDataSet,
+    options: PlanarRenderPathDecisionOptions = {}
+  ): boolean {
+    if (!dataSet.imageIds.length) {
+      return false;
+    }
+
+    const orientation = options.orientation || OrientationAxis.ACQUISITION;
+    const acquisitionOrientation = getPlanarAcquisitionOrientation(
+      dataSet.imageIds
+    );
+    const isAcquisitionPath =
+      orientation === OrientationAxis.ACQUISITION ||
+      (acquisitionOrientation !== undefined &&
+        orientation === acquisitionOrientation);
+    const useVolumePath = isVolumeBackedDataSet(dataSet, isAcquisitionPath);
+
+    if (
+      !isAcquisitionPath &&
+      !useVolumePath &&
+      !dataSet.useWorldCoordinateImageData
+    ) {
+      return false;
+    }
+
+    if (useVolumePath && !supportsVolumeRendering(dataSet)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  private selectImageRenderMode(
     options: PlanarRenderPathDecisionOptions
   ): PlanarEffectiveRenderMode {
-    return this.shouldUseCPUForImage(dataSet, options)
-      ? ActorRenderMode.CPU_IMAGE
-      : ActorRenderMode.VTK_IMAGE;
+    return getRenderModeForBackend(this.resolveBackend(options), 'image');
   }
 
   private selectVolumeRenderMode(
-    dataSet: PlanarRegisteredDataSet,
     options: PlanarRenderPathDecisionOptions
   ): PlanarEffectiveRenderMode {
-    return this.shouldUseCPUForVolume(dataSet, options)
-      ? ActorRenderMode.CPU_VOLUME
-      : ActorRenderMode.VTK_VOLUME_SLICE;
+    return getRenderModeForBackend(this.resolveBackend(options), 'volume');
   }
 
-  private shouldUseCPUForImage(
-    dataSet: PlanarRegisteredDataSet,
+  /**
+   * Resolves the effective backend for one decision: the per-mount override
+   * when present ('auto' resolves from capability detection even when the
+   * global backend is pinned), the global configuration otherwise. The
+   * precedence ladder itself lives in getEffectiveRenderBackend so it cannot
+   * drift from the global resolution. The backend's render modes come from
+   * its registerRenderBackend() definition.
+   */
+  private resolveBackend(
     options: PlanarRenderPathDecisionOptions
-  ): boolean {
-    if (options.webGLAvailable === false) {
-      return true;
-    }
-
-    const configuredCpuThresholds = getConfiguredPlanarCpuThresholds();
-
-    return shouldUseCPU(
-      dataSet.imageIds,
-      options.cpuThresholds?.image ??
-        configuredCpuThresholds?.image ??
-        DEFAULT_PLANAR_CPU_IMAGE_THRESHOLD
-    );
-  }
-
-  private shouldUseCPUForVolume(
-    dataSet: PlanarRegisteredDataSet,
-    options: PlanarRenderPathDecisionOptions
-  ): boolean {
-    if (options.webGLAvailable === false) {
-      return true;
-    }
-
-    const configuredCpuThresholds = getConfiguredPlanarCpuThresholds();
-
-    return shouldUseCPU(
-      dataSet.imageIds,
-      options.cpuThresholds?.volume ??
-        configuredCpuThresholds?.volume ??
-        DEFAULT_PLANAR_CPU_VOLUME_THRESHOLD
-    );
+  ): EffectiveRenderBackend {
+    return getEffectiveRenderBackend(options.renderBackend);
   }
 }
 
@@ -198,44 +213,6 @@ export function getPlanarAcquisitionOrientation(
   return orientation;
 }
 
-export function shouldUseCPU(
-  imageIds: string[],
-  threshold = DEFAULT_PLANAR_CPU_IMAGE_THRESHOLD
-): boolean {
-  if (getShouldUseCPURendering()) {
-    return true;
-  }
-
-  const imageId = imageIds[0];
-
-  if (!imageId) {
-    return false;
-  }
-
-  const imagePlaneModule = metaData.get('imagePlaneModule', imageId);
-  const rows = imagePlaneModule?.rows;
-  const columns = imagePlaneModule?.columns;
-
-  if (!isPositiveSafeInteger(rows) || !isPositiveSafeInteger(columns)) {
-    return false;
-  }
-
-  if (!Number.isFinite(threshold)) {
-    return false;
-  }
-
-  const normalizedThreshold = Math.trunc(threshold);
-
-  if (!Number.isSafeInteger(normalizedThreshold) || normalizedThreshold < 0) {
-    return false;
-  }
-
-  return (
-    BigInt(rows) * BigInt(columns) * BigInt(imageIds.length) >=
-    BigInt(normalizedThreshold)
-  );
-}
-
 function getVolumeId(dataSet: PlanarRegisteredDataSet): string {
   return dataSet.volumeId || cache.generateVolumeId(dataSet.imageIds);
 }
@@ -261,12 +238,4 @@ function isVolumeBackedDataSet(
   }
 
   return !isAcquisitionPath && supportsVolumeRendering(dataSet);
-}
-
-function isPositiveSafeInteger(value: unknown): value is number {
-  return typeof value === 'number' && Number.isSafeInteger(value) && value > 0;
-}
-
-function getConfiguredPlanarCpuThresholds() {
-  return getConfiguration().rendering?.planar?.cpuThresholds;
 }

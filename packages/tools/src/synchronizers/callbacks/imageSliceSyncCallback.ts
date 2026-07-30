@@ -24,6 +24,13 @@ function isVolumeSliceViewport(
     return true;
   }
 
+  // Direct Generic ("next") planar viewports are not VolumeViewport instances;
+  // use their content-true mode to detect volume-backed slice rendering (so the
+  // stack-is-reversed index flip below is applied correctly).
+  if (utilities.viewportIsInVolumeMode(viewport)) {
+    return true;
+  }
+
   const getDefaultActor = (
     viewport as Types.IViewport & {
       getDefaultActor?: () => {

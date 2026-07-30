@@ -53,7 +53,7 @@ Register stack-like data with the metadata provider, then mount it with
 ```ts
 const stackDisplaySetId = 'ct-stack';
 
-utilities.genericViewportDataSetMetadataProvider.add(stackDisplaySetId, {
+utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
   kind: 'planar',
   imageIds,
   initialImageIdIndex: 0,
@@ -86,7 +86,7 @@ Volume slice data uses the same viewport API. The registered data includes a
 ```ts
 const ctDataId = 'ct-volume-source';
 
-utilities.genericViewportDataSetMetadataProvider.add(ctDataId, {
+utilities.genericViewportDisplaySetMetadataProvider.add(ctDataId, {
   kind: 'planar',
   imageIds: ctImageIds,
   initialImageIdIndex: Math.floor(ctImageIds.length / 2),
@@ -113,7 +113,7 @@ the same viewport view state as the source but keep their own data presentation.
 ```ts
 const ptDataId = 'pt-volume-overlay';
 
-utilities.genericViewportDataSetMetadataProvider.add(ptDataId, {
+utilities.genericViewportDisplaySetMetadataProvider.add(ptDataId, {
   kind: 'planar',
   imageIds: ptImageIds,
   initialImageIdIndex: Math.floor(ptImageIds.length / 2),
@@ -162,7 +162,7 @@ their `displaySetId`, `imageIds`, and optional `volumeId` are already the
 public identity.
 
 ```ts
-utilities.genericViewportDataSetMetadataProvider.add(labelmapDataId, {
+utilities.genericViewportDisplaySetMetadataProvider.add(labelmapDataId, {
   kind: 'planar',
   imageIds: labelmapImageIds,
   reference: {

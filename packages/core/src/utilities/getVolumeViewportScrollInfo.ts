@@ -19,13 +19,21 @@ function getVolumeViewportScrollInfo(
 
   const { min, max, current } = sliceRange;
 
-  // Now we can see how many steps there are in this direction
-  const numScrollSteps = Math.round((max - min) / spacingInNormalDirection);
+  const range = max - min;
+
+  // A single-slice volume collapses the range to zero (min === max === current).
+  // Guard against it so `(current - min) / range` doesn't evaluate to 0 / 0 = NaN,
+  // which would propagate to getCurrentImageIdIndex() and the overlay (rendering
+  // "NaN/1" and an undefined imageId).
+  const numScrollSteps =
+    range === 0 ? 0 : Math.round(range / spacingInNormalDirection);
 
   // Find out current frameIndex
-  const fraction = (current - min) / (max - min);
+  const fraction = range === 0 ? 0 : (current - min) / range;
   const floatingStepNumber = fraction * numScrollSteps;
-  const currentStepIndex = Math.round(floatingStepNumber);
+  const currentStepIndex = Number.isFinite(floatingStepNumber)
+    ? Math.round(floatingStepNumber)
+    : 0;
 
   return {
     numScrollSteps,

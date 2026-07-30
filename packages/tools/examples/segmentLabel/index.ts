@@ -13,7 +13,7 @@ import {
   fillVolumeLabelmapWithMockData,
   addMockContourSegmentation,
 } from '../../../../utils/test/testUtils';
-import type { IStreamingImageVolume } from '@cornerstonejs/core/types';
+import type { IStreamingImageVolume, Point3 } from '@cornerstonejs/core/types';
 
 // This is for debugging purposes
 console.warn(
@@ -37,10 +37,20 @@ let renderingEngine;
 const volumeId = 'myVolume';
 const renderingEngineId = 'myRenderingEngine';
 
+// Number of slices between segment 1 and segment 2 in the volume contour
+// viewport. They must be NON-adjacent: a single-slice gap (~1 voxel) is within
+// the contour render/pick tolerance, so segment 2 would still be hit-tested
+// from segment 1's slice and its name would leak onto empty space. A larger gap
+// puts segment 2 unambiguously off segment 1's displayed slice.
+// NOTE: tests/segmentLabelHover.spec.ts hard-codes this same value to scroll to
+// segment 2's slice - keep the two in sync.
+const SEGMENT_SLICE_SEPARATION = 10;
+
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Segment Label Tool in Both Stack and Volume Viewport',
-  'Here, we demonstrate how you can use the Segment Label Tool in both stack and volume viewports to hover and visualize the label of the segment that is below it. It works after some deliberate delay.'
+  'Here, we demonstrate how you can use the Segment Label Tool in both stack and volume viewports to hover and visualize the label of the segment that is below it. It works after some deliberate delay. ' +
+    `The bottom-right (volume contour) viewport seeds Segment 1 and Segment 2 ${SEGMENT_SLICE_SEPARATION} slices apart: hovering empty space on Segment 1’s slice must NOT show Segment 2’s name. Scroll ${SEGMENT_SLICE_SEPARATION} slices to reach Segment 2’s slice to see its name appear.`
 );
 
 const size = '512px';
@@ -283,6 +293,12 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
       representation: {
         type: csToolsEnums.SegmentationRepresentations.Contour,
       },
+      config: {
+        segments: {
+          1: { label: 'Segment 1' },
+          2: { label: 'Segment 2' },
+        },
+      },
     },
   ]);
 
@@ -294,14 +310,48 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
     },
   ]);
 
+  // Place segment 1 and segment 2 SEGMENT_SLICE_SEPARATION slices apart (i.e.
+  // NON-adjacent) to demonstrate that the hovered label is scoped to the
+  // current slice. addMockContourSegmentation projects the contour onto the
+  // viewport's current focal plane, so we seed segment 1, scroll several slices
+  // away, seed segment 2, then return to segment 1's slice.
+  const volumeContourViewport = renderingEngine.getViewport(viewportId4);
+
   addMockContourSegmentation({
     segmentationId: volumeSegContourId,
-    viewport: renderingEngine.getViewport(viewportId4),
+    viewport: volumeContourViewport,
     contours: [
       {
         segmentIndex: 1,
         radius: 75,
       },
+    ],
+  });
+
+  // Remember segment 1's slice (camera) so we can return to it deterministically
+  // after seeding segment 2, instead of relying on a symmetric scroll back.
+  const segment1Camera = volumeContourViewport.getCamera();
+  const segment1FocalPoint = [...segment1Camera.focalPoint] as Point3;
+  const segment1Position = [...segment1Camera.position] as Point3;
+
+  // Move several slices away before seeding segment 2.
+  //
+  // viewport.scroll() reads the volume actor's slice range, which is only
+  // available once the actor's bounds have been computed. Immediately after
+  // setVolumesForViewports that is not guaranteed, so an early scroll() is a
+  // silent no-op (slice range collapses to zero steps). On slower/CI machines
+  // that race is lost, both contours get projected onto the SAME slice, and
+  // the slice-scoping demo/test breaks. Retry scroll() until it actually moves
+  // the focal point so segment 2 is guaranteed to land on a different slice.
+  await scrollUntilSliceChanges(
+    volumeContourViewport,
+    SEGMENT_SLICE_SEPARATION
+  );
+
+  addMockContourSegmentation({
+    segmentationId: volumeSegContourId,
+    viewport: volumeContourViewport,
+    contours: [
       {
         segmentIndex: 2,
         radius: 75,
@@ -309,6 +359,42 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
       },
     ],
   });
+
+  // Return to segment 1's slice so the bug is reproducible on load. Restore the
+  // camera directly (rather than scroll(-SEGMENT_SLICE_SEPARATION)) so the
+  // displayed slice is exactly segment 1's, independent of scroll timing.
+  volumeContourViewport.setCamera({
+    focalPoint: segment1FocalPoint,
+    position: segment1Position,
+  });
+  renderingEngine.render();
+}
+
+/**
+ * Scrolls the volume viewport by `delta` slices, retrying until the camera's
+ * focal point actually moves. This guards against scrolling before the volume
+ * actor's slice range is ready (which makes scroll() a no-op).
+ */
+async function scrollUntilSliceChanges(viewport, delta, maxAttempts = 500) {
+  const focalPointMoved = (a, b) =>
+    Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]) > 1e-6;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const before = viewport.getCamera().focalPoint;
+    viewport.scroll(delta);
+    const after = viewport.getCamera().focalPoint;
+
+    if (focalPointMoved(before, after)) {
+      return;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+
+  console.warn(
+    'segmentLabel example: volume viewport never became scrollable; ' +
+      'segment 2 may have been seeded on the same slice as segment 1.'
+  );
 }
 
 async function _handleStackViewports(stackImageIds: string[]) {

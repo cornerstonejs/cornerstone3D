@@ -13,7 +13,8 @@ import {
 } from '../src/RenderingEngine/GenericViewport';
 import PlanarViewport from '../src/RenderingEngine/GenericViewport/Planar/PlanarViewport';
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
-import genericViewportDataSetMetadataProvider from '../src/utilities/genericViewportDataSetMetadataProvider';
+import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
+import getViewportsWithVolumeId from '../src/utilities/getViewportsWithVolumeId';
 import imageIdToURI from '../src/utilities/imageIdToURI';
 
 let viewportCounter = 0;
@@ -30,9 +31,11 @@ function createViewport(defaultOptions = {}) {
   const renderer = {
     getActiveCamera: jest.fn(() => activeCamera),
   };
+  let viewport;
   const renderingEngine = {
     id: renderingEngineId,
     getRenderer: jest.fn(() => renderer),
+    getViewports: jest.fn(() => (viewport ? [viewport] : [])),
     renderViewport: jest.fn(),
   };
 
@@ -47,7 +50,7 @@ function createViewport(defaultOptions = {}) {
 
   renderingEngineCache.set(renderingEngine);
 
-  const viewport = new PlanarViewport({
+  viewport = new PlanarViewport({
     id: viewportId,
     element,
     renderingEngineId,
@@ -151,6 +154,33 @@ function mountStackBinding(viewport, images) {
   return { binding, dataId, rendering };
 }
 
+function mountVolumeBinding(viewport, { dataId, imageData, role, volumeId }) {
+  const rendering = {
+    renderMode: ActorRenderMode.VTK_VOLUME_SLICE,
+  };
+  const binding = {
+    applyViewState: jest.fn(),
+    data: {
+      id: dataId,
+      type: 'volume',
+      volumeId,
+    },
+    getFrameOfReferenceUID: () => 'planar-test-frame',
+    getImageData: jest.fn(() => imageData),
+    removeData: jest.fn(),
+    rendering,
+    role,
+    updateDataPresentation: jest.fn(),
+  };
+
+  viewport.bindings.set(dataId, binding);
+  if (role === 'source') {
+    viewport.mountedData.promoteSourceDataId(dataId);
+  }
+
+  return { binding, dataId, rendering };
+}
+
 describe('PlanarViewport view state', () => {
   let created = [];
 
@@ -165,7 +195,7 @@ describe('PlanarViewport view state', () => {
       metaData.removeProvider(provider);
     }
     metadataProviders = [];
-    genericViewportDataSetMetadataProvider.clear();
+    genericViewportDisplaySetMetadataProvider.clear();
     jest.clearAllMocks();
   });
 
@@ -486,6 +516,32 @@ describe('PlanarViewport view state', () => {
     expect(secondResolvedView).toBe(firstResolvedView);
   });
 
+  it('finds image data for every bound volume and rejects unknown explicit ids', () => {
+    const { viewport } = track(createViewport());
+    const sourceImageData = { name: 'source' };
+    const overlayImageData = { name: 'overlay' };
+
+    mountVolumeBinding(viewport, {
+      dataId: 'ct-display-set',
+      imageData: sourceImageData,
+      role: 'source',
+      volumeId: 'volume:ct',
+    });
+    mountVolumeBinding(viewport, {
+      dataId: 'pt-display-set',
+      imageData: overlayImageData,
+      role: 'overlay',
+      volumeId: 'volume:pt',
+    });
+
+    expect(viewport.hasVolumeId('volume:ct')).toBe(true);
+    expect(viewport.hasVolumeId('volume:pt')).toBe(true);
+    expect(getViewportsWithVolumeId('volume:pt')).toContain(viewport);
+    expect(viewport.getImageData('volume:pt')).toBe(overlayImageData);
+    expect(viewport.getImageData('volume:missing')).toBeUndefined();
+    expect(viewport.getImageData()).toBe(sourceImageData);
+  });
+
   it('invalidates the resolved view cache when view state changes', () => {
     const { viewport } = track(createViewport());
     const image = createPlanarImage('cache-image-2');
@@ -643,20 +699,20 @@ describe('PlanarViewport view state', () => {
       options: { orientation: expect.anything() },
     });
     expect(
-      genericViewportDataSetMetadataProvider.get(
-        genericViewportDataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
+      genericViewportDisplaySetMetadataProvider.get(
+        genericViewportDisplaySetMetadataProvider.VIEWPORT_V2_DISPLAY_SET,
         firstDataId
       ).image
     ).toBe(firstImage);
     expect(
-      genericViewportDataSetMetadataProvider.get(
-        genericViewportDataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
+      genericViewportDisplaySetMetadataProvider.get(
+        genericViewportDisplaySetMetadataProvider.VIEWPORT_V2_DISPLAY_SET,
         secondDataId
       ).image
     ).toBe(secondImage);
     expect(
-      genericViewportDataSetMetadataProvider.get(
-        genericViewportDataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
+      genericViewportDisplaySetMetadataProvider.get(
+        genericViewportDisplaySetMetadataProvider.VIEWPORT_V2_DISPLAY_SET,
         imageId
       )
     ).toBeUndefined();
@@ -679,14 +735,14 @@ describe('PlanarViewport view state', () => {
     await viewport.renderImageObject(secondImage);
 
     expect(
-      genericViewportDataSetMetadataProvider.get(
-        genericViewportDataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
+      genericViewportDisplaySetMetadataProvider.get(
+        genericViewportDisplaySetMetadataProvider.VIEWPORT_V2_DISPLAY_SET,
         firstDataId
       )
     ).toBeUndefined();
     expect(
-      genericViewportDataSetMetadataProvider.get(
-        genericViewportDataSetMetadataProvider.VIEWPORT_V2_DATA_SET,
+      genericViewportDisplaySetMetadataProvider.get(
+        genericViewportDisplaySetMetadataProvider.VIEWPORT_V2_DISPLAY_SET,
         secondDataId
       ).image
     ).toBe(secondImage);

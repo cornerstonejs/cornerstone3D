@@ -5,6 +5,8 @@ import type { Types } from '@cornerstonejs/core';
 import { mat4, vec3 } from 'gl-matrix';
 import type { PublicToolProps, ToolProps } from '../types';
 import type { MouseWheelEventType } from '../types/EventTypes';
+import getViewportICamera from '../utilities/getViewportICamera';
+import setViewportCamera from '../utilities/setViewportCamera';
 
 const DIRECTIONS = {
   X: [1, 0, 0],
@@ -43,7 +45,7 @@ class VolumeRotateTool extends BaseTool {
     const { viewport } = enabledElement;
     const { direction, rotateIncrementDegrees } = this.configuration;
 
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const { viewUp, position, focalPoint } = camera;
 
     const { direction: deltaY } = wheel;
@@ -73,7 +75,7 @@ class VolumeRotateTool extends BaseTool {
     mat4.rotate(transform, transform, angle, [ax, ay, az]);
     vec3.transformMat4(<Types.Point3>newViewUp, viewUp, transform);
 
-    viewport.setCamera({
+    setViewportCamera(viewport, {
       position: newPosition,
       viewUp: newViewUp,
       focalPoint: newFocalPoint,

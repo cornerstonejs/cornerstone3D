@@ -15,6 +15,7 @@ import {
 import { getToolGroup } from '../store/ToolGroupManager';
 
 import { drawLine as drawLineSvg } from '../drawingSvg';
+import getViewportICamera from '../utilities/getViewportICamera';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
 
 import type {
@@ -206,7 +207,7 @@ class OverlayGridTool extends AnnotationDisplayTool {
     const annotation = annotations[0];
     const { annotationUID } = annotation;
 
-    const { focalPoint, viewPlaneNormal } = targetViewport.getCamera();
+    const { focalPoint, viewPlaneNormal } = getViewportICamera(targetViewport);
 
     const styleSpecifier: StyleSpecifier = {
       toolGroupId: this.toolGroupId,

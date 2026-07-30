@@ -518,4 +518,14 @@ const obj = {
   },
 };
 
-expose(obj);
+const workerEndpoint =
+  typeof self !== 'undefined' &&
+  typeof self.addEventListener === 'function' &&
+  typeof self.postMessage === 'function' &&
+  typeof self.document === 'undefined'
+    ? self
+    : undefined;
+
+if (workerEndpoint) {
+  expose(obj, workerEndpoint);
+}

@@ -104,7 +104,7 @@ async function run() {
 
   client.getDICOMwebMetadata = (imageId) => wadors.metaDataManager.get(imageId);
 
-  utilities.genericViewportDataSetMetadataProvider.add(wsiDataId, {
+  utilities.genericViewportDisplaySetMetadataProvider.add(wsiDataId, {
     imageIds,
     kind: 'wsi',
     options: { webClient: client },

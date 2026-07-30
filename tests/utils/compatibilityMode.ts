@@ -26,6 +26,7 @@ export async function validateCompatibilityRuntime(
       cornerstone?: {
         getShouldUseCPURendering?: () => boolean;
         getUseGenericViewport?: () => boolean;
+        getEffectiveRenderBackend?: () => string;
       };
     }).cornerstone;
 
@@ -35,6 +36,7 @@ export async function validateCompatibilityRuntime(
       cpuParam: searchParams.get('cpu'),
       useGenericViewport: cornerstone?.getUseGenericViewport?.(),
       useCPURendering: cornerstone?.getShouldUseCPURendering?.(),
+      effectiveRenderBackend: cornerstone?.getEffectiveRenderBackend?.(),
     };
   });
 
@@ -58,5 +60,9 @@ export async function validateCompatibilityRuntime(
       runtime.useCPURendering,
       `${title ?? 'example'} should enable CPU rendering`
     ).toBe(true);
+    expect(
+      runtime.effectiveRenderBackend,
+      `${title ?? 'example'} should resolve the cpu render backend`
+    ).toBe('cpu');
   }
 }

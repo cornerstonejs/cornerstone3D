@@ -17,6 +17,7 @@ import type {
 } from '../../types';
 
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+import getViewportICamera from '../../utilities/getViewportICamera';
 import ProbeTool from './ProbeTool';
 import type { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
@@ -58,10 +59,11 @@ class DragProbeTool extends ProbeTool {
     const worldPos = currentPoints.world;
 
     const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
+    const { viewport } = enabledElement;
 
     this.isDrawing = true;
-    const camera = viewport.getCamera();
+    // Native ("next") viewports expose no getCamera; read orientation via the bridge.
+    const camera = getViewportICamera(viewport);
     const { viewPlaneNormal, viewUp } = camera;
 
     const referencedImageId = this.getReferencedImageId(
@@ -144,7 +146,7 @@ class DragProbeTool extends ProbeTool {
       viewportId: enabledElement.viewport.id,
     };
 
-    const annotation = this.editData.annotation;
+    const annotation = this.editData.annotation as ProbeAnnotation;
     const annotationUID = annotation.annotationUID;
     const data = annotation.data;
     const point = data.handles.points[0];

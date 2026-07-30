@@ -224,7 +224,26 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       throw new Error('Viewport not supported');
     }
     scalarData = csUtils.convertToGrayscale(scalarData, width, height);
-    const { voiRange } = viewport.getProperties();
+    // Native ("next") viewports expose no getProperties; read the effective VOI
+    // from the per-binding presentation, falling back to the computed default VOI.
+    let voiRange: Types.VOIRange;
+    // Widen so the capability guard can narrow; the enabled element types
+    // viewport as IStackViewport | IVolumeViewport.
+    const sourceViewport: Types.IViewport = viewport;
+    if (csUtils.viewportSupportsDisplaySetPresentation(sourceViewport)) {
+      const dataId = sourceViewport.getSourceDataId();
+      voiRange = ((dataId
+        ? (
+            sourceViewport.getDisplaySetPresentation(dataId) as
+              | { voiRange?: Types.VOIRange }
+              | undefined
+          )?.voiRange
+        : undefined) ??
+        sourceViewport.getDefaultVOIRange(dataId) ??
+        undefined) as Types.VOIRange;
+    } else {
+      ({ voiRange } = viewport.getProperties());
+    }
     const startPos = worldToSlice(worldPos);
 
     this.scissors = LivewireScissors.createInstanceFromRawPixelData(
@@ -749,7 +768,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     editData.closed = true;
   }
 
-  private _dragCallback = (evt: EventTypes.InteractionEventType): void => {
+  protected _dragCallback = (evt: EventTypes.InteractionEventType): void => {
     this.isDrawing = true;
     const eventDetail = evt.detail;
     const { element } = eventDetail;
@@ -812,30 +831,6 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     this.doneEditMemo();
     this.scissors = null;
     return annotation.annotationUID;
-  };
-
-  private _activateModify = (element) => {
-    state.isInteractingWithTool = true;
-
-    element.addEventListener(Events.MOUSE_UP, this._endCallback);
-    element.addEventListener(Events.MOUSE_DRAG, this._dragCallback);
-    element.addEventListener(Events.MOUSE_CLICK, this._endCallback);
-
-    element.addEventListener(Events.TOUCH_END, this._endCallback);
-    element.addEventListener(Events.TOUCH_DRAG, this._dragCallback);
-    element.addEventListener(Events.TOUCH_TAP, this._endCallback);
-  };
-
-  private _deactivateModify = (element) => {
-    state.isInteractingWithTool = false;
-
-    element.removeEventListener(Events.MOUSE_UP, this._endCallback);
-    element.removeEventListener(Events.MOUSE_DRAG, this._dragCallback);
-    element.removeEventListener(Events.MOUSE_CLICK, this._endCallback);
-
-    element.removeEventListener(Events.TOUCH_END, this._endCallback);
-    element.removeEventListener(Events.TOUCH_DRAG, this._dragCallback);
-    element.removeEventListener(Events.TOUCH_TAP, this._endCallback);
   };
 
   private _activateDraw = (element) => {

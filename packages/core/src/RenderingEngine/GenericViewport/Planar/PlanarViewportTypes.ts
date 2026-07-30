@@ -4,6 +4,8 @@ import type {
   BlendModes,
   InterpolationType,
   OrientationAxis,
+  RenderBackendValue,
+  VOILUTFunctionType,
 } from '../../../enums';
 import type {
   ActorEntry,
@@ -41,13 +43,20 @@ export type PlanarRenderMode =
   | 'webgl2d'
   | ActorRenderMode.VTK_IMAGE
   | ActorRenderMode.VTK_VOLUME_SLICE;
-/** @internal */
+/**
+ * A render mode a planar viewport can mount: the built-in modes plus any mode
+ * declared by an extension backend registered via `registerRenderBackend()`
+ * (the trailing `string & {}` keeps the union open without erasing the
+ * built-in literals from completion).
+ * @internal
+ */
 export type PlanarEffectiveRenderMode =
   | ActorRenderMode.CPU_IMAGE
   | 'webgl2d'
   | ActorRenderMode.VTK_IMAGE
   | ActorRenderMode.VTK_VOLUME_SLICE
-  | ActorRenderMode.CPU_VOLUME;
+  | ActorRenderMode.CPU_VOLUME
+  | (string & {});
 export type PlanarOrientation =
   | OrientationAxis.ACQUISITION
   | OrientationAxis.AXIAL
@@ -68,10 +77,17 @@ export interface PlanarRegisteredDataSet {
 
 export interface PlanarSetDataOptions {
   orientation?: PlanarOrientation;
-  cpuThresholds?: {
-    image?: number;
-    volume?: number;
-  };
+  /**
+   * Per-display-set render backend override, taking precedence over the
+   * global `rendering.planar.renderBackend` configuration. 'cpu' pins this
+   * display set to CPU rendering (e.g. to bound GPU memory for a thumbnail
+   * viewport mounted next to GPU viewports); 'gpu' pins it to the GPU;
+   * 'auto' resolves from capability detection even when the global backend
+   * is pinned. Pinned display sets keep their backend across global
+   * setRenderBackend() switches. When omitted, the global configuration
+   * decides.
+   */
+  renderBackend?: RenderBackendValue;
   role?: BindingRole;
 }
 
@@ -86,7 +102,11 @@ export interface PlanarDataLoadOptions {
 /** @internal */
 export interface PlanarPayload {
   imageIds: string[];
-  initialImageIdIndex: number;
+  // Undefined means "no initial slice was requested" - the volume acquisition
+  // view centers in that case (see createInitialVolumeSliceState). A concrete
+  // number (including an explicit 0) is honored. Consumers that need a scalar
+  // placeholder index default it locally with `?? 0`.
+  initialImageIdIndex?: number;
   volumeId: string;
   renderMode: PlanarEffectiveRenderMode;
   acquisitionOrientation?: PlanarViewState['orientation'];
@@ -100,6 +120,7 @@ export interface PlanarPayload {
 export interface PlanarPresentationProps extends BasePresentationProps {
   colormap?: ColormapPublic;
   voiRange?: VOIRange;
+  voiLUTFunction?: VOILUTFunctionType;
   invert?: boolean;
 }
 

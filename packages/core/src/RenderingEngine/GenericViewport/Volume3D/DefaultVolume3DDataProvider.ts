@@ -4,9 +4,9 @@ import { createAndCacheVolume } from '../../../loaders/volumeLoader';
 import resolveViewportVolumeId from '../../helpers/resolveViewportVolumeId';
 import type { LoadedData } from '../ViewportArchitectureTypes';
 import {
-  getGenericViewportImageDataSet,
-  isGenericViewportImageDataSet,
-} from '../genericViewportDataSetAccess';
+  getGenericViewportImageDisplaySet,
+  isGenericViewportImageDisplaySet,
+} from '../genericViewportDisplaySetAccess';
 import type {
   Volume3DDataProvider,
   Volume3DGeometryPayload,
@@ -67,7 +67,7 @@ export class DefaultVolume3DDataProvider implements Volume3DDataProvider {
   }
 
   private getDataSet(dataId: string): Volume3DRegisteredDataSet | undefined {
-    const dataSet = getGenericViewportImageDataSet(dataId);
+    const dataSet = getGenericViewportImageDisplaySet(dataId);
 
     if (!isVolume3DRegisteredDataSet(dataSet)) {
       return;
@@ -80,7 +80,7 @@ export class DefaultVolume3DDataProvider implements Volume3DDataProvider {
 function isVolume3DRegisteredDataSet(
   value: unknown
 ): value is Volume3DRegisteredDataSet {
-  if (!isGenericViewportImageDataSet(value)) {
+  if (!isGenericViewportImageDisplaySet(value)) {
     return false;
   }
 

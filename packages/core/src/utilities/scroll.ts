@@ -46,6 +46,16 @@ export default function scroll(
   if (viewport instanceof VolumeViewport) {
     scrollVolume(viewport, volumeId, delta, scrollSlabs);
   } else {
+    if (
+      typeof (viewport as IStackViewport).getCurrentImageIdIndex !==
+        'function' ||
+      typeof (viewport as IStackViewport).scroll !== 'function'
+    ) {
+      // Viewports without index-based scrolling (e.g. Generic 3D volume
+      // rendering) ignore scroll requests instead of throwing.
+      return;
+    }
+
     const imageIdIndex = viewport.getCurrentImageIdIndex();
 
     if (

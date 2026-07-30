@@ -54,7 +54,7 @@ describe('performVolumeLabelmapUpdate', () => {
   it('updates stack-backed labelmap geometry volumes', () => {
     const stackLayer = {
       labelmapId: 'stack-layer-id',
-      type: 'stack',
+      storageKind: 'stack',
       imageIds: ['labelmap-image-1', 'labelmap-image-2'],
     };
     const volume = createVolume('stack-layer-geometry-volume');

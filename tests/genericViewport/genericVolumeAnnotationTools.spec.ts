@@ -2,10 +2,18 @@ import { expect, test } from '@playwright/test';
 import {
   createExampleUrl,
   checkForCanvasSnapshot,
+  expectAnnotationText,
   expectGenericViewportRuntime,
   getVisibleViewportCanvas,
   screenShotPaths,
 } from '../utils/index';
+
+// The drawn length is geometry-derived (canvas center → center+(100,100)) and
+// identical on every plane for this volume, so the rendered label is stable
+// across GPU/CPU and axial/sagittal. It is asserted explicitly and hidden from
+// the screenshots because font rasterization — not the measurement — is what
+// drifts between CI environments. See expectAnnotationText / hideAnnotationText.
+const EXPECTED_LENGTH_LABEL = '138 mm';
 
 const EXAMPLE = 'genericVolumeAnnotationTools';
 const SETTLE_MS = 5000;
@@ -207,11 +215,13 @@ test.describe('Volume Annotation - Next (GPU)', () => {
   test('should draw a length measurement (next GPU)', async ({ page }) => {
     const locator = getVisibleViewportCanvas(page, 0);
     await drawLengthMeasurement(page, locator);
+    await expectAnnotationText(page, 0, EXPECTED_LENGTH_LABEL);
     await checkForCanvasSnapshot(
       page,
       '',
       screenShotPaths.volumeAnnotationNext.length,
-      0
+      0,
+      { hideAnnotationText: true }
     );
   });
 
@@ -220,11 +230,13 @@ test.describe('Volume Annotation - Next (GPU)', () => {
   }) => {
     const sagittal = getVisibleViewportCanvas(page, 1);
     await drawLengthMeasurement(page, sagittal);
+    await expectAnnotationText(page, 1, EXPECTED_LENGTH_LABEL);
     await checkForCanvasSnapshot(
       page,
       '',
       screenShotPaths.volumeAnnotationNext.sagittal,
-      1
+      1,
+      { hideAnnotationText: true }
     );
   });
 
@@ -284,11 +296,13 @@ test.describe('Volume Annotation - Next (CPU)', () => {
   test('should draw a length measurement (next CPU)', async ({ page }) => {
     const locator = getVisibleViewportCanvas(page, 0);
     await drawLengthMeasurement(page, locator);
+    await expectAnnotationText(page, 0, EXPECTED_LENGTH_LABEL);
     await checkForCanvasSnapshot(
       page,
       '',
       screenShotPaths.volumeAnnotationNext.cpuLength,
-      0
+      0,
+      { hideAnnotationText: true }
     );
   });
 
@@ -297,11 +311,13 @@ test.describe('Volume Annotation - Next (CPU)', () => {
   }) => {
     const sagittal = getVisibleViewportCanvas(page, 1);
     await drawLengthMeasurement(page, sagittal);
+    await expectAnnotationText(page, 1, EXPECTED_LENGTH_LABEL);
     await checkForCanvasSnapshot(
       page,
       '',
       screenShotPaths.volumeAnnotationNext.cpuSagittal,
-      1
+      1,
+      { hideAnnotationText: true }
     );
   });
 

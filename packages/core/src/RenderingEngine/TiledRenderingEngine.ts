@@ -7,6 +7,7 @@ import getOrCreateCanvas from './helpers/getOrCreateCanvas';
 import type IStackViewport from '../types/IStackViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
 import { vtkOffscreenMultiRenderWindow } from './vtkClasses';
+import { attachWebGLContextEvents } from './helpers/attachWebGLContextEvents';
 
 import type * as EventTypes from '../types/EventTypes';
 import type {
@@ -74,6 +75,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
       this.offscreenMultiRenderWindow.setContainer(
         this.offScreenCanvasContainer
       );
+      attachWebGLContextEvents(this.offscreenMultiRenderWindow, this.id);
     }
   }
   /**

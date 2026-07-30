@@ -44,7 +44,7 @@ export type {
   BaseViewportRenderContext,
   BasePresentationProps,
   DataAddOptions,
-  DataId,
+  DisplaySetId,
   DataProvider,
   ICanvasWorldViewport,
   IFrameOfReferenceViewport,

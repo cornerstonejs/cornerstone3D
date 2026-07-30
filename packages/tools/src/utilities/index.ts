@@ -33,6 +33,7 @@ import * as segmentation from './segmentation';
 import * as drawing from './drawing';
 import * as math from './math';
 import * as planar from './planar';
+import * as spatial from './spatial';
 import * as viewportFilters from './viewportFilters';
 import * as orientation from './orientation';
 import * as cine from './cine';
@@ -61,10 +62,17 @@ import { moveAnnotationToViewPlane } from './moveAnnotationToViewPlane';
 import { safeStructuredClone } from './safeStructuredClone';
 import getOrCreateImageVolume from './segmentation/getOrCreateImageVolume';
 import * as usFanExtraction from '../tools/annotation/UltrasoundPleuraBLineTool/utils/fanExtraction';
+import { jumpToFocalPoint } from './genericViewportToolHelpers';
+import pickIntensityPointInSlab, {
+  getSlabIntensityPickContext,
+} from './pickIntensityPointInSlab';
+
+export * from './defaultGetTextLines';
 
 export {
   math,
   planar,
+  spatial,
   viewportFilters,
   drawing,
   debounce,
@@ -114,4 +122,7 @@ export {
   moveAnnotationToViewPlane,
   safeStructuredClone,
   getOrCreateImageVolume,
+  jumpToFocalPoint,
+  pickIntensityPointInSlab,
+  getSlabIntensityPickContext,
 };

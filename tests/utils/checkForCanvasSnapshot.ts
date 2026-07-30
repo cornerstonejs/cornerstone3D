@@ -57,6 +57,16 @@ interface CheckForCanvasSnapshotOptions {
   threshold?: number;
   /** Allowed fraction of differing pixels. Default 0. */
   maxDiffPixelRatio?: number;
+  /**
+   * Hide annotation text boxes (the `g[data-annotation-uid]` groups that
+   * `drawTextBox` emits) while rasterizing the SVG overlay. Glyph rendering
+   * shifts by a few sub-pixels across machines and GL backends, so the label is
+   * the single largest source of environment-dependent diffs even when the line,
+   * handles and underlying image are pixel-identical. Hide it here and assert
+   * the value separately with `expectAnnotationText` so the snapshot only covers
+   * deterministic geometry. The label is restored after capture. Default false.
+   */
+  hideAnnotationText?: boolean;
 }
 
 /**
@@ -91,6 +101,7 @@ const checkForCanvasSnapshot = async (
     timeoutMs = 8000,
     threshold = 0.005,
     maxDiffPixelRatio = 0,
+    hideAnnotationText = false,
   } = options;
   const indices =
     typeof viewportIndex === 'number'
@@ -116,7 +127,7 @@ const checkForCanvasSnapshot = async (
   }
 
   const base64: string = await page.evaluate(
-    async ({ selector, indices, stableMs, timeoutMs }) => {
+    async ({ selector, indices, stableMs, timeoutMs, hideAnnotationText }) => {
       type ViewportTarget = {
         canvas: HTMLCanvasElement;
         svg: SVGSVGElement | null;
@@ -208,7 +219,23 @@ const checkForCanvasSnapshot = async (
           cursorPrevDisplay.push(n.style.display);
           n.style.display = 'none';
         });
+        // Optionally hide annotation labels for the same reason: font glyph
+        // rasterization drifts ±1 sub-pixel between environments. The value is
+        // asserted separately via expectAnnotationText.
+        const textNodes = hideAnnotationText
+          ? Array.from(
+              svg.querySelectorAll<SVGElement>('g[data-annotation-uid]')
+            )
+          : [];
+        const textPrevDisplay: string[] = [];
+        textNodes.forEach((n) => {
+          textPrevDisplay.push(n.style.display);
+          n.style.display = 'none';
+        });
         const xml = new XMLSerializer().serializeToString(svg);
+        textNodes.forEach((n, i) => {
+          n.style.display = textPrevDisplay[i];
+        });
         cursorNodes.forEach((n, i) => {
           n.style.display = cursorPrevDisplay[i];
         });
@@ -451,7 +478,7 @@ const checkForCanvasSnapshot = async (
         detach();
       }
     },
-    { selector: canvasSelector, indices, stableMs, timeoutMs }
+    { selector: canvasSelector, indices, stableMs, timeoutMs, hideAnnotationText }
   );
 
   const buffer = Buffer.from(base64, 'base64');

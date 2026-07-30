@@ -19,6 +19,7 @@ import triggerEvent from '../utilities/triggerEvent';
 import type { DataSetOptions } from '../types/IViewport';
 import eventTarget from '../eventTarget';
 import imageIdToURI from '../utilities/imageIdToURI';
+import { getGenericViewportWSIDisplaySet } from './GenericViewport/genericViewportDisplaySetAccess';
 import {
   addWSIMiniNavigationOverlayCss,
   type WSIClientLike,
@@ -543,7 +544,7 @@ class WSIViewport extends Viewport {
       return;
     }
     const { dataId } = entries[0];
-    const dataSet = metaData.get('genericViewportDataSet', dataId) as
+    const dataSet = metaData.get('genericViewportDisplaySet', dataId) as
       | { imageIds?: string[]; options?: { webClient?: WSIClientLike } }
       | undefined;
 
@@ -583,6 +584,9 @@ class WSIViewport extends Viewport {
   }
 
   public async setWSI(imageIds: string[], client: WSIClientLike) {
+    // Setting WSI data directly resets any display-set bookkeeping; the
+    // setDisplaySets override re-records after calling this.
+    this.clearDisplaySets();
     this.microscopyElement.style.background = 'black';
     this.microscopyElement.innerText = 'Loading';
     this.imageIds = imageIds;
@@ -626,6 +630,45 @@ class WSIViewport extends Viewport {
     });
   }
 
+  /**
+   * Mounts display sets on the viewport, mirroring the GenericViewport
+   * `setDisplaySets` API. The `displaySetId` is resolved through the registered
+   * generic-viewport dataset metadata (see `genericViewportDisplaySetMetadataProvider`)
+   * to its WSI `imageIds` and `webClient`, which are loaded via `setWSI`.
+   * Resolution and loading run inside {@link mountDisplaySets}, which records
+   * the mounted entries after `setWSI` so {@link getDisplaySets} reports them.
+   *
+   * @param entries - display set entries to mount; the first is used as the WSI source.
+   */
+  public async setDisplaySets(
+    ...entries: Array<{ displaySetId: string; options?: unknown }>
+  ): Promise<void> {
+    await this.mountDisplaySets(entries, async (entry) => {
+      const dataSet = getGenericViewportWSIDisplaySet(entry.displaySetId);
+      if (!dataSet?.imageIds?.length || !dataSet.options?.webClient) {
+        throw new Error(
+          `[WSIViewport] No registered WSI dataset (imageIds + webClient) for display set ${entry.displaySetId}`
+        );
+      }
+
+      // Mirror setDataIds: the mini-navigation overlay CSS is injected here
+      // (and only here on this path) so the overview/position controls are
+      // styled. Honors the per-dataset opt-out; the helper is idempotent.
+      if (dataSet.options.miniNavigationOverlay !== false) {
+        addWSIMiniNavigationOverlayCss();
+      }
+
+      // Call the base loader non-virtually: WSIViewportLegacyAdapter overrides
+      // setWSI to route through setDataIds -> setDisplaySets, which would recurse
+      // back into here indefinitely. Bypassing the override loads the WSI directly.
+      await WSIViewport.prototype.setWSI.call(
+        this,
+        dataSet.imageIds,
+        dataSet.options.webClient
+      );
+    });
+  }
+
   public postrender = () => {
     this.refreshRenderValues();
     triggerEvent(this.element, EVENTS.IMAGE_RENDERED, {
@@ -653,17 +696,13 @@ class WSIViewport extends Viewport {
   protected canvasToIndex = (canvasPos: Point2): Point3 => {
     const transform = this.getTransform();
     transform.invert();
-    const indexPoint = transform.transformPoint(
-      canvasPos.map((it) => it * devicePixelRatio) as Point2
-    );
+    const indexPoint = transform.transformPoint(canvasPos);
     return [indexPoint[0], indexPoint[1], 0] as Point3;
   };
 
   protected indexToCanvas = (indexPos: Point3): Point2 => {
     const transform = this.getTransform();
-    return transform
-      .transformPoint([indexPos[0], indexPos[1]])
-      .map((it) => it / devicePixelRatio) as Point2;
+    return transform.transformPoint([indexPos[0], indexPos[1]]);
   };
 
   /** This can be implemented later when multi-slice WSI is supported */

@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 import { validateCompatibilityRuntime } from './compatibilityMode';
+import { waitForViewportsRendered } from './waitForViewportsRendered';
 
 function shouldForceGenericViewport() {
   return process.env.PLAYWRIGHT_FORCE_COMPAT === 'true';
@@ -129,5 +130,20 @@ export const visitExample = async (
 
   await waitForExamplePage(page, waitForNetwork, waitForDom);
   await validateCompatibilityRuntime(page, title);
+
+  // Wait for the example's own initialization to finish rendering before a test
+  // interacts. Examples set up asynchronously (e.g. `await setStack(...)` then
+  // `setProperties({ voiRange })` + render); the DOM-ready signals above fire
+  // well before that, so on slow/self-hosted runners a test could act before
+  // the example's setup completed and the late setup would clobber it (seen as
+  // the VOI reverting to the image's stored window). Best-effort: a timeout
+  // just falls through to the prior behavior rather than failing setup.
+  try {
+    await waitForViewportsRendered(page, { timeout: 15000, quietMs: 500 });
+  } catch {
+    // Non-cornerstone example or a viewport that never reports rendered —
+    // proceed without blocking test setup.
+  }
+
   await page.waitForTimeout(delay);
 };

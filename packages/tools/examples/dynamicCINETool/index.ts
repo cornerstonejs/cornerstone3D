@@ -1,4 +1,3 @@
-import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
 import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
@@ -10,6 +9,7 @@ import {
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
+  get4DVolumeImageIds,
   setTitleAndDescription,
   setPetTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
@@ -229,33 +229,20 @@ function initViewports(volume, elements) {
 }
 
 async function createVolume(numDimensionGroups: number): Promise<any> {
-  const { metaDataManager } = cornerstoneDICOMImageLoader.wadors;
-
   if (numDimensionGroups < 1 || numDimensionGroups > MAX_NUM_DIMENSION_GROUPS) {
     throw new Error('Number of dimension groups is out of range');
   }
 
-  let imageIds = await createImageIdsAndCacheMetaData({
+  const seriesImageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID: '2.25.232704420736447710317909004159492840763',
     SeriesInstanceUID: '2.25.16992883200578135914239363565496792012',
     wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
-  const NUM_IMAGES_PER_DIMENSION_GROUP = 235;
-  const TOTAL_NUM_IMAGES =
-    MAX_NUM_DIMENSION_GROUPS * NUM_IMAGES_PER_DIMENSION_GROUP;
-  const numImagesToLoad = numDimensionGroups * NUM_IMAGES_PER_DIMENSION_GROUP;
-
-  // Load the last N dimension groups because they have a better image quality
-  // and first ones are white or contains only a few black pixels
-  const firstInstanceNumber = TOTAL_NUM_IMAGES - numImagesToLoad + 1;
-
-  imageIds = imageIds.filter((imageId) => {
-    const instanceMetaData = metaDataManager.get(imageId);
-    const instanceTag = instanceMetaData['00200013'];
-    const instanceNumber = parseInt(instanceTag.Value[0]);
-
-    return instanceNumber >= firstInstanceNumber;
+  // Load the last N dimension groups because they have better image quality
+  // than the first ones (often blank or sparse).
+  const imageIds = get4DVolumeImageIds(seriesImageIds, {
+    lastCount: numDimensionGroups,
   });
 
   // Define a unique id for the volume

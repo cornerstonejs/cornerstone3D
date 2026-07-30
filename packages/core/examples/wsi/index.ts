@@ -128,7 +128,7 @@ async function run() {
 
   // Register WSI data and set it on the viewport
   const dataId = `wsi:${imageIds[0]}`;
-  utilities.genericViewportDataSetMetadataProvider.add(dataId, {
+  utilities.genericViewportDisplaySetMetadataProvider.add(dataId, {
     imageIds,
     options: { webClient: client },
   });

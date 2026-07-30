@@ -18,21 +18,46 @@ export default function getScalingParameters(metaData, imageId: string) {
   const rescaleSlope = modalityLutModule.rescaleSlope;
   const rescaleIntercept = modalityLutModule.rescaleIntercept;
 
-  // Identity transform (slope 1, intercept 0) is implicitly non-prescaled; do not set preScale.
+  // Normalize a missing modality LUT to the identity transform (slope 1,
+  // intercept 0) before the short-circuit below. Otherwise a no-LUT image leaves
+  // rescaleSlope undefined, the `=== 1` check fails, and preScale is enabled with
+  // identity params - breaking the createImage.ts contract that no-LUT images
+  // disable preScale unless PT/RTDOSE-specific scaling is present.
+  const normalizedRescaleSlope = rescaleSlope ?? 1;
+  const normalizedRescaleIntercept = rescaleIntercept ?? 0;
+
+  const scalingModules = metaData.get('scalingModule', imageId) || {};
+
+  // Modality-specific scaling (PT SUV body weight, RTDOSE dose grid scaling)
+  // must be applied even when the modality LUT is an identity transform. PET
+  // stored in counts (e.g. Philips CNTS) commonly has rescaleSlope 1 /
+  // intercept 0 while still requiring suvbw to convert to SUV, so this is
+  // checked before the identity-transform short-circuit below.
+  const hasPTScaling =
+    modality === 'PT' &&
+    typeof scalingModules.suvbw === 'number' &&
+    !isNaN(scalingModules.suvbw);
+  const hasDoseScaling =
+    modality === 'RTDOSE' &&
+    typeof scalingModules.DoseGridScaling === 'number' &&
+    !isNaN(scalingModules.DoseGridScaling);
+
+  // Identity transform (slope 1, intercept 0) with no modality-specific scaling
+  // is implicitly non-prescaled; do not set preScale.
   if (
-    rescaleSlope === 1 &&
-    (rescaleIntercept === 0 || rescaleIntercept == null)
+    normalizedRescaleSlope === 1 &&
+    normalizedRescaleIntercept === 0 &&
+    !hasPTScaling &&
+    !hasDoseScaling
   ) {
     return undefined;
   }
 
   const scalingParameters = {
-    rescaleSlope,
-    rescaleIntercept,
+    rescaleSlope: normalizedRescaleSlope,
+    rescaleIntercept: normalizedRescaleIntercept,
     modality,
   };
-
-  const scalingModules = metaData.get('scalingModule', imageId) || {};
 
   return {
     ...scalingParameters,

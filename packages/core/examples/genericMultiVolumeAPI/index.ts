@@ -292,13 +292,13 @@ async function run() {
 
   addColormapEventListener();
 
-  utilities.genericViewportDataSetMetadataProvider.add(ctDataId, {
+  utilities.genericViewportDisplaySetMetadataProvider.add(ctDataId, {
     imageIds: ctImageIds,
     kind: 'planar',
     initialImageIdIndex: Math.floor(ctImageIds.length / 2),
     volumeId: ctVolumeId,
   });
-  utilities.genericViewportDataSetMetadataProvider.add(ptDataId, {
+  utilities.genericViewportDisplaySetMetadataProvider.add(ptDataId, {
     imageIds: ptImageIds,
     kind: 'planar',
     initialImageIdIndex: Math.floor(ptImageIds.length / 2),

@@ -48,7 +48,7 @@ describe('labelmap legacy adapter', () => {
     expect(labelmapData.referencedImageIds).toEqual(['source-image-1']);
     expect('volumeId' in labelmapData).toBe(false);
     expect('referencedVolumeId' in labelmapData).toBe(false);
-    expect(primaryLayer.type).toBe('stack');
+    expect(primaryLayer.storageKind).toBe('stack');
     expect('volumeId' in primaryLayer).toBe(false);
     expect('referencedVolumeId' in primaryLayer).toBe(false);
   });
@@ -67,7 +67,7 @@ describe('labelmap legacy adapter', () => {
 
     expect(labelmapData.volumeId).toBe('labelmap-volume');
     expect(labelmapData.referencedVolumeId).toBe('source-volume');
-    expect(primaryLayer.type).toBe('volume');
+    expect(primaryLayer.storageKind).toBe('volume');
     expect(primaryLayer.volumeId).toBe('labelmap-volume');
     expect(primaryLayer.referencedVolumeId).toBe('source-volume');
   });

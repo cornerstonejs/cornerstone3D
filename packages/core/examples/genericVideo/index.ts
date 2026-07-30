@@ -173,7 +173,7 @@ async function run() {
   const viewport =
     renderingEngine.getViewport<VideoGenericViewport>(viewportId);
 
-  utilities.genericViewportDataSetMetadataProvider.add(videoDataId, {
+  utilities.genericViewportDisplaySetMetadataProvider.add(videoDataId, {
     kind: 'video',
     sourceDataId: videoId,
   });

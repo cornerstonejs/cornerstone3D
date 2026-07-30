@@ -17,6 +17,17 @@ import contourSegmentationToolBindings from './contourSegmentationToolBindings';
 import contourTools from './contourTools';
 import createElement from './createElement';
 import createImageIdsAndCacheMetaData from './createImageIdsAndCacheMetaData';
+export {
+  splitDisplaySetsFromImageIds,
+  createDisplaySets,
+  getVideoImageIdFromImageIds,
+  getViewportTypeForDisplaySet,
+  getPrimaryStackFrameImageIds,
+  getVolumeFrameImageIds,
+  get4DDimensionGroupImageIds,
+  get4DVolumeImageIds,
+  getNaturalizedInstanceForDisplaySetSplit,
+} from './splitDisplaySetsFromImageIds';
 import createInfoSection from './createInfoSection';
 import downloadSurfacesData from './downloadSurfacesData';
 import getLocalUrl from './getLocalUrl';
@@ -30,6 +41,7 @@ import setCtTransferFunctionForVolumeActor, {
 import setPetColorMapTransferFunctionForVolumeActor from './setPetColorMapTransferFunctionForVolumeActor';
 import setPetTransferFunctionForVolumeActor from './setPetTransferFunctionForVolumeActor';
 import setTitleAndDescription from './setTitleAndDescription';
+import validateAndSortVolumeIds from './validateAndSortVolumeIds';
 import { wadoURICreateImageIds } from './WADOURICreateImageIds';
 
 import {
@@ -72,6 +84,7 @@ export {
   setPetColorMapTransferFunctionForVolumeActor,
   setPetTransferFunctionForVolumeActor,
   setTitleAndDescription,
+  validateAndSortVolumeIds,
   wadoURICreateImageIds,
   createAndCacheGeometriesFromContours,
   createAndCacheGeometriesFromSurfaces,

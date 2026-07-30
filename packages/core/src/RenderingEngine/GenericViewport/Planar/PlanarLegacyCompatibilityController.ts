@@ -10,7 +10,7 @@ import {
   getThresholdValue,
 } from '../../../utilities/colormap';
 import { getTransferFunctionNodes } from '../../../utilities/transferFunctionUtils';
-import genericViewportDataSetMetadataProvider from '../../../utilities/genericViewportDataSetMetadataProvider';
+import genericViewportDisplaySetMetadataProvider from '../../../utilities/genericViewportDisplaySetMetadataProvider';
 import type { PlanarRendering } from './planarRuntimeTypes';
 import {
   clonePlanarLegacyProperties,
@@ -454,7 +454,7 @@ class PlanarLegacyCompatibilityController {
     dataId: string,
     dataSet: PlanarRegisteredDataSet
   ): void {
-    genericViewportDataSetMetadataProvider.add(dataId, dataSet);
+    genericViewportDisplaySetMetadataProvider.add(dataId, dataSet);
     this.managedDataIds.add(dataId);
   }
 
@@ -868,7 +868,7 @@ class PlanarLegacyCompatibilityController {
 
   private unregisterDataId(dataId: string): void {
     try {
-      genericViewportDataSetMetadataProvider.remove(dataId);
+      genericViewportDisplaySetMetadataProvider.remove(dataId);
     } finally {
       this.properties.delete(dataId);
       this.globalDefaultProperties.delete(dataId);

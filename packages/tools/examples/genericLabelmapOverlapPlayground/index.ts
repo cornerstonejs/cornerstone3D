@@ -370,12 +370,12 @@ async function run() {
     toolGroup.addViewport(viewportId, renderingEngineId);
   });
 
-  utilities.genericViewportDataSetMetadataProvider.add(stackDataId, {
+  utilities.genericViewportDisplaySetMetadataProvider.add(stackDataId, {
     kind: 'planar',
     imageIds,
     initialImageIdIndex: Math.floor(imageIds.length / 2),
   });
-  utilities.genericViewportDataSetMetadataProvider.add(volumeDataId, {
+  utilities.genericViewportDisplaySetMetadataProvider.add(volumeDataId, {
     kind: 'planar',
     imageIds,
     initialImageIdIndex: Math.floor(imageIds.length / 2),

@@ -31,6 +31,17 @@ const actorTransferFunctions = new WeakMap<
   LabelmapTransferFunctions
 >();
 
+// Signature of the last style applied to each actor. setLabelmapColorAndOpacity
+// runs on every segmentation render (e.g. every scroll), but the labelmap
+// transfer functions only change when colors, per-segment style, segment
+// visibility, outline config, or active/visibility state change. Caching the
+// applied signature lets us skip the expensive vtk transfer-function rebuild
+// and actor/mapper invalidation when nothing relevant changed.
+const lastAppliedLabelmapStyle = new WeakMap<
+  vtkVolume | vtkImageSlice,
+  string
+>();
+
 const MAX_NUMBER_COLORS = 255;
 
 function setLabelmapColorAndOpacity(
@@ -103,9 +114,6 @@ function setLabelmapColorAndOpacity(
   });
 
   const labelmapActor = labelmapActorEntry.actor as vtkVolume | vtkImageSlice;
-  const { cfun, ofun } = getOrCreateTransferFunctions(labelmapActor);
-  cfun.removeAllPoints();
-  ofun.removeAllPoints();
 
   // sharpness=1.0 gives sharp/step-like transitions between adjacent label
   // values; sharpness=0 would interpolate opacities between labels, which for
@@ -165,6 +173,61 @@ function setLabelmapColorAndOpacity(
     }
   });
 
+  const activeSegmentIndex = getActiveSegmentIndex(
+    segmentationRepresentation.segmentationId
+  );
+
+  const outlineWidths = new Array(numColors - 1).fill(0);
+
+  if (renderOutline) {
+    labelValueEntries.forEach(({ labelValue, segmentIndex }) => {
+      if (segmentsHidden.has(segmentIndex)) {
+        return;
+      }
+
+      outlineWidths[labelValue - 1] =
+        segmentIndex === activeSegmentIndex
+          ? outlineWidth + activeSegmentOutlineWidthDelta
+          : outlineWidth;
+    });
+  }
+
+  const visible = isActiveLabelmap || renderInactiveSegmentations;
+
+  const useImageSliceProperties =
+    labelmapActorEntry.actorMapper?.renderMode === ActorRenderMode.VTK_IMAGE ||
+    labelmapActorEntry.actorMapper?.renderMode ===
+      ActorRenderMode.VTK_VOLUME_SLICE;
+
+  // @ts-ignore - fix type in vtk
+  const { preLoad } = labelmapActor.get?.('preLoad') || { preLoad: null };
+
+  // The signature captures everything that is applied to the actor below, so an
+  // identical signature means re-applying would be a no-op. preLoad consumers
+  // run a custom apply path with effects we cannot observe here, so they always
+  // rebuild.
+  const styleSignature = JSON.stringify({
+    colorNodes,
+    opacityNodes,
+    renderOutline,
+    outlineOpacity,
+    outlineWidths,
+    visible,
+    useImageSliceProperties,
+  });
+  const canUseStyleCache = !preLoad;
+
+  if (
+    canUseStyleCache &&
+    lastAppliedLabelmapStyle.get(labelmapActor) === styleSignature
+  ) {
+    return;
+  }
+
+  const { cfun, ofun } = getOrCreateTransferFunctions(labelmapActor);
+  cfun.removeAllPoints();
+  ofun.removeAllPoints();
+
   cfun.setNodes(colorNodes);
   ofun.setNodes(opacityNodes);
 
@@ -180,9 +243,6 @@ function setLabelmapColorAndOpacity(
     ? actorMapper.mapper
     : labelmapActor.getMapper();
 
-  // @ts-ignore - fix type in vtk
-  const { preLoad } = labelmapActor.get?.('preLoad') || { preLoad: null };
-
   if (preLoad) {
     preLoad({ cfun, ofun, actor: labelmapActor });
   } else {
@@ -191,11 +251,7 @@ function setLabelmapColorAndOpacity(
     labelmapActor.getProperty().setInterpolationTypeToNearest();
   }
 
-  if (
-    labelmapActorEntry.actorMapper?.renderMode === ActorRenderMode.VTK_IMAGE ||
-    labelmapActorEntry.actorMapper?.renderMode ===
-      ActorRenderMode.VTK_VOLUME_SLICE
-  ) {
+  if (useImageSliceProperties) {
     const imageSlice = labelmapActor as vtkImageSlice;
 
     imageSlice.setForceTranslucent(true);
@@ -208,39 +264,24 @@ function setLabelmapColorAndOpacity(
     labelmapActor.getProperty().setUseLabelOutline(renderOutline);
     // @ts-ignore - fix type in vtk
     labelmapActor.getProperty().setLabelOutlineOpacity(outlineOpacity);
-
-    const activeSegmentIndex = getActiveSegmentIndex(
-      segmentationRepresentation.segmentationId
-    );
-    const outlineWidths = new Array(numColors - 1).fill(0);
-
-    labelValueEntries.forEach(({ labelValue, segmentIndex }) => {
-      const isHidden = segmentsHidden.has(segmentIndex);
-      if (isHidden) {
-        return;
-      }
-
-      outlineWidths[labelValue - 1] =
-        segmentIndex === activeSegmentIndex
-          ? outlineWidth + activeSegmentOutlineWidthDelta
-          : outlineWidth;
-    });
-
     labelmapActor.getProperty().setLabelOutlineThickness(outlineWidths);
     labelmapActor.modified();
     labelmapActor.getProperty().modified();
     labelmapMapper?.modified?.();
   } else {
-    labelmapActor
-      .getProperty()
-      .setLabelOutlineThickness(new Array(numColors - 1).fill(0));
+    labelmapActor.getProperty().setLabelOutlineThickness(outlineWidths);
   }
 
-  const visible = isActiveLabelmap || renderInactiveSegmentations;
   labelmapActor.setVisibility(visible);
   labelmapActor.modified();
   labelmapActor.getProperty().modified();
   labelmapMapper?.modified?.();
+
+  if (canUseStyleCache) {
+    lastAppliedLabelmapStyle.set(labelmapActor, styleSignature);
+  } else {
+    lastAppliedLabelmapStyle.delete(labelmapActor);
+  }
 }
 
 function getOrCreateTransferFunctions(

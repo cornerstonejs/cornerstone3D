@@ -22,6 +22,7 @@ import {
 import type { LabelmapSegmentationData } from '../../types/LabelmapTypes';
 
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+import getViewportICamera from '../../utilities/getViewportICamera';
 import {
   config as segmentationConfig,
   segmentLocking,
@@ -113,7 +114,8 @@ class RectangleScissorsTool extends LabelmapBaseTool {
 
     this.isDrawing = true;
 
-    const camera = viewport.getCamera();
+    // Native ("next") viewports expose no getCamera; read orientation via the bridge.
+    const camera = getViewportICamera(viewport);
     const { viewPlaneNormal, viewUp } = camera;
 
     const activeLabelmapSegmentation = activeSegmentation.getActiveSegmentation(

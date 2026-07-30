@@ -9,6 +9,7 @@ import {
   ImageVolume,
 } from '@cornerstonejs/core';
 import { BaseTool } from '../base';
+import getViewportICamera from '../../utilities/getViewportICamera';
 import { SegmentationRepresentations } from '../../enums';
 import type { EventTypes, PublicToolProps, ToolProps } from '../../types';
 import {
@@ -104,7 +105,8 @@ class GrowCutBaseTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
 
-    const { viewUp } = viewport.getCamera();
+    // Native ("next") viewports expose no getCamera; read orientation via the bridge.
+    const { viewUp } = getViewportICamera(viewport);
     const {
       segmentationId,
       segmentIndex,
@@ -435,7 +437,8 @@ class GrowCutBaseTool extends BaseTool {
   ) {
     const volume = cache.getVolume(referencedVolumeId);
     const volumeImageData = volume.imageData;
-    const camera = viewport.getCamera();
+    // Native ("next") viewports expose no getCamera; read orientation via the bridge.
+    const camera = getViewportICamera(viewport);
     const { ijkVecColDir, ijkVecSliceDir } = csUtils.getVolumeDirectionVectors(
       volumeImageData,
       camera

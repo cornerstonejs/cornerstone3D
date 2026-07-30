@@ -7,6 +7,7 @@ import { Enums as csCoreEnums, type Types } from '@cornerstonejs/core';
 
 import createImage from '../createImage';
 import getPixelData from './getPixelData';
+import { loadImageFromCompressedFrameRegistry } from './loadImageFromRegistry';
 import type { DICOMLoaderIImage, DICOMLoaderImageOptions } from '../../types';
 
 const { ProgressiveIterator } = utilities;
@@ -122,6 +123,37 @@ const mediaType =
   'multipart/related; type=application/octet-stream; transfer-syntax=*';
 
 function loadImage(
+  imageId: string,
+  options: CornerstoneWadoRsLoaderOptions = {}
+): Types.IImageLoadObject {
+  // If a full Part 10 instance was prefetched/registered into the NATURALIZED
+  // metadata registry, serve this frame from there instead of a per-frame
+  // /frames/N request. Returns undefined (and we fall through to the network)
+  // when nothing is registered for this frame.
+  const registryPromise = loadImageFromCompressedFrameRegistry(
+    imageId,
+    options
+  );
+  if (registryPromise) {
+    return {
+      // A registry frame the worker can't decode must not be terminal: fall
+      // back to the network /frames/N path, whose transfer-syntax=*
+      // negotiation lets the server transcode to a decodable syntax.
+      promise: registryPromise.catch((error) => {
+        console.warn(
+          `Failed to decode registry frame data for ${imageId}; falling back to network retrieval`,
+          error
+        );
+        return loadImageFromNetwork(imageId, options).promise;
+      }) as Promise<Types.IImage>,
+      cancelFn: undefined,
+    };
+  }
+
+  return loadImageFromNetwork(imageId, options);
+}
+
+function loadImageFromNetwork(
   imageId: string,
   options: CornerstoneWadoRsLoaderOptions = {}
 ): Types.IImageLoadObject {

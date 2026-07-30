@@ -269,6 +269,7 @@ export class StatsOverlay implements StatsInstance {
     const entries: Array<{
       renderingEngineId: string;
       viewportId: string;
+      viewportType: string;
       bindings: RenderModePanelBinding[];
     }> = [];
 
@@ -284,6 +285,7 @@ export class StatsOverlay implements StatsInstance {
         entries.push({
           renderingEngineId: renderingEngine.id,
           viewportId: viewport.id,
+          viewportType: viewport.type,
           bindings: this.getViewportBindingDebugEntries(
             debugViewport,
             (renderModes as Record<string, string> | undefined) ?? {}
@@ -301,20 +303,42 @@ export class StatsOverlay implements StatsInstance {
   ): RenderModePanelBinding[] {
     const actors = viewport.getActors?.() ?? [];
     const sourceDataId = viewport.getSourceDataId?.();
+    const renderModeEntries = Object.entries(renderModes);
 
-    return Object.entries(renderModes).map(([dataId, renderMode]) => {
-      const role = resolveBindingRole(viewport, dataId, sourceDataId);
-      const actor =
-        role === 'source'
-          ? viewport.getDefaultActor?.()
-          : findActorForDataId(actors, dataId);
+    if (renderModeEntries.length) {
+      return renderModeEntries.map(([dataId, renderMode]) => {
+        const role = resolveBindingRole(viewport, dataId, sourceDataId);
+        const actor =
+          role === 'source'
+            ? viewport.getDefaultActor?.()
+            : findActorForDataId(actors, dataId);
+
+        return {
+          actorUID: actor?.uid,
+          dataId,
+          referencedId: actor?.referencedId,
+          renderMode,
+          role,
+          ...getActorScalarInfo(actor),
+        };
+      });
+    }
+
+    // Legacy viewports do not expose a GenericViewport `_debug.renderModes`
+    // map, so derive the rows directly from the actors. This lets the debug
+    // overlay show the same actor UID / referencedId info for legacy viewports
+    // (e.g. to compare whether a labelmap actor is reused or recreated across
+    // slices) instead of an empty bindings panel.
+    return actors.map((actor) => {
+      const dataId = actor.representationUID ?? actor.uid ?? '';
 
       return {
-        actorUID: actor?.uid,
+        actorUID: actor.uid,
         dataId,
-        referencedId: actor?.referencedId,
-        renderMode,
-        role,
+        referencedId: actor.referencedId,
+        renderMode: '-',
+        role: resolveBindingRole(viewport, dataId, sourceDataId),
+        ...getActorScalarInfo(actor),
       };
     });
   }
@@ -471,6 +495,39 @@ type DebugActorEntry = {
   referencedId?: string;
   representationUID?: string;
   uid?: string;
+  actor?: DebugScalarActor;
+};
+
+/**
+ * Minimal structural view of an actor that exposes the image data backing it,
+ * covering both VTK actors (point-data scalars) and the canvas/CPU actors used
+ * for the labelmap render paths (`getScalarData` + pixel-value range).
+ */
+type DebugScalarActor = {
+  getMapper?: () =>
+    | {
+        getInputData?: () => DebugScalarInputData | null | undefined;
+      }
+    | null
+    | undefined;
+};
+
+type DebugScalarInputData = {
+  getPointData?: () =>
+    | {
+        getScalars?: () => DebugScalarArray | null | undefined;
+      }
+    | null
+    | undefined;
+  getScalarData?: () => ArrayLike<number> | null | undefined;
+  minPixelValue?: number;
+  maxPixelValue?: number;
+};
+
+type DebugScalarArray = {
+  getDataType?: () => string;
+  getNumberOfComponents?: () => number;
+  getRange?: (componentIndex?: number) => number[];
 };
 
 type DebugBindingsViewport = {
@@ -513,4 +570,76 @@ function findActorForDataId(
       actor.representationUID === dataId ||
       actor.referencedId === dataId
   );
+}
+
+/**
+ * Reads the scalar buffer type (e.g. `Uint8Array`) and value range backing an
+ * actor so the debug overlay can surface what data is actually loaded. Works
+ * for both VTK actors (via point-data scalars) and the canvas/CPU labelmap
+ * actors (via `getScalarData` + precomputed pixel-value range).
+ *
+ * VTK's `getRange()` is cached per component, so polling it from the overlay
+ * loop is cheap after the first computation. This is best-effort and never
+ * throws -- actors without scalar image data (surfaces, geometry) simply
+ * return no scalar info.
+ */
+function getActorScalarInfo(entry: DebugActorEntry | undefined): {
+  scalarType?: string;
+  scalarRange?: [number, number];
+  numberOfComponents?: number;
+} {
+  const inputData = entry?.actor?.getMapper?.()?.getInputData?.();
+  if (!inputData) {
+    return {};
+  }
+
+  try {
+    const scalars = inputData.getPointData?.()?.getScalars?.();
+    if (scalars?.getDataType) {
+      const numberOfComponents = scalars.getNumberOfComponents?.() ?? 1;
+      // For multi-component (e.g. RGB) read the first component to avoid the
+      // magnitude allocation that `getRange(-1)` performs.
+      const range =
+        numberOfComponents > 1 ? scalars.getRange?.(0) : scalars.getRange?.();
+
+      return {
+        scalarType: scalars.getDataType(),
+        scalarRange: normalizeRange(range),
+        numberOfComponents,
+      };
+    }
+
+    const scalarData = inputData.getScalarData?.();
+    if (scalarData?.constructor?.name) {
+      const range =
+        Number.isFinite(inputData.minPixelValue) &&
+        Number.isFinite(inputData.maxPixelValue)
+          ? [inputData.minPixelValue, inputData.maxPixelValue]
+          : undefined;
+
+      return {
+        scalarType: scalarData.constructor.name,
+        scalarRange: normalizeRange(range),
+      };
+    }
+  } catch {
+    // The debug overlay must never throw; skip scalar info on failure.
+  }
+
+  return {};
+}
+
+function normalizeRange(
+  range: number[] | undefined
+): [number, number] | undefined {
+  if (
+    !range ||
+    range.length < 2 ||
+    !Number.isFinite(range[0]) ||
+    !Number.isFinite(range[1])
+  ) {
+    return undefined;
+  }
+
+  return [range[0], range[1]];
 }

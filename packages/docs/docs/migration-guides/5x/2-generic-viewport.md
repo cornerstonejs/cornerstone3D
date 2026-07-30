@@ -297,7 +297,7 @@ import { Enums, utilities, type PlanarViewport } from '@cornerstonejs/core';
 const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 const displaySetId = 'ct-stack';
 
-utilities.genericViewportDataSetMetadataProvider.add(displaySetId, {
+utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
   kind: 'planar',
   imageIds,
   initialImageIdIndex: 0,
@@ -315,7 +315,7 @@ For a volume-backed planar slice, include the `volumeId` in the registered
 display set:
 
 ```ts
-utilities.genericViewportDataSetMetadataProvider.add(displaySetId, {
+utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
   kind: 'planar',
   imageIds,
   initialImageIdIndex: Math.floor(imageIds.length / 2),

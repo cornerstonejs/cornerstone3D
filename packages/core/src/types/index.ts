@@ -26,6 +26,8 @@ import type {
   ViewportInput,
   RenderingEngineResizeOptions,
 } from './IViewport';
+import type IGenericViewport from './IGenericViewport';
+import type { ViewportContentMode } from './IGenericViewport';
 import type {
   VolumeActor,
   Actor,
@@ -62,6 +64,7 @@ import type {
   Scaling,
   ScalingParameters,
 } from './ScalingParameters';
+import type { ScalingDescriptor } from './ScalingDescriptor';
 import type StackViewportProperties from './StackViewportProperties';
 import type VolumeViewportProperties from './VolumeViewportProperties';
 import type IViewportId from './IViewportId';
@@ -164,6 +167,11 @@ import type {
   ViewportTypeConstants,
   ViewportTypeRegistry,
 } from './ViewportTypeRegistry';
+import type {
+  EffectiveRenderBackend,
+  RenderBackendConstants,
+  RenderBackendRegistry,
+} from './RenderBackendRegistry';
 
 export type * from './MetadataModuleTypes';
 export type * from './InstanceTypes';
@@ -189,6 +197,7 @@ export type {
   IDynamicImageVolume,
   IRenderingEngine,
   ScalingParameters,
+  ScalingDescriptor,
   PTScaling,
   IPointsManager,
   PolyDataPointConfiguration,
@@ -205,6 +214,8 @@ export type {
   IRegisterImageLoader,
   IStreamingVolumeProperties,
   IViewport,
+  IGenericViewport,
+  ViewportContentMode,
   ViewReference,
   DataSetOptions as ImageSetOptions,
   ViewPresentation,
@@ -329,6 +340,9 @@ export type {
   ViewportType,
   ViewportTypeRegistry,
   ViewportTypeConstants,
+  EffectiveRenderBackend,
+  RenderBackendRegistry,
+  RenderBackendConstants,
 };
 
 export { ActorRenderMode };

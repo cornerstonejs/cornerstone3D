@@ -61,6 +61,9 @@ import {
 import type { TransferFunctionNodes } from '../types/ITransferFunctionNode';
 import type vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
 
+import { createAndCacheVolume } from '../loaders/volumeLoader';
+import resolveViewportVolumeId from './helpers/resolveViewportVolumeId';
+import { getGenericViewportImageDisplaySet } from './GenericViewport/genericViewportDisplaySetAccess';
 import createVolumeActor from './helpers/createVolumeActor';
 import volumeNewImageEventDispatcher, {
   resetVolumeNewImageState,
@@ -671,7 +674,12 @@ abstract class BaseVolumeViewport extends Viewport {
   ): ViewReference {
     const target = super.getViewReference(viewRefSpecifier);
     const volumeId = this.getVolumeId(viewRefSpecifier);
-    if (viewRefSpecifier?.forFrameOfReference !== false) {
+    // Include the volumeId unless a frame-of-reference reference was
+    // explicitly requested (forFrameOfReference === true), since such a
+    // reference is not volume specific and must not carry a volumeId.  The
+    // default and forFrameOfReference === false both bind to this volume.
+    // Keep this in sync with planarViewReference (the generic viewports).
+    if (viewRefSpecifier?.forFrameOfReference !== true) {
       target.volumeId = volumeId;
     }
     if (typeof viewRefSpecifier?.sliceIndex !== 'number') {
@@ -1437,6 +1445,10 @@ abstract class BaseVolumeViewport extends Viewport {
     immediate = false,
     suppressEvents = false
   ): Promise<void> {
+    // Setting raw volumes directly resets any display-set bookkeeping; the
+    // setDisplaySets override re-records after calling this.
+    this.clearDisplaySets();
+
     const volumeId = volumeInputArray[0].volumeId;
     const firstImageVolume = cache.getVolume(volumeId);
 
@@ -1497,6 +1509,49 @@ abstract class BaseVolumeViewport extends Viewport {
     if (immediate) {
       this.render();
     }
+  }
+
+  /**
+   * Mounts display sets on the viewport, mirroring the GenericViewport
+   * `setDisplaySets` API. The `displaySetId` is resolved through the registered
+   * generic-viewport dataset metadata (see `genericViewportDisplaySetMetadataProvider`)
+   * to its `imageIds`; a volume is created/cached from them (if not already
+   * present) and loaded via `setVolumes`. Per-entry `options` (e.g. `callback`,
+   * `blendMode`, `slabThickness`) are forwarded to the volume input. Resolution
+   * and loading run inside {@link mountDisplaySets}, which records the mounted
+   * entries after `setVolumes` so {@link getDisplaySets} reports them.
+   *
+   * @param entries - display set entries to mount; the first provides the volume.
+   */
+  public async setDisplaySets(
+    ...entries: Array<{ displaySetId: string; options?: unknown }>
+  ): Promise<void> {
+    await this.mountDisplaySets(entries, async (entry) => {
+      const dataSet = getGenericViewportImageDisplaySet(entry.displaySetId);
+      if (!dataSet?.imageIds?.length) {
+        throw new Error(
+          `[VolumeViewport] No registered imageIds for display set ${entry.displaySetId}`
+        );
+      }
+
+      const volumeId = resolveViewportVolumeId(
+        (dataSet.volumeId as string) ?? entry.displaySetId
+      );
+
+      if (!cache.getVolume(volumeId)) {
+        const volume = await createAndCacheVolume(volumeId, {
+          imageIds: dataSet.imageIds,
+        });
+        volume.load();
+      }
+
+      const volumeInput = {
+        volumeId,
+        ...((entry.options as Record<string, unknown>) ?? {}),
+      } as IVolumeInput;
+
+      await this.setVolumes([volumeInput]);
+    });
   }
 
   /**

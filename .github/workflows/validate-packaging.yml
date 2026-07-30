@@ -1,0 +1,87 @@
+name: Validate ESM Packaging
+
+# Guards the ESM packaging contract from https://github.com/cornerstonejs/cornerstone3D/issues/2763
+# from regressing: every published @cornerstonejs/* package must ship ESM that
+# resolves in bundlers AND native Node (correct `.js`/`.d.ts` extensions,
+# `type:module`, clean publint + @arethetypeswrong). Builds once on Node 24,
+# then validates on Node 24 and 25 — Node >=25 hard-fails on missing extensions,
+# so it is the canary for this class of bug.
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-packages:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6.0.3
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6.0.8
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm run build
+
+      - name: Archive built ESM output
+        run: tar -czf built-esm-packages.tgz packages/*/dist/esm
+
+      - name: Upload built ESM output
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: built-esm-packages
+          path: built-esm-packages.tgz
+          if-no-files-found: error
+
+  validate-packaging:
+    needs: build-packages
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ['24', '25']
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6.0.3
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6.0.8
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download built ESM output
+        uses: actions/download-artifact@v8.0.1
+        with:
+          name: built-esm-packages
+          path: .
+
+      - name: Restore built ESM output
+        run: tar -xzf built-esm-packages.tgz
+
+      - name: Validate ESM packaging (extensions, publint, attw, native-Node import)
+        run: pnpm run validate:packaging

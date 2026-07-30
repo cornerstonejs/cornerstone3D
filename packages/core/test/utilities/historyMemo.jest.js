@@ -52,4 +52,56 @@ describe('HistoryMemo', function () {
     defaultHistoryMemo.undo();
     expect(defaultHistoryMemo.canRedo).toBe(true);
   });
+
+  it('replaces the current memo without adding another undo step', () => {
+    const provisionalMemo = createMemo(0);
+    provisionalMemo.id = 'provisional';
+    historyMemo.push(provisionalMemo);
+    state.testState = 1;
+
+    const replacementMemo = createMemo(10);
+    replacementMemo.id = 'replacement';
+
+    expect(
+      historyMemo.replaceCurrentMemo(
+        replacementMemo,
+        (memo) => memo.id === 'provisional'
+      )
+    ).toBe(true);
+
+    historyMemo.undo();
+    expect(state.testState).toBe(10);
+    expect(historyMemo.canUndo).toBe(false);
+
+    historyMemo.redo();
+    expect(state.testState).toBe(1);
+  });
+
+  it('replaces a matching memo in the current group', () => {
+    const firstMemo = createMemo(0);
+    firstMemo.id = 'first';
+    const provisionalMemo = createMemo(0);
+    provisionalMemo.id = 'provisional';
+
+    historyMemo.startGroupRecording();
+    historyMemo.push(firstMemo);
+    historyMemo.push(provisionalMemo);
+    historyMemo.endGroupRecording();
+
+    const replacementMemo = createMemo(10);
+    replacementMemo.id = 'replacement';
+
+    expect(
+      historyMemo.replaceCurrentMemo(
+        replacementMemo,
+        (memo) => memo.id === 'provisional'
+      )
+    ).toBe(true);
+    expect(
+      historyMemo.replaceCurrentMemo(
+        createMemo(20),
+        (memo) => memo.id === 'missing'
+      )
+    ).toBe(false);
+  });
 });

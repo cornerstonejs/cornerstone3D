@@ -24,3 +24,4 @@ export * as DicomStream from './dicomStream';
 export * from './logging';
 export * from './metadataProvider';
 export * as typedMetadataProviders from './metadataProvider';
+export * from '../displayset';

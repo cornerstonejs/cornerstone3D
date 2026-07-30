@@ -12,6 +12,7 @@ import {
 } from './triggerSegmentationEvents';
 import { addColorLUT } from './addColorLUT';
 import { defaultSegmentationStateManager } from './SegmentationStateManager';
+import { isSegmentationOverlayCompatible } from './helpers/isSegmentationOverlayCompatible';
 import { addDefaultSegmentationListener } from './segmentationEventManager';
 import { getActiveSegmentIndex, setActiveSegmentIndex } from './segmentIndex';
 
@@ -20,6 +21,23 @@ function internalAddSegmentationRepresentation(
   representationInput: RepresentationPublicInput
 ) {
   const { segmentationId, config } = representationInput;
+
+  // Only associate the overlay with a viewport it is compatible with (see
+  // isSegmentationOverlayCompatible for the per-viewport-type rules): an
+  // incompatible viewport can mount nothing useful, yet the forced re-render of
+  // it in the shared rendering engine blanks the unrelated series.
+  if (
+    !isSegmentationOverlayCompatible(
+      getEnabledElementByViewportId(viewportId)?.viewport,
+      segmentationId,
+      representationInput.type
+    )
+  ) {
+    console.warn(
+      `Skipping ${representationInput.type} representation of segmentation "${segmentationId}" on viewport "${viewportId}": the viewport is not a compatible destination for it.`
+    );
+    return;
+  }
 
   // need to be able to override from the outside
   const renderingConfig: RenderingConfig = {

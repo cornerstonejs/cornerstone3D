@@ -6,6 +6,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@cornerstonejs/core': path.resolve(__dirname, 'packages/core/src/index.ts'),
+      '@cornerstonejs/tools': path.resolve(__dirname, 'packages/tools/src/index.ts'),
     },
   },
   test: {

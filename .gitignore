@@ -78,3 +78,7 @@ CLAUDE.md
 vtk-js/
 .ohif-downstream/
 auth.json
+
+# Vitest browser mode run artifacts
+.vitest-attachments/
+tests/vitest-browser/__screenshots__/

@@ -1,5 +1,6 @@
 import { vtkOffscreenMultiRenderWindow } from './vtkClasses';
 import type { VtkOffscreenMultiRenderWindow } from '../types';
+import { attachWebGLContextEvents } from './helpers/attachWebGLContextEvents';
 
 /**
  * Manages a pool of WebGL contexts for parallel rendering.
@@ -18,13 +19,22 @@ class WebGLContextPool {
   /**
    * Creates a pool with the specified number of WebGL contexts
    * @param count - Number of contexts to create
+   * @param renderingEngineId - Owning engine id, carried on the
+   * WEBGL_CONTEXT_LOST / WEBGL_CONTEXT_RESTORED events emitted for these
+   * contexts
    */
-  constructor(count: number) {
+  constructor(count: number, renderingEngineId = '') {
     for (let i = 0; i < count; i++) {
       const offscreenMultiRenderWindow =
         vtkOffscreenMultiRenderWindow.newInstance();
       const container = document.createElement('div');
       offscreenMultiRenderWindow.setContainer(container);
+
+      attachWebGLContextEvents(
+        offscreenMultiRenderWindow,
+        renderingEngineId,
+        i
+      );
 
       this.contexts.push(offscreenMultiRenderWindow);
       this.offScreenCanvasContainers.push(container);

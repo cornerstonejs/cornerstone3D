@@ -118,7 +118,7 @@ async function run() {
 
   const viewport = renderingEngine.getViewport<ECGGenericViewport>(viewportId);
 
-  utilities.genericViewportDataSetMetadataProvider.add(ecgDataId, {
+  utilities.genericViewportDisplaySetMetadataProvider.add(ecgDataId, {
     kind: 'ecg',
     sourceDataId: ecgImageId,
   });

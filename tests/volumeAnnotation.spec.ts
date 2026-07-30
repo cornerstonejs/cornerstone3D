@@ -62,12 +62,15 @@ async function panViewport(page, locator, dx: number, dy: number) {
 test.describe('Volume Annotation Tools', async () => {
   test('should draw a length measurement on the viewport', async ({ page }) => {
     const locator = page.locator('.cornerstone-canvas').nth(0);
-    await simulateDrag(page, locator);
+    await simulateDrag(page, locator, { steps: 10 });
     await checkForCanvasSnapshot(
       page,
       '',
       screenShotPaths.volumeAnnotation.lengthTool,
-      0
+      0,
+      // Absorb sub-pixel font drift on the "138 mm" label across CI
+      // environments; a missing/mis-drawn annotation differs by far more.
+      { maxDiffPixelRatio: 0.003 }
     );
   });
 

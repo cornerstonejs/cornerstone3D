@@ -59,21 +59,26 @@ class WindowLevelTool extends BaseTool {
       viewportsContainingVolumeUID =
         utilities.getViewportsWithVolumeId(volumeId);
       ({ lower, upper } = properties.voiRange);
-      const volume = cache.getVolume(volumeId);
-      if (!volume) {
+      if (!cache.getVolume(volumeId)) {
         throw new Error('Volume not found ' + volumeId);
       }
-      modality = volume.metadata.Modality;
-      isPreScaled = volume.scaling && Object.keys(volume.scaling).length > 0;
     } else if (properties.voiRange) {
-      modality = (viewport as unknown as { modality: string }).modality;
       ({ lower, upper } = properties.voiRange);
-      const { preScale = { scaled: false } } = viewport.getImageData?.() || {};
-      isPreScaled =
-        preScale.scaled && preScale.scalingParameters?.suvbw !== undefined;
     } else {
       throw new Error('Viewport is not a valid type');
     }
+
+    // Resolve modality + pre-scaled state through the single family-aware
+    // descriptor instead of re-deriving them inline. The native ("next")
+    // viewport exposes neither the StackViewport `.modality`/`.preScale` surface
+    // nor the VolumeViewport `.setVolumes` API; the descriptor reads each family
+    // from its own source of truth so a prescaled PT viewport still takes the
+    // gentle fixed-width PT path (5/clientHeight) instead of the aggressive
+    // dynamic-range multiplier. `volumeId` is undefined for the stack/next
+    // branch, where the descriptor falls back to the bound default actor.
+    const descriptor = utilities.getScalingDescriptor(viewport, volumeId);
+    modality = descriptor?.modality;
+    isPreScaled = !!descriptor?.isPreScaled;
 
     // If modality is PT an the viewport is pre-scaled (SUV),
     // treat it special to not include the canvas delta in

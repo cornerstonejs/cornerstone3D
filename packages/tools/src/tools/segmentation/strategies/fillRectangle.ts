@@ -3,6 +3,7 @@ import { utilities as csUtils, StackViewport } from '@cornerstonejs/core';
 import type { Types, BaseVolumeViewport } from '@cornerstonejs/core';
 
 import { getBoundingBoxAroundShapeIJK } from '../../../utilities/boundingBox';
+import getViewportICamera from '../../../utilities/getViewportICamera';
 import type { LabelmapToolOperationData } from '../../../types';
 import BrushStrategy from './BrushStrategy';
 import type { Composition, InitializedOperationData } from './BrushStrategy';
@@ -102,7 +103,8 @@ function createPointInRectangle(
   // For tolerance in the normal direction
   const direction = segmentationImageData.getDirection();
   const spacing = segmentationImageData.getSpacing();
-  const { viewPlaneNormal } = viewport.getCamera();
+  // Native ("next") viewports expose no getCamera; read orientation via the bridge.
+  const { viewPlaneNormal } = getViewportICamera(viewport);
   const EPS = csUtils.getSpacingInNormalDirection(
     {
       direction,

@@ -17,6 +17,10 @@ jest.mock('@cornerstonejs/core', () => {
       spatialRegistrationMetadataProvider: {
         get: jest.fn(),
       },
+      // These fixtures are plain stack/volume mocks, not native Generic
+      // viewports (no getCurrentMode), so volume detection falls through to the
+      // renderMode-based check below; mirror that by reporting non-volume mode.
+      viewportIsInVolumeMode: jest.fn(() => false),
     },
     VolumeViewport,
   };
