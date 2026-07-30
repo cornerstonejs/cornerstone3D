@@ -3,6 +3,30 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.6.12](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.11...v5.6.12) (2026-07-28)
+
+### Bug Fixes
+
+- **tools:** prevent duplicate annotation from re-converting a removed spline ([#2824](https://github.com/cornerstonejs/cornerstone3D/issues/2824)) ([371c708](https://github.com/cornerstonejs/cornerstone3D/commit/371c70872787546c5c3bd79d219cc5d576dcd473))
+
+## [5.6.11](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.10...v5.6.11) (2026-07-24)
+
+### Bug Fixes
+
+- **security:** update postcss to 8.5.22 ([#2823](https://github.com/cornerstonejs/cornerstone3D/issues/2823)) ([37d9002](https://github.com/cornerstonejs/cornerstone3D/commit/37d9002c43e853d730217fae9031002a4fa35150))
+
+## [5.6.10](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.9...v5.6.10) (2026-07-23)
+
+### Bug Fixes
+
+- **security:** update dependencies to fix security vulnerabilities ([#2822](https://github.com/cornerstonejs/cornerstone3D/issues/2822)) ([4d0d886](https://github.com/cornerstonejs/cornerstone3D/commit/4d0d886431ab359c8d2db7d4ef13dd1ab044cd04))
+
+## [5.6.9](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.8...v5.6.9) (2026-07-21)
+
+### Bug Fixes
+
+- **security:** update dependencies to patch CVEs ([#2819](https://github.com/cornerstonejs/cornerstone3D/issues/2819)) ([91d86a7](https://github.com/cornerstonejs/cornerstone3D/commit/91d86a73f9db770cba2494001358d36a8c906007))
+
 ## [5.6.8](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.7...v5.6.8) (2026-07-19)
 
 ### Bug Fixes
