@@ -942,13 +942,17 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       canvasStep
     );
 
-    const pointsInShape = sampleVoxelsFromCanvas({
-      iterator: pixelIterator,
-      imageData,
-      viewport,
-      voxelManager,
-      statsCallback: this.configuration.statsCalculator.statsCallback,
-    });
+    let pointsInShape;
+    if (voxelManager) {
+      pointsInShape = sampleVoxelsFromCanvas({
+        iterator: pixelIterator,
+        imageData,
+        viewport,
+        voxelManager,
+        statsCallback: this.configuration.statsCalculator.statsCallback,
+        storePointData: this.configuration.storePointData,
+      });
+    }
 
     const stats = this.configuration.statsCalculator.getStatistics();
 

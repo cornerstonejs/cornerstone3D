@@ -73,20 +73,26 @@ export function sampleVoxelsFromCanvas({
   imageData,
   voxelManager,
   statsCallback,
+  storePointData = true,
 }: {
   iterator: Generator<number[], void, unknown>;
   viewport: Types.IViewport;
   imageData: vtkImageData | Types.CPUImageData;
   voxelManager: Types.VoxelManager<number>;
   statsCallback: statsCallback;
+  storePointData?: boolean;
 }): {
   value: number;
   pointLPS: Types.Point3;
   pointIJK: Types.Point3;
 }[] {
   const dimensions = imageData.getDimensions();
-  const pointsInShape = [];
+  let pointsInShape = [];
   const visitedIJK = new Set<string>();
+
+  if (!storePointData) {
+    return pointsInShape;
+  }
 
   for (const [cx, cy] of iterator) {
     const canvasPoint: Types.Point2 = [cx, cy];
@@ -105,27 +111,37 @@ export function sampleVoxelsFromCanvas({
       continue;
     }
 
+    const ijkKey = utilities.fnv1aHash(
+      `${ijkPoint[0]},${ijkPoint[1]},${ijkPoint[2]}`
+    );
+    // Unique key hashing via BigInt bit-packing
+    if (visitedIJK.has(ijkKey)) {
+      continue;
+    }
+    visitedIJK.add(ijkKey);
+
     const value = voxelManager.getAtIJKPoint(ijkPoint);
 
     if (value === undefined || value === null) {
       continue;
     }
 
+    // Convert the rounded IJK back to world space (LPS) to ensure consistency
+    const roundedWorldPoint = utilities.transformIndexToWorld(
+      imageData,
+      ijkPoint
+    ) as Types.Point3;
+
     const sample = {
       value: value as number,
-      pointLPS: worldPoint as Types.Point3,
-      pointIJK: ijkPoint,
+      pointLPS: roundedWorldPoint,
+      pointIJK: [ijkPoint[0], ijkPoint[1], ijkPoint[2]] as Types.Point3,
     };
-
-    const ijkKey = `${ijkPoint[0]},${ijkPoint[1]},${ijkPoint[2]}`;
-    if (visitedIJK.has(ijkKey)) {
-      continue;
-    }
-    visitedIJK.add(ijkKey);
 
     pointsInShape.push(sample);
     statsCallback(sample);
   }
+
   return pointsInShape;
 }
 
