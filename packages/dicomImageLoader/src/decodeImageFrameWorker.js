@@ -366,6 +366,15 @@ export async function decodeImageFrame(
 
   // Apply the configured WASM base path before any codec initializes, so the
   // decoders below resolve their binaries from it.
+  //
+  // A decodeConfig without wasmBasePath deliberately leaves the current value
+  // in place rather than clearing it - that stickiness is load-bearing. Every
+  // decoder calls its own initialize()/initLibjpegTurbo() with no arguments
+  // from decodeAsync, which passes undefined straight back into this setter; a
+  // reset there would wipe the path between here and the codec's first
+  // locateFile call, putting back the bare-specifier 404 the option fixes.
+  // The value is write-once in effect anyway, since initialize() returns early
+  // once its codec is instantiated.
   setWasmBasePathFromConfig(decodeConfig);
 
   let decodePromise = null;
