@@ -42,17 +42,6 @@ import { getCalibratedLengthUnitsAndScale, throttle } from '../../utilities';
 
 const CLICK_CLOSE_CURVE_SQR_DIST = 10 ** 2; // px
 
-// Mirror the (non-configurable) tapMaxDistance and tapToleranceMs in
-// eventListeners/touch/touchStartListener.ts. A gesture that travels further
-// than tapMaxDistance never emits its own TOUCH_TAP, but one that ends within
-// tapMaxDistance of an active tap chain's start is still counted into that
-// chain's aggregated TOUCH_TAP. Committing such a gesture on TOUCH_END records
-// where and when it happened so the chain's TOUCH_TAP echo can be ignored in
-// _mouseDownCallback instead of double-committing the point or force-closing
-// the path.
-const TOUCH_TAP_MAX_CANVAS_DISTANCE = 24;
-const TOUCH_TAP_TOLERANCE_MS = 300;
-
 class LivewireContourTool extends ContourSegmentationBaseTool {
   public static toolName = 'LivewireContour';
 
@@ -78,8 +67,6 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     sliceToWorld?: (point: Types.Point2) => Types.Point3;
     originalPath?: Types.Point3[];
     contourHoleProcessingEnabled?: boolean;
-    /** Where and when the last point was committed on TOUCH_END */
-    touchEndCommit?: { canvasPoint: Types.Point2; time: number };
   } | null;
   isDrawing: boolean;
   isHandleOutsideImage = false;
@@ -561,17 +548,11 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     // is committed by the TOUCH_END path and still counted into the chain's
     // aggregated TOUCH_TAP; ignore that echo so the already-committed point
     // is not added again and the path is not force-closed.
-    if (doubleTap && this.editData.touchEndCommit) {
-      const { canvasPoint, time } = this.editData.touchEndCommit;
-      if (
-        Date.now() - time <= TOUCH_TAP_TOLERANCE_MS * 2 &&
-        math.point.distanceToPoint(
-          evt.detail.currentPoints.canvas,
-          canvasPoint
-        ) <= TOUCH_TAP_MAX_CANVAS_DISTANCE
-      ) {
-        return;
-      }
+    if (
+      doubleTap &&
+      this.isTouchTapEchoOfLiftCommit(evt.detail.currentPoints.canvas)
+    ) {
+      return;
     }
 
     const {
@@ -748,14 +729,11 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       startPoints.canvas,
       currentPoints.canvas
     );
-    if (dragDistance <= TOUCH_TAP_MAX_CANVAS_DISTANCE) {
+    if (dragDistance <= LivewireContourTool.TOUCH_TAP_MAX_CANVAS_DISTANCE) {
       return;
     }
 
-    this.editData.touchEndCommit = {
-      canvasPoint: currentPoints.canvas,
-      time: Date.now(),
-    };
+    this.recordTouchLiftCommit(currentPoints.canvas);
     this._mouseDownCallback(evt);
   };
 

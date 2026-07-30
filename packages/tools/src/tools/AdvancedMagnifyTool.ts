@@ -500,8 +500,7 @@ class AdvancedMagnifyTool extends AnnotationTool {
   _pressModifyCallback = (evt: EventTypes.TouchPressEventType): void => {
     const { element, startPoints } = evt.detail;
     const annotation = this.editData.annotation as AdvancedMagnifyAnnotation;
-    // Same touch proximity filterMoveableAnnotationTools uses (36 vs 6).
-    const proximity = 36;
+    const proximity = AdvancedMagnifyTool.TOUCH_PROXIMITY;
 
     if (
       !this.isPointNearTool(element, annotation, startPoints.canvas, proximity)
@@ -794,8 +793,7 @@ class AdvancedMagnifyTool extends AnnotationTool {
 
     const { viewport } = enabledElement;
     const canvasPoint = startPoints.canvas;
-    // Same touch proximity filterMoveableAnnotationTools uses (36 vs 6).
-    const proximity = 36;
+    const proximity = AdvancedMagnifyTool.TOUCH_PROXIMITY;
 
     const annotations = (getAnnotations(this.getToolName(), element) ??
       []) as AdvancedMagnifyAnnotation[];

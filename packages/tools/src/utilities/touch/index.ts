@@ -258,3 +258,10 @@ export {
   getDeltaRotation,
   isMobile,
 };
+
+export {
+  TOUCH_PROXIMITY,
+  MOUSE_PROXIMITY,
+  TOUCH_TAP_MAX_CANVAS_DISTANCE,
+  TOUCH_TAP_TOLERANCE_MS,
+} from './constants';

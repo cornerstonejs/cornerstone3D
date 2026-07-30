@@ -2166,18 +2166,6 @@ class CrosshairsTool extends AnnotationTool {
     element.addEventListener(Events.TOUCH_TAP, this._endCallback);
   };
 
-  private _isTouchInteraction(evt?: EventTypes.InteractionEventType): boolean {
-    const eventName = evt?.detail?.eventName;
-    return (
-      eventName === Events.TOUCH_START ||
-      eventName === Events.TOUCH_START_ACTIVATE ||
-      eventName === Events.TOUCH_DRAG ||
-      eventName === Events.TOUCH_END ||
-      eventName === Events.TOUCH_TAP ||
-      eventName === Events.TOUCH_PRESS
-    );
-  }
-
   _deactivateModify = (element) => {
     state.isInteractingWithTool = false;
 

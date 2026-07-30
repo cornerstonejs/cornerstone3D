@@ -60,19 +60,6 @@ import { convertContourSegmentationAnnotation } from '../../utilities/contourSeg
 const SPLINE_MIN_POINTS = 3;
 const SPLINE_CLICK_CLOSE_CURVE_DIST = 10;
 
-// Mirrors the (non-configurable) tapMaxDistance in
-// eventListeners/touch/touchStartListener.ts. Gestures that stay within this
-// distance are committed by the TOUCH_TAP path; longer drags are committed on
-// TOUCH_END. A longer drag that ends near the anchor of an active tap chain
-// is still counted as a tap by the listener, so lift-commits are recorded in
-// editData and the trailing TOUCH_TAP is dropped in _mouseDownCallback.
-const TOUCH_TAP_MAX_CANVAS_DISTANCE = 24;
-
-// Mirrors the (non-configurable) tapToleranceMs in
-// eventListeners/touch/touchStartListener.ts. TOUCH_TAP fires one tolerance
-// after the last touchend of a tap chain.
-const TOUCH_TAP_TOLERANCE_MS = 300;
-
 const DEFAULT_SPLINE_CONFIG = {
   resolution: 20,
   controlPointAdditionDistance: 6,
@@ -125,8 +112,6 @@ class SplineROITool extends ContourSegmentationBaseTool {
     lastCanvasPoint?: Types.Point2;
     /** Close-curve snap distance (canvas px) for the preview, per input source */
     closeCurveDistance?: number;
-    lastLiftCommitCanvasPoint?: Types.Point2;
-    lastLiftCommitTime?: number;
     contourHoleProcessingEnabled?: boolean;
   } | null;
   isDrawing: boolean;
@@ -566,21 +551,11 @@ class SplineROITool extends ContourSegmentationBaseTool {
     // travelled beyond the tap distance. Such a drag was already committed on
     // TOUCH_END; drop the trailing TOUCH_TAP or it would add a duplicate
     // point and close the curve.
-    if (doubleTap && this.editData.lastLiftCommitCanvasPoint) {
-      const { lastLiftCommitCanvasPoint, lastLiftCommitTime } = this.editData;
-      const tapDistance = math.point.distanceToPoint(
-        evt.detail.currentPoints.canvas,
-        lastLiftCommitCanvasPoint
-      );
-      // TOUCH_TAP is emitted one tap tolerance after the chain's last
-      // touchend, so a lift-commit that ended the chain surfaces here about
-      // TOUCH_TAP_TOLERANCE_MS later; double it to absorb timer jitter.
-      if (
-        Date.now() - lastLiftCommitTime <= 2 * TOUCH_TAP_TOLERANCE_MS &&
-        tapDistance <= TOUCH_TAP_MAX_CANVAS_DISTANCE
-      ) {
-        return;
-      }
+    if (
+      doubleTap &&
+      this.isTouchTapEchoOfLiftCommit(evt.detail.currentPoints.canvas)
+    ) {
+      return;
     }
 
     const { annotation, viewportIdsToRender } = this.editData;
@@ -673,12 +648,11 @@ class SplineROITool extends ContourSegmentationBaseTool {
       startPoints.canvas,
       currentPoints.canvas
     );
-    if (dragDistance <= TOUCH_TAP_MAX_CANVAS_DISTANCE) {
+    if (dragDistance <= SplineROITool.TOUCH_TAP_MAX_CANVAS_DISTANCE) {
       return;
     }
 
-    this.editData.lastLiftCommitCanvasPoint = currentPoints.canvas;
-    this.editData.lastLiftCommitTime = Date.now();
+    this.recordTouchLiftCommit(currentPoints.canvas);
     this._mouseDownCallback(evt);
   };
 

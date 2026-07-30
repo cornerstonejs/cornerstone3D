@@ -455,14 +455,13 @@ class ArrowAnnotateTool extends AnnotationTool {
 
   touchTapCallback = (evt: EventTypes.TouchTapEventType) => {
     if (evt.detail.taps == 2) {
-      // Same touch proximity filterMoveableAnnotationTools uses (36 vs 6).
-      this.doubleClickCallback(evt, 36);
+      this.doubleClickCallback(evt, ArrowAnnotateTool.TOUCH_PROXIMITY);
     }
   };
 
   doubleClickCallback = (
     evt: EventTypes.TouchTapEventType,
-    proximity = 6
+    proximity = ArrowAnnotateTool.MOUSE_PROXIMITY
   ): void => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;

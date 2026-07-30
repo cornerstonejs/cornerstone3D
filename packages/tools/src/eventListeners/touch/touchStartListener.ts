@@ -18,6 +18,10 @@ import {
   getMeanTouchPoints,
   // getRotation
 } from '../../utilities/touch';
+import {
+  TOUCH_TAP_MAX_CANVAS_DISTANCE,
+  TOUCH_TAP_TOLERANCE_MS,
+} from '../../utilities/touch/constants';
 import { Settings } from '@cornerstonejs/core';
 
 const runtimeSettings = Settings.getRuntimeSettings();
@@ -126,8 +130,11 @@ const defaultTapState: ITouchTapListenerState = {
   ],
   taps: 0,
   tapTimeout: null,
-  tapMaxDistance: 24,
-  tapToleranceMs: 300,
+  // Tools that commit a gesture on TOUCH_END need these same values to
+  // recognize the trailing tap echo, so they live in utilities/touch/constants
+  // (re-exposed as BaseTool statics) rather than being defined here.
+  tapMaxDistance: TOUCH_TAP_MAX_CANVAS_DISTANCE,
+  tapToleranceMs: TOUCH_TAP_TOLERANCE_MS,
 };
 
 let state: ITouchStartListenerState = utilities.deepClone(defaultState);

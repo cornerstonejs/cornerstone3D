@@ -450,17 +450,6 @@ class BrushTool extends LabelmapBaseTool {
     this._refreshCursor(element, centerCanvas);
   }
 
-  private _isTouchInteraction(evt: EventTypes.InteractionEventType): boolean {
-    const { eventName } = evt.detail;
-    return (
-      eventName === Events.TOUCH_START ||
-      eventName === Events.TOUCH_START_ACTIVATE ||
-      eventName === Events.TOUCH_DRAG ||
-      eventName === Events.TOUCH_END ||
-      eventName === Events.TOUCH_TAP
-    );
-  }
-
   private _clearCursor(element: HTMLDivElement): void {
     // The cursor may have been rendered on linked viewports too; rerender
     // all of them, not just the source viewport, so no stale circle remains.
@@ -487,7 +476,7 @@ class BrushTool extends LabelmapBaseTool {
       // A second finger reclassifies the gesture (pinch zoom, multi-finger
       // scroll); stop painting and roll the stroke back rather than keep
       // drawing at the mean touch point.
-      this._cancelTouchStroke(element);
+      this._cancelTouchDraw(element);
       return;
     }
 
@@ -591,8 +580,12 @@ class BrushTool extends LabelmapBaseTool {
    * multi-finger does not leave paint behind. The memo is committed only to
    * materialize its undo state and is discarded without reaching the history
    * stack.
+   *
+   * Overrides the base teardown rather than extending it: a brush stroke has
+   * already written to the labelmap, and the preview/lazy-edit state has no
+   * counterpart on the scissors tools.
    */
-  private _cancelTouchStroke(element: HTMLDivElement): void {
+  protected override _cancelTouchDraw(element: HTMLDivElement): void {
     const { memo } = this;
     if (memo?.commitMemo?.()) {
       memo.restoreMemo(true);
