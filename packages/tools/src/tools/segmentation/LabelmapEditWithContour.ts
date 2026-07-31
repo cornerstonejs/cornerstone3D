@@ -3,12 +3,24 @@ import {
   eventTarget,
   utilities,
   getRenderingEngine,
+  getEnabledElement,
+  type Types,
 } from '@cornerstonejs/core';
+
 import PlanarFreehandContourSegmentationTool from '../annotation/PlanarFreehandContourSegmentationTool';
 import BrushTool from './BrushTool';
+
 import * as segmentation from '../../stateManagement/segmentation';
+
 import type { PublicToolProps } from '../../types';
-import { getSegmentationRepresentationsBySegmentationId } from '../../stateManagement/segmentation/getSegmentationRepresentation';
+import type {
+  RepresentationsData,
+  Segmentation,
+} from '../../types/SegmentationStateTypes';
+import { getSegmentationRepresentation } from '../../stateManagement/segmentation/getSegmentationRepresentation';
+import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
+import { isSegmentIndexLocked } from '../../stateManagement/segmentation/segmentLocking';
+import { getSegmentIndexVisibility } from '../../stateManagement/segmentation/config/segmentationVisibility';
 
 /**
  * LabelMapEditWithContourTool provides an intuitive way to edit labelmap segmentations
@@ -49,9 +61,6 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
    * This is used to maintain context when converting contours to labelmap data.
    */
   static annotationsToViewportMap = new Map();
-  private onViewportAddedToToolGroupBinded;
-  private onSegmentationModifiedBinded;
-  static viewportIdsChecked = [];
 
   /**
    * Creates a new instance of LabelMapEditWithContourTool.
@@ -83,10 +92,56 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
       },
       toolProps
     );
+
     super(initialProps);
-    this.onViewportAddedToToolGroupBinded =
-      this.onViewportAddedToToolGroup.bind(this);
-    this.onSegmentationModifiedBinded = this.onSegmentationModified.bind(this);
+
+    this.initializeAddNewAnnotationHandler();
+  }
+
+  /**
+   * Wraps addNewAnnotation so the temporary contour representation is ensured
+   * lazily, exactly when the user starts drawing a new contour.
+   *
+   * The contour representation is provisioned on demand (rather than ahead of
+   * time) because it is removed again after each conversion to labelmap, so it
+   * must be re-created for every new annotation.
+   *
+   * @private
+   */
+  private initializeAddNewAnnotationHandler(): void {
+    const originalAddNewAnnotation = this.addNewAnnotation.bind(this);
+
+    this.addNewAnnotation = (evt) => {
+      const { element } = evt.detail;
+      const enabledElement = getEnabledElement(element);
+
+      if (enabledElement) {
+        const viewportId = enabledElement.viewport.id;
+        const activeSeg = segmentation.getActiveSegmentation(viewportId);
+        const activeSegIndex = getActiveSegmentIndex(activeSeg.segmentationId);
+
+        const isSegmentLocked = isSegmentIndexLocked(
+          activeSeg.segmentationId,
+          activeSegIndex
+        );
+        const isSegmentHidden = !getSegmentIndexVisibility(
+          viewportId,
+          {
+            segmentationId: activeSeg.segmentationId,
+            type: SegmentationRepresentations.Labelmap,
+          },
+          activeSegIndex
+        );
+
+        if (isSegmentLocked || isSegmentHidden) {
+          return null;
+        }
+
+        void this.checkContourSegmentation(viewportId, activeSeg);
+      }
+
+      return originalAddNewAnnotation(evt);
+    };
   }
 
   /**
@@ -100,7 +155,6 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
    */
   protected initializeListeners() {
     LabelMapEditWithContourTool.annotationsToViewportMap.clear();
-    LabelMapEditWithContourTool.viewportIdsChecked = [];
 
     eventTarget.addEventListener(
       Events.ANNOTATION_MODIFIED,
@@ -110,20 +164,6 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
     eventTarget.addEventListener(
       Events.ANNOTATION_COMPLETED,
       this.annotationCompleted
-    );
-
-    eventTarget.addEventListener(
-      Events.TOOLGROUP_VIEWPORT_ADDED,
-      this.onViewportAddedToToolGroupBinded
-    );
-
-    eventTarget.addEventListener(
-      Events.SEGMENTATION_MODIFIED,
-      this.onSegmentationModifiedBinded
-    );
-    eventTarget.addEventListener(
-      Events.SEGMENTATION_REPRESENTATION_MODIFIED,
-      this.onSegmentationModifiedBinded
     );
   }
 
@@ -138,7 +178,6 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
    */
   protected cleanUpListeners() {
     LabelMapEditWithContourTool.annotationsToViewportMap.clear();
-    LabelMapEditWithContourTool.viewportIdsChecked = [];
 
     eventTarget.removeEventListener(
       Events.ANNOTATION_MODIFIED,
@@ -149,20 +188,6 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
       Events.ANNOTATION_COMPLETED,
       this.annotationCompleted
     );
-
-    eventTarget.removeEventListener(
-      Events.TOOLGROUP_VIEWPORT_ADDED,
-      this.onViewportAddedToToolGroup.bind(this)
-    );
-
-    eventTarget.removeEventListener(
-      Events.SEGMENTATION_MODIFIED,
-      this.onSegmentationModified.bind(this)
-    );
-    eventTarget.removeEventListener(
-      Events.SEGMENTATION_REPRESENTATION_MODIFIED,
-      this.onSegmentationModified.bind(this)
-    );
   }
 
   /**
@@ -172,24 +197,26 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
    * representation. If not present, it automatically adds one to enable contour-based editing.
    *
    * @param viewportId - The ID of the viewport to check
-   * @returns Promise boolean or undefined - True if contour representation is available or was successfully added,
-   *                                        false if no active segmentation exists, undefined if already checked
+   * @param activeSeg - Active segmentation in the viewport
+   * @returns Promise resolving to true when a contour representation is available
+   *          (or was successfully added), false if no active segmentation exists
    *
    * @remarks
    * The method performs the following operations:
-   * 1. Checks if the viewport has already been processed to avoid duplicate work
-   * 2. Retrieves the active segmentation for the viewport
-   * 3. If no contour representation exists, adds one with the appropriate configuration
-   * 4. Marks the viewport as checked to prevent redundant processing
+   * 1. Retrieves the active segmentation for the viewport
+   * 2. Adds empty contour representation data when the segmentation has none
+   * 3. Adds the contour representation to the viewport when it is not present yet
+   *
+   * The checks are driven off live state, so the method is idempotent and safe
+   * to call on every new annotation, including after a previous temporary
+   * representation has been cleaned up.
    *
    * @protected
    */
-  protected async checkContourSegmentation(viewportId: string) {
-    if (LabelMapEditWithContourTool.viewportIdsChecked.includes(viewportId)) {
-      return;
-    }
-    const activeSeg = segmentation.getActiveSegmentation(viewportId);
-
+  protected async checkContourSegmentation(
+    viewportId: string,
+    activeSeg: Segmentation
+  ) {
     if (!activeSeg) {
       console.log('No active segmentation detected');
       return false;
@@ -198,83 +225,44 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
     const segmentationId = activeSeg.segmentationId;
 
     if (!activeSeg.representationData.Contour) {
-      LabelMapEditWithContourTool.viewportIdsChecked.push(viewportId);
+      segmentation.addRepresentationData({
+        segmentationId,
+        type: SegmentationRepresentations.Contour,
+        data: {},
+      });
+    }
+
+    const hasViewportContour = getSegmentationRepresentation(viewportId, {
+      segmentationId,
+      type: SegmentationRepresentations.Contour,
+    });
+
+    if (!hasViewportContour) {
       await segmentation.addContourRepresentationToViewport(viewportId, [
         {
           segmentationId,
           type: SegmentationRepresentations.Contour,
         },
       ]);
-
-      segmentation.addRepresentationData({
-        segmentationId,
-        type: SegmentationRepresentations.Contour,
-        data: {},
-      });
-    } else {
-      // if the segmentation already have a contour representation, just add it as checked
-      LabelMapEditWithContourTool.viewportIdsChecked.push(viewportId);
     }
 
     return true;
   }
 
   /**
-   * Event handler called when a viewport is added to the tool group.
+   * Overrides the annotation memo to prevent recording contour edits in
+   * the annotation undo/redo history.
    *
-   * This method responds to viewport addition events and ensures that the newly added
-   * viewport has the necessary contour segmentation representation configured.
+   * Contours drawn by this tool are transient intermediates that are converted to
+   * labelmap data on completion. Undo/redo for those changes is handled by the
+   * labelmap memo created during conversion, not by annotation memos
    *
-   * @param evt - The viewport added event
-   * @param evt.detail.toolGroupId - The ID of the tool group that received the viewport
-   * @param evt.detail.viewportId - The ID of the viewport that was added
-   *
-   * @remarks
-   * The method only processes viewports that belong to this tool's tool group,
-   * ignoring events from other tool groups to avoid unnecessary processing.
-   *
-   * @protected
+   * @param element - The viewport element where the annotation is being drawn.
+   * @param annotation - The contour annotation being edited.
+   * @param options - Optional memo configuration passed by the draw loop.
    */
-  protected onViewportAddedToToolGroup(evt) {
-    const { toolGroupId, viewportId } = evt.detail;
-    if (toolGroupId !== this.toolGroupId) {
-      return;
-    }
-    this.checkContourSegmentation(viewportId);
-  }
-
-  /**
-   * Event handler called when a segmentation is modified.
-   *
-   * This method responds to segmentation modification events and ensures that all
-   * viewports associated with the modified segmentation have proper contour
-   * representation configured.
-   *
-   * @param evt - The segmentation modified event
-   * @param evt.detail.segmentationId - The ID of the segmentation that was modified
-   *
-   * @remarks
-   * The method performs the following operations:
-   * 1. Validates that a segmentation ID is provided in the event
-   * 2. Retrieves all representations associated with the segmentation
-   * 3. For each representation, checks and configures contour segmentation in its viewport
-   * 4. This ensures consistency across all viewports displaying the same segmentation
-   *
-   * @protected
-   */
-  protected onSegmentationModified(evt) {
-    const { segmentationId } = evt.detail || {};
-    if (!segmentationId) {
-      return;
-    }
-    const representations =
-      getSegmentationRepresentationsBySegmentationId(segmentationId);
-    if (!representations) {
-      return;
-    }
-    representations.forEach(
-      async ({ viewportId }) => await this.checkContourSegmentation(viewportId)
-    );
+  protected createMemo(element, annotation, options?): void {
+    return;
   }
 
   onSetToolEnabled(): void {
@@ -316,6 +304,59 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
   }
 
   /**
+   * Removes the temporary Contour representation created for
+   * contour-to-labelmap editing.
+   *
+   * If the Contour representation data is empty after conversion,
+   * the viewport representation and corresponding Contour state
+   * are removed from the segmentation.
+   *
+   * @param viewport - The viewport containing the temporary Contour representation.
+   * @param annotation - The annotation used to determine the segmentation.
+   *
+   * @private
+   */
+  private static cleanupTemporaryContourRepresentation(
+    viewport: Types.IViewport,
+    annotation
+  ): void {
+    const segmentationId = annotation?.data?.segmentation?.segmentationId;
+
+    if (!segmentationId) {
+      return;
+    }
+
+    const segmentationState =
+      segmentation.state.getSegmentation(segmentationId);
+
+    const contourData = segmentationState?.representationData?.Contour;
+
+    if (!contourData || Object.keys(contourData).length) {
+      return;
+    }
+
+    segmentation.removeContourRepresentation(viewport.id, segmentationId);
+
+    const representationData = utilities.deepClone(
+      segmentationState.representationData
+    ) as RepresentationsData;
+
+    delete representationData.Contour;
+
+    segmentation.updateSegmentations(
+      [
+        {
+          segmentationId,
+          payload: {
+            representationData,
+          },
+        },
+      ],
+      true
+    );
+  }
+
+  /**
    * Event handler called when an annotation is completed (user finishes drawing).
    * This method triggers the conversion of the completed contour to labelmap data,
    * effectively applying the drawn contour as a segmentation modification.
@@ -334,30 +375,38 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
    */
   annotationCompleted(evt) {
     const { annotation } = evt.detail;
-    const { polyline } = annotation.data?.contour || {};
+
     if (
       annotation?.metadata?.toolName !== LabelMapEditWithContourTool.toolName
     ) {
       return;
     }
 
-    if (!polyline) {
+    const annotationUID = annotation.annotationUID;
+    const polyline = annotation.data?.contour?.polyline;
+
+    if (!polyline || polyline.length <= 3) {
       return;
     }
 
-    if (
-      LabelMapEditWithContourTool.annotationsToViewportMap.has(
-        annotation.annotationUID
-      )
-    ) {
-      const viewport = LabelMapEditWithContourTool.annotationsToViewportMap.get(
-        annotation.annotationUID
-      );
-      // Only process contours with sufficient points to form a meaningful shape
-      if (polyline.length > 3) {
-        BrushTool.viewportContoursToLabelmap(viewport);
-      }
+    const viewport =
+      LabelMapEditWithContourTool.annotationsToViewportMap.get(annotationUID);
+
+    if (!viewport) {
+      return;
     }
+
+    BrushTool.viewportContoursToLabelmap(viewport, {
+      annotationFilter: (annotations) =>
+        annotations.filter((a) => a.annotationUID === annotationUID),
+    });
+
+    LabelMapEditWithContourTool.cleanupTemporaryContourRepresentation(
+      viewport,
+      annotation
+    );
+
+    LabelMapEditWithContourTool.annotationsToViewportMap.delete(annotationUID);
   }
 }
 

@@ -590,7 +590,10 @@ export default class SegmentationStateManager {
         // If no representations left for the viewport, remove the viewport entry
         if (state.viewportSegRepresentations[viewportId].length === 0) {
           delete state.viewportSegRepresentations[viewportId];
-        } else if (activeRepresentationRemoved) {
+        } else if (
+          activeRepresentationRemoved &&
+          !this.getActiveSegmentation(viewportId)
+        ) {
           // Set the first remaining representation as active
           state.viewportSegRepresentations[viewportId][0].active = true;
         }
