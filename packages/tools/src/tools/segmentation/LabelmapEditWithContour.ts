@@ -13,6 +13,7 @@ import BrushTool from './BrushTool';
 import * as segmentation from '../../stateManagement/segmentation';
 
 import type { PublicToolProps } from '../../types';
+import type { ContourSegmentationAnnotation } from '../../types/ContourSegmentationAnnotation';
 import type {
   RepresentationsData,
   Segmentation,
@@ -398,7 +399,11 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
 
     BrushTool.viewportContoursToLabelmap(viewport, {
       annotationFilter: (annotations) =>
-        annotations.filter((a) => a.annotationUID === annotationUID),
+        annotations.filter(
+          (a) =>
+            (a as ContourSegmentationAnnotation).metadata?.originalToolName ===
+            LabelMapEditWithContourTool.toolName
+        ),
     });
 
     LabelMapEditWithContourTool.cleanupTemporaryContourRepresentation(
