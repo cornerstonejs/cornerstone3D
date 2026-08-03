@@ -119,7 +119,14 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
       if (enabledElement) {
         const viewportId = enabledElement.viewport.id;
         const activeSeg = segmentation.getActiveSegmentation(viewportId);
+        if (!activeSeg) {
+          return null;
+        }
+
         const activeSegIndex = getActiveSegmentIndex(activeSeg.segmentationId);
+        if (activeSegIndex === undefined) {
+          return null;
+        }
 
         const isSegmentLocked = isSegmentIndexLocked(
           activeSeg.segmentationId,

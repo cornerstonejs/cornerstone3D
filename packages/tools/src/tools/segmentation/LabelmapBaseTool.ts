@@ -619,11 +619,12 @@ export default class LabelmapBaseTool extends BaseTool {
   ) {
     const removeContours = options?.removeContours ?? true;
     const annotations = getAllAnnotations();
+    const polylineAnnotations = annotations.filter(
+      (annotation) => annotation.data.contour?.polyline?.length
+    );
     const contourAnnotations = options?.annotationFilter
-      ? options.annotationFilter(annotations)
-      : annotations.filter(
-          (annotation) => annotation.data.contour?.polyline?.length
-        );
+      ? options.annotationFilter(polylineAnnotations)
+      : polylineAnnotations;
     if (!contourAnnotations.length) {
       return;
     }
@@ -725,6 +726,27 @@ export default class LabelmapBaseTool extends BaseTool {
         if (isSegmentLocked || isSegmentHidden) {
           if (segmentIndex !== activeIndex) {
             segmentIndex = activeIndex;
+
+            const isFallbackLocked =
+              segmentIndex > 0 &&
+              isSegmentIndexLocked(segmentationId, segmentIndex);
+            const isFallbackHidden =
+              segmentIndex > 0 &&
+              !getSegmentIndexVisibility(
+                viewport.id,
+                {
+                  segmentationId,
+                  type: SegmentationRepresentations.Labelmap,
+                },
+                segmentIndex
+              );
+
+            if (isFallbackLocked || isFallbackHidden) {
+              if (removeContours) {
+                removeAnnotation(annotation.annotationUID);
+              }
+              continue;
+            }
           } else {
             if (removeContours) {
               removeAnnotation(annotation.annotationUID);
