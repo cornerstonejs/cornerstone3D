@@ -30,7 +30,6 @@ module.exports = {
   devtool: 'source-map',
   externals: [
     '@cornerstonejs/core',
-    'uuid',
     {
       'dicom-parser': {
         commonjs: 'dicom-parser',

@@ -506,9 +506,6 @@ importers:
       pako:
         specifier: 2.1.0
         version: 2.1.0
-      uuid:
-        specifier: 9.0.1
-        version: 9.0.1
     devDependencies:
       '@cornerstonejs/core':
         specifier: 5.6.12

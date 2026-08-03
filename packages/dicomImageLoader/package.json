@@ -118,8 +118,7 @@
     "comlink": "4.4.2",
     "dicom-parser": "1.8.21",
     "jpeg-lossless-decoder-js": "2.1.2",
-    "pako": "2.1.0",
-    "uuid": "9.0.1"
+    "pako": "2.1.0"
   },
   "devDependencies": {
     "@cornerstonejs/core": "5.6.12",
