@@ -24,7 +24,10 @@ import {
   removeAnnotation,
 } from '../../stateManagement/annotation/annotationState';
 import { filterAnnotationsForDisplay } from '../../utilities/planar';
-import { isPointInsidePolyline3D } from '../../utilities/math/polyline';
+import {
+  isPointInsidePolyline3D,
+  projectTo2D,
+} from '../../utilities/math/polyline';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import { fillInsideCircle } from './strategies';
 import type { LabelmapToolOperationData } from '../../types/LabelmapToolOperationData';
@@ -652,6 +655,10 @@ export default class LabelmapBaseTool extends BaseTool {
       ];
 
       const { polyline } = annotation.data.contour;
+      const camera = viewport.getCamera();
+      const viewPlaneNormal =
+        annotation.metadata?.viewPlaneNormal ?? camera.viewPlaneNormal;
+      const viewUp = annotation.metadata?.viewUp ?? camera.viewUp;
       for (const point of polyline) {
         const indexPoint = imageData.worldToIndex(point);
         indexPoint.forEach((v, idx) => {
@@ -686,11 +693,23 @@ export default class LabelmapBaseTool extends BaseTool {
         : startValue === 0
           ? activeIndex
           : 0;
+
+      // Project the 3D world polyline to a 2D plane for inside/outside point calculations
+      const precomputedProjection = projectTo2D(
+        polyline,
+        viewPlaneNormal,
+        viewUp
+      );
       for (let i = boundsIJK[0][0]; i <= boundsIJK[0][1]; i++) {
         for (let j = boundsIJK[1][0]; j <= boundsIJK[1][1]; j++) {
           for (let k = boundsIJK[2][0]; k <= boundsIJK[2][1]; k++) {
             const worldPoint = imageData.indexToWorld([i, j, k]);
-            const isContained = isPointInsidePolyline3D(worldPoint, polyline);
+            // Check if this voxel is inside or outside the boundary
+            const isContained = isPointInsidePolyline3D(worldPoint, polyline, {
+              viewPlaneNormal,
+              viewUp,
+              precomputedProjection,
+            });
             if (isContained) {
               previewVoxels.setAtIJK(i, j, k, segmentIndex);
             }
