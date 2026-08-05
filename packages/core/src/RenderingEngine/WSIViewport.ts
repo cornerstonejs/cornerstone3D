@@ -70,6 +70,12 @@ class WSIViewport extends Viewport {
     zoom: 1,
   };
 
+  // Fit-relative zoom preserved across resize / full screen (see
+  // resize()). 1 = fit-to-container. _wsiZoomClamped tracks whether the
+  // view clamped the resolution, so the next resize keeps the target.
+  private _wsiZoomTarget = 1;
+  private _wsiZoomClamped = false;
+
   private viewer: WSIViewerLike;
   private annotationRemovedListener: EventListener = (evt: Event) => {
     const { detail } = evt as CustomEvent<{
@@ -443,12 +449,59 @@ class WSIViewport extends Viewport {
 
   public resize = (): void => {
     const canvas = this.canvas;
+    // Previous CSS-pixel size. This method always sets canvas.width/
+    // height to clientWidth/clientHeight (unscaled), so these hold the
+    // prior client size and stay in the same coordinate system as the
+    // new clientWidth/clientHeight below (DPR-independent ratio).
+    const oldWidth = canvas.width;
+    const oldHeight = canvas.height;
     const { clientWidth, clientHeight } = canvas;
 
-    // Set the canvas to be same resolution as the client.
     if (canvas.width !== clientWidth || canvas.height !== clientHeight) {
       canvas.width = clientWidth;
       canvas.height = clientHeight;
+    }
+    // Preserve fit-relative zoom across resize / full screen so the
+    // slide is not left zoomed. Skip re-deriving the target after a
+    // clamp, else a clamped resolution would ratchet the zoom.
+    const map = this.map;
+    const view = map?.getView?.();
+    if (map && view && clientWidth > 0 && clientHeight > 0) {
+      const extent = view.getProjection().getExtent();
+      if (!this._wsiZoomClamped && oldWidth > 0 && oldHeight > 0) {
+        const oldResolution = view.getResolution();
+        const oldFit = view.getResolutionForExtent(extent, [
+          oldWidth,
+          oldHeight,
+        ]);
+        if (
+          isFinite(oldFit) &&
+          isFinite(oldResolution) &&
+          oldResolution > 0
+        ) {
+          this._wsiZoomTarget = oldFit / oldResolution;
+        }
+      }
+      map.updateSize();
+      const newFit = view.getResolutionForExtent(extent, [
+        clientWidth,
+        clientHeight,
+      ]);
+      const target = this._wsiZoomTarget;
+      if (
+        isFinite(newFit) &&
+        newFit > 0 &&
+        isFinite(target) &&
+        target > 0
+      ) {
+        const desired = newFit / target;
+        view.setResolution(desired);
+        // Remember if the view clamped the resolution to its allowed
+        // range, so the next resize keeps the intended target.
+        const actual = view.getResolution();
+        this._wsiZoomClamped =
+          Math.abs(actual - desired) > 1e-6 * Math.max(1, desired);
+      }
     }
     this.refreshRenderValues();
   };
