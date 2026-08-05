@@ -352,12 +352,14 @@ function createPointInEllipse(
   const direction = segmentationImageData?.getDirection?.();
 
   const spacingInNormal =
-    spacing && direction
+    spacing && direction && viewNormal
       ? csUtils.getSpacingInNormalDirection(
           { spacing, direction },
           viewNormal as Types.Point3
         )
-      : Math.max(spacing?.[2] ?? 1, Number.EPSILON);
+      : spacing
+        ? Math.max(...spacing, Number.EPSILON)
+        : 1;
 
   const planeTolerance = Math.max(spacingInNormal / 2, Number.EPSILON);
 
@@ -435,6 +437,10 @@ function createPointInEllipse(
 
     if (!worldPoint) {
       return false;
+    }
+
+    if (strokePredicate?.(worldPoint)) {
+      return true;
     }
 
     // Get the vector from the center of the brush to the current voxel

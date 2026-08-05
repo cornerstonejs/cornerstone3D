@@ -94,19 +94,20 @@ const sphereComposition = {
       radiusWorld / spacing[2],
     ];
 
-    // Define bounds that always encompass the sphere
+    // Define bounds that always encompass the sphere, clamped to the image dimensions
+    const dims = segmentationImageData.getDimensions();
     const boundsIJK = [
       [
-        Math.floor(centerIJK[0] - radiusIJK[0]),
-        Math.ceil(centerIJK[0] + radiusIJK[0]),
+        Math.max(0, Math.floor(centerIJK[0] - radiusIJK[0])),
+        Math.min(dims[0] - 1, Math.ceil(centerIJK[0] + radiusIJK[0])),
       ],
       [
-        Math.floor(centerIJK[1] - radiusIJK[1]),
-        Math.ceil(centerIJK[1] + radiusIJK[1]),
+        Math.max(0, Math.floor(centerIJK[1] - radiusIJK[1])),
+        Math.min(dims[1] - 1, Math.ceil(centerIJK[1] + radiusIJK[1])),
       ],
       [
-        Math.floor(centerIJK[2] - radiusIJK[2]),
-        Math.ceil(centerIJK[2] + radiusIJK[2]),
+        Math.max(0, Math.floor(centerIJK[2] - radiusIJK[2])),
+        Math.min(dims[2] - 1, Math.ceil(centerIJK[2] + radiusIJK[2])),
       ],
     ];
 
