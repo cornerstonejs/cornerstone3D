@@ -591,8 +591,16 @@ export default class SegmentationStateManager {
         if (state.viewportSegRepresentations[viewportId].length === 0) {
           delete state.viewportSegRepresentations[viewportId];
         } else if (activeRepresentationRemoved) {
-          // Set the first remaining representation as active
-          state.viewportSegRepresentations[viewportId][0].active = true;
+          const remainingRepresentations =
+            state.viewportSegRepresentations[viewportId];
+          const hasActiveRepresentation = remainingRepresentations.some(
+            (representation) => representation.active
+          );
+
+          if (!hasActiveRepresentation) {
+            // Set the first remaining representation as active
+            remainingRepresentations[0].active = true;
+          }
         }
       }
 

@@ -12,7 +12,11 @@ import { BaseTool } from '../base';
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { getActiveSegmentation } from '../../stateManagement/segmentation/getActiveSegmentation';
-import { getLockedSegmentIndices } from '../../stateManagement/segmentation/segmentLocking';
+import {
+  getLockedSegmentIndices,
+  isSegmentIndexLocked,
+} from '../../stateManagement/segmentation/segmentLocking';
+
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
 import { getCurrentLabelmapImageIdForViewport } from '../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import { getSegmentIndexColor } from '../../stateManagement/segmentation/config/segmentationColor';
@@ -34,6 +38,8 @@ import {
   resolveLabelmapForSegment,
 } from '../../stateManagement/segmentation/helpers/labelmapSegmentationState';
 import getViewportICamera from '../../utilities/getViewportICamera';
+import type { Annotations } from '../../types';
+import { getSegmentIndexVisibility } from '../../stateManagement/segmentation/config/segmentationVisibility';
 
 /**
  * A type for preview data/information, used to setup previews on hover, or
@@ -596,21 +602,37 @@ export default class LabelmapBaseTool extends BaseTool {
   /**
    * This function converts contours on this view into labelmap data, using the
    * handle[0] state
+   *
+   * @param viewport - The viewport containing the contours to be converted.
+   * @param options - Optional configuration settings.
+   * @param options.removeContours - Whether to remove the original contours from the view after conversion. Defaults to `true`.
+   * @param options.annotationFilter - A callback function to filter the annotations that should be converted.
+   * @returns void
+
    */
   public static viewportContoursToLabelmap(
     viewport: Types.IViewport,
-    options?: { removeContours: boolean }
+    options?: {
+      removeContours?: boolean;
+      annotationFilter?: (annotations: Annotations) => Annotations;
+    }
   ) {
     const removeContours = options?.removeContours ?? true;
     const annotations = getAllAnnotations();
-    const viewAnnotations = filterAnnotationsForDisplay(viewport, annotations);
-    if (!viewAnnotations?.length) {
-      return;
-    }
-    const contourAnnotations = viewAnnotations.filter(
+    const polylineAnnotations = annotations.filter(
       (annotation) => annotation.data.contour?.polyline?.length
     );
+    const contourAnnotations = options?.annotationFilter
+      ? options.annotationFilter(polylineAnnotations)
+      : polylineAnnotations;
     if (!contourAnnotations.length) {
+      return;
+    }
+    const viewAnnotations = filterAnnotationsForDisplay(
+      viewport,
+      contourAnnotations
+    );
+    if (!viewAnnotations?.length) {
       return;
     }
 
@@ -644,7 +666,7 @@ export default class LabelmapBaseTool extends BaseTool {
       .actor.getMapper()
       .getInputData();
 
-    for (const annotation of contourAnnotations) {
+    for (const annotation of viewAnnotations) {
       const boundsIJK = [
         [Infinity, -Infinity],
         [Infinity, -Infinity],
@@ -681,17 +703,83 @@ export default class LabelmapBaseTool extends BaseTool {
         }
       }
       const hasBoth = hasZeroIndex && hasPositiveIndex;
-      const segmentIndex = hasBoth
+      let segmentIndex = hasBoth
         ? startValue
         : startValue === 0
           ? activeIndex
           : 0;
+
+      if (segmentIndex && segmentIndex > 0) {
+        const isSegmentLocked = isSegmentIndexLocked(
+          segmentationId,
+          segmentIndex
+        );
+        const isSegmentHidden = !getSegmentIndexVisibility(
+          viewport.id,
+          {
+            segmentationId,
+            type: SegmentationRepresentations.Labelmap,
+          },
+          segmentIndex
+        );
+
+        if (isSegmentLocked || isSegmentHidden) {
+          if (segmentIndex !== activeIndex) {
+            segmentIndex = activeIndex;
+
+            const isFallbackLocked =
+              segmentIndex > 0 &&
+              isSegmentIndexLocked(segmentationId, segmentIndex);
+            const isFallbackHidden =
+              segmentIndex > 0 &&
+              !getSegmentIndexVisibility(
+                viewport.id,
+                {
+                  segmentationId,
+                  type: SegmentationRepresentations.Labelmap,
+                },
+                segmentIndex
+              );
+
+            if (isFallbackLocked || isFallbackHidden) {
+              if (removeContours) {
+                removeAnnotation(annotation.annotationUID);
+              }
+              continue;
+            }
+          } else {
+            if (removeContours) {
+              removeAnnotation(annotation.annotationUID);
+            }
+            continue;
+          }
+        }
+      }
+
       for (let i = boundsIJK[0][0]; i <= boundsIJK[0][1]; i++) {
         for (let j = boundsIJK[1][0]; j <= boundsIJK[1][1]; j++) {
           for (let k = boundsIJK[2][0]; k <= boundsIJK[2][1]; k++) {
             const worldPoint = imageData.indexToWorld([i, j, k]);
             const isContained = isPointInsidePolyline3D(worldPoint, polyline);
             if (isContained) {
+              const currentSegmentIndex = segmentationVoxels.getAtIJK(i, j, k);
+              if (currentSegmentIndex && currentSegmentIndex > 0) {
+                const isSegmentLocked = isSegmentIndexLocked(
+                  segmentationId,
+                  currentSegmentIndex
+                );
+                const isSegmentHidden = !getSegmentIndexVisibility(
+                  viewport.id,
+                  {
+                    segmentationId,
+                    type: SegmentationRepresentations.Labelmap,
+                  },
+                  currentSegmentIndex
+                );
+                if (isSegmentLocked || isSegmentHidden) {
+                  continue;
+                }
+              }
               previewVoxels.setAtIJK(i, j, k, segmentIndex);
             }
           }
@@ -705,6 +793,7 @@ export default class LabelmapBaseTool extends BaseTool {
 
     const slices = previewVoxels.getArrayOfModifiedSlices();
     triggerSegmentationDataModified(segmentationId, slices);
+    brushInstance.doneEditMemo();
   }
 }
 
