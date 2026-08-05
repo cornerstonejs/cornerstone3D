@@ -1730,7 +1730,7 @@ class Viewport {
       flipVertical,
       clippingRange,
       aspectRatio,
-      isFitViewportAfterStretch,
+      isFitViewportAfterStretch: providedIsFitViewportAfterStretch,
     } = cameraInterface;
 
     // Note: Flip camera should be two separate calls since
@@ -1791,6 +1791,12 @@ class Viewport {
     if (clippingRange !== undefined) {
       vtkCamera.setClippingRange(clippingRange);
     }
+
+    const isFitViewportAfterStretch =
+      providedIsFitViewportAfterStretch ??
+      previousCamera.isFitViewportAfterStretch ??
+      true;
+    updatedCamera.isFitViewportAfterStretch = isFitViewportAfterStretch;
 
     if (aspectRatio) {
       this.setAspectRatioForVTKCamera(aspectRatio, isFitViewportAfterStretch);
@@ -2213,6 +2219,7 @@ class Viewport {
     }
     const currentAspectRatio = this.getAspectRatio();
     target.aspectRatio = currentAspectRatio;
+    target.isFitViewportAfterStretch = this.getIsFitViewportAfterStretch();
     if (pan) {
       const currentPan = this.getPan();
       const [aspectX, aspectY] = currentAspectRatio;
@@ -2261,12 +2268,13 @@ class Viewport {
       rotation,
       flipHorizontal = this.flipHorizontal,
       flipVertical = this.flipVertical,
+      isFitViewportAfterStretch = this.getIsFitViewportAfterStretch(),
     } = viewPres;
     if (displayArea !== this.getDisplayArea()) {
       this.setDisplayArea(displayArea);
     }
     this.setZoom(zoom);
-    this.setAspectRatio(aspectRatio, this.getIsFitViewportAfterStretch());
+    this.setAspectRatio(aspectRatio, isFitViewportAfterStretch);
     if (pan) {
       const [aspectX, aspectY] = aspectRatio;
       this.setPan([pan[0] * zoom * aspectX, pan[1] * zoom * aspectY] as Point2);
