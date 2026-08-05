@@ -1,3 +1,4 @@
+import { vec3 } from 'gl-matrix';
 import {
   getEnabledElement,
   cache,
@@ -700,10 +701,35 @@ export default class LabelmapBaseTool extends BaseTool {
         viewPlaneNormal,
         viewUp
       );
+
+      // The 2D containment check above ignores depth, so for oblique contours
+      // the IJK bounding box spans multiple slices along viewPlaneNormal.
+      // Reject voxels that aren't actually on the contour's plane.
+      const planeOrigin = polyline[0];
+      const spacingInNormalDirection = csUtils.getSpacingInNormalDirection(
+        {
+          direction: imageData.getDirection(),
+          spacing: imageData.getSpacing(),
+        },
+        viewPlaneNormal
+      );
+      const halfSpacingInNormalDirection = spacingInNormalDirection / 2 + 1e-6;
+
       for (let i = boundsIJK[0][0]; i <= boundsIJK[0][1]; i++) {
         for (let j = boundsIJK[1][0]; j <= boundsIJK[1][1]; j++) {
           for (let k = boundsIJK[2][0]; k <= boundsIJK[2][1]; k++) {
             const worldPoint = imageData.indexToWorld([i, j, k]);
+
+            const distanceFromPlane = Math.abs(
+              vec3.dot(
+                vec3.sub(vec3.create(), worldPoint, planeOrigin),
+                viewPlaneNormal
+              )
+            );
+            if (distanceFromPlane > halfSpacingInNormalDirection) {
+              continue;
+            }
+
             // Check if this voxel is inside or outside the boundary
             const isContained = isPointInsidePolyline3D(worldPoint, polyline, {
               viewPlaneNormal,

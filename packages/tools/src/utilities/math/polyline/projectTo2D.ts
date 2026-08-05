@@ -1,4 +1,3 @@
-import { utilities } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 import type { Types } from '@cornerstonejs/core';
 
@@ -20,7 +19,24 @@ export function isObliqueProjection(sharedDimensionIndex: number): boolean {
 }
 
 /**
+ * Returns `true` if `right` or `up` are missing, zero, or pointing in the same line.
+ */
+export function isDegenerateObliqueBasis(right?: vec3, up?: vec3): boolean {
+  if (!right || !up) {
+    return true;
+  }
+  if (vec3.squaredLength(right) < epsilon || vec3.squaredLength(up) < epsilon) {
+    return true;
+  }
+  const cross = vec3.create();
+  vec3.cross(cross, right, up);
+  return vec3.squaredLength(cross) < epsilon;
+}
+
+/**
  * Projects a single 3D point to 2D using axis-aligned or oblique projection data.
+ *
+ * @throws If oblique projection inputs (origin, right, up) are invalid or zero.
  */
 export function projectPointTo2D(
   point: Types.Point3,
@@ -30,6 +46,12 @@ export function projectPointTo2D(
   up?: vec3
 ): Types.Point2 {
   if (isObliqueProjection(sharedDimensionIndex)) {
+    if (!origin || isDegenerateObliqueBasis(right, up)) {
+      throw new Error(
+        'Cannot project point: oblique projection requires an origin and a non-degenerate right/up basis'
+      );
+    }
+
     const vec = vec3.create();
     vec3.subtract(vec, point, origin);
 
@@ -64,11 +86,9 @@ export function projectTo2D(
   // Use the first three points, two is enough but three is more robust
   let sharedDimensionIndex;
 
-  const testPoints = utilities.getRandomSampleFromArray(polyline, 50);
-
   for (let i = 0; i < 3; i++) {
     if (
-      testPoints.every(
+      polyline.every(
         (point, index, array) => Math.abs(point[i] - array[0][i]) < epsilon
       )
     ) {
@@ -111,6 +131,15 @@ function projectObliquePolyline(
   // right = up X vpn
   const right = vec3.create();
   vec3.cross(right, viewUp, viewPlaneNormal);
+
+  // If viewUp and viewPlaneNormal are zero-length or parallel to each other, right becomes zero.
+  // Since up is calculated using right, it will also fail.
+  if (vec3.squaredLength(right) < epsilon) {
+    throw new Error(
+      'Cannot compute oblique projection: viewUp and viewPlaneNormal must be non-zero and not parallel'
+    );
+  }
+
   vec3.normalize(right, right);
 
   const up = vec3.create();

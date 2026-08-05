@@ -1,6 +1,7 @@
 import type { Types } from '@cornerstonejs/core';
 import containsPoint from './containsPoint';
 import {
+  isDegenerateObliqueBasis,
   isObliqueProjection,
   projectPointTo2D,
   projectTo2D,
@@ -40,9 +41,12 @@ export function isPointInsidePolyline3D(
   const { sharedDimensionIndex, projectedPolyline, origin, right, up } =
     projection;
 
-  if (isObliqueProjection(sharedDimensionIndex) && (!origin || !right || !up)) {
+  if (
+    isObliqueProjection(sharedDimensionIndex) &&
+    (!origin || isDegenerateObliqueBasis(right, up))
+  ) {
     throw new Error(
-      'Oblique projection requires origin, right, and up vectors'
+      'Oblique projection requires an origin and a non-degenerate right/up basis'
     );
   }
 
