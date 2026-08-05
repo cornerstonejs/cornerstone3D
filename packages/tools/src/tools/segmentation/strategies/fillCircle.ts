@@ -297,7 +297,11 @@ const initializeCircle = {
     // slab so a "circle" paints all voxels through the thickness (a volume fill).
     // See the oblique fill behavioural description for the matching area
     // semantics (per-voxel area divided by the number of w planes).
-    const slabThicknessWorld = viewport.getSlabThickness?.();
+    // `getSlabThickness` only exists on volume viewports; stack/generic ones
+    // have no slab API, so keep it optional and let the fill fall back.
+    const slabThicknessWorld = (
+      viewport as Types.IVolumeViewport
+    ).getSlabThickness?.();
     operationData.obliqueIntegerFill = createCircleObliqueIntegerFill({
       viewUp: normalizedViewUp as Types.Point3,
       viewPlaneNormal: normalizedPlaneNormal as Types.Point3,
