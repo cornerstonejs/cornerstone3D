@@ -80,6 +80,13 @@ export default function iterateOverPlane(
     callback,
   } = options;
 
+  // A non-positive resolution yields infinite/negative steps below.
+  if (!(subPixelResolution > 0)) {
+    throw new Error(
+      `iterateOverPlane: subPixelResolution must be > 0, got ${subPixelResolution}`
+    );
+  }
+
   const iVec = direction.slice(0, 3) as Point3;
   const jVec = direction.slice(3, 6) as Point3;
   const kVec = direction.slice(6, 9) as Point3;

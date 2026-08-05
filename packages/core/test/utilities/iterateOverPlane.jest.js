@@ -85,4 +85,30 @@ describe('iterateOverPlane', () => {
       expect(indices.size).toBe(points.length);
     });
   });
+
+  describe('subPixelResolution validation', () => {
+    const planeOptions = {
+      center: [5, 5, 5],
+      viewRight: [1, 0, 0],
+      viewUp: [0, 1, 0],
+      uExtent: 5,
+      vExtent: 5,
+    };
+
+    it.each([0, -1, NaN])('rejects subPixelResolution of %p', (value) => {
+      expect(() =>
+        iterateOverPlane(volume, { ...planeOptions, subPixelResolution: value })
+      ).toThrow(/subPixelResolution must be > 0/);
+    });
+
+    it('accepts a positive subPixelResolution', () => {
+      expect(() =>
+        iterateOverPlane(volume, { ...planeOptions, subPixelResolution: 2 })
+      ).not.toThrow();
+    });
+
+    it('defaults to 1 when subPixelResolution is omitted', () => {
+      expect(() => iterateOverPlane(volume, planeOptions)).not.toThrow();
+    });
+  });
 });

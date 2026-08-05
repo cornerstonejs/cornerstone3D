@@ -19,6 +19,8 @@ import getViewportICamera from '../../getViewportICamera';
  * the native image spacing.
  * @returns The spacings of the X and Y directions, and the 3D directions of the
  * x and y directions.
+ * @throws If the viewport has no image data, so the slice geometry cannot be
+ * resolved.
  */
 const getSubPixelSpacingAndXYDirections = (
   viewport: Types.IStackViewport | Types.IVolumeViewport,
@@ -27,7 +29,7 @@ const getSubPixelSpacingAndXYDirections = (
   const imageData = viewport.getImageData();
 
   if (!imageData) {
-    return;
+    throw new Error('Viewport image data is not available');
   }
 
   // Native ("next") generic viewports are not StackViewport/VolumeViewport

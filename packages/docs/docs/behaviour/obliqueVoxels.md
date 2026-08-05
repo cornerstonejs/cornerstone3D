@@ -31,7 +31,7 @@ Given a volume with an (orthonormal) direction matrix and voxel spacing, and a
 world-space view plane normal, the iterator builds an **integer** basis
 `[A B C]` and a primitive integer plane normal `N = [ni, nj, nk]` such that:
 
-```
+```text
 N · A = 0          // A is in-plane
 N · B = 0          // B is in-plane
 N · C = 1          // C advances exactly one plane
@@ -40,7 +40,7 @@ det([A B C]) = ±1  // the basis is unimodular
 
 `A`, `B`, `C` and `N` are all integer `Point3` vectors. Voxels are addressed by
 
-```
+```text
 ijk = origin + u*A + v*B + w*C          // origin is usually [0, 0, 0]
 ```
 
@@ -49,7 +49,7 @@ between integer `(u, v, w)` and integer `ijk`. That single fact produces every
 behaviour guarantee below:
 
 - **Single ownership** — every integer voxel belongs to exactly one integer `w`
-  plane (`w = ` the third coordinate of `[A B C]⁻¹ (ijk − origin)`, which is
+  plane (`w` = the third coordinate of `[A B C]⁻¹ (ijk − origin)`, which is
   itself integer because the inverse of a unimodular integer matrix is integer).
 - **Disjoint planes** — planes `w`, `w ± 1` share no voxel.
 - **No repeats, full coverage** — iterating the full `(u, v, w)` envelope of a
@@ -79,7 +79,7 @@ direction of the normal** (`√3` in index units by default). Consequently:
 The basis is built with two extended-GCD (Bézout) steps. For primitive
 `N = [a, b, c]` with `d = gcd(b, c)` (so `b·y₀ + c·z₀ = d`) and `a·s + d·t = 1`:
 
-```
+```text
 A = (0, c/d, -b/d)
 B = (-d, a·y₀, a·z₀)
 C = (s, t·y₀, t·z₀)
