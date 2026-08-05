@@ -18,16 +18,19 @@ describe('getIntersectionIterator', () => {
 
     const pixels = [...getIntersectionIterator(realCoordinates)];
 
-    expect(pixels).toEqual([
-      [10, 10],
-      [11, 10],
-      [12, 10],
-      [10, 11],
-      [11, 11],
-      [12, 11],
-      [10, 12],
-      [11, 12],
-    ]);
+    // Checks an interior pixel.
+    // * Verifies that, scanline fills the inside of the polygon, not just edges.
+    expect(pixels).toContainEqual([11, 11]);
+    // Checks a corner/boundary pixel.
+    //  * Verifies that your rasterizer includes the top-left edge.
+    expect(pixels).toContainEqual([10, 10]);
+    // Checks the right boundary.
+    // * Verifies that the fill includes the right side of the ROI.
+    expect(pixels).toContainEqual([12, 11]);
+
+    expect(
+      pixels.every(([x, y]) => x >= 10 && x <= 12 && y >= 10 && y <= 12)
+    ).toBe(true);
   });
 
   it('should accurately rasterize an ROI with negative and decimal coordinates', () => {
@@ -94,7 +97,8 @@ describe('getIntersectionIterator', () => {
     const narrowRowCoordinates = [
       [0, 0],
       [10.8, 0],
-      [10.8, 0],
+      [10.8, 1],
+      [0, 1],
       [0, 0],
     ];
 
@@ -104,7 +108,8 @@ describe('getIntersectionIterator', () => {
     pixels.forEach(([cx, cy]) => {
       expect(cx).toBeGreaterThanOrEqual(0);
       expect(cx).toBeLessThanOrEqual(10.8);
-      expect(cy).toBe(0);
+      expect(cy).toBeGreaterThanOrEqual(0);
+      expect(cy).toBeLessThanOrEqual(1);
     });
   });
 

@@ -26,6 +26,7 @@ import { isPointInsidePolyline3D } from './isPointInsidePolyline3D';
 import { projectTo2D } from './projectTo2D';
 import convexHull from './convexHull';
 import arePolylinesIdentical from './arePolylinesIdentical';
+import getScanLineIntersections from './getScanlineIntersections';
 
 export {
   isClosed,
@@ -56,4 +57,5 @@ export {
   projectTo2D,
   convexHull,
   arePolylinesIdentical,
+  getScanLineIntersections,
 };
