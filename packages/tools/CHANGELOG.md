@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.6.14](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.13...v5.6.14) (2026-08-06)
+
+### Bug Fixes
+
+- **examples:** import addButtonToToolbar in calibrationTools example ([#2845](https://github.com/cornerstonejs/cornerstone3D/issues/2845)) ([08fa07c](https://github.com/cornerstonejs/cornerstone3D/commit/08fa07c74d4e63ca6c2b87955895f758c1069d1c))
+
 ## [5.6.13](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.12...v5.6.13) (2026-08-03)
 
 **Note:** Version bump only for package @cornerstonejs/tools
