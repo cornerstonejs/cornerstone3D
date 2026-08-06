@@ -6,6 +6,13 @@ import {
   VOILUTFunctionType,
 } from '../../../enums';
 import { ActorRenderMode } from '../../../types';
+import {
+  getRenderBackendForRenderMode,
+  getRenderSurfaceForRenderMode,
+  isImageRenderMode,
+  isVolumeRenderMode,
+} from '../../helpers/renderBackendRegistry';
+import type { EffectiveRenderBackend } from '../../../types/RenderBackendRegistry';
 import type {
   ActorEntry,
   ICamera,
@@ -30,11 +37,13 @@ import imageIdToURI from '../../../utilities/imageIdToURI';
 import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
 import genericViewportDisplaySetMetadataProvider from '../../../utilities/genericViewportDisplaySetMetadataProvider';
 import triggerEvent from '../../../utilities/triggerEvent';
+import eventTarget from '../../../eventTarget';
 import getMinMax from '../../../utilities/getMinMax';
 import renderingEngineCache from '../../renderingEngineCache';
 import { getCameraVectors } from '../../helpers/getCameraVectors';
 import type {
   LoadedData,
+  ViewportDataBinding,
   ViewportDataReference,
 } from '../ViewportArchitectureTypes';
 import GenericViewport from '../GenericViewport';
@@ -77,6 +86,7 @@ import {
 import {
   createPlanarCpuVolumeSliceBasis,
   createPlanarVolumeSliceBasis,
+  getVolumeImageIdIndexWorldPoint,
 } from './planarSliceBasis';
 import type { PlanarRendering } from './planarRuntimeTypes';
 import PlanarMountedData from './PlanarMountedData';
@@ -164,6 +174,18 @@ class PlanarViewport extends GenericViewport<
     canvasWidth: number;
   };
   private setDataRequestId = 0;
+  private renderPipelineSwapId = 0;
+  // Last reported render-path error message per display set; a successful
+  // render clears the entry so a genuine repeat failure after recovery is
+  // reported again.
+  private readonly lastRenderPathErrorByDataId = new Map<string, string>();
+  // Original mount options per display set, kept so a live render-backend
+  // switch (updateRenderingPipeline) can re-run the render-path decision with
+  // the same per-mount semantics (orientation, thresholds, backend pins).
+  private readonly mountOptionsByDataId = new Map<
+    string,
+    PlanarSetDataOptions
+  >();
 
   // ── Static ───────────────────────────────────────────────────────────
 
@@ -421,6 +443,7 @@ class PlanarViewport extends GenericViewport<
       return;
     }
 
+    this.mountOptionsByDataId.set(dataId, resolvedOptions);
     this.clearResolvedViewCache();
     this.setDefaultDataPresentation(dataId, {
       visible: true,
@@ -458,6 +481,8 @@ class PlanarViewport extends GenericViewport<
    */
   removeData(dataId: string): void {
     this.clearResolvedViewCache();
+    this.mountOptionsByDataId.delete(dataId);
+    this.lastRenderPathErrorByDataId.delete(dataId);
     super.removeData(dataId);
     this.mountedData.handleRemovedData(dataId);
 
@@ -566,10 +591,7 @@ class PlanarViewport extends GenericViewport<
   getCanvas(): HTMLCanvasElement {
     const rendering = this.getCurrentPlanarRendering();
 
-    if (
-      rendering?.renderMode === ActorRenderMode.CPU_IMAGE ||
-      rendering?.renderMode === ActorRenderMode.CPU_VOLUME
-    ) {
+    if (getRenderSurfaceForRenderMode(rendering?.renderMode) === 'cpu') {
       return this.renderContext.cpu.canvas;
     }
 
@@ -581,12 +603,17 @@ class PlanarViewport extends GenericViewport<
    */
   async addImages(stackInputs: IStackInput[]): Promise<void> {
     const rendering = this.getCurrentPlanarRendering();
+    const renderMode = rendering?.renderMode;
 
-    if (
-      rendering?.renderMode !== ActorRenderMode.VTK_IMAGE &&
-      rendering?.renderMode !== ActorRenderMode.VTK_VOLUME_SLICE &&
-      rendering?.renderMode !== ActorRenderMode.CPU_IMAGE
-    ) {
+    // Overlay images mount on any registered image mode, and on volume modes
+    // whose surface composites actors (the CPU volume path draws its slice
+    // pixels directly and cannot host overlay actors).
+    const supportsImageOverlays =
+      isImageRenderMode(renderMode) ||
+      (isVolumeRenderMode(renderMode) &&
+        getRenderSurfaceForRenderMode(renderMode) !== 'cpu');
+
+    if (!supportsImageOverlays) {
       return;
     }
 
@@ -688,18 +715,16 @@ class PlanarViewport extends GenericViewport<
 
     const renderMode = binding.rendering.renderMode;
 
+    // VTK_VOLUME is not a mode the planar decision service selects (no
+    // registered backend owns it) but compatibility layers can still mount it.
     if (
       renderMode === ActorRenderMode.VTK_VOLUME ||
-      renderMode === ActorRenderMode.VTK_VOLUME_SLICE ||
-      renderMode === ActorRenderMode.CPU_VOLUME
+      isVolumeRenderMode(renderMode)
     ) {
       return 'volume';
     }
 
-    if (
-      renderMode === ActorRenderMode.VTK_IMAGE ||
-      renderMode === ActorRenderMode.CPU_IMAGE
-    ) {
+    if (isImageRenderMode(renderMode)) {
       return 'stack';
     }
 
@@ -1197,9 +1222,19 @@ class PlanarViewport extends GenericViewport<
    * Returns the active image-data object when the current render path exposes
    * one.
    *
-   * @returns The active image-data object, if exposed by the render path.
+   * @param volumeId - Optional: when the viewport displays several volumes
+   * (eg a fusion viewport), return the image data of the binding showing
+   * this volume rather than of the active/default binding.  Mirrors the
+   * legacy `BaseVolumeViewport.getImageData(volumeId?)` signature so
+   * per-target consumers (eg annotation statistics) work on both.
+   * @returns The image-data object, if exposed by the render path.
    */
-  getImageData() {
+  getImageData(volumeId?: string) {
+    if (volumeId) {
+      const dataId = this.findDataIdByVolumeId(volumeId);
+      const binding = dataId ? this.getBinding(dataId) : undefined;
+      return binding?.getImageData?.();
+    }
     return this.getCurrentBinding()?.getImageData?.();
   }
 
@@ -1264,13 +1299,13 @@ class PlanarViewport extends GenericViewport<
   }
 
   /**
-   * Returns whether the active dataset references the given volume id.
+   * Returns whether any bound dataset references the given volume id.
    *
-   * @param volumeId - Volume id to compare against the active dataset.
-   * @returns `true` when the active dataset references the given volume id.
+   * @param volumeId - Volume id to compare against the bound datasets.
+   * @returns `true` when a source or overlay binding references the volume id.
    */
   hasVolumeId(volumeId: string): boolean {
-    return this.getVolumeId() === volumeId;
+    return this.findDataIdByVolumeId(volumeId) !== undefined;
   }
 
   /**
@@ -1338,10 +1373,7 @@ class PlanarViewport extends GenericViewport<
       imageIds[clampedImageIdIndex] || imageIds[imageIds.length - 1];
     const rendering = this.getCurrentPlanarRendering();
 
-    if (
-      rendering?.renderMode === ActorRenderMode.CPU_VOLUME ||
-      rendering?.renderMode === ActorRenderMode.VTK_VOLUME_SLICE
-    ) {
+    if (isVolumeRenderMode(rendering?.renderMode)) {
       const sliceWorldPoint =
         this.getVolumeSliceWorldPointForImageIdIndex(clampedImageIdIndex);
 
@@ -1621,20 +1653,172 @@ class PlanarViewport extends GenericViewport<
 
     let renderedByAdapter = false;
     const sourceBinding = this.getCurrentBinding();
-
-    sourceBinding?.render?.();
-    renderedByAdapter = renderedByAdapter || Boolean(sourceBinding?.render);
-
-    for (const binding of this.bindings.values()) {
-      if (binding === sourceBinding) {
-        continue;
+    const renderBinding = (
+      binding: ViewportDataBinding<PlanarDataPresentation>,
+      dataId: string
+    ) => {
+      if (!binding.render) {
+        return;
       }
 
-      binding.render?.();
-      renderedByAdapter = renderedByAdapter || Boolean(binding.render);
+      renderedByAdapter = true;
+
+      try {
+        binding.render();
+        this.lastRenderPathErrorByDataId.delete(dataId);
+      } catch (error) {
+        this.reportRenderPathError(error, dataId);
+      }
+    };
+
+    for (const [dataId, binding] of this.bindings.entries()) {
+      if (binding === sourceBinding) {
+        renderBinding(binding, dataId);
+      }
+    }
+
+    for (const [dataId, binding] of this.bindings.entries()) {
+      if (binding !== sourceBinding) {
+        renderBinding(binding, dataId);
+      }
     }
 
     return renderedByAdapter;
+  }
+
+  /**
+   * Live render-backend switch: re-runs the render-path decision for every
+   * mounted display set and remounts, in place, the ones whose effective
+   * render mode changed. The viewport instance, its id, mounted data, view
+   * state (slice/zoom/pan), per-display-set presentation, and tool
+   * annotations all survive -- addLoadedData re-applies presentation and view
+   * state to the rebuilt binding. Display sets pinned via a per-mount
+   * renderBackend re-resolve to the same path and are effectively skipped.
+   *
+   * Called by the global setRenderBackend()/setUseCPURendering() fan-out; the
+   * rebuild is async but the hook itself is fire-and-forget by contract.
+   */
+  override updateRenderingPipeline(): void {
+    void this.applyRenderingPipelineUpdate();
+  }
+
+  private async applyRenderingPipelineUpdate(): Promise<void> {
+    if (this.isDestroyed) {
+      return;
+    }
+
+    const swapId = ++this.renderPipelineSwapId;
+    const isStale = () =>
+      swapId !== this.renderPipelineSwapId || this.isDestroyed;
+    let changed = false;
+
+    // Remount the source binding first: overlays without an explicit
+    // renderBackend inherit the source's mounted backend, so the source must
+    // resolve to the new backend before the overlays re-run their decisions
+    // (the source is not guaranteed to be first in insertion order after a
+    // promoteSourceDataId).
+    const sourceBinding = this.getCurrentBinding();
+    const bindingEntries = Array.from(this.bindings.entries());
+    const orderedEntries = [
+      ...bindingEntries.filter(([, binding]) => binding === sourceBinding),
+      ...bindingEntries.filter(([, binding]) => binding !== sourceBinding),
+    ];
+
+    for (const [dataId, binding] of orderedEntries) {
+      if (isStale()) {
+        return;
+      }
+
+      // Skip bindings that were removed or replaced (e.g. by a concurrent
+      // setDisplaySets) since this pass started.
+      if (this.bindings.get(dataId) !== binding) {
+        continue;
+      }
+
+      const options = this.mountOptionsByDataId.get(dataId) ?? {};
+
+      try {
+        const { data, selectedPath } = await this.loadPlanarData(dataId, {
+          ...options,
+          role: binding.role,
+        });
+
+        if (isStale() || this.bindings.get(dataId) !== binding) {
+          continue;
+        }
+
+        if (selectedPath.renderMode === binding.rendering.renderMode) {
+          continue;
+        }
+
+        const added = await this.addLoadedData(
+          dataId,
+          data,
+          {
+            renderMode: selectedPath.renderMode,
+            role: binding.role,
+          },
+          () => isStale() || this.bindings.get(dataId) !== binding
+        );
+
+        changed = changed || added;
+      } catch (error) {
+        this.reportRenderPathError(error, dataId);
+      }
+    }
+
+    if (isStale() || !changed) {
+      return;
+    }
+
+    // Re-assert the source binding's render mode: every remounted path
+    // activated its own mode while mounting, so with mixed CPU/GPU bindings
+    // the last mount, not the source, may have won the canvas-visibility
+    // toggle.
+    const sourceRenderMode = this.getCurrentPlanarRendering()?.renderMode;
+
+    if (sourceRenderMode) {
+      this.renderContext.display.activateRenderMode(sourceRenderMode);
+    }
+
+    this.clearResolvedViewCache();
+    this.updateBindingsCameraState();
+    this.render();
+
+    // The rebuilt render paths replaced this viewport's actors. Announce it so
+    // consumers that decorate actors (segmentation representations restyle
+    // their labelmap overlays through this) can re-reconcile against the new
+    // instances; the swap itself cannot know about them.
+    triggerEvent(eventTarget, Events.RENDERING_PIPELINE_CHANGED, {
+      renderingEngineId: this.renderingEngineId,
+      viewportId: this.id,
+    });
+  }
+
+  /**
+   * Emits the RENDER_PATH_ERROR degradation signal (and logs) for a render
+   * path that threw while mounting or rendering. Repeated identical failures
+   * for a display set are reported once so a per-frame render error does not
+   * flood the event bus; a successful render of that display set clears the
+   * record, so a genuine failure after a recovery is reported again.
+   * Applications listen for this to offer a backend switch.
+   */
+  private reportRenderPathError(error: unknown, dataId?: string): void {
+    const message = error instanceof Error ? error.message : String(error);
+    const errorKey = dataId ?? '';
+
+    if (this.lastRenderPathErrorByDataId.get(errorKey) === message) {
+      return;
+    }
+
+    this.lastRenderPathErrorByDataId.set(errorKey, message);
+    console.error('[PlanarViewport] Render path error', dataId ?? '', error);
+    triggerEvent(eventTarget, Events.RENDER_PATH_ERROR, {
+      renderingEngineId: this.renderingEngineId,
+      viewportId: this.id,
+      dataId,
+      error,
+    });
   }
 
   private requestRenderingEngineRender(): void {
@@ -1650,9 +1834,7 @@ class PlanarViewport extends GenericViewport<
     cpuCanvas: HTMLCanvasElement,
     vtkCanvas: HTMLCanvasElement
   ): void {
-    const useCPUCanvas =
-      renderMode === ActorRenderMode.CPU_IMAGE ||
-      renderMode === ActorRenderMode.CPU_VOLUME;
+    const useCPUCanvas = getRenderSurfaceForRenderMode(renderMode) === 'cpu';
     const viewportElement = this.element.querySelector(
       '.viewport-element'
     ) as HTMLDivElement | null;
@@ -1892,10 +2074,12 @@ class PlanarViewport extends GenericViewport<
     );
     const selectedPath = selectPlanarRenderPath(dataSet, {
       orientation: resolvedOrientation,
-      cpuThresholds: options.cpuThresholds,
-      // Per-mount CPU force: webGLAvailable=false routes the decision to the CPU
-      // path. Left undefined otherwise so global config + thresholds decide.
-      webGLAvailable: options.forceCPU ? false : undefined,
+      // Per-mount backend pin/override. Overlays without an explicit pin
+      // follow the source binding's mounted backend rather than the global
+      // configuration; only then does the global renderBackend decide.
+      renderBackend:
+        options.renderBackend ??
+        this.getInheritedOverlayRenderBackend(options.role),
     });
     const data = await (this.dataProvider as PlanarDataProvider).load(dataId, {
       acquisitionOrientation: selectedPath.acquisitionOrientation,
@@ -1911,14 +2095,33 @@ class PlanarViewport extends GenericViewport<
     };
   }
 
+  /**
+   * Backend an overlay mount inherits when it carries no explicit
+   * renderBackend: the source binding's mounted backend. Source and overlays
+   * must render through the same backend -- each backend draws to its own
+   * canvas and skips the other's actors -- and the source may be pinned
+   * per-mount to a backend that differs from the global configuration.
+   * Returns undefined for source mounts (they resolve on their own) and when
+   * no source is mounted yet, leaving the global configuration to decide.
+   */
+  private getInheritedOverlayRenderBackend(
+    role: PlanarSetDataOptions['role']
+  ): EffectiveRenderBackend | undefined {
+    if (role === 'source') {
+      return undefined;
+    }
+
+    return getRenderBackendForRenderMode(
+      this.getCurrentPlanarRendering()?.renderMode
+    );
+  }
+
   private applyLoadedPlanarViewState(
     resolvedOrientation: PlanarViewState['orientation'],
     planarData: PlanarPayload,
     selectedPath: SelectedPlanarRenderPath
   ): void {
-    const isVolumePath =
-      selectedPath.renderMode === ActorRenderMode.CPU_VOLUME ||
-      selectedPath.renderMode === ActorRenderMode.VTK_VOLUME_SLICE;
+    const isVolumePath = isVolumeRenderMode(selectedPath.renderMode);
     const orientation = normalizePlanarOrientation(
       resolvedOrientation,
       selectedPath.acquisitionOrientation
@@ -1954,7 +2157,7 @@ class PlanarViewport extends GenericViewport<
 
     const { height, width } = this.getCurrentCanvasDimensions();
     const createSliceBasis =
-      renderMode === ActorRenderMode.CPU_VOLUME
+      getRenderSurfaceForRenderMode(renderMode) === 'cpu'
         ? createPlanarCpuVolumeSliceBasis
         : createPlanarVolumeSliceBasis;
     // The acquisition orientation honors an explicitly carried initial slice but
@@ -1968,6 +2171,26 @@ class PlanarViewport extends GenericViewport<
       orientation === OrientationAxis.ACQUISITION
         ? planarData.initialImageIdIndex
         : undefined;
+
+    // An explicit initial slice indexes payload.imageIds (= the volume's
+    // imageId list), so anchor it at that slice's exact IJK center. Feeding the
+    // index into the slice basis instead would count it in camera order — the
+    // acquisition normal is the negated scan axis — and open on the mirrored
+    // slice.
+    if (typeof initialImageIdIndex === 'number') {
+      const sliceWorldPoint = getVolumeImageIdIndexWorldPoint(
+        planarData.imageVolume,
+        initialImageIdIndex
+      );
+
+      if (sliceWorldPoint) {
+        return {
+          kind: 'volumePoint',
+          sliceWorldPoint,
+        };
+      }
+    }
+
     const { sliceBasis } = createSliceBasis({
       canvasHeight: height,
       canvasWidth: width,

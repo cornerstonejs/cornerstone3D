@@ -7,13 +7,34 @@ import {
 import type { Types } from '@cornerstonejs/core';
 import type { Segmentation } from '../../../types/SegmentationStateTypes';
 import type { LabelmapLayer } from '../../../types/LabelmapTypes';
-import { getLabelmap, registerLabelmap } from './labelmapLayerStore';
+import {
+  getLabelmap,
+  registerLabelmap,
+  removeLabelmap,
+} from './labelmapLayerStore';
 import {
   getSegmentBinding,
   getSegmentsOnLabelmap,
   setSegmentBinding,
 } from './labelmapSegmentBindings';
 import { syncLegacyLabelmapData } from './labelmapLegacyAdapter';
+import type { LabelmapRestoreStep } from '../../../utilities/segmentation/createLabelmapMemo';
+
+/** One source->target voxel-manager pair touched by a segment move,
+ *  with the indices whose value moved. */
+type MovedVoxels = {
+  source: Types.IVoxelManager<number>;
+  target: Types.IVoxelManager<number>;
+  indices: number[];
+};
+
+type MoveSegmentToPrivateLabelmapOptions = {
+  /** When provided, receives an undo/redo step that reverses/replays the whole
+   *  move (layer registration, bulk voxel move, and binding change).
+   *  The step does NOT fire segmentation events itself - the recorder is
+   *  expected to wrap it with the appropriate data-modified notification. */
+  moveStepCallback?: (step: LabelmapRestoreStep) => void;
+};
 
 function createPrivateVolumeLabelmap(
   segmentation: Segmentation,
@@ -96,7 +117,8 @@ function createPrivateLabelmap(
 
 function moveSegmentToPrivateLabelmap(
   segmentation: Segmentation,
-  segmentIndex: number
+  segmentIndex: number,
+  options: MoveSegmentToPrivateLabelmapOptions = {}
 ): LabelmapLayer | undefined {
   const binding = getSegmentBinding(segmentation, segmentIndex);
   if (!binding) {
@@ -117,9 +139,12 @@ function moveSegmentToPrivateLabelmap(
   const privateLabelmap = createPrivateLabelmap(segmentation, sourceLabelmap);
   registerLabelmap(segmentation, privateLabelmap);
 
+  const movedVoxels: MovedVoxels[] = [];
+
   if (sourceLabelmap.volumeId && privateLabelmap.volumeId) {
     const sourceVolume = cache.getVolume(sourceLabelmap.volumeId);
     const targetVolume = cache.getVolume(privateLabelmap.volumeId);
+    const indices: number[] = [];
     sourceVolume.voxelManager.forEach(({ value, index }) => {
       if (value !== binding.labelValue) {
         return;
@@ -127,7 +152,15 @@ function moveSegmentToPrivateLabelmap(
 
       targetVolume.voxelManager.setAtIndex(index, 1);
       sourceVolume.voxelManager.setAtIndex(index, 0);
+      indices.push(index);
     });
+    if (indices.length) {
+      movedVoxels.push({
+        source: sourceVolume.voxelManager as Types.IVoxelManager<number>,
+        target: targetVolume.voxelManager as Types.IVoxelManager<number>,
+        indices,
+      });
+    }
   } else {
     const sourceImageIds = sourceLabelmap.imageIds ?? [];
     const targetImageIds = privateLabelmap.imageIds ?? [];
@@ -140,6 +173,7 @@ function moveSegmentToPrivateLabelmap(
         return;
       }
 
+      const indices: number[] = [];
       sourceImage.voxelManager.forEach(({ value, index }) => {
         if (value !== binding.labelValue) {
           return;
@@ -147,15 +181,55 @@ function moveSegmentToPrivateLabelmap(
 
         targetImage.voxelManager.setAtIndex(index, 1);
         sourceImage.voxelManager.setAtIndex(index, 0);
+        indices.push(index);
       });
+      if (indices.length) {
+        movedVoxels.push({
+          source: sourceImage.voxelManager as Types.IVoxelManager<number>,
+          target: targetImage.voxelManager as Types.IVoxelManager<number>,
+          indices,
+        });
+      }
     });
   }
 
-  setSegmentBinding(segmentation, segmentIndex, {
+  const previousBinding = { ...binding };
+  const newBinding = {
     labelmapId: privateLabelmap.labelmapId,
     labelValue: 1,
-  });
+  };
+
+  setSegmentBinding(segmentation, segmentIndex, { ...newBinding });
   syncLegacyLabelmapData(segmentation);
+
+  // Hand the caller an undo/redo step for the WHOLE move so it can be
+  // recorded on the stroke's memo: without it, undo restores voxels but leaves
+  // the private layer, its binding, and the bulk-moved voxels behind,
+  // stranding the segment outside its history.
+  options.moveStepCallback?.({
+    undo: () => {
+      for (const { source, target, indices } of movedVoxels) {
+        for (const index of indices) {
+          target.setAtIndex(index, 0);
+          source.setAtIndex(index, previousBinding.labelValue);
+        }
+      }
+      setSegmentBinding(segmentation, segmentIndex, { ...previousBinding });
+      removeLabelmap(segmentation, privateLabelmap.labelmapId);
+      syncLegacyLabelmapData(segmentation);
+    },
+    redo: () => {
+      registerLabelmap(segmentation, privateLabelmap);
+      for (const { source, target, indices } of movedVoxels) {
+        for (const index of indices) {
+          source.setAtIndex(index, 0);
+          target.setAtIndex(index, 1);
+        }
+      }
+      setSegmentBinding(segmentation, segmentIndex, { ...newBinding });
+      syncLegacyLabelmapData(segmentation);
+    },
+  });
 
   return privateLabelmap;
 }

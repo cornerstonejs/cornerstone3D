@@ -47,7 +47,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     if (!this.contextPool) {
       const { rendering } = getConfiguration();
       const { webGlContextCount } = rendering;
-      this.contextPool = new WebGLContextPool(webGlContextCount);
+      this.contextPool = new WebGLContextPool(webGlContextCount, this.id);
     }
 
     return this.contextPool;

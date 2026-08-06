@@ -65,6 +65,13 @@ export class VtkImageMapperRenderPath
       throw new Error('[PlanarViewport] VTK image rendering requires an image');
     }
 
+    // 16-bit handling: this path uploads the image's native scalar type (e.g.
+    // Int16/Uint16) through the stock vtk.js vtkImageMapper, which enables
+    // EXT_texture_norm16 itself and runs its own linear-filtering probe
+    // (vtk.js OpenGL ImageMapper/Texture), falling back to half-float/float
+    // when norm16 is unusable. Cornerstone's getCanUseNorm16Texture() gate
+    // (used by the streaming volume texture on the VTK_VOLUME_SLICE path) is
+    // intentionally not wired in here.
     const mapper = vtkImageMapper.newInstance();
     const actor = vtkImageSlice.newInstance();
     const imageData =

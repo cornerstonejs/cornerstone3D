@@ -58,6 +58,14 @@ type CreateLabelmapRenderPlanArgs = {
   viewport: Types.IViewport;
   canRenderCurrentViewport?: () => boolean;
   getExpectedRepresentationUIDs?: () => string[];
+  /**
+   * Whether a mounted actor entry has the shape this plan would mount (e.g. a
+   * per-slice image mount vs a volume mount). Plans share representation UIDs
+   * across shapes, so after a live render-backend switch the UID check alone
+   * cannot detect that the surviving actor was mounted through a different
+   * plan kind; an incompatible entry forces a remount.
+   */
+  isActorEntryCompatible?: (actorEntry: Types.ActorEntry) => boolean;
   mount?: (
     args: LabelmapRenderPlanMountArgs
   ) => Promise<LabelmapRenderPlanMountResult>;

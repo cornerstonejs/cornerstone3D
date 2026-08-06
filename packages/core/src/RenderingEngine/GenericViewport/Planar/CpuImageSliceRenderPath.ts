@@ -88,7 +88,11 @@ export class CpuImageSliceRenderPath
 
     compatibilityActor.setVisibility(true);
 
-    const defaultViewport = getDefaultViewport(ctx.cpu.canvas, payload.image);
+    const defaultViewport = getDefaultViewport(
+      ctx.cpu.canvas,
+      payload.image,
+      getCPUFallbackViewportModality(payload.image)
+    );
 
     defaultViewport.displayedArea = resolvePlanarCpuImageDisplayedArea(
       payload.image
@@ -321,7 +325,11 @@ export class CpuImageSliceRenderPath
     });
 
     rendering.fitScale = getCPUFallbackScalarScale(
-      getDefaultViewport(rendering.enabledElement.canvas, image).scale
+      getDefaultViewport(
+        rendering.enabledElement.canvas,
+        image,
+        getCPUFallbackViewportModality(image)
+      ).scale
     );
     rendering.renderingInvalidated = true;
 
@@ -590,6 +598,17 @@ function markCpuImagePreScaled(image: IImage): void {
   image.isPreScaled = image.preScale?.scaled;
 }
 
+function getCPUFallbackViewportModality(image: IImage): string | undefined {
+  return (
+    image.preScale?.scalingParameters?.modality ||
+    (
+      metaData.get(MetadataModules.GENERAL_SERIES, image.imageId) as
+        | { modality?: string }
+        | undefined
+    )?.modality
+  );
+}
+
 export function buildPlanarImageData(
   image: IImage,
   frameOfReferenceUID?: string
@@ -709,7 +728,11 @@ async function updateRenderedImage(args: {
   const enabledElement = rendering.enabledElement;
   markCpuImagePreScaled(image);
   const camera = ctx.viewport.getViewState();
-  const defaultViewport = getDefaultViewport(ctx.cpu.canvas, image);
+  const defaultViewport = getDefaultViewport(
+    ctx.cpu.canvas,
+    image,
+    getCPUFallbackViewportModality(image)
+  );
   const previousViewport = enabledElement.viewport;
 
   defaultViewport.displayedArea = resolvePlanarCpuImageDisplayedArea(image);

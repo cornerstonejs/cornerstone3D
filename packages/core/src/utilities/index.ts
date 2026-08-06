@@ -23,6 +23,7 @@ import * as obliqueIntegerIterator from './obliqueIntegerIterator';
 import getTargetVolumeAndSpacingInNormalDir from './getTargetVolumeAndSpacingInNormalDir';
 import getVolumeActorCorners from './getVolumeActorCorners';
 import indexWithinDimensions from './indexWithinDimensions';
+import indexAlmostWithinDimensions from './indexAlmostWithinDimensions';
 import getVolumeViewportsContainingSameVolumes from './getVolumeViewportsContainingSameVolumes';
 import getViewportsWithVolumeId from './getViewportsWithVolumeId';
 import transformWorldToIndex, {
@@ -117,6 +118,12 @@ import getVolumeViewReferenceId from './getVolumeViewReferenceId';
 import calculateSpacingBetweenImageIds from './calculateSpacingBetweenImageIds';
 export * as logger from './logger';
 import { calculateNeighborhoodStats } from './calculateNeighborhoodStats';
+import {
+  mapScalarToViewportVoiIntensity,
+  mapViewportVoiIntensityToScalar,
+  mapMappedBandToRawRange,
+} from './viewportVoiIntensityMapping';
+export type { ViewportVoiMappingProps } from './viewportVoiIntensityMapping';
 export * from './getPixelSpacingInformation';
 export * from './getPlaneCubeIntersectionDimensions';
 export * from './rotateToViewCoordinates';
@@ -178,6 +185,7 @@ export {
   getTargetVolumeAndSpacingInNormalDir,
   getVolumeActorCorners,
   indexWithinDimensions,
+  indexAlmostWithinDimensions,
   getVolumeViewportsContainingSameVolumes,
   getViewportsWithVolumeId,
   transformWorldToIndex,
@@ -257,6 +265,9 @@ export {
   getImageDataMetadata,
   buildMetadata,
   calculateNeighborhoodStats,
+  mapScalarToViewportVoiIntensity,
+  mapViewportVoiIntensityToScalar,
+  mapMappedBandToRawRange,
   asArray,
   viewportSupportsImageSlices,
   viewportSupportsStackCalibration,

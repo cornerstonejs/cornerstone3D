@@ -59,7 +59,7 @@ class DragProbeTool extends ProbeTool {
     const worldPos = currentPoints.world;
 
     const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
+    const { viewport } = enabledElement;
 
     this.isDrawing = true;
     // Native ("next") viewports expose no getCamera; read orientation via the bridge.
@@ -146,7 +146,7 @@ class DragProbeTool extends ProbeTool {
       viewportId: enabledElement.viewport.id,
     };
 
-    const annotation = this.editData.annotation;
+    const annotation = this.editData.annotation as ProbeAnnotation;
     const annotationUID = annotation.annotationUID;
     const data = annotation.data;
     const point = data.handles.points[0];

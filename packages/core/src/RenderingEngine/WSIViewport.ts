@@ -696,17 +696,13 @@ class WSIViewport extends Viewport {
   protected canvasToIndex = (canvasPos: Point2): Point3 => {
     const transform = this.getTransform();
     transform.invert();
-    const indexPoint = transform.transformPoint(
-      canvasPos.map((it) => it * devicePixelRatio) as Point2
-    );
+    const indexPoint = transform.transformPoint(canvasPos);
     return [indexPoint[0], indexPoint[1], 0] as Point3;
   };
 
   protected indexToCanvas = (indexPos: Point3): Point2 => {
     const transform = this.getTransform();
-    return transform
-      .transformPoint([indexPos[0], indexPos[1]])
-      .map((it) => it / devicePixelRatio) as Point2;
+    return transform.transformPoint([indexPos[0], indexPos[1]]);
   };
 
   /** This can be implemented later when multi-slice WSI is supported */

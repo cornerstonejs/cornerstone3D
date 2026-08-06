@@ -674,7 +674,12 @@ abstract class BaseVolumeViewport extends Viewport {
   ): ViewReference {
     const target = super.getViewReference(viewRefSpecifier);
     const volumeId = this.getVolumeId(viewRefSpecifier);
-    if (viewRefSpecifier?.forFrameOfReference !== false) {
+    // Include the volumeId unless a frame-of-reference reference was
+    // explicitly requested (forFrameOfReference === true), since such a
+    // reference is not volume specific and must not carry a volumeId.  The
+    // default and forFrameOfReference === false both bind to this volume.
+    // Keep this in sync with planarViewReference (the generic viewports).
+    if (viewRefSpecifier?.forFrameOfReference !== true) {
       target.volumeId = volumeId;
     }
     if (typeof viewRefSpecifier?.sliceIndex !== 'number') {

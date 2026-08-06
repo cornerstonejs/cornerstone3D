@@ -1,5 +1,6 @@
 import {
   type Types,
+  ActorRenderMode,
   addVolumesToViewports,
   Enums,
   cache,
@@ -27,7 +28,10 @@ import {
 } from '../../../../stateManagement/segmentation/helpers/labelmapSegmentationState';
 import { addVolumesAsIndependentComponents } from '../addVolumesAsIndependentComponents';
 import { createLabelmapRepresentationUID } from '../labelmapRepresentationUID';
-import { createLabelmapRenderPlan } from './createLabelmapRenderPlan';
+import {
+  createLabelmapRenderPlan,
+  getActorEntryRenderMode,
+} from './createLabelmapRenderPlan';
 import {
   addLabelmapToPlanarGenericViewport,
   isPlanarNextVolumeViewport,
@@ -65,6 +69,12 @@ function createLegacyVolumeLabelmapPlan({
     viewport,
     getExpectedRepresentationUIDs: () =>
       getExpectedVolumeLabelmapRepresentationUIDs(segmentation, segmentationId),
+    // An actor surviving from a per-slice image-mapper mount (e.g. after a
+    // live render-backend switch remounted it in place) shares this plan's
+    // representation UID but not its shape; force a remount through the
+    // volume path.
+    isActorEntryCompatible: (actorEntry) =>
+      !isImageMountedActorEntry(actorEntry),
     mount: ({ labelMapData }) =>
       mountLegacyVolumeLabelmap({
         config,
@@ -74,6 +84,15 @@ function createLegacyVolumeLabelmapPlan({
         viewport,
       }),
   });
+}
+
+function isImageMountedActorEntry(actorEntry: Types.ActorEntry): boolean {
+  const renderMode = getActorEntryRenderMode(actorEntry);
+
+  return (
+    renderMode === ActorRenderMode.VTK_IMAGE ||
+    renderMode === ActorRenderMode.CPU_IMAGE
+  );
 }
 
 function getExpectedVolumeLabelmapRepresentationUIDs(

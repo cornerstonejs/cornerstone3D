@@ -4,6 +4,7 @@ import type {
   BlendModes,
   InterpolationType,
   OrientationAxis,
+  RenderBackendValue,
   VOILUTFunctionType,
 } from '../../../enums';
 import type {
@@ -42,13 +43,20 @@ export type PlanarRenderMode =
   | 'webgl2d'
   | ActorRenderMode.VTK_IMAGE
   | ActorRenderMode.VTK_VOLUME_SLICE;
-/** @internal */
+/**
+ * A render mode a planar viewport can mount: the built-in modes plus any mode
+ * declared by an extension backend registered via `registerRenderBackend()`
+ * (the trailing `string & {}` keeps the union open without erasing the
+ * built-in literals from completion).
+ * @internal
+ */
 export type PlanarEffectiveRenderMode =
   | ActorRenderMode.CPU_IMAGE
   | 'webgl2d'
   | ActorRenderMode.VTK_IMAGE
   | ActorRenderMode.VTK_VOLUME_SLICE
-  | ActorRenderMode.CPU_VOLUME;
+  | ActorRenderMode.CPU_VOLUME
+  | (string & {});
 export type PlanarOrientation =
   | OrientationAxis.ACQUISITION
   | OrientationAxis.AXIAL
@@ -69,18 +77,17 @@ export interface PlanarRegisteredDataSet {
 
 export interface PlanarSetDataOptions {
   orientation?: PlanarOrientation;
-  cpuThresholds?: {
-    image?: number;
-    volume?: number;
-  };
   /**
-   * Forces this display set to render through the CPU path regardless of the
-   * global rendering configuration or byte-size thresholds. Use when an
-   * individual display set / overlay must be CPU-rendered (e.g. to bound GPU
-   * memory). When omitted, the render path is decided by the global rendering
-   * configuration, WebGL availability, and the CPU thresholds above.
+   * Per-display-set render backend override, taking precedence over the
+   * global `rendering.planar.renderBackend` configuration. 'cpu' pins this
+   * display set to CPU rendering (e.g. to bound GPU memory for a thumbnail
+   * viewport mounted next to GPU viewports); 'gpu' pins it to the GPU;
+   * 'auto' resolves from capability detection even when the global backend
+   * is pinned. Pinned display sets keep their backend across global
+   * setRenderBackend() switches. When omitted, the global configuration
+   * decides.
    */
-  forceCPU?: boolean;
+  renderBackend?: RenderBackendValue;
   role?: BindingRole;
 }
 

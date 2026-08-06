@@ -106,6 +106,9 @@ module.exports = {
       path: require.resolve('path-browserify'),
       events: false,
       buffer: require.resolve('buffer'),
+      // vtk.js 36 pulls in xmlbuilder2@4 -> @oozcitak/url which requires
+      // node's built-in 'url' module, unavailable in the browser bundle.
+      url: false,
     },
   },
   devServer: {

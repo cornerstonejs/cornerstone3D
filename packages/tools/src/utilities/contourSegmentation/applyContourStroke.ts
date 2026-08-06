@@ -10,7 +10,7 @@
  * Spatial overlap is not pre-filtered; Clipper decides the geometry.
  */
 
-import type { Types } from '@cornerstonejs/core';
+import { utilities as csUtils, type Types } from '@cornerstonejs/core';
 import type { ContourSegmentationAnnotation } from '../../types';
 import { ContourWindingDirection } from '../../types/ContourAnnotation';
 import {
@@ -26,7 +26,10 @@ import {
   getContourHolesData,
   updateViewportsForAnnotations,
 } from './sharedOperations';
-import { getAllAnnotations } from '../../stateManagement/annotation/annotationState';
+import {
+  getAllAnnotations,
+  getAnnotation,
+} from '../../stateManagement/annotation/annotationState';
 import {
   addAnnotation,
   addChildAnnotation,
@@ -40,6 +43,7 @@ import isContourSegmentationAnnotation from './isContourSegmentationAnnotation';
 import { hasToolByName } from '../../store/addTool';
 
 const DEFAULT_CONTOUR_SEG_TOOL_NAME = 'PlanarFreehandContourSegmentationTool';
+const { DefaultHistoryMemo } = csUtils.HistoryMemo;
 
 /** Add the stroke to the segment (§3.2). Always additive, never removes area. */
 export function addContourStroke(
@@ -116,13 +120,14 @@ function applyStroke(
       : booleanResult;
 
   // Collect every annotation we're about to discard.
-  const toRemove: ContourSegmentationAnnotation[] = [sourceAnnotation];
+  const previousAnnotations: ContourSegmentationAnnotation[] = [];
   for (const t of targets) {
-    toRemove.push(t);
+    previousAnnotations.push(t);
     for (const h of getContourHolesData(viewport, t)) {
-      toRemove.push(h.annotation);
+      previousAnnotations.push(h.annotation);
     }
   }
+  const toRemove = [sourceAnnotation, ...previousAnnotations];
   for (const annotation of toRemove) {
     removeAnnotationCompletely(annotation);
   }
@@ -130,6 +135,7 @@ function applyStroke(
   // Rebuild from clipper output.
   const template = targets[0] ?? sourceAnnotation;
   const { element } = viewport;
+  const resultAnnotations: ContourSegmentationAnnotation[] = [];
 
   for (const polygon of resultPolygons) {
     if (polygon.outer.length < 3) {
@@ -143,6 +149,7 @@ function applyStroke(
     );
     addAnnotation(parent, element);
     addContourSegmentationAnnotation(parent);
+    resultAnnotations.push(parent);
 
     polygon.holes?.forEach((holePolyline) => {
       if (holePolyline.length < 3) {
@@ -156,6 +163,7 @@ function applyStroke(
       );
       addAnnotation(hole, element);
       addChildAnnotation(parent, hole);
+      resultAnnotations.push(hole);
       triggerAnnotationModified(hole, element);
     });
 
@@ -164,7 +172,72 @@ function applyStroke(
     triggerAnnotationModified(parent, element);
   }
 
+  replaceContourStrokeHistory(
+    sourceAnnotation,
+    previousAnnotations,
+    resultAnnotations,
+    viewport
+  );
   updateViewportsForAnnotations(viewport, toRemove);
+}
+
+function replaceContourStrokeHistory(
+  sourceAnnotation: ContourSegmentationAnnotation,
+  previousAnnotations: ContourSegmentationAnnotation[],
+  resultAnnotations: ContourSegmentationAnnotation[],
+  viewport: Types.IViewport
+): void {
+  const memo: Types.Memo = {
+    id: sourceAnnotation.annotationUID,
+    operationType: 'annotation',
+    restoreMemo: (isUndo = true) => {
+      const annotationsToRemove = isUndo
+        ? resultAnnotations
+        : previousAnnotations;
+      const annotationsToAdd = isUndo ? previousAnnotations : resultAnnotations;
+
+      removeStoredAnnotations(annotationsToRemove);
+      addStoredAnnotations(annotationsToAdd, viewport.element);
+      updateViewportsForAnnotations(viewport, [
+        ...annotationsToRemove,
+        ...annotationsToAdd,
+      ]);
+    },
+  };
+
+  DefaultHistoryMemo.replaceCurrentMemo(
+    memo,
+    (currentMemo) =>
+      currentMemo.id === sourceAnnotation.annotationUID &&
+      currentMemo.operationType === 'annotation'
+  );
+}
+
+function removeStoredAnnotations(
+  annotations: ContourSegmentationAnnotation[]
+): void {
+  for (let i = annotations.length - 1; i >= 0; i--) {
+    const annotation = annotations[i];
+
+    if (getAnnotation(annotation.annotationUID)) {
+      removeAnnotation(annotation.annotationUID);
+    }
+    removeContourSegmentationAnnotation(annotation);
+  }
+}
+
+function addStoredAnnotations(
+  annotations: ContourSegmentationAnnotation[],
+  element: HTMLDivElement
+): void {
+  for (const annotation of annotations) {
+    if (getAnnotation(annotation.annotationUID)) {
+      continue;
+    }
+
+    addAnnotation(annotation, element);
+    addContourSegmentationAnnotation(annotation);
+  }
 }
 
 function collectSamePlaneSegmentTargets(

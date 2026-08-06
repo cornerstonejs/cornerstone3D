@@ -225,7 +225,6 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
           ],
           activeHandleIndex: null,
         },
-        labelmapUID: null,
       },
     };
 

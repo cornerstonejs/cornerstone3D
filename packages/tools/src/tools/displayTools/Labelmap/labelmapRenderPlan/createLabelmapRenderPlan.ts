@@ -14,13 +14,17 @@ function createLabelmapRenderPlan({
   viewport,
   canRenderCurrentViewport = () => kind !== 'unsupported',
   getExpectedRepresentationUIDs = () => [],
+  isActorEntryCompatible = () => true,
   mount = async () => undefined,
   update = () => undefined,
 }: CreateLabelmapRenderPlanArgs): LabelmapRenderPlan {
   const remove = () =>
     removeLabelmapRepresentationFromViewport(viewport, segmentationId);
   const needsRemount = (actorEntries?: Types.ActorEntry[]) =>
-    haveActorUIDsChanged(actorEntries, getExpectedRepresentationUIDs());
+    haveActorUIDsChanged(actorEntries, getExpectedRepresentationUIDs()) ||
+    (actorEntries ?? []).some(
+      (actorEntry) => !isActorEntryCompatible(actorEntry)
+    );
 
   return {
     kind,
@@ -62,6 +66,21 @@ function createLabelmapRenderPlan({
   };
 }
 
+/**
+ * Render mode the actor entry was mounted with, when the viewport exposes it
+ * (GenericViewport actor entries carry it on actorMapper; legacy entries
+ * return undefined).
+ */
+function getActorEntryRenderMode(
+  actorEntry: Types.ActorEntry
+): Types.ActorRenderMode | undefined {
+  return (
+    actorEntry as Types.ActorEntry & {
+      actorMapper?: { renderMode?: Types.ActorRenderMode };
+    }
+  ).actorMapper?.renderMode;
+}
+
 function haveActorUIDsChanged(
   actorEntries: Types.ActorEntry[] | undefined,
   expectedRepresentationUIDs: string[]
@@ -84,4 +103,4 @@ function haveActorUIDsChanged(
   return false;
 }
 
-export { createLabelmapRenderPlan };
+export { createLabelmapRenderPlan, getActorEntryRenderMode };

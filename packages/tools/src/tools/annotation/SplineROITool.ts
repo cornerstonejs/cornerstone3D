@@ -127,6 +127,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
       configuration: {
         preventHandleOutsideImage: false,
         calculateStats: true,
+        allowOpenSplines: false,
         simplifiedSpline: false, // if true, it will convert the annotations to free hand
         getTextLines: defaultGetTextLines,
         /**
@@ -537,7 +538,10 @@ class SplineROITool extends ContourSegmentationBaseTool {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const { canvas: canvasPoint, world: worldPoint } = currentPoints;
-    let closeContour = data.handles.points.length >= 2 && doubleClick;
+    let closeContour =
+      data.handles.points.length >= 2 &&
+      doubleClick &&
+      !this.configuration.allowOpenSplines;
     let addNewPoint = true;
 
     if (data.handles.points.length) {
@@ -557,7 +561,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
 
       if (closestControlPoint?.index === 0) {
         addNewPoint = false;
-        closeContour = true;
+        closeContour = !this.configuration.allowOpenSplines;
       }
     }
 
@@ -569,14 +573,18 @@ class SplineROITool extends ContourSegmentationBaseTool {
     annotation.invalidated = true;
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
-    if (data.contour.closed) {
+    const allowOpenSplines =
+      doubleClick &&
+      this.configuration.allowOpenSplines &&
+      data.handles.points.length >= 3;
+    if (data.contour.closed || allowOpenSplines) {
       this._endCallback(evt);
     }
 
     evt.preventDefault();
   };
 
-  private _dragCallback = (evt: EventTypes.InteractionEventType): void => {
+  protected _dragCallback = (evt: EventTypes.InteractionEventType): void => {
     this.isDrawing = true;
     const eventDetail = evt.detail;
     const { element } = eventDetail;
@@ -706,30 +714,6 @@ class SplineROITool extends ContourSegmentationBaseTool {
     } else {
       this.triggerAnnotationModified(annotation, enabledElement, changeType);
     }
-  };
-
-  private _activateModify = (element) => {
-    state.isInteractingWithTool = true;
-
-    element.addEventListener(Events.MOUSE_UP, this._endCallback);
-    element.addEventListener(Events.MOUSE_DRAG, this._dragCallback);
-    element.addEventListener(Events.MOUSE_CLICK, this._endCallback);
-
-    element.addEventListener(Events.TOUCH_END, this._endCallback);
-    element.addEventListener(Events.TOUCH_DRAG, this._dragCallback);
-    element.addEventListener(Events.TOUCH_TAP, this._endCallback);
-  };
-
-  private _deactivateModify = (element) => {
-    state.isInteractingWithTool = false;
-
-    element.removeEventListener(Events.MOUSE_UP, this._endCallback);
-    element.removeEventListener(Events.MOUSE_DRAG, this._dragCallback);
-    element.removeEventListener(Events.MOUSE_CLICK, this._endCallback);
-
-    element.removeEventListener(Events.TOUCH_END, this._endCallback);
-    element.removeEventListener(Events.TOUCH_DRAG, this._dragCallback);
-    element.removeEventListener(Events.TOUCH_TAP, this._endCallback);
   };
 
   private _activateDraw = (element) => {

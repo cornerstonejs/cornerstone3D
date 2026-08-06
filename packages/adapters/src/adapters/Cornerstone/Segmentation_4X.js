@@ -9,6 +9,15 @@ import ndarray from 'ndarray';
 import getDatasetsFromImages from '../helpers/getDatasetsFromImages';
 import checkOrientation from '../helpers/checkOrientation';
 import { utilities as csUtilities } from '@cornerstonejs/core';
+import {
+  applyPerFrameFunctionalGroups,
+  getReferencedSourceImageSequenceItem,
+} from '../Cornerstone3D/Segmentation/perFrameFunctionalGroups';
+import {
+  encodeFramesToTransferSyntax,
+  getBitmapFramesFromDataset,
+  RLE_LOSSLESS_TRANSFER_SYNTAX_UID as RLE_TS_UID,
+} from '../Cornerstone3D/encodePixelData';
 
 import { Events } from '../enums';
 
@@ -24,6 +33,8 @@ const { BitArray, DicomMessage, DicomMetaDictionary } = dcmjsData;
 const { Normalizer } = normalizers;
 const { Segmentation: SegmentationDerivation } = derivations;
 const { encode, decode } = utilities.compression;
+const RLE_LOSSLESS_TRANSFER_SYNTAX_UID = '1.2.840.10008.1.2.5';
+const EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID = '1.2.840.10008.1.2.1';
 
 /**
  *
@@ -34,7 +45,7 @@ const { encode, decode } = utilities.compression;
  */
 const generateSegmentationDefaultOptions = {
   includeSliceSpacing: true,
-  rleEncode: false,
+  transferSyntaxUid: RLE_LOSSLESS_TRANSFER_SYNTAX_UID,
 };
 
 /**
@@ -59,18 +70,52 @@ export function generateSegmentation(
 }
 
 /**
+ * The set of non-zero segment values actually present in a frame's pixel data,
+ * collected in a single pass. `segmentsOnLabelmap` can be stale, so presence is
+ * verified against the pixels — but once per frame, not with one full-frame
+ * scan per listed segment.
+ */
+function segmentsPresentInFrame(pixelData) {
+  const presentSegments = new Set();
+
+  if (!pixelData) {
+    return presentSegments;
+  }
+
+  for (let i = 0; i < pixelData.length; i++) {
+    const value = pixelData[i];
+
+    if (value !== 0) {
+      presentSegments.add(value);
+    }
+  }
+
+  return presentSegments;
+}
+
+/**
  * Fills a given segmentation object with data from the input labelmaps3D
  *
  * @param segmentation - The segmentation object to be filled.
  * @param inputLabelmaps3D - An array of 3D labelmaps, or a single 3D labelmap.
  * @param userOptions - Optional configuration settings. Will override the default options.
+ *   - `transferSyntaxUid` — the output transfer syntax. Defaults to RLE Lossless
+ *     (`1.2.840.10008.1.2.5`); Explicit VR Little Endian
+ *     (`1.2.840.10008.1.2.1`) is also supported. Any other value throws.
+ *   - `rleEncode` — **obsolete / ignored.** This option is no longer read. It
+ *     never worked correctly in prior versions (the old path did not produce a
+ *     valid RLE-encoded SEG), so it has been dropped rather than fixed. RLE
+ *     output is now selected via `transferSyntaxUid` (RLE Lossless is the
+ *     default), and encoding is handled by `encodeFramesToTransferSyntax`.
  *
  * @returns {object} The filled segmentation object.
  */
 export function fillSegmentation(
   segmentation,
   inputLabelmaps3D,
-  userOptions = {}
+  userOptions = {},
+  images = [],
+  metadata = null
 ) {
   const options = Object.assign(
     {},
@@ -83,8 +128,8 @@ export function fillSegmentation(
     ? inputLabelmaps3D
     : [inputLabelmaps3D];
 
-  let numberOfFrames = 0;
   const referencedFramesPerLabelmap = [];
+  const frameDescriptors = [];
 
   for (
     let labelmapIndex = 0;
@@ -92,12 +137,12 @@ export function fillSegmentation(
     labelmapIndex++
   ) {
     const labelmap3D = labelmaps3D[labelmapIndex];
-    const { labelmaps2D, metadata } = labelmap3D;
+    const { labelmaps2D, metadata: segmentMetadata } = labelmap3D;
 
     const referencedFramesPerSegment = [];
 
-    for (let i = 1; i < metadata.length; i++) {
-      if (metadata[i]) {
+    for (let i = 1; i < segmentMetadata.length; i++) {
+      if (segmentMetadata[i]) {
         referencedFramesPerSegment[i] = [];
       }
     }
@@ -105,19 +150,69 @@ export function fillSegmentation(
     for (let i = 0; i < labelmaps2D.length; i++) {
       const labelmap2D = labelmaps2D[i];
 
-      if (labelmaps2D[i]) {
-        const { segmentsOnLabelmap } = labelmap2D;
-
-        segmentsOnLabelmap.forEach((segmentIndex) => {
-          if (segmentIndex !== 0) {
-            referencedFramesPerSegment[segmentIndex].push(i);
-            numberOfFrames++;
-          }
-        });
+      if (!labelmap2D?.pixelData) {
+        continue;
       }
+
+      const { segmentsOnLabelmap } = labelmap2D;
+      const presentSegments = segmentsPresentInFrame(labelmap2D.pixelData);
+
+      segmentsOnLabelmap.forEach((segmentIndex) => {
+        if (
+          segmentIndex !== 0 &&
+          segmentMetadata[segmentIndex] &&
+          referencedFramesPerSegment[segmentIndex] &&
+          presentSegments.has(segmentIndex)
+        ) {
+          referencedFramesPerSegment[segmentIndex].push(i);
+        }
+      });
     }
 
     referencedFramesPerLabelmap[labelmapIndex] = referencedFramesPerSegment;
+  }
+
+  let numberOfFrames = 0;
+
+  for (
+    let labelmapIndex = 0;
+    labelmapIndex < labelmaps3D.length;
+    labelmapIndex++
+  ) {
+    const referencedFramesPerSegment =
+      referencedFramesPerLabelmap[labelmapIndex];
+    const labelmap3D = labelmaps3D[labelmapIndex];
+    const { metadata: segmentMetadata } = labelmap3D;
+
+    for (
+      let segmentIndex = 1;
+      segmentIndex < referencedFramesPerSegment.length;
+      segmentIndex++
+    ) {
+      const referencedFrameIndicies = referencedFramesPerSegment[segmentIndex];
+
+      if (!referencedFrameIndicies?.length || !segmentMetadata[segmentIndex]) {
+        continue;
+      }
+
+      const labelmaps = _getLabelmapsFromReferencedFrameIndicies(
+        labelmap3D,
+        referencedFrameIndicies
+      );
+
+      if (
+        !labelmaps.length ||
+        !labelmaps.some((frame) => frame?.length && frame.some((v) => v !== 0))
+      ) {
+        continue;
+      }
+
+      numberOfFrames += referencedFrameIndicies.length;
+    }
+  }
+
+  if (numberOfFrames === 0) {
+    throw new Error('No non-empty segmentation frames found for SEG export');
   }
 
   segmentation.setNumberOfFrames(numberOfFrames);
@@ -131,7 +226,7 @@ export function fillSegmentation(
       referencedFramesPerLabelmap[labelmapIndex];
 
     const labelmap3D = labelmaps3D[labelmapIndex];
-    const { metadata } = labelmap3D;
+    const { metadata: segmentMetadata } = labelmap3D;
 
     for (
       let segmentIndex = 1;
@@ -140,58 +235,146 @@ export function fillSegmentation(
     ) {
       const referencedFrameIndicies = referencedFramesPerSegment[segmentIndex];
 
-      if (referencedFrameIndicies) {
-        // Frame numbers start from 1.
-        const referencedFrameNumbers = referencedFrameIndicies.map(
-          (element) => {
-            return element + 1;
-          }
-        );
-        const segmentMetadata = metadata[segmentIndex];
-        const labelmaps = _getLabelmapsFromReferencedFrameIndicies(
-          labelmap3D,
-          referencedFrameIndicies
-        );
-
-        segmentation.addSegmentFromLabelmap(
-          segmentMetadata,
-          labelmaps,
-          segmentIndex,
-          referencedFrameNumbers
-        );
+      if (!referencedFrameIndicies?.length || !segmentMetadata[segmentIndex]) {
+        continue;
       }
+
+      const labelmaps = _getLabelmapsFromReferencedFrameIndicies(
+        labelmap3D,
+        referencedFrameIndicies
+      );
+
+      if (
+        !labelmaps.length ||
+        !labelmaps.some((frame) => frame?.length && frame.some((v) => v !== 0))
+      ) {
+        continue;
+      }
+
+      // Frame numbers start from 1.
+      const referencedFrameNumbers = referencedFrameIndicies.map(
+        (element) => element + 1
+      );
+
+      referencedFrameNumbers.forEach((frameNumber) => {
+        frameDescriptors.push({
+          referencedSegmentNumber: segmentIndex,
+          sourceFrameIndex: frameNumber - 1,
+        });
+      });
+
+      segmentation.addSegmentFromLabelmap(
+        segmentMetadata[segmentIndex],
+        labelmaps,
+        segmentIndex,
+        referencedFrameNumbers
+      );
     }
   }
-  if (options.rleEncode) {
-    const rleEncodedFrames = encode(
-      segmentation.dataset.PixelData,
-      numberOfFrames,
-      segmentation.dataset.Rows,
-      segmentation.dataset.Columns
-    );
 
-    // Must use fractional now to RLE encode, as the DICOM standard only allows BitStored && BitsAllocated
-    // to be 1 for BINARY. This is not ideal and there should be a better format for compression in this manner
-    // added to the standard.
-    segmentation.assignToDataset({
-      BitsAllocated: '8',
-      BitsStored: '8',
-      HighBit: '7',
-      SegmentationType: 'FRACTIONAL',
-      SegmentationFractionalType: 'PROBABILITY',
-      MaximumFractionalValue: '255',
+  if (frameDescriptors.length && images?.length && metadata) {
+    // Every SEG frame must reference a resolvable source SOP Instance UID.
+    // Reject rather than silently dropping frames: a dropped frame would make
+    // the per-frame functional groups disagree with the encoded PixelData and
+    // produce a SEG whose source-image references are unreliable.
+    const perFrameInputs = frameDescriptors.map((desc) => {
+      const sourceImageSequenceItem = getReferencedSourceImageSequenceItem(
+        images[desc.sourceFrameIndex],
+        metadata
+      );
+
+      if (!sourceImageSequenceItem?.ReferencedSOPInstanceUID) {
+        throw new Error(
+          `Cannot resolve a source ReferencedSOPInstanceUID for SEG frame ` +
+            `(sourceFrameIndex ${desc.sourceFrameIndex}, segment ` +
+            `${desc.referencedSegmentNumber}). Refusing to write a SEG with ` +
+            `unreliable source image references.`
+        );
+      }
+
+      return {
+        referencedSegmentNumber: desc.referencedSegmentNumber,
+        sourceImageSequenceItem,
+      };
     });
 
-    segmentation.dataset._meta.TransferSyntaxUID = {
-      Value: ['1.2.840.10008.1.2.5'],
-      vr: 'UI',
-    };
-    segmentation.dataset.SpecificCharacterSet = 'ISO_IR 192';
-    segmentation.dataset._vrMap.PixelData = 'OB';
-    segmentation.dataset.PixelData = rleEncodedFrames;
-  } else {
-    // If no rleEncoding, at least bitpack the data.
+    applyPerFrameFunctionalGroups(segmentation.dataset, perFrameInputs);
+  }
+  const transferSyntaxUid =
+    options.transferSyntaxUid ??
+    options.transferSyntaxUID ??
+    RLE_LOSSLESS_TRANSFER_SYNTAX_UID;
+
+  if (transferSyntaxUid === RLE_LOSSLESS_TRANSFER_SYNTAX_UID) {
+    const isBinaryBitmap =
+      segmentation.dataset.SegmentationType === 'BINARY' &&
+      Number(segmentation.dataset.BitsAllocated) === 1;
+
+    if (isBinaryBitmap) {
+      segmentation.bitPackPixelData();
+      const { frames, bitsAllocated } = getBitmapFramesFromDataset(
+        segmentation.dataset
+      );
+      const { pixelData, pixelDataVR } = encodeFramesToTransferSyntax({
+        transferSyntaxUID: RLE_TS_UID,
+        frames,
+        bitsAllocated,
+        columns: Number(segmentation.dataset.Columns) || undefined,
+      });
+
+      segmentation.dataset.PixelData = pixelData;
+      segmentation.dataset._vrMap.PixelData = pixelDataVR;
+      if (!options.skipTransferSyntaxMeta) {
+        segmentation.dataset._meta.TransferSyntaxUID = {
+          Value: [RLE_LOSSLESS_TRANSFER_SYNTAX_UID],
+          vr: 'UI',
+        };
+      }
+      segmentation.dataset.SpecificCharacterSet = 'ISO_IR 192';
+    } else {
+      const rleEncodedFrames = encode(
+        segmentation.dataset.PixelData,
+        numberOfFrames,
+        segmentation.dataset.Rows,
+        segmentation.dataset.Columns
+      );
+
+      // Fractional/8-bit labelmaps: legacy dcmjs row RLE (not valid for 1-bit packed binary).
+      segmentation.assignToDataset({
+        BitsAllocated: '8',
+        BitsStored: '8',
+        HighBit: '7',
+        SegmentationType: 'FRACTIONAL',
+        SegmentationFractionalType: 'PROBABILITY',
+        MaximumFractionalValue: '255',
+      });
+
+      if (!options.skipTransferSyntaxMeta) {
+        segmentation.dataset._meta.TransferSyntaxUID = {
+          Value: [RLE_LOSSLESS_TRANSFER_SYNTAX_UID],
+          vr: 'UI',
+        };
+      }
+      segmentation.dataset.SpecificCharacterSet = 'ISO_IR 192';
+      segmentation.dataset._vrMap.PixelData = 'OB';
+      segmentation.dataset.PixelData = rleEncodedFrames;
+    }
+  } else if (
+    transferSyntaxUid === EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID
+  ) {
+    // For explicit VR little endian, at least bitpack the data.
     segmentation.bitPackPixelData();
+    if (!options.skipTransferSyntaxMeta) {
+      segmentation.dataset._meta.TransferSyntaxUID = {
+        Value: [EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID],
+        vr: 'UI',
+      };
+    }
+  } else {
+    throw new Error(
+      `Unsupported SEG transfer syntax: ${transferSyntaxUid}. ` +
+        `Supported: ${RLE_LOSSLESS_TRANSFER_SYNTAX_UID}, ${EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID}`
+    );
   }
 
   return segmentation;
@@ -1052,18 +1235,46 @@ export function insertOverlappingPixelDataPlanar(
   }
 }
 
+function getReferencedSegmentNumberFromIdentificationSequence(
+  segmentIdentificationSequence
+) {
+  if (!segmentIdentificationSequence) {
+    return undefined;
+  }
+
+  const normalized = Array.isArray(segmentIdentificationSequence)
+    ? segmentIdentificationSequence[0]
+    : segmentIdentificationSequence;
+
+  return normalized?.ReferencedSegmentNumber;
+}
+
+function getSharedFunctionalGroupsSequence(multiframe) {
+  const shared = multiframe?.SharedFunctionalGroupsSequence;
+
+  if (Array.isArray(shared)) {
+    return shared.length > 0 ? shared[0] : undefined;
+  }
+
+  return shared;
+}
+
 export const getSegmentIndex = (multiframe, frame) => {
-  const { PerFrameFunctionalGroupsSequence, SharedFunctionalGroupsSequence } =
-    multiframe;
-  const PerFrameFunctionalGroups = PerFrameFunctionalGroupsSequence[frame];
-  return PerFrameFunctionalGroups &&
-    PerFrameFunctionalGroups.SegmentIdentificationSequence
-    ? PerFrameFunctionalGroups.SegmentIdentificationSequence
-        .ReferencedSegmentNumber
-    : SharedFunctionalGroupsSequence.SegmentIdentificationSequence
-      ? SharedFunctionalGroupsSequence.SegmentIdentificationSequence
-          .ReferencedSegmentNumber
-      : undefined;
+  const { PerFrameFunctionalGroupsSequence } = multiframe;
+  const PerFrameFunctionalGroups = PerFrameFunctionalGroupsSequence?.[frame];
+  const fromPerFrame = getReferencedSegmentNumberFromIdentificationSequence(
+    PerFrameFunctionalGroups?.SegmentIdentificationSequence
+  );
+
+  if (fromPerFrame !== undefined) {
+    return fromPerFrame;
+  }
+
+  const shared = getSharedFunctionalGroupsSequence(multiframe);
+
+  return getReferencedSegmentNumberFromIdentificationSequence(
+    shared?.SegmentIdentificationSequence
+  );
 };
 
 export function insertPixelDataPlanar(
@@ -1356,16 +1567,17 @@ export function getImageIdOfSourceImageBySourceImageSequence(
     } else if (baseImageId.includes('dicomfile:')) {
       // dicomfile base 1, despite having frame=
       return baseImageId.replace(/frame=\d+/, `frame=${ReferencedFrameNumber}`);
-    } else if (baseImageId.includes('frame=')) {
-      return baseImageId.replace(
-        /frame=\d+/,
-        `frame=${ReferencedFrameNumber - 1}`
-      );
+    } else if (
+      baseImageId.includes('frame=') ||
+      baseImageId.includes('wadouri:')
+    ) {
+      // OHIF local/wadouri use 1-based ?frame= / &frame= (same as dicomfile:).
+      return baseImageId.replace(/frame=\d+/, `frame=${ReferencedFrameNumber}`);
     } else {
       if (baseImageId.includes('wadors:')) {
         return `${baseImageId}/frames/${ReferencedFrameNumber}`;
       } else {
-        return `${baseImageId}?frame=${ReferencedFrameNumber - 1}`;
+        return `${baseImageId}?frame=${ReferencedFrameNumber}`;
       }
     }
   }
@@ -1590,27 +1802,38 @@ export function getSegmentMetadata(multiframe, seriesInstanceUid) {
 }
 
 /**
- * Reads a range of bytes from an array of ArrayBuffer chunks and
- * aggregate them into a new Uint8Array.
+ * Reads a range of SAMPLES (typed-array elements, not bytes) from an array of
+ * typed-array chunks and aggregates them into a new typed array of the same
+ * element type. Chunks may be Uint8Array (8-bit / packed binary) or
+ * Uint16Array (16-bit labelmaps); offsets and lengths are in elements so the
+ * same sample-indexed math works for both widths.
  *
- * @param {ArrayBuffer[]} chunks - An array of ArrayBuffer chunks.
- * @param {number} offset - The offset of the first byte to read.
- * @param {number} length - The number of bytes to read.
- * @returns {Uint8Array} A new Uint8Array containing the requested bytes.
+ * @param {Uint8Array[]|Uint16Array[]} chunks - Typed-array chunks (all the same type).
+ * @param {number} offset - The offset of the first sample to read.
+ * @param {number} length - The number of samples to read.
+ * @returns {Uint8Array|Uint16Array} A view/copy containing the requested samples.
  */
 export function readFromUnpackedChunks(chunks, offset, length) {
   const mapping = getUnpackedOffsetAndLength(chunks, offset, length);
+  const TypedArray = chunks[0]?.constructor ?? Uint8Array;
+  const bytesPerElement = TypedArray.BYTES_PER_ELEMENT ?? 1;
 
+  // Chunks are typically subarray views that share one backing ArrayBuffer, so
+  // `chunk.buffer` is the whole buffer (byte 0 = chunk 0) while the computed
+  // offsets are chunk-relative. Add each chunk's own byteOffset so a view into
+  // chunk N reads chunk N's bytes and not chunk 0's; element offsets are scaled
+  // by the chunk's element width so 16-bit chunks are not read as bytes.
   // If all the data is in one chunk, we can just slice that chunk
   if (mapping.start.chunkIndex === mapping.end.chunkIndex) {
-    return new Uint8Array(
-      chunks[mapping.start.chunkIndex].buffer,
-      mapping.start.offset,
+    const chunk = chunks[mapping.start.chunkIndex];
+    return new TypedArray(
+      chunk.buffer,
+      chunk.byteOffset + mapping.start.offset * bytesPerElement,
       length
     );
   } else {
-    // If the data spans multiple chunks, we need to create a new Uint8Array and copy the data from each chunk
-    let result = new Uint8Array(length);
+    // If the data spans multiple chunks, we need to create a new typed array and copy the data from each chunk
+    let result = new TypedArray(length);
     let resultOffset = 0;
 
     for (let i = mapping.start.chunkIndex; i <= mapping.end.chunkIndex; i++) {
@@ -1619,7 +1842,11 @@ export function readFromUnpackedChunks(chunks, offset, length) {
         i === mapping.end.chunkIndex ? mapping.end.offset : chunks[i].length;
 
       result.set(
-        new Uint8Array(chunks[i].buffer, start, end - start),
+        new TypedArray(
+          chunks[i].buffer,
+          chunks[i].byteOffset + start * bytesPerElement,
+          end - start
+        ),
         resultOffset
       );
       resultOffset += end - start;

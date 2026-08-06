@@ -1,5 +1,7 @@
-import type { VolumeViewport, Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
+
+import getViewportICamera from './getViewportICamera';
 
 /**
  * Computes the ellipse boundary points (top, bottom, left, right) based on two
@@ -26,10 +28,11 @@ import { vec3 } from 'gl-matrix';
  */
 export default function getEllipseWorldCoordinates(
   points: [Types.Point3, Types.Point3],
-  viewport: Types.IStackViewport | VolumeViewport
+  viewport: Types.IViewport
 ): Types.Point3[] {
-  const camera = viewport.getCamera();
-  const { viewUp, viewPlaneNormal } = camera;
+  const { viewUp, viewPlaneNormal } = getViewportICamera(
+    viewport
+  ) as Types.ICamera;
 
   // Calculate view right vector
   const viewRight = vec3.create();
