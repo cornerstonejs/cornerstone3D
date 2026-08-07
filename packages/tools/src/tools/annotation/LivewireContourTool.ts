@@ -69,6 +69,10 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     contourHoleProcessingEnabled?: boolean;
   } | null;
   isDrawing: boolean;
+  // Multi-part: points already placed must survive a pinch, so the extra
+  // finger is ignored by _touchDragDuringDrawCallback rather than cancelling
+  // the contour. See BaseTool.handlesMultiTouchGestures.
+  handlesMultiTouchGestures = true;
   isHandleOutsideImage = false;
 
   constructor(

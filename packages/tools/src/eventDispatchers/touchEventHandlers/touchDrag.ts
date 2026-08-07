@@ -1,5 +1,6 @@
 import getActiveToolForTouchEvent from '../shared/getActiveToolForTouchEvent';
 import getTouchCallbackWithMouseFallback from '../shared/getTouchCallbackWithMouseFallback';
+import releaseToolForMultiTouchGesture from '../shared/releaseToolForMultiTouchGesture';
 import { state } from '../../store/state';
 import type { TouchDragEventType } from '../../types/EventTypes';
 
@@ -9,7 +10,13 @@ import type { TouchDragEventType } from '../../types/EventTypes';
  * that declare 'Touch' support.
  */
 export default function touchDrag(evt: TouchDragEventType) {
-  if (state.isInteractingWithTool) {
+  // Must run before the interaction guard: an extra finger arriving mid-drag
+  // reclassifies the gesture as a manipulation, but the tool owning the draw
+  // loop has already set isInteractingWithTool, so the guard below would
+  // return before the gesture could re-resolve to the two-finger binding.
+  const bypassInteractionGuard = releaseToolForMultiTouchGesture(evt);
+
+  if (state.isInteractingWithTool && !bypassInteractionGuard) {
     return;
   }
 

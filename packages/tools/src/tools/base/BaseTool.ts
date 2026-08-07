@@ -85,6 +85,23 @@ abstract class BaseTool {
 
   /** Supported Interaction Types - currently only Mouse */
   public supportedInteractionTypes: InteractionTypes[];
+
+  /**
+   * Whether this tool implements its own handling for touch points that arrive
+   * after a gesture has already started.
+   *
+   * When false (the default), an extra finger during an in-progress gesture
+   * releases the tool through `cancel()` so the gesture can re-resolve to the
+   * tool bound to the new finger count - normally pinch zoom or multi-finger
+   * scroll. See `releaseToolForMultiTouchGesture`.
+   *
+   * Multi-part tools set this to true: cancelling them would discard points
+   * the user has already placed, and they instead ignore the extra finger for
+   * the duration of the gesture. Declaring it also keeps the manipulation
+   * tools reachable, since the dispatcher bypasses the interaction guard for
+   * such tools rather than clearing it.
+   */
+  public handlesMultiTouchGestures = false;
   /**
    * The configuration for this tool.
    * IBaseTool contains some default configuration values, and you can use
