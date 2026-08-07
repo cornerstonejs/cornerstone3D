@@ -81,6 +81,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
+      supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         // Whether to store point data in the annotation
         storePointData: false,

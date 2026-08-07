@@ -802,6 +802,40 @@ class ClickSegmentTool extends GrowCutBaseTool {
     return true;
   }
 
+  /**
+   * Touch entry point. Touch has no hover, so the plus-cursor arming that
+   * gates mouse clicks can never have run. Instead, arm at tap time: run the
+   * exact hover probe (awaited) at the tap point, which plants a fresh
+   * lastProbe verdict for this point, then hand the event to the unchanged
+   * mouse flow. A blocked verdict rejects the tap with the segmentation
+   * error toast instead of silently ignoring it.
+   */
+  preTouchStartCallback = async (
+    evt: EventTypes.TouchStartEventType
+  ): Promise<boolean> => {
+    if (this.mode !== ToolModes.Active || this.segmentationInProgress) {
+      return false;
+    }
+
+    // TouchStartEventDetail carries element + currentPoints, which is all
+    // runHoverProbe reads.
+    await this.runHoverProbe(evt as unknown as EventTypes.MouseMoveEventType);
+
+    if (this.lastProbe && !this.lastProbe.ok) {
+      growCutLog.info('tap ignored: probe reported no proper region', {
+        canvasPoint: this.lastProbe.canvas,
+      });
+      this.notifySegmentationError(
+        'No meaningful region at the tapped location; nothing was segmented.'
+      );
+      return true;
+    }
+
+    return this.preMouseDownCallback(
+      evt as unknown as EventTypes.MouseDownActivateEventType
+    );
+  };
+
   private async runClick(
     clickData: GrowCutToolData,
     worldPoint: Types.Point3,
