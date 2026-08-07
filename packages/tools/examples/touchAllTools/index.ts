@@ -202,6 +202,15 @@ diagnostics.innerHTML = `
   data is fine and the texture path is at fault:
   <a href="?cpu=1&amp;maxSlices=40">cpu=1 + maxSlices=40</a>
   <br /><br />
+  <b>Annotations drift away from the image as you pan?</b> If they move at a different
+  speed (rather than lagging and catching up), the annotation projection disagrees with
+  the camera - a scale error, zero at the centre and growing with distance.
+  <code>?mobile=0</code> forces the tiled rendering engine instead of the single-context
+  one that touch devices default to; the two use different world/canvas coordinate
+  implementations, so this says which projection path is at fault:
+  <a href="?mobile=0">mobile=0 (tiled)</a> &middot;
+  <a href="?mobile=1">mobile=1 (context pool)</a>
+  <br /><br />
   A <code>diag webglcontextlost</code> entry means the GPU process was killed
   (commonly out of memory). The canvas goes blank with no JavaScript error, so that
   log line is the only evidence.
@@ -429,8 +438,19 @@ function addToolsToGroup(toolGroup, { isVolumeGroup }: { isVolumeGroup }) {
   });
 }
 
-// Same coarse-pointer check the other examples use for mobile-specific setup
-const isMobile = window.matchMedia('(any-pointer:coarse)').matches;
+// Same coarse-pointer check the other examples use for mobile-specific setup.
+//
+// ?mobile=0 / ?mobile=1 overrides it. This is not cosmetic: isMobile drops the
+// engine to webGlContextCount = 1, which selects ContextPoolRenderingEngine
+// over the tiled engine, and the two use *different* world/canvas coordinate
+// implementations (worldToCanvas vs worldToCanvasContextPool). A desktop with
+// a fine pointer therefore exercises entirely different projection code than a
+// tablet, so the override is what makes the two comparable on one device.
+const mobileParam = getStringUrlParam('mobile');
+const isMobile =
+  mobileParam !== null
+    ? getBooleanUrlParam('mobile')
+    : window.matchMedia('(any-pointer:coarse)').matches;
 
 // ---- On-page log console -------------------------------------------------
 // Device debugging without a tethered inspector: captures console output,
@@ -521,7 +541,13 @@ window.addEventListener(
 function logWebGLDiagnostics() {
   console.log('diag userAgent:', navigator.userAgent);
   console.log('diag devicePixelRatio:', window.devicePixelRatio);
-  console.log('diag isMobile (any-pointer:coarse):', isMobile);
+  console.log(
+    'diag isMobile:',
+    isMobile,
+    mobileParam !== null ? '(forced by ?mobile)' : '(from any-pointer:coarse)',
+    '-> rendering engine:',
+    isMobile ? 'ContextPool (1 WebGL context)' : 'Tiled (default pool)'
+  );
 
   const canvas = document.createElement('canvas');
   const gl = canvas.getContext('webgl2');

@@ -749,7 +749,10 @@ class AdvancedMagnifyTool extends AnnotationTool {
     const { canvas: canvasPoint } = currentPoints;
     const viewportElement = element.querySelector(':scope .viewport-element');
     const currentZoomFactor = annotation.data.zoomFactor;
-    const remove = () => dropdown.parentElement.removeChild(dropdown);
+    // Element.remove() rather than parentElement.removeChild(): the dropdown
+    // may already be detached (blur fires as it is torn down), and the latter
+    // throws on a null parent.
+    const remove = () => dropdown.remove();
 
     const dropdown = this._getZoomFactorsListDropdown(
       currentZoomFactor,
@@ -835,10 +838,42 @@ class AdvancedMagnifyTool extends AnnotationTool {
       dropdown.addEventListener(eventName, (evt) => evt.stopPropagation());
     });
 
+    // `change` only fires when the value actually differs, so picking the
+    // factor that is already selected used to leave the picker stranded on the
+    // canvas with no way to dismiss it. Committing from several paths fixes
+    // that, but onChangeCallback tears the dropdown down, so the paths are
+    // funnelled through a one-shot guard rather than allowed to race.
+    let committed = false;
+    const commit = (value?: string) => {
+      if (committed) {
+        return;
+      }
+
+      committed = true;
+      onChangeCallback(value);
+    };
+
     dropdown.addEventListener('change', (evt) => {
       evt.stopPropagation();
-      onChangeCallback(dropdown.value);
+      commit(dropdown.value);
     });
+
+    // Selecting the current value: the click lands on the option even though
+    // no change event follows. Clicks on the listbox chrome (scrollbar,
+    // padding) are deliberately ignored so scrolling the list cannot dismiss
+    // it; those fall through to the blur handler instead.
+    dropdown.addEventListener('click', (evt) => {
+      evt.stopPropagation();
+
+      if ((evt.target as HTMLElement)?.tagName === 'OPTION') {
+        commit(dropdown.value);
+      }
+    });
+
+    // Click-away, and the safety net for platforms that render <select> as a
+    // native modal picker (iOS) where neither of the above reliably fires when
+    // the value is unchanged.
+    dropdown.addEventListener('blur', () => commit(dropdown.value));
 
     dropdown.addEventListener('keydown', (evt) => {
       const shouldCancel =
@@ -847,7 +882,7 @@ class AdvancedMagnifyTool extends AnnotationTool {
 
       if (shouldCancel) {
         evt.stopPropagation();
-        onChangeCallback();
+        commit();
       }
     });
 
