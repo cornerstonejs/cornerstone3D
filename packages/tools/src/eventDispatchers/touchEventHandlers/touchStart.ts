@@ -19,6 +19,7 @@ import filterToolsWithMoveableHandles from '../../store/filterToolsWithMoveableH
 import filterToolsWithAnnotationsForElement from '../../store/filterToolsWithAnnotationsForElement';
 import filterMoveableAnnotationTools from '../../store/filterMoveableAnnotationTools';
 import getActiveToolForTouchEvent from '../shared/getActiveToolForTouchEvent';
+import getTouchCallbackWithMouseFallback from '../shared/getTouchCallbackWithMouseFallback';
 import getToolsWithModesForTouchEvent from '../shared/getToolsWithModesForTouchEvent';
 
 const { Active, Passive } = ToolModes;
@@ -33,10 +34,16 @@ export default function touchStart(evt: EventTypes.TouchStartEventType) {
   }
   const activeTool = getActiveToolForTouchEvent(evt);
 
-  // Check for preTouchStartCallbacks,
+  // Check for preTouchStartCallbacks (falling back to preMouseDownCallback
+  // for tools that declare 'Touch' support without a touch-specific handler).
   // If the tool claims it consumed the event, prevent further checks.
-  if (activeTool && typeof activeTool.preTouchStartCallback === 'function') {
-    const consumedEvent = activeTool.preTouchStartCallback(evt);
+  const preCallback = getTouchCallbackWithMouseFallback(
+    activeTool,
+    'preTouchStartCallback',
+    'preMouseDownCallback'
+  );
+  if (preCallback) {
+    const consumedEvent = preCallback(evt);
 
     if (consumedEvent) {
       return;
@@ -113,9 +120,15 @@ export default function touchStart(evt: EventTypes.TouchStartEventType) {
     return;
   }
 
-  // Run the postTouchStartCallback for the active tool if it exists
-  if (activeTool && typeof activeTool.postTouchStartCallback === 'function') {
-    const consumedEvent = activeTool.postTouchStartCallback(evt);
+  // Run the postTouchStartCallback for the active tool if it exists (falling
+  // back to postMouseDownCallback for tools that declare 'Touch' support).
+  const postCallback = getTouchCallbackWithMouseFallback(
+    activeTool,
+    'postTouchStartCallback',
+    'postMouseDownCallback'
+  );
+  if (postCallback) {
+    const consumedEvent = postCallback(evt);
 
     if (consumedEvent) {
       // If the tool claims it consumed the event, prevent further checks.

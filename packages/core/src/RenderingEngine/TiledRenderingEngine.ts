@@ -8,6 +8,7 @@ import type IStackViewport from '../types/IStackViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
 import { vtkOffscreenMultiRenderWindow } from './vtkClasses';
 import { attachWebGLContextEvents } from './helpers/attachWebGLContextEvents';
+import { setElementTouchActionNone } from './helpers/elementTouchAction';
 
 import type * as EventTypes from '../types/EventTypes';
 import type {
@@ -143,6 +144,10 @@ class TiledRenderingEngine extends BaseRenderingEngine {
 
     // Make the element not focusable, we use this for modifier keys to work
     element.tabIndex = -1;
+
+    // Deliver touch input to cornerstone tools instead of the browser
+    // (scroll, pinch-zoom, double-tap zoom). Restored in _resetViewport.
+    setElementTouchActionNone(element);
 
     const { offScreenCanvasWidth, offScreenCanvasHeight, xOffset } =
       offscreenCanvasProperties;

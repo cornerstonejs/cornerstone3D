@@ -110,9 +110,15 @@ class SplineROITool extends ContourSegmentationBaseTool {
     newAnnotation?: boolean;
     hasMoved?: boolean;
     lastCanvasPoint?: Types.Point2;
+    /** Close-curve snap distance (canvas px) for the preview, per input source */
+    closeCurveDistance?: number;
     contourHoleProcessingEnabled?: boolean;
   } | null;
   isDrawing: boolean;
+  // Multi-part: points already placed must survive a pinch, so the extra
+  // finger is ignored by _touchDragDuringDrawCallback rather than cancelling
+  // the contour. See BaseTool.handlesMultiTouchGestures.
+  handlesMultiTouchGestures = true;
   isHandleOutsideImage = false;
   fireChangeOnUpdate: {
     annotationUID: string;
@@ -174,6 +180,13 @@ class SplineROITool extends ContourSegmentationBaseTool {
            * to the cursor position before the second point is placed.
            */
           enableTwoPointPreview: false,
+          /**
+           * Distance in canvas pixels from the first control point within
+           * which a tap closes the curve when drawing with touch. Mouse
+           * clicks keep the default 10px target; finger taps get a larger
+           * one, matching the 36px touch proximity used for handle grabs.
+           */
+          touchCloseCurveDistance: 36,
           lastControlPointDeletionKeys: ['Backspace', 'Delete'],
         },
         actions: {
@@ -517,13 +530,38 @@ class SplineROITool extends ContourSegmentationBaseTool {
     );
 
     this.editData.lastCanvasPoint = evt.detail.currentPoints.canvas;
+    this.editData.closeCurveDistance =
+      evt.type === Events.TOUCH_DRAG
+        ? this.configuration.spline.touchCloseCurveDistance
+        : SPLINE_CLICK_CLOSE_CURVE_DIST;
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
     evt.preventDefault();
   };
 
   private _mouseDownCallback = (evt: EventTypes.InteractionEventType): void => {
-    const doubleClick = evt.type === Events.MOUSE_DOUBLE_CLICK;
+    const isTouchEvent =
+      evt.type === Events.TOUCH_TAP || evt.type === Events.TOUCH_END;
+    // A double tap arrives as a single TOUCH_TAP event carrying the tap
+    // count (see touchStartListener) and closes the curve exactly like a
+    // mouse double click does.
+    const doubleTap =
+      evt.type === Events.TOUCH_TAP &&
+      (evt.detail as unknown as EventTypes.TouchTapEventDetail).taps >= 2;
+    const doubleClick = evt.type === Events.MOUSE_DOUBLE_CLICK || doubleTap;
+
+    // The tap listener anchors an active tap chain at its first tap, so a
+    // drag that ends near that anchor is counted as a tap even though it
+    // travelled beyond the tap distance. Such a drag was already committed on
+    // TOUCH_END; drop the trailing TOUCH_TAP or it would add a duplicate
+    // point and close the curve.
+    if (
+      doubleTap &&
+      this.isTouchTapEchoOfLiftCommit(evt.detail.currentPoints.canvas)
+    ) {
+      return;
+    }
+
     const { annotation, viewportIdsToRender } = this.editData;
     const { data } = annotation;
 
@@ -554,9 +592,12 @@ class SplineROITool extends ContourSegmentationBaseTool {
     if (data.handles.points.length >= 3) {
       this.createMemo(element, annotation);
       const { instance: spline } = data.spline;
+      const closeCurveDistance = isTouchEvent
+        ? this.configuration.spline.touchCloseCurveDistance
+        : SPLINE_CLICK_CLOSE_CURVE_DIST;
       const closestControlPoint = spline.getClosestControlPointWithinDistance(
         canvasPoint,
-        SPLINE_CLICK_CLOSE_CURVE_DIST
+        closeCurveDistance
       );
 
       if (closestControlPoint?.index === 0) {
@@ -582,6 +623,41 @@ class SplineROITool extends ContourSegmentationBaseTool {
     }
 
     evt.preventDefault();
+  };
+
+  private _touchDragDuringDrawCallback = (
+    evt: EventTypes.TouchDragEventType
+  ): void => {
+    // Ignore multi-touch while drawing: the mean point of two fingers is
+    // never where the user wants the preview.
+    if (evt.detail.currentPointsList.length > 1) {
+      return;
+    }
+    this._mouseMoveCallback(evt);
+  };
+
+  private _touchEndDuringDrawCallback = (
+    evt: EventTypes.TouchEndEventType
+  ): void => {
+    const { startPointsList, currentPointsList, startPoints, currentPoints } =
+      evt.detail;
+
+    if (startPointsList.length > 1 || currentPointsList.length > 1) {
+      return;
+    }
+
+    // Gestures that stay within the tap distance are committed by the
+    // TOUCH_TAP path; committing them here as well would add the point twice.
+    const dragDistance = math.point.distanceToPoint(
+      startPoints.canvas,
+      currentPoints.canvas
+    );
+    if (dragDistance <= SplineROITool.TOUCH_TAP_MAX_CANVAS_DISTANCE) {
+      return;
+    }
+
+    this.recordTouchLiftCommit(currentPoints.canvas);
+    this._mouseDownCallback(evt);
   };
 
   protected _dragCallback = (evt: EventTypes.InteractionEventType): void => {
@@ -728,6 +804,14 @@ class SplineROITool extends ContourSegmentationBaseTool {
     );
 
     element.addEventListener(Events.TOUCH_TAP, this._mouseDownCallback);
+    element.addEventListener(
+      Events.TOUCH_DRAG,
+      this._touchDragDuringDrawCallback
+    );
+    element.addEventListener(
+      Events.TOUCH_END,
+      this._touchEndDuringDrawCallback
+    );
   };
 
   private _deactivateDraw = (element) => {
@@ -742,6 +826,14 @@ class SplineROITool extends ContourSegmentationBaseTool {
     );
 
     element.removeEventListener(Events.TOUCH_TAP, this._mouseDownCallback);
+    element.removeEventListener(
+      Events.TOUCH_DRAG,
+      this._touchDragDuringDrawCallback
+    );
+    element.removeEventListener(
+      Events.TOUCH_END,
+      this._touchEndDuringDrawCallback
+    );
   };
 
   protected isContourSegmentationTool(): boolean {
@@ -896,7 +988,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
         // For splines with 2 or more control points, use the existing preview logic
         const previewPolylinePoints = spline.getPreviewPolylinePoints(
           lastCanvasPoint,
-          SPLINE_CLICK_CLOSE_CURVE_DIST
+          this.editData?.closeCurveDistance ?? SPLINE_CLICK_CLOSE_CURVE_DIST
         );
 
         drawPolylineSvg(
