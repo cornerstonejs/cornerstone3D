@@ -417,10 +417,10 @@ importers:
         version: 1.0.19
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.6.14
+        specifier: 5.7.0
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.6.14
+        specifier: 5.7.0
         version: link:../tools
 
   packages/ai:
@@ -451,10 +451,10 @@ importers:
         version: 1.17.1
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.6.14
+        specifier: 5.7.0
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.6.14
+        specifier: 5.7.0
         version: link:../tools
 
   packages/codemods: {}
@@ -462,7 +462,7 @@ importers:
   packages/core:
     dependencies:
       '@cornerstonejs/utils':
-        specifier: 5.6.14
+        specifier: 5.7.0
         version: link:../utils
       '@kitware/vtk.js':
         specifier: 36.4.1
@@ -478,7 +478,7 @@ importers:
         version: 1.9.2
     devDependencies:
       '@cornerstonejs/metadata':
-        specifier: 5.6.14
+        specifier: 5.7.0
         version: link:../metadata
 
   packages/dicomImageLoader:
@@ -512,10 +512,10 @@ importers:
         version: 9.0.1
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.6.14
+        specifier: 5.7.0
         version: link:../core
       '@cornerstonejs/metadata':
-        specifier: 5.6.14
+        specifier: 5.7.0
         version: link:../metadata
 
   packages/docs:
@@ -613,10 +613,10 @@ importers:
         version: 1.0.0-b.165
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.6.14
+        specifier: 5.7.0
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.6.14
+        specifier: 5.7.0
         version: link:../tools
 
   packages/metadata:
@@ -625,7 +625,7 @@ importers:
         specifier: 1.0.3
         version: 1.0.3
       '@cornerstonejs/utils':
-        specifier: 5.6.14
+        specifier: 5.7.0
         version: link:../utils
       dcmjs:
         specifier: 0.52.0
@@ -641,7 +641,7 @@ importers:
         version: 0.6.9
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.6.14
+        specifier: 5.7.0
         version: link:../core
 
   packages/polymorphic-segmentation:
@@ -654,10 +654,10 @@ importers:
         version: 36.4.1(autoprefixer@10.4.21(postcss@8.5.22))(wslink@2.5.0)
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.6.14
+        specifier: 5.7.0
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.6.14
+        specifier: 5.7.0
         version: link:../tools
 
   packages/tools:
@@ -694,7 +694,7 @@ importers:
         version: 4.4.2
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.6.14
+        specifier: 5.7.0
         version: link:../core
       canvas:
         specifier: 3.2.0

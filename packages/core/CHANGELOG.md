@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [5.7.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.14...v5.7.0) (2026-08-07)
+
+### Features
+
+- **tools:** touch interaction support with dispatcher fallback to mouse callbacks ([#2815](https://github.com/cornerstonejs/cornerstone3D/issues/2815)) ([667ba22](https://github.com/cornerstonejs/cornerstone3D/commit/667ba224254bfcbc4d14b87a2cdc9a9d5dae0807))
+
 ## [5.6.14](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.13...v5.6.14) (2026-08-06)
 
 **Note:** Version bump only for package @cornerstonejs/core
