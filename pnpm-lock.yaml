@@ -43,9 +43,10 @@ overrides:
   undici: 6.27.0
   websocket-driver: 0.7.5
   adm-zip: 0.6.0
-  brace-expansion@<1.1.16: 1.1.16
-  brace-expansion@>=2.0.0 <2.1.2: 2.1.2
-  brace-expansion@>=3.0.0 <5.0.7: 5.0.7
+  brace-expansion@<1.1.17: 1.1.18
+  brace-expansion@>=2.0.0 <2.1.3: 2.1.4
+  brace-expansion@>=3.0.0 <3.0.3: 3.0.6
+  brace-expansion@>=4.0.0 <5.0.8: 5.0.9
   js-yaml@<3.15.0: 3.15.0
   js-yaml@>=4.0.0 <4.3.0: 4.3.0
   linkify-it@<=5.0.1: 5.0.2
@@ -416,10 +417,10 @@ importers:
         version: 1.0.19
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.6.12
+        specifier: 5.6.14
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.6.12
+        specifier: 5.6.14
         version: link:../tools
 
   packages/ai:
@@ -450,10 +451,10 @@ importers:
         version: 1.17.1
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.6.12
+        specifier: 5.6.14
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.6.12
+        specifier: 5.6.14
         version: link:../tools
 
   packages/codemods: {}
@@ -461,7 +462,7 @@ importers:
   packages/core:
     dependencies:
       '@cornerstonejs/utils':
-        specifier: 5.6.12
+        specifier: 5.6.14
         version: link:../utils
       '@kitware/vtk.js':
         specifier: 36.4.1
@@ -477,7 +478,7 @@ importers:
         version: 1.9.2
     devDependencies:
       '@cornerstonejs/metadata':
-        specifier: 5.6.12
+        specifier: 5.6.14
         version: link:../metadata
 
   packages/dicomImageLoader:
@@ -511,10 +512,10 @@ importers:
         version: 9.0.1
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.6.12
+        specifier: 5.6.14
         version: link:../core
       '@cornerstonejs/metadata':
-        specifier: 5.6.12
+        specifier: 5.6.14
         version: link:../metadata
 
   packages/docs:
@@ -612,10 +613,10 @@ importers:
         version: 1.0.0-b.165
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.6.12
+        specifier: 5.6.14
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.6.12
+        specifier: 5.6.14
         version: link:../tools
 
   packages/metadata:
@@ -624,7 +625,7 @@ importers:
         specifier: 1.0.3
         version: 1.0.3
       '@cornerstonejs/utils':
-        specifier: 5.6.12
+        specifier: 5.6.14
         version: link:../utils
       dcmjs:
         specifier: 0.52.0
@@ -640,7 +641,7 @@ importers:
         version: 0.6.9
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.6.12
+        specifier: 5.6.14
         version: link:../core
 
   packages/polymorphic-segmentation:
@@ -653,10 +654,10 @@ importers:
         version: 36.4.1(autoprefixer@10.4.21(postcss@8.5.22))(wslink@2.5.0)
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.6.12
+        specifier: 5.6.14
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.6.12
+        specifier: 5.6.14
         version: link:../tools
 
   packages/tools:
@@ -693,7 +694,7 @@ importers:
         version: 4.4.2
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.6.12
+        specifier: 5.6.14
         version: link:../core
       canvas:
         specifier: 3.2.0
@@ -7472,24 +7473,24 @@ packages:
       }
     engines: { node: '>= 5.10.0' }
 
-  brace-expansion@1.1.16:
+  brace-expansion@1.1.18:
     resolution:
       {
-        integrity: sha512-IDw48K2/2kRkg9LdJxurvq3lV3aBgq0REY89duEqFRthjlPdXHKMj7EnQOXVckxzgisinf3nHfrcE2FufFLXMw==,
+        integrity: sha512-Edep/X9fGqVNmzKBVsDYIOtD+z1tuezV70LBjdCst9Tqu76lsnvRiZ6oTic1n+/BIwX6QDGAO94PN4N2SADvtw==,
       }
 
-  brace-expansion@2.1.2:
+  brace-expansion@2.1.4:
     resolution:
       {
-        integrity: sha512-w5JZcKgdhDOgOwm8H+KgbosopHMuGcl6qbulwjtz3SM7I7P3yW1eAjzMPLrIE+NQ9vjgANKHWeMHnrT0OXW1oA==,
+        integrity: sha512-hGfVzPxthbf3+2yjg/RBs60cB0FhqBS/zvdV/4wn4/BmN0bNMMHPc4V/BbFieqf1TKAGGAHnY4eSjajCl0f2Xg==,
       }
 
-  brace-expansion@5.0.7:
+  brace-expansion@5.0.9:
     resolution:
       {
-        integrity: sha512-7oFy703dxfY3/NLxC1fh2SUCQ0H9rmAY+5EpDVfXjUTTs+HEwR2nYaqLv+GWcTsumwxPfiz6CzCNkwXwBUwqCA==,
+        integrity: sha512-ScQ4IuvIEF1TMlP7Zt+vjJ//9zlPb2SDcxWxM3bk8s6t6GGdJ7KO1dCcTidOPJKePW30LE/2cT7wCyPho9/Wxg==,
       }
-    engines: { node: 18 || 20 || >=22 }
+    engines: { node: 20 || >=22 }
 
   braces@3.0.3:
     resolution:
@@ -25571,16 +25572,16 @@ snapshots:
     dependencies:
       big-integer: 1.6.52
 
-  brace-expansion@1.1.16:
+  brace-expansion@1.1.18:
     dependencies:
       balanced-match: 1.0.2
       concat-map: 0.0.1
 
-  brace-expansion@2.1.2:
+  brace-expansion@2.1.4:
     dependencies:
       balanced-match: 1.0.2
 
-  brace-expansion@5.0.7:
+  brace-expansion@5.0.9:
     dependencies:
       balanced-match: 4.0.4
 
@@ -30189,19 +30190,19 @@ snapshots:
 
   minimatch@10.2.5:
     dependencies:
-      brace-expansion: 5.0.7
+      brace-expansion: 5.0.9
 
   minimatch@3.1.5:
     dependencies:
-      brace-expansion: 1.1.16
+      brace-expansion: 1.1.18
 
   minimatch@5.1.9:
     dependencies:
-      brace-expansion: 2.1.2
+      brace-expansion: 2.1.4
 
   minimatch@9.0.9:
     dependencies:
-      brace-expansion: 2.1.2
+      brace-expansion: 2.1.4
 
   minimist-options@4.1.0:
     dependencies:
@@ -30535,7 +30536,7 @@ snapshots:
       balanced-match: 4.0.3
       base64-js: 1.5.1
       bl: 4.1.0
-      brace-expansion: 5.0.7
+      brace-expansion: 5.0.9
       buffer: 6.0.3
       call-bind-apply-helpers: 1.0.2
       chalk: 4.1.2
