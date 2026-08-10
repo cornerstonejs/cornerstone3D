@@ -80,9 +80,8 @@ const ptAxial = {
   },
 };
 
-const axialSync = createCameraPositionSynchronizer('axialSync')[
-  (ctAxial, ptAxial)
-].forEach((vp) => {
+const axialSync = createCameraPositionSynchronizer('axialSync');
+[ctAxial, ptAxial].forEach((vp) => {
   const { renderingEngineId, viewportId } = vp;
   axialSync.add({ renderingEngineId, viewportId });
 });
