@@ -81,6 +81,10 @@ import calculateTransform from './helpers/cpuFallback/rendering/calculateTransfo
 import canvasToPixel from './helpers/cpuFallback/rendering/canvasToPixel';
 import getDefaultViewport from './helpers/cpuFallback/rendering/getDefaultViewport';
 import pixelToCanvas from './helpers/cpuFallback/rendering/pixelToCanvas';
+import {
+  cssToDevicePixels,
+  deviceToCssPixels,
+} from './helpers/cpuFallback/rendering/cssPixelConversion';
 import resize from './helpers/cpuFallback/rendering/resize';
 
 import cache from '../cache/cache';
@@ -588,11 +592,13 @@ class StackViewport extends Viewport {
         getDimensions: () => metadata.dimensions,
         getScalarData: () => this.cpuImagePixelData,
         getSpacing: () => spacing,
+        // These bridge the CSS-pixel public transforms to the device-pixel
+        // pixelToCanvas/canvasToPixel pair, so the round trip is unchanged.
         worldToIndex: (point: Point3) => {
           const canvasPoint = this.worldToCanvasCPU(point);
           const pixelCoord = canvasToPixel(
             this._cpuFallbackEnabledElement,
-            canvasPoint
+            cssToDevicePixels(canvasPoint)
           );
           return [pixelCoord[0], pixelCoord[1], 0];
         },
@@ -601,7 +607,10 @@ class StackViewport extends Viewport {
             point[0],
             point[1],
           ]);
-          return this.canvasToWorldCPU(canvasPoint, destPoint);
+          return this.canvasToWorldCPU(
+            deviceToCssPixels(canvasPoint),
+            destPoint
+          );
         },
       },
       scalarData: this.cpuImagePixelData,
@@ -1151,10 +1160,12 @@ class StackViewport extends Viewport {
     const { clientHeight } = this.element;
 
     if (focalPoint) {
+      // worldToCanvasCPU returns CSS pixels; canvasToPixel takes device
+      // pixels. The delta below stays in image-pixel units either way.
       const focalPointCanvas = this.worldToCanvasCPU(focalPoint);
       const focalPointPixel = canvasToPixel(
         this._cpuFallbackEnabledElement,
-        focalPointCanvas
+        cssToDevicePixels(focalPointCanvas)
       );
 
       const prevFocalPointCanvas = this.worldToCanvasCPU(
@@ -1162,7 +1173,7 @@ class StackViewport extends Viewport {
       );
       const prevFocalPointPixel = canvasToPixel(
         this._cpuFallbackEnabledElement,
-        prevFocalPointCanvas
+        cssToDevicePixels(prevFocalPointCanvas)
       );
 
       const deltaPixel = vec2.create();
@@ -3013,8 +3024,12 @@ class StackViewport extends Viewport {
     if (!this._cpuFallbackEnabledElement.image) {
       return;
     }
-    // compute the pixel coordinate in the image
-    const [px, py] = canvasToPixel(this._cpuFallbackEnabledElement, canvasPos);
+    // compute the pixel coordinate in the image; canvasPos arrives in CSS
+    // pixels, canvasToPixel expects device pixels.
+    const [px, py] = canvasToPixel(
+      this._cpuFallbackEnabledElement,
+      cssToDevicePixels(canvasPos)
+    );
 
     // convert pixel coordinate to world coordinate
     const { origin, spacing, direction } = this.getImageData();
@@ -3049,7 +3064,9 @@ class StackViewport extends Viewport {
       this._cpuFallbackEnabledElement,
       indexPoint
     );
-    return canvasPoint;
+
+    // pixelToCanvas works in device pixels; the public contract is CSS pixels.
+    return deviceToCssPixels(canvasPoint);
   };
 
   private canvasToWorldGPUContextPool = (canvasPos: Point2): Point3 => {
