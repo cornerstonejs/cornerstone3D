@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.7.3](https://github.com/cornerstonejs/cornerstone3D/compare/v5.7.2...v5.7.3) (2026-08-11)
+
+### Bug Fixes
+
+- **example:** Local example was failing to load images ([#2854](https://github.com/cornerstonejs/cornerstone3D/issues/2854)) ([696ad05](https://github.com/cornerstonejs/cornerstone3D/commit/696ad05afd01eac30fc5cc66fa0a92b3e3478164))
+
 ## [5.7.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.7.1...v5.7.2) (2026-08-11)
 
 ### Bug Fixes
