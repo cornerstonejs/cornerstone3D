@@ -76,12 +76,13 @@ jobs:
           # No `cache: pnpm`: setup-node resolves the store path by running
           # pnpm, which does not exist until the Corepack step below.
 
-      # pnpm comes from Corepack, not pnpm/action-setup — see the note in
-      # playwright.yml. Must run AFTER setup-node, so it is that Node's Corepack.
+      # pnpm comes from Corepack, not pnpm/action-setup, and scoped to `pnpm` —
+      # see the note in playwright.yml. Must run AFTER setup-node, so it is that
+      # Node's Corepack.
       - name: Enable Corepack (pnpm)
         shell: bash
         run: |
-          corepack enable
+          corepack enable pnpm
           corepack prepare --activate
           pnpm --version
 

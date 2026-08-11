@@ -43,12 +43,13 @@ jobs:
       # self-installer requires a working `npm`, which this runner does not
       # provide. Corepack ships inside Node and reads the pinned
       # `packageManager` from package.json, so it needs no npm. Must run AFTER
-      # setup-node, so it is that Node's Corepack. NOTE: node 25 unbundles
-      # corepack; revisit before any such bump.
+      # setup-node, so it is that Node's Corepack. Scoped to `pnpm` — unscoped
+      # `corepack enable` would also create yarn/yarnpkg shims that nothing here
+      # uses. NOTE: node 25 unbundles corepack; revisit before any such bump.
       - name: Enable Corepack (pnpm)
         shell: bash
         run: |
-          corepack enable
+          corepack enable pnpm
           corepack prepare --activate
           pnpm --version
       - name: Install dependencies
