@@ -34,11 +34,24 @@ jobs:
     name: Playwright (${{ matrix.mode }})
     steps:
       - uses: actions/checkout@v6.0.3
-      - uses: pnpm/action-setup@v6.0.8
       - uses: actions/setup-node@v6.4.0
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'pnpm'
+          # No `cache: pnpm`: setup-node resolves the store path by running
+          # pnpm, which does not exist until the Corepack step below.
+      # pnpm comes from Corepack, not pnpm/action-setup: that action's
+      # self-installer requires a working `npm`, which this runner does not
+      # provide. Corepack ships inside Node and reads the pinned
+      # `packageManager` from package.json, so it needs no npm. Must run AFTER
+      # setup-node, so it is that Node's Corepack. Scoped to `pnpm` — unscoped
+      # `corepack enable` would also create yarn/yarnpkg shims that nothing here
+      # uses. NOTE: node 25 unbundles corepack; revisit before any such bump.
+      - name: Enable Corepack (pnpm)
+        shell: bash
+        run: |
+          corepack enable pnpm
+          corepack prepare --activate
+          pnpm --version
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Install Playwright browsers
