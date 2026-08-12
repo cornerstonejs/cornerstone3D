@@ -9,6 +9,7 @@ import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransf
 import { loadAndCacheImage } from '../../loaders/imageLoader';
 import * as metaData from '../../metaData';
 import * as windowLevel from '../../utilities/windowLevel';
+import { normalizeVOILUTFunction } from '../../utilities/voiLUTFunction';
 import { MetadataModules, RequestType } from '../../enums';
 import cache from '../../cache/cache';
 
@@ -67,9 +68,22 @@ export async function getDefaultVolumeVOIRange(
 ): Promise<VOIRange | undefined> {
   let voi = getVOIFromMetadata(imageVolume);
 
+  // A prescaled PT gets the 0-5 default even when the metadata does carry a
+  // window. PT window width/center is expressed in the unscaled counts, so
+  // applying it to SUV values produces an enormous range and a black volume.
+  // This override used to run only on the min/max path below, so a PT series
+  // that shipped a window skipped it and the volume viewport disagreed with the
+  // stack viewport, which has always preferred its own PT range. It applies to
+  // a volume with no imageIds too, whose window came from the volume metadata
+  // rather than from an instance: scaling is a property of the volume, not of
+  // how its window was found.
+  if (voi) {
+    voi = handlePreScaledVolume(imageVolume, voi);
+  }
+
   if (
     !voi &&
-    imageVolume.imageIds.length &&
+    imageVolume.imageIds?.length &&
     shouldUseImageIdsForVOI(imageVolume)
   ) {
     voi = await getVOIFromMiddleSliceMinMax(imageVolume);
@@ -99,12 +113,22 @@ function shouldUseImageIdsForVOI(imageVolume: IImageVolume): boolean {
 }
 
 function handlePreScaledVolume(imageVolume: IImageVolume, voi: VOIRange) {
-  const imageIds = imageVolume.imageIds;
+  const imageIds = imageVolume.imageIds ?? [];
   const imageIdIndex = Math.floor(imageIds.length / 2);
   const imageId = imageIds[imageIdIndex];
 
+  // A volume does not have to carry imageIds - one built from its own metadata
+  // has none - so the general series module is only worth asking for when there
+  // is an instance to key it on. The volume metadata fallback below covers the
+  // rest, and the prescaling check itself reads only volume level fields.
   const generalSeriesModule =
-    metaData.get(MetadataModules.GENERAL_SERIES, imageId) || {};
+    (imageId ? metaData.get(MetadataModules.GENERAL_SERIES, imageId) : null) ||
+    {};
+  // The volume's own metadata is the fallback: the middle instance may not have
+  // a registered general series module, and missing the modality here would
+  // quietly skip the PT handling below.
+  const modality =
+    generalSeriesModule.modality ?? imageVolume.metadata?.Modality;
 
   /**
    * If the volume is prescaled and the modality is PT Sometimes you get super high
@@ -112,7 +136,7 @@ function handlePreScaledVolume(imageVolume: IImageVolume, voi: VOIRange) {
    * Therefore, we follow the majority of other viewers and we set the min/max
    * for the scaled PT to be 0, 5
    */
-  if (_isCurrentImagePTPrescaled(generalSeriesModule.modality, imageVolume)) {
+  if (_isCurrentImagePTPrescaled(modality, imageVolume)) {
     return {
       lower: 0,
       upper: 5,
@@ -120,6 +144,59 @@ function handlePreScaledVolume(imageVolume: IImageVolume, voi: VOIRange) {
   }
 
   return voi;
+}
+
+/**
+ * Finds a usable Window Center/Width, starting at the middle of the stack and
+ * walking outwards.
+ *
+ * The middle instance is preferred (it is the most representative slice), but it
+ * is not guaranteed to have registered metadata: which imageId lands in the
+ * middle depends on how the volume was created and in which order its instances
+ * were added, and an instance whose metadata has not been registered yet
+ * silently produced no window at all - the volume then fell back to a min/max
+ * range from the pixel data (cornerstone3D#1767). Any sibling in the same series
+ * carries the same window in practice, so the nearest instance that has one is a
+ * far better answer than giving up.
+ */
+function getWindowFromNearestImageId(imageIds: string[]) {
+  const middle = Math.floor(imageIds.length / 2);
+
+  for (let offset = 0; offset < imageIds.length; offset++) {
+    // middle, middle + 1, middle - 1, middle + 2, ...
+    const direction = offset % 2 === 0 ? 1 : -1;
+    const index = middle + direction * Math.ceil(offset / 2);
+
+    if (index < 0 || index >= imageIds.length) {
+      continue;
+    }
+
+    const voiLutModule = metaData.get(MetadataModules.VOI_LUT, imageIds[index]);
+
+    const { windowWidth, windowCenter } = voiLutModule ?? {};
+    const width = Array.isArray(windowWidth) ? windowWidth[0] : windowWidth;
+    const center = Array.isArray(windowCenter) ? windowCenter[0] : windowCenter;
+
+    // A center of 0 is a perfectly good window - prescaled PT, parametric maps
+    // and centered MR all use one - so it has to be tested for existence rather
+    // than for truthiness, or those series silently fall back to a min/max
+    // range. A width of 0 or a missing width has no window to show, however.
+    if (!width || center == null) {
+      continue;
+    }
+
+    // The VOI LUT Function has to stay attached to the window - it decides how
+    // the window converts to a range. It used to be assigned to `voi` first and
+    // then overwritten by the window object, so a LINEAR_EXACT/SIGMOID volume
+    // was silently windowed as LINEAR.
+    return {
+      windowWidth: width,
+      windowCenter: center,
+      voiLUTFunction: normalizeVOILUTFunction(voiLutModule.voiLUTFunction),
+    };
+  }
+
+  return undefined;
 }
 
 /**
@@ -133,28 +210,12 @@ function getVOIFromMetadata(imageVolume: IImageVolume): VOIRange | undefined {
   const { imageIds, metadata } = imageVolume;
   let voi;
   if (imageIds?.length) {
-    const imageIdIndex = Math.floor(imageIds.length / 2);
-    const imageId = imageIds[imageIdIndex];
-    const voiLutModule = metaData.get(MetadataModules.VOI_LUT, imageId);
-    if (voiLutModule && voiLutModule.windowWidth && voiLutModule.windowCenter) {
-      if (voiLutModule?.voiLUTFunction) {
-        voi = {};
-        voi.voiLUTFunction = voiLutModule?.voiLUTFunction;
-      }
-      const { windowWidth, windowCenter } = voiLutModule;
-
-      const width = Array.isArray(windowWidth) ? windowWidth[0] : windowWidth;
-      const center = Array.isArray(windowCenter)
-        ? windowCenter[0]
-        : windowCenter;
-
-      // Skip if width is 0
-      if (width !== 0) {
-        voi = { windowWidth: width, windowCenter: center };
-      }
-    }
+    voi = getWindowFromNearestImageId(imageIds);
   } else {
-    voi = metadata.voiLut[0];
+    // A volume without imageIds carries its own window, which it is not
+    // required to have - indexing it unconditionally threw for every volume
+    // built without one
+    voi = metadata?.voiLut?.[0];
   }
 
   if (voi && (voi.windowWidth !== 0 || voi.windowCenter !== 0)) {
@@ -261,7 +322,7 @@ function _isCurrentImagePTPrescaled(modality, imageVolume) {
     return false;
   }
 
-  if (!imageVolume.scaling?.PT.suvbw) {
+  if (!imageVolume.scaling?.PT?.suvbw) {
     return false;
   }
 

@@ -17,6 +17,7 @@ import { getOptions } from './internal/options';
 import isColorImageFn from '../shared/isColorImage';
 import removeAFromRGBA from './removeAFromRGBA';
 import isModalityLUTForDisplay from './isModalityLutForDisplay';
+import normalizeVOILUTSequence from './normalizeVOILUTSequence';
 import setPixelDataType from './setPixelDataType';
 import { fetchPaletteData } from './colorSpaceConverters/fetchPaletteData';
 
@@ -411,11 +412,16 @@ async function createImage(
           windowWidth: voiLutModule.windowWidth
             ? voiLutModule.windowWidth[0]
             : undefined,
+          // VOI LUT Function (0028,1056) reaches us as a string from
+          // dicom-parser, as a single element array from DICOMweb JSON, and
+          // occasionally under the older `voiLutFunction` spelling. Indexing a
+          // string yields its first *character*, which is what turned "SIGMOID"
+          // into "S" and made rendering throw "Invalid VOI LUT function"
+          // (cornerstone3D#2844), so normalize all the shapes here.
           voiLUTFunction:
-            (voiLutModule.voiLUTFunction?.length &&
-              voiLutModule.voiLUTFunction[0]) ||
-            voiLutModule.voiLutFunction ||
-            undefined,
+            utilities.normalizeVOILUTFunction(
+              voiLutModule.voiLUTFunction ?? voiLutModule.voiLutFunction
+            ) ?? undefined,
           decodeTimeInMS: imageFrame.decodeTimeInMS,
           floatPixelData: undefined,
           imageFrame,
@@ -486,12 +492,15 @@ async function createImage(
           image.modalityLUT = modalityLutModule.modalityLUTSequence[0];
         }
 
-        // VOI LUT
-        if (
-          voiLutModule.voiLUTSequence &&
-          voiLutModule.voiLUTSequence.length > 0
-        ) {
-          image.voiLUT = voiLutModule.voiLUTSequence[0];
+        // VOI LUT Sequence (0028,3010). Providers hand this back in several
+        // shapes (already parsed, naturalized dcmjs, or raw DICOMweb JSON), so
+        // normalize before handing it to the renderers.
+        const voiLUT = normalizeVOILUTSequence(
+          voiLutModule.voiLUTSequence ?? voiLutModule.VOILUTSequence
+        );
+
+        if (voiLUT) {
+          image.voiLUT = voiLUT;
         }
 
         if (image.color) {

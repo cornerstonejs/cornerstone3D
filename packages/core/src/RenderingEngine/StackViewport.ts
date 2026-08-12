@@ -15,6 +15,7 @@ import type {
   ActorEntry,
   CPUFallbackColormapData,
   CPUFallbackEnabledElement,
+  CPUFallbackLUT,
   CPUIImageData,
   ColormapPublic,
   EventTypes,
@@ -52,6 +53,14 @@ import {
 import * as windowLevelUtil from '../utilities/windowLevel';
 import createLinearRGBTransferFunction from '../utilities/createLinearRGBTransferFunction';
 import createSigmoidRGBTransferFunction from '../utilities/createSigmoidRGBTransferFunction';
+import createVOILUTSequenceTransferFunction, {
+  getVOILUTSequenceRange,
+  isRenderableVOILUT,
+} from '../utilities/createVOILUTSequenceTransferFunction';
+import {
+  getValidVOILUTFunction,
+  normalizeVOILUTFunction,
+} from '../utilities/voiLUTFunction';
 import { updateVTKImageDataWithCornerstoneImage } from '../utilities/updateVTKImageDataWithCornerstoneImage';
 import triggerEvent from '../utilities/triggerEvent';
 import { isEqual } from '../utilities/isEqual';
@@ -179,6 +188,12 @@ class StackViewport extends Viewport {
   private sharpening: number = 0;
   private smoothing: number = 0;
   private VOILUTFunction: VOILUTFunctionType;
+  // Whether the transfer function currently on the actor was built from the
+  // image's VOI LUT Sequence rather than from a window width/center
+  private voiLUTSequenceApplied = false;
+  // Set once the application asks for a specific VOI LUT Function, which opts
+  // out of the image's own VOI LUT Sequence - see _getVOILUTSequenceToApply
+  private voiLUTFunctionSetByUser = false;
   //
   private invert = false;
   // The initial invert of the image loaded as opposed to the invert status of the viewport itself (see above).
@@ -790,6 +805,7 @@ class StackViewport extends Viewport {
     }
 
     if (typeof VOILUTFunction !== 'undefined') {
+      this.voiLUTFunctionSetByUser = true;
       this.setVOILUTFunction(VOILUTFunction, suppressEvents);
     }
 
@@ -872,12 +888,20 @@ class StackViewport extends Viewport {
   public resetProperties(): void {
     this.cpuRenderingInvalidated = true;
     this.voiUpdatedWithSetProperties = false;
+    // Back to the image's own VOI, which includes its VOI LUT Function and its
+    // VOI LUT Sequence. Leaving VOILUTFunction on the user's choice made reset
+    // keep windowing a LINEAR image as SIGMOID/LINEAR_EXACT; normalize rather
+    // than validate here so an image without one leaves it unset and the
+    // per image fallbacks apply.
+    this.voiLUTFunctionSetByUser = false;
+    this.VOILUTFunction = normalizeVOILUTFunction(this.csImage?.voiLUTFunction);
     this.viewportStatus = ViewportStatus.PRE_RENDER;
 
     this.fillWithBackgroundColor();
 
     if (this.useCPURendering) {
       this._cpuFallbackEnabledElement.renderingTools = {};
+      this._syncCPUVOILUTSequence();
     }
 
     this._resetProperties();
@@ -904,26 +928,35 @@ class StackViewport extends Viewport {
 
     this.setInterpolationType(InterpolationType.LINEAR);
 
-    if (!this.useCPURendering) {
-      const transferFunction = this.getTransferFunction();
-      setTransferFunctionNodes(
-        transferFunction,
-        this.initialTransferFunctionNodes
-      );
+    if (this.useCPURendering) {
+      return;
+    }
 
-      const nodes = getTransferFunctionNodes(transferFunction);
+    if (this.voiLUTSequenceApplied) {
+      this.colormap = undefined;
+      return;
+    }
 
-      const RGBPoints = nodes.reduce((acc, node) => {
-        acc.push(node[0], node[1], node[2], node[3]);
-        return acc;
-      }, []);
+    const transferFunction = this.getTransferFunction();
+    setTransferFunctionNodes(
+      transferFunction,
+      this.initialTransferFunctionNodes
+    );
 
-      const defaultActor = this.getDefaultActor();
-      const matchedColormap = colormapUtils.findMatchingColormap(
-        RGBPoints,
-        defaultActor.actor
-      );
+    const nodes = getTransferFunctionNodes(transferFunction);
 
+    const RGBPoints = nodes.reduce((acc, node) => {
+      acc.push(node[0], node[1], node[2], node[3]);
+      return acc;
+    }, []);
+
+    const defaultActor = this.getDefaultActor();
+    const matchedColormap = colormapUtils.findMatchingColormap(
+      RGBPoints,
+      defaultActor.actor
+    );
+
+    if (matchedColormap) {
       this.setColormap(matchedColormap);
     }
   }
@@ -1375,12 +1408,24 @@ class StackViewport extends Viewport {
     voiLUTFunction: VOILUTFunctionType,
     suppressEvents?: boolean
   ): void {
-    if (this.useCPURendering) {
-      throw new Error('VOI LUT function is not supported in CPU rendering');
-    }
-
     // make sure the VOI LUT function is valid in the VOILUTFunctionType which is enum
     const newVOILUTFunction = this._getValidVOILUTFunction(voiLUTFunction);
+
+    if (this.useCPURendering) {
+      // The CPU path builds its 8 bit display LUT from viewport.voi, so
+      // switching function means regenerating that LUT on the next render.
+      this.VOILUTFunction = newVOILUTFunction;
+      // getVOILut gives the image's VOI LUT Sequence precedence over the
+      // function, so the sequence has to come off the viewport for an explicit
+      // request to have any effect. This is the CPU side of the opt out the GPU
+      // path does in _getVOILUTSequenceToApply; without it setting a VOI LUT
+      // Function changed the render on GPU and did nothing on CPU.
+      this._syncCPUVOILUTSequence();
+      this.cpuRenderingInvalidated = true;
+      this.setVOI(this.voiRange, { suppressEvents });
+
+      return;
+    }
 
     let forceRecreateLUTFunction = false;
     if (this.VOILUTFunction !== newVOILUTFunction) {
@@ -1509,12 +1554,17 @@ class StackViewport extends Viewport {
 
   private setVOICPU(voiRange: VOIRange, options: SetVOIOptions = {}): void {
     const { suppressEvents = false } = options;
-    // TODO: Account for VOILUTFunction
     const { viewport, image } = this._cpuFallbackEnabledElement;
 
     if (!viewport || !image) {
       return;
     }
+
+    // The VOI LUT function decides how a window maps to display values, so the
+    // same function has to be used for both directions of the conversion below
+    // and be handed to the CPU render path via viewport.voi.
+    const voiLUTFunction =
+      this.VOILUTFunction ?? getValidVOILUTFunction(image.voiLUTFunction);
 
     if (typeof voiRange === 'undefined') {
       const { windowWidth: ww, windowCenter: wc } = image;
@@ -1524,29 +1574,32 @@ class StackViewport extends Viewport {
       viewport.voi = {
         windowWidth: wwToUse,
         windowCenter: wcToUse,
-        voiLUTFunction: image.voiLUTFunction,
+        voiLUTFunction,
       };
 
       const { lower, upper } = getVOIRangeFromWindowLevel(
         wwToUse,
         wcToUse,
-        image.voiLUTFunction
+        voiLUTFunction
       );
       voiRange = { lower, upper };
     } else {
       const { lower, upper } = voiRange;
       const { windowCenter, windowWidth } = windowLevelUtil.toWindowLevel(
         lower,
-        upper
+        upper,
+        voiLUTFunction
       );
 
       if (!viewport.voi) {
         viewport.voi = {
           windowWidth: 0,
           windowCenter: 0,
-          voiLUTFunction: image.voiLUTFunction,
+          voiLUTFunction,
         };
       }
+
+      viewport.voi.voiLUTFunction = voiLUTFunction;
 
       viewport.voi.windowWidth = windowWidth;
       viewport.voi.windowCenter = windowCenter;
@@ -1578,6 +1631,28 @@ class StackViewport extends Viewport {
     return imageActor.getProperty().getRGBTransferFunction(0);
   }
 
+  /**
+   * Builds the transfer function for a VOI range: the image's VOI LUT Sequence
+   * curve stretched over that range when one applies, otherwise the analytic
+   * VOI LUT Function.
+   */
+  private _createVOITransferFunction(
+    voiRange: VOIRange,
+    voiLUTSequence?: CPUFallbackLUT
+  ): vtkColorTransferFunction | undefined {
+    if (voiLUTSequence) {
+      return createVOILUTSequenceTransferFunction(voiLUTSequence, { voiRange });
+    }
+
+    if (this.VOILUTFunction === VOILUTFunctionType.SAMPLED_SIGMOID) {
+      return createSigmoidRGBTransferFunction(voiRange);
+    }
+
+    return createLinearRGBTransferFunction(
+      voiRange
+    ) as vtkColorTransferFunction;
+  }
+
   private setVOIGPU(voiRange: VOIRange, options: SetVOIOptions = {}): void {
     const {
       suppressEvents = false,
@@ -1585,11 +1660,15 @@ class StackViewport extends Viewport {
       voiUpdatedWithSetProperties = false,
     } = options;
 
+    const voiLUTSequence = this._getVOILUTSequenceToApply();
+    const useVOILUTSequence = !!voiLUTSequence;
+
     if (
       voiRange &&
       this.voiRange &&
       this.voiRange.lower === voiRange.lower &&
       this.voiRange.upper === voiRange.upper &&
+      useVOILUTSequence === this.voiLUTSequenceApplied &&
       !forceRecreateLUTFunction &&
       !this.stackInvalidated
     ) {
@@ -1624,30 +1703,53 @@ class StackViewport extends Viewport {
     const isSigmoidTFun =
       this.VOILUTFunction === VOILUTFunctionType.SAMPLED_SIGMOID;
 
-    // use the old cfun if it exists for linear case
-    if (isSigmoidTFun || !transferFunction || forceRecreateLUTFunction) {
-      const transferFunctionCreator = isSigmoidTFun
-        ? createSigmoidRGBTransferFunction
-        : createLinearRGBTransferFunction;
+    // A VOI LUT Sequence carries its own nonlinear curve, so it must be
+    // rebuilt as a whole (there is no range to slide) - same as the sigmoid.
+    // The function also has to be recreated when we transition between a
+    // sequence and a window, since the two are not interchangeable by range.
+    const recreateForVOILUTSequence =
+      useVOILUTSequence !== this.voiLUTSequenceApplied;
 
-      transferFunction = transferFunctionCreator(
-        voiRangeToUse
-      ) as vtkColorTransferFunction;
+    if (
+      isSigmoidTFun ||
+      useVOILUTSequence ||
+      recreateForVOILUTSequence ||
+      !transferFunction ||
+      forceRecreateLUTFunction
+    ) {
+      const nextTransferFunction = this._createVOITransferFunction(
+        voiRangeToUse,
+        voiLUTSequence
+      );
 
-      if (this.invert) {
-        invertRgbTransferFunction(transferFunction);
+      // _createVOITransferFunction returns undefined for a VOI LUT Sequence it
+      // cannot use; keep the previous function rather than blanking the image
+      if (nextTransferFunction) {
+        transferFunction = nextTransferFunction as vtkColorTransferFunction;
+
+        if (this.invert) {
+          invertRgbTransferFunction(transferFunction);
+        }
+
+        imageActor.getProperty().setRGBTransferFunction(0, transferFunction);
+
+        // Only _resetProperties consumes these, and it rebuilds a VOI LUT
+        // Sequence curve from the LUT itself rather than replaying nodes - so
+        // reading back a thousand nodes here on every window level move would be
+        // pure overhead.
+        if (!useVOILUTSequence) {
+          this.initialTransferFunctionNodes =
+            getTransferFunctionNodes(transferFunction);
+        }
       }
-
-      imageActor.getProperty().setRGBTransferFunction(0, transferFunction);
-      this.initialTransferFunctionNodes =
-        getTransferFunctionNodes(transferFunction);
     }
 
-    if (!isSigmoidTFun) {
+    if (!isSigmoidTFun && !useVOILUTSequence) {
       // @ts-ignore vtk type error
       transferFunction.setRange(voiRangeToUse.lower, voiRangeToUse.upper);
     }
 
+    this.voiLUTSequenceApplied = useVOILUTSequence;
     this.voiRange = voiRangeToUse;
 
     // if voiRange is set by setProperties we need to lock it if it is not locked already
@@ -2730,10 +2832,64 @@ class StackViewport extends Viewport {
     }
   }
 
+  /**
+   * The VOI LUT Sequence (0028,3010) of the displayed image, when it should
+   * drive the display instead of an analytic VOI LUT Function.
+   *
+   * DICOM allows a window and a sequence to both be present and lets the
+   * application pick (C.11.2.1); like the legacy cornerstone renderer we prefer
+   * the sequence, since a file that ships an explicit VOI LUT expects that
+   * curve. Window level interaction does not disable it - the curve is stretched
+   * over the new range instead, the same way the sampled sigmoid is rebuilt from
+   * a new window - so the shape the file specified survives interaction.
+   *
+   * Asking for a VOI LUT Function explicitly (`setProperties({ VOILUTFunction })`)
+   * is the way to opt out and get a plain analytic window instead.
+   */
+  /**
+   * Keeps the CPU fallback viewport's VOI LUT Sequence in step with
+   * {@link _getVOILUTSequenceToApply}, which is what decides the same question
+   * on the GPU path: the image's sequence drives the display unless the user
+   * asked for a VOI LUT Function explicitly, in which case it has to be off the
+   * viewport - `getVOILut` prefers `viewport.voiLUT` over the function and the
+   * request would otherwise be silently ignored.
+   */
+  private _syncCPUVOILUTSequence(): void {
+    const { viewport, image } = this._cpuFallbackEnabledElement ?? {};
+
+    if (!viewport) {
+      return;
+    }
+
+    viewport.voiLUT = this._getVOILUTSequenceToApply(image ?? this.csImage);
+  }
+
+  private _getVOILUTSequenceToApply(image: IImage = this.csImage) {
+    if (this.voiLUTFunctionSetByUser) {
+      return undefined;
+    }
+
+    const voiLUT = image?.voiLUT;
+
+    return isRenderableVOILUT(voiLUT) ? voiLUT : undefined;
+  }
+
   private _getInitialVOIRange(image: IImage) {
     if (this.voiRange && this.voiUpdatedWithSetProperties) {
       return this.voiRange;
     }
+
+    // When the VOI LUT Sequence drives the display, its own input domain is the
+    // range - the curve is defined against modality LUT output, not relative to
+    // a window, so starting from the file's Window Center/Width (which DICOM
+    // allows alongside the sequence) would stretch the curve before it has ever
+    // been shown unmodified.
+    const voiLUT = this._getVOILUTSequenceToApply(image);
+
+    if (voiLUT) {
+      return getVOILUTSequenceRange(voiLUT);
+    }
+
     const { windowCenter, windowWidth, voiLUTFunction } = image;
 
     let voiRange = getVOIRangeFromWindowLevel(
@@ -3305,6 +3461,13 @@ class StackViewport extends Viewport {
   }
 
   private _getVOIRangeForCurrentImage() {
+    // a VOI LUT Sequence defines the range it is mapped over
+    const voiLUT = this._getVOILUTSequenceToApply();
+
+    if (voiLUT) {
+      return getVOILUTSequenceRange(voiLUT);
+    }
+
     const { windowCenter, windowWidth, voiLUTFunction } = this.csImage;
 
     return getVOIRangeFromWindowLevel(
@@ -3317,14 +3480,7 @@ class StackViewport extends Viewport {
   private _getValidVOILUTFunction(
     voiLUTFunction: VOILUTFunctionType | unknown
   ): VOILUTFunctionType {
-    if (
-      !Object.values(VOILUTFunctionType).includes(
-        voiLUTFunction as VOILUTFunctionType
-      )
-    ) {
-      return VOILUTFunctionType.LINEAR;
-    }
-    return voiLUTFunction as VOILUTFunctionType;
+    return getValidVOILUTFunction(voiLUTFunction);
   }
 
   /**

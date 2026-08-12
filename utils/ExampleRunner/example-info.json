@@ -129,6 +129,10 @@
         "name": "DICOM P10 from the local file system",
         "description": "Provides an interface to load a DICOM P10 image from your local file system to the Cornerstone3D"
       },
+      "voiLutFunction": {
+        "name": "VOI LUT Function and VOI LUT Sequence",
+        "description": "Loads a local DICOM P10 file and shows how its VOI is applied: LINEAR / LINEAR_EXACT / SIGMOID VOI LUT Function (0028,1056), and the VOI LUT Sequence (0028,3010) compared against a plain window, on both the GPU and CPU paths"
+      },
       "advancedLocal": {
         "name": "DICOM P10 with annotation and CPU choice",
         "description": "Annotation tools with drag and drop and CPU/GPU choice"

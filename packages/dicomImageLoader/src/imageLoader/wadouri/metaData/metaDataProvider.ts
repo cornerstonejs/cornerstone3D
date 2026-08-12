@@ -65,6 +65,20 @@ function metaDataProvider(type, imageId) {
   return metadataForDataset(type, imageId, dataSet);
 }
 
+/**
+ * The dataset the VOI attributes live in: the Frame VOI LUT Sequence
+ * (0028,9132) item when the root carries no window of its own, otherwise the
+ * dataset itself. Root tags win, so a legacy window on an enhanced object still
+ * takes precedence over the macro.
+ */
+function resolveVOIDataSet(dataSet: dicomParser.DataSet): dicomParser.DataSet {
+  if (dataSet.elements.x00281050 || dataSet.elements.x00281051) {
+    return dataSet;
+  }
+
+  return dataSet.elements.x00289132?.items?.[0]?.dataSet ?? dataSet;
+}
+
 export function metadataForDataset(
   type,
   imageId,
@@ -212,15 +226,23 @@ export function metadataForDataset(
   if (type === MetadataModules.VOI_LUT) {
     const modalityLUTOutputPixelRepresentation =
       getModalityLUTOutputPixelRepresentation(dataSet);
+    // Enhanced multi frame SOPs (Enhanced CT/MR/PT/US/XA) put the VOI in the
+    // Frame VOI LUT macro inside the shared or per frame functional groups
+    // rather than at the dataset root. The frame combiner copies the macro
+    // itself to the root but not its contents, so the window stays one level
+    // deeper than the tags read below and the viewport fell back to the image
+    // min/max (cornerstone3D#2745). wadors reads the same file correctly, hence
+    // the same image looking different through the two loaders.
+    const voiDataSet = resolveVOIDataSet(dataSet);
 
     return {
-      windowCenter: getNumberValues(dataSet, 'x00281050', 1),
-      windowWidth: getNumberValues(dataSet, 'x00281051', 1),
+      windowCenter: getNumberValues(voiDataSet, 'x00281050', 1),
+      windowWidth: getNumberValues(voiDataSet, 'x00281051', 1),
       voiLUTSequence: getLUTs(
         modalityLUTOutputPixelRepresentation,
-        dataSet.elements.x00283010
+        voiDataSet.elements.x00283010
       ),
-      voiLUTFunction: dataSet.string('x00281056'),
+      voiLUTFunction: voiDataSet.string('x00281056'),
     };
   }
 

@@ -126,6 +126,7 @@ interface IImage {
   cachedLut?: {
     windowWidth?: number | number[];
     windowCenter?: number | number[];
+    voiLUTFunction?: VOILUTFunctionType;
     invert?: boolean;
     lutArray?: Uint8ClampedArray;
     modalityLUT?: CPUFallbackLUT;

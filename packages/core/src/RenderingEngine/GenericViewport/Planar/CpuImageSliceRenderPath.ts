@@ -415,15 +415,20 @@ function applyDataPresentation(
   viewport.invert = props?.invert ?? false;
 
   if (voiRange) {
+    // The range was produced from the window with the image's VOI LUT Function
+    // (getDefaultImageVOIRange), and the CPU render path windows it with that
+    // same function, so converting back with any other one shifts the window
+    const voiLUTFunction = enabledElement.image?.voiLUTFunction;
     const { windowCenter, windowWidth } = toWindowLevel(
       voiRange.lower,
-      voiRange.upper
+      voiRange.upper,
+      voiLUTFunction
     );
 
     viewport.voi = {
       windowCenter,
       windowWidth,
-      voiLUTFunction: enabledElement.image?.voiLUTFunction,
+      voiLUTFunction,
     };
   }
 

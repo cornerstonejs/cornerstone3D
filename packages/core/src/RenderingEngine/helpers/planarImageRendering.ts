@@ -4,9 +4,19 @@ import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import { InterpolationType, VOILUTFunctionType } from '../../enums';
-import type { ColormapPublic, IImage, Point3, VOIRange } from '../../types';
+import type {
+  ColormapPublic,
+  CPUFallbackLUT,
+  IImage,
+  Point3,
+  VOIRange,
+} from '../../types';
 import createLinearRGBTransferFunction from '../../utilities/createLinearRGBTransferFunction';
 import createSigmoidRGBTransferFunction from '../../utilities/createSigmoidRGBTransferFunction';
+import createVOILUTSequenceTransferFunction, {
+  getVOILUTSequenceRange,
+  isRenderableVOILUT,
+} from '../../utilities/createVOILUTSequenceTransferFunction';
 import getVOIRangeFromWindowLevel from '../../utilities/getVOIRangeFromWindowLevel';
 import isPTPrescaledWithSUV from '../../utilities/isPTPrescaledWithSUV';
 import { getImageDataMetadata } from '../../utilities/getImageDataMetadata';
@@ -134,6 +144,12 @@ export function getDefaultImageVOIRange(image: IImage): VOIRange | undefined {
     return { lower: 0, upper: 5 };
   }
 
+  // A VOI LUT Sequence defines the range it is mapped over, and it takes
+  // precedence over a window the file may also carry
+  if (isRenderableVOILUT(image.voiLUT)) {
+    return getVOILUTSequenceRange(image.voiLUT);
+  }
+
   return getVOIRangeFromWindowLevel(
     image.windowWidth,
     image.windowCenter,
@@ -157,11 +173,28 @@ export function applyPlanarImagePresentation(args: {
   actor: vtkImageSlice;
   defaultVOIRange?: VOIRange;
   defaultVOILUTFunction?: VOILUTFunctionType;
+  /**
+   * VOI LUT Sequence (0028,3010) of the displayed image. Drives the display
+   * unless the caller asks for a specific VOI LUT Function or a colormap - see
+   * createPlanarRGBTransferFunction.
+   */
+  defaultVOILUT?: CPUFallbackLUT;
   props?: PlanarImagePresentation;
 }): void {
-  const { actor, defaultVOIRange, defaultVOILUTFunction, props } = args;
+  const {
+    actor,
+    defaultVOIRange,
+    defaultVOILUTFunction,
+    defaultVOILUT,
+    props,
+  } = args;
   const property = actor.getProperty();
   const voiRange = props?.voiRange ?? defaultVOIRange;
+  // An explicitly requested VOI LUT Function opts out of the file's VOI LUT
+  // Sequence; an explicit range does not - the curve is stretched over it, so
+  // window level keeps the shape the file specified
+  const voiLUT =
+    props?.voiLUTFunction === undefined ? defaultVOILUT : undefined;
 
   if (props?.visible !== undefined) {
     actor.setVisibility(props.visible);
@@ -188,6 +221,7 @@ export function applyPlanarImagePresentation(args: {
     invert: props?.invert,
     voiRange,
     voiLUTFunction: props?.voiLUTFunction ?? defaultVOILUTFunction,
+    voiLUT,
   });
 
   property.setUseLookupTableScalarRange(true);
@@ -199,20 +233,59 @@ export function createPlanarRGBTransferFunction(args: {
   invert?: boolean;
   voiRange: VOIRange;
   voiLUTFunction?: VOILUTFunctionType;
+  /**
+   * VOI LUT Sequence (0028,3010). When present it defines the whole VOI
+   * transformation and takes precedence over the window and the VOI LUT
+   * Function (C.11.2.1) - a colormap still wins, since that is an explicit
+   * display choice rather than file metadata.
+   */
+  voiLUT?: CPUFallbackLUT;
 }): vtkColorTransferFunction {
-  const { colormap, invert, voiRange, voiLUTFunction } = args;
-  const transferFunction =
-    colormap?.name !== undefined
-      ? createColormapTransferFunction(colormap, voiRange)
-      : voiLUTFunction === VOILUTFunctionType.SAMPLED_SIGMOID
-        ? createSigmoidRGBTransferFunction(voiRange)
-        : createLinearRGBTransferFunction(voiRange);
+  const { colormap, invert, voiRange, voiLUTFunction, voiLUT } = args;
+  const transferFunction = createVOITransferFunction({
+    colormap,
+    voiRange,
+    voiLUTFunction,
+    voiLUT,
+  });
 
   if (invert) {
     invertRgbTransferFunction(transferFunction);
   }
 
   return transferFunction;
+}
+
+function createVOITransferFunction(args: {
+  colormap?: ColormapPublic;
+  voiRange: VOIRange;
+  voiLUTFunction?: VOILUTFunctionType;
+  voiLUT?: CPUFallbackLUT;
+}): vtkColorTransferFunction {
+  const { colormap, voiRange, voiLUTFunction, voiLUT } = args;
+
+  if (colormap?.name !== undefined) {
+    return createColormapTransferFunction(colormap, voiRange);
+  }
+
+  if (voiLUT) {
+    // Stretched over voiRange so window level reshapes the file's curve rather
+    // than replacing it
+    const voiLUTSequenceTransferFunction = createVOILUTSequenceTransferFunction(
+      voiLUT,
+      { voiRange }
+    );
+
+    if (voiLUTSequenceTransferFunction) {
+      return voiLUTSequenceTransferFunction;
+    }
+  }
+
+  if (voiLUTFunction === VOILUTFunctionType.SAMPLED_SIGMOID) {
+    return createSigmoidRGBTransferFunction(voiRange);
+  }
+
+  return createLinearRGBTransferFunction(voiRange);
 }
 
 function createColormapTransferFunction(
