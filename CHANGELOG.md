@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [5.8.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.7.3...v5.8.0) (2026-08-13)
+
+### Features
+
+- **dicomImageLoader:** add wasmBasePath option for codec binaries ([#2826](https://github.com/cornerstonejs/cornerstone3D/issues/2826)) ([83edb89](https://github.com/cornerstonejs/cornerstone3D/commit/83edb8973e102036112c4992f2cc0324273e7457))
+
 ## [5.7.3](https://github.com/cornerstonejs/cornerstone3D/compare/v5.7.2...v5.7.3) (2026-08-11)
 
 ### Bug Fixes
