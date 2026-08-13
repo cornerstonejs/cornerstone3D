@@ -26,6 +26,24 @@ export default function snapFocalPointToSlice(
 ): { newFocalPoint: Point3; newPosition: Point3 } {
   const { min, max, current } = sliceRange;
 
+  // A single-slice volume collapses the range to zero, which makes the fraction
+  // below 0 / 0 = NaN. That NaN reaches newFocalPoint and newPosition, and a camera
+  // whose focal point and position are both NaN has no direction of projection at
+  // all: vtk.js falls back to its default axial direction while the view up stays on
+  // the acquisition plane, leaving a basis that spans no plane and renders nothing.
+  // There is no slice to snap to in that case, so leave the camera alone.
+  // getVolumeViewportScrollInfo guards the same degenerate range.
+  if (
+    max - min === 0 ||
+    !Number.isFinite(spacingInNormalDirection) ||
+    spacingInNormalDirection === 0
+  ) {
+    return {
+      newFocalPoint: [...focalPoint] as Point3,
+      newPosition: [...position] as Point3,
+    };
+  }
+
   // Get the current offset off the camera position so we can add it on at the end.
   const posDiffFromFocalPoint = vec3.create();
 
