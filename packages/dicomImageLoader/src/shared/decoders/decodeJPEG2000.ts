@@ -20,6 +20,7 @@ const openjpegWasm = new URL(
 
 import type { Types } from '@cornerstonejs/core';
 import type { WebWorkerDecodeConfig } from '../../types';
+import isSignedPixelData from './isSignedPixelData';
 import { resolveWasmUrl, setWasmBasePathFromConfig } from '../wasmBasePath';
 
 const local: {
@@ -150,9 +151,11 @@ async function decodeAsync(
   };
 }
 
-function getPixelData(frameInfo, decodedBuffer) {
+export function getPixelData(frameInfo, decodedBuffer) {
+  const isSigned = isSignedPixelData(frameInfo);
+
   if (frameInfo.bitsPerSample > 8) {
-    if (frameInfo.isSigned) {
+    if (isSigned) {
       return new Int16Array(
         decodedBuffer.buffer,
         decodedBuffer.byteOffset,
@@ -167,7 +170,7 @@ function getPixelData(frameInfo, decodedBuffer) {
     );
   }
 
-  if (frameInfo.isSigned) {
+  if (isSigned) {
     return new Int8Array(
       decodedBuffer.buffer,
       decodedBuffer.byteOffset,

@@ -13,6 +13,7 @@ const charlsWasm = new URL(
 import type { ByteArray } from 'dicom-parser';
 import type { WebWorkerDecodeConfig } from '../../types';
 import type { Types } from '@cornerstonejs/core';
+import isSignedPixelData from './isSignedPixelData';
 import { resolveWasmUrl, setWasmBasePathFromConfig } from '../wasmBasePath';
 
 const local: {
@@ -133,7 +134,19 @@ async function decodeAsync(
   }
 }
 
-function getPixelData(frameInfo, decodedBuffer: ByteArray, signed: boolean) {
+function getPixelData(
+  frameInfo,
+  decodedBuffer: ByteArray,
+  signedFromMetadata: boolean
+) {
+  // Same guard as the JPEG 2000 path: color pixel data is unsigned whatever
+  // Pixel Representation claims (PS3.3 C.7.6.3.1.2), and reading it as signed
+  // makes the color conversion clamp every sample above 127 to 0
+  const signed = isSignedPixelData({
+    isSigned: signedFromMetadata,
+    componentCount: frameInfo.componentCount,
+  });
+
   if (frameInfo.bitsPerSample > 8) {
     if (signed) {
       return new Int16Array(
