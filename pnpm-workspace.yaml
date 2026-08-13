@@ -91,7 +91,8 @@ auditConfig:
     # docs build time on repo-committed images — never on untrusted input.
     - GHSA-w3rx-r6r6-pgpr
     - GHSA-5p2g-fcmc-qvqq
-
+    # extract-zip is a transitive dependency of puppeteer and is only used in dev
+    - GHSA-jmr9-qjv8-65gv
 allowBuilds:
   '@swc/core': true
   canvas: true
