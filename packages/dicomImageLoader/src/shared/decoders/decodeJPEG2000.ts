@@ -20,6 +20,7 @@ const openjpegWasm = new URL(
 
 import type { Types } from '@cornerstonejs/core';
 import type { WebWorkerDecodeConfig } from '../../types';
+import { resolveWasmUrl, setWasmBasePathFromConfig } from '../wasmBasePath';
 
 const local: {
   codec: OpenJpegModule;
@@ -35,6 +36,7 @@ export function initialize(
   decodeConfig?: WebWorkerDecodeConfig
 ): Promise<void> {
   local.decodeConfig = decodeConfig;
+  setWasmBasePathFromConfig(decodeConfig);
 
   if (local.codec) {
     return Promise.resolve();
@@ -43,7 +45,7 @@ export function initialize(
   const openJpegModule = openJpegFactory({
     locateFile: (f) => {
       if (f.endsWith('.wasm')) {
-        return openjpegWasm.toString();
+        return resolveWasmUrl('openjpegwasm_decode.wasm', openjpegWasm);
       }
 
       return f;

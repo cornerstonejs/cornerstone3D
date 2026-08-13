@@ -13,6 +13,7 @@ const charlsWasm = new URL(
 import type { ByteArray } from 'dicom-parser';
 import type { WebWorkerDecodeConfig } from '../../types';
 import type { Types } from '@cornerstonejs/core';
+import { resolveWasmUrl, setWasmBasePathFromConfig } from '../wasmBasePath';
 
 const local: {
   codec: CharlsModule;
@@ -34,6 +35,7 @@ export function initialize(
   decodeConfig?: WebWorkerDecodeConfig
 ): Promise<void> {
   local.decodeConfig = decodeConfig;
+  setWasmBasePathFromConfig(decodeConfig);
 
   if (local.codec) {
     return Promise.resolve();
@@ -42,7 +44,7 @@ export function initialize(
   const charlsModule = charlsFactory({
     locateFile: (f) => {
       if (f.endsWith('.wasm')) {
-        return charlsWasm.toString();
+        return resolveWasmUrl('charlswasm_decode.wasm', charlsWasm);
       }
 
       return f;
