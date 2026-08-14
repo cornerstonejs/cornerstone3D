@@ -33,14 +33,6 @@ async function createImage(
   // in cs3d
   const useRGBA = options.useRGBA;
 
-  // always preScale the pixel array unless it is asked not to
-  options.preScale = {
-    enabled:
-      options.preScale && options.preScale.enabled !== undefined
-        ? options.preScale.enabled
-        : true,
-  };
-
   if (!pixelData?.length) {
     return Promise.reject(new Error('The pixel data is missing'));
   }
@@ -49,6 +41,18 @@ async function createImage(
   const canvas = document.createElement('canvas');
   const imageFrame = getImageFrame(imageId);
   imageFrame.decodeLevel = options.decodeLevel;
+
+  const isColorImage = isColorImageFn(imageFrame.photometricInterpretation);
+
+  // always preScale the pixel array unless it is asked not to, or if the image
+  // is not grayscale (DICOM PS3.3 C.11.2.1.2.2).
+  options.preScale = {
+    enabled:
+      !isColorImage &&
+      (options.preScale && options.preScale.enabled !== undefined
+        ? options.preScale.enabled
+        : true),
+  };
 
   options.allowFloatRendering = canRenderFloatTextures();
 
@@ -114,8 +118,6 @@ async function createImage(
     options,
     taskDecodeConfig
   );
-
-  const isColorImage = isColorImageFn(imageFrame.photometricInterpretation);
 
   return new Promise<DICOMLoaderIImage | Types.IImageFrame>(
     (resolve, reject) => {
@@ -390,12 +392,9 @@ async function createImage(
           columns: imageFrame.columns,
           height: imageFrame.rows,
           preScale: imageFrame.preScale,
-          intercept: modalityLutModule.rescaleIntercept
-            ? modalityLutModule.rescaleIntercept
-            : 0,
-          slope: modalityLutModule.rescaleSlope
-            ? modalityLutModule.rescaleSlope
-            : 1,
+          // Ignore rescale/intercept if the image is not monochrome (DICOM PS3.3 C.11.2.1.2.2)
+          intercept: isColorImage ? 0 : modalityLutModule.rescaleIntercept || 0,
+          slope: isColorImage ? 1 : modalityLutModule.rescaleSlope || 1,
           invert: imageFrame.photometricInterpretation === 'MONOCHROME1',
           minPixelValue: imageFrame.smallestPixelValue,
           maxPixelValue: imageFrame.largestPixelValue,
@@ -411,11 +410,15 @@ async function createImage(
           windowWidth: voiLutModule.windowWidth
             ? voiLutModule.windowWidth[0]
             : undefined,
+          // Ignore the VOI descriptors if the image is not monochrome (DICOM
+          // PS3.3 C.11.2.1.2.2). StackViewport reads voiLUTSequence off the
+          // image to derive the initial VOI range, so a stale grayscale LUT
+          // would put it nowhere near the [0, 255] range of the color samples.
           voiLUTFunction:
-            (voiLutModule.voiLUTFunction?.length &&
+            !isColorImage ? ((voiLutModule.voiLUTFunction?.length &&
               voiLutModule.voiLUTFunction[0]) ||
             voiLutModule.voiLutFunction ||
-            undefined,
+            undefined) : undefined,
           decodeTimeInMS: imageFrame.decodeTimeInMS,
           floatPixelData: undefined,
           imageFrame,
@@ -477,8 +480,10 @@ async function createImage(
           };
         }
 
-        // Modality LUT
+        // Modality LUT, skipped for non-monochrome images for the same reason
+        // the rescale slope/intercept is skipped above.
         if (
+          !isColorImage &&
           modalityLutModule.modalityLUTSequence &&
           modalityLutModule.modalityLUTSequence.length > 0 &&
           isModalityLUTForDisplay(sopCommonModule.sopClassUID)
@@ -486,8 +491,9 @@ async function createImage(
           image.modalityLUT = modalityLutModule.modalityLUTSequence[0];
         }
 
-        // VOI LUT
+        // VOI LUT, also skipped for non-monochrome images.
         if (
+          !isColorImage &&
           voiLutModule.voiLUTSequence &&
           voiLutModule.voiLUTSequence.length > 0
         ) {
