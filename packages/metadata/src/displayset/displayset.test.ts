@@ -485,6 +485,21 @@ describe('split key stability', () => {
     ).toThrow(/Duplicate split rule id "same" at index 1/);
   });
 
+  it('rejects duplicate ids even when there are no instances', () => {
+    // A rule set with duplicate ids is broken regardless of what it is applied
+    // to, and validating only on a non-empty series would let it through in
+    // exactly the cheap case a caller is most likely to exercise first.
+    expect(() =>
+      groupInstancesBySplitRules(
+        [],
+        [
+          { id: 'same', matches: (i) => i.Modality === 'MR' },
+          { id: 'same', matches: (i) => i.Modality === 'CT' },
+        ]
+      )
+    ).toThrow(/Duplicate split rule id "same" at index 1/);
+  });
+
   it('falls back to position for rules with no id', () => {
     const groups = groupInstancesBySplitRules(
       [ct('a', 1)],
@@ -492,7 +507,32 @@ describe('split key stability', () => {
     );
 
     expect(groups).toHaveLength(1);
-    expect(groups[0].splitKey).toBe(JSON.stringify(['#0', 'a']));
+    // A number, not '#0': see below for why the fallback must not be a string.
+    expect(groups[0].splitKey).toBe(JSON.stringify([0, 'a']));
+  });
+
+  it('keeps an unnamed rule from colliding with a positional-looking id', () => {
+    // The discriminator occupies one slot of the key, shared between real ids
+    // and the positional fallback. A string fallback ('#1') is therefore
+    // something a caller can also type as an `id`, and the unnamed rule at
+    // index 1 would then share a bucket namespace with the rule named '#1' -
+    // merging two rules' instances into one group under the wrong matchedRule.
+    const groups = groupInstancesBySplitRules(
+      [
+        { imageId: 'us', Modality: 'US', SeriesInstanceUID: 's' },
+        { imageId: 'ct', Modality: 'CT', SeriesInstanceUID: 's' },
+      ],
+      [
+        { id: '#1', matches: (i) => i.Modality === 'US' },
+        { matches: (i) => i.Modality === 'CT' },
+      ]
+    );
+
+    expect(groups.map((g) => g.instances.map((i) => i.imageId))).toEqual([
+      ['us'],
+      ['ct'],
+    ]);
+    expect(groups.map((g) => g.matchedRule.id)).toEqual(['#1', undefined]);
   });
 
   it('orders groups by rule position, then by key numerically', () => {
@@ -502,6 +542,45 @@ describe('split key stability', () => {
     const groups = groupInstancesBySplitRules(instances, [ctRule]);
 
     expect(groups.map((g) => g.instances[0].imageId)).toEqual(['a', 'b', 'j']);
+  });
+
+  it('orders keys differing only in zero padding deterministically', () => {
+    // A numeric-aware collator reports '01' and '1' as EQUAL. Array sort is
+    // stable, so equal-comparing keys keep their input order and the same series
+    // yields differently ordered display sets depending on how it was passed in
+    // - the exact failure this module exists to prevent.
+    const padded = (
+      imageId: string,
+      AcquisitionNumber: string
+    ): NaturalizedInstance => ({
+      imageId,
+      Modality: 'CT',
+      SeriesInstanceUID: 'series-1',
+      SOPInstanceUID: `sop-${imageId}`,
+      AcquisitionNumber,
+    });
+    const rule: SplitRule = {
+      id: 'padded',
+      matches: () => true,
+      groupBy: ['AcquisitionNumber'],
+    };
+
+    const forward = groupInstancesBySplitRules(
+      [padded('a', '01'), padded('b', '1')],
+      [rule]
+    );
+    const reverse = groupInstancesBySplitRules(
+      [padded('b', '1'), padded('a', '01')],
+      [rule]
+    );
+
+    expect(forward).toHaveLength(2);
+    expect(forward.map((g) => g.instances[0].imageId)).toEqual(
+      reverse.map((g) => g.instances[0].imageId)
+    );
+    expect(forward.map((g) => g.splitKey)).toEqual(
+      reverse.map((g) => g.splitKey)
+    );
   });
 
   it('produces the same keys regardless of input order', () => {
@@ -591,24 +670,38 @@ describe('runBy - interleaved single-frame and multi-frame instances', () => {
 
     const groups = groupInstancesBySplitRules(shuffled, [usRunRule]);
 
-    expect(groups.map((g) => g.instances.map((i) => i.imageId).sort())).toEqual(
-      [['img1', 'img2', 'img3'], ['clip4'], ['img5'], ['clip6']]
+    // Nothing about the result depends on input order: not the run membership,
+    // not the group order, and not the order within each group.
+    expect(groups.map((g) => g.instances.map((i) => i.imageId))).toEqual([
+      ['img1', 'img2', 'img3'],
+      ['clip4'],
+      ['img5'],
+      ['clip6'],
+    ]);
+    expect(groups.map((g) => g.splitKey)).toEqual(
+      groupInstancesBySplitRules(interleaved, [usRunRule]).map(
+        (g) => g.splitKey
+      )
     );
   });
 
   it('computes runs over the instances the rule claimed, ignoring others', () => {
-    // The XA instance sits between img3 and img5 in acquisition order but is
-    // claimed by an earlier rule, so it must not break the US run numbering.
+    // The XA instance sits between img1 and img2 in acquisition order but is
+    // claimed by an earlier rule, so it must not break the US run numbering. It
+    // is multi-frame precisely so that it *would*: counted in the US rule's
+    // walk it flips the run value between img1 and img2 and tears the leading
+    // run of singles into two display sets.
     const withOther: NaturalizedInstance[] = [
-      ...interleaved.slice(0, 3),
+      interleaved[0],
       {
         imageId: 'xa',
         Modality: 'XA',
         SeriesInstanceUID: 'us-series',
         SOPInstanceUID: 'sop-xa',
-        InstanceNumber: 3.5,
+        InstanceNumber: 1.5,
+        NumberOfFrames: 30,
       },
-      ...interleaved.slice(3),
+      ...interleaved.slice(1),
     ];
 
     const groups = groupInstancesBySplitRules(withOther, [
@@ -623,10 +716,37 @@ describe('runBy - interleaved single-frame and multi-frame instances', () => {
     ).toEqual([['img1', 'img2', 'img3'], ['clip4'], ['img5'], ['clip6']]);
   });
 
+  it('numbers runs within a groupBy bucket, not across buckets', () => {
+    // seriesB's clip sits between seriesA's two single frames in acquisition
+    // order. Numbering runs across everything the rule claimed would give those
+    // two frames different ordinals and split seriesA - one series' content
+    // must not decide how another is divided.
+    const instances = [
+      { ...us('a1', 1), SeriesInstanceUID: 'seriesA' },
+      { ...us('b1', 2, 60), SeriesInstanceUID: 'seriesB' },
+      { ...us('a2', 3), SeriesInstanceUID: 'seriesA' },
+    ];
+
+    const groups = groupInstancesBySplitRules(instances, [usRunRule]);
+
+    expect(groups.map((g) => g.instances.map((i) => i.imageId))).toEqual([
+      ['a1', 'a2'],
+      ['b1'],
+    ]);
+  });
+
   it('combines runBy with groupBy', () => {
-    // Two runs of singles that also differ in size must not merge just because
-    // they share a run ordinal position in their own group.
-    const groups = groupInstancesBySplitRules(interleaved, [
+    // 'b' differs from its neighbour 'a' only in Rows and shares its run value,
+    // so only groupBy separates them; 'c' and 'd' share Rows and differ only in
+    // run, so only runBy separates those. Both parts of the key are load-bearing.
+    const instances = [
+      us('a', 1),
+      { ...us('b', 2), Rows: 240 },
+      us('c', 3, 60),
+      us('d', 4),
+    ];
+
+    const groups = groupInstancesBySplitRules(instances, [
       {
         id: 'usSized',
         matches: (i) => i.Modality === 'US',
@@ -635,7 +755,13 @@ describe('runBy - interleaved single-frame and multi-frame instances', () => {
       },
     ]);
 
-    expect(groups).toHaveLength(4);
+    // Ordered by split key, so the Rows=240 bucket precedes the Rows=480 one.
+    expect(groups.map((g) => g.instances.map((i) => i.imageId))).toEqual([
+      ['b'],
+      ['a'],
+      ['c'],
+      ['d'],
+    ]);
   });
 
   it('does not start a new run for structurally equal object values', () => {
@@ -658,6 +784,217 @@ describe('runBy - interleaved single-frame and multi-frame instances', () => {
     expect(groups.map((g) => g.instances.map((i) => i.imageId))).toEqual([
       ['a', 'b'],
       ['c'],
+    ]);
+  });
+
+  it('does not start a new run when object keys arrive in a different order', () => {
+    // Serialized comparison is key-order sensitive, so these two equal values
+    // would read as a change and split the run.
+    const instances = [
+      { ...us('a', 1), window: { center: 40, width: 400 } },
+      { ...us('b', 2), window: { width: 400, center: 40 } },
+      { ...us('c', 3), window: { center: 40, width: 1500 } },
+    ];
+
+    const groups = groupInstancesBySplitRules(instances, [
+      { id: 'byWindow', matches: () => true, runBy: (i) => i.window },
+    ]);
+
+    expect(groups.map((g) => g.instances.map((i) => i.imageId))).toEqual([
+      ['a', 'b'],
+      ['c'],
+    ]);
+  });
+
+  it('compares a self-referential runBy value without throwing', () => {
+    // Serialized comparison throws 'Converting circular structure to JSON' out
+    // of the grouping call, which has nothing to do with what the caller asked
+    // for. Two distinct but structurally equal cyclic values are one run.
+    const first: Record<string, unknown> = { kind: 'a' };
+    first.self = first;
+    const second: Record<string, unknown> = { kind: 'a' };
+    second.self = second;
+    const third: Record<string, unknown> = { kind: 'b' };
+    third.self = third;
+
+    const instances = [
+      { ...us('a', 1), tag: first },
+      { ...us('b', 2), tag: second },
+      { ...us('c', 3), tag: third },
+    ];
+
+    const groups = groupInstancesBySplitRules(instances, [
+      { id: 'byTag', matches: () => true, runBy: (i) => i.tag },
+    ]);
+
+    expect(groups.map((g) => g.instances.map((i) => i.imageId))).toEqual([
+      ['a', 'b'],
+      ['c'],
+    ]);
+  });
+
+  it('sorts instances with no usable InstanceNumber last, not as zero', () => {
+    // `Number(null)` and `Number('')` are 0 - a finite number - so coercing
+    // without a guard makes these two instances sort *ahead* of the numbered
+    // ones and moves every run boundary after them (3 groups instead of 2).
+    const instances: NaturalizedInstance[] = [
+      { ...us('noNumber', 1), InstanceNumber: null as unknown as number },
+      { ...us('blank', 1), InstanceNumber: '' as unknown as number },
+      us('clip', 1, 60),
+      us('single', 2),
+    ];
+
+    const groups = groupInstancesBySplitRules(instances, [usRunRule]);
+
+    expect(groups.map((g) => g.instances.map((i) => i.imageId))).toEqual([
+      ['clip'],
+      // Within the group, the two absent numbers sort after 'single' and break
+      // their tie on SOPInstanceUID.
+      ['single', 'blank', 'noNumber'],
+    ]);
+  });
+});
+
+describe('compareInstances - rule-declared instance order', () => {
+  const slice = (
+    imageId: string,
+    SliceLocation: number,
+    InstanceNumber: number
+  ) =>
+    ({
+      imageId,
+      Modality: 'CT',
+      SOPClassUID: '1.2.840.10008.5.1.4.1.1.2',
+      Rows: 512,
+      SeriesInstanceUID: 'ct-series',
+      SOPInstanceUID: `sop-${imageId}`,
+      SliceLocation,
+      InstanceNumber,
+    }) satisfies NaturalizedInstance;
+
+  // Instance number and spatial position disagree, which is the case the field
+  // exists for: acquisition order is not the order the slices belong in. The
+  // three orderings are deliberately all distinct - input is top/middle/bottom,
+  // acquisition is bottom/top/middle, position ascending is bottom/middle/top -
+  // so no assertion below can pass by coincidence.
+  const reconstructed = [
+    slice('top', 30, 2),
+    slice('middle', 20, 3),
+    slice('bottom', 10, 1),
+  ];
+
+  const spatialRule: SplitRule = {
+    id: 'spatial',
+    matches: () => true,
+    compareInstances: (a, b) =>
+      (a.SliceLocation as number) - (b.SliceLocation as number),
+  };
+
+  it('orders a group by the rule comparator instead of acquisition order', () => {
+    const groups = groupInstancesBySplitRules(reconstructed, [spatialRule]);
+
+    expect(groups[0].instances.map((i) => i.imageId)).toEqual([
+      'bottom',
+      'middle',
+      'top',
+    ]);
+  });
+
+  it('defaults to acquisition order when the rule declares no comparator', () => {
+    const groups = groupInstancesBySplitRules(reconstructed, [
+      { id: 'default', matches: () => true },
+    ]);
+
+    expect(groups[0].instances.map((i) => i.imageId)).toEqual([
+      'bottom',
+      'top',
+      'middle',
+    ]);
+  });
+
+  it('reads the rule series facts through the comparator context', () => {
+    const groups = groupInstancesBySplitRules([...reconstructed].reverse(), [
+      {
+        id: 'directional',
+        matches: () => true,
+        series: () => ({ descending: true }),
+        compareInstances: (a, b, context) =>
+          (context.series.descending ? -1 : 1) *
+          ((a.SliceLocation as number) - (b.SliceLocation as number)),
+      },
+    ]);
+
+    expect(groups[0].instances.map((i) => i.imageId)).toEqual([
+      'top',
+      'middle',
+      'bottom',
+    ]);
+  });
+
+  it('breaks ties from an incomplete comparator by acquisition order', () => {
+    // A comparator that cannot separate two instances - here because they share a
+    // SliceLocation - would otherwise leave them to sort's stability, i.e. to the
+    // caller's input order. Both orderings must agree.
+    const sameLocation = [
+      slice('a', 10, 1),
+      slice('b', 10, 2),
+      slice('c', 10, 3),
+    ];
+    const forward = groupInstancesBySplitRules(sameLocation, [spatialRule]);
+    const reversed = groupInstancesBySplitRules([...sameLocation].reverse(), [
+      spatialRule,
+    ]);
+
+    expect(forward[0].instances.map((i) => i.imageId)).toEqual(['a', 'b', 'c']);
+    expect(reversed[0].instances.map((i) => i.imageId)).toEqual([
+      'a',
+      'b',
+      'c',
+    ]);
+  });
+
+  it('falls back to acquisition order when the comparator returns NaN', () => {
+    // Arithmetic on a tag an instance is missing yields NaN, which sort treats as
+    // "keep as is" - so without a guard the result would follow input order.
+    const partial: NaturalizedInstance[] = [
+      slice('second', 20, 2),
+      { ...slice('first', 10, 1), SliceLocation: undefined },
+    ];
+    expect(
+      groupInstancesBySplitRules(partial, [spatialRule])[0].instances.map(
+        (i) => i.imageId
+      )
+    ).toEqual(['first', 'second']);
+    expect(
+      groupInstancesBySplitRules([...partial].reverse(), [
+        spatialRule,
+      ])[0].instances.map((i) => i.imageId)
+    ).toEqual(['first', 'second']);
+  });
+
+  it('numbers runs in the rule comparator order, not acquisition order', () => {
+    // Runs are consecutive-in-order, so which instances form a run depends on the
+    // rule's order. Spatially, the two singles are adjacent and form one run;
+    // by InstanceNumber the clip sits between them and would split them.
+    const instances = [
+      { ...slice('single1', 10, 1), NumberOfFrames: undefined },
+      { ...slice('clip', 30, 2), NumberOfFrames: 60 },
+      { ...slice('single2', 20, 3), NumberOfFrames: undefined },
+    ];
+
+    const groups = groupInstancesBySplitRules(instances, [
+      {
+        id: 'spatialRuns',
+        matches: () => true,
+        compareInstances: (a, b) =>
+          (a.SliceLocation as number) - (b.SliceLocation as number),
+        runBy: (i) => Number(i.NumberOfFrames ?? 1) > 1,
+      },
+    ]);
+
+    expect(groups.map((g) => g.instances.map((i) => i.imageId))).toEqual([
+      ['single1', 'single2'],
+      ['clip'],
     ]);
   });
 });

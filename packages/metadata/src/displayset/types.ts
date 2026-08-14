@@ -121,6 +121,36 @@ export type SplitRule = {
     | ((instance: NaturalizedInstance, context: RuleContext) => unknown)
   )[];
   /**
+   * Optional. Orders the instances this rule claims - both the order each group's
+   * {@link InstanceGroup.instances} are returned in and the order runs are walked
+   * in to number them (see `runBy`). Returns a negative number if `a` comes
+   * before `b`, a positive number if `b` comes before `a`, and 0 if they are
+   * interchangeable. The third argument carries this rule's derived `series`
+   * facts.
+   *
+   * Defaults to acquisition order: `InstanceNumber`, then `SOPInstanceUID` as a
+   * tiebreak. Declare it when that is the wrong order for the display set this
+   * rule produces - a reconstructed volume belongs in spatial order, which
+   * `InstanceNumber` does not always follow:
+   *
+   * ```ts
+   * {
+   *   id: 'volume3d',
+   *   compareInstances: (a, b) => a.SliceLocation - b.SliceLocation,
+   * }
+   * ```
+   *
+   * It need not be a total order. Ties - a returned 0, or a `NaN` out of
+   * arithmetic on a tag one instance is missing - fall back to acquisition order,
+   * so an incomplete comparator cannot make the result depend on the order the
+   * instances were passed in.
+   */
+  compareInstances?: (
+    a: NaturalizedInstance,
+    b: NaturalizedInstance,
+    context: RuleContext
+  ) => number;
+  /**
    * Optional. Declares that this rule's instances form *runs*: walking the
    * instances this rule claimed in acquisition order, consecutive instances
    * whose value here is equal belong to the same run, and a change in value
@@ -143,11 +173,17 @@ export type SplitRule = {
    * }
    * ```
    *
-   * Runs are computed over the instances **this rule claimed**, in canonical
-   * acquisition order (`InstanceNumber`, then `SOPInstanceUID`) rather than the
+   * Runs are computed over the instances **this rule claimed**, in the rule's own
+   * order (`compareInstances`, defaulting to acquisition order) rather than the
    * order the caller supplied - so, like every other key part, the result does
    * not depend on input order. Instances claimed by other rules do not
    * interrupt a run.
+   *
+   * Runs are also scoped to a single `groupBy` bucket: instances whose `groupBy`
+   * parts differ are bound for different display sets anyway, so one never
+   * interrupts another's run. Without that scoping, two single frames of one
+   * series would be torn apart by another series' clip merely for sitting
+   * between them in acquisition order.
    */
   runBy?: (instance: NaturalizedInstance, context: RuleContext) => unknown;
   customAttributes?: (
@@ -161,6 +197,11 @@ export type SplitContext = {
 };
 
 export type InstanceGroup = {
+  /**
+   * The instances collected into this group, ordered by the rule that produced it
+   * (see {@link SplitRule.compareInstances}) and so independent of the order they
+   * were passed in - as is everything else about the result.
+   */
   instances: NaturalizedInstance[];
   matchedRule: SplitRule;
   /**
