@@ -44,6 +44,19 @@ function getBundlePublicPath(): string | undefined {
 }
 
 /**
+ * The base a bundler anchors its emitted asset URLs to. This is the definition
+ * webpack and rspack generate for `__webpack_require__.b`, which is what
+ * `new URL(<specifier>, import.meta.url)` compiles down to — so the runtime
+ * binaries end up resolved against the same base as the codec wasm.
+ */
+function getDocumentBase(): string | undefined {
+  return (
+    (typeof document !== 'undefined' && document.baseURI) ||
+    globalThis.location?.href
+  );
+}
+
+/**
  * Absolute URL prefix for the ONNX Runtime wasm binaries.
  *
  * @param directory - directory holding `onnxruntime-web/dist`, relative to the
@@ -54,17 +67,17 @@ function getBundlePublicPath(): string | undefined {
 export default function getOrtWasmPaths(
   directory = DEFAULT_ORT_WASM_DIRECTORY
 ): string {
-  const base = getBundlePublicPath() ?? globalThis.document?.baseURI;
-  const documentHref = globalThis.location?.href;
+  const documentBase = getDocumentBase();
+  const base = getBundlePublicPath() ?? documentBase;
 
-  if (!base || !documentHref) {
+  if (!base || !documentBase) {
     return directory;
   }
 
   try {
-    // The public path is often origin-relative (`/pacs/`), so anchor it to the
-    // document before the directory is resolved against it.
-    return new URL(directory, new URL(base, documentHref)).href;
+    // The public path is rarely a full URL (`/pacs/`, or `auto` in a worker),
+    // so anchor it before the directory is resolved against it.
+    return new URL(directory, new URL(base, documentBase)).href;
   } catch {
     return directory;
   }
