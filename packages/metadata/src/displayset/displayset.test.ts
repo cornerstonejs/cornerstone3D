@@ -436,3 +436,228 @@ describe('displayset split utilities', () => {
     expect(groups).toHaveLength(1);
   });
 });
+
+describe('split key stability', () => {
+  const ct = (
+    imageId: string,
+    InstanceNumber: number
+  ): NaturalizedInstance => ({
+    imageId,
+    Modality: 'CT',
+    SOPClassUID: '1.2.840.10008.5.1.4.1.1.2',
+    Rows: 512,
+    SeriesInstanceUID: 'series-1',
+    SOPInstanceUID: `sop-${imageId}`,
+    InstanceNumber,
+  });
+
+  const ctRule: SplitRule = {
+    id: 'ct',
+    matches: (i) => i.Modality === 'CT',
+    groupBy: ['SeriesInstanceUID', 'InstanceNumber'],
+  };
+
+  it('keys off the rule id, so inserting a rule leaves other rules keys unchanged', () => {
+    // The point of the whole id-based discriminator: a caller that persisted
+    // something against a display set must still find it after the rule set is
+    // edited. Keying off the rule's array position would move every key below
+    // an insertion.
+    const instances = [ct('a', 1), ct('b', 2)];
+
+    const before = groupInstancesBySplitRules(instances, [ctRule]);
+    const after = groupInstancesBySplitRules(instances, [
+      { id: 'inserted-ahead', matches: (i) => i.Modality === 'XA' },
+      ctRule,
+    ]);
+
+    expect(after.map((g) => g.splitKey)).toEqual(before.map((g) => g.splitKey));
+  });
+
+  it('rejects a rule set with duplicate ids', () => {
+    expect(() =>
+      groupInstancesBySplitRules(
+        [ct('a', 1)],
+        [
+          { id: 'same', matches: (i) => i.Modality === 'MR' },
+          { id: 'same', matches: (i) => i.Modality === 'CT' },
+        ]
+      )
+    ).toThrow(/Duplicate split rule id "same" at index 1/);
+  });
+
+  it('falls back to position for rules with no id', () => {
+    const groups = groupInstancesBySplitRules(
+      [ct('a', 1)],
+      [{ matches: (i) => i.Modality === 'CT', groupBy: ['imageId'] }]
+    );
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0].splitKey).toBe(JSON.stringify(['#0', 'a']));
+  });
+
+  it('orders groups by rule position, then by key numerically', () => {
+    // '10' must sort after '2', not lexically before it.
+    const instances = [ct('j', 10), ct('b', 2), ct('a', 1)];
+
+    const groups = groupInstancesBySplitRules(instances, [ctRule]);
+
+    expect(groups.map((g) => g.instances[0].imageId)).toEqual(['a', 'b', 'j']);
+  });
+
+  it('produces the same keys regardless of input order', () => {
+    const forward = groupInstancesBySplitRules(
+      [ct('a', 1), ct('b', 2), ct('j', 10)],
+      [ctRule]
+    );
+    const shuffled = groupInstancesBySplitRules(
+      [ct('j', 10), ct('a', 1), ct('b', 2)],
+      [ctRule]
+    );
+
+    expect(shuffled.map((g) => g.splitKey)).toEqual(
+      forward.map((g) => g.splitKey)
+    );
+  });
+});
+
+describe('runBy - interleaved single-frame and multi-frame instances', () => {
+  // The ultrasound case: a series alternating single images and multi-frame
+  // clips. `img1 img2 img3 clip4 img5 clip6` must become four display sets -
+  // the three leading singles together, then each clip and the later single on
+  // their own. Grouping on a per-instance discriminator merges img1..3 with
+  // img5; grouping on InstanceNumber over-splits img1..3 into three.
+  const us = (
+    imageId: string,
+    InstanceNumber: number,
+    NumberOfFrames?: number
+  ): NaturalizedInstance => ({
+    imageId,
+    Modality: 'US',
+    SOPClassUID: '1.2.840.10008.5.1.4.1.1.6.1',
+    Rows: 480,
+    Columns: 640,
+    SeriesInstanceUID: 'us-series',
+    SOPInstanceUID: `sop-${imageId}`,
+    InstanceNumber,
+    ...(NumberOfFrames === undefined ? {} : { NumberOfFrames }),
+  });
+
+  const interleaved = [
+    us('img1', 1),
+    us('img2', 2),
+    us('img3', 3),
+    us('clip4', 4, 60),
+    us('img5', 5),
+    us('clip6', 6, 45),
+  ];
+
+  const usRunRule: SplitRule = {
+    id: 'usInterleaved',
+    matches: (i) => i.Modality === 'US',
+    runBy: (i) => Number(i.NumberOfFrames ?? 1) > 1,
+  };
+
+  it('splits interleaved singles and clips into one display set per run', () => {
+    const groups = groupInstancesBySplitRules(interleaved, [usRunRule]);
+
+    expect(groups.map((g) => g.instances.map((i) => i.imageId))).toEqual([
+      ['img1', 'img2', 'img3'],
+      ['clip4'],
+      ['img5'],
+      ['clip6'],
+    ]);
+  });
+
+  it('merges the singles into one set when runBy is omitted', () => {
+    // Guards the claim above: without runBy the same rule produces the wrong
+    // answer, so the test proves runBy is what does the work.
+    const groups = groupInstancesBySplitRules(interleaved, [
+      { id: 'usInterleaved', matches: (i) => i.Modality === 'US' },
+    ]);
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0].instances).toHaveLength(6);
+  });
+
+  it('numbers runs by acquisition order, not input order', () => {
+    const shuffled = [
+      interleaved[4],
+      interleaved[0],
+      interleaved[5],
+      interleaved[2],
+      interleaved[3],
+      interleaved[1],
+    ];
+
+    const groups = groupInstancesBySplitRules(shuffled, [usRunRule]);
+
+    expect(groups.map((g) => g.instances.map((i) => i.imageId).sort())).toEqual(
+      [['img1', 'img2', 'img3'], ['clip4'], ['img5'], ['clip6']]
+    );
+  });
+
+  it('computes runs over the instances the rule claimed, ignoring others', () => {
+    // The XA instance sits between img3 and img5 in acquisition order but is
+    // claimed by an earlier rule, so it must not break the US run numbering.
+    const withOther: NaturalizedInstance[] = [
+      ...interleaved.slice(0, 3),
+      {
+        imageId: 'xa',
+        Modality: 'XA',
+        SeriesInstanceUID: 'us-series',
+        SOPInstanceUID: 'sop-xa',
+        InstanceNumber: 3.5,
+      },
+      ...interleaved.slice(3),
+    ];
+
+    const groups = groupInstancesBySplitRules(withOther, [
+      { id: 'xa', matches: (i) => i.Modality === 'XA' },
+      usRunRule,
+    ]);
+
+    expect(
+      groups
+        .filter((g) => g.matchedRule.id === 'usInterleaved')
+        .map((g) => g.instances.map((i) => i.imageId))
+    ).toEqual([['img1', 'img2', 'img3'], ['clip4'], ['img5'], ['clip6']]);
+  });
+
+  it('combines runBy with groupBy', () => {
+    // Two runs of singles that also differ in size must not merge just because
+    // they share a run ordinal position in their own group.
+    const groups = groupInstancesBySplitRules(interleaved, [
+      {
+        id: 'usSized',
+        matches: (i) => i.Modality === 'US',
+        groupBy: ['Rows'],
+        runBy: (i) => Number(i.NumberOfFrames ?? 1) > 1,
+      },
+    ]);
+
+    expect(groups).toHaveLength(4);
+  });
+
+  it('does not start a new run for structurally equal object values', () => {
+    // A fresh array per instance would be reference-unequal every time and
+    // split every instance into its own run.
+    const instances = [
+      { ...us('a', 1), ImageType: ['ORIGINAL', 'PRIMARY'] },
+      { ...us('b', 2), ImageType: ['ORIGINAL', 'PRIMARY'] },
+      { ...us('c', 3), ImageType: ['DERIVED', 'SECONDARY'] },
+    ];
+
+    const groups = groupInstancesBySplitRules(instances, [
+      {
+        id: 'byImageType',
+        matches: () => true,
+        runBy: (i) => i.ImageType,
+      },
+    ]);
+
+    expect(groups.map((g) => g.instances.map((i) => i.imageId))).toEqual([
+      ['a', 'b'],
+      ['c'],
+    ]);
+  });
+});

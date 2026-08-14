@@ -79,6 +79,17 @@ export type SplitRuleOptions = {
 };
 
 export type SplitRule = {
+  /**
+   * Stable identifier for this rule, unique within its rule set. It namespaces
+   * every bucket key the rule produces (see {@link InstanceGroup.splitKey}), so
+   * naming a rule is what makes the identities derived from it survive editing
+   * the rule set - reordering rules, or inserting one, leaves other rules'
+   * keys untouched. A rule set containing duplicate ids is rejected.
+   *
+   * Rules without an id fall back to their array position, whose keys therefore
+   * change when the rule set is edited. Give every rule an id if anything
+   * durable (persisted annotations, saved layouts) is keyed off the split.
+   */
   id?: string;
   /** Allowed viewport types; index 0 is the preferred viewport type. */
   viewportTypes?: readonly ViewportTypeHint[];
@@ -109,6 +120,36 @@ export type SplitRule = {
     | string
     | ((instance: NaturalizedInstance, context: RuleContext) => unknown)
   )[];
+  /**
+   * Optional. Declares that this rule's instances form *runs*: walking the
+   * instances this rule claimed in acquisition order, consecutive instances
+   * whose value here is equal belong to the same run, and a change in value
+   * starts a new one. The run's ordinal is folded into the bucket key, so
+   * **interleaved kinds separate instead of merging**.
+   *
+   * The motivating case is an ultrasound series mixing single images and
+   * multi-frame clips - `img1 img2 img3 clip4 img5 clip6` should become four
+   * display sets, not two. `groupBy` alone cannot express that, because its
+   * extractors see one instance at a time and so cannot tell `img3` from
+   * `img5`; grouping on a per-instance discriminator merges them, and grouping
+   * on `InstanceNumber` over-splits `img1..img3` into three. A run needs a
+   * pass over the ordered series, which is what this field buys:
+   *
+   * ```ts
+   * {
+   *   id: 'usInterleaved',
+   *   matches: (instance) => instance.Modality === 'US',
+   *   runBy: (instance) => Number(instance.NumberOfFrames ?? 1) > 1,
+   * }
+   * ```
+   *
+   * Runs are computed over the instances **this rule claimed**, in canonical
+   * acquisition order (`InstanceNumber`, then `SOPInstanceUID`) rather than the
+   * order the caller supplied - so, like every other key part, the result does
+   * not depend on input order. Instances claimed by other rules do not
+   * interrupt a run.
+   */
+  runBy?: (instance: NaturalizedInstance, context: RuleContext) => unknown;
   customAttributes?: (
     attributes: SplitRuleCustomAttributesContext,
     options: SplitRuleOptions
