@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.8.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.0...v5.8.1) (2026-08-14)
+
+### Bug Fixes
+
+- **dicomImageLoader:** update CSP-safe codecs ([#2859](https://github.com/cornerstonejs/cornerstone3D/issues/2859)) ([066de71](https://github.com/cornerstonejs/cornerstone3D/commit/066de717357c21a2b094b9411c373e72e7a5ba04))
+
 # [5.8.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.7.3...v5.8.0) (2026-08-13)
 
 ### Features
