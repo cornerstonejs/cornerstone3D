@@ -6,6 +6,11 @@ import { convertContourToSurface } from './convertContourToSurface';
 import { createAndCacheSurfacesFromRaw } from './createAndCacheSurfacesFromRaw';
 import { convertLabelmapToSurface } from './convertLabelmapToSurface';
 import type { Types as ToolsTypes } from '@cornerstonejs/tools';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'polymorphicSegmentation.Surface.surfaceComputationStrategies'
+);
 
 const { getUniqueSegmentIndices } = cornerstoneTools.utilities.segmentation;
 const { getSegmentation } = cornerstoneTools.segmentation.state;
@@ -56,7 +61,7 @@ export async function computeSurfaceData(
       );
     }
   } catch (error) {
-    console.error(error);
+    cs3dLogger.error(error);
     throw error;
   }
 
@@ -83,7 +88,7 @@ async function computeSurfaceFromLabelmapSegmentation(
   const segmentation = getSegmentation(segmentationId);
 
   if (!segmentation?.representationData?.Labelmap) {
-    console.warn('Only support surface update from labelmaps');
+    cs3dLogger.warn('Only support surface update from labelmaps');
     return;
   }
 
@@ -107,7 +112,7 @@ async function computeSurfaceFromLabelmapSegmentation(
   const errors = surfaces.filter((p) => p.status === 'rejected');
 
   if (errors.length > 0) {
-    console.error(errors);
+    cs3dLogger.error(errors);
     throw new Error('Failed to convert labelmap to surface');
   }
 

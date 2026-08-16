@@ -1,5 +1,10 @@
 import type { Types as ToolsTypes } from '@cornerstonejs/tools';
 import { Enums, segmentation, utilities } from '@cornerstonejs/tools';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'polymorphicSegmentation.canComputeRequestedRepresentation'
+);
 
 type RepresentationsData = ToolsTypes.RepresentationsData;
 
@@ -83,7 +88,7 @@ function getExistingRepresentationTypes(
         validateFn(representationTypeData);
         supportedTypes.push(representationType);
       } catch (error) {
-        console.warn(
+        cs3dLogger.warn(
           `Validation failed for labelmap of type ${representationType}`
         );
       }

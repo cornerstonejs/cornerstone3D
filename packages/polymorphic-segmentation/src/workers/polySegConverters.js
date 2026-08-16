@@ -7,6 +7,11 @@ import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import vtkContourLoopExtraction from '@kitware/vtk.js/Filters/General/ContourLoopExtraction';
 import vtkCutter from '@kitware/vtk.js/Filters/Core/Cutter';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.workerLog.getLogger(
+  'polymorphicSegmentation.workers.polySegConverters'
+);
 
 const {
   math: {
@@ -23,7 +28,7 @@ async function peerImport(moduleId) {
       return import('@icr/polyseg-wasm');
     }
   } catch (error) {
-    console.warn('Error importing module:', error);
+    cs3dLogger.warn('Error importing module:', error);
     return null;
   }
 }
@@ -57,8 +62,8 @@ const polySegConverters = {
     try {
       ICRPolySeg = (await peerImport('@icr/polyseg-wasm')).default;
     } catch (error) {
-      console.error(error);
-      console.debug(
+      cs3dLogger.error(error);
+      cs3dLogger.debug(
         "Warning: '@icr/polyseg-wasm' module not found. Please install it separately."
       );
       return;
@@ -625,7 +630,7 @@ const polySegConverters = {
           try {
             cutter.update();
           } catch (e) {
-            console.warn('Error during clipping', e);
+            cs3dLogger.warn('Error during clipping', e);
             continue;
           }
 
@@ -664,7 +669,7 @@ const polySegConverters = {
               });
             }
           } catch (loopError) {
-            console.warn('Error during loop extraction:', loopError);
+            cs3dLogger.warn('Error during loop extraction:', loopError);
             continue;
           }
         }
@@ -674,7 +679,7 @@ const polySegConverters = {
         updateCacheCallback({ sliceIndex, polyDataResults });
       }
     } catch (e) {
-      console.warn('Error during processing', e);
+      cs3dLogger.warn('Error during processing', e);
     } finally {
       // Cleanup on completion
       surfacesInfo = null;

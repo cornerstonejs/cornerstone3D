@@ -9,6 +9,11 @@ import {
 } from './convertContourToLabelmap';
 import { convertSurfaceToVolumeLabelmap } from './convertSurfaceToLabelmap';
 import type { PolySegConversionOptions } from '../types';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'polymorphicSegmentation.Labelmap.labelmapComputationStrategies'
+);
 
 const { computeStackLabelmapFromVolume, getUniqueSegmentIndices } =
   utilities.segmentation;
@@ -49,7 +54,7 @@ export async function computeLabelmapData(
       );
     }
   } catch (error) {
-    console.error(error);
+    cs3dLogger.error(error);
     throw error;
   }
 
