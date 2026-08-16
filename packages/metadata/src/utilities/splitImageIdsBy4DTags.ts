@@ -1,5 +1,10 @@
 import * as metaData from '../metaData';
 import { toFiniteNumber } from './toNumber';
+import { logging as cornerstoneLogging } from '@cornerstonejs/utils';
+
+const cs3dLogger = cornerstoneLogging.metadataLog.getLogger(
+  'utilities.splitImageIdsBy4DTags'
+);
 
 // TODO: Test remaining implemented tags
 // Supported 4D Tags
@@ -98,7 +103,7 @@ function handleMultiframe4D(imageIds: string[]): MultiframeSplitResult | null {
   const numberOfSlices = instance.NumberOfSlices;
 
   if (timeSlotVector.length !== numberOfFrames) {
-    console.warn(
+    cs3dLogger.warn(
       'TimeSlotVector length does not match NumberOfFrames:',
       timeSlotVector.length,
       'vs',
@@ -109,7 +114,7 @@ function handleMultiframe4D(imageIds: string[]): MultiframeSplitResult | null {
 
   if (sliceVector) {
     if (!Array.isArray(sliceVector)) {
-      console.warn(
+      cs3dLogger.warn(
         'SliceVector exists but is not an array. Expected length:',
         numberOfFrames
       );
@@ -120,7 +125,7 @@ function handleMultiframe4D(imageIds: string[]): MultiframeSplitResult | null {
       sliceVector.length !== numberOfFrames ||
       sliceVector.some((val) => val === undefined)
     ) {
-      console.warn(
+      cs3dLogger.warn(
         'SliceVector exists but has invalid length or undefined entries. Expected length:',
         numberOfFrames,
         'Actual length:',
@@ -166,7 +171,7 @@ function handleMultiframe4D(imageIds: string[]): MultiframeSplitResult | null {
   );
 
   if (!allGroupsHaveSameLength) {
-    console.warn(
+    cs3dLogger.warn(
       'Multiframe 4D split resulted in uneven time slot groups. Expected',
       expectedSlicesPerTimeSlot,
       'slices per time slot.'
