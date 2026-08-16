@@ -491,6 +491,87 @@ describe('wadouri dataSet-layer', () => {
         expect(result.windowWidth).toEqual([400]);
       });
 
+      it('keeps a root VOI LUT Sequence when the window comes from the Frame VOI LUT macro', () => {
+        // Each VOI attribute is resolved on its own: picking one dataset from
+        // the window tags alone dropped a sequence that lived in the other one.
+        const voiLutItemDataSet = fakeDataSet(
+          {},
+          {
+            x00283002: { length: 6 },
+            x00283006: { length: 4 },
+          }
+        );
+        (voiLutItemDataSet as any).uint16 = (t: string, i = 0) => {
+          if (t === 'x00283002') {
+            return [10, 0, 16][i];
+          }
+          if (t === 'x00283006') {
+            return [100, 200][i];
+          }
+          return undefined;
+        };
+
+        const frameVOIDataSet = fakeDataSet({
+          x00281050: '-600',
+          x00281051: '1500',
+        });
+
+        const dataSet = fakeDataSet(
+          {
+            x00280103: 0,
+          },
+          {
+            x00283010: { items: [{ dataSet: voiLutItemDataSet }] },
+            x00289132: { items: [{ dataSet: frameVOIDataSet }] },
+          }
+        );
+
+        const result = metadataForDataset(
+          'voiLutModule',
+          'imageId',
+          dataSet as any
+        );
+
+        expect(result.windowCenter).toEqual([-600]);
+        expect(result.windowWidth).toEqual([1500]);
+        expect(result.voiLUTSequence).toEqual([
+          {
+            id: '1',
+            firstValueMapped: 0,
+            numBitsPerEntry: 16,
+            lut: [100, 200],
+          },
+        ]);
+      });
+
+      it('falls through a present but empty root window to the Frame VOI LUT macro', () => {
+        // Window Center is type 2, so it may be sent zero length. Treating it
+        // as present defeated the macro fallback and left the image with no
+        // window at all.
+        const frameVOIDataSet = fakeDataSet({
+          x00281050: '-600',
+          x00281051: '1500',
+        });
+
+        const dataSet = fakeDataSet(
+          {},
+          {
+            x00281050: { length: 0 },
+            x00281051: { length: 0 },
+            x00289132: { items: [{ dataSet: frameVOIDataSet }] },
+          }
+        );
+
+        const result = metadataForDataset(
+          'voiLutModule',
+          'imageId',
+          dataSet as any
+        );
+
+        expect(result.windowCenter).toEqual([-600]);
+        expect(result.windowWidth).toEqual([1500]);
+      });
+
       it('returns undefined voiLUTSequence when no sequence element is present', () => {
         const dataSet = fakeDataSet({
           x00281050: '40\\50',
