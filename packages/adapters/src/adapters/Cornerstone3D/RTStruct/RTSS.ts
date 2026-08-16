@@ -9,6 +9,9 @@ import getRTROIObservationsSequence from './utilities/getRTROIObservationsSequen
 import getStructureSetModule from './utilities/getStructureSetModule';
 import { createInstance } from '../../../utilities';
 import '../../../utilities/referencedMetadataProvider';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.cs3dLog.getLogger('adapters.Cornerstone3D.RTStruct.RTSS');
 
 type Segmentation = ToolTypes.Segmentation;
 type RtssModule = Types.RtssModule;
@@ -220,7 +223,7 @@ export function generateRTSSFromAnnotations(
       data: { segmentation },
     } = annotation;
     if (!segmentation) {
-      console.warn('Annotation is not a segmentation:', annotation);
+      cs3dLogger.warn('Annotation is not a segmentation:', annotation);
       return;
     }
     const { segmentationId, segmentIndex } = segmentation;
@@ -315,7 +318,7 @@ export function generateRTSSFromContour(segmentations: Segmentation, options) {
     for (const annotationUID of annotationSet.values()) {
       const annotation = toolsAnnotation.state.getAnnotation(annotationUID);
       if (!annotation) {
-        console.error('Unable to find an annotation for UID', annotationUID);
+        cs3dLogger.error('Unable to find an annotation for UID', annotationUID);
         continue;
       }
       annotations.push(annotation);

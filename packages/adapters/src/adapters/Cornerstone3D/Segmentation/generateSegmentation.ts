@@ -11,6 +11,9 @@ import {
   getReferencedSourceImageSequenceItem,
   normalizeSharedFunctionalGroupsSequence,
 } from './perFrameFunctionalGroups.js';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.cs3dLog.getLogger('adapters.Cornerstone3D.Segmentation.generateSegmentation');
 
 const { MetadataModules } = Enums;
 const { SEGImageNormalizer } = normalizers;
@@ -271,7 +274,7 @@ function fillLabelmapSegmentation(
           continue;
         }
         if (frame[i] !== 0 && frame[i] !== value && !overlapWarned) {
-          console.warn(
+          cs3dLogger.warn(
             'generateSegmentation: overlapping labelmap segments detected on the ' +
               'same voxel while exporting a LABELMAP SEG; the later labelmap wins.'
           );
