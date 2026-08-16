@@ -23,7 +23,9 @@ import ort from 'onnxruntime-web/webgpu';
 import { vec3 } from 'gl-matrix';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
-const cs3dLogger = cornerstoneUtilities.logger.aiLog.getLogger('ONNXSegmentationController');
+const cs3dLogger = cornerstoneUtilities.logger.aiLog.getLogger(
+  'ONNXSegmentationController'
+);
 
 const { annotation } = cornerstoneTools;
 const { state: annotationState } = annotation;
@@ -104,6 +106,8 @@ export enum Loggers {
   Encoder = 'encoder',
   Decoder = 'decoder',
 }
+
+type LogListener = (message: string, ...args: unknown[]) => void;
 
 /**
  * The ONNXController handles the interaction between CS3D viewports and ONNX segmentation
@@ -222,7 +226,9 @@ export default class ONNXSegmentationController {
   protected viewport;
   protected excludeTool = ONNXSegmentationController.MarkerExclude;
   protected currentImage;
-  private listeners = [cs3dLogger.info];
+  private listeners: LogListener[] = [
+    (message, ...args) => cs3dLogger.info(message, ...args),
+  ];
   protected desiredImage = {
     imageId: null,
     sampleImageId: null,
@@ -290,7 +296,7 @@ export default class ONNXSegmentationController {
    */
   constructor(
     options: {
-      listeners?: Array<(message: string) => void>;
+      listeners?: LogListener[];
       getPromptAnnotations?: (
         viewport?: Types.IViewport
       ) => cornerstoneTools.Types.Annotation[];
@@ -626,7 +632,7 @@ export default class ONNXSegmentationController {
   /**
    * Logs the message to the given log level
    */
-  protected log(logger: Loggers, ...args) {
+  protected log(logger: Loggers, ...args: unknown[]) {
     for (const listener of this.listeners) {
       listener(logger, ...args);
     }

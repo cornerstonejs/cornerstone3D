@@ -9,7 +9,8 @@ import {
 import ONNXSegmentationController from './ONNXSegmentationController';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
-const cs3dLogger = cornerstoneUtilities.logger.aiLog.getLogger('MarkerLabelmapTool');
+const cs3dLogger =
+  cornerstoneUtilities.logger.aiLog.getLogger('MarkerLabelmapTool');
 
 /**
  * Represents a tool used for segment selection and AI-assisted segmentation.
