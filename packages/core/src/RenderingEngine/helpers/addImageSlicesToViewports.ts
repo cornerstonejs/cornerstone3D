@@ -4,6 +4,9 @@ import type {
   IRenderingEngine,
   IVideoViewport,
 } from '../../types';
+import { coreLog } from '../../utilities/logger';
+
+const log = coreLog.getLogger('RenderingEngine', 'addImageSlicesToViewports');
 
 /**
  * For each provided viewport it adds a volume to the viewport using the
@@ -31,7 +34,7 @@ function addImageSlicesToViewports(
 
     // if the viewport does not support addImages, log a warning and skip
     if (!viewport.addImages) {
-      console.warn(
+      log.warn(
         `Viewport with Id ${viewportId} does not have addImages. Cannot add image segmentation to this viewport.`
       );
 

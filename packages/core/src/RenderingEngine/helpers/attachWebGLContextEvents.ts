@@ -2,6 +2,9 @@ import eventTarget from '../../eventTarget';
 import { Events } from '../../enums';
 import triggerEvent from '../../utilities/triggerEvent';
 import type { VtkOffscreenMultiRenderWindow } from '../../types';
+import { coreLog } from '../../utilities/logger';
+
+const log = coreLog.getLogger('RenderingEngine', 'attachWebGLContextEvents');
 
 /**
  * Forwards WebGL context lost/restored events from a rendering engine's
@@ -29,7 +32,7 @@ export function attachWebGLContextEvents(
   }
 
   canvas.addEventListener('webglcontextlost', () => {
-    console.warn(
+    log.warn(
       `CornerstoneRender: WebGL context lost (renderingEngine=${renderingEngineId}, context=${contextIndex})`
     );
     triggerEvent(eventTarget, Events.WEBGL_CONTEXT_LOST, {
