@@ -22,6 +22,11 @@ import {
   MAX_NUMBER_COLORS,
   setLabelmapColorAndOpacity,
 } from './labelmapActorStyle';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.displayTools.Labelmap.labelmapDisplay'
+);
 
 export { MAX_NUMBER_COLORS };
 const unsupportedImageMapperStates = new Map<string, string>();
@@ -76,7 +81,10 @@ async function render(
   const segmentation = getSegmentation(segmentationId);
 
   if (!segmentation) {
-    console.warn('No segmentation found for segmentationId: ', segmentationId);
+    cs3dLogger.warn(
+      'No segmentation found for segmentationId: ',
+      segmentationId
+    );
     return;
   }
 
@@ -133,7 +141,7 @@ async function render(
 
     polySegConversionInProgress = false;
   } else if (!labelmapData && !getPolySeg()) {
-    console.debug(
+    cs3dLogger.debug(
       `No labelmap data found for segmentationId ${segmentationId} and PolySeg add-on is not configured. Unable to convert from other representations to labelmap. Please register PolySeg using cornerstoneTools.init({ addons: { polySeg } }) to enable automatic conversion.`
     );
   }

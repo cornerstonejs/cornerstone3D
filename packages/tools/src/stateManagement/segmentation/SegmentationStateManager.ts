@@ -35,6 +35,11 @@ import {
   LabelmapImageReferenceResolver,
   syncLegacyLabelmapData,
 } from './labelmapModel';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'stateManagement.segmentation.SegmentationStateManager'
+);
 
 const initialDefaultState: SegmentationState = {
   colorLUT: [],
@@ -145,7 +150,7 @@ export default class SegmentationStateManager {
       );
 
       if (!segmentation) {
-        console.warn(
+        cs3dLogger.warn(
           `Segmentation with id ${segmentationId} not found. Update aborted.`
         );
         return;
@@ -251,7 +256,7 @@ export default class SegmentationStateManager {
     );
 
     if (existingRepresentations.length > 0) {
-      console.debug(
+      cs3dLogger.debug(
         'A segmentation representation of type',
         type,
         'already exists in viewport',
@@ -893,7 +898,7 @@ export default class SegmentationStateManager {
   addColorLUT(colorLUT: Types.ColorLUT, lutIndex: number): void {
     this.updateState((state) => {
       if (state.colorLUT[lutIndex]) {
-        console.warn('Color LUT table already exists, overwriting');
+        cs3dLogger.warn('Color LUT table already exists, overwriting');
       }
       state.colorLUT[lutIndex] = csUtils.deepClone(colorLUT) as Types.ColorLUT;
     });

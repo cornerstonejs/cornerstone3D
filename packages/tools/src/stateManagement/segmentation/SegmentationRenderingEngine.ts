@@ -21,6 +21,11 @@ import PlanarFreehandContourSegmentationTool from '../../tools/annotation/Planar
 import { getToolGroupForViewport } from '../../store/ToolGroupManager';
 import { addDefaultSegmentationListener } from './segmentationEventManager';
 import { getSegmentationRepresentationDisplay } from './SegmentationRepresentationDisplayRegistry';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'stateManagement.segmentation.SegmentationRenderingEngine'
+);
 
 const planarContourToolName = PlanarFreehandContourSegmentationTool.toolName;
 
@@ -194,7 +199,7 @@ class SegmentationRenderingEngine {
           segmentation.representationData[representation.type] !== undefined;
 
         if (!display) {
-          console.warn(
+          cs3dLogger.warn(
             `No display registered for segmentation representation type ${representation.type}.`
           );
           return Promise.resolve({
@@ -220,7 +225,7 @@ class SegmentationRenderingEngine {
             };
           })
           .catch((error) => {
-            console.error(error);
+            cs3dLogger.error(error);
 
             return {
               segmentationId: representation.segmentationId,

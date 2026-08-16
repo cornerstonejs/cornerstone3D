@@ -7,6 +7,11 @@ import intersectPolyline from './intersectPolyline';
 import getNormal2 from './getNormal2';
 import { glMatrix, vec3 } from 'gl-matrix';
 import getLinesIntersection from './getLinesIntersection';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.math.polyline.combinePolyline'
+);
 
 enum PolylinePointType {
   Vertex,
@@ -325,7 +330,7 @@ function mergePolylines(
 
     // Additional safety check for null/undefined next pointer
     if (!currentPoint) {
-      console.warn(
+      cs3dLogger.warn(
         'Broken linked list detected in mergePolylines, breaking loop'
       );
       break;
@@ -333,7 +338,7 @@ function mergePolylines(
   }
 
   if (iterationCount >= maxIterations) {
-    console.warn(
+    cs3dLogger.warn(
       'Maximum iterations reached in mergePolylines, possible infinite loop detected'
     );
   }

@@ -14,6 +14,11 @@ import type { Types } from '@cornerstonejs/core';
 import CINE_EVENTS from './events';
 import { addToolState, getToolState, getToolStateByViewportId } from './state';
 import type { CINETypes } from '../../types';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.cine.playClip'
+);
 
 const { ViewportStatus } = Enums;
 const { triggerEvent } = csUtils;
@@ -163,7 +168,7 @@ function playClip(
       try {
         playClipContext.scroll(delta);
       } catch (e) {
-        console.warn('Play clip not scrolling', e);
+        cs3dLogger.warn('Play clip not scrolling', e);
         _stopClipWithData(playClipData);
         triggerEvent(element, CINE_EVENTS.CLIP_STOPPED, { element });
       }

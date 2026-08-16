@@ -9,6 +9,11 @@ import BrushTool from './BrushTool';
 import * as segmentation from '../../stateManagement/segmentation';
 import type { PublicToolProps } from '../../types';
 import { getSegmentationRepresentationsBySegmentationId } from '../../stateManagement/segmentation/getSegmentationRepresentation';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.segmentation.LabelmapEditWithContour'
+);
 
 /**
  * LabelMapEditWithContourTool provides an intuitive way to edit labelmap segmentations
@@ -191,7 +196,7 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
     const activeSeg = segmentation.getActiveSegmentation(viewportId);
 
     if (!activeSeg) {
-      console.log('No active segmentation detected');
+      cs3dLogger.info('No active segmentation detected');
       return false;
     }
 
