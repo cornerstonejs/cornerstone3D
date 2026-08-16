@@ -10,6 +10,11 @@ import {
   utilities,
 } from '@cornerstonejs/tools';
 import { registerInterpolationWorker } from '../registerWorker';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'labelmapInterpolation.utilities.interpolateLabelmap'
+);
 
 type MorphologicalContourInterpolationOptions = {
   label?: number;
@@ -88,7 +93,7 @@ async function interpolateLabelmap({
 
     triggerWorkerProgress(eventTarget, 100);
   } catch (error) {
-    console.warn(
+    cs3dLogger.warn(
       'Warning: Failed to perform morphological contour interpolation',
       error
     );
