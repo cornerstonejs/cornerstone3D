@@ -16,6 +16,7 @@ export const {
   examplesLog,
   dicomConsistencyLog,
   imageConsistencyLog,
+  log,
 } = logging;
 export type Logger = logging.Logger;
 
