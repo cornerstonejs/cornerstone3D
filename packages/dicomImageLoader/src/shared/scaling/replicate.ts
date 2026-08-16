@@ -15,7 +15,6 @@ export default function replicate(src, dest) {
   for (let x = 0; x < columns; x++) {
     const xSrc = (x * (srcColumns - 1)) / (columns - 1);
     xSrc1Off[x] = Math.floor(xSrc) * samplesPerPixel;
-    // console.log("x src info", x, xSrc, xFrac[x]);
   }
 
   for (let y = 0; y < rows; y++) {

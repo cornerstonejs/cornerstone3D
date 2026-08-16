@@ -97,7 +97,6 @@ async function decodeAsync(compressedImageFrame: ByteArray, imageInfo) {
     );
     frameInfo.width = width;
     frameInfo.height = height;
-    // console.log(`Decoded sub-resolution of size: ${width} x ${height}`);
   }
   // get the decoded pixels
   const decodedBufferInWASM = decoder.getDecodedBuffer();
