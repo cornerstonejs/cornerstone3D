@@ -7,6 +7,9 @@ import {
   addTool,
 } from '@cornerstonejs/tools';
 import ONNXSegmentationController from './ONNXSegmentationController';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.aiLog.getLogger('MarkerLabelmapTool');
 
 /**
  * Represents a tool used for segment selection and AI-assisted segmentation.
@@ -65,7 +68,7 @@ class MarkerLabelmapTool extends LabelmapBaseTool {
     ];
     const toolGroup = this._getToolGroupId();
     if (!toolGroup) {
-      console.debug(
+      cs3dLogger.debug(
         `Tool group not found for tool: ${MarkerLabelmapTool.toolName}`
       );
       return false;
@@ -116,7 +119,7 @@ class MarkerLabelmapTool extends LabelmapBaseTool {
     const enabledElement = getEnabledElementByViewportId(sourceViewportId);
 
     if (!enabledElement) {
-      console.debug(
+      cs3dLogger.debug(
         'No enabled element found for viewportId:',
         sourceViewportId
       );
@@ -139,7 +142,7 @@ class MarkerLabelmapTool extends LabelmapBaseTool {
     // Get tool group
     const toolGroup = this._getToolGroupId();
     if (!toolGroup) {
-      console.debug(`Tool group not found`);
+      cs3dLogger.debug(`Tool group not found`);
       return;
     }
 

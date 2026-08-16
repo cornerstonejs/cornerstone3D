@@ -21,6 +21,9 @@ const { fillInsideCircle } = strategies;
 // @ts-ignore
 import ort from 'onnxruntime-web/webgpu';
 import { vec3 } from 'gl-matrix';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.aiLog.getLogger('ONNXSegmentationController');
 
 const { annotation } = cornerstoneTools;
 const { state: annotationState } = annotation;
@@ -219,7 +222,7 @@ export default class ONNXSegmentationController {
   protected viewport;
   protected excludeTool = ONNXSegmentationController.MarkerExclude;
   protected currentImage;
-  private listeners = [console.log];
+  private listeners = [cs3dLogger.info];
   protected desiredImage = {
     imageId: null,
     sampleImageId: null,
@@ -581,7 +584,7 @@ export default class ONNXSegmentationController {
       sliceIndex: currentSliceIndex + dir,
     });
     if (!viewRef || viewRef.sliceIndex === currentSliceIndex) {
-      console.warn('No next image in direction', dir, currentSliceIndex);
+      cs3dLogger.warn('No next image in direction', dir, currentSliceIndex);
       return;
     }
 
@@ -685,7 +688,7 @@ export default class ONNXSegmentationController {
         'isInAcquisitionPlane' in viewport &&
         !viewport.isInAcquisitionPlane()
       ) {
-        console.warn(
+        cs3dLogger.warn(
           'Non acquisition plane viewports and auto segment mode is not yet supported'
         );
         return;
@@ -1254,7 +1257,7 @@ export default class ONNXSegmentationController {
     }
     const storeData = (data.image_embeddings || data.embeddings)?.cpuData;
     if (!storeData) {
-      console.log('Unable to store data', data);
+      cs3dLogger.info('Unable to store data', data);
       return;
     }
     const writeData = new Float32Array(storeData);
