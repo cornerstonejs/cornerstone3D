@@ -8,6 +8,12 @@ import getPixelDataTypeFromMinMax from '../shared/getPixelDataTypeFromMinMax';
  * min and max values
  */
 function setPixelDataType(imageFrame) {
+  // Skip re-typing if already Float32Array to prevent downgrading to
+  // Uint8Array via getPixelDataTypeFromMinMax. See #2706.
+  if (imageFrame.pixelData instanceof Float32Array) {
+    return;
+  }
+
   const minValue = imageFrame.smallestPixelValue;
   const maxValue = imageFrame.largestPixelValue;
 
