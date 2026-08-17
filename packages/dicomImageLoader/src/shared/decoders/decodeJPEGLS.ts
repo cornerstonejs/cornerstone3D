@@ -10,10 +10,9 @@ const charlsWasm = new URL(
   '@cornerstonejs/codec-charls/decodewasm',
   import.meta.url
 );
-import type { ByteArray } from 'dicom-parser';
 import type { WebWorkerDecodeConfig } from '../../types';
 import type { Types } from '@cornerstonejs/core';
-import isSignedPixelData from './isSignedPixelData';
+import getPixelData from './getPixelData';
 import { resolveWasmUrl, setWasmBasePathFromConfig } from '../wasmBasePath';
 
 const local: {
@@ -132,50 +131,6 @@ async function decodeAsync(
     // TODO: Copy to other codecs as well
     throw getExceptionMessage(error);
   }
-}
-
-function getPixelData(
-  frameInfo,
-  decodedBuffer: ByteArray,
-  signedFromMetadata: boolean
-) {
-  // Same guard as the JPEG 2000 path: color pixel data is unsigned whatever
-  // Pixel Representation claims (PS3.3 C.7.6.3.1.2), and reading it as signed
-  // makes the color conversion clamp every sample above 127 to 0
-  const signed = isSignedPixelData({
-    isSigned: signedFromMetadata,
-    componentCount: frameInfo.componentCount,
-  });
-
-  if (frameInfo.bitsPerSample > 8) {
-    if (signed) {
-      return new Int16Array(
-        decodedBuffer.buffer,
-        decodedBuffer.byteOffset,
-        decodedBuffer.byteLength / 2
-      );
-    }
-
-    return new Uint16Array(
-      decodedBuffer.buffer,
-      decodedBuffer.byteOffset,
-      decodedBuffer.byteLength / 2
-    );
-  }
-
-  if (signed) {
-    return new Int8Array(
-      decodedBuffer.buffer,
-      decodedBuffer.byteOffset,
-      decodedBuffer.byteLength
-    );
-  }
-
-  return new Uint8Array(
-    decodedBuffer.buffer,
-    decodedBuffer.byteOffset,
-    decodedBuffer.byteLength
-  );
 }
 
 export default decodeAsync;

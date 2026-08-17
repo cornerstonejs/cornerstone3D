@@ -23,8 +23,22 @@ describe('isSignedPixelData', () => {
     );
   });
 
+  it('accepts Pixel Representation reported as a number', () => {
+    expect(isSignedPixelData({ isSigned: 1, componentCount: 1 })).toBe(true);
+    expect(isSignedPixelData({ isSigned: 0, componentCount: 1 })).toBe(false);
+    expect(isSignedPixelData({ isSigned: 1, componentCount: 3 })).toBe(false);
+  });
+
+  it('treats any other signed value as unsigned', () => {
+    // Only true and 1 are claims of signedness; a codec reporting anything
+    // else is not telling us the samples are signed.
+    expect(isSignedPixelData({ isSigned: 2, componentCount: 1 })).toBe(false);
+    expect(isSignedPixelData({ isSigned: -1, componentCount: 1 })).toBe(false);
+  });
+
   it('does not throw on missing frame info', () => {
     expect(isSignedPixelData(undefined)).toBe(false);
     expect(isSignedPixelData({})).toBe(false);
+    expect(isSignedPixelData({ isSigned: true })).toBe(false);
   });
 });

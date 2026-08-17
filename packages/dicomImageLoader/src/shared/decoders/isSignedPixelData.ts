@@ -10,12 +10,19 @@
  * conversion copies into a Uint8ClampedArray, which clamps all of those to 0:
  * the bright fifth of the image turned black.
  *
+ * The signed flag is compared exactly rather than tested for truthiness: the
+ * WASM codecs report it as a boolean, DICOM metadata reports Pixel
+ * Representation as 0 or 1, and any other value is not a claim of signedness.
+ *
  * @param frameInfo - decoded frame info, as the codecs report it
  * @returns true only when the samples are both declared signed and grayscale
  */
-export default function isSignedPixelData(frameInfo: {
-  isSigned?: boolean;
+export default function isSignedPixelData(frameInfo?: {
+  isSigned?: boolean | number;
   componentCount?: number;
 }): boolean {
-  return !!frameInfo?.isSigned && frameInfo.componentCount === 1;
+  const declaredSigned =
+    frameInfo?.isSigned === true || frameInfo?.isSigned === 1;
+
+  return declaredSigned && frameInfo.componentCount === 1;
 }
