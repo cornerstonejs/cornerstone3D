@@ -4,7 +4,22 @@ export * as Enums from './enums';
 export { version } from './version';
 export * as metaData from './metaData';
 export * as utilities from './utilities';
+export * as safeFunctions from './safeFunctions';
 export * as displaySet from './displayset';
+export {
+  compileCondition,
+  compileTemplate,
+  compileValue,
+} from './safeFunctions';
+export type {
+  Classifier,
+  ClassifierRegistry,
+  CompiledPredicate,
+  CompiledValue,
+  NamedFacts,
+  SafeFunctionContext,
+  SafeFunctionSubject,
+} from './safeFunctions';
 export type {
   IDisplaySet,
   BaseDisplaySetOptions,
@@ -23,6 +38,16 @@ export type {
   SplitRuleCustomAttributesContext,
   InstanceGroup,
   ViewportTypeHint,
+  ClassifierName,
+  InstanceClassifier,
+  RawCondition,
+  RawValue,
+  RawSeriesFact,
+  RawCustomAttributes,
+  RawSplitRule,
+  RawDisplaySetSelector,
+  CreateDisplaySetSplitRulesOptions,
+  CompiledValueReader,
 } from './displayset';
 export {
   BaseDisplaySet,
@@ -34,6 +59,8 @@ export {
   registerDisplaySetMetadata,
   registerDisplaySetProviders,
   defaultDisplaySetSplitRules,
+  rawDisplaySetSelector,
+  createDisplaySetSplitRules,
   createDisplaySetFromGroup,
   isImageInstance,
   isVideoInstance,
@@ -42,6 +69,8 @@ export {
   getViewportTypesForRule,
   getPreferredViewportType,
   getViewportTypesForGroup,
+  isDisplayableViewportTypes,
+  NO_VIEWPORT_TYPE,
 } from './displayset';
 export type { CreateDisplaySetFromGroupOptions } from './displayset';
 export * as logging from './utilities/logging';

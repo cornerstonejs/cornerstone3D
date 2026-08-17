@@ -246,6 +246,9 @@ importers:
       husky:
         specifier: 9.1.7
         version: 9.1.7
+      immutability-helper:
+        specifier: 3.1.1
+        version: 3.1.1
       jasmine:
         specifier: 6.0.0
         version: 6.0.0
@@ -11486,6 +11489,12 @@ packages:
     resolution:
       {
         integrity: sha512-bc4NBHqOqSfRW7POMkHd51LvClaeMXpm8dx0e8oE2GORbq5aRK7Bxl4FyzVLdGtLmvLKL7BTDBG5ACQm4HWjTA==,
+      }
+
+  immutability-helper@3.1.1:
+    resolution:
+      {
+        integrity: sha512-Q0QaXjPjwIju/28TsugCHNEASwoCcJSyJV3uO1sOIQGI0jKgm9f41Lvz0DZj3n46cNCyAZTsEYoY4C2bVRUzyQ==,
       }
 
   import-fresh@3.3.1:
@@ -28241,6 +28250,8 @@ snapshots:
       file-type: 10.11.0
 
   immer@9.0.21: {}
+
+  immutability-helper@3.1.1: {}
 
   import-fresh@3.3.1:
     dependencies:

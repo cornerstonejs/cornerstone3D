@@ -8,6 +8,7 @@ import type { InstanceGroup, ViewportTypeHint } from './types';
 import {
   getPreferredViewportType,
   getViewportTypesForGroup,
+  isDisplayableViewportTypes,
 } from './viewportTypes';
 
 export type CreateDisplaySetFromGroupOptions = {
@@ -100,9 +101,12 @@ function applyCustomAttributes(
     }
   }
 
-  // Keep the preferred viewport attribute consistent if customAttributes
-  // overrode the allowed viewport types.
+  // Keep the attributes derived from viewportTypes consistent if
+  // customAttributes overrode the allowed viewport types.
   displaySet.preferredViewportType = getPreferredViewportType(
+    displaySet.viewportTypes
+  );
+  displaySet.isDisplayable = isDisplayableViewportTypes(
     displaySet.viewportTypes
   );
 }
@@ -133,7 +137,25 @@ export function createDisplaySetFromGroup(
   const first = instances[0];
   let displaySet: IDisplaySet;
 
-  if (
+  if (!isDisplayableViewportTypes(viewportTypes)) {
+    // Nothing can render this (the catch-all `unsupported` rule claimed it), so
+    // build the plain base shape rather than an image stack: an ImageStack would
+    // advertise frame-level `imageIds` for an object that has no frames. The
+    // SOP-level ids are still kept as `underlyingImageIds` so the display set
+    // remains resolvable from the instance's imageId, while the empty `imageIds`
+    // means anything that ignores `isDisplayable` renders nothing rather than
+    // something broken.
+    const underlyingImageIds = instances
+      .map((i) => i.imageId)
+      .filter(Boolean) as string[];
+    displaySet = new BaseDisplaySet({
+      displaySetId,
+      viewportTypes,
+      instances,
+      imageIds: [],
+      underlyingImageIds,
+    });
+  } else if (
     first &&
     (isVideoInstance(first) || isEcgInstance(first) || isWsiInstance(first))
   ) {

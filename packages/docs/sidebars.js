@@ -175,6 +175,9 @@ module.exports = {
             'concepts/cornerstone-metadata/display-sets',
           ],
         },
+        // Deliberately outside Metadata: the vocabulary is not about metadata,
+        // and display-set splitting is only its first consumer.
+        'concepts/safe-functions',
         {
           type: 'category',
           label: 'Progressive Loading',
