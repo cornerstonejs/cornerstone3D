@@ -419,10 +419,10 @@ importers:
         version: 1.0.19
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.8.0
+        specifier: 5.8.1
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.8.0
+        specifier: 5.8.1
         version: link:../tools
 
   packages/ai:
@@ -453,10 +453,10 @@ importers:
         version: 1.17.1
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.8.0
+        specifier: 5.8.1
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.8.0
+        specifier: 5.8.1
         version: link:../tools
 
   packages/codemods: {}
@@ -464,7 +464,7 @@ importers:
   packages/core:
     dependencies:
       '@cornerstonejs/utils':
-        specifier: 5.8.0
+        specifier: 5.8.1
         version: link:../utils
       '@kitware/vtk.js':
         specifier: 36.4.1
@@ -480,23 +480,23 @@ importers:
         version: 1.9.2
     devDependencies:
       '@cornerstonejs/metadata':
-        specifier: 5.8.0
+        specifier: 5.8.1
         version: link:../metadata
 
   packages/dicomImageLoader:
     dependencies:
       '@cornerstonejs/codec-charls':
-        specifier: 1.2.3
-        version: 1.2.3
+        specifier: 1.2.5
+        version: 1.2.5
       '@cornerstonejs/codec-libjpeg-turbo-8bit':
-        specifier: 1.2.2
-        version: 1.2.2
+        specifier: 1.2.4
+        version: 1.2.4
       '@cornerstonejs/codec-openjpeg':
-        specifier: 1.3.0
-        version: 1.3.0
+        specifier: 1.3.2
+        version: 1.3.2
       '@cornerstonejs/codec-openjph':
-        specifier: 2.4.7
-        version: 2.4.7
+        specifier: 2.4.9
+        version: 2.4.9
       comlink:
         specifier: 4.4.2
         version: 4.4.2
@@ -514,10 +514,10 @@ importers:
         version: 9.0.1
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.8.0
+        specifier: 5.8.1
         version: link:../core
       '@cornerstonejs/metadata':
-        specifier: 5.8.0
+        specifier: 5.8.1
         version: link:../metadata
 
   packages/docs:
@@ -615,10 +615,10 @@ importers:
         version: 1.0.0-b.165
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.8.0
+        specifier: 5.8.1
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.8.0
+        specifier: 5.8.1
         version: link:../tools
 
   packages/metadata:
@@ -627,7 +627,7 @@ importers:
         specifier: 1.0.3
         version: 1.0.3
       '@cornerstonejs/utils':
-        specifier: 5.8.0
+        specifier: 5.8.1
         version: link:../utils
       dcmjs:
         specifier: 0.52.0
@@ -643,7 +643,7 @@ importers:
         version: 0.6.9
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.8.0
+        specifier: 5.8.1
         version: link:../core
 
   packages/polymorphic-segmentation:
@@ -656,10 +656,10 @@ importers:
         version: 36.4.1(autoprefixer@10.4.21(postcss@8.5.26))(wslink@2.5.0)
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.8.0
+        specifier: 5.8.1
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.8.0
+        specifier: 5.8.1
         version: link:../tools
 
   packages/tools:
@@ -696,7 +696,7 @@ importers:
         version: 4.4.2
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.8.0
+        specifier: 5.8.1
         version: link:../core
       canvas:
         specifier: 3.2.0
@@ -2070,10 +2070,24 @@ packages:
       }
     engines: { node: '>=0.14' }
 
+  '@cornerstonejs/codec-charls@1.2.5':
+    resolution:
+      {
+        integrity: sha512-BoENE2cXfzQ2RMxPfMMJxyv7E78iErTCB8b8lod/qv3dsYfCmSOUQKiRsuOZJM24JrjCFnyzbkxhAnF8gAKQnQ==,
+      }
+    engines: { node: '>=0.14' }
+
   '@cornerstonejs/codec-libjpeg-turbo-8bit@1.2.2':
     resolution:
       {
         integrity: sha512-aAUMK2958YNpOb/7G6e2/aG7hExTiFTASlMt/v90XA0pRHdWiNg5ny4S5SAju0FbIw4zcMnR0qfY+yW3VG2ivg==,
+      }
+    engines: { node: '>=0.14' }
+
+  '@cornerstonejs/codec-libjpeg-turbo-8bit@1.2.4':
+    resolution:
+      {
+        integrity: sha512-k5e2/EjE9gV7dkg2x3CzId6mp6P7tTya/AmnLzbN3fZTW6skTMrOTJfqowgGQBzX7styLdcsnjlqwEVqeqaaHQ==,
       }
     engines: { node: '>=0.14' }
 
@@ -2084,10 +2098,24 @@ packages:
       }
     engines: { node: '>=0.14' }
 
+  '@cornerstonejs/codec-openjpeg@1.3.2':
+    resolution:
+      {
+        integrity: sha512-IsvhGRZ/3LzoNQFyAsKKzPw/S769b9JrKhpufU8uEEalOBn+D1OLetzZ48pvpbwxR4J7ZFrnK0FBIYtl8Hdt9Q==,
+      }
+    engines: { node: '>=0.14' }
+
   '@cornerstonejs/codec-openjph@2.4.7':
     resolution:
       {
         integrity: sha512-qvP4q4JDib7mi9r7LqKOwqz7YZ8gjtDX4ZCezeYf8+eb7MBXCz5uXAMeVF3yz9Axw4XiIMdB/pqXkm8tqCl13w==,
+      }
+    engines: { node: '>=0.14' }
+
+  '@cornerstonejs/codec-openjph@2.4.9':
+    resolution:
+      {
+        integrity: sha512-iUGvF8r4SMHFrHGjwhNsTlHDPm+fIcGw3fUYm4vzhsf2J6VR9DqHtynXwUVOCBMSG9YTyWkcsD4db++0kMffMw==,
       }
     engines: { node: '>=0.14' }
 
@@ -21364,11 +21392,19 @@ snapshots:
 
   '@cornerstonejs/codec-charls@1.2.3': {}
 
+  '@cornerstonejs/codec-charls@1.2.5': {}
+
   '@cornerstonejs/codec-libjpeg-turbo-8bit@1.2.2': {}
+
+  '@cornerstonejs/codec-libjpeg-turbo-8bit@1.2.4': {}
 
   '@cornerstonejs/codec-openjpeg@1.3.0': {}
 
+  '@cornerstonejs/codec-openjpeg@1.3.2': {}
+
   '@cornerstonejs/codec-openjph@2.4.7': {}
+
+  '@cornerstonejs/codec-openjph@2.4.9': {}
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
