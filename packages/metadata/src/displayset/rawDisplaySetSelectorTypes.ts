@@ -46,6 +46,16 @@ export type RawCondition =
   /** Membership test against the attribute's value coerced to a string. */
   | { attribute: string; in: (string | number | boolean)[] }
   | { attribute: string; notIn: (string | number | boolean)[] }
+  /**
+   * Substring test against the attribute's value coerced to a string. Case
+   * sensitive unless `ignoreCase` is set. False when the attribute is absent.
+   *
+   * Site rules routinely key off free-text descriptions ("does SeriesDescription
+   * mention flow?"), which no equality test can express.
+   */
+  | { attribute: string; contains: string; ignoreCase?: boolean }
+  /** True when the attribute's value contains **any** of these substrings. */
+  | { attribute: string; containsAny: string[]; ignoreCase?: boolean }
   /** Numeric comparison; false when the attribute is not a finite number. */
   | { attribute: string; greaterThan: number }
   | { attribute: string; lessThan: number }
@@ -73,6 +83,16 @@ export type RawValue =
     }
   /** Yield the boolean result of a condition. */
   | { condition: RawCondition }
+  /**
+   * Yield a string built by substituting `{AttributeName}` placeholders with the
+   * instance's values, e.g. `{ template: 'US series {InstanceNumber}' }`. An
+   * absent attribute substitutes to an empty string. Use `\{` for a literal
+   * brace.
+   *
+   * Substitution is the only operation - there is no expression syntax, so a
+   * template can never be a route to evaluated code.
+   */
+  | { template: string }
   /**
    * Yield one string built from several values, e.g.
    * `{ join: '&', parts: [{ label: 'rows', attribute: 'Rows', bucket: 64 }] }`
@@ -153,6 +173,12 @@ export type RawSplitRule = {
    * without changing other rules' keys.
    */
   id: string;
+  /**
+   * Human-readable explanation of what this rule is for. Part of the rule data
+   * rather than a code comment so a UI that lets a user inspect or toggle rules
+   * can read it from the selector itself instead of maintaining its own copy.
+   */
+  description?: string;
   /** Allowed viewport types; index 0 is preferred. */
   viewportTypes?: string[];
   /** Facts derived from the whole series and read back via `{ seriesFact }`. */

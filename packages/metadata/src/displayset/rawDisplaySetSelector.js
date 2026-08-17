@@ -97,6 +97,10 @@ const IS_RENDERABLE_IMAGE = {
 export const rawDisplaySetSelector = [
   {
     id: 'video',
+    description:
+      'Instances encoded with a video transfer syntax, or a dedicated video SOP ' +
+      'class, or a long multi-frame secondary capture. One display set per ' +
+      'instance, shown on a video viewport.',
     viewportTypes: ['video'],
     matches: { classifier: 'video' },
     groupBy: ['SOPInstanceUID'],
@@ -104,6 +108,9 @@ export const rawDisplaySetSelector = [
 
   {
     id: 'ecg',
+    description:
+      'ECG / waveform SOP classes. One display set per instance, shown on a ' +
+      'waveform viewport rather than an image viewport.',
     viewportTypes: ['ecg'],
     matches: { classifier: 'ecg' },
     groupBy: ['SOPInstanceUID'],
@@ -111,6 +118,9 @@ export const rawDisplaySetSelector = [
 
   {
     id: 'wholeslide',
+    description:
+      'VL Whole Slide Microscopy (or modality SM). All pyramid levels of the ' +
+      'series form a single whole-slide display set.',
     viewportTypes: ['wholeslide'],
     // All microscopy levels of a series form a single whole-slide display set.
     matches: { classifier: 'wsi' },
@@ -119,6 +129,10 @@ export const rawDisplaySetSelector = [
 
   {
     id: 'singleImageModality',
+    description:
+      'CR / DX / MG, which acquire one image per instance. Split within the ' +
+      'series by a coarse image-size bucket so differently sized views (e.g. ' +
+      'mammography projections) become separate stacks.',
     viewportTypes: ['stack'],
     matches: {
       all: [
@@ -145,6 +159,9 @@ export const rawDisplaySetSelector = [
 
   {
     id: 'multiFrame',
+    description:
+      'Multi-frame instances that carry a slice location - a cine clip. One ' +
+      'display set per instance, flagged isClip with its frame count.',
     viewportTypes: ['stack'],
     // Assumes a homogeneous series: samples instances[0] for NumberOfFrames /
     // SliceLocation. The `SliceLocation` presence guard mirrors OHIF - a
@@ -186,6 +203,10 @@ export const rawDisplaySetSelector = [
    */
   {
     id: 'mixedDimensionalityBValue',
+    description:
+      'Diffusion MR that mixes 4D b-value frames with trailing frames that have ' +
+      'none. The undefined-b-value frames are not part of the 4D set, so they ' +
+      'split off - otherwise 4D rendering is applied to the 3D portion.',
     // Both subgroups are multi-slice MR; default them to MPR (volume) like any
     // volumetric MR series. This rule matches before `volume3d`, so listing
     // stack first here would regress the defined-b-value subgroup to a stack.
@@ -211,6 +232,9 @@ export const rawDisplaySetSelector = [
 
   {
     id: 'volume3d',
+    description:
+      'Multi-slice CT / MR / PT / NM, which reconstruct into a volume. Defaults ' +
+      'to MPR, with 3D and stack also allowed.',
     // Default volumetric series to MPR (volume); 3D is an extra allowed type.
     viewportTypes: ['volume', 'volume3d', 'stack'],
     // Assumes a homogeneous series: samples instances[0].Modality. A
@@ -233,6 +257,9 @@ export const rawDisplaySetSelector = [
 
   {
     id: 'defaultImageRule',
+    description:
+      'Fallback for any remaining renderable image. Grouped one display set per ' +
+      'series.',
     viewportTypes: ['stack', 'volume', 'volume3d'],
     matches: IS_RENDERABLE_IMAGE,
   },
@@ -255,6 +282,11 @@ export const rawDisplaySetSelector = [
    */
   {
     id: 'unsupported',
+    description:
+      'Catch-all for objects nothing can render (SEG, RTSTRUCT, RTDOSE, SR, ' +
+      'PDF, presentation states, or an image whose Rows have not loaded). ' +
+      'Produces a display set marked isDisplayable: false so the object is ' +
+      'surfaced rather than silently dropped. Must stay last.',
     viewportTypes: [NO_VIEWPORT_TYPE],
     // No `matches`: claims whatever is left.
     groupBy: ['SeriesInstanceUID', 'SOPInstanceUID'],
@@ -427,6 +459,26 @@ function compileAttributeCondition(condition) {
       return !denied.has(String(single));
     };
   }
+  if ('contains' in condition || 'containsAny' in condition) {
+    const needles = (
+      'contains' in condition ? [condition.contains] : condition.containsAny
+    ).map((needle) =>
+      condition.ignoreCase ? String(needle).toLowerCase() : String(needle)
+    );
+    return (instance) => {
+      const value = instance[attribute];
+      if (isAbsent(value)) {
+        return false;
+      }
+      const haystackRaw = String(
+        Array.isArray(value) ? value.join(' ') : value
+      );
+      const haystack = condition.ignoreCase
+        ? haystackRaw.toLowerCase()
+        : haystackRaw;
+      return needles.some((needle) => haystack.includes(needle));
+    };
+  }
   if ('greaterThan' in condition) {
     const bound = condition.greaterThan;
     return (instance) => {
@@ -443,6 +495,73 @@ function compileAttributeCondition(condition) {
   }
 
   return invalid(`no operator for attribute "${attribute}"`, condition);
+}
+
+/**
+ * Compiles a `{ template: 'text {Attribute} more' }` value into a reader that
+ * substitutes each `{AttributeName}` with the instance's value.
+ *
+ * Parsed once into literal/placeholder segments rather than re-scanned per
+ * instance. Substitution is all it does - there is no arithmetic or expression
+ * syntax - so a template is never a route to evaluated code. `\{` escapes a
+ * literal brace; an absent attribute substitutes an empty string.
+ *
+ * @param {string} template
+ * @returns {(instance: NaturalizedInstance) => string}
+ */
+function compileTemplate(template) {
+  if (typeof template !== 'string') {
+    invalid('template must be a string', template);
+  }
+
+  /** @type {({ literal: string } | { attribute: string })[]} */
+  const segments = [];
+  let literal = '';
+
+  for (let i = 0; i < template.length; i++) {
+    const char = template[i];
+
+    if (char === '\\' && (template[i + 1] === '{' || template[i + 1] === '}')) {
+      literal += template[i + 1];
+      i++;
+      continue;
+    }
+
+    if (char !== '{') {
+      literal += char;
+      continue;
+    }
+
+    const end = template.indexOf('}', i + 1);
+    if (end === -1) {
+      invalid('template has an unclosed "{"', template);
+    }
+    const attribute = template.slice(i + 1, end).trim();
+    if (!attribute) {
+      invalid('template has an empty "{}" placeholder', template);
+    }
+    if (literal) {
+      segments.push({ literal });
+      literal = '';
+    }
+    segments.push({ attribute });
+    i = end;
+  }
+
+  if (literal) {
+    segments.push({ literal });
+  }
+
+  return (instance) =>
+    segments
+      .map((segment) => {
+        if ('literal' in segment) {
+          return segment.literal;
+        }
+        const value = instance[segment.attribute];
+        return isAbsent(value) ? '' : String(value);
+      })
+      .join('');
 }
 
 /**
@@ -463,6 +582,10 @@ function compileValue(value, classifiers) {
 
   if ('condition' in value) {
     return compileCondition(value.condition, classifiers);
+  }
+
+  if ('template' in value) {
+    return compileTemplate(value.template);
   }
 
   if ('join' in value) {

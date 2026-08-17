@@ -488,6 +488,113 @@ describe('createDisplaySetSplitRules - the condition vocabulary', () => {
     expect(claimed({ classifier: 'image' })).toBe('probe');
     expect(claimed({ classifier: 'video' })).toBe('rest');
   });
+
+  it('supports contains, case sensitive by default', () => {
+    const description = { SeriesDescription: '4D Flow SAX' };
+    expect(
+      claimed({ attribute: 'SeriesDescription', contains: 'Flow' }, description)
+    ).toBe('probe');
+    // Case matters unless asked otherwise - a case-insensitive 'de' would sweep
+    // in far more than delayed-enhancement series.
+    expect(
+      claimed({ attribute: 'SeriesDescription', contains: 'flow' }, description)
+    ).toBe('rest');
+    expect(
+      claimed(
+        {
+          attribute: 'SeriesDescription',
+          contains: 'flow',
+          ignoreCase: true,
+        },
+        description
+      )
+    ).toBe('probe');
+  });
+
+  it('supports containsAny', () => {
+    const description = { SeriesDescription: 'PSIR LGE stack' };
+    expect(
+      claimed(
+        { attribute: 'SeriesDescription', containsAny: ['LGE', 'MAG'] },
+        description
+      )
+    ).toBe('probe');
+    expect(
+      claimed(
+        { attribute: 'SeriesDescription', containsAny: ['T2', 'CINE'] },
+        description
+      )
+    ).toBe('rest');
+  });
+
+  it('never matches contains on an absent attribute', () => {
+    expect(claimed({ attribute: 'SeriesDescription', contains: 'flow' })).toBe(
+      'rest'
+    );
+  });
+});
+
+describe('createDisplaySetSplitRules - templates', () => {
+  const readTemplate = (template: string, overrides = {}) => {
+    const rules = createDisplaySetSplitRules([
+      {
+        id: 'templated',
+        customAttributes: { fromFirstInstance: { label: { template } } },
+      } as never,
+    ]);
+    const inst = instance(overrides);
+    return rules[0].customAttributes?.(
+      { instance: inst },
+      { instances: [inst] }
+    ).label;
+  };
+
+  it('substitutes attribute placeholders', () => {
+    expect(
+      readTemplate('US series {InstanceNumber}', { InstanceNumber: 7 })
+    ).toBe('US series 7');
+  });
+
+  it('substitutes several placeholders and keeps the literals', () => {
+    expect(
+      readTemplate('{Modality}/{SeriesDescription} end', {
+        SeriesDescription: 'SAX',
+      })
+    ).toBe('CT/SAX end');
+  });
+
+  it('substitutes an absent attribute as an empty string', () => {
+    expect(readTemplate('[{ImageComments}]')).toBe('[]');
+  });
+
+  it('honours escaped braces', () => {
+    expect(readTemplate('\\{literal\\} {Modality}')).toBe('{literal} CT');
+  });
+
+  it('rejects an unclosed or empty placeholder at compile time', () => {
+    expect(() => readTemplate('{Modality')).toThrow(/unclosed/);
+    expect(() => readTemplate('{}')).toThrow(/empty/);
+  });
+});
+
+describe('rawDisplaySetSelector - rule metadata', () => {
+  it('gives every standard rule a description a UI can display', () => {
+    // A rules UI reads the explanation from the rule itself rather than keeping
+    // its own copy, so a rule without one shows up as blank.
+    const undocumented = rawDisplaySetSelector.filter(
+      (rule) => !rule.description
+    );
+    expect(undocumented.map((rule) => rule.id)).toEqual([]);
+  });
+
+  it('keeps descriptions out of the compiled rules', () => {
+    // The split engine has no use for prose; it should not end up in the
+    // compiled predicate objects.
+    const compiled = createDisplaySetSplitRules(rawDisplaySetSelector);
+    expect(compiled.some((rule) => 'description' in (rule as object))).toBe(
+      false
+    );
+  });
 });
 
 describe('createDisplaySetSplitRules - series facts', () => {
