@@ -17,6 +17,8 @@ import getLineSegmentIntersectionsIndexes from './getLineSegmentIntersectionsInd
 import getLineSegmentIntersectionsCoordinates from './getLineSegmentIntersectionsCoordinates';
 import getClosestLineSegmentIntersection from './getClosestLineSegmentIntersection';
 import getSubPixelSpacingAndXYDirections from './getSubPixelSpacingAndXYDirections';
+import getIntersectionIterator from './getIntersectionIterator';
+import computeEffectiveVoxelSpacing from './computeEffectiveVoxelSpacing';
 import pointsAreWithinCloseContourProximity from './pointsAreWithinCloseContourProximity';
 import addCanvasPointsToArray from './addCanvasPointsToArray';
 import pointCanProjectOnLine from './pointCanProjectOnLine';
@@ -24,6 +26,7 @@ import { isPointInsidePolyline3D } from './isPointInsidePolyline3D';
 import { projectTo2D } from './projectTo2D';
 import convexHull from './convexHull';
 import arePolylinesIdentical from './arePolylinesIdentical';
+import getScanLineIntersections from './getScanlineIntersections';
 
 export {
   isClosed,
@@ -42,6 +45,8 @@ export {
   getLineSegmentIntersectionsCoordinates,
   getClosestLineSegmentIntersection,
   getSubPixelSpacingAndXYDirections,
+  getIntersectionIterator,
+  computeEffectiveVoxelSpacing,
   pointsAreWithinCloseContourProximity,
   addCanvasPointsToArray,
   pointCanProjectOnLine,
@@ -52,4 +57,5 @@ export {
   projectTo2D,
   convexHull,
   arePolylinesIdentical,
+  getScanLineIntersections,
 };
