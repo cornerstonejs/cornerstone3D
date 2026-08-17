@@ -1,20 +1,27 @@
 /**
- * System-level location of the WebAssembly binaries Cornerstone loads at
- * runtime.
+ * Where Cornerstone loads its WebAssembly binaries from.
  *
- * The codec binaries the DICOM image loader decodes with are the reason this
- * exists. Each decoder resolves its binary against a bare
- * `@cornerstonejs/codec-...` specifier, which bundlers do not rewrite, so a
- * bundled application copies the binaries somewhere it serves and names that
- * directory once — `init({ wasmBasePath })` on the loader, see
- * `LoaderOptions.wasmBasePath`. That option is recorded here so it is not
- * private to the loader: any package that has to locate a wasm binary honours
- * the same directory, which is how `@cornerstonejs/ai` finds the ONNX Runtime
- * binaries (see `getOrtWasmPaths`).
+ * A wasm binary cannot be located the way a bundled asset is. The usual
+ * `new URL(<specifier>, import.meta.url)` only works when the bundler resolves,
+ * emits and hashes the file, and several of the binaries Cornerstone needs
+ * cannot be reached that way: the decoders name their codecs with bare
+ * `@cornerstonejs/codec-...` specifiers, which bundlers do not rewrite inside
+ * `new URL(...)`, and `onnxruntime-web@1.17` publishes only JavaScript entry
+ * points in its `exports` map. An application therefore copies those binaries
+ * somewhere it serves and *declares* where they are.
  *
- * It is deliberately one directory for every binary rather than a path per
- * consumer — applications serve them all out of a single place.
+ * Declaring it once is the point of `wasmBasePath`: one directory holding every
+ * binary, set through `init({ wasmBasePath })` on
+ * `@cornerstonejs/dicom-image-loader` (see `LoaderOptions.wasmBasePath`) and
+ * recorded here rather than privately in the loader, so that every package
+ * locating a binary honours the same directory.
+ *
+ * When nothing declares one, each set of binaries falls back to the standard
+ * directory its owner copies them into, resolved against the application rather
+ * than against the current document — see `resolveApplicationUrl` for why that
+ * distinction is the whole point.
  */
+import resolveApplicationUrl from './resolveApplicationUrl';
 
 /** Directory every wasm binary is loaded from, or undefined for the default. */
 let wasmBasePath: string | undefined;
@@ -33,4 +40,27 @@ export function setWasmBasePath(basePath?: string): void {
 /** The configured wasm directory, or undefined when nothing has set one. */
 export function getWasmBasePath(): string | undefined {
   return wasmBasePath;
+}
+
+/**
+ * Absolute URL of the directory a set of wasm binaries loads from.
+ *
+ * @param defaultDirectory - directory to use when nothing has declared one: the
+ *   standard location its owner copies the binaries into, e.g. `ort/` for the
+ *   ONNX Runtime. Both it and a configured `wasmBasePath` are resolved the same
+ *   way — relative to the application, or to the server root when absolute, or
+ *   used as given when a full URL.
+ * @returns the directory as an absolute URL with a trailing slash, or the
+ *   unresolved directory when there is nothing to resolve it against (a
+ *   non-browser context).
+ */
+export function resolveWasmBasePath(defaultDirectory = ''): string {
+  const directory = wasmBasePath || defaultDirectory;
+
+  // A trailing slash, so the value resolves as a directory rather than having
+  // its last segment discarded as a file name. An empty directory stays empty:
+  // it resolves to the application's base itself, not to the server root.
+  return resolveApplicationUrl(
+    !directory || directory.endsWith('/') ? directory : `${directory}/`
+  );
 }
