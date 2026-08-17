@@ -350,29 +350,31 @@ const groups = splitImageIdsBySplitRules(imageIds, {
 });
 ```
 
-### Why the compiled predicates are "safe functions"
+### What a rule is built from
 
-The compiler assembles predicates from a **closed vocabulary** — the condition,
-value, series-fact and custom-attribute forms in `rawDisplaySetSelectorTypes.ts`.
-There is no `eval`, no `new Function`, and no other path from selector data to
-executed code. That is what makes it safe to load a selector from a config file,
-an HTTP response, or an application's customization layer: the worst a malformed
-selector can do is throw at compile time, which it does eagerly, naming the
-offending fragment, rather than midway through splitting a study.
+The conditions and values inside a rule — `{ attribute: 'Modality', in: [...] }`,
+`{ classifier: 'video' }`, `{ attribute: 'Rows', bucket: 64 }`,
+`{ template: '...' }` — are not defined by this module. They are the general
+[safe function](../safe-functions.md) vocabulary: a closed set of JSON forms
+compiled into predicates without `eval`, deliberately independent of display
+sets so hanging protocols and anything else that would otherwise hand-write
+matching code can share it. **See [Safe Functions](../safe-functions.md) for the
+full condition and value reference**, the named-classifier extension point, and
+why a malformed definition throws eagerly with the offending fragment inlined.
 
-The vocabulary in brief:
+What this module contributes is the _rule shape_ those conditions and values sit
+in — `matches`, `groupBy`, `runBy`, `series` facts, `compareInstances`,
+`customAttributes` — plus the built-in instance classifiers (`image`, `video`,
+`ecg`, `wsi`) and the default selector.
 
-| Raw form                                                                 | Compiles to                                                      |
-| ------------------------------------------------------------------------ | ---------------------------------------------------------------- |
-| `{ classifier: 'video' }`                                                | a named instance classifier (`image`, `video`, `ecg`, `wsi`)     |
-| `{ attribute: 'Modality', in: ['CT', 'MR'] }`                            | attribute test — `exists`/`absent`/`equals`/`in`/`greaterThan`/… |
-| `{ attribute: 'SeriesDescription', contains: 'flow', ignoreCase: true }` | substring test (`containsAny` for a list)                        |
-| `{ all: [...] }`, `{ any: [...] }`, `{ not: }`                           | boolean composition                                              |
-| `{ seriesFact: 'mixedBValue' }`                                          | reads a fact this rule's `series` list derived                   |
-| `{ attribute: 'Rows', bucket: 64 }`                                      | a `groupBy` part: `Math.round(Rows / 64)`                        |
-| `{ join: '&', parts: [...] }`                                            | several attributes as one `groupBy` part (`rows=8&cols=8`)       |
-| `{ template: 'US series {InstanceNumber}' }`                             | a string built by substituting attributes                        |
-| `{ name, scope: 'mixed', when, gate }`                                   | a `series` hook — `first`/`every`/`some`/`mixed` over the series |
+| Rule field         | Built from                                                                                  |
+| ------------------ | ------------------------------------------------------------------------------------------- |
+| `matches`          | one condition — which instances this rule claims                                            |
+| `groupBy`          | a list of values — the bucket key each instance contributes                                 |
+| `runBy`            | one value — a change starts a new run within a bucket                                       |
+| `series`           | `{ name, scope, when, gate }` — a fact over the whole series, read back as `{ seriesFact }` |
+| `compareInstances` | `{ attribute, number, descending }` — instance order within a group                         |
+| `customAttributes` | literals, values read from the first instance, or a named preset                            |
 
 A rule also carries a `description`: the explanation lives in the rule data, not in
 a code comment, so a UI that lets a user inspect or toggle rules reads it from the
@@ -380,10 +382,6 @@ selector rather than keeping its own copy. The **Display Set Rules** example
 (`packages/core/examples/displaySetRules`) does exactly that — it lists every
 standard rule with a checkbox and its description, lets you paste a new rule as
 JSON, and re-splits the loaded series live.
-
-Attribute comparisons are deliberately tolerant of how naturalized DICOM arrives:
-values compare as strings, so `'30'` matches `30`; and `undefined`, `null` and
-`''` all count as absent, so an empty element never compares as a real `0`.
 
 Two rules from the defaults, in raw form:
 
@@ -450,8 +448,12 @@ its rule produces, so naming rules is what lets a selector be edited — reorder
 or a rule inserted — without changing the other rules' display set identities.
 
 When a classification genuinely cannot be expressed as data, register it by name
-rather than reaching for a function in the selector. This keeps the selector
-itself serializable:
+rather than reaching for a function in the selector — the
+[named extension](../safe-functions.md#named-extensions) point. This keeps the
+selector itself serializable. `createDisplaySetSplitRules` takes two registries:
+`classifiers`, which is the safe-function one, and `customAttributePresets`,
+which is specific to display sets because a preset returns display set
+attributes:
 
 ```js
 const splitRules = createDisplaySetSplitRules(mySelector, {
@@ -468,7 +470,11 @@ const splitRules = createDisplaySetSplitRules(mySelector, {
 
 A selector that uses named extensions is still shareable, but the _names_ become
 part of the contract: whatever compiles it must register the same names, or
-compilation throws.
+compilation throws. So does the _shape of the instance_ the host feeds the
+splitter — a rule can only key on attributes that are actually there, and one
+that references a missing attribute compiles cleanly and silently groups
+everything together. See
+[the subject is part of the contract](../safe-functions.md#the-subject-is-part-of-the-contract-too).
 
 ### How an application's customization layer fits
 

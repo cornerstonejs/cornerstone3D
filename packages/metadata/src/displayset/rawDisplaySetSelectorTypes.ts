@@ -1,4 +1,10 @@
 import type { NaturalizedInstance, RuleContext } from './types';
+import type {
+  Classifier,
+  ClassifierName,
+  RawCondition,
+  RawValue,
+} from '../safeFunctions';
 
 /**
  * Types for the **raw display set selector** - the serializable, data-shaped
@@ -10,99 +16,20 @@ import type { NaturalizedInstance, RuleContext } from './types';
  * client (e.g. OHIF, splitting a loaded series) can read the identical JSON and
  * get identical splits, instead of each re-implementing the rules.
  *
- * Everything here is plain JSON: objects, arrays, strings, numbers, booleans.
- * The behaviour a rule needs that JSON cannot express - "is this instance a
- * video?" - is referenced **by name** and resolved against a registry of
- * built-in (or caller-supplied) functions. That is what makes the compiled
- * predicates *safe functions*: they are assembled from a closed vocabulary, so
- * a selector can be loaded from a config file, an HTTP response, or an
- * application's customization layer without ever evaluating supplied code.
+ * The conditions and values a rule is built from are **not** defined here: they
+ * are the general {@link RawCondition} / {@link RawValue} safe-function
+ * vocabulary from `../safeFunctions`, which knows nothing about display sets.
+ * What this module adds is the rule shape that vocabulary is wrapped in -
+ * `matches`, `groupBy`, `runBy`, `series` facts, `customAttributes`.
  *
- * @see rawDisplaySetSelector.js for the default selector and the compiler.
+ * @see ../safeFunctions for the condition/value vocabulary and its compiler.
+ * @see rawDisplaySetSelector.js for the default selector and the rule compiler.
  */
 
-/** A named instance classifier, e.g. `'image'`, `'video'`, `'ecg'`, `'wsi'`. */
-export type ClassifierName = string;
+export type { ClassifierName, RawCondition, RawValue };
 
 /** Classifies a single instance. Registered under a {@link ClassifierName}. */
-export type InstanceClassifier = (instance: NaturalizedInstance) => boolean;
-
-/**
- * A condition over one instance (plus, for `seriesFact`, the facts this rule's
- * `series` hook derived). Exactly one form per object.
- */
-export type RawCondition =
-  /** True when the named classifier accepts the instance. */
-  | { classifier: ClassifierName }
-  /** True when the named series fact (see {@link RawSeriesFact}) is truthy. */
-  | { seriesFact: string }
-  /** True when the attribute is present (not `undefined` / `null` / `''`). */
-  | { attribute: string; exists: true }
-  /** True when the attribute is absent (`undefined` / `null` / `''`). */
-  | { attribute: string; absent: true }
-  /** Loose equality against the attribute's value coerced to a string. */
-  | { attribute: string; equals: string | number | boolean }
-  | { attribute: string; notEquals: string | number | boolean }
-  /** Membership test against the attribute's value coerced to a string. */
-  | { attribute: string; in: (string | number | boolean)[] }
-  | { attribute: string; notIn: (string | number | boolean)[] }
-  /**
-   * Substring test against the attribute's value coerced to a string. Case
-   * sensitive unless `ignoreCase` is set. False when the attribute is absent.
-   *
-   * Site rules routinely key off free-text descriptions ("does SeriesDescription
-   * mention flow?"), which no equality test can express.
-   */
-  | { attribute: string; contains: string; ignoreCase?: boolean }
-  /** True when the attribute's value contains **any** of these substrings. */
-  | { attribute: string; containsAny: string[]; ignoreCase?: boolean }
-  /** Numeric comparison; false when the attribute is not a finite number. */
-  | { attribute: string; greaterThan: number }
-  | { attribute: string; lessThan: number }
-  /** All / any / negation of nested conditions. `all: []` is true, `any: []` false. */
-  | { all: RawCondition[] }
-  | { any: RawCondition[] }
-  | { not: RawCondition };
-
-/**
- * A value read off an instance. Used wherever a rule needs a *value* rather
- * than a boolean: `groupBy` parts, `runBy`, and `customAttributes` sources.
- *
- * A bare string is shorthand for `{ attribute: <string> }`.
- */
-export type RawValue =
-  | string
-  | {
-      attribute: string;
-      /** Coerce to a number (`undefined` when not finite). */
-      number?: true;
-      /** Yield `true`/`false` for absent/present instead of the value. */
-      absent?: true;
-      /** Yield `Math.round(value / bucket)` - a deliberately fuzzy bucket. */
-      bucket?: number;
-    }
-  /** Yield the boolean result of a condition. */
-  | { condition: RawCondition }
-  /**
-   * Yield a string built by substituting `{AttributeName}` placeholders with the
-   * instance's values, e.g. `{ template: 'US series {InstanceNumber}' }`. An
-   * absent attribute substitutes to an empty string. Use `\{` for a literal
-   * brace.
-   *
-   * Substitution is the only operation - there is no expression syntax, so a
-   * template can never be a route to evaluated code.
-   */
-  | { template: string }
-  /**
-   * Yield one string built from several values, e.g.
-   * `{ join: '&', parts: [{ label: 'rows', attribute: 'Rows', bucket: 64 }] }`
-   * produces `rows=8`. Use when several attributes must form a *single*
-   * `groupBy` part.
-   */
-  | {
-      join: string;
-      parts: (RawValue & { label?: string })[];
-    };
+export type InstanceClassifier = Classifier<NaturalizedInstance>;
 
 /**
  * A fact derived once per rule from the whole series, read back by that rule's

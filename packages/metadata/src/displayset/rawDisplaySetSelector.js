@@ -18,11 +18,18 @@
  * the rules as data plus one compiler, both sides read the same selector and get
  * the same splits - nobody redefines anything.
  *
- * The compiled predicates are *safe* because they are assembled from a closed
- * vocabulary (see `rawDisplaySetSelectorTypes.ts`) rather than evaluated from
- * source: there is no `eval`, no `new Function`, and no other code path from
- * selector data to executed code. A selector can therefore be loaded from a
- * config file, an HTTP response, or an application's customization layer.
+ * The conditions and values a rule is built from are **not** defined here. They
+ * are the general safe-function vocabulary in `../safeFunctions`, which knows
+ * nothing about display sets and is meant to be shared with anything else that
+ * would otherwise hand-write matching code (hanging protocols, for one). This
+ * module is that vocabulary's first consumer: it contributes the rule shape
+ * (`matches`, `groupBy`, `runBy`, `series` facts, `customAttributes`), the
+ * built-in instance classifiers, and the default rules.
+ *
+ * The compiled predicates are *safe* because that vocabulary is closed: there is
+ * no `eval`, no `new Function`, and no other code path from selector data to
+ * executed code. A selector can therefore be loaded from a config file, an HTTP
+ * response, or an application's customization layer.
  *
  * Deliberately no dependency on any application service. Cornerstone knows
  * nothing about OHIF's `customizationService`, and must not: an application that
@@ -38,6 +45,7 @@ import { isImageInstance } from './isImageInstance';
 import { isVideoInstance } from './isVideoInstance';
 import { isWsiInstance } from './isWsiInstance';
 import { NO_VIEWPORT_TYPE } from './types';
+import { compileCondition, compileValue, toFinite } from '../safeFunctions';
 
 /**
  * @typedef {import('./rawDisplaySetSelectorTypes').RawCondition} RawCondition
@@ -297,61 +305,11 @@ export const rawDisplaySetSelector = [
 ];
 
 /**
- * True when a naturalized attribute value counts as absent. Naturalized DICOM
- * delivers an empty element as `null` or `''` as readily as `undefined`, and a
- * rule asking "does this instance have a b-value?" means all three.
- *
- * @param {unknown} value
- * @returns {boolean}
- */
-function isAbsent(value) {
-  return value === undefined || value === null || value === '';
-}
-
-/**
- * Finite numeric value of a naturalized attribute, or `undefined`.
- *
- * Deliberately not a bare `Number(...)`: that maps `null`, `''` and whitespace to
- * `0`, which would make an absent attribute compare as a real zero.
- *
- * @param {unknown} value
- * @returns {number | undefined}
- */
-function toFinite(value) {
-  if (isAbsent(value)) {
-    return undefined;
-  }
-  const numeric = Array.isArray(value) ? value[0] : value;
-  if (typeof numeric === 'boolean') {
-    return undefined;
-  }
-  const parsed = Number(numeric);
-  return Number.isFinite(parsed) ? parsed : undefined;
-}
-
-/**
- * Compares an attribute value against a literal from the selector.
- *
- * Compares as strings so `'30'` (an IS naturalized as a string) matches `30`
- * from JSON. Multi-valued attributes compare on their first value, which is what
- * the single-valued attributes these conditions target (Modality, SOPClassUID)
- * degrade to when a source delivers them as a one-element array.
- *
- * @param {unknown} value
- * @param {unknown} literal
- * @returns {boolean}
- */
-function looseEquals(value, literal) {
-  if (isAbsent(value)) {
-    return false;
-  }
-  const single = Array.isArray(value) ? value[0] : value;
-  return String(single) === String(literal);
-}
-
-/**
  * Throws with the offending fragment inlined - a selector is usually authored by
  * hand or shipped as config, so a mistake in it must name itself.
+ *
+ * Scoped to the *rule shape* this module defines. Mistakes inside a condition or
+ * value are reported by the safe-function compiler, which names itself instead.
  *
  * @param {string} message
  * @param {unknown} fragment
@@ -361,272 +319,6 @@ function invalid(message, fragment) {
   throw new Error(
     `Invalid raw display set selector: ${message}: ${JSON.stringify(fragment)}`
   );
-}
-
-/**
- * Compiles a {@link RawCondition} into a safe predicate.
- *
- * @param {RawCondition} condition
- * @param {Record<string, (instance: NaturalizedInstance) => boolean>} classifiers
- * @returns {(instance: NaturalizedInstance, context: RuleContext) => boolean}
- */
-function compileCondition(condition, classifiers) {
-  if (!condition || typeof condition !== 'object') {
-    invalid('condition must be an object', condition);
-  }
-
-  if ('all' in condition) {
-    const parts = condition.all.map((part) =>
-      compileCondition(part, classifiers)
-    );
-    return (instance, context) =>
-      parts.every((part) => part(instance, context));
-  }
-
-  if ('any' in condition) {
-    const parts = condition.any.map((part) =>
-      compileCondition(part, classifiers)
-    );
-    return (instance, context) => parts.some((part) => part(instance, context));
-  }
-
-  if ('not' in condition) {
-    const inner = compileCondition(condition.not, classifiers);
-    return (instance, context) => !inner(instance, context);
-  }
-
-  if ('classifier' in condition) {
-    const classifier = classifiers[condition.classifier];
-    if (typeof classifier !== 'function') {
-      invalid(`unknown classifier "${condition.classifier}"`, condition);
-    }
-    return (instance) => classifier(instance);
-  }
-
-  if ('seriesFact' in condition) {
-    const { seriesFact } = condition;
-    return (_instance, context) => Boolean(context?.series?.[seriesFact]);
-  }
-
-  if ('attribute' in condition) {
-    return compileAttributeCondition(condition);
-  }
-
-  return invalid('unrecognized condition', condition);
-}
-
-/**
- * Compiles the `{ attribute, <operator> }` family of conditions.
- *
- * @param {RawCondition & { attribute: string }} condition
- * @returns {(instance: NaturalizedInstance) => boolean}
- */
-function compileAttributeCondition(condition) {
-  const { attribute } = condition;
-
-  if (condition.exists === true) {
-    return (instance) => !isAbsent(instance[attribute]);
-  }
-  if (condition.absent === true) {
-    return (instance) => isAbsent(instance[attribute]);
-  }
-  if ('equals' in condition) {
-    return (instance) => looseEquals(instance[attribute], condition.equals);
-  }
-  if ('notEquals' in condition) {
-    return (instance) => !looseEquals(instance[attribute], condition.notEquals);
-  }
-  if ('in' in condition) {
-    // Compare as strings so the set works for both '1' and 1.
-    const allowed = new Set(condition.in.map((value) => String(value)));
-    return (instance) => {
-      const value = instance[attribute];
-      if (isAbsent(value)) {
-        return false;
-      }
-      const single = Array.isArray(value) ? value[0] : value;
-      return allowed.has(String(single));
-    };
-  }
-  if ('notIn' in condition) {
-    const denied = new Set(condition.notIn.map((value) => String(value)));
-    return (instance) => {
-      const value = instance[attribute];
-      if (isAbsent(value)) {
-        return true;
-      }
-      const single = Array.isArray(value) ? value[0] : value;
-      return !denied.has(String(single));
-    };
-  }
-  if ('contains' in condition || 'containsAny' in condition) {
-    const needles = (
-      'contains' in condition ? [condition.contains] : condition.containsAny
-    ).map((needle) =>
-      condition.ignoreCase ? String(needle).toLowerCase() : String(needle)
-    );
-    return (instance) => {
-      const value = instance[attribute];
-      if (isAbsent(value)) {
-        return false;
-      }
-      const haystackRaw = String(
-        Array.isArray(value) ? value.join(' ') : value
-      );
-      const haystack = condition.ignoreCase
-        ? haystackRaw.toLowerCase()
-        : haystackRaw;
-      return needles.some((needle) => haystack.includes(needle));
-    };
-  }
-  if ('greaterThan' in condition) {
-    const bound = condition.greaterThan;
-    return (instance) => {
-      const value = toFinite(instance[attribute]);
-      return value !== undefined && value > bound;
-    };
-  }
-  if ('lessThan' in condition) {
-    const bound = condition.lessThan;
-    return (instance) => {
-      const value = toFinite(instance[attribute]);
-      return value !== undefined && value < bound;
-    };
-  }
-
-  return invalid(`no operator for attribute "${attribute}"`, condition);
-}
-
-/**
- * Compiles a `{ template: 'text {Attribute} more' }` value into a reader that
- * substitutes each `{AttributeName}` with the instance's value.
- *
- * Parsed once into literal/placeholder segments rather than re-scanned per
- * instance. Substitution is all it does - there is no arithmetic or expression
- * syntax - so a template is never a route to evaluated code. `\{` escapes a
- * literal brace; an absent attribute substitutes an empty string.
- *
- * @param {string} template
- * @returns {(instance: NaturalizedInstance) => string}
- */
-function compileTemplate(template) {
-  if (typeof template !== 'string') {
-    invalid('template must be a string', template);
-  }
-
-  /** @type {({ literal: string } | { attribute: string })[]} */
-  const segments = [];
-  let literal = '';
-
-  for (let i = 0; i < template.length; i++) {
-    const char = template[i];
-
-    if (char === '\\' && (template[i + 1] === '{' || template[i + 1] === '}')) {
-      literal += template[i + 1];
-      i++;
-      continue;
-    }
-
-    if (char !== '{') {
-      literal += char;
-      continue;
-    }
-
-    const end = template.indexOf('}', i + 1);
-    if (end === -1) {
-      invalid('template has an unclosed "{"', template);
-    }
-    const attribute = template.slice(i + 1, end).trim();
-    if (!attribute) {
-      invalid('template has an empty "{}" placeholder', template);
-    }
-    if (literal) {
-      segments.push({ literal });
-      literal = '';
-    }
-    segments.push({ attribute });
-    i = end;
-  }
-
-  if (literal) {
-    segments.push({ literal });
-  }
-
-  return (instance) =>
-    segments
-      .map((segment) => {
-        if ('literal' in segment) {
-          return segment.literal;
-        }
-        const value = instance[segment.attribute];
-        return isAbsent(value) ? '' : String(value);
-      })
-      .join('');
-}
-
-/**
- * Compiles a {@link RawValue} into a safe value reader.
- *
- * @param {RawValue} value
- * @param {Record<string, (instance: NaturalizedInstance) => boolean>} classifiers
- * @returns {(instance: NaturalizedInstance, context: RuleContext) => unknown}
- */
-function compileValue(value, classifiers) {
-  if (typeof value === 'string') {
-    return (instance) => instance[value];
-  }
-
-  if (!value || typeof value !== 'object') {
-    invalid('value must be a string or an object', value);
-  }
-
-  if ('condition' in value) {
-    return compileCondition(value.condition, classifiers);
-  }
-
-  if ('template' in value) {
-    return compileTemplate(value.template);
-  }
-
-  if ('join' in value) {
-    const { join } = value;
-    if (!Array.isArray(value.parts) || !value.parts.length) {
-      invalid('join requires a non-empty parts array', value);
-    }
-    const parts = value.parts.map((part) => ({
-      label: part.label,
-      read: compileValue(part, classifiers),
-    }));
-    return (instance, context) =>
-      parts
-        .map(({ label, read }) => {
-          const read_ = read(instance, context);
-          return label === undefined ? String(read_) : `${label}=${read_}`;
-        })
-        .join(join);
-  }
-
-  if ('attribute' in value) {
-    const { attribute, bucket } = value;
-    if (value.absent === true) {
-      return (instance) => isAbsent(instance[attribute]);
-    }
-    if (bucket !== undefined) {
-      if (!Number.isFinite(bucket) || bucket === 0) {
-        invalid('bucket must be a non-zero finite number', value);
-      }
-      return (instance) => {
-        const numeric = toFinite(instance[attribute]);
-        return numeric === undefined ? undefined : Math.round(numeric / bucket);
-      };
-    }
-    if (value.number === true) {
-      return (instance) => toFinite(instance[attribute]);
-    }
-    return (instance) => instance[attribute];
-  }
-
-  return invalid('unrecognized value', value);
 }
 
 /**

@@ -4,7 +4,22 @@ export * as Enums from './enums';
 export { version } from './version';
 export * as metaData from './metaData';
 export * as utilities from './utilities';
+export * as safeFunctions from './safeFunctions';
 export * as displaySet from './displayset';
+export {
+  compileCondition,
+  compileTemplate,
+  compileValue,
+} from './safeFunctions';
+export type {
+  Classifier,
+  ClassifierRegistry,
+  CompiledPredicate,
+  CompiledValue,
+  NamedFacts,
+  SafeFunctionContext,
+  SafeFunctionSubject,
+} from './safeFunctions';
 export type {
   IDisplaySet,
   BaseDisplaySetOptions,

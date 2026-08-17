@@ -919,3 +919,87 @@ describe('createDisplaySetSplitRules - validation', () => {
     ).toThrow(/\{"classifier":"nope"\}/);
   });
 });
+
+describe('rawDisplaySetSelector - rules written as expressions', () => {
+  it('accepts a string expression as a rule matcher', () => {
+    // The whole point of the expression language: the condition reads as one
+    // line instead of a nested object tree, and still crosses the wire as JSON.
+    const rules = createDisplaySetSplitRules([
+      {
+        id: 'bigCt',
+        viewportTypes: ['stack'],
+        matches: "Modality === 'CT' && Rows > 256",
+      },
+      ...rawDisplaySetSelector,
+    ]);
+
+    expect(
+      ruleIdsFor([instance({ Rows: 512 }), instance({ Rows: 128 })], rules)
+    ).toEqual(['bigCt', 'volume3d']);
+  });
+
+  it('accepts the { expression } object form for the same condition', () => {
+    const rules = createDisplaySetSplitRules([
+      {
+        id: 'mg',
+        viewportTypes: ['stack'],
+        matches: { expression: "Modality in ['CR', 'DX', 'MG']" },
+      },
+      ...rawDisplaySetSelector,
+    ]);
+
+    expect(
+      ruleIdsFor([instance({ Modality: 'MG', Rows: 2294 })], rules)
+    ).toEqual(['mg']);
+  });
+
+  it('groups by a computed expression value', () => {
+    // In value position an expression yields its own result rather than a
+    // boolean, so it can produce a bucket key no attribute carries directly.
+    const rules = createDisplaySetSplitRules([
+      {
+        id: 'byLaterality',
+        viewportTypes: ['stack'],
+        matches: "Modality === 'MG'",
+        groupBy: [
+          'SeriesInstanceUID',
+          {
+            expression:
+              "ImageLaterality + '-' + (Rows > 2000 ? 'big' : 'small')",
+          },
+        ],
+      },
+      ...rawDisplaySetSelector,
+    ]);
+
+    const groups = groupInstancesBySplitRules(
+      [
+        instance({ Modality: 'MG', Rows: 2294, ImageLaterality: 'L' }),
+        instance({ Modality: 'MG', Rows: 2294, ImageLaterality: 'R' }),
+        instance({ Modality: 'MG', Rows: 1024, ImageLaterality: 'R' }),
+      ],
+      rules
+    );
+
+    expect(groups.length).toBe(3);
+    expect(
+      groups.every((group) => group.matchedRule.id === 'byLaterality')
+    ).toBe(true);
+  });
+
+  it('reports an expression syntax error at compile time', () => {
+    expect(() =>
+      createDisplaySetSplitRules([
+        { id: 'bad', matches: 'Modality ===' } as never,
+      ])
+    ).toThrow(/Modality ===/);
+  });
+
+  it('refuses prototype-chain access from an expression', () => {
+    expect(() =>
+      createDisplaySetSplitRules([
+        { id: 'evil', matches: 'instance.constructor' } as never,
+      ])
+    ).toThrow(/constructor/);
+  });
+});
