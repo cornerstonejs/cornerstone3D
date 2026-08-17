@@ -2,7 +2,6 @@ import type {
   LibJpegTurbo8Bit,
   OpenJpegModule,
 } from '@cornerstonejs/codec-libjpeg-turbo-8bit/dist/libjpegturbowasm_decode';
-import type { ByteArray } from 'dicom-parser';
 // @ts-ignore
 import libjpegTurboFactory from '@cornerstonejs/codec-libjpeg-turbo-8bit/decodewasmjs';
 
@@ -14,6 +13,7 @@ const libjpegTurboWasm = new URL(
 );
 import type { Types } from '@cornerstonejs/core';
 import type { LoaderDecodeOptions } from '../../types';
+import getPixelData from './getPixelData';
 import { resolveWasmUrl, setWasmBasePathFromConfig } from '../wasmBasePath';
 
 const local: {
@@ -105,22 +105,6 @@ async function decodeAsync(
     ...encodeOptions,
     ...encodedImageInfo,
   };
-}
-
-function getPixelData(frameInfo, decodedBuffer: ByteArray) {
-  if (frameInfo.isSigned) {
-    return new Int8Array(
-      decodedBuffer.buffer,
-      decodedBuffer.byteOffset,
-      decodedBuffer.byteLength
-    );
-  }
-
-  return new Uint8Array(
-    decodedBuffer.buffer,
-    decodedBuffer.byteOffset,
-    decodedBuffer.byteLength
-  );
 }
 
 const initialize = initLibjpegTurbo;
