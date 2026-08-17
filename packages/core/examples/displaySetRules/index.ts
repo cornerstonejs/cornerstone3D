@@ -12,6 +12,7 @@ import {
   type RawSplitRule,
   type SplitRule,
 } from '@cornerstonejs/metadata';
+import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   initDemo,
   setTitleAndDescription,
@@ -19,6 +20,7 @@ import {
   splitDisplaySetsFromImageIds,
   setCtTransferFunctionForVolumeActor,
   getLocalUrl,
+  addManipulationBindings,
   applyCustomizationUpdate,
   hasUpdateCommand,
 } from '../../../../utils/demo/helpers';
@@ -29,10 +31,28 @@ console.warn(
 );
 
 const { ViewportType, OrientationAxis } = Enums;
+const { ToolGroupManager, LengthTool } = cornerstoneTools;
 
 const renderingEngineId = 'displaySetRulesRenderingEngine';
+
+/**
+ * Two tool groups because the bindings differ: a 3D viewport rotates on the
+ * primary button where a 2D one scrolls frames. Both come from
+ * `addManipulationBindings`, so this example has the same controls as every
+ * other one rather than a set of its own.
+ */
+const toolGroupId2d = 'displaySetRulesTools2d';
+const toolGroupId3d = 'displaySetRulesTools3d';
 const wadoRsRoot =
   getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb';
+
+/**
+ * The local DICOMweb back end. `?useLocal=true` (or `useLocal=<port>`, plus
+ * `useProtocol=https`) points the whole example at it; a source series carrying
+ * `wadoRsRoot: LOCAL_ROOT` reads from it either way, for data that only exists
+ * locally.
+ */
+const LOCAL_ROOT = getLocalUrl() || 'http://localhost:5000/dicomweb';
 
 setTitleAndDescription(
   'Display Set Rules — editing the raw selector',
@@ -43,7 +63,10 @@ setTitleAndDescription(
     'set the server hosts. Every rule shown is read from the selector itself, ' +
     'including its explanation. Each display set that comes out gets its own ' +
     'viewport: a 2x2 MPR + 3D layout when the display set is volume-capable, ' +
-    'otherwise a single viewport of its requested type.'
+    'otherwise a single viewport of its requested type. Every viewport carries ' +
+    'the standard bindings — wheel or Alt+left-drag to navigate frames, ' +
+    'right-drag to zoom, middle-drag to pan — with the length tool promoted to ' +
+    'a plain left drag, so a split can be measured across as well as looked at.'
 );
 
 /** A display set is volume-capable when a rule allowed a volume viewport for it. */
@@ -76,6 +99,8 @@ type SourceSeries = {
   label: string;
   StudyInstanceUID: string;
   SeriesInstanceUID: string;
+  /** Overrides the example-wide root, for a series hosted somewhere else. */
+  wadoRsRoot?: string;
 };
 
 const SOURCE_SERIES: SourceSeries[] = [
@@ -96,17 +121,20 @@ const SOURCE_SERIES: SourceSeries[] = [
     StudyInstanceUID: '1.3.76.13.65829.2.20130125082826.1072139.2',
     SeriesInstanceUID: '1.3.6.1.4.1.20029.40.20130125105919.5407.1',
   },
+  {
+    // CMMD patient D2-0140 (TCIA, CC BY 4.0, DOI 10.7937/tcia.eqde-4b16). All
+    // four screening views arrive as one series, which is what makes it worth
+    // having here: the standard `singleImageModality` rule splits MG on a coarse
+    // image-size bucket, and these four are identically sized, so out of the box
+    // the study is a single four-image stack. Local-only data.
+    label: 'MG — screening mammogram, 4 views in one series (local)',
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.1239.1759.598888059044635576254843278173',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.1239.1759.115060983843511037348481244160',
+    wadoRsRoot: LOCAL_ROOT,
+  },
 ];
-
-/**
- * Rule sets the **server** hosts, as paths under the DICOMweb root. A selector is
- * JSON, so a deployment can serve the same file its back end splits with — the
- * point of the raw form. Missing files are reported, not fatal.
- */
-const SERVER_SELECTOR_EXAMPLES: Record<string, string> = {
-  '(none — use the standard rules)': '',
-  'UCalgary cardiac MR / US': 'ucalgary/displaySets.json',
-};
 
 // ======== Named safe functions ======== //
 
@@ -122,7 +150,50 @@ const DEMO_CLASSIFIERS = {
     /localizer|scout|survey/i.test(String(instance.SeriesDescription ?? '')),
 };
 
+/** Mammography view codes seen in the sample data, by SNOMED code value. */
+const MAMMO_VIEW_BY_CODE: Record<string, string> = {
+  '399162004': 'CC',
+  '399368009': 'MLO',
+};
+
+/** First item of a DICOM sequence, whether naturalized as an array or an item. */
+function firstItem(sequence: unknown): Record<string, unknown> | undefined {
+  const item = Array.isArray(sequence) ? sequence[0] : sequence;
+  return item && typeof item === 'object'
+    ? (item as Record<string, unknown>)
+    : undefined;
+}
+
 const DEMO_CUSTOM_ATTRIBUTE_PRESETS = {
+  /**
+   * Mammography view identity — `RCC` / `RMLO` / `LCC` / `LMLO`, plus the parts
+   * it is built from, so a hanging protocol can match on either.
+   *
+   * A preset rather than data because the view lives in `ViewCodeSequence`: raw
+   * selector attributes are a flat lookup on the instance, so no `{ attribute }`
+   * reaches inside a sequence. `ViewPosition` would be readable as data, but the
+   * sample study (like plenty of real MG) does not send it.
+   */
+  mammoView: (instances: NaturalizedInstance[]) => {
+    const instance = instances[0];
+    const viewCode = firstItem(instance?.ViewCodeSequence);
+    const codeValue = viewCode?.CodeValue;
+    const view =
+      MAMMO_VIEW_BY_CODE[String(codeValue)] ??
+      (viewCode?.CodeMeaning as string) ??
+      String(instance?.ViewPosition ?? 'unknown');
+    const laterality = String(instance?.ImageLaterality ?? '');
+
+    return {
+      imageLaterality: laterality,
+      mammoView: view,
+      viewCode: codeValue
+        ? `${String(viewCode.CodingSchemeDesignator)}:${String(codeValue)}`
+        : undefined,
+      descriptionName: `${laterality}${view}`,
+    };
+  },
+
   /**
    * Cardiac base-to-apex ordering — the UCalgary `sortVector`. Needs the
    * ImagePositionPatient z coordinate and the PatientPosition sign convention, so
@@ -153,26 +224,6 @@ const SAMPLE_SNIPPETS: Record<string, string> = {
     null,
     2
   ),
-  'Split ultrasound per instance (UCalgary)': JSON.stringify(
-    {
-      id: 'ucalgaryUsSplit',
-      description:
-        'Ultrasound: InstanceNumber acts as a series number at this site, so ' +
-        'each instance becomes its own display set.',
-      viewportTypes: ['stack'],
-      matches: { attribute: 'Modality', equals: 'US' },
-      groupBy: ['SeriesInstanceUID', 'InstanceNumber'],
-      customAttributes: {
-        set: { isUS: true },
-        fromFirstInstance: {
-          descriptionName: { template: 'US series {InstanceNumber}' },
-        },
-        fromOptions: ['splitNumber'],
-      },
-    },
-    null,
-    2
-  ),
   'Runs: interleaved US singles and clips': JSON.stringify(
     {
       id: 'usInterleaved',
@@ -182,6 +233,68 @@ const SAMPLE_SNIPPETS: Record<string, string> = {
       viewportTypes: ['stack'],
       matches: { attribute: 'Modality', equals: 'US' },
       runBy: { condition: { attribute: 'NumberOfFrames', greaterThan: 1 } },
+    },
+    null,
+    2
+  ),
+  'Mammo: one series into RCC / RMLO / LCC / LMLO': JSON.stringify(
+    {
+      id: 'mammoViewSplit',
+      description:
+        'Mammography: a screening exam that arrives as a single series still ' +
+        'holds four distinct views. Split it by laterality and view so each ' +
+        'becomes its own display set — the standard singleImageModality rule ' +
+        'only splits MG on a coarse image-size bucket, which is identical ' +
+        'across the four.',
+      viewportTypes: ['stack'],
+      matches: {
+        all: [
+          { attribute: 'Modality', equals: 'MG' },
+          { attribute: 'Rows', exists: true },
+        ],
+      },
+      // ViewPosition first for the vendors that send it; PatientOrientation is
+      // the fallback that distinguishes CC from MLO when they do not
+      // (RCC P\L, RMLO P\FL, LCC A\R, LMLO A\FR). Both are flat attributes, so
+      // this rule needs nothing registered to run.
+      groupBy: [
+        'SeriesInstanceUID',
+        'ImageLaterality',
+        'ViewPosition',
+        'PatientOrientation',
+      ],
+      customAttributes: {
+        fromFirstInstance: {
+          imageLaterality: 'ImageLaterality',
+          patientOrientation: 'PatientOrientation',
+        },
+      },
+    },
+    null,
+    2
+  ),
+  'Mammo: the same split, views named (preset)': JSON.stringify(
+    {
+      id: 'mammoViewSplit',
+      description:
+        'As above, but each display set is also labelled with its view — ' +
+        'mammoView "CC"/"MLO", descriptionName "RCC"/"RMLO"/"LCC"/"LMLO" — ' +
+        'read out of ViewCodeSequence by the named preset. A hanging protocol ' +
+        'can then select a viewport by view rather than by position.',
+      viewportTypes: ['stack'],
+      matches: {
+        all: [
+          { attribute: 'Modality', equals: 'MG' },
+          { attribute: 'Rows', exists: true },
+        ],
+      },
+      groupBy: [
+        'SeriesInstanceUID',
+        'ImageLaterality',
+        'ViewPosition',
+        'PatientOrientation',
+      ],
+      customAttributes: { preset: 'mammoView' },
     },
     null,
     2
@@ -405,15 +518,38 @@ seriesSelect.onchange = () => {
 };
 sourceRow.appendChild(labelled('Series', seriesSelect));
 
-const serverSelect = document.createElement('select');
-for (const label of Object.keys(SERVER_SELECTOR_EXAMPLES)) {
-  const option = document.createElement('option');
-  option.value = label;
-  option.textContent = label;
-  serverSelect.appendChild(option);
-}
-serverSelect.onchange = () => void loadServerSelector(serverSelect.value);
-sourceRow.appendChild(labelled('Server-side rule set', serverSelect));
+/**
+ * Where a server-hosted selector is fetched from. Free text rather than a list
+ * of known files: which rule sets a deployment serves is a property of that
+ * deployment, not of this example, and a hard-coded list only ever describes
+ * one site's data.
+ *
+ * A bare path resolves against the current series' DICOMweb root; an absolute
+ * URL or a rooted path is used as given.
+ */
+const serverPathInput = document.createElement('input');
+serverPathInput.type = 'text';
+serverPathInput.size = 32;
+serverPathInput.placeholder = 'path/to/displaySets.json';
+// Prefilled, not auto-loaded: these are MG rules, and the example opens on a CT
+// series. Pick the MG study, then press Load.
+serverPathInput.value = 'mg/displaySets.json';
+serverPathInput.onkeydown = (event) => {
+  if (event.key === 'Enter') {
+    void loadServerSelector(serverPathInput.value.trim());
+  }
+};
+
+const serverLoadButton = document.createElement('button');
+serverLoadButton.textContent = 'Load';
+serverLoadButton.onclick = () =>
+  void loadServerSelector(serverPathInput.value.trim());
+
+const serverGroup = document.createElement('span');
+serverGroup.style.display = 'flex';
+serverGroup.style.gap = '4px';
+serverGroup.append(serverPathInput, serverLoadButton);
+sourceRow.appendChild(labelled('Server-side rule set', serverGroup));
 
 const rulesHeader = document.createElement('h4');
 rulesHeader.textContent = 'Split rules (in order, first match wins)';
@@ -441,8 +577,15 @@ editorHint.innerText =
     .join(', ')}.`;
 rulesPanel.appendChild(editorHint);
 
+const sourcePickerRow = document.createElement('div');
+sourcePickerRow.style.display = 'flex';
+sourcePickerRow.style.gap = '8px';
+sourcePickerRow.style.alignItems = 'center';
+sourcePickerRow.style.flexWrap = 'wrap';
+sourcePickerRow.style.margin = '6px 0';
+rulesPanel.appendChild(sourcePickerRow);
+
 const sampleSelect = document.createElement('select');
-sampleSelect.style.margin = '6px 0';
 for (const label of Object.keys(SAMPLE_SNIPPETS)) {
   const option = document.createElement('option');
   option.value = label;
@@ -452,7 +595,40 @@ for (const label of Object.keys(SAMPLE_SNIPPETS)) {
 sampleSelect.onchange = () => {
   editor.value = SAMPLE_SNIPPETS[sampleSelect.value];
 };
-rulesPanel.appendChild(sampleSelect);
+sourcePickerRow.appendChild(sampleSelect);
+
+/**
+ * Opens a selector JSON file from disk into the editor.
+ *
+ * Loaded into the editor rather than applied straight away: a rule set being
+ * developed locally is the one most likely to need a look — and an edit —
+ * before it is compiled, and the editor is already where the errors are
+ * reported.
+ */
+const fileInput = document.createElement('input');
+fileInput.type = 'file';
+fileInput.accept = 'application/json,.json';
+fileInput.style.fontSize = '0.85em';
+fileInput.onchange = async () => {
+  const file = fileInput.files?.[0];
+  if (!file) {
+    return;
+  }
+  try {
+    editor.value = await file.text();
+    setStatus(`Loaded ${file.name} into the editor — review, then "Add rule".`);
+  } catch (error) {
+    setStatus(
+      `Could not read ${file.name}: ${
+        error instanceof Error ? error.message : error
+      }`,
+      true
+    );
+  }
+  // Cleared so re-picking the same file after editing it on disk still fires.
+  fileInput.value = '';
+};
+sourcePickerRow.appendChild(labelled('Open a local rule file', fileInput));
 
 const editor = document.createElement('textarea');
 editor.style.width = '100%';
@@ -534,7 +710,6 @@ addButton('Reset', () => {
   mergeCommands.length = 0;
   disabledRuleIds.clear();
   layoutByDisplaySetId.clear();
-  serverSelect.value = Object.keys(SERVER_SELECTOR_EXAMPLES)[0];
   renderRules();
   setStatus('Back to the standard rules.');
   void resplit();
@@ -553,16 +728,22 @@ addButton('Copy selector JSON', async () => {
 
 /**
  * Loads a rule set the server hosts. Accepts a bare selector array or a document
- * with a `rules` array plus metadata (`name`, `notes`, `requires`) — the shape
- * `z:/dicom/ucalgary/displaySets.json` uses.
+ * with a `rules` array plus metadata (`name`, `notes`, `requires`).
+ *
+ * A bare path is resolved against the DICOMweb root the current series reads
+ * from, which is the point of the raw form: the back end that indexed the study
+ * can serve the very rules it indexed it with.
  */
-async function loadServerSelector(label: string) {
-  const path = SERVER_SELECTOR_EXAMPLES[label];
+async function loadServerSelector(path: string) {
   if (!path) {
+    setStatus('Enter a path or URL to a selector JSON file first.', true);
     return;
   }
 
-  const url = `${wadoRsRoot}/${path}`;
+  const root = currentSeries.wadoRsRoot ?? wadoRsRoot;
+  const url = /^(https?:)?\/\//.test(path)
+    ? path
+    : `${root}/${path.replace(/^\/+/, '')}`;
   setStatus(`Fetching ${url}…`);
 
   let document_: unknown;
@@ -636,6 +817,17 @@ function defaultLayoutFor(displaySet: IDisplaySet): string {
     : displaySet.preferredViewportType;
 }
 
+/**
+ * Where a planar stack opens. Mid-stack for a reconstructed series, but the
+ * first image whenever the stack is short enough to be a set of distinct views
+ * (a four-view mammogram, a handful of ultrasound stills) rather than slices
+ * through one thing — opening those in the middle looks like the split dropped
+ * the earlier images.
+ */
+function initialImageIndex(count: number): number {
+  return count > 8 ? Math.floor(count / 2) : 0;
+}
+
 function registerDisplaySetData(displaySet: IDisplaySet, layout: string) {
   const imageIds = [...displaySet.imageIds];
   const provider = utilities.genericViewportDisplaySetMetadataProvider;
@@ -665,9 +857,114 @@ function registerDisplaySetData(displaySet: IDisplaySet, layout: string) {
       provider.add(displaySetId, {
         imageIds,
         kind: 'planar',
-        initialImageIdIndex: Math.floor(imageIds.length / 2),
+        initialImageIdIndex: initialImageIndex(imageIds.length),
       });
   }
+}
+
+/**
+ * Frame navigation for one cell: previous / next buttons and a readout.
+ *
+ * The buttons exist alongside the wheel binding rather than instead of it. The
+ * wheel only scrolls the viewport the pointer is over, and this example stacks
+ * cells down a scrolling page, so a wheel turn is as likely to move the page as
+ * the images — leaving "did the split give me one image or four?" genuinely
+ * ambiguous. The readout answers it outright.
+ */
+function addFrameControls(
+  parent: HTMLElement,
+  element: HTMLDivElement,
+  viewportId: string
+) {
+  const row = document.createElement('div');
+  row.style.display = 'flex';
+  row.style.gap = '6px';
+  row.style.alignItems = 'center';
+  row.style.marginTop = '4px';
+  row.style.fontSize = '0.85em';
+  parent.appendChild(row);
+
+  const readout = document.createElement('span');
+  readout.style.color = '#7f8c8d';
+
+  const buttons = (['◀', '▶'] as const).map((label, position) => {
+    const delta = position === 0 ? -1 : 1;
+    const button = document.createElement('button');
+    button.textContent = label;
+    button.onclick = () => {
+      const viewport = renderingEngine.getViewport(viewportId);
+      if (!viewport) {
+        return;
+      }
+      try {
+        utilities.scroll(viewport, { delta });
+      } catch (error) {
+        // scroll() throws on a disabled or empty viewport; say so rather than
+        // leaving a button that looks broken.
+        setStatus(
+          `Could not scroll ${viewportId}: ${
+            error instanceof Error ? error.message : error
+          }`,
+          true
+        );
+      }
+    };
+    row.appendChild(button);
+    return button;
+  });
+
+  row.appendChild(readout);
+
+  /**
+   * Reads the frame state back off the viewport rather than off the display
+   * set, so the readout reports what is actually mounted — if a rule produced
+   * four imageIds and only one reached the viewport, this is where that shows.
+   *
+   * Driven by IMAGE_RENDERED rather than STACK_NEW_IMAGE because it should
+   * track what the viewport is *showing*. A stack whose index advances but
+   * whose image never renders is exactly the case worth seeing as a stuck
+   * readout, and a readout fed by the index would hide it.
+   */
+  const refresh = () => {
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as Types.IStackViewport;
+    const count = viewport?.getImageIds?.().length ?? 0;
+    const index = viewport?.getCurrentImageIdIndex?.() ?? 0;
+
+    for (const button of buttons) {
+      button.disabled = count < 2;
+    }
+
+    if (count === 0) {
+      readout.textContent = 'no images mounted';
+      return;
+    }
+    readout.textContent =
+      count === 1
+        ? 'single image — nothing to scroll'
+        : `image ${index + 1} / ${count}`;
+  };
+
+  element.addEventListener(Enums.Events.IMAGE_RENDERED, refresh);
+  refresh();
+}
+
+/**
+ * The tool group a viewport type belongs to, or undefined when it has none.
+ *
+ * ECG is deliberately absent: waveform viewports are driven by their own tools
+ * (see the `ecg` example), not by the manipulation bindings, so adding one here
+ * would attach bindings that cannot act on it.
+ */
+function toolGroupIdFor(viewportType: Enums.ViewportType): string | undefined {
+  if (viewportType === ViewportType.VOLUME_3D) {
+    return toolGroupId3d;
+  }
+  if (viewportType === ViewportType.ECG) {
+    return undefined;
+  }
+  return toolGroupId2d;
 }
 
 /** Enables one viewport and mounts the display set on it. */
@@ -679,7 +976,7 @@ async function mountViewport(
   orientation?: Enums.OrientationAxis
 ) {
   if (renderingEngine.getViewport(viewportId)) {
-    renderingEngine.disableElement(viewportId);
+    disableViewport(viewportId);
   }
 
   renderingEngine.enableElement({
@@ -689,6 +986,16 @@ async function mountViewport(
     defaultOptions: orientation ? { orientation } : undefined,
   });
   activeViewportIds.push(viewportId);
+
+  // Added before the data is set so the annotation layer exists for the first
+  // render rather than only after the next one.
+  const toolGroupId = toolGroupIdFor(viewportType);
+  if (toolGroupId) {
+    ToolGroupManager.getToolGroup(toolGroupId)?.addViewport(
+      viewportId,
+      renderingEngineId
+    );
+  }
 
   const viewport = renderingEngine.getViewport(viewportId);
   const options =
@@ -736,8 +1043,21 @@ async function buildCell(displaySet: IDisplaySet, index: number) {
   cell.appendChild(header);
 
   const title = document.createElement('strong');
-  title.textContent = displaySet.displaySetId;
+  // A rule may name what it produced (the mammo rules label their display sets
+  // RCC / LCC / RMLO / LMLO). Lead with that when present: which view a cell is
+  // showing is the thing being checked, and a display set id does not say.
+  const descriptionName = (displaySet as { descriptionName?: string })
+    .descriptionName;
+  title.textContent = descriptionName || displaySet.displaySetId;
   header.appendChild(title);
+
+  if (descriptionName) {
+    const id = document.createElement('span');
+    id.style.color = '#7f8c8d';
+    id.style.fontSize = '0.8em';
+    id.textContent = displaySet.displaySetId;
+    header.appendChild(id);
+  }
 
   const details = document.createElement('span');
   details.style.color = '#7f8c8d';
@@ -823,13 +1143,19 @@ async function buildCell(displaySet: IDisplaySet, index: number) {
     } else {
       const element = viewportElement(320);
       body.appendChild(element);
+      const viewportId = `dsr-${index}-0`;
+      const viewportType = HINT_TO_VIEWPORT_TYPE[layout] ?? ViewportType.STACK;
       await mountViewport(
         displaySet,
         element,
-        `dsr-${index}-0`,
-        HINT_TO_VIEWPORT_TYPE[layout] ?? ViewportType.STACK,
+        viewportId,
+        viewportType,
         layout === 'volume' ? OrientationAxis.AXIAL : undefined
       );
+
+      if (viewportType === ViewportType.STACK) {
+        addFrameControls(body, element, viewportId);
+      }
     }
   } catch (error) {
     const failure = document.createElement('div');
@@ -845,11 +1171,28 @@ async function buildCell(displaySet: IDisplaySet, index: number) {
   }
 }
 
+/**
+ * Disables a viewport and takes it out of its tool group.
+ *
+ * The tool group must be told as well: this example tears down and rebuilds
+ * every viewport on each re-split, and a tool group that keeps a disabled
+ * viewport goes on addressing an element that is no longer rendering.
+ */
+function disableViewport(viewportId: string) {
+  for (const toolGroupId of [toolGroupId2d, toolGroupId3d]) {
+    ToolGroupManager.getToolGroup(toolGroupId)?.removeViewports(
+      renderingEngineId,
+      viewportId
+    );
+  }
+  renderingEngine.disableElement(viewportId);
+}
+
 /** Tears down every viewport and rebuilds one cell per display set. */
 async function renderGrid() {
   for (const viewportId of activeViewportIds) {
     if (renderingEngine.getViewport(viewportId)) {
-      renderingEngine.disableElement(viewportId);
+      disableViewport(viewportId);
     }
   }
   activeViewportIds = [];
@@ -898,11 +1241,31 @@ async function resplit() {
 async function loadSeries() {
   setStatus(`Loading ${currentSeries.label}…`);
   layoutByDisplaySetId.clear();
-  seriesImageIds = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID: currentSeries.StudyInstanceUID,
-    SeriesInstanceUID: currentSeries.SeriesInstanceUID,
-    wadoRsRoot,
-  });
+
+  const root = currentSeries.wadoRsRoot ?? wadoRsRoot;
+
+  try {
+    seriesImageIds = await createImageIdsAndCacheMetaData({
+      StudyInstanceUID: currentSeries.StudyInstanceUID,
+      SeriesInstanceUID: currentSeries.SeriesInstanceUID,
+      wadoRsRoot: root,
+    });
+  } catch (error) {
+    // A series may be hosted somewhere this browser cannot reach — the local
+    // back end most obviously. Say which root failed rather than leaving the
+    // example on the previous series' display sets with no explanation.
+    seriesImageIds = [];
+    displaySets = [];
+    await renderGrid();
+    setStatus(
+      `Could not load ${currentSeries.label} from ${root}: ${
+        error instanceof Error ? error.message : error
+      }`,
+      true
+    );
+    return;
+  }
+
   await resplit();
   setStatus(
     `${currentSeries.label}: ${displaySets.length} display set(s) from ${seriesImageIds.length} imageId(s).`
@@ -911,10 +1274,30 @@ async function loadSeries() {
 
 // ======== Run ======== //
 
+/**
+ * The example's controls, all of them registered by `addManipulationBindings`:
+ * pan, zoom, frame navigation, and the length tool.
+ *
+ * The helper binds Length behind Shift+Ctrl by default — deliberately obscure,
+ * so an example whose subject is something else keeps its primary button. Here
+ * the display sets are the subject and measuring across them is the point, so
+ * its `toolMap` promotes Length to the selected primary-button tool.
+ */
+function createToolGroups() {
+  addManipulationBindings(ToolGroupManager.createToolGroup(toolGroupId2d), {
+    toolMap: new Map([[LengthTool.toolName, { selected: true }]]),
+  });
+
+  addManipulationBindings(ToolGroupManager.createToolGroup(toolGroupId3d), {
+    is3DViewport: true,
+  });
+}
+
 async function run() {
   await initDemo();
 
   renderingEngine = new RenderingEngine(renderingEngineId);
+  createToolGroups();
 
   renderRules();
   await loadSeries();

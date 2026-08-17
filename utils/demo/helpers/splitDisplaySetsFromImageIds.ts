@@ -3,6 +3,8 @@ import {
   createDisplaySetFromGroup,
   defaultDisplaySetSplitRules,
   splitImageIdsBySplitRules,
+  Enums as metadataEnums,
+  metaData as typedMetaData,
   utilities as metadataUtilities,
   type IDisplaySet,
   type NaturalizedInstance,
@@ -22,6 +24,7 @@ export type CreateDisplaySetsOptions = {
 
 const { splitImageIdsBy4DTags } = metadataUtilities;
 const { ViewportType } = Enums;
+const { MetadataModules } = metadataEnums;
 
 /** Maps a display set's preferred viewport type hint to a cornerstone ViewportType. */
 const VIEWPORT_TYPE_BY_PREFERRED_HINT: Record<string, Enums.ViewportType> = {
@@ -79,13 +82,32 @@ function toBaseImageId(imageId: string): string {
 
 /**
  * Naturalized instance for display-set splitting (one row per SOP, base imageId).
+ *
+ * Read from the typed metadata modules rather than through `metaData.get`, so a
+ * rule sees the complete naturalized instance with per-frame data folded in
+ * (the INSTANCE chain: NATURALIZED, then `combineFrameProvider` for multiframe).
+ *
+ * `metaData.get('instance', ...)` would not give that here. The typed bridge is
+ * registered at a deliberately low priority so legacy providers answer first,
+ * and the legacy wadors provider does answer `instance` — with a fixed list of
+ * modules (`instanceModuleNames`) covering pixel/VOI/series data but nothing
+ * positional. No ImageLaterality, ViewPosition, PatientOrientation or
+ * ViewCodeSequence, so a rule splitting mammography by view saw those as
+ * undefined on every image and grouped all four views into one display set.
+ *
+ * A split rule can only key on what the host hands the splitter, so a host that
+ * feeds it a thinner object silently narrows what any rule can express.
  */
 export function getNaturalizedInstanceForDisplaySetSplit(
   imageId: string
 ): NaturalizedInstance | undefined {
-  const instance = metaData.get('instance', imageId) as
-    | NaturalizedInstance
-    | undefined;
+  const instance = (typedMetaData.metadataModuleProvider(
+    MetadataModules.INSTANCE,
+    imageId,
+    undefined
+    // Falls back to the provider chain for hosts running the legacy metadata
+    // provider, where nothing populates NATURALIZED.
+  ) ?? metaData.get('instance', imageId)) as NaturalizedInstance | undefined;
 
   if (!instance) {
     return undefined;
