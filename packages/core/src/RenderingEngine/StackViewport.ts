@@ -1051,17 +1051,16 @@ class StackViewport extends Viewport {
 
   private _setPropertiesFromCache(): void {
     const voiRange = this._getVOIFromCache();
-    const {
-      colormap,
-      VOILUTFunction,
-      interpolationType,
-      invert,
-      sharpening,
-      smoothing,
-    } = this.getProperties();
+    const { colormap, interpolationType, invert, sharpening, smoothing } =
+      this.getProperties();
 
-    if (typeof VOILUTFunction !== 'undefined') {
-      this.setVOILUTFunction(VOILUTFunction, true);
+    // The raw field, not getProperties()' resolved value: this re-asserts what
+    // the viewport already had, so an unset function must stay unset and leave
+    // the per image fallbacks to resolve it. Feeding the resolved value back
+    // here would pin it to the current image's function, and the next frame
+    // would then be rendered with the previous frame's.
+    if (typeof this.VOILUTFunction !== 'undefined') {
+      this.setVOILUTFunction(this.VOILUTFunction, true);
     }
 
     this.setVOI(voiRange);
