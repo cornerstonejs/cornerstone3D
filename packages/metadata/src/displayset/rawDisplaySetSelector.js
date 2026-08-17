@@ -37,6 +37,7 @@ import { isEcgInstance } from './isEcgInstance';
 import { isImageInstance } from './isImageInstance';
 import { isVideoInstance } from './isVideoInstance';
 import { isWsiInstance } from './isWsiInstance';
+import { NO_VIEWPORT_TYPE } from './types';
 
 /**
  * @typedef {import('./rawDisplaySetSelectorTypes').RawCondition} RawCondition
@@ -234,6 +235,32 @@ export const rawDisplaySetSelector = [
     id: 'defaultImageRule',
     viewportTypes: ['stack', 'volume', 'volume3d'],
     matches: IS_RENDERABLE_IMAGE,
+  },
+
+  /**
+   * Final catch-all. Every rule above requires a renderable image, so without
+   * this one a SEG, RTSTRUCT, RTDOSE, SR, presentation state - or an image whose
+   * `Rows` has not loaded yet - would match nothing and be **silently dropped**,
+   * producing no display set and so no trace that the object exists.
+   *
+   * Instead it produces a display set marked `isDisplayable: false` (via the
+   * `none` viewport type) with empty `imageIds` and its `sopClassUids` recorded,
+   * so an application can list the series and say what it is rather than losing
+   * it. An application that supports one of these formats adds its own rule
+   * *before* this one, with real viewport types.
+   *
+   * Grouped per instance, not per series: each of these objects is a document in
+   * its own right (one SEG, one SR), so merging a series' worth of them into a
+   * single display set would conflate unrelated content.
+   */
+  {
+    id: 'unsupported',
+    viewportTypes: [NO_VIEWPORT_TYPE],
+    // No `matches`: claims whatever is left.
+    groupBy: ['SeriesInstanceUID', 'SOPInstanceUID'],
+    customAttributes: {
+      fromContext: ['sopClassUids'],
+    },
   },
 ];
 

@@ -41,7 +41,9 @@ export {
   getViewportTypesForRule,
   getPreferredViewportType,
   getViewportTypesForGroup,
+  isDisplayableViewportTypes,
 } from './viewportTypes';
+export { NO_VIEWPORT_TYPE } from './types';
 export type {
   NaturalizedInstance,
   SeriesInfo,

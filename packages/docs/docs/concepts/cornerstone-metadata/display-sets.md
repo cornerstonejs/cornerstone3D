@@ -232,11 +232,85 @@ A few engine guarantees worth knowing when writing rules:
 - **`series` is scoped to its own rule.** A rule only ever sees the facts its own
   `series` hook returned; it cannot read another rule's facts, and it must not
   mutate shared state.
-- **Unmatched instances are dropped.** An instance that matches no rule (e.g. a
-  non-image SOP) produces no display set; pass `onUnmatchedInstance` to
-  `splitImageIdsBySplitRules` to observe them.
+- **Nothing is dropped by the defaults.** The final `unsupported` rule claims
+  whatever the image rules did not — see
+  [Objects nothing can render](#objects-nothing-can-render). A *custom* rule set
+  without a catch-all does drop unmatched instances; pass `onUnmatchedInstance`
+  to `splitImageIdsBySplitRules` to observe them.
 - **`buildSeriesInfo` is safe on an empty instance list** — it returns zeroed
   counts. It aggregates series statistics only and is independent of split rules.
+
+## Objects nothing can render
+
+Every image rule requires a renderable image, so a series can contain objects no
+rule claims: a SEG, RTSTRUCT, RTDOSE, RTPLAN, SR, encapsulated PDF, presentation
+state — or an image whose `Rows` have not loaded yet.
+
+Dropping those is the wrong answer. A dropped instance produces no display set,
+which leaves **no trace that the object was in the study at all** — the
+application cannot list it, cannot explain it, and cannot tell "we don't support
+this" apart from "this isn't here".
+
+So the last rule in the default selector is a catch-all that claims everything
+left and marks the result **not displayable**:
+
+```ts
+const displaySet = createDisplaySetFromGroup(group);
+
+displaySet.isDisplayable; // false
+displaySet.viewportTypes; // ['none']  — the NO_VIEWPORT_TYPE sentinel
+displaySet.preferredViewportType; // 'none', not a misleading 'stack'
+displaySet.imageIds; // [] — there is nothing to render
+displaySet.underlyingImageIds; // ['wadors:/…'] — still resolvable by imageId
+displaySet.sopClassUids; // ['1.2.840.10008.5.1.4.1.1.66.4'] — *what* it is
+displaySet.instances; // the full instances, e.g. for Modality / description
+```
+
+Points worth knowing:
+
+- **`isDisplayable` is required and derived**, not optional. It is computed from
+  `viewportTypes` (false exactly when they contain `NO_VIEWPORT_TYPE`) and stored
+  as a plain field, so it spreads and serializes like every other attribute and
+  can never disagree with the viewport types. Check it before mounting a display
+  set:
+
+  ```ts
+  if (!displaySet.isDisplayable) {
+    // list it in the study browser, don't hand it to a viewport
+    return;
+  }
+  await viewport.setDisplaySets({ displaySetId: displaySet.displaySetId });
+  ```
+
+- **`'none'` is a sentinel, not an empty list.** An absent or empty
+  `viewportTypes` falls back to `['stack']`, so "empty" cannot mean "not
+  renderable" — that fallback would quietly turn a structured report into a stack.
+- **One display set per object**, not per series: each of these is a document in
+  its own right (one SEG, one SR), so a series' worth of them does not collapse
+  into one display set.
+- **`imageIds` is empty** for these. Code that ignores `isDisplayable` renders
+  nothing rather than treating a document as a one-frame image stack.
+
+### Supporting one of these formats
+
+Add your own rule *before* the catch-all, with real viewport types. This is the
+other half of the user's choice: either take the non-displayable display set and
+present it, or teach the selector how to render the format.
+
+```ts
+const splitRules = createDisplaySetSplitRules([
+  {
+    id: 'seg',
+    viewportTypes: ['stack', 'volume'],
+    matches: { attribute: 'Modality', equals: 'SEG' },
+    groupBy: ['SeriesInstanceUID', 'SOPInstanceUID'],
+  },
+  ...rawDisplaySetSelector, // 'unsupported' stays last
+]);
+```
+
+Order matters: the catch-all has no `matches`, so it claims everything and any
+rule placed after it is dead code.
 
 ## Sharing rules between applications (the raw selector)
 
@@ -436,6 +510,7 @@ const displaySet = createDisplaySetFromGroup(group);
 displaySet.displaySetId;
 displaySet.viewportTypes; // readonly ViewportTypeHint[]
 displaySet.preferredViewportType; // viewportTypes[0]
+displaySet.isDisplayable; // false for objects nothing can render — check before mounting
 displaySet.instances; // readonly NaturalizedInstance[]
 displaySet.imageIds; // frame-level, renderable image ids
 displaySet.underlyingImageIds; // SOP-level image ids (one per instance)

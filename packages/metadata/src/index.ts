@@ -54,6 +54,8 @@ export {
   getViewportTypesForRule,
   getPreferredViewportType,
   getViewportTypesForGroup,
+  isDisplayableViewportTypes,
+  NO_VIEWPORT_TYPE,
 } from './displayset';
 export type { CreateDisplaySetFromGroupOptions } from './displayset';
 export * as logging from './utilities/logging';

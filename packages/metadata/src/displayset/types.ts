@@ -25,7 +25,24 @@ export type ViewportTypeHint =
   | 'video'
   | 'wholeslide'
   | 'ecg'
+  /**
+   * No viewport can render this display set - see {@link NO_VIEWPORT_TYPE}. The
+   * display set still exists (so a study browser can list it and say why it is
+   * not viewable), but it must not be handed to a viewport. Read it as
+   * `displaySet.isDisplayable === false`.
+   */
+  | 'none'
   | string;
+
+/**
+ * The `viewportTypes` entry meaning "nothing can render this".
+ *
+ * Deliberately an explicit sentinel rather than an empty `viewportTypes` array:
+ * an absent or empty list falls back to `['stack']` (see
+ * {@link getViewportTypesForRule}), so "empty" cannot express "not renderable"
+ * without that fallback silently turning a non-image object into a stack.
+ */
+export const NO_VIEWPORT_TYPE = 'none';
 
 /**
  * Series-level statistics aggregated once over a series' instances (see

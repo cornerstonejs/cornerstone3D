@@ -1,3 +1,4 @@
+import { createDisplaySetFromGroup } from './createDisplaySetFromGroup';
 import { defaultDisplaySetSplitRules } from './defaultDisplaySetSplitRules';
 import { groupInstancesBySplitRules } from './groupInstancesBySplitRules';
 import {
@@ -239,27 +240,31 @@ describe('createDisplaySetSplitRules - compiled default behaviour', () => {
     ).toEqual(['multiFrame']);
   });
 
-  it('drops non-image instances', () => {
+  it('surfaces a non-image instance through the catch-all', () => {
     expect(
       ruleIdsFor([
         instance({
-          // Comprehensive SR - no pixel data, matches no rule.
+          // Comprehensive SR - no pixel data, so no image rule claims it. The
+          // catch-all still surfaces it rather than dropping it.
           SOPClassUID: '1.2.840.10008.5.1.4.1.1.88.33',
           Modality: 'SR',
           Rows: undefined,
         }),
       ])
-    ).toEqual([]);
+    ).toEqual(['unsupported']);
   });
 });
 
 describe('default rules - image classifier coverage', () => {
-  // An instance no rule claims produces no display set at all, so a SOP class
-  // missing from the image classifier silently drops the whole series.
-  const rendered = (SOPClassUID: string, Modality: string) =>
+  // A SOP class missing from the image classifier falls through to the catch-all
+  // and comes back non-displayable, so the series is visible but unrenderable -
+  // which is why the classifier list has to be right.
+  // Which image rule claims it depends on modality; what matters here is only
+  // that a real image rule does, rather than the non-displayable catch-all.
+  const claimedBy = (SOPClassUID: string, Modality: string) =>
     ruleIdsFor([
       instance({ SOPClassUID, Modality, SOPInstanceUID: SOPClassUID }),
-    ]).length;
+    ]);
 
   const shouldRender: [string, string, string][] = [
     ['Ultrasound Image Storage', '1.2.840.10008.5.1.4.1.1.6.1', 'US'],
@@ -272,14 +277,153 @@ describe('default rules - image classifier coverage', () => {
   ];
 
   for (const [name, uid, modality] of shouldRender) {
-    it(`builds a display set for ${name}`, () => {
-      expect(rendered(uid, modality)).toBe(1);
+    it(`builds a renderable display set for ${name}`, () => {
+      expect(claimedBy(uid, modality)).not.toEqual(['unsupported']);
+      expect(claimedBy(uid, modality).length).toBe(1);
     });
   }
 
   it('does not build an image display set for MR spectroscopy', () => {
-    // MR Spectroscopy Storage carries no pixel data.
-    expect(rendered('1.2.840.10008.5.1.4.1.1.4.2', 'MR')).toBe(0);
+    // MR Spectroscopy Storage carries no pixel data, so it belongs to the
+    // catch-all rather than to any image rule.
+    expect(claimedBy('1.2.840.10008.5.1.4.1.1.4.2', 'MR')).toEqual([
+      'unsupported',
+    ]);
+  });
+});
+
+describe('default rules - the unsupported catch-all', () => {
+  const NON_IMAGE_SOP_CLASSES: [string, string, string][] = [
+    ['Segmentation', '1.2.840.10008.5.1.4.1.1.66.4', 'SEG'],
+    ['Labelmap Segmentation', '1.2.840.10008.5.1.4.1.1.66.7', 'SEG'],
+    ['RT Structure Set', '1.2.840.10008.5.1.4.1.1.481.3', 'RTSTRUCT'],
+    ['RT Dose', '1.2.840.10008.5.1.4.1.1.481.2', 'RTDOSE'],
+    ['RT Plan', '1.2.840.10008.5.1.4.1.1.481.5', 'RTPLAN'],
+    ['Comprehensive SR', '1.2.840.10008.5.1.4.1.1.88.33', 'SR'],
+    ['Encapsulated PDF', '1.2.840.10008.5.1.4.1.1.104.1', 'DOC'],
+    ['Grayscale Presentation State', '1.2.840.10008.5.1.4.1.1.11.1', 'PR'],
+    ['Raw Data Storage', '1.2.840.10008.5.1.4.1.1.66', 'OT'],
+  ];
+
+  const displaySetFor = (SOPClassUID: string, Modality: string) => {
+    const groups = groupInstancesBySplitRules(
+      [
+        instance({
+          SOPClassUID,
+          Modality,
+          SOPInstanceUID: 'obj-1',
+          imageId: 'wadors:/obj-1',
+          Rows: undefined,
+          Columns: undefined,
+        }),
+      ],
+      defaultDisplaySetSplitRules
+    );
+    return createDisplaySetFromGroup(groups[0]);
+  };
+
+  for (const [name, uid, modality] of NON_IMAGE_SOP_CLASSES) {
+    it(`claims ${name} instead of dropping it`, () => {
+      // Nothing may be silently dropped: an object with no display set leaves no
+      // trace that it was in the study at all.
+      expect(
+        ruleIdsFor([instance({ SOPClassUID: uid, Modality: modality })])
+      ).toEqual(['unsupported']);
+    });
+  }
+
+  it('marks the display set as not displayable', () => {
+    const displaySet = displaySetFor('1.2.840.10008.5.1.4.1.1.66.4', 'SEG');
+
+    expect(displaySet.isDisplayable).toBe(false);
+    expect(displaySet.viewportTypes).toEqual(['none']);
+    // A consumer switching on the preferred type is told 'none', not 'stack'.
+    expect(displaySet.preferredViewportType).toBe('none');
+  });
+
+  it('records what it could not render, so a consumer can say which kind', () => {
+    const displaySet = displaySetFor(
+      '1.2.840.10008.5.1.4.1.1.481.3',
+      'RTSTRUCT'
+    );
+
+    expect(displaySet.sopClassUids).toEqual(['1.2.840.10008.5.1.4.1.1.481.3']);
+    expect(displaySet.instances[0].Modality).toBe('RTSTRUCT');
+  });
+
+  it('advertises no renderable imageIds but stays resolvable by imageId', () => {
+    const displaySet = displaySetFor('1.2.840.10008.5.1.4.1.1.88.33', 'SR');
+
+    // Empty imageIds: anything that ignores isDisplayable renders nothing rather
+    // than treating a document as a one-frame image stack.
+    expect(displaySet.imageIds).toEqual([]);
+    expect(displaySet.underlyingImageIds).toEqual(['wadors:/obj-1']);
+  });
+
+  it('produces one display set per object, not one per series', () => {
+    // Two SEGs of one series are two documents, and must not be conflated.
+    const groups = groupInstancesBySplitRules(
+      [
+        instance({
+          SOPClassUID: '1.2.840.10008.5.1.4.1.1.66.4',
+          Modality: 'SEG',
+          SOPInstanceUID: 'seg-1',
+          InstanceNumber: 1,
+        }),
+        instance({
+          SOPClassUID: '1.2.840.10008.5.1.4.1.1.66.4',
+          Modality: 'SEG',
+          SOPInstanceUID: 'seg-2',
+          InstanceNumber: 2,
+        }),
+      ],
+      defaultDisplaySetSplitRules
+    );
+
+    expect(groups.length).toBe(2);
+  });
+
+  it('surfaces an image whose Rows have not loaded yet', () => {
+    // Every image rule requires Rows, so an incompletely loaded instance would
+    // otherwise vanish without explanation.
+    expect(
+      ruleIdsFor([instance({ SOPInstanceUID: 'ct-no-rows', Rows: undefined })])
+    ).toEqual(['unsupported']);
+  });
+
+  it('yields to an application rule placed before it', () => {
+    // This is how an application that *does* support SEG opts in.
+    const rules = createDisplaySetSplitRules([
+      {
+        id: 'seg',
+        viewportTypes: ['stack'],
+        matches: { attribute: 'Modality', equals: 'SEG' },
+      },
+      ...rawDisplaySetSelector,
+    ]);
+
+    const groups = groupInstancesBySplitRules(
+      [
+        instance({
+          SOPClassUID: '1.2.840.10008.5.1.4.1.1.66.4',
+          Modality: 'SEG',
+          SOPInstanceUID: 'seg-1',
+        }),
+      ],
+      rules
+    );
+
+    expect(groups[0].matchedRule.id).toBe('seg');
+    expect(createDisplaySetFromGroup(groups[0]).isDisplayable).toBe(true);
+  });
+
+  it('is the last rule, so it never shadows a real one', () => {
+    expect(rawDisplaySetSelector[rawDisplaySetSelector.length - 1].id).toBe(
+      'unsupported'
+    );
+    // A rule with no `matches` claims everything, so any later rule is dead code.
+    const catchAlls = rawDisplaySetSelector.filter((rule) => !rule.matches);
+    expect(catchAlls.map((rule) => rule.id)).toEqual(['unsupported']);
   });
 });
 

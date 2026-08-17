@@ -366,13 +366,26 @@ async function run() {
         continue;
       }
 
-      for (let dsIndex = 0; dsIndex < displaySets.length; dsIndex++) {
-        const row = buildRow(
-          displaySets[dsIndex],
-          client,
-          seriesIndex,
-          dsIndex
-        );
+      // The split rules also produce display sets for objects nothing can render
+      // (SEG, RTSTRUCT, SR, ...) so they are not silently dropped. This example
+      // gives each display set a viewport, so it lists those separately instead.
+      const renderable = displaySets.filter(
+        (displaySet) => displaySet.isDisplayable
+      );
+      for (const displaySet of displaySets) {
+        if (displaySet.isDisplayable) {
+          continue;
+        }
+        const notRenderable = document.createElement('div');
+        notRenderable.style.color = '#888';
+        notRenderable.innerText = `Not displayable: ${displaySet.displaySetId} (${
+          displaySet.sopClassUids?.join(', ') ?? 'unknown SOP class'
+        })`;
+        rowsContainer.appendChild(notRenderable);
+      }
+
+      for (let dsIndex = 0; dsIndex < renderable.length; dsIndex++) {
+        const row = buildRow(renderable[dsIndex], client, seriesIndex, dsIndex);
         // Mount sequentially so heavy loads (volume/WSI) don't all contend.
         await mountRow(row);
       }
