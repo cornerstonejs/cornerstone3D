@@ -209,7 +209,10 @@ const mixedDimensionalityBValue: SplitRule = {
 ```
 
 To customize splitting, prepend your own rules to (or replace) the defaults and
-pass the result as `splitRules`. `customAttributes` may set any attribute, but
+pass the result as `splitRules`. Prefer authoring them as data — see
+[Sharing rules between applications](#sharing-rules-between-applications-the-raw-selector)
+— so the same rules can also be used outside the viewer.
+`customAttributes` may set any attribute, but
 the resolved data fields a display set is built from — `imageIds`,
 `underlyingImageIds`, `instances`, and `displaySetId` — are reserved and cannot
 be overwritten, so the underlying-vs-frame image id invariant the viewports rely
@@ -234,6 +237,180 @@ A few engine guarantees worth knowing when writing rules:
   `splitImageIdsBySplitRules` to observe them.
 - **`buildSeriesInfo` is safe on an empty instance list** — it returns zeroed
   counts. It aggregates series statistics only and is independent of split rules.
+
+## Sharing rules between applications (the raw selector)
+
+A display set is not only a client-side idea. A server that indexes a study —
+static-dicomweb building its metadata tree, say — wants to know what display sets
+that study contains, and it has to agree with the viewer that later loads it. If
+each side implements the rules itself, they drift, and the display sets the server
+advertises stop being the ones the client builds.
+
+So the rules are authored **as data** and compiled into functions by one shared
+compiler. `rawDisplaySetSelector.js` holds both:
+
+- `rawDisplaySetSelector` — the default rules as pure JSON. No functions, no
+  imports of application state.
+- `createDisplaySetSplitRules(selector, options)` — turns that JSON into the
+  `SplitRule[]` the split engine executes.
+
+`defaultDisplaySetSplitRules` is literally `createDisplaySetSplitRules(rawDisplaySetSelector)`,
+so the data form is never a second-class path: if it could not express a default
+rule, the package would not build.
+
+```js
+import {
+  createDisplaySetSplitRules,
+  rawDisplaySetSelector,
+  splitImageIdsBySplitRules,
+} from '@cornerstonejs/metadata';
+
+// A server can ship its selector to the client verbatim...
+const selectorJson = JSON.stringify(rawDisplaySetSelector);
+
+// ...and the client compiles the identical rules from it.
+const splitRules = createDisplaySetSplitRules(JSON.parse(selectorJson));
+const groups = splitImageIdsBySplitRules(imageIds, {
+  getNaturalizedInstance,
+  splitRules,
+});
+```
+
+### Why the compiled predicates are "safe functions"
+
+The compiler assembles predicates from a **closed vocabulary** — the condition,
+value, series-fact and custom-attribute forms in `rawDisplaySetSelectorTypes.ts`.
+There is no `eval`, no `new Function`, and no other path from selector data to
+executed code. That is what makes it safe to load a selector from a config file,
+an HTTP response, or an application's customization layer: the worst a malformed
+selector can do is throw at compile time, which it does eagerly, naming the
+offending fragment, rather than midway through splitting a study.
+
+The vocabulary in brief:
+
+| Raw form                                       | Compiles to                                                     |
+| ---------------------------------------------- | --------------------------------------------------------------- |
+| `{ classifier: 'video' }`                      | a named instance classifier (`image`, `video`, `ecg`, `wsi`)     |
+| `{ attribute: 'Modality', in: ['CT', 'MR'] }`  | attribute test — `exists`/`absent`/`equals`/`in`/`greaterThan`/… |
+| `{ all: [...] }`, `{ any: [...] }`, `{ not: }` | boolean composition                                             |
+| `{ seriesFact: 'mixedBValue' }`                | reads a fact this rule's `series` list derived                   |
+| `{ attribute: 'Rows', bucket: 64 }`            | a `groupBy` part: `Math.round(Rows / 64)`                        |
+| `{ join: '&', parts: [...] }`                  | several attributes as one `groupBy` part (`rows=8&cols=8`)       |
+| `{ name, scope: 'mixed', when, gate }`         | a `series` hook — `first`/`every`/`some`/`mixed` over the series  |
+
+Attribute comparisons are deliberately tolerant of how naturalized DICOM arrives:
+values compare as strings, so `'30'` matches `30`; and `undefined`, `null` and
+`''` all count as absent, so an empty element never compares as a real `0`.
+
+Two rules from the defaults, in raw form:
+
+```js
+// "Which instances are a multi-frame clip?" — a fact over the series, read back
+// per instance.
+{
+  id: 'multiFrame',
+  viewportTypes: ['stack'],
+  series: [{
+    name: 'isMultiFrame',
+    scope: 'first',
+    when: { all: [
+      { attribute: 'NumberOfFrames', greaterThan: 1 },
+      { attribute: 'SliceLocation', exists: true },
+    ] },
+  }],
+  matches: { all: [{ seriesFact: 'isMultiFrame' }, { classifier: 'image' }] },
+  groupBy: ['SeriesInstanceUID', 'InstanceNumber'],
+  customAttributes: {
+    set: { isClip: true },
+    fromFirstInstance: {
+      numImageFrames: { attribute: 'NumberOfFrames', number: true },
+    },
+    fromOptions: ['splitNumber'],
+    fromContext: ['isMultiFrame'],
+  },
+}
+
+// The DWI fix: split the undefined-b-value frames off the 4D set.
+{
+  id: 'mixedDimensionalityBValue',
+  viewportTypes: ['volume', 'volume3d', 'stack'],
+  series: [{
+    name: 'mixedBValue',
+    gate: { attribute: 'Modality', equals: 'MR' },
+    scope: 'mixed',
+    when: { attribute: 'DiffusionBValue', exists: true },
+  }],
+  matches: { all: [{ seriesFact: 'mixedBValue' }, { classifier: 'image' }] },
+  groupBy: ['SeriesInstanceUID', { attribute: 'DiffusionBValue', absent: true }],
+}
+```
+
+### Extending a selector
+
+Derive from the defaults and compile the result. Rules are evaluated in order, so
+prepend to claim instances before a default rule sees them:
+
+```js
+const splitRules = createDisplaySetSplitRules([
+  {
+    id: 'usInterleaved',
+    matches: { attribute: 'Modality', equals: 'US' },
+    // Interleaved singles and clips become one display set per run.
+    runBy: { condition: { attribute: 'NumberOfFrames', greaterThan: 1 } },
+  },
+  ...rawDisplaySetSelector,
+]);
+```
+
+Every rule needs an `id`, and ids must be unique: an id namespaces the bucket keys
+its rule produces, so naming rules is what lets a selector be edited — reordered,
+or a rule inserted — without changing the other rules' display set identities.
+
+When a classification genuinely cannot be expressed as data, register it by name
+rather than reaching for a function in the selector. This keeps the selector
+itself serializable:
+
+```js
+const splitRules = createDisplaySetSplitRules(mySelector, {
+  classifiers: {
+    // Referenced from data as { classifier: 'siteProtocol' }
+    siteProtocol: (instance) => instance.ProtocolName?.startsWith('SITE-'),
+  },
+  // Referenced from data as customAttributes: { preset: 'siteLabel' }
+  customAttributePresets: {
+    siteLabel: (instances) => ({ siteLabel: instances[0]?.ProtocolName }),
+  },
+});
+```
+
+A selector that uses named extensions is still shareable, but the *names* become
+part of the contract: whatever compiles it must register the same names, or
+compilation throws.
+
+### How an application's customization layer fits
+
+Cornerstone deliberately knows nothing about OHIF's `customizationService` — or any
+other application's configuration mechanism — and must not. The dependency runs
+one way: the application resolves its own overrides and hands
+`createDisplaySetSplitRules` plain data.
+
+```js
+// In the application, not in cornerstone.
+const selector =
+  customizationService.getCustomization('displaySetSelector') ??
+  rawDisplaySetSelector;
+
+const splitRules = createDisplaySetSplitRules(selector, {
+  classifiers: customizationService.getCustomization('displaySetClassifiers'),
+});
+```
+
+Because the customization value is JSON, the same value can be served to a
+back end that has no customization service at all — it reads the selector from
+config and compiles it with the same call. That is the property that lets one
+deployment's display set rules hold on both sides of the wire. OHIF's side of this
+is documented under
+[Customization Service → Display Set Split Rules](https://docs.ohif.org/platform/services/customization-service/displaySetSplitRules).
 
 ### Instance classifiers
 

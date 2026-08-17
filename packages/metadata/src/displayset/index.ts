@@ -15,6 +15,22 @@ export {
 } from './registerDisplaySetMetadata';
 export { registerDisplaySetProviders } from './displaySetProvider';
 export { defaultDisplaySetSplitRules } from './defaultDisplaySetSplitRules';
+export {
+  rawDisplaySetSelector,
+  createDisplaySetSplitRules,
+} from './rawDisplaySetSelector';
+export type {
+  ClassifierName,
+  InstanceClassifier,
+  RawCondition,
+  RawValue,
+  RawSeriesFact,
+  RawCustomAttributes,
+  RawSplitRule,
+  RawDisplaySetSelector,
+  CreateDisplaySetSplitRulesOptions,
+  CompiledValueReader,
+} from './rawDisplaySetSelectorTypes';
 export { createDisplaySetFromGroup } from './createDisplaySetFromGroup';
 export type { CreateDisplaySetFromGroupOptions } from './createDisplaySetFromGroup';
 export { isImageInstance } from './isImageInstance';
