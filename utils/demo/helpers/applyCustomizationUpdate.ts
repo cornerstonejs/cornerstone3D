@@ -1,75 +1,58 @@
+import update, { extend } from 'immutability-helper';
+
 /**
  * The update function OHIF's customization service uses to merge a customization
- * value over an existing one.
+ * value over an existing one — `immutability-helper`'s `update`, plus OHIF's
+ * custom `$filter` command.
  *
- * OHIF implements this with `immutability-helper`'s `update` plus a custom
- * `$filter` command (see `CustomizationService._update`). This is the same command
- * vocabulary reimplemented here, in the **demo helpers**, so an example can merge
- * a user-supplied rule set exactly the way an OHIF deployment would — without
- * `immutability-helper` becoming a dependency of any published Cornerstone
- * package. Nothing in `packages/` imports this file.
+ * This lives in the **demo helpers** rather than in a package: it is the seam an
+ * example needs to merge a rule set the way an OHIF deployment would, and
+ * `immutability-helper` is a root devDependency (pinned to `3.1.1`, the version
+ * `@ohif/core` uses) so no published Cornerstone package gains a dependency.
+ * Nothing under `packages/` imports this file.
  *
- * Supported commands, matching the subset OHIF customizations actually use:
- *
- * | Command    | Effect                                                        |
- * | ---------- | ------------------------------------------------------------- |
- * | `$set`     | Replace the value outright                                    |
- * | `$merge`   | Shallow-merge an object over the target                       |
- * | `$push`    | Append items to an array                                      |
- * | `$unshift` | Prepend items to an array                                     |
- * | `$splice`  | Apply `Array.prototype.splice` argument tuples                |
- * | `$apply`   | Replace with the result of a function of the current value    |
- * | `$filter`  | OHIF's array command — see {@link applyFilterCommand}         |
- *
- * A spec with no `$` command anywhere replaces the value, which is how OHIF
- * treats a plain customization value (`hasDollarKey` is false → return newValue).
+ * Commands are `immutability-helper`'s built-ins — `$set`, `$merge`, `$push`,
+ * `$unshift`, `$splice`, `$apply`, `$toggle`, `$add`, `$remove` — plus
+ * {@link applyFilterCommand}'s `$filter`. A value with no command at all is the
+ * new value rather than a spec, matching OHIF's `hasDollarKey` short-circuit.
  */
 
-/** A command spec: either `$`-commands, or a nested object of specs. */
+/** A command spec: `$`-commands, or a nested object of specs. */
 export type UpdateSpec = Record<string, unknown>;
-
-const COMMANDS = new Set([
-  '$set',
-  '$merge',
-  '$push',
-  '$unshift',
-  '$splice',
-  '$apply',
-  '$filter',
-]);
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
-}
 
 /**
  * True when `value` contains an update command anywhere in its object tree.
  *
- * Mirrors OHIF's `hasDollarKey`: without a command the value is not a spec at
- * all, it is the new value.
+ * Mirrors OHIF's `hasDollarKey`, including its two exemptions:
+ * - a React element (branded with `$$typeof`) is a value to render, not a spec,
+ *   so its brand must not be misread as a command;
+ * - `$transform` and `$reference` are read-time markers OHIF's service resolves
+ *   itself, not merge commands, so a value carrying them is stored verbatim.
  */
 export function hasUpdateCommand(value: unknown): boolean {
   if (Array.isArray(value)) {
     return value.some(hasUpdateCommand);
   }
-  if (!isPlainObject(value)) {
+
+  if (!value || typeof value !== 'object') {
     return false;
   }
-  return Object.entries(value).some(
-    ([key, nested]) => COMMANDS.has(key) || hasUpdateCommand(nested)
-  );
-}
 
-function objectMatches(item: unknown, match: Record<string, unknown>): boolean {
-  return (
-    isPlainObject(item) &&
-    Object.entries(match).every(([key, value]) => item[key] === value)
+  const record = value as Record<string, unknown>;
+  if (record.$$typeof) {
+    return false;
+  }
+
+  return Object.keys(record).some(
+    (key) =>
+      (key.startsWith('$') && key !== '$transform' && key !== '$reference') ||
+      hasUpdateCommand(record[key])
   );
 }
 
 /**
- * OHIF's `$filter` command, which does four different things to an array
- * depending on the query it is given:
+ * OHIF's `$filter` command, registered onto `immutability-helper` below. It does
+ * four different things to an array depending on the query it is given:
  *
  * - a **function** — keep the items it returns true for.
  * - a **string** — drop the items whose `id` equals it. This is how a
@@ -78,145 +61,99 @@ function objectMatches(item: unknown, match: Record<string, unknown>): boolean {
  *   `match`'s key/value pairs.
  * - `{ id, $merge }` — the same, matching on `id` only (OHIF back-compat).
  *
- * Recurses into nested objects and arrays so a query reaches arrays at any depth.
+ * Recurses into nested objects and arrays, so a query reaches arrays at any depth.
+ *
+ * Ported from `CustomizationService.ts` rather than reinvented, so an example and
+ * an OHIF deployment resolve the same customization identically.
  */
-export function applyFilterCommand(value: unknown, query: unknown): unknown {
-  if (Array.isArray(value)) {
-    if (typeof query === 'function') {
-      return value.filter(query as (item: unknown) => boolean);
-    }
+export function applyFilterCommand(original: unknown, query: unknown): unknown {
+  function objectMatches(item: unknown, matchObj: Record<string, unknown>) {
+    return (
+      Boolean(item) &&
+      typeof item === 'object' &&
+      Object.entries(matchObj).every(
+        ([key, value]) => (item as Record<string, unknown>)[key] === value
+      )
+    );
+  }
 
-    if (typeof query === 'string') {
-      return value.filter((item) => !isPlainObject(item) || item.id !== query);
-    }
-
-    if (isPlainObject(query) && query.$merge) {
-      const merge = query.$merge as Record<string, unknown>;
-      const match = isPlainObject(query.match)
-        ? (query.match as Record<string, unknown>)
-        : query.id !== undefined
-          ? { id: query.id }
-          : undefined;
-
-      // Recurse first so deeply nested arrays are handled too, then merge.
-      const recursed = value.map((item) => applyFilterCommand(item, query));
-      if (!match) {
-        return recursed;
+  function deepFilter(value: unknown, filterQuery: unknown): unknown {
+    if (Array.isArray(value)) {
+      // 1) A function filters the array.
+      if (typeof filterQuery === 'function') {
+        return value.filter(filterQuery as (item: unknown) => boolean);
       }
-      return recursed.map((item) =>
-        objectMatches(item, match) ? { ...(item as object), ...merge } : item
-      );
+
+      // 2) A string removes the items with that id.
+      if (typeof filterQuery === 'string') {
+        return value.filter(
+          (item) => (item as Record<string, unknown>)?.id !== filterQuery
+        );
+      }
+
+      if (filterQuery && typeof filterQuery === 'object') {
+        const q = filterQuery as Record<string, unknown>;
+
+        // 3) { match, $merge } merges into every matching item.
+        if (q.match && q.$merge) {
+          // Recurse first so deeply nested arrays are handled too.
+          const result = value.map((item) => deepFilter(item, filterQuery));
+          return result.map((item) =>
+            objectMatches(item, q.match as Record<string, unknown>)
+              ? { ...(item as object), ...(q.$merge as object) }
+              : item
+          );
+        }
+
+        // 4) { id, $merge } — the same, on id only.
+        if (q.id && q.$merge) {
+          const result = value.map((item) => deepFilter(item, filterQuery));
+          return result.map((item) =>
+            (item as Record<string, unknown>)?.id === q.id
+              ? { ...(item as object), ...(q.$merge as object) }
+              : item
+          );
+        }
+      }
+
+      // Otherwise just recurse without filtering.
+      return value.map((item) => deepFilter(item, filterQuery));
     }
 
-    return value.map((item) => applyFilterCommand(item, query));
-  }
-
-  if (isPlainObject(value)) {
-    const result: Record<string, unknown> = { ...value };
-    for (const [key, nested] of Object.entries(result)) {
-      result[key] = applyFilterCommand(nested, query);
+    if (value && typeof value === 'object') {
+      const newObj = { ...(value as Record<string, unknown>) };
+      for (const [key, val] of Object.entries(newObj)) {
+        newObj[key] = deepFilter(val, filterQuery);
+      }
+      return newObj;
     }
-    return result;
+
+    return value;
   }
 
-  return value;
+  return deepFilter(original, query);
 }
 
+// `extend` registers the command globally on immutability-helper, exactly as
+// OHIF's CustomizationService does at module scope. Registering the same name
+// twice is harmless — it is the same implementation.
+extend('$filter', (query, original) => applyFilterCommand(original, query));
+
 /**
- * Applies an update spec to a value, returning a new value (the input is never
- * mutated).
+ * Applies a customization spec to a value, returning a new value (the input is
+ * never mutated). A spec with no `$` command replaces the value outright, which
+ * is how OHIF treats a plain customization value.
  *
  * @param source - the current value, e.g. the default display set selector.
  * @param spec - a command spec, or a plain value that replaces `source`.
  * @returns the updated value.
  */
 export function applyCustomizationUpdate<T>(source: T, spec: unknown): T {
-  // A value with no commands is the new value, not a spec.
   if (!hasUpdateCommand(spec)) {
     return spec as T;
   }
 
-  if (!isPlainObject(spec)) {
-    return spec as T;
-  }
-
-  if ('$set' in spec) {
-    return spec.$set as T;
-  }
-
-  if ('$apply' in spec) {
-    const apply = spec.$apply;
-    if (typeof apply !== 'function') {
-      throw new Error('$apply expects a function');
-    }
-    return (apply as (value: T) => T)(source);
-  }
-
-  if ('$filter' in spec) {
-    return applyFilterCommand(source, spec.$filter) as T;
-  }
-
-  if ('$merge' in spec) {
-    const merge = spec.$merge;
-    if (!isPlainObject(merge)) {
-      throw new Error('$merge expects an object');
-    }
-    return { ...(source as object), ...merge } as T;
-  }
-
-  if ('$push' in spec || '$unshift' in spec || '$splice' in spec) {
-    if (!Array.isArray(source)) {
-      throw new Error(
-        `${
-          '$push' in spec
-            ? '$push'
-            : '$unshift' in spec
-              ? '$unshift'
-              : '$splice'
-        } expects an array target`
-      );
-    }
-    let result = [...source];
-
-    if ('$push' in spec) {
-      result = result.concat(spec.$push as unknown[]);
-    }
-    if ('$unshift' in spec) {
-      result = (spec.$unshift as unknown[]).concat(result);
-    }
-    if ('$splice' in spec) {
-      for (const args of spec.$splice as [number, number?, ...unknown[]][]) {
-        result.splice(...(args as [number, number, ...unknown[]]));
-      }
-    }
-
-    return result as T;
-  }
-
-  // No command at this level: recurse into the keys the spec mentions, leaving
-  // the rest of `source` untouched.
-  const isArraySource = Array.isArray(source);
-  const result: Record<string, unknown> = isArraySource
-    ? ({ ...(source as unknown as Record<string, unknown>) } as never)
-    : { ...(source as unknown as Record<string, unknown>) };
-
-  for (const [key, nested] of Object.entries(spec)) {
-    result[key] = applyCustomizationUpdate(result[key], nested);
-  }
-
-  if (isArraySource) {
-    // Preserve array-ness when a spec addressed items by index.
-    const array = [...(source as unknown[])];
-    for (const [key, nested] of Object.entries(spec)) {
-      const index = Number(key);
-      if (Number.isInteger(index)) {
-        array[index] = applyCustomizationUpdate(array[index], nested);
-      }
-    }
-    return array as unknown as T;
-  }
-
-  return result as T;
+  return update(source, spec as never) as T;
 }
 
 export default applyCustomizationUpdate;
