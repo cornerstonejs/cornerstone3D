@@ -27,11 +27,11 @@ function calculateViewportsSpatialRegistration(
   viewport1: IStackViewport | IVolumeViewport,
   viewport2: IStackViewport | IVolumeViewport
 ): void {
-  const imageId1 = viewport1.getSliceIndex();
-  const imageId2 = viewport2.getSliceIndex();
+  const imageId1 = viewport1.getImageIds()[0];
+  const imageId2 = viewport2.getImageIds()[0];
 
-  const imagePlaneModule1 = get('imagePlaneModule', imageId1.toString());
-  const imagePlaneModule2 = get('imagePlaneModule', imageId2.toString());
+  const imagePlaneModule1 = get('imagePlaneModule', imageId1);
+  const imagePlaneModule2 = get('imagePlaneModule', imageId2);
 
   if (!imagePlaneModule1 || !imagePlaneModule2) {
     console.log('Viewport spatial registration requires image plane module');
