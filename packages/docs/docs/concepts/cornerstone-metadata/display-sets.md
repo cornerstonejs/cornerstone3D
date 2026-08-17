@@ -234,7 +234,7 @@ A few engine guarantees worth knowing when writing rules:
   mutate shared state.
 - **Nothing is dropped by the defaults.** The final `unsupported` rule claims
   whatever the image rules did not — see
-  [Objects nothing can render](#objects-nothing-can-render). A *custom* rule set
+  [Objects nothing can render](#objects-nothing-can-render). A _custom_ rule set
   without a catch-all does drop unmatched instances; pass `onUnmatchedInstance`
   to `splitImageIdsBySplitRules` to observe them.
 - **`buildSeriesInfo` is safe on an empty instance list** — it returns zeroed
@@ -293,7 +293,7 @@ Points worth knowing:
 
 ### Supporting one of these formats
 
-Add your own rule *before* the catch-all, with real viewport types. This is the
+Add your own rule _before_ the catch-all, with real viewport types. This is the
 other half of the user's choice: either take the non-displayable display set and
 present it, or teach the selector how to render the format.
 
@@ -362,15 +362,24 @@ offending fragment, rather than midway through splitting a study.
 
 The vocabulary in brief:
 
-| Raw form                                       | Compiles to                                                     |
-| ---------------------------------------------- | --------------------------------------------------------------- |
-| `{ classifier: 'video' }`                      | a named instance classifier (`image`, `video`, `ecg`, `wsi`)     |
-| `{ attribute: 'Modality', in: ['CT', 'MR'] }`  | attribute test — `exists`/`absent`/`equals`/`in`/`greaterThan`/… |
-| `{ all: [...] }`, `{ any: [...] }`, `{ not: }` | boolean composition                                             |
-| `{ seriesFact: 'mixedBValue' }`                | reads a fact this rule's `series` list derived                   |
-| `{ attribute: 'Rows', bucket: 64 }`            | a `groupBy` part: `Math.round(Rows / 64)`                        |
-| `{ join: '&', parts: [...] }`                  | several attributes as one `groupBy` part (`rows=8&cols=8`)       |
-| `{ name, scope: 'mixed', when, gate }`         | a `series` hook — `first`/`every`/`some`/`mixed` over the series  |
+| Raw form                                                                 | Compiles to                                                      |
+| ------------------------------------------------------------------------ | ---------------------------------------------------------------- |
+| `{ classifier: 'video' }`                                                | a named instance classifier (`image`, `video`, `ecg`, `wsi`)     |
+| `{ attribute: 'Modality', in: ['CT', 'MR'] }`                            | attribute test — `exists`/`absent`/`equals`/`in`/`greaterThan`/… |
+| `{ attribute: 'SeriesDescription', contains: 'flow', ignoreCase: true }` | substring test (`containsAny` for a list)                        |
+| `{ all: [...] }`, `{ any: [...] }`, `{ not: }`                           | boolean composition                                              |
+| `{ seriesFact: 'mixedBValue' }`                                          | reads a fact this rule's `series` list derived                   |
+| `{ attribute: 'Rows', bucket: 64 }`                                      | a `groupBy` part: `Math.round(Rows / 64)`                        |
+| `{ join: '&', parts: [...] }`                                            | several attributes as one `groupBy` part (`rows=8&cols=8`)       |
+| `{ template: 'US series {InstanceNumber}' }`                             | a string built by substituting attributes                        |
+| `{ name, scope: 'mixed', when, gate }`                                   | a `series` hook — `first`/`every`/`some`/`mixed` over the series |
+
+A rule also carries a `description`: the explanation lives in the rule data, not in
+a code comment, so a UI that lets a user inspect or toggle rules reads it from the
+selector rather than keeping its own copy. The **Display Set Rules** example
+(`packages/core/examples/displaySetRules`) does exactly that — it lists every
+standard rule with a checkbox and its description, lets you paste a new rule as
+JSON, and re-splits the loaded series live.
 
 Attribute comparisons are deliberately tolerant of how naturalized DICOM arrives:
 values compare as strings, so `'30'` matches `30`; and `undefined`, `null` and
@@ -457,7 +466,7 @@ const splitRules = createDisplaySetSplitRules(mySelector, {
 });
 ```
 
-A selector that uses named extensions is still shareable, but the *names* become
+A selector that uses named extensions is still shareable, but the _names_ become
 part of the contract: whatever compiles it must register the same names, or
 compilation throws.
 

@@ -6,6 +6,7 @@ import {
   utilities as metadataUtilities,
   type IDisplaySet,
   type NaturalizedInstance,
+  type SplitRule,
 } from '@cornerstonejs/metadata';
 import createImageIdsAndCacheMetaData from './createImageIdsAndCacheMetaData';
 
@@ -82,10 +83,9 @@ function toBaseImageId(imageId: string): string {
 export function getNaturalizedInstanceForDisplaySetSplit(
   imageId: string
 ): NaturalizedInstance | undefined {
-  const instance = metaData.get(
-    'instance',
-    imageId
-  ) as NaturalizedInstance | undefined;
+  const instance = metaData.get('instance', imageId) as
+    | NaturalizedInstance
+    | undefined;
 
   if (!instance) {
     return undefined;
@@ -122,7 +122,7 @@ function collectFrameImageIdsForGroup(
 ): string[] {
   const sopUids = new Set(
     groupInstances
-      .map(instance => instance.SOPInstanceUID)
+      .map((instance) => instance.SOPInstanceUID)
       .filter(Boolean) as string[]
   );
 
@@ -130,23 +130,29 @@ function collectFrameImageIdsForGroup(
     return seriesImageIds;
   }
 
-  return seriesImageIds.filter(imageId => {
+  return seriesImageIds.filter((imageId) => {
     const instance = getNaturalizedInstanceForDisplaySetSplit(imageId);
     return instance?.SOPInstanceUID && sopUids.has(instance.SOPInstanceUID);
   });
 }
 
 /**
- * Splits a loaded series' imageIds using {@link defaultDisplaySetSplitRules}.
+ * Splits a loaded series' imageIds into display sets.
+ *
+ * @param seriesImageIds - the series' (frame-level) imageIds.
+ * @param splitRules - compiled split rules; defaults to
+ *   {@link defaultDisplaySetSplitRules}. Pass the result of
+ *   `createDisplaySetSplitRules(selector)` to split with a custom selector.
  */
 export function splitDisplaySetsFromImageIds(
-  seriesImageIds: string[]
+  seriesImageIds: string[],
+  splitRules: SplitRule[] = defaultDisplaySetSplitRules
 ): IDisplaySet[] {
   const instanceLevelImageIds = getInstanceLevelImageIds(seriesImageIds);
 
   const groups = splitImageIdsBySplitRules(instanceLevelImageIds, {
     getNaturalizedInstance: getNaturalizedInstanceForDisplaySetSplit,
-    splitRules: defaultDisplaySetSplitRules,
+    splitRules,
   });
 
   return groups.map((group, splitNumber) =>
@@ -178,7 +184,7 @@ export function getVideoImageIdFromImageIds(
 ): string | undefined {
   const displaySets = splitDisplaySetsFromImageIds(seriesImageIds);
   const videoDisplaySet = displaySets.find(
-    displaySet => displaySet.preferredViewportType === 'video'
+    (displaySet) => displaySet.preferredViewportType === 'video'
   );
 
   if (!videoDisplaySet) {
@@ -197,7 +203,7 @@ export function getPrimaryStackFrameImageIds(
   const displaySets = splitDisplaySetsFromImageIds(seriesImageIds);
 
   const primaryDisplaySet =
-    displaySets.find(displaySet => {
+    displaySets.find((displaySet) => {
       const preferred = displaySet.preferredViewportType;
       return preferred === 'stack' || preferred === 'volume3d';
     }) ?? displaySets[0];
@@ -218,10 +224,10 @@ export function getVolumeFrameImageIds(seriesImageIds: string[]): string[] {
 
   const volumeDisplaySet =
     displaySets.find(
-      displaySet => displaySet.preferredViewportType === 'volume3d'
+      (displaySet) => displaySet.preferredViewportType === 'volume3d'
     ) ??
     displaySets.find(
-      displaySet => displaySet.preferredViewportType === 'volume'
+      (displaySet) => displaySet.preferredViewportType === 'volume'
     ) ??
     displaySets[0];
 
@@ -237,7 +243,9 @@ export function getVolumeFrameImageIds(seriesImageIds: string[]): string[] {
  * Splits a series into 4D dimension groups using DICOM 4D tags
  * ({@link splitImageIdsBy4DTags}) after applying default display-set rules.
  */
-export function get4DDimensionGroupImageIds(seriesImageIds: string[]): string[][] {
+export function get4DDimensionGroupImageIds(
+  seriesImageIds: string[]
+): string[][] {
   const volumeFrameImageIds = getVolumeFrameImageIds(seriesImageIds);
   const { imageIdGroups } = splitImageIdsBy4DTags(volumeFrameImageIds);
   return imageIdGroups;
