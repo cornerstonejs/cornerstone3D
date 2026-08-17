@@ -15,6 +15,7 @@ import parseImageId from '../imageLoader/wadouri/parseImageId';
 import { getTransferSyntaxForContentType } from '../imageLoader/wadors/loadImage';
 import isModalityLUTForDisplay from '../imageLoader/isModalityLutForDisplay';
 import isNMReconstructable from '../imageLoader/isNMReconstructable';
+import { logging } from '@cornerstonejs/utils';
 import getOverlayPlaneModule from '../imageLoader/wadors/metaData/getOverlayPlaneModule';
 import { getECGModule } from '../imageLoader/wadors/metaData/ECGHelpers';
 
@@ -643,8 +644,8 @@ describe('getInstanceModule', () => {
   });
 
   it('swallows provider errors for a given type and continues with the rest', () => {
-    const consoleErrorSpy = jest
-      .spyOn(console, 'error')
+    const loggerErrorSpy = jest
+      .spyOn(logging.loaderLog.getLogger('getInstanceModule'), 'error')
       .mockImplementation(() => {});
     const provider = jest.fn((type: string) => {
       if (type === 'badModule') {
@@ -659,7 +660,7 @@ describe('getInstanceModule', () => {
     ]);
 
     expect(result).toEqual({ Ok: true });
-    expect(consoleErrorSpy).toHaveBeenCalled();
-    consoleErrorSpy.mockRestore();
+    expect(loggerErrorSpy).toHaveBeenCalled();
+    loggerErrorSpy.mockRestore();
   });
 });

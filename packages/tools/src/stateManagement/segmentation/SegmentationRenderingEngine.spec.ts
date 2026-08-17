@@ -8,6 +8,19 @@ jest.mock('@cornerstonejs/core', () => ({
   getEnabledElementByViewportId: jest.fn(),
   getRenderingEngines: jest.fn(() => []),
   triggerEvent: jest.fn(),
+  utilities: {
+    logger: {
+      toolsLog: {
+        getLogger: jest.fn(() => ({
+          debug: jest.fn(),
+          info: jest.fn(),
+          warn: jest.fn(),
+          error: jest.fn(),
+          setLevel: jest.fn(),
+        })),
+      },
+    },
+  },
 }));
 
 jest.mock('./getSegmentation', () => ({
