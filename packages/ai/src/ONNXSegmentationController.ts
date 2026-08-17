@@ -1642,10 +1642,10 @@ export default class ONNXSegmentationController {
     }
     config.threads = parseInt(String(config.threads));
     config.local = parseInt(config.local);
-    // Leave a location the application configured alone — it may be serving
-    // the binaries from a CDN or a versioned path. Otherwise resolve the
-    // copy of `onnxruntime-web/dist` against the application rather than
-    // against the current route. See `getOrtWasmPaths`.
+    // Leave a location the application assigned alone. Otherwise take the
+    // system-level wasm directory, or resolve the copy of
+    // `onnxruntime-web/dist` against the application rather than against the
+    // current route. See `getOrtWasmPaths`.
     if (!ort.env.wasm.wasmPaths) {
       ort.env.wasm.wasmPaths = getOrtWasmPaths();
     }

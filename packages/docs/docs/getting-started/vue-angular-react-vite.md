@@ -151,6 +151,8 @@ dicomImageLoaderInit({
 
 A relative `wasmBasePath` resolves against the decode worker's location, and an absolute path or full URL (e.g. a CDN) is used as given. When the option is unset, the default `import.meta.url` resolution applies, which is what unbundled and script-tag usage relies on.
 
+The path is system-wide rather than loader-specific, so it is also where `@cornerstonejs/ai` looks for the ONNX Runtime binaries — copy `onnxruntime-web/dist` into the same directory and there is nothing further to configure. With no `wasmBasePath` set, those binaries are expected in `ort/` under the application's base, which is taken from `PUBLIC_URL` (`window.PUBLIC_URL`, `window.config.path` or the build-time `process.env.PUBLIC_URL`) and defaults to the server root. A subpath deployment that does not set `wasmBasePath` should therefore declare `PUBLIC_URL`; either way the location no longer depends on the route the user happens to be on.
+
 ---
 
 ## Vite

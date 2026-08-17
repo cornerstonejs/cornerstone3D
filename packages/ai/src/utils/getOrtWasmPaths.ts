@@ -5,9 +5,9 @@
  *
  * Every other wasm binary in this repository is located with
  * `new URL(<specifier>, import.meta.url)` — the bundler resolves the file,
- * emits it, and hands back an absolute URL that does not depend on the page
- * the user is currently on. `onnxruntime-web@1.17` cannot be addressed that
- * way: its `exports` map publishes only the JavaScript entry points, so
+ * emits it, and hands back an absolute URL that does not depend on the page the
+ * user is currently on. `onnxruntime-web@1.17` cannot be addressed that way:
+ * its `exports` map publishes only the JavaScript entry points, so
  * `new URL('onnxruntime-web/dist/ort-wasm-simd.jsep.wasm', import.meta.url)`
  * fails to resolve. Applications copy `onnxruntime-web/dist` next to their
  * bundle instead — the example runner copies it to `<example>/ort`
@@ -23,140 +23,116 @@
  * 3c 21 64 6f` followed by "no available backend found".
  *
  * So resolve the prefix against where the *application* is served from, never
- * against the current document URL. In order of authority:
+ * against the current document URL:
  *
- * 1. the bundler's own asset base, when it exposes one — the examples and the
- *    docs site rely on this, since the copy of `onnxruntime-web/dist` sits
- *    beside the emitted bundle rather than at the server root;
- * 2. `PUBLIC_URL`, the base applications inject for exactly this purpose;
- * 3. `document.baseURI`, but only when the page carries an explicit
- *    `<base href>` — that element *is* a declaration of the application root,
- *    whereas a bare `document.baseURI` is just the route;
- * 4. `'/'`, the server root, which is where a copy next to the bundle lands
- *    for an application served from the root — the load path a page one
- *    segment deep already resolved `'ort/'` to.
+ * 1. when the system-level wasm directory is set, these binaries live there,
+ *    exactly like the codec binaries do — an application that already serves
+ *    its wasm out of one place (`init({ wasmBasePath })` on
+ *    `@cornerstonejs/dicom-image-loader`) does not need a second setting;
+ * 2. otherwise `PUBLIC_URL`, the base an application declares for itself,
+ *    defaulting to `'/'` when nothing declares one;
+ * 3. with the directory resolved against that base, anchored at the page's
+ *    origin — the protocol and host of `window.location` and nothing more,
+ *    which is how `dicom-microscopy-viewer` has always located its own assets
+ *    from `PUBLIC_URL`. The route never takes part.
  */
+import { utilities } from '@cornerstonejs/core';
 
 /** Directory applications copy `onnxruntime-web/dist` into. */
 export const DEFAULT_ORT_WASM_DIRECTORY = 'ort/';
 
 /**
- * Public base assumed when nothing declares one. Applications are served from
- * the root far more often than from a sub-path, and a wrong guess here is a
- * 404 rather than a wasm binary — so guess the common case.
+ * Base assumed when nothing declares one. Applications are served from the root
+ * far more often than from a sub-path, and it is the same default every other
+ * reader of `PUBLIC_URL` picks.
  */
 export const DEFAULT_PUBLIC_URL = '/';
 
 /**
- * webpack and rspack replace this identifier with the bundle's runtime public
- * path (`output.publicPath` / `assetPrefix`, or the script's own directory
- * when that is `'auto'`). It is declared rather than imported because other
- * bundlers leave it undefined — the `typeof` guard below covers them.
+ * Declared because `process` does not exist in a browser, and the bundlers that
+ * substitute `process.env.PUBLIC_URL` do it by matching that exact expression —
+ * so it has to be spelled out rather than reached through `globalThis`.
  */
-declare const __webpack_public_path__: string | undefined;
+declare const process: { env: Record<string, string | undefined> };
 
-/**
- * Declared for the same reason: `process` does not exist in a browser, and
- * bundlers that do substitute `process.env.PUBLIC_URL` do it by matching that
- * exact expression, so it has to be spelled out rather than reached through
- * `globalThis`.
- */
-declare const process: { env: Record<string, string | undefined> } | undefined;
-
-/**
- * The base a bundler anchors its emitted asset URLs to. This is the definition
- * webpack and rspack generate for `__webpack_require__.b`, which is what
- * `new URL(<specifier>, import.meta.url)` compiles down to — so the runtime
- * binaries end up resolved against the same base as the codec wasm.
- */
-function getBundlePublicPath(): string | undefined {
-  return typeof __webpack_public_path__ === 'string' && __webpack_public_path__
-    ? __webpack_public_path__
-    : undefined;
+/** Trailing slash, so URL resolution treats the value as a directory. */
+function asDirectory(path: string): string {
+  return path.endsWith('/') ? path : `${path}/`;
 }
 
 /**
- * The public base the application injected: `process.env.PUBLIC_URL` for a
- * build-time substitution (Create React App and friends), `PUBLIC_URL` on the
- * global for a runtime one — the spelling `utils/demo/helpers/initDemo.ts`
- * already uses for `dicom-microscopy-viewer`.
+ * `PUBLIC_URL` as a build-time substitution (Create React App and friends).
+ *
+ * A `typeof process !== 'undefined'` guard would be the obvious way to write
+ * this and does not work: bundlers rewrite `process.env.PUBLIC_URL` but leave
+ * the `typeof` check alone, and it is false in every browser bundle, so the
+ * substituted value would never be read. Catching the reference error is what
+ * is left.
  */
-function getInjectedPublicUrl(): string | undefined {
-  const injected =
-    (typeof process !== 'undefined' && process.env.PUBLIC_URL) ||
-    (globalThis as { PUBLIC_URL?: string }).PUBLIC_URL;
-
-  return typeof injected === 'string' && injected ? injected : undefined;
-}
-
-/**
- * `document.baseURI`, but only when a `<base href>` element put it there.
- * Without that element `baseURI` is just the current route, which is the thing
- * this module exists to stop resolving against.
- */
-function getExplicitDocumentBase(): string | undefined {
-  if (typeof document === 'undefined' || !document.querySelector) {
+function getBuildTimePublicUrl(): string | undefined {
+  try {
+    return process.env.PUBLIC_URL || undefined;
+  } catch {
     return undefined;
   }
-
-  return document.querySelector('base[href]')
-    ? document.baseURI || undefined
-    : undefined;
 }
 
 /**
- * Something absolute to anchor a path-only base (`/pacs/`) against. Only its
- * origin survives that resolution — the route never does.
+ * The base the application declares for itself. `PUBLIC_URL` on the global is
+ * the runtime spelling `utils/demo/helpers/initDemo.ts` sets and
+ * `dicom-microscopy-viewer` reads; `config.path` is the same value carried in a
+ * viewer's configuration object.
  */
-function getAbsoluteReference(): string | undefined {
+function getPublicUrl(): string {
+  const globals = globalThis as {
+    PUBLIC_URL?: string;
+    config?: { path?: string };
+  };
+
   return (
-    (typeof document !== 'undefined' && document.baseURI) ||
-    globalThis.location?.href
+    globals.PUBLIC_URL ||
+    globals.config?.path ||
+    getBuildTimePublicUrl() ||
+    DEFAULT_PUBLIC_URL
   );
 }
 
 /**
- * Where the application is served from, in the order documented above.
- *
- * The result always names a directory. `PUBLIC_URL=/pacs` is a common
- * spelling, and URL resolution would treat that last segment as a file and
- * discard it — turning `/pacs/ort/` back into `/ort/`.
+ * The page's origin, and nothing else. `PUBLIC_URL` is usually a path
+ * (`/pacs/`) and needs something absolute to resolve against, but the route is
+ * exactly what this module exists to keep out of the result — so hand over the
+ * protocol and host alone rather than `location.href` or `document.baseURI`.
  */
-function getApplicationBase(): string {
-  const base =
-    getBundlePublicPath() ??
-    getInjectedPublicUrl() ??
-    getExplicitDocumentBase() ??
-    DEFAULT_PUBLIC_URL;
+function getOrigin(): string | undefined {
+  const { location } = globalThis;
 
-  return base.endsWith('/') ? base : `${base}/`;
+  return location ? `${location.protocol}//${location.host}` : undefined;
 }
 
 /**
  * Absolute URL prefix for the ONNX Runtime wasm binaries.
  *
- * @param directory - directory holding `onnxruntime-web/dist`, relative to the
- *   application. An absolute path or a full URL is used as given, so an
- *   application serving the binaries from a CDN or a versioned path can say
- *   so. Defaults to `ort/`.
- * @returns the prefix as an absolute URL, or `directory` unchanged when there
+ * @param directory - directory holding `onnxruntime-web/dist`. Resolved against
+ *   the application base, so `'assets/ort/'` is relative to the application,
+ *   `'/ort/'` to the server root, and a full URL is used as given — an
+ *   application serving the binaries from a CDN or a versioned path can say so.
+ *   Passing this overrides the system-level wasm directory. Defaults to the
+ *   system-level directory when one is set, otherwise to `ort/`.
+ * @returns the prefix as an absolute URL, or the directory unchanged when there
  *   is nothing to resolve it against (a non-browser context).
  */
-export default function getOrtWasmPaths(
-  directory = DEFAULT_ORT_WASM_DIRECTORY
-): string {
-  const applicationBase = getApplicationBase();
-  const reference = getAbsoluteReference();
+export default function getOrtWasmPaths(directory?: string): string {
+  const prefix = asDirectory(
+    directory ?? utilities.getWasmBasePath() ?? DEFAULT_ORT_WASM_DIRECTORY
+  );
+  const publicUrl = asDirectory(getPublicUrl());
+  const origin = getOrigin();
 
   try {
-    // The application base is rarely a full URL (`/pacs/`, or `'auto'` in a
-    // worker), so anchor it before the directory is resolved against it.
-    const base = reference
-      ? new URL(applicationBase, reference)
-      : new URL(applicationBase);
+    const base = origin ? new URL(publicUrl, origin) : new URL(publicUrl);
 
-    return new URL(directory, base).href;
+    return new URL(prefix, base).href;
   } catch {
-    return directory;
+    return prefix;
   }
 }
