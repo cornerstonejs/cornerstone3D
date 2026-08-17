@@ -2,10 +2,10 @@ import { utilities } from '@cornerstonejs/core';
 import getOrtWasmPaths from './getOrtWasmPaths';
 
 /**
- * How a base is resolved is `resolveApplicationUrl`/`resolveWasmBasePath` in
- * `@cornerstonejs/core`, covered by `packages/core/test/wasmBasePath.jest.js`.
- * What is left here is what this module decides: the standard directory, and
- * which of the two resolvers a given call goes through.
+ * How a base is resolved is `resolveWasmBasePath` in `@cornerstonejs/core`,
+ * covered by `packages/core/test/wasmBasePath.jest.js`. What is left here is the
+ * one thing this module decides - the standard directory - and that the two ways
+ * an application declares a location both reach the ONNX Runtime.
  */
 describe('getOrtWasmPaths', () => {
   const publicUrl = process.env.PUBLIC_URL;
@@ -41,12 +41,9 @@ describe('getOrtWasmPaths', () => {
     expect(getOrtWasmPaths()).toBe('http://localhost/assets/cs-wasm/');
   });
 
-  it('lets a caller-named directory outrank the configured one', () => {
-    utilities.setWasmBasePath('/assets/cs-wasm/');
+  it('serves the binaries from a CDN the configured directory names', () => {
+    utilities.setWasmBasePath('https://cdn.example.com/wasm/');
 
-    expect(getOrtWasmPaths('https://cdn.example.com/onnx/1.17/')).toBe(
-      'https://cdn.example.com/onnx/1.17/'
-    );
-    expect(getOrtWasmPaths('ort-1.17.1/')).toBe('http://localhost/ort-1.17.1/');
+    expect(getOrtWasmPaths()).toBe('https://cdn.example.com/wasm/');
   });
 });

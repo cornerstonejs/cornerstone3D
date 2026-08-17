@@ -11,11 +11,10 @@ export {
   LabelmapSlicePropagationTool,
   MarkerLabelmapTool,
   Events,
-  // Exported so an application can put the ONNX Runtime binaries somewhere
-  // this cannot work out for itself - a CDN, a versioned path - by assigning
-  // `ort.env.wasm.wasmPaths` before the controller runs. Serving them from the
-  // same directory as the codec binaries needs nothing from here: set that
-  // directory once, with `init({ wasmBasePath })` on the DICOM image loader.
+  // Exported to answer where the ONNX Runtime binaries will be looked for, not
+  // to configure it: the location comes from `init({ wasmBasePath })` on the
+  // DICOM image loader, from `PUBLIC_URL`, or from assigning
+  // `ort.env.wasm.wasmPaths` directly, which the controller leaves alone.
   getOrtWasmPaths,
   DEFAULT_ORT_WASM_DIRECTORY,
 };

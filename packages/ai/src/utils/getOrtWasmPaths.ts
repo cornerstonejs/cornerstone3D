@@ -19,6 +19,13 @@
  * the standard directory against the application's base. All this module adds
  * is the standard directory name.
  *
+ * Those two are the whole story, and there is deliberately no third way to name
+ * the location here. Since the binaries cannot be reached from this module,
+ * there is nothing to fall back to: an application serving them from somewhere
+ * else says so with `init({ wasmBasePath })`, or declares where it is mounted
+ * with `PUBLIC_URL`, or assigns `ort.env.wasm.wasmPaths` itself — which the
+ * controller leaves alone.
+ *
  * When `onnxruntime-web` is eventually bumped to >= 1.21 its
  * `*.bundle.min.mjs` builds resolve their own `.wasm` through `import.meta.url`
  * and this module can be deleted.
@@ -29,20 +36,12 @@ import { utilities } from '@cornerstonejs/core';
 export const DEFAULT_ORT_WASM_DIRECTORY = 'ort/';
 
 /**
- * Absolute URL prefix for the ONNX Runtime wasm binaries.
+ * Absolute URL prefix for the ONNX Runtime wasm binaries: the wasm directory the
+ * application configured, or `ort/` under the application's base.
  *
- * @param directory - directory holding `onnxruntime-web/dist`, overriding both
- *   the application's wasm directory and the default `ort/`. Resolved against
- *   the application's base, so `'assets/ort/'` is relative to the application,
- *   `'/ort/'` to the server root, and a full URL is used as given — an
- *   application serving the binaries from a CDN or a versioned path can say so.
  * @returns the prefix as an absolute URL, or the directory unchanged when there
  *   is nothing to resolve it against (a non-browser context).
  */
-export default function getOrtWasmPaths(directory?: string): string {
-  // A directory the caller names is the application talking, so it outranks the
-  // wasm directory the application configured.
-  return directory
-    ? utilities.resolveApplicationUrl(directory)
-    : utilities.resolveWasmBasePath(DEFAULT_ORT_WASM_DIRECTORY);
+export default function getOrtWasmPaths(): string {
+  return utilities.resolveWasmBasePath(DEFAULT_ORT_WASM_DIRECTORY);
 }
