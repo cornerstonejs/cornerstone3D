@@ -54,13 +54,35 @@ export interface WSIMapViewLike {
   setZoom(zoom: number): void;
 }
 
+export interface WSIOverviewMapLike {
+  getEventCoordinate(event: Event): [number, number];
+}
+
+export interface WSIMapControlLike {
+  element?: HTMLElement;
+  getCollapsed?(): boolean;
+  getOverviewMap?(): WSIOverviewMapLike;
+  setCollapsed?(collapsed: boolean): void;
+}
+
 export interface WSIMapLike {
+  getControls?(): {
+    getArray(): WSIMapControlLike[];
+  };
+  getOverlayContainerStopEvent?(): HTMLElement;
+  getOwnerDocument?(): Document;
   getView(): WSIMapViewLike;
   getViewport(): HTMLElement;
   on(eventName: string, handler: () => void): void;
   render(): void;
+  setTarget?(target: HTMLElement | null): void;
   un(eventName: string, handler: () => void): void;
   updateSize?(): void;
+}
+
+export interface WSIOverviewMapInteraction {
+  cleanup(): void;
+  getCollapsed(): boolean | undefined;
 }
 
 export interface WSIViewerLike {
@@ -126,6 +148,84 @@ export async function getDicomMicroscopyViewer(): Promise<DicomMicroscopyViewerL
   return peerImport(
     'dicom-microscopy-viewer'
   ) as Promise<DicomMicroscopyViewerLike>;
+}
+
+/**
+ * Restores overview-map state, isolates its events from viewport tools, and
+ * owns drag listeners without importing OpenLayers types from the peer viewer.
+ */
+export function configureWSIOverviewMap(
+  map: WSIMapLike,
+  collapsed?: boolean
+): WSIOverviewMapInteraction {
+  const controlContainer = map.getOverlayContainerStopEvent?.();
+  const blockedEventTypes = ['pointerdown', 'mousedown', 'dblclick', 'wheel'];
+  const stopPropagation = (event: Event) => event.stopPropagation();
+
+  blockedEventTypes.forEach((eventType) => {
+    controlContainer?.addEventListener(eventType, stopPropagation);
+  });
+
+  const overviewMapControl = map
+    .getControls?.()
+    .getArray()
+    .find((control) => control.getOverviewMap);
+
+  if (collapsed !== undefined) {
+    overviewMapControl?.setCollapsed?.(collapsed);
+  }
+
+  const overviewMap = overviewMapControl?.getOverviewMap?.();
+  const overviewMapElement = overviewMapControl?.element?.querySelector(
+    '.ol-overviewmap-map'
+  );
+  const magnificationBox = overviewMapControl?.element?.querySelector(
+    '.ol-overviewmap-box'
+  );
+  let stopPanning: (() => void) | undefined;
+
+  const startPanning = (event: Event) => {
+    if (
+      event.target !== magnificationBox ||
+      !overviewMap ||
+      !map.getOwnerDocument
+    ) {
+      return;
+    }
+
+    stopPanning?.();
+
+    const ownerDocument = map.getOwnerDocument();
+    const panViewport = (pointerEvent: Event) => {
+      map.getView().setCenter(overviewMap.getEventCoordinate(pointerEvent));
+    };
+    const stopCurrentPan = () => {
+      ownerDocument.removeEventListener('pointermove', panViewport);
+      ownerDocument.removeEventListener('pointerup', stopCurrentPan);
+      ownerDocument.removeEventListener('pointercancel', stopCurrentPan);
+      stopPanning = undefined;
+    };
+
+    stopPanning = stopCurrentPan;
+    ownerDocument.addEventListener('pointermove', panViewport);
+    ownerDocument.addEventListener('pointerup', stopCurrentPan, { once: true });
+    ownerDocument.addEventListener('pointercancel', stopCurrentPan, {
+      once: true,
+    });
+  };
+
+  overviewMapElement?.addEventListener('pointerdown', startPanning);
+
+  return {
+    cleanup: () => {
+      stopPanning?.();
+      overviewMapElement?.removeEventListener('pointerdown', startPanning);
+      blockedEventTypes.forEach((eventType) => {
+        controlContainer?.removeEventListener(eventType, stopPropagation);
+      });
+    },
+    getCollapsed: () => overviewMapControl?.getCollapsed?.(),
+  };
 }
 
 export function addWSIMiniNavigationOverlayCss() {
