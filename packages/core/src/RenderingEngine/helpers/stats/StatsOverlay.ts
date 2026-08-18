@@ -7,6 +7,9 @@ import { StatsPanel } from './StatsPanel';
 import type { Panel, StatsInstance, PerformanceWithMemory } from './types';
 import { PanelType } from './enums';
 import { STATS_CONFIG, PANEL_CONFIGS, CONVERSION } from './constants';
+import { coreLog } from '../../../utilities/logger';
+
+const log = coreLog.getLogger('RenderingEngine', 'StatsOverlay');
 
 /**
  * Singleton class for managing the stats overlay.
@@ -72,7 +75,7 @@ export class StatsOverlay implements StatsInstance {
       this.startLoop();
       this.isSetup = true;
     } catch (error) {
-      console.warn('Failed to setup stats overlay:', error);
+      log.warn('Failed to setup stats overlay:', error);
     }
   }
 

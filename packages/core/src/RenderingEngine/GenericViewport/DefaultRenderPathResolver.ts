@@ -6,6 +6,9 @@ import type {
   RenderPathResolver,
 } from './ViewportArchitectureTypes';
 import type ViewportType from '../../enums/ViewportType';
+import { coreLog } from '../../utilities/logger';
+
+const log = coreLog.getLogger('RenderingEngine', 'DefaultRenderPathResolver');
 
 export class DefaultRenderPathResolver implements RenderPathResolver {
   private paths: RenderPathDefinition[] = [];
@@ -27,7 +30,7 @@ export class DefaultRenderPathResolver implements RenderPathResolver {
     );
 
     if (existingPath) {
-      console.debug(
+      log.debug(
         `[DefaultRenderPathResolver] Duplicate render path registration ignored for "${path.id}"`
       );
       return;

@@ -7,6 +7,11 @@ import {
   getMetaData,
 } from '../../metaData';
 import { BASE_IMAGE_ID, FRAME_IMAGE_IDS } from './imageIdsProviders';
+import { logging as cornerstoneLogging } from '@cornerstonejs/utils';
+
+const cs3dLogger = cornerstoneLogging.metadataLog.getLogger(
+  'utilities.metadataProvider.cacheData'
+);
 
 interface CacheGetOptions {
   noCache?: boolean;
@@ -219,7 +224,7 @@ export function createTypeWritableCacheProvider(type: string) {
   return (next, query: string, data, options) => {
     const cachedValue = CacheData.getCacheData(type, query);
     if (cachedValue !== undefined) {
-      console.warn(
+      cs3dLogger.warn(
         `Metadata add skipped for "${type}" at query "${query}" because cache already has a value.`
       );
       return cachedValue;

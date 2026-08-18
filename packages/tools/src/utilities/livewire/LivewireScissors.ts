@@ -2,6 +2,11 @@ import type { Types } from '@cornerstonejs/core';
 import { utilities } from '@cornerstonejs/core';
 
 import { BucketQueue } from '../BucketQueue';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.livewire.LivewireScissors'
+);
 
 const { isEqual } = utilities;
 const MAX_UINT32 = 4294967295;
@@ -508,7 +513,16 @@ export class LivewireScissors {
     const direction =
       TWO_THIRD_PI * (Math.acos(Math.min(dp, 1)) + Math.acos(dq));
     if (isNaN(direction) || !isFinite(direction)) {
-      console.warn('Found non-direction:', px, py, qx, qy, dp, dq, direction);
+      cs3dLogger.warn(
+        'Found non-direction:',
+        px,
+        py,
+        qx,
+        qy,
+        dp,
+        dq,
+        direction
+      );
       return 1;
     }
     return direction;

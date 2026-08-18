@@ -1,5 +1,8 @@
 import Segmentation_3X from './Segmentation_3X';
 import Segmentation_4X from './Segmentation_4X';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.cs3dLog.getLogger('adapters.Cornerstone.Segmentation');
 
 /**
  * generateSegmentation - Generates a DICOM Segmentation object given cornerstoneTools data.
@@ -32,7 +35,7 @@ function generateSegmentation(
     );
   }
 
-  console.warn(
+  cs3dLogger.warn(
     `No generateSegmentation adapter for cornerstone version ${cornerstoneToolsVersion}, exiting.`
   );
 }
@@ -77,7 +80,7 @@ function generateToolState(
     );
   }
 
-  console.warn(
+  cs3dLogger.warn(
     `No generateToolState adapter for cornerstone version ${cornerstoneToolsVersion}, exiting.`
   );
 }
@@ -104,7 +107,7 @@ function fillSegmentation(
     );
   }
 
-  console.warn(
+  cs3dLogger.warn(
     `No generateSegmentation adapter for cornerstone version ${cornerstoneToolsVersion}, exiting.`
   );
 }

@@ -8,6 +8,11 @@ import {
   createPolylineHole,
   combinePolylines,
 } from './sharedOperations';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.contourSegmentation.contourSegmentationOperation'
+);
 
 /**
  * Processes two contour segmentation annotations by performing merge, subtract, or hole operations.
@@ -61,13 +66,13 @@ export async function contourSegmentationOperation(
   const intersectionInfo = checkIntersection(sourcePolyline, targetPolyline);
 
   if (!intersectionInfo.hasIntersection) {
-    console.warn('No intersection found between the two annotations');
+    cs3dLogger.warn('No intersection found between the two annotations');
     return;
   }
 
   if (intersectionInfo.isContourHole) {
     if (!contourHoleProcessingEnabled) {
-      console.warn('Hole processing is disabled');
+      cs3dLogger.warn('Hole processing is disabled');
       return;
     }
 

@@ -1,8 +1,10 @@
 import { metaData, registerImageLoader, type Types } from '@cornerstonejs/core';
-import { registerDefaultProviders } from '@cornerstonejs/metadata';
+import { logging, registerDefaultProviders } from '@cornerstonejs/metadata';
 
 import { loadImage, loadImageFromNaturalizedMetadata } from './loadImage';
 import { metaDataProvider } from './metaData/index';
+
+const log = logging.loaderLog.getLogger('wadouri');
 
 /**
  * Registers the image loaders for Part 10 DICOM files, and either the
@@ -18,7 +20,7 @@ export default function (options?: {
      * Use addBinaryDicomInstance from @cornerstonejs/metadata to register
      * Part 10 binary metadata directly into the NATURAL cache instead.
      */
-    console.warn(
+    log.warn(
       'wadouri metaDataProvider is deprecated. Use registerMetadataProvider module from @cornerstonejs/metadata instead.'
     );
     // register dicomweb and wadouri image loader prefixes and bind them

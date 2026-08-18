@@ -2,6 +2,11 @@ import { state } from '../../store/state';
 import getActiveToolForMouseEvent from '../shared/getActiveToolForMouseEvent';
 import { setAnnotationSelected } from '../../stateManagement/annotation/annotationSelection';
 import type { EventTypes } from '../../types';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'eventDispatchers.mouseEventHandlers.mouseDownActivate'
+);
 
 /**
  * If the `mouseDown` handler does not consume an event,
@@ -33,7 +38,10 @@ export default function mouseDownActivate(
       const annotation = activeTool.addNewAnnotation(evt, 'mouse');
       setAnnotationSelected(annotation.annotationUID);
     } catch (error) {
-      console.warn('Error adding new annotation, viewport not ready:', error);
+      cs3dLogger.warn(
+        'Error adding new annotation, viewport not ready:',
+        error
+      );
     }
   }
 }

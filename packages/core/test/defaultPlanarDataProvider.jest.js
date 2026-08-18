@@ -20,6 +20,7 @@ import { ActorRenderMode } from '../src/types';
 import { createAndCacheVolume } from '../src/loaders/volumeLoader';
 import { getGenericViewportPlanarDisplaySet } from '../src/RenderingEngine/GenericViewport/genericViewportDisplaySetAccess';
 import { DefaultPlanarDataProvider } from '../src/RenderingEngine/GenericViewport/Planar/DefaultPlanarDataProvider';
+import { coreLog } from '../src/utilities/logger';
 
 const DATA_ID = 'display-set-1';
 
@@ -86,7 +87,12 @@ describe('DefaultPlanarDataProvider', () => {
       const dataSetImageIds = makeImageIds(10);
       registerDataSet({ imageIds: dataSetImageIds, initialImageIdIndex: 3 });
       mockVolume(makeImageIds(10).map((id) => `${id}-other`));
-      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const warnSpy = jest
+        .spyOn(
+          coreLog.getLogger('RenderingEngine', 'DefaultPlanarDataProvider'),
+          'warn'
+        )
+        .mockImplementation(() => {});
 
       try {
         const provider = new DefaultPlanarDataProvider();

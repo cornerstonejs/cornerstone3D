@@ -3,6 +3,12 @@ import triggerEvent from '../../utilities/triggerEvent';
 import type { EventTypes, IVolumeViewport } from '../../types';
 import { Events } from '../../enums';
 import { getRenderingEngine } from '../getRenderingEngine';
+import { coreLog } from '../../utilities/logger';
+
+const log = coreLog.getLogger(
+  'RenderingEngine',
+  'volumeNewImageEventDispatcher'
+);
 
 // Keeping track of previous imageIndex for each viewportId
 type VolumeImageState = Record<string, number>;
@@ -47,7 +53,7 @@ function volumeNewImageEventDispatcher(
   );
 
   if (!sliceData) {
-    console.warn(
+    log.warn(
       `volumeNewImageEventDispatcher: sliceData is undefined for viewport ${viewport.id}`
     );
     return;
