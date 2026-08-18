@@ -159,7 +159,15 @@ export function configureWSIOverviewMap(
   collapsed?: boolean
 ): WSIOverviewMapInteraction {
   const controlContainer = map.getOverlayContainerStopEvent?.();
-  const blockedEventTypes = ['pointerdown', 'mousedown', 'dblclick', 'wheel'];
+  const blockedEventTypes = [
+    'pointerdown',
+    'pointermove',
+    'pointerup',
+    'pointercancel',
+    'mousedown',
+    'dblclick',
+    'wheel',
+  ];
   const stopPropagation = (event: Event) => event.stopPropagation();
 
   blockedEventTypes.forEach((eventType) => {
@@ -200,16 +208,20 @@ export function configureWSIOverviewMap(
       map.getView().setCenter(overviewMap.getEventCoordinate(pointerEvent));
     };
     const stopCurrentPan = () => {
-      ownerDocument.removeEventListener('pointermove', panViewport);
-      ownerDocument.removeEventListener('pointerup', stopCurrentPan);
-      ownerDocument.removeEventListener('pointercancel', stopCurrentPan);
+      ownerDocument.removeEventListener('pointermove', panViewport, true);
+      ownerDocument.removeEventListener('pointerup', stopCurrentPan, true);
+      ownerDocument.removeEventListener('pointercancel', stopCurrentPan, true);
       stopPanning = undefined;
     };
 
     stopPanning = stopCurrentPan;
-    ownerDocument.addEventListener('pointermove', panViewport);
-    ownerDocument.addEventListener('pointerup', stopCurrentPan, { once: true });
+    ownerDocument.addEventListener('pointermove', panViewport, true);
+    ownerDocument.addEventListener('pointerup', stopCurrentPan, {
+      capture: true,
+      once: true,
+    });
     ownerDocument.addEventListener('pointercancel', stopCurrentPan, {
+      capture: true,
       once: true,
     });
   };
