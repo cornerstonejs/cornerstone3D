@@ -426,16 +426,20 @@ export class BaseStreamingImageVolume
       return;
     }
 
+    const cleanupImageCacheListener = () => {
+      eventTarget.removeEventListener(
+        Events.IMAGE_CACHE_IMAGE_ADDED,
+        handleImageCacheAdded
+      );
+    };
+
     // Todo: check if this needs more work for when we have progressive loading
     const handleImageCacheAdded = (event) => {
       const { image } = event.detail;
       if (image.imageId === imageId) {
         this.vtkOpenGLTexture.setUpdatedFrame(imageIdIndex);
         // Remove the event listener after it's been triggered
-        eventTarget.removeEventListener(
-          Events.IMAGE_CACHE_IMAGE_ADDED,
-          handleImageCacheAdded
-        );
+        cleanupImageCacheListener();
       }
     };
 
@@ -444,18 +448,35 @@ export class BaseStreamingImageVolume
       handleImageCacheAdded
     );
 
-    const uncompressedIterator = ProgressiveIterator.as(
-      loadAndCacheImage(imageId, options)
-    );
+    try {
+      const uncompressedIterator = ProgressiveIterator.as(
+        loadAndCacheImage(imageId, options)
+      );
 
-    return uncompressedIterator.forEach(
-      (image) => {
-        // scalarData is the volume container we are progressively loading into
-        // image is the pixelData decoded from workers in cornerstoneDICOMImageLoader
-        this.successCallback(imageId, image);
-      },
-      this.errorCallback.bind(this, imageIdIndex, imageId)
-    );
+      const result = uncompressedIterator.forEach(
+        (image) => {
+          // scalarData is the volume container we are progressively loading into
+          // image is the pixelData decoded from workers in cornerstoneDICOMImageLoader
+          this.successCallback(imageId, image);
+        },
+        this.errorCallback.bind(this, imageIdIndex, imageId)
+      );
+
+      // The listener is only needed while this request is in flight. Most
+      // streaming loads never insert the image into the image cache, so
+      // without settle-time cleanup every call leaks one listener on the
+      // global eventTarget, and each closure retains the volume instance,
+      // keeping decached volumes from being garbage collected.
+      Promise.resolve(result).then(
+        cleanupImageCacheListener,
+        cleanupImageCacheListener
+      );
+
+      return result;
+    } catch (error) {
+      cleanupImageCacheListener();
+      throw error;
+    }
   }
 
   protected getImageIdsRequests(imageIds: string[], priorityDefault: number) {
