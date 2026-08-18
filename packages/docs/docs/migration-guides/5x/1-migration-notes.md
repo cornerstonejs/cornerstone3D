@@ -242,3 +242,41 @@ Two notes on scope:
 - **Check your scroll affordances on small screens.** If a page relied on
   viewport drags to scroll, add padding, a scroll container, or a gutter outside
   the viewport elements so the page remains scrollable on a phone or tablet.
+
+## Prescaled PT volumes ignore the window in the metadata
+
+### What Changed
+
+A volume viewport that shows a **prescaled PT series** (`isPreScaled` with an
+`suvbw` scaling factor) now always starts with a default VOI range of 0 to 5.
+This is correct also when the series has a Window Center and a Window Width.
+
+Before, this default range was applicable only when the viewport found no
+window. The viewport used the range 0 to 5 only after it calculated the minimum
+and the maximum of the middle slice. Thus a PT series that had a window used
+that window.
+
+### Why This Matters
+
+A prescaled PT volume contains SUV values, but the Window Center and the Window
+Width of the file are in the unscaled counts. The window has the incorrect
+units. Applied to SUV values, it gives a very large range, and the volume is
+almost black.
+
+Thus the series that had a window were the series with the incorrect display.
+These volumes also did not agree with the stack viewport, which always uses its
+own PT range. **After the upgrade, PET volumes look different and correct.**
+
+Unscaled PT volumes do not change. They continue to use the window in the
+metadata.
+
+### Migration Guidance
+
+- **Usually, you do not have to do an operation.** The new default range agrees
+  with the stack viewport and with other viewers.
+- **If your application needs the initial behavior**, set the range with
+  `viewport.setProperties({ voiRange })` after the volume loads, or give your
+  own VOI when you configure the viewport. The default is applicable only when
+  the application does not set a range.
+- **If your tests compare volume and stack displays**, change the PT values that
+  you calculated from the metadata window to the range 0 to 5.

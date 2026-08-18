@@ -68,15 +68,11 @@ export async function getDefaultVolumeVOIRange(
 ): Promise<VOIRange | undefined> {
   let voi = getVOIFromMetadata(imageVolume);
 
-  // A prescaled PT gets the 0-5 default even when the metadata does carry a
-  // window. PT window width/center is expressed in the unscaled counts, so
-  // applying it to SUV values produces an enormous range and a black volume.
-  // This override used to run only on the min/max path below, so a PT series
-  // that shipped a window skipped it and the volume viewport disagreed with the
-  // stack viewport, which has always preferred its own PT range. It applies to
-  // a volume with no imageIds too, whose window came from the volume metadata
-  // rather than from an instance: scaling is a property of the volume, not of
-  // how its window was found.
+  // A prescaled PT volume contains SUV values, but the window in the metadata
+  // is in the unscaled counts. Thus this window gives a very large range and a
+  // black volume, and a prescaled PT volume must use the default range 0 to 5.
+  // This is also correct for a volume that has no imageIds, because the
+  // prescaling is a property of the volume, not of the source of the window.
   if (voi) {
     voi = handlePreScaledVolume(imageVolume, voi);
   }
@@ -117,16 +113,15 @@ function handlePreScaledVolume(imageVolume: IImageVolume, voi: VOIRange) {
   const imageIdIndex = Math.floor(imageIds.length / 2);
   const imageId = imageIds[imageIdIndex];
 
-  // A volume does not have to carry imageIds - one built from its own metadata
-  // has none - so the general series module is only worth asking for when there
-  // is an instance to key it on. The volume metadata fallback below covers the
-  // rest, and the prescaling check itself reads only volume level fields.
+  // A volume is not required to have imageIds. A volume that comes from its
+  // own metadata has none. Thus get the general series module only when there
+  // is an instance. The test for the prescaling reads only fields of the volume.
   const generalSeriesModule =
     (imageId ? metaData.get(MetadataModules.GENERAL_SERIES, imageId) : null) ||
     {};
-  // The volume's own metadata is the fallback: the middle instance may not have
-  // a registered general series module, and missing the modality here would
-  // quietly skip the PT handling below.
+  // The metadata of the volume gives the modality when the general series
+  // module of the instance is absent. Without the modality, the code below does
+  // not find a prescaled PT volume.
   const modality =
     generalSeriesModule.modality ?? imageVolume.metadata?.Modality;
 
@@ -147,17 +142,16 @@ function handlePreScaledVolume(imageVolume: IImageVolume, voi: VOIRange) {
 }
 
 /**
- * Finds a usable Window Center/Width, starting at the middle of the stack and
- * walking outwards.
+ * Finds a usable Window Center and Window Width. The search starts at the middle
+ * of the stack and continues to the two ends.
  *
- * The middle instance is preferred (it is the most representative slice), but it
- * is not guaranteed to have registered metadata: which imageId lands in the
- * middle depends on how the volume was created and in which order its instances
- * were added, and an instance whose metadata has not been registered yet
- * silently produced no window at all - the volume then fell back to a min/max
- * range from the pixel data (cornerstone3D#1767). Any sibling in the same series
- * carries the same window in practice, so the nearest instance that has one is a
- * far better answer than giving up.
+ * The middle instance is the best slice, but its metadata can be absent. The
+ * position of an imageId in the volume depends on the method that made the
+ * volume and on the sequence of the instances. When the metadata of the middle
+ * instance was absent, the volume found no window. Then it used a range from
+ * the minimum and the maximum of the pixel data. Usually,
+ * the other instances of the series have the same window. Thus the nearest
+ * instance that has a window gives a much better result.
  */
 function getWindowFromNearestImageId(imageIds: string[]) {
   const middle = Math.floor(imageIds.length / 2);
@@ -177,18 +171,18 @@ function getWindowFromNearestImageId(imageIds: string[]) {
     const width = Array.isArray(windowWidth) ? windowWidth[0] : windowWidth;
     const center = Array.isArray(windowCenter) ? windowCenter[0] : windowCenter;
 
-    // A center of 0 is a perfectly good window - prescaled PT, parametric maps
-    // and centered MR all use one - so it has to be tested for existence rather
-    // than for truthiness, or those series silently fall back to a min/max
-    // range. A width of 0 or a missing width has no window to show, however.
+    // A center of 0 is a correct window. Prescaled PT volumes, parametric maps
+    // and centered MR volumes use one. Thus make sure that the center exists,
+    // but do not make sure that the center is not 0. If not, these series use a
+    // range from the minimum and the maximum. But a width of 0, or an absent
+    // width, gives no window.
     if (!width || center == null) {
       continue;
     }
 
-    // The VOI LUT Function has to stay attached to the window - it decides how
-    // the window converts to a range. It used to be assigned to `voi` first and
-    // then overwritten by the window object, so a LINEAR_EXACT/SIGMOID volume
-    // was silently windowed as LINEAR.
+    // Keep the VOI LUT Function with the window. The function controls how the
+    // window becomes a range. If the function is lost, a volume with the
+    // function LINEAR_EXACT or SIGMOID gets a LINEAR window.
     return {
       windowWidth: width,
       windowCenter: center,
@@ -212,9 +206,8 @@ function getVOIFromMetadata(imageVolume: IImageVolume): VOIRange | undefined {
   if (imageIds?.length) {
     voi = getWindowFromNearestImageId(imageIds);
   } else {
-    // A volume without imageIds carries its own window, which it is not
-    // required to have - indexing it unconditionally threw for every volume
-    // built without one
+    // A volume that has no imageIds contains its own window, but the volume is
+    // not required to have one.
     voi = metadata?.voiLut?.[0];
   }
 

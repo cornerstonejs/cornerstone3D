@@ -191,9 +191,13 @@ class StackViewport extends Viewport {
   // Whether the transfer function currently on the actor was built from the
   // image's VOI LUT Sequence rather than from a window width/center
   private voiLUTSequenceApplied = false;
-  // Set once the application asks for a specific VOI LUT Function, which opts
-  // out of the image's own VOI LUT Sequence - see _getVOILUTSequenceToApply
+  // True when the application asked for a VOI LUT Function that is different
+  // from the function of the image. Then the image cannot use its VOI LUT
+  // Sequence. See _getVOILUTSequenceToApply.
   private voiLUTFunctionSetByUser = false;
+  // The choice of the application about the VOI LUT Sequence of the image. It
+  // stays undefined until the application makes a choice.
+  private useVOILUTSequence: boolean;
   //
   private invert = false;
   // The initial invert of the image loaded as opposed to the invert status of the viewport itself (see above).
@@ -759,6 +763,7 @@ class StackViewport extends Viewport {
    @param properties.colormap - Specifies the colormap for the viewport.
    @param properties.voiRange - Defines the lower and upper Value of Interest (VOI) to be applied.
    @param properties.VOILUTFunction - Function to handle the application of a lookup table (LUT) to the VOI.
+   @param properties.useVOILUTSequence - If false, ignore the VOI LUT Sequence of the image and use the VOI LUT Function.
    @param properties.invert - A boolean value to toggle color inversion (true: inverted, false: not inverted).
    @param properties.interpolationType - Determines the interpolation method to be used (1: linear, 0: nearest-neighbor).
    @param properties.rotation - Specifies the image rotation angle in degrees.
@@ -769,6 +774,7 @@ class StackViewport extends Viewport {
       colormap,
       voiRange,
       VOILUTFunction,
+      useVOILUTSequence,
       invert,
       interpolationType,
       sharpening,
@@ -787,6 +793,8 @@ class StackViewport extends Viewport {
       voiRange: this.globalDefaultProperties.voiRange ?? voiRange,
       VOILUTFunction:
         this.globalDefaultProperties.VOILUTFunction ?? VOILUTFunction,
+      useVOILUTSequence:
+        this.globalDefaultProperties.useVOILUTSequence ?? useVOILUTSequence,
       invert: this.globalDefaultProperties.invert ?? invert,
       interpolationType:
         this.globalDefaultProperties.interpolationType ?? interpolationType,
@@ -804,9 +812,26 @@ class StackViewport extends Viewport {
       this.setVOI(voiRange, { suppressEvents, voiUpdatedWithSetProperties });
     }
 
+    if (typeof useVOILUTSequence !== 'undefined') {
+      this.useVOILUTSequence = useVOILUTSequence;
+    }
+
     if (typeof VOILUTFunction !== 'undefined') {
-      this.voiLUTFunctionSetByUser = true;
+      // Only a different function stops the use of the VOI LUT Sequence. An
+      // absent tag (0028,1056) becomes LINEAR, and getProperties gives that
+      // value to the application. Thus an application that keeps the properties
+      // and sets them again must not stop the sequence with a LINEAR value that
+      // no person selected. Both values go through getValidVOILUTFunction, and
+      // an absent tag is equal to LINEAR.
+      this.voiLUTFunctionSetByUser =
+        getValidVOILUTFunction(VOILUTFunction) !==
+        getValidVOILUTFunction(this.csImage?.voiLUTFunction);
       this.setVOILUTFunction(VOILUTFunction, suppressEvents);
+    } else if (typeof useVOILUTSequence !== 'undefined') {
+      // A change of useVOILUTSequence changes the transfer function, but it
+      // does not change the VOI LUT Function or the range. Thus set the current
+      // function again to make the new transfer function.
+      this.setVOILUTFunction(this.VOILUTFunction, suppressEvents);
     }
 
     if (typeof invert !== 'undefined') {
@@ -857,6 +882,7 @@ class StackViewport extends Viewport {
       VOILUTFunction,
       interpolationType,
       invert,
+      useVOILUTSequence,
       voiUpdatedWithSetProperties,
     } = this;
 
@@ -864,6 +890,7 @@ class StackViewport extends Viewport {
       colormap,
       voiRange,
       VOILUTFunction,
+      useVOILUTSequence,
       interpolationType,
       invert,
       isComputedVOI: !voiUpdatedWithSetProperties,
@@ -894,6 +921,7 @@ class StackViewport extends Viewport {
     // than validate here so an image without one leaves it unset and the
     // per image fallbacks apply.
     this.voiLUTFunctionSetByUser = false;
+    this.useVOILUTSequence = undefined;
     this.VOILUTFunction = normalizeVOILUTFunction(this.csImage?.voiLUTFunction);
     this.viewportStatus = ViewportStatus.PRE_RENDER;
 
@@ -1833,6 +1861,10 @@ class StackViewport extends Viewport {
 
     this.modality = modality;
     const voiLUTFunctionEnum = this._getValidVOILUTFunction(voiLUTFunction);
+    // The VOI LUT Function comes from this image. Thus the flag for the
+    // function of the previous image is not correct, and it must not stop the
+    // VOI LUT Sequence of this image.
+    this.voiLUTFunctionSetByUser = false;
     this.VOILUTFunction = voiLUTFunctionEnum;
 
     this.calibration = calibration;
@@ -2833,20 +2865,6 @@ class StackViewport extends Viewport {
   }
 
   /**
-   * The VOI LUT Sequence (0028,3010) of the displayed image, when it should
-   * drive the display instead of an analytic VOI LUT Function.
-   *
-   * DICOM allows a window and a sequence to both be present and lets the
-   * application pick (C.11.2.1); like the legacy cornerstone renderer we prefer
-   * the sequence, since a file that ships an explicit VOI LUT expects that
-   * curve. Window level interaction does not disable it - the curve is stretched
-   * over the new range instead, the same way the sampled sigmoid is rebuilt from
-   * a new window - so the shape the file specified survives interaction.
-   *
-   * Asking for a VOI LUT Function explicitly (`setProperties({ VOILUTFunction })`)
-   * is the way to opt out and get a plain analytic window instead.
-   */
-  /**
    * Keeps the CPU fallback viewport's VOI LUT Sequence in step with
    * {@link _getVOILUTSequenceToApply}, which is what decides the same question
    * on the GPU path: the image's sequence drives the display unless the user
@@ -2864,8 +2882,30 @@ class StackViewport extends Viewport {
     viewport.voiLUT = this._getVOILUTSequenceToApply(image ?? this.csImage);
   }
 
+  /**
+   * The VOI LUT Sequence (0028,3010) of the displayed image, when it should
+   * drive the display instead of an analytic VOI LUT Function.
+   *
+   * DICOM allows a window and a sequence to both be present and lets the
+   * application pick (C.11.2.1); like the legacy cornerstone renderer we prefer
+   * the sequence, since a file that ships an explicit VOI LUT expects that
+   * curve. Window level interaction does not disable it - the curve is stretched
+   * over the new range instead, the same way the sampled sigmoid is rebuilt from
+   * a new window - so the shape the file specified survives interaction.
+   *
+   * To get a plain analytic window, use
+   * `setProperties({ useVOILUTSequence: false })`. A VOI LUT Function that is
+   * different from the function of the image also stops the sequence, because
+   * only one of the two can drive the display. But a function that is equal to
+   * the function of the image does not stop the sequence. This includes the
+   * LINEAR value that an absent (0028,1056) gives.
+   */
   private _getVOILUTSequenceToApply(image: IImage = this.csImage) {
-    if (this.voiLUTFunctionSetByUser) {
+    if (this.useVOILUTSequence === false) {
+      return undefined;
+    }
+
+    if (this.useVOILUTSequence !== true && this.voiLUTFunctionSetByUser) {
       return undefined;
     }
 
