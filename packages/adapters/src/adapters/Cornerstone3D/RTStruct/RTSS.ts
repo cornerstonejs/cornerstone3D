@@ -11,7 +11,9 @@ import { createInstance } from '../../../utilities';
 import '../../../utilities/referencedMetadataProvider';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
-const cs3dLogger = cornerstoneUtilities.logger.cs3dLog.getLogger('adapters.Cornerstone3D.RTStruct.RTSS');
+const cs3dLogger = cornerstoneUtilities.logger.adaptersLog.getLogger(
+  'Cornerstone3D.RTStruct.RTSS'
+);
 
 type Segmentation = ToolTypes.Segmentation;
 type RtssModule = Types.RtssModule;

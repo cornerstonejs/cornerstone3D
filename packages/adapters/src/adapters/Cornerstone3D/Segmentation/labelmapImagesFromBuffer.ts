@@ -23,7 +23,9 @@ import { normalizeSharedFunctionalGroupsSequence } from './perFrameFunctionalGro
 import { Events } from '../../enums';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
-const cs3dLogger = cornerstoneUtilities.logger.cs3dLog.getLogger('adapters.Cornerstone3D.Segmentation.labelmapImagesFromBuffer');
+const cs3dLogger = cornerstoneUtilities.logger.adaptersLog.getLogger(
+  'Cornerstone3D.Segmentation.labelmapImagesFromBuffer'
+);
 
 const { DicomMessage, DicomMetaDictionary } = dcmjsData;
 const { Normalizer } = normalizers;

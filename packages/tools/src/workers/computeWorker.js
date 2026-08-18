@@ -11,8 +11,8 @@ import { createBidirectionalForSlice } from '../utilities/segmentation/findLarge
 import { createIsInSegmentMetadata } from '../utilities/segmentation/isLineInSegment';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
-const cs3dLogger = cornerstoneUtilities.logger.workerLog.getLogger(
-  'tools.workers.computeWorker'
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'workers.computeWorker'
 );
 
 const { VoxelManager } = utilities;

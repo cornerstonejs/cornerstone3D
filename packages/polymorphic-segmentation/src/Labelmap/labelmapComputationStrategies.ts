@@ -11,8 +11,8 @@ import { convertSurfaceToVolumeLabelmap } from './convertSurfaceToLabelmap';
 import type { PolySegConversionOptions } from '../types';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
-const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
-  'polymorphicSegmentation.Labelmap.labelmapComputationStrategies'
+const cs3dLogger = cornerstoneUtilities.logger.polySegLog.getLogger(
+  'Labelmap.labelmapComputationStrategies'
 );
 
 const { computeStackLabelmapFromVolume, getUniqueSegmentIndices } =

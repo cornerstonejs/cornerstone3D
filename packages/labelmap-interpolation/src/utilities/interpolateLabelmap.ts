@@ -12,9 +12,10 @@ import {
 import { registerInterpolationWorker } from '../registerWorker';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
-const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
-  'labelmapInterpolation.utilities.interpolateLabelmap'
-);
+const cs3dLogger =
+  cornerstoneUtilities.logger.labelmapInterpolationLog.getLogger(
+    'utilities.interpolateLabelmap'
+  );
 
 type MorphologicalContourInterpolationOptions = {
   label?: number;

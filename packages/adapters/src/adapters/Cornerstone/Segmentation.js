@@ -2,7 +2,9 @@ import Segmentation_3X from './Segmentation_3X';
 import Segmentation_4X from './Segmentation_4X';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
-const cs3dLogger = cornerstoneUtilities.logger.cs3dLog.getLogger('adapters.Cornerstone.Segmentation');
+const cs3dLogger = cornerstoneUtilities.logger.adaptersLog.getLogger(
+  'Cornerstone.Segmentation'
+);
 
 /**
  * generateSegmentation - Generates a DICOM Segmentation object given cornerstoneTools data.

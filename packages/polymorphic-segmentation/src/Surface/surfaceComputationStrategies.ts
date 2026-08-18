@@ -8,8 +8,8 @@ import { convertLabelmapToSurface } from './convertLabelmapToSurface';
 import type { Types as ToolsTypes } from '@cornerstonejs/tools';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
-const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
-  'polymorphicSegmentation.Surface.surfaceComputationStrategies'
+const cs3dLogger = cornerstoneUtilities.logger.polySegLog.getLogger(
+  'Surface.surfaceComputationStrategies'
 );
 
 const { getUniqueSegmentIndices } = cornerstoneTools.utilities.segmentation;

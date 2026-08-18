@@ -3,9 +3,10 @@ import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
-const cs3dLogger = cornerstoneUtilities.logger.workerLog.getLogger(
-  'labelmapInterpolation.workers.interpolationWorker'
-);
+const cs3dLogger =
+  cornerstoneUtilities.logger.labelmapInterpolationLog.getLogger(
+    'workers.interpolationWorker'
+  );
 
 /**
  * Dynamically imports ITK WASM modules needed for labelmap interpolation

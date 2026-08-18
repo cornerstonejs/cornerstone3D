@@ -3,7 +3,9 @@ import { normalizers, data, utilities, derivations } from 'dcmjs';
 import { toArray, codeMeaningEquals } from '../helpers';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
-const cs3dLogger = cornerstoneUtilities.logger.cs3dLog.getLogger('adapters.Cornerstone.MeasurementReport');
+const cs3dLogger = cornerstoneUtilities.logger.adaptersLog.getLogger(
+  'Cornerstone.MeasurementReport'
+);
 
 const { TID1500, addAccessors } = utilities;
 

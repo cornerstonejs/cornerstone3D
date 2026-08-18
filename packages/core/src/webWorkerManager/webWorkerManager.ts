@@ -1,9 +1,12 @@
 import * as Comlink from 'comlink';
 import { RequestType } from '../enums';
 import { RequestPoolManager } from '../requestPool/requestPoolManager';
-import { workerLog } from '../utilities/logger';
+import { coreLog } from '../utilities/logger';
 
-const registrationLog = workerLog.getLogger('registration');
+const registrationLog = coreLog.getLogger(
+  'webWorkerManager',
+  'webWorkerManager'
+);
 
 export type WebWorkerManagerOptions = {
   /**
