@@ -7,8 +7,8 @@ import type { RawContourData } from '../contourComputationStrategies';
 import { vec3 } from 'gl-matrix';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
-const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
-  'polymorphicSegmentation.Contour.utils.createAndAddContourSegmentationsFromClippedSurfaces'
+const cs3dLogger = cornerstoneUtilities.logger.polySegLog.getLogger(
+  'Contour.utils.createAndAddContourSegmentationsFromClippedSurfaces'
 );
 
 /**

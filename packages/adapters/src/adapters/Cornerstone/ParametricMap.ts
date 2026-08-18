@@ -3,7 +3,9 @@ import checkOrientation from '../helpers/checkOrientation';
 import { utilities } from '@cornerstonejs/core';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
-const cs3dLogger = cornerstoneUtilities.logger.cs3dLog.getLogger('adapters.Cornerstone.ParametricMap');
+const cs3dLogger = cornerstoneUtilities.logger.adaptersLog.getLogger(
+  'Cornerstone.ParametricMap'
+);
 
 const { DicomMessage, DicomMetaDictionary } = dcmjsData;
 const { Normalizer } = normalizers;

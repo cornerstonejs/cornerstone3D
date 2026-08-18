@@ -9,8 +9,8 @@ import vtkContourLoopExtraction from '@kitware/vtk.js/Filters/General/ContourLoo
 import vtkCutter from '@kitware/vtk.js/Filters/Core/Cutter';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
-const cs3dLogger = cornerstoneUtilities.logger.workerLog.getLogger(
-  'polymorphicSegmentation.workers.polySegConverters'
+const cs3dLogger = cornerstoneUtilities.logger.polySegLog.getLogger(
+  'workers.polySegConverters'
 );
 
 const {

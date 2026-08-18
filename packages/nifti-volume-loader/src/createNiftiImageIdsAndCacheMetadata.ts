@@ -7,6 +7,11 @@ import { NIFTI_LOADER_SCHEME } from './constants';
 import makeVolumeMetadata from './helpers/makeVolumeMetadata';
 import { getArrayConstructor } from './helpers/dataTypeCodeHelper';
 import { getOptions } from './internal';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.loaderLog.getLogger(
+  'nifti.createNiftiImageIdsAndCacheMetadata'
+);
 
 export const urlsMap = new Map();
 const NIFTI1_HEADER_SIZE = 348;
@@ -74,7 +79,7 @@ export async function fetchArrayBuffer({
       receivedLength,
       processChunk,
       controller
-    ).catch(console.error);
+    ).catch(cs3dLogger.error);
 
     if (isCompressed) {
       const decompressedStream = decompressionStream.readable.getReader();
@@ -100,9 +105,9 @@ export async function fetchArrayBuffer({
   } catch (error) {
     // @ts-ignore
     if (error.name === 'AbortError') {
-      console.log('Fetch aborted');
+      cs3dLogger.info('Fetch aborted');
     } else {
-      console.error('Fetch error:', error);
+      cs3dLogger.error('Fetch error:', error);
     }
     throw error;
   }
@@ -213,7 +218,7 @@ function handleNiftiHeader(data): {
       arrayConstructor,
     };
   } catch (error) {
-    console.error('Error reading Nifti header:', error);
+    cs3dLogger.error('Error reading Nifti header:', error);
     // @ts-ignore
     return { isValid: false, message: 'Error reading Nifti header' };
   }
@@ -272,7 +277,7 @@ async function fetchAndAllocateNiftiVolume(url) {
   const numImages = dimensions[2];
 
   if (!isValid) {
-    console.error(message);
+    cs3dLogger.error(message);
     return;
   }
 

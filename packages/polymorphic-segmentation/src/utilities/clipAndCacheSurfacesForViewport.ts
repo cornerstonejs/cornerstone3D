@@ -10,8 +10,8 @@ import { Enums as ToolsEnums, utilities } from '@cornerstonejs/tools';
 import { registerPolySegWorker } from '../registerPolySegWorker';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
-const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
-  'polymorphicSegmentation.utilities.clipAndCacheSurfacesForViewport'
+const cs3dLogger = cornerstoneUtilities.logger.polySegLog.getLogger(
+  'utilities.clipAndCacheSurfacesForViewport'
 );
 
 const workerManager = getWebWorkerManager();

@@ -3,7 +3,9 @@ import ndarray from 'ndarray';
 import getDatasetsFromImages from '../helpers/getDatasetsFromImages';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
-const cs3dLogger = cornerstoneUtilities.logger.cs3dLog.getLogger('adapters.Cornerstone.Segmentation_3X');
+const cs3dLogger = cornerstoneUtilities.logger.adaptersLog.getLogger(
+  'Cornerstone.Segmentation_3X'
+);
 
 const {
   rotateDirectionCosinesInPlane,

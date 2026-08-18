@@ -13,7 +13,9 @@ import {
 } from './perFrameFunctionalGroups.js';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
-const cs3dLogger = cornerstoneUtilities.logger.cs3dLog.getLogger('adapters.Cornerstone3D.Segmentation.generateSegmentation');
+const cs3dLogger = cornerstoneUtilities.logger.adaptersLog.getLogger(
+  'Cornerstone3D.Segmentation.generateSegmentation'
+);
 
 const { MetadataModules } = Enums;
 const { SEGImageNormalizer } = normalizers;

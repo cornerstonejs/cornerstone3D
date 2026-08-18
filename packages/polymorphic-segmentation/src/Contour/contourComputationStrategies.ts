@@ -10,8 +10,8 @@ import { clipAndCacheSurfacesForViewport } from '../utilities/clipAndCacheSurfac
 import { createAndAddContourSegmentationsFromClippedSurfaces } from './utils/createAndAddContourSegmentationsFromClippedSurfaces';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
-const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
-  'polymorphicSegmentation.Contour.contourComputationStrategies'
+const cs3dLogger = cornerstoneUtilities.logger.polySegLog.getLogger(
+  'Contour.contourComputationStrategies'
 );
 
 const { getUniqueSegmentIndices } = utilities.segmentation;

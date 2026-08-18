@@ -1,8 +1,6 @@
 import type { RenderingEngineModeType } from '../types';
 import type { RenderBackendValue } from '../enums';
 
-type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'silent';
-
 interface Cornerstone3DConfig {
   /**
    * Whether the device is mobile or not.
@@ -116,16 +114,6 @@ interface Cornerstone3DConfig {
   };
 
   /**
-   * Configures logging globally or for individual named loggers.
-   */
-  logging?: {
-    /** The default level for all loggers without a specific override. */
-    level?: LogLevel;
-    /** Levels keyed by the full logger name, such as `cs3d.core.init`. */
-    levels?: Record<string, LogLevel>;
-  };
-
-  /**
    * This function returns an imported module for the given module id.
    * It allows replacing broken packing system imports with external importers
    * that perform lazy imports.
@@ -134,4 +122,4 @@ interface Cornerstone3DConfig {
   peerImport?: (moduleId: string) => Promise<any>;
 }
 
-export type { Cornerstone3DConfig as default, LogLevel };
+export type { Cornerstone3DConfig as default };

@@ -16,6 +16,11 @@ import * as NiftiReader from 'nifti-reader-js';
 import { Events } from './enums';
 import { modalityScaleNifti } from './helpers';
 import { getOptions } from './internal';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.loaderLog.getLogger(
+  'nifti.cornerstoneNiftiImageLoader'
+);
 
 type NiftiDataFetchState =
   | {
@@ -175,7 +180,7 @@ async function fetchAndProcessNiftiData(
     niftiImage = NiftiReader.readImage(niftiHeader, niftiBuffer);
   } else {
     const errorMessage = 'The provided buffer is not a valid NIFTI file.';
-    console.warn(errorMessage);
+    cs3dLogger.warn(errorMessage);
     throw new Error(errorMessage);
   }
 

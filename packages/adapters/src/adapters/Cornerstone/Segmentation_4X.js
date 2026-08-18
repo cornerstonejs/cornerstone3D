@@ -22,7 +22,9 @@ import {
 import { Events } from '../enums';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
-const cs3dLogger = cornerstoneUtilities.logger.cs3dLog.getLogger('adapters.Cornerstone.Segmentation_4X');
+const cs3dLogger = cornerstoneUtilities.logger.adaptersLog.getLogger(
+  'Cornerstone.Segmentation_4X'
+);
 
 const {
   rotateDirectionCosinesInPlane,

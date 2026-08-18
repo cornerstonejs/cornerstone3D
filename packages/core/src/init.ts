@@ -10,7 +10,7 @@ import { Events, RenderBackends, RenderingEngineModeEnum } from './enums';
 import type { RenderBackendValue } from './enums';
 import { isRegisteredRenderBackend } from './RenderingEngine/helpers/renderBackendRegistry';
 import type { EffectiveRenderBackend } from './types/RenderBackendRegistry';
-import { coreLog, log as rootLog } from './utilities/logger';
+import { coreLog } from './utilities/logger';
 
 const log = coreLog.getLogger('init');
 
@@ -116,14 +116,6 @@ function init(configuration = config): boolean {
 
   // merge configs
   config = deepMerge(defaultConfig, configuration);
-
-  if (config.logging?.level) {
-    rootLog.setLevel(config.logging.level);
-  }
-
-  Object.entries(config.logging?.levels ?? {}).forEach(([name, level]) => {
-    rootLog.getLogger(name).setLevel(level);
-  });
 
   // mobile safe
   if (config.isMobile) {

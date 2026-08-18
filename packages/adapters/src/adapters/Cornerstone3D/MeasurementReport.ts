@@ -32,7 +32,9 @@ import {
 import LabelData from './LabelData';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
-const cs3dLogger = cornerstoneUtilities.logger.cs3dLog.getLogger('adapters.Cornerstone3D.MeasurementReport');
+const cs3dLogger = cornerstoneUtilities.logger.adaptersLog.getLogger(
+  'Cornerstone3D.MeasurementReport'
+);
 
 const { MetadataModules } = Enums;
 
