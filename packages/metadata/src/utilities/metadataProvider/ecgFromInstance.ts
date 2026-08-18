@@ -326,7 +326,7 @@ const ecgCalibrationProvider: TypedProvider = (next, query, data, options) => {
         physicalDeltaX,
         physicalDeltaY,
         physicalUnitsXDirection: 4,
-        physicalUnitsYDirection: -1,
+        physicalUnitsYDirection: -2,
         regionDataType: 1,
       },
     ],

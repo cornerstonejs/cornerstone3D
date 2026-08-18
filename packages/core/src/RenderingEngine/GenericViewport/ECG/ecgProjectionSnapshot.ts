@@ -6,7 +6,6 @@ import {
   type ECGProjectionSnapshot,
 } from './ECGProjectionTypes';
 import { normalizeECGViewState } from './ecgViewportCamera';
-import type { ECGViewState } from './ECGViewportTypes';
 
 /**
  * Clones a canvas-space point so projection snapshots cannot leak mutable
