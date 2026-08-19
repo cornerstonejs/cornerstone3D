@@ -9,7 +9,12 @@ import {
   utilities,
   ProgressiveRetrieveImages,
   imageLoadPoolManager,
+  getRenderingEngine,
+  registerBrickVolumeLoader,
+  toBrickVolumeId,
+  setBrickVolumeDisplayedPlanes,
 } from '@cornerstonejs/core';
+import { decoders, initializers } from '@cornerstonejs/dicom-image-loader';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -101,6 +106,7 @@ buttonInfo.innerHTML = `
 <li>J2K - streaming HTJ2K</li>
 <li>J2K bytes - byte range request only</li>
 <li>J2K Mixed - J2K byte range first, then full</li>
+<li>Bricks - 3D brick store, coarse pyramid level first (needs ?useLocal=true)</li>
 </ul>`;
 content.appendChild(buttonInfo);
 
@@ -264,6 +270,40 @@ const configHtj2kMixed = {
       rangeIndex: -1,
     },
   },
+};
+
+/**
+ * Hierarchical brick store, generated alongside the frames by:
+ *
+ * ```bash
+ * createdicomweb alternates <studyUID> --brick --dicomdir ~/dicomweb
+ * ```
+ *
+ * against the same Juno data the buttons above use
+ * (`/src/viewer-testdata/dcm/Juno`). Requires `?useLocal=true` so the store is
+ * read from the local static-dicomweb server rather than CloudFront.
+ *
+ * Unlike the retrieve-configuration buttons, this does not go through the
+ * streaming image loader at all: `brick:` dispatches to a separate volume
+ * loader that fetches 3D bricks, so the volume is filled from a coarse pyramid
+ * level first and refined afterwards. Axial frames still come from `/frames/`
+ * in normal use — the brick store exists for the off-axis planes, which
+ * otherwise cost the entire series.
+ */
+const StudyInstanceUID = '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1';
+const SeriesInstanceUID =
+  '1.3.6.1.4.1.25403.345050719074.3824.20170125113545.4';
+
+const getBrickVolumeId = () => {
+  const root = getLocalUrl();
+
+  if (!root) {
+    return undefined;
+  }
+
+  return toBrickVolumeId(
+    `${root}/studies/${StudyInstanceUID}/series/${SeriesInstanceUID}/brick/`
+  );
 };
 
 /**
@@ -445,6 +485,114 @@ async function run() {
   loadButton('J2K Bytes', volumeId, imageIdsCT, configHtj2kByteRange);
   loadButton('J2K Lossy', volumeId, imageIdsCT, configHtj2kLossy);
   loadButton('J2K Mixed', volumeId, imageIdsCT, configHtj2kMixed);
+
+  // ======== Brick store ======== //
+
+  await initializers.JPEGLS();
+
+  // Bricks are packed 3D blocks encoded as a single JPEG-LS codestream, so the
+  // decoder is bound directly rather than going through the image-loading path.
+  // `core` takes it as an injected function so it keeps no codec dependency.
+  registerBrickVolumeLoader({
+    decodeBrick: async (bytes, info) => {
+      const frame = await decoders.JPEGLS(bytes, info);
+      return {
+        pixelData: frame.pixelData,
+        columns: frame.imageInfo.columns,
+        rows: frame.imageInfo.rows,
+      };
+    },
+  });
+
+  /**
+   * Feeds the planes currently on screen into the brick scheduler, so
+   * outstanding bricks are fetched in the order the displayed orientations
+   * need them. Ordering only — the same bricks are fetched either way.
+   */
+  const retargetBricks = (brickVolumeId: string) => {
+    const engine = getRenderingEngine(renderingEngineId);
+
+    const planes = viewportIds
+      .map((id) => engine?.getViewport(id) as Types.IVolumeViewport | undefined)
+      .filter(Boolean)
+      .map((viewport) => {
+        const camera = viewport.getCamera();
+        return {
+          normalWorld: camera.viewPlaneNormal as Types.Point3,
+          pointWorld: camera.focalPoint as Types.Point3,
+        };
+      });
+
+    setBrickVolumeDisplayedPlanes(brickVolumeId, planes);
+  };
+
+  async function loadBrickVolume(refineToLevel, text) {
+    const brickVolumeId = getBrickVolumeId();
+
+    if (!brickVolumeId) {
+      getOrCreateTiming('loadingStatus').innerText =
+        'Brick store needs ?useLocal=true and a local static-dicomweb server';
+      return;
+    }
+
+    cache.purgeCache();
+    imageRetrieveMetadataProvider.clear();
+    resetTimingInfo();
+    getOrCreateTiming('loadingStatus').innerText = 'Loading bricks...';
+
+    const start = Date.now();
+
+    // imageIds are passed so geometry and metadata come from the real DICOM
+    // series — the brick store carries pixels only.
+    const volume = await volumeLoader.createAndCacheVolume(brickVolumeId, {
+      imageIds: imageIdsCT,
+      refineToLevel,
+    });
+
+    const coarseDone = Date.now();
+    getOrCreateTiming('loadingStatus').innerText =
+      `Coarse level in ${coarseDone - start} ms for ${text}`;
+
+    setVolumesForViewports(
+      renderingEngine,
+      [{ volumeId: brickVolumeId }],
+      viewportIds
+    );
+    renderingEngine.renderViewports(viewportIds);
+
+    retargetBricks(brickVolumeId);
+
+    if (refineToLevel) {
+      const onCompleted = (evt) => {
+        if (evt.detail.volumeId !== brickVolumeId) {
+          return;
+        }
+        eventTarget.removeEventListener(
+          Events.IMAGE_VOLUME_LOADING_COMPLETED,
+          onCompleted
+        );
+        getOrCreateTiming('loadingStatus').innerText = `Coarse in ${
+          coarseDone - start
+        } ms, refined to ${refineToLevel} in ${Date.now() - start} ms`;
+      };
+
+      eventTarget.addEventListener(
+        Events.IMAGE_VOLUME_LOADING_COMPLETED,
+        onCompleted
+      );
+
+      // Re-order remaining bricks whenever the user scrolls or rotates.
+      const onCamera = () => retargetBricks(brickVolumeId);
+      eventTarget.addEventListener(Events.CAMERA_MODIFIED, onCamera);
+    }
+  }
+
+  createButton('Bricks Coarse', () =>
+    loadBrickVolume(null, 'coarse level only')
+  );
+  createButton('Bricks Refine d1', () =>
+    loadBrickVolume('d1', 'refine to full resolution')
+  );
 }
 
 run();
