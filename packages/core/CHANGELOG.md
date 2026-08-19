@@ -3,6 +3,32 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.8.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.1...v5.8.2) (2026-08-17)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [5.8.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.0...v5.8.1) (2026-08-14)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+# [5.8.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.7.3...v5.8.0) (2026-08-13)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [5.7.3](https://github.com/cornerstonejs/cornerstone3D/compare/v5.7.2...v5.7.3) (2026-08-11)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [5.7.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.7.1...v5.7.2) (2026-08-11)
+
+### Bug Fixes
+
+- **core:** return CSS pixels from the CPU worldToCanvas/canvasToWorld ([bdd1dd3](https://github.com/cornerstonejs/cornerstone3D/commit/bdd1dd3c26c50802c1c5ac3530eec30ecdbbc39d)), closes [#2849](https://github.com/cornerstonejs/cornerstone3D/issues/2849)
+
+## [5.7.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.7.0...v5.7.1) (2026-08-11)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
 # [5.7.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.14...v5.7.0) (2026-08-07)
 
 ### Features
