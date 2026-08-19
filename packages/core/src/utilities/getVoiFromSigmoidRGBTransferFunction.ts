@@ -19,5 +19,9 @@ export default function getVoiFromSigmoidRGBTransferFunction(
   const x2 = cfunDomain[256 * 3];
   const ww = Math.round((4 * (x2 - x1)) / (logy1 - logy2));
   const wc = Math.round(x1 + (ww * logy1) / 4);
-  return [Math.round(wc - ww / 2), Math.round(wc + ww / 2)];
+  // An inverted function decreases with x, which flips the sign of the window
+  // width derived above (the center is unaffected). Return the range in order
+  // regardless, so callers do not get a lower bound above the upper one.
+  const windowWidth = Math.abs(ww);
+  return [Math.round(wc - windowWidth / 2), Math.round(wc + windowWidth / 2)];
 }
