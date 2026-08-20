@@ -45,6 +45,7 @@ import triggerEvent from '../utilities/triggerEvent';
 import * as colormapUtils from '../utilities/colormap';
 import invertRgbTransferFunction from '../utilities/invertRgbTransferFunction';
 import createSigmoidRGBTransferFunction from '../utilities/createSigmoidRGBTransferFunction';
+import createLinearRGBTransferFunction from '../utilities/createLinearRGBTransferFunction';
 import transformWorldToIndex from '../utilities/transformWorldToIndex';
 import {
   findMatchingColormap,
@@ -273,9 +274,23 @@ abstract class BaseVolumeViewport extends Viewport {
     if (!Object.values(VOILUTFunctionType).includes(voiLUTFunction)) {
       voiLUTFunction = VOILUTFunctionType.LINEAR;
     }
+
+    // The range has to be read while the old function is still recorded, since
+    // getProperties extracts it differently for a sampled sigmoid function.
     const { voiRange } = this.getProperties();
-    this.setVOI(voiRange, volumeId, suppressEvents);
+    const previousVOILUTFunction = this.viewportProperties.VOILUTFunction;
+
+    // A sampled function bakes its curve into the nodes of the transfer
+    // function, so moving away from one has to build a new function rather than
+    // just rescale the existing (still sigmoid shaped) one.
+    const forceRecreateLUTFunction =
+      previousVOILUTFunction !== voiLUTFunction &&
+      previousVOILUTFunction === VOILUTFunctionType.SAMPLED_SIGMOID;
+
+    // Record it before setVOI, which reads it back to decide which transfer
+    // function to apply.
     this.viewportProperties.VOILUTFunction = voiLUTFunction;
+    this.setVOI(voiRange, volumeId, suppressEvents, forceRecreateLUTFunction);
   }
 
   /**
@@ -447,22 +462,18 @@ abstract class BaseVolumeViewport extends Viewport {
       throw new Error(`No actor found for the given volumeId: ${volumeId}`);
     }
 
-    const volumeActor = applicableVolumeActorInfo.volumeActor;
-
-    const transferFunction = volumeActor
-      .getProperty()
-      .getRGBTransferFunction(0);
-
-    const range = transferFunction.getMappingRange();
-
     const matchedColormap = this.getColormap(volumeId);
-    const { VOILUTFunction, invert } = this.getProperties(volumeId);
+    // The mapping range of the transfer function is only the VOI for a linear
+    // function. A sampled sigmoid bakes its curve into the nodes, so its
+    // mapping range is the whole node domain (~3.3x the window width, and
+    // off-center) - getProperties decodes the real window back out of it.
+    const { VOILUTFunction, invert, voiRange } = this.getProperties(volumeId);
 
     return {
       viewportId: this.id,
       range: {
-        lower: range[0],
-        upper: range[1],
+        lower: voiRange.lower,
+        upper: voiRange.upper,
       },
       volumeId: applicableVolumeActorInfo.volumeId,
       VOILUTFunction: VOILUTFunction,
@@ -521,11 +532,16 @@ abstract class BaseVolumeViewport extends Viewport {
    * @param voiRange - Sets the lower and upper voi
    * @param volumeId - The volume id to set the properties for (if undefined, the first volume)
    * @param suppressEvents - If true, the viewport will not emit events
+   * @param forceRecreateLUTFunction - If true, the RGB transfer function is
+   *   rebuilt instead of having its range updated. Required when the VOI LUT
+   *   function changed, since a sampled (sigmoid) function keeps its curve in
+   *   the transfer function nodes.
    */
   private setVOI(
     voiRange: VOIRange,
     volumeId?: string,
-    suppressEvents = false
+    suppressEvents = false,
+    forceRecreateLUTFunction = false
   ): void {
     const applicableVolumeActorInfo = this._getApplicableVolumeActor(volumeId);
 
@@ -558,15 +574,22 @@ abstract class BaseVolumeViewport extends Viewport {
     // https://github.com/Kitware/vtk-js/blob/c6f2e12cddfe5c0386a73f0793eb6d9ab20d573e/Sources/Rendering/OpenGL/VolumeMapper/index.js#L957-L972
     if (VOILUTFunction === VOILUTFunctionType.SAMPLED_SIGMOID) {
       const cfun = createSigmoidRGBTransferFunction(voiRangeToUse);
+      if (this.viewportProperties.invert) {
+        invertRgbTransferFunction(cfun);
+      }
+      volumeActor.getProperty().setRGBTransferFunction(0, cfun);
+    } else if (forceRecreateLUTFunction) {
+      // Coming back from a sampled function, whose curve lives in the nodes of
+      // the transfer function - rescaling that range would keep the sigmoid
+      // shape, so a plain linear function is built instead. Any colormap was
+      // already dropped when the sampled function replaced it.
+      // TODO: make this work for PET series (colormap)
+      const cfun = createLinearRGBTransferFunction(voiRangeToUse);
+      if (this.viewportProperties.invert) {
+        invertRgbTransferFunction(cfun);
+      }
       volumeActor.getProperty().setRGBTransferFunction(0, cfun);
     } else {
-      // TODO: refactor and make it work for PET series (inverted/colormap)
-      // const cfun = createLinearRGBTransferFunction(voiRangeToUse);
-      // volumeActor.getProperty().setRGBTransferFunction(0, cfun);
-
-      // Todo: Moving from LINEAR to SIGMOID and back to LINEAR will not
-      // work until we implement it in a different way because the
-      // LINEAR transfer function is not recreated.
       const { lower, upper } = voiRangeToUse;
       volumeActor
         .getProperty()
@@ -1095,16 +1118,19 @@ abstract class BaseVolumeViewport extends Viewport {
       this.setThreshold(colormap, volumeId);
     }
 
+    // The VOI LUT function has to be applied before the range, otherwise the
+    // range would first be applied with the previous function and then be read
+    // back out of the transfer function by setVOILUTFunction.
+    if (VOILUTFunction !== undefined) {
+      this.setVOILUTFunction(VOILUTFunction, volumeId, suppressEvents);
+    }
+
     if (voiRange !== undefined) {
       this.setVOI(voiRange, volumeId, suppressEvents);
     }
 
     if (typeof interpolationType !== 'undefined') {
       this.setInterpolationType(interpolationType);
-    }
-
-    if (VOILUTFunction !== undefined) {
-      this.setVOILUTFunction(VOILUTFunction, volumeId, suppressEvents);
     }
 
     if (preset !== undefined) {
@@ -1227,12 +1253,14 @@ abstract class BaseVolumeViewport extends Viewport {
       this.setOpacity(properties.colormap, volumeId);
     }
 
-    if (properties.voiRange !== undefined) {
-      this.setVOI(properties.voiRange, volumeId);
-    }
-
+    // As in setProperties, the VOI LUT function comes first so that the range
+    // is applied with the function it belongs to.
     if (properties.VOILUTFunction !== undefined) {
       this.setVOILUTFunction(properties.VOILUTFunction, volumeId);
+    }
+
+    if (properties.voiRange !== undefined) {
+      this.setVOI(properties.voiRange, volumeId);
     }
 
     if (properties.invert !== undefined) {

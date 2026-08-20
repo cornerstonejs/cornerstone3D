@@ -209,6 +209,13 @@ export function toPlanarDataPresentation(
     presentation.voiRange = cloneVOIRange(properties.voiRange);
   }
 
+  // The legacy property is named VOILUTFunction, the presentation one
+  // voiLUTFunction - without this mapping a sigmoid VOI LUT function set through
+  // setProperties never reaches the render path.
+  if (properties.VOILUTFunction !== undefined) {
+    presentation.voiLUTFunction = properties.VOILUTFunction;
+  }
+
   if (properties.invert !== undefined) {
     presentation.invert = properties.invert;
   }
