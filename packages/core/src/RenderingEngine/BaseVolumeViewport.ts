@@ -462,22 +462,18 @@ abstract class BaseVolumeViewport extends Viewport {
       throw new Error(`No actor found for the given volumeId: ${volumeId}`);
     }
 
-    const volumeActor = applicableVolumeActorInfo.volumeActor;
-
-    const transferFunction = volumeActor
-      .getProperty()
-      .getRGBTransferFunction(0);
-
-    const range = transferFunction.getMappingRange();
-
     const matchedColormap = this.getColormap(volumeId);
-    const { VOILUTFunction, invert } = this.getProperties(volumeId);
+    // The mapping range of the transfer function is only the VOI for a linear
+    // function. A sampled sigmoid bakes its curve into the nodes, so its
+    // mapping range is the whole node domain (~3.3x the window width, and
+    // off-center) - getProperties decodes the real window back out of it.
+    const { VOILUTFunction, invert, voiRange } = this.getProperties(volumeId);
 
     return {
       viewportId: this.id,
       range: {
-        lower: range[0],
-        upper: range[1],
+        lower: voiRange.lower,
+        upper: voiRange.upper,
       },
       volumeId: applicableVolumeActorInfo.volumeId,
       VOILUTFunction: VOILUTFunction,
