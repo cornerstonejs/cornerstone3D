@@ -18,6 +18,7 @@ import createVOILUTSequenceTransferFunction, {
   isRenderableVOILUT,
 } from '../../utilities/createVOILUTSequenceTransferFunction';
 import getVOIRangeFromWindowLevel from '../../utilities/getVOIRangeFromWindowLevel';
+import { getValidVOILUTFunction } from '../../utilities/voiLUTFunction';
 import isPTPrescaledWithSUV from '../../utilities/isPTPrescaledWithSUV';
 import { getImageDataMetadata } from '../../utilities/getImageDataMetadata';
 import invertRgbTransferFunction from '../../utilities/invertRgbTransferFunction';
@@ -174,8 +175,9 @@ export function applyPlanarImagePresentation(args: {
   defaultVOIRange?: VOIRange;
   defaultVOILUTFunction?: VOILUTFunctionType;
   /**
-   * VOI LUT Sequence (0028,3010) of the displayed image. Drives the display
-   * unless the caller asks for a specific VOI LUT Function or a colormap - see
+   * VOI LUT Sequence (0028,3010) of the displayed image. This sequence
+   * controls the display. Two conditions stop it: a VOI LUT Function that is
+   * different from the function of the image, or a colormap. Refer to
    * createPlanarRGBTransferFunction.
    */
   defaultVOILUT?: CPUFallbackLUT;
@@ -190,11 +192,25 @@ export function applyPlanarImagePresentation(args: {
   } = args;
   const property = actor.getProperty();
   const voiRange = props?.voiRange ?? defaultVOIRange;
-  // An explicitly requested VOI LUT Function opts out of the file's VOI LUT
-  // Sequence; an explicit range does not - the curve is stretched over it, so
-  // window level keeps the shape the file specified
-  const voiLUT =
-    props?.voiLUTFunction === undefined ? defaultVOILUT : undefined;
+  // This rule is the same as the rule in
+  // StackViewport._getVOILUTSequenceToApply. Only one of the two can control
+  // the display. Thus a VOI LUT Function that is different from the function
+  // of the image stops the VOI LUT Sequence of the file. A function that is
+  // equal to the function of the image does not stop it. An absent tag
+  // (0028,1056) gives the LINEAR value, and getProperties gives that value to
+  // the application. Thus an application that applies the presentation that it
+  // read keeps the sequence. A range from the caller also keeps the sequence.
+  // The transfer function stretches the curve over that range. Thus window
+  // level operations keep the shape that the file specifies.
+  const canUseVOILUTSequence =
+    props?.voiLUTFunction === undefined ||
+    getValidVOILUTFunction(props.voiLUTFunction) ===
+      getValidVOILUTFunction(defaultVOILUTFunction);
+  let voiLUT;
+
+  if (canUseVOILUTSequence) {
+    voiLUT = defaultVOILUT;
+  }
 
   if (props?.visible !== undefined) {
     actor.setVisibility(props.visible);
