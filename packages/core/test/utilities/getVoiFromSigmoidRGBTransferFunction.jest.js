@@ -9,8 +9,34 @@ describe('getVoiFromSigmoidRGBTransferFunction', function () {
 
     const [lower, upper] = getVoiFromSigmoidRGBTransferFunction(cfun);
 
-    expect(lower).toBeCloseTo(-800, -1);
-    expect(upper).toBeCloseTo(200, -1);
+    expect(lower).toBe(-800);
+    expect(upper).toBe(200);
+  });
+
+  it('Should recover a range whose bounds sum to an even number', () => {
+    // The window center is a half integer here, so rounding it before
+    // converting back to a range would shift the result by one.
+    const cfun = createSigmoidRGBTransferFunction({
+      lower: -1000,
+      upper: 1000,
+    });
+
+    const [lower, upper] = getVoiFromSigmoidRGBTransferFunction(cfun);
+
+    expect(lower).toBe(-1000);
+    expect(upper).toBe(1000);
+  });
+
+  it('Should not drift when the range is round tripped repeatedly', () => {
+    let range = { lower: -800, upper: 200 };
+
+    for (let i = 0; i < 50; i++) {
+      const cfun = createSigmoidRGBTransferFunction(range);
+      const [lower, upper] = getVoiFromSigmoidRGBTransferFunction(cfun);
+      range = { lower, upper };
+    }
+
+    expect(range).toEqual({ lower: -800, upper: 200 });
   });
 
   it('Should return the range in order for an inverted sigmoid function', () => {
@@ -24,7 +50,7 @@ describe('getVoiFromSigmoidRGBTransferFunction', function () {
     // function and the range is reversed, which flips a linear function rebuilt
     // from it (see BaseVolumeViewport.setVOI).
     expect(lower).toBeLessThan(upper);
-    expect(lower).toBeCloseTo(-800, -1);
-    expect(upper).toBeCloseTo(200, -1);
+    expect(lower).toBe(-800);
+    expect(upper).toBe(200);
   });
 });
