@@ -1688,7 +1688,16 @@ class StackViewport extends Viewport {
       voiUpdatedWithSetProperties = false,
     } = options;
 
-    const voiLUTSequence = this._getVOILUTSequenceToApply();
+    // A colormap fills the transfer function with its own colors. Thus it stops
+    // the curve of a VOI LUT Sequence and the curve of a sigmoid, which would
+    // replace those colors with a grey ramp. The generic viewports use the same
+    // rule (refer to createPlanarRGBTransferFunction). The CPU path is
+    // different: there the colormap comes after the VOI LUT, so the two combine
+    // and _syncCPUVOILUTSequence keeps the sequence.
+    const colormapApplied = !!(this.colormap as ColormapPublic)?.name;
+    const voiLUTSequence = colormapApplied
+      ? undefined
+      : this._getVOILUTSequenceToApply();
     const useVOILUTSequence = !!voiLUTSequence;
 
     if (
@@ -1729,14 +1738,17 @@ class StackViewport extends Viewport {
     let transferFunction = imageActor.getProperty().getRGBTransferFunction(0);
 
     const isSigmoidTFun =
+      !colormapApplied &&
       this.VOILUTFunction === VOILUTFunctionType.SAMPLED_SIGMOID;
 
     // A VOI LUT Sequence carries its own nonlinear curve, so it must be
     // rebuilt as a whole (there is no range to slide) - same as the sigmoid.
     // The function also has to be recreated when we transition between a
     // sequence and a window, since the two are not interchangeable by range.
+    // A colormap already replaced the colors of the transfer function, and a
+    // new one here would remove the colormap.
     const recreateForVOILUTSequence =
-      useVOILUTSequence !== this.voiLUTSequenceApplied;
+      !colormapApplied && useVOILUTSequence !== this.voiLUTSequenceApplied;
 
     if (
       isSigmoidTFun ||
@@ -1793,6 +1805,7 @@ class StackViewport extends Viewport {
       viewportId: this.id,
       range: voiRangeToUse,
       VOILUTFunction: this.VOILUTFunction,
+      voiLUTSequenceApplied: useVOILUTSequence,
     };
 
     triggerEvent(this.element, Events.VOI_MODIFIED, eventDetail);
