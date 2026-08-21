@@ -58,6 +58,9 @@ import { isEqual } from '../utilities/isEqual';
 import invertRgbTransferFunction from '../utilities/invertRgbTransferFunction';
 import imageRetrieveMetadataProvider from '../utilities/imageRetrieveMetadataProvider';
 import imageIdToURI from '../utilities/imageIdToURI';
+import getDimensionGroupIndexMap, {
+  areInDifferentDimensionGroups,
+} from '../utilities/getDimensionGroupIndexMap';
 import getVOIRangeFromWindowLevel from '../utilities/getVOIRangeFromWindowLevel';
 
 import Viewport from './Viewport';
@@ -154,6 +157,14 @@ class StackViewport extends Viewport {
    * the imageId or URI is present without having to scan the imageIds array.
    */
   private imageKeyToIndexMap = new Map<string, number>();
+  /**
+   * Maps each imageId of a 4D stack to the index of the dimension group (time
+   * point, b-value, echo, ...) it belongs to. Built lazily because it needs the
+   * 4D metadata of every image in the stack, and left undefined for a stack
+   * that only has a single dimension group. Cleared whenever the stack changes.
+   */
+  private imageIdToDimensionGroupIndexMap: Map<string, number> | undefined;
+  private hasResolvedDimensionGroups = false;
 
   // current imageIdIndex that is rendered in the viewport
   private currentImageIdIndex = 0;
@@ -1755,6 +1766,12 @@ class StackViewport extends Viewport {
 
   /**
    * Matches images for overlay by comparing their orientation, position, and dimensions.
+   *
+   * Geometry alone cannot separate the dimension groups of a 4D stack - slice k
+   * carries the same position and orientation at every time point - so a
+   * geometric match is additionally rejected when the two images are known to
+   * belong to different dimension groups of the same stack.
+   *
    * @param currentImageId - The ID of the current image.
    * @param targetOverlayImageId - The ID of the target overlay image.
    * @returns The ID of the matched image, or undefined if no match is found.
@@ -1827,7 +1844,53 @@ class StackViewport extends Viewport {
       }
     };
 
-    return matchImagesForOverlay(currentImageId);
+    const matchedImageId = matchImagesForOverlay(currentImageId);
+
+    if (
+      !matchedImageId ||
+      this.isDifferentDimensionGroup(currentImageId, targetOverlayImageId)
+    ) {
+      return;
+    }
+
+    return matchedImageId;
+  }
+
+  /**
+   * Returns true when both images resolve to a known - and different -
+   * dimension group of this stack. Anything unknown (a 3D stack, or an overlay
+   * belonging to some other series) returns false so the geometric match
+   * stands.
+   */
+  private isDifferentDimensionGroup(
+    currentImageId: string,
+    overlayImageId: string
+  ): boolean {
+    return areInDifferentDimensionGroups(
+      this.getDimensionGroupIndexMap(),
+      currentImageId,
+      // A derived image (a labelmap slice, for instance) is not itself part of
+      // the stack, so compare using the image it was derived from.
+      cache.getImage(overlayImageId)?.referencedImageId ?? overlayImageId
+    );
+  }
+
+  /**
+   * Lazily splits this stack into dimension groups, returning undefined when it
+   * is not 4D. Computed on first use rather than in setStack because it reads
+   * the 4D metadata of every image and most stacks never need it.
+   */
+  private getDimensionGroupIndexMap(): Map<string, number> | undefined {
+    if (this.hasResolvedDimensionGroups) {
+      return this.imageIdToDimensionGroupIndexMap;
+    }
+
+    this.hasResolvedDimensionGroups = true;
+    this.imageIdToDimensionGroupIndexMap = getDimensionGroupIndexMap(
+      this.imageIds
+    );
+
+    return this.imageIdToDimensionGroupIndexMap;
   }
 
   /**
@@ -1968,6 +2031,8 @@ class StackViewport extends Viewport {
       this.imageKeyToIndexMap.set(imageId, index);
       this.imageKeyToIndexMap.set(imageIdToURI(imageId), index);
     });
+    this.imageIdToDimensionGroupIndexMap = undefined;
+    this.hasResolvedDimensionGroups = false;
     this.currentImageIdIndex = currentImageIdIndex;
     this.targetImageIdIndex = currentImageIdIndex;
     const imageRetrieveConfiguration = metaData.get(
