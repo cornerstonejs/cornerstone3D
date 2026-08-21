@@ -19,7 +19,7 @@ const TOLERANCE = 1 / 512;
  * A VOI LUT Sequence item (0028,3010) that can be rendered, i.e. one that has
  * both LUT Data and a usable LUT Descriptor.
  */
-type RenderableVOILUT = CPUFallbackLUT & { firstValueMapped: number };
+export type RenderableVOILUT = CPUFallbackLUT & { firstValueMapped: number };
 
 /**
  * Returns true when the given VOI LUT Sequence item holds enough data to build
@@ -46,6 +46,124 @@ export function getVOILUTSequenceRange(voiLUT: RenderableVOILUT): VOIRange {
     lower: voiLUT.firstValueMapped,
     upper: voiLUT.firstValueMapped + voiLUT.lut.length - 1,
   };
+}
+
+/**
+ * The value that the largest entry of a LUT can hold.
+ *
+ * The number of significant bits comes from the largest entry and not from the
+ * declared depth in LUT Descriptor, because that declared depth cannot be
+ * trusted in real world data.
+ */
+export function getVOILUTOutputScale(lut: ArrayLike<number>): number {
+  let maxEntry = -Infinity;
+
+  for (let i = 0; i < lut.length; i++) {
+    if (lut[i] > maxEntry) {
+      maxEntry = lut[i];
+    }
+  }
+
+  if (maxEntry <= 0) {
+    return 0;
+  }
+
+  return Math.pow(2, Math.ceil(Math.log2(maxEntry + 1))) - 1;
+}
+
+/**
+ * The output of a VOI LUT Sequence for one input value, from 0 to 1.
+ *
+ * The curve is laid over `voiRange`, or over the own domain of the LUT when no
+ * range is given. Every path that shows a sequence uses this function, so the
+ * CPU renderer, the GPU transfer function and the tools that map a display
+ * intensity all see one curve.
+ *
+ * @param voiLUT - a VOI LUT Sequence item
+ * @param value - a value in the output space of the modality LUT
+ * @param voiRange - the input range to lay the curve over
+ */
+export function sampleVOILUT(
+  voiLUT: RenderableVOILUT,
+  value: number,
+  voiRange?: VOIRange
+): number {
+  return createVOILUTSampler(voiLUT, voiRange)(value);
+}
+
+/**
+ * A function that gives the output of a VOI LUT Sequence, from 0 to 1, for each
+ * input value. The scale of the entries and the domain are calculated one time.
+ * A path that maps many values, such as the display LUT of the CPU renderer,
+ * must use this and not sampleVOILUT: a scan of the entries for each value of a
+ * LUT of 65536 entries is very slow.
+ *
+ * @param voiLUT - a VOI LUT Sequence item
+ * @param voiRange - the input range to lay the curve over
+ */
+export function createVOILUTSampler(
+  voiLUT: RenderableVOILUT,
+  voiRange?: VOIRange
+): (value: number) => number {
+  const { lut } = voiLUT;
+  const scale = getVOILUTOutputScale(lut);
+
+  if (!scale) {
+    return () => 0;
+  }
+
+  const lastIndex = lut.length - 1;
+  const domain = resolveDomain(voiLUT, voiRange);
+  const span = domain.upper - domain.lower;
+
+  // A zero span is a threshold and has no span to lay the curve over.
+  if (span <= 0) {
+    return (value: number) => {
+      if (value < domain.lower) {
+        return lut[0] / scale;
+      }
+
+      return lut[lastIndex] / scale;
+    };
+  }
+
+  return (value: number) => {
+    const index = Math.round(((value - domain.lower) / span) * lastIndex);
+
+    return lut[Math.min(Math.max(index, 0), lastIndex)] / scale;
+  };
+}
+
+/**
+ * The input value that gives an output of `output01`, from 0 to 1. The search
+ * takes the entry that is nearest to the output, so a curve that is not
+ * monotonic gives the first of the equal entries.
+ */
+export function invertVOILUTSample(
+  voiLUT: RenderableVOILUT,
+  output01: number,
+  voiRange?: VOIRange
+): number {
+  const { lut } = voiLUT;
+  const domain = resolveDomain(voiLUT, voiRange);
+  const scale = getVOILUTOutputScale(lut);
+  const target = output01 * scale;
+  let nearestIndex = 0;
+  let nearestDistance = Infinity;
+
+  for (let i = 0; i < lut.length; i++) {
+    const distance = Math.abs(lut[i] - target);
+
+    if (distance < nearestDistance) {
+      nearestDistance = distance;
+      nearestIndex = i;
+    }
+  }
+
+  return (
+    domain.lower +
+    (nearestIndex / (lut.length - 1)) * (domain.upper - domain.lower)
+  );
 }
 
 /**
@@ -109,23 +227,15 @@ export default function createVOILUTSequenceTransferFunction(
   const inputAt = (index: number) =>
     domain.lower + (index / (length - 1)) * (domain.upper - domain.lower);
 
-  let maxEntry = -Infinity;
-  for (let i = 0; i < length; i++) {
-    if (lut[i] > maxEntry) {
-      maxEntry = lut[i];
-    }
-  }
-
-  // An all zero LUT carries no curve to render
-  if (maxEntry <= 0) {
-    return undefined;
-  }
-
   // Same "don't trust numBitsPerEntry" heuristic as the CPU path: derive the
   // bit depth from the data so a LUT whose entries only use part of its
   // declared depth still spans the full display range.
-  const bitsPerEntry = Math.ceil(Math.log2(maxEntry + 1));
-  const scale = Math.pow(2, bitsPerEntry) - 1;
+  const scale = getVOILUTOutputScale(lut);
+
+  // An all zero LUT carries no curve to render
+  if (!scale) {
+    return undefined;
+  }
 
   const step = Math.max(1, Math.ceil(length / maxNodes));
   const table: number[] = [];

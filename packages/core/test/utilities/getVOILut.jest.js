@@ -73,12 +73,49 @@ describe('cpuFallback getVOILut', function () {
       numBitsPerEntry: 8,
       lut: [0, 64, 128, 255],
     };
-    const fn = getVOILUT(1, 1, voiLUT, VOILUTFunctionType.SAMPLED_SIGMOID);
+    // The window of the own domain of the LUT (0 .. 3) gives the curve of the
+    // file without a change
+    const fn = getVOILUT(4, 2, voiLUT, VOILUTFunctionType.SAMPLED_SIGMOID);
 
+    expect(fn(0)).toBe(0);
     expect(fn(1)).toBe(64);
+    expect(fn(3)).toBe(255);
     // Values below/above the mapped range clamp to the first/last entry
     expect(fn(-10)).toBe(0);
     expect(fn(10)).toBe(255);
+  });
+
+  it('stretches a VOI LUT Sequence over the window', () => {
+    // The GPU path stretches the curve over the range, so window level
+    // reshapes it. The CPU path used the index of the entry directly, so a
+    // window level drag did nothing for the same file
+    const voiLUT = {
+      firstValueMapped: 0,
+      numBitsPerEntry: 8,
+      lut: [0, 64, 128, 255],
+    };
+    const fn = getVOILUT(7, 3.5, voiLUT, VOILUTFunctionType.LINEAR);
+
+    // The window 0 .. 6 is two times the domain of the LUT. Thus the middle of
+    // the window gives the middle of the curve.
+    expect(fn(0)).toBe(0);
+    expect(fn(3)).toBe(128);
+    expect(fn(6)).toBe(255);
+  });
+
+  it('uses the full display range for a LUT of small entries', () => {
+    // The number of bits comes from the largest entry, and a shift of the
+    // entries gave 0 for every entry of a LUT whose largest entry is below 128
+    const voiLUT = {
+      firstValueMapped: 0,
+      numBitsPerEntry: 16,
+      lut: [0, 50, 100],
+    };
+    const fn = getVOILUT(3, 1.5, voiLUT, VOILUTFunctionType.LINEAR);
+
+    // 7 bits hold 100, so the entries are scaled by 127
+    expect(fn(0)).toBe(0);
+    expect(fn(2)).toBeCloseTo((100 / 127) * 255, 5);
   });
 });
 

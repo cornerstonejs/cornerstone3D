@@ -125,7 +125,12 @@ export type { ViewportVoiMappingProps } from './viewportVoiIntensityMapping';
 export {
   isRenderableVOILUT,
   getVOILUTSequenceRange,
+  getVOILUTOutputScale,
+  sampleVOILUT,
+  createVOILUTSampler,
+  invertVOILUTSample,
 } from './createVOILUTSequenceTransferFunction';
+export type { RenderableVOILUT } from './createVOILUTSequenceTransferFunction';
 export {
   normalizeVOILUTFunction,
   getValidVOILUTFunction,

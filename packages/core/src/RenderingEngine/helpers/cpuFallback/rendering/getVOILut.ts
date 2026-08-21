@@ -1,6 +1,12 @@
 /* eslint no-bitwise: 0 */
 import VOILUTFunctionType from '../../../../enums/VOILUTFunctionType';
 import { getValidVOILUTFunction } from '../../../../utilities/voiLUTFunction';
+import {
+  createVOILUTSampler,
+  isRenderableVOILUT,
+} from '../../../../utilities/createVOILUTSequenceTransferFunction';
+import type { RenderableVOILUT } from '../../../../utilities/createVOILUTSequenceTransferFunction';
+import { toLowHighRange } from '../../../../utilities/windowLevel';
 import type { CPUFallbackLUT } from '../../../../types';
 
 /**
@@ -111,44 +117,41 @@ function generateSigmoidVOILUT(windowWidth: number, windowCenter: number) {
   };
 }
 
-function maxLUTValue(lut: ArrayLike<number>): number {
-  let max = -Infinity;
-
-  for (let i = 0; i < lut.length; i++) {
-    if (lut[i] > max) {
-      max = lut[i];
-    }
-  }
-
-  return max;
-}
-
 /**
- * Generate a non-linear volume of interest lookup table
+ * Generate a non-linear volume of interest lookup table from a VOI LUT
+ * Sequence (0028,3010).
+ *
+ * The curve is stretched over the window, as on the GPU path (refer to
+ * createVOILUTSequenceTransferFunction). Thus window level reshapes the curve
+ * of the file and does not replace it. The window of the own domain of the LUT
+ * gives the curve of the file without a change, and that window is the default
+ * (refer to getVOILUTSequenceRange). Before this, the CPU path used the index
+ * of the entry directly. Thus window level did nothing on the CPU and worked on
+ * the GPU, for the same file.
  *
  * @param {LUT} voiLUT Volume of Interest Lookup Table Object
+ * @param {Number} windowWidth Window Width
+ * @param {Number} windowCenter Window Center
+ * @param {String} [voiLUTFunction] VOI LUT Function (0028,1056)
  *
  * @returns {VOILUTFunction} VOI LUT mapping function
  * @memberof VOILUT
  */
-function generateNonLinearVOILUT(voiLUT) {
-  // We don't trust the voiLUT.numBitsPerEntry, mainly thanks to Agfa!
-  // Reduced rather than spread into Math.max - VOI LUTs can hold tens of
-  // thousands of entries, which overflows the argument limit.
-  const bitsPerEntry = maxLUTValue(voiLUT.lut).toString(2).length;
-  const shift = bitsPerEntry - 8;
-  const minValue = voiLUT.lut[0] >> shift;
-  const maxValue = voiLUT.lut[voiLUT.lut.length - 1] >> shift;
-  const maxValueMapped = voiLUT.firstValueMapped + voiLUT.lut.length - 1;
+function generateNonLinearVOILUT(
+  voiLUT: RenderableVOILUT,
+  windowWidth: number,
+  windowCenter: number,
+  voiLUTFunction?: VOILUTFunctionType | string
+) {
+  // createVOILUTSampler holds the shape of the curve for every path, and it
+  // takes the number of bits from the largest entry. The shift of the entries
+  // that this function did before gives 0 for every entry of a LUT whose
+  // largest entry is below 128, and it cannot map a fractional value.
+  const voiRange = toLowHighRange(windowWidth, windowCenter, voiLUTFunction);
+  const sample = createVOILUTSampler(voiLUT, voiRange);
 
-  return function (modalityLutValue) {
-    if (modalityLutValue < voiLUT.firstValueMapped) {
-      return minValue;
-    } else if (modalityLutValue >= maxValueMapped) {
-      return maxValue;
-    }
-
-    return voiLUT.lut[modalityLutValue - voiLUT.firstValueMapped] >> shift;
+  return function (modalityLutValue: number): number {
+    return sample(modalityLutValue) * Y_MAX;
   };
 }
 
@@ -174,8 +177,13 @@ export default function (
   voiLUT?: CPUFallbackLUT,
   voiLUTFunction?: VOILUTFunctionType | string
 ) {
-  if (voiLUT?.lut?.length) {
-    return generateNonLinearVOILUT(voiLUT);
+  if (isRenderableVOILUT(voiLUT)) {
+    return generateNonLinearVOILUT(
+      voiLUT,
+      windowWidth,
+      windowCenter,
+      voiLUTFunction
+    );
   }
 
   switch (getValidVOILUTFunction(voiLUTFunction)) {
