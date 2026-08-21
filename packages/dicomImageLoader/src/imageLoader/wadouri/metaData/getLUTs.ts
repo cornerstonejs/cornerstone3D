@@ -28,14 +28,19 @@ function getLUT(pixelRepresentation: number, lutDataSet: DataSet): LutType {
     lut: [],
   };
 
+  const lutDataElement = lutDataSet.elements.x00283006;
+  const bytesPerEntry = getBytesPerEntry(
+    lutDataElement,
+    numLUTEntries,
+    numBitsPerEntry
+  );
+
   // The descriptor cannot be trusted beyond the data actually received - a
   // short LUT Data would otherwise fill the tail of the table with undefined
-  const lutDataElement = lutDataSet.elements.x00283006;
-
   if (lutDataElement) {
     numLUTEntries = Math.min(
       numLUTEntries,
-      Math.floor(lutDataElement.length / 2)
+      Math.floor(lutDataElement.length / bytesPerEntry)
     );
   }
 
@@ -44,10 +49,33 @@ function getLUT(pixelRepresentation: number, lutDataSet: DataSet): LutType {
   // entry above 32767 negative, which also broke the "largest entry decides the
   // bit depth" heuristic the renderers use.
   for (let i = 0; i < numLUTEntries; i++) {
-    lut.lut[i] = lutDataSet.uint16('x00283006', i);
+    if (bytesPerEntry === 1) {
+      lut.lut[i] = lutDataSet.byteArray[lutDataElement.dataOffset + i];
+    } else {
+      lut.lut[i] = lutDataSet.uint16('x00283006', i);
+    }
   }
 
   return lut;
+}
+
+/**
+ * The width of one entry of LUT Data. An entry is 16 bits (LUT Data is US or
+ * OW), but a LUT that declares 8 bits for each entry can hold one entry in each
+ * byte. The length of the element says which of the two the file uses, because
+ * the number of entries is known. Reading such a LUT as 16 bit words gave half
+ * a LUT of nonsense.
+ */
+function getBytesPerEntry(
+  lutDataElement: Element,
+  numLUTEntries: number,
+  numBitsPerEntry: number
+): number {
+  if (numBitsPerEntry === 8 && lutDataElement?.length === numLUTEntries) {
+    return 1;
+  }
+
+  return 2;
 }
 
 function getLUTs(pixelRepresentation: number, lutSequence: Element): LutType[] {
