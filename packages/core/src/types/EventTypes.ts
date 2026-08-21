@@ -60,6 +60,13 @@ interface VoiModifiedEventDetail {
   volumeId?: string;
   /** VOILUTFunction */
   VOILUTFunction?: VOILUTFunctionType;
+  /**
+   * True when a VOI LUT Sequence (0028,3010) of the file controls the display.
+   * The range is then the input domain of the curve, and the VOI LUT Function
+   * does not apply. A colorbar that draws a ramp from the range and the
+   * function shows a curve that the viewport does not use.
+   */
+  voiLUTSequenceApplied?: boolean;
   /** inverted */
   invert?: boolean;
   /** Indicates if the 'invert' state has changed from the previous state */

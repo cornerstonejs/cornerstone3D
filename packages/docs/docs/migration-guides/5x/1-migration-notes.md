@@ -280,3 +280,49 @@ metadata.
   the application does not set a range.
 - **If your tests compare volume and stack displays**, change the PT values that
   you calculated from the metadata window to the range 0 to 5.
+
+## Volume viewports apply the VOI LUT Function and the VOI LUT Sequence
+
+### What Changed
+
+A volume viewport now reads the VOI LUT Function (0028,1056) and the VOI LUT
+Sequence (0028,3010) of the file, as the stack viewport does:
+
+- A series that has the function SIGMOID gets a sigmoid transfer function. Before
+  this, the viewport calculated the range from the function but always made a
+  linear transfer function.
+- A series that has a VOI LUT Sequence gets the curve of the sequence. The range
+  is the input domain of the curve, and window level stretches the curve over the
+  new range.
+- The generic viewports (`PLANAR_NEXT`) do the same on their volume paths, on the
+  GPU and on the CPU.
+- `setProperties({ VOILUTFunction })` on a volume viewport now normalizes the
+  value, thus a padded value, a lower case value or a single element array also
+  works. The property is also applied before the transfer function is made. Before
+  this, a request for SIGMOID had no effect until the next change of the VOI.
+
+Two other changes make all the viewport types agree:
+
+- A colormap stops the curve of a VOI LUT Sequence and the curve of a sigmoid on
+  the GPU. A colormap fills the transfer function with its own colors. Before
+  this, a stack viewport removed the colormap on the next window level operation
+  of an image that has a sequence.
+- The CPU path stretches the curve of a sequence over the window. Before this,
+  window level did nothing on the CPU and worked on the GPU, for the same file.
+
+### Why This Matters
+
+CR, DX and MG images frequently carry a VOI LUT Sequence, and their curves are
+strongly non linear. The same file thus had two displays: the correct curve on a
+stack viewport, and a flat linear window on a volume viewport or an MPR.
+
+### Migration Guidance
+
+- **Usually, you do not have to do an operation.** The display of these series
+  agrees with the stack viewport and with other viewers.
+- **To ignore the curve of the file**, use
+  `setProperties({ useVOILUTSequence: false })`. This property is now available on
+  the volume viewports and on the generic viewports also.
+- **If your application draws a colorbar**, read the new field
+  `voiLUTSequenceApplied` of the `VOI_MODIFIED` event. A ramp that you calculate
+  from the range and the function is not the curve that the viewport shows.
