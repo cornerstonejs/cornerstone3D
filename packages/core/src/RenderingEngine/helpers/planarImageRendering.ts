@@ -40,6 +40,12 @@ export interface PlanarImagePresentation {
   colormap?: ColormapPublic;
   voiRange?: VOIRange;
   voiLUTFunction?: VOILUTFunctionType;
+  /**
+   * The use of the VOI LUT Sequence (0028,3010) of the image. If this property
+   * is undefined, the viewport uses the sequence when the image has one. If it
+   * is false, the viewport ignores the sequence and uses the VOI LUT Function.
+   */
+  useVOILUTSequence?: boolean;
   invert?: boolean;
 }
 
@@ -192,25 +198,11 @@ export function applyPlanarImagePresentation(args: {
   } = args;
   const property = actor.getProperty();
   const voiRange = props?.voiRange ?? defaultVOIRange;
-  // This rule is the same as the rule in
-  // StackViewport._getVOILUTSequenceToApply. Only one of the two can control
-  // the display. Thus a VOI LUT Function that is different from the function
-  // of the image stops the VOI LUT Sequence of the file. A function that is
-  // equal to the function of the image does not stop it. An absent tag
-  // (0028,1056) gives the LINEAR value, and getProperties gives that value to
-  // the application. Thus an application that applies the presentation that it
-  // read keeps the sequence. A range from the caller also keeps the sequence.
-  // The transfer function stretches the curve over that range. Thus window
-  // level operations keep the shape that the file specifies.
-  const canUseVOILUTSequence =
-    props?.voiLUTFunction === undefined ||
-    getValidVOILUTFunction(props.voiLUTFunction) ===
-      getValidVOILUTFunction(defaultVOILUTFunction);
-  let voiLUT;
-
-  if (canUseVOILUTSequence) {
-    voiLUT = defaultVOILUT;
-  }
+  const voiLUT = resolveVOILUTSequenceToApply({
+    defaultVOILUT,
+    defaultVOILUTFunction,
+    props,
+  });
 
   if (props?.visible !== undefined) {
     actor.setVisibility(props.visible);
@@ -242,6 +234,47 @@ export function applyPlanarImagePresentation(args: {
 
   property.setUseLookupTableScalarRange(true);
   property.setRGBTransferFunction(0, transferFunction);
+}
+
+/**
+ * The VOI LUT Sequence (0028,3010) that a presentation lets the file keep.
+ *
+ * This rule is the same as the rule in
+ * StackViewport._getVOILUTSequenceToApply and in
+ * BaseVolumeViewport._getVOILUTSequenceToApply. Only one of the sequence and
+ * the VOI LUT Function can control the display. Thus a function that is
+ * different from the function of the image stops the sequence. A function that
+ * is equal to the function of the image does not stop it. An absent tag
+ * (0028,1056) gives the LINEAR value, and getProperties gives that value to the
+ * application. Thus an application that applies the presentation that it read
+ * keeps the sequence. A range from the caller also keeps the sequence. The
+ * transfer function stretches the curve over that range. Thus window level
+ * operations keep the shape that the file specifies.
+ *
+ * The property `useVOILUTSequence` is the direct control: `false` ignores the
+ * sequence, and `true` keeps it whatever the function is.
+ */
+export function resolveVOILUTSequenceToApply(args: {
+  defaultVOILUT?: CPUFallbackLUT;
+  defaultVOILUTFunction?: VOILUTFunctionType;
+  props?: Pick<PlanarImagePresentation, 'voiLUTFunction' | 'useVOILUTSequence'>;
+}): CPUFallbackLUT | undefined {
+  const { defaultVOILUT, defaultVOILUTFunction, props } = args;
+
+  if (props?.useVOILUTSequence === false) {
+    return undefined;
+  }
+
+  const functionIsDifferent =
+    props?.voiLUTFunction !== undefined &&
+    getValidVOILUTFunction(props.voiLUTFunction) !==
+      getValidVOILUTFunction(defaultVOILUTFunction);
+
+  if (props?.useVOILUTSequence !== true && functionIsDifferent) {
+    return undefined;
+  }
+
+  return defaultVOILUT;
 }
 
 export function createPlanarRGBTransferFunction(args: {

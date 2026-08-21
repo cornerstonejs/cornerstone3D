@@ -44,7 +44,9 @@ import type { PlaneRestriction, ViewportInput } from '../types/IViewport';
 import triggerEvent from '../utilities/triggerEvent';
 import * as colormapUtils from '../utilities/colormap';
 import invertRgbTransferFunction from '../utilities/invertRgbTransferFunction';
-import createSigmoidRGBTransferFunction from '../utilities/createSigmoidRGBTransferFunction';
+import createLinearRGBTransferFunction from '../utilities/createLinearRGBTransferFunction';
+import { getValidVOILUTFunction } from '../utilities/voiLUTFunction';
+import { isRenderableVOILUT } from '../utilities/createVOILUTSequenceTransferFunction';
 import transformWorldToIndex from '../utilities/transformWorldToIndex';
 import {
   findMatchingColormap,
@@ -65,6 +67,12 @@ import { createAndCacheVolume } from '../loaders/volumeLoader';
 import resolveViewportVolumeId from './helpers/resolveViewportVolumeId';
 import { getGenericViewportImageDisplaySet } from './GenericViewport/genericViewportDisplaySetAccess';
 import createVolumeActor from './helpers/createVolumeActor';
+import {
+  createVolumeVOITransferFunction,
+  getVolumeVOIShape,
+  volumeVOIIsCurve,
+} from './helpers/setDefaultVolumeVOI';
+import type { VolumeVOIShape } from './helpers/setDefaultVolumeVOI';
 import volumeNewImageEventDispatcher, {
   resetVolumeNewImageState,
 } from './helpers/volumeNewImageEventDispatcher';
@@ -116,6 +124,28 @@ abstract class BaseVolumeViewport extends Viewport {
   protected initialViewUp: Point3;
   protected viewportProperties: VolumeViewportProperties = {};
   private volumeIds = new Set<string>();
+  /**
+   * The VOI LUT Function and the VOI LUT Sequence that the file of each volume
+   * specifies, by volumeId. The metadata of a volume does not change, so the
+   * shape is read once and kept: a window level drag asks for it on every
+   * mouse move.
+   */
+  private volumeVOIShapes = new Map<string, VolumeVOIShape>();
+  /**
+   * Whether the transfer function of a volume is a curve (a VOI LUT Sequence or
+   * a sigmoid) at the moment. A curve cannot become a window by a change of the
+   * range, because vtk.js rescales the nodes that it holds. Thus the transition
+   * needs a new transfer function.
+   */
+  private volumeVOICurveApplied = new Map<string, boolean>();
+  /**
+   * True when an application asked for a VOI LUT Function that is different
+   * from the function of the volume. Only one of the function and the VOI LUT
+   * Sequence can control the display.
+   */
+  private voiLUTFunctionSetByUser = false;
+  /** The `useVOILUTSequence` property, when an application set it. */
+  private useVOILUTSequence: boolean;
 
   constructor(props: ViewportInput) {
     super(props);
@@ -269,13 +299,81 @@ abstract class BaseVolumeViewport extends Viewport {
     volumeId?: string,
     suppressEvents?: boolean
   ): void {
-    // make sure the VOI LUT function is valid in the VOILUTFunctionType which is enum
-    if (!Object.values(VOILUTFunctionType).includes(voiLUTFunction)) {
-      voiLUTFunction = VOILUTFunctionType.LINEAR;
-    }
-    const { voiRange } = this.getProperties();
+    // Normalize rather than test for a member of the enum: the value reaches us
+    // as a padded, lower case or single element array attribute from the
+    // providers as well as from an application, and an unknown value must
+    // become LINEAR rather than break the render.
+    const newVOILUTFunction = getValidVOILUTFunction(voiLUTFunction);
+    const { voiRange } = this.getProperties(volumeId) ?? {};
+
+    // Only a function that is different from the function of the volume stops
+    // the use of the VOI LUT Sequence. An absent (0028,1056) becomes LINEAR,
+    // and getProperties gives that value to the application. Thus an
+    // application that keeps the properties and sets them again must not stop
+    // the sequence with a LINEAR value that no person selected. This is the
+    // same rule as StackViewport and applyPlanarImagePresentation use.
+    this.voiLUTFunctionSetByUser =
+      newVOILUTFunction !==
+      getValidVOILUTFunction(this._getVolumeVOIShape(volumeId).voiLUTFunction);
+
+    // The property has to hold the new function before the transfer function is
+    // made from it. The old order built the transfer function from the previous
+    // function, so a request for SIGMOID had no effect until the next change of
+    // the VOI.
+    this.viewportProperties.VOILUTFunction = newVOILUTFunction;
     this.setVOI(voiRange, volumeId, suppressEvents);
-    this.viewportProperties.VOILUTFunction = voiLUTFunction;
+  }
+
+  /**
+   * The VOI LUT Function and the VOI LUT Sequence of the file of a volume.
+   */
+  private _getVolumeVOIShape(volumeId?: string): VolumeVOIShape {
+    const volumeIdToUse =
+      volumeId ?? this._getApplicableVolumeActor(volumeId)?.volumeId;
+
+    if (!volumeIdToUse) {
+      return {};
+    }
+
+    let shape = this.volumeVOIShapes.get(volumeIdToUse);
+
+    if (!shape) {
+      shape = getVolumeVOIShape(cache.getVolume(volumeIdToUse));
+      this.volumeVOIShapes.set(volumeIdToUse, shape);
+    }
+
+    return shape;
+  }
+
+  /**
+   * The VOI LUT Sequence (0028,3010) of a volume, when it should control the
+   * display instead of an analytic VOI LUT Function. Refer to
+   * resolveVOILUTSequenceToApply for the rule. A colormap also stops it, which
+   * setVOI does for the sigmoid also.
+   */
+  private _getVOILUTSequenceToApply(volumeId?: string) {
+    if (this.useVOILUTSequence === false) {
+      return undefined;
+    }
+
+    if (this.useVOILUTSequence !== true && this.voiLUTFunctionSetByUser) {
+      return undefined;
+    }
+
+    const { voiLUT } = this._getVolumeVOIShape(volumeId);
+
+    return isRenderableVOILUT(voiLUT) ? voiLUT : undefined;
+  }
+
+  /**
+   * The VOI LUT Function in effect: the one that an application set, or the one
+   * that the file of the volume carries.
+   */
+  private _getVOILUTFunctionToApply(volumeId?: string): VOILUTFunctionType {
+    return getValidVOILUTFunction(
+      this.viewportProperties.VOILUTFunction ??
+        this._getVolumeVOIShape(volumeId).voiLUTFunction
+    );
   }
 
   /**
@@ -314,6 +412,10 @@ abstract class BaseVolumeViewport extends Viewport {
     cfun.applyColorMap(colormapObj);
     cfun.setMappingRange(range[0], range[1]);
     volumeActor.getProperty().setRGBTransferFunction(0, cfun);
+    // The colormap replaces the transfer function. Thus a curve of a VOI LUT
+    // Sequence or of a sigmoid is no longer on the actor, and a later change of
+    // the VOI keeps the colors of the colormap.
+    this.volumeVOICurveApplied.set(applicableVolumeActorInfo.volumeId, false);
 
     // This configures the viewport to use the most recently applied colormap.
     // However, this approach is not optimal when dealing with two volumes, as it prevents retrieval of the
@@ -466,6 +568,7 @@ abstract class BaseVolumeViewport extends Viewport {
       },
       volumeId: applicableVolumeActorInfo.volumeId,
       VOILUTFunction: VOILUTFunction,
+      voiLUTSequenceApplied: !!this._getVOILUTSequenceToApply(volumeId),
       colormap: matchedColormap,
       invert,
     };
@@ -552,22 +655,53 @@ abstract class BaseVolumeViewport extends Viewport {
       return;
     }
 
-    const { VOILUTFunction } = this.getProperties(volumeIdToUse);
-
     // scaling logic here
     // https://github.com/Kitware/vtk-js/blob/c6f2e12cddfe5c0386a73f0793eb6d9ab20d573e/Sources/Rendering/OpenGL/VolumeMapper/index.js#L957-L972
-    if (VOILUTFunction === VOILUTFunctionType.SAMPLED_SIGMOID) {
-      const cfun = createSigmoidRGBTransferFunction(voiRangeToUse);
-      volumeActor.getProperty().setRGBTransferFunction(0, cfun);
-    } else {
-      // TODO: refactor and make it work for PET series (inverted/colormap)
-      // const cfun = createLinearRGBTransferFunction(voiRangeToUse);
-      // volumeActor.getProperty().setRGBTransferFunction(0, cfun);
+    // A VOI LUT Sequence of the file and the SIGMOID function are curves. Thus
+    // they need their own transfer function. The curve of a sequence is
+    // stretched over the range. Thus window level reshapes the curve and does
+    // not replace it, as on the stack and the generic viewports.
+    //
+    // A colormap stops both curves. A colormap is a choice of a person, and it
+    // fills the transfer function with its own colors. The generic viewports
+    // use the same rule (refer to createPlanarRGBTransferFunction).
+    let curve;
 
-      // Todo: Moving from LINEAR to SIGMOID and back to LINEAR will not
-      // work until we implement it in a different way because the
-      // LINEAR transfer function is not recreated.
-      const { lower, upper } = voiRangeToUse;
+    if (!this.viewportProperties.colormap?.name) {
+      curve = createVolumeVOITransferFunction({
+        voiRange: voiRangeToUse,
+        voiLUT: this._getVOILUTSequenceToApply(volumeIdToUse),
+        voiLUTFunction: this._getVOILUTFunctionToApply(volumeIdToUse),
+      });
+    }
+
+    const { lower, upper } = voiRangeToUse;
+
+    if (curve) {
+      volumeActor.getProperty().setRGBTransferFunction(0, curve);
+      this.volumeVOICurveApplied.set(volumeIdToUse, true);
+    } else if (this.volumeVOICurveApplied.get(volumeIdToUse)) {
+      // A curve holds hundreds of nodes, and setRange only rescales them. Thus
+      // the shape of the curve stays after the reason for it goes away
+      // (`useVOILUTSequence: false`, or a move back to LINEAR). Make the window
+      // again from nothing.
+      this.volumeVOICurveApplied.set(volumeIdToUse, false);
+      volumeActor
+        .getProperty()
+        .setRGBTransferFunction(
+          0,
+          createLinearRGBTransferFunction(voiRangeToUse)
+        );
+
+      if (this.viewportProperties.invert) {
+        invertRgbTransferFunction(
+          volumeActor.getProperty().getRGBTransferFunction(0)
+        );
+      }
+    } else {
+      // Todo: refactor and make it work for PET series (inverted/colormap)
+      // A range on the existing transfer function keeps the colormap and the
+      // inversion that it carries.
       volumeActor
         .getProperty()
         .getRGBTransferFunction(0)
@@ -1052,6 +1186,7 @@ abstract class BaseVolumeViewport extends Viewport {
     {
       voiRange,
       VOILUTFunction,
+      useVOILUTSequence,
       invert,
       colormap,
       preset,
@@ -1095,6 +1230,10 @@ abstract class BaseVolumeViewport extends Viewport {
       this.setThreshold(colormap, volumeId);
     }
 
+    if (useVOILUTSequence !== undefined) {
+      this.useVOILUTSequence = useVOILUTSequence;
+    }
+
     if (voiRange !== undefined) {
       this.setVOI(voiRange, volumeId, suppressEvents);
     }
@@ -1105,6 +1244,15 @@ abstract class BaseVolumeViewport extends Viewport {
 
     if (VOILUTFunction !== undefined) {
       this.setVOILUTFunction(VOILUTFunction, volumeId, suppressEvents);
+    } else if (useVOILUTSequence !== undefined && voiRange === undefined) {
+      // A change of useVOILUTSequence changes the transfer function, but it
+      // does not change the VOI LUT Function or the range. Thus set the current
+      // function again to make the new transfer function.
+      this.setVOILUTFunction(
+        this._getVOILUTFunctionToApply(volumeId),
+        volumeId,
+        suppressEvents
+      );
     }
 
     if (preset !== undefined) {
@@ -1219,6 +1367,10 @@ abstract class BaseVolumeViewport extends Viewport {
    */
   public resetToDefaultProperties(volumeId: string): void {
     const properties = this.globalDefaultProperties;
+
+    this.voiLUTFunctionSetByUser = false;
+    this.useVOILUTSequence = properties.useVOILUTSequence;
+    this.viewportProperties.VOILUTFunction = properties.VOILUTFunction;
 
     if (properties.colormap?.name) {
       this.setColormap(properties.colormap, volumeId);
@@ -1341,12 +1493,15 @@ abstract class BaseVolumeViewport extends Viewport {
 
     const {
       colormap: latestColormap,
-      VOILUTFunction,
       interpolationType,
       invert,
       slabThickness,
       preset,
     } = this.viewportProperties;
+    // The function of the file when no application set one, as on the stack
+    // viewport. An application that reads the properties and sets them again
+    // then keeps the VOI LUT Sequence of the file.
+    const VOILUTFunction = this._getVOILUTFunctionToApply(volumeId);
 
     volumeId ||= this.getVolumeId();
     const volume = cache.getVolume(volumeId);
@@ -1366,7 +1521,7 @@ abstract class BaseVolumeViewport extends Viewport {
     const volumeActor = volumeActorEntry.actor as vtkVolume;
     const cfun = volumeActor.getProperty().getRGBTransferFunction(0);
     const [lower, upper] =
-      this.viewportProperties?.VOILUTFunction === 'SIGMOID'
+      VOILUTFunction === VOILUTFunctionType.SAMPLED_SIGMOID
         ? getVoiFromSigmoidRGBTransferFunction(cfun)
         : cfun.getRange();
 
@@ -1381,6 +1536,7 @@ abstract class BaseVolumeViewport extends Viewport {
       colormap: colormap,
       voiRange: voiRange,
       VOILUTFunction: VOILUTFunction,
+      useVOILUTSequence: this.useVOILUTSequence,
       interpolationType: interpolationType,
       invert: invert,
       slabThickness: slabThickness,
@@ -1910,6 +2066,23 @@ abstract class BaseVolumeViewport extends Viewport {
     for (let i = 0; i < volumeActorEntries.length; i++) {
       this.viewportProperties.invert = false;
     }
+
+    // New volumes bring their own VOI LUT Function and VOI LUT Sequence. Record
+    // which actors setDefaultVolumeVOI gave a curve to, so a later change of the
+    // VOI knows that a range on that transfer function cannot remove the curve.
+    this.voiLUTFunctionSetByUser = false;
+    this.volumeVOICurveApplied.clear();
+    this.volumeVOIShapes.clear();
+
+    for (const actorEntry of volumeActorEntries) {
+      const volumeId = actorEntry.referencedId;
+
+      this.volumeVOICurveApplied.set(
+        volumeId,
+        volumeVOIIsCurve(this._getVolumeVOIShape(volumeId))
+      );
+    }
+
     this.setActors(volumeActorEntries);
   }
 

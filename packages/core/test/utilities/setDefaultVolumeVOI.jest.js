@@ -1,5 +1,9 @@
 import { describe, it, expect, afterEach } from '@jest/globals';
-import { getDefaultVolumeVOIRange } from '../../src/RenderingEngine/helpers/setDefaultVolumeVOI';
+import {
+  getDefaultVolumeVOI,
+  getDefaultVolumeVOIRange,
+  getVolumeVOIShape,
+} from '../../src/RenderingEngine/helpers/setDefaultVolumeVOI';
 import * as metaData from '../../src/metaData';
 import { MetadataModules } from '../../src/enums';
 
@@ -121,6 +125,68 @@ describe('getDefaultVolumeVOIRange', function () {
     await expect(
       getDefaultVolumeVOIRange({ imageIds: [], metadata: {} })
     ).resolves.toBeUndefined();
+  });
+
+  it('gives the VOI LUT Function of the instance to the viewport', async () => {
+    // The volume viewport reads the function from the shape to make a sigmoid
+    // transfer function. Before, it always made a linear one
+    provider = provideVOI({
+      'test:2': {
+        windowWidth: 400,
+        windowCenter: 0,
+        voiLUTFunction: 'SIGMOID',
+      },
+    });
+
+    expect(getVolumeVOIShape(volume).voiLUTFunction).toBe('SIGMOID');
+    await expect(getDefaultVolumeVOI(volume)).resolves.toEqual({
+      voiRange: { lower: -200, upper: 199 },
+      voiLUT: undefined,
+      voiLUTFunction: 'SIGMOID',
+    });
+  });
+
+  it('takes the range from a VOI LUT Sequence of the instance', async () => {
+    // The sequence is the whole VOI transformation, so its own input domain is
+    // the range, and it wins over a window of the same instance (C.11.2.1)
+    const voiLUT = {
+      firstValueMapped: 100,
+      numBitsPerEntry: 16,
+      lut: [0, 8, 16, 24],
+    };
+
+    provider = provideVOI({
+      'test:2': { windowWidth: 400, windowCenter: 0, voiLUTSequence: [voiLUT] },
+    });
+
+    await expect(getDefaultVolumeVOI(volume)).resolves.toEqual({
+      voiRange: { lower: 100, upper: 103 },
+      voiLUT,
+      voiLUTFunction: undefined,
+    });
+  });
+
+  it('ignores the VOI LUT Sequence of a prescaled PT volume', async () => {
+    // The curve of the file is in the unscaled counts, and the volume holds SUV
+    const voiLUT = {
+      firstValueMapped: 0,
+      numBitsPerEntry: 16,
+      lut: [0, 8, 16],
+    };
+
+    provider = provideVOI({ 'test:2': { voiLUTSequence: [voiLUT] } });
+
+    const ptVolume = {
+      imageIds,
+      metadata: { Modality: 'PT' },
+      isPreScaled: true,
+      scaling: { PT: { suvbw: 1 } },
+    };
+
+    expect(getVolumeVOIShape(ptVolume)).toEqual({});
+    await expect(getDefaultVolumeVOI(ptVolume)).resolves.toEqual({
+      voiRange: { lower: 0, upper: 5 },
+    });
   });
 
   it('keeps the VOI LUT Function attached to the window', async () => {

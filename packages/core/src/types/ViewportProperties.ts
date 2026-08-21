@@ -8,8 +8,14 @@ import type { ColormapPublic } from './Colormap';
 export interface ViewportProperties {
   /** voi range (upper, lower) for the viewport */
   voiRange?: VOIRange;
-  /** VOILUTFunction type which is LINEAR or SAMPLED_SIGMOID */
+  /** VOILUTFunction type which is LINEAR, LINEAR_EXACT or SAMPLED_SIGMOID */
   VOILUTFunction?: VOILUTFunctionType;
+  /**
+   * The use of the VOI LUT Sequence (0028,3010) of the image. If this property
+   * is undefined, the viewport uses the sequence when the image has one. If it
+   * is false, the viewport ignores the sequence and uses the VOI LUT Function.
+   */
+  useVOILUTSequence?: boolean;
   /** invert flag - whether the image is inverted */
   invert?: boolean;
   /** Colormap applied to the viewport*/
