@@ -1,5 +1,6 @@
 import * as metaData from '../metaData';
 import { MetadataModules, VOILUTFunctionType } from '../enums';
+import { getValidVOILUTFunction } from './voiLUTFunction';
 import type IImage from '../types/IImage';
 import type { ImagePlaneModule } from '../types';
 import type IImageCalibration from '../types/IImageCalibration';
@@ -24,23 +25,12 @@ export interface BuildMetadataResult {
   };
 }
 
-/**
- * Gets a valid VOI LUT function from the provided value, defaulting to LINEAR if invalid
- * @param voiLUTFunction - The VOI LUT function to validate
- * @returns A valid VOI LUT function
- */
-export function getValidVOILUTFunction(
-  voiLUTFunction: VOILUTFunctionType | unknown
-): VOILUTFunctionType {
-  if (
-    !Object.values(VOILUTFunctionType).includes(
-      voiLUTFunction as VOILUTFunctionType
-    )
-  ) {
-    return VOILUTFunctionType.LINEAR;
-  }
-  return voiLUTFunction as VOILUTFunctionType;
-}
+// This module held a second getValidVOILUTFunction. That one tested for a
+// member of the enum, so it made LINEAR from a padded, a lower case or a single
+// element array value of (0028,1056), which the providers give. One
+// normalization is enough, and voiLUTFunction.ts holds it. The name stays
+// available here for the applications that import it from this path.
+export { getValidVOILUTFunction };
 
 /**
  * Creates default values for imagePlaneModule if values are undefined

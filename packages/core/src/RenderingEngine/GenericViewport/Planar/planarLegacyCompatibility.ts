@@ -209,6 +209,17 @@ export function toPlanarDataPresentation(
     presentation.voiRange = cloneVOIRange(properties.voiRange);
   }
 
+  // The legacy name of the VOI LUT Function (0028,1056) is VOILUTFunction. The
+  // presentation had no path for it, so a request for SIGMOID or for
+  // LINEAR_EXACT on a compatibility viewport did nothing.
+  if (properties.VOILUTFunction !== undefined) {
+    presentation.voiLUTFunction = properties.VOILUTFunction;
+  }
+
+  if (properties.useVOILUTSequence !== undefined) {
+    presentation.useVOILUTSequence = properties.useVOILUTSequence;
+  }
+
   if (properties.invert !== undefined) {
     presentation.invert = properties.invert;
   }

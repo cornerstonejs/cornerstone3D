@@ -632,6 +632,7 @@ describe('Planar CPU image render path', () => {
     expect(attachment.rendering.enabledElement.viewport.voi).toEqual({
       windowCenter: 2.5,
       windowWidth: 5,
+      voiLUTFunction: VOILUTFunctionType.LINEAR,
     });
   });
 });

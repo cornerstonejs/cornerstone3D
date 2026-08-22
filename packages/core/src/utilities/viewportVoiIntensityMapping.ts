@@ -1,4 +1,10 @@
 import VOILUTFunctionType from '../enums/VOILUTFunctionType';
+import type { CPUFallbackLUT } from '../types';
+import {
+  invertVOILUTSample,
+  isRenderableVOILUT,
+  sampleVOILUT,
+} from './createVOILUTSequenceTransferFunction';
 import { logit } from './logit';
 import * as windowLevelUtil from './windowLevel';
 
@@ -7,6 +13,13 @@ const Y_EPS = 1e-6;
 export type ViewportVoiMappingProps = {
   voiRange: { lower: number; upper: number };
   VOILUTFunction?: string | VOILUTFunctionType;
+  /**
+   * VOI LUT Sequence (0028,3010) of the image, when it controls the display.
+   * The sequence is the whole VOI transformation, so it replaces the window and
+   * the VOI LUT Function (PS3.3 C.11.2.1). Without it a tool that works in
+   * display intensity sees a linear ramp, and the viewport shows the curve.
+   */
+  voiLUT?: CPUFallbackLUT;
   /**
    * When true the viewport renders the VOI inverted (e.g. PET AC), so the
    * displayed intensity is `1 − mapped`. Both the forward and inverse maps must
@@ -27,6 +40,10 @@ export function mapScalarToViewportVoiIntensity(
   const span = upper - lower;
   const fn = props.VOILUTFunction as string | undefined;
   const applyInvert = (y: number) => (props.invert === true ? 1 - y : y);
+
+  if (isRenderableVOILUT(props.voiLUT)) {
+    return applyInvert(sampleVOILUT(props.voiLUT, value, props.voiRange));
+  }
 
   if (fn === VOILUTFunctionType.SAMPLED_SIGMOID || fn === 'SIGMOID') {
     const { windowCenter, windowWidth } = windowLevelUtil.toWindowLevel(
@@ -57,6 +74,10 @@ export function mapViewportVoiIntensityToScalar(
   // round-trip with mapScalarToViewportVoiIntensity is exact.
   const y =
     props.invert === true ? clamp01(1 - clamp01(mapped01)) : clamp01(mapped01);
+
+  if (isRenderableVOILUT(props.voiLUT)) {
+    return invertVOILUTSample(props.voiLUT, y, props.voiRange);
+  }
 
   if (fn === VOILUTFunctionType.SAMPLED_SIGMOID || fn === 'SIGMOID') {
     const { windowCenter, windowWidth } = windowLevelUtil.toWindowLevel(

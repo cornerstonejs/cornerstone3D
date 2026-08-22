@@ -301,7 +301,7 @@ describe('wadouri dataSet-layer', () => {
           {},
           {
             x00283002: { length: 6 },
-            x00283006: { length: 2 },
+            x00283006: { length: 4 },
           }
         );
         // uint16/int16 index-based access on the LUT item dataset
@@ -349,6 +349,146 @@ describe('wadouri dataSet-layer', () => {
             lut: [100, 200],
           },
         ]);
+      });
+
+      it('reads LUT Data as unsigned even for a signed pixel representation', () => {
+        // Only First Value Mapped is in pixel space; LUT Data holds output
+        // values and is always unsigned. Reading it as int16 turned every entry
+        // above 32767 negative, which also broke the "largest entry decides the
+        // bit depth" heuristic the renderers use.
+        const voiLutItemDataSet = fakeDataSet(
+          {},
+          {
+            x00283002: { length: 6 },
+            x00283006: { length: 4 },
+          }
+        );
+        (voiLutItemDataSet as any).uint16 = (t: string, i = 0) => {
+          if (t === 'x00283002') {
+            return [2, 65531, 16][i];
+          }
+          if (t === 'x00283006') {
+            return [100, 65535][i];
+          }
+          return undefined;
+        };
+        (voiLutItemDataSet as any).int16 = (t: string, i = 0) => {
+          if (t === 'x00283002') {
+            return [2, -5, 16][i];
+          }
+          if (t === 'x00283006') {
+            return [100, -1][i];
+          }
+          return undefined;
+        };
+
+        const dataSet = fakeDataSet(
+          // CT SOP class -> signed modality LUT output pixel representation
+          { x00080016: '1.2.840.10008.5.1.4.1.1.2' },
+          { x00283010: { items: [{ dataSet: voiLutItemDataSet }] } }
+        );
+
+        const result = metadataForDataset(
+          'voiLutModule',
+          'imageId',
+          dataSet as any
+        );
+
+        expect(result.voiLUTSequence[0].firstValueMapped).toBe(-5);
+        expect(result.voiLUTSequence[0].lut).toEqual([100, 65535]);
+      });
+
+      it('reads a zero entry count as 65536 entries', () => {
+        // Value 1 of LUT Descriptor is a US, which cannot hold 65536, so 0
+        // means 65536 (PS3.3 C.11.1.1). Reading it as 65535 dropped the last
+        // entry of every full size LUT.
+        const voiLutItemDataSet = fakeDataSet(
+          {},
+          {
+            x00283002: { length: 6 },
+            x00283006: { length: 131072 },
+          }
+        );
+        (voiLutItemDataSet as any).uint16 = (t: string, i = 0) => {
+          if (t === 'x00283002') {
+            return [0, 0, 16][i];
+          }
+          if (t === 'x00283006') {
+            return i;
+          }
+          return undefined;
+        };
+
+        const dataSet = fakeDataSet(
+          { x00280103: 0 },
+          { x00283010: { items: [{ dataSet: voiLutItemDataSet }] } }
+        );
+
+        const result = metadataForDataset(
+          'voiLutModule',
+          'imageId',
+          dataSet as any
+        );
+
+        const { lut } = result.voiLUTSequence[0];
+
+        expect(lut.length).toBe(65536);
+        expect(lut[65535]).toBe(65535);
+      });
+
+      it('reads the window from the Frame VOI LUT macro of an enhanced multi frame', () => {
+        // Enhanced SOPs carry the VOI inside FrameVOILUTSequence (0028,9132) in
+        // the functional groups, and the frame combiner leaves it one level
+        // below the root (cornerstone3D#2745)
+        const frameVOIDataSet = fakeDataSet({
+          x00281050: '-600',
+          x00281051: '1500',
+          x00281056: 'SIGMOID',
+        });
+
+        const dataSet = fakeDataSet(
+          {},
+          {
+            x00289132: { items: [{ dataSet: frameVOIDataSet }] },
+          }
+        );
+
+        const result = metadataForDataset(
+          'voiLutModule',
+          'imageId',
+          dataSet as any
+        );
+
+        expect(result.windowCenter).toEqual([-600]);
+        expect(result.windowWidth).toEqual([1500]);
+        expect(result.voiLUTFunction).toBe('SIGMOID');
+      });
+
+      it('prefers a window at the root over the Frame VOI LUT macro', () => {
+        const frameVOIDataSet = fakeDataSet({
+          x00281050: '-600',
+          x00281051: '1500',
+        });
+
+        const dataSet = fakeDataSet(
+          {
+            x00281050: '40',
+            x00281051: '400',
+          },
+          {
+            x00281050: { length: 2 },
+            x00289132: { items: [{ dataSet: frameVOIDataSet }] },
+          }
+        );
+
+        const result = metadataForDataset(
+          'voiLutModule',
+          'imageId',
+          dataSet as any
+        );
+
+        expect(result.windowCenter).toEqual([40]);
+        expect(result.windowWidth).toEqual([400]);
       });
 
       it('returns undefined voiLUTSequence when no sequence element is present', () => {

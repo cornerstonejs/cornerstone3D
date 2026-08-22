@@ -6,4 +6,7 @@ export const tags: ModuleTagEntry[] = [
   'WindowWidth',
   'VOILUTFunction',
   'WindowCenterWidthExplanation',
+  // Naturalized as `voiLUTSequence`; when present it defines the VOI
+  // transformation instead of the window (C.11.2.1)
+  'VOILUTSequence',
 ];

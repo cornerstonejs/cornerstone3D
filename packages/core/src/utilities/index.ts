@@ -1,6 +1,7 @@
 import * as eventListener from './eventListener';
 import csUtils from './invertRgbTransferFunction';
 import createSigmoidRGBTransferFunction from './createSigmoidRGBTransferFunction';
+import createVOILUTSequenceTransferFunction from './createVOILUTSequenceTransferFunction';
 import getVoiFromSigmoidRGBTransferFunction from './getVoiFromSigmoidRGBTransferFunction';
 import createLinearRGBTransferFunction from './createLinearRGBTransferFunction';
 import scaleRgbTransferFunction from './scaleRgbTransferFunction';
@@ -121,6 +122,19 @@ import {
   mapMappedBandToRawRange,
 } from './viewportVoiIntensityMapping';
 export type { ViewportVoiMappingProps } from './viewportVoiIntensityMapping';
+export {
+  isRenderableVOILUT,
+  getVOILUTSequenceRange,
+  getVOILUTOutputScale,
+  sampleVOILUT,
+  createVOILUTSampler,
+  invertVOILUTSample,
+} from './createVOILUTSequenceTransferFunction';
+export type { RenderableVOILUT } from './createVOILUTSequenceTransferFunction';
+export {
+  normalizeVOILUTFunction,
+  getValidVOILUTFunction,
+} from './voiLUTFunction';
 export * from './getPixelSpacingInformation';
 export * from './getPlaneCubeIntersectionDimensions';
 export * from './rotateToViewCoordinates';
@@ -153,6 +167,7 @@ export {
   eventListener,
   csUtils as invertRgbTransferFunction,
   createSigmoidRGBTransferFunction,
+  createVOILUTSequenceTransferFunction,
   getVoiFromSigmoidRGBTransferFunction,
   createLinearRGBTransferFunction,
   scaleRgbTransferFunction,

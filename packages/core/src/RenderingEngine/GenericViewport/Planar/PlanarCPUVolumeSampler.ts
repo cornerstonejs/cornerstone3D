@@ -14,6 +14,8 @@ import type {
   VOIRange,
 } from '../../../types';
 import VoxelManager from '../../../utilities/VoxelManager';
+import { resolveVOILUTSequenceToApply } from '../../helpers/planarImageRendering';
+import { getVolumeVOIShape } from '../../helpers/setDefaultVolumeVOI';
 import getDefaultViewport from '../../helpers/cpuFallback/rendering/getDefaultViewport';
 import getSpacingInNormalDirection from '../../../utilities/getSpacingInNormalDirection';
 import type { PlanarDataPresentation } from './PlanarViewportTypes';
@@ -402,11 +404,22 @@ export default class PlanarCPUVolumeSampler {
     viewport.invert = dataPresentation?.invert ?? false;
     viewport.pixelReplication =
       dataPresentation?.interpolationType === InterpolationType.NEAREST;
+    // The sampled slice carries the VOI LUT Function and the VOI LUT Sequence
+    // of the volume (refer to createSliceImage). The CPU renderer reads them
+    // from the viewport, as on the stack.
     viewport.voi = {
       windowCenter: (resolvedVOI.lower + resolvedVOI.upper) / 2,
       windowWidth: Math.max(resolvedVOI.upper - resolvedVOI.lower, 1),
-      voiLUTFunction: VOILUTFunctionType.LINEAR,
+      voiLUTFunction:
+        dataPresentation?.voiLUTFunction ??
+        sampledSliceState.image.voiLUTFunction ??
+        VOILUTFunctionType.LINEAR,
     };
+    viewport.voiLUT = resolveVOILUTSequenceToApply({
+      defaultVOILUT: sampledSliceState.image.voiLUT,
+      defaultVOILUTFunction: sampledSliceState.image.voiLUTFunction,
+      props: dataPresentation,
+    });
   }
 
   public needsResample(args: {
@@ -1192,6 +1205,10 @@ export default class PlanarCPUVolumeSampler {
     const windowWidth = Math.max(1, resolvedVOI.upper - resolvedVOI.lower);
     const windowCenter = (resolvedVOI.lower + resolvedVOI.upper) / 2;
     const imageId = `cpuVolumeSlice:${volume.volumeId}:${++this.sampleSequence}`;
+    // The slice is a synthetic image, but the VOI transformation is a property
+    // of the file. Thus the slice keeps the VOI LUT Function and the VOI LUT
+    // Sequence of the volume.
+    const { voiLUT, voiLUTFunction } = getVolumeVOIShape(volume);
     const voxelManager = VoxelManager.createImageVoxelManager({
       width,
       height,
@@ -1205,7 +1222,8 @@ export default class PlanarCPUVolumeSampler {
       intercept: 0,
       windowCenter,
       windowWidth,
-      voiLUTFunction: VOILUTFunctionType.LINEAR,
+      voiLUTFunction: voiLUTFunction ?? VOILUTFunctionType.LINEAR,
+      voiLUT,
       isPreScaled: volume.isPreScaled,
       scaling: volume.scaling,
       color: numberOfComponents > 1,
