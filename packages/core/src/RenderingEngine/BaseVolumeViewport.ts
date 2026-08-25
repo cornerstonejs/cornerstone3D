@@ -1367,6 +1367,7 @@ abstract class BaseVolumeViewport extends Viewport {
    */
   public resetToDefaultProperties(volumeId: string): void {
     const properties = this.globalDefaultProperties;
+    const currentVOIRange = this.getProperties(volumeId)?.voiRange;
 
     this.voiLUTFunctionSetByUser = false;
     this.useVOILUTSequence = properties.useVOILUTSequence;
@@ -1385,6 +1386,10 @@ abstract class BaseVolumeViewport extends Viewport {
 
     if (properties.VOILUTFunction !== undefined) {
       this.setVOILUTFunction(properties.VOILUTFunction, volumeId);
+    } else if (properties.voiRange === undefined && currentVOIRange) {
+      // The cleared flags can change the required transfer function even when
+      // no saved default has a VOI value.
+      this.setVOI(currentVOIRange, volumeId);
     }
 
     if (properties.invert !== undefined) {
@@ -1536,6 +1541,7 @@ abstract class BaseVolumeViewport extends Viewport {
       colormap: colormap,
       voiRange: voiRange,
       VOILUTFunction: VOILUTFunction,
+      voiLUTFunctionSetByUser: this.voiLUTFunctionSetByUser,
       useVOILUTSequence: this.useVOILUTSequence,
       interpolationType: interpolationType,
       invert: invert,

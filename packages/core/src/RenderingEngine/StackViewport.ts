@@ -195,6 +195,10 @@ class StackViewport extends Viewport {
   // Whether the transfer function currently on the actor was built from the
   // image's VOI LUT Sequence rather than from a window width/center
   private voiLUTSequenceApplied = false;
+  // The VOI LUT Sequence used to build the current transfer function. Two
+  // frames can have the same input range but different LUT data. The range and
+  // voiLUTSequenceApplied flag alone cannot show that the function is current.
+  private processedVOILUTSequence: CPUFallbackLUT | undefined;
   // True when the application asked for a VOI LUT Function that is different
   // from the function of the image. Then the image cannot use its VOI LUT
   // Sequence. See _getVOILUTSequenceToApply.
@@ -766,7 +770,7 @@ class StackViewport extends Viewport {
    @param properties - An object containing the properties to be set.
    @param properties.colormap - Specifies the colormap for the viewport.
    @param properties.voiRange - Defines the lower and upper Value of Interest (VOI) to be applied.
-   @param properties.VOILUTFunction - Function to handle the application of a lookup table (LUT) to the VOI.
+   @param properties.VOILUTFunction - Function used to apply the lookup table to the VOI. Each image provides this setting again during navigation. An application request does not remain active across frames.
    @param properties.useVOILUTSequence - If false, ignore the VOI LUT Sequence of the image and use the VOI LUT Function.
    @param properties.invert - A boolean value to toggle color inversion (true: inverted, false: not inverted).
    @param properties.interpolationType - Determines the interpolation method to be used (1: linear, 0: nearest-neighbor).
@@ -893,6 +897,7 @@ class StackViewport extends Viewport {
       colormap,
       voiRange,
       VOILUTFunction: this._getEffectiveVOILUTFunction(),
+      voiLUTFunctionSetByUser: this.voiLUTFunctionSetByUser,
       useVOILUTSequence,
       interpolationType,
       invert,
@@ -1749,7 +1754,7 @@ class StackViewport extends Viewport {
       this.voiRange &&
       this.voiRange.lower === voiRange.lower &&
       this.voiRange.upper === voiRange.upper &&
-      useVOILUTSequence === this.voiLUTSequenceApplied &&
+      voiLUTSequence === this.processedVOILUTSequence &&
       !forceRecreateLUTFunction &&
       !this.stackInvalidated
     ) {
@@ -1847,6 +1852,7 @@ class StackViewport extends Viewport {
     }
 
     this.voiLUTSequenceApplied = appliedVOILUTSequence;
+    this.processedVOILUTSequence = voiLUTSequence;
     this.voiRange = voiRangeToUse;
 
     // if voiRange is set by setProperties we need to lock it if it is not locked already
@@ -2191,6 +2197,9 @@ class StackViewport extends Viewport {
     this.flipVertical = false;
     this.flipHorizontal = false;
     this.voiRange = null;
+    this.useVOILUTSequence = undefined;
+    this.voiLUTSequenceApplied = false;
+    this.processedVOILUTSequence = undefined;
     this.interpolationType = InterpolationType.LINEAR;
     this.invert = false;
     this.viewportStatus = ViewportStatus.LOADING;

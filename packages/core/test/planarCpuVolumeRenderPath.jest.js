@@ -3,12 +3,13 @@ jest.mock('../src/RenderingEngine/helpers/cpuFallback/drawImageSync', () => ({
   default: jest.fn(),
 }));
 
-import { Events, InterpolationType } from '../src/enums';
+import { Events, InterpolationType, VOILUTFunctionType } from '../src/enums';
 import { ActorRenderMode } from '../src/types';
 import drawImageSync from '../src/RenderingEngine/helpers/cpuFallback/drawImageSync';
 import { CpuVolumeSliceRenderPath } from '../src/RenderingEngine/GenericViewport/Planar/CpuVolumeSliceRenderPath';
 import PlanarCPUVolumeSampler from '../src/RenderingEngine/GenericViewport/Planar/PlanarCPUVolumeSampler';
 import eventTarget from '../src/eventTarget';
+import * as metaData from '../src/metaData';
 
 function createCanvas(width = 256, height = 256) {
   const canvas = document.createElement('canvas');
@@ -344,6 +345,86 @@ describe('CpuVolumeSliceRenderPath', () => {
 });
 
 describe('PlanarCPUVolumeSampler resampling decisions', () => {
+  it('reads a volume VOI shape only once across resamples', () => {
+    const sampler = new PlanarCPUVolumeSampler();
+    const volume = {
+      ...createTestVolume(),
+      imageIds: ['image-0', 'image-1'],
+    };
+    const getMetadata = jest.spyOn(metaData, 'get').mockReturnValue(undefined);
+    const sampleArgs = {
+      volume,
+      width: 1,
+      height: 1,
+      dataPresentation: {
+        interpolationType: InterpolationType.LINEAR,
+      },
+    };
+
+    sampler.sampleSliceImage({
+      ...sampleArgs,
+      camera: createCoronalCamera([1.5, 1.5, 1.5]),
+    });
+    sampler.sampleSliceImage({
+      ...sampleArgs,
+      camera: createCoronalCamera([1.5, 2.5, 1.5]),
+    });
+
+    expect(getMetadata).toHaveBeenCalledTimes(3);
+    getMetadata.mockRestore();
+  });
+
+  it('converts the CPU window with the selected VOI LUT function', () => {
+    const sampler = new PlanarCPUVolumeSampler();
+    const sampledSliceState = createSampledSliceState({
+      ...createSampledImage(),
+      voiLUTFunction: VOILUTFunctionType.LINEAR,
+    });
+    const enabledElement = {
+      canvas: createCanvas(),
+      image: sampledSliceState.image,
+      viewport: {},
+    };
+
+    sampler.updateCPUFallbackViewport({
+      enabledElement,
+      sampledSliceState,
+      camera: {
+        focalPoint: [0, 0, 0],
+        parallelScale: 32,
+      },
+      dataPresentation: {
+        voiRange: { lower: 0, upper: 100 },
+        voiLUTFunction: VOILUTFunctionType.LINEAR,
+      },
+    });
+
+    expect(enabledElement.viewport.voi).toEqual({
+      windowCenter: 50.5,
+      windowWidth: 101,
+      voiLUTFunction: VOILUTFunctionType.LINEAR,
+    });
+
+    sampler.updateCPUFallbackViewport({
+      enabledElement,
+      sampledSliceState,
+      camera: {
+        focalPoint: [0, 0, 0],
+        parallelScale: 32,
+      },
+      dataPresentation: {
+        voiRange: { lower: 0, upper: 100 },
+        voiLUTFunction: VOILUTFunctionType.LINEAR_EXACT,
+      },
+    });
+
+    expect(enabledElement.viewport.voi).toEqual({
+      windowCenter: 50,
+      windowWidth: 100,
+      voiLUTFunction: VOILUTFunctionType.LINEAR_EXACT,
+    });
+  });
+
   it('reuses orthogonal source-slice samples across zoom changes', () => {
     const sampler = new PlanarCPUVolumeSampler();
     const sampledSliceState = {

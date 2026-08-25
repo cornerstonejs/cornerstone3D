@@ -1041,6 +1041,119 @@ describe('renderingCore -- Stack', () => {
     });
   });
 
+  describe('VOI LUT Sequence state', function () {
+    it('rebuilds for a different LUT with the same input range', async function () {
+      testUtils.createViewports(renderingEngine, {
+        viewportId,
+        orientation: Enums.OrientationAxis.AXIAL,
+      });
+      const imageInfo = {
+        loader: 'fakeImageLoader',
+        name: 'voiLUT',
+        rows: 16,
+        columns: 16,
+        barStart: 4,
+        barWidth: 4,
+        xSpacing: 1,
+        ySpacing: 1,
+        sliceIndex: 0,
+      };
+      const imageId1 = encodeImageIdInfo(imageInfo);
+      const imageId2 = encodeImageIdInfo({ ...imageInfo, sliceIndex: 1 });
+      const [image1, image2] = await Promise.all([
+        imageLoader.loadAndCacheImage(imageId1),
+        imageLoader.loadAndCacheImage(imageId2),
+      ]);
+
+      image1.voiLUT = {
+        firstValueMapped: 0,
+        numBitsPerEntry: 8,
+        lut: [0, 64, 255],
+      };
+      image2.voiLUT = {
+        firstValueMapped: 0,
+        numBitsPerEntry: 8,
+        lut: [0, 192, 255],
+      };
+
+      const viewport = renderingEngine.getViewport(viewportId);
+      await viewport.setStack([imageId1, imageId2], 0);
+      const firstTransferFunction = viewport.getTransferFunction();
+
+      await viewport.setImageIdIndex(1);
+
+      expect(viewport.getTransferFunction()).not.toBe(firstTransferFunction);
+      expect(viewport.voiLUTSequenceApplied).toBe(true);
+    });
+
+    it('clears the VOI LUT Sequence decision state for a new stack', async function () {
+      testUtils.createViewports(renderingEngine, {
+        viewportId,
+        orientation: Enums.OrientationAxis.AXIAL,
+      });
+      const imageInfo = {
+        loader: 'fakeImageLoader',
+        name: 'voiState',
+        rows: 16,
+        columns: 16,
+        barStart: 4,
+        barWidth: 4,
+        xSpacing: 1,
+        ySpacing: 1,
+        sliceIndex: 0,
+      };
+      const imageId1 = encodeImageIdInfo(imageInfo);
+      const imageId2 = encodeImageIdInfo({ ...imageInfo, sliceIndex: 1 });
+      const viewport = renderingEngine.getViewport(viewportId);
+
+      await viewport.setStack([imageId1], 0);
+      viewport.setProperties({ useVOILUTSequence: false });
+      viewport.voiLUTSequenceApplied = true;
+
+      await viewport.setStack([imageId2], 0);
+
+      expect(viewport.getProperties().useVOILUTSequence).toBeUndefined();
+      expect(viewport.voiLUTSequenceApplied).toBe(false);
+    });
+
+    it('does not retry an unbuildable LUT for an unchanged range', async function () {
+      testUtils.createViewports(renderingEngine, {
+        viewportId,
+        orientation: Enums.OrientationAxis.AXIAL,
+      });
+      const imageId = encodeImageIdInfo({
+        loader: 'fakeImageLoader',
+        name: 'emptyVOILUT',
+        rows: 16,
+        columns: 16,
+        barStart: 4,
+        barWidth: 4,
+        xSpacing: 1,
+        ySpacing: 1,
+      });
+      const image = await imageLoader.loadAndCacheImage(imageId);
+      image.voiLUT = {
+        firstValueMapped: 0,
+        numBitsPerEntry: 8,
+        lut: [0, 0, 0],
+      };
+
+      const viewport = renderingEngine.getViewport(viewportId);
+      await viewport.setStack([imageId], 0);
+      const createTransferFunction = spyOn(
+        viewport,
+        '_createVOITransferFunction'
+      ).and.callThrough();
+      const { voiRange } = viewport.getProperties();
+
+      viewport.setProperties({ voiRange });
+      viewport.setProperties({ voiRange });
+
+      expect(createTransferFunction).not.toHaveBeenCalled();
+      expect(viewport.voiLUTSequenceApplied).toBe(false);
+    });
+  });
+
   describe('Flipping', function () {
     it('Should be able to flip a stack viewport horizontally', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
