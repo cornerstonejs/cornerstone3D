@@ -91,17 +91,28 @@ class SegmentSelectTool extends BaseTool {
     }
   };
 
-  onSetToolEnabled = (): void => {
-    this.onSetToolActive();
+  private _releaseHover = (): void => {
+    this._cancelPendingHover();
+    this._detachHoverLeaveListener();
   };
 
   onSetToolActive = (): void => {
-    this.hoverTimer = null;
+    this._cancelPendingHover();
+  };
+
+  // Every transition out of Active makes the tool unable to hover-activate
+  // (mouseMoveCallback bails unless Active), but the pointer may still be inside
+  // the viewport, so no mouseleave is coming to cancel an already armed timer.
+  onSetToolEnabled = (): void => {
+    this._releaseHover();
+  };
+
+  onSetToolPassive = (): void => {
+    this._releaseHover();
   };
 
   onSetToolDisabled = (): void => {
-    this._cancelPendingHover();
-    this._detachHoverLeaveListener();
+    this._releaseHover();
   };
 
   _setActiveSegment(evt = {} as EventTypes.InteractionEventType): void {

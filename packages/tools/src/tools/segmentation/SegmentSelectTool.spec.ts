@@ -52,6 +52,20 @@ describe('SegmentSelectTool hover-activate timer', () => {
     expect(setActiveSpy).not.toHaveBeenCalled();
   });
 
+  // Toggling the hover feature off (keyboard shortcut, panel switch) moves the
+  // tool out of Active without the pointer ever leaving the viewport, so there is
+  // no mouseleave to lean on - the mode change itself has to drop the timer.
+  it.each([
+    ['passive', () => tool.onSetToolPassive()],
+    ['enabled', () => tool.onSetToolEnabled()],
+    ['disabled', () => tool.onSetToolDisabled()],
+  ])('cancels the pending hover activation when set %s', (_mode, setMode) => {
+    move();
+    setMode();
+    jest.advanceTimersByTime(200);
+    expect(setActiveSpy).not.toHaveBeenCalled();
+  });
+
   it('does not arm the timer when the tool is not Active (hover toggle off)', () => {
     (tool as unknown as { mode: ToolModes }).mode = ToolModes.Passive;
     move();
