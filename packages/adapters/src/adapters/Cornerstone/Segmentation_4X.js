@@ -1786,13 +1786,23 @@ export function alignPixelDataWithSourceData(
 
 export function getSegmentMetadata(multiframe, seriesInstanceUid) {
   const segmentSequence = multiframe.SegmentSequence;
-  let data = [];
+  const data = [];
 
-  if (Array.isArray(segmentSequence)) {
-    data = [undefined, ...segmentSequence];
-  } else {
-    // Only one segment, will be stored as an object.
-    data = [undefined, segmentSequence];
+  const segments = Array.isArray(segmentSequence)
+    ? segmentSequence
+    : [segmentSequence];
+
+  /**
+   * Index segments by their SegmentNumber rather than array position.
+   * This is required for LABELMAP segmentations where SegmentNumber may
+   * start at 0 (for background) or have gaps. The DICOM standard only
+   * requires SegmentNumber >= 1 for BINARY/FRACTIONAL types, but LABELMAP
+   * allows more flexibility (see DICOM Part 3, Section C.8.20.2.4).
+   */
+  for (const segment of segments) {
+    if (segment?.SegmentNumber !== undefined) {
+      data[segment.SegmentNumber] = segment;
+    }
   }
 
   return {
