@@ -99,9 +99,15 @@ export default class RLEVoxelMap<T> {
   public defaultValue: T;
 
   /**
-   * The constructor for creating pixel data.
+   * The constructor for creating pixel data, when the map's creator has chosen
+   * one.
+   *
+   * Left undefined otherwise, so that a reader can tell "no type was chosen"
+   * apart from "Uint8Array was chosen" and keep its own default: `getPixelData`
+   * falls back to `Uint8Array` and `getScalarData` to `Uint8ClampedArray`,
+   * which is what each produced before this field existed.
    */
-  public pixelDataConstructor = Uint8Array;
+  public pixelDataConstructor?: typeof Uint8Array;
 
   /**
    * Copies the data in source into the map.
@@ -125,10 +131,20 @@ export default class RLEVoxelMap<T> {
 
   /**
    *  This is a function on the voxel manager, to get the RLE scalar data.
+   *
+   * Where the map's creator chose a `pixelDataConstructor`, an expanded frame
+   * comes back as that type rather than `Uint8ClampedArray`, so it has the same
+   * type as the buffer it stands in for. That matters wherever an RLE map backs
+   * data that is otherwise a real typed array - a labelmap image, for instance,
+   * whose render path derives the texture's vtk dataType from this array. A map
+   * whose creator chose nothing still expands to `Uint8ClampedArray`.
+   *
    * @returns an array of the given type for the data.
    */
-  public static getScalarData = function (ArrayType = Uint8ClampedArray) {
-    const scalarData = new ArrayType(this.frameSize);
+  public static getScalarData = function (ArrayType?) {
+    const Constructor =
+      ArrayType ?? this.map?.pixelDataConstructor ?? Uint8ClampedArray;
+    const scalarData = new Constructor(this.frameSize);
     this.map.updateScalarData(scalarData);
     return scalarData;
   };
@@ -432,9 +448,8 @@ export default class RLEVoxelMap<T> {
     pixelData?: PixelDataTypedArray
   ): PixelDataTypedArray {
     if (!pixelData) {
-      pixelData = new this.pixelDataConstructor(
-        this.width * this.height * this.numComps
-      );
+      const Constructor = this.pixelDataConstructor ?? Uint8Array;
+      pixelData = new Constructor(this.width * this.height * this.numComps);
     } else {
       pixelData.fill(0);
     }

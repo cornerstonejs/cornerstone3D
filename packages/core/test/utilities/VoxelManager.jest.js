@@ -1,4 +1,5 @@
 import { VoxelManager } from '../../src/utilities';
+import cache from '../../src/cache/cache';
 import { describe, it, expect } from '@jest/globals';
 
 const dimensions = [64, 128, 4];
@@ -217,6 +218,137 @@ describe('VoxelManager', () => {
     const map = VoxelManager.createRLEVolumeVoxelManager({ dimensions });
     map.setAtIJKPoint(ijkPoint, 1);
     expect(map.getAtIJKPoint(ijkPoint)).toBe(1);
+  });
+
+  it('createRLEVolumeVoxelManager with a pixel type and default value', () => {
+    const map = VoxelManager.createRLEVolumeVoxelManager({
+      dimensions,
+      pixelDataConstructor: Uint8Array,
+      defaultValue: 0,
+    });
+
+    // an unwritten voxel reads as the array's zero, not undefined
+    expect(map.getAtIJKPoint(ijkPoint)).toBe(0);
+    expect(map.getConstructor()).toBe(Uint8Array);
+    expect(map.getScalarData()).toBeInstanceOf(Uint8Array);
+  });
+
+  it('createRLEVolumeVoxelManager without a pixel type is left as it was', () => {
+    // Choosing a type is what moves an RLE map onto it. A caller that chose
+    // nothing - the editing history managers, an RLE image - keeps the
+    // expansion type and the constructor fallback it had before the option
+    // existed, rather than being moved onto Uint8Array silently.
+    const map = VoxelManager.createRLEVolumeVoxelManager({ dimensions });
+
+    expect(map.getScalarData()).toBeInstanceOf(Uint8ClampedArray);
+    expect(map.getConstructor()).toBe(Float32Array);
+    expect(map.getAtIJKPoint(ijkPoint)).toBeUndefined();
+  });
+
+  describe('getLiveScalarData', () => {
+    it('is the backing array for a manager that has one', () => {
+      const scalarData = new Uint8Array(dimensions[0] * dimensions[1]);
+      const map = VoxelManager.createImageVoxelManager({
+        width: dimensions[0],
+        height: dimensions[1],
+        scalarData,
+      });
+
+      expect(map.getLiveScalarData()).toBe(scalarData);
+      // and it really is live: a write through the manager is visible in it
+      map.setAtIndex(3, 5);
+      expect(map.getLiveScalarData()[3]).toBe(5);
+    });
+
+    it('is undefined for an RLE manager, whose expansion is a throwaway', () => {
+      const map = VoxelManager.createRLEImageVoxelManager({
+        dimensions: [dimensions[0], dimensions[1]],
+        pixelDataConstructor: Uint8Array,
+        defaultValue: 0,
+      });
+
+      expect(map.getLiveScalarData()).toBeUndefined();
+      // getScalarData still produces an array - it is just not the truth
+      expect(map.getScalarData()).toBeInstanceOf(Uint8Array);
+    });
+
+    it('is undefined while the stored array is only a cached expansion', () => {
+      const map = VoxelManager.createRLEImageVoxelManager({
+        dimensions: [dimensions[0], dimensions[1]],
+        pixelDataConstructor: Uint8Array,
+        defaultValue: 0,
+      });
+
+      // getScalarData(true) retains the expansion, but it is still a snapshot
+      // rather than a backing store, so it must not be handed out as live.
+      map.getScalarData(true);
+      expect(map.getLiveScalarData()).toBeUndefined();
+    });
+  });
+
+  describe('scalar data length without a backing array', () => {
+    it('derives the length and voxel size from the dimensions', () => {
+      const map = VoxelManager.createRLEImageVoxelManager({
+        dimensions: [dimensions[0], dimensions[1]],
+        pixelDataConstructor: Uint8Array,
+        defaultValue: 0,
+      });
+
+      const frameSize = dimensions[0] * dimensions[1];
+      expect(map.getScalarDataLength()).toBe(frameSize);
+      expect(map.bytePerVoxel).toBe(1);
+      expect(map.sizeInBytes).toBe(frameSize);
+    });
+
+    it('builds a complete scalar data array over RLE backed slices', () => {
+      // The segmentation-statistics path: an image volume over labelmap frames.
+      // Sizing the complete array asks each slice how long its scalar data is,
+      // which an RLE frame has no array to answer from.
+      const [width, height, depth] = [4, 4, 3];
+      const frameSize = width * height;
+      const imageIds = [];
+
+      for (let sliceIndex = 0; sliceIndex < depth; sliceIndex++) {
+        const imageId = `rle-labelmap-slice-${sliceIndex}`;
+        const voxelManager = VoxelManager.createRLEImageVoxelManager({
+          dimensions: [width, height],
+          pixelDataConstructor: Uint8Array,
+          defaultValue: 0,
+        });
+        // one segmented voxel per slice, at a different offset on each
+        voxelManager.setAtIndex(sliceIndex, 7);
+
+        imageIds.push(imageId);
+        cache.putImageSync(imageId, {
+          imageId,
+          width,
+          height,
+          voxelManager,
+          getPixelData: () => voxelManager.getScalarData(),
+          sizeInBytes: 5 * 1024,
+        });
+      }
+
+      const volumeVoxelManager = VoxelManager.createImageVolumeVoxelManager({
+        dimensions: [width, height, depth],
+        imageIds,
+        numberOfComponents: 1,
+      });
+
+      expect(volumeVoxelManager.getScalarDataLength()).toBe(frameSize * depth);
+
+      const complete = volumeVoxelManager.getCompleteScalarDataArray();
+      expect(complete).toBeInstanceOf(Uint8Array);
+      expect(complete.length).toBe(frameSize * depth);
+      for (let sliceIndex = 0; sliceIndex < depth; sliceIndex++) {
+        expect(complete[sliceIndex * frameSize + sliceIndex]).toBe(7);
+      }
+      expect(Array.from(complete).filter((value) => value !== 0)).toHaveLength(
+        depth
+      );
+
+      imageIds.forEach((imageId) => cache.removeImageLoadObject(imageId));
+    });
   });
 
   it('addInstanceToImage', () => {

@@ -227,7 +227,9 @@ export async function convertContourToStackLabelmap(
     const { imageId: segImageId } = segmentationInfo;
 
     const segImage = cache.getImage(segImageId);
-    segImage.voxelManager.getScalarData().set(scalarData);
+    // Not `getScalarData().set(...)`: a labelmap image is RLE backed, so that
+    // array is an expansion the map does not read back.
+    segImage.voxelManager.setFromScalarData(scalarData);
     segImage.imageFrame?.pixelData?.set(scalarData);
 
     segImageIds.push(segImageId);

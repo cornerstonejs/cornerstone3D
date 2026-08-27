@@ -7,7 +7,7 @@ import genericMetadataProvider from '../utilities/genericMetadataProvider';
 import { getBufferConfiguration } from '../utilities/getBufferConfiguration';
 import triggerEvent from '../utilities/triggerEvent';
 import uuidv4 from '../utilities/uuidv4';
-import VoxelManager from '../utilities/VoxelManager';
+import VoxelManager, { DEFAULT_RLE_SIZE } from '../utilities/VoxelManager';
 import type {
   IImage,
   ImageLoaderFn,
@@ -25,6 +25,7 @@ import type {
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import * as metaData from '../metaData';
 import VoxelManagerEnum from '../enums/VoxelManagerEnum';
+import { getConfiguration } from '../init';
 
 export interface ImageLoaderOptions {
   priority: number;
@@ -291,9 +292,14 @@ export function createAndCacheDerivedImage(
     length
   );
 
-  // Use a buffer of size 1 for no data
+  // Use a buffer of size 1 for no data. An RLE representation stores the voxels
+  // in its runs and never reads this buffer, so allocating a full frame for it
+  // would be the exact per-slice cost the encoding exists to avoid; it is still
+  // created at size 1 because the pixel/bit-depth metadata below is derived
+  // from its type.
+  const isRleRepresentation = voxelRepresentation === VoxelManagerEnum.RLE;
   const imageScalarData = new TypedArrayConstructor(
-    skipCreateBuffer ? 1 : length
+    skipCreateBuffer || isRleRepresentation ? 1 : length
   );
   const derivedImageId = imageId;
   const referencedImagePlaneMetadata = metaData.get(
@@ -535,10 +541,19 @@ export function createAndCacheLocalImage(
 
   const id = imageId;
 
-  // Todo: probably here we need to consider the RLE voxel manager as well
+  const isRle = voxelRepresentation === VoxelManagerEnum.RLE;
   const voxelManager =
-    (voxelRepresentation === VoxelManagerEnum.RLE &&
-      VoxelManager.createRLEImageVoxelManager<number>({ dimensions, id })) ||
+    (isRle &&
+      VoxelManager.createRLEImageVoxelManager<number>({
+        dimensions,
+        id,
+        // The RLE map is standing in for `scalarDataToUse`, so expanded frames
+        // keep that array's type and an unwritten voxel reads as its zero.
+        pixelDataConstructor: scalarDataToUse.constructor as new (
+          length: number
+        ) => PixelDataTypedArray,
+        defaultValue: 0,
+      })) ||
     (VoxelManager.createImageVoxelManager({
       height,
       width,
@@ -583,7 +598,10 @@ export function createAndCacheLocalImage(
     invert: false,
     getPixelData: () => voxelManager.getScalarData(),
     voxelManager,
-    sizeInBytes: scalarData.byteLength,
+    // An RLE image has no up-front size (its runs grow as voxels are written),
+    // so it is charged the same nominal figure `addInstanceToImage` uses rather
+    // than the size of the 1-element stand-in buffer above.
+    sizeInBytes: isRle ? DEFAULT_RLE_SIZE : scalarData.byteLength,
     referencedImageId,
   } as IImage;
 
@@ -716,21 +734,79 @@ export function unregisterAllImageLoaders(): void {
 }
 
 /**
+ * The in-memory representation labelmap pixel data is stored in, from
+ * `segmentation.labelmapVoxelRepresentation` in the cornerstone configuration
+ * (see `init` / `setConfiguration`).
+ *
+ * A labelmap frame is mostly background - a few contiguous runs of segment
+ * values per row - so RLE holds the same content in a fraction of the memory of
+ * a full `Uint8Array` per slice, and answers per-row questions ("is segment N
+ * on this slice?") from the runs instead of a whole-frame scan, which is what
+ * makes a large multi-segment SEG (a whole-body AI segmentation, say) workable.
+ * It is opt-in because it changes what a host reads back out of a labelmap: an
+ * RLE frame's `getScalarData()` is a fresh expansion rather than the live
+ * buffer, so in-place writes to it are discarded.
+ *
+ * Configuring it covers the labelmaps created deep inside the SEG adapter,
+ * where no per-call option can be threaded through. An individual call can
+ * still override it with `voxelRepresentation`.
+ *
+ * The configured value may be the bare string rather than the enum member, so
+ * that it can come straight from a host's JSON configuration. It is matched
+ * exactly - an unrecognized value (`'rle'`, say) warns and falls back to
+ * `Volume`, because the alternative is a flag that appears to have been set and
+ * silently does nothing.
+ */
+export function getDefaultLabelmapVoxelRepresentation(): VoxelManagerEnum {
+  const configured =
+    getConfiguration().segmentation?.labelmapVoxelRepresentation;
+
+  if (configured === undefined) {
+    return VoxelManagerEnum.Volume;
+  }
+
+  if (
+    configured === VoxelManagerEnum.RLE ||
+    configured === VoxelManagerEnum.Volume
+  ) {
+    return configured as VoxelManagerEnum;
+  }
+
+  console.warn(
+    `Unrecognized segmentation.labelmapVoxelRepresentation "${configured}"; expected ` +
+      `"${VoxelManagerEnum.RLE}" or "${VoxelManagerEnum.Volume}". Falling back to ` +
+      `"${VoxelManagerEnum.Volume}".`
+  );
+
+  return VoxelManagerEnum.Volume;
+}
+
+/**
  * Creates and caches derived segmentation images based on the referenced imageIds, this
  * is a helper function, we don't have segmentation concept in the cornerstone core; however,
  * this helper would make it clear that the segmentation images SHOULD be Uint8Array type
  * always until we have a better solution.
  *
  * @param referencedImageIds - An array of referenced image IDs.
- * @param options - The options for creating the derived images (`default: { targetBuffer: { type: 'Uint8Array' } }`).
+ * @param options - The options for creating the derived images. `targetBuffer` is
+ *   always `{ type: 'Uint8Array' }`; `voxelRepresentation` defaults to
+ *   `getDefaultLabelmapVoxelRepresentation()`, i.e.
+ *   `segmentation.labelmapVoxelRepresentation` from the cornerstone
+ *   configuration, which is `VoxelManagerEnum.Volume` unless a host opts in.
  * @returns The derived images.
  */
 export function createAndCacheDerivedLabelmapImages(
   referencedImageIds: string[],
   options = {} as DerivedImageOptions
 ): IImage[] {
+  const {
+    voxelRepresentation = getDefaultLabelmapVoxelRepresentation(),
+    ...rest
+  } = options;
+
   return createAndCacheDerivedImages(referencedImageIds, {
-    ...options,
+    ...rest,
+    voxelRepresentation,
     targetBuffer: { type: 'Uint8Array' },
   });
 }
@@ -742,15 +818,25 @@ export function createAndCacheDerivedLabelmapImages(
  * always until we have a better solution.
  *
  * @param referencedImageId The ID of the referenced image.
- * @param options The options for creating the derived image (`default: { targetBuffer: { type: 'Uint8Array' } }`).
+ * @param options The options for creating the derived image. `targetBuffer` is
+ *   always `{ type: 'Uint8Array' }`; `voxelRepresentation` defaults to
+ *   `getDefaultLabelmapVoxelRepresentation()`, i.e.
+ *   `segmentation.labelmapVoxelRepresentation` from the cornerstone
+ *   configuration, which is `VoxelManagerEnum.Volume` unless a host opts in.
  * @returns A promise that resolves to the created derived segmentation image.
  */
 export function createAndCacheDerivedLabelmapImage(
   referencedImageId: string,
   options = {} as DerivedImageOptions
 ): IImage {
+  const {
+    voxelRepresentation = getDefaultLabelmapVoxelRepresentation(),
+    ...rest
+  } = options;
+
   return createAndCacheDerivedImage(referencedImageId, {
-    ...options,
+    ...rest,
+    voxelRepresentation,
     targetBuffer: { type: 'Uint8Array' },
   });
 }
