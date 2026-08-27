@@ -3,6 +3,10 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.8.4](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.3...v5.8.4) (2026-08-27)
+
+**Note:** Version bump only for package @cornerstonejs/adapters
+
 ## [5.8.3](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.2...v5.8.3) (2026-08-27)
 
 **Note:** Version bump only for package @cornerstonejs/adapters
