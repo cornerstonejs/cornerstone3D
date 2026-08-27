@@ -60,14 +60,32 @@ function validPath(str) {
   return str.replace(/\\\\/g, '/');
 }
 
-const rspackBin = validPath(
-  path.join(
-    rootPath,
-    'node_modules',
-    '.bin',
-    process.platform === 'win32' ? 'rspack.cmd' : 'rspack'
-  )
+// Resolve the CLI's own JS entry rather than the node_modules/.bin shim. On
+// Windows that shim is a .cmd, which spawnSync refuses to run without
+// shell: true (Node >= 18.20), so spawning it fails with ENOENT. Running the
+// entry with process.execPath behaves identically on every platform.
+const rspackCliManifest = require.resolve('@rspack/cli/package.json');
+const rspackBin = path.join(
+  path.dirname(rspackCliManifest),
+  require(rspackCliManifest).bin.rspack
 );
+
+function runRspack(args) {
+  const result = spawnSync(process.execPath, [rspackBin, ...args], {
+    stdio: 'inherit',
+    cwd: rootPath,
+  });
+
+  if (result.error) {
+    console.error(`Failed to start rspack: ${result.error.message}`);
+    process.exit(1);
+  }
+
+  if (result.status !== 0) {
+    console.error(`rspack ${args[0]} exited with code ${result.status}`);
+    process.exit(result.status ?? 1);
+  }
+}
 
 // ----------------------------------------------------------------------------
 // Find examples
@@ -201,23 +219,20 @@ if (configuration.examples) {
   );
   shell.ShellString(exampleIndexMarkdown).to(path.join(docsDir, 'examples.md'));
 
-  if (options.build == true) {
-    const conf = buildConfig(
-      exampleNames,
-      examplePaths,
-      distDir,
-      validPath(rootPath)
-    );
-    shell.ShellString(conf).to(webpackConfigPath);
+  // Both branches consume this config, and it is gitignored, so regenerate it
+  // unconditionally rather than leaving `serve` to reuse a stale one (or none
+  // at all, on a fresh clone).
+  const conf = buildConfig(
+    exampleNames,
+    examplePaths,
+    distDir,
+    validPath(rootPath)
+  );
+  shell.ShellString(conf).to(webpackConfigPath);
 
-    spawnSync(rspackBin, ['build', '--config', webpackConfigPath], {
-      stdio: 'inherit',
-    });
+  if (options.build == true) {
+    runRspack(['build', '--config', webpackConfigPath]);
   } else {
-    spawnSync(
-      rspackBin,
-      ['serve', '--host', '0.0.0.0', '--config', webpackConfigPath],
-      { stdio: 'inherit' }
-    );
+    runRspack(['serve', '--host', '0.0.0.0', '--config', webpackConfigPath]);
   }
 }
