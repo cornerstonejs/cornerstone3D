@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.8.4](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.3...v5.8.4) (2026-08-27)
+
+### Bug Fixes
+
+- **tools:** cancel a pending SegmentSelectTool hover activation on mouseleave ([#2881](https://github.com/cornerstonejs/cornerstone3D/issues/2881)) ([6972fbe](https://github.com/cornerstonejs/cornerstone3D/commit/6972fbe76b27cc5d49af99c80abbddcef1525f6e))
+
+## [5.8.3](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.2...v5.8.3) (2026-08-27)
+
+### Bug Fixes
+
+- **examples:** repoint dead ohif-assets URLs and fix the Windows example build ([#2883](https://github.com/cornerstonejs/cornerstone3D/issues/2883)) ([e8be535](https://github.com/cornerstonejs/cornerstone3D/commit/e8be53551eab3297c9af53bc05eab4f45d4a0136))
+
 ## [5.8.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.1...v5.8.2) (2026-08-17)
 
 ### Bug Fixes

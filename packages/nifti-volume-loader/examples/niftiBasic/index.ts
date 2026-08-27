@@ -37,7 +37,7 @@ content.appendChild(viewportGrid);
 const viewportId1 = 'CT_NIFTI_AXIAL';
 
 const niftiURL =
-  'https://ohif-assets.s3.us-east-2.amazonaws.com/nifti/CTACardio.nii.gz';
+  'https://ohif-assets-new.s3.us-east-1.amazonaws.com/nifti/CTACardio.nii.gz';
 
 function viewportSupportsStackCompatibility(viewport: unknown): viewport is {
   setStack(imageIds: string[], currentImageIdIndex?: number): Promise<string>;
