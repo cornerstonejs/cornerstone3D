@@ -1,6 +1,12 @@
 import type { Types } from '@cornerstonejs/core';
 import containsPoint from './containsPoint';
-import { projectTo2D } from './projectTo2D';
+import {
+  isDegenerateObliqueBasis,
+  isObliqueProjection,
+  projectPointTo2D,
+  projectTo2D,
+  type ProjectTo2DResult,
+} from './projectTo2D';
 
 /**
  * Determines whether a 3D point is inside a polyline in 3D space.
@@ -10,41 +16,56 @@ import { projectTo2D } from './projectTo2D';
  *
  * @param point - The 3D point to test.
  * @param polyline - The polyline represented as an array of 3D points.
- * @param options.holesPolyline - An array of polylines representing each hole, so it
+ * @param options.holes - An array of polylines representing each hole, so it
  * is an array of arrays of 3D points.
+ * @param options.viewPlaneNormal - Normal of the viewing plane for oblique projections.
+ * @param options.viewUp - Up vector of the viewing plane for oblique projections.
+ * @param options.precomputedProjection - Pre-calculated 2D projection data.
  * @returns A boolean indicating whether the point is inside the polyline.
- * @throws An error if a shared dimension index cannot be found for the polyline points.
  */
 export function isPointInsidePolyline3D(
   point: Types.Point3,
   polyline: Types.Point3[],
-  options: { holes?: Types.Point3[][] } = {}
+  options: {
+    holes?: Types.Point3[][];
+    viewPlaneNormal?: Types.Point3;
+    viewUp?: Types.Point3;
+    precomputedProjection?: ProjectTo2DResult;
+  } = {}
 ) {
-  const { sharedDimensionIndex, projectedPolyline } = projectTo2D(polyline);
+  const { holes, viewPlaneNormal, viewUp, precomputedProjection } = options;
 
-  const { holes } = options;
-  const projectedHoles = [] as Types.Point2[][];
+  const projection =
+    precomputedProjection ?? projectTo2D(polyline, viewPlaneNormal, viewUp);
 
-  if (holes) {
-    for (let i = 0; i < holes.length; i++) {
-      const hole = holes[i];
-      const hole2D = [] as Types.Point2[];
+  const { sharedDimensionIndex, projectedPolyline, origin, right, up } =
+    projection;
 
-      for (let j = 0; j < hole.length; j++) {
-        hole2D.push([
-          hole[j][(sharedDimensionIndex + 1) % 3],
-          hole[j][(sharedDimensionIndex + 2) % 3],
-        ]);
-      }
-
-      projectedHoles.push(hole2D);
-    }
+  if (
+    isObliqueProjection(sharedDimensionIndex) &&
+    (!origin || isDegenerateObliqueBasis(right, up))
+  ) {
+    throw new Error(
+      'Oblique projection requires an origin and a non-degenerate right/up basis'
+    );
   }
 
-  const point2D = [
-    point[(sharedDimensionIndex + 1) % 3],
-    point[(sharedDimensionIndex + 2) % 3],
-  ] as Types.Point2;
+  // Project holes if they exist
+  const projectedHoles =
+    holes?.map((hole) =>
+      hole.map((p) =>
+        projectPointTo2D(p, sharedDimensionIndex, origin, right, up)
+      )
+    ) ?? [];
+
+  // Project the main point
+  const point2D = projectPointTo2D(
+    point,
+    sharedDimensionIndex,
+    origin,
+    right,
+    up
+  );
 
   return containsPoint(projectedPolyline, point2D, { holes: projectedHoles });
 }
