@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.8.7](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.6...v5.8.7) (2026-09-01)
+
+### Bug Fixes
+
+- **adapters:** index segment metadata by SegmentNumber for LABELMAP support ([#2882](https://github.com/cornerstonejs/cornerstone3D/issues/2882)) ([682ebbc](https://github.com/cornerstonejs/cornerstone3D/commit/682ebbcceb9dd6a6b1a0d47d082c98e77f566b73))
+
 ## [5.8.6](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.5...v5.8.6) (2026-09-01)
 
 ### Bug Fixes
