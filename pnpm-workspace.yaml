@@ -37,7 +37,7 @@ overrides:
   'undici@<6.27.0': 6.27.0
   qs: 6.14.1
   lodash: 4.18.1
-  tar: 7.5.20
+  tar: 7.5.22
   shelljs: 0.10.0
   rollup: 3.30.0
   serialize-javascript: 7.0.4
@@ -80,6 +80,7 @@ overrides:
   'postcss@<8.5.26': 8.5.26
   'ip-address@<10.5.0': 10.5.0
   'nx@>=20.8.0 <22.7.8': 22.7.8
+  'pacote@>=11.2.7 <21.5.1': 21.5.1
 
 auditConfig:
   ignoreGhsas:
