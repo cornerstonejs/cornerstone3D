@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.8.7](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.6...v5.8.7) (2026-09-01)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [5.8.6](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.5...v5.8.6) (2026-09-01)
+
+### Bug Fixes
+
+- **StackViewport:** cancel the pending scroll timer when the viewport is disabled ([#2884](https://github.com/cornerstonejs/cornerstone3D/issues/2884)) ([bff87eb](https://github.com/cornerstonejs/cornerstone3D/commit/bff87eb02c1d79372eca75f09ff186aca2c62e76))
+
+## [5.8.5](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.4...v5.8.5) (2026-09-01)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [5.8.4](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.3...v5.8.4) (2026-08-27)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
+## [5.8.3](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.2...v5.8.3) (2026-08-27)
+
+**Note:** Version bump only for package @cornerstonejs/core
+
 ## [5.8.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.1...v5.8.2) (2026-08-17)
 
 **Note:** Version bump only for package @cornerstonejs/core

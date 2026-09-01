@@ -3,6 +3,36 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.8.7](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.6...v5.8.7) (2026-09-01)
+
+### Bug Fixes
+
+- **adapters:** index segment metadata by SegmentNumber for LABELMAP support ([#2882](https://github.com/cornerstonejs/cornerstone3D/issues/2882)) ([682ebbc](https://github.com/cornerstonejs/cornerstone3D/commit/682ebbcceb9dd6a6b1a0d47d082c98e77f566b73))
+
+## [5.8.6](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.5...v5.8.6) (2026-09-01)
+
+### Bug Fixes
+
+- **StackViewport:** cancel the pending scroll timer when the viewport is disabled ([#2884](https://github.com/cornerstonejs/cornerstone3D/issues/2884)) ([bff87eb](https://github.com/cornerstonejs/cornerstone3D/commit/bff87eb02c1d79372eca75f09ff186aca2c62e76))
+
+## [5.8.5](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.4...v5.8.5) (2026-09-01)
+
+### Bug Fixes
+
+- **security:** Patch vulnerable dependencies. ([#2887](https://github.com/cornerstonejs/cornerstone3D/issues/2887)) ([487b88e](https://github.com/cornerstonejs/cornerstone3D/commit/487b88ecb55b220efa466b49144ee355ca49a154))
+
+## [5.8.4](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.3...v5.8.4) (2026-08-27)
+
+### Bug Fixes
+
+- **tools:** cancel a pending SegmentSelectTool hover activation on mouseleave ([#2881](https://github.com/cornerstonejs/cornerstone3D/issues/2881)) ([6972fbe](https://github.com/cornerstonejs/cornerstone3D/commit/6972fbe76b27cc5d49af99c80abbddcef1525f6e))
+
+## [5.8.3](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.2...v5.8.3) (2026-08-27)
+
+### Bug Fixes
+
+- **examples:** repoint dead ohif-assets URLs and fix the Windows example build ([#2883](https://github.com/cornerstonejs/cornerstone3D/issues/2883)) ([e8be535](https://github.com/cornerstonejs/cornerstone3D/commit/e8be53551eab3297c9af53bc05eab4f45d4a0136))
+
 ## [5.8.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.1...v5.8.2) (2026-08-17)
 
 ### Bug Fixes
