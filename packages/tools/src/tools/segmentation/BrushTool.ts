@@ -745,11 +745,22 @@ class BrushTool extends LabelmapBaseTool {
       return;
     }
 
-    this.applyActiveStrategyCallback(
-      enabledElement,
-      operationData,
-      StrategyCallbacks.RejectPreview
-    );
+    // `previewData` is a static shared by every labelmap tool, so an element being set
+    // says only that some tool has painted — not that this one has a preview to reject.
+    // Running the strategy without one asks for a full strategy initialization to do
+    // nothing: the reject handler itself undoes only a memo that carries preview voxels.
+    // The 3D variants pay for it with a throw — `ensureSegmentationVolumeFor3DManipulation`
+    // raises `Volume is not reconstructable for sphere manipulation` on a viewport that
+    // cannot form a volume — and deactivating a sphere brush is enough to reach it, since
+    // `onSetToolPassive` rejects the preview. That throw escapes `ToolGroup.setToolPassive`
+    // and leaves the tool group with no active tool.
+    if (this._previewData.preview) {
+      this.applyActiveStrategyCallback(
+        enabledElement,
+        operationData,
+        StrategyCallbacks.RejectPreview
+      );
+    }
 
     this._previewData.preview = null;
     this._previewData.isDrag = false;
