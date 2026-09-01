@@ -1788,10 +1788,6 @@ export function getSegmentMetadata(multiframe, seriesInstanceUid) {
   const segmentSequence = multiframe.SegmentSequence;
   const data = [];
 
-  const segments = Array.isArray(segmentSequence)
-    ? segmentSequence
-    : [segmentSequence];
-
   /**
    * Index segments by their SegmentNumber rather than array position.
    * This is required for LABELMAP segmentations where SegmentNumber may
@@ -1799,8 +1795,8 @@ export function getSegmentMetadata(multiframe, seriesInstanceUid) {
    * requires SegmentNumber >= 1 for BINARY/FRACTIONAL types, but LABELMAP
    * allows more flexibility (see DICOM Part 3, Section C.8.20.2.4).
    */
-  for (const segment of segments) {
-    if (segment?.SegmentNumber !== undefined) {
+  for (const segment of csUtilities.asArray(segmentSequence)) {
+    if (segment?.SegmentNumber >= 0) {
       data[segment.SegmentNumber] = segment;
     }
   }
