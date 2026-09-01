@@ -105,6 +105,14 @@ export interface BaseRetrieveOptions {
    * Value of 0 means decode full resolution,
    * * 1 means 1/2 resolution in each dimension (eg 1/4 size)
    * * i means 1/2^i resolution in each dimension, or 1/4^i size.
+   *
+   * Setting this to 0 on a partial (range or streaming) retrieve decodes the
+   * truncated codestream at full resolution rather than picking a level from
+   * how many bytes have arrived.  That is the preferred setting for HTJ2K: the
+   * result is full size and merely lossy, which loses much less than decoding
+   * a sub-resolution image and scaling it up afterwards.  Sub-resolution plus
+   * scaling remains the right choice for renditions that are genuinely small,
+   * such as the JLS thumbnails.
    */
   decodeLevel?: number;
   /**
@@ -137,7 +145,8 @@ export type RangeRetrieveOptions = BaseRetrieveOptions & {
 
   /**
    * byte range value to retrieve for initial decode
-   * Defaults to 64,000 bytes.
+   * Defaults to 32,768 bytes, which is enough of an HTJ2K codestream to decode
+   * a usable full resolution image.
    */
   chunkSize?: number | ((metadata) => number);
 };

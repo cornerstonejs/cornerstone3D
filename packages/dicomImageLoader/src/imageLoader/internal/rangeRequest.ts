@@ -12,6 +12,15 @@ import type { CornerstoneWadoRsLoaderOptions } from '../wadors/loadImage';
 type RangeRetrieveOptions = Types.RangeRetrieveOptions;
 
 /**
+ * Bytes fetched by a range stage that does not configure its own chunkSize.
+ *
+ * 32k is enough of an HTJ2K codestream to decode a recognisable full
+ * resolution image, and OpenJPH decodes the truncated remainder rather than
+ * throwing, so there is no reason to buy a larger initial buffer.
+ */
+const DEFAULT_CHUNK_SIZE = 32768;
+
+/**
  * Performs a range request to fetch part of an encoded image, typically
  * so that partial resolution images can be fetched.
  * The configuration of exactly what is requested is based on the transfer
@@ -46,7 +55,7 @@ export default function rangeRequest(
   const chunkSize =
     streamingData.chunkSize ||
     getValue(imageId, retrieveOptions, 'chunkSize') ||
-    65536;
+    DEFAULT_CHUNK_SIZE;
 
   const errorInterceptor = (err) => {
     if (typeof globalOptions.errorInterceptor === 'function') {
@@ -191,7 +200,11 @@ function getByteRange(
   streamingData,
   retrieveOptions: RangeRetrieveOptions
 ): [number, number | ''] {
-  const { totalBytes, encodedData, chunkSize = 65536 } = streamingData;
+  const {
+    totalBytes,
+    encodedData,
+    chunkSize = DEFAULT_CHUNK_SIZE,
+  } = streamingData;
   const { rangeIndex = 0 } = retrieveOptions;
   if (rangeIndex === -1 && (!totalBytes || !encodedData)) {
     return [0, ''];

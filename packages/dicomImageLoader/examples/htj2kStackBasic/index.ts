@@ -133,11 +133,16 @@ const htj2kProgressiveOptions = {
   retrieveOptions: {
     single: {
       streaming: true,
-      decodeLevel: 1,
+      decodeLevel: 0,
     },
   },
 };
 
+// Every stage decodes at full resolution (decodeLevel 0), including the first
+// one that has only 32k of codestream. OpenJPH decodes the truncated remainder
+// rather than throwing, so the sub-resolution fallback ladder this used to
+// carry is gone, and the first image is full size instead of a quarter-size
+// decode scaled back up.
 const htj2kByteRanges = {
   stages: [
     {
@@ -145,16 +150,8 @@ const htj2kByteRanges = {
       retrieveType: 'singleFast',
     },
     {
-      id: 'lossySequentialFailure',
-      retrieveType: 'singleFastFailure',
-    },
-    {
       id: 'lossyMiddle',
       retrieveType: 'singleMiddle',
-    },
-    {
-      id: 'lossyMiddleFailure',
-      retrieveType: 'singleMiddleFailure',
     },
     {
       id: 'finalSequential',
@@ -163,22 +160,13 @@ const htj2kByteRanges = {
   ],
   retrieveOptions: {
     singleFast: {
-      decodeLevel: 2,
-      chunkSize: 128 * 1024,
-      rangeIndex: 0,
-    },
-    // This is a fallback phase if decodeLevel 2 fails, then try at 3
-    singleFastFailure: {
-      decodeLevel: 3,
+      decodeLevel: 0,
+      chunkSize: 32 * 1024,
       rangeIndex: 0,
     },
     // Note how the range increases significantly to get much more data
     singleMiddle: {
       decodeLevel: 0,
-      rangeIndex: 10,
-    },
-    singleMiddleFailure: {
-      decodeLevel: 1,
       rangeIndex: 10,
     },
     singleFinal: {

@@ -185,15 +185,22 @@ function loadImageFromNetwork(
         if (!extractDone && !streamableTransferSyntaxes.has(transferSyntax)) {
           continue;
         }
+        const retrieveDecodeLevel = options.retrieveOptions?.decodeLevel;
+        // An explicit decodeLevel of 0 means "always decode at full
+        // resolution", even from a truncated codestream.  OpenJPH tolerates
+        // the truncation, and a full resolution decode of a partial stream
+        // loses far less than decoding a sub-resolution image and scaling it
+        // back up afterwards.
         const decodeLevel =
           result.decodeLevel ??
-          (imageQualityStatus === ImageQualityStatus.FULL_RESOLUTION
+          (retrieveDecodeLevel === 0 ||
+          imageQualityStatus === ImageQualityStatus.FULL_RESOLUTION
             ? 0
-            : decodeLevelFromComplete(
-                percentComplete,
-                options.retrieveOptions?.decodeLevel
-              ));
-        if (!done && lastDecodeLevel <= decodeLevel) {
+            : decodeLevelFromComplete(percentComplete, retrieveDecodeLevel));
+        // At full resolution each additional chunk refines the same level, so
+        // the level alone cannot say whether decoding again is worthwhile -
+        // only a sub-resolution decode can be skipped for not improving.
+        if (!done && decodeLevel > 0 && lastDecodeLevel <= decodeLevel) {
           // No point trying again yet
           continue;
         }

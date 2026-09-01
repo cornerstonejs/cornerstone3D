@@ -170,9 +170,9 @@ const configHtj2kByteRange = {
   ...interleavedRetrieveStages,
   retrieveOptions: {
     multipleFast: {
-      rangeIndex: 1,
-      chunkSize: 16384,
-      decodeLevel: 1,
+      rangeIndex: 0,
+      chunkSize: 32 * 1024,
+      decodeLevel: 0,
     },
     multipleFinal: {
       rangeIndex: -1,

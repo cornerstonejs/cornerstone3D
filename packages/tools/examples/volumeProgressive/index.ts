@@ -151,7 +151,7 @@ instructions.innerHTML = `
 <ul>
 <li>Partial is reduced resolution for all images</li>
 <li>Lossy means some sort of lossy encoding for all images</li>
-<li>Byte range is 64kb of all images</li>
+<li>Byte range is 32kb of all images, decoded at full resolution</li>
 <li>JLS/HTJ2K is full resolution JLS/HTJ2K</li>
 <li>Mixed is byte range (htj2k) or partial (jls) initially followed by remaining data</li>
 </ul>
@@ -242,6 +242,12 @@ const configHtj2k = {
   },
 };
 
+// The byte range stages all decode at full resolution (decodeLevel 0) from
+// whatever part of the codestream has arrived - OpenJPH decodes a truncated
+// HTJ2K stream rather than throwing on it, so 32k is enough to put a full size
+// image on screen. That loses much less than decoding a sub-resolution image
+// and scaling it up, which is why only the JLS thumbnail configurations above
+// still take the scale-afterwards route.
 const configHtj2kByteRange = {
   ...interleavedRetrieveStages,
   retrieveOptions: {
@@ -249,6 +255,7 @@ const configHtj2kByteRange = {
     multipleFast: {
       ...htj2kFrames,
       rangeIndex: 0,
+      chunkSize: 32 * 1024,
       decodeLevel: 0,
     },
   },
@@ -263,10 +270,11 @@ const configHtj2kLossy = {
       streaming: true,
     },
     multipleFast: {
-      imageQualityStatus: ImageQualityStatus.SUBRESOLUTION,
+      imageQualityStatus: ImageQualityStatus.LOSSY,
       framesPath: '/htj2kLossy/',
       rangeIndex: 0,
-      decodeLevel: 2,
+      chunkSize: 32 * 1024,
+      decodeLevel: 0,
     },
   },
 };
@@ -278,8 +286,8 @@ const configHtj2kMixed = {
     multipleFast: {
       ...htj2kFrames,
       rangeIndex: 0,
-      chunkSize: 32000,
-      decodeLevel: 1,
+      chunkSize: 32 * 1024,
+      decodeLevel: 0,
     },
     multipleFinal: {
       ...htj2kFrames,
