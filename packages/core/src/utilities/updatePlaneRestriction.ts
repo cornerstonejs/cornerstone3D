@@ -59,8 +59,13 @@ export function updatePlaneRestriction(
       if (isEqual(length, 0)) {
         continue;
       }
+      // Math.abs matters: an anti-parallel candidate has a dot product of
+      // about -length, which passes an unsigned comparison while being just as
+      // collinear with inPlaneVector1 as a parallel one. Without the abs, a
+      // symmetric polyline that doubles back on itself yields a second
+      // "in-plane vector" that pins no orientation at all.
       if (
-        vec3.dot(testVector, planeRestriction.inPlaneVector1) <
+        Math.abs(vec3.dot(testVector, planeRestriction.inPlaneVector1)) <
         length * ORTHOGONAL_TEST_VALUE
       ) {
         vec3.normalize(testVector, testVector);

@@ -3,6 +3,90 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.8.7](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.6...v5.8.7) (2026-09-01)
+
+### Bug Fixes
+
+- **adapters:** index segment metadata by SegmentNumber for LABELMAP support ([#2882](https://github.com/cornerstonejs/cornerstone3D/issues/2882)) ([682ebbc](https://github.com/cornerstonejs/cornerstone3D/commit/682ebbcceb9dd6a6b1a0d47d082c98e77f566b73))
+
+## [5.8.6](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.5...v5.8.6) (2026-09-01)
+
+### Bug Fixes
+
+- **StackViewport:** cancel the pending scroll timer when the viewport is disabled ([#2884](https://github.com/cornerstonejs/cornerstone3D/issues/2884)) ([bff87eb](https://github.com/cornerstonejs/cornerstone3D/commit/bff87eb02c1d79372eca75f09ff186aca2c62e76))
+
+## [5.8.5](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.4...v5.8.5) (2026-09-01)
+
+### Bug Fixes
+
+- **security:** Patch vulnerable dependencies. ([#2887](https://github.com/cornerstonejs/cornerstone3D/issues/2887)) ([487b88e](https://github.com/cornerstonejs/cornerstone3D/commit/487b88ecb55b220efa466b49144ee355ca49a154))
+
+## [5.8.4](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.3...v5.8.4) (2026-08-27)
+
+### Bug Fixes
+
+- **tools:** cancel a pending SegmentSelectTool hover activation on mouseleave ([#2881](https://github.com/cornerstonejs/cornerstone3D/issues/2881)) ([6972fbe](https://github.com/cornerstonejs/cornerstone3D/commit/6972fbe76b27cc5d49af99c80abbddcef1525f6e))
+
+## [5.8.3](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.2...v5.8.3) (2026-08-27)
+
+### Bug Fixes
+
+- **examples:** repoint dead ohif-assets URLs and fix the Windows example build ([#2883](https://github.com/cornerstonejs/cornerstone3D/issues/2883)) ([e8be535](https://github.com/cornerstonejs/cornerstone3D/commit/e8be53551eab3297c9af53bc05eab4f45d4a0136))
+
+## [5.8.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.1...v5.8.2) (2026-08-17)
+
+### Bug Fixes
+
+- **dicomImageLoader:** read color pixeldata as unsigned whatever the codec declares ([#2857](https://github.com/cornerstonejs/cornerstone3D/issues/2857)) ([b1046ba](https://github.com/cornerstonejs/cornerstone3D/commit/b1046ba136258e8a5829eaac0318d4776f5d4976)), closes [#1657](https://github.com/cornerstonejs/cornerstone3D/issues/1657) [#2193](https://github.com/cornerstonejs/cornerstone3D/issues/2193) [#2437](https://github.com/cornerstonejs/cornerstone3D/issues/2437)
+
+## [5.8.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.0...v5.8.1) (2026-08-14)
+
+### Bug Fixes
+
+- **dicomImageLoader:** update CSP-safe codecs ([#2859](https://github.com/cornerstonejs/cornerstone3D/issues/2859)) ([066de71](https://github.com/cornerstonejs/cornerstone3D/commit/066de717357c21a2b094b9411c373e72e7a5ba04))
+
+# [5.8.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.7.3...v5.8.0) (2026-08-13)
+
+### Features
+
+- **dicomImageLoader:** add wasmBasePath option for codec binaries ([#2826](https://github.com/cornerstonejs/cornerstone3D/issues/2826)) ([83edb89](https://github.com/cornerstonejs/cornerstone3D/commit/83edb8973e102036112c4992f2cc0324273e7457))
+
+## [5.7.3](https://github.com/cornerstonejs/cornerstone3D/compare/v5.7.2...v5.7.3) (2026-08-11)
+
+### Bug Fixes
+
+- **example:** Local example was failing to load images ([#2854](https://github.com/cornerstonejs/cornerstone3D/issues/2854)) ([696ad05](https://github.com/cornerstonejs/cornerstone3D/commit/696ad05afd01eac30fc5cc66fa0a92b3e3478164))
+
+## [5.7.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.7.1...v5.7.2) (2026-08-11)
+
+### Bug Fixes
+
+- **core:** return CSS pixels from the CPU worldToCanvas/canvasToWorld ([bdd1dd3](https://github.com/cornerstonejs/cornerstone3D/commit/bdd1dd3c26c50802c1c5ac3530eec30ecdbbc39d)), closes [#2849](https://github.com/cornerstonejs/cornerstone3D/issues/2849)
+
+## [5.7.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.7.0...v5.7.1) (2026-08-11)
+
+### Bug Fixes
+
+- **security:** update dependencies to fix vulnerabilities ([#2851](https://github.com/cornerstonejs/cornerstone3D/issues/2851)) ([eb31956](https://github.com/cornerstonejs/cornerstone3D/commit/eb3195611094aad6ba342087a4f2da6cb7506743))
+
+# [5.7.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.14...v5.7.0) (2026-08-07)
+
+### Features
+
+- **tools:** touch interaction support with dispatcher fallback to mouse callbacks ([#2815](https://github.com/cornerstonejs/cornerstone3D/issues/2815)) ([667ba22](https://github.com/cornerstonejs/cornerstone3D/commit/667ba224254bfcbc4d14b87a2cdc9a9d5dae0807))
+
+## [5.6.14](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.13...v5.6.14) (2026-08-06)
+
+### Bug Fixes
+
+- **examples:** import addButtonToToolbar in calibrationTools example ([#2845](https://github.com/cornerstonejs/cornerstone3D/issues/2845)) ([08fa07c](https://github.com/cornerstonejs/cornerstone3D/commit/08fa07c74d4e63ca6c2b87955895f758c1069d1c))
+
+## [5.6.13](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.12...v5.6.13) (2026-08-03)
+
+### Bug Fixes
+
+- **security:** update dependencies to fix brace-expansion vulnerabilities ([#2841](https://github.com/cornerstonejs/cornerstone3D/issues/2841)) ([fede92d](https://github.com/cornerstonejs/cornerstone3D/commit/fede92d28e15f2970e9d4016e3579597df356918))
+
 ## [5.6.12](https://github.com/cornerstonejs/cornerstone3D/compare/v5.6.11...v5.6.12) (2026-07-28)
 
 ### Bug Fixes

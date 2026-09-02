@@ -161,6 +161,37 @@ export type PlaneRestriction = {
    * non-colinear with inPlaneVector1.
    */
   inPlaneVector2?: Point3;
+
+  /**
+   * `T`, the thickness of the referenced plane, as a **full geometric
+   * thickness in world units (mm)** - not a half thickness, and not a voxel
+   * multiple.
+   *
+   * This is a property of the reference, not of the viewport showing it. A new
+   * annotation inherits it once, from the slab thickness of the viewport it was
+   * created in; from then on it belongs to the annotation, so the statistics
+   * computed over that annotation never change because someone thickened a
+   * slab.
+   *
+   * It governs two things:
+   *
+   * - **Display** (Rule D): the plane is visible in a viewport when the
+   *   distance from `point` to the focal point along the view plane normal is
+   *   within `(t + T) / 2`, where `t` is the viewport's own slab thickness.
+   *   Cross-modality consequences are intended: an annotation on one thick NM
+   *   slice may legitimately appear on two thin CT slices, and one spanning two
+   *   CT slices may appear on a single NM slice.
+   * - **Voxel membership** (Rule M): an area annotation contains the voxels
+   *   whose centres are within `(T + T_v) / 2` of the plane, where `T_v` is the
+   *   voxel thickness along the normal, and whose projection onto the plane
+   *   falls inside the 2D shape. Note `t` does *not* appear here.
+   *
+   * When absent it defaults to one voxel along the view plane normal, which is
+   * what a stack viewport and any annotation predating this field will use.
+   *
+   * See https://github.com/cornerstonejs/cornerstone3D/issues/2889
+   */
+  thickness?: number;
 };
 
 /**

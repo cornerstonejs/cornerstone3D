@@ -29,7 +29,7 @@ This approach shifts from our previous volume-first method to an imageId-first a
 
 ```js
 const niftiURL =
-  'https://ohif-assets.s3.us-east-2.amazonaws.com/nifti/MRHead.nii.gz';
+  'https://ohif-assets-new.s3.us-east-1.amazonaws.com/nifti/MRHead.nii.gz';
 const volumeId = 'nifti:' + niftiURL;
 
 const volume = await volumeLoader.createAndCacheVolume(volumeId);
@@ -51,7 +51,7 @@ import {
 } from '@cornerstonejs/nifti-volume-loader';
 
 const niftiURL =
-  'https://ohif-assets.s3.us-east-2.amazonaws.com/nifti/CTACardio.nii.gz';
+  'https://ohif-assets-new.s3.us-east-1.amazonaws.com/nifti/CTACardio.nii.gz';
 
 // register the image loader for nifti files
 imageLoader.registerImageLoader('nifti', cornerstoneNiftiImageLoader);

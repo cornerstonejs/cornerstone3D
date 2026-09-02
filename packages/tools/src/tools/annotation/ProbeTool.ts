@@ -41,6 +41,7 @@ import type {
   ToolHandle,
   PublicToolProps,
   SVGDrawingHelper,
+  InteractionTypes,
 } from '../../types';
 import type { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
@@ -106,6 +107,16 @@ class ProbeTool extends AnnotationTool {
       textCanvasOffset: {
         x: 6,
         y: -6,
+      },
+      /**
+       * Canvas offset (in CSS px) applied to the interaction point while
+       * placing or dragging via touch, so the probe point is not occluded
+       * by the finger. Negative y moves the point above the contact point.
+       * Set to { x: 0, y: 0 } to disable. Mouse interactions are unaffected.
+       */
+      touchCanvasOffset: {
+        x: 0,
+        y: -40,
       },
     },
   };
@@ -195,18 +206,29 @@ class ProbeTool extends AnnotationTool {
    * a Probe Annotation and stores it in the annotationManager
    *
    * @param evt -  EventTypes.NormalizedMouseEventType
+   * @param interactionType -  The interaction type used to add the annotation;
+   * touch placements apply the configured touchCanvasOffset.
    * @returns The annotation object.
    *
    */
   addNewAnnotation = (
-    evt: EventTypes.InteractionEventType
+    evt: EventTypes.InteractionEventType,
+    interactionType: InteractionTypes = 'Mouse'
   ): ProbeAnnotation => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
-    const worldPos = currentPoints.world;
 
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
+
+    // Dispatchers pass 'touch'/'mouse' (lowercase) despite the
+    // InteractionTypes casing, so compare case-insensitively.
+    const isTouch = interactionType.toLowerCase() === 'touch';
+    const worldPos = this.getTouchAdjustedWorldPos(
+      viewport,
+      currentPoints,
+      isTouch
+    );
 
     this.isDrawing = true;
 
@@ -272,6 +294,35 @@ class ProbeTool extends AnnotationTool {
     if (near === true) {
       return point;
     }
+  }
+
+  /**
+   * Returns the world position for an interaction event. For touch
+   * interactions the canvas point is shifted by
+   * `configuration.touchCanvasOffset` before being projected to world, so
+   * the placed/dragged point is not occluded by the finger. For mouse
+   * interactions the original world position is returned unchanged.
+   */
+  protected getTouchAdjustedWorldPos(
+    viewport: Types.IViewport,
+    currentPoints: { canvas: Types.Point2; world: Types.Point3 },
+    isTouch: boolean
+  ): Types.Point3 {
+    const { touchCanvasOffset } = this.configuration;
+
+    if (!isTouch || !touchCanvasOffset) {
+      return currentPoints.world;
+    }
+
+    const { x = 0, y = 0 } = touchCanvasOffset;
+
+    if (!x && !y) {
+      return currentPoints.world;
+    }
+
+    const [canvasX, canvasY] = currentPoints.canvas;
+
+    return viewport.canvasToWorld([canvasX + x, canvasY + y]);
   }
 
   handleSelectedCallback(
@@ -346,7 +397,14 @@ class ProbeTool extends AnnotationTool {
     this.isDrawing = true;
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
-    const worldPos = currentPoints.world;
+
+    const { viewport } = getEnabledElement(element);
+    const isTouch = evt.type === Events.TOUCH_DRAG;
+    const worldPos = this.getTouchAdjustedWorldPos(
+      viewport,
+      currentPoints,
+      isTouch
+    );
 
     const { annotation, viewportIdsToRender, newAnnotation } = this.editData;
     const { data } = annotation;

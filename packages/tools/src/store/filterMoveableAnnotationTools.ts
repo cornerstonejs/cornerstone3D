@@ -4,6 +4,7 @@ import type {
   ToolAnnotationPair,
   ToolAnnotationsPair,
 } from '../types/InternalToolTypes';
+import { MOUSE_PROXIMITY, TOUCH_PROXIMITY } from '../utilities/touch/constants';
 
 /**
  * Filters an array of tools with annotations, returning the first annotation
@@ -23,7 +24,8 @@ export default function filterMoveableAnnotationTools(
   canvasCoords: Types.Point2,
   interactionType = 'mouse'
 ): ToolAnnotationPair[] {
-  const proximity = interactionType === 'touch' ? 36 : 6;
+  const proximity =
+    interactionType === 'touch' ? TOUCH_PROXIMITY : MOUSE_PROXIMITY;
 
   // TODO - This could get pretty expensive pretty quickly. We don't want to fetch the camera
   // And do world to canvas on each coord.

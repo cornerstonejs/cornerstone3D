@@ -126,8 +126,8 @@ class WholeBodySegmentTool extends GrowCutBaseTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    await this.runGrowCut();
     this._deactivateDraw(element);
+    await this.runGrowCut();
 
     this.growCutData = null;
 
@@ -285,6 +285,14 @@ class WholeBodySegmentTool extends GrowCutBaseTool {
     );
     // @ts-expect-error
     element.addEventListener(Events.MOUSE_CLICK, this._endCallback);
+    // @ts-expect-error
+    element.addEventListener(Events.TOUCH_END, this._endCallback);
+    element.addEventListener(
+      Events.TOUCH_DRAG,
+      this._dragCallback as unknown as EventListener
+    );
+    // @ts-expect-error
+    element.addEventListener(Events.TOUCH_TAP, this._endCallback);
   }
 
   private _deactivateDraw = (element: HTMLDivElement): void => {
@@ -296,6 +304,14 @@ class WholeBodySegmentTool extends GrowCutBaseTool {
     );
     // @ts-expect-error
     element.removeEventListener(Events.MOUSE_CLICK, this._endCallback);
+    // @ts-expect-error
+    element.removeEventListener(Events.TOUCH_END, this._endCallback);
+    element.removeEventListener(
+      Events.TOUCH_DRAG,
+      this._dragCallback as unknown as EventListener
+    );
+    // @ts-expect-error
+    element.removeEventListener(Events.TOUCH_TAP, this._endCallback);
   };
 
   private _projectWorldPointAcrossSlices(

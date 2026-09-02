@@ -69,6 +69,10 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     contourHoleProcessingEnabled?: boolean;
   } | null;
   isDrawing: boolean;
+  // Multi-part: points already placed must survive a pinch, so the extra
+  // finger is ignored by _touchDragDuringDrawCallback rather than cancelling
+  // the contour. See BaseTool.handlesMultiTouchGestures.
+  handlesMultiTouchGestures = true;
   isHandleOutsideImage = false;
 
   constructor(
@@ -93,6 +97,14 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
          * The unit is image pixels (index).
          */
         snapHandleNearby: 2,
+
+        /**
+         * Distance in canvas pixels from the first control point within
+         * which a tap closes the curve when drawing with touch. Mouse
+         * clicks keep the default 10px target; finger taps get a larger
+         * one, matching the 36px touch proximity used for handle grabs.
+         */
+        touchCloseCurveDistance: 36,
 
         /**
          * Interpolation is only available for segmentation versions of these
@@ -526,7 +538,27 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
   };
 
   private _mouseDownCallback = (evt: EventTypes.InteractionEventType): void => {
-    const doubleClick = evt.type === Events.MOUSE_DOUBLE_CLICK;
+    const isTouchEvent =
+      evt.type === Events.TOUCH_TAP || evt.type === Events.TOUCH_END;
+    // A double tap arrives as a single TOUCH_TAP event carrying the tap
+    // count (see touchStartListener) and closes the curve exactly like a
+    // mouse double click does.
+    const doubleTap =
+      evt.type === Events.TOUCH_TAP &&
+      (evt.detail as unknown as EventTypes.TouchTapEventDetail).taps >= 2;
+    const doubleClick = evt.type === Events.MOUSE_DOUBLE_CLICK || doubleTap;
+
+    // A drag that ends within tapMaxDistance of an active tap chain's start
+    // is committed by the TOUCH_END path and still counted into the chain's
+    // aggregated TOUCH_TAP; ignore that echo so the already-committed point
+    // is not added again and the path is not force-closed.
+    if (
+      doubleTap &&
+      this.isTouchTapEchoOfLiftCommit(evt.detail.currentPoints.canvas)
+    ) {
+      return;
+    }
+
     const {
       annotation,
       viewportIdsToRender,
@@ -562,6 +594,9 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
         index: -1,
         distSquared: Infinity,
       };
+      const closeDistSquared = isTouchEvent
+        ? this.configuration.touchCloseCurveDistance ** 2
+        : CLICK_CLOSE_CURVE_SQR_DIST;
 
       // Check if there is a control point close to the cursor
       for (let i = 0, len = controlPoints.length; i < len; i++) {
@@ -575,7 +610,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
         );
 
         if (
-          distSquared <= CLICK_CLOSE_CURVE_SQR_DIST &&
+          distSquared <= closeDistSquared &&
           distSquared < closestHandlePoint.distSquared
         ) {
           closestHandlePoint.distSquared = distSquared;
@@ -669,6 +704,41 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
     evt.preventDefault();
+  };
+
+  private _touchDragDuringDrawCallback = (
+    evt: EventTypes.TouchDragEventType
+  ): void => {
+    // Ignore multi-touch while drawing: the mean point of two fingers is
+    // never where the user wants the preview.
+    if (evt.detail.currentPointsList.length > 1) {
+      return;
+    }
+    this._mouseMoveCallback(evt);
+  };
+
+  private _touchEndDuringDrawCallback = (
+    evt: EventTypes.TouchEndEventType
+  ): void => {
+    const { startPointsList, currentPointsList, startPoints, currentPoints } =
+      evt.detail;
+
+    if (startPointsList.length > 1 || currentPointsList.length > 1) {
+      return;
+    }
+
+    // Gestures that stay within the tap distance are committed by the
+    // TOUCH_TAP path; committing them here as well would add the point twice.
+    const dragDistance = math.point.distanceToPoint(
+      startPoints.canvas,
+      currentPoints.canvas
+    );
+    if (dragDistance <= LivewireContourTool.TOUCH_TAP_MAX_CANVAS_DISTANCE) {
+      return;
+    }
+
+    this.recordTouchLiftCommit(currentPoints.canvas);
+    this._mouseDownCallback(evt);
   };
 
   public editHandle(
@@ -844,6 +914,14 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     );
 
     element.addEventListener(Events.TOUCH_TAP, this._mouseDownCallback);
+    element.addEventListener(
+      Events.TOUCH_DRAG,
+      this._touchDragDuringDrawCallback
+    );
+    element.addEventListener(
+      Events.TOUCH_END,
+      this._touchEndDuringDrawCallback
+    );
   };
 
   private _deactivateDraw = (element) => {
@@ -857,6 +935,14 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     );
 
     element.removeEventListener(Events.TOUCH_TAP, this._mouseDownCallback);
+    element.removeEventListener(
+      Events.TOUCH_DRAG,
+      this._touchDragDuringDrawCallback
+    );
+    element.removeEventListener(
+      Events.TOUCH_END,
+      this._touchEndDuringDrawCallback
+    );
   };
 
   public renderAnnotation(

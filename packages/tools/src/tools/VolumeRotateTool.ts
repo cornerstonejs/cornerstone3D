@@ -3,7 +3,7 @@ import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { mat4, vec3 } from 'gl-matrix';
-import type { PublicToolProps, ToolProps } from '../types';
+import type { EventTypes, PublicToolProps, ToolProps } from '../types';
 import type { MouseWheelEventType } from '../types/EventTypes';
 import getViewportICamera from '../utilities/getViewportICamera';
 import setViewportCamera from '../utilities/setViewportCamera';
@@ -16,7 +16,7 @@ const DIRECTIONS = {
 };
 
 /**
- * Tool that rotates the camera on mouse wheel.
+ * Tool that rotates the camera on mouse wheel, and on horizontal mouse/touch drag.
  * It rotates the camera around the focal point, and around a defined axis. Default
  * axis is set to be Z axis, but it can be configured to any custom normalized axis.
  *
@@ -32,6 +32,7 @@ class VolumeRotateTool extends BaseTool {
       configuration: {
         direction: DIRECTIONS.Z,
         rotateIncrementDegrees: 30,
+        rotateDragDegreesPerPixel: 0.5,
       },
     }
   ) {
@@ -41,20 +42,49 @@ class VolumeRotateTool extends BaseTool {
   mouseWheelCallback(evt: MouseWheelEventType) {
     // https://github.com/kitware/vtk-js/blob/HEAD/Sources/Interaction/Manipulators/MouseCameraUnicamRotateManipulator/index.js#L73
     const { element, wheel } = evt.detail;
+    const { rotateIncrementDegrees } = this.configuration;
+    const { direction: deltaY } = wheel;
+
+    //Calculate angle in radian as glmatrix rotate is in radian
+    const angle = (deltaY * (rotateIncrementDegrees * Math.PI)) / 180;
+
+    this._rotate(element, angle);
+  }
+
+  mouseDragCallback(evt: EventTypes.InteractionEventType) {
+    this._dragCallback(evt);
+  }
+
+  touchDragCallback(evt: EventTypes.InteractionEventType) {
+    this._dragCallback(evt);
+  }
+
+  _dragCallback(evt: EventTypes.InteractionEventType) {
+    const { element, deltaPoints } = evt.detail;
+    const { rotateDragDegreesPerPixel } = this.configuration;
+    const deltaX = deltaPoints.canvas[0];
+
+    // High-resolution pointers can fire drag events before a full pixel of
+    // horizontal movement has accumulated.
+    if (!deltaX) {
+      return;
+    }
+
+    const angle = (deltaX * rotateDragDegreesPerPixel * Math.PI) / 180;
+
+    this._rotate(element, angle);
+  }
+
+  _rotate(element: HTMLDivElement, angle: number) {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
-    const { direction, rotateIncrementDegrees } = this.configuration;
+    const { direction } = this.configuration;
 
     const camera = getViewportICamera(viewport);
     const { viewUp, position, focalPoint } = camera;
 
-    const { direction: deltaY } = wheel;
-
     const [cx, cy, cz] = focalPoint;
     const [ax, ay, az] = direction;
-
-    //Calculate angle in radian as glmatrix rotate is in radian
-    const angle = (deltaY * (rotateIncrementDegrees * Math.PI)) / 180;
 
     // position[3] = 1.0
     // focalPoint[3] = 1.0

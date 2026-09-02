@@ -4,6 +4,7 @@ import type {
   ToolAnnotationsPair,
   ToolsWithMoveableHandles,
 } from '../types/InternalToolTypes';
+import { MOUSE_PROXIMITY, TOUCH_PROXIMITY } from '../utilities/touch/constants';
 
 /**
  * Filters an array of tools, returning only tools with moveable handles at the mouse location that are not locked
@@ -20,7 +21,8 @@ export default function filterToolsWithMoveableHandles(
   canvasCoords: Types.Point2,
   interactionType = 'mouse'
 ): ToolsWithMoveableHandles[] {
-  const proximity = interactionType === 'touch' ? 36 : 6;
+  const proximity =
+    interactionType === 'touch' ? TOUCH_PROXIMITY : MOUSE_PROXIMITY;
   const toolsWithMoveableHandles = [];
 
   ToolAndAnnotations.forEach(({ tool, annotations }) => {
