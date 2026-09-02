@@ -19,15 +19,28 @@ export interface ContourShapeOptions {
   /** `n`, the annotation view plane normal. Unit length. */
   normal: Point3;
   /**
-   * The outline, as world coordinates. Treated as a closed polygon: the last
-   * point is joined back to the first, so do not repeat it. Points are
+   * The outline, as world coordinates.
+   *
+   * Either a single ring, or an array of rings. Each ring is treated as closed:
+   * the last point is joined back to the first, so do not repeat it. Points are
    * projected onto the annotation plane, so a contour carrying a little depth
    * error - as a drawn one always does - is handled.
    *
-   * Need not be convex, and may be self-intersecting; interior is decided by
-   * the even-odd rule.
+   * Interior is the even-odd rule over every edge of every ring, which is what
+   * makes **internal holes** work: give the hole as its own ring and it is
+   * excluded. Winding direction does not matter, so a hole ring need not be
+   * wound opposite to its parent. Nesting to any depth follows from the same
+   * rule - a ring inside a hole is solid again - and disjoint rings simply
+   * describe several separate regions.
+   *
+   * Do NOT flatten multiple rings into one array. That inserts an edge from the
+   * end of each ring to the start of the next, which does not error; it quietly
+   * measures a different shape.
+   *
+   * A single ring need be neither convex nor simple; a self-intersecting one is
+   * resolved by even-odd too.
    */
-  polyline: Point3[];
+  polyline: Point3[] | Point3[][];
   /**
    * The contour's extent along the normal, in mm. This is the thickness of the
    * prism the outline sweeps.
@@ -53,10 +66,11 @@ type PlanePoint = [number, number];
  *
  * For a fixed outer and row index, the projection of the voxel centres onto the
  * annotation plane traces a straight line in the column index. Intersecting
- * that line with the polygon gives a sorted set of crossings, and consecutive
- * pairs bound the inside intervals. A convex contour yields one run; a
- * non-convex one yields as many as it has crossings, which is the
- * exact-multiple case the iterator supports. No voxel is ever tested.
+ * that line with every edge of every ring gives a sorted set of crossings, and
+ * consecutive pairs bound the inside intervals. A convex contour yields one
+ * run; a non-convex one, or one with holes, yields as many as it has crossings,
+ * which is the exact-multiple case the iterator supports. No voxel is ever
+ * tested.
  *
  * Interior is the even-odd rule.
  *
@@ -86,8 +100,18 @@ export function createContourShape(
 ): VoxelSlabShape {
   const { volume, planePoint, normal, polyline, depth } = options;
 
-  if (!polyline?.length || polyline.length < 3) {
-    throw new Error('A contour needs at least three points');
+  if (!polyline?.length) {
+    throw new Error('A contour needs an outline');
+  }
+
+  // A single ring is Point3[], so polyline[0][0] is a number; an array of rings
+  // is Point3[][], so polyline[0][0] is itself an array.
+  const inputRings: Point3[][] = Array.isArray((polyline as Point3[][])[0]?.[0])
+    ? (polyline as Point3[][])
+    : [polyline as Point3[]];
+
+  if (inputRings.some((ring) => !ring?.length || ring.length < 3)) {
+    throw new Error('Every contour ring needs at least three points');
   }
 
   // Any in-plane direction will do for the basis; the outline defines its own
@@ -114,25 +138,40 @@ export function createContourShape(
 
   // Projecting first means a contour whose points carry depth error still gives
   // a well-defined outline.
-  const outline: PlanePoint[] = polyline.map((point) =>
-    toPlanePoint(projectPointOntoPlane(point, planePoint, basis.n))
+  const rings: PlanePoint[][] = inputRings.map((ring) =>
+    ring.map((point) =>
+      toPlanePoint(projectPointOntoPlane(point, planePoint, basis.n))
+    )
   );
-  const vertexCount = outline.length;
 
   // Slack scaled to the outline's own size, so it means the same thing for a
   // 2 mm nodule contour and a 400 mm body contour.
   let extent = 0;
-  for (const [x, y] of outline) {
-    extent = Math.max(extent, Math.abs(x), Math.abs(y));
+  for (const ring of rings) {
+    for (const [x, y] of ring) {
+      extent = Math.max(extent, Math.abs(x), Math.abs(y));
+    }
   }
   const boundarySlack = Math.max(extent, 1) * SHAPE_BOUNDARY_EPSILON;
 
-  /** Distance from a plane point to the nearest outline edge. */
-  function distanceToOutline([x, y]: PlanePoint): number {
+  /** Distance from a plane point to the nearest edge of any ring. */
+  function distanceToOutline(planePoint2: PlanePoint): number {
     let best = Infinity;
+    for (const ring of rings) {
+      const distance = distanceToRing(ring, planePoint2);
+      if (distance < best) {
+        best = distance;
+      }
+    }
+    return best;
+  }
+
+  function distanceToRing(ring: PlanePoint[], [x, y]: PlanePoint): number {
+    let best = Infinity;
+    const vertexCount = ring.length;
     for (let i = 0, j = vertexCount - 1; i < vertexCount; j = i++) {
-      const [xi, yi] = outline[i];
-      const [xj, yj] = outline[j];
+      const [xi, yi] = ring[i];
+      const [xj, yj] = ring[j];
       const edgeX = xj - xi;
       const edgeY = yj - yi;
       const lengthSquared = edgeX * edgeX + edgeY * edgeY;
@@ -155,20 +194,26 @@ export function createContourShape(
   const resolveColumnLine = createColumnLineResolver(volume, basis.n);
 
   function containsPlanePoint([x, y]: PlanePoint): boolean {
+    // Even-odd over every edge of every ring. Parity accumulates across rings
+    // rather than resetting per ring, which is what makes a hole ring flip its
+    // interior back to outside.
     let inside = false;
-    for (let i = 0, j = vertexCount - 1; i < vertexCount; j = i++) {
-      const [xi, yi] = outline[i];
-      const [xj, yj] = outline[j];
+    for (const ring of rings) {
+      const vertexCount = ring.length;
+      for (let i = 0, j = vertexCount - 1; i < vertexCount; j = i++) {
+        const [xi, yi] = ring[i];
+        const [xj, yj] = ring[j];
 
-      // Half-open in y so a vertex is counted by exactly one of its edges.
-      if (yi > y !== yj > y) {
-        const crossingX = xi + ((y - yi) / (yj - yi)) * (xj - xi);
-        if (x < crossingX) {
-          inside = !inside;
+        // Half-open in y so a vertex is counted by exactly one of its edges.
+        if (yi > y !== yj > y) {
+          const crossingX = xi + ((y - yi) / (yj - yi)) * (xj - xi);
+          if (x < crossingX) {
+            inside = !inside;
+          }
         }
       }
     }
-    // On the outline counts as inside, whichever side the ray's tie rule
+    // On an outline counts as inside, whichever side the ray's tie rule
     // happened to pick.
     return inside || distanceToOutline([x, y]) <= boundarySlack;
   }
@@ -219,53 +264,57 @@ export function createContourShape(
     const intervals: [number, number][] = [];
     const crossings: number[] = [];
 
-    let previousIndex = vertexCount - 1;
-    let previousSide = sideOf(outline[previousIndex]);
+    for (const ring of rings) {
+      const vertexCount = ring.length;
+      let previousIndex = vertexCount - 1;
+      let previousSide = sideOf(ring[previousIndex]);
 
-    for (let i = 0; i < vertexCount; i++) {
-      const side = sideOf(outline[i]);
+      for (let i = 0; i < vertexCount; i++) {
+        const side = sideOf(ring[i]);
 
-      const previousOnLine =
-        Math.abs(previousSide) * perpendicularScale <= boundarySlack;
-      const currentOnLine =
-        Math.abs(side) * perpendicularScale <= boundarySlack;
+        const previousOnLine =
+          Math.abs(previousSide) * perpendicularScale <= boundarySlack;
+        const currentOnLine =
+          Math.abs(side) * perpendicularScale <= boundarySlack;
 
-      if (previousOnLine && currentOnLine) {
-        // The edge lies along the line. The crossing test cannot see such an
-        // edge at all - both endpoints sit on the same side of a line they are
-        // on - so contribute its own extent directly. Without this, a contour
-        // with an edge running along a voxel row loses that whole row, while
-        // `containsPoint` keeps it as a boundary point.
-        const a = columnOf(outline[previousIndex]);
-        const b = columnOf(outline[i]);
-        intervals.push(
-          a <= b ? [a - slack, b + slack] : [b - slack, a + slack]
-        );
-      } else if (currentOnLine) {
-        // A vertex touching the line without either edge lying along it. Even
-        // odd counting may place it outside, but it is on the boundary, so it
-        // is inside by the same convention `containsPoint` applies.
-        const at = columnOf(outline[i]);
-        intervals.push([at - slack, at + slack]);
+        if (previousOnLine && currentOnLine) {
+          // The edge lies along the line. The crossing test cannot see such an
+          // edge at all - both endpoints sit on the same side of a line they
+          // are on - so contribute its extent directly. Without this, a
+          // contour with an edge running along a voxel row loses that whole
+          // row, while containsPoint keeps it as a boundary point.
+          const a = columnOf(ring[previousIndex]);
+          const b = columnOf(ring[i]);
+          intervals.push(
+            a <= b ? [a - slack, b + slack] : [b - slack, a + slack]
+          );
+        } else if (currentOnLine) {
+          // A vertex touching the line without either edge lying along it.
+          // Even odd counting may place it outside, but it is on the boundary,
+          // so it is inside by the same convention containsPoint applies.
+          const at = columnOf(ring[i]);
+          intervals.push([at - slack, at + slack]);
+        }
+
+        // Zero counts as negative, matching the half-open rule
+        // `yi > y !== yj > y` in containsPlanePoint.
+        if (previousSide > 0 !== side > 0) {
+          const t = previousSide / (previousSide - side);
+          const crossingX =
+            ring[previousIndex][0] + t * (ring[i][0] - ring[previousIndex][0]);
+          const crossingY =
+            ring[previousIndex][1] + t * (ring[i][1] - ring[previousIndex][1]);
+          crossings.push(columnOf([crossingX, crossingY]));
+        }
+
+        previousIndex = i;
+        previousSide = side;
       }
-
-      // Zero counts as negative, matching the half-open `yi > y !== yj > y`
-      // rule in containsPlanePoint.
-      if (previousSide > 0 !== side > 0) {
-        const t = previousSide / (previousSide - side);
-        const crossingX =
-          outline[previousIndex][0] +
-          t * (outline[i][0] - outline[previousIndex][0]);
-        const crossingY =
-          outline[previousIndex][1] +
-          t * (outline[i][1] - outline[previousIndex][1]);
-        crossings.push(columnOf([crossingX, crossingY]));
-      }
-
-      previousIndex = i;
-      previousSide = side;
     }
 
+    // One sorted list across all rings: pairing consecutive crossings IS
+    // even-odd, so a hole ring's two crossings close the interval its
+    // surrounding ring opened.
     crossings.sort((a, b) => a - b);
     for (let pair = 0; pair + 1 < crossings.length; pair += 2) {
       intervals.push([crossings[pair] - slack, crossings[pair + 1] + slack]);
