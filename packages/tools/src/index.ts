@@ -96,10 +96,6 @@ import {
 import VideoRedactionTool from './tools/annotation/VideoRedactionTool';
 
 import * as Enums from './enums';
-import {
-  sampleVoxelsFromCanvas,
-  getCanvasVoxelSamplingStep,
-} from './utilities/sampleVoxelsFromCanvas';
 
 export {
   VideoRedactionTool,
@@ -205,7 +201,6 @@ export {
   WholeBodySegmentTool,
   LabelmapBaseTool,
   LabelMapEditWithContourTool,
-  sampleVoxelsFromCanvas,
   // Spline classes
   splines,
   // Version
