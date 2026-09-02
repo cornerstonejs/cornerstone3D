@@ -154,7 +154,12 @@ export default class RLEVoxelMap<T> {
    * @param scalarData - old scalar data to update
    */
   public updateScalarData = function (scalarData: PixelDataTypedArray) {
-    scalarData.fill(0);
+    // An unwritten voxel reads as `defaultValue` from `get`, so an expansion
+    // has to start from that same value - otherwise `getScalarData()` and
+    // `getAtIndex()` disagree on every voxel a map with a non-zero default
+    // never wrote. `?? 0` keeps a map that never chose a default on the zero
+    // fill it has always had.
+    scalarData.fill((this.defaultValue ?? 0) as number);
     const callback = (index, rle, row) => {
       const { start, end, value } = rle;
       for (let i = start; i < end; i++) {
@@ -447,11 +452,18 @@ export default class RLEVoxelMap<T> {
     k = 0,
     pixelData?: PixelDataTypedArray
   ): PixelDataTypedArray {
+    // Unwritten voxels have to come back as `defaultValue` here for the same
+    // reason as in `updateScalarData` - a fresh array is zero-filled, so it
+    // needs the fill too whenever the default is something else.
+    const unwritten = (this.defaultValue ?? 0) as number;
     if (!pixelData) {
       const Constructor = this.pixelDataConstructor ?? Uint8Array;
       pixelData = new Constructor(this.width * this.height * this.numComps);
+      if (unwritten !== 0) {
+        pixelData.fill(unwritten);
+      }
     } else {
-      pixelData.fill(0);
+      pixelData.fill(unwritten);
     }
     const { width, height, numComps } = this;
 

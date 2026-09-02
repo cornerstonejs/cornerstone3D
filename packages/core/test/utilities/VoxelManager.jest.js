@@ -351,6 +351,81 @@ describe('VoxelManager', () => {
     });
   });
 
+  // An RLE map stores only what differs from its default, and `get` already
+  // returned `defaultValue` for anything it never wrote. The expansion paths
+  // and the sparse test used a literal zero instead, so a map that chose any
+  // other default disagreed with itself.
+  describe('a non-zero defaultValue', () => {
+    const [width, height] = [4, 4];
+    const frameSize = width * height;
+
+    function rleMap(defaultValue) {
+      return VoxelManager.createRLEImageVoxelManager({
+        dimensions: [width, height],
+        pixelDataConstructor: Uint8Array,
+        defaultValue,
+      });
+    }
+
+    it('is what an unwritten voxel expands to, not zero', () => {
+      const map = rleMap(5);
+      map.setAtIndex(3, 9);
+
+      const scalarData = map.getScalarData();
+
+      expect(scalarData[3]).toBe(9);
+      // Every other voxel is unwritten, so it has to read as the default both
+      // per voxel and in the expansion.
+      expect(map.getAtIndex(0)).toBe(5);
+      expect(scalarData[0]).toBe(5);
+      expect(Array.from(scalarData).filter((v) => v === 5)).toHaveLength(
+        frameSize - 1
+      );
+    });
+
+    it('fills getPixelData the same way, into a fresh and a reused array', () => {
+      const map = rleMap(5);
+      map.setAtIndex(3, 9);
+
+      const fresh = map.getPixelData();
+      expect(fresh[0]).toBe(5);
+      expect(fresh[3]).toBe(9);
+
+      // A reused buffer is filled rather than allocated, and arrives dirty.
+      const reused = new Uint8Array(frameSize).fill(200);
+      expect(Array.from(map.getPixelData(0, reused))).toEqual(
+        Array.from(fresh)
+      );
+    });
+
+    it('is the value dropped from the runs, so zeros survive a replace', () => {
+      const map = rleMap(5);
+
+      // All-zero input against a default of 5: zero is a real value here and
+      // has to be stored, or it would read back as 5.
+      map.setFromScalarData(new Uint8Array(frameSize));
+
+      expect(map.getAtIndex(0)).toBe(0);
+      expect(map.getScalarData()[0]).toBe(0);
+      expect(Array.from(map.getScalarData()).some((v) => v === 5)).toBe(false);
+    });
+
+    it('leaves a map that never chose a default on its zero behaviour', () => {
+      const map = rleMap(0);
+      map.setAtIndex(3, 9);
+
+      const scalarData = map.getScalarData();
+      expect(scalarData[0]).toBe(0);
+      expect(scalarData[3]).toBe(9);
+      expect(map.getPixelData()[0]).toBe(0);
+
+      map.setFromScalarData(new Uint8Array(frameSize));
+      expect(map.getAtIndex(0)).toBe(0);
+      // Nothing differs from the default, so nothing is stored.
+      expect(map.map.getRun(0, 0)).toBeUndefined();
+    });
+  });
+
   it('addInstanceToImage', () => {
     const image = {
       width: dimensions[0],

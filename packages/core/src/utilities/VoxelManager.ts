@@ -510,6 +510,11 @@ export default class VoxelManager<T> {
 
     if (map instanceof RLEVoxelMap) {
       const [width, height, depth] = this.dimensions;
+      // The value an unwritten voxel reads back as, and so the one that costs
+      // nothing to leave out of the runs. It is the map's default rather than a
+      // literal zero: on a map defaulting to 5, dropping the 0s would make them
+      // read back as 5, and it is the 5s that are free to drop instead.
+      const sparseValue = (map.defaultValue ?? 0) as number;
       // fillFrom appends runs to the rows it finds, so start from empty to get
       // replace-the-whole-thing semantics.
       map.clear();
@@ -517,7 +522,7 @@ export default class VoxelManager<T> {
         (i, j, k) => {
           const value = scalarData[i + j * width + k * this.frameSize];
           // fillFrom skips undefined, which is what keeps the map sparse.
-          return (value === 0 ? undefined : value) as T;
+          return (value === sparseValue ? undefined : value) as T;
         },
         [
           [0, width - 1],

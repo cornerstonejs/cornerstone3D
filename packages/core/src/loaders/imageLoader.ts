@@ -562,6 +562,21 @@ export function createAndCacheLocalImage(
       id,
     }) as VoxelManager<number>);
 
+  // The RLE map above is created empty, so any voxels the caller actually
+  // supplied would be dropped: `getPixelData()` expands the map, not
+  // `scalarDataToUse`. Copy them in so choosing the representation stays a
+  // storage decision rather than one that loses data.
+  //
+  // Only for a buffer that covers the frame. `createAndCacheDerivedImage`
+  // deliberately passes a 1-element stand-in for an RLE image - it holds no
+  // voxels and exists only so the bit-depth metadata above has a type to read -
+  // and scanning a whole frame for it would cost the per-slice work the
+  // encoding exists to avoid. The `>= width * height` test is the same one
+  // `addInstanceToImage` uses to tell a real frame from dummy data.
+  if (isRle && scalarDataToUse.length >= length) {
+    voxelManager.setFromScalarData(scalarDataToUse);
+  }
+
   // Calculate min and max pixel values
   let minPixelValue = scalarDataToUse[0];
   let maxPixelValue = scalarDataToUse[0];
