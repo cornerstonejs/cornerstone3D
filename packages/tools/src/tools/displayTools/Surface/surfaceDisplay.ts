@@ -11,6 +11,16 @@ import { getPolySeg } from '../../../config';
 import { computeAndAddRepresentation } from '../../../utilities/segmentation/computeAndAddRepresentation';
 import { internalGetHiddenSegmentIndices } from '../../../stateManagement/segmentation/helpers/internalGetHiddenSegmentIndices';
 
+// Guards against launching a second polySeg surface conversion for a
+// segmentation while one is already running. Every re-render (and every viewport
+// showing the segmentation) would otherwise kick off another concurrent
+// conversion; each allocates the full labelmap scalar array, so a large volume
+// with several segments exhausts memory, the workers never reach progress:100,
+// and the "Converting Labelmap to Surface" toast hangs forever. Keyed by
+// segmentationId (not viewport) so several 3D viewports of the same segmentation
+// share a single conversion rather than each starting their own.
+const polySegConversionInProgressForSegmentation = new Set<string>();
+
 /**
  * It removes a segmentation representation from the tool group's viewports and
  * from the segmentation state
@@ -67,22 +77,29 @@ async function render(
     getPolySeg()?.canComputeRequestedRepresentation(
       segmentationId,
       Representations.Surface
-    )
+    ) &&
+    !polySegConversionInProgressForSegmentation.has(segmentationId)
   ) {
     // we need to check if we can request polySEG to convert the other
     // underlying representations to Surface
     const polySeg = getPolySeg();
 
-    SurfaceData = await computeAndAddRepresentation(
-      segmentationId,
-      Representations.Surface,
-      () => polySeg.computeSurfaceData(segmentationId, { viewport })
-    );
+    polySegConversionInProgressForSegmentation.add(segmentationId);
 
-    if (!SurfaceData) {
-      throw new Error(
-        `No Surface data found for segmentationId ${segmentationId} even we tried to compute it`
+    try {
+      SurfaceData = await computeAndAddRepresentation(
+        segmentationId,
+        Representations.Surface,
+        () => polySeg.computeSurfaceData(segmentationId, { viewport })
       );
+    } catch (error) {
+      console.warn(
+        'Unable to compute surface data for segmentationId',
+        segmentationId,
+        error
+      );
+    } finally {
+      polySegConversionInProgressForSegmentation.delete(segmentationId);
     }
   } else if (!SurfaceData && !getPolySeg()) {
     console.debug(
