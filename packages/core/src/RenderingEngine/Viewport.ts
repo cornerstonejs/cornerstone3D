@@ -49,6 +49,7 @@ import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import { deepClone } from '../utilities/deepClone';
 import { updatePlaneRestriction } from '../utilities/updatePlaneRestriction';
+import { isPlaneDepthViewable } from '../utilities/voxelSlab/isPlaneDepthViewable';
 import { getCubeSizeInView } from '../utilities/getPlaneCubeIntersectionDimensions';
 import { getConfiguration } from '../init';
 import type { extendedVtkCamera } from './vtkClasses/extendedVtkCamera';
@@ -2071,12 +2072,31 @@ class Viewport {
         inPlaneVector2: <Point3>(
           vec3.cross(vec3.create(), viewUp, viewPlaneNormal)
         ),
+        thickness: this.getReferenceThickness(),
       },
     };
     if (viewRefSpecifier?.points) {
-      updatePlaneRestriction(viewRefSpecifier.points, target.planeRestriction);
+      // Pass the whole reference, not target.planeRestriction:
+      // updatePlaneRestriction does `reference.planeRestriction ||= ...`. A
+      // PlaneRestriction structurally satisfies the all-optional ViewReference,
+      // so handing it the inner object type checks but builds a nested
+      // planeRestriction.planeRestriction and mutates that instead, silently
+      // discarding the point-derived in-plane vectors.
+      updatePlaneRestriction(viewRefSpecifier.points, target);
     }
     return target;
+  }
+
+  /**
+   * `T` for references created by this viewport: the full geometric thickness
+   * in mm that an annotation drawn here should record.
+   *
+   * A viewport with no slab concept returns undefined, which makes any
+   * annotation created in it fall back to one voxel along the view plane
+   * normal. See `PlaneRestriction.thickness`.
+   */
+  protected getReferenceThickness(): number | undefined {
+    return undefined;
   }
 
   public isPlaneViewable(
@@ -2110,8 +2130,15 @@ class Viewport {
     if (options?.withNavigation) {
       return true;
     }
-    const pointVector = vec3.sub(vec3.create(), point, focalPoint);
-    return isEqual(0, vec3.dot(pointVector, viewPlaneNormal));
+    // Rule D. When the restriction records no thickness this reduces to the
+    // historical exact-plane test, so pre-existing annotations are unaffected.
+    return isPlaneDepthViewable(
+      point,
+      focalPoint,
+      viewPlaneNormal,
+      planeRestriction.thickness,
+      this.getReferenceThickness() ?? 0
+    );
   }
 
   /**
