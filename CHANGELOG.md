@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.8.8](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.7...v5.8.8) (2026-09-02)
+
+### Bug Fixes
+
+- **core:** keep the camera finite for single-slice volumes ([#2858](https://github.com/cornerstonejs/cornerstone3D/issues/2858)) ([62f78e6](https://github.com/cornerstonejs/cornerstone3D/commit/62f78e63f4e397eaff48528061415b3dfb12300a))
+
 ## [5.8.7](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.6...v5.8.7) (2026-09-01)
 
 ### Bug Fixes
