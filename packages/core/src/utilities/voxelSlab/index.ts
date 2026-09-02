@@ -45,3 +45,5 @@ export type {
   ShapeRunProvider,
   VoxelSlabIterationOptions,
 } from './iterateVoxelsInSlab';
+
+export * from './shapes';

@@ -137,7 +137,7 @@ describe('iterateVoxelsInSlab agrees with the reference implementation', () => {
       spacing: [1, 1, 1],
     });
 
-    [0.5, 1, 1.00001, 2, 3, 4].forEach((annotationThickness) => {
+    [0.5, 1, 1.001, 2, 3, 4].forEach((annotationThickness) => {
       it(`T = ${annotationThickness}`, () => {
         expectAgreement({
           volume,

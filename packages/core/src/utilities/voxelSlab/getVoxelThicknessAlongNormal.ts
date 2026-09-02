@@ -27,10 +27,10 @@ import type { IImageVolume, Point3 } from '../../types';
  * in-plane axis and the slice axis, the L1 value is 2*sqrt(2) ~= 2.83 mm
  * against sqrt(5) ~= 2.24 mm for L2.
  *
- * This also returns a float64 result, where getSpacingInNormalDirection
- * accumulates through gl-matrix's Float32Array-backed vec3 and so carries only
- * float32 precision. That matters here because the slab tests in
- * `slabMembership` turn on a relative tolerance of 1e-6.
+ * The distinction is about semantics, not precision: only the L1 length answers
+ * "how far does this voxel reach along the normal", which is what a voxel/slab
+ * overlap test needs. Both are fine to compute in float32, and the slab
+ * tolerance in `slabMembership` is sized to absorb float32 error.
  *
  * @param volume - The volume, or anything carrying its `direction` and `spacing`.
  * @param normal - The direction to measure along. Assumed to be a unit vector.

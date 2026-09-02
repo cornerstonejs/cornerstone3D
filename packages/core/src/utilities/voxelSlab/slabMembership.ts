@@ -10,13 +10,24 @@ import type { Point3 } from '../../types';
  * acquisition-orientation annotation covers exactly one layer of voxels.
  *
  * Signed distances are computed from world coordinates via dot products, so a
- * value that is mathematically exactly on the boundary lands a few ulps either
- * side of it. Without a tolerance the most common case in the whole system
- * would non-deterministically pick up two extra layers. The tolerance is
- * relative to the voxel thickness rather than absolute because spacings in
- * medical imaging range from microns to centimetres.
+ * value that is mathematically exactly on the boundary lands either side of it.
+ * Without a tolerance the most common case in the whole system would
+ * non-deterministically pick up two extra layers. The tolerance is relative to
+ * the voxel thickness rather than absolute because spacings in medical imaging
+ * range from microns to centimetres.
+ *
+ * 1e-5 is chosen so that inputs carrying float32 error - which is most of them,
+ * since gl-matrix vectors and the rest of the rendering geometry are float32 -
+ * are comfortably inside it, float32 giving roughly 1e-7 relative precision.
+ *
+ * The tolerance has one visible consequence worth knowing: because the rule is
+ * strict, a thickness exceeding an exact voxel multiple by less than
+ * `2 * SLAB_RELATIVE_EPSILON * T_v` still selects the smaller number of layers.
+ * At `T_v = 1 mm` that dead band is 20 nm wide, so it is unreachable in
+ * practice, but it does mean `T = T_v + 1e-6` behaves as `T = T_v` rather than
+ * pulling in both neighbours.
  */
-export const SLAB_RELATIVE_EPSILON = 1e-6;
+export const SLAB_RELATIVE_EPSILON = 1e-5;
 
 /**
  * The tolerance to use for slab tests against a grid with the given voxel

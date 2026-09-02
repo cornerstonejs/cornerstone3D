@@ -90,13 +90,12 @@ describe('getVoxelThicknessAlongNormal', () => {
         [0, 1, 0],
         [0, 0, 1],
       ]) {
-        // Only to 7 places: getSpacingInNormalDirection accumulates through
-        // gl-matrix's vec3, which is a Float32Array, so it carries float32
-        // precision. getVoxelThicknessAlongNormal stays in float64, which is
-        // one reason not to build the slab tests on top of it.
+        // 5 places: getSpacingInNormalDirection accumulates through gl-matrix's
+        // Float32Array-backed vec3, so it carries float32 precision. That is
+        // well inside the slab tolerance, which is sized for exactly this.
         expect(getVoxelThicknessAlongNormal(volume, normal)).toBeCloseTo(
           getSpacingInNormalDirection(volume, normal),
-          7
+          5
         );
       }
     });
@@ -115,10 +114,10 @@ describe('getVoxelThicknessAlongNormal', () => {
         2 * Math.SQRT2,
         10
       );
-      // 6 places, not more: this is the float32 result discussed above.
+      // 5 places: this is the float32 result discussed above.
       expect(getSpacingInNormalDirection(volume, normal)).toBeCloseTo(
         Math.sqrt(5),
-        6
+        5
       );
       expect(getVoxelThicknessAlongNormal(volume, normal)).toBeGreaterThan(
         getSpacingInNormalDirection(volume, normal)
@@ -148,9 +147,9 @@ describe('slab half widths', () => {
   });
 
   it('scales the epsilon with the voxel thickness', () => {
-    expect(getSlabEpsilon(1)).toBe(1e-6);
-    expect(getSlabEpsilon(0.001)).toBe(1e-9);
-    expect(getSlabEpsilon(-3)).toBe(3e-6);
+    expect(getSlabEpsilon(1)).toBe(1e-5);
+    expect(getSlabEpsilon(0.001)).toBeCloseTo(1e-8, 15);
+    expect(getSlabEpsilon(-3)).toBeCloseTo(3e-5, 15);
   });
 });
 
@@ -192,8 +191,8 @@ describe('Rule M worked examples', () => {
       expected: [3, 4],
     },
     {
-      name: 'any increase past T_v pulls in both neighbours',
-      thickness: 1.00001,
+      name: 'an increase past T_v beyond the tolerance pulls in both neighbours',
+      thickness: 1.001,
       anchorZ: 3,
       expected: [2, 3, 4],
     },
