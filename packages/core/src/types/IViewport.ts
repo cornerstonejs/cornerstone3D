@@ -349,6 +349,11 @@ export interface ViewPresentation {
    * The aspect ratio is how the viewport image is stretched and the default is [1,1].
    */
   aspectRatio?: Point2;
+
+  /**
+   * Whether to fit the viewport after stretching the aspect ratio.
+   */
+  isFitViewportAfterStretch?: boolean;
 }
 
 /**

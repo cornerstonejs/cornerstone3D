@@ -1266,7 +1266,7 @@ class Viewport {
       viewUp: viewUpToSet,
       clippingRange: clippingRangeToUse,
       aspectRatio: targetAspectRatio,
-      isFitViewportAfterStretch: false,
+      isFitViewportAfterStretch: previousCamera.isFitViewportAfterStretch,
     });
 
     const modifiedCamera = this.getCamera();
@@ -1504,6 +1504,16 @@ class Viewport {
   }
 
   /**
+   * Returns whether to change aspect ratio in anamorphic or not
+   *
+   * @returns change aspect ratio in anamorphic or not
+   */
+  public getIsFitViewportAfterStretch(): boolean {
+    const { isFitViewportAfterStretch } = this.getCamera();
+    return isFitViewportAfterStretch ?? false;
+  }
+
+  /**
    * Because the focalPoint is always in the centre of the viewport,
    * we must do planar computations if the frame (image "slice") is to be preserved.
    * 1. Calculate the intersection of the view plane with the imageData
@@ -1601,6 +1611,7 @@ class Viewport {
       viewAngle: vtkCamera.getViewAngle(),
       flipHorizontal: this.flipHorizontal,
       flipVertical: this.flipVertical,
+      isFitViewportAfterStretch: vtkCamera.getIsFitViewportAfterStretch(),
       aspectRatio: vtkCamera.getAspectRatio(),
     };
   }
@@ -1719,7 +1730,7 @@ class Viewport {
       flipVertical,
       clippingRange,
       aspectRatio,
-      isFitViewportAfterStretch,
+      isFitViewportAfterStretch: providedIsFitViewportAfterStretch,
     } = cameraInterface;
 
     // Note: Flip camera should be two separate calls since
@@ -1781,8 +1792,15 @@ class Viewport {
       vtkCamera.setClippingRange(clippingRange);
     }
 
+    const isFitViewportAfterStretch =
+      providedIsFitViewportAfterStretch ??
+      previousCamera.isFitViewportAfterStretch ??
+      true;
+    updatedCamera.isFitViewportAfterStretch = isFitViewportAfterStretch;
+
     if (aspectRatio) {
       this.setAspectRatioForVTKCamera(aspectRatio, isFitViewportAfterStretch);
+      vtkCamera.setIsFitViewportAfterStretch(isFitViewportAfterStretch);
     }
 
     // update clipping range only if focal point changed of a new actor is added
@@ -2201,6 +2219,7 @@ class Viewport {
     }
     const currentAspectRatio = this.getAspectRatio();
     target.aspectRatio = currentAspectRatio;
+    target.isFitViewportAfterStretch = this.getIsFitViewportAfterStretch();
     if (pan) {
       const currentPan = this.getPan();
       const [aspectX, aspectY] = currentAspectRatio;
@@ -2249,12 +2268,13 @@ class Viewport {
       rotation,
       flipHorizontal = this.flipHorizontal,
       flipVertical = this.flipVertical,
+      isFitViewportAfterStretch = this.getIsFitViewportAfterStretch(),
     } = viewPres;
     if (displayArea !== this.getDisplayArea()) {
       this.setDisplayArea(displayArea);
     }
     this.setZoom(zoom);
-    this.setAspectRatio(aspectRatio);
+    this.setAspectRatio(aspectRatio, isFitViewportAfterStretch);
     if (pan) {
       const [aspectX, aspectY] = aspectRatio;
       this.setPan([pan[0] * zoom * aspectX, pan[1] * zoom * aspectY] as Point2);
