@@ -40,13 +40,19 @@ import type {
 } from '../../types/ToolSpecificAnnotationTypes';
 import type { PlanarFreehandROICommonData } from '../../utilities/math/polyline/planarFreehandROIInternalTypes';
 
-import { getLineSegmentIntersectionsCoordinates } from '../../utilities/math/polyline';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
 import { KeyboardBindings, ChangeTypes, MeasurementType } from '../../enums';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
-import snapIndexBounds from '../../utilities/boundingBox/snapIndexBounds';
+import { getBoundingBoxAroundShapeIJK } from '../../utilities/boundingBox';
+
+const {
+  createContourShape,
+  sampleVoxelsInSlab,
+  getMembershipHalfWidth,
+  getVoxelThicknessAlongNormal,
+} = csUtils.voxelSlab;
 
 const { pointCanProjectOnLine } = polyline;
 const { EPSILON } = CONSTANTS;
@@ -863,6 +869,10 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         canvasCoordinates,
         points,
         imageData,
+        // The volume geometry lives on the enclosing IImageData rather than on
+        // imageData itself, because the CPU fallback's image data has no
+        // getOrigin. See sampleVoxelsInContour.
+        image,
         metadata,
         voxelManager,
         cachedStats,
@@ -870,6 +880,10 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
         calibratedScale,
         deltaInX,
         deltaInY,
+        // Voxel selection is driven by the annotation's own plane and
+        // thickness, not by the viewport, so the annotation has to reach the
+        // stats path. See updateClosedCachedStats.
+        annotation,
       };
       if (closed) {
         this.updateClosedCachedStats(statsArgs);
@@ -894,9 +908,9 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
   };
 
   protected updateClosedCachedStats({
-    viewport,
     points,
     imageData,
+    image,
     metadata,
     voxelManager,
     cachedStats,
@@ -906,47 +920,11 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     calibratedScale,
     deltaInX,
     deltaInY,
+    annotation,
   }) {
     const { areaUnit, unit } = calibratedScale;
 
     const indexPoints = points.map((point) => imageData.worldToIndex(point));
-    const dims = imageData.getDimensions();
-
-    let iMin = Number.MAX_SAFE_INTEGER;
-    let iMax = Number.MIN_SAFE_INTEGER;
-    let jMin = Number.MAX_SAFE_INTEGER;
-    let jMax = Number.MIN_SAFE_INTEGER;
-    let kMin = Number.MAX_SAFE_INTEGER;
-    let kMax = Number.MIN_SAFE_INTEGER;
-
-    for (let j = 0; j < points.length; j++) {
-      const worldPosIndex = indexPoints[j];
-
-      iMin = Math.min(iMin, worldPosIndex[0]);
-      iMax = Math.max(iMax, worldPosIndex[0]);
-
-      jMin = Math.min(jMin, worldPosIndex[1]);
-      jMax = Math.max(jMax, worldPosIndex[1]);
-
-      kMin = Math.min(kMin, worldPosIndex[2]);
-      kMax = Math.max(kMax, worldPosIndex[2]);
-    }
-
-    // Clamp the accumulated bounds into the image extent so the bounding box
-    // never spills outside the volume. Clamping the min/max here is equivalent
-    // to clamping every point (clamp is monotonic, so it commutes with
-    // min/max) but avoids the per-point allocation. The values are left
-    // unfloored so snapIndexBounds can still detect planar (delta <= 1) ROIs.
-    iMin = Math.max(0, Math.min(dims[0] - 1, iMin));
-    iMax = Math.max(0, Math.min(dims[0] - 1, iMax));
-    jMin = Math.max(0, Math.min(dims[1] - 1, jMin));
-    jMax = Math.max(0, Math.min(dims[1] - 1, jMax));
-    kMin = Math.max(0, Math.min(dims[2] - 1, kMin));
-    kMax = Math.max(0, Math.min(dims[2] - 1, kMax));
-
-    [iMin, iMax] = snapIndexBounds(iMin, iMax);
-    [jMin, jMax] = snapIndexBounds(jMin, jMax);
-    [kMin, kMax] = snapIndexBounds(kMin, kMax);
 
     // Convert from canvas_pixels ^2 to mm^2
     const area = polyline.getArea(canvasCoordinates) * deltaInX * deltaInY;
@@ -957,74 +935,27 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       closed
     );
 
-    // Expand bounding box
-    const iDelta = 0.01 * (iMax - iMin);
-    const jDelta = 0.01 * (jMax - jMin);
-    const kDelta = 0.01 * (kMax - kMin);
+    // Rule M of #2889: a voxel belongs to this annotation when its centre is
+    // within (T + T_v) / 2 of the annotation plane along the normal, and its
+    // projection onto that plane is inside the contour.
+    //
+    // Nothing here reads the viewport. The plane, the normal and T all come
+    // from the annotation, so the same annotation over the same volume selects
+    // the same voxels at any zoom, pan, canvas size or slab thickness, and in
+    // any orientation. Oblique is not a special case - it is the general one,
+    // solved in closed form.
+    //
+    // Cost is proportional to the voxels selected plus the rows touched, so
+    // this is also cheaper than sampling per canvas pixel: an ROI magnified 8x
+    // costs the same as one at fit-to-window, where a canvas-driven sampler
+    // pays ~64x.
+    const pointsInShape = this.sampleVoxelsInContour({
+      annotation,
+      points,
+      image,
+      voxelManager,
+    });
 
-    iMin = Math.floor(iMin - iDelta);
-    iMax = Math.ceil(iMax + iDelta);
-    jMin = Math.floor(jMin - jDelta);
-    jMax = Math.ceil(jMax + jDelta);
-    kMin = Math.floor(kMin - kDelta);
-    kMax = Math.ceil(kMax + kDelta);
-
-    const boundsIJK = [
-      [iMin, iMax],
-      [jMin, jMax],
-      [kMin, kMax],
-    ] as [Types.Point2, Types.Point2, Types.Point2];
-
-    const worldPosEnd = imageData.indexToWorld([iMax, jMax, kMax]);
-    const canvasPosEnd = viewport.worldToCanvas(worldPosEnd);
-
-    let curRow = 0;
-    let intersections = [];
-    let intersectionCounter = 0;
-
-    let pointsInShape;
-    if (voxelManager) {
-      pointsInShape = voxelManager.forEach(
-        this.configuration.statsCalculator.statsCallback,
-        {
-          imageData,
-          isInObject: (pointLPS, _pointIJK) => {
-            let result = true;
-            const point = viewport.worldToCanvas(pointLPS);
-            if (point[1] != curRow) {
-              intersectionCounter = 0;
-              curRow = point[1];
-              intersections = getLineSegmentIntersectionsCoordinates(
-                canvasCoordinates,
-                point,
-                [canvasPosEnd[0], point[1]]
-              );
-              intersections.sort(
-                (function (index) {
-                  return function (a, b) {
-                    return a[index] === b[index]
-                      ? 0
-                      : a[index] < b[index]
-                        ? -1
-                        : 1;
-                  };
-                })(0)
-              );
-            }
-            if (intersections.length && point[0] > intersections[0][0]) {
-              intersections.shift();
-              intersectionCounter++;
-            }
-            if (intersectionCounter % 2 === 0) {
-              result = false;
-            }
-            return result;
-          },
-          boundsIJK,
-          returnPoints: this.configuration.storePointData,
-        }
-      );
-    }
     const stats = this.configuration.statsCalculator.getStatistics();
 
     const namedArea: Statistics = {
@@ -1058,6 +989,147 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       modalityUnit,
       unit,
     };
+  }
+
+  /**
+   * Selects the voxels this annotation covers and feeds them to the stats
+   * calculator, per Rule M of
+   * https://github.com/cornerstonejs/cornerstone3D/issues/2889
+   *
+   * This is the reference example of driving `sampleVoxelsInSlab` from an
+   * annotation tool. A tool with a different shape swaps `createContourShape`
+   * for `createEllipseShape` or `createRectangleShape` and changes nothing
+   * else: the plane, the thickness and the accumulation are common to every
+   * area annotation, which is why they live in core.
+   *
+   * @param image - the target's `IImageData`, which is where the volume
+   * geometry is read from. Not `image.imageData`: the CPU fallback's image data
+   * exposes every geometry getter except `getOrigin`, so reading the four
+   * fields off the enclosing object is what keeps this working on a
+   * CPU-rendered stack viewport.
+   * @returns the selected voxels when `storePointData` is set, otherwise an
+   * empty array. Statistics are accumulated either way.
+   */
+  protected sampleVoxelsInContour({
+    annotation,
+    points,
+    image,
+    voxelManager,
+  }): { value: number; pointLPS: Types.Point3; pointIJK: Types.Point3 }[] {
+    // Fewer than three points is not a region, and the shape rejects it. A
+    // contour can reach here that short after a bad hydration or a click that
+    // registered a single point, and throwing out of the render loop would
+    // take the whole viewport down with it.
+    if (!voxelManager || !image || !(points?.length >= 3)) {
+      return [];
+    }
+
+    const normal = vec3.normalize(
+      vec3.create(),
+      annotation.metadata.viewPlaneNormal
+    ) as unknown as Types.Point3;
+
+    // The contour's own points define the plane's depth, which is what makes
+    // this independent of where the camera happens to be focused.
+    const planePoint = points[0] as Types.Point3;
+
+    const { dimensions, direction, spacing, origin, imageData } = image;
+    const volume = { dimensions, direction, spacing, origin };
+
+    // T: the annotation's own thickness, captured from the viewport slab when
+    // the annotation was created. Absent for stack annotations and for
+    // everything drawn before PlaneRestriction.thickness existed, in which
+    // case the shape falls back to one voxel along the normal.
+    const thickness = annotation.metadata.planeRestriction?.thickness;
+
+    const shape = createContourShape({
+      volume,
+      planePoint,
+      normal,
+      polyline: points as Types.Point3[],
+      depth: thickness,
+    });
+
+    const annotationThickness = shape.getRequiredThickness();
+
+    return sampleVoxelsInSlab({
+      volume,
+      planePoint,
+      normal,
+      annotationThickness,
+      bounds: this.getContourIndexBounds(
+        points,
+        volume,
+        imageData,
+        normal,
+        getMembershipHalfWidth(
+          annotationThickness,
+          getVoxelThicknessAlongNormal(volume, normal)
+        )
+      ),
+      getShapeRuns: shape.getRuns,
+      voxelManager,
+      // Statistics are accumulated regardless of storePointData; only the
+      // returned list is conditional.
+      onSample: this.configuration.statsCalculator.statsCallback,
+      storePointData: this.configuration.storePointData,
+    });
+  }
+
+  /**
+   * The index-space bounding box of the voxels the contour can reach, clamped
+   * to the volume.
+   *
+   * The slab narrows iteration along the normal on its own, and the shape runs
+   * bound the column axis exactly, but the outer and row loops would otherwise
+   * walk the full volume extent. This confines them to the rows the contour can
+   * actually reach.
+   *
+   * A qualifying voxel centre is not on the contour's plane: it lies within the
+   * slab's half width `(T + T_v) / 2` of it along the normal, so it can sit
+   * outside the outline's own box by that much. Dilating by the half width
+   * converted into voxels per axis is what keeps the box a superset - a fixed
+   * one voxel silently drops the outer layers of a thick annotation. The extra
+   * voxel on top absorbs the rounding of a fractional index.
+   */
+  private getContourIndexBounds(
+    points: Types.Point3[],
+    volume: {
+      dimensions: Types.Point3;
+      direction: Types.Mat3;
+      spacing: Types.Point3;
+    },
+    imageData,
+    normal: Types.Point3,
+    halfWidth: number
+  ): Types.BoundsIJK {
+    const { dimensions, direction, spacing } = volume;
+
+    const indexPoints = points.map(
+      (point) => imageData.worldToIndex(point) as Types.Point3
+    );
+    const boundingBox = getBoundingBoxAroundShapeIJK(indexPoints);
+
+    return [0, 1, 2].map((axis) => {
+      const axisVector = direction.slice(
+        axis * 3,
+        axis * 3 + 3
+      ) as Types.Point3;
+      // How far the slab's half width reaches along this index axis, in voxels.
+      const dilation =
+        Math.ceil(
+          (halfWidth * Math.abs(vec3.dot(axisVector, normal as vec3))) /
+            spacing[axis]
+        ) + 1;
+
+      return [
+        Math.max(0, Math.floor(boundingBox[axis][0]) - dilation),
+        Math.min(
+          dimensions[axis] - 1,
+          Math.ceil(boundingBox[axis][1]) + dilation
+        ),
+      ];
+    }) as Types.BoundsIJK;
   }
 
   protected updateOpenCachedStats({

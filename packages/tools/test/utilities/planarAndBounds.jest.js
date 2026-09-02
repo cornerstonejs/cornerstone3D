@@ -56,7 +56,6 @@ import {
   getBoundingBoxAroundShapeWorld,
 } from '../../src/utilities/boundingBox/getBoundingBoxAroundShape';
 import extend2DBoundingBoxInViewAxis from '../../src/utilities/boundingBox/extend2DBoundingBoxInViewAxis';
-import snapIndexBounds from '../../src/utilities/boundingBox/snapIndexBounds';
 
 function makeAnnotation({
   viewPlaneNormal,
@@ -825,27 +824,5 @@ describe('utilities/boundingBox/extend2DBoundingBoxInViewAxis', () => {
     expect(() => extend2DBoundingBoxInViewAxis(boundsIJK, 1)).toThrow(
       /3D bounding boxes not supported in an oblique plane/
     );
-  });
-});
-
-describe('utilities/boundingBox/snapIndexBounds', () => {
-  it('collapses to a single rounded index when delta <= 1', () => {
-    // delta = 0.6 <= 1 -> index = round((3.2+3.8)/2) = round(3.5) = 4
-    expect(snapIndexBounds(3.2, 3.8)).toEqual([4, 4]);
-  });
-
-  it('collapses to a single rounded index at the delta===1 boundary', () => {
-    // delta = 1 <= 1 -> index = round(2.5) = 3 (JS rounds .5 up)
-    expect(snapIndexBounds(2, 3)).toEqual([3, 3]);
-  });
-
-  it('uses floor/ceil to preserve coverage when delta > 1', () => {
-    // delta = 3.5 > 1 -> [floor(2.2), ceil(5.7)] = [2, 6]
-    expect(snapIndexBounds(2.2, 5.7)).toEqual([2, 6]);
-  });
-
-  it('uses floor/ceil just past the delta===1 boundary', () => {
-    // delta = 1.0001 > 1 -> [floor(0), ceil(1.0001)] = [0, 2]
-    expect(snapIndexBounds(0, 1.0001)).toEqual([0, 2]);
   });
 });

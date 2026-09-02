@@ -71,6 +71,16 @@ export function resolveAnnotationThickness(
  * for thicker slabs, where an undilated test asked for two voxels of thickness
  * would select only one.
  *
+ * The dilation has one consequence worth stating, because it is visible in
+ * reported statistics: an annotation plane sitting exactly midway between two
+ * voxel centres selects **both** layers, not one. Both voxels genuinely overlap
+ * the slab by equal amounts, so there is no principled way to pick one, and
+ * picking one would make the count depend on a rounding tie. MPR at a
+ * half-slice position is the common way to reach this, and a mean over two
+ * layers is not the same number as a mean over one. This is a deliberate
+ * departure from the older snap-to-nearest-index behaviour, which always
+ * reported a single layer.
+ *
  * Note the viewport slab thickness `t` does **not** appear here. Statistics are
  * a property of the annotation and the data, never of the viewport.
  *
