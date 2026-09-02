@@ -98,6 +98,7 @@ import { _getScalingDescriptor } from './getScalingDescriptor';
 import { resolveGenericViewportVolumeId } from './resolveGenericViewportVolumeId';
 import cache from '../cache/cache';
 import getDynamicVolumeInfo from './getDynamicVolumeInfo';
+import getDimensionGroupIndexMap from './getDimensionGroupIndexMap';
 import autoLoad from './autoLoad';
 import scaleArray from './scaleArray';
 import splitImageIdsBy4DTags, {
@@ -236,6 +237,7 @@ export {
   color,
   hasFloatScalingParameters,
   getDynamicVolumeInfo,
+  getDimensionGroupIndexMap,
   autoLoad,
   scaleArray,
   deepClone,
