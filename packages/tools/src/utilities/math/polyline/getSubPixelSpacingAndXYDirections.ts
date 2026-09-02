@@ -1,8 +1,9 @@
 import { StackViewport, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
-import computeEffectiveVoxelSpacing from './computeEffectiveVoxelSpacing';
 import getViewportICamera from '../../getViewportICamera';
+
+const { getEffectiveSpacingAlongDirection } = csUtils;
 
 const EPSILON = 1e-3;
 
@@ -88,12 +89,9 @@ const getSubPixelSpacingAndXYDirections = (
       // Oblique plane: viewRight is not aligned with any single volume axis.
       // Compute effective spacing by projecting the view direction onto
       // the volume's voxel grid.
-      xSpacing = computeEffectiveVoxelSpacing(
-        viewRight as unknown as Types.Point3,
-        iVector,
-        jVector,
-        kVector,
-        volumeSpacing
+      xSpacing = getEffectiveSpacingAlongDirection(
+        imageData,
+        viewRight as unknown as Types.Point3
       );
       xDir = Array.from(viewRight) as Types.Point3;
     }
@@ -115,12 +113,9 @@ const getSubPixelSpacingAndXYDirections = (
       yDir = kVector;
     } else {
       // Oblique plane: compute effective spacing along viewUp
-      ySpacing = computeEffectiveVoxelSpacing(
-        normalizedViewUp as unknown as Types.Point3,
-        iVector,
-        jVector,
-        kVector,
-        volumeSpacing
+      ySpacing = getEffectiveSpacingAlongDirection(
+        imageData,
+        normalizedViewUp as unknown as Types.Point3
       );
       yDir = Array.from(normalizedViewUp) as Types.Point3;
     }

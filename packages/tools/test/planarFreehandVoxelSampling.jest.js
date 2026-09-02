@@ -1,7 +1,7 @@
 import PlanarFreehandROITool from '../src/tools/annotation/PlanarFreehandROITool';
 
 /**
- * Tests for PlanarFreehandROI voxel selection via `iterateVoxelsInSlab`.
+ * Tests for PlanarFreehandROI voxel selection via `sampleVoxelsInSlab`.
  *
  * The exactness of the iterator itself is covered exhaustively in
  * `packages/core/test/voxelSlab*.jest.js` against a brute-force reference. What
@@ -12,22 +12,28 @@ import PlanarFreehandROITool from '../src/tools/annotation/PlanarFreehandROITool
  */
 
 /**
- * A vtkImageData-shaped stub carrying only the geometry Rule M needs.
+ * An IImageData-shaped stub carrying only the geometry Rule M needs.
+ *
+ * The geometry sits on the outer object and only `worldToIndex` on the inner
+ * `imageData`, which is exactly the shape both the GPU and the CPU fallback
+ * paths guarantee - the CPU one has no `getOrigin`.
  *
  * @param spacing - mm per voxel per axis
  * @param dimensions - voxel counts per axis
  */
-function createImageData(spacing, dimensions) {
+function createImage(spacing, dimensions) {
   return {
-    getDimensions: () => dimensions,
-    getDirection: () => [1, 0, 0, 0, 1, 0, 0, 0, 1],
-    getSpacing: () => spacing,
-    getOrigin: () => [0, 0, 0],
-    worldToIndex: ([x, y, z]) => [
-      x / spacing[0],
-      y / spacing[1],
-      z / spacing[2],
-    ],
+    dimensions,
+    direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+    spacing,
+    origin: [0, 0, 0],
+    imageData: {
+      worldToIndex: ([x, y, z]) => [
+        x / spacing[0],
+        y / spacing[1],
+        z / spacing[2],
+      ],
+    },
   };
 }
 
@@ -78,7 +84,7 @@ describe('PlanarFreehandROI voxel sampling', () => {
     const points = tool.sampleVoxelsInContour({
       annotation: createAnnotation(0.2),
       points: SQUARE,
-      imageData: createImageData([1, 1, 0.5], [8, 8, 8]),
+      image: createImage([1, 1, 0.5], [8, 8, 8]),
       voxelManager,
     });
 
@@ -106,7 +112,7 @@ describe('PlanarFreehandROI voxel sampling', () => {
     const points = tool.sampleVoxelsInContour({
       annotation: createAnnotation(1),
       points: SQUARE,
-      imageData: createImageData([1, 1, 0.5], [8, 8, 8]),
+      image: createImage([1, 1, 0.5], [8, 8, 8]),
       voxelManager,
     });
 
@@ -130,7 +136,7 @@ describe('PlanarFreehandROI voxel sampling', () => {
     const points = tool.sampleVoxelsInContour({
       annotation: createAnnotation(0.2),
       points: SQUARE,
-      imageData: createImageData([1, 1, 0.5], [8, 8, 8]),
+      image: createImage([1, 1, 0.5], [8, 8, 8]),
       voxelManager,
     });
 
@@ -151,14 +157,14 @@ describe('PlanarFreehandROI voxel sampling', () => {
     const thick = thickTool.sampleVoxelsInContour({
       annotation: createAnnotation(1),
       points: SQUARE,
-      imageData: createImageData([1, 1, 1], [8, 8, 8]),
+      image: createImage([1, 1, 1], [8, 8, 8]),
       voxelManager,
     });
 
     const thin = thinTool.sampleVoxelsInContour({
       annotation: createAnnotation(1),
       points: SQUARE,
-      imageData: createImageData([1, 1, 0.5], [8, 8, 8]),
+      image: createImage([1, 1, 0.5], [8, 8, 8]),
       voxelManager,
     });
 
@@ -173,7 +179,7 @@ describe('PlanarFreehandROI voxel sampling', () => {
     const points = tool.sampleVoxelsInContour({
       annotation: createAnnotation(0.2),
       points: SQUARE,
-      imageData: createImageData([1, 1, 0.5], [8, 8, 8]),
+      image: createImage([1, 1, 0.5], [8, 8, 8]),
       voxelManager,
     });
 
@@ -186,13 +192,43 @@ describe('PlanarFreehandROI voxel sampling', () => {
     }
   });
 
+  it('returns nothing rather than throwing for a degenerate contour', () => {
+    // Fewer than three points is not a region and the shape rejects it. This
+    // runs inside the render loop, so an exception here takes the viewport
+    // down and leaves the shared stats accumulator half filled.
+    const { tool, statsCallback } = createTool({ storePointData: true });
+
+    const degenerate = [
+      undefined,
+      [],
+      [[1, 1, 0]],
+      [
+        [1, 1, 0],
+        [3, 1, 0],
+      ],
+    ];
+
+    for (const points of degenerate) {
+      expect(
+        tool.sampleVoxelsInContour({
+          annotation: createAnnotation(0.2),
+          points,
+          image: createImage([1, 1, 0.5], [8, 8, 8]),
+          voxelManager,
+        })
+      ).toHaveLength(0);
+    }
+
+    expect(statsCallback).not.toHaveBeenCalled();
+  });
+
   it('returns nothing when the volume carries no voxels for the contour', () => {
     const { tool, statsCallback } = createTool({ storePointData: true });
 
     const points = tool.sampleVoxelsInContour({
       annotation: createAnnotation(0.2),
       points: SQUARE,
-      imageData: createImageData([1, 1, 0.5], [8, 8, 8]),
+      image: createImage([1, 1, 0.5], [8, 8, 8]),
       voxelManager: { getAtIJKPoint: () => undefined },
     });
 

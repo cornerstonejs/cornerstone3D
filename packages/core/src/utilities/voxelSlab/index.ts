@@ -46,4 +46,11 @@ export type {
   VoxelSlabIterationOptions,
 } from './iterateVoxelsInSlab';
 
+export { sampleVoxelsInSlab } from './sampleVoxelsInSlab';
+export type {
+  VoxelSlabSample,
+  VoxelSlabSamplingOptions,
+  VoxelSlabValueSource,
+} from './sampleVoxelsInSlab';
+
 export * from './shapes';
