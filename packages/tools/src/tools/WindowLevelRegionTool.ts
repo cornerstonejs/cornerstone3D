@@ -324,14 +324,13 @@ class WindowLevelRegionTool extends AnnotationTool {
     const { data } = annotation;
     const { points } = data.handles;
 
-    const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
-    const startCanvas = canvasCoordinates[0];
-    const endCanvas = canvasCoordinates[3];
+    const startImage = imageData.worldToImage(points[0]);
+    const endImage = imageData.worldToImage(points[3]);
 
-    let left = Math.min(startCanvas[0], endCanvas[0]);
-    let top = Math.min(startCanvas[1], endCanvas[1]);
-    let width = Math.abs(startCanvas[0] - endCanvas[0]);
-    let height = Math.abs(startCanvas[1] - endCanvas[1]);
+    let left = Math.min(startImage[0], endImage[0]);
+    let top = Math.min(startImage[1], endImage[1]);
+    let width = Math.abs(startImage[0] - endImage[0]);
+    let height = Math.abs(startImage[1] - endImage[1]);
 
     left = utilities.clip(left, 0, imageData.width);
     top = utilities.clip(top, 0, imageData.height);
