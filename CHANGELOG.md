@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.8.9](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.8...v5.8.9) (2026-09-03)
+
+### Bug Fixes
+
+- **security:** Patch browserslist and fast-uri security vulnerabilities ([#2896](https://github.com/cornerstonejs/cornerstone3D/issues/2896)) ([0a77bb8](https://github.com/cornerstonejs/cornerstone3D/commit/0a77bb8574aa6543afdb2c57d1abf9722713c40c))
+
 ## [5.8.8](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.7...v5.8.8) (2026-09-02)
 
 ### Bug Fixes
