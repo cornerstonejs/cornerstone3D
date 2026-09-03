@@ -8,6 +8,7 @@ overrides:
   '@babel/helper-create-class-features-plugin': 7.28.3
   '@babel/helper-compilation-targets': 7.29.7
   caniuse-lite: 1.0.30001767
+  browserslist@<4.28.7: 4.28.7
   axios: 1.18.1
   buffer: 6.0.3
   node-forge: 1.4.0
@@ -28,7 +29,7 @@ overrides:
   handlebars: 4.7.9
   path-to-regexp: 0.1.13
   protobufjs: 7.6.1
-  fast-uri@>=3.0.0 <3.1.5: 3.1.5
+  fast-uri@>=3.0.0 <3.1.6: 3.1.6
   tmp: 0.2.7
   make-fetch-happen: 15.0.5
   webpack: 5.105.0
@@ -54,7 +55,6 @@ overrides:
   ip-address@<10.5.0: 10.5.0
   nx@>=20.8.0 <22.7.8: 22.7.8
   pacote@>=11.2.7 <21.5.1: 21.5.1
-  browserslist@<4.28.7: 4.28.7
 
 importers:
   .:
@@ -421,10 +421,10 @@ importers:
         version: 1.0.19
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.8.7
+        specifier: 5.8.9
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.8.7
+        specifier: 5.8.9
         version: link:../tools
 
   packages/ai:
@@ -455,10 +455,10 @@ importers:
         version: 1.17.1
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.8.7
+        specifier: 5.8.9
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.8.7
+        specifier: 5.8.9
         version: link:../tools
 
   packages/codemods: {}
@@ -466,7 +466,7 @@ importers:
   packages/core:
     dependencies:
       '@cornerstonejs/utils':
-        specifier: 5.8.7
+        specifier: 5.8.9
         version: link:../utils
       '@kitware/vtk.js':
         specifier: 36.4.1
@@ -482,7 +482,7 @@ importers:
         version: 1.9.2
     devDependencies:
       '@cornerstonejs/metadata':
-        specifier: 5.8.7
+        specifier: 5.8.9
         version: link:../metadata
 
   packages/dicomImageLoader:
@@ -516,10 +516,10 @@ importers:
         version: 9.0.1
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.8.7
+        specifier: 5.8.9
         version: link:../core
       '@cornerstonejs/metadata':
-        specifier: 5.8.7
+        specifier: 5.8.9
         version: link:../metadata
 
   packages/docs:
@@ -617,10 +617,10 @@ importers:
         version: 1.0.0-b.165
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.8.7
+        specifier: 5.8.9
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.8.7
+        specifier: 5.8.9
         version: link:../tools
 
   packages/metadata:
@@ -629,7 +629,7 @@ importers:
         specifier: 1.0.3
         version: 1.0.3
       '@cornerstonejs/utils':
-        specifier: 5.8.7
+        specifier: 5.8.9
         version: link:../utils
       dcmjs:
         specifier: 0.52.0
@@ -645,7 +645,7 @@ importers:
         version: 0.6.9
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.8.7
+        specifier: 5.8.9
         version: link:../core
 
   packages/polymorphic-segmentation:
@@ -658,10 +658,10 @@ importers:
         version: 36.4.1(autoprefixer@10.4.21(postcss@8.5.26))(wslink@2.5.0)
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.8.7
+        specifier: 5.8.9
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.8.7
+        specifier: 5.8.9
         version: link:../tools
 
   packages/tools:
@@ -698,7 +698,7 @@ importers:
         version: 4.4.2
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.8.7
+        specifier: 5.8.9
         version: link:../core
       canvas:
         specifier: 3.2.0
@@ -9459,10 +9459,10 @@ packages:
     engines: { node: '>=0.12.18' }
     hasBin: true
 
-  electron-to-chromium@1.5.416:
+  electron-to-chromium@1.5.418:
     resolution:
       {
-        integrity: sha512-K6bvB2BjnNrugtIih6ewlbBI9DXa976jIdiIlRLHhBoEI9a4JaQjjHyF+A1IQI543aQYR4LnmOrT/K5fZj0aPA==,
+        integrity: sha512-UzS26r3AEbG5wSoGVpJKqwHIU9zwQN7LHdVIThDrJpS0I5KdlXFMEb8543fhc9dVnIIAST6ar8rhwa00AL5MlA==,
       }
 
   emittery@0.13.1:
@@ -10203,10 +10203,10 @@ packages:
         integrity: sha512-lhd/wF+Lk98HZoTCtlVraHtfh5XYijIjalXck7saUtuanSDyLMxnHhSXEDJqHxD7msR8D0uCmqlkwjCV8xvwHw==,
       }
 
-  fast-uri@3.1.5:
+  fast-uri@3.1.6:
     resolution:
       {
-        integrity: sha512-gHwA1O9LDIcKunMKhObS/HimwtehO1nPUECKAu5TpKgaO19fcWEl4bliWe1jWxVFvIXztJjjQ4L8XQ1EU9f7Jw==,
+        integrity: sha512-7Ical1vFEMr0onbVzEDIreM22I4khW+fzyQPwvAFWBp1iwdshSZRsL4jjRvPG9JP1uiqMHRto+YU6R2/CzDz5Q==,
       }
 
   fastest-levenshtein@1.0.16:
@@ -25222,14 +25222,14 @@ snapshots:
   ajv@8.18.0:
     dependencies:
       fast-deep-equal: 3.1.3
-      fast-uri: 3.1.5
+      fast-uri: 3.1.6
       json-schema-traverse: 1.0.0
       require-from-string: 2.0.2
 
   ajv@8.20.0:
     dependencies:
       fast-deep-equal: 3.1.3
-      fast-uri: 3.1.5
+      fast-uri: 3.1.6
       json-schema-traverse: 1.0.0
       require-from-string: 2.0.2
 
@@ -25654,7 +25654,7 @@ snapshots:
     dependencies:
       baseline-browser-mapping: 2.11.20
       caniuse-lite: 1.0.30001767
-      electron-to-chromium: 1.5.416
+      electron-to-chromium: 1.5.418
       node-releases: 2.0.54
       update-browserslist-db: 1.2.3(browserslist@4.28.7)
 
@@ -26831,7 +26831,7 @@ snapshots:
 
   ejs@5.0.1: {}
 
-  electron-to-chromium@1.5.416: {}
+  electron-to-chromium@1.5.418: {}
 
   emittery@0.13.1: {}
 
@@ -27263,7 +27263,7 @@ snapshots:
 
   fast-json-stable-stringify@2.1.0: {}
 
-  fast-uri@3.1.5: {}
+  fast-uri@3.1.6: {}
 
   fastest-levenshtein@1.0.16: {}
 
