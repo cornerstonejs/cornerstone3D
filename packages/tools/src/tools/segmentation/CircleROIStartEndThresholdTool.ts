@@ -110,28 +110,34 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     }
   }
 
-  protected getTargetId(
-    viewport: Types.IBaseVolumeViewport
-  ): string | undefined {
-    const { isPreferredTargetId } = this.configurationTyped; // Get preferred ID from config
+  /**
+   * Resolves the volume this tool measures on the given viewport, together
+   * with the targetId its statistics are cached under.
+   *
+   * The target is chosen by the inherited {@link BaseTool.getTargetId}, so it
+   * honours the `targetsFilter`/`targetPredicate` tool configuration (see
+   * `measurementTargetFilters`): on a fusion viewport, configuring
+   * `firstPixelData` with `forModality('PT')` measures the PT volume rather
+   * than the viewport's default (first) one.  Without a configured filter the
+   * viewport's default view reference is used, as before.
+   *
+   * @param viewport - the viewport to resolve the target on
+   * @param data - the annotation data, so an existing cachedStats key for the
+   *   same volume is reused rather than a second one created
+   * @returns the targetId and its cached volume, or undefined when a
+   *   configured filter selects no target on this viewport (eg a PT only
+   *   filter on a CT viewport) or the volume is no longer cached
+   */
+  protected getTargetVolume(
+    viewport: Types.IViewport,
+    data?: CircleROIStartEndThresholdAnnotation['data']
+  ): { targetId: string; imageVolume: Types.IImageVolume } | undefined {
+    const targetId = this.getTargetId(viewport, data);
+    const imageVolume = targetId
+      ? cache.getVolume(csUtils.getVolumeId(targetId))
+      : undefined;
 
-    // Check if cachedStats is available and contains the preferredVolumeId
-    if (isPreferredTargetId) {
-      for (const volumeId of viewport.getAllVolumeIds()) {
-        if (isPreferredTargetId(viewport, { targetId: volumeId }))
-          return 'volumeId:' + volumeId;
-      }
-    }
-
-    // If not found or not applicable, use the viewport's default method
-    const defaultTargetId = viewport.getViewReferenceId?.();
-    if (defaultTargetId) {
-      return defaultTargetId;
-    }
-
-    throw new Error(
-      'getTargetId: viewport must have a getViewReferenceId method'
-    );
+    return imageVolume ? { targetId, imageVolume } : undefined;
   }
 
   /**
@@ -159,9 +165,14 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     if (viewport instanceof StackViewport) {
       throw new Error('Stack Viewport Not implemented');
     } else {
-      const targetId = this.getTargetId(viewport);
-      volumeId = csUtils.getVolumeId(targetId);
-      imageVolume = cache.getVolume(volumeId);
+      const target = this.getTargetVolume(viewport);
+      if (!target) {
+        throw new Error(
+          `${this.getToolName()}: no measurement target on this viewport - check the targetsFilter configuration`
+        );
+      }
+      volumeId = csUtils.getVolumeId(target.targetId);
+      imageVolume = target.imageVolume;
 
       referencedImageId = csUtils.getClosestImageId(
         imageVolume,
@@ -318,15 +329,19 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       removeAnnotation(annotation.annotationUID);
     }
 
-    const targetId = this.getTargetId(enabledElement.viewport);
-    const imageVolume = cache.getVolume(targetId.split(/volumeId:|\?/)[1]);
-
-    this._computePointsInsideVolume(
-      annotation,
-      imageVolume,
-      targetId,
-      enabledElement
+    const target = this.getTargetVolume(
+      enabledElement.viewport,
+      annotation.data as CircleROIStartEndThresholdAnnotation['data']
     );
+
+    if (target) {
+      this._computePointsInsideVolume(
+        annotation,
+        target.imageVolume,
+        target.targetId,
+        enabledElement
+      );
+    }
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
@@ -459,8 +474,9 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
       // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
       const iteratorVolumeIDs =
-        // @ts-ignore
-        annotationEnabledElement.viewport?.volumeIds.values();
+        (
+          annotationEnabledElement.viewport as Types.IVolumeViewport
+        )?.getAllVolumeIds?.() ?? [];
 
       for (const volumeId of iteratorVolumeIDs) {
         if (
@@ -819,8 +835,13 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const { viewport } = enabledElement;
 
     const { cachedStats } = data;
-    const targetId = this.getTargetId(viewport);
-    const imageVolume = cache.getVolume(targetId.split(/volumeId:|\?/)[1]);
+    const target = this.getTargetVolume(viewport, data);
+
+    if (!target) {
+      return cachedStats;
+    }
+
+    const { targetId, imageVolume } = target;
 
     // Todo: this shouldn't be here, this is a performance issue
     // Since we are extending the RectangleROI class, we need to

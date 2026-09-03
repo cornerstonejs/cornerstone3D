@@ -32,6 +32,7 @@ const {
   ZoomTool,
   StackScrollTool,
   annotation,
+  measurementTargetFilters,
 } = cornerstoneTools;
 
 const { selection } = annotation;
@@ -377,13 +378,6 @@ async function run() {
   toolGroup.addTool(ZoomTool.toolName);
   toolGroup.addTool(StackScrollTool.toolName);
 
-  const isPreferredTargetId = (
-    viewport: any,
-    targetInfo: { targetId: string; cachedState: any }
-  ) => {
-    return targetInfo.targetId.includes('PT_');
-  };
-
   // Segmentation Tools
   toolGroup.addTool(RectangleROIStartEndThresholdTool.toolName, {
     /* Define if the stats are calculated while drawing the annotation or at the end */
@@ -392,7 +386,15 @@ async function run() {
     storePointData: true,
     /*Set a custom wait time */
     throttleTimeout: 100,
-    isPreferredTargetId,
+    // The viewports below fuse CT and PT, and the threshold statistics must
+    // come from the PT volume rather than from the viewport's default (first)
+    // one, which is the CT.  The `firstPixelData` chooser takes the first
+    // eligible candidate and the `forModality` predicate narrows eligibility
+    // to PT; `measurementTargetFilters.forId(ptVolumeId)` would select the
+    // same volume by id instead.  This tool measures a single target, so the
+    // `allPixelData` chooser would behave the same here.
+    targetsFilter: measurementTargetFilters.firstPixelData,
+    targetPredicate: measurementTargetFilters.forModality('PT'),
   });
 
   toolGroup.setToolActive(RectangleROIStartEndThresholdTool.toolName, {
