@@ -55,6 +55,7 @@ export function applyPlanarVolumePresentation(args: {
     colormap: props?.colormap,
     invert: props?.invert,
     voiRange,
+    voiLUTFunction: props?.voiLUTFunction,
   });
 
   property.setUseLookupTableScalarRange(true);
