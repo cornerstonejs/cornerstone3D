@@ -5,6 +5,7 @@ import {
   StackViewport,
   VolumeViewport,
 } from '@cornerstonejs/core';
+import { vec3 } from 'gl-matrix';
 
 function extractWindowLevelRegionToolData(viewport: Types.IViewport) {
   if (viewport instanceof VolumeViewport) {
@@ -25,8 +26,9 @@ function extractWindowLevelRegionToolData(viewport: Types.IViewport) {
 }
 
 function extractImageDataVolume(viewport: Types.IVolumeViewport) {
-  const { scalarData, width, height } =
+  const { scalarData, width, height, indexToSliceMatrix } =
     csUtils.getCurrentVolumeViewportSlice(viewport);
+  const imageData = viewport.getImageData().imageData;
   const { min: minPixelValue, max: maxPixelValue } =
     csUtils.getMinMax(scalarData);
   return {
@@ -37,6 +39,19 @@ function extractImageDataVolume(viewport: Types.IVolumeViewport) {
     height,
     rows: width,
     columns: height,
+    worldToImage: (worldPoint: Types.Point3): Types.Point2 => {
+      const indexPoint = csUtils.transformWorldToIndexContinuous(
+        imageData,
+        worldPoint
+      );
+      const slicePoint = vec3.transformMat4(
+        [0, 0, 0],
+        indexPoint,
+        indexToSliceMatrix
+      );
+
+      return [slicePoint[0], slicePoint[1]];
+    },
     // color,
   };
 }
@@ -59,6 +74,14 @@ function extractImageDataStack(viewport: Types.IStackViewport) {
     rows,
     columns,
     color,
+    worldToImage: (worldPoint: Types.Point3): Types.Point2 => {
+      const indexPoint = csUtils.transformWorldToIndexContinuous(
+        imageData,
+        worldPoint
+      );
+
+      return [indexPoint[0], indexPoint[1]];
+    },
   };
 }
 
@@ -89,6 +112,14 @@ function extractImageDataGeneric(viewport: Types.IGenericViewport) {
   const { rows, columns, color } = image;
   const { min: minPixelValue, max: maxPixelValue } =
     csUtils.getMinMax(scalarData);
+  const worldToImage = (worldPoint: Types.Point3): Types.Point2 => {
+    const imagePoint = csUtils.worldToImageCoords(imageId, worldPoint);
+    if (!imagePoint) {
+      throw new Error('Viewport not supported');
+    }
+
+    return [imagePoint[0], imagePoint[1]];
+  };
 
   return {
     scalarData,
@@ -99,6 +130,7 @@ function extractImageDataGeneric(viewport: Types.IGenericViewport) {
     rows,
     columns,
     color,
+    worldToImage,
   };
 }
 
