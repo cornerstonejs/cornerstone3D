@@ -255,7 +255,6 @@ const configHtj2kByteRange = {
     multipleFast: {
       ...htj2kFrames,
       rangeIndex: 0,
-      chunkSize: 32 * 1024,
       decodeLevel: 0,
     },
   },
@@ -273,7 +272,6 @@ const configHtj2kLossy = {
       imageQualityStatus: ImageQualityStatus.LOSSY,
       framesPath: '/htj2kLossy/',
       rangeIndex: 0,
-      chunkSize: 32 * 1024,
       decodeLevel: 0,
     },
   },
@@ -286,7 +284,6 @@ const configHtj2kMixed = {
     multipleFast: {
       ...htj2kFrames,
       rangeIndex: 0,
-      chunkSize: 32 * 1024,
       decodeLevel: 0,
     },
     multipleFinal: {

@@ -180,7 +180,6 @@ const configHtj2kByteRange = {
     multipleFast: {
       ...htj2kFrames,
       rangeIndex: 0,
-      chunkSize: 32 * 1024,
       decodeLevel: 0,
     },
     multipleFinal: {

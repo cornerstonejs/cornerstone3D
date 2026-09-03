@@ -149,6 +149,11 @@ const htj2kProgressiveOptions = {
 // rather than throwing, so the sub-resolution fallback ladder this used to
 // carry is gone, and the first image is full size instead of a quarter-size
 // decode scaled back up.
+//
+// The pacing is left at its defaults here: `initialChunkSize` 32k for the
+// first range, `chunkSize` 128k for each range after it, and `msBetweenDecode`
+// 500 so a fast connection refines at a readable rate rather than decoding
+// every chunk. Any of the three can be set per retrieve type.
 const htj2kByteRanges = {
   stages: [
     {
@@ -169,7 +174,6 @@ const htj2kByteRanges = {
     singleFast: {
       ...htj2kFrames,
       decodeLevel: 0,
-      chunkSize: 32 * 1024,
       rangeIndex: 0,
     },
     // Note how the range increases significantly to get much more data

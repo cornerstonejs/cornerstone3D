@@ -121,6 +121,36 @@ export interface BaseRetrieveOptions {
    * complete image is lossy, this should be set to LOSSY.
    */
   imageQualityStatus?: ImageQualityStatus;
+
+  /**
+   * Bytes to accumulate between decodes of a partial image, after the initial
+   * one.  Defaults to 131,072 (128kb).
+   *
+   * For a range retrieve this is the size of each range after the first, which
+   * uses `initialChunkSize` instead.  For a streaming retrieve it is how much
+   * new data has to arrive before the partial codestream is decoded again.
+   *
+   * A partial image is decoded once per chunk at most, so this is the main
+   * control over how much work a large frame does on its way to complete: 128kb
+   * chunks decode an 8MB frame about 60 times if nothing else intervenes, which
+   * is why `msBetweenDecode` also applies.
+   */
+  chunkSize?: number | ((metadata) => number);
+
+  /**
+   * Minimum milliseconds between two decodes of the same partial image.
+   * Defaults to 500.
+   *
+   * Decoding is far more expensive than receiving, so on a fast connection or
+   * a large frame the chunk size alone lets the decoder run continuously
+   * without the display gaining anything from it.  This throttles that to a
+   * readable refresh rate.  A completed image is always decoded, however
+   * recently the last partial decode ran, so this only ever delays intermediate
+   * versions and never the final one.
+   *
+   * Set to 0 to decode on every chunk.
+   */
+  msBetweenDecode?: number;
 }
 
 /**
@@ -144,11 +174,16 @@ export type RangeRetrieveOptions = BaseRetrieveOptions & {
   rangeIndex: number;
 
   /**
-   * byte range value to retrieve for initial decode
-   * Defaults to 32,768 bytes, which is enough of an HTJ2K codestream to decode
-   * a usable full resolution image.
+   * Byte range to retrieve for the first decode, at `rangeIndex` 0.
+   * Defaults to 32,768 bytes (32kb).
+   *
+   * 32kb is enough of an HTJ2K codestream to decode a usable full resolution
+   * image, and the decoder tolerates the truncated remainder, so there is no
+   * reason to buy a larger buffer before putting something on screen.  Later
+   * ranges use `chunkSize` instead, which is larger because by then the point
+   * is refinement rather than time to first image.
    */
-  chunkSize?: number | ((metadata) => number);
+  initialChunkSize?: number | ((metadata) => number);
 };
 
 /**

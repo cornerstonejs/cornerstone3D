@@ -238,7 +238,6 @@ const htj2kMixedOptions = {
     singleFast: {
       ...htj2kFrames,
       decodeLevel: 0,
-      chunkSize: 32 * 1024,
       rangeIndex: 0,
     },
     // Note how the rangeIndex increases significantly to get much more data

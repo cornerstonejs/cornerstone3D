@@ -12,6 +12,12 @@ import type {
 const { ProgressiveIterator } = utilities;
 
 /**
+ * Bytes to accumulate between decodes of a streaming response, when the
+ * retrieve options set no chunkSize. Matches the range retrieve default.
+ */
+const DEFAULT_CHUNK_SIZE = 131072;
+
+/**
  * This function does a streaming parse from an http request, delivering
  * combined/subsequent parts of the result as iterations on a
  * ProgressiveIterator instance.
@@ -33,8 +39,13 @@ export default function streamRequest(
     streamingData = {} as StreamingData,
   } = options;
 
-  // @ts-expect-error
-  const minChunkSize = retrieveOptions.minChunkSize || 128 * 1024;
+  // How much new data to accumulate before decoding the partial codestream
+  // again. `minChunkSize` is the former name for this and is still honoured.
+  const minChunkSize =
+    (retrieveOptions.chunkSize as number) ||
+    // @ts-expect-error deprecated alias for chunkSize
+    retrieveOptions.minChunkSize ||
+    DEFAULT_CHUNK_SIZE;
 
   const errorInterceptor = (err) => {
     if (typeof globalOptions.errorInterceptor === 'function') {

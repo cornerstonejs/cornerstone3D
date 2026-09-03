@@ -243,32 +243,54 @@ Two notes on scope:
   viewport drags to scroll, add padding, a scroll container, or a gutter outside
   the viewport elements so the page remains scrollable on a phone or tablet.
 
-## Progressive loading: 32kb default range, full resolution partial HTJ2K decode
+## Progressive loading: split chunk sizes, decode throttle, full resolution partial HTJ2K decode
 
 ### What Changed
 
-Two related changes to progressive retrieval:
+Progressive retrieval now separates the first range from the ones that follow,
+and paces decoding on a clock:
 
-- The default `chunkSize` for a range retrieve dropped from 64kb (65536 bytes)
-  to 32kb (32768 bytes). This applies to **any** range retrieve that does not
-  set its own `chunkSize`, not only HTJ2K ones.
-- Setting `decodeLevel: 0` on a partial (byte range or streaming) retrieve now
-  means "decode at full resolution from whatever bytes have arrived" rather
-  than picking a reduced level from how much of the frame is present. The
-  resulting image is reported as `LOSSY` instead of `SUBRESOLUTION`, since it
-  is full size and only the codestream is incomplete.
+- **`initialChunkSize`** (new, default 32kb) is the byte range fetched for the
+  first decode, at `rangeIndex` 0.
+- **`chunkSize`** (default 128kb) is now the size of each range _after_ the
+  first, and for a streaming retrieve how much new data has to arrive before
+  the partial codestream is decoded again. It previously meant the initial
+  range, and defaulted to 64kb.
+- **`msBetweenDecode`** (new, default 500) is the minimum time between two
+  decodes of the same partial image. A completed image is always decoded, so
+  this only ever delays intermediate versions.
 
-Both rest on `@cornerstonejs/codec-openjph` 2.4.10, which decodes a truncated
-HTJ2K codestream instead of throwing on it. The codec is a pinned dependency of
-`@cornerstonejs/dicom-image-loader`, so a normal install already gets it.
+Range boundaries follow from the first two: the end of range `n` is at
+`initialChunkSize + n * chunkSize`, where it used to be `chunkSize * (n + 1)`.
+
+Separately, setting `decodeLevel: 0` on a partial retrieve now means "decode at
+full resolution from whatever bytes have arrived" rather than picking a reduced
+level from how much of the frame is present. The resulting image is reported as
+`LOSSY` instead of `SUBRESOLUTION`, since it is full size and only the
+codestream is incomplete. This rests on `@cornerstonejs/codec-openjph` 2.4.10,
+which decodes a truncated HTJ2K codestream instead of throwing on it. The codec
+is a pinned dependency of `@cornerstonejs/dicom-image-loader`, so a normal
+install already gets it.
 
 ### Why This Matters
 
-The smaller default is right for HTJ2K, where 32kb is enough to decode a usable
-full resolution image, and a full resolution decode of a partial stream loses
-much less than decoding a quarter-size image and scaling it back up. For other
-transfer syntaxes a third less data may not be enough for the level being asked
-for, and that shows up as a quality change rather than an error.
+**The rename is the breaking part.** A configuration that sets `chunkSize` to
+size its _first_ range still compiles and still runs, but now sizes every range
+after the first instead, leaving the initial range at the 32kb default. If you
+had `chunkSize: 256000` to get a large first fetch, you now get 32kb first and
+256kb increments after it.
+
+The two sizes differ because they buy different things: the first range is
+buying time to first image, where 32kb of HTJ2K is enough for a usable full
+resolution decode, and later ranges are buying refinement, where small steps
+only mean more requests for the same result. For transfer syntaxes that cannot
+decode a truncated stream, a 32kb first range may not be enough for the level
+being asked for, and that surfaces as a quality change rather than an error.
+
+`msBetweenDecode` exists because chunk size alone does not bound decoding cost.
+On a fast connection 128kb arrives in a few milliseconds, so a large frame would
+decode dozens of times on its way to complete — work that costs far more than
+the receive it is keeping up with, and that no display can show.
 
 The codec floor is not optional. A consumer who dedupes `codec-openjph` to a
 version older than 2.4.10 — via an override, a resolution, or a hoisted older
@@ -279,8 +301,12 @@ fails.
 
 ### Migration Guidance
 
-- **Set `chunkSize` explicitly** on any range retrieve configuration tuned
-  around the old 64kb default, particularly non-HTJ2K ones.
+- **Rename `chunkSize` to `initialChunkSize`** anywhere it was sizing the first
+  range — which is what it always meant before this change.
+- **Set `chunkSize` explicitly** if you want the later ranges at something other
+  than 128kb, particularly for non-HTJ2K syntaxes.
+- **Raise or zero `msBetweenDecode`** if 500ms is not the refresh rate you want;
+  0 decodes on every chunk, as before.
 - **Check for a pinned older openjph.** If your lockfile resolves
   `@cornerstonejs/codec-openjph` below 2.4.10, remove the pin or raise it.
 - **Prefer `decodeLevel: 0` for HTJ2K partial retrieves,** and keep

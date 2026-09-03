@@ -148,8 +148,21 @@ as soon as possible.
 
 #### Options
 
-- `chunkSize`: byte range value to retrieve for initial decode (default is 32kb).
-  Ignored for all but the first range request (regardless of rangeIndex).
+- `initialChunkSize`: byte range to retrieve for the first decode, at
+  `rangeIndex` 0 (default is 32kb). Small on purpose: 32kb is enough of an
+  HTJ2K codestream to decode a usable full resolution image, so it is the
+  shortest path to something on screen.
+- `chunkSize`: bytes added by each range after the first (default is 128kb).
+  Larger than the initial range because by then the image is already displayed
+  and the job is refining it, so fetching the remainder in 32kb steps would
+  only mean more requests and more decodes for the same result.
+- `msBetweenDecode`: minimum milliseconds between two decodes of the same
+  partial image (default is 500). Chunk size bounds how often data arrives, but
+  on a fast connection that still outruns what a display can use - decoding is
+  far more expensive than receiving - so this throttles refinement to a
+  readable rate. A completed image is always decoded, so this only ever delays
+  intermediate versions, never the final one. Set to 0 to decode on every
+  chunk.
 - `rangeIndex`: is the range number (index) that you want to fetch, -1 for remaining data
 
 Note that there is no guarantee that the rangeIndex will actually fetch another
@@ -178,7 +191,7 @@ For instance for the options of
 ```js
 {
   rangeIndex: 0,
-  chunkSize: 256000, // 256kb
+  initialChunkSize: 256000, // 256kb
 }
 ```
 
@@ -192,7 +205,7 @@ another example
   decodeLevel: 3
 }
 
-// chunkSize is default 32kb
+// initialChunkSize is default 32kb
 ```
 
 ![](../../assets/range-0-decode-3.png)
@@ -201,12 +214,17 @@ another example
 You can fetch the remaining data by using `rangeIndex: -1`.
 In addition, `rangeIndex = 0` will always be the first chunk.
 
-For instance, if you have 4 ranges, then your ranges would be
+Range 0 covers `initialChunkSize` and every range after it adds a full
+`chunkSize`, so the end of range `n` is at
+`initialChunkSize + n * chunkSize`. A stage always starts from the data
+already retrieved, so skipping indices simply fetches a larger span.
 
-- `rangeIndex 0`: `0` to `chunkSize-1` (in bytes)
-- `rangeIndex 5`: `chunkSize` to `5 * chunkSize-1` (in bytes)
-- `rangeIndex 25`: `5 * chunkSize` to `25 * chunkSize-1` (in bytes)
-- `rangeIndex -1`: `25 * chunkSize` to `totalSize` (in bytes) - the rest of the data
+For instance, with the defaults (32kb initial, 128kb thereafter):
+
+- `rangeIndex 0`: `0` to `32k-1` (in bytes)
+- `rangeIndex 5`: `32k` to `32k + 5*128k - 1` (in bytes)
+- `rangeIndex 25`: `32k + 5*128k` to `32k + 25*128k - 1` (in bytes)
+- `rangeIndex -1`: `32k + 25*128k` to `totalSize` (in bytes) - the rest of the data
 
 This use of rangeIndex allows retrieving larger increments to agree with the
 amount of data required for decodeLevel values.

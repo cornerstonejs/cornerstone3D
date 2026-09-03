@@ -12,13 +12,24 @@ import type { CornerstoneWadoRsLoaderOptions } from '../wadors/loadImage';
 type RangeRetrieveOptions = Types.RangeRetrieveOptions;
 
 /**
- * Bytes fetched by a range stage that does not configure its own chunkSize.
+ * Bytes fetched by the first range, when the stage sets no initialChunkSize.
  *
  * 32k is enough of an HTJ2K codestream to decode a recognisable full
  * resolution image, and OpenJPH decodes the truncated remainder rather than
- * throwing, so there is no reason to buy a larger initial buffer.
+ * throwing, so there is no reason to buy a larger buffer before showing
+ * something.
  */
-const DEFAULT_CHUNK_SIZE = 32768;
+const DEFAULT_INITIAL_CHUNK_SIZE = 32768;
+
+/**
+ * Bytes fetched by each range after the first, when the stage sets no
+ * chunkSize.
+ *
+ * Larger than the initial range because by this point the image is already on
+ * screen and the job is refining it: fetching the remainder in 32k steps would
+ * mean many more requests and decodes for the same result.
+ */
+const DEFAULT_CHUNK_SIZE = 131072;
 
 /**
  * Performs a range request to fetch part of an encoded image, typically
@@ -56,6 +67,10 @@ export default function rangeRequest(
     streamingData.chunkSize ||
     getValue(imageId, retrieveOptions, 'chunkSize') ||
     DEFAULT_CHUNK_SIZE;
+  const initialChunkSize =
+    streamingData.initialChunkSize ||
+    getValue(imageId, retrieveOptions, 'initialChunkSize') ||
+    DEFAULT_INITIAL_CHUNK_SIZE;
 
   const errorInterceptor = (err) => {
     if (typeof globalOptions.errorInterceptor === 'function') {
@@ -89,6 +104,7 @@ export default function rangeRequest(
     try {
       if (!streamingData.encodedData) {
         streamingData.chunkSize = chunkSize;
+        streamingData.initialChunkSize = initialChunkSize;
         streamingData.rangesFetched = 0;
       }
       const byteRange = getByteRange(streamingData, retrieveOptions);
@@ -196,6 +212,22 @@ function getValue(imageId: string, src, attr: string) {
   return value(metaData, imageId);
 }
 
+/**
+ * End offset, exclusive, of the range identified by rangeIndex.
+ *
+ * Range 0 covers the initial chunk and every range after it adds a full
+ * chunkSize, so the boundaries are 32k, 160k, 288k ... on the defaults. The
+ * two sizes differ because the first range is buying time to first image and
+ * the rest are buying refinement.
+ */
+function rangeEndOffset(
+  rangeIndex: number,
+  initialChunkSize: number,
+  chunkSize: number
+) {
+  return initialChunkSize + rangeIndex * chunkSize;
+}
+
 function getByteRange(
   streamingData,
   retrieveOptions: RangeRetrieveOptions
@@ -204,6 +236,7 @@ function getByteRange(
     totalBytes,
     encodedData,
     chunkSize = DEFAULT_CHUNK_SIZE,
+    initialChunkSize = DEFAULT_INITIAL_CHUNK_SIZE,
   } = streamingData;
   const { rangeIndex = 0 } = retrieveOptions;
   if (rangeIndex === -1 && (!totalBytes || !encodedData)) {
@@ -214,5 +247,8 @@ function getByteRange(
   }
   // Note the byte range is inclusive at both ends and zero based,
   // so the byteLength is the next index to fetch.
-  return [encodedData?.byteLength || 0, chunkSize * (rangeIndex + 1) - 1];
+  return [
+    encodedData?.byteLength || 0,
+    rangeEndOffset(rangeIndex, initialChunkSize, chunkSize) - 1,
+  ];
 }

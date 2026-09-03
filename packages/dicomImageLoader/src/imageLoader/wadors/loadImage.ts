@@ -13,12 +13,15 @@ import type { DICOMLoaderIImage, DICOMLoaderImageOptions } from '../../types';
 const { ProgressiveIterator } = utilities;
 const { ImageQualityStatus } = Enums;
 /**
- * How much the retrieved codestream has to grow before an incomplete frame is
- * decoded again at full resolution. Half as much again is enough to be visible
- * while keeping the number of decodes logarithmic in the frame size rather than
- * linear in the number of network chunks.
+ * Minimum milliseconds between two decodes of the same partial image, when the
+ * retrieve options do not set `msBetweenDecode`.
+ *
+ * Chunk size bounds how often new data arrives, but on a fast connection that
+ * still outruns what a display can use: decoding is much more expensive than
+ * receiving, so without a clock the decoder runs continuously and the extra
+ * frames are never seen. 500ms is a readable refresh rate.
  */
-const REDECODE_GROWTH_FACTOR = 1.5;
+const DEFAULT_MS_BETWEEN_DECODE = 500;
 
 const streamableTransferSyntaxes = new Set<string>([
   // Private HTJ2K
@@ -102,6 +105,7 @@ export interface StreamingData {
   // Some values used by instances of streaming data for range
   totalBytes?: number;
   chunkSize?: number;
+  initialChunkSize?: number;
   totalRanges?: number;
   rangesFetched?: number;
 }
@@ -179,7 +183,7 @@ function loadImageFromNetwork(
         getPixelData(imageURI, imageId, mediaType, options)
       );
       let lastDecodeLevel = 10;
-      let lastDecodedLength = 0;
+      let lastDecodeTime = 0;
       for await (const result of compressedIt) {
         const {
           pixelData,
@@ -211,8 +215,11 @@ function loadImageFromNetwork(
             done,
             decodeLevel,
             lastDecodeLevel,
-            encodedLength: pixelData?.length ?? 0,
-            lastDecodedLength,
+            lastDecodeTime,
+            now: Date.now(),
+            msBetweenDecode:
+              options.retrieveOptions?.msBetweenDecode ??
+              DEFAULT_MS_BETWEEN_DECODE,
           })
         ) {
           // No point trying again yet
@@ -240,7 +247,9 @@ function loadImageFromNetwork(
           // The iteration is done even if the image itself isn't done yet
           it.add(image, done);
           lastDecodeLevel = decodeLevel;
-          lastDecodedLength = pixelData?.length ?? 0;
+          // Timed from the end of the decode, so a decode slower than the
+          // interval does not immediately qualify the next chunk.
+          lastDecodeTime = Date.now();
         } catch (e) {
           if (extractDone) {
             console.warn("Couldn't decode", e);
@@ -273,41 +282,53 @@ function loadImageFromNetwork(
 /**
  * Decides whether an incomplete frame is worth decoding again.
  *
- * A sub-resolution decode is only worth repeating when the level itself
- * improves - decoding the same level twice produces the same image. At full
- * resolution the level never changes, so the brake has to be how much new
- * codestream has arrived instead. Without one, a large frame would decode once
- * per network chunk: an 8MB frame arriving in 128k reads is ~64 full frame
- * decodes and renders, each allocating a fresh buffer. Requiring the
- * codestream to grow by REDECODE_GROWTH_FACTOR each time makes that
- * logarithmic - ~10 decodes for the same frame - while keeping the refinement
- * that makes full resolution partial decoding worth doing.
+ * Two brakes apply, because they bound different things:
  *
- * A finished frame is always decoded, whatever the growth.
+ * * How much new data arrived, which is the chunk size. That is applied
+ *   upstream - a range retrieve fetches one chunk per stage, and a streaming
+ *   retrieve accumulates chunkSize bytes before yielding - so by the time a
+ *   result reaches here the data has already grown by a chunk.
+ * * How recently the last decode ran, which is this function. Chunk size alone
+ *   is not enough on a fast connection: 128k arrives in a few milliseconds on
+ *   a local server, so an 8MB frame would decode ~60 times in the time a
+ *   viewer can display two or three of them. Decoding costs far more than
+ *   receiving, so those extra decodes come straight out of the budget for the
+ *   frames that are actually seen.
+ *
+ * A sub-resolution decode is exempt from the clock but bound by the level
+ * instead: it is only worth repeating when the level improves, since decoding
+ * the same level twice produces the same image.
+ *
+ * A finished frame is always decoded, however recently the last one ran, so
+ * the throttle only ever delays intermediate versions and never the final one.
  */
 export function shouldDecodeAgain({
   done,
   decodeLevel,
   lastDecodeLevel,
-  encodedLength,
-  lastDecodedLength,
+  lastDecodeTime,
+  now,
+  msBetweenDecode,
 }: {
   done: boolean;
   decodeLevel: number;
   lastDecodeLevel: number;
-  encodedLength: number;
-  lastDecodedLength: number;
+  lastDecodeTime: number;
+  now: number;
+  msBetweenDecode: number;
 }): boolean {
   if (done) {
     return true;
   }
+  if (decodeLevel > 0) {
+    // Sub-resolution: more bytes at the same level produce the same image.
+    return decodeLevel < lastDecodeLevel;
+  }
   if (decodeLevel < lastDecodeLevel) {
+    // First full resolution decode, or an improvement from sub-resolution.
     return true;
   }
-  return (
-    decodeLevel === 0 &&
-    encodedLength >= lastDecodedLength * REDECODE_GROWTH_FACTOR
-  );
+  return now - lastDecodeTime >= msBetweenDecode;
 }
 
 /** The decode level is based on how much of hte data is needed for
