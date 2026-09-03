@@ -43,7 +43,7 @@ setTitleAndDescription(
   'Here, we demonstrate how you can use the Segment Select Tool in both stack and volume viewports to hover and select the active segment based on the mouse position. It works after some deliberate delay. In the first row, you can use the brushes to select the active segment on the labelmap data. And for the second row viewports, you can use annotation tools and contour segmentation to select the active segment on the volume data.'
 );
 
-const size = '500px';
+const size = '512px';
 
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
@@ -115,7 +115,9 @@ function setupTools(toolGroupId, isContour = false) {
   addManipulationBindings(toolGroup);
 
   // Segmentation Tools
-  toolGroup.addTool(SegmentSelectTool.toolName);
+  toolGroup.addTool(SegmentSelectTool.toolName, {
+    mode: SegmentSelectTool.SelectMode.Inside,
+  });
 
   toolGroup.setToolActive(SegmentSelectTool.toolName);
 

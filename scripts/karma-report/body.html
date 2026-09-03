@@ -1,0 +1,39 @@
+<div class="sidebar">
+  <div class="sidebar-header">
+    <h2>Karma Test Results</h2>
+    <div class="stats" id="stats"></div>
+  </div>
+  <div class="sidebar-controls">
+    <input type="text" id="filter" placeholder="Filter screenshots..." />
+    <div class="status-filters">
+      <button class="active" data-status="all" onclick="setStatusFilter('all')">All</button>
+      <button data-status="failed" onclick="setStatusFilter('failed')">Failed</button>
+      <button data-status="passed" onclick="setStatusFilter('passed')">Passed</button>
+    </div>
+  </div>
+  <div class="sidebar-list" id="sidebar-list"></div>
+</div>
+
+<div class="main">
+  <div class="toolbar">
+    <div class="title" id="current-title">Select an image comparison</div>
+    <div class="nav-btns">
+      <button onclick="navigate(-1)">Prev</button>
+      <button onclick="navigate(1)">Next</button>
+    </div>
+    <div class="mode-btns">
+      <button class="active" data-mode="slider" onclick="setMode('slider')">Slider</button>
+      <button data-mode="sidebyside" onclick="setMode('sidebyside')">Side by Side</button>
+      <button data-mode="diff" onclick="setMode('diff')">Diff</button>
+    </div>
+    <span class="diff-info" id="diff-info"></span>
+    <button class="copy-cmd-btn" id="copy-cmd-btn" onclick="copyDebugCommand()">Copy debug cmd</button>
+  </div>
+  <div class="compare-area" id="compare-area">
+    <div style="color:#555; font-size: 14px;">Select a screenshot from the sidebar, or press <kbd>J</kbd> / <kbd>K</kbd> to navigate.</div>
+  </div>
+</div>
+
+<div class="kbd-hints">
+  <kbd>J</kbd>/<kbd>K</kbd> navigate &nbsp; <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> mode &nbsp; <kbd>/</kbd> filter
+</div>

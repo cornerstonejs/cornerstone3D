@@ -29,12 +29,11 @@ import {
   drawCircle as drawCircleSvg,
   drawEllipseByCoordinates as drawEllipseSvg,
   drawHandles as drawHandlesSvg,
-  drawLinkedTextBox as drawLinkedTextBoxSvg,
 } from '../../drawingSvg';
 import { state } from '../../store/state';
 import { ChangeTypes, Events } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
+import getViewportICamera from '../../utilities/getViewportICamera';
 import getWorldWidthAndHeightFromTwoPoints from '../../utilities/planar/getWorldWidthAndHeightFromTwoPoints';
 import {
   pointInEllipse,
@@ -58,6 +57,7 @@ import type { EllipticalROIAnnotation } from '../../types/ToolSpecificAnnotation
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
+import { viewportSupportsImageSlices } from '../../utilities/viewportCapabilities';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import { vec2 } from 'gl-matrix';
@@ -840,7 +840,9 @@ class EllipticalROITool extends AnnotationTool {
           // at the referencedImageId
           for (const targetId in data.cachedStats) {
             if (targetId.startsWith('imageId')) {
-              const viewports = renderingEngine.getStackViewports();
+              const viewports = renderingEngine
+                .getViewports()
+                .filter(viewportSupportsImageSlices);
 
               const invalidatedStack = viewports.find((vp) => {
                 // The stack viewport that contains the imageId but is not
@@ -939,60 +941,23 @@ class EllipticalROITool extends AnnotationTool {
 
       renderStatus = true;
 
-      const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
-      if (!options.visibility) {
-        data.handles.textBox = {
-          hasMoved: false,
-          worldPosition: <Types.Point3>[0, 0, 0],
-          worldBoundingBox: {
-            topLeft: <Types.Point3>[0, 0, 0],
-            topRight: <Types.Point3>[0, 0, 0],
-            bottomLeft: <Types.Point3>[0, 0, 0],
-            bottomRight: <Types.Point3>[0, 0, 0],
-          },
-        };
-        continue;
-      }
-
       const textLines = this.configuration.getTextLines(data, targetId);
       if (!textLines || textLines.length === 0) {
         continue;
       }
-
-      // Poor man's cached?
-      let canvasTextBoxCoords;
-
-      if (!data.handles.textBox.hasMoved) {
-        canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCorners);
-
-        data.handles.textBox.worldPosition =
-          viewport.canvasToWorld(canvasTextBoxCoords);
+      if (
+        !this.renderLinkedTextBoxAnnotation({
+          enabledElement,
+          svgDrawingHelper,
+          annotation,
+          styleSpecifier,
+          textLines,
+          canvasCoordinates,
+          placementPoints: canvasCorners,
+        })
+      ) {
+        continue;
       }
-
-      const textBoxPosition = viewport.worldToCanvas(
-        data.handles.textBox.worldPosition
-      );
-
-      const textBoxUID = '1';
-      const boundingBox = drawLinkedTextBoxSvg(
-        svgDrawingHelper,
-        annotationUID,
-        textBoxUID,
-        textLines,
-        textBoxPosition,
-        canvasCoordinates,
-        {},
-        options
-      );
-
-      const { x: left, y: top, width, height } = boundingBox;
-
-      data.handles.textBox.worldBoundingBox = {
-        topLeft: viewport.canvasToWorld([left, top]),
-        topRight: viewport.canvasToWorld([left + width, top]),
-        bottomLeft: viewport.canvasToWorld([left, top + height]),
-        bottomRight: viewport.canvasToWorld([left + width, top + height]),
-      };
     }
 
     return renderStatus;
@@ -1008,7 +973,9 @@ class EllipticalROITool extends AnnotationTool {
     const { points } = data.handles;
 
     const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
-    const { viewPlaneNormal, viewUp } = viewport.getCamera();
+    // Native ("next") viewports expose no getCamera; read view orientation
+    // through the shared ICamera bridge (legacy viewports fall through to getCamera).
+    const { viewPlaneNormal, viewUp } = getViewportICamera(viewport);
 
     const [topLeftCanvas, bottomRightCanvas] = <Array<Types.Point2>>(
       getCanvasEllipseCorners(canvasCoordinates)
@@ -1093,16 +1060,22 @@ class EllipticalROITool extends AnnotationTool {
         const isEmptyArea = worldWidth === 0 && worldHeight === 0;
 
         const handles = [pos1Index, pos2Index];
-        const { scale, areaUnit } = getCalibratedLengthUnitsAndScale(
-          image,
-          handles
-        );
+        const calibrate = getCalibratedLengthUnitsAndScale(image, handles);
+        const { areaUnit } = calibrate;
         const aspect = getCalibratedAspect(image);
-        const area = Math.abs(
-          Math.PI *
-            (worldWidth / scale / 2) *
-            (worldHeight / aspect / scale / 2)
+        const indexHandles = points.map((p) => imageData.worldToIndex(p));
+
+        const width = EllipticalROITool.calculateLengthInIndex(
+          calibrate,
+          indexHandles.slice(2, 4)
         );
+
+        const height = EllipticalROITool.calculateLengthInIndex(
+          calibrate,
+          indexHandles.slice(0, 2)
+        );
+
+        const area = Math.abs(Math.PI * (width / 2) * (height / aspect / 2));
 
         const pixelUnitsOptions = {
           isPreScaled: isViewportPreScaled(viewport, targetId),

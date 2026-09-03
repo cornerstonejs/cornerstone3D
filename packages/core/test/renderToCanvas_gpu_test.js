@@ -42,6 +42,25 @@ describe('renderToCanvas -- GPU', () => {
     });
   });
 
+  function completeComparisons(done, comparisons) {
+    Promise.allSettled(comparisons).then((results) => {
+      const failures = results
+        .filter((result) => result.status === 'rejected')
+        .map((result) => result.reason);
+
+      if (failures.length) {
+        done.fail(
+          failures.length === 1
+            ? failures[0]
+            : new Error(failures.map((failure) => failure.message).join('\n\n'))
+        );
+        return;
+      }
+
+      done();
+    });
+  }
+
   it('Should render two viewports one with setStack and one with renderToCanvas', function (done) {
     const width = 256;
     const height = 256;
@@ -73,22 +92,27 @@ describe('renderToCanvas -- GPU', () => {
     const imageId = encodeImageIdInfo(imageInfo);
 
     const vp = renderingEngine.getViewport(viewportId);
-    element.addEventListener(Events.IMAGE_RENDERED, () => {
-      const image = vp.getCanvas().toDataURL('image/png');
-      compareImages(
-        image,
-        renderToCanvas_gpu_setStack,
-        'renderToCanvas_gpu_setStack'
-      ).then(() => null, done.fail);
+    element.addEventListener(
+      Events.IMAGE_RENDERED,
+      () => {
+        const image = vp.getCanvas().toDataURL('image/png');
+        const image2 = canvas.toDataURL('image/png');
 
-      const image2 = canvas.toDataURL('image/png');
-
-      compareImages(
-        image2,
-        renderToCanvas_gpu_canvas,
-        'renderToCanvas_gpu_canvas'
-      ).then(done, done.fail);
-    });
+        completeComparisons(done, [
+          compareImages(
+            image,
+            renderToCanvas_gpu_setStack,
+            'renderToCanvas_gpu_setStack'
+          ),
+          compareImages(
+            image2,
+            renderToCanvas_gpu_canvas,
+            'renderToCanvas_gpu_canvas'
+          ),
+        ]);
+      },
+      { once: true }
+    );
 
     try {
       utilities
@@ -140,23 +164,27 @@ describe('renderToCanvas -- GPU', () => {
     const imageId = encodeImageIdInfo(imageInfo);
 
     const vp = renderingEngine.getViewport(viewportId);
-    element.addEventListener(Events.IMAGE_RENDERED, () => {
-      const image = vp.getCanvas().toDataURL('image/png');
+    element.addEventListener(
+      Events.IMAGE_RENDERED,
+      () => {
+        const image = vp.getCanvas().toDataURL('image/png');
+        const image2 = canvas.toDataURL('image/png');
 
-      compareImages(
-        image,
-        renderToCanvas_gpu_setStack_color,
-        'renderToCanvas_gpu_setStack_color'
-      );
-
-      const image2 = canvas.toDataURL('image/png');
-
-      compareImages(
-        image2,
-        renderToCanvas_gpu_canvas_color,
-        'renderToCanvas_gpu_canvas_color'
-      ).then(done, done.fail);
-    });
+        completeComparisons(done, [
+          compareImages(
+            image,
+            renderToCanvas_gpu_setStack_color,
+            'renderToCanvas_gpu_setStack_color'
+          ),
+          compareImages(
+            image2,
+            renderToCanvas_gpu_canvas_color,
+            'renderToCanvas_gpu_canvas_color'
+          ),
+        ]);
+      },
+      { once: true }
+    );
 
     try {
       utilities

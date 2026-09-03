@@ -1,7 +1,7 @@
 import * as metaData from '../metaData';
 import { MetadataModules, VOILUTFunctionType } from '../enums';
 import type IImage from '../types/IImage';
-import type { ImagePlaneModule, ImagePixelModule } from '../types';
+import type { ImagePlaneModule } from '../types';
 import type IImageCalibration from '../types/IImageCalibration';
 
 export interface BuildMetadataResult {
@@ -50,35 +50,34 @@ export function getValidVOILUTFunction(
 export function getImagePlaneModule(imageId: string): ImagePlaneModule {
   const imagePlaneModule = metaData.get(MetadataModules.IMAGE_PLANE, imageId);
 
+  if (imagePlaneModule.usingDefaultValues !== undefined) {
+    // If the usingDefault values is set, then everything is already available
+    return imagePlaneModule;
+  }
+  if (
+    imagePlaneModule.columnPixelSpacing &&
+    imagePlaneModule.rowPixelSpacing &&
+    imagePlaneModule.columnCosines &&
+    imagePlaneModule.rowCosines &&
+    imagePlaneModule.imagePositionPatient &&
+    imagePlaneModule.imageOrientationPatient
+  ) {
+    // Everything is specifically provided, assume it is correct already.
+    return imagePlaneModule;
+  }
   const newImagePlaneModule: ImagePlaneModule = {
     ...imagePlaneModule,
+    usingDefaultValues: true,
   };
 
-  if (!newImagePlaneModule.columnPixelSpacing) {
-    newImagePlaneModule.columnPixelSpacing = 1;
-  }
-
-  if (!newImagePlaneModule.rowPixelSpacing) {
-    newImagePlaneModule.rowPixelSpacing = 1;
-  }
-
-  if (!newImagePlaneModule.columnCosines) {
-    newImagePlaneModule.columnCosines = [0, 1, 0];
-  }
-
-  if (!newImagePlaneModule.rowCosines) {
-    newImagePlaneModule.rowCosines = [1, 0, 0];
-  }
-
-  if (!newImagePlaneModule.imagePositionPatient) {
-    newImagePlaneModule.imagePositionPatient = [0, 0, 0];
-  }
-
-  if (!newImagePlaneModule.imageOrientationPatient) {
-    newImagePlaneModule.imageOrientationPatient = new Float32Array([
-      1, 0, 0, 0, 1, 0,
-    ]);
-  }
+  newImagePlaneModule.columnPixelSpacing ||= 1;
+  newImagePlaneModule.rowPixelSpacing ||= 1;
+  newImagePlaneModule.columnCosines ||= [0, 1, 0];
+  newImagePlaneModule.rowCosines ||= [1, 0, 0];
+  newImagePlaneModule.imagePositionPatient ||= [0, 0, 0];
+  newImagePlaneModule.imageOrientationPatient ||= new Float32Array([
+    1, 0, 0, 0, 1, 0,
+  ]);
 
   return newImagePlaneModule;
 }
@@ -138,12 +137,12 @@ export function buildMetadata(image: IImage): BuildMetadataResult {
     highBit,
     photometricInterpretation,
     samplesPerPixel,
-  } = metaData.get('imagePixelModule', imageId);
+  } = metaData.get(MetadataModules.IMAGE_PIXEL, imageId);
 
   const { windowWidth, windowCenter, voiLUTFunction } = image;
 
-  const { modality } = metaData.get('generalSeriesModule', imageId);
-  const imageIdScalingFactor = metaData.get('scalingModule', imageId);
+  const { modality } = metaData.get(MetadataModules.GENERAL_SERIES, imageId);
+  const imageIdScalingFactor = metaData.get(MetadataModules.SCALING, imageId);
   const calibration = metaData.get(MetadataModules.CALIBRATION, imageId);
 
   const voiLUTFunctionEnum = getValidVOILUTFunction(voiLUTFunction);

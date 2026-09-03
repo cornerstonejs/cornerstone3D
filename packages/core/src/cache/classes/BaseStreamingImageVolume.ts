@@ -1,5 +1,10 @@
 import * as metaData from '../../metaData';
-import { Events, ImageQualityStatus, RequestType } from '../../enums';
+import {
+  Events,
+  ImageQualityStatus,
+  MetadataModules,
+  RequestType,
+} from '../../enums';
 import eventTarget from '../../eventTarget';
 import imageLoadPoolManager from '../../requestPool/imageLoadPoolManager';
 import type {
@@ -272,7 +277,7 @@ export class BaseStreamingImageVolume
   public load(callback: (...args: unknown[]) => void): void {
     const { imageIds, loadStatus, numFrames } = this;
     const { transferSyntaxUID } =
-      metaData.get('transferSyntax', imageIds[0]) || {};
+      metaData.get(MetadataModules.TRANSFER_SYNTAX, imageIds[0]) || {};
     const imageRetrieveConfiguration = metaData.get(
       imageRetrieveMetadataProvider.IMAGE_RETRIEVE_CONFIGURATION,
       this.volumeId,
@@ -318,17 +323,18 @@ export class BaseStreamingImageVolume
 
   public getLoaderImageOptions(imageId: string) {
     const { transferSyntaxUID: transferSyntaxUID } =
-      metaData.get('transferSyntax', imageId) || {};
+      metaData.get(MetadataModules.TRANSFER_SYNTAX, imageId) || {};
 
     // Use the actual dimensions for this volume in order to support volumes not the same size as the raw data
     const targetRows = this.dimensions[1];
     const targetCols = this.dimensions[0];
     const imageIdIndex = this.getImageIdIndex(imageId);
 
-    const modalityLutModule = metaData.get('modalityLutModule', imageId) || {};
+    const modalityLutModule =
+      metaData.get(MetadataModules.MODALITY_LUT, imageId) || {};
 
     const generalSeriesModule =
-      metaData.get('generalSeriesModule', imageId) || {};
+      metaData.get(MetadataModules.GENERAL_SERIES, imageId) || {};
 
     const scalingParameters: ScalingParameters = {
       rescaleSlope: modalityLutModule.rescaleSlope,
@@ -338,7 +344,7 @@ export class BaseStreamingImageVolume
     const modality = scalingParameters.modality;
 
     if (modality === 'PT' || modality === 'RTDOSE') {
-      const scalingFactor = metaData.get('scalingModule', imageId);
+      const scalingFactor = metaData.get(MetadataModules.SCALING, imageId);
 
       if (scalingFactor) {
         this._addScalingToVolume(scalingFactor);

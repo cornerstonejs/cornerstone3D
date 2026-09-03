@@ -29,7 +29,7 @@ setTitleAndDescription(
   'Here we show the usage of multiple tool groups at the same time'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 

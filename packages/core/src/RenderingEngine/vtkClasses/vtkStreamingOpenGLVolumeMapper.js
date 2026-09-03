@@ -8,6 +8,7 @@ import { getTransferFunctionsHash } from '@kitware/vtk.js/Rendering/OpenGL/Rende
 import { Representation } from '@kitware/vtk.js/Rendering/Core/Property/Constants';
 import { BlendMode } from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants';
 import { getCanUseNorm16Texture } from '../../init';
+import canUseFloatOpacityTexture from './canUseFloatOpacityTexture';
 
 /**
  * vtkStreamingOpenGLVolumeMapper - A derived class of the core vtkOpenGLVolumeMapper class.
@@ -211,11 +212,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       // for this table. Errors in low values of opacity accumulate to
       // visible artifacts. High values of opacity quickly terminate without
       // artifacts.
-      if (
-        model._openGLRenderWindow.getWebgl2() ||
-        (model.context.getExtension('OES_texture_float') &&
-          model.context.getExtension('OES_texture_float_linear'))
-      ) {
+      if (canUseFloatOpacityTexture(model._openGLRenderWindow, model.context)) {
         newOpacityTexture.create2DFromRaw({
           width: oWidth,
           height: 2 * numIComps,
@@ -364,6 +361,10 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
             currentTexture.getTextureParameters();
 
           const dataType = imageData.get('dataType').dataType;
+          const textureNumberOfComponents =
+            imageData.getPointData()?.getScalars()?.getNumberOfComponents?.() ??
+            imageData.get('numberOfComponents').numberOfComponents ??
+            1;
 
           let shouldReset = true;
 
@@ -371,7 +372,12 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
             if (previousTextureParameters?.width === dims[0]) {
               if (previousTextureParameters?.height === dims[1]) {
                 if (previousTextureParameters?.depth === dims[2]) {
-                  shouldReset = false;
+                  if (
+                    previousTextureParameters?.numberOfComponents ===
+                    textureNumberOfComponents
+                  ) {
+                    shouldReset = false;
+                  }
                 }
               }
             }
@@ -388,7 +394,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
               width: dims[0],
               height: dims[1],
               depth: dims[2],
-              numberOfComponents: numIComps,
+              numberOfComponents: textureNumberOfComponents,
               dataType,
             });
 
@@ -398,7 +404,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
               width: dims[0],
               height: dims[1],
               depth: dims[2],
-              numComps: numIComps,
+              numComps: textureNumberOfComponents,
               dataType,
               data: null,
             });

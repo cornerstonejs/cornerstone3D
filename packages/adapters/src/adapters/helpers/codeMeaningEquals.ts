@@ -6,11 +6,9 @@
  * content item's CodeMeaning matches the provided codeMeaningName.
  */
 const codeMeaningEquals = (codeMeaningName: string) => {
-    return contentItem => {
-        return (
-            contentItem.ConceptNameCodeSequence.CodeMeaning === codeMeaningName
-        );
-    };
+  return (contentItem) => {
+    return contentItem.ConceptNameCodeSequence.CodeMeaning === codeMeaningName;
+  };
 };
 
 export { codeMeaningEquals };

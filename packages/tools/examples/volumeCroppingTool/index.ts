@@ -1,4 +1,4 @@
-import type { Types, VolumeViewport3D } from '@cornerstonejs/core';
+import type { LegacyVolumeViewport3D, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
@@ -13,6 +13,7 @@ import {
   addDropdownToToolbar,
   getLocalUrl,
   addToggleButtonToToolbar,
+  addSliderToToolbar,
 } from '../../../../utils/demo/helpers';
 
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -31,11 +32,12 @@ const {
   ZoomTool,
   PanTool,
   OrientationMarkerTool,
+  OrientationControllerTool,
   StackScrollTool,
   CrosshairsTool,
 } = cornerstoneTools;
 
-const { MouseBindings } = csToolsEnums;
+const { MouseBindings, KeyboardBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 
 // Define a unique id for the volume
@@ -51,16 +53,46 @@ const viewportId3 = 'CT_SAGITTAL';
 const viewportId4 = 'CT_3D_VOLUME'; // New 3D volume viewport
 const viewportIds = [viewportId1, viewportId2, viewportId3, viewportId4];
 
+// Set up toolbar with three rows: viewports, planes, control
+const toolbar = document.getElementById('demo-toolbar');
+if (toolbar) {
+  toolbar.style.display = 'flex';
+  toolbar.style.flexDirection = 'column';
+  toolbar.style.gap = '8px';
+}
+
+const viewportsRow = document.createElement('div');
+viewportsRow.style.display = 'flex';
+viewportsRow.style.gap = '10px';
+viewportsRow.style.alignItems = 'center';
+
+const planesRow = document.createElement('div');
+planesRow.style.display = 'flex';
+planesRow.style.gap = '10px';
+planesRow.style.alignItems = 'center';
+
+const controlRow = document.createElement('div');
+controlRow.style.display = 'flex';
+controlRow.style.gap = '10px';
+controlRow.style.alignItems = 'center';
+
+if (toolbar) {
+  toolbar.appendChild(viewportsRow);
+  toolbar.appendChild(planesRow);
+  toolbar.appendChild(controlRow);
+}
+
 // Add dropdown to toolbar to select number of orthographic viewports (reloads page with URL param)
 addDropdownToToolbar({
-  labelText: 'Number of Orthographic Viewports',
+  labelText: 'Number of Orthographic Viewports:',
   options: {
     values: [1, 2, 3],
     defaultValue: getNumViewportsFromUrl(),
   },
+  container: viewportsRow,
   onSelectedValueChange: (selectedValue) => {
     const url = new URL(window.location.href);
-    url.searchParams.set('numViewports', selectedValue);
+    url.searchParams.set('numViewports', String(selectedValue));
     window.location.href = url.toString();
   },
 });
@@ -69,8 +101,8 @@ const renderingEngineId = 'myRenderingEngine';
 /////////////////////////////////////////
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Volume Cropping',
-  'Here we demonstrate how to crop a 3D  volume with 6 clipping planes aligned on the x,y and z axes.'
+  'Volume Cropping and Orientation Controller',
+  'Demonstrates the volume cropping and the orientation controller tools in a volume3d viewport along with the volume cropping control tool in 1 to 3 orthographic viewports.'
 );
 
 const size = '400px';
@@ -92,7 +124,7 @@ const element4 = document.createElement('div'); // 3D Volume
 const rightViewportsContainer = document.createElement('div');
 rightViewportsContainer.style.display = 'flex';
 rightViewportsContainer.style.flexDirection = 'column';
-rightViewportsContainer.style.width = '20%';
+rightViewportsContainer.style.width = '25%';
 rightViewportsContainer.style.height = '100%';
 
 // Set styles for the 2D viewports (stacked vertically on the right)
@@ -135,39 +167,57 @@ content.appendChild(viewportGrid);
 const instructions = document.createElement('p');
 instructions.innerText = `
   Basic controls:
-  - Click/Drag the spheres in VRT or reference lines in the orthographic viewports.
-  - Rotate , pan or zoom the 3D viewport using the mouse.
+  - Click/Drag the spheres in 3D or reference lines in the orthographic viewports.
+  - Rotate, pan or zoom the 3D viewport using the mouse.
   - Use the scroll wheel to scroll through the slices in the orthographic viewports.
+  - Toggle the clipping planes, handles, and rotate clipping planes on drag.
+  - Click on the faces/edges/corners of the beveled cube orientation widget to change the orientation.
+  URL params: numViewports=1|2|3
   `;
 
 content.append(instructions);
 
-addToggleButtonToToolbar({
-  title: 'Toggle 3D handles',
-  defaultToggle: false,
-  onClick: (toggle) => {
-    // Get the tool group for the 3D viewport
-    const toolGroupVRT =
-      cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
-    // Get the VolumeCroppingTool instance from the tool group
-    const croppingTool = toolGroupVRT.getToolInstance('VolumeCropping');
-    // Call setHandlesVisible on the tool instance
-    if (croppingTool && typeof croppingTool.setHandlesVisible === 'function') {
-      croppingTool.setHandlesVisible(!croppingTool.getHandlesVisible());
-    }
-  },
-});
+const rotateHintOverlay = document.createElement('div');
+rotateHintOverlay.textContent = 'Use SHIFT-drag to rotate the clipping planes.';
+rotateHintOverlay.style.position = 'absolute';
+rotateHintOverlay.style.top = '10px';
+rotateHintOverlay.style.left = '50%';
+rotateHintOverlay.style.transform = 'translateX(-50%)';
+rotateHintOverlay.style.padding = '4px 8px';
+rotateHintOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0.55)';
+rotateHintOverlay.style.color = 'white';
+rotateHintOverlay.style.fontSize = '12px';
+rotateHintOverlay.style.borderRadius = '4px';
+rotateHintOverlay.style.pointerEvents = 'none';
+rotateHintOverlay.style.zIndex = '2';
+rotateHintOverlay.style.display = 'none';
+element4.appendChild(rotateHintOverlay);
+
+const updateRotateHintVisibility = () => {
+  const toolGroupVRT =
+    cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
+  const croppingTool = toolGroupVRT?.getToolInstance('VolumeCropping');
+  const isCroppingActive =
+    !!croppingTool &&
+    typeof croppingTool.getClippingPlanesVisible === 'function' &&
+    croppingTool.getClippingPlanesVisible();
+
+  rotateHintOverlay.style.display = isCroppingActive ? 'block' : 'none';
+};
+
+const croppingLabel = document.createElement('span');
+croppingLabel.textContent = 'Cropping:';
+croppingLabel.style.marginRight = '4px';
+planesRow.appendChild(croppingLabel);
 
 addToggleButtonToToolbar({
-  title: 'Toggle Cropping Planes',
+  title: 'Toggle Clipping Planes',
   defaultToggle: false,
+  container: planesRow,
   onClick: (toggle) => {
-    // Get the tool group for the 3D viewport
     const toolGroupVRT =
       cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
-    // Get the VolumeCroppingTool instance from the tool group
     const croppingTool = toolGroupVRT.getToolInstance('VolumeCropping');
-    // Call setClippingPlanesVisible on the tool instance
     if (
       croppingTool &&
       typeof croppingTool.setClippingPlanesVisible === 'function'
@@ -175,6 +225,40 @@ addToggleButtonToToolbar({
       croppingTool.setClippingPlanesVisible(
         !croppingTool.getClippingPlanesVisible()
       );
+      updateRotateHintVisibility();
+    }
+  },
+});
+
+addToggleButtonToToolbar({
+  title: 'Toggle Handles',
+  defaultToggle: false,
+  container: planesRow,
+  onClick: (toggle) => {
+    const toolGroupVRT =
+      cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
+    const croppingTool = toolGroupVRT.getToolInstance('VolumeCropping');
+    if (croppingTool && typeof croppingTool.setHandlesVisible === 'function') {
+      croppingTool.setHandlesVisible(!croppingTool.getHandlesVisible());
+    }
+  },
+});
+
+addToggleButtonToToolbar({
+  title: 'Toggle Rotate Clipping Planes on drag (without shift)',
+  defaultToggle: false,
+  container: planesRow,
+  onClick: (toggle) => {
+    const toolGroupVRT =
+      cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
+    const croppingTool = toolGroupVRT.getToolInstance('VolumeCropping');
+    if (
+      croppingTool &&
+      typeof croppingTool.setRotatePlanesOnDrag === 'function' &&
+      typeof croppingTool.getRotatePlanesOnDrag === 'function'
+    ) {
+      const currentState = croppingTool.getRotatePlanesOnDrag();
+      croppingTool.setRotatePlanesOnDrag(!currentState);
     }
   },
 });
@@ -195,6 +279,34 @@ const viewportReferenceLineControllable = [
   viewportId2,
   viewportId3,
 ];
+
+type OrientationAppearancePreset = {
+  edgeColor: [number, number, number];
+  cornerColor: [number, number, number];
+  highlightColor: [number, number, number];
+  restingAmbient: number;
+  hoverAmbient: number;
+};
+
+const orientationAppearancePresets: Record<
+  string,
+  OrientationAppearancePreset
+> = {
+  default: {
+    edgeColor: [200, 200, 200],
+    cornerColor: [150, 150, 150],
+    highlightColor: [255, 255, 255],
+    restingAmbient: 1.0,
+    hoverAmbient: 1.0,
+  },
+  themed: {
+    edgeColor: [66, 111, 176],
+    cornerColor: [41, 73, 124],
+    highlightColor: [91, 163, 255],
+    restingAmbient: 0.55,
+    hoverAmbient: 1.0,
+  },
+};
 
 /**
  * Get the number of orthographic viewports from the URL (?numViewports=1|2|3)
@@ -221,6 +333,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(OrientationMarkerTool);
+  cornerstoneTools.addTool(OrientationControllerTool);
   cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(CrosshairsTool);
 
@@ -296,7 +409,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
 
   renderingEngine.setViewports(viewportInputArray);
 
-  volume.load();
+  await volume.load();
 
   // Only set volumes for the active viewport IDs
   const activeViewportIds = [
@@ -345,6 +458,11 @@ async function run(numViewports = getNumViewportsFromUrl()) {
     ],
   });
 
+  const colorScheme: 'rgy' | 'gray' | 'marker' = 'rgy';
+  const keepOrientationUp = true;
+  const letterColorScheme: 'mixed' | 'white' | 'black' = 'mixed';
+  const appearancePreset = 'default';
+
   // Tool group for 3D viewport
   const toolGroupVRT = ToolGroupManager.createToolGroup(toolGroupIdVRT);
   toolGroupVRT.addTool(ZoomTool.toolName);
@@ -363,45 +481,255 @@ async function run(numViewports = getNumViewportsFromUrl()) {
       },
     ],
   });
-  toolGroupVRT.addTool(OrientationMarkerTool.toolName, {
-    overlayMarkerType:
-      OrientationMarkerTool.OVERLAY_MARKER_TYPES.ANNOTATED_CUBE,
-  });
-  // toolGroupVRT.setToolActive(OrientationMarkerTool.toolName);
 
-  const isMobile = window.matchMedia('(any-pointer:coarse)').matches;
-  const viewport = renderingEngine.getViewport(viewportId4) as VolumeViewport3D;
-  renderingEngine.renderViewports(activeViewportIds);
+  // Disable tool if it already exists to ensure fresh configuration
+  if (toolGroupVRT.hasTool(OrientationControllerTool.toolName)) {
+    toolGroupVRT.setToolDisabled(OrientationControllerTool.toolName);
+  }
+
+  // Add OrientationControllerTool - colors resolved from colorScheme/letterColorScheme maps
+  toolGroupVRT.addTool(OrientationControllerTool.toolName, {
+    colorScheme,
+    keepOrientationUp,
+    letterColorScheme,
+    ...orientationAppearancePresets[appearancePreset],
+  });
+  // Enable OrientationControllerTool after viewport is added and volume is loaded
+  toolGroupVRT.setToolEnabled(OrientationControllerTool.toolName);
+
+  // Add dropdown for orientation control colors
+  const colorSchemeValues: string[] = ['rgy', 'gray', 'marker'];
+  const colorSchemeLabels = ['RGY', 'Gray', 'Marker'];
+
+  addDropdownToToolbar({
+    labelText: 'Orientation Control: Colors',
+    options: {
+      values: colorSchemeValues,
+      defaultValue: colorScheme,
+      labels: colorSchemeLabels,
+    },
+    container: controlRow,
+    onSelectedValueChange: (selectedValue) => {
+      const toolGroupVRT =
+        cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
+      const orientationControllerTool = toolGroupVRT.getToolInstance(
+        OrientationControllerTool.toolName
+      );
+
+      if (orientationControllerTool) {
+        orientationControllerTool.configuration.colorScheme = selectedValue;
+        orientationControllerTool.onSetToolDisabled();
+        orientationControllerTool.onSetToolEnabled();
+      }
+    },
+  });
+
+  // Add dropdown for letter color scheme
+  const letterColorSchemeValues: string[] = ['mixed', 'white', 'black'];
+  const letterColorSchemeLabels = ['Mixed', 'White', 'Black'];
+
+  addDropdownToToolbar({
+    labelText: 'Letter Colors',
+    options: {
+      values: letterColorSchemeValues,
+      defaultValue: letterColorScheme,
+      labels: letterColorSchemeLabels,
+    },
+    container: controlRow,
+    onSelectedValueChange: (selectedValue) => {
+      const toolGroupVRT =
+        cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
+      const orientationControllerTool = toolGroupVRT.getToolInstance(
+        OrientationControllerTool.toolName
+      );
+
+      if (orientationControllerTool) {
+        orientationControllerTool.configuration.letterColorScheme =
+          selectedValue;
+        orientationControllerTool.onSetToolDisabled();
+        orientationControllerTool.onSetToolEnabled();
+      }
+    },
+  });
+
+  // Add dropdown for "Keep orientation up"
+  const keepOrientationUpValues: string[] = ['true', 'false'];
+  const keepOrientationUpLabels = ['True', 'False'];
+
+  addDropdownToToolbar({
+    labelText: 'Keep Orientation Up',
+    options: {
+      values: keepOrientationUpValues,
+      defaultValue: String(keepOrientationUp),
+      labels: keepOrientationUpLabels,
+    },
+    container: controlRow,
+    onSelectedValueChange: (selectedValue) => {
+      const newValue = selectedValue === 'true';
+
+      // Get the tool group for the 3D viewport
+      const toolGroupVRT =
+        cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
+      // Get the OrientationControllerTool instance from the tool group
+      const orientationControllerTool = toolGroupVRT.getToolInstance(
+        OrientationControllerTool.toolName
+      );
+      if (orientationControllerTool) {
+        // Update configuration
+        orientationControllerTool.configuration.keepOrientationUp = newValue;
+        // Reinitialize viewports to apply the change
+        orientationControllerTool.onSetToolDisabled();
+        orientationControllerTool.onSetToolEnabled();
+      }
+    },
+  });
+
+  const orientationAppearanceValues = ['default', 'themed'];
+  const orientationAppearanceLabels = [
+    'Default bevel/hover',
+    'Themed bevel/hover',
+  ];
+
+  addDropdownToToolbar({
+    labelText: 'Bevel + Hover Theme',
+    options: {
+      values: orientationAppearanceValues,
+      defaultValue: appearancePreset,
+      labels: orientationAppearanceLabels,
+    },
+    container: controlRow,
+    onSelectedValueChange: (selectedValue) => {
+      const toolGroupVRT =
+        cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
+      const orientationControllerTool = toolGroupVRT.getToolInstance(
+        OrientationControllerTool.toolName
+      );
+
+      if (orientationControllerTool) {
+        const preset = orientationAppearancePresets[selectedValue];
+        if (!preset) {
+          return;
+        }
+
+        orientationControllerTool.configuration.edgeColor = preset.edgeColor;
+        orientationControllerTool.configuration.cornerColor =
+          preset.cornerColor;
+        orientationControllerTool.configuration.highlightColor =
+          preset.highlightColor;
+        orientationControllerTool.configuration.restingAmbient =
+          preset.restingAmbient;
+        orientationControllerTool.configuration.hoverAmbient =
+          preset.hoverAmbient;
+        orientationControllerTool.onSetToolDisabled();
+        orientationControllerTool.onSetToolEnabled();
+      }
+    },
+  });
+
+  addSliderToToolbar({
+    title: 'Marker size',
+    range: [0.01, 0.05],
+    defaultValue: 0.04,
+    step: 0.01,
+    container: controlRow,
+    onSelectedValueChange: (value) => {
+      const size = Number(value);
+      const toolGroupVRT =
+        cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
+      const orientationControllerTool = toolGroupVRT.getToolInstance(
+        OrientationControllerTool.toolName
+      );
+      if (orientationControllerTool) {
+        orientationControllerTool.configuration.size = size;
+        orientationControllerTool.onSetToolDisabled();
+        orientationControllerTool.onSetToolEnabled();
+      }
+    },
+    updateLabelOnChange: (value, label) => {
+      label.textContent = `Orientation marker size: ${value}`;
+    },
+  });
+
+  addSliderToToolbar({
+    title: 'Handles size',
+    range: [2, 20],
+    defaultValue: 7,
+    step: 1,
+    container: planesRow,
+    onSelectedValueChange: (value) => {
+      const sphereRadius = Number(value);
+      const toolGroupVRT =
+        cornerstoneTools.ToolGroupManager.getToolGroup(toolGroupIdVRT);
+      const croppingTool = toolGroupVRT.getToolInstance(
+        VolumeCroppingTool.toolName
+      );
+
+      if (!croppingTool) {
+        return;
+      }
+
+      croppingTool.setHandleRadius(sphereRadius);
+    },
+    updateLabelOnChange: (value, label) => {
+      label.textContent = `Handles size: ${value}`;
+    },
+  });
+
+  const viewport = renderingEngine.getViewport(
+    viewportId4
+  ) as LegacyVolumeViewport3D;
+
   await setVolumesForViewports(
     renderingEngine,
     [{ volumeId }],
-    [viewportId4]
-  ).then(() => {
-    viewport.setProperties({
-      preset: 'CT-Bone',
-    });
-    toolGroupVRT.addViewport(viewportId4, renderingEngineId);
-    toolGroupVRT.addTool(VolumeCroppingTool.toolName, {
-      sphereRadius: 7,
-      sphereColors: {
-        x: [1, 1, 0],
-        y: [0, 1, 0],
-        z: [1, 0, 0],
-        corners: [0, 0, 1],
-      },
-      showCornerSpheres: true,
-      initialCropFactor: 0.2,
-    });
-    toolGroupVRT.setToolActive(VolumeCroppingTool.toolName, {
-      bindings: [
-        {
-          mouseButton: MouseBindings.Primary,
-        },
-      ],
-    });
-    viewport.setZoom(1.2);
-    viewport.render();
+    [viewportId4],
+    true
+  );
+
+  viewport.setProperties({
+    preset: 'CT-Bone',
   });
+
+  toolGroupVRT.addViewport(viewportId4, renderingEngineId);
+
+  viewport.resetCamera();
+  viewport.setZoom(1.2);
+
+  // Force VTK pipeline to size and render (workaround for volume not showing until interaction)
+  renderingEngine.resize(true, true);
+
+  // Now add and activate the cropping tool (start with clipping off so volume gets first render)
+  toolGroupVRT.addTool(VolumeCroppingTool.toolName, {
+    showHandles: false,
+    showClippingPlanes: false,
+    sphereRadius: 7,
+    sphereColors: {
+      x: [1, 1, 0],
+      y: [0, 1, 0],
+      z: [1, 0, 0],
+      corners: [0, 0, 1],
+    },
+    showCornerSpheres: true,
+    initialCropFactor: 0.2,
+  });
+  toolGroupVRT.setToolActive(VolumeCroppingTool.toolName, {
+    bindings: [
+      { mouseButton: MouseBindings.Primary },
+      {
+        mouseButton: MouseBindings.Primary,
+        modifierKey: KeyboardBindings.Shift,
+      },
+    ],
+  });
+
+  // Hide 3D handles by default (same as toggle button does)
+  const croppingTool = toolGroupVRT.getToolInstance('VolumeCropping');
+  if (croppingTool && typeof croppingTool.setHandlesVisible === 'function') {
+    croppingTool.setHandlesVisible(false);
+  }
+  updateRotateHintVisibility();
+  // Clipping off on load; user enables via Toggle Clipping Planes button
+  renderingEngine.renderViewports(activeViewportIds);
 }
 
 run();

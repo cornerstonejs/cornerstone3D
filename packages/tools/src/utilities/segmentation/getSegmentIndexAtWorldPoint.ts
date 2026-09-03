@@ -5,11 +5,21 @@ import {
   getSegmentation,
   getCurrentLabelmapImageIdsForViewport,
 } from '../../stateManagement/segmentation/segmentationState';
-import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
-import type { ContourSegmentationAnnotation, Segmentation } from '../../types';
+import type {
+  Annotation,
+  ContourSegmentationAnnotation,
+  Segmentation,
+} from '../../types';
 import { getAnnotation } from '../../stateManagement';
 import { isPointInsidePolyline3D } from '../math/polyline';
+import filterAnnotationsForDisplay from '../planar/filterAnnotationsForDisplay';
 import { getLabelmapActorEntry } from '../../stateManagement/segmentation/helpers/getSegmentationActor';
+import getViewportLabelmapRenderMode from '../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
+import {
+  getLabelmaps,
+  getOrCreateLabelmapVolume,
+  getSegmentIndexForLabelValue,
+} from '../../stateManagement/segmentation/helpers/labelmapSegmentationState';
 
 type Options = {
   representationType?: SegmentationRepresentations;
@@ -73,20 +83,41 @@ export function getSegmentIndexAtWorldForLabelmap(
   worldPoint: Types.Point3,
   { viewport }: Options
 ): number | undefined {
-  const labelmapData = segmentation.representationData.Labelmap;
+  const viewportRenderMode = viewport
+    ? getViewportLabelmapRenderMode(viewport)
+    : 'unsupported';
 
-  if (viewport instanceof BaseVolumeViewport) {
-    const { volumeId } = labelmapData as LabelmapSegmentationDataVolume;
-    const segmentationVolume = cache.getVolume(volumeId);
+  if (
+    viewportRenderMode === 'volume' ||
+    viewport instanceof BaseVolumeViewport
+  ) {
+    for (const layer of getLabelmaps(segmentation)) {
+      const segmentationVolume = getOrCreateLabelmapVolume(layer);
 
-    if (!segmentationVolume) {
-      return;
+      if (!segmentationVolume) {
+        continue;
+      }
+
+      const voxelManager =
+        segmentationVolume.voxelManager as Types.IVoxelManager<number>;
+      const indexIJK = utilities.transformWorldToIndex(
+        segmentationVolume.imageData,
+        worldPoint
+      );
+      const labelValue = voxelManager.getAtIJKPoint(indexIJK as Types.Point3);
+
+      if (!labelValue) {
+        continue;
+      }
+
+      return getSegmentIndexForLabelValue(
+        segmentation,
+        layer.labelmapId,
+        labelValue
+      );
     }
 
-    const segmentIndex =
-      segmentationVolume.imageData.getScalarValueFromWorld(worldPoint);
-
-    return segmentIndex;
+    return;
   }
 
   // stack segmentation case
@@ -95,38 +126,51 @@ export function getSegmentIndexAtWorldForLabelmap(
     segmentation.segmentationId
   );
 
-  if (segmentationImageIds.length > 1) {
-    console.warn(
-      'Segment selection for labelmaps with multiple imageIds in stack viewports is not supported yet.'
+  if (!segmentationImageIds?.length) {
+    return;
+  }
+
+  for (const segmentationImageId of segmentationImageIds) {
+    const image = cache.getImage(segmentationImageId);
+
+    if (!image) {
+      continue;
+    }
+
+    const segmentationActorEntry = getLabelmapActorEntry(
+      viewport.id,
+      segmentation.segmentationId,
+      segmentationImageId
     );
-    return;
+    const imageData = segmentationActorEntry?.actor.getMapper().getInputData();
+    const indexIJK = utilities.transformWorldToIndex(imageData, worldPoint);
+
+    const dimensions = imageData.getDimensions();
+    const voxelManager = (imageData.voxelManager ||
+      utilities.VoxelManager.createScalarVolumeVoxelManager({
+        dimensions,
+        scalarData: imageData.getPointData().getScalars().getData(),
+      })) as Types.IVoxelManager<number>;
+
+    const labelValue = voxelManager.getAtIJKPoint(indexIJK as Types.Point3);
+
+    if (!labelValue) {
+      continue;
+    }
+
+    const layer = getLabelmaps(segmentation).find((candidateLayer) =>
+      candidateLayer.imageIds?.includes(segmentationImageId)
+    );
+    if (!layer) {
+      return labelValue;
+    }
+
+    return getSegmentIndexForLabelValue(
+      segmentation,
+      layer.labelmapId,
+      labelValue
+    );
   }
-
-  const segmentationImageId = segmentationImageIds[0];
-
-  const image = cache.getImage(segmentationImageId);
-
-  if (!image) {
-    return;
-  }
-
-  const segmentationActorEntry = getLabelmapActorEntry(
-    viewport.id,
-    segmentation.segmentationId
-  );
-  const imageData = segmentationActorEntry?.actor.getMapper().getInputData();
-  const indexIJK = utilities.transformWorldToIndex(imageData, worldPoint);
-
-  const dimensions = imageData.getDimensions();
-  const voxelManager = (imageData.voxelManager ||
-    utilities.VoxelManager.createScalarVolumeVoxelManager({
-      dimensions,
-      scalarData: imageData.getPointData().getScalars().getData(),
-    })) as Types.IVoxelManager<number>;
-
-  const segmentIndex = voxelManager.getAtIJKPoint(indexIJK as Types.Point3);
-
-  return segmentIndex;
 }
 
 /**
@@ -144,39 +188,41 @@ export function getSegmentIndexAtWorldForContour(
 ): number {
   const contourData = segmentation.representationData.Contour;
 
-  const segmentIndices = Array.from(contourData.annotationUIDsMap.keys());
-  const { viewPlaneNormal } = viewport.getCamera();
-
-  for (const segmentIndex of segmentIndices) {
-    const annotationsSet = contourData.annotationUIDsMap.get(segmentIndex);
-
-    if (!annotationsSet) {
-      continue;
-    }
-
-    for (const annotationUID of annotationsSet) {
+  // Map every contour annotation back to its segment index so we can restrict
+  // the search to the annotations the viewport is actually displaying.
+  const segmentIndexByAnnotation = new Map<Annotation, number>();
+  for (const [segmentIndex, annotationUIDs] of contourData.annotationUIDsMap) {
+    for (const annotationUID of annotationUIDs) {
       const annotation = getAnnotation(
         annotationUID
       ) as ContourSegmentationAnnotation;
 
-      if (!annotation) {
-        continue;
+      if (annotation) {
+        segmentIndexByAnnotation.set(annotation, Number(segmentIndex));
       }
+    }
+  }
 
-      const { polyline } = annotation.data.contour;
+  // Only consider contours displayed on the current slice. Reusing the same
+  // filter the renderer applies (filterAnnotationsWithinSlice for volume
+  // viewports, isReferenceViewable for stack viewports) ensures a contour from
+  // another slice is not matched - its polyline shares the view plane normal and
+  // the point-in-polyline test projects to 2D, so it would otherwise contain the
+  // point even though it belongs to a different slice.
+  const displayableAnnotations = filterAnnotationsForDisplay(
+    viewport,
+    Array.from(segmentIndexByAnnotation.keys())
+  );
 
-      if (
-        !utilities.isEqual(viewPlaneNormal, annotation.metadata.viewPlaneNormal)
-      ) {
-        continue;
-      }
+  for (const annotation of displayableAnnotations) {
+    const { polyline } = (annotation as ContourSegmentationAnnotation).data
+      .contour;
 
-      // This function checks whether we are inside the contour. It does not
-      // check if we are exactly on the contour, which is highly unlikely given
-      // the canvas pixel resolution of 1 decimal place we have by design.
-      if (isPointInsidePolyline3D(worldPoint, polyline)) {
-        return Number(segmentIndex);
-      }
+    // This function checks whether we are inside the contour. It does not
+    // check if we are exactly on the contour, which is highly unlikely given
+    // the canvas pixel resolution of 1 decimal place we have by design.
+    if (isPointInsidePolyline3D(worldPoint, polyline)) {
+      return segmentIndexByAnnotation.get(annotation);
     }
   }
 }

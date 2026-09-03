@@ -5,7 +5,7 @@ import type Point2 from './Point2';
  * Camera Interface. See {@link https://kitware.github.io/vtk-examples/site/VTKBook/03Chapter3/#35-cameras} if you
  * want to know more about the camera.
  */
-interface ICamera {
+interface ICamera<TScale = number> {
   /** Camera Focal point */
   focalPoint?: Point3;
   /** Camera Parallel Projection flag - whether camera is using parallel projection */
@@ -16,7 +16,7 @@ interface ICamera {
    * Scale factor for the camera, it is the ratio of how much an image pixel takes
    * up one screen pixel
    */
-  scale?: number;
+  scale?: TScale;
   /** Camera position */
   position?: Point3;
   /** Camera view angle - 90 degrees is orthographic */
@@ -33,6 +33,17 @@ interface ICamera {
   flipVertical?: boolean;
   /** clipping range */
   clippingRange?: Point2;
+  /** Aspect Ratio */
+  aspectRatio?: Point2;
+  /** Anamorphic Stretch */
+  isFitViewportAfterStretch?: boolean;
 }
 
-export type { ICamera as default };
+interface ResetCameraOptions {
+  resetPan?: boolean;
+  resetZoom?: boolean;
+  resetToCenter?: boolean;
+  resetAspectRatio?: boolean;
+}
+
+export type { ICamera as default, ResetCameraOptions };

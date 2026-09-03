@@ -20,44 +20,30 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6.0.3
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6.0.8
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6.4.0
         with:
-          node-version: '20.18.1'
-          cache: 'npm'
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.2.23
+          node-version: '24.15.0'
+          cache: 'pnpm'
 
       - name: Install root dependencies
-        run: bun install --frozen-lockfile
-
-      - name: reset nx cache
-        run: rm -rf .nx/cache
-
-      - name: reset nx cache
-        run: bun nx reset
+        run: pnpm install --frozen-lockfile
 
       - name: Build packages in ESM format
-        run: bun run build:esm
-        env:
-          NX_CACHE_DIRECTORY: ${{ runner.temp }}/nx-cache
-          NX_DAEMON: false
-
-      - name: Install docs dependencies
-        run: cd packages/docs && bun install
+        run: pnpm run build:esm
 
       - name: Build Docusaurus documentation
-        run: cd packages/docs && bun run build:ci
+        run: pnpm --filter docs run build:ci
         env:
           NODE_OPTIONS: --max_old_space_size=32384
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         if: always()
         with:
           name: docusaurus-build-${{ github.sha }}

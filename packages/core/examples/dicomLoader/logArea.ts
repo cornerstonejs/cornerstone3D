@@ -3,7 +3,7 @@ export type AddLogFn = (message: string, ...args: unknown[]) => void;
 function createLogArea() {
   const area = document.createElement('div');
   area.id = 'log-area';
-  area.style.width = '500px';
+  area.style.width = '512px';
   area.style.height = '80vh';
   area.style.background = 'lightblue';
   area.style.margin = '5px';

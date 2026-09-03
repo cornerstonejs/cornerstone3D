@@ -30,7 +30,7 @@ const WADO_RS_TESTS = [
 describe('dicomImageLoader - WADO-RS', () => {
   beforeEach(() => {
     wadors.register();
-    dicomImageLoaderInit();
+    dicomImageLoaderInit({ useLegacyMetadataProvider: true });
   });
 
   afterEach(() => {
@@ -39,6 +39,7 @@ describe('dicomImageLoader - WADO-RS', () => {
     wadors.metaDataManager.purge();
     cache.purgeCache();
     imageLoader.unregisterAllImageLoaders();
+    metaData.removeAllProviders();
   });
 
   for (const t of WADO_RS_TESTS) {
@@ -65,4 +66,66 @@ describe('dicomImageLoader - WADO-RS', () => {
       }
     });
   }
+});
+
+describe('dicomImageLoader - WADO-RS default metadata registration', () => {
+  beforeEach(() => {
+    dicomImageLoaderInit();
+  });
+
+  afterEach(() => {
+    wadors.metaDataManager.purge();
+    cache.purgeCache();
+    imageLoader.unregisterAllImageLoaders();
+    metaData.removeAllProviders();
+  });
+
+  it('should read legacy WADO-RS metadata when default providers are registered', () => {
+    const test = WADO_RS_TESTS[0];
+    const [frame] = test.frames;
+    const [metadataModuleName, expectedModuleValues] = Object.entries(
+      frame.metadataModule
+    )[0];
+
+    wadors.metaDataManager.add(test.wadorsUrl, test.wadorsMetadata);
+
+    const actualModuleValue = metaData.get(metadataModuleName, test.wadorsUrl);
+
+    expect(actualModuleValue).toEqual(expectedModuleValues);
+  });
+});
+
+describe('dicomImageLoader - metadata provider preservation', () => {
+  afterEach(() => {
+    wadors.metaDataManager.purge();
+    cache.purgeCache();
+    imageLoader.unregisterAllImageLoaders();
+    metaData.removeAllProviders();
+  });
+
+  it('should keep app metadata providers registered before initialization', () => {
+    const imageId =
+      'wadors:https://server.example/dicom-web/studies/1/series/2/instances/3/frames/1';
+    const imagePixelModule = {
+      samplesPerPixel: 1,
+      photometricInterpretation: 'MONOCHROME2',
+      rows: 64,
+      columns: 64,
+      bitsAllocated: 16,
+      bitsStored: 12,
+      highBit: 11,
+      pixelRepresentation: 0,
+    };
+    const appProvider = (type, query) => {
+      if (type === 'imagePixelModule' && query === imageId) {
+        return imagePixelModule;
+      }
+    };
+
+    metaData.addProvider(appProvider, 9999);
+
+    dicomImageLoaderInit();
+
+    expect(metaData.get('imagePixelModule', imageId)).toBe(imagePixelModule);
+  });
 });

@@ -7,5 +7,12 @@ export default class FixJSDOMEnvironment extends JSDOMEnvironment {
 
     // FIXME https://github.com/jsdom/jsdom/issues/3363
     this.global.structuredClone = structuredClone;
+
+    // jsdom doesn't provide TextEncoder/TextDecoder
+    if (!this.global.TextEncoder) {
+      const { TextEncoder, TextDecoder } = require('util');
+      this.global.TextEncoder = TextEncoder;
+      this.global.TextDecoder = TextDecoder;
+    }
   }
 }

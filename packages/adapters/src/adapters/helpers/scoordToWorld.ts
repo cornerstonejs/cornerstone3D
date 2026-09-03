@@ -1,4 +1,4 @@
-import { type Types, utilities } from "@cornerstonejs/core";
+import { type Types, utilities } from '@cornerstonejs/core';
 
 const { imageToWorldCoords } = utilities;
 
@@ -8,29 +8,25 @@ const { imageToWorldCoords } = utilities;
  * 2d points, it will convert image to to world coords.
  */
 export function scoordToWorld(
-    { is3DMeasurement, referencedImageId },
-    scoord
+  { is3DMeasurement, referencedImageId },
+  scoord
 ): Types.Point3[] {
-    const worldCoords = [];
-    if (is3DMeasurement) {
-        const { GraphicData } = scoord;
-        for (let i = 0; i < GraphicData.length; i += 3) {
-            const point = [
-                GraphicData[i],
-                GraphicData[i + 1],
-                GraphicData[i + 2]
-            ];
-            worldCoords.push(point);
-        }
-    } else {
-        const { GraphicData } = scoord;
-        for (let i = 0; i < GraphicData.length; i += 2) {
-            const point = imageToWorldCoords(referencedImageId, [
-                GraphicData[i],
-                GraphicData[i + 1]
-            ]);
-            worldCoords.push(point);
-        }
+  const worldCoords = [];
+  if (is3DMeasurement) {
+    const { GraphicData } = scoord;
+    for (let i = 0; i < GraphicData.length; i += 3) {
+      const point = [GraphicData[i], GraphicData[i + 1], GraphicData[i + 2]];
+      worldCoords.push(point);
     }
-    return worldCoords;
+  } else {
+    const { GraphicData } = scoord;
+    for (let i = 0; i < GraphicData.length; i += 2) {
+      const point = imageToWorldCoords(referencedImageId, [
+        GraphicData[i],
+        GraphicData[i + 1],
+      ]);
+      worldCoords.push(point);
+    }
+  }
+  return worldCoords;
 }

@@ -1,8 +1,8 @@
 import {
+  BaseVolumeViewport,
   cache,
   getEnabledElement,
   utilities as csUtils,
-  BaseVolumeViewport,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -26,7 +26,11 @@ import {
   getCurrentLabelmapImageIdForViewport,
   getSegmentation,
 } from '../../stateManagement/segmentation/segmentationState';
-import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
+import getViewportLabelmapRenderMode from '../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
+import {
+  getOrCreateLabelmapVolume,
+  resolveLabelmapForSegment,
+} from '../../stateManagement/segmentation/helpers/labelmapSegmentationState';
 
 const { transformWorldToIndex, isEqual } = csUtils;
 
@@ -98,12 +102,21 @@ class PaintFillTool extends BaseTool {
 
     this.doneEditMemo();
 
-    if (viewport instanceof BaseVolumeViewport) {
-      const { volumeId } = representationData[
-        SegmentationRepresentations.Labelmap
-      ] as LabelmapSegmentationDataVolume;
+    const viewportRenderMode = getViewportLabelmapRenderMode(viewport);
 
-      const segmentation = cache.getVolume(volumeId);
+    if (
+      viewportRenderMode === 'volume' ||
+      viewport instanceof BaseVolumeViewport
+    ) {
+      const layer = resolveLabelmapForSegment(
+        getSegmentation(segmentationId),
+        segmentIndex
+      );
+      const segmentation = layer ? getOrCreateLabelmapVolume(layer) : undefined;
+
+      if (!segmentation) {
+        return;
+      }
       ({ dimensions, direction } = segmentation);
 
       voxelManager = segmentation.voxelManager;

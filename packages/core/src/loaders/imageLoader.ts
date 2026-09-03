@@ -1,5 +1,7 @@
 import cache from '../cache/cache';
 import Events from '../enums/Events';
+import MetadataModules from '../enums/MetadataModules';
+import { ImageQualityStatus } from '../enums';
 import eventTarget from '../eventTarget';
 import genericMetadataProvider from '../utilities/genericMetadataProvider';
 import { getBufferConfiguration } from '../utilities/getBufferConfiguration';
@@ -18,6 +20,7 @@ import type {
   PixelDataTypedArray,
   ImagePlaneModuleMetadata,
   ImagePixelModuleMetadata,
+  RetrieveOptions,
 } from '../types';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import * as metaData from '../metaData';
@@ -28,6 +31,7 @@ export interface ImageLoaderOptions {
   requestType: string;
   additionalDetails?: Record<string, unknown>;
   ignoreCache?: boolean;
+  retrieveOptions?: RetrieveOptions;
 }
 
 interface LocalImageOptions {
@@ -68,6 +72,15 @@ type DerivedImageOptions = LocalImageOptions & {
 const imageLoaders = {};
 let unknownImageLoader;
 
+function getRequestedImageQualityStatus(
+  options: ImageLoaderOptions
+): ImageQualityStatus {
+  return (
+    options.retrieveOptions?.imageQualityStatus ??
+    ImageQualityStatus.FULL_RESOLUTION
+  );
+}
+
 /**
  * Loads an image using a registered Cornerstone Image Loader.
  *
@@ -84,13 +97,32 @@ function loadImageFromImageLoader(
   options: ImageLoaderOptions
 ): IImageLoadObject {
   // Attempt to retrieve the image from cache
-  const cachedImageLoadObject = cache.getImageLoadObject(imageId);
+  const cachedImageLoadObject =
+    !options.ignoreCache && cache.getImageLoadObject(imageId);
 
   if (cachedImageLoadObject) {
     // This is an in-progress image, which someone else is loading, so just
     // handle the response directly.
     handleImageLoadPromise(cachedImageLoadObject.promise, imageId);
     return cachedImageLoadObject;
+  }
+
+  // Progressive retrieval intentionally leaves partial images in the cache
+  // while scheduling a final request. Never replace this with a quality-blind
+  // cache.getImage(imageId) shortcut, or the final request can resolve to the
+  // partial image and the volume will never receive full-resolution data.
+  const cachedImage =
+    !options.ignoreCache &&
+    cache.getImage(imageId, getRequestedImageQualityStatus(options));
+
+  if (cachedImage) {
+    const imageLoadObject = {
+      promise: Promise.resolve(cachedImage),
+    };
+
+    handleImageLoadPromise(imageLoadObject.promise, imageId);
+
+    return imageLoadObject;
   }
 
   // Determine the appropriate image loader based on the image scheme
@@ -247,7 +279,10 @@ export function createAndCacheDerivedImage(
   const { imageId, skipCreateBuffer, onCacheAdd, voxelRepresentation } =
     options;
 
-  const imagePlaneModule = metaData.get('imagePlaneModule', referencedImageId);
+  const imagePlaneModule = metaData.get(
+    MetadataModules.IMAGE_PLANE,
+    referencedImageId
+  );
 
   const length = imagePlaneModule.rows * imagePlaneModule.columns;
 
@@ -262,35 +297,38 @@ export function createAndCacheDerivedImage(
   );
   const derivedImageId = imageId;
   const referencedImagePlaneMetadata = metaData.get(
-    'imagePlaneModule',
+    MetadataModules.IMAGE_PLANE,
     referencedImageId
   );
 
   genericMetadataProvider.add(derivedImageId, {
-    type: 'imagePlaneModule',
+    type: MetadataModules.IMAGE_PLANE,
     metadata: referencedImagePlaneMetadata,
   });
 
   const referencedImageGeneralSeriesMetadata = metaData.get(
-    'generalSeriesModule',
+    MetadataModules.GENERAL_SERIES,
     referencedImageId
   );
 
   genericMetadataProvider.add(derivedImageId, {
-    type: 'generalSeriesModule',
+    type: MetadataModules.GENERAL_SERIES,
     metadata: referencedImageGeneralSeriesMetadata,
   });
 
   genericMetadataProvider.add(derivedImageId, {
-    type: 'generalImageModule',
+    type: MetadataModules.GENERAL_IMAGE,
     metadata: {
       instanceNumber: options.instanceNumber,
     },
   });
 
-  const imagePixelModule = metaData.get('imagePixelModule', referencedImageId);
+  const imagePixelModule = metaData.get(
+    MetadataModules.IMAGE_PIXEL,
+    referencedImageId
+  );
   genericMetadataProvider.add(derivedImageId, {
-    type: 'imagePixelModule',
+    type: MetadataModules.IMAGE_PIXEL,
     metadata: {
       ...imagePixelModule,
       bitsAllocated: 8,
@@ -488,7 +526,7 @@ export function createAndCacheLocalImage(
   };
 
   // Add metadata to genericMetadataProvider
-  ['imagePlaneModule', 'imagePixelModule'].forEach((type) => {
+  [MetadataModules.IMAGE_PLANE, MetadataModules.IMAGE_PIXEL].forEach((type) => {
     genericMetadataProvider.add(imageId, {
       type,
       metadata: metadata[type] || {},

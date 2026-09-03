@@ -1,5 +1,6 @@
-import { getEnabledElement, StackViewport, Enums } from '@cornerstonejs/core';
+import { getEnabledElement, Enums, utilities } from '@cornerstonejs/core';
 import { getToolState } from './state';
+import { viewportSupportsImageSlices } from '../viewportCapabilities';
 
 export const requestType = Enums.RequestType.Prefetch;
 export const priority = 0;
@@ -51,7 +52,18 @@ export function getStackData(element) {
 
   const { viewport } = enabledElement;
 
-  if (!(viewport instanceof StackViewport)) {
+  if (
+    !viewportSupportsImageSlices(viewport) ||
+    utilities.viewportIsInVolumeMode(viewport) ||
+    // A legacy VolumeViewport exposes the same image-slice methods as a
+    // StackViewport (so viewportSupportsImageSlices is true) but has no
+    // getCurrentMode, so viewportIsInVolumeMode cannot detect it. Exclude it
+    // here to preserve the old `instanceof StackViewport` behavior; a generic
+    // ("next") viewport that also exposes addVolumes/setVolumes via the legacy
+    // adapter still passes isGenericViewport and stays prefetchable.
+    (utilities.viewportSupportsVolumeCompatibility(viewport) &&
+      !utilities.isGenericViewport(viewport))
+  ) {
     // we shouldn't throw error here, since the viewport might have
     // changed from stack to volume during prefetch
     return null;

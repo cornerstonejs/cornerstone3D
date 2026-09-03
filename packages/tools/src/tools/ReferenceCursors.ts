@@ -13,6 +13,7 @@ import {
 import { isAnnotationVisible } from '../stateManagement/annotation/annotationVisibility';
 import { drawLine } from '../drawingSvg';
 import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters';
+import getViewportICamera from '../utilities/getViewportICamera';
 import type {
   EventTypes,
   PublicToolProps,
@@ -33,6 +34,7 @@ import {
   resetElementCursor,
 } from '../cursors/elementCursor';
 import { getToolGroup } from '../store/ToolGroupManager';
+import { jumpToFocalPoint } from '../utilities/genericViewportToolHelpers';
 
 /**
  * ReferenceCursors is a tool that will show your cursors position in all other elements in the toolGroup if they have a matching FrameOfReference relative to its position in world space.
@@ -148,7 +150,7 @@ class ReferenceCursors extends AnnotationDisplayTool {
 
     this.isDrawing = true;
 
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const { viewPlaneNormal, viewUp } = camera;
     if (!viewPlaneNormal || !viewUp) {
       throw new Error('Camera not found');
@@ -253,7 +255,16 @@ class ReferenceCursors extends AnnotationDisplayTool {
   //checks if we need to update the annotation position due to camera changes
   onCameraModified = (evt: Types.EventTypes.CameraModifiedEvent): void => {
     const eventDetail = evt.detail;
-    const { element, previousCamera, camera } = eventDetail;
+    const { previousCamera, camera } = eventDetail;
+    const element =
+      eventDetail.element ||
+      (evt.currentTarget as HTMLDivElement | null) ||
+      (evt.target as HTMLDivElement | null);
+
+    if (!element || !previousCamera) {
+      return;
+    }
+
     const enabledElement = getEnabledElement(element);
     const viewport = enabledElement.viewport as
       | Types.IVolumeViewport
@@ -305,7 +316,7 @@ class ReferenceCursors extends AnnotationDisplayTool {
     if (!viewport) {
       return [];
     }
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const { viewPlaneNormal, focalPoint } = camera;
     if (!viewPlaneNormal || !focalPoint) {
       return [];
@@ -451,9 +462,7 @@ class ReferenceCursors extends AnnotationDisplayTool {
     return renderStatus;
   };
 
-  updateViewportImage(
-    viewport: Types.IStackViewport | Types.IVolumeViewport
-  ): void {
+  updateViewportImage(viewport: Types.IViewport): void {
     const currentMousePosition = this._currentCursorWorldPosition;
 
     if (!currentMousePosition || currentMousePosition.some((e) => isNaN(e))) {
@@ -473,7 +482,7 @@ class ReferenceCursors extends AnnotationDisplayTool {
         viewport.setImageIdIndex(closestIndex);
       }
     } else if (viewport instanceof VolumeViewport) {
-      const { focalPoint, viewPlaneNormal } = viewport.getCamera();
+      const { focalPoint, viewPlaneNormal } = getViewportICamera(viewport);
       if (!focalPoint || !viewPlaneNormal) {
         return;
       }
@@ -509,6 +518,42 @@ class ReferenceCursors extends AnnotationDisplayTool {
         if (renderingEngine) {
           renderingEngine.renderViewport(viewport.id);
         }
+      }
+    } else if (utilities.isGenericViewport(viewport)) {
+      // Native PLANAR_NEXT (stack or volume mode) is neither StackViewport nor
+      // VolumeViewport. Move the rendering plane to the cursor along the view-plane
+      // normal via the view reference (snaps to the nearest slice); it has no setCamera.
+      const { focalPoint, viewPlaneNormal } = getViewportICamera(viewport);
+      if (!focalPoint || !viewPlaneNormal) {
+        return;
+      }
+      const plane = utilities.planar.planeEquation(viewPlaneNormal, focalPoint);
+      const currentDistance = utilities.planar.planeDistanceToPoint(
+        plane,
+        currentMousePosition,
+        true
+      );
+      if (Math.abs(currentDistance) < 0.5) {
+        return;
+      }
+      const normalizedViewPlane = vec3.normalize(
+        vec3.create(),
+        vec3.fromValues(...viewPlaneNormal)
+      );
+      const scaledPlaneNormal = vec3.scale(
+        vec3.create(),
+        normalizedViewPlane,
+        currentDistance
+      );
+      const newFocalPoint = vec3.add(
+        vec3.create(),
+        vec3.fromValues(...focalPoint),
+        scaledPlaneNormal
+      ) as Types.Point3;
+      jumpToFocalPoint(viewport, newFocalPoint);
+      const renderingEngine = viewport.getRenderingEngine();
+      if (renderingEngine) {
+        renderingEngine.renderViewport(viewport.id);
       }
     }
   }

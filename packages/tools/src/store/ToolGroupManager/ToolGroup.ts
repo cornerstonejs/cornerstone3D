@@ -820,7 +820,9 @@ export default class ToolGroup {
           toolName,
           sourceToolMode,
           {
-            bindings: sourceToolOptions.bindings ?? [],
+            // Tools added without ever receiving a mode have no toolOptions
+            // entry, but they still appear in _toolInstances.
+            bindings: sourceToolOptions?.bindings ?? [],
           }
         );
       });

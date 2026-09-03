@@ -476,7 +476,7 @@ const { numberOfComponents } = imageData.get('numberOfComponents');
 1. Replace `getPointData().getScalars().getNumberOfComponents()` with `get('numberOfComponents')`.
 2. Use the destructuring syntax to extract the `numberOfComponents` property.
 
-::info
+:::info
 These changes represent a significant update to the Cornerstone library's handling of image volumes and textures. The introduction of the VoxelManager and the elimination of large scalar data arrays for volumes provide several benefits:
 
 1. Reduced memory usage: By relying on individual images instead of a large array buffer, memory usage is significantly reduced, especially for large datasets.

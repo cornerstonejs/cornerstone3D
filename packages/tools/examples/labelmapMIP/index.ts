@@ -52,7 +52,7 @@ setTitleAndDescription(
   'Here we demonstrate rendering of a mock ellipsoid labelmap over MIP data'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 
@@ -86,6 +86,20 @@ addButtonToToolbar({
   },
 });
 
+addButtonToToolbar({
+  title: 'Delete Labelmap Representation',
+  onClick: () => {
+    const representations =
+      segmentation.state.getSegmentationRepresentations(viewportId2);
+
+    if (representations && representations.length > 0) {
+      segmentation.removeSegmentationRepresentation(
+        viewportId2,
+        segmentationId as any
+      );
+    }
+  },
+});
 /**
  * Runs the demo
  */

@@ -19,9 +19,12 @@ export default function drawPath(
     color?: string;
     fillColor?: string;
     fillOpacity?: number;
+    strokeOpacity?: number;
     width?: number;
     lineWidth?: number;
     lineDash?: string;
+    lineCap?: 'butt' | 'round' | 'square';
+    lineJoin?: 'miter' | 'round' | 'bevel';
     closePath?: boolean;
   }
 ): void {
@@ -36,8 +39,11 @@ export default function drawPath(
     width = 10,
     fillColor = 'none',
     fillOpacity = 0,
+    strokeOpacity = 1,
     lineWidth,
     lineDash,
+    lineCap,
+    lineJoin,
     closePath = false,
   } = options;
 
@@ -80,8 +86,11 @@ export default function drawPath(
     stroke: color,
     fill: fillColor,
     'fill-opacity': fillOpacity,
+    'stroke-opacity': strokeOpacity,
     'stroke-width': strokeWidth,
     'stroke-dasharray': lineDash,
+    'stroke-linecap': lineCap,
+    'stroke-linejoin': lineJoin,
   };
 
   if (existingNode) {

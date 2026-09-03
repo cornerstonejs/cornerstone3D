@@ -95,7 +95,7 @@ describe('metaData Provider', function () {
     //
     metaData.addProvider(metadataProvider1);
     metaData.addProvider(metadataProvider2, 100);
-    metaData.addProvider(metadataProvider1, 1000);
+    metaData.addProvider(metadataProvider1.bind(), 1000);
 
     const result = metaData.get('modalityLutModule', 'imageId');
     expect(result.rescaleSlope).toBe(1);

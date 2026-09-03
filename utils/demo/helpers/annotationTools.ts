@@ -16,6 +16,7 @@ const {
   EraserTool,
   KeyImageTool,
   VideoRedactionTool,
+  UltrasoundDirectionalTool,
 } = cornerstoneTools;
 
 const annotationTools = new Map<string, ToolBinding>();
@@ -39,5 +40,8 @@ annotationTools.set(PlanarFreehandROITool.toolName, {
 annotationTools.set(EraserTool.toolName, { tool: EraserTool });
 annotationTools.set(KeyImageTool.toolName, { tool: KeyImageTool });
 annotationTools.set(VideoRedactionTool.toolName, { tool: VideoRedactionTool });
+annotationTools.set(UltrasoundDirectionalTool.toolName, {
+  tool: UltrasoundDirectionalTool,
+});
 
 export default annotationTools;

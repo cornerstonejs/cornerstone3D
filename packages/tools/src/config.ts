@@ -94,12 +94,23 @@ type ComputeWorkerConfig = {
   };
 };
 
+type SegmentationConfig = {
+  /**
+   * Controls how labelmap editing interacts with other segments.
+   * - all: erase all other unlocked segments under the edit footprint
+   * - visible: erase only visible unlocked segments
+   * - none: do not erase other segments, allowing overlap
+   */
+  overwriteMode?: 'all' | 'visible' | 'none';
+};
+
 /**
  * Configuration type containing add-ons
  */
 export type Config = {
   addons: AddOns;
   computeWorker?: ComputeWorkerConfig;
+  segmentation?: SegmentationConfig;
 };
 
 let config = {} as Config;

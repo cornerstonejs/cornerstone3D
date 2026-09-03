@@ -9,7 +9,9 @@ import type {
 function validateRepresentationData(
   segmentationRepresentationData: LabelmapSegmentationData
 ): void {
-  if ('volumeId' in segmentationRepresentationData) {
+  if (
+    (segmentationRepresentationData as LabelmapSegmentationDataVolume).volumeId
+  ) {
     segmentationRepresentationData =
       segmentationRepresentationData as LabelmapSegmentationDataVolume;
 

@@ -2,7 +2,7 @@ import {
   handleMultiframe4D,
   generateFrameImageId,
 } from '../../src/utilities/splitImageIdsBy4DTags';
-import * as metaData from '../../src/metaData';
+import { metaData } from '@cornerstonejs/metadata';
 import {
   describe,
   it,
@@ -13,18 +13,16 @@ import {
 } from '@jest/globals';
 
 describe('splitImageIdsBy4DTags - Multiframe 4D Functions', () => {
-  let originalMetaDataGet;
   let mockMetaDataGet;
 
   beforeEach(() => {
-    originalMetaDataGet = metaData.get;
-    mockMetaDataGet = jest.fn();
-    metaData.get = mockMetaDataGet;
+    mockMetaDataGet = jest
+      .spyOn(metaData, 'get')
+      .mockImplementation(() => undefined);
   });
 
   afterEach(() => {
-    metaData.get = originalMetaDataGet;
-    jest.clearAllMocks();
+    jest.restoreAllMocks();
   });
 
   describe('generateFrameImageId', () => {
@@ -35,13 +33,20 @@ describe('splitImageIdsBy4DTags - Multiframe 4D Functions', () => {
       expect(result).toBe('wadors:/path/to/image.dcm/frames/5');
     });
 
-    it('should throw an error when /frames/ pattern is missing', () => {
-      const baseImageId = 'wadors:/path/to/image.dcm';
+    it('should replace the frame number for query-param-based imageIds', () => {
+      const baseImageId = 'wadouri:/path/to/image.dcm?frame=1';
       const frameNumber = 5;
+      const result = generateFrameImageId(baseImageId, frameNumber);
 
-      expect(() => generateFrameImageId(baseImageId, frameNumber)).toThrow(
-        'baseImageId must contain a "/frames/" pattern followed by a digit'
-      );
+      expect(result).toBe('wadouri:/path/to/image.dcm?frame=5');
+    });
+
+    it('should append a frame parameter for local file imageIds', () => {
+      const baseImageId = 'dicomfile:0';
+      const frameNumber = 5;
+      const result = generateFrameImageId(baseImageId, frameNumber);
+
+      expect(result).toBe('dicomfile:0?frame=5');
     });
   });
 
@@ -66,6 +71,22 @@ describe('splitImageIdsBy4DTags - Multiframe 4D Functions', () => {
       expect(result.imageIdGroups[1]).toEqual([
         'wadors:/path/to/multiframe.dcm/frames/3',
         'wadors:/path/to/multiframe.dcm/frames/4',
+      ]);
+    });
+
+    it('should successfully split local multiframe imageIds without a /frames/ suffix', () => {
+      mockMetaDataGet.mockReturnValue({
+        NumberOfFrames: 4,
+        TimeSlotVector: [1, 1, 2, 2],
+      });
+
+      const result = handleMultiframe4D(['dicomfile:0']);
+
+      expect(result).not.toBeNull();
+      expect(result.splittingTag).toBe('TimeSlotVector');
+      expect(result.imageIdGroups).toEqual([
+        ['dicomfile:0?frame=1', 'dicomfile:0?frame=2'],
+        ['dicomfile:0?frame=3', 'dicomfile:0?frame=4'],
       ]);
     });
 

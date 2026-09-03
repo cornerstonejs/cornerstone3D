@@ -203,7 +203,7 @@ class ProgressiveRetrieveImagesInstance {
           // Updates the image cache to contain a partial image in whatever
           // the current status (none possibly), and remove the image load
           // instance but not the actual image cached value.
-          cache.setPartialImage(imageId);
+          cache.setPartialImage(imageId, undefined, true);
           // After the update, the image can still be fetched in the old version
           // but a new request will be run and will replace the old version as
           // appropriate

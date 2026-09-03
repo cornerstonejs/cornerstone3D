@@ -6,7 +6,11 @@ import type { InitializedOperationData } from '../BrushStrategy';
 import type { SVGDrawingHelper } from '../../../../types';
 
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
-import { drawCircle as drawCircleSvg } from '../../../../drawingSvg';
+import {
+  drawCircle as drawCircleSvg,
+  drawPath as drawPathSvg,
+} from '../../../../drawingSvg';
+import getViewportICamera from '../../../../utilities/getViewportICamera';
 
 export default {
   [StrategyCallbacks.CalculateCursorGeometry]: function (
@@ -19,8 +23,12 @@ export default {
     const { configuration, activeStrategy, hoverData } = operationData;
     const { viewport } = enabledElement;
 
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const { brushSize } = configuration;
+
+    if (!camera.viewUp || !camera.viewPlaneNormal) {
+      return;
+    }
 
     const viewUp = vec3.fromValues(
       camera.viewUp[0],
@@ -76,6 +84,7 @@ export default {
       leftCursorInWorld,
       rightCursorInWorld,
     ];
+    data.editPoints = [...data.handles.points];
 
     const strategy = configuration.strategies[activeStrategy];
 
@@ -108,22 +117,9 @@ export default {
       return;
     }
 
-    const annotationUID = toolMetadata.brushCursorUID;
+    const annotationUID = toolMetadata.brushCursorUID || 'brushCursor';
 
     const data = brushCursor.data;
-    const { points } = data.handles;
-    const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
-
-    const bottom = canvasCoordinates[0];
-    const top = canvasCoordinates[1];
-
-    const center = [
-      Math.floor((bottom[0] + top[0]) / 2),
-      Math.floor((bottom[1] + top[1]) / 2),
-    ];
-
-    const radius = Math.abs(bottom[1] - Math.floor((bottom[1] + top[1]) / 2));
-
     const color = `rgb(${toolMetadata.segmentColor?.slice(0, 3) || [0, 0, 0]})`;
 
     // If rendering engine has been destroyed while rendering
@@ -132,35 +128,86 @@ export default {
       return;
     }
 
-    const circleUID = '0';
-    drawCircleSvg(
-      svgDrawingHelper,
-      annotationUID,
-      circleUID,
-      center as Types.Point2,
-      radius,
-      {
-        color,
-        lineDash:
-          this.centerSegmentIndexInfo.segmentIndex === 0 ? [1, 2] : null,
+    const points = data.handles?.points || [];
+    const totalCircles = Math.floor((points?.length || 0) / 4);
+    const circleGeometries: Array<{ center: Types.Point2; radius: number }> =
+      [];
+
+    for (let i = 0; i < points.length; i += 4) {
+      const circlePoints = points.slice(i, i + 4);
+
+      if (circlePoints.length < 2) {
+        continue;
       }
-    );
+
+      const canvasCoordinates = circlePoints.map((p) =>
+        viewport.worldToCanvas(p)
+      );
+      const bottom = canvasCoordinates[0];
+      const top = canvasCoordinates[1];
+      const center = [
+        Math.floor((bottom[0] + top[0]) / 2),
+        Math.floor((bottom[1] + top[1]) / 2),
+      ] as Types.Point2;
+      const radius = Math.round(Math.abs(bottom[1] - center[1]));
+
+      circleGeometries.push({ center, radius });
+    }
+
+    const currentCircle = circleGeometries[circleGeometries.length - 1];
+
+    if (circleGeometries.length > 1) {
+      drawPathSvg(
+        svgDrawingHelper,
+        annotationUID,
+        'stroke-preview',
+        circleGeometries.map((circle) => circle.center),
+        {
+          color,
+          lineWidth: currentCircle.radius * 2,
+          strokeOpacity: 0.35,
+          lineCap: 'round',
+          lineJoin: 'round',
+          lineDash:
+            this.centerSegmentIndexInfo.segmentIndex === 0 ? '6,4' : undefined,
+        }
+      );
+    }
+
+    if (currentCircle) {
+      drawCircleSvg(
+        svgDrawingHelper,
+        annotationUID,
+        'current-circle',
+        currentCircle.center,
+        currentCircle.radius,
+        {
+          color,
+          lineWidth: 2,
+          strokeOpacity: 1,
+          lineDash:
+            this.centerSegmentIndexInfo.segmentIndex === 0 ? [1, 2] : null,
+        },
+        'brush-cursor'
+      );
+    }
 
     const { dynamicRadiusInCanvas } = configuration?.threshold || {
       dynamicRadiusInCanvas: 0,
     };
 
-    if (dynamicRadiusInCanvas) {
-      const circleUID1 = '1';
+    if (dynamicRadiusInCanvas && currentCircle) {
+      const circleUID1 = 'dynamic-radius';
       drawCircleSvg(
         svgDrawingHelper,
         annotationUID,
         circleUID1,
-        center as Types.Point2,
+        currentCircle.center,
         dynamicRadiusInCanvas,
         {
           color,
-        }
+        },
+        'brush-cursor'
       );
     }
   },

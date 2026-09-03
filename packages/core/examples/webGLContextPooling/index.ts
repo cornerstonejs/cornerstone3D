@@ -4,6 +4,7 @@ import {
   Enums,
   init as csRenderInit,
   getRenderingEngine,
+  utilities,
 } from '@cornerstonejs/core';
 import {
   createImageIdsAndCacheMetaData,
@@ -255,8 +256,10 @@ async function run() {
     toolGroup.addViewport(viewportId, renderingEngineId);
   });
 
-  // Get all stack viewports
-  const stackViewports = renderingEngine.getStackViewports();
+  // Get all viewports that support the stack compatibility API.
+  const stackViewports = renderingEngine
+    .getViewports()
+    .filter(utilities.viewportSupportsStackCompatibility);
 
   // Set the stack on each viewport
   await Promise.all(

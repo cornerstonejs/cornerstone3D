@@ -1,4 +1,4 @@
-import { AnnotationTool } from '../base';
+import { AnnotationTool, measurementTargetFilters } from '../base';
 import {
   getEnabledElement,
   VolumeViewport,
@@ -6,6 +6,7 @@ import {
   getEnabledElementByViewportId,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
+import { vec3 } from 'gl-matrix';
 
 import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
 import throttle from '../../utilities/throttle';
@@ -22,15 +23,13 @@ import {
 } from '../../stateManagement/annotation/helpers/state';
 import {
   drawHandles as drawHandlesSvg,
-  drawLinkedTextBox as drawLinkedTextBoxSvg,
   drawRectByCoordinates as drawRectSvg,
 } from '../../drawingSvg';
 import { state } from '../../store/state';
 import { ChangeTypes, Events } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
+import getViewportICamera from '../../utilities/getViewportICamera';
 import * as rectangle from '../../utilities/math/rectangle';
-import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
-import getWorldWidthAndHeightFromCorners from '../../utilities/planar/getWorldWidthAndHeightFromCorners';
 import {
   resetElementCursor,
   hideElementCursor,
@@ -49,11 +48,13 @@ import type {
 import type { RectangleROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
+import { viewportSupportsImageSlices } from '../../utilities/viewportCapabilities';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
+import { defaultAreaGetTextLines } from '../../utilities/defaultGetTextLines';
 
-const { transformWorldToIndex } = csUtils;
+const { transformWorldToIndex, transformWorldToIndexContinuous } = csUtils;
 
 /**
  * RectangleROIAnnotation let you draw annotations that measures the statistics
@@ -119,8 +120,12 @@ class RectangleROITool extends AnnotationTool {
         shadow: true,
         preventHandleOutsideImage: false,
         calculateStats: true,
-        getTextLines: defaultGetTextLines,
+        getTextLines: defaultAreaGetTextLines,
         statsCalculator: BasicStatsCalculator,
+        // By default show the statistics of every display set containing
+        // pixel values (eg both CT and PT on a fusion viewport), but never
+        // SEG and the like - see measurementTargetFilters for alternatives
+        targetsFilter: measurementTargetFilters.allPixelData,
       },
     }
   ) {
@@ -141,9 +146,7 @@ class RectangleROITool extends AnnotationTool {
    * @returns The annotation object.
    *
    */
-  addNewAnnotation = (
-    evt: EventTypes.InteractionEventType
-  ): RectangleROIAnnotation => {
+  addNewAnnotation = (evt: EventTypes.InteractionEventType): Annotation => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
@@ -275,9 +278,6 @@ class RectangleROITool extends AnnotationTool {
 
     hideElementCursor(element);
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     evt.preventDefault();
@@ -318,9 +318,6 @@ class RectangleROITool extends AnnotationTool {
     this._activateModify(element);
 
     hideElementCursor(element);
-
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
@@ -621,7 +618,7 @@ class RectangleROITool extends AnnotationTool {
       const { points, activeHandleIndex } = data.handles;
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
-      const targetId = this.getTargetId(viewport, data);
+      const targetIds = this.getMeasurementTargets(viewport, data);
       styleSpecifier.annotationUID = annotationUID;
 
       const { color, lineWidth, lineDash } = this.getAnnotationStyle({
@@ -629,36 +626,37 @@ class RectangleROITool extends AnnotationTool {
         styleSpecifier,
       });
 
-      const { viewPlaneNormal, viewUp } = viewport.getCamera();
+      // Native ("next") viewports expose no getCamera; read view orientation
+      // through the shared ICamera bridge (legacy viewports fall through to getCamera).
+      const { viewPlaneNormal, viewUp } = getViewportICamera(viewport);
 
-      // If cachedStats does not exist, or the unit is missing (as part of import/hydration etc.),
-      // force to recalculate the stats from the points
+      // If cachedStats does not exist for one of the measurement targets, or
+      // the unit is missing (as part of import/hydration etc.), force to
+      // recalculate the stats from the points.  Every filtered target gets
+      // seeded here, so a single (eg fusion) viewport computes the stats for
+      // all of them even when no other viewport has done so.
       if (
-        !data.cachedStats[targetId] ||
-        data.cachedStats[targetId].areaUnit == null
+        this.ensureCachedStatsTargets(
+          data,
+          targetIds,
+          (stats) => stats.areaUnit == null
+        )
       ) {
-        data.cachedStats[targetId] = {
-          Modality: null,
-          area: null,
-          max: null,
-          mean: null,
-          stdDev: null,
-          areaUnit: null,
-        };
-
         this._calculateCachedStats(
           annotation,
           viewPlaneNormal,
           viewUp,
-          renderingEngine,
           enabledElement
         );
       } else if (annotation.invalidated) {
+        // A change - recompute (throttled, so slow stats are not recomputed
+        // every frame during a drag).  Clearing stale targets and rebuilding
+        // the cumulative key set is done inside _calculateCachedStats, gated
+        // by the invalidated flag.
         this._throttledCalculateCachedStats(
           annotation,
           viewPlaneNormal,
           viewUp,
-          renderingEngine,
           enabledElement
         );
 
@@ -676,7 +674,9 @@ class RectangleROITool extends AnnotationTool {
           // at the referencedImageId
           for (const targetId in data.cachedStats) {
             if (targetId.startsWith('imageId')) {
-              const viewports = renderingEngine.getStackViewports();
+              const viewports = renderingEngine
+                .getViewports()
+                .filter(viewportSupportsImageSlices);
 
               const invalidatedStack = viewports.find((vp) => {
                 // The stack viewport that contains the imageId but is not
@@ -754,57 +754,22 @@ class RectangleROITool extends AnnotationTool {
 
       renderStatus = true;
 
-      const options = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
-      if (!options.visibility) {
-        data.handles.textBox = {
-          hasMoved: false,
-          worldPosition: <Types.Point3>[0, 0, 0],
-          worldBoundingBox: {
-            topLeft: <Types.Point3>[0, 0, 0],
-            topRight: <Types.Point3>[0, 0, 0],
-            bottomLeft: <Types.Point3>[0, 0, 0],
-            bottomRight: <Types.Point3>[0, 0, 0],
-          },
-        };
+      const textLines = this.configuration.getTextLines(data, targetIds);
+      if (!textLines?.length) {
         continue;
       }
-
-      const textLines = this.configuration.getTextLines(data, targetId);
-      if (!textLines || textLines.length === 0) {
+      if (
+        !this.renderLinkedTextBoxAnnotation({
+          enabledElement,
+          svgDrawingHelper,
+          annotation,
+          styleSpecifier,
+          textLines,
+          canvasCoordinates,
+        })
+      ) {
         continue;
       }
-
-      if (!data.handles.textBox.hasMoved) {
-        const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
-
-        data.handles.textBox.worldPosition =
-          viewport.canvasToWorld(canvasTextBoxCoords);
-      }
-
-      const textBoxPosition = viewport.worldToCanvas(
-        data.handles.textBox.worldPosition
-      );
-
-      const textBoxUID = '1';
-      const boundingBox = drawLinkedTextBoxSvg(
-        svgDrawingHelper,
-        annotationUID,
-        textBoxUID,
-        textLines,
-        textBoxPosition,
-        canvasCoordinates,
-        {},
-        options
-      );
-
-      const { x: left, y: top, width, height } = boundingBox;
-
-      data.handles.textBox.worldBoundingBox = {
-        topLeft: viewport.canvasToWorld([left, top]),
-        topRight: viewport.canvasToWorld([left + width, top]),
-        bottomLeft: viewport.canvasToWorld([left, top + height]),
-        bottomRight: viewport.canvasToWorld([left + width, top + height]),
-      };
     }
 
     return renderStatus;
@@ -843,7 +808,6 @@ class RectangleROITool extends AnnotationTool {
     annotation,
     viewPlaneNormal,
     viewUp,
-    renderingEngine,
     enabledElement
   ) => {
     if (!this.configuration.calculateStats) {
@@ -853,11 +817,30 @@ class RectangleROITool extends AnnotationTool {
     const { viewport } = enabledElement;
     const { element } = viewport;
 
-    const worldPos1 = data.handles.points[0];
-    const worldPos2 = data.handles.points[3];
+    const worldHandles = data.handles.points;
     const { cachedStats } = data;
 
+    // On an actual change (invalidation) drop every cached target so stale
+    // volumes are removed and the (fixed frame of reference) key set is
+    // rebuilt from the current viewport's targets.  This is done at the seam
+    // where the invalidated flag is consumed (and reset below), so during a
+    // drag it only happens when the throttled calculation actually runs -
+    // not every frame.  When not invalidated we keep the existing targets
+    // (possibly seeded by other viewports) and just fill/refresh them.
+    if (annotation.invalidated) {
+      // Capture the current targets first (reusing existing keys where the
+      // volume already has stats) so this viewport's volumes keep stable
+      // keys, then drop everything (removing stale/foreign volumes) and
+      // reseed just those targets.
+      const currentTargets = this.getMeasurementTargets(viewport, data);
+      for (const key of Object.keys(cachedStats)) {
+        delete cachedStats[key];
+      }
+      this.ensureCachedStatsTargets(data, currentTargets);
+    }
+
     const targetIds = Object.keys(cachedStats);
+    let isHandleOutsideAnyTarget = false;
 
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
@@ -868,29 +851,31 @@ class RectangleROITool extends AnnotationTool {
       // to various reasons such as if the target was a volumeViewport, and
       // the volumeViewport has been decached in the meantime.
       if (!image) {
+        // The key may have been created by another viewport that does have
+        // this volume - leave it in place so that viewport can compute it.
+        // Stale keys are cleared on annotation change, not here.
         continue;
       }
 
       const { dimensions, imageData, metadata, voxelManager } = image;
 
-      const pos1Index = transformWorldToIndex(imageData, worldPos1);
-
-      pos1Index[0] = Math.floor(pos1Index[0]);
-      pos1Index[1] = Math.floor(pos1Index[1]);
-      pos1Index[2] = Math.floor(pos1Index[2]);
-
-      const pos2Index = transformWorldToIndex(imageData, worldPos2);
-
-      pos2Index[0] = Math.floor(pos2Index[0]);
-      pos2Index[1] = Math.floor(pos2Index[1]);
-      pos2Index[2] = Math.floor(pos2Index[2]);
+      const continuousIndexHandles = worldHandles.map((worldHandle) =>
+        transformWorldToIndexContinuous(imageData, worldHandle)
+      );
+      const pos1Index = transformWorldToIndex(imageData, worldHandles[0]);
+      const pos2Index = transformWorldToIndex(imageData, worldHandles[3]);
 
       // Check if one of the indexes are inside the volume, this then gives us
       // Some area to do stats over.
 
-      if (this._isInsideVolume(pos1Index, pos2Index, dimensions)) {
-        this.isHandleOutsideImage = false;
+      const isHandleOutsideTarget = !this._isInsideVolume(
+        pos1Index,
+        pos2Index,
+        dimensions
+      );
+      isHandleOutsideAnyTarget ||= isHandleOutsideTarget;
 
+      if (!isHandleOutsideTarget) {
         // Calculate index bounds to iterate over
 
         const iMin = Math.min(pos1Index[0], pos2Index[0]);
@@ -908,20 +893,19 @@ class RectangleROITool extends AnnotationTool {
           [kMin, kMax],
         ] as [Types.Point2, Types.Point2, Types.Point2];
 
-        const { worldWidth, worldHeight } = getWorldWidthAndHeightFromCorners(
-          viewPlaneNormal,
-          viewUp,
-          worldPos1,
-          worldPos2
-        );
-
         const handles = [pos1Index, pos2Index];
-        const { scale, areaUnit } = getCalibratedLengthUnitsAndScale(
-          image,
-          handles
-        );
+        const calibrate = getCalibratedLengthUnitsAndScale(image, handles);
 
-        const area = Math.abs(worldWidth * worldHeight) / (scale * scale);
+        const width = RectangleROITool.calculateLengthInIndex(calibrate, [
+          continuousIndexHandles[0],
+          continuousIndexHandles[1],
+        ]);
+        const height = RectangleROITool.calculateLengthInIndex(calibrate, [
+          continuousIndexHandles[0],
+          continuousIndexHandles[2],
+        ]);
+        const area = Math.abs(width * height);
+        const { areaUnit } = calibrate;
 
         const pixelUnitsOptions = {
           isPreScaled: isViewportPreScaled(viewport, targetId),
@@ -965,13 +949,15 @@ class RectangleROITool extends AnnotationTool {
           modalityUnit,
         };
       } else {
-        this.isHandleOutsideImage = true;
         cachedStats[targetId] = {
           Modality: metadata.Modality,
         };
       }
     }
 
+    // Aggregate every resolved measurement target so deletion under
+    // preventHandleOutsideImage is deterministic across fusion actor order.
+    this.isHandleOutsideImage = isHandleOutsideAnyTarget;
     const invalidated = annotation.invalidated;
     annotation.invalidated = false;
 
@@ -1049,43 +1035,6 @@ class RectangleROITool extends AnnotationTool {
 
     triggerAnnotationRenderForViewportIds([viewport.id]);
   };
-}
-
-/**
- * _getTextLines - Returns the Area, mean and std deviation of the area of the
- * target volume enclosed by the rectangle.
- *
- * @param data - The annotation tool-specific data.
- * @param targetId - The volumeId of the volume to display the stats for.
- */
-function defaultGetTextLines(data, targetId: string): string[] {
-  const cachedVolumeStats = data.cachedStats[targetId];
-  const { area, mean, max, stdDev, areaUnit, modalityUnit, min } =
-    cachedVolumeStats;
-
-  if (mean === undefined || mean === null) {
-    return;
-  }
-
-  const textLines: string[] = [];
-
-  if (csUtils.isNumber(area)) {
-    textLines.push(`Area: ${csUtils.roundNumber(area)} ${areaUnit}`);
-  }
-  if (csUtils.isNumber(mean)) {
-    textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
-  }
-  if (csUtils.isNumber(max)) {
-    textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
-  }
-  if (csUtils.isNumber(min)) {
-    textLines.push(`Min: ${csUtils.roundNumber(min)} ${modalityUnit}`);
-  }
-  if (csUtils.isNumber(stdDev)) {
-    textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
-  }
-
-  return textLines;
 }
 
 export default RectangleROITool;

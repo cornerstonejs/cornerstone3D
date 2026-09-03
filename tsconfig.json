@@ -3,6 +3,8 @@
   "compilerOptions": {
     "baseUrl": "./packages",
     "paths": {
+      "@cornerstonejs/metadata": ["metadata/src"],
+      "@cornerstonejs/metadata/*": ["metadata/src/*"],
       "@cornerstonejs/core": ["core/src"],
       "@cornerstonejs/tools": ["tools/src"],
       "@cornerstonejs/dicomImageLoader": ["dicomImageLoader/src"],

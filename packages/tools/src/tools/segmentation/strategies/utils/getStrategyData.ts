@@ -86,7 +86,11 @@ function getStrategyDataForStackViewport({
     if (!labelmapImageId) {
       return null;
     }
-    const actorEntry = getLabelmapActorEntry(viewport.id, segmentationId);
+    const actorEntry = getLabelmapActorEntry(
+      viewport.id,
+      segmentationId,
+      labelmapImageId
+    );
 
     if (!actorEntry) {
       return null;

@@ -41,7 +41,7 @@ setTitleAndDescription(
   'This example demonstrates how to render a segmentation in both Orthographic and Stack Viewports using a volume. It showcases the synchronization of the segmentation between the two viewports, even when displaying different slices or orientations.'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 

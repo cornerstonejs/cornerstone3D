@@ -6,7 +6,8 @@ import {
   addDropdownToToolbar,
   initDemo,
   setTitleAndDescription,
-  createImageIdsAndCacheMetaData,
+  createDisplaySets,
+  getViewportTypeForDisplaySet,
   getLocalUrl,
   addManipulationBindings,
   addVideoTime,
@@ -19,27 +20,8 @@ console.warn(
   'Click on index.ts to open source code for this example --------->'
 );
 
-const {
-  LengthTool,
-  HeightTool,
-  KeyImageTool,
-  ProbeTool,
-  RectangleROITool,
-  EllipticalROITool,
-  CircleROITool,
-  BidirectionalTool,
-  AngleTool,
-  CobbAngleTool,
-  ArrowAnnotateTool,
-  PlanarFreehandROITool,
-  LivewireContourTool,
+const { ToolGroupManager, Enums: csToolsEnums } = cornerstoneTools;
 
-  VideoRedactionTool,
-  ToolGroupManager,
-  Enums: csToolsEnums,
-} = cornerstoneTools;
-
-const { ViewportType } = Enums;
 const { MouseBindings, KeyboardBindings, Events: toolsEvents } = csToolsEnums;
 
 const toolGroupId = 'VIDEO_TOOL_GROUP_ID';
@@ -65,8 +47,8 @@ const element = document.createElement('div');
 element.oncontextmenu = (e) => e.preventDefault();
 
 element.id = 'cornerstone-element';
-element.style.width = '500px';
-element.style.height = '500px';
+element.style.width = '512px';
+element.style.height = '512px';
 
 content.appendChild(element);
 
@@ -187,17 +169,20 @@ async function run() {
   await initDemo();
 
   // Get Cornerstone imageIds and fetch metadata into RAM
-  const imageIds = await createImageIdsAndCacheMetaData({
+  const displaySets = await createDisplaySets({
     StudyInstanceUID: '2.25.96975534054447904995905761963464388233',
     SeriesInstanceUID: '2.25.15054212212536476297201250326674987992',
     wadoRsRoot:
       getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
-  // Only one SOP instances is DICOM, so find it
-  const videoId = imageIds.find(
-    (it) => it.indexOf('2.25.179478223177027022014772769075050874231') !== -1
-  );
+  const displaySet =
+    displaySets.find((ds) => ds.preferredViewportType === 'video') ??
+    displaySets[0];
+  if (!displaySet) {
+    throw new Error('No display set found in series');
+  }
+  const videoId = displaySet.instances[0].imageId;
 
   addAnnotationListeners();
 
@@ -225,7 +210,7 @@ async function run() {
   // Create a stack viewport
   const viewportInput = {
     viewportId,
-    type: ViewportType.VIDEO,
+    type: getViewportTypeForDisplaySet(displaySet),
     element,
     defaultOptions: {
       background: <Types.Point3>[0.2, 0, 0.2],
@@ -242,7 +227,7 @@ async function run() {
   // Set the video on the viewport
   // Will be `<dicomwebRoot>/studies/<studyUID>/series/<seriesUID>/instances/<instanceUID>/rendered?accept=video/mp4`
   // on a compliant DICOMweb endpoint
-  await viewport.setVideo(videoId, 1);
+  await viewport.setDisplaySets({ displaySetId: videoId });
   addVideoTime(element, viewport);
 }
 

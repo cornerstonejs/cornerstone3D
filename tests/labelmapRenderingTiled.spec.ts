@@ -1,6 +1,6 @@
 import { test } from 'playwright-test-coverage';
 import {
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   visitExample,
   screenShotPaths,
 } from './utils/index';
@@ -14,26 +14,25 @@ test.describe('Labelmap Rendering', async () => {
   test('should render the labelmap in axial/coronal/sagittal orientations', async ({
     page,
   }) => {
-    const axial = await page.locator('canvas').nth(0);
-    const coronal = await page.locator('canvas').nth(1);
-    const sagittal = await page.locator('canvas').nth(2);
-
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      axial,
-      screenShotPaths.labelmapRenderingTiled.axial
+      '',
+      screenShotPaths.labelmapRenderingTiled.axial,
+      0
     );
 
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      coronal,
-      screenShotPaths.labelmapRenderingTiled.coronal
+      '',
+      screenShotPaths.labelmapRenderingTiled.coronal,
+      1
     );
 
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      sagittal,
-      screenShotPaths.labelmapRenderingTiled.sagittal
+      '',
+      screenShotPaths.labelmapRenderingTiled.sagittal,
+      2
     );
   });
 });

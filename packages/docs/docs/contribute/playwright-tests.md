@@ -151,24 +151,78 @@ Our simulate drag utility can simulate a drag on any element, and avoid going ou
 After you have wrote your tests, you can run them by using the following command:
 
 ```bash
-yarn test:e2e:ci
+./scripts/run-playright.sh
+./scripts/run-playright.sh --compat
+./scripts/run-playright.sh --cpu
+./scripts/run-playright.sh --next
 ```
 
-If you want to use headed mode, you can use the following command:
+The wrapper runs `npx playwright test`, auto-selects the test files for the chosen mode, and writes timestamped logs and artifacts under `reports/`.
+
+Examples:
 
 ```bash
-yarn test:e2e:headed
+reports/legacy-playwright/<timestamp>/
+reports/compat-playwright/<timestamp>/
+reports/compat-cpu-playwright/<timestamp>/
+reports/generic-viewport-playwright/<timestamp>/
 ```
 
-You will see the test results in your terminal, if you want an indepth report, you can use the following command:
+Supported wrapper flags:
+
+- `--compat`: open example pages with `?type=next`.
+- `--cpu`: open example pages with `?cpu=1`.
+- `--next`: run only `tests/genericViewport/**/*.spec.ts`.
+
+`--next` on Playwright is different from `--next` on Karma. Playwright uses it to select the `tests/genericViewport` suite only. Karma uses it as a convenience mode that runs compatibility and CPU passes.
+
+Any other arguments are passed directly to `playwright test`, so you can still use the normal Playwright CLI:
 
 ```bash
-yarn playwright show-report tests/playwright-report
+./scripts/run-playright.sh --project chromium --headed
+./scripts/run-playright.sh -g "stack viewport"
+./scripts/run-playright.sh --workers 1
+./scripts/run-playright.sh --update-snapshots
+```
+
+Useful environment variables:
+
+- `PLAYWRIGHT_REUSE_EXISTING_SERVER=true|false`: control reuse of the configured local example server.
+- The wrapper sets `PLAYWRIGHT_FORCE_COMPAT`, `PLAYWRIGHT_FORCE_CPU_RENDERING`, `PLAYWRIGHT_HTML_OUTPUT_DIR`, and `PLAYWRIGHT_HTML_OPEN=never` internally.
+
+Examples:
+
+```bash
+./scripts/run-playright.sh
+./scripts/run-playright.sh --compat
+./scripts/run-playright.sh --project chromium --headed
+./scripts/run-playright.sh -g "stack viewport"
+PLAYWRIGHT_REUSE_EXISTING_SERVER=true ./scripts/run-playright.sh --project chromium
+./scripts/run-playright.sh --next
+```
+
+## Updating Screenshot Baselines
+
+Playwright snapshot files are stored under `tests/screenshots/<project>/<spec>/<name>.png`, using the path template from `playwright.config.ts`.
+
+Normal runs compare against those committed screenshots. To rewrite them, pass Playwright's native snapshot flag through the wrapper:
+
+```bash
+./scripts/run-playright.sh --update-snapshots
+./scripts/run-playright.sh --next --update-snapshots
+./scripts/run-playright.sh --project chromium --update-snapshots
 ```
 
 ## Serving the examples manually for development
 
-By default, when you run the tests, it will call the `bun build-and-serve-static-examples` command to serve the examples first, then run the tests, if you would like to serve the examples manually, you can use the same command. The examples will be available at `http://localhost:3000`. This could speed up your development process since playwright will skip the build and serve step and use the existing server on port 3000.
+By default, Playwright builds the examples in `playwright.globalSetup.ts` when it needs to start its own local server, then the configured `webServer` serves `.static-examples` at `http://localhost:3333`.
+
+If you want to serve the examples manually during development, you can run the same command yourself and then tell Playwright to reuse the existing server:
+
+```bash
+yarn run build-and-serve-static-examples
+PLAYWRIGHT_REUSE_EXISTING_SERVER=true ./scripts/run-playright.sh
+```
 
 ## Playwright VSCode Extension and Recording Tests
 

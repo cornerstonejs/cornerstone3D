@@ -2,6 +2,7 @@ import { createSynchronizer } from '../../store/SynchronizerManager';
 import { Enums } from '@cornerstonejs/core';
 import voiSyncCallback from '../callbacks/voiSyncCallback';
 import type Synchronizer from '../../store/SynchronizerManager/Synchronizer';
+import type { ISynchronizerEventHandler } from '../../types';
 
 type VOISynchronizerOptions = {
   syncInvertState: boolean;
@@ -32,7 +33,7 @@ export default function createVOISynchronizer(
   const VOISynchronizer = createSynchronizer(
     synchronizerName,
     Enums.Events.VOI_MODIFIED,
-    voiSyncCallback,
+    voiSyncCallback as ISynchronizerEventHandler,
     {
       auxiliaryEvents: [
         {

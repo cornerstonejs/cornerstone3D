@@ -1,20 +1,20 @@
-import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
-import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
-import type { Types } from '@cornerstonejs/core';
+import { BaseVolumeViewport, type Types } from '@cornerstonejs/core';
 import {
-  BaseVolumeViewport,
   getEnabledElement,
   Enums,
   getEnabledElementByIds,
-  cache,
-  utilities,
 } from '@cornerstonejs/core';
 import { triggerSegmentationRender } from '../../stateManagement/segmentation/SegmentationRenderingEngine';
-import { updateLabelmapSegmentationImageReferences } from '../../stateManagement/segmentation/updateLabelmapSegmentationImageReferences';
-import { getCurrentLabelmapImageIdsForViewport } from '../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import { SegmentationRepresentations } from '../../enums';
-import { getLabelmapActorEntries } from '../../stateManagement/segmentation/helpers/getSegmentationActor';
+import getViewportLabelmapRenderMode from '../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
+import {
+  canRenderVolumeViewportLabelmapAsImage,
+  getVolumeViewportLabelmapImageMapperState,
+  shouldUseSliceRendering,
+} from '../../stateManagement/segmentation/helpers/labelmapImageMapperSupport';
 import { getSegmentationRepresentations } from '../../stateManagement/segmentation/getSegmentationRepresentation';
+import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
+import { syncStackLabelmapActors } from '../../tools/displayTools/Labelmap/syncStackLabelmapActors';
 
 const enable = function (element: HTMLDivElement): void {
   if (!element) {
@@ -28,8 +28,24 @@ const enable = function (element: HTMLDivElement): void {
   }
 
   const { viewport } = enabledElement;
+  const isVolumeViewport = viewport instanceof BaseVolumeViewport;
+  const isPlanarViewport = viewport.type === Enums.ViewportType.PLANAR_NEXT;
+  const canUseStackImageEvents =
+    typeof (viewport as { getCurrentImageId?: () => string })
+      .getCurrentImageId === 'function';
 
-  if (viewport instanceof BaseVolumeViewport) {
+  if (isVolumeViewport || isPlanarViewport) {
+    element.addEventListener(
+      Enums.Events.CAMERA_MODIFIED,
+      _imageChangeEventListener as EventListener
+    );
+  }
+
+  if (
+    isVolumeViewport ||
+    !canUseStackImageEvents ||
+    getViewportLabelmapRenderMode(viewport) !== 'image'
+  ) {
     return;
   }
 
@@ -47,6 +63,8 @@ const enable = function (element: HTMLDivElement): void {
 };
 
 const disable = function (element: HTMLDivElement): void {
+  const viewportId = getEnabledElement(element)?.viewport?.id;
+
   element.removeEventListener(
     Enums.Events.PRE_STACK_NEW_IMAGE,
     _imageChangeEventListener as EventListener
@@ -55,6 +73,14 @@ const disable = function (element: HTMLDivElement): void {
     Enums.Events.IMAGE_RENDERED,
     _imageChangeEventListener as EventListener
   );
+  element.removeEventListener(
+    Enums.Events.CAMERA_MODIFIED,
+    _imageChangeEventListener as EventListener
+  );
+
+  if (viewportId) {
+    perViewportManualTriggers.delete(viewportId);
+  }
 };
 
 const perViewportManualTriggers = new Map();
@@ -72,14 +98,21 @@ const perViewportManualTriggers = new Map();
 function _imageChangeEventListener(evt) {
   const eventData = evt.detail;
   const { viewportId, renderingEngineId } = eventData;
-  const { viewport } = getEnabledElementByIds(
+  const enabledElement = getEnabledElementByIds(
     viewportId,
     renderingEngineId
-  ) as { viewport: Types.IStackViewport };
+  ) as { viewport: Types.IStackViewport } | undefined;
 
+  if (!enabledElement) {
+    return;
+  }
+
+  const { viewport } = enabledElement;
+  const isVolumeViewport = viewport instanceof BaseVolumeViewport;
   const representations = getSegmentationRepresentations(viewportId);
 
   if (!representations?.length) {
+    perViewportManualTriggers.delete(viewportId);
     return;
   }
 
@@ -88,167 +121,80 @@ function _imageChangeEventListener(evt) {
       representation.type === SegmentationRepresentations.Labelmap
   );
 
-  const actors = viewport.getActors();
+  const hasVolumeImageMapperRepresentation = labelmapRepresentations.some(
+    (representation) => {
+      const segmentation = getSegmentation(representation.segmentationId);
 
-  // Update the maps
-  labelmapRepresentations.forEach((representation) => {
-    const { segmentationId } = representation;
-    updateLabelmapSegmentationImageReferences(viewportId, segmentationId);
-  });
-
-  const labelmapActors = labelmapRepresentations
-    .flatMap((representation) => {
-      return getLabelmapActorEntries(viewportId, representation.segmentationId);
-    })
-    .filter((actor) => actor !== undefined);
-
-  if (!labelmapActors.length) {
-    return;
-  }
-
-  // we need to check for the current viewport state with the current representations
-  // is there any extra actor that needs to be removed
-  // or any actor that needs to be added (which it is added later down), but remove
-  // it here if it is not needed
-  labelmapActors.forEach((actor) => {
-    // if cannot find a representation for this actor means it has stuck around
-    // form previous renderings and should be removed
-    const validActor = labelmapRepresentations.find((representation) => {
-      const derivedImageIds = getCurrentLabelmapImageIdsForViewport(
-        viewportId,
-        representation.segmentationId
+      return (
+        canRenderVolumeViewportLabelmapAsImage(viewport) &&
+        shouldUseSliceRendering(
+          segmentation,
+          (
+            representation as {
+              config?: { useSliceRendering?: boolean };
+            }
+          ).config
+        )
       );
-
-      return derivedImageIds?.includes(actor.referencedId);
-    });
-
-    if (!validActor) {
-      viewport.removeActors([actor.uid]);
     }
-  });
+  );
 
-  labelmapRepresentations.forEach((representation) => {
-    const { segmentationId } = representation;
-    const currentImageId = viewport.getCurrentImageId();
-    const derivedImageIds = getCurrentLabelmapImageIdsForViewport(
-      viewportId,
-      segmentationId
-    );
+  if (evt.type === Enums.Events.CAMERA_MODIFIED) {
+    if (hasVolumeImageMapperRepresentation) {
+      const nextState = getVolumeViewportLabelmapImageMapperState(viewport);
+      const previousState = perViewportManualTriggers.get(viewportId);
 
-    if (!derivedImageIds) {
+      if (previousState === nextState.key) {
+        return;
+      }
+
+      perViewportManualTriggers.set(viewportId, nextState.key);
+      triggerSegmentationRender(viewportId);
       return;
     }
 
-    let shouldTriggerSegmentationRender = false;
-    const updateSegmentationActor = (derivedImageId) => {
-      const derivedImage = cache.getImage(derivedImageId);
-
-      if (!derivedImage) {
-        console.warn(
-          'No derived image found in the cache for segmentation representation',
-          representation
-        );
-        return;
-      }
-
-      // re-use the old labelmap actor for the new image labelmap for speed and memory
-      const segmentationActorInput = actors.find(
-        (actor) => actor.referencedId === derivedImageId
-      );
-
-      if (!segmentationActorInput) {
-        // i guess we need to create here
-        const { dimensions, spacing, direction } =
-          viewport.getImageDataMetadata(derivedImage);
-
-        const currentImage =
-          cache.getImage(currentImageId) ||
-          ({
-            imageId: currentImageId,
-          } as Types.IImage);
-
-        const { origin: currentOrigin } =
-          viewport.getImageDataMetadata(currentImage);
-
-        // IMPORTANT: We need to make sure that the origin of the segmentation
-        // is the same as the current image origin. This is because due to some
-        // floating point precision issues, when coming from volume to stack
-        // the origin of the segmentation can be slightly different from the
-        // current image origin. This can cause the segmentation to be rendered
-        // in the wrong location.
-        // Todo: This will not work for segmentations that are not in the same frame
-        // of reference or derived from the same image. This can happen when we have
-        // a segmentation that happens to exist in the same space as the image but is
-        // not derived from it. We need to find a way to handle this case, but don't think
-        // it makes sense to do it for the stack viewport, as the volume viewport is designed to handle this case.
-        const originToUse = currentOrigin;
-        const constructor = derivedImage.voxelManager.getConstructor();
-        const newPixelData = derivedImage.voxelManager.getScalarData();
-
-        const scalarArray = vtkDataArray.newInstance({
-          name: 'Pixels',
-          numberOfComponents: 1,
-          // @ts-expect-error
-          values: new constructor(newPixelData),
-        });
-
-        const imageData = vtkImageData.newInstance();
-
-        imageData.setDimensions(dimensions[0], dimensions[1], 1);
-        imageData.setSpacing(spacing);
-        imageData.setDirection(direction);
-        imageData.setOrigin(originToUse);
-        imageData.getPointData().setScalars(scalarArray);
-        imageData.modified();
-
-        viewport.addImages([
-          {
-            imageId: derivedImageId,
-            representationUID: `${segmentationId}-${SegmentationRepresentations.Labelmap}-${derivedImage.imageId}`,
-            callback: ({ imageActor }) => {
-              imageActor.getMapper().setInputData(imageData);
-            },
-          },
-        ]);
-
-        shouldTriggerSegmentationRender = true;
-        return;
-      } else {
-        // if actor found
-        // update the image data
-
-        const segmentationImageData = segmentationActorInput.actor
-          .getMapper()
-          .getInputData();
-
-        if (segmentationImageData.setDerivedImage) {
-          // Update the derived image data, whether vtk or other as appropriate
-          // to the actor(s) displaying the data.
-          segmentationImageData.setDerivedImage(derivedImage);
-        } else {
-          utilities.updateVTKImageDataWithCornerstoneImage(
-            segmentationImageData,
-            derivedImage
-          );
-        }
-      }
-    };
-
-    derivedImageIds.forEach(updateSegmentationActor);
-    // if one or more actors were added to the viewport
-    // we need to trigger a segmentation render
-    if (shouldTriggerSegmentationRender) {
-      triggerSegmentationRender(viewportId);
+    // GenericViewport (PLANAR_NEXT) does not fire PRE_STACK_NEW_IMAGE when
+    // scrolling, so handle stack labelmap sync on CAMERA_MODIFIED instead.
+    const isPlanarNext = viewport.type === Enums.ViewportType.PLANAR_NEXT;
+    if (!isPlanarNext) {
+      perViewportManualTriggers.delete(viewportId);
+      return;
     }
 
-    viewport.render();
+    // Fall through to the stack labelmap sync below.
+  }
 
+  if (getViewportLabelmapRenderMode(viewport) !== 'image') {
+    return;
+  }
+
+  if (canRenderVolumeViewportLabelmapAsImage(viewport)) {
+    return;
+  }
+
+  if (
+    typeof (viewport as { getCurrentImageId?: () => string })
+      .getCurrentImageId !== 'function'
+  ) {
+    return;
+  }
+
+  const stackViewport = viewport as Types.IStackViewport & {
+    element: HTMLDivElement;
+  };
+
+  labelmapRepresentations.forEach((representation) => {
+    const { segmentationId } = representation;
+    syncStackLabelmapActors(stackViewport, segmentationId);
+
+    // if one or more actors were added to the viewport
+    // we need to trigger a segmentation render
     // This is put here to make sure that the segmentation is rendered
     // for the initial image as well after that we don't need it since
     // stack new image is called when changing slices
     if (evt.type === Enums.Events.IMAGE_RENDERED) {
       // unsubscribe after the initial render
-      viewport.element.removeEventListener(
+      stackViewport.element.removeEventListener(
         Enums.Events.IMAGE_RENDERED,
         _imageChangeEventListener as EventListener
       );

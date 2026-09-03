@@ -16,7 +16,7 @@ function init(options: LoaderOptions = {}): void {
   // cornerstone set
   // DO NOT CHANGE THE ORDER OF THESE TWO LINES!
   setOptions(options);
-  registerLoaders();
+  registerLoaders(options);
 
   const workerManager = getWebWorkerManager();
   const maxWorkers = options?.maxWebWorkers || getReasonableWorkerCount();

@@ -113,13 +113,16 @@ const viewportGrid = document.createElement('div');
 viewportGrid.style.display = 'flex';
 viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
+viewportGrid.style.flexWrap = 'wrap';
 
 const element1 = document.createElement('div');
 const element2 = document.createElement('div');
 element1.style.width = size;
 element1.style.height = size;
+element1.style.flexShrink = '0';
 element2.style.width = size;
 element2.style.height = size;
+element2.style.flexShrink = '0';
 
 // Disable right click context menu so we can have right click tool
 element1.oncontextmenu = (e) => e.preventDefault();

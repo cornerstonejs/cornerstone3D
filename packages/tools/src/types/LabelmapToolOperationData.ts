@@ -6,10 +6,15 @@ import type {
 } from './LabelmapTypes';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { LabelmapMemo } from '../utilities/segmentation/createLabelmapMemo';
+import type { SegmentLabelmapBindingState } from './LabelmapTypes';
 
 type LabelmapToolOperationData = {
   segmentationId: string;
   segmentIndex: number;
+  labelValue?: number;
+  labelmapId?: string;
+  overwriteSegmentIndices?: number[];
+  crossLayerEraseBindings?: SegmentLabelmapBindingState[];
   /**
    * The colours to use for previewing
    */

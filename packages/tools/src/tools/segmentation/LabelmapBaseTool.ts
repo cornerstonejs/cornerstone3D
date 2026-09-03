@@ -5,12 +5,10 @@ import {
   Enums,
   eventTarget,
   BaseVolumeViewport,
-  StackViewport,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
-import type { LabelmapSegmentationDataVolume } from '../../types/LabelmapTypes';
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { getActiveSegmentation } from '../../stateManagement/segmentation/getActiveSegmentation';
@@ -30,6 +28,14 @@ import { isPointInsidePolyline3D } from '../../utilities/math/polyline';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import { fillInsideCircle } from './strategies';
 import type { LabelmapToolOperationData } from '../../types/LabelmapToolOperationData';
+import getViewportLabelmapRenderMode from '../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
+import {
+  getOrCreateLabelmapVolume,
+  resolveLabelmapForSegment,
+} from '../../stateManagement/segmentation/helpers/labelmapSegmentationState';
+import getViewportICamera from '../../utilities/getViewportICamera';
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+import { resetElementCursor } from '../../cursors/elementCursor';
 
 /**
  * A type for preview data/information, used to setup previews on hover, or
@@ -129,6 +135,19 @@ export default class LabelmapBaseTool extends BaseTool {
     isDrag: false,
   };
 
+  /**
+   * Whether a draw loop is currently in progress. Declared here so the shared
+   * touch-cancellation path can reason about it; the drawing tools narrow it.
+   */
+  protected isDrawing?: boolean;
+
+  /**
+   * In-progress draw state. Declared here only with the members the shared
+   * touch-cancellation path needs; the drawing tools narrow it to their own
+   * (richer) shape.
+   */
+  protected editData?: { viewportIdsToRender?: string[] } | null;
+
   protected memoMap: Map<string, LabelmapMemo.LabelmapMemo>;
   protected acceptedMemoIds: Map<
     string,
@@ -146,6 +165,38 @@ export default class LabelmapBaseTool extends BaseTool {
       hasPreviewIndex: false,
       changedIndices: [],
     };
+  }
+
+  /**
+   * Cancels an in-progress touch draw when the gesture turns out to be
+   * multi-finger (pinch zoom, multi-finger scroll). The rubber band of the
+   * scissors tools lives only in `editData` and is never written to the
+   * annotation state, so tearing the draw loop down and re-rendering makes it
+   * disappear without applying anything to the labelmap.
+   *
+   * Tools whose stroke has already written voxels (BrushTool) need to roll
+   * those writes back as well and therefore override this.
+   */
+  protected _cancelTouchDraw(element: HTMLDivElement): void {
+    if (!this.isDrawing) {
+      return;
+    }
+
+    const viewportIdsToRender = this.editData?.viewportIdsToRender;
+
+    // Declared on the subclasses (BrushTool declares it `private`, so it
+    // cannot be widened to `protected` on this class).
+    (
+      this as unknown as { _deactivateDraw: (element: HTMLDivElement) => void }
+    )._deactivateDraw(element);
+
+    resetElementCursor(element);
+    this.editData = null;
+    this.isDrawing = false;
+
+    if (viewportIdsToRender) {
+      triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+    }
   }
 
   protected _historyRedoHandler(evt) {
@@ -167,6 +218,10 @@ export default class LabelmapBaseTool extends BaseTool {
 
       const element = memoData?.element;
       const operationData = this.getOperationData(element);
+      if (!operationData) {
+        return;
+      }
+
       operationData.segmentIndex = memoData?.segmentIndex;
 
       if (element) {
@@ -251,15 +306,6 @@ export default class LabelmapBaseTool extends BaseTool {
 
     const activeSegmentation = getActiveSegmentation(viewport.id);
     if (!activeSegmentation) {
-      const event = new CustomEvent(Enums.Events.ERROR_EVENT, {
-        detail: {
-          type: 'Segmentation',
-          message:
-            'No active segmentation detected, create a segmentation representation before using the brush tool',
-        },
-        cancelable: true,
-      });
-      eventTarget.dispatchEvent(event);
       return null;
     }
 
@@ -285,37 +331,34 @@ export default class LabelmapBaseTool extends BaseTool {
     segmentsLocked,
     segmentationId,
   }): EditDataReturnType {
-    if (viewport instanceof BaseVolumeViewport) {
-      if (!representationData[SegmentationRepresentations.Labelmap]) {
+    const viewportRenderMode = getViewportLabelmapRenderMode(viewport);
+    const activeSegmentIndex = getActiveSegmentIndex(segmentationId);
+    const segmentation = getSegmentation(segmentationId);
+    const layerForEdit = activeSegmentIndex
+      ? resolveLabelmapForSegment(segmentation, activeSegmentIndex)
+      : undefined;
+
+    if (
+      viewportRenderMode === 'volume' ||
+      viewport instanceof BaseVolumeViewport
+    ) {
+      const segmentationVolume = layerForEdit
+        ? getOrCreateLabelmapVolume(layerForEdit)
+        : undefined;
+      const volumeId = layerForEdit?.volumeId ?? segmentationVolume?.volumeId;
+
+      if (!segmentationVolume || !volumeId) {
         return;
       }
 
-      const { volumeId } = representationData[
-        SegmentationRepresentations.Labelmap
-      ] as LabelmapSegmentationDataVolume;
       const actors = viewport.getActors();
-
-      const isStackViewport = viewport instanceof StackViewport;
-
-      if (isStackViewport) {
-        const event = new CustomEvent(Enums.Events.ERROR_EVENT, {
-          detail: {
-            type: 'Segmentation',
-            message: 'Cannot perform brush operation on the selected viewport',
-          },
-          cancelable: true,
-        });
-        eventTarget.dispatchEvent(event);
-        return null;
-      }
 
       // we used to take the first actor here but we should take the one that is
       // probably the same size as the segmentation volume
-      const volumes = actors.map((actorEntry) =>
-        cache.getVolume(actorEntry.referencedId)
-      );
-
-      const segmentationVolume = cache.getVolume(volumeId);
+      const volumes = actors
+        .filter((actorEntry) => actorEntry.referencedId)
+        .map((actorEntry) => cache.getVolume(actorEntry.referencedId))
+        .filter((volume): volume is Types.IImageVolume => !!volume);
 
       const referencedVolumeIdToThreshold =
         volumes.find((volume) =>
@@ -326,10 +369,14 @@ export default class LabelmapBaseTool extends BaseTool {
         volumeId,
         referencedVolumeId:
           this.configuration.threshold?.volumeId ??
+          layerForEdit?.referencedVolumeId ??
+          segmentationVolume.referencedVolumeId ??
           referencedVolumeIdToThreshold,
         segmentsLocked,
       };
-    } else {
+    }
+
+    if (viewportRenderMode === 'image') {
       const segmentationImageId = getCurrentLabelmapImageIdForViewport(
         viewport.id,
         segmentationId
@@ -346,19 +393,40 @@ export default class LabelmapBaseTool extends BaseTool {
         segmentsLocked,
       };
     }
+
+    const event = new CustomEvent(Enums.Events.ERROR_EVENT, {
+      detail: {
+        type: 'Segmentation',
+        message: 'Cannot perform brush operation on the selected viewport',
+      },
+      cancelable: true,
+    });
+    eventTarget.dispatchEvent(event);
+
+    return null;
   }
 
   protected createHoverData(element, centerCanvas?) {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const { viewPlaneNormal, viewUp } = camera;
+
+    if (!viewPlaneNormal || !viewUp) {
+      return;
+    }
 
     const viewportIdsToRender = [viewport.id];
 
+    const activeSegmentationData = this.getActiveSegmentationData(viewport);
+
+    if (!activeSegmentationData) {
+      return;
+    }
+
     const { segmentIndex, segmentationId, segmentColor } =
-      this.getActiveSegmentationData(viewport) || {};
+      activeSegmentationData;
 
     // Center of circle in canvas Coordinates
     const brushCursor = {
@@ -412,16 +480,29 @@ export default class LabelmapBaseTool extends BaseTool {
     };
   }
 
-  protected getOperationData(element?): ModifiedLabelmapToolOperationData {
+  protected getOperationData(
+    element?
+  ): ModifiedLabelmapToolOperationData | undefined {
     const editData = this._editData || this.createEditData(element);
-    const { segmentIndex, segmentationId, brushCursor } =
-      this._hoverData || this.createHoverData(element);
+    const hoverData = this._hoverData || this.createHoverData(element);
+
+    if (!editData || !hoverData) {
+      return;
+    }
+
+    const { segmentIndex, segmentationId, brushCursor } = hoverData;
     const { data, metadata = {} } = brushCursor || {};
     const { viewPlaneNormal, viewUp } = metadata;
+    const points = data?.editPoints || data?.handles?.points;
 
     const configColor =
       this.configuration.preview?.previewColors?.[segmentIndex];
-    const { viewport } = getEnabledElement(element);
+    const { viewport } = getEnabledElement(element) || {};
+
+    if (!viewport || !segmentIndex || !segmentationId) {
+      return;
+    }
+
     const segmentColor = getSegmentIndexColor(
       viewport.id,
       segmentationId,
@@ -441,7 +522,7 @@ export default class LabelmapBaseTool extends BaseTool {
 
     const operationData = {
       ...editData,
-      points: data?.handles?.points,
+      points,
       segmentIndex,
       viewPlaneNormal,
       previewOnHover: !this._previewData.isDrag,
@@ -475,9 +556,15 @@ export default class LabelmapBaseTool extends BaseTool {
       this.rejectPreview(element);
     }
     const enabledElement = getEnabledElement(element);
+    const operationData = this.getOperationData(element);
+
+    if (!enabledElement || !operationData) {
+      return;
+    }
+
     const results = this.applyActiveStrategyCallback(
       enabledElement,
-      this.getOperationData(element),
+      operationData,
       StrategyCallbacks.AddPreview
     );
     _previewData.isDrag = true;
@@ -498,9 +585,15 @@ export default class LabelmapBaseTool extends BaseTool {
     }
     this.doneEditMemo();
     const enabledElement = getEnabledElement(element);
+    const operationData = this.getOperationData(element);
+
+    if (!enabledElement || !operationData) {
+      return;
+    }
+
     this.applyActiveStrategyCallback(
       enabledElement,
-      this.getOperationData(element),
+      operationData,
       StrategyCallbacks.RejectPreview
     );
 
@@ -518,6 +611,9 @@ export default class LabelmapBaseTool extends BaseTool {
     }
 
     const operationData = this.getOperationData(element);
+    if (!operationData) {
+      return;
+    }
 
     // Track the memo ID if it was from an acceptPreview operation
     if (this.memo && this.memo.id) {

@@ -1,7 +1,11 @@
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
+import type vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
+import type vtkImageResliceMapper from '@kitware/vtk.js/Rendering/Core/ImageResliceMapper';
 import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
+import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import type CanvasActor from '../RenderingEngine/CanvasActor';
+import type CanvasMapper from '../RenderingEngine/CanvasActor/CanvasMapper';
 import type { BlendModes } from '../enums';
 
 export type Actor = vtkActor;
@@ -9,6 +13,53 @@ export type VolumeActor = vtkVolume;
 export type ImageActor = vtkImageSlice;
 
 export type ICanvasActor = CanvasActor;
+
+export enum ActorRenderMode {
+  VTK_IMAGE = 'vtkImage',
+  VTK_VOLUME = 'vtkVolume',
+  VTK_VOLUME_SLICE = 'vtkVolumeSlice',
+  CPU_IMAGE = 'cpuImage',
+  CPU_VOLUME = 'cpuVolume',
+}
+
+/**
+ * Actor/mapper pair associated with a rendering path, discriminated by
+ * `renderMode`. Narrowing on `renderMode` produces a fully-typed actor +
+ * mapper combination so consumers do not need to cast.
+ *
+ * ```ts
+ * if (proxy.renderMode === 'vtkVolumeSlice') {
+ *   // proxy.mapper is vtkImageResliceMapper, proxy.actor is ImageActor
+ *   proxy.mapper.setSlicePlane(...);
+ * }
+ * ```
+ */
+export type ActorMapperProxy =
+  | {
+      renderMode: ActorRenderMode.VTK_IMAGE;
+      actor: ImageActor;
+      mapper: vtkImageMapper;
+    }
+  | {
+      renderMode: ActorRenderMode.VTK_VOLUME;
+      actor: VolumeActor;
+      mapper: vtkVolumeMapper;
+    }
+  | {
+      renderMode: ActorRenderMode.VTK_VOLUME_SLICE;
+      actor: ImageActor;
+      mapper: vtkImageResliceMapper;
+    }
+  | {
+      renderMode: ActorRenderMode.CPU_IMAGE;
+      actor: ICanvasActor;
+      mapper: CanvasMapper;
+    }
+  | {
+      renderMode: ActorRenderMode.CPU_VOLUME;
+      actor: ICanvasActor;
+      mapper: CanvasMapper;
+    };
 
 /**
  * Cornerstone Actor Entry including actor uid, actual Actor, and
@@ -20,6 +71,8 @@ export interface ActorEntry {
   uid: string;
   /** actual actor object */
   actor: Actor | VolumeActor | ImageActor | ICanvasActor;
+  /** VTK actor/mapper proxy used by compatibility layers such as Generic Viewport */
+  actorMapper?: ActorMapperProxy;
   /** the id of the referenced object (e.g., volume) from which this actor is derived or created*/
   referencedId?: string;
   /** slab thickness for the actor */

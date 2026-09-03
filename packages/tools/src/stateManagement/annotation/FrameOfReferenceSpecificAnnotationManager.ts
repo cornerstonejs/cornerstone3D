@@ -15,6 +15,10 @@ import {
   utilities,
 } from '@cornerstonejs/core';
 
+function isUnsafeKey(key: string): boolean {
+  return key === '__proto__' || key === 'constructor' || key === 'prototype';
+}
+
 /**
  * This is the default annotation manager. It stores annotations by default
  * based on the FrameOfReferenceUID. However, it is possible to override the
@@ -212,6 +216,10 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
 
     groupKey = groupKey || FrameOfReferenceUID;
 
+    if (isUnsafeKey(groupKey) || isUnsafeKey(toolName)) {
+      return;
+    }
+
     const annotations = this.annotations;
 
     let frameOfReferenceSpecificAnnotations = annotations[groupKey];
@@ -336,14 +344,14 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
       const toolSpecificAnnotations =
         frameOfReferenceSpecificAnnotations[toolName];
 
-      return structuredClone(toolSpecificAnnotations);
+      return utilities.deepClone(toolSpecificAnnotations);
     } else if (groupKey) {
       const frameOfReferenceSpecificAnnotations = annotations[groupKey];
 
-      return structuredClone(frameOfReferenceSpecificAnnotations);
+      return utilities.deepClone(frameOfReferenceSpecificAnnotations);
     }
 
-    return structuredClone(annotations);
+    return utilities.deepClone(annotations);
   };
 
   /**
@@ -383,7 +391,7 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
       annotations[groupKey] = <GroupSpecificAnnotations>state;
     } else {
       // Set entire annotations
-      this.annotations = <AnnotationState>structuredClone(state);
+      this.annotations = <AnnotationState>utilities.deepClone(state);
     }
   };
 

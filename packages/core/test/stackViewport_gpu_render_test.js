@@ -26,7 +26,8 @@ const { cache, RenderingEngine, utilities, imageLoader, metaData, Enums } =
   cornerstone3D;
 
 const { Events, ViewportType, InterpolationType } = Enums;
-const { calibratedPixelSpacingMetadataProvider } = utilities;
+const { calibratedPixelSpacingMetadataProvider, transferFunctionUtils } =
+  utilities;
 
 const { fakeImageLoader, fakeMetaDataProvider, compareImages } = testUtils;
 
@@ -858,6 +859,111 @@ describe('renderingCore -- Stack', () => {
       } catch (e) {
         done.fail(e);
       }
+    });
+
+    it('Should preserve stack properties when actor recreation is only caused by a data type mismatch', function (done) {
+      testUtils.createViewports(renderingEngine, {
+        viewportId,
+        orientation: Enums.OrientationAxis.AXIAL,
+      });
+
+      const imageInfo1 = {
+        loader: 'fakeImageLoader',
+        name: 'imageURI',
+        rows: 11,
+        columns: 11,
+        barStart: 4,
+        barWidth: 1,
+        xSpacing: 1,
+        ySpacing: 1,
+        sliceIndex: 0,
+        dataType: 'Uint8Array',
+      };
+      const imageInfo2 = {
+        ...imageInfo1,
+        sliceIndex: 1,
+        dataType: 'Uint16Array',
+      };
+
+      const imageId1 = testUtils.encodeImageIdInfo(imageInfo1);
+      const imageId2 = testUtils.encodeImageIdInfo(imageInfo2);
+
+      const vp = renderingEngine.getViewport(viewportId);
+      const expectedVOIRange = { lower: -260, upper: 140 };
+      const expectedColormap = { name: 'hsv' };
+
+      vp.setStack([imageId1, imageId2], 0)
+        .then(() => {
+          vp.setProperties({
+            colormap: expectedColormap,
+            interpolationType: InterpolationType.NEAREST,
+            voiRange: expectedVOIRange,
+            invert: true,
+          });
+
+          return vp.setImageIdIndex(1);
+        })
+        .then(() => {
+          const props = vp.getProperties();
+
+          expect(vp.stackActorReInitialized).toBe(true);
+          expect(props.interpolationType).toBe(InterpolationType.NEAREST);
+          expect(props.invert).toBe(true);
+          expect(props.colormap).toEqual(expectedColormap);
+          expect(props.voiRange).toEqual(expectedVOIRange);
+
+          done();
+        })
+        .catch(done.fail);
+    });
+
+    it('Should preserve inversion when scrolling after resetProperties', function (done) {
+      testUtils.createViewports(renderingEngine, {
+        viewportId,
+        orientation: Enums.OrientationAxis.AXIAL,
+      });
+
+      const imageInfo = {
+        loader: 'fakeImageLoader',
+        name: 'imageURI',
+        rows: 64,
+        columns: 64,
+        barStart: 20,
+        barWidth: 5,
+        xSpacing: 1,
+        ySpacing: 1,
+        sliceIndex: 0,
+      };
+      const imageId1 = testUtils.encodeImageIdInfo(imageInfo);
+      const imageId2 = testUtils.encodeImageIdInfo({
+        ...imageInfo,
+        sliceIndex: 1,
+      });
+
+      const vp = renderingEngine.getViewport(viewportId);
+      const getTransferFunctionColors = () => {
+        const actor = vp.getDefaultActor().actor;
+        const transferFunction = actor.getProperty().getRGBTransferFunction(0);
+
+        return transferFunctionUtils
+          .getTransferFunctionNodes(transferFunction)
+          .map(([, red, green, blue]) => [red, green, blue]);
+      };
+
+      vp.setStack([imageId1, imageId2], 0)
+        .then(() => {
+          vp.resetProperties();
+          vp.setProperties({ invert: true });
+
+          const invertedColors = getTransferFunctionColors();
+
+          return vp.setImageIdIndex(1).then(() => {
+            expect(vp.getProperties().invert).toBe(true);
+            expect(getTransferFunctionColors()).toEqual(invertedColors);
+          });
+        })
+        .then(done)
+        .catch(done.fail);
     });
 
     it('Should be able to resetProperties API', function (done) {

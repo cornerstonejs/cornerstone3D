@@ -44,8 +44,8 @@ const createCornerstoneElement = (id) => {
   const element = document.createElement('div');
   element.oncontextmenu = (e) => e.preventDefault(); // Disable right click context menu
   element.id = id;
-  element.style.width = '500px';
-  element.style.height = '500px';
+  element.style.width = '512px';
+  element.style.height = '512px';
   return element;
 };
 

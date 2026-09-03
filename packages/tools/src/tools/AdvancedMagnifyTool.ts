@@ -50,6 +50,8 @@ import type {
 import type { AdvancedMagnifyAnnotation } from '../types/ToolSpecificAnnotationTypes';
 
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
+import getViewportICamera from '../utilities/getViewportICamera';
+import { getNativeSourceProperties } from '../utilities/genericViewportToolHelpers';
 import type { StyleSpecifier } from '../types/AnnotationStyle';
 import { getCanvasCircleRadius } from '../utilities/math/circle';
 
@@ -212,15 +214,22 @@ class AdvancedMagnifyTool extends AnnotationTool {
       radius
     ) as [Types.Point3, Types.Point3, Types.Point3, Types.Point3];
 
-    const camera = viewport.getCamera();
-    const { viewPlaneNormal, viewUp } = camera;
+    // Native PLANAR_NEXT ("next") source viewports have no getCamera; read the
+    // orientation through the lane-agnostic getViewportICamera helper instead.
+    const isNativeSource = csUtils.isGenericViewport(viewport);
+    const { viewPlaneNormal, viewUp } = isNativeSource
+      ? getViewportICamera(viewport)
+      : viewport.getCamera();
 
-    const referencedImageId = this.getReferencedImageId(
-      viewport,
-      worldPos,
-      viewPlaneNormal,
-      viewUp
-    );
+    // The base getReferencedImageId derives the image id by string-splitting the
+    // targetId, which on a native viewport is a frameOfReference-prefixed id and
+    // yields a bogus value. Read the current image id directly (mirrors MagnifyTool).
+    // currentImageId may be undefined for a reconstructed/volume plane; it is only
+    // stored as annotation metadata and tolerated (the loupe is built from
+    // getImageIds()/getCurrentImageIdIndex()).
+    const referencedImageId = isNativeSource
+      ? getNativeSourceProperties(viewport).currentImageId
+      : this.getReferencedImageId(viewport, worldPos, viewPlaneNormal, viewUp);
 
     const annotationUID = csUtils.uuidv4();
     const magnifyViewportId = csUtils.uuidv4();
@@ -314,7 +323,8 @@ class AdvancedMagnifyTool extends AnnotationTool {
     element: HTMLDivElement,
     annotation: AdvancedMagnifyAnnotation,
     canvasCoords: Types.Point2,
-    proximity: number
+    proximity: number,
+    interactionType?: string
   ): boolean => {
     const { viewport } = getEnabledElement(element);
     const { points } = annotation.data.handles;
@@ -323,6 +333,14 @@ class AdvancedMagnifyTool extends AnnotationTool {
     const radiusPoint = getCanvasCircleRadius([center, canvasCoords]);
 
     if (Math.abs(radiusPoint - radius) < proximity * 2) {
+      return true;
+    }
+
+    // On touch the glass interior is a whole-tool grab (move) as well:
+    // fingers have no hover to discover the border band, and an unconsumed
+    // touch inside the glass would fall through to addNewAnnotation and
+    // stack another magnifier on top of this one.
+    if (interactionType === 'touch' && radiusPoint < radius) {
       return true;
     }
 
@@ -391,7 +409,9 @@ class AdvancedMagnifyTool extends AnnotationTool {
     evt.preventDefault();
   };
 
-  _endCallback = (evt: EventTypes.InteractionEventType): void => {
+  _endCallback = (
+    evt: EventTypes.InteractionEventType | EventTypes.TouchPressEventType
+  ): void => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
@@ -469,6 +489,32 @@ class AdvancedMagnifyTool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
+  /**
+   * TOUCH_PRESS listener active while a loupe is grabbed: touching down near
+   * the loupe always starts a move/resize on TOUCH_START, which sets
+   * state.isInteractingWithTool and makes the touchPress dispatcher drop the
+   * event, so the press that opens the zoom-factor picker has to be handled
+   * by the interaction itself. Ends the in-progress move before showing the
+   * picker.
+   */
+  _pressModifyCallback = (evt: EventTypes.TouchPressEventType): void => {
+    const { element, startPoints } = evt.detail;
+    const annotation = this.editData.annotation as AdvancedMagnifyAnnotation;
+    const proximity = AdvancedMagnifyTool.TOUCH_PROXIMITY;
+
+    if (
+      !this.isPointNearTool(element, annotation, startPoints.canvas, proximity)
+    ) {
+      return;
+    }
+
+    // Keep the touchPress dispatcher from re-opening the picker once
+    // _endCallback clears state.isInteractingWithTool.
+    evt.stopImmediatePropagation();
+    this._endCallback(evt);
+    this.showZoomFactorsList(evt, annotation);
+  };
+
   _dragHandle = (evt: EventTypes.InteractionEventType): void => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
@@ -544,6 +590,7 @@ class AdvancedMagnifyTool extends AnnotationTool {
     element.addEventListener(Events.TOUCH_END, this._endCallback);
     element.addEventListener(Events.TOUCH_DRAG, this._dragModifyCallback);
     element.addEventListener(Events.TOUCH_TAP, this._endCallback);
+    element.addEventListener(Events.TOUCH_PRESS, this._pressModifyCallback);
   };
 
   _deactivateModify = (element) => {
@@ -556,6 +603,7 @@ class AdvancedMagnifyTool extends AnnotationTool {
     element.removeEventListener(Events.TOUCH_END, this._endCallback);
     element.removeEventListener(Events.TOUCH_DRAG, this._dragModifyCallback);
     element.removeEventListener(Events.TOUCH_TAP, this._endCallback);
+    element.removeEventListener(Events.TOUCH_PRESS, this._pressModifyCallback);
   };
 
   /**
@@ -687,16 +735,24 @@ class AdvancedMagnifyTool extends AnnotationTool {
   // Basic dropdown component that allows the user to select a different zoom factor.
   // configurations.actions may be changed to use a customized dropdown.
   public showZoomFactorsList(
-    evt: EventTypes.InteractionEventType,
+    evt: EventTypes.InteractionEventType | EventTypes.TouchPressEventType,
     annotation: AdvancedMagnifyAnnotation
   ) {
-    const { element, currentPoints } = evt.detail;
+    const { element } = evt.detail;
+    // TOUCH_PRESS events carry no currentPoints; use the press start point.
+    const currentPoints =
+      'currentPoints' in evt.detail
+        ? evt.detail.currentPoints
+        : evt.detail.startPoints;
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
     const { canvas: canvasPoint } = currentPoints;
     const viewportElement = element.querySelector(':scope .viewport-element');
     const currentZoomFactor = annotation.data.zoomFactor;
-    const remove = () => dropdown.parentElement.removeChild(dropdown);
+    // Element.remove() rather than parentElement.removeChild(): the dropdown
+    // may already be detached (blur fires as it is torn down), and the latter
+    // throws on a null parent.
+    const remove = () => dropdown.remove();
 
     const dropdown = this._getZoomFactorsListDropdown(
       currentZoomFactor,
@@ -720,6 +776,46 @@ class AdvancedMagnifyTool extends AnnotationTool {
     dropdown.focus();
   }
 
+  /**
+   * Touch counterpart of the Secondary+Shift zoom-factor action: a
+   * long-press (TOUCH_PRESS) near the magnifying glass border opens the
+   * same picker. The touchPress dispatcher calls the first active tool that
+   * implements this callback, without any proximity check, so the hit-test
+   * happens here (and an earlier tool in the group implementing
+   * touchPressCallback would shadow this one). When TOUCH_START has already
+   * grabbed the loupe the dispatcher drops the event entirely and
+   * _pressModifyCallback delivers the press instead.
+   */
+  touchPressCallback = (evt: EventTypes.TouchPressEventType): void => {
+    const { element, startPoints } = evt.detail;
+    const enabledElement = getEnabledElement(element);
+
+    if (!enabledElement) {
+      return;
+    }
+
+    const { viewport } = enabledElement;
+    const canvasPoint = startPoints.canvas;
+    const proximity = AdvancedMagnifyTool.TOUCH_PROXIMITY;
+
+    const annotations = (getAnnotations(this.getToolName(), element) ??
+      []) as AdvancedMagnifyAnnotation[];
+    const annotation = annotations
+      .filter((a) => a.data.sourceViewportId === viewport.id)
+      .find(
+        (a) =>
+          isAnnotationVisible(a.annotationUID) &&
+          !isAnnotationLocked(a.annotationUID) &&
+          this.isPointNearTool(element, a, canvasPoint, proximity)
+      );
+
+    if (!annotation) {
+      return;
+    }
+
+    this.showZoomFactorsList(evt, annotation);
+  };
+
   private _getZoomFactorsListDropdown(currentZoomFactor, onChangeCallback) {
     const { zoomFactorList } = this.configuration.magnifyingGlass;
     const dropdown = document.createElement('select');
@@ -730,14 +826,54 @@ class AdvancedMagnifyTool extends AnnotationTool {
       position: 'absolute',
     });
 
-    ['mousedown', 'mouseup', 'mousemove', 'click'].forEach((eventName) => {
+    [
+      'mousedown',
+      'mouseup',
+      'mousemove',
+      'click',
+      'touchstart',
+      'touchend',
+      'touchmove',
+    ].forEach((eventName) => {
       dropdown.addEventListener(eventName, (evt) => evt.stopPropagation());
     });
 
+    // `change` only fires when the value actually differs, so picking the
+    // factor that is already selected used to leave the picker stranded on the
+    // canvas with no way to dismiss it. Committing from several paths fixes
+    // that, but onChangeCallback tears the dropdown down, so the paths are
+    // funnelled through a one-shot guard rather than allowed to race.
+    let committed = false;
+    const commit = (value?: string) => {
+      if (committed) {
+        return;
+      }
+
+      committed = true;
+      onChangeCallback(value);
+    };
+
     dropdown.addEventListener('change', (evt) => {
       evt.stopPropagation();
-      onChangeCallback(dropdown.value);
+      commit(dropdown.value);
     });
+
+    // Selecting the current value: the click lands on the option even though
+    // no change event follows. Clicks on the listbox chrome (scrollbar,
+    // padding) are deliberately ignored so scrolling the list cannot dismiss
+    // it; those fall through to the blur handler instead.
+    dropdown.addEventListener('click', (evt) => {
+      evt.stopPropagation();
+
+      if ((evt.target as HTMLElement)?.tagName === 'OPTION') {
+        commit(dropdown.value);
+      }
+    });
+
+    // Click-away, and the safety net for platforms that render <select> as a
+    // native modal picker (iOS) where neither of the above reliably fires when
+    // the value is unchanged.
+    dropdown.addEventListener('blur', () => commit(dropdown.value));
 
     dropdown.addEventListener('keydown', (evt) => {
       const shouldCancel =
@@ -746,7 +882,7 @@ class AdvancedMagnifyTool extends AnnotationTool {
 
       if (shouldCancel) {
         evt.stopPropagation();
-        onChangeCallback();
+        commit();
       }
     });
 
@@ -900,6 +1036,7 @@ class AdvancedMagnifyViewportManager {
       position,
       zoomFactor,
       autoPan,
+      annotation,
     });
 
     this._addSourceElementEventListener(sourceElement);
@@ -1006,8 +1143,11 @@ class AdvancedMagnifyViewportManager {
     const { renderingEngineId, viewportId: sourceViewportId } = evt.detail;
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const sourceViewport = renderingEngine.getViewport(sourceViewportId);
+    // Native ("next") viewports expose orientation via getViewportICamera, not getCamera.
     const { viewPlaneNormal: currentViewPlaneNormal } =
-      sourceViewport.getCamera();
+      csUtils.isGenericViewport(sourceViewport)
+        ? getViewportICamera(sourceViewport)
+        : sourceViewport.getCamera();
 
     const magnifyViewportsMapEntries =
       this._getMagnifyViewportsMapEntriesBySourceViewportId(sourceViewportId);
@@ -1162,6 +1302,7 @@ class AdvancedMagnifyViewport {
   private _resized = false;
   private _resizeViewportAsync: () => void;
   private _canAutoPan = false;
+  private _annotation: AdvancedMagnifyAnnotation;
   private _autoPan: {
     enabled: boolean;
     padding: number;
@@ -1178,6 +1319,7 @@ class AdvancedMagnifyViewport {
     position = [0, 0],
     zoomFactor,
     autoPan,
+    annotation,
   }: {
     magnifyViewportId?: string;
     sourceEnabledElement: Types.IEnabledElement;
@@ -1189,11 +1331,13 @@ class AdvancedMagnifyViewport {
       padding: number;
       callback: AutoPanCallback;
     };
+    annotation?: AdvancedMagnifyAnnotation;
   }) {
     // Private properties
     this._viewportId = magnifyViewportId ?? csUtils.uuidv4();
     this._sourceEnabledElement = sourceEnabledElement;
     this._autoPan = autoPan;
+    this._annotation = annotation;
 
     // Public properties
     this.radius = radius;
@@ -1203,6 +1347,10 @@ class AdvancedMagnifyViewport {
 
     this._browserMouseDownCallback = this._browserMouseDownCallback.bind(this);
     this._browserMouseUpCallback = this._browserMouseUpCallback.bind(this);
+    this._browserTouchStartCallback =
+      this._browserTouchStartCallback.bind(this);
+    this._browserTouchEndCallback = this._browserTouchEndCallback.bind(this);
+    this._touchPressCallback = this._touchPressCallback.bind(this);
     this._handleToolModeChanged = this._handleToolModeChanged.bind(this);
     this._mouseDragCallback = this._mouseDragCallback.bind(this);
     this._resizeViewportAsync = <() => void>(
@@ -1343,6 +1491,27 @@ class AdvancedMagnifyViewport {
     magnifyViewport,
     zoomFactor
   ) {
+    if (csUtils.isGenericViewport(viewport)) {
+      // Native PLANAR_NEXT has no getCamera/parallelScale and its on-screen canvas is
+      // hidden (offsetWidth === 0). Reconstruct the source's parallelScale geometrically:
+      // worldPerPixel (vertical) comes from canvasToWorld of two element-space points one
+      // pixel apart, and parallelScale = worldPerPixel * elementHeight / 2. Then apply the
+      // same legacy formula: parallelScaleSource * (1/zoom) * (loupeWidth / sourceWidth).
+      const sourceElement = viewport.element as HTMLElement;
+      const sourceWidth = sourceElement.clientWidth;
+      const sourceHeight = sourceElement.clientHeight;
+      const worldTop = viewport.canvasToWorld([0, 0] as Types.Point2);
+      const worldBottom = viewport.canvasToWorld([0, 1] as Types.Point2);
+      const worldPerPixel = vec3.distance(
+        worldTop as Types.Point3,
+        worldBottom as Types.Point3
+      );
+      const parallelScaleSource = (worldPerPixel * sourceHeight) / 2;
+      const canvasRatio = magnifyViewport.canvas.offsetWidth / sourceWidth;
+
+      return parallelScaleSource * (1 / zoomFactor) * canvasRatio;
+    }
+
     const { parallelScale } = viewport.getCamera();
     const canvasRatio =
       magnifyViewport.canvas.offsetWidth / viewport.canvas.offsetWidth;
@@ -1437,11 +1606,16 @@ class AdvancedMagnifyViewport {
       sourceViewport.getRenderingEngine() as Types.IRenderingEngine;
 
     const { options: sourceViewportOptions } = sourceViewport;
+    // Native PLANAR_NEXT sources have no setStack/setProperties/setCamera, so the loupe
+    // can't be a native viewport. Mirror MagnifyTool: back the loupe with a legacy STACK
+    // viewport so every clone/sync call below uses the legacy API surface. The native
+    // source still feeds it via getImageIds()/getCurrentImageIdIndex().
+    const isNativeSource = csUtils.isGenericViewport(sourceViewport);
     const viewportInput = {
       element: magnifyElement,
       viewportId: magnifyViewportId,
-      type: sourceViewport.type,
-      defaultOptions: { ...sourceViewportOptions },
+      type: isNativeSource ? Enums.ViewportType.STACK : sourceViewport.type,
+      defaultOptions: isNativeSource ? {} : { ...sourceViewportOptions },
     };
 
     renderingEngine.enableElement(viewportInput);
@@ -1450,8 +1624,11 @@ class AdvancedMagnifyViewport {
       renderingEngine.getViewport(magnifyViewportId)
     );
 
-    if (this._isStackViewport(sourceViewport)) {
-      this._cloneStack(sourceViewport, magnifyViewport as Types.IStackViewport);
+    if (isNativeSource || this._isStackViewport(sourceViewport)) {
+      this._cloneStack(
+        sourceViewport as Types.IStackViewport,
+        magnifyViewport as Types.IStackViewport
+      );
     } else if (this._isVolumeViewport(sourceViewport)) {
       this._cloneVolumes(
         sourceViewport,
@@ -1501,6 +1678,51 @@ class AdvancedMagnifyViewport {
     // makes the magnifying glass unresponsive for that amount of time.
     element.removeEventListener('mouseup', this._cancelMouseEventCallback);
     element.removeEventListener('mousemove', this._cancelMouseEventCallback);
+  }
+
+  private _browserTouchEndCallback(evt: TouchEvent) {
+    // Unlike mouse, touches end one finger at a time; only restore the
+    // shielding once the last finger lifts, otherwise a remaining finger's
+    // touchmove would be blocked from the document-level drag listeners.
+    if (evt.touches?.length > 0) {
+      return;
+    }
+
+    const { element } = this._enabledElement.viewport;
+
+    document.removeEventListener('touchend', this._browserTouchEndCallback);
+    document.removeEventListener('touchcancel', this._browserTouchEndCallback);
+
+    // Restrict the scope of magnifying glass events again
+    element.addEventListener('touchend', this._cancelMouseEventCallback, {
+      passive: false,
+    });
+    element.addEventListener('touchmove', this._cancelMouseEventCallback, {
+      passive: false,
+    });
+  }
+
+  private _browserTouchStartCallback(evt: TouchEvent) {
+    const { element } = this._enabledElement.viewport;
+
+    // Enable auto pan only when the first finger lands inside of the
+    // magnifying glass viewport (same rule as _browserMouseDownCallback);
+    // additional fingers must not flip the decision mid-gesture.
+    if (evt.touches?.length === 1) {
+      this._canAutoPan = !!(evt.target as HTMLElement)?.closest(
+        '.advancedMagnifyTool'
+      );
+    }
+
+    // Wait for the gesture to end to restrict the scope of magnifying glass
+    // events again ('touchcancel' covers OS-interrupted gestures)
+    document.addEventListener('touchend', this._browserTouchEndCallback);
+    document.addEventListener('touchcancel', this._browserTouchEndCallback);
+
+    // Allow touchend and touchmove events so annotations can be manipulated
+    // when the finger passes over the magnifying glass (dragging a handle).
+    element.removeEventListener('touchend', this._cancelMouseEventCallback);
+    element.removeEventListener('touchmove', this._cancelMouseEventCallback);
   }
 
   private _mouseDragCallback(evt: EventTypes.InteractionEventType) {
@@ -1571,6 +1793,46 @@ class AdvancedMagnifyViewport {
     autoPan.callback(autoPanCallbackData);
   }
 
+  /**
+   * A long-press inside the loupe opens the zoom-factor picker. TOUCH_PRESS
+   * fires on the magnify element itself (its cloned tool group excludes
+   * AdvancedMagnify, so the touch dispatcher can never route it there).
+   */
+  private _touchPressCallback(evt: EventTypes.TouchPressEventType) {
+    if (state.isInteractingWithTool) {
+      return;
+    }
+
+    const toolInstance = this._sourceToolGroup?.getToolInstance(
+      ADVANCED_MAGNIFY_TOOL_NAME
+    ) as AdvancedMagnifyTool;
+
+    if (!toolInstance || !this._annotation) {
+      return;
+    }
+
+    const { viewport: sourceViewport } = this._sourceEnabledElement;
+    const pressCanvas = evt.detail.startPoints.canvas;
+    // Loupe-local canvas to source-viewport canvas: the loupe's top-left
+    // sits at (position - radius) in source canvas space (see update()).
+    const sourceCanvasPoint: Types.Point2 = [
+      pressCanvas[0] + this.position[0] - this.radius,
+      pressCanvas[1] + this.position[1] - this.radius,
+    ];
+
+    // The dropdown must live on the SOURCE element: the loupe element has
+    // overflow hidden and a 50% border radius that would clip it.
+    toolInstance.showZoomFactorsList(
+      {
+        detail: {
+          element: sourceViewport.element,
+          startPoints: { canvas: sourceCanvasPoint },
+        },
+      } as unknown as EventTypes.TouchPressEventType,
+      this._annotation
+    );
+  }
+
   private _addBrowserEventListeners(element) {
     // mousedown on document is handled in the capture phase because the other
     // mousedown event listener added to the magnifying glass element does not
@@ -1587,6 +1849,30 @@ class AdvancedMagnifyViewport {
     element.addEventListener('mouseup', this._cancelMouseEventCallback);
     element.addEventListener('mousemove', this._cancelMouseEventCallback);
     element.addEventListener('dblclick', this._cancelMouseEventCallback);
+
+    // touchstart on document is handled in the capture phase for the same
+    // reason as mousedown above (the element-level cancel stops bubbling).
+    document.addEventListener(
+      'touchstart',
+      this._browserTouchStartCallback,
+      true
+    );
+
+    // Touch events must not bubble up either: without this the source
+    // viewport's touchstart listener also runs and clobbers the shared
+    // touch-pipeline state, so gestures inside the loupe get attributed to
+    // the source viewport. passive: false because the cancel callback calls
+    // preventDefault (also suppresses synthesized mouse events / ghost
+    // clicks for touches inside the loupe).
+    element.addEventListener('touchstart', this._cancelMouseEventCallback, {
+      passive: false,
+    });
+    element.addEventListener('touchend', this._cancelMouseEventCallback, {
+      passive: false,
+    });
+    element.addEventListener('touchmove', this._cancelMouseEventCallback, {
+      passive: false,
+    });
   }
 
   private _removeBrowserEventListeners(element) {
@@ -1601,6 +1887,18 @@ class AdvancedMagnifyViewport {
     element.removeEventListener('mouseup', this._cancelMouseEventCallback);
     element.removeEventListener('mousemove', this._cancelMouseEventCallback);
     element.removeEventListener('dblclick', this._cancelMouseEventCallback);
+
+    document.removeEventListener(
+      'touchstart',
+      this._browserTouchStartCallback,
+      true
+    );
+    document.removeEventListener('touchend', this._browserTouchEndCallback);
+    document.removeEventListener('touchcancel', this._browserTouchEndCallback);
+
+    element.removeEventListener('touchstart', this._cancelMouseEventCallback);
+    element.removeEventListener('touchend', this._cancelMouseEventCallback);
+    element.removeEventListener('touchmove', this._cancelMouseEventCallback);
   }
 
   private _addEventListeners(element) {
@@ -1617,6 +1915,18 @@ class AdvancedMagnifyViewport {
     element.addEventListener(
       cstEvents.MOUSE_DRAG,
       this._mouseDragCallback as EventListener
+    );
+
+    // Touch has no hover: TOUCH_DRAG alone drives autoPan (the callback only
+    // reads currentPoints.canvas, which touch drags carry too).
+    element.addEventListener(
+      cstEvents.TOUCH_DRAG,
+      this._mouseDragCallback as EventListener
+    );
+
+    element.addEventListener(
+      cstEvents.TOUCH_PRESS,
+      this._touchPressCallback as EventListener
     );
 
     this._addBrowserEventListeners(element);
@@ -1636,6 +1946,16 @@ class AdvancedMagnifyViewport {
     element.addEventListener(
       cstEvents.MOUSE_DRAG,
       this._mouseDragCallback as EventListener
+    );
+
+    element.removeEventListener(
+      cstEvents.TOUCH_DRAG,
+      this._mouseDragCallback as EventListener
+    );
+
+    element.removeEventListener(
+      cstEvents.TOUCH_PRESS,
+      this._touchPressCallback as EventListener
     );
 
     this._removeBrowserEventListeners(element);
@@ -1664,6 +1984,14 @@ class AdvancedMagnifyViewport {
       this.zoomFactor
     );
 
+    // Native PLANAR_NEXT has no getCamera; read flip state through the projection-aware
+    // helper. The loupe (legacy STACK) still exposes getCamera.
+    const native = csUtils.isGenericViewport(sourceViewport)
+      ? getNativeSourceProperties(sourceViewport)
+      : undefined;
+    const { flipHorizontal, flipVertical } =
+      native ?? sourceViewport.getCamera();
+
     const { focalPoint, position, viewPlaneNormal } =
       magnifyViewport.getCamera();
 
@@ -1689,6 +2017,8 @@ class AdvancedMagnifyViewport {
       parallelScale,
       focalPoint: updatedFocalPoint,
       position: updatedPosition,
+      flipHorizontal,
+      flipVertical,
     });
   }
 
@@ -1702,7 +2032,14 @@ class AdvancedMagnifyViewport {
   private _syncViewports() {
     const { viewport: sourceViewport } = this._sourceEnabledElement;
     const { viewport: magnifyViewport } = this._enabledElement;
-    const sourceProperties = sourceViewport.getProperties();
+    const isNativeSource = csUtils.isGenericViewport(sourceViewport);
+
+    // Native PLANAR_NEXT has no getProperties; read its VOI/LUT via the display-set
+    // presentation keyed by the source data id (mirrors MagnifyTool). The loupe is a
+    // legacy STACK viewport, so setProperties below still works.
+    const sourceProperties = isNativeSource
+      ? getNativeSourceProperties(sourceViewport).properties
+      : sourceViewport.getProperties();
     const imageData = magnifyViewport.getImageData();
 
     if (!imageData) {
@@ -1712,7 +2049,9 @@ class AdvancedMagnifyViewport {
     magnifyViewport.setProperties(sourceProperties);
     this._syncViewportsCameras(sourceViewport, magnifyViewport);
 
-    if (this._isStackViewport(sourceViewport)) {
+    // Native sources are driven as a stack (legacy STACK loupe); keep the loupe's image
+    // index in sync via getCurrentImageIdIndex(), which native viewports support.
+    if (isNativeSource || this._isStackViewport(sourceViewport)) {
       this._syncStackViewports(
         sourceViewport as Types.IStackViewport,
         magnifyViewport as Types.IStackViewport

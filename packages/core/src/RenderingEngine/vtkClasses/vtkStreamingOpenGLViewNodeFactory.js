@@ -7,6 +7,7 @@ import vtkOpenGLGlyph3DMapper from '@kitware/vtk.js/Rendering/OpenGL/Glyph3DMapp
 import vtkOpenGLImageMapper from '@kitware/vtk.js/Rendering/OpenGL/ImageMapper';
 import vtkOpenGLImageCPRMapper from '@kitware/vtk.js/Rendering/OpenGL/ImageCPRMapper';
 import vtkOpenGLImageSlice from '@kitware/vtk.js/Rendering/OpenGL/ImageSlice';
+import vtkOpenGLImageResliceMapper from '@kitware/vtk.js/Rendering/OpenGL/ImageResliceMapper';
 import vtkOpenGLPixelSpaceCallbackMapper from '@kitware/vtk.js/Rendering/OpenGL/PixelSpaceCallbackMapper';
 import vtkOpenGLPolyDataMapper from '@kitware/vtk.js/Rendering/OpenGL/PolyDataMapper';
 import vtkOpenGLRenderer from '@kitware/vtk.js/Rendering/OpenGL/Renderer';
@@ -17,6 +18,7 @@ import vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
 import vtkOpenGLVolume from '@kitware/vtk.js/Rendering/OpenGL/Volume';
 import vtkOpenGLVolumeMapper from '@kitware/vtk.js/Rendering/OpenGL/VolumeMapper';
 import vtkViewNodeFactory from '@kitware/vtk.js/Rendering/SceneGraph/ViewNodeFactory';
+import vtkStreamingOpenGLImageResliceMapper from './vtkStreamingOpenGLImageResliceMapper';
 import vtkStreamingOpenGLVolumeMapper from './vtkStreamingOpenGLVolumeMapper';
 
 const CLASS_MAPPING = Object.create(null);
@@ -91,6 +93,10 @@ function vtkStreamingOpenGLViewNodeFactory(publicAPI, model) {
       initialValues.scalarTexture = dataObject.getScalarTexture();
     }
 
+    if (className === 'vtkSharedImageResliceMapper') {
+      initialValues.scalarTexture = dataObject.getScalarTexture();
+    }
+
     return initialValues;
   };
 }
@@ -119,6 +125,10 @@ export function extend(publicAPI, model, initialValues = {}) {
   registerOverride('vtkGlyph3DMapper', vtkOpenGLGlyph3DMapper.newInstance);
   registerOverride('vtkImageMapper', vtkOpenGLImageMapper.newInstance);
   registerOverride('vtkImageCPRMapper', vtkOpenGLImageCPRMapper.newInstance);
+  registerOverride(
+    'vtkImageResliceMapper',
+    vtkOpenGLImageResliceMapper.newInstance
+  );
   registerOverride('vtkImageSlice', vtkOpenGLImageSlice.newInstance);
   registerOverride('vtkMapper', vtkOpenGLPolyDataMapper.newInstance);
   registerOverride(
@@ -135,6 +145,10 @@ export function extend(publicAPI, model, initialValues = {}) {
   registerOverride(
     'vtkSharedVolumeMapper',
     vtkStreamingOpenGLVolumeMapper.newInstance
+  );
+  registerOverride(
+    'vtkSharedImageResliceMapper',
+    vtkStreamingOpenGLImageResliceMapper.newInstance
   );
   // registerOverride(
   //   'vtkWidgetRepresentation',

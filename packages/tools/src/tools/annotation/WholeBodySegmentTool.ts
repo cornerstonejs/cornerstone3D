@@ -22,6 +22,7 @@ import type {
 } from '../../types';
 
 import triggerAnnotationRenderForViewportUIDs from '../../utilities/triggerAnnotationRenderForViewportIds';
+import getViewportICamera from '../../utilities/getViewportICamera';
 import { growCut } from '../../utilities/segmentation';
 import type { GrowCutBoundingBoxOptions } from '../../utilities/segmentation/growCut';
 import type {
@@ -125,8 +126,8 @@ class WholeBodySegmentTool extends GrowCutBaseTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    await this.runGrowCut();
     this._deactivateDraw(element);
+    await this.runGrowCut();
 
     this.growCutData = null;
 
@@ -284,6 +285,14 @@ class WholeBodySegmentTool extends GrowCutBaseTool {
     );
     // @ts-expect-error
     element.addEventListener(Events.MOUSE_CLICK, this._endCallback);
+    // @ts-expect-error
+    element.addEventListener(Events.TOUCH_END, this._endCallback);
+    element.addEventListener(
+      Events.TOUCH_DRAG,
+      this._dragCallback as unknown as EventListener
+    );
+    // @ts-expect-error
+    element.addEventListener(Events.TOUCH_TAP, this._endCallback);
   }
 
   private _deactivateDraw = (element: HTMLDivElement): void => {
@@ -295,6 +304,14 @@ class WholeBodySegmentTool extends GrowCutBaseTool {
     );
     // @ts-expect-error
     element.removeEventListener(Events.MOUSE_CLICK, this._endCallback);
+    // @ts-expect-error
+    element.removeEventListener(Events.TOUCH_END, this._endCallback);
+    element.removeEventListener(
+      Events.TOUCH_DRAG,
+      this._dragCallback as unknown as EventListener
+    );
+    // @ts-expect-error
+    element.removeEventListener(Events.TOUCH_TAP, this._endCallback);
   };
 
   private _projectWorldPointAcrossSlices(
@@ -327,7 +344,7 @@ class WholeBodySegmentTool extends GrowCutBaseTool {
     viewport: Types.IViewport,
     worldEdgePoint: Types.Point3
   ) {
-    const { viewPlaneNormal } = viewport.getCamera();
+    const { viewPlaneNormal } = getViewportICamera(viewport);
 
     return this._projectWorldPointAcrossSlices(
       viewport,
@@ -398,7 +415,7 @@ class WholeBodySegmentTool extends GrowCutBaseTool {
       volume.imageData,
       worldPoint
     );
-    const { viewUp, viewPlaneNormal } = viewport.getCamera();
+    const { viewUp, viewPlaneNormal } = getViewportICamera(viewport);
     const vecRow = vec3.cross(vec3.create(), viewUp, viewPlaneNormal);
     const axis = vecRow.findIndex((n) => csUtils.isEqual(Math.abs(n), 1));
     const ijkLineP1: Types.Point3 = [...ijkPoint];

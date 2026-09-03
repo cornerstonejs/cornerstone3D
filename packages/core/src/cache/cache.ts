@@ -1151,7 +1151,11 @@ class Cache {
    * @param imageId - image ID
    * @param partialImage - partial image to use
    */
-  public setPartialImage(imageId: string, partialImage?: IImage) {
+  public setPartialImage(
+    imageId: string,
+    partialImage?: IImage,
+    removeImageLoadObject = false
+  ) {
     const cachedImage = this._imageCache.get(imageId);
     if (!cachedImage) {
       if (partialImage) {
@@ -1172,6 +1176,9 @@ class Cache {
       cachedImage.sizeInBytes = 0;
       cachedImage.image = partialImage || cachedImage.image;
     } else {
+      if (removeImageLoadObject) {
+        cachedImage.imageLoadObject = null;
+      }
       cachedImage.image = partialImage || cachedImage.image;
     }
   }

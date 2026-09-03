@@ -13,9 +13,9 @@ import {
   addSliderToToolbar,
   addDropdownToToolbar,
   addButtonToToolbar,
+  get4DVolumeImageIds,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
 
 const {
   utilities: csToolsUtilities,
@@ -49,7 +49,7 @@ setTitleAndDescription(
   'Generates a 3D volume using the SUM, AVERAGE, or SUBTRACT operators for a 4D time series.\nEnter the dimension group numbers to use separated by commas (ex: 0,1,3,4) then press "Set Dimension Groups". \nNote: the index for the dimension groups starts at 0'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 
@@ -226,32 +226,15 @@ async function run() {
     ],
   });
 
-  const { metaDataManager } = cornerstoneDICOMImageLoader.wadors;
-
-  // Get Cornerstone imageIds and fetch metadata into RAM
-  let imageIds = await createImageIdsAndCacheMetaData({
+  const seriesImageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID: '2.25.79767489559005369769092179787138169587',
     SeriesInstanceUID: '2.25.87977716979310885152986847054790859463',
     wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
-  const firstDimensionGroup = 10;
-  const lastDimensionGroup = 14;
-  const NUM_IMAGES_PER_DIMENSION_GROUP = 235;
-  const firstInstanceNumber =
-    (firstDimensionGroup - 1) * NUM_IMAGES_PER_DIMENSION_GROUP + 1;
-  const lastInstanceNumber =
-    lastDimensionGroup * NUM_IMAGES_PER_DIMENSION_GROUP;
-
-  imageIds = imageIds.filter((imageId) => {
-    const instanceMetaData = metaDataManager.get(imageId);
-    const instanceTag = instanceMetaData['00200013'];
-    const instanceNumber = parseInt(instanceTag.Value[0]);
-
-    return (
-      instanceNumber >= firstInstanceNumber &&
-      instanceNumber <= lastInstanceNumber
-    );
+  const imageIds = get4DVolumeImageIds(seriesImageIds, {
+    fromGroup: 10,
+    toGroup: 14,
   });
 
   // Instantiate a rendering engine

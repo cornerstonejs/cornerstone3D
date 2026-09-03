@@ -1,4 +1,5 @@
 import * as metaData from '../metaData';
+import { MetadataModules } from '../enums';
 import type { ScalingParameters } from '../types';
 
 /**
@@ -11,9 +12,10 @@ import type { ScalingParameters } from '../types';
 export default function getScalingParameters(
   imageId: string
 ): ScalingParameters {
-  const modalityLutModule = metaData.get('modalityLutModule', imageId) || {};
+  const modalityLutModule =
+    metaData.get(MetadataModules.MODALITY_LUT, imageId) || {};
   const generalSeriesModule =
-    metaData.get('generalSeriesModule', imageId) || {};
+    metaData.get(MetadataModules.GENERAL_SERIES, imageId) || {};
 
   const { modality } = generalSeriesModule;
 
@@ -23,7 +25,7 @@ export default function getScalingParameters(
     modality,
   };
 
-  const scalingModules = metaData.get('scalingModule', imageId) || {};
+  const scalingModules = metaData.get(MetadataModules.SCALING, imageId) || {};
 
   return {
     ...scalingParameters,

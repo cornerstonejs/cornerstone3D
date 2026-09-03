@@ -1,4 +1,9 @@
-import { BaseTool, AnnotationTool, AnnotationDisplayTool } from './base';
+import {
+  BaseTool,
+  AnnotationTool,
+  AnnotationDisplayTool,
+  measurementTargetFilters,
+} from './base';
 import PanTool from './PanTool';
 import TrackballRotateTool from './TrackballRotateTool';
 import VolumeCroppingTool from './VolumeCroppingTool';
@@ -10,6 +15,8 @@ import PlanarRotateTool from './PlanarRotateTool';
 import ZoomTool from './ZoomTool';
 import MIPJumpToClickTool from './MIPJumpToClickTool';
 import CrosshairsTool from './CrosshairsTool';
+import WorldCrosshairTool from './WorldCrosshairTool';
+import SliceIntersectionTool from './SliceIntersectionTool';
 import MagnifyTool from './MagnifyTool';
 import AdvancedMagnifyTool from './AdvancedMagnifyTool';
 import ReferenceLinesTool from './ReferenceLinesTool';
@@ -46,6 +53,7 @@ import KeyImageTool from './annotation/KeyImageTool';
 import AnnotationEraserTool from './AnnotationEraserTool';
 import RegionSegmentTool from './annotation/RegionSegmentTool';
 import RegionSegmentPlusTool from './annotation/RegionSegmentPlusTool';
+import ClickSegmentTool from './annotation/ClickSegmentTool';
 import WholeBodySegmentTool from './annotation/WholeBodySegmentTool';
 import LabelmapBaseTool from './segmentation/LabelmapBaseTool';
 
@@ -59,6 +67,7 @@ import CircleROIStartEndThresholdTool from './segmentation/CircleROIStartEndThre
 import BrushTool from './segmentation/BrushTool';
 import PaintFillTool from './segmentation/PaintFillTool';
 import OrientationMarkerTool from './OrientationMarkerTool';
+import OrientationControllerTool from './OrientationControllerTool';
 import SegmentSelectTool from './segmentation/SegmentSelectTool';
 import SegmentBidirectionalTool from './segmentation/SegmentBidirectionalTool';
 
@@ -71,6 +80,7 @@ export {
   BaseTool,
   AnnotationTool,
   AnnotationDisplayTool,
+  measurementTargetFilters,
   // Manipulation Tools
   PanTool,
   TrackballRotateTool,
@@ -86,6 +96,8 @@ export {
   ReferenceCursors,
   // Annotation Tools
   CrosshairsTool,
+  WorldCrosshairTool,
+  SliceIntersectionTool,
   ReferenceLinesTool,
   OverlayGridTool,
   SegmentationIntersectionTool,
@@ -126,11 +138,13 @@ export {
   PaintFillTool,
   ScaleOverlayTool,
   OrientationMarkerTool,
+  OrientationControllerTool,
   SculptorTool,
   SegmentSelectTool,
   VolumeRotateTool,
   RegionSegmentTool,
   RegionSegmentPlusTool,
+  ClickSegmentTool,
   WholeBodySegmentTool,
   LabelmapBaseTool,
   SegmentBidirectionalTool,

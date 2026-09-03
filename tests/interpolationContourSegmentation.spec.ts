@@ -1,7 +1,7 @@
 import { test } from 'playwright-test-coverage';
 import type { Page, Locator } from '@playwright/test';
 import {
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   visitExample,
   screenShotPaths,
 } from './utils/index';
@@ -25,10 +25,11 @@ test.describe('Contour Freehand Annotation Tool', async () => {
     // Wait 5 seconds for rendering to complete
     await page.waitForTimeout(5000);
 
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      canvas,
-      screenShotPaths.interpolationContourSegmentation.splineContourSegmentationTool
+      '',
+      screenShotPaths.interpolationContourSegmentation.splineContourSegmentationTool,
+      0
     );
   });
 

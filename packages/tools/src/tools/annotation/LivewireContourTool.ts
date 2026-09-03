@@ -10,10 +10,7 @@ import {
 import type { Types } from '@cornerstonejs/core';
 
 import { removeAnnotation } from '../../stateManagement/annotation/annotationState';
-import {
-  drawHandles as drawHandlesSvg,
-  drawLinkedTextBox as drawLinkedTextBoxSvg,
-} from '../../drawingSvg';
+import { drawHandles as drawHandlesSvg } from '../../drawingSvg';
 import { state } from '../../store/state';
 import { Events, KeyboardBindings, ChangeTypes } from '../../enums';
 import type {
@@ -41,7 +38,6 @@ import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters'
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
 import type { AnnotationStyle } from '../../types/AnnotationStyle';
 import type { AnnotationModifiedEventDetail } from '../../types/EventTypes';
-import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import { getCalibratedLengthUnitsAndScale, throttle } from '../../utilities';
 
 const CLICK_CLOSE_CURVE_SQR_DIST = 10 ** 2; // px
@@ -73,6 +69,10 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     contourHoleProcessingEnabled?: boolean;
   } | null;
   isDrawing: boolean;
+  // Multi-part: points already placed must survive a pinch, so the extra
+  // finger is ignored by _touchDragDuringDrawCallback rather than cancelling
+  // the contour. See BaseTool.handlesMultiTouchGestures.
+  handlesMultiTouchGestures = true;
   isHandleOutsideImage = false;
 
   constructor(
@@ -97,6 +97,14 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
          * The unit is image pixels (index).
          */
         snapHandleNearby: 2,
+
+        /**
+         * Distance in canvas pixels from the first control point within
+         * which a tap closes the curve when drawing with touch. Mouse
+         * clicks keep the default 10px target; finger taps get a larger
+         * one, matching the 36px touch proximity used for handle grabs.
+         */
+        touchCloseCurveDistance: 36,
 
         /**
          * Interpolation is only available for segmentation versions of these
@@ -228,7 +236,26 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       throw new Error('Viewport not supported');
     }
     scalarData = csUtils.convertToGrayscale(scalarData, width, height);
-    const { voiRange } = viewport.getProperties();
+    // Native ("next") viewports expose no getProperties; read the effective VOI
+    // from the per-binding presentation, falling back to the computed default VOI.
+    let voiRange: Types.VOIRange;
+    // Widen so the capability guard can narrow; the enabled element types
+    // viewport as IStackViewport | IVolumeViewport.
+    const sourceViewport: Types.IViewport = viewport;
+    if (csUtils.viewportSupportsDisplaySetPresentation(sourceViewport)) {
+      const dataId = sourceViewport.getSourceDataId();
+      voiRange = ((dataId
+        ? (
+            sourceViewport.getDisplaySetPresentation(dataId) as
+              | { voiRange?: Types.VOIRange }
+              | undefined
+          )?.voiRange
+        : undefined) ??
+        sourceViewport.getDefaultVOIRange(dataId) ??
+        undefined) as Types.VOIRange;
+    } else {
+      ({ voiRange } = viewport.getProperties());
+    }
     const startPos = worldToSlice(worldPos);
 
     this.scissors = LivewireScissors.createInstanceFromRawPixelData(
@@ -511,7 +538,27 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
   };
 
   private _mouseDownCallback = (evt: EventTypes.InteractionEventType): void => {
-    const doubleClick = evt.type === Events.MOUSE_DOUBLE_CLICK;
+    const isTouchEvent =
+      evt.type === Events.TOUCH_TAP || evt.type === Events.TOUCH_END;
+    // A double tap arrives as a single TOUCH_TAP event carrying the tap
+    // count (see touchStartListener) and closes the curve exactly like a
+    // mouse double click does.
+    const doubleTap =
+      evt.type === Events.TOUCH_TAP &&
+      (evt.detail as unknown as EventTypes.TouchTapEventDetail).taps >= 2;
+    const doubleClick = evt.type === Events.MOUSE_DOUBLE_CLICK || doubleTap;
+
+    // A drag that ends within tapMaxDistance of an active tap chain's start
+    // is committed by the TOUCH_END path and still counted into the chain's
+    // aggregated TOUCH_TAP; ignore that echo so the already-committed point
+    // is not added again and the path is not force-closed.
+    if (
+      doubleTap &&
+      this.isTouchTapEchoOfLiftCommit(evt.detail.currentPoints.canvas)
+    ) {
+      return;
+    }
+
     const {
       annotation,
       viewportIdsToRender,
@@ -547,6 +594,9 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
         index: -1,
         distSquared: Infinity,
       };
+      const closeDistSquared = isTouchEvent
+        ? this.configuration.touchCloseCurveDistance ** 2
+        : CLICK_CLOSE_CURVE_SQR_DIST;
 
       // Check if there is a control point close to the cursor
       for (let i = 0, len = controlPoints.length; i < len; i++) {
@@ -560,7 +610,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
         );
 
         if (
-          distSquared <= CLICK_CLOSE_CURVE_SQR_DIST &&
+          distSquared <= closeDistSquared &&
           distSquared < closestHandlePoint.distSquared
         ) {
           closestHandlePoint.distSquared = distSquared;
@@ -654,6 +704,41 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
     evt.preventDefault();
+  };
+
+  private _touchDragDuringDrawCallback = (
+    evt: EventTypes.TouchDragEventType
+  ): void => {
+    // Ignore multi-touch while drawing: the mean point of two fingers is
+    // never where the user wants the preview.
+    if (evt.detail.currentPointsList.length > 1) {
+      return;
+    }
+    this._mouseMoveCallback(evt);
+  };
+
+  private _touchEndDuringDrawCallback = (
+    evt: EventTypes.TouchEndEventType
+  ): void => {
+    const { startPointsList, currentPointsList, startPoints, currentPoints } =
+      evt.detail;
+
+    if (startPointsList.length > 1 || currentPointsList.length > 1) {
+      return;
+    }
+
+    // Gestures that stay within the tap distance are committed by the
+    // TOUCH_TAP path; committing them here as well would add the point twice.
+    const dragDistance = math.point.distanceToPoint(
+      startPoints.canvas,
+      currentPoints.canvas
+    );
+    if (dragDistance <= LivewireContourTool.TOUCH_TAP_MAX_CANVAS_DISTANCE) {
+      return;
+    }
+
+    this.recordTouchLiftCommit(currentPoints.canvas);
+    this._mouseDownCallback(evt);
   };
 
   public editHandle(
@@ -753,7 +838,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     editData.closed = true;
   }
 
-  private _dragCallback = (evt: EventTypes.InteractionEventType): void => {
+  protected _dragCallback = (evt: EventTypes.InteractionEventType): void => {
     this.isDrawing = true;
     const eventDetail = evt.detail;
     const { element } = eventDetail;
@@ -818,30 +903,6 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     return annotation.annotationUID;
   };
 
-  private _activateModify = (element) => {
-    state.isInteractingWithTool = true;
-
-    element.addEventListener(Events.MOUSE_UP, this._endCallback);
-    element.addEventListener(Events.MOUSE_DRAG, this._dragCallback);
-    element.addEventListener(Events.MOUSE_CLICK, this._endCallback);
-
-    element.addEventListener(Events.TOUCH_END, this._endCallback);
-    element.addEventListener(Events.TOUCH_DRAG, this._dragCallback);
-    element.addEventListener(Events.TOUCH_TAP, this._endCallback);
-  };
-
-  private _deactivateModify = (element) => {
-    state.isInteractingWithTool = false;
-
-    element.removeEventListener(Events.MOUSE_UP, this._endCallback);
-    element.removeEventListener(Events.MOUSE_DRAG, this._dragCallback);
-    element.removeEventListener(Events.MOUSE_CLICK, this._endCallback);
-
-    element.removeEventListener(Events.TOUCH_END, this._endCallback);
-    element.removeEventListener(Events.TOUCH_DRAG, this._dragCallback);
-    element.removeEventListener(Events.TOUCH_TAP, this._endCallback);
-  };
-
   private _activateDraw = (element) => {
     state.isInteractingWithTool = true;
 
@@ -853,6 +914,14 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     );
 
     element.addEventListener(Events.TOUCH_TAP, this._mouseDownCallback);
+    element.addEventListener(
+      Events.TOUCH_DRAG,
+      this._touchDragDuringDrawCallback
+    );
+    element.addEventListener(
+      Events.TOUCH_END,
+      this._touchEndDuringDrawCallback
+    );
   };
 
   private _deactivateDraw = (element) => {
@@ -866,6 +935,14 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     );
 
     element.removeEventListener(Events.TOUCH_TAP, this._mouseDownCallback);
+    element.removeEventListener(
+      Events.TOUCH_DRAG,
+      this._touchDragDuringDrawCallback
+    );
+    element.removeEventListener(
+      Events.TOUCH_END,
+      this._touchEndDuringDrawCallback
+    );
   };
 
   public renderAnnotation(
@@ -985,12 +1062,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       this._throttledCalculateCachedStats(annotation, element);
     }
 
-    this._renderStats(
-      annotation,
-      viewport,
-      svgDrawingHelper,
-      annotationStyle.textbox
-    );
+    this._renderStats(annotation, enabledElement, svgDrawingHelper);
 
     return true;
   }
@@ -1040,43 +1112,36 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
 
       const { imageData } = image;
-      const { scale, areaUnit } = getCalibratedLengthUnitsAndScale(
-        image,
-        () => {
-          const {
-            maxX: canvasMaxX,
-            maxY: canvasMaxY,
-            minX: canvasMinX,
-            minY: canvasMinY,
-          } = math.polyline.getAABB(canvasCoordinates);
+      const { areaUnit } = getCalibratedLengthUnitsAndScale(image, () => {
+        const {
+          maxX: canvasMaxX,
+          maxY: canvasMaxY,
+          minX: canvasMinX,
+          minY: canvasMinY,
+        } = math.polyline.getAABB(canvasCoordinates);
 
-          const topLeftBBWorld = viewport.canvasToWorld([
-            canvasMinX,
-            canvasMinY,
-          ]);
+        const topLeftBBWorld = viewport.canvasToWorld([canvasMinX, canvasMinY]);
 
-          const topLeftBBIndex = utilities.transformWorldToIndex(
-            imageData,
-            topLeftBBWorld
-          );
+        const topLeftBBIndex = utilities.transformWorldToIndex(
+          imageData,
+          topLeftBBWorld
+        );
 
-          const bottomRightBBWorld = viewport.canvasToWorld([
-            canvasMaxX,
-            canvasMaxY,
-          ]);
+        const bottomRightBBWorld = viewport.canvasToWorld([
+          canvasMaxX,
+          canvasMaxY,
+        ]);
 
-          const bottomRightBBIndex = utilities.transformWorldToIndex(
-            imageData,
-            bottomRightBBWorld
-          );
+        const bottomRightBBIndex = utilities.transformWorldToIndex(
+          imageData,
+          bottomRightBBWorld
+        );
 
-          return [topLeftBBIndex, bottomRightBBIndex];
-        }
-      );
-      let area = math.polyline.getArea(canvasCoordinates) / scale / scale;
-
+        return [topLeftBBIndex, bottomRightBBIndex];
+      });
       // Convert from canvas_pixels ^2 to mm^2
-      area *= deltaInX * deltaInY;
+      const area =
+        math.polyline.getArea(canvasCoordinates) * deltaInX * deltaInY;
 
       cachedStats[targetId] = {
         Modality: metadata.Modality,
@@ -1100,58 +1165,37 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     return cachedStats;
   };
 
-  private _renderStats = (
-    annotation,
-    viewport,
-    svgDrawingHelper,
-    textboxStyle
-  ) => {
+  private _renderStats = (annotation, enabledElement, svgDrawingHelper) => {
     const data = annotation.data;
+    const { viewport } = enabledElement;
     const targetId = this.getTargetId(viewport);
 
-    if (!data.contour.closed || !textboxStyle.visibility) {
+    if (!data.contour.closed) {
       return;
     }
 
+    const styleSpecifier = {
+      toolGroupId: this.toolGroupId,
+      toolName: this.getToolName(),
+      viewportId: enabledElement.viewport.id,
+      annotationUID: annotation.annotationUID,
+    };
     const textLines = this.configuration.getTextLines(data, targetId);
     if (!textLines || textLines.length === 0) {
       return;
     }
-
     const canvasCoordinates = data.handles.points.map((p) =>
       viewport.worldToCanvas(p)
     );
-    if (!data.handles.textBox.hasMoved) {
-      const canvasTextBoxCoords = getTextBoxCoordsCanvas(canvasCoordinates);
-
-      data.handles.textBox.worldPosition =
-        viewport.canvasToWorld(canvasTextBoxCoords);
-    }
-
-    const textBoxPosition = viewport.worldToCanvas(
-      data.handles.textBox.worldPosition
-    );
-
-    const textBoxUID = 'textBox';
-    const boundingBox = drawLinkedTextBoxSvg(
+    this.renderLinkedTextBoxAnnotation({
+      enabledElement,
       svgDrawingHelper,
-      annotation.annotationUID ?? '',
-      textBoxUID,
+      annotation,
+      styleSpecifier,
       textLines,
-      textBoxPosition,
       canvasCoordinates,
-      {},
-      textboxStyle
-    );
-
-    const { x: left, y: top, width, height } = boundingBox;
-
-    data.handles.textBox.worldBoundingBox = {
-      topLeft: viewport.canvasToWorld([left, top]),
-      topRight: viewport.canvasToWorld([left + width, top]),
-      bottomLeft: viewport.canvasToWorld([left, top + height]),
-      bottomRight: viewport.canvasToWorld([left + width, top + height]),
-    };
+      textBoxUID: 'textBox',
+    });
   };
 
   triggerAnnotationModified = (

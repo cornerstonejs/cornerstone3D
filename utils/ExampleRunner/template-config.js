@@ -13,7 +13,21 @@ const csAdapters = path.resolve('packages/adapters/src/index');
 const csDICOMImageLoaderDistPath = path.resolve(
   'packages/dicomImageLoader/src/index'
 );
+const csMetadataBasePath = path.resolve('packages/metadata/src');
+const csUtilsBasePath = path.resolve('packages/utils/src');
 const csNiftiPath = path.resolve('packages/nifti-volume-loader/src/index');
+
+// LAN mode runs on its own port so a shared/tunnelled example does not collide
+// with (or get tunnelled instead of) a viewer already holding the default port.
+const DEFAULT_PORT = 3000;
+const DEFAULT_LAN_PORT = 3003;
+
+// CS3D_ALLOW_LAN=1 (exactly '1') exposes the dev server on the local network so
+// examples can be opened from a phone/tablet; any other value keeps the default
+// localhost-only setup.
+const allowLan = process.env.CS3D_ALLOW_LAN === '1';
+const port =
+  process.env.CS3D_PORT || (allowLan ? DEFAULT_LAN_PORT : DEFAULT_PORT);
 
 module.exports = function buildConfig(name, destPath, root, exampleBasePath) {
   return `
@@ -90,6 +104,8 @@ module.exports = {
         '/'
       )}',
       '@cornerstonejs/adapters': '${csAdapters.replace(/\\/g, '/')}',
+      '@cornerstonejs/metadata': '${csMetadataBasePath.replace(/\\/g, '/')}',
+      '@cornerstonejs/utils': '${csUtilsBasePath.replace(/\\/g, '/')}',
       '@cornerstonejs/dicom-image-loader': '${csDICOMImageLoaderDistPath.replace(
         /\\/g,
         '/'
@@ -102,17 +118,25 @@ module.exports = {
       path: require.resolve('path-browserify'),
       events: false,
       buffer: require.resolve('buffer'),
+      // vtk.js 36 pulls in xmlbuilder2@4 -> @oozcitak/url which requires
+      // node's built-in 'url' module, unavailable in the browser bundle.
+      url: false,
     },
   },
   devServer: {
     hot: true,
     open: false,
-    port: ${process.env.CS3D_PORT || 3000},
+    port: ${port},
     historyApiFallback: true,
-    allowedHosts: [
+    ${
+      allowLan
+        ? `host: '0.0.0.0',
+    allowedHosts: 'all',`
+        : `allowedHosts: [
       '127.0.0.1',
       'localhost',
-    ],
+    ],`
+    }
   },
 };
 `;

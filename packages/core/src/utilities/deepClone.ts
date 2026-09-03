@@ -1,32 +1,67 @@
 /**
- * Deeply clones an object using structuredClone if available, otherwise falls back to a custom implementation.
- *
- * @param obj - The object to be cloned.
- * @returns A deep clone of the input object.
+ * Deeply clones a value using structuredClone when possible, with a fallback
+ * for cloneable plain objects in runtimes where structuredClone is unavailable
+ * or rejects non-cloneable values such as functions.
  */
-export function deepClone(obj: unknown): unknown {
-  if (obj === null || typeof obj !== 'object') {
-    return obj;
-  }
-
-  if (typeof obj === 'function') {
-    return obj; // Return function reference as-is
-  }
-
+export function deepClone<T>(value: T): T {
   if (typeof structuredClone === 'function') {
-    // just return the object
-    return obj;
+    try {
+      return structuredClone(value);
+    } catch {
+      // Fall through to the permissive clone below.
+    }
   }
 
-  if (Array.isArray(obj)) {
-    return obj.map(deepClone);
-  } else {
-    const clonedObj = {};
-    for (const key in obj) {
-      if (Object.prototype.hasOwnProperty.call(obj, key)) {
-        clonedObj[key] = deepClone(obj[key]);
-      }
-    }
-    return clonedObj;
+  return cloneValue(value, new WeakMap<object, unknown>());
+}
+
+function cloneValue<T>(value: T, seen: WeakMap<object, unknown>): T {
+  if (value === null || typeof value !== 'object') {
+    return value;
   }
+
+  const existingClone = seen.get(value);
+  if (existingClone) {
+    return existingClone as T;
+  }
+
+  if (value instanceof Date) {
+    return new Date(value.getTime()) as T;
+  }
+
+  if (value instanceof Map) {
+    const clonedMap = new Map();
+    seen.set(value, clonedMap);
+    value.forEach((mapValue, mapKey) => {
+      clonedMap.set(cloneValue(mapKey, seen), cloneValue(mapValue, seen));
+    });
+    return clonedMap as T;
+  }
+
+  if (value instanceof Set) {
+    const clonedSet = new Set();
+    seen.set(value, clonedSet);
+    value.forEach((setValue) => {
+      clonedSet.add(cloneValue(setValue, seen));
+    });
+    return clonedSet as T;
+  }
+
+  if (Array.isArray(value)) {
+    const clonedArray = [];
+    seen.set(value, clonedArray);
+    value.forEach((item, index) => {
+      clonedArray[index] = cloneValue(item, seen);
+    });
+    return clonedArray as T;
+  }
+
+  const clonedObject = {} as Record<PropertyKey, unknown>;
+  seen.set(value, clonedObject);
+
+  Reflect.ownKeys(value).forEach((key) => {
+    clonedObject[key] = cloneValue(value[key], seen);
+  });
+
+  return clonedObject as T;
 }

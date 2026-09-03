@@ -1,5 +1,10 @@
 import type { Types } from '@cornerstonejs/core';
-import { RenderingEngine, Enums, WSIViewport } from '@cornerstonejs/core';
+import {
+  RenderingEngine,
+  Enums,
+  WSIViewport,
+  utilities,
+} from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import dicomImageLoader from '@cornerstonejs/dicom-image-loader';
 import { api } from 'dicomweb-client';
@@ -91,8 +96,8 @@ const content = document.getElementById('content');
 const element = document.createElement('div');
 element.id = 'cornerstone-element';
 element.oncontextmenu = () => false;
-element.style.width = '500px';
-element.style.height = '500px';
+element.style.width = '512px';
+element.style.height = '512px';
 
 content.appendChild(element);
 
@@ -180,8 +185,14 @@ async function run() {
   const viewport = <Types.IWSIViewport>renderingEngine.getViewport(viewportId);
 
   client.getDICOMwebMetadata = (imageId) => wadors.metaDataManager.get(imageId);
-  // Set the stack on the viewport
-  await viewport.setDataIds(imageIds, { webClient: client });
+
+  // Register WSI data and set it on the viewport
+  const dataId = `wsi:${imageIds[0]}`;
+  utilities.genericViewportDisplaySetMetadataProvider.add(dataId, {
+    imageIds,
+    options: { webClient: client },
+  });
+  await viewport.setDisplaySets({ displaySetId: dataId });
 
   toolGroup.addViewport(viewportId, renderingEngineId);
 }

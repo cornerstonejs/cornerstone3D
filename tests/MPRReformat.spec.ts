@@ -1,7 +1,7 @@
 import { test } from 'playwright-test-coverage';
 import {
   visitExample,
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   screenShotPaths,
   simulateClicksOnElement,
 } from './utils/index';
@@ -12,44 +12,44 @@ test.beforeEach(async ({ page }) => {
 
 test.describe('MPR Reformat Visual Tests', () => {
   test('should match screenshot before interaction', async ({ page }) => {
-    const screenshotLocator = page.locator('#content > div');
-
     // Take screenshot before reformat
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      screenshotLocator,
-      screenShotPaths.mprReformat.beforeReformat
+      '',
+      screenShotPaths.mprReformat.beforeReformat,
+      [0, 1, 2]
     );
 
     // Click the reformat button
-    await page.click('button:has-text("Reformat viewports")');
+    await page.click('button:has-text("Set orientation reformat")');
 
     // Wait for reformat to complete
     await page.waitForTimeout(2000);
 
     // Take screenshot after reformat
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      screenshotLocator,
-      screenShotPaths.mprReformat.afterReformat
+      '',
+      screenShotPaths.mprReformat.afterReformat,
+      [0, 1, 2]
     );
   });
 
   test('should match screenshot after interaction', async ({ page }) => {
-    const screenshotLocator = page.locator('#content > div');
     const firstCanvas = page.locator('.cornerstone-canvas').nth(0);
 
     // Click the reformat button
-    await page.click('button:has-text("Reformat viewports")');
+    await page.click('button:has-text("Set orientation reformat")');
 
     // Wait for reformat to complete
     await page.waitForTimeout(2000);
 
     // Take screenshot after reformat
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      screenshotLocator,
-      screenShotPaths.mprReformat.afterReformat
+      '',
+      screenShotPaths.mprReformat.afterReformat,
+      [0, 1, 2]
     );
 
     // Perform some interaction (e.g., pan) - try to click on canvas
@@ -81,10 +81,11 @@ test.describe('MPR Reformat Visual Tests', () => {
     }
 
     // Verify the reformat is maintained after interaction
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      screenshotLocator,
-      screenShotPaths.mprReformat.afterInteraction
+      '',
+      screenShotPaths.mprReformat.afterInteraction,
+      [0, 1, 2]
     );
   });
 });

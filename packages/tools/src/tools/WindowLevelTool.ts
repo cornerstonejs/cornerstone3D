@@ -5,6 +5,7 @@ import {
   cache,
   utilities,
 } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import type { EventTypes } from '../types';
 
 // Todo: should move to configuration
@@ -46,28 +47,38 @@ class WindowLevelTool extends BaseTool {
       viewportsContainingVolumeUID;
     let isPreScaled = false;
 
-    const properties = viewport.getProperties();
+    const properties = getViewportVOIProperties(viewport);
+
+    if (!properties?.voiRange) {
+      throw new Error('Viewport is not a valid type');
+    }
+
     if (viewport instanceof VolumeViewport) {
       volumeId = viewport.getVolumeId();
 
       viewportsContainingVolumeUID =
         utilities.getViewportsWithVolumeId(volumeId);
       ({ lower, upper } = properties.voiRange);
-      const volume = cache.getVolume(volumeId);
-      if (!volume) {
+      if (!cache.getVolume(volumeId)) {
         throw new Error('Volume not found ' + volumeId);
       }
-      modality = volume.metadata.Modality;
-      isPreScaled = volume.scaling && Object.keys(volume.scaling).length > 0;
     } else if (properties.voiRange) {
-      modality = (viewport as unknown as { modality: string }).modality;
       ({ lower, upper } = properties.voiRange);
-      const { preScale = { scaled: false } } = viewport.getImageData?.() || {};
-      isPreScaled =
-        preScale.scaled && preScale.scalingParameters?.suvbw !== undefined;
     } else {
       throw new Error('Viewport is not a valid type');
     }
+
+    // Resolve modality + pre-scaled state through the single family-aware
+    // descriptor instead of re-deriving them inline. The native ("next")
+    // viewport exposes neither the StackViewport `.modality`/`.preScale` surface
+    // nor the VolumeViewport `.setVolumes` API; the descriptor reads each family
+    // from its own source of truth so a prescaled PT viewport still takes the
+    // gentle fixed-width PT path (5/clientHeight) instead of the aggressive
+    // dynamic-range multiplier. `volumeId` is undefined for the stack/next
+    // branch, where the descriptor falls back to the bound default actor.
+    const descriptor = utilities.getScalingDescriptor(viewport, volumeId);
+    modality = descriptor?.modality;
+    isPreScaled = !!descriptor?.isPreScaled;
 
     // If modality is PT an the viewport is pre-scaled (SUV),
     // treat it special to not include the canvas delta in
@@ -91,6 +102,7 @@ class WindowLevelTool extends BaseTool {
         volumeId,
         lower,
         upper,
+        voiLutFunction: properties.VOILUTFunction,
       });
     }
 
@@ -99,7 +111,7 @@ class WindowLevelTool extends BaseTool {
       return;
     }
 
-    viewport.setProperties({
+    setViewportVOIProperties(viewport, {
       voiRange: newRange,
     });
 
@@ -143,7 +155,14 @@ class WindowLevelTool extends BaseTool {
     return { lower, upper };
   }
 
-  getNewRange({ viewport, deltaPointsCanvas, volumeId, lower, upper }) {
+  getNewRange({
+    viewport,
+    deltaPointsCanvas,
+    volumeId,
+    lower,
+    upper,
+    voiLutFunction,
+  }) {
     const multiplier =
       this._getMultiplierFromDynamicRange(viewport, volumeId) ||
       DEFAULT_MULTIPLIER;
@@ -160,8 +179,6 @@ class WindowLevelTool extends BaseTool {
     windowCenter += wcDelta;
 
     windowWidth = Math.max(windowWidth, 1);
-
-    const voiLutFunction = viewport.getProperties().VOILUTFunction;
 
     // Convert back to range
     return utilities.windowLevel.toLowHighRange(
@@ -208,8 +225,8 @@ class WindowLevelTool extends BaseTool {
     return !Number.isFinite(ratio)
       ? DEFAULT_IMAGE_DYNAMIC_RANGE
       : ratio > 1
-      ? Math.round(ratio)
-      : ratio;
+        ? Math.round(ratio)
+        : ratio;
   }
 
   _getImageDynamicRangeFromViewport(viewport) {
@@ -302,3 +319,92 @@ class WindowLevelTool extends BaseTool {
 
 WindowLevelTool.toolName = 'WindowLevel';
 export default WindowLevelTool;
+
+type ViewportVOIProperties = {
+  voiRange?: Types.VOIRange;
+  VOILUTFunction?: unknown;
+};
+
+type ViewportWithLegacyVOIProperties = {
+  getProperties?: () => ViewportVOIProperties;
+  setProperties?: (props: ViewportVOIProperties) => void;
+};
+
+type ViewportWithDataPresentation = {
+  getSourceDataId?: () => string | undefined;
+  getDisplaySetPresentation?: (
+    dataId: string
+  ) => ViewportVOIProperties | undefined;
+  setDisplaySetPresentation?: (
+    dataId: string,
+    props: Partial<ViewportVOIProperties>
+  ) => void;
+  getDefaultVOIRange?: (dataId?: string) => Types.VOIRange | undefined;
+};
+
+function getViewportVOIProperties(viewport): ViewportVOIProperties | undefined {
+  const legacyViewport = viewport as ViewportWithLegacyVOIProperties;
+
+  if (typeof legacyViewport.getProperties === 'function') {
+    return legacyViewport.getProperties();
+  }
+
+  const target = getDataPresentationTarget(viewport);
+
+  if (!target) {
+    return;
+  }
+
+  const dataPresentation = target.viewport.getDisplaySetPresentation?.(
+    target.dataId
+  );
+  const defaultVOIRange = target.viewport.getDefaultVOIRange?.(target.dataId);
+
+  return {
+    ...(dataPresentation || {}),
+    voiRange: dataPresentation?.voiRange ?? defaultVOIRange,
+  };
+}
+
+function setViewportVOIProperties(
+  viewport,
+  props: ViewportVOIProperties
+): void {
+  const legacyViewport = viewport as ViewportWithLegacyVOIProperties;
+
+  if (typeof legacyViewport.setProperties === 'function') {
+    legacyViewport.setProperties(props);
+    return;
+  }
+
+  const target = getDataPresentationTarget(viewport);
+
+  if (!target) {
+    return;
+  }
+
+  target.viewport.setDisplaySetPresentation?.(target.dataId, props);
+}
+
+function getDataPresentationTarget(viewport):
+  | {
+      viewport: ViewportWithDataPresentation;
+      dataId: string;
+    }
+  | undefined {
+  const genericViewport = viewport as ViewportWithDataPresentation;
+  const dataId = genericViewport.getSourceDataId?.();
+
+  if (
+    !dataId ||
+    typeof genericViewport.getDisplaySetPresentation !== 'function' ||
+    typeof genericViewport.setDisplaySetPresentation !== 'function'
+  ) {
+    return;
+  }
+
+  return {
+    viewport: genericViewport,
+    dataId,
+  };
+}

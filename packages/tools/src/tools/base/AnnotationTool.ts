@@ -34,12 +34,18 @@ import type {
   StyleSpecifier,
 } from '../../types/AnnotationStyle';
 import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
+import { state } from '../../store/state';
+import { Events } from '../../enums';
+import { drawLinkedTextBox } from '../../drawingSvg';
+import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
+import type { SVGDrawingHelper } from '../../types';
 import ChangeTypes from '../../enums/ChangeTypes';
 import { setAnnotationSelected } from '../../stateManagement/annotation/annotationSelection';
 import { addContourSegmentationAnnotation } from '../../utilities/contourSegmentation';
+import { safeStructuredClone } from '../../utilities/safeStructuredClone';
+import getViewportICamera from '../../utilities/getViewportICamera';
 
 const { DefaultHistoryMemo } = csUtils.HistoryMemo;
-const { PointsManager } = csUtils;
 
 /**
  * Abstract class for tools which create and display annotations on the
@@ -76,10 +82,15 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     viewport,
     ...annotationBaseData
   ): T {
-    return this.createAnnotation(
-      { metadata: viewport.getViewReference() },
-      ...annotationBaseData
-    ) as T;
+    // MPR based annotations are cross-FOR by default, while stack annotations
+    // remain per-frame. Resolve the normal volume-specific reference first so
+    // legacy VolumeViewport can populate referencedImageId, then remove only
+    // the volume restriction that would prevent the annotation from applying
+    // to other volumes in the same frame of reference.
+    const metadata = viewport.getViewReference();
+    delete metadata.volumeId;
+
+    return this.createAnnotation({ metadata }, ...annotationBaseData) as T;
   }
 
   /**
@@ -181,6 +192,94 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     proximity: number,
     interactionType: string
   ): boolean;
+
+  /**
+   * Drag handler wired by `_activateModify`. Tools that use the shared
+   * modify listeners assign this (typically as an arrow-function field).
+   * Loosely typed on purpose: tools narrow the event parameter to the
+   * interaction events they actually handle, and the base class only wires
+   * the callback as an EventListener.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected _dragCallback?: (evt: any) => void;
+
+  /**
+   * End-of-interaction handler wired by `_activateModify`. Tools that use
+   * the shared modify listeners assign this (typically as an arrow-function
+   * field). Loosely typed for the same reason as `_dragCallback`.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected _endCallback?: (evt: any) => void;
+
+  /**
+   * Wires the standard modify-interaction listeners (`_dragCallback` on
+   * drag, `_endCallback` on mouse/touch end) on the element and flags the
+   * global interaction state. Tools with tool-specific listener sets may
+   * override this.
+   */
+  protected _activateModify = (element: HTMLDivElement): void => {
+    state.isInteractingWithTool = true;
+
+    element.addEventListener(
+      Events.MOUSE_UP,
+      this._endCallback as EventListener
+    );
+    element.addEventListener(
+      Events.MOUSE_DRAG,
+      this._dragCallback as EventListener
+    );
+    element.addEventListener(
+      Events.MOUSE_CLICK,
+      this._endCallback as EventListener
+    );
+
+    element.addEventListener(
+      Events.TOUCH_END,
+      this._endCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_DRAG,
+      this._dragCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_TAP,
+      this._endCallback as EventListener
+    );
+  };
+
+  /**
+   * Removes the listeners wired by `_activateModify` and clears the global
+   * interaction state.
+   */
+  protected _deactivateModify = (element: HTMLDivElement): void => {
+    state.isInteractingWithTool = false;
+
+    element.removeEventListener(
+      Events.MOUSE_UP,
+      this._endCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.MOUSE_DRAG,
+      this._dragCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.MOUSE_CLICK,
+      this._endCallback as EventListener
+    );
+
+    element.removeEventListener(
+      Events.TOUCH_END,
+      this._endCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_DRAG,
+      this._dragCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_TAP,
+      this._endCallback as EventListener
+    );
+  };
 
   /**
    * @virtual Event handler for Cornerstone MOUSE_MOVE event.
@@ -372,6 +471,112 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
   }
 
   /**
+   * Renders a linked text box for an annotation using shared visibility, placement,
+   * and worldBoundingBox logic. Call from renderAnnotation when the tool uses a
+   * linked text box (e.g. Length, RectangleROI). The caller must supply textLines
+   * and canvasCoordinates; when text box visibility is off, this method resets
+   * data.handles.textBox and returns false.
+   *
+   * @param options.enabledElement - Cornerstone enabled element
+   * @param options.svgDrawingHelper - SVG drawing helper
+   * @param options.annotation - Annotation whose text box to render
+   * @param options.styleSpecifier - Style specifier for getLinkedTextBoxStyle
+   * @param options.textLines - Lines to display (caller responsibility to compute/skip when empty)
+   * @param options.canvasCoordinates - Canvas anchor points for the link line (and for placement when placementPoints omitted)
+   * @param options.textBoxUID - Optional UID for the text box SVG group (default '1')
+   * @param options.placementPoints - Optional; when provided, used for getTextBoxCoordsCanvas only (e.g. circle ROI uses corners for placement, center for link)
+   * @returns true if the text box was drawn, false if visibility was off (textBox was reset)
+   */
+  protected renderLinkedTextBoxAnnotation(options: {
+    enabledElement: Types.IEnabledElement;
+    svgDrawingHelper: SVGDrawingHelper;
+    annotation: Annotation;
+    styleSpecifier: StyleSpecifier;
+    textLines: string[];
+    canvasCoordinates: Types.Point2[];
+    textBoxUID?: string;
+    placementPoints?: Types.Point2[];
+  }): boolean {
+    const {
+      enabledElement,
+      svgDrawingHelper,
+      annotation,
+      styleSpecifier,
+      textLines,
+      canvasCoordinates,
+      textBoxUID = '1',
+      placementPoints,
+    } = options;
+    const { viewport } = enabledElement;
+    const { element } = viewport;
+    const { annotationUID, data } = annotation;
+
+    const styleOptions = this.getLinkedTextBoxStyle(styleSpecifier, annotation);
+    if (!styleOptions.visibility) {
+      data.handles.textBox = {
+        hasMoved: false,
+        worldPosition: <Types.Point3>[0, 0, 0],
+        worldBoundingBox: {
+          topLeft: <Types.Point3>[0, 0, 0],
+          topRight: <Types.Point3>[0, 0, 0],
+          bottomLeft: <Types.Point3>[0, 0, 0],
+          bottomRight: <Types.Point3>[0, 0, 0],
+        },
+      };
+      return false;
+    }
+
+    if (!data.handles.textBox) {
+      data.handles.textBox = {
+        hasMoved: false,
+        worldPosition: <Types.Point3>[0, 0, 0],
+        worldBoundingBox: {
+          topLeft: <Types.Point3>[0, 0, 0],
+          topRight: <Types.Point3>[0, 0, 0],
+          bottomLeft: <Types.Point3>[0, 0, 0],
+          bottomRight: <Types.Point3>[0, 0, 0],
+        },
+      };
+    }
+
+    const pointsForPlacement = placementPoints ?? canvasCoordinates;
+    if (!data.handles.textBox.hasMoved) {
+      const canvasTextBoxCoords = getTextBoxCoordsCanvas(
+        pointsForPlacement,
+        element,
+        textLines
+      );
+      data.handles.textBox.worldPosition =
+        viewport.canvasToWorld(canvasTextBoxCoords);
+    }
+
+    const textBoxPosition = viewport.worldToCanvas(
+      data.handles.textBox.worldPosition
+    );
+
+    const boundingBox = drawLinkedTextBox(
+      svgDrawingHelper,
+      annotationUID,
+      textBoxUID,
+      textLines,
+      textBoxPosition,
+      canvasCoordinates,
+      {},
+      styleOptions
+    );
+
+    const { x: left, y: top, width, height } = boundingBox;
+    data.handles.textBox.worldBoundingBox = {
+      topLeft: viewport.canvasToWorld([left, top]),
+      topRight: viewport.canvasToWorld([left + width, top]),
+      bottomLeft: viewport.canvasToWorld([left, top + height]),
+      bottomRight: viewport.canvasToWorld([left + width, top + height]),
+    };
+
+    return true;
+  }
+
+  /**
    * Returns true if the viewport is scaled to SUV units
    * @param viewport - The viewport
    * @param targetId - The annotation targetId
@@ -383,9 +588,13 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     targetId: string,
     imageId?: string
   ): boolean {
-    if (viewport instanceof BaseVolumeViewport) {
-      const volumeId = csUtils.getVolumeId(targetId);
-      const volume = cache.getVolume(volumeId);
+    const volumeId = csUtils.getVolumeId(targetId);
+    const volume = cache.getVolume(volumeId);
+
+    // Planar GenericViewports can also use cached volume targets. Prefer the
+    // target volume's scaling whenever one exists, regardless of the viewport
+    // class, so a secondary PT binding in a fused viewport reports SUV units.
+    if (volume) {
       return volume?.scaling?.PT !== undefined;
     }
     const scalingModule: Types.ScalingParameters | undefined =
@@ -478,9 +687,8 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
 
   /**
    * Creates an annotation state copy to allow storing the current state of
-   * an annotation.  This class has knowledge about the contour and spline
-   * implementations in order to copy the contour object efficiently, and to
-   * allow copying the spline object (which has member variables etc).
+   * an annotation. Contour and other special keys are handled by safeStructuredClone.
+   * Spline is omitted (non-cloneable refs).
    *
    * @param annotation - the annotation to create a clone of
    * @param deleting - a flag to indicate that this object is about to be deleted (deleting true),
@@ -493,34 +701,11 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
   ) {
     const { data, annotationUID } = annotation;
 
-    const cloneData = {
-      ...data,
-      cachedStats: {},
-    } as typeof data;
-
-    delete cloneData.contour;
-    delete cloneData.spline;
-
-    const state = {
+    return {
       annotationUID,
-      data: structuredClone(cloneData),
+      data: safeStructuredClone(data),
       deleting,
     };
-
-    const contour = (data as ContourAnnotationData['data']).contour;
-
-    if (contour) {
-      state.data.contour = {
-        ...contour,
-        polyline: null,
-        pointsManager: PointsManager.create3(
-          contour.polyline.length,
-          contour.polyline
-        ),
-      };
-    }
-
-    return state;
   }
 
   /**
@@ -541,7 +726,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
    * @returns Memo containing the annotation data.
    */
   public static createAnnotationMemo(
-    element,
+    element: HTMLDivElement | null | undefined,
     annotation: Annotation,
     options?: { newAnnotation?: boolean; deleting?: boolean }
   ) {
@@ -617,11 +802,13 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
         }
         state.data = newState.data;
         currentAnnotation.invalidated = true;
-        triggerAnnotationModified(
-          currentAnnotation,
-          element,
-          ChangeTypes.History
-        );
+        if (element) {
+          triggerAnnotationModified(
+            currentAnnotation,
+            element,
+            ChangeTypes.History
+          );
+        }
       },
       id: annotationUID,
       operationType: 'annotation',
@@ -669,7 +856,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     const { viewport } = enabledElement;
     const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
 
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const viewPlaneNormal = options.viewplaneNormal ?? camera.viewPlaneNormal;
     const viewUp = options.viewUp ?? camera.viewUp;
 
@@ -707,6 +894,20 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
           viewPlaneNormal,
           viewUp
         );
+      } else if (csUtils.isGenericViewport(viewport)) {
+        // Native ("next") viewports are neither StackViewport nor
+        // BaseVolumeViewport; resolve the referenced image from the viewport's
+        // own view reference, which handles both stack and volume planar modes.
+        // Cast structurally: the param type excludes generic viewports, so the
+        // type guard narrows it to `never` here.
+        const genericViewport = viewport as unknown as {
+          getViewReference?: (specifier?: {
+            points?: Types.Point3[];
+          }) => { referencedImageId?: string } | undefined;
+        };
+        referencedImageId = genericViewport.getViewReference?.({
+          points: [points[0]],
+        })?.referencedImageId;
       } else {
         throw new Error('Unsupported viewport type');
       }

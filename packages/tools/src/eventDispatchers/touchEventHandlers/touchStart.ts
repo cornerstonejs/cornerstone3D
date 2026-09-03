@@ -19,6 +19,7 @@ import filterToolsWithMoveableHandles from '../../store/filterToolsWithMoveableH
 import filterToolsWithAnnotationsForElement from '../../store/filterToolsWithAnnotationsForElement';
 import filterMoveableAnnotationTools from '../../store/filterMoveableAnnotationTools';
 import getActiveToolForTouchEvent from '../shared/getActiveToolForTouchEvent';
+import getTouchCallbackWithMouseFallback from '../shared/getTouchCallbackWithMouseFallback';
 import getToolsWithModesForTouchEvent from '../shared/getToolsWithModesForTouchEvent';
 
 const { Active, Passive } = ToolModes;
@@ -33,29 +34,32 @@ export default function touchStart(evt: EventTypes.TouchStartEventType) {
   }
   const activeTool = getActiveToolForTouchEvent(evt);
 
-  // Check for preTouchStartCallbacks,
+  // Check for preTouchStartCallbacks (falling back to preMouseDownCallback
+  // for tools that declare 'Touch' support without a touch-specific handler).
   // If the tool claims it consumed the event, prevent further checks.
-  if (activeTool && typeof activeTool.preTouchStartCallback === 'function') {
-    const consumedEvent = activeTool.preTouchStartCallback(evt);
+  const preCallback = getTouchCallbackWithMouseFallback(
+    activeTool,
+    'preTouchStartCallback',
+    'preMouseDownCallback'
+  );
+  if (preCallback) {
+    const consumedEvent = preCallback(evt);
 
     if (consumedEvent) {
       return;
     }
   }
 
-  const isPrimaryClick = Object.keys(evt.detail.event.touches).length === 1;
-  const activeToolsWithEventBinding = getToolsWithModesForTouchEvent(
-    evt,
-    [Active],
-    Object.keys(evt.detail.event.touches).length
-  );
-  const passiveToolsIfEventWasPrimaryTouchButton = isPrimaryClick
-    ? getToolsWithModesForTouchEvent(evt, [Passive])
-    : undefined;
+  // Find all tools that might respond to this touch start for annotation interaction.
+  // For checking existing annotation interactions (handles, moveable annotations),
+  // we need ALL Active and Passive tools regardless of touch binding.
+  // This allows editing annotations created by tools bound to different touch gestures.
+  // The touch binding only determines which tool creates NEW annotations.
+  const allActiveTools = getToolsWithModesForTouchEvent(evt, [Active]);
+  const allPassiveTools = getToolsWithModesForTouchEvent(evt, [Passive]);
   const applicableTools = [
-    ...(activeToolsWithEventBinding || []),
-    ...(passiveToolsIfEventWasPrimaryTouchButton || []),
-    activeTool,
+    ...(allActiveTools || []),
+    ...(allPassiveTools || []),
   ];
 
   const eventDetail = evt.detail;
@@ -116,9 +120,15 @@ export default function touchStart(evt: EventTypes.TouchStartEventType) {
     return;
   }
 
-  // Run the postTouchStartCallback for the active tool if it exists
-  if (activeTool && typeof activeTool.postTouchStartCallback === 'function') {
-    const consumedEvent = activeTool.postTouchStartCallback(evt);
+  // Run the postTouchStartCallback for the active tool if it exists (falling
+  // back to postMouseDownCallback for tools that declare 'Touch' support).
+  const postCallback = getTouchCallbackWithMouseFallback(
+    activeTool,
+    'postTouchStartCallback',
+    'postMouseDownCallback'
+  );
+  if (postCallback) {
+    const consumedEvent = postCallback(evt);
 
     if (consumedEvent) {
       // If the tool claims it consumed the event, prevent further checks.

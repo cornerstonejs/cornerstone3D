@@ -39,6 +39,14 @@ function destroy() {
   defaultSegmentationStateManager.resetState();
 }
 
+// Some downstream consumers (and a couple of karma tests) reach for the
+// underlying state manager singleton; expose it through the public
+// segmentation.state namespace so they don't have to deep-import the
+// SegmentationStateManager module.
+function getDefaultSegmentationStateManager() {
+  return defaultSegmentationStateManager;
+}
+
 export {
   getColorLUT,
   getCurrentLabelmapImageIdForViewport,
@@ -69,5 +77,6 @@ export {
   updateLabelmapSegmentationImageReferences,
   getSegmentationRepresentationsBySegmentationId,
   destroy,
+  getDefaultSegmentationStateManager,
   // style
 };

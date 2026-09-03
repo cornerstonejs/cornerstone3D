@@ -1,0 +1,423 @@
+import { ActorRenderMode } from '../src/types';
+import { Events, OrientationAxis } from '../src/enums';
+import PlanarMountedData from '../src/RenderingEngine/GenericViewport/Planar/PlanarMountedData';
+import PlanarViewReferenceController from '../src/RenderingEngine/GenericViewport/Planar/PlanarViewReferenceController';
+import PlanarLegacyCompatibilityController, {
+  PLANAR_LEGACY_PER_IMAGE_DEFAULT_PROPERTIES_LIMIT,
+} from '../src/RenderingEngine/GenericViewport/Planar/PlanarLegacyCompatibilityController';
+import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
+
+function createBinding({
+  actorUID,
+  dataId,
+  frameOfReferenceUID = 'for-1',
+  imageIds = [`${dataId}-image`],
+  role = 'overlay',
+  volumeId,
+} = {}) {
+  return {
+    data: {
+      id: dataId,
+      type: 'image',
+      imageIds,
+      initialImageIdIndex: 0,
+      volumeId,
+    },
+    role,
+    rendering: {
+      currentImageIdIndex: 0,
+      maxImageIdIndex: imageIds.length - 1,
+      renderMode: ActorRenderMode.CPU_IMAGE,
+    },
+    applyViewState: jest.fn(),
+    getActorEntry: () => ({
+      actor: {},
+      referencedId: volumeId ?? dataId,
+      uid: actorUID,
+    }),
+    getFrameOfReferenceUID: () => frameOfReferenceUID,
+    removeData: jest.fn(),
+    updateDataPresentation: jest.fn(),
+  };
+}
+
+function createMountedData(bindings) {
+  return new PlanarMountedData({
+    getBinding: (dataId) => bindings.get(dataId),
+    getFirstBinding: () => bindings.values().next().value,
+    getBindings: () => bindings.entries(),
+    removeData: (dataId) => bindings.delete(dataId),
+  });
+}
+
+function createLegacyStackHarness({ deferSetData = false } = {}) {
+  const element = document.createElement('div');
+  const viewportId = 'CT_STACK';
+  const dataId = `__planar_v2__:${viewportId}:stack`;
+  const pendingSetData = [];
+  let controller;
+  let hasBinding = false;
+  let currentImageIds = [];
+
+  function finishSetData(requestedDataId) {
+    const registered = genericViewportDisplaySetMetadataProvider.get(
+      genericViewportDisplaySetMetadataProvider.VIEWPORT_V2_DISPLAY_SET,
+      requestedDataId
+    );
+
+    if (!registered) {
+      throw new Error(`Missing metadata for ${requestedDataId}`);
+    }
+
+    currentImageIds = registered.imageIds;
+    hasBinding = true;
+  }
+
+  const host = {
+    getElement: () => element,
+    getViewportId: () => viewportId,
+    getRequestedOrientation: () => OrientationAxis.ACQUISITION,
+    prepareVolumeCompatibilityCamera: jest.fn(),
+    setDisplaySets: jest.fn((...entries) => {
+      const requestedDataId = entries[0]?.displaySetId;
+
+      if (hasBinding) {
+        hasBinding = false;
+        controller.removeData(requestedDataId);
+      }
+
+      if (!deferSetData) {
+        finishSetData(requestedDataId);
+        return Promise.resolve();
+      }
+
+      return new Promise((resolve) => {
+        pendingSetData.push(() => {
+          finishSetData(requestedDataId);
+          resolve();
+        });
+      });
+    }),
+    setImageIdIndex: jest.fn(async (imageIdIndex) => {
+      return currentImageIds[imageIdIndex];
+    }),
+    getCurrentImageId: () => currentImageIds[0],
+    render: jest.fn(),
+    removeBindingsExcept: jest.fn((keepDataIds) => {
+      if (hasBinding && !keepDataIds.has(dataId)) {
+        hasBinding = false;
+        controller.removeData(dataId);
+      }
+    }),
+    setCameraOrientation: jest.fn(),
+    setDataPresentationState: jest.fn(),
+    setDisplaySetPresentation: jest.fn(),
+    getDisplaySetPresentation: jest.fn(),
+    getCameraOrientation: jest.fn(),
+    getCurrentPlanarRendering: jest.fn(),
+    getActiveDataId: () => (hasBinding ? dataId : undefined),
+    getFirstBoundDataId: () => (hasBinding ? dataId : undefined),
+    findDataIdByVolumeId: jest.fn(),
+    getBindingActor: jest.fn(),
+    getDefaultVOIRange: jest.fn(),
+    getImageCount: () => currentImageIds.length,
+    getMaxImageIdIndex: () => Math.max(0, currentImageIds.length - 1),
+  };
+
+  controller = new PlanarLegacyCompatibilityController(host);
+
+  return {
+    controller,
+    dataId,
+    element,
+    getCurrentImageIds: () => currentImageIds,
+    host,
+    pendingSetData,
+  };
+}
+
+describe('Planar legacy stack compatibility', () => {
+  afterEach(() => {
+    genericViewportDisplaySetMetadataProvider.clear();
+  });
+
+  it('replaces the legacy stack without unregistering replacement metadata', async () => {
+    const { controller, dataId, getCurrentImageIds, host } =
+      createLegacyStackHarness();
+
+    await controller.setStack(['image:old']);
+    await expect(controller.setStack(['image:new'])).resolves.toBe('image:new');
+
+    expect(host.setDisplaySets).toHaveBeenCalledTimes(2);
+    expect(getCurrentImageIds()).toEqual(['image:new']);
+    expect(
+      genericViewportDisplaySetMetadataProvider.get(
+        genericViewportDisplaySetMetadataProvider.VIEWPORT_V2_DISPLAY_SET,
+        dataId
+      )
+    ).toEqual({
+      imageIds: ['image:new'],
+      initialImageIdIndex: 0,
+    });
+  });
+
+  it('ignores stale stack completions from overlapping replacements', async () => {
+    const { controller, getCurrentImageIds, host, pendingSetData } =
+      createLegacyStackHarness({ deferSetData: true });
+
+    const firstSetStack = controller.setStack(['image:first']);
+    const secondSetStack = controller.setStack(['image:second']);
+
+    expect(host.setDisplaySets).toHaveBeenCalledTimes(2);
+    pendingSetData.pop()();
+    await expect(secondSetStack).resolves.toBe('image:second');
+    expect(getCurrentImageIds()).toEqual(['image:second']);
+    expect(host.setImageIdIndex).toHaveBeenCalledTimes(1);
+
+    pendingSetData.pop()();
+    await expect(firstSetStack).resolves.toBe('image:first');
+    expect(host.setImageIdIndex).toHaveBeenCalledTimes(1);
+  });
+
+  it('evicts oldest per-image default properties beyond the compatibility cache limit', async () => {
+    const { controller, element, host } = createLegacyStackHarness();
+
+    await controller.setStack(['image:active']);
+
+    for (
+      let index = 0;
+      index <= PLANAR_LEGACY_PER_IMAGE_DEFAULT_PROPERTIES_LIMIT;
+      index++
+    ) {
+      controller.setDefaultProperties({ invert: true }, `image:${index}`);
+    }
+
+    host.setDataPresentationState.mockClear();
+    element.dispatchEvent(
+      new CustomEvent(Events.STACK_NEW_IMAGE, {
+        detail: {
+          imageId: 'image:0',
+        },
+      })
+    );
+
+    expect(host.setDataPresentationState).not.toHaveBeenCalled();
+
+    element.dispatchEvent(
+      new CustomEvent(Events.STACK_NEW_IMAGE, {
+        detail: {
+          imageId: `image:${PLANAR_LEGACY_PER_IMAGE_DEFAULT_PROPERTIES_LIMIT}`,
+        },
+      })
+    );
+
+    expect(host.setDataPresentationState).toHaveBeenCalledTimes(1);
+  });
+
+  it('prunes per-image default properties that do not belong to a replacement stack', async () => {
+    const { controller, element, host } = createLegacyStackHarness();
+
+    await controller.setStack(['image:old']);
+    controller.setDefaultProperties({ invert: true }, 'image:old');
+    await controller.setStack(['image:new']);
+
+    host.setDataPresentationState.mockClear();
+    element.dispatchEvent(
+      new CustomEvent(Events.STACK_NEW_IMAGE, {
+        detail: {
+          imageId: 'image:old',
+        },
+      })
+    );
+
+    expect(host.setDataPresentationState).not.toHaveBeenCalled();
+  });
+});
+
+describe('Planar mounted-data orchestration', () => {
+  it('promotes one source and returns actors with source before overlays', () => {
+    const bindings = new Map([
+      [
+        'source',
+        createBinding({
+          actorUID: 'source-actor',
+          dataId: 'source',
+          role: 'source',
+        }),
+      ],
+      [
+        'overlay',
+        createBinding({
+          actorUID: 'overlay-actor',
+          dataId: 'overlay',
+        }),
+      ],
+    ]);
+    const mountedData = createMountedData(bindings);
+
+    mountedData.promoteSourceDataId('overlay');
+
+    expect(bindings.get('source').role).toBe('overlay');
+    expect(bindings.get('overlay').role).toBe('source');
+    expect(mountedData.getCurrentBinding().data.id).toBe('overlay');
+    expect(mountedData.getActors().map((actor) => actor.uid)).toEqual([
+      'overlay-actor',
+      'source-actor',
+    ]);
+  });
+
+  it('promotes the next binding when the active source is removed', () => {
+    const bindings = new Map([
+      [
+        'source',
+        createBinding({
+          actorUID: 'source-actor',
+          dataId: 'source',
+          role: 'source',
+        }),
+      ],
+      [
+        'overlay',
+        createBinding({
+          actorUID: 'overlay-actor',
+          dataId: 'overlay',
+        }),
+      ],
+    ]);
+    const mountedData = createMountedData(bindings);
+
+    mountedData.promoteSourceDataId('source');
+    bindings.delete('source');
+    mountedData.handleRemovedData('source');
+
+    expect(mountedData.getActiveDataId()).toBe('overlay');
+    expect(bindings.get('overlay').role).toBe('source');
+  });
+});
+
+describe('Planar view-reference orchestration', () => {
+  it('activates the binding that owns an image reference before navigation', () => {
+    const bindings = new Map([
+      [
+        'source',
+        createBinding({
+          actorUID: 'source-actor',
+          dataId: 'source',
+          imageIds: ['image:source'],
+          role: 'source',
+        }),
+      ],
+      [
+        'overlay',
+        createBinding({
+          actorUID: 'overlay-actor',
+          dataId: 'overlay',
+          imageIds: ['image:overlay'],
+        }),
+      ],
+    ]);
+    const mountedData = createMountedData(bindings);
+    let viewState = {
+      slice: {
+        kind: 'stackIndex',
+        imageIdIndex: 0,
+      },
+    };
+    const render = jest.fn();
+    const setImageIdIndex = jest.fn((imageIdIndex) => {
+      viewState = {
+        ...viewState,
+        slice: {
+          kind: 'stackIndex',
+          imageIdIndex,
+        },
+      };
+
+      return Promise.resolve('image:overlay');
+    });
+    const updateBindingsCameraState = jest.fn();
+
+    mountedData.promoteSourceDataId('source');
+
+    const references = new PlanarViewReferenceController({
+      viewportId: 'viewport-1',
+      viewportType: 'planar',
+      getActiveDataId: () => mountedData.getActiveDataId(),
+      getBinding: (dataId) => bindings.get(dataId),
+      getBindings: () => bindings.entries(),
+      getCurrentBinding: () => mountedData.getCurrentBinding(),
+      getRenderContext: () => ({
+        viewportId: 'viewport-1',
+        renderingEngineId: 'rendering-engine',
+        type: 'planar',
+        viewport: {
+          element: document.createElement('div'),
+          getActiveDataId: () => mountedData.getActiveDataId(),
+          getOverlayActors: () =>
+            mountedData.getProjectedActorEntries('overlay'),
+          getViewState: () => viewState,
+          isCurrentDataId: (dataId) =>
+            mountedData.getCurrentBinding()?.data.id === dataId,
+        },
+        renderPath: {
+          renderMode: ActorRenderMode.CPU_IMAGE,
+        },
+        view: {},
+        display: {
+          activateRenderMode: jest.fn(),
+          renderNow: jest.fn(),
+          requestRender: jest.fn(),
+        },
+        cpu: {
+          canvas: document.createElement('canvas'),
+          composition: {
+            clearedRenderPassId: -1,
+            renderPassId: 0,
+          },
+          context: document.createElement('canvas').getContext('2d'),
+        },
+        vtk: {
+          canvas: document.createElement('canvas'),
+          renderer: {},
+        },
+      }),
+      getResolvedView: () => ({
+        getFrameOfReferenceUID: () => 'for-1',
+        toICamera: () => ({
+          focalPoint: [0, 0, 0],
+          parallelProjection: true,
+          parallelScale: 1,
+          position: [0, 0, 1],
+          viewPlaneNormal: [0, 0, 1],
+          viewUp: [0, -1, 0],
+        }),
+      }),
+      getViewState: () => viewState,
+      getVolumeSliceWorldPointForImageIdIndex: (imageIdIndex) => [
+        0,
+        0,
+        imageIdIndex,
+      ],
+      promoteSourceDataId: (dataId) => mountedData.promoteSourceDataId(dataId),
+      render,
+      setImageIdIndex,
+      setViewState: (viewStatePatch) => {
+        viewState = {
+          ...viewState,
+          ...viewStatePatch,
+        };
+      },
+      updateBindingsCameraState,
+    });
+
+    references.setViewReference({
+      FrameOfReferenceUID: 'for-1',
+      referencedImageId: 'image:overlay',
+    });
+
+    expect(mountedData.getActiveDataId()).toBe('overlay');
+    expect(updateBindingsCameraState).toHaveBeenCalledTimes(1);
+    expect(setImageIdIndex).toHaveBeenCalledWith(0);
+    expect(render).not.toHaveBeenCalled();
+  });
+});

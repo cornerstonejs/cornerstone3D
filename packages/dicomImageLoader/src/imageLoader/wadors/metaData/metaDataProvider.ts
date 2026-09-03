@@ -1,4 +1,3 @@
-import * as dicomParser from 'dicom-parser';
 import {
   Enums,
   utilities,
@@ -21,12 +20,12 @@ import {
 } from './extractPositioningFromMetadata';
 import { getImageTypeSubItemFromMetadata } from './NMHelpers';
 import isNMReconstructable from '../../isNMReconstructable';
-import {
-  getInstanceModule,
-  instanceModuleNames,
-} from '../../getInstanceModule';
+import { instanceModuleNames } from '../../getInstanceModule';
 import { getUSEnhancedRegions } from './USHelpers';
 
+/**
+ * @deprecated Use addDicomWebInstance from @cornerstonejs/metadata instead.
+ */
 function metaDataProvider(type, imageId) {
   const { MetadataModules } = Enums;
 
@@ -114,7 +113,7 @@ function metaDataProvider(type, imageId) {
     return {
       patientAge: getNumberValue(metaData['00101010']),
       patientSize: getNumberValue(metaData['00101020']),
-      patientSex: getValue<'M' | 'F'>(metaData['00100040']),
+      patientSex: getValue<'M' | 'F' | 'O'>(metaData['00100040']),
       patientWeight: getNumberValue(metaData['00101030']),
     };
   }

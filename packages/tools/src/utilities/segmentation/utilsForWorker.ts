@@ -39,6 +39,14 @@ export const getSegmentationDataForWorker = (
   segmentIndices
 ) => {
   const segmentation = getSegmentation(segmentationId);
+  if (!segmentation?.representationData) {
+    console.debug(
+      'getSegmentationDataForWorker: segmentation missing or not ready',
+      segmentationId
+    );
+    return null;
+  }
+
   const { representationData } = segmentation;
 
   const { Labelmap } = representationData;
@@ -58,8 +66,8 @@ export const getSegmentationDataForWorker = (
     imageIds: segImageIds,
   };
 
-  let reconstructableVolume = false;
-  if (segImageIds) {
+  let reconstructableVolume = Boolean(segVolumeId);
+  if (!reconstructableVolume && segImageIds) {
     const refImageIds = segImageIds.map((imageId) => {
       const image = cache.getImage(imageId);
       return image.referencedImageId;

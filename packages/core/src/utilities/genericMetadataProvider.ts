@@ -1,4 +1,5 @@
 import { addProvider } from '../metaData';
+import { deepClone } from './deepClone';
 
 let state: Record<string, unknown> = {}; // Calibrated pixel spacing per imageId
 /**
@@ -18,7 +19,7 @@ const metadataProvider = {
   ): void => {
     metadataProvider.addRaw(imageId, {
       ...payload,
-      metadata: structuredClone(payload.metadata),
+      metadata: deepClone(payload.metadata),
     });
   },
 

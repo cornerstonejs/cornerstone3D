@@ -4,7 +4,8 @@ import {
 } from '../../../utils/test/testUtils';
 import * as cornerstone3D from '../src/index';
 
-const { imageLoader, cache } = cornerstone3D;
+const { imageLoader, cache, Enums, ProgressiveRetrieveImages, utilities } =
+  cornerstone3D;
 
 describe('imageLoader -- ', function () {
   afterEach(() => {
@@ -146,6 +147,104 @@ describe('imageLoader -- ', function () {
       );
 
       await expectAsync(imageLoadObject).toBeResolvedTo(this.image2);
+    });
+
+    it('loads final image after a progressive partial image is delivered while cache promise is in flight', async function () {
+      const { ImageQualityStatus, RequestType } = Enums;
+      const imageId = 'progressive://image1';
+      const successStatuses = [];
+      const permanentErrors = [];
+      const loaderCalls = [];
+
+      const createImage = (imageQualityStatus) => ({
+        imageId,
+        imageQualityStatus,
+        width: 1,
+        height: 1,
+        rows: 1,
+        columns: 1,
+        numberOfComponents: 1,
+        sizeInBytes: 1,
+        getPixelData: () => new Uint8Array([imageQualityStatus]),
+      });
+
+      imageLoader.registerImageLoader('progressive', (_imageId, options) => {
+        const imageQualityStatus =
+          options.retrieveOptions?.imageQualityStatus ??
+          ImageQualityStatus.FULL_RESOLUTION;
+        const image = createImage(imageQualityStatus);
+        const iterator = new utilities.ProgressiveIterator(
+          `progressive-${loaderCalls.length}`
+        );
+
+        loaderCalls.push(imageQualityStatus);
+
+        window.setTimeout(() => {
+          iterator.add(image, true);
+        }, 0);
+
+        if (imageQualityStatus !== ImageQualityStatus.FULL_RESOLUTION) {
+          const pendingPromise = new Promise(() => {});
+          pendingPromise.iterator = iterator;
+
+          return {
+            promise: pendingPromise,
+          };
+        }
+
+        return {
+          promise: iterator.getDonePromise(),
+        };
+      });
+
+      const progressiveLoader = new ProgressiveRetrieveImages({
+        stages: [
+          {
+            id: 'fast',
+            retrieveType: 'singleFast',
+          },
+          {
+            id: 'final',
+            retrieveType: 'singleFinal',
+          },
+        ],
+        retrieveOptions: {
+          singleFast: {
+            imageQualityStatus: ImageQualityStatus.SUBRESOLUTION,
+          },
+          singleFinal: {
+            imageQualityStatus: ImageQualityStatus.FULL_RESOLUTION,
+          },
+        },
+      });
+
+      await progressiveLoader.loadImages([imageId], {
+        getLoaderImageOptions: () => ({
+          priority: 0,
+          requestType: RequestType.Interaction,
+        }),
+        successCallback: (_imageId, image) => {
+          successStatuses.push(image.imageQualityStatus);
+        },
+        errorCallback: (_imageId, permanent, reason) => {
+          if (permanent) {
+            permanentErrors.push(reason);
+          }
+        },
+      });
+
+      expect(loaderCalls).toEqual([
+        ImageQualityStatus.SUBRESOLUTION,
+        ImageQualityStatus.FULL_RESOLUTION,
+      ]);
+      expect(successStatuses).toEqual([
+        ImageQualityStatus.SUBRESOLUTION,
+        ImageQualityStatus.FULL_RESOLUTION,
+      ]);
+      expect(permanentErrors).toEqual([]);
+      expect(cache.getImageQuality(imageId)).toBe(
+        ImageQualityStatus.FULL_RESOLUTION
+      );
     });
   });
 

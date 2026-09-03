@@ -4,7 +4,6 @@ import {
   convertMapperToNotSharedMapper,
   volumeLoader,
   eventTarget,
-  createVolumeActor,
   type Types,
 } from '@cornerstonejs/core';
 import { Events, SegmentationRepresentations } from '../../../enums';
@@ -50,7 +49,7 @@ export async function addVolumesAsIndependentComponents({
   // which the segmentation data is added as a second component to the volume data
   const defaultActor = viewport.getDefaultActor();
   const { actor } = defaultActor as { actor: vtkVolume };
-  const { uid, callback } = defaultActor;
+  const { uid } = defaultActor;
 
   const referenceVolumeId = viewport.getVolumeId();
 
@@ -84,6 +83,15 @@ export async function addVolumesAsIndependentComponents({
 
   const { imageData: segImageData } = segImageVolume;
   const baseVolume = cache.getVolume(referenceVolumeId);
+
+  const volumeTexture = baseVolume.vtkOpenGLTexture;
+  const hasPendingFrames = volumeTexture.hasUpdatedFrames();
+  if (hasPendingFrames) {
+    // We do not change the actor if there are pending frames (i.e. the viewport is still rendering).
+    // If we did proceed to change the actor, the viewport would be blanked out.
+    return;
+  }
+
   const baseVoxelManager = baseVolume.voxelManager;
   const baseData = baseVoxelManager.getCompleteScalarDataArray();
 
@@ -104,6 +112,14 @@ export async function addVolumesAsIndependentComponents({
 
   viewport.removeActors([uid]);
   const oldMapper = actor.getMapper();
+  // convertMapperToNotSharedMapper reuses the old mapper's vtkImageData and
+  // replaces its point-data scalars with a CPU array, which this function then
+  // rewrites as a 2-component (base + seg) array. The shared streaming mapper
+  // renders from the GPU texture and misconfigures its shader if that injected
+  // array is still active, so capture the original scalars (usually none) to
+  // undo the mutation on restore.
+  const sharedImageData = (oldMapper as vtkVolumeMapper).getInputData();
+  const originalScalars = sharedImageData.getPointData().getScalars() ?? null;
   const mapper = convertMapperToNotSharedMapper(oldMapper as vtkVolumeMapper);
   actor.setMapper(mapper);
 
@@ -116,17 +132,41 @@ export async function addVolumesAsIndependentComponents({
   arrayAgain.setData(cubeData);
   arrayAgain.setNumberOfComponents(2);
 
+  const oldColorMixPreset = actor.getProperty().getColorMixPreset();
   actor.getProperty().setColorMixPreset(1);
 
+  const oldForceNearestInterpolation = actor
+    .getProperty()
+    .getForceNearestInterpolation(1);
   actor.getProperty().setForceNearestInterpolation(1, true);
+  const oldIndependentComponents = actor
+    .getProperty()
+    .getIndependentComponents();
   actor.getProperty().setIndependentComponents(true);
 
+  // While the segmentation is mounted, setLabelmapColorAndOpacity treats this
+  // combined actor as the labelmap actor and enables the label-outline shader
+  // path on its property. Capture the pre-mount outline state so the restore
+  // can undo it - otherwise the plain base volume keeps rendering through the
+  // label-outline shader after the representation is removed.
+  const oldUseLabelOutline = actor.getProperty().getUseLabelOutline();
+  // @ts-ignore - fix type in vtk
+  const oldLabelOutlineOpacity = actor.getProperty().getLabelOutlineOpacity();
+  const oldLabelOutlineThickness = actor
+    .getProperty()
+    .getLabelOutlineThickness();
+
+  // Reuse the representationUID computed by the render plan (which includes
+  // the labelmapId suffix). The plan's reconcile step compares actor UIDs
+  // against that format; a mismatch makes it tear down this combined actor —
+  // which is also the viewport's base volume actor — on the next render.
+  const representationUID =
+    (volumeInputArray[0].representationUID as string) ??
+    `${segmentationId}-${SegmentationRepresentations.Labelmap}`;
+
   viewport.addActor({
-    actor,
-    uid,
-    callback,
-    referencedId: referenceVolumeId,
-    representationUID: `${segmentationId}-${SegmentationRepresentations.Labelmap}`,
+    ...defaultActor,
+    representationUID,
   });
 
   internalCache.set(uid, {
@@ -135,13 +175,14 @@ export async function addVolumesAsIndependentComponents({
     originalBlendMode: viewport.getBlendMode(),
   });
 
+  const oldPreLoad = actor.get('preLoad');
   actor.set({
     preLoad: load,
   });
 
   function onSegmentationDataModified(evt) {
     // update the second component of the array with the new segmentation data
-    const { segmentationId } = evt.detail;
+    const { segmentationId, modifiedSlicesToUse } = evt.detail;
     const { representationData } = getSegmentation(segmentationId);
     const { volumeId: segVolumeId } =
       representationData.Labelmap as LabelmapSegmentationDataVolume;
@@ -155,24 +196,37 @@ export async function addVolumesAsIndependentComponents({
 
     const imageData = mapper.getInputData();
     const array = imageData.getPointData().getArray(0);
-    const baseData = array.getData();
+    const combinedData = array.getData();
     const newComp = 2;
     const dims = segImageData.getDimensions();
+    const sliceSize = dims[0] * dims[1];
 
-    const slices = Array.from({ length: dims[2] }, (_, i) => i);
+    // Brush strokes report which slices they touched; merging only those
+    // keeps the CPU cost proportional to the edit instead of the volume.
+    const slices: number[] = modifiedSlicesToUse?.length
+      ? modifiedSlicesToUse
+      : Array.from({ length: dims[2] }, (_, i) => i);
 
     for (const z of slices) {
-      for (let y = 0; y < dims[1]; ++y) {
-        for (let x = 0; x < dims[0]; ++x) {
-          const iTuple = x + dims[0] * (y + dims[1] * z);
-          baseData[iTuple * newComp + 1] = segVoxelManager.getAtIndex(
+      const sliceStart = z * sliceSize;
+      const sliceImage = cache.getImage(segmentationVolume.imageIds?.[z]);
+      const sliceData = sliceImage?.voxelManager?.getScalarData?.();
+
+      if (sliceData?.length === sliceSize) {
+        for (let i = 0; i < sliceSize; ++i) {
+          combinedData[(sliceStart + i) * newComp + 1] = sliceData[i];
+        }
+      } else {
+        for (let i = 0; i < sliceSize; ++i) {
+          const iTuple = sliceStart + i;
+          combinedData[iTuple * newComp + 1] = segVoxelManager.getAtIndex(
             iTuple
           ) as number;
         }
       }
     }
 
-    array.setData(baseData);
+    array.setData(combinedData);
 
     imageData.modified();
     viewport.render();
@@ -184,40 +238,69 @@ export async function addVolumesAsIndependentComponents({
     200
   );
 
+  function onSegmentationRepresentationRemoved(evt) {
+    if (evt.detail.viewportId !== viewport.id) {
+      return;
+    }
+
+    // The data-modified handler was registered debounced; the plain
+    // removeEventListener would leave the debounce wrapper attached forever,
+    // still merging into this detached imageData on every edit.
+    eventTarget.removeEventListenerDebounced(
+      Events.SEGMENTATION_DATA_MODIFIED,
+      onSegmentationDataModified
+    );
+    eventTarget.removeEventListener(
+      Events.SEGMENTATION_REPRESENTATION_REMOVED,
+      onSegmentationRepresentationRemoved
+    );
+
+    const actorEntry = viewport.getActor(uid);
+
+    if (actorEntry) {
+      viewport.removeActors([uid]);
+    }
+
+    internalCache.delete(uid);
+
+    if (viewport.isDisabled) {
+      return;
+    }
+
+    // Restore the original actor and add it back to the viewport.
+    actor.setMapper(oldMapper);
+
+    const pointData = sharedImageData.getPointData();
+
+    if (originalScalars) {
+      pointData.setScalars(originalScalars);
+    } else {
+      pointData.removeArray('Pixels');
+    }
+    sharedImageData.modified();
+
+    actor.getProperty().setColorMixPreset(oldColorMixPreset);
+    actor
+      .getProperty()
+      .setForceNearestInterpolation(1, oldForceNearestInterpolation);
+    actor.getProperty().setIndependentComponents(oldIndependentComponents);
+    actor.getProperty().setUseLabelOutline(oldUseLabelOutline);
+    // @ts-ignore - fix type in vtk
+    actor.getProperty().setLabelOutlineOpacity(oldLabelOutlineOpacity);
+    actor.getProperty().setLabelOutlineThickness(oldLabelOutlineThickness);
+
+    viewport.addActor({
+      ...defaultActor,
+    });
+
+    actor.set(oldPreLoad);
+
+    viewport.render();
+  }
+
   eventTarget.addEventListener(
     Events.SEGMENTATION_REPRESENTATION_REMOVED,
-    async (evt) => {
-      eventTarget.removeEventListener(
-        Events.SEGMENTATION_DATA_MODIFIED,
-        onSegmentationDataModified
-      );
-
-      const actorEntry = viewport.getActor(uid);
-      const { element, id } = viewport;
-      viewport.removeActors([uid]);
-
-      const actor = await createVolumeActor(
-        {
-          volumeId: uid,
-          blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
-          callback: ({ volumeActor }) => {
-            if (actorEntry.callback) {
-              // @ts-expect-error
-              actorEntry.callback({
-                volumeActor,
-                volumeId,
-              });
-            }
-          },
-        },
-        element,
-        id
-      );
-
-      viewport.addActor({ actor, uid });
-
-      viewport.render();
-    }
+    onSegmentationRepresentationRemoved
   );
 
   return {

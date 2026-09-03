@@ -30,7 +30,11 @@ export default function touchStartActivate(
   }
 
   if (activeTool.addNewAnnotation) {
-    const annotation = activeTool.addNewAnnotation(evt, 'touch');
-    setAnnotationSelected(annotation.annotationUID);
+    try {
+      const annotation = activeTool.addNewAnnotation(evt, 'touch');
+      setAnnotationSelected(annotation.annotationUID);
+    } catch (error) {
+      console.warn('Error adding new annotation, viewport not ready:', error);
+    }
   }
 }

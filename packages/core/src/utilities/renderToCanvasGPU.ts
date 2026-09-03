@@ -14,7 +14,7 @@ import type {
   Point3,
 } from '../types';
 import { getRenderingEngine } from '../RenderingEngine/getRenderingEngine';
-import type RenderingEngine from '../RenderingEngine';
+import type RenderingEngine from '../RenderingEngine/RenderingEngine';
 import TiledRenderingEngine from '../RenderingEngine/TiledRenderingEngine';
 import isPTPrescaledWithSUV from './isPTPrescaledWithSUV';
 import type { CanvasLoadPosition } from './loadImageToCanvas';

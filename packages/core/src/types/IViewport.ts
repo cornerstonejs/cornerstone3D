@@ -42,6 +42,18 @@ export type ViewReferenceSpecifier = {
    * reference rather than to a specific volume or stack.  Thus, the view
    * reference would be compatible with any view showing the same frame of
    * reference UID.
+   *
+   * This controls whether the returned view reference carries a `volumeId`:
+   * - `true` - a frame-of-reference reference: it is NOT volume specific, so
+   *   the `volumeId` is omitted (the reference stays compatible with any view
+   *   of the same `FrameOfReferenceUID`).
+   * - `false` or `undefined` (the default) - the reference is bound to the
+   *   viewport's volume and includes its `volumeId`.
+   *
+   * In other words the `volumeId` is included whenever
+   * `forFrameOfReference !== true`.  All viewport implementations
+   * (`BaseVolumeViewport.getViewReference`, `planarViewReference`) must follow
+   * this same rule so the flag has one meaning everywhere.
    */
   forFrameOfReference?: boolean;
   /**
@@ -167,6 +179,11 @@ export interface ViewReference {
   FrameOfReferenceUID?: string;
 
   /**
+   * Logical dataset id for the referenced data.
+   */
+  dataId?: string;
+
+  /**
    * A referenced plane identifies one or more planes.
    * Currently this has a point within the plane to identify the focal depth
    * (but NOT the focal point), and up to two coplanar vectors.
@@ -260,6 +277,11 @@ export interface ViewReference {
   sliceIndex?: number;
 
   /**
+   * 1-based dimension group number for dynamic/dimensional data.
+   */
+  dimensionGroupNumber?: number;
+
+  /**
    * VolumeId that the referencedImageId was chosen from
    */
   volumeId?: string;
@@ -322,6 +344,11 @@ export interface ViewPresentation {
    * The flip vertical value is true if the view is flipped vertically.
    */
   flipVertical?: boolean;
+
+  /**
+   * The aspect ratio is how the viewport image is stretched and the default is [1,1].
+   */
+  aspectRatio?: Point2;
 }
 
 /**
@@ -351,6 +378,7 @@ export interface ViewPresentationSelector {
   displayArea?: boolean;
   zoom?: boolean;
   pan?: boolean;
+  aspectRatio?: boolean;
   flipHorizontal?: boolean;
   flipVertical?: boolean;
   // Transfer function relative parameters
@@ -371,6 +399,10 @@ export type DataSetOptions = {
 };
 
 type IViewport = Viewport;
+
+interface RenderingEngineResizeOptions {
+  keepCamera?: boolean;
+}
 
 /**
  * Public Interface for viewport input to get enabled/disabled or set
@@ -393,6 +425,8 @@ interface NormalizedViewportInput {
   viewportId: string;
   /** type of the viewport */
   type: ViewportType;
+  /** original requested type before any internal remapping */
+  requestedType?: ViewportType;
   /** options for the viewport */
   defaultOptions: ViewportInputOptions;
 }
@@ -402,6 +436,7 @@ interface InternalViewportInput {
   canvas: HTMLCanvasElement;
   viewportId: string;
   type: ViewportType;
+  requestedType?: ViewportType;
   defaultOptions: ViewportInputOptions;
 }
 
@@ -409,6 +444,7 @@ interface ViewportInput {
   id: string;
   renderingEngineId: string;
   type: ViewportType;
+  requestedType?: ViewportType;
   element: HTMLDivElement;
   sx: number;
   sy: number;
@@ -420,6 +456,7 @@ interface ViewportInput {
 
 export type {
   IViewport,
+  RenderingEngineResizeOptions,
   ViewportInput,
   PublicViewportInput,
   InternalViewportInput,

@@ -4,6 +4,11 @@ import { mat4, vec3 } from 'gl-matrix';
 import { BaseTool } from './base';
 import angleBetweenLines from '../utilities/math/angle/angleBetweenLines';
 import type { PublicToolProps, ToolProps, EventTypes } from '../types';
+import getViewportICamera from '../utilities/getViewportICamera';
+import {
+  applyViewportPresentation,
+  getViewportPresentation,
+} from '../utilities/viewportPresentation';
 
 /**
  * The PlanarRotateTool is a tool that allows the user to rotate
@@ -46,7 +51,7 @@ class PlanarRotateTool extends BaseTool {
     const startPointWorld = startPoints.world;
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const width = element.clientWidth;
     const height = element.clientHeight;
 
@@ -59,6 +64,10 @@ class PlanarRotateTool extends BaseTool {
     );
 
     const { viewPlaneNormal } = camera;
+
+    if (!viewPlaneNormal) {
+      return;
+    }
 
     const v1 = vec3.sub(vec3.create(), centerWorld, startPointWorld);
     const v2 = vec3.sub(vec3.create(), centerWorld, currentPointWorld);
@@ -75,7 +84,12 @@ class PlanarRotateTool extends BaseTool {
   }
 
   setAngle(viewport, angle) {
-    const { viewPlaneNormal, viewUp } = viewport.getCamera();
+    const { viewPlaneNormal, viewUp } = getViewportICamera(viewport);
+
+    if (!viewPlaneNormal || !viewUp) {
+      return;
+    }
+
     if (viewport instanceof BaseVolumeViewport) {
       const rotAngle = (((angle + 360) % 360) * Math.PI) / 180;
       const rotMat = mat4.identity(new Float32Array(16));
@@ -83,12 +97,22 @@ class PlanarRotateTool extends BaseTool {
       const rotatedViewUp = vec3.transformMat4(vec3.create(), viewUp, rotMat);
       viewport.setCamera({ viewUp: rotatedViewUp as Types.Point3 });
     } else {
-      const { rotation } = (
-        viewport as Types.IStackViewport
-      ).getViewPresentation();
-      viewport.setViewPresentation({
+      const presentation = getViewportPresentation(viewport) as
+        | { rotation?: number }
+        | undefined;
+
+      if (!presentation) {
+        return;
+      }
+
+      const { rotation = 0 } = presentation;
+      const didApply = applyViewportPresentation(viewport, {
         rotation: (rotation + angle + 360) % 360,
       });
+
+      if (!didApply) {
+        return;
+      }
     }
 
     viewport.render();

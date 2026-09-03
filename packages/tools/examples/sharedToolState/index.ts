@@ -33,7 +33,7 @@ setTitleAndDescription(
   'Here we demonstrate that annotations are stored on frame of reference, this annotations drawn on volume viewports can be displayed on stack viewports displaying the same data and vice versa.'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 

@@ -10,9 +10,13 @@ async function run() {
   ]);
   console.log('Current branch:', branchName);
 
-  // read the current version from lerna.json
-  const lernaJson = JSON.parse(await fs.readFile('lerna.json', 'utf-8'));
-  const currentVersion = lernaJson.version;
+  // Read the current version from packages/core/package.json. The root
+  // package.json is a private workspace root with no version field since the
+  // lerna -> pnpm migration removed lerna.json.
+  const corePackageJson = JSON.parse(
+    await fs.readFile('packages/core/package.json', 'utf-8')
+  );
+  const currentVersion = corePackageJson.version;
 
   console.log('Current version:', currentVersion);
 
@@ -34,10 +38,18 @@ async function run() {
   if (branchName === 'beta') {
     console.log('Branch: beta');
     const prereleaseComponents = semver.prerelease(currentVersion);
-    const isBumpBeta = lastCommitMessage.trim().endsWith('[BUMP BETA]');
+    const trimmedLastCommitMessage = lastCommitMessage.trim();
+    const isBumpBeta = trimmedLastCommitMessage.includes('[BUMP BETA]');
+    const isBumpBetaMajor = trimmedLastCommitMessage.includes(
+      '[BUMP BETA MAJOR]'
+    );
     console.log('isBumpBeta', isBumpBeta);
+    console.log('isBumpBetaMajor', isBumpBetaMajor);
 
-    if (
+    if (isBumpBetaMajor) {
+      console.log('Bumping major version for beta release');
+      nextVersion = `${semver.major(currentVersion) + 1}.0.0-beta.1`;
+    } else if (
       prereleaseComponents &&
       prereleaseComponents.includes('beta') &&
       !isBumpBeta

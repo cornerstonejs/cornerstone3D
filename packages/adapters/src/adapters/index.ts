@@ -1,42 +1,42 @@
-import { CornerstoneSR, CornerstoneSEG, CornerstonePMAP } from "./Cornerstone";
+import { CornerstoneSR, CornerstoneSEG, CornerstonePMAP } from './Cornerstone';
 import {
-    Cornerstone3DSR,
-    Cornerstone3DSEG,
-    Cornerstone3DPMAP,
-    Cornerstone3DRT
-} from "./Cornerstone3D";
-import { NO_IMAGE_ID } from "./Cornerstone3D/constants";
-import { VTKjsSEG } from "./VTKjs";
-import * as Enums from "./enums";
-import * as helpers from "./helpers";
+  Cornerstone3DSR,
+  Cornerstone3DSEG,
+  Cornerstone3DPMAP,
+  Cornerstone3DRT,
+} from './Cornerstone3D';
+import { NO_IMAGE_ID } from './Cornerstone3D/constants';
+import { VTKjsSEG } from './VTKjs';
+import * as Enums from './enums';
+import * as helpers from './helpers';
 
 const adaptersSR = {
-    Cornerstone: CornerstoneSR,
-    Cornerstone3D: Cornerstone3DSR
+  Cornerstone: CornerstoneSR,
+  Cornerstone3D: Cornerstone3DSR,
 };
 
 const adaptersSEG = {
-    Cornerstone: CornerstoneSEG,
-    Cornerstone3D: Cornerstone3DSEG,
-    VTKjs: VTKjsSEG
+  Cornerstone: CornerstoneSEG,
+  Cornerstone3D: Cornerstone3DSEG,
+  VTKjs: VTKjsSEG,
 };
 
 const adaptersPMAP = {
-    Cornerstone: CornerstonePMAP,
-    Cornerstone3D: Cornerstone3DPMAP
-    // VTKjs: VTKjsPMAP
+  Cornerstone: CornerstonePMAP,
+  Cornerstone3D: Cornerstone3DPMAP,
+  // VTKjs: VTKjsPMAP
 };
 
 const adaptersRT = {
-    Cornerstone3D: Cornerstone3DRT
+  Cornerstone3D: Cornerstone3DRT,
 };
 
 export {
-    adaptersSR,
-    adaptersSEG,
-    adaptersPMAP,
-    adaptersRT,
-    Enums,
-    helpers,
-    NO_IMAGE_ID
+  adaptersSR,
+  adaptersSEG,
+  adaptersPMAP,
+  adaptersRT,
+  Enums,
+  helpers,
+  NO_IMAGE_ID,
 };

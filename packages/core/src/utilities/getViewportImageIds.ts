@@ -1,4 +1,4 @@
-import { VolumeViewport } from '../RenderingEngine';
+import VolumeViewport from '../RenderingEngine/VolumeViewport';
 import cache from '../cache/cache';
 import type { IViewport, IStackViewport } from '../types';
 

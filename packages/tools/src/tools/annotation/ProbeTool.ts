@@ -24,6 +24,7 @@ import {
   drawHandles as drawHandlesSvg,
   drawTextBox as drawTextBoxSvg,
 } from '../../drawingSvg';
+import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import { state } from '../../store/state';
 import { ChangeTypes, Events } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
@@ -40,10 +41,12 @@ import type {
   ToolHandle,
   PublicToolProps,
   SVGDrawingHelper,
+  InteractionTypes,
 } from '../../types';
 import type { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
+import { viewportSupportsImageSlices } from '../../utilities/viewportCapabilities';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 
 const { transformWorldToIndex } = csUtils;
@@ -104,6 +107,16 @@ class ProbeTool extends AnnotationTool {
       textCanvasOffset: {
         x: 6,
         y: -6,
+      },
+      /**
+       * Canvas offset (in CSS px) applied to the interaction point while
+       * placing or dragging via touch, so the probe point is not occluded
+       * by the finger. Negative y moves the point above the contact point.
+       * Set to { x: 0, y: 0 } to disable. Mouse interactions are unaffected.
+       */
+      touchCanvasOffset: {
+        x: 0,
+        y: -40,
       },
     },
   };
@@ -193,18 +206,29 @@ class ProbeTool extends AnnotationTool {
    * a Probe Annotation and stores it in the annotationManager
    *
    * @param evt -  EventTypes.NormalizedMouseEventType
+   * @param interactionType -  The interaction type used to add the annotation;
+   * touch placements apply the configured touchCanvasOffset.
    * @returns The annotation object.
    *
    */
   addNewAnnotation = (
-    evt: EventTypes.InteractionEventType
+    evt: EventTypes.InteractionEventType,
+    interactionType: InteractionTypes = 'Mouse'
   ): ProbeAnnotation => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
-    const worldPos = currentPoints.world;
 
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
+
+    // Dispatchers pass 'touch'/'mouse' (lowercase) despite the
+    // InteractionTypes casing, so compare case-insensitively.
+    const isTouch = interactionType.toLowerCase() === 'touch';
+    const worldPos = this.getTouchAdjustedWorldPos(
+      viewport,
+      currentPoints,
+      isTouch
+    );
 
     this.isDrawing = true;
 
@@ -270,6 +294,35 @@ class ProbeTool extends AnnotationTool {
     if (near === true) {
       return point;
     }
+  }
+
+  /**
+   * Returns the world position for an interaction event. For touch
+   * interactions the canvas point is shifted by
+   * `configuration.touchCanvasOffset` before being projected to world, so
+   * the placed/dragged point is not occluded by the finger. For mouse
+   * interactions the original world position is returned unchanged.
+   */
+  protected getTouchAdjustedWorldPos(
+    viewport: Types.IViewport,
+    currentPoints: { canvas: Types.Point2; world: Types.Point3 },
+    isTouch: boolean
+  ): Types.Point3 {
+    const { touchCanvasOffset } = this.configuration;
+
+    if (!isTouch || !touchCanvasOffset) {
+      return currentPoints.world;
+    }
+
+    const { x = 0, y = 0 } = touchCanvasOffset;
+
+    if (!x && !y) {
+      return currentPoints.world;
+    }
+
+    const [canvasX, canvasY] = currentPoints.canvas;
+
+    return viewport.canvasToWorld([canvasX + x, canvasY + y]);
   }
 
   handleSelectedCallback(
@@ -344,7 +397,14 @@ class ProbeTool extends AnnotationTool {
     this.isDrawing = true;
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
-    const worldPos = currentPoints.world;
+
+    const { viewport } = getEnabledElement(element);
+    const isTouch = evt.type === Events.TOUCH_DRAG;
+    const worldPos = this.getTouchAdjustedWorldPos(
+      viewport,
+      currentPoints,
+      isTouch
+    );
 
     const { annotation, viewportIdsToRender, newAnnotation } = this.editData;
     const { data } = annotation;
@@ -492,26 +552,30 @@ class ProbeTool extends AnnotationTool {
         if (viewport instanceof VolumeViewport) {
           const { referencedImageId } = annotation.metadata;
 
-          // invalidate all the relevant stackViewports if they are not
-          // at the referencedImageId
-          for (const targetId in data.cachedStats) {
-            if (targetId.startsWith('imageId')) {
-              const viewports = renderingEngine.getStackViewports();
+          // invalidate all the relevant stack-like viewports if they are not
+          // at the referencedImageId (skip if metadata/referencedImageId missing)
+          if (referencedImageId) {
+            for (const targetId in data.cachedStats) {
+              if (targetId.startsWith('imageId')) {
+                const viewports = renderingEngine
+                  .getViewports()
+                  .filter(viewportSupportsImageSlices);
 
-              const invalidatedStack = viewports.find((vp) => {
-                // The stack viewport that contains the imageId but is not
-                // showing it currently
-                const referencedImageURI =
-                  csUtils.imageIdToURI(referencedImageId);
-                const hasImageURI = vp.hasImageURI(referencedImageURI);
-                const currentImageURI = csUtils.imageIdToURI(
-                  vp.getCurrentImageId()
-                );
-                return hasImageURI && currentImageURI !== referencedImageURI;
-              });
+                const invalidatedStack = viewports.find((vp) => {
+                  const currentImageId = vp.getCurrentImageId();
+                  if (!currentImageId) return false;
+                  // The stack viewport that contains the imageId but is not
+                  // showing it currently
+                  const referencedImageURI =
+                    csUtils.imageIdToURI(referencedImageId);
+                  const hasImageURI = vp.hasImageURI(referencedImageURI);
+                  const currentImageURI = csUtils.imageIdToURI(currentImageId);
+                  return hasImageURI && currentImageURI !== referencedImageURI;
+                });
 
-              if (invalidatedStack) {
-                delete data.cachedStats[targetId];
+                if (invalidatedStack) {
+                  delete data.cachedStats[targetId];
+                }
               }
             }
           }
@@ -547,10 +611,11 @@ class ProbeTool extends AnnotationTool {
 
       const textLines = this.configuration.getTextLines(data, targetId);
       if (textLines) {
-        const textCanvasCoordinates = [
-          canvasCoordinates[0] + this.configuration.textCanvasOffset.x,
-          canvasCoordinates[1] + this.configuration.textCanvasOffset.y,
-        ];
+        const textCanvasCoordinates = getTextBoxCoordsCanvas(
+          [canvasCoordinates],
+          element,
+          textLines
+        );
 
         const textUID = '0';
         drawTextBoxSvg(
@@ -558,7 +623,7 @@ class ProbeTool extends AnnotationTool {
           annotationUID,
           textUID,
           textLines,
-          [textCanvasCoordinates[0], textCanvasCoordinates[1]],
+          textCanvasCoordinates,
           options
         );
       }
@@ -605,7 +670,7 @@ class ProbeTool extends AnnotationTool {
 
       const { dimensions, imageData, metadata, voxelManager } = image;
 
-      const modality = metadata.Modality;
+      const modality = metadata?.Modality;
       let ijk = transformWorldToIndex(imageData, worldPos);
 
       ijk = vec3.round(ijk, ijk);
@@ -613,11 +678,9 @@ class ProbeTool extends AnnotationTool {
       if (csUtils.indexWithinDimensions(ijk, dimensions)) {
         this.isHandleOutsideImage = false;
 
-        let value = voxelManager.getAtIJKPoint(ijk);
-
         // Index[2] for stackViewport is always 0, but for visualization
-        // we reset it to be imageId index
-        if (targetId.startsWith('imageId:')) {
+        // we reset it to be imageId index (skip for ECG; channel is already in ijk[2])
+        if (targetId.startsWith('imageId:') && modality !== 'ECG') {
           const imageId = targetId.split('imageId:')[1];
           const imageURI = csUtils.imageIdToURI(imageId);
           const viewports = csUtils.getViewportsWithImageURI(imageURI);
@@ -627,17 +690,23 @@ class ProbeTool extends AnnotationTool {
           ijk[2] = viewport.getCurrentImageIdIndex();
         }
 
-        let modalityUnit;
+        let value: number | number[];
+        let modalityUnit: string | string[];
 
-        if (modality === 'US') {
+        if (modality === 'ECG') {
           const calibratedResults = getCalibratedProbeUnitsAndValue(image, [
             ijk,
           ]);
-
+          value = calibratedResults.values;
+          modalityUnit = calibratedResults.units;
+        } else if (modality === 'US') {
+          value = voxelManager?.getAtIJKPoint(ijk);
+          const calibratedResults = getCalibratedProbeUnitsAndValue(image, [
+            ijk,
+          ]);
           const hasEnhancedRegionValues = calibratedResults.values.every(
-            (value) => value !== null
+            (v) => v !== null
           );
-
           value = (
             hasEnhancedRegionValues ? calibratedResults.values : value
           ) as number;
@@ -645,6 +714,7 @@ class ProbeTool extends AnnotationTool {
             ? calibratedResults.units
             : 'raw';
         } else {
+          value = voxelManager?.getAtIJKPoint(ijk);
           modalityUnit = getPixelValueUnits(
             modality,
             annotation.metadata.referencedImageId,
