@@ -9,6 +9,7 @@ interface ImageFrame {
   columns: number;
   bitsAllocated: number;
   bitsStored: number;
+  highBit?: number;
   pixelRepresentation: number;
   smallestPixelValue: number;
   largestPixelValue: number;
