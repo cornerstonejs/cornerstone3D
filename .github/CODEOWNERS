@@ -1,0 +1,44 @@
+# Review routing for CI-critical paths. Requires an approval from one of the
+# listed owners when a PR touches a matching path (enforced via branch
+# protection's "require review from Code Owners" on main).
+#
+# Notes on how GitHub evaluates this file:
+#   - gitignore-style patterns; the LAST matching pattern wins.
+#   - Owners must have write access or the rule silently does not bind.
+#   - Any single listed owner's approval satisfies the rule; an author's own
+#     approval never counts, so keep at least two owners per rule.
+#   - Only the copy of this file on the PR's base branch is enforced, so a PR
+#     that rewrites these rules is still judged by the old ones.
+#
+# No default (catch-all) owner: paths not listed here keep the normal review
+# flow.
+#
+# Two groups of paths are protected, for two different reasons. A path belongs
+# here when a change to it changes what CI executes, or with what rights, so
+# that the review is routed to someone who will look at it in those terms.
+
+# ── Workflows ─────────────────────────────────────────────────────────────────
+# Every workflow file, whichever runner it targets.
+
+/.github/                                        @jbocce @sedghi @wayfarer3130
+
+# ── Self-hosted runner ────────────────────────────────────────────────────────
+# Scripts that the workflows exec on the shared self-hosted "nashua" box. Keep
+# this group in step with the protected-path list in the `gate` job of
+# .github/workflows/playwright.yml and ohif-downstream.yml — that list is what
+# keeps fork PRs that touch these paths off the box until merged.
+
+/scripts/ci/                                     @jbocce @sedghi @wayfarer3130
+/scripts/run-playright.sh                        @jbocce @sedghi @wayfarer3130
+/scripts/link-ohif-cornerstone-node-modules.mjs  @jbocce @sedghi @wayfarer3130
+
+# ── Release pipeline ──────────────────────────────────────────────────────────
+# Scripts that .github/workflows/publish.yml runs on every merge to main, with
+# `contents: write` and `id-token: write` — i.e. with the rights to push the
+# version commit and tag, create the release, and publish to npm. A fork PR
+# cannot trigger that workflow, but a change merged from one is executed by it,
+# so the review before merge is the only check. These do NOT belong in the
+# `gate` lists above: they never run on the self-hosted box.
+
+/scripts/release-mode.mjs                        @jbocce @sedghi @wayfarer3130
+/scripts/workspace-packages.mjs                  @jbocce @sedghi @wayfarer3130
