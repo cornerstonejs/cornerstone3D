@@ -242,3 +242,46 @@ Two notes on scope:
 - **Check your scroll affordances on small screens.** If a page relied on
   viewport drags to scroll, add padding, a scroll container, or a gutter outside
   the viewport elements so the page remains scrollable on a phone or tablet.
+
+## Progressive loading: 32kb default range, full resolution partial HTJ2K decode
+
+### What Changed
+
+Two related changes to progressive retrieval:
+
+- The default `chunkSize` for a range retrieve dropped from 64kb (65536 bytes)
+  to 32kb (32768 bytes). This applies to **any** range retrieve that does not
+  set its own `chunkSize`, not only HTJ2K ones.
+- Setting `decodeLevel: 0` on a partial (byte range or streaming) retrieve now
+  means "decode at full resolution from whatever bytes have arrived" rather
+  than picking a reduced level from how much of the frame is present. The
+  resulting image is reported as `LOSSY` instead of `SUBRESOLUTION`, since it
+  is full size and only the codestream is incomplete.
+
+Both rest on `@cornerstonejs/codec-openjph` 2.4.10, which decodes a truncated
+HTJ2K codestream instead of throwing on it. The codec is a pinned dependency of
+`@cornerstonejs/dicom-image-loader`, so a normal install already gets it.
+
+### Why This Matters
+
+The smaller default is right for HTJ2K, where 32kb is enough to decode a usable
+full resolution image, and a full resolution decode of a partial stream loses
+much less than decoding a quarter-size image and scaling it back up. For other
+transfer syntaxes a third less data may not be enough for the level being asked
+for, and that shows up as a quality change rather than an error.
+
+The codec floor is not optional. A consumer who dedupes `codec-openjph` to a
+version older than 2.4.10 — via an override, a resolution, or a hoisted older
+copy — will get throwing decodes on truncated codestreams. In a multi-stage
+retrieve configuration the next stage still runs, so it degrades to a slower
+load; in a single-stage configuration there is no next stage and the frame
+fails.
+
+### Migration Guidance
+
+- **Set `chunkSize` explicitly** on any range retrieve configuration tuned
+  around the old 64kb default, particularly non-HTJ2K ones.
+- **Check for a pinned older openjph.** If your lockfile resolves
+  `@cornerstonejs/codec-openjph` below 2.4.10, remove the pin or raise it.
+- **Prefer `decodeLevel: 0` for HTJ2K partial retrieves,** and keep
+  sub-resolution levels for genuinely small renditions such as JLS thumbnails.

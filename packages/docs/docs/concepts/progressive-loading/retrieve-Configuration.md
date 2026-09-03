@@ -79,6 +79,23 @@ The resolution of decoding is controlled by `decodeLevel` configuration and it c
 So if the decodeLevel for a stage is set to 0, then the image will be decoded to full resolution. If it is set to 1, then the image will be decoded to half resolution (x/2, y/2) and so on.
 
 :::tip
+For HTJ2K, setting `decodeLevel: 0` on a partial (byte range or streaming)
+retrieve is usually the right choice. The decoder tolerates a truncated
+codestream, so a partial retrieve decodes at full size and is merely lossy,
+which loses considerably less than decoding a sub-resolution image and scaling
+it back up afterwards. Such an image is reported as `LOSSY` rather than
+`SUBRESOLUTION`, and only counts as `FULL_RESOLUTION` once the whole frame has
+arrived.
+
+Sub-resolution decoding plus scaling remains the right choice for renditions
+that are genuinely small, such as JLS thumbnails, and for transfer syntaxes
+whose decoders cannot read a truncated stream.
+
+Truncated HTJ2K decoding requires `@cornerstonejs/codec-openjph` 2.4.10 or
+later. Older builds throw on a truncated codestream instead of decoding it.
+:::
+
+:::tip
 For volume viewports, we currently don't allow decoding into sub-resolution because it would require reallocating the volume in memory, which is inefficient. Therefore, if the data is partial and can't be decoded into full resolution, we simply replicate it (inside a web worker for performance) to fill the entire volume.
 
 However, for the stack viewport, we do allow decoding into sub-resolution since this re-allocation is cheaper than the whole volume. Additionally, in this scneario, future enhanced qualities of the image will wipe out the old image and create a new image with new size until full resolution is reached.
@@ -131,7 +148,7 @@ as soon as possible.
 
 #### Options
 
-- `chunkSize`: byte range value to retrieve for initial decode (default is 64kb).
+- `chunkSize`: byte range value to retrieve for initial decode (default is 32kb).
   Ignored for all but the first range request (regardless of rangeIndex).
 - `rangeIndex`: is the range number (index) that you want to fetch, -1 for remaining data
 
@@ -175,7 +192,7 @@ another example
   decodeLevel: 3
 }
 
-// chunkSize is default 64kb
+// chunkSize is default 32kb
 ```
 
 ![](../../assets/range-0-decode-3.png)

@@ -12,6 +12,14 @@ import type { DICOMLoaderIImage, DICOMLoaderImageOptions } from '../../types';
 
 const { ProgressiveIterator } = utilities;
 const { ImageQualityStatus } = Enums;
+/**
+ * How much the retrieved codestream has to grow before an incomplete frame is
+ * decoded again at full resolution. Half as much again is enough to be visible
+ * while keeping the number of decodes logarithmic in the frame size rather than
+ * linear in the number of network chunks.
+ */
+const REDECODE_GROWTH_FACTOR = 1.5;
+
 const streamableTransferSyntaxes = new Set<string>([
   // Private HTJ2K
   '3.2.840.10008.1.2.4.96',
@@ -171,6 +179,7 @@ function loadImageFromNetwork(
         getPixelData(imageURI, imageId, mediaType, options)
       );
       let lastDecodeLevel = 10;
+      let lastDecodedLength = 0;
       for await (const result of compressedIt) {
         const {
           pixelData,
@@ -197,10 +206,15 @@ function loadImageFromNetwork(
           imageQualityStatus === ImageQualityStatus.FULL_RESOLUTION
             ? 0
             : decodeLevelFromComplete(percentComplete, retrieveDecodeLevel));
-        // At full resolution each additional chunk refines the same level, so
-        // the level alone cannot say whether decoding again is worthwhile -
-        // only a sub-resolution decode can be skipped for not improving.
-        if (!done && decodeLevel > 0 && lastDecodeLevel <= decodeLevel) {
+        if (
+          !shouldDecodeAgain({
+            done,
+            decodeLevel,
+            lastDecodeLevel,
+            encodedLength: pixelData?.length ?? 0,
+            lastDecodedLength,
+          })
+        ) {
           // No point trying again yet
           continue;
         }
@@ -226,6 +240,7 @@ function loadImageFromNetwork(
           // The iteration is done even if the image itself isn't done yet
           it.add(image, done);
           lastDecodeLevel = decodeLevel;
+          lastDecodedLength = pixelData?.length ?? 0;
         } catch (e) {
           if (extractDone) {
             console.warn("Couldn't decode", e);
@@ -253,6 +268,46 @@ function loadImageFromNetwork(
     promise: uncompressedIterator.getDonePromise(),
     cancelFn: undefined,
   };
+}
+
+/**
+ * Decides whether an incomplete frame is worth decoding again.
+ *
+ * A sub-resolution decode is only worth repeating when the level itself
+ * improves - decoding the same level twice produces the same image. At full
+ * resolution the level never changes, so the brake has to be how much new
+ * codestream has arrived instead. Without one, a large frame would decode once
+ * per network chunk: an 8MB frame arriving in 128k reads is ~64 full frame
+ * decodes and renders, each allocating a fresh buffer. Requiring the
+ * codestream to grow by REDECODE_GROWTH_FACTOR each time makes that
+ * logarithmic - ~10 decodes for the same frame - while keeping the refinement
+ * that makes full resolution partial decoding worth doing.
+ *
+ * A finished frame is always decoded, whatever the growth.
+ */
+export function shouldDecodeAgain({
+  done,
+  decodeLevel,
+  lastDecodeLevel,
+  encodedLength,
+  lastDecodedLength,
+}: {
+  done: boolean;
+  decodeLevel: number;
+  lastDecodeLevel: number;
+  encodedLength: number;
+  lastDecodedLength: number;
+}): boolean {
+  if (done) {
+    return true;
+  }
+  if (decodeLevel < lastDecodeLevel) {
+    return true;
+  }
+  return (
+    decodeLevel === 0 &&
+    encodedLength >= lastDecodedLength * REDECODE_GROWTH_FACTOR
+  );
 }
 
 /** The decode level is based on how much of hte data is needed for
