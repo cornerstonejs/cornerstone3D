@@ -14,6 +14,7 @@ import {
   LabelmapBaseTool,
 } from '@cornerstonejs/tools';
 import { Events as aiEvents } from './enums';
+import getOrtWasmPaths from './utils/getOrtWasmPaths';
 
 const { strategies } = cstSegmentation;
 const { fillInsideCircle } = strategies;
@@ -1641,7 +1642,13 @@ export default class ONNXSegmentationController {
     }
     config.threads = parseInt(String(config.threads));
     config.local = parseInt(config.local);
-    ort.env.wasm.wasmPaths = 'ort/';
+    // Leave a location the application assigned alone. Otherwise take the
+    // system-level wasm directory, or resolve the copy of
+    // `onnxruntime-web/dist` against the application rather than against the
+    // current route. See `getOrtWasmPaths`.
+    if (!ort.env.wasm.wasmPaths) {
+      ort.env.wasm.wasmPaths = getOrtWasmPaths();
+    }
     ort.env.wasm.numThreads = config.threads;
     ort.env.wasm.proxy = config.provider == 'wasm';
 

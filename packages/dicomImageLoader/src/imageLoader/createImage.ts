@@ -86,7 +86,11 @@ async function createImage(
     }
   }
 
-  const { decodeConfig, wasmBasePath } = getOptions();
+  // `setOptions` publishes the loader option system-wide, so the two agree;
+  // reading the system value as the fallback also picks up a directory set
+  // through `utilities.setWasmBasePath` alone.
+  const { decodeConfig, wasmBasePath = utilities.getWasmBasePath() } =
+    getOptions();
   // Forward the WASM base path to the worker, where the decoders resolve their
   // binaries. The loader-level option wins over one set in decodeConfig.
   const taskDecodeConfig =
