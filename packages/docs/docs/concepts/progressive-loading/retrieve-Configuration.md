@@ -103,6 +103,35 @@ However, for the stack viewport, we do allow decoding into sub-resolution since 
 
 We will talk about `frequency` in the each method's section below.
 
+### Partial decoding is HTJ2K only
+
+Everything below about decoding a partial image applies **only to HTJ2K**. The
+decision is not a configuration option — it is a fixed list of transfer syntaxes
+in `streamableTransferSyntaxes` (`imageLoader/wadors/loadImage.ts`), currently:
+
+| Transfer syntax UID       | Meaning                             |
+| ------------------------- | ----------------------------------- |
+| `3.2.840.10008.1.2.4.96`  | HTJ2K, private/pre-ratification UID |
+| `1.2.840.10008.1.2.4.202` | HTJ2K (RPCL) — reliably streamable  |
+| `1.2.840.10008.1.2.4.203` | HTJ2K lossy — attempted, may not be |
+
+When a partial buffer arrives whose transfer syntax is not on that list, the
+decode is skipped and the loader waits for more data; the image is decoded once
+the frame is complete. So for every other syntax, byte range and streaming
+retrieves still control **how the data is fetched**, but the image is only ever
+decoded once, at full quality.
+
+Two consequences worth knowing:
+
+- `decodeLevel` is only honoured by the HTJ2K decoder. Setting it for another
+  syntax has no effect.
+- Tuning `initialChunkSize` down for a non-HTJ2K syntax does not lower quality;
+  it can only add a round trip before the first (complete) decode.
+
+The list is a module-level constant rather than a setting, so adding a syntax to
+it means changing that file — appropriate only for a codec that can genuinely
+decode a truncated codestream, since one that cannot will throw instead.
+
 ### Streaming Options
 
 #### Options

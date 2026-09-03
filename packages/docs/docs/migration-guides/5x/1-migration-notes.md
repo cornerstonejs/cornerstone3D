@@ -283,9 +283,13 @@ had `chunkSize: 256000` to get a large first fetch, you now get 32kb first and
 The two sizes differ because they buy different things: the first range is
 buying time to first image, where 32kb of HTJ2K is enough for a usable full
 resolution decode, and later ranges are buying refinement, where small steps
-only mean more requests for the same result. For transfer syntaxes that cannot
-decode a truncated stream, a 32kb first range may not be enough for the level
-being asked for, and that surfaces as a quality change rather than an error.
+only mean more requests for the same result.
+
+For a non-HTJ2K transfer syntax the effect is on round trips rather than on
+quality. Only HTJ2K decodes an incomplete buffer at all — see
+[Partial decoding is HTJ2K only](#partial-decoding-is-htj2k-only) — so every
+other syntax simply waits until a range completes the frame before decoding it
+once. A smaller first range means it may take one more request to get there.
 
 `msBetweenDecode` exists because chunk size alone does not bound decoding cost.
 On a fast connection 128kb arrives in a few milliseconds, so a large frame would
