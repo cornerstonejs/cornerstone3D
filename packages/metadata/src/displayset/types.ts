@@ -25,7 +25,24 @@ export type ViewportTypeHint =
   | 'video'
   | 'wholeslide'
   | 'ecg'
+  /**
+   * No viewport can render this display set - see {@link NO_VIEWPORT_TYPE}. The
+   * display set still exists (so a study browser can list it and say why it is
+   * not viewable), but it must not be handed to a viewport. Read it as
+   * `displaySet.isDisplayable === false`.
+   */
+  | 'none'
   | string;
+
+/**
+ * The `viewportTypes` entry meaning "nothing can render this".
+ *
+ * Deliberately an explicit sentinel rather than an empty `viewportTypes` array:
+ * an absent or empty list falls back to `['stack']` (see
+ * {@link getViewportTypesForRule}), so "empty" cannot express "not renderable"
+ * without that fallback silently turning a non-image object into a stack.
+ */
+export const NO_VIEWPORT_TYPE = 'none';
 
 /**
  * Series-level statistics aggregated once over a series' instances (see
@@ -79,6 +96,17 @@ export type SplitRuleOptions = {
 };
 
 export type SplitRule = {
+  /**
+   * Stable identifier for this rule, unique within its rule set. It namespaces
+   * every bucket key the rule produces (see {@link InstanceGroup.splitKey}), so
+   * naming a rule is what makes the identities derived from it survive editing
+   * the rule set - reordering rules, or inserting one, leaves other rules'
+   * keys untouched. A rule set containing duplicate ids is rejected.
+   *
+   * Rules without an id fall back to their array position, whose keys therefore
+   * change when the rule set is edited. Give every rule an id if anything
+   * durable (persisted annotations, saved layouts) is keyed off the split.
+   */
   id?: string;
   /** Allowed viewport types; index 0 is the preferred viewport type. */
   viewportTypes?: readonly ViewportTypeHint[];
@@ -109,6 +137,72 @@ export type SplitRule = {
     | string
     | ((instance: NaturalizedInstance, context: RuleContext) => unknown)
   )[];
+  /**
+   * Optional. Orders the instances this rule claims - both the order each group's
+   * {@link InstanceGroup.instances} are returned in and the order runs are walked
+   * in to number them (see `runBy`). Returns a negative number if `a` comes
+   * before `b`, a positive number if `b` comes before `a`, and 0 if they are
+   * interchangeable. The third argument carries this rule's derived `series`
+   * facts.
+   *
+   * Defaults to acquisition order: `InstanceNumber`, then `SOPInstanceUID` as a
+   * tiebreak. Declare it when that is the wrong order for the display set this
+   * rule produces - a reconstructed volume belongs in spatial order, which
+   * `InstanceNumber` does not always follow:
+   *
+   * ```ts
+   * {
+   *   id: 'volume3d',
+   *   compareInstances: (a, b) => a.SliceLocation - b.SliceLocation,
+   * }
+   * ```
+   *
+   * It need not be a total order. Ties - a returned 0, or a `NaN` out of
+   * arithmetic on a tag one instance is missing - fall back to acquisition order,
+   * so an incomplete comparator cannot make the result depend on the order the
+   * instances were passed in.
+   */
+  compareInstances?: (
+    a: NaturalizedInstance,
+    b: NaturalizedInstance,
+    context: RuleContext
+  ) => number;
+  /**
+   * Optional. Declares that this rule's instances form *runs*: walking the
+   * instances this rule claimed in acquisition order, consecutive instances
+   * whose value here is equal belong to the same run, and a change in value
+   * starts a new one. The run's ordinal is folded into the bucket key, so
+   * **interleaved kinds separate instead of merging**.
+   *
+   * The motivating case is an ultrasound series mixing single images and
+   * multi-frame clips - `img1 img2 img3 clip4 img5 clip6` should become four
+   * display sets, not two. `groupBy` alone cannot express that, because its
+   * extractors see one instance at a time and so cannot tell `img3` from
+   * `img5`; grouping on a per-instance discriminator merges them, and grouping
+   * on `InstanceNumber` over-splits `img1..img3` into three. A run needs a
+   * pass over the ordered series, which is what this field buys:
+   *
+   * ```ts
+   * {
+   *   id: 'usInterleaved',
+   *   matches: (instance) => instance.Modality === 'US',
+   *   runBy: (instance) => Number(instance.NumberOfFrames ?? 1) > 1,
+   * }
+   * ```
+   *
+   * Runs are computed over the instances **this rule claimed**, in the rule's own
+   * order (`compareInstances`, defaulting to acquisition order) rather than the
+   * order the caller supplied - so, like every other key part, the result does
+   * not depend on input order. Instances claimed by other rules do not
+   * interrupt a run.
+   *
+   * Runs are also scoped to a single `groupBy` bucket: instances whose `groupBy`
+   * parts differ are bound for different display sets anyway, so one never
+   * interrupts another's run. Without that scoping, two single frames of one
+   * series would be torn apart by another series' clip merely for sitting
+   * between them in acquisition order.
+   */
+  runBy?: (instance: NaturalizedInstance, context: RuleContext) => unknown;
   customAttributes?: (
     attributes: SplitRuleCustomAttributesContext,
     options: SplitRuleOptions
@@ -120,6 +214,11 @@ export type SplitContext = {
 };
 
 export type InstanceGroup = {
+  /**
+   * The instances collected into this group, ordered by the rule that produced it
+   * (see {@link SplitRule.compareInstances}) and so independent of the order they
+   * were passed in - as is everything else about the result.
+   */
   instances: NaturalizedInstance[];
   matchedRule: SplitRule;
   /**
