@@ -1,3 +1,4 @@
+import type { AABB2 } from '../../../types';
 import type {
   BaseViewportRenderContext,
   BasePresentationProps,
@@ -14,6 +15,14 @@ export interface ECGChannelData {
   max: number;
 }
 
+/** Normalized 2D bounding region for multi-lead or segmented ECG layouts */
+export interface TraceRegion {
+  id?: string;
+  bounds: AABB2;
+  leadIndices: number[];
+  timeWindow?: [number, number];
+}
+
 /** @internal */
 export interface ECGWaveformPayload {
   channels: ECGChannelData[];
@@ -28,6 +37,7 @@ export interface ECGWaveformPayload {
 
 export interface ECGPresentationProps extends BasePresentationProps {
   visibleChannels?: number[];
+  traceRegions?: TraceRegion[];
 }
 
 export interface ECGViewState extends ViewportCameraBase<[number, number]> {
@@ -61,6 +71,15 @@ export interface ChannelLayout {
   itemHeight: number;
   yOffset: number;
   baseline: number;
+  minX?: number;
+  maxX?: number;
+  minY?: number;
+  maxY?: number;
+  leadIndex?: number;
+  regionIndex?: number;
+  timeWindow?: [number, number];
+  startIndex?: number;
+  endIndex?: number;
 }
 
 /** @internal */
