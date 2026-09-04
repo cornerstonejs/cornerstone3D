@@ -22,6 +22,7 @@ const transferSyntaxes = {
   '1.2.840.10008.1.2.4.80': 'JPEGLSLosslessTransferSyntax',
 
   '1.2.840.10008.1.2.4.90': 'JPEG2000LosslessOnlyTransferSyntax',
+  '1.2.840.10008.1.2.4.201': 'HTJ2KLosslessTransferSyntax',
   '1.2.840.10008.1.2.5': 'RLELosslessTransferSyntax',
 
   '1.2.840.10008.1.2.1.98':
@@ -47,8 +48,11 @@ const pendingTransferSyntaxes = {
   '1.2.840.10008.1.2.4.70': [
     'JPEGProcess14SV1TransferSyntax',
     // Fails against the uncompressed original through either metadata
-    // provider, so this is the decoder rather than the metadata path.
-    'decoder does not reproduce the source exactly',
+    // provider, so this is the decoder rather than the metadata path. The
+    // colour fixture for the same syntax decodes correctly in the corpus, so
+    // it is the grayscale path specifically. A fix is expected from an
+    // upstream codec update; re-enable this case when that lands.
+    'decoder does not reproduce the source exactly, pending an upstream codec fix',
   ],
 };
 
