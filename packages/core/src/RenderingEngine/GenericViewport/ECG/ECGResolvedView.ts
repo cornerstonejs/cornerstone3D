@@ -27,17 +27,27 @@ type ECGResolvedViewState = {
   waveform: ECGWaveformPayload;
 };
 
+/**
+ * Computes coordinate transforms and resolved state for ECG viewport rendering.
+ */
 class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
   private cachedCanvasMapping?: ECGCanvasMapping;
 
+  /** Gets the current zoom scale factor. */
   get zoom(): number {
     return Math.max(this.state.viewState.scale ?? 1, 0.001);
   }
 
+  /** Gets the current 2D pan offset. */
   get pan(): Point2 {
     return getPanForECGCanvasMapping(this.getCanvasMapping());
   }
 
+  /**
+   * Converts a canvas-space point into 3D world-space coordinates.
+   * @param canvasPos - Point in canvas space [x, y].
+   * @returns 3D world point [sampleIndex, amplitude, channelIndex].
+   */
   canvasToWorld(canvasPos: Point2): Point3 {
     const mapping = this.getCanvasMapping();
     const channelLayouts = this.getChannelLayouts();
@@ -45,34 +55,54 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
       (canvasPos[0] - mapping.xOffset) / mapping.effectiveRatio,
       (canvasPos[1] - mapping.yOffset) / mapping.effectiveRatio,
     ];
-    let z = 0;
 
-    for (let index = 0; index < channelLayouts.length; index++) {
-      const channelLayout = channelLayouts[index];
+    // Find the layout cell containing the coordinates
+    let layout = channelLayouts.find((item) => {
+      const xStart = item.xOffset ?? 0;
+      const xEnd = xStart + (item.width ?? this.state.metrics.ecgWidth);
+      // Row heights are stacked vertically; determine boundaries of this row
+      const yStart = item.yOffset - item.itemHeight;
+      const yEnd = item.yOffset;
+      return (
+        subCanvasPos[0] >= xStart &&
+        subCanvasPos[0] <= xEnd &&
+        subCanvasPos[1] >= yStart &&
+        subCanvasPos[1] <= yEnd
+      );
+    });
 
-      if (
-        subCanvasPos[1] <= channelLayout.yOffset ||
-        index === channelLayouts.length - 1
-      ) {
-        z = index;
-        break;
-      }
+    if (!layout && channelLayouts.length > 0) {
+      // Pick nearest layout by vertical distance to center line
+      layout = channelLayouts.reduce((nearest, item) => {
+        const itemCenterY = item.yOffset - item.itemHeight / 2;
+        const nearestCenterY = nearest.yOffset - nearest.itemHeight / 2;
+        return Math.abs(subCanvasPos[1] - itemCenterY) <
+          Math.abs(subCanvasPos[1] - nearestCenterY)
+          ? item
+          : nearest;
+      }, channelLayouts[0]);
     }
 
-    const channelLayout = channelLayouts[z];
+    if (!layout) {
+      return [0, 0, 0];
+    }
+
+    const xOffset = layout.xOffset ?? 0;
+    const width = layout.width ?? this.state.metrics.ecgWidth;
+    const startSample = layout.startSample ?? 0;
+    const endSample = layout.endSample ?? this.state.waveform.numberOfSamples;
+    const leadIndex = layout.leadIndex ?? channelLayouts.indexOf(layout);
+
+    const fraction = (subCanvasPos[0] - xOffset) / (width || 1);
+    const sampleIndex = startSample + fraction * (endSample - startSample);
 
     return [
       Math.max(
         0,
-        Math.min(
-          this.state.waveform.numberOfSamples - 1,
-          (subCanvasPos[0] * this.state.waveform.numberOfSamples) /
-            this.state.metrics.ecgWidth
-        )
+        Math.min(this.state.waveform.numberOfSamples - 1, sampleIndex)
       ),
-      (channelLayout.baseline - subCanvasPos[1]) /
-        this.state.metrics.channelScale,
-      z,
+      (layout.baseline - subCanvasPos[1]) / this.state.metrics.channelScale,
+      leadIndex,
     ];
   }
 
@@ -81,17 +111,24 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
     const channelLayouts = this.getChannelLayouts();
     const z = Math.round(worldPos[2]);
 
-    if (z < 0 || z >= channelLayouts.length) {
+    const layout =
+      channelLayouts.find((item) => item.leadIndex === z) || channelLayouts[z];
+    if (!layout) {
       return [0, 0];
     }
 
+    const startSample = layout.startSample ?? 0;
+    const endSample = layout.endSample ?? this.state.waveform.numberOfSamples;
+    const xOffset = layout.xOffset ?? 0;
+    const width = layout.width ?? this.state.metrics.ecgWidth;
+
+    const sampleFraction =
+      (worldPos[0] - startSample) / (endSample - startSample || 1);
+    const canvasX = xOffset + sampleFraction * width;
+
     return [
-      (worldPos[0] / this.state.waveform.numberOfSamples) *
-        this.state.metrics.ecgWidth *
-        mapping.effectiveRatio +
-        mapping.xOffset,
-      (channelLayouts[z].baseline -
-        worldPos[1] * this.state.metrics.channelScale) *
+      canvasX * mapping.effectiveRatio + mapping.xOffset,
+      (layout.baseline - worldPos[1] * this.state.metrics.channelScale) *
         mapping.effectiveRatio +
         mapping.yOffset,
     ];
@@ -174,6 +211,9 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
         this.state.dataPresentation?.visibleChannels
       ),
       channelScale: this.state.metrics.channelScale,
+      layoutType: this.state.dataPresentation?.layoutType ?? '12x1',
+      numberOfSamples: this.state.waveform.numberOfSamples,
+      ecgWidth: this.state.metrics.ecgWidth,
     });
   }
 

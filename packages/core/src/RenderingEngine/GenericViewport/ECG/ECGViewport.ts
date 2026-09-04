@@ -3,8 +3,11 @@ import type { LoadedData } from '../ViewportArchitectureTypes';
 import GenericViewport from '../GenericViewport';
 import { ViewportType } from '../../../enums';
 import { getDefaultECGValueRange } from '../../../utilities/ECGUtilities';
+import genericViewportDisplaySetMetadataProvider from '../../../utilities/genericViewportDisplaySetMetadataProvider';
+import imageIdToURI from '../../../utilities/imageIdToURI';
 import type {
   CPUIImageData,
+  ICamera,
   Mat3,
   Point2,
   Point3,
@@ -114,10 +117,19 @@ class ECGViewport extends GenericViewport<
     }
   }
 
+  /**
+   * Returns the active ECG waveform dataset payload mounted on this viewport.
+   * @returns Active waveform payload or null.
+   */
   getWaveformData(): ECGWaveformPayload | null {
     return this.getWaveformBindingData() ?? null;
   }
 
+  /**
+   * Returns a view reference describing the mounted ECG dataset state.
+   * @param _specifier - Optional specifier flags.
+   * @returns View reference representation.
+   */
   getViewReference(_specifier: ViewReferenceSpecifier = {}): ViewReference {
     const dataId = this.getFirstBinding()?.data.id;
 
@@ -129,18 +141,35 @@ class ECGViewport extends GenericViewport<
     };
   }
 
+  /**
+   * Returns a unique string identifier for the view reference.
+   * @param _specifier - Optional specifier flags.
+   * @returns String identifier.
+   */
   getViewReferenceId(_specifier: ViewReferenceSpecifier = {}): string {
     return `imageId:${this.getCurrentImageId()}`;
   }
 
+  /**
+   * Sets the view reference for the viewport.
+   * @param _viewRef - Target view reference.
+   */
   setViewReference(_viewRef: ViewReference): void {
     // ECG viewports always show the single active waveform.
   }
 
+  /**
+   * Returns the current slice index (always 0 for 2D ECG viewports).
+   * @returns Slice index 0.
+   */
   getSliceIndex(): number {
     return 0;
   }
 
+  /**
+   * Returns the current zoom level of the viewport.
+   * @returns Zoom level factor.
+   */
   getZoom(): number {
     return (
       this.getResolvedView()?.zoom ?? Math.max(this.viewState.scale ?? 1, 0.001)
@@ -169,6 +198,11 @@ class ECGViewport extends GenericViewport<
     ];
   }
 
+  /**
+   * Sets the zoom level for the viewport relative to an optional canvas point.
+   * @param zoom - Scale factor to apply.
+   * @param canvasPoint - Optional point in canvas space to zoom relative to.
+   */
   setZoom(zoom: number, canvasPoint?: Point2): void {
     const resolvedView = this.getResolvedView();
 
@@ -185,10 +219,18 @@ class ECGViewport extends GenericViewport<
     });
   }
 
+  /**
+   * Returns the current 2D pan offset of the viewport.
+   * @returns Array containing [x, y] pan coordinates.
+   */
   getPan(): Point2 {
     return this.getResolvedView()?.pan ?? [0, 0];
   }
 
+  /**
+   * Sets the 2D pan offset for the viewport.
+   * @param pan - Target [x, y] pan offset.
+   */
   setPan(pan: Point2): void {
     const resolvedView = this.getResolvedView();
 
@@ -274,10 +316,13 @@ class ECGViewport extends GenericViewport<
   }
 
   /**
-   * Resets pan and zoom to defaults and re-renders.
+   * Resets pan, zoom, and scroll to defaults while preserving the loaded
+   * time/value range, then re-renders. Called by `resetCamera()` and the
+   * toolbar "Reset View" button.
    */
   resetViewState(): boolean {
     const previousCamera = this.getCameraForEvent();
+
     this.viewState = createDefaultECGViewState({
       timeRange: this.viewState.timeRange,
       valueRange: this.viewState.valueRange,
@@ -289,6 +334,43 @@ class ECGViewport extends GenericViewport<
   }
 
   /**
+   * Returns the legacy-compatible camera projection for this viewport.
+   */
+  getCamera(): ICamera {
+    return this.getCameraForEvent();
+  }
+
+  /**
+   * Sets camera parameters. Translates parallelScale updates from tools like
+   * ZoomTool into viewport zoom level updates.
+   */
+  setCamera(cameraPatch: Partial<ICamera>): void {
+    if (
+      cameraPatch.parallelScale !== undefined &&
+      cameraPatch.parallelScale > 0
+    ) {
+      const currentCamera = this.getCamera();
+      if (currentCamera.parallelScale) {
+        const ratio = currentCamera.parallelScale / cameraPatch.parallelScale;
+        const currentZoom = this.viewState.scale ?? 1;
+        this.setZoom(currentZoom * ratio);
+      }
+    } else if (cameraPatch.scale !== undefined && cameraPatch.scale > 0) {
+      this.setZoom(cameraPatch.scale);
+    }
+
+    if (cameraPatch.focalPoint) {
+      const currentCamera = this.getCamera();
+      if (currentCamera.focalPoint) {
+        const dx = cameraPatch.focalPoint[0] - currentCamera.focalPoint[0];
+        const dy = cameraPatch.focalPoint[1] - currentCamera.focalPoint[1];
+        const currentPan = this.getPan();
+        this.setPan([currentPan[0] + dx, currentPan[1] + dy]);
+      }
+    }
+  }
+
+  /**
    * ECG viewports have no rotation.
    */
   getRotation(): number {
@@ -296,10 +378,83 @@ class ECGViewport extends GenericViewport<
   }
 
   /**
-   * No-op: ECG viewports are not slice stacks.
+   * Scrolls the ECG viewport horizontally by `delta` viewport-widths.
+   *
+   * Matches the Cornerstone viewport scroll convention so OHIF's scroll utility
+   * (which calls `viewport.scroll(delta, debounce, loop)` positionally) works
+   * correctly. Positive delta scrolls forward in time; negative scrolls back.
+   * The time window is clamped so it cannot scroll past the start or end of the signal.
+   *
+   * @param delta - Number of viewport-widths to shift (default 1).
+   *   Use `1` for one full screen forward, `-1` for one full screen back.
+   *   Fractional values (e.g. `0.25`) scroll a quarter screen.
+   * @param _debounceLoading - Ignored; kept for signature compatibility.
+   * @param _loop - Ignored; ECG viewports clamp rather than loop.
    */
-  scroll(): void {
-    // no-op
+  scroll(delta = 1, _debounceLoading = true, _loop = false): void {
+    const waveform = this.getWaveformData();
+
+    if (!waveform) {
+      return;
+    }
+
+    const durationMs = this.getDurationMs();
+    const [startMs, endMs] = this.viewState.timeRange;
+    const windowMs = Math.max(1, endMs - startMs);
+    const shiftMs = windowMs * delta;
+
+    // Clamp so the window stays within [0, durationMs]
+    const nextStart = Math.max(
+      0,
+      Math.min(startMs + shiftMs, durationMs - windowMs)
+    );
+    const nextEnd = Math.min(durationMs, nextStart + windowMs);
+
+    const previousCamera = this.getCameraForEvent();
+    this.viewState = {
+      ...this.viewState,
+      timeRange: [nextStart, nextEnd],
+    };
+    this.modified(previousCamera);
+  }
+
+  /**
+   * Scrolls the visible window so that `timeMs` is at the left edge.
+   *
+   * @param timeMs - Target start time in milliseconds.
+   */
+  scrollToTime(timeMs: number): void {
+    const waveform = this.getWaveformData();
+
+    if (!waveform) {
+      return;
+    }
+
+    const durationMs = this.getDurationMs();
+    const [startMs, endMs] = this.viewState.timeRange;
+    const windowMs = Math.max(1, endMs - startMs);
+    const nextStart = Math.max(0, Math.min(timeMs, durationMs - windowMs));
+    const nextEnd = Math.min(durationMs, nextStart + windowMs);
+
+    const previousCamera = this.getCameraForEvent();
+    this.viewState = {
+      ...this.viewState,
+      timeRange: [nextStart, nextEnd],
+    };
+    this.modified(previousCamera);
+  }
+
+  /**
+   * Returns the total signal duration in milliseconds, or 0 if no waveform is loaded.
+   */
+  getDurationMs(): number {
+    const waveform = this.getWaveformData();
+
+    if (!waveform) {
+      return 0;
+    }
+
+    return (waveform.numberOfSamples / waveform.samplingFrequency) * 1000;
   }
 
   /**
@@ -325,6 +480,33 @@ class ECGViewport extends GenericViewport<
     const binding = this.getFirstBinding();
 
     return binding ? [binding.data.id] : [];
+  }
+
+  /**
+   * Returns whether the viewport is rendering the specified imageURI.
+   */
+  hasImageURI(imageURI: string): boolean {
+    const binding = this.getFirstBinding();
+    if (!binding) {
+      return false;
+    }
+
+    const dataId = binding.data.id;
+    if (dataId === imageURI || dataId.includes(imageURI)) {
+      return true;
+    }
+
+    const metadata = genericViewportDisplaySetMetadataProvider.get(
+      genericViewportDisplaySetMetadataProvider.VIEWPORT_V2_DISPLAY_SET,
+      dataId
+    ) as { sourceDataId?: string } | undefined;
+    if (metadata?.sourceDataId) {
+      if (imageIdToURI(metadata.sourceDataId) === imageURI) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /**
@@ -369,6 +551,9 @@ class ECGViewport extends GenericViewport<
       imageData,
       scalarData,
       hasPixelSpacing: false,
+      calibration: waveform.calibration as
+        | import('../../../types').IImageCalibration
+        | undefined,
       preScale: { scaled: false },
       metadata: { Modality: 'ECG', FrameOfReferenceUID: '' },
     };

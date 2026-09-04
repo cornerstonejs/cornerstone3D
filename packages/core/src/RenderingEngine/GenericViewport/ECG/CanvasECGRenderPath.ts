@@ -26,12 +26,22 @@ import type {
 } from './ECGViewportTypes';
 import { resolveECGCanvasMapping } from './ecgViewportCamera';
 
-/** @internal */
+/**
+ * Render path implementation that draws ECG grid, channel labels, and traces on a 2D canvas.
+ * @internal
+ */
 export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
+  /**
+   * Adds an ECG dataset payload to the render path attachment list.
+   * @param ctx - Canvas rendering context.
+   * @param data - ECG waveform dataset payload.
+   * @param _options - Additional attachment options.
+   * @returns Promise resolving to the render path attachment descriptor.
+   */
   async addData(
     ctx: ECGCanvasRenderContext,
     data: LoadedData,
-    options: DataAddOptions
+    _options: DataAddOptions
   ): Promise<RenderPathAttachment<ECGDataPresentation>> {
     const waveform = data as unknown as LoadedData<ECGWaveformPayload>;
 
@@ -191,6 +201,7 @@ function drawFrame(
 
   ensureECGCanvasSize(canvas);
 
+  const layoutType = currentDataPresentation?.layoutType ?? '12x1';
   const metrics = computeECGRenderMetrics({
     canvas,
     visibleChannels,
@@ -199,10 +210,16 @@ function drawFrame(
       currentCamera.timeRange[1] - currentCamera.timeRange[0]
     ),
     valueRange: currentCamera.valueRange,
+    sweepSpeed: currentDataPresentation?.sweepSpeed,
+    sensitivityMmMv: currentDataPresentation?.sensitivityMmMv,
+    layoutType,
   }) as RenderWindowMetrics;
   const layouts = computeECGChannelLayouts({
     visibleChannels,
     channelScale: metrics.channelScale,
+    layoutType,
+    numberOfSamples: waveform.numberOfSamples,
+    ecgWidth: metrics.ecgWidth,
   });
   const timeWindow = computeTimeWindow(waveform, currentCamera);
   const dpr = window.devicePixelRatio || 1;
@@ -233,9 +250,19 @@ function drawFrame(
     yOffset * dpr
   );
 
-  drawECGGrid(canvasContext, metrics, {
-    showGrid: currentDataPresentation?.showGrid,
-  });
+  drawECGGrid(
+    canvasContext,
+    {
+      ...metrics,
+      sweepSpeed: currentDataPresentation?.sweepSpeed,
+      sensitivityMmMv: currentDataPresentation?.sensitivityMmMv,
+      showAmplitudeLabels: currentDataPresentation?.showAmplitudeLabels,
+    },
+    {
+      showGrid: currentDataPresentation?.showGrid,
+    },
+    layouts
+  );
   drawECGTraces({
     ctx: canvasContext,
     layouts,
