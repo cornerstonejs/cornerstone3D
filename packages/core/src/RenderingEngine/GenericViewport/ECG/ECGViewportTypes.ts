@@ -71,6 +71,15 @@ export interface ChannelLayout {
   itemHeight: number;
   yOffset: number;
   baseline: number;
+  minX?: number;
+  maxX?: number;
+  minY?: number;
+  maxY?: number;
+  leadIndex?: number;
+  regionIndex?: number;
+  timeWindow?: [number, number];
+  startIndex?: number;
+  endIndex?: number;
 }
 
 /** @internal */

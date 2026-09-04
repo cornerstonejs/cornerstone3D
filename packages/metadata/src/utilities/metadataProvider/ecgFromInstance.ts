@@ -305,27 +305,29 @@ const ECG_AMPLITUDE_OFFSET = 32768;
  */
 const ecgCalibrationProvider: TypedProvider = (next, query, data, options) => {
   const instance = data as Record<string, unknown> | undefined;
-  const raw = instance?.WaveformSequence;
+  const raw = instance?.WaveformSequence ?? instance?.waveformSequence;
   const groups = toArray(raw as ArrayLike<Record<string, unknown>> | undefined);
   if (!groups.length) return next(query, data, options);
   const group = groups[0];
   const numberOfWaveformSamples =
-    (group.NumberOfWaveformSamples as number) ?? 0;
-  const samplingFrequency = (group.SamplingFrequency as number) ?? 1;
-  const physicalDeltaX = 1 / (samplingFrequency || 1);
+    ((group.NumberOfWaveformSamples ??
+      group.numberOfWaveformSamples) as number) || 100000;
+  const samplingFrequency =
+    ((group.SamplingFrequency ?? group.samplingFrequency) as number) || 1000;
+  const physicalDeltaX = 1000 / (samplingFrequency || 1);
   const physicalDeltaY = 0.001;
   return {
     sequenceOfUltrasoundRegions: [
       {
         regionLocationMinX0: 0,
-        regionLocationMaxX1: numberOfWaveformSamples,
+        regionLocationMaxX1: Math.max(numberOfWaveformSamples, 100000),
         regionLocationMinY0: 0,
         regionLocationMaxY1: ECG_AMPLITUDE_INDEX_SIZE - 1,
         referencePixelX0: 0,
         referencePixelY0: ECG_AMPLITUDE_OFFSET,
         physicalDeltaX,
         physicalDeltaY,
-        physicalUnitsXDirection: 4,
+        physicalUnitsXDirection: -2,
         physicalUnitsYDirection: -1,
         regionDataType: 1,
       },

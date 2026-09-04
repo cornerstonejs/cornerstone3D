@@ -3,11 +3,14 @@ import type { LoadedData } from '../ViewportArchitectureTypes';
 import GenericViewport from '../GenericViewport';
 import { ViewportType } from '../../../enums';
 import { getDefaultECGValueRange } from '../../../utilities/ECGUtilities';
+import imageIdToURI from '../../../utilities/imageIdToURI';
 import type {
   CPUIImageData,
+  IImageCalibration,
   Mat3,
   Point2,
   Point3,
+  ReferenceCompatibleOptions,
   ViewReference,
   ViewReferenceSpecifier,
 } from '../../../types';
@@ -55,6 +58,8 @@ class ECGViewport extends GenericViewport<
     this.renderingEngineId = args.renderingEngineId;
     this.canvas = getOrCreateCanvas(this.element);
     this.canvasContext = this.canvas.getContext('2d');
+    this.canvasToWorld = this.canvasToWorld.bind(this);
+    this.worldToCanvas = this.worldToCanvas.bind(this);
     this.dataProvider = args.dataProvider || new DefaultECGDataProvider();
     this.renderPathResolver =
       args.renderPathResolver || createECGRenderPathResolver();
@@ -120,11 +125,15 @@ class ECGViewport extends GenericViewport<
 
   getViewReference(_specifier: ViewReferenceSpecifier = {}): ViewReference {
     const dataId = this.getFirstBinding()?.data.id;
+    const currentImageId = this.getCurrentImageId();
 
     return {
       FrameOfReferenceUID: this.getFrameOfReferenceUID(),
       dataId,
-      referencedImageId: this.getCurrentImageId(),
+      referencedImageId: currentImageId,
+      referencedImageURI: currentImageId
+        ? imageIdToURI(currentImageId)
+        : undefined,
       sliceIndex: 0,
     };
   }
@@ -296,10 +305,14 @@ class ECGViewport extends GenericViewport<
   }
 
   /**
-   * No-op: ECG viewports are not slice stacks.
+   * Scrolls the ECG viewport horizontally in time.
    */
-  scroll(): void {
-    // no-op
+  scroll(delta = 0): void {
+    if (!delta) {
+      return;
+    }
+    const [panX, panY] = this.getPan();
+    this.setPan([panX - delta * 50, panY]);
   }
 
   /**
@@ -328,6 +341,70 @@ class ECGViewport extends GenericViewport<
   }
 
   /**
+   * Returns whether this viewport is rendering the given image ID.
+   */
+  hasImageId(imageId: string): boolean {
+    return this.getCurrentImageId() === imageId;
+  }
+
+  /**
+   * Returns whether this viewport is rendering the given image URI.
+   * Required by ImageSliceViewport interface for tool measurement resolution.
+   *
+   * @param imageURI - Image URI to check
+   * @returns boolean indicating if the image URI matches current ECG dataset
+   */
+  hasImageURI(imageURI: string): boolean {
+    const currentImageId = this.getCurrentImageId();
+    if (!currentImageId) {
+      return false;
+    }
+    return imageIdToURI(currentImageId) === imageURI;
+  }
+
+  /**
+   * Returns the Frame of Reference UID scoped to this ECG viewport.
+   */
+  getFrameOfReferenceUID(): string {
+    return `ecg-viewport-${this.id}`;
+  }
+
+  /**
+   * Returns whether a view reference is viewable in this ECG viewport.
+   *
+   * @param viewRef - View reference to check
+   * @param _options - Optional reference compatibility options
+   * @returns boolean indicating if the reference belongs to this viewport
+   */
+  isReferenceViewable(
+    viewRef: ViewReference,
+    _options: ReferenceCompatibleOptions = {}
+  ): boolean {
+    if (!viewRef) {
+      return false;
+    }
+
+    const currentImageId = this.getCurrentImageId();
+    if (!currentImageId) {
+      return false;
+    }
+
+    if (viewRef.referencedImageId) {
+      return this.hasImageId(viewRef.referencedImageId);
+    }
+
+    if (viewRef.referencedImageURI) {
+      return this.hasImageURI(viewRef.referencedImageURI);
+    }
+
+    if (viewRef.FrameOfReferenceUID) {
+      return viewRef.FrameOfReferenceUID === this.getFrameOfReferenceUID();
+    }
+
+    return false;
+  }
+
+  /**
    * Returns image data compatible with the Cornerstone tools annotation system.
    * Amplitude is mapped to [0, ECG_AMPLITUDE_INDEX_SIZE) so annotation
    * index bounds checks work correctly across channels.
@@ -341,7 +418,14 @@ class ECGViewport extends GenericViewport<
 
     const nSamples = waveform.numberOfSamples;
     const nChannels = waveform.channels.length;
-    const dimensions: Point3 = [nSamples, ECG_AMPLITUDE_INDEX_SIZE, nChannels];
+    const traceRegions = this.getDisplaySetPresentation(
+      waveform.id
+    )?.traceRegions;
+    const maxZ =
+      traceRegions && traceRegions.length > 0
+        ? (traceRegions.length + 1) * 1000
+        : nChannels;
+    const dimensions: Point3 = [nSamples, ECG_AMPLITUDE_INDEX_SIZE, maxZ];
     const spacing: Point3 = [1, 1, 1];
     const origin: Point3 = [0, 0, 0];
     const direction: Mat3 = [1, 0, 0, 0, 1, 0, 0, 0, 1];
@@ -371,6 +455,7 @@ class ECGViewport extends GenericViewport<
       hasPixelSpacing: false,
       preScale: { scaled: false },
       metadata: { Modality: 'ECG', FrameOfReferenceUID: '' },
+      calibration: waveform.calibration as IImageCalibration,
     };
   }
 

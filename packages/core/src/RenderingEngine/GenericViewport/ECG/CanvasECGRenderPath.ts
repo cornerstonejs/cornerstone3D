@@ -3,6 +3,7 @@ import triggerEvent from '../../../utilities/triggerEvent';
 import {
   computeECGChannelLayouts,
   computeECGRenderMetrics,
+  computeECGTimeWindow,
   drawECGGrid,
   drawECGTraces,
   ensureECGCanvasSize,
@@ -25,8 +26,20 @@ import type {
 } from './ECGViewportTypes';
 import { resolveECGCanvasMapping } from './ecgViewportCamera';
 
-/** @internal */
+/**
+ * Render path implementation for rendering 2D ECG waveforms on an HTML5 canvas.
+ * @internal
+ */
 export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
+  /**
+   * Adds an ECG waveform dataset to the canvas render context and returns
+   * life-cycle control callbacks.
+   *
+   * @param ctx - Canvas render context
+   * @param data - Loaded ECG waveform data
+   * @param options - Render attachment options
+   * @returns Render path attachment handle
+   */
   async addData(
     ctx: ECGCanvasRenderContext,
     data: LoadedData,
@@ -68,6 +81,12 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
     };
   }
 
+  /**
+   * Updates presentation properties (e.g. visible channels, line width, grid) for the ECG rendering.
+   *
+   * @param rendering - Target canvas rendering object
+   * @param props - Updated presentation properties
+   */
   private updateDataPresentation(
     rendering: ECGCanvasRendering,
     props: unknown
@@ -77,16 +96,35 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
       | undefined;
   }
 
+  /**
+   * Applies the current camera / view state to the rendering object.
+   *
+   * @param rendering - Target canvas rendering object
+   * @param camera - Updated camera view state
+   */
   private applyViewState(rendering: ECGCanvasRendering, camera: unknown): void {
     rendering.currentCamera = camera as ECGViewState;
   }
 
+  /**
+   * Returns the viewport-scoped Frame of Reference UID.
+   *
+   * @param ctx - Canvas render context
+   * @returns Frame of reference UID string
+   */
   private getFrameOfReferenceUID(
     ctx: ECGCanvasRenderContext
   ): string | undefined {
     return `ecg-viewport-${ctx.viewportId}`;
   }
 
+  /**
+   * Triggers a draw frame pass onto the canvas.
+   *
+   * @param ctx - Canvas render context
+   * @param rendering - Target canvas rendering object
+   * @param waveform - Waveform data payload
+   */
   private render(
     ctx: ECGCanvasRenderContext,
     rendering: ECGCanvasRendering,
@@ -95,27 +133,48 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
     drawFrame(ctx, rendering, waveform);
   }
 
+  /**
+   * Cleans up data when removed from the viewport.
+   */
   private removeData(): void {
     // Canvas lifecycle is owned by the viewport element.
   }
 }
 
-/** @internal */
+/**
+ * Render path definition for 2D canvas ECG rendering.
+ * @internal
+ */
 export class CanvasECGPath
   implements RenderPathDefinition<ECGCanvasRenderContext>
 {
   readonly id = 'ecg:canvas-signal';
   readonly type = ViewportType.ECG_NEXT;
 
+  /**
+   * Checks if this render path handles the given data and render options.
+   *
+   * @param data - Loaded dataset
+   * @param options - Attachment options
+   * @returns boolean indicating if this path matches
+   */
   matches(data: LoadedData, options: DataAddOptions): boolean {
     return data.type === 'ecg' && options.renderMode === 'signal2d';
   }
 
+  /**
+   * Creates a new instance of CanvasECGRenderPath.
+   *
+   * @returns New CanvasECGRenderPath instance
+   */
   createRenderPath() {
     return new CanvasECGRenderPath();
   }
 }
 
+/**
+ * Resolves the effective 2D transform ratio and pixel offsets for canvas rendering.
+ */
 function getEffectiveTransform(
   metrics: RenderWindowMetrics,
   camera: ECGViewState | undefined,
@@ -134,43 +193,10 @@ function getEffectiveTransform(
   };
 }
 
-function computeTimeWindow(
-  waveform: ECGWaveformPayload,
-  camera: ECGViewState
-): {
-  startMs: number;
-  endMs: number;
-  startIndex: number;
-  endIndex: number;
-} {
-  const durationMs =
-    (waveform.numberOfSamples / waveform.samplingFrequency) * 1000;
-  const startMs = Math.max(0, Math.min(camera.timeRange[0], durationMs));
-  const requestedEnd = Math.max(startMs + 1, camera.timeRange[1]);
-  const endMs = Math.max(startMs + 1, Math.min(requestedEnd, durationMs));
-  const startIndex = Math.max(
-    0,
-    Math.min(
-      waveform.numberOfSamples - 1,
-      Math.floor((startMs / 1000) * waveform.samplingFrequency)
-    )
-  );
-  const endIndex = Math.max(
-    startIndex + 1,
-    Math.min(
-      waveform.numberOfSamples,
-      Math.ceil((endMs / 1000) * waveform.samplingFrequency)
-    )
-  );
-
-  return {
-    startMs,
-    endMs,
-    startIndex,
-    endIndex,
-  };
-}
-
+/**
+ * Executes a full canvas render pass for an ECG frame, including background,
+ * grid lines, baselines, and waveform traces.
+ */
 function drawFrame(
   ecgCtx: ECGCanvasRenderContext,
   ecgRendering: ECGCanvasRendering,
@@ -198,12 +224,13 @@ function drawFrame(
       currentCamera.timeRange[1] - currentCamera.timeRange[0]
     ),
     valueRange: currentCamera.valueRange,
+    traceRegions: currentDataPresentation?.traceRegions,
   }) as RenderWindowMetrics;
   const layouts = computeECGChannelLayouts({
     visibleChannels,
     channelScale: metrics.channelScale,
   });
-  const timeWindow = computeTimeWindow(waveform, currentCamera);
+  const timeWindow = computeECGTimeWindow(waveform, currentCamera);
   const dpr = window.devicePixelRatio || 1;
 
   ecgRendering.metrics = metrics;
@@ -239,11 +266,16 @@ function drawFrame(
     ctx: canvasContext,
     layouts,
     ecgWidth: metrics.ecgWidth,
+    ecgHeight: metrics.ecgHeight,
     channelScale: metrics.channelScale,
     startIndex: timeWindow.startIndex,
     endIndex: timeWindow.endIndex,
     lineWidth: currentDataPresentation?.lineWidth,
     amplitudeScale: currentDataPresentation?.amplitudeScale,
+    traceRegions: currentDataPresentation?.traceRegions,
+    channels: waveform.channels,
+    numberOfSamples: waveform.numberOfSamples,
+    visibleChannels: currentDataPresentation?.visibleChannels,
   });
 
   canvasContext.resetTransform();

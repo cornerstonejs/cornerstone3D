@@ -34,6 +34,8 @@ import ECGGenericViewport, {
   createECGRenderPathResolver,
   DefaultECGDataProvider,
   ecgProjection,
+  type TraceRegion,
+  type ECGProperties,
 } from './RenderingEngine/GenericViewport/ECG';
 import VideoGenericViewport, {
   createDefaultVideoRenderPaths,
@@ -276,6 +278,8 @@ export type {
   RetrieveStage,
   ImageLoadListener,
   IImagesLoader,
+  TraceRegion,
+  ECGProperties,
 };
 
 export {
