@@ -298,10 +298,24 @@ the receive it is keeping up with, and that no display can show.
 
 The codec floor is not optional. A consumer who dedupes `codec-openjph` to a
 version older than 2.4.10 — via an override, a resolution, or a hoisted older
-copy — will get throwing decodes on truncated codestreams. In a multi-stage
-retrieve configuration the next stage still runs, so it degrades to a slower
-load; in a single-stage configuration there is no next stage and the frame
-fails.
+copy — will get throwing decodes on truncated codestreams.
+
+How far that degrades depends on whether another stage covers the same image.
+`ProgressiveRetrieveImages` chains stages through `next` per image ID, so a
+failed decode only retries when a _later stage selects that same image_:
+
+- `sequentialRetrieveStages` and `interleavedRetrieveStages` both cover every
+  image again — the latter through its final catch-all `errorRetrieve` stage —
+  so a failure there costs a slower load rather than a lost frame.
+- `singleRetrieveStages`, which is the default when a configuration sets no
+  `stages`, has one stage and its `errorRetrieve` fallback commented out. There
+  is no `next`, so the frame is reported failed.
+- A hand-written multi-stage configuration whose stages select disjoint images
+  (by `decimate`/`offset`/`positions`) behaves like the single-stage case for
+  any image only one stage covers.
+
+A lost frame surfaces as a permanent `errorCallback` on the loader's listener
+rather than an uncaught error, so it is reported rather than silent.
 
 ### Migration Guidance
 

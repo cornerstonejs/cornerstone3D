@@ -4,7 +4,7 @@ import type {
   LoaderXhrRequestError,
   LoaderXhrRequestPromise,
 } from '../../types';
-import metaDataManager from '../wadors/metaDataManager';
+import getRetrieveValue from './getRetrieveValue';
 import extractMultipart from '../wadors/extractMultipart';
 import { getImageQualityStatus } from '../wadors/getImageQualityStatus';
 import type { CornerstoneWadoRsLoaderOptions } from '../wadors/loadImage';
@@ -65,11 +65,11 @@ export default function rangeRequest(
     options;
   const chunkSize =
     streamingData.chunkSize ||
-    getValue(imageId, retrieveOptions, 'chunkSize') ||
+    getRetrieveValue<number>(imageId, retrieveOptions, 'chunkSize') ||
     DEFAULT_CHUNK_SIZE;
   const initialChunkSize =
     streamingData.initialChunkSize ||
-    getValue(imageId, retrieveOptions, 'initialChunkSize') ||
+    getRetrieveValue<number>(imageId, retrieveOptions, 'initialChunkSize') ||
     DEFAULT_INITIAL_CHUNK_SIZE;
 
   const errorInterceptor = (err) => {
@@ -201,15 +201,6 @@ async function fetchRangeAndAppend(
   }
 
   return streamingData;
-}
-
-function getValue(imageId: string, src, attr: string) {
-  const value = src[attr];
-  if (typeof value !== 'function') {
-    return value;
-  }
-  const metaData = metaDataManager.get(imageId);
-  return value(metaData, imageId);
 }
 
 /**
