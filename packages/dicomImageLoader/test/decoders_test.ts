@@ -52,7 +52,26 @@ const pendingTransferSyntaxes = {
   ],
 };
 
+/**
+ * The colour set. Only the syntaxes whose colour path differs meaningfully from
+ * the grayscale one are duplicated here, rather than all twelve: three samples
+ * per pixel changes the frame length arithmetic that encapsulated uncompressed
+ * and deflated frames depend on, and JPEG XL colour is a separate code path in
+ * the codec from JPEG XL grayscale.
+ *
+ * ColorImage.dcm is kodim23 from the Kodak True Color suite - 768x512
+ * interleaved RGB, PlanarConfiguration 0 - so unlike the CT it is unsigned and
+ * multi-sample.
+ */
+const colorTransferSyntaxes = {
+  '1.2.840.10008.1.2.1.98':
+    'EncapsulatedUncompressedExplicitVRLittleEndianTransferSyntax',
+  '1.2.840.10008.1.2.8.1': 'DeflatedImageFrameCompressionTransferSyntax',
+  '1.2.840.10008.1.2.4.110': 'JPEGXLLosslessTransferSyntax',
+};
+
 const base = 'CTImage.dcm';
+const colorBase = 'ColorImage.dcm';
 // Karma serves the repository under /base, so this is the real path to the
 // fixtures.
 const url =
@@ -125,6 +144,66 @@ describe('Test lossless TransferSyntaxes decoding', function () {
 
     it(`should properly decode ${name}`, function () {
       pending(reason);
+    });
+  });
+});
+
+describe('Test lossless TransferSyntaxes decoding of colour', function () {
+  let uncompressedSamples = null;
+
+  beforeAll(async function () {
+    init({
+      beforeSend(/* xhr, imageId */) {},
+      imageCreated(/* image */) {},
+      strict: false,
+      decodeConfig: {},
+    });
+
+    ({ samples: uncompressedSamples } = await decodeSamples(
+      `${url}${colorBase}`
+    ));
+
+    // Three interleaved samples per pixel over 768x512, so a decoder that drops
+    // or reorders a channel shows up as a length or value difference rather
+    // than passing quietly.
+    expect(uncompressedSamples.length).toBe(768 * 512 * 3);
+  });
+
+  afterAll(function () {
+    dataSetCacheManager.purge();
+  });
+
+  Object.keys(colorTransferSyntaxes).forEach((transferSyntaxUid) => {
+    const name = colorTransferSyntaxes[transferSyntaxUid];
+    const filename = `${colorBase}_${name}_${transferSyntaxUid}.dcm`;
+
+    it(`should properly decode colour ${name}`, async function () {
+      const { transferSyntaxUID, samples } = await decodeSamples(
+        `${url}${filename}`
+      );
+
+      expect(transferSyntaxUID).toBe(transferSyntaxUid);
+      expect(samples.length).toBe(uncompressedSamples.length);
+
+      let firstDifference = -1;
+      for (let i = 0; i < samples.length; i++) {
+        if (samples[i] !== uncompressedSamples[i]) {
+          firstDifference = i;
+          break;
+        }
+      }
+
+      if (firstDifference !== -1) {
+        // Reported as pixel and channel, since a wrong colour transform
+        // typically shows as a consistent offset in one channel.
+        const pixel = Math.floor(firstDifference / 3);
+        const channel = 'RGB'[firstDifference % 3];
+        fail(
+          `${name}: pixel ${pixel} channel ${channel} is ` +
+            `${samples[firstDifference]}, expected ` +
+            `${uncompressedSamples[firstDifference]}`
+        );
+      }
     });
   });
 });

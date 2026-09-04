@@ -1,13 +1,22 @@
 #!/usr/bin/env python3
-"""Transcode testImages/CTImage.dcm into the transfer syntaxes cs3d now decodes.
+"""Transcode a testImages base image into the transfer syntaxes cs3d now decodes.
 
-decoders_test.ts compares every compressed variant against the decoded
-CTImage.dcm, so each fixture has to be a lossless re-encoding of that exact
-image and nothing else. Every file written here is read back, decoded, and
-compared with the source pixels; a file that does not round-trip is not left
-behind.
+decoders_test.ts compares every variant against the decoded base image, so each
+fixture has to be a lossless re-encoding of that exact image and nothing else.
+Every file written here is read back, decoded, and compared with the source
+pixels; a file that does not round-trip is not left behind.
 
-    python make_fixtures.py <testImages dir>
+    python make-fixtures.py <testImages dir> [base.dcm ...]
+
+Defaults to both base images: CTImage.dcm (512x512 16 bit signed grayscale) and
+ColorImage.dcm (768x512 8 bit interleaved RGB). The colour one matters because
+three samples per pixel exercises the frame length arithmetic, and because JPEG
+XL colour is a different code path in the codec from JPEG XL grayscale.
+
+ColorImage.dcm is kodim23 from the Kodak True Color suite, released for
+unrestricted use, wrapped in a synthetic Secondary Capture header - not medical
+data, no human subject. Each file carries that attribution in (0008,2111)
+DerivationDescription. Taken from viewer-testdata dcm/colorEncode.
 """
 
 from __future__ import annotations
@@ -69,6 +78,8 @@ def encode_jpegxl(pixels: np.ndarray) -> bytes:
     unsigned = np.ascontiguousarray(pixels).view(
         np.uint16 if pixels.dtype.itemsize == 2 else np.uint8
     )
+    # Colour arrives as (rows, columns, samples) and is encoded as such, so the
+    # codec writes a three channel image rather than a wider grayscale one.
     return even(imagecodecs.jpegxl_encode(unsigned, lossless=True))
 
 
@@ -121,16 +132,19 @@ def verify(path: Path, uid: str, expected: np.ndarray) -> None:
 
 def main() -> None:
     test_images = Path(sys.argv[1])
-    source = pydicom.dcmread(test_images / "CTImage.dcm")
-    print(
-        f"source CTImage.dcm: {source.Rows}x{source.Columns} "
-        f"{source.BitsAllocated}bit pr={source.PixelRepresentation} "
-        f"range {source.pixel_array.min()}..{source.pixel_array.max()}"
-    )
+    bases = sys.argv[2:] or ["CTImage.dcm", "ColorImage.dcm"]
 
-    for uid, name in TARGETS.items():
-        out = test_images / f"CTImage.dcm_{name}_{uid}.dcm"
-        build(source, uid, out)
+    for base in bases:
+        source = pydicom.dcmread(test_images / base)
+        print(
+            f"source {base}: {source.Rows}x{source.Columns} "
+            f"{source.BitsAllocated}bit spp={source.SamplesPerPixel} "
+            f"pi={source.PhotometricInterpretation} "
+            f"pr={source.PixelRepresentation}"
+        )
+
+        for uid, name in TARGETS.items():
+            build(source, uid, test_images / f"{base}_{name}_{uid}.dcm")
 
 
 if __name__ == "__main__":
