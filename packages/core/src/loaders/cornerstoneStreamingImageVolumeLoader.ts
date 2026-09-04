@@ -5,6 +5,12 @@ import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import type { IRetrieveConfiguration } from '../types';
 import { generateVolumePropsFromImageIds } from '../utilities/generateVolumePropsFromImageIds';
 import { loadImage } from './imageLoader';
+import { coreLog } from '../utilities/logger';
+
+const log = coreLog.getLogger(
+  'loaders',
+  'cornerstoneStreamingImageVolumeLoader'
+);
 
 interface IVolumeLoader {
   promise: Promise<StreamingImageVolume>;
@@ -63,7 +69,7 @@ function cornerstoneStreamingImageVolumeLoader(
               async () => {
                 loadImage(imageId)
                   .then(() => {
-                    console.log(`Prefetched imageId: ${imageId}`);
+                    log.info(`Prefetched imageId: ${imageId}`);
                     resolve(true);
                   })
                   .catch((err) => {
@@ -76,7 +82,7 @@ function cornerstoneStreamingImageVolumeLoader(
             );
           });
         })
-      ).catch(console.error);
+      ).catch((error) => log.error(error));
     }
 
     const volumeProps = generateVolumePropsFromImageIds(

@@ -10,6 +10,9 @@ import { combineFrameInstanceDataset } from './combineFrameInstanceDataset';
 import multiframeDataset from './retrieveMultiframeDataset';
 import { loadedDataSets, purgeLoadedDataSets } from './loadedDataSets';
 import { eventTarget, triggerEvent } from '@cornerstonejs/core';
+import { logging } from '@cornerstonejs/metadata';
+
+const log = logging.loaderLog.getLogger('wadouri');
 
 export interface CornerstoneWadoLoaderCacheManagerInfoResponse {
   cacheSizeInBytes: number;
@@ -55,7 +58,7 @@ function update(uri: string, dataSet: DataSet) {
   const loadedDataSet = loadedDataSets[uri];
 
   if (!loadedDataSet) {
-    console.error(`No loaded dataSet for uri ${uri}`);
+    log.error(`No loaded dataSet for uri ${uri}`);
 
     return;
   }
@@ -79,7 +82,6 @@ function load(
 ): CornerstoneWadoLoaderCachedPromise {
   // if already loaded return it right away
   if (loadedDataSets[uri]) {
-    // console.log('using loaded dataset ' + uri);
     return new Promise((resolve) => {
       loadedDataSets[uri].cacheCount++;
       resolve(loadedDataSets[uri].dataSet);
@@ -88,7 +90,6 @@ function load(
 
   // if we are currently loading this uri, increment the cacheCount and return its promise
   if (promises[uri]) {
-    // console.log('returning existing load promise for ' + uri);
     promises[uri].cacheCount++;
 
     return promises[uri];
@@ -184,11 +185,9 @@ function load(
 
 // remove the cached/loaded dicom dataset for the specified wadouri to free up memory
 function unload(uri: string): void {
-  // console.log('unload for ' + uri);
   if (loadedDataSets[uri]) {
     loadedDataSets[uri].cacheCount--;
     if (loadedDataSets[uri].cacheCount === 0) {
-      // console.log('removing loaded dataset for ' + uri);
       cacheSizeInBytes -= loadedDataSets[uri].dataSet.byteArray.length;
       delete loadedDataSets[uri];
 

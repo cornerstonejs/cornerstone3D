@@ -11,11 +11,15 @@ export const {
   workerLog,
   coreLog,
   toolsLog,
+  adaptersLog,
   loaderLog,
+  polySegLog,
+  labelmapInterpolationLog,
   aiLog,
   examplesLog,
   dicomConsistencyLog,
   imageConsistencyLog,
+  log,
 } = logging;
 export type Logger = logging.Logger;
 

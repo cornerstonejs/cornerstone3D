@@ -5,6 +5,9 @@ import type { SurfaceSegmentationData } from './types/SurfaceTypes';
 import type SegmentationRepresentations from './enums/SegmentationRepresentations';
 import { eventTarget, triggerEvent } from '@cornerstonejs/core';
 import Events from './enums/Events';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger('config');
 
 export type SurfacesInfo = {
   id: string;
@@ -144,7 +147,7 @@ let polysegInitialized = false;
  */
 export function getPolySeg() {
   if (!config.addons?.polySeg) {
-    console.warn(
+    cs3dLogger.warn(
       'PolySeg add-on not configured. This will prevent automatic conversion between segmentation representations (labelmap, contour, surface). To enable these features, install @cornerstonejs/polymorphic-segmentation and register it during initialization: cornerstoneTools.init({ addons: { polySeg } }).'
     );
 

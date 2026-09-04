@@ -2,6 +2,11 @@ import { getAnnotations } from '../stateManagement/annotation/annotationState';
 import type { ToolAnnotationsPair } from '../types/InternalToolTypes';
 import type AnnotationTool from '../tools/base/AnnotationTool';
 import type BaseTool from '../tools/base/BaseTool';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'store.filterToolsWithAnnotationsForElement'
+);
 
 /**
  * Filters an array of tools, returning only tools which have annotation.
@@ -20,7 +25,7 @@ export default function filterToolsWithAnnotationsForElement(
     const tool = tools[i];
 
     if (!tool) {
-      console.warn('undefined tool in filterToolsWithAnnotationsForElement');
+      cs3dLogger.warn('undefined tool in filterToolsWithAnnotationsForElement');
       continue;
     }
 

@@ -40,9 +40,6 @@ describe('#getTransferSyntaxForContentType', function () {
     it(`given a content type of ${contentType}, should return ${expectedTransferSyntax}`, () => {
       const transferSyntax = getTransferSyntaxForContentType(contentType);
 
-      console.log(transferSyntax);
-      console.log(expectedTransferSyntax);
-
       expect(transferSyntax).to.be.equal(expectedTransferSyntax);
     });
   });

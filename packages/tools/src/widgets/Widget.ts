@@ -22,11 +22,11 @@ import type { WidgetProps, WidgetSize } from './types';
  *     }
  *
  *     public show() {
- *       console.log('Show color picker');
+ *       logger.info('Show color picker');
  *     }
  *
  *     protected containerResized() {
- *       console.log('New container size: ', this.containerSize);
+ *       logger.info('New container size: ', this.containerSize);
  *     }
  *   }
  *
