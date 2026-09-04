@@ -368,11 +368,18 @@ export function computeECGRenderMetrics<TChannel extends ECGChannelLike>(args: {
   const targetTotalHeight = ecgWidth * canvasAspect;
 
   const hasRegions = traceRegions && traceRegions.length > 0;
-  const distinctRows = hasRegions
-    ? new Set(traceRegions.map((r) => Math.round((r.bounds?.minY ?? 0) * 100)))
-        .size
-    : visibleChannels.length;
-  const rowCount = Math.max(1, distinctRows);
+  let rowCount = Math.max(1, visibleChannels.length);
+
+  if (hasRegions) {
+    const minSlotHeight = Math.min(
+      ...traceRegions.map((r) => {
+        const leadCount = Math.max(1, r.leadIndices?.length || 1);
+        const regionHeight = (r.bounds?.maxY ?? 1) - (r.bounds?.minY ?? 0);
+        return Math.max(1e-4, regionHeight / leadCount);
+      })
+    );
+    rowCount = Math.max(1, Math.round(1 / minSlotHeight));
+  }
 
   const totalSpacing = ECG_CHANNEL_SPACING * rowCount;
   const heightPerChannel = (targetTotalHeight - totalSpacing) / rowCount;
@@ -508,8 +515,10 @@ export function drawECGTraces<TChannel extends ECGChannelLike>(args: {
       ? new Set(visibleChannels)
       : null;
 
-    traceRegions.forEach((region) => {
-      const leadIndices = region.leadIndices?.length ? region.leadIndices : [0];
+    traceRegions.forEach((region, regionIndex) => {
+      const leadIndices = region.leadIndices?.length
+        ? region.leadIndices
+        : [regionIndex];
       const leadCount = leadIndices.length;
 
       const minX = region.bounds?.minX ?? 0;

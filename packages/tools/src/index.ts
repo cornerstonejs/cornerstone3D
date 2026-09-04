@@ -75,6 +75,7 @@ import {
   ReferenceCursors,
   PaintFillTool,
   ScaleOverlayTool,
+  WaveformRegionOverlayTool,
   OrientationMarkerTool,
   OrientationControllerTool,
   OverlayGridTool,
@@ -155,6 +156,7 @@ export {
   AdvancedMagnifyTool,
   ReferenceCursors,
   ScaleOverlayTool,
+  WaveformRegionOverlayTool,
   SculptorTool,
   EraserTool,
   // Segmentation Display
