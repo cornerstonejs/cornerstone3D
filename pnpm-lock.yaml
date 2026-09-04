@@ -488,17 +488,20 @@ importers:
   packages/dicomImageLoader:
     dependencies:
       '@cornerstonejs/codec-charls':
+        specifier: 1.2.6
+        version: 1.2.6
+      '@cornerstonejs/codec-libjpeg-turbo-8bit':
         specifier: 1.2.5
         version: 1.2.5
-      '@cornerstonejs/codec-libjpeg-turbo-8bit':
-        specifier: 1.2.4
-        version: 1.2.4
+      '@cornerstonejs/codec-libjxl':
+        specifier: 1.1.0
+        version: 1.1.0
       '@cornerstonejs/codec-openjpeg':
-        specifier: 1.3.2
-        version: 1.3.2
+        specifier: 1.3.3
+        version: 1.3.3
       '@cornerstonejs/codec-openjph':
-        specifier: 2.4.9
-        version: 2.4.9
+        specifier: 2.4.10
+        version: 2.4.10
       comlink:
         specifier: 4.4.2
         version: 4.4.2
@@ -2072,10 +2075,10 @@ packages:
       }
     engines: { node: '>=0.14' }
 
-  '@cornerstonejs/codec-charls@1.2.5':
+  '@cornerstonejs/codec-charls@1.2.6':
     resolution:
       {
-        integrity: sha512-BoENE2cXfzQ2RMxPfMMJxyv7E78iErTCB8b8lod/qv3dsYfCmSOUQKiRsuOZJM24JrjCFnyzbkxhAnF8gAKQnQ==,
+        integrity: sha512-uXV0UzYaLgn9NiPnM2nibNp1HzdEOB2aLJGsHNd6XcmiOMjz2GW7TuSEbDyavtB8bdN8RHcVssJgyN+0cuG5IA==,
       }
     engines: { node: '>=0.14' }
 
@@ -2086,12 +2089,19 @@ packages:
       }
     engines: { node: '>=0.14' }
 
-  '@cornerstonejs/codec-libjpeg-turbo-8bit@1.2.4':
+  '@cornerstonejs/codec-libjpeg-turbo-8bit@1.2.5':
     resolution:
       {
-        integrity: sha512-k5e2/EjE9gV7dkg2x3CzId6mp6P7tTya/AmnLzbN3fZTW6skTMrOTJfqowgGQBzX7styLdcsnjlqwEVqeqaaHQ==,
+        integrity: sha512-rz6+M0F98bsxbPDLsD6mGfXvISOeJ2RenESroQaoVhTYRr5SKixp/sdIns2tMWDLn1ctW2HNlU9U1QmOWL8Vwg==,
       }
     engines: { node: '>=0.14' }
+
+  '@cornerstonejs/codec-libjxl@1.1.0':
+    resolution:
+      {
+        integrity: sha512-0oywJo5AdobAfrSnGSJulLwyIxOB6o+fX9oQlUunKPsXiSmkBfvZ83z6IH2NlITZbYvB/3bgoJzZZWpbrQaznQ==,
+      }
+    engines: { node: '>=24' }
 
   '@cornerstonejs/codec-openjpeg@1.3.0':
     resolution:
@@ -2100,10 +2110,17 @@ packages:
       }
     engines: { node: '>=0.14' }
 
-  '@cornerstonejs/codec-openjpeg@1.3.2':
+  '@cornerstonejs/codec-openjpeg@1.3.3':
     resolution:
       {
-        integrity: sha512-IsvhGRZ/3LzoNQFyAsKKzPw/S769b9JrKhpufU8uEEalOBn+D1OLetzZ48pvpbwxR4J7ZFrnK0FBIYtl8Hdt9Q==,
+        integrity: sha512-GhKsXdzULk7UgPNQNx+oJbRs3DDvn2YQvUTe5x6SlobjAf3UYDv/wZ/RLcXt5+HkVKqlDW6EHoqUoE5OjkDuRg==,
+      }
+    engines: { node: '>=0.14' }
+
+  '@cornerstonejs/codec-openjph@2.4.10':
+    resolution:
+      {
+        integrity: sha512-E9lV25u8xxn3wgWNzNMz8S08QxLeMgzqFAOtIYjCYaPzeg+2UkXwPTDd+MmqXAJPHujgPmMuJGPdayU70GJNHQ==,
       }
     engines: { node: '>=0.14' }
 
@@ -2111,13 +2128,6 @@ packages:
     resolution:
       {
         integrity: sha512-qvP4q4JDib7mi9r7LqKOwqz7YZ8gjtDX4ZCezeYf8+eb7MBXCz5uXAMeVF3yz9Axw4XiIMdB/pqXkm8tqCl13w==,
-      }
-    engines: { node: '>=0.14' }
-
-  '@cornerstonejs/codec-openjph@2.4.9':
-    resolution:
-      {
-        integrity: sha512-iUGvF8r4SMHFrHGjwhNsTlHDPm+fIcGw3fUYm4vzhsf2J6VR9DqHtynXwUVOCBMSG9YTyWkcsD4db++0kMffMw==,
       }
     engines: { node: '>=0.14' }
 
@@ -21309,19 +21319,21 @@ snapshots:
 
   '@cornerstonejs/codec-charls@1.2.3': {}
 
-  '@cornerstonejs/codec-charls@1.2.5': {}
+  '@cornerstonejs/codec-charls@1.2.6': {}
 
   '@cornerstonejs/codec-libjpeg-turbo-8bit@1.2.2': {}
 
-  '@cornerstonejs/codec-libjpeg-turbo-8bit@1.2.4': {}
+  '@cornerstonejs/codec-libjpeg-turbo-8bit@1.2.5': {}
+
+  '@cornerstonejs/codec-libjxl@1.1.0': {}
 
   '@cornerstonejs/codec-openjpeg@1.3.0': {}
 
-  '@cornerstonejs/codec-openjpeg@1.3.2': {}
+  '@cornerstonejs/codec-openjpeg@1.3.3': {}
+
+  '@cornerstonejs/codec-openjph@2.4.10': {}
 
   '@cornerstonejs/codec-openjph@2.4.7': {}
-
-  '@cornerstonejs/codec-openjph@2.4.9': {}
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:

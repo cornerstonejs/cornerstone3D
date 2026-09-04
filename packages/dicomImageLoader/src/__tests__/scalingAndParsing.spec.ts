@@ -285,7 +285,10 @@ describe('getTransferSyntaxForContentType', () => {
       'image/jp2': '1.2.840.10008.1.2.4.90',
       'image/jpx': '1.2.840.10008.1.2.4.92',
       'image/jphc': '3.2.840.10008.1.2.4.96',
-      'image/jxl': '1.2.840.10008.1.2.4.140',
+      // PS3.18 Table 8.7.3-5: image/jxl defaults to JPEG XL Lossless. The
+      // .140 this used to assert is not a JPEG XL UID at all.
+      'image/jxl': '1.2.840.10008.1.2.4.110',
+      'application/x-deflate': '1.2.840.10008.1.2.8.1',
     };
 
     for (const [contentType, transferSyntax] of Object.entries(table)) {

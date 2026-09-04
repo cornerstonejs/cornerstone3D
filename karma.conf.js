@@ -50,7 +50,9 @@ if (!process.env.CHROME_BIN) {
  * karma-webpack config
  * https://github.com/codymikol/karma-webpack?tab=readme-ov-file#default-webpack-configuration
  */
-const outputPath = path.join(os.tmpdir(), '_karma_webpack_') + Math.floor(Math.random() * 1000000)
+const outputPath =
+  path.join(os.tmpdir(), '_karma_webpack_') +
+  Math.floor(Math.random() * 1000000);
 const forceCompat = process.env.FORCE_COMPAT === 'true';
 const forceCpuRendering = process.env.FORCE_CPU_RENDERING === 'true';
 const grepPattern = process.env.KARMA_GREP;
@@ -108,21 +110,30 @@ module.exports = function (config) {
     ],
     frameworks: ['jasmine', 'webpack'],
     files: [
-      ...(process.env.KARMA_PACKAGE === 'core' ? [] : ['packages/tools/test/**/*_test.js']),
-      ...(process.env.KARMA_PACKAGE === 'tools' ? [] : ['packages/core/test/**/*_test.js']),
+      ...(process.env.KARMA_PACKAGE === 'core'
+        ? []
+        : ['packages/tools/test/**/*_test.js']),
+      ...(process.env.KARMA_PACKAGE === 'tools'
+        ? []
+        : ['packages/core/test/**/*_test.js']),
+      // Named individually rather than globbed: the rest of
+      // packages/dicomImageLoader/test predates the move to jasmine and still
+      // uses mocha's before()/chai, so a glob would switch on suites that
+      // cannot run.
+      'packages/dicomImageLoader/test/decoders_test.ts',
       // Serve dicomImageLoad test images
       {
         pattern: 'packages/dicomImageLoader/testImages/**/*',
         watched: false,
         included: false,
-        served: true
+        served: true,
       },
       // Compat-mode baselines for dynamic comparison
       {
         pattern: 'karma-baselines/**/*.png',
         watched: false,
         included: false,
-        served: true
+        served: true,
       },
       /**
        * Required to allow karma to load wasm and worker files built via webpack.
@@ -132,8 +143,8 @@ module.exports = function (config) {
         pattern: `${outputPath}/**/*`,
         included: false,
         served: true,
-        watched: false
-      }
+        watched: false,
+      },
     ],
     proxies: {
       '/testImages/': '/base/packages/dicomImageLoader/testImages/',
@@ -142,6 +153,7 @@ module.exports = function (config) {
     preprocessors: {
       'packages/core/test/**/*_test.js': ['webpack'],
       'packages/tools/test/**/*_test.js': ['webpack'],
+      'packages/dicomImageLoader/test/decoders_test.ts': ['webpack'],
     },
     coverageReporter: {
       type: 'html',
@@ -208,7 +220,7 @@ module.exports = function (config) {
         ],
       },
       experiments: {
-        asyncWebAssembly: true
+        asyncWebAssembly: true,
       },
       resolve: {
         extensions: ['.ts', '.tsx', '.js', '.jsx'],
@@ -223,8 +235,12 @@ module.exports = function (config) {
         alias: {
           '@cornerstonejs/core': path.resolve('packages/core/src/index'),
           '@cornerstonejs/tools': path.resolve('packages/tools/src/index'),
-          '@cornerstonejs/dicom-image-loader': path.resolve('packages/dicomImageLoader/src/index'),
-          '@cornerstonejs/metadata': path.resolve('packages/metadata/src/index'),
+          '@cornerstonejs/dicom-image-loader': path.resolve(
+            'packages/dicomImageLoader/src/index'
+          ),
+          '@cornerstonejs/metadata': path.resolve(
+            'packages/metadata/src/index'
+          ),
           '@cornerstonejs/utils': path.resolve('packages/utils/src/index'),
         },
       },

@@ -5,7 +5,12 @@ import * as dicomParser from 'dicom-parser';
  */
 
 function framesAreFragmented(dataSet: DataSet) {
-  const numberOfFrames = dataSet.intString('x00280008');
+  // NumberOfFrames is absent on single frame images, where it defaults to 1.
+  // Without this, a single frame image read `undefined !== 1` as "fragmented"
+  // and fell through to the JPEG marker scan below - which finds nothing in a
+  // syntax that is not JPEG, such as Encapsulated Uncompressed, Deflated Image
+  // Frame Compression or JPEG XL.
+  const numberOfFrames = dataSet.intString('x00280008') || 1;
   const pixelDataElement = dataSet.elements.x7fe00010;
 
   return numberOfFrames !== pixelDataElement.fragments.length;
