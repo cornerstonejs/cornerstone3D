@@ -242,3 +242,63 @@ Two notes on scope:
 - **Check your scroll affordances on small screens.** If a page relied on
   viewport drags to scroll, add padding, a scroll container, or a gutter outside
   the viewport elements so the page remains scrollable on a phone or tablet.
+
+## Encapsulated Uncompressed and Deflated Image Frame Compression, and the JPEG XL UIDs
+
+### What Changed
+
+Two transfer syntaxes now decode:
+
+- **Encapsulated Uncompressed Explicit VR Little Endian**
+  (`1.2.840.10008.1.2.1.98`). Nothing is compressed; the syntax exists so that
+  uncompressed pixel data can use the encapsulated format, one frame per
+  fragment, which makes a single frame addressable without reading the whole
+  Pixel Data element (PS3.5 A.4.11).
+- **Deflated Image Frame Compression** (`1.2.840.10008.1.2.8.1`). Each frame is
+  separately compressed with raw Deflate per RFC 1951 - no zlib header or
+  Adler-32 trailer - and encapsulated as one fragment (PS3.5 A.4.13). This is
+  per frame, unlike Deflated Explicit VR Little Endian
+  (`1.2.840.10008.1.2.1.99`), which deflates the whole data set and is inflated
+  by dicomParser before a frame is ever decoded.
+
+Separately, the `image/jxl` media type mapping was **corrected**. It previously
+resolved to `1.2.840.10008.1.2.4.140`, which is not a JPEG XL UID. JPEG XL was
+ratified in Supplement 232 as:
+
+| UID                       | Name                       |
+| ------------------------- | -------------------------- |
+| `1.2.840.10008.1.2.4.110` | JPEG XL Lossless           |
+| `1.2.840.10008.1.2.4.111` | JPEG XL JPEG Recompression |
+| `1.2.840.10008.1.2.4.112` | JPEG XL                    |
+
+`image/jxl` now resolves to `1.2.840.10008.1.2.4.110`, which PS3.18
+Table 8.7.3-5 gives as the default when a response carries no
+`transfer-syntax` parameter to disambiguate. `application/x-deflate` was added
+for Deflated Image Frame Compression from the same table.
+
+**JPEG XL pixel data still does not decode** - the codec is not yet published.
+The UIDs are correct so that negotiation and metadata are right, and so that a
+JPEG XL frame fails against the correct transfer syntax rather than a
+fabricated one.
+
+### Why This Matters
+
+Both new syntaxes reach the decoder as one fragment per frame, and both pad:
+encapsulated fragments are padded to an even length, and Deflated Image Frame
+Compression appends a NULL when the deflated stream is odd. The decoders trim
+that padding to the frame's native pixel length, and treat a frame _shorter_
+than its pixel data as an error rather than rendering it partially.
+
+This release also fixes a latent bug in encapsulated frame extraction: a single
+frame image has no `NumberOfFrames` element, which the fragment reader compared
+against the fragment count and concluded the frames were fragmented, falling
+back to a scan for JPEG SOI markers. That scan finds nothing in a syntax that
+is not JPEG. `NumberOfFrames` now defaults to 1, so a conformant single frame
+image of any encapsulated syntax takes the direct fragment path.
+
+### Migration Guidance
+
+- No action is required to read the two new syntaxes; they are decoded like any
+  other.
+- If you special-cased `1.2.840.10008.1.2.4.140` as JPEG XL anywhere in your own
+  code, change it to the `.110`/`.111`/`.112` block.

@@ -61,9 +61,13 @@ export function getTransferSyntaxForContentType(contentType: string): string {
     'image/jll': '1.2.840.10008.1.2.4.70',
     'image/jp2': '1.2.840.10008.1.2.4.90',
     'image/jpx': '1.2.840.10008.1.2.4.92',
+    // image/jxl covers all three JPEG XL syntaxes; PS3.18 Table 8.7.3-5 makes
+    // JPEG XL Lossless the default when the response carries no
+    // transfer-syntax parameter to disambiguate.
+    'image/jxl': '1.2.840.10008.1.2.4.110',
+    'application/x-deflate': '1.2.840.10008.1.2.8.1',
     // Temporary types, until ratified by DICOM committed - TODO
     'image/jphc': '3.2.840.10008.1.2.4.96',
-    'image/jxl': '1.2.840.10008.1.2.4.140',
   };
 
   if (params['transfer-syntax']) {

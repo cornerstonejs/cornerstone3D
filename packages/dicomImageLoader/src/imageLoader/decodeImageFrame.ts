@@ -83,7 +83,25 @@ function decodeImageFrame(
         decodeConfig
       );
     case '1.2.840.10008.1.2.1.99':
-      // Deflate transfer syntax (deflated by dicomParser)
+      // Deflated Explicit VR Little Endian (inflated by dicomParser)
+      return processDecodeTask(
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig
+      );
+    case '1.2.840.10008.1.2.1.98':
+      // Encapsulated Uncompressed Explicit VR Little Endian
+      return processDecodeTask(
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig
+      );
+    case '1.2.840.10008.1.2.8.1':
+      // Deflated Image Frame Compression
       return processDecodeTask(
         imageFrame,
         transferSyntax,

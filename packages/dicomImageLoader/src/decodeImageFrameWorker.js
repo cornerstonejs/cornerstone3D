@@ -13,6 +13,8 @@ import decodeJPEGLossless from './shared/decoders/decodeJPEGLossless';
 import decodeJPEGLS from './shared/decoders/decodeJPEGLS';
 import decodeJPEG2000 from './shared/decoders/decodeJPEG2000';
 import decodeHTJ2K from './shared/decoders/decodeHTJ2K';
+import decodeEncapsulatedUncompressed from './shared/decoders/decodeEncapsulatedUncompressed';
+import decodeDeflatedFrame from './shared/decoders/decodeDeflatedFrame';
 // Note that the scaling is pixel value scaling, which is applying a modality LUT
 import applyModalityLUT from './shared/scaling/scaleArray';
 import { setWasmBasePathFromConfig } from './shared/wasmBasePath';
@@ -392,8 +394,18 @@ export async function decodeImageFrame(
       decodePromise = decodeBigEndian(imageFrame, pixelData);
       break;
     case '1.2.840.10008.1.2.1.99':
-      // Deflate transfer syntax (deflated by dicomParser)
+      // Deflated Explicit VR Little Endian - the whole data set is deflated, so
+      // dicomParser has already inflated it by the time a frame reaches here.
       decodePromise = decodeLittleEndian(imageFrame, pixelData);
+      break;
+    case '1.2.840.10008.1.2.1.98':
+      // Encapsulated Uncompressed Explicit VR Little Endian
+      decodePromise = decodeEncapsulatedUncompressed(imageFrame, pixelData);
+      break;
+    case '1.2.840.10008.1.2.8.1':
+      // Deflated Image Frame Compression - unlike 1.99 above, each frame is
+      // deflated separately, so inflating is per frame and happens here.
+      decodePromise = decodeDeflatedFrame(imageFrame, pixelData);
       break;
     case '1.2.840.10008.1.2.5':
       // RLE Lossless
