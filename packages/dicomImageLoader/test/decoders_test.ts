@@ -47,11 +47,14 @@ const pendingTransferSyntaxes = {
   ],
   '1.2.840.10008.1.2.4.70': [
     'JPEGProcess14SV1TransferSyntax',
-    // Fails against the uncompressed original through either metadata
-    // provider, so this is the decoder rather than the metadata path. The
-    // colour fixture for the same syntax decodes correctly in the corpus, so
-    // it is the grayscale path specifically. A fix is expected from an
-    // upstream codec update; re-enable this case when that lands.
+    // Exactly one sample is wrong - the last one, which decodes as 0 instead
+    // of -2000 - and only for this fixture. It is not the grayscale path in
+    // general: viewer-testdata's SV1 frame of the same shape, 512x512 16 bit
+    // signed, decodes with zero differences, as does this syntax in colour.
+    // The two differ by encoder, DCMTK 3.6.1 here against dcm4che there, so
+    // this looks like a stream some decoders tolerate and this one does not.
+    // pydicom reads the same frame correctly. Tracked upstream against
+    // jpeg-lossless-decoder-js; re-enable this case when a fix is published.
     'decoder does not reproduce the source exactly, pending an upstream codec fix',
   ],
 };
