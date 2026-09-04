@@ -493,6 +493,9 @@ importers:
       '@cornerstonejs/codec-libjpeg-turbo-8bit':
         specifier: 1.2.5
         version: 1.2.5
+      '@cornerstonejs/codec-libjxl':
+        specifier: 1.1.0
+        version: 1.1.0
       '@cornerstonejs/codec-openjpeg':
         specifier: 1.3.3
         version: 1.3.3
@@ -2092,6 +2095,13 @@ packages:
         integrity: sha512-rz6+M0F98bsxbPDLsD6mGfXvISOeJ2RenESroQaoVhTYRr5SKixp/sdIns2tMWDLn1ctW2HNlU9U1QmOWL8Vwg==,
       }
     engines: { node: '>=0.14' }
+
+  '@cornerstonejs/codec-libjxl@1.1.0':
+    resolution:
+      {
+        integrity: sha512-0oywJo5AdobAfrSnGSJulLwyIxOB6o+fX9oQlUunKPsXiSmkBfvZ83z6IH2NlITZbYvB/3bgoJzZZWpbrQaznQ==,
+      }
+    engines: { node: '>=24' }
 
   '@cornerstonejs/codec-openjpeg@1.3.0':
     resolution:
@@ -21314,6 +21324,8 @@ snapshots:
   '@cornerstonejs/codec-libjpeg-turbo-8bit@1.2.2': {}
 
   '@cornerstonejs/codec-libjpeg-turbo-8bit@1.2.5': {}
+
+  '@cornerstonejs/codec-libjxl@1.1.0': {}
 
   '@cornerstonejs/codec-openjpeg@1.3.0': {}
 

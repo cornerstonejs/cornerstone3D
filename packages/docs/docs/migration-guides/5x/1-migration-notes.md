@@ -329,6 +329,7 @@ rather than an uncaught error, so it is reported rather than silent.
   `@cornerstonejs/codec-openjph` below 2.4.10, remove the pin or raise it.
 - **Prefer `decodeLevel: 0` for HTJ2K partial retrieves,** and keep
   sub-resolution levels for genuinely small renditions such as JLS thumbnails.
+
 ## Encapsulated Uncompressed and Deflated Image Frame Compression, and the JPEG XL UIDs
 
 ### What Changed
@@ -362,10 +363,22 @@ Table 8.7.3-5 gives as the default when a response carries no
 `transfer-syntax` parameter to disambiguate. `application/x-deflate` was added
 for Deflated Image Frame Compression from the same table.
 
-**JPEG XL pixel data still does not decode** - the codec is not yet published.
-The UIDs are correct so that negotiation and metadata are right, and so that a
-JPEG XL frame fails against the correct transfer syntax rather than a
-fabricated one.
+All three JPEG XL syntaxes now **decode**, through
+`@cornerstonejs/codec-libjxl`. They share one decoder: the difference between
+them is what the encoder was allowed to do, not how the codestream is read.
+
+Two limits worth knowing:
+
+- **Signedness comes from `PixelRepresentation`, not the codestream.** JPEG XL
+  has no signed sample type, so its decoder always reports unsigned and the
+  loader applies `PixelRepresentation` itself - the same arrangement JPEG-LS
+  uses. A JPEG XL frame whose metadata says signed is read correctly; a frame
+  with no metadata is read as unsigned.
+- **Partial decoding is not supported.** The codec rejects a truncated
+  codestream rather than decoding what arrived, so JPEG XL is deliberately not
+  in `streamableTransferSyntaxes` and byte range or streaming retrieves of it
+  decode once, when the frame is complete. The format does support progressive
+  decoding; this codec build does not use it yet.
 
 ### Why This Matters
 

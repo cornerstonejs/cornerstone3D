@@ -213,6 +213,17 @@ function decodeImageFrame(
         options,
         decodeConfig
       );
+    case '1.2.840.10008.1.2.4.110':
+    case '1.2.840.10008.1.2.4.111':
+    case '1.2.840.10008.1.2.4.112':
+      // JPEG XL: lossless, JPEG recompression and general
+      return processDecodeTask(
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig
+      );
   }
 
   /* Don't know if these work...

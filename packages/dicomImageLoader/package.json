@@ -113,6 +113,7 @@
   "dependencies": {
     "@cornerstonejs/codec-charls": "1.2.6",
     "@cornerstonejs/codec-libjpeg-turbo-8bit": "1.2.5",
+    "@cornerstonejs/codec-libjxl": "1.1.0",
     "@cornerstonejs/codec-openjpeg": "1.3.3",
     "@cornerstonejs/codec-openjph": "2.4.10",
     "comlink": "4.4.2",

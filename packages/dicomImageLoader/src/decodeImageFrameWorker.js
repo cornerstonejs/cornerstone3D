@@ -15,6 +15,7 @@ import decodeJPEG2000 from './shared/decoders/decodeJPEG2000';
 import decodeHTJ2K from './shared/decoders/decodeHTJ2K';
 import decodeEncapsulatedUncompressed from './shared/decoders/decodeEncapsulatedUncompressed';
 import decodeDeflatedFrame from './shared/decoders/decodeDeflatedFrame';
+import decodeJPEGXL from './shared/decoders/decodeJPEGXL';
 // Note that the scaling is pixel value scaling, which is applying a modality LUT
 import applyModalityLUT from './shared/scaling/scaleArray';
 import { setWasmBasePathFromConfig } from './shared/wasmBasePath';
@@ -487,6 +488,21 @@ export async function decodeImageFrame(
       };
 
       decodePromise = decodeHTJ2K(pixelData, opts);
+      break;
+    case '1.2.840.10008.1.2.4.110':
+    case '1.2.840.10008.1.2.4.111':
+    case '1.2.840.10008.1.2.4.112':
+      // JPEG XL - lossless, JPEG recompression and general. All three read the
+      // same way; they differ in what the encoder was allowed to do.
+      opts = {
+        // JPEG XL carries no signed sample type, so signedness comes from
+        // PixelRepresentation rather than from the codestream.
+        signed: imageFrame.pixelRepresentation === 1,
+        bytesPerPixel: imageFrame.bitsAllocated <= 8 ? 1 : 2,
+        ...imageFrame,
+      };
+
+      decodePromise = decodeJPEGXL(pixelData, opts);
       break;
     default:
       throw new Error(`no decoder for transfer syntax ${transferSyntax}`);
