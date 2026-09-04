@@ -4,12 +4,19 @@ import { getOptions } from './options';
 import type { LoaderXhrRequestError } from '../../types';
 import extractMultipart from '../wadors/extractMultipart';
 import { getImageQualityStatus } from '../wadors/getImageQualityStatus';
+import getRetrieveValue from './getRetrieveValue';
 import type {
   CornerstoneWadoRsLoaderOptions,
   StreamingData,
 } from '../wadors/loadImage';
 
 const { ProgressiveIterator } = utilities;
+
+/**
+ * Bytes to accumulate between decodes of a streaming response, when the
+ * retrieve options set no chunkSize. Matches the range retrieve default.
+ */
+const DEFAULT_CHUNK_SIZE = 131072;
 
 /**
  * This function does a streaming parse from an http request, delivering
@@ -33,8 +40,17 @@ export default function streamRequest(
     streamingData = {} as StreamingData,
   } = options;
 
-  // @ts-expect-error
-  const minChunkSize = retrieveOptions.minChunkSize || 128 * 1024;
+  // How much new data to accumulate before decoding the partial codestream
+  // again. `minChunkSize` is the former name for this and is still honoured.
+  //
+  // chunkSize may be a callback over the image metadata, so it has to be
+  // resolved to a number here: left as a function it would be truthy, flow into
+  // the `lastSize + minChunkSize` comparison below as NaN, and disable the
+  // threshold entirely - decoding every chunk received.
+  const minChunkSize =
+    getRetrieveValue<number>(imageId, retrieveOptions, 'chunkSize') ||
+    getRetrieveValue<number>(imageId, retrieveOptions, 'minChunkSize') ||
+    DEFAULT_CHUNK_SIZE;
 
   const errorInterceptor = (err) => {
     if (typeof globalOptions.errorInterceptor === 'function') {
