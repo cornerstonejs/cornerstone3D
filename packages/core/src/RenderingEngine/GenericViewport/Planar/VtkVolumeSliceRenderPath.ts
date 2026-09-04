@@ -6,6 +6,7 @@ import uuidv4 from '../../../utilities/uuidv4';
 import { Events, ViewportType } from '../../../enums';
 import eventTarget from '../../../eventTarget';
 import createVolumeSliceActor from '../../helpers/createVolumeSliceActor';
+import { getVolumeVOIShape } from '../../helpers/setDefaultVolumeVOI';
 import { ActorRenderMode } from '../../../types';
 import type { IImageData, Point2, Point3 } from '../../../types';
 import type {
@@ -79,6 +80,10 @@ export class VtkVolumeSliceRenderPath
 
     const transferFunction = actor.getProperty().getRGBTransferFunction(0);
     const defaultRange = transferFunction?.getRange?.();
+    // The VOI LUT Function and the VOI LUT Sequence of the file, which the
+    // range cannot carry. setDefaultVolumeVOI already put them on the actor;
+    // the presentation needs them again on each change of the VOI.
+    const volumeVOIShape = getVolumeVOIShape(imageVolume);
 
     const rendering: PlanarVolumeSliceRendering = {
       renderMode: ActorRenderMode.VTK_VOLUME_SLICE,
@@ -94,6 +99,8 @@ export class VtkVolumeSliceRenderPath
       defaultVOIRange: defaultRange
         ? { lower: defaultRange[0], upper: defaultRange[1] }
         : undefined,
+      defaultVOILUTFunction: volumeVOIShape.voiLUTFunction,
+      defaultVOILUT: volumeVOIShape.voiLUT,
       dataPresentation: undefined,
       isSegmentationOverlay,
     };
@@ -205,6 +212,10 @@ export class VtkVolumeSliceRenderPath
       defaultVOIRange: rendering.isSegmentationOverlay
         ? undefined
         : rendering.defaultVOIRange,
+      defaultVOILUTFunction: rendering.defaultVOILUTFunction,
+      defaultVOILUT: rendering.isSegmentationOverlay
+        ? undefined
+        : rendering.defaultVOILUT,
       mapper: rendering.mapper,
       props: rendering.dataPresentation,
     });

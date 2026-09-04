@@ -5,7 +5,10 @@ import calculateTransform from '../../helpers/cpuFallback/rendering/calculateTra
 import canvasToPixel from '../../helpers/cpuFallback/rendering/canvasToPixel';
 import correctShift from '../../helpers/cpuFallback/rendering/correctShift';
 import getDefaultViewport from '../../helpers/cpuFallback/rendering/getDefaultViewport';
-import { getDefaultImageVOIRange } from '../../helpers/planarImageRendering';
+import {
+  getDefaultImageVOIRange,
+  resolveVOILUTSequenceToApply,
+} from '../../helpers/planarImageRendering';
 import resizeEnabledElement from '../../helpers/cpuFallback/rendering/resize';
 import drawImageSync from '../../helpers/cpuFallback/drawImageSync';
 import { resolveCPUFallbackColormap } from '../../helpers/cpuFallback/colors';
@@ -15,6 +18,7 @@ import {
   ViewportType,
   Events,
   ViewportStatus,
+  VOILUTFunctionType,
 } from '../../../enums';
 import { loadAndCacheImage } from '../../../loaders/imageLoader';
 import * as metaData from '../../../metaData';
@@ -413,17 +417,28 @@ function applyDataPresentation(
     enabledElement.image?.colormap
   );
   viewport.invert = props?.invert ?? false;
+  const voiLUTFunction =
+    props?.voiLUTFunction ??
+    enabledElement.image?.voiLUTFunction ??
+    VOILUTFunctionType.LINEAR;
+
+  viewport.voiLUT = resolveVOILUTSequenceToApply({
+    defaultVOILUT: enabledElement.image?.voiLUT,
+    defaultVOILUTFunction: enabledElement.image?.voiLUTFunction,
+    props,
+  });
 
   if (voiRange) {
     const { windowCenter, windowWidth } = toWindowLevel(
       voiRange.lower,
-      voiRange.upper
+      voiRange.upper,
+      voiLUTFunction
     );
 
     viewport.voi = {
       windowCenter,
       windowWidth,
-      voiLUTFunction: enabledElement.image?.voiLUTFunction,
+      voiLUTFunction,
     };
   }
 

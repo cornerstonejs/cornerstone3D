@@ -632,6 +632,61 @@ describe('Planar CPU image render path', () => {
     expect(attachment.rendering.enabledElement.viewport.voi).toEqual({
       windowCenter: 2.5,
       windowWidth: 5,
+      voiLUTFunction: VOILUTFunctionType.LINEAR,
     });
+  });
+
+  it('applies the requested VOI LUT function and sequence choice', async () => {
+    const canvas = document.createElement('canvas');
+    const image = createImage('voi-image');
+    const voiLUT = {
+      firstValueMapped: 0,
+      numBitsPerEntry: 8,
+      lut: [0, 64, 255],
+    };
+
+    image.voiLUT = voiLUT;
+    Object.defineProperties(canvas, {
+      clientHeight: { configurable: true, value: 64 },
+      clientWidth: { configurable: true, value: 64 },
+    });
+
+    const renderPath = new CpuImageSliceRenderPath();
+    const attachment = await renderPath.addData(
+      {
+        viewportId: 'viewport',
+        renderingEngineId: 'rendering-engine',
+        viewport: { element: document.createElement('div') },
+        display: { activateRenderMode: jest.fn() },
+        cpu: { canvas },
+      },
+      {
+        id: 'voi-stack',
+        type: 'image',
+        image,
+        imageIds: [image.imageId],
+        initialImageIdIndex: 0,
+      },
+      {}
+    );
+
+    attachment.updateDataPresentation({
+      voiRange: { lower: 0, upper: 100 },
+      voiLUTFunction: VOILUTFunctionType.SAMPLED_SIGMOID,
+      useVOILUTSequence: false,
+    });
+
+    expect(attachment.rendering.enabledElement.viewport.voi).toEqual({
+      windowCenter: 50.5,
+      windowWidth: 101,
+      voiLUTFunction: VOILUTFunctionType.SAMPLED_SIGMOID,
+    });
+    expect(attachment.rendering.enabledElement.viewport.voiLUT).toBeUndefined();
+
+    attachment.updateDataPresentation({
+      voiRange: { lower: 0, upper: 100 },
+      useVOILUTSequence: true,
+    });
+    expect(attachment.rendering.enabledElement.viewport.voiLUT).toBe(voiLUT);
   });
 });
