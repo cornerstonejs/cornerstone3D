@@ -53,20 +53,35 @@ const pendingTransferSyntaxes = {
 };
 
 /**
- * The colour set. Only the syntaxes whose colour path differs meaningfully from
- * the grayscale one are duplicated here, rather than all twelve: three samples
- * per pixel changes the frame length arithmetic that encapsulated uncompressed
- * and deflated frames depend on, and JPEG XL colour is a separate code path in
- * the codec from JPEG XL grayscale.
+ * The colour set. Not every syntax is duplicated in colour - the point is to
+ * cover each decoder whose colour handling differs from its grayscale
+ * handling, which is a smaller set than the list of syntaxes.
+ *
+ * Encapsulated uncompressed is deliberately absent: its fragment is the same
+ * native little endian pixel data Explicit VR LE already carries, so a colour
+ * case would re-test the base image rather than a decoder, at 1.2MB.
  *
  * ColorImage.dcm is kodim23 from the Kodak True Color suite - 768x512
  * interleaved RGB, PlanarConfiguration 0 - so unlike the CT it is unsigned and
- * multi-sample.
+ * multi-sample. The .57, .80 and .201 fixtures are that same image as encoded
+ * by viewer-testdata's colorEncode corpus, which verifies all twelve of its
+ * encodings decode to one reference; the rest are produced by
+ * testImages/make-fixtures.py.
  */
 const colorTransferSyntaxes = {
-  '1.2.840.10008.1.2.1.98':
-    'EncapsulatedUncompressedExplicitVRLittleEndianTransferSyntax',
+  // Deflated frames: three samples per pixel changes the frame length
+  // arithmetic the inflate path checks against.
   '1.2.840.10008.1.2.8.1': 'DeflatedImageFrameCompressionTransferSyntax',
+  // The three codecs whose colour handling is a separate path from grayscale,
+  // one per decoder rather than one per syntax:
+  //   .57  decodeJPEGLossless, a JavaScript decoder
+  //   .80  decodeJPEGLS, charls, which has interleave modes
+  //   .201 decodeHTJ2K, OpenJPH, stored as YBR_RCT so the codec has to undo
+  //        the reversible colour transform to give back RGB
+  //   .110 decodeJPEGXL, libjxl, three channels rather than one
+  '1.2.840.10008.1.2.4.57': 'JPEGProcess14TransferSyntax',
+  '1.2.840.10008.1.2.4.80': 'JPEGLSLosslessTransferSyntax',
+  '1.2.840.10008.1.2.4.201': 'HTJ2KLosslessTransferSyntax',
   '1.2.840.10008.1.2.4.110': 'JPEGXLLosslessTransferSyntax',
 };
 
