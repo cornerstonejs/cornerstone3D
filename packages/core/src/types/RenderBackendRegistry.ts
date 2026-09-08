@@ -15,13 +15,7 @@ export interface CoreRenderBackendConstants {
  * backend strings, e.g.
  * `interface RenderBackendRegistry { 'myOrg:webgpu': 'myOrg:webgpu' }`.
  */
-export interface RenderBackendRegistry extends CoreRenderBackendRegistry {
-  /**
-   * Experimental WebGPU backend. Present in typings unconditionally; the
-   * runtime entry only exists after `registerWebGPURenderBackend()` runs.
-   */
-  webgpu: 'webgpu';
-}
+export interface RenderBackendRegistry extends CoreRenderBackendRegistry {}
 
 /**
  * Extensions augment this interface to add names on `Enums.RenderBackends`.
@@ -30,10 +24,7 @@ export interface RenderBackendRegistry extends CoreRenderBackendRegistry {
  *
  * `interface RenderBackendConstants { readonly WEBGPU: 'myOrg:webgpu' }`
  */
-export interface RenderBackendConstants extends CoreRenderBackendConstants {
-  /** See RenderBackendRegistry.webgpu — experimental, opt-in registration. */
-  readonly WEBGPU: 'webgpu';
-}
+export interface RenderBackendConstants extends CoreRenderBackendConstants {}
 
 export type RenderBackend = RenderBackendRegistry[keyof RenderBackendRegistry];
 

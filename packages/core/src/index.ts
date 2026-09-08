@@ -211,15 +211,10 @@ import {
   isRegisteredRenderBackend,
   isImageRenderMode,
   isVolumeRenderMode,
+  getRenderSurfaceForRenderMode,
+  renderModeSupportsOverlayActors,
+  renderModeUsesVtkActors,
 } from './RenderingEngine/helpers/renderBackendRegistry';
-import {
-  registerWebGPURenderBackend,
-  isWebGPURenderingAvailable,
-} from './RenderingEngine/helpers/registerWebGPURenderBackend';
-import {
-  getWebGPUViewportDebugInfo,
-  setWebGPUViewportBackground,
-} from './RenderingEngine/GenericViewport/Planar/webgpuViewportRenderWindow';
 export type {
   ViewportType,
   ViewportTypeConstants,
@@ -388,13 +383,15 @@ export {
   isRegisteredViewportType,
   registerRenderBackend,
   isRegisteredRenderBackend,
+  // Render-mode queries against the backend registry. Consumers outside core
+  // (notably @cornerstonejs/tools) must resolve render-mode kind and
+  // capabilities through these rather than comparing ActorRenderMode
+  // literals, so that extension backends are covered.
   isImageRenderMode,
   isVolumeRenderMode,
-  // WebGPU render backend (experimental)
-  registerWebGPURenderBackend,
-  isWebGPURenderingAvailable,
-  getWebGPUViewportDebugInfo,
-  setWebGPUViewportBackground,
+  getRenderSurfaceForRenderMode,
+  renderModeSupportsOverlayActors,
+  renderModeUsesVtkActors,
   //
   imageLoadPoolManager as requestPoolManager,
   imageRetrievalPoolManager,

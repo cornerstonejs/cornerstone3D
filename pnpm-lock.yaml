@@ -665,6 +665,19 @@ importers:
         specifier: 5.8.9
         version: link:../tools
 
+  packages/rendering-webgpu-vtkjs:
+    dependencies:
+      '@kitware/vtk.js':
+        specifier: 36.4.2
+        version: 36.4.2(autoprefixer@10.4.21(postcss@8.5.26))(wslink@2.5.0)
+    devDependencies:
+      '@cornerstonejs/core':
+        specifier: 5.8.9
+        version: link:../core
+      '@cornerstonejs/tools':
+        specifier: 5.8.9
+        version: link:../tools
+
   packages/tools:
     dependencies:
       '@kitware/vtk.js':

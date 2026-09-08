@@ -1,7 +1,7 @@
 import vtkRenderWindow from '@kitware/vtk.js/Rendering/Core/RenderWindow';
 import vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import vtkWebGPURenderWindow from '@kitware/vtk.js/Rendering/WebGPU/RenderWindow';
-import renderingEngineCache from '../../renderingEngineCache';
+import { getRenderingEngine } from '@cornerstonejs/core';
 // Registers the WebGPU view-node overrides (renderer, actors, image mappers,
 // textures, ...) on the WebGPU view-node factory so the scene graph can be
 // built for the WebGPU view API.
@@ -110,7 +110,7 @@ function resolveViewportBackground(
 ): [number, number, number] {
   try {
     const viewport = renderingEngineId
-      ? renderingEngineCache.get(renderingEngineId)?.getViewport(viewportId)
+      ? getRenderingEngine(renderingEngineId)?.getViewport(viewportId)
       : undefined;
     const background = (
       viewport as { defaultOptions?: { background?: [number, number, number] } }

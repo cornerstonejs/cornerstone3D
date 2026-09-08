@@ -1,16 +1,16 @@
 import {
   isRegisteredRenderBackend,
   registerRenderBackend,
-} from './renderBackendRegistry';
+} from '@cornerstonejs/core/renderBackend';
 import {
   WebGPUImageMapperPath,
   WEBGPU_IMAGE_RENDER_MODE,
-} from '../GenericViewport/Planar/WebGPUImageMapperRenderPath';
+} from './WebGPUImageMapperRenderPath';
 import {
   WebGPUVolumeSlicePath,
   WEBGPU_VOLUME_RENDER_MODE,
-} from '../GenericViewport/Planar/WebGPUVolumeSliceRenderPath';
-import { isWebGPURenderingAvailable } from '../GenericViewport/Planar/webgpuViewportRenderWindow';
+} from './WebGPUVolumeSliceRenderPath';
+import { isWebGPURenderingAvailable } from './webgpuViewportRenderWindow';
 
 export { isWebGPURenderingAvailable };
 
@@ -48,17 +48,29 @@ export function registerWebGPURenderBackend(): void {
     name: 'WEBGPU',
     backend: WEBGPU_RENDER_BACKEND,
     renderModes: {
+      // Both modes mount ordinary vtk actors into a vtk scene and can host
+      // overlay actors; only the presentation surface differs from the core
+      // gpu backend. Declared explicitly rather than left to the defaults,
+      // because the surface below would otherwise be the only signal and it
+      // says the opposite -- see the comment on `surface`.
       image: {
         id: WEBGPU_IMAGE_RENDER_MODE,
         createDefinition: () => new WebGPUImageMapperPath(),
+        supportsOverlayActors: true,
+        usesVtkActors: true,
       },
       volume: {
         id: WEBGPU_VOLUME_RENDER_MODE,
         createDefinition: () => new WebGPUVolumeSlicePath(),
+        supportsOverlayActors: true,
+        usesVtkActors: true,
       },
     },
     // The WebGPU path blits into the viewport's `cpu` surface canvas (the
-    // `vtk` surface belongs to the engine's WebGL blit cycle).
+    // `vtk` surface belongs to the engine's WebGL blit cycle). This is a
+    // statement about which canvas is composited, not about how the scene is
+    // built: the actors are vtk actors, which is why the two capabilities
+    // above are declared and must not be inferred from this.
     surface: 'cpu',
   });
 }

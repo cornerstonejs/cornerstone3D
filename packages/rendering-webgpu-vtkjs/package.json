@@ -1,0 +1,60 @@
+{
+  "name": "@cornerstonejs/rendering-webgpu-vtkjs",
+  "version": "5.8.9",
+  "description": "Deprecated experimental WebGPU render backend for Cornerstone3D, built on the vtk.js WebGPU view API",
+  "files": [
+    "dist"
+  ],
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "sideEffects": false,
+  "directories": {
+    "build": "dist"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/esm/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "default": "./dist/esm/index.js"
+    },
+    "./version": {
+      "types": "./dist/esm/version.d.ts",
+      "import": "./dist/esm/version.js",
+      "default": "./dist/esm/version.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "prebuild": "node ../../scripts/generate-version.js ./",
+    "clean": "rimraf dist",
+    "build": "pnpm run build:esm",
+    "build:esm": "pnpm run prebuild && tsc --project ./tsconfig.json && tsc-alias -p ./tsconfig.json --resolve-full-paths && node ../../scripts/write-dist-esm-package-json.js ./",
+    "build:esm:watch": "sh -c 'tsc-alias -p ./tsconfig.json --resolve-full-paths --watch & alias_pid=$!; node ../../scripts/write-dist-esm-package-json.js ./ --watch & writer_pid=$!; trap \"kill $alias_pid $writer_pid\" EXIT; tsc --project ./tsconfig.json --watch'",
+    "build:all": "pnpm run build:esm",
+    "dev": "tsc --project ./tsconfig.json --watch",
+    "start": "tsc --project ./tsconfig.json --watch --sourceMap --inlineSources",
+    "lint": "oxlint .",
+    "prepublishOnly": "pnpm run clean && pnpm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cornerstonejs/cornerstone3D.git"
+  },
+  "author": "@cornerstonejs",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/cornerstonejs/cornerstone3D/issues"
+  },
+  "homepage": "https://github.com/cornerstonejs/cornerstone3D/blob/main/packages/rendering-webgpu-vtkjs/README.md",
+  "devDependencies": {
+    "@cornerstonejs/core": "5.8.9",
+    "@cornerstonejs/tools": "5.8.9"
+  },
+  "peerDependencies": {
+    "@cornerstonejs/core": "5.8.9",
+    "@kitware/vtk.js": "36.4.2"
+  }
+}

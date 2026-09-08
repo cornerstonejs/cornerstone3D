@@ -30,6 +30,28 @@ export interface RenderBackendRenderMode {
    * render paths ship in createDefaultPlanarRenderPaths().
    */
   createDefinition?: () => RenderPathDefinition;
+  /**
+   * Whether a mount in this render mode can host additional overlay actors
+   * alongside the primary one, as `addImages()` needs. Default true.
+   *
+   * False for render modes that draw their pixels straight to the canvas and
+   * own no actor container — the core `cpuVolume` mode is the only such mode
+   * today. Declare it false rather than relying on `surface`: a backend can
+   * composite into the cpu canvas and still host actors, which is exactly
+   * what a WebGPU backend blitting its frames does.
+   */
+  supportsOverlayActors?: boolean;
+  /**
+   * Whether this render mode mounts vtk actors (a vtkImageSlice or
+   * vtkVolume in a vtk scene graph), as opposed to a CanvasActor drawing
+   * pixels directly. Default true.
+   *
+   * Consumers use this to decide whether vtk-specific actor handling applies
+   * — the labelmap image-mapper render plan in `@cornerstonejs/tools` is the
+   * main one. Independent of {@link supportsOverlayActors}: the core
+   * `cpuImage` mode hosts overlays without mounting vtk actors.
+   */
+  usesVtkActors?: boolean;
 }
 
 export interface RenderBackendRenderModes {
@@ -76,6 +98,8 @@ interface RenderModeEntry {
   backend: EffectiveRenderBackend;
   kind: RenderBackendDataKind;
   surface: RenderSurface;
+  supportsOverlayActors: boolean;
+  usesVtkActors: boolean;
 }
 
 type InternalRenderBackendDefinition = RenderBackendDefinition & {
@@ -106,8 +130,15 @@ function registerCoreRenderBackends() {
   registerRenderBackend({
     backend: RenderBackends.CPU,
     renderModes: {
-      image: { id: ActorRenderMode.CPU_IMAGE },
-      volume: { id: ActorRenderMode.CPU_VOLUME },
+      // Both cpu modes draw through a CanvasActor rather than vtk actors.
+      // cpuImage still composites overlay images; cpuVolume writes its slice
+      // pixels straight to the canvas and owns no actor container.
+      image: { id: ActorRenderMode.CPU_IMAGE, usesVtkActors: false },
+      volume: {
+        id: ActorRenderMode.CPU_VOLUME,
+        usesVtkActors: false,
+        supportsOverlayActors: false,
+      },
     },
     surface: 'cpu',
   });
@@ -194,12 +225,12 @@ export function registerRenderBackend({
     );
   }
 
-  const modeEntries: Array<[string, RenderBackendDataKind]> = [
-    [renderModes.image.id, 'image'],
-  ];
+  const modeEntries: Array<
+    [string, RenderBackendDataKind, RenderBackendRenderMode]
+  > = [[renderModes.image.id, 'image', renderModes.image]];
 
   if (renderModes.volume) {
-    modeEntries.push([renderModes.volume.id, 'volume']);
+    modeEntries.push([renderModes.volume.id, 'volume', renderModes.volume]);
   }
 
   for (const [renderMode] of modeEntries) {
@@ -221,11 +252,13 @@ export function registerRenderBackend({
     surface,
   });
 
-  for (const [renderMode, kind] of modeEntries) {
+  for (const [renderMode, kind, mode] of modeEntries) {
     renderModeIndex.set(renderMode, {
       backend: backend as EffectiveRenderBackend,
       kind,
       surface,
+      supportsOverlayActors: mode.supportsOverlayActors !== false,
+      usesVtkActors: mode.usesVtkActors !== false,
     });
   }
 
@@ -303,6 +336,37 @@ export function isVolumeRenderMode(renderMode: string | undefined): boolean {
 export function isImageRenderMode(renderMode: string | undefined): boolean {
   registerCoreRenderBackends();
   return renderMode ? renderModeIndex.get(renderMode)?.kind === 'image' : false;
+}
+
+/**
+ * Whether a mount in `renderMode` can host overlay actors alongside the
+ * primary one (`addImages()`). Unknown modes default to true, matching the
+ * `supportsOverlayActors` default.
+ *
+ * Deliberately not derived from the composited surface: a backend can blit
+ * into the cpu canvas and still mount actors.
+ */
+export function renderModeSupportsOverlayActors(
+  renderMode: string | undefined
+): boolean {
+  registerCoreRenderBackends();
+  return renderMode
+    ? renderModeIndex.get(renderMode)?.supportsOverlayActors !== false
+    : false;
+}
+
+/**
+ * Whether `renderMode` mounts vtk actors rather than drawing through a
+ * CanvasActor. Unknown modes default to true, matching the `usesVtkActors`
+ * default.
+ */
+export function renderModeUsesVtkActors(
+  renderMode: string | undefined
+): boolean {
+  registerCoreRenderBackends();
+  return renderMode
+    ? renderModeIndex.get(renderMode)?.usesVtkActors !== false
+    : false;
 }
 
 /**

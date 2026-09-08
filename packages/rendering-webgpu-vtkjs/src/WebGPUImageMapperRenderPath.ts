@@ -1,32 +1,32 @@
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
-import { buildPlanarActorEntry } from './buildPlanarActorEntry';
-import uuidv4 from '../../../utilities/uuidv4';
+import { buildPlanarActorEntry } from '@cornerstonejs/core/renderBackend';
+import { uuidv4 } from '@cornerstonejs/core/utilities';
 import {
   Events,
   InterpolationType,
   MetadataModules,
   ViewportStatus,
   ViewportType,
-} from '../../../enums';
-import { loadAndCacheImage } from '../../../loaders/imageLoader';
-import { updateVTKImageDataWithCornerstoneImage } from '../../../utilities/updateVTKImageDataWithCornerstoneImage';
-import * as metaData from '../../../metaData';
-import triggerEvent from '../../../utilities/triggerEvent';
-import type { CPUIImageData, IImage } from '../../../types';
+} from '@cornerstonejs/core/enums';
+import { loadAndCacheImage } from '@cornerstonejs/core/loaders/imageLoader';
+import { updateVTKImageDataWithCornerstoneImage } from '@cornerstonejs/core/utilities';
+import { metaData } from '@cornerstonejs/core';
+import { triggerEvent } from '@cornerstonejs/core/utilities';
+import type { CPUIImageData, IImage } from '@cornerstonejs/core/types';
 import {
   applyPlanarImagePresentation,
   createVTKImageDataFromImage,
   getDefaultImageVOIRange,
   updateVTKImageDataGeometryFromImage,
-} from '../../helpers/planarImageRendering';
+} from '@cornerstonejs/core/renderBackend';
 import type {
   DataAddOptions,
   LoadedData,
   RenderPathAttachment,
   RenderPathDefinition,
   RenderPath,
-} from '../ViewportArchitectureTypes';
+} from '@cornerstonejs/core/renderBackend';
 import type {
   PlanarViewState,
   PlanarDataPresentation,
@@ -34,18 +34,18 @@ import type {
   PlanarResolvedICamera,
   PlanarViewportRenderContext,
   PlanarCpuImageAdapterContext,
-} from './PlanarViewportTypes';
-import type { PlanarImageMapperRendering } from './planarRuntimeTypes';
-import { buildPlanarImageData } from './CpuImageSliceRenderPath';
-import { triggerPlanarNewImage } from './planarImageEvents';
+} from '@cornerstonejs/core/renderBackend';
+import type { PlanarImageMapperRendering } from '@cornerstonejs/core/renderBackend';
+import { buildPlanarImageData } from '@cornerstonejs/core/renderBackend';
+import { triggerPlanarNewImage } from '@cornerstonejs/core/renderBackend';
 import {
   applyPlanarICameraToActor,
   applyPlanarICameraToRenderer,
-} from './planarRenderCamera';
+} from '@cornerstonejs/core/renderBackend';
 import {
   resolvePlanarRenderPathCurrentImageIdIndex,
   resolvePlanarRenderPathProjection,
-} from './planarRenderPathProjection';
+} from '@cornerstonejs/core/renderBackend';
 import type { WebGPUViewportWindow } from './webgpuViewportRenderWindow';
 import {
   acquireWebGPUViewportWindow,

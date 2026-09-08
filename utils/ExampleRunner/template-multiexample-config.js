@@ -21,6 +21,12 @@ module.exports = function buildConfig(names, exampleBasePaths, destPath, root) {
   const csMetadataBasePath = fromRoot('packages/metadata/src');
   const csUtilsBasePath = fromRoot('packages/utils/src');
   const csNiftiPath = fromRoot('packages/nifti-volume-loader/src/index');
+  // See template-config.js: directory alias so '@cornerstonejs/core/<sub>'
+  // resolves, paired with the exact '$' alias for the bare specifier.
+  const csRenderSrcPath = fromRoot('packages/core/src');
+  const csWebGPUBasePath = fromRoot(
+    'packages/rendering-webgpu-vtkjs/src/index'
+  );
 
   let multiExampleEntryPoints = '';
 
@@ -118,7 +124,12 @@ module.exports = {
   },
   resolve: {
     alias: {
-      '@cornerstonejs/core': '${csRenderBasePath.replace(/\\/g, '/')}',
+      '@cornerstonejs/core$': '${csRenderBasePath.replace(/\\/g, '/')}',
+      '@cornerstonejs/core': '${csRenderSrcPath.replace(/\\/g, '/')}',
+      '@cornerstonejs/rendering-webgpu-vtkjs': '${csWebGPUBasePath.replace(
+        /\\/g,
+        '/'
+      )}',
       '@cornerstonejs/tools': '${csToolsBasePath.replace(/\\/g, '/')}',
       '@cornerstonejs/ai': '${csAiBasePath.replace(/\\/g, '/')}',
       '@cornerstonejs/polymorphic-segmentation': '${csPolymorphicSegmentationBasePath.replace(

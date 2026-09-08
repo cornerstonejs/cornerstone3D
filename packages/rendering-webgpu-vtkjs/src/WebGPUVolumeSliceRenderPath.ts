@@ -4,38 +4,42 @@ import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkImageResliceMapper from '@kitware/vtk.js/Rendering/Core/ImageResliceMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
-import { buildPlanarActorEntry } from './buildPlanarActorEntry';
-import uuidv4 from '../../../utilities/uuidv4';
-import { Events, ViewportStatus, ViewportType } from '../../../enums';
-import eventTarget from '../../../eventTarget';
-import setDefaultVolumeVOI from '../../helpers/setDefaultVolumeVOI';
-import triggerEvent from '../../../utilities/triggerEvent';
-import type { IImageData, IImageVolume } from '../../../types';
+import { buildPlanarActorEntry } from '@cornerstonejs/core/renderBackend';
+import { uuidv4 } from '@cornerstonejs/core/utilities';
+import {
+  Events,
+  ViewportStatus,
+  ViewportType,
+} from '@cornerstonejs/core/enums';
+import { eventTarget } from '@cornerstonejs/core';
+import { setDefaultVolumeVOI } from '@cornerstonejs/core/renderBackend';
+import { triggerEvent } from '@cornerstonejs/core/utilities';
+import type { IImageData, IImageVolume } from '@cornerstonejs/core/types';
 import type {
   DataAddOptions,
   LoadedData,
   RenderPathAttachment,
   RenderPathDefinition,
   RenderPath,
-} from '../ViewportArchitectureTypes';
+} from '@cornerstonejs/core/renderBackend';
 import type {
   PlanarViewState,
   PlanarDataPresentation,
   PlanarPayload,
   PlanarResolvedICamera,
   PlanarViewportRenderContext,
-} from './PlanarViewportTypes';
-import type { PlanarVolumeSliceRendering } from './planarRuntimeTypes';
-import { triggerPlanarVolumeNewImage } from './planarImageEvents';
+} from '@cornerstonejs/core/renderBackend';
+import type { PlanarVolumeSliceRendering } from '@cornerstonejs/core/renderBackend';
+import { triggerPlanarVolumeNewImage } from '@cornerstonejs/core/renderBackend';
 import {
   applyPlanarICameraToActor,
   applyPlanarICameraToRenderer,
-} from './planarRenderCamera';
+} from '@cornerstonejs/core/renderBackend';
 import {
   getPlanarRenderPathActiveSourceICamera,
   resolvePlanarRenderPathProjection,
-} from './planarRenderPathProjection';
-import { applyPlanarVolumePresentation } from './planarVolumePresentation';
+} from '@cornerstonejs/core/renderBackend';
+import { applyPlanarVolumePresentation } from '@cornerstonejs/core/renderBackend';
 import type { PlanarWebGPUImageAdapterContext } from './WebGPUImageMapperRenderPath';
 import type { WebGPUViewportWindow } from './webgpuViewportRenderWindow';
 import {
@@ -52,6 +56,12 @@ import {
 export const WEBGPU_VOLUME_RENDER_MODE = 'webgpuVolume';
 
 const SLICE_OVERLAY_DEPTH_EPSILON = 1e-4;
+// Trailing delay before re-materializing the mapper scalars after the volume
+// was modified. Unlike the OpenGL path (which marks individual slices dirty on
+// a shared streaming texture), this path rebuilds the whole scalar buffer and
+// the stock WebGPU mapper re-uploads the whole 3D texture behind it, so a brush
+// drag or a streaming series must coalesce rather than refresh per event.
+const VOLUME_MODIFIED_REFRESH_DELAY_MS = 240;
 
 type PlanarWebGPUVolumeSliceRendering = Omit<
   PlanarVolumeSliceRendering,
@@ -88,9 +98,11 @@ function asProjectionRendering(
  *    custom texture classes). The stock WebGPU mapper reads
  *    `imageData.getPointData().getScalars()`, so this path builds a parallel
  *    mapper-input imageData whose scalars are the voxelManager's complete
- *    scalar array. Non-streamed phase: the texture uploads once from the
- *    current array contents; a full refresh happens on volume load
- *    completion (progressive per-frame texture updates are a follow-up).
+ *    scalar array. Because that array is a copy rather than a live view, every
+ *    volume modification (streamed frames, labelmap brush edits) has to
+ *    re-materialize it; the refresh is coalesced onto a trailing timer since it
+ *    rebuilds the whole buffer (progressive per-slice texture updates are a
+ *    follow-up).
  *
  * @internal
  */
@@ -106,6 +118,8 @@ export class WebGPUVolumeSliceRenderPath
   ): Promise<RenderPathAttachment<PlanarDataPresentation>> {
     const payload: PlanarPayload = data as unknown as LoadedData<PlanarPayload>;
     const imageVolume = payload.imageVolume;
+    const isSegmentationOverlay =
+      options.role === 'overlay' && payload.reference?.kind === 'segmentation';
 
     if (!imageVolume) {
       throw new Error(
@@ -116,118 +130,153 @@ export class WebGPUVolumeSliceRenderPath
     const window = acquireWebGPUViewportWindow(ctx.viewportId, {
       renderingEngineId: ctx.renderingEngineId,
     });
-    this.window = window;
+    let mapperImageDataAcquired = false;
+    let addedActor: ReturnType<typeof vtkImageSlice.newInstance> | undefined;
 
-    const mapperImageDataEntry = acquireMapperImageData(
-      payload.volumeId,
-      imageVolume
-    );
-    const mapperImageData = mapperImageDataEntry.imageData;
-    const slicePlane = vtkPlaneFactory.newInstance();
-    const mapper = vtkImageResliceMapper.newInstance();
-
-    mapper.setInputData(mapperImageData);
-    mapper.setSlicePlane(slicePlane);
-    mapper.setSlabThickness(0);
-
-    const actor = vtkImageSlice.newInstance();
-    actor.setMapper(mapper);
-
-    const imageDataMetadata = imageVolume.imageData?.get(
-      'numberOfComponents'
-    ) as { numberOfComponents?: number } | undefined;
-
-    if ((imageDataMetadata?.numberOfComponents ?? 1) > 1) {
-      actor.getProperty().setIndependentComponents(false);
-    }
-
-    await setDefaultVolumeVOI(actor, imageVolume);
-    applyScalarRangeFallback(actor, imageVolume);
-
-    ctx.display.activateRenderMode(WEBGPU_VOLUME_RENDER_MODE);
-    window.renderer.addActor(actor);
-
-    const transferFunction = actor.getProperty().getRGBTransferFunction(0);
-    const defaultRange = transferFunction?.getRange?.();
-
-    const rendering: PlanarWebGPUVolumeSliceRendering = {
-      renderMode: WEBGPU_VOLUME_RENDER_MODE,
-      actorEntryUID: uuidv4(),
-      actor,
-      overlayOrder: getImageSliceOverlayOrder(window, actor),
-      imageVolume,
-      imageIds: payload.imageIds,
-      acquisitionOrientation: payload.acquisitionOrientation,
-      mapper,
-      mapperImageData,
-      currentImageIdIndex: payload.initialImageIdIndex ?? 0,
-      maxImageIdIndex: payload.imageIds.length - 1,
-      defaultVOIRange: defaultRange
-        ? { lower: defaultRange[0], upper: defaultRange[1] }
-        : undefined,
-      dataPresentation: undefined,
-      removeStreamingSubscriptions: subscribeToVolumeEvents(
+    try {
+      const mapperImageDataEntry = acquireMapperImageData(
         payload.volumeId,
-        (eventType) => {
-          if (
-            eventType === Events.IMAGE_VOLUME_LOADING_COMPLETED &&
-            !mapperImageDataEntry.refreshedAfterLoad
-          ) {
-            mapperImageDataEntry.refreshedAfterLoad = true;
-            refreshMapperScalars(rendering);
-          }
+        imageVolume
+      );
+      mapperImageDataAcquired = true;
 
-          ctx.display.renderNow();
+      const mapperImageData = mapperImageDataEntry.imageData;
+      const slicePlane = vtkPlaneFactory.newInstance();
+      const mapper = vtkImageResliceMapper.newInstance();
+
+      mapper.setInputData(mapperImageData);
+      mapper.setSlicePlane(slicePlane);
+      mapper.setSlabThickness(0);
+
+      const actor = vtkImageSlice.newInstance();
+      actor.setMapper(mapper);
+
+      const imageDataMetadata = imageVolume.imageData?.get(
+        'numberOfComponents'
+      ) as { numberOfComponents?: number } | undefined;
+
+      if ((imageDataMetadata?.numberOfComponents ?? 1) > 1) {
+        actor.getProperty().setIndependentComponents(false);
+      }
+
+      await setDefaultVolumeVOI(actor, imageVolume);
+      applyScalarRangeFallback(actor, imageVolume);
+
+      ctx.display.activateRenderMode(WEBGPU_VOLUME_RENDER_MODE);
+      window.renderer.addActor(actor);
+      addedActor = actor;
+
+      const transferFunction = actor.getProperty().getRGBTransferFunction(0);
+      const defaultRange = transferFunction?.getRange?.();
+
+      const rendering: PlanarWebGPUVolumeSliceRendering = {
+        renderMode: WEBGPU_VOLUME_RENDER_MODE,
+        actorEntryUID: uuidv4(),
+        actor,
+        overlayOrder: getImageSliceOverlayOrder(window, actor),
+        imageVolume,
+        imageIds: payload.imageIds,
+        acquisitionOrientation: payload.acquisitionOrientation,
+        mapper,
+        mapperImageData,
+        currentImageIdIndex: payload.initialImageIdIndex ?? 0,
+        maxImageIdIndex: payload.imageIds.length - 1,
+        defaultVOIRange: defaultRange
+          ? { lower: defaultRange[0], upper: defaultRange[1] }
+          : undefined,
+        dataPresentation: undefined,
+        isSegmentationOverlay,
+      };
+
+      // The mapper scalars are a copy of the voxel data shared by every
+      // viewport showing this volume, so the refresh is scheduled on the shared
+      // entry and each viewport only repaints once it has actually run.
+      // renderNow() rather than requestRender(): this viewport draws itself
+      // through its own WebGPU window and blits the result, so it does not go
+      // through the engine's shared vtk render window (see the class docstring).
+      const onScalarsRefreshed = () => {
+        mapper.modified();
+        ctx.display.renderNow();
+      };
+
+      mapperImageDataEntry.subscribers.add(onScalarsRefreshed);
+
+      const removeVolumeSubscriptions = subscribeToVolumeEvents(
+        payload.volumeId,
+        () => {
+          requestMapperScalarRefresh(mapperImageDataEntry);
         }
-      ),
-    };
-    imageVolume.load(() => {
-      ctx.display.renderNow();
-    });
+      );
 
-    triggerPlanarVolumeNewImage(ctx, {
-      camera: ctx.viewport.getViewState(),
-      acquisitionOrientation: rendering.acquisitionOrientation,
-      imageIds: rendering.imageIds,
-      imageIdIndex: rendering.currentImageIdIndex,
-      maxImageIdIndex: rendering.maxImageIdIndex,
-    });
+      rendering.removeStreamingSubscriptions = () => {
+        mapperImageDataEntry.subscribers.delete(onScalarsRefreshed);
+        removeVolumeSubscriptions();
+      };
+      imageVolume.load(() => {
+        ctx.display.renderNow();
+      });
 
-    return {
-      rendering,
-      updateDataPresentation: (props) => {
-        this.updateDataPresentation(ctx, rendering, props);
-      },
-      applyViewState: (camera) => {
-        this.applyViewState(ctx, rendering, data.id, camera);
-      },
-      getFrameOfReferenceUID: () => {
-        return rendering.imageVolume.metadata?.FrameOfReferenceUID;
-      },
-      getActorEntry: (data) => {
-        const planarData = data as LoadedData<PlanarPayload>;
+      triggerPlanarVolumeNewImage(ctx, {
+        camera: ctx.viewport.getViewState(),
+        acquisitionOrientation: rendering.acquisitionOrientation,
+        imageIds: rendering.imageIds,
+        imageIdIndex: rendering.currentImageIdIndex,
+        maxImageIdIndex: rendering.maxImageIdIndex,
+      });
 
-        return buildPlanarActorEntry(planarData, {
-          actor: rendering.actor,
-          mapper: rendering.mapper,
-          renderMode: WEBGPU_VOLUME_RENDER_MODE as never,
-          uid: rendering.actorEntryUID,
-          referencedIdFallback: planarData.volumeId,
-        });
-      },
-      getImageData: () => {
-        return buildPlanarVolumeImageData(rendering.imageVolume);
-      },
-      render: () => {
-        this.render(ctx, data.id);
-      },
-      resize: () => {
-        this.resize(ctx, rendering, data.id);
-      },
-      removeData: () => {
-        this.removeData(ctx, rendering);
-      },
-    };
+      this.window = window;
+
+      return {
+        rendering,
+        updateDataPresentation: (props) => {
+          this.updateDataPresentation(ctx, rendering, props);
+        },
+        applyViewState: (camera) => {
+          this.applyViewState(ctx, rendering, data.id, camera);
+        },
+        getFrameOfReferenceUID: () => {
+          return rendering.imageVolume.metadata?.FrameOfReferenceUID;
+        },
+        getActorEntry: (data) => {
+          const planarData = data as LoadedData<PlanarPayload>;
+
+          return buildPlanarActorEntry(planarData, {
+            actor: rendering.actor,
+            mapper: rendering.mapper,
+            renderMode: WEBGPU_VOLUME_RENDER_MODE as never,
+            uid: rendering.actorEntryUID,
+            referencedIdFallback: planarData.volumeId,
+          });
+        },
+        getImageData: () => {
+          return buildPlanarVolumeImageData(rendering.imageVolume);
+        },
+        render: () => {
+          this.render(ctx, data.id);
+        },
+        resize: () => {
+          this.resize(ctx, rendering, data.id);
+        },
+        removeData: () => {
+          this.removeData(ctx, rendering);
+        },
+      };
+    } catch (error) {
+      // removeData() is the only caller of the release helpers and is only
+      // reachable through the attachment this never returned, so the
+      // acquisitions have to be undone here — otherwise the viewport's WebGPU
+      // device and blit canvas stay pinned for the life of the page.
+      if (addedActor) {
+        window.renderer.removeActor(addedActor);
+      }
+
+      if (mapperImageDataAcquired) {
+        releaseMapperImageData(payload.volumeId);
+      }
+
+      releaseWebGPUViewportWindow(ctx.viewportId);
+      throw error;
+    }
   }
 
   private render(ctx: PlanarWebGPUImageAdapterContext, dataId: string): void {
@@ -260,9 +309,14 @@ export class WebGPUVolumeSliceRenderPath
     }
 
     rendering.dataPresentation = props as PlanarDataPresentation | undefined;
+    // See VtkVolumeSliceRenderPath: segmentation overlays get their transfer
+    // functions from the segmentation styling, so applying a default VOI range
+    // here would overwrite the segment colors with a grayscale ramp.
     applyPlanarVolumePresentation({
       actor: rendering.actor,
-      defaultVOIRange: rendering.defaultVOIRange,
+      defaultVOIRange: rendering.isSegmentationOverlay
+        ? undefined
+        : rendering.defaultVOIRange,
       mapper: rendering.mapper,
       props: rendering.dataPresentation,
     });
@@ -435,23 +489,30 @@ export class WebGPUVolumeSlicePath
  * array), so every viewport rendering the same volume must share one
  * instance — reference-counted like the per-viewport windows.
  */
-const mapperImageDataByVolumeId = new Map<
-  string,
-  {
-    imageData: ReturnType<typeof vtkImageData.newInstance>;
-    refCount: number;
-    refreshedAfterLoad: boolean;
-  }
->();
+type MapperImageDataEntry = {
+  imageData: ReturnType<typeof vtkImageData.newInstance>;
+  imageVolume: IImageVolume;
+  refCount: number;
+  refreshTimer: ReturnType<typeof setTimeout> | null;
+  /** Per-viewport repaint callbacks, run after a refresh actually happened. */
+  subscribers: Set<() => void>;
+};
 
-function acquireMapperImageData(volumeId: string, imageVolume: IImageVolume) {
+const mapperImageDataByVolumeId = new Map<string, MapperImageDataEntry>();
+
+function acquireMapperImageData(
+  volumeId: string,
+  imageVolume: IImageVolume
+): MapperImageDataEntry {
   let entry = mapperImageDataByVolumeId.get(volumeId);
 
   if (!entry) {
     entry = {
       imageData: createMapperImageData(imageVolume),
+      imageVolume,
       refCount: 0,
-      refreshedAfterLoad: false,
+      refreshTimer: null,
+      subscribers: new Set(),
     };
     mapperImageDataByVolumeId.set(volumeId, entry);
   }
@@ -470,9 +531,37 @@ function releaseMapperImageData(volumeId: string): void {
   entry.refCount -= 1;
 
   if (entry.refCount <= 0) {
+    if (entry.refreshTimer !== null) {
+      clearTimeout(entry.refreshTimer);
+      entry.refreshTimer = null;
+    }
+
+    entry.subscribers.clear();
     mapperImageDataByVolumeId.delete(volumeId);
     entry.imageData.delete();
   }
+}
+
+/**
+ * Schedules one coalesced scalar refresh for the shared mapper input.
+ *
+ * The first event of a burst arms the timer and later ones ride along, so a
+ * brush drag or a streaming series costs one whole-volume rebuild and one
+ * texture upload per window rather than one per event, while still bounding how
+ * long the display can lag the voxel data.
+ */
+function requestMapperScalarRefresh(entry: MapperImageDataEntry): void {
+  if (entry.refreshTimer !== null) {
+    return;
+  }
+
+  entry.refreshTimer = setTimeout(() => {
+    entry.refreshTimer = null;
+    refreshMapperScalars(entry);
+    entry.subscribers.forEach((onScalarsRefreshed) => {
+      onScalarsRefreshed();
+    });
+  }, VOLUME_MODIFIED_REFRESH_DELAY_MS);
 }
 
 /**
@@ -531,27 +620,25 @@ function getVolumeScalarArray(imageVolume: IImageVolume) {
 }
 
 /**
- * Re-materializes the voxel data into the mapper's scalar array once the
- * volume finishes loading, invalidating the cached GPU texture exactly once.
+ * Re-materializes the voxel data into the shared mapper scalar array,
+ * invalidating the cached GPU texture. Always called through
+ * requestMapperScalarRefresh — this is a whole-volume rebuild.
  */
-function refreshMapperScalars(
-  rendering: PlanarWebGPUVolumeSliceRendering
-): void {
-  const scalars = rendering.mapperImageData.getPointData().getScalars();
+function refreshMapperScalars(entry: MapperImageDataEntry): void {
+  const scalars = entry.imageData.getPointData().getScalars();
 
   if (!scalars) {
     return;
   }
 
-  const values = getVolumeScalarArray(rendering.imageVolume);
+  const values = getVolumeScalarArray(entry.imageVolume);
 
   if (scalars.getData() !== values) {
     scalars.setData(values as never);
   }
 
   scalars.modified();
-  rendering.mapperImageData.modified();
-  rendering.mapper.modified();
+  entry.imageData.modified();
 }
 
 /**
