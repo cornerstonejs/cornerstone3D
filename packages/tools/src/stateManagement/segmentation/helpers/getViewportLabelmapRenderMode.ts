@@ -3,6 +3,8 @@ import {
   BaseVolumeViewport,
   StackViewport,
   Enums,
+  isImageRenderMode,
+  isVolumeRenderMode,
   type Types,
 } from '@cornerstonejs/core';
 import {
@@ -48,6 +50,17 @@ export default function getViewportLabelmapRenderMode(
       }
     | undefined;
   const renderMode = actorMapper?.renderMode;
+
+  // Registered render modes (including extension backends such as the webgpu
+  // image mode) resolve through the render-backend registry; the literal
+  // checks below remain for legacy modes the registry does not know about.
+  if (renderMode && isVolumeRenderMode(renderMode)) {
+    return 'volume';
+  }
+
+  if (renderMode && isImageRenderMode(renderMode)) {
+    return 'image';
+  }
 
   if (
     renderMode === ActorRenderMode.VTK_VOLUME ||

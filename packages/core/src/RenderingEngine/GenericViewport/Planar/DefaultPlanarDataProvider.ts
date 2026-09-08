@@ -1,6 +1,6 @@
 import { loadAndCacheImage } from '../../../loaders/imageLoader';
 import { createAndCacheVolume } from '../../../loaders/volumeLoader';
-import { ActorRenderMode } from '../../../types';
+import { isVolumeRenderMode } from '../../helpers/renderBackendRegistry';
 import resolveViewportVolumeId from '../../helpers/resolveViewportVolumeId';
 import type { LoadedData } from '../ViewportArchitectureTypes';
 import { getGenericViewportPlanarDisplaySet } from '../genericViewportDisplaySetAccess';
@@ -48,8 +48,9 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
         : clampedImageIdIndex;
 
     if (
-      options.renderMode === ActorRenderMode.VTK_VOLUME_SLICE ||
-      options.renderMode === ActorRenderMode.CPU_VOLUME
+      // Volume-kind render modes (core or extension backends, e.g. the
+      // webgpu volume mode) get a prepared image volume in the payload.
+      isVolumeRenderMode(options.renderMode)
     ) {
       const volumeId = resolveViewportVolumeId(options.volumeId);
       const imageVolume = await createAndCacheVolume(volumeId, {

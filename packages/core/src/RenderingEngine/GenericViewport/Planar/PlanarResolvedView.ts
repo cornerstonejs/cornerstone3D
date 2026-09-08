@@ -1,5 +1,10 @@
 import { ActorRenderMode } from '../../../types';
 import type { IImage, IImageVolume, Point2, Point3 } from '../../../types';
+import {
+  getRenderSurfaceForRenderMode,
+  isImageRenderMode,
+  isVolumeRenderMode,
+} from '../../helpers/renderBackendRegistry';
 import clonePoint3 from '../../../utilities/clonePoint3';
 import ResolvedViewportView from '../ResolvedViewportView';
 import {
@@ -356,13 +361,14 @@ export function getPlanarViewStateCanvasDimensions(args: {
 } {
   const { renderContext, rendering } = args;
 
-  if (
-    rendering.renderMode === ActorRenderMode.CPU_IMAGE ||
-    rendering.renderMode === ActorRenderMode.CPU_VOLUME
-  ) {
+  // The registry knows which composited surface a render mode draws to; the
+  // core cpu modes and extension backends registered with `surface: 'cpu'`
+  // (e.g. the WebGPU path, which blits into the cpu canvas) all measure the
+  // cpu canvas, everything else measures the vtk canvas.
+  if (getRenderSurfaceForRenderMode(rendering.renderMode) === 'cpu') {
     if (!renderContext.cpu) {
       throw new Error(
-        '[PlanarResolvedView] CPU render paths require a CPU canvas context'
+        '[PlanarResolvedView] CPU-surface render paths require a CPU canvas context'
       );
     }
 
@@ -418,14 +424,13 @@ export function resolvePlanarViewportView(args: {
     });
   const requestedViewState = args.viewState;
 
-  if (
-    rendering.renderMode === ActorRenderMode.CPU_IMAGE ||
-    rendering.renderMode === ActorRenderMode.VTK_IMAGE
-  ) {
+  // Any image-kind render mode (core cpuImage/vtkImage or an extension
+  // backend's image mode, e.g. webgpuImage) resolves as a stack view.
+  if (isImageRenderMode(rendering.renderMode)) {
     const image =
       (rendering.renderMode === ActorRenderMode.CPU_IMAGE
         ? rendering.enabledElement?.image
-        : rendering.currentImage) || data?.image;
+        : (rendering as { currentImage?: IImage }).currentImage) || data?.image;
 
     if (!image) {
       return;
@@ -453,10 +458,13 @@ export function resolvePlanarViewportView(args: {
     });
   }
 
-  if (
-    rendering.renderMode === ActorRenderMode.CPU_VOLUME ||
-    rendering.renderMode === ActorRenderMode.VTK_VOLUME_SLICE
-  ) {
+  if (isVolumeRenderMode(rendering.renderMode)) {
+    // isVolumeRenderMode() is not a type guard; volume-kind renderings share
+    // the volume-slice shape.
+    const volumeRendering = rendering as unknown as Extract<
+      PlanarRendering,
+      { imageVolume: IImageVolume }
+    >;
     const resolvedViewState =
       typeof sliceIndex === 'number'
         ? {
@@ -485,7 +493,7 @@ export function resolvePlanarViewportView(args: {
         canvasHeight,
         canvasWidth,
         imageIdIndex: resolvedImageIdIndex,
-        imageVolume: rendering.imageVolume,
+        imageVolume: volumeRendering.imageVolume,
         orientation: resolvedViewState.orientation,
       });
 
@@ -495,7 +503,7 @@ export function resolvePlanarViewportView(args: {
       canvasWidth,
       currentImageIdIndex,
       frameOfReferenceUID,
-      imageVolume: rendering.imageVolume,
+      imageVolume: volumeRendering.imageVolume,
       maxImageIdIndex,
       sliceBasis,
       usePixelGridCenter:

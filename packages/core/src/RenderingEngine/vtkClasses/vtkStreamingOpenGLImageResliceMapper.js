@@ -9,6 +9,7 @@ import {
 } from '@kitware/vtk.js/Rendering/OpenGL/RenderWindow/resourceSharingHelper';
 import vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
 import { getCanUseNorm16Texture } from '../../init';
+import { getFilterableFloatTexturePrecision } from '../../utilities/renderingCapabilities';
 
 const { vtkErrorMacro } = macro;
 
@@ -188,7 +189,10 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
         const numComps = model.numberOfComponents;
 
         currentTexture.setOpenGLRenderWindow(model._openGLRenderWindow);
-        currentTexture.enableUseHalfFloat?.(false);
+        currentTexture.setUseHalfFloatForFloatData?.(
+          dataType === VtkDataTypes.FLOAT &&
+            getFilterableFloatTexturePrecision() === 16
+        );
 
         const previousTextureParameters =
           currentTexture.getTextureParameters?.();

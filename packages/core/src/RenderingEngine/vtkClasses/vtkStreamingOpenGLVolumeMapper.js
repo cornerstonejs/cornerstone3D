@@ -8,6 +8,7 @@ import { getTransferFunctionsHash } from '@kitware/vtk.js/Rendering/OpenGL/Rende
 import { Representation } from '@kitware/vtk.js/Rendering/Core/Property/Constants';
 import { BlendMode } from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants';
 import { getCanUseNorm16Texture } from '../../init';
+import { getFilterableFloatTexturePrecision } from '../../utilities/renderingCapabilities';
 import canUseFloatOpacityTexture from './canUseFloatOpacityTexture';
 
 /**
@@ -352,15 +353,14 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
           const dims = imageData.getDimensions();
           currentTexture.setOpenGLRenderWindow(model._openGLRenderWindow);
 
-          // Set not to use half float initially since we don't know if the
-          // streamed data is actually half float compatible or not yet, as
-          // the data has not arrived due to streaming
-          currentTexture.enableUseHalfFloat(false);
-
           const previousTextureParameters =
             currentTexture.getTextureParameters();
 
           const dataType = imageData.get('dataType').dataType;
+          currentTexture.setUseHalfFloatForFloatData?.(
+            dataType === VtkDataTypes.FLOAT &&
+              getFilterableFloatTexturePrecision() === 16
+          );
           const textureNumberOfComponents =
             imageData.getPointData()?.getScalars()?.getNumberOfComponents?.() ??
             imageData.get('numberOfComponents').numberOfComponents ??

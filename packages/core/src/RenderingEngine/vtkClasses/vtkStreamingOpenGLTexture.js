@@ -31,6 +31,18 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
   model.updatedFrames = [];
   model.volumeId = null;
 
+  /**
+   * The streaming path allocates an empty texture before image ranges are
+   * available, so vtk.js cannot run its normal range-based half-float
+   * selection. Let the capability probe select R16F explicitly when R32F is
+   * not filterable (notably on iOS Safari). Float32 CPU values are still
+   * uploaded and WebGL converts them to the R16F texture representation.
+   */
+  publicAPI.setUseHalfFloatForFloatData = (useHalfFloat) => {
+    model.enableUseHalfFloat = useHalfFloat;
+    model.canUseHalfFloat = useHalfFloat;
+  };
+
   const superCreate3DFilterableFromRaw = publicAPI.create3DFilterableFromRaw;
 
   publicAPI.create3DFilterableFromRaw = ({

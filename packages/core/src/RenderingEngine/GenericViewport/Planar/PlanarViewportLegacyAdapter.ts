@@ -1,6 +1,6 @@
 import cache from '../../../cache/cache';
 import RENDERING_DEFAULTS from '../../../constants/rendering';
-import { ActorRenderMode } from '../../../types';
+import { isVolumeRenderMode } from '../../helpers/renderBackendRegistry';
 import type {
   ActorEntry,
   ICamera,
@@ -307,10 +307,7 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
   private isVolumeSliceRenderingActive(): boolean {
     const rendering = this.getCurrentPlanarRendering();
 
-    return (
-      rendering?.renderMode === ActorRenderMode.CPU_VOLUME ||
-      rendering?.renderMode === ActorRenderMode.VTK_VOLUME_SLICE
-    );
+    return isVolumeRenderMode(rendering?.renderMode);
   }
 
   private warnUnsupportedPositionOnlyCameraPatch(): void {

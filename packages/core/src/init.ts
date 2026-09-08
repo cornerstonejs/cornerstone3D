@@ -3,7 +3,10 @@ let csRenderInitialized = false;
 import deepMerge from './utilities/deepMerge';
 import type { Cornerstone3DConfig } from './types';
 import CentralizedWebWorkerManager from './webWorkerManager/webWorkerManager';
-import { getRenderingCapabilities } from './utilities/renderingCapabilities';
+import {
+  getFilterableFloatTexturePrecision,
+  getRenderingCapabilities,
+} from './utilities/renderingCapabilities';
 import triggerEvent from './utilities/triggerEvent';
 import eventTarget from './eventTarget';
 import { Events, RenderBackends, RenderingEngineModeEnum } from './enums';
@@ -303,8 +306,9 @@ function setPreferSizeOverAccuracy(status: boolean): void {
 }
 
 /**
- * Whether float (32-bit) textures can be linearly sampled, based on the
- * probed capability profile (OES_texture_float_linear draw + readback).
+ * Whether floating-point volume samples can be linearly filtered, based on
+ * the probed capability profile. This includes 32-bit float textures and the
+ * filterable 16-bit float fallback used by iOS Safari and vtk.js WebGPU.
  * Historically this was a user-agent iOS check; environments where the probe
  * cannot run (no WebGL context, e.g. unit tests, or WebGL1-only browsers --
  * the texture probes require WebGL2) keep the legacy user-agent behavior so
@@ -314,7 +318,7 @@ function canRenderFloatTextures(): boolean {
   const capabilities = getRenderingCapabilities();
 
   if (capabilities.webgl2) {
-    return capabilities.floatLinear;
+    return getFilterableFloatTexturePrecision(capabilities) !== null;
   }
 
   return !isIOS();

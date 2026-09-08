@@ -59,6 +59,29 @@ const NO_GPU_FORMATS: TextureFormatSupport = {
 
 let cachedCapabilities: RenderingCapabilities | null = null;
 
+/**
+ * Returns the floating-point texture precision that can be linearly sampled.
+ *
+ * WebGL exposes 32-bit and 16-bit float filtering independently. In
+ * particular, Safari on iOS can linearly filter R16F textures while R32F
+ * textures remain non-filterable. Volume preparation must therefore accept
+ * either precision instead of disabling modality pre-scaling whenever R32F
+ * filtering is unavailable.
+ */
+export function getFilterableFloatTexturePrecision(
+  capabilities: RenderingCapabilities = getRenderingCapabilities()
+): 32 | 16 | null {
+  if (capabilities.floatLinear) {
+    return 32;
+  }
+
+  if (capabilities.halfFloatLinear) {
+    return 16;
+  }
+
+  return null;
+}
+
 function getWebGLContextInfo(): WebGLContextInfo {
   const info: WebGLContextInfo = {
     webgl: false,

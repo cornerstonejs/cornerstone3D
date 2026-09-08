@@ -1,4 +1,8 @@
-import { ActorRenderMode, type Types } from '@cornerstonejs/core';
+import {
+  ActorRenderMode,
+  isVolumeRenderMode,
+  type Types,
+} from '@cornerstonejs/core';
 import type { ViewportLabelmapRenderMode } from '../../../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
 import type { Segmentation } from '../../../../types/SegmentationStateTypes';
 import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/triggerSegmentationEvents';
@@ -68,8 +72,7 @@ function isVolumeMountedActorEntry(actorEntry: Types.ActorEntry): boolean {
 
   return (
     renderMode === ActorRenderMode.VTK_VOLUME ||
-    renderMode === ActorRenderMode.VTK_VOLUME_SLICE ||
-    renderMode === ActorRenderMode.CPU_VOLUME
+    (!!renderMode && isVolumeRenderMode(renderMode))
   );
 }
 
