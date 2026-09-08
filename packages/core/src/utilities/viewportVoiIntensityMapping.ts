@@ -1,14 +1,53 @@
 import VOILUTFunctionType from '../enums/VOILUTFunctionType';
-import type { CPUFallbackLUT } from '../types';
+import type { CPUFallbackLUT, VOIRange } from '../types';
+import type { RenderableVOILUT } from './createVOILUTSequenceTransferFunction';
 import {
+  createVOILUTSampler,
   invertVOILUTSample,
   isRenderableVOILUT,
-  sampleVOILUT,
 } from './createVOILUTSequenceTransferFunction';
 import { logit } from './logit';
 import * as windowLevelUtil from './windowLevel';
 
 const Y_EPS = 1e-6;
+
+/**
+ * The sampler of the last VOI LUT Sequence that was asked for.
+ *
+ * createVOILUTSampler reads every entry of the LUT to get the scale of the
+ * entries, and a LUT holds up to 65536 entries. The callers map one voxel for
+ * each call over a whole region (refer to runFloodFillSegmentation and to
+ * adaptiveRegionIntensityRange), always with the same LUT and the same range.
+ * Thus one entry is enough to remove the scan from the loop.
+ */
+let lastSampler: {
+  voiLUT: RenderableVOILUT;
+  lower: number;
+  upper: number;
+  sample: (value: number) => number;
+} | null = null;
+
+function getVOILUTSampler(
+  voiLUT: RenderableVOILUT,
+  voiRange: VOIRange
+): (value: number) => number {
+  const { lower, upper } = voiRange;
+
+  if (
+    lastSampler &&
+    lastSampler.voiLUT === voiLUT &&
+    lastSampler.lower === lower &&
+    lastSampler.upper === upper
+  ) {
+    return lastSampler.sample;
+  }
+
+  const sample = createVOILUTSampler(voiLUT, voiRange);
+
+  lastSampler = { voiLUT, lower, upper, sample };
+
+  return sample;
+}
 
 export type ViewportVoiMappingProps = {
   voiRange: { lower: number; upper: number };
@@ -42,7 +81,7 @@ export function mapScalarToViewportVoiIntensity(
   const applyInvert = (y: number) => (props.invert === true ? 1 - y : y);
 
   if (isRenderableVOILUT(props.voiLUT)) {
-    return applyInvert(sampleVOILUT(props.voiLUT, value, props.voiRange));
+    return applyInvert(getVOILUTSampler(props.voiLUT, props.voiRange)(value));
   }
 
   if (fn === VOILUTFunctionType.SAMPLED_SIGMOID || fn === 'SIGMOID') {

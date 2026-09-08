@@ -117,6 +117,22 @@ describe('cpuFallback getVOILut', function () {
     expect(fn(0)).toBe(0);
     expect(fn(2)).toBeCloseTo((100 / 127) * 255, 5);
   });
+
+  it('falls back to the window for an all zero VOI LUT Sequence', () => {
+    // An all zero LUT carries no curve, and the sampler gives 0 for every
+    // value - a black image. The GPU path falls back to the analytic window
+    // (refer to setVOIGPU), so the CPU path must do the same.
+    const voiLUT = {
+      firstValueMapped: 0,
+      numBitsPerEntry: 16,
+      lut: [0, 0, 0],
+    };
+    const fn = getVOILUT(256, 128, voiLUT, VOILUTFunctionType.LINEAR);
+
+    expect(fn(0)).toBe(0);
+    expect(fn(128)).toBeCloseTo(128, 0);
+    expect(fn(255)).toBe(255);
+  });
 });
 
 describe('createLinearRGBTransferFunction', function () {
