@@ -125,7 +125,7 @@ shorthand for `{ attribute: <string> }`.
 A template substitutes and nothing else — no arithmetic, no expression syntax —
 so it can never become a route to evaluated code. `\{` escapes a literal brace,
 and an absent attribute substitutes an empty string. For anything more, use an
-expression with a template literal: `{ expression: '`${Modality} ${Rows}`' }`.
+expression with a template literal: ``{ expression: '`${Modality} ${Rows}`' }``.
 
 :::note Text composition reaches every attribute, by design
 A template — and a template literal in an expression — can interpolate any
