@@ -135,6 +135,7 @@ export {
   normalizeVOILUTFunction,
   getValidVOILUTFunction,
 } from './voiLUTFunction';
+export { default as normalizeVOILUTSequence } from './normalizeVOILUTSequence';
 export * from './getPixelSpacingInformation';
 export * from './getPlaneCubeIntersectionDimensions';
 export * from './rotateToViewCoordinates';

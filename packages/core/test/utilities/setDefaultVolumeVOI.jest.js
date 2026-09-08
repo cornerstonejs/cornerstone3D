@@ -166,6 +166,52 @@ describe('getDefaultVolumeVOIRange', function () {
     });
   });
 
+  it('normalizes a VOI LUT Sequence of the wadors provider', async () => {
+    // The wadors provider passes the raw DICOMweb JSON items through, and the
+    // dcmjs providers give LUTDescriptor and LUTData. Before, the volume path
+    // only accepted the already parsed shape of the wadouri provider. Thus a
+    // volume of every other provider lost the VOI LUT Sequence of the file
+    // without a message, and it rendered a linear window instead of the curve.
+    provider = provideVOI({
+      'test:2': {
+        windowWidth: 400,
+        windowCenter: 0,
+        voiLUTSequence: [
+          {
+            '00283002': { Value: [4, 100, 16] },
+            '00283006': { Value: [0, 8, 16, 24] },
+          },
+        ],
+      },
+    });
+
+    await expect(getDefaultVolumeVOI(volume)).resolves.toEqual({
+      voiRange: { lower: 100, upper: 103 },
+      voiLUT: {
+        firstValueMapped: 100,
+        numBitsPerEntry: 16,
+        lut: [0, 8, 16, 24],
+      },
+      voiLUTFunction: undefined,
+    });
+  });
+
+  it('normalizes a naturalized VOI LUT Sequence', async () => {
+    provider = provideVOI({
+      'test:2': {
+        voiLUTSequence: [
+          { LUTDescriptor: [4, 100, 16], LUTData: [0, 8, 16, 24] },
+        ],
+      },
+    });
+
+    expect(getVolumeVOIShape(volume).voiLUT).toEqual({
+      firstValueMapped: 100,
+      numBitsPerEntry: 16,
+      lut: [0, 8, 16, 24],
+    });
+  });
+
   it('ignores the VOI LUT Sequence of a prescaled PT volume', async () => {
     // The curve of the file is in the unscaled counts, and the volume holds SUV
     const voiLUT = {

@@ -12,6 +12,7 @@ import { loadAndCacheImage } from '../../loaders/imageLoader';
 import * as metaData from '../../metaData';
 import * as windowLevel from '../../utilities/windowLevel';
 import { normalizeVOILUTFunction } from '../../utilities/voiLUTFunction';
+import normalizeVOILUTSequence from '../../utilities/normalizeVOILUTSequence';
 import createVOILUTSequenceTransferFunction, {
   getVOILUTSequenceRange,
   isRenderableVOILUT,
@@ -294,11 +295,14 @@ function isPTPrescaledVolume(imageVolume: IImageVolume): boolean {
 /**
  * The VOI LUT Sequence of an instance, in the shape that the renderers use.
  *
- * A cached image is the best source: the loader normalizes the sequence of the
- * file there, and each provider (wadouri, naturalized dcmjs, DICOMweb JSON)
- * gives another shape. The metadata module is the fallback for a volume whose
- * instances were never loaded as images; it holds the already parsed shape on
- * the wadouri path.
+ * A cached image is the fastest source: the image loader already normalized the
+ * sequence of the file there. Each provider gives another shape (wadouri gives
+ * a parsed LUT, dcmjs gives LUTDescriptor and LUTData, and DICOMweb JSON gives
+ * raw elements), so the metadata module goes through the same normalizer. A
+ * volume that streams its own instances puts no image in the image cache, and
+ * before this the raw shapes of the wadors path and of the dcmjs path both
+ * failed isRenderableVOILUT. Thus a volume lost the VOI LUT Sequence of the
+ * file without a message.
  */
 function getVOILUTSequenceForImageId(
   imageId: string,
@@ -310,15 +314,11 @@ function getVOILUTSequenceForImageId(
     return imageVOILUT;
   }
 
-  const sequence = voiLutModule.voiLUTSequence;
+  const voiLUT = normalizeVOILUTSequence(
+    voiLutModule.voiLUTSequence ?? voiLutModule.VOILUTSequence
+  );
 
-  if (!sequence) {
-    return undefined;
-  }
-
-  const items = Array.isArray(sequence) ? sequence : [sequence];
-
-  return items.find(isRenderableVOILUT);
+  return isRenderableVOILUT(voiLUT) ? voiLUT : undefined;
 }
 
 /**

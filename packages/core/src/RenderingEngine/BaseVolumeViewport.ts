@@ -126,11 +126,15 @@ abstract class BaseVolumeViewport extends Viewport {
   private volumeIds = new Set<string>();
   /**
    * The VOI LUT Function and the VOI LUT Sequence that the file of each volume
-   * specifies, by volumeId. The metadata of a volume does not change, so the
-   * shape is read once and kept: a window level drag asks for it on every
-   * mouse move.
+   * specifies, by volumeId, together with the load state of the volume that the
+   * shape was read under. The shape is kept because a window level drag asks
+   * for it on every mouse move, and the load state lets one more read happen
+   * after the load completes. Refer to _getVolumeVOIShape.
    */
-  private volumeVOIShapes = new Map<string, VolumeVOIShape>();
+  private volumeVOIShapes = new Map<
+    string,
+    { shape: VolumeVOIShape; loaded: boolean }
+  >();
   /**
    * Whether the transfer function of a volume is a curve (a VOI LUT Sequence or
    * a sigmoid) at the moment. A curve cannot become a window by a change of the
@@ -335,12 +339,23 @@ abstract class BaseVolumeViewport extends Viewport {
       return {};
     }
 
-    let shape = this.volumeVOIShapes.get(volumeIdToUse);
+    const volume = cache.getVolume(volumeIdToUse);
+    // The wadouri provider reads the VOI from the file of the instance, and
+    // that file arrives after the volume. Thus a shape that was read while the
+    // volume still loaded can be empty, and an empty shape is not yet the
+    // answer. Read the shape one more time when the load completes, and keep
+    // that second answer. Without this the volume lost the VOI LUT Sequence of
+    // the file for the life of the viewport.
+    const loaded = !!volume?.loadStatus?.loaded;
+    const cached = this.volumeVOIShapes.get(volumeIdToUse);
 
-    if (!shape) {
-      shape = getVolumeVOIShape(cache.getVolume(volumeIdToUse));
-      this.volumeVOIShapes.set(volumeIdToUse, shape);
+    if (cached && (cached.loaded || !loaded)) {
+      return cached.shape;
     }
+
+    const shape = getVolumeVOIShape(volume);
+
+    this.volumeVOIShapes.set(volumeIdToUse, { shape, loaded });
 
     return shape;
   }
@@ -564,7 +579,15 @@ abstract class BaseVolumeViewport extends Viewport {
       },
       volumeId: applicableVolumeActorInfo.volumeId,
       VOILUTFunction: VOILUTFunction,
-      voiLUTSequenceApplied: !!this._getVOILUTSequenceToApply(volumeId),
+      // What reached the actor, and not what the file asks for: a colormap
+      // replaces the curve of the sequence, and setColormap then records that
+      // no curve is on the actor. StackViewport reports the applied state in
+      // the same way. A sequence always wins over a sigmoid in
+      // createVolumeVOITransferFunction, so a recorded curve plus a sequence
+      // that applies means the curve is the curve of the sequence.
+      voiLUTSequenceApplied:
+        !!this._getVOILUTSequenceToApply(volumeId) &&
+        !!this.volumeVOICurveApplied.get(applicableVolumeActorInfo.volumeId),
       colormap: matchedColormap,
       invert,
     };
@@ -1795,6 +1818,10 @@ abstract class BaseVolumeViewport extends Viewport {
 
     this.addActors(volumeActors);
 
+    // Before initializeColorTransferFunction, and before any colormap: a
+    // colormap replaces the curve, and setColormap records that itself.
+    this._recordVolumeVOICurves(volumeActors);
+
     this.initializeColorTransferFunction(volumeInputArray);
 
     if (immediate) {
@@ -2088,13 +2115,31 @@ abstract class BaseVolumeViewport extends Viewport {
       this.viewportProperties.invert = false;
     }
 
-    // New volumes bring their own VOI LUT Function and VOI LUT Sequence. Record
-    // which actors setDefaultVolumeVOI gave a curve to, so a later change of the
-    // VOI knows that a range on that transfer function cannot remove the curve.
+    // A new set of volumes replaces every volume. Thus drop what the previous
+    // volumes recorded before the new actors are recorded.
     this.voiLUTFunctionSetByUser = false;
     this.volumeVOICurveApplied.clear();
     this.volumeVOIShapes.clear();
 
+    this._recordVolumeVOICurves(volumeActorEntries);
+
+    this.setActors(volumeActorEntries);
+  }
+
+  /**
+   * Records which of the given actors setDefaultVolumeVOI gave a curve to, so
+   * that a later change of the VOI knows that a range on that transfer function
+   * cannot remove the curve.
+   *
+   * Both _setVolumeActors and addVolumes call this. addVolumes adds an actor to
+   * the actors that are already on the viewport, and it must not drop what the
+   * other volumes recorded. Without the call from addVolumes, a fusion volume
+   * whose file gives a sigmoid or a VOI LUT Sequence had no record. Then
+   * getProperties reported the whole node domain of the curve as the VOI, which
+   * is about 3.3 times the window width for a sigmoid, and the window level tool
+   * and setVOILUTFunction both start from that value.
+   */
+  private _recordVolumeVOICurves(volumeActorEntries: ActorEntry[]): void {
     for (const actorEntry of volumeActorEntries) {
       const volumeId = actorEntry.referencedId;
 
@@ -2103,8 +2148,6 @@ abstract class BaseVolumeViewport extends Viewport {
         volumeVOIIsCurve(this._getVolumeVOIShape(volumeId))
       );
     }
-
-    this.setActors(volumeActorEntries);
   }
 
   /**
