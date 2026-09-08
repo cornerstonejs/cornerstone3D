@@ -326,3 +326,64 @@ stack viewport, and a flat linear window on a volume viewport or an MPR.
 - **If your application draws a colorbar**, read the new field
   `voiLUTSequenceApplied` of the `VOI_MODIFIED` event. A ramp that you calculate
   from the range and the function is not the curve that the viewport shows.
+
+## Volume viewports report the real window for a sigmoid
+
+### What Changed
+
+Three paths that give the VOI of a volume viewport back to an application now
+give the window of the DICOM attributes, and not a value derived from the nodes
+of the transfer function.
+
+- **`detail.range` of the `VOI_MODIFIED` event.** A sampled sigmoid holds its
+  curve in the nodes of the transfer function, so the mapping range of that
+  function is the whole node domain, `[c - 1.733w, c + 1.560w]`. That is about
+  3.3 times the window width, and it is not centered on the window. The event
+  carried that domain. It now carries the window, which is the value that
+  `getProperties` already gave.
+- **`getProperties().voiRange`.** The conversion from the recovered window width
+  and center to a range used `c ± w/2`, which is the LINEAR_EXACT convention
+  (C.11.2.1.3.2), while the sigmoid transfer function is built from the range
+  through the LINEAR convention of note 4 of C.11.2.1.2.1. The two differ by one,
+  so each read and write of the properties widened the window by one, and two
+  rounding operations moved it a further half unit in each direction. The
+  conversion is now the exact inverse of the one that builds the curve, thus a
+  range survives any number of round trips.
+- **`getProperties().voiRange` when the actor does not hold a sigmoid.** A
+  colormap and a VOI LUT Sequence each replace the curve, and the value SIGMOID
+  of (0028,1056) stays in effect over both. The colormap ramp or the curve of the
+  sequence was solved for a window regardless. A colormap ramp gave an infinite
+  width and a range of NaN, and the viewport then rejected every later window
+  level operation. Only a sigmoid on the actor is solved for a window now.
+
+A volume viewport also keeps its inversion when the VOI needs a new transfer
+function. Before this, the first window level operation on an inverted volume
+that shows a sigmoid or a VOI LUT Sequence removed the inversion.
+
+A linear volume viewport does not change. The vtk.js `getRange` is the mapping
+range, which is the value that a linear read back already gave.
+
+### Why This Matters
+
+`voiSyncCallback` copies `detail.range` into `setProperties({ voiRange })` of
+each target viewport, and `ViewportColorbar` reads the same field. A
+synchronized viewport or a colorbar of a sigmoid volume thus showed
+`WW 3293 / WC -387` for a window of `WW 1000 / WC -300`.
+
+An application that reads the properties and writes them again widened the
+window on each cycle, and `WindowLevelTool` does exactly that on each mouse
+move. A drag on a SIGMOID series thus widened the window beyond the movement of
+the pointer.
+
+### Migration Guidance
+
+- **Usually, you do not have to do an operation.** These values are the values
+  that your application asked for.
+- **Remove a correction of your own.** An application that scaled
+  `detail.range` of a sigmoid viewport, or that rounded a window to conceal the
+  drift, now receives a correct value and must not correct it again.
+- **A presentation state that your application stored for a sigmoid volume can
+  hold a widened window.** The window grew by one on each read and write cycle,
+  so a stored value can be several units wider than the window of the file.
+  Nothing reads such a value incorrectly now, but it is not the window that the
+  file gives.
