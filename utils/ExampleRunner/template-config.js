@@ -16,6 +16,14 @@ const csDICOMImageLoaderDistPath = path.resolve(
 const csMetadataBasePath = path.resolve('packages/metadata/src');
 const csUtilsBasePath = path.resolve('packages/utils/src');
 const csNiftiPath = path.resolve('packages/nifti-volume-loader/src/index');
+// Directory (not /index) so subpath imports such as
+// '@cornerstonejs/core/renderBackend' resolve. The bare specifier keeps an
+// exact '$' alias; without the split, webpack prefix-matches the bare key and
+// rewrites the subpath to '<...>/src/index/renderBackend'.
+const csRenderSrcPath = path.resolve('packages/core/src');
+const csWebGPUBasePath = path.resolve(
+  'packages/rendering-webgpu-vtkjs/src/index'
+);
 
 // LAN mode runs on its own port so a shared/tunnelled example does not collide
 // with (or get tunnelled instead of) a viewer already holding the default port.
@@ -88,7 +96,12 @@ module.exports = {
   },
   resolve: {
     alias: {
-      '@cornerstonejs/core': '${csRenderBasePath.replace(/\\/g, '/')}',
+      '@cornerstonejs/core$': '${csRenderBasePath.replace(/\\/g, '/')}',
+      '@cornerstonejs/core': '${csRenderSrcPath.replace(/\\/g, '/')}',
+      '@cornerstonejs/rendering-webgpu-vtkjs': '${csWebGPUBasePath.replace(
+        /\\/g,
+        '/'
+      )}',
       '@cornerstonejs/tools': '${csToolsBasePath.replace(/\\/g, '/')}',
       '@cornerstonejs/ai': '${csAiBasePath.replace(/\\/g, '/')}',
       '@cornerstonejs/polymorphic-segmentation': '${csPolymorphicSegmentationBasePath.replace(

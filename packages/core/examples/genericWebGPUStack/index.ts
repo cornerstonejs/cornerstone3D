@@ -6,13 +6,17 @@ import {
   imageLoader,
   utilities,
   eventTarget,
-  registerWebGPURenderBackend,
-  isWebGPURenderingAvailable,
-  getWebGPUViewportDebugInfo,
   getRenderBackend,
   setRenderBackend,
   getEffectiveRenderBackend,
 } from '@cornerstonejs/core';
+// The WebGPU backend is a separate, opt-in package: core knows nothing about
+// it, and an application that never imports it pays nothing for it.
+import {
+  registerWebGPURenderBackend,
+  isWebGPURenderingAvailable,
+  getWebGPUViewportDebugInfo,
+} from '@cornerstonejs/rendering-webgpu-vtkjs';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   initDemo,

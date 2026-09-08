@@ -215,14 +215,6 @@ import {
   renderModeSupportsOverlayActors,
   renderModeUsesVtkActors,
 } from './RenderingEngine/helpers/renderBackendRegistry';
-import {
-  registerWebGPURenderBackend,
-  isWebGPURenderingAvailable,
-} from './RenderingEngine/helpers/registerWebGPURenderBackend';
-import {
-  getWebGPUViewportDebugInfo,
-  setWebGPUViewportBackground,
-} from './RenderingEngine/GenericViewport/Planar/webgpuViewportRenderWindow';
 export type {
   ViewportType,
   ViewportTypeConstants,
@@ -400,11 +392,6 @@ export {
   getRenderSurfaceForRenderMode,
   renderModeSupportsOverlayActors,
   renderModeUsesVtkActors,
-  // WebGPU render backend (experimental)
-  registerWebGPURenderBackend,
-  isWebGPURenderingAvailable,
-  getWebGPUViewportDebugInfo,
-  setWebGPUViewportBackground,
   //
   imageLoadPoolManager as requestPoolManager,
   imageRetrievalPoolManager,

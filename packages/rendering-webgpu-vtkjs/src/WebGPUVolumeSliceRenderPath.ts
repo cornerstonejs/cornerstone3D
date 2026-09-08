@@ -4,38 +4,42 @@ import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkImageResliceMapper from '@kitware/vtk.js/Rendering/Core/ImageResliceMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
-import { buildPlanarActorEntry } from './buildPlanarActorEntry';
-import uuidv4 from '../../../utilities/uuidv4';
-import { Events, ViewportStatus, ViewportType } from '../../../enums';
-import eventTarget from '../../../eventTarget';
-import setDefaultVolumeVOI from '../../helpers/setDefaultVolumeVOI';
-import triggerEvent from '../../../utilities/triggerEvent';
-import type { IImageData, IImageVolume } from '../../../types';
+import { buildPlanarActorEntry } from '@cornerstonejs/core/renderBackend';
+import { uuidv4 } from '@cornerstonejs/core/utilities';
+import {
+  Events,
+  ViewportStatus,
+  ViewportType,
+} from '@cornerstonejs/core/enums';
+import { eventTarget } from '@cornerstonejs/core';
+import { setDefaultVolumeVOI } from '@cornerstonejs/core/renderBackend';
+import { triggerEvent } from '@cornerstonejs/core/utilities';
+import type { IImageData, IImageVolume } from '@cornerstonejs/core/types';
 import type {
   DataAddOptions,
   LoadedData,
   RenderPathAttachment,
   RenderPathDefinition,
   RenderPath,
-} from '../ViewportArchitectureTypes';
+} from '@cornerstonejs/core/renderBackend';
 import type {
   PlanarViewState,
   PlanarDataPresentation,
   PlanarPayload,
   PlanarResolvedICamera,
   PlanarViewportRenderContext,
-} from './PlanarViewportTypes';
-import type { PlanarVolumeSliceRendering } from './planarRuntimeTypes';
-import { triggerPlanarVolumeNewImage } from './planarImageEvents';
+} from '@cornerstonejs/core/renderBackend';
+import type { PlanarVolumeSliceRendering } from '@cornerstonejs/core/renderBackend';
+import { triggerPlanarVolumeNewImage } from '@cornerstonejs/core/renderBackend';
 import {
   applyPlanarICameraToActor,
   applyPlanarICameraToRenderer,
-} from './planarRenderCamera';
+} from '@cornerstonejs/core/renderBackend';
 import {
   getPlanarRenderPathActiveSourceICamera,
   resolvePlanarRenderPathProjection,
-} from './planarRenderPathProjection';
-import { applyPlanarVolumePresentation } from './planarVolumePresentation';
+} from '@cornerstonejs/core/renderBackend';
+import { applyPlanarVolumePresentation } from '@cornerstonejs/core/renderBackend';
 import type { PlanarWebGPUImageAdapterContext } from './WebGPUImageMapperRenderPath';
 import type { WebGPUViewportWindow } from './webgpuViewportRenderWindow';
 import {

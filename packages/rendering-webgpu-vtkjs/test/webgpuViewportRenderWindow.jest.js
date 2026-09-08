@@ -8,11 +8,13 @@ jest.mock('@kitware/vtk.js/Rendering/WebGPU/RenderWindow', () => ({
   newInstance: jest.fn(),
 }));
 jest.mock('@kitware/vtk.js/Rendering/WebGPU/Profiles/All', () => ({}));
-jest.mock('../src/RenderingEngine/renderingEngineCache', () => ({
-  get: jest.fn(),
+// The backend reaches core only through public API; the background colour
+// lookup is the one core call this module makes.
+jest.mock('@cornerstonejs/core', () => ({
+  getRenderingEngine: jest.fn(),
 }));
 
-import { renderWebGPUViewportWindow } from '../src/RenderingEngine/GenericViewport/Planar/webgpuViewportRenderWindow';
+import { renderWebGPUViewportWindow } from '../src/webgpuViewportRenderWindow';
 
 function createRenderFixture(initialized = true) {
   const sourceCanvas = document.createElement('canvas');

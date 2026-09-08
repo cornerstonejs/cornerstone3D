@@ -7,6 +7,7 @@ packages:
   - packages/docs
   - packages/nifti-volume-loader
   - packages/polymorphic-segmentation
+  - packages/rendering-webgpu-vtkjs
   - packages/tools
   - packages/ai
   - packages/codemods
