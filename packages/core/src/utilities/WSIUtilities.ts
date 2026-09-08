@@ -54,8 +54,35 @@ export interface WSIMapViewLike {
   setZoom(zoom: number): void;
 }
 
+interface WSIOverviewViewOptions {
+  projection: ReturnType<WSIMapViewLike['getProjection']>;
+  rotation: number;
+  center: [number, number];
+  resolution: number;
+  minResolution: number;
+  maxResolution: number;
+  extent: number[];
+  constrainOnlyCenter: boolean;
+  showFullExtent: boolean;
+}
+
+interface WSIOverviewViewLike {
+  constructor: new (options: WSIOverviewViewOptions) => WSIOverviewViewLike;
+  getProjection(): ReturnType<WSIMapViewLike['getProjection']>;
+  getRotation(): number;
+  getMinResolution(): number;
+  getMaxResolution(): number;
+  on(eventName: 'change:rotation', handler: () => void): void;
+  un(eventName: 'change:rotation', handler: () => void): void;
+}
+
 export interface WSIOverviewMapLike {
   getEventCoordinate(event: Event): [number, number];
+  getSize(): number[] | undefined;
+  getView(): WSIOverviewViewLike;
+  setView(view: WSIOverviewViewLike): void;
+  on(eventName: 'change:size' | 'change:view', handler: () => void): void;
+  un(eventName: 'change:size' | 'change:view', handler: () => void): void;
 }
 
 export interface WSIMapControlLike {
@@ -152,7 +179,8 @@ export async function getDicomMicroscopyViewer(): Promise<DicomMicroscopyViewerL
 
 /**
  * Restores overview-map state, isolates its events from viewport tools, and
- * owns drag listeners without importing OpenLayers types from the peer viewer.
+ * fits the full slide to its rendered size. Owns listeners without importing
+ * OpenLayers types from the peer viewer.
  */
 export function configureWSIOverviewMap(
   map: WSIMapLike,
@@ -184,6 +212,62 @@ export function configureWSIOverviewMap(
   }
 
   const overviewMap = overviewMapControl?.getOverviewMap?.();
+  let overviewView: WSIOverviewViewLike;
+  let fittedOverviewView: WSIOverviewViewLike;
+  const fitOverviewMap = () => {
+    const size = overviewMap.getSize();
+    if (!size || size[0] <= 0 || size[1] <= 0) {
+      return;
+    }
+    const view = overviewMap.getView();
+    const projection = view.getProjection();
+    const extent = projection.getExtent();
+    const width = extent[2] - extent[0];
+    const height = extent[3] - extent[1];
+    const rotation = view.getRotation();
+    const cos = Math.abs(Math.cos(rotation));
+    const sin = Math.abs(Math.sin(rotation));
+    const resolution = Math.max(
+      (width * cos + height * sin) / size[0],
+      (width * sin + height * cos) / size[1]
+    );
+    if (
+      view.getMinResolution() === resolution &&
+      view.getMaxResolution() === resolution
+    ) {
+      return;
+    }
+    const center: [number, number] = [
+      (extent[0] + extent[2]) / 2,
+      (extent[1] + extent[3]) / 2,
+    ];
+    // The microscopy viewer locks zoom to its inline dimensions, which CSS can override.
+    fittedOverviewView = new view.constructor({
+      projection,
+      rotation,
+      center,
+      resolution,
+      minResolution: resolution,
+      maxResolution: resolution,
+      extent: center.concat(center),
+      constrainOnlyCenter: true,
+      showFullExtent: true,
+    });
+    overviewMap.setView(fittedOverviewView);
+  };
+  const bindOverviewView = () => {
+    overviewView?.un('change:rotation', fitOverviewMap);
+    overviewView = overviewMap.getView();
+    overviewView.on('change:rotation', fitOverviewMap);
+    if (overviewView !== fittedOverviewView) {
+      fitOverviewMap();
+    }
+  };
+  if (overviewMap) {
+    overviewMap.on('change:size', fitOverviewMap);
+    overviewMap.on('change:view', bindOverviewView);
+    bindOverviewView();
+  }
   const overviewMapElement = overviewMapControl?.element?.querySelector(
     '.ol-overviewmap-map'
   );
@@ -201,6 +285,7 @@ export function configureWSIOverviewMap(
       return;
     }
 
+    event.stopImmediatePropagation();
     stopPanning?.();
 
     const ownerDocument = map.getOwnerDocument();
@@ -209,29 +294,40 @@ export function configureWSIOverviewMap(
     };
     const stopCurrentPan = () => {
       ownerDocument.removeEventListener('pointermove', panViewport, true);
-      ownerDocument.removeEventListener('pointerup', stopCurrentPan, true);
-      ownerDocument.removeEventListener('pointercancel', stopCurrentPan, true);
+      ownerDocument.removeEventListener('pointerup', finishPanning, true);
+      ownerDocument.removeEventListener('pointercancel', finishPanning, true);
       stopPanning = undefined;
     };
 
+    const finishPanning = (pointerEvent: Event) => {
+      pointerEvent.stopPropagation();
+      stopCurrentPan();
+    };
     stopPanning = stopCurrentPan;
     ownerDocument.addEventListener('pointermove', panViewport, true);
-    ownerDocument.addEventListener('pointerup', stopCurrentPan, {
+    ownerDocument.addEventListener('pointerup', finishPanning, {
       capture: true,
       once: true,
     });
-    ownerDocument.addEventListener('pointercancel', stopCurrentPan, {
+    ownerDocument.addEventListener('pointercancel', finishPanning, {
       capture: true,
       once: true,
     });
   };
 
-  overviewMapElement?.addEventListener('pointerdown', startPanning);
+  overviewMapElement?.addEventListener('pointerdown', startPanning, true);
 
   return {
     cleanup: () => {
+      overviewView?.un('change:rotation', fitOverviewMap);
+      overviewMap?.un('change:size', fitOverviewMap);
+      overviewMap?.un('change:view', bindOverviewView);
       stopPanning?.();
-      overviewMapElement?.removeEventListener('pointerdown', startPanning);
+      overviewMapElement?.removeEventListener(
+        'pointerdown',
+        startPanning,
+        true
+      );
       blockedEventTypes.forEach((eventType) => {
         controlContainer?.removeEventListener(eventType, stopPropagation);
       });
