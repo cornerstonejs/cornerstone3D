@@ -981,6 +981,24 @@ class StackViewport extends Viewport {
 
     const nodes = getTransferFunctionNodes(transferFunction);
 
+    // findMatchingColormap compares the colors of the nodes only, and the plain
+    // grey ramp that every window builds has the same colors as the vtk.js
+    // `Grayscale` preset. Thus every reset of a grey image matched a colormap
+    // that no person selected. setVOIGPU reads this.colormap as a display
+    // choice of the application, and it stops the VOI LUT Sequence and the
+    // sigmoid for that viewport. Nothing clears this.colormap again, so one
+    // reset made both permanently inert: a sigmoid image rendered as a linear
+    // window, and a VOI LUT Sequence on a later image of the stack never
+    // reached the actor. A grey ramp is the absence of a colormap. Thus record
+    // the absence.
+    if (
+      nodes.every(([, red, green, blue]) => red === green && green === blue)
+    ) {
+      this.colormap = undefined;
+
+      return;
+    }
+
     const RGBPoints = nodes.reduce((acc, node) => {
       acc.push(node[0], node[1], node[2], node[3]);
       return acc;
@@ -2701,6 +2719,36 @@ class StackViewport extends Viewport {
       this.modality,
       this._cpuFallbackEnabledElement.viewport.colormap
     );
+
+    // getDefaultViewport puts the VOI LUT Sequence of the image on the viewport
+    // without a condition. Thus apply the same rule as the GPU path, or a
+    // request for a VOI LUT Function and `useVOILUTSequence: false` both did
+    // nothing when the stack was invalidated.
+    const voiLUTToApply = this._getVOILUTSequenceToApply(image);
+
+    viewport.voiLUT = voiLUTToApply;
+
+    // getVOILut lays the curve of a sequence over viewport.voi, and the curve
+    // is defined against the output of the modality LUT. Thus the own domain of
+    // the LUT is the window that gives the curve of the file without a change,
+    // which is what _getInitialVOIRange gives the GPU path. getDefaultViewport
+    // reads the Window Center/Width of the file, which DICOM allows next to the
+    // sequence (C.11.2.1), and that window stretched the curve before a person
+    // ever saw it - so the CPU render and the GPU render of one file differed.
+    // toWindowLevel is the exact inverse of the toLowHighRange that getVOILut
+    // and getVOIRangeFromWindowLevel both use, so the domain survives the trip
+    // through the window.
+    if (voiLUTToApply && viewport.voi) {
+      const { lower, upper } = getVOILUTSequenceRange(voiLUTToApply);
+      const window = windowLevelUtil.toWindowLevel(
+        lower,
+        upper,
+        viewport.voi.voiLUTFunction
+      );
+
+      viewport.voi.windowWidth = window.windowWidth;
+      viewport.voi.windowCenter = window.windowCenter;
+    }
 
     const { windowCenter, windowWidth, voiLUTFunction } = viewport.voi;
     this.voiRange = getVOIRangeFromWindowLevel(

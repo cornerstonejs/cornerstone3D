@@ -1152,6 +1152,88 @@ describe('renderingCore -- Stack', () => {
       expect(createTransferFunction).not.toHaveBeenCalled();
       expect(viewport.voiLUTSequenceApplied).toBe(false);
     });
+
+    it('does not let resetProperties record a colormap for a grey ramp', async function () {
+      // findMatchingColormap compares the colors of the nodes only, so the grey
+      // ramp of a plain window matched the vtk.js `Grayscale` preset and
+      // resetProperties recorded a colormap that no person selected. setVOIGPU
+      // reads a colormap as a display choice and stops the VOI LUT Sequence and
+      // the sigmoid, and nothing clears this.colormap again. Thus one reset made
+      // both permanently inert on that viewport.
+      testUtils.createViewports(renderingEngine, {
+        viewportId,
+        orientation: Enums.OrientationAxis.AXIAL,
+      });
+      const imageInfo = {
+        loader: 'fakeImageLoader',
+        name: 'resetColormap',
+        rows: 16,
+        columns: 16,
+        barStart: 4,
+        barWidth: 4,
+        xSpacing: 1,
+        ySpacing: 1,
+        sliceIndex: 0,
+      };
+      const plainImageId = encodeImageIdInfo(imageInfo);
+      const voiLUTImageId = encodeImageIdInfo({ ...imageInfo, sliceIndex: 1 });
+      const [, voiLUTImage] = await Promise.all([
+        imageLoader.loadAndCacheImage(plainImageId),
+        imageLoader.loadAndCacheImage(voiLUTImageId),
+      ]);
+
+      voiLUTImage.voiLUT = {
+        firstValueMapped: 0,
+        numBitsPerEntry: 8,
+        lut: [0, 64, 255],
+      };
+
+      const viewport = renderingEngine.getViewport(viewportId);
+      await viewport.setStack([plainImageId, voiLUTImageId], 0);
+
+      viewport.resetProperties();
+
+      expect(viewport.getProperties().colormap).toBeUndefined();
+
+      // The next image of the stack still gets its curve
+      await viewport.setImageIdIndex(1);
+
+      expect(viewport.voiLUTSequenceApplied).toBe(true);
+    });
+
+    it('keeps a sigmoid after resetProperties', async function () {
+      testUtils.createViewports(renderingEngine, {
+        viewportId,
+        orientation: Enums.OrientationAxis.AXIAL,
+      });
+      const imageId = encodeImageIdInfo({
+        loader: 'fakeImageLoader',
+        name: 'resetSigmoid',
+        rows: 16,
+        columns: 16,
+        barStart: 4,
+        barWidth: 4,
+        xSpacing: 1,
+        ySpacing: 1,
+      });
+      await imageLoader.loadAndCacheImage(imageId);
+
+      const viewport = renderingEngine.getViewport(viewportId);
+      await viewport.setStack([imageId], 0);
+
+      viewport.resetProperties();
+      viewport.setProperties({
+        VOILUTFunction: Enums.VOILUTFunctionType.SAMPLED_SIGMOID,
+      });
+
+      expect(viewport.getProperties().VOILUTFunction).toBe(
+        Enums.VOILUTFunctionType.SAMPLED_SIGMOID
+      );
+      // A sigmoid holds hundreds of nodes; a linear window holds two. A
+      // colormap that the reset recorded suppressed the rebuild, so the ramp
+      // stayed and the sigmoid never reached the actor.
+      expect(viewport.getTransferFunction().getSize()).toBeGreaterThan(2);
+    });
   });
 
   describe('Flipping', function () {
