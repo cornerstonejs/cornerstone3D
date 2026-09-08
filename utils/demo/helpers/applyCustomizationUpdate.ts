@@ -21,13 +21,26 @@ import update, { extend } from 'immutability-helper';
 export type UpdateSpec = Record<string, unknown>;
 
 /**
+ * Read-time markers OHIF's customization service resolves itself, rather than
+ * `immutability-helper` merge commands. A value carrying one is stored
+ * verbatim, so it must not be mistaken for a spec here either.
+ *
+ * `$function` matters most for rule sets: a rule authored as
+ * `{ matches: { $function: "Modality === 'CT'" } }` is a *value* to OHIF, but
+ * without this exemption it reads as a spec and `update()` then throws on the
+ * unrecognized `$function` command — so the selector an OHIF deployment runs
+ * could not be pasted into an example, which is the whole point of the shared
+ * data form. Kept in sync with `hasDollarKey` in `CustomizationService.ts`.
+ */
+const READ_TIME_MARKERS = new Set(['$transform', '$reference', '$function']);
+
+/**
  * True when `value` contains an update command anywhere in its object tree.
  *
- * Mirrors OHIF's `hasDollarKey`, including its two exemptions:
- * - a React element (branded with `$$typeof`) is a value to render, not a spec,
- *   so its brand must not be misread as a command;
- * - `$transform` and `$reference` are read-time markers OHIF's service resolves
- *   itself, not merge commands, so a value carrying them is stored verbatim.
+ * Mirrors OHIF's `hasDollarKey`, including its exemptions: a React element
+ * (branded with `$$typeof`) is a value to render, not a spec, so its brand must
+ * not be misread as a command, and the {@link READ_TIME_MARKERS} are not
+ * commands either.
  */
 export function hasUpdateCommand(value: unknown): boolean {
   if (Array.isArray(value)) {
@@ -45,7 +58,7 @@ export function hasUpdateCommand(value: unknown): boolean {
 
   return Object.keys(record).some(
     (key) =>
-      (key.startsWith('$') && key !== '$transform' && key !== '$reference') ||
+      (key.startsWith('$') && !READ_TIME_MARKERS.has(key)) ||
       hasUpdateCommand(record[key])
   );
 }
