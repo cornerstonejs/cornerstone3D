@@ -233,13 +233,13 @@ class LabelTool extends AnnotationTool {
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
     this.configuration.getTextCallback((label) => {
+      resetElementCursor(element);
       if (!label) {
         removeAnnotation(annotation.annotationUID);
         triggerAnnotationRenderForViewportIds(viewportIdsToRender);
         this.isDrawing = false;
         return;
       }
-      resetElementCursor(element);
       annotation.data.label = label;
 
       triggerAnnotationCompleted(annotation);
