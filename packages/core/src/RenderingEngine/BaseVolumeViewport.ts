@@ -1525,10 +1525,20 @@ abstract class BaseVolumeViewport extends Viewport {
 
     const volumeActor = volumeActorEntry.actor as vtkVolume;
     const cfun = volumeActor.getProperty().getRGBTransferFunction(0);
-    const [lower, upper] =
-      VOILUTFunction === VOILUTFunctionType.SAMPLED_SIGMOID
-        ? getVoiFromSigmoidRGBTransferFunction(cfun)
-        : cfun.getRange();
+    // Solve the transfer function for a window only when a sigmoid is what the
+    // actor holds. The function in effect is not enough to know that: a
+    // colormap and a VOI LUT Sequence each replace the curve (refer to
+    // setVOI), while a SIGMOID value of (0028,1056) stays in effect over both.
+    // Solving a colormap ramp for a window takes log((1 - y) / y) of 0 or of 1,
+    // thus an infinite width and a range of NaN, and the next setVOI then
+    // rejects that range and leaves window level inert on the viewport.
+    const sigmoidApplied =
+      VOILUTFunction === VOILUTFunctionType.SAMPLED_SIGMOID &&
+      !!this.volumeVOICurveApplied.get(volumeId) &&
+      !this._getVOILUTSequenceToApply(volumeId);
+    const [lower, upper] = sigmoidApplied
+      ? getVoiFromSigmoidRGBTransferFunction(cfun)
+      : cfun.getRange();
 
     const voiRange = { lower, upper };
 
