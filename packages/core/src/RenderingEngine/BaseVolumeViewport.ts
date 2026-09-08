@@ -674,6 +674,15 @@ abstract class BaseVolumeViewport extends Viewport {
     const { lower, upper } = voiRangeToUse;
 
     if (curve) {
+      // A transfer function that is made anew carries no inversion, and
+      // setInvert inverts only the one that is on the actor at the time. Thus
+      // carry the inversion over here, or a window level drag on a curve loses
+      // the inversion of a MONOCHROME1 volume and the inversion that a person
+      // chose. StackViewport.setVOIGPU does the same on the stack path.
+      if (this.viewportProperties.invert) {
+        invertRgbTransferFunction(curve);
+      }
+
       volumeActor.getProperty().setRGBTransferFunction(0, curve);
       this.volumeVOICurveApplied.set(volumeIdToUse, true);
     } else if (this.volumeVOICurveApplied.get(volumeIdToUse)) {
