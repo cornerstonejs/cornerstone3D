@@ -19,6 +19,7 @@ const transferSyntaxes = {
   '1.2.840.10008.1.2.2': 'BigEndianExplicitTransferSyntax',
 
   '1.2.840.10008.1.2.4.57': 'JPEGProcess14TransferSyntax',
+  '1.2.840.10008.1.2.4.70': 'JPEGProcess14SV1TransferSyntax',
   '1.2.840.10008.1.2.4.80': 'JPEGLSLosslessTransferSyntax',
 
   '1.2.840.10008.1.2.4.90': 'JPEG2000LosslessOnlyTransferSyntax',
@@ -33,8 +34,15 @@ const transferSyntaxes = {
 
 /**
  * Syntaxes with a fixture but a pre-existing failure, reported as pending so
- * they stay visible rather than being quietly dropped from the list. Neither is
+ * they stay visible rather than being quietly dropped from the list. It is not
  * related to the syntaxes added alongside this suite being enabled.
+ *
+ * 1.2.840.10008.1.2.4.70 used to sit here: exactly one sample was wrong, the
+ * last, decoding as 0 instead of -2000, because jpeg-lossless-decoder-js
+ * 2.1.2 read the 0xFF introducing EOI as entropy coded data whenever the final
+ * Huffman code ended on a byte boundary - which is what DCMTK writes for a
+ * frame ending in a run of one value. Fixed upstream in
+ * cornerstonejs/JPEGLosslessDecoderJS; the case is in the active list above.
  */
 const pendingTransferSyntaxes = {
   '1.2.840.10008.1.2.1.99': [
@@ -44,18 +52,6 @@ const pendingTransferSyntaxes = {
     // ArrayBuffer to addDicomPart10Instance, which cannot parse it, so nothing
     // reaches NATURALIZED. Passes through the legacy metadata provider.
     'addDicomPart10Instance does not inflate a deflated data set',
-  ],
-  '1.2.840.10008.1.2.4.70': [
-    'JPEGProcess14SV1TransferSyntax',
-    // Exactly one sample is wrong - the last one, which decodes as 0 instead
-    // of -2000 - and only for this fixture. It is not the grayscale path in
-    // general: viewer-testdata's SV1 frame of the same shape, 512x512 16 bit
-    // signed, decodes with zero differences, as does this syntax in colour.
-    // The two differ by encoder, DCMTK 3.6.1 here against dcm4che there, so
-    // this looks like a stream some decoders tolerate and this one does not.
-    // pydicom reads the same frame correctly. Tracked upstream against
-    // jpeg-lossless-decoder-js; re-enable this case when a fix is published.
-    'decoder does not reproduce the source exactly, pending an upstream codec fix',
   ],
 };
 
