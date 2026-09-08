@@ -23,6 +23,7 @@ export {
 } from './compile';
 
 export {
+  collectIdentifiers,
   compileExpression,
   ExpressionSyntaxError,
   parseExpressionSource,
@@ -30,6 +31,7 @@ export {
   FORBIDDEN_PROPERTIES,
   type CompiledExpression,
   type CompileExpressionOptions,
+  type ExpressionNode,
 } from './expression';
 
 export type {

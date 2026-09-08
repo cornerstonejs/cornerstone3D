@@ -2,7 +2,10 @@ import { describe, expect, it } from '@jest/globals';
 import { buildSeriesInfo } from './buildSeriesInfo';
 import { createDisplaySetFromGroup } from './createDisplaySetFromGroup';
 import { defaultDisplaySetSplitRules } from './defaultDisplaySetSplitRules';
-import { groupInstancesBySplitRules } from './groupInstancesBySplitRules';
+import {
+  groupInstancesBySplitRules,
+  orderInstancesForRule,
+} from './groupInstancesBySplitRules';
 import { ImageStackDisplaySet } from './ImageStackDisplaySet';
 import { isVideoInstance } from './isVideoInstance';
 import { resolveInstances } from './resolveInstances';
@@ -995,6 +998,235 @@ describe('compareInstances - rule-declared instance order', () => {
     expect(groups.map((g) => g.instances.map((i) => i.imageId))).toEqual([
       ['single1', 'single2'],
       ['clip'],
+    ]);
+  });
+});
+
+describe('host-supplied instance ordering', () => {
+  const slice = (
+    imageId: string,
+    SliceLocation: number,
+    InstanceNumber: number
+  ) =>
+    ({
+      imageId,
+      Modality: 'CT',
+      SOPClassUID: '1.2.840.10008.5.1.4.1.1.2',
+      Rows: 512,
+      SeriesInstanceUID: 'ct-series',
+      SOPInstanceUID: `sop-${imageId}`,
+      SliceLocation,
+      InstanceNumber,
+    }) satisfies NaturalizedInstance;
+
+  // Acquisition order (by InstanceNumber) is b, c, a. Position order is a, b, c.
+  // Input order is a, b, c. All three are distinguishable, so no assertion below
+  // can pass by coincidence.
+  const instances = [slice('a', 10, 3), slice('b', 20, 1), slice('c', 30, 2)];
+  const plainRule: SplitRule = { id: 'plain', matches: () => true };
+  const byPosition = (list: NaturalizedInstance[]) =>
+    [...list].sort(
+      (a, b) => (a.SliceLocation as number) - (b.SliceLocation as number)
+    );
+  const byPositionDescending = (list: NaturalizedInstance[]) =>
+    [...list].sort(
+      (a, b) => (b.SliceLocation as number) - (a.SliceLocation as number)
+    );
+  const ids = (groups: InstanceGroup[]) =>
+    groups[0].instances.map((i) => i.imageId);
+
+  it('defaults to acquisition order when the host supplies nothing', () => {
+    expect(ids(groupInstancesBySplitRules(instances, [plainRule]))).toEqual([
+      'b',
+      'c',
+      'a',
+    ]);
+  });
+
+  it('applies a host base sort to every rule', () => {
+    // A whole-list sort, which is the point: a base order that picks a reference
+    // instance and projects onto it cannot be written as a comparator.
+    const groups = groupInstancesBySplitRules(
+      instances,
+      [plainRule],
+      undefined,
+      { sortInstances: byPosition }
+    );
+    expect(ids(groups)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('tells the base sort which rule it is ordering for', () => {
+    const seen: string[] = [];
+    groupInstancesBySplitRules(instances, [plainRule], undefined, {
+      sortInstances: (list, context) => {
+        seen.push(context.matchedRule.id ?? '');
+        return list;
+      },
+    });
+    expect(seen).toEqual(['plain']);
+  });
+
+  it('lets a rule comparator override the host base sort', () => {
+    const groups = groupInstancesBySplitRules(
+      instances,
+      [
+        {
+          id: 'descending',
+          matches: () => true,
+          compareInstances: (a, b) =>
+            (b.SliceLocation as number) - (a.SliceLocation as number),
+        },
+      ],
+      undefined,
+      { sortInstances: byPosition }
+    );
+    expect(ids(groups)).toEqual(['c', 'b', 'a']);
+  });
+
+  it('falls through to the base order when a comparator returns 0', () => {
+    // The comparator has an opinion about `a` only - it must sort first - and
+    // declines on every other pair. The rest must keep the base (descending
+    // position) order rather than collapsing to acquisition or input order.
+    const groups = groupInstancesBySplitRules(
+      instances,
+      [
+        {
+          id: 'aFirst',
+          matches: () => true,
+          compareInstances: (x, y) => {
+            if (x.imageId === y.imageId) {
+              return 0;
+            }
+            if (x.imageId === 'a') {
+              return -1;
+            }
+            if (y.imageId === 'a') {
+              return 1;
+            }
+            return 0;
+          },
+        },
+      ],
+      undefined,
+      { sortInstances: byPositionDescending }
+    );
+    expect(ids(groups)).toEqual(['a', 'c', 'b']);
+  });
+
+  it('consults the host comparator after the rule declines', () => {
+    const groups = groupInstancesBySplitRules(
+      instances,
+      [{ id: 'noOpinion', matches: () => true, compareInstances: () => 0 }],
+      undefined,
+      {
+        compareInstances: (a, b) =>
+          (a.SliceLocation as number) - (b.SliceLocation as number),
+      }
+    );
+    expect(ids(groups)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('prefers the rule comparator over the host comparator', () => {
+    const groups = groupInstancesBySplitRules(
+      instances,
+      [
+        {
+          id: 'ruleWins',
+          matches: () => true,
+          compareInstances: (a, b) =>
+            (b.SliceLocation as number) - (a.SliceLocation as number),
+        },
+      ],
+      undefined,
+      {
+        compareInstances: (a, b) =>
+          (a.SliceLocation as number) - (b.SliceLocation as number),
+      }
+    );
+    expect(ids(groups)).toEqual(['c', 'b', 'a']);
+  });
+
+  it('treats a NaN comparator result as no opinion', () => {
+    const groups = groupInstancesBySplitRules(
+      instances,
+      [
+        {
+          id: 'missingTag',
+          matches: () => true,
+          // `Missing` is on no instance, so every comparison yields NaN.
+          compareInstances: (a, b) =>
+            (a.Missing as number) - (b.Missing as number),
+        },
+      ],
+      undefined,
+      { sortInstances: byPosition }
+    );
+    expect(ids(groups)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('stays independent of the order instances were passed in', () => {
+    const options = { sortInstances: byPosition };
+    const forward = groupInstancesBySplitRules(
+      instances,
+      [plainRule],
+      undefined,
+      options
+    );
+    const reverse = groupInstancesBySplitRules(
+      [...instances].reverse(),
+      [plainRule],
+      undefined,
+      options
+    );
+    expect(ids(forward)).toEqual(ids(reverse));
+  });
+
+  it('orderInstancesForRule reproduces the engine order outside a split', () => {
+    const options = { sortInstances: byPosition };
+    const rule: SplitRule = {
+      id: 'descending',
+      matches: () => true,
+      compareInstances: (a, b) =>
+        (b.SliceLocation as number) - (a.SliceLocation as number),
+    };
+    const fromEngine = ids(
+      groupInstancesBySplitRules(instances, [rule], undefined, options)
+    );
+    const standalone = orderInstancesForRule(instances, rule, options).map(
+      (i) => i.imageId
+    );
+    expect(standalone).toEqual(fromEngine);
+  });
+
+  it('walks runs in the host order, so run numbering follows it too', () => {
+    // Runs are walked in the rule's order. With the base sort ascending by
+    // position, a/b form one run and the clip another; acquisition order
+    // (b, c, a) would have torn a and b apart into separate runs.
+    const clip = (
+      imageId: string,
+      SliceLocation: number,
+      InstanceNumber: number
+    ) =>
+      ({
+        ...slice(imageId, SliceLocation, InstanceNumber),
+        NumberOfFrames: 10,
+      }) satisfies NaturalizedInstance;
+    const list = [slice('a', 10, 3), slice('b', 20, 1), clip('c', 30, 2)];
+    const groups = groupInstancesBySplitRules(
+      list,
+      [
+        {
+          id: 'runs',
+          matches: () => true,
+          runBy: (instance) => Number(instance.NumberOfFrames ?? 1) > 1,
+        },
+      ],
+      undefined,
+      { sortInstances: byPosition }
+    );
+    expect(groups.map((g) => g.instances.map((i) => i.imageId))).toEqual([
+      ['a', 'b'],
+      ['c'],
     ]);
   });
 });

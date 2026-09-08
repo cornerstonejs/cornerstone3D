@@ -157,9 +157,14 @@ export type SplitRule = {
    * }
    * ```
    *
-   * It need not be a total order. Ties - a returned 0, or a `NaN` out of
-   * arithmetic on a tag one instance is missing - fall back to acquisition order,
-   * so an incomplete comparator cannot make the result depend on the order the
+   * It need not be a total order, and is not expected to be. **Returning 0 (or a
+   * `NaN`, as arithmetic on a tag one instance is missing produces) declines to
+   * have an opinion**, rather than asserting the two are interchangeable: the
+   * host's default comparator is consulted next, and failing that the base order
+   * stands - the host's {@link GroupInstancesOptions.sortInstances}, itself
+   * falling back to acquisition order. So a rule can order by one thing and
+   * leave everything else to the default, without restating it, and an
+   * incomplete comparator still cannot make the result depend on the order the
    * instances were passed in.
    */
   compareInstances?: (
@@ -207,6 +212,57 @@ export type SplitRule = {
     attributes: SplitRuleCustomAttributesContext,
     options: SplitRuleOptions
   ) => Record<string, unknown>;
+};
+
+/**
+ * What a sort hook is told about the instances it is ordering.
+ */
+export type InstanceOrderContext = {
+  /** The rule that claimed these instances. */
+  matchedRule: SplitRule;
+  /** That rule's derived series facts. */
+  series: SeriesFacts;
+};
+
+/**
+ * A whole-list instance sort.
+ *
+ * Whole-list rather than a comparator because a real base order is not always
+ * pairwise: ordering slices along the scan axis means picking a reference
+ * instance and projecting the rest onto its normal, which no `(a, b)` function
+ * can express. Ties left alone keep acquisition order.
+ */
+export type SortInstances = (
+  instances: NaturalizedInstance[],
+  context: InstanceOrderContext
+) => NaturalizedInstance[];
+
+/**
+ * Host-supplied defaults for a split operation.
+ *
+ * Ordering lives here rather than only on a rule because it has to be settable
+ * once, for every rule, by whatever application is doing the splitting - and it
+ * has to be settable the same way whether that application is a viewer or a
+ * server building a study index. A per-rule-only hook would leave the *default*
+ * order defined by whoever calls the engine, so two consumers of one selector
+ * could order the same display set differently while both appearing correct.
+ *
+ * A later revision is expected to let a selector carry its sort as data; when it
+ * does it will compile to these same hooks, so ownership of ordering does not
+ * change hands again.
+ */
+export type GroupInstancesOptions = {
+  /**
+   * The base order every rule's instances start in, after acquisition order and
+   * before any comparator. Defaults to acquisition order alone.
+   */
+  sortInstances?: SortInstances;
+  /**
+   * A comparator consulted after a rule's own {@link SplitRule.compareInstances}
+   * and before falling back to the base order. Returning 0 declines to have an
+   * opinion rather than asserting equality.
+   */
+  compareInstances?: SplitRule['compareInstances'];
 };
 
 export type SplitContext = {

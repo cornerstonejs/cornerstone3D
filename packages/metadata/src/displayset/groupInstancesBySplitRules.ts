@@ -1,5 +1,7 @@
 import type {
+  GroupInstancesOptions,
   InstanceGroup,
+  InstanceOrderContext,
   NaturalizedInstance,
   RuleContext,
   SplitRule,
@@ -66,30 +68,91 @@ function compareByAcquisition(
  * The order a rule's instances are taken to be in: both the order runs are walked
  * in to number them and the order each group's `instances` are returned in.
  *
- * A rule may declare {@link SplitRule.compareInstances} because acquisition order
- * is not always the order a display set's frames belong in - a reconstructed
- * volume belongs in spatial order, which `InstanceNumber` does not always follow.
+ * Three layers, each deferring to the one below it:
  *
- * Whatever the rule returns is tie-broken by {@link compareByAcquisition}, so a
- * comparator that is not total - 0 for two distinct instances, or `NaN` out of
- * arithmetic on a missing tag - cannot quietly hand ordering back to
- * `Array.prototype.sort`'s stability and so to the caller's input order.
+ *  1. **Acquisition order**, always applied first. Not the caller's input order:
+ *     an order derived from that would make run ordinals - and so bucket keys -
+ *     depend on the sequence imageIds happened to arrive in, which is the
+ *     property this module exists to guarantee against. Everything below is
+ *     applied to this canonical order, so it is also the final tie-break.
+ *  2. **The host's base sort** ({@link GroupInstancesOptions.sortInstances}), a
+ *     whole-list sort rather than a comparator. It has to be: a real base order
+ *     is not always pairwise - ordering slices along the scan axis means picking
+ *     a reference instance and projecting onto its normal, which no `(a, b)`
+ *     function can express. Ties it leaves alone keep the order from step 1,
+ *     because `Array.prototype.sort` is stable.
+ *  3. **Comparators**, the rule's own {@link SplitRule.compareInstances} first,
+ *     then the host's default ({@link GroupInstancesOptions.compareInstances}).
+ *     The first one to return a finite non-zero value decides. **A comparator
+ *     returning 0 is declining to have an opinion**, not asserting equality: the
+ *     next comparator is consulted, and if none has an opinion the base order
+ *     from steps 1-2 stands. So a comparator can express "order by this one
+ *     thing, and leave the rest alone" without having to restate the default.
+ *
+ * A `NaN` counts as no opinion too - arithmetic on a tag one instance is missing
+ * produces one, and treating it as 0 would otherwise hand ordering to whatever
+ * `sort` does with a non-numeric result.
  */
-function buildInstanceComparator(
+function buildInstanceOrderer(
   splitRule: SplitRule,
-  context: RuleContext
-): (a: NaturalizedInstance, b: NaturalizedInstance) => number {
-  const declared = splitRule.compareInstances;
-  if (!declared) {
-    return compareByAcquisition;
-  }
-
-  return (a, b) => {
-    const order = declared(a, b, context);
-    return Number.isFinite(order) && order !== 0
-      ? order
-      : compareByAcquisition(a, b);
+  context: RuleContext,
+  options: GroupInstancesOptions
+): (instances: NaturalizedInstance[]) => NaturalizedInstance[] {
+  const comparators = [
+    splitRule.compareInstances,
+    options.compareInstances,
+  ].filter(
+    (comparator): comparator is NonNullable<SplitRule['compareInstances']> =>
+      typeof comparator === 'function'
+  );
+  const baseSort = options.sortInstances;
+  const orderContext: InstanceOrderContext = {
+    matchedRule: splitRule,
+    series: context.series,
   };
+
+  return (instances) => {
+    let ordered = [...instances].sort(compareByAcquisition);
+
+    if (baseSort) {
+      // Copied because a host sort may return the array it was handed, and the
+      // comparator pass below sorts in place.
+      ordered = [...baseSort(ordered, orderContext)];
+    }
+
+    if (comparators.length) {
+      ordered.sort((a, b) => {
+        for (const comparator of comparators) {
+          const order = comparator(a, b, context);
+          if (Number.isFinite(order) && order !== 0) {
+            return order;
+          }
+        }
+        return 0;
+      });
+    }
+
+    return ordered;
+  };
+}
+
+/**
+ * The order one rule puts a set of instances in, for a host that has to reproduce
+ * it outside a split - re-sorting a display set after new instances arrive, say.
+ *
+ * Exported so that ordering has exactly one implementation: a host applying its
+ * own sort a second time would discard the rule's comparator, which is precisely
+ * the bug this replaces.
+ */
+export function orderInstancesForRule(
+  instances: NaturalizedInstance[],
+  splitRule: SplitRule,
+  options: GroupInstancesOptions = {}
+): NaturalizedInstance[] {
+  const context: RuleContext = {
+    series: splitRule.series?.({ instances }) ?? {},
+  };
+  return buildInstanceOrderer(splitRule, context, options)(instances);
 }
 
 /**
@@ -105,7 +168,7 @@ function buildInstanceComparator(
  * of the split key.
  *
  * Within a bucket, walks the instances in the rule's order (see
- * {@link buildInstanceComparator}) and increments the ordinal every time `runBy`
+ * {@link buildInstanceOrderer}) and increments the ordinal every time `runBy`
  * returns a value differing from the previous instance's - so a series of
  * `single single single clip single clip` yields runs `0 0 0 1 2 3`.
  *
@@ -117,7 +180,7 @@ function buildRunIndex(
   instances: NaturalizedInstance[],
   baseKeyParts: Map<NaturalizedInstance, unknown[]>,
   runBy: NonNullable<SplitRule['runBy']>,
-  compare: (a: NaturalizedInstance, b: NaturalizedInstance) => number,
+  order: (instances: NaturalizedInstance[]) => NaturalizedInstance[],
   context: RuleContext
 ): Map<NaturalizedInstance, number> {
   const buckets = new Map<string, NaturalizedInstance[]>();
@@ -135,7 +198,7 @@ function buildRunIndex(
   const runIndex = new Map<NaturalizedInstance, number>();
 
   for (const bucket of buckets.values()) {
-    const ordered = [...bucket].sort(compare);
+    const ordered = order(bucket);
 
     let currentRun = -1;
     let previousValue: unknown;
@@ -453,7 +516,8 @@ function resolveRuleDiscriminators(
 export function groupInstancesBySplitRules(
   instances: NaturalizedInstance[],
   splitRules: SplitRule[],
-  onUnmatched?: (instance: NaturalizedInstance) => void
+  onUnmatched?: (instance: NaturalizedInstance) => void,
+  options: GroupInstancesOptions = {}
 ): InstanceGroup[] {
   // Validated ahead of the empty-input shortcut: a rule set with duplicate ids
   // is broken whether or not there are instances to split, and reporting it only
@@ -508,8 +572,8 @@ export function groupInstancesBySplitRules(
     return parts;
   });
 
-  const ruleComparators = splitRules.map((rule, ruleIndex) =>
-    buildInstanceComparator(rule, ruleContexts[ruleIndex])
+  const ruleOrderers = splitRules.map((rule, ruleIndex) =>
+    buildInstanceOrderer(rule, ruleContexts[ruleIndex], options)
   );
 
   const runIndexes = splitRules.map((rule, ruleIndex) =>
@@ -518,7 +582,7 @@ export function groupInstancesBySplitRules(
           claimedByRule[ruleIndex],
           baseKeyParts[ruleIndex],
           rule.runBy,
-          ruleComparators[ruleIndex],
+          ruleOrderers[ruleIndex],
           ruleContexts[ruleIndex]
         )
       : undefined
@@ -558,7 +622,7 @@ export function groupInstancesBySplitRules(
   // the order the imageIds arrived in, which nothing else about the result does.
   for (const group of groups) {
     const ruleIndex = groupRuleIndex.get(group.splitKey ?? '') ?? 0;
-    group.instances.sort(ruleComparators[ruleIndex]);
+    group.instances = ruleOrderers[ruleIndex](group.instances);
   }
 
   return groups.sort((a, b) => {

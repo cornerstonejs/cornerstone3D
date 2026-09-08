@@ -7,13 +7,18 @@ export * as utilities from './utilities';
 export * as safeFunctions from './safeFunctions';
 export * as displaySet from './displayset';
 export {
+  collectIdentifiers,
   compileCondition,
+  compileExpression,
   compileTemplate,
   compileValue,
+  ExpressionSyntaxError,
 } from './safeFunctions';
 export type {
   Classifier,
   ClassifierRegistry,
+  CompiledExpression,
+  CompileExpressionOptions,
   CompiledPredicate,
   CompiledValue,
   NamedFacts,
@@ -38,6 +43,9 @@ export type {
   SplitRuleCustomAttributesContext,
   InstanceGroup,
   ViewportTypeHint,
+  InstanceOrderContext,
+  SortInstances,
+  GroupInstancesOptions,
   ClassifierName,
   InstanceClassifier,
   RawCondition,
@@ -59,6 +67,7 @@ export {
   registerDisplaySetMetadata,
   registerDisplaySetProviders,
   defaultDisplaySetSplitRules,
+  orderInstancesForRule,
   rawDisplaySetSelector,
   createDisplaySetSplitRules,
   createDisplaySetFromGroup,

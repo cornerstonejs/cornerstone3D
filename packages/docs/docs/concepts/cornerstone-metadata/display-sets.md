@@ -376,6 +376,40 @@ in — `matches`, `groupBy`, `runBy`, `series` facts, `compareInstances`,
 | `compareInstances` | `{ attribute, number, descending }` — instance order within a group                         |
 | `customAttributes` | literals, values read from the first instance, or a named preset                            |
 
+### Who decides instance order
+
+Instance order is layered, each layer deferring to the one below:
+
+1. **Acquisition order** (`InstanceNumber`, then `SOPInstanceUID`), always applied
+   first — never the order the imageIds arrived in, so nothing about the result
+   depends on that.
+2. **The host's base sort**, `GroupInstancesOptions.sortInstances`, passed to
+   `groupInstancesBySplitRules` / `splitImageIdsBySplitRules`. A **whole-list**
+   sort, not a comparator, because a real base order is not always pairwise:
+   ordering slices along the scan axis means picking a reference instance and
+   projecting the rest onto its normal, which no `(a, b)` function can express.
+3. **Comparators** — the rule's own `compareInstances` first, then the host's
+   `GroupInstancesOptions.compareInstances`.
+
+A comparator **returning 0 declines to have an opinion** rather than asserting the
+two instances are interchangeable: the next comparator is consulted, and if none
+has one, the base order stands. So a rule can say "order by this one thing, leave
+the rest alone" without restating the default. A `NaN` — which arithmetic on a tag
+one instance is missing produces — counts as no opinion too.
+
+The base sort is host-supplied rather than only rule-declared for the same reason
+the rules themselves are data: the *default* order has to be settable once, the
+same way, by whatever is doing the splitting. If only rules could set it, two
+consumers of one selector could order the same display set differently while both
+appearing correct — a viewer sorting by position and a server by instance number,
+say. `orderInstancesForRule` exposes the whole composition so a host that has to
+re-order outside a split (after new instances arrive, for instance) reproduces the
+same order rather than applying its own sort a second time and discarding the
+rule's.
+
+A later revision is expected to let a selector carry its sort as data; it will
+compile to these same hooks, so ordering does not change owner again.
+
 A rule also carries a `description`: the explanation lives in the rule data, not in
 a code comment, so a UI that lets a user inspect or toggle rules reads it from the
 selector rather than keeping its own copy. The **Display Set Rules** example

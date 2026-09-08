@@ -127,6 +127,20 @@ so it can never become a route to evaluated code. `\{` escapes a literal brace,
 and an absent attribute substitutes an empty string. For anything more, use an
 expression with a template literal: `{ expression: '`${Modality} ${Rows}`' }`.
 
+:::note Text composition reaches every attribute, by design
+A template — and a template literal in an expression — can interpolate any
+attribute the subject carries. That is the point: composing a label out of
+attributes is a main reason to write a definition rather than hard-code one.
+
+It also means a definition, not just a display template, decides what text a
+host ends up showing. Where the subject is a naturalized DICOM instance, the
+patient identifiers sit on it next to the acquisition tags, so a definition can
+put them in a label. Nothing here can prevent that without also preventing the
+intended use, so it is a property of the vocabulary rather than a defect in it:
+a host handing these definitions to its UI should treat them as content under
+the same review as any other configuration that decides what a screen says.
+:::
+
 **The one asymmetry to remember**: in condition position a bare string is an
 expression; in value position a bare string is an attribute name. Value position
 had that meaning first and thousands of `groupBy: ['SeriesInstanceUID']` entries
@@ -177,6 +191,40 @@ If two hosts feed the same rules differently shaped subjects — one a full
 naturalized DICOM instance, another a trimmed-down projection of it — they will
 disagree about the result while both appearing to work. Whatever a definition is
 allowed to reference should be documented alongside it.
+
+### Seeing what an expression reads
+
+`collectIdentifiers` returns the identifiers an expression resolves against its
+scope, which is what a host needs to decide what to fetch — or to notice an
+expression referencing something it does not supply:
+
+```js
+import { collectIdentifiers, parseExpressionSource } from '@cornerstonejs/metadata';
+
+collectIdentifiers(parseExpressionSource("Modality === 'CT' && Rows > 512"));
+// ['Modality', 'Rows']
+```
+
+Only the root of a member chain is a scope lookup, so
+`instance.ViewCodeSequence[0].CodeValue` reports just `instance`.
+
+**`compileExpression` does not take a list of permitted identifiers, and does
+not reject an unknown one.** That is deliberate, for two reasons:
+
+- **The subject is open-ended at runtime.** A naturalized DICOM instance
+  carries private tags, vendor additions and per-frame data folded in by the
+  naturalizer. No dictionary enumerates it, so validating against one rejects
+  expressions that would have worked — a false rejection breaks a deployment,
+  where a silent no-match only puzzles one.
+- **The compiler is called from where the list is not.** `compileCondition` and
+  `compileValue` compile a selector's expressions, and an application's own
+  marker (OHIF's `$function`) compiles at customization-read time. None of
+  those sites knows the shape of the subject a rule will later run against.
+
+A host that genuinely has a closed subject can build the check it wants from
+`collectIdentifiers` in a couple of lines, and choose whether an unknown
+identifier is a warning or an error. That decision belongs to whoever knows
+what is on the subject.
 
 ## Worked example: display-set split rules
 

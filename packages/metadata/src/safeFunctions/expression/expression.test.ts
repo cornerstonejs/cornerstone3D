@@ -1,4 +1,9 @@
-import { compileExpression, ExpressionSyntaxError } from './index';
+import {
+  collectIdentifiers,
+  compileExpression,
+  ExpressionSyntaxError,
+  parseExpressionSource,
+} from './index';
 
 describe('compileExpression', () => {
   describe('literals and operators', () => {
@@ -209,6 +214,71 @@ describe('compileExpression', () => {
       } finally {
         warn.mockRestore();
       }
+    });
+  });
+
+  describe('collectIdentifiers', () => {
+    const identifiersOf = (source: string) =>
+      collectIdentifiers(parseExpressionSource(source)).sort();
+
+    it('collects the identifiers an expression resolves against its scope', () => {
+      expect(identifiersOf("Modality === 'CT' && Rows > 512")).toEqual([
+        'Modality',
+        'Rows',
+      ]);
+    });
+
+    it('collects only the root of a member or index chain', () => {
+      // `ViewCodeSequence` and `CodeValue` are field reads off whatever
+      // `instance` is, not scope lookups, so they are not identifiers.
+      expect(identifiersOf('instance.ViewCodeSequence[0].CodeValue')).toEqual([
+        'instance',
+      ]);
+      // The index expression IS evaluated in scope, so it is collected.
+      expect(identifiersOf('instance.Sequence[Offset]')).toEqual([
+        'Offset',
+        'instance',
+      ]);
+    });
+
+    it('does not collect helper or aggregate callees', () => {
+      expect(identifiersOf('round(Rows / 64)')).toEqual(['Rows']);
+      expect(identifiersOf('minOf(instances, InstanceNumber)')).toEqual([
+        'InstanceNumber',
+        'instances',
+      ]);
+    });
+
+    it('reaches into templates, ternaries and arrays', () => {
+      expect(identifiersOf('`${SeriesDescription} ${Modality}`')).toEqual([
+        'Modality',
+        'SeriesDescription',
+      ]);
+      expect(identifiersOf('Rows > 2000 ? Big : Small')).toEqual([
+        'Big',
+        'Rows',
+        'Small',
+      ]);
+      expect(identifiersOf("Modality in [Primary, 'CT']")).toEqual([
+        'Modality',
+        'Primary',
+      ]);
+    });
+
+    it('de-duplicates', () => {
+      expect(identifiersOf('Rows > 0 && Rows < 1024')).toEqual(['Rows']);
+    });
+
+    it('lets a host spot an identifier it does not supply', () => {
+      // What a host with a genuinely closed subject would do with this, rather
+      // than the compiler doing it: the compiler is called from places that do
+      // not know the subject's shape, and a naturalized instance's attributes
+      // are not enumerable up front anyway.
+      const supplied = new Set(['Modality', 'Rows', 'instance', 'context']);
+      const unknown = identifiersOf("Modallity === 'CT' && Rows > 0").filter(
+        (name) => !supplied.has(name)
+      );
+      expect(unknown).toEqual(['Modallity']);
     });
   });
 });

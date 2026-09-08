@@ -114,6 +114,84 @@ const AGGREGATES = new Set([
   'sumOf',
 ]);
 
+/**
+ * Every identifier an expression resolves against its scope, de-duplicated.
+ *
+ * Only `identifier` nodes are scope lookups. A member chain's property names
+ * are not (`instance.ViewCodeSequence` looks up `instance` and then reads a
+ * field off whatever that is), and a call's callee is resolved against the
+ * helper whitelist rather than the scope — so neither appears here.
+ *
+ * This answers "which attributes does this expression read?", which is what a
+ * host needs to decide what to fetch, or to report an expression referencing
+ * something it does not supply.
+ *
+ * Reporting is left to the host on purpose, and `compileExpression` takes no
+ * list of permitted identifiers. Two reasons, both learned the hard way:
+ *
+ *  - The subject is open-ended at runtime. A naturalized DICOM instance
+ *    carries private tags, vendor additions and per-frame data folded in by
+ *    the naturalizer; no dictionary enumerates it, so checking against one
+ *    rejects expressions that would have worked.
+ *  - The compiler is called from where the list is not. `compileCondition` and
+ *    `compileValue` compile a selector's expressions, and an application's own
+ *    marker (OHIF's `$function`) compiles at customization-read time — none of
+ *    those sites knows the shape of the subject a rule will later run against.
+ *
+ * A host that genuinely has a closed subject can build the check it wants from
+ * this function in a couple of lines, and decide for itself whether the result
+ * is a warning or an error.
+ */
+export function collectIdentifiers(node: ExpressionNode): string[] {
+  const found = new Set<string>();
+
+  const walk = (current: ExpressionNode): void => {
+    switch (current.type) {
+      case 'literal':
+        return;
+      case 'identifier':
+        found.add(current.name);
+        return;
+      case 'member':
+        walk(current.object);
+        return;
+      case 'index':
+        walk(current.object);
+        walk(current.index);
+        return;
+      case 'call':
+        current.args.forEach(walk);
+        return;
+      case 'unary':
+        walk(current.argument);
+        return;
+      case 'binary':
+      case 'logical':
+        walk(current.left);
+        walk(current.right);
+        return;
+      case 'conditional':
+        walk(current.test);
+        walk(current.consequent);
+        walk(current.alternate);
+        return;
+      case 'array':
+        current.elements.forEach(walk);
+        return;
+      case 'template':
+        current.parts.forEach((part) => {
+          if (part.kind === 'expr') {
+            walk(part.node);
+          }
+        });
+        return;
+    }
+  };
+
+  walk(node);
+  return [...found];
+}
+
 function resolveIdentifier(name: string, scope: EvaluationScope): unknown {
   if (Object.prototype.hasOwnProperty.call(scope.params, name)) {
     return scope.params[name];
@@ -331,6 +409,9 @@ function compileNode(node: ExpressionNode, expression: string): NodeEvaluator {
  * Calling convention: the compiled function's positional arguments bind to
  * `options.params` (default `['instance', 'context']`).  Bare identifiers
  * resolve parameter names first, then fields of the first argument.
+ *
+ * An identifier the subject does not carry resolves to `undefined`; see
+ * {@link collectIdentifiers} for reporting that.
  */
 export function compileExpression(
   source: string,

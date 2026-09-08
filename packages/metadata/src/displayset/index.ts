@@ -6,6 +6,7 @@ export type { ImageStackDisplaySetOptions } from './ImageStackDisplaySet';
 export { resolveInstances } from './resolveInstances';
 export type { ResolveInstancesOptions } from './resolveInstances';
 export { buildSeriesInfo } from './buildSeriesInfo';
+export { orderInstancesForRule } from './groupInstancesBySplitRules';
 export { groupInstancesBySplitRules } from './groupInstancesBySplitRules';
 export { splitImageIdsBySplitRules } from './splitImageIdsBySplitRules';
 export type { SplitImageIdsBySplitRulesOptions } from './splitImageIdsBySplitRules';
@@ -56,4 +57,7 @@ export type {
   SplitRuleCustomAttributesContext,
   InstanceGroup,
   ViewportTypeHint,
+  InstanceOrderContext,
+  SortInstances,
+  GroupInstancesOptions,
 } from './types';
