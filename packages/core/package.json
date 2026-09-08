@@ -45,6 +45,11 @@
       "import": "./dist/esm/enums/*.js",
       "default": "./dist/esm/enums/*.js"
     },
+    "./renderBackend": {
+      "types": "./dist/esm/renderBackend/index.d.ts",
+      "import": "./dist/esm/renderBackend/index.js",
+      "default": "./dist/esm/renderBackend/index.js"
+    },
     "./loaders": {
       "types": "./dist/esm/loaders/index.d.ts",
       "import": "./dist/esm/loaders/index.js",

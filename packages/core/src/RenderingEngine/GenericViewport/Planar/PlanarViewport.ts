@@ -11,6 +11,7 @@ import {
   getRenderSurfaceForRenderMode,
   isImageRenderMode,
   isVolumeRenderMode,
+  renderModeSupportsOverlayActors,
 } from '../../helpers/renderBackendRegistry';
 import type { EffectiveRenderBackend } from '../../../types/RenderBackendRegistry';
 import type {
@@ -605,18 +606,12 @@ class PlanarViewport extends GenericViewport<
     const rendering = this.getCurrentPlanarRendering();
     const renderMode = rendering?.renderMode;
 
-    // Overlay images mount on any registered image mode, and on volume modes
-    // whose actors live in a vtk scene (the CanvasActor-based cpuVolume path
-    // draws its slice pixels directly and cannot host overlay actors). Note:
-    // this must not key on the composited surface — extension backends such
-    // as webgpu blit into the cpu surface canvas while still hosting vtk
-    // actors.
-    const supportsImageOverlays =
-      isImageRenderMode(renderMode) ||
-      (isVolumeRenderMode(renderMode) &&
-        renderMode !== ActorRenderMode.CPU_VOLUME);
-
-    if (!supportsImageOverlays) {
+    // Overlay images mount on any registered render mode that declares it can
+    // host actors alongside the primary one. Asking the registry rather than
+    // the composited surface matters for extension backends: one that blits
+    // its frames into the cpu canvas still mounts actors, so keying on the
+    // surface would silently drop its overlays.
+    if (!renderModeSupportsOverlayActors(renderMode)) {
       return;
     }
 
