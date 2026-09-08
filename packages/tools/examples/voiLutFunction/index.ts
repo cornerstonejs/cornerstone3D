@@ -92,6 +92,9 @@ let currentImageId: string;
 // Mirrors what the viewport tracks internally: asking for a VOI LUT Function is
 // the opt out from the image's own VOI LUT Sequence
 let voiLUTFunctionRequested = false;
+// Kept here so that the inversion survives a reload of the image, which the CPU
+// toggle does, and so both pipelines are compared in the same state
+let invertRequested = false;
 
 /**
  * (Re)creates the stack viewport.
@@ -145,6 +148,7 @@ function updateInfo() {
     }`,
     '',
     `viewport VOILUTFunction : ${properties.VOILUTFunction}`,
+    `viewport invert         : ${properties.invert ? 'yes' : 'no'}`,
     `viewport voiRange       : ${
       properties.voiRange
         ? `${properties.voiRange.lower.toFixed(
@@ -171,6 +175,12 @@ async function loadAndViewImage(imageId: string) {
 
   await prefetchMetadataInformation([imageId]);
   await viewport.setStack([imageId]);
+
+  // A new stack starts from the state of the file, so put the requested
+  // inversion back on the viewport
+  if (invertRequested) {
+    viewport.setProperties({ invert: true });
+  }
 
   viewport.render();
   updateInfo();
@@ -247,6 +257,13 @@ addButtonToToolbar({
     // what opts back in to the file's own VOI LUT Sequence
     voiLUTFunctionRequested = false;
     viewport.resetProperties();
+
+    // resetProperties also puts the inversion back to the state of the file, so
+    // keep the choice that the Invert toggle shows
+    if (invertRequested) {
+      viewport.setProperties({ invert: true });
+    }
+
     viewport.render();
     updateInfo();
   },
@@ -281,6 +298,23 @@ addButtonToToolbar({
 
     voiLUTFunctionRequested = true;
     viewport.setProperties({ VOILUTFunction: voiLUTFunction, voiRange });
+    viewport.render();
+    updateInfo();
+  },
+});
+
+// A VOI LUT Sequence and a sigmoid each put a curve on the actor, and a window
+// level drag makes that curve again from the new window. The inversion belongs
+// to the viewport and not to the curve, so it has to survive each rebuild. Use
+// this toggle with a window level drag, on the GPU and on the CPU, to see that
+// the inversion stays. A MONOCHROME1 file is inverted from the start, and the
+// same rule holds for that inversion.
+addToggleButtonToToolbar({
+  title: 'Invert',
+  defaultToggle: false,
+  onClick: (toggle) => {
+    invertRequested = toggle;
+    viewport.setProperties({ invert: toggle });
     viewport.render();
     updateInfo();
   },

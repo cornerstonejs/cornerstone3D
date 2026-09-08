@@ -10,6 +10,7 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addButtonToToolbar,
+  addToggleButtonToToolbar,
   addLabelToToolbar,
   createInfoSection,
 } from '../../../../utils/demo/helpers';
@@ -73,14 +74,21 @@ function setVOILUTFunction(VOILUTFunction: Enums.VOILUTFunctionType) {
   updateVoiLabel();
 }
 
-// Shows which function is active and on which window, since the window level
-// tool can change the window afterwards.
+// Shows which function is active, on which window, and whether the viewport is
+// inverted, since the window level tool can change the window afterwards and the
+// inversion has to survive that change.
 function updateVoiLabel() {
-  const { voiRange: range, VOILUTFunction } = getViewport().getProperties();
+  const {
+    voiRange: range,
+    VOILUTFunction,
+    invert,
+  } = getViewport().getProperties();
   const windowWidth = Math.round(range.upper - range.lower);
   const windowCenter = Math.round((range.lower + range.upper) / 2);
 
-  voiLabel.innerText = `${VOILUTFunction} - WW ${windowWidth} / WC ${windowCenter}`;
+  voiLabel.innerText = `${VOILUTFunction} - WW ${windowWidth} / WC ${windowCenter} - ${
+    invert ? 'inverted' : 'not inverted'
+  }`;
 }
 
 addButtonToToolbar({
@@ -91,6 +99,23 @@ addButtonToToolbar({
 addButtonToToolbar({
   title: 'Set Sigmoid VOI',
   onClick: () => setVOILUTFunction(Enums.VOILUTFunctionType.SAMPLED_SIGMOID),
+});
+
+// A sigmoid VOI puts a curve on the actor, and a window level drag makes that
+// curve again from the new window. The inversion is a property of the viewport
+// and not of the window, so it has to survive each rebuild of the curve. Use
+// this toggle with a window level drag to see that the inversion stays.
+addToggleButtonToToolbar({
+  id: 'invert',
+  title: 'Invert',
+  defaultToggle: false,
+  onClick: (toggle) => {
+    const viewport = getViewport();
+
+    viewport.setProperties({ invert: toggle });
+    viewport.render();
+    updateVoiLabel();
+  },
 });
 
 voiLabel = addLabelToToolbar({
@@ -121,6 +146,9 @@ createInfoSection(content)
   )
   .addInstruction(
     'Left click drag window levels the volume, and both functions follow the new window'
+  )
+  .addInstruction(
+    'Invert works with either function, and the image stays inverted through a window level drag on the sigmoid curve'
   );
 // ============================= //
 
