@@ -10,6 +10,8 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addButtonToToolbar,
+  addLabelToToolbar,
+  createInfoSection,
 } from '../../../../utils/demo/helpers';
 
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -35,44 +37,67 @@ const { ViewportType } = Enums;
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Sigmoid VOI Volume',
-  'This example shows how to set a Sigmoid VOI on a Volume viewport.'
+  'This example shows how to set a Sigmoid VOI on a Volume viewport, and how it ' +
+    'differs from the linear VOI at the same window level.'
 );
+
+// Both buttons apply this same window (WW 1000 / WC -300) so that only the shape
+// of the VOI LUT curve changes between them, which is the point of the example.
+// The window is deliberately placed to clip both ends of this CT: the linear LUT
+// maps everything below -800 to solid black and everything above 200 to solid
+// white, while the sigmoid LUT rolls off instead of clipping and keeps mapping
+// values out to about WC +/- 1.73 * WW. The lung and the bone are therefore
+// where the two functions differ - flat with the linear LUT, and still showing
+// gradation with the sigmoid one, up to about 30 of 255 grey levels of it right
+// at the window edges. In the middle of the window the two curves nearly
+// coincide, which is why an unconstrained window looks the same either way.
+const voiRange = { lower: -800, upper: 200 };
+
+let voiLabel: HTMLLabelElement;
+
+function getViewport() {
+  // Get the rendering engine
+  const renderingEngine = getRenderingEngine(renderingEngineId);
+
+  // Get the volume viewport
+  return renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
+}
+
+function setVOILUTFunction(VOILUTFunction: Enums.VOILUTFunctionType) {
+  // The same voiRange is set with both functions, so the only thing that
+  // changes is how the values inside (and outside) that range are mapped.
+  const viewport = getViewport();
+
+  viewport.setProperties({ VOILUTFunction, voiRange });
+  viewport.render();
+  updateVoiLabel();
+}
+
+// Shows which function is active and on which window, since the window level
+// tool can change the window afterwards.
+function updateVoiLabel() {
+  const { voiRange: range, VOILUTFunction } = getViewport().getProperties();
+  const windowWidth = Math.round(range.upper - range.lower);
+  const windowCenter = Math.round((range.lower + range.upper) / 2);
+
+  voiLabel.innerText = `${VOILUTFunction} - WW ${windowWidth} / WC ${windowCenter}`;
+}
 
 addButtonToToolbar({
   title: 'Set Linear VOI',
-  onClick: () => {
-    // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-
-    // Get the volume viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IVolumeViewport;
-
-    // Set a range to highlight bones
-    viewport.setProperties({ VOILUTFunction: Enums.VOILUTFunctionType.LINEAR });
-
-    viewport.render();
-  },
+  onClick: () => setVOILUTFunction(Enums.VOILUTFunctionType.LINEAR),
 });
 
 addButtonToToolbar({
   title: 'Set Sigmoid VOI',
-  onClick: () => {
-    // Get the rendering engine
-    const renderingEngine = getRenderingEngine(renderingEngineId);
+  onClick: () => setVOILUTFunction(Enums.VOILUTFunctionType.SAMPLED_SIGMOID),
+});
 
-    // Get the volume viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IVolumeViewport;
-
-    // Set a range to highlight bones
-    viewport.setProperties({
-      VOILUTFunction: Enums.VOILUTFunctionType.SAMPLED_SIGMOID,
-    });
-
-    viewport.render();
+voiLabel = addLabelToToolbar({
+  id: 'voiState',
+  title: 'VOI:',
+  style: {
+    paddingLeft: '10px',
   },
 });
 
@@ -83,6 +108,20 @@ element.style.width = '512px';
 element.style.height = '512px';
 
 content.appendChild(element);
+
+createInfoSection(content)
+  .addInstruction(
+    'Both buttons apply the same window (WW 1000 / WC -300), so only the VOI LUT function changes'
+  )
+  .addInstruction(
+    'Linear clips at the window: lung and air below -800 go solid black, bone above 200 goes solid white'
+  )
+  .addInstruction(
+    'Sigmoid rolls off instead of clipping, so the lung and the bone keep some gradation - that is where to look for the difference'
+  )
+  .addInstruction(
+    'Left click drag window levels the volume, and both functions follow the new window'
+  );
 // ============================= //
 
 /**
@@ -156,10 +195,14 @@ async function run() {
   volume.load();
 
   // Set the volume on the viewport
-  viewport.setVolumes([{ volumeId }]);
+  await viewport.setVolumes([{ volumeId }]);
 
-  // Render the image
-  viewport.render();
+  // Keeps the label honest while the window level tool is used.
+  element.addEventListener(Enums.Events.VOI_MODIFIED, updateVoiLabel);
+
+  // Start off in the linear state that the buttons switch between, so that the
+  // first click on either button is a pure change of the VOI LUT function.
+  setVOILUTFunction(Enums.VOILUTFunctionType.LINEAR);
 }
 
 run();
