@@ -3,6 +3,7 @@ import type { PublicToolProps } from '../../types';
 import SplineROITool from './SplineROITool';
 import { Events } from '../../enums';
 import { convertContourSegmentationAnnotation } from '../../utilities/contourSegmentation';
+import { getAnnotation } from '../../stateManagement/annotation/annotationState';
 
 class SplineContourSegmentationTool extends SplineROITool {
   static toolName = 'SplineContourSegmentationTool';
@@ -51,6 +52,20 @@ class SplineContourSegmentationTool extends SplineROITool {
     ) {
       return;
     }
+
+    // applyContourStroke already removes the source stroke and rebuilds the
+    // segment as PlanarFreehandContourSegmentationTool annotations. Converting
+    // the removed source again would add a second, same-geometry freehand
+    // contour. Under Clipper's EvenOdd fill rule those duplicates cancel out
+    // when the next stroke is applied, which makes the original spline vanish.
+    // Skip if the source annotation is no longer in the annotation state.
+    if (
+      !annotation?.annotationUID ||
+      !getAnnotation(annotation.annotationUID)
+    ) {
+      return;
+    }
+
     convertContourSegmentationAnnotation(annotation);
   }
 }

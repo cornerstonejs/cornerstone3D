@@ -9,6 +9,10 @@ import viewportTypeUsesCustomRenderingPipeline, {
 } from './helpers/viewportTypeUsesCustomRenderingPipeline';
 import getOrCreateCanvas from './helpers/getOrCreateCanvas';
 import {
+  setElementTouchActionNone,
+  restoreElementTouchAction,
+} from './helpers/elementTouchAction';
+import {
   getShouldUseCPURendering,
   getUseGenericViewport,
   isCornerstoneInitialized,
@@ -567,6 +571,10 @@ abstract class BaseRenderingEngine {
     // Make the element not focusable, we use this for modifier keys to work
     element.tabIndex = -1;
 
+    // Deliver touch input to cornerstone tools instead of the browser
+    // (scroll, pinch-zoom, double-tap zoom). Restored in _resetViewport.
+    setElementTouchActionNone(element);
+
     const canvas = getOrCreateCanvas(element);
 
     // Add a viewport with no offset
@@ -718,6 +726,7 @@ abstract class BaseRenderingEngine {
 
     element.removeAttribute('data-viewport-uid');
     element.removeAttribute('data-rendering-engine-uid');
+    restoreElementTouchAction(element);
 
     // clear drawing
     const context = canvas.getContext('2d');

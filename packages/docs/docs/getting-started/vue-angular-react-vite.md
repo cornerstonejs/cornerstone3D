@@ -35,6 +35,7 @@ Here are some examples of how to use Cornerstone3D with React, Vue, Angular, and
 2. **Required setup:**
    - **Vite config:** Use `@originjs/vite-plugin-commonjs` for `dicom-parser`, set `optimizeDeps.exclude: ['@cornerstonejs/dicom-image-loader']`, `optimizeDeps.include: ['dicom-parser']`, and `worker: { format: 'es' }`. See [Vite basic setup](#basic-setup) below.
    - **Subpath:** For running under a subpath (e.g. `/subpath/`), set `base` from `process.env.BASE_PATH` and use scripts like `dev:subpath` / `build:subpath` that set `BASE_PATH=/subpath/`. The Vue template uses `cross-env` for this.
+   - **Codec WASM:** Vite resolves the codec binaries on its own, so nothing is required here. Optionally set `init({ wasmBasePath })` to serve them from a location you choose, e.g. a CDN — see [Codec WASM location](#codec-wasm-location).
 
 3. **How to run:**
    - **Dev (root):** `npm run dev` → open http://localhost:5173/
@@ -54,6 +55,7 @@ Here are some examples of how to use Cornerstone3D with React, Vue, Angular, and
 2. **Required setup:**
    - **Postinstall / prebuild:** The project uses scripts to create Node stubs (`fs`/`path`) for the browser build and to bundle the DICOM image loader worker and copy codec WASM. These run on `npm install` and before `npm run build` (via `prebuild`). The **preview** script runs them before building so the production bundle has the worker and codecs.
    - **Serve:** In development, `@cornerstonejs/dicom-image-loader` is excluded from prebundle so the worker loads correctly.
+   - **Codec WASM:** Required here, unlike the Vite templates — the `application` builder uses esbuild, which does not resolve the codecs' bare specifiers. Point the loader at the copied binaries with `init({ wasmBasePath })`; see [Codec WASM location](#codec-wasm-location).
    - **Assets:** Codec `.wasm` files are copied from `node_modules` into the build via `angular.json` assets; the worker is generated into `public/cs-dicom-loader/` (and that folder is typically gitignored).
 
 3. **How to run:**
@@ -77,7 +79,8 @@ Here are some examples of how to use Cornerstone3D with React, Vue, Angular, and
 
 2. **Required setup:**
    - **Vite config:** Same as Vue: CommonJS plugin for `dicom-parser`, exclude `@cornerstonejs/dicom-image-loader` from `optimizeDeps`, include `dicom-parser`, and `worker: { format: 'es' }`. Optionally use a Cornerstone WASM plugin or `base` for subpath.
-   - **Subpath:** Set `base: '/subpath/'` in `vite.config.ts` (or from env) for build/preview under a subpath; optionally use `setConfiguration({ wasmBasePath })` or a plugin for WASM base path.
+   - **Subpath:** Set `base: '/subpath/'` in `vite.config.ts` (or from env) for build/preview under a subpath.
+   - **Codec WASM:** Vite resolves the codec binaries on its own, so nothing is required here. Optionally set `init({ wasmBasePath })` to serve them from a location you choose, e.g. a CDN — see [Codec WASM location](#codec-wasm-location).
 
 3. **How to run:**
    - **Dev (root):** `npm run dev` → open http://localhost:5173/
@@ -94,6 +97,59 @@ Here are some examples of how to use Cornerstone3D with React, Vue, Angular, and
 | React (Vite) | `npm install` | `npm run dev` | `npm run build` | `npm run preview`                      |
 
 For subpath, use the `dev:subpath` / `build:subpath` / `preview:subpath` scripts where available (Vue, Angular) or set `base` in Vite config (React/Vue).
+
+---
+
+## Codec WASM location
+
+Each decoder locates its WASM binary with a bare `@cornerstonejs/codec-...` specifier inside `new URL(..., import.meta.url)`. Whether that needs any setup from you depends on the bundler:
+
+| Bundler               | Behavior                                                                                                       |
+| --------------------- | -------------------------------------------------------------------------------------------------------------- |
+| webpack 5             | Resolves the specifier through the package `exports` map and emits the binary as an asset. Nothing to do.      |
+| Vite / Rollup (build) | Same: resolves and emits the binary (or inlines it, when under the asset inline limit). Nothing to do.         |
+| esbuild               | Does **not** resolve it. `new URL(...)` is treated as ordinary code, so the bare specifier survives the build. |
+
+Angular's `application` builder is esbuild-based, so Angular applications are the common case that needs configuration. In Vite, keep `@cornerstonejs/dicom-image-loader` out of dev-time dependency optimization (the `optimizeDeps.exclude` above), because prebundling runs esbuild — that is the same limitation seen from the dev server.
+
+When the specifier is not resolved, the request goes to a path that does not exist — usually answered by the SPA fallback, which surfaces as:
+
+```
+CompileError: WebAssembly.instantiate(): expected magic word 00 61 73 6d, found 3c 21 64 6f
+```
+
+(`3c 21 64 6f` is `<!do` — the decoder received `index.html` instead of a binary.)
+
+Serve the binaries yourself and point the loader at them with `wasmBasePath`:
+
+```js
+import { init as dicomImageLoaderInit } from '@cornerstonejs/dicom-image-loader';
+
+dicomImageLoaderInit({
+  wasmBasePath: '/assets/cs-wasm/',
+});
+```
+
+Reach for this when your bundler does not resolve the specifiers (esbuild, so Angular), or when you want the binaries served from a location you control — a CDN, or a path that suits a subpath deployment — regardless of bundler.
+
+That is a single root for every codec — there is no per-codec option. The directory must contain the four binaries under their published names, copied at build time out of the `dist` directory of each codec package:
+
+| File                           | Copy from                                 |
+| ------------------------------ | ----------------------------------------- |
+| `charlswasm_decode.wasm`       | `@cornerstonejs/codec-charls`             |
+| `libjpegturbowasm_decode.wasm` | `@cornerstonejs/codec-libjpeg-turbo-8bit` |
+| `openjpegwasm_decode.wasm`     | `@cornerstonejs/codec-openjpeg`           |
+| `openjphjs.wasm`               | `@cornerstonejs/codec-openjph`            |
+
+For a **subpath** deployment, include the base path. Deriving it from the document keeps one build working at any mount point:
+
+```js
+dicomImageLoaderInit({
+  wasmBasePath: new URL('assets/cs-wasm/', document.baseURI).href,
+});
+```
+
+A relative `wasmBasePath` resolves against the decode worker's location, and an absolute path or full URL (e.g. a CDN) is used as given. When the option is unset, the default `import.meta.url` resolution applies, which is what unbundled and script-tag usage relies on.
 
 ---
 

@@ -455,11 +455,14 @@ class ArrowAnnotateTool extends AnnotationTool {
 
   touchTapCallback = (evt: EventTypes.TouchTapEventType) => {
     if (evt.detail.taps == 2) {
-      this.doubleClickCallback(evt);
+      this.doubleClickCallback(evt, ArrowAnnotateTool.TOUCH_PROXIMITY);
     }
   };
 
-  doubleClickCallback = (evt: EventTypes.TouchTapEventType): void => {
+  doubleClickCallback = (
+    evt: EventTypes.TouchTapEventType,
+    proximity = ArrowAnnotateTool.MOUSE_PROXIMITY
+  ): void => {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
     let annotations = getAnnotations(this.getToolName(), element);
@@ -478,7 +481,7 @@ class ArrowAnnotateTool extends AnnotationTool {
         element,
         annotation as ArrowAnnotation,
         eventDetail.currentPoints.canvas,
-        6 // Todo: get from configuration
+        proximity
       )
     );
 

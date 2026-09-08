@@ -2,7 +2,6 @@ import type {
   LibJpegTurbo8Bit,
   OpenJpegModule,
 } from '@cornerstonejs/codec-libjpeg-turbo-8bit/dist/libjpegturbowasm_decode';
-import type { ByteArray } from 'dicom-parser';
 // @ts-ignore
 import libjpegTurboFactory from '@cornerstonejs/codec-libjpeg-turbo-8bit/decodewasmjs';
 
@@ -13,6 +12,9 @@ const libjpegTurboWasm = new URL(
   import.meta.url
 );
 import type { Types } from '@cornerstonejs/core';
+import type { LoaderDecodeOptions } from '../../types';
+import getPixelData from './getPixelData';
+import { resolveWasmUrl, setWasmBasePathFromConfig } from '../wasmBasePath';
 
 const local: {
   codec: OpenJpegModule;
@@ -22,7 +24,9 @@ const local: {
   decoder: undefined,
 };
 
-function initLibjpegTurbo(): Promise<void> {
+function initLibjpegTurbo(decodeConfig?: LoaderDecodeOptions): Promise<void> {
+  setWasmBasePathFromConfig(decodeConfig);
+
   if (local.codec) {
     return Promise.resolve();
   }
@@ -30,7 +34,7 @@ function initLibjpegTurbo(): Promise<void> {
   const libjpegTurboModule = libjpegTurboFactory({
     locateFile: (f) => {
       if (f.endsWith('.wasm')) {
-        return libjpegTurboWasm.toString();
+        return resolveWasmUrl('libjpegturbowasm_decode.wasm', libjpegTurboWasm);
       }
 
       return f;
@@ -101,22 +105,6 @@ async function decodeAsync(
     ...encodeOptions,
     ...encodedImageInfo,
   };
-}
-
-function getPixelData(frameInfo, decodedBuffer: ByteArray) {
-  if (frameInfo.isSigned) {
-    return new Int8Array(
-      decodedBuffer.buffer,
-      decodedBuffer.byteOffset,
-      decodedBuffer.byteLength
-    );
-  }
-
-  return new Uint8Array(
-    decodedBuffer.buffer,
-    decodedBuffer.byteOffset,
-    decodedBuffer.byteLength
-  );
 }
 
 const initialize = initLibjpegTurbo;

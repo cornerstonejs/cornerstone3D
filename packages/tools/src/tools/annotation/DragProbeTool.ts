@@ -8,6 +8,7 @@ import {
 } from '../../drawingSvg';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import { hideElementCursor } from '../../cursors/elementCursor';
+import { Events } from '../../enums';
 import type {
   Annotation,
   EventTypes,
@@ -56,10 +57,18 @@ class DragProbeTool extends ProbeTool {
   ): ProbeAnnotation => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
-    const worldPos = currentPoints.world;
 
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
+
+    // Reached with the TOUCH_START event via postTouchStartCallback (both the
+    // explicit alias below and the dispatcher-level fallback).
+    const isTouch = evt.type === Events.TOUCH_START;
+    const worldPos = this.getTouchAdjustedWorldPos(
+      viewport,
+      currentPoints,
+      isTouch
+    );
 
     this.isDrawing = true;
     // Native ("next") viewports expose no getCamera; read orientation via the bridge.

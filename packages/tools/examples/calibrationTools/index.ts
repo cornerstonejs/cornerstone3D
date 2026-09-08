@@ -8,6 +8,7 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
+  addButtonToToolbar,
   addDropdownToToolbar,
   viewportId,
   renderingEngineId,

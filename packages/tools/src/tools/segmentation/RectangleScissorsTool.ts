@@ -235,10 +235,20 @@ class RectangleScissorsTool extends LabelmapBaseTool {
   };
 
   _dragCallback = (evt: EventTypes.InteractionEventType) => {
-    this.isDrawing = true;
-
     const eventDetail = evt.detail;
     const { element } = eventDetail;
+
+    const { currentPointsList } =
+      eventDetail as EventTypes.TouchDragEventDetail;
+    if (currentPointsList?.length > 1) {
+      // A second finger reclassifies the gesture (pinch zoom, multi-finger
+      // scroll); drop the rubber band instead of resizing it at the mean
+      // touch point and applying on release.
+      this._cancelTouchDraw(element);
+      return;
+    }
+
+    this.isDrawing = true;
 
     const { annotation, viewportIdsToRender, handleIndex } = this.editData;
     const { data } = annotation;

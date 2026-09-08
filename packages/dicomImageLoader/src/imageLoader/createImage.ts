@@ -86,7 +86,13 @@ async function createImage(
     }
   }
 
-  const { decodeConfig } = getOptions();
+  const { decodeConfig, wasmBasePath } = getOptions();
+  // Forward the WASM base path to the worker, where the decoders resolve their
+  // binaries. The loader-level option wins over one set in decodeConfig.
+  const taskDecodeConfig =
+    wasmBasePath === undefined
+      ? decodeConfig
+      : { ...decodeConfig, wasmBasePath };
 
   // Remove any property of the `imageFrame` that cannot be transferred to the worker,
   // such as promises and functions.
@@ -106,7 +112,7 @@ async function createImage(
     pixelData,
     canvas,
     options,
-    decodeConfig
+    taskDecodeConfig
   );
 
   const isColorImage = isColorImageFn(imageFrame.photometricInterpretation);

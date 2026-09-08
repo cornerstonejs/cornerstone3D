@@ -13,6 +13,11 @@ export interface WebWorkerOptions {
 export interface WebWorkerDecodeConfig {
   initializeCodecsOnStartup: boolean;
   strict?: boolean;
+  /**
+   * Base path the codec WASM binaries are loaded from. Forwarded from
+   * `LoaderOptions.wasmBasePath` with the decode task.
+   */
+  wasmBasePath?: string;
 }
 
 export interface WebWorkerTaskOptions {
