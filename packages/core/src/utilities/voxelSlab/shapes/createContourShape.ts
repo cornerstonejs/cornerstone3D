@@ -1,7 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import type { Point2, Point3 } from '../../../types';
 import type { IndexSpaceSlab, VolumeGeometry } from '../indexSpaceSlab';
-import getVoxelThicknessAlongNormal from '../getVoxelThicknessAlongNormal';
 import { projectPointOntoPlane } from '../slabMembership';
 import type { PlaneBasis, VoxelSlabShape } from './shapeGeometry';
 import {
@@ -51,7 +50,10 @@ export interface ContourShapeOptions {
    * `annotationThickness` and the slab enforces it, complete with the half
    * voxel dilation that guarantees at least one layer is selected.
    *
-   * Omit to let the slab decide the depth entirely.
+   * Omit to let the slab decide the depth entirely. `getRequiredThickness()`
+   * then returns 0, so the documented
+   * `getRequiredThickness() || annotationThickness` hands the slab the
+   * annotation's own thickness.
    */
   depth?: number;
 }
@@ -190,7 +192,6 @@ export function createContourShape(
     return best;
   }
 
-  const voxelThickness = getVoxelThicknessAlongNormal(volume, basis.n);
   const resolveColumnLine = createColumnLineResolver(volume, basis.n);
 
   function containsPlanePoint([x, y]: PlanePoint): boolean {
@@ -352,9 +353,11 @@ export function createContourShape(
   return {
     containsPoint,
     getRuns,
-    // The prism's depth, which the caller should hand to the slab. Falling back
-    // to one voxel matches the default the slab itself would apply.
+    // The prism's depth, which the caller should hand to the slab. A contour
+    // given no depth is planar, so it returns 0 as the contract requires - and
+    // `getRequiredThickness() || annotationThickness` then falls through to the
+    // annotation's own thickness rather than replacing it with one voxel.
     getRequiredThickness: () =>
-      Number.isFinite(depth) ? (depth as number) : voxelThickness,
+      Number.isFinite(depth) ? (depth as number) : 0,
   };
 }

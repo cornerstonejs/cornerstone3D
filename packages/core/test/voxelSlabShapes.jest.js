@@ -777,14 +777,16 @@ describe('createContourShape', () => {
     });
   });
 
-  it('defaults its required thickness to one voxel', () => {
+  it('requires no thickness of its own when given no depth', () => {
     const shape = createContourShape({
       volume,
       planePoint,
       normal: AXIAL,
       polyline: square(10, 10, 3, 3),
     });
-    expect(shape.getRequiredThickness()).toBeCloseTo(1, 10);
+    // Planar, so 0 - and the caller's `|| annotationThickness` then keeps the
+    // annotation's own thickness instead of narrowing it to one voxel.
+    expect(shape.getRequiredThickness()).toBe(0);
   });
 
   it('reports the depth it was given', () => {
