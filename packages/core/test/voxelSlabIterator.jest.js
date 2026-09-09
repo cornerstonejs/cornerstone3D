@@ -356,6 +356,69 @@ describe('iterateVoxelsInSlab agrees with the reference implementation', () => {
         )
       );
     });
+
+    it('only ever narrows, so a box reaching outside the volume is clamped', () => {
+      const volume = createSyntheticVolume({
+        dimensions: [10, 10, 10],
+        spacing: [1, 1, 1],
+      });
+      const planePoint = [5, 5, 5];
+      const normal = [0, 0, 1];
+
+      // A bounding box derived from world coordinates easily reaches past the
+      // volume on both sides. Every index must still lie inside the volume.
+      const voxels = collectVoxelsInSlab({
+        volume,
+        planePoint,
+        normal,
+        annotationThickness: 1,
+        bounds: [
+          [-40, 60],
+          [-40, 60],
+          [-40, 60],
+        ],
+      });
+
+      voxels.forEach((ijk) => {
+        ijk.forEach((index, axis) => {
+          expect(index).toBeGreaterThanOrEqual(0);
+          expect(index).toBeLessThan(volume.dimensions[axis]);
+        });
+      });
+
+      // Clamped to the whole volume, so the result matches the default.
+      expect(canonicaliseVoxels(voxels)).toEqual(
+        canonicaliseVoxels(
+          collectVoxelsInSlab({
+            volume,
+            planePoint,
+            normal,
+            annotationThickness: 1,
+          })
+        )
+      );
+    });
+
+    it('selects nothing when the box lies wholly outside the volume', () => {
+      const volume = createSyntheticVolume({
+        dimensions: [10, 10, 10],
+        spacing: [1, 1, 1],
+      });
+
+      expect(
+        collectVoxelsInSlab({
+          volume,
+          planePoint: [5, 5, 5],
+          normal: [0, 0, 1],
+          annotationThickness: 1,
+          bounds: [
+            [20, 30],
+            [0, 9],
+            [0, 9],
+          ],
+        })
+      ).toHaveLength(0);
+    });
   });
 });
 
