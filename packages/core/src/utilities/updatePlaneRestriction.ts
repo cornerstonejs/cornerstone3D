@@ -18,6 +18,15 @@ const ORTHOGONAL_TEST_VALUE = 0.95;
  * This type of reference restricts the allowed camera views to those
  * which contain the point, and whose view plane normal is orthogonal to the in
  * plane vectors.
+ *
+ * @param points - the points that the reference must contain.
+ * @param reference - the view reference, and NOT `reference.planeRestriction`.
+ * This function does `reference.planeRestriction ||= ...`, so it needs the
+ * outer object. A `PlaneRestriction` also structurally satisfies the
+ * all-optional `ViewReference`, so a call that passes the inner object type
+ * checks, but then builds and mutates a nested
+ * `planeRestriction.planeRestriction`, and silently discards the
+ * point-derived in-plane vectors.
  */
 export function updatePlaneRestriction(
   points: Point3[],

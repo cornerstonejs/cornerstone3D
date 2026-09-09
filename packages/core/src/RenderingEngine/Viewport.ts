@@ -2077,12 +2077,6 @@ class Viewport {
       },
     };
     if (viewRefSpecifier?.points) {
-      // Pass the whole reference, not target.planeRestriction:
-      // updatePlaneRestriction does `reference.planeRestriction ||= ...`. A
-      // PlaneRestriction structurally satisfies the all-optional ViewReference,
-      // so handing it the inner object type checks but builds a nested
-      // planeRestriction.planeRestriction and mutates that instead, silently
-      // discarding the point-derived in-plane vectors.
       updatePlaneRestriction(viewRefSpecifier.points, target);
     }
     return target;
