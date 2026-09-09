@@ -1,7 +1,7 @@
 import { collectVoxelsInSlab } from '../src/utilities/voxelSlab/iterateVoxelsInSlab';
 import { buildIndexSpaceSlab } from '../src/utilities/voxelSlab/indexSpaceSlab';
 import getVoxelThicknessAlongNormal from '../src/utilities/voxelSlab/getVoxelThicknessAlongNormal';
-import { createContourShape } from '../src/utilities/voxelSlab/shapes/createContourShape';
+import { createPolylineShape } from '../src/utilities/voxelSlab/shapes/createPolylineShape';
 import { createPlaneBasis } from '../src/utilities/voxelSlab/shapes/shapeGeometry';
 import { createSyntheticVolume, obliqueNormal } from './utils/syntheticVolume';
 import {
@@ -18,31 +18,31 @@ const AXIAL = [0, 0, 1];
 function expectShapeConsistency({
   volume,
   planePoint,
-  normal,
-  annotationThickness,
+  viewPlaneNormal,
+  referencePlaneThickness,
   shape,
 }) {
   const viaRuns = collectVoxelsInSlab({
     volume,
     planePoint,
-    normal,
-    annotationThickness,
+    viewPlaneNormal,
+    referencePlaneThickness,
     getShapeRuns: shape.getRuns,
   });
 
   const viaPredicate = collectVoxelsInSlab({
     volume,
     planePoint,
-    normal,
-    annotationThickness,
+    viewPlaneNormal,
+    referencePlaneThickness,
     isInShape: (center) => shape.containsPoint(center),
   });
 
   const viaReference = referenceVoxelsInSlab({
     volume,
     planePoint,
-    normal,
-    annotationThickness,
+    viewPlaneNormal,
+    referencePlaneThickness,
     isInShape: (_projected, _ijk, center) => shape.containsPoint(center),
   });
 
@@ -57,8 +57,8 @@ function expectShapeConsistency({
 }
 
 /** Maps plane coordinates onto an arbitrary plane, for the oblique cases. */
-function planeMapper(anchor, normal) {
-  const { u, v } = createPlaneBasis(normal, [1, 0, 0]);
+function planeMapper(anchor, viewPlaneNormal) {
+  const { u, v } = createPlaneBasis(viewPlaneNormal, [1, 0, 0]);
   return ([x, y]) => [
     anchor[0] + (x - 12) * u[0] + (y - 12) * v[0],
     anchor[1] + (x - 12) * u[1] + (y - 12) * v[1],
@@ -66,7 +66,7 @@ function planeMapper(anchor, normal) {
   ];
 }
 
-describe('createContourShape - three or more runs per row', () => {
+describe('createPolylineShape - three or more runs per row', () => {
   const volume = createSyntheticVolume({
     dimensions: [24, 24, 4],
     spacing: [1, 1, 1],
@@ -95,10 +95,10 @@ describe('createContourShape - three or more runs per row', () => {
   ];
 
   const combShape = () =>
-    createContourShape({
+    createPolylineShape({
       volume,
       planePoint,
-      normal: AXIAL,
+      viewPlaneNormal: AXIAL,
       polyline: comb,
     });
 
@@ -130,8 +130,8 @@ describe('createContourShape - three or more runs per row', () => {
     expectShapeConsistency({
       volume,
       planePoint,
-      normal: AXIAL,
-      annotationThickness: 1,
+      viewPlaneNormal: AXIAL,
+      referencePlaneThickness: 1,
       shape: combShape(),
     });
   });
@@ -143,19 +143,22 @@ describe('createContourShape - three or more runs per row', () => {
     });
 
     [20, 40, 65].forEach((degrees) => {
-      const normal = obliqueNormal(oblique.direction, degrees);
+      const viewPlaneNormal = obliqueNormal(oblique.direction, degrees);
       const anchor = [12, 12, 10];
-      const toPlane = planeMapper(anchor, normal);
+      const toPlane = planeMapper(anchor, viewPlaneNormal);
 
       expectShapeConsistency({
         volume: oblique,
         planePoint: anchor,
-        normal,
-        annotationThickness: getVoxelThicknessAlongNormal(oblique, normal),
-        shape: createContourShape({
+        viewPlaneNormal,
+        referencePlaneThickness: getVoxelThicknessAlongNormal(
+          oblique,
+          viewPlaneNormal
+        ),
+        shape: createPolylineShape({
           volume: oblique,
           planePoint: anchor,
-          normal,
+          viewPlaneNormal,
           polyline: comb.map(([x, y]) => toPlane([x, y])),
         }),
       });
@@ -163,7 +166,7 @@ describe('createContourShape - three or more runs per row', () => {
   });
 });
 
-describe('createContourShape - internal holes', () => {
+describe('createPolylineShape - internal holes', () => {
   const volume = createSyntheticVolume({
     dimensions: [26, 26, 4],
     spacing: [1, 1, 1],
@@ -178,19 +181,19 @@ describe('createContourShape - internal holes', () => {
   ];
 
   const annulus = () =>
-    createContourShape({
+    createPolylineShape({
       volume,
       planePoint,
-      normal: AXIAL,
+      viewPlaneNormal: AXIAL,
       polyline: [ring(4, 20), ring(9, 15)],
     });
 
   it('rejects a ring with fewer than three points', () => {
     expect(() =>
-      createContourShape({
+      createPolylineShape({
         volume,
         planePoint,
-        normal: AXIAL,
+        viewPlaneNormal: AXIAL,
         polyline: [
           ring(4, 20),
           [
@@ -206,12 +209,12 @@ describe('createContourShape - internal holes', () => {
     expectShapeConsistency({
       volume,
       planePoint,
-      normal: AXIAL,
-      annotationThickness: 1,
-      shape: createContourShape({
+      viewPlaneNormal: AXIAL,
+      referencePlaneThickness: 1,
+      shape: createPolylineShape({
         volume,
         planePoint,
-        normal: AXIAL,
+        viewPlaneNormal: AXIAL,
         polyline: ring(4, 20),
       }),
     });
@@ -223,8 +226,8 @@ describe('createContourShape - internal holes', () => {
     const voxels = expectShapeConsistency({
       volume,
       planePoint,
-      normal: AXIAL,
-      annotationThickness: 1,
+      viewPlaneNormal: AXIAL,
+      referencePlaneThickness: 1,
       shape,
     });
 
@@ -252,18 +255,18 @@ describe('createContourShape - internal holes', () => {
   });
 
   it('treats a ring inside a hole as solid again', () => {
-    const shape = createContourShape({
+    const shape = createPolylineShape({
       volume,
       planePoint,
-      normal: AXIAL,
+      viewPlaneNormal: AXIAL,
       polyline: [ring(2, 22), ring(6, 18), ring(10, 14)],
     });
 
     expectShapeConsistency({
       volume,
       planePoint,
-      normal: AXIAL,
-      annotationThickness: 1,
+      viewPlaneNormal: AXIAL,
+      referencePlaneThickness: 1,
       shape,
     });
 
@@ -273,18 +276,18 @@ describe('createContourShape - internal holes', () => {
   });
 
   it('supports disjoint rings as separate regions', () => {
-    const shape = createContourShape({
+    const shape = createPolylineShape({
       volume,
       planePoint,
-      normal: AXIAL,
+      viewPlaneNormal: AXIAL,
       polyline: [ring(2, 8), ring(16, 22)],
     });
 
     const voxels = expectShapeConsistency({
       volume,
       planePoint,
-      normal: AXIAL,
-      annotationThickness: 1,
+      viewPlaneNormal: AXIAL,
+      referencePlaneThickness: 1,
       shape,
     });
 
@@ -301,19 +304,22 @@ describe('createContourShape - internal holes', () => {
     });
 
     [25, 50].forEach((degrees) => {
-      const normal = obliqueNormal(oblique.direction, degrees);
+      const viewPlaneNormal = obliqueNormal(oblique.direction, degrees);
       const anchor = [12, 12, 11];
-      const toPlane = planeMapper(anchor, normal);
+      const toPlane = planeMapper(anchor, viewPlaneNormal);
 
       expectShapeConsistency({
         volume: oblique,
         planePoint: anchor,
-        normal,
-        annotationThickness: getVoxelThicknessAlongNormal(oblique, normal),
-        shape: createContourShape({
+        viewPlaneNormal,
+        referencePlaneThickness: getVoxelThicknessAlongNormal(
+          oblique,
+          viewPlaneNormal
+        ),
+        shape: createPolylineShape({
           volume: oblique,
           planePoint: anchor,
-          normal,
+          viewPlaneNormal,
           polyline: [
             ring(4, 20).map(([x, y]) => toPlane([x, y])),
             ring(9, 15).map(([x, y]) => toPlane([x, y])),
@@ -330,8 +336,8 @@ describe('createContourShape - internal holes', () => {
     const options = {
       volume,
       planePoint,
-      normal: AXIAL,
-      annotationThickness: 1,
+      viewPlaneNormal: AXIAL,
+      referencePlaneThickness: 1,
     };
 
     const withRings = collectVoxelsInSlab({
@@ -341,10 +347,10 @@ describe('createContourShape - internal holes', () => {
 
     const flattened = collectVoxelsInSlab({
       ...options,
-      getShapeRuns: createContourShape({
+      getShapeRuns: createPolylineShape({
         volume,
         planePoint,
-        normal: AXIAL,
+        viewPlaneNormal: AXIAL,
         polyline: [...ring(4, 20), ...ring(9, 15)],
       }).getRuns,
     });

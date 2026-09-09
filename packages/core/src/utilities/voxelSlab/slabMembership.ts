@@ -25,28 +25,28 @@ export function getSlabEpsilon(voxelThickness: number): number {
 }
 
 /**
- * Resolves the annotation thickness to use, in mm.
+ * Resolves the reference plane thickness to use, in mm.
  *
  * Null, undefined, and 0 or less all count as "not recorded" and default to one
  * voxel along the normal. See
  * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  *
- * @param annotationThickness - The recorded thickness, or null/undefined/0.
+ * @param referencePlaneThickness - The recorded thickness, or null/undefined/0.
  * @param voxelThickness - The voxel thickness along the normal, the fallback.
  */
-export function resolveAnnotationThickness(
-  annotationThickness: number | null | undefined,
+export function resolveReferencePlaneThickness(
+  referencePlaneThickness: number | null | undefined,
   voxelThickness: number
 ): number {
-  return Number.isFinite(annotationThickness) &&
-    (annotationThickness as number) > 0
-    ? (annotationThickness as number)
+  return Number.isFinite(referencePlaneThickness) &&
+    (referencePlaneThickness as number) > 0
+    ? (referencePlaneThickness as number)
     : voxelThickness;
 }
 
 /**
  * The half width used to decide which *voxels* an area annotation contains
- * (Rule M): `(annotationThickness + voxelThickness) / 2`.
+ * (Rule M): `(referencePlaneThickness + voxelThickness) / 2`.
  *
  * The voxel term widens the slab by half a voxel each side, so a plane exactly
  * midway between two voxel centres selects **both** layers. The viewport's own
@@ -54,31 +54,31 @@ export function resolveAnnotationThickness(
  *
  * See `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  *
- * @param annotationThickness - The annotation thickness, already resolved.
+ * @param referencePlaneThickness - The reference plane thickness, resolved.
  * @param voxelThickness - The voxel thickness along the normal.
  */
 export function getMembershipHalfWidth(
-  annotationThickness: number,
+  referencePlaneThickness: number,
   voxelThickness: number
 ): number {
-  return (annotationThickness + voxelThickness) / 2;
+  return (referencePlaneThickness + voxelThickness) / 2;
 }
 
 /**
  * The half width used to decide whether an annotation is *displayed* in a
- * viewport (Rule D): `(viewportSlabThickness + annotationThickness) / 2`.
+ * viewport (Rule D): `(viewportSlabThickness + referencePlaneThickness) / 2`.
  *
  * Unlike Rule M this uses the viewport slab thickness, because whether
  * something is shown legitimately depends on how thick a slab is being viewed.
  *
  * @param viewportSlabThickness - The viewport slab thickness in mm.
- * @param annotationThickness - The annotation thickness, already resolved.
+ * @param referencePlaneThickness - The reference plane thickness, resolved.
  */
 export function getDisplayHalfWidth(
   viewportSlabThickness: number,
-  annotationThickness: number
+  referencePlaneThickness: number
 ): number {
-  return (viewportSlabThickness + annotationThickness) / 2;
+  return (viewportSlabThickness + referencePlaneThickness) / 2;
 }
 
 /**
@@ -122,19 +122,19 @@ export function isWithinSlab(
  * @param voxelCenter - The voxel centre in world coordinates.
  * @param planePoint - The annotation plane anchor.
  * @param normal - The annotation's view plane normal. Unit length.
- * @param annotationThickness - The annotation thickness, already resolved.
+ * @param referencePlaneThickness - The reference plane thickness, resolved.
  * @param voxelThickness - The voxel thickness along the normal.
  */
 export function isVoxelCenterInSlab(
   voxelCenter: Point3,
   planePoint: Point3,
   normal: Point3,
-  annotationThickness: number,
+  referencePlaneThickness: number,
   voxelThickness: number
 ): boolean {
   return isWithinSlab(
     signedDistanceToPlane(voxelCenter, planePoint, normal),
-    getMembershipHalfWidth(annotationThickness, voxelThickness),
+    getMembershipHalfWidth(referencePlaneThickness, voxelThickness),
     getSlabEpsilon(voxelThickness)
   );
 }

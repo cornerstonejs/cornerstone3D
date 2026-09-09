@@ -6,7 +6,7 @@ import {
   createCircleShape,
 } from '../src/utilities/voxelSlab/shapes/createEllipseShape';
 import { createRectangleShape } from '../src/utilities/voxelSlab/shapes/createRectangleShape';
-import { createContourShape } from '../src/utilities/voxelSlab/shapes/createContourShape';
+import { createPolylineShape } from '../src/utilities/voxelSlab/shapes/createPolylineShape';
 import {
   createPlaneBasis,
   solveAbsLinearLeq,
@@ -32,30 +32,30 @@ const AXIAL = [0, 0, 1];
  * must all select exactly the same voxels.
  */
 function expectShapeConsistency(
-  { volume, planePoint, normal, annotationThickness, shape },
+  { volume, planePoint, viewPlaneNormal, referencePlaneThickness, shape },
   label = ''
 ) {
   const viaRuns = collectVoxelsInSlab({
     volume,
     planePoint,
-    normal,
-    annotationThickness,
+    viewPlaneNormal,
+    referencePlaneThickness,
     getShapeRuns: shape.getRuns,
   });
 
   const viaPredicate = collectVoxelsInSlab({
     volume,
     planePoint,
-    normal,
-    annotationThickness,
+    viewPlaneNormal,
+    referencePlaneThickness,
     isInShape: (center) => shape.containsPoint(center),
   });
 
   const viaReference = referenceVoxelsInSlab({
     volume,
     planePoint,
-    normal,
-    annotationThickness,
+    viewPlaneNormal,
+    referencePlaneThickness,
     isInShape: (_projected, _ijk, center) => shape.containsPoint(center),
   });
 
@@ -165,8 +165,8 @@ describe('createEllipseShape - planar', () => {
       createEllipseShape({
         volume,
         planePoint,
-        normal: AXIAL,
-        center: planePoint,
+        viewPlaneNormal: AXIAL,
+        centerWorld: planePoint,
         majorAxis: [1, 0, 0],
         majorRadius: 0,
         minorRadius: 2,
@@ -178,8 +178,8 @@ describe('createEllipseShape - planar', () => {
     const shape = createEllipseShape({
       volume,
       planePoint,
-      normal: AXIAL,
-      center: planePoint,
+      viewPlaneNormal: AXIAL,
+      centerWorld: planePoint,
       majorAxis: [1, 0, 0],
       majorRadius: 4.5,
       minorRadius: 2.5,
@@ -188,8 +188,8 @@ describe('createEllipseShape - planar', () => {
     const voxels = expectShapeConsistency({
       volume,
       planePoint,
-      normal: AXIAL,
-      annotationThickness: 1,
+      viewPlaneNormal: AXIAL,
+      referencePlaneThickness: 1,
       shape,
     });
 
@@ -208,8 +208,8 @@ describe('createEllipseShape - planar', () => {
     const shape = createEllipseShape({
       volume,
       planePoint,
-      normal: AXIAL,
-      center: planePoint,
+      viewPlaneNormal: AXIAL,
+      centerWorld: planePoint,
       majorAxis: [0, 1, 0],
       majorRadius: 4.5,
       minorRadius: 2.5,
@@ -218,8 +218,8 @@ describe('createEllipseShape - planar', () => {
     const voxels = expectShapeConsistency({
       volume,
       planePoint,
-      normal: AXIAL,
-      annotationThickness: 1,
+      viewPlaneNormal: AXIAL,
+      referencePlaneThickness: 1,
       shape,
     });
 
@@ -233,8 +233,8 @@ describe('createEllipseShape - planar', () => {
     const inPlane = createEllipseShape({
       volume,
       planePoint,
-      normal: AXIAL,
-      center: planePoint,
+      viewPlaneNormal: AXIAL,
+      centerWorld: planePoint,
       majorAxis: [1, 0, 0],
       majorRadius: 4.5,
       minorRadius: 2.5,
@@ -242,8 +242,8 @@ describe('createEllipseShape - planar', () => {
     const tilted = createEllipseShape({
       volume,
       planePoint,
-      normal: AXIAL,
-      center: planePoint,
+      viewPlaneNormal: AXIAL,
+      centerWorld: planePoint,
       majorAxis: [1, 0, 7],
       majorRadius: 4.5,
       minorRadius: 2.5,
@@ -252,8 +252,8 @@ describe('createEllipseShape - planar', () => {
     const options = {
       volume,
       planePoint,
-      normal: AXIAL,
-      annotationThickness: 1,
+      viewPlaneNormal: AXIAL,
+      referencePlaneThickness: 1,
     };
     expect(
       canonicaliseVoxels(
@@ -270,8 +270,8 @@ describe('createEllipseShape - planar', () => {
     const shape = createCircleShape({
       volume,
       planePoint,
-      normal: AXIAL,
-      center: planePoint,
+      viewPlaneNormal: AXIAL,
+      centerWorld: planePoint,
       radius: 3,
     });
     expect(shape.getRequiredThickness()).toBe(0);
@@ -284,13 +284,13 @@ describe('createEllipseShape - planar', () => {
     });
 
     [10, 25, 40, 55, 70].forEach((degrees) => {
-      const normal = obliqueNormal(oblique.direction, degrees);
+      const viewPlaneNormal = obliqueNormal(oblique.direction, degrees);
       const anchor = [7, 7, 13];
       const shape = createEllipseShape({
         volume: oblique,
         planePoint: anchor,
-        normal,
-        center: anchor,
+        viewPlaneNormal,
+        centerWorld: anchor,
         majorAxis: [1, 0, 0],
         majorRadius: 4,
         minorRadius: 2,
@@ -300,8 +300,11 @@ describe('createEllipseShape - planar', () => {
         {
           volume: oblique,
           planePoint: anchor,
-          normal,
-          annotationThickness: getVoxelThicknessAlongNormal(oblique, normal),
+          viewPlaneNormal,
+          referencePlaneThickness: getVoxelThicknessAlongNormal(
+            oblique,
+            viewPlaneNormal
+          ),
           shape,
         },
         `${degrees} degrees`
@@ -317,20 +320,20 @@ describe('createEllipseShape - planar', () => {
       direction,
       origin: [-4, 6, 2],
     });
-    const normal = obliqueNormal(direction, 33);
+    const viewPlaneNormal = obliqueNormal(direction, 33);
     const anchor = [-1, 12, 12];
 
     expectShapeConsistency(
       {
         volume: tilted,
         planePoint: anchor,
-        normal,
-        annotationThickness: 3,
+        viewPlaneNormal,
+        referencePlaneThickness: 3,
         shape: createEllipseShape({
           volume: tilted,
           planePoint: anchor,
-          normal,
-          center: anchor,
+          viewPlaneNormal,
+          centerWorld: anchor,
           majorAxis: [0, 1, 0],
           majorRadius: 5,
           minorRadius: 2.5,
@@ -352,8 +355,8 @@ describe('createEllipseShape - solid', () => {
     const shape = createEllipseShape({
       volume,
       planePoint,
-      normal: AXIAL,
-      center: planePoint,
+      viewPlaneNormal: AXIAL,
+      centerWorld: planePoint,
       majorAxis: [1, 0, 0],
       majorRadius: 4,
       minorRadius: 3,
@@ -368,8 +371,8 @@ describe('createEllipseShape - solid', () => {
     const shape = createEllipseShape({
       volume,
       planePoint,
-      normal: AXIAL,
-      center: planePoint,
+      viewPlaneNormal: AXIAL,
+      centerWorld: planePoint,
       majorAxis: [1, 0, 0],
       majorRadius: 5,
       minorRadius: 5,
@@ -379,8 +382,8 @@ describe('createEllipseShape - solid', () => {
     const voxels = expectShapeConsistency({
       volume,
       planePoint,
-      normal: AXIAL,
-      annotationThickness: shape.getRequiredThickness(),
+      viewPlaneNormal: AXIAL,
+      referencePlaneThickness: shape.getRequiredThickness(),
       shape,
     });
 
@@ -398,8 +401,8 @@ describe('createEllipseShape - solid', () => {
     const shape = createCircleShape({
       volume,
       planePoint,
-      normal: AXIAL,
-      center: planePoint,
+      viewPlaneNormal: AXIAL,
+      centerWorld: planePoint,
       radius: 4,
       depthRadius: 4,
     });
@@ -407,8 +410,8 @@ describe('createEllipseShape - solid', () => {
     const voxels = expectShapeConsistency({
       volume,
       planePoint,
-      normal: AXIAL,
-      annotationThickness: shape.getRequiredThickness(),
+      viewPlaneNormal: AXIAL,
+      referencePlaneThickness: shape.getRequiredThickness(),
       shape,
     });
 
@@ -426,13 +429,13 @@ describe('createEllipseShape - solid', () => {
     });
 
     [20, 45, 65].forEach((degrees) => {
-      const normal = obliqueNormal(oblique.direction, degrees);
+      const viewPlaneNormal = obliqueNormal(oblique.direction, degrees);
       const anchor = [8, 8, 12];
       const shape = createEllipseShape({
         volume: oblique,
         planePoint: anchor,
-        normal,
-        center: anchor,
+        viewPlaneNormal,
+        centerWorld: anchor,
         majorAxis: [1, 0, 0],
         majorRadius: 4,
         minorRadius: 3,
@@ -443,8 +446,8 @@ describe('createEllipseShape - solid', () => {
         {
           volume: oblique,
           planePoint: anchor,
-          normal,
-          annotationThickness: shape.getRequiredThickness(),
+          viewPlaneNormal,
+          referencePlaneThickness: shape.getRequiredThickness(),
           shape,
         },
         `solid at ${degrees} degrees`
@@ -465,8 +468,8 @@ describe('createRectangleShape', () => {
       createRectangleShape({
         volume,
         planePoint,
-        normal: AXIAL,
-        center: planePoint,
+        viewPlaneNormal: AXIAL,
+        centerWorld: planePoint,
         majorAxis: [1, 0, 0],
         majorHalfLength: 3,
         minorHalfLength: -1,
@@ -478,8 +481,8 @@ describe('createRectangleShape', () => {
     const shape = createRectangleShape({
       volume,
       planePoint,
-      normal: AXIAL,
-      center: planePoint,
+      viewPlaneNormal: AXIAL,
+      centerWorld: planePoint,
       majorAxis: [1, 0, 0],
       majorHalfLength: 3.5,
       minorHalfLength: 2.5,
@@ -488,8 +491,8 @@ describe('createRectangleShape', () => {
     const voxels = expectShapeConsistency({
       volume,
       planePoint,
-      normal: AXIAL,
-      annotationThickness: 1,
+      viewPlaneNormal: AXIAL,
+      referencePlaneThickness: 1,
       shape,
     });
 
@@ -505,8 +508,8 @@ describe('createRectangleShape', () => {
     const shape = createRectangleShape({
       volume,
       planePoint,
-      normal: AXIAL,
-      center: planePoint,
+      viewPlaneNormal: AXIAL,
+      centerWorld: planePoint,
       majorAxis: [1, 0, 0],
       majorHalfLength: 3,
       minorHalfLength: 2,
@@ -515,8 +518,8 @@ describe('createRectangleShape', () => {
     const voxels = expectShapeConsistency({
       volume,
       planePoint,
-      normal: AXIAL,
-      annotationThickness: 1,
+      viewPlaneNormal: AXIAL,
+      referencePlaneThickness: 1,
       shape,
     });
 
@@ -528,8 +531,8 @@ describe('createRectangleShape', () => {
     const shape = createRectangleShape({
       volume,
       planePoint,
-      normal: AXIAL,
-      center: planePoint,
+      viewPlaneNormal: AXIAL,
+      centerWorld: planePoint,
       majorAxis: [1, 1, 0],
       majorHalfLength: 6,
       minorHalfLength: 1,
@@ -538,8 +541,8 @@ describe('createRectangleShape', () => {
     const voxels = expectShapeConsistency({
       volume,
       planePoint,
-      normal: AXIAL,
-      annotationThickness: 1,
+      viewPlaneNormal: AXIAL,
+      referencePlaneThickness: 1,
       shape,
     });
 
@@ -558,8 +561,8 @@ describe('createRectangleShape', () => {
     const shape = createRectangleShape({
       volume: cube,
       planePoint: anchor,
-      normal: AXIAL,
-      center: anchor,
+      viewPlaneNormal: AXIAL,
+      centerWorld: anchor,
       majorAxis: [1, 0, 0],
       majorHalfLength: 3.5,
       minorHalfLength: 3.5,
@@ -569,8 +572,8 @@ describe('createRectangleShape', () => {
     const voxels = expectShapeConsistency({
       volume: cube,
       planePoint: anchor,
-      normal: AXIAL,
-      annotationThickness: shape.getRequiredThickness(),
+      viewPlaneNormal: AXIAL,
+      referencePlaneThickness: shape.getRequiredThickness(),
       shape,
     });
 
@@ -587,20 +590,23 @@ describe('createRectangleShape', () => {
     });
 
     [15, 35, 60, 80].forEach((degrees) => {
-      const normal = obliqueNormal(oblique.direction, degrees);
+      const viewPlaneNormal = obliqueNormal(oblique.direction, degrees);
       const anchor = [8, 7, 12];
 
       expectShapeConsistency(
         {
           volume: oblique,
           planePoint: anchor,
-          normal,
-          annotationThickness: getVoxelThicknessAlongNormal(oblique, normal),
+          viewPlaneNormal,
+          referencePlaneThickness: getVoxelThicknessAlongNormal(
+            oblique,
+            viewPlaneNormal
+          ),
           shape: createRectangleShape({
             volume: oblique,
             planePoint: anchor,
-            normal,
-            center: anchor,
+            viewPlaneNormal,
+            centerWorld: anchor,
             majorAxis: [1, 0, 0],
             majorHalfLength: 4,
             minorHalfLength: 2.5,
@@ -612,7 +618,7 @@ describe('createRectangleShape', () => {
   });
 });
 
-describe('createContourShape', () => {
+describe('createPolylineShape', () => {
   const volume = createSyntheticVolume({
     dimensions: [20, 20, 6],
     spacing: [1, 1, 1],
@@ -628,10 +634,10 @@ describe('createContourShape', () => {
 
   it('rejects a degenerate outline', () => {
     expect(() =>
-      createContourShape({
+      createPolylineShape({
         volume,
         planePoint,
-        normal: AXIAL,
+        viewPlaneNormal: AXIAL,
         polyline: [
           [0, 0, 3],
           [1, 0, 3],
@@ -644,31 +650,31 @@ describe('createContourShape', () => {
     const options = {
       volume,
       planePoint,
-      normal: AXIAL,
-      annotationThickness: 1,
+      viewPlaneNormal: AXIAL,
+      referencePlaneThickness: 1,
     };
 
-    const contour = createContourShape({
+    const polyline = createPolylineShape({
       volume,
       planePoint,
-      normal: AXIAL,
+      viewPlaneNormal: AXIAL,
       polyline: square(10, 10, 3.5, 3),
     });
     const rectangle = createRectangleShape({
       volume,
       planePoint,
-      normal: AXIAL,
-      center: [10, 10, 3],
+      viewPlaneNormal: AXIAL,
+      centerWorld: [10, 10, 3],
       majorAxis: [1, 0, 0],
       majorHalfLength: 3.5,
       minorHalfLength: 3.5,
     });
 
-    expectShapeConsistency({ ...options, shape: contour });
+    expectShapeConsistency({ ...options, shape: polyline });
 
     expect(
       canonicaliseVoxels(
-        collectVoxelsInSlab({ ...options, getShapeRuns: contour.getRuns })
+        collectVoxelsInSlab({ ...options, getShapeRuns: polyline.getRuns })
       )
     ).toEqual(
       canonicaliseVoxels(
@@ -677,8 +683,8 @@ describe('createContourShape', () => {
     );
   });
 
-  it('handles a contour whose points carry depth error', () => {
-    // A drawn contour never lies exactly in the plane.
+  it('handles a polyline whose points carry depth error', () => {
+    // A drawn outline never lies exactly in the plane.
     const noisy = square(10, 10, 3.5, 3).map(([x, y, z], index) => [
       x,
       y,
@@ -688,12 +694,12 @@ describe('createContourShape', () => {
     expectShapeConsistency({
       volume,
       planePoint,
-      normal: AXIAL,
-      annotationThickness: 1,
-      shape: createContourShape({
+      viewPlaneNormal: AXIAL,
+      referencePlaneThickness: 1,
+      shape: createPolylineShape({
         volume,
         planePoint,
-        normal: AXIAL,
+        viewPlaneNormal: AXIAL,
         polyline: noisy,
       }),
     });
@@ -717,12 +723,12 @@ describe('createContourShape', () => {
         {
           volume,
           planePoint,
-          normal: AXIAL,
-          annotationThickness: 1,
-          shape: createContourShape({
+          viewPlaneNormal: AXIAL,
+          referencePlaneThickness: 1,
+          shape: createPolylineShape({
             volume,
             planePoint,
-            normal: AXIAL,
+            viewPlaneNormal: AXIAL,
             polyline: uShape,
           }),
         },
@@ -731,10 +737,10 @@ describe('createContourShape', () => {
     });
 
     it('emits more than one run for a row crossing both arms', () => {
-      const shape = createContourShape({
+      const shape = createPolylineShape({
         volume,
         planePoint,
-        normal: AXIAL,
+        viewPlaneNormal: AXIAL,
         polyline: uShape,
       });
       const slab = buildIndexSpaceSlab(volume, planePoint, AXIAL, 1);
@@ -761,14 +767,14 @@ describe('createContourShape', () => {
     });
 
     it('excludes the notch of the U', () => {
-      const shape = createContourShape({
+      const shape = createPolylineShape({
         volume,
         planePoint,
-        normal: AXIAL,
+        viewPlaneNormal: AXIAL,
         polyline: uShape,
       });
 
-      // A point inside the notch is outside the contour.
+      // A point inside the notch is outside the polyline.
       expect(shape.containsPoint([9, 12, 3])).toBe(false);
       // A point in an arm is inside it.
       expect(shape.containsPoint([4, 12, 3])).toBe(true);
@@ -778,13 +784,13 @@ describe('createContourShape', () => {
   });
 
   it('requires no thickness of its own when given no depth', () => {
-    const shape = createContourShape({
+    const shape = createPolylineShape({
       volume,
       planePoint,
-      normal: AXIAL,
+      viewPlaneNormal: AXIAL,
       polyline: square(10, 10, 3, 3),
     });
-    // Planar, so 0, and the caller's `|| annotationThickness` keeps the
+    // Planar, so 0, and the caller's `|| referencePlaneThickness` keeps the
     // annotation's own thickness.
     expect(shape.getRequiredThickness()).toBe(0);
   });
@@ -804,25 +810,25 @@ describe('createContourShape', () => {
       [8, 8, 8],
       [8, 8, 8.5],
     ].forEach((anchor) => {
-      const shape = createContourShape({
+      const shape = createPolylineShape({
         volume: cube,
         planePoint: anchor,
-        normal: AXIAL,
+        viewPlaneNormal: AXIAL,
         polyline: square(8, 8, 3, 3),
       });
 
       const passedThrough = collectVoxelsInSlab({
         volume: cube,
         planePoint: anchor,
-        normal: AXIAL,
-        annotationThickness: shape.getRequiredThickness(),
+        viewPlaneNormal: AXIAL,
+        referencePlaneThickness: shape.getRequiredThickness(),
         getShapeRuns: shape.getRuns,
       });
 
       const defaulted = collectVoxelsInSlab({
         volume: cube,
         planePoint: anchor,
-        normal: AXIAL,
+        viewPlaneNormal: AXIAL,
         getShapeRuns: shape.getRuns,
       });
 
@@ -832,10 +838,10 @@ describe('createContourShape', () => {
   });
 
   it('reports the depth it was given', () => {
-    const shape = createContourShape({
+    const shape = createPolylineShape({
       volume,
       planePoint,
-      normal: AXIAL,
+      viewPlaneNormal: AXIAL,
       polyline: square(10, 10, 3, 3),
       depth: 4,
     });
@@ -848,10 +854,10 @@ describe('createContourShape', () => {
       spacing: [1, 1, 1],
     });
     const anchor = [10, 10, 8];
-    const shape = createContourShape({
+    const shape = createPolylineShape({
       volume: cube,
       planePoint: anchor,
-      normal: AXIAL,
+      viewPlaneNormal: AXIAL,
       polyline: square(10, 10, 3.5, 8),
       depth: 4,
     });
@@ -859,8 +865,8 @@ describe('createContourShape', () => {
     const voxels = expectShapeConsistency({
       volume: cube,
       planePoint: anchor,
-      normal: AXIAL,
-      annotationThickness: shape.getRequiredThickness(),
+      viewPlaneNormal: AXIAL,
+      referencePlaneThickness: shape.getRequiredThickness(),
       shape,
     });
 
@@ -877,12 +883,12 @@ describe('createContourShape', () => {
     });
 
     [12, 30, 50, 70].forEach((degrees) => {
-      const normal = obliqueNormal(oblique.direction, degrees);
+      const viewPlaneNormal = obliqueNormal(oblique.direction, degrees);
       const anchor = [9, 9, 15];
 
       // A hexagon in the annotation plane, built from the plane's own basis so
       // it genuinely lies in the oblique plane.
-      const { u, v } = createPlaneBasis(normal, [1, 0, 0]);
+      const { u, v } = createPlaneBasis(viewPlaneNormal, [1, 0, 0]);
       const polyline = [];
       for (let corner = 0; corner < 6; corner++) {
         const angle = (corner / 6) * 2 * Math.PI;
@@ -901,12 +907,15 @@ describe('createContourShape', () => {
         {
           volume: oblique,
           planePoint: anchor,
-          normal,
-          annotationThickness: getVoxelThicknessAlongNormal(oblique, normal),
-          shape: createContourShape({
+          viewPlaneNormal,
+          referencePlaneThickness: getVoxelThicknessAlongNormal(
+            oblique,
+            viewPlaneNormal
+          ),
+          shape: createPolylineShape({
             volume: oblique,
             planePoint: anchor,
-            normal,
+            viewPlaneNormal,
             polyline,
           }),
         },
@@ -920,8 +929,8 @@ describe('createContourShape', () => {
     const circle = createCircleShape({
       volume,
       planePoint: anchor,
-      normal: AXIAL,
-      center: anchor,
+      viewPlaneNormal: AXIAL,
+      centerWorld: anchor,
       radius: 6,
     });
 
@@ -935,10 +944,10 @@ describe('createContourShape', () => {
           anchor[2],
         ]);
       }
-      return createContourShape({
+      return createPolylineShape({
         volume,
         planePoint: anchor,
-        normal: AXIAL,
+        viewPlaneNormal: AXIAL,
         polyline,
       });
     };
@@ -946,8 +955,8 @@ describe('createContourShape', () => {
     const options = {
       volume,
       planePoint: anchor,
-      normal: AXIAL,
-      annotationThickness: 1,
+      viewPlaneNormal: AXIAL,
+      referencePlaneThickness: 1,
     };
     const circleCount = collectVoxelsInSlab({
       ...options,

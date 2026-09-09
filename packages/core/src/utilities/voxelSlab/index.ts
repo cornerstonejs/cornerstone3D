@@ -11,7 +11,7 @@ export { default as getVoxelThicknessAlongNormal } from './getVoxelThicknessAlon
 export {
   SLAB_RELATIVE_EPSILON,
   getSlabEpsilon,
-  resolveAnnotationThickness,
+  resolveReferencePlaneThickness,
   getMembershipHalfWidth,
   getDisplayHalfWidth,
   signedDistanceToPlane,

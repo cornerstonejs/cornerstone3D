@@ -19,18 +19,22 @@ import {
 const UNIT_BOUNDARY = 1 + SHAPE_BOUNDARY_EPSILON;
 
 export interface EllipseShapeOptions {
-  /** Geometry of the volume being measured. */
+  /**
+   * The volume being measured. Pass an `IImageVolume`, or any object that has
+   * `direction`, `spacing`, `origin` and `dimensions`. The structural form
+   * lets a caller that holds no cached volume, such as a test, use this code.
+   */
   volume: VolumeGeometry;
   /** The annotation plane anchor. Defines the plane's depth. */
   planePoint: Point3;
   /** The annotation view plane normal. Unit length. */
-  normal: Point3;
+  viewPlaneNormal: Point3;
   /**
    * The ellipse centre in world coordinates. For the planar form it is
    * projected onto the annotation plane, so a centre carrying a little depth
    * error is harmless.
    */
-  center: Point3;
+  centerWorld: Point3;
   /**
    * Direction of the major axis. Need not be unit length, and need not already
    * lie in the plane - its component along the normal is removed.
@@ -63,7 +67,7 @@ export function createEllipseShape(
   const {
     volume,
     planePoint,
-    normal,
+    viewPlaneNormal: normal,
     majorAxis,
     majorRadius,
     minorRadius,
@@ -88,8 +92,8 @@ export function createEllipseShape(
   // A flat ellipse is tested on the projected point, so its centre only
   // matters within the plane.
   const center = isSolid
-    ? ([...options.center] as Point3)
-    : projectPointOntoPlane(options.center, planePoint, basis.n);
+    ? ([...options.centerWorld] as Point3)
+    : projectPointOntoPlane(options.centerWorld, planePoint, basis.n);
 
   // Each entry scales a world offset into the unit sphere's space.
   const scaledAxes: { axis: Point3; inverseRadius: number }[] = [
@@ -173,13 +177,13 @@ export function createEllipseShape(
 export function createCircleShape(options: {
   volume: VolumeGeometry;
   planePoint: Point3;
-  normal: Point3;
-  center: Point3;
+  viewPlaneNormal: Point3;
+  centerWorld: Point3;
   radius: number;
   /** Supply to make it a sphere rather than a flat disc. */
   depthRadius?: number;
 }): VoxelSlabShape {
-  const { normal } = options;
+  const { viewPlaneNormal: normal } = options;
 
   // Any vector not parallel to the normal gives a valid in-plane direction.
   const candidate: Point3 = Math.abs(normal[0]) < 0.9 ? [1, 0, 0] : [0, 1, 0];
@@ -192,8 +196,8 @@ export function createCircleShape(options: {
   return createEllipseShape({
     volume: options.volume,
     planePoint: options.planePoint,
-    normal,
-    center: options.center,
+    viewPlaneNormal: normal,
+    centerWorld: options.centerWorld,
     majorAxis,
     majorRadius: options.radius,
     minorRadius: options.radius,

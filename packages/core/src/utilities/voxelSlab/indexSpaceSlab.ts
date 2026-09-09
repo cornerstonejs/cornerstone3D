@@ -5,7 +5,7 @@ import getVoxelThicknessAlongNormal from './getVoxelThicknessAlongNormal';
 import {
   getMembershipHalfWidth,
   getSlabEpsilon,
-  resolveAnnotationThickness,
+  resolveReferencePlaneThickness,
 } from './slabMembership';
 
 export type VolumeGeometry =
@@ -34,8 +34,8 @@ export interface IndexSpaceSlab {
   c0: number;
   /** The voxel thickness along the normal. */
   voxelThickness: number;
-  /** The resolved annotation thickness. */
-  annotationThickness: number;
+  /** The resolved reference plane thickness. */
+  referencePlaneThickness: number;
   /**
    * The strict half width the depth must fall inside, already tightened by the
    * epsilon. Test `Math.abs(depth) < halfWidth`.
@@ -89,7 +89,7 @@ export function pickOuterAxis(g: Point3): 0 | 1 | 2 {
  * @param volume - Geometry of the volume being measured.
  * @param planePoint - The annotation plane anchor, in world coordinates.
  * @param normal - The annotation view plane normal. Must be unit length.
- * @param annotationThickness - The annotation thickness in mm, or null/undefined
+ * @param referencePlaneThickness - The thickness in mm, or null/undefined
  *   to default to one voxel.
  * @param options.columnAxis - Force which of the two non-outer axes carries the
  *   runs. Defaults to the lower-numbered of the two, so an
@@ -100,15 +100,15 @@ export function buildIndexSpaceSlab(
   volume: VolumeGeometry,
   planePoint: Point3,
   normal: Point3,
-  annotationThickness?: number | null,
+  referencePlaneThickness?: number | null,
   options: { columnAxis?: 0 | 1 | 2 } = {}
 ): IndexSpaceSlab {
   const { origin } = volume;
   const g = getIndexSpaceNormal(volume, normal);
 
   const voxelThickness = getVoxelThicknessAlongNormal(volume, normal);
-  const thickness = resolveAnnotationThickness(
-    annotationThickness,
+  const thickness = resolveReferencePlaneThickness(
+    referencePlaneThickness,
     voxelThickness
   );
 
@@ -143,7 +143,7 @@ export function buildIndexSpaceSlab(
     g,
     c0,
     voxelThickness,
-    annotationThickness: thickness,
+    referencePlaneThickness: thickness,
     halfWidth,
     outerAxis,
     rowAxis,

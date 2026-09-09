@@ -2421,11 +2421,12 @@ abstract class BaseVolumeViewport extends Viewport {
   /**
    * Get the geometric thickness in mm that an annotation applies to.
    *
-   * Doubles the slab value, which is a half thickness on this render path, and
-   * maps the rendering minimum to undefined. See
+   * This method does NOT return the slab thickness. `getSlabThickness` returns
+   * a half thickness on this render path, so this method doubles that value,
+   * and it maps the rendering minimum to undefined. See
    * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
    */
-  protected getReferenceThickness(): number | undefined {
+  protected getReferencePlaneThickness(): number | undefined {
     const slabThickness = this.getSlabThickness();
 
     if (

@@ -94,7 +94,7 @@ those annotations appear on.
 ## Where `T` comes from
 
 A new annotation takes `T` once, at creation, from the slab thickness of the
-viewport that the user drew in. `Viewport.getReferenceThickness` supplies the
+viewport that the user drew in. `Viewport.getReferencePlaneThickness` supplies the
 value, and `BaseVolumeViewport` overrides that method. After creation, `T`
 belongs to the annotation and lives on `PlaneRestriction.referencePlaneThickness`.
 
@@ -113,7 +113,7 @@ never when it recalculates the statistics.
 
 ### Two conversions on the volume viewport
 
-`BaseVolumeViewport.getReferenceThickness` applies two conversions that a
+`BaseVolumeViewport.getReferencePlaneThickness` applies two conversions that a
 reader of the raw slab value would miss.
 
 **It doubles the value.** `getSlabThickness` returns the number passed to
@@ -138,27 +138,28 @@ A tool builds a shape, then walks the voxels:
 ```ts
 import { utilities } from '@cornerstonejs/core';
 
-const { createContourShape, iterateVoxelsInSlab } = utilities.voxelSlab;
+const { createPolylineShape, iterateVoxelsInSlab } = utilities.voxelSlab;
 
-const shape = createContourShape({
+const shape = createPolylineShape({
   volume, // { dimensions, direction, spacing, origin }
   planePoint, // the annotation plane anchor
-  normal, // the view plane normal, unit length
+  viewPlaneNormal, // unit length
   polyline, // the outline in world coordinates
 });
 
 for (const { ijk, center } of iterateVoxelsInSlab({
   volume,
   planePoint,
-  normal,
-  annotationThickness: shape.getRequiredThickness() || annotationThickness,
+  viewPlaneNormal,
+  referencePlaneThickness:
+    shape.getRequiredThickness() || referencePlaneThickness,
   getShapeRuns: shape.getRuns,
 })) {
   // accumulate statistics
 }
 ```
 
-A tool with a different outline replaces `createContourShape` with
+A tool with a different outline replaces `createPolylineShape` with
 `createEllipseShape` or `createRectangleShape`, and changes nothing else.
 
 Two details matter for a consumer:
@@ -166,7 +167,7 @@ Two details matter for a consumer:
 - `ijk` and `center` are **reused between iterations**. Copy either one before
   you retain it.
 - The shape is intersected with the slab, and not unioned with it. Pass
-  `getRequiredThickness()` as the `annotationThickness` unless you deliberately
+  `getRequiredThickness()` as the `referencePlaneThickness` unless you deliberately
   want the slab to clip the shape.
 
 Every shape exposes `containsPoint` as its definition beside `getRuns` as the
@@ -199,13 +200,13 @@ but need not, because the iterator intersects the results either way.
 `getRequiredThickness()` returns the smallest `T` for which the slab contains
 the whole shape. A planar shape returns 0, because it has no extent along the
 normal and any `T` works. A shape with depth returns that depth, and a smaller
-`annotationThickness` will clip it.
+`referencePlaneThickness` will clip it.
 
-### Contour rings and holes
+### Polyline rings and holes
 
-`createContourShape` accepts either a single ring or an array of rings. Each
+`createPolylineShape` accepts either a single ring or an array of rings. Each
 ring is closed, so do not repeat the first point at the end. Points are
-projected onto the annotation plane, which handles a contour that carries a
+projected onto the annotation plane, which handles an outline that carries a
 little depth error, as a drawn one always does.
 
 The interior is the even-odd rule over every edge of every ring, and the parity
@@ -271,9 +272,9 @@ Each shape reaches its exact runs by its own route:
 | ------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
 | ellipse, ellipsoid | a line substituted into the quadratic form gives a quadratic in the column index, whose real roots bound one interval        |
 | rectangle, box     | each face is a linear constraint, so each gives one interval, and their intersection is one interval because a box is convex |
-| contour prism      | the crossings of the line with every edge of every ring, sorted, with consecutive pairs bounding the inside intervals        |
+| polyline prism     | the crossings of the line with every edge of every ring, sorted, with consecutive pairs bounding the inside intervals        |
 
-A non-convex contour therefore yields several runs, which is the exact-multiple
+A non-convex polyline therefore yields several runs, which is the exact-multiple
 case the iterator supports.
 
 ## Boundary handling
@@ -286,10 +287,10 @@ independent cases made that rule necessary:
   `containsPoint` adds the squares and can give a little more than 1, while
   `getRuns` solves for the roots and gives exactly 5. Both therefore compare
   against a boundary that a relative epsilon widens.
-- The even-odd rule gives the interior of a contour, but `containsPoint` casts a
+- The even-odd rule gives the interior of a polyline, but `containsPoint` casts a
   ray along one plane axis while `getRuns` intersects a line along the direction
   that the column axis projects to. The two tie rules degenerate at different
-  geometry. A rectangular contour drawn on voxel boundaries kept a row at one end
+  geometry. A rectangular polyline drawn on voxel boundaries kept a row at one end
   and lost it at the other.
 - The crossing test cannot see an outline edge that runs along a run line,
   because both end points lie on the same side of a line that holds them. Such an
@@ -363,7 +364,7 @@ Everything here is exported under `utilities.voxelSlab`.
 | `iterateVoxelsInSlab`, `collectVoxelsInSlab`                           | the traversal                            |
 | `createEllipseShape`, `createCircleShape`                              | ellipse in-plane, ellipsoid out-of-plane |
 | `createRectangleShape`                                                 | rectangle in-plane, box out-of-plane     |
-| `createContourShape`                                                   | a contour prism, with internal holes     |
+| `createPolylineShape`                                                  | a polyline prism, with internal holes    |
 | `getVoxelThicknessAlongNormal`                                         | `T_v`                                    |
 | `isPlaneDepthViewable`                                                 | the depth half of Rule D                 |
 | `buildIndexSpaceSlab`, `getDepthRun`, `getSlabAxisBound`               | the index-space run arithmetic           |

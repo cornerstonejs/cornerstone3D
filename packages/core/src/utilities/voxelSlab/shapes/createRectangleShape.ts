@@ -17,24 +17,28 @@ import {
  * Expands a half extent so a voxel centre on the face counts as inside.
  *
  * The slack scales with the half extent, with a floor of one unit so a
- * sub-millimetre extent keeps a usable tolerance. `createContourShape` floors
+ * sub-millimetre extent keeps a usable tolerance. `createPolylineShape` floors
  * its own slack the same way.
  */
 const expand = (halfExtent: number) =>
   halfExtent + Math.max(halfExtent, 1) * SHAPE_BOUNDARY_EPSILON;
 
 export interface RectangleShapeOptions {
-  /** Geometry of the volume being measured. */
+  /**
+   * The volume being measured. Pass an `IImageVolume`, or any object that has
+   * `direction`, `spacing`, `origin` and `dimensions`. The structural form
+   * lets a caller that holds no cached volume, such as a test, use this code.
+   */
   volume: VolumeGeometry;
   /** The annotation plane anchor. Defines the plane's depth. */
   planePoint: Point3;
   /** The annotation view plane normal. Unit length. */
-  normal: Point3;
+  viewPlaneNormal: Point3;
   /**
    * The rectangle centre in world coordinates. For the planar form it is
    * projected onto the annotation plane.
    */
-  center: Point3;
+  centerWorld: Point3;
   /**
    * Direction of the major axis. Need not be unit length, and need not already
    * lie in the plane - its component along the normal is removed.
@@ -66,7 +70,7 @@ export function createRectangleShape(
   const {
     volume,
     planePoint,
-    normal,
+    viewPlaneNormal: normal,
     majorAxis,
     majorHalfLength,
     minorHalfLength,
@@ -89,8 +93,8 @@ export function createRectangleShape(
     : 0;
 
   const center = isSolid
-    ? ([...options.center] as Point3)
-    : projectPointOntoPlane(options.center, planePoint, basis.n);
+    ? ([...options.centerWorld] as Point3)
+    : projectPointOntoPlane(options.centerWorld, planePoint, basis.n);
 
   const constraints: { axis: Point3; halfExtent: number }[] = [
     { axis: basis.u, halfExtent: expand(majorHalfLength) },

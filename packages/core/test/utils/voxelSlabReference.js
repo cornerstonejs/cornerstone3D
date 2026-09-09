@@ -2,7 +2,7 @@ import getVoxelThicknessAlongNormal from '../../src/utilities/voxelSlab/getVoxel
 import {
   isVoxelCenterInSlab,
   projectPointOntoPlane,
-  resolveAnnotationThickness,
+  resolveReferencePlaneThickness,
 } from '../../src/utilities/voxelSlab/slabMembership';
 
 /**
@@ -21,9 +21,9 @@ import {
  * @param {object} options
  * @param {object} options.volume - from createSyntheticVolume
  * @param {[number,number,number]} options.planePoint - `P0`, the annotation plane anchor
- * @param {[number,number,number]} options.normal - `n`, unit length
- * @param {number} [options.annotationThickness] - `T` in mm; defaults to one voxel
- * @param {(projected: number[], ijk: number[], center: number[]) => boolean} [options.isInShape]
+ * @param {[number,number,number]} options.viewPlaneNormal - `n`, unit length
+ * @param {number} [options.referencePlaneThickness] - `T` in mm; defaults to one voxel
+ * @param {(projected: number[], ijk: number[], centerWorld: number[]) => boolean} [options.isInShape]
  *   The 2D in-shape predicate, receiving the voxel centre projected onto the
  *   annotation plane. Defaults to accepting everything, which isolates the
  *   depth half of the rule.
@@ -32,14 +32,14 @@ import {
 export function referenceVoxelsInSlab({
   volume,
   planePoint,
-  normal,
-  annotationThickness,
+  viewPlaneNormal,
+  referencePlaneThickness,
   isInShape = () => true,
 }) {
   const { dimensions, indexToWorld } = volume;
-  const voxelThickness = getVoxelThicknessAlongNormal(volume, normal);
-  const thickness = resolveAnnotationThickness(
-    annotationThickness,
+  const voxelThickness = getVoxelThicknessAlongNormal(volume, viewPlaneNormal);
+  const thickness = resolveReferencePlaneThickness(
+    referencePlaneThickness,
     voxelThickness
   );
 
@@ -55,7 +55,7 @@ export function referenceVoxelsInSlab({
           !isVoxelCenterInSlab(
             center,
             planePoint,
-            normal,
+            viewPlaneNormal,
             thickness,
             voxelThickness
           )
@@ -64,7 +64,11 @@ export function referenceVoxelsInSlab({
         }
 
         // Rule M, part 2: the projection along the normal falls in the shape.
-        const projected = projectPointOntoPlane(center, planePoint, normal);
+        const projected = projectPointOntoPlane(
+          center,
+          planePoint,
+          viewPlaneNormal
+        );
         if (!isInShape(projected, [i, j, k], center)) {
           continue;
         }

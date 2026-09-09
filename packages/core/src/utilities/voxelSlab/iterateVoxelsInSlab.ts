@@ -41,18 +41,22 @@ export type ShapeRunProvider = (
 ) => Iterable<Point2>;
 
 export interface VoxelSlabIterationOptions {
-  /** Geometry of the volume being measured. */
+  /**
+   * The volume being measured. Pass an `IImageVolume`, or any object that has
+   * `direction`, `spacing`, `origin` and `dimensions`. The structural form
+   * lets a caller that holds no cached volume, such as a test, use this code.
+   */
   volume: VolumeGeometry;
   /** The annotation plane anchor, in world coordinates. */
   planePoint: Point3;
   /** The annotation view plane normal. Must be unit length. */
-  normal: Point3;
+  viewPlaneNormal: Point3;
   /**
-   * The annotation thickness in mm. Omit, or pass null or 0, to default to one
-   * voxel along the normal. A planar shape reports 0 from `getRequiredThickness`, so a caller
-   * can pass that value straight through.
+   * The reference plane thickness in mm. Omit, or pass null or 0, to default
+   * to one voxel along the normal. A planar shape reports 0 from
+   * `getRequiredThickness`, so a caller can pass that value straight through.
    */
-  annotationThickness?: number | null;
+  referencePlaneThickness?: number | null;
   /**
    * Inclusive index bounds to confine iteration to. Defaults to the whole
    * volume. Supply the annotation's own index-space bounding box when you have
@@ -88,8 +92,8 @@ export function* iterateVoxelsInSlab(
   const {
     volume,
     planePoint,
-    normal,
-    annotationThickness,
+    viewPlaneNormal: normal,
+    referencePlaneThickness,
     getShapeRuns,
     isInShape,
     columnAxis: forcedColumnAxis,
@@ -101,7 +105,7 @@ export function* iterateVoxelsInSlab(
     volume,
     planePoint,
     normal,
-    annotationThickness,
+    referencePlaneThickness,
     { columnAxis: forcedColumnAxis }
   );
   const { outerAxis, rowAxis, columnAxis } = slab;

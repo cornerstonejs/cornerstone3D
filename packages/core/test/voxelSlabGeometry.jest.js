@@ -4,7 +4,7 @@ import {
   getMembershipHalfWidth,
   getDisplayHalfWidth,
   getSlabEpsilon,
-  resolveAnnotationThickness,
+  resolveReferencePlaneThickness,
   isVoxelCenterInSlab,
   signedDistanceToPlane,
   projectPointOntoPlane,
@@ -54,11 +54,11 @@ describe('getVoxelThicknessAlongNormal', () => {
       dimensions: [4, 4, 4],
       spacing: [1, 1, 3],
     });
-    const normal = obliqueNormal(volume.direction, 45);
-    const flipped = normal.map((v) => -v);
+    const viewPlaneNormal = obliqueNormal(volume.direction, 45);
+    const flipped = viewPlaneNormal.map((v) => -v);
 
     expect(getVoxelThicknessAlongNormal(volume, flipped)).toBeCloseTo(
-      getVoxelThicknessAlongNormal(volume, normal),
+      getVoxelThicknessAlongNormal(volume, viewPlaneNormal),
       10
     );
   });
@@ -85,7 +85,7 @@ describe('getVoxelThicknessAlongNormal', () => {
         spacing: [0.7, 1.3, 2.5],
       });
 
-      for (const normal of [
+      for (const viewPlaneNormal of [
         [1, 0, 0],
         [0, 1, 0],
         [0, 0, 1],
@@ -93,10 +93,9 @@ describe('getVoxelThicknessAlongNormal', () => {
         // 5 places: getSpacingInNormalDirection accumulates through gl-matrix's
         // Float32Array-backed vec3, so it carries float32 precision. That is
         // well inside the slab tolerance, which is sized for exactly this.
-        expect(getVoxelThicknessAlongNormal(volume, normal)).toBeCloseTo(
-          getSpacingInNormalDirection(volume, normal),
-          5
-        );
+        expect(
+          getVoxelThicknessAlongNormal(volume, viewPlaneNormal)
+        ).toBeCloseTo(getSpacingInNormalDirection(volume, viewPlaneNormal), 5);
       }
     });
 
@@ -108,20 +107,20 @@ describe('getVoxelThicknessAlongNormal', () => {
         dimensions: [4, 4, 4],
         spacing: [1, 1, 3],
       });
-      const normal = obliqueNormal(volume.direction, 45);
+      const viewPlaneNormal = obliqueNormal(volume.direction, 45);
 
-      expect(getVoxelThicknessAlongNormal(volume, normal)).toBeCloseTo(
+      expect(getVoxelThicknessAlongNormal(volume, viewPlaneNormal)).toBeCloseTo(
         2 * Math.SQRT2,
         10
       );
       // 5 places: this is the float32 result discussed above.
-      expect(getSpacingInNormalDirection(volume, normal)).toBeCloseTo(
+      expect(getSpacingInNormalDirection(volume, viewPlaneNormal)).toBeCloseTo(
         Math.sqrt(5),
         5
       );
-      expect(getVoxelThicknessAlongNormal(volume, normal)).toBeGreaterThan(
-        getSpacingInNormalDirection(volume, normal)
-      );
+      expect(
+        getVoxelThicknessAlongNormal(volume, viewPlaneNormal)
+      ).toBeGreaterThan(getSpacingInNormalDirection(volume, viewPlaneNormal));
     });
   });
 });
@@ -139,18 +138,18 @@ describe('slab half widths', () => {
   });
 
   it('defaults an unrecorded annotation thickness to one voxel', () => {
-    expect(resolveAnnotationThickness(undefined, 2.5)).toBe(2.5);
-    expect(resolveAnnotationThickness(null, 2.5)).toBe(2.5);
-    expect(resolveAnnotationThickness(NaN, 2.5)).toBe(2.5);
-    expect(resolveAnnotationThickness(4, 2.5)).toBe(4);
+    expect(resolveReferencePlaneThickness(undefined, 2.5)).toBe(2.5);
+    expect(resolveReferencePlaneThickness(null, 2.5)).toBe(2.5);
+    expect(resolveReferencePlaneThickness(NaN, 2.5)).toBe(2.5);
+    expect(resolveReferencePlaneThickness(4, 2.5)).toBe(4);
   });
 
   it('treats a thickness of 0 or less as unrecorded', () => {
     // A planar shape reports 0 from getRequiredThickness, and a caller passes
     // that value straight to the slab. Honouring 0 literally would halve the
     // half width and select nothing between voxel centres.
-    expect(resolveAnnotationThickness(0, 2.5)).toBe(2.5);
-    expect(resolveAnnotationThickness(-1, 2.5)).toBe(2.5);
+    expect(resolveReferencePlaneThickness(0, 2.5)).toBe(2.5);
+    expect(resolveReferencePlaneThickness(-1, 2.5)).toBe(2.5);
   });
 
   it('scales the epsilon with the voxel thickness', () => {
@@ -217,8 +216,8 @@ describe('Rule M worked examples', () => {
         referenceLayers({
           volume: isotropic(),
           planePoint: [0, 0, anchorZ],
-          normal: AXIAL,
-          annotationThickness: thickness,
+          viewPlaneNormal: AXIAL,
+          referencePlaneThickness: thickness,
         })
       ).toEqual(expected);
     });
@@ -234,9 +233,9 @@ describe('invariant I5 - acquisition orientation selects the displayed slice onl
         referenceLayers({
           volume,
           planePoint: [0, 0, k],
-          normal: AXIAL,
+          viewPlaneNormal: AXIAL,
           // Unset thickness defaults to one voxel, as on a stack viewport.
-          annotationThickness: undefined,
+          referencePlaneThickness: undefined,
         })
       ).toEqual([k]);
     }
@@ -252,7 +251,7 @@ describe('invariant I5 - acquisition orientation selects the displayed slice onl
       referenceLayers({
         volume,
         planePoint: [0, 0, 2.5 * 4],
-        normal: AXIAL,
+        viewPlaneNormal: AXIAL,
       })
     ).toEqual([4]);
   });
@@ -268,7 +267,7 @@ describe('invariant I5 - acquisition orientation selects the displayed slice onl
       referenceLayers({
         volume,
         planePoint: [0, 0, spacing * 4],
-        normal: AXIAL,
+        viewPlaneNormal: AXIAL,
       })
     ).toEqual([4]);
   });
@@ -282,8 +281,8 @@ describe('invariant I4 - at least one layer whenever T >= T_v', () => {
       const layers = referenceLayers({
         volume,
         planePoint: [0, 0, 3 + offset],
-        normal: AXIAL,
-        annotationThickness: 1,
+        viewPlaneNormal: AXIAL,
+        referencePlaneThickness: 1,
       });
 
       expect(layers.length).toBeGreaterThanOrEqual(1);
@@ -295,16 +294,19 @@ describe('invariant I4 - at least one layer whenever T >= T_v', () => {
       dimensions: [8, 8, 8],
       spacing: [1, 1, 3],
     });
-    const normal = obliqueNormal(volume.direction, 37);
-    const voxelThickness = getVoxelThicknessAlongNormal(volume, normal);
+    const viewPlaneNormal = obliqueNormal(volume.direction, 37);
+    const voxelThickness = getVoxelThicknessAlongNormal(
+      volume,
+      viewPlaneNormal
+    );
 
     for (let offset = 0; offset < 1; offset += 0.1) {
       const anchor = [3 + offset, 3, 9];
       const layers = referenceLayers({
         volume,
         planePoint: anchor,
-        normal,
-        annotationThickness: voxelThickness,
+        viewPlaneNormal,
+        referencePlaneThickness: voxelThickness,
       });
 
       expect(layers.length).toBeGreaterThanOrEqual(1);
@@ -330,8 +332,8 @@ describe('epsilon guards the exact boundary', () => {
         referenceLayers({
           volume: isotropic(),
           planePoint: [0, 0, z],
-          normal: AXIAL,
-          annotationThickness: 1,
+          viewPlaneNormal: AXIAL,
+          referencePlaneThickness: 1,
         })
       ).toEqual([3]);
     });

@@ -29,5 +29,5 @@ export type { EllipseShapeOptions } from './createEllipseShape';
 export { createRectangleShape } from './createRectangleShape';
 export type { RectangleShapeOptions } from './createRectangleShape';
 
-export { createContourShape } from './createContourShape';
-export type { ContourShapeOptions } from './createContourShape';
+export { createPolylineShape } from './createPolylineShape';
+export type { PolylineShapeOptions } from './createPolylineShape';

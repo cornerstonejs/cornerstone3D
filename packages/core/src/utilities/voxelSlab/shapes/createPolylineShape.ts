@@ -10,13 +10,17 @@ import {
   toIntegerRun,
 } from './shapeGeometry';
 
-export interface ContourShapeOptions {
-  /** Geometry of the volume being measured. */
+export interface PolylineShapeOptions {
+  /**
+   * The volume being measured. Pass an `IImageVolume`, or any object that has
+   * `direction`, `spacing`, `origin` and `dimensions`. The structural form
+   * lets a caller that holds no cached volume, such as a test, use this code.
+   */
   volume: VolumeGeometry;
   /** The annotation plane anchor. Defines the plane's depth. */
   planePoint: Point3;
   /** The annotation view plane normal. Unit length. */
-  normal: Point3;
+  viewPlaneNormal: Point3;
   /**
    * The outline, as world coordinates: one ring, or an array of rings. Each
    * ring is closed, so do not repeat the first point.
@@ -27,7 +31,7 @@ export interface ContourShapeOptions {
    */
   polyline: Point3[] | Point3[][];
   /**
-   * The contour's extent along the normal, in mm.
+   * The polyline's extent along the normal, in mm.
    *
    * Unlike the ellipsoid and box, the shape does *not* apply this itself: the
    * slab enforces it, via `getRequiredThickness()`. Omit to let the slab
@@ -36,27 +40,30 @@ export interface ContourShapeOptions {
   depth?: number;
 }
 
-/** A point in the plane's 2D basis, relative to the plane anchor. */
-type PlanePoint = [number, number];
-
 /**
- * A contour lying in the annotation plane, swept into a prism by its depth.
+ * A closed polyline lying in the annotation plane, swept into a prism by its depth.
  *
- * Interior is the even-odd rule, so a non-convex contour or one with holes
+ * Interior is the even-odd rule, so a non-convex polyline or one with holes
  * yields several runs. A point exactly on the outline is inside it, widened by
  * `SHAPE_BOUNDARY_EPSILON`. The outline test is purely in-plane; depth is left
  * to Rule M's slab.
  *
- * See `ContourShapeOptions.depth` and
+ * See `PolylineShapeOptions.depth` and
  * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  */
-export function createContourShape(
-  options: ContourShapeOptions
+export function createPolylineShape(
+  options: PolylineShapeOptions
 ): VoxelSlabShape {
-  const { volume, planePoint, normal, polyline, depth } = options;
+  const {
+    volume,
+    planePoint,
+    viewPlaneNormal: normal,
+    polyline,
+    depth,
+  } = options;
 
   if (!polyline?.length) {
-    throw new Error('A contour needs an outline');
+    throw new Error('A polyline shape needs an outline');
   }
 
   // A single ring is Point3[], so polyline[0][0] is a number; an array of rings
@@ -66,7 +73,7 @@ export function createContourShape(
     : [polyline as Point3[]];
 
   if (inputRings.some((ring) => !ring?.length || ring.length < 3)) {
-    throw new Error('Every contour ring needs at least three points');
+    throw new Error('Every polyline ring needs at least three points');
   }
 
   // Any in-plane direction will do for the basis; the outline defines its own
@@ -77,7 +84,9 @@ export function createContourShape(
     vec3.cross(vec3.create(), normal as vec3, candidate as vec3) as Point3
   );
 
-  const toPlanePoint = (point: Point3): PlanePoint => [
+  // Every Point2 below is a point in the plane's 2D basis, relative to the
+  // plane anchor, and never a world coordinate or a canvas coordinate.
+  const toPlanePoint = (point: Point3): Point2 => [
     (point[0] - planePoint[0]) * basis.u[0] +
       (point[1] - planePoint[1]) * basis.u[1] +
       (point[2] - planePoint[2]) * basis.u[2],
@@ -86,21 +95,21 @@ export function createContourShape(
       (point[2] - planePoint[2]) * basis.v[2],
   ];
 
-  const toPlaneDirection = (vector: Point3): PlanePoint => [
+  const toPlaneDirection = (vector: Point3): Point2 => [
     vector[0] * basis.u[0] + vector[1] * basis.u[1] + vector[2] * basis.u[2],
     vector[0] * basis.v[0] + vector[1] * basis.v[1] + vector[2] * basis.v[2],
   ];
 
-  // Projecting first means a contour whose points carry depth error still gives
+  // Projecting first means a polyline whose points carry depth error still gives
   // a well-defined outline.
-  const rings: PlanePoint[][] = inputRings.map((ring) =>
+  const rings: Point2[][] = inputRings.map((ring) =>
     ring.map((point) =>
       toPlanePoint(projectPointOntoPlane(point, planePoint, basis.n))
     )
   );
 
   // Slack scaled to the outline's own size, so it means the same thing for a
-  // 2 mm nodule contour and a 400 mm body contour.
+  // 2 mm nodule outline and a 400 mm body outline.
   let extent = 0;
   for (const ring of rings) {
     for (const [x, y] of ring) {
@@ -110,7 +119,7 @@ export function createContourShape(
   const boundarySlack = Math.max(extent, 1) * SHAPE_BOUNDARY_EPSILON;
 
   /** Distance from a plane point to the nearest edge of any ring. */
-  function distanceToOutline(planePoint2: PlanePoint): number {
+  function distanceToOutline(planePoint2: Point2): number {
     let best = Infinity;
     for (const ring of rings) {
       const distance = distanceToRing(ring, planePoint2);
@@ -121,7 +130,7 @@ export function createContourShape(
     return best;
   }
 
-  function distanceToRing(ring: PlanePoint[], [x, y]: PlanePoint): number {
+  function distanceToRing(ring: Point2[], [x, y]: Point2): number {
     let best = Infinity;
     const vertexCount = ring.length;
     for (let i = 0, j = vertexCount - 1; i < vertexCount; j = i++) {
@@ -147,7 +156,7 @@ export function createContourShape(
 
   const resolveColumnLine = createColumnLineResolver(volume, basis.n);
 
-  function containsPlanePoint([x, y]: PlanePoint): boolean {
+  function containsPlanePoint([x, y]: Point2): boolean {
     // Even-odd over every edge of every ring. Parity accumulates across rings
     // rather than resetting per ring, which is what makes a hole ring flip its
     // interior back to outside.
@@ -208,11 +217,11 @@ export function createContourShape(
     const perpendicularScale = 1 / directionLength;
 
     /** Column index of the point on the line nearest a plane point. */
-    const columnOf = ([x, y]: PlanePoint) =>
+    const columnOf = ([x, y]: Point2) =>
       ((x - origin2[0]) * direction2[0] + (y - origin2[1]) * direction2[1]) /
       directionLengthSquared;
 
-    const sideOf = ([x, y]: PlanePoint) =>
+    const sideOf = ([x, y]: Point2) =>
       direction2[0] * (y - origin2[1]) - direction2[1] * (x - origin2[0]);
 
     const intervals: [number, number][] = [];
@@ -235,7 +244,7 @@ export function createContourShape(
           // The edge lies along the line. The crossing test cannot see such an
           // edge at all - both endpoints sit on the same side of a line they
           // are on - so contribute its extent directly. Without this, a
-          // contour with an edge running along a voxel row loses that whole
+          // polyline with an edge running along a voxel row loses that whole
           // row, while containsPoint keeps it as a boundary point.
           const a = columnOf(ring[previousIndex]);
           const b = columnOf(ring[i]);
@@ -306,9 +315,9 @@ export function createContourShape(
   return {
     containsPoint,
     getRuns,
-    // The prism's depth, which the caller gives to the slab. A contour with no
+    // The prism's depth, which the caller gives to the slab. A polyline with no
     // depth is planar, so it returns 0 and the caller's
-    // `|| annotationThickness` keeps the annotation's own thickness.
+    // `|| referencePlaneThickness` keeps the annotation's own thickness.
     getRequiredThickness: () =>
       Number.isFinite(depth) ? (depth as number) : 0,
   };

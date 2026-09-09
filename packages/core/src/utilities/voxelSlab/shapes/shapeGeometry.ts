@@ -28,9 +28,9 @@ export interface VoxelSlabShape {
   ): Iterable<Point2>;
 
   /**
-   * The smallest annotation thickness for which Rule M's slab contains the
+   * The smallest reference plane thickness for which Rule M's slab contains the
    * whole shape. A planar shape returns 0; a shape with depth returns that
-   * depth, and a smaller `annotationThickness` clips it.
+   * depth, and a smaller `referencePlaneThickness` clips it.
    */
   getRequiredThickness(): number;
 }

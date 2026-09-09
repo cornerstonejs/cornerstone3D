@@ -2073,7 +2073,7 @@ class Viewport {
         inPlaneVector2: <Point3>(
           vec3.cross(vec3.create(), viewUp, viewPlaneNormal)
         ),
-        referencePlaneThickness: this.getReferenceThickness(),
+        referencePlaneThickness: this.getReferencePlaneThickness(),
       },
     };
     if (viewRefSpecifier?.points) {
@@ -2085,9 +2085,14 @@ class Viewport {
   /**
    * Get the geometric thickness in mm that an annotation applies to.
    *
+   * Two thicknesses exist, and they are not the same quantity. The **slab
+   * thickness** belongs to the viewport, and `getSlabThickness` returns it. The
+   * **reference plane thickness** belongs to the data, and this method returns
+   * it. Rule D adds the two.
+   *
    * See `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
    */
-  protected getReferenceThickness(): number | undefined {
+  protected getReferencePlaneThickness(): number | undefined {
     return undefined;
   }
 
@@ -2129,7 +2134,7 @@ class Viewport {
       focalPoint,
       viewPlaneNormal,
       planeRestriction.referencePlaneThickness,
-      this.getReferenceThickness() ?? 0
+      this.getReferencePlaneThickness() ?? 0
     );
   }
 
