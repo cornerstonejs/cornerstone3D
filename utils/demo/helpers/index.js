@@ -52,6 +52,8 @@ import { createAndCacheGeometriesFromContours } from './createAndCacheGeometries
 export * from './constants';
 export * from './addUploadToToolbar';
 
+import { createLayoutRegions, ecgLayouts } from './ecgLayouts';
+
 export {
   addBrushSizeSlider,
   addButtonToToolbar,
@@ -73,6 +75,8 @@ export {
   createElement,
   createImageIdsAndCacheMetaData,
   createInfoSection,
+  createLayoutRegions,
+  ecgLayouts,
   ctVoiRange,
   downloadSurfacesData,
   getLocalUrl,

@@ -76,6 +76,7 @@ export {
   ecgProjection,
 } from './ECG';
 export type {
+  TraceRegion,
   ECGViewState,
   ECGDataPresentation,
   ECGChannelData,

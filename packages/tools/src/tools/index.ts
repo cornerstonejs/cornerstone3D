@@ -24,6 +24,7 @@ import OverlayGridTool from './OverlayGridTool';
 import SegmentationIntersectionTool from './SegmentationIntersectionTool';
 import ReferenceCursors from './ReferenceCursors';
 import ScaleOverlayTool from './ScaleOverlayTool';
+import WaveformRegionOverlayTool from './WaveformRegionOverlayTool';
 import SculptorTool from './SculptorTool';
 import VolumeRotateTool from './VolumeRotateTool';
 
@@ -137,6 +138,7 @@ export {
   AdvancedMagnifyTool,
   PaintFillTool,
   ScaleOverlayTool,
+  WaveformRegionOverlayTool,
   OrientationMarkerTool,
   OrientationControllerTool,
   SculptorTool,
