@@ -34,13 +34,13 @@ export type { IndexSpaceSlab, VolumeGeometry } from './indexSpaceSlab';
 export { isPlaneDepthViewable } from './isPlaneDepthViewable';
 
 export {
-  iterateVoxelsInSlab,
-  collectVoxelsInSlab,
-} from './iterateVoxelsInSlab';
+  iterateVoxelsInShape,
+  collectVoxelsInShape,
+} from './iterateVoxelsInShape';
 export type {
-  VoxelSlabVisit,
+  VoxelInShape,
   ShapeRunProvider,
-  VoxelSlabIterationOptions,
-} from './iterateVoxelsInSlab';
+  VoxelsInShapeOptions,
+} from './iterateVoxelsInShape';
 
 export * from './shapes';

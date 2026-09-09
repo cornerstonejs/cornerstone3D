@@ -1,4 +1,4 @@
-import { collectVoxelsInSlab } from '../src/utilities/voxelSlab/iterateVoxelsInSlab';
+import { collectVoxelsInShape } from '../src/utilities/voxelSlab/iterateVoxelsInShape';
 import { buildIndexSpaceSlab } from '../src/utilities/voxelSlab/indexSpaceSlab';
 import getVoxelThicknessAlongNormal from '../src/utilities/voxelSlab/getVoxelThicknessAlongNormal';
 import {
@@ -35,7 +35,7 @@ function expectShapeConsistency(
   { volume, planePoint, viewPlaneNormal, referencePlaneThickness, shape },
   label = ''
 ) {
-  const viaRuns = collectVoxelsInSlab({
+  const viaRuns = collectVoxelsInShape({
     volume,
     planePoint,
     viewPlaneNormal,
@@ -43,7 +43,7 @@ function expectShapeConsistency(
     getShapeRuns: shape.getRuns,
   });
 
-  const viaPredicate = collectVoxelsInSlab({
+  const viaPredicate = collectVoxelsInShape({
     volume,
     planePoint,
     viewPlaneNormal,
@@ -257,11 +257,11 @@ describe('createEllipseShape - planar', () => {
     };
     expect(
       canonicaliseVoxels(
-        collectVoxelsInSlab({ ...options, getShapeRuns: tilted.getRuns })
+        collectVoxelsInShape({ ...options, getShapeRuns: tilted.getRuns })
       )
     ).toEqual(
       canonicaliseVoxels(
-        collectVoxelsInSlab({ ...options, getShapeRuns: inPlane.getRuns })
+        collectVoxelsInShape({ ...options, getShapeRuns: inPlane.getRuns })
       )
     );
   });
@@ -714,11 +714,11 @@ describe('createPolylineShape', () => {
 
     expect(
       canonicaliseVoxels(
-        collectVoxelsInSlab({ ...options, getShapeRuns: polyline.getRuns })
+        collectVoxelsInShape({ ...options, getShapeRuns: polyline.getRuns })
       )
     ).toEqual(
       canonicaliseVoxels(
-        collectVoxelsInSlab({ ...options, getShapeRuns: rectangle.getRuns })
+        collectVoxelsInShape({ ...options, getShapeRuns: rectangle.getRuns })
       )
     );
   });
@@ -857,7 +857,7 @@ describe('createPolylineShape', () => {
         polyline: square(8, 8, 3, 3),
       });
 
-      const passedThrough = collectVoxelsInSlab({
+      const passedThrough = collectVoxelsInShape({
         volume: cube,
         planePoint: anchor,
         viewPlaneNormal: AXIAL,
@@ -865,7 +865,7 @@ describe('createPolylineShape', () => {
         getShapeRuns: shape.getRuns,
       });
 
-      const defaulted = collectVoxelsInSlab({
+      const defaulted = collectVoxelsInShape({
         volume: cube,
         planePoint: anchor,
         viewPlaneNormal: AXIAL,
@@ -943,11 +943,11 @@ describe('createPolylineShape', () => {
       viewPlaneNormal: AXIAL,
       referencePlaneThickness: 1,
     };
-    const defaulted = collectVoxelsInSlab({
+    const defaulted = collectVoxelsInShape({
       ...options,
       getShapeRuns: withDefault.getRuns,
     });
-    const explicit = collectVoxelsInSlab({
+    const explicit = collectVoxelsInShape({
       ...options,
       getShapeRuns: withAnchor.getRuns,
     });
@@ -1038,16 +1038,16 @@ describe('createPolylineShape', () => {
       viewPlaneNormal: AXIAL,
       referencePlaneThickness: 1,
     };
-    const circleCount = collectVoxelsInSlab({
+    const circleCount = collectVoxelsInShape({
       ...options,
       getShapeRuns: circle.getRuns,
     }).length;
 
-    const coarse = collectVoxelsInSlab({
+    const coarse = collectVoxelsInShape({
       ...options,
       getShapeRuns: polygonOf(6).getRuns,
     }).length;
-    const fine = collectVoxelsInSlab({
+    const fine = collectVoxelsInShape({
       ...options,
       getShapeRuns: polygonOf(64).getRuns,
     }).length;

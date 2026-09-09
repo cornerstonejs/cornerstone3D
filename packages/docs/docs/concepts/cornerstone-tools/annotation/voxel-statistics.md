@@ -1,26 +1,37 @@
 ---
 id: voxel-statistics
 title: Voxel Statistics and Oblique Views
-summary: Which voxels an area annotation covers (Rule M), which annotations a viewport displays (Rule D), and how the shared voxel slab iterator evaluates both exactly at any orientation
+summary: One iterator for the voxels a tool's shape covers, at any orientation, plus the two rules it evaluates - which voxels an area annotation contains (Rule M) and which annotations a viewport displays (Rule D)
 ---
 
 # Voxel Statistics and Oblique Views
 
-An area annotation reports a mean, a maximum and an area. Those numbers are a
-function of a voxel set, and this page defines that set.
+## The problem
 
-Rule M and Rule D below are **normative**. Issue
-[#2889](https://github.com/cornerstonejs/cornerstone3D/issues/2889) states them
-as well. The index-space arithmetic that evaluates Rule M quickly is an
-implementation detail, and anyone may change it as long as it selects the same
-voxels.
+A tool draws a shape on a viewport, and that shape stands for a set of voxels.
+An area annotation is a **prism**: the outline sweeps along the view normal, and
+the prism holds every voxel inside the outline and within the annotation's own
+thickness. Some tools draw a **solid** instead, such as a sphere or a box, and
+the solid holds every voxel inside it. Either way the tool needs the same thing:
+every voxel of that set, exactly once each.
 
-## Why the rules exist
+Producing that set is harder than it looks, and Cornerstone3D already contains
+four separate attempts at it:
 
-Cornerstone3D calculated ROI statistics for years without a definition of which
-voxels those statistics cover. Each tool wrote its own traversal, and no
-traversal was correct in an oblique view. Three failure modes followed, and none
-of the three is reachable by a change to a sample step size.
+| tool                    | how it walks the voxels                                                                                         |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `RectangleROITool`      | the index-space bounding box of the two corner handles, and no shape test at all                                |
+| `EllipticalROITool`     | the same bounding box, plus `pointInEllipse` on every voxel in the box                                          |
+| `CircleROITool`         | the same bounding box, plus a sphere test on every voxel in the box                                             |
+| `PlanarFreehandROITool` | the same bounding box, plus `worldToCanvas` on every voxel, and a crossing count that carries state across rows |
+
+Every one of the four is a bounding box paired with a per-voxel test, and every
+one of the four is wrong in a different way. The rectangle omits the test, so it
+is exact for an axis-aligned rectangle and it over-counts the corners of a
+rotated one. The freehand tool works in canvas coordinates, so the answer moves
+when the user zooms. All four build the box from one slice, so all four return a
+sheet one voxel thick. Three failure modes follow, and no choice of sample step
+size reaches any of the three.
 
 **A nearest-neighbour sample cannot cover an integer lattice under rotation.**
 At a 45° in-plane oblique angle, samples along `(0.707, 0.707)` in IJK round to
@@ -38,6 +49,56 @@ annotation on an NM series with 1 mm slices, and fuse that series with a CT
 series at 0.5 mm in the same orientation. The correct CT maximum must examine
 two CT voxels for each in-plane location. Extra in-plane samples never produce
 the second voxel, because every sample lies on the same plane.
+
+The four traversals are also slow, and each one carries its own special cases.
+The bounding box of a disc holds `4 / π` times as many voxels as the disc, so a
+quarter of the per-voxel tests are wasted before the plane is even oblique. Tilt
+the plane and the box becomes the 3D box around the tilted prism, which holds
+many times the voxels of the prism itself.
+
+## The solution: one iterator
+
+`iterateVoxelsInShape` walks the voxel set directly, and no tool needs a
+traversal of its own. It works in index space, where the depth test is exactly
+linear in the integer voxel indices. For each row it therefore solves two closed
+intervals in closed form, one from the slab and one from the shape, intersects
+the two, and emits the integers inside. It tests no voxel that it does not emit,
+and it reads nothing from the display.
+
+An area statistic becomes a loop over that iterator and an accumulator. The tool
+supplies the shape and the thickness, the iterator supplies the voxels, and the
+mean, the maximum and the count follow from one pass. Rule M and Rule D below
+define the set that the iterator produces, so a tool that uses the iterator gets
+the defined answer without knowing the arithmetic.
+
+Rule M and Rule D are **normative**. Issue
+[#2889](https://github.com/cornerstonejs/cornerstone3D/issues/2889) states them
+as well. The index-space arithmetic that evaluates Rule M quickly is an
+implementation detail, and anyone may change it as long as it selects the same
+voxels.
+
+### The base case is the base of the iterator
+
+The ordinary case is a non-oblique view of a single layer: the plane lies on the
+acquisition axis, and the annotation is one voxel thick. The iterator does not
+special-case that view. It **is** the base of the iterator: the outer axis
+becomes the slice axis, the depth interval resolves to one layer, and the inner
+loop emits runs along `i` for each `j`, in memory order. The general oblique
+case is the same three loops with a depth interval that moves.
+
+Even in that base case the iterator is generally faster than the four
+traversals, because a shape that supplies runs needs no per-voxel test. The
+older code tests every voxel of the bounding box and rejects most of them. The
+iterator solves the row once and emits an interval, so the count of shape tests
+falls from the size of the box to zero.
+
+The gap widens as the geometry gets harder. In a stretched space, where the
+spacing is anisotropic, a circle in world coordinates is an eccentric ellipse in
+index space, and a rectangle rotated in the plane is a rotated box in index
+space. The bounding box of either grows faster than its content, so a
+bounding-box traversal wastes more of its work. The closed form does not care:
+an ellipsoid solves one quadratic per row, and a box solves one linear
+inequality per axis, at every angle and at every aspect ratio.
 
 ## Rule M: voxel membership
 
@@ -138,7 +199,7 @@ A tool builds a shape, then walks the voxels:
 ```ts
 import { utilities } from '@cornerstonejs/core';
 
-const { createPolylineShape, iterateVoxelsInSlab } = utilities.voxelSlab;
+const { createPolylineShape, iterateVoxelsInShape } = utilities.voxelSlab;
 
 const shape = createPolylineShape({
   volume, // { dimensions, direction, spacing, origin }
@@ -147,7 +208,7 @@ const shape = createPolylineShape({
   polyline, // the outline in world coordinates
 });
 
-for (const { ijk, center } of iterateVoxelsInSlab({
+for (const { ijk, center } of iterateVoxelsInShape({
   volume,
   planePoint,
   viewPlaneNormal,
@@ -374,7 +435,7 @@ Everything here is exported under `utilities.voxelSlab`.
 
 | export                                                                 | purpose                                  |
 | ---------------------------------------------------------------------- | ---------------------------------------- |
-| `iterateVoxelsInSlab`, `collectVoxelsInSlab`                           | the traversal                            |
+| `iterateVoxelsInShape`, `collectVoxelsInShape`                         | the traversal                            |
 | `createEllipseShape`, `createCircleShape`                              | ellipse in-plane, ellipsoid out-of-plane |
 | `createRectangleShape`                                                 | rectangle in-plane, box out-of-plane     |
 | `createPolylineShape`                                                  | a planar polyline, with internal holes   |

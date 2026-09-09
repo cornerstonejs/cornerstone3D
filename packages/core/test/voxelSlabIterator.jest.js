@@ -1,4 +1,4 @@
-import { collectVoxelsInSlab } from '../src/utilities/voxelSlab/iterateVoxelsInSlab';
+import { collectVoxelsInShape } from '../src/utilities/voxelSlab/iterateVoxelsInShape';
 import {
   buildIndexSpaceSlab,
   getIndexSpaceNormal,
@@ -56,7 +56,7 @@ function expectAgreement({
     isInShape: shape ? (_projected, _ijk, center) => shape(center) : undefined,
   });
 
-  const fast = collectVoxelsInSlab({
+  const fast = collectVoxelsInShape({
     volume,
     planePoint,
     viewPlaneNormal,
@@ -134,7 +134,7 @@ describe('index space depth matches world space depth', () => {
   });
 });
 
-describe('iterateVoxelsInSlab agrees with the reference implementation', () => {
+describe('iterateVoxelsInShape agrees with the reference implementation', () => {
   describe('acquisition orientation, depth only', () => {
     const volume = createSyntheticVolume({
       dimensions: [6, 6, 8],
@@ -341,7 +341,7 @@ describe('iterateVoxelsInSlab agrees with the reference implementation', () => {
 
       const results = allowed.map((columnAxis) =>
         canonicaliseVoxels(
-          collectVoxelsInSlab({
+          collectVoxelsInShape({
             volume,
             planePoint,
             viewPlaneNormal,
@@ -366,7 +366,7 @@ describe('iterateVoxelsInSlab agrees with the reference implementation', () => {
       const planePoint = [5, 5, 5];
       const viewPlaneNormal = [0, 0, 1];
 
-      const bounded = collectVoxelsInSlab({
+      const bounded = collectVoxelsInShape({
         volume,
         planePoint,
         viewPlaneNormal,
@@ -400,7 +400,7 @@ describe('iterateVoxelsInSlab agrees with the reference implementation', () => {
 
       // A box derived from world coordinates can reach past the volume on both
       // sides. Every index must still lie inside the volume.
-      const voxels = collectVoxelsInSlab({
+      const voxels = collectVoxelsInShape({
         volume,
         planePoint,
         viewPlaneNormal,
@@ -422,7 +422,7 @@ describe('iterateVoxelsInSlab agrees with the reference implementation', () => {
       // Clamped to the whole volume, so the result matches the default.
       expect(canonicaliseVoxels(voxels)).toEqual(
         canonicaliseVoxels(
-          collectVoxelsInSlab({
+          collectVoxelsInShape({
             volume,
             planePoint,
             viewPlaneNormal,
@@ -439,7 +439,7 @@ describe('iterateVoxelsInSlab agrees with the reference implementation', () => {
       });
 
       expect(
-        collectVoxelsInSlab({
+        collectVoxelsInShape({
           volume,
           planePoint: [5, 5, 5],
           viewPlaneNormal: [0, 0, 1],
@@ -467,7 +467,7 @@ describe('invariant I1 - no display inputs', () => {
 
     const run = () =>
       canonicaliseVoxels(
-        collectVoxelsInSlab({
+        collectVoxelsInShape({
           volume,
           planePoint,
           viewPlaneNormal,

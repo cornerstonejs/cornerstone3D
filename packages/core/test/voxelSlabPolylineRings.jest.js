@@ -1,4 +1,4 @@
-import { collectVoxelsInSlab } from '../src/utilities/voxelSlab/iterateVoxelsInSlab';
+import { collectVoxelsInShape } from '../src/utilities/voxelSlab/iterateVoxelsInShape';
 import { buildIndexSpaceSlab } from '../src/utilities/voxelSlab/indexSpaceSlab';
 import getVoxelThicknessAlongNormal from '../src/utilities/voxelSlab/getVoxelThicknessAlongNormal';
 import { createPolylineShape } from '../src/utilities/voxelSlab/shapes/createPolylineShape';
@@ -22,7 +22,7 @@ function expectShapeConsistency({
   referencePlaneThickness,
   shape,
 }) {
-  const viaRuns = collectVoxelsInSlab({
+  const viaRuns = collectVoxelsInShape({
     volume,
     planePoint,
     viewPlaneNormal,
@@ -30,7 +30,7 @@ function expectShapeConsistency({
     getShapeRuns: shape.getRuns,
   });
 
-  const viaPredicate = collectVoxelsInSlab({
+  const viaPredicate = collectVoxelsInShape({
     volume,
     planePoint,
     viewPlaneNormal,
@@ -340,12 +340,12 @@ describe('createPolylineShape - internal holes', () => {
       referencePlaneThickness: 1,
     };
 
-    const withRings = collectVoxelsInSlab({
+    const withRings = collectVoxelsInShape({
       ...options,
       getShapeRuns: annulus().getRuns,
     });
 
-    const flattened = collectVoxelsInSlab({
+    const flattened = collectVoxelsInShape({
       ...options,
       getShapeRuns: createPolylineShape({
         volume,

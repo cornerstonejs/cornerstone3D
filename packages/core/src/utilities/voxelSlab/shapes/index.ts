@@ -1,5 +1,5 @@
 /**
- * Plane-anchored shapes that drive `iterateVoxelsInSlab`.
+ * Plane-anchored shapes that drive `iterateVoxelsInShape`.
  *
  * Each shape provides a `containsPoint` definition and an exact `getRuns`
  * closed form, and the two must select the same voxels. For a worked example,

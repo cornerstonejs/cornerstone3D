@@ -3,7 +3,7 @@ import type { Point2, Point3 } from '../../../types';
 import type { IndexSpaceSlab, VolumeGeometry } from '../indexSpaceSlab';
 
 /**
- * A plane-anchored shape that can drive {@link iterateVoxelsInSlab}.
+ * A plane-anchored shape that can drive {@link iterateVoxelsInShape}.
  *
  * `containsPoint` is the definition and `getRuns` the optimisation, and the two
  * must always select the same voxels. Boundaries are **inclusive**.
@@ -18,7 +18,7 @@ export interface VoxelSlabShape {
    * The optimisation. Exact inclusive runs along `slab.columnAxis`.
    *
    * Signature matches `ShapeRunProvider`, so it can be handed straight to
-   * `iterateVoxelsInSlab` as `getShapeRuns`.
+   * `iterateVoxelsInShape` as `getShapeRuns`.
    */
   getRuns(
     outerIndex: number,

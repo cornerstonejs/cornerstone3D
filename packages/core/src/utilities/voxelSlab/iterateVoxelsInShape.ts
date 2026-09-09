@@ -8,14 +8,14 @@ import {
 import { signedDistanceToPlane } from './slabMembership';
 
 /**
- * One voxel visited by {@link iterateVoxelsInSlab}.
+ * One voxel visited by {@link iterateVoxelsInShape}.
  *
  * The arrays are **reused between iterations** so that iterating a large ROI
  * does not allocate three arrays per voxel. Copy anything you intend to retain.
- * `iterateVoxelsInSlab` is a generator, so a consumer that reads the fields and
+ * `iterateVoxelsInShape` is a generator, so a consumer that reads the fields and
  * moves on - which is what a statistics accumulator does - never notices.
  */
-export interface VoxelSlabVisit {
+export interface VoxelInShape {
   /** Voxel index. Reused; copy to retain. */
   ijk: Point3;
   /** Voxel centre in world coordinates. Reused; copy to retain. */
@@ -40,7 +40,7 @@ export type ShapeRunProvider = (
   slab: IndexSpaceSlab
 ) => Iterable<Point2>;
 
-export interface VoxelSlabIterationOptions {
+export interface VoxelsInShapeOptions {
   /**
    * The volume being measured. Pass an `IImageVolume`, or any object that has
    * `direction`, `spacing`, `origin` and `dimensions`. The structural form
@@ -86,9 +86,9 @@ export interface VoxelSlabIterationOptions {
  * canvas size and every other display property. See
  * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  */
-export function* iterateVoxelsInSlab(
-  options: VoxelSlabIterationOptions
-): Generator<VoxelSlabVisit, void, undefined> {
+export function* iterateVoxelsInShape(
+  options: VoxelsInShapeOptions
+): Generator<VoxelInShape, void, undefined> {
   const {
     volume,
     planePoint,
@@ -147,7 +147,7 @@ export function* iterateVoxelsInSlab(
 
   const ijk: Point3 = [0, 0, 0];
   const center: Point3 = [0, 0, 0];
-  const visit: VoxelSlabVisit = { ijk, center, depth: 0 };
+  const visit: VoxelInShape = { ijk, center, depth: 0 };
 
   const columnStep = axisStep[columnAxis];
 
@@ -212,17 +212,15 @@ export function* iterateVoxelsInSlab(
 }
 
 /**
- * Collects the voxel indices {@link iterateVoxelsInSlab} would visit.
+ * Collects the voxel indices {@link iterateVoxelsInShape} would visit.
  *
  * Copies each index, unlike the generator, so the result is safe to retain.
  * Intended for tests and for callers that genuinely need the whole list;
  * prefer the generator when accumulating statistics.
  */
-export function collectVoxelsInSlab(
-  options: VoxelSlabIterationOptions
-): Point3[] {
+export function collectVoxelsInShape(options: VoxelsInShapeOptions): Point3[] {
   const collected: Point3[] = [];
-  for (const { ijk } of iterateVoxelsInSlab(options)) {
+  for (const { ijk } of iterateVoxelsInShape(options)) {
     collected.push([ijk[0], ijk[1], ijk[2]]);
   }
   return collected;
