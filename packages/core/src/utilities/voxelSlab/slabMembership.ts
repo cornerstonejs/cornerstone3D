@@ -58,13 +58,17 @@ export function resolveAnnotationThickness(
  * The half width used to decide which *voxels* an area annotation contains
  * (Rule M): `d = (T + T_v) / 2`.
  *
- * The `T_v` term dilates the slab by half a voxel on each side, so that a voxel
+ * The `T_v` term widens the slab by half a voxel on each side, so a voxel
  * centre qualifies exactly when the voxel itself overlaps the annotation's
  * slab. It has no effect in the default case of `T = T_v` anchored on a voxel
- * centre, which yields exactly one layer either way; it matters for planes that
- * do not pass through voxel centres, which would otherwise select nothing, and
- * for thicker slabs, where an undilated test asked for two voxels of thickness
- * would select only one.
+ * centre, which gives one layer either way. It matters for a plane that misses
+ * the voxel centres, which would otherwise select nothing, and for a thicker
+ * slab, where an unwidened test asked for two voxels of thickness would select
+ * one.
+ *
+ * One consequence is visible in reported statistics: a plane exactly midway
+ * between two voxel centres selects **both** layers. See
+ * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  *
  * Note the viewport slab thickness `t` does **not** appear here. Statistics are
  * a property of the annotation and the data, never of the viewport.
