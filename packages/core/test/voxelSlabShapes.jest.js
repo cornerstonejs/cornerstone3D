@@ -463,6 +463,46 @@ describe('createRectangleShape', () => {
   });
   const planePoint = [10, 10, 4];
 
+  it('keeps an outline point at a huge origin and a tiny half extent', () => {
+    // The tolerance floor exists for a sub-millimetre extent. This is the
+    // hostile pairing: a 1e9 mm origin, a 1 micron half extent, and an oblique
+    // basis, so no component of the frame is exactly representable.
+    const ORIGIN = 1e9;
+    const HALF = 1e-3;
+    const angle = 37 * (Math.PI / 180);
+    const normal = [
+      Math.sin(angle) * Math.SQRT1_2,
+      Math.sin(angle) * Math.SQRT1_2,
+      Math.cos(angle),
+    ];
+    const huge = createSyntheticVolume({
+      dimensions: [8, 8, 8],
+      spacing: [1, 1, 1],
+      origin: [ORIGIN, ORIGIN, ORIGIN],
+    });
+    const center = [ORIGIN + 4, ORIGIN + 4, ORIGIN + 4];
+    const shape = createRectangleShape({
+      volume: huge,
+      planePoint: center,
+      viewPlaneNormal: normal,
+      centerWorld: center,
+      majorAxis: [1, 0, 0],
+      majorHalfLength: HALF,
+      minorHalfLength: HALF,
+    });
+
+    const { u, v } = createPlaneBasis(normal, [1, 0, 0]);
+    const at = (du, dv) =>
+      [0, 1, 2].map((i) => center[i] + u[i] * du + v[i] * dv);
+
+    expect(shape.containsPoint(center)).toBe(true);
+    expect(shape.containsPoint(at(HALF, 0))).toBe(true);
+    expect(shape.containsPoint(at(0, HALF))).toBe(true);
+    expect(shape.containsPoint(at(HALF, HALF))).toBe(true);
+    // The tolerance still has to reject a point well outside the outline.
+    expect(shape.containsPoint(at(HALF * 2, 0))).toBe(false);
+  });
+
   it('rejects non-positive half lengths', () => {
     expect(() =>
       createRectangleShape({
@@ -807,9 +847,9 @@ describe('createPolylineShape', () => {
     // The second anchor is the case that matters: it lies between voxel
     // centres, where a half width of T_v / 2 selects nothing.
     [
-      [8, 8, 8],
-      [8, 8, 8.5],
-    ].forEach((anchor) => {
+      { anchor: [8, 8, 8], layers: [8] },
+      { anchor: [8, 8, 8.5], layers: [8, 9] },
+    ].forEach(({ anchor, layers }) => {
       const shape = createPolylineShape({
         volume: cube,
         planePoint: anchor,
@@ -834,21 +874,27 @@ describe('createPolylineShape', () => {
 
       expect(passedThrough.length).toBeGreaterThan(0);
       expect(passedThrough).toEqual(defaulted);
+      // Equality alone would still hold if a regression widened the slab in
+      // both paths, so name the layers. Rule M: an anchor on a voxel centre
+      // selects one layer, and an anchor midway between two centres selects
+      // both of them.
+      expect(
+        [...new Set(passedThrough.map(([, , k]) => k))].sort((a, b) => a - b)
+      ).toEqual(layers);
     });
   });
 
-  it('reports the depth it was given', () => {
+  it('is planar, so it requires no thickness of its own', () => {
     const shape = createPolylineShape({
       volume,
       planePoint,
       viewPlaneNormal: AXIAL,
       polyline: square(10, 10, 3, 3),
-      depth: 4,
     });
-    expect(shape.getRequiredThickness()).toBe(4);
+    expect(shape.getRequiredThickness()).toBe(0);
   });
 
-  it('spans the layers its depth implies', () => {
+  it('spans the layers the caller thickness implies', () => {
     const cube = createSyntheticVolume({
       dimensions: [20, 20, 16],
       spacing: [1, 1, 1],
@@ -859,14 +905,15 @@ describe('createPolylineShape', () => {
       planePoint: anchor,
       viewPlaneNormal: AXIAL,
       polyline: square(10, 10, 3.5, 8),
-      depth: 4,
     });
 
     const voxels = expectShapeConsistency({
       volume: cube,
       planePoint: anchor,
       viewPlaneNormal: AXIAL,
-      referencePlaneThickness: shape.getRequiredThickness(),
+      // The prism depth is the caller's thickness now that the shape carries
+      // none of its own.
+      referencePlaneThickness: 4,
       shape,
     });
 
@@ -874,6 +921,39 @@ describe('createPolylineShape', () => {
     expect(
       [...new Set(voxels.map(([, , k]) => k))].sort((a, b) => a - b)
     ).toEqual([6, 7, 8, 9, 10]);
+  });
+
+  it('defaults the plane anchor to the first outline point', () => {
+    const outline = square(10, 10, 3, 3);
+    const withDefault = createPolylineShape({
+      volume,
+      viewPlaneNormal: AXIAL,
+      polyline: outline,
+    });
+    const withAnchor = createPolylineShape({
+      volume,
+      planePoint: outline[0],
+      viewPlaneNormal: AXIAL,
+      polyline: outline,
+    });
+
+    const options = {
+      volume,
+      planePoint: outline[0],
+      viewPlaneNormal: AXIAL,
+      referencePlaneThickness: 1,
+    };
+    const defaulted = collectVoxelsInSlab({
+      ...options,
+      getShapeRuns: withDefault.getRuns,
+    });
+    const explicit = collectVoxelsInSlab({
+      ...options,
+      getShapeRuns: withAnchor.getRuns,
+    });
+
+    expect(defaulted.length).toBeGreaterThan(0);
+    expect(defaulted).toEqual(explicit);
   });
 
   it('agrees at oblique angles', () => {

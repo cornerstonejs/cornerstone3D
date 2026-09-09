@@ -202,12 +202,25 @@ the whole shape. A planar shape returns 0, because it has no extent along the
 normal and any `T` works. A shape with depth returns that depth, and a smaller
 `referencePlaneThickness` will clip it.
 
+`createEllipseShape` and `createRectangleShape` each carry a depth, and each
+applies its own. `createPolylineShape` is always planar and returns 0, so the
+caller's `referencePlaneThickness` alone decides how far the slab reaches along
+the normal. A caller that wants a polyline prism passes the prism depth as that
+thickness.
+
 ### Polyline rings and holes
 
 `createPolylineShape` accepts either a single ring or an array of rings. Each
 ring is closed, so do not repeat the first point at the end. Points are
 projected onto the annotation plane, which handles an outline that carries a
 little depth error, as a drawn one always does.
+
+`planePoint` is optional for this shape, because every point of the outline
+lies in the plane already, and the first point of the first ring is the
+default. Pass the annotation's own anchor when you have one: a drawn vertex
+carries rounding error that the anchor does not. Whichever anchor you use, give
+the shape and the iterator the **same** one, or the two describe different
+slabs.
 
 The interior is the even-odd rule over every edge of every ring, and the parity
 accumulates across the rings rather than per ring. That single rule gives:
@@ -272,7 +285,7 @@ Each shape reaches its exact runs by its own route:
 | ------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
 | ellipse, ellipsoid | a line substituted into the quadratic form gives a quadratic in the column index, whose real roots bound one interval        |
 | rectangle, box     | each face is a linear constraint, so each gives one interval, and their intersection is one interval because a box is convex |
-| polyline prism     | the crossings of the line with every edge of every ring, sorted, with consecutive pairs bounding the inside intervals        |
+| polyline outline   | the crossings of the line with every edge of every ring, sorted, with consecutive pairs bounding the inside intervals        |
 
 A non-convex polyline therefore yields several runs, which is the exact-multiple
 case the iterator supports.
@@ -364,7 +377,7 @@ Everything here is exported under `utilities.voxelSlab`.
 | `iterateVoxelsInSlab`, `collectVoxelsInSlab`                           | the traversal                            |
 | `createEllipseShape`, `createCircleShape`                              | ellipse in-plane, ellipsoid out-of-plane |
 | `createRectangleShape`                                                 | rectangle in-plane, box out-of-plane     |
-| `createPolylineShape`                                                  | a polyline prism, with internal holes    |
+| `createPolylineShape`                                                  | a planar polyline, with internal holes   |
 | `getVoxelThicknessAlongNormal`                                         | `T_v`                                    |
 | `isPlaneDepthViewable`                                                 | the depth half of Rule D                 |
 | `buildIndexSpaceSlab`, `getDepthRun`, `getSlabAxisBound`               | the index-space run arithmetic           |

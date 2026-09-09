@@ -17,8 +17,16 @@ export interface PolylineShapeOptions {
    * lets a caller that holds no cached volume, such as a test, use this code.
    */
   volume: VolumeGeometry;
-  /** The annotation plane anchor. Defines the plane's depth. */
-  planePoint: Point3;
+  /**
+   * The annotation plane anchor, which defines the plane's depth. Defaults to
+   * the first point of the outline, because every point of a polyline lies in
+   * the plane already.
+   *
+   * Pass the annotation's own anchor when you have one: a drawn vertex carries
+   * rounding error that the anchor does not. Whichever you use, the shape and
+   * the iterator MUST use the same anchor, or the two describe different slabs.
+   */
+  planePoint?: Point3;
   /** The annotation view plane normal. Unit length. */
   viewPlaneNormal: Point3;
   /**
@@ -30,37 +38,25 @@ export interface PolylineShapeOptions {
    * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
    */
   polyline: Point3[] | Point3[][];
-  /**
-   * The polyline's extent along the normal, in mm.
-   *
-   * Unlike the ellipsoid and box, the shape does *not* apply this itself: the
-   * slab enforces it, via `getRequiredThickness()`. Omit to let the slab
-   * decide, in which case `getRequiredThickness()` returns 0.
-   */
-  depth?: number;
 }
 
 /**
- * A closed polyline lying in the annotation plane, swept into a prism by its depth.
+ * A closed polyline lying in the annotation plane.
  *
  * Interior is the even-odd rule, so a non-convex polyline or one with holes
  * yields several runs. A point exactly on the outline is inside it, widened by
- * `SHAPE_BOUNDARY_EPSILON`. The outline test is purely in-plane; depth is left
- * to Rule M's slab.
+ * `SHAPE_BOUNDARY_EPSILON`. The test is purely in-plane, and the shape is
+ * planar: it reports a required thickness of 0, and the caller's
+ * `referencePlaneThickness` alone decides how far the slab reaches along the
+ * normal. The ellipse and the rectangle differ, because each of those carries
+ * its own depth.
  *
- * See `PolylineShapeOptions.depth` and
- * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
+ * See `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  */
 export function createPolylineShape(
   options: PolylineShapeOptions
 ): VoxelSlabShape {
-  const {
-    volume,
-    planePoint,
-    viewPlaneNormal: normal,
-    polyline,
-    depth,
-  } = options;
+  const { volume, viewPlaneNormal: normal, polyline } = options;
 
   if (!polyline?.length) {
     throw new Error('A polyline shape needs an outline');
@@ -75,6 +71,10 @@ export function createPolylineShape(
   if (inputRings.some((ring) => !ring?.length || ring.length < 3)) {
     throw new Error('Every polyline ring needs at least three points');
   }
+
+  // Resolved after the ring checks, so an empty outline raises the outline
+  // error rather than an index error.
+  const planePoint: Point3 = options.planePoint ?? inputRings[0][0];
 
   // Any in-plane direction will do for the basis; the outline defines its own
   // orientation. Pick one that is not parallel to the normal.
@@ -315,10 +315,9 @@ export function createPolylineShape(
   return {
     containsPoint,
     getRuns,
-    // The prism's depth, which the caller gives to the slab. A polyline with no
-    // depth is planar, so it returns 0 and the caller's
-    // `|| referencePlaneThickness` keeps the annotation's own thickness.
-    getRequiredThickness: () =>
-      Number.isFinite(depth) ? (depth as number) : 0,
+    // Always planar. The caller's own `referencePlaneThickness` decides how far
+    // the slab reaches along the normal, so a caller that wants a prism passes
+    // that thickness to the iterator.
+    getRequiredThickness: () => 0,
   };
 }
