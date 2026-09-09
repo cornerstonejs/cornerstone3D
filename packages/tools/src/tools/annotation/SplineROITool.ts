@@ -56,6 +56,11 @@ import { BSpline } from './splines/BSpline';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
 import { triggerAnnotationRenderForViewportIds } from '../../utilities';
 import { convertContourSegmentationAnnotation } from '../../utilities/contourSegmentation';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.annotation.SplineROITool'
+);
 
 const SPLINE_MIN_POINTS = 3;
 const SPLINE_CLICK_CLOSE_CURVE_DIST = 10;
@@ -1444,7 +1449,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
     }
 
     if (points.length < SPLINE_MIN_POINTS) {
-      console.warn('Spline requires at least 3 control points');
+      cs3dLogger.warn('Spline requires at least 3 control points');
       return;
     }
 

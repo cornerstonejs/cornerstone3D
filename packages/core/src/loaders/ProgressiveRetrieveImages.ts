@@ -19,6 +19,9 @@ import { ImageQualityStatus, RequestType, Events } from '../enums';
 import cache from '../cache/cache';
 import eventTarget from '../eventTarget';
 import { fillNearbyFrames } from './fillNearbyFrames';
+import { coreLog } from '../utilities/logger';
+
+const log = coreLog.getLogger('loaders', 'ProgressiveRetrieveImages');
 
 export {
   sequentialRetrieveStages,
@@ -180,7 +183,7 @@ class ProgressiveRetrieveImagesInstance {
       .forEach(async (image, done) => {
         const oldStatus = cache.getImageQuality(imageId);
         if (!image) {
-          console.warn('No image retrieved', imageId);
+          log.warn('No image retrieved', imageId);
           return;
         }
         const { imageQualityStatus } = image;

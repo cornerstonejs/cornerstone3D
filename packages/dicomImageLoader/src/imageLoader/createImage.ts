@@ -8,6 +8,7 @@ import {
   metaData,
   utilities,
 } from '@cornerstonejs/core';
+import { logging } from '@cornerstonejs/metadata';
 import convertColorSpace from './convertColorSpace';
 import isColorConversionRequired from './isColorConversionRequired';
 import decodeImageFrame from './decodeImageFrame';
@@ -19,6 +20,8 @@ import removeAFromRGBA from './removeAFromRGBA';
 import isModalityLUTForDisplay from './isModalityLutForDisplay';
 import setPixelDataType from './setPixelDataType';
 import { fetchPaletteData } from './colorSpaceConverters/fetchPaletteData';
+
+const log = logging.loaderLog.getLogger('createImage');
 
 let lastImageIdDrawn = '';
 
@@ -299,36 +302,33 @@ async function createImage(
                 typeof (x as { length?: number }).length === 'number'
                   ? Array.from(x as ArrayLike<number>).slice(0, 10)
                   : null;
-              console.log(
-                '[createImage] PALETTE COLOR before convertColorSpace',
-                {
-                  imageId,
-                  descriptor: desc,
-                  pixelDataLength: len,
-                  pixelDataSlice:
-                    sliceSize > 0 && pd
-                      ? Array.from(
-                          { length: sliceSize },
-                          (_, i) => (pd as ArrayLike<number>)[i]
-                        )
-                      : [],
-                  redLUT: {
-                    length: lutLen(r),
-                    byteLength: lutByteLen(r),
-                    first10: first10(r),
-                  },
-                  greenLUT: {
-                    length: lutLen(g),
-                    byteLength: lutByteLen(g),
-                    first10: first10(g),
-                  },
-                  blueLUT: {
-                    length: lutLen(b),
-                    byteLength: lutByteLen(b),
-                    first10: first10(b),
-                  },
-                }
-              );
+              log.info('[createImage] PALETTE COLOR before convertColorSpace', {
+                imageId,
+                descriptor: desc,
+                pixelDataLength: len,
+                pixelDataSlice:
+                  sliceSize > 0 && pd
+                    ? Array.from(
+                        { length: sliceSize },
+                        (_, i) => (pd as ArrayLike<number>)[i]
+                      )
+                    : [],
+                redLUT: {
+                  length: lutLen(r),
+                  byteLength: lutByteLen(r),
+                  first10: first10(r),
+                },
+                greenLUT: {
+                  length: lutLen(g),
+                  byteLength: lutByteLen(g),
+                  first10: first10(g),
+                },
+                blueLUT: {
+                  length: lutLen(b),
+                  byteLength: lutByteLen(b),
+                  first10: first10(b),
+                },
+              });
             }
             convertColorSpace(imageFrame, imageData.data, useRGBA);
             imageFrame.imageData = imageData;

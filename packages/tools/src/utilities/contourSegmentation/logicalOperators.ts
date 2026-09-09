@@ -50,6 +50,11 @@ import { intersectPolylinesSets } from './polylineIntersect';
 import { xorPolylinesSets } from './polylineXor';
 import type { PolylineInfoWorld } from './polylineInfoTypes';
 import { getViewReferenceFromAnnotation } from './getViewReferenceFromAnnotation';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.contourSegmentation.logicalOperators'
+);
 
 export type SegmentInfo = {
   segmentationId: string;
@@ -423,24 +428,24 @@ export function copy(segment: SegmentInfo, options: OperatorOptions) {
 export function deleteOperation(segment: SegmentInfo) {
   const segmentation = getSegmentation(segment.segmentationId);
   if (!segmentation) {
-    console.log('No active segmentation detected');
+    cs3dLogger.info('No active segmentation detected');
     return;
   }
 
   if (!segmentation.representationData.Contour) {
-    console.log('No contour representation found');
+    cs3dLogger.info('No contour representation found');
     return;
   }
 
   const representationData = segmentation.representationData.Contour;
   const { annotationUIDsMap } = representationData;
   if (!annotationUIDsMap) {
-    console.log('No annotation map found');
+    cs3dLogger.info('No annotation map found');
     return;
   }
 
   if (!annotationUIDsMap.has(segment.segmentIndex)) {
-    console.log('Segmentation index has no annotations');
+    cs3dLogger.info('Segmentation index has no annotations');
     return;
   }
 

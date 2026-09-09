@@ -10,6 +10,11 @@ import { validateGeometry } from './utils';
 import type { ContourRepresentation } from '../../../../types/SegmentationStateTypes';
 import { SegmentationRepresentations } from '../../../../enums';
 import { segmentationStyle } from '../../../../stateManagement/segmentation/SegmentationStyle';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.displayTools.Contour.contourHandler.handleContourSegmentation'
+);
 
 function handleContourSegmentation(
   viewport: StackViewport | Types.IVolumeViewport,
@@ -37,7 +42,7 @@ function addContourSetsToElement(
     const geometry = cache.getGeometry(geometryId);
 
     if (!geometry) {
-      console.warn(
+      cs3dLogger.warn(
         `No geometry found for geometryId ${geometryId}. Skipping render.`
       );
       return;

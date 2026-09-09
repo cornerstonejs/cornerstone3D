@@ -12,6 +12,11 @@ import {
   setSegmentBinding,
   syncLegacyLabelmapData,
 } from './helpers/labelmapSegmentationState';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'stateManagement.segmentation.segmentIndex'
+);
 
 /**
  * Set the active segment index for a segmentation Id. It fires a global state
@@ -30,7 +35,7 @@ function setActiveSegmentIndex(
   const segmentation = getSegmentation(segmentationId);
 
   if (typeof segmentIndex === 'string') {
-    console.warn('segmentIndex is a string, converting to number');
+    cs3dLogger.warn('segmentIndex is a string, converting to number');
     segmentIndex = Number(segmentIndex);
   }
 
