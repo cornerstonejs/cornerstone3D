@@ -1,4 +1,5 @@
 import type { mat4 } from 'gl-matrix';
+import { coreLog } from '../utilities/logger';
 import { Events as EVENTS, VideoEnums as VideoViewportEnum } from '../enums';
 import type { DisplaySetId } from './GenericViewport/ViewportArchitectureTypes';
 import { getGenericViewportSourceDataId } from './GenericViewport/genericViewportDisplaySetAccess';
@@ -50,6 +51,8 @@ export type CanvasScalarData = Uint8ClampedArray & {
  * An object representing a single stack viewport, which is a camera
  * looking into an internal scene, and an associated target output `canvas`.
  */
+const log = coreLog.getLogger('RenderingEngine', 'VideoViewport');
+
 class VideoViewport extends Viewport {
   public static frameRangeExtractor = /(\/frames\/|[&?]frameNumber=)([^/&?]*)/i;
 
@@ -557,7 +560,7 @@ class VideoViewport extends Viewport {
       !this.videoElement.videoWidth ||
       !this.videoElement.videoHeight
     ) {
-      console.debug('Video not ready yet, returning empty scalar data');
+      log.debug('Video not ready yet, returning empty scalar data');
       // Return an empty CanvasScalarData object
       const emptyData = new Uint8ClampedArray() as CanvasScalarData;
       emptyData.getRange = () => [0, 255];

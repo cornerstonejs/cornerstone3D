@@ -26,6 +26,11 @@ import type {
 import { MouseCursor, SVGMouseCursor } from '../../cursors';
 import { initElementCursor } from '../../cursors/elementCursor';
 import getToolGroup from './getToolGroup';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'store.ToolGroupManager.ToolGroup'
+);
 
 const { Active, Passive, Enabled, Disabled } = ToolModes;
 
@@ -81,7 +86,7 @@ export default class ToolGroup {
   public getToolInstance(toolInstanceName: string) {
     const toolInstance = this._toolInstances[toolInstanceName];
     if (!toolInstance) {
-      console.warn(
+      cs3dLogger.warn(
         `'${toolInstanceName}' is not registered with this toolGroup (${this.id}).`
       );
       return;
@@ -123,7 +128,7 @@ export default class ToolGroup {
     const localToolInstance = this.toolOptions[toolName];
 
     if (!hasToolName) {
-      console.warn(
+      cs3dLogger.warn(
         'Tool with configuration did not produce a toolName: ',
         configuration
       );
@@ -131,14 +136,14 @@ export default class ToolGroup {
     }
 
     if (!toolDefinition) {
-      console.warn(
+      cs3dLogger.warn(
         `'${toolName}' is not registered with the library. You need to use cornerstoneTools.addTool to register it.`
       );
       return;
     }
 
     if (localToolInstance) {
-      console.warn(
+      cs3dLogger.warn(
         `'${toolName}' is already registered for ToolGroup ${this.id}.`
       );
       return;
@@ -282,7 +287,7 @@ export default class ToolGroup {
     const toolInstance = this._toolInstances[toolName];
 
     if (toolInstance === undefined) {
-      console.warn(
+      cs3dLogger.warn(
         `Tool ${toolName} not added to toolGroup, can't set tool configuration.`
       );
 
@@ -298,7 +303,7 @@ export default class ToolGroup {
     options = {} as SetToolBindingsType
   ): void {
     if (!toolName) {
-      console.warn('setToolMode: toolName must be defined');
+      cs3dLogger.warn('setToolMode: toolName must be defined');
       return;
     }
 
@@ -325,7 +330,7 @@ export default class ToolGroup {
       return;
     }
 
-    console.warn('setToolMode: mode must be defined');
+    cs3dLogger.warn('setToolMode: mode must be defined');
   }
 
   /**
@@ -347,7 +352,7 @@ export default class ToolGroup {
     const toolInstance = this._toolInstances[toolName];
 
     if (toolInstance === undefined) {
-      console.warn(
+      cs3dLogger.warn(
         `Tool ${toolName} not added to toolGroup, can't set tool mode.`
       );
 
@@ -355,7 +360,7 @@ export default class ToolGroup {
     }
 
     if (!toolInstance) {
-      console.warn(
+      cs3dLogger.warn(
         `'${toolName}' instance ${toolInstance} is not registered with this toolGroup, can't set tool mode.`
       );
       return;
@@ -456,7 +461,7 @@ export default class ToolGroup {
     const toolInstance = this._toolInstances[toolName];
 
     if (toolInstance === undefined) {
-      console.warn(
+      cs3dLogger.warn(
         `Tool ${toolName} not added to toolGroup, can't set tool mode.`
       );
 
@@ -524,7 +529,7 @@ export default class ToolGroup {
     const toolInstance = this._toolInstances[toolName];
 
     if (toolInstance === undefined) {
-      console.warn(
+      cs3dLogger.warn(
         `Tool ${toolName} not added to toolGroup, can't set tool mode.`
       );
 
@@ -558,7 +563,7 @@ export default class ToolGroup {
     const toolInstance = this._toolInstances[toolName];
 
     if (toolInstance === undefined) {
-      console.warn(
+      cs3dLogger.warn(
         `Tool ${toolName} not added to toolGroup, can't set tool mode.`
       );
 
@@ -691,7 +696,7 @@ export default class ToolGroup {
   ): boolean {
     const toolInstance = this._toolInstances[toolName];
     if (toolInstance === undefined) {
-      console.warn(
+      cs3dLogger.warn(
         `Tool ${toolName} not present, can't set tool configuration.`
       );
       return false;
@@ -745,7 +750,7 @@ export default class ToolGroup {
    */
   getToolConfiguration(toolName: string, configurationPath?: string): unknown {
     if (this._toolInstances[toolName] === undefined) {
-      console.warn(
+      cs3dLogger.warn(
         `Tool ${toolName} not present, can't set tool configuration.`
       );
       return;
@@ -798,7 +803,7 @@ export default class ToolGroup {
     let toolGroup = getToolGroup(newToolGroupId);
 
     if (toolGroup) {
-      console.debug(`ToolGroup ${newToolGroupId} already exists`);
+      cs3dLogger.debug(`ToolGroup ${newToolGroupId} already exists`);
       return toolGroup;
     }
 

@@ -22,6 +22,11 @@ import getViewportICamera from '../../utilities/getViewportICamera';
 import ProbeTool from './ProbeTool';
 import type { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.annotation.DragProbeTool'
+);
 
 class DragProbeTool extends ProbeTool {
   static toolName = 'DragProbe';
@@ -186,7 +191,7 @@ class DragProbeTool extends ProbeTool {
 
     // If rendering engine has been destroyed while rendering
     if (!viewport.getRenderingEngine()) {
-      console.warn('Rendering Engine has been destroyed');
+      cs3dLogger.warn('Rendering Engine has been destroyed');
       return renderStatus;
     }
 

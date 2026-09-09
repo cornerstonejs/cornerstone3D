@@ -6,6 +6,11 @@ import type {
 import { getAnnotation } from '../../annotation/annotationState';
 import { getSegmentation } from '../getSegmentation';
 import interpolateSegmentPoints from '../../../utilities/planarFreehandROITool/interpolation/interpolateSegmentPoints';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'stateManagement.segmentation.utilities.smoothContours'
+);
 
 /**
  * Smooths contour polylines for a given segmentation and segment using B-spline interpolation.
@@ -32,11 +37,11 @@ export default function smoothContours(
 ) {
   const segmentation = getSegmentation(segmentationId);
   if (!segmentation) {
-    console.warn(`Invalid segmentation given ${segmentationId}`);
+    cs3dLogger.warn(`Invalid segmentation given ${segmentationId}`);
     return;
   }
   if (!segmentation.representationData.Contour) {
-    console.warn(
+    cs3dLogger.warn(
       `No contour representation found for segmentation ${segmentationId}`
     );
     return;
@@ -47,12 +52,12 @@ export default function smoothContours(
 
   const { annotationUIDsMap } = contourRepresentationData;
   if (!annotationUIDsMap) {
-    console.warn(`No contours found for segmentation ${segmentationId}`);
+    cs3dLogger.warn(`No contours found for segmentation ${segmentationId}`);
     return;
   }
 
   if (!annotationUIDsMap.has(segmentIndex)) {
-    console.warn(
+    cs3dLogger.warn(
       `Error extracting contour data from segment ${segmentIndex} in segmentation ${segmentationId}`
     );
     return;

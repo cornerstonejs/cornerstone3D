@@ -10,6 +10,11 @@ import { getColorLUT } from '../../../stateManagement/segmentation/getColorLUT';
 import { getPolySeg } from '../../../config';
 import { computeAndAddRepresentation } from '../../../utilities/segmentation/computeAndAddRepresentation';
 import { internalGetHiddenSegmentIndices } from '../../../stateManagement/segmentation/helpers/internalGetHiddenSegmentIndices';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.displayTools.Surface.surfaceDisplay'
+);
 
 /**
  * It removes a segmentation representation from the tool group's viewports and
@@ -85,13 +90,13 @@ async function render(
       );
     }
   } else if (!SurfaceData && !getPolySeg()) {
-    console.debug(
+    cs3dLogger.debug(
       `No surface data found for segmentationId ${segmentationId} and PolySeg add-on is not configured. Unable to convert from other representations to surface. Please register PolySeg using cornerstoneTools.init({ addons: { polySeg } }) to enable automatic conversion.`
     );
   }
 
   if (!SurfaceData) {
-    console.warn(
+    cs3dLogger.warn(
       `No Surface data found for segmentationId ${segmentationId}. Skipping render.`
     );
     return;
@@ -100,7 +105,7 @@ async function render(
   const { geometryIds } = SurfaceData;
 
   if (!geometryIds?.size) {
-    console.warn(
+    cs3dLogger.warn(
       `No Surfaces found for segmentationId ${segmentationId}. Skipping render.`
     );
   }
@@ -114,7 +119,7 @@ async function render(
     const geometry = cache.getGeometry(geometryId) as Types.IGeometry;
 
     if (!geometry?.data) {
-      console.warn(
+      cs3dLogger.warn(
         `No Surfaces found for geometryId ${geometryId}. Skipping render.`
       );
       return;

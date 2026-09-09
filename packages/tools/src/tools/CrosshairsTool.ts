@@ -60,6 +60,11 @@ import type {
 } from '../types';
 import { isAnnotationLocked } from '../stateManagement/annotation/annotationLocking';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.CrosshairsTool'
+);
 
 const { RENDERING_DEFAULTS } = CONSTANTS;
 
@@ -439,7 +444,7 @@ class CrosshairsTool extends AnnotationTool {
    */
   _computeToolCenter = (viewportsInfo): void => {
     if (!viewportsInfo.length || viewportsInfo.length === 1) {
-      console.warn(
+      cs3dLogger.warn(
         'For crosshairs to operate, at least two viewports must be given.'
       );
       return;
@@ -600,7 +605,7 @@ class CrosshairsTool extends AnnotationTool {
   };
 
   cancel = () => {
-    console.log('Not implemented yet');
+    cs3dLogger.info('Not implemented yet');
   };
 
   /**

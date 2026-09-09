@@ -19,6 +19,11 @@ import {
 } from './stackPrefetchUtils';
 import { Events } from '../../enums';
 import type { EventTypes } from '../../types';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.stackPrefetch.stackPrefetch'
+);
 
 const { imageRetrieveMetadataProvider } = utilities;
 
@@ -48,7 +53,7 @@ function prefetch(element) {
   const stack = getStackData(element);
 
   if (!stack?.imageIds?.length) {
-    console.warn('CornerstoneTools.stackPrefetch: No images in stack.');
+    cs3dLogger.warn('CornerstoneTools.stackPrefetch: No images in stack.');
     return;
   }
 
@@ -237,7 +242,7 @@ function enable(element) {
   const stack = getStackData(element);
 
   if (!stack || !stack.imageIds || stack.imageIds.length === 0) {
-    console.warn('CornerstoneTools.stackPrefetch: No images in stack.');
+    cs3dLogger.warn('CornerstoneTools.stackPrefetch: No images in stack.');
     return;
   }
 

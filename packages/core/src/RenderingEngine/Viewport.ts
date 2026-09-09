@@ -7,6 +7,7 @@ import type { mat4, ReadonlyVec3 } from 'gl-matrix';
 import { vec2, vec3 } from 'gl-matrix';
 
 import Events from '../enums/Events';
+import { coreLog } from '../utilities/logger';
 import ViewportStatus from '../enums/ViewportStatus';
 import ViewportType from '../enums/ViewportType';
 import renderingEngineCache from './renderingEngineCache';
@@ -63,6 +64,8 @@ import type { extendedVtkCamera } from './vtkClasses/extendedVtkCamera';
  * which is camera properties/methods, vtk.js actors, and other common
  * logic.
  */
+const log = coreLog.getLogger('RenderingEngine', 'Viewport');
+
 class Viewport {
   /**
    * CameraViewPresentation is a view presentation selector that has all the
@@ -660,9 +663,7 @@ class Viewport {
     const actorEntry = this.getActor(actorUID);
 
     if (!actorEntry) {
-      console.warn(
-        `Actor ${actorUID} does not exist in ${this.id}, can't remove`
-      );
+      log.warn(`Actor ${actorUID} does not exist in ${this.id}, can't remove`);
       return;
     }
 
@@ -709,7 +710,7 @@ class Viewport {
     const { resetCamera = false } = options;
     const renderingEngine = this.getRenderingEngine();
     if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
-      console.warn(
+      log.warn(
         'Viewport::addActors::Rendering engine has not been initialized or has been destroyed'
       );
       return;
@@ -756,7 +757,7 @@ class Viewport {
     const renderingEngine = this.getRenderingEngine();
 
     if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
-      console.warn(
+      log.warn(
         `Cannot add actor UID of ${actorUID} Rendering Engine has been destroyed`
       );
       return;
@@ -767,7 +768,7 @@ class Viewport {
     }
 
     if (this.getActor(actorUID)) {
-      console.warn(`Actor ${actorUID} already exists for this viewport`);
+      log.warn(`Actor ${actorUID} already exists for this viewport`);
       return;
     }
 
@@ -1559,7 +1560,7 @@ class Viewport {
     const renderer = this.getRenderer();
 
     if (!renderer) {
-      console.warn('No renderer found for the viewport');
+      log.warn('No renderer found for the viewport');
       return null;
     }
 

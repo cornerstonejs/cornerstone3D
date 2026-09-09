@@ -31,7 +31,10 @@ export type WorldLine = {
  * meaningful to draw spatial overlays (reference points, plane intersection
  * lines) from one viewport into the other.
  */
-export type SpatialLinkPolicy = 'toolGroup' | 'frameOfReferenceUID' | 'explicit';
+export type SpatialLinkPolicy =
+  | 'toolGroup'
+  | 'frameOfReferenceUID'
+  | 'explicit';
 
 export type SpatialLinkOptions = {
   policy: SpatialLinkPolicy;
