@@ -28,6 +28,11 @@ export {
   get4DVolumeImageIds,
   getNaturalizedInstanceForDisplaySetSplit,
 } from './splitDisplaySetsFromImageIds';
+export {
+  applyCustomizationUpdate,
+  hasUpdateCommand,
+  applyFilterCommand,
+} from './applyCustomizationUpdate';
 import createInfoSection from './createInfoSection';
 import downloadSurfacesData from './downloadSurfacesData';
 import getLocalUrl from './getLocalUrl';

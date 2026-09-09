@@ -411,9 +411,17 @@ async function createImage(
           windowWidth: voiLutModule.windowWidth
             ? voiLutModule.windowWidth[0]
             : undefined,
+          // Unlike windowCenter/windowWidth, VOILUTFunction (0028,1056) is a
+          // single-valued CS, and both metadata providers deliver it as a
+          // string. Indexing [0] into it yielded its first *character* - a
+          // 'SIGMOID' image arrived as 'S', which is not a VOILUTFunctionType,
+          // so `toLowHighRange` threw and the image never rendered. Images that
+          // omit the tag were unaffected, which is why this only ever showed up
+          // on data that sends it (mammography routinely does).
           voiLUTFunction:
-            (voiLutModule.voiLUTFunction?.length &&
-              voiLutModule.voiLUTFunction[0]) ||
+            (Array.isArray(voiLutModule.voiLUTFunction)
+              ? voiLutModule.voiLUTFunction[0]
+              : voiLutModule.voiLUTFunction) ||
             voiLutModule.voiLutFunction ||
             undefined,
           decodeTimeInMS: imageFrame.decodeTimeInMS,
