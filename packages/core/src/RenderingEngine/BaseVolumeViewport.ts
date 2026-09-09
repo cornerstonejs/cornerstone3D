@@ -2419,17 +2419,11 @@ abstract class BaseVolumeViewport extends Viewport {
   }
 
   /**
-   * `T` for references this viewport creates, as a full geometric thickness in
-   * mm.
+   * Gets the effective geometric thickness for the voxels included with an
+   * annotation created on this viewport.
    *
-   * Doubled because `getSlabThickness` is a *half* thickness on this render
-   * path: it places the clipping planes at `focalPoint +/- slabThickness`. The
-   * generic planar path uses vtkImageResliceMapper, where the field is already
-   * a full thickness, so the doubling belongs here and not in the shared
-   * reference code.
-   *
-   * The rendering minimum means "no slab requested", not "a 0.05 mm slab", so
-   * it maps to undefined and `T` falls back to one voxel along the normal.
+   * Doubles the slab value and maps the rendering minimum to undefined. See
+   * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
    */
   protected getReferenceThickness(): number | undefined {
     const slabThickness = this.getSlabThickness();

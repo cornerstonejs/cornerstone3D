@@ -30,16 +30,11 @@ export function getSlabEpsilon(voxelThickness: number): number {
 /**
  * Resolves the annotation thickness `T` to use.
  *
- * `T` is a full geometric thickness in world units (mm). When an annotation
- * carries no thickness - because it was created on a stack viewport, or was
- * loaded from a source that predates the field - it defaults to one voxel along
- * the view plane normal.
- *
- * A `T` of 0 or less counts as "not recorded" and takes the same default. A
- * planar shape reports 0 from `getRequiredThickness`, and a caller passes that
- * value straight to the slab, so 0 has to mean "the shape asks for no depth of
- * its own". Honouring 0 literally would give a half width of `T_v / 2`, which
- * selects nothing at all for a plane that lies between voxel centres.
+ * `T` is a full geometric thickness in mm. Null, undefined, and 0 or less all
+ * count as "not recorded" and default to one voxel along the normal, because a
+ * planar shape reports 0 from `getRequiredThickness` and a caller may pass that
+ * value straight through. See
+ * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  *
  * @param annotationThickness - `T`, or null/undefined/0 when not recorded.
  * @param voxelThickness - `T_v`, the fallback.
@@ -59,19 +54,12 @@ export function resolveAnnotationThickness(
  * (Rule M): `d = (T + T_v) / 2`.
  *
  * The `T_v` term widens the slab by half a voxel on each side, so a voxel
- * centre qualifies exactly when the voxel itself overlaps the annotation's
- * slab. It has no effect in the default case of `T = T_v` anchored on a voxel
- * centre, which gives one layer either way. It matters for a plane that misses
- * the voxel centres, which would otherwise select nothing, and for a thicker
- * slab, where an unwidened test asked for two voxels of thickness would select
- * one.
+ * centre qualifies exactly when the voxel itself overlaps the slab. One
+ * consequence is visible in reported statistics: a plane exactly midway between
+ * two voxel centres selects **both** layers.
  *
- * One consequence is visible in reported statistics: a plane exactly midway
- * between two voxel centres selects **both** layers. See
+ * The viewport slab thickness `t` does **not** appear here. See
  * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
- *
- * Note the viewport slab thickness `t` does **not** appear here. Statistics are
- * a property of the annotation and the data, never of the viewport.
  *
  * @param annotationThickness - `T`, already resolved.
  * @param voxelThickness - `T_v`.

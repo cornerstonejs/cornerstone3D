@@ -5,22 +5,12 @@ import type { IImageVolume, Point3 } from '../../types';
 /**
  * Calculates `T_v`, the thickness of a single voxel measured along `normal`.
  *
- * This is the support width of the voxel box along the normal:
- *
- * ```
- *   T_v = Σᵢ |dᵢ · n| * sᵢ
- * ```
- *
- * where `dᵢ` are the unit direction vectors of the voxel axes and `sᵢ` the
- * spacing along each. A voxel overlaps a slab of half width `d` exactly when
- * its centre lies within `d + T_v / 2` of the plane, which is what makes this
- * the right quantity for a voxel/slab overlap test.
+ * The support width of the voxel box along the normal, `T_v = Σᵢ |dᵢ · n| * sᵢ`.
  *
  * This is the L1 length, deliberately **not** the L2 length that
  * {@link getSpacingInNormalDirection} returns. Only L1 answers "how far does
- * this voxel reach along the normal". The two agree when the normal is parallel
- * to a voxel axis, and diverge for oblique ones: 1x1x3 mm voxels at 45 degrees
- * give 2*sqrt(2) ~= 2.83 mm against sqrt(5) ~= 2.24 mm.
+ * this voxel reach along the normal". See
+ * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  *
  * @param volume - The volume, or anything carrying its `direction` and `spacing`.
  * @param normal - The direction to measure along. Assumed to be a unit vector.

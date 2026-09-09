@@ -5,21 +5,10 @@ import type { IndexSpaceSlab, VolumeGeometry } from '../indexSpaceSlab';
 /**
  * A plane-anchored shape that can drive {@link iterateVoxelsInSlab}.
  *
- * Every shape exposes the same pair:
+ * `containsPoint` is the definition and `getRuns` the optimisation, and the two
+ * must always select the same voxels. Boundaries are **inclusive**.
  *
- * - `containsPoint` is the *definition*. It answers, for one world point,
- *   whether the shape contains it. Slow but obviously correct.
- * - `getRuns` is the *optimisation*. It emits exact inclusive integer runs
- *   along the slab's column axis, computed in closed form.
- *
- * The two must always select the same voxels. That is the same relationship the
- * brute-force reference implementation has with the iterator itself, and it is
- * how these shapes are tested: run the iterator once with `isInShape:
- * shape.containsPoint` and once with `getShapeRuns: shape.getRuns`, and require
- * identical output.
- *
- * Boundaries are **inclusive**: a voxel centre lying exactly on the shape
- * boundary is inside it.
+ * See `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  */
 export interface VoxelSlabShape {
   /** The definition. Does the shape contain this world point? */
@@ -40,12 +29,8 @@ export interface VoxelSlabShape {
 
   /**
    * The smallest annotation thickness `T` for which Rule M's slab contains the
-   * whole shape.
-   *
-   * Planar shapes return 0: they have no extent along the normal, so any `T`
-   * works and the caller picks it to suit the measurement. Shapes with depth
-   * return that depth, and passing anything smaller as `annotationThickness`
-   * will clip them - the slab and the shape are intersected, not unioned.
+   * whole shape. A planar shape returns 0; a shape with depth returns that
+   * depth, and a smaller `annotationThickness` clips it.
    */
   getRequiredThickness(): number;
 }

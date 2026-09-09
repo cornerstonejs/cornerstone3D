@@ -26,24 +26,12 @@ export interface VoxelSlabVisit {
 
 /**
  * Yields inclusive `[min, max]` runs along the slab's column axis that the
- * annotation's 2D shape covers, for one (outer, row) position.
+ * annotation's 2D shape covers, for one (outer, row) position. Yielding nothing
+ * means the shape does not reach this row.
  *
- * Three levels of precision are supported, in decreasing order of speed:
- *
- * - **exact** - yield a single run that is exactly the covered voxels. A
- *   rectangle or an axis-aligned row of a circle or ellipse can do this in
- *   closed form.
- * - **exact-multiple** - yield several disjoint runs, for a row that enters and
- *   leaves the shape more than once. A non-convex freehand polygon needs this,
- *   and it falls out of sorted scanline intersections.
- * - **approximate** - yield a superset run and supply `isInShape` as well, so
- *   the iterator tests each voxel inside the run. Any new shape can be
- *   onboarded this way and optimised later.
- *
- * Yielding nothing means the shape does not reach this row.
- *
- * `depthRun` is the run the depth test already permits, so a provider may clip
- * to it but does not need to - the iterator intersects the results either way.
+ * Runs may be exact, exact-multiple or an approximate superset paired with
+ * `isInShape`. See
+ * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  */
 export type ShapeRunProvider = (
   outerIndex: number,

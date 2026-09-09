@@ -18,26 +18,12 @@ export interface ContourShapeOptions {
   /** `n`, the annotation view plane normal. Unit length. */
   normal: Point3;
   /**
-   * The outline, as world coordinates.
+   * The outline, as world coordinates: one ring, or an array of rings. Each
+   * ring is closed, so do not repeat the first point.
    *
-   * Either a single ring, or an array of rings. Each ring is treated as closed:
-   * the last point is joined back to the first, so do not repeat it. Points are
-   * projected onto the annotation plane, so a contour carrying a little depth
-   * error - as a drawn one always does - is handled.
-   *
-   * Interior is the even-odd rule over every edge of every ring, which is what
-   * makes **internal holes** work: give the hole as its own ring and it is
-   * excluded. Winding direction does not matter, so a hole ring need not be
-   * wound opposite to its parent. Nesting to any depth follows from the same
-   * rule - a ring inside a hole is solid again - and disjoint rings simply
-   * describe several separate regions.
-   *
-   * Do NOT flatten multiple rings into one array. That inserts an edge from the
-   * end of each ring to the start of the next, which does not error; it quietly
-   * measures a different shape.
-   *
-   * A single ring need be neither convex nor simple; a self-intersecting one is
-   * resolved by even-odd too.
+   * Do NOT flatten multiple rings into one array. That inserts an edge between
+   * them, raises no error, and quietly measures a different shape. See
+   * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
    */
   polyline: Point3[] | Point3[][];
   /**

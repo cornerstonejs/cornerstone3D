@@ -79,6 +79,13 @@ The effects across modalities are intended. An annotation on one thick NM slice
 can correctly appear on two thin CT slices, and an annotation that spans two CT
 slices can correctly appear on one NM slice.
 
+As in Rule M the comparison is strict and tightened by a relative epsilon,
+because the common case puts the neighbouring slice exactly on the boundary and
+must exclude it. A viewport shows the annotations created on its own slice, not
+those on the next one. Here the epsilon is relative to the half width, and not
+to the voxel thickness `T_v` that Rule M uses, because `T_v` needs a volume and
+a display decision is made without one.
+
 A reference that records no thickness falls back to an exact plane match to
 within `isEqual`. Any annotation created before `PlaneRestriction.thickness`
 existed records no thickness, and a wider visibility would change which slices
@@ -103,6 +110,26 @@ its own".
 Reading the slab once at creation does not contradict the independence of
 Rule M from `t`. The code reads the slab when it creates the reference, and
 never when it recalculates the statistics.
+
+### Two conversions on the volume viewport
+
+`BaseVolumeViewport.getReferenceThickness` applies two conversions that a
+reader of the raw slab value would miss.
+
+**It doubles the value.** `getSlabThickness` returns the number passed to
+`setOrientationOfClippingPlanes`, which places the clipping planes at
+`focalPoint ± slabThickness`. The stored number is therefore a _half_
+thickness on that render path, and the geometric thickness is twice it. The
+generic planar path uses `vtkImageResliceMapper`, where the same field is
+already a full thickness, so the doubling belongs on the volume viewport and
+not in the shared reference code.
+
+**It maps the rendering minimum to undefined.** A slab at
+`RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS` means "no slab was requested",
+not "a 0.05 mm slab was requested". Recording it literally would give
+`T = 0.1 mm`, which is thinner than any real voxel and would break the
+guarantee that an annotation always covers at least one layer. Mapping it to
+undefined lets `T` fall back to one voxel along the normal.
 
 ## Using the iterator
 
@@ -146,6 +173,57 @@ Every shape exposes `containsPoint` as its definition beside `getRuns` as the
 optimisation. Replace `getShapeRuns: shape.getRuns` with
 `isInShape: shape.containsPoint` and the voxel set must stay identical, only
 slower. That replacement is the cheapest way to debug a shape.
+
+## The shape contract
+
+Every shape implements `VoxelSlabShape`, which has three members.
+
+`containsPoint(point)` is the **definition** of the shape. It takes a voxel
+centre in world coordinates and answers whether the shape contains it.
+
+`getRuns(outer, row, depthRun, slab)` is the **optimisation**. It yields
+inclusive `[min, max]` runs along the slab's column axis for one
+`(outer, row)` position, and it must select the same voxels that
+`containsPoint` does. Yielding nothing means the shape does not reach that row.
+A provider works at one of three levels of precision:
+
+| level          | contract                                                                             | example                                           |
+| -------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------- |
+| exact          | one run that is exactly the covered voxels                                           | a rectangle, or an axis-aligned row of an ellipse |
+| exact-multiple | several disjoint runs, for a row that enters and leaves the shape more than once     | a non-convex freehand polygon                     |
+| approximate    | a superset run, with `isInShape` supplied so the iterator tests each voxel inside it | any new shape, before it is optimised             |
+
+`depthRun` is the run the depth test already permits. A provider may clip to it
+but need not, because the iterator intersects the results either way.
+
+`getRequiredThickness()` returns the smallest `T` for which the slab contains
+the whole shape. A planar shape returns 0, because it has no extent along the
+normal and any `T` works. A shape with depth returns that depth, and a smaller
+`annotationThickness` will clip it.
+
+### Contour rings and holes
+
+`createContourShape` accepts either a single ring or an array of rings. Each
+ring is closed, so do not repeat the first point at the end. Points are
+projected onto the annotation plane, which handles a contour that carries a
+little depth error, as a drawn one always does.
+
+The interior is the even-odd rule over every edge of every ring, and the parity
+accumulates across the rings rather than per ring. That single rule gives:
+
+- **internal holes** — give the hole as its own ring and it is excluded;
+- **nesting to any depth** — a ring inside a hole is solid again;
+- **disjoint regions** — separate rings describe separate regions.
+
+Winding direction does not matter, so a hole ring need not be wound opposite to
+its parent. A single ring need be neither convex nor simple, because even-odd
+resolves a self-intersecting one too.
+
+:::warning
+Do not flatten multiple rings into one array. Flattening inserts an edge from
+the end of each ring to the start of the next. That does not raise an error; it
+quietly measures a different shape.
+:::
 
 ## Why the runs are exact
 

@@ -15,27 +15,16 @@ export type VolumeGeometry =
 /**
  * The slab of Rule M expressed in index space.
  *
- * The key property is that the depth test is *exactly linear in the integer
- * voxel indices*. A voxel at index `p` has its centre at `origin + M p` in
- * world space, where `M` is the index-to-world matrix, so
+ * The depth test is exactly linear in the integer voxel indices, which is what
+ * lets the iterator emit exact runs rather than test every voxel:
  *
  * ```
  *   depth(p) = (centre - P0) . n = p . g + c0
- *   g  = Mᵀ n      (the index space normal)
+ *   g  = Mᵀ n      (the index space normal, deliberately not normalised)
  *   c0 = (origin - P0) . n
  * ```
  *
- * `g` and `c0` are constants, so along any single axis the voxels satisfying
- * `|depth(p)| < halfWidth` form a closed-form interval. That is what lets the
- * iterator emit exact integer runs rather than test every voxel, at every
- * orientation. `g` is deliberately not normalised: its components are the
- * change in world depth per unit step of each index.
- *
- * Iteration nests outer -> row -> column. `outerAxis` is `argmax |g|`, the axis
- * whose index step moves depth most, so the two remaining axes lie closest to
- * the annotation plane and carry the shape's runs innermost.
- *
- * Derivation, axis roles and the unbounded-column case:
+ * Iteration nests outer -> row -> column. Derivation and axis roles:
  * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  */
 export interface IndexSpaceSlab {
