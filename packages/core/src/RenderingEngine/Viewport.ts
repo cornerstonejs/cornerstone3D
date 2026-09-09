@@ -2073,11 +2073,11 @@ class Viewport {
         inPlaneVector2: <Point3>(
           vec3.cross(vec3.create(), viewUp, viewPlaneNormal)
         ),
-        thickness: this.getReferenceThickness(),
+        referencePlaneThickness: this.getReferenceThickness(),
       },
     };
     if (viewRefSpecifier?.points) {
-      updatePlaneRestriction(viewRefSpecifier.points, target);
+      updatePlaneRestriction(viewRefSpecifier.points, target, viewRefSpecifier);
     }
     return target;
   }
@@ -2128,13 +2128,20 @@ class Viewport {
       point,
       focalPoint,
       viewPlaneNormal,
-      planeRestriction.thickness,
+      planeRestriction.referencePlaneThickness,
       this.getReferenceThickness() ?? 0
     );
   }
 
   /**
    * Find out if this viewport does or could show this view reference.
+   *
+   * The plane restriction and the top level orientation are two separate
+   * limits, and the viewport applies both. A restriction that pins no
+   * orientation, which is what one point gives, therefore does not make every
+   * view compatible: the `viewPlaneNormal` of the reference still has to match
+   * the camera, unless the caller passes `withOrientation`.
+   *
    * @param options - allows specifying whether the view COULD display this with
    *                  some modification - either navigation or displaying as volume.
    * @returns true if the viewport could show this view reference
@@ -2143,8 +2150,11 @@ class Viewport {
     viewRef: ViewReference,
     options?: ReferenceCompatibleOptions
   ): boolean {
-    if (viewRef.planeRestriction) {
-      return this.isPlaneViewable(viewRef.planeRestriction, options);
+    if (
+      viewRef.planeRestriction &&
+      !this.isPlaneViewable(viewRef.planeRestriction, options)
+    ) {
+      return false;
     }
     if (
       viewRef.FrameOfReferenceUID &&

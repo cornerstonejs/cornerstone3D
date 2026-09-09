@@ -87,7 +87,7 @@ to the voxel thickness `T_v` that Rule M uses, because `T_v` needs a volume and
 a display decision is made without one.
 
 A reference that records no thickness falls back to an exact plane match to
-within `isEqual`. Any annotation created before `PlaneRestriction.thickness`
+within `isEqual`. Any annotation created before `PlaneRestriction.referencePlaneThickness`
 existed records no thickness, and a wider visibility would change which slices
 those annotations appear on.
 
@@ -96,7 +96,7 @@ those annotations appear on.
 A new annotation takes `T` once, at creation, from the slab thickness of the
 viewport that the user drew in. `Viewport.getReferenceThickness` supplies the
 value, and `BaseVolumeViewport` overrides that method. After creation, `T`
-belongs to the annotation and lives on `PlaneRestriction.thickness`.
+belongs to the annotation and lives on `PlaneRestriction.referencePlaneThickness`.
 
 When a reference records no thickness, `T` defaults to one voxel along the
 normal. A stack viewport uses that default, and so does every annotation that
