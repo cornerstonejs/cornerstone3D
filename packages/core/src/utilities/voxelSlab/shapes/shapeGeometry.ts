@@ -99,22 +99,16 @@ export function getAxisSteps(volume: VolumeGeometry): [Point3, Point3, Point3] {
 /**
  * The line, parameterised by column index, that a run of voxel centres traces.
  *
- * For fixed positions on the outer and row axes, the voxel centre is
+ * For fixed outer and row positions, both the centre and its projection onto
+ * the annotation plane are straight lines in `col`:
  *
  * ```
- *   centre(col) = base + col * step
- * ```
- *
- * and its projection along the normal onto the annotation plane is
- *
- * ```
+ *   centre(col)    = base + col * step
  *   projected(col) = projectedBase + col * projectedStep
  *   projectedStep  = step - g[columnAxis] * n
  * ```
  *
- * because `depth(col) = baseDepth + col * g[columnAxis]` is itself linear. Both
- * are straight lines, which is what reduces every shape test to a
- * one-dimensional intersection in `col`.
+ * That is what reduces every shape test to a one-dimensional intersection.
  */
 export interface ColumnLine {
   /** Voxel centre at column 0. */
@@ -186,16 +180,11 @@ export function createColumnLineResolver(
  * Relative slack applied to a shape's boundary, so that a voxel centre lying
  * on the outline is reliably inside it.
  *
- * Without this the two halves of a shape disagree at exact ties. A circle of
- * radius 5 on an integer voxel grid puts centres exactly on its outline at
- * `(5, 0)` and at every Pythagorean point such as `(3, 4)`; `containsPoint`
- * evaluates a sum of squares and may land a hair above 1, while `getRuns`
- * solves for the roots and lands exactly on 5. Expanding the boundary by a
- * relative amount well above float32 error puts both firmly on the same side.
+ * Without it `containsPoint` and `getRuns` disagree at exact ties. Matched to
+ * `SLAB_RELATIVE_EPSILON`, but applied only to shape outlines: Rule M's depth
+ * test tightens instead, because there the neighbouring layer must be excluded.
  *
- * Matched to `SLAB_RELATIVE_EPSILON`, and applied only to shape outlines -
- * Rule M's depth test moves in the opposite direction, tightening rather than
- * loosening, because there the neighbouring layer must be excluded.
+ * See `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  */
 export const SHAPE_BOUNDARY_EPSILON = 1e-5;
 
@@ -273,14 +262,9 @@ export function solveQuadraticLeqZero(
 /**
  * The inclusive integer run inside a real interval.
  *
- * Boundaries are inclusive, so an endpoint landing exactly on an integer keeps
- * that integer - unlike the depth runs of Rule M, whose endpoints are
- * deliberately exclusive. The difference is intentional: the depth rule's
- * strictness is what makes `T = T_v` select one layer, whereas a voxel centre
- * exactly on a shape's outline is conventionally inside it.
- *
- * Infinite bounds are preserved; the iterator intersects them with the depth
- * run, which is always finite.
+ * Boundaries are inclusive, unlike the depth runs of Rule M, whose endpoints
+ * are exclusive so that `T = T_v` selects one layer. Infinite bounds are
+ * preserved; the iterator intersects them with the always-finite depth run.
  */
 export function toIntegerRun(range: RealRange | null): Point2 | null {
   if (!range) {

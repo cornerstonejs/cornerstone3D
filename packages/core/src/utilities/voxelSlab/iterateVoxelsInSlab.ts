@@ -80,14 +80,10 @@ export interface VoxelSlabIterationOptions {
  *
  * A voxel is visited exactly when its centre lies within `(T + T_v) / 2` of the
  * annotation plane along the normal, and its projection onto that plane falls
- * inside the annotation's 2D shape. Every qualifying voxel is visited exactly
- * once, and iteration is independent of zoom, canvas size and any other display
- * property.
+ * inside the 2D shape. Every qualifying voxel is visited once, and iteration is
+ * independent of zoom, canvas size and every other display property.
  *
- * The depth half of the rule is solved in closed form rather than tested per
- * voxel: see {@link IndexSpaceSlab}. Cost is therefore proportional to the
- * number of voxels emitted plus the number of rows touched, not to the volume
- * of any bounding box.
+ * See `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  */
 export function* iterateVoxelsInSlab(
   options: VoxelSlabIterationOptions

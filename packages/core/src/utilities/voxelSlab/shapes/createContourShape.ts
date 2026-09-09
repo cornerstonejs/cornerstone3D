@@ -30,15 +30,11 @@ export interface ContourShapeOptions {
    * The contour's extent along the normal, in mm. This is the thickness of the
    * prism the outline sweeps.
    *
-   * Unlike the ellipsoid and box, this is *not* applied by the shape. A prism's
-   * depth constraint is exactly Rule M's slab, so applying it twice would only
-   * risk the two disagreeing. Pass `getRequiredThickness()` as the iterator's
-   * `annotationThickness` and the slab enforces it, complete with the half
-   * voxel dilation that guarantees at least one layer is selected.
-   *
-   * Omit to let the slab decide the depth. `getRequiredThickness()` then
-   * returns 0, so `getRequiredThickness() || annotationThickness` gives the
-   * slab the annotation's own thickness.
+   * Unlike the ellipsoid and box, the shape does *not* apply this itself: a
+   * prism's depth constraint is exactly Rule M's slab. Pass
+   * `getRequiredThickness()` as the iterator's `annotationThickness` and the
+   * slab enforces it. Omit to let the slab decide, in which case
+   * `getRequiredThickness()` returns 0.
    */
   depth?: number;
 }
@@ -49,17 +45,12 @@ type PlanePoint = [number, number];
 /**
  * A contour lying in the annotation plane, swept into a prism by its depth.
  *
- * Interior is the even-odd rule. The runs are exact because the crossings of a
- * line with every edge of every ring, sorted, bound the inside intervals in
- * consecutive pairs. A non-convex contour, or one with holes, yields several
- * runs, which is the exact-multiple case the iterator supports.
+ * Interior is the even-odd rule, so a non-convex contour or one with holes
+ * yields several runs. A point exactly on the outline is inside it, widened by
+ * `SHAPE_BOUNDARY_EPSILON`. The outline test is purely in-plane; depth is left
+ * to Rule M's slab.
  *
- * A point exactly on the outline is inside it. `containsPoint` and `getRuns`
- * reach their answer by different routes, and their tie rules degenerate at
- * different geometry, so both widen the outline by `SHAPE_BOUNDARY_EPSILON`.
- *
- * The outline test is purely in-plane; depth is left to Rule M's slab. See
- * `ContourShapeOptions.depth` and
+ * See `ContourShapeOptions.depth` and
  * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  */
 export function createContourShape(

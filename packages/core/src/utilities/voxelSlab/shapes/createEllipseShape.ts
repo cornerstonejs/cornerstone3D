@@ -51,21 +51,11 @@ export interface EllipseShapeOptions {
 /**
  * An ellipse lying in the annotation plane, or an ellipsoid centred on it.
  *
- * Both forms are specified identically - a major-axis direction plus radii -
- * with the third radius promoting the flat ellipse to a solid. That is also how
- * `createRectangleShape` is specified, so the two can be swapped freely.
+ * A third radius promotes the flat ellipse to a solid. `createRectangleShape`
+ * takes the same options, so the two are interchangeable. The depth radius is
+ * widened by half a voxel; the in-plane radii are not.
  *
- * The runs are exact because a line substituted into the ellipse's quadratic
- * form gives a quadratic in the column index, whose real roots bound one
- * interval. No voxel is ever tested.
- *
- * The in-plane radii are used as given, so a voxel counts when its *centre*
- * falls inside the outline. The depth radius is widened by half a voxel,
- * mirroring Rule M's `T_v` term, so a voxel counts when the voxel *itself*
- * reaches the ellipsoid.
- *
- * The shape is intersected with the slab, not unioned with it. See
- * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
+ * See `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  */
 export function createEllipseShape(
   options: EllipseShapeOptions

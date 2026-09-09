@@ -6,14 +6,10 @@ import type { Point3 } from '../../types';
  *
  * The slab tests below are strict (`<`, not `<=`), because the default `T = T_v`
  * places the neighbouring voxel centres *exactly* on the boundary and must
- * exclude them. Signed distances come from dot products, so a value that is
- * mathematically on the boundary lands on either side of it, and without a
- * tolerance the most common case in the system would pick up two extra layers
- * at random. The tolerance is relative to the voxel thickness because spacings
- * range from microns to centimetres, and 1e-5 sits above float32 error.
+ * exclude them. Relative to the voxel thickness, because spacings range from
+ * microns to centimetres.
  *
- * Why strict, and the 20 nm dead band it implies:
- * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
+ * See `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  */
 export const SLAB_RELATIVE_EPSILON = 1e-5;
 
@@ -53,13 +49,11 @@ export function resolveAnnotationThickness(
  * The half width used to decide which *voxels* an area annotation contains
  * (Rule M): `d = (T + T_v) / 2`.
  *
- * The `T_v` term widens the slab by half a voxel on each side, so a voxel
- * centre qualifies exactly when the voxel itself overlaps the slab. One
- * consequence is visible in reported statistics: a plane exactly midway between
- * two voxel centres selects **both** layers.
+ * The `T_v` term widens the slab by half a voxel each side, so a plane exactly
+ * midway between two voxel centres selects **both** layers. The viewport slab
+ * thickness `t` does **not** appear here.
  *
- * The viewport slab thickness `t` does **not** appear here. See
- * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
+ * See `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  *
  * @param annotationThickness - `T`, already resolved.
  * @param voxelThickness - `T_v`.

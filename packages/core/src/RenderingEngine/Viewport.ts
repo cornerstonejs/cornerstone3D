@@ -2083,12 +2083,9 @@ class Viewport {
   }
 
   /**
-   * `T` for references created by this viewport: the full geometric thickness
-   * in mm that an annotation drawn here should record.
+   * Get the geometric thickness in mm that an annotation applies to.
    *
-   * A viewport with no slab concept returns undefined, which makes any
-   * annotation created in it fall back to one voxel along the view plane
-   * normal. See `PlaneRestriction.thickness`.
+   * See `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
    */
   protected getReferenceThickness(): number | undefined {
     return undefined;

@@ -54,20 +54,11 @@ export interface RectangleShapeOptions {
 /**
  * A rectangle lying in the annotation plane, or a box centred on it.
  *
- * Specified exactly as `createEllipseShape` is - a major-axis direction plus
- * half extents - so the two are interchangeable, and the third extent promotes
- * the flat rectangle to a solid.
+ * A third half extent promotes the flat rectangle to a solid.
+ * `createEllipseShape` takes the same options, so the two are interchangeable.
+ * The depth extent is widened by half a voxel; the in-plane extents are not.
  *
- * The runs are exact because each face is a linear constraint that contributes
- * one interval in the column index, and their intersection is itself one
- * interval because a box is convex. No voxel is ever tested.
- *
- * As with the ellipse the in-plane extents are used as given, while the depth
- * extent is widened by half a voxel. A widened box is then exactly equivalent
- * to Rule M's slab at `T = 2 * depthHalfLength`, so the two agree.
- *
- * The shape is intersected with the slab, not unioned with it. See
- * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
+ * See `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  */
 export function createRectangleShape(
   options: RectangleShapeOptions

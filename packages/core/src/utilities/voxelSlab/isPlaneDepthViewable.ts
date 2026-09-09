@@ -12,9 +12,8 @@ import { getDisplayHalfWidth, SLAB_RELATIVE_EPSILON } from './slabMembership';
  * ```
  *
  * where `t` is the viewport's slab thickness and `T` the plane's own thickness,
- * both full geometric thicknesses in mm. The comparison is strict and tightened
- * by a relative epsilon, and a reference with no thickness falls back to an
- * exact-to-within-`isEqual` plane match.
+ * both full geometric thicknesses in mm. A reference with no thickness falls
+ * back to an exact-to-within-`isEqual` plane match.
  *
  * See `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  *
