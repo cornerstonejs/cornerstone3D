@@ -52,12 +52,8 @@ export interface IndexSpaceSlab {
 /**
  * Computes `g = Mᵀ n`, the index space normal.
  *
- * Note this is the transpose, not the inverse: a plane with world normal `n`
- * maps to the index space plane `(Mᵀ n) . p = const`. Using `M⁻¹ n` gives the
- * wrong vector as soon as the spacing is anisotropic.
- *
- * The result is parallel to the projected spacing vector whose L2 length
- * `getSpacingInNormalDirection` returns.
+ * The transpose, not the inverse: `M⁻¹ n` gives the wrong vector as soon as the
+ * spacing is anisotropic.
  */
 export function getIndexSpaceNormal(
   volume: VolumeGeometry,
@@ -213,10 +209,7 @@ function clampRange(range: Point2 | null, clampTo?: Point2): Point2 | null {
 
 /**
  * The inclusive run along `slab.columnAxis` satisfying the depth half of Rule M
- * for a fixed position on the outer and row axes.
- *
- * Exact: every voxel in the returned run passes the depth test and no voxel
- * outside it can. Returns null when the column holds no voxels.
+ * for a fixed outer and row position, or null when the column holds no voxels.
  *
  * @param clampTo - Inclusive bounds along the column axis, normally the volume
  *   dimension. Required whenever depth does not vary along the column axis,

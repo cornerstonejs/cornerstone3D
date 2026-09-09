@@ -163,13 +163,8 @@ export type PlaneRestriction = {
   inPlaneVector2?: Point3;
 
   /**
-   * `T`, the thickness of the referenced plane, as a **full geometric
-   * thickness in world units (mm)** - not a half thickness, and not a voxel
-   * multiple.
-   *
-   * A property of the reference, not of the viewport showing it. It governs
-   * display (Rule D) and voxel membership (Rule M). When absent it defaults to
-   * one voxel along the view plane normal.
+   * `T`, the thickness of the referenced plane: a **full** geometric thickness
+   * in mm, not a half thickness.
    *
    * See `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
    */

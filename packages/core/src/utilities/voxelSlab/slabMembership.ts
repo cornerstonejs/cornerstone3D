@@ -26,10 +26,8 @@ export function getSlabEpsilon(voxelThickness: number): number {
 /**
  * Resolves the annotation thickness `T` to use.
  *
- * `T` is a full geometric thickness in mm. Null, undefined, and 0 or less all
- * count as "not recorded" and default to one voxel along the normal, because a
- * planar shape reports 0 from `getRequiredThickness` and a caller may pass that
- * value straight through. See
+ * Null, undefined, and 0 or less all count as "not recorded" and default to one
+ * voxel along the normal. See
  * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  *
  * @param annotationThickness - `T`, or null/undefined/0 when not recorded.
@@ -50,9 +48,7 @@ export function resolveAnnotationThickness(
  * (Rule M): `d = (T + T_v) / 2`.
  *
  * The `T_v` term widens the slab by half a voxel each side, so a plane exactly
- * midway between two voxel centres selects **both** layers. The viewport slab
- * thickness `t` does **not** appear here.
- *
+ * midway between two voxel centres selects **both** layers. Note `t` is absent.
  * See `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  *
  * @param annotationThickness - `T`, already resolved.

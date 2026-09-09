@@ -3,13 +3,11 @@ import { vec3 } from 'gl-matrix';
 import type { IImageVolume, Point3 } from '../../types';
 
 /**
- * Calculates `T_v`, the thickness of a single voxel measured along `normal`.
- *
- * The support width of the voxel box along the normal, `T_v = Σᵢ |dᵢ · n| * sᵢ`.
+ * Calculates `T_v`, the thickness of a single voxel along `normal`: the support
+ * width of the voxel box, `T_v = Σᵢ |dᵢ · n| * sᵢ`.
  *
  * This is the L1 length, deliberately **not** the L2 length that
- * {@link getSpacingInNormalDirection} returns. Only L1 answers "how far does
- * this voxel reach along the normal". See
+ * {@link getSpacingInNormalDirection} returns. See
  * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  *
  * @param volume - The volume, or anything carrying its `direction` and `spacing`.

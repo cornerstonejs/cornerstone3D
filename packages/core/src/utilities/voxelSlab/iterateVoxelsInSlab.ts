@@ -78,12 +78,9 @@ export interface VoxelSlabIterationOptions {
  * Iterates the voxels of an area annotation according to Rule M of
  * https://github.com/cornerstonejs/cornerstone3D/issues/2889
  *
- * A voxel is visited exactly when its centre lies within `(T + T_v) / 2` of the
- * annotation plane along the normal, and its projection onto that plane falls
- * inside the 2D shape. Every qualifying voxel is visited once, and iteration is
- * independent of zoom, canvas size and every other display property.
- *
- * See `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
+ * Every qualifying voxel is visited once, and iteration is independent of zoom,
+ * canvas size and every other display property. See
+ * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  */
 export function* iterateVoxelsInSlab(
   options: VoxelSlabIterationOptions

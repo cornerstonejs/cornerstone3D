@@ -27,14 +27,11 @@ export interface ContourShapeOptions {
    */
   polyline: Point3[] | Point3[][];
   /**
-   * The contour's extent along the normal, in mm. This is the thickness of the
-   * prism the outline sweeps.
+   * The contour's extent along the normal, in mm.
    *
-   * Unlike the ellipsoid and box, the shape does *not* apply this itself: a
-   * prism's depth constraint is exactly Rule M's slab. Pass
-   * `getRequiredThickness()` as the iterator's `annotationThickness` and the
-   * slab enforces it. Omit to let the slab decide, in which case
-   * `getRequiredThickness()` returns 0.
+   * Unlike the ellipsoid and box, the shape does *not* apply this itself: the
+   * slab enforces it, via `getRequiredThickness()`. Omit to let the slab
+   * decide, in which case `getRequiredThickness()` returns 0.
    */
   depth?: number;
 }

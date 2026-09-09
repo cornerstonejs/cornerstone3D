@@ -47,10 +47,8 @@ export interface PlaneBasis {
 /**
  * Builds an orthonormal in-plane frame from a normal and an orientation vector.
  *
- * `orientation` gives the direction of the shape's major axis. It need not be
- * unit length, and it need not already lie in the plane - its component along
- * the normal is removed. This is what lets a caller pass, say, an ellipse's
- * major-axis handle direction directly.
+ * `orientation` gives the shape's major axis. It need not be unit length, nor
+ * already lie in the plane - its component along the normal is removed.
  *
  * @throws if `orientation` is parallel to the normal, since it then defines no
  *   in-plane direction at all.
