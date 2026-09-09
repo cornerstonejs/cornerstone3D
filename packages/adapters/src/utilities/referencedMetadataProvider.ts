@@ -98,7 +98,18 @@ export const metadataProvider = {
     // instance.
     const generalImage = metaData.get(MetadataModules.GENERAL_IMAGE, imageId);
     const study = metaData.get(MetadataModules.GENERAL_STUDY, imageId);
-    result.InstanceNumber = 1 + Number(generalImage.instanceNumber);
+    // An unnumbered predecessor gives nothing to increment, and
+    // `1 + Number(undefined)` is `NaN`, which then reaches the stored instance.
+    // An instance that arrived without a number is exactly that case - an
+    // artifact written back by another system, which has to stay
+    // indistinguishable from one of ours. A first instance is numbered `1` here
+    // (see NEW_INSTANCE_DATA below), so an unnumbered predecessor takes the same
+    // value; the order of the revisions comes from PredecessorDocumentsSequence,
+    // and not from this element.
+    const predecessorInstanceNumber = Number(generalImage.instanceNumber);
+    result.InstanceNumber = Number.isFinite(predecessorInstanceNumber)
+      ? 1 + predecessorInstanceNumber
+      : 1;
     result.PredecessorDocumentsSequence = {
       StudyInstanceUID: study.studyInstanceUID,
       ReferencedSeriesSequence: {
