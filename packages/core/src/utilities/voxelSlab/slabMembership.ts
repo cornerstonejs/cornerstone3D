@@ -4,28 +4,16 @@ import type { Point3 } from '../../types';
 /**
  * Relative tolerance used when testing whether something lies within a slab.
  *
- * The slab tests below are deliberately strict (`<`, not `<=`), because the
- * default annotation thickness `T = T_v` places the neighbouring voxel centres
- * *exactly* on the slab boundary, and they must be excluded so that an
- * acquisition-orientation annotation covers exactly one layer of voxels.
+ * The slab tests below are strict (`<`, not `<=`), because the default `T = T_v`
+ * places the neighbouring voxel centres *exactly* on the boundary and must
+ * exclude them. Signed distances come from dot products, so a value that is
+ * mathematically on the boundary lands on either side of it, and without a
+ * tolerance the most common case in the system would pick up two extra layers
+ * at random. The tolerance is relative to the voxel thickness because spacings
+ * range from microns to centimetres, and 1e-5 sits above float32 error.
  *
- * Signed distances are computed from world coordinates via dot products, so a
- * value that is mathematically exactly on the boundary lands either side of it.
- * Without a tolerance the most common case in the whole system would
- * non-deterministically pick up two extra layers. The tolerance is relative to
- * the voxel thickness rather than absolute because spacings in medical imaging
- * range from microns to centimetres.
- *
- * 1e-5 is chosen so that inputs carrying float32 error - which is most of them,
- * since gl-matrix vectors and the rest of the rendering geometry are float32 -
- * are comfortably inside it, float32 giving roughly 1e-7 relative precision.
- *
- * The tolerance has one visible consequence worth knowing: because the rule is
- * strict, a thickness exceeding an exact voxel multiple by less than
- * `2 * SLAB_RELATIVE_EPSILON * T_v` still selects the smaller number of layers.
- * At `T_v = 1 mm` that dead band is 20 nm wide, so it is unreachable in
- * practice, but it does mean `T = T_v + 1e-6` behaves as `T = T_v` rather than
- * pulling in both neighbours.
+ * Why strict, and the 20 nm dead band it implies:
+ * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  */
 export const SLAB_RELATIVE_EPSILON = 1e-5;
 

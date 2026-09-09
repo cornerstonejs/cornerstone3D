@@ -25,35 +25,18 @@ export type VolumeGeometry =
  *   c0 = (origin - P0) . n
  * ```
  *
- * `g` and `c0` are constants, so along any single axis the set of voxels
- * satisfying `|depth(p)| < halfWidth` is a closed-form interval. That is what
- * lets the iterator emit exact integer runs rather than testing every voxel,
- * and it holds for every orientation, oblique included.
+ * `g` and `c0` are constants, so along any single axis the voxels satisfying
+ * `|depth(p)| < halfWidth` form a closed-form interval. That is what lets the
+ * iterator emit exact integer runs rather than test every voxel, at every
+ * orientation. `g` is deliberately not normalised: its components are the
+ * change in world depth per unit step of each index.
  *
- * `g` is deliberately not normalised: its components are the change in world
- * depth per unit step of each index, which is exactly what the run arithmetic
- * needs. In acquisition orientation it comes out parallel to (0, 0, 1), since
- * the normal is the k axis so `d0 . n` and `d1 . n` vanish and only
- * `s2 * (d2 . n) = s2` survives.
+ * Iteration nests outer -> row -> column. `outerAxis` is `argmax |g|`, the axis
+ * whose index step moves depth most, so the two remaining axes lie closest to
+ * the annotation plane and carry the shape's runs innermost.
  *
- * ## Axis roles
- *
- * Iteration is nested outer -> row -> column:
- *
- * - `outerAxis` is `argmax |g|`, the axis whose index step moves depth most.
- *   Sweeping it outermost means each outer step covers a thin band of the
- *   volume, and the two remaining axes are the ones lying closest to the
- *   annotation plane.
- * - `rowAxis` and `columnAxis` are the remaining two, and are the in-plane-ish
- *   pair. A 2D shape's spans are naturally expressed as runs along
- *   `columnAxis` for each `rowAxis` value, which is why the shape constraint
- *   belongs innermost: for each (outer, row) the depth constraint gives one
- *   interval along `columnAxis` and the shape gives one or more, and the
- *   iterator emits their intersection.
- *
- * Note the depth interval along `columnAxis` is frequently unbounded - in
- * acquisition orientation `g[columnAxis]` is zero, so depth does not vary along
- * it at all and the shape is the only binding constraint.
+ * Derivation, axis roles and the unbounded-column case:
+ * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  */
 export interface IndexSpaceSlab {
   /** `g`, the unnormalised index space normal. */

@@ -2,12 +2,12 @@
  * Voxel-relative annotation statistics: which voxels an area annotation
  * contains, and which annotations a viewport displays.
  *
- * The behaviour these utilities implement is specified in
- * https://github.com/cornerstonejs/cornerstone3D/issues/2889 and in
- * `docs/docs/concepts/annotations/voxel-statistics.md`. Rule M (voxel
- * membership) and Rule D (display) are normative; the index-space run
- * arithmetic used to evaluate Rule M quickly is an implementation detail and
- * may be changed freely so long as it selects the same voxels.
+ * Rule M (voxel membership) and Rule D (display) are normative, and both are
+ * specified in
+ * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md` and in
+ * https://github.com/cornerstonejs/cornerstone3D/issues/2889. The index-space
+ * run arithmetic that evaluates Rule M quickly is an implementation detail, and
+ * anyone may change it as long as it selects the same voxels.
  */
 export { default as getVoxelThicknessAlongNormal } from './getVoxelThicknessAlongNormal';
 

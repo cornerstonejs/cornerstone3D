@@ -63,38 +63,18 @@ type PlanePoint = [number, number];
 /**
  * A contour lying in the annotation plane, swept into a prism by its depth.
  *
- * ## Why the runs are exact
+ * Interior is the even-odd rule. The runs are exact because the crossings of a
+ * line with every edge of every ring, sorted, bound the inside intervals in
+ * consecutive pairs. A non-convex contour, or one with holes, yields several
+ * runs, which is the exact-multiple case the iterator supports.
  *
- * For a fixed outer and row index, the projection of the voxel centres onto the
- * annotation plane traces a straight line in the column index. Intersecting
- * that line with every edge of every ring gives a sorted set of crossings, and
- * consecutive pairs bound the inside intervals. A convex contour yields one
- * run; a non-convex one, or one with holes, yields as many as it has crossings,
- * which is the exact-multiple case the iterator supports. No voxel is ever
- * tested.
- *
- * Interior is the even-odd rule.
- *
- * ## Boundary handling
- *
- * A point lying exactly on the outline is inside it. This needs stating because
- * the two halves of the shape reach their answer by different routes:
- * `containsPoint` casts a ray along one axis of the plane basis, while
- * `getRuns` intersects a line running along whichever direction the column axis
- * projects to. Even-odd is direction independent for points genuinely inside or
- * outside, but a point *on* the boundary is decided by whichever tie rule the
- * ray or line happens to hit, and those degenerate at different geometry - one
- * where an outline edge shares a row, the other where it shares a column.
- *
- * That case is not exotic: a rectangular contour drawn on voxel boundaries puts
- * a whole row of voxel centres exactly on an edge. Both routes therefore widen
- * the outline by a relative epsilon, so anything within that slack of the
- * boundary is inside for both. See `SHAPE_BOUNDARY_EPSILON`.
- *
- * ## Depth
+ * A point exactly on the outline is inside it. `containsPoint` and `getRuns`
+ * reach their answer by different routes, and their tie rules degenerate at
+ * different geometry, so both widen the outline by `SHAPE_BOUNDARY_EPSILON`.
  *
  * The outline test is purely in-plane; depth is left to Rule M's slab. See
- * `ContourShapeOptions.depth`.
+ * `ContourShapeOptions.depth` and
+ * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  */
 export function createContourShape(
   options: ContourShapeOptions

@@ -55,27 +55,17 @@ export interface EllipseShapeOptions {
  * with the third radius promoting the flat ellipse to a solid. That is also how
  * `createRectangleShape` is specified, so the two can be swapped freely.
  *
- * ## Why the runs are exact
+ * The runs are exact because a line substituted into the ellipse's quadratic
+ * form gives a quadratic in the column index, whose real roots bound one
+ * interval. No voxel is ever tested.
  *
- * For a fixed outer and row index, the voxel centre traces a straight line in
- * the column index, and so does its projection onto the plane. Substituting a
- * line into the ellipse's quadratic form gives a quadratic in the column index,
- * whose real roots bound exactly one interval. No voxel is ever tested.
+ * The in-plane radii are used as given, so a voxel counts when its *centre*
+ * falls inside the outline. The depth radius is widened by half a voxel,
+ * mirroring Rule M's `T_v` term, so a voxel counts when the voxel *itself*
+ * reaches the ellipsoid.
  *
- * ## Depth and the slab
- *
- * The in-plane radii are used as given: a voxel counts when its *centre* falls
- * inside the outline, which is the usual convention and keeps the perimeter
- * consistent with other viewers.
- *
- * The depth radius is dilated by half a voxel thickness, mirroring Rule M's
- * `T_v` term, so a voxel counts when the voxel *itself* reaches the ellipsoid.
- * Without that an ellipsoid thinner than a voxel, or one whose surface falls
- * between voxel centres, could select nothing at all.
- *
- * Remember the shape is intersected with Rule M's slab, not unioned with it.
- * Pass `getRequiredThickness()` as the iterator's `annotationThickness` unless
- * you deliberately want the slab to clip the shape.
+ * The shape is intersected with the slab, not unioned with it. See
+ * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  */
 export function createEllipseShape(
   options: EllipseShapeOptions

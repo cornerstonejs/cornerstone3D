@@ -58,26 +58,16 @@ export interface RectangleShapeOptions {
  * half extents - so the two are interchangeable, and the third extent promotes
  * the flat rectangle to a solid.
  *
- * ## Why the runs are exact
+ * The runs are exact because each face is a linear constraint that contributes
+ * one interval in the column index, and their intersection is itself one
+ * interval because a box is convex. No voxel is ever tested.
  *
- * Each face is a linear constraint on the world offset, and for a fixed outer
- * and row index the voxel centre traces a straight line in the column index.
- * Every face therefore contributes one interval in the column index, and the
- * run is their intersection - which is itself a single interval, since a box is
- * convex. No voxel is ever tested.
+ * As with the ellipse the in-plane extents are used as given, while the depth
+ * extent is widened by half a voxel. A widened box is then exactly equivalent
+ * to Rule M's slab at `T = 2 * depthHalfLength`, so the two agree.
  *
- * ## Depth and the slab
- *
- * As with the ellipse, the in-plane extents are used as given - a voxel counts
- * when its centre falls inside the outline - while the depth extent is dilated
- * by half a voxel thickness so a voxel counts when the voxel itself reaches the
- * box. With the depth extent dilated, a box is exactly equivalent to Rule M's
- * slab at `T = 2 * depthHalfLength`, which is the point: the two agree rather
- * than fighting.
- *
- * The shape is intersected with the slab, not unioned with it, so pass
- * `getRequiredThickness()` as the iterator's `annotationThickness` unless you
- * deliberately want the slab to clip the shape.
+ * The shape is intersected with the slab, not unioned with it. See
+ * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  */
 export function createRectangleShape(
   options: RectangleShapeOptions
