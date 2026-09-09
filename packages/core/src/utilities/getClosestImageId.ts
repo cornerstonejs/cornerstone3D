@@ -10,12 +10,43 @@ import { EPSILON } from '../constants';
 
 const log = coreLog.getLogger('utilities', 'getClosestImageId');
 
+type ClosestImageIdVolume =
+  | IImageVolume
+  | { direction: mat3; spacing: Point3; imageIds: string[] };
+
+/**
+ * A dynamic volume's `imageIds` span every dimension group, and each group
+ * repeats the same set of image positions. Searching that flat list by distance
+ * alone would resolve to whichever group happens to be stored first rather than
+ * the one on screen, so restrict the search to the active dimension group.
+ */
+function getImageIdsToSearch(imageVolume: ClosestImageIdVolume): string[] {
+  const dynamicVolume = imageVolume as Partial<IImageVolume> & {
+    getCurrentDimensionGroupImageIds?: () => string[];
+  };
+
+  if (
+    typeof dynamicVolume.isDynamicVolume !== 'function' ||
+    !dynamicVolume.isDynamicVolume() ||
+    typeof dynamicVolume.getCurrentDimensionGroupImageIds !== 'function'
+  ) {
+    return imageVolume.imageIds;
+  }
+
+  return (
+    dynamicVolume.getCurrentDimensionGroupImageIds() ?? imageVolume.imageIds
+  );
+}
+
 /**
  * Given an image volume, a point in world space, and the view plane normal,
  * it returns the closest imageId based on the specified options.
  * If `options.ignoreSpacing` is true, it returns the imageId with the minimum
  * distance along the view plane normal, regardless of voxel spacing.
  * Otherwise, it returns the closest imageId within half voxel spacing along the normal.
+ *
+ * For dynamic (4D) volumes only the active dimension group is searched, so the
+ * returned imageId always belongs to the dimension group currently displayed.
  *
  * @param imageVolume - The image volume or object containing direction, spacing, and imageIds.
  * @param worldPos - The position in the world coordinate system.
@@ -26,14 +57,13 @@ const log = coreLog.getLogger('utilities', 'getClosestImageId');
  * @returns The closest imageId based on the criteria, or undefined if none found.
  */
 export default function getClosestImageId(
-  imageVolume:
-    | IImageVolume
-    | { direction: mat3; spacing: Point3; imageIds: string[] },
+  imageVolume: ClosestImageIdVolume,
   worldPos: Point3,
   viewPlaneNormal: Point3,
   options?: { ignoreSpacing?: boolean }
 ): string | undefined {
-  const { direction, spacing, imageIds } = imageVolume;
+  const { direction, spacing } = imageVolume;
+  const imageIds = getImageIdsToSearch(imageVolume);
   const { ignoreSpacing = false } = options || {};
 
   if (!imageIds?.length) {
