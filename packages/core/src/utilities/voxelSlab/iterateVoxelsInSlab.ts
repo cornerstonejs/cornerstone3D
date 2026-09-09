@@ -43,13 +43,13 @@ export type ShapeRunProvider = (
 export interface VoxelSlabIterationOptions {
   /** Geometry of the volume being measured. */
   volume: VolumeGeometry;
-  /** `P0`, the annotation plane anchor, in world coordinates. */
+  /** The annotation plane anchor, in world coordinates. */
   planePoint: Point3;
-  /** `n`, the annotation view plane normal. Must be unit length. */
+  /** The annotation view plane normal. Must be unit length. */
   normal: Point3;
   /**
-   * `T` in mm. Omit, or pass null or 0, to default to one voxel along the
-   * normal. A planar shape reports 0 from `getRequiredThickness`, so a caller
+   * The annotation thickness in mm. Omit, or pass null or 0, to default to one
+   * voxel along the normal. A planar shape reports 0 from `getRequiredThickness`, so a caller
    * can pass that value straight through.
    */
   annotationThickness?: number | null;

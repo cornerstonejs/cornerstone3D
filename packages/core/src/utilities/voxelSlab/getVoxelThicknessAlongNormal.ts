@@ -3,8 +3,8 @@ import { vec3 } from 'gl-matrix';
 import type { IImageVolume, Point3 } from '../../types';
 
 /**
- * Calculates `T_v`, the thickness of a single voxel along `normal`: the support
- * width of the voxel box, `T_v = Σᵢ |dᵢ · n| * sᵢ`.
+ * Calculates the thickness of a single voxel along `normal`: the support width
+ * of the voxel box, `Σᵢ |dᵢ · n| * sᵢ`.
  *
  * This is the L1 length, deliberately **not** the L2 length that
  * {@link getSpacingInNormalDirection} returns. See

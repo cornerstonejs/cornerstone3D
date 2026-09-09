@@ -4,9 +4,9 @@ import type { Point3 } from '../../types';
 /**
  * Relative tolerance used when testing whether something lies within a slab.
  *
- * The slab tests below are strict (`<`, not `<=`), because the default `T = T_v`
- * places the neighbouring voxel centres *exactly* on the boundary and must
- * exclude them. Relative to the voxel thickness, because spacings range from
+ * The slab tests below are strict (`<`, not `<=`), because a one-voxel-thick
+ * annotation places the neighbouring voxel centres *exactly* on the boundary
+ * and must exclude them. Relative to the voxel thickness, because spacings range from
  * microns to centimetres.
  *
  * See `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
@@ -17,21 +17,22 @@ export const SLAB_RELATIVE_EPSILON = 1e-5;
  * The tolerance to use for slab tests against a grid with the given voxel
  * thickness along the normal.
  *
- * @param voxelThickness - `T_v`, see `getVoxelThicknessAlongNormal`.
+ * @param voxelThickness - The voxel thickness along the normal. See
+ *   `getVoxelThicknessAlongNormal`.
  */
 export function getSlabEpsilon(voxelThickness: number): number {
   return Math.abs(voxelThickness) * SLAB_RELATIVE_EPSILON;
 }
 
 /**
- * Resolves the annotation thickness `T` to use.
+ * Resolves the annotation thickness to use, in mm.
  *
  * Null, undefined, and 0 or less all count as "not recorded" and default to one
  * voxel along the normal. See
  * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  *
- * @param annotationThickness - `T`, or null/undefined/0 when not recorded.
- * @param voxelThickness - `T_v`, the fallback.
+ * @param annotationThickness - The recorded thickness, or null/undefined/0.
+ * @param voxelThickness - The voxel thickness along the normal, the fallback.
  */
 export function resolveAnnotationThickness(
   annotationThickness: number | null | undefined,
@@ -45,14 +46,16 @@ export function resolveAnnotationThickness(
 
 /**
  * The half width used to decide which *voxels* an area annotation contains
- * (Rule M): `d = (T + T_v) / 2`.
+ * (Rule M): `(annotationThickness + voxelThickness) / 2`.
  *
- * The `T_v` term widens the slab by half a voxel each side, so a plane exactly
- * midway between two voxel centres selects **both** layers. Note `t` is absent.
+ * The voxel term widens the slab by half a voxel each side, so a plane exactly
+ * midway between two voxel centres selects **both** layers. The viewport's own
+ * slab thickness is deliberately absent.
+ *
  * See `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  *
- * @param annotationThickness - `T`, already resolved.
- * @param voxelThickness - `T_v`.
+ * @param annotationThickness - The annotation thickness, already resolved.
+ * @param voxelThickness - The voxel thickness along the normal.
  */
 export function getMembershipHalfWidth(
   annotationThickness: number,
@@ -63,13 +66,13 @@ export function getMembershipHalfWidth(
 
 /**
  * The half width used to decide whether an annotation is *displayed* in a
- * viewport (Rule D): `(t + T) / 2`.
+ * viewport (Rule D): `(viewportSlabThickness + annotationThickness) / 2`.
  *
  * Unlike Rule M this uses the viewport slab thickness, because whether
  * something is shown legitimately depends on how thick a slab is being viewed.
  *
- * @param viewportSlabThickness - `t`, full geometric thickness in mm.
- * @param annotationThickness - `T`, already resolved.
+ * @param viewportSlabThickness - The viewport slab thickness in mm.
+ * @param annotationThickness - The annotation thickness, already resolved.
  */
 export function getDisplayHalfWidth(
   viewportSlabThickness: number,
@@ -117,10 +120,10 @@ export function isWithinSlab(
  * inside the annotation's 2D shape.
  *
  * @param voxelCenter - The voxel centre in world coordinates.
- * @param planePoint - `P0`, the annotation plane anchor.
- * @param normal - `n`, the annotation's view plane normal. Unit length.
- * @param annotationThickness - `T`, already resolved.
- * @param voxelThickness - `T_v`.
+ * @param planePoint - The annotation plane anchor.
+ * @param normal - The annotation's view plane normal. Unit length.
+ * @param annotationThickness - The annotation thickness, already resolved.
+ * @param voxelThickness - The voxel thickness along the normal.
  */
 export function isVoxelCenterInSlab(
   voxelCenter: Point3,

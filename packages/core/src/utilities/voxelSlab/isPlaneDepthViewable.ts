@@ -8,21 +8,21 @@ import { getDisplayHalfWidth, SLAB_RELATIVE_EPSILON } from './slabMembership';
  * viewport's focal plane to be displayed.
  *
  * ```
- *   |(point - focalPoint) . n| < (t + T) / 2
+ *   |depth| < (viewportSlabThickness + annotationThickness) / 2
  * ```
  *
- * where `t` is the viewport's slab thickness and `T` the plane's own thickness,
- * both full geometric thicknesses in mm. A reference with no thickness falls
- * back to an exact-to-within-`isEqual` plane match.
+ * Both are full geometric thicknesses in mm. A reference with no thickness
+ * falls back to an exact-to-within-`isEqual` plane match.
  *
  * See `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  *
  * @param planePoint - The point identifying the referenced plane's depth.
  * @param focalPoint - The viewport camera focal point.
  * @param viewPlaneNormal - The viewport view plane normal. Unit length.
- * @param annotationThickness - `T`, or undefined when not recorded.
- * @param viewportSlabThickness - `t`. Defaults to 0, which makes the window
- *   `T / 2` - correct for a stack viewport, which has no slab.
+ * @param annotationThickness - The plane's own thickness, or undefined when not
+ *   recorded.
+ * @param viewportSlabThickness - Defaults to 0, which halves the window -
+ *   correct for a stack viewport, which has no slab.
  */
 export function isPlaneDepthViewable(
   planePoint: Point3,

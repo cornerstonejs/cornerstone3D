@@ -19,9 +19,9 @@ export type VolumeGeometry =
  * lets the iterator emit exact runs rather than test every voxel:
  *
  * ```
- *   depth(p) = (centre - P0) . n = p . g + c0
+ *   depth(p) = (centre - planePoint) . n = p . g + c0
  *   g  = Mᵀ n      (the index space normal, deliberately not normalised)
- *   c0 = (origin - P0) . n
+ *   c0 = (origin - planePoint) . n
  * ```
  *
  * Iteration nests outer -> row -> column. Derivation and axis roles:
@@ -32,9 +32,9 @@ export interface IndexSpaceSlab {
   g: Point3;
   /** `c0`, the world depth of index (0, 0, 0). */
   c0: number;
-  /** `T_v`, the voxel thickness along the normal. */
+  /** The voxel thickness along the normal. */
   voxelThickness: number;
-  /** `T`, the resolved annotation thickness. */
+  /** The resolved annotation thickness. */
   annotationThickness: number;
   /**
    * The strict half width the depth must fall inside, already tightened by the
@@ -87,9 +87,10 @@ export function pickOuterAxis(g: Point3): 0 | 1 | 2 {
  * Builds the index space form of an annotation's slab.
  *
  * @param volume - Geometry of the volume being measured.
- * @param planePoint - `P0`, the annotation plane anchor, in world coordinates.
- * @param normal - `n`, the annotation view plane normal. Must be unit length.
- * @param annotationThickness - `T` in mm, or null/undefined to default to one voxel.
+ * @param planePoint - The annotation plane anchor, in world coordinates.
+ * @param normal - The annotation view plane normal. Must be unit length.
+ * @param annotationThickness - The annotation thickness in mm, or null/undefined
+ *   to default to one voxel.
  * @param options.columnAxis - Force which of the two non-outer axes carries the
  *   runs. Defaults to the lower-numbered of the two, so an
  *   acquisition-orientation volume emits runs along i for each j, matching
@@ -163,9 +164,9 @@ export function depthAtIndex(slab: IndexSpaceSlab, ijk: Point3): number {
  * The integers `x` satisfying `lo < x * coeff < hi`, as an inclusive range.
  *
  * Bounds are open, so an endpoint landing exactly on an integer excludes that
- * integer - which is what makes `T = T_v` select exactly one layer. Returns
- * null when no integer qualifies, and `[-Infinity, Infinity]` when the
- * constraint is vacuous.
+ * integer - which is what makes a one-voxel-thick annotation select exactly one
+ * layer. Returns null when no integer qualifies, and `[-Infinity, Infinity]`
+ * when the constraint is vacuous.
  */
 function integersWithProductInOpenInterval(
   coeff: number,

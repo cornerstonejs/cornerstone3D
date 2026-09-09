@@ -163,8 +163,8 @@ export type PlaneRestriction = {
   inPlaneVector2?: Point3;
 
   /**
-   * `T`, the thickness of the referenced plane: a **full** geometric thickness
-   * in mm, not a half thickness.
+   * The thickness of the referenced plane: a **full** geometric thickness in
+   * mm, not a half thickness.
    *
    * See `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
    */

@@ -13,9 +13,9 @@ import {
 export interface ContourShapeOptions {
   /** Geometry of the volume being measured. */
   volume: VolumeGeometry;
-  /** `P0`, the annotation plane anchor. Defines the plane's depth. */
+  /** The annotation plane anchor. Defines the plane's depth. */
   planePoint: Point3;
-  /** `n`, the annotation view plane normal. Unit length. */
+  /** The annotation view plane normal. Unit length. */
   normal: Point3;
   /**
    * The outline, as world coordinates: one ring, or an array of rings. Each

@@ -28,7 +28,7 @@ export interface VoxelSlabShape {
   ): Iterable<Point2>;
 
   /**
-   * The smallest annotation thickness `T` for which Rule M's slab contains the
+   * The smallest annotation thickness for which Rule M's slab contains the
    * whole shape. A planar shape returns 0; a shape with depth returns that
    * depth, and a smaller `annotationThickness` clips it.
    */
@@ -261,7 +261,7 @@ export function solveQuadraticLeqZero(
  * The inclusive integer run inside a real interval.
  *
  * Boundaries are inclusive, unlike the depth runs of Rule M, whose endpoints
- * are exclusive so that `T = T_v` selects one layer. Infinite bounds are
+ * are exclusive so that a one-voxel-thick annotation selects one layer. Infinite bounds are
  * preserved; the iterator intersects them with the always-finite depth run.
  */
 export function toIntegerRun(range: RealRange | null): Point2 | null {
