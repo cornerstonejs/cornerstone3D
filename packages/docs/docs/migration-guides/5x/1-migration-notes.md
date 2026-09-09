@@ -242,3 +242,148 @@ Two notes on scope:
 - **Check your scroll affordances on small screens.** If a page relied on
   viewport drags to scroll, add padding, a scroll container, or a gutter outside
   the viewport elements so the page remains scrollable on a phone or tablet.
+
+## Prescaled PT volumes ignore the window in the metadata
+
+### What Changed
+
+A volume viewport that shows a **prescaled PT series** (`isPreScaled` with an
+`suvbw` scaling factor) now always starts with a default VOI range of 0 to 5.
+This is correct also when the series has a Window Center and a Window Width.
+
+Before, this default range was applicable only when the viewport found no
+window. The viewport used the range 0 to 5 only after it calculated the minimum
+and the maximum of the middle slice. Thus a PT series that had a window used
+that window.
+
+### Why This Matters
+
+A prescaled PT volume contains SUV values, but the Window Center and the Window
+Width of the file are in the unscaled counts. The window has the incorrect
+units. Applied to SUV values, it gives a very large range, and the volume is
+almost black.
+
+Thus the series that had a window were the series with the incorrect display.
+These volumes also did not agree with the stack viewport, which always uses its
+own PT range. **After the upgrade, PET volumes look different and correct.**
+
+Unscaled PT volumes do not change. They continue to use the window in the
+metadata.
+
+### Migration Guidance
+
+- **Usually, you do not have to do an operation.** The new default range agrees
+  with the stack viewport and with other viewers.
+- **If your application needs the initial behavior**, set the range with
+  `viewport.setProperties({ voiRange })` after the volume loads, or give your
+  own VOI when you configure the viewport. The default is applicable only when
+  the application does not set a range.
+- **If your tests compare volume and stack displays**, change the PT values that
+  you calculated from the metadata window to the range 0 to 5.
+
+## Volume viewports apply the VOI LUT Function and the VOI LUT Sequence
+
+### What Changed
+
+A volume viewport now reads the VOI LUT Function (0028,1056) and the VOI LUT
+Sequence (0028,3010) of the file, as the stack viewport does:
+
+- A series that has the function SIGMOID gets a sigmoid transfer function. Before
+  this, the viewport calculated the range from the function but always made a
+  linear transfer function.
+- A series that has a VOI LUT Sequence gets the curve of the sequence. The range
+  is the input domain of the curve, and window level stretches the curve over the
+  new range.
+- The generic viewports (`PLANAR_NEXT`) do the same on their volume paths, on the
+  GPU and on the CPU.
+- `setProperties({ VOILUTFunction })` on a volume viewport now normalizes the
+  value, thus a padded value, a lower case value or a single element array also
+  works. The property is also applied before the transfer function is made. Before
+  this, a request for SIGMOID had no effect until the next change of the VOI.
+
+Two other changes make all the viewport types agree:
+
+- A colormap stops the curve of a VOI LUT Sequence and the curve of a sigmoid on
+  the GPU. A colormap fills the transfer function with its own colors. Before
+  this, a stack viewport removed the colormap on the next window level operation
+  of an image that has a sequence.
+- The CPU path stretches the curve of a sequence over the window. Before this,
+  window level did nothing on the CPU and worked on the GPU, for the same file.
+
+### Why This Matters
+
+CR, DX and MG images frequently carry a VOI LUT Sequence, and their curves are
+strongly non linear. The same file thus had two displays: the correct curve on a
+stack viewport, and a flat linear window on a volume viewport or an MPR.
+
+### Migration Guidance
+
+- **Usually, you do not have to do an operation.** The display of these series
+  agrees with the stack viewport and with other viewers.
+- **To ignore the curve of the file**, use
+  `setProperties({ useVOILUTSequence: false })`. This property is now available on
+  the volume viewports and on the generic viewports also.
+- **If your application draws a colorbar**, read the new field
+  `voiLUTSequenceApplied` of the `VOI_MODIFIED` event. A ramp that you calculate
+  from the range and the function is not the curve that the viewport shows.
+
+## Volume viewports report the real window for a sigmoid
+
+### What Changed
+
+Three paths that give the VOI of a volume viewport back to an application now
+give the window of the DICOM attributes, and not a value derived from the nodes
+of the transfer function.
+
+- **`detail.range` of the `VOI_MODIFIED` event.** A sampled sigmoid holds its
+  curve in the nodes of the transfer function, so the mapping range of that
+  function is the whole node domain, `[c - 1.733w, c + 1.560w]`. That is about
+  3.3 times the window width, and it is not centered on the window. The event
+  carried that domain. It now carries the window, which is the value that
+  `getProperties` already gave.
+- **`getProperties().voiRange`.** The conversion from the recovered window width
+  and center to a range used `c ± w/2`, which is the LINEAR_EXACT convention
+  (C.11.2.1.3.2), while the sigmoid transfer function is built from the range
+  through the LINEAR convention of note 4 of C.11.2.1.2.1. The two differ by one,
+  so each read and write of the properties widened the window by one, and two
+  rounding operations moved it a further half unit in each direction. The
+  conversion is now the exact inverse of the one that builds the curve, thus a
+  range survives any number of round trips.
+- **`getProperties().voiRange` when the actor does not hold a sigmoid.** A
+  colormap and a VOI LUT Sequence each replace the curve, and the value SIGMOID
+  of (0028,1056) stays in effect over both. The colormap ramp or the curve of the
+  sequence was solved for a window regardless. A colormap ramp gave an infinite
+  width and a range of NaN, and the viewport then rejected every later window
+  level operation. Only a sigmoid on the actor is solved for a window now.
+
+A volume viewport also keeps its inversion when the VOI needs a new transfer
+function. Before this, the first window level operation on an inverted volume
+that shows a sigmoid or a VOI LUT Sequence removed the inversion.
+
+A linear volume viewport does not change. The vtk.js `getRange` is the mapping
+range, which is the value that a linear read back already gave.
+
+### Why This Matters
+
+`voiSyncCallback` copies `detail.range` into `setProperties({ voiRange })` of
+each target viewport, and `ViewportColorbar` reads the same field. A
+synchronized viewport or a colorbar of a sigmoid volume thus showed
+`WW 3293 / WC -387` for a window of `WW 1000 / WC -300`.
+
+An application that reads the properties and writes them again widened the
+window on each cycle, and `WindowLevelTool` does exactly that on each mouse
+move. A drag on a SIGMOID series thus widened the window beyond the movement of
+the pointer.
+
+### Migration Guidance
+
+- **Usually, you do not have to do an operation.** These values are the values
+  that your application asked for.
+- **Remove a correction of your own.** An application that scaled
+  `detail.range` of a sigmoid viewport, or that rounded a window to conceal the
+  drift, now receives a correct value and must not correct it again.
+- **A presentation state that your application stored for a sigmoid volume can
+  hold a widened window.** The window grew by one on each read and write cycle,
+  so a stored value can be several units wider than the window of the file.
+  Nothing reads such a value incorrectly now, but it is not the window that the
+  file gives.

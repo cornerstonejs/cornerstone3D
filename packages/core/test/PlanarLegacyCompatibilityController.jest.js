@@ -206,6 +206,27 @@ describe('PlanarLegacyCompatibilityController', () => {
       );
     });
 
+    it('does not pin a resolved image VOI LUT function into the presentation', () => {
+      const { host } = createHost({
+        getActiveDataId: jest.fn(() => 'data-1'),
+      });
+      const controller = new PlanarLegacyCompatibilityController(host);
+
+      controller.setProperties({
+        VOILUTFunction: 'SIGMOID',
+        voiLUTFunctionSetByUser: false,
+      });
+
+      expect(host.setDataPresentationState).toHaveBeenCalledWith('data-1', {});
+
+      controller.setProperties({
+        VOILUTFunction: 'SIGMOID',
+      });
+      expect(host.setDataPresentationState).toHaveBeenLastCalledWith('data-1', {
+        voiLUTFunction: 'SIGMOID',
+      });
+    });
+
     it('does nothing when no target data id can be resolved', () => {
       const { host } = createHost({
         getActiveDataId: jest.fn(() => undefined),

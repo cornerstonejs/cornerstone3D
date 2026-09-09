@@ -14,6 +14,11 @@ import type {
   VOIRange,
 } from '../../../types';
 import VoxelManager from '../../../utilities/VoxelManager';
+import { resolveVOILUTSequenceToApply } from '../../helpers/planarImageRendering';
+import {
+  getVolumeVOIShape,
+  type VolumeVOIShape,
+} from '../../helpers/setDefaultVolumeVOI';
 import getDefaultViewport from '../../helpers/cpuFallback/rendering/getDefaultViewport';
 import getSpacingInNormalDirection from '../../../utilities/getSpacingInNormalDirection';
 import type { PlanarDataPresentation } from './PlanarViewportTypes';
@@ -25,6 +30,7 @@ import {
   getSpatiallyClampedContinuousIndex,
   SOURCE_SLICE_INDEX_TOLERANCE,
 } from './planarCPUVolumeSamplingUtils';
+import { toWindowLevel } from '../../../utilities/windowLevel';
 
 type SliceArray = PixelDataTypedArray;
 type SliceArrayConstructor = new (length: number) => SliceArray;
@@ -169,6 +175,7 @@ function worldVectorToContinuousIndexDelta(
 
 export default class PlanarCPUVolumeSampler {
   private sampleSequence = 0;
+  private volumeVOIShapes = new WeakMap<IImageVolume, VolumeVOIShape>();
   private scalarViewportSampler = new PlanarCPUScalarViewportSampler();
   private scalarRangeCache = new WeakMap<
     NonNullable<IImageVolume['voxelManager']>,
@@ -402,11 +409,25 @@ export default class PlanarCPUVolumeSampler {
     viewport.invert = dataPresentation?.invert ?? false;
     viewport.pixelReplication =
       dataPresentation?.interpolationType === InterpolationType.NEAREST;
-    viewport.voi = {
-      windowCenter: (resolvedVOI.lower + resolvedVOI.upper) / 2,
-      windowWidth: Math.max(resolvedVOI.upper - resolvedVOI.lower, 1),
-      voiLUTFunction: VOILUTFunctionType.LINEAR,
-    };
+    // The sampled slice carries the VOI LUT Function and the VOI LUT Sequence
+    // of the volume (refer to createSliceImage). The CPU renderer reads them
+    // from the viewport, as on the stack.
+    const voiLUTFunction =
+      dataPresentation?.voiLUTFunction ??
+      sampledSliceState.image.voiLUTFunction ??
+      VOILUTFunctionType.LINEAR;
+    const { windowCenter, windowWidth } = toWindowLevel(
+      resolvedVOI.lower,
+      resolvedVOI.upper,
+      voiLUTFunction
+    );
+
+    viewport.voi = { windowCenter, windowWidth, voiLUTFunction };
+    viewport.voiLUT = resolveVOILUTSequenceToApply({
+      defaultVOILUT: sampledSliceState.image.voiLUT,
+      defaultVOILUTFunction: sampledSliceState.image.voiLUTFunction,
+      props: dataPresentation,
+    });
   }
 
   public needsResample(args: {
@@ -1189,9 +1210,23 @@ export default class PlanarCPUVolumeSampler {
       voiRange && voiRange.upper > voiRange.lower
         ? voiRange
         : { lower: minPixelValue, upper: maxPixelValue };
-    const windowWidth = Math.max(1, resolvedVOI.upper - resolvedVOI.lower);
-    const windowCenter = (resolvedVOI.lower + resolvedVOI.upper) / 2;
     const imageId = `cpuVolumeSlice:${volume.volumeId}:${++this.sampleSequence}`;
+    // The slice is a synthetic image, but the VOI transformation is a property
+    // of the file. Thus the slice keeps the VOI LUT Function and the VOI LUT
+    // Sequence of the volume.
+    let volumeVOIShape = this.volumeVOIShapes.get(volume);
+
+    if (!volumeVOIShape) {
+      volumeVOIShape = getVolumeVOIShape(volume);
+      this.volumeVOIShapes.set(volume, volumeVOIShape);
+    }
+
+    const { voiLUT, voiLUTFunction } = volumeVOIShape;
+    const { windowCenter, windowWidth } = toWindowLevel(
+      resolvedVOI.lower,
+      resolvedVOI.upper,
+      voiLUTFunction
+    );
     const voxelManager = VoxelManager.createImageVoxelManager({
       width,
       height,
@@ -1205,7 +1240,8 @@ export default class PlanarCPUVolumeSampler {
       intercept: 0,
       windowCenter,
       windowWidth,
-      voiLUTFunction: VOILUTFunctionType.LINEAR,
+      voiLUTFunction: voiLUTFunction ?? VOILUTFunctionType.LINEAR,
+      voiLUT,
       isPreScaled: volume.isPreScaled,
       scaling: volume.scaling,
       color: numberOfComponents > 1,

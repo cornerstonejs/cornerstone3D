@@ -1,5 +1,6 @@
 import getModalityLut from './getModalityLut';
 import getVOILUT from './getVOILut';
+import type VOILUTFunctionType from '../../../../enums/VOILUTFunctionType';
 import type { IImage, CPUFallbackLUT } from '../../../../types';
 
 /**
@@ -12,6 +13,7 @@ import type { IImage, CPUFallbackLUT } from '../../../../types';
  * @param invert - A boolean describing whether or not the image has been inverted
  * @param modalityLUT - A modality Lookup Table
  * @param voiLUT - A Volume of Interest Lookup Table
+ * @param voiLUTFunction - VOI LUT Function (0028,1056)
  *
  * @returns A lookup table to apply to the image
  */
@@ -21,7 +23,8 @@ export default function (
   windowCenter: number,
   invert: boolean,
   modalityLUT: CPUFallbackLUT,
-  voiLUT: CPUFallbackLUT
+  voiLUT: CPUFallbackLUT,
+  voiLUTFunction?: VOILUTFunctionType | string
 ): Uint8ClampedArray {
   const maxPixelValue = image.maxPixelValue;
   const minPixelValue = image.minPixelValue;
@@ -37,7 +40,7 @@ export default function (
   const lut = image.cachedLut.lutArray;
 
   const mlutfn = getModalityLut(image.slope, image.intercept, modalityLUT);
-  const vlutfn = getVOILUT(windowWidth, windowCenter, voiLUT);
+  const vlutfn = getVOILUT(windowWidth, windowCenter, voiLUT, voiLUTFunction);
 
   if (image.isPreScaled) {
     // if the image is already preScaled, it means that the slop and the intercept

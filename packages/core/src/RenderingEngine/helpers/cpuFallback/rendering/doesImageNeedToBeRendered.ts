@@ -25,6 +25,8 @@ export default function doesImageNeedToBeRendered(
       enabledElement.viewport.voi.windowCenter ||
     lastRenderedViewport.windowWidth !==
       enabledElement.viewport.voi.windowWidth ||
+    lastRenderedViewport.voiLUTFunction !==
+      enabledElement.viewport.voi.voiLUTFunction ||
     lastRenderedViewport.invert !== enabledElement.viewport.invert ||
     lastRenderedViewport.rotation !== enabledElement.viewport.rotation ||
     lastRenderedViewport.hflip !== enabledElement.viewport.hflip ||

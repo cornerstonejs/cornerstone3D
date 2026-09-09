@@ -65,6 +65,46 @@ function metaDataProvider(type, imageId) {
   return metadataForDataset(type, imageId, dataSet);
 }
 
+/**
+ * The datasets a VOI attribute may live in, in precedence order: the dataset
+ * itself, then the Frame VOI LUT Sequence (0028,9132) item. Root tags win, so a
+ * legacy window on an enhanced object still takes precedence over the macro.
+ */
+function getVOIDataSets(dataSet: dicomParser.DataSet): dicomParser.DataSet[] {
+  const frameVOIDataSet = dataSet.elements.x00289132?.items?.[0]?.dataSet;
+
+  return frameVOIDataSet ? [dataSet, frameVOIDataSet] : [dataSet];
+}
+
+/**
+ * The first value `read` yields from any of `dataSets`.
+ *
+ * Each VOI attribute is resolved on its own rather than picking one dataset for
+ * all of them: an enhanced object may carry the window in the Frame VOI LUT
+ * macro and the VOI LUT Sequence at the root, or the reverse, and choosing a
+ * single dataset from the window tags alone silently dropped whichever
+ * attributes lived in the other one.
+ *
+ * Presence is decided by reading the attribute the same way the caller
+ * extracts it, so an attribute that is present but empty - DICOM allows a type
+ * 2 window to be sent zero length, and `getNumberValues` yields nothing for one
+ * - falls through to the next dataset instead of ending the search.
+ */
+function findVOIValue<T>(
+  dataSets: dicomParser.DataSet[],
+  read: (dataSet: dicomParser.DataSet) => T | undefined
+): T | undefined {
+  for (const dataSet of dataSets) {
+    const value = read(dataSet);
+
+    if (value !== undefined) {
+      return value;
+    }
+  }
+
+  return undefined;
+}
+
 export function metadataForDataset(
   type,
   imageId,
@@ -212,15 +252,35 @@ export function metadataForDataset(
   if (type === MetadataModules.VOI_LUT) {
     const modalityLUTOutputPixelRepresentation =
       getModalityLUTOutputPixelRepresentation(dataSet);
+    // Enhanced multi frame SOPs (Enhanced CT/MR/PT/US/XA) put the VOI in the
+    // Frame VOI LUT macro inside the shared or per frame functional groups
+    // rather than at the dataset root. The frame combiner copies the macro
+    // itself to the root but not its contents, so the window stays one level
+    // deeper than the tags read below and the viewport fell back to the image
+    // min/max (cornerstone3D#2745). wadors reads the same file correctly, hence
+    // the same image looking different through the two loaders.
+    const voiDataSets = getVOIDataSets(dataSet);
+    // Center and width are resolved as a pair - a window is only meaningful as
+    // both - while the sequence and the function are looked up on their own.
+    const windowDataSet =
+      voiDataSets.find(
+        (candidate) =>
+          getNumberValues(candidate, 'x00281050', 1) !== undefined &&
+          getNumberValues(candidate, 'x00281051', 1) !== undefined
+      ) ?? dataSet;
 
     return {
-      windowCenter: getNumberValues(dataSet, 'x00281050', 1),
-      windowWidth: getNumberValues(dataSet, 'x00281051', 1),
-      voiLUTSequence: getLUTs(
-        modalityLUTOutputPixelRepresentation,
-        dataSet.elements.x00283010
+      windowCenter: getNumberValues(windowDataSet, 'x00281050', 1),
+      windowWidth: getNumberValues(windowDataSet, 'x00281051', 1),
+      voiLUTSequence: findVOIValue(voiDataSets, (candidate) =>
+        getLUTs(
+          modalityLUTOutputPixelRepresentation,
+          candidate.elements.x00283010
+        )
       ),
-      voiLUTFunction: dataSet.string('x00281056'),
+      voiLUTFunction: findVOIValue(voiDataSets, (candidate) =>
+        candidate.string('x00281056')
+      ),
     };
   }
 

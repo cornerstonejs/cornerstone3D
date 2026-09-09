@@ -172,7 +172,8 @@ class WindowLevelTool extends BaseTool {
 
     let { windowWidth, windowCenter } = utilities.windowLevel.toWindowLevel(
       lower,
-      upper
+      upper,
+      voiLutFunction
     );
 
     windowWidth += wwDelta;

@@ -12,6 +12,8 @@ import type {
   CPUFallbackEnabledElement,
 } from '../../../../types';
 import { createCanvas } from '../../getOrCreateCanvas';
+import VOILUTFunctionType from '../../../../enums/VOILUTFunctionType';
+import { getValidVOILUTFunction } from '../../../../utilities/voiLUTFunction';
 
 /**
  * Generates an appropriate Look Up Table to render the given image with the given window width and level (specified in the viewport)
@@ -28,6 +30,7 @@ function getLut(image: IImage, viewport: CPUFallbackViewport) {
     image.cachedLut !== undefined &&
     image.cachedLut.windowCenter === viewport.voi.windowCenter &&
     image.cachedLut.windowWidth === viewport.voi.windowWidth &&
+    image.cachedLut.voiLUTFunction === viewport.voi.voiLUTFunction &&
     image.cachedLut.invert === viewport.invert
   ) {
     return image.cachedLut.lutArray;
@@ -38,10 +41,13 @@ function getLut(image: IImage, viewport: CPUFallbackViewport) {
     image,
     viewport.voi.windowWidth,
     viewport.voi.windowCenter,
-    viewport.invert
+    viewport.invert,
+    undefined,
+    viewport.voi.voiLUTFunction
   );
   image.cachedLut.windowWidth = viewport.voi.windowWidth;
   image.cachedLut.windowCenter = viewport.voi.windowCenter;
+  image.cachedLut.voiLUTFunction = viewport.voi.voiLUTFunction;
   image.cachedLut.invert = viewport.invert;
 
   return image.cachedLut.lutArray;
@@ -77,10 +83,14 @@ function getRenderCanvas(
   // The ww/wc is identity and not inverted - get a canvas with the image rendered into it for
   // Fast drawing.  Note that this is 256/128, and NOT 255/127, per the DICOM
   // standard, but allow either.
-  const { windowWidth, windowCenter } = enabledElement.viewport.voi;
+  const { windowWidth, windowCenter, voiLUTFunction } =
+    enabledElement.viewport.voi;
   if (
     (windowWidth === 256 || windowWidth === 255) &&
     (windowCenter === 128 || windowCenter === 127) &&
+    // Only a LINEAR window of those dimensions is the identity. SIGMOID and
+    // LINEAR_EXACT still reshape the pixels, so they have to go through the LUT
+    getValidVOILUTFunction(voiLUTFunction) === VOILUTFunctionType.LINEAR &&
     !enabledElement.viewport.invert &&
     image.getCanvas &&
     image.getCanvas()
