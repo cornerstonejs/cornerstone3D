@@ -79,10 +79,10 @@ The effects across modalities are intended. An annotation on one thick NM slice
 can correctly appear on two thin CT slices, and an annotation that spans two CT
 slices can correctly appear on one NM slice.
 
-A reference that records no thickness keeps the historical behaviour, which is
-an exact plane match to within `isEqual`. Every annotation that predates
-`PlaneRestriction.thickness` records none, and a wider visibility would change
-what existing viewers show.
+A reference that records no thickness falls back to an exact plane match to
+within `isEqual`. Any annotation created before `PlaneRestriction.thickness`
+existed records no thickness, and a wider visibility would change which slices
+those annotations appear on.
 
 ## Where `T` comes from
 

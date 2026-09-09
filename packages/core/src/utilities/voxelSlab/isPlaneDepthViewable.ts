@@ -21,9 +21,10 @@ import { getDisplayHalfWidth, SLAB_RELATIVE_EPSILON } from './slabMembership';
  * that Rule M uses, because `T_v` needs a volume and a display decision is made
  * without one.
  *
- * A reference with no thickness falls back to the historical exact-to-within-
- * `isEqual` plane match. Every annotation predating `PlaneRestriction.thickness`
- * has none, and a wider visibility would change what existing viewers show.
+ * A reference with no thickness falls back to an exact-to-within-`isEqual`
+ * plane match. Any annotation created before `PlaneRestriction.thickness`
+ * existed has none, and a wider visibility would change which slices those
+ * annotations appear on.
  *
  * See https://github.com/cornerstonejs/cornerstone3D/issues/2889
  *
