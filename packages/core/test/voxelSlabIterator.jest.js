@@ -273,7 +273,7 @@ describe('iterateVoxelsInSlab agrees with the reference implementation', () => {
       });
     });
 
-    it('a shape that selects nothing', () => {
+    it('a shape that selects a single voxel', () => {
       const volume = createSyntheticVolume({
         dimensions: [8, 8, 8],
         spacing: [1, 1, 1],
@@ -281,6 +281,8 @@ describe('iterateVoxelsInSlab agrees with the reference implementation', () => {
       const planePoint = [4, 4, 4];
       const normal = [0, 0, 1];
 
+      // The disc is centred on the voxel centre at (4, 4, 4), so that one
+      // centre is at distance 0 and no other is within the radius.
       const voxels = expectAgreement({
         volume,
         planePoint,
@@ -290,6 +292,27 @@ describe('iterateVoxelsInSlab agrees with the reference implementation', () => {
       });
 
       expect(voxels).toHaveLength(1);
+    });
+
+    it('a shape that selects nothing', () => {
+      const volume = createSyntheticVolume({
+        dimensions: [8, 8, 8],
+        spacing: [1, 1, 1],
+      });
+      const planePoint = [4, 4, 4];
+      const normal = [0, 0, 1];
+
+      // Offset within the plane to sit between voxel centres, so the four
+      // nearest are at 0.707 and the disc catches none of them.
+      const voxels = expectAgreement({
+        volume,
+        planePoint,
+        normal,
+        annotationThickness: 1,
+        shape: discInPlane([4.5, 4.5, 4], normal, 0.1),
+      });
+
+      expect(voxels).toHaveLength(0);
     });
   });
 
