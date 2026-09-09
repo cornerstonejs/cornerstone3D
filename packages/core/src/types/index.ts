@@ -136,6 +136,14 @@ import type {
   ECGChannel,
   ECGWaveformData,
 } from './ECGViewportTypes';
+import type {
+  TraceRegion,
+  ECGChannelData,
+  ECGPresentationProps,
+  ECGViewState,
+  ECGDataPresentation,
+  ECGProperties,
+} from '../RenderingEngine/GenericViewport/ECG/ECGViewportTypes';
 import type ECGViewportProperties from './ECGViewportProperties';
 import type { ISurface } from './ISurface';
 import type BoundsIJK from './BoundsIJK';
@@ -314,6 +322,12 @@ export type {
   ECGChannel,
   ECGWaveformData,
   ECGViewportProperties,
+  TraceRegion,
+  ECGChannelData,
+  ECGPresentationProps,
+  ECGViewState,
+  ECGDataPresentation,
+  ECGProperties,
   BoundsIJK,
   BoundsLPS,
   Color,
