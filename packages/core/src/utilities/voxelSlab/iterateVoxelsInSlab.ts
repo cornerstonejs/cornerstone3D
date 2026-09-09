@@ -66,9 +66,8 @@ export interface VoxelSlabIterationOptions {
    * volume. Supply the annotation's own index-space bounding box when you have
    * one; the slab bound tightening below only narrows along the normal.
    *
-   * Bounds only ever narrow. Each axis is intersected with the volume extent,
-   * so a box that reaches outside the volume - which one derived from world
-   * coordinates easily does - never yields an index outside it.
+   * Bounds only narrow: each axis intersects the volume extent, so a box that
+   * reaches outside the volume still yields no index outside it.
    */
   bounds?: BoundsIJK;
   /** Exact or exact-multiple in-plane runs. See {@link ShapeRunProvider}. */
@@ -127,9 +126,8 @@ export function* iterateVoxelsInSlab(
     dimensions[axis] - 1,
   ]) as BoundsIJK;
 
-  // Intersect rather than substitute, so a caller's box can only narrow. A
-  // bounding box derived from world coordinates can reach past the volume, and
-  // an index outside it would read the wrong voxel or none at all.
+  // Intersect, do not substitute: an index past the volume reads the wrong
+  // voxel, and a box derived from world coordinates can reach past it.
   const requestedBounds = options.bounds;
   const bounds: BoundsIJK = requestedBounds
     ? ([0, 1, 2].map((axis) => [
@@ -138,7 +136,7 @@ export function* iterateVoxelsInSlab(
       ]) as BoundsIJK)
     : volumeBounds;
 
-  // An empty bound on any axis selects nothing at all.
+  // An empty bound on any axis selects nothing.
   if (bounds.some(([min, max]) => min > max)) {
     return;
   }

@@ -281,8 +281,8 @@ describe('iterateVoxelsInSlab agrees with the reference implementation', () => {
       const planePoint = [4, 4, 4];
       const normal = [0, 0, 1];
 
-      // The disc is centred on the voxel centre at (4, 4, 4), so that one
-      // centre is at distance 0 and no other is within the radius.
+      // Centred on the voxel centre at (4, 4, 4): that centre is at distance 0,
+      // and no other is within the radius.
       const voxels = expectAgreement({
         volume,
         planePoint,
@@ -302,8 +302,8 @@ describe('iterateVoxelsInSlab agrees with the reference implementation', () => {
       const planePoint = [4, 4, 4];
       const normal = [0, 0, 1];
 
-      // Offset within the plane to sit between voxel centres, so the four
-      // nearest are at 0.707 and the disc catches none of them.
+      // Offset within the plane to sit between voxel centres: the four nearest
+      // are at 0.707, outside the disc.
       const voxels = expectAgreement({
         volume,
         planePoint,
@@ -388,8 +388,8 @@ describe('iterateVoxelsInSlab agrees with the reference implementation', () => {
       const planePoint = [5, 5, 5];
       const normal = [0, 0, 1];
 
-      // A bounding box derived from world coordinates easily reaches past the
-      // volume on both sides. Every index must still lie inside the volume.
+      // A box derived from world coordinates can reach past the volume on both
+      // sides. Every index must still lie inside the volume.
       const voxels = collectVoxelsInSlab({
         volume,
         planePoint,

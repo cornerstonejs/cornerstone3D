@@ -784,8 +784,8 @@ describe('createContourShape', () => {
       normal: AXIAL,
       polyline: square(10, 10, 3, 3),
     });
-    // Planar, so 0 - and the caller's `|| annotationThickness` then keeps the
-    // annotation's own thickness instead of narrowing it to one voxel.
+    // Planar, so 0, and the caller's `|| annotationThickness` keeps the
+    // annotation's own thickness.
     expect(shape.getRequiredThickness()).toBe(0);
   });
 

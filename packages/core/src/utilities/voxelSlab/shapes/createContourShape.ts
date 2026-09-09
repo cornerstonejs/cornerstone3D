@@ -50,10 +50,9 @@ export interface ContourShapeOptions {
    * `annotationThickness` and the slab enforces it, complete with the half
    * voxel dilation that guarantees at least one layer is selected.
    *
-   * Omit to let the slab decide the depth entirely. `getRequiredThickness()`
-   * then returns 0, so the documented
-   * `getRequiredThickness() || annotationThickness` hands the slab the
-   * annotation's own thickness.
+   * Omit to let the slab decide the depth. `getRequiredThickness()` then
+   * returns 0, so `getRequiredThickness() || annotationThickness` gives the
+   * slab the annotation's own thickness.
    */
   depth?: number;
 }
@@ -353,10 +352,9 @@ export function createContourShape(
   return {
     containsPoint,
     getRuns,
-    // The prism's depth, which the caller should hand to the slab. A contour
-    // given no depth is planar, so it returns 0 as the contract requires - and
-    // `getRequiredThickness() || annotationThickness` then falls through to the
-    // annotation's own thickness rather than replacing it with one voxel.
+    // The prism's depth, which the caller gives to the slab. A contour with no
+    // depth is planar, so it returns 0 and the caller's
+    // `|| annotationThickness` keeps the annotation's own thickness.
     getRequiredThickness: () =>
       Number.isFinite(depth) ? (depth as number) : 0,
   };
