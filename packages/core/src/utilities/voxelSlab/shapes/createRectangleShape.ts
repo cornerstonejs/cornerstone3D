@@ -13,9 +13,15 @@ import {
   toIntegerRun,
 } from './shapeGeometry';
 
-/** Expands a half extent so a voxel centre on the face counts as inside. */
+/**
+ * Expands a half extent so a voxel centre on the face counts as inside.
+ *
+ * The slack is relative to the half extent, with a floor of one unit so that a
+ * sub-millimetre extent keeps a usable absolute tolerance. `createContourShape`
+ * floors its own slack the same way.
+ */
 const expand = (halfExtent: number) =>
-  halfExtent * (1 + SHAPE_BOUNDARY_EPSILON);
+  halfExtent + Math.max(halfExtent, 1) * SHAPE_BOUNDARY_EPSILON;
 
 export interface RectangleShapeOptions {
   /** Geometry of the volume being measured. */
