@@ -123,8 +123,9 @@ export function pickOuterAxis(g: Point3): 0 | 1 | 2 {
  * @param normal - `n`, the annotation view plane normal. Must be unit length.
  * @param annotationThickness - `T` in mm, or null/undefined to default to one voxel.
  * @param options.columnAxis - Force which of the two non-outer axes carries the
- *   runs. Defaults to the higher-numbered one, so an acquisition-orientation
- *   volume emits runs along i for each j, matching row-major memory order.
+ *   runs. Defaults to the lower-numbered of the two, so an
+ *   acquisition-orientation volume emits runs along i for each j, matching
+ *   row-major memory order.
  */
 export function buildIndexSpaceSlab(
   volume: VolumeGeometry,
