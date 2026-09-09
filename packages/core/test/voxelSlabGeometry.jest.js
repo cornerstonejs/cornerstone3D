@@ -142,8 +142,15 @@ describe('slab half widths', () => {
     expect(resolveAnnotationThickness(undefined, 2.5)).toBe(2.5);
     expect(resolveAnnotationThickness(null, 2.5)).toBe(2.5);
     expect(resolveAnnotationThickness(NaN, 2.5)).toBe(2.5);
-    expect(resolveAnnotationThickness(0, 2.5)).toBe(0);
     expect(resolveAnnotationThickness(4, 2.5)).toBe(4);
+  });
+
+  it('treats a thickness of 0 or less as unrecorded', () => {
+    // A planar shape reports 0 from getRequiredThickness, and a caller passes
+    // that value straight to the slab. Honouring 0 literally would halve the
+    // half width and select nothing between voxel centres.
+    expect(resolveAnnotationThickness(0, 2.5)).toBe(2.5);
+    expect(resolveAnnotationThickness(-1, 2.5)).toBe(2.5);
   });
 
   it('scales the epsilon with the voxel thickness', () => {

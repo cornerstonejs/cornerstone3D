@@ -789,6 +789,48 @@ describe('createContourShape', () => {
     expect(shape.getRequiredThickness()).toBe(0);
   });
 
+  it('selects one layer when a caller passes that 0 straight to the slab', () => {
+    // A consumer may pass getRequiredThickness() to the iterator without the
+    // `||`. The slab must then apply its one-voxel default, and not a half
+    // width of T_v / 2, which selects nothing between voxel centres.
+    const cube = createSyntheticVolume({
+      dimensions: [16, 16, 16],
+      spacing: [1, 1, 1],
+    });
+
+    // The second anchor is the case that matters: it lies between voxel
+    // centres, where a half width of T_v / 2 selects nothing.
+    [
+      [8, 8, 8],
+      [8, 8, 8.5],
+    ].forEach((anchor) => {
+      const shape = createContourShape({
+        volume: cube,
+        planePoint: anchor,
+        normal: AXIAL,
+        polyline: square(8, 8, 3, 3),
+      });
+
+      const passedThrough = collectVoxelsInSlab({
+        volume: cube,
+        planePoint: anchor,
+        normal: AXIAL,
+        annotationThickness: shape.getRequiredThickness(),
+        getShapeRuns: shape.getRuns,
+      });
+
+      const defaulted = collectVoxelsInSlab({
+        volume: cube,
+        planePoint: anchor,
+        normal: AXIAL,
+        getShapeRuns: shape.getRuns,
+      });
+
+      expect(passedThrough.length).toBeGreaterThan(0);
+      expect(passedThrough).toEqual(defaulted);
+    });
+  });
+
   it('reports the depth it was given', () => {
     const shape = createContourShape({
       volume,

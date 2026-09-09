@@ -47,14 +47,21 @@ export function getSlabEpsilon(voxelThickness: number): number {
  * loaded from a source that predates the field - it defaults to one voxel along
  * the view plane normal.
  *
- * @param annotationThickness - `T`, or null/undefined when not recorded.
+ * A `T` of 0 or less counts as "not recorded" and takes the same default. A
+ * planar shape reports 0 from `getRequiredThickness`, and a caller passes that
+ * value straight to the slab, so 0 has to mean "the shape asks for no depth of
+ * its own". Honouring 0 literally would give a half width of `T_v / 2`, which
+ * selects nothing at all for a plane that lies between voxel centres.
+ *
+ * @param annotationThickness - `T`, or null/undefined/0 when not recorded.
  * @param voxelThickness - `T_v`, the fallback.
  */
 export function resolveAnnotationThickness(
   annotationThickness: number | null | undefined,
   voxelThickness: number
 ): number {
-  return Number.isFinite(annotationThickness)
+  return Number.isFinite(annotationThickness) &&
+    (annotationThickness as number) > 0
     ? (annotationThickness as number)
     : voxelThickness;
 }
