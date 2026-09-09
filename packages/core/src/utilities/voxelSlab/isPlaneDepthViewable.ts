@@ -13,22 +13,17 @@ import { getDisplayHalfWidth, SLAB_RELATIVE_EPSILON } from './slabMembership';
  *
  * where `t` is the viewport's slab thickness and `T` the plane's own thickness,
  * both as full geometric thicknesses in mm. As in Rule M the comparison is
- * strict and tightened by a relative epsilon, because the common case places
- * the neighbouring slice exactly on the boundary and it must be excluded so
- * that a viewport shows the annotations created on its slice and not those
- * created on the next one.
+ * strict and tightened by a relative epsilon, because the common case puts the
+ * neighbouring slice exactly on the boundary and must exclude it: a viewport
+ * shows the annotations created on its own slice, not those on the next one.
  *
- * Here the epsilon is relative to the half width rather than to the voxel
- * thickness `T_v` used by Rule M, because `T_v` requires a volume and display
- * decisions are made without one.
+ * The epsilon is relative to the half width, not to the voxel thickness `T_v`
+ * that Rule M uses, because `T_v` needs a volume and a display decision is made
+ * without one.
  *
- * ## Backwards compatibility
- *
- * When the reference carries no thickness, this falls back to the historical
- * behaviour - an exact-to-within-`isEqual` plane match. That is deliberate:
- * every annotation created before `PlaneRestriction.thickness` existed has no
- * thickness, and widening their visibility would change what existing viewers
- * display. Only references that actually record a thickness get the window.
+ * A reference with no thickness falls back to the historical exact-to-within-
+ * `isEqual` plane match. Every annotation predating `PlaneRestriction.thickness`
+ * has none, and a wider visibility would change what existing viewers show.
  *
  * See https://github.com/cornerstonejs/cornerstone3D/issues/2889
  *

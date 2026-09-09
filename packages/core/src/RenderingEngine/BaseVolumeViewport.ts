@@ -2419,25 +2419,17 @@ abstract class BaseVolumeViewport extends Viewport {
   }
 
   /**
-   * `T` for references created by this viewport, as a full geometric thickness
-   * in mm.
+   * `T` for references this viewport creates, as a full geometric thickness in
+   * mm.
    *
-   * Two conversions happen here.
+   * Doubled because `getSlabThickness` is a *half* thickness on this render
+   * path: it places the clipping planes at `focalPoint +/- slabThickness`. The
+   * generic planar path uses vtkImageResliceMapper, where the field is already
+   * a full thickness, so the doubling belongs here and not in the shared
+   * reference code.
    *
-   * `getSlabThickness` returns the value handed to
-   * `setOrientationOfClippingPlanes`, which places the clipping planes at
-   * `focalPoint +/- slabThickness`. The stored number is therefore a *half*
-   * thickness on this render path, and the geometric thickness is twice it.
-   * (The generic planar path uses vtkImageResliceMapper, where the same field
-   * is a full thickness - so this doubling belongs here, on the legacy
-   * viewport, and not in the shared reference code.)
-   *
-   * A slab at the rendering minimum means "no slab was requested" rather than
-   * "a 0.05 mm slab was requested", so it maps to undefined and lets the
-   * annotation fall back to one voxel along the normal. Without this a plain
-   * volume viewport would record T = 0.1 mm, which is thinner than any real
-   * voxel and would break the guarantee that an annotation always covers at
-   * least one layer.
+   * The rendering minimum means "no slab requested", not "a 0.05 mm slab", so
+   * it maps to undefined and `T` falls back to one voxel along the normal.
    */
   protected getReferenceThickness(): number | undefined {
     const slabThickness = this.getSlabThickness();
