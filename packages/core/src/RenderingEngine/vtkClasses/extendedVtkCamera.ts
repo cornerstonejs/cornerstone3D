@@ -26,6 +26,7 @@ interface ICameraInitialValues {
   physicalViewUp?: number[];
   physicalViewNorth?: number[];
   aspectRatio?: number[];
+  isFitViewportAfterStretch?: boolean;
 }
 
 declare module '@kitware/vtk.js/Rendering/Core/Camera' {
@@ -44,6 +45,18 @@ declare module '@kitware/vtk.js/Rendering/Core/Camera' {
      * @param aspectRatio - [scaleX, scaleY] stretch factors applied along the canvas X and Y axes
      */
     setAspectRatio(aspectRatio: [x: number, y: number]): boolean;
+
+    /**
+     *  Returns whether fit to viewport after stretch or not
+     *  @defaultValue true
+     */
+    getIsFitViewportAfterStretch(): boolean;
+
+    /**
+     * Set whether fit to viewport after stretch or not
+     * @param isFitViewportAfterStretch - Whether fit to viewport after stretch or not
+     */
+    setIsFitViewportAfterStretch(isFitViewportAfterStretch: boolean): void;
   }
 }
 
@@ -85,6 +98,14 @@ function extendedVtkCamera(publicAPI, model) {
 
   publicAPI.setAspectRatio = (aspectRatio) => {
     model.aspectRatio = aspectRatio;
+  };
+
+  publicAPI.getIsFitViewportAfterStretch = () => {
+    return model.isFitViewportAfterStretch;
+  };
+
+  publicAPI.setIsFitViewportAfterStretch = (isFitViewportAfterStretch) => {
+    model.isFitViewportAfterStretch = isFitViewportAfterStretch;
   };
 }
 
