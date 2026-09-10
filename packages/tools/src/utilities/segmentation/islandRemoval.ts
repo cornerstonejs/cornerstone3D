@@ -1,6 +1,11 @@
 import { utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import normalizeViewportPlane from '../normalizeViewportPlane';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.segmentation.islandRemoval'
+);
 
 const { RLEVoxelMap, VoxelManager } = utilities;
 
@@ -146,7 +151,7 @@ export default class IslandRemoval {
     );
 
     if (error) {
-      console.warn(
+      cs3dLogger.warn(
         'Not performing island removal for planes not orthogonal to acquisition plane',
         error
       );

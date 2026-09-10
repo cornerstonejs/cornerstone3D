@@ -6,6 +6,9 @@ import type {
   ICamera,
   VolumeActor,
 } from '../types';
+import { coreLog } from './logger';
+
+const log = coreLog.getLogger('utilities', 'getVolumeSliceRangeInfo');
 
 /**
  * Calculates the slice range for the given volume based on its orientation
@@ -43,7 +46,7 @@ function getVolumeSliceRangeInfo(
   const actorEntry = viewport.getActor(actorUID);
 
   if (!actorEntry) {
-    console.warn('No actor found for with actorUID of', actorUID);
+    log.warn('No actor found for with actorUID of', actorUID);
     return null;
   }
 

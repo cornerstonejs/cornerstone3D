@@ -50,6 +50,11 @@ import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScale
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import { filterAnnotationsWithinSamePlane } from '../../utilities/planar';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.segmentation.RectangleROIStartEndThresholdTool'
+);
 
 const { transformWorldToIndex } = csUtils;
 
@@ -659,7 +664,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
 
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
-        console.warn('Rendering Engine has been destroyed');
+        cs3dLogger.warn('Rendering Engine has been destroyed');
         return renderStatus;
       }
 

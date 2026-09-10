@@ -64,6 +64,11 @@ import type {
 } from '../types/EventTypes';
 import { distanceToPoint } from '../utilities/math/point';
 import { addSegmentationRepresentations } from '../stateManagement/segmentation';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.AdvancedMagnifyTool'
+);
 
 const MAGNIFY_CLASSNAME = 'advancedMagnifyTool';
 const MAGNIFY_VIEWPORT_INITIAL_RADIUS = 125;
@@ -668,7 +673,7 @@ class AdvancedMagnifyTool extends AnnotationTool {
 
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
-        console.warn('Rendering Engine has been destroyed');
+        cs3dLogger.warn('Rendering Engine has been destroyed');
         return renderStatus;
       }
 

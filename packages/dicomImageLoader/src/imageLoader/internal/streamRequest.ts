@@ -1,5 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
 import { utilities } from '@cornerstonejs/core';
+import { logging } from '@cornerstonejs/metadata';
 import { getOptions } from './options';
 import type { LoaderXhrRequestError } from '../../types';
 import extractMultipart from '../wadors/extractMultipart';
@@ -9,6 +10,8 @@ import type {
   CornerstoneWadoRsLoaderOptions,
   StreamingData,
 } from '../wadors/loadImage';
+
+const log = logging.loaderLog.getLogger('streamRequest');
 
 const { ProgressiveIterator } = utilities;
 
@@ -147,7 +150,7 @@ export default function streamRequest(
       }
     } catch (err) {
       errorInterceptor(err);
-      console.error(err);
+      log.error(err);
       reject(err);
     }
   });

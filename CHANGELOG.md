@@ -3,6 +3,24 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [5.10.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.9.1...v5.10.0) (2026-09-10)
+
+### Features
+
+- **core:** define voxel-relative annotation statistics and add a shared oblique-capable voxel iterator ([#2893](https://github.com/cornerstonejs/cornerstone3D/issues/2893)) ([cd7f279](https://github.com/cornerstonejs/cornerstone3D/commit/cd7f2799d20e5a08487654ae8c99755bad753504)), closes [#2889](https://github.com/cornerstonejs/cornerstone3D/issues/2889) [#2744](https://github.com/cornerstonejs/cornerstone3D/issues/2744) [#2744](https://github.com/cornerstonejs/cornerstone3D/issues/2744) [#2744](https://github.com/cornerstonejs/cornerstone3D/issues/2744) [#2744](https://github.com/cornerstonejs/cornerstone3D/issues/2744) [#2744](https://github.com/cornerstonejs/cornerstone3D/issues/2744) [#2889](https://github.com/cornerstonejs/cornerstone3D/issues/2889)
+
+## [5.9.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.9.0...v5.9.1) (2026-09-09)
+
+### Bug Fixes
+
+- **security:** update dependencies to fix security vulnerabilities ([#2908](https://github.com/cornerstonejs/cornerstone3D/issues/2908)) ([49c9180](https://github.com/cornerstonejs/cornerstone3D/commit/49c91809bc90bf642bee6f3b241c139f525810f2))
+
+# [5.9.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.9...v5.9.0) (2026-09-09)
+
+### Features
+
+- **logging:** replace console calls with hierarchical loglevel loggers named cs3d.<package>.<path>.<file> ([#2865](https://github.com/cornerstonejs/cornerstone3D/issues/2865)) ([49dc03d](https://github.com/cornerstonejs/cornerstone3D/commit/49dc03dcb7badce594525e9285368964a38aa174))
+
 ## [5.8.9](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.8...v5.8.9) (2026-09-03)
 
 ### Bug Fixes
