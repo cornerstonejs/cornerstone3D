@@ -43,4 +43,11 @@ export type {
   VoxelsInShapeOptions,
 } from './iterateVoxelsInShape';
 
+export { sampleVoxelsInShape } from './sampleVoxelsInShape';
+export type {
+  VoxelSample,
+  VoxelsInShapeSamplingOptions,
+  VoxelValueSource,
+} from './sampleVoxelsInShape';
+
 export * from './shapes';

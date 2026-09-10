@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.10.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.10.0...v5.10.1) (2026-09-10)
+
+### Bug Fixes
+
+- **security:** override smol-toml to 1.7.1 (GHSA-7w5x-hrqm-74c2) ([#2911](https://github.com/cornerstonejs/cornerstone3D/issues/2911)) ([366bb38](https://github.com/cornerstonejs/cornerstone3D/commit/366bb38e568a3eae5d5b58a3ffd9242fffb68738))
+
 # [5.10.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.9.1...v5.10.0) (2026-09-10)
 
 ### Features
