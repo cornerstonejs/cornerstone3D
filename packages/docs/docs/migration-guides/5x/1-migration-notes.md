@@ -245,3 +245,42 @@ planes now resolve to a projected voxel spacing.
 - See the
   [Planar Fill Iteration](../../concepts/cornerstone-tools/segmentation/planar-fill-iteration.md)
   concept page for the full design and the per-strategy contract.
+## Viewport elements set `touch-action: none`
+
+### What Changed
+
+The rendering engine now sets `touch-action: none` on every element it enables
+as a viewport, and restores the element's prior inline value when the viewport
+is disabled. Previously this was left to the application.
+
+### Why This Matters
+
+Without `touch-action: none`, the browser claims viewport gestures before
+Cornerstone sees them: a one-finger drag scrolls the page instead of running the
+active tool, a two-finger pinch zooms the document rather than the image, and a
+double-tap triggers the browser's own zoom. Touch tools cannot work on an
+element the browser is still handling, which is why this is applied
+unconditionally rather than behind a configuration flag — there is no
+useful behavior to preserve on the other side of the switch.
+
+The visible consequence is that **dragging on a viewport no longer scrolls the
+page** on touch devices. Applications that relied on a viewport being a valid
+place to start a page scroll need to provide scrollable area around the
+viewport instead.
+
+Two notes on scope:
+
+- Only viewport elements are affected. The rest of your layout is untouched.
+- The value is applied inline, so it overrides a `touch-action` coming from a
+  CSS class for the duration that the viewport is enabled. On disable the
+  element's original inline value is restored, and any CSS-supplied value takes
+  effect again.
+
+### Migration Guidance
+
+- **Remove application-level workarounds.** If you set `touch-action: none` (or
+  attached `preventDefault` touch listeners) on viewport elements to get touch
+  tools working, that code is now redundant and can be deleted.
+- **Check your scroll affordances on small screens.** If a page relied on
+  viewport drags to scroll, add padding, a scroll container, or a gutter outside
+  the viewport elements so the page remains scrollable on a phone or tablet.

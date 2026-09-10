@@ -11,6 +11,8 @@ const openjphWasm = new URL(
 );
 
 import type { LoaderDecodeOptions } from '../../types';
+import getPixelData from './getPixelData';
+import { resolveWasmUrl, setWasmBasePathFromConfig } from '../wasmBasePath';
 
 const local: {
   codec: HTJ2KModule | undefined;
@@ -38,6 +40,7 @@ function calculateSizeAtDecompositionLevel(
 
 export function initialize(decodeConfig?: LoaderDecodeOptions): Promise<void> {
   local.decodeConfig = decodeConfig;
+  setWasmBasePathFromConfig(decodeConfig);
 
   if (local.codec) {
     return Promise.resolve();
@@ -46,7 +49,7 @@ export function initialize(decodeConfig?: LoaderDecodeOptions): Promise<void> {
   const openJphModule = openJphFactory({
     locateFile: (f) => {
       if (f.endsWith('.wasm')) {
-        return openjphWasm.toString();
+        return resolveWasmUrl('openjphjs.wasm', openjphWasm);
       }
 
       return f;
@@ -95,7 +98,6 @@ async function decodeAsync(compressedImageFrame: ByteArray, imageInfo) {
     );
     frameInfo.width = width;
     frameInfo.height = height;
-    // console.log(`Decoded sub-resolution of size: ${width} x ${height}`);
   }
   // get the decoded pixels
   const decodedBufferInWASM = decoder.getDecodedBuffer();
@@ -172,38 +174,6 @@ async function decodeAsync(compressedImageFrame: ByteArray, imageInfo) {
     ...encodeOptions,
     ...encodedImageInfo,
   };
-}
-
-function getPixelData(frameInfo, decodedBuffer) {
-  if (frameInfo.bitsPerSample > 8) {
-    if (frameInfo.isSigned) {
-      return new Int16Array(
-        decodedBuffer.buffer,
-        decodedBuffer.byteOffset,
-        decodedBuffer.byteLength / 2
-      );
-    }
-
-    return new Uint16Array(
-      decodedBuffer.buffer,
-      decodedBuffer.byteOffset,
-      decodedBuffer.byteLength / 2
-    );
-  }
-
-  if (frameInfo.isSigned) {
-    return new Int8Array(
-      decodedBuffer.buffer,
-      decodedBuffer.byteOffset,
-      decodedBuffer.byteLength
-    );
-  }
-
-  return new Uint8Array(
-    decodedBuffer.buffer,
-    decodedBuffer.byteOffset,
-    decodedBuffer.byteLength
-  );
 }
 
 export default decodeAsync;

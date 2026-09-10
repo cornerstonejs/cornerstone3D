@@ -71,7 +71,7 @@ RenderingEngine will handle creation of the viewports, and we can get the viewpo
 const viewport = renderingEngine.getViewport(viewportId);
 
 await viewport.setVideoURL(
-  'https://ohif-assets.s3.us-east-2.amazonaws.com/video/rendered.mp4'
+  'https://ohif-assets-new.s3.us-east-1.amazonaws.com/video/rendered.mp4'
 );
 
 await viewport.play();
@@ -131,7 +131,7 @@ async function run() {
   const viewport = renderingEngine.getViewport(viewportId);
 
   await viewport.setVideoURL(
-    'https://ohif-assets.s3.us-east-2.amazonaws.com/video/rendered.mp4'
+    'https://ohif-assets-new.s3.us-east-1.amazonaws.com/video/rendered.mp4'
   );
 
   await viewport.play();

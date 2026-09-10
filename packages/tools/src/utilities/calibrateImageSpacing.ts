@@ -4,6 +4,11 @@ import {
   viewportSupportsStackCalibration,
   viewportSupportsStackCompatibility,
 } from './viewportCapabilities';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.calibrateImageSpacing'
+);
 
 const { calibratedPixelSpacingMetadataProvider } = utilities;
 
@@ -54,7 +59,7 @@ export default function calibrateImageSpacing(
           (viewport as Types.IViewport).render();
         })
         .catch((error) => {
-          console.warn(
+          cs3dLogger.warn(
             'calibrateImageSpacing: failed to refresh stack-compatible viewport',
             error
           );

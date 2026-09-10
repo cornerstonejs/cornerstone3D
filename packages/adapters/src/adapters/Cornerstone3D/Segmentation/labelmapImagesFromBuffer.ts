@@ -21,6 +21,11 @@ import {
 import { compactMergeSegmentDataWithoutInformationLoss } from './compactMergeSegData';
 import { normalizeSharedFunctionalGroupsSequence } from './perFrameFunctionalGroups';
 import { Events } from '../../enums';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.adaptersLog.getLogger(
+  'Cornerstone3D.Segmentation.labelmapImagesFromBuffer'
+);
 
 const { DicomMessage, DicomMetaDictionary } = dcmjsData;
 const { Normalizer } = normalizers;
@@ -789,7 +794,7 @@ async function createLabelmapsFromSegImageIds(
   const SeriesInstanceUID = generalSeriesModule.seriesInstanceUID;
 
   if (!imagePlaneModule) {
-    console.warn('Insufficient metadata, imagePlaneModule missing.');
+    cs3dLogger.warn('Insufficient metadata, imagePlaneModule missing.');
   }
 
   const ImageOrientationPatient = Array.isArray(imagePlaneModule.rowCosines)
@@ -1084,7 +1089,7 @@ export function insertPixelDataPlanar({
         );
 
         if (!imageId) {
-          console.warn(
+          cs3dLogger.warn(
             "Image not present in stack, can't import frame : " + i + '.'
           );
           continue;
@@ -1098,7 +1103,7 @@ export function insertPixelDataPlanar({
         );
 
         if (!stackImageId) {
-          console.warn(
+          cs3dLogger.warn(
             `Image not present in stack, can't import frame : ${i}.`
           );
           continue;
@@ -1107,7 +1112,7 @@ export function insertPixelDataPlanar({
         const sourceImageMetadata = imageIdMaps.metadata[stackImageId];
 
         if (!sourceImageMetadata) {
-          console.warn(
+          cs3dLogger.warn(
             `No instance metadata for referenced image at frame : ${i}.`
           );
           continue;
@@ -1244,7 +1249,7 @@ export function insertPixelDataPlanar({
         }
 
         if (!imageId) {
-          console.warn(
+          cs3dLogger.warn(
             `Image not present in stack, can't import frame : ${i}.`
           );
           continue;
@@ -1258,7 +1263,7 @@ export function insertPixelDataPlanar({
         );
 
         if (!stackImageId) {
-          console.warn(
+          cs3dLogger.warn(
             `Image not present in stack, can't import frame : ${i}.`
           );
           continue;
@@ -1267,7 +1272,7 @@ export function insertPixelDataPlanar({
         const sourceImageMetadata = imageIdMaps.metadata[stackImageId];
 
         if (!sourceImageMetadata) {
-          console.warn(
+          cs3dLogger.warn(
             `No instance metadata for referenced image at frame : ${i}.`
           );
           continue;

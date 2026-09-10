@@ -61,9 +61,6 @@ jobs:
           echo "[build-context] OHIF ref: ${{ env.OHIF_REF }}"
           echo "[build-context] ═══════════════════════════════════════════════════════════════"
 
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v6.0.8
-
       # OHIF (a bun/yarn project) is installed with bun so it gets an isolated
       # node_modules instead of being pulled into this repo's pnpm workspace,
       # which mixes jest copies and breaks jest-runner (leakDetector error).
@@ -76,7 +73,18 @@ jobs:
         uses: actions/setup-node@v6.4.0
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          # No `cache: pnpm`: setup-node resolves the store path by running
+          # pnpm, which does not exist until the Corepack step below.
+
+      # pnpm comes from Corepack, not pnpm/action-setup, and scoped to `pnpm` —
+      # see the note in playwright.yml. Must run AFTER setup-node, so it is that
+      # Node's Corepack.
+      - name: Enable Corepack (pnpm)
+        shell: bash
+        run: |
+          corepack enable pnpm
+          corepack prepare --activate
+          pnpm --version
 
       - name: Install Cornerstone dependencies
         run: pnpm install --frozen-lockfile

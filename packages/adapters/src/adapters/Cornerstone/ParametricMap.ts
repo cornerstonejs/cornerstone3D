@@ -1,6 +1,11 @@
 import { log, data as dcmjsData, normalizers } from 'dcmjs';
 import checkOrientation from '../helpers/checkOrientation';
 import { utilities } from '@cornerstonejs/core';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.adaptersLog.getLogger(
+  'Cornerstone.ParametricMap'
+);
 
 const { DicomMessage, DicomMetaDictionary } = dcmjsData;
 const { Normalizer } = normalizers;
@@ -21,7 +26,7 @@ async function generateToolState(
   );
 
   if (!imagePlaneModule) {
-    console.warn('Insufficient metadata, imagePlaneModule missing.');
+    cs3dLogger.warn('Insufficient metadata, imagePlaneModule missing.');
   }
 
   const ImageOrientationPatient = Array.isArray(imagePlaneModule.rowCosines)
@@ -126,7 +131,7 @@ function insertPixelDataPlanar(
     );
 
     if (!imageId) {
-      console.warn(
+      cs3dLogger.warn(
         "Image not present in stack, can't import frame : " + i + '.'
       );
       continue;
@@ -249,7 +254,7 @@ function findReferenceSourceImageId(
       }
     }
   } else if (SourceImageSequence && SourceImageSequence.length !== 0) {
-    console.warn(
+    cs3dLogger.warn(
       'DerivationImageSequence not present, using SourceImageSequence assuming SEG has the same geometry as the source image.'
     );
     frameSourceImageSequence = SourceImageSequence[frameSegment];

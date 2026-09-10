@@ -1,4 +1,7 @@
 import { metaData } from '@cornerstonejs/core';
+import { logging } from '@cornerstonejs/metadata';
+
+const log = logging.loaderLog.getLogger('getInstanceModule');
 
 /**
  * Retrieves metadata from a DICOM image and returns it as an object with capitalized keys.
@@ -26,7 +29,7 @@ function getInstanceModule(imageId, metaDataProvider, types) {
         Object.assign(result, capitalizedData);
       }
     } catch (error) {
-      console.error(`Error retrieving ${t} data:`, error);
+      log.error(`Error retrieving ${t} data:`, error);
     }
   }
 

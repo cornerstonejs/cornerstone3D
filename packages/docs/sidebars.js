@@ -110,6 +110,7 @@ module.exports = {
           'In this section you will find how-to guides for cornerstone3D',
       },
       items: [
+        'how-to-guides/configuration',
         'how-to-guides/custom-image-loader',
         'how-to-guides/custom-metadata-provider',
         'how-to-guides/custom-volume-loading',
@@ -244,6 +245,7 @@ module.exports = {
                 'concepts/cornerstone-tools/annotation/locking',
                 'concepts/cornerstone-tools/annotation/config',
                 'concepts/cornerstone-tools/annotation/measurementTargets',
+                'concepts/cornerstone-tools/annotation/voxel-statistics',
                 'concepts/cornerstone-tools/annotation/annotationGroups',
               ],
             },

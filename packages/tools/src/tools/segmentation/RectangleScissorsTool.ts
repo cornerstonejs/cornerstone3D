@@ -40,6 +40,11 @@ import {
   getOrCreateLabelmapVolume,
   resolveLabelmapForSegment,
 } from '../../stateManagement/segmentation/helpers/labelmapSegmentationState';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.segmentation.RectangleScissorsTool'
+);
 
 /**
  * Tool for manipulating segmentation data by drawing a rectangle. It acts on the
@@ -235,10 +240,20 @@ class RectangleScissorsTool extends LabelmapBaseTool {
   };
 
   _dragCallback = (evt: EventTypes.InteractionEventType) => {
-    this.isDrawing = true;
-
     const eventDetail = evt.detail;
     const { element } = eventDetail;
+
+    const { currentPointsList } =
+      eventDetail as EventTypes.TouchDragEventDetail;
+    if (currentPointsList?.length > 1) {
+      // A second finger reclassifies the gesture (pinch zoom, multi-finger
+      // scroll); drop the rubber band instead of resizing it at the mean
+      // touch point and applying on release.
+      this._cancelTouchDraw(element);
+      return;
+    }
+
+    this.isDrawing = true;
 
     const { annotation, viewportIdsToRender, handleIndex } = this.editData;
     const { data } = annotation;
@@ -403,7 +418,7 @@ class RectangleScissorsTool extends LabelmapBaseTool {
 
     // If rendering engine has been destroyed while rendering
     if (!viewport.getRenderingEngine()) {
-      console.warn('Rendering Engine has been destroyed');
+      cs3dLogger.warn('Rendering Engine has been destroyed');
       return renderStatus;
     }
 
