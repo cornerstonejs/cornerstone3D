@@ -31,6 +31,9 @@ const {
   TrackballRotateTool,
   VolumeRotateTool,
   RectangleROITool,
+  EllipticalROITool,
+  CircleROITool,
+  PlanarFreehandROITool,
   measurementTargetFilters,
 } = cornerstoneTools;
 
@@ -90,10 +93,21 @@ setTitleAndDescription(
   'PT-CT fusion layout with Crosshairs, and synchronized cameras, CT W/L and PET threshold'
 );
 
+// Every area annotation tool selects its voxels through the same shared
+// sampler, so all four belong here: this example is the way to compare them
+// on an oblique plane, and across two modalities of different slice
+// thickness.
+const roiToolNames = [
+  RectangleROITool.toolName,
+  EllipticalROITool.toolName,
+  CircleROITool.toolName,
+  PlanarFreehandROITool.toolName,
+];
+
 const optionsValues = [
   WindowLevelTool.toolName,
   CrosshairsTool.toolName,
-  RectangleROITool.toolName,
+  ...roiToolNames,
 ];
 
 // ============================= //
@@ -108,26 +122,25 @@ addDropdownToToolbar({
       // Set the other tools disabled so we don't get conflicts.
       // Note we only strictly need to change the one which is currently active.
 
+      // Everything that is not the selection gives up the primary button.
+      for (const name of [WindowLevelTool.toolName, ...roiToolNames]) {
+        if (name !== toolName) {
+          toolGroup.setToolDisabled(name);
+        }
+      }
+
       if (toolName === WindowLevelTool.toolName) {
         // Set crosshairs passive so they are still interactable
         toolGroup.setToolPassive(CrosshairsTool.toolName);
-        toolGroup.setToolDisabled(RectangleROITool.toolName);
-        toolGroup.setToolActive(WindowLevelTool.toolName, {
-          bindings: [{ mouseButton: MouseBindings.Primary }],
-        });
-      } else if (toolName === CrosshairsTool.toolName) {
-        toolGroup.setToolDisabled(WindowLevelTool.toolName);
-        toolGroup.setToolDisabled(RectangleROITool.toolName);
-        toolGroup.setToolActive(CrosshairsTool.toolName, {
-          bindings: [{ mouseButton: MouseBindings.Primary }],
-        });
-      } else {
-        toolGroup.setToolDisabled(WindowLevelTool.toolName);
+      } else if (toolName !== CrosshairsTool.toolName) {
+        // An ROI tool draws with the primary button, and a passive crosshair
+        // would take the click near a reference line instead.
         toolGroup.setToolDisabled(CrosshairsTool.toolName);
-        toolGroup.setToolActive(RectangleROITool.toolName, {
-          bindings: [{ mouseButton: MouseBindings.Primary }],
-        });
       }
+
+      toolGroup.setToolActive(toolName, {
+        bindings: [{ mouseButton: MouseBindings.Primary }],
+      });
     });
   },
 });
@@ -347,6 +360,9 @@ function setUpToolGroups() {
   cornerstoneTools.addTool(TrackballRotateTool);
   cornerstoneTools.addTool(VolumeRotateTool);
   cornerstoneTools.addTool(RectangleROITool);
+  cornerstoneTools.addTool(EllipticalROITool);
+  cornerstoneTools.addTool(CircleROITool);
+  cornerstoneTools.addTool(PlanarFreehandROITool);
 
   // Define tool groups for the main 9 viewports.
   // Crosshairs currently only supports 3 viewports for a toolgroup due to the
@@ -377,7 +393,7 @@ function setUpToolGroups() {
       getReferenceLineDraggableRotatable,
       getReferenceLineSlabThicknessControlsOn,
     });
-    toolGroup.addTool(RectangleROITool.toolName);
+    roiToolNames.forEach((toolName) => toolGroup.addTool(toolName));
   });
 
   fusionToolGroup.addTool(PanTool.toolName);
@@ -391,18 +407,21 @@ function setUpToolGroups() {
     // Only set CT volume to MIP in the fusion viewport
     filterActorUIDsToSetSlabThickness: [ctVolumeId],
   });
-  fusionToolGroup.addTool(RectangleROITool.toolName, {
-    // Compute/show statistics for the PT volume of the fusion viewport only,
-    // selected by its volume id.  The `allPixelData` chooser takes every
-    // eligible candidate, and the `forId` predicate narrows eligibility to
-    // that volume; `measurementTargetFilters.forModality('PT')` would select
-    // the same volume by modality instead, and leaving the default
-    // configuration (allPixelData with no predicate) would compute/show the
-    // statistics of both PT and CT at once.
-    // (This replaces the deprecated `isPreferredTargetId` configuration.)
-    targetsFilter: measurementTargetFilters.allPixelData,
-    targetPredicate: measurementTargetFilters.forId(ptVolumeId),
-  });
+  // The same PT-only targeting applies to every area annotation tool.
+  roiToolNames.forEach((toolName) =>
+    fusionToolGroup.addTool(toolName, {
+      // Compute/show statistics for the PT volume of the fusion viewport only,
+      // selected by its volume id.  The `allPixelData` chooser takes every
+      // eligible candidate, and the `forId` predicate narrows eligibility to
+      // that volume; `measurementTargetFilters.forModality('PT')` would select
+      // the same volume by modality instead, and leaving the default
+      // configuration (allPixelData with no predicate) would compute/show the
+      // statistics of both PT and CT at once.
+      // (This replaces the deprecated `isPreferredTargetId` configuration.)
+      targetsFilter: measurementTargetFilters.allPixelData,
+      targetPredicate: measurementTargetFilters.forId(ptVolumeId),
+    })
+  );
 
   // Here is the difference in the toolGroups used, that we need to specify the
   // volume to use for the WindowLevelTool for the fusion viewports
