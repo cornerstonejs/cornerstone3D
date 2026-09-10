@@ -84,6 +84,47 @@ describe('Rectangle ROI area', () => {
     expect([...new Set(indices.map(([, , k]) => k))]).toEqual([0]);
   });
 
+  it('samples an annotation that records a plane restriction and no normal', () => {
+    // A measurement that arrives from a DICOM SR has no recorded normal,
+    // because an SR stores no camera. The hydration code records two in-plane
+    // vectors instead, and those two describe the same plane.
+    const withNormal = jest.fn();
+    const fromRestriction = jest.fn();
+
+    createTool(withNormal)._calculateCachedStats(
+      createAnnotation(),
+      [0, 0, 1],
+      [0, 1, 0],
+      { viewport: { element: document.createElement('div') } }
+    );
+
+    const hydrated = createAnnotation();
+    hydrated.metadata = {
+      viewPlaneNormal: null,
+      viewUp: null,
+      FrameOfReferenceUID: 'FOR',
+      planeRestriction: {
+        FrameOfReferenceUID: 'FOR',
+        point: hydrated.data.handles.points[0],
+        inPlaneVector1: [1, 0, 0],
+        inPlaneVector2: [0, 1, 0],
+      },
+    };
+
+    createTool(fromRestriction)._calculateCachedStats(
+      hydrated,
+      [0, 0, 1],
+      [0, 1, 0],
+      { viewport: { element: document.createElement('div') } }
+    );
+
+    const indicesOf = (mock) =>
+      mock.mock.calls.map(([{ pointIJK }]) => pointIJK.join(','));
+
+    expect(indicesOf(withNormal)).toHaveLength(15);
+    expect(indicesOf(fromRestriction)).toEqual(indicesOf(withNormal));
+  });
+
   it('reports no voxels for a rectangle of no width', () => {
     // The shape factory rejects a zero half length, and an exception inside
     // the render loop would stop the whole viewport.

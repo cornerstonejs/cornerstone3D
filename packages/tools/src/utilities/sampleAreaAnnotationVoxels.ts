@@ -4,6 +4,7 @@ import { utilities as csUtils } from '@cornerstonejs/core';
 import { getBoundingBoxAroundShapeIJK } from './boundingBox';
 
 const {
+  asUnitNormal,
   getMembershipHalfWidth,
   getVoxelThicknessAlongNormal,
   resolveReferencePlaneThickness,
@@ -34,13 +35,17 @@ export type AreaAnnotationVoxel = {
 
 export interface AreaAnnotationVoxelsOptions {
   /**
-   * The annotation. The function reads `metadata.viewPlaneNormal` and
-   * `metadata.planeRestriction.referencePlaneThickness`, and nothing else.
+   * The annotation. The function reads `metadata.viewPlaneNormal`,
+   * `metadata.planeRestriction`, and nothing else.
    */
   annotation: {
     metadata?: {
       viewPlaneNormal?: Types.Point3;
-      planeRestriction?: { referencePlaneThickness?: number };
+      planeRestriction?: {
+        referencePlaneThickness?: number;
+        inPlaneVector1?: Types.Point3;
+        inPlaneVector2?: Types.Point3;
+      };
     };
   };
   /**
@@ -140,24 +145,17 @@ export default function sampleAreaAnnotationVoxels({
   onSample,
   storePointData,
 }: AreaAnnotationVoxelsOptions): AreaAnnotationVoxel[] {
-  // Without a normal there is no plane, and so no voxel set is defined. Every
-  // tool records the normal when it creates the annotation, so this guards a
-  // malformed annotation rather than an ordinary one.
-  const recordedNormal = annotation?.metadata?.viewPlaneNormal;
+  // Without a plane there is no voxel set at all.
+  const viewPlaneNormal = resolveAnnotationNormal(annotation?.metadata);
 
   if (
     !voxelManager ||
     !image ||
-    !recordedNormal ||
+    !viewPlaneNormal ||
     !(points?.length >= minimumPoints)
   ) {
     return [];
   }
-
-  const viewPlaneNormal = vec3.normalize(
-    vec3.create(),
-    recordedNormal
-  ) as unknown as Types.Point3;
 
   // The annotation's own points define the plane's depth, which is what makes
   // this independent of where the camera happens to be focused. The shape and
@@ -214,6 +212,48 @@ export default function sampleAreaAnnotationVoxels({
     onSample,
     storePointData,
   });
+}
+
+/**
+ * The unit normal of the annotation's own plane.
+ *
+ * `metadata.viewPlaneNormal` is the recorded value, and every tool records it
+ * when the user draws the annotation. An annotation that arrives from a DICOM
+ * SR has no recorded normal, because an SR stores no camera: the hydration
+ * code calls `updatePlaneRestriction` instead, which records two in-plane
+ * directions, and the cross product of the two describes the same plane.
+ * Neither source reads a viewport, so the voxel set stays a property of the
+ * annotation and the data in both cases.
+ *
+ * @returns undefined when neither source gives a plane. Two points give one
+ * in-plane direction and no plane, so a two point annotation that arrives
+ * without a normal, such as a circle from an SR, reports no statistics.
+ */
+function resolveAnnotationNormal(
+  metadata: AreaAnnotationVoxelsOptions['annotation']['metadata']
+): Types.Point3 | undefined {
+  const recorded = metadata?.viewPlaneNormal;
+
+  if (recorded && vec3.squaredLength(recorded as vec3) > 0) {
+    return asUnitNormal(recorded);
+  }
+
+  const { inPlaneVector1, inPlaneVector2 } = metadata?.planeRestriction ?? {};
+
+  if (!inPlaneVector1 || !inPlaneVector2) {
+    return undefined;
+  }
+
+  const normal = vec3.cross(
+    vec3.create(),
+    inPlaneVector1 as vec3,
+    inPlaneVector2 as vec3
+  );
+
+  // Two collinear vectors cross to zero, and describe no plane.
+  return vec3.squaredLength(normal) > 0
+    ? (asUnitNormal(normal as unknown as Types.Point3) as Types.Point3)
+    : undefined;
 }
 
 /**

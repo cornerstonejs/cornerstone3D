@@ -309,6 +309,14 @@ Two arguments carry the whole of what a tool must get right:
   no radius, and the sampler then measures no voxel. The shape factories throw on
   one, and an exception inside the render loop stops the whole viewport.
 
+The plane comes from `annotation.metadata`, and never from a viewport. Every tool
+records `viewPlaneNormal` when the user draws the annotation. An annotation that
+arrives from a DICOM SR records no normal, because an SR stores no camera, and
+`updatePlaneRestriction` records two in-plane vectors instead; the sampler then
+crosses those two vectors, which describes the same plane. Two points give one
+in-plane vector and no plane, so a two point annotation that arrives without a
+normal reports no statistics.
+
 ## The shape contract
 
 Every shape implements `VoxelSlabShape`, which has three members.
