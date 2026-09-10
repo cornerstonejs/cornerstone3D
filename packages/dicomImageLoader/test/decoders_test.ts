@@ -11,6 +11,12 @@ import init from '../src/init';
  * CTImage.dcm is signed (PixelRepresentation 1), which is worth knowing because
  * it is the case that catches a decoder taking signedness from its codec rather
  * than from the data set - JPEG XL and JPEG-LS both always report unsigned.
+ *
+ * `pnpm test:decoders` runs this suite alone, in about one minute rather than
+ * the several minutes of a full `pnpm test`. That script also takes
+ * `--jpeg-lossless-build <path>`, which replaces jpeg-lossless-decoder-js with
+ * a different build of that decoder, so you can test a decoder fix before its
+ * release. See karma.decoders.conf.js.
  */
 const transferSyntaxes = {
   '1.2.840.10008.1.2': 'LittleEndianImplicitTransferSyntax',
