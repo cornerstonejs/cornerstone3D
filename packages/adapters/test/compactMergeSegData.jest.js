@@ -161,4 +161,37 @@ describe('compactMergeSegmentDataWithoutInformationLoss', () => {
       ],
     ]);
   });
+
+  // getSegmentData() assigns only the indices that hold voxels, so its result is a SPARSE
+  // array (real holes), not a dense one containing `undefined`. That distinction matters:
+  // Array.prototype.forEach visits an `undefined` ELEMENT but skips a HOLE. Every test above
+  // uses dense arrays, so none of them exercise this.
+  it('should keep new data at indices the existing layer does not span (sparse arrays)', () => {
+    // Existing layer holds images 3..4 — length 5, holes at 0..2.
+    const existingLayer = [];
+    existingLayer[3] = [1, 0];
+    existingLayer[4] = [1, 0];
+
+    // New segment holds images 1..3 — length 4, so the EXISTING layer is the longer one
+    // and becomes `largerArray`. Indices 1 and 2 are outside the existing layer's
+    // populated set and used to be dropped.
+    const newSegmentData = [];
+    newSegmentData[1] = [0, 2];
+    newSegmentData[2] = [0, 2];
+    newSegmentData[3] = [0, 2];
+
+    const arrayOfSegmentData = [existingLayer];
+
+    compactMergeSegmentDataWithoutInformationLoss({
+      arrayOfSegmentData,
+      newSegmentData,
+    });
+
+    // Merged into the single existing layer, keeping every image from both.
+    expect(arrayOfSegmentData).toHaveLength(1);
+    expect(arrayOfSegmentData[0][1]).toEqual([0, 2]);
+    expect(arrayOfSegmentData[0][2]).toEqual([0, 2]);
+    expect(arrayOfSegmentData[0][3]).toEqual([1, 2]);
+    expect(arrayOfSegmentData[0][4]).toEqual([1, 0]);
+  });
 });
