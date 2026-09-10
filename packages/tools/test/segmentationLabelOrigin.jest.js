@@ -8,10 +8,23 @@
  * the segmentation.
  */
 
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect, jest } from '@jest/globals';
+
+jest.mock(
+  '../src/stateManagement/segmentation/triggerSegmentationEvents',
+  () => ({
+    triggerSegmentationModified: jest.fn(),
+    triggerSegmentationRepresentationModified: jest.fn(),
+    triggerSegmentationRemoved: jest.fn(),
+    triggerSegmentationRepresentationRemoved: jest.fn(),
+    triggerSegmentationDataModified: jest.fn(),
+  })
+);
 
 const normalizeSegmentationInput =
   require('../src/stateManagement/segmentation/helpers/normalizeSegmentationInput').default;
+const SegmentationStateManager =
+  require('../src/stateManagement/segmentation/SegmentationStateManager').default;
 const { SegmentationRepresentations } = require('../src/enums');
 
 const PREDECESSOR_IMAGE_ID = 'wadors:predecessor';
@@ -61,6 +74,58 @@ describe('normalizeSegmentationInput label origin', () => {
     const segmentation = normalize({ label: '', labelIsGenerated: false });
 
     expect(segmentation.labelIsGenerated).toBe(false);
+  });
+});
+
+describe('updateSegmentation label origin', () => {
+  /** Puts a generated segmentation in a state manager of its own. */
+  function givenGeneratedSegmentation() {
+    const manager = new SegmentationStateManager('label-origin-test');
+
+    manager.addSegmentation(
+      normalize({ label: 'Segmentation 3', labelIsGenerated: true })
+    );
+
+    return manager;
+  }
+
+  // The viewer renames a segmentation through this method, and the renamed
+  // segmentation holds a name that the user chose.
+  it('clears the flag when the payload replaces the label', () => {
+    const manager = givenGeneratedSegmentation();
+
+    manager.updateSegmentation('seg-1', { label: 'Liver' });
+
+    expect(manager.getSegmentation('seg-1').labelIsGenerated).toBe(false);
+  });
+
+  // The user can type the generated name, and the typed name is still a name
+  // that the user chose. A comparison of the two strings misses this case.
+  it('clears the flag for a rename to the generated name', () => {
+    const manager = givenGeneratedSegmentation();
+
+    manager.updateSegmentation('seg-1', { label: 'Segmentation 3' });
+
+    expect(manager.getSegmentation('seg-1').labelIsGenerated).toBe(false);
+  });
+
+  it('keeps an explicit flag that the payload carries', () => {
+    const manager = givenGeneratedSegmentation();
+
+    manager.updateSegmentation('seg-1', {
+      label: 'Segmentation 4',
+      labelIsGenerated: true,
+    });
+
+    expect(manager.getSegmentation('seg-1').labelIsGenerated).toBe(true);
+  });
+
+  it('leaves the flag alone when the payload holds no label', () => {
+    const manager = givenGeneratedSegmentation();
+
+    manager.updateSegmentation('seg-1', { cachedStats: { count: 1 } });
+
+    expect(manager.getSegmentation('seg-1').labelIsGenerated).toBe(true);
   });
 });
 

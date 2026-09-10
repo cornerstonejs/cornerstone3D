@@ -135,6 +135,11 @@ export default class SegmentationStateManager {
    * This method updates the state immutably. If the segmentation with the given ID is not found,
    * the method will return without making any changes.
    *
+   * A payload that carries a `label` and no `labelIsGenerated` clears
+   * `labelIsGenerated`, because the flag describes the label that the
+   * segmentation holds. A caller that replaces the label with another generated
+   * label passes `labelIsGenerated: true` beside the new label.
+   *
    * @example
    * ```typescript
    * segmentationStateManager.updateSegmentation('seg1', { label: 'newLabel' });
@@ -158,6 +163,15 @@ export default class SegmentationStateManager {
 
       // Directly mutate the draft state
       Object.assign(segmentation, payload);
+
+      // The new label came from the caller, and the caller said nothing about
+      // the origin of the new label, so the user chose the new label. A viewer
+      // renames a segmentation this way, and the renamed segmentation must stop
+      // counting as a segmentation that no user has named.
+      if ('label' in payload && !('labelIsGenerated' in payload)) {
+        segmentation.labelIsGenerated = false;
+      }
+
       if (segmentation.representationData?.Labelmap) {
         ensureLabelmapState(segmentation);
         syncLegacyLabelmapData(segmentation);
