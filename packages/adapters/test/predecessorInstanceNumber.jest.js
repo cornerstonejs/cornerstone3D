@@ -28,23 +28,33 @@ const { MetadataModules } = Enums;
 const IMAGE_ID = 'wadors:predecessor';
 const SERIES_UID = '1.2.826.0.1.3680043.8.498.900';
 const STUDY_UID = '1.2.826.0.1.3680043.8.498.1';
+const INSTANCE_UID = '1.2.826.0.1.3680043.8.498.901';
+const SEG_SOP_CLASS_UID = '1.2.840.10008.5.1.4.1.1.66.4';
 
-/** Answers the three modules the predecessor sequence is built from. */
-function givenPredecessor({ instanceNumber, seriesData, generalImage, study }) {
+/**
+ * Answers the four modules the predecessor sequence is built from. Pass `null`
+ * for a module that no provider holds, and an object for a module that holds
+ * only some of the attributes.
+ */
+function givenPredecessor({
+  instanceNumber,
+  seriesData,
+  generalImage,
+  sopModule,
+  study,
+}) {
   mockGet.mockImplementation((moduleType) => {
     switch (moduleType) {
       case MetadataModules.SERIES_DATA:
         return seriesData === undefined
           ? { SeriesInstanceUID: SERIES_UID, SeriesNumber: '3101' }
           : seriesData;
+      case MetadataModules.SOP_COMMON:
+        return sopModule === undefined
+          ? { sopClassUID: SEG_SOP_CLASS_UID, sopInstanceUID: INSTANCE_UID }
+          : sopModule;
       case MetadataModules.GENERAL_IMAGE:
-        return generalImage === undefined
-          ? {
-              instanceNumber,
-              sopClassUID: '1.2.840.10008.5.1.4.1.1.66.4',
-              sopInstanceUID: '1.2.826.0.1.3680043.8.498.901',
-            }
-          : generalImage;
+        return generalImage === undefined ? { instanceNumber } : generalImage;
       case MetadataModules.GENERAL_STUDY:
         return study === undefined ? { studyInstanceUID: STUDY_UID } : study;
       default:
@@ -86,31 +96,61 @@ describe('PREDECESSOR_SEQUENCE instance number', () => {
     expect(
       result.PredecessorDocumentsSequence.ReferencedSeriesSequence
         .ReferencedSOPSequence.ReferencedSOPInstanceUID
-    ).toBe('1.2.826.0.1.3680043.8.498.901');
+    ).toBe(INSTANCE_UID);
     expect(result.SeriesInstanceUID).toBe(SERIES_UID);
   });
 });
 
+describe('PREDECESSOR_SEQUENCE reference', () => {
+  // The General Image module lists SOPClassUID as well, and the provider read
+  // the pair of UIDs there. A host provider answers that module without the
+  // class UID, and the Type 1 ReferencedSOPClassUID went missing on every
+  // link back. The SOP Common module is the module that holds both UIDs.
+  it('takes both UIDs from the SOP Common module', () => {
+    givenPredecessor({
+      instanceNumber: '3',
+      generalImage: { instanceNumber: '3' },
+    });
+
+    const reference =
+      predecessorSequence().PredecessorDocumentsSequence
+        .ReferencedSeriesSequence.ReferencedSOPSequence;
+
+    expect(reference.ReferencedSOPClassUID).toBe(SEG_SOP_CLASS_UID);
+    expect(reference.ReferencedSOPInstanceUID).toBe(INSTANCE_UID);
+  });
+});
+
 describe('PREDECESSOR_SEQUENCE with a predecessor no provider holds', () => {
-  // Reading `generalImage.instanceNumber` off `undefined` threw a TypeError,
-  // and the throw took the whole save with it. A stale imageId reaches this.
+  // Reading the UIDs off `undefined` threw a TypeError, and the throw took the
+  // whole save with it. A stale imageId reaches this.
   it('answers undefined when no provider holds the instance', () => {
-    givenPredecessor({ generalImage: undefined, instanceNumber: '3' });
-    mockGet.mockImplementation((moduleType) =>
-      moduleType === MetadataModules.GENERAL_IMAGE ? undefined : {}
-    );
+    givenPredecessor({ instanceNumber: '3', sopModule: null });
     expect(predecessorSequence()).toBeUndefined();
   });
 
   it('answers undefined when the instance names no SOP Instance UID', () => {
-    givenPredecessor({ generalImage: { instanceNumber: '3' } });
+    givenPredecessor({
+      instanceNumber: '3',
+      sopModule: { sopClassUID: SEG_SOP_CLASS_UID },
+    });
+    expect(predecessorSequence()).toBeUndefined();
+  });
+
+  // ReferencedSOPClassUID is Type 1 too, so an absent class UID gives the same
+  // no-op as an absent instance UID.
+  it('answers undefined when the instance names no SOP Class UID', () => {
+    givenPredecessor({
+      instanceNumber: '3',
+      sopModule: { sopInstanceUID: INSTANCE_UID },
+    });
     expect(predecessorSequence()).toBeUndefined();
   });
 
   // Every consumer merges the result with `Object.assign`, so an answer of
   // undefined has to be a no-op rather than a crash.
   it('leaves a dataset untouched when it answers undefined', () => {
-    givenPredecessor({ generalImage: {} });
+    givenPredecessor({ sopModule: {} });
     const dataset = { SeriesNumber: '3100', Modality: 'SEG' };
 
     Object.assign(dataset, predecessorSequence());
@@ -123,6 +163,20 @@ describe('PREDECESSOR_SEQUENCE with a predecessor no provider holds', () => {
     expect(
       predecessorSequence().PredecessorDocumentsSequence.StudyInstanceUID
     ).toBeUndefined();
+  });
+
+  // The instance number is the only attribute this module takes from the
+  // General Image module, so an absent module gives the number of a first
+  // instance and keeps the link back.
+  it('does not throw when the general image module is absent', () => {
+    givenPredecessor({ generalImage: null });
+    const result = predecessorSequence();
+
+    expect(result.InstanceNumber).toBe(1);
+    expect(
+      result.PredecessorDocumentsSequence.ReferencedSeriesSequence
+        .ReferencedSOPSequence.ReferencedSOPInstanceUID
+    ).toBe(INSTANCE_UID);
   });
 });
 

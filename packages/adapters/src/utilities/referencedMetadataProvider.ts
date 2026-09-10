@@ -94,16 +94,24 @@ export const metadataProvider = {
    * to the generated object.
    */
   [MetadataModules.PREDECESSOR_SEQUENCE]: (imageId) => {
-    const generalImage = metaData.get(MetadataModules.GENERAL_IMAGE, imageId);
+    // The link back names the predecessor by its two SOP UIDs, and the SOP
+    // Common module is the module that holds both. The General Image module
+    // lists SOPClassUID as well, but a host provider can answer that module
+    // without the entry, and then the Type 1 ReferencedSOPClassUID is absent
+    // with no error. `REFERENCED_SERIES_REFERENCE` above reads the same module
+    // for the same pair of UIDs.
+    const sopModule = metaData.get(MetadataModules.SOP_COMMON, imageId);
 
     // No provider holds the instance - a stale imageId, or an instance no
     // provider ingested. Return `undefined`, which every consumer merges as a
     // no-op, rather than throw on the reads below or name no instance in the
-    // Type 1 ReferencedSOPInstanceUID.
-    if (!generalImage?.sopInstanceUID) {
+    // two Type 1 attributes of the reference.
+    if (!sopModule?.sopInstanceUID || !sopModule.sopClassUID) {
       return undefined;
     }
 
+    const generalImage =
+      metaData.get(MetadataModules.GENERAL_IMAGE, imageId) ?? {};
     const study = metaData.get(MetadataModules.GENERAL_STUDY, imageId) ?? {};
 
     // Keep only the series attributes the predecessor has a value for, so the
@@ -123,8 +131,8 @@ export const metadataProvider = {
       ReferencedSeriesSequence: {
         SeriesInstanceUID: result.SeriesInstanceUID,
         ReferencedSOPSequence: {
-          ReferencedSOPClassUID: generalImage.sopClassUID,
-          ReferencedSOPInstanceUID: generalImage.sopInstanceUID,
+          ReferencedSOPClassUID: sopModule.sopClassUID,
+          ReferencedSOPInstanceUID: sopModule.sopInstanceUID,
         },
       },
     };
