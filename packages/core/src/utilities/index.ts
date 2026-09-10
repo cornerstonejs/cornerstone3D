@@ -124,6 +124,7 @@ export type { ViewportVoiMappingProps } from './viewportVoiIntensityMapping';
 export * from './getPixelSpacingInformation';
 export * from './getPlaneCubeIntersectionDimensions';
 export * from './rotateToViewCoordinates';
+export * as voxelSlab from './voxelSlab';
 import { asArray } from './asArray';
 import {
   viewportSupportsImageSlices,
