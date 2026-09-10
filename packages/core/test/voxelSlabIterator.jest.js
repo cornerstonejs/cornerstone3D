@@ -1,4 +1,4 @@
-import { collectVoxelsInSlab } from '../src/utilities/voxelSlab/iterateVoxelsInSlab';
+import { collectVoxelsInShape } from '../src/utilities/voxelSlab/iterateVoxelsInShape';
 import {
   buildIndexSpaceSlab,
   getIndexSpaceNormal,
@@ -22,10 +22,14 @@ import {
  * predicate. Both the oracle and the fast iterator are given the same one so
  * the comparison is apples to apples.
  */
-function discInPlane(planePoint, normal, radius) {
+function discInPlane(planePoint, viewPlaneNormal, radius) {
   const radiusSquared = radius * radius;
   return (center) => {
-    const projected = projectPointOntoPlane(center, planePoint, normal);
+    const projected = projectPointOntoPlane(
+      center,
+      planePoint,
+      viewPlaneNormal
+    );
     const dx = projected[0] - planePoint[0];
     const dy = projected[1] - planePoint[1];
     const dz = projected[2] - planePoint[2];
@@ -40,23 +44,23 @@ function discInPlane(planePoint, normal, radius) {
 function expectAgreement({
   volume,
   planePoint,
-  normal,
-  annotationThickness,
+  viewPlaneNormal,
+  referencePlaneThickness,
   shape,
 }) {
   const oracle = referenceVoxelsInSlab({
     volume,
     planePoint,
-    normal,
-    annotationThickness,
+    viewPlaneNormal,
+    referencePlaneThickness,
     isInShape: shape ? (_projected, _ijk, center) => shape(center) : undefined,
   });
 
-  const fast = collectVoxelsInSlab({
+  const fast = collectVoxelsInShape({
     volume,
     planePoint,
-    normal,
-    annotationThickness,
+    viewPlaneNormal,
+    referencePlaneThickness,
     isInShape: shape ? (center) => shape(center) : undefined,
   });
 
@@ -90,9 +94,9 @@ describe('getIndexSpaceNormal', () => {
       spacing: [1, 2, 4],
       direction,
     });
-    const normal = acquisitionNormal(direction);
+    const viewPlaneNormal = acquisitionNormal(direction);
 
-    const g = getIndexSpaceNormal(volume, normal);
+    const g = getIndexSpaceNormal(volume, viewPlaneNormal);
 
     expect(g[0]).toBeCloseTo(0, 10);
     expect(g[1]).toBeCloseTo(0, 10);
@@ -109,19 +113,19 @@ describe('index space depth matches world space depth', () => {
       direction,
       origin: [-3, 7, 11],
     });
-    const normal = obliqueNormal(direction, 31);
+    const viewPlaneNormal = obliqueNormal(direction, 31);
     const planePoint = [0.5, 8, 14];
 
-    const slab = buildIndexSpaceSlab(volume, planePoint, normal, 1);
+    const slab = buildIndexSpaceSlab(volume, planePoint, viewPlaneNormal, 1);
 
     for (let k = 0; k < 5; k++) {
       for (let j = 0; j < 5; j++) {
         for (let i = 0; i < 5; i++) {
           const center = volume.indexToWorld([i, j, k]);
           const worldDepth =
-            (center[0] - planePoint[0]) * normal[0] +
-            (center[1] - planePoint[1]) * normal[1] +
-            (center[2] - planePoint[2]) * normal[2];
+            (center[0] - planePoint[0]) * viewPlaneNormal[0] +
+            (center[1] - planePoint[1]) * viewPlaneNormal[1] +
+            (center[2] - planePoint[2]) * viewPlaneNormal[2];
 
           expect(depthAtIndex(slab, [i, j, k])).toBeCloseTo(worldDepth, 10);
         }
@@ -130,20 +134,20 @@ describe('index space depth matches world space depth', () => {
   });
 });
 
-describe('iterateVoxelsInSlab agrees with the reference implementation', () => {
+describe('iterateVoxelsInShape agrees with the reference implementation', () => {
   describe('acquisition orientation, depth only', () => {
     const volume = createSyntheticVolume({
       dimensions: [6, 6, 8],
       spacing: [1, 1, 1],
     });
 
-    [0.5, 1, 1.001, 2, 3, 4].forEach((annotationThickness) => {
-      it(`T = ${annotationThickness}`, () => {
+    [0.5, 1, 1.001, 2, 3, 4].forEach((referencePlaneThickness) => {
+      it(`T = ${referencePlaneThickness}`, () => {
         expectAgreement({
           volume,
           planePoint: [2, 2, 3],
-          normal: [0, 0, 1],
-          annotationThickness,
+          viewPlaneNormal: [0, 0, 1],
+          referencePlaneThickness,
         });
       });
     });
@@ -152,8 +156,8 @@ describe('iterateVoxelsInSlab agrees with the reference implementation', () => {
       expectAgreement({
         volume,
         planePoint: [2, 2, 3.5],
-        normal: [0, 0, 1],
-        annotationThickness: 1,
+        viewPlaneNormal: [0, 0, 1],
+        referencePlaneThickness: 1,
       });
     });
 
@@ -161,8 +165,8 @@ describe('iterateVoxelsInSlab agrees with the reference implementation', () => {
       expectAgreement({
         volume,
         planePoint: [2, 2, 0],
-        normal: [0, 0, 1],
-        annotationThickness: 4,
+        viewPlaneNormal: [0, 0, 1],
+        referencePlaneThickness: 4,
       });
     });
 
@@ -170,8 +174,8 @@ describe('iterateVoxelsInSlab agrees with the reference implementation', () => {
       const voxels = expectAgreement({
         volume,
         planePoint: [2, 2, 40],
-        normal: [0, 0, 1],
-        annotationThickness: 1,
+        viewPlaneNormal: [0, 0, 1],
+        referencePlaneThickness: 1,
       });
       expect(voxels).toHaveLength(0);
     });
@@ -186,12 +190,15 @@ describe('iterateVoxelsInSlab agrees with the reference implementation', () => {
 
     [1, 5, 15, 30, 45, 60, 75, 89].forEach((degrees) => {
       it(`${degrees} degrees off the slice axis`, () => {
-        const normal = obliqueNormal(volume.direction, degrees);
+        const viewPlaneNormal = obliqueNormal(volume.direction, degrees);
         expectAgreement({
           volume,
           planePoint: [3, 3, 9],
-          normal,
-          annotationThickness: getVoxelThicknessAlongNormal(volume, normal),
+          viewPlaneNormal,
+          referencePlaneThickness: getVoxelThicknessAlongNormal(
+            volume,
+            viewPlaneNormal
+          ),
         });
       });
     });
@@ -204,13 +211,13 @@ describe('iterateVoxelsInSlab agrees with the reference implementation', () => {
         direction,
         origin: [5, -2, 3],
       });
-      const normal = obliqueNormal(direction, 41);
+      const viewPlaneNormal = obliqueNormal(direction, 41);
 
       expectAgreement({
         volume: tilted,
         planePoint: [6, 1, 8],
-        normal,
-        annotationThickness: 4,
+        viewPlaneNormal,
+        referencePlaneThickness: 4,
       });
     });
   });
@@ -222,14 +229,14 @@ describe('iterateVoxelsInSlab agrees with the reference implementation', () => {
         spacing: [1, 1, 1],
       });
       const planePoint = [6, 6, 3];
-      const normal = [0, 0, 1];
+      const viewPlaneNormal = [0, 0, 1];
 
       const voxels = expectAgreement({
         volume,
         planePoint,
-        normal,
-        annotationThickness: 1,
-        shape: discInPlane(planePoint, normal, 3.5),
+        viewPlaneNormal,
+        referencePlaneThickness: 1,
+        shape: discInPlane(planePoint, viewPlaneNormal, 3.5),
       });
 
       // Sanity: a single layer, and fewer voxels than the bounding square.
@@ -243,15 +250,18 @@ describe('iterateVoxelsInSlab agrees with the reference implementation', () => {
         dimensions: [14, 14, 10],
         spacing: [0.8, 0.8, 2.4],
       });
-      const normal = obliqueNormal(volume.direction, 35);
+      const viewPlaneNormal = obliqueNormal(volume.direction, 35);
       const planePoint = [5, 5, 12];
 
       expectAgreement({
         volume,
         planePoint,
-        normal,
-        annotationThickness: getVoxelThicknessAlongNormal(volume, normal),
-        shape: discInPlane(planePoint, normal, 3),
+        viewPlaneNormal,
+        referencePlaneThickness: getVoxelThicknessAlongNormal(
+          volume,
+          viewPlaneNormal
+        ),
+        shape: discInPlane(planePoint, viewPlaneNormal, 3),
       });
     });
 
@@ -261,16 +271,37 @@ describe('iterateVoxelsInSlab agrees with the reference implementation', () => {
         spacing: [1, 1, 1],
         direction: rotatedDirection(20, 'z'),
       });
-      const normal = obliqueNormal(volume.direction, 50);
+      const viewPlaneNormal = obliqueNormal(volume.direction, 50);
       const planePoint = [6, 6, 6];
 
       expectAgreement({
         volume,
         planePoint,
-        normal,
-        annotationThickness: 5,
-        shape: discInPlane(planePoint, normal, 4),
+        viewPlaneNormal,
+        referencePlaneThickness: 5,
+        shape: discInPlane(planePoint, viewPlaneNormal, 4),
       });
+    });
+
+    it('a shape that selects a single voxel', () => {
+      const volume = createSyntheticVolume({
+        dimensions: [8, 8, 8],
+        spacing: [1, 1, 1],
+      });
+      const planePoint = [4, 4, 4];
+      const viewPlaneNormal = [0, 0, 1];
+
+      // Centred on the voxel centre at (4, 4, 4): that centre is at distance 0,
+      // and no other is within the radius.
+      const voxels = expectAgreement({
+        volume,
+        planePoint,
+        viewPlaneNormal,
+        referencePlaneThickness: 1,
+        shape: discInPlane(planePoint, viewPlaneNormal, 0.1),
+      });
+
+      expect(voxels).toHaveLength(1);
     });
 
     it('a shape that selects nothing', () => {
@@ -279,17 +310,19 @@ describe('iterateVoxelsInSlab agrees with the reference implementation', () => {
         spacing: [1, 1, 1],
       });
       const planePoint = [4, 4, 4];
-      const normal = [0, 0, 1];
+      const viewPlaneNormal = [0, 0, 1];
 
+      // Offset within the plane to sit between voxel centres: the four nearest
+      // are at 0.707, outside the disc.
       const voxels = expectAgreement({
         volume,
         planePoint,
-        normal,
-        annotationThickness: 1,
-        shape: discInPlane(planePoint, normal, 0.1),
+        viewPlaneNormal,
+        referencePlaneThickness: 1,
+        shape: discInPlane([4.5, 4.5, 4], viewPlaneNormal, 0.1),
       });
 
-      expect(voxels).toHaveLength(1);
+      expect(voxels).toHaveLength(0);
     });
   });
 
@@ -299,20 +332,20 @@ describe('iterateVoxelsInSlab agrees with the reference implementation', () => {
         dimensions: [9, 9, 9],
         spacing: [1, 1, 2],
       });
-      const normal = obliqueNormal(volume.direction, 28);
+      const viewPlaneNormal = obliqueNormal(volume.direction, 28);
       const planePoint = [4, 4, 8];
-      const shape = discInPlane(planePoint, normal, 3);
+      const shape = discInPlane(planePoint, viewPlaneNormal, 3);
 
-      const slab = buildIndexSpaceSlab(volume, planePoint, normal, 2);
+      const slab = buildIndexSpaceSlab(volume, planePoint, viewPlaneNormal, 2);
       const allowed = [0, 1, 2].filter((axis) => axis !== slab.outerAxis);
 
       const results = allowed.map((columnAxis) =>
         canonicaliseVoxels(
-          collectVoxelsInSlab({
+          collectVoxelsInShape({
             volume,
             planePoint,
-            normal,
-            annotationThickness: 2,
+            viewPlaneNormal,
+            referencePlaneThickness: 2,
             isInShape: (center) => shape(center),
             columnAxis,
           })
@@ -331,13 +364,13 @@ describe('iterateVoxelsInSlab agrees with the reference implementation', () => {
         spacing: [1, 1, 1],
       });
       const planePoint = [5, 5, 5];
-      const normal = [0, 0, 1];
+      const viewPlaneNormal = [0, 0, 1];
 
-      const bounded = collectVoxelsInSlab({
+      const bounded = collectVoxelsInShape({
         volume,
         planePoint,
-        normal,
-        annotationThickness: 1,
+        viewPlaneNormal,
+        referencePlaneThickness: 1,
         bounds: [
           [2, 4],
           [2, 4],
@@ -350,11 +383,74 @@ describe('iterateVoxelsInSlab agrees with the reference implementation', () => {
           referenceVoxelsInSlab({
             volume,
             planePoint,
-            normal,
-            annotationThickness: 1,
+            viewPlaneNormal,
+            referencePlaneThickness: 1,
           }).filter(([i, j]) => i >= 2 && i <= 4 && j >= 2 && j <= 4)
         )
       );
+    });
+
+    it('only ever narrows, so a box reaching outside the volume is clamped', () => {
+      const volume = createSyntheticVolume({
+        dimensions: [10, 10, 10],
+        spacing: [1, 1, 1],
+      });
+      const planePoint = [5, 5, 5];
+      const viewPlaneNormal = [0, 0, 1];
+
+      // A box derived from world coordinates can reach past the volume on both
+      // sides. Every index must still lie inside the volume.
+      const voxels = collectVoxelsInShape({
+        volume,
+        planePoint,
+        viewPlaneNormal,
+        referencePlaneThickness: 1,
+        bounds: [
+          [-40, 60],
+          [-40, 60],
+          [-40, 60],
+        ],
+      });
+
+      voxels.forEach((ijk) => {
+        ijk.forEach((index, axis) => {
+          expect(index).toBeGreaterThanOrEqual(0);
+          expect(index).toBeLessThan(volume.dimensions[axis]);
+        });
+      });
+
+      // Clamped to the whole volume, so the result matches the default.
+      expect(canonicaliseVoxels(voxels)).toEqual(
+        canonicaliseVoxels(
+          collectVoxelsInShape({
+            volume,
+            planePoint,
+            viewPlaneNormal,
+            referencePlaneThickness: 1,
+          })
+        )
+      );
+    });
+
+    it('selects nothing when the box lies wholly outside the volume', () => {
+      const volume = createSyntheticVolume({
+        dimensions: [10, 10, 10],
+        spacing: [1, 1, 1],
+      });
+
+      expect(
+        collectVoxelsInShape({
+          volume,
+          planePoint: [5, 5, 5],
+          viewPlaneNormal: [0, 0, 1],
+          referencePlaneThickness: 1,
+          bounds: [
+            [20, 30],
+            [0, 9],
+            [0, 9],
+          ],
+        })
+      ).toHaveLength(0);
     });
   });
 });
@@ -365,17 +461,17 @@ describe('invariant I1 - no display inputs', () => {
       dimensions: [8, 8, 8],
       spacing: [1, 1, 2],
     });
-    const normal = obliqueNormal(volume.direction, 33);
+    const viewPlaneNormal = obliqueNormal(volume.direction, 33);
     const planePoint = [4, 4, 8];
-    const shape = discInPlane(planePoint, normal, 3);
+    const shape = discInPlane(planePoint, viewPlaneNormal, 3);
 
     const run = () =>
       canonicaliseVoxels(
-        collectVoxelsInSlab({
+        collectVoxelsInShape({
           volume,
           planePoint,
-          normal,
-          annotationThickness: 2,
+          viewPlaneNormal,
+          referencePlaneThickness: 2,
           isInShape: (center) => shape(center),
         })
       );

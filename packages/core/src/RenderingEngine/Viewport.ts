@@ -7,6 +7,7 @@ import type { mat4, ReadonlyVec3 } from 'gl-matrix';
 import { vec2, vec3 } from 'gl-matrix';
 
 import Events from '../enums/Events';
+import { coreLog } from '../utilities/logger';
 import ViewportStatus from '../enums/ViewportStatus';
 import ViewportType from '../enums/ViewportType';
 import renderingEngineCache from './renderingEngineCache';
@@ -63,6 +64,8 @@ import type { extendedVtkCamera } from './vtkClasses/extendedVtkCamera';
  * which is camera properties/methods, vtk.js actors, and other common
  * logic.
  */
+const log = coreLog.getLogger('RenderingEngine', 'Viewport');
+
 class Viewport {
   /**
    * CameraViewPresentation is a view presentation selector that has all the
@@ -660,9 +663,7 @@ class Viewport {
     const actorEntry = this.getActor(actorUID);
 
     if (!actorEntry) {
-      console.warn(
-        `Actor ${actorUID} does not exist in ${this.id}, can't remove`
-      );
+      log.warn(`Actor ${actorUID} does not exist in ${this.id}, can't remove`);
       return;
     }
 
@@ -709,7 +710,7 @@ class Viewport {
     const { resetCamera = false } = options;
     const renderingEngine = this.getRenderingEngine();
     if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
-      console.warn(
+      log.warn(
         'Viewport::addActors::Rendering engine has not been initialized or has been destroyed'
       );
       return;
@@ -756,7 +757,7 @@ class Viewport {
     const renderingEngine = this.getRenderingEngine();
 
     if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
-      console.warn(
+      log.warn(
         `Cannot add actor UID of ${actorUID} Rendering Engine has been destroyed`
       );
       return;
@@ -767,7 +768,7 @@ class Viewport {
     }
 
     if (this.getActor(actorUID)) {
-      console.warn(`Actor ${actorUID} already exists for this viewport`);
+      log.warn(`Actor ${actorUID} already exists for this viewport`);
       return;
     }
 
@@ -1559,7 +1560,7 @@ class Viewport {
     const renderer = this.getRenderer();
 
     if (!renderer) {
-      console.warn('No renderer found for the viewport');
+      log.warn('No renderer found for the viewport');
       return null;
     }
 
@@ -2072,30 +2073,26 @@ class Viewport {
         inPlaneVector2: <Point3>(
           vec3.cross(vec3.create(), viewUp, viewPlaneNormal)
         ),
-        thickness: this.getReferenceThickness(),
+        referencePlaneThickness: this.getReferencePlaneThickness(),
       },
     };
     if (viewRefSpecifier?.points) {
-      // Pass the whole reference, not target.planeRestriction:
-      // updatePlaneRestriction does `reference.planeRestriction ||= ...`. A
-      // PlaneRestriction structurally satisfies the all-optional ViewReference,
-      // so handing it the inner object type checks but builds a nested
-      // planeRestriction.planeRestriction and mutates that instead, silently
-      // discarding the point-derived in-plane vectors.
-      updatePlaneRestriction(viewRefSpecifier.points, target);
+      updatePlaneRestriction(viewRefSpecifier.points, target, viewRefSpecifier);
     }
     return target;
   }
 
   /**
-   * `T` for references created by this viewport: the full geometric thickness
-   * in mm that an annotation drawn here should record.
+   * Get the geometric thickness in mm that an annotation applies to.
    *
-   * A viewport with no slab concept returns undefined, which makes any
-   * annotation created in it fall back to one voxel along the view plane
-   * normal. See `PlaneRestriction.thickness`.
+   * Two thicknesses exist, and they are not the same quantity. The **slab
+   * thickness** belongs to the viewport, and `getSlabThickness` returns it. The
+   * **reference plane thickness** belongs to the data, and this method returns
+   * it. Rule D adds the two.
+   *
+   * See `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
    */
-  protected getReferenceThickness(): number | undefined {
+  protected getReferencePlaneThickness(): number | undefined {
     return undefined;
   }
 
@@ -2136,13 +2133,20 @@ class Viewport {
       point,
       focalPoint,
       viewPlaneNormal,
-      planeRestriction.thickness,
-      this.getReferenceThickness() ?? 0
+      planeRestriction.referencePlaneThickness,
+      this.getReferencePlaneThickness() ?? 0
     );
   }
 
   /**
    * Find out if this viewport does or could show this view reference.
+   *
+   * The plane restriction and the top level orientation are two separate
+   * limits, and the viewport applies both. A restriction that pins no
+   * orientation, which is what one point gives, therefore does not make every
+   * view compatible: the `viewPlaneNormal` of the reference still has to match
+   * the camera, unless the caller passes `withOrientation`.
+   *
    * @param options - allows specifying whether the view COULD display this with
    *                  some modification - either navigation or displaying as volume.
    * @returns true if the viewport could show this view reference
@@ -2151,8 +2155,11 @@ class Viewport {
     viewRef: ViewReference,
     options?: ReferenceCompatibleOptions
   ): boolean {
-    if (viewRef.planeRestriction) {
-      return this.isPlaneViewable(viewRef.planeRestriction, options);
+    if (
+      viewRef.planeRestriction &&
+      !this.isPlaneViewable(viewRef.planeRestriction, options)
+    ) {
+      return false;
     }
     if (
       viewRef.FrameOfReferenceUID &&

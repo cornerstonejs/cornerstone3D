@@ -8,14 +8,14 @@ import {
 import { signedDistanceToPlane } from './slabMembership';
 
 /**
- * One voxel visited by {@link iterateVoxelsInSlab}.
+ * One voxel visited by {@link iterateVoxelsInShape}.
  *
  * The arrays are **reused between iterations** so that iterating a large ROI
  * does not allocate three arrays per voxel. Copy anything you intend to retain.
- * `iterateVoxelsInSlab` is a generator, so a consumer that reads the fields and
+ * `iterateVoxelsInShape` is a generator, so a consumer that reads the fields and
  * moves on - which is what a statistics accumulator does - never notices.
  */
-export interface VoxelSlabVisit {
+export interface VoxelInShape {
   /** Voxel index. Reused; copy to retain. */
   ijk: Point3;
   /** Voxel centre in world coordinates. Reused; copy to retain. */
@@ -26,24 +26,12 @@ export interface VoxelSlabVisit {
 
 /**
  * Yields inclusive `[min, max]` runs along the slab's column axis that the
- * annotation's 2D shape covers, for one (outer, row) position.
+ * annotation's 2D shape covers, for one (outer, row) position. Yielding nothing
+ * means the shape does not reach this row.
  *
- * Three levels of precision are supported, in decreasing order of speed:
- *
- * - **exact** - yield a single run that is exactly the covered voxels. A
- *   rectangle or an axis-aligned row of a circle or ellipse can do this in
- *   closed form.
- * - **exact-multiple** - yield several disjoint runs, for a row that enters and
- *   leaves the shape more than once. A non-convex freehand polygon needs this,
- *   and it falls out of sorted scanline intersections.
- * - **approximate** - yield a superset run and supply `isInShape` as well, so
- *   the iterator tests each voxel inside the run. Any new shape can be
- *   onboarded this way and optimised later.
- *
- * Yielding nothing means the shape does not reach this row.
- *
- * `depthRun` is the run the depth test already permits, so a provider may clip
- * to it but does not need to - the iterator intersects the results either way.
+ * Runs may be exact, exact-multiple or an approximate superset paired with
+ * `isInShape`. See
+ * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  */
 export type ShapeRunProvider = (
   outerIndex: number,
@@ -52,19 +40,30 @@ export type ShapeRunProvider = (
   slab: IndexSpaceSlab
 ) => Iterable<Point2>;
 
-export interface VoxelSlabIterationOptions {
-  /** Geometry of the volume being measured. */
+export interface VoxelsInShapeOptions {
+  /**
+   * The volume being measured. Pass an `IImageVolume`, or any object that has
+   * `direction`, `spacing`, `origin` and `dimensions`. The structural form
+   * lets a caller that holds no cached volume, such as a test, use this code.
+   */
   volume: VolumeGeometry;
-  /** `P0`, the annotation plane anchor, in world coordinates. */
+  /** The annotation plane anchor, in world coordinates. */
   planePoint: Point3;
-  /** `n`, the annotation view plane normal. Must be unit length. */
-  normal: Point3;
-  /** `T` in mm. Omit or pass null to default to one voxel along the normal. */
-  annotationThickness?: number | null;
+  /** The annotation view plane normal. Must be unit length. */
+  viewPlaneNormal: Point3;
+  /**
+   * The reference plane thickness in mm. Omit, or pass null or 0, to default
+   * to one voxel along the normal. A planar shape reports 0 from
+   * `getRequiredThickness`, so a caller can pass that value straight through.
+   */
+  referencePlaneThickness?: number | null;
   /**
    * Inclusive index bounds to confine iteration to. Defaults to the whole
    * volume. Supply the annotation's own index-space bounding box when you have
    * one; the slab bound tightening below only narrows along the normal.
+   *
+   * Bounds only narrow: each axis intersects the volume extent, so a box that
+   * reaches outside the volume still yields no index outside it.
    */
   bounds?: BoundsIJK;
   /** Exact or exact-multiple in-plane runs. See {@link ShapeRunProvider}. */
@@ -83,25 +82,18 @@ export interface VoxelSlabIterationOptions {
  * Iterates the voxels of an area annotation according to Rule M of
  * https://github.com/cornerstonejs/cornerstone3D/issues/2889
  *
- * A voxel is visited exactly when its centre lies within `(T + T_v) / 2` of the
- * annotation plane along the normal, and its projection onto that plane falls
- * inside the annotation's 2D shape. Every qualifying voxel is visited exactly
- * once, and iteration is independent of zoom, canvas size and any other display
- * property.
- *
- * The depth half of the rule is solved in closed form rather than tested per
- * voxel: see {@link IndexSpaceSlab}. Cost is therefore proportional to the
- * number of voxels emitted plus the number of rows touched, not to the volume
- * of any bounding box.
+ * Every qualifying voxel is visited once, and iteration is independent of zoom,
+ * canvas size and every other display property. See
+ * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  */
-export function* iterateVoxelsInSlab(
-  options: VoxelSlabIterationOptions
-): Generator<VoxelSlabVisit, void, undefined> {
+export function* iterateVoxelsInShape(
+  options: VoxelsInShapeOptions
+): Generator<VoxelInShape, void, undefined> {
   const {
     volume,
     planePoint,
-    normal,
-    annotationThickness,
+    viewPlaneNormal: normal,
+    referencePlaneThickness,
     getShapeRuns,
     isInShape,
     columnAxis: forcedColumnAxis,
@@ -113,18 +105,30 @@ export function* iterateVoxelsInSlab(
     volume,
     planePoint,
     normal,
-    annotationThickness,
+    referencePlaneThickness,
     { columnAxis: forcedColumnAxis }
   );
   const { outerAxis, rowAxis, columnAxis } = slab;
 
-  const bounds: BoundsIJK =
-    options.bounds ??
-    ([
-      [0, dimensions[0] - 1],
-      [0, dimensions[1] - 1],
-      [0, dimensions[2] - 1],
-    ] as BoundsIJK);
+  const volumeBounds = [0, 1, 2].map((axis) => [
+    0,
+    dimensions[axis] - 1,
+  ]) as BoundsIJK;
+
+  // Intersect, do not substitute: an index past the volume reads the wrong
+  // voxel, and a box derived from world coordinates can reach past it.
+  const requestedBounds = options.bounds;
+  const bounds: BoundsIJK = requestedBounds
+    ? ([0, 1, 2].map((axis) => [
+        Math.max(requestedBounds[axis][0], volumeBounds[axis][0]),
+        Math.min(requestedBounds[axis][1], volumeBounds[axis][1]),
+      ]) as BoundsIJK)
+    : volumeBounds;
+
+  // An empty bound on any axis selects nothing.
+  if (bounds.some(([min, max]) => min > max)) {
+    return;
+  }
 
   // World displacement per unit step of each index.
   const axisStep: Point3[] = [0, 1, 2].map((axis) => {
@@ -143,7 +147,7 @@ export function* iterateVoxelsInSlab(
 
   const ijk: Point3 = [0, 0, 0];
   const center: Point3 = [0, 0, 0];
-  const visit: VoxelSlabVisit = { ijk, center, depth: 0 };
+  const visit: VoxelInShape = { ijk, center, depth: 0 };
 
   const columnStep = axisStep[columnAxis];
 
@@ -208,17 +212,15 @@ export function* iterateVoxelsInSlab(
 }
 
 /**
- * Collects the voxel indices {@link iterateVoxelsInSlab} would visit.
+ * Collects the voxel indices {@link iterateVoxelsInShape} would visit.
  *
  * Copies each index, unlike the generator, so the result is safe to retain.
  * Intended for tests and for callers that genuinely need the whole list;
  * prefer the generator when accumulating statistics.
  */
-export function collectVoxelsInSlab(
-  options: VoxelSlabIterationOptions
-): Point3[] {
+export function collectVoxelsInShape(options: VoxelsInShapeOptions): Point3[] {
   const collected: Point3[] = [];
-  for (const { ijk } of iterateVoxelsInSlab(options)) {
+  for (const { ijk } of iterateVoxelsInShape(options)) {
     collected.push([ijk[0], ijk[1], ijk[2]]);
   }
   return collected;

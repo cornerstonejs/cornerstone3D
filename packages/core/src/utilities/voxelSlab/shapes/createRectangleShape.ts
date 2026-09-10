@@ -13,22 +13,32 @@ import {
   toIntegerRun,
 } from './shapeGeometry';
 
-/** Expands a half extent so a voxel centre on the face counts as inside. */
+/**
+ * Expands a half extent so a voxel centre on the face counts as inside.
+ *
+ * The slack scales with the half extent, with a floor of one unit so a
+ * sub-millimetre extent keeps a usable tolerance. `createPolylineShape` floors
+ * its own slack the same way.
+ */
 const expand = (halfExtent: number) =>
-  halfExtent * (1 + SHAPE_BOUNDARY_EPSILON);
+  halfExtent + Math.max(halfExtent, 1) * SHAPE_BOUNDARY_EPSILON;
 
 export interface RectangleShapeOptions {
-  /** Geometry of the volume being measured. */
+  /**
+   * The volume being measured. Pass an `IImageVolume`, or any object that has
+   * `direction`, `spacing`, `origin` and `dimensions`. The structural form
+   * lets a caller that holds no cached volume, such as a test, use this code.
+   */
   volume: VolumeGeometry;
-  /** `P0`, the annotation plane anchor. Defines the plane's depth. */
+  /** The annotation plane anchor. Defines the plane's depth. */
   planePoint: Point3;
-  /** `n`, the annotation view plane normal. Unit length. */
-  normal: Point3;
+  /** The annotation view plane normal. Unit length. */
+  viewPlaneNormal: Point3;
   /**
    * The rectangle centre in world coordinates. For the planar form it is
    * projected onto the annotation plane.
    */
-  center: Point3;
+  centerWorld: Point3;
   /**
    * Direction of the major axis. Need not be unit length, and need not already
    * lie in the plane - its component along the normal is removed.
@@ -48,30 +58,11 @@ export interface RectangleShapeOptions {
 /**
  * A rectangle lying in the annotation plane, or a box centred on it.
  *
- * Specified exactly as `createEllipseShape` is - a major-axis direction plus
- * half extents - so the two are interchangeable, and the third extent promotes
- * the flat rectangle to a solid.
+ * A third half extent promotes the flat rectangle to a solid.
+ * `createEllipseShape` takes the same options, so the two are interchangeable.
+ * The depth extent is widened by half a voxel; the in-plane extents are not.
  *
- * ## Why the runs are exact
- *
- * Each face is a linear constraint on the world offset, and for a fixed outer
- * and row index the voxel centre traces a straight line in the column index.
- * Every face therefore contributes one interval in the column index, and the
- * run is their intersection - which is itself a single interval, since a box is
- * convex. No voxel is ever tested.
- *
- * ## Depth and the slab
- *
- * As with the ellipse, the in-plane extents are used as given - a voxel counts
- * when its centre falls inside the outline - while the depth extent is dilated
- * by half a voxel thickness so a voxel counts when the voxel itself reaches the
- * box. With the depth extent dilated, a box is exactly equivalent to Rule M's
- * slab at `T = 2 * depthHalfLength`, which is the point: the two agree rather
- * than fighting.
- *
- * The shape is intersected with the slab, not unioned with it, so pass
- * `getRequiredThickness()` as the iterator's `annotationThickness` unless you
- * deliberately want the slab to clip the shape.
+ * See `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  */
 export function createRectangleShape(
   options: RectangleShapeOptions
@@ -79,7 +70,7 @@ export function createRectangleShape(
   const {
     volume,
     planePoint,
-    normal,
+    viewPlaneNormal: normal,
     majorAxis,
     majorHalfLength,
     minorHalfLength,
@@ -102,8 +93,8 @@ export function createRectangleShape(
     : 0;
 
   const center = isSolid
-    ? ([...options.center] as Point3)
-    : projectPointOntoPlane(options.center, planePoint, basis.n);
+    ? ([...options.centerWorld] as Point3)
+    : projectPointOntoPlane(options.centerWorld, planePoint, basis.n);
 
   const constraints: { axis: Point3; halfExtent: number }[] = [
     { axis: basis.u, halfExtent: expand(majorHalfLength) },

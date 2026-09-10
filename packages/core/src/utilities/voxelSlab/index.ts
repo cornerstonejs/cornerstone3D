@@ -2,19 +2,16 @@
  * Voxel-relative annotation statistics: which voxels an area annotation
  * contains, and which annotations a viewport displays.
  *
- * The behaviour these utilities implement is specified in
- * https://github.com/cornerstonejs/cornerstone3D/issues/2889 and in
- * `docs/docs/concepts/annotations/voxel-statistics.md`. Rule M (voxel
- * membership) and Rule D (display) are normative; the index-space run
- * arithmetic used to evaluate Rule M quickly is an implementation detail and
- * may be changed freely so long as it selects the same voxels.
+ * Rule M (voxel membership) and Rule D (display) are normative. See
+ * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md` and
+ * https://github.com/cornerstonejs/cornerstone3D/issues/2889.
  */
 export { default as getVoxelThicknessAlongNormal } from './getVoxelThicknessAlongNormal';
 
 export {
   SLAB_RELATIVE_EPSILON,
   getSlabEpsilon,
-  resolveAnnotationThickness,
+  resolveReferencePlaneThickness,
   getMembershipHalfWidth,
   getDisplayHalfWidth,
   signedDistanceToPlane,
@@ -37,20 +34,20 @@ export type { IndexSpaceSlab, VolumeGeometry } from './indexSpaceSlab';
 export { isPlaneDepthViewable } from './isPlaneDepthViewable';
 
 export {
-  iterateVoxelsInSlab,
-  collectVoxelsInSlab,
-} from './iterateVoxelsInSlab';
+  iterateVoxelsInShape,
+  collectVoxelsInShape,
+} from './iterateVoxelsInShape';
 export type {
-  VoxelSlabVisit,
+  VoxelInShape,
   ShapeRunProvider,
-  VoxelSlabIterationOptions,
-} from './iterateVoxelsInSlab';
+  VoxelsInShapeOptions,
+} from './iterateVoxelsInShape';
 
-export { sampleVoxelsInSlab } from './sampleVoxelsInSlab';
+export { sampleVoxelsInShape } from './sampleVoxelsInShape';
 export type {
-  VoxelSlabSample,
-  VoxelSlabSamplingOptions,
-  VoxelSlabValueSource,
-} from './sampleVoxelsInSlab';
+  VoxelSample,
+  VoxelsInShapeSamplingOptions,
+  VoxelValueSource,
+} from './sampleVoxelsInShape';
 
 export * from './shapes';

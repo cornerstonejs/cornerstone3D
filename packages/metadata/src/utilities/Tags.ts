@@ -7,6 +7,9 @@ import {
   RadiopharmaceuticalInfoModule,
 } from './modules';
 import type { ModuleTagEntry } from './modules';
+import { logging as cornerstoneLogging } from '@cornerstonejs/utils';
+
+const cs3dLogger = cornerstoneLogging.metadataLog.getLogger('utilities.Tags');
 
 const dicomDictionary = dcmjs.data.DicomMetaDictionary.dictionary;
 const nameMap = dcmjs.data.DicomMetaDictionary.nameMap;
@@ -175,7 +178,7 @@ for (const [moduleName, keywords] of moduleDefinitions) {
 // Create TagEntry objects and register them
 for (const [keyword, { hex, groups }] of tagGroups) {
   if (!hex) {
-    console.warn(`Tags: keyword "${keyword}" not found in dcmjs nameMap`);
+    cs3dLogger.warn(`Tags: keyword "${keyword}" not found in dcmjs nameMap`);
     continue;
   }
   addTag(keyword, createTagEntry(hex, ...groups));

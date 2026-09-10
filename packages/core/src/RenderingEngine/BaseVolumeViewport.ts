@@ -4,6 +4,7 @@ import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransf
 import { vec2, vec3 } from 'gl-matrix';
 import type { mat4 } from 'gl-matrix';
 import cache from '../cache/cache';
+import { coreLog } from '../utilities/logger';
 import {
   MPR_CAMERA_VALUES,
   RENDERING_DEFAULTS,
@@ -99,6 +100,8 @@ import {
  * For setting volumes on viewports you need to use addVolumesToViewports
  * which will add volumes to the specified viewports.
  */
+const log = coreLog.getLogger('RenderingEngine', 'BaseVolumeViewport');
+
 abstract class BaseVolumeViewport extends Viewport {
   useCPURendering = false;
   private _FrameOfReferenceUID: string;
@@ -545,7 +548,7 @@ abstract class BaseVolumeViewport extends Viewport {
     }
 
     if ([voiRangeToUse.lower, voiRangeToUse.upper].some(isInvalidNumber)) {
-      console.warn(
+      log.warn(
         'VOI range contains invalid values, ignoring setVOI request',
         voiRangeToUse
       );
@@ -1175,7 +1178,7 @@ abstract class BaseVolumeViewport extends Viewport {
 
       return renderPasses.length ? renderPasses : null;
     } catch (e) {
-      console.warn('Failed to create custom render passes:', e);
+      log.warn('Failed to create custom render passes:', e);
       return null;
     }
   };
@@ -1657,7 +1660,7 @@ abstract class BaseVolumeViewport extends Viewport {
     _immediate = true,
     _suppressEvents = false
   ): void {
-    console.warn('Method "setOrientation" needs implementation');
+    log.warn('Method "setOrientation" needs implementation');
   }
 
   /**
@@ -2416,27 +2419,14 @@ abstract class BaseVolumeViewport extends Viewport {
   }
 
   /**
-   * `T` for references created by this viewport, as a full geometric thickness
-   * in mm.
+   * Get the geometric thickness in mm that an annotation applies to.
    *
-   * Two conversions happen here.
-   *
-   * `getSlabThickness` returns the value handed to
-   * `setOrientationOfClippingPlanes`, which places the clipping planes at
-   * `focalPoint +/- slabThickness`. The stored number is therefore a *half*
-   * thickness on this render path, and the geometric thickness is twice it.
-   * (The generic planar path uses vtkImageResliceMapper, where the same field
-   * is a full thickness - so this doubling belongs here, on the legacy
-   * viewport, and not in the shared reference code.)
-   *
-   * A slab at the rendering minimum means "no slab was requested" rather than
-   * "a 0.05 mm slab was requested", so it maps to undefined and lets the
-   * annotation fall back to one voxel along the normal. Without this a plain
-   * volume viewport would record T = 0.1 mm, which is thinner than any real
-   * voxel and would break the guarantee that an annotation always covers at
-   * least one layer.
+   * This method does NOT return the slab thickness. `getSlabThickness` returns
+   * a half thickness on this render path, so this method doubles that value,
+   * and it maps the rendering minimum to undefined. See
+   * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
    */
-  protected getReferenceThickness(): number | undefined {
+  protected getReferencePlaneThickness(): number | undefined {
     const slabThickness = this.getSlabThickness();
 
     if (

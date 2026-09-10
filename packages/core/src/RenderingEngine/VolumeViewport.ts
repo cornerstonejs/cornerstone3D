@@ -3,6 +3,7 @@ import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 import cache from '../cache/cache';
+import { coreLog } from '../utilities/logger';
 import { EPSILON, MPR_CAMERA_VALUES, RENDERING_DEFAULTS } from '../constants';
 import type { BlendModes } from '../enums';
 import { OrientationAxis, Events } from '../enums';
@@ -46,6 +47,8 @@ import {
  * For setting volumes on viewports you need to use addVolumesToViewports
  * which will add volumes to the specified viewports.
  */
+const log = coreLog.getLogger('RenderingEngine', 'VolumeViewport');
+
 class VolumeViewport extends BaseVolumeViewport {
   private _useAcquisitionPlaneForViewPlane = false;
   constructor(props: ViewportInput) {
@@ -267,7 +270,7 @@ class VolumeViewport extends BaseVolumeViewport {
     const activeCamera = this.getVtkActiveCamera();
 
     if (!activeCamera) {
-      console.warn('No active camera found');
+      log.warn('No active camera found');
       return;
     }
 
@@ -913,7 +916,7 @@ class VolumeViewport extends BaseVolumeViewport {
     const actorEntry = this.getDefaultActor();
 
     if (!actorEntry?.actor) {
-      console.warn('No image data found for calculating vtkPlanes.');
+      log.warn('No image data found for calculating vtkPlanes.');
       return [];
     }
 

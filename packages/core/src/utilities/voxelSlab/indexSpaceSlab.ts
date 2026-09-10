@@ -5,7 +5,7 @@ import getVoxelThicknessAlongNormal from './getVoxelThicknessAlongNormal';
 import {
   getMembershipHalfWidth,
   getSlabEpsilon,
-  resolveAnnotationThickness,
+  resolveReferencePlaneThickness,
 } from './slabMembership';
 
 export type VolumeGeometry =
@@ -15,55 +15,27 @@ export type VolumeGeometry =
 /**
  * The slab of Rule M expressed in index space.
  *
- * The key property is that the depth test is *exactly linear in the integer
- * voxel indices*. A voxel at index `p` has its centre at `origin + M p` in
- * world space, where `M` is the index-to-world matrix, so
+ * The depth test is exactly linear in the integer voxel indices, which is what
+ * lets the iterator emit exact runs rather than test every voxel:
  *
  * ```
- *   depth(p) = (centre - P0) . n = p . g + c0
- *   g  = Mᵀ n      (the index space normal)
- *   c0 = (origin - P0) . n
+ *   depth(p) = (centre - planePoint) . n = p . g + c0
+ *   g  = Mᵀ n      (the index space normal, deliberately not normalised)
+ *   c0 = (origin - planePoint) . n
  * ```
  *
- * `g` and `c0` are constants, so along any single axis the set of voxels
- * satisfying `|depth(p)| < halfWidth` is a closed-form interval. That is what
- * lets the iterator emit exact integer runs rather than testing every voxel,
- * and it holds for every orientation, oblique included.
- *
- * `g` is deliberately not normalised: its components are the change in world
- * depth per unit step of each index, which is exactly what the run arithmetic
- * needs. In acquisition orientation it comes out parallel to (0, 0, 1), since
- * the normal is the k axis so `d0 . n` and `d1 . n` vanish and only
- * `s2 * (d2 . n) = s2` survives.
- *
- * ## Axis roles
- *
- * Iteration is nested outer -> row -> column:
- *
- * - `outerAxis` is `argmax |g|`, the axis whose index step moves depth most.
- *   Sweeping it outermost means each outer step covers a thin band of the
- *   volume, and the two remaining axes are the ones lying closest to the
- *   annotation plane.
- * - `rowAxis` and `columnAxis` are the remaining two, and are the in-plane-ish
- *   pair. A 2D shape's spans are naturally expressed as runs along
- *   `columnAxis` for each `rowAxis` value, which is why the shape constraint
- *   belongs innermost: for each (outer, row) the depth constraint gives one
- *   interval along `columnAxis` and the shape gives one or more, and the
- *   iterator emits their intersection.
- *
- * Note the depth interval along `columnAxis` is frequently unbounded - in
- * acquisition orientation `g[columnAxis]` is zero, so depth does not vary along
- * it at all and the shape is the only binding constraint.
+ * Iteration nests outer -> row -> column. Derivation and axis roles:
+ * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  */
 export interface IndexSpaceSlab {
   /** `g`, the unnormalised index space normal. */
   g: Point3;
   /** `c0`, the world depth of index (0, 0, 0). */
   c0: number;
-  /** `T_v`, the voxel thickness along the normal. */
+  /** The voxel thickness along the normal. */
   voxelThickness: number;
-  /** `T`, the resolved annotation thickness. */
-  annotationThickness: number;
+  /** The resolved reference plane thickness. */
+  referencePlaneThickness: number;
   /**
    * The strict half width the depth must fall inside, already tightened by the
    * epsilon. Test `Math.abs(depth) < halfWidth`.
@@ -80,12 +52,8 @@ export interface IndexSpaceSlab {
 /**
  * Computes `g = Mᵀ n`, the index space normal.
  *
- * Note this is the transpose, not the inverse: a plane with world normal `n`
- * maps to the index space plane `(Mᵀ n) . p = const`. Using `M⁻¹ n` gives the
- * wrong vector as soon as the spacing is anisotropic.
- *
- * The result is parallel to the projected spacing vector whose L2 length
- * `getSpacingInNormalDirection` returns.
+ * The transpose, not the inverse: `M⁻¹ n` gives the wrong vector as soon as the
+ * spacing is anisotropic.
  */
 export function getIndexSpaceNormal(
   volume: VolumeGeometry,
@@ -119,26 +87,28 @@ export function pickOuterAxis(g: Point3): 0 | 1 | 2 {
  * Builds the index space form of an annotation's slab.
  *
  * @param volume - Geometry of the volume being measured.
- * @param planePoint - `P0`, the annotation plane anchor, in world coordinates.
- * @param normal - `n`, the annotation view plane normal. Must be unit length.
- * @param annotationThickness - `T` in mm, or null/undefined to default to one voxel.
+ * @param planePoint - The annotation plane anchor, in world coordinates.
+ * @param normal - The annotation view plane normal. Must be unit length.
+ * @param referencePlaneThickness - The thickness in mm, or null/undefined
+ *   to default to one voxel.
  * @param options.columnAxis - Force which of the two non-outer axes carries the
- *   runs. Defaults to the higher-numbered one, so an acquisition-orientation
- *   volume emits runs along i for each j, matching row-major memory order.
+ *   runs. Defaults to the lower-numbered of the two, so an
+ *   acquisition-orientation volume emits runs along i for each j, matching
+ *   row-major memory order.
  */
 export function buildIndexSpaceSlab(
   volume: VolumeGeometry,
   planePoint: Point3,
   normal: Point3,
-  annotationThickness?: number | null,
+  referencePlaneThickness?: number | null,
   options: { columnAxis?: 0 | 1 | 2 } = {}
 ): IndexSpaceSlab {
   const { origin } = volume;
   const g = getIndexSpaceNormal(volume, normal);
 
   const voxelThickness = getVoxelThicknessAlongNormal(volume, normal);
-  const thickness = resolveAnnotationThickness(
-    annotationThickness,
+  const thickness = resolveReferencePlaneThickness(
+    referencePlaneThickness,
     voxelThickness
   );
 
@@ -173,7 +143,7 @@ export function buildIndexSpaceSlab(
     g,
     c0,
     voxelThickness,
-    annotationThickness: thickness,
+    referencePlaneThickness: thickness,
     halfWidth,
     outerAxis,
     rowAxis,
@@ -194,9 +164,9 @@ export function depthAtIndex(slab: IndexSpaceSlab, ijk: Point3): number {
  * The integers `x` satisfying `lo < x * coeff < hi`, as an inclusive range.
  *
  * Bounds are open, so an endpoint landing exactly on an integer excludes that
- * integer - which is what makes `T = T_v` select exactly one layer. Returns
- * null when no integer qualifies, and `[-Infinity, Infinity]` when the
- * constraint is vacuous.
+ * integer - which is what makes a one-voxel-thick annotation select exactly one
+ * layer. Returns null when no integer qualifies, and `[-Infinity, Infinity]`
+ * when the constraint is vacuous.
  */
 function integersWithProductInOpenInterval(
   coeff: number,
@@ -240,10 +210,7 @@ function clampRange(range: Point2 | null, clampTo?: Point2): Point2 | null {
 
 /**
  * The inclusive run along `slab.columnAxis` satisfying the depth half of Rule M
- * for a fixed position on the outer and row axes.
- *
- * Exact: every voxel in the returned run passes the depth test and no voxel
- * outside it can. Returns null when the column holds no voxels.
+ * for a fixed outer and row position, or null when the column holds no voxels.
  *
  * @param clampTo - Inclusive bounds along the column axis, normally the volume
  *   dimension. Required whenever depth does not vary along the column axis,

@@ -1,6 +1,11 @@
 import { cache } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import shaderCode from './growCutShader';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.segmentation.growCut.runGrowCut'
+);
 
 const GB = 1024 * 1024 * 1024;
 const WEBGPU_MEMORY_LIMIT = 1.99 * GB;
@@ -475,7 +480,9 @@ async function runGrowCut(
     }
 
     if (limitProcessingTime && performance.now() > limitProcessingTime) {
-      console.warn(`Exceeded processing time limit (${maxProcessingTime})ms`);
+      cs3dLogger.warn(
+        `Exceeded processing time limit (${maxProcessingTime})ms`
+      );
       break;
     }
   }

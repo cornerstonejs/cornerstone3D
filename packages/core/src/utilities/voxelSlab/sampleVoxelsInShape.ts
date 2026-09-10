@@ -1,9 +1,9 @@
 import type { Point3 } from '../../types';
-import type { VoxelSlabIterationOptions } from './iterateVoxelsInSlab';
-import { iterateVoxelsInSlab } from './iterateVoxelsInSlab';
+import type { VoxelsInShapeOptions } from './iterateVoxelsInShape';
+import { iterateVoxelsInShape } from './iterateVoxelsInShape';
 
 /** One voxel of an area annotation, with the value read from the volume. */
-export interface VoxelSlabSample {
+export interface VoxelSample {
   /** The voxel's value. */
   value: number;
   /** The voxel centre in world coordinates. Safe to retain. */
@@ -13,19 +13,19 @@ export interface VoxelSlabSample {
 }
 
 /** Just enough of a voxel manager to read values by index. */
-export interface VoxelSlabValueSource {
+export interface VoxelValueSource {
   getAtIJKPoint(ijk: Point3): number | undefined | null;
 }
 
-export interface VoxelSlabSamplingOptions extends VoxelSlabIterationOptions {
+export interface VoxelsInShapeSamplingOptions extends VoxelsInShapeOptions {
   /** Where the values come from. Voxels it has no value for are skipped. */
-  voxelManager: VoxelSlabValueSource;
+  voxelManager: VoxelValueSource;
   /**
    * Called for every voxel that has a value, in iteration order. This is where
    * a statistics accumulator hooks in; it runs whether or not the samples are
    * being collected.
    */
-  onSample?: (sample: VoxelSlabSample) => void;
+  onSample?: (sample: VoxelSample) => void;
   /**
    * Whether to return the samples as well. Collecting them costs an object per
    * voxel, which an ROI over a large volume will feel, so a caller that only
@@ -40,19 +40,24 @@ export interface VoxelSlabSamplingOptions extends VoxelSlabIterationOptions {
  *
  * This is the whole of the accumulation half of a measurement, and it is
  * identical for every area annotation: only the shape handed in as
- * `getShapeRuns` differs between a contour, an ellipse and a rectangle. Nothing
+ * `getShapeRuns` differs between a polyline, an ellipse and a rectangle. Nothing
  * here reads a viewport, so the same annotation over the same volume samples
  * the same voxels at any zoom, pan, canvas size or slab thickness, and in any
  * orientation.
  *
- * ```ts
- * const shape = createContourShape({ volume, planePoint, normal, polyline });
+ * A planar shape reports a required thickness of 0, so the `||` below keeps
+ * the annotation's own thickness. A shape that carries depth of its own, such
+ * as an ellipsoid, reports that depth and the `||` takes it instead.
  *
- * const samples = sampleVoxelsInSlab({
+ * ```ts
+ * const shape = createPolylineShape({ volume, viewPlaneNormal, polyline });
+ *
+ * const samples = sampleVoxelsInShape({
  *   volume,
  *   planePoint,
- *   normal,
- *   annotationThickness: shape.getRequiredThickness(),
+ *   viewPlaneNormal,
+ *   referencePlaneThickness:
+ *     shape.getRequiredThickness() || referencePlaneThickness,
  *   getShapeRuns: shape.getRuns,
  *   voxelManager,
  *   onSample: statsCallback,
@@ -63,18 +68,18 @@ export interface VoxelSlabSamplingOptions extends VoxelSlabIterationOptions {
  * @returns the samples when `storePointData` is set, otherwise an empty array.
  * `onSample` is called either way.
  */
-export function sampleVoxelsInSlab(
-  options: VoxelSlabSamplingOptions
-): VoxelSlabSample[] {
+export function sampleVoxelsInShape(
+  options: VoxelsInShapeSamplingOptions
+): VoxelSample[] {
   const { voxelManager, onSample, storePointData, ...iteration } = options;
 
-  const samples: VoxelSlabSample[] = [];
+  const samples: VoxelSample[] = [];
 
   if (!voxelManager) {
     return samples;
   }
 
-  for (const { ijk, center } of iterateVoxelsInSlab(iteration)) {
+  for (const { ijk, center } of iterateVoxelsInShape(iteration)) {
     const value = voxelManager.getAtIJKPoint(ijk);
 
     if (value === undefined || value === null) {
@@ -82,7 +87,7 @@ export function sampleVoxelsInSlab(
     }
 
     // ijk and center are reused between iterations, so copy before retaining.
-    const sample: VoxelSlabSample = {
+    const sample: VoxelSample = {
       value,
       pointLPS: [center[0], center[1], center[2]],
       pointIJK: [ijk[0], ijk[1], ijk[2]],

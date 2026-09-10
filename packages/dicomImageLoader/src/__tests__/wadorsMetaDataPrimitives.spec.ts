@@ -1,4 +1,5 @@
 import { Enums } from '@cornerstonejs/core';
+import { logging } from '@cornerstonejs/utils';
 
 import getValue from '../imageLoader/wadors/metaData/getValue';
 import getNumberValue from '../imageLoader/wadors/metaData/getNumberValue';
@@ -124,7 +125,9 @@ describe('wadors metadata primitives', () => {
     let warnSpy: jest.SpyInstance;
 
     beforeEach(() => {
-      warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+      warnSpy = jest
+        .spyOn(logging.loaderLog.getLogger('wadors'), 'warn')
+        .mockImplementation(() => undefined);
     });
 
     afterEach(() => {

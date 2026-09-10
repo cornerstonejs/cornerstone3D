@@ -1,7 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import type { Point2, Point3 } from '../../../types';
 import type { IndexSpaceSlab, VolumeGeometry } from '../indexSpaceSlab';
-import getVoxelThicknessAlongNormal from '../getVoxelThicknessAlongNormal';
 import { projectPointOntoPlane } from '../slabMembership';
 import type { PlaneBasis, VoxelSlabShape } from './shapeGeometry';
 import {
@@ -11,97 +10,56 @@ import {
   toIntegerRun,
 } from './shapeGeometry';
 
-export interface ContourShapeOptions {
-  /** Geometry of the volume being measured. */
-  volume: VolumeGeometry;
-  /** `P0`, the annotation plane anchor. Defines the plane's depth. */
-  planePoint: Point3;
-  /** `n`, the annotation view plane normal. Unit length. */
-  normal: Point3;
+export interface PolylineShapeOptions {
   /**
-   * The outline, as world coordinates.
+   * The volume being measured. Pass an `IImageVolume`, or any object that has
+   * `direction`, `spacing`, `origin` and `dimensions`. The structural form
+   * lets a caller that holds no cached volume, such as a test, use this code.
+   */
+  volume: VolumeGeometry;
+  /**
+   * The annotation plane anchor, which defines the plane's depth. Defaults to
+   * the first point of the outline, because every point of a polyline lies in
+   * the plane already.
    *
-   * Either a single ring, or an array of rings. Each ring is treated as closed:
-   * the last point is joined back to the first, so do not repeat it. Points are
-   * projected onto the annotation plane, so a contour carrying a little depth
-   * error - as a drawn one always does - is handled.
+   * Pass the annotation's own anchor when you have one: a drawn vertex carries
+   * rounding error that the anchor does not. Whichever you use, the shape and
+   * the iterator MUST use the same anchor, or the two describe different slabs.
+   */
+  planePoint?: Point3;
+  /** The annotation view plane normal. Unit length. */
+  viewPlaneNormal: Point3;
+  /**
+   * The outline, as world coordinates: one ring, or an array of rings. Each
+   * ring is closed, so do not repeat the first point.
    *
-   * Interior is the even-odd rule over every edge of every ring, which is what
-   * makes **internal holes** work: give the hole as its own ring and it is
-   * excluded. Winding direction does not matter, so a hole ring need not be
-   * wound opposite to its parent. Nesting to any depth follows from the same
-   * rule - a ring inside a hole is solid again - and disjoint rings simply
-   * describe several separate regions.
-   *
-   * Do NOT flatten multiple rings into one array. That inserts an edge from the
-   * end of each ring to the start of the next, which does not error; it quietly
-   * measures a different shape.
-   *
-   * A single ring need be neither convex nor simple; a self-intersecting one is
-   * resolved by even-odd too.
+   * Do NOT flatten multiple rings into one array. That inserts an edge between
+   * them, raises no error, and quietly measures a different shape. See
+   * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
    */
   polyline: Point3[] | Point3[][];
-  /**
-   * The contour's extent along the normal, in mm. This is the thickness of the
-   * prism the outline sweeps.
-   *
-   * Unlike the ellipsoid and box, this is *not* applied by the shape. A prism's
-   * depth constraint is exactly Rule M's slab, so applying it twice would only
-   * risk the two disagreeing. Pass `getRequiredThickness()` as the iterator's
-   * `annotationThickness` and the slab enforces it, complete with the half
-   * voxel dilation that guarantees at least one layer is selected.
-   *
-   * Omit to let the slab decide the depth entirely.
-   */
-  depth?: number;
 }
 
-/** A point in the plane's 2D basis, relative to the plane anchor. */
-type PlanePoint = [number, number];
-
 /**
- * A contour lying in the annotation plane, swept into a prism by its depth.
+ * A closed polyline lying in the annotation plane.
  *
- * ## Why the runs are exact
+ * Interior is the even-odd rule, so a non-convex polyline or one with holes
+ * yields several runs. A point exactly on the outline is inside it, widened by
+ * `SHAPE_BOUNDARY_EPSILON`. The test is purely in-plane, and the shape is
+ * planar: it reports a required thickness of 0, and the caller's
+ * `referencePlaneThickness` alone decides how far the slab reaches along the
+ * normal. The ellipse and the rectangle differ, because each of those carries
+ * its own depth.
  *
- * For a fixed outer and row index, the projection of the voxel centres onto the
- * annotation plane traces a straight line in the column index. Intersecting
- * that line with every edge of every ring gives a sorted set of crossings, and
- * consecutive pairs bound the inside intervals. A convex contour yields one
- * run; a non-convex one, or one with holes, yields as many as it has crossings,
- * which is the exact-multiple case the iterator supports. No voxel is ever
- * tested.
- *
- * Interior is the even-odd rule.
- *
- * ## Boundary handling
- *
- * A point lying exactly on the outline is inside it. This needs stating because
- * the two halves of the shape reach their answer by different routes:
- * `containsPoint` casts a ray along one axis of the plane basis, while
- * `getRuns` intersects a line running along whichever direction the column axis
- * projects to. Even-odd is direction independent for points genuinely inside or
- * outside, but a point *on* the boundary is decided by whichever tie rule the
- * ray or line happens to hit, and those degenerate at different geometry - one
- * where an outline edge shares a row, the other where it shares a column.
- *
- * That case is not exotic: a rectangular contour drawn on voxel boundaries puts
- * a whole row of voxel centres exactly on an edge. Both routes therefore widen
- * the outline by a relative epsilon, so anything within that slack of the
- * boundary is inside for both. See `SHAPE_BOUNDARY_EPSILON`.
- *
- * ## Depth
- *
- * The outline test is purely in-plane; depth is left to Rule M's slab. See
- * `ContourShapeOptions.depth`.
+ * See `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  */
-export function createContourShape(
-  options: ContourShapeOptions
+export function createPolylineShape(
+  options: PolylineShapeOptions
 ): VoxelSlabShape {
-  const { volume, planePoint, normal, polyline, depth } = options;
+  const { volume, viewPlaneNormal: normal, polyline } = options;
 
   if (!polyline?.length) {
-    throw new Error('A contour needs an outline');
+    throw new Error('A polyline shape needs an outline');
   }
 
   // A single ring is Point3[], so polyline[0][0] is a number; an array of rings
@@ -111,8 +69,12 @@ export function createContourShape(
     : [polyline as Point3[]];
 
   if (inputRings.some((ring) => !ring?.length || ring.length < 3)) {
-    throw new Error('Every contour ring needs at least three points');
+    throw new Error('Every polyline ring needs at least three points');
   }
+
+  // Resolved after the ring checks, so an empty outline raises the outline
+  // error rather than an index error.
+  const planePoint: Point3 = options.planePoint ?? inputRings[0][0];
 
   // Any in-plane direction will do for the basis; the outline defines its own
   // orientation. Pick one that is not parallel to the normal.
@@ -122,7 +84,9 @@ export function createContourShape(
     vec3.cross(vec3.create(), normal as vec3, candidate as vec3) as Point3
   );
 
-  const toPlanePoint = (point: Point3): PlanePoint => [
+  // Every Point2 below is a point in the plane's 2D basis, relative to the
+  // plane anchor, and never a world coordinate or a canvas coordinate.
+  const toPlanePoint = (point: Point3): Point2 => [
     (point[0] - planePoint[0]) * basis.u[0] +
       (point[1] - planePoint[1]) * basis.u[1] +
       (point[2] - planePoint[2]) * basis.u[2],
@@ -131,21 +95,21 @@ export function createContourShape(
       (point[2] - planePoint[2]) * basis.v[2],
   ];
 
-  const toPlaneDirection = (vector: Point3): PlanePoint => [
+  const toPlaneDirection = (vector: Point3): Point2 => [
     vector[0] * basis.u[0] + vector[1] * basis.u[1] + vector[2] * basis.u[2],
     vector[0] * basis.v[0] + vector[1] * basis.v[1] + vector[2] * basis.v[2],
   ];
 
-  // Projecting first means a contour whose points carry depth error still gives
+  // Projecting first means a polyline whose points carry depth error still gives
   // a well-defined outline.
-  const rings: PlanePoint[][] = inputRings.map((ring) =>
+  const rings: Point2[][] = inputRings.map((ring) =>
     ring.map((point) =>
       toPlanePoint(projectPointOntoPlane(point, planePoint, basis.n))
     )
   );
 
   // Slack scaled to the outline's own size, so it means the same thing for a
-  // 2 mm nodule contour and a 400 mm body contour.
+  // 2 mm nodule outline and a 400 mm body outline.
   let extent = 0;
   for (const ring of rings) {
     for (const [x, y] of ring) {
@@ -155,7 +119,7 @@ export function createContourShape(
   const boundarySlack = Math.max(extent, 1) * SHAPE_BOUNDARY_EPSILON;
 
   /** Distance from a plane point to the nearest edge of any ring. */
-  function distanceToOutline(planePoint2: PlanePoint): number {
+  function distanceToOutline(planePoint2: Point2): number {
     let best = Infinity;
     for (const ring of rings) {
       const distance = distanceToRing(ring, planePoint2);
@@ -166,7 +130,7 @@ export function createContourShape(
     return best;
   }
 
-  function distanceToRing(ring: PlanePoint[], [x, y]: PlanePoint): number {
+  function distanceToRing(ring: Point2[], [x, y]: Point2): number {
     let best = Infinity;
     const vertexCount = ring.length;
     for (let i = 0, j = vertexCount - 1; i < vertexCount; j = i++) {
@@ -190,10 +154,9 @@ export function createContourShape(
     return best;
   }
 
-  const voxelThickness = getVoxelThicknessAlongNormal(volume, basis.n);
   const resolveColumnLine = createColumnLineResolver(volume, basis.n);
 
-  function containsPlanePoint([x, y]: PlanePoint): boolean {
+  function containsPlanePoint([x, y]: Point2): boolean {
     // Even-odd over every edge of every ring. Parity accumulates across rings
     // rather than resetting per ring, which is what makes a hole ring flip its
     // interior back to outside.
@@ -254,11 +217,11 @@ export function createContourShape(
     const perpendicularScale = 1 / directionLength;
 
     /** Column index of the point on the line nearest a plane point. */
-    const columnOf = ([x, y]: PlanePoint) =>
+    const columnOf = ([x, y]: Point2) =>
       ((x - origin2[0]) * direction2[0] + (y - origin2[1]) * direction2[1]) /
       directionLengthSquared;
 
-    const sideOf = ([x, y]: PlanePoint) =>
+    const sideOf = ([x, y]: Point2) =>
       direction2[0] * (y - origin2[1]) - direction2[1] * (x - origin2[0]);
 
     const intervals: [number, number][] = [];
@@ -281,7 +244,7 @@ export function createContourShape(
           // The edge lies along the line. The crossing test cannot see such an
           // edge at all - both endpoints sit on the same side of a line they
           // are on - so contribute its extent directly. Without this, a
-          // contour with an edge running along a voxel row loses that whole
+          // polyline with an edge running along a voxel row loses that whole
           // row, while containsPoint keeps it as a boundary point.
           const a = columnOf(ring[previousIndex]);
           const b = columnOf(ring[i]);
@@ -352,9 +315,9 @@ export function createContourShape(
   return {
     containsPoint,
     getRuns,
-    // The prism's depth, which the caller should hand to the slab. Falling back
-    // to one voxel matches the default the slab itself would apply.
-    getRequiredThickness: () =>
-      Number.isFinite(depth) ? (depth as number) : voxelThickness,
+    // Always planar. The caller's own `referencePlaneThickness` decides how far
+    // the slab reaches along the normal, so a caller that wants a prism passes
+    // that thickness to the iterator.
+    getRequiredThickness: () => 0,
   };
 }

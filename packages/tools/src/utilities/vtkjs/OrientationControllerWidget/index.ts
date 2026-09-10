@@ -9,6 +9,11 @@ import { Enums } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import vtkAnnotatedRhombicuboctahedronActor from '../AnnotatedRhombicuboctahedronActor';
 import { beginOwnedDrag, endOwnedDrag } from '../../interactionDragCoordinator';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.vtkjs.OrientationControllerWidget.index'
+);
 
 export interface OrientationControllerConfig {
   faceColors: {
@@ -410,7 +415,7 @@ export class vtkOrientationControllerWidget {
     // This keeps the marker at a constant screen size regardless of zoom
     const canvas = viewport.canvas;
     if (!canvas) {
-      console.warn('OrientationControllerWidget: No canvas available');
+      cs3dLogger.warn('OrientationControllerWidget: No canvas available');
       return false;
     }
 
@@ -453,7 +458,7 @@ export class vtkOrientationControllerWidget {
         screenSizePixels
       );
       if (!worldPos) {
-        console.warn(
+        cs3dLogger.warn(
           'OrientationControllerWidget: Could not get world position'
         );
         return;

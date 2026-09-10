@@ -2,6 +2,9 @@ import { vec3 } from 'gl-matrix';
 import * as metaData from '../metaData';
 import { MetadataModules } from '../enums';
 import { getConfiguration } from '../init';
+import { coreLog } from './logger';
+
+const log = coreLog.getLogger('utilities', 'calculateSpacingBetweenImageIds');
 
 /**
  * Default spacing value (in mm) used as fallback when spacing cannot be calculated
@@ -192,10 +195,10 @@ export default function calculateSpacingBetweenImageIds(
   // cubic voxel creation
   if ((spacing === 0 || isNaN(spacing)) && !strictZSpacingForVolumeViewport) {
     if (spacingBetweenSlices) {
-      console.debug('Could not calculate spacing. Using spacingBetweenSlices');
+      log.debug('Could not calculate spacing. Using spacingBetweenSlices');
       spacing = spacingBetweenSlices;
     } else if (sliceThickness) {
-      console.debug(
+      log.debug(
         'Could not calculate spacing and no spacingBetweenSlices. Using sliceThickness'
       );
       spacing = sliceThickness;
@@ -208,7 +211,7 @@ export default function calculateSpacingBetweenImageIds(
       if (pixelSpacingValue) {
         spacing = pixelSpacingValue;
       } else {
-        console.debug(
+        log.debug(
           `Could not calculate spacing and no pixel spacing found. Using default thickness (${DEFAULT_THICKNESS_SINGLE_SLICE} mm)`
         );
         spacing = DEFAULT_THICKNESS_SINGLE_SLICE;

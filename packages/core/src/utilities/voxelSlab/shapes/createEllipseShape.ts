@@ -19,18 +19,22 @@ import {
 const UNIT_BOUNDARY = 1 + SHAPE_BOUNDARY_EPSILON;
 
 export interface EllipseShapeOptions {
-  /** Geometry of the volume being measured. */
+  /**
+   * The volume being measured. Pass an `IImageVolume`, or any object that has
+   * `direction`, `spacing`, `origin` and `dimensions`. The structural form
+   * lets a caller that holds no cached volume, such as a test, use this code.
+   */
   volume: VolumeGeometry;
-  /** `P0`, the annotation plane anchor. Defines the plane's depth. */
+  /** The annotation plane anchor. Defines the plane's depth. */
   planePoint: Point3;
-  /** `n`, the annotation view plane normal. Unit length. */
-  normal: Point3;
+  /** The annotation view plane normal. Unit length. */
+  viewPlaneNormal: Point3;
   /**
    * The ellipse centre in world coordinates. For the planar form it is
    * projected onto the annotation plane, so a centre carrying a little depth
    * error is harmless.
    */
-  center: Point3;
+  centerWorld: Point3;
   /**
    * Direction of the major axis. Need not be unit length, and need not already
    * lie in the plane - its component along the normal is removed.
@@ -51,31 +55,11 @@ export interface EllipseShapeOptions {
 /**
  * An ellipse lying in the annotation plane, or an ellipsoid centred on it.
  *
- * Both forms are specified identically - a major-axis direction plus radii -
- * with the third radius promoting the flat ellipse to a solid. That is also how
- * `createRectangleShape` is specified, so the two can be swapped freely.
+ * A third radius promotes the flat ellipse to a solid. `createRectangleShape`
+ * takes the same options, so the two are interchangeable. The depth radius is
+ * widened by half a voxel; the in-plane radii are not.
  *
- * ## Why the runs are exact
- *
- * For a fixed outer and row index, the voxel centre traces a straight line in
- * the column index, and so does its projection onto the plane. Substituting a
- * line into the ellipse's quadratic form gives a quadratic in the column index,
- * whose real roots bound exactly one interval. No voxel is ever tested.
- *
- * ## Depth and the slab
- *
- * The in-plane radii are used as given: a voxel counts when its *centre* falls
- * inside the outline, which is the usual convention and keeps the perimeter
- * consistent with other viewers.
- *
- * The depth radius is dilated by half a voxel thickness, mirroring Rule M's
- * `T_v` term, so a voxel counts when the voxel *itself* reaches the ellipsoid.
- * Without that an ellipsoid thinner than a voxel, or one whose surface falls
- * between voxel centres, could select nothing at all.
- *
- * Remember the shape is intersected with Rule M's slab, not unioned with it.
- * Pass `getRequiredThickness()` as the iterator's `annotationThickness` unless
- * you deliberately want the slab to clip the shape.
+ * See `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  */
 export function createEllipseShape(
   options: EllipseShapeOptions
@@ -83,7 +67,7 @@ export function createEllipseShape(
   const {
     volume,
     planePoint,
-    normal,
+    viewPlaneNormal: normal,
     majorAxis,
     majorRadius,
     minorRadius,
@@ -108,8 +92,8 @@ export function createEllipseShape(
   // A flat ellipse is tested on the projected point, so its centre only
   // matters within the plane.
   const center = isSolid
-    ? ([...options.center] as Point3)
-    : projectPointOntoPlane(options.center, planePoint, basis.n);
+    ? ([...options.centerWorld] as Point3)
+    : projectPointOntoPlane(options.centerWorld, planePoint, basis.n);
 
   // Each entry scales a world offset into the unit sphere's space.
   const scaledAxes: { axis: Point3; inverseRadius: number }[] = [
@@ -193,13 +177,13 @@ export function createEllipseShape(
 export function createCircleShape(options: {
   volume: VolumeGeometry;
   planePoint: Point3;
-  normal: Point3;
-  center: Point3;
+  viewPlaneNormal: Point3;
+  centerWorld: Point3;
   radius: number;
   /** Supply to make it a sphere rather than a flat disc. */
   depthRadius?: number;
 }): VoxelSlabShape {
-  const { normal } = options;
+  const { viewPlaneNormal: normal } = options;
 
   // Any vector not parallel to the normal gives a valid in-plane direction.
   const candidate: Point3 = Math.abs(normal[0]) < 0.9 ? [1, 0, 0] : [0, 1, 0];
@@ -212,8 +196,8 @@ export function createCircleShape(options: {
   return createEllipseShape({
     volume: options.volume,
     planePoint: options.planePoint,
-    normal,
-    center: options.center,
+    viewPlaneNormal: normal,
+    centerWorld: options.centerWorld,
     majorAxis,
     majorRadius: options.radius,
     minorRadius: options.radius,

@@ -48,10 +48,11 @@ import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
 import { getBoundingBoxAroundShapeIJK } from '../../utilities/boundingBox';
 
 const {
-  createContourShape,
-  sampleVoxelsInSlab,
+  createPolylineShape,
+  sampleVoxelsInShape,
   getMembershipHalfWidth,
   getVoxelThicknessAlongNormal,
+  resolveReferencePlaneThickness,
 } = csUtils.voxelSlab;
 
 const { pointCanProjectOnLine } = polyline;
@@ -996,8 +997,8 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
    * calculator, per Rule M of
    * https://github.com/cornerstonejs/cornerstone3D/issues/2889
    *
-   * This is the reference example of driving `sampleVoxelsInSlab` from an
-   * annotation tool. A tool with a different shape swaps `createContourShape`
+   * This is the reference example of driving `sampleVoxelsInShape` from an
+   * annotation tool. A tool with a different shape swaps `createPolylineShape`
    * for `createEllipseShape` or `createRectangleShape` and changes nothing
    * else: the plane, the thickness and the accumulation are common to every
    * area annotation, which is why they live in core.
@@ -1024,48 +1025,57 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       return [];
     }
 
-    const normal = vec3.normalize(
+    const viewPlaneNormal = vec3.normalize(
       vec3.create(),
       annotation.metadata.viewPlaneNormal
     ) as unknown as Types.Point3;
 
     // The contour's own points define the plane's depth, which is what makes
-    // this independent of where the camera happens to be focused.
+    // this independent of where the camera happens to be focused. The shape
+    // would default to the same anchor, and the iterator has to be given the
+    // same one, so name it once here.
     const planePoint = points[0] as Types.Point3;
 
     const { dimensions, direction, spacing, origin, imageData } = image;
     const volume = { dimensions, direction, spacing, origin };
+    const voxelThickness = getVoxelThicknessAlongNormal(
+      volume,
+      viewPlaneNormal
+    );
 
     // T: the annotation's own thickness, captured from the viewport slab when
     // the annotation was created. Absent for stack annotations and for
-    // everything drawn before PlaneRestriction.thickness existed, in which
-    // case the shape falls back to one voxel along the normal.
-    const thickness = annotation.metadata.planeRestriction?.thickness;
+    // everything drawn before PlaneRestriction.referencePlaneThickness
+    // existed, in which case it falls back to one voxel along the normal.
+    //
+    // The polyline shape is planar and reports no thickness of its own, so T
+    // reaches the slab from here. Resolve it once, because the bounds below
+    // must use the same value the iterator uses: an unresolved absent
+    // thickness gives a half width of T_v / 2, which clips the bounds by half
+    // a voxel and drops the outermost layer.
+    const referencePlaneThickness = resolveReferencePlaneThickness(
+      annotation.metadata.planeRestriction?.referencePlaneThickness,
+      voxelThickness
+    );
 
-    const shape = createContourShape({
+    const shape = createPolylineShape({
       volume,
       planePoint,
-      normal,
+      viewPlaneNormal,
       polyline: points as Types.Point3[],
-      depth: thickness,
     });
 
-    const annotationThickness = shape.getRequiredThickness();
-
-    return sampleVoxelsInSlab({
+    return sampleVoxelsInShape({
       volume,
       planePoint,
-      normal,
-      annotationThickness,
+      viewPlaneNormal,
+      referencePlaneThickness,
       bounds: this.getContourIndexBounds(
         points,
         volume,
         imageData,
-        normal,
-        getMembershipHalfWidth(
-          annotationThickness,
-          getVoxelThicknessAlongNormal(volume, normal)
-        )
+        viewPlaneNormal,
+        getMembershipHalfWidth(referencePlaneThickness, voxelThickness)
       ),
       getShapeRuns: shape.getRuns,
       voxelManager,

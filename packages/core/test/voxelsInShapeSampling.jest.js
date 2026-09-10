@@ -1,9 +1,9 @@
-import { sampleVoxelsInSlab } from '../src/utilities/voxelSlab/sampleVoxelsInSlab';
-import { collectVoxelsInSlab } from '../src/utilities/voxelSlab/iterateVoxelsInSlab';
+import { sampleVoxelsInShape } from '../src/utilities/voxelSlab/sampleVoxelsInShape';
+import { collectVoxelsInShape } from '../src/utilities/voxelSlab/iterateVoxelsInShape';
 
 /**
- * `sampleVoxelsInSlab` is the accumulation half of an area measurement, shared
- * by every ROI tool. Which voxels it visits is `iterateVoxelsInSlab`'s job and
+ * `sampleVoxelsInShape` is the accumulation half of an area measurement, shared
+ * by every ROI tool. Which voxels it visits is `iterateVoxelsInShape`'s job and
  * is covered exhaustively against a brute force oracle in
  * `voxelSlabIterator.jest.js`; what matters here is the reading contract laid
  * over it - values, copies, the callback, and what a missing value does.
@@ -17,25 +17,25 @@ const volume = {
 };
 
 const planePoint = [0, 0, 0];
-const normal = [0, 0, 1];
+const viewPlaneNormal = [0, 0, 1];
 
 /** The z = 0 layer, 64 voxels, with every value distinct and non-zero. */
 const iteration = {
   volume,
   planePoint,
-  normal,
-  annotationThickness: 1,
+  viewPlaneNormal,
+  referencePlaneThickness: 1,
 };
 
 const voxelManager = {
   getAtIJKPoint: ([i, j, k]) => i + j * 8 + k * 64 + 1,
 };
 
-describe('sampleVoxelsInSlab', () => {
+describe('sampleVoxelsInShape', () => {
   it('reads a value for every voxel the iterator visits', () => {
-    const expected = collectVoxelsInSlab(iteration);
+    const expected = collectVoxelsInShape(iteration);
 
-    const samples = sampleVoxelsInSlab({
+    const samples = sampleVoxelsInShape({
       ...iteration,
       voxelManager,
       storePointData: true,
@@ -54,13 +54,13 @@ describe('sampleVoxelsInSlab', () => {
     const stored = jest.fn();
     const notStored = jest.fn();
 
-    const withData = sampleVoxelsInSlab({
+    const withData = sampleVoxelsInShape({
       ...iteration,
       voxelManager,
       onSample: stored,
       storePointData: true,
     });
-    const withoutData = sampleVoxelsInSlab({
+    const withoutData = sampleVoxelsInShape({
       ...iteration,
       voxelManager,
       onSample: notStored,
@@ -75,7 +75,7 @@ describe('sampleVoxelsInSlab', () => {
   it('skips voxels the volume has no value for', () => {
     const onSample = jest.fn();
 
-    const samples = sampleVoxelsInSlab({
+    const samples = sampleVoxelsInShape({
       ...iteration,
       voxelManager: {
         // Half the layer is missing; 0 is a value and must survive.
@@ -91,7 +91,7 @@ describe('sampleVoxelsInSlab', () => {
   });
 
   it('returns copies, not the arrays the iterator reuses', () => {
-    const samples = sampleVoxelsInSlab({
+    const samples = sampleVoxelsInShape({
       ...iteration,
       voxelManager,
       storePointData: true,
@@ -106,7 +106,7 @@ describe('sampleVoxelsInSlab', () => {
 
   it('returns nothing without a voxel manager', () => {
     expect(
-      sampleVoxelsInSlab({ ...iteration, voxelManager: null })
+      sampleVoxelsInShape({ ...iteration, voxelManager: null })
     ).toHaveLength(0);
   });
 });

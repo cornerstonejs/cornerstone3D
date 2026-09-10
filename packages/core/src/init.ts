@@ -10,6 +10,9 @@ import { Events, RenderBackends, RenderingEngineModeEnum } from './enums';
 import type { RenderBackendValue } from './enums';
 import { isRegisteredRenderBackend } from './RenderingEngine/helpers/renderBackendRegistry';
 import type { EffectiveRenderBackend } from './types/RenderBackendRegistry';
+import { coreLog } from './utilities/logger';
+
+const log = coreLog.getLogger('init');
 
 // TODO: change config into a class with methods to better control get/set
 const defaultConfig: Cornerstone3DConfig = {
@@ -123,7 +126,7 @@ function init(configuration = config): boolean {
     if (configuration.rendering?.preferSizeOverAccuracy) {
       config.rendering.preferSizeOverAccuracy = true;
     } else if (!_hasNorm16TextureSupport()) {
-      console.log(
+      log.info(
         'norm16 texture not supported, you can turn on the preferSizeOverAccuracy flag to use native data type, but be aware of the inaccuracy of the rendering in high bits'
       );
     }
@@ -131,13 +134,13 @@ function init(configuration = config): boolean {
 
   const capabilities = getRenderingCapabilities();
   if (!capabilities.webgl) {
-    console.log('CornerstoneRender: GPU not detected, using CPU rendering');
+    log.info('CornerstoneRender: GPU not detected, using CPU rendering');
     config.rendering.useCPURendering = true;
   } else {
-    console.log('CornerstoneRender: using GPU rendering');
+    log.info('CornerstoneRender: using GPU rendering');
 
     if (capabilities.softwareRasterizer) {
-      console.log(
+      log.info(
         `CornerstoneRender: software rasterizer detected (${capabilities.renderer}), GPU rendering may be slow`
       );
     }
@@ -214,7 +217,7 @@ function getEffectiveRenderBackend(
     // registered would otherwise be silently downgraded to 'auto'.
     if (!warnedUnregisteredBackends.has(backend)) {
       warnedUnregisteredBackends.add(backend);
-      console.warn(
+      log.warn(
         `[getEffectiveRenderBackend] Unregistered render backend "${backend}"; ` +
           `falling back to 'auto'. Register custom backends with registerRenderBackend().`
       );

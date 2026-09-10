@@ -1,7 +1,7 @@
 import PlanarFreehandROITool from '../src/tools/annotation/PlanarFreehandROITool';
 
 /**
- * Tests for PlanarFreehandROI voxel selection via `sampleVoxelsInSlab`.
+ * Tests for PlanarFreehandROI voxel selection via `sampleVoxelsInShape`.
  *
  * The exactness of the iterator itself is covered exhaustively in
  * `packages/core/test/voxelSlab*.jest.js` against a brute-force reference. What
@@ -44,7 +44,10 @@ function createAnnotation(thickness) {
   return {
     metadata: {
       viewPlaneNormal: [0, 0, 1],
-      planeRestriction: thickness === undefined ? undefined : { thickness },
+      planeRestriction:
+        thickness === undefined
+          ? undefined
+          : { referencePlaneThickness: thickness },
     },
   };
 }

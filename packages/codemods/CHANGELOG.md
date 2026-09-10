@@ -3,6 +3,26 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [5.10.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.9.1...v5.10.0) (2026-09-10)
+
+**Note:** Version bump only for package @cornerstonejs/codemods
+
+## [5.9.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.9.0...v5.9.1) (2026-09-09)
+
+**Note:** Version bump only for package @cornerstonejs/codemods
+
+# [5.9.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.9...v5.9.0) (2026-09-09)
+
+**Note:** Version bump only for package @cornerstonejs/codemods
+
+## [5.8.9](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.8...v5.8.9) (2026-09-03)
+
+**Note:** Version bump only for package @cornerstonejs/codemods
+
+## [5.8.8](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.7...v5.8.8) (2026-09-02)
+
+**Note:** Version bump only for package @cornerstonejs/codemods
+
 ## [5.8.7](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.6...v5.8.7) (2026-09-01)
 
 **Note:** Version bump only for package @cornerstonejs/codemods
