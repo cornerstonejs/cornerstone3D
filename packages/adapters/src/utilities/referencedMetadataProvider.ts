@@ -17,6 +17,27 @@ export const STUDY_MODULES = [
 
 export const SERIES_MODULES = [MetadataModules.GENERAL_SERIES];
 
+/**
+ * Copies the attributes that have a value, and drops the rest.
+ *
+ * `getNormalized` builds a module from whatever a provider returns, and a
+ * provider returns the module as a whole - an attribute the instance does not
+ * carry is present as a key with the value `undefined`. Such a key overwrites a
+ * real value when a consumer merges the module onto a dataset, so it must not
+ * leave this provider.
+ */
+function definedAttributesOf(source) {
+  const result = {};
+
+  for (const [key, value] of Object.entries(source ?? {})) {
+    if (value !== undefined) {
+      result[key] = value;
+    }
+  }
+
+  return result;
+}
+
 export const IMAGE_MODULES = [
   MetadataModules.GENERAL_IMAGE,
   MetadataModules.IMAGE_PLANE,
@@ -92,12 +113,35 @@ export const metadataProvider = {
    * to the generated object.
    */
   [MetadataModules.PREDECESSOR_SEQUENCE]: (imageId) => {
-    // Start with the series data
-    const result = { ...metaData.get(MetadataModules.SERIES_DATA, imageId) };
+    const generalImage = metaData.get(MetadataModules.GENERAL_IMAGE, imageId);
+
+    // Nothing names the predecessor when no provider holds its instance - a
+    // stale imageId, or an instance a provider never ingested. `undefined` is
+    // what a provider answers for "I have nothing", and every consumer merges
+    // this result with `Object.assign`, which takes `undefined` as a no-op.
+    // The two alternatives are both worse: reading `generalImage.instanceNumber`
+    // off `undefined` throws and takes the whole save with it, and a
+    // PredecessorDocumentsSequence built from nothing carries a Type 1
+    // ReferencedSOPInstanceUID that names no instance.
+    if (!generalImage?.sopInstanceUID) {
+      return undefined;
+    }
+
+    const study = metaData.get(MetadataModules.GENERAL_STUDY, imageId) ?? {};
+
+    // Start with the series data, and keep only the attributes the predecessor
+    // has a value for. A provider answers a module as a whole and gives
+    // `undefined` for an attribute the instance does not carry, and every
+    // consumer merges this result onto a dataset with `Object.assign`, which
+    // copies an undefined value over a real one. A predecessor with no Series
+    // Number would otherwise clear the Series Number that the derivation gave
+    // the revision, and dcmjs drops that Type 1 element when it denaturalizes
+    // the dataset. The same holds for Modality and for the two UIDs.
+    const result = definedAttributesOf(
+      metaData.get(MetadataModules.SERIES_DATA, imageId)
+    );
     // And extend with the predecessor information, plus updates for a new
     // instance.
-    const generalImage = metaData.get(MetadataModules.GENERAL_IMAGE, imageId);
-    const study = metaData.get(MetadataModules.GENERAL_STUDY, imageId);
     // An unnumbered predecessor gives nothing to increment, and
     // `1 + Number(undefined)` is `NaN`, which then reaches the stored instance.
     // An instance that arrived without a number is exactly that case - an
