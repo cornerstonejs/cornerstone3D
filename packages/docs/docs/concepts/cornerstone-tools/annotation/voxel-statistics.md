@@ -236,6 +236,87 @@ optimisation. Replace `getShapeRuns: shape.getRuns` with
 `isInShape: shape.containsPoint` and the voxel set must stay identical, only
 slower. That replacement is the cheapest way to debug a shape.
 
+## Sampling the values
+
+The iterator yields indices and centres, and no values. A tool that measures
+needs the value of every voxel as well, so `sampleVoxelsInShape` wraps the
+iterator and reads it:
+
+```ts
+const { createPolylineShape, sampleVoxelsInShape } = utilities.voxelSlab;
+
+const samples = sampleVoxelsInShape({
+  volume,
+  planePoint,
+  viewPlaneNormal,
+  referencePlaneThickness:
+    shape.getRequiredThickness() || referencePlaneThickness,
+  bounds, // the index box the annotation can reach
+  getShapeRuns: shape.getRuns,
+  voxelManager,
+  onSample: statsCallback,
+  storePointData,
+});
+```
+
+`onSample` receives `{ value, pointLPS, pointIJK }` for every voxel that has a
+value, in iteration order, which is what a statistics calculator consumes. A
+voxel the `voxelManager` holds no value for is skipped. `storePointData` also
+collects the samples and returns them, at the cost of one object per voxel, so a
+caller that only accumulates statistics leaves it off and uses `onSample`.
+
+The `bounds` must allow for the thickness that `referencePlaneThickness`
+resolves to. A caller that dilates its bounds for the annotation's own
+thickness, and then hands a solid shape's larger depth to the iterator, loses
+every layer past the first.
+
+### The tools share one path
+
+Every area annotation tool in `@cornerstonejs/tools` reaches the sampler through
+`utilities.sampleAreaAnnotationVoxels`. That function takes the annotation and
+the target image, and derives the plane, the normal, the thickness and the index
+bounds. Only the shape differs between the tools:
+
+```ts
+const pointsInShape = utilities.sampleAreaAnnotationVoxels({
+  annotation,
+  image, // the target's IImageData, and not image.imageData
+  voxelManager,
+  points, // the world points the shape is built from
+  boundsMargin, // how far the shape reaches past those points
+  createShape: ({ volume, planePoint, viewPlaneNormal }) =>
+    createCircleShape({
+      volume,
+      planePoint,
+      viewPlaneNormal,
+      centerWorld,
+      radius,
+    }),
+  onSample: statsCallback,
+  storePointData,
+});
+```
+
+Two arguments carry the whole of what a tool must get right:
+
+- `points` and `boundsMargin` give the index bounds. The outline of a polyline,
+  and the four corners of a rectangle, enclose the shape, so those tools leave
+  `boundsMargin` at 0. A circle and an ellipse only touch their handles, so they
+  pass the largest radius: the outline bulges out of the box of the handles as
+  soon as that box is not aligned with the index axes, and a circle drawn with
+  `simplified` handles keeps one handle only.
+- `createShape` returns nothing for a degenerate annotation, such as a circle of
+  no radius, and the sampler then measures no voxel. The shape factories throw on
+  one, and an exception inside the render loop stops the whole viewport.
+
+The plane comes from `annotation.metadata`, and never from a viewport. Every tool
+records `viewPlaneNormal` when the user draws the annotation. An annotation that
+arrives from a DICOM SR records no normal, because an SR stores no camera, and
+`updatePlaneRestriction` records two in-plane vectors instead; the sampler then
+crosses those two vectors, which describes the same plane. Two points give one
+in-plane vector and no plane, so a two point annotation that arrives without a
+normal reports no statistics.
+
 ## The shape contract
 
 Every shape implements `VoxelSlabShape`, which has three members.
@@ -408,15 +489,22 @@ This is an L1 length, and it is deliberately not the L2 length that
 this voxel reach along the normal", which is what a voxel/slab overlap test
 needs.
 
-| function                       | formula                  | answers                                              |
-| ------------------------------ | ------------------------ | ---------------------------------------------------- |
-| `getSpacingInNormalDirection`  | L2, `sqrt(Σ (d·aᵢ·sᵢ)²)` | how far the camera dollies before it sees new voxels |
-| `getVoxelThicknessAlongNormal` | L1, `Σ \|d·aᵢ\|·sᵢ`      | how far one voxel reaches along the direction        |
+| function                            | formula                          | answers                                              |
+| ----------------------------------- | -------------------------------- | ---------------------------------------------------- |
+| `getSpacingInNormalDirection`       | L2, `sqrt(Σ (d·aᵢ·sᵢ)²)`         | how far the camera dollies before it sees new voxels |
+| `getVoxelThicknessAlongNormal`      | L1, `Σ \|d·aᵢ\|·sᵢ`              | how far one voxel reaches along the direction        |
+| `getEffectiveSpacingAlongDirection` | harmonic, `1/sqrt(Σ (d·aᵢ/sᵢ)²)` | how far to step to cross one voxel                   |
 
-The two agree whenever the normal is parallel to a voxel axis, which covers any
+All three agree whenever the normal is parallel to a voxel axis, which covers any
 acquisition-orientation view, and they diverge for an oblique normal. For
 1×1×3 mm voxels viewed at 45 degrees between an in-plane axis and the slice
-axis, the L1 value is `2*sqrt(2) ≈ 2.83 mm` against `sqrt(5) ≈ 2.24 mm` for L2.
+axis, the L1 value is `2*sqrt(2) ≈ 2.83 mm` against `sqrt(5) ≈ 2.24 mm` for L2,
+and `≈ 1.34 mm` for the harmonic form.
+
+Rule M uses `T_v` and nothing else. The harmonic form belongs to a tool that
+walks a line, such as the sub-pixel resampler of the freehand ROI: it needs a
+step that crosses one voxel per step, and neither of the other two measures
+answers that.
 
 ## Cost
 
@@ -436,6 +524,7 @@ Everything here is exported under `utilities.voxelSlab`.
 | export                                                                 | purpose                                  |
 | ---------------------------------------------------------------------- | ---------------------------------------- |
 | `iterateVoxelsInShape`, `collectVoxelsInShape`                         | the traversal                            |
+| `sampleVoxelsInShape`                                                  | the traversal, with the values read      |
 | `createEllipseShape`, `createCircleShape`                              | ellipse in-plane, ellipsoid out-of-plane |
 | `createRectangleShape`                                                 | rectangle in-plane, box out-of-plane     |
 | `createPolylineShape`                                                  | a planar polyline, with internal holes   |
@@ -443,3 +532,10 @@ Everything here is exported under `utilities.voxelSlab`.
 | `isPlaneDepthViewable`                                                 | the depth half of Rule D                 |
 | `buildIndexSpaceSlab`, `getDepthRun`, `getSlabAxisBound`               | the index-space run arithmetic           |
 | `isVoxelCenterInSlab`, `getMembershipHalfWidth`, `getDisplayHalfWidth` | the Rule M and Rule D predicates         |
+
+Two more exports sit outside that namespace:
+
+| export                                                            | purpose                                       |
+| ----------------------------------------------------------------- | --------------------------------------------- |
+| `utilities.getEffectiveSpacingAlongDirection`, in core            | the step that crosses one voxel along a line  |
+| `utilities.sampleAreaAnnotationVoxels`, in `@cornerstonejs/tools` | the one path every area annotation tool takes |
