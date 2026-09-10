@@ -10,7 +10,7 @@ import {
   createEllipseInPoint,
   getEllipseCornersFromCanvasCoordinates,
 } from './fillCircle';
-import { createSphereObliqueIntegerFill } from './utils/obliqueIntegerFill';
+import { createSphereBrushFill } from './utils/brushVoxelSlab';
 const { transformWorldToIndex, getNormalizedAspectRatio } = csUtils;
 import { getSphereBoundsInfoFromViewport } from '../../../utilities/getSphereBoundsInfo';
 import type { CanvasCoordinates } from '../../../types';
@@ -80,38 +80,66 @@ const sphereComposition = {
     // Calculate radius in world units
     const radiusWorld = vec3.distance(points[0], points[1]) / 2;
 
-    // Get the center in IJK
-    const centerIJK = transformWorldToIndex(
+    // The fallback bounds, for the bounding-box walk that `regionFill` uses
+    // when no shape fill is built. The shape fill computes its own, tighter
+    // bounds from the same geometry the iterator uses.
+    const baseExtent = getSphereBoundsInfoFromViewport(
+      points.slice(0, 2) as [Types.Point3, Types.Point3],
       segmentationImageData,
-      center as Types.Point3
+      viewport
     );
 
-    // Get the spacing of the volume to convert world radius to IJK "radius"
-    const spacing = segmentationImageData.getSpacing();
-    const radiusIJK = [
-      radiusWorld / spacing[0],
-      radiusWorld / spacing[1],
-      radiusWorld / spacing[2],
-    ];
+    const strokeCenters = operationData.strokePointsWorld?.length
+      ? operationData.strokePointsWorld
+      : [operationData.centerWorld];
 
-    // Define bounds that always encompass the sphere, clamped to the image dimensions
-    const dims = segmentationImageData.getDimensions();
-    const boundsIJK = [
-      [
-        Math.max(0, Math.floor(centerIJK[0] - radiusIJK[0])),
-        Math.min(dims[0] - 1, Math.ceil(centerIJK[0] + radiusIJK[0])),
-      ],
-      [
-        Math.max(0, Math.floor(centerIJK[1] - radiusIJK[1])),
-        Math.min(dims[1] - 1, Math.ceil(centerIJK[1] + radiusIJK[1])),
-      ],
-      [
-        Math.max(0, Math.floor(centerIJK[2] - radiusIJK[2])),
-        Math.min(dims[2] - 1, Math.ceil(centerIJK[2] + radiusIJK[2])),
-      ],
-    ];
+    // Each stroke point translates the same sphere, so slide the base bounds
+    // by the delta in IJK space rather than recomputing the expensive sphere
+    // bounds per sample - which adds up quickly during a fast brush.
+    const baseBounds = baseExtent.boundsIJK;
+    const baseCenterIJK = operationData.centerIJK;
+    const boundsForStroke = strokeCenters.reduce<Types.BoundsIJK | null>(
+      (accumulated, centerPoint) => {
+        if (!centerPoint) {
+          return accumulated;
+        }
 
-    operationData.isInObjectBoundsIJK = boundsIJK as Types.BoundsIJK;
+        const translatedCenterIJK = transformWorldToIndex(
+          segmentationImageData,
+          centerPoint as Types.Point3
+        );
+
+        const translated = [0, 1, 2].map((axis) => {
+          const delta = translatedCenterIJK[axis] - baseCenterIJK[axis];
+          return [
+            baseBounds[axis][0] + delta,
+            baseBounds[axis][1] + delta,
+          ] as Types.Point2;
+        }) as Types.BoundsIJK;
+
+        if (!accumulated) {
+          return translated;
+        }
+
+        return [0, 1, 2].map((axis) => [
+          Math.min(accumulated[axis][0], translated[axis][0]),
+          Math.max(accumulated[axis][1], translated[axis][1]),
+        ]) as Types.BoundsIJK;
+      },
+      null
+    );
+
+    const boundsToUse = boundsForStroke ?? baseExtent.boundsIJK;
+
+    // Clamp once at the end, so a drag that crosses the image edge does not
+    // pay for a clamp per partial result.
+    const dimensions = segmentationImageData?.getDimensions();
+    operationData.isInObjectBoundsIJK = dimensions
+      ? ([0, 1, 2].map((axis) => [
+          Math.max(0, Math.min(boundsToUse[axis][0], dimensions[axis] - 1)),
+          Math.max(0, Math.min(boundsToUse[axis][1], dimensions[axis] - 1)),
+        ]) as Types.BoundsIJK)
+      : boundsToUse;
 
     operationData.isInObject = createEllipseInPoint(cornersInWorld, {
       strokePointsWorld: operationData.strokePointsWorld,
@@ -124,14 +152,16 @@ const sphereComposition = {
       viewNormal: normalizedPlaneNormal,
     });
 
-    operationData.obliqueIntegerFill = createSphereObliqueIntegerFill({
-      viewUp: normalizedViewUp as Types.Point3,
-      viewPlaneNormal: normalizedPlaneNormal as Types.Point3,
-      centerIJK,
+    // A sphere carries its own depth, so it reports the slab thickness it needs
+    // and the view slab thickness never enters. The stroke centers sweep a tube
+    // rather than a flat swept disc, which is what a sphere brush should paint.
+    operationData.brushVoxelSlabFill = createSphereBrushFill({
       segmentationImageData,
+      viewPlaneNormal: normalizedPlaneNormal as Types.Point3,
+      centerWorld: operationData.centerWorld,
       radiusWorld,
+      strokeCentersWorld: strokeCenters,
     });
-    // }
   },
 } as Composition;
 

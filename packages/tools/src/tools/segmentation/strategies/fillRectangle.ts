@@ -7,7 +7,7 @@ import type { Composition, InitializedOperationData } from './BrushStrategy';
 import { StrategyCallbacks } from '../../../enums';
 import compositions from './compositions';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
-import { createRectangleObliqueIntegerFill } from './utils/obliqueIntegerFill';
+import { createRectangleBrushFill } from './utils/brushVoxelSlab';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -80,7 +80,6 @@ const initializeRectangle = {
     const {
       points, // bottom, top, left, right
       segmentationImageData,
-      viewUp,
       viewPlaneNormal,
     } = operationData;
 
@@ -112,12 +111,13 @@ const initializeRectangle = {
     operationData.isInObject = pointInShapeFn;
     operationData.isInObjectBoundsIJK = boundsIJK;
 
-    operationData.obliqueIntegerFill = createRectangleObliqueIntegerFill({
-      viewUp: viewUp as Types.Point3,
-      viewPlaneNormal: viewPlaneNormal as Types.Point3,
-      centerIJK: operationData.centerIJK,
+    // The corners define the plane, so the fill matches the rectangle the user
+    // drew. `viewPlaneNormal` only stands in when the corners are degenerate
+    // and cross to zero.
+    operationData.brushVoxelSlabFill = createRectangleBrushFill({
       segmentationImageData,
       cornersWorld: orderedPoints,
+      viewPlaneNormal: viewPlaneNormal as Types.Point3,
     });
   },
 } as Composition;

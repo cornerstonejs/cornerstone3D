@@ -31,3 +31,5 @@ export type { RectangleShapeOptions } from './createRectangleShape';
 
 export { createPolylineShape } from './createPolylineShape';
 export type { PolylineShapeOptions } from './createPolylineShape';
+
+export { createUnionShape } from './createUnionShape';

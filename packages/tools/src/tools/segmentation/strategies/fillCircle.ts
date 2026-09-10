@@ -11,7 +11,7 @@ import type { CanvasCoordinates } from '../../../types';
 import { StrategyCallbacks } from '../../../enums';
 import compositions from './compositions';
 import { pointInSphere } from '../../../utilities/math/sphere';
-import { createCircleObliqueIntegerFill } from './utils/obliqueIntegerFill';
+import { createCircleBrushFill } from './utils/brushVoxelSlab';
 
 const {
   transformWorldToIndex,
@@ -286,27 +286,27 @@ const initializeCircle = {
 
     operationData.isInObjectBoundsIJK = boundsIJK;
 
-    // Always fill through the integer oblique iterator - both single clicks and
-    // click-drag strokes. It constrains the fill to the view slab using fast
-    // integer u/v/w ranges, which avoids the 3D bleed into adjacent slices that
-    // the axis-aligned bounding-box fallback produced on oblique planes. The
-    // stroke centers make it paint a continuous capsule in one pass.
+    // Always fill through the shared voxel slab iterator - both single clicks
+    // and click-drag strokes. It walks the disc itself rather than the
+    // axis-aligned bounding box around it, which is what avoids the bleed into
+    // the neighbouring slices that the box walk produced on an oblique plane.
+    // The stroke centers make it paint a continuous swept disc in one pass.
     //
     // The slab thickness follows the view: a thin view fills a single oblique
     // plane, while a full-thickness (thick-slab) view fills every plane in the
-    // slab so a "circle" paints all voxels through the thickness (a volume fill).
-    // See the oblique fill behavioural description for the matching area
-    // semantics (per-voxel area divided by the number of w planes).
+    // slab so a "circle" paints all voxels through the thickness (a volume
+    // fill). See `utils/brushVoxelSlab.ts` for the matching area semantics.
     // `getSlabThickness` only exists on volume viewports; stack/generic ones
-    // have no slab API, so keep it optional and let the fill fall back.
+    // have no slab API, so keep it optional and let the fill default to one
+    // voxel along the normal.
     const slabThicknessWorld = (
       viewport as Types.IVolumeViewport
     ).getSlabThickness?.();
-    operationData.obliqueIntegerFill = createCircleObliqueIntegerFill({
+    operationData.brushVoxelSlabFill = createCircleBrushFill({
+      segmentationImageData,
       viewUp: normalizedViewUp as Types.Point3,
       viewPlaneNormal: normalizedPlaneNormal as Types.Point3,
-      centerIJK: operationData.centerIJK,
-      segmentationImageData,
+      centerWorld: operationData.centerWorld,
       xRadius,
       yRadius,
       strokeCentersWorld: strokeCenters,

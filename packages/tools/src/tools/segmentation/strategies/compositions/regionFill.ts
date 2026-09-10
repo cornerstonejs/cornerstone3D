@@ -1,9 +1,6 @@
 import type { InitializedOperationData } from '../BrushStrategy';
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
-import {
-  forEachObliqueIntegerFillVoxel,
-  isObliqueIntegerFillNonEmpty,
-} from '../utils/obliqueIntegerFill';
+import { forEachBrushFillVoxel } from '../utils/brushVoxelSlab';
 
 /**
  * Creates a fill strategy that uses the isWithinThreshold created by the
@@ -11,9 +8,12 @@ import {
  * the specified area, checking if in threshold, and if so, filling that area
  * with the new segment by calling the setValue function.
  *
- * When `operationData.obliqueIntegerFill` is present, voxels are enumerated
- * with the integer oblique iterator (`w -> u -> v`, inner loop `ijk += B`)
- * instead of walking the axis-aligned IJK bounding box.
+ * When `operationData.brushVoxelSlabFill` is present, the voxels come from the
+ * shared voxel slab iterator, which walks the brush shape itself rather than
+ * the axis-aligned IJK bounding box around it. See
+ * `strategies/utils/brushVoxelSlab.ts`. A strategy that builds no fill - a
+ * degenerate brush, or one that has not moved onto the shared iterator yet -
+ * falls back to the bounding-box walk.
  */
 export default {
   [StrategyCallbacks.Fill]: (operationData: InitializedOperationData) => {
@@ -23,7 +23,7 @@ export default {
       segmentationVoxelManager,
       brushStrategy,
       centerIJK,
-      obliqueIntegerFill,
+      brushVoxelSlabFill,
     } = operationData;
     const isWithinThreshold =
       brushStrategy.createIsInThreshold?.(operationData);
@@ -39,15 +39,11 @@ export default {
         }
       : (data) => setValue(operationData, data);
 
-    if (
-      obliqueIntegerFill &&
-      isObliqueIntegerFillNonEmpty(obliqueIntegerFill)
-    ) {
-      forEachObliqueIntegerFillVoxel(
-        obliqueIntegerFill,
+    if (brushVoxelSlabFill) {
+      forEachBrushFillVoxel(
+        brushVoxelSlabFill,
         segmentationVoxelManager,
-        callback,
-        segmentationImageData
+        callback
       );
     } else {
       segmentationVoxelManager.forEach(callback, {
