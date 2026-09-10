@@ -88,8 +88,44 @@ const colorTransferSyntaxes = {
   '1.2.840.10008.1.2.4.110': 'JPEGXLLosslessTransferSyntax',
 };
 
+/**
+ * Lossy syntaxes, which by definition cannot be compared bit-for-bit against
+ * the uncompressed original, so each one carries the largest per sample
+ * difference it is allowed to produce.
+ *
+ * .50 is the one syntax libjpeg-turbo decodes here, so it is the only case that
+ * covers that codec at all - every entry in the lossless list above goes to a
+ * different decoder.
+ *
+ * It runs against GrayImage.dcm rather than either of the other two bases, and
+ * both of those would be the wrong image for it:
+ *
+ *   CTImage.dcm is 16 bit, while JPEG Baseline is an 8 bit process, so the
+ *   fixture would be an 8 bit frame compared against 16 bit CT values - not
+ *   the same value space, which is why the older
+ *   test/lossyImagesDecoding_test.ts needed a tolerance of 100 and recorded a
+ *   TODO against it.
+ *
+ *   ColorImage.dcm would not reach this codec at all. decodeImageFrame.ts
+ *   sends 8 bit .50 with three or four samples per pixel to the browser's own
+ *   JPEG decoder, so a colour fixture tests the browser rather than
+ *   libjpeg-turbo.
+ *
+ * Against a matched 8 bit grayscale base the bound is a real one. The encode is
+ * quality 90, whose worst sample lands 14 off; 20 leaves room for two libjpeg
+ * derived decoders to differ slightly through their IDCT without making the
+ * bound meaningless.
+ */
+const lossyTransferSyntaxes = {
+  '1.2.840.10008.1.2.4.50': {
+    name: 'JPEGProcess1TransferSyntax',
+    tolerance: 20,
+  },
+};
+
 const base = 'CTImage.dcm';
 const colorBase = 'ColorImage.dcm';
+const grayBase = 'GrayImage.dcm';
 // Karma serves the repository under /base, so this is the real path to the
 // fixtures.
 const url =
@@ -220,6 +256,69 @@ describe('Test lossless TransferSyntaxes decoding of colour', function () {
           `${name}: pixel ${pixel} channel ${channel} is ` +
             `${samples[firstDifference]}, expected ` +
             `${uncompressedSamples[firstDifference]}`
+        );
+      }
+    });
+  });
+});
+
+describe('Test lossy TransferSyntaxes decoding', function () {
+  let uncompressedSamples = null;
+
+  beforeAll(async function () {
+    init({
+      beforeSend(/* xhr, imageId */) {},
+      imageCreated(/* image */) {},
+      strict: false,
+      decodeConfig: {},
+    });
+
+    ({ samples: uncompressedSamples } = await decodeSamples(
+      `${url}${grayBase}`
+    ));
+
+    // 768x512 single sample, so a fixture that decoded as colour, or that lost
+    // a row, shows up as a length difference rather than passing quietly.
+    expect(uncompressedSamples.length).toBe(768 * 512);
+  });
+
+  afterAll(function () {
+    dataSetCacheManager.purge();
+  });
+
+  Object.keys(lossyTransferSyntaxes).forEach((transferSyntaxUid) => {
+    const { name, tolerance } = lossyTransferSyntaxes[transferSyntaxUid];
+    const filename = `${grayBase}_${name}_${transferSyntaxUid}.dcm`;
+
+    it(`should properly decode ${name}`, async function () {
+      const { transferSyntaxUID, samples } = await decodeSamples(
+        `${url}${filename}`
+      );
+
+      // Guards against a fixture that is not the syntax its name claims, which
+      // would otherwise pass here while testing the wrong decoder.
+      expect(transferSyntaxUID).toBe(transferSyntaxUid);
+      expect(samples.length).toBe(uncompressedSamples.length);
+
+      // The whole frame is scanned rather than stopping at the first sample
+      // over the tolerance, so the failure message reports the worst sample in
+      // the image instead of whichever one happens to come first.
+      let worstIndex = -1;
+      let worstDifference = 0;
+      for (let i = 0; i < samples.length; i++) {
+        const difference = Math.abs(samples[i] - uncompressedSamples[i]);
+
+        if (difference > worstDifference) {
+          worstDifference = difference;
+          worstIndex = i;
+        }
+      }
+
+      if (worstDifference > tolerance) {
+        fail(
+          `${name}: pixel ${worstIndex} is ${samples[worstIndex]}, expected ` +
+            `${uncompressedSamples[worstIndex]} within ${tolerance} ` +
+            `(difference ${worstDifference})`
         );
       }
     });
