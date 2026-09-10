@@ -34,6 +34,7 @@ const {
   EllipticalROITool,
   CircleROITool,
   PlanarFreehandROITool,
+  PlanarRotateTool,
   measurementTargetFilters,
 } = cornerstoneTools;
 
@@ -104,9 +105,19 @@ const roiToolNames = [
   PlanarFreehandROITool.toolName,
 ];
 
+// Crosshairs rotate the plane, which changes how oblique the OTHER two views
+// are. PlanarRotateTool rolls the view about its own normal, which is the
+// in-plane rotation, and the two are worth testing separately.
+const primaryToolNames = [
+  WindowLevelTool.toolName,
+  PlanarRotateTool.toolName,
+  ...roiToolNames,
+];
+
 const optionsValues = [
   WindowLevelTool.toolName,
   CrosshairsTool.toolName,
+  PlanarRotateTool.toolName,
   ...roiToolNames,
 ];
 
@@ -123,13 +134,16 @@ addDropdownToToolbar({
       // Note we only strictly need to change the one which is currently active.
 
       // Everything that is not the selection gives up the primary button.
-      for (const name of [WindowLevelTool.toolName, ...roiToolNames]) {
+      for (const name of primaryToolNames) {
         if (name !== toolName) {
           toolGroup.setToolDisabled(name);
         }
       }
 
-      if (toolName === WindowLevelTool.toolName) {
+      if (
+        toolName === WindowLevelTool.toolName ||
+        toolName === PlanarRotateTool.toolName
+      ) {
         // Set crosshairs passive so they are still interactable
         toolGroup.setToolPassive(CrosshairsTool.toolName);
       } else if (toolName !== CrosshairsTool.toolName) {
@@ -363,6 +377,7 @@ function setUpToolGroups() {
   cornerstoneTools.addTool(EllipticalROITool);
   cornerstoneTools.addTool(CircleROITool);
   cornerstoneTools.addTool(PlanarFreehandROITool);
+  cornerstoneTools.addTool(PlanarRotateTool);
 
   // Define tool groups for the main 9 viewports.
   // Crosshairs currently only supports 3 viewports for a toolgroup due to the
@@ -393,12 +408,14 @@ function setUpToolGroups() {
       getReferenceLineDraggableRotatable,
       getReferenceLineSlabThicknessControlsOn,
     });
+    toolGroup.addTool(PlanarRotateTool.toolName);
     roiToolNames.forEach((toolName) => toolGroup.addTool(toolName));
   });
 
   fusionToolGroup.addTool(PanTool.toolName);
   fusionToolGroup.addTool(ZoomTool.toolName);
   fusionToolGroup.addTool(StackScrollTool.toolName);
+  fusionToolGroup.addTool(PlanarRotateTool.toolName);
   fusionToolGroup.addTool(CrosshairsTool.toolName, {
     getReferenceLineColor,
     getReferenceLineControllable,
