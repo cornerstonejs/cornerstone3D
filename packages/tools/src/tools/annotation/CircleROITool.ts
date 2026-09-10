@@ -67,6 +67,7 @@ import {
   type MetricDefinition,
 } from '../../utilities/defaultGetTextLines';
 import getEllipseWorldCoordinates from '../../utilities/getEllipseWorldCoordinates';
+import sampleAreaAnnotationVoxels from '../../utilities/sampleAreaAnnotationVoxels';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
 const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
@@ -74,6 +75,7 @@ const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
 );
 
 const { transformWorldToIndex } = csUtils;
+const { createCircleShape } = csUtils.voxelSlab;
 
 /**
  * CircleROITool let you draw annotations that measures the statistics
@@ -1028,34 +1030,6 @@ class CircleROITool extends AnnotationTool {
       isHandleOutsideAnyTarget ||= isHandleOutsideTarget;
 
       if (!isHandleOutsideTarget) {
-        const iMin = Math.min(pos1Index[0], pos2Index[0]);
-        const iMax = Math.max(pos1Index[0], pos2Index[0]);
-
-        const jMin = Math.min(pos1Index[1], pos2Index[1]);
-        const jMax = Math.max(pos1Index[1], pos2Index[1]);
-
-        const kMin = Math.min(pos1Index[2], pos2Index[2]);
-        const kMax = Math.max(pos1Index[2], pos2Index[2]);
-
-        const boundsIJK = [
-          [iMin, iMax],
-          [jMin, jMax],
-          [kMin, kMax],
-        ] as [Types.Point2, Types.Point2, Types.Point2];
-
-        const center = points[0];
-
-        const xRadius = Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2;
-        const yRadius = Math.abs(topLeftWorld[1] - bottomRightWorld[1]) / 2;
-        const zRadius = Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2;
-
-        const ellipseObj = {
-          center,
-          xRadius: xRadius < EPSILON / 2 ? 0 : xRadius,
-          yRadius: yRadius < EPSILON / 2 ? 0 : yRadius,
-          zRadius: zRadius < EPSILON / 2 ? 0 : zRadius,
-        };
-
         const pixelUnitsOptions = {
           isPreScaled: isViewportPreScaled(viewport, targetId),
           isSuvScaled: this.isSuvScaled(
@@ -1071,19 +1045,31 @@ class CircleROITool extends AnnotationTool {
           pixelUnitsOptions
         );
 
-        let pointsInShape;
-        if (voxelManager) {
-          pointsInShape = voxelManager.forEach(
-            this.configuration.statsCalculator.statsCallback,
-            {
-              isInObject: (pointLPS) =>
-                pointInEllipse(ellipseObj, pointLPS, { fast: true }),
-              boundsIJK,
-              imageData,
-              returnPoints: this.configuration.storePointData,
-            }
-          );
-        }
+        // A circle drawn on the viewport is a circle in the annotation
+        // plane, whatever the orientation of that plane. The shared sampler
+        // selects the voxels for it, so the selection matches the polyline
+        // and rectangle tools, and it does not depend on the display.
+        const pointsInShape = sampleAreaAnnotationVoxels({
+          annotation,
+          image,
+          // Statistics are over scalar values. A colour volume gives an
+          // RGB triple, which no statistic here consumes.
+          voxelManager: voxelManager as Types.IVoxelManager<number>,
+          // The centre and the four cardinal handles bound the circle.
+          points: points as Types.Point3[],
+          createShape: ({ volume, planePoint, viewPlaneNormal }) =>
+            createCircleShape({
+              volume,
+              planePoint,
+              viewPlaneNormal,
+              centerWorld: points[0] as Types.Point3,
+              radius: vec3.distance(points[0], points[1]),
+            }),
+          // A centre and one point on the circle are the whole definition.
+          minimumPoints: 2,
+          onSample: this.configuration.statsCalculator.statsCallback,
+          storePointData: this.configuration.storePointData,
+        });
         const stats = this.configuration.statsCalculator.getStatistics();
 
         cachedStats[targetId] = {

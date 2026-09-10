@@ -45,15 +45,9 @@ import { BasicStatsCalculator } from '../../utilities/math/basic';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
 import { KeyboardBindings, ChangeTypes, MeasurementType } from '../../enums';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
-import { getBoundingBoxAroundShapeIJK } from '../../utilities/boundingBox';
+import sampleAreaAnnotationVoxels from '../../utilities/sampleAreaAnnotationVoxels';
 
-const {
-  createPolylineShape,
-  sampleVoxelsInShape,
-  getMembershipHalfWidth,
-  getVoxelThicknessAlongNormal,
-  resolveReferencePlaneThickness,
-} = csUtils.voxelSlab;
+const { createPolylineShape } = csUtils.voxelSlab;
 
 const { pointCanProjectOnLine } = polyline;
 const { EPSILON } = CONSTANTS;
@@ -1017,129 +1011,26 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     image,
     voxelManager,
   }): { value: number; pointLPS: Types.Point3; pointIJK: Types.Point3 }[] {
-    // Fewer than three points is not a region, and the shape rejects it. A
-    // contour can reach here that short after a bad hydration or a click that
-    // registered a single point, and throwing out of the render loop would
-    // take the whole viewport down with it.
-    if (!voxelManager || !image || !(points?.length >= 3)) {
-      return [];
-    }
-
-    const viewPlaneNormal = vec3.normalize(
-      vec3.create(),
-      annotation.metadata.viewPlaneNormal
-    ) as unknown as Types.Point3;
-
-    // The contour's own points define the plane's depth, which is what makes
-    // this independent of where the camera happens to be focused. The shape
-    // would default to the same anchor, and the iterator has to be given the
-    // same one, so name it once here.
-    const planePoint = points[0] as Types.Point3;
-
-    const { dimensions, direction, spacing, origin, imageData } = image;
-    const volume = { dimensions, direction, spacing, origin };
-    const voxelThickness = getVoxelThicknessAlongNormal(
-      volume,
-      viewPlaneNormal
-    );
-
-    // T: the annotation's own thickness, captured from the viewport slab when
-    // the annotation was created. Absent for stack annotations and for
-    // everything drawn before PlaneRestriction.referencePlaneThickness
-    // existed, in which case it falls back to one voxel along the normal.
-    //
-    // The polyline shape is planar and reports no thickness of its own, so T
-    // reaches the slab from here. Resolve it once, because the bounds below
-    // must use the same value the iterator uses: an unresolved absent
-    // thickness gives a half width of T_v / 2, which clips the bounds by half
-    // a voxel and drops the outermost layer.
-    const referencePlaneThickness = resolveReferencePlaneThickness(
-      annotation.metadata.planeRestriction?.referencePlaneThickness,
-      voxelThickness
-    );
-
-    const shape = createPolylineShape({
-      volume,
-      planePoint,
-      viewPlaneNormal,
-      polyline: points as Types.Point3[],
-    });
-
-    return sampleVoxelsInShape({
-      volume,
-      planePoint,
-      viewPlaneNormal,
-      referencePlaneThickness,
-      bounds: this.getContourIndexBounds(
-        points,
-        volume,
-        imageData,
-        viewPlaneNormal,
-        getMembershipHalfWidth(referencePlaneThickness, voxelThickness)
-      ),
-      getShapeRuns: shape.getRuns,
+    return sampleAreaAnnotationVoxels({
+      annotation,
+      image,
       voxelManager,
+      // The outline bounds the shape, and points[0] anchors the plane.
+      points,
+      createShape: ({ volume, planePoint, viewPlaneNormal }) =>
+        createPolylineShape({
+          volume,
+          planePoint,
+          viewPlaneNormal,
+          polyline: points as Types.Point3[],
+        }),
+      // Fewer than three points is not a region, and the shape rejects it.
+      minimumPoints: 3,
       // Statistics are accumulated regardless of storePointData; only the
       // returned list is conditional.
       onSample: this.configuration.statsCalculator.statsCallback,
       storePointData: this.configuration.storePointData,
     });
-  }
-
-  /**
-   * The index-space bounding box of the voxels the contour can reach, clamped
-   * to the volume.
-   *
-   * The slab narrows iteration along the normal on its own, and the shape runs
-   * bound the column axis exactly, but the outer and row loops would otherwise
-   * walk the full volume extent. This confines them to the rows the contour can
-   * actually reach.
-   *
-   * A qualifying voxel centre is not on the contour's plane: it lies within the
-   * slab's half width `(T + T_v) / 2` of it along the normal, so it can sit
-   * outside the outline's own box by that much. Dilating by the half width
-   * converted into voxels per axis is what keeps the box a superset - a fixed
-   * one voxel silently drops the outer layers of a thick annotation. The extra
-   * voxel on top absorbs the rounding of a fractional index.
-   */
-  private getContourIndexBounds(
-    points: Types.Point3[],
-    volume: {
-      dimensions: Types.Point3;
-      direction: Types.Mat3;
-      spacing: Types.Point3;
-    },
-    imageData,
-    normal: Types.Point3,
-    halfWidth: number
-  ): Types.BoundsIJK {
-    const { dimensions, direction, spacing } = volume;
-
-    const indexPoints = points.map(
-      (point) => imageData.worldToIndex(point) as Types.Point3
-    );
-    const boundingBox = getBoundingBoxAroundShapeIJK(indexPoints);
-
-    return [0, 1, 2].map((axis) => {
-      const axisVector = direction.slice(
-        axis * 3,
-        axis * 3 + 3
-      ) as Types.Point3;
-      // How far the slab's half width reaches along this index axis, in voxels.
-      const dilation =
-        Math.ceil(
-          (halfWidth * Math.abs(vec3.dot(axisVector, normal as vec3))) /
-            spacing[axis]
-        ) + 1;
-
-      return [
-        Math.max(0, Math.floor(boundingBox[axis][0]) - dilation),
-        Math.min(
-          dimensions[axis] - 1,
-          Math.ceil(boundingBox[axis][1]) + dilation
-        ),
-      ];
-    }) as Types.BoundsIJK;
   }
 
   protected updateOpenCachedStats({
