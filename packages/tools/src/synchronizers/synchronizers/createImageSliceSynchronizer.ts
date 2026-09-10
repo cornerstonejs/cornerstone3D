@@ -22,7 +22,8 @@ export default function createImageSliceSynchronizer(
     {
       auxiliaryEvents: [
         {
-          name: 'VOLUME_NEW_IMAGE',
+          name: VOLUME_NEW_IMAGE,
+          source: 'element',
         },
       ],
     }
