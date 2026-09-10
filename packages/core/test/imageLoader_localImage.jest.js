@@ -1,8 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
-import {
-  createAndCacheDerivedImage,
-  createAndCacheLocalImage,
-} from '../src/loaders/imageLoader';
+import { createAndCacheLocalImage } from '../src/loaders/imageLoader';
 import cache from '../src/cache/cache';
 import * as metaData from '../src/metaData';
 import MetadataModules from '../src/enums/MetadataModules';
@@ -53,25 +50,22 @@ describe('createAndCacheLocalImage metadata', () => {
     expect(buildMetadata(image).modality).toBe('CT');
   });
 
-  it('keeps a referenced image generalSeriesModule on derived images', () => {
+  it('copies generalSeriesModule from a referenced image', () => {
     const referencedImageId = 'local:ref';
-    createLocalSlice(referencedImageId);
     genericMetadataProvider.add(referencedImageId, {
       type: MetadataModules.GENERAL_SERIES,
       metadata: { modality: 'PT', seriesInstanceUID: '1.2.3' },
     });
 
-    const derived = createAndCacheDerivedImage(referencedImageId, {
-      imageId: 'derived:slice0',
-    });
+    const imageId = 'local:from-ref';
+    const image = createLocalSlice(imageId, { referencedImageId });
 
-    expect(
-      metaData.get(MetadataModules.GENERAL_SERIES, derived.imageId)
-    ).toEqual(
+    expect(metaData.get(MetadataModules.GENERAL_SERIES, imageId)).toEqual(
       expect.objectContaining({
         modality: 'PT',
         seriesInstanceUID: '1.2.3',
       })
     );
+    expect(buildMetadata(image).modality).toBe('PT');
   });
 });
