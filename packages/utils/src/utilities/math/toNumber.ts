@@ -10,32 +10,48 @@ function isNumberLike(value: unknown): value is NumberLike {
 }
 
 /**
- * Converts a value to a finite number, returning undefined if the value is not finite.
+ * Converts a value to a finite number, returning `defaultValue` if the value is
+ * not finite. An array value converts entry by entry, and each entry that is
+ * not finite becomes `defaultValue`.
  *
  * @param value - The value to convert to a finite number
- * @returns The finite number value, or undefined if the value is not finite
+ * @param defaultValue - The number to return for an absent or non-finite value.
+ *   The default is `undefined`, so a call without this argument behaves as
+ *   before.
+ * @returns The finite number value, or `defaultValue` if the value is not finite
  */
 export function toFiniteNumber(
-  value: NumberLike | undefined
+  value: NumberLike | undefined,
+  defaultValue?: undefined
 ): number | undefined;
+export function toFiniteNumber(
+  value: NumberLike | undefined,
+  defaultValue: number
+): number;
 export function toFiniteNumber<T extends NumberLike>(
-  value: ArrayLike<T> | undefined
+  value: ArrayLike<T> | undefined,
+  defaultValue?: undefined
 ): number[] | undefined;
 export function toFiniteNumber<T extends NumberLike>(
-  value: T | ArrayLike<T> | undefined
+  value: ArrayLike<T> | undefined,
+  defaultValue: number
+): number[];
+export function toFiniteNumber<T extends NumberLike>(
+  value: T | ArrayLike<T> | undefined,
+  defaultValue?: number
 ): number | undefined | number[] {
   if (value === undefined) {
-    return undefined;
+    return defaultValue;
   }
 
   if (isNumberLike(value)) {
     const converted = Number(value);
-    return Number.isFinite(converted) ? converted : undefined;
+    return Number.isFinite(converted) ? converted : defaultValue;
   }
 
   return Array.from(value, (entry) => {
     const converted = Number(entry);
-    return Number.isFinite(converted) ? converted : undefined;
+    return Number.isFinite(converted) ? converted : defaultValue;
   }) as number[];
 }
 

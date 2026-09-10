@@ -1,4 +1,5 @@
 import { metaData, Enums, type Types } from '@cornerstonejs/core';
+import { utilities as metadataUtilities } from '@cornerstonejs/metadata';
 import dcmjs from 'dcmjs';
 
 import {
@@ -8,6 +9,7 @@ import {
 
 const { DicomMetaDictionary } = dcmjs.data;
 const { MetadataModules } = Enums;
+const { definedAttributesOf, toFiniteNumber } = metadataUtilities;
 
 export const STUDY_MODULES = [
   MetadataModules.GENERAL_STUDY,
@@ -16,27 +18,6 @@ export const STUDY_MODULES = [
 ];
 
 export const SERIES_MODULES = [MetadataModules.GENERAL_SERIES];
-
-/**
- * Copies the attributes that have a value, and drops the rest.
- *
- * `getNormalized` builds a module from whatever a provider returns, and a
- * provider returns the module as a whole - an attribute the instance does not
- * carry is present as a key with the value `undefined`. Such a key overwrites a
- * real value when a consumer merges the module onto a dataset, so it must not
- * leave this provider.
- */
-function definedAttributesOf(source) {
-  const result = {};
-
-  for (const [key, value] of Object.entries(source ?? {})) {
-    if (value !== undefined) {
-      result[key] = value;
-    }
-  }
-
-  return result;
-}
 
 export const IMAGE_MODULES = [
   MetadataModules.GENERAL_IMAGE,
@@ -115,45 +96,28 @@ export const metadataProvider = {
   [MetadataModules.PREDECESSOR_SEQUENCE]: (imageId) => {
     const generalImage = metaData.get(MetadataModules.GENERAL_IMAGE, imageId);
 
-    // Nothing names the predecessor when no provider holds its instance - a
-    // stale imageId, or an instance a provider never ingested. `undefined` is
-    // what a provider answers for "I have nothing", and every consumer merges
-    // this result with `Object.assign`, which takes `undefined` as a no-op.
-    // The two alternatives are both worse: reading `generalImage.instanceNumber`
-    // off `undefined` throws and takes the whole save with it, and a
-    // PredecessorDocumentsSequence built from nothing carries a Type 1
-    // ReferencedSOPInstanceUID that names no instance.
+    // No provider holds the instance - a stale imageId, or an instance no
+    // provider ingested. Return `undefined`, which every consumer merges as a
+    // no-op, rather than throw on the reads below or name no instance in the
+    // Type 1 ReferencedSOPInstanceUID.
     if (!generalImage?.sopInstanceUID) {
       return undefined;
     }
 
     const study = metaData.get(MetadataModules.GENERAL_STUDY, imageId) ?? {};
 
-    // Start with the series data, and keep only the attributes the predecessor
-    // has a value for. A provider answers a module as a whole and gives
-    // `undefined` for an attribute the instance does not carry, and every
-    // consumer merges this result onto a dataset with `Object.assign`, which
-    // copies an undefined value over a real one. A predecessor with no Series
-    // Number would otherwise clear the Series Number that the derivation gave
-    // the revision, and dcmjs drops that Type 1 element when it denaturalizes
-    // the dataset. The same holds for Modality and for the two UIDs.
+    // Keep only the series attributes the predecessor has a value for, so the
+    // merge does not clear the Series Number, the Modality or the UIDs that the
+    // derivation gave the revision.
     const result = definedAttributesOf(
       metaData.get(MetadataModules.SERIES_DATA, imageId)
     );
-    // And extend with the predecessor information, plus updates for a new
-    // instance.
-    // An unnumbered predecessor gives nothing to increment, and
-    // `1 + Number(undefined)` is `NaN`, which then reaches the stored instance.
-    // An instance that arrived without a number is exactly that case - an
-    // artifact written back by another system, which has to stay
-    // indistinguishable from one of ours. A first instance is numbered `1` here
-    // (see NEW_INSTANCE_DATA below), so an unnumbered predecessor takes the same
-    // value; the order of the revisions comes from PredecessorDocumentsSequence,
-    // and not from this element.
-    const predecessorInstanceNumber = Number(generalImage.instanceNumber);
-    result.InstanceNumber = Number.isFinite(predecessorInstanceNumber)
-      ? 1 + predecessorInstanceNumber
-      : 1;
+
+    // An unnumbered predecessor counts as 0, so the revision takes the number 1
+    // that a first instance gets (see NEW_INSTANCE_DATA below). The order of the
+    // revisions comes from PredecessorDocumentsSequence, and not from this
+    // element.
+    result.InstanceNumber = 1 + toFiniteNumber(generalImage.instanceNumber, 0);
     result.PredecessorDocumentsSequence = {
       StudyInstanceUID: study.studyInstanceUID,
       ReferencedSeriesSequence: {
