@@ -130,26 +130,25 @@ addDropdownToToolbar({
     [ctToolGroupId, ptToolGroupId, fusionToolGroupId].forEach((toolGroupId) => {
       const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
-      // Set the other tools disabled so we don't get conflicts.
-      // Note we only strictly need to change the one which is currently active.
-
-      // Everything that is not the selection gives up the primary button.
+      // Everything that is not the selection gives up the primary button,
+      // and it goes PASSIVE rather than disabled. A disabled annotation tool
+      // also hides the annotations that the user already drew, so disabling
+      // the ROI tools made the measurements vanish whenever the user picked
+      // the crosshairs or the rotate tool.
       for (const name of primaryToolNames) {
         if (name !== toolName) {
-          toolGroup.setToolDisabled(name);
+          toolGroup.setToolPassive(name);
         }
       }
 
-      if (
-        toolName === WindowLevelTool.toolName ||
-        toolName === PlanarRotateTool.toolName
-      ) {
+      if (roiToolNames.includes(toolName)) {
+        // The one exception. An ROI tool draws with the primary button, and a
+        // passive crosshair takes a click near a reference line before the ROI
+        // tool sees it, so the reference lines step aside while drawing.
+        toolGroup.setToolDisabled(CrosshairsTool.toolName);
+      } else if (toolName !== CrosshairsTool.toolName) {
         // Set crosshairs passive so they are still interactable
         toolGroup.setToolPassive(CrosshairsTool.toolName);
-      } else if (toolName !== CrosshairsTool.toolName) {
-        // An ROI tool draws with the primary button, and a passive crosshair
-        // would take the click near a reference line instead.
-        toolGroup.setToolDisabled(CrosshairsTool.toolName);
       }
 
       toolGroup.setToolActive(toolName, {
