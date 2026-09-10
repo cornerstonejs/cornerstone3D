@@ -4,14 +4,17 @@ import { utilities as csUtils } from '@cornerstonejs/core';
 import { getBoundingBoxAroundShapeIJK } from './boundingBox';
 
 const {
-  createPolylineShape,
   getMembershipHalfWidth,
   getVoxelThicknessAlongNormal,
   resolveReferencePlaneThickness,
   sampleVoxelsInShape,
 } = csUtils.voxelSlab;
 
-/** The volume geometry that the voxel iterator reads. */
+/**
+ * The volume geometry that the voxel iterator reads: core's `VolumeGeometry`,
+ * restricted to the structural form, because every caller here passes an
+ * `IImageData` and never an `IImageVolume`.
+ */
 export type AreaAnnotationVolume = {
   dimensions: Types.Point3;
   direction: Types.Mat3;
@@ -19,12 +22,8 @@ export type AreaAnnotationVolume = {
   origin: Types.Point3;
 };
 
-/**
- * A plane-anchored shape, as every `csUtils.voxelSlab` shape factory returns
- * one. Taken from `createPolylineShape` because the shape type is internal to
- * core; all of the factories return the same shape.
- */
-export type AreaAnnotationShape = ReturnType<typeof createPolylineShape>;
+/** A plane-anchored shape, as every `csUtils.voxelSlab` factory returns one. */
+export type AreaAnnotationShape = csUtils.voxelSlab.VoxelSlabShape;
 
 /** One voxel of an area annotation, with its value. */
 export type AreaAnnotationVoxel = {
@@ -54,12 +53,19 @@ export interface AreaAnnotationVoxelsOptions {
   /** Where the values come from. */
   voxelManager: { getAtIJKPoint(ijk: Types.Point3): number };
   /**
-   * The world points that bound the shape: the outline of a polyline, the four
-   * corners of a rectangle, the cardinal handles of a circle. The index bounds
-   * come from these points, and `points[0]` anchors the plane unless
-   * `planePoint` overrides it.
+   * The world points the shape is built from: the outline of a polyline, the
+   * four corners of a rectangle, the centre and the handles of a circle. The
+   * index bounds come from these points and from `boundsMargin`, and
+   * `points[0]` anchors the plane unless `planePoint` overrides it.
    */
   points: Types.Point3[];
+  /**
+   * How far, in mm, the shape reaches past `points`. Defaults to 0, which
+   * holds when the points enclose the shape, as the outline of a polyline and
+   * the four corners of a rectangle do. A circle and an ellipse pass their
+   * largest radius, because their handles only touch the outline.
+   */
+  boundsMargin?: number;
   /**
    * Builds the shape. This is the only argument that differs between the area
    * annotation tools.
@@ -127,6 +133,7 @@ export default function sampleAreaAnnotationVoxels({
   image,
   voxelManager,
   points,
+  boundsMargin = 0,
   createShape,
   planePoint: planePointOverride,
   minimumPoints = 3,
@@ -183,20 +190,24 @@ export default function sampleAreaAnnotationVoxels({
     return [];
   }
 
+  // A planar shape reports 0, so the annotation's own thickness stands. A
+  // shape that carries depth of its own reports that depth instead. The bounds
+  // and the iterator must use the same value, or a solid shape loses every
+  // layer past the first.
+  const slabThickness = shape.getRequiredThickness() || referencePlaneThickness;
+
   return sampleVoxelsInShape({
     volume,
     planePoint,
     viewPlaneNormal,
-    // A planar shape reports 0, so the annotation's own thickness stands. A
-    // shape that carries depth of its own reports that depth instead.
-    referencePlaneThickness:
-      shape.getRequiredThickness() || referencePlaneThickness,
+    referencePlaneThickness: slabThickness,
     bounds: getAnnotationIndexBounds(
       points,
       volume,
       imageData,
       viewPlaneNormal,
-      getMembershipHalfWidth(referencePlaneThickness, voxelThickness)
+      getMembershipHalfWidth(slabThickness, voxelThickness),
+      boundsMargin
     ),
     getShapeRuns: shape.getRuns,
     voxelManager,
@@ -214,19 +225,26 @@ export default function sampleAreaAnnotationVoxels({
  * walk the full volume extent. This confines them to the rows the annotation
  * can actually reach.
  *
- * A qualifying voxel centre does not lie on the annotation's plane: it lies
- * within the slab's half width `(T + T_v) / 2` of the plane along the normal,
- * so it can sit outside the outline's own box by that much. Dilating by the
- * half width converted into voxels per axis is what keeps the box a superset.
- * A fixed one voxel silently drops the outer layers of a thick annotation. The
- * extra voxel on top absorbs the rounding of a fractional index.
+ * The box of `points` is not the box of the shape, and a qualifying voxel
+ * centre does not lie on the annotation's plane. Two dilations therefore keep
+ * the box a superset:
+ *
+ * - `margin`, how far the shape reaches past `points`. The direction matrix is
+ *   orthonormal, so a world distance of `margin` moves the index by at most
+ *   `margin / spacing` along any axis.
+ * - `halfWidth`, the slab's `(T + T_v) / 2`, within which a centre qualifies.
+ *   The centre can sit outside the plane by that much, along the normal. A
+ *   fixed one voxel silently drops the outer layers of a thick annotation.
+ *
+ * The extra voxel on top absorbs the rounding of a fractional index.
  */
 function getAnnotationIndexBounds(
   points: Types.Point3[],
   volume: Pick<AreaAnnotationVolume, 'dimensions' | 'direction' | 'spacing'>,
   imageData,
   viewPlaneNormal: Types.Point3,
-  halfWidth: number
+  halfWidth: number,
+  margin: number
 ): Types.BoundsIJK {
   const { dimensions, direction, spacing } = volume;
 
@@ -237,10 +255,12 @@ function getAnnotationIndexBounds(
 
   return [0, 1, 2].map((axis) => {
     const axisVector = direction.slice(axis * 3, axis * 3 + 3) as Types.Point3;
-    // How far the slab's half width reaches along this index axis, in voxels.
+    // How far the margin and the half width reach along this index axis, in
+    // voxels.
     const dilation =
       Math.ceil(
-        (halfWidth * Math.abs(vec3.dot(axisVector, viewPlaneNormal as vec3))) /
+        (margin +
+          halfWidth * Math.abs(vec3.dot(axisVector, viewPlaneNormal as vec3))) /
           spacing[axis]
       ) + 1;
 

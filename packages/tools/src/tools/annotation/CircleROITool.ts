@@ -6,7 +6,6 @@ import {
   VolumeViewport,
   utilities as csUtils,
   getEnabledElementByViewportId,
-  EPSILON,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -56,10 +55,7 @@ import {
   getCanvasCircleCorners,
   getCanvasCircleRadius,
 } from '../../utilities/math/circle';
-import {
-  getCanvasEllipseCorners,
-  pointInEllipse,
-} from '../../utilities/math/ellipse';
+import { getCanvasEllipseCorners } from '../../utilities/math/ellipse';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
 import {
@@ -1049,22 +1045,34 @@ class CircleROITool extends AnnotationTool {
         // plane, whatever the orientation of that plane. The shared sampler
         // selects the voxels for it, so the selection matches the polyline
         // and rectangle tools, and it does not depend on the display.
+        const worldRadius = vec3.distance(points[0], points[1]);
         const pointsInShape = sampleAreaAnnotationVoxels({
           annotation,
           image,
           // Statistics are over scalar values. A colour volume gives an
           // RGB triple, which no statistic here consumes.
           voxelManager: voxelManager as Types.IVoxelManager<number>,
-          // The centre and the four cardinal handles bound the circle.
           points: points as Types.Point3[],
-          createShape: ({ volume, planePoint, viewPlaneNormal }) =>
-            createCircleShape({
+          // The handles only touch the outline, and the `simplified`
+          // representation keeps the centre and one handle, so the radius is
+          // what bounds the disc.
+          boundsMargin: worldRadius,
+          createShape: ({ volume, planePoint, viewPlaneNormal }) => {
+            // A circle of no radius covers no voxel, and the factory rejects
+            // it. A new annotation holds two identical handles until the first
+            // drag moves one of them.
+            if (!(worldRadius > 0)) {
+              return null;
+            }
+
+            return createCircleShape({
               volume,
               planePoint,
               viewPlaneNormal,
               centerWorld: points[0] as Types.Point3,
-              radius: vec3.distance(points[0], points[1]),
-            }),
+              radius: worldRadius,
+            });
+          },
           // A centre and one point on the circle are the whole definition.
           minimumPoints: 2,
           onSample: this.configuration.statsCalculator.statsCallback,

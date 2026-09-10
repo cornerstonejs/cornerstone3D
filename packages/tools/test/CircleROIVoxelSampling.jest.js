@@ -25,20 +25,24 @@ describe('Circle ROI voxel sampling', () => {
     };
   }
 
-  /** A circle of radius 5 mm centred on (20, 20, 0), with cardinal handles. */
-  function createAnnotation() {
+  /**
+   * A circle of radius 5 mm centred on (20, 20, 0). The tool keeps either the
+   * five handles of the full representation, or the centre and one handle of
+   * the `simplified` representation, which is the default.
+   */
+  function createAnnotation(
+    points = [
+      [20, 20, 0],
+      [20, 15, 0],
+      [20, 25, 0],
+      [15, 20, 0],
+      [25, 20, 0],
+    ]
+  ) {
     return {
       data: {
         cachedStats: { [targetId]: {} },
-        handles: {
-          points: [
-            [20, 20, 0],
-            [20, 15, 0],
-            [20, 25, 0],
-            [15, 20, 0],
-            [25, 20, 0],
-          ],
-        },
+        handles: { points },
       },
       invalidated: false,
       metadata: { viewPlaneNormal: [0, 0, 1] },
@@ -90,6 +94,59 @@ describe('Circle ROI voxel sampling', () => {
       }
     }
     expect(indices).toHaveLength(expected);
+  });
+
+  it('selects the same voxels from the simplified handles', () => {
+    // The handles only touch the outline, and the simplified representation
+    // keeps the centre and one handle, so the box of the handles holds a
+    // quarter of the disc. The radius, and not the handles, must bound it.
+    const fromAllHandles = jest.fn();
+    const fromTwoHandles = jest.fn();
+
+    createTool(fromAllHandles)._calculateCachedStats(
+      createAnnotation(),
+      createViewport(),
+      {},
+      {}
+    );
+
+    createTool(fromTwoHandles)._calculateCachedStats(
+      createAnnotation([
+        [20, 20, 0],
+        [20, 15, 0],
+      ]),
+      createViewport(),
+      {},
+      {}
+    );
+
+    const indicesOf = (mock) =>
+      mock.mock.calls.map(([{ pointIJK }]) => pointIJK.join(','));
+
+    expect(indicesOf(fromAllHandles).length).toBeGreaterThan(0);
+    expect(indicesOf(fromTwoHandles)).toEqual(indicesOf(fromAllHandles));
+  });
+
+  it('reports no voxels for a circle of no radius', () => {
+    // The shape factory rejects a zero radius, and an exception inside the
+    // render loop would stop the whole viewport. A new annotation holds two
+    // identical handles until the first drag moves one of them.
+    const statsCallback = jest.fn();
+    const tool = createTool(statsCallback);
+
+    expect(() =>
+      tool._calculateCachedStats(
+        createAnnotation([
+          [20, 20, 0],
+          [20, 20, 0],
+        ]),
+        createViewport(),
+        {},
+        {}
+      )
+    ).not.toThrow();
+
+    expect(statsCallback).not.toHaveBeenCalled();
   });
 
   it('selects the same voxels whatever the canvas scale', () => {

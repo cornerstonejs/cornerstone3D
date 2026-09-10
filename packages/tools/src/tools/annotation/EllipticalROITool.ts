@@ -1067,30 +1067,33 @@ class EllipticalROITool extends AnnotationTool {
         // plane, whatever the orientation of that plane. The older code
         // tested an ellipsoid aligned with the world axes, which does not
         // describe that ellipse once the plane tilts.
+        // points are [bottom, top, left, right], so left to right and bottom
+        // to top are the two axes, and they are perpendicular.
+        const majorRadius = vec3.distance(points[2], points[3]) / 2;
+        const minorRadius = vec3.distance(points[0], points[1]) / 2;
+
         const pointsInShape = sampleAreaAnnotationVoxels({
           annotation,
           image,
           // Statistics are over scalar values. A colour volume gives an RGB
           // triple, which no statistic here consumes.
           voxelManager: voxelManager as Types.IVoxelManager<number>,
-          // The four cardinal handles bound the ellipse.
           points: points as Types.Point3[],
+          // The handles only touch the outline, so the larger radius is what
+          // bounds the ellipse.
+          boundsMargin: Math.max(majorRadius, minorRadius),
           createShape: ({ volume, planePoint, viewPlaneNormal: normal }) => {
-            // points are [bottom, top, left, right], so left to right and
-            // bottom to top are the two axes, and they are perpendicular.
-            const majorAxis = vec3.sub(
-              vec3.create(),
-              points[3],
-              points[2]
-            ) as unknown as Types.Point3;
-            const majorRadius = vec3.distance(points[2], points[3]) / 2;
-            const minorRadius = vec3.distance(points[0], points[1]) / 2;
-
             // An ellipse of no width or no height covers no voxel, and the
             // factory rejects it.
             if (!(majorRadius > 0) || !(minorRadius > 0)) {
               return null;
             }
+
+            const majorAxis = vec3.sub(
+              vec3.create(),
+              points[3],
+              points[2]
+            ) as unknown as Types.Point3;
 
             return createEllipseShape({
               volume,

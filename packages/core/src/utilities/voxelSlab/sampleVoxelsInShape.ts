@@ -45,9 +45,11 @@ export interface VoxelsInShapeSamplingOptions extends VoxelsInShapeOptions {
  * the same voxels at any zoom, pan, canvas size or slab thickness, and in any
  * orientation.
  *
- * A planar shape reports a required thickness of 0, so the `||` below keeps
- * the annotation's own thickness. A shape that carries depth of its own, such
- * as an ellipsoid, reports that depth and the `||` takes it instead.
+ * The caller resolves the thickness, as the example below does. A planar shape
+ * reports a required thickness of 0, so the `||` keeps the annotation's own
+ * thickness. A shape that carries depth of its own, such as an ellipsoid,
+ * reports that depth and the `||` takes it instead. The `bounds` the caller
+ * passes must allow for the same value.
  *
  * ```ts
  * const shape = createPolylineShape({ volume, viewPlaneNormal, polyline });

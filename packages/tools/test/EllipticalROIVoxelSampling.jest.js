@@ -77,9 +77,9 @@ describe('Elliptical ROI voxel sampling', () => {
     return tool;
   }
 
-  function sample(statsCallback, spacing) {
+  function sample(statsCallback, spacing, annotation = createAnnotation()) {
     createTool(statsCallback, spacing)._calculateCachedStats(
-      createAnnotation(),
+      annotation,
       createViewport(),
       {},
       {}
@@ -129,6 +129,54 @@ describe('Elliptical ROI voxel sampling', () => {
           ((worldY - 20) * (worldY - 20)) / 16 <=
         1 + 1e-6;
       expect(inside).toBe(true);
+    }
+  });
+
+  it('keeps the voxels an in-plane rotation puts outside the handle box', () => {
+    // The handles only touch the outline. Rotated by 45 degrees, this ellipse
+    // reaches sqrt(200) = 14.14 mm along x, but the handles reach 11.31 mm, so
+    // a box built from the handles alone loses the outermost voxels.
+    const half = Math.SQRT1_2;
+    const majorRadius = 16;
+    const minorRadius = 12;
+    const center = [20, 20, 0];
+    // u along (1, 1), v along (-1, 1), both unit length.
+    const u = [half, half, 0];
+    const v = [-half, half, 0];
+    const offset = (axis, distance) =>
+      center.map((value, index) => value + axis[index] * distance);
+
+    const annotation = createAnnotation();
+    annotation.data.handles.points = [
+      offset(v, -minorRadius),
+      offset(v, minorRadius),
+      offset(u, -majorRadius),
+      offset(u, majorRadius),
+    ];
+
+    const indices = sample(jest.fn(), undefined, annotation);
+
+    const isInside = (i, j) => {
+      const dx = i - center[0];
+      const dy = j - center[1];
+      const along = (dx * u[0] + dy * u[1]) / majorRadius;
+      const across = (dx * v[0] + dy * v[1]) / minorRadius;
+      return along * along + across * across <= 1 + 1e-6;
+    };
+
+    let expected = 0;
+    for (let i = 0; i < 40; i++) {
+      for (let j = 0; j < 40; j++) {
+        if (isInside(i, j)) {
+          expected++;
+        }
+      }
+    }
+
+    expect(expected).toBeGreaterThan(0);
+    expect(indices).toHaveLength(expected);
+    for (const [i, j] of indices) {
+      expect(isInside(i, j)).toBe(true);
     }
   });
 
