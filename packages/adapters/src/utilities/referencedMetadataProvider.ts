@@ -1,5 +1,9 @@
-import { metaData, Enums, type Types } from '@cornerstonejs/core';
-import { utilities as metadataUtilities } from '@cornerstonejs/metadata';
+import {
+  metaData,
+  Enums,
+  utilities as csUtils,
+  type Types,
+} from '@cornerstonejs/core';
 import dcmjs from 'dcmjs';
 
 import {
@@ -9,7 +13,7 @@ import {
 
 const { DicomMetaDictionary } = dcmjs.data;
 const { MetadataModules } = Enums;
-const { definedAttributesOf, toFiniteNumber } = metadataUtilities;
+const { definedAttributesOf } = csUtils;
 
 export const STUDY_MODULES = [
   MetadataModules.GENERAL_STUDY,
@@ -121,11 +125,14 @@ export const metadataProvider = {
       metaData.get(MetadataModules.SERIES_DATA, imageId)
     );
 
-    // An unnumbered predecessor counts as 0, so the revision takes the number 1
-    // that a first instance gets (see NEW_INSTANCE_DATA below). The order of the
-    // revisions comes from PredecessorDocumentsSequence, and not from this
-    // element.
-    result.InstanceNumber = 1 + toFiniteNumber(generalImage.instanceNumber, 0);
+    // An unnumbered predecessor gives nothing to increment, so the revision
+    // takes the number 1 that a first instance gets (see NEW_INSTANCE_DATA
+    // below). The order of the revisions comes from PredecessorDocumentsSequence,
+    // and not from this element.
+    const predecessorNumber = Number(generalImage.instanceNumber);
+    result.InstanceNumber = Number.isFinite(predecessorNumber)
+      ? 1 + predecessorNumber
+      : 1;
     result.PredecessorDocumentsSequence = {
       StudyInstanceUID: study.studyInstanceUID,
       ReferencedSeriesSequence: {
