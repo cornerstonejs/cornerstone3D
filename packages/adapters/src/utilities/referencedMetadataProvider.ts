@@ -4,6 +4,7 @@ import {
   utilities as csUtils,
   type Types,
 } from '@cornerstonejs/core';
+import { utilities as metadataUtilities } from '@cornerstonejs/metadata';
 import dcmjs from 'dcmjs';
 
 import {
@@ -13,7 +14,7 @@ import {
 
 const { DicomMetaDictionary } = dcmjs.data;
 const { MetadataModules } = Enums;
-const { definedAttributesOf } = csUtils;
+const { definedAttributesOf } = metadataUtilities;
 
 const cs3dLogger = csUtils.logger.adaptersLog.getLogger(
   'utilities.referencedMetadataProvider'
@@ -102,23 +103,11 @@ export const metadataProvider = {
    * to the generated object.
    */
   [MetadataModules.PREDECESSOR_SEQUENCE]: (imageId) => {
-    // The link back names the predecessor by its two SOP UIDs, and the SOP
-    // Common module is the module that holds both. The General Image module
-    // lists SOPClassUID as well, but a host provider can answer that module
-    // without the entry, and then the Type 1 ReferencedSOPClassUID is absent
-    // with no error. `REFERENCED_SERIES_REFERENCE` above reads the same module
-    // for the same pair of UIDs.
+    // Both UIDs come from SOP Common. The General Image module lists
+    // SOPClassUID too, but a provider can answer it without that entry.
     const sopModule = metaData.get(MetadataModules.SOP_COMMON, imageId);
 
-    // No provider holds the instance - a stale imageId, or an instance no
-    // provider ingested. Return `undefined`, which every consumer merges as a
-    // no-op, rather than throw on the reads below or name no instance in the
-    // two Type 1 attributes of the reference.
-    //
-    // The no-op is silent for the consumer, and the caller asked to join the
-    // series of this predecessor. The stored instance goes into the new series
-    // that the derivation made instead, so log the reason here: it is the only
-    // report that the caller gets.
+    // `undefined` merges as a no-op in every consumer.
     if (!sopModule?.sopInstanceUID || !sopModule.sopClassUID) {
       cs3dLogger.warn(
         `No metadata provider holds the predecessor ${imageId}, so the ` +
@@ -132,24 +121,14 @@ export const metadataProvider = {
       metaData.get(MetadataModules.GENERAL_IMAGE, imageId) ?? {};
     const study = metaData.get(MetadataModules.GENERAL_STUDY, imageId) ?? {};
 
-    // Keep only the series attributes the predecessor has a value for, so the
-    // merge does not clear the Series Number, the Modality or the UIDs that the
-    // derivation gave the revision.
-    //
-    // A predecessor that carries no SeriesDate/SeriesTime is the one case this
-    // rule reads wrongly: the revision then keeps the UTC date/time that dcmjs
-    // stamps on a derivation, and west of UTC that date is tomorrow for the
-    // last hours of the local day. It does not arise. Every SEG, SR and
-    // RTSTRUCT that this code base writes carries a series date and time, and
-    // those are the only objects that take a predecessor.
+    // Only the attributes the predecessor has a value for, so the merge does
+    // not clear what the derivation gave the revision. A predecessor with no
+    // SeriesDate would keep dcmjs's UTC one, but every object stored through
+    // this path carries a series date and time.
     const result = definedAttributesOf(
       metaData.get(MetadataModules.SERIES_DATA, imageId)
     );
 
-    // The Series Instance UID is what puts the instance in the series of the
-    // predecessor. Without it the instance keeps the new UID of the derivation
-    // and joins no existing series, which is the opposite of what the caller
-    // asked for, so report it.
     if (result.SeriesInstanceUID === undefined) {
       cs3dLogger.warn(
         `The predecessor ${imageId} carries no SeriesInstanceUID, so the ` +
@@ -158,10 +137,8 @@ export const metadataProvider = {
       );
     }
 
-    // An unnumbered predecessor gives nothing to increment, so the revision
-    // takes the number 1 that a first instance gets (see NEW_INSTANCE_DATA
-    // below). The order of the revisions comes from PredecessorDocumentsSequence,
-    // and not from this element.
+    // An unnumbered predecessor gives nothing to increment, so the revision is
+    // numbered 1. PredecessorDocumentsSequence orders the revisions, not this.
     const predecessorNumber = Number(generalImage.instanceNumber);
     result.InstanceNumber = Number.isFinite(predecessorNumber)
       ? 1 + predecessorNumber

@@ -27,17 +27,12 @@ function isEntryWise(value: unknown): value is ArrayLike<unknown> {
 /**
  * Converts a value to a finite number, returning `defaultValue` if the value is
  * not finite. An array converts entry by entry, and each entry that is not
- * finite becomes `defaultValue`.
- *
- * `defaultValue` also covers a value that this function cannot convert at all:
- * `undefined`, `null`, a boolean, and a plain object. An earlier version threw
- * on `null` and answered `[]` for the other three.
+ * finite becomes `defaultValue`. `defaultValue` also covers a value that cannot
+ * convert at all: `undefined`, `null`, a boolean, and a plain object.
  *
  * @param value - The value to convert to a finite number
- * @param defaultValue - The number to return for a value that is absent, or not
- *   finite, or not convertible. The default is `undefined`, so a call without
- *   this argument keeps the answer of the earlier version for every value that
- *   the earlier version converted.
+ * @param defaultValue - The number to return for a value that is absent, not
+ *   finite, or not convertible. Defaults to `undefined`.
  * @returns The finite number value, or `defaultValue`
  */
 export function toFiniteNumber(

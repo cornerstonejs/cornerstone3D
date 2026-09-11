@@ -489,8 +489,7 @@ function generateSegmentation(
         MetadataModules.PREDECESSOR_SEQUENCE,
         predecessorImageId
       );
-      // Onto the dataset, which is what gets stored - `segmentationResult` only
-      // wraps it, as `segmentationResult.dataset.SOPClassUID` above shows.
+      // Onto the dataset, which is what gets stored, not onto its wrapper.
       Object.assign(segmentationResult.dataset, predecessor);
     }
 

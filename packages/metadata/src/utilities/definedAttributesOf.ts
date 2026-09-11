@@ -1,12 +1,9 @@
 /**
  * Copies the attributes that have a value, and drops the rest.
  *
- * The main use is a dataset that a consumer builds from metadata modules. A
- * metadata provider answers a module as a whole, so an attribute the instance
- * does not carry is present as a key with the value `undefined`. A merge with
- * `Object.assign` or with the spread syntax copies that `undefined` over a real
- * value, and the dataset loses the attribute. Pass the module through this
- * function first, and the merge keeps the value the dataset already has.
+ * A metadata provider answers a module as a whole, so an attribute the instance
+ * does not carry arrives as a key whose value is `undefined`. Merging that key
+ * clears a real value on the destination, so this drops it instead.
  *
  * @param source - the object to copy. A `null` or `undefined` source gives `{}`.
  * @returns a new object that holds only the attributes with a defined value

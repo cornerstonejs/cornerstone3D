@@ -40,18 +40,13 @@ export type Segmentation = {
   label: string;
   fallbackLabel?: string;
   /**
-   * The creator invented the label, so the user has not chosen a name for this
-   * segmentation. A viewer names a new segmentation `Segmentation 3` or similar
-   * to give the user something to see, and a name of that kind must not become
-   * a default that the viewer offers for a later segmentation. The label itself
-   * stays in `label`, and this flag says where the label came from.
+   * The creator invented the label, so no user has named this segmentation.
+   * A generated name must not become a default offered for a later one.
    */
   labelIsGenerated?: boolean;
   /**
-   * The image id of the instance that this segmentation was loaded from, or
-   * was last stored as. A save writes a new revision of that instance, and
-   * `generateSegmentation` takes the predecessor sequence from the image id.
-   * `Annotation.predecessorImageId` holds the same value for an annotation.
+   * The instance this segmentation was loaded from, or was last stored as.
+   * A save writes a new revision of it. See `Annotation.predecessorImageId`.
    */
   predecessorImageId?: string;
   segments: {

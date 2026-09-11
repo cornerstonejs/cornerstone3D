@@ -43,8 +43,7 @@ function normalizeSegmentationInput(
     segmentationId,
     label: config?.label ?? null,
     fallbackLabel: config?.fallbackLabel ?? null,
-    // A creator that gives no label gives no name that the user chose, so the
-    // label of such a segmentation counts as generated as well.
+    // No label from the creator means no name that a user chose.
     labelIsGenerated: config?.labelIsGenerated ?? !config?.label,
     predecessorImageId: config?.predecessorImageId,
     cachedStats: config?.cachedStats ?? {},

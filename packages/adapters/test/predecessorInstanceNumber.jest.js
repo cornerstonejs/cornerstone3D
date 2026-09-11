@@ -3,10 +3,8 @@ import { describe, it, expect, jest } from '@jest/globals';
 const mockGet = jest.fn();
 const mockWarn = jest.fn();
 
-// The provider reads its inputs through `metaData.get`, and registers itself on
-// import; both are stubbed so the module under test can be driven directly.
-// The logger is stubbed as well, so the tests can read what the provider
-// reports about a predecessor it cannot use.
+// `metaData.get`, `addProvider` and the logger are stubbed, so the module can
+// be driven directly and the tests can read what it warns about.
 jest.mock('@cornerstonejs/core', () => {
   const actual = jest.requireActual('@cornerstonejs/core');
   return {
@@ -115,10 +113,8 @@ describe('PREDECESSOR_SEQUENCE instance number', () => {
 });
 
 describe('PREDECESSOR_SEQUENCE reference', () => {
-  // The General Image module lists SOPClassUID as well, and the provider read
-  // the pair of UIDs there. A host provider answers that module without the
-  // class UID, and the Type 1 ReferencedSOPClassUID went missing on every
-  // link back. The SOP Common module is the module that holds both UIDs.
+  // The provider read both UIDs from the General Image module, which a host
+  // can answer without the class UID. Type 1 ReferencedSOPClassUID went missing.
   it('takes both UIDs from the SOP Common module', () => {
     givenPredecessor({
       instanceNumber: '3',
@@ -171,9 +167,7 @@ describe('PREDECESSOR_SEQUENCE with a predecessor no provider holds', () => {
     expect(dataset).toEqual({ SeriesNumber: '3100', Modality: 'SEG' });
   });
 
-  // The consumer merges the answer and stores the instance, so the no-op is
-  // silent there. The caller asked to join the series of this predecessor, and
-  // the instance goes into a new series instead, so the provider reports why.
+  // The no-op is silent in the consumer, so the warning is the only report.
   it('warns and names the predecessor when it answers undefined', () => {
     givenPredecessor({ instanceNumber: '3', sopModule: null });
 
@@ -214,10 +208,8 @@ describe('PREDECESSOR_SEQUENCE with a predecessor no provider holds', () => {
 });
 
 describe('PREDECESSOR_SEQUENCE attributes without a value', () => {
-  // A provider answers a module as a whole, so an attribute the instance does
-  // not carry comes back as a key whose value is undefined. `Object.assign`
-  // copies such a key over a real value, and dcmjs then drops the element:
-  // a Type 1 attribute of the revision was lost to a gap in its predecessor.
+  // Merging a key whose value is undefined lost a Type 1 attribute of the
+  // revision to a gap in its predecessor.
   it('drops an attribute the predecessor has no value for', () => {
     givenPredecessor({
       instanceNumber: '3',
