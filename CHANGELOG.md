@@ -3,6 +3,73 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.10.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.10.1...v5.10.2) (2026-09-11)
+
+### Bug Fixes
+
+- **adapters:** apply the predecessor to the dataset, and number an unnumbered one ([#2907](https://github.com/cornerstonejs/cornerstone3D/issues/2907)) ([1bd5ecc](https://github.com/cornerstonejs/cornerstone3D/commit/1bd5eccb587b91655267bf92b3e2dfae70dfc115))
+- **ai:** resolve the ONNX wasm directory against the app, not the route ([#2864](https://github.com/cornerstonejs/cornerstone3D/issues/2864)) ([0c5e012](https://github.com/cornerstonejs/cornerstone3D/commit/0c5e012e54bbd2fe2e4b2a00e7afae765aeabb68))
+
+## [5.10.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.10.0...v5.10.1) (2026-09-10)
+
+### Bug Fixes
+
+- **security:** override smol-toml to 1.7.1 (GHSA-7w5x-hrqm-74c2) ([#2911](https://github.com/cornerstonejs/cornerstone3D/issues/2911)) ([366bb38](https://github.com/cornerstonejs/cornerstone3D/commit/366bb38e568a3eae5d5b58a3ffd9242fffb68738))
+
+# [5.10.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.9.1...v5.10.0) (2026-09-10)
+
+### Features
+
+- **core:** define voxel-relative annotation statistics and add a shared oblique-capable voxel iterator ([#2893](https://github.com/cornerstonejs/cornerstone3D/issues/2893)) ([cd7f279](https://github.com/cornerstonejs/cornerstone3D/commit/cd7f2799d20e5a08487654ae8c99755bad753504)), closes [#2889](https://github.com/cornerstonejs/cornerstone3D/issues/2889) [#2744](https://github.com/cornerstonejs/cornerstone3D/issues/2744) [#2744](https://github.com/cornerstonejs/cornerstone3D/issues/2744) [#2744](https://github.com/cornerstonejs/cornerstone3D/issues/2744) [#2744](https://github.com/cornerstonejs/cornerstone3D/issues/2744) [#2744](https://github.com/cornerstonejs/cornerstone3D/issues/2744) [#2889](https://github.com/cornerstonejs/cornerstone3D/issues/2889)
+
+## [5.9.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.9.0...v5.9.1) (2026-09-09)
+
+### Bug Fixes
+
+- **security:** update dependencies to fix security vulnerabilities ([#2908](https://github.com/cornerstonejs/cornerstone3D/issues/2908)) ([49c9180](https://github.com/cornerstonejs/cornerstone3D/commit/49c91809bc90bf642bee6f3b241c139f525810f2))
+
+# [5.9.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.9...v5.9.0) (2026-09-09)
+
+### Features
+
+- **logging:** replace console calls with hierarchical loglevel loggers named cs3d.<package>.<path>.<file> ([#2865](https://github.com/cornerstonejs/cornerstone3D/issues/2865)) ([49dc03d](https://github.com/cornerstonejs/cornerstone3D/commit/49dc03dcb7badce594525e9285368964a38aa174))
+
+## [5.8.9](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.8...v5.8.9) (2026-09-03)
+
+### Bug Fixes
+
+- **security:** Patch browserslist and fast-uri security vulnerabilities ([#2896](https://github.com/cornerstonejs/cornerstone3D/issues/2896)) ([0a77bb8](https://github.com/cornerstonejs/cornerstone3D/commit/0a77bb8574aa6543afdb2c57d1abf9722713c40c))
+
+## [5.8.8](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.7...v5.8.8) (2026-09-02)
+
+### Bug Fixes
+
+- **core:** keep the camera finite for single-slice volumes ([#2858](https://github.com/cornerstonejs/cornerstone3D/issues/2858)) ([62f78e6](https://github.com/cornerstonejs/cornerstone3D/commit/62f78e63f4e397eaff48528061415b3dfb12300a))
+
+## [5.8.7](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.6...v5.8.7) (2026-09-01)
+
+### Bug Fixes
+
+- **adapters:** index segment metadata by SegmentNumber for LABELMAP support ([#2882](https://github.com/cornerstonejs/cornerstone3D/issues/2882)) ([682ebbc](https://github.com/cornerstonejs/cornerstone3D/commit/682ebbcceb9dd6a6b1a0d47d082c98e77f566b73))
+
+## [5.8.6](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.5...v5.8.6) (2026-09-01)
+
+### Bug Fixes
+
+- **StackViewport:** cancel the pending scroll timer when the viewport is disabled ([#2884](https://github.com/cornerstonejs/cornerstone3D/issues/2884)) ([bff87eb](https://github.com/cornerstonejs/cornerstone3D/commit/bff87eb02c1d79372eca75f09ff186aca2c62e76))
+
+## [5.8.5](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.4...v5.8.5) (2026-09-01)
+
+### Bug Fixes
+
+- **security:** Patch vulnerable dependencies. ([#2887](https://github.com/cornerstonejs/cornerstone3D/issues/2887)) ([487b88e](https://github.com/cornerstonejs/cornerstone3D/commit/487b88ecb55b220efa466b49144ee355ca49a154))
+
+## [5.8.4](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.3...v5.8.4) (2026-08-27)
+
+### Bug Fixes
+
+- **tools:** cancel a pending SegmentSelectTool hover activation on mouseleave ([#2881](https://github.com/cornerstonejs/cornerstone3D/issues/2881)) ([6972fbe](https://github.com/cornerstonejs/cornerstone3D/commit/6972fbe76b27cc5d49af99c80abbddcef1525f6e))
+
 ## [5.8.3](https://github.com/cornerstonejs/cornerstone3D/compare/v5.8.2...v5.8.3) (2026-08-27)
 
 ### Bug Fixes

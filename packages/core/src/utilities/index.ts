@@ -17,6 +17,7 @@ import clamp from './clamp';
 import isOpposite from './isOpposite';
 import getClosestImageId from './getClosestImageId';
 import getSpacingInNormalDirection from './getSpacingInNormalDirection';
+import getEffectiveSpacingAlongDirection from './getEffectiveSpacingAlongDirection';
 import getTargetVolumeAndSpacingInNormalDir from './getTargetVolumeAndSpacingInNormalDir';
 import getVolumeActorCorners from './getVolumeActorCorners';
 import indexWithinDimensions from './indexWithinDimensions';
@@ -124,6 +125,7 @@ export type { ViewportVoiMappingProps } from './viewportVoiIntensityMapping';
 export * from './getPixelSpacingInformation';
 export * from './getPlaneCubeIntersectionDimensions';
 export * from './rotateToViewCoordinates';
+export * as voxelSlab from './voxelSlab';
 import { asArray } from './asArray';
 import {
   viewportSupportsImageSlices,
@@ -140,6 +142,12 @@ import {
   viewportIsInStackMode,
 } from './viewportCapabilities';
 import { getNormalizedAspectRatio } from './getNormalizedAspectRatio';
+import {
+  getWasmBasePath,
+  resolveWasmBasePath,
+  setWasmBasePath,
+} from './wasmBasePath';
+import resolveApplicationUrl, { getPublicUrl } from './resolveApplicationUrl';
 export { updatePlaneRestriction } from './updatePlaneRestriction';
 const getViewportModality = (viewport: IViewport, volumeId?: string) =>
   _getViewportModality(viewport, volumeId, cache.getVolume);
@@ -176,6 +184,7 @@ export {
   convertColorArrayToRgbString,
   getClosestImageId,
   getSpacingInNormalDirection,
+  getEffectiveSpacingAlongDirection,
   getTargetVolumeAndSpacingInNormalDir,
   getVolumeActorCorners,
   indexWithinDimensions,
@@ -276,4 +285,9 @@ export {
   viewportIsInVolumeMode,
   viewportIsInStackMode,
   getNormalizedAspectRatio,
+  getWasmBasePath,
+  setWasmBasePath,
+  resolveWasmBasePath,
+  resolveApplicationUrl,
+  getPublicUrl,
 };

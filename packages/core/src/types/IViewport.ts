@@ -61,6 +61,18 @@ export type ViewReferenceSpecifier = {
    */
   points?: Point3[];
   /**
+   * Compute the in-plane vectors of the plane restriction from the points,
+   * even when the restriction already holds a pair.
+   *
+   * This flag applies to three points or more, which is the only case where
+   * `updatePlaneRestriction` keeps an existing pair. A camera gives an exact
+   * pair from its cross products, and that pair describes the same plane that
+   * three points pin, so the function keeps the pair by default. Set this flag
+   * when the points are the authority, for example when the code rebuilds a
+   * reference from stored annotation data.
+   */
+  forceInPlaneVectors?: boolean;
+  /**
    * The volumeId to reference
    */
   volumeId?: string;
@@ -140,6 +152,36 @@ export type ReferencedImageRange = ViewReference & {
  * If a inPlaneVector(s) are specified, they must also be orthogonal to the view plane normal.
  *
  * Other types of plane restrictions may be defined at a later point.
+ *
+ * ## Compatibility, and NOT restoration
+ *
+ * A plane restriction answers one question: which camera views CAN show this
+ * data. A plane restriction never answers the other question: which camera
+ * view the application SHOULD go back to. The two jobs belong to two different
+ * parts of a `ViewReference`:
+ *
+ * - `planeRestriction` states compatibility. Each field of a plane restriction
+ *   removes views that cannot show the data. A restriction that says less
+ *   allows more views, and that is correct whenever the data itself says less.
+ * - `viewPlaneNormal` and `viewUp` at the top level of the `ViewReference`
+ *   state the view to restore. They record the camera that the user had, and
+ *   an application uses both to set an orientation back. The
+ *   `viewPlaneNormal` alone decides which view matches, and which viewport an
+ *   application prefers, because two views of one plane that differ only in
+ *   rotation are rare enough to ignore.
+ *
+ * Never fill an in-plane vector from the camera to make a view restore
+ * correctly. A camera pair added to a one point restriction claims that the
+ * point lies in one plane only, so every viewport of another orientation
+ * reports that the viewport cannot show the point, which is false.
+ * `updatePlaneRestriction` therefore records exactly what the points support:
+ * no in-plane vector for one point, `inPlaneVector1` alone for two points, and
+ * both vectors for three or more points.
+ *
+ * A viewport applies the restriction and the top level orientation together. A
+ * restriction that pins no orientation does not make every view compatible: a
+ * `viewPlaneNormal` at the top level still has to match, unless the caller
+ * passes `withOrientation`.
  */
 export type PlaneRestriction = {
   FrameOfReferenceUID: string;
@@ -152,6 +194,10 @@ export type PlaneRestriction = {
   /**
    * An inPlaneVector1 is required for all colinear referenced planes.
    * Shall not be undefined if inPlaneVector2 is defined.
+   *
+   * Set this vector only from the data. Two points give the direction between
+   * the two points. One point gives no direction, so one point leaves this
+   * vector undefined.
    */
   inPlaneVector1?: Point3;
 
@@ -159,8 +205,23 @@ export type PlaneRestriction = {
    * An inPlaneVector2 is required for all full planar definitions.
    * Shall have a non-zero dot product with inPlaneVector1, that is, shall be
    * non-colinear with inPlaneVector1.
+   *
+   * Set this vector only when the data pins a plane, which needs three points
+   * or more. Fewer points leave this vector undefined.
    */
   inPlaneVector2?: Point3;
+
+  /**
+   * The thickness of the referenced plane: a **full** geometric thickness in
+   * mm, not a half thickness.
+   *
+   * This value states compatibility, like the rest of the restriction: it
+   * widens the set of focal planes that can show the data. The name pairs with
+   * `viewportSlabThickness`, which is the other quantity of the depth test.
+   *
+   * See `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
+   */
+  referencePlaneThickness?: number;
 };
 
 /**

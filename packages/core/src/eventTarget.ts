@@ -1,3 +1,7 @@
+import { coreLog } from './utilities/logger';
+
+const log = coreLog.getLogger('eventTarget');
+
 /**
  * EventTarget - Provides the [EventTarget](https://developer.mozilla.org/en-US/docs/Web/API/EventTarget) interface
  */
@@ -114,7 +118,6 @@ class CornerstoneEventTarget implements EventTarget {
 
   dispatchEvent(event) {
     if (!this.listeners[event.type]) {
-      //console.warn(`Skipping dispatch since there are no listeners for ${event.type}`);
       return !event.defaultPrevented;
     }
 
@@ -125,7 +128,7 @@ class CornerstoneEventTarget implements EventTarget {
       try {
         stack[i].call(this, event);
       } catch (error) {
-        console.error(`error in event listener of type:  ${event.type}`, error);
+        log.error(`error in event listener of type:  ${event.type}`, error);
       }
     }
 
