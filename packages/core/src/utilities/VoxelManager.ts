@@ -589,6 +589,19 @@ export default class VoxelManager<T> {
       return Constructor.BYTES_PER_ELEMENT;
     }
 
+    // An RLE map whose creator chose no type still expands to a known array
+    // type, so it still has a voxel width. The `_get(0)` fallback below cannot
+    // find that width: an RLE map holds numbers, and a number has no
+    // BYTES_PER_ELEMENT, so an empty map throws on `undefined` and a map with a
+    // default returns NaN. Both reach `sizeInBytes` now that
+    // `getScalarDataLength()` derives a length rather than throwing first.
+    if (this.map instanceof RLEVoxelMap) {
+      const ExpansionConstructor = this.map.pixelDataConstructor
+        ? this.map.pixelDataConstructor
+        : Uint8ClampedArray;
+      return ExpansionConstructor.BYTES_PER_ELEMENT;
+    }
+
     // get the first element of the scalar data
     const value = this._get(0) as unknown as { BYTES_PER_ELEMENT: number };
     return value.BYTES_PER_ELEMENT;

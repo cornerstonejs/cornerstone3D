@@ -300,6 +300,27 @@ describe('VoxelManager', () => {
       expect(map.sizeInBytes).toBe(frameSize);
     });
 
+    it('gives an untyped RLE map the width of the type it expands to', () => {
+      // No pixelDataConstructor, so there is no _getConstructor to read the
+      // width from. The _get(0) fallback cannot supply one either - an RLE map
+      // holds numbers - so an empty map threw and a map with a default gave
+      // NaN. The expansion type (Uint8ClampedArray) is the answer.
+      const empty = VoxelManager.createRLEVolumeVoxelManager({ dimensions });
+      const volumeSize = dimensions[0] * dimensions[1] * dimensions[2];
+
+      expect(empty.bytePerVoxel).toBe(1);
+      expect(empty.sizeInBytes).toBe(volumeSize);
+
+      const withDefault = VoxelManager.createRLEVolumeVoxelManager({
+        dimensions,
+        defaultValue: 0,
+      });
+      withDefault.setAtIJKPoint([1, 2, 0], 3);
+
+      expect(withDefault.bytePerVoxel).toBe(1);
+      expect(withDefault.sizeInBytes).toBe(volumeSize);
+    });
+
     it('expands every frame of a multi frame RLE map, not just the first', () => {
       // The derived length is width * height * depth, so the expansion has to
       // be that long too. A one frame array drops every row past frame 0
