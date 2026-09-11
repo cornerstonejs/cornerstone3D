@@ -424,6 +424,9 @@ importers:
       '@cornerstonejs/core':
         specifier: 5.10.1
         version: link:../core
+      '@cornerstonejs/metadata':
+        specifier: 5.10.1
+        version: link:../metadata
       '@cornerstonejs/tools':
         specifier: 5.10.1
         version: link:../tools

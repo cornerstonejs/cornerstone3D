@@ -1,4 +1,10 @@
-import { metaData, Enums, type Types } from '@cornerstonejs/core';
+import {
+  metaData,
+  Enums,
+  utilities as csUtils,
+  type Types,
+} from '@cornerstonejs/core';
+import { utilities as metadataUtilities } from '@cornerstonejs/metadata';
 import dcmjs from 'dcmjs';
 
 import {
@@ -8,6 +14,11 @@ import {
 
 const { DicomMetaDictionary } = dcmjs.data;
 const { MetadataModules } = Enums;
+const { definedAttributesOf } = metadataUtilities;
+
+const cs3dLogger = csUtils.logger.adaptersLog.getLogger(
+  'utilities.referencedMetadataProvider'
+);
 
 export const STUDY_MODULES = [
   MetadataModules.GENERAL_STUDY,
@@ -92,20 +103,66 @@ export const metadataProvider = {
    * to the generated object.
    */
   [MetadataModules.PREDECESSOR_SEQUENCE]: (imageId) => {
-    // Start with the series data
-    const result = { ...metaData.get(MetadataModules.SERIES_DATA, imageId) };
-    // And extend with the predecessor information, plus updates for a new
-    // instance.
-    const generalImage = metaData.get(MetadataModules.GENERAL_IMAGE, imageId);
-    const study = metaData.get(MetadataModules.GENERAL_STUDY, imageId);
-    result.InstanceNumber = 1 + Number(generalImage.instanceNumber);
+    // Both UIDs come from SOP Common, which is the module the DICOM standard
+    // puts them in. The General Image module holds the instance number only.
+    const sopModule = metaData.get(MetadataModules.SOP_COMMON, imageId);
+
+    // `undefined` merges as a no-op in every consumer.
+    if (!sopModule?.sopInstanceUID || !sopModule.sopClassUID) {
+      cs3dLogger.warn(
+        `No metadata provider holds the predecessor ${imageId}, so the ` +
+          `instance names no predecessor and joins no existing series. ` +
+          `The instance goes into the new series that the derivation made.`
+      );
+      return undefined;
+    }
+
+    const generalImage =
+      metaData.get(MetadataModules.GENERAL_IMAGE, imageId) ?? {};
+    const study = metaData.get(MetadataModules.GENERAL_STUDY, imageId) ?? {};
+
+    // Only the attributes the predecessor has a value for, so the merge does
+    // not clear what the derivation gave the revision. A predecessor with no
+    // SeriesDate would keep dcmjs's UTC one, but every object stored through
+    // this path carries a series date and time.
+    const result = definedAttributesOf(
+      metaData.get(MetadataModules.SERIES_DATA, imageId)
+    );
+
+    // StudyInstanceUID and SeriesInstanceUID are Type 1 in
+    // PredecessorDocumentsSequence. A provider that answers SOP Common, but
+    // does not hold one of these two UIDs, gives incomplete data. A stored
+    // object that names an empty predecessor is worse for the user than a save
+    // that fails and says why, so this throws.
+    if (result.SeriesInstanceUID === undefined) {
+      throw new Error(
+        `The predecessor ${imageId} carries no SeriesInstanceUID, which ` +
+          `PredecessorDocumentsSequence requires. Refusing to write an ` +
+          `instance that names an incomplete predecessor.`
+      );
+    }
+
+    if (study.studyInstanceUID === undefined) {
+      throw new Error(
+        `The predecessor ${imageId} carries no StudyInstanceUID, which ` +
+          `PredecessorDocumentsSequence requires. Refusing to write an ` +
+          `instance that names an incomplete predecessor.`
+      );
+    }
+
+    // An unnumbered predecessor gives nothing to increment, so the revision is
+    // numbered 1. PredecessorDocumentsSequence orders the revisions, not this.
+    const predecessorNumber = Number(generalImage.instanceNumber);
+    result.InstanceNumber = Number.isFinite(predecessorNumber)
+      ? 1 + predecessorNumber
+      : 1;
     result.PredecessorDocumentsSequence = {
       StudyInstanceUID: study.studyInstanceUID,
       ReferencedSeriesSequence: {
         SeriesInstanceUID: result.SeriesInstanceUID,
         ReferencedSOPSequence: {
-          ReferencedSOPClassUID: generalImage.sopClassUID,
-          ReferencedSOPInstanceUID: generalImage.sopInstanceUID,
+          ReferencedSOPClassUID: sopModule.sopClassUID,
+          ReferencedSOPInstanceUID: sopModule.sopInstanceUID,
         },
       },
     };
