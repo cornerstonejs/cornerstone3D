@@ -1,0 +1,91 @@
+name: Publish to npm
+
+# Publishes the workspace packages when a change lands on main, and creates the
+# GitHub Release for the tag.
+#
+# npm trusted publishing (OIDC) authenticates the publish, so the repository
+# holds no npm token. Each package names this repository and this workflow file
+# as its trusted publisher on npmjs.com, so a rename of this file stops the
+# publish until the name is changed there as well.
+#
+# The version commit and the tag are pushed with GITHUB_TOKEN. GitHub does not
+# start a workflow for such a push, so this workflow does not re-trigger itself.
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# One publish at a time. A second run computes the same next version.
+concurrency:
+  group: publish-to-npm
+  cancel-in-progress: false
+
+permissions:
+  contents: write # push the version commit and the tag, and create the release
+  id-token: write # the OIDC token that npm trusted publishing reads
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6.0.3
+        with:
+          # version.mjs reads the last commit message, and the new tag must not
+          # collide with an existing one.
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6.0.8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: '24.15.0'
+          cache: 'pnpm'
+
+      # Trusted publishing needs npm 11.5.1 or later.
+      - name: Update npm
+        run: |
+          npm install --global npm@latest
+          npm --version
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Compute the next version
+        run: node ./version.mjs
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Identify the committer
+        run: |
+          git config user.email "contact@ohif.org"
+          git config user.name "ohif-bot"
+
+      - name: Set the package versions, commit and tag
+        run: node ./publish-version.mjs
+
+      - name: Publish to npm
+        run: node ./publish-package.mjs
+
+      # Only after npm accepts the packages. A failed publish therefore leaves
+      # no tag, and no GitHub Release, for a version that npm does not hold.
+      - name: Push the version commit and the tag
+        run: |
+          git push origin HEAD:main
+          git push origin "v$(cat version.txt)"
+
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="v$(cat version.txt)"
+          gh release create "$TAG" \
+            --repo "${{ github.repository }}" \
+            --title "$TAG" \
+            --generate-notes
