@@ -1,4 +1,5 @@
 import { VoxelManager } from '../../src/utilities';
+import cache from '../../src/cache/cache';
 import { describe, it, expect } from '@jest/globals';
 
 const dimensions = [64, 128, 4];
@@ -217,6 +218,253 @@ describe('VoxelManager', () => {
     const map = VoxelManager.createRLEVolumeVoxelManager({ dimensions });
     map.setAtIJKPoint(ijkPoint, 1);
     expect(map.getAtIJKPoint(ijkPoint)).toBe(1);
+  });
+
+  it('createRLEVolumeVoxelManager with a pixel type and default value', () => {
+    const map = VoxelManager.createRLEVolumeVoxelManager({
+      dimensions,
+      pixelDataConstructor: Uint8Array,
+      defaultValue: 0,
+    });
+
+    // an unwritten voxel reads as the array's zero, not undefined
+    expect(map.getAtIJKPoint(ijkPoint)).toBe(0);
+    expect(map.getConstructor()).toBe(Uint8Array);
+    expect(map.getScalarData()).toBeInstanceOf(Uint8Array);
+  });
+
+  it('createRLEVolumeVoxelManager without a pixel type is left as it was', () => {
+    // Choosing a type is what moves an RLE map onto it. A caller that chose
+    // nothing - the editing history managers, an RLE image - keeps the
+    // expansion type and the constructor fallback it had before the option
+    // existed, rather than being moved onto Uint8Array silently.
+    const map = VoxelManager.createRLEVolumeVoxelManager({ dimensions });
+
+    expect(map.getScalarData()).toBeInstanceOf(Uint8ClampedArray);
+    expect(map.getConstructor()).toBe(Float32Array);
+    expect(map.getAtIJKPoint(ijkPoint)).toBeUndefined();
+  });
+
+  describe('getLiveScalarData', () => {
+    it('is the backing array for a manager that has one', () => {
+      const scalarData = new Uint8Array(dimensions[0] * dimensions[1]);
+      const map = VoxelManager.createImageVoxelManager({
+        width: dimensions[0],
+        height: dimensions[1],
+        scalarData,
+      });
+
+      expect(map.getLiveScalarData()).toBe(scalarData);
+      // and it really is live: a write through the manager is visible in it
+      map.setAtIndex(3, 5);
+      expect(map.getLiveScalarData()[3]).toBe(5);
+    });
+
+    it('is undefined for an RLE manager, whose expansion is a throwaway', () => {
+      const map = VoxelManager.createRLEImageVoxelManager({
+        dimensions: [dimensions[0], dimensions[1]],
+        pixelDataConstructor: Uint8Array,
+        defaultValue: 0,
+      });
+
+      expect(map.getLiveScalarData()).toBeUndefined();
+      // getScalarData still produces an array - it is just not the truth
+      expect(map.getScalarData()).toBeInstanceOf(Uint8Array);
+    });
+
+    it('is undefined while the stored array is only a cached expansion', () => {
+      const map = VoxelManager.createRLEImageVoxelManager({
+        dimensions: [dimensions[0], dimensions[1]],
+        pixelDataConstructor: Uint8Array,
+        defaultValue: 0,
+      });
+
+      // getScalarData(true) retains the expansion, but it is still a snapshot
+      // rather than a backing store, so it must not be handed out as live.
+      map.getScalarData(true);
+      expect(map.getLiveScalarData()).toBeUndefined();
+    });
+  });
+
+  describe('scalar data length without a backing array', () => {
+    it('derives the length and voxel size from the dimensions', () => {
+      const map = VoxelManager.createRLEImageVoxelManager({
+        dimensions: [dimensions[0], dimensions[1]],
+        pixelDataConstructor: Uint8Array,
+        defaultValue: 0,
+      });
+
+      const frameSize = dimensions[0] * dimensions[1];
+      expect(map.getScalarDataLength()).toBe(frameSize);
+      expect(map.bytePerVoxel).toBe(1);
+      expect(map.sizeInBytes).toBe(frameSize);
+    });
+
+    it('gives an untyped RLE map the width of the type it expands to', () => {
+      // No pixelDataConstructor, so there is no _getConstructor to read the
+      // width from. The _get(0) fallback cannot supply one either - an RLE map
+      // holds numbers - so an empty map threw and a map with a default gave
+      // NaN. The expansion type (Uint8ClampedArray) is the answer.
+      const empty = VoxelManager.createRLEVolumeVoxelManager({ dimensions });
+      const volumeSize = dimensions[0] * dimensions[1] * dimensions[2];
+
+      expect(empty.bytePerVoxel).toBe(1);
+      expect(empty.sizeInBytes).toBe(volumeSize);
+
+      const withDefault = VoxelManager.createRLEVolumeVoxelManager({
+        dimensions,
+        defaultValue: 0,
+      });
+      withDefault.setAtIJKPoint([1, 2, 0], 3);
+
+      expect(withDefault.bytePerVoxel).toBe(1);
+      expect(withDefault.sizeInBytes).toBe(volumeSize);
+    });
+
+    it('expands every frame of a multi frame RLE map, not just the first', () => {
+      // The derived length is width * height * depth, so the expansion has to
+      // be that long too. A one frame array drops every row past frame 0
+      // silently, because a typed array ignores an out of bounds write.
+      const map = VoxelManager.createRLEVolumeVoxelManager({
+        dimensions,
+        pixelDataConstructor: Uint8Array,
+        defaultValue: 0,
+      });
+
+      const [width, height, depth] = dimensions;
+      const lastFrame = [1, 2, depth - 1];
+      map.setAtIJKPoint(lastFrame, 7);
+
+      const scalarData = map.getScalarData();
+      expect(scalarData.length).toBe(map.getScalarDataLength());
+      expect(scalarData.length).toBe(width * height * depth);
+      expect(scalarData[map.toIndex(lastFrame)]).toBe(7);
+    });
+
+    it('builds a complete scalar data array over RLE backed slices', () => {
+      // The segmentation-statistics path: an image volume over labelmap frames.
+      // Sizing the complete array asks each slice how long its scalar data is,
+      // which an RLE frame has no array to answer from.
+      const [width, height, depth] = [4, 4, 3];
+      const frameSize = width * height;
+      const imageIds = [];
+
+      for (let sliceIndex = 0; sliceIndex < depth; sliceIndex++) {
+        const imageId = `rle-labelmap-slice-${sliceIndex}`;
+        const voxelManager = VoxelManager.createRLEImageVoxelManager({
+          dimensions: [width, height],
+          pixelDataConstructor: Uint8Array,
+          defaultValue: 0,
+        });
+        // one segmented voxel per slice, at a different offset on each
+        voxelManager.setAtIndex(sliceIndex, 7);
+
+        imageIds.push(imageId);
+        cache.putImageSync(imageId, {
+          imageId,
+          width,
+          height,
+          voxelManager,
+          getPixelData: () => voxelManager.getScalarData(),
+          sizeInBytes: 5 * 1024,
+        });
+      }
+
+      const volumeVoxelManager = VoxelManager.createImageVolumeVoxelManager({
+        dimensions: [width, height, depth],
+        imageIds,
+        numberOfComponents: 1,
+      });
+
+      expect(volumeVoxelManager.getScalarDataLength()).toBe(frameSize * depth);
+
+      const complete = volumeVoxelManager.getCompleteScalarDataArray();
+      expect(complete).toBeInstanceOf(Uint8Array);
+      expect(complete.length).toBe(frameSize * depth);
+      for (let sliceIndex = 0; sliceIndex < depth; sliceIndex++) {
+        expect(complete[sliceIndex * frameSize + sliceIndex]).toBe(7);
+      }
+      expect(Array.from(complete).filter((value) => value !== 0)).toHaveLength(
+        depth
+      );
+
+      imageIds.forEach((imageId) => cache.removeImageLoadObject(imageId));
+    });
+  });
+
+  // An RLE map stores only what differs from its default, and `get` already
+  // returned `defaultValue` for anything it never wrote. The expansion paths
+  // and the sparse test used a literal zero instead, so a map that chose any
+  // other default disagreed with itself.
+  describe('a non-zero defaultValue', () => {
+    const [width, height] = [4, 4];
+    const frameSize = width * height;
+
+    function rleMap(defaultValue) {
+      return VoxelManager.createRLEImageVoxelManager({
+        dimensions: [width, height],
+        pixelDataConstructor: Uint8Array,
+        defaultValue,
+      });
+    }
+
+    it('is what an unwritten voxel expands to, not zero', () => {
+      const map = rleMap(5);
+      map.setAtIndex(3, 9);
+
+      const scalarData = map.getScalarData();
+
+      expect(scalarData[3]).toBe(9);
+      // Every other voxel is unwritten, so it has to read as the default both
+      // per voxel and in the expansion.
+      expect(map.getAtIndex(0)).toBe(5);
+      expect(scalarData[0]).toBe(5);
+      expect(Array.from(scalarData).filter((v) => v === 5)).toHaveLength(
+        frameSize - 1
+      );
+    });
+
+    it('fills getPixelData the same way, into a fresh and a reused array', () => {
+      const map = rleMap(5);
+      map.setAtIndex(3, 9);
+
+      const fresh = map.getPixelData();
+      expect(fresh[0]).toBe(5);
+      expect(fresh[3]).toBe(9);
+
+      // A reused buffer is filled rather than allocated, and arrives dirty.
+      const reused = new Uint8Array(frameSize).fill(200);
+      expect(Array.from(map.getPixelData(0, reused))).toEqual(
+        Array.from(fresh)
+      );
+    });
+
+    it('is the value dropped from the runs, so zeros survive a replace', () => {
+      const map = rleMap(5);
+
+      // All-zero input against a default of 5: zero is a real value here and
+      // has to be stored, or it would read back as 5.
+      map.setFromScalarData(new Uint8Array(frameSize));
+
+      expect(map.getAtIndex(0)).toBe(0);
+      expect(map.getScalarData()[0]).toBe(0);
+      expect(Array.from(map.getScalarData()).some((v) => v === 5)).toBe(false);
+    });
+
+    it('leaves a map that never chose a default on its zero behaviour', () => {
+      const map = rleMap(0);
+      map.setAtIndex(3, 9);
+
+      const scalarData = map.getScalarData();
+      expect(scalarData[0]).toBe(0);
+      expect(scalarData[3]).toBe(9);
+      expect(map.getPixelData()[0]).toBe(0);
+
+      map.setFromScalarData(new Uint8Array(frameSize));
+      expect(map.getAtIndex(0)).toBe(0);
+      // Nothing differs from the default, so nothing is stored.
+      expect(map.map.getRun(0, 0)).toBeUndefined();
+    });
   });
 
   it('addInstanceToImage', () => {
