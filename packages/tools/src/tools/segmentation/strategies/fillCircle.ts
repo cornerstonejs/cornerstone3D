@@ -299,7 +299,7 @@ const initializeCircle = {
     // `getSlabThickness` only exists on volume viewports; stack/generic ones
     // have no slab API, so keep it optional and let the fill default to one
     // voxel along the normal.
-    const slabThicknessWorld = (
+    const viewThicknessWorld = (
       viewport as Types.IVolumeViewport
     ).getSlabThickness?.();
     operationData.brushVoxelSlabFill = createCircleBrushFill({
@@ -310,7 +310,7 @@ const initializeCircle = {
       xRadius,
       yRadius,
       strokeCentersWorld: strokeCenters,
-      slabThicknessWorld,
+      viewThicknessWorld,
     });
   },
 } as Composition;

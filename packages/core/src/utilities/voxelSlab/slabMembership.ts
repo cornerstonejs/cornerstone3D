@@ -65,6 +65,39 @@ export function getMembershipHalfWidth(
 }
 
 /**
+ * The half width used to decide which voxels a *brush fill* writes (Rule F):
+ * `max(fillDepth, voxelThickness) / 2`.
+ *
+ * Rule M and Rule F answer different questions, and a fill must not use Rule M.
+ * Rule M measures, so it widens the slab by half a voxel on each side and a
+ * plane midway between two voxel layers reports both layers. That is right for
+ * an area, because an area must not under-count. It is wrong for a brush: the
+ * user drew one layer, and the brush would write two.
+ *
+ * Rule F therefore takes only the voxels that the fill volume passes through.
+ * A fill depth of one voxel or less gives `voxelThickness / 2`, which selects
+ * exactly the voxels whose box the fill plane crosses, and no fill is ever
+ * thinner than one voxel. A full-thickness view gives `fillDepth / 2`, so the
+ * fill writes exactly the depth the viewport shows.
+ *
+ * See `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
+ *
+ * @param fillDepth - The depth the fill covers along the normal, in mm. Zero,
+ *   negative, null and undefined all mean "one voxel".
+ * @param voxelThickness - The voxel thickness along the normal.
+ */
+export function getFillHalfWidth(
+  fillDepth: number | null | undefined,
+  voxelThickness: number
+): number {
+  const depth =
+    Number.isFinite(fillDepth) && (fillDepth as number) > 0
+      ? (fillDepth as number)
+      : 0;
+  return Math.max(depth, Math.abs(voxelThickness)) / 2;
+}
+
+/**
  * The half width used to decide whether an annotation is *displayed* in a
  * viewport (Rule D): `(viewportSlabThickness + referencePlaneThickness) / 2`.
  *

@@ -92,17 +92,28 @@ depth of its own. The reference plane thickness therefore decides how deep the
 fill reaches along the normal.
 
 - **Thin (single-slice) view** — the default, and what you get when the
-  viewport reports no slab thickness. The thickness is one voxel measured along
-  the normal, so the fill paints one oblique layer. Rule M widens the slab by
-  half a voxel on each side, and that is what keeps the layer watertight: a
-  thinner slab grazes the voxel grid at sparse positions and shows up as spaced
-  lines or holes on a steep oblique plane.
-- **Full-thickness (thick-slab) view** — the view slab thickness passes through
-  as the reference plane thickness, so the flat disc becomes a short cylinder
-  and the fill paints every layer through the slab.
+  viewport reports no slab thickness. The depth is one voxel measured along the
+  normal, so the fill paints one oblique layer. Rule F makes the half width
+  `T_v / 2`, and a slab of that thickness is a standard digital plane: it holds
+  every voxel that the plane passes through, and it shares no voxel with the
+  fill one `T_v` away. A thinner slab leaves holes, and a thicker slab writes
+  two layers.
+- **Full-thickness (thick-slab) view** — the view thickness passes through as
+  the fill depth, so the flat disc becomes a short cylinder and the fill paints
+  every layer through the slab.
 
 A sphere brush is the exception. It carries its own depth, reports that depth
-through `getRequiredThickness`, and so ignores the view slab entirely.
+through `getRequiredThickness`, and so ignores the view slab entirely. A sphere
+keeps Rule M, because the shape's own runs already bound the fill.
+
+:::caution
+A fill and the viewport must step by the same distance. The digital planes of
+Rule F are `T_v` apart, and `T_v` is the L1 measure. A volume viewport steps by
+`getSpacingInNormalDirection`, which is the L2 measure, and L2 is shorter than
+L1 for an oblique normal. Two consecutive oblique slices therefore fall inside
+one digital plane, and both slices show the same fill. The fill is correct in
+that case, and the step is wrong.
+:::
 
 ### Area semantics for a thick-slab fill
 

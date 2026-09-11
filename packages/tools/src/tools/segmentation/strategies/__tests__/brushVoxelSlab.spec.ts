@@ -220,12 +220,14 @@ describe('brushVoxelSlab', () => {
 
       const thin = collect(createCircleBrushFill(common), dimensions);
       const thick = collect(
-        createCircleBrushFill({ ...common, slabThicknessWorld: 6 }),
+        createCircleBrushFill({ ...common, viewThicknessWorld: 6 }),
         dimensions
       );
 
+      // Rule F takes the half width as `max(depth, T_v) / 2`, so a 6 mm view
+      // over 1 mm voxels reaches 3 mm each side of the plane at layer 12.
       expect(axisLayers(thin, 2)).toEqual([12]);
-      expect(axisLayers(thick, 2)).toEqual([9, 10, 11, 12, 13, 14, 15]);
+      expect(axisLayers(thick, 2)).toEqual([10, 11, 12, 13, 14]);
       expect(thick.length).toBeGreaterThan(thin.length);
     });
 
