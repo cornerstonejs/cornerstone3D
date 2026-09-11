@@ -15,6 +15,10 @@ const { DicomMetaDictionary } = dcmjs.data;
 const { MetadataModules } = Enums;
 const { definedAttributesOf } = csUtils;
 
+const cs3dLogger = csUtils.logger.adaptersLog.getLogger(
+  'utilities.referencedMetadataProvider'
+);
+
 export const STUDY_MODULES = [
   MetadataModules.GENERAL_STUDY,
   MetadataModules.PATIENT_STUDY,
@@ -110,7 +114,17 @@ export const metadataProvider = {
     // provider ingested. Return `undefined`, which every consumer merges as a
     // no-op, rather than throw on the reads below or name no instance in the
     // two Type 1 attributes of the reference.
+    //
+    // The no-op is silent for the consumer, and the caller asked to join the
+    // series of this predecessor. The stored instance goes into the new series
+    // that the derivation made instead, so log the reason here: it is the only
+    // report that the caller gets.
     if (!sopModule?.sopInstanceUID || !sopModule.sopClassUID) {
+      cs3dLogger.warn(
+        `No metadata provider holds the predecessor ${imageId}, so the ` +
+          `instance names no predecessor and joins no existing series. ` +
+          `The instance goes into the new series that the derivation made.`
+      );
       return undefined;
     }
 
@@ -121,9 +135,28 @@ export const metadataProvider = {
     // Keep only the series attributes the predecessor has a value for, so the
     // merge does not clear the Series Number, the Modality or the UIDs that the
     // derivation gave the revision.
+    //
+    // A predecessor that carries no SeriesDate/SeriesTime is the one case this
+    // rule reads wrongly: the revision then keeps the UTC date/time that dcmjs
+    // stamps on a derivation, and west of UTC that date is tomorrow for the
+    // last hours of the local day. It does not arise. Every SEG, SR and
+    // RTSTRUCT that this code base writes carries a series date and time, and
+    // those are the only objects that take a predecessor.
     const result = definedAttributesOf(
       metaData.get(MetadataModules.SERIES_DATA, imageId)
     );
+
+    // The Series Instance UID is what puts the instance in the series of the
+    // predecessor. Without it the instance keeps the new UID of the derivation
+    // and joins no existing series, which is the opposite of what the caller
+    // asked for, so report it.
+    if (result.SeriesInstanceUID === undefined) {
+      cs3dLogger.warn(
+        `The predecessor ${imageId} carries no SeriesInstanceUID, so the ` +
+          `instance joins no existing series. The instance keeps the new ` +
+          `series that the derivation made.`
+      );
+    }
 
     // An unnumbered predecessor gives nothing to increment, so the revision
     // takes the number 1 that a first instance gets (see NEW_INSTANCE_DATA

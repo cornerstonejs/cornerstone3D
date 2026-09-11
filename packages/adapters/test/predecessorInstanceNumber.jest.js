@@ -1,13 +1,25 @@
 import { describe, it, expect, jest } from '@jest/globals';
 
 const mockGet = jest.fn();
+const mockWarn = jest.fn();
 
 // The provider reads its inputs through `metaData.get`, and registers itself on
 // import; both are stubbed so the module under test can be driven directly.
+// The logger is stubbed as well, so the tests can read what the provider
+// reports about a predecessor it cannot use.
 jest.mock('@cornerstonejs/core', () => {
   const actual = jest.requireActual('@cornerstonejs/core');
   return {
     ...actual,
+    utilities: {
+      ...actual.utilities,
+      logger: {
+        ...actual.utilities.logger,
+        adaptersLog: {
+          getLogger: () => ({ warn: (...args) => mockWarn(...args) }),
+        },
+      },
+    },
     metaData: {
       ...actual.metaData,
       get: (...args) => mockGet(...args),
@@ -43,6 +55,7 @@ function givenPredecessor({
   sopModule,
   study,
 }) {
+  mockWarn.mockClear();
   mockGet.mockImplementation((moduleType) => {
     switch (moduleType) {
       case MetadataModules.SERIES_DATA:
@@ -158,6 +171,26 @@ describe('PREDECESSOR_SEQUENCE with a predecessor no provider holds', () => {
     expect(dataset).toEqual({ SeriesNumber: '3100', Modality: 'SEG' });
   });
 
+  // The consumer merges the answer and stores the instance, so the no-op is
+  // silent there. The caller asked to join the series of this predecessor, and
+  // the instance goes into a new series instead, so the provider reports why.
+  it('warns and names the predecessor when it answers undefined', () => {
+    givenPredecessor({ instanceNumber: '3', sopModule: null });
+
+    predecessorSequence();
+
+    expect(mockWarn).toHaveBeenCalledTimes(1);
+    expect(mockWarn.mock.calls[0][0]).toContain(IMAGE_ID);
+  });
+
+  it('does not warn when it answers a predecessor', () => {
+    givenPredecessor({ instanceNumber: '3' });
+
+    predecessorSequence();
+
+    expect(mockWarn).not.toHaveBeenCalled();
+  });
+
   it('does not throw when the study module is absent', () => {
     givenPredecessor({ instanceNumber: '3', study: null });
     expect(
@@ -216,6 +249,22 @@ describe('PREDECESSOR_SEQUENCE attributes without a value', () => {
     expect(dataset.SeriesNumber).toBe('3100');
     expect(dataset.Modality).toBe('SEG');
     expect(dataset.SeriesInstanceUID).toBe(SERIES_UID);
+  });
+
+  it('takes the series date and time of the predecessor when it has them', () => {
+    givenPredecessor({
+      instanceNumber: '3',
+      seriesData: {
+        SeriesInstanceUID: SERIES_UID,
+        SeriesDate: '20230405',
+        SeriesTime: '090000.000000',
+      },
+    });
+
+    const result = predecessorSequence();
+
+    expect(result.SeriesDate).toBe('20230405');
+    expect(result.SeriesTime).toBe('090000.000000');
   });
 
   it('takes the value of the predecessor when the predecessor has one', () => {
