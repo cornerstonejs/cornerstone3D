@@ -330,6 +330,7 @@ class RectangleScissorsTool extends LabelmapBaseTool {
 
     const { annotation, newAnnotation, hasMoved } = this.editData;
     const { data } = annotation;
+    const { viewPlaneNormal, viewUp } = annotation.metadata;
 
     if (newAnnotation && !hasMoved) {
       return;
@@ -346,6 +347,8 @@ class RectangleScissorsTool extends LabelmapBaseTool {
     const operationData = {
       ...this.editData,
       points: data.handles.points,
+      viewPlaneNormal,
+      viewUp,
       createMemo: this.createMemo.bind(this),
     };
 

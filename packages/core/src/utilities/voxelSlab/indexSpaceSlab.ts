@@ -95,13 +95,17 @@ export function pickOuterAxis(g: Point3): 0 | 1 | 2 {
  *   runs. Defaults to the lower-numbered of the two, so an
  *   acquisition-orientation volume emits runs along i for each j, matching
  *   row-major memory order.
+ * @param options.membershipHalfWidth - Use this half width instead of the one
+ *   Rule M computes. A brush fill passes the half width of Rule F here, because
+ *   a fill selects the voxels it passes through and a measurement does not. See
+ *   `getFillHalfWidth`. Measurement code must leave this unset.
  */
 export function buildIndexSpaceSlab(
   volume: VolumeGeometry,
   planePoint: Point3,
   normal: Point3,
   referencePlaneThickness?: number | null,
-  options: { columnAxis?: 0 | 1 | 2 } = {}
+  options: { columnAxis?: 0 | 1 | 2; membershipHalfWidth?: number } = {}
 ): IndexSpaceSlab {
   const { origin } = volume;
   const g = getIndexSpaceNormal(volume, normal);
@@ -118,7 +122,9 @@ export function buildIndexSpaceSlab(
     (origin[2] - planePoint[2]) * normal[2];
 
   const halfWidth =
-    getMembershipHalfWidth(thickness, voxelThickness) -
+    (Number.isFinite(options.membershipHalfWidth)
+      ? (options.membershipHalfWidth as number)
+      : getMembershipHalfWidth(thickness, voxelThickness)) -
     getSlabEpsilon(voxelThickness);
 
   const outerAxis = pickOuterAxis(g);

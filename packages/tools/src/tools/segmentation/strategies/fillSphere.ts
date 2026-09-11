@@ -10,13 +10,15 @@ import {
   createEllipseInPoint,
   getEllipseCornersFromCanvasCoordinates,
 } from './fillCircle';
+import { createSphereBrushFill } from './utils/brushVoxelSlab';
 const { transformWorldToIndex, getNormalizedAspectRatio } = csUtils;
 import { getSphereBoundsInfoFromViewport } from '../../../utilities/getSphereBoundsInfo';
 import type { CanvasCoordinates } from '../../../types';
 
 const sphereComposition = {
   [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
-    const { points, viewport, segmentationImageData } = operationData;
+    const { points, viewport, segmentationImageData, viewUp, viewPlaneNormal } =
+      operationData;
 
     // Happens on a preview setup
     if (!points) {
@@ -39,11 +41,6 @@ const sphereComposition = {
       center as Types.Point3
     );
 
-    const baseExtent = getSphereBoundsInfoFromViewport(
-      points.slice(0, 2) as [Types.Point3, Types.Point3],
-      segmentationImageData,
-      viewport
-    );
     const canvasCoordinates = points.map((p) =>
       viewport.worldToCanvas(p)
     ) as CanvasCoordinates;
@@ -66,88 +63,83 @@ const sphereComposition = {
         ? vec3.distance(points[2], points[3]) / 2 / aspectRatio[0]
         : 0;
 
-    const strokeCenters =
-      operationData.strokePointsWorld &&
-      operationData.strokePointsWorld.length > 0
-        ? operationData.strokePointsWorld
-        : [operationData.centerWorld];
+    const normalizedViewUp = vec3.fromValues(viewUp[0], viewUp[1], viewUp[2]);
+    vec3.normalize(normalizedViewUp, normalizedViewUp);
 
-    // The original implementation recalculated the expensive sphere bounds for
-    // every interpolated point. That repeats a handful of world-to-index
-    // conversions per sample, which adds up quickly during fast brushes. We
-    // know each stroke point simply translates the same sphere, so we can reuse
-    // the base bounds and slide them by the delta in IJK space instead.
+    const normalizedPlaneNormal = vec3.fromValues(
+      viewPlaneNormal[0],
+      viewPlaneNormal[1],
+      viewPlaneNormal[2]
+    );
+    vec3.normalize(normalizedPlaneNormal, normalizedPlaneNormal);
+
+    const viewRight = vec3.create();
+    vec3.cross(viewRight, normalizedViewUp, normalizedPlaneNormal);
+    vec3.normalize(viewRight, viewRight);
+
+    // Calculate radius in world units
+    const radiusWorld = vec3.distance(points[0], points[1]) / 2;
+
+    // The fallback bounds, for the bounding-box walk that `regionFill` uses
+    // when no shape fill is built. The shape fill computes its own, tighter
+    // bounds from the same geometry the iterator uses.
+    const baseExtent = getSphereBoundsInfoFromViewport(
+      points.slice(0, 2) as [Types.Point3, Types.Point3],
+      segmentationImageData,
+      viewport
+    );
+
+    const strokeCenters = operationData.strokePointsWorld?.length
+      ? operationData.strokePointsWorld
+      : [operationData.centerWorld];
+
+    // Each stroke point translates the same sphere, so slide the base bounds
+    // by the delta in IJK space rather than recomputing the expensive sphere
+    // bounds per sample - which adds up quickly during a fast brush.
     const baseBounds = baseExtent.boundsIJK;
     const baseCenterIJK = operationData.centerIJK;
     const boundsForStroke = strokeCenters.reduce<Types.BoundsIJK | null>(
-      (acc, centerPoint) => {
+      (accumulated, centerPoint) => {
         if (!centerPoint) {
-          return acc;
+          return accumulated;
         }
 
         const translatedCenterIJK = transformWorldToIndex(
           segmentationImageData,
           centerPoint as Types.Point3
         );
-        const deltaIJK = [
-          translatedCenterIJK[0] - baseCenterIJK[0],
-          translatedCenterIJK[1] - baseCenterIJK[1],
-          translatedCenterIJK[2] - baseCenterIJK[2],
-        ];
 
-        const translatedBounds: Types.BoundsIJK = [
-          [baseBounds[0][0] + deltaIJK[0], baseBounds[0][1] + deltaIJK[0]],
-          [baseBounds[1][0] + deltaIJK[1], baseBounds[1][1] + deltaIJK[1]],
-          [baseBounds[2][0] + deltaIJK[2], baseBounds[2][1] + deltaIJK[2]],
-        ];
+        const translated = [0, 1, 2].map((axis) => {
+          const delta = translatedCenterIJK[axis] - baseCenterIJK[axis];
+          return [
+            baseBounds[axis][0] + delta,
+            baseBounds[axis][1] + delta,
+          ] as Types.Point2;
+        }) as Types.BoundsIJK;
 
-        if (!acc) {
-          return translatedBounds;
+        if (!accumulated) {
+          return translated;
         }
 
-        return [
-          [
-            Math.min(acc[0][0], translatedBounds[0][0]),
-            Math.max(acc[0][1], translatedBounds[0][1]),
-          ],
-          [
-            Math.min(acc[1][0], translatedBounds[1][0]),
-            Math.max(acc[1][1], translatedBounds[1][1]),
-          ],
-          [
-            Math.min(acc[2][0], translatedBounds[2][0]),
-            Math.max(acc[2][1], translatedBounds[2][1]),
-          ],
-        ] as Types.BoundsIJK;
+        return [0, 1, 2].map((axis) => [
+          Math.min(accumulated[axis][0], translated[axis][0]),
+          Math.max(accumulated[axis][1], translated[axis][1]),
+        ]) as Types.BoundsIJK;
       },
       null
     );
 
     const boundsToUse = boundsForStroke ?? baseExtent.boundsIJK;
 
-    if (segmentationImageData) {
-      const dimensions = segmentationImageData.getDimensions();
-      // Clamp once at the end to keep the bounds valid for downstream
-      // iteration. We were clamping each partial result previously, which was
-      // redundant and still left us doing extra work when a drag crossed the
-      // image edges.
-      operationData.isInObjectBoundsIJK = [
-        [
-          Math.max(0, Math.min(boundsToUse[0][0], dimensions[0] - 1)),
-          Math.max(0, Math.min(boundsToUse[0][1], dimensions[0] - 1)),
-        ],
-        [
-          Math.max(0, Math.min(boundsToUse[1][0], dimensions[1] - 1)),
-          Math.max(0, Math.min(boundsToUse[1][1], dimensions[1] - 1)),
-        ],
-        [
-          Math.max(0, Math.min(boundsToUse[2][0], dimensions[2] - 1)),
-          Math.max(0, Math.min(boundsToUse[2][1], dimensions[2] - 1)),
-        ],
-      ] as Types.BoundsIJK;
-    } else {
-      operationData.isInObjectBoundsIJK = boundsToUse;
-    }
+    // Clamp once at the end, so a drag that crosses the image edge does not
+    // pay for a clamp per partial result.
+    const dimensions = segmentationImageData?.getDimensions();
+    operationData.isInObjectBoundsIJK = dimensions
+      ? ([0, 1, 2].map((axis) => [
+          Math.max(0, Math.min(boundsToUse[axis][0], dimensions[axis] - 1)),
+          Math.max(0, Math.min(boundsToUse[axis][1], dimensions[axis] - 1)),
+        ]) as Types.BoundsIJK)
+      : boundsToUse;
 
     operationData.isInObject = createEllipseInPoint(cornersInWorld, {
       strokePointsWorld: operationData.strokePointsWorld,
@@ -155,8 +147,21 @@ const sphereComposition = {
       xRadius,
       yRadius,
       aspectRatio,
+      viewRight,
+      viewUp: normalizedViewUp,
+      viewNormal: normalizedPlaneNormal,
     });
-    // }
+
+    // A sphere carries its own depth, so it reports the slab thickness it needs
+    // and the view slab thickness never enters. The stroke centers sweep a tube
+    // rather than a flat swept disc, which is what a sphere brush should paint.
+    operationData.brushVoxelSlabFill = createSphereBrushFill({
+      segmentationImageData,
+      viewPlaneNormal: normalizedPlaneNormal as Types.Point3,
+      centerWorld: operationData.centerWorld,
+      radiusWorld,
+      strokeCentersWorld: strokeCenters,
+    });
   },
 } as Composition;
 

@@ -1,7 +1,10 @@
 import type { Types } from '@cornerstonejs/core';
+import type { Types as csToolsTypes } from '@cornerstonejs/tools';
+import { vec3 } from 'gl-matrix';
 import {
   RenderingEngine,
   Enums,
+  getRenderingEngine,
   setVolumesForViewports,
   volumeLoader,
   ProgressiveRetrieveImages,
@@ -11,8 +14,10 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
+  addButtonToToolbar,
   addDropdownToToolbar,
   addSliderToToolbar,
+  addToggleButtonToToolbar,
   setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
 import { getStringUrlParam } from '../../../../utils/demo/helpers/exampleParameters';
@@ -27,6 +32,7 @@ const {
   ToolGroupManager,
   Enums: csToolsEnums,
   segmentation,
+  CrosshairsTool,
   RectangleScissorsTool,
   SphereScissorsTool,
   CircleScissorsTool,
@@ -56,6 +62,11 @@ const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`;
+const renderingEngineId = 'myRenderingEngine';
+const viewportId1 = 'CT_AXIAL';
+const viewportId2 = 'CT_SAGITTAL';
+const viewportId3 = 'CT_CORONAL';
+const viewportIds = [viewportId1, viewportId2, viewportId3];
 // const volumeId = encodeVolumeIdInfo({
 //   loader: 'fakeVolumeLoader',
 //   name: 'volumeURI',
@@ -70,7 +81,10 @@ const volumeId = `${volumeLoaderScheme}:${volumeName}`;
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Basic manual labelmap Segmentation tools',
-  'Here we demonstrate manual segmentation tools'
+  'Here we demonstrate manual segmentation tools. The crosshairs rotate the ' +
+    'planes, and the "Axial Oblique Angle" slider tilts the axial plane by an ' +
+    'exact angle. Use the crosshairs or the slider to make a plane oblique, ' +
+    'then paint on that plane to test the shape of the brush on a rotated image.'
 );
 
 const size = '512px';
@@ -108,10 +122,16 @@ content.appendChild(viewportGrid);
 
 const instructions = document.createElement('p');
 instructions.innerText = `
-  Left Click: Use selected Segmentation Tool.
-  Middle Click: Pan
-  Right Click: Zoom
-  Mouse wheel: Scroll Stack
+  Left Click: Use the selected segmentation tool.
+  Shift + Left Click: Erase with the circular brush.
+  Ctrl + Left Click: Pan.
+  Alt + Left Click: Navigate the slices.
+  Middle Click drag: Move the crosshairs. Drag a reference line to move that
+    plane. Drag the circle handle on a reference line to rotate the planes.
+    The "Crosshairs" button turns the crosshairs off, and then the middle
+    button pans again.
+  Middle Wheel: Navigate the slices of the viewport that is below the pointer.
+  Right Click: Zoom.
   `;
 
 content.append(instructions);
@@ -242,6 +262,188 @@ addSliderToToolbar({
   },
 });
 
+// ======== Crosshairs and slice navigation ======== //
+
+const viewportColors = {
+  [viewportId1]: 'rgb(200, 0, 0)',
+  [viewportId2]: 'rgb(200, 200, 0)',
+  [viewportId3]: 'rgb(0, 200, 0)',
+};
+
+function getReferenceLineColor(viewportId) {
+  return viewportColors[viewportId];
+}
+
+function getReferenceLineControllable() {
+  return true;
+}
+
+function getReferenceLineDraggableRotatable() {
+  return true;
+}
+
+function getReferenceLineSlabThicknessControlsOn() {
+  return true;
+}
+
+/**
+ * The brush keeps the primary mouse button, so the crosshairs use the middle
+ * mouse button. The pan tool takes the middle mouse button back when the user
+ * turns the crosshairs off.
+ */
+function setCrosshairsEnabled(enabled: boolean) {
+  const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+
+  if (!toolGroup) {
+    return;
+  }
+
+  // setToolActive merges the bindings, so first remove all of the bindings of
+  // the two tools that share the middle mouse button.
+  toolGroup.setToolDisabled(CrosshairsTool.toolName);
+  toolGroup.setToolDisabled(PanTool.toolName);
+
+  const panBindings: csToolsTypes.IToolBinding[] = [
+    {
+      mouseButton: MouseBindings.Primary,
+      modifierKey: KeyboardBindings.Ctrl,
+    },
+  ];
+
+  if (enabled) {
+    toolGroup.setToolActive(CrosshairsTool.toolName, {
+      bindings: [{ mouseButton: MouseBindings.Auxiliary }],
+    });
+  } else {
+    panBindings.push({ mouseButton: MouseBindings.Auxiliary });
+  }
+
+  toolGroup.setToolActive(PanTool.toolName, { bindings: panBindings });
+
+  getRenderingEngine(renderingEngineId)?.renderViewports(viewportIds);
+}
+
+// The camera of the axial viewport before the example applies an oblique angle.
+let axialBaseCamera: {
+  viewPlaneNormal: Types.Point3;
+  viewUp: Types.Point3;
+  focalPoint: Types.Point3;
+  distance: number;
+};
+
+/**
+ * Rotates the axial viewport about the world X axis by an exact angle. An
+ * oblique plane makes the brush fill voxels that the plane cuts at an angle,
+ * and that is the condition that this example tests.
+ *
+ * The rotation keeps the focal point of the first camera, so the plane always
+ * turns about the centre of the volume. `setCamera` must also get the new
+ * position, because `viewPlaneNormal` alone turns the camera about its
+ * position, and that moves the focal point out of the volume.
+ */
+function setAxialObliqueAngle(degrees: number) {
+  const viewport = getRenderingEngine(renderingEngineId)?.getViewport(
+    viewportId1
+  ) as Types.IVolumeViewport;
+
+  if (!viewport || !axialBaseCamera) {
+    return;
+  }
+
+  const { focalPoint, distance } = axialBaseCamera;
+  const radians = (degrees * Math.PI) / 180;
+  const origin: Types.Point3 = [0, 0, 0];
+  const viewPlaneNormal = vec3.create();
+  const viewUp = vec3.create();
+
+  vec3.rotateX(
+    viewPlaneNormal,
+    axialBaseCamera.viewPlaneNormal,
+    origin,
+    radians
+  );
+  vec3.rotateX(viewUp, axialBaseCamera.viewUp, origin, radians);
+
+  // The view plane normal points from the focal point towards the camera.
+  const position = vec3.scaleAndAdd(
+    vec3.create(),
+    focalPoint as vec3,
+    viewPlaneNormal,
+    distance
+  );
+
+  viewport.setCamera({
+    focalPoint,
+    position: Array.from(position) as Types.Point3,
+    viewPlaneNormal: Array.from(viewPlaneNormal) as Types.Point3,
+    viewUp: Array.from(viewUp) as Types.Point3,
+  });
+  viewport.render();
+}
+
+addToggleButtonToToolbar({
+  id: 'crosshairs',
+  title: 'Crosshairs',
+  defaultToggle: true,
+  onClick: (toggle) => {
+    setCrosshairsEnabled(toggle);
+  },
+});
+
+addSliderToToolbar({
+  id: 'obliqueAngle',
+  title: 'Axial Oblique Angle: 0 degrees',
+  range: [0, 60],
+  step: 1,
+  defaultValue: 0,
+  onSelectedValueChange: (valueAsStringOrNumber) => {
+    setAxialObliqueAngle(Number(valueAsStringOrNumber));
+  },
+  updateLabelOnChange: (value, label) => {
+    label.innerHTML = `Axial Oblique Angle: ${value} degrees`;
+  },
+});
+
+addButtonToToolbar({
+  title: 'Reset Cameras',
+  onClick: () => {
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    if (!renderingEngine) {
+      return;
+    }
+
+    const obliqueSlider = document.getElementById(
+      'obliqueAngle'
+    ) as HTMLInputElement;
+
+    if (obliqueSlider) {
+      obliqueSlider.value = '0';
+    }
+
+    const obliqueLabel = document.getElementById('obliqueAngle-label');
+
+    if (obliqueLabel) {
+      obliqueLabel.innerHTML = 'Axial Oblique Angle: 0 degrees';
+    }
+
+    viewportIds.forEach((viewportId) => {
+      const viewport = renderingEngine.getViewport(
+        viewportId
+      ) as Types.IVolumeViewport;
+
+      viewport.resetCamera({
+        resetPan: true,
+        resetZoom: true,
+        resetToCenter: true,
+        resetRotation: true,
+      });
+    });
+
+    renderingEngine.renderViewports(viewportIds);
+  },
+});
+
 // ============================= //
 
 async function addSegmentationsToState() {
@@ -301,6 +503,7 @@ async function run() {
   cornerstoneTools.addTool(SphereScissorsTool);
   cornerstoneTools.addTool(PaintFillTool);
   cornerstoneTools.addTool(BrushTool);
+  cornerstoneTools.addTool(CrosshairsTool);
 
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
@@ -322,6 +525,12 @@ async function run() {
   );
   toolGroup.addTool(PaintFillTool.toolName);
   toolGroup.addTool(StackScrollTool.toolName);
+  toolGroup.addTool(CrosshairsTool.toolName, {
+    getReferenceLineColor,
+    getReferenceLineControllable,
+    getReferenceLineDraggableRotatable,
+    getReferenceLineSlabThicknessControlsOn,
+  });
   toolGroup.addToolInstance(
     brushInstanceNames.CircularBrush,
     BrushTool.toolName,
@@ -355,6 +564,9 @@ async function run() {
       {
         mouseButton: MouseBindings.Primary, // Left Click
         modifierKey: KeyboardBindings.Alt,
+      },
+      {
+        mouseButton: MouseBindings.Wheel, // Mouse wheel
       },
       {
         numTouchPoints: 1,
@@ -393,17 +605,10 @@ async function run() {
     ],
   });
 
-  toolGroup.setToolActive(PanTool.toolName, {
-    bindings: [
-      {
-        mouseButton: MouseBindings.Auxiliary, // Middle Click
-      },
-      {
-        mouseButton: MouseBindings.Primary,
-        modifierKey: KeyboardBindings.Ctrl,
-      },
-    ],
-  });
+  // The pan tool and the crosshairs tool share the middle mouse button.
+  // setCrosshairsEnabled gives the middle mouse button to one of the two tools,
+  // and this example calls that function after it adds the viewports.
+
   toolGroup.setToolActive(ZoomTool.toolName, {
     bindings: [
       {
@@ -432,14 +637,9 @@ async function run() {
   await addSegmentationsToState();
 
   // Instantiate a rendering engine
-  const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create the viewports
-  const viewportId1 = 'CT_AXIAL';
-  const viewportId2 = 'CT_SAGITTAL';
-  const viewportId3 = 'CT_CORONAL';
-
   const viewportInputArray = [
     {
       viewportId: viewportId1,
@@ -485,6 +685,24 @@ async function run() {
     [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
     [viewportId1, viewportId2, viewportId3]
   );
+
+  // The crosshairs tool needs the viewports of the tool group and a camera for
+  // each viewport, so this call must come after setVolumesForViewports.
+  setCrosshairsEnabled(true);
+
+  // Keep the camera of the axial viewport. The "Axial Oblique Angle" slider
+  // rotates this camera, and the "Reset Cameras" button restores it.
+  const axialViewport = renderingEngine.getViewport(
+    viewportId1
+  ) as Types.IVolumeViewport;
+  const { viewPlaneNormal, viewUp, focalPoint, position } =
+    axialViewport.getCamera();
+  axialBaseCamera = {
+    viewPlaneNormal: [...viewPlaneNormal] as Types.Point3,
+    viewUp: [...viewUp] as Types.Point3,
+    focalPoint: [...focalPoint] as Types.Point3,
+    distance: vec3.distance(position as vec3, focalPoint as vec3),
+  };
 
   // Add the segmentation representation to the viewports
   const segmentationRepresentation = {

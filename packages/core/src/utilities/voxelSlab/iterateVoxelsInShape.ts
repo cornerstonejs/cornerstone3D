@@ -58,6 +58,14 @@ export interface VoxelsInShapeOptions {
    */
   referencePlaneThickness?: number | null;
   /**
+   * Use this half width along the normal instead of the one Rule M computes
+   * from `referencePlaneThickness`. A brush fill passes the half width of Rule
+   * F here, because a fill selects the voxels it passes through and a
+   * measurement does not. See `getFillHalfWidth`. Measurement code must leave
+   * this unset.
+   */
+  membershipHalfWidth?: number;
+  /**
    * Inclusive index bounds to confine iteration to. Defaults to the whole
    * volume. Supply the annotation's own index-space bounding box when you have
    * one; the slab bound tightening below only narrows along the normal.
@@ -94,6 +102,7 @@ export function* iterateVoxelsInShape(
     planePoint,
     viewPlaneNormal: normal,
     referencePlaneThickness,
+    membershipHalfWidth,
     getShapeRuns,
     isInShape,
     columnAxis: forcedColumnAxis,
@@ -106,7 +115,7 @@ export function* iterateVoxelsInShape(
     planePoint,
     normal,
     referencePlaneThickness,
-    { columnAxis: forcedColumnAxis }
+    { columnAxis: forcedColumnAxis, membershipHalfWidth }
   );
   const { outerAxis, rowAxis, columnAxis } = slab;
 

@@ -1,7 +1,7 @@
 ---
 id: voxel-statistics
 title: Voxel Statistics and Oblique Views
-summary: One iterator for the voxels a tool's shape covers, at any orientation, plus the two rules it evaluates - which voxels an area annotation contains (Rule M) and which annotations a viewport displays (Rule D)
+summary: One iterator for the voxels a tool's shape covers, at any orientation, plus the three rules it evaluates - which voxels an area annotation contains (Rule M), which voxels a brush fill writes (Rule F), and which annotations a viewport displays (Rule D)
 ---
 
 # Voxel Statistics and Oblique Views
@@ -67,15 +67,15 @@ and it reads nothing from the display.
 
 An area statistic becomes a loop over that iterator and an accumulator. The tool
 supplies the shape and the thickness, the iterator supplies the voxels, and the
-mean, the maximum and the count follow from one pass. Rule M and Rule D below
-define the set that the iterator produces, so a tool that uses the iterator gets
-the defined answer without knowing the arithmetic.
+mean, the maximum and the count follow from one pass. Rule M, Rule F and Rule D
+below define the set that the iterator produces, so a tool that uses the
+iterator gets the defined answer without knowing the arithmetic.
 
-Rule M and Rule D are **normative**. Issue
-[#2889](https://github.com/cornerstonejs/cornerstone3D/issues/2889) states them
-as well. The index-space arithmetic that evaluates Rule M quickly is an
-implementation detail, and anyone may change it as long as it selects the same
-voxels.
+Rule M, Rule F and Rule D are **normative**. Issue
+[#2889](https://github.com/cornerstonejs/cornerstone3D/issues/2889) states Rule
+M and Rule D as well. The index-space arithmetic that evaluates Rule M quickly
+is an implementation detail, and anyone may change it as long as it selects the
+same voxels.
 
 ### The base case is the base of the iterator
 
@@ -129,6 +129,46 @@ voxels overlap the slab by equal amounts, so no principled way to choose one
 exists, and a choice would make the count depend on a rounding tie. A mean over
 two layers is not the same number as a mean over one, and MPR at a half-slice
 position is the ordinary way to reach this state.
+:::
+
+## Rule F: brush fill
+
+Rule M answers a measurement question. A brush fill asks a different question,
+and Rule M gives the wrong answer to it.
+
+A brush fill writes a voxel when the voxel obeys two conditions:
+
+1. The voxel centre lies within `max(F, T_v) / 2` of the fill plane, measured
+   along the normal. `F` is the depth that the fill covers, and `F` defaults to
+   `T_v`.
+2. The projection of that centre along the normal onto the plane falls inside
+   the 2D shape.
+
+The half width of Rule F is `max(F, T_v) / 2`, and the half width of Rule M is
+`(T + T_v) / 2`. For the default of one voxel of depth, Rule M gives `T_v` and
+Rule F gives `T_v / 2`. Rule M is therefore twice as deep, and it writes two
+layers where the user drew one.
+
+The depth of `T_v` that Rule F gives is exact, and it is not a compromise. The
+slab of Rule F has a thickness of `T_v`, which is the L1 length of the
+index-space normal `g`, where `gᵢ = sᵢ * (aᵢ · n)`. A slab of that thickness is
+a standard digital plane. Two properties follow, and the two properties hold
+together at every orientation:
+
+- **No hole.** The slab holds every voxel that the continuous plane passes
+  through.
+- **No overlap.** Two such slabs share no voxel when the two planes are `T_v`
+  apart along the normal.
+
+Consecutive fills therefore tile the volume exactly, in the same way that
+consecutive digital lines tile a 2D grid. A thinner slab breaks the first
+property, and a thicker slab breaks the second one.
+
+:::caution
+The tiling holds when the planes are `T_v` apart. A viewport that steps by a
+different distance shows one fill on two consecutive slices, and the fill looks
+like a bleed into the neighbouring slice. The fill is correct in that case, and
+the step is wrong. See the Spacing section below for the three measures.
 :::
 
 ## Rule D: display
@@ -501,10 +541,15 @@ acquisition-orientation view, and they diverge for an oblique normal. For
 axis, the L1 value is `2*sqrt(2) ≈ 2.83 mm` against `sqrt(5) ≈ 2.24 mm` for L2,
 and `≈ 1.34 mm` for the harmonic form.
 
-Rule M uses `T_v` and nothing else. The harmonic form belongs to a tool that
-walks a line, such as the sub-pixel resampler of the freehand ROI: it needs a
-step that crosses one voxel per step, and neither of the other two measures
-answers that.
+Rule M uses `T_v` and nothing else. Rule F also uses `T_v`, because the L1
+length is what makes the slab a standard digital plane. The harmonic form
+belongs to a tool that walks a line, such as the sub-pixel resampler of the
+freehand ROI: it needs a step that crosses one voxel per step, and neither of
+the other two measures answers that.
+
+A slice step is an overlap test, so a slice step needs the L1 value as well. A
+step of L2 is shorter than `T_v` for an oblique normal, and two consecutive
+slice positions then fall inside one digital plane.
 
 ## Cost
 
@@ -532,6 +577,7 @@ Everything here is exported under `utilities.voxelSlab`.
 | `isPlaneDepthViewable`                                                 | the depth half of Rule D                 |
 | `buildIndexSpaceSlab`, `getDepthRun`, `getSlabAxisBound`               | the index-space run arithmetic           |
 | `isVoxelCenterInSlab`, `getMembershipHalfWidth`, `getDisplayHalfWidth` | the Rule M and Rule D predicates         |
+| `getFillHalfWidth`                                                     | the half width of Rule F                 |
 
 Two more exports sit outside that namespace:
 
