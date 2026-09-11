@@ -24,6 +24,15 @@ import {
 window.cornerstone = cornerstone;
 window.cornerstoneTools = cornerstoneTools;
 
+// Examples are served from the root by the example dev server and from
+// /live-examples/ on the docs site, and each deployment copies the wasm
+// binaries it needs (onnxruntime-web, dicom-microscopy-viewer) next to the
+// page. Declaring the page's own directory as the public URL is what makes
+// those copies findable from either location; a page that declares its own
+// PUBLIC_URL keeps it. Examples are single pages rather than routed
+// applications, so the page directory *is* the application root here.
+window.PUBLIC_URL ||= window.location.pathname.replace(/[^/]*$/, '');
+
 export default async function initDemo(config: any = {}) {
   const urlParams = new URLSearchParams(window.location.search);
   const debugEnabled = urlParams.get('debug') === 'true';
@@ -78,8 +87,7 @@ export default async function initDemo(config: any = {}) {
  */
 export async function peerImport(moduleId) {
   if (moduleId === 'dicom-microscopy-viewer') {
-    // The microscopy viewer loads relative to the public URL
-    window.PUBLIC_URL ||= '/';
+    // The microscopy viewer loads relative to the public URL, declared above.
     // Use a relative library path that includes the component name
     window.PUBLIC_LIB_URL ||= './${component}/';
     return importGlobal(

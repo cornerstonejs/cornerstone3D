@@ -143,6 +143,12 @@ import {
   viewportIsInStackMode,
 } from './viewportCapabilities';
 import { getNormalizedAspectRatio } from './getNormalizedAspectRatio';
+import {
+  getWasmBasePath,
+  resolveWasmBasePath,
+  setWasmBasePath,
+} from './wasmBasePath';
+import resolveApplicationUrl, { getPublicUrl } from './resolveApplicationUrl';
 export { updatePlaneRestriction } from './updatePlaneRestriction';
 const getViewportModality = (viewport: IViewport, volumeId?: string) =>
   _getViewportModality(viewport, volumeId, cache.getVolume);
@@ -280,4 +286,9 @@ export {
   viewportIsInVolumeMode,
   viewportIsInStackMode,
   getNormalizedAspectRatio,
+  getWasmBasePath,
+  setWasmBasePath,
+  resolveWasmBasePath,
+  resolveApplicationUrl,
+  getPublicUrl,
 };
