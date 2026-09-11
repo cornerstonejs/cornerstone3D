@@ -2,45 +2,28 @@
  * Brush fills over the shared voxel slab iterator.
  *
  * Each builder here describes a brush shape - circle/ellipse, sphere,
- * rectangle - as a `VoxelSlabShape` anchored on the view plane, and the fill
- * enumerates the voxels of that shape with `csUtils.voxelSlab`'s
- * `iterateVoxelsInShape`. That is the same iterator, the same shapes and the
- * same membership rule that the area annotation tools measure with, so a brush
- * paints the voxels that an annotation of the same shape would report. See
+ * rectangle - as a `VoxelSlabShape` from `csUtils.voxelSlab`, and the fill
+ * enumerates the voxels of that shape with `iterateVoxelsInShape`. The shapes,
+ * the iterator, the slab thickness rules and the area semantics of a thick-slab
+ * fill are documented in
+ * `docs/docs/concepts/cornerstone-tools/segmentation/planar-fill-iteration.md`.
+ * The membership rule that a brush shares with the area annotation tools is
+ * documented in
  * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  *
- * The iterator emits exact integer runs along one voxel axis, nested inside the
- * slab's own bounds along the normal. Cost is therefore proportional to the
- * voxels painted plus the rows touched, and never to the volume of the
- * axis-aligned bounding box - which is almost entirely empty for a brush on an
- * oblique plane, and is what made the previous box walk both slow and prone to
- * bleeding into the neighbouring slices.
+ * This file holds no shape geometry. It adds only the wrapping that a brush
+ * needs and an annotation does not:
  *
- * ## Slab thickness
- *
- * A circle or a rectangle brush is flat: it lies in the view plane and carries
- * no depth of its own. The reference plane thickness therefore decides how deep
- * the fill reaches along the normal:
- *
- * - **Thin (single-slice) view** - the default. The thickness is one voxel
- *   measured along the normal, so the fill paints one oblique layer of voxels.
- *   Rule M widens the slab by half a voxel on each side, which is what keeps
- *   that single layer watertight: a thinner slab grazes the voxel grid at
- *   sparse positions and shows up as spaced lines or holes on a steep oblique
- *   plane.
- * - **Full-thickness (thick-slab) view** - the view slab thickness is passed
- *   through as the reference plane thickness, so the flat disc becomes a short
- *   cylinder and the fill paints every layer through the slab.
- *
- * A sphere brush is different: it carries its own depth, reports it through
- * `getRequiredThickness`, and so ignores the view slab entirely.
- *
- * ## Area semantics for thick-slab fills
- *
- * A thin fill is one voxel deep, so its in-plane area is the painted voxel
- * count times the voxel area. A thick-slab fill is a volume, not a planar
- * region: an *area* over its voxels must divide by the depth in voxels, or the
- * extra layers over-count the area. This affects area measurements only.
+ * - the volume geometry, read from the `vtkImageData` that a brush strategy
+ *   carries as `segmentationImageData`;
+ * - the in-plane axes, from the camera's `viewUp` and the normal, or from the
+ *   corners of a rectangle;
+ * - the stroke centres, resampled so that consecutive shapes overlap;
+ * - the thickness, taken from the view slab because a brush records none of
+ *   its own;
+ * - the index bounds, through the `getShapeIndexBounds` that the annotation
+ *   side also uses;
+ * - the iteration, in the callback shape that `VoxelManager.forEach` uses.
  */
 import { vec3 } from 'gl-matrix';
 import type { Types } from '@cornerstonejs/core';
@@ -54,10 +37,10 @@ const {
   createEllipseShape,
   createRectangleShape,
   createUnionShape,
+  getFillHalfWidth,
   getMembershipHalfWidth,
   getVoxelThicknessAlongNormal,
   iterateVoxelsInShape,
-  resolveReferencePlaneThickness,
 } = csUtils.voxelSlab;
 
 type VoxelSlabShape = csUtils.voxelSlab.VoxelSlabShape;
@@ -82,8 +65,12 @@ export interface BrushVoxelSlabFill {
   planePoint: Types.Point3;
   /** The unit view plane normal. */
   viewPlaneNormal: Types.Point3;
-  /** The resolved thickness along the normal, in mm. */
-  referencePlaneThickness: number;
+  /**
+   * The half width along the normal, in mm, that a voxel centre must fall
+   * inside. Rule F for a flat brush, Rule M for a shape that carries its own
+   * depth. See `getFillHalfWidth`.
+   */
+  membershipHalfWidth: number;
   /** Inclusive index bounds the iteration is confined to. */
   bounds: Types.BoundsIJK;
   /** The brush shape's exact in-plane runs. */
@@ -117,9 +104,9 @@ function getViewRight(
  * The centres of a brush stroke, resampled so consecutive discs overlap.
  *
  * The pointer reports a handful of positions per stroke, and a fast drag leaves
- * them further apart than the brush is wide. The union of discs at only those
- * positions would then be a dotted line, so a sample every `stepWorld` fills
- * the gaps. Half the smaller radius guarantees an overlap.
+ * them further apart than the brush is wide, which makes the union of discs a
+ * dotted line. A sample every `stepWorld` fills the gaps; half the smaller
+ * radius guarantees an overlap.
  */
 function densifyStrokeCenters(
   centers: Types.Point3[],
@@ -154,10 +141,10 @@ function densifyStrokeCenters(
 /**
  * Assembles a fill from one shape per stroke centre.
  *
- * Everything except the shape is identical for all three brushes, and it is the
- * same resolution order that `sampleAreaAnnotationVoxels` uses: resolve the
- * thickness first, let a shape with depth of its own override it, then bound
- * the index space with that same thickness. Bounds computed from a different
+ * Everything except the shape is identical for all three brushes, and the
+ * order is the order that `sampleAreaAnnotationVoxels` uses: resolve the
+ * thickness, let a shape with depth of its own override it, then bound the
+ * index space with that same thickness. Bounds computed from a different
  * thickness than the iterator uses drop the outermost layer.
  *
  * @returns null when the brush covers nothing, which tells `regionFill` to fall
@@ -169,7 +156,7 @@ function buildBrushFill({
   viewPlaneNormal,
   centersWorld,
   boundsMargin,
-  slabThicknessWorld,
+  viewThicknessWorld,
   createShape,
 }: {
   segmentationImageData: vtkImageData;
@@ -177,7 +164,8 @@ function buildBrushFill({
   viewPlaneNormal: Types.Point3;
   centersWorld: Types.Point3[];
   boundsMargin: number;
-  slabThicknessWorld?: number;
+  /** The **full** depth the view shows, in mm. Not the half thickness. */
+  viewThicknessWorld?: number;
   createShape: (args: {
     volume: BrushVolume;
     planePoint: Types.Point3;
@@ -206,25 +194,28 @@ function buildBrushFill({
 
   const shape = createUnionShape(shapes);
 
-  // The view slab thickness stands in for the annotation's own thickness here:
-  // a brush has no recorded thickness, and what the user sees is what the view
-  // shows. Absent or zero resolves to one voxel along the normal, so a thin
-  // view paints one oblique layer.
-  const referencePlaneThickness =
-    shape.getRequiredThickness() ||
-    resolveReferencePlaneThickness(slabThicknessWorld, voxelThickness);
+  // A shape that carries its own depth - a sphere - keeps Rule M, because the
+  // shape's own runs already bound it and the half voxel of Rule M only widens
+  // an outer bound. A flat brush takes Rule F from the view: the fill writes
+  // the voxels its own volume passes through, and never the extra layer that
+  // Rule M would add for a measurement.
+  const requiredThickness = shape.getRequiredThickness();
+  const membershipHalfWidth =
+    requiredThickness > 0
+      ? getMembershipHalfWidth(requiredThickness, voxelThickness)
+      : getFillHalfWidth(viewThicknessWorld, voxelThickness);
 
   return {
     volume,
     planePoint,
     viewPlaneNormal,
-    referencePlaneThickness,
+    membershipHalfWidth,
     bounds: getShapeIndexBounds(
       centersWorld,
       volume,
       segmentationImageData,
       viewPlaneNormal,
-      getMembershipHalfWidth(referencePlaneThickness, voxelThickness),
+      membershipHalfWidth,
       boundsMargin
     ),
     shape,
@@ -235,12 +226,11 @@ function buildBrushFill({
  * A circle or ellipse brush: a flat disc in the view plane, per stroke centre.
  *
  * Flat, not an ellipsoid. An ellipsoid tapers to zero thickness at its rim, so
- * on an oblique plane it leaves holes there; the flat disc keeps the full slab
- * thickness right out to the edge and stays watertight. The depth comes from
- * the slab, as the module description explains.
+ * on an oblique plane it leaves holes there. The flat disc keeps the full slab
+ * thickness out to the edge, and stays watertight.
  *
- * @param operationData.slabThicknessWorld - The view slab thickness in mm.
- * Omit, or pass 0, to paint a single oblique layer.
+ * @param operationData.viewThicknessWorld - The **full** depth the view shows,
+ * in mm. Omit, or pass 0, to paint a single oblique layer.
  */
 export function createCircleBrushFill(operationData: {
   segmentationImageData: vtkImageData;
@@ -250,7 +240,7 @@ export function createCircleBrushFill(operationData: {
   xRadius: number;
   yRadius: number;
   strokeCentersWorld?: Types.Point3[];
-  slabThicknessWorld?: number;
+  viewThicknessWorld?: number;
 }): BrushVoxelSlabFill | null {
   const {
     segmentationImageData,
@@ -259,7 +249,7 @@ export function createCircleBrushFill(operationData: {
     centerWorld,
     xRadius,
     yRadius,
-    slabThicknessWorld,
+    viewThicknessWorld,
   } = operationData;
 
   if (!(xRadius > 0) || !(yRadius > 0)) {
@@ -279,7 +269,7 @@ export function createCircleBrushFill(operationData: {
     viewPlaneNormal,
     centersWorld: densifyStrokeCenters(centers, Math.min(xRadius, yRadius) / 2),
     boundsMargin: Math.max(xRadius, yRadius),
-    slabThicknessWorld,
+    viewThicknessWorld,
     createShape: ({ volume, planePoint, centerWorld: center }) =>
       createEllipseShape({
         volume,
@@ -296,9 +286,9 @@ export function createCircleBrushFill(operationData: {
 /**
  * A sphere brush: a solid sphere per stroke centre.
  *
- * The sphere carries its own depth, so it reports the thickness the slab must
- * have and the view slab thickness never enters. Unlike the circle brush the
- * centres are not projected onto the plane, so a stroke sweeps a true tube.
+ * The shape reports the depth it needs, so the view slab thickness never
+ * enters. Unlike the circle brush, the centres are not projected onto the
+ * plane, so a stroke sweeps a true tube.
  */
 export function createSphereBrushFill(operationData: {
   segmentationImageData: vtkImageData;
@@ -412,8 +402,7 @@ export function createRectangleBrushFill(operationData: {
  * `VoxelManager.forEach` uses.
  *
  * The iterator already computes each voxel's world centre, so `pointLPS` costs
- * nothing beyond the copy - the previous fill transformed every index back to
- * world separately.
+ * nothing beyond the copy.
  */
 export function forEachBrushFillVoxel(
   fill: BrushVoxelSlabFill,
@@ -429,7 +418,7 @@ export function forEachBrushFillVoxel(
     volume: fill.volume,
     planePoint: fill.planePoint,
     viewPlaneNormal: fill.viewPlaneNormal,
-    referencePlaneThickness: fill.referencePlaneThickness,
+    membershipHalfWidth: fill.membershipHalfWidth,
     bounds: fill.bounds,
     getShapeRuns: fill.shape.getRuns,
   });
