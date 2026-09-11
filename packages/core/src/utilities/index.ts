@@ -76,6 +76,7 @@ import getViewportImageIds from './getViewportImageIds';
 import { getRandomSampleFromArray } from './getRandomSampleFromArray';
 import { getVolumeId } from './getVolumeId';
 import { hasFloatScalingParameters } from './hasFloatScalingParameters';
+import { getScalingMode } from './getScalingMode';
 import { pointInShapeCallback } from './pointInShapeCallback';
 import * as ECGUtilities from './ECGUtilities';
 import * as VideoUtilities from './VideoUtilities';
@@ -244,6 +245,7 @@ export {
   getVolumeId,
   color,
   hasFloatScalingParameters,
+  getScalingMode,
   getDynamicVolumeInfo,
   autoLoad,
   scaleArray,
