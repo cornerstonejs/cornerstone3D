@@ -144,7 +144,13 @@ export default class RLEVoxelMap<T> {
   public static getScalarData = function (ArrayType?) {
     const Constructor =
       ArrayType ?? this.map?.pixelDataConstructor ?? Uint8ClampedArray;
-    const scalarData = new Constructor(this.frameSize);
+    // Every frame, not just the first: `updateScalarData` writes a row for each
+    // `k`, so an array of one frame drops every row past frame 0 - a typed
+    // array ignores an out of bounds write, so the loss is silent. The length
+    // also has to agree with `getScalarDataLength()`, which derives the same
+    // `width * height * depth` from the dimensions.
+    const depth = this.map?.depth || 1;
+    const scalarData = new Constructor(this.frameSize * depth);
     this.map.updateScalarData(scalarData);
     return scalarData;
   };

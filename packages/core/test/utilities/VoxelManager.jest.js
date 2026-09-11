@@ -300,6 +300,26 @@ describe('VoxelManager', () => {
       expect(map.sizeInBytes).toBe(frameSize);
     });
 
+    it('expands every frame of a multi frame RLE map, not just the first', () => {
+      // The derived length is width * height * depth, so the expansion has to
+      // be that long too. A one frame array drops every row past frame 0
+      // silently, because a typed array ignores an out of bounds write.
+      const map = VoxelManager.createRLEVolumeVoxelManager({
+        dimensions,
+        pixelDataConstructor: Uint8Array,
+        defaultValue: 0,
+      });
+
+      const [width, height, depth] = dimensions;
+      const lastFrame = [1, 2, depth - 1];
+      map.setAtIJKPoint(lastFrame, 7);
+
+      const scalarData = map.getScalarData();
+      expect(scalarData.length).toBe(map.getScalarDataLength());
+      expect(scalarData.length).toBe(width * height * depth);
+      expect(scalarData[map.toIndex(lastFrame)]).toBe(7);
+    });
+
     it('builds a complete scalar data array over RLE backed slices', () => {
       // The segmentation-statistics path: an image volume over labelmap frames.
       // Sizing the complete array asks each slice how long its scalar data is,
