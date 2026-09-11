@@ -28,9 +28,12 @@ Pass `predecessorImageId` — the image id of the instance the new object
 supersedes — and the object joins that instance's series instead:
 
 ```js
-const { dataset } = await generateSegmentation(segmentation, {
-  predecessorImageId,
-});
+const { dataset } = generateSegmentation(
+  referencedImages,
+  labelmaps3D,
+  metaData,
+  { predecessorImageId }
+);
 ```
 
 `generateRTSSFromRepresentation` and `MeasurementReport.generateReport` take the
@@ -76,6 +79,10 @@ The module answers `undefined` if no metadata provider holds the image id — a
 stale id, or an instance that was never ingested. Every caller merges that answer
 as a no-op, so the save still succeeds, but the object starts a new series and
 names no predecessor. The module logs a warning naming the image id, and that
-warning is the only report the caller gets. It warns in the same way when the
-predecessor is held but carries no `SeriesInstanceUID`, because the result is the
-same: the revision keeps the new series that the derivation made.
+warning is the only report the caller gets.
+
+The module throws if a provider holds the image id but carries no
+`StudyInstanceUID`, or no `SeriesInstanceUID`. Both attributes are Type 1 in
+`PredecessorDocumentsSequence`. The module cannot write the sequence without
+them, and a stored object that names an empty predecessor is worse for the user
+than a save that fails and says why.

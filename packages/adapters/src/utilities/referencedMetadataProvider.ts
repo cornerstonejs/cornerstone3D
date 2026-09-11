@@ -103,8 +103,8 @@ export const metadataProvider = {
    * to the generated object.
    */
   [MetadataModules.PREDECESSOR_SEQUENCE]: (imageId) => {
-    // Both UIDs come from SOP Common. The General Image module lists
-    // SOPClassUID too, but a provider can answer it without that entry.
+    // Both UIDs come from SOP Common, which is the module the DICOM standard
+    // puts them in. The General Image module holds the instance number only.
     const sopModule = metaData.get(MetadataModules.SOP_COMMON, imageId);
 
     // `undefined` merges as a no-op in every consumer.
@@ -129,11 +129,24 @@ export const metadataProvider = {
       metaData.get(MetadataModules.SERIES_DATA, imageId)
     );
 
+    // StudyInstanceUID and SeriesInstanceUID are Type 1 in
+    // PredecessorDocumentsSequence. A provider that answers SOP Common, but
+    // does not hold one of these two UIDs, gives incomplete data. A stored
+    // object that names an empty predecessor is worse for the user than a save
+    // that fails and says why, so this throws.
     if (result.SeriesInstanceUID === undefined) {
-      cs3dLogger.warn(
-        `The predecessor ${imageId} carries no SeriesInstanceUID, so the ` +
-          `instance joins no existing series. The instance keeps the new ` +
-          `series that the derivation made.`
+      throw new Error(
+        `The predecessor ${imageId} carries no SeriesInstanceUID, which ` +
+          `PredecessorDocumentsSequence requires. Refusing to write an ` +
+          `instance that names an incomplete predecessor.`
+      );
+    }
+
+    if (study.studyInstanceUID === undefined) {
+      throw new Error(
+        `The predecessor ${imageId} carries no StudyInstanceUID, which ` +
+          `PredecessorDocumentsSequence requires. Refusing to write an ` +
+          `instance that names an incomplete predecessor.`
       );
     }
 

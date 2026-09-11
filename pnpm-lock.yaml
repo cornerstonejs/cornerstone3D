@@ -408,9 +408,6 @@ importers:
       '@babel/runtime-corejs2':
         specifier: 7.26.10
         version: 7.26.10
-      '@cornerstonejs/metadata':
-        specifier: 5.10.1
-        version: link:../metadata
       buffer:
         specifier: 6.0.3
         version: 6.0.3
@@ -427,6 +424,9 @@ importers:
       '@cornerstonejs/core':
         specifier: 5.10.1
         version: link:../core
+      '@cornerstonejs/metadata':
+        specifier: 5.10.1
+        version: link:../metadata
       '@cornerstonejs/tools':
         specifier: 5.10.1
         version: link:../tools

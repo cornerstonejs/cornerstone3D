@@ -127,6 +127,29 @@ describe('updateSegmentation label origin', () => {
 
     expect(manager.getSegmentation('seg-1').labelIsGenerated).toBe(true);
   });
+
+  // A caller that builds the payload from an optional field sends the key with
+  // the value `undefined`. A test of the key alone read that as a rename, and
+  // the generated name became a name that the user chose.
+  it('leaves the flag alone for a label with no value', () => {
+    const manager = givenGeneratedSegmentation();
+
+    manager.updateSegmentation('seg-1', { label: undefined });
+
+    expect(manager.getSegmentation('seg-1').labelIsGenerated).toBe(true);
+  });
+
+  // The same payload must not turn an explicit flag into a generated one.
+  it('clears the flag for a rename beside a flag with no value', () => {
+    const manager = givenGeneratedSegmentation();
+
+    manager.updateSegmentation('seg-1', {
+      label: 'Liver',
+      labelIsGenerated: undefined,
+    });
+
+    expect(manager.getSegmentation('seg-1').labelIsGenerated).toBe(false);
+  });
 });
 
 describe('normalizeSegmentationInput predecessor', () => {

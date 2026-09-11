@@ -185,13 +185,6 @@ describe('PREDECESSOR_SEQUENCE with a predecessor no provider holds', () => {
     expect(mockWarn).not.toHaveBeenCalled();
   });
 
-  it('does not throw when the study module is absent', () => {
-    givenPredecessor({ instanceNumber: '3', study: null });
-    expect(
-      predecessorSequence().PredecessorDocumentsSequence.StudyInstanceUID
-    ).toBeUndefined();
-  });
-
   // The instance number is the only attribute this module takes from the
   // General Image module, so an absent module gives the number of a first
   // instance and keeps the link back.
@@ -204,6 +197,31 @@ describe('PREDECESSOR_SEQUENCE with a predecessor no provider holds', () => {
       result.PredecessorDocumentsSequence.ReferencedSeriesSequence
         .ReferencedSOPSequence.ReferencedSOPInstanceUID
     ).toBe(INSTANCE_UID);
+  });
+});
+
+describe('PREDECESSOR_SEQUENCE with an incomplete predecessor', () => {
+  // StudyInstanceUID and SeriesInstanceUID are Type 1 in
+  // PredecessorDocumentsSequence. The provider emitted the sequence with an
+  // undefined value for either one, and the viewer stored the non-conformant
+  // object. A save that fails is better than a stored object that names an
+  // empty predecessor.
+  it('throws when the study module is absent', () => {
+    givenPredecessor({ instanceNumber: '3', study: null });
+    expect(predecessorSequence).toThrow(/StudyInstanceUID/);
+  });
+
+  it('throws when the study module carries no StudyInstanceUID', () => {
+    givenPredecessor({ instanceNumber: '3', study: {} });
+    expect(predecessorSequence).toThrow(/StudyInstanceUID/);
+  });
+
+  it('throws when the series data carries no SeriesInstanceUID', () => {
+    givenPredecessor({
+      instanceNumber: '3',
+      seriesData: { SeriesNumber: '3101' },
+    });
+    expect(predecessorSequence).toThrow(/SeriesInstanceUID/);
   });
 });
 
