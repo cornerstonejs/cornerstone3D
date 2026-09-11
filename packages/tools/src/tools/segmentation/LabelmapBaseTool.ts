@@ -591,11 +591,16 @@ export default class LabelmapBaseTool extends BaseTool {
       return;
     }
 
-    this.applyActiveStrategyCallback(
-      enabledElement,
-      operationData,
-      StrategyCallbacks.RejectPreview
-    );
+    // Only a tool that actually has a preview has something to reject: `previewData` is
+    // shared by every labelmap tool, so the element alone does not say this one previewed
+    // anything. See `BrushTool.rejectPreview` for what running it regardless costs.
+    if (this._previewData.preview) {
+      this.applyActiveStrategyCallback(
+        enabledElement,
+        operationData,
+        StrategyCallbacks.RejectPreview
+      );
+    }
 
     // Make sure to fully reset all preview related data
     this._previewData.preview = null;
