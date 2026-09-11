@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.10.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.10.1...v5.10.2) (2026-09-11)
+
+### Bug Fixes
+
+- **ai:** resolve the ONNX wasm directory against the app, not the route ([#2864](https://github.com/cornerstonejs/cornerstone3D/issues/2864)) ([0c5e012](https://github.com/cornerstonejs/cornerstone3D/commit/0c5e012e54bbd2fe2e4b2a00e7afae765aeabb68))
+
 ## [5.10.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.10.0...v5.10.1) (2026-09-10)
 
 **Note:** Version bump only for package @cornerstonejs/dicom-image-loader

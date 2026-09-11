@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.10.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.10.1...v5.10.2) (2026-09-11)
+
+### Bug Fixes
+
+- **adapters:** apply the predecessor to the dataset, and number an unnumbered one ([#2907](https://github.com/cornerstonejs/cornerstone3D/issues/2907)) ([1bd5ecc](https://github.com/cornerstonejs/cornerstone3D/commit/1bd5eccb587b91655267bf92b3e2dfae70dfc115))
+
 ## [5.10.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.10.0...v5.10.1) (2026-09-10)
 
 **Note:** Version bump only for package @cornerstonejs/metadata
