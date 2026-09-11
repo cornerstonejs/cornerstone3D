@@ -102,16 +102,16 @@ function decodeImageFrame(
       );
     case '1.2.840.10008.1.2.4.50':
       // JPEG Baseline lossy process 1 (8 bit)
-
-      // Handle 8-bit JPEG Baseline color images using the browser's built-in
-      // JPEG decoding
-      if (
-        imageFrame.bitsAllocated === 8 &&
-        (imageFrame.samplesPerPixel === 3 || imageFrame.samplesPerPixel === 4)
-      ) {
-        return decodeJPEGBaseline8BitColor(imageFrame, pixelData, canvas);
+      if (!decodeConfig?.useJPEGBaseline8BitColorWebWorker) {
+        // Handle 8-bit JPEG Baseline color images using the browser's built-in JPEG decoding,
+        // unless it has been configured to use the web-worker decoder instead.
+        if (
+          imageFrame.bitsAllocated === 8 &&
+          (imageFrame.samplesPerPixel === 3 || imageFrame.samplesPerPixel === 4)
+        ) {
+          return decodeJPEGBaseline8BitColor(imageFrame, pixelData, canvas);
+        }
       }
-
       return processDecodeTask(
         imageFrame,
         transferSyntax,
