@@ -47,6 +47,12 @@ interface LocalImageOptions {
   direction?: Mat3;
   referencedImageId?: string;
   /**
+   * Optional DICOM modality. Stored on generalSeriesModule so StackViewport
+   * can read it during load. Ignored when a referenced image already has a
+   * generalSeriesModule (derived images copy that module instead).
+   */
+  modality?: string;
+  /**
    * Skip creation of the actual buffer object.
    * In fact, this creates a very short buffer, as there are lots of places
    * assuming a buffer exists.
@@ -424,6 +430,7 @@ export function createAndCacheLocalImage(
     frameOfReferenceUID,
     voxelRepresentation,
     referencedImageId,
+    modality,
   } = options;
 
   const dimensions = options.dimensions;
@@ -520,13 +527,23 @@ export function createAndCacheLocalImage(
     highBit,
   } as ImagePixelModuleMetadata;
 
+  const referencedSeries =
+    referencedImageId &&
+    metaData.get(MetadataModules.GENERAL_SERIES, referencedImageId);
+  const generalSeriesModule = referencedSeries || { modality };
+
   const metadata = {
     imagePlaneModule,
     imagePixelModule,
+    generalSeriesModule,
   };
 
   // Add metadata to genericMetadataProvider
-  [MetadataModules.IMAGE_PLANE, MetadataModules.IMAGE_PIXEL].forEach((type) => {
+  [
+    MetadataModules.IMAGE_PLANE,
+    MetadataModules.IMAGE_PIXEL,
+    MetadataModules.GENERAL_SERIES,
+  ].forEach((type) => {
     genericMetadataProvider.add(imageId, {
       type,
       metadata: metadata[type] || {},
