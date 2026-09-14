@@ -82,6 +82,13 @@ export interface BrushVoxelSlabFill {
    * depth. See `getFillHalfWidth`.
    */
   membershipHalfWidth: number;
+  /**
+   * The depth interval, which follows the same branch as the half width above.
+   * A flat brush takes Rule F, so a flat brush takes the half-open interval
+   * that makes consecutive fills tile. A shape that carries its own depth
+   * takes Rule M, so it keeps the open interval that Rule M defines.
+   */
+  depthInterval: 'open' | 'half-open';
   /** Inclusive index bounds the iteration is confined to. */
   bounds: Types.BoundsIJK;
   /** The brush shape's exact in-plane runs. */
@@ -221,6 +228,11 @@ function buildBrushFill({
     planePoint,
     viewPlaneNormal,
     membershipHalfWidth,
+    // Rule M and the open interval go together, and Rule F and the half-open
+    // interval go together. A sphere keeps Rule M, so a sphere keeps the open
+    // interval: its own runs bound the depth, and the half-open interval would
+    // add the layer on the far boundary.
+    depthInterval: requiredThickness > 0 ? 'open' : 'half-open',
     bounds: getShapeIndexBounds(
       centersWorld,
       volume,
@@ -430,12 +442,7 @@ export function forEachBrushFillVoxel(
     planePoint: fill.planePoint,
     viewPlaneNormal: fill.viewPlaneNormal,
     membershipHalfWidth: fill.membershipHalfWidth,
-    // Rule F is defined with the half-open interval. The open interval that
-    // Rule M uses drops both boundaries, so a voxel centre that lands exactly
-    // on a boundary belongs to no fill at all, and no plane ever writes it.
-    // That happens whenever the depths of the centres are commensurate with
-    // the slab, of which 45 degrees is the common case.
-    depthInterval: 'half-open',
+    depthInterval: fill.depthInterval,
     bounds: fill.bounds,
     getShapeRuns: fill.shape.getRuns,
   });
