@@ -77,9 +77,6 @@ const sphereComposition = {
     vec3.cross(viewRight, normalizedViewUp, normalizedPlaneNormal);
     vec3.normalize(viewRight, viewRight);
 
-    // Calculate radius in world units
-    const radiusWorld = vec3.distance(points[0], points[1]) / 2;
-
     // The fallback bounds, for the bounding-box walk that `regionFill` uses
     // when no shape fill is built. The shape fill computes its own, tighter
     // bounds from the same geometry the iterator uses.
@@ -157,9 +154,11 @@ const sphereComposition = {
     // rather than a flat swept disc, which is what a sphere brush should paint.
     operationData.brushVoxelSlabFill = createSphereBrushFill({
       segmentationImageData,
+      viewUp: normalizedViewUp as unknown as Types.Point3,
       viewPlaneNormal: normalizedPlaneNormal as Types.Point3,
       centerWorld: operationData.centerWorld,
-      radiusWorld,
+      xRadius,
+      yRadius,
       strokeCentersWorld: strokeCenters,
     });
   },

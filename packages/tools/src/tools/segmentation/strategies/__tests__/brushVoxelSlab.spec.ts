@@ -299,9 +299,11 @@ describe('brushVoxelSlab', () => {
       const radiusWorld = 4;
       const fill = createSphereBrushFill({
         segmentationImageData: makeImageData(dimensions),
+        viewUp: [0, 1, 0],
         viewPlaneNormal: [0, 0, 1],
         centerWorld: center,
-        radiusWorld,
+        xRadius: radiusWorld,
+        yRadius: radiusWorld,
       });
 
       const visited = collect(fill, dimensions);
@@ -346,9 +348,11 @@ describe('brushVoxelSlab', () => {
         const visited = collect(
           createSphereBrushFill({
             segmentationImageData: makeImageData(dimensions),
+            viewUp: [0, 1, 0],
             viewPlaneNormal,
             centerWorld: center,
-            radiusWorld,
+            xRadius: radiusWorld,
+            yRadius: radiusWorld,
           }),
           dimensions
         );
@@ -374,14 +378,58 @@ describe('brushVoxelSlab', () => {
       }
     });
 
-    it('builds no fill for a zero radius', () => {
-      expect(
+    it('follows the two in-plane radii on a stretched viewport', () => {
+      // What a 2:1 viewport gives: the cursor is a circle on screen, and the
+      // caller divides each radius by the aspect ratio to undo the stretch.
+      const xRadius = 6;
+      const yRadius = 3;
+
+      const visited = collect(
         createSphereBrushFill({
           segmentationImageData: makeImageData(dimensions),
+          viewUp: [0, 1, 0],
           viewPlaneNormal: [0, 0, 1],
           centerWorld: center,
-          radiusWorld: 0,
-        })
+          xRadius,
+          yRadius,
+        }),
+        dimensions
+      );
+
+      expect(visited.length).toBeGreaterThan(0);
+
+      const extent = (axis: number) => {
+        const offsets = visited.map(({ pointLPS }) =>
+          Math.abs(pointLPS[axis] - center[axis])
+        );
+        return Math.max(...offsets);
+      };
+
+      // viewRight is viewUp x normal = [0,1,0] x [0,0,1] = +i, so xRadius runs
+      // along i and yRadius along j. A single radius would make the two equal.
+      expect(extent(0)).toBeGreaterThan(extent(1));
+      expect(extent(0)).toBeLessThanOrEqual(xRadius + 1e-4);
+      expect(extent(1)).toBeLessThanOrEqual(yRadius + 1e-4);
+
+      // The normal is not stretched, so the depth semi-axis is the larger of
+      // the two, plus the half voxel the shape adds along the normal.
+      expect(extent(2)).toBeLessThanOrEqual(xRadius + 0.5 + 1e-4);
+      expect(extent(2)).toBeGreaterThan(yRadius);
+    });
+
+    it('builds no fill for a zero radius', () => {
+      const common = {
+        segmentationImageData: makeImageData(dimensions),
+        viewUp: [0, 1, 0] as Types.Point3,
+        viewPlaneNormal: [0, 0, 1] as Types.Point3,
+        centerWorld: center,
+      };
+
+      expect(
+        createSphereBrushFill({ ...common, xRadius: 0, yRadius: 4 })
+      ).toBeNull();
+      expect(
+        createSphereBrushFill({ ...common, xRadius: 4, yRadius: 0 })
       ).toBeNull();
     });
   });

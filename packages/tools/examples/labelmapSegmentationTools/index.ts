@@ -414,7 +414,7 @@ addToggleButtonToToolbar({
       .getLogger('utilities', 'getTargetVolumeAndSpacingInNormalDir')
       .setLevel(level);
     utilities.logger.toolsLog
-      .getLogger('tools', 'segmentation', 'brushVoxelSlab')
+      .getLogger('segmentation', 'brushVoxelSlab')
       .setLevel(level);
   },
 });

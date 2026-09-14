@@ -34,17 +34,14 @@ import { getShapeIndexBounds } from '../../../../utilities/sampleAreaAnnotationV
 
 /**
  * Diagnostics for a brush fill. Call `brushFillLog.setLevel('debug')` to see
- * the depth spread of the voxels that a fill writes. See
- * https://github.com/cornerstonejs/cornerstone3D/issues/2912.
+ * the depth spread of the voxels that a fill writes.
  */
 export const brushFillLog = csUtils.logger.toolsLog.getLogger(
-  'tools',
   'segmentation',
   'brushVoxelSlab'
 );
 
 const {
-  createCircleShape,
   createEllipseShape,
   createRectangleShape,
   createUnionShape,
@@ -82,12 +79,7 @@ export interface BrushVoxelSlabFill {
    * depth. See `getFillHalfWidth`.
    */
   membershipHalfWidth: number;
-  /**
-   * The depth interval, which follows the same branch as the half width above.
-   * A flat brush takes Rule F, so a flat brush takes the half-open interval
-   * that makes consecutive fills tile. A shape that carries its own depth
-   * takes Rule M, so it keeps the open interval that Rule M defines.
-   */
+  /** The depth interval that goes with the half width above. */
   depthInterval: 'open' | 'half-open';
   /** Inclusive index bounds the iteration is confined to. */
   bounds: Types.BoundsIJK;
@@ -212,11 +204,9 @@ function buildBrushFill({
 
   const shape = createUnionShape(shapes);
 
-  // A shape that carries its own depth - a sphere - keeps Rule M, because the
-  // shape's own runs already bound it and the half voxel of Rule M only widens
-  // an outer bound. A flat brush takes Rule F from the view: the fill writes
-  // the voxels its own volume passes through, and never the extra layer that
-  // Rule M would add for a measurement.
+  // A shape that carries its own depth - a sphere - keeps Rule M, because its
+  // own runs already bound the depth. A flat brush takes Rule F from the view.
+  // See `getFillHalfWidth` for the difference between the two rules.
   const requiredThickness = shape.getRequiredThickness();
   const membershipHalfWidth =
     requiredThickness > 0
@@ -228,10 +218,7 @@ function buildBrushFill({
     planePoint,
     viewPlaneNormal,
     membershipHalfWidth,
-    // Rule M and the open interval go together, and Rule F and the half-open
-    // interval go together. A sphere keeps Rule M, so a sphere keeps the open
-    // interval: its own runs bound the depth, and the half-open interval would
-    // add the layer on the far boundary.
+    // Rule M pairs with the open interval, and Rule F with the half-open one.
     depthInterval: requiredThickness > 0 ? 'open' : 'half-open',
     bounds: getShapeIndexBounds(
       centersWorld,
@@ -307,7 +294,11 @@ export function createCircleBrushFill(operationData: {
 }
 
 /**
- * A sphere brush: a solid sphere per stroke centre.
+ * A sphere brush: a solid ellipsoid per stroke centre.
+ *
+ * The two in-plane radii are the ones the cursor is drawn from, so the brush
+ * paints what the user sees. They are equal on a square viewport, which makes
+ * the shape a sphere.
  *
  * The shape reports the depth it needs, so the view slab thickness never
  * enters. Unlike the circle brush, the centres are not projected onto the
@@ -315,17 +306,32 @@ export function createCircleBrushFill(operationData: {
  */
 export function createSphereBrushFill(operationData: {
   segmentationImageData: vtkImageData;
+  viewUp: Types.Point3;
   viewPlaneNormal: Types.Point3;
   centerWorld: Types.Point3;
-  radiusWorld: number;
+  xRadius: number;
+  yRadius: number;
   strokeCentersWorld?: Types.Point3[];
 }): BrushVoxelSlabFill | null {
-  const { segmentationImageData, viewPlaneNormal, centerWorld, radiusWorld } =
-    operationData;
+  const {
+    segmentationImageData,
+    viewUp,
+    viewPlaneNormal,
+    centerWorld,
+    xRadius,
+    yRadius,
+  } = operationData;
 
-  if (!(radiusWorld > 0)) {
+  if (!(xRadius > 0) || !(yRadius > 0)) {
     return null;
   }
+
+  // The viewport stretches the two in-plane axes, and the caller divides each
+  // radius by the aspect ratio to undo that stretch. The normal is not drawn,
+  // so it carries no stretch, and the unstretched radius is the larger of the
+  // two - `getNormalizedAspectRatio` scales the smaller axis to 1.
+  const depthRadius = Math.max(xRadius, yRadius);
+  const viewRight = getViewRight(viewUp, viewPlaneNormal);
 
   const centers = operationData.strokeCentersWorld?.length
     ? operationData.strokeCentersWorld
@@ -335,16 +341,18 @@ export function createSphereBrushFill(operationData: {
     segmentationImageData,
     planePoint: centerWorld,
     viewPlaneNormal,
-    centersWorld: densifyStrokeCenters(centers, radiusWorld / 2),
-    boundsMargin: radiusWorld,
+    centersWorld: densifyStrokeCenters(centers, Math.min(xRadius, yRadius) / 2),
+    boundsMargin: depthRadius,
     createShape: ({ volume, planePoint, centerWorld: center }) =>
-      createCircleShape({
+      createEllipseShape({
         volume,
         planePoint,
         viewPlaneNormal,
         centerWorld: center,
-        radius: radiusWorld,
-        depthRadius: radiusWorld,
+        majorAxis: viewRight,
+        majorRadius: xRadius,
+        minorRadius: yRadius,
+        depthRadius,
       }),
   });
 }
@@ -448,8 +456,7 @@ export function forEachBrushFillVoxel(
   });
 
   // Diagnostics. A fill of one digital plane holds voxels whose depths span
-  // less than one voxel thickness. A wider span means the fill wrote more than
-  // one plane, and the neighbouring slice then shows part of the fill.
+  // less than one voxel thickness.
   const debug = (brushFillLog.getLevel?.() ?? 5) <= 1;
   const depths: number[] = [];
   let painted = 0;
