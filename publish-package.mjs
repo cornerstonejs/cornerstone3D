@@ -40,6 +40,9 @@ async function run() {
     '--abbrev-ref',
     'HEAD',
   ]);
+  // `beta` is unreachable while the publish workflow runs for the branch main
+  // only. The branch stays here, and the beta arm of version.mjs stays as well,
+  // for the beta release that CircleCI also held ready but never ran.
   const distTag = branchName === 'main' ? 'latest' : 'beta';
 
   console.log(`Publishing from ${branchName} under the "${distTag}" tag`);
@@ -80,6 +83,17 @@ async function run() {
   console.log(`Skipped: ${skipped.length ? skipped.join(', ') : 'none'}`);
 
   if (failures.length) {
+    // The workflow pushes no tag after this, so the version that npm holds for
+    // the published packages names no commit. A re-run publishes what is
+    // missing and then pushes the tag, because the packages above are skipped
+    // and the version is the same. That holds only while main carries no new
+    // change: a merge gives the next run another version, and it leaves this
+    // version without a tag.
+    console.error(
+      `::error::The publish stopped after ${published.length} of ` +
+        `${packages.length} packages, and the workflow pushes no tag. ` +
+        `Re-run this workflow before another change lands on main.`
+    );
     throw new Error(`Failed to publish: ${failures.join(', ')}`);
   }
 

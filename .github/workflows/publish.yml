@@ -49,8 +49,15 @@ jobs:
       # change lands first. Such a run must publish nothing: it would build the
       # version commit on a parent that is not the tip, npm would accept the
       # packages, and git would then reject the push. npm would hold a version
-      # with no commit, no tag and no release. The run that holds the tip
-      # publishes instead, and it carries the changes of this one.
+      # with no commit, no tag and no release.
+      #
+      # The run that holds the tip publishes instead, and it carries the changes
+      # of this one. A change that lands *during* a publish is the exception:
+      # the push step then rebases, and the run for that change sees a tip that
+      # is the version commit and skips. That change waits for the next merge.
+      #
+      # Every step below is gated, so a run that holds no tip does no install
+      # and no build.
       - name: Check that this run holds the tip of main
         id: tip
         run: |
@@ -63,30 +70,41 @@ jobs:
           fi
 
       - name: Setup pnpm
+        if: steps.tip.outputs.publish == 'true'
         uses: pnpm/action-setup@v6.0.8
 
       - name: Setup Node.js
+        if: steps.tip.outputs.publish == 'true'
         uses: actions/setup-node@v6.4.0
         with:
           node-version: '24.15.0'
           cache: 'pnpm'
 
-      # Trusted publishing needs npm 11.5.1 or later.
+      # This npm exchanges the OIDC token for npm credentials, so the version is
+      # pinned like every other tool of this repository. Trusted publishing
+      # needs 11.5.1 or later. Read the release notes of npm before you raise
+      # this pin, and never let it float: `npm@latest` is npm 12 now, and a
+      # publish is not the place to meet an untested major version.
       - name: Update npm
+        if: steps.tip.outputs.publish == 'true'
         run: |
-          npm install --global npm@latest
+          npm install --global npm@11.19.0
           npm --version
 
       - name: Install dependencies
+        if: steps.tip.outputs.publish == 'true'
         run: pnpm install --frozen-lockfile
 
       - name: Compute the next version
+        if: steps.tip.outputs.publish == 'true'
         run: node ./version.mjs
 
       - name: Build
+        if: steps.tip.outputs.publish == 'true'
         run: pnpm run build
 
       - name: Identify the committer
+        if: steps.tip.outputs.publish == 'true'
         run: |
           git config user.email "contact@ohif.org"
           git config user.name "ohif-bot"
@@ -117,12 +135,19 @@ jobs:
 
           # A change landed on main while npm accepted the packages. The
           # packages are public now, so the commit and the tag have to follow.
-          # Move both onto the new tip and push once more.
           echo "The push failed. Moving the version commit onto the tip of main."
           git fetch --no-tags origin main
-          git rebase FETCH_HEAD
+
+          if ! git rebase FETCH_HEAD; then
+            git rebase --abort || true
+            echo "::error::npm holds ${TAG}, and git holds no tag for it. The version commit does not rebase onto the tip of main, so an operator must finish this release by hand: create the tag ${TAG} on a commit that carries these package versions, and create the release for it."
+            exit 1
+          fi
+
           git -c tag.gpgsign=false tag -f "$TAG"
           git push --atomic "$REMOTE" HEAD:main "$TAG"
+
+          echo "::warning::${TAG} moved onto a newer tip of main. The tag therefore names a change that the published packages do not carry, and that change gets no release of its own until the next merge."
 
       - name: Create the GitHub release
         if: steps.tip.outputs.publish == 'true'
