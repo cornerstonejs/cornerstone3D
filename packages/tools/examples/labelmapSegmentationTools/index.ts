@@ -9,6 +9,8 @@ import {
   volumeLoader,
   ProgressiveRetrieveImages,
   utilities,
+  getConfiguration,
+  setConfiguration,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -387,6 +389,45 @@ addToggleButtonToToolbar({
   defaultToggle: true,
   onClick: (toggle) => {
     setCrosshairsEnabled(toggle);
+  },
+});
+
+// EXPERIMENTAL, and for https://github.com/cornerstonejs/cornerstone3D/issues/2912.
+// The slice step decides how far the viewport moves between two slices. The
+// default 'l2' measure is smaller than the width of one voxel on an oblique
+// plane, so two adjacent slices show some of the same voxels, and one brush
+// stroke appears on the next slice and on the previous slice. The 'l1' measure
+// is the width of one voxel along the normal, so each slice shows a new set of
+// voxels. The two measures are equal at an angle of 0 degrees.
+//
+// Paint a stroke, then step one slice, to compare the two measures. Toggle this
+// button before you paint, because the button changes the step and not the
+// labelmap.
+addToggleButtonToToolbar({
+  id: 'sliceStepMeasure',
+  title: 'Slice step: voxel width (L1)',
+  defaultToggle: false,
+  onClick: (toggle) => {
+    const configuration = getConfiguration();
+
+    setConfiguration({
+      ...configuration,
+      rendering: {
+        ...configuration.rendering,
+        sliceStepMeasure: toggle ? 'l1' : 'l2',
+      },
+    });
+
+    // A viewport reads the step when the viewport resolves a slice, so the
+    // camera keeps the position of the old grid until the next scroll. Snap
+    // every viewport onto the new grid now. `scroll(0)` moves no slice, and it
+    // rounds the focal point to the nearest slice of the new step, so the
+    // measure takes effect at once and the current position is kept.
+    const renderingEngine = getRenderingEngine(renderingEngineId);
+
+    renderingEngine?.getViewports().forEach((viewport) => {
+      (viewport as Types.IVolumeViewport).scroll?.(0);
+    });
   },
 });
 

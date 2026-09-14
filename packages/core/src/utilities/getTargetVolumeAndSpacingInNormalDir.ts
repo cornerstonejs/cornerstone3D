@@ -2,6 +2,8 @@ import cache from '../cache/cache';
 import { EPSILON } from '../constants';
 import type { ICamera, IImageVolume, IVolumeViewport, Point3 } from '../types';
 import getSpacingInNormalDirection from './getSpacingInNormalDirection';
+import getVoxelThicknessAlongNormal from './voxelSlab/getVoxelThicknessAlongNormal';
+import { getConfiguration } from '../init';
 import { getVolumeLoaderSchemes } from '../loaders/volumeLoader';
 import { getVolumeId } from './getVolumeId';
 
@@ -149,6 +151,15 @@ function getSpacingInNormal(
 
   if (slabThickness && useSlabThickness) {
     return slabThickness;
+  }
+
+  // EXPERIMENTAL. 'l1' measures how far one voxel reaches along the normal,
+  // which is what an overlap test needs, and it is the larger of the two for
+  // an oblique normal. The two measures are equal for an acquisition
+  // orientation, so this switch changes an oblique view only. See
+  // https://github.com/cornerstonejs/cornerstone3D/issues/2912.
+  if (getConfiguration().rendering?.sliceStepMeasure === 'l1') {
+    return getVoxelThicknessAlongNormal(imageVolume, viewPlaneNormal);
   }
 
   return getSpacingInNormalDirection(imageVolume, viewPlaneNormal);
