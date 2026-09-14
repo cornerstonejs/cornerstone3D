@@ -6,6 +6,7 @@ export type { ImageStackDisplaySetOptions } from './ImageStackDisplaySet';
 export { resolveInstances } from './resolveInstances';
 export type { ResolveInstancesOptions } from './resolveInstances';
 export { buildSeriesInfo } from './buildSeriesInfo';
+export { orderInstancesForRule } from './groupInstancesBySplitRules';
 export { groupInstancesBySplitRules } from './groupInstancesBySplitRules';
 export { splitImageIdsBySplitRules } from './splitImageIdsBySplitRules';
 export type { SplitImageIdsBySplitRulesOptions } from './splitImageIdsBySplitRules';
@@ -15,6 +16,22 @@ export {
 } from './registerDisplaySetMetadata';
 export { registerDisplaySetProviders } from './displaySetProvider';
 export { defaultDisplaySetSplitRules } from './defaultDisplaySetSplitRules';
+export {
+  rawDisplaySetSelector,
+  createDisplaySetSplitRules,
+} from './rawDisplaySetSelector';
+export type {
+  ClassifierName,
+  InstanceClassifier,
+  RawCondition,
+  RawValue,
+  RawSeriesFact,
+  RawCustomAttributes,
+  RawSplitRule,
+  RawDisplaySetSelector,
+  CreateDisplaySetSplitRulesOptions,
+  CompiledValueReader,
+} from './rawDisplaySetSelectorTypes';
 export { createDisplaySetFromGroup } from './createDisplaySetFromGroup';
 export type { CreateDisplaySetFromGroupOptions } from './createDisplaySetFromGroup';
 export { isImageInstance } from './isImageInstance';
@@ -25,7 +42,9 @@ export {
   getViewportTypesForRule,
   getPreferredViewportType,
   getViewportTypesForGroup,
+  isDisplayableViewportTypes,
 } from './viewportTypes';
+export { NO_VIEWPORT_TYPE } from './types';
 export type {
   NaturalizedInstance,
   SeriesInfo,
@@ -38,4 +57,7 @@ export type {
   SplitRuleCustomAttributesContext,
   InstanceGroup,
   ViewportTypeHint,
+  InstanceOrderContext,
+  SortInstances,
+  GroupInstancesOptions,
 } from './types';
