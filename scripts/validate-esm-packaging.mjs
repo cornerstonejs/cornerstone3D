@@ -31,35 +31,24 @@ const nameFilter = args.filter((a) => !a.startsWith('--'));
 
 // Extensions that count as a resolved JS module specifier.
 const JS_EXTS = ['.js', '.mjs', '.cjs', '.json'];
-const GLOB_CHARS = /[*?[\]{}]/;
-
-function assertLiteralPackageDirs(packageDirs) {
-  for (const rel of packageDirs) {
-    if (
-      typeof rel !== 'string' ||
-      !rel ||
-      rel.startsWith('!') ||
-      GLOB_CHARS.test(rel)
-    ) {
-      throw new Error(
-        `lerna.json package entry '${rel}' must be a literal package directory, not a glob`
-      );
-    }
-  }
-}
 
 function listPublishedPackages() {
-  const lerna = JSON.parse(readFileSync(join(repoRoot, 'lerna.json'), 'utf8'));
-  assertLiteralPackageDirs(lerna.packages);
+  const packagesRoot = join(repoRoot, 'packages');
   const pkgs = [];
-  for (const rel of lerna.packages) {
-    // lerna.json entries here are literal directories, not globs.
-    const dir = join(repoRoot, rel);
+  for (const entry of readdirSync(packagesRoot, { withFileTypes: true })) {
+    if (!entry.isDirectory()) {
+      continue;
+    }
+    const dir = join(packagesRoot, entry.name);
     const pkgJsonPath = join(dir, 'package.json');
     if (!existsSync(pkgJsonPath)) {
       continue;
     }
     const json = JSON.parse(readFileSync(pkgJsonPath, 'utf8'));
+    // A private package is not published, so it is out of scope.
+    if (json.private) {
+      continue;
+    }
     // In scope: anything that declares an exports map and has built ESM.
     // This naturally excludes the source-only codemods package.
     if (!json.exports || !existsSync(join(dir, 'dist', 'esm'))) {
