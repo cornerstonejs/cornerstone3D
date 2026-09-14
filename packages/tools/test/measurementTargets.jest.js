@@ -6,8 +6,11 @@ import {
 import { cache, utilities } from '@cornerstonejs/core';
 import CircleROITool from '../src/tools/annotation/CircleROITool';
 import RectangleROITool from '../src/tools/annotation/RectangleROITool';
+import CircleROIStartEndThresholdTool from '../src/tools/segmentation/CircleROIStartEndThresholdTool';
+import RectangleROIStartEndThresholdTool from '../src/tools/segmentation/RectangleROIStartEndThresholdTool';
 import AnnotationTool from '../src/tools/base/AnnotationTool';
 import BaseTool from '../src/tools/base/BaseTool';
+import measurementTargetFilters from '../src/tools/base/measurementTargetFilters';
 
 class TestBaseTool extends BaseTool {
   static getViewportDisplaySetsForTest(viewport) {
@@ -42,6 +45,32 @@ function createViewport() {
     element: document.createElement('div'),
     worldToCanvas: ([x, y]) => [x, y],
   };
+}
+
+/**
+ * A fusion viewport displaying a CT volume first and a PT volume second, as
+ * the StartEndThreshold tools see it: the CT is the viewport default, so
+ * measuring the PT requires a configured target filter.
+ */
+function createFusionViewport() {
+  return {
+    element: document.createElement('div'),
+    getActors: () => [
+      { referencedId: 'ct-volume' },
+      { referencedId: 'pt-volume' },
+    ],
+    getViewReferenceId: ({ volumeId } = {}) =>
+      `volumeId:${volumeId ?? 'ct-volume'}?sliceIndex=0&viewPlaneNormal=0,0,1`,
+  };
+}
+
+function mockFusionVolumes() {
+  const volumes = {
+    'ct-volume': { metadata: { Modality: 'CT' } },
+    'pt-volume': { metadata: { Modality: 'PT' } },
+  };
+  jest.spyOn(cache, 'getVolume').mockImplementation((id) => volumes[id]);
+  return volumes;
 }
 
 function createStatsCalculator() {
@@ -236,5 +265,61 @@ describe('measurement target regressions', () => {
     });
 
     expect(tool.isHandleOutsideImage).toBe(true);
+  });
+
+  describe.each([
+    ['Rectangle', RectangleROIStartEndThresholdTool],
+    ['Circle', CircleROIStartEndThresholdTool],
+  ])('%s ROI start/end threshold target selection', (_name, ToolClass) => {
+    it('measures the viewport default volume when no filter is configured', () => {
+      const volumes = mockFusionVolumes();
+      const tool = new ToolClass();
+
+      expect(tool.getTargetVolume(createFusionViewport())).toEqual({
+        targetId: 'volumeId:ct-volume?sliceIndex=0&viewPlaneNormal=0,0,1',
+        imageVolume: volumes['ct-volume'],
+      });
+    });
+
+    it('measures the PT volume of a fusion viewport when filtered by modality', () => {
+      const volumes = mockFusionVolumes();
+      const tool = new ToolClass();
+      tool.configuration.targetsFilter =
+        measurementTargetFilters.firstPixelData;
+      tool.configuration.targetPredicate =
+        measurementTargetFilters.forModality('PT');
+
+      expect(tool.getTargetVolume(createFusionViewport())).toEqual({
+        targetId: 'volumeId:pt-volume?sliceIndex=0&viewPlaneNormal=0,0,1',
+        imageVolume: volumes['pt-volume'],
+      });
+    });
+
+    it('reuses an existing cachedStats key for the filtered volume', () => {
+      mockFusionVolumes();
+      const tool = new ToolClass();
+      tool.configuration.targetsFilter =
+        measurementTargetFilters.firstPixelData;
+      tool.configuration.targetPredicate =
+        measurementTargetFilters.forModality('PT');
+      const existing = 'volumeId:pt-volume?sliceIndex=7&viewPlaneNormal=0,1,0';
+
+      expect(
+        tool.getTargetVolume(createFusionViewport(), {
+          cachedStats: { [existing]: {} },
+        }).targetId
+      ).toBe(existing);
+    });
+
+    it('resolves no target when the filter selects nothing on the viewport', () => {
+      mockFusionVolumes();
+      const tool = new ToolClass();
+      tool.configuration.targetsFilter =
+        measurementTargetFilters.firstPixelData;
+      tool.configuration.targetPredicate =
+        measurementTargetFilters.forModality('MG');
+
+      expect(tool.getTargetVolume(createFusionViewport())).toBeUndefined();
+    });
   });
 });
