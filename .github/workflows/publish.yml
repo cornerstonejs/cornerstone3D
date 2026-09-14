@@ -58,16 +58,29 @@ jobs:
       #
       # Every step below is gated, so a run that holds no tip does no install
       # and no build.
-      - name: Check that this run holds the tip of main
+      - name: Check that this run holds something to publish
         id: tip
         run: |
           git fetch --no-tags origin main
-          if [ "$(git rev-parse HEAD)" = "$(git rev-parse FETCH_HEAD)" ]; then
-            echo 'publish=true' >> "$GITHUB_OUTPUT"
-          else
-            echo 'publish=false' >> "$GITHUB_OUTPUT"
+          PUBLISH=true
+
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse FETCH_HEAD)" ]; then
+            PUBLISH=false
             echo "::notice::main moved past ${GITHUB_SHA}. The run that holds the tip publishes."
           fi
+
+          # A push of the version commit starts no run, because GITHUB_TOKEN
+          # pushes it. A manual run is the exception: it would read the message
+          # of that commit, find no `feat`, and publish 11 packages that carry
+          # no change of any kind.
+          case "$(git log -1 --pretty=%s)" in
+            'chore(version): Update package versions'*)
+              PUBLISH=false
+              echo "::notice::The tip is the version commit of the release that already happened. Nothing is new."
+              ;;
+          esac
+
+          echo "publish=${PUBLISH}" >> "$GITHUB_OUTPUT"
 
       - name: Setup pnpm
         if: steps.tip.outputs.publish == 'true'
