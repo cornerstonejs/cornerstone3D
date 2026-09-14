@@ -33,8 +33,10 @@ overrides:
   tar-fs: 2.1.4
   body-parser: 1.20.3
   ws: 8.21.0
-  # undici <6.27.0 (reached only via lerna > node-gyp) is vulnerable to a
-  # WebSocket DoS via fragment count bypass (GHSA-vxpw-j846-p89q).
+  # undici <6.27.0 is vulnerable to a WebSocket DoS via fragment count bypass
+  # (GHSA-vxpw-j846-p89q). lerna > node-gyp was the only path to undici, and
+  # the removal of lerna took that path away, so this rule now matches nothing.
+  # It stays as a floor for a dependency that brings undici back.
   'undici@<6.27.0': 6.27.0
   qs: 6.14.1
   lodash: 4.18.1
