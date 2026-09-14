@@ -481,8 +481,9 @@ export default class VoxelManager<T> {
   }
 
   /**
-   * The live backing store - the array that `getScalarData()` both returns and
-   * reads back from - or undefined when this manager has none.
+   * The backing store that a caller can write into - the array that
+   * `getScalarData()` both returns and reads back from - or undefined when this
+   * manager has none.
    *
    * A manager that keeps its voxels in something else (an RLE map) can still
    * produce an array from `getScalarData()`, but that is a fresh expansion:
@@ -491,8 +492,11 @@ export default class VoxelManager<T> {
    * can touch the array directly where that is correct and only fall back to a
    * call per voxel (`getAtIndex` / `setAtIndex`, or `setFromScalarData`) where
    * it is not.
+   *
+   * Undefined is the normal answer for an RLE labelmap, not an error - every
+   * caller needs the per voxel fallback.
    */
-  public getLiveScalarData(): PixelDataTypedArray | undefined {
+  public getWritableScalarData(): PixelDataTypedArray | undefined {
     return this._scalarDataIsCachedExpansion
       ? undefined
       : (this.scalarData ?? undefined);

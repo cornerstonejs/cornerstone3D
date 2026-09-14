@@ -19,7 +19,7 @@ jest.mock('@cornerstonejs/core', () => {
           voxelManager: {
             setAtIndex: (index, value) => (pixelData[index] = value),
             getAtIndex: (index) => pixelData[index],
-            getLiveScalarData: () => pixelData,
+            getWritableScalarData: () => pixelData,
           },
         };
       },

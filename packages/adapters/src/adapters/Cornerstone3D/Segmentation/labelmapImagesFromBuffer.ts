@@ -1141,7 +1141,7 @@ export function insertPixelDataPlanar({
         // would make this test miss every collision. That one is read through
         // the voxel manager instead.
         const labelmap2DView = imageVoxelManager
-          ? imageVoxelManager.getLiveScalarData()
+          ? imageVoxelManager.getWritableScalarData()
           : labelmapImage.getPixelData();
 
         const data = alignedPixelDataI.data;
@@ -1458,7 +1458,7 @@ const getArrayOfLabelMapImagesWithSegmentData = ({
           // Fill the live frame buffer directly where there is one - this is a
           // whole frame per group, so it stays a plain array write.
           const frame = voxelManager
-            ? voxelManager.getLiveScalarData()
+            ? voxelManager.getWritableScalarData()
             : labelMapImage.getPixelData();
 
           if (frame) {

@@ -245,7 +245,7 @@ describe('VoxelManager', () => {
     expect(map.getAtIJKPoint(ijkPoint)).toBeUndefined();
   });
 
-  describe('getLiveScalarData', () => {
+  describe('getWritableScalarData', () => {
     it('is the backing array for a manager that has one', () => {
       const scalarData = new Uint8Array(dimensions[0] * dimensions[1]);
       const map = VoxelManager.createImageVoxelManager({
@@ -254,10 +254,10 @@ describe('VoxelManager', () => {
         scalarData,
       });
 
-      expect(map.getLiveScalarData()).toBe(scalarData);
+      expect(map.getWritableScalarData()).toBe(scalarData);
       // and it really is live: a write through the manager is visible in it
       map.setAtIndex(3, 5);
-      expect(map.getLiveScalarData()[3]).toBe(5);
+      expect(map.getWritableScalarData()[3]).toBe(5);
     });
 
     it('is undefined for an RLE manager, whose expansion is a throwaway', () => {
@@ -267,7 +267,7 @@ describe('VoxelManager', () => {
         defaultValue: 0,
       });
 
-      expect(map.getLiveScalarData()).toBeUndefined();
+      expect(map.getWritableScalarData()).toBeUndefined();
       // getScalarData still produces an array - it is just not the truth
       expect(map.getScalarData()).toBeInstanceOf(Uint8Array);
     });
@@ -282,7 +282,7 @@ describe('VoxelManager', () => {
       // getScalarData(true) retains the expansion, but it is still a snapshot
       // rather than a backing store, so it must not be handed out as live.
       map.getScalarData(true);
-      expect(map.getLiveScalarData()).toBeUndefined();
+      expect(map.getWritableScalarData()).toBeUndefined();
     });
   });
 

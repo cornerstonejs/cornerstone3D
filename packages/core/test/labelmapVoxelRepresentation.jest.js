@@ -112,7 +112,7 @@ describe('createAndCacheLocalImage with the RLE representation', () => {
     );
     // The RLE map, not the supplied buffer, is the source of truth afterwards.
     expect(image.voxelManager.getAtIndex(7)).toBe(9);
-    expect(image.voxelManager.getLiveScalarData()).toBeUndefined();
+    expect(image.voxelManager.getWritableScalarData()).toBeUndefined();
   });
 
   it('agrees with the Volume representation on the same data', () => {
