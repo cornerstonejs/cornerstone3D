@@ -138,7 +138,6 @@
     "karma-junit-reporter": "2.0.1",
     "karma-spec-reporter": "0.0.36",
     "karma-webpack": "5.0.1",
-    "lerna": "9.0.4",
     "lint-staged": "13.3.0",
     "nyc": "17.1.0",
     "open-cli": "7.2.0",

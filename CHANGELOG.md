@@ -3,6 +3,19 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [5.10.2](https://github.com/cornerstonejs/cornerstone3D/compare/v5.10.1...v5.10.2) (2026-09-11)
+
+### Bug Fixes
+
+- **adapters:** apply the predecessor to the dataset, and number an unnumbered one ([#2907](https://github.com/cornerstonejs/cornerstone3D/issues/2907)) ([1bd5ecc](https://github.com/cornerstonejs/cornerstone3D/commit/1bd5eccb587b91655267bf92b3e2dfae70dfc115))
+- **ai:** resolve the ONNX wasm directory against the app, not the route ([#2864](https://github.com/cornerstonejs/cornerstone3D/issues/2864)) ([0c5e012](https://github.com/cornerstonejs/cornerstone3D/commit/0c5e012e54bbd2fe2e4b2a00e7afae765aeabb68))
+
+## [5.10.1](https://github.com/cornerstonejs/cornerstone3D/compare/v5.10.0...v5.10.1) (2026-09-10)
+
+### Bug Fixes
+
+- **security:** override smol-toml to 1.7.1 (GHSA-7w5x-hrqm-74c2) ([#2911](https://github.com/cornerstonejs/cornerstone3D/issues/2911)) ([366bb38](https://github.com/cornerstonejs/cornerstone3D/commit/366bb38e568a3eae5d5b58a3ffd9242fffb68738))
+
 # [5.10.0](https://github.com/cornerstonejs/cornerstone3D/compare/v5.9.1...v5.10.0) (2026-09-10)
 
 ### Features
