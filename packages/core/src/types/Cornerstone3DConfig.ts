@@ -1,5 +1,5 @@
 import type { RenderingEngineModeType } from '../types';
-import type { RenderBackendValue } from '../enums';
+import type { RenderBackendValue, VoxelManagerEnum } from '../enums';
 
 interface Cornerstone3DConfig {
   /**
@@ -101,6 +101,38 @@ interface Cornerstone3DConfig {
      * through legacy compatibility adapters at viewport creation time.
      */
     useGenericViewport?: boolean;
+  };
+
+  /**
+   * Core configuration for the labelmap images that core itself creates. This
+   * is not the segmentation configuration of cstools: `overwriteMode` and the
+   * rest of `SegmentationConfig` in `packages/tools/src/config.ts` describe
+   * display and editing behaviour, which cstools owns. A setting here describes
+   * how core allocates an image, so it stays beside the loader that reads it,
+   * which cstools cannot do - core cannot import cstools.
+   */
+  segmentation?: {
+    /**
+     * The voxel representation labelmap images are created with, for callers
+     * that do not ask for one (see `createAndCacheDerivedLabelmapImage(s)`).
+     *
+     * `'Volume'` (default) gives every labelmap a full frame buffer - one byte
+     * per pixel per slice, segmented or not. `'RLE'` stores each frame as runs
+     * instead, which on a large multi-segment SEG (a whole-body AI
+     * segmentation, say) is a fraction of the memory, and answers per-row
+     * questions ("is segment N on this slice?") from the runs rather than a
+     * whole-frame scan. Hosts that read labelmap pixels directly should opt in
+     * knowingly: an RLE frame's `getScalarData()` is a fresh expansion, not the
+     * writable buffer, so in-place writes to it are discarded
+     * (`getWritableScalarData()` returns undefined for such a frame).
+     *
+     * Accepts the bare string as well as the enum member, so this can come
+     * straight from a host's JSON/deployment configuration. The value is
+     * matched exactly; anything else warns and falls back to `'Volume'` rather
+     * than being silently ignored (see
+     * `getDefaultLabelmapVoxelRepresentation`).
+     */
+    labelmapVoxelRepresentation?: VoxelManagerEnum | `${VoxelManagerEnum}`;
   };
 
   debug: {
