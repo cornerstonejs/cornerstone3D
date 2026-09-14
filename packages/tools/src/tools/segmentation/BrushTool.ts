@@ -427,14 +427,16 @@ class BrushTool extends LabelmapBaseTool {
       strategyData.segmentationVoxelManager
     );
 
-    this._previewData.preview = this.applyActiveStrategyCallback(
-      getEnabledElement(this._previewData.element),
-      {
-        ...operationData,
-        ...strategyData,
-        memo,
-      },
-      StrategyCallbacks.Preview
+    this._setPreview(
+      this.applyActiveStrategyCallback(
+        getEnabledElement(this._previewData.element),
+        {
+          ...operationData,
+          ...strategyData,
+          memo,
+        },
+        StrategyCallbacks.Preview
+      )
     );
   };
 
@@ -540,6 +542,9 @@ class BrushTool extends LabelmapBaseTool {
 
     if (this._isLazyLabelmapEditingEnabled(this._hoverData.viewport)) {
       this._lazyEdit.appendStrokePoint(currentWorld);
+      // `capturePreviewCircle` only accumulates the cursor points, so the drag
+      // writes no voxels. The lazy stroke paints the whole path once, in
+      // `_endCallback`, and that call stores the preview.
       this._captureLazyPreviewCircle();
       this._previewData.preview = null;
     } else {
@@ -555,10 +560,7 @@ class BrushTool extends LabelmapBaseTool {
         vec3.clone(currentWorld) as Types.Point3,
       ];
 
-      this._previewData.preview = this.applyActiveStrategy(
-        enabledElement,
-        operationData
-      );
+      this._setPreview(this.applyActiveStrategy(enabledElement, operationData));
     }
 
     const currentCanvasClone = vec2.clone(currentCanvas) as Types.Point2;
@@ -655,11 +657,14 @@ class BrushTool extends LabelmapBaseTool {
       operationData.strokePointsWorld = this._lazyEdit
         .getStrokePointsWorld()
         .map((point) => vec3.clone(point) as Types.Point3);
-      this.applyActiveStrategy(enabledElement, operationData);
+      // The lazy stroke paints the whole path here, so this is the call that
+      // creates the preview. Store the result, or a later reject finds no preview
+      // and leaves the stroke on the labelmap.
+      this._setPreview(this.applyActiveStrategy(enabledElement, operationData));
     } else if (!this._previewData.preview && !this._previewData.isDrag) {
       // Don't re-fill when the preview is showing and the user clicks again
       // otherwise the new area of hover may get filled, which is unexpected
-      this.applyActiveStrategy(enabledElement, operationData);
+      this._setPreview(this.applyActiveStrategy(enabledElement, operationData));
     }
 
     this.doneEditMemo();
@@ -746,14 +751,18 @@ class BrushTool extends LabelmapBaseTool {
     }
 
     // `previewData` is a static shared by every labelmap tool, so an element being set
-    // says only that some tool has painted — not that this one has a preview to reject.
-    // Running the strategy without one asks for a full strategy initialization to do
-    // nothing: the reject handler itself undoes only a memo that carries preview voxels.
-    // The 3D variants pay for it with a throw — `ensureSegmentationVolumeFor3DManipulation`
-    // raises `Volume is not reconstructable for sphere manipulation` on a viewport that
-    // cannot form a volume — and deactivating a sphere brush is enough to reach it, since
-    // `onSetToolPassive` rejects the preview. That throw escapes `ToolGroup.setToolPassive`
-    // and leaves the tool group with no active tool.
+    // says only that some tool has painted — not that a preview is on the labelmap.
+    // `preview` answers that second question, because every paint path stores its result
+    // through `_setPreview`, which keeps a result only when the strategy set a preview up.
+    //
+    // Running the strategy without a preview asks for a full strategy initialization to
+    // do nothing: the reject handler itself undoes only a memo that carries preview
+    // voxels. The 3D variants pay for it with a throw —
+    // `ensureSegmentationVolumeFor3DManipulation` raises `Volume is not reconstructable
+    // for sphere manipulation` on a viewport that cannot form a volume — and deactivating
+    // a sphere brush is enough to reach it, since `onSetToolPassive` rejects the preview.
+    // That throw escapes `ToolGroup.setToolPassive` and leaves the tool group with no
+    // active tool.
     if (this._previewData.preview) {
       this.applyActiveStrategyCallback(
         enabledElement,
@@ -792,11 +801,13 @@ class BrushTool extends LabelmapBaseTool {
       return;
     }
 
-    this._previewData.preview = this.applyActiveStrategyCallback(
-      enabledElement,
-      operationData,
-      StrategyCallbacks.Interpolate,
-      config.configuration
+    this._setPreview(
+      this.applyActiveStrategyCallback(
+        enabledElement,
+        operationData,
+        StrategyCallbacks.Interpolate,
+        config.configuration
+      )
     );
     this._previewData.isDrag = true;
   }

@@ -243,6 +243,24 @@ export default class LabelmapBaseTool extends BaseTool {
   }
 
   /**
+   * Stores the result of a strategy as the shared preview, but only when the
+   * strategy actually set a preview up.
+   *
+   * `BrushStrategy.fill` returns its initialized data for every stroke, with a
+   * preview or without one, so the raw result cannot go into `previewData.preview`
+   * directly. `modified` is the field that says a preview segment index went onto
+   * the labelmap: the `preview` composition sets `modified` to true only when both
+   * `previewSegmentIndex` and `segmentIndex` are present. `addPreview` uses the
+   * same test.
+   *
+   * Keeping `previewData.preview` truthful is what lets every labelmap tool share
+   * one preview: any tool can then reject the preview that any other tool created.
+   */
+  protected _setPreview(results) {
+    this._previewData.preview = results?.modified ? results : null;
+  }
+
+  /**
    * Checks if the tool has a preview data associated.
    * @returns True if the tool has preview data, false otherwise.
    */
@@ -591,9 +609,12 @@ export default class LabelmapBaseTool extends BaseTool {
       return;
     }
 
-    // Only a tool that actually has a preview has something to reject: `previewData` is
-    // shared by every labelmap tool, so the element alone does not say this one previewed
-    // anything. See `BrushTool.rejectPreview` for what running it regardless costs.
+    // A reject only has work to do when a preview exists. `previewData` is shared by
+    // every labelmap tool on purpose, so any tool can reject the preview that any other
+    // tool created, but the element alone says only that some tool has painted. Every
+    // paint path stores its result through `_setPreview`, so `preview` is set when, and
+    // only when, preview voxels are on the labelmap. See `BrushTool.rejectPreview` for
+    // what running the strategy without a preview costs.
     if (this._previewData.preview) {
       this.applyActiveStrategyCallback(
         enabledElement,
