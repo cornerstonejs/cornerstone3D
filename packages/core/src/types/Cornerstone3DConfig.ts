@@ -103,6 +103,14 @@ interface Cornerstone3DConfig {
     useGenericViewport?: boolean;
   };
 
+  /**
+   * Core configuration for the labelmap images that core itself creates. This
+   * is not the segmentation configuration of cstools: `overwriteMode` and the
+   * rest of `SegmentationConfig` in `packages/tools/src/config.ts` describe
+   * display and editing behaviour, which cstools owns. A setting here describes
+   * how core allocates an image, so it stays beside the loader that reads it,
+   * which cstools cannot do - core cannot import cstools.
+   */
   segmentation?: {
     /**
      * The voxel representation labelmap images are created with, for callers
@@ -115,7 +123,8 @@ interface Cornerstone3DConfig {
      * questions ("is segment N on this slice?") from the runs rather than a
      * whole-frame scan. Hosts that read labelmap pixels directly should opt in
      * knowingly: an RLE frame's `getScalarData()` is a fresh expansion, not the
-     * live buffer, so in-place writes to it are discarded.
+     * writable buffer, so in-place writes to it are discarded
+     * (`getWritableScalarData()` returns undefined for such a frame).
      *
      * Accepts the bare string as well as the enum member, so this can come
      * straight from a host's JSON/deployment configuration. The value is
