@@ -29,6 +29,9 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    # A manual run can name any ref, and npm trusted publishing does not limit
+    # the branch. Only main publishes.
+    if: github.ref == 'refs/heads/main'
 
     steps:
       - name: Checkout code
@@ -37,6 +40,27 @@ jobs:
           # version.mjs reads the last commit message, and the new tag must not
           # collide with an existing one.
           fetch-depth: 0
+          # The install and the build run the lifecycle scripts of every
+          # dependency. None of those scripts needs the push credential, so git
+          # does not keep it. The push step supplies the credential itself.
+          persist-credentials: false
+
+      # This run holds `github.sha`, which is not the tip of main when a second
+      # change lands first. Such a run must publish nothing: it would build the
+      # version commit on a parent that is not the tip, npm would accept the
+      # packages, and git would then reject the push. npm would hold a version
+      # with no commit, no tag and no release. The run that holds the tip
+      # publishes instead, and it carries the changes of this one.
+      - name: Check that this run holds the tip of main
+        id: tip
+        run: |
+          git fetch --no-tags origin main
+          if [ "$(git rev-parse HEAD)" = "$(git rev-parse FETCH_HEAD)" ]; then
+            echo 'publish=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'publish=false' >> "$GITHUB_OUTPUT"
+            echo "::notice::main moved past ${GITHUB_SHA}. The run that holds the tip publishes."
+          fi
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6.0.8
@@ -68,24 +92,59 @@ jobs:
           git config user.name "ohif-bot"
 
       - name: Set the package versions, commit and tag
+        if: steps.tip.outputs.publish == 'true'
         run: node ./publish-version.mjs
 
       - name: Publish to npm
+        if: steps.tip.outputs.publish == 'true'
         run: node ./publish-package.mjs
 
       # Only after npm accepts the packages. A failed publish therefore leaves
       # no tag, and no GitHub Release, for a version that npm does not hold.
       - name: Push the version commit and the tag
+        if: steps.tip.outputs.publish == 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
-          git push origin HEAD:main
-          git push origin "v$(cat version.txt)"
+          TAG="v$(cat version.txt)"
+          REMOTE="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+          # One push for both refs. GitHub takes both refs, or it takes neither,
+          # so main never carries a release commit that no tag names.
+          if git push --atomic "$REMOTE" HEAD:main "$TAG"; then
+            exit 0
+          fi
+
+          # A change landed on main while npm accepted the packages. The
+          # packages are public now, so the commit and the tag have to follow.
+          # Move both onto the new tip and push once more.
+          echo "The push failed. Moving the version commit onto the tip of main."
+          git fetch --no-tags origin main
+          git rebase FETCH_HEAD
+          git -c tag.gpgsign=false tag -f "$TAG"
+          git push --atomic "$REMOTE" HEAD:main "$TAG"
 
       - name: Create the GitHub release
+        if: steps.tip.outputs.publish == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="v$(cat version.txt)"
+
+          # A re-run of this job must not fail on a release that exists.
+          if gh release view "$TAG" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            echo "The release $TAG exists already."
+            exit 0
+          fi
+
+          # A version that holds a hyphen is a pre-release, such as
+          # 5.1.0-beta.0.
+          PRERELEASE=''
+          case "$TAG" in
+            *-*) PRERELEASE='--prerelease' ;;
+          esac
+
           gh release create "$TAG" \
-            --repo "${{ github.repository }}" \
+            --repo "${GITHUB_REPOSITORY}" \
             --title "$TAG" \
-            --generate-notes
+            --generate-notes $PRERELEASE
