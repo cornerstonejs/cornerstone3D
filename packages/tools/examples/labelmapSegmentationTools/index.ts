@@ -380,6 +380,13 @@ function setAxialObliqueAngle(degrees: number) {
     viewPlaneNormal: Array.from(viewPlaneNormal) as Types.Point3,
     viewUp: Array.from(viewUp) as Types.Point3,
   });
+
+  // The focal point above is the centre of the volume, and the centre does not
+  // sit on the grid of slice positions of the new normal. A fill would then
+  // write a plane that lies between two slice positions, and the neighbouring
+  // slices would each show a part of that plane. `scroll(0)` moves no slice,
+  // and it rounds the focal point onto the nearest slice position.
+  viewport.scroll(0);
   viewport.render();
 }
 
@@ -389,6 +396,26 @@ addToggleButtonToToolbar({
   defaultToggle: true,
   onClick: (toggle) => {
     setCrosshairsEnabled(toggle);
+  },
+});
+
+// Diagnostics for https://github.com/cornerstonejs/cornerstone3D/issues/2912.
+// `slice step` reports which measure a viewport uses, and what the viewport
+// steps by. `brush fill` reports the depth spread of the voxels that one fill
+// writes: a fill of one digital plane gives a `depthSpanInVoxels` below 1.
+addToggleButtonToToolbar({
+  id: 'sliceStepLogs',
+  title: 'Debug logs: slice step and brush fill',
+  defaultToggle: false,
+  onClick: (toggle) => {
+    const level = toggle ? 'debug' : 'warn';
+
+    utilities.logger.coreLog
+      .getLogger('utilities', 'getTargetVolumeAndSpacingInNormalDir')
+      .setLevel(level);
+    utilities.logger.toolsLog
+      .getLogger('tools', 'segmentation', 'brushVoxelSlab')
+      .setLevel(level);
   },
 });
 

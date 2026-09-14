@@ -6,6 +6,20 @@ import getVoxelThicknessAlongNormal from './voxelSlab/getVoxelThicknessAlongNorm
 import { getConfiguration } from '../init';
 import { getVolumeLoaderSchemes } from '../loaders/volumeLoader';
 import { getVolumeId } from './getVolumeId';
+import { coreLog } from './logger';
+
+/**
+ * Diagnostics for the slice step. Call
+ * `sliceStepLog.setLevel('debug')` to see which measure a viewport uses. See
+ * https://github.com/cornerstonejs/cornerstone3D/issues/2912.
+ */
+export const sliceStepLog = coreLog.getLogger(
+  'utilities',
+  'getTargetVolumeAndSpacingInNormalDir'
+);
+
+/** The last line logged, so that a repeated render logs nothing. */
+let lastSliceStepLine = '';
 
 // One EPSILON part larger multiplier
 const EPSILON_PART = 1 + EPSILON;
@@ -149,18 +163,44 @@ function getSpacingInNormal(
     }
   ).getProperties?.()?.slabThickness;
 
-  if (slabThickness && useSlabThickness) {
-    return slabThickness;
-  }
-
   // EXPERIMENTAL. 'l1' measures how far one voxel reaches along the normal,
   // which is what an overlap test needs, and it is the larger of the two for
   // an oblique normal. The two measures are equal for an acquisition
   // orientation, so this switch changes an oblique view only. See
   // https://github.com/cornerstonejs/cornerstone3D/issues/2912.
-  if (getConfiguration().rendering?.sliceStepMeasure === 'l1') {
-    return getVoxelThicknessAlongNormal(imageVolume, viewPlaneNormal);
+  const measure = getConfiguration().rendering?.sliceStepMeasure;
+  const geometric =
+    measure === 'l1'
+      ? getVoxelThicknessAlongNormal(imageVolume, viewPlaneNormal)
+      : getSpacingInNormalDirection(imageVolume, viewPlaneNormal);
+  const used = slabThickness && useSlabThickness ? slabThickness : geometric;
+
+  // This function runs on every render, so the diagnostics stay behind the
+  // level test, and the second measure is computed only for the message.
+  if ((sliceStepLog.getLevel?.() ?? 5) <= 1) {
+    const l1 = getVoxelThicknessAlongNormal(imageVolume, viewPlaneNormal);
+    const l2 = getSpacingInNormalDirection(imageVolume, viewPlaneNormal);
+
+    // Log an oblique viewport only, and only when the numbers change. An
+    // axis-aligned normal gives `l1 === l2` and says nothing about the defect.
+    if (Math.abs(l1 - l2) > 1e-6 * Math.max(l1, l2)) {
+      const line =
+        `slice step [${viewport?.id}] measure=${measure ?? 'l2'} ` +
+        `used=${used.toFixed(4)} l1=${l1.toFixed(4)} l2=${l2.toFixed(4)} ` +
+        `l1/l2=${(l1 / l2).toFixed(4)} ` +
+        `fromSlabThickness=${Boolean(slabThickness && useSlabThickness)}`;
+
+      if (line !== lastSliceStepLine) {
+        lastSliceStepLine = line;
+        sliceStepLog.debug(line, {
+          slabThickness,
+          useSlabThickness,
+          viewPlaneNormal,
+          spacing: imageVolume.spacing,
+        });
+      }
+    }
   }
 
-  return getSpacingInNormalDirection(imageVolume, viewPlaneNormal);
+  return used;
 }

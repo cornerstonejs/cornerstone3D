@@ -32,6 +32,17 @@ import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 
 import { getShapeIndexBounds } from '../../../../utilities/sampleAreaAnnotationVoxels';
 
+/**
+ * Diagnostics for a brush fill. Call `brushFillLog.setLevel('debug')` to see
+ * the depth spread of the voxels that a fill writes. See
+ * https://github.com/cornerstonejs/cornerstone3D/issues/2912.
+ */
+export const brushFillLog = csUtils.logger.toolsLog.getLogger(
+  'tools',
+  'segmentation',
+  'brushVoxelSlab'
+);
+
 const {
   createCircleShape,
   createEllipseShape,
@@ -423,7 +434,23 @@ export function forEachBrushFillVoxel(
     getShapeRuns: fill.shape.getRuns,
   });
 
+  // Diagnostics. A fill of one digital plane holds voxels whose depths span
+  // less than one voxel thickness. A wider span means the fill wrote more than
+  // one plane, and the neighbouring slice then shows part of the fill.
+  const debug = (brushFillLog.getLevel?.() ?? 5) <= 1;
+  const depths: number[] = [];
+  let painted = 0;
+
   for (const { ijk, center } of iteration) {
+    if (debug) {
+      depths.push(
+        (center[0] - fill.planePoint[0]) * fill.viewPlaneNormal[0] +
+          (center[1] - fill.planePoint[1]) * fill.viewPlaneNormal[1] +
+          (center[2] - fill.planePoint[2]) * fill.viewPlaneNormal[2]
+      );
+    }
+    painted++;
+
     // ijk and center are reused between iterations, so copy before the
     // callback, which records them in an undo memo.
     const pointIJK: Types.Point3 = [ijk[0], ijk[1], ijk[2]];
@@ -436,4 +463,40 @@ export function forEachBrushFillVoxel(
       pointLPS: [center[0], center[1], center[2]],
     });
   }
+
+  if (!debug) {
+    return;
+  }
+
+  const voxelThickness = getVoxelThicknessAlongNormal(
+    fill.volume,
+    fill.viewPlaneNormal
+  );
+  // Round to a tenth of a voxel, so that two voxels of one layer count once.
+  const layers = new Set(
+    depths.map((depth) => Math.round((depth / voxelThickness) * 10) / 10)
+  );
+  const sorted = [...layers].sort((a, b) => a - b);
+
+  // A single digital plane gives a span below 1. A span at or above 1 means
+  // the fill wrote into the neighbouring plane.
+  const span = (Math.max(...depths) - Math.min(...depths)) / voxelThickness;
+
+  brushFillLog.debug(
+    `brush fill painted=${painted} T_v=${voxelThickness.toFixed(4)} ` +
+      `halfWidth=${fill.membershipHalfWidth.toFixed(4)} ` +
+      `halfWidth/T_v=${(fill.membershipHalfWidth / voxelThickness).toFixed(
+        4
+      )} ` +
+      `depthSpanInVoxels=${span.toFixed(4)} ` +
+      `distinctLayers=${sorted.length} ` +
+      `${span < 1 ? 'ONE PLANE' : 'MORE THAN ONE PLANE'}`,
+    {
+      minDepth: Math.min(...depths),
+      maxDepth: Math.max(...depths),
+      layersInVoxels: sorted.length <= 24 ? sorted : `${sorted.length} values`,
+      planePoint: fill.planePoint,
+      viewPlaneNormal: fill.viewPlaneNormal,
+    }
+  );
 }
