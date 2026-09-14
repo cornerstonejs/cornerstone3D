@@ -430,6 +430,12 @@ export function forEachBrushFillVoxel(
     planePoint: fill.planePoint,
     viewPlaneNormal: fill.viewPlaneNormal,
     membershipHalfWidth: fill.membershipHalfWidth,
+    // Rule F is defined with the half-open interval. The open interval that
+    // Rule M uses drops both boundaries, so a voxel centre that lands exactly
+    // on a boundary belongs to no fill at all, and no plane ever writes it.
+    // That happens whenever the depths of the centres are commensurate with
+    // the slab, of which 45 degrees is the common case.
+    depthInterval: 'half-open',
     bounds: fill.bounds,
     getShapeRuns: fill.shape.getRuns,
   });

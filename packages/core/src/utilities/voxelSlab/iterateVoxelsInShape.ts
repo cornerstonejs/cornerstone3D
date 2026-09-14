@@ -66,6 +66,15 @@ export interface VoxelsInShapeOptions {
    */
   membershipHalfWidth?: number;
   /**
+   * `'open'`, the default, excludes both depth boundaries, which is what Rule M
+   * asks for. `'half-open'` includes the low boundary, so a voxel centre that
+   * lands exactly on a boundary belongs to exactly one of two consecutive
+   * slabs rather than to neither. Rule F is defined with `'half-open'`, because
+   * consecutive fills must write every voxel exactly once. Measurement code
+   * must leave this unset.
+   */
+  depthInterval?: 'open' | 'half-open';
+  /**
    * Inclusive index bounds to confine iteration to. Defaults to the whole
    * volume. Supply the annotation's own index-space bounding box when you have
    * one; the slab bound tightening below only narrows along the normal.
@@ -103,6 +112,7 @@ export function* iterateVoxelsInShape(
     viewPlaneNormal: normal,
     referencePlaneThickness,
     membershipHalfWidth,
+    depthInterval,
     getShapeRuns,
     isInShape,
     columnAxis: forcedColumnAxis,
@@ -115,7 +125,7 @@ export function* iterateVoxelsInShape(
     planePoint,
     normal,
     referencePlaneThickness,
-    { columnAxis: forcedColumnAxis, membershipHalfWidth }
+    { columnAxis: forcedColumnAxis, membershipHalfWidth, depthInterval }
   );
   const { outerAxis, rowAxis, columnAxis } = slab;
 

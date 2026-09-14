@@ -97,10 +97,15 @@ fill reaches along the normal.
   `T_v / 2`, and a slab of that thickness is a standard digital plane: it holds
   every voxel that the plane passes through, and it shares no voxel with the
   fill one `T_v` away. A thinner slab leaves holes, and a thicker slab writes
-  two layers.
+  two layers. The depth interval of Rule F is half-open, which gives the shared
+  boundary to exactly one of two consecutive fills. An open interval gives that
+  boundary to neither of the two, and at 45 degrees an open interval therefore
+  makes half of the voxels unreachable by any fill.
 - **Full-thickness (thick-slab) view** — the view thickness passes through as
   the fill depth, so the flat disc becomes a short cylinder and the fill paints
-  every layer through the slab.
+  every layer through the slab. The half-open interval makes the count of
+  layers exactly `F / T_v`, whatever the position of the plane between two
+  layers.
 
 A sphere brush is the exception. It carries its own depth, reports that depth
 through `getRequiredThickness`, and so ignores the view slab entirely. A sphere

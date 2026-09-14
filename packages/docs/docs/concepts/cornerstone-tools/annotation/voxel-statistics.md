@@ -138,11 +138,29 @@ and Rule M gives the wrong answer to it.
 
 A brush fill writes a voxel when the voxel obeys two conditions:
 
-1. The voxel centre lies within `max(F, T_v) / 2` of the fill plane, measured
-   along the normal. `F` is the depth that the fill covers, and `F` defaults to
-   `T_v`.
+1. The depth of the voxel centre, measured along the normal from the fill
+   plane, lies in the **half-open** interval `[-max(F, T_v) / 2,
++max(F, T_v) / 2)`. `F` is the depth that the fill covers, and `F` defaults
+   to `T_v`.
 2. The projection of that centre along the normal onto the plane falls inside
    the 2D shape.
+
+The interval is half-open, and Rule M uses an open interval. This difference is
+normative, and the difference is not an accident of the arithmetic. An open
+interval drops both of its boundaries, so a voxel centre that lands exactly on
+a boundary belongs to neither of two consecutive slabs. No fill then writes
+that voxel, at any plane position.
+
+A voxel centre lands exactly on a boundary whenever the depths of the centres
+are commensurate with the slab. A rotation of 45 degrees about one voxel axis
+is the common case: the depths are then multiples of `T_v / 2`, and an open
+interval loses **half of the volume**. A half-open interval loses nothing at
+any orientation.
+
+The half-open interval also fixes the count of layers of a thick fill. A
+half-open interval of width `F` holds exactly `F / T_v` layers, whatever the
+position of the plane between two layers. An open interval of the same width
+holds one layer more or one layer less, by that position.
 
 The half width of Rule F is `max(F, T_v) / 2`, and the half width of Rule M is
 `(T + T_v) / 2`. For the default of one voxel of depth, Rule M gives `T_v` and
@@ -159,6 +177,10 @@ together at every orientation:
   through.
 - **No overlap.** Two such slabs share no voxel when the two planes are `T_v`
   apart along the normal.
+
+The half-open interval is what makes the second property hold at every
+orientation. Two consecutive slabs share the boundary between them, and the
+half-open interval gives that boundary to exactly one of the two.
 
 Consecutive fills therefore tile the volume exactly, in the same way that
 consecutive digital lines tile a 2D grid. A thinner slab breaks the first
@@ -515,6 +537,11 @@ voxel multiple by less than `2 * SLAB_RELATIVE_EPSILON * T_v` still selects the
 smaller number of layers. At `T_v = 1 mm` that dead band is 20 nm wide, so it is
 unreachable in practice, but `T = T_v + 1e-6` does behave as `T = T_v` rather
 than pull in both neighbours.
+
+This section describes Rule M and Rule D. Rule F uses a half-open interval
+instead, for the reason that the Rule F section gives, and the epsilon then
+moves the interval rather than narrows it. A narrower interval would leave a
+gap between two consecutive fills, and the fills must tile.
 
 ## Voxel thickness along the normal
 

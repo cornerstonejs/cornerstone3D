@@ -225,9 +225,12 @@ describe('brushVoxelSlab', () => {
       );
 
       // Rule F takes the half width as `max(depth, T_v) / 2`, so a 6 mm view
-      // over 1 mm voxels reaches 3 mm each side of the plane at layer 12.
+      // over 1 mm voxels reaches 3 mm each side of the plane at layer 12. The
+      // interval is half-open, so the count is exactly 6 mm / 1 mm = 6 layers,
+      // and the count does not depend on where the plane sits between two
+      // layers. The open interval gave 5 layers or 6 layers by that phase.
       expect(axisLayers(thin, 2)).toEqual([12]);
-      expect(axisLayers(thick, 2)).toEqual([10, 11, 12, 13, 14]);
+      expect(axisLayers(thick, 2)).toEqual([9, 10, 11, 12, 13, 14]);
       expect(thick.length).toBeGreaterThan(thin.length);
     });
 
