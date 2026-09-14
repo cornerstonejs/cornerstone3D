@@ -9,6 +9,15 @@ import { getAllPackages, isPublishable } from './scripts/workspace-packages.mjs'
 // the tag only after npm accepts the packages, so a failed publish leaves no tag
 // for a version that npm does not hold.
 
+// No command below asks a question. execa connects stdin to a pipe and never
+// closes that pipe, so a child that reads stdin waits for an answer that never
+// arrives. Such a child holds the release for as long as the workflow allows.
+// `ignore` gives the child an end of file at once: the command fails, the
+// release stops, and the log names the command that failed.
+function runCommand(file, args, options) {
+  return execa(file, args, { ...options, stdin: 'ignore' });
+}
+
 async function run() {
   const nextVersion = (await fs.readFile('./version.txt', 'utf-8')).trim();
 
@@ -58,32 +67,41 @@ async function run() {
       entry.manifestPath,
       JSON.stringify(entry.manifest, null, 2) + '\n'
     );
-    await execa('npx', ['prettier', '--write', entry.manifestPath]);
+    await runCommand('npx', ['prettier', '--write', entry.manifestPath]);
   }
 
   // The lockfile records the version of every workspace package, and the repo
   // installs with a frozen lockfile, so the lockfile moves with the versions.
   console.log('Updating the lockfile...');
-  await execa('pnpm', [
+  await runCommand('pnpm', [
     'install',
     '--lockfile-only',
     '--no-frozen-lockfile',
   ]);
-  await execa('npx', ['prettier', '--write', 'pnpm-lock.yaml']);
+  await runCommand('npx', ['prettier', '--write', 'pnpm-lock.yaml']);
 
   for (const entry of allPackages) {
-    await execa('node', ['./scripts/generate-version.js', entry.dir]);
+    await runCommand('node', ['./scripts/generate-version.js', entry.dir]);
   }
 
-  await execa('git', ['add', '-A']);
-  await execa('git', [
+  await runCommand('git', ['add', '-A']);
+  // The workflow sets HUSKY=0, so the pre-commit hook does not run here. That
+  // hook runs `pnpm run lint-staged`, and pnpm verifies the dependencies of the
+  // workspace before it runs a script. The new pnpm-lock.yaml above does not
+  // match node_modules, so the check would stop the commit.
+  await runCommand('git', [
     'commit',
     '-m',
     `chore(version): Update package versions to ${nextVersion}`,
   ]);
   // A lightweight tag, as every release tag of this repository is. `-c` keeps a
   // machine that signs its tags by default from asking for a tag message.
-  await execa('git', ['-c', 'tag.gpgsign=false', 'tag', `v${nextVersion}`]);
+  await runCommand('git', [
+    '-c',
+    'tag.gpgsign=false',
+    'tag',
+    `v${nextVersion}`,
+  ]);
 
   console.log(`Committed and tagged v${nextVersion}`);
 }

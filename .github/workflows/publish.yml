@@ -42,6 +42,26 @@ jobs:
     # A manual run can name any ref, and npm trusted publishing does not limit
     # the branch. Only main publishes.
     if: github.ref == 'refs/heads/main'
+    # A healthy release run takes about 8 minutes. The default of 360 minutes
+    # let one blocked step hold the `publish-to-npm` concurrency group for 6
+    # hours, and every merge to main queued behind that step. This timeout ends
+    # such a step, and the group is free again for the next merge.
+    timeout-minutes: 30
+
+    env:
+      # `prepare` runs `husky`, and the install below therefore installs the git
+      # hooks. husky 9 no longer skips that step for CI. The hooks then reach the
+      # commit that publish-version.mjs makes: `.husky/pre-commit` runs
+      # `pnpm run lint-staged`, and pnpm verifies the dependencies of the
+      # workspace before it runs any script. publish-version.mjs writes a new
+      # pnpm-lock.yaml one step earlier, so that check meets a lockfile that
+      # node_modules does not match, and the commit stops inside the hook.
+      #
+      # The release commit needs no hook. The release scripts write every file of
+      # that commit, and the checks of the pull request already read the code.
+      # `HUSKY=0` stops the install of the hooks, and it also stops each hook
+      # that an earlier run installed.
+      HUSKY: '0'
 
     steps:
       - name: Checkout code
