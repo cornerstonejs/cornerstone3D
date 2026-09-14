@@ -51,10 +51,10 @@ export interface IndexSpaceSlab {
   /**
    * Whether `depthLow` is inclusive, which makes the interval half-open.
    *
-   * The open interval drops both of its endpoints, so a voxel centre that lands
-   * exactly on a boundary belongs to no slab at all. Consecutive slabs then
-   * leave that voxel out, and no plane reaches it. A fill needs the half-open
-   * interval, because consecutive fills must write every voxel exactly once.
+   * The open interval drops both of its endpoints, so a voxel centre on a
+   * boundary belongs to no slab at all, and no plane reaches it. A fill needs
+   * the half-open interval, because consecutive fills must write every voxel
+   * exactly once.
    */
   halfOpen: boolean;
   /** `argmax |g|`. Swept outermost. */
@@ -112,14 +112,11 @@ export function pickOuterAxis(g: Point3): 0 | 1 | 2 {
  *   acquisition-orientation volume emits runs along i for each j, matching
  *   row-major memory order.
  * @param options.membershipHalfWidth - Use this half width instead of the one
- *   Rule M computes. A brush fill passes the half width of Rule F here, because
- *   a fill selects the voxels it passes through and a measurement does not. See
+ *   Rule M computes. A brush fill passes the half width of Rule F here - see
  *   `getFillHalfWidth`. Measurement code must leave this unset.
  * @param options.depthInterval - `'open'`, the default, excludes both
- *   boundaries, which is what Rule M asks for: a plane midway between two
- *   layers selects both layers. `'half-open'` includes the low boundary, so
- *   each voxel belongs to exactly one of the consecutive slabs. A fill passes
- *   `'half-open'`. See {@link IndexSpaceSlab.halfOpen}.
+ *   boundaries, which is what Rule M asks for. `'half-open'` includes the low
+ *   boundary. See {@link IndexSpaceSlab.halfOpen}.
  */
 export function buildIndexSpaceSlab(
   volume: VolumeGeometry,

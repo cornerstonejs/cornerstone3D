@@ -29,8 +29,6 @@ const defaultConfig: Cornerstone3DConfig = {
     // Use new method by default for accurate full-width display
     useLegacyCameraFOV: false,
     strictZSpacingForVolumeViewport: true,
-    // See Cornerstone3DConfig. 'l2' keeps the historic slice step; 'l1' is the
-    // experiment of https://github.com/cornerstonejs/cornerstone3D/issues/2912.
     sliceStepMeasure: 'l2',
     /**
      * The rendering engine mode to use.

@@ -9,9 +9,8 @@ import { getVolumeId } from './getVolumeId';
 import { coreLog } from './logger';
 
 /**
- * Diagnostics for the slice step. Call
- * `sliceStepLog.setLevel('debug')` to see which measure a viewport uses. See
- * https://github.com/cornerstonejs/cornerstone3D/issues/2912.
+ * Diagnostics for the slice step. Call `sliceStepLog.setLevel('debug')` to see
+ * which measure a viewport uses.
  */
 export const sliceStepLog = coreLog.getLogger(
   'utilities',
@@ -163,11 +162,7 @@ function getSpacingInNormal(
     }
   ).getProperties?.()?.slabThickness;
 
-  // EXPERIMENTAL. 'l1' measures how far one voxel reaches along the normal,
-  // which is what an overlap test needs, and it is the larger of the two for
-  // an oblique normal. The two measures are equal for an acquisition
-  // orientation, so this switch changes an oblique view only. See
-  // https://github.com/cornerstonejs/cornerstone3D/issues/2912.
+  // See Cornerstone3DConfig.rendering.sliceStepMeasure.
   const measure = getConfiguration().rendering?.sliceStepMeasure;
   const geometric =
     measure === 'l1'
@@ -182,7 +177,7 @@ function getSpacingInNormal(
     const l2 = getSpacingInNormalDirection(imageVolume, viewPlaneNormal);
 
     // Log an oblique viewport only, and only when the numbers change. An
-    // axis-aligned normal gives `l1 === l2` and says nothing about the defect.
+    // axis-aligned normal gives `l1 === l2`, which tells the reader nothing.
     if (Math.abs(l1 - l2) > 1e-6 * Math.max(l1, l2)) {
       const line =
         `slice step [${viewport?.id}] measure=${measure ?? 'l2'} ` +

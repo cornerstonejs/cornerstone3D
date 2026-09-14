@@ -60,18 +60,15 @@ export interface VoxelsInShapeOptions {
   /**
    * Use this half width along the normal instead of the one Rule M computes
    * from `referencePlaneThickness`. A brush fill passes the half width of Rule
-   * F here, because a fill selects the voxels it passes through and a
-   * measurement does not. See `getFillHalfWidth`. Measurement code must leave
-   * this unset.
+   * F here - see `getFillHalfWidth`. Measurement code must leave this unset.
    */
   membershipHalfWidth?: number;
   /**
    * `'open'`, the default, excludes both depth boundaries, which is what Rule M
-   * asks for. `'half-open'` includes the low boundary, so a voxel centre that
-   * lands exactly on a boundary belongs to exactly one of two consecutive
-   * slabs rather than to neither. Rule F is defined with `'half-open'`, because
-   * consecutive fills must write every voxel exactly once. Measurement code
-   * must leave this unset.
+   * asks for. `'half-open'` includes the low boundary, so a voxel centre on a
+   * boundary belongs to exactly one of two consecutive slabs rather than to
+   * neither. Rule F is defined with `'half-open'`. Measurement code must leave
+   * this unset.
    */
   depthInterval?: 'open' | 'half-open';
   /**

@@ -384,11 +384,7 @@ function getSliceMetrics(args: {
   const { imageVolume, viewPlaneNormal } = args;
   const corners = buildImageVolumeCorners(imageVolume);
 
-  // EXPERIMENTAL. 'l1' measures how far one voxel reaches along the normal,
-  // which is what an overlap test needs, and it is the larger of the two for
-  // an oblique normal. The two measures are equal for an acquisition
-  // orientation, so this switch changes an oblique view only. See
-  // https://github.com/cornerstonejs/cornerstone3D/issues/2912.
+  // See Cornerstone3DConfig.rendering.sliceStepMeasure.
   const measure =
     getConfiguration().rendering?.sliceStepMeasure === 'l1'
       ? getVoxelThicknessAlongNormal

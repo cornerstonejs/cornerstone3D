@@ -287,23 +287,10 @@ const initializeCircle = {
 
     operationData.isInObjectBoundsIJK = boundsIJK;
 
-    // Always fill through the shared voxel slab iterator - both single clicks
-    // and click-drag strokes. It walks the disc itself rather than the
-    // axis-aligned bounding box around it, which is what avoids the bleed into
-    // the neighbouring slices that the box walk produced on an oblique plane.
-    // The stroke centers make it paint a continuous swept disc in one pass.
-    //
     // The slab thickness follows the view: a thin view fills a single oblique
-    // plane, while a full-thickness (thick-slab) view fills every plane in the
-    // slab so a "circle" paints all voxels through the thickness (a volume
-    // fill). See `utils/brushVoxelSlab.ts` for the matching area semantics.
-    //
-    // `getSlabThickness` returns a half thickness on the volume viewport,
-    // because the clipping planes sit at `focalPoint ± slabThickness`.
-    // `getViewSlabDepthOfViewport` converts it to the depth the view shows,
-    // per render path, and reports a thin view as undefined so that the fill
-    // falls back to one voxel along the normal. Passing the raw value filled
-    // half of the depth that the user saw.
+    // plane, and a full-thickness view fills every plane in the slab, so a
+    // "circle" paints all voxels through the thickness. A thin view reports
+    // undefined, and the fill falls back to one voxel along the normal.
     const viewThicknessWorld = getViewSlabDepthOfViewport(viewport);
     operationData.brushVoxelSlabFill = createCircleBrushFill({
       segmentationImageData,
@@ -375,9 +362,9 @@ function createPointInEllipse(
   vec3.add(center, topLeft, bottomRight);
   vec3.scale(center, center, 0.5);
 
-  // Calculate a SINGLE original radius to ensure the base shape is a circle.
-  // We'll use the width (major axis) as the definitive diameter. Only the
-  // length is needed here; the in-plane directions come from viewRight/viewUp.
+  // One radius, so that the base shape is a circle. The width (the major axis)
+  // gives the diameter. Only the length matters here, because the in-plane
+  // directions come from viewRight and viewUp.
   const majorAxisVec = vec3.create();
   vec3.subtract(majorAxisVec, topRight, topLeft);
   const originalRadius = vec3.length(majorAxisVec) / 2;

@@ -128,12 +128,10 @@ function createPointInRectangle(
 ) {
   const [p0, p1, , p3] = orderedPoints;
 
-  // Convert rectangle corners to IJK.
   const rectangleCornersIJK = orderedPoints.map((world) =>
     transformWorldToIndex(segmentationImageData, world)
   );
 
-  // Bounding box in IJK space.
   const dims = segmentationImageData.getDimensions();
 
   const cornerIValues = rectangleCornersIJK.map((p) => p[0]);
@@ -176,8 +174,7 @@ function createPointInRectangle(
 
   const direction = segmentationImageData.getDirection();
 
-  // Proper spacing along rectangle normal.
-  // Important for oblique orientations.
+  // The spacing along the rectangle's own normal, which an oblique plane needs.
   const projectedSpacing = csUtils.getSpacingInNormalDirection(
     {
       direction,
@@ -186,13 +183,11 @@ function createPointInRectangle(
     normal as Types.Point3
   );
 
-  // Use a slightly thicker slab to avoid sparse voxel sampling
-  // artifacts on oblique planes.
-  // Using full projected spacing gives more stable voxel occupancy.
+  // The full projected spacing, because a thinner slab samples an oblique plane
+  // sparsely and leaves holes.
   const thickness = projectedSpacing;
 
-  // Small tolerance helps stable edge coverage
-  // without excessive overfill
+  // Half a voxel, which covers the edge without a large overfill.
   const inPlaneSpacing = Math.min(spacing[0], spacing[1]);
 
   const inPlaneTolerance = inPlaneSpacing / 2;
