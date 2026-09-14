@@ -5,6 +5,11 @@ import {
 } from '@cornerstonejs/tools';
 import type { RawContourData } from '../contourComputationStrategies';
 import { vec3 } from 'gl-matrix';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.polySegLog.getLogger(
+  'Contour.utils.createAndAddContourSegmentationsFromClippedSurfaces'
+);
 
 /**
  * Finds the best contour from a lines array for normal calculation.
@@ -196,13 +201,13 @@ export function createAndAddContourSegmentationsFromClippedSurfaces(
 ) {
   const annotationUIDsMap = new Map<number, Set<string>>();
   if (!viewport) {
-    console.warn('Invalid viewport given');
+    cs3dLogger.warn('Invalid viewport given');
     return;
   }
 
   const camera = viewport.getCamera();
   if (!camera) {
-    console.warn('Camera not available in viewport');
+    cs3dLogger.warn('Camera not available in viewport');
     return;
   }
   const planeNormal = camera.viewPlaneNormal;

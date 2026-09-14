@@ -4,12 +4,15 @@ import { ActorRenderMode } from '../../../types';
 import resolveViewportVolumeId from '../../helpers/resolveViewportVolumeId';
 import type { LoadedData } from '../ViewportArchitectureTypes';
 import { getGenericViewportPlanarDisplaySet } from '../genericViewportDisplaySetAccess';
+import { coreLog } from '../../../utilities/logger';
 import type {
   PlanarDataProvider,
   PlanarDataLoadOptions,
   PlanarPayload,
   PlanarRegisteredDataSet,
 } from './PlanarViewportTypes';
+
+const log = coreLog.getLogger('RenderingEngine', 'DefaultPlanarDataProvider');
 
 export class DefaultPlanarDataProvider implements PlanarDataProvider {
   async load(
@@ -72,7 +75,7 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
         if (remappedIndex >= 0) {
           volumeInitialImageIdIndex = remappedIndex;
         } else {
-          console.warn(
+          log.warn(
             `[PlanarViewport] initialImageIdIndex remap failed: imageId ` +
               `"${requestedImageId}" not found in the volume imageIds; ` +
               `using the original index ${initialImageIdIndex}`

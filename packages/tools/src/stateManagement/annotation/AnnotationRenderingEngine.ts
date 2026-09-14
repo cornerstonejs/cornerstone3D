@@ -7,6 +7,11 @@ import { Events, ToolModes } from '../../enums';
 import { draw as drawSvg } from '../../drawingSvg';
 import getToolsWithModesForElement from '../../utilities/getToolsWithModesForElement';
 import type { AnnotationRenderedEventDetail } from '../../types/EventTypes';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'stateManagement.annotation.AnnotationRenderingEngine'
+);
 const { Active, Passive, Enabled } = ToolModes;
 
 /**
@@ -161,7 +166,6 @@ class AnnotationRenderingEngine {
     if (!enabledElement) {
       // Happens during testing, and isn't an issue as it just means there
       // is overlap between shutdown and re-render
-      // console.warn('Element has been disabled');
       return;
     }
 
@@ -169,7 +173,7 @@ class AnnotationRenderingEngine {
       enabledElement.renderingEngineId
     );
     if (!renderingEngine) {
-      console.warn('rendering Engine has been destroyed');
+      cs3dLogger.warn('rendering Engine has been destroyed');
       return;
     }
 

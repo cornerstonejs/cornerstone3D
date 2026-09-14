@@ -1,6 +1,11 @@
 import { getEnabledElementByViewportId } from '@cornerstonejs/core';
 import { LabelmapBaseTool } from '@cornerstonejs/tools';
 import ONNXSegmentationController from './ONNXSegmentationController';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.aiLog.getLogger(
+  'LabelmapSlicePropagationTool'
+);
 
 /**
  * Represents a tool used for segment selection and AI-assisted segmentation.
@@ -76,7 +81,7 @@ class LabelmapSlicePropagationTool extends LabelmapBaseTool {
     const enabledElement = getEnabledElementByViewportId(sourceViewportId);
 
     if (!enabledElement) {
-      console.debug(
+      cs3dLogger.debug(
         'No enabled element found for viewportId:',
         sourceViewportId
       );
