@@ -11,20 +11,18 @@ import { getPolySeg } from '../../../config';
 import { computeAndAddRepresentation } from '../../../utilities/segmentation/computeAndAddRepresentation';
 import { internalGetHiddenSegmentIndices } from '../../../stateManagement/segmentation/helpers/internalGetHiddenSegmentIndices';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+import type { SurfaceSegmentationData } from '../../../types/SurfaceTypes';
 
 const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
   'tools.displayTools.Surface.surfaceDisplay'
 );
 
-// Guards against launching a second polySeg surface conversion for a
-// segmentation while one is already running. Every re-render (and every viewport
-// showing the segmentation) would otherwise kick off another concurrent
-// conversion; each allocates the full labelmap scalar array, so a large volume
-// with several segments exhausts memory, the workers never reach progress:100,
-// and the "Converting Labelmap to Surface" toast hangs forever. Keyed by
-// segmentationId (not viewport) so several 3D viewports of the same segmentation
-// share a single conversion rather than each starting their own.
-const polySegConversionInProgressForSegmentation = new Set<string>();
+// The in-flight polySeg conversion per segmentationId, so concurrent renders
+// share one conversion instead of each starting their own.
+const polySegConversionBySegmentation = new Map<
+  string,
+  Promise<SurfaceSegmentationData>
+>();
 
 /**
  * It removes a segmentation representation from the tool group's viewports and
@@ -82,30 +80,29 @@ async function render(
     getPolySeg()?.canComputeRequestedRepresentation(
       segmentationId,
       Representations.Surface
-    ) &&
-    !polySegConversionInProgressForSegmentation.has(segmentationId)
+    )
   ) {
     // we need to check if we can request polySEG to convert the other
     // underlying representations to Surface
     const polySeg = getPolySeg();
 
-    polySegConversionInProgressForSegmentation.add(segmentationId);
+    let conversion = polySegConversionBySegmentation.get(segmentationId);
 
-    try {
-      SurfaceData = await computeAndAddRepresentation(
+    if (!conversion) {
+      conversion = computeAndAddRepresentation(
         segmentationId,
         Representations.Surface,
         () => polySeg.computeSurfaceData(segmentationId, { viewport })
-      );
-    } catch (error) {
-      console.warn(
-        'Unable to compute surface data for segmentationId',
-        segmentationId,
-        error
-      );
-    } finally {
-      polySegConversionInProgressForSegmentation.delete(segmentationId);
+      ).finally(() => {
+        polySegConversionBySegmentation.delete(segmentationId);
+      }) as Promise<SurfaceSegmentationData>;
+
+      polySegConversionBySegmentation.set(segmentationId, conversion);
     }
+
+    // The error reaches SegmentationRenderingEngine, which logs it and skips the
+    // default listener for a representation that holds no data.
+    SurfaceData = await conversion;
   } else if (!SurfaceData && !getPolySeg()) {
     cs3dLogger.debug(
       `No surface data found for segmentationId ${segmentationId} and PolySeg add-on is not configured. Unable to convert from other representations to surface. Please register PolySeg using cornerstoneTools.init({ addons: { polySeg } }) to enable automatic conversion.`

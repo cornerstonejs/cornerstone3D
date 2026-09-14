@@ -1,14 +1,11 @@
 import Representations from '../../../enums/SegmentationRepresentations';
 
-// The render() path reaches into a wide dependency graph; stub everything that
-// is not the guard so the test isolates the one behavior under test: how many
-// times a polySeg surface conversion is launched under concurrent renders.
-// jest.mock factories are hoisted, so every variable they touch must be
-// prefixed with `mock`.
+// jest.mock factories are hoisted, so every variable they touch needs a `mock`
+// prefix.
 const mockComputeAndAddRepresentation = jest.fn(
   () =>
     new Promise((resolve) =>
-      setTimeout(() => resolve({ geometryIds: new Map() }), 10)
+      setTimeout(() => resolve({ geometryIds: new Map([['geo-1', true]]) }), 10)
     )
 );
 const mockCanCompute = jest.fn(() => true);
@@ -16,10 +13,26 @@ const mockComputeSurfaceData = jest.fn();
 const mockGetSegmentation = jest.fn(() => ({
   representationData: {}, // no Surface yet -> conversion is attempted
 }));
+const mockGetGeometry = jest.fn(() => ({ data: { segmentIndex: 1 } }));
+const mockAddOrUpdateSurfaceToElement = jest.fn();
 
+// surfaceDisplay.ts builds its logger at module scope, and the hoisted import
+// runs before the consts above, so the logger is inlined here.
 jest.mock('@cornerstonejs/core', () => ({
-  cache: { getGeometry: jest.fn() },
+  cache: { getGeometry: (...a: unknown[]) => mockGetGeometry(...a) },
   getEnabledElementByViewportId: jest.fn(),
+  utilities: {
+    logger: {
+      toolsLog: {
+        getLogger: () => ({
+          debug: jest.fn(),
+          info: jest.fn(),
+          warn: jest.fn(),
+          error: jest.fn(),
+        }),
+      },
+    },
+  },
 }));
 jest.mock('./removeSurfaceFromElement', () => ({
   __esModule: true,
@@ -27,13 +40,13 @@ jest.mock('./removeSurfaceFromElement', () => ({
 }));
 jest.mock('./addOrUpdateSurfaceToElement', () => ({
   __esModule: true,
-  default: jest.fn(),
+  default: (...a: unknown[]) => mockAddOrUpdateSurfaceToElement(...a),
 }));
 jest.mock('../../../stateManagement/segmentation/getSegmentation', () => ({
   getSegmentation: (...a: unknown[]) => mockGetSegmentation(...a),
 }));
 jest.mock('../../../stateManagement/segmentation/getColorLUT', () => ({
-  getColorLUT: jest.fn(() => []),
+  getColorLUT: jest.fn(() => [null, [1, 2, 3, 255]]),
 }));
 jest.mock('../../../config', () => ({
   getPolySeg: () => ({
@@ -65,34 +78,37 @@ const representation = {
 } as never;
 
 beforeEach(() => {
-  mockComputeAndAddRepresentation.mockClear();
+  jest.clearAllMocks();
 });
 
 describe('surfaceDisplay.render polySeg conversion guard', () => {
   it('launches the conversion only once while it is still in progress (concurrent renders)', async () => {
     const viewport = makeViewport('vp-1');
 
-    // Two renders fire before the first conversion resolves — exactly what the
-    // stuck-toast bug does via repeated re-renders on a large segmentation.
     await Promise.all([
       render(viewport as never, representation),
       render(viewport as never, representation),
     ]);
 
-    // Without the guard this is 2 (concurrent conversions -> memory churn ->
-    // workers never reach progress:100 -> toast hangs). With it, it is 1.
     expect(mockComputeAndAddRepresentation).toHaveBeenCalledTimes(1);
   });
 
-  it('deduplicates across viewports: two 3D viewports of the same segmentation convert once', async () => {
-    // e.g. a 3D "four up" layout — several viewports render the same
-    // segmentation at once. Keyed by segmentationId, only one conversion runs.
+  it('shares one conversion across viewports, and every viewport still renders the surface', async () => {
+    const viewportA = makeViewport('vp-A');
+    const viewportB = makeViewport('vp-B');
+
     await Promise.all([
-      render(makeViewport('vp-A') as never, representation),
-      render(makeViewport('vp-B') as never, representation),
+      render(viewportA as never, representation),
+      render(viewportB as never, representation),
     ]);
 
     expect(mockComputeAndAddRepresentation).toHaveBeenCalledTimes(1);
+
+    // The viewport that does not start the conversion must await it, not skip
+    // its own render: a guard that only blocks leaves that viewport empty.
+    expect(mockAddOrUpdateSurfaceToElement).toHaveBeenCalledTimes(2);
+    expect(viewportA.render).toHaveBeenCalledTimes(1);
+    expect(viewportB.render).toHaveBeenCalledTimes(1);
   });
 
   it('is per-segmentation, not global: a different segmentation still converts', async () => {
@@ -111,6 +127,21 @@ describe('surfaceDisplay.render polySeg conversion guard', () => {
     await render(viewport as never, representation);
     await render(viewport as never, representation);
 
+    expect(mockComputeAndAddRepresentation).toHaveBeenCalledTimes(2);
+  });
+
+  it('propagates a conversion failure to the caller', async () => {
+    const boom = new Error('conversion failed');
+    mockComputeAndAddRepresentation.mockImplementationOnce(
+      () => Promise.reject(boom) as never
+    );
+
+    await expect(
+      render(makeViewport('vp-3') as never, representation)
+    ).rejects.toThrow('conversion failed');
+
+    // The failed conversion must not stay in the map and block later renders.
+    await render(makeViewport('vp-3') as never, representation);
     expect(mockComputeAndAddRepresentation).toHaveBeenCalledTimes(2);
   });
 });
