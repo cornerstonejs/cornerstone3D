@@ -10,7 +10,7 @@ import {
   createEllipseInPoint,
   getEllipseCornersFromCanvasCoordinates,
 } from './fillCircle';
-import { createSphereBrushFill } from './utils/brushVoxelSlab';
+import { applyBrushFill, createSphereBrushFill } from './utils/brushVoxelSlab';
 const { transformWorldToIndex, getNormalizedAspectRatio } = csUtils;
 import { getSphereBoundsInfoFromViewport } from '../../../utilities/getSphereBoundsInfo';
 import type { CanvasCoordinates } from '../../../types';
@@ -147,20 +147,26 @@ const sphereComposition = {
       viewRight,
       viewUp: normalizedViewUp,
       viewNormal: normalizedPlaneNormal,
+      // The same depth semi-axis that `createSphereBrushFill` uses, so the
+      // fallback predicate and the shape fill describe one solid.
+      depthRadius: Math.max(xRadius, yRadius),
     });
 
     // A sphere carries its own depth, so it reports the slab thickness it needs
     // and the view slab thickness never enters. The stroke centers sweep a tube
     // rather than a flat swept disc, which is what a sphere brush should paint.
-    operationData.brushVoxelSlabFill = createSphereBrushFill({
-      segmentationImageData,
-      viewUp: normalizedViewUp as unknown as Types.Point3,
-      viewPlaneNormal: normalizedPlaneNormal as Types.Point3,
-      centerWorld: operationData.centerWorld,
-      xRadius,
-      yRadius,
-      strokeCentersWorld: strokeCenters,
-    });
+    applyBrushFill(
+      operationData,
+      createSphereBrushFill({
+        segmentationImageData,
+        viewUp: normalizedViewUp as unknown as Types.Point3,
+        viewPlaneNormal: normalizedPlaneNormal as Types.Point3,
+        centerWorld: operationData.centerWorld,
+        xRadius,
+        yRadius,
+        strokeCentersWorld: strokeCenters,
+      })
+    );
   },
 } as Composition;
 

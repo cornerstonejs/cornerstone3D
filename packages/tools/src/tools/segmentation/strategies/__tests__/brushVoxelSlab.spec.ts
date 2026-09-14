@@ -3,6 +3,7 @@ import { utilities as csUtils } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 
 import {
+  createBrushFillPredicate,
   createCircleBrushFill,
   createRectangleBrushFill,
   createSphereBrushFill,
@@ -35,6 +36,17 @@ function makeImageData(
     getSpacing: () => spacing,
     getDirection: () => direction,
     getOrigin: () => origin,
+    indexToWorld: (ijk: Types.Point3, out?: Types.Point3) => {
+      const world = (out ?? [0, 0, 0]) as Types.Point3;
+      for (let axis = 0; axis < 3; axis++) {
+        world[axis] =
+          origin[axis] +
+          ijk[0] * spacing[0] * iVector[axis] +
+          ijk[1] * spacing[1] * jVector[axis] +
+          ijk[2] * spacing[2] * kVector[axis];
+      }
+      return world;
+    },
     // The direction rows are orthonormal, so the inverse is the transpose
     // divided by the spacing.
     worldToIndex: (world: Types.Point3) => {
@@ -576,6 +588,104 @@ describe('brushVoxelSlab', () => {
           ],
         })
       ).toBeNull();
+    });
+  });
+
+  describe('createBrushFillPredicate', () => {
+    const dimensions: Types.Point3 = [24, 24, 24];
+    const center: Types.Point3 = [12, 12, 12];
+
+    /** Every voxel inside the fill's bounds that the point test accepts. */
+    function selectByPredicate(
+      fill: ReturnType<typeof createCircleBrushFill>,
+      imageData: ReturnType<typeof makeImageData>,
+      { useWorld }: { useWorld: boolean }
+    ): string[] {
+      const predicate = createBrushFillPredicate(fill, imageData);
+      const [[iMin, iMax], [jMin, jMax], [kMin, kMax]] = fill.bounds;
+      const selected: string[] = [];
+
+      for (let k = kMin; k <= kMax; k++) {
+        for (let j = jMin; j <= jMax; j++) {
+          for (let i = iMin; i <= iMax; i++) {
+            const ijk = [i, j, k] as Types.Point3;
+            // `VoxelManager.forEach` passes a world point on the LPS branch and
+            // a null point on the other two branches.
+            const world = useWorld
+              ? (imageData.indexToWorld(ijk, [0, 0, 0] as Types.Point3) as
+                  | Types.Point3
+                  | undefined)
+              : null;
+            if (predicate(world ? ([...world] as Types.Point3) : null, ijk)) {
+              selected.push(ijk.join(','));
+            }
+          }
+        }
+      }
+
+      return selected;
+    }
+
+    // The fill paints through the iterator, and the erase, the overlap and the
+    // segment index paths test one point at a time. The two must select the
+    // same voxels.
+    const cases: Array<
+      [string, () => ReturnType<typeof createCircleBrushFill>]
+    > = [
+      [
+        'a circle on an oblique plane',
+        () =>
+          createCircleBrushFill({
+            segmentationImageData: makeImageData(dimensions),
+            viewUp: [0, 1, 0],
+            viewPlaneNormal: obliqueNormal(37),
+            centerWorld: center,
+            xRadius: 5,
+            yRadius: 5,
+          }),
+      ],
+      [
+        'a thick-slab circle',
+        () =>
+          createCircleBrushFill({
+            segmentationImageData: makeImageData(dimensions),
+            viewUp: [0, 1, 0],
+            viewPlaneNormal: [0, 0, 1],
+            centerWorld: center,
+            xRadius: 5,
+            yRadius: 5,
+            viewThicknessWorld: 6,
+          }),
+      ],
+      [
+        'a sphere',
+        () =>
+          createSphereBrushFill({
+            segmentationImageData: makeImageData(dimensions),
+            viewUp: [0, 1, 0],
+            viewPlaneNormal: obliqueNormal(23),
+            centerWorld: center,
+            xRadius: 4,
+            yRadius: 4,
+          }),
+      ],
+    ];
+
+    it.each(cases)('selects the voxels the fill paints, for %s', (_, build) => {
+      const fill = build();
+      const imageData = makeImageData(dimensions);
+      const painted = keys(collect(fill, dimensions)).sort();
+
+      expect(painted.length).toBeGreaterThan(0);
+
+      expect(
+        selectByPredicate(fill, imageData, { useWorld: true }).sort()
+      ).toEqual(painted);
+      // The index-only branch must agree with the world branch, which is what
+      // a half-voxel offset in the index conversion would break.
+      expect(
+        selectByPredicate(fill, imageData, { useWorld: false }).sort()
+      ).toEqual(painted);
     });
   });
 });

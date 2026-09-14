@@ -47,8 +47,10 @@ const {
   createUnionShape,
   getFillHalfWidth,
   getMembershipHalfWidth,
+  getSlabEpsilon,
   getVoxelThicknessAlongNormal,
   iterateVoxelsInShape,
+  signedDistanceToPlane,
 } = csUtils.voxelSlab;
 
 type VoxelSlabShape = csUtils.voxelSlab.VoxelSlabShape;
@@ -429,6 +431,92 @@ export function createRectangleBrushFill(operationData: {
 }
 
 /**
+ * A point test that selects the same voxels as {@link forEachBrushFillVoxel}.
+ *
+ * `regionFill` paints through the iterator, and the cross-layer erase, the
+ * labelmap overlap and the segment index paths each test one point at a time
+ * through `VoxelManager.forEach`. The two must agree. When they disagree,
+ * another layer loses the labels that the brush never painted, and keeps the
+ * labels that a thick-slab fill should have removed.
+ *
+ * `VoxelManager.forEach` calls the test as `(pointLPS, pointIJK)`, and the
+ * non-LPS branches pass a null `pointLPS`, so the test converts the index
+ * itself. `imageData.indexToWorld` gives the voxel centre already.
+ *
+ * @param fill - The fill that `regionFill` paints.
+ * @param imageData - The labelmap image data, for the index conversion.
+ */
+export function createBrushFillPredicate(
+  fill: BrushVoxelSlabFill,
+  imageData?: vtkImageData
+): (pointLPS: Types.Point3 | null, pointIJK?: Types.Point3) => boolean {
+  const { planePoint, viewPlaneNormal, membershipHalfWidth, shape } = fill;
+
+  // The same interval that `buildIndexSpaceSlab` gives the iterator: the
+  // epsilon shifts a half-open interval and narrows an open one.
+  const epsilon = getSlabEpsilon(
+    getVoxelThicknessAlongNormal(fill.volume, viewPlaneNormal)
+  );
+  const halfOpen = fill.depthInterval === 'half-open';
+  const depthLow = halfOpen
+    ? -membershipHalfWidth - epsilon
+    : -membershipHalfWidth + epsilon;
+  const depthHigh = membershipHalfWidth - epsilon;
+
+  const scratch: Types.Point3 = [0, 0, 0];
+
+  return (pointLPS: Types.Point3 | null, pointIJK?: Types.Point3): boolean => {
+    let world = pointLPS;
+
+    if (!world) {
+      if (!pointIJK || !imageData) {
+        return false;
+      }
+      world = imageData.indexToWorld(
+        pointIJK as unknown as vec3,
+        scratch as unknown as vec3
+      ) as unknown as Types.Point3;
+    }
+
+    const depth = signedDistanceToPlane(world, planePoint, viewPlaneNormal);
+    const withinDepth = halfOpen
+      ? depth >= depthLow && depth < depthHigh
+      : depth > depthLow && depth < depthHigh;
+
+    return withinDepth && shape.containsPoint(world);
+  };
+}
+
+/**
+ * Records a fill on the operation data, together with the point test and the
+ * bounds that every other composition reads.
+ *
+ * A brush strategy calls this instead of assigning `brushVoxelSlabFill`, so
+ * that the fill and `isInObject` never describe two different regions. A null
+ * fill leaves the operation data as it is, and the bounding-box walk stands.
+ */
+export function applyBrushFill(
+  operationData: {
+    segmentationImageData?: vtkImageData;
+    brushVoxelSlabFill?: BrushVoxelSlabFill | null;
+    isInObject?: (pointLPS, pointIJK) => boolean;
+    isInObjectBoundsIJK?: Types.BoundsIJK;
+  },
+  fill: BrushVoxelSlabFill | null
+): void {
+  if (!fill) {
+    return;
+  }
+
+  operationData.brushVoxelSlabFill = fill;
+  operationData.isInObject = createBrushFillPredicate(
+    fill,
+    operationData.segmentationImageData
+  );
+  operationData.isInObjectBoundsIJK = fill.bounds;
+}
+
+/**
  * Visits every voxel of a brush fill, in the callback shape that
  * `VoxelManager.forEach` uses.
  *
@@ -459,15 +547,21 @@ export function forEachBrushFillVoxel(
   // less than one voxel thickness.
   const debug = (brushFillLog.getLevel?.() ?? 5) <= 1;
   const depths: number[] = [];
+  // Accumulated in the loop. `Math.max(...depths)` throws a RangeError once a
+  // thick-slab fill holds enough voxels to overflow the argument stack.
+  let minDepth = Infinity;
+  let maxDepth = -Infinity;
   let painted = 0;
 
   for (const { ijk, center } of iteration) {
     if (debug) {
-      depths.push(
+      const depth =
         (center[0] - fill.planePoint[0]) * fill.viewPlaneNormal[0] +
-          (center[1] - fill.planePoint[1]) * fill.viewPlaneNormal[1] +
-          (center[2] - fill.planePoint[2]) * fill.viewPlaneNormal[2]
-      );
+        (center[1] - fill.planePoint[1]) * fill.viewPlaneNormal[1] +
+        (center[2] - fill.planePoint[2]) * fill.viewPlaneNormal[2];
+      depths.push(depth);
+      minDepth = Math.min(minDepth, depth);
+      maxDepth = Math.max(maxDepth, depth);
     }
     painted++;
 
@@ -488,6 +582,12 @@ export function forEachBrushFillVoxel(
     return;
   }
 
+  // An empty fill has no depth at all, and the span below would be NaN.
+  if (!painted) {
+    brushFillLog.debug('brush fill painted=0');
+    return;
+  }
+
   const voxelThickness = getVoxelThicknessAlongNormal(
     fill.volume,
     fill.viewPlaneNormal
@@ -500,7 +600,7 @@ export function forEachBrushFillVoxel(
 
   // A single digital plane gives a span below 1. A span at or above 1 means
   // the fill wrote into the neighbouring plane.
-  const span = (Math.max(...depths) - Math.min(...depths)) / voxelThickness;
+  const span = (maxDepth - minDepth) / voxelThickness;
 
   brushFillLog.debug(
     `brush fill painted=${painted} T_v=${voxelThickness.toFixed(4)} ` +
@@ -512,8 +612,8 @@ export function forEachBrushFillVoxel(
       `distinctLayers=${sorted.length} ` +
       `${span < 1 ? 'ONE PLANE' : 'MORE THAN ONE PLANE'}`,
     {
-      minDepth: Math.min(...depths),
-      maxDepth: Math.max(...depths),
+      minDepth,
+      maxDepth,
       layersInVoxels: sorted.length <= 24 ? sorted : `${sorted.length} values`,
       planePoint: fill.planePoint,
       viewPlaneNormal: fill.viewPlaneNormal,

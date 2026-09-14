@@ -11,7 +11,7 @@ import type { CanvasCoordinates } from '../../../types';
 import { StrategyCallbacks } from '../../../enums';
 import compositions from './compositions';
 import { pointInSphere } from '../../../utilities/math/sphere';
-import { createCircleBrushFill } from './utils/brushVoxelSlab';
+import { applyBrushFill, createCircleBrushFill } from './utils/brushVoxelSlab';
 import { getViewSlabDepthOfViewport } from '../../../utilities/genericViewportToolHelpers';
 
 const {
@@ -20,8 +20,6 @@ const {
   isEqual,
   getNormalizedAspectRatio,
 } = csUtils;
-
-const VOXEL_CENTER_OFFSET = 0.5;
 
 /**
  * Returns the corners of an ellipse in canvas coordinates.
@@ -292,16 +290,19 @@ const initializeCircle = {
     // "circle" paints all voxels through the thickness. A thin view reports
     // undefined, and the fill falls back to one voxel along the normal.
     const viewThicknessWorld = getViewSlabDepthOfViewport(viewport);
-    operationData.brushVoxelSlabFill = createCircleBrushFill({
-      segmentationImageData,
-      viewUp: normalizedViewUp as Types.Point3,
-      viewPlaneNormal: normalizedPlaneNormal as Types.Point3,
-      centerWorld: operationData.centerWorld,
-      xRadius,
-      yRadius,
-      strokeCentersWorld: strokeCenters,
-      viewThicknessWorld,
-    });
+    applyBrushFill(
+      operationData,
+      createCircleBrushFill({
+        segmentationImageData,
+        viewUp: normalizedViewUp as Types.Point3,
+        viewPlaneNormal: normalizedPlaneNormal as Types.Point3,
+        centerWorld: operationData.centerWorld,
+        xRadius,
+        yRadius,
+        strokeCentersWorld: strokeCenters,
+        viewThicknessWorld,
+      })
+    );
   },
 } as Composition;
 
@@ -324,6 +325,12 @@ function createPointInEllipse(
     viewRight?: vec3;
     viewUp?: vec3;
     viewNormal?: vec3;
+    /**
+     * Semi-axis along the normal, in mm. Supply it for a shape that reaches out
+     * of the plane, such as a sphere brush. Omit it for a flat disc, which is
+     * what a circle brush paints.
+     */
+    depthRadius?: number;
   } = {}
 ) {
   if (!cornersInWorld || cornersInWorld.length !== 4) {
@@ -334,13 +341,6 @@ function createPointInEllipse(
   const aspectRatio = options.aspectRatio || [1, 1];
   const segmentationImageData = options.segmentationImageData;
   const { viewRight, viewUp, viewNormal } = options;
-
-  const toVoxelCenterIJK = (pointIJK: Types.Point3): Types.Point3 =>
-    [
-      pointIJK[0] + VOXEL_CENTER_OFFSET,
-      pointIJK[1] + VOXEL_CENTER_OFFSET,
-      pointIJK[2] + VOXEL_CENTER_OFFSET,
-    ] as Types.Point3;
 
   const spacing = segmentationImageData?.getSpacing?.();
   const direction = segmentationImageData?.getDirection?.();
@@ -376,6 +376,10 @@ function createPointInEllipse(
   const yRadius = originalRadius / aspectRatio[1];
   const invXRadiusSquared = 1 / (xRadius * xRadius);
   const invYRadiusSquared = 1 / (yRadius * yRadius);
+  const invZRadiusSquared =
+    options.depthRadius > 0
+      ? 1 / (options.depthRadius * options.depthRadius)
+      : null;
 
   // If radii are equal, treat as sphere
   const xRadiusForStroke = options.xRadius ?? xRadius;
@@ -386,7 +390,13 @@ function createPointInEllipse(
     yRadiusForStroke
   );
 
-  if (isEqual(xRadius, yRadius)) {
+  // The fast path is a true sphere only when all three semi-axes agree. A
+  // depth radius of its own sends the shape to the ellipsoid branch below.
+  const isSphere =
+    isEqual(xRadius, yRadius) &&
+    (invZRadiusSquared === null || isEqual(options.depthRadius, xRadius));
+
+  if (isSphere) {
     const radius = xRadius;
     const sphereObj = {
       center,
@@ -400,9 +410,11 @@ function createPointInEllipse(
       // world position once here instead of forcing callers to do the
       // conversion (the previous code re-did this work on every sample).
       if (!worldPoint && pointIJK && options.segmentationImageData) {
+        // `indexToWorld` returns the voxel centre already, so the index needs
+        // no half-voxel offset.
         worldPoint = transformIndexToWorld(
           options.segmentationImageData,
-          toVoxelCenterIJK(pointIJK as Types.Point3)
+          pointIJK as Types.Point3
         ) as Types.Point3;
       }
 
@@ -425,7 +437,7 @@ function createPointInEllipse(
     if (!worldPoint && pointIJK && options.segmentationImageData) {
       worldPoint = transformIndexToWorld(
         options.segmentationImageData,
-        toVoxelCenterIJK(pointIJK as Types.Point3)
+        pointIJK as Types.Point3
       ) as Types.Point3;
     }
 
@@ -451,12 +463,18 @@ function createPointInEllipse(
     const xTerm = xDist * xDist * invXRadiusSquared;
     const yTerm = yDist * yDist * invYRadiusSquared;
 
-    if (xTerm + yTerm <= 1) {
-      // Depth Check (Z-axis)
-      // Ensure the voxel is physically close to the plane we are looking at
-      const zDist = Math.abs(vec3.dot(pointVec, viewNormal));
+    const zDist = vec3.dot(pointVec, viewNormal);
 
-      return zDist <= planeTolerance;
+    // A shape with a depth radius is an ellipsoid, so the normal joins the
+    // ellipse equation as a third term. `fillSphere` reuses this function, and
+    // a plane tolerance would flatten its sphere into a disc.
+    if (invZRadiusSquared !== null) {
+      return xTerm + yTerm + zDist * zDist * invZRadiusSquared <= 1;
+    }
+
+    if (xTerm + yTerm <= 1) {
+      // A flat disc: keep the voxel only when it lies close to the plane.
+      return Math.abs(zDist) <= planeTolerance;
     }
 
     return false;
