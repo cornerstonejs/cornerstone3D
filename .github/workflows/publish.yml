@@ -8,6 +8,16 @@ name: Publish to npm
 # as its trusted publisher on npmjs.com, so a rename of this file stops the
 # publish until the name is changed there as well.
 #
+# The version commit and the tag go to main BEFORE npm sees the packages. git
+# can reject a push, and npm cannot take a version back, so the step that can
+# fail cheaply runs first. A rejected push therefore costs nothing: npm holds
+# nothing yet, and the next run releases the same changes.
+#
+# The state that remains is a tag that npm does not hold yet. That state
+# repairs itself: main carries the version, so a re-run publishes exactly that
+# version rather than a new one. The run for a version commit is the `recover`
+# mode below.
+#
 # The version commit and the tag are pushed with GITHUB_TOKEN. GitHub does not
 # start a workflow for such a push, so this workflow does not re-trigger itself.
 
@@ -45,49 +55,41 @@ jobs:
           # does not keep it. The push step supplies the credential itself.
           persist-credentials: false
 
-      # This run holds `github.sha`, which is not the tip of main when a second
-      # change lands first. Such a run must publish nothing: it would build the
-      # version commit on a parent that is not the tip, npm would accept the
-      # packages, and git would then reject the push. npm would hold a version
-      # with no commit, no tag and no release.
+      # Three modes:
       #
-      # The run that holds the tip publishes instead, and it carries the changes
-      # of this one. A change that lands *during* a publish is the exception:
-      # the push step then rebases, and the run for that change sees a tip that
-      # is the version commit and skips. That change waits for the next merge.
-      #
-      # Every step below is gated, so a run that holds no tip does no install
-      # and no build.
-      - name: Check that this run holds something to publish
-        id: tip
+      #   skip     This run holds `github.sha`, and main has moved past it. The
+      #            run that holds the tip releases, and it carries these changes.
+      #   recover  The tip is a version commit. git holds that version already,
+      #            so this run takes no new version: it publishes whatever npm
+      #            still lacks of the version that main carries. A release that
+      #            npm already holds in full makes this run do nothing.
+      #   release  The normal path.
+      - name: Choose the mode for this run
+        id: mode
         run: |
           git fetch --no-tags origin main
-          PUBLISH=true
+          MODE=release
 
           if [ "$(git rev-parse HEAD)" != "$(git rev-parse FETCH_HEAD)" ]; then
-            PUBLISH=false
-            echo "::notice::main moved past ${GITHUB_SHA}. The run that holds the tip publishes."
+            MODE=skip
+            echo "::notice::main moved past ${GITHUB_SHA}. The run that holds the tip releases."
+          else
+            case "$(git log -1 --pretty=%s)" in
+              'chore(version): Update package versions'*)
+                MODE=recover
+                echo "::notice::The tip is a version commit. This run publishes what npm still lacks of it."
+                ;;
+            esac
           fi
 
-          # A push of the version commit starts no run, because GITHUB_TOKEN
-          # pushes it. A manual run is the exception: it would read the message
-          # of that commit, find no `feat`, and publish 11 packages that carry
-          # no change of any kind.
-          case "$(git log -1 --pretty=%s)" in
-            'chore(version): Update package versions'*)
-              PUBLISH=false
-              echo "::notice::The tip is the version commit of the release that already happened. Nothing is new."
-              ;;
-          esac
-
-          echo "publish=${PUBLISH}" >> "$GITHUB_OUTPUT"
+          echo "mode=${MODE}" >> "$GITHUB_OUTPUT"
 
       - name: Setup pnpm
-        if: steps.tip.outputs.publish == 'true'
+        if: steps.mode.outputs.mode != 'skip'
         uses: pnpm/action-setup@v6.0.8
 
       - name: Setup Node.js
-        if: steps.tip.outputs.publish == 'true'
+        if: steps.mode.outputs.mode != 'skip'
         uses: actions/setup-node@v6.4.0
         with:
           node-version: '24.15.0'
@@ -99,45 +101,54 @@ jobs:
       # this pin, and never let it float: `npm@latest` is npm 12 now, and a
       # publish is not the place to meet an untested major version.
       - name: Update npm
-        if: steps.tip.outputs.publish == 'true'
+        if: steps.mode.outputs.mode != 'skip'
         run: |
           npm install --global npm@11.19.0
           npm --version
 
       - name: Install dependencies
-        if: steps.tip.outputs.publish == 'true'
+        if: steps.mode.outputs.mode != 'skip'
         run: pnpm install --frozen-lockfile
 
       - name: Compute the next version
-        if: steps.tip.outputs.publish == 'true'
+        if: steps.mode.outputs.mode == 'release'
         run: node ./version.mjs
 
       - name: Build
-        if: steps.tip.outputs.publish == 'true'
+        if: steps.mode.outputs.mode != 'skip'
         run: pnpm run build
 
       - name: Identify the committer
-        if: steps.tip.outputs.publish == 'true'
+        if: steps.mode.outputs.mode == 'release'
         run: |
           git config user.email "contact@ohif.org"
           git config user.name "ohif-bot"
 
       - name: Set the package versions, commit and tag
-        if: steps.tip.outputs.publish == 'true'
+        if: steps.mode.outputs.mode == 'release'
         run: node ./publish-version.mjs
 
-      - name: Publish to npm
-        if: steps.tip.outputs.publish == 'true'
-        run: node ./publish-package.mjs
+      # Every package of the release carries one version, so the manifest of
+      # core names it. A `recover` run reads the version that main already
+      # carries, and a `release` run reads the version it has just written.
+      - name: Read the version of this release
+        id: release
+        if: steps.mode.outputs.mode != 'skip'
+        run: |
+          VERSION="$(node -p "require('./packages/core/package.json').version")"
+          echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Releasing v${VERSION}"
 
-      # Only after npm accepts the packages. A failed publish therefore leaves
-      # no tag, and no GitHub Release, for a version that npm does not hold.
+      # Before npm, on purpose. git rejects this push when a change lands on
+      # main during the run, and npm holds nothing at that point, so the run
+      # stops with no trace. The change of this run reaches npm through the run
+      # for the next merge.
       - name: Push the version commit and the tag
-        if: steps.tip.outputs.publish == 'true'
+        if: steps.mode.outputs.mode == 'release'
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          TAG="v$(cat version.txt)"
+          TAG='${{ steps.release.outputs.tag }}'
           REMOTE="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
 
           # One push for both refs. GitHub takes both refs, or it takes neither,
@@ -146,30 +157,21 @@ jobs:
             exit 0
           fi
 
-          # A change landed on main while npm accepted the packages. The
-          # packages are public now, so the commit and the tag have to follow.
-          echo "The push failed. Moving the version commit onto the tip of main."
-          git fetch --no-tags origin main
+          echo "::error::A change landed on main during this run, so git rejected the push of ${TAG}. npm holds nothing for this version, and nothing is stranded. The run for the next merge releases these changes."
+          exit 1
 
-          if ! git rebase FETCH_HEAD; then
-            git rebase --abort || true
-            echo "::error::npm holds ${TAG}, and git holds no tag for it. The version commit does not rebase onto the tip of main, so an operator must finish this release by hand: create the tag ${TAG} on a commit that carries these package versions, and create the release for it."
-            exit 1
-          fi
-
-          git -c tag.gpgsign=false tag -f "$TAG"
-          git push --atomic "$REMOTE" HEAD:main "$TAG"
-
-          echo "::warning::${TAG} moved onto a newer tip of main. The tag therefore names a change that the published packages do not carry, and that change gets no release of its own until the next merge."
+      - name: Publish to npm
+        if: steps.mode.outputs.mode != 'skip'
+        run: node ./publish-package.mjs
 
       - name: Create the GitHub release
-        if: steps.tip.outputs.publish == 'true'
+        if: steps.mode.outputs.mode != 'skip'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="v$(cat version.txt)"
+          TAG='${{ steps.release.outputs.tag }}'
 
-          # A re-run of this job must not fail on a release that exists.
+          # A `recover` run reaches a release that exists, and so does a re-run.
           if gh release view "$TAG" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
             echo "The release $TAG exists already."
             exit 0
