@@ -1,16 +1,12 @@
 import fs from 'fs/promises';
-import path from 'path';
-import { glob } from 'glob';
+import { execa } from 'execa';
 
 // The release covers `packages/*` only. `addOns/*` are workspace members that
 // this repository does not publish.
-const RELEASE_GLOB = 'packages/*';
+const PACKAGES_ROOT = 'packages';
 
-/** `glob` answers the separator of the platform. Paths stay POSIX here. */
-const toPosix = (value) => value.split(path.sep).join('/');
-
-async function readPackage(directory) {
-  const dir = toPosix(directory);
+async function readPackage(name) {
+  const dir = `${PACKAGES_ROOT}/${name}`;
   const manifestPath = `${dir}/package.json`;
 
   try {
@@ -29,7 +25,11 @@ async function readPackage(directory) {
  * a published package, and those ranges move with each release.
  */
 export async function getAllPackages() {
-  const directories = glob.sync(RELEASE_GLOB).sort();
+  const entries = await fs.readdir(PACKAGES_ROOT, { withFileTypes: true });
+  const directories = entries
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
   const packages = await Promise.all(directories.map(readPackage));
 
   return packages.filter(Boolean);
@@ -54,4 +54,44 @@ export async function getPublishablePackages() {
   const packages = await getAllPackages();
 
   return packages.filter(isPublishable);
+}
+
+/**
+ * True when the registry already holds this exact version.
+ *
+ * npm answers `E404` for a version that it does not hold, and it answers the
+ * same code for a name that it does not hold. Every other failure - a network
+ * fault, or a 5xx answer - says nothing about the version. Such a failure
+ * therefore throws, because an answer of "not published" would turn a fault of
+ * one minute into a release that stops halfway.
+ */
+export async function isPublished(name, version) {
+  try {
+    await execa('npm', ['view', `${name}@${version}`, 'version']);
+    return true;
+  } catch (error) {
+    const output = `${error.stderr ?? ''}\n${error.stdout ?? ''}`;
+
+    if (/\bE404\b|404 Not Found/.test(output)) {
+      return false;
+    }
+
+    throw new Error(
+      `Cannot read the registry for ${name}@${version}: ` +
+        `${error.shortMessage ?? error.message}`
+    );
+  }
+}
+
+/** The packages of the given set that npm does not hold at their version. */
+export async function findUnpublished(packages) {
+  const missing = [];
+
+  for (const entry of packages) {
+    if (!(await isPublished(entry.name, entry.manifest.version))) {
+      missing.push(`${entry.name}@${entry.manifest.version}`);
+    }
+  }
+
+  return missing;
 }

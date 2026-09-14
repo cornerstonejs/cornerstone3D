@@ -55,41 +55,26 @@ jobs:
           # does not keep it. The push step supplies the credential itself.
           persist-credentials: false
 
-      # Three modes:
-      #
-      #   skip     This run holds `github.sha`, and main has moved past it. The
-      #            run that holds the tip releases, and it carries these changes.
-      #   recover  The tip is a version commit. git holds that version already,
-      #            so this run takes no new version: it publishes whatever npm
-      #            still lacks of the version that main carries. A release that
-      #            npm already holds in full makes this run do nothing.
-      #   release  The normal path.
-      - name: Choose the mode for this run
-        id: mode
+      # A run holds `github.sha`, and main has moved past it when a second
+      # change lands first. The run that holds the tip releases, and it carries
+      # the changes of this one, so this one does nothing at all.
+      - name: Check that this run holds the tip of main
+        id: tip
         run: |
           git fetch --no-tags origin main
-          MODE=release
-
-          if [ "$(git rev-parse HEAD)" != "$(git rev-parse FETCH_HEAD)" ]; then
-            MODE=skip
-            echo "::notice::main moved past ${GITHUB_SHA}. The run that holds the tip releases."
+          if [ "$(git rev-parse HEAD)" = "$(git rev-parse FETCH_HEAD)" ]; then
+            echo 'proceed=true' >> "$GITHUB_OUTPUT"
           else
-            case "$(git log -1 --pretty=%s)" in
-              'chore(version): Update package versions'*)
-                MODE=recover
-                echo "::notice::The tip is a version commit. This run publishes what npm still lacks of it."
-                ;;
-            esac
+            echo 'proceed=false' >> "$GITHUB_OUTPUT"
+            echo "::notice::main moved past ${GITHUB_SHA}. The run that holds the tip releases."
           fi
 
-          echo "mode=${MODE}" >> "$GITHUB_OUTPUT"
-
       - name: Setup pnpm
-        if: steps.mode.outputs.mode != 'skip'
+        if: steps.tip.outputs.proceed == 'true'
         uses: pnpm/action-setup@v6.0.8
 
       - name: Setup Node.js
-        if: steps.mode.outputs.mode != 'skip'
+        if: steps.tip.outputs.proceed == 'true'
         uses: actions/setup-node@v6.4.0
         with:
           node-version: '24.15.0'
@@ -101,21 +86,48 @@ jobs:
       # this pin, and never let it float: `npm@latest` is npm 12 now, and a
       # publish is not the place to meet an untested major version.
       - name: Update npm
-        if: steps.mode.outputs.mode != 'skip'
+        if: steps.tip.outputs.proceed == 'true'
         run: |
           npm install --global npm@11.19.0
           npm --version
 
       - name: Install dependencies
-        if: steps.mode.outputs.mode != 'skip'
+        if: steps.tip.outputs.proceed == 'true'
         run: pnpm install --frozen-lockfile
+
+      # `release` takes a new version. `recover` publishes the version that main
+      # carries already, and takes no new version. Two things force `recover`:
+      #
+      #   - The tip is a version commit. A push of one starts no run, because
+      #     GITHUB_TOKEN pushes it, so only a manual run reaches this. Bumping
+      #     there would publish 11 packages that carry no change.
+      #   - npm does not hold the version that main carries. A new version on
+      #     top of that one would leave the first as a tag npm never receives,
+      #     and every merge after it would do the same. The release heals first.
+      - name: Choose the mode for this run
+        id: mode
+        if: steps.tip.outputs.proceed == 'true'
+        run: |
+          case "$(git log -1 --pretty=%s)" in
+            'chore(version): Update package versions'*)
+              echo "::notice::The tip is a version commit, so this run takes no new version."
+              echo 'mode=recover' >> "$GITHUB_OUTPUT"
+              exit 0
+              ;;
+          esac
+
+          MODE="$(node ./scripts/release-mode.mjs)"
+          if [ "$MODE" = 'recover' ]; then
+            echo "::warning::npm does not hold the version that main carries. This run publishes that version, and it takes no new one, so one broken release cannot leave a tag for every merge after it."
+          fi
+          echo "mode=${MODE}" >> "$GITHUB_OUTPUT"
 
       - name: Compute the next version
         if: steps.mode.outputs.mode == 'release'
         run: node ./version.mjs
 
       - name: Build
-        if: steps.mode.outputs.mode != 'skip'
+        if: steps.tip.outputs.proceed == 'true'
         run: pnpm run build
 
       - name: Identify the committer
@@ -133,7 +145,7 @@ jobs:
       # carries, and a `release` run reads the version it has just written.
       - name: Read the version of this release
         id: release
-        if: steps.mode.outputs.mode != 'skip'
+        if: steps.tip.outputs.proceed == 'true'
         run: |
           VERSION="$(node -p "require('./packages/core/package.json').version")"
           echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
@@ -161,11 +173,11 @@ jobs:
           exit 1
 
       - name: Publish to npm
-        if: steps.mode.outputs.mode != 'skip'
+        if: steps.tip.outputs.proceed == 'true'
         run: node ./publish-package.mjs
 
       - name: Create the GitHub release
-        if: steps.mode.outputs.mode != 'skip'
+        if: steps.tip.outputs.proceed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

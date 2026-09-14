@@ -1,38 +1,14 @@
 import { execa } from 'execa';
-import { getPublishablePackages } from './scripts/workspace-packages.mjs';
+import {
+  getPublishablePackages,
+  isPublished,
+} from './scripts/workspace-packages.mjs';
 
 // Publishes each package that npm does not already hold at its current version.
 //
 // The npm CLI does the publish, and not a library, because the CLI is what
 // exchanges the GitHub Actions OIDC token for npm credentials. npm trusted
 // publishing needs npm 11.5.1 or later.
-
-/**
- * True when the registry already holds this exact version.
- *
- * npm answers `E404` for a version that it does not hold, and it answers the
- * same code for a name that it does not hold. Every other failure - a network
- * fault, or a 5xx answer - says nothing about the version. Such a failure
- * therefore throws, because an answer of "not published" would turn a fault of
- * one minute into a release that stops halfway.
- */
-async function isPublished(name, version) {
-  try {
-    await execa('npm', ['view', `${name}@${version}`, 'version']);
-    return true;
-  } catch (error) {
-    const output = `${error.stderr ?? ''}\n${error.stdout ?? ''}`;
-
-    if (/\bE404\b|404 Not Found/.test(output)) {
-      return false;
-    }
-
-    throw new Error(
-      `Cannot read the registry for ${name}@${version}: ` +
-        `${error.shortMessage ?? error.message}`
-    );
-  }
-}
 
 async function run() {
   const { stdout: branchName } = await execa('git', [
