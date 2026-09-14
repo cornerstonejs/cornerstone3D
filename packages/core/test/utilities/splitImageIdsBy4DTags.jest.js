@@ -3,6 +3,7 @@ import {
   generateFrameImageId,
 } from '../../src/utilities/splitImageIdsBy4DTags';
 import { metaData } from '@cornerstonejs/metadata';
+import { logging } from '@cornerstonejs/utils';
 import {
   describe,
   it,
@@ -115,7 +116,12 @@ describe('splitImageIdsBy4DTags - Multiframe 4D Functions', () => {
     });
 
     it('should return null when TimeSlotVector length does not match NumberOfFrames', () => {
-      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const loggerWarnSpy = jest
+        .spyOn(
+          logging.metadataLog.getLogger('utilities.splitImageIdsBy4DTags'),
+          'warn'
+        )
+        .mockImplementation();
       mockMetaDataGet.mockReturnValue({
         NumberOfFrames: 4,
         TimeSlotVector: [1, 1, 2],
@@ -123,18 +129,23 @@ describe('splitImageIdsBy4DTags - Multiframe 4D Functions', () => {
       const result = handleMultiframe4D([baseImageId]);
 
       expect(result).toBeNull();
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
+      expect(loggerWarnSpy).toHaveBeenCalledWith(
         'TimeSlotVector length does not match NumberOfFrames:',
         3,
         'vs',
         4
       );
 
-      consoleWarnSpy.mockRestore();
+      loggerWarnSpy.mockRestore();
     });
 
     it('should return null when SliceVector length does not match NumberOfFrames', () => {
-      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const loggerWarnSpy = jest
+        .spyOn(
+          logging.metadataLog.getLogger('utilities.splitImageIdsBy4DTags'),
+          'warn'
+        )
+        .mockImplementation();
       mockMetaDataGet.mockReturnValue({
         NumberOfFrames: 4,
         TimeSlotVector: [1, 1, 2, 2],
@@ -143,18 +154,23 @@ describe('splitImageIdsBy4DTags - Multiframe 4D Functions', () => {
       const result = handleMultiframe4D([baseImageId]);
 
       expect(result).toBeNull();
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
+      expect(loggerWarnSpy).toHaveBeenCalledWith(
         'SliceVector exists but has invalid length or undefined entries. Expected length:',
         4,
         'Actual length:',
         3
       );
 
-      consoleWarnSpy.mockRestore();
+      loggerWarnSpy.mockRestore();
     });
 
     it('should return null when SliceVector has undefined entries', () => {
-      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const loggerWarnSpy = jest
+        .spyOn(
+          logging.metadataLog.getLogger('utilities.splitImageIdsBy4DTags'),
+          'warn'
+        )
+        .mockImplementation();
       mockMetaDataGet.mockReturnValue({
         NumberOfFrames: 4,
         TimeSlotVector: [1, 1, 2, 2],
@@ -163,18 +179,23 @@ describe('splitImageIdsBy4DTags - Multiframe 4D Functions', () => {
       const result = handleMultiframe4D([baseImageId]);
 
       expect(result).toBeNull();
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
+      expect(loggerWarnSpy).toHaveBeenCalledWith(
         'SliceVector exists but has invalid length or undefined entries. Expected length:',
         4,
         'Actual length:',
         4
       );
 
-      consoleWarnSpy.mockRestore();
+      loggerWarnSpy.mockRestore();
     });
 
     it('should return null when SliceVector is not an array', () => {
-      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const loggerWarnSpy = jest
+        .spyOn(
+          logging.metadataLog.getLogger('utilities.splitImageIdsBy4DTags'),
+          'warn'
+        )
+        .mockImplementation();
       mockMetaDataGet.mockReturnValue({
         NumberOfFrames: 4,
         TimeSlotVector: [1, 1, 2, 2],
@@ -183,12 +204,12 @@ describe('splitImageIdsBy4DTags - Multiframe 4D Functions', () => {
       const result = handleMultiframe4D([baseImageId]);
 
       expect(result).toBeNull();
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
+      expect(loggerWarnSpy).toHaveBeenCalledWith(
         'SliceVector exists but is not an array. Expected length:',
         4
       );
 
-      consoleWarnSpy.mockRestore();
+      loggerWarnSpy.mockRestore();
     });
   });
 });

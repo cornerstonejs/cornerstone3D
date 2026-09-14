@@ -494,22 +494,33 @@ class StackViewport extends Viewport {
 
       return renderPasses.length ? renderPasses : null;
     } catch (e) {
-      console.warn('Failed to create custom render passes:', e);
+      log.warn('Failed to create custom render passes:', e);
       return null;
     }
   };
 
   private initializeElementDisabledHandler() {
+    // Cancel the pending debounced frame change (see `scroll`) when this
+    // viewport is torn down, so its `setImageIdIndex` timer never fires against
+    // a destroyed viewport (which throws from `_throwIfDestroyed`).
+    //
+    // An arrow function is required so `this` is the viewport rather than the
+    // event target, and the listener must act only on ITS OWN element: this is
+    // a single global listener per viewport, so without the guard the first
+    // ELEMENT_DISABLED of any viewport would remove every viewport's handler.
+    const elementDisabledHandler = (evt: EventTypes.ElementDisabledEvent) => {
+      if (evt.detail?.element !== this.element) {
+        return;
+      }
+      clearTimeout(this.debouncedTimeout);
+      eventTarget.removeEventListener(
+        Events.ELEMENT_DISABLED,
+        elementDisabledHandler as EventListener
+      );
+    };
     eventTarget.addEventListener(
       Events.ELEMENT_DISABLED,
-      function elementDisabledHandler() {
-        clearTimeout(this.debouncedTimeout);
-
-        eventTarget.removeEventListener(
-          Events.ELEMENT_DISABLED,
-          elementDisabledHandler
-        );
-      }
+      elementDisabledHandler as EventListener
     );
   }
 
@@ -2432,7 +2443,7 @@ class StackViewport extends Viewport {
 
   private _loadAndDisplayImageGPU(imageId: string, imageIdIndex: number) {
     if (!imageId) {
-      console.warn('No image id set yet to load');
+      log.warn('No image id set yet to load');
       return;
     }
     const eventDetail: EventTypes.PreStackNewImageEventDetail = {

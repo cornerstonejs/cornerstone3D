@@ -9,6 +9,11 @@ import { getDeduplicatedVTKPolyDataPoints } from '../utilities/contours/getDedup
 import { findContoursFromReducedSet } from '../utilities/contours/contourFinder';
 import { createBidirectionalForSlice } from '../utilities/segmentation/findLargestBidirectional';
 import { createIsInSegmentMetadata } from '../utilities/segmentation/isLineInSegment';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'workers.computeWorker'
+);
 
 const { VoxelManager } = utilities;
 
@@ -425,7 +430,7 @@ const computeWorker = {
             sliceContours.push(contourData);
           }
         } catch (e) {
-          console.warn(e);
+          cs3dLogger.warn(e);
         }
 
         // Create isInSegment helper
@@ -596,8 +601,8 @@ const computeWorker = {
             sliceContours.push(contourData);
           }
         } catch (e) {
-          console.warn(sliceIndex);
-          console.warn(e);
+          cs3dLogger.warn(sliceIndex);
+          cs3dLogger.warn(e);
         }
       }
 
