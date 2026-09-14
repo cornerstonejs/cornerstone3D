@@ -254,6 +254,14 @@ not "a 0.05 mm slab was requested". Recording it literally would give
 guarantee that an annotation always covers at least one layer. Mapping it to
 undefined lets `T` fall back to one voxel along the normal.
 
+`utilities.getViewSlabDepth` holds the second conversion, and every caller
+that needs a depth uses it. The caller supplies a full depth, so a volume
+viewport passes `getSlabThickness() * 2` and a generic planar viewport passes
+the value as it is. A brush fill reaches the function through
+`getViewSlabDepthOfViewport` in the tools package, which selects the render
+path. A caller that reads `getSlabThickness` and treats the value as a depth
+fills half of the depth that the user sees.
+
 ## Using the iterator
 
 A tool builds a shape, then walks the voxels:
@@ -606,9 +614,11 @@ Everything here is exported under `utilities.voxelSlab`.
 | `isVoxelCenterInSlab`, `getMembershipHalfWidth`, `getDisplayHalfWidth` | the Rule M and Rule D predicates         |
 | `getFillHalfWidth`                                                     | the half width of Rule F                 |
 
-Two more exports sit outside that namespace:
+Four more exports sit outside that namespace:
 
 | export                                                            | purpose                                       |
 | ----------------------------------------------------------------- | --------------------------------------------- |
 | `utilities.getEffectiveSpacingAlongDirection`, in core            | the step that crosses one voxel along a line  |
+| `utilities.getViewSlabDepth`, in core                             | a slab depth, with "no slab" as undefined     |
 | `utilities.sampleAreaAnnotationVoxels`, in `@cornerstonejs/tools` | the one path every area annotation tool takes |
+| `utilities.getViewSlabDepthOfViewport`, in `@cornerstonejs/tools` | the slab depth of a viewport, per render path |

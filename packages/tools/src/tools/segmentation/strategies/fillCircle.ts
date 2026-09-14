@@ -12,6 +12,7 @@ import { StrategyCallbacks } from '../../../enums';
 import compositions from './compositions';
 import { pointInSphere } from '../../../utilities/math/sphere';
 import { createCircleBrushFill } from './utils/brushVoxelSlab';
+import { getViewSlabDepthOfViewport } from '../../../utilities/genericViewportToolHelpers';
 
 const {
   transformWorldToIndex,
@@ -296,12 +297,14 @@ const initializeCircle = {
     // plane, while a full-thickness (thick-slab) view fills every plane in the
     // slab so a "circle" paints all voxels through the thickness (a volume
     // fill). See `utils/brushVoxelSlab.ts` for the matching area semantics.
-    // `getSlabThickness` only exists on volume viewports; stack/generic ones
-    // have no slab API, so keep it optional and let the fill default to one
-    // voxel along the normal.
-    const viewThicknessWorld = (
-      viewport as Types.IVolumeViewport
-    ).getSlabThickness?.();
+    //
+    // `getSlabThickness` returns a half thickness on the volume viewport,
+    // because the clipping planes sit at `focalPoint ± slabThickness`.
+    // `getViewSlabDepthOfViewport` converts it to the depth the view shows,
+    // per render path, and reports a thin view as undefined so that the fill
+    // falls back to one voxel along the normal. Passing the raw value filled
+    // half of the depth that the user saw.
+    const viewThicknessWorld = getViewSlabDepthOfViewport(viewport);
     operationData.brushVoxelSlabFill = createCircleBrushFill({
       segmentationImageData,
       viewUp: normalizedViewUp as Types.Point3,
