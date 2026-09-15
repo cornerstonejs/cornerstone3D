@@ -17,6 +17,8 @@ export {
   resolveReferencePlaneThickness,
   getMembershipHalfWidth,
   getFillHalfWidth,
+  getSlabHalfWidth,
+  isSlabDepthLowInclusive,
   getDisplayHalfWidth,
   signedDistanceToPlane,
   isWithinSlab,
@@ -24,6 +26,8 @@ export {
   projectPointOntoPlane,
   asUnitNormal,
 } from './slabMembership';
+
+export type { SlabDepthCoverage } from './slabMembership';
 
 export {
   getIndexSpaceNormal,

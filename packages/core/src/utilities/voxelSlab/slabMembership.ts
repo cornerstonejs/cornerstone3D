@@ -98,6 +98,60 @@ export function getFillHalfWidth(
 }
 
 /**
+ * Which voxels along the normal a slab of a given thickness selects.
+ *
+ * - `'overlapping'` - a voxel qualifies when its own box overlaps the slab.
+ *   The slab is therefore widened by half a voxel on each side, and a plane
+ *   halfway between two voxel layers selects both layers. A slab of this kind
+ *   never under-counts, and two consecutive slabs share the voxels on the
+ *   boundary between them.
+ * - `'centerInside'` - a voxel qualifies when its centre lies inside the slab,
+ *   with no widening, and the slab is never thinner than one voxel. Two
+ *   consecutive slabs of this kind tile the normal: every voxel belongs to
+ *   exactly one of them, and to one of them at least.
+ */
+export type SlabDepthCoverage = 'overlapping' | 'centerInside';
+
+/**
+ * The half width along the normal for the given coverage, in mm.
+ *
+ * Both rules read the same resolved thickness, so a caller passes one
+ * thickness and picks the rule with {@link SlabDepthCoverage}. A caller never
+ * computes a half width of its own.
+ *
+ * @param thickness - The resolved slab thickness along the normal, in mm. See
+ *   `resolveReferencePlaneThickness`.
+ * @param voxelThickness - The voxel thickness along the normal.
+ * @param coverage - Which voxels the slab selects. Defaults to
+ *   `'overlapping'`.
+ */
+export function getSlabHalfWidth(
+  thickness: number,
+  voxelThickness: number,
+  coverage: SlabDepthCoverage = 'overlapping'
+): number {
+  return coverage === 'centerInside'
+    ? getFillHalfWidth(thickness, voxelThickness)
+    : getMembershipHalfWidth(thickness, voxelThickness);
+}
+
+/**
+ * Whether the low end of the depth interval is inclusive for the given
+ * coverage.
+ *
+ * `'centerInside'` needs the half-open interval. An open interval drops both
+ * of its endpoints, so a voxel centre that lands exactly on a boundary belongs
+ * to neither of two consecutive slabs, and the two stop tiling.
+ * `'overlapping'` keeps the open interval, because it selects the voxels on
+ * both sides of a boundary anyway.
+ */
+export function isSlabDepthLowInclusive(
+  coverage: SlabDepthCoverage = 'overlapping'
+): boolean {
+  return coverage === 'centerInside';
+}
+
+/**
  * The half width used to decide whether an annotation is *displayed* in a
  * viewport (Rule D): `(viewportSlabThickness + referencePlaneThickness) / 2`.
  *

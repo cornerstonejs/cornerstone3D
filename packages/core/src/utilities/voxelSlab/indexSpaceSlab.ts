@@ -2,9 +2,11 @@ import type { mat3 } from 'gl-matrix';
 import { vec3 } from 'gl-matrix';
 import type { BoundsIJK, IImageVolume, Point2, Point3 } from '../../types';
 import getVoxelThicknessAlongNormal from './getVoxelThicknessAlongNormal';
+import type { SlabDepthCoverage } from './slabMembership';
 import {
-  getMembershipHalfWidth,
   getSlabEpsilon,
+  getSlabHalfWidth,
+  isSlabDepthLowInclusive,
   resolveReferencePlaneThickness,
 } from './slabMembership';
 
@@ -51,10 +53,11 @@ export interface IndexSpaceSlab {
   /**
    * Whether `depthLow` is inclusive, which makes the interval half-open.
    *
-   * The open interval drops both of its endpoints, so a voxel centre on a
-   * boundary belongs to no slab at all, and no plane reaches it. A fill needs
-   * the half-open interval, because consecutive fills must write every voxel
-   * exactly once.
+   * An open interval drops both of its endpoints, so a voxel centre that lands
+   * exactly on a boundary belongs to neither of two consecutive slabs. A
+   * half-open interval gives that voxel to exactly one of the two, which is
+   * what makes consecutive slabs tile. Follows from the slab's
+   * {@link SlabDepthCoverage}.
    */
   halfOpen: boolean;
   /** `argmax |g|`. Swept outermost. */
@@ -111,12 +114,11 @@ export function pickOuterAxis(g: Point3): 0 | 1 | 2 {
  *   runs. Defaults to the lower-numbered of the two, so an
  *   acquisition-orientation volume emits runs along i for each j, matching
  *   row-major memory order.
- * @param options.membershipHalfWidth - Use this half width instead of the one
- *   Rule M computes. A brush fill passes the half width of Rule F here - see
- *   `getFillHalfWidth`. Measurement code must leave this unset.
- * @param options.depthInterval - `'open'`, the default, excludes both
- *   boundaries, which is what Rule M asks for. `'half-open'` includes the low
- *   boundary. See {@link IndexSpaceSlab.halfOpen}.
+ * @param options.depthCoverage - Which voxels along the normal the slab
+ *   selects: `'overlapping'`, the default, takes every voxel whose box the
+ *   slab reaches, and `'centerInside'` takes only the voxels whose centre the
+ *   slab contains. The half width and the depth interval both follow from it.
+ *   See {@link SlabDepthCoverage}.
  */
 export function buildIndexSpaceSlab(
   volume: VolumeGeometry,
@@ -125,8 +127,7 @@ export function buildIndexSpaceSlab(
   referencePlaneThickness?: number | null,
   options: {
     columnAxis?: 0 | 1 | 2;
-    membershipHalfWidth?: number;
-    depthInterval?: 'open' | 'half-open';
+    depthCoverage?: SlabDepthCoverage;
   } = {}
 ): IndexSpaceSlab {
   const { origin } = volume;
@@ -143,11 +144,13 @@ export function buildIndexSpaceSlab(
     (origin[1] - planePoint[1]) * normal[1] +
     (origin[2] - planePoint[2]) * normal[2];
 
-  const rawHalfWidth = Number.isFinite(options.membershipHalfWidth)
-    ? (options.membershipHalfWidth as number)
-    : getMembershipHalfWidth(thickness, voxelThickness);
+  const rawHalfWidth = getSlabHalfWidth(
+    thickness,
+    voxelThickness,
+    options.depthCoverage
+  );
   const epsilon = getSlabEpsilon(voxelThickness);
-  const halfOpen = options.depthInterval === 'half-open';
+  const halfOpen = isSlabDepthLowInclusive(options.depthCoverage);
 
   // The epsilon shifts the half-open interval rather than narrowing it, so the
   // interval keeps a width of exactly `2 * rawHalfWidth` and consecutive slabs

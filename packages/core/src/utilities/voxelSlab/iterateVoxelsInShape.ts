@@ -5,6 +5,7 @@ import {
   getDepthRun,
   getSlabAxisBound,
 } from './indexSpaceSlab';
+import type { SlabDepthCoverage } from './slabMembership';
 import { signedDistanceToPlane } from './slabMembership';
 
 /**
@@ -58,19 +59,15 @@ export interface VoxelsInShapeOptions {
    */
   referencePlaneThickness?: number | null;
   /**
-   * Use this half width along the normal instead of the one Rule M computes
-   * from `referencePlaneThickness`. A brush fill passes the half width of Rule
-   * F here - see `getFillHalfWidth`. Measurement code must leave this unset.
+   * Which voxels along the normal the slab selects.
+   *
+   * `'overlapping'`, the default, takes every voxel whose box the slab reaches,
+   * so the slab is widened by half a voxel each side and a plane halfway
+   * between two layers selects both. `'centerInside'` takes only the voxels
+   * whose centre the slab contains, and consecutive slabs then tile: each
+   * voxel belongs to exactly one of them.
    */
-  membershipHalfWidth?: number;
-  /**
-   * `'open'`, the default, excludes both depth boundaries, which is what Rule M
-   * asks for. `'half-open'` includes the low boundary, so a voxel centre on a
-   * boundary belongs to exactly one of two consecutive slabs rather than to
-   * neither. Rule F is defined with `'half-open'`. Measurement code must leave
-   * this unset.
-   */
-  depthInterval?: 'open' | 'half-open';
+  depthCoverage?: SlabDepthCoverage;
   /**
    * Inclusive index bounds to confine iteration to. Defaults to the whole
    * volume. Supply the annotation's own index-space bounding box when you have
@@ -108,8 +105,7 @@ export function* iterateVoxelsInShape(
     planePoint,
     viewPlaneNormal: normal,
     referencePlaneThickness,
-    membershipHalfWidth,
-    depthInterval,
+    depthCoverage,
     getShapeRuns,
     isInShape,
     columnAxis: forcedColumnAxis,
@@ -122,7 +118,7 @@ export function* iterateVoxelsInShape(
     planePoint,
     normal,
     referencePlaneThickness,
-    { columnAxis: forcedColumnAxis, membershipHalfWidth, depthInterval }
+    { columnAxis: forcedColumnAxis, depthCoverage }
   );
   const { outerAxis, rowAxis, columnAxis } = slab;
 

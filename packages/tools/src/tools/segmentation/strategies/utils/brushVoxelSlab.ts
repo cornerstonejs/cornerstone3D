@@ -45,13 +45,16 @@ const {
   createEllipseShape,
   createRectangleShape,
   createUnionShape,
-  getFillHalfWidth,
-  getMembershipHalfWidth,
   getSlabEpsilon,
+  getSlabHalfWidth,
   getVoxelThicknessAlongNormal,
+  isSlabDepthLowInclusive,
   iterateVoxelsInShape,
+  resolveReferencePlaneThickness,
   signedDistanceToPlane,
 } = csUtils.voxelSlab;
+
+type SlabDepthCoverage = csUtils.voxelSlab.SlabDepthCoverage;
 
 type VoxelSlabShape = csUtils.voxelSlab.VoxelSlabShape;
 
@@ -76,13 +79,17 @@ export interface BrushVoxelSlabFill {
   /** The unit view plane normal. */
   viewPlaneNormal: Types.Point3;
   /**
-   * The half width along the normal, in mm, that a voxel centre must fall
-   * inside. Rule F for a flat brush, Rule M for a shape that carries its own
-   * depth. See `getFillHalfWidth`.
+   * The slab thickness along the normal, in mm, before the coverage rule is
+   * applied.
    */
-  membershipHalfWidth: number;
-  /** The depth interval that goes with the half width above. */
-  depthInterval: 'open' | 'half-open';
+  thicknessWorld: number;
+  /**
+   * Which voxels along the normal the fill writes. A flat brush takes
+   * `'centerInside'`, so consecutive fills tile and a brush stroke on one
+   * plane writes one layer. A shape that carries its own depth takes
+   * `'overlapping'`, because its own runs already bound the depth.
+   */
+  depthCoverage: SlabDepthCoverage;
   /** Inclusive index bounds the iteration is confined to. */
   bounds: Types.BoundsIJK;
   /** The brush shape's exact in-plane runs. */
@@ -206,28 +213,31 @@ function buildBrushFill({
 
   const shape = createUnionShape(shapes);
 
-  // A shape that carries its own depth - a sphere - keeps Rule M, because its
-  // own runs already bound the depth. A flat brush takes Rule F from the view.
-  // See `getFillHalfWidth` for the difference between the two rules.
+  // A shape that carries its own depth - a sphere - bounds the depth with its
+  // own runs, so the slab only has to reach every voxel the shape touches. A
+  // flat brush takes its depth from the view, and writes one layer per plane.
   const requiredThickness = shape.getRequiredThickness();
-  const membershipHalfWidth =
-    requiredThickness > 0
-      ? getMembershipHalfWidth(requiredThickness, voxelThickness)
-      : getFillHalfWidth(viewThicknessWorld, voxelThickness);
+  const carriesOwnDepth = requiredThickness > 0;
+  const depthCoverage: SlabDepthCoverage = carriesOwnDepth
+    ? 'overlapping'
+    : 'centerInside';
+  const thicknessWorld = resolveReferencePlaneThickness(
+    carriesOwnDepth ? requiredThickness : viewThicknessWorld,
+    voxelThickness
+  );
 
   return {
     volume,
     planePoint,
     viewPlaneNormal,
-    membershipHalfWidth,
-    // Rule M pairs with the open interval, and Rule F with the half-open one.
-    depthInterval: requiredThickness > 0 ? 'open' : 'half-open',
+    thicknessWorld,
+    depthCoverage,
     bounds: getShapeIndexBounds(
       centersWorld,
       volume,
       segmentationImageData,
       viewPlaneNormal,
-      membershipHalfWidth,
+      getSlabHalfWidth(thicknessWorld, voxelThickness, depthCoverage),
       boundsMargin
     ),
     shape,
@@ -450,18 +460,23 @@ export function createBrushFillPredicate(
   fill: BrushVoxelSlabFill,
   imageData?: vtkImageData
 ): (pointLPS: Types.Point3 | null, pointIJK?: Types.Point3) => boolean {
-  const { planePoint, viewPlaneNormal, membershipHalfWidth, shape } = fill;
+  const { planePoint, viewPlaneNormal, shape } = fill;
 
   // The same interval that `buildIndexSpaceSlab` gives the iterator: the
   // epsilon shifts a half-open interval and narrows an open one.
-  const epsilon = getSlabEpsilon(
-    getVoxelThicknessAlongNormal(fill.volume, viewPlaneNormal)
+  const voxelThickness = getVoxelThicknessAlongNormal(
+    fill.volume,
+    viewPlaneNormal
   );
-  const halfOpen = fill.depthInterval === 'half-open';
-  const depthLow = halfOpen
-    ? -membershipHalfWidth - epsilon
-    : -membershipHalfWidth + epsilon;
-  const depthHigh = membershipHalfWidth - epsilon;
+  const halfWidth = getSlabHalfWidth(
+    fill.thicknessWorld,
+    voxelThickness,
+    fill.depthCoverage
+  );
+  const epsilon = getSlabEpsilon(voxelThickness);
+  const halfOpen = isSlabDepthLowInclusive(fill.depthCoverage);
+  const depthLow = halfOpen ? -halfWidth - epsilon : -halfWidth + epsilon;
+  const depthHigh = halfWidth - epsilon;
 
   const scratch: Types.Point3 = [0, 0, 0];
 
@@ -537,8 +552,8 @@ export function forEachBrushFillVoxel(
     volume: fill.volume,
     planePoint: fill.planePoint,
     viewPlaneNormal: fill.viewPlaneNormal,
-    membershipHalfWidth: fill.membershipHalfWidth,
-    depthInterval: fill.depthInterval,
+    referencePlaneThickness: fill.thicknessWorld,
+    depthCoverage: fill.depthCoverage,
     bounds: fill.bounds,
     getShapeRuns: fill.shape.getRuns,
   });
@@ -601,13 +616,17 @@ export function forEachBrushFillVoxel(
   // A single digital plane gives a span below 1. A span at or above 1 means
   // the fill wrote into the neighbouring plane.
   const span = (maxDepth - minDepth) / voxelThickness;
+  const halfWidth = getSlabHalfWidth(
+    fill.thicknessWorld,
+    voxelThickness,
+    fill.depthCoverage
+  );
 
   brushFillLog.debug(
     `brush fill painted=${painted} T_v=${voxelThickness.toFixed(4)} ` +
-      `halfWidth=${fill.membershipHalfWidth.toFixed(4)} ` +
-      `halfWidth/T_v=${(fill.membershipHalfWidth / voxelThickness).toFixed(
-        4
-      )} ` +
+      `coverage=${fill.depthCoverage} ` +
+      `halfWidth=${halfWidth.toFixed(4)} ` +
+      `halfWidth/T_v=${(halfWidth / voxelThickness).toFixed(4)} ` +
       `depthSpanInVoxels=${span.toFixed(4)} ` +
       `distinctLayers=${sorted.length} ` +
       `${span < 1 ? 'ONE PLANE' : 'MORE THAN ONE PLANE'}`,

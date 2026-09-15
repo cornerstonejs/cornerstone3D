@@ -31,7 +31,7 @@ function makeVolume(degrees, spacing = [1, 1, 1]) {
  * The positions are `T_v` apart, which is the spacing at which the slabs of
  * Rule F tile. The range covers the whole volume, so every voxel must appear.
  */
-function countWritesOverAllPlanes(volume, normal, depthInterval) {
+function countWritesOverAllPlanes(volume, normal, depthCoverage) {
   const voxelThickness = getVoxelThicknessAlongNormal(volume, normal);
 
   // The extent of the volume along the normal, from its eight corners.
@@ -65,8 +65,7 @@ function countWritesOverAllPlanes(volume, normal, depthInterval) {
       volume,
       planePoint,
       viewPlaneNormal: normal,
-      membershipHalfWidth: voxelThickness / 2,
-      depthInterval,
+      depthCoverage,
     });
 
     for (const ijk of voxels) {
@@ -91,7 +90,7 @@ function tally(counts) {
   return { once, repeated, missed: DIM ** 3 - counts.size };
 }
 
-describe('the half-open depth interval of Rule F', () => {
+describe("the depth interval of 'centerInside' coverage", () => {
   // 45 degrees puts the depths of the voxel centres exactly on the boundaries
   // of the slab, which is the case the open interval loses.
   const cases = [
@@ -107,7 +106,7 @@ describe('the half-open depth interval of Rule F', () => {
 
     it('writes every voxel exactly once over consecutive planes', () => {
       const { once, repeated, missed } = tally(
-        countWritesOverAllPlanes(volume, AXIAL, 'half-open')
+        countWritesOverAllPlanes(volume, AXIAL, 'centerInside')
       );
 
       expect(missed).toBe(0);
@@ -116,20 +115,30 @@ describe('the half-open depth interval of Rule F', () => {
     });
   });
 
-  it('loses the voxels on the boundary without the half-open interval', () => {
-    // The regression this guards. At 45 degrees the open interval drops both
-    // boundaries, so every second plane of the lattice is unreachable.
-    const volume = makeVolume(45);
-    const open = tally(countWritesOverAllPlanes(volume, AXIAL, 'open'));
-    const halfOpen = tally(
-      countWritesOverAllPlanes(volume, AXIAL, 'half-open')
+  it("does not tile with 'overlapping' coverage", () => {
+    // 'overlapping' reaches every voxel whose box the slab touches, so
+    // consecutive slabs share the voxels between them. That is right for a
+    // measurement and wrong for a fill, which would write those voxels twice.
+    //
+    // The pair that lost the boundary voxels - the narrow half width of
+    // 'centerInside' with an open interval - can no longer be built: the
+    // interval follows from the coverage, so the two cannot disagree.
+    const volume = makeVolume(30);
+    const overlapping = tally(
+      countWritesOverAllPlanes(volume, AXIAL, 'overlapping')
+    );
+    const centerInside = tally(
+      countWritesOverAllPlanes(volume, AXIAL, 'centerInside')
     );
 
-    expect(open.missed).toBeGreaterThan(0.4 * DIM ** 3);
-    expect(halfOpen.missed).toBe(0);
+    expect(overlapping.missed).toBe(0);
+    expect(overlapping.repeated).toBeGreaterThan(0);
+
+    expect(centerInside.missed).toBe(0);
+    expect(centerInside.repeated).toBe(0);
   });
 
-  it('defaults to the open interval, so Rule M does not change', () => {
+  it("defaults to 'overlapping', so a measurement does not change", () => {
     const volume = makeVolume(45);
     const slab = buildIndexSpaceSlab(volume, [0, 0, 0], AXIAL, 1);
 
@@ -139,25 +148,24 @@ describe('the half-open depth interval of Rule F', () => {
       volume,
       planePoint: [0, 0, 0],
       viewPlaneNormal: AXIAL,
-      membershipHalfWidth: 1,
+      referencePlaneThickness: 1,
     });
-    const explicitlyOpen = collectVoxelsInShape({
+    const explicit = collectVoxelsInShape({
       volume,
       planePoint: [0, 0, 0],
       viewPlaneNormal: AXIAL,
-      membershipHalfWidth: 1,
-      depthInterval: 'open',
+      referencePlaneThickness: 1,
+      depthCoverage: 'overlapping',
     });
 
-    expect(withoutOption).toEqual(explicitlyOpen);
+    expect(withoutOption).toEqual(explicit);
   });
 
   it('keeps the interval one voxel thickness wide', () => {
     const volume = makeVolume(45);
     const voxelThickness = getVoxelThicknessAlongNormal(volume, AXIAL);
     const slab = buildIndexSpaceSlab(volume, [0, 0, 0], AXIAL, null, {
-      membershipHalfWidth: voxelThickness / 2,
-      depthInterval: 'half-open',
+      depthCoverage: 'centerInside',
     });
 
     expect(slab.halfOpen).toBe(true);
