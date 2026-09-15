@@ -1,4 +1,7 @@
 import type { WADORSMetaDataElement } from '../../../types';
+import { logging } from '@cornerstonejs/metadata';
+
+const log = logging.loaderLog.getLogger('wadors');
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getSequenceItems(element: any): WADORSMetaDataElement[] {
@@ -10,7 +13,7 @@ function getSequenceItems(element: any): WADORSMetaDataElement[] {
   if (!Array.isArray(element.Value)) {
     // If the Value is an object, encapsulate it in an array and log a warning message
     if (typeof element.Value === 'object') {
-      console.warn(
+      log.warn(
         'Warning: Value should be an array, but an object was found. Encapsulating the object in an array.'
       );
       return [element.Value];

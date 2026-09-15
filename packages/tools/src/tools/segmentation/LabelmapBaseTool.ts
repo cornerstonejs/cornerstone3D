@@ -38,6 +38,8 @@ import {
   resolveLabelmapForSegment,
 } from '../../stateManagement/segmentation/helpers/labelmapSegmentationState';
 import getViewportICamera from '../../utilities/getViewportICamera';
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+import { resetElementCursor } from '../../cursors/elementCursor';
 
 /**
  * A type for preview data/information, used to setup previews on hover, or
@@ -137,6 +139,19 @@ export default class LabelmapBaseTool extends BaseTool {
     isDrag: false,
   };
 
+  /**
+   * Whether a draw loop is currently in progress. Declared here so the shared
+   * touch-cancellation path can reason about it; the drawing tools narrow it.
+   */
+  protected isDrawing?: boolean;
+
+  /**
+   * In-progress draw state. Declared here only with the members the shared
+   * touch-cancellation path needs; the drawing tools narrow it to their own
+   * (richer) shape.
+   */
+  protected editData?: { viewportIdsToRender?: string[] } | null;
+
   protected memoMap: Map<string, LabelmapMemo.LabelmapMemo>;
   protected acceptedMemoIds: Map<
     string,
@@ -154,6 +169,38 @@ export default class LabelmapBaseTool extends BaseTool {
       hasPreviewIndex: false,
       changedIndices: [],
     };
+  }
+
+  /**
+   * Cancels an in-progress touch draw when the gesture turns out to be
+   * multi-finger (pinch zoom, multi-finger scroll). The rubber band of the
+   * scissors tools lives only in `editData` and is never written to the
+   * annotation state, so tearing the draw loop down and re-rendering makes it
+   * disappear without applying anything to the labelmap.
+   *
+   * Tools whose stroke has already written voxels (BrushTool) need to roll
+   * those writes back as well and therefore override this.
+   */
+  protected _cancelTouchDraw(element: HTMLDivElement): void {
+    if (!this.isDrawing) {
+      return;
+    }
+
+    const viewportIdsToRender = this.editData?.viewportIdsToRender;
+
+    // Declared on the subclasses (BrushTool declares it `private`, so it
+    // cannot be widened to `protected` on this class).
+    (
+      this as unknown as { _deactivateDraw: (element: HTMLDivElement) => void }
+    )._deactivateDraw(element);
+
+    resetElementCursor(element);
+    this.editData = null;
+    this.isDrawing = false;
+
+    if (viewportIdsToRender) {
+      triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+    }
   }
 
   protected _historyRedoHandler(evt) {
@@ -197,6 +244,24 @@ export default class LabelmapBaseTool extends BaseTool {
   // Gets a shared preview data
   protected get _previewData() {
     return LabelmapBaseTool.previewData;
+  }
+
+  /**
+   * Stores the result of a strategy as the shared preview, but only when the
+   * strategy actually set a preview up.
+   *
+   * `BrushStrategy.fill` returns its initialized data for every stroke, with a
+   * preview or without one, so the raw result cannot go into `previewData.preview`
+   * directly. `modified` is the field that says a preview segment index went onto
+   * the labelmap: the `preview` composition sets `modified` to true only when both
+   * `previewSegmentIndex` and `segmentIndex` are present. `addPreview` uses the
+   * same test.
+   *
+   * Keeping `previewData.preview` truthful is what lets every labelmap tool share
+   * one preview: any tool can then reject the preview that any other tool created.
+   */
+  protected _setPreview(results) {
+    this._previewData.preview = results?.modified ? results : null;
   }
 
   /**
@@ -548,11 +613,19 @@ export default class LabelmapBaseTool extends BaseTool {
       return;
     }
 
-    this.applyActiveStrategyCallback(
-      enabledElement,
-      operationData,
-      StrategyCallbacks.RejectPreview
-    );
+    // A reject only has work to do when a preview exists. `previewData` is shared by
+    // every labelmap tool on purpose, so any tool can reject the preview that any other
+    // tool created, but the element alone says only that some tool has painted. Every
+    // paint path stores its result through `_setPreview`, so `preview` is set when, and
+    // only when, preview voxels are on the labelmap. See `BrushTool.rejectPreview` for
+    // what running the strategy without a preview costs.
+    if (this._previewData.preview) {
+      this.applyActiveStrategyCallback(
+        enabledElement,
+        operationData,
+        StrategyCallbacks.RejectPreview
+      );
+    }
 
     // Make sure to fully reset all preview related data
     this._previewData.preview = null;

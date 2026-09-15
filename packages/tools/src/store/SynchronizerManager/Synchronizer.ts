@@ -8,6 +8,11 @@ import {
 } from '@cornerstonejs/core';
 
 import type { ISynchronizerEventHandler } from '../../types';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'store.SynchronizerManager.Synchronizer'
+);
 
 type eventSource = 'element' | 'eventTarget';
 
@@ -123,7 +128,7 @@ class Synchronizer {
       getRenderingEngine(renderingEngineId).getViewport(viewportId);
 
     if (!viewport) {
-      console.warn(
+      cs3dLogger.warn(
         `Synchronizer.addSource: No viewport for ${renderingEngineId} ${viewportId}`
       );
       return;
@@ -292,7 +297,7 @@ class Synchronizer {
         }
       }
     } catch (ex) {
-      console.warn(`Synchronizer, for: ${this._eventName}`, ex);
+      cs3dLogger.warn(`Synchronizer, for: ${this._eventName}`, ex);
     } finally {
       if (promises.length) {
         Promise.allSettled(promises).then(() => {

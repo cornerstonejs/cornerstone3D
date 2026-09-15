@@ -12,6 +12,11 @@ import {
 } from './robustSegmentIntersection';
 import containsPoint from './containsPoint';
 import arePolylinesIdentical from './arePolylinesIdentical';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.math.polyline.subtractPolylines'
+);
 
 export default function subtractPolylines(
   targetPolylineCoords: Types.Point2[],
@@ -251,7 +256,6 @@ export default function subtractPolylines(
           tnode.intersectionDir = IntersectionDirection.Entering; // Was outside, now hitting boundary -> entering
         }
       } else {
-        // console.warn("Unpaired intersection on target:", tnode.coordinates, tData);
         // This can happen if robustSegmentIntersection is not perfect or due to precision
         tnode.isIntersection = false; // Treat as vertex if no partner
       }
@@ -284,7 +288,7 @@ export default function subtractPolylines(
 
     do {
       if (safetyBreak++ > maxIter) {
-        console.warn(
+        cs3dLogger.warn(
           'Subtraction: Max iterations reached, possible infinite loop.'
         );
         break;
@@ -323,7 +327,7 @@ export default function subtractPolylines(
             // Path continues from partnerNode, then its next.
           } else {
             // Should not happen if graph is consistent. Stay on source.
-            console.warn(
+            cs3dLogger.warn(
               'Subtraction: Intersection on source without partner.'
             );
           }

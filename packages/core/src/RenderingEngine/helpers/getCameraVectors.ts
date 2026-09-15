@@ -3,11 +3,13 @@ import * as CONSTANTS from '../../constants';
 import * as Enums from '../../enums';
 import type * as Types from '../../types';
 import type OrientationVectors from '../../types/OrientationVectors';
+import { coreLog } from '../../utilities/logger';
 
 import { vec3 } from 'gl-matrix';
 
 const { MPR_CAMERA_VALUES } = CONSTANTS;
 const { OrientationAxis } = Enums;
+const log = coreLog.getLogger('RenderingEngine', 'getCameraVectors');
 
 export interface CameraPositionConfig {
   orientation?: Enums.OrientationAxis;
@@ -258,7 +260,7 @@ export function getCameraVectors(
   }
 
   if (viewport.type !== Enums.ViewportType.ORTHOGRAPHIC) {
-    console.warn('Viewport should be a volume viewport');
+    log.warn('Viewport should be a volume viewport');
   }
   let imageId = viewport.getCurrentImageId();
   if (!imageId) {
