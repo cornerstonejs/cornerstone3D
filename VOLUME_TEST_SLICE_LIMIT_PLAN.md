@@ -72,7 +72,7 @@ Keeps the demos realistic for anyone browsing the example pages (default = full 
 - `PLAYWRIGHT_FORCE_COMPAT` **unset** (that's the default).
 - Per spec:
   ```
-  bash ./scripts/run-playwright.sh --update tests/<spec>.spec.ts
+  bash ./scripts/run-playwright.sh --update-snapshots tests/<spec>.spec.ts
   ```
   or
   ```
