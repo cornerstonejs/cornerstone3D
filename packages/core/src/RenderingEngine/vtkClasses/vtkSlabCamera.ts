@@ -759,6 +759,18 @@ export interface vtkSlabCamera extends vtkObject {
    * @param aspectRatio - aspectRatio of the viewport in x and y axis
    */
   setAspectRatio(aspectRatio: [x: number, y: number]): boolean;
+
+  /**
+   *  Returns whether fit to viewport after stretch or not
+   *  @defaultValue true
+   */
+  getIsFitViewportAfterStretch(): boolean;
+
+  /**
+   * Set whether fit to viewport after stretch or not
+   * @param isFitViewportAfterStretch - Whether fit to viewport after stretch or not
+   */
+  setIsFitViewportAfterStretch(isFitViewportAfterStretch: boolean): void;
 }
 
 const DEFAULT_VALUES = {
