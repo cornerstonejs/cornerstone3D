@@ -34,7 +34,7 @@
 # install policy, so the rules have to be here before the files are.
 
 /scripts/ci/                                     @jbocce @sedghi @wayfarer3130
-/scripts/run-playright.sh                        @jbocce @sedghi @wayfarer3130
+/scripts/run-playwright.sh                       @jbocce @sedghi @wayfarer3130
 /scripts/link-ohif-cornerstone-node-modules.mjs  @jbocce @sedghi @wayfarer3130
 /preinstall.js                                   @jbocce @sedghi @wayfarer3130
 /package.json                                    @jbocce @sedghi @wayfarer3130

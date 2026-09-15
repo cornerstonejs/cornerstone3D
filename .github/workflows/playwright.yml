@@ -83,7 +83,7 @@ jobs:
             [ -n "$f" ] || continue
             case "$f" in
               # Workflows, and the scripts they exec on the box.
-              .github/*|scripts/ci/*|scripts/run-playright.sh|scripts/link-ohif-cornerstone-node-modules.mjs)
+              .github/*|scripts/ci/*|scripts/run-playwright.sh|scripts/link-ohif-cornerstone-node-modules.mjs)
                 ci_touched=true ;;
               # The install surface. package.json declares `preinstall`, and pnpm
               # executes a root pnpmfile, so editing either runs code on the box
@@ -180,9 +180,9 @@ jobs:
           # $RUN_ARGS is deliberately unquoted: it carries several flags
           # (e.g. `--compat --project=chromium`) that must word-split.
           if [ "$COLLECT_COVERAGE" = "true" ]; then
-            bash scripts/ci/with-nashua-lock.sh pnpm exec nyc --reporter=html ./scripts/run-playright.sh $RUN_ARGS
+            bash scripts/ci/with-nashua-lock.sh pnpm exec nyc --reporter=html ./scripts/run-playwright.sh $RUN_ARGS
           else
-            bash scripts/ci/with-nashua-lock.sh ./scripts/run-playright.sh $RUN_ARGS
+            bash scripts/ci/with-nashua-lock.sh ./scripts/run-playwright.sh $RUN_ARGS
           fi
       - name: Upload Playwright report and test results
         if: failure()

@@ -98,7 +98,7 @@ jobs:
             [ -n "$f" ] || continue
             case "$f" in
               # Workflows, and the scripts they exec on the box.
-              .github/*|scripts/ci/*|scripts/run-playright.sh|scripts/link-ohif-cornerstone-node-modules.mjs)
+              .github/*|scripts/ci/*|scripts/run-playwright.sh|scripts/link-ohif-cornerstone-node-modules.mjs)
                 ci_touched=true ;;
               # The install surface. package.json declares `preinstall`, and pnpm
               # executes a root pnpmfile, so editing either runs code on the box
