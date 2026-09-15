@@ -56,5 +56,22 @@ if [[ ! "$REF" =~ ^[A-Za-z0-9][A-Za-z0-9._/+-]*$ ]] || [[ "$REF" == *..* ]]; the
   exit 1
 fi
 
+# The grammar above constrains which characters may appear; git also constrains
+# the shape. A trailing slash, a double slash, a path component starting with a
+# dot, and a '.lock' suffix all pass the grammar and are still illegal refs.
+# Without this, such a value reaches the checkout step and fails there with a
+# git error about a missing ref, several steps away from the typo that caused
+# it.
+#
+# `refs/heads/$REF` rather than `--branch $REF`: the latter also expands git's
+# previous-branch syntax (@{-1}), which consults repository state. The grammar
+# already bars '@', so that cannot arise here, but a validator that only
+# validates is the simpler thing to reason about — and this form needs no
+# repository at all.
+if ! git check-ref-format "refs/heads/${REF}"; then
+  echo "::error::Rejected the OHIF ref supplied via ${SOURCE}: git does not accept that ref name. Check for a trailing or doubled '/', a path component starting with '.', or a '.lock' suffix."
+  exit 1
+fi
+
 echo "::notice::OHIF ref (${SOURCE}): ${REF}"
 echo "OHIF_REF=${REF}" >> "$GITHUB_ENV"
