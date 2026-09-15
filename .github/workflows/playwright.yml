@@ -89,10 +89,12 @@ jobs:
               # executes a root pnpmfile, so editing either runs code on the box
               # during `pnpm install`. The lockfile and workspace file steer what
               # gets installed and can undo the release-age quarantine; .npmrc can
-              # repoint the registry. Three of these are untracked today — that is
+              # repoint the registry. Most of these are untracked today — that is
               # the point: a fork can ADD one, and a list of only existing files
               # would not notice.
-              package.json|pnpm-lock.yaml|pnpm-workspace.yaml|preinstall.js|.npmrc|.pnpmfile.cjs|pnpmfile.cjs)
+              package.json|pnpm-lock.yaml|pnpm-workspace.yaml|preinstall.js|.npmrc)
+                ci_touched=true ;;
+              .pnpmfile.mjs|.pnpmfile.cjs|pnpmfile.mjs|pnpmfile.cjs)
                 ci_touched=true ;;
             esac
           done <<<"$files"
