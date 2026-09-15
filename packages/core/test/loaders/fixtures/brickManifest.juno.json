@@ -1,0 +1,52 @@
+{
+  "version": 2,
+  "axes": [
+    {
+      "name": "x",
+      "type": "space",
+      "size": 512,
+      "subsample": true
+    },
+    {
+      "name": "y",
+      "type": "space",
+      "size": 512,
+      "subsample": true
+    },
+    {
+      "name": "z",
+      "type": "space",
+      "size": 174,
+      "subsample": true
+    }
+  ],
+  "dimensionIndexPointers": [],
+  "brickSize": [64, 64, 64],
+  "brickOrder": "z-minor",
+  "brickPadding": false,
+  "spacing": [0.9765625, 0.9765625, 5],
+  "levels": [
+    {
+      "name": "d1",
+      "factors": [1, 1, 1],
+      "size": [512, 512, 174],
+      "brickSize": [64, 64, 64],
+      "bricks": [8, 8, 3]
+    },
+    {
+      "name": "d4_4_1",
+      "factors": [4, 4, 1],
+      "size": [128, 128, 174],
+      "brickSize": [64, 64, 64],
+      "bricks": [2, 2, 3]
+    },
+    {
+      "name": "d8_8_2",
+      "factors": [8, 8, 2],
+      "size": [64, 64, 87],
+      "brickSize": [64, 64, 87],
+      "bricks": [1, 1, 1]
+    }
+  ],
+  "transferSyntaxUID": "1.2.840.10008.1.2.4.80"
+}
