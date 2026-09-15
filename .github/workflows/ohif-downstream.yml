@@ -40,6 +40,17 @@ jobs:
   # playwright.yml and in .github/CODEOWNERS, and must be kept in sync by hand:
   # separate workflow files cannot share code. Editing one without the others
   # fails silently.
+  #
+  # This job is part of the workflow it protects: a fork PR can delete it, along
+  # with the `needs:` and `if:` below, and dispatch straight to the box. What
+  # stops that is a repository setting —
+  # `actions/permissions/fork-pr-contributor-approval` set to
+  # `all_external_contributors`, so a maintainer approves every fork PR run.
+  # Relaxing it removes that barrier silently, so treat it as part of this file.
+  #
+  # This job's value is catching an approval given without full attention, not a
+  # deliberate attacker, who deletes it. Other layers exist outside this
+  # repository; this is not the last line of defence.
   gate:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -86,7 +97,17 @@ jobs:
           while IFS= read -r f; do
             [ -n "$f" ] || continue
             case "$f" in
-              .github/*|scripts/ci/*|scripts/run-playright.sh|scripts/link-ohif-cornerstone-node-modules.mjs|package.json|pnpm-lock.yaml|pnpm-workspace.yaml)
+              # Workflows, and the scripts they exec on the box.
+              .github/*|scripts/ci/*|scripts/run-playright.sh|scripts/link-ohif-cornerstone-node-modules.mjs)
+                ci_touched=true ;;
+              # The install surface. package.json declares `preinstall`, and pnpm
+              # executes a root pnpmfile, so editing either runs code on the box
+              # during `pnpm install`. The lockfile and workspace file steer what
+              # gets installed and can undo the release-age quarantine; .npmrc can
+              # repoint the registry. Three of these are untracked today — that is
+              # the point: a fork can ADD one, and a list of only existing files
+              # would not notice.
+              package.json|pnpm-lock.yaml|pnpm-workspace.yaml|preinstall.js|.npmrc|.pnpmfile.cjs|pnpmfile.cjs)
                 ci_touched=true ;;
             esac
           done <<<"$files"

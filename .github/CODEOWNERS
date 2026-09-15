@@ -23,14 +23,26 @@
 /.github/                                        @jbocce @sedghi @wayfarer3130
 
 # ── Self-hosted runner ────────────────────────────────────────────────────────
-# Scripts that the workflows exec on the shared self-hosted "nashua" box. Keep
-# this group in step with the protected-path list in the `gate` job of
-# .github/workflows/playwright.yml and ohif-downstream.yml — that list is what
-# keeps fork PRs that touch these paths off the box until merged.
+# Code and configuration that decide what executes on the shared self-hosted
+# "nashua" box. The same paths are listed in the `gate` job of
+# .github/workflows/playwright.yml and ohif-downstream.yml; keep the two in
+# step. They do different jobs: the gate keeps a fork PR off the box until its
+# change is merged, and these rules put a code owner in front of the merge.
+#
+# The last three do not exist in the repository today. That is deliberate: pnpm
+# executes a root pnpmfile if one appears, and reads .npmrc for the registry and
+# install policy, so the rules have to be here before the files are.
 
 /scripts/ci/                                     @jbocce @sedghi @wayfarer3130
 /scripts/run-playright.sh                        @jbocce @sedghi @wayfarer3130
 /scripts/link-ohif-cornerstone-node-modules.mjs  @jbocce @sedghi @wayfarer3130
+/preinstall.js                                   @jbocce @sedghi @wayfarer3130
+/package.json                                    @jbocce @sedghi @wayfarer3130
+/pnpm-lock.yaml                                  @jbocce @sedghi @wayfarer3130
+/pnpm-workspace.yaml                             @jbocce @sedghi @wayfarer3130
+/.npmrc                                          @jbocce @sedghi @wayfarer3130
+/.pnpmfile.cjs                                   @jbocce @sedghi @wayfarer3130
+/pnpmfile.cjs                                    @jbocce @sedghi @wayfarer3130
 
 # ── Release pipeline ──────────────────────────────────────────────────────────
 # Scripts that .github/workflows/publish.yml runs on every merge to main, with
