@@ -151,10 +151,10 @@ Our simulate drag utility can simulate a drag on any element, and avoid going ou
 After you have wrote your tests, you can run them by using the following command:
 
 ```bash
-./scripts/run-playright.sh
-./scripts/run-playright.sh --compat
-./scripts/run-playright.sh --cpu
-./scripts/run-playright.sh --next
+./scripts/run-playwright.sh
+./scripts/run-playwright.sh --compat
+./scripts/run-playwright.sh --cpu
+./scripts/run-playwright.sh --next
 ```
 
 The wrapper runs `npx playwright test`, auto-selects the test files for the chosen mode, and writes timestamped logs and artifacts under `reports/`.
@@ -179,10 +179,10 @@ Supported wrapper flags:
 Any other arguments are passed directly to `playwright test`, so you can still use the normal Playwright CLI:
 
 ```bash
-./scripts/run-playright.sh --project chromium --headed
-./scripts/run-playright.sh -g "stack viewport"
-./scripts/run-playright.sh --workers 1
-./scripts/run-playright.sh --update-snapshots
+./scripts/run-playwright.sh --project chromium --headed
+./scripts/run-playwright.sh -g "stack viewport"
+./scripts/run-playwright.sh --workers 1
+./scripts/run-playwright.sh --update-snapshots
 ```
 
 Useful environment variables:
@@ -193,12 +193,12 @@ Useful environment variables:
 Examples:
 
 ```bash
-./scripts/run-playright.sh
-./scripts/run-playright.sh --compat
-./scripts/run-playright.sh --project chromium --headed
-./scripts/run-playright.sh -g "stack viewport"
-PLAYWRIGHT_REUSE_EXISTING_SERVER=true ./scripts/run-playright.sh --project chromium
-./scripts/run-playright.sh --next
+./scripts/run-playwright.sh
+./scripts/run-playwright.sh --compat
+./scripts/run-playwright.sh --project chromium --headed
+./scripts/run-playwright.sh -g "stack viewport"
+PLAYWRIGHT_REUSE_EXISTING_SERVER=true ./scripts/run-playwright.sh --project chromium
+./scripts/run-playwright.sh --next
 ```
 
 ## Updating Screenshot Baselines
@@ -208,9 +208,9 @@ Playwright snapshot files are stored under `tests/screenshots/<project>/<spec>/<
 Normal runs compare against those committed screenshots. To rewrite them, pass Playwright's native snapshot flag through the wrapper:
 
 ```bash
-./scripts/run-playright.sh --update-snapshots
-./scripts/run-playright.sh --next --update-snapshots
-./scripts/run-playright.sh --project chromium --update-snapshots
+./scripts/run-playwright.sh --update-snapshots
+./scripts/run-playwright.sh --next --update-snapshots
+./scripts/run-playwright.sh --project chromium --update-snapshots
 ```
 
 ## Serving the examples manually for development
@@ -221,7 +221,7 @@ If you want to serve the examples manually during development, you can run the s
 
 ```bash
 yarn run build-and-serve-static-examples
-PLAYWRIGHT_REUSE_EXISTING_SERVER=true ./scripts/run-playright.sh
+PLAYWRIGHT_REUSE_EXISTING_SERVER=true ./scripts/run-playwright.sh
 ```
 
 ## Playwright VSCode Extension and Recording Tests
