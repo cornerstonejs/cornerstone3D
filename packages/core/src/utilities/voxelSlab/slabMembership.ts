@@ -65,6 +65,93 @@ export function getMembershipHalfWidth(
 }
 
 /**
+ * The half width used to decide which voxels a *brush fill* writes (Rule F):
+ * `max(fillDepth, voxelThickness) / 2`.
+ *
+ * Rule M and Rule F answer different questions, and a fill must not use Rule M.
+ * Rule M measures, so it widens the slab by half a voxel on each side and a
+ * plane midway between two voxel layers reports both layers. That is right for
+ * an area, because an area must not under-count. It is wrong for a brush: the
+ * user drew one layer, and the brush would write two.
+ *
+ * Rule F therefore takes only the voxels that the fill volume passes through.
+ * A fill depth of one voxel or less gives `voxelThickness / 2`, which selects
+ * exactly the voxels whose box the fill plane crosses, and no fill is ever
+ * thinner than one voxel. A full-thickness view gives `fillDepth / 2`, so the
+ * fill writes exactly the depth the viewport shows.
+ *
+ * See `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
+ *
+ * @param fillDepth - The depth the fill covers along the normal, in mm. Zero,
+ *   negative, null and undefined all mean "one voxel".
+ * @param voxelThickness - The voxel thickness along the normal.
+ */
+export function getFillHalfWidth(
+  fillDepth: number | null | undefined,
+  voxelThickness: number
+): number {
+  const depth =
+    Number.isFinite(fillDepth) && (fillDepth as number) > 0
+      ? (fillDepth as number)
+      : 0;
+  return Math.max(depth, Math.abs(voxelThickness)) / 2;
+}
+
+/**
+ * Which voxels along the normal a slab of a given thickness selects.
+ *
+ * - `'overlapping'` - a voxel qualifies when its own box overlaps the slab.
+ *   The slab is therefore widened by half a voxel on each side, and a plane
+ *   halfway between two voxel layers selects both layers. A slab of this kind
+ *   never under-counts, and two consecutive slabs share the voxels on the
+ *   boundary between them.
+ * - `'centerInside'` - a voxel qualifies when its centre lies inside the slab,
+ *   with no widening, and the slab is never thinner than one voxel. Two
+ *   consecutive slabs of this kind tile the normal: every voxel belongs to
+ *   exactly one of them, and to one of them at least.
+ */
+export type SlabDepthCoverage = 'overlapping' | 'centerInside';
+
+/**
+ * The half width along the normal for the given coverage, in mm.
+ *
+ * Both rules read the same resolved thickness, so a caller passes one
+ * thickness and picks the rule with {@link SlabDepthCoverage}. A caller never
+ * computes a half width of its own.
+ *
+ * @param thickness - The resolved slab thickness along the normal, in mm. See
+ *   `resolveReferencePlaneThickness`.
+ * @param voxelThickness - The voxel thickness along the normal.
+ * @param coverage - Which voxels the slab selects. Defaults to
+ *   `'overlapping'`.
+ */
+export function getSlabHalfWidth(
+  thickness: number,
+  voxelThickness: number,
+  coverage: SlabDepthCoverage = 'overlapping'
+): number {
+  return coverage === 'centerInside'
+    ? getFillHalfWidth(thickness, voxelThickness)
+    : getMembershipHalfWidth(thickness, voxelThickness);
+}
+
+/**
+ * Whether the low end of the depth interval is inclusive for the given
+ * coverage.
+ *
+ * `'centerInside'` needs the half-open interval. An open interval drops both
+ * of its endpoints, so a voxel centre that lands exactly on a boundary belongs
+ * to neither of two consecutive slabs, and the two stop tiling.
+ * `'overlapping'` keeps the open interval, because it selects the voxels on
+ * both sides of a boundary anyway.
+ */
+export function isSlabDepthLowInclusive(
+  coverage: SlabDepthCoverage = 'overlapping'
+): boolean {
+  return coverage === 'centerInside';
+}
+
+/**
  * The half width used to decide whether an annotation is *displayed* in a
  * viewport (Rule D): `(viewportSlabThickness + referencePlaneThickness) / 2`.
  *
