@@ -1,7 +1,9 @@
 import type { Types } from '@cornerstonejs/core';
+import { vec3 } from 'gl-matrix';
 import {
   RenderingEngine,
   Enums,
+  getRenderingEngine,
   setVolumesForViewports,
   volumeLoader,
   getEnabledElement,
@@ -11,6 +13,7 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addDropdownToToolbar,
+  addSliderToToolbar,
   getLocalUrl,
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
@@ -38,13 +41,19 @@ const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
+const renderingEngineId = 'myRenderingEngine';
+const viewportId1 = 'CT_AXIAL';
+const viewportId2 = 'CT_SAGITTAL';
+const viewportId3 = 'CT_CORONAL';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Labelmap Edit With Contour',
   'Here we demonstrate editing of a labelmap with contour tools.  Start inside the ' +
-    'labelmap area to extend it, and have the contour extend outside.  Then hit e to edit ' +
-    'the labelmap data'
+    'labelmap area to extend it, and have the contour extend outside.  The tool then ' +
+    'converts the contour to labelmap data.  The "Axial Oblique Angle" slider tilts the ' +
+    'axial plane of the first viewport by an exact angle, so that you can test the ' +
+    'conversion on an oblique plane.'
 );
 
 const size = '32vw';
@@ -70,12 +79,11 @@ content.appendChild(viewportGrid);
 
 const instructions = document.createElement('p');
 instructions.innerText = `
-  Hover - show preview of segmentation tool
-  Left drag to extend preview
-  Left Click (or enter) to accept preview
-  Reject preview by button (or esc)
-  Hover outside of region to reset to hovered over segment index
-  Shift Left - zoom, Ctrl Left - Pan, Alt Left - Stack Scroll
+  Left drag to draw a closed contour. The tool converts the contour to labelmap
+  data as soon as you close the contour.
+  Press Escape to cancel the contour that you draw.
+  Set "Axial Oblique Angle" above 0 to tilt the first viewport, then draw a
+  contour on that oblique plane.
   `;
 
 content.append(instructions);
@@ -99,6 +107,79 @@ addButtonToToolbar({
     const activeName = toolGroup.getActivePrimaryMouseButtonTool();
     const brush = toolGroup.getToolInstance(activeName);
     brush.rejectPreview?.(element1);
+  },
+});
+
+// The camera of the axial viewport before the example applies an oblique angle.
+let axialBaseCamera: {
+  viewPlaneNormal: Types.Point3;
+  viewUp: Types.Point3;
+  focalPoint: Types.Point3;
+  distance: number;
+};
+
+/**
+ * Rotates the axial viewport about the world X axis by an exact angle. An
+ * oblique plane has no shared X, Y or Z value across the contour points, and
+ * that is the condition that this example tests.
+ *
+ * The rotation keeps the focal point of the first camera, so the plane always
+ * turns about the centre of the volume. `setCamera` must also get the new
+ * position, because `viewPlaneNormal` alone turns the camera about its
+ * position, and that moves the focal point out of the volume.
+ */
+function setAxialObliqueAngle(degrees: number) {
+  const viewport = getRenderingEngine(renderingEngineId)?.getViewport(
+    viewportId1
+  ) as Types.IVolumeViewport;
+
+  if (!viewport || !axialBaseCamera) {
+    return;
+  }
+
+  const { focalPoint, distance } = axialBaseCamera;
+  const radians = (degrees * Math.PI) / 180;
+  const origin: Types.Point3 = [0, 0, 0];
+  const viewPlaneNormal = vec3.create();
+  const viewUp = vec3.create();
+
+  vec3.rotateX(
+    viewPlaneNormal,
+    axialBaseCamera.viewPlaneNormal,
+    origin,
+    radians
+  );
+  vec3.rotateX(viewUp, axialBaseCamera.viewUp, origin, radians);
+
+  // The view plane normal points from the focal point towards the camera.
+  const position = vec3.scaleAndAdd(
+    vec3.create(),
+    focalPoint as vec3,
+    viewPlaneNormal,
+    distance
+  );
+
+  viewport.setCamera({
+    focalPoint,
+    position: Array.from(position) as Types.Point3,
+    viewPlaneNormal: Array.from(viewPlaneNormal) as Types.Point3,
+    viewUp: Array.from(viewUp) as Types.Point3,
+  });
+
+  // The focal point above is the centre of the volume, and the centre does not
+  // sit on the grid of slice positions of the new normal. `scroll(0)` moves no
+  // slice, and it rounds the focal point onto the nearest slice position.
+  viewport.scroll(0);
+  viewport.render();
+}
+
+addSliderToToolbar({
+  title: 'Axial Oblique Angle',
+  range: [0, 60],
+  step: 1,
+  defaultValue: 0,
+  onSelectedValueChange: (value) => {
+    setAxialObliqueAngle(Number(value));
   },
 });
 
@@ -172,13 +253,7 @@ async function run() {
   ]);
 
   // Instantiate a rendering engine
-  const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
-
-  // Create the viewports
-  const viewportId1 = 'CT_AXIAL';
-  const viewportId2 = 'CT_SAGITTAL';
-  const viewportId3 = 'CT_CORONAL';
 
   const viewportInputArray = [
     {
@@ -250,6 +325,18 @@ async function run() {
 
   // Render the image
   renderingEngine.render();
+
+  // The slider rotates this camera, so read it after the volume sets the camera.
+  const { viewPlaneNormal, viewUp, focalPoint, position } = (
+    renderingEngine.getViewport(viewportId1) as Types.IVolumeViewport
+  ).getCamera();
+
+  axialBaseCamera = {
+    viewPlaneNormal,
+    viewUp,
+    focalPoint,
+    distance: vec3.distance(position, focalPoint),
+  };
 
   elements.forEach((element) =>
     element.addEventListener(csToolsEnums.Events.KEY_DOWN, (evt) => {
