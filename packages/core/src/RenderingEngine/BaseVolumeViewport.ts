@@ -73,6 +73,7 @@ import Viewport from './Viewport';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
 import getVolumeViewportScrollInfo from '../utilities/getVolumeViewportScrollInfo';
+import getViewSlabDepth from '../utilities/getViewSlabDepth';
 import { actorIsA, isImageActor } from '../utilities/actorCheck';
 import type { ImageActor } from '../types/IActor';
 import snapFocalPointToSlice from '../utilities/snapFocalPointToSlice';
@@ -2427,17 +2428,9 @@ abstract class BaseVolumeViewport extends Viewport {
    * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
    */
   protected getReferencePlaneThickness(): number | undefined {
-    const slabThickness = this.getSlabThickness();
-
-    if (
-      !Number.isFinite(slabThickness) ||
-      slabThickness <= RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS
-    ) {
-      return undefined;
-    }
-
-    return slabThickness * 2;
+    return getViewSlabDepth(this.getSlabThickness() * 2);
   }
+
   /**
    * Given a point in world coordinates, return the intensity at that point
    * @param point - The point in world coordinates to get the intensity

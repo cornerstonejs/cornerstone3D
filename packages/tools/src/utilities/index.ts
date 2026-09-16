@@ -63,7 +63,10 @@ import { moveAnnotationToViewPlane } from './moveAnnotationToViewPlane';
 import { safeStructuredClone } from './safeStructuredClone';
 import getOrCreateImageVolume from './segmentation/getOrCreateImageVolume';
 import * as usFanExtraction from '../tools/annotation/UltrasoundPleuraBLineTool/utils/fanExtraction';
-import { jumpToFocalPoint } from './genericViewportToolHelpers';
+import {
+  jumpToFocalPoint,
+  getViewSlabDepthOfViewport,
+} from './genericViewportToolHelpers';
 import pickIntensityPointInSlab, {
   getSlabIntensityPickContext,
 } from './pickIntensityPointInSlab';
@@ -125,6 +128,7 @@ export {
   safeStructuredClone,
   getOrCreateImageVolume,
   jumpToFocalPoint,
+  getViewSlabDepthOfViewport,
   pickIntensityPointInSlab,
   getSlabIntensityPickContext,
 };

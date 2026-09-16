@@ -24,7 +24,7 @@ import {
   removeAnnotation,
 } from '../../stateManagement/annotation/annotationState';
 import { filterAnnotationsForDisplay } from '../../utilities/planar';
-import { getAreaAnnotationIndexBounds } from '../../utilities/sampleAreaAnnotationVoxels';
+import { getShapeIndexBounds } from '../../utilities/sampleAreaAnnotationVoxels';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import { fillInsideCircle } from './strategies';
 import type { LabelmapToolOperationData } from '../../types/LabelmapToolOperationData';
@@ -783,7 +783,7 @@ export default class LabelmapBaseTool extends BaseTool {
         volume,
         planePoint,
         viewPlaneNormal,
-        bounds: getAreaAnnotationIndexBounds(
+        bounds: getShapeIndexBounds(
           polyline,
           volume,
           imageData,
