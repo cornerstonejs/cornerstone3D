@@ -3,13 +3,23 @@
 #   OHIF_REF: <branch-or-tag>
 #   ohif_ref: <branch-or-tag>
 # Validates the resolved ref, then writes OHIF_REF to GITHUB_ENV for subsequent
-# steps. An invalid ref is a hard failure, not a fallback to the default.
+# steps. An invalid ref is a hard failure, not a fallback to the default. A PR
+# body the script cannot read is also a hard failure, for the same reason.
 #
 # Required env: EVENT_NAME, GITHUB_ENV
 # Optional: GH_TOKEN, REPO, PR_NUMBER (required for pull_request body parse)
 # Optional: OHIF_REF_INPUT (workflow_dispatch), DEFAULT_REF (default: master)
 
-set -e
+# pipefail as well as -e: the PR body arrives through `gh api`, and a pipeline
+# reports only the exit status of its last command. The body also goes into a
+# variable first, rather than straight into a pipe. Both steps exist for the
+# same failure: without them, a `gh api` that fails yields an empty REF, the
+# script falls back to the default ref, and the log says "PR body, defaulted" —
+# the same text a PR body with no OHIF_REF line produces. A run that tested
+# against the wrong ref would then pass and read as normal. `sed` also quits at
+# the first match, which can end the pipe while `gh` still writes, so keeping
+# the two commands apart avoids a SIGPIPE status as well.
+set -eo pipefail
 
 DEFAULT_REF="${DEFAULT_REF:-master}"
 
@@ -17,11 +27,14 @@ if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
   REF="${OHIF_REF_INPUT:-}"
   SOURCE="workflow_dispatch"
 elif [[ "$EVENT_NAME" == "pull_request" ]]; then
-  REF=$(gh api "repos/${REPO}/pulls/${PR_NUMBER}" --jq '.body' \
-    | sed -n '/^[[:space:]]*[Oo][Hh][Ii][Ff]_[Rr][Ee][Ff]:[[:space:]]*/{
+  if ! PR_BODY=$(gh api "repos/${REPO}/pulls/${PR_NUMBER}" --jq '.body'); then
+    echo "::error::Could not read the body of pull request ${PR_NUMBER} in ${REPO}. The OHIF ref is unknown, so this job stops instead of testing against ${DEFAULT_REF}."
+    exit 1
+  fi
+  REF=$(sed -n '/^[[:space:]]*[Oo][Hh][Ii][Ff]_[Rr][Ee][Ff]:[[:space:]]*/{
       s/^[[:space:]]*[Oo][Hh][Ii][Ff]_[Rr][Ee][Ff]:[[:space:]]*\([^[:space:]]*\).*/\1/p
       q
-    }')
+    }' <<<"$PR_BODY")
   SOURCE="PR body"
 else
   REF=""
