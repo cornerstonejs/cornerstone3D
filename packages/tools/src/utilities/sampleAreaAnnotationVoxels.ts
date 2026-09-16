@@ -280,6 +280,9 @@ function resolveAnnotationNormal(
  *   fixed one voxel silently drops the outer layers of a thick annotation.
  *
  * The extra voxel on top absorbs the rounding of a fractional index.
+ *
+ * A labelmap fill uses this as well, so the box that a fill walks and the box
+ * that a statistic walks stay the same box.
  */
 export function getShapeIndexBounds(
   points: Types.Point3[],
@@ -287,7 +290,7 @@ export function getShapeIndexBounds(
   imageData,
   viewPlaneNormal: Types.Point3,
   halfWidth: number,
-  margin: number
+  margin = 0
 ): Types.BoundsIJK {
   const { dimensions, direction, spacing } = volume;
 

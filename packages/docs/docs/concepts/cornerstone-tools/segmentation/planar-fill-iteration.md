@@ -139,6 +139,19 @@ The circle brush projects every disc onto the one view plane, so a stroke paints
 a single oblique layer however far the pointer travelled. The sphere brush does
 not project its centres, so a stroke sweeps a true tube.
 
+## A contour that becomes a labelmap
+
+`LabelmapBaseTool` converts a closed contour annotation to labelmap voxels, and
+that conversion is a fill. It therefore uses this same design: the polyline is
+the shape, through `createPolylineShape`, and `iterateVoxelsInShape` enumerates
+the voxels.
+
+`createPolylineShape` is flat, so it reports no thickness of its own. The
+conversion takes a depth of one voxel along the contour's own normal, and the
+coverage `'centerInside'`, which is Rule F. The contour plane comes from the
+annotation and never from the camera, so the same contour over the same volume
+writes the same voxels at any zoom, any pan and any slab thickness.
+
 ## Where the code lives
 
 | File                                                                 | Role                                             |
@@ -147,4 +160,5 @@ not project its centres, so a stroke sweeps a true tube.
 | `core/src/utilities/voxelSlab/shapes/`                               | The shapes, including `createUnionShape`         |
 | `tools/src/tools/segmentation/strategies/utils/brushVoxelSlab.ts`    | The brush shapes and the fill                    |
 | `tools/src/tools/segmentation/strategies/compositions/regionFill.ts` | The `Fill` callback                              |
+| `tools/src/tools/segmentation/LabelmapBaseTool.ts`                   | The contour to labelmap fill                     |
 | `tools/src/utilities/sampleAreaAnnotationVoxels.ts`                  | The annotation side, and the shared index bounds |
