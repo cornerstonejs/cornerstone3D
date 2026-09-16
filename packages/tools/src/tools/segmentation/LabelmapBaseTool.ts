@@ -24,7 +24,7 @@ import {
   removeAnnotation,
 } from '../../stateManagement/annotation/annotationState';
 import { filterAnnotationsForDisplay } from '../../utilities/planar';
-import { getShapeIndexBounds } from '../../utilities/sampleAreaAnnotationVoxels';
+import { iterateContourFillVoxels } from './strategies/utils/contourVoxelSlab';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import { fillInsideCircle } from './strategies';
 import type { LabelmapToolOperationData } from '../../types/LabelmapToolOperationData';
@@ -37,22 +37,7 @@ import getViewportICamera from '../../utilities/getViewportICamera';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import { resetElementCursor } from '../../cursors/elementCursor';
 
-const {
-  asUnitNormal,
-  createPolylineShape,
-  getSlabHalfWidth,
-  getVoxelThicknessAlongNormal,
-  iterateVoxelsInShape,
-} = csUtils.voxelSlab;
-
-/**
- * A contour to labelmap conversion is a fill, so it follows Rule F and not
- * Rule M: it writes the voxels whose centre the contour's own slab holds. See
- * `getFillHalfWidth` in core, and the brush fills in
- * `strategies/utils/brushVoxelSlab.ts`, which take the same coverage for the
- * same reason.
- */
-const CONTOUR_FILL_COVERAGE = 'centerInside' as const;
+const { asUnitNormal } = csUtils.voxelSlab;
 
 /**
  * A type for preview data/information, used to setup previews on hover, or
@@ -771,47 +756,13 @@ export default class LabelmapBaseTool extends BaseTool {
           ? activeIndex
           : 0;
 
-      // Fill the outline the way a brush of the same shape fills it: the
-      // polyline is the brush shape, and the slab is one voxel thick along the
-      // contour's own normal. `createPolylineShape` is flat, so the shape
-      // reports no thickness of its own, and the coverage decides the depth.
-      //
-      // The coverage is `centerInside`, which is Rule F. Rule M widens the slab
-      // by half a voxel on each side, so a contour that falls midway between
-      // two voxel layers writes both layers, and two contours on neighbouring
-      // frames write the layer between them two times. Rule F writes only the
-      // voxels whose centre the slab holds. A thin oblique contour therefore
-      // writes the single frame that the view shows, the walk never visits a
-      // voxel off that frame, and contours on consecutive frames tile.
-      const planePoint = polyline[0];
-      const voxelThickness = getVoxelThicknessAlongNormal(
+      // Fill the outline the way a brush of the same shape fills it. See
+      // `iterateContourFillVoxels` for the shape and the depth rule.
+      for (const ijk of iterateContourFillVoxels({
         volume,
-        viewPlaneNormal
-      );
-      const shape = createPolylineShape({
-        volume,
-        planePoint,
-        viewPlaneNormal,
         polyline,
-      });
-
-      for (const { ijk } of iterateVoxelsInShape({
-        volume,
-        planePoint,
         viewPlaneNormal,
-        depthCoverage: CONTOUR_FILL_COVERAGE,
-        bounds: getShapeIndexBounds(
-          polyline,
-          volume,
-          imageData,
-          viewPlaneNormal,
-          getSlabHalfWidth(
-            voxelThickness,
-            voxelThickness,
-            CONTOUR_FILL_COVERAGE
-          )
-        ),
-        getShapeRuns: shape.getRuns,
+        imageData,
       })) {
         previewVoxels.setAtIJK(ijk[0], ijk[1], ijk[2], segmentIndex);
       }
