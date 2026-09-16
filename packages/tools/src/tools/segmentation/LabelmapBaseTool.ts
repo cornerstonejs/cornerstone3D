@@ -1,4 +1,3 @@
-import { vec3 } from 'gl-matrix';
 import {
   getEnabledElement,
   cache,
@@ -25,10 +24,7 @@ import {
   removeAnnotation,
 } from '../../stateManagement/annotation/annotationState';
 import { filterAnnotationsForDisplay } from '../../utilities/planar';
-import {
-  isPointInsidePolyline3D,
-  projectTo2D,
-} from '../../utilities/math/polyline';
+import { getAreaAnnotationIndexBounds } from '../../utilities/sampleAreaAnnotationVoxels';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import { fillInsideCircle } from './strategies';
 import type { LabelmapToolOperationData } from '../../types/LabelmapToolOperationData';
@@ -40,6 +36,14 @@ import {
 import getViewportICamera from '../../utilities/getViewportICamera';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import { resetElementCursor } from '../../cursors/elementCursor';
+
+const {
+  asUnitNormal,
+  createPolylineShape,
+  getMembershipHalfWidth,
+  getVoxelThicknessAlongNormal,
+  iterateVoxelsInShape,
+} = csUtils.voxelSlab;
 
 /**
  * A type for preview data/information, used to setup previews on hover, or
@@ -712,7 +716,6 @@ export default class LabelmapBaseTool extends BaseTool {
     const previewVoxels = memo?.voxelManager;
     const segmentationVoxels =
       previewVoxels.sourceVoxelManager || previewVoxels;
-    const { dimensions } = previewVoxels;
 
     // Create an undo history for the operation
     // Iterate through the canvas space in canvas index coordinates
@@ -721,30 +724,21 @@ export default class LabelmapBaseTool extends BaseTool {
       .actor.getMapper()
       .getInputData();
 
-    for (const annotation of contourAnnotations) {
-      const boundsIJK = [
-        [Infinity, -Infinity],
-        [Infinity, -Infinity],
-        [Infinity, -Infinity],
-      ];
+    // The geometry that the voxel slab iterator walks. The labelmap is derived
+    // from this image data, so the two share every index.
+    const volume = {
+      dimensions: imageData.getDimensions(),
+      direction: imageData.getDirection(),
+      spacing: imageData.getSpacing(),
+      origin: imageData.getOrigin(),
+    };
 
+    for (const annotation of contourAnnotations) {
       const { polyline } = annotation.data.contour;
       const camera = viewport.getCamera();
-      const viewPlaneNormal =
-        annotation.metadata?.viewPlaneNormal ?? camera.viewPlaneNormal;
-      const viewUp = annotation.metadata?.viewUp ?? camera.viewUp;
-      for (const point of polyline) {
-        const indexPoint = imageData.worldToIndex(point);
-        indexPoint.forEach((v, idx) => {
-          boundsIJK[idx][0] = Math.min(boundsIJK[idx][0], v);
-          boundsIJK[idx][1] = Math.max(boundsIJK[idx][1], v);
-        });
-      }
-
-      boundsIJK.forEach((bound, idx) => {
-        bound[0] = Math.round(Math.max(0, bound[0]));
-        bound[1] = Math.round(Math.min(dimensions[idx] - 1, bound[1]));
-      });
+      const viewPlaneNormal = asUnitNormal(
+        annotation.metadata?.viewPlaneNormal ?? camera.viewPlaneNormal
+      );
 
       const activeIndex = getActiveSegmentIndex(segmentationId);
       const startPoint = annotation.data.handles?.[0] || polyline[0];
@@ -768,52 +762,37 @@ export default class LabelmapBaseTool extends BaseTool {
           ? activeIndex
           : 0;
 
-      // Project the 3D world polyline to a 2D plane for inside/outside point calculations
-      const precomputedProjection = projectTo2D(
-        polyline,
-        viewPlaneNormal,
-        viewUp
-      );
-
-      // The 2D containment check above ignores depth, so for oblique contours
-      // the IJK bounding box spans multiple slices along viewPlaneNormal.
-      // Reject voxels that aren't actually on the contour's plane.
-      const planeOrigin = polyline[0];
-      const spacingInNormalDirection = csUtils.getSpacingInNormalDirection(
-        {
-          direction: imageData.getDirection(),
-          spacing: imageData.getSpacing(),
-        },
+      // Fill the outline the way a brush of the same shape fills it: the
+      // polyline is the brush shape, and the slab is one voxel thick along the
+      // contour's own normal. The shape reports no thickness of its own, so a
+      // thin oblique contour writes the single frame that the view shows, and
+      // the walk never visits a voxel off that frame.
+      const planePoint = polyline[0];
+      const voxelThickness = getVoxelThicknessAlongNormal(
+        volume,
         viewPlaneNormal
       );
-      const halfSpacingInNormalDirection = spacingInNormalDirection / 2 + 1e-6;
+      const shape = createPolylineShape({
+        volume,
+        planePoint,
+        viewPlaneNormal,
+        polyline,
+      });
 
-      for (let i = boundsIJK[0][0]; i <= boundsIJK[0][1]; i++) {
-        for (let j = boundsIJK[1][0]; j <= boundsIJK[1][1]; j++) {
-          for (let k = boundsIJK[2][0]; k <= boundsIJK[2][1]; k++) {
-            const worldPoint = imageData.indexToWorld([i, j, k]);
-
-            const distanceFromPlane = Math.abs(
-              vec3.dot(
-                vec3.sub(vec3.create(), worldPoint, planeOrigin),
-                viewPlaneNormal
-              )
-            );
-            if (distanceFromPlane > halfSpacingInNormalDirection) {
-              continue;
-            }
-
-            // Check if this voxel is inside or outside the boundary
-            const isContained = isPointInsidePolyline3D(worldPoint, polyline, {
-              viewPlaneNormal,
-              viewUp,
-              precomputedProjection,
-            });
-            if (isContained) {
-              previewVoxels.setAtIJK(i, j, k, segmentIndex);
-            }
-          }
-        }
+      for (const { ijk } of iterateVoxelsInShape({
+        volume,
+        planePoint,
+        viewPlaneNormal,
+        bounds: getAreaAnnotationIndexBounds(
+          polyline,
+          volume,
+          imageData,
+          viewPlaneNormal,
+          getMembershipHalfWidth(voxelThickness, voxelThickness)
+        ),
+        getShapeRuns: shape.getRuns,
+      })) {
+        previewVoxels.setAtIJK(ijk[0], ijk[1], ijk[2], segmentIndex);
       }
 
       if (removeContours) {

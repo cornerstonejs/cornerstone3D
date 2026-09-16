@@ -199,7 +199,7 @@ export default function sampleAreaAnnotationVoxels({
     planePoint,
     viewPlaneNormal,
     referencePlaneThickness: slabThickness,
-    bounds: getAnnotationIndexBounds(
+    bounds: getAreaAnnotationIndexBounds(
       points,
       volume,
       imageData,
@@ -277,14 +277,17 @@ function resolveAnnotationNormal(
  *   fixed one voxel silently drops the outer layers of a thick annotation.
  *
  * The extra voxel on top absorbs the rounding of a fractional index.
+ *
+ * A labelmap fill uses this as well, so the box that a fill walks and the box
+ * that a statistic walks stay the same box.
  */
-function getAnnotationIndexBounds(
+export function getAreaAnnotationIndexBounds(
   points: Types.Point3[],
   volume: Pick<AreaAnnotationVolume, 'dimensions' | 'direction' | 'spacing'>,
   imageData,
   viewPlaneNormal: Types.Point3,
   halfWidth: number,
-  margin: number
+  margin = 0
 ): Types.BoundsIJK {
   const { dimensions, direction, spacing } = volume;
 

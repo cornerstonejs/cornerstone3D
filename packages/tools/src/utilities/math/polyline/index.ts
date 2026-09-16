@@ -21,11 +21,7 @@ import pointsAreWithinCloseContourProximity from './pointsAreWithinCloseContourP
 import addCanvasPointsToArray from './addCanvasPointsToArray';
 import pointCanProjectOnLine from './pointCanProjectOnLine';
 import { isPointInsidePolyline3D } from './isPointInsidePolyline3D';
-import {
-  isObliqueProjection,
-  projectPointTo2D,
-  projectTo2D,
-} from './projectTo2D';
+import { projectTo2D } from './projectTo2D';
 import convexHull from './convexHull';
 import arePolylinesIdentical from './arePolylinesIdentical';
 
@@ -53,8 +49,6 @@ export {
   subtractPolylines,
   intersectPolylines,
   isPointInsidePolyline3D,
-  isObliqueProjection,
-  projectPointTo2D,
   projectTo2D,
   convexHull,
   arePolylinesIdentical,
