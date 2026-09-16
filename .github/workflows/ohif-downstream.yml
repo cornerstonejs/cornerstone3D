@@ -177,14 +177,19 @@ jobs:
           OHIF_REF_INPUT: ${{ github.event.inputs.ohif_ref }}
           DEFAULT_REF: master
 
-      # OHIF_REF is read as a shell variable ($OHIF_REF), never interpolated as
-      # ${{ env.OHIF_REF }}: its value comes from the PR body (see the resolve
-      # step above), and GitHub pastes ${{ }} in as literal text before the
-      # shell exists — so punctuation in the value would become program
-      # structure and execute here on the nashua box. The shell expands
-      # $OHIF_REF only after parsing the command line, so it can only ever be
-      # data. The github.* values below are GitHub-supplied and not PR-settable,
-      # so they stay as expressions.
+      # Every `run:` step reads OHIF_REF as a shell variable ($OHIF_REF), and
+      # none of them interpolates it as ${{ env.OHIF_REF }}: its value comes
+      # from the PR body (see the resolve step above), and GitHub pastes ${{ }}
+      # in as literal text before the shell exists — so punctuation in the value
+      # would become program structure and execute here on the nashua box. The
+      # shell expands $OHIF_REF only after it parses the command line, so the
+      # value can only ever be data. The github.* values below are
+      # GitHub-supplied and not PR-settable, so they stay as expressions.
+      #
+      # The one ${{ env.OHIF_REF }} in this file is the `ref:` input of the
+      # Checkout OHIF step. An action input is not a shell command, so the
+      # paste-before-parse problem does not apply there; the resolve step
+      # validates the value for the checkout itself.
       - name: Log build context (OHIF/CS3D branch and version for build diagnosis)
         run: |
           echo "::notice::Build type: ohif-downstream | CS3D: ${{ github.repository }}@${{ github.ref }} (${{ github.sha }}) | OHIF ref: ${OHIF_REF}"
@@ -247,7 +252,11 @@ jobs:
       # pnpm-workspace.yaml in $OHIF_DIR is what keeps its install separate from
       # this repo's workspace: pnpm treats the nearest workspace file as the root
       # and never looks further up. --frozen-lockfile installs exactly the
-      # versions OHIF ships and honours its minimumReleaseAge quarantine;
+      # versions OHIF ships, `overrides` included. It does not apply OHIF's
+      # minimumReleaseAge quarantine: pnpm applies that setting when it resolves
+      # a version range, and a frozen lockfile resolves nothing. The lockfile is
+      # the stronger guarantee anyway — it pins an exact version per package,
+      # where the quarantine only bars a version that npm published recently.
       - name: Install OHIF dependencies
         working-directory: ${{ env.OHIF_DIR }}
         run: pnpm install --frozen-lockfile
