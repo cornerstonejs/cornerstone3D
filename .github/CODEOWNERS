@@ -32,16 +32,31 @@
 /scripts/ci/                                     @jbocce @sedghi @wayfarer3130
 /scripts/run-playwright.sh                       @jbocce @sedghi @wayfarer3130
 /scripts/link-ohif-cornerstone-node-modules.mjs  @jbocce @sedghi @wayfarer3130
-/preinstall.js                                   @jbocce @sedghi @wayfarer3130
-/package.json                                    @jbocce @sedghi @wayfarer3130
 /pnpm-lock.yaml                                  @jbocce @sedghi @wayfarer3130
 /pnpm-workspace.yaml                             @jbocce @sedghi @wayfarer3130
+
+# The next two rules carry no leading slash, so they match at every depth, and
+# that is deliberate. A root `pnpm install` runs the lifecycle scripts of every
+# workspace project, not only the root one: packages/docs/package.json already
+# declares `"preinstall": "node preinstall.js"`. A root-anchored /package.json
+# would route the root manifest for review and let a fork add a `postinstall` to
+# packages/<name>/package.json, or edit packages/docs/preinstall.js, with no
+# code owner in front of the merge.
+#
+# The cost is that a version bump or a dependency change in any workspace
+# project now needs an approval from one of these owners. That is the intended
+# trade: the same manifest that carries the version carries the lifecycle
+# scripts.
+package.json                                     @jbocce @sedghi @wayfarer3130
+preinstall.js                                    @jbocce @sedghi @wayfarer3130
 
 # These do not exist in the repository today, and the rules have to be here
 # before the files are: pnpm executes a root pnpmfile if one appears, and reads
 # .npmrc for the registry and install policy. Both pnpmfile extensions are
-# listed because either name is loaded.
-/.npmrc                                          @jbocce @sedghi @wayfarer3130
+# listed because either name is loaded. .npmrc is unanchored for the reason
+# above; the pnpmfile rules stay root-anchored, because pnpm loads only a root
+# pnpmfile.
+.npmrc                                           @jbocce @sedghi @wayfarer3130
 /.pnpmfile.mjs                                   @jbocce @sedghi @wayfarer3130
 /.pnpmfile.cjs                                   @jbocce @sedghi @wayfarer3130
 /pnpmfile.mjs                                    @jbocce @sedghi @wayfarer3130
