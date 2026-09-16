@@ -1,9 +1,7 @@
 import type { Types } from '@cornerstonejs/core';
-import { vec3 } from 'gl-matrix';
 import {
   RenderingEngine,
   Enums,
-  getRenderingEngine,
   setVolumesForViewports,
   volumeLoader,
   getEnabledElement,
@@ -14,9 +12,11 @@ import {
   setTitleAndDescription,
   addDropdownToToolbar,
   addSliderToToolbar,
+  createObliqueAngleController,
   getLocalUrl,
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
+import type { ObliqueAngleController } from '../../../../utils/demo/helpers/camera/createObliqueAngleController';
 import * as cornerstone from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import { fillVolumeLabelmapWithMockData } from '../../../../utils/test/fillVolumeLabelmapWithMockData';
@@ -110,68 +110,9 @@ addButtonToToolbar({
   },
 });
 
-// The camera of the axial viewport before the example applies an oblique angle.
-let axialBaseCamera: {
-  viewPlaneNormal: Types.Point3;
-  viewUp: Types.Point3;
-  focalPoint: Types.Point3;
-  distance: number;
-};
-
-/**
- * Rotates the axial viewport about the world X axis by an exact angle. An
- * oblique plane has no shared X, Y or Z value across the contour points, and
- * that is the condition that this example tests.
- *
- * The rotation keeps the focal point of the first camera, so the plane always
- * turns about the centre of the volume. `setCamera` must also get the new
- * position, because `viewPlaneNormal` alone turns the camera about its
- * position, and that moves the focal point out of the volume.
- */
-function setAxialObliqueAngle(degrees: number) {
-  const viewport = getRenderingEngine(renderingEngineId)?.getViewport(
-    viewportId1
-  ) as Types.IVolumeViewport;
-
-  if (!viewport || !axialBaseCamera) {
-    return;
-  }
-
-  const { focalPoint, distance } = axialBaseCamera;
-  const radians = (degrees * Math.PI) / 180;
-  const origin: Types.Point3 = [0, 0, 0];
-  const viewPlaneNormal = vec3.create();
-  const viewUp = vec3.create();
-
-  vec3.rotateX(
-    viewPlaneNormal,
-    axialBaseCamera.viewPlaneNormal,
-    origin,
-    radians
-  );
-  vec3.rotateX(viewUp, axialBaseCamera.viewUp, origin, radians);
-
-  // The view plane normal points from the focal point towards the camera.
-  const position = vec3.scaleAndAdd(
-    vec3.create(),
-    focalPoint as vec3,
-    viewPlaneNormal,
-    distance
-  );
-
-  viewport.setCamera({
-    focalPoint,
-    position: Array.from(position) as Types.Point3,
-    viewPlaneNormal: Array.from(viewPlaneNormal) as Types.Point3,
-    viewUp: Array.from(viewUp) as Types.Point3,
-  });
-
-  // The focal point above is the centre of the volume, and the centre does not
-  // sit on the grid of slice positions of the new normal. `scroll(0)` moves no
-  // slice, and it rounds the focal point onto the nearest slice position.
-  viewport.scroll(0);
-  viewport.render();
-}
+// Tilts the axial viewport. The example creates the controller once the
+// viewport renders the volume, so the slider does nothing before that.
+let axialOblique: ObliqueAngleController;
 
 addSliderToToolbar({
   title: 'Axial Oblique Angle',
@@ -179,7 +120,7 @@ addSliderToToolbar({
   step: 1,
   defaultValue: 0,
   onSelectedValueChange: (value) => {
-    setAxialObliqueAngle(Number(value));
+    axialOblique?.setAngle(Number(value));
   },
 });
 
@@ -326,17 +267,11 @@ async function run() {
   // Render the image
   renderingEngine.render();
 
-  // The slider rotates this camera, so read it after the volume sets the camera.
-  const { viewPlaneNormal, viewUp, focalPoint, position } = (
+  // The controller captures this camera, so create it after the volume sets
+  // the camera.
+  axialOblique = createObliqueAngleController(
     renderingEngine.getViewport(viewportId1) as Types.IVolumeViewport
-  ).getCamera();
-
-  axialBaseCamera = {
-    viewPlaneNormal,
-    viewUp,
-    focalPoint,
-    distance: vec3.distance(position, focalPoint),
-  };
+  );
 
   elements.forEach((element) =>
     element.addEventListener(csToolsEnums.Events.KEY_DOWN, (evt) => {
