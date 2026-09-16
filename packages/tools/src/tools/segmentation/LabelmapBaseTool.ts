@@ -40,10 +40,19 @@ import { resetElementCursor } from '../../cursors/elementCursor';
 const {
   asUnitNormal,
   createPolylineShape,
-  getMembershipHalfWidth,
+  getSlabHalfWidth,
   getVoxelThicknessAlongNormal,
   iterateVoxelsInShape,
 } = csUtils.voxelSlab;
+
+/**
+ * A contour to labelmap conversion is a fill, so it follows Rule F and not
+ * Rule M: it writes the voxels whose centre the contour's own slab holds. See
+ * `getFillHalfWidth` in core, and the brush fills in
+ * `strategies/utils/brushVoxelSlab.ts`, which take the same coverage for the
+ * same reason.
+ */
+const CONTOUR_FILL_COVERAGE = 'centerInside' as const;
 
 /**
  * A type for preview data/information, used to setup previews on hover, or
@@ -764,9 +773,16 @@ export default class LabelmapBaseTool extends BaseTool {
 
       // Fill the outline the way a brush of the same shape fills it: the
       // polyline is the brush shape, and the slab is one voxel thick along the
-      // contour's own normal. The shape reports no thickness of its own, so a
-      // thin oblique contour writes the single frame that the view shows, and
-      // the walk never visits a voxel off that frame.
+      // contour's own normal. `createPolylineShape` is flat, so the shape
+      // reports no thickness of its own, and the coverage decides the depth.
+      //
+      // The coverage is `centerInside`, which is Rule F. Rule M widens the slab
+      // by half a voxel on each side, so a contour that falls midway between
+      // two voxel layers writes both layers, and two contours on neighbouring
+      // frames write the layer between them two times. Rule F writes only the
+      // voxels whose centre the slab holds. A thin oblique contour therefore
+      // writes the single frame that the view shows, the walk never visits a
+      // voxel off that frame, and contours on consecutive frames tile.
       const planePoint = polyline[0];
       const voxelThickness = getVoxelThicknessAlongNormal(
         volume,
@@ -783,12 +799,17 @@ export default class LabelmapBaseTool extends BaseTool {
         volume,
         planePoint,
         viewPlaneNormal,
+        depthCoverage: CONTOUR_FILL_COVERAGE,
         bounds: getShapeIndexBounds(
           polyline,
           volume,
           imageData,
           viewPlaneNormal,
-          getMembershipHalfWidth(voxelThickness, voxelThickness)
+          getSlabHalfWidth(
+            voxelThickness,
+            voxelThickness,
+            CONTOUR_FILL_COVERAGE
+          )
         ),
         getShapeRuns: shape.getRuns,
       })) {
