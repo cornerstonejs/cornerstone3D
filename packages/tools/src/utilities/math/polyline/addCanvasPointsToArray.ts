@@ -2,6 +2,11 @@ import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { vec2, vec3 } from 'gl-matrix';
 import type { PlanarFreehandROICommonData } from './planarFreehandROIInternalTypes';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.math.polyline.addCanvasPointsToArray'
+);
 
 /**
  * Adds one or more points to the array at a resolution defined by the underlying image.
@@ -18,7 +23,7 @@ const addCanvasPointsToArray = (
 
   if (!canvasPoints.length) {
     canvasPoints.push(newCanvasPoint);
-    console.log('>>>>> !canvasPoints. :: RETURN');
+    cs3dLogger.info('>>>>> !canvasPoints. :: RETURN');
     return 1;
   }
 

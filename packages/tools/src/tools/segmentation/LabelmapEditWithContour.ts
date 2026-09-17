@@ -23,6 +23,10 @@ import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getAct
 import { isSegmentIndexLocked } from '../../stateManagement/segmentation/segmentLocking';
 import { getSegmentIndexVisibility } from '../../stateManagement/segmentation/config/segmentationVisibility';
 
+const cs3dLogger = utilities.logger.toolsLog.getLogger(
+  'tools.segmentation.LabelmapEditWithContour'
+);
+
 /**
  * LabelMapEditWithContourTool provides an intuitive way to edit labelmap segmentations
  * by drawing freehand contours. This tool combines the precision of contour drawing
@@ -226,7 +230,7 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
     activeSeg: Segmentation
   ) {
     if (!activeSeg) {
-      console.log('No active segmentation detected');
+      cs3dLogger.info('No active segmentation detected');
       return false;
     }
 

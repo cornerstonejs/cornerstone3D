@@ -28,7 +28,7 @@ import {
   removeAnnotation,
 } from '../../stateManagement/annotation/annotationState';
 import { filterAnnotationsForDisplay } from '../../utilities/planar';
-import { isPointInsidePolyline3D } from '../../utilities/math/polyline';
+import { iterateContourFillVoxels } from './strategies/utils/contourVoxelSlab';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import { fillInsideCircle } from './strategies';
 import type { LabelmapToolOperationData } from '../../types/LabelmapToolOperationData';
@@ -40,6 +40,10 @@ import {
 import getViewportICamera from '../../utilities/getViewportICamera';
 import type { Annotations } from '../../types';
 import { getSegmentIndexVisibility } from '../../stateManagement/segmentation/config/segmentationVisibility';
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+import { resetElementCursor } from '../../cursors/elementCursor';
+
+const { asUnitNormal } = csUtils.voxelSlab;
 
 /**
  * A type for preview data/information, used to setup previews on hover, or
@@ -139,6 +143,19 @@ export default class LabelmapBaseTool extends BaseTool {
     isDrag: false,
   };
 
+  /**
+   * Whether a draw loop is currently in progress. Declared here so the shared
+   * touch-cancellation path can reason about it; the drawing tools narrow it.
+   */
+  protected isDrawing?: boolean;
+
+  /**
+   * In-progress draw state. Declared here only with the members the shared
+   * touch-cancellation path needs; the drawing tools narrow it to their own
+   * (richer) shape.
+   */
+  protected editData?: { viewportIdsToRender?: string[] } | null;
+
   protected memoMap: Map<string, LabelmapMemo.LabelmapMemo>;
   protected acceptedMemoIds: Map<
     string,
@@ -156,6 +173,38 @@ export default class LabelmapBaseTool extends BaseTool {
       hasPreviewIndex: false,
       changedIndices: [],
     };
+  }
+
+  /**
+   * Cancels an in-progress touch draw when the gesture turns out to be
+   * multi-finger (pinch zoom, multi-finger scroll). The rubber band of the
+   * scissors tools lives only in `editData` and is never written to the
+   * annotation state, so tearing the draw loop down and re-rendering makes it
+   * disappear without applying anything to the labelmap.
+   *
+   * Tools whose stroke has already written voxels (BrushTool) need to roll
+   * those writes back as well and therefore override this.
+   */
+  protected _cancelTouchDraw(element: HTMLDivElement): void {
+    if (!this.isDrawing) {
+      return;
+    }
+
+    const viewportIdsToRender = this.editData?.viewportIdsToRender;
+
+    // Declared on the subclasses (BrushTool declares it `private`, so it
+    // cannot be widened to `protected` on this class).
+    (
+      this as unknown as { _deactivateDraw: (element: HTMLDivElement) => void }
+    )._deactivateDraw(element);
+
+    resetElementCursor(element);
+    this.editData = null;
+    this.isDrawing = false;
+
+    if (viewportIdsToRender) {
+      triggerAnnotationRenderForViewportIds(viewportIdsToRender);
+    }
   }
 
   protected _historyRedoHandler(evt) {
@@ -199,6 +248,24 @@ export default class LabelmapBaseTool extends BaseTool {
   // Gets a shared preview data
   protected get _previewData() {
     return LabelmapBaseTool.previewData;
+  }
+
+  /**
+   * Stores the result of a strategy as the shared preview, but only when the
+   * strategy actually set a preview up.
+   *
+   * `BrushStrategy.fill` returns its initialized data for every stroke, with a
+   * preview or without one, so the raw result cannot go into `previewData.preview`
+   * directly. `modified` is the field that says a preview segment index went onto
+   * the labelmap: the `preview` composition sets `modified` to true only when both
+   * `previewSegmentIndex` and `segmentIndex` are present. `addPreview` uses the
+   * same test.
+   *
+   * Keeping `previewData.preview` truthful is what lets every labelmap tool share
+   * one preview: any tool can then reject the preview that any other tool created.
+   */
+  protected _setPreview(results) {
+    this._previewData.preview = results?.modified ? results : null;
   }
 
   /**
@@ -550,11 +617,19 @@ export default class LabelmapBaseTool extends BaseTool {
       return;
     }
 
-    this.applyActiveStrategyCallback(
-      enabledElement,
-      operationData,
-      StrategyCallbacks.RejectPreview
-    );
+    // A reject only has work to do when a preview exists. `previewData` is shared by
+    // every labelmap tool on purpose, so any tool can reject the preview that any other
+    // tool created, but the element alone says only that some tool has painted. Every
+    // paint path stores its result through `_setPreview`, so `preview` is set when, and
+    // only when, preview voxels are on the labelmap. See `BrushTool.rejectPreview` for
+    // what running the strategy without a preview costs.
+    if (this._previewData.preview) {
+      this.applyActiveStrategyCallback(
+        enabledElement,
+        operationData,
+        StrategyCallbacks.RejectPreview
+      );
+    }
 
     // Make sure to fully reset all preview related data
     this._previewData.preview = null;
@@ -657,7 +732,6 @@ export default class LabelmapBaseTool extends BaseTool {
     const previewVoxels = memo?.voxelManager;
     const segmentationVoxels =
       previewVoxels.sourceVoxelManager || previewVoxels;
-    const { dimensions } = previewVoxels;
 
     // Create an undo history for the operation
     // Iterate through the canvas space in canvas index coordinates
@@ -666,26 +740,21 @@ export default class LabelmapBaseTool extends BaseTool {
       .actor.getMapper()
       .getInputData();
 
+    // The geometry that the voxel slab iterator walks. The labelmap is derived
+    // from this image data, so the two share every index.
+    const volume = {
+      dimensions: imageData.getDimensions(),
+      direction: imageData.getDirection(),
+      spacing: imageData.getSpacing(),
+      origin: imageData.getOrigin(),
+    };
+
     for (const annotation of viewAnnotations) {
-      const boundsIJK = [
-        [Infinity, -Infinity],
-        [Infinity, -Infinity],
-        [Infinity, -Infinity],
-      ];
-
       const { polyline } = annotation.data.contour;
-      for (const point of polyline) {
-        const indexPoint = imageData.worldToIndex(point);
-        indexPoint.forEach((v, idx) => {
-          boundsIJK[idx][0] = Math.min(boundsIJK[idx][0], v);
-          boundsIJK[idx][1] = Math.max(boundsIJK[idx][1], v);
-        });
-      }
-
-      boundsIJK.forEach((bound, idx) => {
-        bound[0] = Math.round(Math.max(0, bound[0]));
-        bound[1] = Math.round(Math.min(dimensions[idx] - 1, bound[1]));
-      });
+      const camera = viewport.getCamera();
+      const viewPlaneNormal = asUnitNormal(
+        annotation.metadata?.viewPlaneNormal ?? camera.viewPlaneNormal
+      );
 
       const activeIndex = getActiveSegmentIndex(segmentationId);
       const startPoint = annotation.data.handles?.[0] || polyline[0];
@@ -756,34 +825,37 @@ export default class LabelmapBaseTool extends BaseTool {
         }
       }
 
-      for (let i = boundsIJK[0][0]; i <= boundsIJK[0][1]; i++) {
-        for (let j = boundsIJK[1][0]; j <= boundsIJK[1][1]; j++) {
-          for (let k = boundsIJK[2][0]; k <= boundsIJK[2][1]; k++) {
-            const worldPoint = imageData.indexToWorld([i, j, k]);
-            const isContained = isPointInsidePolyline3D(worldPoint, polyline);
-            if (isContained) {
-              const currentSegmentIndex = segmentationVoxels.getAtIJK(i, j, k);
-              if (currentSegmentIndex && currentSegmentIndex > 0) {
-                const isSegmentLocked = isSegmentIndexLocked(
-                  segmentationId,
-                  currentSegmentIndex
-                );
-                const isSegmentHidden = !getSegmentIndexVisibility(
-                  viewport.id,
-                  {
-                    segmentationId,
-                    type: SegmentationRepresentations.Labelmap,
-                  },
-                  currentSegmentIndex
-                );
-                if (isSegmentLocked || isSegmentHidden) {
-                  continue;
-                }
-              }
-              previewVoxels.setAtIJK(i, j, k, segmentIndex);
-            }
+      // Fill the outline the way a brush of the same shape fills it. See
+      // `iterateContourFillVoxels` for the shape and the depth rule.
+      for (const ijk of iterateContourFillVoxels({
+        volume,
+        polyline,
+        viewPlaneNormal,
+        imageData,
+      })) {
+        const currentSegmentIndex = segmentationVoxels.getAtIJK(
+          ijk[0],
+          ijk[1],
+          ijk[2]
+        );
+        if (currentSegmentIndex && currentSegmentIndex > 0) {
+          const isSegmentLocked = isSegmentIndexLocked(
+            segmentationId,
+            currentSegmentIndex
+          );
+          const isSegmentHidden = !getSegmentIndexVisibility(
+            viewport.id,
+            {
+              segmentationId,
+              type: SegmentationRepresentations.Labelmap,
+            },
+            currentSegmentIndex
+          );
+          if (isSegmentLocked || isSegmentHidden) {
+            continue;
           }
         }
+        previewVoxels.setAtIJK(ijk[0], ijk[1], ijk[2], segmentIndex);
       }
 
       if (removeContours) {

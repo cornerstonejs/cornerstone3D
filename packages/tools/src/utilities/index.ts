@@ -20,6 +20,7 @@ import triggerAnnotationRenderForToolGroupIds from './triggerAnnotationRenderFor
 import triggerAnnotationRender from './triggerAnnotationRender';
 
 import { getSphereBoundsInfo } from './getSphereBoundsInfo';
+import sampleAreaAnnotationVoxels from './sampleAreaAnnotationVoxels';
 import { pointToString } from './pointToString';
 import AnnotationMultiSlice from './AnnotationMultiSlice';
 import getViewportForAnnotation from './getViewportForAnnotation';
@@ -62,7 +63,10 @@ import { moveAnnotationToViewPlane } from './moveAnnotationToViewPlane';
 import { safeStructuredClone } from './safeStructuredClone';
 import getOrCreateImageVolume from './segmentation/getOrCreateImageVolume';
 import * as usFanExtraction from '../tools/annotation/UltrasoundPleuraBLineTool/utils/fanExtraction';
-import { jumpToFocalPoint } from './genericViewportToolHelpers';
+import {
+  jumpToFocalPoint,
+  getViewSlabDepthOfViewport,
+} from './genericViewportToolHelpers';
 import pickIntensityPointInSlab, {
   getSlabIntensityPickContext,
 } from './pickIntensityPointInSlab';
@@ -94,6 +98,7 @@ export {
   triggerAnnotationRenderForToolGroupIds,
   triggerAnnotationRender,
   getSphereBoundsInfo,
+  sampleAreaAnnotationVoxels,
   getAnnotationNearPoint,
   getViewportForAnnotation,
   getAnnotationNearPointOnEnabledElement,
@@ -123,6 +128,7 @@ export {
   safeStructuredClone,
   getOrCreateImageVolume,
   jumpToFocalPoint,
+  getViewSlabDepthOfViewport,
   pickIntensityPointInSlab,
   getSlabIntensityPickContext,
 };

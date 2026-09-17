@@ -5,6 +5,11 @@ import {
   getAnnotationMapFromSegmentation,
   type AnnotationInfo,
 } from './getAnnotationMapFromSegmentation';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'stateManagement.segmentation.utilities.getPolylineMap'
+);
 
 /**
  * Creates a copy of the polyline and adds the first point to the end if closed is true.
@@ -62,7 +67,7 @@ export function getPolylinesMap(
   );
 
   if (!annotationUIDsInSegmentMap.has(segmentIndex)) {
-    console.warn(
+    cs3dLogger.warn(
       `No contour information found for segmentIndex ${segmentIndex}`
     );
     return;

@@ -44,6 +44,11 @@ import { setAnnotationSelected } from '../../stateManagement/annotation/annotati
 import { addContourSegmentationAnnotation } from '../../utilities/contourSegmentation';
 import { safeStructuredClone } from '../../utilities/safeStructuredClone';
 import getViewportICamera from '../../utilities/getViewportICamera';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.base.AnnotationTool'
+);
 
 const { DefaultHistoryMemo } = csUtils.HistoryMemo;
 
@@ -788,7 +793,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
         }
         const currentAnnotation = getAnnotation(annotationUID);
         if (!currentAnnotation) {
-          console.warn('No current annotation');
+          cs3dLogger.warn('No current annotation');
           return;
         }
         Object.assign(currentAnnotation.data, state.data);

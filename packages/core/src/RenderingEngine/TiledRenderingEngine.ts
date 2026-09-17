@@ -2,12 +2,14 @@ import BaseRenderingEngine, { VIEWPORT_MIN_SIZE } from './BaseRenderingEngine';
 import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
+import { coreLog } from '../utilities/logger';
 import viewportTypeUsesCustomRenderingPipeline from './helpers/viewportTypeUsesCustomRenderingPipeline';
 import getOrCreateCanvas from './helpers/getOrCreateCanvas';
 import type IStackViewport from '../types/IStackViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
 import { vtkOffscreenMultiRenderWindow } from './vtkClasses';
 import { attachWebGLContextEvents } from './helpers/attachWebGLContextEvents';
+import { setElementTouchActionNone } from './helpers/elementTouchAction';
 
 import type * as EventTypes from '../types/EventTypes';
 import type {
@@ -58,6 +60,8 @@ interface ViewportDisplayCoords {
  *
  * @public
  */
+const log = coreLog.getLogger('RenderingEngine', 'TiledRenderingEngine');
+
 class TiledRenderingEngine extends BaseRenderingEngine {
   constructor(id?: string) {
     super(id);
@@ -143,6 +147,10 @@ class TiledRenderingEngine extends BaseRenderingEngine {
 
     // Make the element not focusable, we use this for modifier keys to work
     element.tabIndex = -1;
+
+    // Deliver touch input to cornerstone tools instead of the browser
+    // (scroll, pinch-zoom, double-tap zoom). Restored in _resetViewport.
+    setElementTouchActionNone(element);
 
     const { offScreenCanvasWidth, offScreenCanvasHeight, xOffset } =
       offscreenCanvasProperties;
@@ -450,7 +458,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
       viewport.sWidth < VIEWPORT_MIN_SIZE ||
       viewport.sHeight < VIEWPORT_MIN_SIZE
     ) {
-      console.warn('Viewport is too small', viewport.sWidth, viewport.sHeight);
+      log.warn('Viewport is too small', viewport.sWidth, viewport.sHeight);
       return;
     }
     if (viewportTypeUsesCustomRenderingPipeline(viewport.type) === true) {

@@ -1,4 +1,7 @@
 import type { PixelDataTypedArray, PixelDataTypedArrayString } from '../types';
+import { coreLog } from './logger';
+
+const log = coreLog.getLogger('utilities', 'getBufferConfiguration');
 
 /**
  * Gets the appropriate TypedArray constructor based on the provided buffer type.
@@ -24,7 +27,7 @@ function getConstructorFromType(
       if (!isVolumeBuffer) {
         return bufferType === 'Uint16Array' ? Uint16Array : Int16Array;
       } else {
-        console.debug(
+        log.debug(
           `${bufferType} is not supported for volume rendering, switching back to Float32Array`
         );
         return Float32Array;

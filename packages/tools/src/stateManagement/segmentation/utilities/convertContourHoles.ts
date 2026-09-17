@@ -6,6 +6,11 @@ import {
 } from '../../annotation/annotationState';
 import { getSegmentation } from '../getSegmentation';
 import { extractSegmentPolylines } from './extractSegmentPolylines';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'stateManagement.segmentation.utilities.convertContourHoles'
+);
 
 /**
  * Discovers contour holes in a segment, clears their parent, and adds their annotationUID to the representationData.annotationUIDsSet.
@@ -23,11 +28,11 @@ export default function convertContourHoles(
 ) {
   const segmentation = getSegmentation(segmentationId);
   if (!segmentation) {
-    console.warn(`Invalid segmentation given ${segmentationId}`);
+    cs3dLogger.warn(`Invalid segmentation given ${segmentationId}`);
     return;
   }
   if (!segmentation.representationData.Contour) {
-    console.warn(
+    cs3dLogger.warn(
       `No contour representation found for segmentation ${segmentationId}`
     );
     return;
@@ -35,12 +40,14 @@ export default function convertContourHoles(
 
   const { annotationUIDsMap } = segmentation?.representationData.Contour || {};
   if (!annotationUIDsMap) {
-    console.warn(`No annotation map found for segmentation ${segmentationId}`);
+    cs3dLogger.warn(
+      `No annotation map found for segmentation ${segmentationId}`
+    );
     return;
   }
   const annotationsUIDsSet = annotationUIDsMap?.get(segmentIndex);
   if (!annotationsUIDsSet) {
-    console.warn(
+    cs3dLogger.warn(
       `Segmentation index ${segmentIndex} has no annotations in segmentation ${segmentationId}`
     );
     return;
@@ -52,13 +59,13 @@ export default function convertContourHoles(
   if (targetSegmentationId && typeof targetSegmentationIndex === 'number') {
     const targetSegmentation = getSegmentation(targetSegmentationId);
     if (!targetSegmentation) {
-      console.warn(
+      cs3dLogger.warn(
         `Target segmentation ${targetSegmentationId} does not exist.`
       );
       return;
     }
     if (!targetSegmentation.representationData.Contour) {
-      console.warn(
+      cs3dLogger.warn(
         `No contour representation found for target segmentation ${targetSegmentationId}`
       );
       return;
@@ -82,7 +89,7 @@ export default function convertContourHoles(
     segmentIndex
   );
   if (!polylinesCanvasMap) {
-    console.warn(
+    cs3dLogger.warn(
       `Error extracting contour data from segment ${segmentIndex} in segmentation ${segmentationId}`
     );
     return;

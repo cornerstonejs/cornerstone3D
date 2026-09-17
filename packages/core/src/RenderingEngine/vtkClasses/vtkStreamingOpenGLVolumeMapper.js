@@ -9,6 +9,12 @@ import { Representation } from '@kitware/vtk.js/Rendering/Core/Property/Constant
 import { BlendMode } from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants';
 import { getCanUseNorm16Texture } from '../../init';
 import canUseFloatOpacityTexture from './canUseFloatOpacityTexture';
+import { coreLog } from '../../utilities/logger';
+
+const log = coreLog.getLogger(
+  'RenderingEngine',
+  'vtkStreamingOpenGLVolumeMapper'
+);
 
 /**
  * vtkStreamingOpenGLVolumeMapper - A derived class of the core vtkOpenGLVolumeMapper class.
@@ -334,7 +340,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
         // Ensure texture exists for this component
         if (!model.scalarTextures[component]) {
           // Texture should have been initialized in extend(), but create if missing
-          console.warn(
+          log.warn(
             `ScalarTexture for component ${component} not initialized, skipping.`
           );
           return;
