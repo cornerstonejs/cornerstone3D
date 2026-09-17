@@ -37,7 +37,12 @@ export default function touchStartActivate(
   if (activeTool.addNewAnnotation) {
     try {
       const annotation = activeTool.addNewAnnotation(evt, 'touch');
-      setAnnotationSelected(annotation.annotationUID);
+      // A tool returns a falsy value when the tool declines the interaction,
+      // for example when the active segment is locked. That is not an error,
+      // so there is nothing to select and nothing to report.
+      if (annotation?.annotationUID) {
+        setAnnotationSelected(annotation.annotationUID);
+      }
     } catch (error) {
       cs3dLogger.warn(
         'Error adding new annotation, viewport not ready:',

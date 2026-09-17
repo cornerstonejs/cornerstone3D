@@ -14,6 +14,7 @@ import * as segmentation from '../../stateManagement/segmentation';
 
 import type { PublicToolProps } from '../../types';
 import type { ContourSegmentationAnnotation } from '../../types/ContourSegmentationAnnotation';
+import type { ContourSegmentationData } from '../../types/ContourTypes';
 import type {
   RepresentationsData,
   Segmentation,
@@ -66,6 +67,35 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
    * This is used to maintain context when converting contours to labelmap data.
    */
   static annotationsToViewportMap = new Map();
+
+  /**
+   * Segmentation ids for which this tool created `representationData.Contour`.
+   * The tool removes only the Contour representation data that the tool itself
+   * created, so the tool never removes an empty Contour representation that the
+   * application owns.
+   */
+  private static temporaryContourData = new Set<string>();
+
+  /**
+   * Keys of the viewport contour representations that this tool added. The key
+   * is `${viewportId}\u0000${segmentationId}`. The tool removes only the
+   * viewport representations that the tool itself added.
+   */
+  private static temporaryContourViewports = new Set<string>();
+
+  /**
+   * Builds the key of a viewport contour representation.
+   *
+   * @param viewportId - the id of the viewport.
+   * @param segmentationId - the id of the segmentation.
+   * @returns the key for `temporaryContourViewports`.
+   */
+  private static getViewportContourKey(
+    viewportId: string,
+    segmentationId: string
+  ): string {
+    return `${viewportId}\u0000${segmentationId}`;
+  }
 
   /**
    * Creates a new instance of LabelMapEditWithContourTool.
@@ -242,6 +272,7 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
         type: SegmentationRepresentations.Contour,
         data: {},
       });
+      LabelMapEditWithContourTool.temporaryContourData.add(segmentationId);
     }
 
     const hasViewportContour = getSegmentationRepresentation(viewportId, {
@@ -250,6 +281,12 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
     });
 
     if (!hasViewportContour) {
+      LabelMapEditWithContourTool.temporaryContourViewports.add(
+        LabelMapEditWithContourTool.getViewportContourKey(
+          viewportId,
+          segmentationId
+        )
+      );
       await segmentation.addContourRepresentationToViewport(viewportId, [
         {
           segmentationId,
@@ -303,6 +340,17 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
    */
   annotationModified(evt) {
     const { annotation, renderingEngineId, viewportId } = evt.detail;
+
+    // Keep only the annotations of this tool. `applyContourStroke` creates the
+    // merged result annotations with the name of the freehand contour tool, and
+    // those annotations never reach `annotationCompleted`. Without this test the
+    // map keeps a viewport reference for every annotation of the application.
+    if (
+      annotation?.metadata?.toolName !== LabelMapEditWithContourTool.toolName
+    ) {
+      return;
+    }
+
     const viewport =
       getRenderingEngine(renderingEngineId)?.getViewport(viewportId);
     if (!viewport) {
@@ -316,12 +364,50 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
   }
 
   /**
-   * Removes the temporary Contour representation created for
+   * Reports if a Contour representation still holds an annotation.
+   *
+   * `addContourSegmentationAnnotation` puts an `annotationUIDsMap` on the
+   * Contour representation data, and the map stays there after the conversion
+   * removes the annotations. An empty map, and a map that holds no segment, are
+   * both equal to no contour content.
+   *
+   * @param contourData - the Contour representation data of the segmentation.
+   * @returns true when the Contour representation still holds content.
+   */
+  private static hasContourContent(
+    contourData: ContourSegmentationData
+  ): boolean {
+    if (contourData.geometryIds?.length) {
+      return true;
+    }
+
+    const { annotationUIDsMap } = contourData;
+
+    if (!annotationUIDsMap) {
+      return false;
+    }
+
+    for (const annotationUIDs of annotationUIDsMap.values()) {
+      if (annotationUIDs.size) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Removes the temporary Contour representation that this tool created for
    * contour-to-labelmap editing.
    *
-   * If the Contour representation data is empty after conversion,
-   * the viewport representation and corresponding Contour state
-   * are removed from the segmentation.
+   * The tool removes the viewport representation only when the tool added that
+   * viewport representation. The tool removes `representationData.Contour` only
+   * when the tool created that data. An application that owns an empty Contour
+   * representation keeps that representation.
+   *
+   * The tool also keeps the representation when the Contour representation
+   * still holds an annotation, because that annotation belongs to the
+   * application.
    *
    * @param viewport - The viewport containing the temporary Contour representation.
    * @param annotation - The annotation used to determine the segmentation.
@@ -338,16 +424,41 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
       return;
     }
 
+    const viewportKey = LabelMapEditWithContourTool.getViewportContourKey(
+      viewport.id,
+      segmentationId
+    );
+    const ownsViewportContour =
+      LabelMapEditWithContourTool.temporaryContourViewports.has(viewportKey);
+    const ownsContourData =
+      LabelMapEditWithContourTool.temporaryContourData.has(segmentationId);
+
+    if (!ownsViewportContour && !ownsContourData) {
+      return;
+    }
+
     const segmentationState =
       segmentation.state.getSegmentation(segmentationId);
 
     const contourData = segmentationState?.representationData?.Contour;
 
-    if (!contourData || Object.keys(contourData).length) {
+    if (
+      contourData &&
+      LabelMapEditWithContourTool.hasContourContent(contourData)
+    ) {
       return;
     }
 
-    segmentation.removeContourRepresentation(viewport.id, segmentationId);
+    if (ownsViewportContour) {
+      LabelMapEditWithContourTool.temporaryContourViewports.delete(viewportKey);
+      segmentation.removeContourRepresentation(viewport.id, segmentationId);
+    }
+
+    if (!ownsContourData || !segmentationState) {
+      return;
+    }
+
+    LabelMapEditWithContourTool.temporaryContourData.delete(segmentationId);
 
     const representationData = utilities.deepClone(
       segmentationState.representationData
@@ -380,8 +491,13 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
    * The method performs the following steps:
    * 1. Extracts the polyline data from the completed contour annotation
    * 2. Verifies that the annotation has an associated viewport in the tracking map
-   * 3. Ensures the polyline has sufficient points (> 3) to form a valid contour
+   * 3. Ensures the polyline has sufficient points (>= 3) to form a valid contour
    * 4. Delegates to BrushTool.viewportContoursToLabelmap() for the actual conversion
+   *
+   * The `ANNOTATION_COMPLETED` listener of `init` runs before this handler, so
+   * `applyContourStroke` already removed this annotation and put the merged
+   * result annotations in the annotation state. The conversion therefore selects
+   * the contours by segment, and not by the annotation that the event carries.
    *
    * @private
    */
@@ -395,12 +511,6 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
     }
 
     const annotationUID = annotation.annotationUID;
-    const polyline = annotation.data?.contour?.polyline;
-
-    if (!polyline || polyline.length <= 3) {
-      return;
-    }
-
     const viewport =
       LabelMapEditWithContourTool.annotationsToViewportMap.get(annotationUID);
 
@@ -408,14 +518,35 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
       return;
     }
 
-    BrushTool.viewportContoursToLabelmap(viewport, {
-      annotationFilter: (annotations) =>
-        annotations.filter(
-          (a) =>
-            (a as ContourSegmentationAnnotation).metadata?.originalToolName ===
-            LabelMapEditWithContourTool.toolName
-        ),
-    });
+    // The conversion runs only for a contour that `applyContourStroke` keeps.
+    // `applyContourStroke` drops a polyline of less than 3 points, so this test
+    // uses the same limit. The clean up below still runs for the dropped stroke,
+    // because the temporary representation exists in both cases.
+    const polyline = annotation.data?.contour?.polyline;
+    const segmentationData = (annotation as ContourSegmentationAnnotation).data
+      ?.segmentation;
+
+    if (polyline?.length >= 3 && segmentationData) {
+      BrushTool.viewportContoursToLabelmap(viewport, {
+        // `applyContourStroke` merged the stroke into the contours of the same
+        // segment on the same plane, and it names each result annotation after
+        // the freehand contour tool. The segment of the stroke is therefore the
+        // only reliable test for the result of the stroke.
+        annotationFilter: (annotations) =>
+          annotations.filter((candidate) => {
+            const candidateSegmentation = (
+              candidate as ContourSegmentationAnnotation
+            ).data?.segmentation;
+
+            return (
+              candidateSegmentation?.segmentationId ===
+                segmentationData.segmentationId &&
+              candidateSegmentation?.segmentIndex ===
+                segmentationData.segmentIndex
+            );
+          }),
+      });
+    }
 
     LabelMapEditWithContourTool.cleanupTemporaryContourRepresentation(
       viewport,
