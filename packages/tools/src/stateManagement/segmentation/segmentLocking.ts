@@ -39,10 +39,7 @@ function _setContourSegmentationSegmentAnnotationsLocked(
  * belongs to.
  * @param segmentIndex - The index of the segment
  * @returns A boolean value indicating whether the segment is locked or not.
- * A segment index that the segmentation does not declare is not locked, so
- * this function returns false for that segment index. A labelmap can hold a
- * value that `addSegmentations` never declared, and a caller that reads the
- * labelmap values gets that value.
+ * An undeclared segment index is not locked.
  */
 function isSegmentIndexLocked(
   segmentationId: string,

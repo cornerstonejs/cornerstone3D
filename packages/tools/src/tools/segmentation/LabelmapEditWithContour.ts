@@ -69,27 +69,13 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
   static annotationsToViewportMap = new Map();
 
   /**
-   * Segmentation ids for which this tool created `representationData.Contour`.
-   * The tool removes only the Contour representation data that the tool itself
-   * created, so the tool never removes an empty Contour representation that the
-   * application owns.
+   * What this tool created, and so what this tool may remove again: the
+   * segmentation ids given a `representationData.Contour`, and the viewport
+   * contour representations, keyed by `getViewportContourKey`.
    */
   private static temporaryContourData = new Set<string>();
-
-  /**
-   * Keys of the viewport contour representations that this tool added. The key
-   * is `${viewportId}\u0000${segmentationId}`. The tool removes only the
-   * viewport representations that the tool itself added.
-   */
   private static temporaryContourViewports = new Set<string>();
 
-  /**
-   * Builds the key of a viewport contour representation.
-   *
-   * @param viewportId - the id of the viewport.
-   * @param segmentationId - the id of the segmentation.
-   * @returns the key for `temporaryContourViewports`.
-   */
   private static getViewportContourKey(
     viewportId: string,
     segmentationId: string
@@ -341,10 +327,7 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
   annotationModified(evt) {
     const { annotation, renderingEngineId, viewportId } = evt.detail;
 
-    // Keep only the annotations of this tool. `applyContourStroke` creates the
-    // merged result annotations with the name of the freehand contour tool, and
-    // those annotations never reach `annotationCompleted`. Without this test the
-    // map keeps a viewport reference for every annotation of the application.
+    // Keep only this tool's annotations, otherwise the map grows without bound.
     if (
       annotation?.metadata?.toolName !== LabelMapEditWithContourTool.toolName
     ) {
@@ -364,15 +347,9 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
   }
 
   /**
-   * Reports if a Contour representation still holds an annotation.
-   *
-   * `addContourSegmentationAnnotation` puts an `annotationUIDsMap` on the
-   * Contour representation data, and the map stays there after the conversion
-   * removes the annotations. An empty map, and a map that holds no segment, are
-   * both equal to no contour content.
-   *
-   * @param contourData - the Contour representation data of the segmentation.
-   * @returns true when the Contour representation still holds content.
+   * Reports if a Contour representation still holds content. The
+   * `annotationUIDsMap` that `addContourSegmentationAnnotation` installs stays
+   * in place after the annotations are removed, so an empty map is no content.
    */
   private static hasContourContent(
     contourData: ContourSegmentationData
@@ -398,16 +375,8 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
 
   /**
    * Removes the temporary Contour representation that this tool created for
-   * contour-to-labelmap editing.
-   *
-   * The tool removes the viewport representation only when the tool added that
-   * viewport representation. The tool removes `representationData.Contour` only
-   * when the tool created that data. An application that owns an empty Contour
-   * representation keeps that representation.
-   *
-   * The tool also keeps the representation when the Contour representation
-   * still holds an annotation, because that annotation belongs to the
-   * application.
+   * contour-to-labelmap editing. Only what this tool created is removed, and
+   * only while the representation holds no content.
    *
    * @param viewport - The viewport containing the temporary Contour representation.
    * @param annotation - The annotation used to determine the segmentation.
@@ -494,10 +463,9 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
    * 3. Ensures the polyline has sufficient points (>= 3) to form a valid contour
    * 4. Delegates to BrushTool.viewportContoursToLabelmap() for the actual conversion
    *
-   * The `ANNOTATION_COMPLETED` listener of `init` runs before this handler, so
-   * `applyContourStroke` already removed this annotation and put the merged
-   * result annotations in the annotation state. The conversion therefore selects
-   * the contours by segment, and not by the annotation that the event carries.
+   * The `ANNOTATION_COMPLETED` listener of `init` runs first, so
+   * `applyContourStroke` has already replaced this annotation with the merged
+   * result. The conversion therefore selects the contours by segment.
    *
    * @private
    */
@@ -518,20 +486,16 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
       return;
     }
 
-    // The conversion runs only for a contour that `applyContourStroke` keeps.
-    // `applyContourStroke` drops a polyline of less than 3 points, so this test
-    // uses the same limit. The clean up below still runs for the dropped stroke,
-    // because the temporary representation exists in both cases.
+    // Same limit as `applyContourStroke`, so a stroke it kept is converted.
+    // The clean up below runs for a dropped stroke too.
     const polyline = annotation.data?.contour?.polyline;
     const segmentationData = (annotation as ContourSegmentationAnnotation).data
       ?.segmentation;
 
     if (polyline?.length >= 3 && segmentationData) {
       BrushTool.viewportContoursToLabelmap(viewport, {
-        // `applyContourStroke` merged the stroke into the contours of the same
-        // segment on the same plane, and it names each result annotation after
-        // the freehand contour tool. The segment of the stroke is therefore the
-        // only reliable test for the result of the stroke.
+        // The result carries the freehand tool's name, so the segment is the
+        // only reliable way to find it.
         annotationFilter: (annotations) =>
           annotations.filter((candidate) => {
             const candidateSegmentation = (

@@ -748,8 +748,6 @@ export default class LabelmapBaseTool extends BaseTool {
       origin: imageData.getOrigin(),
     };
 
-    // One lookup for the whole conversion. The lock state and the visibility
-    // state do not change while the conversion runs.
     const isSegmentEditable = createSegmentEditableLookup(
       viewport.id,
       segmentationId
@@ -784,9 +782,7 @@ export default class LabelmapBaseTool extends BaseTool {
           ? activeIndex
           : 0;
 
-      // A locked segment and a hidden segment both reject the edit. The active
-      // segment is the fall back target. When the fall back target also rejects
-      // the edit, the tool drops the annotation.
+      // Fall back to the active segment, then drop the annotation.
       if (!isSegmentEditable(segmentIndex)) {
         segmentIndex = activeIndex;
       }
@@ -828,37 +824,21 @@ export default class LabelmapBaseTool extends BaseTool {
   }
 }
 
-/** The lookup did not yet read the state for this segment index. */
 const SEGMENT_UNKNOWN = 0;
-/** The fill loop can write over this segment index. */
 const SEGMENT_EDITABLE = 1;
-/** The segment index is locked or hidden, so the fill loop must skip it. */
 const SEGMENT_BLOCKED = 2;
 
 /**
- * Creates the lookup that tells the fill loop if it can write over a segment
+ * Returns a lookup that tells the fill loop if it can write over a segment
  * index. A locked segment and a hidden segment both reject the write.
  *
- * The lookup keeps one `Uint8Array` instance, and the iteration fills that
- * array. The lookup reads the segmentation state once for each new segment
- * index, and every later voxel that holds the same segment index reads only the
- * array. The array grows when the iteration finds a segment index above the
- * current length, so a labelmap value that the segmentation never declared does
- * not make the lookup allocate the full value range in advance.
- *
- * Segment index 0 is the background, and the fill loop always writes over the
- * background.
- *
- * @param viewportId - the id of the viewport that shows the labelmap.
- * @param segmentationId - the id of the segmentation that holds the segments.
- * @returns a function that returns true when the fill loop can write over the
- * given segment index.
+ * The state is read once per segment index and cached in one Uint8Array that
+ * the iteration fills and grows.
  */
 function createSegmentEditableLookup(
   viewportId: string,
   segmentationId: string
 ): (segmentIndex: number) => boolean {
-  // Both of these reads are constant for the whole conversion.
   const segments = getSegmentation(segmentationId)?.segments;
   const hiddenSegmentIndices = getHiddenSegmentIndices(viewportId, {
     segmentationId,
@@ -885,9 +865,7 @@ function createSegmentEditableLookup(
       return cached === SEGMENT_EDITABLE;
     }
 
-    // `segments` holds no entry for a labelmap value that `addSegmentations`
-    // never declared. That value carries no lock, so the fill loop writes
-    // over it.
+    // An undeclared labelmap value has no entry, and so no lock.
     const isEditable =
       segments?.[segmentIndex]?.locked !== true &&
       !hiddenSegmentIndices.has(segmentIndex);
@@ -897,15 +875,7 @@ function createSegmentEditableLookup(
   };
 }
 
-/**
- * Removes a contour annotation that the conversion consumed.
- *
- * `removeAnnotation` takes the annotation out of the annotation state, but the
- * annotation stays in the `annotationUIDsMap` of the Contour representation.
- * `removeContourSegmentationAnnotation` takes the annotation out of that map.
- *
- * @param annotation - the contour annotation that the conversion consumed.
- */
+/** Removes a consumed contour from the annotation state and from annotationUIDsMap. */
 function removeContourAnnotation(annotation): void {
   removeAnnotation(annotation.annotationUID);
 
