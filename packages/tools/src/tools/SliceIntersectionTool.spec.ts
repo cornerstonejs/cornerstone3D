@@ -728,6 +728,61 @@ describe('SliceIntersectionTool', () => {
     ).toBe(false);
   });
 
+  it('keeps a line hovered over its slab boundary lines so wide slab handles stay reachable', () => {
+    const axial = createFakePlanarViewport({
+      id: 'axial',
+      orientation: 'axial',
+      focalPoint: [0, 0, 0],
+    });
+    // 40mm slab around x=10 -> boundary lines at x=-10 and x=30, which the
+    // fake axial canvas maps to canvas x=240 and x=280 (line at x=260).
+    const sagittal = createFakePlanarViewport({
+      id: 'sagittal',
+      orientation: 'sagittal',
+      focalPoint: [10, 0, 0],
+      slabThickness: 40,
+    });
+    // Horizontal line through canvas y=250 crossing the slab boundaries.
+    const coronal = createFakePlanarViewport({
+      id: 'coronal',
+      orientation: 'coronal',
+      focalPoint: [0, 0, 0],
+    });
+    const tool = createTool({ viewports: [axial, sagittal, coronal] });
+
+    const internals = tool as unknown as {
+      _renderedLines: Map<string, unknown[]>;
+      _findLineNear: (
+        viewportId: string,
+        canvasCoords: number[],
+        proximity: number,
+        options?: { includeHandles?: boolean; includeSlabLines?: boolean }
+      ) => { groupId: string } | null;
+    };
+    internals._renderedLines.set('axial', computeLines(tool, axial));
+
+    const findLineNear = (
+      canvasCoords: number[],
+      options?: { includeHandles?: boolean; includeSlabLines?: boolean }
+    ) =>
+      internals._findLineNear('axial', canvasCoords, 6, options)?.groupId ??
+      null;
+
+    expect(findLineNear([280, 100])).toBeNull();
+    expect(findLineNear([280, 100], { includeHandles: true })).toBeNull();
+    expect(findLineNear([280, 100], { includeSlabLines: true })).toBe(
+      'FOR1:sagittal'
+    );
+    expect(findLineNear([242, 100], { includeSlabLines: true })).toBe(
+      'FOR1:sagittal'
+    );
+
+    // A slab boundary never steals the hover of another group's line.
+    expect(findLineNear([280, 250], { includeSlabLines: true })).toBe(
+      'FOR1:coronal'
+    );
+  });
+
   it('aligns plane-group members to the group leader plane', () => {
     const ctCoronal = createFakePlanarViewport({
       id: 'ctCoronal',

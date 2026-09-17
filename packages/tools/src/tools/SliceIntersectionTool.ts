@@ -1162,7 +1162,7 @@ class SliceIntersectionTool extends AnnotationTool {
       enabledElement.viewport.id,
       canvasCoords,
       LINE_PROXIMITY,
-      true
+      { includeHandles: true }
     );
   };
 
@@ -1358,8 +1358,10 @@ class SliceIntersectionTool extends AnnotationTool {
       currentPoints.canvas,
       LINE_PROXIMITY,
       // Keep the active line (and its handles) while hovering the handles
-      // themselves, which sit at a canvas offset from the line.
-      true
+      // themselves, which sit at a canvas offset from the line, and while
+      // hovering the slab boundary lines those handles sit on: otherwise the
+      // handles of a wide slab vanish before the cursor can reach them.
+      { includeHandles: true, includeSlabLines: true }
     );
 
     let needsRedraw = false;
@@ -1923,13 +1925,18 @@ class SliceIntersectionTool extends AnnotationTool {
    * set, proximity to the line's rotation/slab handles also counts: the slab
    * handles sit at a canvas offset from the line itself, and hover must not
    * drop the active state (hiding the handles) while the cursor travels from
-   * the line onto a handle.
+   * the line onto a handle. When `includeSlabLines` is set, proximity to the
+   * dashed slab boundary lines counts too, so a wide slab's handles can be
+   * reached by hovering the boundary line they sit on.
    */
   private _findLineNear(
     viewportId: string,
     canvasCoords: Types.Point2,
     proximity: number,
-    includeHandles = false
+    {
+      includeHandles = false,
+      includeSlabLines = false,
+    }: { includeHandles?: boolean; includeSlabLines?: boolean } = {}
   ): RenderedIntersectionLine | null {
     const lines = this._renderedLines.get(viewportId) ?? [];
     const handleReach = this.configuration.handleRadius + proximity;
@@ -1960,6 +1967,25 @@ class SliceIntersectionTool extends AnnotationTool {
         if (nearHandle) {
           return lineInfo;
         }
+      }
+    }
+
+    if (includeSlabLines) {
+      // Checked after every line and handle, so a slab boundary line crossing
+      // another group's line never steals that line's hover.
+      const slabLineInfo = lines.find((lineInfo) =>
+        lineInfo.slabLineSegments.some(
+          ([segmentStart, segmentEnd]) =>
+            lineSegment.distanceToPoint(
+              segmentStart,
+              segmentEnd,
+              canvasCoords
+            ) <= proximity
+        )
+      );
+
+      if (slabLineInfo) {
+        return slabLineInfo;
       }
     }
 
