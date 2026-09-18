@@ -50,6 +50,37 @@ const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
 const { transformWorldToIndexContinuous } = csUtils;
 
 /**
+ * Returns true when the viewport shows content that this tool can measure: an
+ * image stack, or an ECG waveform.
+ *
+ * A capability guard alone is not enough. `viewportSupportsImageSlices` reports
+ * which methods a viewport exposes, and the legacy `VolumeViewport` exposes all
+ * four of them, so the guard accepts a volume viewport that this tool cannot
+ * measure. The content question needs `getCurrentMode`, which the generic
+ * viewport families answer. A legacy viewport does not answer it, so the test
+ * falls back to the volume capability for that case.
+ */
+function supportsUltrasoundDirectional(viewport: unknown): boolean {
+  if (csUtils.viewportSupportsWaveform(viewport)) {
+    return true;
+  }
+
+  if (!csUtils.viewportSupportsImageSlices(viewport)) {
+    return false;
+  }
+
+  const contentMode = csUtils.getViewportContentMode(viewport);
+
+  if (contentMode === undefined) {
+    // A legacy viewport. `VolumeViewport` carries `addVolumes` and
+    // `setVolumes`, and `StackViewport` does not.
+    return !csUtils.viewportSupportsVolumeCompatibility(viewport);
+  }
+
+  return !csUtils.viewportIsInVolumeMode(viewport);
+}
+
+/**
  * The `UltrasoundDirectionalTool` class is a tool for creating directional ultrasound annotations.
  * It allows users to draw lines and measure distances between two points in the image.
  * It automatically calculates the distance based on the relevant unit of measurement.
@@ -117,12 +148,9 @@ class UltrasoundDirectionalTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    if (
-      !csUtils.viewportSupportsImageSlices(viewport) &&
-      !csUtils.viewportSupportsWaveform(viewport)
-    ) {
+    if (!supportsUltrasoundDirectional(viewport)) {
       throw new Error(
-        'UltrasoundDirectionalTool can only be used on a viewport that supports image slices (StackViewport) or waveform data (ECGViewport)'
+        'UltrasoundDirectionalTool can only be used on a viewport that shows an image stack (StackViewport) or waveform data (ECGViewport)'
       );
     }
 

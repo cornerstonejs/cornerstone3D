@@ -93,6 +93,10 @@ export interface RenderWindowMetrics {
   worldToCanvasRatio: number;
   xOffsetCanvas: number;
   yOffsetCanvas: number;
+  /** World pixels that one second of signal occupies. */
+  pxPerSecond: number;
+  /** Sweep speed in mm/s that produced `pxPerSecond`. */
+  sweepSpeed: number;
 }
 
 /** @internal */

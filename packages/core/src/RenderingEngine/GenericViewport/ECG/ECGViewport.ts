@@ -365,14 +365,40 @@ class ECGViewport extends GenericViewport<
     }
 
     if (cameraPatch.focalPoint) {
-      const currentCamera = this.getCamera();
-      if (currentCamera.focalPoint) {
-        const dx = cameraPatch.focalPoint[0] - currentCamera.focalPoint[0];
-        const dy = cameraPatch.focalPoint[1] - currentCamera.focalPoint[1];
-        const currentPan = this.getPan();
-        this.setPan([currentPan[0] + dx, currentPan[1] + dy]);
-      }
+      this.setFocalPoint(cameraPatch.focalPoint);
     }
+  }
+
+  /**
+   * Moves the pan so that the requested world point sits at the center of the
+   * canvas.
+   *
+   * The pan is in canvas pixels, and a world point holds a sample index and a
+   * raw amplitude. The two spaces have different units and opposite vertical
+   * directions, so the conversion goes through `worldToCanvas`. The previous
+   * code added a world-space difference straight to the pan, which moved the
+   * viewport by the wrong distance and in the wrong vertical direction.
+   */
+  private setFocalPoint(focalPoint: Point3): void {
+    const resolvedView = this.getResolvedView();
+
+    if (!resolvedView) {
+      return;
+    }
+
+    const targetCanvas = resolvedView.worldToCanvas(focalPoint);
+    const canvasCenter: Point2 = [
+      this.canvas.clientWidth / 2,
+      this.canvas.clientHeight / 2,
+    ];
+    const currentPan = this.getPan();
+
+    // Moving the content so that `targetCanvas` reaches the center means
+    // shifting the pan by the canvas-space difference.
+    this.setPan([
+      currentPan[0] + (canvasCenter[0] - targetCanvas[0]),
+      currentPan[1] + (canvasCenter[1] - targetCanvas[1]),
+    ]);
   }
 
   /**
@@ -497,7 +523,10 @@ class ECGViewport extends GenericViewport<
     }
 
     const dataId = binding.data.id;
-    if (dataId === imageURI || dataId.includes(imageURI)) {
+    // Compare whole identifiers. A test with `includes` matched a UID that is
+    // a prefix of the bound UID, and it matched a fragment in the middle of the
+    // identifier, so the viewport claimed images of other instances.
+    if (dataId === imageURI || imageIdToURI(dataId) === imageURI) {
       return true;
     }
 

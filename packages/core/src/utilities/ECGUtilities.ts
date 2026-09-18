@@ -11,6 +11,12 @@ export const ECG_PX_PER_MM = 3.779;
 /** @deprecated Use ECG_DEFAULT_SWEEP_SPEED_MM_S and ECG_PX_PER_MM to compute dynamically. */
 export const ECG_SECONDS_WIDTH = 150;
 export const ECG_CHANNEL_SPACING = 5;
+/**
+ * Millivolts that one raw sample unit represents when the instance carries no
+ * channel sensitivity. A 16-bit diagnostic ECG normally samples at 1 microvolt
+ * for each unit.
+ */
+export const ECG_DEFAULT_MV_PER_UNIT = 0.001;
 
 export const ECG_RENDERING_COLORS = {
   gridMajor: '#7f0000',
@@ -27,6 +33,29 @@ export interface ECGChannelLike {
   min: number;
   max: number;
   visible?: boolean;
+  /**
+   * Millivolts that one raw sample unit of this channel represents. The value
+   * comes from the DICOM channel sensitivity. It is `ECG_DEFAULT_MV_PER_UNIT`
+   * when the instance omits the sensitivity.
+   */
+  mvPerUnit?: number;
+}
+
+/**
+ * Returns the millivolts that one raw sample unit represents for a set of
+ * channels. The function reads the first channel that carries the value,
+ * because a multiplex group shares one sensitivity in practice.
+ */
+export function getECGMvPerUnit<TChannel extends ECGChannelLike>(
+  channels: TChannel[]
+): number {
+  for (const channel of channels) {
+    if (Number.isFinite(channel.mvPerUnit) && channel.mvPerUnit > 0) {
+      return channel.mvPerUnit;
+    }
+  }
+
+  return ECG_DEFAULT_MV_PER_UNIT;
 }
 
 export interface ECGWaveformLike<
@@ -86,6 +115,14 @@ export interface ECGRenderMetrics {
   worldToCanvasRatio: number;
   xOffsetCanvas: number;
   yOffsetCanvas: number;
+  /**
+   * World pixels that one second of signal occupies. `drawECGGrid` needs this
+   * value to place the vertical grid lines, because the world width already
+   * encodes the sweep speed.
+   */
+  pxPerSecond: number;
+  /** Sweep speed in mm/s that produced `pxPerSecond`. */
+  sweepSpeed: number;
 }
 
 export interface ECGGridMetrics {
@@ -133,6 +170,11 @@ export async function loadECGWaveform(dataId: string): Promise<{
       data,
       min,
       max,
+      mvPerUnit:
+        Number.isFinite(channelDefinition.mvPerUnit) &&
+        channelDefinition.mvPerUnit > 0
+          ? channelDefinition.mvPerUnit
+          : ECG_DEFAULT_MV_PER_UNIT,
     });
   }
 
@@ -567,10 +609,16 @@ export function computeECGRenderMetrics<TChannel extends ECGChannelLike>(args: {
   let channelScale: number;
 
   if (sensitivityMmMv != null && sensitivityMmMv > 0) {
-    // Use clinically calibrated scale: pxPerMv = sensitivityMmMv * ECG_PX_PER_MM
-    // The waveform data is in raw ADC units; each unit = (1 / sensitivityMmMv) mV
-    // so channel scale = sensitivityMmMv * ECG_PX_PER_MM px / unit
-    channelScale = sensitivityMmMv * ECG_PX_PER_MM;
+    // Clinically calibrated scale. The three factors carry these units:
+    //   sensitivityMmMv  mm for each millivolt
+    //   ECG_PX_PER_MM    pixels for each mm
+    //   mvPerUnit        millivolts for each raw sample unit
+    // The product is therefore pixels for each raw sample unit, which is what
+    // the draw code and the layout need. The waveform data holds raw units, so
+    // the third factor is not optional: without it the scale is too large by
+    // the reciprocal of mvPerUnit, which is 1000 for a typical ECG.
+    channelScale =
+      sensitivityMmMv * ECG_PX_PER_MM * getECGMvPerUnit(visibleChannels);
   } else {
     // Legacy auto-fit: fill canvas height with amplitude range
     const canvasAspect =
@@ -605,6 +653,8 @@ export function computeECGRenderMetrics<TChannel extends ECGChannelLike>(args: {
     worldToCanvasRatio,
     xOffsetCanvas: (clientWidth - drawWidth) / 2,
     yOffsetCanvas: (clientHeight - drawHeight) / 2,
+    pxPerSecond,
+    sweepSpeed: resolvedSweepSpeed,
   };
 }
 
@@ -617,6 +667,7 @@ export function drawECGGrid<TChannel extends ECGChannelLike = ECGChannelLike>(
     sweepSpeed?: number;
     sensitivityMmMv?: number;
     showAmplitudeLabels?: boolean;
+    pxPerSecond?: number;
   },
   options?: { showGrid?: boolean },
   layouts?: ECGChannelLayout<TChannel>[]
@@ -633,27 +684,18 @@ export function drawECGGrid<TChannel extends ECGChannelLike = ECGChannelLike>(
     sensitivityMmMv,
     showAmplitudeLabels = true,
     worldToCanvasRatio = 1,
+    pxPerSecond,
   } = metrics;
 
   let minorH: number;
   let majorH: number;
-  let minorV: number;
-  let majorV: number;
 
-  if (
-    sweepSpeed != null &&
-    sweepSpeed > 0 &&
-    sensitivityMmMv != null &&
-    sensitivityMmMv > 0
-  ) {
-    // Calibrated mode: grid lines represent physical mm dimensions.
-    // Standard ECG grids: 1 mm minor blocks, 5 mm major blocks.
+  if (sensitivityMmMv != null && sensitivityMmMv > 0) {
+    // Calibrated amplitude: a minor block is 1 mm, and a major block is 5 mm.
     minorH = ECG_PX_PER_MM;
     majorH = ECG_PX_PER_MM * 5;
-    minorV = ECG_PX_PER_MM;
-    majorV = ECG_PX_PER_MM * 5;
   } else {
-    // Legacy auto-fit mode calculations
+    // Auto-fit amplitude: pick the largest grid unit that still draws.
     const minLineSpacing = 8;
     let horizontalGridUnit = 100;
 
@@ -663,9 +705,22 @@ export function drawECGGrid<TChannel extends ECGChannelLike = ECGChannelLike>(
 
     minorH = horizontalGridUnit * channelScale;
     majorH = minorH * 5;
-    minorV = ECG_SECONDS_WIDTH / 25;
-    majorV = ECG_SECONDS_WIDTH / 5;
   }
+
+  // The vertical lines mark paper millimetres on the time axis, and one
+  // millimetre of paper is 1/sweepSpeed seconds. The world width already
+  // encodes the sweep speed through `pxPerSecond`, so the same formula serves
+  // the calibrated path and the auto-fit path. The previous code used
+  // `ECG_SECONDS_WIDTH` here while the width came from the sweep speed, so a
+  // major block covered 0.317 s in place of 0.2 s.
+  const resolvedSweepSpeed =
+    sweepSpeed != null && sweepSpeed > 0
+      ? sweepSpeed
+      : ECG_DEFAULT_SWEEP_SPEED_MM_S;
+  const resolvedPxPerSecond =
+    pxPerSecond != null && pxPerSecond > 0 ? pxPerSecond : ECG_SECONDS_WIDTH;
+  const minorV = resolvedPxPerSecond / resolvedSweepSpeed;
+  const majorV = minorV * 5;
 
   const effectiveMinorH = minorH * worldToCanvasRatio;
   const effectiveMinorV = minorV * worldToCanvasRatio;
@@ -766,8 +821,19 @@ export function drawECGTraces<TChannel extends ECGChannelLike>(args: {
       startSample,
       endSample,
     }) => {
+      // The layout always sets `endSample` now, so the clamp against the real
+      // length of the channel has to be explicit. A channel array shorter than
+      // `numberOfSamples` otherwise yields `undefined` samples, and
+      // `ctx.lineTo(x, NaN)` blanks the whole trace.
       const layoutStart = startSample ?? 0;
-      const layoutEnd = endSample ?? channel.data.length;
+      const layoutEnd = Math.min(
+        endSample ?? channel.data.length,
+        channel.data.length
+      );
+      // A cell whose time window falls past the end of a truncated channel
+      // still gets its baseline, so the reader sees an empty cell in place of
+      // nothing.
+      const hasSamples = layoutEnd > layoutStart;
 
       const windowStart = startIndex !== undefined ? startIndex : layoutStart;
       const windowEnd = endIndex !== undefined ? endIndex : layoutEnd;
@@ -788,6 +854,10 @@ export function drawECGTraces<TChannel extends ECGChannelLike>(args: {
       ctx.moveTo(xOffset, baseline);
       ctx.lineTo(xOffset + traceWidth, baseline);
       ctx.stroke();
+
+      if (!hasSamples) {
+        return;
+      }
 
       ctx.strokeStyle = ECG_RENDERING_COLORS.trace;
       ctx.lineWidth = lineWidth;

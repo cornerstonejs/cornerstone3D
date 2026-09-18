@@ -56,6 +56,8 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
         worldToCanvasRatio: 1,
         xOffsetCanvas: 0,
         yOffsetCanvas: 0,
+        pxPerSecond: 1,
+        sweepSpeed: 1,
       },
     };
 
@@ -259,8 +261,9 @@ function drawFrame(
   drawECGGrid(
     canvasContext,
     {
+      // `metrics` already carries `pxPerSecond` and the resolved `sweepSpeed`
+      // that produced it, so the grid and the trace width stay in agreement.
       ...metrics,
-      sweepSpeed: currentDataPresentation?.sweepSpeed,
       sensitivityMmMv: currentDataPresentation?.sensitivityMmMv,
       showAmplitudeLabels: currentDataPresentation?.showAmplitudeLabels,
     },

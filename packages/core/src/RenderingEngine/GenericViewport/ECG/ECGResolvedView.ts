@@ -77,15 +77,18 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
     });
 
     if (!layout && channelLayouts.length > 0) {
-      // Pick nearest layout by vertical distance to center line
-      layout = channelLayouts.reduce((nearest, item) => {
-        const itemCenterY = item.yOffset - item.itemHeight / 2;
-        const nearestCenterY = nearest.yOffset - nearest.itemHeight / 2;
-        return Math.abs(subCanvasPos[1] - itemCenterY) <
-          Math.abs(subCanvasPos[1] - nearestCenterY)
-          ? item
-          : nearest;
-      }, channelLayouts[0]);
+      // Pick the nearest cell by the distance to its rectangle, in both axes.
+      // A comparison of the vertical distance alone always returned column 0 in
+      // a multi-column layout, because every cell of a row shares one vertical
+      // distance.
+      layout = channelLayouts.reduce(
+        (nearest, item) =>
+          this.getDistanceToCell(subCanvasPos, item) <
+          this.getDistanceToCell(subCanvasPos, nearest)
+            ? item
+            : nearest,
+        channelLayouts[0]
+      );
     }
 
     if (!layout) {
@@ -212,6 +215,26 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
     });
 
     return this.cachedCanvasMapping;
+  }
+
+  /**
+   * Returns the squared distance from a point to the rectangle of a layout
+   * cell, in sub-canvas space. The value is 0 when the point is inside the
+   * rectangle. The function squares the distance, because the caller only
+   * compares two values.
+   */
+  private getDistanceToCell(
+    point: Point2,
+    layout: ReturnType<ECGResolvedView['computeChannelLayouts']>[number]
+  ): number {
+    const xStart = layout.xOffset ?? 0;
+    const xEnd = xStart + (layout.width ?? this.state.metrics.ecgWidth);
+    const yStart = layout.yOffset - layout.itemHeight;
+    const yEnd = layout.yOffset;
+    const dx = Math.max(xStart - point[0], 0, point[0] - xEnd);
+    const dy = Math.max(yStart - point[1], 0, point[1] - yEnd);
+
+    return dx * dx + dy * dy;
   }
 
   private getChannelLayouts() {
