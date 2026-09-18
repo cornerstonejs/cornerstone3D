@@ -41,6 +41,11 @@ import {
 } from '../../stateManagement/segmentation/helpers/labelmapSegmentationState';
 import getEllipseWorldCoordinates from '../../utilities/getEllipseWorldCoordinates';
 import getCenterAndRadiusInCanvas from '../../utilities/getCenterAndRadiusInCanvas';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.segmentation.CircleScissorsTool'
+);
 
 /**
  * Tool for manipulating segmentation data by drawing a circle. It acts on the
@@ -242,9 +247,20 @@ class CircleScissorsTool extends LabelmapBaseTool {
   };
 
   _dragCallback = (evt: EventTypes.InteractionEventType) => {
-    this.isDrawing = true;
     const eventDetail = evt.detail;
     const { element } = eventDetail;
+
+    const { currentPointsList } =
+      eventDetail as EventTypes.TouchDragEventDetail;
+    if (currentPointsList?.length > 1) {
+      // A second finger reclassifies the gesture (pinch zoom, multi-finger
+      // scroll); drop the rubber band instead of resizing it at the mean
+      // touch point and applying on release.
+      this._cancelTouchDraw(element);
+      return;
+    }
+
+    this.isDrawing = true;
     const { currentPoints } = eventDetail;
     const currentCanvasPoints = currentPoints.canvas;
     const enabledElement = getEnabledElement(element);
@@ -373,7 +389,7 @@ class CircleScissorsTool extends LabelmapBaseTool {
 
     // If rendering engine has been destroyed while rendering
     if (!viewport.getRenderingEngine()) {
-      console.warn('Rendering Engine has been destroyed');
+      cs3dLogger.warn('Rendering Engine has been destroyed');
       return renderStatus;
     }
 

@@ -3,11 +3,16 @@ import renderingEngineCache from './renderingEngineCache';
 import eventTarget from '../eventTarget';
 import uuidv4 from '../utilities/uuidv4';
 import triggerEvent from '../utilities/triggerEvent';
+import { coreLog } from '../utilities/logger';
 import ViewportType from '../enums/ViewportType';
 import viewportTypeUsesCustomRenderingPipeline, {
   viewportUsesCustomRenderingPipeline,
 } from './helpers/viewportTypeUsesCustomRenderingPipeline';
 import getOrCreateCanvas from './helpers/getOrCreateCanvas';
+import {
+  setElementTouchActionNone,
+  restoreElementTouchAction,
+} from './helpers/elementTouchAction';
 import {
   getShouldUseCPURendering,
   getUseGenericViewport,
@@ -41,6 +46,8 @@ export const VIEWPORT_MIN_SIZE = 2;
  *
  * @abstract
  */
+const log = coreLog.getLogger('RenderingEngine', 'BaseRenderingEngine');
+
 abstract class BaseRenderingEngine {
   /** Unique identifier for renderingEngine */
   readonly id: string;
@@ -170,7 +177,7 @@ abstract class BaseRenderingEngine {
 
     // 2 To throw if there is no viewport stored in rendering engine
     if (!viewport) {
-      console.warn(`viewport ${viewportId} does not exist`);
+      log.warn(`viewport ${viewportId} does not exist`);
       return;
     }
 
@@ -547,7 +554,7 @@ abstract class BaseRenderingEngine {
     // 1. Get the viewport
     const viewport = this.getViewport(viewportId);
     if (!viewport) {
-      console.warn(`viewport ${viewportId} does not exist`);
+      log.warn(`viewport ${viewportId} does not exist`);
       return;
     }
 
@@ -566,6 +573,10 @@ abstract class BaseRenderingEngine {
 
     // Make the element not focusable, we use this for modifier keys to work
     element.tabIndex = -1;
+
+    // Deliver touch input to cornerstone tools instead of the browser
+    // (scroll, pinch-zoom, double-tap zoom). Restored in _resetViewport.
+    setElementTouchActionNone(element);
 
     const canvas = getOrCreateCanvas(element);
 
@@ -718,6 +729,7 @@ abstract class BaseRenderingEngine {
 
     element.removeAttribute('data-viewport-uid');
     element.removeAttribute('data-rendering-engine-uid');
+    restoreElementTouchAction(element);
 
     // clear drawing
     const context = canvas.getContext('2d');

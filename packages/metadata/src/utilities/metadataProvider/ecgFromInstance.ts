@@ -8,6 +8,11 @@
 import { addTypedProvider } from '../../metaData';
 import { MetadataModules } from '../../enums';
 import type { TypedProvider } from '../../metaData';
+import { logging as cornerstoneLogging } from '@cornerstonejs/utils';
+
+const cs3dLogger = cornerstoneLogging.metadataLog.getLogger(
+  'utilities.metadataProvider.ecgFromInstance'
+);
 
 export interface EcgModuleFull {
   numberOfWaveformChannels: number;
@@ -258,7 +263,7 @@ export function buildEcgModuleFromInstance(
         sampleInterpretation
       );
     }
-    console.warn(
+    cs3dLogger.warn(
       '[ecgFromInstance] No waveform data source found. group keys:',
       Object.keys(group),
       'waveformData keys:',

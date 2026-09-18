@@ -5,7 +5,6 @@ import {
   VolumeViewport,
   utilities as csUtils,
   getEnabledElementByViewportId,
-  EPSILON,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -35,10 +34,8 @@ import { ChangeTypes, Events } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import getViewportICamera from '../../utilities/getViewportICamera';
 import getWorldWidthAndHeightFromTwoPoints from '../../utilities/planar/getWorldWidthAndHeightFromTwoPoints';
-import {
-  pointInEllipse,
-  getCanvasEllipseCorners,
-} from '../../utilities/math/ellipse';
+import sampleAreaAnnotationVoxels from '../../utilities/sampleAreaAnnotationVoxels';
+import { getCanvasEllipseCorners } from '../../utilities/math/ellipse';
 import {
   resetElementCursor,
   hideElementCursor,
@@ -60,10 +57,16 @@ import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
 import { viewportSupportsImageSlices } from '../../utilities/viewportCapabilities';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
-import { vec2 } from 'gl-matrix';
+import { vec2, vec3 } from 'gl-matrix';
 import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.annotation.EllipticalROITool'
+);
 
 const { transformWorldToIndex } = csUtils;
+const { createEllipseShape } = csUtils.voxelSlab;
 
 /**
  * EllipticalROITool let you draw annotations that measures the statistics
@@ -866,7 +869,7 @@ class EllipticalROITool extends AnnotationTool {
 
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
-        console.warn('Rendering Engine has been destroyed');
+        cs3dLogger.warn('Rendering Engine has been destroyed');
         return renderStatus;
       }
 
@@ -1019,38 +1022,6 @@ class EllipticalROITool extends AnnotationTool {
       // Some area to do stats over.
 
       if (this._isInsideVolume(pos1Index, pos2Index, dimensions)) {
-        const iMin = Math.min(pos1Index[0], pos2Index[0]);
-        const iMax = Math.max(pos1Index[0], pos2Index[0]);
-
-        const jMin = Math.min(pos1Index[1], pos2Index[1]);
-        const jMax = Math.max(pos1Index[1], pos2Index[1]);
-
-        const kMin = Math.min(pos1Index[2], pos2Index[2]);
-        const kMax = Math.max(pos1Index[2], pos2Index[2]);
-
-        const boundsIJK = [
-          [iMin, iMax],
-          [jMin, jMax],
-          [kMin, kMax],
-        ] as [Types.Point2, Types.Point2, Types.Point2];
-
-        const center = [
-          (topLeftWorld[0] + bottomRightWorld[0]) / 2,
-          (topLeftWorld[1] + bottomRightWorld[1]) / 2,
-          (topLeftWorld[2] + bottomRightWorld[2]) / 2,
-        ] as Types.Point3;
-
-        const xRadius = Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2;
-        const yRadius = Math.abs(topLeftWorld[1] - bottomRightWorld[1]) / 2;
-        const zRadius = Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2;
-
-        const ellipseObj = {
-          center,
-          xRadius: xRadius < EPSILON / 2 ? 0 : xRadius,
-          yRadius: yRadius < EPSILON / 2 ? 0 : yRadius,
-          zRadius: zRadius < EPSILON / 2 ? 0 : zRadius,
-        };
-
         const { worldWidth, worldHeight } = getWorldWidthAndHeightFromTwoPoints(
           viewPlaneNormal,
           viewUp,
@@ -1092,19 +1063,57 @@ class EllipticalROITool extends AnnotationTool {
           pixelUnitsOptions
         );
 
-        let pointsInShape;
-        if (voxelManager) {
-          pointsInShape = voxelManager.forEach(
-            this.configuration.statsCalculator.statsCallback,
-            {
-              isInObject: (pointLPS) =>
-                pointInEllipse(ellipseObj, pointLPS, { fast: true }),
-              boundsIJK,
-              imageData,
-              returnPoints: this.configuration.storePointData,
+        // An ellipse drawn on the viewport is an ellipse in the annotation
+        // plane, whatever the orientation of that plane. The older code
+        // tested an ellipsoid aligned with the world axes, which does not
+        // describe that ellipse once the plane tilts.
+        // points are [bottom, top, left, right], so left to right and bottom
+        // to top are the two axes, and they are perpendicular.
+        const majorRadius = vec3.distance(points[2], points[3]) / 2;
+        const minorRadius = vec3.distance(points[0], points[1]) / 2;
+
+        const pointsInShape = sampleAreaAnnotationVoxels({
+          annotation,
+          image,
+          // Statistics are over scalar values. A colour volume gives an RGB
+          // triple, which no statistic here consumes.
+          voxelManager: voxelManager as Types.IVoxelManager<number>,
+          points: points as Types.Point3[],
+          // The handles only touch the outline, so the larger radius is what
+          // bounds the ellipse.
+          boundsMargin: Math.max(majorRadius, minorRadius),
+          createShape: ({ volume, planePoint, viewPlaneNormal: normal }) => {
+            // An ellipse of no width or no height covers no voxel, and the
+            // factory rejects it.
+            if (!(majorRadius > 0) || !(minorRadius > 0)) {
+              return null;
             }
-          );
-        }
+
+            const majorAxis = vec3.sub(
+              vec3.create(),
+              points[3],
+              points[2]
+            ) as unknown as Types.Point3;
+
+            return createEllipseShape({
+              volume,
+              planePoint,
+              viewPlaneNormal: normal,
+              centerWorld: vec3.lerp(
+                vec3.create(),
+                points[2],
+                points[3],
+                0.5
+              ) as unknown as Types.Point3,
+              majorAxis,
+              majorRadius,
+              minorRadius,
+            });
+          },
+          minimumPoints: 4,
+          onSample: this.configuration.statsCalculator.statsCallback,
+          storePointData: this.configuration.storePointData,
+        });
         const stats = this.configuration.statsCalculator.getStatistics();
 
         cachedStats[targetId] = {
