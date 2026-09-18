@@ -1,7 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
 import {
   StackViewport,
-  cache,
   getEnabledElement,
   utilities as csUtils,
   utilities as coreUtils,
@@ -116,51 +115,18 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
   }
 
   /**
-   * Resolves the volume this tool measures on the given viewport, together
-   * with the targetId its statistics are cached under.
-   *
-   * The target is chosen by the inherited {@link BaseTool.getTargetId}, so it
-   * honours the `targetsFilter`/`targetPredicate` tool configuration (see
-   * `measurementTargetFilters`): on a fusion viewport, configuring
-   * `firstPixelData` with `forModality('PT')` measures the PT volume rather
-   * than the viewport's default (first) one.  Without a configured filter the
-   * viewport's default view reference is used, as before.
-   *
-   * The annotation data is deliberately not passed to `getTargetId`: this
-   * tool's `cachedStats` is a flat `VolumeStats` (`pointsInVolume`,
-   * `statistics`) rather than a map keyed by targetId, so it holds no
-   * `volumeId:` key that the target selection can reuse. The viewport alone
-   * decides the target.
-   *
-   * @param viewport - the viewport to resolve the target on
-   * @returns the targetId and its cached volume, or undefined when a
-   *   configured filter selects no target on this viewport (eg a PT only
-   *   filter on a CT viewport) or the volume is no longer cached
-   */
-  protected getTargetVolume(
-    viewport: Types.IViewport
-  ): { targetId: string; imageVolume: Types.IImageVolume } | undefined {
-    const targetId = this.getTargetId(viewport);
-    const imageVolume = targetId
-      ? cache.getVolume(csUtils.getVolumeId(targetId))
-      : undefined;
-
-    return imageVolume ? { targetId, imageVolume } : undefined;
-  }
-
-  /**
    * Based on the current position of the mouse and the current imageId to create
    * a CircleROI Annotation and stores it in the annotationManager
    *
    * @param evt -  EventTypes.NormalizedMouseEventType
-   * @returns The annotation object, or undefined when there is nothing to
+   * @returns The annotation object, or `null` when there is nothing to
    *   measure on this viewport because a configured `targetsFilter` selects
    *   no target on it (eg a PT only filter on a CT viewport).
    *
    */
   addNewAnnotation = (
     evt: EventTypes.InteractionEventType
-  ): Annotation | undefined => {
+  ): Annotation | null => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
@@ -180,7 +146,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     // mid-draw with no editData for cancel() to unwind.
     const target = this.getTargetVolume(viewport);
     if (!target) {
-      return;
+      return null;
     }
 
     const volumeId = csUtils.getVolumeId(target.targetId);
@@ -693,9 +659,15 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       basePos1,
       basePos2
     );
+    // The calibration compares the handles against the pixel bounds of the
+    // ultrasound regions of the image, so it reads index coordinates, as the
+    // other ROI tools pass.
+    const indexCoordinates = data.handles.points.map((point) =>
+      image.imageData.worldToIndex(point)
+    );
     const measureInfo = getCalibratedLengthUnitsAndScale(
       image,
-      data.handles.points
+      indexCoordinates
     );
     const aspect = getCalibratedAspect(image);
     const area = Math.abs(

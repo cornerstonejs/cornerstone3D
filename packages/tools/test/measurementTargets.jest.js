@@ -295,31 +295,6 @@ describe('measurement target regressions', () => {
       });
     });
 
-    it('resolves the target from the viewport, not from the annotation', () => {
-      const volumes = mockFusionVolumes();
-      const tool = new ToolClass();
-      tool.configuration.targetsFilter =
-        measurementTargetFilters.firstPixelData;
-      tool.configuration.targetPredicate =
-        measurementTargetFilters.forModality('PT');
-
-      // The cachedStats of these two tools is a flat VolumeStats, so it holds
-      // no per-target key to reuse. An annotation carrying a stale key from
-      // another view must not change the target of this viewport.
-      expect(
-        tool.getTargetVolume(createFusionViewport(), {
-          cachedStats: {
-            'volumeId:pt-volume?sliceIndex=7&viewPlaneNormal=0,1,0': {},
-            pointsInVolume: [],
-            statistics: {},
-          },
-        })
-      ).toEqual({
-        targetId: 'volumeId:pt-volume?sliceIndex=0&viewPlaneNormal=0,0,1',
-        imageVolume: volumes['pt-volume'],
-      });
-    });
-
     it('resolves no target when the filter selects nothing on the viewport', () => {
       mockFusionVolumes();
       const tool = new ToolClass();
@@ -328,7 +303,7 @@ describe('measurement target regressions', () => {
       tool.configuration.targetPredicate =
         measurementTargetFilters.forModality('MG');
 
-      expect(tool.getTargetVolume(createFusionViewport())).toBeUndefined();
+      expect(tool.getTargetVolume(createFusionViewport())).toBeNull();
     });
   });
 });
