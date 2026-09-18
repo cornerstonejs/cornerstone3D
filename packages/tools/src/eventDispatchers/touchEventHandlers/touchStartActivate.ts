@@ -37,7 +37,9 @@ export default function touchStartActivate(
   if (activeTool.addNewAnnotation) {
     try {
       const annotation = activeTool.addNewAnnotation(evt, 'touch');
-      // null return for annotation for declined create
+      // A tool returns null when it creates no annotation, because it has
+      // nothing to measure on this viewport - for example when a configured
+      // targetsFilter selects no target. That is not an error.
       if (annotation?.annotationUID) {
         setAnnotationSelected(annotation.annotationUID);
       }
