@@ -37,7 +37,10 @@ export default function touchStartActivate(
   if (activeTool.addNewAnnotation) {
     try {
       const annotation = activeTool.addNewAnnotation(evt, 'touch');
-      setAnnotationSelected(annotation.annotationUID);
+      // null return for annotation for declined create
+      if (annotation?.annotationUID) {
+        setAnnotationSelected(annotation.annotationUID);
+      }
     } catch (error) {
       cs3dLogger.warn(
         'Error adding new annotation, viewport not ready:',
