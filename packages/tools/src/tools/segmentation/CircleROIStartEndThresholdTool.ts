@@ -846,6 +846,10 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const target = this.getTargetVolume(viewport);
 
     if (!target) {
+      // Clear the flag although no statistics were computed. The render
+      // callback calls this method for every invalidated annotation, so a
+      // flag that stays set repeats this work on every frame.
+      annotation.invalidated = false;
       return cachedStats;
     }
 

@@ -454,7 +454,10 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       worldPos1,
       worldPos2
     );
-    const measureInfo = getCalibratedLengthUnitsAndScale(image, data.habdles);
+    const measureInfo = getCalibratedLengthUnitsAndScale(
+      image,
+      data.handles.points
+    );
 
     const area =
       Math.abs(worldWidth * worldHeight) /
@@ -573,6 +576,10 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     const target = this.getTargetVolume(viewport);
 
     if (!target) {
+      // Clear the flag although no statistics were computed. The render
+      // callback calls this method for every invalidated annotation, so a
+      // flag that stays set repeats this work on every frame.
+      annotation.invalidated = false;
       return cachedStats;
     }
 

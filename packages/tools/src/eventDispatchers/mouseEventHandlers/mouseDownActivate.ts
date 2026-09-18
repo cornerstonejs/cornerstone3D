@@ -36,7 +36,12 @@ export default function mouseDownActivate(
   if (activeTool.addNewAnnotation) {
     try {
       const annotation = activeTool.addNewAnnotation(evt, 'mouse');
-      setAnnotationSelected(annotation.annotationUID);
+      // A tool returns nothing when it has nothing to measure on this
+      // viewport, for example when a configured targetsFilter selects no
+      // target. That is not an error.
+      if (annotation) {
+        setAnnotationSelected(annotation.annotationUID);
+      }
     } catch (error) {
       cs3dLogger.warn(
         'Error adding new annotation, viewport not ready:',
