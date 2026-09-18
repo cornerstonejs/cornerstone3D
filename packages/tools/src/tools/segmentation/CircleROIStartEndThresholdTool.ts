@@ -127,10 +127,10 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
    * viewport's default view reference is used, as before.
    *
    * The annotation data is deliberately not passed to `getTargetId`: this
-   * tool's `cachedStats` is a flat `VolumeStats` rather than a map keyed by
-   * targetId, so there is no per-target key to reuse, and handing those
-   * flat keys (`pointsInVolume`, `statistics`) to the target selection would
-   * let them be mistaken for targetIds.
+   * tool's `cachedStats` is a flat `VolumeStats` (`pointsInVolume`,
+   * `statistics`) rather than a map keyed by targetId, so it holds no
+   * `volumeId:` key that the target selection can reuse. The viewport alone
+   * decides the target.
    *
    * @param viewport - the viewport to resolve the target on
    * @returns the targetId and its cached volume, or undefined when a
@@ -713,8 +713,13 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       ),
     };
 
+    // The modality has to come from the volume being measured - the
+    // annotation metadata has no Modality, so reading it from there left PT
+    // statistics unitless instead of SUV.
+    const modality = imageVolume?.metadata?.Modality;
+
     const modalityUnit = getPixelValueUnits(
-      metadata.Modality,
+      modality,
       annotation.metadata.referencedImageId,
       modalityUnitOptions
     );
@@ -821,7 +826,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const stats = this.configuration.statsCalculator.getStatistics();
     data.cachedStats.pointsInVolume = pointsInsideVolume;
     data.cachedStats.statistics = {
-      Modality: metadata.Modality,
+      Modality: modality,
       area,
       mean: stats.mean?.value,
       stdDev: stats.stdDev?.value,
@@ -838,7 +843,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const { viewport } = enabledElement;
 
     const { cachedStats } = data;
-    const target = this.getTargetVolume(viewport, data);
+    const target = this.getTargetVolume(viewport);
 
     if (!target) {
       return cachedStats;

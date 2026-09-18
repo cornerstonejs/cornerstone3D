@@ -127,10 +127,10 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
    * viewport's default view reference is used, as before.
    *
    * The annotation data is deliberately not passed to `getTargetId`: this
-   * tool's `cachedStats` is a flat `VolumeStats` rather than a map keyed by
-   * targetId, so there is no per-target key to reuse, and handing those
-   * flat keys (`pointsInVolume`, `statistics`) to the target selection would
-   * let them be mistaken for targetIds.
+   * tool's `cachedStats` is a flat `VolumeStats` (`pointsInVolume`,
+   * `statistics`) rather than a map keyed by targetId, so it holds no
+   * `volumeId:` key that the target selection can reuse. The viewport alone
+   * decides the target.
    *
    * @param viewport - the viewport to resolve the target on
    * @returns the targetId and its cached volume, or undefined when a
