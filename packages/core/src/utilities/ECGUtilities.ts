@@ -42,6 +42,9 @@ export interface ECGWaveformLike<
   calibration?: unknown;
 }
 
+/** Arrangement of the ECG leads on the canvas. */
+export type ECGLayoutType = '12x1' | '6x2' | '3x4' | '3x4+1';
+
 export interface ECGChannelLayout<
   TChannel extends ECGChannelLike = ECGChannelLike,
 > {
@@ -55,8 +58,25 @@ export interface ECGChannelLayout<
   endSample?: number;
   col?: number;
   row?: number;
+  /**
+   * Stable identifier of the layout cell, and the Z component of the ECG world
+   * point. A grid cell uses the index of the channel in the unfiltered channel
+   * list, so the identifier does not change when the user hides another lead or
+   * selects another layout. A rhythm strip repeats a lead that a grid cell
+   * already shows, so the rhythm strip gets its own synthetic identifier above
+   * the last channel index. The identifier is therefore unique in one layout,
+   * and `worldToCanvas` can select one cell without ambiguity.
+   */
   leadIndex?: number;
   isRhythm?: boolean;
+}
+
+/** A visible channel together with its index in the unfiltered channel list. */
+export interface ECGVisibleChannelEntry<
+  TChannel extends ECGChannelLike = ECGChannelLike,
+> {
+  channel: TChannel;
+  channelIndex: number;
 }
 
 export interface ECGRenderMetrics {
@@ -191,130 +211,195 @@ export function getVisibleECGChannelsByFlag<TChannel extends ECGChannelLike>(
   );
 }
 
-export function computeECGHeight<TChannel extends ECGChannelLike>(
-  visibleChannels: TChannel[],
-  channelScale: number,
-  layoutType: '12x1' | '6x2' | '3x4' | '3x4+1' = '12x1'
-): number {
-  if (visibleChannels.length === 0) {
-    return 1;
-  }
+/**
+ * Returns the visible channels together with the index of each channel in the
+ * unfiltered channel list. The caller passes those indices to
+ * {@link computeECGChannelLayouts} as `leadIndices`, so a layout cell keeps the
+ * same identifier when the user hides another lead.
+ *
+ * The filter rule matches {@link getVisibleECGChannels}.
+ */
+export function getVisibleECGChannelEntries<TChannel extends ECGChannelLike>(
+  channels: TChannel[],
+  visibleChannels?: number[]
+): ECGVisibleChannelEntry<TChannel>[] {
+  const visible = visibleChannels ? new Set(visibleChannels) : undefined;
+  const entries: ECGVisibleChannelEntry<TChannel>[] = [];
 
-  let rowCount = 12;
-  if (layoutType === '6x2') {
-    rowCount = 6;
-  } else if (layoutType === '3x4') {
-    rowCount = 3;
-  } else if (layoutType === '3x4+1') {
-    rowCount = 4;
-  }
+  channels.forEach((channel, channelIndex) => {
+    if (channel.data.length === 0) {
+      return;
+    }
 
-  const rowHeights = new Array(rowCount).fill(0);
-  visibleChannels.forEach((channel, index) => {
-    let row = index;
-    if (layoutType === '6x2') {
-      row = index % 6;
-    } else if (layoutType === '3x4' || layoutType === '3x4+1') {
-      row = index % 3;
+    if (visible && !visible.has(channelIndex)) {
+      return;
     }
-    const itemHeight = (channel.max - channel.min) * channelScale * 1.25;
-    if (row < rowCount && itemHeight > rowHeights[row]) {
-      rowHeights[row] = itemHeight;
-    }
+
+    entries.push({ channel, channelIndex });
   });
 
-  if (layoutType === '3x4+1' && visibleChannels.length > 1) {
-    const rhythmChannel = visibleChannels[1]; // Lead II
-    const rhythmHeight =
-      (rhythmChannel.max - rhythmChannel.min) * channelScale * 1.25;
-    if (rhythmHeight > rowHeights[3]) {
-      rowHeights[3] = rhythmHeight;
-    }
-  }
-
-  let totalHeight = 0;
-  const defaultEmptyRowHeight = 100 * channelScale * 1.25;
-  for (let r = 0; r < rowCount; r++) {
-    totalHeight +=
-      (rowHeights[r] || defaultEmptyRowHeight) + ECG_CHANNEL_SPACING;
-  }
-
-  return totalHeight || 1;
+  return entries;
 }
 
-export function computeECGChannelLayouts<
-  TChannel extends ECGChannelLike,
->(args: {
+/** Rows that one column of a layout holds before the next column starts. */
+const ECG_LAYOUT_ROWS_PER_COLUMN: Record<ECGLayoutType, number> = {
+  '12x1': Number.POSITIVE_INFINITY,
+  '6x2': 6,
+  '3x4': 3,
+  '3x4+1': 3,
+};
+
+/** Number of columns that a layout holds when every lead fits in the grid. */
+const ECG_LAYOUT_NOMINAL_COLUMNS: Record<ECGLayoutType, number> = {
+  '12x1': 1,
+  '6x2': 2,
+  '3x4': 4,
+  '3x4+1': 4,
+};
+
+/** Number of rows that a layout holds when every lead fits in the grid. */
+const ECG_LAYOUT_NOMINAL_ROWS: Record<ECGLayoutType, number> = {
+  '12x1': 12,
+  '6x2': 6,
+  '3x4': 3,
+  '3x4+1': 4,
+};
+
+/**
+ * Returns the number of rows that a layout uses for a given count of visible
+ * leads. The grid grows above the nominal size when the waveform holds more
+ * leads than the nominal layout holds.
+ */
+export function getECGLayoutRowCount(
+  layoutType: ECGLayoutType,
+  visibleCount: number
+): number {
+  const rowsPerColumn = ECG_LAYOUT_ROWS_PER_COLUMN[layoutType];
+  const gridRows = Number.isFinite(rowsPerColumn)
+    ? rowsPerColumn
+    : Math.max(1, visibleCount);
+
+  return Math.max(
+    ECG_LAYOUT_NOMINAL_ROWS[layoutType],
+    layoutType === '3x4+1' ? gridRows + 1 : gridRows
+  );
+}
+
+interface ECGLayoutItem<TChannel extends ECGChannelLike> {
+  channel: TChannel;
+  row: number;
+  col: number;
+  leadIndex: number;
+  isRhythm: boolean;
+}
+
+interface ECGLayoutGrid<TChannel extends ECGChannelLike> {
+  rowCount: number;
+  colCount: number;
+  items: ECGLayoutItem<TChannel>[];
+  rowHeights: number[];
+  rowYOffsets: number[];
+  rowBaselines: number[];
+  totalHeight: number;
+}
+
+/**
+ * Selects the position of the rhythm lead in the visible channel list.
+ *
+ * The rule prefers lead II, and the pattern `\bii\b` does not match lead III.
+ * The rule falls back to the second visible channel, and then to the first one.
+ * {@link computeECGHeight} and {@link computeECGChannelLayouts} both call this
+ * function, so the reserved height and the drawn layout always agree.
+ */
+function getECGRhythmPosition<TChannel extends ECGChannelLike>(
+  visibleChannels: TChannel[]
+): number {
+  const named = visibleChannels.findIndex((channel) =>
+    /\bii\b/.test((channel.name ?? '').toLowerCase())
+  );
+
+  if (named >= 0) {
+    return named;
+  }
+
+  return visibleChannels.length > 1 ? 1 : 0;
+}
+
+/**
+ * Computes the shared row geometry of an ECG layout: the grid size, the layout
+ * items, the row heights, the row offsets and the total height.
+ *
+ * The grid grows when the waveform holds more leads than the nominal layout, so
+ * a 15-lead ECG keeps every lead. The nominal layout stays the minimum size, so
+ * a 12-lead ECG in the `12x1` layout still reserves 12 rows.
+ */
+function computeECGLayoutGrid<TChannel extends ECGChannelLike>(args: {
   visibleChannels: TChannel[];
   channelScale: number;
-  layoutType?: '12x1' | '6x2' | '3x4' | '3x4+1';
-  numberOfSamples?: number;
-  ecgWidth?: number;
-}): ECGChannelLayout<TChannel>[] {
+  layoutType: ECGLayoutType;
+  leadIndices?: number[];
+  channelCount?: number;
+}): ECGLayoutGrid<TChannel> {
   const {
     visibleChannels,
     channelScale,
-    layoutType = '12x1',
-    numberOfSamples = 5000,
-    ecgWidth = 1000,
+    layoutType,
+    leadIndices,
+    channelCount,
   } = args;
+  const rowsPerColumn = ECG_LAYOUT_ROWS_PER_COLUMN[layoutType];
+  const visibleCount = visibleChannels.length;
+  const usedColumns = Number.isFinite(rowsPerColumn)
+    ? Math.ceil(visibleCount / rowsPerColumn)
+    : 1;
+  const colCount = Math.max(
+    ECG_LAYOUT_NOMINAL_COLUMNS[layoutType],
+    usedColumns
+  );
+  const rowCount = getECGLayoutRowCount(layoutType, visibleCount);
 
-  const layouts: ECGChannelLayout<TChannel>[] = [];
-
-  let rowCount = 12;
-  let colCount = 1;
-  if (layoutType === '6x2') {
-    rowCount = 6;
-    colCount = 2;
-  } else if (layoutType === '3x4') {
-    rowCount = 3;
-    colCount = 4;
-  } else if (layoutType === '3x4+1') {
-    rowCount = 4;
-    colCount = 4;
-  }
-
-  const layoutItems: {
-    channel: TChannel;
-    row: number;
-    col: number;
-    leadIndex: number;
-    isRhythm?: boolean;
-  }[] = [];
+  // A grid cell keeps the index of its channel in the unfiltered channel list,
+  // so the identifier survives a change of the visible leads or of the layout.
+  const resolvedLeadIndices =
+    leadIndices ?? visibleChannels.map((_channel, index) => index);
+  const items: ECGLayoutItem<TChannel>[] = [];
 
   visibleChannels.forEach((channel, index) => {
-    let row = index;
-    let col = 0;
-    if (layoutType === '6x2') {
-      row = index % 6;
-      col = Math.floor(index / 6);
-    } else if (layoutType === '3x4' || layoutType === '3x4+1') {
-      row = index % 3;
-      col = Math.floor(index / 3);
-    }
+    const row = Number.isFinite(rowsPerColumn) ? index % rowsPerColumn : index;
+    const col = Number.isFinite(rowsPerColumn)
+      ? Math.floor(index / rowsPerColumn)
+      : 0;
 
-    if (row < rowCount && col < colCount) {
-      layoutItems.push({ channel, row, col, leadIndex: index });
-    }
+    items.push({
+      channel,
+      row,
+      col,
+      leadIndex: resolvedLeadIndices[index] ?? index,
+      isRhythm: false,
+    });
   });
 
-  if (layoutType === '3x4+1' && visibleChannels.length > 0) {
-    const rhythmChannel =
-      visibleChannels.find((c) => c.name?.toLowerCase().includes('ii')) ||
-      visibleChannels[1] ||
-      visibleChannels[0];
-    const rhythmLeadIndex = visibleChannels.indexOf(rhythmChannel);
-    layoutItems.push({
-      channel: rhythmChannel,
-      row: 3,
+  if (layoutType === '3x4+1' && visibleCount > 0) {
+    // The rhythm strip repeats a lead that a grid cell already shows, so it
+    // takes its own identifier above the last channel index. Without the
+    // separate identifier, `worldToCanvas` cannot tell the two cells apart.
+    const rhythmPosition = getECGRhythmPosition(visibleChannels);
+    const lastLeadIndex = resolvedLeadIndices.reduce(
+      (highest, leadIndex) => Math.max(highest, leadIndex),
+      -1
+    );
+
+    items.push({
+      channel: visibleChannels[rhythmPosition],
+      row: rowCount - 1,
       col: 0,
-      leadIndex: rhythmLeadIndex >= 0 ? rhythmLeadIndex : 1,
+      leadIndex: channelCount ?? lastLeadIndex + 1,
       isRhythm: true,
     });
   }
 
   const rowHeights = new Array(rowCount).fill(0);
-  layoutItems.forEach(({ channel, row }) => {
+  items.forEach(({ channel, row }) => {
     const itemHeight = (channel.max - channel.min) * channelScale * 1.25;
     if (itemHeight > rowHeights[row]) {
       rowHeights[row] = itemHeight;
@@ -323,55 +408,115 @@ export function computeECGChannelLayouts<
 
   const rowYOffsets = new Array(rowCount).fill(0);
   const rowBaselines = new Array(rowCount).fill(0);
+  const defaultEmptyRowHeight = 100 * channelScale * 1.25;
   let currentYOffset = 0;
+
   for (let r = 0; r < rowCount; r++) {
-    const rowHeight = rowHeights[r] || 100 * channelScale * 1.25;
+    const rowHeight = rowHeights[r] || defaultEmptyRowHeight;
     currentYOffset += rowHeight + ECG_CHANNEL_SPACING;
     rowYOffsets[r] = currentYOffset;
 
-    const rowItem = layoutItems.find((item) => item.row === r);
+    const rowItem = items.find((item) => item.row === r);
     const minVal = rowItem ? rowItem.channel.min : 0;
     rowBaselines[r] = currentYOffset + minVal * channelScale;
   }
 
-  layoutItems.forEach(({ channel, row, col, leadIndex }) => {
+  return {
+    rowCount,
+    colCount,
+    items,
+    rowHeights,
+    rowYOffsets,
+    rowBaselines,
+    totalHeight: currentYOffset,
+  };
+}
+
+/**
+ * Returns the total world height of the ECG layout.
+ *
+ * The function derives the height from {@link computeECGLayoutGrid}, which
+ * {@link computeECGChannelLayouts} also uses. The reserved height and the drawn
+ * layout therefore always agree, including the choice of the rhythm lead.
+ */
+export function computeECGHeight<TChannel extends ECGChannelLike>(
+  visibleChannels: TChannel[],
+  channelScale: number,
+  layoutType: ECGLayoutType = '12x1'
+): number {
+  if (visibleChannels.length === 0) {
+    return 1;
+  }
+
+  const grid = computeECGLayoutGrid({
+    visibleChannels,
+    channelScale,
+    layoutType,
+  });
+
+  return grid.totalHeight || 1;
+}
+
+export function computeECGChannelLayouts<
+  TChannel extends ECGChannelLike,
+>(args: {
+  visibleChannels: TChannel[];
+  channelScale: number;
+  layoutType?: ECGLayoutType;
+  numberOfSamples?: number;
+  ecgWidth?: number;
+  /**
+   * Index of each visible channel in the unfiltered channel list. The layout
+   * writes these indices to `leadIndex`. When the caller omits the argument,
+   * the layout uses the position in `visibleChannels`.
+   */
+  leadIndices?: number[];
+  /**
+   * Length of the unfiltered channel list. The `3x4+1` rhythm strip takes this
+   * value as its synthetic `leadIndex`.
+   */
+  channelCount?: number;
+}): ECGChannelLayout<TChannel>[] {
+  const {
+    visibleChannels,
+    channelScale,
+    layoutType = '12x1',
+    numberOfSamples = 5000,
+    ecgWidth = 1000,
+    leadIndices,
+    channelCount,
+  } = args;
+
+  const grid = computeECGLayoutGrid({
+    visibleChannels,
+    channelScale,
+    layoutType,
+    leadIndices,
+    channelCount,
+  });
+  const layouts: ECGChannelLayout<TChannel>[] = [];
+
+  grid.items.forEach(({ channel, row, col, leadIndex, isRhythm }) => {
     let startSample = 0;
     let endSample = numberOfSamples;
     let width = ecgWidth;
     let xOffset = 0;
 
-    if (layoutType === '6x2') {
-      const segmentDuration = numberOfSamples / 2;
+    // A grid cell of a multi-column layout shows one time segment of the
+    // signal. The rhythm strip and the `12x1` rows show the full duration.
+    if (layoutType !== '12x1' && !isRhythm) {
+      const segmentDuration = numberOfSamples / grid.colCount;
       startSample = Math.floor(col * segmentDuration);
       endSample = Math.floor((col + 1) * segmentDuration);
-      width = ecgWidth / 2;
+      width = ecgWidth / grid.colCount;
       xOffset = col * width;
-    } else if (layoutType === '3x4') {
-      const segmentDuration = numberOfSamples / 4;
-      startSample = Math.floor(col * segmentDuration);
-      endSample = Math.floor((col + 1) * segmentDuration);
-      width = ecgWidth / 4;
-      xOffset = col * width;
-    } else if (layoutType === '3x4+1') {
-      if (row === 3) {
-        startSample = 0;
-        endSample = numberOfSamples;
-        width = ecgWidth;
-        xOffset = 0;
-      } else {
-        const segmentDuration = numberOfSamples / 4;
-        startSample = Math.floor(col * segmentDuration);
-        endSample = Math.floor((col + 1) * segmentDuration);
-        width = ecgWidth / 4;
-        xOffset = col * width;
-      }
     }
 
     layouts.push({
       channel,
-      itemHeight: rowHeights[row],
-      yOffset: rowYOffsets[row],
-      baseline: rowBaselines[row],
+      itemHeight: grid.rowHeights[row],
+      yOffset: grid.rowYOffsets[row],
+      baseline: grid.rowBaselines[row],
       xOffset,
       width,
       startSample,
@@ -379,6 +524,7 @@ export function computeECGChannelLayouts<
       col,
       row,
       leadIndex,
+      isRhythm,
     });
   });
 
@@ -400,7 +546,7 @@ export function computeECGRenderMetrics<TChannel extends ECGChannelLike>(args: {
    * Controls how tall one millivolt of signal is rendered.
    */
   sensitivityMmMv?: number;
-  layoutType?: '12x1' | '6x2' | '3x4' | '3x4+1';
+  layoutType?: ECGLayoutType;
 }): ECGRenderMetrics {
   const {
     canvas,
@@ -432,16 +578,10 @@ export function computeECGRenderMetrics<TChannel extends ECGChannelLike>(args: {
         ? canvas.clientHeight / canvas.clientWidth
         : 2 / 3;
     const targetTotalHeight = ecgWidth * canvasAspect;
-
-    let rowCount = 12;
-    if (layoutType === '6x2') {
-      rowCount = 6;
-    } else if (layoutType === '3x4') {
-      rowCount = 3;
-    } else if (layoutType === '3x4+1') {
-      rowCount = 4;
-    }
-
+    // Use the same row count that the layout uses, so the auto-fit scale still
+    // fills the canvas when the waveform holds more leads than the nominal
+    // layout holds.
+    const rowCount = getECGLayoutRowCount(layoutType, visibleChannels.length);
     const totalSpacing = ECG_CHANNEL_SPACING * Math.max(1, rowCount);
     const heightPerChannel =
       (targetTotalHeight - totalSpacing) / Math.max(1, rowCount);

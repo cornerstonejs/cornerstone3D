@@ -7,7 +7,7 @@ import {
   drawECGLabels,
   drawECGTraces,
   ensureECGCanvasSize,
-  getVisibleECGChannels,
+  getVisibleECGChannelEntries,
 } from '../../../utilities/ECGUtilities';
 import type {
   DataAddOptions,
@@ -194,10 +194,14 @@ function drawFrame(
     return;
   }
 
-  const visibleChannels = getVisibleECGChannels(
+  // Keep the index of each visible channel in the unfiltered channel list. The
+  // layout writes that index to `leadIndex`, and `ECGResolvedView.worldToCanvas`
+  // selects a layout cell by that index.
+  const visibleEntries = getVisibleECGChannelEntries(
     waveform.channels,
     currentDataPresentation?.visibleChannels
   );
+  const visibleChannels = visibleEntries.map((entry) => entry.channel);
 
   ensureECGCanvasSize(canvas);
 
@@ -216,6 +220,8 @@ function drawFrame(
   }) as RenderWindowMetrics;
   const layouts = computeECGChannelLayouts({
     visibleChannels,
+    leadIndices: visibleEntries.map((entry) => entry.channelIndex),
+    channelCount: waveform.channels.length,
     channelScale: metrics.channelScale,
     layoutType,
     numberOfSamples: waveform.numberOfSamples,

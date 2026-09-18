@@ -1,7 +1,7 @@
 import type { ICamera, Point2, Point3 } from '../../../types';
 import {
   computeECGChannelLayouts,
-  getVisibleECGChannels,
+  getVisibleECGChannelEntries,
 } from '../../../utilities/ECGUtilities';
 import ResolvedViewportView from '../ResolvedViewportView';
 import {
@@ -32,6 +32,9 @@ type ECGResolvedViewState = {
  */
 class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
   private cachedCanvasMapping?: ECGCanvasMapping;
+  private cachedChannelLayouts?: ReturnType<
+    ECGResolvedView['computeChannelLayouts']
+  >;
 
   /** Gets the current zoom scale factor. */
   get zoom(): number {
@@ -46,7 +49,9 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
   /**
    * Converts a canvas-space point into 3D world-space coordinates.
    * @param canvasPos - Point in canvas space [x, y].
-   * @returns 3D world point [sampleIndex, amplitude, channelIndex].
+   * @returns 3D world point `[sampleIndex, amplitude, leadIndex]`. The sample
+   * index is global, so it does not depend on the layout cell. The lead index
+   * identifies the layout cell; see {@link ECGChannelLayout.leadIndex}.
    */
   canvasToWorld(canvasPos: Point2): Point3 {
     const mapping = this.getCanvasMapping();
@@ -111,8 +116,13 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
     const channelLayouts = this.getChannelLayouts();
     const z = Math.round(worldPos[2]);
 
-    const layout =
-      channelLayouts.find((item) => item.leadIndex === z) || channelLayouts[z];
+    // `leadIndex` identifies one layout cell without ambiguity: a grid cell
+    // carries the index of its channel in the unfiltered channel list, and the
+    // `3x4+1` rhythm strip carries its own synthetic index. A search by
+    // position in the layout array would select the wrong cell, because the
+    // array holds only the visible leads.
+    const layout = channelLayouts.find((item) => item.leadIndex === z);
+
     if (!layout) {
       return [0, 0];
     }
@@ -205,11 +215,24 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
   }
 
   private getChannelLayouts() {
+    // The layout is stable for one resolved view, so compute it once. A tool
+    // that converts many annotation handles calls canvasToWorld and
+    // worldToCanvas repeatedly, and each call needs the same layout.
+    this.cachedChannelLayouts ||= this.computeChannelLayouts();
+
+    return this.cachedChannelLayouts;
+  }
+
+  private computeChannelLayouts() {
+    const entries = getVisibleECGChannelEntries(
+      this.state.waveform.channels,
+      this.state.dataPresentation?.visibleChannels
+    );
+
     return computeECGChannelLayouts({
-      visibleChannels: getVisibleECGChannels(
-        this.state.waveform.channels,
-        this.state.dataPresentation?.visibleChannels
-      ),
+      visibleChannels: entries.map((entry) => entry.channel),
+      leadIndices: entries.map((entry) => entry.channelIndex),
+      channelCount: this.state.waveform.channels.length,
       channelScale: this.state.metrics.channelScale,
       layoutType: this.state.dataPresentation?.layoutType ?? '12x1',
       numberOfSamples: this.state.waveform.numberOfSamples,
