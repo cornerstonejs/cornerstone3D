@@ -563,6 +563,16 @@ function _createMultiframeSegmentationFromReferencedImages(
       ...studyData,
       ...seriesData,
       ...imageData,
+      // Each virtual dataset stands for the single frame this image references,
+      // not the whole source instance. When the source is a multiframe
+      // (enhanced) instance, IMAGE_DATA carries its NumberOfFrames (e.g. 16) but
+      // none of the functional-group sequences. Left in place, that leaked frame
+      // count makes SEGImageNormalizer treat the single virtual dataset as an
+      // already-multiframe one and run normalizeMultiframe on it (which needs the
+      // absent SharedFunctionalGroupsSequence) → it throws. Forcing 1 frame lets
+      // the normal virtual-multiframe assembly path — the same one a single-frame
+      // source stack uses — handle a multiframe source identically.
+      NumberOfFrames: 1,
       PixelData: image.voxelManager.getScalarData(),
       // Declaring it as 16 bits allows the normalizer to work on 8 bit data
       BitsAllocated: 16,
