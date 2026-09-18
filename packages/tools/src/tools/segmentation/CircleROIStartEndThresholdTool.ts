@@ -121,18 +121,21 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
    * than the viewport's default (first) one.  Without a configured filter the
    * viewport's default view reference is used, as before.
    *
+   * The annotation data is deliberately not passed to `getTargetId`: this
+   * tool's `cachedStats` is a flat `VolumeStats` rather than a map keyed by
+   * targetId, so there is no per-target key to reuse, and handing those
+   * flat keys (`pointsInVolume`, `statistics`) to the target selection would
+   * let them be mistaken for targetIds.
+   *
    * @param viewport - the viewport to resolve the target on
-   * @param data - the annotation data, so an existing cachedStats key for the
-   *   same volume is reused rather than a second one created
    * @returns the targetId and its cached volume, or undefined when a
    *   configured filter selects no target on this viewport (eg a PT only
    *   filter on a CT viewport) or the volume is no longer cached
    */
   protected getTargetVolume(
-    viewport: Types.IViewport,
-    data?: CircleROIStartEndThresholdAnnotation['data']
+    viewport: Types.IViewport
   ): { targetId: string; imageVolume: Types.IImageVolume } | undefined {
-    const targetId = this.getTargetId(viewport, data);
+    const targetId = this.getTargetId(viewport);
     const imageVolume = targetId
       ? cache.getVolume(csUtils.getVolumeId(targetId))
       : undefined;
@@ -145,10 +148,14 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
    * a CircleROI Annotation and stores it in the annotationManager
    *
    * @param evt -  EventTypes.NormalizedMouseEventType
-   * @returns The annotation object.
+   * @returns The annotation object, or undefined when there is nothing to
+   *   measure on this viewport because a configured `targetsFilter` selects
+   *   no target on it (eg a PT only filter on a CT viewport).
    *
    */
-  addNewAnnotation = (evt: EventTypes.InteractionEventType): Annotation => {
+  addNewAnnotation = (
+    evt: EventTypes.InteractionEventType
+  ): Annotation | undefined => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
@@ -156,30 +163,30 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    this.isDrawing = true;
-
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
 
-    let referencedImageId, imageVolume, volumeId;
     if (viewport instanceof StackViewport) {
       throw new Error('Stack Viewport Not implemented');
-    } else {
-      const target = this.getTargetVolume(viewport);
-      if (!target) {
-        throw new Error(
-          `${this.getToolName()}: no measurement target on this viewport - check the targetsFilter configuration`
-        );
-      }
-      volumeId = csUtils.getVolumeId(target.targetId);
-      imageVolume = target.imageVolume;
-
-      referencedImageId = csUtils.getClosestImageId(
-        imageVolume,
-        worldPos,
-        viewPlaneNormal
-      );
     }
+
+    // Resolve the target before any drawing state is set, so that a viewport
+    // with nothing to measure leaves the tool untouched rather than stuck
+    // mid-draw with no editData for cancel() to unwind.
+    const target = this.getTargetVolume(viewport);
+    if (!target) {
+      return;
+    }
+
+    const volumeId = csUtils.getVolumeId(target.targetId);
+    const imageVolume = target.imageVolume;
+    const referencedImageId = csUtils.getClosestImageId(
+      imageVolume,
+      worldPos,
+      viewPlaneNormal
+    );
+
+    this.isDrawing = true;
 
     const spacingInNormal = csUtils.getSpacingInNormalDirection(
       imageVolume,
@@ -329,10 +336,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       removeAnnotation(annotation.annotationUID);
     }
 
-    const target = this.getTargetVolume(
-      enabledElement.viewport,
-      annotation.data as CircleROIStartEndThresholdAnnotation['data']
-    );
+    const target = this.getTargetVolume(enabledElement.viewport);
 
     if (target) {
       this._computePointsInsideVolume(
@@ -473,21 +477,17 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       ] = middleCoordinate;
 
       // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
-      const iteratorVolumeIDs =
-        (
-          annotationEnabledElement.viewport as Types.IVolumeViewport
-        )?.getAllVolumeIds?.() ?? [];
+      const annotationViewport =
+        annotationEnabledElement?.viewport as Types.IVolumeViewport;
 
-      for (const volumeId of iteratorVolumeIDs) {
-        if (
-          annotation.invalidated &&
-          annotation.metadata.volumeId === volumeId
-        ) {
-          this._throttledCalculateCachedStats(
-            annotation,
-            annotationEnabledElement
-          );
-        }
+      if (
+        annotation.invalidated &&
+        annotationViewport?.hasVolumeId?.(metadata.volumeId)
+      ) {
+        this._throttledCalculateCachedStats(
+          annotation,
+          annotationEnabledElement
+        );
       }
 
       // If rendering engine has been destroyed while rendering

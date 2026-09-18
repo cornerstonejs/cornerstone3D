@@ -121,18 +121,21 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
    * than the viewport's default (first) one.  Without a configured filter the
    * viewport's default view reference is used, as before.
    *
+   * The annotation data is deliberately not passed to `getTargetId`: this
+   * tool's `cachedStats` is a flat `VolumeStats` rather than a map keyed by
+   * targetId, so there is no per-target key to reuse, and handing those
+   * flat keys (`pointsInVolume`, `statistics`) to the target selection would
+   * let them be mistaken for targetIds.
+   *
    * @param viewport - the viewport to resolve the target on
-   * @param data - the annotation data, so an existing cachedStats key for the
-   *   same volume is reused rather than a second one created
    * @returns the targetId and its cached volume, or undefined when a
    *   configured filter selects no target on this viewport (eg a PT only
    *   filter on a CT viewport) or the volume is no longer cached
    */
   protected getTargetVolume(
-    viewport: Types.IViewport,
-    data?: RectangleROIStartEndThresholdAnnotation['data']
+    viewport: Types.IViewport
   ): { targetId: string; imageVolume: Types.IImageVolume } | undefined {
-    const targetId = this.getTargetId(viewport, data);
+    const targetId = this.getTargetId(viewport);
     const imageVolume = targetId
       ? cache.getVolume(csUtils.getVolumeId(targetId))
       : undefined;
@@ -165,7 +168,9 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
    * the edit data for the tool.
    *
    * @param evt -  EventTypes.NormalizedMouseEventType
-   * @returns The annotation object.
+   * @returns The annotation object, or undefined when there is nothing to
+   *   measure on this viewport because a configured `targetsFilter` selects
+   *   no target on it (eg a PT only filter on a CT viewport).
    *
    */
   addNewAnnotation = (evt: EventTypes.InteractionEventType) => {
@@ -176,29 +181,30 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
 
-    this.isDrawing = true;
-
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
 
-    let referencedImageId, imageVolume, volumeId;
     if (viewport instanceof StackViewport) {
       throw new Error('Stack Viewport Not implemented');
-    } else {
-      const target = this.getTargetVolume(viewport);
-      if (!target) {
-        throw new Error(
-          `${this.getToolName()}: no measurement target on this viewport - check the targetsFilter configuration`
-        );
-      }
-      volumeId = csUtils.getVolumeId(target.targetId);
-      imageVolume = target.imageVolume;
-      referencedImageId = csUtils.getClosestImageId(
-        imageVolume,
-        worldPos,
-        viewPlaneNormal
-      );
     }
+
+    // Resolve the target before any drawing state is set, so that a viewport
+    // with nothing to measure leaves the tool untouched rather than stuck
+    // mid-draw with no editData for cancel() to unwind.
+    const target = this.getTargetVolume(viewport);
+    if (!target) {
+      return;
+    }
+
+    const volumeId = csUtils.getVolumeId(target.targetId);
+    const imageVolume = target.imageVolume;
+    const referencedImageId = csUtils.getClosestImageId(
+      imageVolume,
+      worldPos,
+      viewPlaneNormal
+    );
+
+    this.isDrawing = true;
 
     const spacingInNormal = csUtils.getSpacingInNormalDirection(
       imageVolume,
@@ -329,10 +335,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       removeAnnotation(annotation.annotationUID);
     }
 
-    const target = this.getTargetVolume(
-      enabledElement.viewport,
-      annotation.data as RectangleROIStartEndThresholdAnnotation['data']
-    );
+    const target = this.getTargetVolume(enabledElement.viewport);
 
     if (target) {
       this._computeProjectionPoints(
@@ -462,8 +465,13 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       ),
     };
 
+    // The modality has to come from the volume being measured - the
+    // annotation metadata has no Modality, so reading it from there left PT
+    // statistics unitless instead of SUV.
+    const modality = imageVolume?.metadata?.Modality;
+
     const modalityUnit = getPixelValueUnits(
-      metadata.Modality,
+      modality,
       annotation.metadata.referencedImageId,
       modalityUnitOptions
     );
@@ -541,7 +549,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     const stats = this.configuration.statsCalculator.getStatistics();
     data.cachedStats.pointsInVolume = pointsInsideVolume;
     data.cachedStats.statistics = {
-      Modality: metadata.Modality,
+      Modality: modality,
       area,
       mean: stats.mean?.value,
       stdDev: stats.stdDev?.value,
@@ -557,7 +565,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     const { viewport } = enabledElement;
 
     const { cachedStats } = data;
-    const target = this.getTargetVolume(viewport, data);
+    const target = this.getTargetVolume(viewport);
 
     if (!target) {
       return cachedStats;
@@ -675,21 +683,17 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       }
 
       // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
-      const iteratorVolumeIDs =
-        (
-          annotationEnabledElement.viewport as Types.IVolumeViewport
-        )?.getAllVolumeIds?.() ?? [];
+      const annotationViewport =
+        annotationEnabledElement?.viewport as Types.IVolumeViewport;
 
-      for (const volumeId of iteratorVolumeIDs) {
-        if (
-          annotation.invalidated &&
-          annotation.metadata.volumeId === volumeId
-        ) {
-          this._throttledCalculateCachedStats(
-            annotation,
-            annotationEnabledElement
-          );
-        }
+      if (
+        annotation.invalidated &&
+        annotationViewport?.hasVolumeId?.(metadata.volumeId)
+      ) {
+        this._throttledCalculateCachedStats(
+          annotation,
+          annotationEnabledElement
+        );
       }
 
       // if it is inside the start/end slice, but not exactly the first or
