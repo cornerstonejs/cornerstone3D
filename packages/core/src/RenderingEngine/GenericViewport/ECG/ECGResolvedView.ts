@@ -1,7 +1,10 @@
 import type { ICamera, Point2, Point3 } from '../../../types';
 import {
   computeECGChannelLayouts,
+  computeECGRenderMetrics,
   getVisibleECGChannelEntries,
+  type ECGChannelLayout,
+  type ECGRenderMetrics,
 } from '../../../utilities/ECGUtilities';
 import ResolvedViewportView from '../ResolvedViewportView';
 import {
@@ -13,9 +16,9 @@ import {
 } from './ecgViewportCamera';
 import type {
   ECGViewState,
+  ECGChannelData,
   ECGDataPresentation,
   ECGWaveformPayload,
-  RenderWindowMetrics,
 } from './ECGViewportTypes';
 
 type ECGResolvedViewState = {
@@ -23,17 +26,38 @@ type ECGResolvedViewState = {
   canvas: HTMLCanvasElement;
   dataPresentation?: ECGDataPresentation;
   frameOfReferenceUID: string;
-  metrics: RenderWindowMetrics;
   waveform: ECGWaveformPayload;
 };
 
+/** Canvas transform that the render path applies before it draws. */
+type ECGCanvasTransform = {
+  effectiveRatio: number;
+  xOffset: number;
+  yOffset: number;
+};
+
 /**
- * Computes coordinate transforms and resolved state for ECG viewport rendering.
+ * Owns the world geometry of one ECG frame, and the transforms between world
+ * space and canvas space.
+ *
+ * The snapshot derives everything from the data, the canvas geometry and the
+ * view state, which is what the view ownership contract asks of a resolved view
+ * (see ViewportArchitectureTypes). The render metrics and the channel layouts
+ * are part of that geometry, so this class computes them, and
+ * `CanvasECGRenderPath` reads them back. The render path previously computed
+ * the metrics itself and wrote them onto the mounted rendering, so a transform
+ * answered with the geometry of the previous frame, and answered with a
+ * placeholder before the first frame.
+ *
+ * Every derived value is cached, because one instance describes one frame and
+ * the state is frozen.
  */
 class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
   private cachedCanvasMapping?: ECGCanvasMapping;
-  private cachedChannelLayouts?: ReturnType<
-    ECGResolvedView['computeChannelLayouts']
+  private cachedChannelLayouts?: ECGChannelLayout<ECGChannelData>[];
+  private cachedMetrics?: ECGRenderMetrics;
+  private cachedVisibleEntries?: ReturnType<
+    typeof getVisibleECGChannelEntries<ECGChannelData>
   >;
 
   /** Gets the current zoom scale factor. */
@@ -47,6 +71,56 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
   }
 
   /**
+   * World geometry of this frame: the world size, the amplitude scale and the
+   * pixels for each second. The render path draws with these values.
+   */
+  get metrics(): ECGRenderMetrics {
+    this.cachedMetrics ||= computeECGRenderMetrics({
+      canvas: this.state.canvas,
+      visibleChannels: this.getVisibleChannels(),
+      windowMs: Math.max(
+        1,
+        this.state.viewState.timeRange[1] - this.state.viewState.timeRange[0]
+      ),
+      valueRange: this.state.viewState.valueRange,
+      sweepSpeed: this.state.dataPresentation?.sweepSpeed,
+      sensitivityMmMv: this.state.dataPresentation?.sensitivityMmMv,
+      layoutType: this.layoutType,
+    });
+
+    return this.cachedMetrics;
+  }
+
+  /** Layout cell of each visible lead, in the order that the grid fills. */
+  get channelLayouts(): ECGChannelLayout<ECGChannelData>[] {
+    // The layout is stable for one resolved view, so compute it once. A tool
+    // that converts many annotation handles calls canvasToWorld and
+    // worldToCanvas repeatedly, and each call needs the same layout.
+    this.cachedChannelLayouts ||= this.computeChannelLayouts();
+
+    return this.cachedChannelLayouts;
+  }
+
+  /** Lead arrangement that this frame draws. */
+  get layoutType() {
+    return this.state.dataPresentation?.layoutType ?? '12x1';
+  }
+
+  /**
+   * Scale and offset that map world space to canvas space. The render path
+   * passes these values to `setTransform`.
+   */
+  get canvasTransform(): ECGCanvasTransform {
+    const mapping = this.getCanvasMapping();
+
+    return {
+      effectiveRatio: mapping.effectiveRatio,
+      xOffset: mapping.xOffset,
+      yOffset: mapping.yOffset,
+    };
+  }
+
+  /**
    * Converts a canvas-space point into 3D world-space coordinates.
    * @param canvasPos - Point in canvas space [x, y].
    * @returns 3D world point `[sampleIndex, amplitude, leadIndex]`. The sample
@@ -55,7 +129,7 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
    */
   canvasToWorld(canvasPos: Point2): Point3 {
     const mapping = this.getCanvasMapping();
-    const channelLayouts = this.getChannelLayouts();
+    const channelLayouts = this.channelLayouts;
     const subCanvasPos: Point2 = [
       (canvasPos[0] - mapping.xOffset) / mapping.effectiveRatio,
       (canvasPos[1] - mapping.yOffset) / mapping.effectiveRatio,
@@ -64,7 +138,7 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
     // Find the layout cell containing the coordinates
     let layout = channelLayouts.find((item) => {
       const xStart = item.xOffset ?? 0;
-      const xEnd = xStart + (item.width ?? this.state.metrics.ecgWidth);
+      const xEnd = xStart + (item.width ?? this.metrics.ecgWidth);
       // Row heights are stacked vertically; determine boundaries of this row
       const yStart = item.yOffset - item.itemHeight;
       const yEnd = item.yOffset;
@@ -96,7 +170,7 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
     }
 
     const xOffset = layout.xOffset ?? 0;
-    const width = layout.width ?? this.state.metrics.ecgWidth;
+    const width = layout.width ?? this.metrics.ecgWidth;
     const startSample = layout.startSample ?? 0;
     const endSample = layout.endSample ?? this.state.waveform.numberOfSamples;
     const leadIndex = layout.leadIndex ?? channelLayouts.indexOf(layout);
@@ -109,14 +183,14 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
         0,
         Math.min(this.state.waveform.numberOfSamples - 1, sampleIndex)
       ),
-      (layout.baseline - subCanvasPos[1]) / this.state.metrics.channelScale,
+      (layout.baseline - subCanvasPos[1]) / this.metrics.channelScale,
       leadIndex,
     ];
   }
 
   worldToCanvas(worldPos: Point3): Point2 {
     const mapping = this.getCanvasMapping();
-    const channelLayouts = this.getChannelLayouts();
+    const channelLayouts = this.channelLayouts;
     const z = Math.round(worldPos[2]);
 
     // `leadIndex` identifies one layout cell without ambiguity: a grid cell
@@ -133,7 +207,7 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
     const startSample = layout.startSample ?? 0;
     const endSample = layout.endSample ?? this.state.waveform.numberOfSamples;
     const xOffset = layout.xOffset ?? 0;
-    const width = layout.width ?? this.state.metrics.ecgWidth;
+    const width = layout.width ?? this.metrics.ecgWidth;
 
     const sampleFraction =
       (worldPos[0] - startSample) / (endSample - startSample || 1);
@@ -141,7 +215,7 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
 
     return [
       canvasX * mapping.effectiveRatio + mapping.xOffset,
-      (layout.baseline - worldPos[1] * this.state.metrics.channelScale) *
+      (layout.baseline - worldPos[1] * this.metrics.channelScale) *
         mapping.effectiveRatio +
         mapping.yOffset,
     ];
@@ -211,7 +285,7 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
     this.cachedCanvasMapping ||= resolveECGCanvasMapping({
       canvas: this.state.canvas,
       camera: this.state.viewState,
-      metrics: this.state.metrics,
+      metrics: this.metrics,
     });
 
     return this.cachedCanvasMapping;
@@ -225,10 +299,10 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
    */
   private getDistanceToCell(
     point: Point2,
-    layout: ReturnType<ECGResolvedView['computeChannelLayouts']>[number]
+    layout: ECGChannelLayout<ECGChannelData>
   ): number {
     const xStart = layout.xOffset ?? 0;
-    const xEnd = xStart + (layout.width ?? this.state.metrics.ecgWidth);
+    const xEnd = xStart + (layout.width ?? this.metrics.ecgWidth);
     const yStart = layout.yOffset - layout.itemHeight;
     const yEnd = layout.yOffset;
     const dx = Math.max(xStart - point[0], 0, point[0] - xEnd);
@@ -237,29 +311,35 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
     return dx * dx + dy * dy;
   }
 
-  private getChannelLayouts() {
-    // The layout is stable for one resolved view, so compute it once. A tool
-    // that converts many annotation handles calls canvasToWorld and
-    // worldToCanvas repeatedly, and each call needs the same layout.
-    this.cachedChannelLayouts ||= this.computeChannelLayouts();
-
-    return this.cachedChannelLayouts;
-  }
-
-  private computeChannelLayouts() {
-    const entries = getVisibleECGChannelEntries(
+  /**
+   * Returns the visible channels together with their index in the unfiltered
+   * channel list. The metrics and the layout both need the same selection, so
+   * the filter runs once.
+   */
+  private getVisibleEntries() {
+    this.cachedVisibleEntries ||= getVisibleECGChannelEntries(
       this.state.waveform.channels,
       this.state.dataPresentation?.visibleChannels
     );
+
+    return this.cachedVisibleEntries;
+  }
+
+  private getVisibleChannels(): ECGChannelData[] {
+    return this.getVisibleEntries().map((entry) => entry.channel);
+  }
+
+  private computeChannelLayouts(): ECGChannelLayout<ECGChannelData>[] {
+    const entries = this.getVisibleEntries();
 
     return computeECGChannelLayouts({
       visibleChannels: entries.map((entry) => entry.channel),
       leadIndices: entries.map((entry) => entry.channelIndex),
       channelCount: this.state.waveform.channels.length,
-      channelScale: this.state.metrics.channelScale,
-      layoutType: this.state.dataPresentation?.layoutType ?? '12x1',
+      channelScale: this.metrics.channelScale,
+      layoutType: this.layoutType,
       numberOfSamples: this.state.waveform.numberOfSamples,
-      ecgWidth: this.state.metrics.ecgWidth,
+      ecgWidth: this.metrics.ecgWidth,
     });
   }
 

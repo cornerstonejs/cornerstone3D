@@ -1,5 +1,8 @@
 import type {
   ECGViewportProperties,
+  ICamera,
+  Point2,
+  Point3,
   ViewPresentation,
   ViewPresentationSelector,
 } from '../../../types';
@@ -149,6 +152,74 @@ class ECGViewportLegacyAdapter extends ECGViewport {
    */
   resetCamera(_options?: unknown): boolean {
     return this.resetViewState();
+  }
+
+  /**
+   * Returns the legacy-compatible camera projection for this viewport.
+   *
+   * `ICamera` is the legacy camera shape. A next viewport reads `getViewState`,
+   * `getZoom` and `getPan` instead, so this method and `setCamera` live on the
+   * adapter, as they do in the Video, WSI and Planar families.
+   */
+  getCamera(): ICamera {
+    return this.getCameraForEvent();
+  }
+
+  /**
+   * Applies legacy camera parameters. The method translates a `parallelScale`
+   * or a `scale` into a zoom, and a `focalPoint` into a pan.
+   */
+  setCamera(cameraPatch: Partial<ICamera>): void {
+    if (
+      cameraPatch.parallelScale !== undefined &&
+      cameraPatch.parallelScale > 0
+    ) {
+      const currentCamera = this.getCamera();
+      if (currentCamera.parallelScale) {
+        const ratio = currentCamera.parallelScale / cameraPatch.parallelScale;
+        const currentZoom = this.getZoom();
+        this.setZoom(currentZoom * ratio);
+      }
+    } else if (cameraPatch.scale !== undefined && cameraPatch.scale > 0) {
+      this.setZoom(cameraPatch.scale);
+    }
+
+    if (cameraPatch.focalPoint) {
+      this.setFocalPoint(cameraPatch.focalPoint);
+    }
+  }
+
+  /**
+   * Moves the pan so that the requested world point sits at the center of the
+   * canvas.
+   *
+   * The pan is in canvas pixels, and a world point holds a sample index and a
+   * raw amplitude. The two spaces have different units, and the vertical
+   * directions are opposite, so the conversion goes through `worldToCanvas`.
+   * The previous code added a world-space difference straight to the pan, which
+   * moved the viewport by the wrong distance and in the wrong vertical
+   * direction. `WSIViewportLegacyAdapter.setCamera` uses the same round trip.
+   */
+  private setFocalPoint(focalPoint: Point3): void {
+    const resolvedView = this.getResolvedView();
+
+    if (!resolvedView) {
+      return;
+    }
+
+    const targetCanvas = resolvedView.worldToCanvas(focalPoint);
+    const canvasCenter: Point2 = [
+      this.canvas.clientWidth / 2,
+      this.canvas.clientHeight / 2,
+    ];
+    const currentPan = this.getPan();
+
+    // Moving the content so that `targetCanvas` reaches the center means a
+    // shift of the pan by the canvas-space difference.
+    this.setPan([
+      currentPan[0] + (canvasCenter[0] - targetCanvas[0]),
+      currentPan[1] + (canvasCenter[1] - targetCanvas[1]),
+    ]);
   }
 }
 

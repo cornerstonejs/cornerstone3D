@@ -7,7 +7,6 @@ import genericViewportDisplaySetMetadataProvider from '../../../utilities/generi
 import imageIdToURI from '../../../utilities/imageIdToURI';
 import type {
   CPUIImageData,
-  ICamera,
   Mat3,
   Point2,
   Point3,
@@ -20,7 +19,6 @@ import type { GenericViewportReferenceContext } from '../genericViewportReferenc
 import type {
   ECGViewState,
   ECGCanvasRenderContext,
-  ECGCanvasRendering,
   ECGDataPresentation,
   ECGViewportInput,
   ECGWaveformPayload,
@@ -73,6 +71,9 @@ class ECGViewport extends GenericViewport<
       element: this.element,
       canvas: this.canvas,
       canvasContext: this.canvasContext,
+      // The render path reads the world geometry of the frame from here, so the
+      // viewport stays the single owner of the view state and the presentation.
+      getResolvedView: () => this.getResolvedView(),
     };
     this.viewState = createDefaultECGViewState({
       timeRange: [0, 1],
@@ -276,15 +277,15 @@ class ECGViewport extends GenericViewport<
    * @returns The ECG content width and height in device pixels.
    */
   getContentDimensions(): { width: number; height: number } {
-    const rendering = this.getCurrentRendering();
+    const resolvedView = this.getResolvedView();
 
-    if (!rendering) {
+    if (!resolvedView) {
       return { width: 0, height: 0 };
     }
 
     return {
-      width: rendering.metrics.ecgWidth,
-      height: rendering.metrics.ecgHeight,
+      width: resolvedView.metrics.ecgWidth,
+      height: resolvedView.metrics.ecgHeight,
     };
   }
 
@@ -336,69 +337,6 @@ class ECGViewport extends GenericViewport<
     this.triggerCameraResetEvent();
 
     return true;
-  }
-
-  /**
-   * Returns the legacy-compatible camera projection for this viewport.
-   */
-  getCamera(): ICamera {
-    return this.getCameraForEvent();
-  }
-
-  /**
-   * Sets camera parameters. Translates parallelScale updates from tools like
-   * ZoomTool into viewport zoom level updates.
-   */
-  setCamera(cameraPatch: Partial<ICamera>): void {
-    if (
-      cameraPatch.parallelScale !== undefined &&
-      cameraPatch.parallelScale > 0
-    ) {
-      const currentCamera = this.getCamera();
-      if (currentCamera.parallelScale) {
-        const ratio = currentCamera.parallelScale / cameraPatch.parallelScale;
-        const currentZoom = this.viewState.scale ?? 1;
-        this.setZoom(currentZoom * ratio);
-      }
-    } else if (cameraPatch.scale !== undefined && cameraPatch.scale > 0) {
-      this.setZoom(cameraPatch.scale);
-    }
-
-    if (cameraPatch.focalPoint) {
-      this.setFocalPoint(cameraPatch.focalPoint);
-    }
-  }
-
-  /**
-   * Moves the pan so that the requested world point sits at the center of the
-   * canvas.
-   *
-   * The pan is in canvas pixels, and a world point holds a sample index and a
-   * raw amplitude. The two spaces have different units and opposite vertical
-   * directions, so the conversion goes through `worldToCanvas`. The previous
-   * code added a world-space difference straight to the pan, which moved the
-   * viewport by the wrong distance and in the wrong vertical direction.
-   */
-  private setFocalPoint(focalPoint: Point3): void {
-    const resolvedView = this.getResolvedView();
-
-    if (!resolvedView) {
-      return;
-    }
-
-    const targetCanvas = resolvedView.worldToCanvas(focalPoint);
-    const canvasCenter: Point2 = [
-      this.canvas.clientWidth / 2,
-      this.canvas.clientHeight / 2,
-    ];
-    const currentPan = this.getPan();
-
-    // Moving the content so that `targetCanvas` reaches the center means
-    // shifting the pan by the canvas-space difference.
-    this.setPan([
-      currentPan[0] + (canvasCenter[0] - targetCanvas[0]),
-      currentPan[1] + (canvasCenter[1] - targetCanvas[1]),
-    ]);
   }
 
   /**
@@ -640,21 +578,20 @@ class ECGViewport extends GenericViewport<
     return binding.data;
   }
 
-  private getCurrentRendering(): ECGCanvasRendering | undefined {
-    const binding = this.getFirstBinding();
-
-    if (!binding || !isECGCanvasRendering(binding.rendering)) {
-      return;
-    }
-
-    return binding.rendering;
-  }
-
+  /**
+   * Builds the resolved view of the current frame.
+   *
+   * The snapshot comes from the mounted waveform, the canvas geometry, the view
+   * state and the data presentation. It does not read the mounted rendering,
+   * so a transform is correct before the first draw and after every view-state
+   * change. The previous version read the metrics that the last draw had left
+   * on the render path, which made a transform one frame stale, and made it
+   * report a placeholder geometry until the first frame.
+   */
   getResolvedView(): ECGResolvedView | undefined {
     const waveform = this.getWaveformBindingData();
-    const rendering = this.getCurrentRendering();
 
-    if (!waveform || !rendering) {
+    if (!waveform) {
       return;
     }
 
@@ -663,7 +600,6 @@ class ECGViewport extends GenericViewport<
       canvas: this.canvas,
       dataPresentation: this.getDisplaySetPresentation(waveform.id),
       frameOfReferenceUID: `ecg-viewport-${this.id}`,
-      metrics: rendering.metrics,
       waveform,
     });
   }
@@ -693,10 +629,4 @@ function isECGWaveformData(
     typeof waveform.samplingFrequency === 'number' &&
     typeof waveform.numberOfChannels === 'number'
   );
-}
-
-function isECGCanvasRendering(rendering: {
-  renderMode: string;
-}): rendering is ECGCanvasRendering {
-  return rendering.renderMode === 'signal2d';
 }

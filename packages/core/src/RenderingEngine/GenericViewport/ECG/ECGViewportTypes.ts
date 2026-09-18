@@ -6,6 +6,8 @@ import type {
   RenderPathResolver,
 } from '../ViewportArchitectureTypes';
 import type { ViewportCameraBase } from '../ViewportCameraTypes';
+import type { ECGRenderMetrics } from '../../../utilities/ECGUtilities';
+import type ECGResolvedView from './ECGResolvedView';
 
 export interface ECGChannelData {
   name: string;
@@ -77,27 +79,16 @@ export interface ECGViewportInput {
 
 export type ECGGenericViewportInput = ECGViewportInput;
 
-/** @internal */
-export interface ChannelLayout {
-  channel: ECGChannelData;
-  itemHeight: number;
-  yOffset: number;
-  baseline: number;
-}
-
-/** @internal */
-export interface RenderWindowMetrics {
-  ecgWidth: number;
-  ecgHeight: number;
-  channelScale: number;
-  worldToCanvasRatio: number;
-  xOffsetCanvas: number;
-  yOffsetCanvas: number;
-  /** World pixels that one second of signal occupies. */
-  pxPerSecond: number;
-  /** Sweep speed in mm/s that produced `pxPerSecond`. */
-  sweepSpeed: number;
-}
+/**
+ * World geometry of one ECG frame.
+ *
+ * The type is an alias of `ECGRenderMetrics`, which `computeECGRenderMetrics`
+ * returns. The two used to be separate declarations with the same shape, and
+ * `CanvasECGRenderPath` cast between them, which hid any future drift.
+ *
+ * @internal
+ */
+export type RenderWindowMetrics = ECGRenderMetrics;
 
 /** @internal */
 export interface ECGCanvasRenderContext extends BaseViewportRenderContext {
@@ -105,14 +96,25 @@ export interface ECGCanvasRenderContext extends BaseViewportRenderContext {
   element: HTMLDivElement;
   canvas: HTMLCanvasElement;
   canvasContext: CanvasRenderingContext2D;
+  /**
+   * Returns the resolved view of the current frame, which owns the world
+   * geometry and the canvas transform. The render path reads the geometry from
+   * here in place of computing it, so the viewport and the drawn frame cannot
+   * disagree. The result is undefined while no waveform is mounted.
+   */
+  getResolvedView(): ECGResolvedView | undefined;
 }
 
-/** @internal */
+/**
+ * Mounted rendering state of the canvas ECG render path.
+ *
+ * The record holds no view state and no geometry. `ECGResolvedView` owns both,
+ * and the render path reads them through `ECGCanvasRenderContext`.
+ *
+ * @internal
+ */
 export type ECGCanvasRendering = MountedRendering<{
   renderMode: 'signal2d';
   canvas: HTMLCanvasElement;
   canvasContext: CanvasRenderingContext2D;
-  metrics: RenderWindowMetrics;
-  currentCamera?: ECGViewState;
-  currentDataPresentation?: ECGDataPresentation;
 }>;

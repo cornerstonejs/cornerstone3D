@@ -1,13 +1,10 @@
 import { Events as EVENTS, ViewportType } from '../../../enums';
 import triggerEvent from '../../../utilities/triggerEvent';
 import {
-  computeECGChannelLayouts,
-  computeECGRenderMetrics,
   drawECGGrid,
   drawECGLabels,
   drawECGTraces,
   ensureECGCanvasSize,
-  getVisibleECGChannelEntries,
 } from '../../../utilities/ECGUtilities';
 import type {
   DataAddOptions,
@@ -22,12 +19,19 @@ import type {
   ECGCanvasRendering,
   ECGDataPresentation,
   ECGWaveformPayload,
-  RenderWindowMetrics,
 } from './ECGViewportTypes';
-import { resolveECGCanvasMapping } from './ecgViewportCamera';
+import type ECGResolvedView from './ECGResolvedView';
 
 /**
- * Render path implementation that draws ECG grid, channel labels, and traces on a 2D canvas.
+ * Render path that draws the ECG grid, the channel labels and the traces on a
+ * 2D canvas.
+ *
+ * The render path owns the drawing only. `ECGResolvedView` owns the world
+ * geometry: the render metrics, the channel layouts and the canvas transform.
+ * The render path reads all three through `ctx.getResolvedView()`, so the
+ * transform that a tool uses and the geometry that the frame draws are always
+ * the same values.
+ *
  * @internal
  */
 export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
@@ -49,31 +53,23 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
       renderMode: 'signal2d',
       canvas: ctx.canvas,
       canvasContext: ctx.canvasContext,
-      metrics: {
-        ecgWidth: 1,
-        ecgHeight: 1,
-        channelScale: 1,
-        worldToCanvasRatio: 1,
-        xOffsetCanvas: 0,
-        yOffsetCanvas: 0,
-        pxPerSecond: 1,
-        sweepSpeed: 1,
-      },
     };
 
     return {
       rendering,
-      updateDataPresentation: (props) => {
-        this.updateDataPresentation(rendering, props);
+      updateDataPresentation: () => {
+        // The viewport stores the presentation, and the resolved view reads it.
+        // A copy here would be a second source of truth for the geometry.
       },
-      applyViewState: (camera) => {
-        this.applyViewState(rendering, camera);
+      applyViewState: () => {
+        // The viewport owns the view state. The canvas redraws in full for each
+        // frame, so there is no incremental state to apply.
       },
       getFrameOfReferenceUID: () => {
         return this.getFrameOfReferenceUID(ctx);
       },
       render: () => {
-        this.render(ctx, rendering, waveform);
+        drawFrame(ctx, waveform);
       },
       removeData: () => {
         this.removeData();
@@ -81,31 +77,10 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
     };
   }
 
-  private updateDataPresentation(
-    rendering: ECGCanvasRendering,
-    props: unknown
-  ): void {
-    rendering.currentDataPresentation = props as
-      | ECGDataPresentation
-      | undefined;
-  }
-
-  private applyViewState(rendering: ECGCanvasRendering, camera: unknown): void {
-    rendering.currentCamera = camera as ECGViewState;
-  }
-
   private getFrameOfReferenceUID(
     ctx: ECGCanvasRenderContext
   ): string | undefined {
     return `ecg-viewport-${ctx.viewportId}`;
-  }
-
-  private render(
-    ctx: ECGCanvasRenderContext,
-    rendering: ECGCanvasRendering,
-    waveform: ECGWaveformPayload
-  ): void {
-    drawFrame(ctx, rendering, waveform);
   }
 
   private removeData(): void {
@@ -129,24 +104,9 @@ export class CanvasECGPath
   }
 }
 
-function getEffectiveTransform(
-  metrics: RenderWindowMetrics,
-  camera: ECGViewState | undefined,
-  canvas: HTMLCanvasElement
-): { effectiveRatio: number; xOffset: number; yOffset: number } {
-  const mapping = resolveECGCanvasMapping({
-    metrics,
-    camera,
-    canvas,
-  });
-
-  return {
-    effectiveRatio: mapping.effectiveRatio,
-    xOffset: mapping.xOffset,
-    yOffset: mapping.yOffset,
-  };
-}
-
+/**
+ * Returns the sample range that the view state selects, clamped to the signal.
+ */
 function computeTimeWindow(
   waveform: ECGWaveformPayload,
   camera: ECGViewState
@@ -186,69 +146,38 @@ function computeTimeWindow(
 
 function drawFrame(
   ecgCtx: ECGCanvasRenderContext,
-  ecgRendering: ECGCanvasRendering,
   waveform: ECGWaveformPayload
 ): void {
-  const { canvas, canvasContext, currentCamera, currentDataPresentation } =
-    ecgRendering;
-
-  if (!currentCamera) {
-    return;
-  }
-
-  // Keep the index of each visible channel in the unfiltered channel list. The
-  // layout writes that index to `leadIndex`, and `ECGResolvedView.worldToCanvas`
-  // selects a layout cell by that index.
-  const visibleEntries = getVisibleECGChannelEntries(
-    waveform.channels,
-    currentDataPresentation?.visibleChannels
-  );
-  const visibleChannels = visibleEntries.map((entry) => entry.channel);
+  const { canvas, canvasContext } = ecgCtx;
 
   ensureECGCanvasSize(canvas);
 
-  const layoutType = currentDataPresentation?.layoutType ?? '12x1';
-  const metrics = computeECGRenderMetrics({
-    canvas,
-    visibleChannels,
-    windowMs: Math.max(
-      1,
-      currentCamera.timeRange[1] - currentCamera.timeRange[0]
-    ),
-    valueRange: currentCamera.valueRange,
-    sweepSpeed: currentDataPresentation?.sweepSpeed,
-    sensitivityMmMv: currentDataPresentation?.sensitivityMmMv,
-    layoutType,
-  }) as RenderWindowMetrics;
-  const layouts = computeECGChannelLayouts({
-    visibleChannels,
-    leadIndices: visibleEntries.map((entry) => entry.channelIndex),
-    channelCount: waveform.channels.length,
-    channelScale: metrics.channelScale,
-    layoutType,
-    numberOfSamples: waveform.numberOfSamples,
-    ecgWidth: metrics.ecgWidth,
-  });
-  const timeWindow = computeTimeWindow(waveform, currentCamera);
+  // The resolved view is the single owner of the geometry of this frame. It is
+  // absent only while no waveform is mounted, and then there is nothing to
+  // draw.
+  const resolvedView: ECGResolvedView | undefined = ecgCtx.getResolvedView();
+
+  if (!resolvedView) {
+    return;
+  }
+
+  const viewState = resolvedView.state.viewState;
+  const dataPresentation = resolvedView.state.dataPresentation;
+  const metrics = resolvedView.metrics;
+  const layouts = resolvedView.channelLayouts;
+  const { effectiveRatio, xOffset, yOffset } = resolvedView.canvasTransform;
+  const timeWindow = computeTimeWindow(waveform, viewState);
   const dpr = window.devicePixelRatio || 1;
-
-  ecgRendering.metrics = metrics;
-
-  const { effectiveRatio, xOffset, yOffset } = getEffectiveTransform(
-    metrics,
-    currentCamera,
-    canvas
-  );
 
   canvasContext.resetTransform();
   canvasContext.fillStyle = '#000000';
   canvasContext.fillRect(0, 0, canvas.width, canvas.height);
 
-  if (currentDataPresentation?.visible === false) {
+  if (dataPresentation?.visible === false) {
     return;
   }
 
-  canvasContext.globalAlpha = currentDataPresentation?.opacity ?? 1;
+  canvasContext.globalAlpha = dataPresentation?.opacity ?? 1;
   canvasContext.setTransform(
     effectiveRatio * dpr,
     0,
@@ -264,11 +193,11 @@ function drawFrame(
       // `metrics` already carries `pxPerSecond` and the resolved `sweepSpeed`
       // that produced it, so the grid and the trace width stay in agreement.
       ...metrics,
-      sensitivityMmMv: currentDataPresentation?.sensitivityMmMv,
-      showAmplitudeLabels: currentDataPresentation?.showAmplitudeLabels,
+      sensitivityMmMv: dataPresentation?.sensitivityMmMv,
+      showAmplitudeLabels: dataPresentation?.showAmplitudeLabels,
     },
     {
-      showGrid: currentDataPresentation?.showGrid,
+      showGrid: dataPresentation?.showGrid,
     },
     layouts
   );
@@ -279,8 +208,8 @@ function drawFrame(
     channelScale: metrics.channelScale,
     startIndex: timeWindow.startIndex,
     endIndex: timeWindow.endIndex,
-    lineWidth: currentDataPresentation?.lineWidth,
-    amplitudeScale: currentDataPresentation?.amplitudeScale,
+    lineWidth: dataPresentation?.lineWidth,
+    amplitudeScale: dataPresentation?.amplitudeScale,
   });
   drawECGLabels(canvasContext, layouts, metrics.worldToCanvasRatio);
 
@@ -291,6 +220,6 @@ function drawFrame(
     element: ecgCtx.element,
     viewportId: ecgCtx.viewportId,
     renderingEngineId: ecgCtx.renderingEngineId,
-    rendering: ecgRendering,
+    resolvedView,
   });
 }
