@@ -848,7 +848,7 @@ class SliceIntersectionTool extends AnnotationTool {
     );
 
     if (isActive) {
-      this._appendHandles(lineInfo, targetViewport, leaderViewport);
+      this._appendHandles(lineInfo, leaderViewport);
     }
 
     return lineInfo;
@@ -1035,7 +1035,6 @@ class SliceIntersectionTool extends AnnotationTool {
 
   private _appendHandles(
     lineInfo: RenderedIntersectionLine,
-    targetViewport: Types.IViewport,
     leaderViewport: Types.IViewport
   ): void {
     const { rotatable, slabThicknessControls, showSlabThickness } =
@@ -1054,18 +1053,22 @@ class SliceIntersectionTool extends AnnotationTool {
     }
 
     if (slabThicknessControls && showSlabThickness && volumeMode) {
-      lineInfo.slabHandles = this._computeSlabHandles(
-        lineInfo,
-        targetViewport,
-        leaderViewport
-      );
+      lineInfo.slabHandles = this._computeSlabHandles(lineInfo);
     }
   }
 
+  /**
+   * Places one handle on each dashed slab boundary line: the closest point of
+   * that drawn segment to the line anchor. The handles must sit on the lines
+   * that the user sees. Only the drawn segments give that position for every
+   * plane orientation: a leader normal that is oblique to the target plane
+   * puts the boundary line at (slabThickness / 2) / s from the center line,
+   * and the projection of a world point offset along that normal at
+   * (slabThickness / 2) * s, where s is the sine of the angle between the two
+   * planes.
+   */
   private _computeSlabHandles(
-    lineInfo: RenderedIntersectionLine,
-    targetViewport: Types.IViewport,
-    leaderViewport: Types.IViewport
+    lineInfo: RenderedIntersectionLine
   ): Types.Point2[] {
     const [start, end] = lineInfo.canvasPoints;
 
@@ -1077,33 +1080,28 @@ class SliceIntersectionTool extends AnnotationTool {
       start[1] + (end[1] - start[1]) * SLAB_HANDLE_LINE_FRACTION,
     ];
 
-    const slabThickness = this._getSourceSlabThickness(leaderViewport);
-    const anchorWorld = targetViewport.canvasToWorld(anchorCanvas);
-    const { normal } = lineInfo.leaderPlane;
+    const minimumOffsetSquared =
+      MIN_SLAB_HANDLE_CANVAS_OFFSET * MIN_SLAB_HANDLE_CANVAS_OFFSET;
 
-    const plusWorld: Types.Point3 = [
-      anchorWorld[0] + normal[0] * (slabThickness / 2),
-      anchorWorld[1] + normal[1] * (slabThickness / 2),
-      anchorWorld[2] + normal[2] * (slabThickness / 2),
-    ];
-    const plusCanvas = targetViewport.worldToCanvas(plusWorld);
+    const handles = lineInfo.slabLineSegments
+      .map(([segmentStart, segmentEnd]) =>
+        lineSegment.distanceToPointSquaredInfo(
+          segmentStart,
+          segmentEnd,
+          anchorCanvas
+        )
+      )
+      .filter((info) => info.distanceSquared >= minimumOffsetSquared)
+      .map((info) => info.point);
 
-    const canvasOffset = Math.hypot(
-      plusCanvas[0] - anchorCanvas[0],
-      plusCanvas[1] - anchorCanvas[1]
-    );
-
-    if (canvasOffset >= MIN_SLAB_HANDLE_CANVAS_OFFSET) {
-      const minusWorld: Types.Point3 = [
-        anchorWorld[0] - normal[0] * (slabThickness / 2),
-        anchorWorld[1] - normal[1] * (slabThickness / 2),
-        anchorWorld[2] - normal[2] * (slabThickness / 2),
-      ];
-      return [plusCanvas, targetViewport.worldToCanvas(minusWorld)];
+    if (handles.length) {
+      return handles;
     }
 
-    // Slab collapsed to (near) minimum: place grab points at a fixed canvas
-    // offset perpendicular to the line so the slab is still adjustable.
+    // No boundary line to sit on: the slab is collapsed to (near) the
+    // minimum, or the boundary lines fall outside the target canvas. Place
+    // the grab points at a fixed canvas offset perpendicular to the line so
+    // the slab is still adjustable.
     const direction = vec2.normalize(
       vec2.create(),
       vec2.subtract(vec2.create(), end, start)
@@ -1925,9 +1923,10 @@ class SliceIntersectionTool extends AnnotationTool {
    * set, proximity to the line's rotation/slab handles also counts: the slab
    * handles sit at a canvas offset from the line itself, and hover must not
    * drop the active state (hiding the handles) while the cursor travels from
-   * the line onto a handle. When `includeSlabLines` is set, proximity to the
-   * dashed slab boundary lines counts too, so a wide slab's handles can be
-   * reached by hovering the boundary line they sit on.
+   * the line onto a handle. When `includeSlabLines` is set, and the
+   * `slabThicknessControls` configuration gives the line slab handles,
+   * proximity to the dashed slab boundary lines counts too, so a wide slab's
+   * handles can be reached by hovering the boundary line they sit on.
    */
   private _findLineNear(
     viewportId: string,
@@ -1970,19 +1969,31 @@ class SliceIntersectionTool extends AnnotationTool {
       }
     }
 
-    if (includeSlabLines) {
+    // A slab boundary line is a hover target only because the slab handles
+    // sit on that line, so the configuration that removes those handles also
+    // removes the hover target.
+    if (includeSlabLines && this.configuration.slabThicknessControls) {
       // Checked after every line and handle, so a slab boundary line crossing
-      // another group's line never steals that line's hover.
-      const slabLineInfo = lines.find((lineInfo) =>
-        lineInfo.slabLineSegments.some(
-          ([segmentStart, segmentEnd]) =>
-            lineSegment.distanceToPoint(
-              segmentStart,
-              segmentEnd,
-              canvasCoords
-            ) <= proximity
-        )
-      );
+      // another group's line never steals that line's hover. Two slab
+      // boundary lines that cross each other give the hover to the closest
+      // line, and a tie keeps the first group.
+      let slabLineInfo: RenderedIntersectionLine | null = null;
+      let slabLineDistance = Infinity;
+
+      for (const lineInfo of lines) {
+        for (const [segmentStart, segmentEnd] of lineInfo.slabLineSegments) {
+          const distance = lineSegment.distanceToPoint(
+            segmentStart,
+            segmentEnd,
+            canvasCoords
+          );
+
+          if (distance <= proximity && distance < slabLineDistance) {
+            slabLineDistance = distance;
+            slabLineInfo = lineInfo;
+          }
+        }
+      }
 
       if (slabLineInfo) {
         return slabLineInfo;

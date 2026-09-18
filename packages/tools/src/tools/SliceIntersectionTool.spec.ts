@@ -1,6 +1,8 @@
 import { vec3 } from 'gl-matrix';
+import type { Types } from '@cornerstonejs/core';
 import SliceIntersectionTool from './SliceIntersectionTool';
 import WorldCrosshairTool from './WorldCrosshairTool';
+import * as lineSegment from '../utilities/math/line';
 import { distancePointToPlane } from '../utilities/spatial';
 import type { Plane } from '../utilities/spatial';
 
@@ -38,8 +40,12 @@ function createFakePlanarViewport({
   slabThickness = undefined as number | undefined,
   /** Snap slice navigation to this grid spacing along the normal (mm). */
   snapSpacing = 0,
+  /** Oblique planes: orthonormal axes that replace the named orientation. */
+  axes: axesOverride = undefined as
+    | { normal: number[]; u: number[]; v: number[] }
+    | undefined,
 }) {
-  const axes = ORIENTATION_AXES[orientation];
+  const axes = axesOverride ?? ORIENTATION_AXES[orientation];
   const camera = {
     viewPlaneNormal: [...axes.normal],
     viewUp: [...axes.v],
@@ -242,6 +248,8 @@ function computeLines(tool: SliceIntersectionTool, targetViewport: unknown) {
         leaderViewportId: string;
         memberViewportIds: string[];
         canvasPoints: [number[], number[]];
+        slabLineSegments: Array<[number[], number[]]>;
+        slabHandles: number[][];
         color: string;
       }>;
     }
@@ -781,6 +789,159 @@ describe('SliceIntersectionTool', () => {
     expect(findLineNear([280, 250], { includeSlabLines: true })).toBe(
       'FOR1:coronal'
     );
+  });
+
+  it('gives the hover of two crossing slab boundary lines to the closest line', () => {
+    const axial = createFakePlanarViewport({
+      id: 'axial',
+      orientation: 'axial',
+      focalPoint: [0, 0, 0],
+    });
+    // Vertical boundary lines at canvas x=240 and x=280.
+    const sagittal = createFakePlanarViewport({
+      id: 'sagittal',
+      orientation: 'sagittal',
+      focalPoint: [10, 0, 0],
+      slabThickness: 40,
+    });
+    // Horizontal boundary lines at canvas y=230 and y=270.
+    const coronal = createFakePlanarViewport({
+      id: 'coronal',
+      orientation: 'coronal',
+      focalPoint: [0, 0, 0],
+      slabThickness: 40,
+    });
+    const tool = createTool({ viewports: [axial, sagittal, coronal] });
+
+    const internals = tool as unknown as {
+      _renderedLines: Map<string, unknown[]>;
+      _findLineNear: (
+        viewportId: string,
+        canvasCoords: number[],
+        proximity: number,
+        options?: { includeHandles?: boolean; includeSlabLines?: boolean }
+      ) => { groupId: string } | null;
+    };
+    internals._renderedLines.set('axial', computeLines(tool, axial));
+
+    const findLineNear = (canvasCoords: number[]) =>
+      internals._findLineNear('axial', canvasCoords, 6, {
+        includeSlabLines: true,
+      })?.groupId ?? null;
+
+    // The two boundary lines cross at (280, 270). Each probe sits on one
+    // boundary line and 3px from the other one.
+    expect(findLineNear([280, 267])).toBe('FOR1:sagittal');
+    expect(findLineNear([277, 270])).toBe('FOR1:coronal');
+  });
+
+  it('never hovers a slab boundary line when the configuration removes the slab handles', () => {
+    const axial = createFakePlanarViewport({
+      id: 'axial',
+      orientation: 'axial',
+      focalPoint: [0, 0, 0],
+    });
+    const sagittal = createFakePlanarViewport({
+      id: 'sagittal',
+      orientation: 'sagittal',
+      focalPoint: [10, 0, 0],
+      slabThickness: 40,
+    });
+    // The dashed boundary lines still render, but no handle sits on them.
+    const tool = createTool({
+      viewports: [axial, sagittal],
+      configuration: { slabThicknessControls: false },
+    });
+
+    const internals = tool as unknown as {
+      _renderedLines: Map<string, unknown[]>;
+      _findLineNear: (
+        viewportId: string,
+        canvasCoords: number[],
+        proximity: number,
+        options?: { includeHandles?: boolean; includeSlabLines?: boolean }
+      ) => { groupId: string } | null;
+    };
+    const lines = computeLines(tool, axial);
+    internals._renderedLines.set('axial', lines);
+
+    expect(lines[0].slabLineSegments).toHaveLength(2);
+
+    const findLineNear = (canvasCoords: number[]) =>
+      internals._findLineNear('axial', canvasCoords, 6, {
+        includeSlabLines: true,
+      })?.groupId ?? null;
+
+    expect(findLineNear([280, 100])).toBeNull();
+    expect(findLineNear([240, 100])).toBeNull();
+    // The center line itself still hovers.
+    expect(findLineNear([260, 100])).toBe('FOR1:sagittal');
+  });
+
+  it('places the slab handles on the drawn boundary lines when the leader plane is oblique', () => {
+    const axial = createFakePlanarViewport({
+      id: 'axial',
+      orientation: 'axial',
+      focalPoint: [0, 0, 0],
+    });
+    // Sagittal plane tilted 30 degrees about the y axis: its normal leaves
+    // the axial plane, so a world offset along that normal projects to a
+    // DIFFERENT canvas distance than the drawn boundary line.
+    const tilt = Math.PI / 6;
+    const sagittal = createFakePlanarViewport({
+      id: 'sagittal',
+      focalPoint: [10, 0, 0],
+      slabThickness: 40,
+      axes: {
+        normal: [Math.cos(tilt), 0, Math.sin(tilt)],
+        u: [0, 1, 0],
+        v: [-Math.sin(tilt), 0, Math.cos(tilt)],
+      },
+    });
+    const tool = createTool({ viewports: [axial, sagittal] });
+
+    // Handles exist on the active line only.
+    Object.assign(tool as unknown as Record<string, unknown>, {
+      _activeGroupId: 'FOR1:sagittal',
+      _activeTargetViewportId: 'axial',
+    });
+
+    const [line] = computeLines(tool, axial);
+
+    // The planes meet at 60 degrees, so each boundary line sits at
+    // (40 / 2) / sin(60 degrees) = 23.094 from the center line at canvas
+    // x=260. The projected world offset gives 20 * sin(60 degrees) = 17.32,
+    // which is 5.77px off the drawn line.
+    const boundaryOffset = 20 / Math.sin(Math.PI / 3);
+    const sortByX = (points: number[][]) =>
+      [...points].sort((a, b) => a[0] - b[0]);
+
+    const segmentXs = sortByX(
+      line.slabLineSegments.map((segment) => segment[0])
+    );
+    expect(segmentXs[0][0]).toBeCloseTo(260 - boundaryOffset, 3);
+    expect(segmentXs[1][0]).toBeCloseTo(260 + boundaryOffset, 3);
+
+    const handles = sortByX(line.slabHandles);
+    expect(handles).toHaveLength(2);
+    expect(handles[0][0]).toBeCloseTo(260 - boundaryOffset, 3);
+    expect(handles[1][0]).toBeCloseTo(260 + boundaryOffset, 3);
+
+    // Both handles keep the same position along the line.
+    expect(handles[0][1]).toBeCloseTo(handles[1][1], 3);
+
+    // Every handle lies on a drawn boundary line.
+    handles.forEach((handle) => {
+      const distances = line.slabLineSegments.map(
+        ([segmentStart, segmentEnd]) =>
+          lineSegment.distanceToPoint(
+            segmentStart as Types.Point2,
+            segmentEnd as Types.Point2,
+            handle as Types.Point2
+          )
+      );
+      expect(Math.min(...distances)).toBeCloseTo(0, 3);
+    });
   });
 
   it('aligns plane-group members to the group leader plane', () => {
