@@ -1,7 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
 import {
   StackViewport,
-  cache,
   getEnabledElement,
   utilities as csUtils,
   utilities as coreUtils,
@@ -120,10 +119,14 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
    * a CircleROI Annotation and stores it in the annotationManager
    *
    * @param evt -  EventTypes.NormalizedMouseEventType
-   * @returns The annotation object.
+   * @returns The annotation object, or `null` when there is nothing to
+   *   measure on this viewport because a configured `targetsFilter` selects
+   *   no target on it (eg a PT only filter on a CT viewport).
    *
    */
-  addNewAnnotation = (evt: EventTypes.InteractionEventType): Annotation => {
+  addNewAnnotation = (
+    evt: EventTypes.InteractionEventType
+  ): Annotation | null => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
@@ -131,25 +134,30 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    this.isDrawing = true;
-
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
 
-    let referencedImageId, imageVolume, volumeId;
     if (viewport instanceof StackViewport) {
       throw new Error('Stack Viewport Not implemented');
-    } else {
-      const targetId = this.getTargetId(viewport);
-      volumeId = csUtils.getVolumeId(targetId);
-      imageVolume = cache.getVolume(volumeId);
-
-      referencedImageId = csUtils.getClosestImageId(
-        imageVolume,
-        worldPos,
-        viewPlaneNormal
-      );
     }
+
+    // Resolve the target before any drawing state is set, so that a viewport
+    // with nothing to measure leaves the tool untouched rather than stuck
+    // mid-draw with no editData for cancel() to unwind.
+    const target = this.getTargetVolume(viewport);
+    if (!target) {
+      return null;
+    }
+
+    const volumeId = csUtils.getVolumeId(target.targetId);
+    const imageVolume = target.imageVolume;
+    const referencedImageId = csUtils.getClosestImageId(
+      imageVolume,
+      worldPos,
+      viewPlaneNormal
+    );
+
+    this.isDrawing = true;
 
     const spacingInNormal = csUtils.getSpacingInNormalDirection(
       imageVolume,
@@ -299,15 +307,16 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       removeAnnotation(annotation.annotationUID);
     }
 
-    const targetId = this.getTargetId(enabledElement.viewport);
-    const imageVolume = cache.getVolume(targetId.split(/volumeId:|\?/)[1]);
+    const target = this.getTargetVolume(enabledElement.viewport);
 
-    this._computePointsInsideVolume(
-      annotation,
-      imageVolume,
-      targetId,
-      enabledElement
-    );
+    if (target) {
+      this._computePointsInsideVolume(
+        annotation,
+        target.imageVolume,
+        target.targetId,
+        enabledElement
+      );
+    }
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
@@ -439,20 +448,17 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       ] = middleCoordinate;
 
       // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
-      const iteratorVolumeIDs =
-        // @ts-ignore
-        annotationEnabledElement.viewport?.volumeIds.values();
+      const annotationViewport =
+        annotationEnabledElement?.viewport as Types.IVolumeViewport;
 
-      for (const volumeId of iteratorVolumeIDs) {
-        if (
-          annotation.invalidated &&
-          annotation.metadata.volumeId === volumeId
-        ) {
-          this._throttledCalculateCachedStats(
-            annotation,
-            annotationEnabledElement
-          );
-        }
+      if (
+        annotation.invalidated &&
+        annotationViewport?.hasVolumeId?.(metadata.volumeId)
+      ) {
+        this._throttledCalculateCachedStats(
+          annotation,
+          annotationEnabledElement
+        );
       }
 
       // If rendering engine has been destroyed while rendering
@@ -653,9 +659,15 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       basePos1,
       basePos2
     );
+    // The calibration compares the handles against the pixel bounds of the
+    // ultrasound regions of the image, so it reads index coordinates, as the
+    // other ROI tools pass.
+    const indexCoordinates = data.handles.points.map((point) =>
+      image.imageData.worldToIndex(point)
+    );
     const measureInfo = getCalibratedLengthUnitsAndScale(
       image,
-      data.handles.points
+      indexCoordinates
     );
     const aspect = getCalibratedAspect(image);
     const area = Math.abs(
@@ -673,8 +685,13 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       ),
     };
 
+    // The modality has to come from the volume being measured - the
+    // annotation metadata has no Modality, so reading it from there left PT
+    // statistics unitless instead of SUV.
+    const modality = imageVolume?.metadata?.Modality;
+
     const modalityUnit = getPixelValueUnits(
-      metadata.Modality,
+      modality,
       annotation.metadata.referencedImageId,
       modalityUnitOptions
     );
@@ -781,7 +798,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const stats = this.configuration.statsCalculator.getStatistics();
     data.cachedStats.pointsInVolume = pointsInsideVolume;
     data.cachedStats.statistics = {
-      Modality: metadata.Modality,
+      Modality: modality,
       area,
       mean: stats.mean?.value,
       stdDev: stats.stdDev?.value,
@@ -798,8 +815,17 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const { viewport } = enabledElement;
 
     const { cachedStats } = data;
-    const targetId = this.getTargetId(viewport);
-    const imageVolume = cache.getVolume(targetId.split(/volumeId:|\?/)[1]);
+    const target = this.getTargetVolume(viewport);
+
+    if (!target) {
+      // Clear the flag although no statistics were computed. The render
+      // callback calls this method for every invalidated annotation, so a
+      // flag that stays set repeats this work on every frame.
+      annotation.invalidated = false;
+      return cachedStats;
+    }
+
+    const { targetId, imageVolume } = target;
 
     // Todo: this shouldn't be here, this is a performance issue
     // Since we are extending the RectangleROI class, we need to
