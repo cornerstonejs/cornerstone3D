@@ -236,7 +236,11 @@ export function getPlanarViewReference(args: {
   }
 
   if (viewRefSpecifier?.points && viewReference.planeRestriction) {
-    updatePlaneRestriction(viewRefSpecifier.points, viewReference);
+    updatePlaneRestriction(
+      viewRefSpecifier.points,
+      viewReference,
+      viewRefSpecifier
+    );
   }
 
   return viewReference;

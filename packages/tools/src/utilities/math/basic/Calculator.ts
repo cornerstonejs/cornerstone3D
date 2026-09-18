@@ -1,4 +1,9 @@
 import type { NamedStatistics } from '../../../types';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.math.basic.Calculator'
+);
 
 export abstract class Calculator {
   /**
@@ -22,6 +27,6 @@ export class InstanceCalculator {
    */
   getStatistics() {
     // Implement instance-specific logic if needed
-    console.debug('InstanceCalculator getStatistics called');
+    cs3dLogger.debug('InstanceCalculator getStatistics called');
   }
 }

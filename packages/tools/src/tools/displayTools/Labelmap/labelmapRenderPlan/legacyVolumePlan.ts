@@ -40,6 +40,11 @@ import type {
   LabelmapRenderPlan,
   LabelmapRenderPlanMountResult,
 } from './types';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.displayTools.Labelmap.labelmapRenderPlan.legacyVolumePlan'
+);
 
 const { uuidv4 } = utilities;
 
@@ -177,7 +182,7 @@ async function mountLegacyVolumeLabelmap({
     if (!baseVolume || !segVolume) {
       useIndependentComponents = false;
       blendMode = Enums.BlendModes.MAXIMUM_INTENSITY_BLEND;
-      console.debug(
+      cs3dLogger.debug(
         'Independent components unavailable (missing reference or segmentation volume) - falling back to regular volume addition'
       );
     } else {
@@ -192,7 +197,7 @@ async function mountLegacyVolumeLabelmap({
         // If dimensions don't match, fallback to regular volume addition
         useIndependentComponents = false;
         blendMode = Enums.BlendModes.MAXIMUM_INTENSITY_BLEND;
-        console.debug(
+        cs3dLogger.debug(
           'Dimensions mismatch - falling back to regular volume addition'
         );
       }
