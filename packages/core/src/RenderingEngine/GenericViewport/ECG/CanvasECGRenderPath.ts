@@ -4,7 +4,6 @@ import {
   computeECGChannelLayouts,
   computeECGRenderMetrics,
   drawECGGrid,
-  drawECGLabels,
   drawECGTraces,
   ensureECGCanvasSize,
   getVisibleECGChannels,
@@ -246,7 +245,6 @@ function drawFrame(
     lineWidth: currentDataPresentation?.lineWidth,
     amplitudeScale: currentDataPresentation?.amplitudeScale,
   });
-  drawECGLabels(canvasContext, layouts, metrics.worldToCanvasRatio);
 
   canvasContext.resetTransform();
   canvasContext.globalAlpha = 1;
