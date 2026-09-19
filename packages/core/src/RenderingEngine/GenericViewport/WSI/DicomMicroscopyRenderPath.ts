@@ -1,6 +1,9 @@
 import { Events as EVENTS, ViewportType } from '../../../enums';
 import triggerEvent from '../../../utilities/triggerEvent';
-import { getDicomMicroscopyViewer } from '../../../utilities/WSIUtilities';
+import {
+  configureWSIOverviewMap,
+  getDicomMicroscopyViewer,
+} from '../../../utilities/WSIUtilities';
 import type {
   DataAddOptions,
   LoadedData,
@@ -52,6 +55,7 @@ export class DicomMicroscopyRenderPath
     viewer.deactivateDragPanInteraction();
 
     const map = viewer.getMap();
+    const overviewMapInteraction = configureWSIOverviewMap(map);
     const postrenderHandler = () => {
       triggerEvent(ctx.element, EVENTS.IMAGE_RENDERED, {
         element: ctx.element,
@@ -101,6 +105,7 @@ export class DicomMicroscopyRenderPath
         map.render?.();
       },
       removeData: () => {
+        overviewMapInteraction.cleanup();
         this.removeData(rendering);
       },
     };
