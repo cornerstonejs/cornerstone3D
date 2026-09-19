@@ -1,6 +1,25 @@
+import { NO_VIEWPORT_TYPE } from './types';
 import type { InstanceGroup, SplitRule, ViewportTypeHint } from './types';
 
 const DEFAULT_VIEWPORT_TYPES: readonly ViewportTypeHint[] = ['stack'];
+
+/**
+ * Whether a display set with these viewport types can be shown on a viewport.
+ *
+ * False only for the explicit {@link NO_VIEWPORT_TYPE} sentinel, which the
+ * catch-all `unsupported` split rule uses for objects no rule knows how to render
+ * (SEG, RTSTRUCT, SR, presentation states, ...). Such a display set is still
+ * produced - so nothing is silently dropped and a study browser can list it - but
+ * must not be mounted on a viewport.
+ *
+ * @param viewportTypes - the display set's allowed viewport types.
+ * @returns false when the types say nothing can render this.
+ */
+export function isDisplayableViewportTypes(
+  viewportTypes: readonly ViewportTypeHint[]
+): boolean {
+  return !viewportTypes.includes(NO_VIEWPORT_TYPE);
+}
 
 /**
  * Resolves the allowed viewport types for a matched split rule, falling back to
