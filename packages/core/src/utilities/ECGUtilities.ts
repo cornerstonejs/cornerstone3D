@@ -1,5 +1,6 @@
 import { MetadataModules } from '../enums';
 import * as metaData from '../metaData';
+import type { TraceRegion } from '../RenderingEngine/GenericViewport/ECG/ECGViewportTypes';
 
 export const ECG_SECONDS_WIDTH = 150;
 export const ECG_CHANNEL_SPACING = 5;
@@ -12,6 +13,21 @@ export const ECG_RENDERING_COLORS = {
   label: '#ffff00',
   background: '#000000',
 } as const;
+
+export const STANDARD_12_LEADS = [
+  'I',
+  'II',
+  'III',
+  'aVR',
+  'aVL',
+  'aVF',
+  'V1',
+  'V2',
+  'V3',
+  'V4',
+  'V5',
+  'V6',
+] as const;
 
 export interface ECGChannelLike {
   name: string;
@@ -58,6 +74,12 @@ export interface ECGGridMetrics {
   channelScale: number;
 }
 
+/**
+ * Loads an ECG waveform dataset from metadata and retrieves the channel data arrays.
+ *
+ * @param dataId - The unique data ID / image ID for the ECG dataset
+ * @returns Object containing the parsed waveform data and calibration metadata
+ */
 export async function loadECGWaveform(dataId: string): Promise<{
   waveform: ECGWaveformLike;
   calibration: unknown;
@@ -85,10 +107,19 @@ export async function loadECGWaveform(dataId: string): Promise<{
 
   for (let index = 0; index < numberOfChannels; index++) {
     const channelDefinition = channelDefinitions[index] || {};
-    const name =
+    const rawName =
       channelDefinition.channelSourceSequence?.codeMeaning ||
       channelDefinition.ChannelSourceSequence?.CodeMeaning ||
-      `Channel ${index + 1}`;
+      '';
+    const cleanName = rawName
+      .replace(/^Lead\s+/i, '')
+      .replace(/\s*\([^)]*\)/g, '')
+      .trim();
+
+    const name =
+      cleanName ||
+      (index < STANDARD_12_LEADS.length ? STANDARD_12_LEADS[index] : '') ||
+      `${index + 1}`;
     const data = channelArrays[index] || new Int16Array(0);
     const { min, max } = computeECGMinMax(data);
 
@@ -214,13 +245,116 @@ export function computeECGChannelLayouts<
   return layouts;
 }
 
+/**
+ * Computes the visible sample range [startIndex, endIndex] and time range [startMs, endMs]
+ * for the given waveform and camera time range.
+ *
+ * @param waveform - Waveform metadata and sample parameters
+ * @param camera - Current ECG camera/view state containing timeRange
+ * @returns Object with calculated time boundaries and sample indices
+ */
+export function computeECGTimeWindow(
+  waveform: { numberOfSamples: number; samplingFrequency?: number },
+  camera?: { timeRange?: [number, number] }
+): {
+  startMs: number;
+  endMs: number;
+  startIndex: number;
+  endIndex: number;
+} {
+  const samplingFrequency = Math.max(1, waveform?.samplingFrequency || 1000);
+  const numberOfSamples = Math.max(1, waveform?.numberOfSamples ?? 5000);
+  const durationMs = (numberOfSamples / samplingFrequency) * 1000;
+  const startMs = Math.max(
+    0,
+    Math.min(camera?.timeRange?.[0] ?? 0, durationMs)
+  );
+  const requestedEnd = Math.max(
+    startMs + 1,
+    camera?.timeRange?.[1] ?? durationMs
+  );
+  const endMs = Math.max(startMs + 1, Math.min(requestedEnd, durationMs));
+  const startIndex = Math.max(
+    0,
+    Math.min(
+      numberOfSamples - 1,
+      Math.floor((startMs / 1000) * samplingFrequency)
+    )
+  );
+  const endIndex = Math.max(
+    startIndex + 1,
+    Math.min(numberOfSamples, Math.ceil((endMs / 1000) * samplingFrequency))
+  );
+
+  return {
+    startMs,
+    endMs,
+    startIndex,
+    endIndex,
+  };
+}
+
+/**
+ * Computes the sample index range [segStartIndex, segEndIndex] for a trace region,
+ * taking into account explicit timeWindow boundaries or proportional bounds within
+ * the active viewport window.
+ *
+ * @param args - Calculation parameters including region, channel length, and timeline window bounds
+ * @returns Object with segStartIndex and segEndIndex
+ */
+export function computeECGRegionSampleRange(args: {
+  region: TraceRegion;
+  channelDataLength: number;
+  effectiveStart: number;
+  effectiveEnd: number;
+}): {
+  segStartIndex: number;
+  segEndIndex: number;
+} {
+  const { region, channelDataLength, effectiveStart, effectiveEnd } = args;
+  const windowSpan = Math.max(1, effectiveEnd - effectiveStart);
+  const minX = region.bounds?.minX ?? 0;
+  const maxX = region.bounds?.maxX ?? 1;
+
+  if (region.timeWindow && region.timeWindow.length === 2) {
+    const segStartIndex = Math.max(
+      effectiveStart,
+      Math.min(channelDataLength, region.timeWindow[0])
+    );
+    const segEndIndex = Math.max(
+      segStartIndex,
+      Math.min(effectiveEnd, channelDataLength, region.timeWindow[1])
+    );
+    return { segStartIndex, segEndIndex };
+  }
+
+  const segStartIndex = Math.max(
+    0,
+    Math.floor(effectiveStart + minX * windowSpan)
+  );
+  const segEndIndex = Math.min(
+    channelDataLength,
+    Math.ceil(effectiveStart + maxX * windowSpan)
+  );
+
+  return { segStartIndex, segEndIndex };
+}
+
+/**
+ * Computes rendering metrics (dimensions, channel scaling, and world-to-canvas ratio)
+ * for an ECG viewport based on canvas size, visible channels, and layout regions.
+ *
+ * @param args - Metric calculation parameters including canvas, channels, window, and traceRegions
+ * @returns Computed ECGRenderMetrics object
+ */
 export function computeECGRenderMetrics<TChannel extends ECGChannelLike>(args: {
   canvas: HTMLCanvasElement;
   visibleChannels: TChannel[];
   windowMs: number;
   valueRange: [number, number];
+  traceRegions?: TraceRegion[];
 }): ECGRenderMetrics {
-  const { canvas, visibleChannels, windowMs, valueRange } = args;
+  const { canvas, visibleChannels, windowMs, valueRange, traceRegions } = args;
   const ecgWidth = Math.max(
     1,
     Math.ceil((windowMs / 1000) * ECG_SECONDS_WIDTH)
@@ -232,12 +366,28 @@ export function computeECGRenderMetrics<TChannel extends ECGChannelLike>(args: {
       ? canvas.clientHeight / canvas.clientWidth
       : 2 / 3;
   const targetTotalHeight = ecgWidth * canvasAspect;
-  const totalSpacing =
-    ECG_CHANNEL_SPACING * Math.max(1, visibleChannels.length);
-  const heightPerChannel =
-    (targetTotalHeight - totalSpacing) / Math.max(1, visibleChannels.length);
+
+  const hasRegions = traceRegions && traceRegions.length > 0;
+  let rowCount = Math.max(1, visibleChannels.length);
+
+  if (hasRegions) {
+    const minSlotHeight = Math.min(
+      ...traceRegions.map((r) => {
+        const leadCount = Math.max(1, r.leadIndices?.length || 1);
+        const regionHeight = (r.bounds?.maxY ?? 1) - (r.bounds?.minY ?? 0);
+        return Math.max(1e-4, regionHeight / leadCount);
+      })
+    );
+    rowCount = Math.max(1, Math.round(1 / minSlotHeight));
+  }
+
+  const totalSpacing = ECG_CHANNEL_SPACING * rowCount;
+  const heightPerChannel = (targetTotalHeight - totalSpacing) / rowCount;
   const channelScale = heightPerChannel / (range * 1.25);
-  const ecgHeight = computeECGHeight(visibleChannels, channelScale);
+  const ecgHeight = hasRegions
+    ? targetTotalHeight
+    : computeECGHeight(visibleChannels, channelScale);
+
   const worldToCanvasRatio = Math.min(
     canvas.clientWidth / Math.max(1, ecgWidth),
     canvas.clientHeight / Math.max(1, ecgHeight)
@@ -314,26 +464,124 @@ export function drawECGGrid(
   ctx.stroke();
 }
 
+/**
+ * Renders ECG waveform traces and baselines onto a 2D canvas context, supporting
+ * both continuous stacked channel layouts and segmented multi-lead trace regions.
+ *
+ * @param args - Drawing parameters including canvas context, layout configuration, metrics, and traceRegions
+ */
 export function drawECGTraces<TChannel extends ECGChannelLike>(args: {
   ctx: CanvasRenderingContext2D;
   layouts: ECGChannelLayout<TChannel>[];
   ecgWidth: number;
+  ecgHeight?: number;
   channelScale: number;
   startIndex?: number;
   endIndex?: number;
   lineWidth?: number;
   amplitudeScale?: number;
+  traceRegions?: TraceRegion[];
+  channels?: TChannel[];
+  numberOfSamples?: number;
+  visibleChannels?: number[];
 }): void {
   const {
     ctx,
     layouts,
     ecgWidth,
+    ecgHeight = 1,
     channelScale,
     startIndex = 0,
     endIndex,
     lineWidth = 1,
     amplitudeScale = 1,
+    traceRegions,
+    channels,
+    numberOfSamples,
+    visibleChannels,
   } = args;
+
+  if (
+    traceRegions &&
+    traceRegions.length > 0 &&
+    channels &&
+    channels.length > 0
+  ) {
+    const totalSamples = numberOfSamples ?? channels[0]?.data?.length ?? 5000;
+    const effectiveStart = startIndex ?? 0;
+    const effectiveEnd = endIndex ?? totalSamples;
+    const windowSpan = Math.max(1, effectiveEnd - effectiveStart);
+    const visibleChannelsSet = visibleChannels
+      ? new Set(visibleChannels)
+      : null;
+
+    traceRegions.forEach((region, regionIndex) => {
+      const leadIndices = region.leadIndices?.length
+        ? region.leadIndices
+        : [regionIndex];
+      const leadCount = leadIndices.length;
+
+      const minX = region.bounds?.minX ?? 0;
+      const maxX = region.bounds?.maxX ?? 1;
+      const totalMinY = region.bounds?.minY ?? 0;
+      const totalMaxY = region.bounds?.maxY ?? 1;
+      const slotHeight = (totalMaxY - totalMinY) / leadCount;
+
+      const startX = minX * ecgWidth;
+      const endX = maxX * ecgWidth;
+      const spanWidth = Math.max(1, endX - startX);
+
+      leadIndices.forEach((channelIdx, leadOffset) => {
+        if (visibleChannelsSet && !visibleChannelsSet.has(channelIdx)) {
+          return;
+        }
+
+        const channel = channels[channelIdx];
+        if (!channel || !channel.data.length) {
+          return;
+        }
+
+        const minY = totalMinY + leadOffset * slotHeight;
+        const maxY = minY + slotHeight;
+        const baseline = ((minY + maxY) / 2) * ecgHeight;
+
+        const { segStartIndex, segEndIndex } = computeECGRegionSampleRange({
+          region,
+          channelDataLength: channel.data.length,
+          effectiveStart,
+          effectiveEnd,
+        });
+        const sampleCount = Math.max(1, segEndIndex - segStartIndex);
+
+        ctx.strokeStyle = ECG_RENDERING_COLORS.baseline;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(startX, baseline);
+        ctx.lineTo(endX, baseline);
+        ctx.stroke();
+
+        ctx.strokeStyle = ECG_RENDERING_COLORS.trace;
+        ctx.lineWidth = lineWidth;
+        ctx.beginPath();
+
+        for (let index = segStartIndex; index < segEndIndex; index++) {
+          const x =
+            startX + ((index - segStartIndex) * spanWidth) / sampleCount;
+          const y =
+            baseline - channel.data[index] * channelScale * amplitudeScale;
+
+          if (index === segStartIndex) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+
+        ctx.stroke();
+      });
+    });
+    return;
+  }
 
   layouts.forEach(({ channel, baseline }) => {
     const resolvedEndIndex = Math.min(
