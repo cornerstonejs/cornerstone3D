@@ -6,6 +6,7 @@ import {
   VOILUTFunctionType,
 } from '../../../enums';
 import { ActorRenderMode } from '../../../types';
+import { coreLog } from '../../../utilities/logger';
 import {
   getRenderBackendForRenderMode,
   getRenderSurfaceForRenderMode,
@@ -139,6 +140,8 @@ type PlanarResetViewStateOptions = {
   resetOrientation?: boolean;
   resetFlip?: boolean;
 };
+
+const log = coreLog.getLogger('RenderingEngine', 'PlanarViewport');
 
 class PlanarViewport extends GenericViewport<
   PlanarViewState,
@@ -1812,7 +1815,7 @@ class PlanarViewport extends GenericViewport<
     }
 
     this.lastRenderPathErrorByDataId.set(errorKey, message);
-    console.error('[PlanarViewport] Render path error', dataId ?? '', error);
+    log.error('[PlanarViewport] Render path error', dataId ?? '', error);
     triggerEvent(eventTarget, Events.RENDER_PATH_ERROR, {
       renderingEngineId: this.renderingEngineId,
       viewportId: this.id,

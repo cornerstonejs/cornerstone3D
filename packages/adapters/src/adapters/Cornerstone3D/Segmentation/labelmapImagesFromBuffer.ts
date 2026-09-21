@@ -21,6 +21,11 @@ import {
 import { compactMergeSegmentDataWithoutInformationLoss } from './compactMergeSegData';
 import { normalizeSharedFunctionalGroupsSequence } from './perFrameFunctionalGroups';
 import { Events } from '../../enums';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.adaptersLog.getLogger(
+  'Cornerstone3D.Segmentation.labelmapImagesFromBuffer'
+);
 
 const { DicomMessage, DicomMetaDictionary } = dcmjsData;
 const { Normalizer } = normalizers;
@@ -789,7 +794,7 @@ async function createLabelmapsFromSegImageIds(
   const SeriesInstanceUID = generalSeriesModule.seriesInstanceUID;
 
   if (!imagePlaneModule) {
-    console.warn('Insufficient metadata, imagePlaneModule missing.');
+    cs3dLogger.warn('Insufficient metadata, imagePlaneModule missing.');
   }
 
   const ImageOrientationPatient = Array.isArray(imagePlaneModule.rowCosines)
@@ -1084,7 +1089,7 @@ export function insertPixelDataPlanar({
         );
 
         if (!imageId) {
-          console.warn(
+          cs3dLogger.warn(
             "Image not present in stack, can't import frame : " + i + '.'
           );
           continue;
@@ -1098,7 +1103,7 @@ export function insertPixelDataPlanar({
         );
 
         if (!stackImageId) {
-          console.warn(
+          cs3dLogger.warn(
             `Image not present in stack, can't import frame : ${i}.`
           );
           continue;
@@ -1107,7 +1112,7 @@ export function insertPixelDataPlanar({
         const sourceImageMetadata = imageIdMaps.metadata[stackImageId];
 
         if (!sourceImageMetadata) {
-          console.warn(
+          cs3dLogger.warn(
             `No instance metadata for referenced image at frame : ${i}.`
           );
           continue;
@@ -1126,8 +1131,18 @@ export function insertPixelDataPlanar({
 
         const imageIdIndex = imageIdMaps.indices[stackImageId];
         const labelmapImage = labelMapImages[imageIdIndex];
-        const labelmap2DView = labelmapImage.getPixelData();
         const imageVoxelManager = labelmapImage.voxelManager;
+        // The live frame buffer, where there is one. The overlap test below runs
+        // once per non-zero voxel of the SEG, so it reads that array directly
+        // rather than paying for a call through the voxel manager.
+        //
+        // An RLE labelmap has no live buffer: `getPixelData()` hands back a
+        // fresh expansion that the writes below never show up in, so reading it
+        // would make this test miss every collision. That one is read through
+        // the voxel manager instead.
+        const labelmap2DView = imageVoxelManager
+          ? imageVoxelManager.getWritableScalarData()
+          : labelmapImage.getPixelData();
 
         const data = alignedPixelDataI.data;
 
@@ -1136,7 +1151,12 @@ export function insertPixelDataPlanar({
           if (data[k]) {
             for (let x = k; x < len; ++x) {
               if (data[x]) {
-                if (!overlapping && labelmap2DView[x] !== 0) {
+                if (
+                  !overlapping &&
+                  (labelmap2DView
+                    ? labelmap2DView[x]
+                    : imageVoxelManager.getAtIndex(x)) !== 0
+                ) {
                   overlapping = true;
                   return resolve(
                     insertOverlappingPixelDataPlanar({
@@ -1244,7 +1264,7 @@ export function insertPixelDataPlanar({
         }
 
         if (!imageId) {
-          console.warn(
+          cs3dLogger.warn(
             `Image not present in stack, can't import frame : ${i}.`
           );
           continue;
@@ -1258,7 +1278,7 @@ export function insertPixelDataPlanar({
         );
 
         if (!stackImageId) {
-          console.warn(
+          cs3dLogger.warn(
             `Image not present in stack, can't import frame : ${i}.`
           );
           continue;
@@ -1267,7 +1287,7 @@ export function insertPixelDataPlanar({
         const sourceImageMetadata = imageIdMaps.metadata[stackImageId];
 
         if (!sourceImageMetadata) {
-          console.warn(
+          cs3dLogger.warn(
             `No instance metadata for referenced image at frame : ${i}.`
           );
           continue;
@@ -1285,8 +1305,12 @@ export function insertPixelDataPlanar({
         }
         const imageIdIndex = imageIdMaps.indices[stackImageId];
         const labelmapImage = labelMapImages[imageIdIndex];
-        const labelmap2DView = labelmapImage.getPixelData(); // TypedArray
         const imageVoxelManager = labelmapImage.voxelManager;
+        // See the planar path above: only fall back to the frame buffer when
+        // there is no voxel manager, so an RLE labelmap is never expanded here.
+        const labelmap2DView = imageVoxelManager
+          ? undefined
+          : labelmapImage.getPixelData(); // TypedArray
         const data = alignedPixelDataI.data;
         let segmentsOnFrameArr = segmentsOnFrame[imageIdIndex];
         if (!segmentsOnFrameArr) {
@@ -1428,11 +1452,31 @@ const getArrayOfLabelMapImagesWithSegmentData = ({
         const labelMapImage =
           imageLoader.createAndCacheDerivedLabelmapImage(referencedImageId);
 
-        const pixelData = labelMapImage.getPixelData();
-
         if (!hasEmptySegmentData) {
-          for (let j = 0; j < pixelData.length; j++) {
-            pixelData[j] = arr[i][j];
+          const segmentData = arr[i];
+          const voxelManager = labelMapImage.voxelManager;
+          // Fill the live frame buffer directly where there is one - this is a
+          // whole frame per group, so it stays a plain array write.
+          const frame = voxelManager
+            ? voxelManager.getWritableScalarData()
+            : labelMapImage.getPixelData();
+
+          if (frame) {
+            // Bounded by the frame as well as the group, so an over-long group
+            // cannot write past the end of the labelmap.
+            const length = Math.min(frame.length, segmentData.length);
+            for (let j = 0; j < length; j++) {
+              frame[j] = segmentData[j];
+            }
+          } else {
+            // An RLE labelmap has no live buffer - `getPixelData()` hands back
+            // a fresh expansion, so writing into it would discard the whole
+            // group - and is filled a voxel at a time.
+            for (let j = 0; j < segmentData.length; j++) {
+              if (segmentData[j]) {
+                voxelManager.setAtIndex(j, segmentData[j]);
+              }
+            }
           }
         }
 

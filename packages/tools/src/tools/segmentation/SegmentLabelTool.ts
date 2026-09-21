@@ -46,7 +46,7 @@ class SegmentLabelTool extends BaseTool {
       },
     },
     defaultToolProps: ToolProps = {
-      supportedInteractionTypes: ['Mouse', 'Touch'],
+      supportedInteractionTypes: ['Mouse'],
       configuration: {
         hoverTimeout: 100,
         searchRadius: 6, // search for border in a 6px radius

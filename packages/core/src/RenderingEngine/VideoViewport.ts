@@ -1,4 +1,5 @@
 import type { mat4 } from 'gl-matrix';
+import { coreLog } from '../utilities/logger';
 import { Events as EVENTS, VideoEnums as VideoViewportEnum } from '../enums';
 import type { DisplaySetId } from './GenericViewport/ViewportArchitectureTypes';
 import { getGenericViewportSourceDataId } from './GenericViewport/genericViewportDisplaySetAccess';
@@ -21,7 +22,8 @@ import type {
   ImageActor,
   CPUIImageData,
   IImageData,
-  BoundsIJK,
+  IVoxelManager,
+  RGB,
 } from '../types';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
 import triggerEvent from '../utilities/triggerEvent';
@@ -31,7 +33,7 @@ import CanvasActor from './CanvasActor';
 import cache from '../cache/cache';
 import uuidv4 from '../utilities/uuidv4';
 import FrameRange from '../utilities/FrameRange';
-import { pointInShapeCallback } from '../utilities/pointInShapeCallback';
+import VoxelManager from '../utilities/VoxelManager';
 import {
   getVideoImageDataMetadata,
   loadVideoStreamMetadata,
@@ -50,6 +52,8 @@ export type CanvasScalarData = Uint8ClampedArray & {
  * An object representing a single stack viewport, which is a camera
  * looking into an internal scene, and an associated target output `canvas`.
  */
+const log = coreLog.getLogger('RenderingEngine', 'VideoViewport');
+
 class VideoViewport extends Viewport {
   public static frameRangeExtractor = /(\/frames\/|[&?]frameNumber=)([^/&?]*)/i;
 
@@ -557,7 +561,7 @@ class VideoViewport extends Viewport {
       !this.videoElement.videoWidth ||
       !this.videoElement.videoHeight
     ) {
-      console.debug('Video not ready yet, returning empty scalar data');
+      log.debug('Video not ready yet, returning empty scalar data');
       // Return an empty CanvasScalarData object
       const emptyData = new Uint8ClampedArray() as CanvasScalarData;
       emptyData.getRange = () => [0, 255];
@@ -612,30 +616,7 @@ class VideoViewport extends Viewport {
       getScalarData: () => this.getScalarData(),
       scalarData: this.getScalarData(),
       imageData,
-      // It is for the annotations to work, since all of them work on voxelManager and not on scalarData now
-      voxelManager: {
-        forEach: (
-          callback: (args: {
-            value: unknown;
-            index: number;
-            pointIJK: Point3;
-            pointLPS: Point3;
-          }) => void,
-          options?: {
-            boundsIJK?: BoundsIJK;
-            isInObject?: (pointLPS, pointIJK) => boolean;
-            returnPoints?: boolean;
-            imageData;
-          }
-        ) => {
-          return pointInShapeCallback(options.imageData, {
-            pointInShapeFn: options.isInObject ?? (() => true),
-            callback: callback,
-            boundsIJK: options.boundsIJK,
-            returnPoints: options.returnPoints ?? false,
-          });
-        },
-      },
+      voxelManager: this.getFrameVoxelManager(),
       hasPixelSpacing: this.hasPixelSpacing,
       calibration: this.calibration,
       preScale: {
@@ -648,8 +629,49 @@ class VideoViewport extends Viewport {
       enumerable: true,
     });
 
-    // @ts-expect-error because of voxelmanager
     return imageDataForReturn;
+  }
+
+  /**
+   * A voxel manager over the RGBA pixels of the frame that the viewport
+   * displays. The annotation tools read a value through `getAtIJKPoint`, and
+   * the segmentation code reads a run of values through `forEach`, so the
+   * manager must be a real one and not an object that carries `forEach` alone.
+   *
+   * The value of a pixel is its `[r, g, b]` triple, which is what a colour
+   * image in a stack viewport also reports, so the statistics calculators
+   * handle the two in the same way. The alpha channel carries no measurement.
+   *
+   * The pixels are one frame: `getScalarData` reads the video element into a
+   * canvas and caches the result per frame number. A measurement therefore
+   * covers the frame on display, and an annotation on another frame measures
+   * that other frame only when the viewport moves to it.
+   *
+   * @returns undefined when no frame is available yet, or when the pixels do
+   * not match the frame size. The tools then report no statistics, which is
+   * what they already do for a WSI viewport, and never a wrong value.
+   */
+  private getFrameVoxelManager():
+    | IVoxelManager<number>
+    | IVoxelManager<RGB>
+    | undefined {
+    const { videoWidth: width, videoHeight: height } = this;
+    const scalarData = this.getScalarData();
+
+    // The canvas of `getScalarData` is the size of the video, and RGBA gives
+    // four bytes for every pixel. A different length means the frame and the
+    // index space of `worldToIndex` disagree, and every value would be read
+    // from the wrong pixel.
+    if (!width || !height || scalarData.length !== width * height * 4) {
+      return undefined;
+    }
+
+    return VoxelManager.createScalarVolumeVoxelManager({
+      dimensions: [width, height, 1],
+      scalarData,
+      numberOfComponents: 4,
+      id: `videoFrame:${this.id}:${scalarData.frameNumber}`,
+    });
   }
 
   getMiddleSliceData = () => {

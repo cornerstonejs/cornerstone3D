@@ -40,6 +40,7 @@ const disable = function (element: HTMLDivElement) {
   );
   element.removeEventListener(Events.TOUCH_DRAG, touchDrag as EventListener);
   element.removeEventListener(Events.TOUCH_END, touchEnd as EventListener);
+  element.removeEventListener(Events.TOUCH_TAP, touchTap as EventListener);
   element.removeEventListener(Events.TOUCH_PRESS, touchPress as EventListener);
 };
 

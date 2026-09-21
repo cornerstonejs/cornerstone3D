@@ -24,6 +24,7 @@ import { ToolModes } from '../../enums';
 class SegmentSelectTool extends BaseTool {
   static toolName;
   private hoverTimer: ReturnType<typeof setTimeout> | null;
+  private hoverElement: HTMLDivElement | null = null;
 
   static SelectMode = {
     Inside: 'Inside',
@@ -33,7 +34,7 @@ class SegmentSelectTool extends BaseTool {
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
-      supportedInteractionTypes: ['Mouse', 'Touch'],
+      supportedInteractionTypes: ['Mouse'],
       configuration: {
         hoverTimeout: 100,
         mode: SegmentSelectTool.SelectMode.Border,
@@ -54,6 +55,17 @@ class SegmentSelectTool extends BaseTool {
       clearTimeout(this.hoverTimer);
     }
 
+    // The hover activation is debounced, so the timer can still be pending after
+    // the pointer has left the viewport (e.g. moving to the segmentation panel to
+    // click a segment). Cancel it on mouseleave, otherwise a stale hover fires
+    // ~hoverTimeout later and overrides the selection the user just made.
+    const { element } = evt.detail;
+    if (this.hoverElement !== element) {
+      this._detachHoverLeaveListener();
+      this.hoverElement = element;
+      element.addEventListener('mouseleave', this._cancelPendingHover);
+    }
+
     this.hoverTimer = setTimeout(() => {
       this._setActiveSegment(evt);
       this.hoverTimer = null;
@@ -62,16 +74,45 @@ class SegmentSelectTool extends BaseTool {
     return true;
   };
 
-  onSetToolEnabled = (): void => {
-    this.onSetToolActive();
+  private _cancelPendingHover = (): void => {
+    if (this.hoverTimer) {
+      clearTimeout(this.hoverTimer);
+      this.hoverTimer = null;
+    }
+  };
+
+  private _detachHoverLeaveListener = (): void => {
+    if (this.hoverElement) {
+      this.hoverElement.removeEventListener(
+        'mouseleave',
+        this._cancelPendingHover
+      );
+      this.hoverElement = null;
+    }
+  };
+
+  private _releaseHover = (): void => {
+    this._cancelPendingHover();
+    this._detachHoverLeaveListener();
   };
 
   onSetToolActive = (): void => {
-    this.hoverTimer = null;
+    this._cancelPendingHover();
+  };
+
+  // Every transition out of Active makes the tool unable to hover-activate
+  // (mouseMoveCallback bails unless Active), but the pointer may still be inside
+  // the viewport, so no mouseleave is coming to cancel an already armed timer.
+  onSetToolEnabled = (): void => {
+    this._releaseHover();
+  };
+
+  onSetToolPassive = (): void => {
+    this._releaseHover();
   };
 
   onSetToolDisabled = (): void => {
-    this.hoverTimer = null;
+    this._releaseHover();
   };
 
   _setActiveSegment(evt = {} as EventTypes.InteractionEventType): void {

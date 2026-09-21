@@ -1,4 +1,6 @@
 import { getEnabledElement, utilities } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import { distanceToPoint } from '../../utilities/math/point';
 import type {
   Annotation,
   EventTypes,
@@ -39,11 +41,71 @@ import { defaultSegmentationStateManager } from '../../stateManagement/segmentat
 abstract class ContourSegmentationBaseTool extends ContourBaseTool {
   static PreviewSegmentIndex = 255;
 
+  /**
+   * Where and when a touch gesture was committed on TOUCH_END, used to
+   * recognize and drop the trailing TOUCH_TAP echo. See
+   * {@link ContourSegmentationBaseTool.isTouchTapEchoOfLiftCommit}.
+   */
+  private _touchLiftCommit?: { canvasPoint: Types.Point2; time: number };
+
   constructor(toolProps: PublicToolProps, defaultToolProps: ToolProps) {
     super(toolProps, defaultToolProps);
     if (this.configuration.interpolation?.enabled) {
       InterpolationManager.addTool(this.getToolName());
     }
+  }
+
+  /**
+   * Records that a point was committed by the TOUCH_END path.
+   *
+   * A drag travels beyond the tap distance and so never emits its own
+   * TOUCH_TAP, but if it *ends* within the tap distance of an active tap
+   * chain's anchor the listener still folds it into that chain's aggregated
+   * TOUCH_TAP. Point-placing contour tools therefore commit such a gesture on
+   * TOUCH_END and record it here, so the tap that arrives a tolerance later
+   * can be identified as an echo instead of committing the point a second
+   * time (or force-closing the contour).
+   */
+  protected recordTouchLiftCommit(canvasPoint: Types.Point2): void {
+    this._touchLiftCommit = { canvasPoint, time: Date.now() };
+  }
+
+  /**
+   * Whether `canvasPoint` is the aggregated TOUCH_TAP echo of a gesture this
+   * tool already committed via {@link recordTouchLiftCommit}, in which case
+   * the caller should ignore the tap.
+   *
+   * The recorded commit is consumed (or discarded once it ages out) so a
+   * stale entry cannot suppress a legitimate tap on a later contour.
+   */
+  protected isTouchTapEchoOfLiftCommit(canvasPoint: Types.Point2): boolean {
+    if (!this._touchLiftCommit) {
+      return false;
+    }
+
+    const { canvasPoint: committedPoint, time } = this._touchLiftCommit;
+    // TOUCH_TAP is emitted one tap tolerance after the chain's last touchend,
+    // so a lift-commit that ended the chain surfaces about one tolerance
+    // later; double it to absorb timer jitter.
+    const withinTime =
+      Date.now() - time <=
+      2 * ContourSegmentationBaseTool.TOUCH_TAP_TOLERANCE_MS;
+
+    if (!withinTime) {
+      this._touchLiftCommit = undefined;
+      return false;
+    }
+
+    const withinDistance =
+      distanceToPoint(canvasPoint, committedPoint) <=
+      ContourSegmentationBaseTool.TOUCH_TAP_MAX_CANVAS_DISTANCE;
+
+    if (!withinDistance) {
+      return false;
+    }
+
+    this._touchLiftCommit = undefined;
+    return true;
   }
 
   protected onSetToolConfiguration() {

@@ -202,3 +202,89 @@ The legacy `moduleResolution: "node"` (a.k.a. `node10`) does **not** map a
 as `any` or fail to resolve. This is a **type-resolution** concern only —
 runtime behavior is unaffected — but if you see missing types, switch to
 `"bundler"`/`"node16"`/`"nodenext"`.
+
+## Oblique brush fills use the shared voxel slab iterator
+
+### What Changed
+
+The circle, sphere and rectangle brush fills no longer walk the axis-aligned IJK
+bounding box around the brush. They describe the brush as a plane-anchored shape
+and enumerate its voxels with `csUtils.voxelSlab.iterateVoxelsInShape` — the same
+iterator, the same shapes and the same membership rule (Rule M) that the area
+annotation tools measure with.
+
+Three things follow for a rotated or oblique viewport:
+
+- A circle, a sphere and a rectangle brush paint the shape the user drew, at any
+  orientation.
+- A flat brush paints one oblique layer of voxels in a thin view, and every layer
+  through the slab in a full-thickness view. It no longer bleeds into the
+  neighbouring slices.
+- `csUtils.voxelSlab.createUnionShape` is new. It merges the runs of several
+  shapes into a disjoint sequence, which is how a brush stroke paints the union
+  of one disc per sample without writing a voxel twice.
+
+`operationData.isInObject` and `operationData.isInObjectBoundsIJK` are unchanged,
+and `regionFill` still uses them when a strategy builds no fill.
+
+### Why This Matters
+
+The box walk tested `O(N³)` voxels to fill an `O(N²)` sheet, and it needed a
+depth tolerance to reject the off-plane voxels it should never have visited. No
+single tolerance is right for every orientation: too small a value left holes in
+the sheet, and too large a value bled the fill into the neighbouring slices. The
+slab bound of the shared iterator is exact for every orientation, so no tolerance
+is needed.
+
+### Migration Guidance
+
+- No action is required for an application that uses the built-in brush tools.
+- A custom brush strategy keeps working through `isInObject` and
+  `isInObjectBoundsIJK`. To opt into the iterator, set
+  `operationData.brushVoxelSlabFill` in your `Initialize` callback; the builders
+  in `strategies/utils/brushVoxelSlab.ts` show how.
+- See
+  [Planar Fill Iteration](../../concepts/cornerstone-tools/segmentation/planar-fill-iteration.md)
+  for the fill contract, and
+  [Voxel Statistics](../../concepts/cornerstone-tools/annotation/voxel-statistics.md)
+  for Rule M itself.
+
+## Viewport elements set `touch-action: none`
+
+### What Changed
+
+The rendering engine now sets `touch-action: none` on every element it enables
+as a viewport, and restores the element's prior inline value when the viewport
+is disabled. Previously this was left to the application.
+
+### Why This Matters
+
+Without `touch-action: none`, the browser claims viewport gestures before
+Cornerstone sees them: a one-finger drag scrolls the page instead of running the
+active tool, a two-finger pinch zooms the document rather than the image, and a
+double-tap triggers the browser's own zoom. Touch tools cannot work on an
+element the browser is still handling, which is why this is applied
+unconditionally rather than behind a configuration flag — there is no
+useful behavior to preserve on the other side of the switch.
+
+The visible consequence is that **dragging on a viewport no longer scrolls the
+page** on touch devices. Applications that relied on a viewport being a valid
+place to start a page scroll need to provide scrollable area around the
+viewport instead.
+
+Two notes on scope:
+
+- Only viewport elements are affected. The rest of your layout is untouched.
+- The value is applied inline, so it overrides a `touch-action` coming from a
+  CSS class for the duration that the viewport is enabled. On disable the
+  element's original inline value is restored, and any CSS-supplied value takes
+  effect again.
+
+### Migration Guidance
+
+- **Remove application-level workarounds.** If you set `touch-action: none` (or
+  attached `preventDefault` touch listeners) on viewport elements to get touch
+  tools working, that code is now redundant and can be deleted.
+- **Check your scroll affordances on small screens.** If a page relied on
+  viewport drags to scroll, add padding, a scroll container, or a gutter outside
+  the viewport elements so the page remains scrollable on a phone or tablet.

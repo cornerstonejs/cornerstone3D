@@ -45,6 +45,9 @@ class BrushTool extends LabelmapBaseTool {
     canvas: Types.Point2;
     world: Types.Point3;
   } | null = null;
+  // Native-event timestamp of the interaction that activated the current draw
+  // loop, used to discard delayed TOUCH_TAP events from a previous gesture.
+  private _drawStartTimeStamp = 0;
   private _lazyEdit = new LazyBrushEditController();
 
   constructor(
@@ -218,14 +221,17 @@ class BrushTool extends LabelmapBaseTool {
     element: HTMLDivElement,
     centerCanvas: Types.Point2,
     viewportId: string,
-    segmentationId: string
+    segmentationId: string,
+    isTouch = false
   ): void {
     this._lazyEdit.scheduleCleanup({
       element,
       centerCanvas,
       viewportId,
       segmentationId,
-      refreshCursor: this._refreshCursor.bind(this),
+      refreshCursor: isTouch
+        ? (cleanupElement: HTMLDivElement) => this._clearCursor(cleanupElement)
+        : this._refreshCursor.bind(this),
     });
   }
 
@@ -265,6 +271,7 @@ class BrushTool extends LabelmapBaseTool {
     // This might be a mouse down
     this._previewData.isDrag = false;
     this._previewData.timerStart = Date.now();
+    this._drawStartTimeStamp = (eventData.event as Event)?.timeStamp ?? 0;
     const canvasPoint = vec2.clone(currentPoints.canvas) as Types.Point2;
     const worldPoint = viewport.canvasToWorld([
       canvasPoint[0],
@@ -284,6 +291,7 @@ class BrushTool extends LabelmapBaseTool {
       return false;
     }
     this._calculateCursor(element, canvasPoint);
+    BrushTool.activeCursorTool = this;
     this._resetLazyEditState();
 
     if (this._isLazyLabelmapEditingEnabled(this._hoverData.viewport)) {
@@ -419,14 +427,16 @@ class BrushTool extends LabelmapBaseTool {
       strategyData.segmentationVoxelManager
     );
 
-    this._previewData.preview = this.applyActiveStrategyCallback(
-      getEnabledElement(this._previewData.element),
-      {
-        ...operationData,
-        ...strategyData,
-        memo,
-      },
-      StrategyCallbacks.Preview
+    this._setPreview(
+      this.applyActiveStrategyCallback(
+        getEnabledElement(this._previewData.element),
+        {
+          ...operationData,
+          ...strategyData,
+          memo,
+        },
+        StrategyCallbacks.Preview
+      )
     );
   };
 
@@ -442,9 +452,36 @@ class BrushTool extends LabelmapBaseTool {
     this._refreshCursor(element, centerCanvas);
   }
 
+  private _clearCursor(element: HTMLDivElement): void {
+    // The cursor may have been rendered on linked viewports too; rerender
+    // all of them, not just the source viewport, so no stale circle remains.
+    const viewportIdsToRender = this._hoverData?.viewportIdsToRender;
+    this._hoverData = undefined;
+
+    if (viewportIdsToRender?.length) {
+      triggerAnnotationRenderForViewportUIDs(viewportIdsToRender);
+      return;
+    }
+
+    const enabledElement = getEnabledElement(element);
+    if (enabledElement) {
+      triggerAnnotationRenderForViewportUIDs([enabledElement.viewport.id]);
+    }
+  }
+
   private _dragCallback = (evt: EventTypes.InteractionEventType): void => {
     const eventData = evt.detail;
     const { element, currentPoints } = eventData;
+
+    const { currentPointsList } = eventData as EventTypes.TouchDragEventDetail;
+    if (currentPointsList?.length > 1) {
+      // A second finger reclassifies the gesture (pinch zoom, multi-finger
+      // scroll); stop painting and roll the stroke back rather than keep
+      // drawing at the mean touch point.
+      this._cancelTouchDraw(element);
+      return;
+    }
+
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
@@ -505,6 +542,9 @@ class BrushTool extends LabelmapBaseTool {
 
     if (this._isLazyLabelmapEditingEnabled(this._hoverData.viewport)) {
       this._lazyEdit.appendStrokePoint(currentWorld);
+      // `capturePreviewCircle` only accumulates the cursor points, so the drag
+      // writes no voxels. The lazy stroke paints the whole path once, in
+      // `_endCallback`, and that call stores the preview.
       this._captureLazyPreviewCircle();
       this._previewData.preview = null;
     } else {
@@ -520,10 +560,7 @@ class BrushTool extends LabelmapBaseTool {
         vec3.clone(currentWorld) as Types.Point3,
       ];
 
-      this._previewData.preview = this.applyActiveStrategy(
-        enabledElement,
-        operationData
-      );
+      this._setPreview(this.applyActiveStrategy(enabledElement, operationData));
     }
 
     const currentCanvasClone = vec2.clone(currentCanvas) as Types.Point2;
@@ -538,6 +575,39 @@ class BrushTool extends LabelmapBaseTool {
     this._previewData.isDrag = true;
     this._previewData.startPoint = currentCanvasClone;
   };
+
+  /**
+   * Cancels an in-progress touch stroke: rolls back the voxel writes recorded
+   * so far and tears the draw loop down, so a gesture that turns out to be
+   * multi-finger does not leave paint behind. The memo is committed only to
+   * materialize its undo state and is discarded without reaching the history
+   * stack.
+   *
+   * Overrides the base teardown rather than extending it: a brush stroke has
+   * already written to the labelmap, and the preview/lazy-edit state has no
+   * counterpart on the scissors tools.
+   */
+  protected override _cancelTouchDraw(element: HTMLDivElement): void {
+    const { memo } = this;
+    if (memo?.commitMemo?.()) {
+      memo.restoreMemo(true);
+    }
+    this.memo = null;
+
+    this._deactivateDraw(element);
+    resetElementCursor(element);
+
+    this._editData = null;
+    this._lastDragInfo = null;
+    this._previewData.preview = null;
+    this._previewData.isDrag = false;
+    if (this._previewData.timer) {
+      window.clearTimeout(this._previewData.timer);
+      this._previewData.timer = null;
+    }
+    this._resetLazyEditState();
+    this._clearCursor(element);
+  }
 
   private _calculateCursor(element, _centerCanvas) {
     const enabledElement = getEnabledElement(element);
@@ -562,6 +632,17 @@ class BrushTool extends LabelmapBaseTool {
   private _endCallback = (evt: EventTypes.InteractionEventType): void => {
     const eventData = evt.detail;
     const { element } = eventData;
+
+    if (eventData.eventName === Events.TOUCH_TAP) {
+      // TOUCH_TAP is dispatched on a delay after touchend, so a tap from a
+      // previous gesture can land while a new stroke is in progress. Only
+      // honor taps belonging to the gesture that activated this draw loop.
+      const tapTimeStamp = (eventData.event as Event)?.timeStamp ?? 0;
+      if (tapTimeStamp < this._drawStartTimeStamp) {
+        return;
+      }
+    }
+
     const enabledElement = getEnabledElement(element);
 
     const operationData = this.getOperationData(element);
@@ -576,11 +657,14 @@ class BrushTool extends LabelmapBaseTool {
       operationData.strokePointsWorld = this._lazyEdit
         .getStrokePointsWorld()
         .map((point) => vec3.clone(point) as Types.Point3);
-      this.applyActiveStrategy(enabledElement, operationData);
+      // The lazy stroke paints the whole path here, so this is the call that
+      // creates the preview. Store the result, or a later reject finds no preview
+      // and leaves the stroke on the labelmap.
+      this._setPreview(this.applyActiveStrategy(enabledElement, operationData));
     } else if (!this._previewData.preview && !this._previewData.isDrag) {
       // Don't re-fill when the preview is showing and the user clicks again
       // otherwise the new area of hover may get filled, which is unexpected
-      this.applyActiveStrategy(enabledElement, operationData);
+      this._setPreview(this.applyActiveStrategy(enabledElement, operationData));
     }
 
     this.doneEditMemo();
@@ -598,14 +682,21 @@ class BrushTool extends LabelmapBaseTool {
         element,
         evt.detail.currentPoints.canvas as Types.Point2,
         enabledElement.viewport.id,
-        operationData.segmentationId
+        operationData.segmentationId,
+        this._isTouchInteraction(evt)
       );
       triggerAnnotationRenderForViewportUIDs(
         this._hoverData.viewportIdsToRender
       );
     } else {
       this._resetLazyEditState();
-      this.updateCursor(evt);
+      if (this._isTouchInteraction(evt)) {
+        // On touch there is no pointer hovering after release, so clear the
+        // cursor instead of re-showing it at the lift point.
+        this._clearCursor(element);
+      } else {
+        this.updateCursor(evt);
+      }
     }
 
     this.applyActiveStrategyCallback(
@@ -659,11 +750,26 @@ class BrushTool extends LabelmapBaseTool {
       return;
     }
 
-    this.applyActiveStrategyCallback(
-      enabledElement,
-      operationData,
-      StrategyCallbacks.RejectPreview
-    );
+    // `previewData` is a static shared by every labelmap tool, so an element being set
+    // says only that some tool has painted — not that a preview is on the labelmap.
+    // `preview` answers that second question, because every paint path stores its result
+    // through `_setPreview`, which keeps a result only when the strategy set a preview up.
+    //
+    // Running the strategy without a preview asks for a full strategy initialization to
+    // do nothing: the reject handler itself undoes only a memo that carries preview
+    // voxels. The 3D variants pay for it with a throw —
+    // `ensureSegmentationVolumeFor3DManipulation` raises `Volume is not reconstructable
+    // for sphere manipulation` on a viewport that cannot form a volume — and deactivating
+    // a sphere brush is enough to reach it, since `onSetToolPassive` rejects the preview.
+    // That throw escapes `ToolGroup.setToolPassive` and leaves the tool group with no
+    // active tool.
+    if (this._previewData.preview) {
+      this.applyActiveStrategyCallback(
+        enabledElement,
+        operationData,
+        StrategyCallbacks.RejectPreview
+      );
+    }
 
     this._previewData.preview = null;
     this._previewData.isDrag = false;
@@ -695,11 +801,13 @@ class BrushTool extends LabelmapBaseTool {
       return;
     }
 
-    this._previewData.preview = this.applyActiveStrategyCallback(
-      enabledElement,
-      operationData,
-      StrategyCallbacks.Interpolate,
-      config.configuration
+    this._setPreview(
+      this.applyActiveStrategyCallback(
+        enabledElement,
+        operationData,
+        StrategyCallbacks.Interpolate,
+        config.configuration
+      )
     );
     this._previewData.isDrag = true;
   }
@@ -720,6 +828,19 @@ class BrushTool extends LabelmapBaseTool {
       Events.MOUSE_CLICK,
       this._endCallback as EventListener
     );
+
+    element.addEventListener(
+      Events.TOUCH_END,
+      this._endCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_DRAG,
+      this._dragCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_TAP,
+      this._endCallback as EventListener
+    );
   };
 
   /**
@@ -736,6 +857,19 @@ class BrushTool extends LabelmapBaseTool {
     );
     element.removeEventListener(
       Events.MOUSE_CLICK,
+      this._endCallback as EventListener
+    );
+
+    element.removeEventListener(
+      Events.TOUCH_END,
+      this._endCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_DRAG,
+      this._dragCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_TAP,
       this._endCallback as EventListener
     );
   };

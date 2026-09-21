@@ -1,0 +1,222 @@
+name: Publish to npm
+
+# Publishes the workspace packages when a change lands on main, and creates the
+# GitHub Release for the tag.
+#
+# npm trusted publishing (OIDC) authenticates the publish, so the repository
+# holds no npm token. Each package names this repository and this workflow file
+# as its trusted publisher on npmjs.com, so a rename of this file stops the
+# publish until the name is changed there as well.
+#
+# The version commit and the tag go to main BEFORE npm sees the packages. git
+# can reject a push, and npm cannot take a version back, so the step that can
+# fail cheaply runs first. A rejected push therefore costs nothing: npm holds
+# nothing yet, and the next run releases the same changes.
+#
+# The state that remains is a tag that npm does not hold yet. That state
+# repairs itself: main carries the version, so a re-run publishes exactly that
+# version rather than a new one. The run for a version commit is the `recover`
+# mode below.
+#
+# The version commit and the tag are pushed with GITHUB_TOKEN. GitHub does not
+# start a workflow for such a push, so this workflow does not re-trigger itself.
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# One publish at a time. A second run computes the same next version.
+concurrency:
+  group: publish-to-npm
+  cancel-in-progress: false
+
+permissions:
+  contents: write # push the version commit and the tag, and create the release
+  id-token: write # the OIDC token that npm trusted publishing reads
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    # A manual run can name any ref, and npm trusted publishing does not limit
+    # the branch. Only main publishes.
+    if: github.ref == 'refs/heads/main'
+    # A healthy release run takes about 8 minutes. The default of 360 minutes
+    # let one blocked step hold the `publish-to-npm` concurrency group for 6
+    # hours, and every merge to main queued behind that step. This timeout ends
+    # such a step, and the group is free again for the next merge.
+    timeout-minutes: 30
+
+    env:
+      # `prepare` runs `husky`, and the install below therefore installs the git
+      # hooks. husky 9 no longer skips that step for CI. The hooks then reach the
+      # commit that publish-version.mjs makes: `.husky/pre-commit` runs
+      # `pnpm run lint-staged`, and pnpm verifies the dependencies of the
+      # workspace before it runs any script. publish-version.mjs writes a new
+      # pnpm-lock.yaml one step earlier, so that check meets a lockfile that
+      # node_modules does not match, and the commit stops inside the hook.
+      #
+      # The release commit needs no hook. The release scripts write every file of
+      # that commit, and the checks of the pull request already read the code.
+      # `HUSKY=0` stops the install of the hooks, and it also stops each hook
+      # that an earlier run installed.
+      HUSKY: '0'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6.0.3
+        with:
+          # version.mjs reads the last commit message, and the new tag must not
+          # collide with an existing one.
+          fetch-depth: 0
+          # The install and the build run the lifecycle scripts of every
+          # dependency. None of those scripts needs the push credential, so git
+          # does not keep it. The push step supplies the credential itself.
+          persist-credentials: false
+
+      # A run holds `github.sha`, and main has moved past it when a second
+      # change lands first. The run that holds the tip releases, and it carries
+      # the changes of this one, so this one does nothing at all.
+      - name: Check that this run holds the tip of main
+        id: tip
+        run: |
+          git fetch --no-tags origin main
+          if [ "$(git rev-parse HEAD)" = "$(git rev-parse FETCH_HEAD)" ]; then
+            echo 'proceed=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'proceed=false' >> "$GITHUB_OUTPUT"
+            echo "::notice::main moved past ${GITHUB_SHA}. The run that holds the tip releases."
+          fi
+
+      - name: Setup pnpm
+        if: steps.tip.outputs.proceed == 'true'
+        uses: pnpm/action-setup@v6.0.8
+
+      - name: Setup Node.js
+        if: steps.tip.outputs.proceed == 'true'
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: '24.15.0'
+          cache: 'pnpm'
+
+      # This npm exchanges the OIDC token for npm credentials, so the version is
+      # pinned like every other tool of this repository. Trusted publishing
+      # needs 11.5.1 or later. Read the release notes of npm before you raise
+      # this pin, and never let it float: `npm@latest` is npm 12 now, and a
+      # publish is not the place to meet an untested major version.
+      - name: Update npm
+        if: steps.tip.outputs.proceed == 'true'
+        run: |
+          npm install --global npm@11.19.0
+          npm --version
+
+      - name: Install dependencies
+        if: steps.tip.outputs.proceed == 'true'
+        run: pnpm install --frozen-lockfile
+
+      # `release` takes a new version. `recover` publishes the version that main
+      # carries already, and takes no new version. Two things force `recover`:
+      #
+      #   - The tip is a version commit. A push of one starts no run, because
+      #     GITHUB_TOKEN pushes it, so only a manual run reaches this. Bumping
+      #     there would publish 11 packages that carry no change.
+      #   - npm does not hold the version that main carries. A new version on
+      #     top of that one would leave the first as a tag npm never receives,
+      #     and every merge after it would do the same. The release heals first.
+      - name: Choose the mode for this run
+        id: mode
+        if: steps.tip.outputs.proceed == 'true'
+        run: |
+          case "$(git log -1 --pretty=%s)" in
+            'chore(version): Update package versions'*)
+              echo "::notice::The tip is a version commit, so this run takes no new version."
+              echo 'mode=recover' >> "$GITHUB_OUTPUT"
+              exit 0
+              ;;
+          esac
+
+          MODE="$(node ./scripts/release-mode.mjs)"
+          if [ "$MODE" = 'recover' ]; then
+            echo "::warning::npm does not hold the version that main carries. This run publishes that version, and it takes no new one, so one broken release cannot leave a tag for every merge after it."
+          fi
+          echo "mode=${MODE}" >> "$GITHUB_OUTPUT"
+
+      - name: Compute the next version
+        if: steps.mode.outputs.mode == 'release'
+        run: node ./version.mjs
+
+      - name: Build
+        if: steps.tip.outputs.proceed == 'true'
+        run: pnpm run build
+
+      - name: Identify the committer
+        if: steps.mode.outputs.mode == 'release'
+        run: |
+          git config user.email "contact@ohif.org"
+          git config user.name "ohif-bot"
+
+      - name: Set the package versions, commit and tag
+        if: steps.mode.outputs.mode == 'release'
+        run: node ./publish-version.mjs
+
+      # Every package of the release carries one version, so the manifest of
+      # core names it. A `recover` run reads the version that main already
+      # carries, and a `release` run reads the version it has just written.
+      - name: Read the version of this release
+        id: release
+        if: steps.tip.outputs.proceed == 'true'
+        run: |
+          VERSION="$(node -p "require('./packages/core/package.json').version")"
+          echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Releasing v${VERSION}"
+
+      # Before npm, on purpose. git rejects this push when a change lands on
+      # main during the run, and npm holds nothing at that point, so the run
+      # stops with no trace. The change of this run reaches npm through the run
+      # for the next merge.
+      - name: Push the version commit and the tag
+        if: steps.mode.outputs.mode == 'release'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          TAG='${{ steps.release.outputs.tag }}'
+          REMOTE="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+          # One push for both refs. GitHub takes both refs, or it takes neither,
+          # so main never carries a release commit that no tag names.
+          if git push --atomic "$REMOTE" HEAD:main "$TAG"; then
+            exit 0
+          fi
+
+          echo "::error::A change landed on main during this run, so git rejected the push of ${TAG}. npm holds nothing for this version, and nothing is stranded. The run for the next merge releases these changes."
+          exit 1
+
+      - name: Publish to npm
+        if: steps.tip.outputs.proceed == 'true'
+        run: node ./publish-package.mjs
+
+      - name: Create the GitHub release
+        if: steps.tip.outputs.proceed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG='${{ steps.release.outputs.tag }}'
+
+          # A `recover` run reaches a release that exists, and so does a re-run.
+          if gh release view "$TAG" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            echo "The release $TAG exists already."
+            exit 0
+          fi
+
+          # A version that holds a hyphen is a pre-release, such as
+          # 5.1.0-beta.0.
+          PRERELEASE=''
+          case "$TAG" in
+            *-*) PRERELEASE='--prerelease' ;;
+          esac
+
+          gh release create "$TAG" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "$TAG" \
+            --generate-notes $PRERELEASE
