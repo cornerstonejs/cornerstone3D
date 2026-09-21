@@ -613,8 +613,16 @@ export default class SegmentationStateManager {
         if (state.viewportSegRepresentations[viewportId].length === 0) {
           delete state.viewportSegRepresentations[viewportId];
         } else if (activeRepresentationRemoved) {
-          // Set the first remaining representation as active
-          state.viewportSegRepresentations[viewportId][0].active = true;
+          const remainingRepresentations =
+            state.viewportSegRepresentations[viewportId];
+          const hasActiveRepresentation = remainingRepresentations.some(
+            (representation) => representation.active
+          );
+
+          if (!hasActiveRepresentation) {
+            // Set the first remaining representation as active
+            remainingRepresentations[0].active = true;
+          }
         }
       }
 
@@ -662,17 +670,19 @@ export default class SegmentationStateManager {
       );
     });
 
-    // If there are remaining representations, trigger a modified event for the new active one
-    const remainingRepresentations =
-      this.getSegmentationRepresentations(viewportId);
-    if (
-      remainingRepresentations.length > 0 &&
-      remainingRepresentations[0].active
-    ) {
+    // If there are remaining representations, trigger a modified event for the
+    // active one. `removeSegmentationRepresentationsInternal` keeps an active
+    // representation that it finds at any index, so the active representation
+    // is not always the first one.
+    const activeRepresentation = this.getSegmentationRepresentations(
+      viewportId
+    ).find((representation) => representation.active);
+
+    if (activeRepresentation) {
       triggerSegmentationRepresentationModified(
         viewportId,
-        remainingRepresentations[0].segmentationId,
-        remainingRepresentations[0].type
+        activeRepresentation.segmentationId,
+        activeRepresentation.type
       );
     }
 
