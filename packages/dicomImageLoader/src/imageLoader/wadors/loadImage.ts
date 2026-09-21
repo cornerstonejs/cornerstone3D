@@ -4,11 +4,14 @@ import {
   utilities,
 } from '@cornerstonejs/core';
 import { Enums as csCoreEnums, type Types } from '@cornerstonejs/core';
+import { logging } from '@cornerstonejs/metadata';
 
 import createImage from '../createImage';
 import getPixelData from './getPixelData';
 import { loadImageFromCompressedFrameRegistry } from './loadImageFromRegistry';
 import type { DICOMLoaderIImage, DICOMLoaderImageOptions } from '../../types';
+
+const log = logging.loaderLog.getLogger('wadors');
 
 const { ProgressiveIterator } = utilities;
 const { ImageQualityStatus } = Enums;
@@ -140,7 +143,7 @@ function loadImage(
       // back to the network /frames/N path, whose transfer-syntax=*
       // negotiation lets the server transcode to a decodable syntax.
       promise: registryPromise.catch((error) => {
-        console.warn(
+        log.warn(
           `Failed to decode registry frame data for ${imageId}; falling back to network retrieval`,
           error
         );
@@ -221,7 +224,7 @@ function loadImageFromNetwork(
           lastDecodeLevel = decodeLevel;
         } catch (e) {
           if (extractDone) {
-            console.warn("Couldn't decode", e);
+            log.warn("Couldn't decode", e);
             throw e;
           }
         }

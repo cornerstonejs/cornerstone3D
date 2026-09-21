@@ -1,5 +1,10 @@
 import type { Types } from '@cornerstonejs/core';
 import { Enums } from '@cornerstonejs/core';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.dynamicVolume.generateImageFromTimeData'
+);
 
 /**
  * Helper function to sum scalar data over specified dimension groups.
@@ -106,7 +111,7 @@ function generateImageFromTimeData(
   const { dimensionGroupNumbers, frameNumbers } = options;
 
   if (frameNumbers) {
-    console.warn(
+    cs3dLogger.warn(
       'Warning: frameNumbers parameter is deprecated. Please use dimensionGroupNumbers instead.'
     );
   }
@@ -168,7 +173,7 @@ function updateVolumeFromTimeData(
   }
 
   if (frameNumbers) {
-    console.warn(
+    cs3dLogger.warn(
       'Warning: frameNumbers parameter is deprecated. Please use dimensionGroupNumbers instead.'
     );
   }

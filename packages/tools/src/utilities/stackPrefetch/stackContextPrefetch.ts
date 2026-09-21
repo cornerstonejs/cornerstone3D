@@ -17,6 +17,11 @@ import {
 } from './stackPrefetchUtils';
 import { Events } from '../../enums';
 import type { EventTypes } from '../../types';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.stackPrefetch.stackContextPrefetch'
+);
 
 const { imageRetrieveMetadataProvider } = utilities;
 
@@ -74,7 +79,7 @@ const enable = (element, priority = 0): void => {
     return;
   }
   if (!stack.imageIds?.length) {
-    console.warn('CornerstoneTools.stackPrefetch: No images in stack.');
+    cs3dLogger.warn('CornerstoneTools.stackPrefetch: No images in stack.');
     return;
   }
 
@@ -105,7 +110,7 @@ function prefetch(element, priority = 0) {
     return;
   }
   if (!stack?.imageIds?.length) {
-    console.warn('CornerstoneTools.stackPrefetch: No images in stack.');
+    cs3dLogger.warn('CornerstoneTools.stackPrefetch: No images in stack.');
     return;
   }
 
@@ -206,22 +211,6 @@ function prefetch(element, priority = 0) {
           stats.fillTime = Date.now() - stats.start;
           const { size } = stats.imageIds;
           stats.fillSize = size;
-          // console.log(
-          //   'Done cache fill',
-          //   stats.fillTime,
-          //   'ms',
-          //   size,
-          //   'items',
-          //   'average total time',
-          //   roundNumber(stats.fillTime / size),
-          //   'ms',
-          //   'average load',
-          //   roundNumber(stats.loadTimeInMS / size),
-          //   'ms',
-          //   'average decode',
-          //   roundNumber(stats.decodeTimeInMS / size),
-          //   'ms'
-          // );
         }
       }
     }
@@ -303,7 +292,7 @@ const updateToolState = (element, usage?: number) => {
     return;
   }
   if (!stack.imageIds?.length) {
-    console.warn('CornerstoneTools.stackPrefetch: No images in stack.');
+    cs3dLogger.warn('CornerstoneTools.stackPrefetch: No images in stack.');
     return;
   }
 

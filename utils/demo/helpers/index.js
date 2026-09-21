@@ -12,7 +12,7 @@ import addSliderToToolbar from './addSliderToToolbar';
 import addToggleButtonToToolbar from './addToggleButtonToToolbar';
 import addVideoTime from './addVideoTime';
 import annotationTools from './annotationTools';
-import camera from './camera';
+import camera, { createObliqueAngleController } from './camera';
 import contourSegmentationToolBindings from './contourSegmentationToolBindings';
 import contourTools from './contourTools';
 import createElement from './createElement';
@@ -52,8 +52,6 @@ import { createAndCacheGeometriesFromContours } from './createAndCacheGeometries
 export * from './constants';
 export * from './addUploadToToolbar';
 
-import { createLayoutRegions, ecgLayouts } from './ecgLayouts';
-
 export {
   addBrushSizeSlider,
   addButtonToToolbar,
@@ -70,13 +68,12 @@ export {
   addVideoTime,
   annotationTools,
   camera,
+  createObliqueAngleController,
   contourSegmentationToolBindings,
   contourTools,
   createElement,
   createImageIdsAndCacheMetaData,
   createInfoSection,
-  createLayoutRegions,
-  ecgLayouts,
   ctVoiRange,
   downloadSurfacesData,
   getLocalUrl,
