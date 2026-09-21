@@ -1,5 +1,10 @@
 import { isEqual } from './isEqual';
 import { CalibrationTypes } from '../enums';
+import { logging as cornerstoneLogging } from '@cornerstonejs/utils';
+
+const cs3dLogger = cornerstoneLogging.metadataLog.getLogger(
+  'utilities.getPixelSpacingInformation'
+);
 
 // TODO: Use ENUMS from dcmjs
 const projectionRadiographSOPClassUIDs = new Set([
@@ -58,7 +63,7 @@ export function calculateRadiographicPixelSpacing(instance) {
 
   if (PixelSpacing && PixelSpacingCalibrationType === 'GEOMETRY') {
     if (isEqual(PixelSpacing, ImagerPixelSpacing)) {
-      console.warn(
+      cs3dLogger.warn(
         'Calibration type is geometry, but pixel spacing and imager pixel spacing identical',
         PixelSpacing,
         ImagerPixelSpacing
@@ -100,7 +105,7 @@ export function calculateRadiographicPixelSpacing(instance) {
       };
     }
     if (ermf) {
-      console.error('Illegal ERMF value:', ermf);
+      cs3dLogger.error('Illegal ERMF value:', ermf);
     }
     return {
       PixelSpacing: PixelSpacing || ImagerPixelSpacing,

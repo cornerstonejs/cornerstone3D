@@ -27,7 +27,6 @@ export type {
 } from './ecgProjectionAdapter';
 export { default } from './ECGViewport';
 export type {
-  TraceRegion,
   ECGViewState,
   ECGDataPresentation,
   ECGChannelData,

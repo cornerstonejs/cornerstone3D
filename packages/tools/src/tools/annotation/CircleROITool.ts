@@ -6,7 +6,6 @@ import {
   VolumeViewport,
   utilities as csUtils,
   getEnabledElementByViewportId,
-  EPSILON,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -56,10 +55,7 @@ import {
   getCanvasCircleCorners,
   getCanvasCircleRadius,
 } from '../../utilities/math/circle';
-import {
-  getCanvasEllipseCorners,
-  pointInEllipse,
-} from '../../utilities/math/ellipse';
+import { getCanvasEllipseCorners } from '../../utilities/math/ellipse';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
 import {
@@ -67,8 +63,15 @@ import {
   type MetricDefinition,
 } from '../../utilities/defaultGetTextLines';
 import getEllipseWorldCoordinates from '../../utilities/getEllipseWorldCoordinates';
+import sampleAreaAnnotationVoxels from '../../utilities/sampleAreaAnnotationVoxels';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.annotation.CircleROITool'
+);
 
 const { transformWorldToIndex } = csUtils;
+const { createCircleShape } = csUtils.voxelSlab;
 
 /**
  * CircleROITool let you draw annotations that measures the statistics
@@ -786,7 +789,7 @@ class CircleROITool extends AnnotationTool {
 
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
-        console.warn('Rendering Engine has been destroyed');
+        cs3dLogger.warn('Rendering Engine has been destroyed');
         return renderStatus;
       }
 
@@ -1023,34 +1026,6 @@ class CircleROITool extends AnnotationTool {
       isHandleOutsideAnyTarget ||= isHandleOutsideTarget;
 
       if (!isHandleOutsideTarget) {
-        const iMin = Math.min(pos1Index[0], pos2Index[0]);
-        const iMax = Math.max(pos1Index[0], pos2Index[0]);
-
-        const jMin = Math.min(pos1Index[1], pos2Index[1]);
-        const jMax = Math.max(pos1Index[1], pos2Index[1]);
-
-        const kMin = Math.min(pos1Index[2], pos2Index[2]);
-        const kMax = Math.max(pos1Index[2], pos2Index[2]);
-
-        const boundsIJK = [
-          [iMin, iMax],
-          [jMin, jMax],
-          [kMin, kMax],
-        ] as [Types.Point2, Types.Point2, Types.Point2];
-
-        const center = points[0];
-
-        const xRadius = Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2;
-        const yRadius = Math.abs(topLeftWorld[1] - bottomRightWorld[1]) / 2;
-        const zRadius = Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2;
-
-        const ellipseObj = {
-          center,
-          xRadius: xRadius < EPSILON / 2 ? 0 : xRadius,
-          yRadius: yRadius < EPSILON / 2 ? 0 : yRadius,
-          zRadius: zRadius < EPSILON / 2 ? 0 : zRadius,
-        };
-
         const pixelUnitsOptions = {
           isPreScaled: isViewportPreScaled(viewport, targetId),
           isSuvScaled: this.isSuvScaled(
@@ -1066,19 +1041,43 @@ class CircleROITool extends AnnotationTool {
           pixelUnitsOptions
         );
 
-        let pointsInShape;
-        if (voxelManager) {
-          pointsInShape = voxelManager.forEach(
-            this.configuration.statsCalculator.statsCallback,
-            {
-              isInObject: (pointLPS) =>
-                pointInEllipse(ellipseObj, pointLPS, { fast: true }),
-              boundsIJK,
-              imageData,
-              returnPoints: this.configuration.storePointData,
+        // A circle drawn on the viewport is a circle in the annotation
+        // plane, whatever the orientation of that plane. The shared sampler
+        // selects the voxels for it, so the selection matches the polyline
+        // and rectangle tools, and it does not depend on the display.
+        const worldRadius = vec3.distance(points[0], points[1]);
+        const pointsInShape = sampleAreaAnnotationVoxels({
+          annotation,
+          image,
+          // Statistics are over scalar values. A colour volume gives an
+          // RGB triple, which no statistic here consumes.
+          voxelManager: voxelManager as Types.IVoxelManager<number>,
+          points: points as Types.Point3[],
+          // The handles only touch the outline, and the `simplified`
+          // representation keeps the centre and one handle, so the radius is
+          // what bounds the disc.
+          boundsMargin: worldRadius,
+          createShape: ({ volume, planePoint, viewPlaneNormal }) => {
+            // A circle of no radius covers no voxel, and the factory rejects
+            // it. A new annotation holds two identical handles until the first
+            // drag moves one of them.
+            if (!(worldRadius > 0)) {
+              return null;
             }
-          );
-        }
+
+            return createCircleShape({
+              volume,
+              planePoint,
+              viewPlaneNormal,
+              centerWorld: points[0] as Types.Point3,
+              radius: worldRadius,
+            });
+          },
+          // A centre and one point on the circle are the whole definition.
+          minimumPoints: 2,
+          onSample: this.configuration.statsCalculator.statsCallback,
+          storePointData: this.configuration.storePointData,
+        });
         const stats = this.configuration.statsCalculator.getStatistics();
 
         cachedStats[targetId] = {

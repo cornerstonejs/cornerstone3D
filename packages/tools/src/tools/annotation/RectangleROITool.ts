@@ -53,8 +53,15 @@ import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScale
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
 import { defaultAreaGetTextLines } from '../../utilities/defaultGetTextLines';
+import sampleAreaAnnotationVoxels from '../../utilities/sampleAreaAnnotationVoxels';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.annotation.RectangleROITool'
+);
 
 const { transformWorldToIndex, transformWorldToIndexContinuous } = csUtils;
+const { createRectangleShape } = csUtils.voxelSlab;
 
 /**
  * RectangleROIAnnotation let you draw annotations that measures the statistics
@@ -700,7 +707,7 @@ class RectangleROITool extends AnnotationTool {
 
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
-        console.warn('Rendering Engine has been destroyed');
+        cs3dLogger.warn('Rendering Engine has been destroyed');
         return renderStatus;
       }
 
@@ -878,21 +885,6 @@ class RectangleROITool extends AnnotationTool {
       if (!isHandleOutsideTarget) {
         // Calculate index bounds to iterate over
 
-        const iMin = Math.min(pos1Index[0], pos2Index[0]);
-        const iMax = Math.max(pos1Index[0], pos2Index[0]);
-
-        const jMin = Math.min(pos1Index[1], pos2Index[1]);
-        const jMax = Math.max(pos1Index[1], pos2Index[1]);
-
-        const kMin = Math.min(pos1Index[2], pos2Index[2]);
-        const kMax = Math.max(pos1Index[2], pos2Index[2]);
-
-        const boundsIJK = [
-          [iMin, iMax],
-          [jMin, jMax],
-          [kMin, kMax],
-        ] as [Types.Point2, Types.Point2, Types.Point2];
-
         const handles = [pos1Index, pos2Index];
         const calibrate = getCalibratedLengthUnitsAndScale(image, handles);
 
@@ -923,17 +915,56 @@ class RectangleROITool extends AnnotationTool {
           pixelUnitsOptions
         );
 
-        let pointsInShape;
-        if (voxelManager) {
-          pointsInShape = voxelManager.forEach(
-            this.configuration.statsCalculator.statsCallback,
-            {
-              boundsIJK,
-              imageData,
-              returnPoints: this.configuration.storePointData,
+        // The older code walked the index bounding box and applied no shape
+        // test, which is exact only while the rectangle stays aligned with the
+        // index axes. A rotated or oblique rectangle over-counted its corners.
+        // The shared sampler tests the rectangle itself.
+        const pointsInShape = sampleAreaAnnotationVoxels({
+          annotation,
+          image,
+          // Statistics are over scalar values. A colour volume gives an
+          // RGB triple, which no statistic here consumes.
+          voxelManager: voxelManager as Types.IVoxelManager<number>,
+          // The four corners bound the rectangle.
+          points: worldHandles as Types.Point3[],
+          createShape: ({ volume, planePoint, viewPlaneNormal }) => {
+            // points[0] and points[3] are opposite corners, so 0 to 1 and 0 to
+            // 2 are the two edges.
+            const majorAxis = vec3.sub(
+              vec3.create(),
+              worldHandles[1],
+              worldHandles[0]
+            ) as unknown as Types.Point3;
+            const majorHalfLength =
+              vec3.distance(worldHandles[0], worldHandles[1]) / 2;
+            const minorHalfLength =
+              vec3.distance(worldHandles[0], worldHandles[2]) / 2;
+
+            // A rectangle of no width or no height covers no voxel, and the
+            // factory rejects it.
+            if (!(majorHalfLength > 0) || !(minorHalfLength > 0)) {
+              return null;
             }
-          );
-        }
+
+            return createRectangleShape({
+              volume,
+              planePoint,
+              viewPlaneNormal,
+              centerWorld: vec3.lerp(
+                vec3.create(),
+                worldHandles[0],
+                worldHandles[3],
+                0.5
+              ) as unknown as Types.Point3,
+              majorAxis,
+              majorHalfLength,
+              minorHalfLength,
+            });
+          },
+          minimumPoints: 4,
+          onSample: this.configuration.statsCalculator.statsCallback,
+          storePointData: this.configuration.storePointData,
+        });
         const stats = this.configuration.statsCalculator.getStatistics();
 
         cachedStats[targetId] = {
