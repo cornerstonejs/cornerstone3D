@@ -478,4 +478,99 @@ describe('VoxelManager', () => {
     VoxelManager.addInstanceToImage(image);
     expect(image.voxelManager).toBeInstanceOf(VoxelManager);
   });
+
+  // `getRange`, `getCompleteScalarDataArray`, `setCompleteScalarDataArray` and
+  // `invalidateCache` are not methods. A factory installs each one on the
+  // instance after the constructor returns, and only some of the factories
+  // install them. `IVoxelManager` marks the four optional for that reason, and
+  // `IVolumeVoxelManager` marks them required. These tests pin which factory
+  // installs which member, so that a change to one of the factories cannot make
+  // either interface wrong without a test failure.
+  describe('the four function-valued properties', () => {
+    const FOUR_MEMBERS = [
+      'getRange',
+      'getCompleteScalarDataArray',
+      'setCompleteScalarDataArray',
+      'invalidateCache',
+    ];
+
+    const installedMembers = (voxelManager) =>
+      FOUR_MEMBERS.filter(
+        (member) => typeof voxelManager[member] === 'function'
+      );
+
+    it('createImageVolumeVoxelManager installs all four', () => {
+      const voxelManager = VoxelManager.createImageVolumeVoxelManager({
+        dimensions,
+        imageIds: [],
+        numberOfComponents: 1,
+      });
+      expect(installedMembers(voxelManager)).toEqual(FOUR_MEMBERS);
+    });
+
+    it('createScalarVolumeVoxelManager installs none of the four', () => {
+      const voxelManager = VoxelManager.createScalarVolumeVoxelManager({
+        dimensions,
+        scalarData: new Uint8Array(
+          dimensions[0] * dimensions[1] * dimensions[2]
+        ),
+      });
+      expect(installedMembers(voxelManager)).toEqual([]);
+      // The type promised that this call was safe before commit 1.
+      expect(() => voxelManager.getRange()).toThrow(TypeError);
+    });
+
+    it('createImageVoxelManager installs none of the four', () => {
+      const voxelManager = VoxelManager.createImageVoxelManager({
+        width: dimensions[0],
+        height: dimensions[1],
+        scalarData: new Uint8Array(dimensions[0] * dimensions[1]),
+      });
+      expect(installedMembers(voxelManager)).toEqual([]);
+      expect(() => voxelManager.getRange()).toThrow(TypeError);
+    });
+
+    // This factory is the reason that it returns an `IVoxelManager` and not an
+    // `IVolumeVoxelManager`.
+    it('createScalarDynamicVolumeVoxelManager installs two of the four', () => {
+      const [width, height, depth] = [4, 4, 2];
+      const imageIdGroups = [[], []];
+
+      for (let group = 0; group < imageIdGroups.length; group++) {
+        for (let sliceIndex = 0; sliceIndex < depth; sliceIndex++) {
+          const imageId = `dynamic-group-${group}-slice-${sliceIndex}`;
+          const voxelManager = VoxelManager.createImageVoxelManager({
+            width,
+            height,
+            scalarData: new Uint8Array(width * height),
+          });
+
+          imageIdGroups[group].push(imageId);
+          cache.putImageSync(imageId, {
+            imageId,
+            width,
+            height,
+            voxelManager,
+            getPixelData: () => voxelManager.getScalarData(),
+            sizeInBytes: width * height,
+          });
+        }
+      }
+
+      const voxelManager = VoxelManager.createScalarDynamicVolumeVoxelManager({
+        imageIdGroups,
+        dimensions: [width, height, depth],
+        numberOfComponents: 1,
+      });
+
+      expect(installedMembers(voxelManager)).toEqual([
+        'getRange',
+        'getCompleteScalarDataArray',
+      ]);
+
+      imageIdGroups.flat().forEach((imageId) => {
+        cache.removeImageLoadObject(imageId);
+      });
+    });
+  });
 });
