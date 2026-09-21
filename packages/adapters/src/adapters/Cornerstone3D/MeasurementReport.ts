@@ -865,7 +865,11 @@ export default class MeasurementReport {
           measurementData[toolAdapter.toolType].push(measurement);
         }
       } catch (e) {
-        cs3dLogger.warn('Unable to generate tool state for', measurementGroup, e);
+        cs3dLogger.warn(
+          'Unable to generate tool state for',
+          measurementGroup,
+          e
+        );
       }
     });
 

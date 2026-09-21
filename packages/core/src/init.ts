@@ -6,7 +6,12 @@ import CentralizedWebWorkerManager from './webWorkerManager/webWorkerManager';
 import { getRenderingCapabilities } from './utilities/renderingCapabilities';
 import triggerEvent from './utilities/triggerEvent';
 import eventTarget from './eventTarget';
-import { Events, RenderBackends, RenderingEngineModeEnum } from './enums';
+import {
+  Events,
+  RenderBackends,
+  RenderingEngineModeEnum,
+  VoxelManagerEnum,
+} from './enums';
 import type { RenderBackendValue } from './enums';
 import { isRegisteredRenderBackend } from './RenderingEngine/helpers/renderBackendRegistry';
 import type { EffectiveRenderBackend } from './types/RenderBackendRegistry';
@@ -24,6 +29,7 @@ const defaultConfig: Cornerstone3DConfig = {
     // Use new method by default for accurate full-width display
     useLegacyCameraFOV: false,
     strictZSpacingForVolumeViewport: true,
+    sliceStepMeasure: 'l2',
     /**
      * The rendering engine mode to use.
      * 'contextPool' is the a rendering engine that uses sequential rendering, pararllization and has enhanced support/performance for multi-monitor and high resolution displays.
@@ -54,6 +60,14 @@ const defaultConfig: Cornerstone3DConfig = {
     },
   },
 
+  segmentation: {
+    /**
+     * Labelmaps get a full frame buffer unless a host opts into RLE, which
+     * changes what its own code reads out of a labelmap (see the type docs).
+     */
+    labelmapVoxelRepresentation: VoxelManagerEnum.Volume,
+  },
+
   debug: {
     /**
      * Wether or not to show the stats overlay for debugging purposes, stats include:
@@ -75,6 +89,7 @@ const defaultConfig: Cornerstone3DConfig = {
 let config: Cornerstone3DConfig = {
   ...defaultConfig,
   rendering: { ...defaultConfig.rendering },
+  segmentation: { ...defaultConfig.segmentation },
 };
 
 let webWorkerManager: CentralizedWebWorkerManager | null = null;

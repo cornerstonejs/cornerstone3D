@@ -166,6 +166,141 @@ describe('createPolylineShape - three or more runs per row', () => {
   });
 });
 
+describe('createPolylineShape - vertices and edges on a voxel row', () => {
+  const volume = createSyntheticVolume({
+    dimensions: [24, 24, 4],
+    spacing: [1, 1, 1],
+  });
+  const planePoint = [12, 12, 2];
+
+  // A W under a bar. Voxel centres sit on the integers, so this outline puts
+  // three degenerate cases on rows of voxel centres at once:
+  //
+  // - row 4 passes through the three bottom vertices. Each vertex only touches
+  //   the row, and both edges of each vertex leave upwards. A side value of
+  //   zero counts as negative, so each vertex gives two crossings at the same
+  //   place, the count stays even, and the pair closes over the one voxel of
+  //   the vertex.
+  // - row 12 passes through the two peaks, which touch the row from below.
+  // - row 18 holds the whole top edge. Both ends of that edge lie on the row,
+  //   so no crossing test can see the edge, and the code contributes the
+  //   extent of the edge itself.
+  //
+  // `containsPoint` calls a point on the outline inside, so the runs must keep
+  // these voxels to stay consistent with it. A pairing loop over an odd count
+  // of crossings drops a span instead.
+  const wUnderBar = [
+    [4, 4, 2],
+    [8, 12, 2],
+    [12, 4, 2],
+    [16, 12, 2],
+    [20, 4, 2],
+    [20, 18, 2],
+    [4, 18, 2],
+  ];
+
+  const wShape = (viewPlaneNormal = AXIAL, polyline = wUnderBar) =>
+    createPolylineShape({
+      volume,
+      planePoint,
+      viewPlaneNormal,
+      polyline,
+    });
+
+  it('keeps the isolated voxels of a row that only touches vertices', () => {
+    const slab = buildIndexSpaceSlab(volume, planePoint, AXIAL, 1);
+
+    // The three bottom vertices, each one voxel wide, and nothing between
+    // them: at row 4 the outline of the W has left the row already.
+    expect([...wShape().getRuns(2, 4, [0, 23], slab)]).toEqual([
+      [4, 4],
+      [12, 12],
+      [20, 20],
+    ]);
+  });
+
+  it('spans the row that passes through the two peaks', () => {
+    const slab = buildIndexSpaceSlab(volume, planePoint, AXIAL, 1);
+
+    expect([...wShape().getRuns(2, 12, [0, 23], slab)]).toEqual([[4, 20]]);
+  });
+
+  it('keeps the row that holds a whole edge', () => {
+    const slab = buildIndexSpaceSlab(volume, planePoint, AXIAL, 1);
+
+    expect([...wShape().getRuns(2, 18, [0, 23], slab)]).toEqual([[4, 20]]);
+  });
+
+  it('agrees with the predicate and the reference over the whole outline', () => {
+    expectShapeConsistency({
+      volume,
+      planePoint,
+      viewPlaneNormal: AXIAL,
+      referencePlaneThickness: 1,
+      shape: wShape(),
+    });
+  });
+
+  // A triangle whose apex touches row 14 from below, where the row holds
+  // nothing else. Both edges of the apex leave downwards, and a side value of
+  // zero counts as negative, so the crossing test sees no sign change and
+  // records no crossing for either edge. The apex is on the outline, so
+  // `containsPoint` keeps it, and only the rule for a vertex on the row keeps
+  // the run.
+  const spike = [
+    [6, 4, 2],
+    [18, 4, 2],
+    [12, 14, 2],
+  ];
+
+  it('keeps the one voxel of a vertex that touches a row from below', () => {
+    const slab = buildIndexSpaceSlab(volume, planePoint, AXIAL, 1);
+
+    expect([...wShape(AXIAL, spike).getRuns(2, 14, [0, 23], slab)]).toEqual([
+      [12, 12],
+    ]);
+  });
+
+  it('agrees with the predicate and the reference over the spike', () => {
+    expectShapeConsistency({
+      volume,
+      planePoint,
+      viewPlaneNormal: AXIAL,
+      referencePlaneThickness: 1,
+      shape: wShape(AXIAL, spike),
+    });
+  });
+
+  it('agrees obliquely, where a vertex lands on a row by chance', () => {
+    const oblique = createSyntheticVolume({
+      dimensions: [24, 24, 10],
+      spacing: [1, 1, 2],
+    });
+
+    [20, 40, 65].forEach((degrees) => {
+      const viewPlaneNormal = obliqueNormal(oblique.direction, degrees);
+      const anchor = [12, 12, 10];
+      const toPlane = planeMapper(anchor, viewPlaneNormal);
+
+      expectShapeConsistency({
+        volume: oblique,
+        planePoint: anchor,
+        viewPlaneNormal,
+        referencePlaneThickness: getVoxelThicknessAlongNormal(
+          oblique,
+          viewPlaneNormal
+        ),
+        shape: createPolylineShape({
+          volume: oblique,
+          planePoint: anchor,
+          viewPlaneNormal,
+          polyline: wUnderBar.map(([x, y]) => toPlane([x, y])),
+        }),
+      });
+    });
+  });
+});
+
 describe('createPolylineShape - internal holes', () => {
   const volume = createSyntheticVolume({
     dimensions: [26, 26, 4],
