@@ -13,9 +13,9 @@
  *
  * The configuration also lets you replace the JPEG Lossless decoder with a
  * different build of that decoder. `packages/dicomImageLoader` depends on
- * `jpeg-lossless-decoder-js` directly, so a fix in that decoder reaches
- * cornerstone3D through a version bump only. To test a fix before its release,
- * point this configuration at the build that holds the fix:
+ * `@cornerstonejs/jpeg-lossless-decoder-js` directly, so a fix in that decoder
+ * reaches cornerstone3D through a version bump only. To test a fix before its
+ * release, point this configuration at the build that holds the fix:
  *
  *   pnpm test:decoders --jpeg-lossless-build ../codecs/packages/dicom-codec/src/vendor/jpeg-lossless-decoder-js/lossless.cjs
  *
@@ -23,10 +23,12 @@
  * environment variable in a shell script, and use the option on the command
  * line. The option wins if you give both. The path can be relative to the root
  * of the repository, or absolute. The build must be a CommonJS module or an ES
- * module that exports `Decoder`.
+ * module that exports `Decoder` - the published package's own entry point,
+ * `release/cjs/lossless.cjs`, is one.
  *
- * Give no override, and the tests use the `jpeg-lossless-decoder-js` version
- * that `pnpm install` resolved. That is what CI tests.
+ * Give no override, and the tests use the
+ * `@cornerstonejs/jpeg-lossless-decoder-js` version that `pnpm install`
+ * resolved. That is what CI tests.
  */
 
 const path = require('path');
@@ -73,7 +75,7 @@ module.exports = function (config) {
 
   if (jpegLosslessBuild) {
     console.log(
-      `[karma.decoders.conf.js] jpeg-lossless-decoder-js resolves to ${path.resolve(
+      `[karma.decoders.conf.js] @cornerstonejs/jpeg-lossless-decoder-js resolves to ${path.resolve(
         jpegLosslessBuild
       )}`
     );
@@ -116,7 +118,12 @@ module.exports = function (config) {
           ...config.webpack.resolve.alias,
           ...(jpegLosslessBuild
             ? {
-                'jpeg-lossless-decoder-js': path.resolve(jpegLosslessBuild),
+                // Must name the same specifier decodeJPEGLossless.ts imports.
+                // An alias key that no import names matches nothing, and
+                // webpack reports no error for it, so the override would
+                // silently test the installed decoder instead of this build.
+                '@cornerstonejs/jpeg-lossless-decoder-js':
+                  path.resolve(jpegLosslessBuild),
               }
             : {}),
         },

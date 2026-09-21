@@ -496,15 +496,15 @@ importers:
       '@cornerstonejs/codec-openjph':
         specifier: 2.4.11
         version: 2.4.11
+      '@cornerstonejs/jpeg-lossless-decoder-js':
+        specifier: 2.2.1
+        version: 2.2.1
       comlink:
         specifier: 4.4.2
         version: 4.4.2
       dicom-parser:
         specifier: 1.8.21
         version: 1.8.21
-      jpeg-lossless-decoder-js:
-        specifier: 2.1.2
-        version: 2.1.2
       pako:
         specifier: 2.1.0
         version: 2.1.0
@@ -1591,6 +1591,9 @@ packages:
   '@cornerstonejs/codec-openjph@2.4.7':
     resolution: {integrity: sha512-qvP4q4JDib7mi9r7LqKOwqz7YZ8gjtDX4ZCezeYf8+eb7MBXCz5uXAMeVF3yz9Axw4XiIMdB/pqXkm8tqCl13w==}
     engines: {node: '>=0.14'}
+
+  '@cornerstonejs/jpeg-lossless-decoder-js@2.2.1':
+    resolution: {integrity: sha512-cDCv7dm3qw9kbxCydvj0UGbNQcsPmTwcyd9SQXkBt34CDgSBeb8Xvj0Gz9HlJ+7DIKOFMTazF1oDJSu0pcCKmg==}
 
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -3091,12 +3094,6 @@ packages:
     peerDependenciesMeta:
       rollup:
         optional: true
-
-  '@rollup/rollup-linux-x64-gnu@4.13.0':
-    resolution: {integrity: sha512-yUD/8wMffnTKuiIsl6xU+4IA8UNhQ/f1sAnQebmE/lyQ8abjsVyDkyRkWop0kdMhKMprpNIhPmYlCxgHrPoXoA==}
-    cpu: [x64]
-    os: [linux]
-    libc: [glibc]
 
   '@rspack/binding-darwin-arm64@1.6.0':
     resolution: {integrity: sha512-IrigOWnGvQgugsTZgf3dB5uko+y+lkNLYg/8w0DiobxkWhpLO97RAeR1w0ofIPXYVu3UWVf7dgHj3PjTqjC9Tw==}
@@ -7054,9 +7051,6 @@ packages:
   joycon@3.1.1:
     resolution: {integrity: sha512-34wB/Y7MW7bzjKRjUKTa46I2Z7eV62Rkhva+KkopW7Qvv/OSWBqvkSY7vusOPrNuZcUG3tApvdVgNB8POj3SPw==}
     engines: {node: '>=10'}
-
-  jpeg-lossless-decoder-js@2.1.2:
-    resolution: {integrity: sha512-fYf/plymnuKwVw+s8gJ8O/BPw8y8OLaN11MBvEcT05kuy3m45o7BEC4J0JbxMNUYyO+MdK/I/jq0q1gkVYZm2Q==}
 
   js-sha3@0.9.3:
     resolution: {integrity: sha512-BcJPCQeLg6WjEx3FE591wVAevlli8lxsxm9/FzV4HXkV49TmBH38Yvrpce6fjbADGMKFrBMGTqrVz3qPIZ88Gg==}
@@ -12144,6 +12138,8 @@ snapshots:
 
   '@cornerstonejs/codec-openjph@2.4.7': {}
 
+  '@cornerstonejs/jpeg-lossless-decoder-js@2.2.1': {}
+
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
       '@jridgewell/trace-mapping': 0.3.9
@@ -14461,9 +14457,6 @@ snapshots:
       picomatch: 4.0.4
     optionalDependencies:
       rollup: 3.30.0
-
-  '@rollup/rollup-linux-x64-gnu@4.13.0':
-    optional: true
 
   '@rspack/binding-darwin-arm64@1.6.0':
     optional: true
@@ -18958,10 +18951,6 @@ snapshots:
       '@sideway/pinpoint': 2.0.0
 
   joycon@3.1.1: {}
-
-  jpeg-lossless-decoder-js@2.1.2:
-    optionalDependencies:
-      '@rollup/rollup-linux-x64-gnu': 4.13.0
 
   js-sha3@0.9.3: {}
 

@@ -14,9 +14,10 @@ import init from '../src/init';
  *
  * `pnpm test:decoders` runs this suite alone, in about one minute rather than
  * the several minutes of a full `pnpm test`. That script also takes
- * `--jpeg-lossless-build <path>`, which replaces jpeg-lossless-decoder-js with
- * a different build of that decoder, so you can test a decoder fix before its
- * release. See karma.decoders.conf.js.
+ * `--jpeg-lossless-build <path>`, which replaces
+ * @cornerstonejs/jpeg-lossless-decoder-js with a different build of that
+ * decoder, so you can test a decoder fix before its release. See
+ * karma.decoders.conf.js.
  */
 const transferSyntaxes = {
   '1.2.840.10008.1.2': 'LittleEndianImplicitTransferSyntax',
@@ -44,11 +45,19 @@ const transferSyntaxes = {
  * related to the syntaxes added alongside this suite being enabled.
  *
  * 1.2.840.10008.1.2.4.70 used to sit here: exactly one sample was wrong, the
- * last, decoding as 0 instead of -2000, because jpeg-lossless-decoder-js
+ * last, decoding as -1024 instead of -3024, because jpeg-lossless-decoder-js
  * 2.1.2 read the 0xFF introducing EOI as entropy coded data whenever the final
  * Huffman code ended on a byte boundary - which is what DCMTK writes for a
- * frame ending in a run of one value. Fixed upstream in
- * cornerstonejs/JPEGLosslessDecoderJS; the case is in the active list above.
+ * frame ending in a run of one value.
+ *
+ * The fix reaches this repository under a different name rather than through a
+ * version bump, which is the part worth knowing. The original package,
+ * rii-mango/jpeg-lossless-decoder-js, last published 2.1.2 in April 2024, and
+ * npm still gives that version as latest. The fix lives in the fork
+ * cornerstonejs/JPEGLosslessDecoderJS, published as
+ * @cornerstonejs/jpeg-lossless-decoder-js, which is what
+ * packages/dicomImageLoader now depends on. Upgrading the unscoped package
+ * would find nothing; the dependency had to be swapped.
  */
 const pendingTransferSyntaxes = {
   '1.2.840.10008.1.2.1.99': [
