@@ -81,6 +81,7 @@ import { pointInShapeCallback } from './pointInShapeCallback';
 import * as ECGUtilities from './ECGUtilities';
 import * as VideoUtilities from './VideoUtilities';
 import * as WSIUtilities from './WSIUtilities';
+import * as voxelGrid from './voxelGrid';
 // name spaces
 export * as planar from './planar';
 import * as windowLevel from './windowLevel';
@@ -257,6 +258,7 @@ export {
   ECGUtilities,
   VideoUtilities,
   WSIUtilities,
+  voxelGrid,
   deepEqual,
   jumpToSlice,
   scroll,

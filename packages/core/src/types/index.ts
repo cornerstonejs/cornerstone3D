@@ -155,6 +155,16 @@ import type {
   VoxelManagerForEachCallbackArguments,
   VoxelManagerForEachOptions,
 } from './IVoxelManager';
+import type {
+  VoxelGrid,
+  VoxelGridLimits,
+  VoxelGridReduction,
+  VoxelRepresentationId,
+} from './VoxelGrid';
+import type {
+  VoxelStatisticAccumulator,
+  VoxelStatisticDefinition,
+} from './VoxelStatistic';
 import type { IRLEVoxelMap, RLERun } from './IRLEVoxelMap';
 import type ImageLoadRequests from './ImageLoadRequests';
 import type { IBaseVolumeViewport } from './IBaseVolumeViewport';
@@ -177,6 +187,11 @@ import type {
   RenderBackendConstants,
   RenderBackendRegistry,
 } from './RenderBackendRegistry';
+import type {
+  VoxelStatistic,
+  VoxelStatisticConstants,
+  VoxelStatisticRegistry,
+} from './VoxelStatisticRegistry';
 
 export type * from './MetadataModuleTypes';
 export type * from './InstanceTypes';
@@ -330,6 +345,13 @@ export type {
   IVolumeVoxelManager,
   VoxelManagerForEachCallbackArguments,
   VoxelManagerForEachOptions,
+  VoxelGrid,
+  VoxelGridLimits,
+  VoxelGridReduction,
+  VoxelRepresentationId,
+  VoxelStatistic,
+  VoxelStatisticAccumulator,
+  VoxelStatisticDefinition,
   IRLEVoxelMap,
   RLERun,
   ViewportInput,
@@ -351,6 +373,8 @@ export type {
   EffectiveRenderBackend,
   RenderBackendRegistry,
   RenderBackendConstants,
+  VoxelStatisticRegistry,
+  VoxelStatisticConstants,
 };
 
 export { ActorRenderMode };

@@ -17,6 +17,7 @@ import * as VideoEnums from './VideoEnums';
 import MetadataModules from './MetadataModules';
 import { GenerateImageType } from './GenerateImageType';
 import VoxelManagerEnum from './VoxelManagerEnum';
+import VoxelStatistics, { type VoxelStatisticsMap } from './VoxelStatistics';
 import RenderingEngineModeEnum from './RenderingEngineModeEnum';
 import RenderBackends, {
   type RenderBackendValue,
@@ -43,6 +44,8 @@ export {
   MetadataModules,
   ImageQualityStatus,
   VoxelManagerEnum,
+  VoxelStatistics,
+  type VoxelStatisticsMap,
   GenerateImageType,
   RenderingEngineModeEnum,
   RenderBackends,
