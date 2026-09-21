@@ -210,6 +210,10 @@ import {
   registerRenderBackend,
   isRegisteredRenderBackend,
 } from './RenderingEngine/helpers/renderBackendRegistry';
+import {
+  registerVoxelStatistic,
+  isRegisteredVoxelStatistic,
+} from './utilities/voxelGrid/voxelStatistics';
 export type {
   ViewportType,
   ViewportTypeConstants,
@@ -232,6 +236,13 @@ export type {
   RenderBackendRenderModes,
   RenderSurface,
 } from './RenderingEngine/helpers/renderBackendRegistry';
+export type {
+  VoxelStatistic,
+  VoxelStatisticConstants,
+  VoxelStatisticRegistry,
+} from './types/VoxelStatisticRegistry';
+export type { VoxelStatisticsMap } from './enums/VoxelStatistics';
+export type { RegisterVoxelStatisticOptions } from './utilities/voxelGrid/voxelStatistics';
 
 export * from './loaders/decimatedVolumeLoader';
 
@@ -378,6 +389,8 @@ export {
   isRegisteredViewportType,
   registerRenderBackend,
   isRegisteredRenderBackend,
+  registerVoxelStatistic,
+  isRegisteredVoxelStatistic,
   //
   imageLoadPoolManager as requestPoolManager,
   imageRetrievalPoolManager,
