@@ -3,6 +3,11 @@ import type { ContourSegmentationData } from '../../types/ContourTypes';
 import type { SurfaceSegmentationData } from '../../types/SurfaceTypes';
 import { getSegmentation } from './getSegmentation';
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'stateManagement.segmentation.internalAddRepresentationData'
+);
 
 type SegmentationData =
   | LabelmapSegmentationData
@@ -43,7 +48,7 @@ function internalAddRepresentationData({
   }
 
   if (segmentation.representationData[type]) {
-    console.warn(
+    cs3dLogger.warn(
       `Representation data of type ${type} already exists for segmentation ${segmentationId}, overwriting it.`
     );
 

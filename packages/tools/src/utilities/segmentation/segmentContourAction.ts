@@ -10,6 +10,11 @@ import createBidirectionalToolData from './createBidirectionalToolData';
 import BidirectionalTool from '../../tools/annotation/BidirectionalTool';
 import { getSegmentations } from '../../stateManagement/segmentation/getSegmentations';
 import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.segmentation.segmentContourAction'
+);
 
 export type Segment = {
   segmentationId: string;
@@ -38,7 +43,7 @@ export default async function segmentContourAction(
   element: HTMLDivElement,
   configuration
 ) {
-  console.warn(
+  cs3dLogger.warn(
     'Deprecation Alert: There is a new getSegmentLargestBidirectional function that handles volume, stack and individual segment cases properly. This function is deprecated and will be removed in a future version.'
   );
   const { data: configurationData } = configuration;
@@ -141,7 +146,7 @@ export default async function segmentContourAction(
     });
     enabledElement.viewport.render();
   } else {
-    console.warn('No bidirectional found');
+    cs3dLogger.warn('No bidirectional found');
   }
 
   return newBidirectional;

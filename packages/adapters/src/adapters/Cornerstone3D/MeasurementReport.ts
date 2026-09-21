@@ -30,6 +30,11 @@ import {
   TEXT_ANNOTATION_POSITION,
 } from './constants';
 import LabelData from './LabelData';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.adaptersLog.getLogger(
+  'Cornerstone3D.MeasurementReport'
+);
 
 const { MetadataModules } = Enums;
 
@@ -854,13 +859,13 @@ export default class MeasurementReport {
           measurement.TrackingUniqueIdentifier = trackingUniqueIdentifierValue;
           measurement.predecessorImageId = predecessorImageId;
 
-          console.log(`=== ${toolAdapter.toolType} ===`);
-          console.log(measurement);
+          cs3dLogger.info(`=== ${toolAdapter.toolType} ===`);
+          cs3dLogger.info(measurement);
           measurementData[toolAdapter.toolType] ||= [];
           measurementData[toolAdapter.toolType].push(measurement);
         }
       } catch (e) {
-        console.warn('Unable to generate tool state for', measurementGroup, e);
+        cs3dLogger.warn('Unable to generate tool state for', measurementGroup, e);
       }
     });
 

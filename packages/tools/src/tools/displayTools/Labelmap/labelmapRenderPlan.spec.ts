@@ -18,6 +18,17 @@ jest.mock('@cornerstonejs/core', () => ({
     getVolume: jest.fn(),
   },
   utilities: {
+    logger: {
+      toolsLog: {
+        getLogger: jest.fn(() => ({
+          debug: jest.fn(),
+          info: jest.fn(),
+          warn: jest.fn(),
+          error: jest.fn(),
+          setLevel: jest.fn(),
+        })),
+      },
+    },
     uuidv4: jest.fn(() => 'generated-volume-id'),
     genericViewportDisplaySetMetadataProvider: {
       add: jest.fn(),
