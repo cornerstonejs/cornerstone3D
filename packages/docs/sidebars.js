@@ -139,6 +139,7 @@ module.exports = {
             'concepts/cornerstone-core/metadataProvider',
             'concepts/cornerstone-core/volumes',
             'concepts/cornerstone-core/voxelManager',
+            'concepts/cornerstone-core/compositeVoxelManager',
             'concepts/cornerstone-core/volumeLoader',
             'concepts/cornerstone-core/geometryLoader',
             'concepts/cornerstone-core/cache',
