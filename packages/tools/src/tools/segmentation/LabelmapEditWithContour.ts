@@ -504,7 +504,8 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
    *
    * The `ANNOTATION_COMPLETED` listener of `init` runs first, so
    * `applyContourStroke` has already replaced this annotation with the merged
-   * result. The conversion therefore selects the contours by segment.
+   * result. The conversion therefore selects the contours by segment, and the
+   * conversion gets the start point of the stroke from this annotation.
    *
    * @private
    */
@@ -533,6 +534,13 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
 
     if (polyline?.length >= 3 && segmentationData) {
       BrushTool.viewportContoursToLabelmap(viewport, {
+        // `annotation` is the stroke of the user, and `polyline[0]` of that
+        // stroke is the point where the user puts the cursor down. The
+        // conversion reads the labelmap at that point to decide between the
+        // add and the remove. The merged result has a different first point,
+        // because Clipper rebuilds the ring and chooses its own first point,
+        // and that point makes the decision arbitrary.
+        strokeStartPoint: polyline[0],
         // The result carries the freehand tool's name, so the segment is the
         // only reliable way to find it.
         annotationFilter: (annotations) =>

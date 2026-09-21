@@ -689,6 +689,7 @@ export default class LabelmapBaseTool extends BaseTool {
     options?: {
       removeContours?: boolean;
       annotationFilter?: (annotations: Annotations) => Annotations;
+      strokeStartPoint?: Types.Point3;
     }
   ) {
     const removeContours = options?.removeContours ?? true;
@@ -761,7 +762,16 @@ export default class LabelmapBaseTool extends BaseTool {
       );
 
       const activeIndex = getActiveSegmentIndex(segmentationId);
-      const startPoint = annotation.data.handles?.[0] || polyline[0];
+      // The point that the caller gives comes first. `polyline[0]` is not the
+      // point where the user starts the stroke, because a boolean operation
+      // rebuilds the contour and chooses its own first point, and
+      // `updateContourPolyline` can reverse the order of the points. The
+      // start point decides between the add and the remove below, so a caller
+      // that knows the point of the user must give that point.
+      const startPoint =
+        options?.strokeStartPoint ||
+        annotation.data.handles?.[0] ||
+        polyline[0];
       const startIndex = imageData.worldToIndex(startPoint).map(Math.round);
       const startValue = segmentationVoxels.getAtIJKPoint(startIndex) || 0;
       let hasZeroIndex = false;
