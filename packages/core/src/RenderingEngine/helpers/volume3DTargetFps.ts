@@ -15,11 +15,7 @@ import {
   type ResolvedLod,
 } from './fpsBudgetController';
 
-export {
-  VOLUME_3D_DEFAULT_TARGET_FPS,
-  VOLUME_3D_MIN_TARGET_FPS,
-  VOLUME_3D_MAX_TARGET_FPS,
-} from './fpsBudgetController';
+export { VOLUME_3D_DEFAULT_TARGET_FPS } from './fpsBudgetController';
 
 /** Fixed interactive sample-distance factor (legacy rotate ×2). */
 export const VOLUME_3D_DEFAULT_INTERACTIVE_SAMPLE_DISTANCE_FACTOR = 2;
