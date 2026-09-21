@@ -17,6 +17,11 @@ import { computeAndAddRepresentation } from '../../../utilities/segmentation/com
 import { getUniqueSegmentIndices } from '../../../utilities/segmentation/getUniqueSegmentIndices';
 import { getAnnotation } from '../../../stateManagement/annotation/annotationState';
 import { vec3 } from 'gl-matrix';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.displayTools.Contour.contourDisplay'
+);
 
 const polySegConversionInProgressForViewportId = new Map<string, boolean>();
 
@@ -85,7 +90,7 @@ async function render(
         () => polySeg.computeContourData(segmentationId, { viewport })
       );
     } catch (error) {
-      console.warn(
+      cs3dLogger.warn(
         'Unable to compute contour data for segmentationId',
         segmentationId,
         error
@@ -94,7 +99,7 @@ async function render(
 
     polySegConversionInProgressForViewportId.set(viewport.id, false);
   } else if (!contourData && !getPolySeg()) {
-    console.debug(
+    cs3dLogger.debug(
       `No contour data found for segmentationId ${segmentationId} and PolySeg add-on is not configured. Unable to convert from other representations to contour. Please register PolySeg using cornerstoneTools.init({ addons: { polySeg } }) to enable automatic conversion.`
     );
   }
