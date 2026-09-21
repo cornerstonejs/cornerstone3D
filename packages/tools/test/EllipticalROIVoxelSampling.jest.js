@@ -1,4 +1,5 @@
 import EllipticalROITool from '../src/tools/annotation/EllipticalROITool';
+import { MINIMUM_AREA_ANNOTATION_DIMENSION } from '../src/utilities/areaAnnotationShapeUtils';
 
 /**
  * Elliptical ROI selects its voxels through the shared area annotation
@@ -180,19 +181,55 @@ describe('Elliptical ROI voxel sampling', () => {
     }
   });
 
-  it('reports no voxels for an ellipse of no height', () => {
-    // The shape factory rejects a zero radius, and an exception inside the
-    // render loop would stop the whole viewport.
+  it.each([
+    ['zero minor radius', 8, 0],
+    [
+      'minor radius below the minimum',
+      8,
+      MINIMUM_AREA_ANNOTATION_DIMENSION / 2,
+    ],
+    ['minor radius at the minimum', 8, MINIMUM_AREA_ANNOTATION_DIMENSION],
+    ['major radius at the minimum', MINIMUM_AREA_ANNOTATION_DIMENSION, 4],
+  ])(
+    'reports no voxels for an ellipse with %s',
+    (_description, major, minor) => {
+      // Sampling must skip an ellipse when either semi-axis is too small to
+      // define stable geometry, without stopping the render loop.
+      const statsCallback = jest.fn();
+      const tool = createTool(statsCallback);
+      const annotation = createAnnotation();
+      annotation.data.handles.points = [
+        [20, 20 - minor, 0],
+        [20, 20 + minor, 0],
+        [20 - major, 20, 0],
+        [20 + major, 20, 0],
+      ];
+
+      expect(() =>
+        tool._calculateCachedStats(annotation, createViewport(), {}, {})
+      ).not.toThrow();
+
+      expect(statsCallback).not.toHaveBeenCalled();
+    }
+  );
+
+  it('samples a small ellipse whose radii are above the minimum', () => {
     const statsCallback = jest.fn();
-    const tool = createTool(statsCallback);
+    // The cutoff itself is covered by AreaAnnotationShapeUtils.jest.js. Keep
+    // this end-to-end fixture large enough for the shape solver's world-space
+    // arithmetic to resolve the centre voxel reliably.
+    const radius = 1e-3;
     const annotation = createAnnotation();
-    annotation.data.handles.points[0] = [20, 20, 0];
-    annotation.data.handles.points[1] = [20, 20, 0];
+    annotation.data.handles.points = [
+      [20, 20 - radius, 0],
+      [20, 20 + radius, 0],
+      [20 - radius, 20, 0],
+      [20 + radius, 20, 0],
+    ];
 
-    expect(() =>
-      tool._calculateCachedStats(annotation, createViewport(), {}, {})
-    ).not.toThrow();
+    sample(statsCallback, undefined, annotation);
 
-    expect(statsCallback).not.toHaveBeenCalled();
+    expect(statsCallback).toHaveBeenCalledTimes(1);
+    expect(statsCallback.mock.calls[0][0].pointIJK).toEqual([20, 20, 0]);
   });
 });

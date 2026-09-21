@@ -35,6 +35,7 @@ import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters'
 import getViewportICamera from '../../utilities/getViewportICamera';
 import getWorldWidthAndHeightFromTwoPoints from '../../utilities/planar/getWorldWidthAndHeightFromTwoPoints';
 import sampleAreaAnnotationVoxels from '../../utilities/sampleAreaAnnotationVoxels';
+import { hasValidAreaAnnotationDimensions } from '../../utilities/areaAnnotationShapeUtils';
 import { getCanvasEllipseCorners } from '../../utilities/math/ellipse';
 import {
   resetElementCursor,
@@ -1083,9 +1084,10 @@ class EllipticalROITool extends AnnotationTool {
           // bounds the ellipse.
           boundsMargin: Math.max(majorRadius, minorRadius),
           createShape: ({ volume, planePoint, viewPlaneNormal: normal }) => {
-            // An ellipse of no width or no height covers no voxel, and the
-            // factory rejects it.
-            if (!(majorRadius > 0) || !(minorRadius > 0)) {
+            // A zero or numerically negligible radius does not define a stable
+            // sampled ellipse. Skip the shape instead of passing degenerate
+            // geometry to the factory.
+            if (!hasValidAreaAnnotationDimensions(majorRadius, minorRadius)) {
               return null;
             }
 

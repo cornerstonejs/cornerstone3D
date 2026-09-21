@@ -64,6 +64,7 @@ import {
 } from '../../utilities/defaultGetTextLines';
 import getEllipseWorldCoordinates from '../../utilities/getEllipseWorldCoordinates';
 import sampleAreaAnnotationVoxels from '../../utilities/sampleAreaAnnotationVoxels';
+import { hasValidAreaAnnotationDimensions } from '../../utilities/areaAnnotationShapeUtils';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
 const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
@@ -1058,10 +1059,10 @@ class CircleROITool extends AnnotationTool {
           // what bounds the disc.
           boundsMargin: worldRadius,
           createShape: ({ volume, planePoint, viewPlaneNormal }) => {
-            // A circle of no radius covers no voxel, and the factory rejects
-            // it. A new annotation holds two identical handles until the first
-            // drag moves one of them.
-            if (!(worldRadius > 0)) {
+            // A zero or numerically negligible radius does not define a stable
+            // sampled circle. New annotations have coincident handles until
+            // the first drag, so skip the shape instead of calling the factory.
+            if (!hasValidAreaAnnotationDimensions(worldRadius)) {
               return null;
             }
 
