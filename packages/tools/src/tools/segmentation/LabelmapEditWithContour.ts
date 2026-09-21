@@ -18,6 +18,7 @@ import type { ContourSegmentationData } from '../../types/ContourTypes';
 import type {
   RepresentationsData,
   Segmentation,
+  SegmentationRepresentation,
 } from '../../types/SegmentationStateTypes';
 import { getSegmentationRepresentation } from '../../stateManagement/segmentation/getSegmentationRepresentation';
 import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
@@ -70,11 +71,24 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
 
   /**
    * What this tool created, and so what this tool may remove again: the
-   * segmentation ids given a `representationData.Contour`, and the viewport
-   * contour representations, keyed by `getViewportContourKey`.
+   * `representationData.Contour` objects that this tool added, keyed by
+   * segmentation id, and the viewport contour representations that this tool
+   * added, keyed by `getViewportContourKey`.
+   *
+   * Each record holds the object itself, and not only a flag. The application
+   * can remove a representation of this tool and add its own representation
+   * for the same viewport and the same segmentation. The clean up compares the
+   * record against the live object, so a record that no longer matches is
+   * stale, and this tool removes nothing that the application added.
    */
-  private static temporaryContourData = new Set<string>();
-  private static temporaryContourViewports = new Set<string>();
+  private static temporaryContourData = new Map<
+    string,
+    ContourSegmentationData
+  >();
+  private static temporaryContourViewports = new Map<
+    string,
+    SegmentationRepresentation
+  >();
 
   private static getViewportContourKey(
     viewportId: string,
@@ -165,7 +179,15 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
           return null;
         }
 
-        void this.checkContourSegmentation(viewportId, activeSeg);
+        // The contour representation is added asynchronously, and the draw
+        // loop cannot wait for it. A failure must still reach the log, and it
+        // must not leave a record of ownership behind.
+        this.checkContourSegmentation(viewportId, activeSeg).catch((error) => {
+          cs3dLogger.warn(
+            'Failed to add the temporary contour representation:',
+            error
+          );
+        });
       }
 
       return originalAddNewAnnotation(evt);
@@ -206,6 +228,12 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
    */
   protected cleanUpListeners() {
     LabelMapEditWithContourTool.annotationsToViewportMap.clear();
+
+    // A disabled tool draws no more contours, and it therefore acts on no
+    // record. The records hold live objects, so this tool drops the records
+    // and keeps no object alive.
+    LabelMapEditWithContourTool.temporaryContourData.clear();
+    LabelMapEditWithContourTool.temporaryContourViewports.clear();
 
     eventTarget.removeEventListener(
       Events.ANNOTATION_MODIFIED,
@@ -253,12 +281,19 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
     const segmentationId = activeSeg.segmentationId;
 
     if (!activeSeg.representationData.Contour) {
+      // `addRepresentationData` stores this object itself, so the record below
+      // identifies the contour data that this tool added.
+      const contourData: ContourSegmentationData = {};
+
       segmentation.addRepresentationData({
         segmentationId,
         type: SegmentationRepresentations.Contour,
-        data: {},
+        data: contourData,
       });
-      LabelMapEditWithContourTool.temporaryContourData.add(segmentationId);
+      LabelMapEditWithContourTool.temporaryContourData.set(
+        segmentationId,
+        contourData
+      );
     }
 
     const hasViewportContour = getSegmentationRepresentation(viewportId, {
@@ -267,18 +302,30 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
     });
 
     if (!hasViewportContour) {
-      LabelMapEditWithContourTool.temporaryContourViewports.add(
-        LabelMapEditWithContourTool.getViewportContourKey(
-          viewportId,
-          segmentationId
-        )
-      );
       await segmentation.addContourRepresentationToViewport(viewportId, [
         {
           segmentationId,
           type: SegmentationRepresentations.Contour,
         },
       ]);
+
+      // The record comes after the add, because a failed add creates no
+      // representation, and a record of it makes this tool remove the
+      // representation of the application later.
+      const addedRepresentation = getSegmentationRepresentation(viewportId, {
+        segmentationId,
+        type: SegmentationRepresentations.Contour,
+      });
+
+      if (addedRepresentation) {
+        LabelMapEditWithContourTool.temporaryContourViewports.set(
+          LabelMapEditWithContourTool.getViewportContourKey(
+            viewportId,
+            segmentationId
+          ),
+          addedRepresentation
+        );
+      }
     }
 
     return true;
@@ -397,12 +444,12 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
       viewport.id,
       segmentationId
     );
-    const ownsViewportContour =
-      LabelMapEditWithContourTool.temporaryContourViewports.has(viewportKey);
-    const ownsContourData =
-      LabelMapEditWithContourTool.temporaryContourData.has(segmentationId);
+    const recordedRepresentation =
+      LabelMapEditWithContourTool.temporaryContourViewports.get(viewportKey);
+    const recordedContourData =
+      LabelMapEditWithContourTool.temporaryContourData.get(segmentationId);
 
-    if (!ownsViewportContour && !ownsContourData) {
+    if (!recordedRepresentation && !recordedContourData) {
       return;
     }
 
@@ -410,6 +457,29 @@ class LabelMapEditWithContourTool extends PlanarFreehandContourSegmentationTool 
       segmentation.state.getSegmentation(segmentationId);
 
     const contourData = segmentationState?.representationData?.Contour;
+
+    // A record holds only what this tool added. The live object tells if that
+    // object is still in place, and a record that no longer matches is stale.
+    const liveRepresentation = getSegmentationRepresentation(viewport.id, {
+      segmentationId,
+      type: SegmentationRepresentations.Contour,
+    });
+    const ownsViewportContour =
+      !!recordedRepresentation && recordedRepresentation === liveRepresentation;
+    const ownsContourData =
+      !!recordedContourData && recordedContourData === contourData;
+
+    if (recordedRepresentation && !ownsViewportContour) {
+      LabelMapEditWithContourTool.temporaryContourViewports.delete(viewportKey);
+    }
+
+    if (recordedContourData && !ownsContourData) {
+      LabelMapEditWithContourTool.temporaryContourData.delete(segmentationId);
+    }
+
+    if (!ownsViewportContour && !ownsContourData) {
+      return;
+    }
 
     if (
       contourData &&

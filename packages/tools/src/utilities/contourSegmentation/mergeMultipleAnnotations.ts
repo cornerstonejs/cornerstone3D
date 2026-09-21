@@ -233,7 +233,10 @@ function createNewAnnotationFromPolyline(
     highlighted: true,
     invalidated: true,
     isLocked: false,
-    isVisible: undefined,
+    // `filterAnnotationsForDisplay` and `filterAnnotationsWithinSlice` both
+    // drop an annotation that has a falsy `isVisible`, so the new annotation
+    // must start visible.
+    isVisible: true,
     interpolationUID: baseAnnotation.interpolationUID,
     interpolationCompleted: baseAnnotation.interpolationCompleted,
   };
