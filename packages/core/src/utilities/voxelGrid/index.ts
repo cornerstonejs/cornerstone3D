@@ -43,6 +43,22 @@ export {
 } from './voxelStatistics';
 export { voxelGridKey, voxelGridsEqual } from './voxelGridKey';
 export {
+  gridIndexToWorld,
+  gridWorldToIndex,
+  mapIndexBetweenGrids,
+  mapIndexToNearestVoxel,
+  mapBoundsBetweenGrids,
+  gridContainsIndex,
+  gridCoversRegion,
+  cornersOfBounds,
+  boundsOfGrid,
+  boundsOfFrame,
+  intersectBounds,
+  volumeOfBounds,
+  sameBounds,
+  containsBounds,
+} from './voxelGridTransforms';
+export {
   voxelCountOfGrid,
   maxEdgeOfGrid,
   voxelGridWithinLimits,
