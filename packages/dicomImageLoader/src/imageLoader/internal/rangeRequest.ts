@@ -6,6 +6,10 @@ import type {
   LoaderXhrRequestPromise,
 } from '../../types';
 import getRetrieveValue from './getRetrieveValue';
+import {
+  DEFAULT_CHUNK_SIZE,
+  DEFAULT_INITIAL_CHUNK_SIZE,
+} from './retrieveDefaults';
 import extractMultipart from '../wadors/extractMultipart';
 import { getImageQualityStatus } from '../wadors/getImageQualityStatus';
 import type { CornerstoneWadoRsLoaderOptions } from '../wadors/loadImage';
@@ -13,26 +17,6 @@ import type { CornerstoneWadoRsLoaderOptions } from '../wadors/loadImage';
 const log = logging.loaderLog.getLogger('rangeRequest');
 
 type RangeRetrieveOptions = Types.RangeRetrieveOptions;
-
-/**
- * Bytes fetched by the first range, when the stage sets no initialChunkSize.
- *
- * 32k is enough of an HTJ2K codestream to decode a recognisable full
- * resolution image, and OpenJPH decodes the truncated remainder rather than
- * throwing, so there is no reason to buy a larger buffer before showing
- * something.
- */
-const DEFAULT_INITIAL_CHUNK_SIZE = 32768;
-
-/**
- * Bytes fetched by each range after the first, when the stage sets no
- * chunkSize.
- *
- * Larger than the initial range because by this point the image is already on
- * screen and the job is refining it: fetching the remainder in 32k steps would
- * mean many more requests and decodes for the same result.
- */
-const DEFAULT_CHUNK_SIZE = 131072;
 
 /**
  * Performs a range request to fetch part of an encoded image, typically
