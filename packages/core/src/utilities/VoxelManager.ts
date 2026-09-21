@@ -9,6 +9,7 @@ import type {
   IImage,
   RGB,
   CPUImageData,
+  IVolumeVoxelManager,
   IVoxelManager,
   IRLEVoxelMap,
   Point2,
@@ -44,8 +45,13 @@ type SampleableVoxelVolume = VoxelVolumeGeometry & {
 
 /**
  * This is a simple, standard interface to values associated with a voxel.
+ *
+ * The class declares `implements IVoxelManager<T>`, so the compiler checks that
+ * the class and the interface stay in agreement. `IVoxelManager` is the
+ * structural interface, and a composite voxel manager can implement it without
+ * a subclass of this class.
  */
-export default class VoxelManager<T> {
+export default class VoxelManager<T> implements IVoxelManager<T> {
   public modifiedSlices = new Set<number>();
   private boundsIJK = [
     [Infinity, -Infinity],
@@ -58,11 +64,17 @@ export default class VoxelManager<T> {
   public isInObject: (pointLPS, pointIJK) => boolean;
   public readonly dimensions: Point3;
   public readonly numberOfComponents: number;
+  // These four members are not methods. A factory installs each one on the
+  // instance after the constructor returns, and only some of the factories
+  // install them: `createScalarVolumeVoxelManager` and
+  // `createImageVoxelManager` install none of the four. Every one of the four
+  // is therefore OPTIONAL. `getRange` carried no `?` before, which promised a
+  // caller that the call was always safe while `getRange()` threw a TypeError
+  // on the instances of those two factories.
   public getCompleteScalarDataArray?: () => ArrayLike<number>;
   public setCompleteScalarDataArray?: (scalarData: ArrayLike<number>) => void;
   public invalidateCache?: () => void;
-
-  public getRange: () => [number, number];
+  public getRange?: () => [number, number];
   private scalarData = null as PixelDataTypedArray;
   // True only when `scalarData` is a cached expansion produced by
   // `getScalarData(true)` from `_getScalarData` (e.g. an RLE decode), as opposed
@@ -75,7 +87,10 @@ export default class VoxelManager<T> {
   // a limit on the number of slices to cache since it can grow indefinitely
   private _sliceDataCache = null as Map<string, PixelDataTypedArray>;
 
-  public readonly _id: string;
+  // The backing field of the `id` getter, and nothing else reads it, so it is
+  // private and it stays out of `IVoxelManager`. An implementer of the
+  // interface supplies `id` in whatever way suits it.
+  private readonly _id: string;
 
   points: Set<number>;
   width: number;
@@ -86,7 +101,9 @@ export default class VoxelManager<T> {
   _getScalarDataLength?: () => number;
   _getScalarData?: () => ArrayLike<number>;
   _updateScalarData?: (scalarData: ArrayLike<number>) => PixelDataTypedArray;
-  _getSliceData: (args: {
+  // No factory installs this member, and no code reads it, so it is optional
+  // for the same reason as the four members above.
+  _getSliceData?: (args: {
     sliceIndex: number;
     slicePlane: number;
   }) => PixelDataTypedArray;
@@ -1081,23 +1098,26 @@ export default class VoxelManager<T> {
     imageIds: string[];
     numberOfComponents: number;
     id?: string;
-  }): IVoxelManager<number> | IVoxelManager<RGB> {
+  }): IVolumeVoxelManager<number> | IVolumeVoxelManager<RGB> {
     const pixelsPerSlice = dimensions[0] * dimensions[1];
     const depth = dimensions[2];
+    // The slice voxel managers are typed as the CLASS and not as the interface,
+    // because `setCompleteScalarDataArray` below reads the private
+    // `scalarData` field of a slice voxel manager. Every image voxel manager is
+    // an instance of this class, so the cast at `resolveSliceVoxelManager`
+    // states a fact.
     const sliceVoxelManagers = new Array<
-      IVoxelManager<number> | IVoxelManager<RGB> | null | undefined
+      VoxelManager<number> | VoxelManager<RGB> | null | undefined
     >(depth);
     let lastSliceIndex = -1;
-    let lastSliceVoxelManager:
-      | IVoxelManager<number>
-      | IVoxelManager<RGB>
-      | null = null;
+    let lastSliceVoxelManager: VoxelManager<number> | VoxelManager<RGB> | null =
+      null;
     const warnedMissingImageIds = new Set<number>();
     const warnedMissingImages = new Set<string>();
 
     const resolveSliceVoxelManager = (
       sliceIndex: number
-    ): IVoxelManager<number> | IVoxelManager<RGB> | null => {
+    ): VoxelManager<number> | VoxelManager<RGB> | null => {
       if (sliceIndex < 0 || sliceIndex >= depth) {
         return null;
       }
@@ -1126,7 +1146,9 @@ export default class VoxelManager<T> {
         return null;
       }
 
-      const imageVoxelManager = image.voxelManager;
+      const imageVoxelManager = image.voxelManager as
+        | VoxelManager<number>
+        | VoxelManager<RGB>;
       sliceVoxelManagers[sliceIndex] = imageVoxelManager;
 
       return imageVoxelManager;
@@ -1366,7 +1388,19 @@ export default class VoxelManager<T> {
       ];
     };
 
-    return voxelManager as IVoxelManager<number> | IVoxelManager<RGB>;
+    // Every one of the four function-valued properties is installed above, so
+    // this factory returns the VOLUME interface, and a caller of one of the
+    // four needs no guard.
+    //
+    // The assertion goes through `unknown` for two reasons, and each one is a
+    // limit of the compiler and not a doubt about the code. First, the class
+    // declares the four properties as optional, because other factories install
+    // none of them, so the compiler cannot see the four assignments above.
+    // Second, the instance is a `VoxelManager<number | RGB>` and the result is
+    // a union of two voxel managers, one over `number` and one over `RGB`.
+    return voxelManager as unknown as
+      | IVolumeVoxelManager<number>
+      | IVolumeVoxelManager<RGB>;
   }
 
   /**
@@ -1424,6 +1458,16 @@ export default class VoxelManager<T> {
     });
   }
 
+  /**
+   * Creates a voxel manager over a set of dimension groups, and gives the
+   * values of the active dimension group.
+   *
+   * THE RESULT IS AN `IVoxelManager` AND NOT AN `IVolumeVoxelManager`. This
+   * factory installs `getRange` and `getCompleteScalarDataArray`, and it
+   * installs neither `setCompleteScalarDataArray` nor `invalidateCache`, so a
+   * call to one of those two throws a TypeError. A caller must guard the call,
+   * or somebody must add the two delegations to this factory in later work.
+   */
   public static createScalarDynamicVolumeVoxelManager({
     imageIdGroups,
     dimensions,
@@ -1708,9 +1752,9 @@ export default class VoxelManager<T> {
    * update to the underlying source voxel manager.
    */
   public static createHistoryVoxelManager<T>(
-    sourceVoxelManager: VoxelManager<T>,
+    sourceVoxelManager: IVoxelManager<T>,
     id?: string
-  ): VoxelManager<T> {
+  ): IVoxelManager<T> {
     const map = new Map<number, T>();
     const { dimensions } = sourceVoxelManager;
     const voxelManager = new VoxelManager(dimensions, {
@@ -1731,7 +1775,13 @@ export default class VoxelManager<T> {
       _id: id || 'createHistoryVoxelManager',
     });
     voxelManager.map = map;
-    voxelManager.scalarData = sourceVoxelManager.scalarData;
+    // The cast reaches the private backing store of the source. Every voxel
+    // manager is an instance of this class, and the assignment must copy the
+    // field itself: `getWritableScalarData()` hides a cached expansion, and
+    // this code copied a cached expansion before.
+    voxelManager.scalarData = (
+      sourceVoxelManager as VoxelManager<T>
+    ).scalarData;
     voxelManager.sourceVoxelManager = sourceVoxelManager;
     return voxelManager;
   }
@@ -1743,9 +1793,9 @@ export default class VoxelManager<T> {
    * update to the underlying source voxel manager.
    */
   public static createRLEHistoryVoxelManager<T>(
-    sourceVoxelManager: VoxelManager<T>,
+    sourceVoxelManager: IVoxelManager<T>,
     id?: string
-  ): VoxelManager<T> {
+  ): IVoxelManager<T> {
     const { dimensions } = sourceVoxelManager;
     const map = new RLEVoxelMap<T>(dimensions[0], dimensions[1], dimensions[2]);
     const voxelManager = new VoxelManager<T>(dimensions, {
@@ -1790,7 +1840,7 @@ export default class VoxelManager<T> {
     dimensions: Point3;
     planeFactory: (width: number, height: number) => T;
     id?: string;
-  }): VoxelManager<T> {
+  }): IVoxelManager<T> {
     const map = new Map<number, T>();
     const [width, height] = dimensions;
     const planeSize = width * height;
@@ -1833,7 +1883,7 @@ export default class VoxelManager<T> {
     id?: string;
     pixelDataConstructor?: new (length: number) => PixelDataTypedArray;
     defaultValue?: T;
-  }): VoxelManager<T> {
+  }): IVoxelManager<T> {
     const [width, height, depth] = dimensions;
     const map = new RLEVoxelMap<T>(width, height, depth);
 
@@ -1887,7 +1937,7 @@ export default class VoxelManager<T> {
     id?: string;
     pixelDataConstructor?: new (length: number) => PixelDataTypedArray;
     defaultValue?: T;
-  }): VoxelManager<T> {
+  }): IVoxelManager<T> {
     const [width, height] = dimensions;
     return VoxelManager.createRLEVolumeVoxelManager<T>({
       dimensions: [width, height, 1],
@@ -1933,8 +1983,6 @@ export default class VoxelManager<T> {
     // storing an RLE representation, which doesn't have an up front size.
     image.sizeInBytes = DEFAULT_RLE_SIZE;
   }
-
-  public static;
 }
 
 export type { VoxelManager };

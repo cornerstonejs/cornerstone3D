@@ -149,7 +149,12 @@ import type {
   PolyDataPointConfiguration,
 } from './IPointsManager';
 import type IImageFrame from './IImageFrame';
-import type { IVoxelManager } from './IVoxelManager';
+import type {
+  IVolumeVoxelManager,
+  IVoxelManager,
+  VoxelManagerForEachCallbackArguments,
+  VoxelManagerForEachOptions,
+} from './IVoxelManager';
 import type { IRLEVoxelMap, RLERun } from './IRLEVoxelMap';
 import type ImageLoadRequests from './ImageLoadRequests';
 import type { IBaseVolumeViewport } from './IBaseVolumeViewport';
@@ -322,6 +327,9 @@ export type {
   IImageFrame,
   LocalVolumeOptions,
   IVoxelManager,
+  IVolumeVoxelManager,
+  VoxelManagerForEachCallbackArguments,
+  VoxelManagerForEachOptions,
   IRLEVoxelMap,
   RLERun,
   ViewportInput,
