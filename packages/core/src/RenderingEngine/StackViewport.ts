@@ -494,7 +494,7 @@ class StackViewport extends Viewport {
 
       return renderPasses.length ? renderPasses : null;
     } catch (e) {
-      console.warn('Failed to create custom render passes:', e);
+      log.warn('Failed to create custom render passes:', e);
       return null;
     }
   };
@@ -2443,7 +2443,7 @@ class StackViewport extends Viewport {
 
   private _loadAndDisplayImageGPU(imageId: string, imageIdIndex: number) {
     if (!imageId) {
-      console.warn('No image id set yet to load');
+      log.warn('No image id set yet to load');
       return;
     }
     const eventDetail: EventTypes.PreStackNewImageEventDetail = {

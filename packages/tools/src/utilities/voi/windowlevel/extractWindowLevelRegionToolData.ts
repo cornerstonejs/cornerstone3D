@@ -5,6 +5,11 @@ import {
   StackViewport,
   VolumeViewport,
 } from '@cornerstonejs/core';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.voi.windowlevel.extractWindowLevelRegionToolData'
+);
 
 function extractWindowLevelRegionToolData(viewport: Types.IViewport) {
   if (viewport instanceof VolumeViewport) {
@@ -73,7 +78,7 @@ function extractImageDataGeneric(viewport: Types.IGenericViewport) {
     // interaction. Full reformatted-slice region window-leveling for native
     // volume viewports needs slice-view plumbing on the generic viewport and is
     // tracked as a follow-up.
-    console.warn(
+    cs3dLogger.warn(
       'WindowLevelRegionTool: the current native viewport slice has no backing image (reformatted/oblique volume plane); skipping region window level.'
     );
     return undefined;
