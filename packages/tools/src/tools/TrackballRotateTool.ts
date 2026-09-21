@@ -19,16 +19,15 @@ import {
   applyViewportPresentation,
   getViewportPresentation,
 } from '../utilities/viewportPresentation';
+import armVolume3DInteraction from '../utilities/armVolume3DInteraction';
 
 class TrackballRotateTool extends BaseTool {
   static toolName;
   touchDragCallback: (evt: EventTypes.InteractionEventType) => void;
   mouseDragCallback: (evt: EventTypes.InteractionEventType) => void;
-  cleanUp: () => void;
   _resizeObservers = new Map();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   _viewportAddedListener: (evt: any) => void;
-  _hasResolutionChanged = false;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -36,7 +35,6 @@ class TrackballRotateTool extends BaseTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         rotateIncrementDegrees: 2,
-        rotateSampleDistanceFactor: 2, // Factor to increase sample distance (lower resolution) when rotating
       },
     }
   ) {
@@ -46,54 +44,9 @@ class TrackballRotateTool extends BaseTool {
   }
 
   preMouseDownCallback = (evt: EventTypes.InteractionEventType) => {
-    const eventDetail = evt.detail;
-    const { element } = eventDetail;
-    const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
-    const actorEntry = viewport.getDefaultActor();
-    const actor = actorEntry.actor as Types.VolumeActor;
-    const mapper = actor.getMapper();
-
-    const hasSampleDistance =
-      'getSampleDistance' in mapper || 'getCurrentSampleDistance' in mapper;
-
-    if (!hasSampleDistance) {
-      return true;
-    }
-
-    const originalSampleDistance = mapper.getSampleDistance();
-
-    if (!this._hasResolutionChanged) {
-      const { rotateSampleDistanceFactor } = this.configuration;
-      mapper.setSampleDistance(
-        originalSampleDistance * rotateSampleDistanceFactor
-      );
-      this._hasResolutionChanged = true;
-
-      if (this.cleanUp !== null) {
-        // Clean up previous event listener
-        document.removeEventListener('mouseup', this.cleanUp);
-        document.removeEventListener('touchend', this.cleanUp);
-        document.removeEventListener('touchcancel', this.cleanUp);
-      }
-
-      this.cleanUp = () => {
-        // All listener types are armed below; whichever fires first must
-        // clear the others so no stale once-listener lingers on document.
-        document.removeEventListener('mouseup', this.cleanUp);
-        document.removeEventListener('touchend', this.cleanUp);
-        document.removeEventListener('touchcancel', this.cleanUp);
-        mapper.setSampleDistance(originalSampleDistance);
-        viewport.render();
-        this._hasResolutionChanged = false;
-      };
-
-      document.addEventListener('mouseup', this.cleanUp, { once: true });
-      document.addEventListener('touchend', this.cleanUp, { once: true });
-      // OS-interrupted gestures (incoming call, notification shade) end in
-      // touchcancel, never touchend.
-      document.addEventListener('touchcancel', this.cleanUp, { once: true });
-    }
+    const { element } = evt.detail;
+    // Viewport policy owns interactive LOD (fixed ×2 or Target FPS).
+    armVolume3DInteraction(element);
     return true;
   };
 

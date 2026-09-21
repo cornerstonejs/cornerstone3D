@@ -10,6 +10,7 @@ import { Enums, getEnabledElement } from '@cornerstonejs/core';
 import { BaseTool } from './base';
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
 import { Events } from '../enums';
+import armVolume3DInteraction from '../utilities/armVolume3DInteraction';
 
 /**
  * ZoomTool tool manipulates the camera zoom applied to a viewport. It
@@ -59,6 +60,7 @@ class ZoomTool extends BaseTool {
   preMouseDownCallback = (evt: EventTypes.InteractionEventType): boolean => {
     const eventData = evt.detail;
     const { element, currentPoints } = eventData;
+    armVolume3DInteraction(element);
     const worldPos = currentPoints.world;
     const enabledElement = getEnabledElement(element);
     const viewport = enabledElement.viewport;

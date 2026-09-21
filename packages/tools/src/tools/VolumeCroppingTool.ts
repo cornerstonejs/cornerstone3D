@@ -47,6 +47,7 @@ import {
   getViewportPresentation,
 } from '../utilities/viewportPresentation';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+import armVolume3DInteraction from '../utilities/armVolume3DInteraction';
 
 const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
   'tools.VolumeCroppingTool'
@@ -132,7 +133,6 @@ const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
  * @property {Function} cleanUp - Cleanup function for resetting tool state after interactions
  * @property {Map} _resizeObservers - Map of ResizeObserver instances for viewport resize handling
  * @property {Function} _viewportAddedListener - Event listener for new viewport additions
- * @property {boolean} _hasResolutionChanged - Flag tracking if rendering resolution has been modified during interaction
  * @property {ClippingPlane[]} originalClippingPlanes - Array of clipping plane objects with origin and normal vectors
  * @property {number|null} draggingSphereIndex - Index of currently dragged sphere, null when not dragging
  * @property {number[]|null} cornerDragOffset - 3D offset vector for corner sphere dragging [dx, dy, dz]
@@ -172,10 +172,8 @@ const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
  * @property {number} sphereRadius - Radius of manipulation spheres in world units (default: 8)
  * @property {number} grabSpherePixelDistance - Pixel distance threshold for sphere selection (default: 20)
  * @property {number} rotateIncrementDegrees - Rotation increment for camera rotation (default: 2)
- * @property {number} rotateSampleDistanceFactor - Sample distance multiplier during rotation for performance (default: 2)
  * @property {number} rotateClippingPlanesIncrementDegrees - Rotation increment for clipping planes rotation (default: 5)
- *
- * @events
+ * * @events
  * @event VOLUMECROPPING_TOOL_CHANGED - Fired when sphere positions change or clipping planes are updated.
  *   Event detail includes:
  *   - originalClippingPlanes: ClippingPlane[] - Array of 6 clipping planes [XMIN, XMAX, YMIN, YMAX, ZMIN, ZMAX]
@@ -207,7 +205,6 @@ class VolumeCroppingTool extends BaseTool {
   cleanUp: () => void;
   _resizeObservers = new Map();
   _viewportAddedListener: (evt) => void;
-  _hasResolutionChanged = false;
   originalClippingPlanes: ClippingPlane[] = [];
   draggingSphereIndex: number | null = null;
   rotatePlanesOnDrag: boolean = false; // If true, dragging rotates clipping planes instead of camera
@@ -262,7 +259,6 @@ class VolumeCroppingTool extends BaseTool {
         sphereRadius: 8,
         grabSpherePixelDistance: 20, //pixels threshold for closeness to the sphere being grabbed
         rotateIncrementDegrees: 2,
-        rotateSampleDistanceFactor: 2, // Factor to increase sample distance (lower resolution) when rotating
         rotateClippingPlanesIncrementDegrees: 5, // Rotation increment for clipping planes (higher = faster rotation)
       },
     }
@@ -406,7 +402,6 @@ class VolumeCroppingTool extends BaseTool {
     if (!actor) {
       return false;
     }
-    const mapper = actor.getMapper();
 
     const mouseCanvas: [number, number] = [
       evt.detail.currentPoints.canvas[0],
@@ -458,68 +453,30 @@ class VolumeCroppingTool extends BaseTool {
       }
     }
 
-    const hasSampleDistance =
-      'getSampleDistance' in mapper || 'getCurrentSampleDistance' in mapper;
+    // Rotate path: viewport policy owns interactive LOD (fixed ×2 or Target FPS).
+    armVolume3DInteraction(element);
 
-    if (!hasSampleDistance) {
-      return true;
+    if (this.cleanUp !== null) {
+      document.removeEventListener('mouseup', this.cleanUp);
+      document.removeEventListener('touchend', this.cleanUp);
+      document.removeEventListener('touchcancel', this.cleanUp);
     }
 
-    const originalSampleDistance = mapper.getSampleDistance();
+    this.cleanUp = () => {
+      document.removeEventListener('mouseup', this.cleanUp);
+      document.removeEventListener('touchend', this.cleanUp);
+      document.removeEventListener('touchcancel', this.cleanUp);
 
-    if (!this._hasResolutionChanged) {
-      const { rotateSampleDistanceFactor } = this.configuration;
-      mapper.setSampleDistance(
-        originalSampleDistance * rotateSampleDistanceFactor
-      );
-      this._hasResolutionChanged = true;
+      (evt.target as HTMLElement).style.cursor = '';
+      this.draggingSphereIndex = null;
+      this.cornerDragOffset = null;
+      this.faceDragOffset = null;
+      this.suppressPlaneRotationForCurrentDrag = false;
+    };
 
-      if (this.cleanUp !== null) {
-        // Clean up previous event listener
-        document.removeEventListener('mouseup', this.cleanUp);
-        document.removeEventListener('touchend', this.cleanUp);
-        document.removeEventListener('touchcancel', this.cleanUp);
-      }
-
-      this.cleanUp = () => {
-        // All listener types are armed below; whichever fires first must
-        // clear the others so no stale once-listener lingers on document.
-        document.removeEventListener('mouseup', this.cleanUp);
-        document.removeEventListener('touchend', this.cleanUp);
-        document.removeEventListener('touchcancel', this.cleanUp);
-        mapper.setSampleDistance(originalSampleDistance);
-
-        // Reset cursor style
-        (evt.target as HTMLElement).style.cursor = '';
-        if (this.draggingSphereIndex !== null) {
-          const sphereState = this.sphereStates[this.draggingSphereIndex];
-          const [viewport3D] = this._getViewportsInfo();
-          const renderingEngine = getRenderingEngine(
-            viewport3D.renderingEngineId
-          );
-          const viewport = renderingEngine.getViewport(viewport3D.viewportId);
-
-          if (sphereState.isCorner) {
-            this._updateCornerSpheres();
-            this._updateFaceSpheresFromCorners();
-            this._updateClippingPlanesFromFaceSpheres(viewport);
-          }
-        }
-        this.draggingSphereIndex = null;
-        this.cornerDragOffset = null;
-        this.faceDragOffset = null;
-        this.suppressPlaneRotationForCurrentDrag = false;
-
-        viewport.render();
-        this._hasResolutionChanged = false;
-      };
-
-      document.addEventListener('mouseup', this.cleanUp, { once: true });
-      document.addEventListener('touchend', this.cleanUp, { once: true });
-      // OS-interrupted gestures (incoming call, notification shade) end in
-      // touchcancel, never touchend.
-      document.addEventListener('touchcancel', this.cleanUp, { once: true });
-    }
+    document.addEventListener('mouseup', this.cleanUp, { once: true });
+    document.addEventListener('touchend', this.cleanUp, { once: true });
+    document.addEventListener('touchcancel', this.cleanUp, { once: true });
 
     return true;
   };
