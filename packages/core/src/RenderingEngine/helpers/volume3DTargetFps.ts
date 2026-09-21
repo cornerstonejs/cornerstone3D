@@ -428,6 +428,12 @@ export function beginVolume3DInteraction(viewportId: string): boolean {
     return false;
   }
 
+  if (entry.interacting) {
+    // Already armed for this interaction. Re-capturing the
+    // baseline here would store a degraded sample distance.
+    return true;
+  }
+
   entry.baselineMappers = captureBaselineMappers(viewport);
   if (!entry.baselineMappers.length) {
     return false;
