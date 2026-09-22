@@ -201,13 +201,23 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     const counts = new Float64Array(width * height);
     let read = 0;
 
-    for (let k = firstK; k < lastK; k++) {
-      let frame;
+    const imageIds = volume.imageIds;
 
-      try {
-        frame = voxelManager.getSliceData({ sliceIndex: k, slicePlane: 2 });
-      } catch (error) {
-        frame = null;
+    for (let k = firstK; k < lastK; k++) {
+      // The scalar data of the cached image is the frame itself, and reading it
+      // costs nothing. `getSliceData` of a volume voxel manager composes the
+      // slice one voxel at a time, which a profile showed as the cost of this
+      // fill, so it serves only as the fallback.
+      let frame = imageIds?.[k]
+        ? cache.getImage(imageIds[k])?.voxelManager?.getScalarData()
+        : undefined;
+
+      if (!frame) {
+        try {
+          frame = voxelManager.getSliceData({ sliceIndex: k, slicePlane: 2 });
+        } catch (error) {
+          frame = null;
+        }
       }
 
       if (!frame || frame.length < sourceWidth * sourceHeight) {
