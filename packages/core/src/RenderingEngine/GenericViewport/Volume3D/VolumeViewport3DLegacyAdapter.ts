@@ -23,6 +23,16 @@ import type {
 
 class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
   private readonly managedDataIds = new Set<string>();
+  /**
+   * The data sets that a mount is about to add again.
+   *
+   * `setDisplaySets` removes every bound data set before it adds the new ones,
+   * and this adapter forgets the registration of a data set that it removes. A
+   * mount of the same volume therefore wiped the registration that it had just
+   * written, and the data provider then found nothing. These ids keep their
+   * registration for the length of the mount.
+   */
+  private readonly remountingDataIds = new Set<string>();
   private readonly volumeDataIds = new Map<string, string>();
   private readonly legacyProperties = new Map<
     string,
@@ -256,6 +266,7 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
 
         genericViewportDisplaySetMetadataProvider.add(dataId, dataSet);
         this.managedDataIds.add(dataId);
+        this.remountingDataIds.add(dataId);
         this.volumeDataIds.set(volumeInput.volumeId, dataId);
         dataIds.push(dataId);
       }
@@ -292,6 +303,15 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
         }
       });
 
+      if (replaceExisting) {
+        // A legacy volume viewport resets its camera whenever it sets its
+        // actors, through `addActors(actors, { resetCamera: true })`. Nothing
+        // did so here, so the camera kept the default of a new vtk camera and
+        // pointed away from the volume, which drew an empty viewport. The reset
+        // runs after the mount, because a reset before it has no actor to fit.
+        this.resetCamera();
+      }
+
       if (!suppressEvents) {
         triggerEvent(this.element, Events.VOLUME_VIEWPORT_NEW_VOLUME, {
           viewportId: this.id,
@@ -299,11 +319,15 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
         });
       }
     } catch (error) {
+      // The mount failed, so these data sets really do go away.
       dataIds.forEach((dataId) => {
+        this.remountingDataIds.delete(dataId);
         this.forgetData(dataId);
       });
 
       throw error;
+    } finally {
+      dataIds.forEach((dataId) => this.remountingDataIds.delete(dataId));
     }
   }
 
@@ -418,6 +442,11 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
   }
 
   private forgetData(dataId: string): void {
+    if (this.remountingDataIds.has(dataId)) {
+      // A mount is adding this data set again, so its registration stays.
+      return;
+    }
+
     if (!this.managedDataIds.delete(dataId)) {
       return;
     }

@@ -75,7 +75,22 @@ const seriesOptions = {
     wadoRsRoot:
       getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   },
-  'DTI 3720 images of 128 x 128': {
+  // A real 3D volume of 2464 images, each of 512 x 512, with one image at each
+  // position. The k axis exceeds the limit of 2048 of every known device, so a
+  // reduction of that one axis applies, and nothing is interleaved: a streak in
+  // this series comes from the code and not from the acquisition.
+  'CT body 2464 images of 512 x 512 (local)': {
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.99.1071.24993177073256607564948872275593',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.99.1071.13277129293167305892649949655853',
+    wadoRsRoot:
+      getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+  },
+  // 3720 images at 40 positions: 93 acquisitions of each slice. A reduction of
+  // the k axis mixes acquisitions, so a sagittal or a coronal view of it bands
+  // whatever the code does.
+  'DTI 3720 images of 128 x 128 (4D, 40 positions)': {
     StudyInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.191696062987463500085282581898315738844',
     SeriesInstanceUID:
@@ -311,9 +326,11 @@ const configHtj2kMixed = {
  */
 async function run() {
   // Init Cornerstone and related libraries
-  // The render strategies live on the generic viewports, so the reduction that
-  // the GPU class forces is visible only when they are on.
-  await initDemo({ core: { rendering: { useGenericViewport: true } } });
+  // The reduction that the GPU class forces is visible on a legacy viewport and
+  // on a generic viewport, because the choice of a strategy lives in the actor
+  // helpers that both of them use. Add `?type=next` to the address to draw
+  // through the generic viewports and their render paths.
+  await initDemo();
 
   const toolGroupId = 'TOOL_GROUP_ID';
 
