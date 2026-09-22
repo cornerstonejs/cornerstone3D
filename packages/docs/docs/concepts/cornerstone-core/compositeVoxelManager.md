@@ -239,6 +239,10 @@ already holds **replaces** that representation.
 
 ### What the record holds
 
+A record answers **what the data is**, and a separate pure function answers **what one reader gets
+from it**. The record is a fact about the data, so a caller can cache a record. A verdict belongs to
+a pair — the data, and the reader that uses it — so a caller must not cache a verdict.
+
 ```ts
 const record = composite.getRegionQuality(representation, region);
 // { grid, lowest, highest, voxels, missing, deliveries, exact }
@@ -296,6 +300,82 @@ voxels, so:
 maps the region back into the source and reads that copy. The copy is frozen, so the record never
 states more than the data that the derivation really read. A later derivation from a better source
 replaces the data and the copy at the same time.
+
+### The verdict of one reader
+
+```ts
+const record = composite.getQuality({ region, ceiling: [2, 2, 2] });
+const verdict = utilities.voxelGrid.compareVoxelQuality(record, {
+  displaySpacing: [4, 4, 4],
+});
+// { lossless: true, causes: [], magnitude: 0.5, record }
+```
+
+`compareVoxelQuality` is **pure**. A view is lossless when each of these holds:
+
+| Cause         | The reader sees a loss when                                                     |
+| ------------- | ------------------------------------------------------------------------------- |
+| `resolution`  | the spacing of the data is coarser than one display pixel of that reader        |
+| `aliasing`    | the reduction that produced the data folds the high frequencies into the signal |
+| `missingData` | more of the region is missing than the reader accepts                           |
+| `quality`     | the comparable summary is below the floor that the reader states                |
+
+`displaySpacing` is the distance in world units that **one display pixel** covers. A reader that
+states nothing there asks for the data at its own spacing, and the resolution then makes no view
+lossy. `magnitude` says how much coarser the data is than one display pixel, on the axis where the
+difference is largest.
+
+**Two viewports over one volume hold one record and a different verdict at one moment, and both
+verdicts are correct.** A 3D viewport that draws the whole volume small reports `lossless` from the
+reduced data, while an MPR viewport at a high magnification reports `resolution` from the same
+volume. MR-U-5 requires the first of those two: a viewport that shows reduced data where the
+reduction is not visible must not warn the user.
+
+### How the data reached its spacing, and where it came from
+
+The record carries the two separately, because they answer different questions:
+
+- **`reduction`** — `Enums.VoxelReductions.None`, `.BoxAverage` or `.Decimation`. A box average and
+  a decimation at one spacing have a **different loss**: a decimation folds the high spatial
+  frequencies into the signal, so no magnification removes that error and a view of it is never
+  lossless. A box average is lossless at a display resolution that its spacing can carry.
+- **`source`** — `Enums.VoxelDataSources.ServerLevel`, `.ClientDerived`, `.DecoderSubResolution` or
+  `.DirectLoad`. The source carries no rule. A reader that reports the fidelity to a user names it.
+
+A loader states both when the data arrives:
+
+```ts
+composite.acceptData({
+  grid,
+  voxelManager,
+  reduction: Enums.VoxelReductions.Decimation,
+  source: Enums.VoxelDataSources.ServerLevel,
+});
+```
+
+An extension adds a kind of a reduction in the same way as a statistic, and it states the one
+property that a verdict reads:
+
+```ts
+registerVoxelReduction({
+  name: 'WAVELET',
+  reduction: 'myOrg:wavelet',
+  aliases: false,
+});
+```
+
+**A kind that nothing registered counts as a kind that aliases**, so an unknown production of the
+data never gives a verdict of "lossless".
+
+### The comparable summary
+
+`record.status` is an `ImageQualityStatus`, and the code **derives** it from the record with
+`imageQualityStatusOfRecord`. Every existing `minQuality` floor and every existing guard against a
+regression of the quality reads that one number, so those call sites keep working. The record holds
+the facts, and the summary holds the number that a floor can compare.
+
+The summary takes the lowest quality of the region, it falls to a replicate while data is missing,
+and it never states the full resolution for a reduction that aliases.
 
 ## The arithmetic behind the composite
 

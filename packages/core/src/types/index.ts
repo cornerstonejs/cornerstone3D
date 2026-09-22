@@ -192,6 +192,22 @@ import type {
   VoxelStatisticConstants,
   VoxelStatisticRegistry,
 } from './VoxelStatisticRegistry';
+import type {
+  VoxelDataSource,
+  VoxelDataSourceConstants,
+  VoxelDataSourceRegistry,
+  VoxelReduction,
+  VoxelReductionConstants,
+  VoxelReductionRegistry,
+} from './VoxelQualityRegistry';
+import type {
+  DeliveredRegion,
+  VoxelQualityCause,
+  VoxelQualityRecord,
+  VoxelQualityRequirement,
+  VoxelQualityVerdict,
+  VoxelReductionDefinition,
+} from './VoxelQuality';
 
 export type * from './MetadataModuleTypes';
 export type * from './InstanceTypes';
@@ -375,6 +391,18 @@ export type {
   RenderBackendConstants,
   VoxelStatisticRegistry,
   VoxelStatisticConstants,
+  VoxelReduction,
+  VoxelReductionRegistry,
+  VoxelReductionConstants,
+  VoxelReductionDefinition,
+  VoxelDataSource,
+  VoxelDataSourceRegistry,
+  VoxelDataSourceConstants,
+  DeliveredRegion,
+  VoxelQualityRecord,
+  VoxelQualityRequirement,
+  VoxelQualityVerdict,
+  VoxelQualityCause,
 };
 
 export { ActorRenderMode };

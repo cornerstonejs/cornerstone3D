@@ -1,13 +1,19 @@
 import ImageQualityStatus from '../enums/ImageQualityStatus';
+import VoxelDataSources from '../enums/VoxelDataSources';
+import VoxelReductions from '../enums/VoxelReductions';
 import VoxelStatistics from '../enums/VoxelStatistics';
 import type {
   BoundsIJK,
+  DeliveredRegion,
   IVoxelManager,
   PixelDataTypedArray,
   Point3,
+  VoxelDataSource,
   VoxelGrid,
   VoxelGridReduction,
   VoxelManagerForEachOptions,
+  VoxelQualityRecord,
+  VoxelReduction,
   VoxelStatistic,
 } from '../types';
 import type { PointInShape } from './pointInShapeCallback';
@@ -18,6 +24,7 @@ import {
   containsBounds,
   deriveBoxAverageGrid,
   gridCoversRegion,
+  imageQualityStatusOfRecord,
   intersectBounds,
   isDefaultSelectionStatistic,
   mapBoundsBetweenGrids,
@@ -80,6 +87,22 @@ export type VoxelRepresentation<T> = {
    */
   quality?: ImageQualityStatus;
   /**
+   * HOW the data of this representation reached its spacing. `none` by default,
+   * which is a representation that holds every voxel of its own grid.
+   *
+   * The kind of the reduction is not the source of the data. A box average and
+   * a decimation at one spacing have a different loss, and a verdict reads the
+   * kind to decide whether a display resolution can carry the data.
+   */
+  reduction?: VoxelReduction;
+  /**
+   * WHERE the data of this representation came from: a level of a server store,
+   * a reduction that this client computed, a sub-resolution decode, or a direct
+   * load. The source carries no rule, and a reader that reports the fidelity to
+   * a user names it.
+   */
+  source?: VoxelDataSource;
+  /**
    * THE RECORD OF THE DATA THAT PRODUCED A DERIVED REPRESENTATION, frozen at
    * the moment of the derivation, in the index space of that source.
    *
@@ -101,50 +124,13 @@ export type VoxelRepresentation<T> = {
   };
 };
 
-/** One delivery of a loader, and the quality of the data that it carried. */
-export type DeliveredRegion = {
-  /**
-   * The region that the delivery covered, in the index space of the
-   * representation that holds it, as `[[minI, maxI], [minJ, maxJ], [minK,
-   * maxK]]`.
-   */
-  bounds: BoundsIJK;
-  /** The quality of the data of that region. */
-  quality: ImageQualityStatus;
-};
+export type { DeliveredRegion, VoxelQualityRecord };
 
 /**
- * What a region of one representation holds, as an ABSOLUTE record. THE RECORD
- * STATES NO VERDICT: a reader compares the record against its own requirement,
- * and two viewports over one volume can therefore reach a different answer from
- * one record. Commit 4 of this work adds the spacing, the kind of the reduction
- * and the source of the data to this record, and it adds the pure function that
- * produces the verdict.
+ * The absolute record of a region. This is the name that this file used before
+ * the record moved to `types/VoxelQuality.ts`, and it stays as an alias.
  */
-export type RegionQuality = {
-  /** The grid that this record describes. */
-  grid: VoxelGrid;
-  /** The lowest quality among the deliveries that meet the region. */
-  lowest: ImageQualityStatus;
-  /** The highest quality among the deliveries that meet the region. */
-  highest: ImageQualityStatus;
-  /** The number of voxels of this representation that the region covers. */
-  voxels: number;
-  /** The number of those voxels that no delivery has covered yet. */
-  missing: number;
-  /** The number of deliveries that meet the region. */
-  deliveries: number;
-  /**
-   * Whether `missing` is exact. A record that is not exact NEVER STATES LESS
-   * THAN WHAT IS MISSING, so a reader that trusts the record errs towards "the
-   * data is not complete", and never towards a wrong statement of completeness.
-   *
-   * Two cases give an estimate: a derived representation, whose voxel maps to a
-   * box of source voxels and not to one source voxel, and a set of deliveries
-   * whose edges are too many to cut exactly.
-   */
-  exact: boolean;
-};
+export type RegionQuality = VoxelQualityRecord;
 
 /** The three inputs of the selection rule. */
 export type VoxelRepresentationSelector = {
@@ -197,6 +183,13 @@ export type CreateVoxelRepresentationOptions = {
   statistic?: VoxelStatistic;
   /** Rounds each value. `true` by default, for a store of whole numbers. */
   round?: boolean;
+  /**
+   * The kind of the reduction that this derivation performs. A box reduction by
+   * default, which does not alias.
+   */
+  reduction?: VoxelReduction;
+  /** The source of the data. A reduction of this client by default. */
+  source?: VoxelDataSource;
 };
 
 /** What the deliveries of one region cover, and at which quality. */
@@ -354,6 +347,20 @@ function coverageOfRegion(
   }
 
   return coverage;
+}
+
+/**
+ * Derives the comparable summary of a record, and gives the record back.
+ *
+ * `ImageQualityStatus` stays as the comparable summary, and every existing
+ * `minQuality` floor reads it. The code derives the summary from the record, so
+ * the record holds the facts and the summary holds one number that a floor can
+ * compare.
+ */
+function withStatus(record: VoxelQualityRecord): VoxelQualityRecord {
+  record.status = imageQualityStatusOfRecord(record);
+
+  return record;
 }
 
 /** The volume of one voxel, which orders the resolutions. */
@@ -565,13 +572,15 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     sourceDimensions,
     statistic = VoxelStatistics.Average,
     round = true,
+    reduction: kind,
+    source = VoxelDataSources.ClientDerived,
   }: CreateVoxelRepresentationOptions): VoxelRepresentation<T> {
-    const source = sourceGrid
+    const sourceRepresentation = sourceGrid
       ? this.getRepresentation(sourceGrid, statistic) ||
         this.getRepresentation(sourceGrid, this.primaryRepresentation.statistic)
       : this.selectRepresentation({});
 
-    if (!source) {
+    if (!sourceRepresentation) {
       throw new Error(
         'createRepresentation: the composite holds no source for the derivation'
       );
@@ -585,29 +594,43 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     // A DERIVATION ALWAYS GOES FROM A HIGHER RESOLUTION TO A LOWER ONE. The
     // construction holds that rule: a box size is a whole number of at least 1,
     // so the result is never finer than the source that it reads.
-    const grid = deriveBoxAverageGrid(source.grid, reduction);
-    const voxelManager = this.createVoxelManagerForGrid(grid, source);
+    const grid = deriveBoxAverageGrid(sourceRepresentation.grid, reduction);
+    const voxelManager = this.createVoxelManagerForGrid(
+      grid,
+      sourceRepresentation
+    );
 
     reduceByBoxStatistic(
-      source.voxelManager as never,
+      sourceRepresentation.voxelManager as never,
       reduction,
       voxelManager as never,
       { statistic, round }
     );
 
+    const reducesAnAxis = factors.some((factor) => factor > 1);
+
     return this.addRepresentation({
       grid,
       statistic,
       voxelManager,
-      quality: source.quality,
+      quality: sourceRepresentation.quality,
+      // A BOX REDUCTION DOES NOT ALIAS: every source voxel of the box reaches
+      // the result. An axis that no factor reduces holds every source voxel, so
+      // that derivation is no reduction at all.
+      reduction:
+        kind ??
+        (reducesAnAxis ? VoxelReductions.BoxAverage : VoxelReductions.None),
+      source,
       // THE RECORD OF THE SOURCE BECOMES THE RECORD OF THE RESULT, and the copy
       // freezes at this moment. The derived data is no better than the data
       // that produced it, and a box that reads a source voxel that has not
       // arrived holds nothing.
       derivedFrom: {
-        grid: source.grid,
-        delivered: source.delivered ? [...source.delivered] : undefined,
-        quality: source.quality,
+        grid: sourceRepresentation.grid,
+        delivered: sourceRepresentation.delivered
+          ? [...sourceRepresentation.delivered]
+          : undefined,
+        quality: sourceRepresentation.quality,
       },
     });
   }
@@ -636,6 +659,8 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     quality = ImageQualityStatus.FULL_RESOLUTION,
     bounds,
     frameIndex,
+    reduction,
+    source,
   }: {
     grid: VoxelGrid;
     voxelManager?: IVoxelManager<T>;
@@ -643,8 +668,16 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     quality?: ImageQualityStatus;
     bounds?: BoundsIJK;
     frameIndex?: number;
+    /** How this data reached its spacing. `none` by default. */
+    reduction?: VoxelReduction;
+    /** Where this data came from. A direct load by default. */
+    source?: VoxelDataSource;
   }): VoxelRepresentation<T> {
     const existing = this.getRepresentation(grid, statistic);
+    const production = {
+      reduction: reduction ?? existing?.reduction ?? VoxelReductions.None,
+      source: source ?? existing?.source ?? VoxelDataSources.DirectLoad,
+    };
     const deliveredBounds =
       bounds ??
       (frameIndex === undefined ? undefined : boundsOfFrame(grid, frameIndex));
@@ -656,12 +689,22 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
         voxelManager: voxelManager ?? existing?.voxelManager,
         quality,
         delivered: existing?.delivered,
+        ...production,
       });
     }
 
     const representation =
       existing ??
-      this.addRepresentation({ grid, statistic, voxelManager, delivered: [] });
+      this.addRepresentation({
+        grid,
+        statistic,
+        voxelManager,
+        delivered: [],
+        ...production,
+      });
+
+    representation.reduction = production.reduction;
+    representation.source = production.source;
 
     if (voxelManager && representation.voxelManager !== voxelManager) {
       representation.voxelManager = voxelManager;
@@ -753,7 +796,7 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
   public getRegionQuality(
     representation: VoxelRepresentation<T>,
     region?: BoundsIJK
-  ): RegionQuality {
+  ): VoxelQualityRecord {
     const { grid } = representation;
     const target = region
       ? intersectBounds(
@@ -762,24 +805,27 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
         )
       : boundsOfGrid(grid);
     const voxels = volumeOfBounds(target);
-    const record: RegionQuality = {
+    const record: VoxelQualityRecord = {
       grid,
+      reduction: representation.reduction ?? VoxelReductions.None,
+      source: representation.source ?? VoxelDataSources.DirectLoad,
       lowest: undefined,
       highest: undefined,
       voxels,
       missing: voxels,
       deliveries: 0,
       exact: true,
+      status: ImageQualityStatus.FAR_REPLICATE,
     };
 
     if (voxels === 0) {
       record.missing = 0;
 
-      return record;
+      return withStatus(record);
     }
 
     if (representation.derivedFrom) {
-      return this.qualityOfDerived(representation, target, record);
+      return withStatus(this.qualityOfDerived(representation, target, record));
     }
 
     const coverage = coverageOfRegion(representation.delivered, target);
@@ -807,7 +853,7 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
 
     record.missing = voxels - covered;
 
-    return record;
+    return withStatus(record);
   }
 
   /**
@@ -858,7 +904,9 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
    * The record states no verdict. Commit 4 of this work adds the pure function
    * that compares a record against the requirement of one reader.
    */
-  public getQuality(selector: VoxelRepresentationSelector = {}): RegionQuality {
+  public getQuality(
+    selector: VoxelRepresentationSelector = {}
+  ): VoxelQualityRecord {
     const selected = this.selectRepresentation(selector);
 
     return selected
@@ -878,8 +926,8 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
   private qualityOfDerived(
     representation: VoxelRepresentation<T>,
     target: BoundsIJK,
-    record: RegionQuality
-  ): RegionQuality {
+    record: VoxelQualityRecord
+  ): VoxelQualityRecord {
     const { grid, delivered, quality } = representation.derivedFrom;
     const sourceBounds = intersectBounds(
       mapBoundsBetweenGrids(representation.grid, grid, target),
@@ -896,7 +944,7 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     if (sourceVoxels === 0) {
       record.missing = record.voxels;
 
-      return record;
+      return withStatus(record);
     }
 
     let missingSource = sourceVoxels - coverage.covered;
@@ -916,7 +964,7 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     record.exact =
       record.exact && (missingSource === 0 || missingSource === sourceVoxels);
 
-    return record;
+    return withStatus(record);
   }
 
   // ==========================================================================
