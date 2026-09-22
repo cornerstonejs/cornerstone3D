@@ -1059,9 +1059,6 @@ class CircleROITool extends AnnotationTool {
           // what bounds the disc.
           boundsMargin: worldRadius,
           createShape: ({ volume, planePoint, viewPlaneNormal }) => {
-            // A zero or numerically negligible radius does not define a stable
-            // sampled circle. New annotations have coincident handles until
-            // the first drag, so skip the shape instead of calling the factory.
             if (!hasValidAreaAnnotationDimensions(worldRadius)) {
               return null;
             }

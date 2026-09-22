@@ -940,10 +940,6 @@ class RectangleROITool extends AnnotationTool {
               vec3.distance(worldHandles[0], worldHandles[1]) / 2;
             const minorHalfLength =
               vec3.distance(worldHandles[0], worldHandles[2]) / 2;
-
-            // A zero or numerically negligible half-length does not define a
-            // stable sampled rectangle. Skip the shape instead of passing
-            // degenerate geometry to the factory.
             if (
               !hasValidAreaAnnotationDimensions(
                 majorHalfLength,
