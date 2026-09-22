@@ -42,6 +42,7 @@ import type {
   ImagePlaneModule,
   PixelDataTypedArray,
   ResetCameraOptions,
+  SetAspectRatioOptions,
 } from '../types';
 import { actorIsA, isImageActor } from '../utilities/actorCheck';
 import * as colormapUtils from '../utilities/colormap';
@@ -355,15 +356,18 @@ class StackViewport extends Viewport {
    * @param options - Optional configuration for the reset operation
    * @param options.resetPan - Whether to reset the pan (default: true)
    * @param options.resetZoom - Whether to reset the zoom (default: true)
+   * @param options.resetToCenter - Whether to centre the camera (default: true).
+   *   The CPU fallback ignores this option.
+   * @param options.resetAspectRatio - Whether to apply the aspect ratio of the
+   *   viewport options, instead of the one of the camera (default: true)
+   * @param options.storeAsInitialCamera - Whether to keep the result as the
+   *   baseline of the zoom and of the pan (default: true). The CPU fallback
+   *   ignores this option.
    * @returns boolean - True if the camera was reset successfully, false otherwise
    */
-  public resetCamera: (options?: {
-    resetPan?: boolean;
-    resetZoom?: boolean;
-    resetToCenter?: boolean;
-    suppressEvents?: boolean;
-    resetAspectRatio?: boolean;
-  }) => boolean;
+  public resetCamera: (
+    options?: ResetCameraOptions & { suppressEvents?: boolean }
+  ) => boolean;
 
   /**
    * canvasToWorld Returns the world coordinates of the given `canvasPos`
@@ -1266,7 +1270,14 @@ class StackViewport extends Viewport {
     return aspectRatio ?? this.options?.aspectRatio ?? [1, 1];
   }
 
-  public setAspectRatioCPU(value: Point2, storeAsInitialCamera = false): void {
+  /**
+   * The CPU version of `Viewport.setAspectRatio`, which documents the options.
+   */
+  public setAspectRatioCPU(
+    value: Point2,
+    options: SetAspectRatioOptions = {}
+  ): void {
+    const { fit = false, storeAsInitialCamera = false } = options;
     const camera = this.getCameraCPU();
     if (storeAsInitialCamera) {
       this.options.aspectRatio = value;
@@ -1276,6 +1287,15 @@ class StackViewport extends Viewport {
       ...camera,
       aspectRatio: value,
     });
+
+    if (fit) {
+      // `resetCameraCPU` holds the fit of the CPU fallback.
+      this.resetCameraCPU({
+        resetPan: false,
+        resetZoom: true,
+        resetAspectRatio: false,
+      });
+    }
   }
 
   private setFlipCPU({ flipHorizontal, flipVertical }: FlipDirection): void {
@@ -3786,34 +3806,19 @@ class StackViewport extends Viewport {
       gpu: this.setInvertColorGPU,
     },
     resetCamera: {
-      cpu: (
-        options: {
-          resetPan?: boolean;
-          resetZoom?: boolean;
-          resetAspectRatio?: boolean;
-        } = {}
-      ): boolean => {
+      cpu: (options: ResetCameraOptions = {}): boolean => {
         const {
           resetPan = true,
           resetZoom = true,
           resetAspectRatio = true,
         } = options;
+        // `resetToCenter` and `storeAsInitialCamera` do not apply to the CPU
+        // fallback, which always centres and keeps no initial camera.
         this.resetCameraCPU({ resetPan, resetZoom, resetAspectRatio });
         return true;
       },
-      gpu: (
-        options: {
-          resetPan?: boolean;
-          resetZoom?: boolean;
-          resetAspectRatio?: boolean;
-        } = {}
-      ): boolean => {
-        const {
-          resetPan = true,
-          resetZoom = true,
-          resetAspectRatio = true,
-        } = options;
-        this.resetCameraGPU({ resetPan, resetZoom, resetAspectRatio });
+      gpu: (options: ResetCameraOptions = {}): boolean => {
+        this.resetCameraGPU(options);
         return true;
       },
     },

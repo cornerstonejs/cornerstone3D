@@ -240,14 +240,7 @@ addDropdownToToolbar({
     const aspect = (value as string).split(':').map((it) => Number(it));
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const viewport = renderingEngine.getViewport(viewportId);
-    viewport.setAspectRatio(aspect);
-    // `setAspectRatio` only stretches the image, so the fit of the stretched
-    // image needs a reset of the zoom.
-    viewport.resetCamera({
-      resetPan: false,
-      resetToCenter: false,
-      resetAspectRatio: false,
-    });
+    viewport.setAspectRatio(aspect, { fit: true });
     viewport.render();
   },
 });
