@@ -4,7 +4,12 @@ import {
   VoxelManager,
   voxelGrid,
 } from '../../src/utilities';
-import { VoxelStatistics, ImageQualityStatus } from '../../src/enums';
+import {
+  VoxelStatistics,
+  ImageQualityStatus,
+  VoxelReductions,
+  VoxelDataSources,
+} from '../../src/enums';
 import {
   registerVoxelStatistic,
   __resetVoxelStatisticRegistry,
@@ -975,6 +980,108 @@ describe('CompositeVoxelManager reads across a reduction of 2, 3 and 4', () => {
 
     expect(lastFourSlices.missing).toBe(lastFourSlices.voxels);
     expect(lastFourSlices.lowest).toBeUndefined();
+  });
+});
+
+describe('CompositeVoxelManager gives a record that two readers judge', () => {
+  const { compareVoxelQuality } = voxelGrid;
+  const dimensions = [8, 8, 8];
+
+  it('gives one record to two viewports, which report differently', () => {
+    // Acceptance criterion 7 of issue #2921. The full resolution data arrived,
+    // and a reduction of it exists beside it.
+    const composite = new CompositeVoxelManager({
+      primary: makeFunction(dimensions, (i, j, k) => i + j + k),
+      grid: makeGrid(dimensions),
+      quality: ImageQualityStatus.FULL_RESOLUTION,
+    });
+
+    composite.createRepresentation({ factors: [2, 2, 2] });
+
+    // The 3D viewport draws the whole volume small, so it takes the reduced
+    // data, and one of its display pixels covers 4 mm.
+    const volumeRecord = composite.getQuality({ ceiling: [2, 2, 2] });
+    const volumeVerdict = compareVoxelQuality(volumeRecord, {
+      displaySpacing: [4, 4, 4],
+    });
+
+    // The MPR viewport draws one plane at a high magnification, so it takes the
+    // full resolution data, and one of its display pixels covers 0.5 mm.
+    const planeRecord = composite.getQuality({ ceiling: [0.5, 0.5, 0.5] });
+    const planeVerdict = compareVoxelQuality(planeRecord, {
+      displaySpacing: [0.5, 0.5, 0.5],
+    });
+
+    expect(volumeRecord.grid.spacing).toEqual([2, 2, 2]);
+    expect(volumeRecord.reduction).toBe(VoxelReductions.BoxAverage);
+    expect(volumeRecord.source).toBe(VoxelDataSources.ClientDerived);
+    expect(volumeVerdict.lossless).toBe(true);
+
+    expect(planeRecord.grid.spacing).toEqual([1, 1, 1]);
+    expect(planeRecord.reduction).toBe(VoxelReductions.None);
+    expect(planeVerdict.lossless).toBe(false);
+    expect(planeVerdict.causes).toEqual(['resolution']);
+    expect(planeVerdict.magnitude).toBeCloseTo(2, 10);
+  });
+
+  it('states the kind of the reduction and the source that a loader gave', () => {
+    const composite = new CompositeVoxelManager({
+      primary: VoxelManager.createMapVoxelManager({ dimension: dimensions }),
+      grid: makeGrid(dimensions),
+    });
+    const grid = deriveBoxAverageGrid(composite.grid, { factors: [2, 2, 2] });
+
+    // A level of a server brick store arrives, and that server decimated it.
+    composite.acceptData({
+      grid,
+      voxelManager: makeFilled(grid.dimensions, 3),
+      reduction: VoxelReductions.Decimation,
+      source: VoxelDataSources.ServerLevel,
+      quality: ImageQualityStatus.FULL_RESOLUTION,
+    });
+
+    const record = composite.getQuality({ ceiling: [2, 2, 2] });
+
+    expect(record.reduction).toBe(VoxelReductions.Decimation);
+    expect(record.source).toBe(VoxelDataSources.ServerLevel);
+    // A decimation aliases, so no magnification gives a lossless view, and the
+    // comparable summary never states the full resolution.
+    expect(record.status).toBe(ImageQualityStatus.SUBRESOLUTION);
+    expect(
+      compareVoxelQuality(record, { displaySpacing: [100, 100, 100] }).causes
+    ).toEqual(['aliasing']);
+  });
+
+  it('takes the summary of the record down while data is missing', () => {
+    const composite = new CompositeVoxelManager({
+      primary: VoxelManager.createMapVoxelManager({ dimension: dimensions }),
+      grid: makeGrid(dimensions),
+    });
+
+    composite.acceptData({
+      grid: composite.grid,
+      frameIndex: 0,
+      quality: ImageQualityStatus.FULL_RESOLUTION,
+    });
+
+    const record = composite.getQuality();
+
+    expect(record.missing).toBe(8 * 8 * 7);
+    expect(record.status).toBe(ImageQualityStatus.ADJACENT_REPLICATE);
+    expect(compareVoxelQuality(record).causes).toEqual(['missingData']);
+
+    // The region of the frame that arrived is complete, and its record says so.
+    const firstFrame = composite.getQuality({
+      region: [
+        [0, 7],
+        [0, 7],
+        [0, 0],
+      ],
+    });
+
+    expect(firstFrame.missing).toBe(0);
+    expect(firstFrame.status).toBe(ImageQualityStatus.FULL_RESOLUTION);
+    expect(compareVoxelQuality(firstFrame).lossless).toBe(true);
   });
 });
 

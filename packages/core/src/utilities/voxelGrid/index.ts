@@ -41,6 +41,14 @@ export {
   createAverageAccumulator,
   type RegisterVoxelStatisticOptions,
 } from './voxelStatistics';
+export {
+  registerVoxelReduction,
+  getVoxelReduction,
+  isAliasingReduction,
+  imageQualityStatusOfRecord,
+  compareVoxelQuality,
+  type RegisterVoxelReductionOptions,
+} from './voxelQuality';
 export { voxelGridKey, voxelGridsEqual } from './voxelGridKey';
 export {
   gridIndexToWorld,
