@@ -9,20 +9,26 @@
  * Bytes to retrieve, or to accumulate, before the first decode of a partial
  * image, when the retrieve options set no `initialChunkSize`.
  *
- * 32k is enough of an HTJ2K codestream to decode a recognisable full
- * resolution image, and OpenJPH decodes the truncated remainder rather than
- * throwing, so there is no reason to buy a larger buffer before showing
- * something.
+ * 32k decodes: OpenJPH reads the truncated remainder rather than throwing, and
+ * the result is a recognisable image. The size is still too small for a high
+ * resolution frame, where 32k of codestream spreads over so many pixels that
+ * the first image adds little over a blank viewport, and the decode is then
+ * repeated almost immediately. 128k buys a first image worth showing and stays
+ * a small part of a frame that runs to several megabytes.
+ *
+ * This value equals `DEFAULT_CHUNK_SIZE` at present. The two stay separate
+ * because they answer different questions - time to first image against cost
+ * of refinement - and either can be set on its own in the retrieve options.
  */
-export const DEFAULT_INITIAL_CHUNK_SIZE = 32768;
+export const DEFAULT_INITIAL_CHUNK_SIZE = 131072;
 
 /**
  * Bytes to retrieve, or to accumulate, between decodes after the first, when
  * the retrieve options set no `chunkSize`.
  *
- * Larger than the initial size because by this point the image is already on
- * screen and the job is refining it: advancing in 32k steps would mean many
- * more requests and decodes for the same result.
+ * By this point the image is already on screen and the job is refining it, so
+ * advancing in smaller steps would mean many more requests and decodes for the
+ * same result.
  */
 export const DEFAULT_CHUNK_SIZE = 131072;
 

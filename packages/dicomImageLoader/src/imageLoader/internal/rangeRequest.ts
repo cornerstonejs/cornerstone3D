@@ -194,9 +194,10 @@ async function fetchRangeAndAppend(
  * End offset, exclusive, of the range identified by rangeIndex.
  *
  * Range 0 covers the initial chunk and every range after it adds a full
- * chunkSize, so the boundaries are 32k, 160k, 288k ... on the defaults. The
- * two sizes differ because the first range is buying time to first image and
- * the rest are buying refinement.
+ * chunkSize, so the boundaries are 128k, 256k, 384k ... on the defaults. The
+ * two sizes are separate options because the first range is buying time to
+ * first image and the rest are buying refinement, even where, as now, the
+ * defaults give them the same value.
  */
 function rangeEndOffset(
   rangeIndex: number,
