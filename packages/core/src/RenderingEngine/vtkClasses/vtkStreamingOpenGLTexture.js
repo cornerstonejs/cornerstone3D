@@ -2,6 +2,8 @@ import macro from '@kitware/vtk.js/macros';
 import vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
 import cache from '../../cache/cache';
 import { getConstructorFromType } from '../../utilities/getBufferConfiguration';
+import VoxelManager from '../../utilities/VoxelManager';
+import { voxelGridsEqual } from '../../utilities/voxelGrid';
 
 /**
  * Converts the input data array to the specified data type
@@ -98,10 +100,85 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       return;
     }
 
+    if (model.grid && !isGridOfVolume(volume, model.grid)) {
+      return publicAPI.hasUpdatedFrames() && updateTextureFromComposite(volume);
+    }
+
     return (
       publicAPI.hasUpdatedFrames() && updateTextureImagesUsingVoxelManager()
     );
   };
+
+  /** States whether the grid of this texture is the grid of the volume. */
+  function isGridOfVolume(volume, grid) {
+    return volume.voxelGrid ? voxelGridsEqual(volume.voxelGrid, grid) : true;
+  }
+
+  /**
+   * Fills a texture whose grid is not the grid of the volume.
+   *
+   * The composite computes which sub voxel managers fill this texture, and
+   * `fillGrid` reads the best sources that it holds. A fill is many to one:
+   * several representations can cover one region between them, which is the
+   * brick case, so this function states no single source.
+   *
+   * The fill computes every voxel of the grid, because `fillGrid` takes no
+   * region. The upload stays partial: the function uploads the slices that a
+   * delivery marked, and it leaves the others.
+   */
+  function updateTextureFromComposite(volume) {
+    const { grid } = model;
+    const [width, height, depth] = grid.dimensions;
+    const Constructor = getConstructorFromType(volume.dataType, true);
+    const target = VoxelManager.createScalarVolumeVoxelManager({
+      dimensions: grid.dimensions,
+      scalarData: new Constructor(width * height * depth),
+      numberOfComponents: 1,
+    });
+
+    volume.compositeVoxelManager.fillGrid(grid, target);
+
+    const scalarData = target.getScalarData();
+    const gl = model.context;
+    const frameLength = width * height;
+
+    for (let slice = 0; slice < depth; slice++) {
+      if (!model.updatedFrames[slice]) {
+        continue;
+      }
+
+      const [pixData] = publicAPI.updateArrayDataTypeForGL(volume.dataType, [
+        scalarData.subarray(slice * frameLength, (slice + 1) * frameLength),
+      ]);
+
+      publicAPI.bind();
+
+      gl.texSubImage3D(
+        model.target, // target
+        0, // level
+        0, // xoffset
+        0, // yoffset
+        slice, // zoffset
+        width, // width
+        height, // height
+        1, // depth (1 slice)
+        model.format, // format
+        model.openGLDataType, // type
+        pixData // data
+      );
+
+      publicAPI.deactivate();
+      model.updatedFrames[slice] = null;
+    }
+
+    if (model.generateMipmap) {
+      model.context.generateMipmap(model.target);
+    }
+
+    publicAPI.deactivate();
+
+    return true;
+  }
 
   /**
    * Called when a frame is loaded so that on next render we know which data to load in.
