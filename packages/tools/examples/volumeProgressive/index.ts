@@ -78,8 +78,10 @@ const seriesOptions = {
   // A real 3D volume of 2464 images, each of 512 x 512, with one image at each
   // position. The k axis exceeds the limit of 2048 of every known device, so a
   // reduction of that one axis applies, and nothing is interleaved: a streak in
-  // this series comes from the code and not from the acquisition.
-  'CT body 2464 images of 512 x 512 (local)': {
+  // this series comes from the code and not from the acquisition. This series
+  // is the test data of commit 9, which gives a derived representation that
+  // follows the load.
+  'CT body 2464 images of 512 x 512': {
     StudyInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.99.1071.24993177073256607564948872275593',
     SeriesInstanceUID:
