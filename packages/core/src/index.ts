@@ -145,6 +145,36 @@ export type {
   VolumeTextureMutability,
   VolumeTextureSlot,
 } from './cache';
+export {
+  getGpuCapabilityProfile,
+  getGpuCapabilityProfiles,
+  getActiveGpuCapabilityProfile,
+  setActiveGpuCapabilityProfile,
+  resetActiveGpuCapabilityProfile,
+  gridLimitsOfProfile,
+} from './utilities/gpuCapabilityProfiles';
+export type {
+  GpuCapabilityProfile,
+  GpuCapabilityProfileId,
+  GpuSpeedIndex,
+} from './utilities/gpuCapabilityProfiles';
+export {
+  defaultVolumeStrategyProvider,
+  provisionFullResolutionStrategy,
+  provisionReducedResolutionStrategy,
+  selectFirstReadyStrategy,
+  reducedStrategyName,
+} from './RenderingEngine/helpers/volumeRenderStrategy';
+export type {
+  IVolumeRenderStrategy,
+  SelectVolumeStrategy,
+  SelectVolumeStrategyContext,
+  StrategyBinding,
+  StrategyBindingRole,
+  VolumeStrategyProvider,
+  VolumeStrategyProvisionContext,
+  VolumeStrategyProvisionReason,
+} from './RenderingEngine/helpers/volumeRenderStrategy';
 import cache from './cache/cache';
 import imageRetrievalPoolManager from './requestPool/imageRetrievalPoolManager';
 import imageLoadPoolManager from './requestPool/imageLoadPoolManager';

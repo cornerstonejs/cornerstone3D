@@ -10,11 +10,56 @@ import { BlendMode } from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants
 import { getCanUseNorm16Texture } from '../../init';
 import canUseFloatOpacityTexture from './canUseFloatOpacityTexture';
 import { coreLog } from '../../utilities/logger';
+import { getBufferConfiguration } from '../../utilities/getBufferConfiguration';
+import { voxelGridWithinLimits } from '../../utilities/voxelGrid';
+import {
+  getActiveGpuCapabilityProfile,
+  gridLimitsOfProfile,
+} from '../../utilities/gpuCapabilityProfiles';
 
 const log = coreLog.getLogger(
   'RenderingEngine',
   'vtkStreamingOpenGLVolumeMapper'
 );
+
+/**
+ * States whether the device that the active capability profile describes can
+ * hold a texture of these dimensions.
+ *
+ * The count happens before the allocation. An application states the profile,
+ * and this function probes nothing.
+ *
+ * @param {number[]} dims - the number of voxels on each axis
+ * @param {string} dataType - the type of the buffer of the texture
+ * @param {number} numberOfComponents - the number of components of one voxel
+ * @param {{volumeId?: string}} context - what the mapper knows, for the message
+ * @returns {boolean} true when the device can hold the texture
+ */
+function gridFitsProfile(dims, dataType, numberOfComponents, context) {
+  const profile = getActiveGpuCapabilityProfile();
+  const { numBytes } = getBufferConfiguration(
+    dataType,
+    numberOfComponents || 1,
+    { isVolumeBuffer: true }
+  );
+  const limits = gridLimitsOfProfile(profile, numBytes);
+  const grid = {
+    dimensions: [dims[0], dims[1], dims[2]],
+    spacing: [1, 1, 1],
+    origin: [0, 0, 0],
+    direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+  };
+
+  if (voxelGridWithinLimits(grid, limits)) {
+    return true;
+  }
+
+  log.warn(
+    `the profile ${profile.id} cannot hold a texture of ${dims[0]}x${dims[1]}x${dims[2]} for the volume ${context?.volumeId}, so no allocation is issued`
+  );
+
+  return false;
+}
 
 /**
  * vtkStreamingOpenGLVolumeMapper - A derived class of the core vtkOpenGLVolumeMapper class.
@@ -354,8 +399,17 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
         }
 
         if (model.scalarTextureStrings[component] !== toString) {
-          // Build the textures
-          const dims = imageData.getDimensions();
+          // Build the textures.
+          //
+          // The dimensions come from the texture when the texture states a
+          // grid. `imageData` always describes the full-resolution grid, so a
+          // mapper that read `imageData` alone would allocate every texture at
+          // the full dimensions and would overwrite a reduced texture on the
+          // next render. The texture coordinates stay normalized over the same
+          // world bounds, so a reduced texture covers the same volume with
+          // fewer voxels.
+          const dims =
+            currentTexture.getGrid?.()?.dimensions ?? imageData.getDimensions();
           currentTexture.setOpenGLRenderWindow(model._openGLRenderWindow);
 
           // Set not to use half float initially since we don't know if the
@@ -390,6 +444,23 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
           }
 
           if (shouldReset) {
+            // The cost of the texture, counted before the allocation. This is
+            // the only place where the dimensions are known and the allocation
+            // has not started. An allocation that the device cannot hold fails
+            // inside the driver, and the viewport then shows black, which is
+            // the defect that issue #2921 names. The mapper refuses that
+            // allocation instead, and the render path draws what it drew
+            // before. MR-API-IV-7, and acceptance criterion 15.
+            if (
+              !gridFitsProfile(dims, dataType, textureNumberOfComponents, {
+                volumeId: currentTexture.getVolumeId?.(),
+              })
+            ) {
+              currentTexture.deactivate();
+
+              return;
+            }
+
             const norm16Ext = model.context.getExtension('EXT_texture_norm16');
             currentTexture.setOglNorm16Ext(
               getCanUseNorm16Texture() ? norm16Ext : null
