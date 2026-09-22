@@ -30,6 +30,12 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
   model.updatedFrames = [];
   model.volumeId = null;
+  // The grid that this texture holds. The texture store of `ImageVolume` states
+  // it when it builds the texture. A texture whose grid is the grid of the
+  // volume reads the cached images frame by frame, which is the path of the
+  // full-resolution data. A texture of any other grid reads the composite,
+  // because no cached image holds a reduced voxel.
+  model.grid = null;
 
   const superCreate3DFilterableFromRaw = publicAPI.create3DFilterableFromRaw;
 
@@ -117,9 +123,14 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       return;
     }
 
-    const imageIds = volume.imageIds;
+    // The number of slices of this texture, and not the number of images of the
+    // volume. A texture of a reduced grid holds fewer slices than the volume
+    // holds images.
+    const slices = model.grid
+      ? model.grid.dimensions[2]
+      : volume.imageIds.length;
 
-    for (let i = 0; i < imageIds.length; i++) {
+    for (let i = 0; i < slices; i++) {
       model.updatedFrames[i] = true;
     }
   };
@@ -264,6 +275,21 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
   };
 
   publicAPI.getVolumeId = () => model.volumeId;
+
+  /**
+   * States the grid that this texture holds. The texture pool of `ImageVolume`
+   * calls this member when it builds the texture.
+   */
+  publicAPI.setGrid = (grid) => {
+    model.grid = grid;
+  };
+
+  /**
+   * The grid that this texture holds, which a mapper reads to get the
+   * dimensions of the allocation. A texture that states no grid holds the grid
+   * of its volume.
+   */
+  publicAPI.getGrid = () => model.grid;
 
   publicAPI.setTextureParameters = ({
     width,

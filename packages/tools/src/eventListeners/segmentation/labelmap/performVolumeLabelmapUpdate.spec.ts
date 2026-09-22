@@ -37,9 +37,7 @@ function createVolume(volumeId: string) {
     metadata: {
       FrameOfReferenceUID: 'frame-of-reference',
     },
-    vtkOpenGLTexture: {
-      setUpdatedFrame: jest.fn(),
-    },
+    markFrameDirty: jest.fn(),
     voxelManager: {
       invalidateCache: jest.fn(),
     },
@@ -74,7 +72,7 @@ describe('performVolumeLabelmapUpdate', () => {
     });
 
     expect(getOrCreateLabelmapVolumeMock).toHaveBeenCalledWith(stackLayer);
-    expect(volume.vtkOpenGLTexture.setUpdatedFrame).toHaveBeenCalledWith(1);
+    expect(volume.markFrameDirty).toHaveBeenCalledWith(1);
     expect(volume.voxelManager.invalidateCache).toHaveBeenCalledTimes(1);
     expect(volume.imageData.modified).toHaveBeenCalledTimes(1);
     expect(triggerEventMock).toHaveBeenCalledWith(
@@ -105,7 +103,7 @@ describe('performVolumeLabelmapUpdate', () => {
     });
 
     expect(getVolumeMock).toHaveBeenCalledWith('legacy-volume-id');
-    expect(volume.vtkOpenGLTexture.setUpdatedFrame).toHaveBeenCalledTimes(3);
+    expect(volume.markFrameDirty).toHaveBeenCalledTimes(3);
     expect(triggerEventMock).toHaveBeenCalledWith(
       eventTarget,
       'IMAGE_VOLUME_MODIFIED',

@@ -132,6 +132,18 @@ import {
   Surface,
   StreamingDynamicImageVolume,
   StreamingImageVolume,
+  VolumeTextureSet,
+  VolumeTextureStore,
+  volumeTextureStore,
+  isMutableSlab,
+} from './cache';
+export type {
+  FixedVolumeTextureSlot,
+  IMutableVolumeTextureSlab,
+  ProvisionTextureSetOptions,
+  VolumeTextureLimits,
+  VolumeTextureMutability,
+  VolumeTextureSlot,
 } from './cache';
 import cache from './cache/cache';
 import imageRetrievalPoolManager from './requestPool/imageRetrievalPoolManager';
@@ -331,6 +343,10 @@ export {
   ContextPoolRenderingEngine,
   ImageVolume,
   Surface,
+  VolumeTextureSet,
+  VolumeTextureStore,
+  volumeTextureStore,
+  isMutableSlab,
   // Helpers
   getRenderingEngine,
   getRenderingEngines,

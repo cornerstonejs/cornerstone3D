@@ -25,7 +25,7 @@ export function performVolumeLabelmapUpdate({
   const volumes = getVolumesToUpdate(labelmapData);
 
   volumes.forEach((segmentationVolume) => {
-    const { imageData, vtkOpenGLTexture, voxelManager } = segmentationVolume;
+    const { imageData, voxelManager } = segmentationVolume;
 
     let slicesToUpdate;
     if (modifiedSlicesToUse?.length > 0) {
@@ -35,9 +35,12 @@ export function performVolumeLabelmapUpdate({
       slicesToUpdate = [...Array(numSlices).keys()];
     }
 
-    vtkOpenGLTexture?.setUpdatedFrame &&
+    // The volume holds a pool of textures, so one slice is dirty in every
+    // texture whose grid covers that slice, and `markFrameDirty` fans the mark
+    // out to each of them.
+    segmentationVolume.markFrameDirty &&
       slicesToUpdate.forEach((i) => {
-        vtkOpenGLTexture.setUpdatedFrame(i);
+        segmentationVolume.markFrameDirty(i);
       });
 
     voxelManager?.invalidateCache?.();

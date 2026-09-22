@@ -32,7 +32,19 @@ async function createVolumeSliceActor(
     throw new Error(`imageVolume with id: ${volumeId} does not exist`);
   }
 
-  const { imageData, vtkOpenGLTexture } = imageVolume;
+  const { imageData } = imageVolume;
+  // The volume builds no texture until a caller claims one. Commit 7 of the
+  // multi-resolution work gives this path a pluggable function that chooses a
+  // grid; until then the path claims the full-resolution grid, which is the
+  // texture that this path used before the pool existed.
+  const vtkOpenGLTexture = imageVolume.getFullResolutionTexture();
+
+  if (!vtkOpenGLTexture) {
+    throw new Error(
+      `the texture pool refused a full-resolution texture for the volume ${volumeId}`
+    );
+  }
+
   const loadStatus = imageVolume.loadStatus as { loaded?: boolean } | undefined;
   const slicePlane = vtkPlane.newInstance();
   const mapper = vtkSharedImageResliceMapper.newInstance();
