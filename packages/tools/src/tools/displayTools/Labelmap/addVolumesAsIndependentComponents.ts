@@ -84,8 +84,10 @@ export async function addVolumesAsIndependentComponents({
   const { imageData: segImageData } = segImageVolume;
   const baseVolume = cache.getVolume(referenceVolumeId);
 
+  // The volume names a full-resolution texture only while the pool holds that
+  // entry, and a texture that does not exist has no pending frame.
   const volumeTexture = baseVolume.vtkOpenGLTexture;
-  const hasPendingFrames = volumeTexture.hasUpdatedFrames();
+  const hasPendingFrames = volumeTexture?.hasUpdatedFrames() ?? false;
   if (hasPendingFrames) {
     // We do not change the actor if there are pending frames (i.e. the viewport is still rendering).
     // If we did proceed to change the actor, the viewport would be blanked out.

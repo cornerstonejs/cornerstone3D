@@ -4,6 +4,8 @@ import type { VolumeActor } from './../../types/IActor';
 import type { VoiModifiedEventDetail } from './../../types/EventTypes';
 import { loadVolume } from '../../loaders/volumeLoader';
 import createVolumeMapper from './createVolumeMapper';
+import { resolveVolumeTexture } from './resolveVolumeTexture';
+import type { ResolveVolumeTextureOptions } from './resolveVolumeTexture';
 import type BlendModes from '../../enums/BlendModes';
 import triggerEvent from '../../utilities/triggerEvent';
 import { Events } from '../../enums';
@@ -11,7 +13,7 @@ import setDefaultVolumeVOI from './setDefaultVolumeVOI';
 import type { BlendMode } from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants';
 import { getConfiguration } from '../../init';
 
-interface createVolumeActorInterface {
+interface createVolumeActorInterface extends ResolveVolumeTextureOptions {
   volumeId: string;
   callback?: ({
     volumeActor,
@@ -50,7 +52,22 @@ async function createVolumeActor(
     );
   }
 
-  const { imageData, vtkOpenGLTexture } = imageVolume;
+  const { imageData } = imageVolume;
+  // The strategies decide which grid this actor draws. A legacy viewport has no
+  // render path, so this one choice is what gives it the reduction that the
+  // capability of the device requires. A render path passes its own provider
+  // here and then keeps choosing on every render.
+  const { texture: vtkOpenGLTexture } = resolveVolumeTexture(imageVolume, {
+    provideStrategies: props.provideStrategies,
+    selectStrategy: props.selectStrategy,
+    viewportId,
+  });
+
+  if (!vtkOpenGLTexture) {
+    throw new Error(
+      `no render strategy gives a texture for the volume ${volumeId}`
+    );
+  }
 
   const volumeMapper = createVolumeMapper(imageData, vtkOpenGLTexture);
 

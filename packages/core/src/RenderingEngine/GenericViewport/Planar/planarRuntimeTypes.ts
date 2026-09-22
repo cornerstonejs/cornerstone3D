@@ -32,6 +32,9 @@ import type {
   VOIRange,
 } from '../../../types';
 import type { MountedRendering } from '../ViewportArchitectureTypes';
+import type { IVolumeRenderStrategy } from '../../helpers/volumeRenderStrategy';
+import type { vtkStreamingOpenGLTexture } from '../../../cache/classes/ImageVolume';
+import type { VoxelQualityRecord } from '../../../types';
 import type {
   PlanarViewState,
   PlanarDataPresentation,
@@ -151,6 +154,19 @@ export type PlanarVolumeSliceRendering = MountedRendering<{
   dataPresentation?: PlanarDataPresentation;
   isSegmentationOverlay?: boolean;
   removeStreamingSubscriptions?: () => void;
+  /** The viewport that draws. */
+  viewportId?: string;
+  /** The strategies that the provider has built. */
+  strategies?: IVolumeRenderStrategy[];
+  /** The strategy of the present render. */
+  strategy?: IVolumeRenderStrategy;
+  /** The texture that the mapper holds. */
+  boundTexture?: vtkStreamingOpenGLTexture;
+  /**
+   * The record of the quality for the most recent render of this viewport from
+   * this data.
+   */
+  voxelQuality?: VoxelQualityRecord;
 }>;
 
 /**

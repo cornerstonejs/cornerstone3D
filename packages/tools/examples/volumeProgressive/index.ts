@@ -15,6 +15,8 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   getLocalUrl,
+  addDropdownToToolbar,
+  addGpuCapabilityProfileDropdown,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -31,6 +33,7 @@ const {
   ZoomTool,
   ToolGroupManager,
   StackScrollTool,
+  TrackballRotateTool,
   Enums: csToolsEnums,
 } = cornerstoneTools;
 
@@ -46,11 +49,64 @@ const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 
 const renderingEngineId = 'myRenderingEngine';
+const viewportId3D = 'CT_VOLUME_3D';
 const viewportIds = [
   'CT_SAGITTAL_STACK_1',
   'CT_SAGITTAL_STACK_2',
   'CT_SAGITTAL_STACK_3',
+  viewportId3D,
 ];
+
+/**
+ * The series that this example can load.
+ *
+ * The DTI series holds 3720 images of 128 x 128, which is a volume that no
+ * profile with a small edge can hold in one texture, so the reduction is
+ * visible. The CT series is the one that this example loaded before, and the
+ * alternate paths of the progressive configurations exist on that server only.
+ */
+const seriesOptions = {
+  'CT (progressive configurations)': {
+    StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1',
+    SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113545.4',
+    // The alternate frame paths that the JLS and the lossy configurations need
+    // exist on a local static DICOMweb server only. The public host serves the
+    // plain frames path, so those buttons fall back to it.
+    wadoRsRoot:
+      getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+  },
+  // A real 3D volume of 2464 images, each of 512 x 512, with one image at each
+  // position. The k axis exceeds the limit of 2048 of every known device, so a
+  // reduction of that one axis applies, and nothing is interleaved: a streak in
+  // this series comes from the code and not from the acquisition. This series
+  // is the test data of commit 9, which gives a derived representation that
+  // follows the load.
+  'CT body 2464 images of 512 x 512': {
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.99.1071.24993177073256607564948872275593',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.99.1071.13277129293167305892649949655853',
+    wadoRsRoot:
+      getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+  },
+  // 3720 images at 40 positions: 93 acquisitions of each slice. A reduction of
+  // the k axis mixes acquisitions, so a sagittal or a coronal view of it bands
+  // whatever the code does.
+  'DTI 3720 images of 128 x 128 (4D, 40 positions)': {
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.191696062987463500085282581898315738844',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.286489448812938804331972885532764010716',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+  },
+  'PERFUSION 900 images': {
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.191696062987463500085282581898315738844',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.9480659329591605716620606691103764508',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+  },
+};
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -61,8 +117,16 @@ setTitleAndDescription(
 const size = '512px';
 const content = document.getElementById('content');
 
+// The drop downs choose what to load. They apply at the next load.
 const loaders = document.createElement('div');
 content.appendChild(loaders);
+
+// The load buttons take a line of their own, so it is obvious what to press.
+const loadButtons = document.createElement('div');
+loadButtons.style.clear = 'both';
+loadButtons.style.padding = '0.5em 0';
+loadButtons.innerHTML = '<div><b>Load with:</b></div>';
+content.appendChild(loadButtons);
 
 const timingInfo = document.createElement('div');
 timingInfo.style.width = '35em';
@@ -123,26 +187,19 @@ const viewportGrid = document.createElement('div');
 viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
 viewportGrid.style.clear = 'both';
-const element1 = document.createElement('div');
-const element2 = document.createElement('div');
-const element3 = document.createElement('div');
-element1.style.width = size;
-element1.style.height = size;
-element2.style.width = size;
-element2.style.height = size;
-element3.style.width = size;
-element3.style.height = size;
+viewportGrid.style.flexWrap = 'wrap';
+const elements = [0, 1, 2, 3].map(() => {
+  const element = document.createElement('div');
 
-// Disable right click context menu so we can have right click tools
-element1.oncontextmenu = (e) => e.preventDefault();
-// Disable right click context menu so we can have right click tools
-element2.oncontextmenu = (e) => e.preventDefault();
-// Disable right click context menu so we can have right click tools
-element3.oncontextmenu = (e) => e.preventDefault();
+  element.style.width = size;
+  element.style.height = size;
+  // Disable right click context menu so we can have right click tools
+  element.oncontextmenu = (e) => e.preventDefault();
+  viewportGrid.appendChild(element);
 
-viewportGrid.appendChild(element1);
-viewportGrid.appendChild(element2);
-viewportGrid.appendChild(element3);
+  return element;
+});
+const [element1, element2, element3, element4] = elements;
 
 content.appendChild(viewportGrid);
 
@@ -271,6 +328,10 @@ const configHtj2kMixed = {
  */
 async function run() {
   // Init Cornerstone and related libraries
+  // The reduction that the GPU class forces is visible on a legacy viewport and
+  // on a generic viewport, because the choice of a strategy lives in the actor
+  // helpers that both of them use. Add `?type=next` to the address to draw
+  // through the generic viewports and their render paths.
   await initDemo();
 
   const toolGroupId = 'TOOL_GROUP_ID';
@@ -279,6 +340,7 @@ async function run() {
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(WindowLevelTool);
   cornerstoneTools.addTool(StackScrollTool);
+  cornerstoneTools.addTool(TrackballRotateTool);
   cornerstoneTools.addTool(ZoomTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
@@ -324,11 +386,39 @@ async function run() {
     ],
   });
 
-  const imageIdsCT = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1',
-    SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113545.4',
-    wadoRsRoot:
-      getLocalUrl() || 'https://d3t6nz73ql33tx.cloudfront.net/dicomweb',
+  // The image ids of the series that the drop down selects. A load reads this,
+  // so a change of the series applies at the next load.
+  // The CT series is the default, because it renders with the window that
+  // this example sets. Select another series to change what the load buttons
+  // fetch; the change applies at the next load.
+  let imageIdsCT = await createImageIdsAndCacheMetaData(
+    seriesOptions['CT (progressive configurations)']
+  );
+
+  addDropdownToToolbar({
+    id: 'series',
+    labelText: 'Series',
+    container: loaders,
+    options: {
+      map: new Map(Object.entries(seriesOptions)),
+      defaultValue: 'CT (progressive configurations)',
+    },
+    onSelectedValueChange: async (_key, value) => {
+      imageIdsCT = await createImageIdsAndCacheMetaData(value);
+      getOrCreateTiming('loadingStatus').innerText =
+        `Selected ${imageIdsCT.length} images. Press a load button.`;
+    },
+  });
+
+  // An application states the GPU class, and nothing probes the device. The
+  // strategies of a viewport are built when that viewport adds its actor, so a
+  // change applies at the next load, which rebuilds every viewport.
+  addGpuCapabilityProfileDropdown({
+    container: loaders,
+    onSelectedValueChange: (profile) => {
+      getOrCreateTiming('loadingStatus').innerText =
+        `GPU class ${profile.id}. Press a load button to apply it.`;
+    },
   });
 
   // Instantiate a rendering engine
@@ -363,14 +453,38 @@ async function run() {
         background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
+    {
+      viewportId: viewportId3D,
+      type: ViewportType.VOLUME_3D,
+      element: element4,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.CORONAL,
+        background: <Types.Point3>[0.2, 0, 0.2],
+      },
+    },
   ];
 
   renderingEngine.setViewports(viewportInputArray);
 
-  // Set the tool group on the viewports
-  viewportIds.forEach((viewportId) =>
-    toolGroup.addViewport(viewportId, renderingEngineId)
-  );
+  // Set the tool group on the MPR viewports. The 3D viewport scrolls no
+  // slices, so it takes the trackball of its own group.
+  viewportIds
+    .filter((viewportId) => viewportId !== viewportId3D)
+    .forEach((viewportId) =>
+      toolGroup.addViewport(viewportId, renderingEngineId)
+    );
+
+  const toolGroup3D = ToolGroupManager.createToolGroup(`${toolGroupId}_3d`);
+
+  toolGroup3D.addTool(TrackballRotateTool.toolName);
+  toolGroup3D.addTool(ZoomTool.toolName);
+  toolGroup3D.setToolActive(TrackballRotateTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Primary }],
+  });
+  toolGroup3D.setToolActive(ZoomTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Secondary }],
+  });
+  toolGroup3D.addViewport(viewportId3D, renderingEngineId);
   renderingEngine.renderViewports(viewportIds);
 
   const progressiveRendering = true;
@@ -402,7 +516,12 @@ async function run() {
       } ms for ${text} with ${imageIds.length} items`;
     });
 
-    setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds);
+    await setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds);
+
+    // The 3D viewport shows nothing without a transfer function.
+    const viewport3D = renderingEngine.getViewport(viewportId3D);
+
+    viewport3D?.setProperties?.({ preset: 'CT-Bone' });
 
     // Render the image
     renderingEngine.renderViewports(viewportIds);
@@ -424,27 +543,32 @@ async function run() {
     button.innerText = text;
     button.id = text;
     button.onclick = action;
-    loaders.appendChild(button);
+    loadButtons.appendChild(button);
     return button;
   };
 
-  const loadButton = (text, volId, imageIds, config) =>
-    createButton(text, loadVolume.bind(null, volId, imageIds, config, text));
+  // The button reads the image ids WHEN IT IS PRESSED. A bound argument would
+  // hold the series that was selected when the button was created, so a change
+  // of the series would never reach the load.
+  const loadButton = (text, volId, getImageIds, config) =>
+    createButton(text, () => loadVolume(volId, getImageIds(), config, text));
 
-  loadButton('JLS', volumeId, imageIdsCT, configJLS);
+  // The plain DICOMweb path, with no retrieve configuration. Every server
+  // serves it, so this is the load that always works.
+  loadButton('DICOMweb', volumeId, () => imageIdsCT, null);
+  loadButton('JLS', volumeId, () => imageIdsCT, configJLS);
   loadButton(
     'JLS Non Interleaved',
     volumeId,
     imageIdsCT,
     configJLSNonInterleaved
   );
-  loadButton('JLS Thumb', volumeId, imageIdsCT, configJLSThumbnail);
-  loadButton('JLS Mixed', volumeId, imageIdsCT, configJLSMixed);
-  loadButton('J2K', volumeId, imageIdsCT, configHtj2k);
-  loadButton('J2K Non Progressive', volumeId, imageIdsCT, null);
-  loadButton('J2K Bytes', volumeId, imageIdsCT, configHtj2kByteRange);
-  loadButton('J2K Lossy', volumeId, imageIdsCT, configHtj2kLossy);
-  loadButton('J2K Mixed', volumeId, imageIdsCT, configHtj2kMixed);
+  loadButton('JLS Thumb', volumeId, () => imageIdsCT, configJLSThumbnail);
+  loadButton('JLS Mixed', volumeId, () => imageIdsCT, configJLSMixed);
+  loadButton('J2K', volumeId, () => imageIdsCT, configHtj2k);
+  loadButton('J2K Bytes', volumeId, () => imageIdsCT, configHtj2kByteRange);
+  loadButton('J2K Lossy', volumeId, () => imageIdsCT, configHtj2kLossy);
+  loadButton('J2K Mixed', volumeId, () => imageIdsCT, configHtj2kMixed);
 }
 
 run();
