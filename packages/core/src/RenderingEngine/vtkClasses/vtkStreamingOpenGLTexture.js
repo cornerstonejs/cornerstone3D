@@ -129,26 +129,52 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
   function updateTextureFromComposite(volume) {
     const { grid } = model;
     const [width, height, depth] = grid.dimensions;
-    const Constructor = getConstructorFromType(volume.dataType, true);
-    const target = VoxelManager.createScalarVolumeVoxelManager({
-      dimensions: grid.dimensions,
-      scalarData: new Constructor(width * height * depth),
+    // The slab must hold the type that the volume declares, because the upload
+    // below states that type to GL. `isVolumeBuffer` would widen an Int16Array
+    // to a Float32Array, and the upload would then read the bytes of one type
+    // as another.
+    const Constructor = getConstructorFromType(volume.dataType, false);
+    const frameLength = width * height;
+    const composite = volume.compositeVoxelManager;
+    const gl = model.context;
+    // One slice of this grid. A fill of the whole grid would read every voxel
+    // of the volume on every refill, and a delivery changes one slice of it.
+    const slab = VoxelManager.createScalarVolumeVoxelManager({
+      dimensions: [width, height, 1],
+      scalarData: new Constructor(frameLength),
       numberOfComponents: 1,
     });
-
-    volume.compositeVoxelManager.fillGrid(grid, target);
-
-    const scalarData = target.getScalarData();
-    const gl = model.context;
-    const frameLength = width * height;
 
     for (let slice = 0; slice < depth; slice++) {
       if (!model.updatedFrames[slice]) {
         continue;
       }
 
+      // The grid of this one slice. Its origin moves along the k axis by the
+      // spacing of one voxel of the grid, so the composite reads the voxels
+      // that this slice covers and no others.
+      composite.fillGrid(
+        {
+          dimensions: [width, height, 1],
+          spacing: grid.spacing,
+          direction: grid.direction,
+          origin: [
+            grid.origin[0] + grid.direction[6] * grid.spacing[2] * slice,
+            grid.origin[1] + grid.direction[7] * grid.spacing[2] * slice,
+            grid.origin[2] + grid.direction[8] * grid.spacing[2] * slice,
+          ],
+        },
+        slab
+      );
+
+      let data = slab.getScalarData();
+
+      if (volume.dataType !== data.constructor.name) {
+        data = convertDataType(data, volume.dataType);
+      }
+
       const [pixData] = publicAPI.updateArrayDataTypeForGL(volume.dataType, [
-        scalarData.subarray(slice * frameLength, (slice + 1) * frameLength),
+        data,
       ]);
 
       publicAPI.bind();

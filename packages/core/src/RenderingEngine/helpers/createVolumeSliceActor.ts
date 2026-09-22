@@ -1,4 +1,6 @@
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
+import { resolveVolumeTexture } from './resolveVolumeTexture';
+import type { ResolveVolumeTextureOptions } from './resolveVolumeTexture';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import { vtkSharedImageResliceMapper } from '../vtkClasses';
 import type { ImageActor } from '../../types/IActor';
@@ -8,7 +10,7 @@ import triggerEvent from '../../utilities/triggerEvent';
 import { Events } from '../../enums';
 import setDefaultVolumeVOI from './setDefaultVolumeVOI';
 
-interface CreateVolumeSliceActorOptions {
+interface CreateVolumeSliceActorOptions extends ResolveVolumeTextureOptions {
   volumeId: string;
   callback?: ({
     volumeActor,
@@ -33,15 +35,19 @@ async function createVolumeSliceActor(
   }
 
   const { imageData } = imageVolume;
-  // The volume builds no texture until a caller claims one. Commit 7 of the
-  // multi-resolution work gives this path a pluggable function that chooses a
-  // grid; until then the path claims the full-resolution grid, which is the
-  // texture that this path used before the pool existed.
-  const vtkOpenGLTexture = imageVolume.getFullResolutionTexture();
+  // The strategies decide which grid this actor draws. A legacy viewport has no
+  // render path, so this one choice is what gives it the reduction that the
+  // capability of the device requires. A render path passes its own provider
+  // here and then keeps choosing on every render.
+  const { texture: vtkOpenGLTexture } = resolveVolumeTexture(imageVolume, {
+    provideStrategies: props.provideStrategies,
+    selectStrategy: props.selectStrategy,
+    viewportId,
+  });
 
   if (!vtkOpenGLTexture) {
     throw new Error(
-      `the texture pool refused a full-resolution texture for the volume ${volumeId}`
+      `no render strategy gives a texture for the volume ${volumeId}`
     );
   }
 

@@ -319,11 +319,15 @@ export function provisionReducedResolutionStrategy({
   const grid = deriveBoxAverageGrid(fullResolutionGrid, { factors });
   const name = reducedStrategyName(factors);
 
-  // The selection never creates a representation, so this is where a caller
-  // decides that a new representation is worth its cost.
-  if (!volume.compositeVoxelManager.getRepresentation(grid)) {
-    volume.createVoxelRepresentation({ factors });
-  }
+  // No representation is derived here. A derivation at this moment would read a
+  // volume whose images have not arrived, and it would freeze that empty result:
+  // a derived representation does not follow the data that arrives later.
+  //
+  // The texture fills through `fillGrid`, which reads the best source that the
+  // composite holds at the moment of the fill, so the image follows the load.
+  // That fill samples the finest source rather than a box average, which
+  // P31.2 of the plan asks for. A box average needs a derivation that updates
+  // as each frame arrives, and that belongs with the loader.
 
   const set = volume.provisionTextureSet({
     name,

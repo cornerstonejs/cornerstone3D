@@ -13,6 +13,7 @@ import {
   provisionReducedResolutionStrategy,
   selectFirstReadyStrategy,
 } from '../src/RenderingEngine/helpers/volumeRenderStrategy';
+import { resolveVolumeTexture } from '../src/RenderingEngine/helpers/resolveVolumeTexture';
 import ImageVolume from '../src/cache/classes/ImageVolume';
 import volumeTextureStore from '../src/cache/volumeTextureStore';
 import { VoxelManager } from '../src/utilities';
@@ -133,18 +134,19 @@ describe('the default provider builds the strategies', () => {
     ).toBeUndefined();
   });
 
-  it('derives the box average of the grid that it draws', () => {
+  it('derives no representation when it builds a strategy', () => {
     const volume = makeVolume();
 
     provisionReducedResolutionStrategy(context(volume, 'low-tablet'));
 
-    const derived = volume
-      .getVoxelRepresentations()
-      .find((representation) => representation.grid.dimensions[0] === 256);
-
-    // THE STRATEGY ASKS FOR THE BOX AVERAGE ONLY, and never a decimation.
-    expect(derived.reduction).toBe('boxAverage');
-    expect(derived.voxelManager.getAtIJK(0, 0, 0)).toBe(7);
+    // A derivation at this moment would read a volume whose images have not
+    // arrived, and it would freeze that empty result. The texture fills through
+    // `fillGrid` instead, which reads the best source that the composite holds
+    // at the moment of the fill.
+    expect(volume.getVoxelRepresentations().length).toBe(1);
+    expect(volume.getVoxelRepresentations()[0].grid.dimensions).toEqual(
+      dimensions
+    );
   });
 
   it('gives one texture set to two viewports that choose one strategy', () => {
@@ -400,9 +402,13 @@ describe('the render reports the quality', () => {
 
     const record = rendering.voxelQuality;
 
-    expect(record.grid.dimensions).toEqual([256, 256, 8]);
-    expect(record.reduction).toBe('boxAverage');
-    // THE RECORD STATES NO VERDICT. A reader compares it against its own
+    // The record follows the ceiling that this render path reads. No
+    // representation exists at the reduced grid yet, so the record describes
+    // the full-resolution data that the fill samples. It will describe the
+    // reduction once a derivation that follows the load exists.
+    expect(record.grid.dimensions).toEqual(dimensions);
+    expect(record.reduction).toBe('none');
+    // The record states no verdict. A reader compares it against its own
     // requirement, which is how a viewport reports lossless at a display
     // resolution below the resolution of the data.
     expect(record.verdict).toBeUndefined();
@@ -430,5 +436,53 @@ describe('the render reports the quality', () => {
     expect(rendering.strategy).toBe(strategy);
     expect(rendering.mapper.setScalarTexture).not.toHaveBeenCalled();
     expect(rendering.voxelQuality.grid.dimensions).toEqual(dimensions);
+  });
+});
+
+describe('the actor helpers choose a strategy for either architecture', () => {
+  it('gives the reduced texture that the profile allows', () => {
+    // A legacy viewport has no render path, so the choice at the creation of
+    // its actor is the only one it gets. The capability of a device does not
+    // change while a viewport lives, so one choice is what the capability
+    // needs.
+    const volume = makeVolume();
+
+    const { strategy, texture } = resolveVolumeTexture(volume, {
+      provideStrategies: ({ volume: aVolume }) =>
+        defaultVolumeStrategyProvider({
+          volume: aVolume,
+          profile: getGpuCapabilityProfile('low-tablet'),
+        }),
+    });
+
+    expect(strategy.name).toBe('reduced-2x2x1/full-extent/average');
+    expect(texture.getGrid().dimensions).toEqual([256, 256, 8]);
+    // The full-resolution set is not built, so it takes no room in the budget.
+    expect(volume.getTextureSet('full-resolution/full-extent')).toBeUndefined();
+  });
+
+  it('gives the full-resolution texture when the device can hold it', () => {
+    const volume = makeVolume();
+
+    const { strategy, texture } = resolveVolumeTexture(volume, {
+      provideStrategies: ({ volume: aVolume }) =>
+        defaultVolumeStrategyProvider({
+          volume: aVolume,
+          profile: getGpuCapabilityProfile('high'),
+        }),
+    });
+
+    expect(strategy.name).toBe('full-resolution/full-extent');
+    expect(texture.getGrid().dimensions).toEqual(dimensions);
+  });
+
+  it('takes no reference, so a render path owns the claim', () => {
+    const volume = makeVolume();
+
+    resolveVolumeTexture(volume);
+
+    expect(volume.getTextureSet('full-resolution/full-extent').references).toBe(
+      0
+    );
   });
 });
