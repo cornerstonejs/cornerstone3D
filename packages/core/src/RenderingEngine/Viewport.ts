@@ -52,6 +52,7 @@ import { deepClone } from '../utilities/deepClone';
 import { updatePlaneRestriction } from '../utilities/updatePlaneRestriction';
 import { isPlaneDepthViewable } from '../utilities/voxelSlab/isPlaneDepthViewable';
 import { getCubeSizeInView } from '../utilities/getPlaneCubeIntersectionDimensions';
+import { getNormalizedAspectRatio } from '../utilities/getNormalizedAspectRatio';
 import { getConfiguration } from '../init';
 import type { extendedVtkCamera } from './vtkClasses/extendedVtkCamera';
 
@@ -1125,6 +1126,9 @@ class Viewport {
    * @param options.resetToCenter - If true, the camera is reset to the center of the volume (slice)
    * @param options.storeAsInitialCamera - If true, reset camera is stored as the initial camera (to allow differences to
    *   be detected for pan/zoom values)
+   * @param options.resetAspectRatio - If true, the aspect ratio of the viewport options is applied, otherwise the
+   *   current aspect ratio of the camera is kept. The zoom calculation uses that aspect ratio, so `resetZoom: true`
+   *   fits a stretched image into the viewport.
    * @returns boolean
    */
   public resetCamera(options?: {
@@ -1205,15 +1209,30 @@ class Viewport {
 
     const canvasSize = [this.sWidth, this.sHeight];
 
-    const boundsAspectRatio = widthWorld / heightWorld;
+    const targetAspectRatio = resetAspectRatio
+      ? this.options?.aspectRatio || ([1, 1] as Point2)
+      : this.getAspectRatio();
+
+    // The aspect ratio stretches the image along the canvas X axis and along
+    // the canvas Y axis. The fit therefore uses the stretched width.
+    const [stretchX, stretchY] = getNormalizedAspectRatio(targetAspectRatio);
+    const stretchRatio = stretchX / stretchY;
+
+    const boundsAspectRatio = (widthWorld * stretchRatio) / heightWorld;
     const canvasAspectRatio = canvasSize[0] / canvasSize[1];
 
     const scaleFactor = boundsAspectRatio / canvasAspectRatio;
 
-    const parallelScale =
+    let parallelScale =
       scaleFactor < 1 // can fit full height, so use it.
         ? (this.insetImageMultiplier * heightWorld) / 2
         : (this.insetImageMultiplier * heightWorld * scaleFactor) / 2;
+
+    // A ratio below 1 compresses the image along the canvas X axis. The camera
+    // must zoom out, or the image loses the full height.
+    if (stretchRatio < 1) {
+      parallelScale /= stretchRatio;
+    }
 
     // If we have just a single point, pick a radius of 1.0
     // compute the radius of the enclosing sphere
@@ -1256,10 +1275,6 @@ class Viewport {
       -focalPointToSet[2]
     );
 
-    const targetAspectRatio = resetAspectRatio
-      ? this.options?.aspectRatio || ([1, 1] as Point2)
-      : this.getAspectRatio();
-
     this.setCamera({
       parallelScale: resetZoom ? parallelScale : previousCamera.parallelScale,
       focalPoint: focalPointToSet,
@@ -1268,7 +1283,6 @@ class Viewport {
       viewUp: viewUpToSet,
       clippingRange: clippingRangeToUse,
       aspectRatio: targetAspectRatio,
-      isFitViewportAfterStretch: previousCamera.isFitViewportAfterStretch,
     });
 
     const modifiedCamera = this.getCamera();
@@ -1480,16 +1494,14 @@ class Viewport {
    * - The camera pose and orientation (position, focal point, and viewPlaneNormal)
    * remain unchanged.
    * - Image data, spacing, and world coordinates are not modified.
+   * - The zoom remains unchanged. Call `resetCamera({ resetZoom: true })` after
+   * this method if the stretched image must fit the viewport again.
    *
    * @param value - The aspect ratio to set as `[widthRatio, heightRatio]`.
    * @param storeAsInitialCamera - Whether to store the updated camera state as the initial camera.
    *                               Defaults to `false`.
    */
-  public setAspectRatio(
-    value: Point2,
-    isFitViewportAfterStretch = true,
-    storeAsInitialCamera = false
-  ): void {
+  public setAspectRatio(value: Point2, storeAsInitialCamera = false): void {
     const camera = this.getCamera();
     if (storeAsInitialCamera) {
       this.options.aspectRatio = value;
@@ -1499,20 +1511,9 @@ class Viewport {
       {
         ...camera,
         aspectRatio: value,
-        isFitViewportAfterStretch,
       },
       storeAsInitialCamera
     );
-  }
-
-  /**
-   * Returns whether to change aspect ratio in anamorphic or not
-   *
-   * @returns change aspect ratio in anamorphic or not
-   */
-  public getIsFitViewportAfterStretch(): boolean {
-    const { isFitViewportAfterStretch } = this.getCamera();
-    return isFitViewportAfterStretch ?? false;
   }
 
   /**
@@ -1613,7 +1614,6 @@ class Viewport {
       viewAngle: vtkCamera.getViewAngle(),
       flipHorizontal: this.flipHorizontal,
       flipVertical: this.flipVertical,
-      isFitViewportAfterStretch: vtkCamera.getIsFitViewportAfterStretch(),
       aspectRatio: vtkCamera.getAspectRatio(),
     };
   }
@@ -1629,83 +1629,6 @@ class Viewport {
       ...camera,
       rotation: this.getRotation(),
     };
-  }
-
-  /**
-   * set the aspect ratio on VTK Camera
-   * @param aspectRatio - aspect ratio to set to VTKCamera
-   * @param isFitViewportAfterStretch - change aspect ratio in anamorphic
-   */
-  private setAspectRatioForVTKCamera(
-    aspectRatio: Point2,
-    isFitViewportAfterStretch: boolean = true
-  ): void {
-    const vtkCamera = this.getVtkActiveCamera() as extendedVtkCamera;
-
-    if (!isFitViewportAfterStretch) {
-      vtkCamera.setAspectRatio(aspectRatio);
-      return;
-    }
-
-    const currentAspect = (vtkCamera.getAspectRatio() as Point2) || [1, 1];
-    if (
-      currentAspect[0] === aspectRatio[0] &&
-      currentAspect[1] === aspectRatio[1]
-    ) {
-      return;
-    }
-
-    const getRatioValue = ([x, y]: Point2) => x / y;
-    const oldRatioValue = getRatioValue(currentAspect);
-    const newRatioValue = getRatioValue(aspectRatio);
-
-    vtkCamera.setAspectRatio(aspectRatio);
-
-    const imageData = this.getDefaultImageData();
-    if (!imageData) return;
-
-    // Calculates the parallel scale required to fit the volume within the canvas for a given aspect ratio.
-    const getFitScale = (rVal: number): number => {
-      const { widthWorld, heightWorld } = getCubeSizeInView(
-        imageData,
-        vtkCamera.getViewPlaneNormal() as Point3,
-        vtkCamera.getViewUp() as Point3
-      );
-
-      const canvasAspectRatio = this.sWidth / this.sHeight;
-      const effectiveWidth = widthWorld * rVal;
-      const effectiveImageRatio = effectiveWidth / heightWorld;
-
-      // Determine scale based on whether the width or height is the limiting constraint (Letterboxing)
-      let fitScale =
-        effectiveImageRatio > canvasAspectRatio
-          ? effectiveWidth / (2 * canvasAspectRatio)
-          : heightWorld / 2;
-
-      // Adjust scale to prevent vertical compression when the aspect ratio favors the Y-axis
-      if (rVal < 1) fitScale /= rVal;
-
-      return fitScale;
-    };
-
-    // Apply the relative difference in fit scales to the current camera zoom (parallelScale)
-    const ratioFactor = getFitScale(newRatioValue) / getFitScale(oldRatioValue);
-    vtkCamera.setParallelScale(vtkCamera.getParallelScale() * ratioFactor);
-
-    // Keep baseline cameras synced to get the correct zoom after stretching.
-    // If not, the saved zoom value will drift from 1.0 even when the image fits the screen.
-    if (this.initialCamera?.parallelScale) {
-      this.initialCamera = {
-        ...this.initialCamera,
-        parallelScale: this.initialCamera.parallelScale * ratioFactor,
-      };
-    }
-    if (this.fitToCanvasCamera?.parallelScale) {
-      this.fitToCanvasCamera = {
-        ...this.fitToCanvasCamera,
-        parallelScale: this.fitToCanvasCamera.parallelScale * ratioFactor,
-      };
-    }
   }
 
   /**
@@ -1732,7 +1655,6 @@ class Viewport {
       flipVertical,
       clippingRange,
       aspectRatio,
-      isFitViewportAfterStretch: providedIsFitViewportAfterStretch,
     } = cameraInterface;
 
     // Note: Flip camera should be two separate calls since
@@ -1794,15 +1716,11 @@ class Viewport {
       vtkCamera.setClippingRange(clippingRange);
     }
 
-    const isFitViewportAfterStretch =
-      providedIsFitViewportAfterStretch ??
-      previousCamera.isFitViewportAfterStretch ??
-      true;
-    updatedCamera.isFitViewportAfterStretch = isFitViewportAfterStretch;
-
     if (aspectRatio) {
-      this.setAspectRatioForVTKCamera(aspectRatio, isFitViewportAfterStretch);
-      vtkCamera.setIsFitViewportAfterStretch(isFitViewportAfterStretch);
+      // The aspect ratio only changes the projection matrix. The zoom stays
+      // the same, and `resetCamera` fits the stretched image if a caller
+      // wants that fit.
+      vtkCamera.setAspectRatio(aspectRatio);
     }
 
     // update clipping range only if focal point changed of a new actor is added
@@ -2253,7 +2171,6 @@ class Viewport {
     }
     const currentAspectRatio = this.getAspectRatio();
     target.aspectRatio = currentAspectRatio;
-    target.isFitViewportAfterStretch = this.getIsFitViewportAfterStretch();
     if (pan) {
       const currentPan = this.getPan();
       const [aspectX, aspectY] = currentAspectRatio;
@@ -2302,13 +2219,15 @@ class Viewport {
       rotation,
       flipHorizontal = this.flipHorizontal,
       flipVertical = this.flipVertical,
-      isFitViewportAfterStretch = this.getIsFitViewportAfterStretch(),
     } = viewPres;
     if (displayArea !== this.getDisplayArea()) {
       this.setDisplayArea(displayArea);
     }
+    // The aspect ratio changes the projection only, and the zoom is a recorded
+    // value of the presentation. The aspect ratio comes first, because the
+    // presentation gives the last word on the zoom.
+    this.setAspectRatio(aspectRatio);
     this.setZoom(zoom);
-    this.setAspectRatio(aspectRatio, isFitViewportAfterStretch);
     if (pan) {
       const [aspectX, aspectY] = aspectRatio;
       this.setPan([pan[0] * zoom * aspectX, pan[1] * zoom * aspectY] as Point2);

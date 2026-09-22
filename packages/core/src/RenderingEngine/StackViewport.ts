@@ -104,6 +104,7 @@ import uuidv4 from '../utilities/uuidv4';
 import getSpacingInNormalDirection from '../utilities/getSpacingInNormalDirection';
 import getClosestImageId from '../utilities/getClosestImageId';
 import { adjustInitialViewUp } from '../utilities/adjustInitialViewUp';
+import { getNormalizedAspectRatio } from '../utilities/getNormalizedAspectRatio';
 import { isContextPoolRenderingEngine } from './helpers/isContextPoolRenderingEngine';
 import {
   createSharpeningRenderPass,
@@ -1102,56 +1103,44 @@ class StackViewport extends Viewport {
 
   /**
    * set the aspect ratio on Viewport
+   *
+   * The aspect ratio only stretches the image. The zoom stays the same, and
+   * `resetCamera` fits the stretched image if a caller wants that fit.
+   *
    * @param aspectRatio - aspect ratio to set to Viewport
-   * @param isFitViewportAfterStretch - change aspect ratio in anamorphic
    */
-  private setAspectRatioForViewport(
-    aspectRatio: Point2,
-    isFitViewportAfterStretch: boolean = true
-  ): void {
-    const { viewport, image } = this._cpuFallbackEnabledElement;
+  private setAspectRatioForViewport(aspectRatio: Point2): void {
+    const { viewport } = this._cpuFallbackEnabledElement;
 
-    if (!isFitViewportAfterStretch) {
-      viewport.aspectRatio = aspectRatio;
-      return;
-    }
+    viewport.aspectRatio = aspectRatio;
+  }
 
+  /**
+   * Calculates the parallel scale that fits the image into the canvas for one
+   * stretch value of the aspect ratio.
+   *
+   * @param ratioValue - the width ratio divided by the height ratio
+   * @returns the parallel scale that fits the image
+   */
+  private getFitParallelScaleCPU(ratioValue: number): number {
+    const { image } = this._cpuFallbackEnabledElement;
     const { clientWidth, clientHeight } = this.element;
     const { rowPixelSpacing, columnPixelSpacing, width, height } = image;
-
-    const getRatioValue = ([x, y]: Point2) => x / y;
-    const oldRatioValue = getRatioValue(viewport.aspectRatio || [1, 1]);
-    const newRatioValue = getRatioValue(aspectRatio);
 
     const canvasRatio = clientWidth / clientHeight;
     const baseHeight = clientHeight * rowPixelSpacing * 0.5;
 
-    const calculateFitParallelScale = (rVal: number): number => {
-      const effectiveWidth = width * columnPixelSpacing * rVal;
-      const effectiveHeight = height * rowPixelSpacing;
+    const effectiveWidth = width * columnPixelSpacing * ratioValue;
+    const effectiveHeight = height * rowPixelSpacing;
 
-      // Determine if fitting the image is constrained by the canvas width or height
-      if (effectiveWidth / effectiveHeight > canvasRatio) {
-        return baseHeight / (clientWidth / effectiveWidth);
-      }
-
-      const fitPScale = effectiveHeight * 0.5;
-      // Adjust scale for narrow aspect ratios to ensure the image remains fully visible
-      return rVal < 1 ? fitPScale / rVal : fitPScale;
-    };
-
-    // Calculate the scaling multiplier needed to keep the zoom relative after the ratio change
-    const ratioFactor =
-      calculateFitParallelScale(newRatioValue) /
-      calculateFitParallelScale(oldRatioValue);
-
-    viewport.aspectRatio = aspectRatio;
-
-    if (viewport.parallelScale) {
-      viewport.parallelScale *= ratioFactor;
-      // Keep the CPU scale property in sync with the updated viewport geometry
-      viewport.scale = baseHeight / viewport.parallelScale;
+    // Determine if fitting the image is constrained by the canvas width or height
+    if (effectiveWidth / effectiveHeight > canvasRatio) {
+      return baseHeight / (clientWidth / effectiveWidth);
     }
+
+    const fitParallelScale = effectiveHeight * 0.5;
+    // Adjust scale for narrow aspect ratios to ensure the image remains fully visible
+    return ratioValue < 1 ? fitParallelScale / ratioValue : fitParallelScale;
   }
 
   private setCameraCPU(cameraInterface: ICamera): void {
@@ -1165,7 +1154,6 @@ class StackViewport extends Viewport {
       flipHorizontal,
       flipVertical,
       aspectRatio,
-      isFitViewportAfterStretch,
     } = cameraInterface;
 
     const { clientHeight } = this.element;
@@ -1223,7 +1211,7 @@ class StackViewport extends Viewport {
     }
 
     if (aspectRatio) {
-      this.setAspectRatioForViewport(aspectRatio, isFitViewportAfterStretch);
+      this.setAspectRatioForViewport(aspectRatio);
     }
 
     if (flipHorizontal !== undefined || flipVertical !== undefined) {
@@ -1278,11 +1266,7 @@ class StackViewport extends Viewport {
     return aspectRatio ?? this.options?.aspectRatio ?? [1, 1];
   }
 
-  public setAspectRatioCPU(
-    value: Point2,
-    isFitViewportAfterStretch = true,
-    storeAsInitialCamera = false
-  ): void {
+  public setAspectRatioCPU(value: Point2, storeAsInitialCamera = false): void {
     const camera = this.getCameraCPU();
     if (storeAsInitialCamera) {
       this.options.aspectRatio = value;
@@ -1291,7 +1275,6 @@ class StackViewport extends Viewport {
     this.setCameraCPU({
       ...camera,
       aspectRatio: value,
-      isFitViewportAfterStretch,
     });
   }
 
@@ -2824,9 +2807,11 @@ class StackViewport extends Viewport {
   private resetCameraCPU({
     resetPan = true,
     resetZoom = true,
+    resetAspectRatio = true,
   }: {
     resetPan?: boolean;
     resetZoom?: boolean;
+    resetAspectRatio?: boolean;
   }) {
     const { image } = this._cpuFallbackEnabledElement;
 
@@ -2834,9 +2819,24 @@ class StackViewport extends Viewport {
       return;
     }
 
+    const targetAspectRatio = resetAspectRatio
+      ? this.options?.aspectRatio || ([1, 1] as Point2)
+      : this.getAspectRatioCPU();
+
     resetCamera(this._cpuFallbackEnabledElement, resetPan, resetZoom);
 
-    const { scale } = this._cpuFallbackEnabledElement.viewport;
+    let { scale } = this._cpuFallbackEnabledElement.viewport;
+
+    if (resetZoom) {
+      // The aspect ratio stretches the image, and the reset above fits the
+      // image without that stretch. The scale therefore needs the ratio
+      // between the two fits.
+      const [stretchX, stretchY] = getNormalizedAspectRatio(targetAspectRatio);
+      const stretchRatio = stretchX / stretchY;
+      scale /=
+        this.getFitParallelScaleCPU(stretchRatio) /
+        this.getFitParallelScaleCPU(1);
+    }
 
     // canvas center is the focal point
     const { clientWidth, clientHeight } = this.element;
@@ -2847,6 +2847,7 @@ class StackViewport extends Viewport {
     this.setCameraCPU({
       focalPoint: centerWorld,
       scale,
+      aspectRatio: targetAspectRatio,
     });
   }
 
@@ -3786,10 +3787,18 @@ class StackViewport extends Viewport {
     },
     resetCamera: {
       cpu: (
-        options: { resetPan?: boolean; resetZoom?: boolean } = {}
+        options: {
+          resetPan?: boolean;
+          resetZoom?: boolean;
+          resetAspectRatio?: boolean;
+        } = {}
       ): boolean => {
-        const { resetPan = true, resetZoom = true } = options;
-        this.resetCameraCPU({ resetPan, resetZoom });
+        const {
+          resetPan = true,
+          resetZoom = true,
+          resetAspectRatio = true,
+        } = options;
+        this.resetCameraCPU({ resetPan, resetZoom, resetAspectRatio });
         return true;
       },
       gpu: (

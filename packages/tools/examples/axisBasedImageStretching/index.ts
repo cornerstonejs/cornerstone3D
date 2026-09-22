@@ -246,6 +246,22 @@ addCheckboxToToolbar({
   },
 });
 
+/**
+ * Sets the aspect ratio of one viewport. `setAspectRatio` only stretches the
+ * image, so a fit of the stretched image needs a reset of the zoom.
+ */
+const applyAspectRatio = (vp, aspect: Types.Point2) => {
+  vp.setAspectRatio(aspect);
+  if (isFitViewportAfterStretch) {
+    vp.resetCamera({
+      resetPan: false,
+      resetToCenter: false,
+      resetAspectRatio: false,
+    });
+  }
+  vp.render();
+};
+
 let stretchAxis = ['Stretch X', 'Stretch Y'];
 let selectedAxis = stretchAxis[0];
 
@@ -270,8 +286,7 @@ const setStretch = (value) => {
     if (!vp) {
       return;
     }
-    vp.setAspectRatio([sx, sy], isFitViewportAfterStretch);
-    vp.render();
+    applyAspectRatio(vp, [sx, sy]);
   });
 };
 
@@ -293,8 +308,7 @@ addDropdownToToolbar({
       if (!vp) {
         return;
       }
-      vp.setAspectRatio(aspect, isFitViewportAfterStretch);
-      vp.render();
+      applyAspectRatio(vp, aspect);
     });
   },
 });
