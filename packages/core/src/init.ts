@@ -159,6 +159,15 @@ function init(configuration = config): boolean {
         `CornerstoneRender: software rasterizer detected (${capabilities.renderer}), GPU rendering may be slow`
       );
     }
+
+    log.info(
+      `CornerstoneRender: GPU class ${capabilities.gpuClass} ` +
+        `(budgetFrac=${capabilities.recommendedInteractiveBudgetFrac}` +
+        (capabilities.gpuPerfMsPerMpx != null
+          ? `, msPerMpx=${capabilities.gpuPerfMsPerMpx.toFixed(2)}`
+          : '') +
+        ')'
+    );
   }
 
   csRenderInitialized = true;
