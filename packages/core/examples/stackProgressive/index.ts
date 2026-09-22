@@ -56,7 +56,8 @@ itemInfo.innerHTML = `
 <ul>
 <li>JLS Thumbnail - small JLS thumbnails only</li>
 <li>JLS Mixed - thumbnail first, then full</li>
-<li>HTJ2K - streaming load</li>
+<li>HTJ2K - streaming load, first decode at the default 128k</li>
+<li>HTJ2K 32k First - the same load, first decode at 32k</li>
 <li>HTJ2K - lossy byte range then lossy full</li>
 <li>Bytes - full resolution 64k bytes, then full final</li>
 </ul>
@@ -201,6 +202,28 @@ const htj2kProgressiveOptions = {
   },
 };
 
+/**
+ * The same streaming retrieve, with the initial size the default used before it
+ * became 128k.
+ *
+ * The two configurations together show what that size buys on one large frame.
+ * 32k puts an image on screen sooner, because a quarter of the data has to
+ * arrive first. The image is poorer, because 32k of codestream covers the whole
+ * 3036x3036 frame, and the next decode follows almost at once and replaces it.
+ * Compare the time and the quality of the first render of each.
+ */
+const htj2kInitial32kOptions = {
+  retrieveOptions: {
+    default: htj2kFrames,
+    single: {
+      ...htj2kFrames,
+      streaming: true,
+      decodeLevel: 0,
+      initialChunkSize: 32 * 1024,
+    },
+  },
+};
+
 const htj2kLossyOptions = {
   ...sequentialRetrieveStages,
   retrieveOptions: {
@@ -325,6 +348,7 @@ async function run() {
 
   loadButton('HTJ2K Non Progressive', imageIds, undefined);
   loadButton('HTJ2K', imageIds, htj2kProgressiveOptions);
+  loadButton('HTJ2K 32k First', imageIds, htj2kInitial32kOptions);
   loadButton('HTJ2K Lossy', imageIds, htj2kLossyOptions);
   loadButton('HTJ2K Bytes', imageIds, htj2kMixedOptions);
 
