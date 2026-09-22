@@ -36,7 +36,7 @@ already exists.
   ║            ▼              │                        │                            ║
   ║   VolumeStrategyProvider ─┘                        │                            ║
   ║            │   · reads the GpuCapabilityProfile    │                            ║
-  ║            │   · derives a box average when it must│                            ║
+  ║            │   · computes the box factors per axis │                            ║
   ║            │   · provisions the texture sets ──────┘                            ║
   ║            │                                                                    ║
   ║            ▼                                                                    ║
@@ -98,8 +98,11 @@ The default provider reads the capability profile and answers in one of two ways
 
 - The device can hold the full-resolution grid, so the provider builds the **full-resolution
   strategy** and provisions the set `full-resolution/full-extent`.
-- The device cannot, so the provider computes a **box average per axis**, derives that
-  representation into the composite, and provisions a reduced set whose name carries the factors.
+- The device cannot, so the provider computes the **size of the box on each axis** and provisions a
+  reduced set whose name carries those factors. It derives **no** representation: a derivation at
+  this moment reads a volume whose images have not arrived, and it freezes that empty result. The
+  loader owns the derivation that follows the load, which the table at the end of this document
+  records.
 
 The reduction is per axis and it is not uniform. An edge of 2049 voxels exceeds a limit of 2048 on
 one axis and by one voxel, so one axis reduces and the other two do not.
@@ -282,12 +285,14 @@ and needs no change.
 
 ## What this version does not do
 
-| Item                                                               | Where it belongs                         |
-| ------------------------------------------------------------------ | ---------------------------------------- |
-| A phased render, and a vocabulary of phases                        | the render component that implements one |
-| A consumer of the `refinement` role                                | the multi-texture render component       |
-| A performance-bound choice of strategy                             | task T14                                 |
-| An automatic policy with recorded fixtures                         | task T15                                 |
-| A capability probe, and the override of an overstated memory value | task T15                                 |
-| A brick loader, and the sets that it would provision               | task T7                                  |
-| The state that a user sees, and the indicator of OHIF              | tasks T3 and T6                          |
+| Item                                                                                                                                                                                                                                                                              | Where it belongs                         |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| A box average behind a reduced texture. The texture fills by asking the composite for the best source of each voxel, which is a nearest neighbour sample. A box average needs a representation that updates as each frame arrives, and only the loader knows when a frame arrives | the loader, commit 9                     |
+| A quality record that describes the reduction. No representation exists at the reduced grid, so the record describes the full-resolution data under the ceiling, and an indicator built on it under-reports                                                                       | the loader, commit 9                     |
+| A phased render, and a vocabulary of phases                                                                                                                                                                                                                                       | the render component that implements one |
+| A consumer of the `refinement` role                                                                                                                                                                                                                                               | the multi-texture render component       |
+| A performance-bound choice of strategy                                                                                                                                                                                                                                            | task T14                                 |
+| An automatic policy with recorded fixtures                                                                                                                                                                                                                                        | task T15                                 |
+| A capability probe, and the override of an overstated memory value                                                                                                                                                                                                                | task T15                                 |
+| A brick loader, and the sets that it would provision                                                                                                                                                                                                                              | task T7                                  |
+| The state that a user sees, and the indicator of OHIF                                                                                                                                                                                                                             | tasks T3 and T6                          |

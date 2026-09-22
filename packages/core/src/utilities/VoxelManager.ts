@@ -658,9 +658,13 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
     }
 
     if (this._getConstructor) {
-      return this._getConstructor() as new (
-        length: number
-      ) => PixelDataTypedArray;
+      // A volume that streams its images answers with nothing until the first
+      // image is cached, so the fallback below applies to that volume too.
+      const Constructor = this._getConstructor();
+
+      if (Constructor) {
+        return Constructor as new (length: number) => PixelDataTypedArray;
+      }
     }
 
     log.warn('No scalar data available or can be used to get the constructor');

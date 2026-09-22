@@ -17,6 +17,8 @@ import type {
   VoxelStatistic,
 } from '../types';
 import { coreLog } from '../utilities/logger';
+import eventTarget from '../eventTarget';
+import Events from '../enums/Events';
 
 const log = coreLog.getLogger('cache', 'volumeTextureStore');
 
@@ -442,6 +444,18 @@ function releaseTexturesOf(
 }
 
 const volumeTextureStore = new VolumeTextureStore();
+
+// A volume that leaves the cache takes its textures with it. The cache does not
+// call `ImageVolume.destroy`, so the store listens for the removal instead:
+// this store is global, and a set that nobody evicts would hold its textures
+// for the life of the page.
+eventTarget.addEventListener(Events.VOLUME_CACHE_VOLUME_REMOVED, (evt) => {
+  const { volumeId } = (evt as CustomEvent<{ volumeId?: string }>).detail ?? {};
+
+  if (volumeId) {
+    volumeTextureStore.evictVolume(volumeId);
+  }
+});
 
 export { VolumeTextureStore, volumeTextureStore };
 export default volumeTextureStore;

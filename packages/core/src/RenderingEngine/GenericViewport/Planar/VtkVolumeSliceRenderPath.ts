@@ -108,6 +108,8 @@ export class VtkVolumeSliceRenderPath
     const { actor } = await createVolumeSliceActor(
       {
         volumeId: payload.volumeId,
+        provideStrategies: this.provideStrategies,
+        selectStrategy: this.selectStrategy,
       },
       ctx.viewport.element,
       ctx.viewportId,
