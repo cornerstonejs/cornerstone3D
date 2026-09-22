@@ -483,6 +483,7 @@ export class ImageVolume {
       applyGrid: (texture, grid) => {
         texture.setGrid(grid);
       },
+      markTextureSlice: markSlice,
       ...options,
     });
   }

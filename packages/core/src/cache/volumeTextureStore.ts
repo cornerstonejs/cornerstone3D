@@ -68,6 +68,17 @@ export type ProvisionTextureSetOptions<TextureType> = {
   destroyTexture?: (texture: TextureType) => void;
   /** States the grid on a texture. A slab calls this again on each re-point. */
   applyGrid?: (texture: TextureType, grid: VoxelGrid) => void;
+  /**
+   * Marks one z slice of one texture for a refill.
+   *
+   * A new texture holds uninitialised memory, so the store marks every slice of
+   * it. A slice that nothing marks is never uploaded, and it draws whatever the
+   * driver left in that memory.
+   */
+  markTextureSlice?: (
+    slot: VolumeTextureSlot<TextureType>,
+    slice: number
+  ) => void;
   /** The limits of one texture. No limit by default. */
   limits?: VolumeTextureLimits;
 };
@@ -293,8 +304,9 @@ class VolumeTextureStore {
       set.add(slot);
     });
 
-    // Every texture holds nothing yet, so the first render of each one fills it.
-    set.markAllDirty();
+    // Every texture holds uninitialised memory, so every slice of it must
+    // upload once before it is drawn.
+    set.markAllDirty(options.markTextureSlice);
     set.lastUsed = ++this.clock;
 
     this.sets.set(key, {
