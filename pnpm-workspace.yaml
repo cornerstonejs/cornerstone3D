@@ -56,7 +56,7 @@ overrides:
   'form-data': 4.0.6
   'vite': 8.0.16
   websocket-driver: 0.7.5
-  adm-zip: 0.6.0
+  'adm-zip@<0.6.1': 0.6.1
   # brace-expansion ReDoS (GHSA-3jxr-9vmj-r5cp / CVE-2026-13149). The advisory
   # patches three separate branches; each rule is scoped to its own major range
   # so they stay disjoint (an unscoped '<5.0.7' would also catch v1/v2 and force
