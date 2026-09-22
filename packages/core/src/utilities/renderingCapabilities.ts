@@ -16,18 +16,34 @@ export {
   classifyGpuClass,
 } from './gpuBudgetProbe';
 
-/**
- * Bump when the probes (or the meaning of any profile field) change so that
- * profiles cached by earlier versions are discarded.
- */
-export const RENDERING_CAPABILITIES_PROBE_VERSION = 3;
-
 const STORAGE_KEY = 'cornerstone3D.renderingCapabilities';
 
 const SOFTWARE_RASTERIZER_PATTERN =
   /swiftshader|llvmpipe|softpipe|software|microsoft basic render/i;
 
 const GPU_CLASS_SET = new Set<string>(GPU_CLASSES);
+
+/** Hard WebGL size limits gathered from a cheap context probe. */
+export interface WebGLSizeLimits {
+  /** MAX_TEXTURE_SIZE (2D). */
+  maxTextureSize: number;
+  /** MAX_3D_TEXTURE_SIZE (WebGL2 only; 0 on WebGL1 / no context). */
+  max3DTextureSize: number;
+  /** MAX_ARRAY_TEXTURE_LAYERS (WebGL2 only; 0 on WebGL1 / no context). */
+  maxArrayTextureLayers: number;
+  /** MAX_RENDERBUFFER_SIZE. */
+  maxRenderbufferSize: number;
+  /** MAX_VIEWPORT_DIMS as [width, height]. */
+  maxViewportDims: [number, number];
+}
+
+const NO_GPU_SIZE_LIMITS: WebGLSizeLimits = {
+  maxTextureSize: 0,
+  max3DTextureSize: 0,
+  maxArrayTextureLayers: 0,
+  maxRenderbufferSize: 0,
+  maxViewportDims: [0, 0],
+};
 
 /**
  * The GPU capability profile detected through offscreen WebGL probes.
@@ -43,13 +59,13 @@ const GPU_CLASS_SET = new Set<string>(GPU_CLASSES);
  * Interactive pixel-budget seeding uses {@link recommendedInteractiveBudgetFrac}
  * from a fixed class→frac table — not a continuous timing→budget formula.
  */
-export interface RenderingCapabilities extends TextureFormatSupport {
+export interface RenderingCapabilities
+  extends TextureFormatSupport,
+    WebGLSizeLimits {
   /** Any WebGL context (1 or 2) could be created. */
   webgl: boolean;
   /** A WebGL2 context could be created. */
   webgl2: boolean;
-  /** MAX_TEXTURE_SIZE of the probed context, 0 when no context exists. */
-  maxTextureSize: number;
   /** Unmasked renderer string when exposed by the browser, '' otherwise. */
   renderer: string;
   /** True when the renderer string identifies a software rasterizer. */
@@ -68,17 +84,16 @@ export interface RenderingCapabilities extends TextureFormatSupport {
   gpuPerfMsPerMpx: number | null;
 }
 
-interface WebGLContextInfo {
+interface WebGLContextInfo extends WebGLSizeLimits {
   webgl: boolean;
   webgl2: boolean;
-  maxTextureSize: number;
   renderer: string;
 }
 
-interface CachedCapabilities {
-  probeVersion: number;
+interface CachedCapabilities extends WebGLSizeLimits {
   renderer: string;
   webgl2: boolean;
+  softwareRasterizer: boolean;
   formats: TextureFormatSupport;
   gpuClass: GpuClass;
   gpuPerfMsPerMpx: number | null;
@@ -95,11 +110,36 @@ const NO_GPU_FORMATS: TextureFormatSupport = {
 
 let cachedCapabilities: RenderingCapabilities | null = null;
 
+function readGlNumber(
+  gl: WebGLRenderingContext | WebGL2RenderingContext,
+  pname: number
+): number {
+  return Number(gl.getParameter(pname)) || 0;
+}
+
+function readGlViewportDims(
+  gl: WebGLRenderingContext | WebGL2RenderingContext
+): [number, number] {
+  const dims = gl.getParameter(gl.MAX_VIEWPORT_DIMS);
+  if (
+    dims &&
+    typeof dims === 'object' &&
+    typeof (dims as ArrayLike<number>)[0] === 'number' &&
+    typeof (dims as ArrayLike<number>)[1] === 'number'
+  ) {
+    return [
+      Number((dims as ArrayLike<number>)[0]) || 0,
+      Number((dims as ArrayLike<number>)[1]) || 0,
+    ];
+  }
+  return [0, 0];
+}
+
 function getWebGLContextInfo(): WebGLContextInfo {
   const info: WebGLContextInfo = {
     webgl: false,
     webgl2: false,
-    maxTextureSize: 0,
+    ...NO_GPU_SIZE_LIMITS,
     renderer: '',
   };
 
@@ -121,7 +161,17 @@ function getWebGLContextInfo(): WebGLContextInfo {
 
     info.webgl = true;
     info.webgl2 = !!gl2;
-    info.maxTextureSize = Number(gl.getParameter(gl.MAX_TEXTURE_SIZE)) || 0;
+    info.maxTextureSize = readGlNumber(gl, gl.MAX_TEXTURE_SIZE);
+    info.maxRenderbufferSize = readGlNumber(gl, gl.MAX_RENDERBUFFER_SIZE);
+    info.maxViewportDims = readGlViewportDims(gl);
+
+    if (gl2) {
+      info.max3DTextureSize = readGlNumber(gl2, gl2.MAX_3D_TEXTURE_SIZE);
+      info.maxArrayTextureLayers = readGlNumber(
+        gl2,
+        gl2.MAX_ARRAY_TEXTURE_LAYERS
+      );
+    }
 
     // Modern browsers expose the unmasked renderer through RENDERER directly;
     // older ones require the WEBGL_debug_renderer_info extension.
@@ -160,6 +210,19 @@ function withPerformanceFields(
   };
 }
 
+function isCachedSizeLimits(parsed: CachedCapabilities): boolean {
+  return (
+    typeof parsed?.maxTextureSize === 'number' &&
+    typeof parsed?.max3DTextureSize === 'number' &&
+    typeof parsed?.maxArrayTextureLayers === 'number' &&
+    typeof parsed?.maxRenderbufferSize === 'number' &&
+    Array.isArray(parsed?.maxViewportDims) &&
+    parsed.maxViewportDims.length === 2 &&
+    typeof parsed.maxViewportDims[0] === 'number' &&
+    typeof parsed.maxViewportDims[1] === 'number'
+  );
+}
+
 function readCachedProfile(
   renderer: string,
   webgl2: boolean
@@ -180,10 +243,13 @@ function readCachedProfile(
     // The texture probes require WebGL2, so a profile cached on a WebGL1-only
     // run is all-false; invalidate it when WebGL2 availability changes for
     // the same renderer (browser update/flag) instead of pinning it forever.
+    // Size-limit fields are required so incomplete cache entries are ignored.
+    // There is no probe-version field — clear localStorage manually to refresh.
     if (
-      parsed?.probeVersion !== RENDERING_CAPABILITIES_PROBE_VERSION ||
       parsed?.renderer !== renderer ||
       parsed?.webgl2 !== webgl2 ||
+      !isCachedSizeLimits(parsed) ||
+      typeof parsed?.softwareRasterizer !== 'boolean' ||
       typeof parsed?.formats !== 'object' ||
       parsed?.formats === null ||
       typeof parsed?.gpuClass !== 'string' ||
@@ -206,17 +272,22 @@ function readCachedProfile(
 }
 
 function writeCachedProfile(
-  renderer: string,
-  webgl2: boolean,
+  contextInfo: WebGLContextInfo,
+  softwareRasterizer: boolean,
   formats: TextureFormatSupport,
   gpuClass: GpuClass,
   gpuPerfMsPerMpx: number | null
 ): void {
   try {
     const payload: CachedCapabilities = {
-      probeVersion: RENDERING_CAPABILITIES_PROBE_VERSION,
-      renderer,
-      webgl2,
+      renderer: contextInfo.renderer,
+      webgl2: contextInfo.webgl2,
+      maxTextureSize: contextInfo.maxTextureSize,
+      max3DTextureSize: contextInfo.max3DTextureSize,
+      maxArrayTextureLayers: contextInfo.maxArrayTextureLayers,
+      maxRenderbufferSize: contextInfo.maxRenderbufferSize,
+      maxViewportDims: contextInfo.maxViewportDims,
+      softwareRasterizer,
       formats,
       gpuClass,
       gpuPerfMsPerMpx,
@@ -231,13 +302,13 @@ function writeCachedProfile(
 
 /**
  * Runs the capability detection: one cheap context to gather renderer string,
- * WebGL level and MAX_TEXTURE_SIZE, then the texture-format and GPU class
- * probes.
+ * WebGL level and size limits (2D/3D texture, array layers, renderbuffer,
+ * viewport), then the texture-format and GPU class probes.
  *
- * Probe results are cached in localStorage keyed by renderer string, WebGL2
- * availability, and probe version, so repeat page loads on the same GPU skip
- * the probe contexts entirely. Pass `useCache: false` to force a fresh probe
- * run (also refreshes the stored cache).
+ * Probe results are cached in localStorage keyed by renderer string and WebGL2
+ * availability, so repeat page loads on the same GPU skip the probe contexts
+ * entirely. Pass `useCache: false` to force a fresh probe run (also refreshes
+ * the stored cache). Clear the storage key manually after probe-shape changes.
  */
 export function detectRenderingCapabilities({
   useCache = true,
@@ -295,8 +366,8 @@ export function detectRenderingCapabilities({
   // not poison the cache under an otherwise valid renderer key.
   if (probedFormats && gpuClass != null) {
     writeCachedProfile(
-      contextInfo.renderer,
-      contextInfo.webgl2,
+      contextInfo,
+      softwareRasterizer,
       probedFormats,
       gpuClass,
       gpuPerfMsPerMpx

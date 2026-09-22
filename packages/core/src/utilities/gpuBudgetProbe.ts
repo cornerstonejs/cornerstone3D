@@ -35,8 +35,17 @@ export const GPU_PERF_MS_PER_MPX_HIGH_MAX = 2;
 export const GPU_PERF_MS_PER_MPX_MEDIUM_MAX = 8;
 export const GPU_PERF_MS_PER_MPX_LOW_MAX = 25;
 
-const PROBE_SIZES = [128, 256, 512];
-const PROBE_ITERATIONS = 6;
+/**
+ * Floor used when the GPU finishes within one performance.now() tick.
+ * Reported as this value (not 0) so logs/cache stay interpretable and
+ * classification treats the result as {@link GpuClass} high.
+ */
+export const GPU_PERF_MS_PER_MPX_TOO_FAST = 0.001;
+
+// Large enough that discrete / fast iGPUs still accumulate measurable time;
+// a 128–512 clear loop often finishes in 0ms on laptop GPUs.
+const PROBE_SIZES = [512, 1024, 2048];
+const PROBE_ITERATIONS = 12;
 
 export function getRecommendedInteractiveBudgetFrac(
   gpuClass: GpuClass | null
@@ -66,8 +75,9 @@ export function classifyGpuClass({
   if (softwareRasterizer) {
     return 'minimal';
   }
-  if (!(msPerMpx > 0) || !Number.isFinite(msPerMpx)) {
-    // Probe failed on hardware GL — treat as medium rather than punishing.
+  // null / NaN / negative → probe failed. 0 (or too-fast floor) means the
+  // GPU finished within timer resolution — treat as high, not medium.
+  if (msPerMpx == null || !Number.isFinite(msPerMpx) || msPerMpx < 0) {
     return 'medium';
   }
   if (msPerMpx <= GPU_PERF_MS_PER_MPX_HIGH_MAX) {
@@ -133,20 +143,26 @@ export function probeGpuMsPerMpx(): number | null {
       // Warm-up (excluded from timing).
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
-      gl.finish();
+      syncGpu(gl);
 
       const start = performance.now();
       for (let i = 0; i < PROBE_ITERATIONS; i++) {
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.drawArrays(gl.TRIANGLES, 0, 3);
       }
-      gl.finish();
+      syncGpu(gl);
       totalMs += performance.now() - start;
       totalMpx += (size * size * PROBE_ITERATIONS) / 1e6;
     }
 
-    if (!(totalMpx > 0) || !(totalMs >= 0)) {
+    if (!(totalMpx > 0) || !(totalMs >= 0) || !Number.isFinite(totalMs)) {
       return null;
+    }
+
+    // Timer resolution can round a fast discrete GPU to 0ms; do not persist
+    // a literal 0 (ambiguous with "failed") — clamp to the too-fast floor.
+    if (totalMs === 0) {
+      return GPU_PERF_MS_PER_MPX_TOO_FAST;
     }
 
     return totalMs / totalMpx;
@@ -158,6 +174,16 @@ export function probeGpuMsPerMpx(): number | null {
       loseContext?.loseContext();
     }
   }
+}
+
+/**
+ * Block until submitted GPU work completes. finish() alone is enough on most
+ * drivers; a 1×1 readPixels forces a pipeline flush where finish is lazy.
+ */
+function syncGpu(gl: WebGLRenderingContext | WebGL2RenderingContext): void {
+  gl.finish();
+  const pixel = new Uint8Array(4);
+  gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
 }
 
 function createFillProgram(
