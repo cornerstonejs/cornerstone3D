@@ -1,7 +1,13 @@
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import imageIdToURI from '../../utilities/imageIdToURI';
 import VoxelManager from '../../utilities/VoxelManager';
+import CompositeVoxelManager from '../../utilities/CompositeVoxelManager';
 import { vtkStreamingOpenGLTexture } from '../../RenderingEngine/vtkClasses';
+import type {
+  CreateVoxelRepresentationOptions,
+  VoxelRepresentation,
+  VoxelRepresentationSelector,
+} from '../../utilities/CompositeVoxelManager';
 import type {
   Metadata,
   Point3,
@@ -11,6 +17,8 @@ import type {
   PixelDataTypedArrayString,
   RGB,
   IVoxelManager,
+  VoxelGrid,
+  VoxelQualityRecord,
 } from '../../types';
 import cache from '../cache';
 import type vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
@@ -88,6 +96,12 @@ export class ImageVolume {
    */
   voxelManager?: IVoxelManager<number> | IVoxelManager<RGB>;
   dataType?: PixelDataTypedArrayString;
+
+  /**
+   * The composite of the alternate representations, which the volume builds on
+   * the first request. See `compositeVoxelManager`.
+   */
+  private _compositeVoxelManager?: CompositeVoxelManager<number | RGB>;
 
   /**
    * Calculates the number of time points to be the number of dimension groups
@@ -209,6 +223,132 @@ export class ImageVolume {
     return this.voxelManager.sizeInBytes;
   }
 
+  // ==========================================================================
+  // The multi-resolution API
+  //
+  // THE EXISTING PUBLIC SURFACE DOES NOT CHANGE. `dimensions`, `spacing`,
+  // `origin`, `direction`, `imageIds`, `getImageIdIndex`, `voxelManager` and
+  // `getCompleteScalarDataArray` keep their behaviour, so a tool, a
+  // segmentation and a measurement see no difference. MR-API-IV-1 and
+  // MR-API-IV-9 require that.
+  //
+  // The members below are new, and they give the ALTERNATE REPRESENTATIONS of
+  // the voxel data to a caller, which MR-API-IV-4 requires. A render path reads
+  // them to select the grid that it draws, and a loader reads them to deliver
+  // data at a grid that is not the grid of this volume.
+  // ==========================================================================
+
+  /**
+   * THE GRID DESCRIPTOR OF THE DATA OF THIS VOLUME.
+   *
+   * The grid states the origin, the direction, the spacing and the dimensions
+   * that the volume already holds, and it states nothing else. THERE IS NO
+   * LEVEL INDEX: the grid of this volume is the primary representation of the
+   * composite, and it carries no ordinal that would make it "level 0".
+   *
+   * Each call gives a new record, and the record holds a copy of each array, so
+   * a consumer that stores the grid is not exposed to a later change of
+   * `this.origin` or of `this.dimensions`.
+   */
+  public get voxelGrid(): VoxelGrid {
+    return {
+      origin: [...this.origin] as Point3,
+      direction: [...this.direction] as Mat3,
+      spacing: [...this.spacing] as Point3,
+      dimensions: [...this.dimensions] as Point3,
+    };
+  }
+
+  /**
+   * THE COMPOSITE OF THIS VOLUME, which holds every representation of the voxel
+   * data. The volume builds the composite on the first request, and the
+   * representation of `voxelManager` is the primary one.
+   *
+   * `voxelManager` STAYS THE PRIMARY VOXEL MANAGER, and a read through
+   * `voxelManager` therefore reads the data of this grid alone, which is the
+   * behaviour of today. A caller that wants the best data for a region, at a
+   * resolution that it states, reads the composite.
+   *
+   * The volume DISCARDS THE COMPOSITE when a caller assigns a new
+   * `voxelManager`, because the alternate representations describe the data of
+   * the voxel manager that produced them. `volumeLoader.createLocalVolume`
+   * assigns a new voxel manager immediately after the construction, and the
+   * discard makes that assignment safe.
+   *
+   * `sizeInBytes` counts the primary voxel manager alone. A derived
+   * representation is extra memory that the cache does not count yet.
+   */
+  public get compositeVoxelManager(): CompositeVoxelManager<number | RGB> {
+    const primary = this.voxelManager as IVoxelManager<number | RGB>;
+
+    if (
+      !this._compositeVoxelManager ||
+      this._compositeVoxelManager.primary !== primary
+    ) {
+      this._compositeVoxelManager = new CompositeVoxelManager<number | RGB>({
+        primary,
+        grid: this.voxelGrid,
+        id: `composite-${this.volumeId}`,
+      });
+    }
+
+    return this._compositeVoxelManager;
+  }
+
+  /**
+   * Every representation of the voxel data, the primary one included.
+   *
+   * MANY REPRESENTATIONS CAN EXIST AT ONE RESOLUTION, each one covering a
+   * different part of the volume, because a set of bricks is exactly that. A
+   * caller must not assume one representation for each spacing.
+   */
+  public getVoxelRepresentations(): VoxelRepresentation<number | RGB>[] {
+    return this.compositeVoxelManager.getRepresentations();
+  }
+
+  /**
+   * THE REPRESENTATION THAT A READER GETS for a region, at a statistic, under a
+   * ceiling. The ceiling is the resolution that the caller will use, so a
+   * render path that fills a texture at one eighth passes the spacing of that
+   * texture, and the selection does not return the full-resolution data.
+   *
+   * THE SELECTION NEVER CREATES. `createVoxelRepresentation` creates, and the
+   * caller decides whether a new representation is worth its cost.
+   */
+  public selectVoxelRepresentation(
+    selector: VoxelRepresentationSelector = {}
+  ): VoxelRepresentation<number | RGB> {
+    return this.compositeVoxelManager.selectRepresentation(selector);
+  }
+
+  /**
+   * Derives a new representation from the data that the volume already holds,
+   * and adds that representation to the composite.
+   *
+   * A DERIVATION ALWAYS GOES FROM A HIGHER RESOLUTION TO A LOWER ONE. Data that
+   * no derivation can give arrives through `compositeVoxelManager.acceptData`,
+   * which is the member that a loader calls.
+   */
+  public createVoxelRepresentation(
+    options: CreateVoxelRepresentationOptions
+  ): VoxelRepresentation<number | RGB> {
+    return this.compositeVoxelManager.createRepresentation(options);
+  }
+
+  /**
+   * THE ABSOLUTE RECORD of the data that a reader would get for a region, under
+   * the same three inputs that the selection takes.
+   *
+   * THE RECORD STATES NO VERDICT. A reader compares the record against its own
+   * requirement with `compareVoxelQuality`, so two viewports over one volume
+   * can report a different verdict at one moment.
+   */
+  public getVoxelQuality(
+    selector: VoxelRepresentationSelector = {}
+  ): VoxelQualityRecord {
+    return this.compositeVoxelManager.getQuality(selector);
+  }
+
   /** return the image ids for the volume if it is made of separated images */
   public get imageIds(): string[] {
     return this._imageIds;
@@ -277,6 +417,9 @@ export class ImageVolume {
     this.imageData.delete();
     this.imageData = null;
     this.voxelManager.clear();
+    // The alternate representations hold their own voxels, and nothing else
+    // refers to them, so the discard of the composite releases that memory.
+    this._compositeVoxelManager = undefined;
 
     this.vtkOpenGLTexture.releaseGraphicsResources();
     this.vtkOpenGLTexture.delete();
