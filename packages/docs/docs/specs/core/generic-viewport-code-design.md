@@ -206,9 +206,9 @@ For example `ECG/ECGViewport.ts`, `Planar/PlanarViewport.ts`.
 For example `ECG/ECGViewportTypes.ts`.
 
 - **GENVIEW-STATE-1** An option that changes the world geometry, or that changes
-  the world/canvas transform of any point, belongs to the view state. A layout,
-  a time window, a sweep speed and an amplitude sensitivity each change the
-  geometry, so each one is view state.
+  the world/canvas transform of any point, belongs to the view state. A slice
+  position, a reformat orientation, a cell layout, a time window and an
+  amplitude scale each change the geometry, so each one is view state.
 - **GENVIEW-STATE-2** An option that changes the appearance only belongs to the
   data presentation: the VOI, the opacity, the colormap, the blend mode, the
   interpolation, the visibility, the line width.
@@ -373,51 +373,97 @@ For example `ECG/ECGViewportLegacyAdapter.ts`.
 
 ## Known deviations
 
-The rules above describe the intended design. The code today deviates in the
-places below. Each line names the requirement that the deviation breaks.
+The rules above describe the intended design. The code on `main` deviates in the
+places below. Each item names the requirement that the deviation breaks.
 
-- `packages/core/src/utilities/ECGUtilities.ts` holds the ECG layout code, the
-  ECG metric code and the ECG drawing code. The module serves the ECG family and
-  the deprecated `RenderingEngine/ECGViewport.ts`. The Video family and the WSI
-  family keep their drawing code inside the family directory. Breaks
-  GENVIEW-FILE-1 and GENVIEW-FILE-5.
-- `ECGDataPresentation` holds `layoutType`, `sweepSpeed`, `sensitivityMmMv` and
-  `visibleChannels`. Each of the four changes the world geometry, so each one
-  belongs in `ECGViewState`. Breaks GENVIEW-STATE-1 and GENVIEW-API-5: a layout
-  change moves the annotations, and no `CAMERA_MODIFIED` event tells the tools.
-- The ECG family, the Video family and the WSI family do not override
-  `getCurrentMode()`, so each one answers `'unknown'`. Breaks
-  GENVIEW-FAMILY-5 and GENVIEW-API-6. The guard
-  `supportsUltrasoundDirectional` in `UltrasoundDirectionalTool` needs a second
-  tier of tests because of this gap.
-- The architecture has no term for a tiled world space, where one world Z index
-  names one layout cell. The ECG family carries that concept alone. This is a
-  gap, and not a defect. A second family that needs a tiled world space is the
-  moment to add the term.
+A review uses this section in two ways. A deviation that this section already
+holds is not a new finding. A change that makes one of these deviations worse is
+a finding, and the report names the deviation.
+
+### The resolved view of the ECG family reads render-path output
+
+`CanvasECGRenderPath.addData` creates a `metrics` object on the mounted
+rendering, and `drawFrame` overwrites that object on each draw.
+`ECGViewport.getResolvedView` passes the same object into `ECGResolvedView`, and
+the resolved view divides by `metrics.ecgWidth` and `metrics.channelScale` in
+`canvasToWorld`.
+
+The world/canvas transform is therefore one frame old after any change of the
+canvas size or of the time window. Before the first draw, the transform uses the
+placeholder values that `addData` wrote, which are all ones.
+
+Breaks GENVIEW-VIEW-2, GENVIEW-PATH-2 and GENVIEW-API-4.
+
+### `amplitudeScale` scales the drawn trace and not the transform
+
+`ECGDataPresentation` holds `amplitudeScale`. `drawECGTraces` multiplies each
+sample by `channelScale * amplitudeScale`, and `ECGResolvedView.canvasToWorld`
+divides by `channelScale` only.
+
+An `amplitudeScale` other than 1 therefore moves the trace on the canvas, and it
+does not move the coordinate transform. An annotation no longer sits on the
+feature that the user placed it on, and no `CAMERA_MODIFIED` event reports the
+change.
+
+Breaks GENVIEW-STATE-1 and GENVIEW-API-5. `amplitudeScale` belongs in
+`ECGViewState`, because it changes where a world point lands on the canvas.
+
+### `sweepSpeed` is declared and never read
+
+`ECGProperties` declares `sweepSpeed`, and no code in the ECG family or in
+`utilities/ECGUtilities.ts` reads it. `computeECGRenderMetrics` uses the constant
+`ECG_SECONDS_WIDTH` for the horizontal scale.
+
+The option is dead. When a change makes it live, the option goes into
+`ECGViewState` and not into `ECGDataPresentation`, for the reason above.
+
+### `utilities/ECGUtilities.ts` serves two viewport classes
+
+The module holds the ECG layout code, the ECG metric code and the ECG drawing
+code. Two classes import it: the ECG family, and the deprecated
+`packages/core/src/RenderingEngine/ECGViewport.ts`.
+
+The Video family and the WSI family have no equivalent module. Their drawing
+code lives inside the family directory.
+
+Breaks GENVIEW-FILE-1 and GENVIEW-FILE-5. The fix moves the code into
+`GenericViewport/ECG/` and leaves a re-export for the deprecated class.
+
+### Three declarations of the ECG layout, and two of the render metrics
+
+| Declaration           | File                                      | State                                                |
+| --------------------- | ----------------------------------------- | ---------------------------------------------------- |
+| `ChannelLayout`       | `GenericViewport/ECG/ECGViewportTypes.ts` | Exported, and no file imports it                     |
+| `ChannelLayout`       | `RenderingEngine/ECGViewport.ts`          | A second local declaration                           |
+| `ECGChannelLayout`    | `utilities/ECGUtilities.ts`               | The one that the code uses                           |
+| `RenderWindowMetrics` | `GenericViewport/ECG/ECGViewportTypes.ts` | Structurally the same as `ECGRenderMetrics`          |
+| `ECGRenderMetrics`    | `utilities/ECGUtilities.ts`               | `CanvasECGRenderPath` casts to `RenderWindowMetrics` |
+
+Breaks GENVIEW-STATE-5. The dead declaration goes, and the duplicate becomes a
+type alias, so a future change to one shape cannot silently pass the cast.
+
+### Only the Planar family answers `getCurrentMode()`
+
+`PlanarViewport` overrides `getCurrentMode()`. The ECG family, the Video family,
+the WSI family and the Volume3D family do not, so each one answers `'unknown'`
+whenever data is mounted.
+
+`UltrasoundDirectionalTool` shows the cost. Its guard reads:
+
+```ts
+if (!(viewport instanceof StackViewport) && !(viewport instanceof ECGViewport)) {
+```
+
+An `instanceof` test names one class. It does not extend to a viewport type that
+an application registers, and it cannot tell a planar viewport that shows a
+stack from one that shows a volume.
+
+Breaks GENVIEW-FAMILY-5 and GENVIEW-API-6.
 
 ## Past defects
 
 This section records the defects that the requirements above prevent. A new
-defect of the same kind gets a new line here.
+defect of the same kind gets a new line here, with the pull request that fixed
+it and the requirement that covers it.
 
-- The ECG resolved view read the render metrics from the object that the render
-  path overwrote on each draw. The transform was one frame stale, and it was
-  wrong before the first draw. Fixed in commit `1e54edd86`. Requirements:
-  GENVIEW-VIEW-2, GENVIEW-PATH-2, GENVIEW-API-4.
-- The ECG layout ran three times for one frame, in the resolved view and in the
-  render path, so the transform and the drawn frame could disagree. Fixed in
-  commits `df6787c10` and `1e54edd86`. Requirement: GENVIEW-VIEW-6.
-- `ChannelLayout` and `RenderWindowMetrics` in the ECG family duplicated
-  `ECGChannelLayout` and `ECGRenderMetrics` in `utilities/ECGUtilities.ts`, and
-  the render path cast between the copies. Fixed in commit `1e54edd86`.
-  Requirement: GENVIEW-STATE-5.
-- `getCamera()` and `setCamera()` sat on `ECGViewport`, so a direct `ECG_NEXT`
-  viewport carried two camera APIs. Fixed in commit `1e54edd86`. Requirement:
-  GENVIEW-LEGACY-2.
-- `ECGViewport.setCamera()` added a world-space difference to a pan in canvas
-  pixels, and the vertical axes point in opposite directions. Fixed in commit
-  `150a77f3a`. Requirement: GENVIEW-LEGACY-3.
-- The calibrated ECG amplitude scale was about 1000 times too large, because the
-  ECG drawing code in `utilities/ECGUtilities.ts` served two classes with
-  different unit conventions. Fixed in commit `150a77f3a`. Requirement:
-  GENVIEW-FILE-5.
+No entry yet. The § Known deviations section holds what is open.
