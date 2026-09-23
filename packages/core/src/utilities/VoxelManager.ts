@@ -44,6 +44,18 @@ type SampleableVoxelVolume = VoxelVolumeGeometry & {
 };
 
 /**
+ * The lookup that takes a column and a row of a slice of a volume to an index
+ * in an image that holds a different number of voxels in the plane.
+ *
+ * `columns` gives the column of the image, and `rows` gives the start of the
+ * row of the image, so the sum of the two is the index of the voxel.
+ */
+type SliceScaling = {
+  columns: Int32Array;
+  rows: Int32Array;
+};
+
+/**
  * This is a simple, standard interface to values associated with a voxel.
  *
  * The class declares `implements IVoxelManager<T>`, so the compiler checks that
@@ -74,6 +86,11 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
   public getCompleteScalarDataArray?: () => ArrayLike<number>;
   public setCompleteScalarDataArray?: (scalarData: ArrayLike<number>) => void;
   public invalidateCache?: () => void;
+  /**
+   * Forgets what this voxel manager holds about one slice, so the next read of
+   * that slice resolves it again.
+   */
+  public invalidateSlice?: (sliceIndex: number) => void;
   public getRange?: () => [number, number];
   private scalarData = null as PixelDataTypedArray;
   // True only when `scalarData` is a cached expansion produced by
@@ -101,12 +118,17 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
   _getScalarDataLength?: () => number;
   _getScalarData?: () => ArrayLike<number>;
   _updateScalarData?: (scalarData: ArrayLike<number>) => PixelDataTypedArray;
-  // No factory installs this member, and no code reads it, so it is optional
-  // for the same reason as the four members above.
+  /**
+   * A shorter path to one slice, for a voxel manager that already holds the
+   * values of that slice together.
+   *
+   * `getSliceData` calls this member first, and it composes the slice voxel by
+   * voxel only when this member gives nothing back.
+   */
   _getSliceData?: (args: {
     sliceIndex: number;
     slicePlane: number;
-  }) => PixelDataTypedArray;
+  }) => PixelDataTypedArray | undefined;
 
   /**
    * Gets the ID of the voxel manager
@@ -957,6 +979,12 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
     sliceIndex: number;
     slicePlane: number;
   }): PixelDataTypedArray => {
+    const direct = this._getSliceData?.({ sliceIndex, slicePlane });
+
+    if (direct) {
+      return direct;
+    }
+
     const [width, height, depth] = this.dimensions;
     const frameSize = width * height;
     const startIndex = sliceIndex * frameSize;
@@ -1103,8 +1131,8 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
     numberOfComponents: number;
     id?: string;
   }): IVolumeVoxelManager<number> | IVolumeVoxelManager<RGB> {
-    const pixelsPerSlice = dimensions[0] * dimensions[1];
-    const depth = dimensions[2];
+    const [width, height, depth] = dimensions;
+    const pixelsPerSlice = width * height;
     // The slice voxel managers are typed as the CLASS and not as the interface,
     // because `setCompleteScalarDataArray` below reads the private
     // `scalarData` field of a slice voxel manager. Every image voxel manager is
@@ -1118,6 +1146,59 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
       null;
     const warnedMissingImageIds = new Set<number>();
     const warnedMissingImages = new Set<string>();
+    // One entry for each slice whose image holds a different number of voxels
+    // in the plane from this volume. `undefined` means that the slice has not
+    // been resolved, and `null` that the image matches the volume exactly.
+    const sliceScalings = new Array<SliceScaling | null | undefined>(depth);
+    const scalingsBySize = new Map<string, SliceScaling>();
+
+    /**
+     * The lookup that takes a column and a row of this volume to a column and a
+     * row of an image of a different size.
+     *
+     * The image loader gives an image its true decoded size, which a
+     * sub-resolution decode and a thumbnail make smaller than the volume. This
+     * repeats the arithmetic of the `replicate` scaling of that loader, which
+     * maps the two extents end to end, so a read gives the same value that an
+     * up-scale at the moment of the decode gave.
+     */
+    const scalingFor = (
+      imageWidth: number,
+      imageHeight: number
+    ): SliceScaling => {
+      const key = `${imageWidth}x${imageHeight}`;
+      const cached = scalingsBySize.get(key);
+
+      if (cached) {
+        return cached;
+      }
+
+      const columns = new Int32Array(width);
+      const rows = new Int32Array(height);
+
+      for (let i = 0; i < width; i++) {
+        columns[i] =
+          width > 1 ? Math.floor((i * (imageWidth - 1)) / (width - 1)) : 0;
+      }
+
+      for (let j = 0; j < height; j++) {
+        const row =
+          height > 1 ? Math.floor((j * (imageHeight - 1)) / (height - 1)) : 0;
+        rows[j] = row * imageWidth;
+      }
+
+      const scaling = { columns, rows };
+      scalingsBySize.set(key, scaling);
+
+      return scaling;
+    };
+
+    /** The index in the image that holds the value of an index of a slice. */
+    const scaleIndex = (scaling: SliceScaling, pixelIndex: number): number => {
+      const row = Math.floor(pixelIndex / width);
+
+      return scaling.rows[row] + scaling.columns[pixelIndex - row * width];
+    };
 
     const resolveSliceVoxelManager = (
       sliceIndex: number
@@ -1153,9 +1234,30 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
       const imageVoxelManager = image.voxelManager as
         | VoxelManager<number>
         | VoxelManager<RGB>;
+      const imageWidth = image.width ?? imageVoxelManager.dimensions?.[0];
+      const imageHeight = image.height ?? imageVoxelManager.dimensions?.[1];
+
       sliceVoxelManagers[sliceIndex] = imageVoxelManager;
+      // The image loader gives an image its true decoded size, so a
+      // sub-resolution frame and a thumbnail hold fewer voxels than one slice
+      // of this volume. The image stays in the cache exactly as the loader
+      // provided it, and a read of this volume scales it.
+      sliceScalings[sliceIndex] =
+        imageWidth === width && imageHeight === height
+          ? null
+          : scalingFor(imageWidth, imageHeight);
 
       return imageVoxelManager;
+    };
+
+    /**
+     * The index in the image of a slice that holds the value of an index in
+     * that slice of this volume.
+     */
+    const imageIndexOf = (sliceIndex: number, pixelIndex: number): number => {
+      const scaling = sliceScalings[sliceIndex];
+
+      return scaling ? scaleIndex(scaling, pixelIndex) : pixelIndex;
     };
 
     function getVoxelValue(index) {
@@ -1175,7 +1277,10 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
         lastSliceVoxelManager = imageVoxelManager;
       }
 
-      const pixelIndex = index - sliceIndex * pixelsPerSlice;
+      const pixelIndex = imageIndexOf(
+        sliceIndex,
+        index - sliceIndex * pixelsPerSlice
+      );
 
       return imageVoxelManager.getAtIndex(pixelIndex) as number | RGB;
     }
@@ -1197,7 +1302,10 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
         lastSliceVoxelManager = imageVoxelManager;
       }
 
-      const pixelIndex = index - sliceIndex * pixelsPerSlice;
+      const pixelIndex = imageIndexOf(
+        sliceIndex,
+        index - sliceIndex * pixelsPerSlice
+      );
 
       const currentValue = imageVoxelManager.getAtIndex(pixelIndex);
       const isChanged = !isEqual(v, currentValue);
@@ -1228,8 +1336,86 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
 
     voxelManager.invalidateCache = () => {
       sliceVoxelManagers.fill(undefined);
+      sliceScalings.fill(undefined);
       lastSliceIndex = -1;
       lastSliceVoxelManager = null;
+    };
+
+    /**
+     * Forgets the voxel manager that this volume holds for one slice.
+     *
+     * The image of a slice can be replaced. A progressive loader delivers a
+     * replicate of a nearby frame first, which the cache holds under the image
+     * id of this slice, and it delivers the image of the slice itself later.
+     * Without this the volume keeps the voxel manager of the replicate for
+     * ever, and the slice shows the voxels of another slice: a sagittal or a
+     * coronal view then holds a block of one frame repeated.
+     */
+    voxelManager.invalidateSlice = (sliceIndex: number) => {
+      if (sliceIndex < 0 || sliceIndex >= depth) {
+        return;
+      }
+
+      sliceVoxelManagers[sliceIndex] = undefined;
+      sliceScalings[sliceIndex] = undefined;
+
+      if (lastSliceIndex === sliceIndex) {
+        lastSliceIndex = -1;
+        lastSliceVoxelManager = null;
+      }
+    };
+
+    // One k slice of this volume is one image of the cache, and that image
+    // already holds the values of the slice together and in order. Copy them,
+    // rather than read the slice voxel by voxel: a volume of 512 x 512 x 1232
+    // holds 323 million voxels, and one call for each of them takes tens of
+    // seconds.
+    //
+    // The copy keeps the contract of `getSliceData`, which gives the caller an
+    // array of its own. It also keeps the image of the cache exactly as the
+    // loader provided it, which a caller that writes to the result would
+    // otherwise change.
+    voxelManager._getSliceData = ({ sliceIndex, slicePlane }) => {
+      if (slicePlane !== 2) {
+        // A YZ or an XZ slice reads one voxel of every image, so no image
+        // holds the values of that slice together.
+        return undefined;
+      }
+
+      const imageVoxelManager = resolveSliceVoxelManager(sliceIndex);
+      // The field, and not `getScalarData`, because an image that holds its
+      // values another way, such as a run length map, must take the path
+      // below. `getScalarData` would expand that map on every call.
+      const scalarData = imageVoxelManager?.scalarData;
+
+      if (!scalarData || numberOfComponents !== 1) {
+        // The image has not arrived, or one voxel of it holds more than one
+        // value. The caller composes the slice itself.
+        return undefined;
+      }
+
+      const scaling = sliceScalings[sliceIndex];
+
+      if (!scaling) {
+        return scalarData.slice() as PixelDataTypedArray;
+      }
+
+      // The image holds a different number of voxels from the slice of this
+      // volume, so scale it rather than copy it.
+      const slice = new (scalarData.constructor as new (
+        length: number
+      ) => PixelDataTypedArray)(pixelsPerSlice);
+
+      for (let j = 0; j < height; j++) {
+        const sourceRow = scaling.rows[j];
+        const targetRow = j * width;
+
+        for (let i = 0; i < width; i++) {
+          slice[targetRow + i] = scalarData[sourceRow + scaling.columns[i]];
+        }
+      }
+
+      return slice;
     };
 
     voxelManager.getMiddleSliceData = () => {
@@ -1311,7 +1497,11 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
 
         if (imageVoxelManager) {
           const sliceStart = sliceIndex * sliceSize;
-          const pixelData = imageVoxelManager.getScalarData();
+          // `getSliceData` scales an image that holds a different number of
+          // voxels from the slice, and it copies an image that matches.
+          const pixelData = sliceScalings[sliceIndex]
+            ? voxelManager.getSliceData({ sliceIndex, slicePlane: 2 })
+            : imageVoxelManager.getScalarData();
 
           if (numberOfComponents === 1) {
             scalarData.set(pixelData, sliceStart);
@@ -1351,14 +1541,19 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
           // Instead of directly assigning scalarData, use TypedArray's set method
           // previously here we were using imageVoxelManager.scalarData = sliceData
           // which had some weird side effects
-          if (imageVoxelManager.scalarData) {
+          if (
+            imageVoxelManager.scalarData &&
+            imageVoxelManager.scalarData.length >= sliceSize
+          ) {
             imageVoxelManager.scalarData.set(sliceData);
             // Ensure the voxel manager knows about the changes
             imageVoxelManager.modifiedSlices.add(sliceIndex);
           } else {
-            // Fallback to individual updates if scalarData is not directly accessible
+            // The image holds its values another way, or it holds fewer voxels
+            // than the slice. A write through this voxel manager maps each
+            // index into the image, so it fits either case.
             for (let i = 0; i < sliceSize; i++) {
-              imageVoxelManager.setAtIndex(i, sliceData[i]);
+              voxelManager.setAtIndex(sliceStart + i, sliceData[i]);
             }
           }
 

@@ -282,8 +282,9 @@ function boxAverageAtIJK<T extends BoxStatisticValue = number>(
  * Writes the statistic of each box of a region of the source into the target.
  *
  * The target holds the dimensions that `reducedDimensions` gives for the region
- * and the factors. The function writes no value for a box that holds no value,
- * so the target keeps what the target already holds for that voxel.
+ * and the factors, and `targetOffset` moves the result to another place in a
+ * larger target. The function writes no value for a box that holds no value, so
+ * the target keeps what the target already holds for that voxel.
  *
  * The function builds ONE accumulator for each component, and it resets those
  * accumulators for each box.
@@ -304,6 +305,7 @@ function reduceByBoxStatistic<T extends BoxStatisticValue = number>(
   const accumulators = createAccumulators(statistic);
   const resolved = resolveReduction(source, reduction);
   const { dimensions } = resolved;
+  const [targetI, targetJ, targetK] = reduction.targetOffset ?? [0, 0, 0];
 
   let written = 0;
 
@@ -316,7 +318,12 @@ function reduceByBoxStatistic<T extends BoxStatisticValue = number>(
           continue;
         }
 
-        target.setAtIJK(i, j, k, (round ? roundValue(value) : value) as T);
+        target.setAtIJK(
+          targetI + i,
+          targetJ + j,
+          targetK + k,
+          (round ? roundValue(value) : value) as T
+        );
         written++;
       }
     }

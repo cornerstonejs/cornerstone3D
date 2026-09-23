@@ -91,6 +91,15 @@ export type VoxelGridReduction = {
    * dimensions of the source grid.
    */
   sourceDimensions?: Point3;
+  /**
+   * The index in the target grid of the first reduced voxel that the reduction
+   * writes. The default is `[0, 0, 0]`.
+   *
+   * A reduction of a region of the source writes that region at the start of
+   * the target, which suits a target that holds the region alone. A reduction
+   * that updates a part of a larger target states here where that part sits.
+   */
+  targetOffset?: Point3;
 };
 
 /**

@@ -121,6 +121,14 @@ export type VoxelRepresentation<T> = {
     grid: VoxelGrid;
     delivered?: DeliveredRegion[];
     quality?: ImageQualityStatus;
+    /**
+     * The box size and the region that took the source to this representation.
+     * `refreshDerivedFrames` reads it to redo one part of the derivation when
+     * new source data arrives.
+     */
+    reduction?: VoxelGridReduction;
+    /** Whether the derivation rounds each value. */
+    round?: boolean;
   };
 };
 
@@ -165,6 +173,14 @@ export type CompositeVoxelManagerOptions<T> = {
   statistic?: VoxelStatistic;
   /** The quality of the primary representation. */
   quality?: ImageQualityStatus;
+  /**
+   * What a loader has already delivered into the primary representation.
+   *
+   * A volume that holds every voxel states nothing here, and a derivation then
+   * reads the whole grid. A volume that still loads states the regions that
+   * arrived, and an empty list therefore means that nothing arrived yet.
+   */
+  delivered?: DeliveredRegion[];
   /** The identifier of the composite. */
   id?: string;
 };
@@ -427,6 +443,7 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     grid,
     statistic = VoxelStatistics.Average,
     quality,
+    delivered,
     id,
   }: CompositeVoxelManagerOptions<T>) {
     this.primary = primary;
@@ -436,6 +453,7 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
       statistic,
       voxelManager: primary,
       quality,
+      delivered,
     };
     this.representations.push(this.primaryRepresentation);
   }
@@ -576,8 +594,7 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     source = VoxelDataSources.ClientDerived,
   }: CreateVoxelRepresentationOptions): VoxelRepresentation<T> {
     const sourceRepresentation = sourceGrid
-      ? this.getRepresentation(sourceGrid, statistic) ||
-        this.getRepresentation(sourceGrid, this.primaryRepresentation.statistic)
+      ? this.sourceOfDerivation(sourceGrid, { statistic })
       : this.selectRepresentation({});
 
     if (!sourceRepresentation) {
@@ -600,16 +617,8 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
       sourceRepresentation
     );
 
-    reduceByBoxStatistic(
-      sourceRepresentation.voxelManager as never,
-      reduction,
-      voxelManager as never,
-      { statistic, round }
-    );
-
     const reducesAnAxis = factors.some((factor) => factor > 1);
-
-    return this.addRepresentation({
+    const representation = this.addRepresentation({
       grid,
       statistic,
       voxelManager,
@@ -622,17 +631,44 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
         (reducesAnAxis ? VoxelReductions.BoxAverage : VoxelReductions.None),
       source,
       // THE RECORD OF THE SOURCE BECOMES THE RECORD OF THE RESULT, and the copy
-      // freezes at this moment. The derived data is no better than the data
-      // that produced it, and a box that reads a source voxel that has not
-      // arrived holds nothing.
+      // states the data that the derivation really read. A box that reads a
+      // source voxel that has not arrived holds nothing, and
+      // `refreshDerivedFrames` redoes that box, and this copy, when the voxel
+      // arrives.
       derivedFrom: {
         grid: sourceRepresentation.grid,
         delivered: sourceRepresentation.delivered
           ? [...sourceRepresentation.delivered]
           : undefined,
         quality: sourceRepresentation.quality,
+        reduction,
+        round,
       },
     });
+
+    const { delivered } = sourceRepresentation;
+
+    if (delivered) {
+      // The source states which regions hold data, so reduce those regions and
+      // no others. A streaming volume of 512 x 512 x 1232 voxels holds 323
+      // million of them, and a pass over all of them takes tens of seconds and
+      // gives nothing for a region that no delivery covers.
+      for (const delivery of delivered) {
+        this.reduceRegionInto(representation, sourceRepresentation, {
+          bounds: delivery.bounds,
+        });
+      }
+    } else {
+      // The source states no region, so it holds data everywhere.
+      reduceByBoxStatistic(
+        sourceRepresentation.voxelManager as never,
+        reduction,
+        voxelManager as never,
+        { statistic, round }
+      );
+    }
+
+    return representation;
   }
 
   /**
@@ -711,8 +747,162 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     }
 
     this.setDeliveredQuality(representation, deliveredBounds, quality);
+    this.refreshDerivedFrames(deliveredBounds, grid, statistic);
 
     return representation;
+  }
+
+  /**
+   * Redoes the part of every derived representation that a delivery changed.
+   *
+   * A derived voxel is a box of source voxels, and `createRepresentation`
+   * computes that box once, from the data that the composite held at that
+   * moment. A streaming loader delivers its frames after that moment, so
+   * without this member a derived representation keeps the empty result of the
+   * derivation for ever.
+   *
+   * The work covers the boxes that the delivery touches, and not the whole
+   * volume: a volume of 3720 frames re-derives far too slowly to run on the
+   * arrival of each frame.
+   *
+   * @param bounds - the region of the delivery, in the index space of `grid`
+   * @param grid - the grid that the delivery wrote
+   * @param statistic - the statistic that the delivery wrote
+   * @returns the number of representations that this member changed
+   */
+  public refreshDerivedFrames(
+    bounds: BoundsIJK,
+    grid: VoxelGrid,
+    statistic: VoxelStatistic = VoxelStatistics.Average
+  ): number {
+    const delivered = this.getRepresentation(grid, statistic);
+    let refreshed = 0;
+
+    if (!delivered) {
+      return 0;
+    }
+
+    for (const representation of this.representations) {
+      if (!representation.derivedFrom?.reduction) {
+        continue;
+      }
+
+      if (this.refreshDerivedRegion(representation, delivered, bounds)) {
+        refreshed++;
+      }
+    }
+
+    return refreshed;
+  }
+
+  /**
+   * The representation of `grid` that a derivation of `statistic` reads.
+   *
+   * A derivation prefers the source of its own statistic, and it falls back to
+   * the statistic of the primary representation, which is the statistic that
+   * a loader delivers.
+   */
+  private sourceOfDerivation(
+    grid: VoxelGrid,
+    { statistic }: { statistic: VoxelStatistic }
+  ): VoxelRepresentation<T> {
+    return (
+      this.getRepresentation(grid, statistic) ||
+      this.getRepresentation(grid, this.primaryRepresentation.statistic)
+    );
+  }
+
+  /**
+   * Redoes the boxes of one derived representation that cover a source region.
+   *
+   * @returns true when the member redid at least one box
+   */
+  private refreshDerivedRegion(
+    representation: VoxelRepresentation<T>,
+    delivered: VoxelRepresentation<T>,
+    bounds: BoundsIJK
+  ): boolean {
+    const { derivedFrom } = representation;
+    const source = this.sourceOfDerivation(derivedFrom.grid, representation);
+
+    if (source !== delivered) {
+      // This representation reads other data, so the delivery changes no box
+      // of it.
+      return false;
+    }
+
+    if (!this.reduceRegionInto(representation, source, { bounds })) {
+      return false;
+    }
+
+    // The record of the source becomes the record of the result again, because
+    // the boxes now hold the data that the source holds now.
+    derivedFrom.delivered = source.delivered
+      ? [...source.delivered]
+      : undefined;
+    derivedFrom.quality = source.quality;
+
+    return true;
+  }
+
+  /**
+   * Reduces the part of a source that covers a region into a derived
+   * representation.
+   *
+   * The region states source voxels, and a box holds several of them, so the
+   * member grows the region to whole boxes: a delivery of one voxel makes the
+   * whole box of that voxel out of date.
+   *
+   * @returns true when the member reduced at least one box
+   */
+  private reduceRegionInto(
+    representation: VoxelRepresentation<T>,
+    source: VoxelRepresentation<T>,
+    { bounds }: { bounds: BoundsIJK }
+  ): boolean {
+    const { reduction, round = true } = representation.derivedFrom ?? {};
+
+    if (!reduction || !source.voxelManager || !representation.voxelManager) {
+      return false;
+    }
+
+    const { factors } = reduction;
+    const offset = reduction.sourceOffset ?? [0, 0, 0];
+    const extent = reduction.sourceDimensions ?? source.grid.dimensions;
+    const sourceOffset = [0, 0, 0] as Point3;
+    const sourceDimensions = [0, 0, 0] as Point3;
+    const targetOffset = [0, 0, 0] as Point3;
+
+    for (let axis = 0; axis < 3; axis++) {
+      // The region, in the index space that the reduction reads. The reduction
+      // reads a region of the source, so a delivery that falls outside that
+      // region changes nothing here.
+      const first = Math.max(bounds[axis][0] - offset[axis], 0);
+      const last = Math.min(bounds[axis][1] - offset[axis], extent[axis] - 1);
+
+      if (first > last) {
+        return false;
+      }
+
+      const firstBox = Math.floor(first / factors[axis]);
+      const lastBox = Math.floor(last / factors[axis]);
+
+      sourceOffset[axis] = offset[axis] + firstBox * factors[axis];
+      sourceDimensions[axis] = Math.min(
+        (lastBox - firstBox + 1) * factors[axis],
+        offset[axis] + extent[axis] - sourceOffset[axis]
+      );
+      targetOffset[axis] = firstBox;
+    }
+
+    reduceByBoxStatistic(
+      source.voxelManager as never,
+      { factors, sourceOffset, sourceDimensions, targetOffset },
+      representation.voxelManager as never,
+      { statistic: representation.statistic, round }
+    );
+
+    return true;
   }
 
   /**

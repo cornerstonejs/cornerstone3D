@@ -134,19 +134,29 @@ describe('the default provider builds the strategies', () => {
     ).toBeUndefined();
   });
 
-  it('derives no representation when it builds a strategy', () => {
+  it('derives a representation at the grid of the strategy', () => {
     const volume = makeVolume();
 
     provisionReducedResolutionStrategy(context(volume, 'low-tablet'));
 
-    // A derivation at this moment would read a volume whose images have not
-    // arrived, and it would freeze that empty result. The texture fills through
-    // `fillGrid` instead, which reads the best source that the composite holds
-    // at the moment of the fill.
-    expect(volume.getVoxelRepresentations().length).toBe(1);
-    expect(volume.getVoxelRepresentations()[0].grid.dimensions).toEqual(
-      dimensions
-    );
+    const representations = volume.getVoxelRepresentations();
+    const derived = representations.find((one) => one.derivedFrom);
+
+    // Most of the images of the volume have not arrived at this moment, so the
+    // derivation reduces almost no data. `ImageVolume.markFrameDirty` redoes
+    // the boxes of the representation as each frame arrives.
+    expect(representations.length).toBe(2);
+    expect(derived.grid.dimensions).toEqual([256, 256, 8]);
+    expect(derived.reduction).toBe('boxAverage');
+  });
+
+  it('derives one representation when two viewports ask for one grid', () => {
+    const volume = makeVolume();
+
+    provisionReducedResolutionStrategy(context(volume, 'low-tablet'));
+    provisionReducedResolutionStrategy(context(volume, 'low-tablet'));
+
+    expect(volume.getVoxelRepresentations().length).toBe(2);
   });
 
   it('gives one texture set to two viewports that choose one strategy', () => {
@@ -402,12 +412,11 @@ describe('the render reports the quality', () => {
 
     const record = rendering.voxelQuality;
 
-    // The record follows the ceiling that this render path reads. No
-    // representation exists at the reduced grid yet, so the record describes
-    // the full-resolution data that the fill samples. It will describe the
-    // reduction once a derivation that follows the load exists.
-    expect(record.grid.dimensions).toEqual(dimensions);
-    expect(record.reduction).toBe('none');
+    // The record describes the data that the render really bound, which is the
+    // reduced representation that the strategy derived, and not the
+    // full-resolution data under the ceiling.
+    expect(record.grid.dimensions).toEqual([256, 256, 8]);
+    expect(record.reduction).toBe('boxAverage');
     // The record states no verdict. A reader compares it against its own
     // requirement, which is how a viewport reports lossless at a display
     // resolution below the resolution of the data.

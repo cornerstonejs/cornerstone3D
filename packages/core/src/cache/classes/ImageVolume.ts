@@ -14,6 +14,7 @@ import type {
 import type { VolumeTextureSet, VolumeTextureSlot } from './VolumeTextureSet';
 import type { ProvisionTextureSetOptions } from '../volumeTextureStore';
 import type {
+  DeliveredRegion,
   Metadata,
   Point3,
   Mat3,
@@ -25,6 +26,7 @@ import type {
   VoxelGrid,
   VoxelQualityRecord,
 } from '../../types';
+import ImageQualityStatus from '../../enums/ImageQualityStatus';
 import cache from '../cache';
 import type vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
 
@@ -322,6 +324,19 @@ export class ImageVolume {
    * `sizeInBytes` counts the primary voxel manager alone. A derived
    * representation is extra memory that the cache does not count yet.
    */
+  /**
+   * The regions of this volume that a loader has already delivered.
+   *
+   * A volume of this class holds every voxel from the moment of its
+   * construction, and it therefore states nothing: a derivation reads the whole
+   * grid. A volume that loads its frames one at a time overrides this member
+   * and states which frames arrived, so that a derivation reduces those frames
+   * and no others.
+   */
+  protected deliveredRegions(): DeliveredRegion[] | undefined {
+    return undefined;
+  }
+
   public get compositeVoxelManager(): CompositeVoxelManager<number | RGB> {
     const primary = this.voxelManager as IVoxelManager<number | RGB>;
 
@@ -332,6 +347,7 @@ export class ImageVolume {
       this._compositeVoxelManager = new CompositeVoxelManager<number | RGB>({
         primary,
         grid: this.voxelGrid,
+        delivered: this.deliveredRegions(),
         id: `composite-${this.volumeId}`,
       });
     }
@@ -538,25 +554,40 @@ export class ImageVolume {
   }
 
   /**
-   * Marks one frame of the volume for a refill, in every texture of every set
-   * whose grid covers that frame.
+   * Takes the arrival of the data of one frame.
    *
-   * A loader calls this member when the data of a frame arrives. One frame
-   * changes several textures, because each texture that covers the frame reads
-   * the same voxels, and MR-API-IV-6 states that rule. A mark uploads nothing:
-   * the refill happens at the next render of each texture.
+   * A loader calls this member when the data of a frame arrives. The composite
+   * records the delivery, and it redoes the boxes of every derived
+   * representation that the frame changed, because a derivation must follow
+   * the load: `createRepresentation` reduces the data that the composite holds
+   * at the moment of the derivation, and a streaming loader delivers its frames
+   * after that moment.
+   *
+   * The member then marks the frame for a refill in every texture of every set
+   * whose grid covers the frame. One frame changes several textures, because
+   * each texture that covers the frame reads the same voxels, and MR-API-IV-6
+   * states that rule. A mark uploads nothing: the refill happens at the next
+   * render of each texture.
+   *
+   * @param quality - the quality of the data that arrived
    */
-  public markFrameDirty(frameIndex: number): void {
-    const sets = this.textureSets;
+  public markFrameDirty(
+    frameIndex: number,
+    quality: ImageQualityStatus = ImageQualityStatus.FULL_RESOLUTION
+  ): void {
+    // The delivery can have replaced the image of this frame, and the voxel
+    // manager holds the image that it last resolved for the frame. Forget that
+    // image, so the reads below take the image that has just arrived.
+    this.voxelManager?.invalidateSlice?.(frameIndex);
 
-    if (sets.length === 0) {
-      return;
-    }
+    this.compositeVoxelManager.acceptData({
+      grid: this.voxelGrid,
+      frameIndex,
+      quality,
+    });
 
-    const bounds = boundsOfFrame(this.voxelGrid, frameIndex);
-
-    for (const set of sets) {
-      set.markDirty(bounds, markSlice);
+    for (const set of this.textureSets) {
+      set.markDirty(boundsOfFrame(this.voxelGrid, frameIndex), markSlice);
     }
   }
 

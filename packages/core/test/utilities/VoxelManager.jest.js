@@ -390,6 +390,65 @@ describe('VoxelManager', () => {
 
       imageIds.forEach((imageId) => cache.removeImageLoadObject(imageId));
     });
+
+    it('reads one XY slice from the image of that slice', () => {
+      // One k slice of the volume is one image of the cache, and that image
+      // already holds the values of the slice together. Reading them voxel by
+      // voxel takes tens of seconds over a volume of 512 x 512 x 1232.
+      const [width, height, depth] = [4, 4, 3];
+      const imageIds = [];
+
+      for (let sliceIndex = 0; sliceIndex < depth; sliceIndex++) {
+        const imageId = `scalar-slice-${sliceIndex}`;
+        const scalarData = new Uint8Array(width * height).fill(sliceIndex + 1);
+        const voxelManager = VoxelManager.createImageVoxelManager({
+          width,
+          height,
+          scalarData,
+          numberOfComponents: 1,
+        });
+
+        imageIds.push(imageId);
+        cache.putImageSync(imageId, {
+          imageId,
+          width,
+          height,
+          voxelManager,
+          getPixelData: () => scalarData,
+          sizeInBytes: 5 * 1024,
+        });
+      }
+
+      const volumeVoxelManager = VoxelManager.createImageVolumeVoxelManager({
+        dimensions: [width, height, depth],
+        imageIds,
+        numberOfComponents: 1,
+      });
+
+      const slice = volumeVoxelManager.getSliceData({
+        sliceIndex: 1,
+        slicePlane: 2,
+      });
+
+      expect(slice.length).toBe(width * height);
+      expect(Array.from(slice)).toEqual(new Array(width * height).fill(2));
+
+      // The result is the caller's own array, so a write to it leaves the
+      // image of the cache exactly as the loader provided it.
+      slice[0] = 99;
+      expect(volumeVoxelManager.getAtIJK(0, 0, 1)).toBe(2);
+
+      // A YZ slice reads one voxel of every image, so no image holds it
+      // together, and the generic path composes it.
+      const across = volumeVoxelManager.getSliceData({
+        sliceIndex: 0,
+        slicePlane: 0,
+      });
+
+      expect(Array.from(across.slice(0, height))).toEqual([1, 1, 1, 1]);
+
+      imageIds.forEach((imageId) => cache.removeImageLoadObject(imageId));
+    });
   });
 
   // An RLE map stores only what differs from its default, and `get` already

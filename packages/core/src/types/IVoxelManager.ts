@@ -93,6 +93,12 @@ export interface IVoxelManager<T> {
   setCompleteScalarDataArray?: (scalarData: ArrayLike<number>) => void;
   /** Drops any cached lookup. A factory installs this member. */
   invalidateCache?: () => void;
+  /**
+   * Forgets what this voxel manager holds about one slice, so the next read of
+   * that slice resolves it again. A loader that replaces the image of a slice
+   * calls this member. A factory installs it.
+   */
+  invalidateSlice?: (sliceIndex: number) => void;
   /** Gets the `[min, max]` pair of the data. A factory installs this member. */
   getRange?: () => [number, number];
 

@@ -254,6 +254,26 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     return true;
   }
 
+  /**
+   * The voxels of the representation that the composite holds at this exact
+   * grid, when the composite holds one and it keeps them in one array.
+   *
+   * A strategy derives that representation, and `ImageVolume.markFrameDirty`
+   * redoes its boxes as each frame arrives, so the values follow the load. The
+   * values are the box average that the render path asks for, and reading them
+   * is a copy of one slice.
+   *
+   * @returns nothing when no such representation exists, and the caller then
+   * computes the values itself
+   */
+  function derivedVoxelsOf(composite, grid) {
+    const representation = composite.getRepresentation(grid);
+    const [width, height, depth] = grid.dimensions;
+    const voxels = representation?.voxelManager?.getWritableScalarData?.();
+
+    return voxels?.length === width * height * depth ? voxels : null;
+  }
+
   function updateTextureFromComposite(volume) {
     const { grid } = model;
     const [width, height, depth] = grid.dimensions;
@@ -265,7 +285,8 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     const frameLength = width * height;
     const composite = volume.compositeVoxelManager;
     const gl = model.context;
-    const factors = boxFactorsOf(volume, grid);
+    const derived = derivedVoxelsOf(composite, grid);
+    const factors = derived ? null : boxFactorsOf(volume, grid);
     // One slice of this grid. A fill of the whole grid would read every voxel
     // of the volume on every refill, and a delivery changes one slice of it.
     const slab = VoxelManager.createScalarVolumeVoxelManager({
@@ -279,40 +300,48 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
         continue;
       }
 
-      // `fillGrid` leaves a voxel untouched where the composite holds no
-      // value, and this slab serves every slice, so a voxel that one slice does
-      // not fill would keep the value that an earlier slice wrote.
-      slab.getScalarData().fill(0);
+      let data;
 
-      // A slice whose data has not arrived uploads the cleared slab, which
-      // costs nothing to compute. The volume marks that slice again when its
-      // frames arrive, and the next render fills it with real voxels. Filling
-      // every slice of a new texture from the data would stall the first
-      // render: a volume of 512 x 512 x 1232 measured about 17 seconds.
-      const filled =
-        factors && fillSliceByBoxAverage(volume, grid, factors, slice, slab);
+      if (derived) {
+        // The composite holds this slice already. A view costs nothing, and
+        // the upload below reads it.
+        data = derived.subarray(slice * frameLength, (slice + 1) * frameLength);
+      } else {
+        // `fillGrid` leaves a voxel untouched where the composite holds no
+        // value, and this slab serves every slice, so a voxel that one slice
+        // does not fill would keep the value that an earlier slice wrote.
+        slab.getScalarData().fill(0);
 
-      if (!filled && !factors) {
-        // The grid is not a box of the grid of the volume, such as an oblique
-        // slab, and the composite covers a grid of any shape. Its origin moves
-        // along the k axis by the spacing of one voxel of the grid, so it reads
-        // the voxels that this slice covers and no others.
-        composite.fillGrid(
-          {
-            dimensions: [width, height, 1],
-            spacing: grid.spacing,
-            direction: grid.direction,
-            origin: [
-              grid.origin[0] + grid.direction[6] * grid.spacing[2] * slice,
-              grid.origin[1] + grid.direction[7] * grid.spacing[2] * slice,
-              grid.origin[2] + grid.direction[8] * grid.spacing[2] * slice,
-            ],
-          },
-          slab
-        );
+        // A slice whose data has not arrived uploads the cleared slab, which
+        // costs nothing to compute. The volume marks that slice again when its
+        // frames arrive, and the next render fills it with real voxels.
+        // Filling every slice of a new texture from the data would stall the
+        // first render: a volume of 512 x 512 x 1232 measured about 17 seconds.
+        const filled =
+          factors && fillSliceByBoxAverage(volume, grid, factors, slice, slab);
+
+        if (!filled && !factors) {
+          // The grid is not a box of the grid of the volume, such as an oblique
+          // slab, and the composite covers a grid of any shape. Its origin
+          // moves along the k axis by the spacing of one voxel of the grid, so
+          // it reads the voxels that this slice covers and no others.
+          composite.fillGrid(
+            {
+              dimensions: [width, height, 1],
+              spacing: grid.spacing,
+              direction: grid.direction,
+              origin: [
+                grid.origin[0] + grid.direction[6] * grid.spacing[2] * slice,
+                grid.origin[1] + grid.direction[7] * grid.spacing[2] * slice,
+                grid.origin[2] + grid.direction[8] * grid.spacing[2] * slice,
+              ],
+            },
+            slab
+          );
+        }
+
+        data = slab.getScalarData();
       }
-
-      let data = slab.getScalarData();
 
       if (volume.dataType !== data.constructor.name) {
         data = convertDataType(data, volume.dataType);

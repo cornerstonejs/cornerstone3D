@@ -256,6 +256,29 @@ describe('voxelGrid.reduceByBoxAverage', () => {
     expect(target.written.has('1,0,0')).toBe(false);
   });
 
+  it('writes a region of the source at a place in the target', () => {
+    const source = makeSource([8, 1, 1], [0, 1, 2, 3, 4, 5, 6, 7]);
+    const target = makeTarget();
+
+    // The source region holds the voxels 4 to 7, which make the boxes 2 and 3
+    // of the whole source, so the target offset puts them there. An update of
+    // a part of a larger target needs exactly this.
+    reduceByBoxStatistic(
+      source,
+      {
+        factors: [2, 1, 1],
+        sourceOffset: [4, 0, 0],
+        sourceDimensions: [4, 1, 1],
+        targetOffset: [2, 0, 0],
+      },
+      target
+    );
+
+    expect(target.written.get('2,0,0')).toBe(5);
+    expect(target.written.get('3,0,0')).toBe(7);
+    expect(target.written.has('0,0,0')).toBe(false);
+  });
+
   it('reduces a region of the source only', () => {
     const values = [0, 1, 2, 3, 4, 5, 6, 7];
     const source = makeSource([8, 1, 1], values);
