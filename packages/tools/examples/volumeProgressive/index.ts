@@ -9,6 +9,8 @@ import {
   utilities,
   ProgressiveRetrieveImages,
   imageLoadPoolManager,
+  imageLoader,
+  metaData,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -19,6 +21,8 @@ import {
   addGpuCapabilityProfileDropdown,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import * as cornerstoneAdapters from '@cornerstonejs/adapters';
+import { wadouri } from '@cornerstonejs/dicom-image-loader';
 
 // This is for debugging purposes
 console.warn(
@@ -42,6 +46,13 @@ const { ImageQualityStatus, ViewportType, Events } = Enums;
 const { MouseBindings } = csToolsEnums;
 
 const { interleavedRetrieveStages } = ProgressiveRetrieveImages;
+const { Cornerstone3D } = cornerstoneAdapters.adaptersSEG;
+const { segmentation: csToolsSegmentation } = cornerstoneTools;
+
+const segmentationId = 'SEGMENTATION_ID';
+
+/** The largest edge in pixels that a viewport takes, however large the data. */
+const maximumViewportEdge = 1500;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -86,6 +97,21 @@ const seriesOptions = {
       '1.3.6.1.4.1.14519.5.2.1.99.1071.24993177073256607564948872275593',
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.99.1071.13277129293167305892649949655853',
+    wadoRsRoot:
+      getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+  },
+  // The same CT of 2464 images, with the segmentation that one reader made of
+  // it. The CT loads in stages, and the segmentation loads as one complete
+  // DICOM instance: a labelmap has no use for a coarse version of itself,
+  // because a segment index is a name and not a measurement, and an average of
+  // two segment indices names a third segment.
+  'CT body 2464 images with a SEG': {
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.99.1071.24993177073256607564948872275593',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.99.1071.13277129293167305892649949655853',
+    segSeriesInstanceUID:
+      '1.2.826.0.1.3680043.10.511.3.87031968437079874720771706917838569',
     wadoRsRoot:
       getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   },
@@ -184,10 +210,8 @@ stageInfo.innerHTML = `
 content.appendChild(stageInfo);
 
 const viewportGrid = document.createElement('div');
-viewportGrid.style.display = 'flex';
-viewportGrid.style.flexDirection = 'row';
 viewportGrid.style.clear = 'both';
-viewportGrid.style.flexWrap = 'wrap';
+
 const elements = [0, 1, 2, 3].map(() => {
   const element = document.createElement('div');
 
@@ -195,11 +219,33 @@ const elements = [0, 1, 2, 3].map(() => {
   element.style.height = size;
   // Disable right click context menu so we can have right click tools
   element.oncontextmenu = (e) => e.preventDefault();
-  viewportGrid.appendChild(element);
 
   return element;
 });
 const [element1, element2, element3, element4] = elements;
+
+/**
+ * The viewports sit in two rows, and each row holds the two viewports of the
+ * same height.
+ *
+ * `sizeViewportsToVolume` gives a viewport one pixel for each voxel, so the
+ * axial view and the 3D view are as tall as one image, and the sagittal view
+ * and the coronal view are as tall as the number of slices. A single row of
+ * all four would leave a large empty space beside the two short ones.
+ */
+const viewportRow = (...rowElements) => {
+  const row = document.createElement('div');
+
+  row.style.display = 'flex';
+  row.style.flexDirection = 'row';
+  row.style.alignItems = 'flex-start';
+
+  rowElements.forEach((element) => row.appendChild(element));
+  viewportGrid.appendChild(row);
+};
+
+viewportRow(element3, element4);
+viewportRow(element1, element2);
 
 content.appendChild(viewportGrid);
 
@@ -281,6 +327,130 @@ const configJLSMixed = {
     },
   },
 };
+
+/**
+ * The frames that one retrieved frame replicates to, for a decimation of
+ * `decimate`.
+ *
+ * The default configuration fills every frame because its list matches its
+ * decimation. It decimates by 4 and it replicates to the offsets -1, +1 and
+ * +2, which with the retrieved frame itself covers 4 frames in a row. A larger
+ * decimation with that same list of three offsets leaves the frames between
+ * two retrieved frames empty.
+ *
+ * This builds the list that covers a whole decimation window, so one retrieved
+ * frame in `decimate` fills the whole volume.
+ *
+ * The quality follows the distance. A frame beside the retrieved frame holds
+ * data of the neighbour of its own slice, and a frame 16 slices away holds
+ * data of a different part of the body. The two are not equally good, and the
+ * record must not state that they are.
+ */
+function nearbyFramesOfDecimation(decimate) {
+  const frames = [];
+  const first = -Math.floor((decimate - 1) / 2);
+
+  for (let offset = first; offset < first + decimate; offset++) {
+    if (offset !== 0) {
+      frames.push({
+        offset,
+        imageQualityStatus:
+          Math.abs(offset) <= 1
+            ? ImageQualityStatus.ADJACENT_REPLICATE
+            : ImageQualityStatus.FAR_REPLICATE,
+      });
+    }
+  }
+
+  return frames;
+}
+
+/**
+ * The interleaved path, with two changes for a volume of many images.
+ *
+ * `initialImages` fetches the middle image and the two images beside it, and
+ * then the first and the last image. A viewport opens on the middle of the
+ * volume, and a reduced texture takes the box average of several frames there,
+ * so one middle image alone gives that view almost nothing.
+ *
+ * `coarse32` then retrieves one image in 32 and replicates each one to the 31
+ * images around it, so the whole volume holds data once 1/32 of the images
+ * have arrived. The data is at the resolution of the acquisition in the plane,
+ * and at one thirty second of it along the k axis. Every later stage refines
+ * that volume.
+ *
+ * The stage needs the number of images, because a position of the middle of
+ * the volume plus one image is an index and not a fraction.
+ */
+function interleavedConfigurationOf(imageCount) {
+  const middle = Math.floor(imageCount / 2);
+  const [initialImages, ...laterStages] = interleavedRetrieveStages.stages;
+
+  return {
+    stages: [
+      {
+        ...initialImages,
+        positions: [middle, middle - 1, middle + 1, 0, -1],
+      },
+      {
+        id: 'coarse32',
+        decimate: 32,
+        offset: 16,
+        priority: 6,
+        requestType: RequestType.Thumbnail,
+        retrieveType: 'default',
+        nearbyFrames: nearbyFramesOfDecimation(32),
+      },
+      // Every later stage keeps its order behind the coarse stage, which took
+      // the priority that the first of them held.
+      ...laterStages.map((stage) => ({
+        ...stage,
+        priority: stage.priority === undefined ? undefined : stage.priority + 1,
+      })),
+    ],
+  };
+}
+
+/**
+ * The bytes of the one DICOM instance that a WADO-RS instance response holds.
+ *
+ * That endpoint answers with a `multipart/related` body of one part. The
+ * server names no boundary in the Content-Type header, so the boundary comes
+ * from the first line of the body, and the headers of the part end at the
+ * first empty line. The CRLF before the closing boundary belongs to the
+ * envelope, and not to the instance.
+ */
+function part10BytesOf(contentType: string, buffer: ArrayBuffer): ArrayBuffer {
+  if (!contentType || contentType.indexOf('multipart') === -1) {
+    return buffer;
+  }
+
+  const bytes = new Uint8Array(buffer);
+  const latin1Of = (part: Uint8Array) => String.fromCharCode(...part);
+  const head = latin1Of(bytes.subarray(0, 2048));
+  const boundary = head.slice(0, head.indexOf('\r\n'));
+  const headerEnd = head.indexOf('\r\n\r\n');
+
+  if (boundary.slice(0, 2) !== '--' || headerEnd === -1) {
+    throw new Error('The response holds no multipart header');
+  }
+
+  // The closing boundary is at the end of the body, so read that end only.
+  const tailStart = Math.max(0, bytes.length - boundary.length - 8);
+  const closeIndex = latin1Of(bytes.subarray(tailStart)).lastIndexOf(
+    `\r\n${boundary}`
+  );
+
+  return buffer.slice(
+    headerEnd + 4,
+    closeIndex === -1 ? bytes.length : tailStart + closeIndex
+  );
+}
+
+/** Adds the frame qualifier that a WADO-URI image id takes. Frames count from 1. */
+function withFrame(imageId: string, frame: number): string {
+  return `${imageId}${imageId.indexOf('?') === -1 ? '?' : '&'}frame=${frame}`;
+}
 
 const configHtj2k = interleavedRetrieveStages;
 
@@ -391,9 +561,8 @@ async function run() {
   // The CT series is the default, because it renders with the window that
   // this example sets. Select another series to change what the load buttons
   // fetch; the change applies at the next load.
-  let imageIdsCT = await createImageIdsAndCacheMetaData(
-    seriesOptions['CT (progressive configurations)']
-  );
+  let selectedSeries = seriesOptions['CT (progressive configurations)'];
+  let imageIdsCT = await createImageIdsAndCacheMetaData(selectedSeries);
 
   addDropdownToToolbar({
     id: 'series',
@@ -404,6 +573,7 @@ async function run() {
       defaultValue: 'CT (progressive configurations)',
     },
     onSelectedValueChange: async (_key, value) => {
+      selectedSeries = value;
       imageIdsCT = await createImageIdsAndCacheMetaData(value);
       getOrCreateTiming('loadingStatus').innerText =
         `Selected ${imageIdsCT.length} images. Press a load button.`;
@@ -493,6 +663,10 @@ async function run() {
   imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.Prefetch, 12);
   imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.Thumbnail, 16);
 
+  // The Part 10 bytes of each segmentation that this page fetched, keyed by
+  // the series. A second press of a load button then reads no 19 MB again.
+  const segBuffers = new Map<string, ArrayBuffer>();
+
   async function loadVolume(volumeId, imageIds, config, text) {
     cache.purgeCache();
     imageRetrieveMetadataProvider.clear();
@@ -518,6 +692,11 @@ async function run() {
 
     await setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds);
 
+    // After the viewports hold their actors, and not before: the resize below
+    // fits each camera to the data, and a viewport with no actor has no bounds
+    // to fit, which fails inside `getSpatialExtent`.
+    sizeViewportsToVolume(volume.dimensions, volume.spacing);
+
     // The 3D viewport shows nothing without a transfer function.
     const viewport3D = renderingEngine.getViewport(viewportId3D);
 
@@ -525,6 +704,158 @@ async function run() {
 
     // Render the image
     renderingEngine.renderViewports(viewportIds);
+
+    await loadSegmentation(selectedSeries, imageIds);
+  }
+
+  /**
+   * Gives each planar viewport the shape of the data that it shows, at one
+   * pixel or more for each voxel.
+   *
+   * A viewport that is smaller than its data samples that data, and a sample
+   * hides the change that one stage of a progressive load makes.
+   *
+   * The shape comes from the world extent and not from the number of voxels,
+   * because the camera fits the world extent. A volume whose spacing differs
+   * between two axes has a number of voxels of one shape and a world extent of
+   * another, and a viewport of the first shape shows the background around the
+   * data. The scale is the finest spacing of the two axes, so the finer axis
+   * gets one pixel for each voxel and the coarser axis gets more than one.
+   *
+   * The 3D viewport shows a projection and not a plane of voxels, so it takes
+   * the size of the axial viewport, which keeps the row of the two tidy.
+   *
+   * No side goes beyond `maximumViewportEdge`. A series whose spacing differs
+   * strongly between two axes asks for an edge of several thousand pixels, and
+   * a page of that size is hard to use. The clip scales BOTH sides by the same
+   * factor, so the shape stays the shape of the data and the background does
+   * not come back.
+   */
+  function sizeViewportsToVolume(dimensions, spacing) {
+    // The two axes of the plane of each orientation, in the order of
+    // `viewportInputArray`: sagittal, then coronal, then axial.
+    const planes = [
+      [1, 2],
+      [0, 2],
+      [0, 1],
+    ];
+
+    const sizes = planes.map(([first, second]) => {
+      const scale = Math.min(spacing[first], spacing[second]);
+      const width = (dimensions[first] * spacing[first]) / scale;
+      const height = (dimensions[second] * spacing[second]) / scale;
+      const clip = Math.min(1, maximumViewportEdge / Math.max(width, height));
+
+      return [Math.round(width * clip), Math.round(height * clip)];
+    });
+
+    // The 3D viewport takes the size of the axial viewport, which is the last
+    // of the planes above.
+    [...sizes, sizes[2]].forEach(([width, height], index) => {
+      elements[index].style.width = `${width}px`;
+      elements[index].style.height = `${height}px`;
+    });
+
+    renderingEngine.resize(true, false);
+  }
+
+  /**
+   * Loads the segmentation of the selected series, when that series has one.
+   *
+   * The segmentation loads as one complete DICOM instance, and not in stages.
+   * A segment index is a name and not a measurement, so a box average of two
+   * segment indices names a third segment, and a coarse version of a labelmap
+   * states something that the reader never drew. One request of the whole
+   * instance also costs far less than the 2464 requests of one frame each that
+   * a per frame path needs on this series.
+   *
+   * The segmentation references the images of the CT, and not the voxels of
+   * the CT, so this runs as soon as the image ids exist. The CT itself keeps
+   * loading in stages while the segmentation arrives.
+   */
+  async function loadSegmentation(series, referenceImageIds) {
+    const { StudyInstanceUID, segSeriesInstanceUID, wadoRsRoot } = series;
+
+    csToolsSegmentation.removeAllSegmentationRepresentations();
+    csToolsSegmentation.state.removeSegmentation(segmentationId);
+
+    if (!segSeriesInstanceUID) {
+      return;
+    }
+
+    const start = Date.now();
+    const seriesPath = `${wadoRsRoot}/studies/${StudyInstanceUID}/series/${segSeriesInstanceUID}`;
+
+    getOrCreateTiming('segStatus').innerText = 'Fetching the segmentation...';
+
+    let part10 = segBuffers.get(segSeriesInstanceUID);
+
+    if (!part10) {
+      // The series holds one instance, and a query of the series names that
+      // instance, so this example needs no SOP instance uid of its own.
+      const instances = await (await fetch(`${seriesPath}/instances`)).json();
+      const sopInstanceUID = instances[0]['00080018'].Value[0];
+      const response = await fetch(`${seriesPath}/instances/${sopInstanceUID}`);
+
+      part10 = part10BytesOf(
+        response.headers.get('content-type'),
+        await response.arrayBuffer()
+      );
+      segBuffers.set(segSeriesInstanceUID, part10);
+    }
+
+    // The file manager holds the bytes, and the WADO-URI loader then reads
+    // every frame of the instance out of those bytes, with no further request.
+    const segImageId = wadouri.fileManager.add(new Blob([part10]));
+
+    await imageLoader.loadAndCacheImage(segImageId);
+
+    const instance = metaData.get('instance', segImageId) || {};
+    const frameCount = Number(instance.NumberOfFrames) || 1;
+    const frameImageIds =
+      frameCount > 1
+        ? Array.from({ length: frameCount }, (_, index) =>
+            withFrame(segImageId, index + 1)
+          )
+        : [segImageId];
+
+    getOrCreateTiming('segStatus').innerText =
+      `Reading a segmentation of ${frameCount} frames...`;
+
+    const { labelMapImages } =
+      await Cornerstone3D.Segmentation.createFromDicomSegImageId(
+        referenceImageIds,
+        segImageId,
+        { metadataProvider: metaData, frameImageIds }
+      );
+
+    csToolsSegmentation.addSegmentations([
+      {
+        segmentationId,
+        representation: {
+          type: csToolsEnums.SegmentationRepresentations.Labelmap,
+          data: {
+            imageIds: labelMapImages.flat().map((image) => image.imageId),
+          },
+        },
+      },
+    ]);
+
+    // Each planar viewport draws the labelmap. The 3D viewport shows a
+    // projection of the CT, and it takes no labelmap here.
+    for (const viewportId of viewportIds.filter((id) => id !== viewportId3D)) {
+      await csToolsSegmentation.addSegmentationRepresentations(viewportId, [
+        {
+          segmentationId,
+          type: csToolsEnums.SegmentationRepresentations.Labelmap,
+        },
+      ]);
+    }
+
+    renderingEngine.renderViewports(viewportIds);
+
+    getOrCreateTiming('segStatus').innerText =
+      `Segmentation of ${frameCount} frames took ${Date.now() - start} ms`;
   }
 
   const imageLoadStage = (evt) => {
@@ -547,15 +878,27 @@ async function run() {
     return button;
   };
 
-  // The button reads the image ids WHEN IT IS PRESSED. A bound argument would
+  // The button reads the image ids when it is pressed. A bound argument would
   // hold the series that was selected when the button was created, so a change
   // of the series would never reach the load.
   const loadButton = (text, volId, getImageIds, config) =>
     createButton(text, () => loadVolume(volId, getImageIds(), config, text));
 
-  // The plain DICOMweb path, with no retrieve configuration. Every server
-  // serves it, so this is the load that always works.
-  loadButton('DICOMweb', volumeId, () => imageIdsCT, null);
+  // The two loads that every DICOMweb server serves, because neither one asks
+  // for an alternate frames path. They differ in the ORDER of the requests:
+  // `Linear` asks for the frames from the first to the last, and `Progressive`
+  // interleaves them, so a coarse version of the whole volume arrives first.
+  loadButton('Linear', volumeId, () => imageIdsCT, null);
+  // The configuration needs the number of images, so it is built when the
+  // button is pressed and not when the button is created.
+  createButton('Progressive', () =>
+    loadVolume(
+      volumeId,
+      imageIdsCT,
+      interleavedConfigurationOf(imageIdsCT.length),
+      'Progressive'
+    )
+  );
   loadButton('JLS', volumeId, () => imageIdsCT, configJLS);
   loadButton(
     'JLS Non Interleaved',
