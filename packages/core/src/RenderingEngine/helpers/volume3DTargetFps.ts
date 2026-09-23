@@ -249,8 +249,25 @@ function resolveSampleDistance(
   return 0;
 }
 
-function applyFixedSampleDistanceFactor(entry: Volume3DTargetFpsEntry) {
-  const factor = VOLUME_3D_DEFAULT_INTERACTIVE_SAMPLE_DISTANCE_FACTOR;
+/**
+ * Resolve the fixed-policy interactive sample-distance multiplier.
+ * Accepts a finite number > 0; otherwise returns the default ×2.
+ */
+export function resolveFixedSampleDistanceFactor(
+  sampleDistanceFactor?: number
+): number {
+  const factor = Number(sampleDistanceFactor);
+  if (Number.isFinite(factor) && factor > 0) {
+    return factor;
+  }
+  return VOLUME_3D_DEFAULT_INTERACTIVE_SAMPLE_DISTANCE_FACTOR;
+}
+
+function applyFixedSampleDistanceFactor(
+  entry: Volume3DTargetFpsEntry,
+  sampleDistanceFactor?: number
+) {
+  const factor = resolveFixedSampleDistanceFactor(sampleDistanceFactor);
   for (const { mapper, baselineSampleDistance } of entry.baselineMappers) {
     mapper.setSampleDistance?.(baselineSampleDistance * factor);
   }
@@ -355,8 +372,10 @@ export function getVolume3DTargetFps(viewportId: string): number | undefined {
 
 /**
  * Set interactive quality policy for a legacy Volume3D viewport.
- * `fixedSampleDistance` (default) applies ×2 during drag; `targetFps` uses
- * adaptive budget LOD when also enabled via setVolume3DTargetFpsEnabled.
+ * `fixedSampleDistance` (default) applies a fixed sample-distance multiplier
+ * during drag (tool `rotateSampleDistanceFactor` when provided, else ×2);
+ * `targetFps` uses adaptive budget LOD when also enabled via
+ * setVolume3DTargetFpsEnabled.
  */
 export function setVolume3DInteractiveQualityPolicy(
   viewportId: string,
@@ -423,9 +442,18 @@ export function getVolume3DTargetFpsEnabled(
 
 /**
  * Begin interactive LOD for a legacy Volume3D viewport.
- * Returns true when interaction quality was armed (fixed ×2 or Target FPS).
+ * Returns true when interaction quality was armed (fixed sample-distance
+ * factor or Target FPS).
+ *
+ * Under `fixedSampleDistance`, optional `sampleDistanceFactor` (e.g. from
+ * tool `rotateSampleDistanceFactor`) multiplies baseline sample distance when
+ * it is a finite number > 0; otherwise the default ×2 is used.
+ * Under `targetFps`, the factor is ignored.
  */
-export function beginVolume3DInteraction(viewportId: string): boolean {
+export function beginVolume3DInteraction(
+  viewportId: string,
+  options?: { sampleDistanceFactor?: number }
+): boolean {
   const entry = ensureEntry(viewportId);
   const viewport = resolveViewport(viewportId);
   if (!entry || !viewport) {
@@ -463,7 +491,7 @@ export function beginVolume3DInteraction(viewportId: string): boolean {
     applySampleDistanceForLod(entry, entry.lastLod);
   } else {
     // fixedSampleDistance (default)
-    applyFixedSampleDistanceFactor(entry);
+    applyFixedSampleDistanceFactor(entry, options?.sampleDistanceFactor);
     entry.lastLod = {
       scale: 1,
       steps: INTERACTIVE_FULL_STEPS,

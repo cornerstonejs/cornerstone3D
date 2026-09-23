@@ -8,10 +8,16 @@ import {
  * Arms legacy Volume3D interactive quality for the element (fixed sample-
  * distance factor or Target FPS, per viewport policy), and restores full
  * quality on mouseup / touchend / touchcancel.
+ *
+ * Under `fixedSampleDistance`, optional `sampleDistanceFactor` is applied
+ * when it is a finite number > 0; otherwise the default ×2 is used.
+ * Under `targetFps`, the factor is ignored.
+ *
  * Returns true when interaction quality was armed.
  */
 export default function armVolume3DInteraction(
-  element: HTMLDivElement
+  element: HTMLDivElement,
+  options?: { sampleDistanceFactor?: number }
 ): boolean {
   const enabledElement = getEnabledElement(element);
   if (!enabledElement?.viewport) {
@@ -19,7 +25,7 @@ export default function armVolume3DInteraction(
   }
 
   const { viewport } = enabledElement;
-  if (!beginVolume3DInteraction(viewport.id)) {
+  if (!beginVolume3DInteraction(viewport.id, options)) {
     return false;
   }
 

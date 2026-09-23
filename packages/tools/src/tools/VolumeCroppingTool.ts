@@ -453,8 +453,10 @@ class VolumeCroppingTool extends BaseTool {
       }
     }
 
-    // Rotate path: viewport policy owns interactive LOD (fixed ×2 or Target FPS).
-    armVolume3DInteraction(element);
+    // Rotate path: viewport policy owns interactive LOD; tool may supply fixed multiplier.
+    armVolume3DInteraction(element, {
+      sampleDistanceFactor: this.configuration.rotateSampleDistanceFactor,
+    });
 
     if (this.cleanUp !== null) {
       document.removeEventListener('mouseup', this.cleanUp);

@@ -35,6 +35,8 @@ class TrackballRotateTool extends BaseTool {
       supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         rotateIncrementDegrees: 2,
+        // Applied under fixedSampleDistance policy; ignored under targetFps.
+        rotateSampleDistanceFactor: 2,
       },
     }
   ) {
@@ -45,8 +47,10 @@ class TrackballRotateTool extends BaseTool {
 
   preMouseDownCallback = (evt: EventTypes.InteractionEventType) => {
     const { element } = evt.detail;
-    // Viewport policy owns interactive LOD (fixed ×2 or Target FPS).
-    armVolume3DInteraction(element);
+    // Viewport policy owns interactive LOD; tool may supply fixed multiplier.
+    armVolume3DInteraction(element, {
+      sampleDistanceFactor: this.configuration.rotateSampleDistanceFactor,
+    });
     return true;
   };
 
