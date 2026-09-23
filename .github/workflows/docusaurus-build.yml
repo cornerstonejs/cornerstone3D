@@ -1,16 +1,19 @@
 name: Docusaurus Build
 
-# Stage one of the documentation preview. This workflow builds the
-# documentation and the examples of the pull request, and it uploads the result
-# as an artifact. It does not publish the result.
+# Builds the documentation and the examples for every pull request, and uploads
+# the result as an artifact.
 #
-# docs-preview-deploy.yml is stage two. That workflow runs after this one, it
-# downloads the artifact, and it publishes the artifact to Netlify.
+# A pull request whose branch lives in this repository also gets its preview
+# from this workflow, in the steps at the end. That path is the fast one: the
+# author sees the preview at the end of this run, without a second run.
 #
-# The split exists so that this workflow needs no secret and no token that can
-# write. This workflow builds the code of the pull request, and the code of a
-# fork pull request is untrusted. Please keep the permissions below as they
-# are, and add a publish step to stage two instead of to this workflow.
+# A fork pull request cannot take that path. GitHub passes no secret to a run
+# from a fork, so the deploy step below is guarded and skips. docs-preview-
+# deploy.yml publishes the artifact of such a run instead, in a second
+# workflow that holds the secrets.
+#
+# Both paths call scripts/ci/docs-preview-publish.sh, so the deploy, the
+# comment and the status have one implementation.
 
 on:
   pull_request:
@@ -27,8 +30,15 @@ jobs:
   docusaurus-build:
     timeout-minutes: 30
     runs-on: ubuntu-latest
+    # The two write scopes serve the publish step at the end, and nothing else.
+    # GitHub caps the token of a fork pull request at read-only whatever this
+    # block asks for, so on a fork run these two scopes have no effect. The
+    # guard on the publish step is what keeps a fork run out of that step; the
+    # scopes are not a second guard.
     permissions:
       contents: read
+      pull-requests: write
+      statuses: write
 
     steps:
       - name: Checkout repository
@@ -54,8 +64,9 @@ jobs:
         env:
           NODE_OPTIONS: --max_old_space_size=32384
 
-      # Stage two reads this artifact. It matches the name on the prefix
-      # `docusaurus-build-`, so a change to the name must keep that prefix.
+      # docs-preview-deploy.yml reads this artifact for a fork pull request. It
+      # matches the name on the prefix `docusaurus-build-`, so a change to the
+      # name must keep that prefix.
       - name: Upload build artifacts
         uses: actions/upload-artifact@v7.0.1
         if: always()
@@ -63,3 +74,19 @@ jobs:
           name: docusaurus-build-${{ github.sha }}
           path: packages/docs/build/
           retention-days: 7
+
+      # The fast path, for a pull request whose branch lives in this repository.
+      # continue-on-error keeps this job a report on the documentation build:
+      # the build steps above carry no such flag, so a build that fails still
+      # fails the job, and an outage at Netlify does not.
+      - name: Publish the preview
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        continue-on-error: true
+        run: bash scripts/ci/docs-preview-publish.sh
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          GH_TOKEN: ${{ github.token }}
+          PUBLISH_DIR: ${{ github.workspace }}/packages/docs/build
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}

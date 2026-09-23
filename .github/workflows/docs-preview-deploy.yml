@@ -1,28 +1,27 @@
 name: Deploy Docs Preview
 
-# Stage two of the documentation preview. Stage one is docusaurus-build.yml,
-# which builds the documentation and the examples for every pull request and
-# uploads the result as an artifact. Stage one gets no secret and a read-only
-# token, because it builds the code of the pull request, and the code of a fork
-# pull request is untrusted.
+# Publishes the documentation preview of a FORK pull request.
 #
-# This workflow runs after stage one, in the context of this repository, so it
-# holds the Netlify secrets and a token that can write. It publishes the
-# artifact of stage one. Because of the split, a fork pull request gets a
-# preview, which the guard in stage one alone cannot give it.
+# docusaurus-build.yml builds the documentation for every pull request. A pull
+# request whose branch lives in this repository also publishes its own preview
+# there, in the same run. A fork pull request cannot, because GitHub passes no
+# secret to a run from a fork. This workflow closes that gap: it starts after
+# the build, in the context of this repository, so it holds the Netlify secrets
+# and a token that can write.
 #
-# Three rules keep the split safe, and a change to this file must keep all
-# three:
+# Four rules keep this safe, and a change to this file must keep all four:
 #
-#  1. This workflow never runs code that comes from the pull request. It
-#     downloads static files and uploads the same static files to Netlify. The
-#     flag --no-build is part of that rule, because it stops netlify-cli from
-#     running a build command of the site.
-#  2. This workflow reads no value out of the artifact. Every value that it uses
-#     comes from the `workflow_run` payload, which GitHub writes.
-#  3. GitHub runs a `workflow_run` workflow from the default branch only. A fork
-#     pull request therefore cannot change this file. A change to this file
-#     takes effect after the merge to `main`, and not before.
+#  1. This workflow never runs code of the pull request. It downloads static
+#     files and uploads the same static files. The flag --no-build in
+#     scripts/ci/docs-preview-publish.sh is part of this rule, because the flag
+#     stops netlify-cli from running a build command of the site.
+#  2. This workflow reads no value out of the artifact. Every value comes from
+#     the `workflow_run` payload, which GitHub writes.
+#  3. The checkout below takes the DEFAULT BRANCH, and never the code of the
+#     pull request. The script that this workflow runs therefore comes from
+#     `main` and not from the fork.
+#  4. GitHub runs a `workflow_run` workflow from the default branch only, so a
+#     fork pull request cannot change this file.
 #
 # A value of the payload can still hold text that an author of a fork chose,
 # for example the name of a branch. Every step below passes such a value
@@ -43,34 +42,45 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # The largest artifact that this workflow publishes, in megabytes. A full
-  # build is about 250 MB, of which ort/ is 136 MB and dicom-microscopy-viewer/
-  # is 20 MB. The limit leaves room for growth, and it stops a pull request that
-  # makes the build write an enormous file.
+  # The largest artifact that this workflow publishes, in megabytes. A normal
+  # build is about 95 MB. The limit leaves room for growth, and it stops a fork
+  # pull request that makes the build write an enormous file.
   MAX_ARTIFACT_MB: 1024
 
 jobs:
   deploy:
-    name: Deploy the preview of the pull request
-    # A run of stage one that failed carries a partial artifact, because the
-    # upload step of stage one runs with `if: always()`. Publish a build that
-    # succeeded only.
+    name: Publish the preview of a fork pull request
+    # Three conditions, and each one matters:
+    #   - a pull request, and not a push;
+    #   - a build that succeeded, because the upload step of the build runs with
+    #     `if: always()` and a failed build leaves a partial artifact;
+    #   - a fork, because docusaurus-build.yml already published the preview of
+    #     a pull request whose branch lives in this repository.
     if: >-
       github.event.workflow_run.event == 'pull_request' &&
-      github.event.workflow_run.conclusion == 'success'
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name != github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
-      actions: read # read and download the artifact of the run of stage one
+      actions: read # read and download the artifact of the build
       pull-requests: write # write the comment
       statuses: write # write the row of the checks list
 
     steps:
+      # Rule 3. `ref` names the default branch, so this brings the trusted copy
+      # of the publish script and never the code of the fork. sparse-checkout
+      # keeps the checkout to the one directory that this workflow runs.
+      - name: Checkout the publish script from the default branch
+        uses: actions/checkout@v6.0.3
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          sparse-checkout: scripts/ci
+          persist-credentials: false
+
       # The `pull_requests` array of a `workflow_run` payload is empty for a
-      # fork pull request, so this step asks the API instead. The head
-      # repository and the head branch identify the pull request, and GitHub
-      # supplies both. The answer passes a test for digits before any later
-      # step uses the answer in a URL or in an alias.
+      # fork pull request, so this step asks the API. The head repository and
+      # the head branch identify the pull request, and GitHub supplies both.
       - name: Resolve the pull request
         id: pr
         env:
@@ -98,8 +108,8 @@ jobs:
           echo "number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
           echo "::notice::The preview belongs to pull request #${PR_NUMBER}."
 
-      # Ask for the size before the download, so an enormous artifact costs a
-      # single API call and not the transfer.
+      # Ask for the size before the download, so an enormous artifact costs one
+      # API call and not the transfer.
       - name: Check the size of the artifact
         if: steps.pr.outputs.number != ''
         env:
@@ -107,9 +117,9 @@ jobs:
           RUN_ID: ${{ github.event.workflow_run.id }}
         run: |
           set -euo pipefail
-          # No --paginate: a run of stage one uploads one artifact, and one page
-          # holds it. With --paginate, gh applies the filter to each page, and a
-          # sum of the first page alone would understate the total.
+          # No --paginate: a build uploads one artifact, and one page holds it.
+          # With --paginate, gh applies the filter to each page, and a sum of the
+          # first page alone would understate the total.
           BYTES=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/artifacts?per_page=100" \
             --jq '[.artifacts[] | select((.name // "") | startswith("docusaurus-build-")) | .size_in_bytes] | add // 0')
           MB=$(( BYTES / 1048576 ))
@@ -119,9 +129,9 @@ jobs:
             exit 1
           fi
 
-      # The name of the artifact of stage one holds `github.sha`, which is the
-      # merge commit of the pull request. This workflow knows the head commit
-      # and not the merge commit, so it matches on the prefix of the name.
+      # The name of the artifact holds `github.sha`, which is the merge commit
+      # of the pull request. This workflow knows the head commit and not the
+      # merge commit, so it matches on the prefix of the name.
       - name: Download the documentation build
         if: steps.pr.outputs.number != ''
         uses: actions/download-artifact@v8.0.1
@@ -132,96 +142,22 @@ jobs:
           github-token: ${{ github.token }}
           path: site
 
-      - name: Deploy the preview to Netlify
-        id: deploy
+      - name: Publish the preview
         if: steps.pr.outputs.number != ''
-        # This job checks out no repository, so netlify-cli finds no pnpm
-        # workspace and needs no --filter. The production deploy in
-        # build-docs.yml explains the other flags. The pinned version matches
-        # build-docs.yml and docusaurus-build.yml.
-        run: |
-          set -euo pipefail
-          test -f site/index.html || {
-            echo "::error::The artifact holds no index.html. The preview is absent."
-            exit 1
-          }
-          RESULT=$(npx -y netlify-cli@27.5.2 deploy \
-            --no-build \
-            --dir="$GITHUB_WORKSPACE/site" \
-            --alias="pr-${PR_NUMBER}" \
-            --json)
-          URL=$(jq -r '.deploy_url' <<<"$RESULT")
-          if [[ -z "$URL" || "$URL" == "null" ]]; then
-            echo "::error::The Netlify deploy returned no URL."
-            echo "$RESULT"
-            exit 1
-          fi
-          echo "url=$URL" >> "$GITHUB_OUTPUT"
-          {
-            echo "## Preview"
-            echo
-            echo "| Target | URL |"
-            echo "| --- | --- |"
-            echo "| Documentation | ${URL} |"
-            echo "| Examples | ${URL}/live-examples/ |"
-          } >> "$GITHUB_STEP_SUMMARY"
+        run: bash scripts/ci/docs-preview-publish.sh
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-          PR_NUMBER: ${{ steps.pr.outputs.number }}
-
-      # One comment for each pull request. The marker identifies the comment
-      # that this workflow wrote, and each later push edits that comment instead
-      # of adding another one.
-      - name: Comment the preview links on the pull request
-        if: steps.deploy.outputs.url != ''
-        continue-on-error: true
-        env:
           GH_TOKEN: ${{ github.token }}
-          URL: ${{ steps.deploy.outputs.url }}
+          PUBLISH_DIR: ${{ github.workspace }}/site
           PR_NUMBER: ${{ steps.pr.outputs.number }}
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
-        run: |
-          set -euo pipefail
-          MARKER='<!-- cs3d-docs-preview -->'
-          BODY=$(printf '%s\n### Documentation preview for %s\n\n| Target | URL |\n| --- | --- |\n| Documentation | %s |\n| Examples | %s/live-examples/ |\n' \
-            "$MARKER" "${HEAD_SHA:0:7}" "$URL" "$URL")
 
-          COMMENT_ID=$(gh api --paginate \
-            "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" \
-            --jq "[.[] | select((.body // \"\") | startswith(\"$MARKER\")) | .id] | first // empty" \
-            | head -n 1)
-
-          if [ -n "$COMMENT_ID" ]; then
-            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$COMMENT_ID" -f body="$BODY"
-          else
-            gh api -X POST "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" -f body="$BODY"
-          fi
-
-      # A commit status adds a row to the checks list of the pull request, and
-      # the Details link of that row opens the preview. The run of this workflow
-      # does not appear in that list, because the run belongs to a
-      # `workflow_run` event, so without this row a reader of the pull request
-      # sees nothing of this workflow at all.
-      - name: Add the preview to the checks list
-        if: steps.deploy.outputs.url != ''
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ github.token }}
-          URL: ${{ steps.deploy.outputs.url }}
-          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
-        run: |
-          set -euo pipefail
-          gh api -X POST "repos/$GITHUB_REPOSITORY/statuses/$HEAD_SHA" \
-            -f state=success \
-            -f context='preview/docs' \
-            -f description='The documentation and the examples preview' \
-            -f target_url="$URL"
-
-      # Without this step a failure of this workflow is invisible on the pull
-      # request, for the reason that the step above gives. The row reports the
-      # failure and links to the run. The row is advisory: it does not block a
-      # merge unless somebody makes `preview/docs` a required check.
+      # A run of this workflow does not appear in the checks list of the pull
+      # request, because the run belongs to a `workflow_run` event. Without this
+      # step a failure here is invisible to a reader of the pull request. The
+      # row is advisory: it blocks no merge unless somebody makes `preview/docs`
+      # a required check.
       - name: Report a failed preview on the checks list
         if: failure() && steps.pr.outputs.number != ''
         continue-on-error: true
