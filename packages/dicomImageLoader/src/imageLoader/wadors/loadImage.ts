@@ -16,17 +16,6 @@ const log = logging.loaderLog.getLogger('wadors');
 
 const { ProgressiveIterator } = utilities;
 const { ImageQualityStatus } = Enums;
-/**
- * Minimum milliseconds between two decodes of the same partial image, when the
- * retrieve options do not set `msBetweenDecode`.
- *
- * Chunk size bounds how often new data arrives, but on a fast connection that
- * still outruns what a display can use: decoding is much more expensive than
- * receiving, so without a clock the decoder runs continuously and the extra
- * frames are never seen. 500ms is a readable refresh rate.
- */
-const DEFAULT_MS_BETWEEN_DECODE = 500;
-
 const streamableTransferSyntaxes = new Set<string>([
   // Private HTJ2K
   '3.2.840.10008.1.2.4.96',
