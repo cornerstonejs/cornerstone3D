@@ -288,3 +288,112 @@ Two notes on scope:
 - **Check your scroll affordances on small screens.** If a page relied on
   viewport drags to scroll, add padding, a scroll container, or a gutter outside
   the viewport elements so the page remains scrollable on a phone or tablet.
+
+## Progressive loading: split chunk sizes, decode throttle, full resolution partial HTJ2K decode
+
+### What Changed
+
+Progressive retrieval now separates the first decode from the ones that follow,
+and paces decoding on a clock:
+
+- **`initialChunkSize`** (new, default 32kb) is how much data the first decode
+  waits for. On a byte range retrieve it is the range fetched at `rangeIndex` 0. On a streaming retrieve it is how much of the response accumulates before
+  the first decode, where the whole 128kb `chunkSize` was needed before.
+- **`chunkSize`** (default 128kb) is now the size of each range _after_ the
+  first, and for a streaming retrieve how much new data has to arrive before
+  the partial codestream is decoded again. It previously meant the initial
+  range, and defaulted to 64kb.
+- **`msBetweenDecode`** (new, default 500) is the minimum time between two
+  decodes of the same partial image. A completed image is always decoded, so
+  this only ever delays intermediate versions. It applies to a streaming
+  retrieve only: a byte range stage decodes once, when its range arrives, so
+  there is no second decode for the clock to hold back.
+
+Range boundaries follow from the first two: the end of range `n` is at
+`initialChunkSize + n * chunkSize`, where it used to be `chunkSize * (n + 1)`.
+
+The first stage of a frame fixes both sizes for that frame. A byte range
+retrieve reads `initialChunkSize` and `chunkSize` on the stage that fetches the
+first bytes, and every later stage of the same frame reuses those values,
+because the ranges of one frame have to agree on where their boundaries fall.
+
+Separately, setting `decodeLevel: 0` on a partial retrieve now means "decode at
+full resolution from whatever bytes have arrived" rather than picking a reduced
+level from how much of the frame is present. The resulting image is reported as
+`LOSSY` instead of `SUBRESOLUTION`, since it is full size and only the
+codestream is incomplete. This rests on `@cornerstonejs/codec-openjph` 2.4.10,
+which decodes a truncated HTJ2K codestream instead of throwing on it. The codec
+is a pinned dependency of `@cornerstonejs/dicom-image-loader`, so a normal
+install already gets it.
+
+### Why This Matters
+
+**The rename is the breaking part.** A configuration that sets `chunkSize` to
+size its _first_ range still compiles and still runs, but now sizes every range
+after the first instead, leaving the initial range at the 32kb default. If you
+had `chunkSize: 256000` to get a large first fetch, you now get 32kb first and
+256kb increments after it.
+
+The two sizes differ because they buy different things: the first range is
+buying time to first image, where 32kb of HTJ2K is enough for a usable full
+resolution decode, and later ranges are buying refinement, where small steps
+only mean more requests for the same result.
+
+For a non-HTJ2K transfer syntax the effect is on round trips rather than on
+quality. Only HTJ2K decodes an incomplete buffer at all — see
+[Partial decoding is HTJ2K only](#partial-decoding-is-htj2k-only) — so every
+other syntax simply waits until a range completes the frame before decoding it
+once. A smaller first range means it may take one more request to get there.
+
+`msBetweenDecode` exists because chunk size alone does not bound decoding cost.
+On a fast connection 128kb arrives in a few milliseconds, so a large frame would
+decode dozens of times on its way to complete — work that costs far more than
+the receive it is keeping up with, and that no display can show.
+
+**A `chunkSize` set on a later stage is ignored**, because the first stage of a
+frame fixes both sizes. A configuration that reads naturally — a small
+`initialChunkSize` on the first stage and a large `chunkSize` on the stage after
+it — therefore gets the 128kb default for its later ranges rather than the value
+it asked for, and fetches to a nearer boundary than intended. Set both sizes on
+the stage that retrieves `rangeIndex` 0.
+
+**A streaming retrieve now shows its first image sooner.** The first decode
+waits for `initialChunkSize`, 32kb by default, where it previously waited for
+the full 128kb threshold. Set `initialChunkSize` on a streaming retrieve to get
+the old behaviour back.
+
+The codec floor is not optional. A consumer who dedupes `codec-openjph` to a
+version older than 2.4.10 — via an override, a resolution, or a hoisted older
+copy — will get throwing decodes on truncated codestreams.
+
+How far that degrades depends on whether another stage covers the same image.
+`ProgressiveRetrieveImages` chains stages through `next` per image ID, so a
+failed decode only retries when a _later stage selects that same image_:
+
+- `sequentialRetrieveStages` and `interleavedRetrieveStages` both cover every
+  image again — the latter through its final catch-all `errorRetrieve` stage —
+  so a failure there costs a slower load rather than a lost frame.
+- `singleRetrieveStages`, which is the default when a configuration sets no
+  `stages`, has one stage and its `errorRetrieve` fallback commented out. There
+  is no `next`, so the frame is reported failed.
+- A hand-written multi-stage configuration whose stages select disjoint images
+  (by `decimate`/`offset`/`positions`) behaves like the single-stage case for
+  any image only one stage covers.
+
+A lost frame surfaces as a permanent `errorCallback` on the loader's listener
+rather than an uncaught error, so it is reported rather than silent.
+
+### Migration Guidance
+
+- **Rename `chunkSize` to `initialChunkSize`** anywhere it was sizing the first
+  range — which is what it always meant before this change.
+- **Set `chunkSize` explicitly** if you want the later ranges at something other
+  than 128kb, particularly for non-HTJ2K syntaxes.
+- **Put both sizes on the first stage** of a byte range configuration. A later
+  stage cannot change them.
+- **Raise or zero `msBetweenDecode`** if 500ms is not the refresh rate you want;
+  0 decodes on every chunk, as before. It applies to streaming retrieves only.
+- **Check for a pinned older openjph.** If your lockfile resolves
+  `@cornerstonejs/codec-openjph` below 2.4.10, remove the pin or raise it.
+- **Prefer `decodeLevel: 0` for HTJ2K partial retrieves,** and keep
+  sub-resolution levels for genuinely small renditions such as JLS thumbnails.

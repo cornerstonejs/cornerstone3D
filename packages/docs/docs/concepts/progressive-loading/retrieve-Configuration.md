@@ -79,12 +79,58 @@ The resolution of decoding is controlled by `decodeLevel` configuration and it c
 So if the decodeLevel for a stage is set to 0, then the image will be decoded to full resolution. If it is set to 1, then the image will be decoded to half resolution (x/2, y/2) and so on.
 
 :::tip
+For HTJ2K, setting `decodeLevel: 0` on a partial (byte range or streaming)
+retrieve is usually the right choice. The decoder tolerates a truncated
+codestream, so a partial retrieve decodes at full size and is merely lossy,
+which loses considerably less than decoding a sub-resolution image and scaling
+it back up afterwards. Such an image is reported as `LOSSY` rather than
+`SUBRESOLUTION`, and only counts as `FULL_RESOLUTION` once the whole frame has
+arrived.
+
+Sub-resolution decoding plus scaling remains the right choice for renditions
+that are genuinely small, such as JLS thumbnails, and for transfer syntaxes
+whose decoders cannot read a truncated stream.
+
+Truncated HTJ2K decoding requires `@cornerstonejs/codec-openjph` 2.4.10 or
+later. Older builds throw on a truncated codestream instead of decoding it.
+:::
+
+:::tip
 For volume viewports, we currently don't allow decoding into sub-resolution because it would require reallocating the volume in memory, which is inefficient. Therefore, if the data is partial and can't be decoded into full resolution, we simply replicate it (inside a web worker for performance) to fill the entire volume.
 
 However, for the stack viewport, we do allow decoding into sub-resolution since this re-allocation is cheaper than the whole volume. Additionally, in this scneario, future enhanced qualities of the image will wipe out the old image and create a new image with new size until full resolution is reached.
 :::
 
 We will talk about `frequency` in the each method's section below.
+
+### Partial decoding is HTJ2K only
+
+Everything below about decoding a partial image applies **only to HTJ2K**. The
+decision is not a configuration option — it is a fixed list of transfer syntaxes
+in `streamableTransferSyntaxes` (`imageLoader/wadors/loadImage.ts`), currently:
+
+| Transfer syntax UID       | Meaning                             |
+| ------------------------- | ----------------------------------- |
+| `3.2.840.10008.1.2.4.96`  | HTJ2K, private/pre-ratification UID |
+| `1.2.840.10008.1.2.4.202` | HTJ2K (RPCL) — reliably streamable  |
+| `1.2.840.10008.1.2.4.203` | HTJ2K lossy — attempted, may not be |
+
+When a partial buffer arrives whose transfer syntax is not on that list, the
+decode is skipped and the loader waits for more data; the image is decoded once
+the frame is complete. So for every other syntax, byte range and streaming
+retrieves still control **how the data is fetched**, but the image is only ever
+decoded once, at full quality.
+
+Two consequences worth knowing:
+
+- `decodeLevel` is only honoured by the HTJ2K decoder. Setting it for another
+  syntax has no effect.
+- Tuning `initialChunkSize` down for a non-HTJ2K syntax does not lower quality;
+  it can only add a round trip before the first (complete) decode.
+
+The list is a module-level constant rather than a setting, so adding a syntax to
+it means changing that file — appropriate only for a codec that can genuinely
+decode a truncated codestream, since one that cannot will throw instead.
 
 ### Streaming Options
 
@@ -93,8 +139,34 @@ We will talk about `frequency` in the each method's section below.
 For streaming requests, you can configure the following options:
 
 - `streaming`: whether to use streaming or not
+- `initialChunkSize`: bytes that have to accumulate before the first decode
+  (default is 128kb). The stream shows nothing until this much has arrived, so
+  it sets the time to first image. 32kb already decodes, but on a high
+  resolution frame that much codestream spreads over so many pixels that the
+  first image adds little, and the decode then repeats almost immediately.
+- `chunkSize`: bytes that have to accumulate between one decode and the next
+  (default is 128kb). By then the image is already displayed and the job is
+  refining it, so decoding after every small addition would only mean more work
+  for the same result. `minChunkSize` is the former name for this option and is
+  still honoured.
+- `msBetweenDecode`: minimum milliseconds between two decodes of the same
+  partial image (default is 500). Chunk size bounds how often data arrives, but
+  on a fast connection that still outruns what a display can use - decoding is
+  far more expensive than receiving - so this throttles refinement to a
+  readable rate. A completed image is always decoded, so this only ever delays
+  intermediate versions, never the final one. Set to 0 to decode on every
+  chunk.
+
+`msBetweenDecode` only has an effect here. A byte range stage decodes once, when
+its range arrives, so there is no second decode for the clock to hold back; on
+that path the range sizes alone control how often a partial image is decoded.
 
 #### Decoding Frequency
+
+Setting `decodeLevel: 0` overrides everything in this section: the partial
+codestream is then decoded at full resolution however little of it has arrived.
+That is the preferred setting for HTJ2K. The levels below apply when
+`decodeLevel` is not set.
 
 Most often, when the stream is coming from a server, the server lets the client know about the final size of the data. So, at each point in time, we can identify the percentage of the data that has been downloaded and decode the image to the relevant resolution so in the streaming scenario you really don't have to set it manually.
 
@@ -131,13 +203,48 @@ as soon as possible.
 
 #### Options
 
-- `chunkSize`: byte range value to retrieve for initial decode (default is 64kb).
-  Ignored for all but the first range request (regardless of rangeIndex).
+- `initialChunkSize`: byte range to retrieve for the first decode, at
+  `rangeIndex` 0 (default is 128kb). Small on purpose, because it is the
+  shortest path to something on screen. 32kb also decodes, but it is too little
+  for a high resolution frame to show much.
+- `chunkSize`: bytes added by each range after the first (default is 128kb).
+  By then the image is already displayed and the job is refining it, so
+  fetching the remainder in smaller steps would only mean more requests and
+  more decodes for the same result.
 - `rangeIndex`: is the range number (index) that you want to fetch, -1 for remaining data
 
 Note that there is no guarantee that the rangeIndex will actually fetch another
 range since it will discontinue fetching once all the data has been fetched.
 Also, -1 is used to flag the "remaining" data.
+
+`msBetweenDecode` has no effect on a byte range retrieve. A range stage decodes
+once, when its range arrives, so there is no second decode for the clock to
+hold back. The range sizes alone control how often a partial image is decoded
+here. The option applies to a streaming retrieve, where one request delivers
+many partial versions of the same image.
+
+:::caution
+The first stage of a frame fixes `initialChunkSize` and `chunkSize` for that
+frame. Both are read on the stage that fetches the first bytes, and every later
+stage of the same frame reuses those values, because the ranges of one frame
+have to agree on where their boundaries fall. A `chunkSize` set on a later
+stage is ignored, and that stage fetches to the boundary the first stage
+implied instead.
+
+So set both on the stage that retrieves `rangeIndex` 0:
+
+```js
+retrieveOptions: {
+  // Correct - the first stage sets both sizes for the whole frame.
+  singleFast: { rangeIndex: 0, initialChunkSize: 16384, chunkSize: 262144 },
+  singleMiddle: { rangeIndex: 5 },
+  singleFinal: { rangeIndex: -1 },
+}
+```
+
+Written the other way round, with `chunkSize: 262144` on `singleMiddle`, that
+stage would fetch to `16384 + 5 * 128kb` rather than to `16384 + 5 * 256kb`.
+:::
 
 #### Decoding Frequency
 
@@ -161,7 +268,7 @@ For instance for the options of
 ```js
 {
   rangeIndex: 0,
-  chunkSize: 256000, // 256kb
+  initialChunkSize: 256000, // 256kb
 }
 ```
 
@@ -175,7 +282,7 @@ another example
   decodeLevel: 3
 }
 
-// chunkSize is default 64kb
+// initialChunkSize is default 128kb
 ```
 
 ![](../../assets/range-0-decode-3.png)
@@ -184,12 +291,17 @@ another example
 You can fetch the remaining data by using `rangeIndex: -1`.
 In addition, `rangeIndex = 0` will always be the first chunk.
 
-For instance, if you have 4 ranges, then your ranges would be
+Range 0 covers `initialChunkSize` and every range after it adds a full
+`chunkSize`, so the end of range `n` is at
+`initialChunkSize + n * chunkSize`. A stage always starts from the data
+already retrieved, so skipping indices simply fetches a larger span.
 
-- `rangeIndex 0`: `0` to `chunkSize-1` (in bytes)
-- `rangeIndex 5`: `chunkSize` to `5 * chunkSize-1` (in bytes)
-- `rangeIndex 25`: `5 * chunkSize` to `25 * chunkSize-1` (in bytes)
-- `rangeIndex -1`: `25 * chunkSize` to `totalSize` (in bytes) - the rest of the data
+For instance, with the defaults (128kb initial, 128kb thereafter):
+
+- `rangeIndex 0`: `0` to `128k-1` (in bytes)
+- `rangeIndex 5`: `128k` to `128k + 5*128k - 1` (in bytes)
+- `rangeIndex 25`: `128k + 5*128k` to `128k + 25*128k - 1` (in bytes)
+- `rangeIndex -1`: `128k + 25*128k` to `totalSize` (in bytes) - the rest of the data
 
 This use of rangeIndex allows retrieving larger increments to agree with the
 amount of data required for decodeLevel values.
