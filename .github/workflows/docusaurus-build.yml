@@ -15,8 +15,14 @@ jobs:
   docusaurus-build:
     timeout-minutes: 30
     runs-on: ubuntu-latest
+    # The two write scopes belong to the three preview steps at the end of this
+    # job, and to nothing else. A fork pull request receives a read-only
+    # GITHUB_TOKEN whatever this block asks for, which is one of the reasons
+    # those steps are guarded.
     permissions:
       contents: read
+      pull-requests: write
+      statuses: write
 
     steps:
       - name: Checkout repository
@@ -49,3 +55,122 @@ jobs:
           name: docusaurus-build-${{ github.sha }}
           path: packages/docs/build/
           retention-days: 7
+
+      # The four steps below publish the directory that the build above already
+      # produced. They add no build time, and they use the Netlify site and the
+      # two secrets that build-docs.yml already uses for cornerstonejs.org.
+      #
+      # Every one of them is limited to a pull request whose branch lives in
+      # this repository. A fork pull request reaches neither the secrets nor a
+      # writable token, so the deploy step is skipped, its `url` output stays
+      # empty, and the three steps that read that output skip in turn. A fork
+      # pull request therefore keeps a green docs build and gets no preview.
+      #
+      # All four carry continue-on-error, so this job reports on the build and
+      # not on Netlify. A build that fails still fails the job, because the
+      # build steps run earlier and carry no such flag. An outage at Netlify,
+      # or a refused API call, leaves the job green and leaves an annotation.
+      - name: Deploy the preview to Netlify
+        id: deploy
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        continue-on-error: true
+        # The flags match the production deploy in build-docs.yml, and that file
+        # explains each one: --no-build stops netlify-cli from re-running the
+        # site build, --dir must be absolute because netlify-cli resolves a
+        # relative path against the repository root, and --filter docs names the
+        # workspace package so netlify-cli does not stop on monorepo detection.
+        #
+        # --alias replaces --prod and puts the deploy on its own hostname. The
+        # alias is the pull request number, so a new push to the same pull
+        # request replaces the previous preview instead of adding one.
+        #
+        # The netlify-cli version is pinned. Without a pin this step runs
+        # whatever the registry serves at that moment, with NETLIFY_AUTH_TOKEN
+        # in its environment.
+        run: |
+          set -euo pipefail
+          RESULT=$(npx -y netlify-cli@27.5.2 deploy \
+            --no-build \
+            --filter docs \
+            --dir="$GITHUB_WORKSPACE/packages/docs/build" \
+            --alias="pr-${PR_NUMBER}" \
+            --json) || {
+            echo "::warning::The Netlify deploy command failed. The preview is absent for this run."
+            exit 1
+          }
+          URL=$(jq -r '.deploy_url' <<<"$RESULT")
+          if [[ -z "$URL" || "$URL" == "null" ]]; then
+            echo "::warning::The Netlify deploy returned no URL. The preview is absent for this run."
+            echo "$RESULT"
+            exit 1
+          fi
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+
+      # The job summary needs no token and no permission, so it is the one place
+      # the links always appear when the deploy runs at all.
+      - name: Write the preview links to the job summary
+        if: steps.deploy.outputs.url != ''
+        continue-on-error: true
+        run: |
+          {
+            echo "## Preview"
+            echo
+            echo "| Target | URL |"
+            echo "| --- | --- |"
+            echo "| Documentation | ${URL} |"
+            echo "| Examples | ${URL}/live-examples/ |"
+          } >> "$GITHUB_STEP_SUMMARY"
+        env:
+          URL: ${{ steps.deploy.outputs.url }}
+
+      # One comment for each pull request. The marker identifies the comment
+      # that this workflow wrote, and each later push edits that comment instead
+      # of adding another one.
+      - name: Comment the preview links on the pull request
+        if: steps.deploy.outputs.url != ''
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          URL: ${{ steps.deploy.outputs.url }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          MARKER='<!-- cs3d-docs-preview -->'
+          BODY=$(printf '%s\n### Documentation preview for %s\n\n| Target | URL |\n| --- | --- |\n| Documentation | %s |\n| Examples | %s/live-examples/ |\n' \
+            "$MARKER" "${HEAD_SHA:0:7}" "$URL" "$URL")
+
+          COMMENT_ID=$(gh api --paginate \
+            "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" \
+            --jq "[.[] | select((.body // \"\") | startswith(\"$MARKER\")) | .id] | first // empty" \
+            | head -n 1)
+
+          if [ -n "$COMMENT_ID" ]; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$COMMENT_ID" -f body="$BODY"
+          else
+            gh api -X POST "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" -f body="$BODY"
+          fi
+
+      # A commit status adds a row to the checks list of the pull request, and
+      # the Details link of that row opens the preview. A comment moves down the
+      # page as the review continues; this row does not. The status is attached
+      # to the head commit, because a status on the merge commit that the
+      # pull_request event supplies does not appear on the pull request.
+      - name: Add the preview to the checks list
+        if: steps.deploy.outputs.url != ''
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          URL: ${{ steps.deploy.outputs.url }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          gh api -X POST "repos/$GITHUB_REPOSITORY/statuses/$HEAD_SHA" \
+            -f state=success \
+            -f context='preview/docs' \
+            -f description='The documentation and the examples preview' \
+            -f target_url="$URL"
