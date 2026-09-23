@@ -3,11 +3,19 @@ import imageIdToURI from '../../utilities/imageIdToURI';
 import VoxelManager from '../../utilities/VoxelManager';
 import CompositeVoxelManager from '../../utilities/CompositeVoxelManager';
 import volumeTextureStore from '../volumeTextureStore';
+import { provideReducedImages } from '../reducedVolumeImages';
 import { isMutableSlab } from './VolumeTextureSet';
-import { boundsOfFrame } from '../../utilities/voxelGrid';
+import {
+  boundsOfFrame,
+  normalizedFactors,
+  voxelGridKey,
+  voxelGridsEqual,
+} from '../../utilities/voxelGrid';
 import { vtkStreamingOpenGLTexture } from '../../RenderingEngine/vtkClasses';
 import type {
+  CompositeVoxelManagerOptions,
   CreateVoxelRepresentationOptions,
+  RepresentationStorage,
   VoxelRepresentation,
   VoxelRepresentationSelector,
 } from '../../utilities/CompositeVoxelManager';
@@ -350,10 +358,56 @@ export class ImageVolume {
         grid: this.voxelGrid,
         delivered: this.deliveredRegions(),
         id: `composite-${this.volumeId}`,
+        createStorage: (request) => this.createRepresentationStorage(request),
       });
     }
 
     return this._compositeVoxelManager;
+  }
+
+  /**
+   * Builds the store of a derived representation in the IMAGE CACHE.
+   *
+   * One image of the cache holds one slice of the derived grid, exactly as one
+   * image holds one frame of this volume, so the one cache that already holds
+   * the full-resolution frames counts and evicts the reduced voxels as well. A
+   * second viewport that asks for the same reduction finds the same images and
+   * derives nothing again.
+   *
+   * THE DERIVATION MUST READ THE GRID OF THIS VOLUME. A slice of the derived
+   * grid then covers a whole number of frames of this volume, and the image id
+   * of the first of those frames names it. A derivation from another
+   * representation gets no store here, and the composite keeps an array of its
+   * own for it.
+   *
+   * @returns the store, or `undefined` to keep an array
+   */
+  private createRepresentationStorage({
+    grid,
+    statistic,
+    reduction,
+    source,
+  }: Parameters<
+    CompositeVoxelManagerOptions<number | RGB>['createStorage']
+  >[0]): RepresentationStorage<number | RGB> | undefined {
+    if (!voxelGridsEqual(source.grid, this.voxelGrid)) {
+      return undefined;
+    }
+
+    return provideReducedImages({
+      grid,
+      sourceImageIds: this.imageIds,
+      factors: normalizedFactors(reduction.factors),
+      sourceOffset: reduction.sourceOffset,
+      statistic,
+      dataType: this.dataType,
+      numberOfComponents: this._numberOfComponents,
+      // The image cache exempts an image of a volume from its own eviction, and
+      // a reduced slice lives as long as the volume that derived it.
+      sharedCacheKey: this.volumeId,
+      frameOfReferenceUID: this.metadata?.FrameOfReferenceUID,
+      id: `${this.volumeId}-${voxelGridKey(grid, statistic)}`,
+    }) as RepresentationStorage<number | RGB> | undefined;
   }
 
   /**

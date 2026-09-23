@@ -255,23 +255,49 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
   }
 
   /**
-   * The voxels of the representation that the composite holds at this exact
-   * grid, when the composite holds one and it keeps them in one array.
+   * Reads one slice of the representation that the composite holds at this
+   * exact grid.
    *
    * A strategy derives that representation, and `ImageVolume.markFrameDirty`
    * redoes its boxes as each frame arrives, so the values follow the load. The
-   * values are the box average that the render path asks for, and reading them
-   * is a copy of one slice.
+   * values are the box average that the render path asks for.
    *
-   * @returns nothing when no such representation exists, and the caller then
-   * computes the values itself
+   * THE IMAGE CACHE HOLDS THOSE VOXELS. One image holds one slice of the
+   * reduced grid, exactly as one image holds one frame of the volume, so this
+   * reads the same way that the full-resolution path reads a frame and it
+   * copies nothing. A representation that keeps an array of its own, which a
+   * composite without the cache builds, gives a view of that array instead.
+   *
+   * @returns a function that gives the voxels of one slice, or nothing when the
+   * composite holds no such representation, and the caller then computes the
+   * values itself
    */
-  function derivedVoxelsOf(composite, grid) {
+  function derivedSliceReaderOf(composite, grid) {
     const representation = composite.getRepresentation(grid);
     const [width, height, depth] = grid.dimensions;
-    const voxels = representation?.voxelManager?.getWritableScalarData?.();
+    const frameLength = width * height;
 
-    return voxels?.length === width * height * depth ? voxels : null;
+    if (!representation) {
+      return null;
+    }
+
+    const { imageIds } = representation;
+
+    if (imageIds?.length === depth) {
+      // A slice that the cache has evicted gives nothing, and the caller then
+      // computes that one slice. The other slices still read the cache.
+      return (slice) =>
+        cache.getImage(imageIds[slice])?.voxelManager?.getScalarData();
+    }
+
+    const voxels = representation.voxelManager?.getWritableScalarData?.();
+
+    if (voxels?.length !== frameLength * depth) {
+      return null;
+    }
+
+    return (slice) =>
+      voxels.subarray(slice * frameLength, (slice + 1) * frameLength);
   }
 
   function updateTextureFromComposite(volume) {
@@ -285,8 +311,11 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     const frameLength = width * height;
     const composite = volume.compositeVoxelManager;
     const gl = model.context;
-    const derived = derivedVoxelsOf(composite, grid);
-    const factors = derived ? null : boxFactorsOf(volume, grid);
+    const derivedSliceOf = derivedSliceReaderOf(composite, grid);
+    // The factors serve the slices that the composite cannot give, so they are
+    // computed even when a derived representation exists: the image cache can
+    // evict one reduced slice, and the fill of that one slice falls back.
+    const factors = boxFactorsOf(volume, grid);
     // One slice of this grid. A fill of the whole grid would read every voxel
     // of the volume on every refill, and a delivery changes one slice of it.
     const slab = VoxelManager.createScalarVolumeVoxelManager({
@@ -300,13 +329,9 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
         continue;
       }
 
-      let data;
+      let data = derivedSliceOf?.(slice);
 
-      if (derived) {
-        // The composite holds this slice already. A view costs nothing, and
-        // the upload below reads it.
-        data = derived.subarray(slice * frameLength, (slice + 1) * frameLength);
-      } else {
+      if (!data) {
         // `fillGrid` leaves a voxel untouched where the composite holds no
         // value, and this slab serves every slice, so a voxel that one slice
         // does not fill would keep the value that an earlier slice wrote.

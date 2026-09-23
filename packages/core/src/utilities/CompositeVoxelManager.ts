@@ -51,6 +51,15 @@ export type VoxelRepresentation<T> = {
   /** The voxels of this representation. */
   voxelManager: IVoxelManager<T>;
   /**
+   * THE IMAGES OF THE IMAGE CACHE THAT HOLD THE VOXELS, when the voxels live
+   * there. One image holds one slice of the grid, in the order of the grid, and
+   * the voxel manager above reads them. A consumer that wants the voxels of one
+   * slice without a copy reads `cache.getImage(imageIds[slice])`.
+   *
+   * A representation that keeps an array of its own states nothing here.
+   */
+  imageIds?: string[];
+  /**
    * WHAT A LOADER HAS DELIVERED, and at which quality.
    *
    * THE UNIT OF A DELIVERY IS NOT ALWAYS A FRAME. A streaming volume delivers
@@ -182,6 +191,38 @@ export type CompositeVoxelManagerOptions<T> = {
   delivered?: DeliveredRegion[];
   /** The identifier of the composite. */
   id?: string;
+  /**
+   * BUILDS THE STORE OF A DERIVED REPRESENTATION.
+   *
+   * The composite computes the voxels of a derivation, and it does not decide
+   * where those voxels live. `ImageVolume` supplies a function that puts them in
+   * the IMAGE CACHE, one image for each slice of the derived grid, so the one
+   * cache that holds the full-resolution frames counts and evicts the reduced
+   * voxels as well.
+   *
+   * A composite that states no function, which a test does, keeps an array of
+   * its own.
+   *
+   * @returns the store, or `undefined` to keep an array
+   */
+  createStorage?: (request: {
+    /** The grid of the new representation. */
+    grid: VoxelGrid;
+    /** The statistic of the new representation. */
+    statistic: VoxelStatistic;
+    /** The box size of each axis, and the region of the source. */
+    reduction: VoxelGridReduction;
+    /** The representation that the derivation reads. */
+    source: VoxelRepresentation<T>;
+  }) => RepresentationStorage<T> | undefined;
+};
+
+/** Where the voxels of one derived representation live. */
+export type RepresentationStorage<T> = {
+  /** The voxel manager over those voxels. */
+  voxelManager: IVoxelManager<T>;
+  /** The images of the image cache that hold them, one for each slice. */
+  imageIds?: string[];
 };
 
 /** The options of a derivation of a new representation. */
@@ -516,6 +557,9 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
   /** The representation that defines the index space of the composite. */
   public readonly primary: IVoxelManager<T>;
 
+  /** Builds the store of a derived representation. See the options. */
+  private readonly createStorage?: CompositeVoxelManagerOptions<T>['createStorage'];
+
   constructor({
     primary,
     grid,
@@ -523,8 +567,10 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     quality,
     delivered,
     id,
+    createStorage,
   }: CompositeVoxelManagerOptions<T>) {
     this.primary = primary;
+    this.createStorage = createStorage;
     this.compositeId = id || `composite-${primary.id}`;
     this.primaryRepresentation = {
       grid,
@@ -690,9 +736,11 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     // construction holds that rule: a box size is a whole number of at least 1,
     // so the result is never finer than the source that it reads.
     const grid = deriveBoxAverageGrid(sourceRepresentation.grid, reduction);
-    const voxelManager = this.createVoxelManagerForGrid(
+    const { voxelManager, imageIds } = this.createStorageForGrid(
       grid,
-      sourceRepresentation
+      sourceRepresentation,
+      reduction,
+      statistic
     );
 
     const reducesAnAxis = factors.some((factor) => factor > 1);
@@ -700,6 +748,7 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
       grid,
       statistic,
       voxelManager,
+      imageIds,
       quality: sourceRepresentation.quality,
       // A BOX REDUCTION DOES NOT ALIAS: every source voxel of the box reaches
       // the result. An axis that no factor reduces holds every source voxel, so
@@ -769,6 +818,7 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
   public acceptData({
     grid,
     voxelManager,
+    imageIds,
     statistic = VoxelStatistics.Average,
     quality = ImageQualityStatus.FULL_RESOLUTION,
     bounds,
@@ -778,6 +828,13 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
   }: {
     grid: VoxelGrid;
     voxelManager?: IVoxelManager<T>;
+    /**
+     * The images of the image cache that hold the voxels of this
+     * representation, one for each slice of its grid. A loader that delivers a
+     * reduced level of a server store, or a brick, states them, and the voxels
+     * then live in the image cache with the full-resolution frames.
+     */
+    imageIds?: string[];
     statistic?: VoxelStatistic;
     quality?: ImageQualityStatus;
     bounds?: BoundsIJK;
@@ -801,6 +858,7 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
         grid,
         statistic,
         voxelManager: voxelManager ?? existing?.voxelManager,
+        imageIds: imageIds ?? existing?.imageIds,
         quality,
         delivered: existing?.delivered,
         ...production,
@@ -813,6 +871,7 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
         grid,
         statistic,
         voxelManager,
+        imageIds,
         delivered: [],
         ...production,
       });
@@ -822,6 +881,10 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
 
     if (voxelManager && representation.voxelManager !== voxelManager) {
       representation.voxelManager = voxelManager;
+    }
+
+    if (imageIds) {
+      representation.imageIds = imageIds;
     }
 
     this.setDeliveredQuality(representation, deliveredBounds, quality);
@@ -1396,10 +1459,31 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     return (candidateQuality.lowest ?? 0) > (bestQuality.lowest ?? 0);
   }
 
-  private createVoxelManagerForGrid(
+  /**
+   * Builds the store of a derived representation.
+   *
+   * THE IMAGE CACHE HOLDS THE VOXELS WHERE IT CAN. `createStorage` puts one
+   * image of the cache at each slice of the derived grid, so the reduced voxels
+   * are counted, evicted and shared by the one cache that already holds the
+   * full-resolution frames, and a second viewport that asks for the same
+   * reduction finds the same voxels.
+   *
+   * The array below is the fallback. A composite that states no `createStorage`
+   * keeps it, and so does a derivation that the cache cannot hold, such as one
+   * of an element type that no image uses.
+   */
+  private createStorageForGrid(
     grid: VoxelGrid,
-    source: VoxelRepresentation<T>
-  ): IVoxelManager<T> {
+    source: VoxelRepresentation<T>,
+    reduction: VoxelGridReduction,
+    statistic: VoxelStatistic
+  ): RepresentationStorage<T> {
+    const stored = this.createStorage?.({ grid, statistic, reduction, source });
+
+    if (stored?.voxelManager) {
+      return stored;
+    }
+
     const { numberOfComponents } = source.voxelManager;
     const Constructor = source.voxelManager.getConstructor();
     const length =
@@ -1408,15 +1492,17 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
       grid.dimensions[2] *
       (numberOfComponents || 1);
 
-    return VoxelManager.createScalarVolumeVoxelManager({
-      dimensions: grid.dimensions,
-      scalarData: new Constructor(length) as PixelDataTypedArray,
-      numberOfComponents,
-      id: `${this.compositeId}-${voxelGridKey(grid, source.statistic)}`,
-      // The factory gives a voxel manager over a number or over an RGB value,
-      // according to the number of the components, and the composite holds
-      // whichever of the two its primary representation holds.
-    }) as unknown as IVoxelManager<T>;
+    return {
+      voxelManager: VoxelManager.createScalarVolumeVoxelManager({
+        dimensions: grid.dimensions,
+        scalarData: new Constructor(length) as PixelDataTypedArray,
+        numberOfComponents,
+        id: `${this.compositeId}-${voxelGridKey(grid, statistic)}`,
+        // The factory gives a voxel manager over a number or over an RGB value,
+        // according to the number of the components, and the composite holds
+        // whichever of the two its primary representation holds.
+      }) as unknown as IVoxelManager<T>,
+    };
   }
 
   /** Reads one voxel of the target grid from the first source that holds it. */

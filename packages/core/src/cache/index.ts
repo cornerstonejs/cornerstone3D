@@ -10,6 +10,12 @@ import {
   VolumeTextureSet,
   isMutableSlab,
 } from './classes/VolumeTextureSet';
+import {
+  isReducedImageId,
+  parseReducedImageId,
+  provideReducedImages,
+  reducedImageId,
+} from './reducedVolumeImages';
 
 export type {
   FixedVolumeTextureSlot,
@@ -23,6 +29,11 @@ export type {
   ProvisionTextureSetOptions,
   VolumeTextureLimits,
 } from './volumeTextureStore';
+export type {
+  ReducedImageIdOptions,
+  ReducedImages,
+  ReducedImagesOptions,
+} from './reducedVolumeImages';
 
 export {
   ImageVolume,
@@ -36,4 +47,8 @@ export {
   MutableVolumeTextureSlab,
   isMutableSlab,
   volumeTextureStore,
+  isReducedImageId,
+  parseReducedImageId,
+  provideReducedImages,
+  reducedImageId,
 };
