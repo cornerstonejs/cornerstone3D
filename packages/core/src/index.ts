@@ -12,6 +12,8 @@ import createVolumeMapper, {
 } from './RenderingEngine/helpers/createVolumeMapper';
 import {
   VOLUME_3D_DEFAULT_TARGET_FPS,
+  VOLUME_3D_MIN_TARGET_FPS,
+  VOLUME_3D_MAX_TARGET_FPS,
   VOLUME_3D_DEFAULT_INTERACTIVE_SAMPLE_DISTANCE_FACTOR,
   setVolume3DTargetFps,
   getVolume3DTargetFps,
@@ -349,6 +351,8 @@ export {
   createVolumeMapper,
   // Volume3D Target FPS (legacy VolumeViewport3D interactive LOD)
   VOLUME_3D_DEFAULT_TARGET_FPS,
+  VOLUME_3D_MIN_TARGET_FPS,
+  VOLUME_3D_MAX_TARGET_FPS,
   VOLUME_3D_DEFAULT_INTERACTIVE_SAMPLE_DISTANCE_FACTOR,
   setVolume3DTargetFps,
   getVolume3DTargetFps,

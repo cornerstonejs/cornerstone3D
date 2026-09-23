@@ -4,6 +4,10 @@
  */
 
 export const VOLUME_3D_DEFAULT_TARGET_FPS = 10;
+/** Inclusive floor for Target FPS after normalization. */
+export const VOLUME_3D_MIN_TARGET_FPS = 1;
+/** Inclusive ceiling for Target FPS after normalization. */
+export const VOLUME_3D_MAX_TARGET_FPS = 60;
 
 /** Absolute floor for adaptive pixel budget. */
 export const HARD_MIN_BUDGET_PX = 10_000;
@@ -59,7 +63,7 @@ export function normalizeTargetFps(value: unknown): number {
   if (!Number.isFinite(fps) || fps <= 0) {
     return VOLUME_3D_DEFAULT_TARGET_FPS;
   }
-  return Math.round(fps);
+  return clamp(Math.round(fps), VOLUME_3D_MIN_TARGET_FPS, VOLUME_3D_MAX_TARGET_FPS);
 }
 
 /**

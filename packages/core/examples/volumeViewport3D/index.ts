@@ -11,6 +11,8 @@ import {
   getVolume3DTargetFpsSnapshot,
   VOLUME_3D_DEFAULT_TARGET_FPS,
   VOLUME_3D_DEFAULT_INTERACTIVE_SAMPLE_DISTANCE_FACTOR,
+  VOLUME_3D_MIN_TARGET_FPS,
+  VOLUME_3D_MAX_TARGET_FPS,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -273,7 +275,7 @@ addCheckboxToToolbar({
 addSliderToToolbar({
   id: 'interactive-fidelity-fps',
   title: `Target FPS: ${VOLUME_3D_DEFAULT_TARGET_FPS}`,
-  range: [1, 30],
+  range: [VOLUME_3D_MIN_TARGET_FPS, VOLUME_3D_MAX_TARGET_FPS],
   defaultValue: VOLUME_3D_DEFAULT_TARGET_FPS,
   container: fidelityRow,
   onSelectedValueChange: (value) => {

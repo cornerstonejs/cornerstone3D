@@ -15,7 +15,11 @@ import {
   type ResolvedLod,
 } from './fpsBudgetController';
 
-export { VOLUME_3D_DEFAULT_TARGET_FPS } from './fpsBudgetController';
+export {
+  VOLUME_3D_DEFAULT_TARGET_FPS,
+  VOLUME_3D_MIN_TARGET_FPS,
+  VOLUME_3D_MAX_TARGET_FPS,
+} from './fpsBudgetController';
 
 /** Fixed interactive sample-distance factor (legacy rotate ×2). */
 export const VOLUME_3D_DEFAULT_INTERACTIVE_SAMPLE_DISTANCE_FACTOR = 2;
@@ -319,7 +323,7 @@ function resolvePhase(entry: Volume3DTargetFpsEntry): Volume3DTargetFpsPhase {
 
 /**
  * Set the Target FPS for a legacy Volume3D viewport.
- * Clamps to 1–30. Returns false when the viewport is not legacy Volume3D.
+ * Clamps to 1–60. Returns false when the viewport is not legacy Volume3D.
  * Does not enable targeting by itself — use setVolume3DTargetFpsEnabled.
  */
 export function setVolume3DTargetFps(
