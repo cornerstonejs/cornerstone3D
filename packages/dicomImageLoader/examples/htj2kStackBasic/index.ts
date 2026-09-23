@@ -133,6 +133,11 @@ async function showStack(
 // with no entry of its own falls back to `default`.
 const htj2kFrames = { framesPath: '/htj2k/' };
 
+// One streaming request, decoded repeatedly as the response arrives. The
+// defaults apply here too: the first decode runs once `initialChunkSize` (32k)
+// has accumulated, each decode after it waits for `chunkSize` (128k) more, and
+// `msBetweenDecode` (500) keeps a fast connection from decoding faster than the
+// display can show.
 const htj2kProgressiveOptions = {
   retrieveOptions: {
     default: htj2kFrames,
@@ -150,10 +155,11 @@ const htj2kProgressiveOptions = {
 // carry is gone, and the first image is full size instead of a quarter-size
 // decode scaled back up.
 //
-// The pacing is left at its defaults here: `initialChunkSize` 32k for the
-// first range, `chunkSize` 128k for each range after it, and `msBetweenDecode`
-// 500 so a fast connection refines at a readable rate rather than decoding
-// every chunk. Any of the three can be set per retrieve type.
+// The range sizes are left at their defaults here: `initialChunkSize` 32k for
+// the first range and `chunkSize` 128k for each range after it. Both are read
+// from the stage that fetches the first bytes, so they belong on `singleFast`
+// rather than on a later stage. `msBetweenDecode` does not apply on this path,
+// because each range stage decodes once.
 const htj2kByteRanges = {
   stages: [
     {

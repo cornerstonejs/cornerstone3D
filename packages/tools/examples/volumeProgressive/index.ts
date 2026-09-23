@@ -229,11 +229,27 @@ const configJLSMixed = {
   },
 };
 
+/**
+ * Bytes of a frame to retrieve, or to accumulate, before the first decode of
+ * that frame.
+ *
+ * The shared default is larger, because it is set for a single high resolution
+ * image, where 32k of codestream spreads over too many pixels to show much. A
+ * volume is the other case: each frame is far smaller, and the viewer is
+ * waiting for a first pass over every frame rather than for one image. Asking
+ * for four times as much of each frame delays that whole pass, so this example
+ * keeps 32k.
+ */
+const INITIAL_CHUNK_SIZE = 32 * 1024;
+
 // Primary frames/ keep the source transfer syntax, which for this study is
 // JPEG-LS lossless, so the HTJ2K configurations retrieve from the htj2k/
 // rendition instead. A retrieve type with no entry of its own falls back to
 // `default`, so setting `default` is enough to move a whole configuration.
-const htj2kFrames = { framesPath: '/htj2k/' };
+const htj2kFrames = {
+  framesPath: '/htj2k/',
+  initialChunkSize: INITIAL_CHUNK_SIZE,
+};
 
 const configHtj2k = {
   ...interleavedRetrieveStages,
@@ -270,7 +286,10 @@ const configHtj2kLossy = {
     },
     multipleFast: {
       imageQualityStatus: ImageQualityStatus.LOSSY,
+      // This entry names its own rendition rather than spreading htj2kFrames,
+      // so it needs its own copy of the initial size.
       framesPath: '/htj2kLossy/',
+      initialChunkSize: INITIAL_CHUNK_SIZE,
       rangeIndex: 0,
       decodeLevel: 0,
     },

@@ -1,4 +1,5 @@
 import RectangleROITool from '../src/tools/annotation/RectangleROITool';
+import { MINIMUM_AREA_ANNOTATION_DIMENSION } from '../src/utilities/areaAnnotationShapeUtils';
 
 describe('Rectangle ROI area', () => {
   const targetId = 'imageId:test';
@@ -125,25 +126,59 @@ describe('Rectangle ROI area', () => {
     expect(indicesOf(fromRestriction)).toEqual(indicesOf(withNormal));
   });
 
-  it('reports no voxels for a rectangle of no width', () => {
-    // The shape factory rejects a zero half length, and an exception inside
-    // the render loop would stop the whole viewport.
+  it.each([
+    ['zero major half-length', 0, 8],
+    [
+      'major half-length below the minimum',
+      MINIMUM_AREA_ANNOTATION_DIMENSION / 2,
+      8,
+    ],
+    ['major half-length at the minimum', MINIMUM_AREA_ANNOTATION_DIMENSION, 8],
+    ['minor half-length at the minimum', 8, MINIMUM_AREA_ANNOTATION_DIMENSION],
+  ])(
+    'reports no voxels for a rectangle with %s',
+    (_description, major, minor) => {
+      // Sampling must skip a rectangle when either half-length is too small to
+      // define stable geometry, without stopping the render loop.
+      const statsCallback = jest.fn();
+      const tool = createTool(statsCallback);
+      const annotation = createAnnotation();
+      annotation.data.handles.points = [
+        [20 - major, 20 - minor, 0],
+        [20 + major, 20 - minor, 0],
+        [20 - major, 20 + minor, 0],
+        [20 + major, 20 + minor, 0],
+      ];
+
+      expect(() =>
+        tool._calculateCachedStats(annotation, [0, 0, 1], [0, 1, 0], {
+          viewport: { element: document.createElement('div') },
+        })
+      ).not.toThrow();
+
+      expect(statsCallback).not.toHaveBeenCalled();
+    }
+  );
+
+  it('samples a small rectangle whose half-lengths are above the minimum', () => {
     const statsCallback = jest.fn();
     const tool = createTool(statsCallback);
     const annotation = createAnnotation();
+    // The cutoff itself is covered by AreaAnnotationShapeUtils.jest.js. Keep
+    // this end-to-end fixture large enough for stable world-space arithmetic.
+    const halfLength = 1e-3;
     annotation.data.handles.points = [
-      [2, 2, 0],
-      [2, 2, 0],
-      [2, 18, 0],
-      [2, 18, 0],
+      [20 - halfLength, 20 - halfLength, 0],
+      [20 + halfLength, 20 - halfLength, 0],
+      [20 - halfLength, 20 + halfLength, 0],
+      [20 + halfLength, 20 + halfLength, 0],
     ];
 
-    expect(() =>
-      tool._calculateCachedStats(annotation, [0, 0, 1], [0, 1, 0], {
-        viewport: { element: document.createElement('div') },
-      })
-    ).not.toThrow();
+    tool._calculateCachedStats(annotation, [0, 0, 1], [0, 1, 0], {
+      viewport: { element: document.createElement('div') },
+    });
 
-    expect(statsCallback).not.toHaveBeenCalled();
+    expect(statsCallback).toHaveBeenCalledTimes(1);
+    expect(statsCallback.mock.calls[0][0].pointIJK).toEqual([4, 4, 0]);
   });
 });

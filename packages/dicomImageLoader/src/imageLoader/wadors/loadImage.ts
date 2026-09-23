@@ -9,6 +9,7 @@ import { logging } from '@cornerstonejs/metadata';
 import createImage from '../createImage';
 import getPixelData from './getPixelData';
 import { loadImageFromCompressedFrameRegistry } from './loadImageFromRegistry';
+import { DEFAULT_MS_BETWEEN_DECODE } from '../internal/retrieveDefaults';
 import type { DICOMLoaderIImage, DICOMLoaderImageOptions } from '../../types';
 
 const log = logging.loaderLog.getLogger('wadors');

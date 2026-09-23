@@ -6,6 +6,10 @@ import type { LoaderXhrRequestError } from '../../types';
 import extractMultipart from '../wadors/extractMultipart';
 import { getImageQualityStatus } from '../wadors/getImageQualityStatus';
 import getRetrieveValue from './getRetrieveValue';
+import {
+  DEFAULT_CHUNK_SIZE,
+  DEFAULT_INITIAL_CHUNK_SIZE,
+} from './retrieveDefaults';
 import type {
   CornerstoneWadoRsLoaderOptions,
   StreamingData,
@@ -16,10 +20,25 @@ const log = logging.loaderLog.getLogger('streamRequest');
 const { ProgressiveIterator } = utilities;
 
 /**
- * Bytes to accumulate between decodes of a streaming response, when the
- * retrieve options set no chunkSize. Matches the range retrieve default.
+ * Byte count at which the next decode of a streaming response becomes
+ * worthwhile.
+ *
+ * The first decode and the ones after it wait for different amounts, for the
+ * same reason a range retrieve fetches different sizes: the first decode buys
+ * time to first image, and the rest buy refinement. `lastSize` is 0 until the
+ * first decode has run, which is what distinguishes the two cases.
+ *
+ * @param lastSize - bytes held at the last decode, 0 if none has run
+ * @param initialChunkSize - bytes to wait for before the first decode
+ * @param chunkSize - new bytes to wait for before each later decode
  */
-const DEFAULT_CHUNK_SIZE = 131072;
+export function nextDecodeAt(
+  lastSize: number,
+  initialChunkSize: number,
+  chunkSize: number
+): number {
+  return lastSize + (lastSize ? chunkSize : initialChunkSize);
+}
 
 /**
  * This function does a streaming parse from an http request, delivering
@@ -54,6 +73,14 @@ export default function streamRequest(
     getRetrieveValue<number>(imageId, retrieveOptions, 'chunkSize') ||
     getRetrieveValue<number>(imageId, retrieveOptions, 'minChunkSize') ||
     DEFAULT_CHUNK_SIZE;
+
+  // How much data to accumulate before the *first* decode, which is a separate
+  // size for the same reason it is on a range retrieve: the first decode buys
+  // time to first image, and the ones after it buy refinement. Without this the
+  // stream shows nothing until a full chunkSize has arrived.
+  const initialChunkSize =
+    getRetrieveValue<number>(imageId, retrieveOptions, 'initialChunkSize') ||
+    DEFAULT_INITIAL_CHUNK_SIZE;
 
   const errorInterceptor = (err) => {
     if (typeof globalOptions.errorInterceptor === 'function') {
@@ -118,7 +145,11 @@ export default function streamRequest(
           continue;
         }
         readDone = done || encodedData.byteLength === totalBytes;
-        if (!readDone && encodedData.length < lastSize + minChunkSize) {
+        if (
+          !readDone &&
+          encodedData.length <
+            nextDecodeAt(lastSize, initialChunkSize, minChunkSize)
+        ) {
           continue;
         }
         lastSize = encodedData.length;

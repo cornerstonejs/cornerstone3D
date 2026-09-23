@@ -147,8 +147,34 @@ decodes normally. Adding it would need the codec to adopt libjxl's
 For streaming requests, you can configure the following options:
 
 - `streaming`: whether to use streaming or not
+- `initialChunkSize`: bytes that have to accumulate before the first decode
+  (default is 128kb). The stream shows nothing until this much has arrived, so
+  it sets the time to first image. 32kb already decodes, but on a high
+  resolution frame that much codestream spreads over so many pixels that the
+  first image adds little, and the decode then repeats almost immediately.
+- `chunkSize`: bytes that have to accumulate between one decode and the next
+  (default is 128kb). By then the image is already displayed and the job is
+  refining it, so decoding after every small addition would only mean more work
+  for the same result. `minChunkSize` is the former name for this option and is
+  still honoured.
+- `msBetweenDecode`: minimum milliseconds between two decodes of the same
+  partial image (default is 500). Chunk size bounds how often data arrives, but
+  on a fast connection that still outruns what a display can use - decoding is
+  far more expensive than receiving - so this throttles refinement to a
+  readable rate. A completed image is always decoded, so this only ever delays
+  intermediate versions, never the final one. Set to 0 to decode on every
+  chunk.
+
+`msBetweenDecode` only has an effect here. A byte range stage decodes once, when
+its range arrives, so there is no second decode for the clock to hold back; on
+that path the range sizes alone control how often a partial image is decoded.
 
 #### Decoding Frequency
+
+Setting `decodeLevel: 0` overrides everything in this section: the partial
+codestream is then decoded at full resolution however little of it has arrived.
+That is the preferred setting for HTJ2K. The levels below apply when
+`decodeLevel` is not set.
 
 Most often, when the stream is coming from a server, the server lets the client know about the final size of the data. So, at each point in time, we can identify the percentage of the data that has been downloaded and decode the image to the relevant resolution so in the streaming scenario you really don't have to set it manually.
 
@@ -186,25 +212,47 @@ as soon as possible.
 #### Options
 
 - `initialChunkSize`: byte range to retrieve for the first decode, at
-  `rangeIndex` 0 (default is 32kb). Small on purpose: 32kb is enough of an
-  HTJ2K codestream to decode a usable full resolution image, so it is the
-  shortest path to something on screen.
+  `rangeIndex` 0 (default is 128kb). Small on purpose, because it is the
+  shortest path to something on screen. 32kb also decodes, but it is too little
+  for a high resolution frame to show much.
 - `chunkSize`: bytes added by each range after the first (default is 128kb).
-  Larger than the initial range because by then the image is already displayed
-  and the job is refining it, so fetching the remainder in 32kb steps would
-  only mean more requests and more decodes for the same result.
-- `msBetweenDecode`: minimum milliseconds between two decodes of the same
-  partial image (default is 500). Chunk size bounds how often data arrives, but
-  on a fast connection that still outruns what a display can use - decoding is
-  far more expensive than receiving - so this throttles refinement to a
-  readable rate. A completed image is always decoded, so this only ever delays
-  intermediate versions, never the final one. Set to 0 to decode on every
-  chunk.
+  By then the image is already displayed and the job is refining it, so
+  fetching the remainder in smaller steps would only mean more requests and
+  more decodes for the same result.
 - `rangeIndex`: is the range number (index) that you want to fetch, -1 for remaining data
 
 Note that there is no guarantee that the rangeIndex will actually fetch another
 range since it will discontinue fetching once all the data has been fetched.
 Also, -1 is used to flag the "remaining" data.
+
+`msBetweenDecode` has no effect on a byte range retrieve. A range stage decodes
+once, when its range arrives, so there is no second decode for the clock to
+hold back. The range sizes alone control how often a partial image is decoded
+here. The option applies to a streaming retrieve, where one request delivers
+many partial versions of the same image.
+
+:::caution
+The first stage of a frame fixes `initialChunkSize` and `chunkSize` for that
+frame. Both are read on the stage that fetches the first bytes, and every later
+stage of the same frame reuses those values, because the ranges of one frame
+have to agree on where their boundaries fall. A `chunkSize` set on a later
+stage is ignored, and that stage fetches to the boundary the first stage
+implied instead.
+
+So set both on the stage that retrieves `rangeIndex` 0:
+
+```js
+retrieveOptions: {
+  // Correct - the first stage sets both sizes for the whole frame.
+  singleFast: { rangeIndex: 0, initialChunkSize: 16384, chunkSize: 262144 },
+  singleMiddle: { rangeIndex: 5 },
+  singleFinal: { rangeIndex: -1 },
+}
+```
+
+Written the other way round, with `chunkSize: 262144` on `singleMiddle`, that
+stage would fetch to `16384 + 5 * 128kb` rather than to `16384 + 5 * 256kb`.
+:::
 
 #### Decoding Frequency
 
@@ -242,7 +290,7 @@ another example
   decodeLevel: 3
 }
 
-// initialChunkSize is default 32kb
+// initialChunkSize is default 128kb
 ```
 
 ![](../../assets/range-0-decode-3.png)
@@ -256,12 +304,12 @@ Range 0 covers `initialChunkSize` and every range after it adds a full
 `initialChunkSize + n * chunkSize`. A stage always starts from the data
 already retrieved, so skipping indices simply fetches a larger span.
 
-For instance, with the defaults (32kb initial, 128kb thereafter):
+For instance, with the defaults (128kb initial, 128kb thereafter):
 
-- `rangeIndex 0`: `0` to `32k-1` (in bytes)
-- `rangeIndex 5`: `32k` to `32k + 5*128k - 1` (in bytes)
-- `rangeIndex 25`: `32k + 5*128k` to `32k + 25*128k - 1` (in bytes)
-- `rangeIndex -1`: `32k + 25*128k` to `totalSize` (in bytes) - the rest of the data
+- `rangeIndex 0`: `0` to `128k-1` (in bytes)
+- `rangeIndex 5`: `128k` to `128k + 5*128k - 1` (in bytes)
+- `rangeIndex 25`: `128k + 5*128k` to `128k + 25*128k - 1` (in bytes)
+- `rangeIndex -1`: `128k + 25*128k` to `totalSize` (in bytes) - the rest of the data
 
 This use of rangeIndex allows retrieving larger increments to agree with the
 amount of data required for decodeLevel values.

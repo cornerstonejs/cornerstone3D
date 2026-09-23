@@ -293,7 +293,7 @@ addDropdownToToolbar({
   },
   onSelectedValueChange: (value) => {
     const aspect = (value as string).split(':').map((it) => Number(it));
-    viewport.setAspectRatio(aspect, storeAsInitialCamera);
+    viewport.setAspectRatio(aspect, { storeAsInitialCamera });
     viewport.render();
   },
 });
