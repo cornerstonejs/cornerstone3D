@@ -132,7 +132,49 @@ import {
   Surface,
   StreamingDynamicImageVolume,
   StreamingImageVolume,
+  VolumeTextureSet,
+  VolumeTextureStore,
+  volumeTextureStore,
+  isMutableSlab,
 } from './cache';
+export type {
+  FixedVolumeTextureSlot,
+  IMutableVolumeTextureSlab,
+  ProvisionTextureSetOptions,
+  VolumeTextureLimits,
+  VolumeTextureMutability,
+  VolumeTextureSlot,
+} from './cache';
+export {
+  getGpuCapabilityProfile,
+  getGpuCapabilityProfiles,
+  getActiveGpuCapabilityProfile,
+  setActiveGpuCapabilityProfile,
+  resetActiveGpuCapabilityProfile,
+  gridLimitsOfProfile,
+} from './utilities/gpuCapabilityProfiles';
+export type {
+  GpuCapabilityProfile,
+  GpuCapabilityProfileId,
+  GpuSpeedIndex,
+} from './utilities/gpuCapabilityProfiles';
+export {
+  defaultVolumeStrategyProvider,
+  provisionFullResolutionStrategy,
+  provisionReducedResolutionStrategy,
+  selectFirstReadyStrategy,
+  reducedStrategyName,
+} from './RenderingEngine/helpers/volumeRenderStrategy';
+export type {
+  IVolumeRenderStrategy,
+  SelectVolumeStrategy,
+  SelectVolumeStrategyContext,
+  StrategyBinding,
+  StrategyBindingRole,
+  VolumeStrategyProvider,
+  VolumeStrategyProvisionContext,
+  VolumeStrategyProvisionReason,
+} from './RenderingEngine/helpers/volumeRenderStrategy';
 import cache from './cache/cache';
 import imageRetrievalPoolManager from './requestPool/imageRetrievalPoolManager';
 import imageLoadPoolManager from './requestPool/imageLoadPoolManager';
@@ -210,6 +252,10 @@ import {
   registerRenderBackend,
   isRegisteredRenderBackend,
 } from './RenderingEngine/helpers/renderBackendRegistry';
+import {
+  registerVoxelStatistic,
+  isRegisteredVoxelStatistic,
+} from './utilities/voxelGrid/voxelStatistics';
 export type {
   ViewportType,
   ViewportTypeConstants,
@@ -232,6 +278,13 @@ export type {
   RenderBackendRenderModes,
   RenderSurface,
 } from './RenderingEngine/helpers/renderBackendRegistry';
+export type {
+  VoxelStatistic,
+  VoxelStatisticConstants,
+  VoxelStatisticRegistry,
+} from './types/VoxelStatisticRegistry';
+export type { VoxelStatisticsMap } from './enums/VoxelStatistics';
+export type { RegisterVoxelStatisticOptions } from './utilities/voxelGrid/voxelStatistics';
 
 export * from './loaders/decimatedVolumeLoader';
 
@@ -320,6 +373,10 @@ export {
   ContextPoolRenderingEngine,
   ImageVolume,
   Surface,
+  VolumeTextureSet,
+  VolumeTextureStore,
+  volumeTextureStore,
+  isMutableSlab,
   // Helpers
   getRenderingEngine,
   getRenderingEngines,
@@ -378,6 +435,8 @@ export {
   isRegisteredViewportType,
   registerRenderBackend,
   isRegisteredRenderBackend,
+  registerVoxelStatistic,
+  isRegisteredVoxelStatistic,
   //
   imageLoadPoolManager as requestPoolManager,
   imageRetrievalPoolManager,
