@@ -99,18 +99,49 @@ The default provider reads the capability profile and answers in one of two ways
 - The device can hold the full-resolution grid, so the provider builds the **full-resolution
   strategy** and provisions the set `full-resolution/full-extent`.
 - The device cannot, so the provider computes the **size of the box on each axis** and provisions a
-  reduced set whose name carries those factors. It derives **no** representation: a derivation at
-  this moment reads a volume whose images have not arrived, and it freezes that empty result. The
-  loader owns the derivation that follows the load, which the table at the end of this document
-  records.
+  reduced set whose name carries those factors. It also derives the representation of that grid,
+  which holds the box average that the texture reads.
 
 The reduction is per axis and it is not uniform. An edge of 2049 voxels exceeds a limit of 2048 on
 one axis and by one voxel, so one axis reduces and the other two do not.
 
-**The textures hold no data at this point.** The loader fills the voxel managers as the data
-arrives, `ImageVolume` marks every texture whose grid covers the new region, and each render
-refills the marked slices. That is the path that the code already used, and a strategy does not
-change it.
+**The textures hold no data at this point, and neither does the derived representation.** Almost
+none of the images of the volume have arrived when a viewport adds its actor, so the derivation
+reduces almost nothing. The next section states how it catches up.
+
+The loader fills the voxel managers as the data arrives, `ImageVolume` marks every texture whose
+grid covers the new region, and each render refills the marked slices. That is the path that the
+code already used, and a strategy does not change it.
+
+## How a derived representation follows the load
+
+**A derivation is not a single event.** `createRepresentation` reduces the data that the composite
+holds at the moment of the call, and a streaming loader delivers its frames after that moment. A
+derivation that ran once would hold the empty result for ever.
+
+`ImageVolume.markFrameDirty` therefore does three things when a frame arrives, and a loader calls
+it for every delivery:
+
+1. It tells the voxel manager to forget the image that it last resolved for the frame. A
+   progressive loader puts a replicate of a nearby frame in the cache under the image id of this
+   frame, and the image of the frame itself arrives later.
+2. It hands the delivery to the composite, which records the quality of the frame and redoes the
+   boxes of every derived representation that the frame touches. It redoes **those boxes only**: a
+   volume of 2464 frames re-derives far too slowly to run in full on each frame.
+3. It marks the frame in every texture of every set whose grid covers it.
+
+`createRepresentation` reads the same record. A source that states which regions it has delivered
+is reduced over those regions and no others, so a derivation over a volume that has loaded nothing
+costs nothing, and a derivation over a volume that has loaded half of its frames reduces that half.
+
+P31.3 states the rule for the values. Before the full-resolution data of a box arrives, the box
+average is an approximation over the frames that have arrived, and the code **replaces** that value
+in place when the rest arrives. There are never two stored copies.
+
+**The loader keeps the true decoded size.** The request states the type of the buffer and no size,
+so an image keeps the size that the decoder produced: a sub-resolution HTJ2K decode and a JLS
+thumbnail stay small in the cache. The voxel manager of the volume scales such an image when it
+reads it, so the primary grid answers over its whole extent.
 
 ## When the strategies are rebuilt
 
@@ -285,14 +316,13 @@ and needs no change.
 
 ## What this version does not do
 
-| Item                                                                                                                                                                                                                                                                              | Where it belongs                         |
-| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
-| A box average behind a reduced texture. The texture fills by asking the composite for the best source of each voxel, which is a nearest neighbour sample. A box average needs a representation that updates as each frame arrives, and only the loader knows when a frame arrives | the loader, commit 9                     |
-| A quality record that describes the reduction. No representation exists at the reduced grid, so the record describes the full-resolution data under the ceiling, and an indicator built on it under-reports                                                                       | the loader, commit 9                     |
-| A phased render, and a vocabulary of phases                                                                                                                                                                                                                                       | the render component that implements one |
-| A consumer of the `refinement` role                                                                                                                                                                                                                                               | the multi-texture render component       |
-| A performance-bound choice of strategy                                                                                                                                                                                                                                            | task T14                                 |
-| An automatic policy with recorded fixtures                                                                                                                                                                                                                                        | task T15                                 |
-| A capability probe, and the override of an overstated memory value                                                                                                                                                                                                                | task T15                                 |
-| A brick loader, and the sets that it would provision                                                                                                                                                                                                                              | task T7                                  |
-| The state that a user sees, and the indicator of OHIF                                                                                                                                                                                                                             | tasks T3 and T6                          |
+| Item                                                                                                                                                                                                                                                                           | Where it belongs                         |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------- |
+| A ladder of grids. The provider builds one reduced grid, which is the largest that the device allows, and it never builds a coarse grid that a finer one later replaces. The resolution of a render therefore does not change while a volume loads, although its values refine | a provider that reads the load progress  |
+| A phased render, and a vocabulary of phases                                                                                                                                                                                                                                    | the render component that implements one |
+| A consumer of the `refinement` role                                                                                                                                                                                                                                            | the multi-texture render component       |
+| A performance-bound choice of strategy                                                                                                                                                                                                                                         | task T14                                 |
+| An automatic policy with recorded fixtures                                                                                                                                                                                                                                     | task T15                                 |
+| A capability probe, and the override of an overstated memory value                                                                                                                                                                                                             | task T15                                 |
+| A brick loader, and the sets that it would provision                                                                                                                                                                                                                           | task T7                                  |
+| The state that a user sees, and the indicator of OHIF                                                                                                                                                                                                                          | tasks T3 and T6                          |

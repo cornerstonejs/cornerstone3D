@@ -200,6 +200,12 @@ not acceptable when a reformat is diagnostic.
 of at least 1, so the result is never finer than its source. Data that no derivation can give
 arrives through `acceptData`.
 
+**A derivation reduces the regions that its source has delivered, and no others.** A source that
+states a list of deliveries is read over those regions alone, so a derivation over a streaming
+volume that has loaded nothing costs nothing, and a derivation over a volume that has loaded half
+of its frames reduces that half. A source that states no list holds every voxel, and the derivation
+then reads the whole grid.
+
 **The origin carries the sample offset.** A decimation reports the corner voxel of a box, and a box
 average reports the centre. The two lie apart by `(factor - 1) / 2` source voxels on each axis, and
 `deriveBoxAverageGrid` puts that distance in the origin of the new grid. Every consumer that
@@ -236,6 +242,15 @@ that no delivery covers.
 
 A representation that shares the key (grid, statistic) of a representation that the composite
 already holds **replaces** that representation.
+
+**A delivery also updates every derived representation that reads it.** `acceptData` redoes the
+boxes that the delivery touches, and it redoes those boxes only: a volume of 2464 frames re-derives
+far too slowly to run in full on the arrival of each frame. A caller that delivers data therefore
+needs no second call, and a derivation that ran before the data arrived catches up.
+
+P31.3 states the rule for the values. Before the full-resolution data of a box arrives, the box
+average is an approximation over the source voxels that have arrived, and the code **replaces**
+that value in place when the rest arrives. There are never two stored copies.
 
 ### What the record holds
 
@@ -296,10 +311,11 @@ voxels, so:
 - the quality of that voxel is the quality of the **worst** source voxel of its box;
 - the voxel holds **no data at all** while any source voxel of its box has not arrived.
 
-`createRepresentation` therefore freezes a copy of the record of its source, and `getRegionQuality`
-maps the region back into the source and reads that copy. The copy is frozen, so the record never
-states more than the data that the derivation really read. A later derivation from a better source
-replaces the data and the copy at the same time.
+`createRepresentation` therefore takes a copy of the record of its source, and `getRegionQuality`
+maps the region back into the source and reads that copy. **The copy states the data that the
+derivation really read**, and never more: a box that reads a source voxel that has not arrived
+holds nothing, and the copy says so. When a delivery redoes that box, it takes the copy forward at
+the same time, so the record and the data always describe the same moment.
 
 ### The verdict of one reader
 
