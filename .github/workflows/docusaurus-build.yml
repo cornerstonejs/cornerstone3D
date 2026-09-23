@@ -65,9 +65,15 @@ jobs:
       # writable token, so the deploy step is skipped, its `url` output stays
       # empty, and the three steps that read that output skip in turn. A fork
       # pull request therefore keeps a green docs build and gets no preview.
+      #
+      # All four carry continue-on-error, so this job reports on the build and
+      # not on Netlify. A build that fails still fails the job, because the
+      # build steps run earlier and carry no such flag. An outage at Netlify,
+      # or a refused API call, leaves the job green and leaves an annotation.
       - name: Deploy the preview to Netlify
         id: deploy
         if: github.event.pull_request.head.repo.full_name == github.repository
+        continue-on-error: true
         # The flags match the production deploy in build-docs.yml, and that file
         # explains each one: --no-build stops netlify-cli from re-running the
         # site build, --dir must be absolute because netlify-cli resolves a
@@ -89,12 +95,12 @@ jobs:
             --dir="$GITHUB_WORKSPACE/packages/docs/build" \
             --alias="pr-${PR_NUMBER}" \
             --json) || {
-            echo "::error::The Netlify deploy command failed."
+            echo "::warning::The Netlify deploy command failed. The preview is absent for this run."
             exit 1
           }
           URL=$(jq -r '.deploy_url' <<<"$RESULT")
           if [[ -z "$URL" || "$URL" == "null" ]]; then
-            echo "::error::The Netlify deploy returned no URL."
+            echo "::warning::The Netlify deploy returned no URL. The preview is absent for this run."
             echo "$RESULT"
             exit 1
           fi
@@ -108,6 +114,7 @@ jobs:
       # the links always appear when the deploy runs at all.
       - name: Write the preview links to the job summary
         if: steps.deploy.outputs.url != ''
+        continue-on-error: true
         run: |
           {
             echo "## Preview"
@@ -125,6 +132,7 @@ jobs:
       # of adding another one.
       - name: Comment the preview links on the pull request
         if: steps.deploy.outputs.url != ''
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
           URL: ${{ steps.deploy.outputs.url }}
@@ -154,6 +162,7 @@ jobs:
       # pull_request event supplies does not appear on the pull request.
       - name: Add the preview to the checks list
         if: steps.deploy.outputs.url != ''
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
           URL: ${{ steps.deploy.outputs.url }}
