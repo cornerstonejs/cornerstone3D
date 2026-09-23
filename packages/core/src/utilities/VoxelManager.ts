@@ -13,7 +13,9 @@ import type {
   IVoxelManager,
   IRLEVoxelMap,
   Point2,
+  PixelDataTypedArrayString,
 } from '../types';
+import { getConstructorFromType } from './getBufferConfiguration';
 import RLEVoxelMap from './RLEVoxelMap';
 import isEqual from './isEqual';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
@@ -1118,6 +1120,9 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
    * that are composed of multiple images, one for each slice.
    * @param dimensions - The dimensions of the image volume.
    * @param imageIds - The array of image IDs.
+   * @param dataType - the type that the images of this volume hold. The volume
+   *     states it from its metadata, so `getConstructor` answers with the right
+   *     type before the first image arrives.
    * @returns A VoxelManager instance for the image volume.
    */
   public static createImageVolumeVoxelManager({
@@ -1125,11 +1130,13 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
     imageIds,
     numberOfComponents = 1,
     id,
+    dataType,
   }: {
     dimensions: Point3;
     imageIds: string[];
     numberOfComponents: number;
     id?: string;
+    dataType?: PixelDataTypedArrayString;
   }): IVolumeVoxelManager<number> | IVolumeVoxelManager<RGB> {
     const [width, height, depth] = dimensions;
     const pixelsPerSlice = width * height;
@@ -1224,10 +1231,26 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
 
       const image = cache.getImage(imageId);
       if (!image?.voxelManager) {
+        // A frame that has not arrived is the ordinary state of a streaming
+        // volume, and not a defect: `getAtIJK` answers with the nearest value
+        // that it holds, and a box reduction takes the source voxels that have
+        // arrived and skips the rest. A derivation that follows the load reads
+        // every frame of a box as soon as one frame of that box arrives, so a
+        // warning here reports the normal case once for each image of the
+        // volume. The message stays available at the debug level.
         if (!warnedMissingImages.has(imageId)) {
           warnedMissingImages.add(imageId);
-          log.warn(`Image not found for imageId: ${imageId}`);
+          log.debug(`Image not found for imageId: ${imageId}`);
         }
+
+        // THE ABSENCE IS CACHED, exactly as the absence of an image id is. A
+        // reduction reads every voxel of a slice, so without this each of the
+        // 262144 reads of one slice of 512 x 512 asks the cache for the same
+        // image again. `invalidateSlice` clears the entry, and
+        // `ImageVolume.markFrameDirty` calls it when the image of the frame
+        // arrives, so the next read takes the image.
+        sliceVoxelManagers[sliceIndex] = null;
+
         return null;
       }
 
@@ -1265,16 +1288,21 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
       if (sliceIndex < 0 || sliceIndex >= depth) {
         return null;
       }
-      const imageVoxelManager =
-        sliceIndex === lastSliceIndex
-          ? lastSliceVoxelManager
-          : resolveSliceVoxelManager(sliceIndex);
-      if (!imageVoxelManager) {
-        return null;
-      }
-      if (sliceIndex !== lastSliceIndex) {
+      let imageVoxelManager: VoxelManager<number> | VoxelManager<RGB> | null;
+
+      if (sliceIndex === lastSliceIndex) {
+        imageVoxelManager = lastSliceVoxelManager;
+      } else {
+        imageVoxelManager = resolveSliceVoxelManager(sliceIndex);
+        // THE MEMO HOLDS A SLICE THAT HAS NOT ARRIVED AS WELL. A reduction
+        // reads a whole slice in order, so a slice that holds no image would
+        // otherwise resolve again for each of its voxels.
         lastSliceIndex = sliceIndex;
         lastSliceVoxelManager = imageVoxelManager;
+      }
+
+      if (!imageVoxelManager) {
+        return null;
       }
 
       const pixelIndex = imageIndexOf(
@@ -1290,16 +1318,18 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
       if (sliceIndex < 0 || sliceIndex >= depth) {
         return false;
       }
-      const imageVoxelManager =
-        sliceIndex === lastSliceIndex
-          ? lastSliceVoxelManager
-          : resolveSliceVoxelManager(sliceIndex);
-      if (!imageVoxelManager) {
-        return false;
-      }
-      if (sliceIndex !== lastSliceIndex) {
+      let imageVoxelManager: VoxelManager<number> | VoxelManager<RGB> | null;
+
+      if (sliceIndex === lastSliceIndex) {
+        imageVoxelManager = lastSliceVoxelManager;
+      } else {
+        imageVoxelManager = resolveSliceVoxelManager(sliceIndex);
         lastSliceIndex = sliceIndex;
         lastSliceVoxelManager = imageVoxelManager;
+      }
+
+      if (!imageVoxelManager) {
+        return false;
       }
 
       const pixelIndex = imageIndexOf(
@@ -1320,10 +1350,17 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
 
     const _getConstructor = () => {
       const imageVoxelManager = resolveSliceVoxelManager(0);
-      if (!imageVoxelManager) {
-        return null;
+
+      if (imageVoxelManager) {
+        return imageVoxelManager.getConstructor();
       }
-      return imageVoxelManager.getConstructor();
+
+      // No image has arrived yet. The volume states the type of its images from
+      // the metadata, so a derivation that runs before the load can still
+      // allocate the right type. Without this answer the caller takes the
+      // Float32Array of the default, which holds twice the bytes of the
+      // Int16Array that a CT needs.
+      return dataType ? getConstructorFromType(dataType, false) : null;
     };
 
     const voxelManager = new VoxelManager<number | RGB>(dimensions, {

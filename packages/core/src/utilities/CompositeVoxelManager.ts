@@ -30,7 +30,6 @@ import {
   mapBoundsBetweenGrids,
   mapIndexToNearestVoxel,
   reduceByBoxStatistic,
-  sameBounds,
   volumeOfBounds,
   voxelGridKey,
 } from './voxelGrid';
@@ -398,6 +397,70 @@ function withinCeiling(grid: VoxelGrid, ceiling: Point3): boolean {
 }
 
 /**
+ * THE INDEX OF ONE RECORD OF DELIVERIES, so that one delivery costs a constant
+ * number of comparisons and not one for each delivery that arrived before it.
+ *
+ * A streaming volume of 3720 frames records 3720 deliveries, and each frame is
+ * one k slice that no other frame contains, so the record never collapses. A
+ * scan of the record for each delivery is therefore quadratic over a load.
+ *
+ * `byBounds` answers "did this exact region arrive before". `bySlice` holds the
+ * deliveries that touch one k slice, and CONTAINMENT NEEDS AN OVERLAP IN K, so
+ * a delivery compares itself against the deliveries of its own k slices alone.
+ */
+type DeliveryIndex = {
+  byBounds: Map<string, DeliveredRegion>;
+  bySlice: Map<number, Set<DeliveredRegion>>;
+};
+
+/** The key of one region. `sameBounds` compares the same six whole numbers. */
+function boundsKey(bounds: BoundsIJK): string {
+  return `${bounds[0][0]},${bounds[0][1]},${bounds[1][0]},${bounds[1][1]},${bounds[2][0]},${bounds[2][1]}`;
+}
+
+function addToDeliveryIndex(
+  index: DeliveryIndex,
+  delivery: DeliveredRegion
+): void {
+  index.byBounds.set(boundsKey(delivery.bounds), delivery);
+
+  for (let k = delivery.bounds[2][0]; k <= delivery.bounds[2][1]; k++) {
+    let bucket = index.bySlice.get(k);
+
+    if (!bucket) {
+      bucket = new Set<DeliveredRegion>();
+      index.bySlice.set(k, bucket);
+    }
+
+    bucket.add(delivery);
+  }
+}
+
+function removeFromDeliveryIndex(
+  index: DeliveryIndex,
+  delivery: DeliveredRegion
+): void {
+  index.byBounds.delete(boundsKey(delivery.bounds));
+
+  for (let k = delivery.bounds[2][0]; k <= delivery.bounds[2][1]; k++) {
+    index.bySlice.get(k)?.delete(delivery);
+  }
+}
+
+function buildDeliveryIndex(delivered: DeliveredRegion[]): DeliveryIndex {
+  const index: DeliveryIndex = {
+    byBounds: new Map(),
+    bySlice: new Map(),
+  };
+
+  for (const delivery of delivered) {
+    addToDeliveryIndex(index, delivery);
+  }
+
+  return index;
+}
+
+/**
  * A voxel manager that holds MORE THAN ONE REPRESENTATION OF THE SAME DATA AT
  * THE SAME TIME.
  *
@@ -434,6 +497,21 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
   private readonly representations: VoxelRepresentation<T>[] = [];
   private readonly primaryRepresentation: VoxelRepresentation<T>;
   private readonly compositeId: string;
+  /**
+   * The quality at which a refresh of the derived representations last WROTE
+   * voxels for one region of one source. See `acceptData`.
+   */
+  private readonly refreshedQuality = new Map<string, ImageQualityStatus>();
+  /**
+   * The index of each record of deliveries, by the array that holds that
+   * record. `setDeliveredQuality` is the one member that changes such an array,
+   * so an index stays true while the array lives. A representation that takes a
+   * new array gets a new index, because the key is the array itself.
+   */
+  private readonly deliveryIndexes = new WeakMap<
+    DeliveredRegion[],
+    DeliveryIndex
+  >();
 
   /** The representation that defines the index space of the composite. */
   public readonly primary: IVoxelManager<T>;
@@ -747,9 +825,42 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     }
 
     this.setDeliveredQuality(representation, deliveredBounds, quality);
-    this.refreshDerivedFrames(deliveredBounds, grid, statistic);
+
+    // ONE DELIVERY CAN ARRIVE TWICE. `BaseStreamingImageVolume` marks a frame
+    // from the delivery itself, and again from the event that the cache sends
+    // when the image of that frame arrives. The two marks carry the same data,
+    // and a second reduction of that data reads every source voxel of every box
+    // again and writes the same values.
+    //
+    // The record holds the quality at which a refresh last WROTE voxels for
+    // this region. A mark that runs before the image arrives writes nothing and
+    // therefore leaves no record, so it never blocks the mark that follows the
+    // image. That ordering is what `listenForCachedImages` exists to repair.
+    const refreshKey = `${voxelGridKey(grid, statistic)}#${deliveredBounds.join(
+      ','
+    )}`;
+    const refreshed = this.refreshedQuality.get(refreshKey);
+
+    if (refreshed === undefined || refreshed < quality) {
+      if (this.refreshDerivedFrames(deliveredBounds, grid, statistic) > 0) {
+        this.refreshedQuality.set(refreshKey, quality);
+      }
+    }
 
     return representation;
+  }
+
+  /**
+   * Forgets which regions a refresh already reduced.
+   *
+   * A caller that replaces the voxels of the whole source calls this member, so
+   * that the next delivery of each region reduces the new data.
+   * `BaseStreamingImageVolume.invalidateVolume` is the one caller: a dynamic
+   * volume changes its dimension group, and every frame then holds other data
+   * at the same quality.
+   */
+  public clearDerivedRefreshRecord(): void {
+    this.refreshedQuality.clear();
   }
 
   /**
@@ -831,7 +942,9 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
       return false;
     }
 
-    if (!this.reduceRegionInto(representation, source, { bounds })) {
+    // A refresh that wrote no voxel changed nothing, so the record of the
+    // result must not claim the deliveries that the source now holds.
+    if (this.reduceRegionInto(representation, source, { bounds }) === 0) {
       return false;
     }
 
@@ -853,17 +966,19 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
    * member grows the region to whole boxes: a delivery of one voxel makes the
    * whole box of that voxel out of date.
    *
-   * @returns true when the member reduced at least one box
+   * @returns the number of reduced voxels that the member wrote. A box whose
+   *     source voxels have not arrived holds no value, so a region of a source
+   *     that holds nothing yet gives 0.
    */
   private reduceRegionInto(
     representation: VoxelRepresentation<T>,
     source: VoxelRepresentation<T>,
     { bounds }: { bounds: BoundsIJK }
-  ): boolean {
+  ): number {
     const { reduction, round = true } = representation.derivedFrom ?? {};
 
     if (!reduction || !source.voxelManager || !representation.voxelManager) {
-      return false;
+      return 0;
     }
 
     const { factors } = reduction;
@@ -881,7 +996,7 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
       const last = Math.min(bounds[axis][1] - offset[axis], extent[axis] - 1);
 
       if (first > last) {
-        return false;
+        return 0;
       }
 
       const firstBox = Math.floor(first / factors[axis]);
@@ -895,14 +1010,12 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
       targetOffset[axis] = firstBox;
     }
 
-    reduceByBoxStatistic(
+    return reduceByBoxStatistic(
       source.voxelManager as never,
       { factors, sourceOffset, sourceDimensions, targetOffset },
       representation.voxelManager as never,
       { statistic: representation.statistic, round }
     );
-
-    return true;
   }
 
   /**
@@ -926,13 +1039,13 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     }
 
     const { delivered } = representation;
-    const existing = delivered.find((delivery) =>
-      sameBounds(delivery.bounds, bounds)
-    );
+    const index = this.deliveryIndexOf(delivered);
+    const existing = index.byBounds.get(boundsKey(bounds));
 
     if (existing) {
       // The same region arrived again. A LOWER QUALITY NEVER REPLACES A HIGHER
-      // ONE, which is the rule of `cachedFrames`.
+      // ONE, which is the rule of `cachedFrames`. The key is the region alone,
+      // so a change of the quality leaves the index true.
       if (existing.quality >= quality) {
         return false;
       }
@@ -943,33 +1056,82 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     }
 
     // A delivery that a better delivery already holds changes nothing, so the
-    // record does not grow.
-    if (
-      delivered.some(
-        (delivery) =>
-          delivery.quality >= quality && containsBounds(delivery.bounds, bounds)
-      )
-    ) {
-      return false;
+    // record does not grow. A delivery that holds this region covers every k
+    // slice of it, so it lies in the bucket of the first of those slices.
+    const containers = index.bySlice.get(bounds[2][0]);
+
+    if (containers) {
+      for (const delivery of containers) {
+        if (
+          delivery.quality >= quality &&
+          containsBounds(delivery.bounds, bounds)
+        ) {
+          return false;
+        }
+      }
     }
 
     // A delivery that holds an earlier delivery of no better quality replaces
     // that earlier delivery, so an overlap does not make the record grow
-    // without a limit.
-    for (let index = delivered.length - 1; index >= 0; index--) {
-      const delivery = delivered[index];
+    // without a limit. Such an earlier delivery lies inside the k slices of
+    // this one, so the buckets of those slices hold every candidate.
+    const contained = new Set<DeliveredRegion>();
 
-      if (
-        delivery.quality <= quality &&
-        containsBounds(bounds, delivery.bounds)
-      ) {
-        delivered.splice(index, 1);
+    for (let k = bounds[2][0]; k <= bounds[2][1]; k++) {
+      const bucket = index.bySlice.get(k);
+
+      if (!bucket) {
+        continue;
+      }
+
+      for (const delivery of bucket) {
+        if (
+          delivery.quality <= quality &&
+          containsBounds(bounds, delivery.bounds)
+        ) {
+          contained.add(delivery);
+        }
       }
     }
 
-    delivered.push({ bounds, quality });
+    if (contained.size) {
+      for (const delivery of contained) {
+        removeFromDeliveryIndex(index, delivery);
+      }
+
+      // One pass over the record, and not one `splice` for each removal.
+      let write = 0;
+
+      for (let read = 0; read < delivered.length; read++) {
+        if (!contained.has(delivered[read])) {
+          delivered[write++] = delivered[read];
+        }
+      }
+
+      delivered.length = write;
+    }
+
+    const delivery = { bounds, quality };
+
+    delivered.push(delivery);
+    addToDeliveryIndex(index, delivery);
 
     return true;
+  }
+
+  /**
+   * The index of one record of deliveries, which the member builds once for
+   * each array that it sees. See `DeliveryIndex`.
+   */
+  private deliveryIndexOf(delivered: DeliveredRegion[]): DeliveryIndex {
+    let index = this.deliveryIndexes.get(delivered);
+
+    if (!index) {
+      index = buildDeliveryIndex(delivered);
+      this.deliveryIndexes.set(delivered, index);
+    }
+
+    return index;
   }
 
   /**

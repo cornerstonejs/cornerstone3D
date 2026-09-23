@@ -70,6 +70,11 @@ export class BaseStreamingImageVolume
   protected invalidateVolume(immediate: boolean): void {
     const { numFrames } = this;
 
+    // Every frame now holds other data at the same quality, so the composite
+    // must reduce each one again. Without this the record of the refresh
+    // reports the frames as already reduced, and each mark below does nothing.
+    this.compositeVoxelManager.clearDerivedRefreshRecord();
+
     for (let i = 0; i < numFrames; i++) {
       this.markFrameDirty(i);
     }
