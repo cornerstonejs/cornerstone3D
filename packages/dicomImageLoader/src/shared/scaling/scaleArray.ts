@@ -1,4 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
+import { getScalingMode } from './getScalingMode';
 
 export default function scaleArray(
   array: Types.PixelDataTypedArray,
@@ -8,26 +9,22 @@ export default function scaleArray(
   const { rescaleSlope, rescaleIntercept, suvbw, doseGridScaling } =
     scalingParameters;
 
-  if (
-    scalingParameters.modality === 'PT' &&
-    typeof suvbw === 'number' &&
-    !isNaN(suvbw)
-  ) {
-    for (let i = 0; i < arrayLength; i++) {
-      array[i] = suvbw * (array[i] * rescaleSlope + rescaleIntercept);
-    }
-  } else if (
-    scalingParameters.modality === 'RTDOSE' &&
-    typeof doseGridScaling === 'number' &&
-    !isNaN(doseGridScaling)
-  ) {
-    for (let i = 0; i < arrayLength; i++) {
-      array[i] = array[i] * doseGridScaling;
-    }
-  } else {
-    for (let i = 0; i < arrayLength; i++) {
-      array[i] = array[i] * rescaleSlope + rescaleIntercept;
-    }
+  switch (getScalingMode(scalingParameters)) {
+    case 'PT_SUV':
+      for (let i = 0; i < arrayLength; i++) {
+        array[i] = suvbw * (array[i] * rescaleSlope + rescaleIntercept);
+      }
+      break;
+    case 'RTDOSE':
+      for (let i = 0; i < arrayLength; i++) {
+        array[i] = array[i] * doseGridScaling;
+      }
+      break;
+    default:
+      // RESCALE and NONE: linear rescale (matches prior else branch).
+      for (let i = 0; i < arrayLength; i++) {
+        array[i] = array[i] * rescaleSlope + rescaleIntercept;
+      }
   }
 
   return true;

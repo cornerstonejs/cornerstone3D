@@ -11,6 +11,8 @@ interface ScalingParameters {
   suvlbm?: number;
   /** SUV body surface area */
   suvbsa?: number;
+  /** dose grid scaling factor applied for RTDOSE modality */
+  doseGridScaling?: number;
 }
 
 interface PTScaling {
