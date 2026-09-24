@@ -77,5 +77,5 @@ cornerstone3DTools.annotation.state.getAnnotation(annotationUID);
 ## Read more
 
 :::note TIP
-Read more about the state API [here](/api/tools/namespace/annotation#state)
+Read more about the state API [here](/docs/api/tools/namespaces/annotation/variables/state)
 :::
