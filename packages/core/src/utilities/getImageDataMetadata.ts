@@ -1,4 +1,4 @@
-import { vec3 } from 'gl-matrix';
+import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import type {
   Point3,
   Mat3,
@@ -27,6 +27,37 @@ type ReturnImageDataMetadata = {
   calibration: IImageCalibration;
   scanAxisNormal: Point3;
 };
+
+function getOrthonormalOrientation(
+  rowCosines: Point3,
+  columnCosines: Point3
+): { row: Point3; column: Point3; normal: Point3 } {
+  const row = [...rowCosines] as Point3;
+  const column = [...columnCosines] as Point3;
+  const defaultOrientation = {
+    row: [1, 0, 0] as Point3,
+    column: [0, 1, 0] as Point3,
+    normal: [0, 0, 1] as Point3,
+  };
+
+  const rowLength = vtkMath.normalize(row);
+  if (vtkMath.areEquals([rowLength], [0])) {
+    return defaultOrientation;
+  }
+
+  vtkMath.multiplyAccumulate(column, row, -vtkMath.dot(column, row), column);
+
+  const columnLength = vtkMath.normalize(column);
+  if (vtkMath.areEquals([columnLength], [0])) {
+    return defaultOrientation;
+  }
+
+  const normal = vtkMath.cross(row, column, [0, 0, 0]);
+  vtkMath.normalize(normal);
+
+  return { row, column, normal };
+}
+
 /**
  * Calculates image metadata based on the image object. It calculates normal
  * axis for the images, and output image metadata
@@ -56,18 +87,11 @@ export function getImageDataMetadata(image: IImage): ReturnImageDataMetadata {
     columnCosines = [0, 1, 0] as Point3;
   }
 
-  const rowCosineVec = vec3.fromValues(
-    rowCosines[0],
-    rowCosines[1],
-    rowCosines[2]
-  );
-  const colCosineVec = vec3.fromValues(
-    columnCosines[0],
-    columnCosines[1],
-    columnCosines[2]
-  );
-  const scanAxisNormal = vec3.create();
-  vec3.cross(scanAxisNormal, rowCosineVec, colCosineVec);
+  const {
+    row: rowCosineVec,
+    column: colCosineVec,
+    normal: scanAxisNormal,
+  } = getOrthonormalOrientation(rowCosines as Point3, columnCosines as Point3);
 
   let origin = imagePlaneModule.imagePositionPatient;
   // if null or undefined
