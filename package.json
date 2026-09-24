@@ -58,6 +58,7 @@
     "test:unit:no-coverage": "jest",
     "rebuild:canvas": "npm rebuild canvas",
     "test:debug": "karma start ./karma.conf.js --browsers Chrome --no-single-run",
+    "test:decoders": "karma start ./karma.decoders.conf.js",
     "lint-staged": "lint-staged",
     "lint": "oxlint packages/**/src --quiet",
     "webpack:watch": "pnpm -r --filter=!docs run webpack:watch"

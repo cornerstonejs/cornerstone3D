@@ -48,10 +48,10 @@ overrides:
   js-yaml@>=4.0.0 <4.3.2: 4.3.2
   linkify-it@<=5.0.1: 5.0.2
   postcss@<8.5.26: 8.5.26
-  '@cornerstonejs/codec-charls': 1.2.6
-  '@cornerstonejs/codec-libjpeg-turbo-8bit': 1.2.5
-  '@cornerstonejs/codec-openjpeg': 1.3.3
-  '@cornerstonejs/codec-openjph': 2.4.10
+  '@cornerstonejs/codec-charls': 1.2.7
+  '@cornerstonejs/codec-libjpeg-turbo-8bit': 1.2.7
+  '@cornerstonejs/codec-openjpeg': 1.3.6
+  '@cornerstonejs/codec-openjph': 2.4.11
 
 importers:
   .:
@@ -485,26 +485,29 @@ importers:
   packages/dicomImageLoader:
     dependencies:
       '@cornerstonejs/codec-charls':
-        specifier: 1.2.6
-        version: 1.2.6
+        specifier: 1.2.7
+        version: 1.2.7
       '@cornerstonejs/codec-libjpeg-turbo-8bit':
-        specifier: 1.2.5
-        version: 1.2.5
+        specifier: 1.2.7
+        version: 1.2.7
+      '@cornerstonejs/codec-libjxl':
+        specifier: 1.1.1
+        version: 1.1.1
       '@cornerstonejs/codec-openjpeg':
-        specifier: 1.3.3
-        version: 1.3.3
+        specifier: 1.3.6
+        version: 1.3.6
       '@cornerstonejs/codec-openjph':
-        specifier: 2.4.10
-        version: 2.4.10
+        specifier: 2.4.11
+        version: 2.4.11
+      '@cornerstonejs/jpeg-lossless-decoder-js':
+        specifier: 2.2.1
+        version: 2.2.1
       comlink:
         specifier: 4.4.2
         version: 4.4.2
       dicom-parser:
         specifier: 1.8.21
         version: 1.8.21
-      jpeg-lossless-decoder-js:
-        specifier: 2.1.2
-        version: 2.1.2
       pako:
         specifier: 2.1.0
         version: 2.1.0
@@ -2062,33 +2065,46 @@ packages:
       }
     engines: { node: '>=10' }
 
-  '@cornerstonejs/codec-charls@1.2.6':
+  '@cornerstonejs/codec-charls@1.2.7':
     resolution:
       {
-        integrity: sha512-uXV0UzYaLgn9NiPnM2nibNp1HzdEOB2aLJGsHNd6XcmiOMjz2GW7TuSEbDyavtB8bdN8RHcVssJgyN+0cuG5IA==,
+        integrity: sha512-kNfQ7J8LIrfQUbt56fPJ0SEvevLlAAbsLHjqPS4DUDWVSuAHb5Fn0cMIV/U0SYkJRJqKvzyLJYF1hl7/xQGqLQ==,
       }
     engines: { node: '>=0.14' }
 
-  '@cornerstonejs/codec-libjpeg-turbo-8bit@1.2.5':
+  '@cornerstonejs/codec-libjpeg-turbo-8bit@1.2.7':
     resolution:
       {
-        integrity: sha512-rz6+M0F98bsxbPDLsD6mGfXvISOeJ2RenESroQaoVhTYRr5SKixp/sdIns2tMWDLn1ctW2HNlU9U1QmOWL8Vwg==,
+        integrity: sha512-TINxDtm+RQuMvWNyNR6z8lCkqDKguZBMrPJ3+oAvLc1XQ3tQsIGIIUWzveedpyr8gp7DYsQqoPLhCl2mYTSv3w==,
       }
     engines: { node: '>=0.14' }
 
-  '@cornerstonejs/codec-openjpeg@1.3.3':
+  '@cornerstonejs/codec-libjxl@1.1.1':
     resolution:
       {
-        integrity: sha512-GhKsXdzULk7UgPNQNx+oJbRs3DDvn2YQvUTe5x6SlobjAf3UYDv/wZ/RLcXt5+HkVKqlDW6EHoqUoE5OjkDuRg==,
+        integrity: sha512-Gp5AXNDuqX9CggJ6VJzjEuPowL2IsKGkvUPo3I7ZmCaY1vNDTwOdJUFrHACl3RIMDm+EL9EUw0Lhsmbs5b0fvA==,
+      }
+    engines: { node: '>=24' }
+
+  '@cornerstonejs/codec-openjpeg@1.3.6':
+    resolution:
+      {
+        integrity: sha512-bSdZXF+2GxfBkWHUr7yGLQtIwbAm9wOl3e4ARee/9Z9lfKyVqhUCixI6+ZjIn9YKTIuDcn/NZNK94XEUg1SBtw==,
       }
     engines: { node: '>=0.14' }
 
-  '@cornerstonejs/codec-openjph@2.4.10':
+  '@cornerstonejs/codec-openjph@2.4.11':
     resolution:
       {
-        integrity: sha512-E9lV25u8xxn3wgWNzNMz8S08QxLeMgzqFAOtIYjCYaPzeg+2UkXwPTDd+MmqXAJPHujgPmMuJGPdayU70GJNHQ==,
+        integrity: sha512-NzwCYevGSj2JOuP7BztxrOd5WnJ86gOGLv3sq36jZxxHUXoDo1YhzizHiYz+T7GQqkzbfaQcwSyxsRogzGFIPQ==,
       }
     engines: { node: '>=0.14' }
+
+  '@cornerstonejs/jpeg-lossless-decoder-js@2.2.1':
+    resolution:
+      {
+        integrity: sha512-cDCv7dm3qw9kbxCydvj0UGbNQcsPmTwcyd9SQXkBt34CDgSBeb8Xvj0Gz9HlJ+7DIKOFMTazF1oDJSu0pcCKmg==,
+      }
 
   '@cspotcode/source-map-support@0.8.1':
     resolution:
@@ -4438,15 +4454,6 @@ packages:
     peerDependenciesMeta:
       rollup:
         optional: true
-
-  '@rollup/rollup-linux-x64-gnu@4.13.0':
-    resolution:
-      {
-        integrity: sha512-yUD/8wMffnTKuiIsl6xU+4IA8UNhQ/f1sAnQebmE/lyQ8abjsVyDkyRkWop0kdMhKMprpNIhPmYlCxgHrPoXoA==,
-      }
-    cpu: [x64]
-    os: [linux]
-    libc: [glibc]
 
   '@rspack/binding-darwin-arm64@1.6.0':
     resolution:
@@ -11317,12 +11324,6 @@ packages:
         integrity: sha512-34wB/Y7MW7bzjKRjUKTa46I2Z7eV62Rkhva+KkopW7Qvv/OSWBqvkSY7vusOPrNuZcUG3tApvdVgNB8POj3SPw==,
       }
     engines: { node: '>=10' }
-
-  jpeg-lossless-decoder-js@2.1.2:
-    resolution:
-      {
-        integrity: sha512-fYf/plymnuKwVw+s8gJ8O/BPw8y8OLaN11MBvEcT05kuy3m45o7BEC4J0JbxMNUYyO+MdK/I/jq0q1gkVYZm2Q==,
-      }
 
   js-sha3@0.9.3:
     resolution:
@@ -19112,13 +19113,17 @@ snapshots:
 
   '@cornerstonejs/calculate-suv@1.0.3': {}
 
-  '@cornerstonejs/codec-charls@1.2.6': {}
+  '@cornerstonejs/codec-charls@1.2.7': {}
 
-  '@cornerstonejs/codec-libjpeg-turbo-8bit@1.2.5': {}
+  '@cornerstonejs/codec-libjpeg-turbo-8bit@1.2.7': {}
 
-  '@cornerstonejs/codec-openjpeg@1.3.3': {}
+  '@cornerstonejs/codec-libjxl@1.1.1': {}
 
-  '@cornerstonejs/codec-openjph@2.4.10': {}
+  '@cornerstonejs/codec-openjpeg@1.3.6': {}
+
+  '@cornerstonejs/codec-openjph@2.4.11': {}
+
+  '@cornerstonejs/jpeg-lossless-decoder-js@2.2.1': {}
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
@@ -21437,9 +21442,6 @@ snapshots:
       picomatch: 4.0.4
     optionalDependencies:
       rollup: 3.30.0
-
-  '@rollup/rollup-linux-x64-gnu@4.13.0':
-    optional: true
 
   '@rspack/binding-darwin-arm64@1.6.0':
     optional: true
@@ -23807,10 +23809,10 @@ snapshots:
 
   dicom-microscopy-viewer@0.48.6:
     dependencies:
-      '@cornerstonejs/codec-charls': 1.2.6
-      '@cornerstonejs/codec-libjpeg-turbo-8bit': 1.2.5
-      '@cornerstonejs/codec-openjpeg': 1.3.3
-      '@cornerstonejs/codec-openjph': 2.4.10
+      '@cornerstonejs/codec-charls': 1.2.7
+      '@cornerstonejs/codec-libjpeg-turbo-8bit': 1.2.7
+      '@cornerstonejs/codec-openjpeg': 1.3.6
+      '@cornerstonejs/codec-openjph': 2.4.11
       colormap: 2.3.2
       dcmjs: 0.41.0
       dicomicc: 0.1.0
@@ -25934,10 +25936,6 @@ snapshots:
       '@sideway/pinpoint': 2.0.0
 
   joycon@3.1.1: {}
-
-  jpeg-lossless-decoder-js@2.1.2:
-    optionalDependencies:
-      '@rollup/rollup-linux-x64-gnu': 4.13.0
 
   js-sha3@0.9.3: {}
 

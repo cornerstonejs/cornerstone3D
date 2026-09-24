@@ -397,3 +397,75 @@ rather than an uncaught error, so it is reported rather than silent.
   `@cornerstonejs/codec-openjph` below 2.4.10, remove the pin or raise it.
 - **Prefer `decodeLevel: 0` for HTJ2K partial retrieves,** and keep
   sub-resolution levels for genuinely small renditions such as JLS thumbnails.
+
+## Encapsulated Uncompressed and Deflated Image Frame Compression, and the JPEG XL UIDs
+
+### What Changed
+
+Two transfer syntaxes now decode:
+
+- **Encapsulated Uncompressed Explicit VR Little Endian**
+  (`1.2.840.10008.1.2.1.98`). Nothing is compressed; the syntax exists so that
+  uncompressed pixel data can use the encapsulated format, one frame per
+  fragment, which makes a single frame addressable without reading the whole
+  Pixel Data element (PS3.5 A.4.11).
+- **Deflated Image Frame Compression** (`1.2.840.10008.1.2.8.1`). Each frame is
+  separately compressed with raw Deflate per RFC 1951 - no zlib header or
+  Adler-32 trailer - and encapsulated as one fragment (PS3.5 A.4.13). This is
+  per frame, unlike Deflated Explicit VR Little Endian
+  (`1.2.840.10008.1.2.1.99`), which deflates the whole data set and is inflated
+  by dicomParser before a frame is ever decoded.
+
+Separately, the `image/jxl` media type mapping was **corrected**. It previously
+resolved to `1.2.840.10008.1.2.4.140`, which is not a JPEG XL UID. JPEG XL was
+ratified in Supplement 232 as:
+
+| UID                       | Name                       |
+| ------------------------- | -------------------------- |
+| `1.2.840.10008.1.2.4.110` | JPEG XL Lossless           |
+| `1.2.840.10008.1.2.4.111` | JPEG XL JPEG Recompression |
+| `1.2.840.10008.1.2.4.112` | JPEG XL                    |
+
+`image/jxl` now resolves to `1.2.840.10008.1.2.4.110`, which PS3.18
+Table 8.7.3-5 gives as the default when a response carries no
+`transfer-syntax` parameter to disambiguate. `application/x-deflate` was added
+for Deflated Image Frame Compression from the same table.
+
+All three JPEG XL syntaxes now **decode**, through
+`@cornerstonejs/codec-libjxl`. They share one decoder: the difference between
+them is what the encoder was allowed to do, not how the codestream is read.
+
+Two limits worth knowing:
+
+- **Signedness comes from `PixelRepresentation`, not the codestream.** JPEG XL
+  has no signed sample type, so its decoder always reports unsigned and the
+  loader applies `PixelRepresentation` itself - the same arrangement JPEG-LS
+  uses. A JPEG XL frame whose metadata says signed is read correctly; a frame
+  with no metadata is read as unsigned.
+- **Partial decoding is not supported.** The codec rejects a truncated
+  codestream rather than decoding what arrived, so JPEG XL is deliberately not
+  in `streamableTransferSyntaxes` and byte range or streaming retrieves of it
+  decode once, when the frame is complete. The format does support progressive
+  decoding; this codec build does not use it yet.
+
+### Why This Matters
+
+Both new syntaxes reach the decoder as one fragment per frame, and both pad:
+encapsulated fragments are padded to an even length, and Deflated Image Frame
+Compression appends a NULL when the deflated stream is odd. The decoders trim
+that padding to the frame's native pixel length, and treat a frame _shorter_
+than its pixel data as an error rather than rendering it partially.
+
+This release also fixes a latent bug in encapsulated frame extraction: a single
+frame image has no `NumberOfFrames` element, which the fragment reader compared
+against the fragment count and concluded the frames were fragmented, falling
+back to a scan for JPEG SOI markers. That scan finds nothing in a syntax that
+is not JPEG. `NumberOfFrames` now defaults to 1, so a conformant single frame
+image of any encapsulated syntax takes the direct fragment path.
+
+### Migration Guidance
+
+- No action is required to read the two new syntaxes; they are decoded like any
+  other.
+- If you special-cased `1.2.840.10008.1.2.4.140` as JPEG XL anywhere in your own
+  code, change it to the `.110`/`.111`/`.112` block.

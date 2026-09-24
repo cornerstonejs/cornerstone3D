@@ -56,9 +56,24 @@ describe('getPixelData', () => {
     ).toEqual(new Uint16Array([0, 65535]));
   });
 
+  it('reads a 16 bit JPEG XL frame as signed on the override alone', () => {
+    // JPEG XL has no signed sample type at all, so its decoder always reports
+    // isSigned false and PixelRepresentation is the only thing that can say
+    // otherwise. Trusting the frame info here would render every signed JPEG XL
+    // image - CT among them - as large positive values.
+    expect(
+      getPixelData(
+        { bitsPerSample: 16, isSigned: false, componentCount: 1 },
+        decodedBuffer([0x00, 0x80, 0xff, 0xff]),
+        true
+      )
+    ).toEqual(new Int16Array([-32768, -1]));
+  });
+
   it('prefers the metadata signedness over the frame info when given', () => {
-    // JPEG-LS takes signedness from Pixel Representation rather than from the
-    // codestream, so an explicit override has to win in both directions.
+    // JPEG-LS and JPEG XL both take signedness from Pixel Representation rather
+    // than from the codestream, so an explicit override has to win in both
+    // directions.
     expect(
       getPixelData(
         { bitsPerSample: 8, isSigned: false, componentCount: 1 },

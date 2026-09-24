@@ -17,7 +17,7 @@ export function initialize(
   }
 
   return new Promise((resolve, reject) => {
-    import('jpeg-lossless-decoder-js').then(({ Decoder }) => {
+    import('@cornerstonejs/jpeg-lossless-decoder-js').then(({ Decoder }) => {
       local.DecoderClass = Decoder;
       resolve();
     }, reject);
