@@ -28,6 +28,11 @@ import type {
 } from '../types';
 import { getViewportClassForInput } from './helpers/viewportTypeToViewportClass';
 import { isGenericViewport } from '../utilities/viewportCapabilities';
+import {
+  getVolume3DInteractivePresentSize,
+  peekVolume3DInteractivePresentSize,
+  recordVolume3DPresent,
+} from './helpers/volume3DTargetFps';
 
 /**
  * ContextPoolRenderingEngine extends BaseRenderingEngine to provide parallel rendering
@@ -472,9 +477,16 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
     const viewportWidth = viewport.sWidth;
     const viewportHeight = viewport.sHeight;
+    const interactivePresent = getVolume3DInteractivePresentSize(
+      viewport.id,
+      viewportWidth,
+      viewportHeight
+    );
+    const renderWidth = interactivePresent?.renderWidth ?? viewportWidth;
+    const renderHeight = interactivePresent?.renderHeight ?? viewportHeight;
 
-    const xEnd = Math.min(1, viewportWidth / maxSize.width);
-    const yEnd = Math.min(1, viewportHeight / maxSize.height);
+    const xEnd = Math.min(1, renderWidth / maxSize.width);
+    const yEnd = Math.min(1, renderHeight / maxSize.height);
 
     renderer.setViewport(0, 0, xEnd, yEnd);
 
@@ -580,6 +592,9 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     } = viewport;
     const dWidth = viewport.sWidth;
     const dHeight = viewport.sHeight;
+    const interactivePresent = peekVolume3DInteractivePresentSize(viewportId);
+    const sourceWidth = interactivePresent?.renderWidth ?? dWidth;
+    const sourceHeight = interactivePresent?.renderHeight ?? dHeight;
 
     // Update on-screen canvas size only when the VTK render result is available,
     // so the displayed size matches the rendered size and aspect ratio without flicker.
@@ -592,19 +607,21 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       this.contextPool.getContextIndexForViewport(viewportId);
     const maxSize = this.contextPool.getMaxSizeForContext(contextIndex);
 
-    const sourceY = maxSize.height - dHeight;
+    const sourceY = maxSize.height - sourceHeight;
 
     onScreenContext.drawImage(
       offScreenCanvas,
       0, // Source X
       sourceY, // Source Y (copy from where VTK rendered at bottom)
-      dWidth, // Source width
-      dHeight, // Source height
+      sourceWidth, // Source width (may be smaller during Target FPS interaction)
+      sourceHeight, // Source height
       0, // Destination X
       0, // Destination Y
-      dWidth, // Destination width
+      dWidth, // Destination width (always full on-screen size)
       dHeight // Destination height
     );
+
+    recordVolume3DPresent(viewportId);
 
     return {
       element,
