@@ -2532,6 +2532,12 @@ class StackViewport extends Viewport {
       ? viewport
       : viewportSettingToUse;
 
+    if (this.stackInvalidated) {
+      // A MONOCHROME1 image loads inverted: keep it so on resetProperties
+      this.initialInvert = !!viewport.invert;
+      this.invert = this.initialInvert;
+    }
+
     // used the previous state of the viewport, then stackInvalidated is set to false
     this.stackInvalidated = false;
 
