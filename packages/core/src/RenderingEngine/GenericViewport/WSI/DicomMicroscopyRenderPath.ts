@@ -1,6 +1,12 @@
 import { Events as EVENTS, ViewportType } from '../../../enums';
+import clamp from '../../../utilities/clamp';
 import triggerEvent from '../../../utilities/triggerEvent';
-import { getDicomMicroscopyViewer } from '../../../utilities/WSIUtilities';
+import {
+  getDicomMicroscopyViewer,
+  type WSIInteractionHandler,
+  type WSIMapLike,
+  type WSIViewerLike,
+} from '../../../utilities/WSIUtilities';
 import type {
   DataAddOptions,
   LoadedData,
@@ -52,6 +58,9 @@ export class DicomMicroscopyRenderPath
     viewer.deactivateDragPanInteraction();
 
     const map = viewer.getMap();
+
+    this.configureDragZoom(viewer, map);
+
     const postrenderHandler = () => {
       triggerEvent(ctx.element, EVENTS.IMAGE_RENDERED, {
         element: ctx.element,
@@ -142,6 +151,76 @@ export class DicomMicroscopyRenderPath
 
   private getFrameOfReferenceUID(payload: WSIPayload): string | undefined {
     return payload.frameOfReferenceUID ?? undefined;
+  }
+
+  private configureDragZoom(viewer: WSIViewerLike, map: WSIMapLike): void {
+    const interactions = map.getInteractions?.();
+
+    if (
+      !interactions ||
+      !map.getPixelFromCoordinate ||
+      !viewer.activateDragZoomInteraction ||
+      !viewer.deactivateDragZoomInteraction
+    ) {
+      return;
+    }
+
+    const existingInteractions = new Set(interactions.getArray());
+
+    // The viewer API does not return the created interaction, so identify it
+    // by comparing the map's interactions before and after activation.
+    viewer.activateDragZoomInteraction({
+      bindings: { mouseButtons: ['right'] },
+    });
+
+    const addedInteractions = interactions
+      .getArray()
+      .filter((interaction) => !existingInteractions.has(interaction));
+    const dragZoomInteraction = addedInteractions[0];
+    const handleDownEvent = dragZoomInteraction?.handleDownEvent;
+    const handleDragEvent = dragZoomInteraction?.handleDragEvent;
+    const handleUpEvent = dragZoomInteraction?.handleUpEvent;
+
+    if (
+      addedInteractions.length !== 1 ||
+      !handleDownEvent ||
+      !handleDragEvent ||
+      !handleUpEvent
+    ) {
+      viewer.deactivateDragZoomInteraction();
+      console.warn(
+        'Unable to constrain microscopy drag zoom; drag zoom was disabled'
+      );
+      return;
+    }
+
+    const imageExtent = map.getView().getProjection().getExtent();
+    const constrainToImageExtent =
+      (handler: WSIInteractionHandler): WSIInteractionHandler =>
+      (event) => {
+        const originalCoordinate = event.coordinate;
+        const originalPixel = event.pixel;
+
+        event.coordinate = [
+          clamp(originalCoordinate[0], imageExtent[0], imageExtent[2]),
+          clamp(originalCoordinate[1], imageExtent[1], imageExtent[3]),
+        ];
+        event.pixel = map.getPixelFromCoordinate(event.coordinate);
+
+        // Other map interactions receive the same event object.
+        try {
+          return handler.call(dragZoomInteraction, event);
+        } finally {
+          event.coordinate = originalCoordinate;
+          event.pixel = originalPixel;
+        }
+      };
+
+    dragZoomInteraction.handleDownEvent =
+      constrainToImageExtent(handleDownEvent);
+    dragZoomInteraction.handleDragEvent =
+      constrainToImageExtent(handleDragEvent);
+    dragZoomInteraction.handleUpEvent = constrainToImageExtent(handleUpEvent);
   }
 
   private removeData(rendering: WSIRendering): void {
