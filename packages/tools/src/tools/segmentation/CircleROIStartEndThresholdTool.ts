@@ -47,10 +47,7 @@ import {
   getCanvasCircleCorners,
   getCanvasCircleRadius,
 } from '../../utilities/math/circle';
-import {
-  getCalibratedLengthUnitsAndScale,
-  getCalibratedAspect,
-} from '../../utilities/getCalibratedUnits';
+import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { pointInEllipse } from '../../utilities/math/ellipse';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
@@ -648,13 +645,13 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     );
     // The scale converts index distances, so the radius, from the centre to
     // the point on the circle, is measured in index space, as CircleROITool
-    // does.
+    // does. The per-axis scales already account for non-square pixels, so no
+    // aspect correction applies.
     const radius = CircleROIStartEndThresholdTool.calculateLengthInIndex(
       measureInfo,
       indexCoordinates.slice(0, 2)
     );
-    const aspect = getCalibratedAspect(image);
-    const area = Math.abs((Math.PI * radius * radius) / aspect);
+    const area = Math.PI * radius * radius;
 
     const modalityUnitOptions = {
       isPreScaled: isViewportPreScaled(viewport, targetId),

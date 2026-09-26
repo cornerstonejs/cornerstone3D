@@ -13,8 +13,9 @@ jest.mock('../src/utilities/viewport/isViewportPreScaled', () => ({
 // distance by it is off by the spacing.
 const spacing = [0.5, 0.5, 2];
 
-function createImage() {
+function createImage(calibration = undefined) {
   return {
+    calibration,
     dimensions: [512, 512, 100],
     hasPixelSpacing: true,
     spacing,
@@ -115,30 +116,38 @@ describe('measurements of world distances on an image with non-unit spacing', ()
     expect(area).toBeCloseTo(200);
   });
 
-  it('CircleROIStartEndThresholdTool reports the area in mm²', () => {
-    const tool = new CircleROIStartEndThresholdTool();
-    tool.configuration.statsCalculator = createStatsCalculator();
-    tool.getTargetImageData = () => createImage();
-    // centre and a point on the circle, 10 mm apart
-    const annotation = {
-      data: {
-        handles: {
-          points: [
-            [20, 20, 4],
-            [30, 20, 4],
-          ],
+  // The radius is measured in index space, where the per-axis scales already
+  // square up the pixels, so a calibration aspect does not change the area.
+  it.each([
+    ['no calibration', undefined],
+    ['a calibration aspect', { aspect: 2 }],
+  ])(
+    'CircleROIStartEndThresholdTool reports the area in mm² with %s',
+    (_name, calibration) => {
+      const tool = new CircleROIStartEndThresholdTool();
+      tool.configuration.statsCalculator = createStatsCalculator();
+      tool.getTargetImageData = () => createImage(calibration);
+      // centre and a point on the circle, 10 mm apart
+      const annotation = {
+        data: {
+          handles: {
+            points: [
+              [20, 20, 4],
+              [30, 20, 4],
+            ],
+          },
+          cachedStats: { projectionPoints: [] },
         },
-        cachedStats: { projectionPoints: [] },
-      },
-      metadata: { viewPlaneNormal: [0, 0, 1], viewUp: [0, -1, 0] },
-    };
+        metadata: { viewPlaneNormal: [0, 0, 1], viewUp: [0, -1, 0] },
+      };
 
-    tool._computePointsInsideVolume(annotation, undefined, 'volumeId:ct', {
-      viewport: createViewport(),
-    });
+      tool._computePointsInsideVolume(annotation, undefined, 'volumeId:ct', {
+        viewport: createViewport(),
+      });
 
-    const { area, areaUnit } = annotation.data.cachedStats.statistics;
-    expect(areaUnit).toBe('mm²');
-    expect(area).toBeCloseTo(Math.PI * 100);
-  });
+      const { area, areaUnit } = annotation.data.cachedStats.statistics;
+      expect(areaUnit).toBe('mm²');
+      expect(area).toBeCloseTo(Math.PI * 100);
+    }
+  );
 });
