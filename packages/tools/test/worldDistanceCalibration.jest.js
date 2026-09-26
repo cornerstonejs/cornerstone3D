@@ -49,7 +49,7 @@ describe('measurements of world distances on an image with non-unit spacing', ()
     const SAGITTAL = [1, 0, 0];
     const CORONAL = [0, -1, 0];
 
-    function measureHeight(points, metadata, cameraNormal = undefined) {
+    function measureHeight(points, metadata, viewportCamera = {}) {
       const tool = new HeightTool();
       tool.getTargetImageData = () => createImage();
       const annotation = {
@@ -60,11 +60,24 @@ describe('measurements of world distances on an image with non-unit spacing', ()
       tool._calculateCachedStats(annotation, null, {
         viewport: {
           ...createViewport(),
-          getCamera: () => ({ viewPlaneNormal: cameraNormal }),
+          getViewReference: () => ({}),
+          ...viewportCamera,
         },
       });
       return annotation.data.cachedStats.target;
     }
+
+    // A legacy viewport has getCamera; a generic (next) viewport has none and
+    // resolves its camera from the view it displays
+    const legacyCamera = (viewPlaneNormal) => ({
+      getCamera: () => ({ viewPlaneNormal }),
+    });
+    const genericCamera = (viewPlaneNormal) => ({
+      setDisplaySets: () => undefined,
+      setDisplaySetPresentation: () => undefined,
+      setViewState: () => undefined,
+      getResolvedView: () => ({ toICamera: () => ({ viewPlaneNormal }) }),
+    });
 
     it('reports the vertical extent in mm on an axial slice', () => {
       const { height, unit } = measureHeight(
@@ -134,18 +147,24 @@ describe('measurements of world distances on an image with non-unit spacing', ()
       expect(height).toBeCloseTo(20);
     });
 
-    it('uses the camera normal when the annotation has none', () => {
-      const { height } = measureHeight(
-        [
-          [10, 10, 4],
-          [10, 30, 4],
-        ],
-        {},
-        AXIAL
-      );
+    it.each([
+      ['a legacy', legacyCamera],
+      ['a generic', genericCamera],
+    ])(
+      'uses the camera normal of %s viewport when the annotation has none',
+      (_name, viewportCamera) => {
+        const { height } = measureHeight(
+          [
+            [10, 10, 4],
+            [10, 30, 4],
+          ],
+          {},
+          viewportCamera(AXIAL)
+        );
 
-      expect(height).toBeCloseTo(20);
-    });
+        expect(height).toBeCloseTo(20);
+      }
+    );
   });
 
   it('RectangleROIStartEndThresholdTool reports the area in mm²', () => {

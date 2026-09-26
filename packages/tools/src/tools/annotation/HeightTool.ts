@@ -43,6 +43,7 @@ import type {
 import type { LengthAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
+import getViewportICamera from '../../utilities/getViewportICamera';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
 const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
@@ -750,7 +751,7 @@ class HeightTool extends AnnotationTool {
     const worldPos2 = data.handles.points[1];
     const viewPlaneNormal =
       annotation.metadata.viewPlaneNormal ??
-      viewport.getCamera().viewPlaneNormal;
+      getViewportICamera(viewport).viewPlaneNormal;
     const { cachedStats } = data;
     const targetIds = Object.keys(cachedStats);
 
