@@ -28,7 +28,12 @@ const sopInstanceUid = '1.2.3.4';
  * getMeasurementData and returns its cached stats. The encoding turns the
  * numeric values into strings, so only the units are compared.
  */
-function roundTrip(Adapter, tool, editArgs = (tidArgs) => tidArgs) {
+function roundTrip(
+  Adapter,
+  tool,
+  editArgs = (tidArgs) => tidArgs,
+  editItems = (items) => items
+) {
   const tidArgs = editArgs(
     Adapter.getTID300RepresentationArguments(tool, false)
   );
@@ -37,7 +42,7 @@ function roundTrip(Adapter, tool, editArgs = (tidArgs) => tidArgs) {
       ContentSequence: new Adapter.TID300Representation(tidArgs).contentItem(),
     })
   );
-  const items = [].concat(ContentSequence);
+  const items = editItems([].concat(ContentSequence));
 
   const spy = jest
     .spyOn(MeasurementReport, 'getSetupMeasurementData')
@@ -259,6 +264,34 @@ describe('units restored from an SR', () => {
 
     expect(Number(stats.length)).toBe(20);
     expect(stats.perimeter).toBeUndefined();
+    expect(stats.unit).toBe('mm');
+  });
+
+  // Another writer may store the length of an open contour as a Length item
+  it('open PlanarFreehandROI keeps a stored Length', () => {
+    const stats = roundTrip(
+      PlanarFreehandROI,
+      toolWith({
+        contour: { polyline: square.slice(0, 3), closed: false },
+        handles: { points: [] },
+        cachedStats: { [imageKey]: { length: 20, unit: 'mm' } },
+      }),
+      undefined,
+      (items) =>
+        items.map((item) =>
+          item.ValueType === 'NUM'
+            ? {
+                ...item,
+                ConceptNameCodeSequence: {
+                  ...[].concat(item.ConceptNameCodeSequence)[0],
+                  CodeMeaning: 'Length',
+                },
+              }
+            : item
+        )
+    );
+
+    expect(Number(stats.length)).toBe(20);
     expect(stats.unit).toBe('mm');
   });
 });

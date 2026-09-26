@@ -108,7 +108,8 @@ class PlanarFreehandROI extends BaseAdapter3D {
             ? { area: NUMGroup.MeasuredValueSequence.NumericValue }
             : {}),
           ...metrics,
-          [lengthStat]: perimeter,
+          // An SR may store the length of an open contour as a Length item
+          ...(perimeter === undefined ? {} : { [lengthStat]: perimeter }),
         },
       };
     }
