@@ -17,6 +17,11 @@ class PlanarFreehandROI extends BaseAdapter3D {
     PlanarFreehandROI.registerSubType(PlanarFreehandROI, 'SplineROI');
   }
 
+  /**
+   * Restores a PlanarFreehandROI annotation from a TID 1500 measurement group:
+   * the contour, its control points and spline type, and the stats with their
+   * units. The perimeter of an open contour is restored as its length.
+   */
   static getMeasurementData(
     MeasurementGroup,
     sopInstanceUIDToImageIdMap,
@@ -93,12 +98,17 @@ class PlanarFreehandROI extends BaseAdapter3D {
     };
 
     if (referencedImageId) {
+      const { perimeter, ...metrics } =
+        restoreAdditionalMetrics(measurementNUMGroups);
+      // dcmjs writes the length of an open contour as its perimeter
+      const lengthStat = isOpenContour ? 'length' : 'perimeter';
       state.annotation.data.cachedStats = {
         [`imageId:${referencedImageId}`]: {
           ...(!isOpenContour && NUMGroup
             ? { area: NUMGroup.MeasuredValueSequence.NumericValue }
             : {}),
-          ...restoreAdditionalMetrics(measurementNUMGroups),
+          ...metrics,
+          [lengthStat]: perimeter,
         },
       };
     }
