@@ -36,7 +36,10 @@ import type {
 import * as math from '../../utilities/math';
 import throttle from '../../utilities/throttle';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
+import {
+  getCalibratedLengthUnitsAndScale,
+  getCalibratedAreaFromWorld,
+} from '../../utilities/getCalibratedUnits';
 import getMouseModifierKey from '../../eventDispatchers/shared/getMouseModifier';
 
 import { ContourWindingDirection } from '../../types/ContourAnnotation';
@@ -1378,36 +1381,44 @@ class SplineROITool extends ContourSegmentationBaseTool {
       const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
 
       const { imageData } = image;
-      const { areaUnit } = getCalibratedLengthUnitsAndScale(image, () => {
-        const {
-          maxX: canvasMaxX,
-          maxY: canvasMaxY,
-          minX: canvasMinX,
-          minY: canvasMinY,
-        } = math.polyline.getAABB(canvasCoordinates);
+      const {
+        maxX: canvasMaxX,
+        maxY: canvasMaxY,
+        minX: canvasMinX,
+        minY: canvasMinY,
+      } = math.polyline.getAABB(canvasCoordinates);
 
-        const topLeftBBWorld = viewport.canvasToWorld([canvasMinX, canvasMinY]);
+      const topLeftBBWorld = viewport.canvasToWorld([canvasMinX, canvasMinY]);
 
-        const topLeftBBIndex = utilities.transformWorldToIndex(
-          imageData,
-          topLeftBBWorld
-        );
+      const topLeftBBIndex = utilities.transformWorldToIndex(
+        imageData,
+        topLeftBBWorld
+      );
 
-        const bottomRightBBWorld = viewport.canvasToWorld([
-          canvasMaxX,
-          canvasMaxY,
-        ]);
+      const bottomRightBBWorld = viewport.canvasToWorld([
+        canvasMaxX,
+        canvasMaxY,
+      ]);
 
-        const bottomRightBBIndex = utilities.transformWorldToIndex(
-          imageData,
-          bottomRightBBWorld
-        );
+      const bottomRightBBIndex = utilities.transformWorldToIndex(
+        imageData,
+        bottomRightBBWorld
+      );
 
-        return [topLeftBBIndex, bottomRightBBIndex];
-      });
-      // Convert from canvas_pixels ^2 to mm^2
-      const area =
-        math.polyline.getArea(canvasCoordinates) * deltaInX * deltaInY;
+      // The calibration tests the handles against the ultrasound regions, so
+      // it takes the corners of the bounding box as an array.
+      const calibrate = getCalibratedLengthUnitsAndScale(image, [
+        topLeftBBIndex,
+        bottomRightBBIndex,
+      ]);
+      const { areaUnit } = calibrate;
+      // Convert from canvas_pixels ^2 to world units ^2, then to the
+      // calibrated units (cm² on an ultrasound region, for instance)
+      const area = getCalibratedAreaFromWorld(
+        image,
+        calibrate,
+        math.polyline.getArea(canvasCoordinates) * deltaInX * deltaInY
+      );
 
       cachedStats[targetId] = {
         Modality: metadata.Modality,
