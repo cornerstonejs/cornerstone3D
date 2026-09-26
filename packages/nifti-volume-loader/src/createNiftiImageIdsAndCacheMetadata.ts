@@ -324,7 +324,8 @@ async function fetchAndAllocateNiftiVolume(url) {
       imagePositionPatient,
       sliceThickness: spacing[2],
       sliceLocation: origin[2] + i * spacing[2],
-      pixelSpacing: [spacing[0], spacing[1]],
+      // DICOM order, [row spacing, column spacing], as core reads it
+      pixelSpacing: [spacing[1], spacing[0]],
       rowPixelSpacing: spacing[1],
       columnPixelSpacing: spacing[0],
     };
