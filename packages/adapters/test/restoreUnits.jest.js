@@ -128,6 +128,7 @@ describe('units restored from an SR', () => {
       );
 
       expect(stats).toMatchObject({ areaUnit, radiusUnit: unit, modalityUnit });
+      expect(Number(stats.radius)).toBe(5);
     }
   );
 
