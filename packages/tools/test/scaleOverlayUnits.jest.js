@@ -47,6 +47,9 @@ function renderScale(imageData) {
 
   tool.renderAnnotation({ viewport }, {});
 
+  if (!drawLine.mock.calls.length) {
+    return { drawn: drawTextBox.mock.calls.length > 0 };
+  }
   const [, , , start, end] = drawLine.mock.calls[0];
   const [, , , lines] = drawTextBox.mock.calls[0];
   return { lines, length: Math.hypot(end[0] - start[0], end[1] - start[1]) };
@@ -101,5 +104,17 @@ describe('ScaleOverlayTool units', () => {
 
     expect(lines).toEqual(['25 cm']);
     expect(length).toBeCloseTo(250);
+  });
+
+  it('draws no scale when none of the sizes fits the view', () => {
+    // A user calibration of 1000: the view is 0.6 mm across, below the
+    // smallest scale size
+    const result = renderScale({
+      hasPixelSpacing: true,
+      spacing: [1, 1, 1],
+      calibration: { type: 'User', scale: 1000 },
+    });
+
+    expect(result).toEqual({ drawn: false });
   });
 });

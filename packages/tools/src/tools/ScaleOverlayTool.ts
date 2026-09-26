@@ -240,6 +240,11 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
       worldHeightViewport,
       location
     );
+    // None of the scale sizes fits the view (it is too small, in the image's
+    // units, for the smallest size)
+    if (scaleSize === undefined) {
+      return renderStatus;
+    }
 
     // Applies the scale with the predetermined size to the image in
     // world coordinates, then converts them to canvas coordinates
