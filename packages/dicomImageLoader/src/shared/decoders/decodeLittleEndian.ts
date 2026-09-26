@@ -1,10 +1,12 @@
 import type { ByteArray } from 'dicom-parser';
 import type { Types } from '@cornerstonejs/core';
+import { dropNativePadding } from './nativeFrameBytes';
 
 async function decodeLittleEndian(
   imageFrame: Types.IImageFrame,
-  pixelData: ByteArray
+  frameData: ByteArray
 ): Promise<Types.IImageFrame> {
+  const pixelData = dropNativePadding(imageFrame, frameData);
   let arrayBuffer = pixelData.buffer;
 
   let offset = pixelData.byteOffset;
