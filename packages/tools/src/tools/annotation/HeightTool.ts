@@ -49,7 +49,7 @@ const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
   'tools.annotation.HeightTool'
 );
 
-const { transformWorldToIndex } = csUtils;
+const { transformWorldToIndex, transformWorldToIndexContinuous } = csUtils;
 
 /**
  * HeightTool let you draw annotations that measures the height of two drawing
@@ -700,7 +700,11 @@ class HeightTool extends AnnotationTool {
     return renderStatus;
   };
 
-  _calculateHeight(pos1, pos2) {
+  /**
+   * Returns the world axis the height is measured along: z on sagittal and
+   * coronal slices, y on axial ones. Undefined on an oblique slice.
+   */
+  _getHeightAxis(pos1, pos2): number | undefined {
     const dx = pos2[0] - pos1[0];
     const dy = pos2[1] - pos1[1];
     const dz = pos2[2] - pos1[2];
@@ -713,22 +717,42 @@ class HeightTool extends AnnotationTool {
       //SAGITAL when it reaches 0 takes the measurement of Y, to correct it we return 0.
       if (dy != 0) {
         //SAGITAL use Z:
-        return Math.abs(dz);
+        return 2;
       } else {
-        return 0;
+        // Y, where the height is 0
+        return 1;
       }
     }
     //SAGITAL AND CORONAL use Z:
     //CORONAL:
     else if (dy == 0) {
       //CORONAL use Z:
-      return Math.abs(dz);
+      return 2;
     }
     //AXIAL
     else if (dz == 0) {
       //AXIAL use Y:
-      return Math.abs(dy);
+      return 1;
     }
+  }
+
+  /**
+   * Returns the calibrated height from pos1 to pos2, or undefined on an
+   * oblique slice. The calibration scale converts index distances, so the
+   * height is measured in index space: from pos1 to pos1 moved along the
+   * height axis as far as pos2.
+   */
+  _calculateHeight(image, pos1, pos2, calibrate): number | undefined {
+    const axis = this._getHeightAxis(pos1, pos2);
+    if (axis === undefined) {
+      return;
+    }
+    const end = [...pos1] as Types.Point3;
+    end[axis] = pos2[axis];
+    return HeightTool.calculateLengthInIndex(calibrate, [
+      transformWorldToIndexContinuous(image.imageData, pos1),
+      transformWorldToIndexContinuous(image.imageData, end),
+    ]);
   }
 
   _calculateCachedStats(annotation, renderingEngine, enabledElement) {
@@ -759,9 +783,15 @@ class HeightTool extends AnnotationTool {
       const index1 = transformWorldToIndex(imageData, worldPos1);
       const index2 = transformWorldToIndex(imageData, worldPos2);
       const handles = [index1, index2];
-      const { scale, unit } = getCalibratedLengthUnitsAndScale(image, handles);
+      const calibrate = getCalibratedLengthUnitsAndScale(image, handles);
+      const { unit } = calibrate;
 
-      const height = this._calculateHeight(worldPos1, worldPos2) / scale;
+      const height = this._calculateHeight(
+        image,
+        worldPos1,
+        worldPos2,
+        calibrate
+      );
 
       const outside = this._isInsideVolume(index1, index2, dimensions);
       this.isHandleOutsideImage = outside;
