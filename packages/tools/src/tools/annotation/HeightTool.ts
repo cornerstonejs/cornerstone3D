@@ -701,39 +701,19 @@ class HeightTool extends AnnotationTool {
   };
 
   /**
-   * Returns the world axis the height is measured along: z on sagittal and
-   * coronal slices, y on axial ones. Undefined on an oblique slice.
+   * Returns the world axis the height is measured along, from the normal of
+   * the slice: z on sagittal and coronal slices, y on axial ones. Undefined
+   * on an oblique slice. The handles cannot tell the slice apart: a height
+   * drawn straight up keeps two of its three coordinates.
    */
-  _getHeightAxis(pos1, pos2): number | undefined {
-    const dx = pos2[0] - pos1[0];
-    const dy = pos2[1] - pos1[1];
-    const dz = pos2[2] - pos1[2];
-    //SAGITAL X alway 0
-    //CORONAL Y alway 0
-    //AXIAL Z alway 0
-
-    //SAGITAL:
-    if (dx == 0) {
-      //SAGITAL when it reaches 0 takes the measurement of Y, to correct it we return 0.
-      if (dy != 0) {
-        //SAGITAL use Z:
-        return 2;
-      } else {
-        // Y, where the height is 0
-        return 1;
-      }
+  _getHeightAxis(viewPlaneNormal: Types.Point3): number | undefined {
+    const normalAxis = [0, 1, 2].find((axis) =>
+      csUtils.isEqual(Math.abs(viewPlaneNormal[axis]), 1)
+    );
+    if (normalAxis === undefined) {
+      return;
     }
-    //SAGITAL AND CORONAL use Z:
-    //CORONAL:
-    else if (dy == 0) {
-      //CORONAL use Z:
-      return 2;
-    }
-    //AXIAL
-    else if (dz == 0) {
-      //AXIAL use Y:
-      return 1;
-    }
+    return normalAxis === 2 ? 1 : 2;
   }
 
   /**
@@ -742,8 +722,14 @@ class HeightTool extends AnnotationTool {
    * height is measured in index space: from pos1 to pos1 moved along the
    * height axis as far as pos2.
    */
-  _calculateHeight(image, pos1, pos2, calibrate): number | undefined {
-    const axis = this._getHeightAxis(pos1, pos2);
+  _calculateHeight(
+    image,
+    pos1,
+    pos2,
+    calibrate,
+    viewPlaneNormal: Types.Point3
+  ): number | undefined {
+    const axis = this._getHeightAxis(viewPlaneNormal);
     if (axis === undefined) {
       return;
     }
@@ -757,10 +743,14 @@ class HeightTool extends AnnotationTool {
 
   _calculateCachedStats(annotation, renderingEngine, enabledElement) {
     const data = annotation.data;
-    const { element } = enabledElement.viewport;
+    const { viewport } = enabledElement;
+    const { element } = viewport;
 
     const worldPos1 = data.handles.points[0];
     const worldPos2 = data.handles.points[1];
+    const viewPlaneNormal =
+      annotation.metadata.viewPlaneNormal ??
+      viewport.getCamera().viewPlaneNormal;
     const { cachedStats } = data;
     const targetIds = Object.keys(cachedStats);
 
@@ -790,7 +780,8 @@ class HeightTool extends AnnotationTool {
         image,
         worldPos1,
         worldPos2,
-        calibrate
+        calibrate,
+        viewPlaneNormal
       );
 
       const outside = this._isInsideVolume(index1, index2, dimensions);

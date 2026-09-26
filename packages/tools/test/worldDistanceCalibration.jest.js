@@ -44,46 +44,107 @@ function createStatsCalculator() {
 
 describe('measurements of world distances on an image with non-unit spacing', () => {
   describe('HeightTool', () => {
-    function measureHeight(points) {
+    // The view plane normals of the default axial, sagittal and coronal cameras
+    const AXIAL = [0, 0, -1];
+    const SAGITTAL = [1, 0, 0];
+    const CORONAL = [0, -1, 0];
+
+    function measureHeight(points, metadata, cameraNormal = undefined) {
       const tool = new HeightTool();
       tool.getTargetImageData = () => createImage();
       const annotation = {
         data: { handles: { points }, cachedStats: { target: {} } },
         invalidated: false,
-        metadata: {},
+        metadata,
       };
       tool._calculateCachedStats(annotation, null, {
-        viewport: createViewport(),
+        viewport: {
+          ...createViewport(),
+          getCamera: () => ({ viewPlaneNormal: cameraNormal }),
+        },
       });
       return annotation.data.cachedStats.target;
     }
 
     it('reports the vertical extent in mm on an axial slice', () => {
-      const { height, unit } = measureHeight([
-        [10, 10, 4],
-        [15, 30, 4],
-      ]);
+      const { height, unit } = measureHeight(
+        [
+          [10, 10, 4],
+          [15, 30, 4],
+        ],
+        { viewPlaneNormal: AXIAL }
+      );
 
       expect(unit).toBe('mm');
       expect(height).toBeCloseTo(20);
     });
 
-    it('reports the vertical extent in mm on a sagittal slice, across the slice spacing', () => {
-      const { height } = measureHeight([
-        [10, 10, 4],
-        [10, 30, 24],
-      ]);
+    // A height drawn straight up or down keeps the other in-plane coordinate,
+    // so the orientation cannot be read from which coordinates stay the same.
+    it.each([
+      ['an axial', AXIAL, [10, 30, 4]],
+      ['a sagittal', SAGITTAL, [10, 10, 24]],
+      ['a coronal', CORONAL, [10, 10, 24]],
+    ])(
+      'reports a height drawn straight up on %s slice',
+      (_name, viewPlaneNormal, end) => {
+        const { height } = measureHeight([[10, 10, 4], end], {
+          viewPlaneNormal,
+        });
+
+        expect(height).toBeCloseTo(20);
+      }
+    );
+
+    it.each([
+      ['sagittal', SAGITTAL, [10, 25, 24]],
+      ['coronal', CORONAL, [20, 10, 24]],
+    ])(
+      'reports the vertical extent in mm on a %s slice, across the slice spacing',
+      (_name, viewPlaneNormal, end) => {
+        const { height } = measureHeight([[10, 10, 4], end], {
+          viewPlaneNormal,
+        });
+
+        expect(height).toBeCloseTo(20);
+      }
+    );
+
+    it('reports no height on an oblique plane', () => {
+      const { height } = measureHeight(
+        [
+          [10, 10, 4],
+          [20, 30, 24],
+        ],
+        { viewPlaneNormal: [2 / Math.sqrt(5), 0, -1 / Math.sqrt(5)] }
+      );
+
+      expect(height).toBeUndefined();
+    });
+
+    it('reads a normal with rounding noise as an axial slice', () => {
+      const { height } = measureHeight(
+        [
+          [10, 10, 4],
+          [10, 30, 4],
+        ],
+        { viewPlaneNormal: [0, 1e-9, -1 + 1e-12] }
+      );
 
       expect(height).toBeCloseTo(20);
     });
 
-    it('reports no height on an oblique plane', () => {
-      const { height } = measureHeight([
-        [10, 10, 4],
-        [20, 30, 24],
-      ]);
+    it('uses the camera normal when the annotation has none', () => {
+      const { height } = measureHeight(
+        [
+          [10, 10, 4],
+          [10, 30, 4],
+        ],
+        {},
+        AXIAL
+      );
 
-      expect(height).toBeUndefined();
+      expect(height).toBeCloseTo(20);
     });
   });
 
