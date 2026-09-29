@@ -70,6 +70,52 @@ describe('compileExpression', () => {
       expect(fn2({ instances: [1, 2, 3] })).toBe(3);
     });
 
+    it('reads the implicit scope from a named parameter', () => {
+      const fn = compileExpression('SliceLocation', {
+        params: ['a', 'b'],
+        implicitScope: 'b',
+      });
+      expect(fn({ SliceLocation: 1 }, { SliceLocation: 2 })).toBe(2);
+      expect(() =>
+        compileExpression('x', { params: ['a'], implicitScope: 'c' })
+      ).toThrow(/implicitScope 'c' is not one of the parameters \(a\)/);
+    });
+
+    it('refuses a bare identifier that is not a parameter with no implicit scope', () => {
+      const options = { params: ['a', 'b', 'context'], implicitScope: false };
+      const fn = compileExpression(
+        'a.SliceLocation - b.SliceLocation',
+        options
+      );
+      expect(fn({ SliceLocation: 5 }, { SliceLocation: 2 })).toBe(3);
+      expect(() =>
+        compileExpression('SliceLocation - b.SliceLocation', options)
+      ).toThrow(ExpressionSyntaxError);
+      expect(() =>
+        compileExpression('SliceLocation - b.SliceLocation', options)
+      ).toThrow(/'SliceLocation' is not a parameter.*\(a, b, context\)/);
+      // Index expressions and template parts are checked too.
+      expect(() => compileExpression('a[Key]', options)).toThrow(/'Key'/);
+      expect(() => compileExpression('`${Name}`', options)).toThrow(/'Name'/);
+    });
+
+    it('lets an aggregate element expression read the element with no implicit scope', () => {
+      const fn = compileExpression('count(context.items, Rows > 1)', {
+        params: ['a', 'b', 'context'],
+        implicitScope: false,
+      });
+      expect(
+        fn(undefined, undefined, { items: [{ Rows: 2 }, { Rows: 0 }] })
+      ).toBe(1);
+      // The list argument is still checked.
+      expect(() =>
+        compileExpression('count(items, Rows > 1)', {
+          params: ['context'],
+          implicitScope: false,
+        })
+      ).toThrow(/'items' is not a parameter/);
+    });
+
     it('returns undefined for unknown identifiers (sparse tags)', () => {
       const fn = compileExpression('DiffusionBValue != undefined');
       expect(fn({})).toBe(false);

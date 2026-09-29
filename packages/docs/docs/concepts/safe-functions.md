@@ -65,9 +65,11 @@ tokenizer and recursive-descent parser (`safeFunctions/expression`).
   to the useful cases: `null` and `undefined` are equivalent, and number/string
   pairs coerce; the rest of the JS `==` table does not apply.
 - **Identifiers** — resolved against the named parameters first, then against
-  the fields of the first argument. So `Modality` reads `subject.Modality`, and
-  an unknown identifier is `undefined` rather than an error, which is what makes
-  sparse DICOM tags usable (`DiffusionBValue != undefined`).
+  the fields of the _implicit scope_, which is the first argument unless the
+  place says otherwise. So `Modality` reads `subject.Modality`, and an unknown
+  identifier is `undefined` rather than an error, which is what makes sparse
+  DICOM tags usable (`DiffusionBValue != undefined`). A place with no implicit
+  scope (see below) refuses a bare identifier that is not a parameter.
 - **Member access** — guarded: `__proto__`, `prototype` and `constructor` are
   rejected at parse time, so an expression cannot walk out to the prototype
   chain.
@@ -84,11 +86,35 @@ taking the surrounding operation down.
 Positional arguments bind to `options.params`, default `['instance', 'context']`
 — which is why `context.series.mixedBValue` reaches a derived fact.
 
+`options.implicitScope` says where a bare identifier that is not a parameter is
+read:
+
+| `implicitScope`        | A bare identifier such as `SliceLocation` reads                                      |
+| ---------------------- | ------------------------------------------------------------------------------------ |
+| omitted, or `true`     | the field of the first argument                                                      |
+| a parameter name (`b`) | the field of that argument                                                           |
+| `false`                | nothing — it is a compile-time `ExpressionSyntaxError` unless it is a parameter name |
+
+Use `false` where no single argument is "the subject". A comparator is called
+`(a, b, context)`, so `SliceLocation - b.SliceLocation` is almost certainly a
+mistake; with an implicit scope it would silently mean `a.SliceLocation`, and
+with `implicitScope: false` it fails to compile. Inside the element expression of
+an aggregate (`count(context.items, Rows > 1)`), bare identifiers always read the
+element.
+
+```js
+const compare = compileExpression('a.SliceLocation - b.SliceLocation', {
+  params: ['a', 'b', 'context'],
+  implicitScope: false,
+});
+```
+
 ## The structural vocabulary
 
 ### Conditions (`RawCondition`)
 
-Exactly one form per object.
+Exactly one form per object. An attribute condition has exactly one operator;
+`ignoreCase` is a modifier of `contains` / `containsAny` only.
 
 | Form                                                                     | Meaning                                                                                              |
 | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
@@ -146,12 +172,88 @@ expression; in value position a bare string is an attribute name. Value position
 had that meaning first and thousands of `groupBy: ['SeriesInstanceUID']` entries
 depend on it, so an expression in value position must use `{ expression }`.
 
+Attributes, facts and classifiers are read as **own properties only**. A name
+such as `constructor` or `toString` reads the subject's own value — usually
+`undefined` — and never a member of `Object.prototype`: so
+`{ attribute: 'toString', exists: true }` is false for an empty subject, and
+`{ seriesFact: 'constructor' }` is false.
+
+### Inline functions
+
+An actual function is accepted wherever a condition or a value is expected — as
+a whole definition, or nested (`{ all: [{ classifier: 'image' }, fn] }`,
+`{ join: '&', parts: ['Rows', fn] }`). It passes through as is. That is the
+route by which an application that turns its own markers into functions (OHIF's
+`$function`) hands them in. A definition that holds a function is no longer
+JSON, so it cannot cross the wire; prefer a [named extension](#named-extensions)
+when the definition must be shared.
+
+## The schema: one table, strict keys
+
+The forms above are not only documentation. They are one table, the **schema**
+(`safeFunctions/schema.ts`), and the compiler reads it: it selects the form of a
+fragment from it, checks the keys against it, and builds its error messages
+from it. `conditionShape` and `valueShape` are exported, and a consumer that
+wraps conditions and values in a shape of its own adds its shapes to the same
+kind of table — display-set split rules do, see
+[`splitRuleSchema`](./cornerstone-metadata/display-sets.md#the-schema-of-a-rule).
+
+Each entry of the table describes one form: the key that selects it, every key
+it allows, which keys are required, which are operators (exactly one) and which
+are modifiers (only with their operators), and what kind of data each key holds:
+
+```js
+// conditionShape.forms.attribute, abridged
+{
+  selectBy: 'attribute',
+  keys: {
+    attribute: { kind: 'string' },
+    equals: { kind: 'scalar', role: 'operator' },
+    in: { kind: 'scalar', list: true, role: 'operator' },
+    contains: { kind: 'string', role: 'operator' },
+    ignoreCase: { kind: 'boolean', role: 'modifier', with: ['contains', 'containsAny'] },
+    // ...
+  },
+}
+```
+
+The compiler is **strict**, because a key that is silently ignored changes what
+a definition means with no trace:
+
+- **An unknown key is a compile error**, anywhere. `{ attribute: 'Modality',
+equal: 'CT' }` and `{ attribute: 'Rows', bukket: 64 }` both fail, and the
+  message lists the allowed keys.
+- **A form the place does not accept is a compile error**, and the message lists
+  the accepted forms and the call signature of the place.
+- **A key of the wrong kind is a compile error**: `in` must be an array,
+  `greaterThan` a finite number, `exists` must be `true`.
+- A key named `'*'` in a table allows any key. Its entry says what each value is:
+  `literal` keeps the value as is, a shape name compiles each value as that shape.
+
+A place also declares its **expression variables** — an `ExpressionScope` of
+`params` and `implicitScope` — so an expression at that place is compiled with
+known arguments. `compileCondition` and `compileValue` take the scope, the path
+and the name of the definition for messages as a third argument:
+
+```js
+compileCondition(
+  'a.Rows > b.Rows',
+  {},
+  {
+    path: 'protocol.match',
+    definition: 'hanging protocol',
+    expression: { params: ['a', 'b'], implicitScope: false },
+  }
+);
+```
+
 ## Named extensions
 
 When a test genuinely cannot be expressed as data — a geometric check, a
 free-form heuristic — register it **by name** rather than putting a function in
-the definition. The definition stays serializable; only the name crosses the
-wire.
+the definition. (A function in the definition is accepted, but the definition
+then stops being JSON.) The definition stays serializable; only the name
+crosses the wire.
 
 ```js
 const matches = compileCondition(
@@ -168,14 +270,20 @@ them few. A definition that is pure data has no such coupling.
 
 ## Failure is eager, and names itself
 
-Compilation validates the whole definition up front and throws with the offending
-fragment inlined — the structural compiler quoting the JSON, the expression
-compiler quoting the source:
+Compilation validates the whole definition up front and throws with the path of
+the fragment and the fragment inlined — the structural compiler quoting the
+JSON, the expression compiler quoting the source:
 
 ```
-Invalid safe function definition: unknown classifier "sitProtocol": {"classifier":"sitProtocol"}
+Invalid safe function definition: unknown classifier "sitProtocol"; known: siteProtocol: {"classifier":"sitProtocol"}
+Invalid safe function definition: unknown key 'equal'; allowed: attribute, exists, absent, equals, notEquals, in, notIn, contains, containsAny, greaterThan, lessThan, ignoreCase
+Invalid safe function definition: 'ignoreCase' applies only with contains, containsAny: {"attribute":"Modality","equals":"CT","ignoreCase":true}
 Unexpected end of input in expression: Modality ===
 ```
+
+A consumer passes the path and its own name, so a message from inside a
+display-set rule reads
+`Invalid raw display set selector: rule 'r'.matches.all[1]: unknown key 'equal'; ...`.
 
 Compile once, at setup, so a bad definition fails at startup rather than midway
 through the work it was supposed to describe.
@@ -211,8 +319,11 @@ collectIdentifiers(parseExpressionSource("Modality === 'CT' && Rows > 512"));
 Only the root of a member chain is a scope lookup, so
 `instance.ViewCodeSequence[0].CodeValue` reports just `instance`.
 
-**`compileExpression` does not take a list of permitted identifiers, and does
-not reject an unknown one.** That is deliberate, for two reasons:
+**`compileExpression` does not take a list of permitted attribute names, and
+does not reject an unknown attribute.** (It does reject every bare identifier
+that is not a parameter when `implicitScope` is `false`: then the set of names
+is closed, the parameters. The attributes of a subject are not.) That is
+deliberate, for two reasons:
 
 - **The subject is open-ended at runtime.** A naturalized DICOM instance
   carries private tags, vendor additions and per-frame data folded in by the

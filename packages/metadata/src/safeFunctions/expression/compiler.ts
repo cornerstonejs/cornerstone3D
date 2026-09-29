@@ -23,9 +23,27 @@ export type CompileExpressionOptions = {
   /**
    * Names for the positional arguments of the compiled function.  Defaults
    * to `['instance', 'context']`.  Bare identifiers resolve parameter names
-   * first, then fields of the first argument (the implicit scope).
+   * first, then fields of the implicit scope (see `implicitScope`).
    */
-  params?: string[];
+  params?: readonly string[];
+  /**
+   * Where a bare identifier that is not a parameter name is looked up:
+   *
+   * - omitted or `true`: the fields of the first argument (the implicit
+   *   scope), so `Modality` reads `instance.Modality`.
+   * - a parameter name: the fields of that argument.
+   * - `false`: nowhere. The expression reads only its parameters, and a bare
+   *   identifier that is not a parameter name is a compile-time
+   *   {@link ExpressionSyntaxError}. Use it where no single argument is "the
+   *   subject" - a comparator called `(a, b, context)` - so that
+   *   `SliceLocation - b.SliceLocation` fails instead of silently reading
+   *   `a.SliceLocation`.
+   *
+   * Inside the second argument of an aggregate (`some(list, expr)`, ...) bare
+   * identifiers always read the fields of the element, whatever this option
+   * says.
+   */
+  implicitScope?: boolean | string;
 };
 
 /** Reads a property while refusing prototype-chain escape hatches. */
@@ -127,7 +145,10 @@ const AGGREGATES = new Set([
  * something it does not supply.
  *
  * Reporting is left to the host on purpose, and `compileExpression` takes no
- * list of permitted identifiers. Two reasons, both learned the hard way:
+ * list of permitted attribute names. (It can refuse every bare identifier that
+ * is not a parameter - `implicitScope: false` - because then the set of names
+ * is closed. A subject's attributes are not.) Two reasons, both learned the
+ * hard way:
  *
  *  - The subject is open-ended at runtime. A naturalized DICOM instance
  *    carries private tags, vendor additions and per-frame data folded in by
@@ -190,6 +211,75 @@ export function collectIdentifiers(node: ExpressionNode): string[] {
 
   walk(node);
   return [...found];
+}
+
+/**
+ * Throws for the first bare identifier that is not a parameter name, outside
+ * the element expression of an aggregate (where bare identifiers read the
+ * element's fields). Used for an expression compiled with no implicit scope.
+ */
+function assertOnlyParams(
+  node: ExpressionNode,
+  paramNames: readonly string[],
+  expression: string
+): void {
+  const allowed = new Set(paramNames);
+  const walk = (current: ExpressionNode): void => {
+    switch (current.type) {
+      case 'literal':
+        return;
+      case 'identifier':
+        if (!allowed.has(current.name)) {
+          throw new ExpressionSyntaxError(
+            `'${current.name}' is not a parameter, and this expression has no ` +
+              `implicit scope; it can read only (${paramNames.join(', ')})`,
+            expression
+          );
+        }
+        return;
+      case 'member':
+        walk(current.object);
+        return;
+      case 'index':
+        walk(current.object);
+        walk(current.index);
+        return;
+      case 'call':
+        if (AGGREGATES.has(current.callee)) {
+          // The element expression reads the element: not checked here.
+          if (current.args[0]) {
+            walk(current.args[0]);
+          }
+          return;
+        }
+        current.args.forEach(walk);
+        return;
+      case 'unary':
+        walk(current.argument);
+        return;
+      case 'binary':
+      case 'logical':
+        walk(current.left);
+        walk(current.right);
+        return;
+      case 'conditional':
+        walk(current.test);
+        walk(current.consequent);
+        walk(current.alternate);
+        return;
+      case 'array':
+        current.elements.forEach(walk);
+        return;
+      case 'template':
+        current.parts.forEach((part) => {
+          if (part.kind === 'expr') {
+            walk(part.node);
+          }
+        });
+        return;
+    }
+  };
+  walk(node);
 }
 
 function resolveIdentifier(name: string, scope: EvaluationScope): unknown {
@@ -408,17 +498,36 @@ function compileNode(node: ExpressionNode, expression: string): NodeEvaluator {
  *
  * Calling convention: the compiled function's positional arguments bind to
  * `options.params` (default `['instance', 'context']`).  Bare identifiers
- * resolve parameter names first, then fields of the first argument.
+ * resolve parameter names first, then fields of the implicit scope - the
+ * first argument unless `options.implicitScope` says otherwise.
  *
- * An identifier the subject does not carry resolves to `undefined`; see
- * {@link collectIdentifiers} for reporting that.
+ * With an implicit scope, an identifier the subject does not carry resolves to
+ * `undefined` (the subject is open-ended; see {@link collectIdentifiers} for
+ * reporting that). With `implicitScope: false` the set of names is closed - the
+ * parameters - so an unknown bare identifier is a compile-time error.
  */
 export function compileExpression(
   source: string,
   options: CompileExpressionOptions = {}
 ): CompiledExpression {
   const paramNames = options.params ?? ['instance', 'context'];
+  const { implicitScope = true } = options;
+  let implicitIndex = -1;
+  if (implicitScope === true) {
+    implicitIndex = 0;
+  } else if (typeof implicitScope === 'string') {
+    implicitIndex = paramNames.indexOf(implicitScope);
+    if (implicitIndex === -1) {
+      throw new ExpressionSyntaxError(
+        `implicitScope '${implicitScope}' is not one of the parameters (${paramNames.join(', ')})`,
+        source
+      );
+    }
+  }
   const ast = parseExpressionSource(source);
+  if (implicitIndex === -1) {
+    assertOnlyParams(ast, paramNames, source);
+  }
   const evaluator = compileNode(ast, source);
   let warned = false;
 
@@ -427,7 +536,10 @@ export function compileExpression(
     paramNames.forEach((name, index) => {
       params[name] = args[index];
     });
-    const scope: EvaluationScope = { params, implicit: [args[0]] };
+    const scope: EvaluationScope = {
+      params,
+      implicit: implicitIndex === -1 ? [] : [args[implicitIndex]],
+    };
     try {
       return evaluator(scope);
     } catch (error) {

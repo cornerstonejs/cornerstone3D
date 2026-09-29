@@ -21,9 +21,17 @@ export {
   rawDisplaySetSelector,
   createDisplaySetSplitRules,
 } from './rawDisplaySetSelector';
+export {
+  splitRuleSchema,
+  COMPARATOR_EXPRESSION_SCOPE,
+  SERIES_FACT_SCOPES,
+  CUSTOM_ATTRIBUTE_CONTEXT_NAMES,
+  CUSTOM_ATTRIBUTE_OPTION_NAMES,
+} from './splitRuleSchema';
 export type {
   ClassifierName,
   InstanceClassifier,
+  RawComparator,
   RawCondition,
   RawValue,
   RawSeriesFact,

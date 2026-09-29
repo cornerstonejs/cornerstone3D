@@ -31,6 +31,11 @@
  * executed code. A selector can therefore be loaded from a config file, an HTTP
  * response, or an application's customization layer.
  *
+ * The compiler is *strict*. Every place in a rule, the forms it accepts and the
+ * keys of each form are one table, `splitRuleSchema` (`./splitRuleSchema.ts`),
+ * which the compiler reads. An unknown key or an unaccepted form is a compile
+ * error that names the rule and the path, never a key that is silently ignored.
+ *
  * Deliberately no dependency on any application service. Cornerstone knows
  * nothing about OHIF's `customizationService`, and must not: an application that
  * has one resolves its overrides itself and passes the resulting plain data in.
@@ -46,7 +51,18 @@ import { isVideoInstance } from './isVideoInstance';
 import { isWsiInstance } from './isWsiInstance';
 import { NO_VIEWPORT_TYPE } from './types';
 import { validateSplitRuleSetEntry } from './splitRuleSet';
-import { compileCondition, compileValue, toFinite } from '../safeFunctions';
+import { splitRuleSchema } from './splitRuleSchema';
+import {
+  at,
+  compileExpressionAt,
+  compileKey,
+  createSite,
+  invalidAt,
+  matchForm,
+  readOwn,
+  safeFunctionCompilers,
+  toFinite,
+} from '../safeFunctions';
 
 /**
  * @typedef {import('./rawDisplaySetSelectorTypes').RawCondition} RawCondition
@@ -314,12 +330,15 @@ export const rawDisplaySetSelector = {
   },
 };
 
+/** What the messages call a selector. */
+const DEFINITION = 'raw display set selector';
+
 /**
  * Throws with the offending fragment inlined - a selector is usually authored by
  * hand or shipped as config, so a mistake in it must name itself.
  *
- * Scoped to the *rule shape* this module defines. Mistakes inside a condition or
- * value are reported by the safe-function compiler, which names itself instead.
+ * Only for the selector as a whole. A mistake inside a rule is reported at its
+ * path through the schema (`rule 'id'.matches.all[1]: ...`).
  *
  * @param {string} message
  * @param {unknown} fragment
@@ -327,38 +346,56 @@ export const rawDisplaySetSelector = {
  */
 function invalid(message, fragment) {
   throw new Error(
-    `Invalid raw display set selector: ${message}: ${JSON.stringify(fragment)}`
+    `Invalid ${DEFINITION}: ${message}: ${JSON.stringify(fragment)}`
   );
 }
 
 /**
- * Compiles a rule's {@link RawSeriesFact} list into its `series` hook: one
+ * The compiled field of a rule, or of a nested shape, as its schema entry says.
+ *
+ * @param {import('../safeFunctions').SchemaForm} form
+ * @param {Record<string, unknown>} fragment
+ * @param {string} key
+ * @param {import('../safeFunctions').SchemaSite} site
+ * @returns {any}
+ */
+function compileField(form, fragment, key, site) {
+  const spec = form.keys[key];
+  return compileKey(spec, fragment[key], at(site, key, spec));
+}
+
+/**
+ * Compiles one {@link RawSeriesFact}. The whole list becomes the rule's
+ * `series` hook in {@link compileSeriesHook}.
+ *
+ * @param {unknown} fact
+ * @param {import('../safeFunctions').SchemaSite} site
+ */
+function compileSeriesFact(fact, site) {
+  const [, form] = matchForm(splitRuleSchema.seriesFact, fact, site);
+  return {
+    name: fact.name,
+    scope: fact.scope,
+    minInstances: fact.minInstances,
+    gate:
+      fact.gate === undefined
+        ? undefined
+        : compileField(form, fact, 'gate', site),
+    when: compileField(form, fact, 'when', site),
+  };
+}
+
+/**
+ * Turns the compiled series facts of a rule into its `series` hook: one
  * function returning every named fact for that rule.
  *
  * Facts are evaluated against the whole series but read back per instance, so
  * this runs once per rule per split rather than per instance.
  *
- * @param {RawSeriesFact[]} facts
- * @param {Record<string, (instance: NaturalizedInstance) => boolean>} classifiers
+ * @param {ReturnType<typeof compileSeriesFact>[]} compiled
  * @returns {(context: { instances: NaturalizedInstance[] }) => SeriesFacts}
  */
-function compileSeriesFacts(facts, classifiers) {
-  const compiled = facts.map((fact) => {
-    if (!fact?.name) {
-      invalid('series fact requires a name', fact);
-    }
-    if (!['first', 'every', 'some', 'mixed'].includes(fact.scope)) {
-      invalid(`series fact "${fact.name}" has an unknown scope`, fact);
-    }
-    return {
-      name: fact.name,
-      scope: fact.scope,
-      minInstances: fact.minInstances,
-      gate: fact.gate ? compileCondition(fact.gate, classifiers) : undefined,
-      when: compileCondition(fact.when, classifiers),
-    };
-  });
-
+function compileSeriesHook(compiled) {
   // Facts never read other facts, so an empty series context is the right
   // argument for the nested condition evaluation.
   const emptyContext = { series: {} };
@@ -402,7 +439,7 @@ function evaluateSeriesFact(fact, instances, context) {
 
   switch (fact.scope) {
     case 'first':
-      return fact.when(first, context);
+      return Boolean(fact.when(first, context));
     case 'every':
       return instances.every((instance) => fact.when(instance, context));
     case 'some':
@@ -418,6 +455,46 @@ function evaluateSeriesFact(fact, instances, context) {
 }
 
 /**
+ * Compiles a rule's `compareInstances` data into a comparator
+ * `(a, b, context) => number`.
+ *
+ * - `{ attribute, number?, descending? }` orders by the numeric value of the
+ *   attribute. A missing value on either side returns 0: "no opinion".
+ * - `{ expression }` evaluates the expression with the parameters `a`, `b` and
+ *   `context`, and no implicit scope. The result is coerced to a number, so a
+ *   missing tag gives `NaN`, which the engine also reads as "no opinion".
+ *
+ * @param {unknown} comparator
+ * @param {import('../safeFunctions').SchemaSite} site
+ * @returns {NonNullable<SplitRule['compareInstances']>}
+ */
+function compileComparator(comparator, site) {
+  const [form, spec] = matchForm(splitRuleSchema.comparator, comparator, site);
+
+  if (form === 'expression') {
+    const evaluate = compileExpressionAt(
+      comparator.expression,
+      at(site, 'expression'),
+      spec.expression
+    );
+    return (a, b, context) => Number(evaluate(a, b, context));
+  }
+
+  const { attribute, descending } = comparator;
+  const direction = descending ? -1 : 1;
+  return (a, b) => {
+    const aValue = toFinite(readOwn(a, attribute));
+    const bValue = toFinite(readOwn(b, attribute));
+    if (aValue === undefined || bValue === undefined) {
+      // Let the engine's acquisition-order tiebreak decide rather than
+      // inventing an order from a missing tag.
+      return 0;
+    }
+    return (aValue - bValue) * direction;
+  };
+}
+
+/**
  * Compiles a {@link RawCustomAttributes} recipe into a rule's
  * `customAttributes` callback.
  *
@@ -426,25 +503,33 @@ function evaluateSeriesFact(fact, instances, context) {
  * are deliberately *not* reachable here - the engine does not forward them - so
  * conditions inside a recipe evaluate against an empty series context.
  *
- * @param {RawCustomAttributes} recipe
- * @param {Record<string, (instance: NaturalizedInstance) => boolean>} classifiers
+ * @param {unknown} recipe
+ * @param {import('../safeFunctions').SchemaSite} site
  * @param {NonNullable<CreateDisplaySetSplitRulesOptions['customAttributePresets']>} presets
  * @returns {NonNullable<SplitRule['customAttributes']>}
  */
-function compileCustomAttributes(recipe, classifiers, presets) {
-  const literals = recipe.set ?? {};
-  const fromFirstInstance = Object.entries(recipe.fromFirstInstance ?? {}).map(
-    ([key, value]) => ({ key, read: compileValue(value, classifiers) })
-  );
+function compileCustomAttributes(recipe, site, presets) {
+  const [, form] = matchForm(splitRuleSchema.customAttributes, recipe, site);
+  const field = (key) =>
+    recipe[key] === undefined
+      ? undefined
+      : compileField(form, recipe, key, site);
+
+  const literals = field('set') ?? {};
+  const fromFirstInstance = Object.entries(field('fromFirstInstance') ?? {});
   const contextNames = recipe.fromContext ?? [];
   const optionNames = recipe.fromOptions ?? [];
   const emptyContext = { series: {} };
 
   let preset;
   if (recipe.preset !== undefined) {
-    preset = presets[recipe.preset];
+    preset = readOwn(presets, recipe.preset);
     if (typeof preset !== 'function') {
-      invalid(`unknown customAttributes preset "${recipe.preset}"`, recipe);
+      invalidAt(
+        at(site, 'preset'),
+        `unknown customAttributes preset "${recipe.preset}"; known: ${Object.keys(presets).join(', ') || '(none)'}`,
+        recipe
+      );
     }
   }
 
@@ -455,7 +540,7 @@ function compileCustomAttributes(recipe, classifiers, presets) {
     /** @type {Record<string, unknown>} */
     const result = { ...literals };
 
-    for (const { key, read } of fromFirstInstance) {
+    for (const [key, read] of fromFirstInstance) {
       result[key] = first === undefined ? undefined : read(first, emptyContext);
     }
 
@@ -492,6 +577,13 @@ function compileCustomAttributes(recipe, classifiers, presets) {
  * priority. Compilation is eager: a malformed selector throws here, at setup,
  * rather than midway through splitting a study.
  *
+ * Compilation is strict, and follows {@link splitRuleSchema}: an unknown field
+ * or key anywhere in a rule, or a form a place does not accept, throws with the
+ * rule id and the path of the fragment. An actual function passes through as is
+ * at every function place (`matches`, a `groupBy` entry, `runBy`,
+ * `compareInstances`, `series`, `customAttributes`, and any nested condition or
+ * value).
+ *
  * ```js
  * import {
  *   createDisplaySetSplitRules,
@@ -527,16 +619,25 @@ export function createDisplaySetSplitRules(
 
   const classifiers = { ...BUILT_IN_CLASSIFIERS, ...options.classifiers };
   const presets = options.customAttributePresets ?? {};
+  const compilers = {
+    ...safeFunctionCompilers,
+    seriesFact: compileSeriesFact,
+    comparator: compileComparator,
+    customAttributes: (recipe, site) =>
+      compileCustomAttributes(recipe, site, presets),
+  };
 
   /** @type {SplitRuleSet} */
   const compiledSet = {};
   for (const [id, rule] of Object.entries(selector)) {
     validateSplitRuleSetEntry(id, rule);
-    const { id: _id, ...compiledRule } = compileRule(
-      { ...rule, id },
+    const site = createSite(
       classifiers,
-      presets
+      { definition: DEFINITION, path: `rule '${id}'` },
+      splitRuleSchema,
+      compilers
     );
+    const { id: _id, ...compiledRule } = compileRule(id, rule, site);
     compiledSet[id] = { ...compiledRule, priority: rule.priority };
   }
   return compiledSet;
@@ -545,58 +646,52 @@ export function createDisplaySetSplitRules(
 /**
  * Compiles one raw rule into a {@link SplitRule}.
  *
- * @param {RawSplitRule & { id: string }} rule
- * @param {Record<string, (instance: NaturalizedInstance) => boolean>} classifiers
- * @param {NonNullable<CreateDisplaySetSplitRulesOptions['customAttributePresets']>} presets
+ * @param {string} id - the key of the rule in the selector.
+ * @param {RawSplitRule} rule
+ * @param {import('../safeFunctions').SchemaSite} site
  * @returns {SplitRule}
  */
-function compileRule(rule, classifiers, presets) {
+function compileRule(id, rule, site) {
+  const [, form] = matchForm(splitRuleSchema.rule, rule, site);
+  const field = (key) => compileField(form, rule, key, site);
+
   /** @type {SplitRule} */
-  const compiled = { id: rule.id };
+  const compiled = { id };
 
-  if (rule.viewportTypes) {
-    compiled.viewportTypes = rule.viewportTypes;
+  if (rule.viewportTypes !== undefined) {
+    compiled.viewportTypes = field('viewportTypes');
   }
 
-  if (rule.series?.length) {
-    compiled.series = compileSeriesFacts(rule.series, classifiers);
+  if (rule.series !== undefined) {
+    const series = field('series');
+    if (typeof series === 'function') {
+      compiled.series = series;
+    } else if (series.length) {
+      compiled.series = compileSeriesHook(series);
+    }
   }
 
-  if (rule.matches) {
-    compiled.matches = compileCondition(rule.matches, classifiers);
+  if (rule.matches !== undefined) {
+    compiled.matches = field('matches');
   }
 
-  if (rule.groupBy?.length) {
-    compiled.groupBy = rule.groupBy.map((part) =>
-      compileValue(part, classifiers)
-    );
+  if (rule.groupBy !== undefined) {
+    const groupBy = field('groupBy');
+    if (groupBy.length) {
+      compiled.groupBy = groupBy;
+    }
   }
 
-  if (rule.runBy) {
-    compiled.runBy = compileValue(rule.runBy, classifiers);
+  if (rule.runBy !== undefined) {
+    compiled.runBy = field('runBy');
   }
 
-  if (rule.compareInstances) {
-    const { attribute, descending } = rule.compareInstances;
-    const direction = descending ? -1 : 1;
-    compiled.compareInstances = (a, b) => {
-      const aValue = toFinite(a[attribute]);
-      const bValue = toFinite(b[attribute]);
-      if (aValue === undefined || bValue === undefined) {
-        // Let the engine's acquisition-order tiebreak decide rather than
-        // inventing an order from a missing tag.
-        return 0;
-      }
-      return (aValue - bValue) * direction;
-    };
+  if (rule.compareInstances !== undefined) {
+    compiled.compareInstances = field('compareInstances');
   }
 
-  if (rule.customAttributes) {
-    compiled.customAttributes = compileCustomAttributes(
-      rule.customAttributes,
-      classifiers,
-      presets
-    );
+  if (rule.customAttributes !== undefined) {
+    compiled.customAttributes = field('customAttributes');
   }
 
   return compiled;

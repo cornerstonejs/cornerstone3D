@@ -9,7 +9,8 @@ import update, { extend } from 'immutability-helper';
  * example needs to merge a rule set the way an OHIF deployment would, and
  * `immutability-helper` is a root devDependency (pinned to `3.1.1`, the version
  * `@ohif/core` uses) so no published Cornerstone package gains a dependency.
- * Nothing under `packages/` imports this file.
+ * No published package source imports this file; only the examples do (for
+ * example `packages/core/examples/displaySetRules`).
  *
  * Commands are `immutability-helper`'s built-ins — `$set`, `$merge`, `$push`,
  * `$unshift`, `$splice`, `$apply`, `$toggle`, `$add`, `$remove` — plus

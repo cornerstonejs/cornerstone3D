@@ -286,6 +286,78 @@ describe('displayset split utilities', () => {
     );
   });
 
+  describe('customAttributes that replace viewportTypes', () => {
+    const imageInstances: NaturalizedInstance[] = [
+      {
+        imageId: 'wadors:vt-1',
+        SOPClassUID: '1.2.840.10008.5.1.4.1.1.2',
+        Modality: 'CT',
+        Rows: 512,
+        SeriesInstanceUID: 'series-vt',
+        InstanceNumber: 1,
+      },
+    ];
+
+    it('builds the non-displayable shape when customAttributes turn a displayable rule off', () => {
+      const displaySet = createDisplaySetFromGroup({
+        instances: imageInstances,
+        matchedRule: {
+          id: 'turnedOff',
+          viewportTypes: ['stack'],
+          customAttributes: () => ({ viewportTypes: ['none'], label: 'x' }),
+        },
+      });
+
+      expect(displaySet.viewportTypes).toEqual(['none']);
+      expect(displaySet.isDisplayable).toBe(false);
+      expect(displaySet.preferredViewportType).toBe('none');
+      // The class and imageIds match isDisplayable: no frame-level imageIds.
+      expect(displaySet).not.toBeInstanceOf(ImageStackDisplaySet);
+      expect(displaySet.imageIds).toEqual([]);
+      expect(displaySet.underlyingImageIds).toEqual(['wadors:vt-1']);
+      expect((displaySet as unknown as Record<string, unknown>).label).toBe(
+        'x'
+      );
+    });
+
+    it('builds an image stack when customAttributes turn a non-displayable rule on', () => {
+      const displaySet = createDisplaySetFromGroup({
+        instances: imageInstances,
+        matchedRule: {
+          id: 'turnedOn',
+          viewportTypes: ['none'],
+          customAttributes: () => ({ viewportTypes: ['stack', 'volume'] }),
+        },
+      });
+
+      expect(displaySet.viewportTypes).toEqual(['stack', 'volume']);
+      expect(displaySet.isDisplayable).toBe(true);
+      expect(displaySet.preferredViewportType).toBe('stack');
+      expect(displaySet).toBeInstanceOf(ImageStackDisplaySet);
+      expect(displaySet.imageIds).toEqual(['wadors:vt-1']);
+    });
+
+    it('passes the rule viewportTypes to customAttributes, and cannot be overridden by isDisplayable', () => {
+      let seen: unknown;
+      const displaySet = createDisplaySetFromGroup({
+        instances: imageInstances,
+        matchedRule: {
+          id: 'lies',
+          viewportTypes: ['none'],
+          customAttributes: ({ viewportTypes }) => {
+            seen = viewportTypes;
+            return { isDisplayable: true, preferredViewportType: 'stack' };
+          },
+        },
+      });
+
+      expect(seen).toEqual(['none']);
+      expect(displaySet.isDisplayable).toBe(false);
+      expect(displaySet.preferredViewportType).toBe('none');
+      expect(displaySet.imageIds).toEqual([]);
+    });
+  });
+
   it('derives unique displaySetIds for splits of one series', () => {
     const seriesUID = 'series-split';
     const makeGroup = (imageId: string): InstanceGroup => ({

@@ -281,6 +281,16 @@ the resolved data fields a display set is built from — `imageIds`,
 be overwritten, so the underlying-vs-frame image id invariant the viewports rely
 on always holds.
 
+A `viewportTypes` key in the returned attributes replaces the rule's viewport
+types, and it does so **before** the display set is built:
+`createDisplaySetFromGroup` runs `customAttributes` first, resolves the
+effective viewport types, chooses the display set class from them (an image
+stack, a base display set, or the non-displayable shape with empty `imageIds`),
+and then applies the other attributes. So custom attributes that turn a
+displayable group into `['none']` get the non-displayable shape, and the
+reverse. `isDisplayable` and `preferredViewportType` are always derived from
+the effective viewport types; custom attributes cannot set them to disagree.
+
 A few engine guarantees worth knowing when writing rules:
 
 - **Buckets are namespaced by rule.** Two different rules can never merge into
@@ -452,14 +462,119 @@ in — `matches`, `groupBy`, `runBy`, `series` facts, `compareInstances`,
 `customAttributes` — plus the built-in instance classifiers (`image`, `video`,
 `ecg`, `wsi`) and the default selector.
 
-| Rule field         | Built from                                                                                  |
-| ------------------ | ------------------------------------------------------------------------------------------- |
-| `matches`          | one condition — which instances this rule claims                                            |
-| `groupBy`          | a list of values — the bucket key each instance contributes                                 |
-| `runBy`            | one value — a change starts a new run within a bucket                                       |
-| `series`           | `{ name, scope, when, gate }` — a fact over the whole series, read back as `{ seriesFact }` |
-| `compareInstances` | `{ attribute, number, descending }` — instance order within a group                         |
-| `customAttributes` | literals, values read from the first instance, or a named preset                            |
+| Rule field         | Built from                                                                                                      | Compiled to                                        |
+| ------------------ | --------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `matches`          | one condition — which instances this rule claims                                                                | `(instance, context) => boolean`                   |
+| `groupBy`          | a list of values — the bucket key each instance contributes                                                     | each entry: `(instance, context) => value`         |
+| `runBy`            | one value — a change starts a new run within a bucket                                                           | `(instance, context) => value`                     |
+| `series`           | a list of `{ name, scope, when, gate?, minInstances? }` — facts over the whole series, read as `{ seriesFact }` | `({ instances }) => facts`                         |
+| `compareInstances` | `{ attribute, number?, descending? }` or `{ expression }` — instance order within a group                       | `(a, b, context) => number`                        |
+| `customAttributes` | `{ set?, fromFirstInstance?, fromContext?, fromOptions?, preset? }`                                             | `(attributes, options) => Record<string, unknown>` |
+
+The other fields are data: `id` (optional, must equal the key), `priority`,
+`description` and `viewportTypes`.
+
+### The schema of a rule
+
+Every place in a rule, and the forms each place accepts, are one table:
+`splitRuleSchema`, exported from `@cornerstonejs/metadata`.
+`createDisplaySetSplitRules` reads it — to select the form of each fragment, to
+check its keys, to take the expression variables of each place, and to build
+its error messages — so the table cannot drift from what compiles. It is keyed
+by shape: `rule` (the rule itself), `seriesFact`, `comparator`,
+`customAttributes`, and the generic `condition` and `value` shapes from
+[Safe Functions](../safe-functions.md#the-schema-one-table-strict-keys).
+
+Each rule field says what it holds and, for a place that becomes a function, how
+the function is called:
+
+```js
+// splitRuleSchema.rule.forms.rule.keys, abridged
+{
+  matches: {
+    kind: 'condition',
+    call: '(instance, context) => boolean',
+    expression: { params: ['instance', 'context'], implicitScope: 'instance' },
+    optional: true,
+  },
+  compareInstances: {
+    kind: 'comparator',
+    call: '(a, b, context) => number',
+    optional: true,
+  },
+  customAttributes: {
+    kind: 'customAttributes',
+    function: true, // a whole callback is accepted
+    call: '(attributes, options) => Record<string, unknown>',
+    optional: true,
+  },
+}
+
+// splitRuleSchema.customAttributes.forms.recipe.keys, abridged
+{
+  set: { kind: 'record', keys: { '*': { kind: 'literal' } } },
+  fromFirstInstance: {
+    kind: 'record',
+    keys: { '*': { kind: 'value', call: '(firstInstance, context) => value' } },
+  },
+  fromContext: { kind: 'string', list: true, oneOf: ['isMultiFrame', 'sopClassUids', 'viewportTypes'] },
+  fromOptions: { kind: 'string', list: true, oneOf: ['splitNumber', 'descriptionName'] },
+  preset: { kind: 'string' },
+}
+```
+
+The compiler is **strict**. A wrong rule fails at compile time; it is never
+silently ignored:
+
+- **An unknown key is an error, anywhere in a rule.** A typo such as `matchs`
+  would otherwise leave the rule with no `matches`, so it would claim every
+  instance. The message names the rule, the path and the allowed keys:
+
+  ```
+  Invalid raw display set selector: rule 'r': unknown field 'matchs'; allowed: id, priority, description, viewportTypes, series, matches, groupBy, runBy, compareInstances, customAttributes
+  Invalid raw display set selector: rule 'r'.customAttributes: unknown key 'fromFirstInstnce'; allowed: set, fromFirstInstance, fromContext, fromOptions, preset
+  Invalid raw display set selector: rule 'r'.customAttributes.fromContext[0]: unknown fromContext "isMultiFrme"; allowed: isMultiFrame, sopClassUids, viewportTypes
+  Invalid raw display set selector: rule 'r'.matches: 'ignoreCase' applies only with contains, containsAny: {...}
+  ```
+
+- **A form the place does not accept is an error**, and the message lists the
+  accepted forms and the call signature:
+
+  ```
+  Invalid raw display set selector: rule 'r'.compareInstances: unrecognized comparator; expected { attribute, number?, descending? }, { expression } called with (a, b, context), or a function (a, b, context) => number: {"atribute":"SliceLocation"}
+  ```
+
+- **Wildcard keys.** `'*'` in the table allows any key. `customAttributes.set.*`
+  keeps each value as a literal; `customAttributes.fromFirstInstance.*` compiles
+  each value as a value read from the first instance of the group.
+- **An actual function passes through as is** at every function place — a whole
+  `matches`, a `groupBy` entry, `runBy`, `compareInstances`, a whole `series`
+  hook, a whole `customAttributes` — and wherever a nested condition or value is
+  expected, e.g. inside `all: [...]` or as a `fromFirstInstance` value. The
+  strictness applies to data only. A selector with a function in it is no longer
+  JSON, so it cannot be shared with a server.
+
+### Comparators as data
+
+`compareInstances` takes one of three forms, each compiled to
+`(a, b, context) => number`:
+
+```js
+// Ascending by a numeric attribute; `descending: true` reverses it.
+compareInstances: { attribute: 'SliceLocation', number: true },
+
+// An expression over a, b and context.
+compareInstances: { expression: 'a.SliceLocation - b.SliceLocation' },
+
+// An actual function, as is.
+compareInstances: (a, b) => a.SliceLocation - b.SliceLocation,
+```
+
+A comparator expression has **no implicit scope**: the only names it can read
+are `a`, `b` and `context`. So `'SliceLocation - b.SliceLocation'` is a compile
+error, rather than silently reading `a.SliceLocation`. The result is coerced to a
+number; a result of `0` or `NaN` (a missing tag on one side) is "no opinion",
+and the next comparator decides — see [Who decides instance order](#who-decides-instance-order).
 
 ### Who decides instance order
 
@@ -587,8 +702,9 @@ display set identities.
 
 When a classification genuinely cannot be expressed as data, register it by name
 rather than reaching for a function in the selector — the
-[named extension](../safe-functions.md#named-extensions) point. This keeps the
-selector itself serializable. `createDisplaySetSplitRules` takes two registries:
+[named extension](../safe-functions.md#named-extensions) point. A function in the
+selector compiles (see [the schema of a rule](#the-schema-of-a-rule)), but a
+named extension keeps the selector itself serializable. `createDisplaySetSplitRules` takes two registries:
 `classifiers`, which is the safe-function one, and `customAttributePresets`,
 which is specific to display sets because a preset returns display set
 attributes:

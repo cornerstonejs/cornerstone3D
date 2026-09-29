@@ -1,4 +1,4 @@
-import type { NaturalizedInstance, RuleContext } from './types';
+import type { NaturalizedInstance, RuleContext, SplitRule } from './types';
 import type {
   Classifier,
   ClassifierName,
@@ -21,6 +21,10 @@ import type {
  * vocabulary from `../safeFunctions`, which knows nothing about display sets.
  * What this module adds is the rule shape that vocabulary is wrapped in -
  * `matches`, `groupBy`, `runBy`, `series` facts, `customAttributes`.
+ *
+ * These types follow `splitRuleSchema` (`splitRuleSchema.ts`), the table the
+ * compiler reads. A key that is not in that table is a compile error, and an
+ * actual function is accepted at every function place.
  *
  * @see ../safeFunctions for the condition/value vocabulary and its compiler.
  * @see rawDisplaySetSelector.js for the default selector and the rule compiler.
@@ -114,22 +118,57 @@ export type RawSplitRule = {
   description?: string;
   /** Allowed viewport types; index 0 is preferred. */
   viewportTypes?: string[];
-  /** Facts derived from the whole series and read back via `{ seriesFact }`. */
-  series?: RawSeriesFact[];
-  /** Which instances this rule claims. Omit for a catch-all rule. */
-  matches?: RawCondition;
-  /** Bucket recipe; defaults to `['SeriesInstanceUID']`. */
-  groupBy?: RawValue[];
-  /** Value whose changes start a new run (see {@link SplitRule.runBy}). */
-  runBy?: RawValue;
   /**
-   * Instance ordering for this rule. `{ attribute, number: true }` sorts
-   * ascending by that attribute; `descending` reverses it.
+   * Facts derived from the whole series and read back via `{ seriesFact }`. An
+   * actual function replaces the whole list: it is the rule's `series` hook.
    */
-  compareInstances?: { attribute: string; number?: true; descending?: true };
-  /** Extra attributes for the produced display sets. */
-  customAttributes?: RawCustomAttributes;
+  series?: RawSeriesFact[] | NonNullable<SplitRule['series']>;
+  /**
+   * Which instances this rule claims, compiled to
+   * `(instance, context) => boolean`. Omit for a catch-all rule.
+   */
+  matches?: RawCondition;
+  /**
+   * Bucket recipe; defaults to `['SeriesInstanceUID']`. Each entry compiles to
+   * `(instance, context) => value`.
+   */
+  groupBy?: RawValue[];
+  /**
+   * Value whose changes start a new run (see {@link SplitRule.runBy}), compiled
+   * to `(instance, context) => value`.
+   */
+  runBy?: RawValue;
+  /** Instance ordering for this rule. See {@link RawComparator}. */
+  compareInstances?: RawComparator;
+  /**
+   * Extra attributes for the produced display sets: a recipe, or an actual
+   * `customAttributes` callback.
+   */
+  customAttributes?:
+    | RawCustomAttributes
+    | NonNullable<SplitRule['customAttributes']>;
 };
+
+/**
+ * A rule's `compareInstances`, compiled to `(a, b, context) => number`. A
+ * result of 0 or `NaN` is "no opinion": the next comparator decides.
+ */
+export type RawComparator =
+  /**
+   * Ascending by the numeric value of the attribute; `descending` reverses. A
+   * missing value on either side is "no opinion". (`number` is accepted for
+   * symmetry with values; the comparison is always numeric.)
+   */
+  | { attribute: string; number?: boolean; descending?: boolean }
+  /**
+   * An expression called with `(a, b, context)`, e.g.
+   * `'a.SliceLocation - b.SliceLocation'`. There is no implicit scope: a bare
+   * identifier that is not `a`, `b` or `context` is a compile error. The result
+   * is coerced to a number.
+   */
+  | { expression: string }
+  /** An actual comparator, which passes through as is. */
+  | NonNullable<SplitRule['compareInstances']>;
 
 /**
  * A whole raw selector: rules keyed by rule id, the data form of a

@@ -10,7 +10,11 @@
  * hanging protocols and any other place that today ships hand-written matching
  * code are the intended next ones.
  *
- * Everything here is plain JSON: objects, arrays, strings, numbers, booleans.
+ * Everything here is plain JSON: objects, arrays, strings, numbers, booleans -
+ * except that an actual function is also accepted in the place of any
+ * condition or value, and passes through as is. The keys each form allows are
+ * in the schema (`schema.ts`), which the compiler reads; an unknown key is a
+ * compile error.
  * The behaviour that JSON cannot express — "is this instance a video?" — is
  * referenced **by name** and resolved against a registry the caller supplies.
  * That is what makes the compiled predicates *safe*: they are assembled from a
@@ -96,7 +100,21 @@ export type RawCondition =
   /** All / any / negation of nested conditions. `all: []` is true, `any: []` false. */
   | { all: RawCondition[] }
   | { any: RawCondition[] }
-  | { not: RawCondition };
+  | { not: RawCondition }
+  /**
+   * An actual function, which passes through as is. Not JSON: an application
+   * that turns its own markers into functions (OHIF's `$function`) hands the
+   * result in here. Strictness applies to data only.
+   */
+  | InlinePredicate;
+
+/** A function in the place of a condition, called `(subject, context)`. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type InlinePredicate = (subject: any, context?: any) => boolean;
+
+/** A function in the place of a value, called `(subject, context)`. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type InlineValue = (subject: any, context?: any) => unknown;
 
 /**
  * A value read off a subject. Used wherever a definition needs a *value* rather
@@ -141,7 +159,9 @@ export type RawValue =
   | {
       join: string;
       parts: (RawValue & { label?: string })[];
-    };
+    }
+  /** An actual function, which passes through as is (see {@link InlinePredicate}). */
+  | InlineValue;
 
 /** A compiled {@link RawCondition}. */
 export type CompiledPredicate<Subject = SafeFunctionSubject> = (

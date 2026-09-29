@@ -533,7 +533,7 @@ function ruleRow(
     meta.push(`viewports: ${rule.viewportTypes.join(', ')}`);
   }
   meta.push(`groupBy: ${describeGroupBy(rule)}`);
-  if (rule.series?.length) {
+  if (Array.isArray(rule.series) && rule.series.length) {
     meta.push(`series facts: ${rule.series.map((f) => f.name).join(', ')}`);
   }
   if (origin !== 'standard') {
@@ -1179,11 +1179,14 @@ async function buildCell(displaySet: IDisplaySet, index: number) {
     return;
   }
 
-  const layout =
-    layoutByDisplaySetId.get(displaySet.displaySetId) ??
-    defaultLayoutFor(displaySet);
-
+  // A stored layout is keyed by displaySetId, which is positional: after a
+  // re-split the same id can name a different display set. Use the stored
+  // layout only when this display set still offers it - a stored `volume`
+  // layout on a one-image stack would mount an orthographic viewport that fails.
   const options = layoutOptionsFor(displaySet);
+  const stored = layoutByDisplaySetId.get(displaySet.displaySetId);
+  const layout =
+    stored && options.includes(stored) ? stored : defaultLayoutFor(displaySet);
   if (options.length > 1) {
     const layoutSelect = document.createElement('select');
     for (const option of options) {

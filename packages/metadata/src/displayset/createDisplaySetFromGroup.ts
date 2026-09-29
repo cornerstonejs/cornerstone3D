@@ -54,24 +54,19 @@ function isAssignable(target: object, key: string): boolean {
 }
 
 /**
- * Runs the matched rule's `customAttributes` (if any) and spreads the returned
- * attributes flat onto the display set (shared attributes are declared on
- * IDisplaySet). A `viewportTypes` key in the returned attributes overrides the
- * rule's default viewport types; `preferredViewportType` is kept in sync
- * afterwards. Reserved data fields (see {@link RESERVED_ATTRIBUTE_KEYS}) and
- * keys backed by a read-only accessor on the display set are skipped rather than
- * overridden.
+ * Runs the matched rule's `customAttributes` (if any) and returns the
+ * attributes it produces. Runs before the display set exists, because a
+ * `viewportTypes` key in the result decides which class the display set is.
  */
-function applyCustomAttributes(
-  displaySet: IDisplaySet,
+function runCustomAttributes(
   group: InstanceGroup,
   viewportTypes: readonly ViewportTypeHint[],
   options: CreateDisplaySetFromGroupOptions
-): void {
+): Record<string, unknown> | undefined {
   const { instances, matchedRule } = group;
   const first = instances[0];
   if (!matchedRule.customAttributes || !first) {
-    return;
+    return undefined;
   }
 
   const sopClassUids = [
@@ -79,21 +74,51 @@ function applyCustomAttributes(
   ];
   const isMultiFrame = Number(first.NumberOfFrames) > 1;
 
-  const attributes = matchedRule.customAttributes(
-    { instance: first, isMultiFrame, sopClassUids, viewportTypes },
-    {
-      instances,
-      splitNumber: options.splitNumber,
-      descriptionName: options.descriptionName,
-    }
+  return (
+    matchedRule.customAttributes(
+      { instance: first, isMultiFrame, sopClassUids, viewportTypes },
+      {
+        instances,
+        splitNumber: options.splitNumber,
+        descriptionName: options.descriptionName,
+      }
+    ) ?? undefined
   );
+}
 
+/**
+ * The viewport types the display set gets: a `viewportTypes` array in the
+ * custom attributes wins over the rule's own.
+ */
+function resolveViewportTypes(
+  ruleViewportTypes: readonly ViewportTypeHint[],
+  attributes: Record<string, unknown> | undefined
+): readonly ViewportTypeHint[] {
+  const override = attributes?.viewportTypes;
+  return Array.isArray(override)
+    ? (override as ViewportTypeHint[])
+    : ruleViewportTypes;
+}
+
+/**
+ * Spreads the custom attributes flat onto the display set (shared attributes
+ * are declared on IDisplaySet). `viewportTypes` is skipped, because the display
+ * set was already built with the resolved viewport types. Reserved data fields
+ * (see {@link RESERVED_ATTRIBUTE_KEYS}) and keys backed by a read-only accessor
+ * on the display set are skipped rather than overridden. The attributes that
+ * derive from `viewportTypes` are set again at the end, so a custom attribute
+ * cannot make `isDisplayable` disagree with the class and its `imageIds`.
+ */
+function applyCustomAttributes(
+  displaySet: IDisplaySet,
+  attributes: Record<string, unknown> | undefined
+): void {
   if (!attributes) {
     return;
   }
 
   for (const [key, value] of Object.entries(attributes)) {
-    if (RESERVED_ATTRIBUTE_KEYS.has(key)) {
+    if (key === 'viewportTypes' || RESERVED_ATTRIBUTE_KEYS.has(key)) {
       continue;
     }
     if (isAssignable(displaySet, key)) {
@@ -101,8 +126,6 @@ function applyCustomAttributes(
     }
   }
 
-  // Keep the attributes derived from viewportTypes consistent if
-  // customAttributes overrode the allowed viewport types.
   displaySet.preferredViewportType = getPreferredViewportType(
     displaySet.viewportTypes
   );
@@ -113,12 +136,21 @@ function applyCustomAttributes(
 
 /**
  * Builds cornerstone display set metadata for an instance group.
+ *
+ * The order matters: the rule's `customAttributes` run first, then the
+ * effective viewport types are resolved (a `viewportTypes` key in the returned
+ * attributes wins), then the display set class is chosen from those viewport
+ * types, and last the remaining attributes are applied. So a rule whose custom
+ * attributes make a group non-displayable gets the non-displayable shape (empty
+ * `imageIds`), and the reverse.
  */
 export function createDisplaySetFromGroup(
   group: InstanceGroup,
   options: CreateDisplaySetFromGroupOptions = {}
 ): IDisplaySet {
-  const viewportTypes = getViewportTypesForGroup(group);
+  const ruleViewportTypes = getViewportTypesForGroup(group);
+  const attributes = runCustomAttributes(group, ruleViewportTypes, options);
+  const viewportTypes = resolveViewportTypes(ruleViewportTypes, attributes);
   const { instances } = group;
   // A single series can split into multiple display sets (e.g. the DWI
   // mixed-b-value split), so the default id folds in the 0-based `splitNumber`
@@ -175,7 +207,7 @@ export function createDisplaySetFromGroup(
     });
   }
 
-  applyCustomAttributes(displaySet, group, viewportTypes, options);
+  applyCustomAttributes(displaySet, attributes);
 
   return displaySet;
 }

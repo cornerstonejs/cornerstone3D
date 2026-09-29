@@ -9,6 +9,15 @@
  * an application's customization layer. The worst a malformed one can do is
  * throw here, at compile time, naming the offending fragment.
  *
+ * The compiler is **strict**, and it reads its rules from the schema in
+ * `schema.ts` ({@link conditionShape}, {@link valueShape}): an unknown key, a
+ * form the place does not accept, a missing required key or a second operator
+ * is a compile error that names the path of the fragment. An actual function
+ * passes through as is wherever a condition or a value is expected.
+ *
+ * Every attribute, fact and classifier is read as an own property only, so a
+ * name such as `constructor` or `toString` never reaches `Object.prototype`.
+ *
  * Deliberately free of any domain knowledge — no display sets, no DICOM, no
  * application services. A consumer supplies the subject type, the named
  * classifiers, and whatever rule shape wraps these conditions and values.
@@ -18,6 +27,24 @@
 
 import { asArrayFirst } from '@cornerstonejs/utils';
 import { compileExpression } from './expression';
+import {
+  at,
+  compileKey,
+  conditionShape,
+  INSTANCE_EXPRESSION_SCOPE,
+  invalidAt,
+  matchForm,
+  readOwn,
+  safeFunctionSchema,
+  unrecognized,
+  valueShape,
+} from './schema';
+import type {
+  ExpressionScope,
+  Schema,
+  SchemaSite,
+  ShapeCompiler,
+} from './schema';
 import type {
   ClassifierRegistry,
   CompiledPredicate,
@@ -28,16 +55,23 @@ import type {
 } from './types';
 
 /**
- * Parameter names bound to a compiled expression's positional arguments.
- *
- * Compiled functions are called `(subject, context)`. `instance` is the name
- * the first parameter answers to because the display-set rules that drove this
- * language pass a naturalized instance; bare identifiers resolve against that
- * first argument regardless of what it is called, so an expression only needs
- * the name to reach the whole object (`instance.ViewCodeSequence`) rather than
- * one of its fields.
+ * Where a condition or a value is compiled. Every field is optional; the
+ * defaults compile a stand-alone definition called `(instance, context)`.
  */
-const EXPRESSION_PARAMS = ['instance', 'context'];
+export type CompileOptions = {
+  /** Path of the definition, for messages, e.g. `rule 'r'.matches`. */
+  path?: string;
+  /** What is being compiled, for messages. Defaults to `safe function definition`. */
+  definition?: string;
+  /**
+   * The expression variables of the place. Defaults to
+   * {@link INSTANCE_EXPRESSION_SCOPE}: called `(instance, context)`, bare
+   * identifiers read the attributes of `instance`.
+   */
+  expression?: ExpressionScope;
+  /** The call signature of the place, for messages. */
+  call?: string;
+};
 
 /**
  * True when a value counts as absent. Naturalized DICOM delivers an empty
@@ -85,161 +119,245 @@ export function looseEquals(value: unknown, literal: unknown): boolean {
   return String(single) === String(literal);
 }
 
+const DEFAULT_DEFINITION = 'safe function definition';
+
 /**
  * Throws with the offending fragment inlined - a definition is usually authored
  * by hand or shipped as config, so a mistake in it must name itself.
  */
 export function invalid(message: string, fragment: unknown): never {
-  throw new Error(
-    `Invalid safe function definition: ${message}: ${JSON.stringify(fragment)}`
+  return invalidAt(
+    { path: '', definition: DEFAULT_DEFINITION },
+    message,
+    fragment
   );
 }
 
+/** The compilers of the generic shapes, keyed by shape name. */
+export const safeFunctionCompilers: Record<string, ShapeCompiler> = {
+  condition: (fragment, site) => compileConditionAt(fragment, site),
+  value: (fragment, site) => compileValueAt(fragment, site),
+};
+
 /**
- * Compiles the `{ attribute, <operator> }` family of conditions.
+ * Builds the site of a stand-alone compile, for {@link compileCondition} and
+ * {@link compileValue}.
+ */
+export function createSite(
+  classifiers: Record<string, unknown> = {},
+  options: CompileOptions = {},
+  schema: Schema = safeFunctionSchema,
+  compilers: Record<string, ShapeCompiler> = safeFunctionCompilers
+): SchemaSite {
+  return {
+    path: options.path ?? '',
+    definition: options.definition ?? DEFAULT_DEFINITION,
+    schema,
+    compilers,
+    classifiers,
+    expression: options.expression ?? INSTANCE_EXPRESSION_SCOPE,
+    call: options.call,
+  };
+}
+
+/**
+ * Compiles an expression with the variables of its place. A syntax error, or
+ * a bare identifier where the place has no implicit scope, throws with the
+ * path of the place.
+ */
+export function compileExpressionAt(
+  source: string,
+  site: SchemaSite,
+  scope: ExpressionScope = site.expression ?? INSTANCE_EXPRESSION_SCOPE
+) {
+  try {
+    return compileExpression(source, {
+      params: scope.params,
+      implicitScope: scope.implicitScope,
+    });
+  } catch (error) {
+    return invalidAt(site, (error as Error).message);
+  }
+}
+
+/**
+ * Compiles the `{ attribute, <operator> }` family of conditions. The keys are
+ * already checked against the schema: exactly one operator is present.
  */
 function compileAttributeCondition<Subject extends SafeFunctionSubject>(
-  condition: RawCondition & { attribute: string }
+  condition: Record<string, unknown>
 ): CompiledPredicate<Subject> {
-  const { attribute } = condition;
+  const attribute = condition.attribute as string;
+  const read = (subject: Subject) => readOwn(subject, attribute);
 
-  if ('exists' in condition && condition.exists === true) {
-    return (subject) => !isAbsent(subject[attribute]);
+  if (condition.exists !== undefined) {
+    return (subject) => !isAbsent(read(subject));
   }
-  if ('absent' in condition && condition.absent === true) {
-    return (subject) => isAbsent(subject[attribute]);
+  if (condition.absent !== undefined) {
+    return (subject) => isAbsent(read(subject));
   }
-  if ('equals' in condition) {
-    return (subject) => looseEquals(subject[attribute], condition.equals);
+  if (condition.equals !== undefined) {
+    const { equals } = condition;
+    return (subject) => looseEquals(read(subject), equals);
   }
-  if ('notEquals' in condition) {
-    return (subject) => !looseEquals(subject[attribute], condition.notEquals);
+  if (condition.notEquals !== undefined) {
+    const { notEquals } = condition;
+    return (subject) => !looseEquals(read(subject), notEquals);
   }
-  if ('in' in condition) {
+  if (condition.in !== undefined) {
     // Compare as strings so the set works for both '1' and 1.
-    const allowed = new Set(condition.in.map((value) => String(value)));
+    const allowed = new Set(
+      (condition.in as unknown[]).map((value) => String(value))
+    );
     return (subject) => {
-      const value = subject[attribute];
+      const value = read(subject);
       if (isAbsent(value)) {
         return false;
       }
-      const single = asArrayFirst(value);
-      return allowed.has(String(single));
+      return allowed.has(String(asArrayFirst(value)));
     };
   }
-  if ('notIn' in condition) {
-    const denied = new Set(condition.notIn.map((value) => String(value)));
+  if (condition.notIn !== undefined) {
+    const denied = new Set(
+      (condition.notIn as unknown[]).map((value) => String(value))
+    );
     return (subject) => {
-      const value = subject[attribute];
+      const value = read(subject);
       if (isAbsent(value)) {
         return true;
       }
-      const single = asArrayFirst(value);
-      return !denied.has(String(single));
+      return !denied.has(String(asArrayFirst(value)));
     };
   }
-  if ('contains' in condition || 'containsAny' in condition) {
+  if (condition.contains !== undefined || condition.containsAny !== undefined) {
+    const ignoreCase = condition.ignoreCase === true;
     const needles = (
-      'contains' in condition ? [condition.contains] : condition.containsAny
+      condition.contains !== undefined
+        ? [condition.contains]
+        : (condition.containsAny as unknown[])
     ).map((needle) =>
-      condition.ignoreCase ? String(needle).toLowerCase() : String(needle)
+      ignoreCase ? String(needle).toLowerCase() : String(needle)
     );
     return (subject) => {
-      const value = subject[attribute];
+      const value = read(subject);
       if (isAbsent(value)) {
         return false;
       }
       const haystackRaw = String(
         Array.isArray(value) ? value.join(' ') : value
       );
-      const haystack = condition.ignoreCase
-        ? haystackRaw.toLowerCase()
-        : haystackRaw;
+      const haystack = ignoreCase ? haystackRaw.toLowerCase() : haystackRaw;
       return needles.some((needle) => haystack.includes(needle));
     };
   }
-  if ('greaterThan' in condition) {
-    const bound = condition.greaterThan;
+  if (condition.greaterThan !== undefined) {
+    const bound = condition.greaterThan as number;
     return (subject) => {
-      const value = toFinite(subject[attribute]);
+      const value = toFinite(read(subject));
       return value !== undefined && value > bound;
     };
   }
-  if ('lessThan' in condition) {
-    const bound = condition.lessThan;
-    return (subject) => {
-      const value = toFinite(subject[attribute]);
-      return value !== undefined && value < bound;
-    };
+  const bound = condition.lessThan as number;
+  return (subject) => {
+    const value = toFinite(read(subject));
+    return value !== undefined && value < bound;
+  };
+}
+
+/**
+ * Compiles a condition at a site. See {@link compileCondition}.
+ */
+export function compileConditionAt<Subject extends SafeFunctionSubject>(
+  condition: unknown,
+  site: SchemaSite
+): CompiledPredicate<Subject> {
+  if (typeof condition === 'function') {
+    return condition as CompiledPredicate<Subject>;
   }
 
-  return invalid(`no operator for attribute "${attribute}"`, condition);
+  // A string condition is an expression. Coerced to a boolean, because a
+  // condition's contract is boolean however the expression happens to end.
+  if (typeof condition === 'string') {
+    const evaluate = compileExpressionAt(condition, site);
+    return (subject, context) => Boolean(evaluate(subject, context));
+  }
+
+  if (!condition || typeof condition !== 'object' || Array.isArray(condition)) {
+    return unrecognized(conditionShape, condition, site);
+  }
+
+  const [form, spec] = matchForm(conditionShape, condition, site);
+  const fields = condition as Record<string, unknown>;
+  const nested = (key: string) =>
+    compileKey(spec.keys[key], fields[key], at(site, key, spec.keys[key]));
+
+  switch (form) {
+    case 'expression':
+      return compileConditionAt<Subject>(
+        fields.expression,
+        at(site, 'expression')
+      );
+
+    case 'all': {
+      const parts = nested('all') as CompiledPredicate<Subject>[];
+      return (subject, context) =>
+        parts.every((part) => part(subject, context));
+    }
+
+    case 'any': {
+      const parts = nested('any') as CompiledPredicate<Subject>[];
+      return (subject, context) => parts.some((part) => part(subject, context));
+    }
+
+    case 'not': {
+      const inner = nested('not') as CompiledPredicate<Subject>;
+      return (subject, context) => !inner(subject, context);
+    }
+
+    case 'classifier': {
+      const classifier = readOwn(site.classifiers, fields.classifier as string);
+      if (typeof classifier !== 'function') {
+        return invalidAt(
+          site,
+          `unknown classifier "${fields.classifier}"; known: ${Object.keys(site.classifiers).join(', ') || '(none)'}`,
+          condition
+        );
+      }
+      return (subject) => Boolean(classifier(subject));
+    }
+
+    case 'seriesFact': {
+      const name = fields.seriesFact as string;
+      return (_subject, context) => Boolean(readOwn(context?.series, name));
+    }
+
+    case 'attribute':
+      return compileAttributeCondition<Subject>(fields);
+  }
+
+  return unrecognized(conditionShape, condition, site);
 }
 
 /**
  * Compiles a {@link RawCondition} into a safe predicate.
  *
+ * An actual function passes through as is.
+ *
  * @param condition - the condition as data.
  * @param classifiers - named classifiers the condition may reference.
+ * @param options - where the condition sits, for the expression variables and
+ *   the messages.
+ * @throws when the condition is not a form the schema accepts.
  */
 export function compileCondition<Subject extends SafeFunctionSubject>(
   condition: RawCondition,
-  classifiers: ClassifierRegistry<Subject> = {}
+  classifiers: ClassifierRegistry<Subject> = {},
+  options: CompileOptions = {}
 ): CompiledPredicate<Subject> {
-  // A string condition is an expression. Coerced to a boolean, because a
-  // condition's contract is boolean however the expression happens to end.
-  if (typeof condition === 'string') {
-    const evaluate = compileExpression(condition, {
-      params: EXPRESSION_PARAMS,
-    });
-    return (subject, context) => Boolean(evaluate(subject, context));
-  }
-
-  if (!condition || typeof condition !== 'object') {
-    invalid('condition must be a string expression or an object', condition);
-  }
-
-  if ('expression' in condition) {
-    return compileCondition<Subject>(condition.expression, classifiers);
-  }
-
-  if ('all' in condition) {
-    const parts = condition.all.map((part) =>
-      compileCondition<Subject>(part, classifiers)
-    );
-    return (subject, context) => parts.every((part) => part(subject, context));
-  }
-
-  if ('any' in condition) {
-    const parts = condition.any.map((part) =>
-      compileCondition<Subject>(part, classifiers)
-    );
-    return (subject, context) => parts.some((part) => part(subject, context));
-  }
-
-  if ('not' in condition) {
-    const inner = compileCondition<Subject>(condition.not, classifiers);
-    return (subject, context) => !inner(subject, context);
-  }
-
-  if ('classifier' in condition) {
-    const classifier = classifiers[condition.classifier];
-    if (typeof classifier !== 'function') {
-      invalid(`unknown classifier "${condition.classifier}"`, condition);
-    }
-    return (subject) => classifier(subject);
-  }
-
-  if ('seriesFact' in condition) {
-    const { seriesFact } = condition;
-    return (_subject, context) => Boolean(context?.series?.[seriesFact]);
-  }
-
-  if ('attribute' in condition) {
-    return compileAttributeCondition<Subject>(condition);
-  }
-
-  return invalid('unrecognized condition', condition);
+  return compileConditionAt<Subject>(
+    condition,
+    createSite(classifiers, options)
+  );
 }
 
 /**
@@ -252,10 +370,14 @@ export function compileCondition<Subject extends SafeFunctionSubject>(
  * literal brace; an absent attribute substitutes an empty string.
  */
 export function compileTemplate<Subject extends SafeFunctionSubject>(
-  template: string
+  template: string,
+  site: Pick<SchemaSite, 'path' | 'definition'> = {
+    path: '',
+    definition: DEFAULT_DEFINITION,
+  }
 ): (subject: Subject) => string {
   if (typeof template !== 'string') {
-    invalid('template must be a string', template);
+    invalidAt(site, 'template must be a string', template);
   }
 
   const segments: ({ literal: string } | { attribute: string })[] = [];
@@ -277,11 +399,11 @@ export function compileTemplate<Subject extends SafeFunctionSubject>(
 
     const end = template.indexOf('}', i + 1);
     if (end === -1) {
-      invalid('template has an unclosed "{"', template);
+      invalidAt(site, 'template has an unclosed "{"', template);
     }
     const attribute = template.slice(i + 1, end).trim();
     if (!attribute) {
-      invalid('template has an empty "{}" placeholder', template);
+      invalidAt(site, 'template has an empty "{}" placeholder', template);
     }
     if (literal) {
       segments.push({ literal });
@@ -301,83 +423,124 @@ export function compileTemplate<Subject extends SafeFunctionSubject>(
         if ('literal' in segment) {
           return segment.literal;
         }
-        const value = subject[segment.attribute];
+        const value = readOwn(subject, segment.attribute);
         return isAbsent(value) ? '' : String(value);
       })
       .join('');
 }
 
 /**
+ * Compiles a value at a site. See {@link compileValue}.
+ */
+export function compileValueAt<Subject extends SafeFunctionSubject>(
+  value: unknown,
+  site: SchemaSite
+): CompiledValue<Subject> {
+  if (typeof value === 'function') {
+    return value as CompiledValue<Subject>;
+  }
+
+  if (typeof value === 'string') {
+    return (subject) => readOwn(subject, value);
+  }
+
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return unrecognized(valueShape, value, site);
+  }
+
+  const [form, spec] = matchForm(valueShape, value, site);
+  const fields = value as Record<string, unknown>;
+
+  switch (form) {
+    case 'expression': {
+      // Not coerced: in value position the expression's own result is the point.
+      const evaluate = compileExpressionAt(
+        fields.expression as string,
+        at(site, 'expression')
+      );
+      return (subject, context) => evaluate(subject, context);
+    }
+
+    case 'condition':
+      return compileKey(
+        spec.keys.condition,
+        fields.condition,
+        at(site, 'condition', spec.keys.condition)
+      ) as CompiledValue<Subject>;
+
+    case 'template':
+      return compileTemplate<Subject>(
+        fields.template as string,
+        at(site, 'template')
+      );
+
+    case 'join': {
+      const { join, parts } = fields as { join: string; parts: unknown };
+      if (!Array.isArray(parts) || !parts.length) {
+        return invalidAt(site, 'join requires a non-empty parts array', value);
+      }
+      const readers = compileKey(
+        spec.keys.parts,
+        parts,
+        at(site, 'parts', spec.keys.parts)
+      ) as CompiledValue<Subject>[];
+      const labels = parts.map((part) => readOwn(part, 'label'));
+      return (subject, context) =>
+        readers
+          .map((read, index) => {
+            const result = read(subject, context);
+            const label = labels[index];
+            return label === undefined ? String(result) : `${label}=${result}`;
+          })
+          .join(join);
+    }
+
+    case 'attribute': {
+      const attribute = fields.attribute as string;
+      const bucket = fields.bucket as number | undefined;
+      if (fields.absent === true) {
+        return (subject) => isAbsent(readOwn(subject, attribute));
+      }
+      if (bucket !== undefined) {
+        if (bucket === 0) {
+          return invalidAt(
+            site,
+            'bucket must be a non-zero finite number',
+            value
+          );
+        }
+        return (subject) => {
+          const numeric = toFinite(readOwn(subject, attribute));
+          return numeric === undefined
+            ? undefined
+            : Math.round(numeric / bucket);
+        };
+      }
+      if (fields.number === true) {
+        return (subject) => toFinite(readOwn(subject, attribute));
+      }
+      return (subject) => readOwn(subject, attribute);
+    }
+  }
+
+  return unrecognized(valueShape, value, site);
+}
+
+/**
  * Compiles a {@link RawValue} into a safe value reader.
+ *
+ * An actual function passes through as is.
  *
  * @param value - the value as data.
  * @param classifiers - named classifiers a nested condition may reference.
+ * @param options - where the value sits, for the expression variables and the
+ *   messages.
+ * @throws when the value is not a form the schema accepts.
  */
 export function compileValue<Subject extends SafeFunctionSubject>(
   value: RawValue,
-  classifiers: ClassifierRegistry<Subject> = {}
+  classifiers: ClassifierRegistry<Subject> = {},
+  options: CompileOptions = {}
 ): CompiledValue<Subject> {
-  if (typeof value === 'string') {
-    return (subject) => subject[value];
-  }
-
-  if (!value || typeof value !== 'object') {
-    invalid('value must be a string or an object', value);
-  }
-
-  if ('expression' in value) {
-    // Not coerced: in value position the expression's own result is the point.
-    const evaluate = compileExpression(value.expression, {
-      params: EXPRESSION_PARAMS,
-    });
-    return (subject, context) => evaluate(subject, context);
-  }
-
-  if ('condition' in value) {
-    return compileCondition<Subject>(value.condition, classifiers);
-  }
-
-  if ('template' in value) {
-    return compileTemplate<Subject>(value.template);
-  }
-
-  if ('join' in value) {
-    const { join } = value;
-    if (!Array.isArray(value.parts) || !value.parts.length) {
-      invalid('join requires a non-empty parts array', value);
-    }
-    const parts = value.parts.map((part) => ({
-      label: part.label,
-      read: compileValue<Subject>(part, classifiers),
-    }));
-    return (subject, context) =>
-      parts
-        .map(({ label, read }) => {
-          const read_ = read(subject, context);
-          return label === undefined ? String(read_) : `${label}=${read_}`;
-        })
-        .join(join);
-  }
-
-  if ('attribute' in value) {
-    const { attribute, bucket } = value;
-    if (value.absent === true) {
-      return (subject) => isAbsent(subject[attribute]);
-    }
-    if (bucket !== undefined) {
-      if (!Number.isFinite(bucket) || bucket === 0) {
-        invalid('bucket must be a non-zero finite number', value);
-      }
-      return (subject) => {
-        const numeric = toFinite(subject[attribute]);
-        return numeric === undefined ? undefined : Math.round(numeric / bucket);
-      };
-    }
-    if (value.number === true) {
-      return (subject) => toFinite(subject[attribute]);
-    }
-    return (subject) => subject[attribute];
-  }
-
-  return invalid('unrecognized value', value);
+  return compileValueAt<Subject>(value, createSite(classifiers, options));
 }
