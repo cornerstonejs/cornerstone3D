@@ -97,17 +97,12 @@ export type SplitRuleOptions = {
 
 export type SplitRule = {
   /**
-   * Stable identifier for this rule, unique within its rule set. It namespaces
-   * every bucket key the rule produces (see {@link InstanceGroup.splitKey}), so
-   * naming a rule is what makes the identities derived from it survive editing
-   * the rule set - reordering rules, or inserting one, leaves other rules'
-   * keys untouched. A rule set containing duplicate ids is rejected.
-   *
-   * Rules without an id fall back to their array position, whose keys therefore
-   * change when the rule set is edited. Give every rule an id if anything
-   * durable (persisted annotations, saved layouts) is keyed off the split.
+   * Stable identifier for this rule: its key in the {@link SplitRuleSet}. It
+   * namespaces every bucket key the rule produces (see
+   * {@link InstanceGroup.splitKey}), so reordering rules, or inserting one,
+   * leaves the other rules' keys untouched.
    */
-  id?: string;
+  id: string;
   /** Allowed viewport types; index 0 is the preferred viewport type. */
   viewportTypes?: readonly ViewportTypeHint[];
   /**
@@ -176,7 +171,7 @@ export type SplitRule = {
    * Optional. Declares that this rule's instances form *runs*: walking the
    * instances this rule claimed in acquisition order, consecutive instances
    * whose value here is equal belong to the same run, and a change in value
-   * starts a new one. The run's ordinal is folded into the bucket key, so
+   * starts a new one. The run's key (see below) is folded into the bucket key, so
    * **interleaved kinds separate instead of merging**.
    *
    * The motivating case is an ultrasound series mixing single images and
@@ -206,6 +201,15 @@ export type SplitRule = {
    * interrupts another's run. Without that scoping, two single frames of one
    * series would be torn apart by another series' clip merely for sitting
    * between them in acquisition order.
+   *
+   * A run is keyed by its **first instance** in the rule's order (its
+   * `SOPInstanceUID`, else its `imageId`), not by its ordinal. An ordinal shifts
+   * for every later run when a new run appears earlier in the series, so a key
+   * built from it would name a different run after new instances arrive. The
+   * first instance changes only when an instance is added ahead of the run. A
+   * new instance that splits a run leaves the key with the part that holds the
+   * first instance, and the other parts get new keys - so a host reconciling
+   * against earlier keys must still expect a run to lose members.
    */
   runBy?: (instance: NaturalizedInstance, context: RuleContext) => unknown;
   customAttributes?: (
@@ -213,6 +217,49 @@ export type SplitRule = {
     options: SplitRuleOptions
   ) => Record<string, unknown>;
 };
+
+/**
+ * One entry of a {@link SplitRuleSet}: a split rule plus the priority that
+ * places it in evaluation order.
+ */
+export type SplitRuleSetEntry = Omit<SplitRule, 'id'> & {
+  /**
+   * The rule's id. Optional, because the entry's key in the rule set is the id.
+   * When present it must equal that key.
+   */
+  id?: string;
+  /**
+   * Where this rule is evaluated. Rules run in ascending priority, and the first
+   * matching rule wins, so a lower number runs earlier. Equal priorities run in
+   * id order, so the order is deterministic.
+   *
+   * `null` excludes the rule. That is how a customization turns a default rule
+   * off without having to remove its key.
+   *
+   * The default rules use the priorities `1..n`, in their documented order. A
+   * priority below `0` therefore runs before every default rule, and a priority
+   * above {@link DEFAULT_SPLIT_RULE_PRIORITY_LIMIT} runs after every default
+   * rule.
+   */
+  priority: number | null;
+};
+
+/**
+ * Split rules keyed by id, with an explicit {@link SplitRuleSetEntry.priority}.
+ * This is the only form the split engine takes.
+ *
+ * Keyed because a rule set is usually built by merging layers - the defaults,
+ * then a deployment's overrides, then a mode's. A key cannot occur twice, so a
+ * later layer replaces or edits a rule instead of adding a second copy, and
+ * the priority lets a layer move or exclude a rule by id.
+ */
+export type SplitRuleSet = Record<string, SplitRuleSetEntry>;
+
+/**
+ * The highest priority the default rules may use. A rule with a priority above
+ * this value runs after every default rule.
+ */
+export const DEFAULT_SPLIT_RULE_PRIORITY_LIMIT = 10000;
 
 /**
  * What a sort hook is told about the instances it is ordering.
@@ -269,6 +316,17 @@ export type SplitContext = {
   getNaturalizedInstance: (imageId: string) => NaturalizedInstance | undefined;
 };
 
+/** Options for `orderInstancesForRule`. */
+export type OrderInstancesOptions = GroupInstancesOptions & {
+  /**
+   * The rule's series facts to order with - normally the
+   * {@link InstanceGroup.series} of the group the instances came from. Omitted,
+   * the facts are computed from the instances being ordered, which can differ
+   * from the facts the split used (see {@link InstanceGroup.series}).
+   */
+  series?: SeriesFacts;
+};
+
 export type InstanceGroup = {
   /**
    * The instances collected into this group, ordered by the rule that produced it
@@ -277,6 +335,17 @@ export type InstanceGroup = {
    */
   instances: NaturalizedInstance[];
   matchedRule: SplitRule;
+  /**
+   * The matched rule's series facts for this split: its `series` hook applied
+   * to every instance passed to the split, not only this group's. A host that
+   * orders the group again later (see `orderInstancesForRule`) passes these
+   * back, so that a comparator reading `context.series` sees the value it saw
+   * during the split. Facts computed from the group alone can differ: a
+   * "mixed b-value" fact is true for the series and false for each half.
+   * Set by `groupInstancesBySplitRules`; optional so hand-built groups don't
+   * need it.
+   */
+  series?: SeriesFacts;
   /**
    * Deterministic, rule-namespaced bucket key this group was collected under.
    * Stable for a given set of instances regardless of input order, so it can

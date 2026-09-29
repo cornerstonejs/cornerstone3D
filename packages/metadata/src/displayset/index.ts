@@ -8,6 +8,7 @@ export type { ResolveInstancesOptions } from './resolveInstances';
 export { buildSeriesInfo } from './buildSeriesInfo';
 export { orderInstancesForRule } from './groupInstancesBySplitRules';
 export { groupInstancesBySplitRules } from './groupInstancesBySplitRules';
+export { resolveSplitRuleSet, validateSplitRuleSetEntry } from './splitRuleSet';
 export { splitImageIdsBySplitRules } from './splitImageIdsBySplitRules';
 export type { SplitImageIdsBySplitRulesOptions } from './splitImageIdsBySplitRules';
 export {
@@ -44,7 +45,7 @@ export {
   getViewportTypesForGroup,
   isDisplayableViewportTypes,
 } from './viewportTypes';
-export { NO_VIEWPORT_TYPE } from './types';
+export { NO_VIEWPORT_TYPE, DEFAULT_SPLIT_RULE_PRIORITY_LIMIT } from './types';
 export type {
   NaturalizedInstance,
   SeriesInfo,
@@ -60,4 +61,7 @@ export type {
   InstanceOrderContext,
   SortInstances,
   GroupInstancesOptions,
+  SplitRuleSet,
+  SplitRuleSetEntry,
+  OrderInstancesOptions,
 } from './types';

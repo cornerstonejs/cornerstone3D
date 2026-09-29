@@ -92,14 +92,20 @@ export type RawCustomAttributes = {
   preset?: string;
 };
 
-/** One rule in a raw selector. Mirrors {@link SplitRule}, in data form. */
+/** One rule in a raw selector. Mirrors {@link SplitRuleSetEntry}, in data form. */
 export type RawSplitRule = {
   /**
-   * Stable identifier, unique within the selector. It namespaces every bucket
-   * key the rule produces, so naming rules is what lets the selector be edited
-   * without changing other rules' keys.
+   * The rule id. Optional, because the rule's key in the selector is the id.
+   * When present it must equal that key. The id namespaces every bucket key the
+   * rule produces, so the selector can be edited without changing other rules'
+   * keys.
    */
-  id: string;
+  id?: string;
+  /**
+   * Evaluation order: ascending, first match wins; `null` excludes the rule.
+   * See `SplitRuleSetEntry.priority`.
+   */
+  priority: number | null;
   /**
    * Human-readable explanation of what this rule is for. Part of the rule data
    * rather than a code comment so a UI that lets a user inspect or toggle rules
@@ -125,8 +131,11 @@ export type RawSplitRule = {
   customAttributes?: RawCustomAttributes;
 };
 
-/** A whole raw selector: an ordered list of rules, first match wins. */
-export type RawDisplaySetSelector = RawSplitRule[];
+/**
+ * A whole raw selector: rules keyed by rule id, the data form of a
+ * `SplitRuleSet`. Rules are tried in ascending priority; first match wins.
+ */
+export type RawDisplaySetSelector = Record<string, RawSplitRule>;
 
 /** Options for {@link createDisplaySetSplitRules}. */
 export type CreateDisplaySetSplitRulesOptions = {

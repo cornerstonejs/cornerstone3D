@@ -8,7 +8,7 @@ import {
   utilities as metadataUtilities,
   type IDisplaySet,
   type NaturalizedInstance,
-  type SplitRule,
+  type SplitRuleSet,
 } from '@cornerstonejs/metadata';
 import createImageIdsAndCacheMetaData from './createImageIdsAndCacheMetaData';
 
@@ -162,13 +162,13 @@ function collectFrameImageIdsForGroup(
  * Splits a loaded series' imageIds into display sets.
  *
  * @param seriesImageIds - the series' (frame-level) imageIds.
- * @param splitRules - compiled split rules; defaults to
+ * @param splitRules - compiled split rules, keyed by rule id; defaults to
  *   {@link defaultDisplaySetSplitRules}. Pass the result of
  *   `createDisplaySetSplitRules(selector)` to split with a custom selector.
  */
 export function splitDisplaySetsFromImageIds(
   seriesImageIds: string[],
-  splitRules: SplitRule[] = defaultDisplaySetSplitRules
+  splitRules: SplitRuleSet = defaultDisplaySetSplitRules
 ): IDisplaySet[] {
   const instanceLevelImageIds = getInstanceLevelImageIds(seriesImageIds);
 

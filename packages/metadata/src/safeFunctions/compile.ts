@@ -16,6 +16,7 @@
  * @module safeFunctions/compile
  */
 
+import { asArrayFirst } from '@cornerstonejs/utils';
 import { compileExpression } from './expression';
 import type {
   ClassifierRegistry,
@@ -57,8 +58,11 @@ export function toFinite(value: unknown): number | undefined {
   if (isAbsent(value)) {
     return undefined;
   }
-  const numeric = Array.isArray(value) ? value[0] : value;
-  if (typeof numeric === 'boolean') {
+  const numeric = asArrayFirst(value);
+  if (
+    typeof numeric === 'boolean' ||
+    (typeof numeric === 'string' && numeric.trim() === '')
+  ) {
     return undefined;
   }
   const parsed = Number(numeric);
@@ -77,7 +81,7 @@ export function looseEquals(value: unknown, literal: unknown): boolean {
   if (isAbsent(value)) {
     return false;
   }
-  const single = Array.isArray(value) ? value[0] : value;
+  const single = asArrayFirst(value);
   return String(single) === String(literal);
 }
 
@@ -119,7 +123,7 @@ function compileAttributeCondition<Subject extends SafeFunctionSubject>(
       if (isAbsent(value)) {
         return false;
       }
-      const single = Array.isArray(value) ? value[0] : value;
+      const single = asArrayFirst(value);
       return allowed.has(String(single));
     };
   }
@@ -130,7 +134,7 @@ function compileAttributeCondition<Subject extends SafeFunctionSubject>(
       if (isAbsent(value)) {
         return true;
       }
-      const single = Array.isArray(value) ? value[0] : value;
+      const single = asArrayFirst(value);
       return !denied.has(String(single));
     };
   }

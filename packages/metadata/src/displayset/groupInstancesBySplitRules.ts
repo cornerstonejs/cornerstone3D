@@ -3,40 +3,20 @@ import type {
   InstanceGroup,
   InstanceOrderContext,
   NaturalizedInstance,
+  OrderInstancesOptions,
   RuleContext,
   SplitRule,
+  SplitRuleSet,
 } from './types';
-
-/**
- * Numeric value of an instance's `InstanceNumber`, or `undefined` when it has
- * none usable.
- *
- * Deliberately not a bare `Number(...)`: that maps `null`, `''` and whitespace to
- * 0 - a finite number - so an instance with no instance number would alias to 0
- * and sort among (indeed ahead of) the genuinely numbered ones, silently moving
- * run boundaries. Only a real number or a numeric string counts.
- */
-function instanceNumberOf(instance: NaturalizedInstance): number | undefined {
-  // Read as `unknown` rather than the declared `number`: naturalized DICOM
-  // routinely delivers an IS value as a string, or as null for an empty element.
-  const raw: unknown = instance.InstanceNumber;
-
-  if (typeof raw === 'number') {
-    return Number.isFinite(raw) ? raw : undefined;
-  }
-  if (typeof raw === 'string' && raw.trim() !== '') {
-    const parsed = Number(raw);
-    return Number.isFinite(parsed) ? parsed : undefined;
-  }
-  return undefined;
-}
+import { resolveSplitRuleSet } from './splitRuleSet';
+import { toFinite } from '../safeFunctions';
 
 /**
  * Canonical acquisition order, and the default a rule gets when it declares no
  * {@link SplitRule.compareInstances}.
  *
  * Deliberately *not* the caller's input order: an order derived from input order
- * would make run ordinals - and so bucket keys - depend on the order imageIds
+ * would make run boundaries - and so bucket keys - depend on the order imageIds
  * happened to be passed in, which is exactly the property this module guarantees
  * against. `InstanceNumber` is the acquisition sequence; `SOPInstanceUID` breaks
  * ties so the order is total even when instance numbers are absent or duplicated.
@@ -45,8 +25,9 @@ function compareByAcquisition(
   a: NaturalizedInstance,
   b: NaturalizedInstance
 ): number {
-  const aNumber = instanceNumberOf(a);
-  const bNumber = instanceNumberOf(b);
+  // `toFinite`, not `Number`: an absent InstanceNumber must not alias to 0.
+  const aNumber = toFinite(a.InstanceNumber);
+  const bNumber = toFinite(b.InstanceNumber);
   const aHas = aNumber !== undefined;
   const bHas = bNumber !== undefined;
 
@@ -71,7 +52,7 @@ function compareByAcquisition(
  * Three layers, each deferring to the one below it:
  *
  *  1. **Acquisition order**, always applied first. Not the caller's input order:
- *     an order derived from that would make run ordinals - and so bucket keys -
+ *     an order derived from that would make run boundaries - and so bucket keys -
  *     depend on the sequence imageIds happened to arrive in, which is the
  *     property this module exists to guarantee against. Everything below is
  *     applied to this canonical order, so it is also the final tie-break.
@@ -143,20 +124,43 @@ function buildInstanceOrderer(
  * Exported so that ordering has exactly one implementation: a host applying its
  * own sort a second time would discard the rule's comparator, which is precisely
  * the bug this replaces.
+ *
+ * Pass the group's {@link InstanceGroup.series} as `options.series`, so the
+ * comparators see the facts the split computed from the whole series. Without
+ * it, the facts are computed from `instances` alone.
  */
 export function orderInstancesForRule(
   instances: NaturalizedInstance[],
   splitRule: SplitRule,
-  options: GroupInstancesOptions = {}
+  options: OrderInstancesOptions = {}
 ): NaturalizedInstance[] {
   const context: RuleContext = {
-    series: splitRule.series?.({ instances }) ?? {},
+    series: options.series ?? splitRule.series?.({ instances }) ?? {},
   };
   return buildInstanceOrderer(splitRule, context, options)(instances);
 }
 
 /**
- * Assigns each instance the ordinal of the run it belongs to.
+ * Where one instance's run sits, and what identifies it.
+ *
+ * `ordinal` orders the run among the bucket's runs, and is used only to order
+ * the groups. `key` is the part of the split key that names the run: the
+ * identity of the run's first instance in the rule's order. See
+ * {@link SplitRule.runBy} for why the key is not the ordinal.
+ */
+type RunPosition = { ordinal: number; key: unknown };
+
+/**
+ * The identity a run is keyed by: its first instance's `SOPInstanceUID`, else
+ * its `imageId`. Falls back to the ordinal only for an instance that carries
+ * neither, which leaves nothing else stable to key off.
+ */
+function runKeyOf(first: NaturalizedInstance, ordinal: number): unknown {
+  return first.SOPInstanceUID ?? first.imageId ?? ordinal;
+}
+
+/**
+ * Assigns each instance the run it belongs to.
  *
  * Runs are computed **per bucket**, not across every instance the rule claimed.
  * Instances whose `groupBy` parts differ are already destined for different
@@ -170,11 +174,12 @@ export function orderInstancesForRule(
  * Within a bucket, walks the instances in the rule's order (see
  * {@link buildInstanceOrderer}) and increments the ordinal every time `runBy`
  * returns a value differing from the previous instance's - so a series of
- * `single single single clip single clip` yields runs `0 0 0 1 2 3`.
+ * `single single single clip single clip` yields runs `0 0 0 1 2 3`. Each run
+ * is keyed by its first instance (see {@link runKeyOf}).
  *
- * Keyed by object identity rather than by UID: the caller passes the very same
- * instance objects to `groupInstancesBySplitRules`, and object identity avoids
- * assuming every instance carries a `SOPInstanceUID`.
+ * The map is keyed by object identity rather than by UID: the caller passes the
+ * very same instance objects to `groupInstancesBySplitRules`, and object
+ * identity avoids assuming every instance carries a `SOPInstanceUID`.
  */
 function buildRunIndex(
   instances: NaturalizedInstance[],
@@ -182,7 +187,7 @@ function buildRunIndex(
   runBy: NonNullable<SplitRule['runBy']>,
   order: (instances: NaturalizedInstance[]) => NaturalizedInstance[],
   context: RuleContext
-): Map<NaturalizedInstance, number> {
+): Map<NaturalizedInstance, RunPosition> {
   const buckets = new Map<string, NaturalizedInstance[]>();
 
   for (const instance of instances) {
@@ -195,12 +200,12 @@ function buildRunIndex(
     }
   }
 
-  const runIndex = new Map<NaturalizedInstance, number>();
+  const runIndex = new Map<NaturalizedInstance, RunPosition>();
 
   for (const bucket of buckets.values()) {
     const ordered = order(bucket);
 
-    let currentRun = -1;
+    let currentRun: RunPosition | undefined;
     let previousValue: unknown;
     let hasPrevious = false;
 
@@ -211,7 +216,8 @@ function buildRunIndex(
       // reference inequality. `Object.is` would treat every fresh array as a
       // change.
       if (!hasPrevious || !isSameRunValue(previousValue, value)) {
-        currentRun += 1;
+        const ordinal = currentRun ? currentRun.ordinal + 1 : 0;
+        currentRun = { ordinal, key: runKeyOf(instance, ordinal) };
       }
       runIndex.set(instance, currentRun);
       previousValue = value;
@@ -400,7 +406,7 @@ function compareSplitKeys(a: string, b: string): number {
 
 /**
  * Key parts an instance contributes through its rule's `groupBy`, before the run
- * ordinal is appended.
+ * key is appended.
  *
  * Computed once per instance and reused, because they are needed twice: to
  * partition the rule's instances into buckets for run numbering, and to build the
@@ -429,57 +435,18 @@ function buildBaseKeyParts(
  *
  * The discriminator is the rule's `id`, NOT its position in the rule set:
  * position would make every key below an inserted rule change, silently
- * invalidating any identity derived from the split. See
- * {@link resolveRuleDiscriminators}.
+ * invalidating any identity derived from the split.
  */
 function buildSplitKey(
-  instance: NaturalizedInstance,
-  ruleDiscriminator: string | number,
+  ruleDiscriminator: string,
   baseKeyParts: unknown[],
-  runIndex: Map<NaturalizedInstance, number> | undefined
+  run: RunPosition | undefined
 ): string {
   return JSON.stringify(
-    runIndex
-      ? [ruleDiscriminator, ...baseKeyParts, runIndex.get(instance)]
+    run
+      ? [ruleDiscriminator, ...baseKeyParts, run.key]
       : [ruleDiscriminator, ...baseKeyParts]
   );
-}
-
-/**
- * Resolves the namespace each rule contributes to its bucket keys, and rejects
- * a rule set that cannot produce stable ones.
- *
- * A rule's `id` is its identity: keying off it means inserting, removing or
- * reordering rules leaves every other rule's keys untouched, which is what lets
- * a caller persist something against a display set and still find it after the
- * rule set is edited. Duplicate ids would collapse two rules into one bucket
- * namespace, so they are a hard error rather than something to paper over.
- *
- * A rule with no id has no identity to key off, so it falls back to its
- * position - documented on {@link SplitRule.id} as the unstable case. That
- * fallback is the position as a **number**, not as a string: the discriminator
- * occupies one slot of the key shared with caller-supplied ids, so any string
- * form (`"#1"`) could be typed as an `id` by a caller and silently merge an
- * unnamed rule's buckets with that rule's. `id` is a string, so a number cannot
- * collide with one.
- */
-function resolveRuleDiscriminators(
-  splitRules: SplitRule[]
-): (string | number)[] {
-  const seen = new Set<string>();
-
-  return splitRules.map((rule, ruleIndex) => {
-    if (rule.id === undefined) {
-      return ruleIndex;
-    }
-    if (seen.has(rule.id)) {
-      throw new Error(
-        `Duplicate split rule id "${rule.id}" at index ${ruleIndex}. Split rule ids namespace the bucket keys display set identities are derived from, so they must be unique within a rule set.`
-      );
-    }
-    seen.add(rule.id);
-    return rule.id;
-  });
 }
 
 /**
@@ -497,10 +464,15 @@ function resolveRuleDiscriminators(
  * merging into one bucket.
  *
  * Groups are returned in a **deterministic order** - by the position of the rule
- * that produced them, then by bucket key - so a series' display sets are stable
- * regardless of the order the imageIds were passed in. The key comparison is
- * numeric-aware, so a group keyed on instance 10 sorts after instance 2 rather
- * than lexically before it.
+ * that produced them, then by bucket key, then by run position - so a series'
+ * display sets are stable regardless of the order the imageIds were passed in.
+ * The key comparison is numeric-aware, so a group keyed on instance 10 sorts
+ * after instance 2 rather than lexically before it. Runs sort by their position
+ * in the rule's order, not by their key, because a run's key is an instance
+ * UID and says nothing about where the run sits in the series.
+ *
+ * `ruleSet` is keyed by rule id, and its rules are tried in ascending priority
+ * (see `resolveSplitRuleSet`).
  *
  * Instances *within* a group are ordered by their rule's
  * {@link SplitRule.compareInstances}, defaulting to acquisition order, so nothing
@@ -511,19 +483,19 @@ function resolveRuleDiscriminators(
  *   therefore placed in no group (e.g. a non-image SOP such as an SR or
  *   presentation state). Lets callers observe what was dropped instead of it
  *   disappearing silently.
- * @throws if two rules in `splitRules` share an `id`.
+ * @throws if a rule set entry is invalid (see `validateSplitRuleSetEntry`).
  */
 export function groupInstancesBySplitRules(
   instances: NaturalizedInstance[],
-  splitRules: SplitRule[],
+  ruleSet: SplitRuleSet,
   onUnmatched?: (instance: NaturalizedInstance) => void,
   options: GroupInstancesOptions = {}
 ): InstanceGroup[] {
-  // Validated ahead of the empty-input shortcut: a rule set with duplicate ids
-  // is broken whether or not there are instances to split, and reporting it only
-  // for a non-empty series would let it through in exactly the case a caller is
-  // least likely to be testing.
-  const ruleDiscriminators = resolveRuleDiscriminators(splitRules);
+  // Resolved ahead of the empty-input shortcut: an invalid rule set is broken
+  // whether or not there are instances to split, and reporting it only for a
+  // non-empty series would let it through in exactly the case a caller is least
+  // likely to be testing.
+  const splitRules = resolveSplitRuleSet(ruleSet);
 
   if (!instances.length) {
     return [];
@@ -589,26 +561,41 @@ export function groupInstancesBySplitRules(
   );
 
   const instancesMap = new Map<string, InstanceGroup>();
-  // Preserves rule order in the output without leaking the rule's position into
-  // the key itself, which is the whole point of the id-based discriminator.
-  const groupRuleIndex = new Map<string, number>();
+  // How each group sorts in the output. Kept beside the key rather than in it:
+  // the rule's position must order the groups without leaking into the key,
+  // which is the whole point of the id-based discriminator, and a run's ordinal
+  // must order the runs without leaking into the key, which is the point of the
+  // first-instance run key.
+  const groupSortKeys = new Map<
+    string,
+    { ruleIndex: number; bucketKey: string; runOrdinal: number }
+  >();
 
   for (let ruleIndex = 0; ruleIndex < splitRules.length; ruleIndex++) {
     const splitRule = splitRules[ruleIndex];
+    const runIndex = runIndexes[ruleIndex];
 
     for (const instance of claimedByRule[ruleIndex]) {
-      const key = buildSplitKey(
-        instance,
-        ruleDiscriminators[ruleIndex],
-        baseKeyParts[ruleIndex].get(instance),
-        runIndexes[ruleIndex]
-      );
+      const parts = baseKeyParts[ruleIndex].get(instance);
+      const run = runIndex?.get(instance);
+      const key = buildSplitKey(splitRules[ruleIndex].id, parts, run);
 
       let group = instancesMap.get(key);
       if (!group) {
-        group = { instances: [], matchedRule: splitRule, splitKey: key };
+        group = {
+          instances: [],
+          matchedRule: splitRule,
+          // The facts of the whole split, not of this group - see
+          // `InstanceGroup.series`.
+          series: ruleContexts[ruleIndex].series,
+          splitKey: key,
+        };
         instancesMap.set(key, group);
-        groupRuleIndex.set(key, ruleIndex);
+        groupSortKeys.set(key, {
+          ruleIndex,
+          bucketKey: buildSplitKey(splitRules[ruleIndex].id, parts, undefined),
+          runOrdinal: run?.ordinal ?? 0,
+        });
       }
       group.instances.push(instance);
     }
@@ -621,17 +608,24 @@ export function groupInstancesBySplitRules(
   // leaving them in input order would make a display set's frame order depend on
   // the order the imageIds arrived in, which nothing else about the result does.
   for (const group of groups) {
-    const ruleIndex = groupRuleIndex.get(group.splitKey ?? '') ?? 0;
+    const ruleIndex = groupSortKeys.get(group.splitKey ?? '')?.ruleIndex ?? 0;
     group.instances = ruleOrderers[ruleIndex](group.instances);
   }
 
   return groups.sort((a, b) => {
-    const ruleOrder =
-      (groupRuleIndex.get(a.splitKey ?? '') ?? 0) -
-      (groupRuleIndex.get(b.splitKey ?? '') ?? 0);
+    const aSort = groupSortKeys.get(a.splitKey ?? '');
+    const bSort = groupSortKeys.get(b.splitKey ?? '');
+    const ruleOrder = (aSort?.ruleIndex ?? 0) - (bSort?.ruleIndex ?? 0);
     if (ruleOrder !== 0) {
       return ruleOrder;
     }
-    return compareSplitKeys(a.splitKey ?? '', b.splitKey ?? '');
+    const bucketOrder = compareSplitKeys(
+      aSort?.bucketKey ?? '',
+      bSort?.bucketKey ?? ''
+    );
+    if (bucketOrder !== 0) {
+      return bucketOrder;
+    }
+    return (aSort?.runOrdinal ?? 0) - (bSort?.runOrdinal ?? 0);
   });
 }

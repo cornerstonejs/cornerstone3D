@@ -10,8 +10,26 @@ import { ImageStackDisplaySet } from './ImageStackDisplaySet';
 import { isVideoInstance } from './isVideoInstance';
 import { resolveInstances } from './resolveInstances';
 import { splitImageIdsBySplitRules } from './splitImageIdsBySplitRules';
-import type { InstanceGroup, NaturalizedInstance, SplitRule } from './types';
+import type {
+  InstanceGroup,
+  NaturalizedInstance,
+  SplitRule,
+  SplitRuleSet,
+} from './types';
 import { getPreferredViewportType } from './viewportTypes';
+
+/**
+ * A keyed rule set from rules listed in evaluation order: each rule's id is its
+ * key, and its position gives its priority. For tests whose point is not the
+ * shape of the rule set.
+ */
+const ruleSet = (...rules: SplitRule[]): SplitRuleSet =>
+  Object.fromEntries(
+    rules.map(({ id, ...rule }, index) => [
+      id,
+      { ...rule, priority: index + 1 },
+    ])
+  );
 
 describe('displayset split utilities', () => {
   const instances: NaturalizedInstance[] = [
@@ -138,15 +156,12 @@ describe('displayset split utilities', () => {
 
   it('groups by default image rule into a single group', () => {
     const singleInstance = [instances[0]];
-    const rules: SplitRule[] = [
-      {
-        id: 'defaultImageRule',
-        viewportTypes: ['stack'],
-        matches: (instance) =>
-          instance.SOPClassUID === '1.2.840.10008.5.1.4.1.1.2' &&
-          !!instance.Rows,
-      },
-    ];
+    const rules = ruleSet({
+      id: 'defaultImageRule',
+      viewportTypes: ['stack'],
+      matches: (instance) =>
+        instance.SOPClassUID === '1.2.840.10008.5.1.4.1.1.2' && !!instance.Rows,
+    });
     const groups = groupInstancesBySplitRules(singleInstance, rules);
     expect(groups).toHaveLength(1);
     expect(groups[0].instances).toHaveLength(1);
@@ -306,7 +321,7 @@ describe('displayset split utilities', () => {
       { imageId: 'b', Modality: 'NM' },
     ];
     // Two different rules whose groupBy functions return the same string.
-    const rules: SplitRule[] = [
+    const rules = ruleSet(
       {
         id: 'ruleA',
         matches: (i) => i.Modality === 'XA',
@@ -316,8 +331,8 @@ describe('displayset split utilities', () => {
         id: 'ruleB',
         matches: (i) => i.Modality === 'NM',
         groupBy: [() => 'same'],
-      },
-    ];
+      }
+    );
     const groups = groupInstancesBySplitRules(insts, rules);
 
     // Without rule-namespaced keys these would collapse into one bucket.
@@ -422,13 +437,11 @@ describe('displayset split utilities', () => {
       { imageId: 'a', Modality: 'CT' },
       { imageId: 'b', Modality: 'SR' },
     ];
-    const rules: SplitRule[] = [
-      {
-        id: 'ct',
-        matches: (i) => i.Modality === 'CT',
-        groupBy: ['imageId'],
-      },
-    ];
+    const rules = ruleSet({
+      id: 'ct',
+      matches: (i) => i.Modality === 'CT',
+      groupBy: ['imageId'],
+    });
     const unmatched: string[] = [];
 
     const groups = groupInstancesBySplitRules(insts, rules, (i) =>
@@ -463,86 +476,53 @@ describe('split key stability', () => {
   it('keys off the rule id, so inserting a rule leaves other rules keys unchanged', () => {
     // The point of the whole id-based discriminator: a caller that persisted
     // something against a display set must still find it after the rule set is
-    // edited. Keying off the rule's array position would move every key below
-    // an insertion.
+    // edited. Keying off the rule's evaluation position would move every key
+    // below an insertion.
     const instances = [ct('a', 1), ct('b', 2)];
 
-    const before = groupInstancesBySplitRules(instances, [ctRule]);
-    const after = groupInstancesBySplitRules(instances, [
-      { id: 'inserted-ahead', matches: (i) => i.Modality === 'XA' },
-      ctRule,
-    ]);
+    const before = groupInstancesBySplitRules(instances, {
+      ct: { ...ctRule, priority: 1 },
+    });
+    const after = groupInstancesBySplitRules(instances, {
+      ct: { ...ctRule, priority: 1 },
+      // Runs before `ct`, and claims one of its instances.
+      insertedAhead: {
+        priority: -1,
+        matches: (i) => i.InstanceNumber === 2,
+      },
+    });
 
-    expect(after.map((g) => g.splitKey)).toEqual(before.map((g) => g.splitKey));
+    expect(after.map((g) => g.matchedRule.id)).toEqual(['insertedAhead', 'ct']);
+    const ctKey = (groups: InstanceGroup[]) =>
+      groups.find((g) => g.matchedRule.id === 'ct')?.splitKey;
+    expect(ctKey(after)).toBe(ctKey(before));
   });
 
-  it('rejects a rule set with duplicate ids', () => {
+  it('keys a group by the rule id taken from the rule set key', () => {
+    const groups = groupInstancesBySplitRules([ct('a', 1)], {
+      byImage: { priority: 1, groupBy: ['imageId'] },
+    });
+
+    expect(groups[0].matchedRule.id).toBe('byImage');
+    expect(groups[0].splitKey).toBe(JSON.stringify(['byImage', 'a']));
+  });
+
+  it('rejects an invalid rule set even when there are no instances', () => {
+    // A broken rule set is broken regardless of what it is applied to, and
+    // validating only on a non-empty series would let it through in exactly the
+    // cheap case a caller is most likely to exercise first.
     expect(() =>
-      groupInstancesBySplitRules(
-        [ct('a', 1)],
-        [
-          { id: 'same', matches: (i) => i.Modality === 'MR' },
-          { id: 'same', matches: (i) => i.Modality === 'CT' },
-        ]
-      )
-    ).toThrow(/Duplicate split rule id "same" at index 1/);
-  });
-
-  it('rejects duplicate ids even when there are no instances', () => {
-    // A rule set with duplicate ids is broken regardless of what it is applied
-    // to, and validating only on a non-empty series would let it through in
-    // exactly the cheap case a caller is most likely to exercise first.
-    expect(() =>
-      groupInstancesBySplitRules(
-        [],
-        [
-          { id: 'same', matches: (i) => i.Modality === 'MR' },
-          { id: 'same', matches: (i) => i.Modality === 'CT' },
-        ]
-      )
-    ).toThrow(/Duplicate split rule id "same" at index 1/);
-  });
-
-  it('falls back to position for rules with no id', () => {
-    const groups = groupInstancesBySplitRules(
-      [ct('a', 1)],
-      [{ matches: (i) => i.Modality === 'CT', groupBy: ['imageId'] }]
-    );
-
-    expect(groups).toHaveLength(1);
-    // A number, not '#0': see below for why the fallback must not be a string.
-    expect(groups[0].splitKey).toBe(JSON.stringify([0, 'a']));
-  });
-
-  it('keeps an unnamed rule from colliding with a positional-looking id', () => {
-    // The discriminator occupies one slot of the key, shared between real ids
-    // and the positional fallback. A string fallback ('#1') is therefore
-    // something a caller can also type as an `id`, and the unnamed rule at
-    // index 1 would then share a bucket namespace with the rule named '#1' -
-    // merging two rules' instances into one group under the wrong matchedRule.
-    const groups = groupInstancesBySplitRules(
-      [
-        { imageId: 'us', Modality: 'US', SeriesInstanceUID: 's' },
-        { imageId: 'ct', Modality: 'CT', SeriesInstanceUID: 's' },
-      ],
-      [
-        { id: '#1', matches: (i) => i.Modality === 'US' },
-        { matches: (i) => i.Modality === 'CT' },
-      ]
-    );
-
-    expect(groups.map((g) => g.instances.map((i) => i.imageId))).toEqual([
-      ['us'],
-      ['ct'],
-    ]);
-    expect(groups.map((g) => g.matchedRule.id)).toEqual(['#1', undefined]);
+      groupInstancesBySplitRules([], {
+        broken: { id: 'other', priority: 1 },
+      })
+    ).toThrow(/"broken".*states id "other"/);
   });
 
   it('orders groups by rule position, then by key numerically', () => {
     // '10' must sort after '2', not lexically before it.
     const instances = [ct('j', 10), ct('b', 2), ct('a', 1)];
 
-    const groups = groupInstancesBySplitRules(instances, [ctRule]);
+    const groups = groupInstancesBySplitRules(instances, ruleSet(ctRule));
 
     expect(groups.map((g) => g.instances[0].imageId)).toEqual(['a', 'b', 'j']);
   });
@@ -570,11 +550,11 @@ describe('split key stability', () => {
 
     const forward = groupInstancesBySplitRules(
       [padded('a', '01'), padded('b', '1')],
-      [rule]
+      ruleSet(rule)
     );
     const reverse = groupInstancesBySplitRules(
       [padded('b', '1'), padded('a', '01')],
-      [rule]
+      ruleSet(rule)
     );
 
     expect(forward).toHaveLength(2);
@@ -589,11 +569,11 @@ describe('split key stability', () => {
   it('produces the same keys regardless of input order', () => {
     const forward = groupInstancesBySplitRules(
       [ct('a', 1), ct('b', 2), ct('j', 10)],
-      [ctRule]
+      ruleSet(ctRule)
     );
     const shuffled = groupInstancesBySplitRules(
       [ct('j', 10), ct('a', 1), ct('b', 2)],
-      [ctRule]
+      ruleSet(ctRule)
     );
 
     expect(shuffled.map((g) => g.splitKey)).toEqual(
@@ -640,7 +620,7 @@ describe('runBy - interleaved single-frame and multi-frame instances', () => {
   };
 
   it('splits interleaved singles and clips into one display set per run', () => {
-    const groups = groupInstancesBySplitRules(interleaved, [usRunRule]);
+    const groups = groupInstancesBySplitRules(interleaved, ruleSet(usRunRule));
 
     expect(groups.map((g) => g.instances.map((i) => i.imageId))).toEqual([
       ['img1', 'img2', 'img3'],
@@ -653,9 +633,10 @@ describe('runBy - interleaved single-frame and multi-frame instances', () => {
   it('merges the singles into one set when runBy is omitted', () => {
     // Guards the claim above: without runBy the same rule produces the wrong
     // answer, so the test proves runBy is what does the work.
-    const groups = groupInstancesBySplitRules(interleaved, [
-      { id: 'usInterleaved', matches: (i) => i.Modality === 'US' },
-    ]);
+    const groups = groupInstancesBySplitRules(
+      interleaved,
+      ruleSet({ id: 'usInterleaved', matches: (i) => i.Modality === 'US' })
+    );
 
     expect(groups).toHaveLength(1);
     expect(groups[0].instances).toHaveLength(6);
@@ -671,7 +652,7 @@ describe('runBy - interleaved single-frame and multi-frame instances', () => {
       interleaved[1],
     ];
 
-    const groups = groupInstancesBySplitRules(shuffled, [usRunRule]);
+    const groups = groupInstancesBySplitRules(shuffled, ruleSet(usRunRule));
 
     // Nothing about the result depends on input order: not the run membership,
     // not the group order, and not the order within each group.
@@ -682,7 +663,7 @@ describe('runBy - interleaved single-frame and multi-frame instances', () => {
       ['clip6'],
     ]);
     expect(groups.map((g) => g.splitKey)).toEqual(
-      groupInstancesBySplitRules(interleaved, [usRunRule]).map(
+      groupInstancesBySplitRules(interleaved, ruleSet(usRunRule)).map(
         (g) => g.splitKey
       )
     );
@@ -707,10 +688,10 @@ describe('runBy - interleaved single-frame and multi-frame instances', () => {
       ...interleaved.slice(1),
     ];
 
-    const groups = groupInstancesBySplitRules(withOther, [
-      { id: 'xa', matches: (i) => i.Modality === 'XA' },
-      usRunRule,
-    ]);
+    const groups = groupInstancesBySplitRules(
+      withOther,
+      ruleSet({ id: 'xa', matches: (i) => i.Modality === 'XA' }, usRunRule)
+    );
 
     expect(
       groups
@@ -730,7 +711,7 @@ describe('runBy - interleaved single-frame and multi-frame instances', () => {
       { ...us('a2', 3), SeriesInstanceUID: 'seriesA' },
     ];
 
-    const groups = groupInstancesBySplitRules(instances, [usRunRule]);
+    const groups = groupInstancesBySplitRules(instances, ruleSet(usRunRule));
 
     expect(groups.map((g) => g.instances.map((i) => i.imageId))).toEqual([
       ['a1', 'a2'],
@@ -749,14 +730,15 @@ describe('runBy - interleaved single-frame and multi-frame instances', () => {
       us('d', 4),
     ];
 
-    const groups = groupInstancesBySplitRules(instances, [
-      {
+    const groups = groupInstancesBySplitRules(
+      instances,
+      ruleSet({
         id: 'usSized',
         matches: (i) => i.Modality === 'US',
         groupBy: ['Rows'],
         runBy: (i) => Number(i.NumberOfFrames ?? 1) > 1,
-      },
-    ]);
+      })
+    );
 
     // Ordered by split key, so the Rows=240 bucket precedes the Rows=480 one.
     expect(groups.map((g) => g.instances.map((i) => i.imageId))).toEqual([
@@ -776,13 +758,14 @@ describe('runBy - interleaved single-frame and multi-frame instances', () => {
       { ...us('c', 3), ImageType: ['DERIVED', 'SECONDARY'] },
     ];
 
-    const groups = groupInstancesBySplitRules(instances, [
-      {
+    const groups = groupInstancesBySplitRules(
+      instances,
+      ruleSet({
         id: 'byImageType',
         matches: () => true,
         runBy: (i) => i.ImageType,
-      },
-    ]);
+      })
+    );
 
     expect(groups.map((g) => g.instances.map((i) => i.imageId))).toEqual([
       ['a', 'b'],
@@ -799,9 +782,10 @@ describe('runBy - interleaved single-frame and multi-frame instances', () => {
       { ...us('c', 3), window: { center: 40, width: 1500 } },
     ];
 
-    const groups = groupInstancesBySplitRules(instances, [
-      { id: 'byWindow', matches: () => true, runBy: (i) => i.window },
-    ]);
+    const groups = groupInstancesBySplitRules(
+      instances,
+      ruleSet({ id: 'byWindow', matches: () => true, runBy: (i) => i.window })
+    );
 
     expect(groups.map((g) => g.instances.map((i) => i.imageId))).toEqual([
       ['a', 'b'],
@@ -826,9 +810,10 @@ describe('runBy - interleaved single-frame and multi-frame instances', () => {
       { ...us('c', 3), tag: third },
     ];
 
-    const groups = groupInstancesBySplitRules(instances, [
-      { id: 'byTag', matches: () => true, runBy: (i) => i.tag },
-    ]);
+    const groups = groupInstancesBySplitRules(
+      instances,
+      ruleSet({ id: 'byTag', matches: () => true, runBy: (i) => i.tag })
+    );
 
     expect(groups.map((g) => g.instances.map((i) => i.imageId))).toEqual([
       ['a', 'b'],
@@ -837,23 +822,24 @@ describe('runBy - interleaved single-frame and multi-frame instances', () => {
   });
 
   it('sorts instances with no usable InstanceNumber last, not as zero', () => {
-    // `Number(null)` and `Number('')` are 0 - a finite number - so coercing
-    // without a guard makes these two instances sort *ahead* of the numbered
-    // ones and moves every run boundary after them (3 groups instead of 2).
+    // `Number(null)`, `Number('')` and `Number(' ')` are 0 - a finite number -
+    // so coercing without a guard makes these instances sort *ahead* of the
+    // numbered ones and moves every run boundary after them.
     const instances: NaturalizedInstance[] = [
       { ...us('noNumber', 1), InstanceNumber: null as unknown as number },
       { ...us('blank', 1), InstanceNumber: '' as unknown as number },
+      { ...us('spaces', 1), InstanceNumber: '  ' as unknown as number },
       us('clip', 1, 60),
       us('single', 2),
     ];
 
-    const groups = groupInstancesBySplitRules(instances, [usRunRule]);
+    const groups = groupInstancesBySplitRules(instances, ruleSet(usRunRule));
 
     expect(groups.map((g) => g.instances.map((i) => i.imageId))).toEqual([
       ['clip'],
-      // Within the group, the two absent numbers sort after 'single' and break
+      // Within the group, the absent numbers sort after 'single' and break
       // their tie on SOPInstanceUID.
-      ['single', 'blank', 'noNumber'],
+      ['single', 'blank', 'noNumber', 'spaces'],
     ]);
   });
 });
@@ -894,7 +880,10 @@ describe('compareInstances - rule-declared instance order', () => {
   };
 
   it('orders a group by the rule comparator instead of acquisition order', () => {
-    const groups = groupInstancesBySplitRules(reconstructed, [spatialRule]);
+    const groups = groupInstancesBySplitRules(
+      reconstructed,
+      ruleSet(spatialRule)
+    );
 
     expect(groups[0].instances.map((i) => i.imageId)).toEqual([
       'bottom',
@@ -904,9 +893,10 @@ describe('compareInstances - rule-declared instance order', () => {
   });
 
   it('defaults to acquisition order when the rule declares no comparator', () => {
-    const groups = groupInstancesBySplitRules(reconstructed, [
-      { id: 'default', matches: () => true },
-    ]);
+    const groups = groupInstancesBySplitRules(
+      reconstructed,
+      ruleSet({ id: 'default', matches: () => true })
+    );
 
     expect(groups[0].instances.map((i) => i.imageId)).toEqual([
       'bottom',
@@ -916,16 +906,17 @@ describe('compareInstances - rule-declared instance order', () => {
   });
 
   it('reads the rule series facts through the comparator context', () => {
-    const groups = groupInstancesBySplitRules([...reconstructed].reverse(), [
-      {
+    const groups = groupInstancesBySplitRules(
+      [...reconstructed].reverse(),
+      ruleSet({
         id: 'directional',
         matches: () => true,
         series: () => ({ descending: true }),
         compareInstances: (a, b, context) =>
           (context.series.descending ? -1 : 1) *
           ((a.SliceLocation as number) - (b.SliceLocation as number)),
-      },
-    ]);
+      })
+    );
 
     expect(groups[0].instances.map((i) => i.imageId)).toEqual([
       'top',
@@ -943,10 +934,14 @@ describe('compareInstances - rule-declared instance order', () => {
       slice('b', 10, 2),
       slice('c', 10, 3),
     ];
-    const forward = groupInstancesBySplitRules(sameLocation, [spatialRule]);
-    const reversed = groupInstancesBySplitRules([...sameLocation].reverse(), [
-      spatialRule,
-    ]);
+    const forward = groupInstancesBySplitRules(
+      sameLocation,
+      ruleSet(spatialRule)
+    );
+    const reversed = groupInstancesBySplitRules(
+      [...sameLocation].reverse(),
+      ruleSet(spatialRule)
+    );
 
     expect(forward[0].instances.map((i) => i.imageId)).toEqual(['a', 'b', 'c']);
     expect(reversed[0].instances.map((i) => i.imageId)).toEqual([
@@ -964,14 +959,16 @@ describe('compareInstances - rule-declared instance order', () => {
       { ...slice('first', 10, 1), SliceLocation: undefined },
     ];
     expect(
-      groupInstancesBySplitRules(partial, [spatialRule])[0].instances.map(
-        (i) => i.imageId
-      )
+      groupInstancesBySplitRules(
+        partial,
+        ruleSet(spatialRule)
+      )[0].instances.map((i) => i.imageId)
     ).toEqual(['first', 'second']);
     expect(
-      groupInstancesBySplitRules([...partial].reverse(), [
-        spatialRule,
-      ])[0].instances.map((i) => i.imageId)
+      groupInstancesBySplitRules(
+        [...partial].reverse(),
+        ruleSet(spatialRule)
+      )[0].instances.map((i) => i.imageId)
     ).toEqual(['first', 'second']);
   });
 
@@ -985,15 +982,16 @@ describe('compareInstances - rule-declared instance order', () => {
       { ...slice('single2', 20, 3), NumberOfFrames: undefined },
     ];
 
-    const groups = groupInstancesBySplitRules(instances, [
-      {
+    const groups = groupInstancesBySplitRules(
+      instances,
+      ruleSet({
         id: 'spatialRuns',
         matches: () => true,
         compareInstances: (a, b) =>
           (a.SliceLocation as number) - (b.SliceLocation as number),
         runBy: (i) => Number(i.NumberOfFrames ?? 1) > 1,
-      },
-    ]);
+      })
+    );
 
     expect(groups.map((g) => g.instances.map((i) => i.imageId))).toEqual([
       ['single1', 'single2'],
@@ -1036,11 +1034,9 @@ describe('host-supplied instance ordering', () => {
     groups[0].instances.map((i) => i.imageId);
 
   it('defaults to acquisition order when the host supplies nothing', () => {
-    expect(ids(groupInstancesBySplitRules(instances, [plainRule]))).toEqual([
-      'b',
-      'c',
-      'a',
-    ]);
+    expect(
+      ids(groupInstancesBySplitRules(instances, ruleSet(plainRule)))
+    ).toEqual(['b', 'c', 'a']);
   });
 
   it('applies a host base sort to every rule', () => {
@@ -1048,7 +1044,7 @@ describe('host-supplied instance ordering', () => {
     // instance and projects onto it cannot be written as a comparator.
     const groups = groupInstancesBySplitRules(
       instances,
-      [plainRule],
+      ruleSet(plainRule),
       undefined,
       { sortInstances: byPosition }
     );
@@ -1057,7 +1053,7 @@ describe('host-supplied instance ordering', () => {
 
   it('tells the base sort which rule it is ordering for', () => {
     const seen: string[] = [];
-    groupInstancesBySplitRules(instances, [plainRule], undefined, {
+    groupInstancesBySplitRules(instances, ruleSet(plainRule), undefined, {
       sortInstances: (list, context) => {
         seen.push(context.matchedRule.id ?? '');
         return list;
@@ -1069,14 +1065,12 @@ describe('host-supplied instance ordering', () => {
   it('lets a rule comparator override the host base sort', () => {
     const groups = groupInstancesBySplitRules(
       instances,
-      [
-        {
-          id: 'descending',
-          matches: () => true,
-          compareInstances: (a, b) =>
-            (b.SliceLocation as number) - (a.SliceLocation as number),
-        },
-      ],
+      ruleSet({
+        id: 'descending',
+        matches: () => true,
+        compareInstances: (a, b) =>
+          (b.SliceLocation as number) - (a.SliceLocation as number),
+      }),
       undefined,
       { sortInstances: byPosition }
     );
@@ -1089,24 +1083,22 @@ describe('host-supplied instance ordering', () => {
     // position) order rather than collapsing to acquisition or input order.
     const groups = groupInstancesBySplitRules(
       instances,
-      [
-        {
-          id: 'aFirst',
-          matches: () => true,
-          compareInstances: (x, y) => {
-            if (x.imageId === y.imageId) {
-              return 0;
-            }
-            if (x.imageId === 'a') {
-              return -1;
-            }
-            if (y.imageId === 'a') {
-              return 1;
-            }
+      ruleSet({
+        id: 'aFirst',
+        matches: () => true,
+        compareInstances: (x, y) => {
+          if (x.imageId === y.imageId) {
             return 0;
-          },
+          }
+          if (x.imageId === 'a') {
+            return -1;
+          }
+          if (y.imageId === 'a') {
+            return 1;
+          }
+          return 0;
         },
-      ],
+      }),
       undefined,
       { sortInstances: byPositionDescending }
     );
@@ -1116,7 +1108,11 @@ describe('host-supplied instance ordering', () => {
   it('consults the host comparator after the rule declines', () => {
     const groups = groupInstancesBySplitRules(
       instances,
-      [{ id: 'noOpinion', matches: () => true, compareInstances: () => 0 }],
+      ruleSet({
+        id: 'noOpinion',
+        matches: () => true,
+        compareInstances: () => 0,
+      }),
       undefined,
       {
         compareInstances: (a, b) =>
@@ -1129,14 +1125,12 @@ describe('host-supplied instance ordering', () => {
   it('prefers the rule comparator over the host comparator', () => {
     const groups = groupInstancesBySplitRules(
       instances,
-      [
-        {
-          id: 'ruleWins',
-          matches: () => true,
-          compareInstances: (a, b) =>
-            (b.SliceLocation as number) - (a.SliceLocation as number),
-        },
-      ],
+      ruleSet({
+        id: 'ruleWins',
+        matches: () => true,
+        compareInstances: (a, b) =>
+          (b.SliceLocation as number) - (a.SliceLocation as number),
+      }),
       undefined,
       {
         compareInstances: (a, b) =>
@@ -1149,15 +1143,13 @@ describe('host-supplied instance ordering', () => {
   it('treats a NaN comparator result as no opinion', () => {
     const groups = groupInstancesBySplitRules(
       instances,
-      [
-        {
-          id: 'missingTag',
-          matches: () => true,
-          // `Missing` is on no instance, so every comparison yields NaN.
-          compareInstances: (a, b) =>
-            (a.Missing as number) - (b.Missing as number),
-        },
-      ],
+      ruleSet({
+        id: 'missingTag',
+        matches: () => true,
+        // `Missing` is on no instance, so every comparison yields NaN.
+        compareInstances: (a, b) =>
+          (a.Missing as number) - (b.Missing as number),
+      }),
       undefined,
       { sortInstances: byPosition }
     );
@@ -1168,13 +1160,13 @@ describe('host-supplied instance ordering', () => {
     const options = { sortInstances: byPosition };
     const forward = groupInstancesBySplitRules(
       instances,
-      [plainRule],
+      ruleSet(plainRule),
       undefined,
       options
     );
     const reverse = groupInstancesBySplitRules(
       [...instances].reverse(),
-      [plainRule],
+      ruleSet(plainRule),
       undefined,
       options
     );
@@ -1190,7 +1182,7 @@ describe('host-supplied instance ordering', () => {
         (b.SliceLocation as number) - (a.SliceLocation as number),
     };
     const fromEngine = ids(
-      groupInstancesBySplitRules(instances, [rule], undefined, options)
+      groupInstancesBySplitRules(instances, ruleSet(rule), undefined, options)
     );
     const standalone = orderInstancesForRule(instances, rule, options).map(
       (i) => i.imageId
@@ -1214,13 +1206,11 @@ describe('host-supplied instance ordering', () => {
     const list = [slice('a', 10, 3), slice('b', 20, 1), clip('c', 30, 2)];
     const groups = groupInstancesBySplitRules(
       list,
-      [
-        {
-          id: 'runs',
-          matches: () => true,
-          runBy: (instance) => Number(instance.NumberOfFrames ?? 1) > 1,
-        },
-      ],
+      ruleSet({
+        id: 'runs',
+        matches: () => true,
+        runBy: (instance) => Number(instance.NumberOfFrames ?? 1) > 1,
+      }),
       undefined,
       { sortInstances: byPosition }
     );
@@ -1228,5 +1218,111 @@ describe('host-supplied instance ordering', () => {
       ['a', 'b'],
       ['c'],
     ]);
+  });
+});
+
+describe('InstanceGroup.series - the facts of the whole split', () => {
+  const mr = (
+    imageId: string,
+    InstanceNumber: number,
+    SliceLocation: number,
+    DiffusionBValue?: number
+  ): NaturalizedInstance => ({
+    imageId,
+    Modality: 'MR',
+    SeriesInstanceUID: 'dwi',
+    SOPInstanceUID: `sop-${imageId}`,
+    InstanceNumber,
+    SliceLocation,
+    ...(DiffusionBValue === undefined ? {} : { DiffusionBValue }),
+  });
+
+  // Two halves: two frames with a b-value, two without. The series mixes both
+  // kinds, but neither half does.
+  const dwi = [
+    mr('b1', 1, 10, 800),
+    mr('b2', 2, 20, 800),
+    mr('n1', 3, 10),
+    mr('n2', 4, 20),
+  ];
+
+  const mixedBValue = ({ instances }: { instances: NaturalizedInstance[] }) => {
+    const withB = instances.filter((i) => i.DiffusionBValue !== undefined);
+    return {
+      mixed: withB.length > 0 && withB.length < instances.length,
+    };
+  };
+
+  // Orders by position, descending for a mixed series and ascending otherwise,
+  // so the order shows which facts the comparator saw.
+  const dwiRule: SplitRule = {
+    id: 'dwi',
+    series: mixedBValue,
+    groupBy: [
+      'SeriesInstanceUID',
+      (instance) => instance.DiffusionBValue === undefined,
+    ],
+    compareInstances: (a, b, context) =>
+      (context.series.mixed ? -1 : 1) *
+      ((a.SliceLocation as number) - (b.SliceLocation as number)),
+  };
+
+  const ids = (list: NaturalizedInstance[]) => list.map((i) => i.imageId);
+
+  it('gives every group the series facts of all instances in the split', () => {
+    const groups = groupInstancesBySplitRules(dwi, ruleSet(dwiRule));
+
+    expect(groups.map((g) => ids(g.instances))).toEqual([
+      ['b2', 'b1'],
+      ['n2', 'n1'],
+    ]);
+    // Each half alone is not mixed, but the group carries the split's facts.
+    for (const group of groups) {
+      expect(mixedBValue({ instances: group.instances })).toEqual({
+        mixed: false,
+      });
+      expect(group.series).toEqual({ mixed: true });
+    }
+  });
+
+  it('gives a rule with no series hook an empty facts object', () => {
+    const groups = groupInstancesBySplitRules(
+      dwi,
+      ruleSet({ id: 'plain', groupBy: ['SeriesInstanceUID'] })
+    );
+
+    expect(groups[0].series).toEqual({});
+  });
+
+  it('orderInstancesForRule uses options.series instead of recomputing the facts', () => {
+    const [firstHalf] = groupInstancesBySplitRules(dwi, ruleSet(dwiRule));
+
+    // With the group's facts, the order is the order the split produced.
+    expect(
+      ids(
+        orderInstancesForRule(firstHalf.instances, dwiRule, {
+          series: firstHalf.series,
+        })
+      )
+    ).toEqual(['b2', 'b1']);
+    // Without them, the facts come from the half alone, which is not mixed, so
+    // the comparator sees different facts and orders the other way.
+    expect(ids(orderInstancesForRule(firstHalf.instances, dwiRule))).toEqual([
+      'b1',
+      'b2',
+    ]);
+  });
+
+  it('orderInstancesForRule passes options.series to the host sort too', () => {
+    const seen: unknown[] = [];
+    orderInstancesForRule(dwi, dwiRule, {
+      series: { mixed: 'from the caller' },
+      sortInstances: (list, context) => {
+        seen.push(context.series.mixed);
+        return list;
+      },
+    });
+
+    expect(seen).toEqual(['from the caller']);
   });
 });

@@ -9,8 +9,9 @@ import {
   rawDisplaySetSelector,
   type IDisplaySet,
   type NaturalizedInstance,
+  type RawDisplaySetSelector,
   type RawSplitRule,
-  type SplitRule,
+  type SplitRuleSet,
 } from '@cornerstonejs/metadata';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -59,7 +60,8 @@ setTitleAndDescription(
   'The standard display-set split rules are data (rawDisplaySetSelector), not ' +
     'code, so they can be inspected, toggled and extended at runtime — and the ' +
     'same selector can be used by a server. Untick a rule to see what the ' +
-    'series splits into without it, add your own rule as JSON, or load a rule ' +
+    'series splits into without it, add your own rules as JSON (keyed by rule ' +
+    'id, with a priority: below 0 runs before the standard rules), or load a rule ' +
     'set the server hosts. Every rule shown is read from the selector itself, ' +
     'including its explanation. Each display set that comes out gets its own ' +
     'viewport: a 2x2 MPR + 3D layout when the display set is volume-capable, ' +
@@ -158,7 +160,7 @@ const MAMMO_VIEW_BY_CODE: Record<string, string> = {
 
 /** First item of a DICOM sequence, whether naturalized as an array or an item. */
 function firstItem(sequence: unknown): Record<string, unknown> | undefined {
-  const item = Array.isArray(sequence) ? sequence[0] : sequence;
+  const item = utilities.asArrayFirst(sequence);
   return item && typeof item === 'object'
     ? (item as Record<string, unknown>)
     : undefined;
@@ -213,60 +215,66 @@ const DEMO_CUSTOM_ATTRIBUTE_PRESETS = {
 const SAMPLE_SNIPPETS: Record<string, string> = {
   'A single new rule (localizers first)': JSON.stringify(
     {
-      id: 'localizer',
-      description:
-        'Split scout / localizer images off into their own stack so they do ' +
-        'not join the volume.',
-      viewportTypes: ['stack'],
-      matches: { classifier: 'localizer' },
-      groupBy: ['SeriesInstanceUID'],
+      localizer: {
+        priority: -1,
+        description:
+          'Split scout / localizer images off into their own stack so they do ' +
+          'not join the volume.',
+        viewportTypes: ['stack'],
+        matches: { classifier: 'localizer' },
+        groupBy: ['SeriesInstanceUID'],
+      },
     },
     null,
     2
   ),
   'Runs: interleaved US singles and clips': JSON.stringify(
     {
-      id: 'usInterleaved',
-      description:
-        'One display set per run of same-kind instances, so img img clip img ' +
-        'becomes three display sets instead of two.',
-      viewportTypes: ['stack'],
-      matches: { attribute: 'Modality', equals: 'US' },
-      runBy: { condition: { attribute: 'NumberOfFrames', greaterThan: 1 } },
+      usInterleaved: {
+        priority: -1,
+        description:
+          'One display set per run of same-kind instances, so img img clip img ' +
+          'becomes three display sets instead of two.',
+        viewportTypes: ['stack'],
+        matches: { attribute: 'Modality', equals: 'US' },
+        runBy: { condition: { attribute: 'NumberOfFrames', greaterThan: 1 } },
+      },
     },
     null,
     2
   ),
   'Mammo: one series into RCC / RMLO / LCC / LMLO': JSON.stringify(
     {
-      id: 'mammoViewSplit',
-      description:
-        'Mammography: a screening exam that arrives as a single series still ' +
-        'holds four distinct views. Split it by laterality and view so each ' +
-        'becomes its own display set — the standard singleImageModality rule ' +
-        'only splits MG on a coarse image-size bucket, which is identical ' +
-        'across the four.',
-      viewportTypes: ['stack'],
-      matches: {
-        all: [
-          { attribute: 'Modality', equals: 'MG' },
-          { attribute: 'Rows', exists: true },
+      mammoViewSplit: {
+        priority: -1,
+        description:
+          'Mammography: a screening exam that arrives as a single series still ' +
+          'holds four distinct views. Split it by laterality and view so each ' +
+          'becomes its own display set — the standard singleImageModality rule ' +
+          'only splits MG on a coarse image-size bucket, which is identical ' +
+          'across the four.',
+        viewportTypes: ['stack'],
+        matches: {
+          all: [
+            { attribute: 'Modality', equals: 'MG' },
+            { attribute: 'Rows', exists: true },
+          ],
+        },
+        // ViewPosition first for the vendors that send it; PatientOrientation is
+        // the fallback that distinguishes CC from MLO when they do not
+        // (RCC P\L, RMLO P\FL, LCC A\R, LMLO A\FR). Both are flat attributes, so
+        // this rule needs nothing registered to run.
+        groupBy: [
+          'SeriesInstanceUID',
+          'ImageLaterality',
+          'ViewPosition',
+          'PatientOrientation',
         ],
-      },
-      // ViewPosition first for the vendors that send it; PatientOrientation is
-      // the fallback that distinguishes CC from MLO when they do not
-      // (RCC P\L, RMLO P\FL, LCC A\R, LMLO A\FR). Both are flat attributes, so
-      // this rule needs nothing registered to run.
-      groupBy: [
-        'SeriesInstanceUID',
-        'ImageLaterality',
-        'ViewPosition',
-        'PatientOrientation',
-      ],
-      customAttributes: {
-        fromFirstInstance: {
-          imageLaterality: 'ImageLaterality',
-          patientOrientation: 'PatientOrientation',
+        customAttributes: {
+          fromFirstInstance: {
+            imageLaterality: 'ImageLaterality',
+            patientOrientation: 'PatientOrientation',
+          },
         },
       },
     },
@@ -275,32 +283,39 @@ const SAMPLE_SNIPPETS: Record<string, string> = {
   ),
   'Mammo: the same split, views named (preset)': JSON.stringify(
     {
-      id: 'mammoViewSplit',
-      description:
-        'As above, but each display set is also labelled with its view — ' +
-        'mammoView "CC"/"MLO", descriptionName "RCC"/"RMLO"/"LCC"/"LMLO" — ' +
-        'read out of ViewCodeSequence by the named preset. A hanging protocol ' +
-        'can then select a viewport by view rather than by position.',
-      viewportTypes: ['stack'],
-      matches: {
-        all: [
-          { attribute: 'Modality', equals: 'MG' },
-          { attribute: 'Rows', exists: true },
+      mammoViewSplit: {
+        priority: -1,
+        description:
+          'As above, but each display set is also labelled with its view — ' +
+          'mammoView "CC"/"MLO", descriptionName "RCC"/"RMLO"/"LCC"/"LMLO" — ' +
+          'read out of ViewCodeSequence by the named preset. A hanging protocol ' +
+          'can then select a viewport by view rather than by position.',
+        viewportTypes: ['stack'],
+        matches: {
+          all: [
+            { attribute: 'Modality', equals: 'MG' },
+            { attribute: 'Rows', exists: true },
+          ],
+        },
+        groupBy: [
+          'SeriesInstanceUID',
+          'ImageLaterality',
+          'ViewPosition',
+          'PatientOrientation',
         ],
+        customAttributes: { preset: 'mammoView' },
       },
-      groupBy: [
-        'SeriesInstanceUID',
-        'ImageLaterality',
-        'ViewPosition',
-        'PatientOrientation',
-      ],
-      customAttributes: { preset: 'mammoView' },
     },
     null,
     2
   ),
-  'Customization merge command ($filter by id)': JSON.stringify(
-    { $filter: { id: 'volume3d', $merge: { viewportTypes: ['stack'] } } },
+  'Customization merge command ($merge by key)': JSON.stringify(
+    { volume3d: { $merge: { viewportTypes: ['stack'] } } },
+    null,
+    2
+  ),
+  'Customization merge command (exclude a rule)': JSON.stringify(
+    { singleImageModality: { priority: { $set: null } } },
     null,
     2
   ),
@@ -310,8 +325,11 @@ const SAMPLE_SNIPPETS: Record<string, string> = {
 
 /** Rule ids the user unticked. Ids come from the selector, never hard-coded. */
 const disabledRuleIds = new Set<string>();
-/** Rules the user added or the server supplied, ahead of the standard ones. */
-let addedRules: RawSplitRule[] = [];
+/**
+ * Rules the user added or the server supplied, keyed by rule id. Merged over the
+ * standard ones by key, so an added rule with a standard id replaces that rule.
+ */
+let addedRules: RawDisplaySetSelector = {};
 /** Customization merge commands applied on top, in order. */
 const mergeCommands: unknown[] = [];
 
@@ -357,20 +375,27 @@ function setStatus(message: string, isError = false) {
 
 // ======== The selector, assembled from user state ======== //
 
-/**
- * The selector as data: user/server rules first, then the standard ones minus the
- * unticked ids, then any customization merge commands on top.
- *
- * The `unsupported` catch-all is never dropped — removing it would make the split
- * silently discard everything no other rule claims, which is the failure mode it
- * exists to prevent. Its checkbox is disabled for the same reason.
- */
-function buildSelector(): RawSplitRule[] {
-  const standard = rawDisplaySetSelector.filter(
-    (rule) => !disabledRuleIds.has(rule.id)
-  );
+/** The standard rules with the user/server rules merged over them by key. */
+function mergedRules(): RawDisplaySetSelector {
+  return { ...rawDisplaySetSelector, ...addedRules };
+}
 
-  let selector: RawSplitRule[] = [...addedRules, ...standard];
+/**
+ * The selector as data: the standard rules with the user/server rules merged
+ * over them by key, the unticked ids excluded (`priority: null`), then any
+ * customization merge commands on top.
+ *
+ * The `unsupported` catch-all is never excluded here — without it the split
+ * would silently discard everything no other rule claims, which is the failure
+ * mode it exists to prevent. Its checkbox is disabled for the same reason.
+ */
+function buildSelector(): RawDisplaySetSelector {
+  let selector: RawDisplaySetSelector = Object.fromEntries(
+    Object.entries(mergedRules()).map(([id, rule]) => [
+      id,
+      disabledRuleIds.has(id) ? { ...rule, priority: null } : rule,
+    ])
+  );
 
   // Applied the way OHIF's customization service merges a customization over an
   // extension default: same command vocabulary, same order.
@@ -381,7 +406,54 @@ function buildSelector(): RawSplitRule[] {
   return selector;
 }
 
-function compileSelector(): SplitRule[] {
+/**
+ * The rules of a selector in evaluation order: ascending priority, equal
+ * priorities by id. Excluded rules (`priority: null`) come last, so the list
+ * still shows them.
+ */
+function rulesInOrder(
+  selector: RawDisplaySetSelector
+): [string, RawSplitRule][] {
+  const rank = (rule: RawSplitRule) =>
+    typeof rule.priority === 'number' ? rule.priority : Infinity;
+  return Object.entries(selector).sort(
+    ([aId, a], [bId, b]) =>
+      rank(a) - rank(b) || (aId < bId ? -1 : aId > bId ? 1 : 0)
+  );
+}
+
+/**
+ * Turns pasted or fetched JSON into keyed rules.
+ *
+ * Accepts a selector keyed by rule id, or a single rule object with an `id`,
+ * which becomes `{ [id]: { ...rule, priority: -1 } }` (it runs before the
+ * standard rules) unless it states its own priority.
+ */
+function toKeyedRules(parsed: unknown): RawDisplaySetSelector {
+  if (Array.isArray(parsed)) {
+    throw new Error(
+      'the array form is not supported: key the rules by id, each with a priority'
+    );
+  }
+  if (!parsed || typeof parsed !== 'object') {
+    throw new Error(
+      'expected an object keyed by rule id, or one rule with an id'
+    );
+  }
+  const record = parsed as Record<string, unknown>;
+  if (typeof record.id === 'string') {
+    const rule = record as RawSplitRule & { id: string };
+    return {
+      [rule.id]: {
+        ...rule,
+        priority: rule.priority === undefined ? -1 : rule.priority,
+      },
+    };
+  }
+  return record as RawDisplaySetSelector;
+}
+
+function compileSelector(): SplitRuleSet {
   return createDisplaySetSplitRules(buildSelector(), {
     classifiers: DEMO_CLASSIFIERS,
     customAttributePresets: DEMO_CUSTOM_ATTRIBUTE_PRESETS,
@@ -413,7 +485,11 @@ function describeGroupBy(rule: RawSplitRule): string {
     .join(' / ');
 }
 
-function ruleRow(rule: RawSplitRule, origin: 'standard' | 'added') {
+function ruleRow(
+  id: string,
+  rule: RawSplitRule,
+  origin: 'standard' | 'added' | 'replaced'
+) {
   const row = document.createElement('div');
   row.style.display = 'flex';
   row.style.gap = '8px';
@@ -422,18 +498,21 @@ function ruleRow(rule: RawSplitRule, origin: 'standard' | 'added') {
 
   const checkbox = document.createElement('input');
   checkbox.type = 'checkbox';
-  checkbox.checked = !disabledRuleIds.has(rule.id);
+  const isExcluded = rule.priority === null;
+  checkbox.checked = !isExcluded && !disabledRuleIds.has(id);
   checkbox.style.marginTop = '3px';
   const isCatchAll = !rule.matches;
-  checkbox.disabled = isCatchAll;
+  checkbox.disabled = isCatchAll || isExcluded;
   checkbox.title = isCatchAll
     ? 'The catch-all cannot be disabled: without it, unmatched objects are dropped.'
-    : `Toggle the "${rule.id}" rule`;
+    : isExcluded
+      ? `The "${id}" rule is excluded by its priority: null.`
+      : `Toggle the "${id}" rule`;
   checkbox.onchange = () => {
     if (checkbox.checked) {
-      disabledRuleIds.delete(rule.id);
+      disabledRuleIds.delete(id);
     } else {
-      disabledRuleIds.add(rule.id);
+      disabledRuleIds.add(id);
     }
     void resplit();
   };
@@ -443,11 +522,13 @@ function ruleRow(rule: RawSplitRule, origin: 'standard' | 'added') {
 
   const title = document.createElement('div');
   const idLabel = document.createElement('strong');
-  idLabel.textContent = rule.id;
+  idLabel.textContent = id;
   title.appendChild(idLabel);
 
   // Everything below is read off the rule data itself.
-  const meta: string[] = [];
+  const meta: string[] = [
+    `priority: ${rule.priority === null ? 'null (excluded)' : rule.priority}`,
+  ];
   if (rule.viewportTypes?.length) {
     meta.push(`viewports: ${rule.viewportTypes.join(', ')}`);
   }
@@ -455,8 +536,8 @@ function ruleRow(rule: RawSplitRule, origin: 'standard' | 'added') {
   if (rule.series?.length) {
     meta.push(`series facts: ${rule.series.map((f) => f.name).join(', ')}`);
   }
-  if (origin === 'added') {
-    meta.push('added');
+  if (origin !== 'standard') {
+    meta.push(origin === 'added' ? 'added' : 'replaces the standard rule');
   }
   const metaEl = document.createElement('span');
   metaEl.style.color = '#7f8c8d';
@@ -476,11 +557,13 @@ function ruleRow(rule: RawSplitRule, origin: 'standard' | 'added') {
 
 function renderRules() {
   rulesList.replaceChildren();
-  for (const rule of addedRules) {
-    rulesList.appendChild(ruleRow(rule, 'added'));
-  }
-  for (const rule of rawDisplaySetSelector) {
-    rulesList.appendChild(ruleRow(rule, 'standard'));
+  for (const [id, rule] of rulesInOrder(mergedRules())) {
+    const origin = !(id in addedRules)
+      ? 'standard'
+      : id in rawDisplaySetSelector
+        ? 'replaced'
+        : 'added';
+    rulesList.appendChild(ruleRow(id, rule, origin));
   }
 }
 
@@ -552,7 +635,8 @@ serverGroup.append(serverPathInput, serverLoadButton);
 sourceRow.appendChild(labelled('Server-side rule set', serverGroup));
 
 const rulesHeader = document.createElement('h4');
-rulesHeader.textContent = 'Split rules (in order, first match wins)';
+rulesHeader.textContent =
+  'Split rules (by ascending priority, first match wins)';
 rulesHeader.style.margin = '12px 0 4px';
 rulesPanel.appendChild(rulesHeader);
 
@@ -568,8 +652,10 @@ const editorHint = document.createElement('div');
 editorHint.style.color = '#bdc3c7';
 editorHint.style.fontSize = '0.9em';
 editorHint.innerText =
-  'Paste one rule, an array of rules, or a customization merge command ' +
-  '($set / $push / $merge / $filter). Named safe functions available here: ' +
+  'Paste rules keyed by rule id, each with a priority (below 0 runs before ' +
+  'the standard rules; null excludes a rule), one rule with an "id" (it gets ' +
+  'priority -1), or a customization merge command keyed by rule id ' +
+  '($set / $merge / $unset). Named safe functions available here: ' +
   `classifiers ${Object.keys(DEMO_CLASSIFIERS)
     .map((name) => `"${name}"`)
     .join(', ')}; presets ${Object.keys(DEMO_CUSTOM_ATTRIBUTE_PRESETS)
@@ -661,17 +747,15 @@ function addButton(label: string, onClick: () => void) {
  * cannot split.
  */
 function applyParsedSelector(parsed: unknown, source: string): boolean {
-  const previousAdded = [...addedRules];
+  const previousAdded = addedRules;
   const previousCommandCount = mergeCommands.length;
 
-  if (hasUpdateCommand(parsed)) {
-    mergeCommands.push(parsed);
-  } else {
-    const rules = (Array.isArray(parsed) ? parsed : [parsed]) as RawSplitRule[];
-    addedRules = [...addedRules, ...rules];
-  }
-
   try {
+    if (hasUpdateCommand(parsed)) {
+      mergeCommands.push(parsed);
+    } else {
+      addedRules = { ...addedRules, ...toKeyedRules(parsed) };
+    }
     compileSelector();
   } catch (error) {
     addedRules = previousAdded;
@@ -706,7 +790,7 @@ addButton('Add rule', () => {
 });
 
 addButton('Reset', () => {
-  addedRules = [];
+  addedRules = {};
   mergeCommands.length = 0;
   disabledRuleIds.clear();
   layoutByDisplaySetId.clear();
@@ -727,8 +811,9 @@ addButton('Copy selector JSON', async () => {
 });
 
 /**
- * Loads a rule set the server hosts. Accepts a bare selector array or a document
- * with a `rules` array plus metadata (`name`, `notes`, `requires`).
+ * Loads a rule set the server hosts. Accepts a bare selector keyed by rule id,
+ * or a document with a keyed `rules` object plus metadata (`name`, `notes`,
+ * `requires`).
  *
  * A bare path is resolved against the DICOMweb root the current series reads
  * from, which is the point of the raw form: the back end that indexed the study
@@ -763,16 +848,20 @@ async function loadServerSelector(path: string) {
     return;
   }
 
-  const doc = document_ as {
+  const doc = (document_ ?? {}) as {
     name?: string;
     rules?: unknown;
     requires?: { customAttributePresets?: string[] };
   };
-  const rules = Array.isArray(document_) ? document_ : doc.rules;
+  const isDocument =
+    !Array.isArray(document_) &&
+    Boolean(doc.rules) &&
+    typeof doc.rules === 'object';
+  const rules = isDocument ? doc.rules : document_;
 
-  if (!Array.isArray(rules)) {
+  if (!rules || typeof rules !== 'object' || Array.isArray(rules)) {
     setStatus(
-      `${url} is neither a selector array nor a document with a "rules" array.`,
+      `${url} is neither a selector keyed by rule id nor a document with a keyed "rules" object.`,
       true
     );
     return;
@@ -795,7 +884,9 @@ async function loadServerSelector(path: string) {
 
   if (applyParsedSelector(rules, url)) {
     setStatus(
-      `Loaded ${doc.name ?? url} — ${rules.length} rule(s) ahead of the standard ones.`
+      `Loaded ${(isDocument && doc.name) || url} — ${
+        Object.keys(toKeyedRules(rules)).length
+      } rule(s) merged over the standard ones.`
     );
     void resplit();
   }

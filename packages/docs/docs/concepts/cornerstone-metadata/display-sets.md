@@ -157,7 +157,47 @@ Split rules decide how a series' instances are grouped into display sets and
 which viewport types each group supports. `defaultDisplaySetSplitRules` covers
 the common DICOM cases (video, ECG, whole-slide, single-image modalities,
 multi-frame clips, mixed-b-value DWI, volumetric series, and a fallback image
-rule). Rules are evaluated **in order, first match wins per instance**.
+rule). Rules are evaluated in **ascending priority, first match wins per
+instance**.
+
+### Rule sets keyed by id
+
+Every function that takes split rules (`groupInstancesBySplitRules`,
+`splitImageIdsBySplitRules`) takes a `SplitRuleSet`: the rules keyed by id, each
+with a `priority`. `createDisplaySetSplitRules` takes the same shape in data form
+and returns one. There is no array form.
+
+```ts
+import type { SplitRuleSet } from '@cornerstonejs/metadata';
+
+const ruleSet: SplitRuleSet = {
+  // The key is the rule id.
+  ctScout: { priority: -1, matches: (i) => i.InstanceNumber === 1 },
+  volume3d: { priority: 1, groupBy: ['SeriesInstanceUID'] },
+  // `null` excludes the rule.
+  unwanted: { priority: null },
+};
+```
+
+Rules run in ascending priority, and equal priorities run in id order, so the
+order never depends on the order of the keys. `resolveSplitRuleSet` returns the
+included rules in that order, each with its key as its `id`.
+
+A rule set is usually merged from layers — the defaults, then an application's
+overrides. A key cannot occur twice, so a layer replaces a rule, moves it (a new
+`priority`), or excludes it (`priority: null`) by its id, and never adds a
+second copy. The default rules use the priorities `1..n`, so a priority below
+`0` runs before every default rule. In the defaults, `unsupported` is a
+catch-all with the highest default priority (`9`), so a fallback rule that must
+see what the image rules leave needs a priority between `defaultImageRule` (`8`)
+and `unsupported` — `8.5`, say — or `unsupported` excluded with
+`priority: null`. Priorities above `DEFAULT_SPLIT_RULE_PRIORITY_LIMIT`
+(`10000`) are reserved for rules that run after every default rule.
+
+An entry that states an `id` different from its key, or that has a priority
+that is missing, or neither `null` nor a finite number, is an error.
+`validateSplitRuleSetEntry(id, entry)` runs that check on one entry, and returns
+`false` for an excluded one.
 
 A `SplitRule` has up to five parts:
 
@@ -169,12 +209,16 @@ A `SplitRule` has up to five parts:
 | `viewportTypes`    | Allowed viewport types for the produced display sets; index `0` is preferred.                                                 |
 | `customAttributes` | Returns extra attributes spread flat onto the display set (e.g. `isClip`, `numImageFrames`).                                  |
 
-Most rules only need `matches` and `groupBy`:
+A rule's `id` is its key in the rule set, so an entry does not repeat it. Most
+rules only need `matches` and `groupBy`, plus the entry's `priority`:
 
 ```ts
 {
-  matches: (instance) => isVideoInstance(instance),
-  groupBy: ['SOPInstanceUID'],
+  video: {
+    priority: 1,
+    matches: (instance) => isVideoInstance(instance),
+    groupBy: ['SOPInstanceUID'],
+  },
 }
 ```
 
@@ -186,10 +230,11 @@ whether the series mixes b-value and non-b-value frames, and `groupBy` then
 separates them into two display sets:
 
 ```ts
-import type { SplitRule } from '@cornerstonejs/metadata';
+import type { SplitRuleSetEntry } from '@cornerstonejs/metadata';
 
-const mixedDimensionalityBValue: SplitRule = {
-  id: 'mixedDimensionalityBValue',
+// Keyed as `mixedDimensionalityBValue` in the rule set.
+const mixedDimensionalityBValue: SplitRuleSetEntry = {
+  priority: 6,
   viewportTypes: ['volume', 'volume3d', 'stack'],
   // Computed once over the whole series; returned, not mutated onto shared state.
   series: ({ instances }) => ({
@@ -208,8 +253,26 @@ const mixedDimensionalityBValue: SplitRule = {
 };
 ```
 
-To customize splitting, prepend your own rules to (or replace) the defaults and
-pass the result as `splitRules`. Prefer authoring them as data — see
+To customize splitting, merge your own rules over the defaults by key — a new id
+adds a rule, an existing id replaces one — and pass the result as `splitRules`:
+
+```ts
+const splitRules: SplitRuleSet = {
+  ...defaultDisplaySetSplitRules,
+  // Runs before every default rule.
+  ctScout: {
+    priority: -1,
+    matches: (i) => /localizer|scout/i.test(String(i.SeriesDescription ?? '')),
+  },
+  // Turns a default rule off without removing its key.
+  singleImageModality: {
+    ...defaultDisplaySetSplitRules.singleImageModality,
+    priority: null,
+  },
+};
+```
+
+Prefer authoring them as data — see
 [Sharing rules between applications](#sharing-rules-between-applications-the-raw-selector)
 — so the same rules can also be used outside the viewer.
 `customAttributes` may set any attribute, but
@@ -222,9 +285,19 @@ A few engine guarantees worth knowing when writing rules:
 
 - **Buckets are namespaced by rule.** Two different rules can never merge into
   one display set even if their `groupBy` values coincide.
-- **Group order is deterministic.** Groups come back sorted by a stable,
-  rule-namespaced key, so a series' display sets — and any id derived from their
-  position — are stable regardless of the order the image ids were passed in.
+- **Keys come from the rule id, not the rule's position.** Moving a rule, or
+  adding one with a lower priority, leaves the other rules' `splitKey`s
+  unchanged.
+- **Group order is deterministic.** Groups come back sorted by rule priority,
+  then by a stable, rule-namespaced bucket key, then by run position, so a
+  series' display sets — and any id derived from their position — are stable
+  regardless of the order the image ids were passed in.
+- **Each group carries its rule's series facts.** `InstanceGroup.series` holds
+  the facts the matched rule's `series` hook computed over _all_ the instances
+  passed to the split, not only the group's. Those can differ: a "mixed b-value"
+  fact is true for the series and false for each half. See
+  [Who decides instance order](#who-decides-instance-order) for why that
+  matters when a group is ordered again later.
 - **`series` samples `instances[0]`** for some facts (e.g. multi-frame,
   volumetric), so those rules assume a homogeneous series. A heterogeneous series
   needs a dedicated rule (as `mixedDimensionalityBValue` does for DWI) to
@@ -232,8 +305,8 @@ A few engine guarantees worth knowing when writing rules:
 - **`series` is scoped to its own rule.** A rule only ever sees the facts its own
   `series` hook returned; it cannot read another rule's facts, and it must not
   mutate shared state.
-- **Nothing is dropped by the defaults.** The final `unsupported` rule claims
-  whatever the image rules did not — see
+- **Nothing is dropped by the defaults.** The `unsupported` rule, at the
+  highest default priority, claims whatever the image rules did not — see
   [Objects nothing can render](#objects-nothing-can-render). A _custom_ rule set
   without a catch-all does drop unmatched instances; pass `onUnmatchedInstance`
   to `splitImageIdsBySplitRules` to observe them.
@@ -251,8 +324,9 @@ which leaves **no trace that the object was in the study at all** — the
 application cannot list it, cannot explain it, and cannot tell "we don't support
 this" apart from "this isn't here".
 
-So the last rule in the default selector is a catch-all that claims everything
-left and marks the result **not displayable**:
+So the default selector's `unsupported` rule, at the highest default priority,
+is a catch-all that claims everything left and marks the result **not
+displayable**:
 
 ```ts
 const displaySet = createDisplaySetFromGroup(group);
@@ -293,24 +367,30 @@ Points worth knowing:
 
 ### Supporting one of these formats
 
-Add your own rule _before_ the catch-all, with real viewport types. This is the
-other half of the user's choice: either take the non-displayable display set and
-present it, or teach the selector how to render the format.
+Add your own rule with a priority _below_ the catch-all's, with real viewport
+types. This is the other half of the user's choice: either take the
+non-displayable display set and present it, or teach the selector how to render
+the format.
 
 ```ts
-const splitRules = createDisplaySetSplitRules([
-  {
-    id: 'seg',
+const splitRules = createDisplaySetSplitRules({
+  ...rawDisplaySetSelector,
+  seg: {
+    // Below 0: runs before every default rule.
+    priority: -1,
     viewportTypes: ['stack', 'volume'],
     matches: { attribute: 'Modality', equals: 'SEG' },
     groupBy: ['SeriesInstanceUID', 'SOPInstanceUID'],
   },
-  ...rawDisplaySetSelector, // 'unsupported' stays last
-]);
+});
 ```
 
-Order matters: the catch-all has no `matches`, so it claims everything and any
-rule placed after it is dead code.
+Priority matters: the catch-all has no `matches`, so it claims everything, and
+a rule with a higher priority than `unsupported` (`9`) never sees an instance.
+A rule meant only for what the image rules leave goes between
+`defaultImageRule` (`8`) and `unsupported`, for example at `8.5`. To replace the
+catch-all instead, exclude it with
+`unsupported: { ...rawDisplaySetSelector.unsupported, priority: null }`.
 
 ## Sharing rules between applications (the raw selector)
 
@@ -323,10 +403,15 @@ advertises stop being the ones the client builds.
 So the rules are authored **as data** and compiled into functions by one shared
 compiler. `rawDisplaySetSelector.js` holds both:
 
-- `rawDisplaySetSelector` — the default rules as pure JSON. No functions, no
-  imports of application state.
+- `rawDisplaySetSelector` — the default rules as pure JSON, keyed by rule id:
+  `video` (priority `1`), `ecg` (`2`), `wholeslide` (`3`),
+  `singleImageModality` (`4`), `multiFrame` (`5`), `mixedDimensionalityBValue`
+  (`6`), `volume3d` (`7`), `defaultImageRule` (`8`) and `unsupported` (`9`). No
+  functions, no imports of application state.
 - `createDisplaySetSplitRules(selector, options)` — turns that JSON into the
-  `SplitRule[]` the split engine executes.
+  `SplitRuleSet` the split engine executes, with the same keys and priorities.
+  An excluded entry (`priority: null`) is compiled and kept, so a later layer
+  can include it again by giving it a priority.
 
 `defaultDisplaySetSplitRules` is literally `createDisplaySetSplitRules(rawDisplaySetSelector)`,
 so the data form is never a second-class path: if it could not express a default
@@ -398,7 +483,7 @@ the rest alone" without restating the default. A `NaN` — which arithmetic on a
 one instance is missing produces — counts as no opinion too.
 
 The base sort is host-supplied rather than only rule-declared for the same reason
-the rules themselves are data: the *default* order has to be settable once, the
+the rules themselves are data: the _default_ order has to be settable once, the
 same way, by whatever is doing the splitting. If only rules could set it, two
 consumers of one selector could order the same display set differently while both
 appearing correct — a viewer sorting by position and a server by instance number,
@@ -407,6 +492,21 @@ re-order outside a split (after new instances arrive, for instance) reproduces t
 same order rather than applying its own sort a second time and discarding the
 rule's.
 
+Pass the group's series facts when you do. A comparator can read
+`context.series`, and those facts came from the whole split, not from the
+group — so `orderInstancesForRule` recomputing them from the group's instances
+alone can give a comparator different facts and a different order:
+
+```ts
+const [group] = groupInstancesBySplitRules(instances, splitRules);
+
+const reordered = orderInstancesForRule(
+  [...group.instances, ...newInstances],
+  group.matchedRule,
+  { series: group.series, sortInstances }
+);
+```
+
 A later revision is expected to let a selector carry its sort as data; it will
 compile to these same hooks, so ordering does not change owner again.
 
@@ -414,72 +514,76 @@ A rule also carries a `description`: the explanation lives in the rule data, not
 a code comment, so a UI that lets a user inspect or toggle rules reads it from the
 selector rather than keeping its own copy. The **Display Set Rules** example
 (`packages/core/examples/displaySetRules`) does exactly that — it lists every
-standard rule with a checkbox and its description, lets you paste a new rule as
-JSON, and re-splits the loaded series live.
+standard rule with a checkbox, its priority and its description, lets you paste
+rules as JSON keyed by id, and re-splits the loaded series live.
 
 Two rules from the defaults, in raw form:
 
 ```js
-// "Which instances are a multi-frame clip?" — a fact over the series, read back
-// per instance.
 {
-  id: 'multiFrame',
-  viewportTypes: ['stack'],
-  series: [{
-    name: 'isMultiFrame',
-    scope: 'first',
-    when: { all: [
-      { attribute: 'NumberOfFrames', greaterThan: 1 },
-      { attribute: 'SliceLocation', exists: true },
-    ] },
-  }],
-  matches: { all: [{ seriesFact: 'isMultiFrame' }, { classifier: 'image' }] },
-  groupBy: ['SeriesInstanceUID', 'InstanceNumber'],
-  customAttributes: {
-    set: { isClip: true },
-    fromFirstInstance: {
-      numImageFrames: { attribute: 'NumberOfFrames', number: true },
+  // "Which instances are a multi-frame clip?" — a fact over the series, read
+  // back per instance.
+  multiFrame: {
+    priority: 5,
+    viewportTypes: ['stack'],
+    series: [{
+      name: 'isMultiFrame',
+      scope: 'first',
+      when: { all: [
+        { attribute: 'NumberOfFrames', greaterThan: 1 },
+        { attribute: 'SliceLocation', exists: true },
+      ] },
+    }],
+    matches: { all: [{ seriesFact: 'isMultiFrame' }, { classifier: 'image' }] },
+    groupBy: ['SeriesInstanceUID', 'InstanceNumber'],
+    customAttributes: {
+      set: { isClip: true },
+      fromFirstInstance: {
+        numImageFrames: { attribute: 'NumberOfFrames', number: true },
+      },
+      fromOptions: ['splitNumber'],
+      fromContext: ['isMultiFrame'],
     },
-    fromOptions: ['splitNumber'],
-    fromContext: ['isMultiFrame'],
   },
-}
 
-// The DWI fix: split the undefined-b-value frames off the 4D set.
-{
-  id: 'mixedDimensionalityBValue',
-  viewportTypes: ['volume', 'volume3d', 'stack'],
-  series: [{
-    name: 'mixedBValue',
-    gate: { attribute: 'Modality', equals: 'MR' },
-    scope: 'mixed',
-    when: { attribute: 'DiffusionBValue', exists: true },
-  }],
-  matches: { all: [{ seriesFact: 'mixedBValue' }, { classifier: 'image' }] },
-  groupBy: ['SeriesInstanceUID', { attribute: 'DiffusionBValue', absent: true }],
+  // The DWI fix: split the undefined-b-value frames off the 4D set.
+  mixedDimensionalityBValue: {
+    priority: 6,
+    viewportTypes: ['volume', 'volume3d', 'stack'],
+    series: [{
+      name: 'mixedBValue',
+      gate: { attribute: 'Modality', equals: 'MR' },
+      scope: 'mixed',
+      when: { attribute: 'DiffusionBValue', exists: true },
+    }],
+    matches: { all: [{ seriesFact: 'mixedBValue' }, { classifier: 'image' }] },
+    groupBy: ['SeriesInstanceUID', { attribute: 'DiffusionBValue', absent: true }],
+  },
 }
 ```
 
 ### Extending a selector
 
-Derive from the defaults and compile the result. Rules are evaluated in order, so
-prepend to claim instances before a default rule sees them:
+Derive from the defaults and compile the result. Rules are evaluated in
+ascending priority, so give a rule a priority below `0` to claim instances
+before any default rule sees them:
 
 ```js
-const splitRules = createDisplaySetSplitRules([
-  {
-    id: 'usInterleaved',
+const splitRules = createDisplaySetSplitRules({
+  ...rawDisplaySetSelector,
+  usInterleaved: {
+    priority: -1,
     matches: { attribute: 'Modality', equals: 'US' },
     // Interleaved singles and clips become one display set per run.
     runBy: { condition: { attribute: 'NumberOfFrames', greaterThan: 1 } },
   },
-  ...rawDisplaySetSelector,
-]);
+});
 ```
 
-Every rule needs an `id`, and ids must be unique: an id namespaces the bucket keys
-its rule produces, so naming rules is what lets a selector be edited — reordered,
-or a rule inserted — without changing the other rules' display set identities.
+The key is the rule's id, so ids are unique by construction. An id namespaces
+the bucket keys its rule produces, so keying rules is what lets a selector be
+edited — a rule moved, or a rule inserted — without changing the other rules'
+display set identities.
 
 When a classification genuinely cannot be expressed as data, register it by name
 rather than reaching for a function in the selector — the

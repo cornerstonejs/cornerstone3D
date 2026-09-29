@@ -45,6 +45,7 @@ import { isImageInstance } from './isImageInstance';
 import { isVideoInstance } from './isVideoInstance';
 import { isWsiInstance } from './isWsiInstance';
 import { NO_VIEWPORT_TYPE } from './types';
+import { validateSplitRuleSetEntry } from './splitRuleSet';
 import { compileCondition, compileValue, toFinite } from '../safeFunctions';
 
 /**
@@ -59,6 +60,7 @@ import { compileCondition, compileValue, toFinite } from '../safeFunctions';
  * @typedef {import('./types').RuleContext} RuleContext
  * @typedef {import('./types').SeriesFacts} SeriesFacts
  * @typedef {import('./types').SplitRule} SplitRule
+ * @typedef {import('./types').SplitRuleSet} SplitRuleSet
  */
 
 /** Modalities whose multi-slice series are reconstructable into a volume. */
@@ -97,14 +99,22 @@ const IS_RENDERABLE_IMAGE = {
  *
  * Semantically identical to the previously hand-written
  * `defaultDisplaySetSplitRules`: same ids, same order, same viewport types, same
- * grouping. Rules are evaluated in order and the first match wins per instance,
- * so ordering is part of the contract.
+ * grouping. The key is the rule id. Rules are evaluated in ascending `priority`
+ * and the first match wins per instance, so the priorities are part of the
+ * contract.
+ *
+ * The defaults use the priorities `1..n`. A rule with a priority below `0` runs
+ * before all of them. `unsupported` is a catch-all, so a rule that must see
+ * the instances no other default claims needs a priority between
+ * `defaultImageRule` and `unsupported` (for example `8.5`); a rule above
+ * `unsupported` only sees instances when `unsupported` is excluded
+ * (`priority: null`).
  *
  * @type {RawDisplaySetSelector}
  */
-export const rawDisplaySetSelector = [
-  {
-    id: 'video',
+export const rawDisplaySetSelector = {
+  video: {
+    priority: 1,
     description:
       'Instances encoded with a video transfer syntax, or a dedicated video SOP ' +
       'class, or a long multi-frame secondary capture. One display set per ' +
@@ -114,8 +124,8 @@ export const rawDisplaySetSelector = [
     groupBy: ['SOPInstanceUID'],
   },
 
-  {
-    id: 'ecg',
+  ecg: {
+    priority: 2,
     description:
       'ECG / waveform SOP classes. One display set per instance, shown on a ' +
       'waveform viewport rather than an image viewport.',
@@ -124,8 +134,8 @@ export const rawDisplaySetSelector = [
     groupBy: ['SOPInstanceUID'],
   },
 
-  {
-    id: 'wholeslide',
+  wholeslide: {
+    priority: 3,
     description:
       'VL Whole Slide Microscopy (or modality SM). All pyramid levels of the ' +
       'series form a single whole-slide display set.',
@@ -135,8 +145,8 @@ export const rawDisplaySetSelector = [
     groupBy: ['SeriesInstanceUID'],
   },
 
-  {
-    id: 'singleImageModality',
+  singleImageModality: {
+    priority: 4,
     description:
       'CR / DX / MG, which acquire one image per instance. Split within the ' +
       'series by a coarse image-size bucket so differently sized views (e.g. ' +
@@ -165,8 +175,8 @@ export const rawDisplaySetSelector = [
     ],
   },
 
-  {
-    id: 'multiFrame',
+  multiFrame: {
+    priority: 5,
     description:
       'Multi-frame instances that carry a slice location - a cine clip. One ' +
       'display set per instance, flagged isClip with its frame count.',
@@ -209,8 +219,8 @@ export const rawDisplaySetSelector = [
    * part of the 4d data set.  That prevents applying incorrect 4d rendering
    * to the 3d portion.
    */
-  {
-    id: 'mixedDimensionalityBValue',
+  mixedDimensionalityBValue: {
+    priority: 6,
     description:
       'Diffusion MR that mixes 4D b-value frames with trailing frames that have ' +
       'none. The undefined-b-value frames are not part of the 4D set, so they ' +
@@ -238,8 +248,8 @@ export const rawDisplaySetSelector = [
     ],
   },
 
-  {
-    id: 'volume3d',
+  volume3d: {
+    priority: 7,
     description:
       'Multi-slice CT / MR / PT / NM, which reconstruct into a volume. Defaults ' +
       'to MPR, with 3D and stack also allowed.',
@@ -263,8 +273,8 @@ export const rawDisplaySetSelector = [
     groupBy: ['SeriesInstanceUID'],
   },
 
-  {
-    id: 'defaultImageRule',
+  defaultImageRule: {
+    priority: 8,
     description:
       'Fallback for any remaining renderable image. Grouped one display set per ' +
       'series.',
@@ -288,13 +298,13 @@ export const rawDisplaySetSelector = [
    * its own right (one SEG, one SR), so merging a series' worth of them into a
    * single display set would conflate unrelated content.
    */
-  {
-    id: 'unsupported',
+  unsupported: {
+    priority: 9,
     description:
       'Catch-all for objects nothing can render (SEG, RTSTRUCT, RTDOSE, SR, ' +
       'PDF, presentation states, or an image whose Rows have not loaded). ' +
       'Produces a display set marked isDisplayable: false so the object is ' +
-      'surfaced rather than silently dropped. Must stay last.',
+      'surfaced rather than silently dropped. Must keep the highest priority.',
     viewportTypes: [NO_VIEWPORT_TYPE],
     // No `matches`: claims whatever is left.
     groupBy: ['SeriesInstanceUID', 'SOPInstanceUID'],
@@ -302,7 +312,7 @@ export const rawDisplaySetSelector = [
       fromContext: ['sopClassUids'],
     },
   },
-];
+};
 
 /**
  * Throws with the offending fragment inlined - a selector is usually authored by
@@ -475,10 +485,12 @@ function compileCustomAttributes(recipe, classifiers, presets) {
 /**
  * Compiles a raw display set selector into executable split rules.
  *
- * The result is a plain `SplitRule[]`, ready to hand to
- * `splitImageIdsBySplitRules` / `groupInstancesBySplitRules`. Compilation is
- * eager: a malformed selector throws here, at setup, rather than midway through
- * splitting a study.
+ * The result is a {@link SplitRuleSet} with the same keys and priorities, ready
+ * to hand to `splitImageIdsBySplitRules` / `groupInstancesBySplitRules`, or to
+ * merge with another rule set by key. An excluded entry (`priority: null`) is
+ * compiled and kept, so a later layer can include it again by giving it a
+ * priority. Compilation is eager: a malformed selector throws here, at setup,
+ * rather than midway through splitting a study.
  *
  * ```js
  * import {
@@ -491,86 +503,101 @@ function compileCustomAttributes(recipe, classifiers, presets) {
  *
  * // A deployment's own selector, e.g. read from JSON on a server or supplied by
  * // an application's customization layer on a client:
- * const custom = createDisplaySetSplitRules([
- *   { id: 'usClips', matches: { attribute: 'Modality', equals: 'US' },
- *     runBy: { condition: { attribute: 'NumberOfFrames', greaterThan: 1 } } },
+ * const custom = createDisplaySetSplitRules({
  *   ...rawDisplaySetSelector,
- * ]);
+ *   usClips: {
+ *     priority: -1,
+ *     matches: { attribute: 'Modality', equals: 'US' },
+ *     runBy: { condition: { attribute: 'NumberOfFrames', greaterThan: 1 } },
+ *   },
+ * });
  * ```
  *
- * @param {RawDisplaySetSelector} [selector=rawDisplaySetSelector] - the rules as data.
+ * @param {RawDisplaySetSelector} [selector=rawDisplaySetSelector] - the rules as data, keyed by rule id.
  * @param {CreateDisplaySetSplitRulesOptions} [options] - named extension points.
- * @returns {SplitRule[]} compiled rules, in selector order.
+ * @returns {SplitRuleSet} compiled rules, keyed by rule id.
  */
 export function createDisplaySetSplitRules(
   selector = rawDisplaySetSelector,
   options = {}
 ) {
-  if (!Array.isArray(selector)) {
-    invalid('selector must be an array of rules', selector);
+  if (!selector || typeof selector !== 'object' || Array.isArray(selector)) {
+    invalid('selector must be an object keyed by rule id', selector);
   }
 
   const classifiers = { ...BUILT_IN_CLASSIFIERS, ...options.classifiers };
   const presets = options.customAttributePresets ?? {};
 
-  return selector.map((rule) => {
-    if (!rule || typeof rule !== 'object') {
-      invalid('rule must be an object', rule);
-    }
-    if (!rule.id) {
-      // Ids namespace bucket keys, so an unnamed rule would make its display
-      // sets' identities depend on its position in the selector.
-      invalid('rule requires an id', rule);
-    }
+  /** @type {SplitRuleSet} */
+  const compiledSet = {};
+  for (const [id, rule] of Object.entries(selector)) {
+    validateSplitRuleSetEntry(id, rule);
+    const { id: _id, ...compiledRule } = compileRule(
+      { ...rule, id },
+      classifiers,
+      presets
+    );
+    compiledSet[id] = { ...compiledRule, priority: rule.priority };
+  }
+  return compiledSet;
+}
 
-    /** @type {SplitRule} */
-    const compiled = { id: rule.id };
+/**
+ * Compiles one raw rule into a {@link SplitRule}.
+ *
+ * @param {RawSplitRule & { id: string }} rule
+ * @param {Record<string, (instance: NaturalizedInstance) => boolean>} classifiers
+ * @param {NonNullable<CreateDisplaySetSplitRulesOptions['customAttributePresets']>} presets
+ * @returns {SplitRule}
+ */
+function compileRule(rule, classifiers, presets) {
+  /** @type {SplitRule} */
+  const compiled = { id: rule.id };
 
-    if (rule.viewportTypes) {
-      compiled.viewportTypes = rule.viewportTypes;
-    }
+  if (rule.viewportTypes) {
+    compiled.viewportTypes = rule.viewportTypes;
+  }
 
-    if (rule.series?.length) {
-      compiled.series = compileSeriesFacts(rule.series, classifiers);
-    }
+  if (rule.series?.length) {
+    compiled.series = compileSeriesFacts(rule.series, classifiers);
+  }
 
-    if (rule.matches) {
-      compiled.matches = compileCondition(rule.matches, classifiers);
-    }
+  if (rule.matches) {
+    compiled.matches = compileCondition(rule.matches, classifiers);
+  }
 
-    if (rule.groupBy?.length) {
-      compiled.groupBy = rule.groupBy.map((part) =>
-        compileValue(part, classifiers)
-      );
-    }
+  if (rule.groupBy?.length) {
+    compiled.groupBy = rule.groupBy.map((part) =>
+      compileValue(part, classifiers)
+    );
+  }
 
-    if (rule.runBy) {
-      compiled.runBy = compileValue(rule.runBy, classifiers);
-    }
+  if (rule.runBy) {
+    compiled.runBy = compileValue(rule.runBy, classifiers);
+  }
 
-    if (rule.compareInstances) {
-      const { attribute, descending } = rule.compareInstances;
-      const direction = descending ? -1 : 1;
-      compiled.compareInstances = (a, b) => {
-        const aValue = toFinite(a[attribute]);
-        const bValue = toFinite(b[attribute]);
-        if (aValue === undefined || bValue === undefined) {
-          // Let the engine's acquisition-order tiebreak decide rather than
-          // inventing an order from a missing tag.
-          return 0;
-        }
-        return (aValue - bValue) * direction;
-      };
-    }
+  if (rule.compareInstances) {
+    const { attribute, descending } = rule.compareInstances;
+    const direction = descending ? -1 : 1;
+    compiled.compareInstances = (a, b) => {
+      const aValue = toFinite(a[attribute]);
+      const bValue = toFinite(b[attribute]);
+      if (aValue === undefined || bValue === undefined) {
+        // Let the engine's acquisition-order tiebreak decide rather than
+        // inventing an order from a missing tag.
+        return 0;
+      }
+      return (aValue - bValue) * direction;
+    };
+  }
 
-    if (rule.customAttributes) {
-      compiled.customAttributes = compileCustomAttributes(
-        rule.customAttributes,
-        classifiers,
-        presets
-      );
-    }
+  if (rule.customAttributes) {
+    compiled.customAttributes = compileCustomAttributes(
+      rule.customAttributes,
+      classifiers,
+      presets
+    );
+  }
 
-    return compiled;
-  });
+  return compiled;
 }

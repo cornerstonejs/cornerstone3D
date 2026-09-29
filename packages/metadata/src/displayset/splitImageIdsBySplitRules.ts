@@ -5,12 +5,13 @@ import type {
   InstanceGroup,
   NaturalizedInstance,
   SplitContext,
-  SplitRule,
+  SplitRuleSet,
 } from './types';
 
 export type SplitImageIdsBySplitRulesOptions = SplitContext &
   GroupInstancesOptions & {
-    splitRules: SplitRule[];
+    /** The rules, keyed by rule id and tried in ascending priority. */
+    splitRules: SplitRuleSet;
     onMissingImageId?: (imageId: string) => void;
     /**
      * Called for each resolved instance that matches no split rule (and so

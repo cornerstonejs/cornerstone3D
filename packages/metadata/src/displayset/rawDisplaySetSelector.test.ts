@@ -5,7 +5,27 @@ import {
   createDisplaySetSplitRules,
   rawDisplaySetSelector,
 } from './rawDisplaySetSelector';
+import type {
+  RawDisplaySetSelector,
+  RawSplitRule,
+} from './rawDisplaySetSelectorTypes';
+import { resolveSplitRuleSet } from './splitRuleSet';
 import type { NaturalizedInstance } from './types';
+
+/**
+ * A keyed raw selector from rules listed in evaluation order: each rule's id is
+ * its key, and its position gives its priority. For tests whose point is not
+ * the shape of the selector.
+ */
+const raw = (
+  ...rules: (Omit<RawSplitRule, 'priority'> & { id: string })[]
+): RawDisplaySetSelector =>
+  Object.fromEntries(
+    rules.map(({ id, ...rule }, index) => [
+      id,
+      { ...rule, priority: index + 1 },
+    ])
+  );
 
 const CT_SOP_CLASS = '1.2.840.10008.5.1.4.1.1.2';
 const MR_SOP_CLASS = '1.2.840.10008.5.1.4.1.1.4';
@@ -63,11 +83,29 @@ describe('rawDisplaySetSelector - the selector as data', () => {
     expect(remote.map((g) => g.splitKey)).toEqual(local.map((g) => g.splitKey));
   });
 
-  it('gives every rule an id, so keys survive editing the selector', () => {
-    expect(rawDisplaySetSelector.every((rule) => Boolean(rule.id))).toBe(true);
-    expect(new Set(rawDisplaySetSelector.map((r) => r.id)).size).toBe(
-      rawDisplaySetSelector.length
-    );
+  it('keys every rule by its id, so keys survive editing the selector', () => {
+    for (const [id, rule] of Object.entries(rawDisplaySetSelector)) {
+      // The key is the id. A rule that also states an id must agree with it.
+      expect(rule.id ?? id).toBe(id);
+    }
+  });
+
+  it('gives the defaults the priorities 1..n in their documented order', () => {
+    const entries = Object.entries(rawDisplaySetSelector);
+    expect(entries.map(([id, rule]) => [id, rule.priority])).toEqual([
+      ['video', 1],
+      ['ecg', 2],
+      ['wholeslide', 3],
+      ['singleImageModality', 4],
+      ['multiFrame', 5],
+      ['mixedDimensionalityBValue', 6],
+      ['volume3d', 7],
+      ['defaultImageRule', 8],
+      ['unsupported', 9],
+    ]);
+    expect(
+      resolveSplitRuleSet(defaultDisplaySetSplitRules).map((rule) => rule.id)
+    ).toEqual(entries.map(([id]) => id));
   });
 });
 
@@ -391,16 +429,16 @@ describe('default rules - the unsupported catch-all', () => {
     ).toEqual(['unsupported']);
   });
 
-  it('yields to an application rule placed before it', () => {
+  it('yields to an application rule with a lower priority', () => {
     // This is how an application that *does* support SEG opts in.
-    const rules = createDisplaySetSplitRules([
-      {
-        id: 'seg',
+    const rules = createDisplaySetSplitRules({
+      ...rawDisplaySetSelector,
+      seg: {
+        priority: -1,
         viewportTypes: ['stack'],
         matches: { attribute: 'Modality', equals: 'SEG' },
       },
-      ...rawDisplaySetSelector,
-    ]);
+    });
 
     const groups = groupInstancesBySplitRules(
       [
@@ -417,22 +455,74 @@ describe('default rules - the unsupported catch-all', () => {
     expect(createDisplaySetFromGroup(groups[0]).isDisplayable).toBe(true);
   });
 
-  it('is the last rule, so it never shadows a real one', () => {
-    expect(rawDisplaySetSelector[rawDisplaySetSelector.length - 1].id).toBe(
-      'unsupported'
+  it('has the highest priority, so it never shadows a real one', () => {
+    const priorities = Object.values(rawDisplaySetSelector).map(
+      (rule) => rule.priority as number
+    );
+    expect(rawDisplaySetSelector.unsupported.priority).toBe(
+      Math.max(...priorities)
     );
     // A rule with no `matches` claims everything, so any later rule is dead code.
-    const catchAlls = rawDisplaySetSelector.filter((rule) => !rule.matches);
-    expect(catchAlls.map((rule) => rule.id)).toEqual(['unsupported']);
+    const catchAlls = Object.entries(rawDisplaySetSelector).filter(
+      ([, rule]) => !rule.matches
+    );
+    expect(catchAlls.map(([id]) => id)).toEqual(['unsupported']);
+  });
+
+  it('lets a fallback rule run between defaultImageRule and unsupported', () => {
+    const rules = createDisplaySetSplitRules({
+      ...rawDisplaySetSelector,
+      segFallback: {
+        priority: 8.5,
+        matches: { attribute: 'Modality', equals: 'SEG' },
+      },
+    });
+
+    expect(
+      ruleIdsFor(
+        [
+          instance({
+            SOPClassUID: '1.2.840.10008.5.1.4.1.1.66.4',
+            Modality: 'SEG',
+          }),
+          instance({
+            SOPClassUID: '1.2.840.10008.5.1.4.1.1.88.33',
+            Modality: 'SR',
+          }),
+        ],
+        rules
+      )
+    ).toEqual(['segFallback', 'unsupported']);
+  });
+
+  it('can be excluded with a null priority', () => {
+    const rules = createDisplaySetSplitRules({
+      ...rawDisplaySetSelector,
+      unsupported: { ...rawDisplaySetSelector.unsupported, priority: null },
+    });
+    const unmatched: NaturalizedInstance[] = [];
+
+    const groups = groupInstancesBySplitRules(
+      [
+        instance({
+          SOPClassUID: '1.2.840.10008.5.1.4.1.1.88.33',
+          Modality: 'SR',
+        }),
+      ],
+      rules,
+      (i) => unmatched.push(i)
+    );
+
+    expect(groups).toEqual([]);
+    expect(unmatched.length).toBe(1);
   });
 });
 
 describe('createDisplaySetSplitRules - the condition vocabulary', () => {
   const rules = (matches: unknown) =>
-    createDisplaySetSplitRules([
-      { id: 'probe', matches } as never,
-      { id: 'rest' },
-    ]);
+    createDisplaySetSplitRules(
+      raw({ id: 'probe', matches } as never, { id: 'rest' })
+    );
 
   const claimed = (matches: unknown, overrides = {}) =>
     groupInstancesBySplitRules([instance(overrides)], rules(matches))[0]
@@ -536,14 +626,14 @@ describe('createDisplaySetSplitRules - the condition vocabulary', () => {
 
 describe('createDisplaySetSplitRules - templates', () => {
   const readTemplate = (template: string, overrides = {}) => {
-    const rules = createDisplaySetSplitRules([
-      {
+    const rules = createDisplaySetSplitRules(
+      raw({
         id: 'templated',
         customAttributes: { fromFirstInstance: { label: { template } } },
-      } as never,
-    ]);
+      } as never)
+    );
     const inst = instance(overrides);
-    return rules[0].customAttributes?.(
+    return rules.templated.customAttributes?.(
       { instance: inst },
       { instances: [inst] }
     ).label;
@@ -581,32 +671,91 @@ describe('rawDisplaySetSelector - rule metadata', () => {
   it('gives every standard rule a description a UI can display', () => {
     // A rules UI reads the explanation from the rule itself rather than keeping
     // its own copy, so a rule without one shows up as blank.
-    const undocumented = rawDisplaySetSelector.filter(
-      (rule) => !rule.description
+    const undocumented = Object.entries(rawDisplaySetSelector).filter(
+      ([, rule]) => !rule.description
     );
-    expect(undocumented.map((rule) => rule.id)).toEqual([]);
+    expect(undocumented.map(([id]) => id)).toEqual([]);
   });
 
   it('keeps descriptions out of the compiled rules', () => {
     // The split engine has no use for prose; it should not end up in the
     // compiled predicate objects.
     const compiled = createDisplaySetSplitRules(rawDisplaySetSelector);
-    expect(compiled.some((rule) => 'description' in (rule as object))).toBe(
-      false
+    expect(
+      Object.values(compiled).some((rule) => 'description' in (rule as object))
+    ).toBe(false);
+  });
+});
+
+describe('createDisplaySetSplitRules - the keyed result', () => {
+  const selector: RawDisplaySetSelector = {
+    catchAll: { priority: 2 },
+    ctRule: { priority: 1, matches: { attribute: 'Modality', equals: 'CT' } },
+    off: { priority: null, matches: { attribute: 'Modality', equals: 'MR' } },
+  };
+
+  it('keeps the keys and the priorities of the selector', () => {
+    const compiled = createDisplaySetSplitRules(selector);
+
+    expect(Object.keys(compiled).sort()).toEqual(['catchAll', 'ctRule', 'off']);
+    expect(compiled.catchAll.priority).toBe(2);
+    expect(compiled.ctRule.priority).toBe(1);
+    expect(compiled.ctRule.matches?.(instance(), { series: {} })).toBe(true);
+    expect(
+      compiled.ctRule.matches?.(instance({ Modality: 'MR' }), { series: {} })
+    ).toBe(false);
+  });
+
+  it('compiles and keeps an excluded entry, so a later layer can include it', () => {
+    const compiled = createDisplaySetSplitRules(selector);
+
+    expect(compiled.off.priority).toBeNull();
+    expect(
+      compiled.off.matches?.(instance({ Modality: 'MR' }), { series: {} })
+    ).toBe(true);
+    expect(resolveSplitRuleSet(compiled).map((rule) => rule.id)).toEqual([
+      'ctRule',
+      'catchAll',
+    ]);
+
+    const included = resolveSplitRuleSet({
+      ...compiled,
+      off: { ...compiled.off, priority: 0 },
+    });
+    expect(included.map((rule) => rule.id)).toEqual([
+      'off',
+      'ctRule',
+      'catchAll',
+    ]);
+  });
+
+  it('gives the compiled defaults the same keys and priorities as the selector', () => {
+    expect(
+      Object.entries(defaultDisplaySetSplitRules).map(([id, rule]) => [
+        id,
+        rule.priority,
+      ])
+    ).toEqual(
+      Object.entries(rawDisplaySetSelector).map(([id, rule]) => [
+        id,
+        rule.priority,
+      ])
     );
   });
 });
 
 describe('createDisplaySetSplitRules - series facts', () => {
   const factRules = (fact: unknown) =>
-    createDisplaySetSplitRules([
-      {
-        id: 'probe',
-        series: [fact],
-        matches: { seriesFact: 'flag' },
-      } as never,
-      { id: 'rest' },
-    ]);
+    createDisplaySetSplitRules(
+      raw(
+        {
+          id: 'probe',
+          series: [fact],
+          matches: { seriesFact: 'flag' },
+        } as never,
+        { id: 'rest' }
+      )
+    );
 
   const matchedIds = (fact: unknown, instances: NaturalizedInstance[]) =>
     new Set(
@@ -723,26 +872,26 @@ describe('createDisplaySetSplitRules - runBy and compareInstances as data', () =
   ];
 
   it('splits runs from a declarative runBy condition', () => {
-    const rules = createDisplaySetSplitRules([
-      {
+    const rules = createDisplaySetSplitRules(
+      raw({
         id: 'usRuns',
         matches: { attribute: 'Modality', equals: 'US' },
         runBy: { condition: { attribute: 'NumberOfFrames', greaterThan: 1 } },
-      },
-    ]);
+      })
+    );
 
     // singles, clip, singles -> three display sets rather than two.
     expect(groupInstancesBySplitRules(interleaved, rules).length).toBe(3);
   });
 
   it('orders a group from a declarative compareInstances', () => {
-    const rules = createDisplaySetSplitRules([
-      {
+    const rules = createDisplaySetSplitRules(
+      raw({
         id: 'byLocation',
         matches: { attribute: 'Modality', equals: 'CT' },
         compareInstances: { attribute: 'SliceLocation', number: true },
-      },
-    ]);
+      })
+    );
 
     const groups = groupInstancesBySplitRules(
       [
@@ -759,8 +908,8 @@ describe('createDisplaySetSplitRules - runBy and compareInstances as data', () =
   });
 
   it('reverses that order with descending', () => {
-    const rules = createDisplaySetSplitRules([
-      {
+    const rules = createDisplaySetSplitRules(
+      raw({
         id: 'byLocationDesc',
         matches: { attribute: 'Modality', equals: 'CT' },
         compareInstances: {
@@ -768,8 +917,8 @@ describe('createDisplaySetSplitRules - runBy and compareInstances as data', () =
           number: true,
           descending: true,
         },
-      },
-    ]);
+      })
+    );
 
     const groups = groupInstancesBySplitRules(
       [
@@ -789,10 +938,10 @@ describe('createDisplaySetSplitRules - runBy and compareInstances as data', () =
 describe('createDisplaySetSplitRules - extension points', () => {
   it('accepts application-supplied classifiers', () => {
     const rules = createDisplaySetSplitRules(
-      [
+      raw(
         { id: 'special', matches: { classifier: 'siteSpecific' } },
-        { id: 'rest' },
-      ],
+        { id: 'rest' }
+      ),
       {
         classifiers: {
           siteSpecific: (i) => i.SeriesDescription === 'SITE',
@@ -810,7 +959,7 @@ describe('createDisplaySetSplitRules - extension points', () => {
 
   it('lets a supplied classifier override a built-in one', () => {
     const rules = createDisplaySetSplitRules(
-      [{ id: 'img', matches: { classifier: 'image' } }, { id: 'rest' }],
+      raw({ id: 'img', matches: { classifier: 'image' } }, { id: 'rest' }),
       { classifiers: { image: () => false } }
     );
 
@@ -821,12 +970,10 @@ describe('createDisplaySetSplitRules - extension points', () => {
 
   it('applies a named customAttributes preset over the declarative fields', () => {
     const rules = createDisplaySetSplitRules(
-      [
-        {
-          id: 'preset',
-          customAttributes: { set: { label: 'declarative' }, preset: 'site' },
-        },
-      ],
+      raw({
+        id: 'preset',
+        customAttributes: { set: { label: 'declarative' }, preset: 'site' },
+      }),
       {
         customAttributePresets: {
           site: (instances, { splitNumber }) => ({
@@ -839,7 +986,7 @@ describe('createDisplaySetSplitRules - extension points', () => {
     );
 
     expect(
-      rules[0].customAttributes?.(
+      rules.preset.customAttributes?.(
         { instance: instance() },
         { instances: [instance()], splitNumber: 1 }
       )
@@ -848,74 +995,85 @@ describe('createDisplaySetSplitRules - extension points', () => {
 });
 
 describe('createDisplaySetSplitRules - validation', () => {
-  it('rejects a non-array selector', () => {
-    expect(() => createDisplaySetSplitRules({} as never)).toThrow(
-      /must be an array of rules/
+  it('rejects a selector that is not an object keyed by rule id', () => {
+    expect(createDisplaySetSplitRules({})).toEqual({});
+    expect(() => createDisplaySetSplitRules('rules' as never)).toThrow(
+      /Invalid raw display set selector: selector must be an object keyed by rule id/
     );
+    // The array form is gone.
+    expect(() =>
+      createDisplaySetSplitRules([{ id: 'x', priority: 1 }] as never)
+    ).toThrow(/selector must be an object keyed by rule id/);
   });
 
-  it('rejects a rule with no id', () => {
-    expect(() => createDisplaySetSplitRules([{} as never])).toThrow(
-      /rule requires an id/
+  it('rejects an entry whose id differs from its key', () => {
+    expect(() =>
+      createDisplaySetSplitRules({ key: { id: 'other', priority: 1 } })
+    ).toThrow(/"key".*states id "other"/);
+  });
+
+  it('rejects an entry with no priority', () => {
+    expect(() => createDisplaySetSplitRules({ x: {} as never })).toThrow(
+      /"x".*priority must be a finite number/
     );
   });
 
   it('rejects an unknown classifier at compile time, not at split time', () => {
     expect(() =>
-      createDisplaySetSplitRules([
-        { id: 'x', matches: { classifier: 'nope' } } as never,
-      ])
+      createDisplaySetSplitRules(
+        raw({ id: 'x', matches: { classifier: 'nope' } } as never)
+      )
     ).toThrow(/unknown classifier "nope"/);
   });
 
   it('rejects an attribute condition with no operator', () => {
     expect(() =>
-      createDisplaySetSplitRules([
-        { id: 'x', matches: { attribute: 'Rows' } } as never,
-      ])
+      createDisplaySetSplitRules(
+        raw({ id: 'x', matches: { attribute: 'Rows' } } as never)
+      )
     ).toThrow(/no operator for attribute "Rows"/);
   });
 
   it('rejects an unrecognized condition', () => {
     expect(() =>
-      createDisplaySetSplitRules([
-        { id: 'x', matches: { nonsense: true } } as never,
-      ])
+      createDisplaySetSplitRules(
+        raw({ id: 'x', matches: { nonsense: true } } as never)
+      )
     ).toThrow(/unrecognized condition/);
   });
 
   it('rejects an unknown series fact scope', () => {
     expect(() =>
-      createDisplaySetSplitRules([
-        {
+      createDisplaySetSplitRules(
+        raw({
           id: 'x',
           series: [{ name: 'f', scope: 'most', when: { all: [] } }],
-        } as never,
-      ])
+        } as never)
+      )
     ).toThrow(/unknown scope/);
   });
 
   it('rejects a zero bucket', () => {
     expect(() =>
-      createDisplaySetSplitRules([
-        { id: 'x', groupBy: [{ attribute: 'Rows', bucket: 0 }] } as never,
-      ])
+      createDisplaySetSplitRules(
+        raw({ id: 'x', groupBy: [{ attribute: 'Rows', bucket: 0 }] } as never)
+      )
     ).toThrow(/bucket must be a non-zero finite number/);
   });
 
   it('rejects an unknown customAttributes preset', () => {
     expect(() =>
-      createDisplaySetSplitRules([
-        { id: 'x', customAttributes: { preset: 'missing' } } as never,
-      ])
+      createDisplaySetSplitRules(
+        raw({ id: 'x', customAttributes: { preset: 'missing' } } as never)
+      )
     ).toThrow(/unknown customAttributes preset "missing"/);
   });
 
   it('names the offending fragment in the error', () => {
     expect(() =>
-      createDisplaySetSplitRules([
-        { id: 'x', matches: { classifier: 'nope' } } as never,
-      ])
+      createDisplaySetSplitRules(
+        raw({ id: 'x', matches: { classifier: 'nope' } } as never)
+      )
     ).toThrow(/\{"classifier":"nope"\}/);
   });
 });
@@ -924,14 +1082,14 @@ describe('rawDisplaySetSelector - rules written as expressions', () => {
   it('accepts a string expression as a rule matcher', () => {
     // The whole point of the expression language: the condition reads as one
     // line instead of a nested object tree, and still crosses the wire as JSON.
-    const rules = createDisplaySetSplitRules([
-      {
-        id: 'bigCt',
+    const rules = createDisplaySetSplitRules({
+      ...rawDisplaySetSelector,
+      bigCt: {
+        priority: -1,
         viewportTypes: ['stack'],
         matches: "Modality === 'CT' && Rows > 256",
       },
-      ...rawDisplaySetSelector,
-    ]);
+    });
 
     expect(
       ruleIdsFor([instance({ Rows: 512 }), instance({ Rows: 128 })], rules)
@@ -939,14 +1097,14 @@ describe('rawDisplaySetSelector - rules written as expressions', () => {
   });
 
   it('accepts the { expression } object form for the same condition', () => {
-    const rules = createDisplaySetSplitRules([
-      {
-        id: 'mg',
+    const rules = createDisplaySetSplitRules({
+      ...rawDisplaySetSelector,
+      mg: {
+        priority: -1,
         viewportTypes: ['stack'],
         matches: { expression: "Modality in ['CR', 'DX', 'MG']" },
       },
-      ...rawDisplaySetSelector,
-    ]);
+    });
 
     expect(
       ruleIdsFor([instance({ Modality: 'MG', Rows: 2294 })], rules)
@@ -956,9 +1114,10 @@ describe('rawDisplaySetSelector - rules written as expressions', () => {
   it('groups by a computed expression value', () => {
     // In value position an expression yields its own result rather than a
     // boolean, so it can produce a bucket key no attribute carries directly.
-    const rules = createDisplaySetSplitRules([
-      {
-        id: 'byLaterality',
+    const rules = createDisplaySetSplitRules({
+      ...rawDisplaySetSelector,
+      byLaterality: {
+        priority: -1,
         viewportTypes: ['stack'],
         matches: "Modality === 'MG'",
         groupBy: [
@@ -969,8 +1128,7 @@ describe('rawDisplaySetSelector - rules written as expressions', () => {
           },
         ],
       },
-      ...rawDisplaySetSelector,
-    ]);
+    });
 
     const groups = groupInstancesBySplitRules(
       [
@@ -989,17 +1147,17 @@ describe('rawDisplaySetSelector - rules written as expressions', () => {
 
   it('reports an expression syntax error at compile time', () => {
     expect(() =>
-      createDisplaySetSplitRules([
-        { id: 'bad', matches: 'Modality ===' } as never,
-      ])
+      createDisplaySetSplitRules(
+        raw({ id: 'bad', matches: 'Modality ===' } as never)
+      )
     ).toThrow(/Modality ===/);
   });
 
   it('refuses prototype-chain access from an expression', () => {
     expect(() =>
-      createDisplaySetSplitRules([
-        { id: 'evil', matches: 'instance.constructor' } as never,
-      ])
+      createDisplaySetSplitRules(
+        raw({ id: 'evil', matches: 'instance.constructor' } as never)
+      )
     ).toThrow(/constructor/);
   });
 });

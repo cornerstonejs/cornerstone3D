@@ -199,7 +199,10 @@ scope, which is what a host needs to decide what to fetch — or to notice an
 expression referencing something it does not supply:
 
 ```js
-import { collectIdentifiers, parseExpressionSource } from '@cornerstonejs/metadata';
+import {
+  collectIdentifiers,
+  parseExpressionSource,
+} from '@cornerstonejs/metadata';
 
 collectIdentifiers(parseExpressionSource("Modality === 'CT' && Rows > 512"));
 // ['Modality', 'Rows']
@@ -231,17 +234,20 @@ what is on the subject.
 `@cornerstonejs/metadata`'s display-set splitting is built on this vocabulary. It
 supplies the subject (a naturalized instance), the built-in classifiers
 (`image`, `video`, `ecg`, `wsi`), and a rule shape that wraps conditions and
-values in `matches` / `groupBy` / `runBy` / `series` / `customAttributes`:
+values in `matches` / `groupBy` / `runBy` / `series` / `customAttributes`. A
+selector keys each rule by its id and gives it a `priority`:
 
 ```js
 {
-  id: 'singleImageModality',
-  viewportTypes: ['stack'],
-  matches: "Modality in ['CR', 'DX', 'MG'] && Rows != undefined",
-  groupBy: [
-    'SeriesInstanceUID',
-    { join: '&', parts: [{ label: 'rows', attribute: 'Rows', bucket: 64 }] },
-  ],
+  singleImageModality: {
+    priority: 4,
+    viewportTypes: ['stack'],
+    matches: "Modality in ['CR', 'DX', 'MG'] && Rows != undefined",
+    groupBy: [
+      'SeriesInstanceUID',
+      { join: '&', parts: [{ label: 'rows', attribute: 'Rows', bucket: 64 }] },
+    ],
+  },
 }
 ```
 

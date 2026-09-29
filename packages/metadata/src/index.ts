@@ -46,6 +46,9 @@ export type {
   InstanceOrderContext,
   SortInstances,
   GroupInstancesOptions,
+  SplitRuleSet,
+  SplitRuleSetEntry,
+  OrderInstancesOptions,
   ClassifierName,
   InstanceClassifier,
   RawCondition,
@@ -68,6 +71,8 @@ export {
   registerDisplaySetProviders,
   defaultDisplaySetSplitRules,
   orderInstancesForRule,
+  resolveSplitRuleSet,
+  validateSplitRuleSetEntry,
   rawDisplaySetSelector,
   createDisplaySetSplitRules,
   createDisplaySetFromGroup,
@@ -80,6 +85,7 @@ export {
   getViewportTypesForGroup,
   isDisplayableViewportTypes,
   NO_VIEWPORT_TYPE,
+  DEFAULT_SPLIT_RULE_PRIORITY_LIMIT,
 } from './displayset';
 export type { CreateDisplaySetFromGroupOptions } from './displayset';
 export * as logging from './utilities/logging';
