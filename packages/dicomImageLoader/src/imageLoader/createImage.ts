@@ -15,7 +15,6 @@ import decodeImageFrame from './decodeImageFrame';
 import getImageFrame from './getImageFrame';
 import getScalingParameters from './getScalingParameters';
 import { getOptions } from './internal/options';
-import isColorImageFn from '../shared/isColorImage';
 import removeAFromRGBA from './removeAFromRGBA';
 import isModalityLUTForDisplay from './isModalityLutForDisplay';
 import setPixelDataType from './setPixelDataType';
@@ -122,7 +121,9 @@ async function createImage(
     taskDecodeConfig
   );
 
-  const isColorImage = isColorImageFn(imageFrame.photometricInterpretation);
+  const isColorImage = utilities.isColorImage(
+    imageFrame.photometricInterpretation
+  );
 
   return new Promise<DICOMLoaderIImage | Types.IImageFrame>(
     (resolve, reject) => {

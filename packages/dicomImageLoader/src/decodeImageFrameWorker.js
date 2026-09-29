@@ -23,7 +23,6 @@ import getMinMax from './shared/getMinMax';
 import getPixelDataTypeFromMinMax, {
   validatePixelDataType,
 } from './shared/getPixelDataTypeFromMinMax';
-import isColorImage from './shared/isColorImage';
 
 const imageUtils = {
   bilinear,
@@ -71,12 +70,23 @@ export function postProcessDecodedPixels(
       ? options.allowFloatRendering
       : true;
 
+  // Matches utilities.isColorImage in @cornerstonejs/core, inlined so the
+  // worker bundle doesn't pull in all of core
+  const isColorImage = [
+    'RGB',
+    'PALETTE COLOR',
+    'YBR_FULL',
+    'YBR_FULL_422',
+    'YBR_PARTIAL_422',
+    'YBR_PARTIAL_420',
+    'YBR_RCT',
+    'YBR_ICT',
+  ].includes(imageFrame.photometricInterpretation);
+
   // Sometimes the type is specified before the DICOM header data has been
   // read.  This is fine except for color data, where the wrong type gets
   // specified.  Don't use the target buffer in that case.
-  let invalidType =
-    isColorImage(imageFrame.photometricInterpretation) &&
-    options.targetBuffer?.offset === undefined;
+  let invalidType = isColorImage && options.targetBuffer?.offset === undefined;
 
   const willScale = options.preScale?.enabled;
 

@@ -15,7 +15,7 @@ import { default as createImage } from './imageLoader/createImage';
 import { default as decodeJPEGBaseline8BitColor } from './imageLoader/decodeJPEGBaseline8BitColor';
 import { default as getImageFrame } from './imageLoader/getImageFrame';
 import { default as getMinMax } from './shared/getMinMax';
-import { default as isColorImage } from './shared/isColorImage';
+import { utilities } from '@cornerstonejs/core';
 import { default as isJPEGBaseline8BitColor } from './imageLoader/isJPEGBaseline8BitColor';
 import { default as getPixelData } from './imageLoader/wadors/getPixelData';
 import { default as prefetchPart10Instance } from './imageLoader/prefetchPart10Instance';
@@ -27,6 +27,8 @@ import {
   postProcessDecodedPixels,
 } from './decodeImageFrameWorker';
 import { initializers, decoders } from './shared/decoders';
+
+const { isColorImage } = utilities;
 
 const cornerstoneDICOMImageLoader = {
   constants,

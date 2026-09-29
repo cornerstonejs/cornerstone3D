@@ -64,6 +64,7 @@ import decimate from './decimate';
 import imageRetrieveMetadataProvider from './imageRetrieveMetadataProvider';
 import genericViewportDisplaySetMetadataProvider from './genericViewportDisplaySetMetadataProvider';
 import isVideoTransferSyntax from './isVideoTransferSyntax';
+import isColorImage from './isColorImage';
 import { getBufferConfiguration } from './getBufferConfiguration';
 import { generateVolumePropsFromImageIds } from './generateVolumePropsFromImageIds';
 import { convertStackToVolumeViewport } from './convertStackToVolumeViewport';
@@ -232,6 +233,7 @@ export {
   isValidVolume,
   genericMetadataProvider,
   isVideoTransferSyntax,
+  isColorImage,
   HistoryMemo,
   generateVolumePropsFromImageIds,
   getBufferConfiguration,

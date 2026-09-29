@@ -15,7 +15,7 @@ import { default as createImage } from './createImage';
 import { default as decodeJPEGBaseline8BitColor } from './decodeJPEGBaseline8BitColor';
 import { default as getImageFrame } from './getImageFrame';
 import { default as getMinMax } from '../shared/getMinMax';
-import { default as isColorImage } from '../shared/isColorImage';
+import { utilities } from '@cornerstonejs/core';
 import { default as isJPEGBaseline8BitColor } from './isJPEGBaseline8BitColor';
 import { default as getPixelData } from './wadors/getPixelData';
 import { default as getScalingParameters } from './getScalingParameters';
@@ -24,6 +24,8 @@ import { default as removeAFromRGBA } from './removeAFromRGBA';
 import { default as isModalityLUTForDisplay } from './isModalityLutForDisplay';
 import { default as setPixelDataType } from './setPixelDataType';
 import { internal } from './internal/index';
+
+const { isColorImage } = utilities;
 
 const cornerstoneDICOMImageLoader = {
   convertRGBColorByPixel,

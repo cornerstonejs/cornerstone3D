@@ -11,6 +11,7 @@ import getScalingParameters from './getScalingParameters';
 import { hasFloatScalingParameters } from './hasFloatScalingParameters';
 import { canRenderFloatTextures } from '../init';
 import cache from '../cache/cache';
+import isColorImage from './isColorImage';
 
 // Map constructor names to PixelDataTypedArrayString
 const constructorToTypedArray: Record<string, PixelDataTypedArrayString> = {
@@ -77,8 +78,10 @@ function generateVolumePropsFromImageIds(
     imageIds: sortedImageIds,
     volumeId,
     voxelManager: null,
-    numberOfComponents:
-      volumeMetadata.PhotometricInterpretation === 'RGB' ? 3 : 1,
+    // Color frames (RGB, YBR_* and PALETTE COLOR) are decoded to interleaved RGB
+    numberOfComponents: isColorImage(volumeMetadata.PhotometricInterpretation)
+      ? 3
+      : 1,
   };
 }
 
